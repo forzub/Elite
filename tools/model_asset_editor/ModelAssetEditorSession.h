@@ -83,8 +83,12 @@ private:
         std::size_t outputTriangles = 0;
         std::size_t removedDegenerateTriangles = 0;
         std::size_t removedDuplicateTriangles = 0;
+        std::size_t sourceNonManifoldEdges = 0;
         std::size_t normalIslands = 0;
         std::size_t rebuiltEdges = 0;
+        std::size_t splitTopologyVertices = 0;
+        std::size_t raycastPatches = 0;
+        std::size_t raycastFlippedTriangles = 0;
         std::uint64_t outputFingerprint = 0;
     };
     std::filesystem::path wizardWorkspacePath() const;
@@ -102,7 +106,11 @@ private:
         std::size_t referenceRenderNodeIndex = std::size_t(-1),
         const std::vector<std::size_t>& targetRenderNodeIndices = {});
     bool analyzeModelPreflight();
-    bool safeFixModelPreflight();
+    bool canonicalizeLoadedWorkingSet(
+        const std::string& invalidationStage = {},
+        bool reportStatus = false,
+        bool* payloadChangedOut = nullptr);
+    bool verifyLoadedWorkingSetCanonical(std::string* reason = nullptr) const;
     bool modelPreflightAllLoadedReady(std::string* reason = nullptr) const;
     bool setGeometryTopologyClass(
         std::size_t lodIndex,
@@ -163,11 +171,13 @@ private:
     // uses SurfaceMode; breached and closed volumes both render as front-sided
     // shells, while explicit thin sheets map to ThinTwoSided.
     std::map<std::size_t, std::map<std::string, std::string>> m_geometryTopologyClasses; // geometry id -> explicit class
-    // Proof that a mesh has passed the destructive canonical builder. The mesh
-    // payload remains in .elmesh/checkpoints; this record only preserves the
-    // before/after preparation facts and a fingerprint so stale records cannot
-    // unlock the LOD generator.
+    // Evidence that a resident working mesh was explicitly prepared through
+    // CanonicalMeshBuilder. Load/restore/reimport may legally expose RAW meshes;
+    // this sidecar only gates downstream LOD authoring when its fingerprint
+    // matches the current resident payload.
     std::map<std::size_t, std::map<std::string, MeshPreparationRecord>> m_meshPreparationRecords;
+    // Session-only RAW snapshots for the diagnostic SOURCE viewport. Never serialized into .elmodel/.elmesh.
+    std::map<std::size_t, std::map<std::string, MeshLod>> m_rawMeshSnapshots;
     std::map<std::size_t, std::map<std::string, std::vector<std::string>>> m_legacySourceVariantReplacements;
     std::size_t m_nextBaseVisualOrdinal = 1;
     std::size_t m_nextSourceVariantOrdinal = 1;

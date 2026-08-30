@@ -43,3 +43,11 @@ dataset, or binary dependency that is redistributed with the game must receive
 an entry here before release. The entry must identify upstream, version/commit,
 license, bundled files, whether we modified them, and any attribution/notice
 requirements.
+
+## Offline Model Asset Editor — libigl / Eigen / Embree
+
+- **Components:** libigl v2.6.0 core + Embree module, Eigen and Intel Embree resolved by libigl CMake integration.
+- **Purpose:** offline imported-mesh topology repair and outward orientation (`split_nonmanifold`, `reorient_facets_raycast`) in `EliteAssetEditor`; optional station diagnostic spike uses the same libraries.
+- **Upstream:** `https://github.com/libigl/libigl`, pinned tag `v2.6.0`; transitive dependency versions are resolved by that pinned libigl CMake graph.
+- **Scope:** authoring tools only. `EliteModelAsset`, the game client/server and runtime mesh normalizer do not link libigl or Embree.
+- **Licensing:** retain upstream libigl/Eigen/Embree notices and licenses when redistributing an editor build containing these dependencies.

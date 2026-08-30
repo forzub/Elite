@@ -1,3 +1,81 @@
+## 0.10.16 — production libigl + Embree canonical preparation
+
+- `ПОДГОТОВИТЬ МЕШИ` now uses libigl `split_nonmanifold` plus Embree `reorient_facets_raycast` as the production topology/orientation authority; the v7 radial-envelope/open-component orientation heuristic is removed.
+- Positional `1e-4` equality remains only a cleanup/weld candidate. Existing topology-aware source-edge adjacency is preserved so independent coincident/touching sheets are not merged back into false non-manifold geometry.
+- Degenerate/collapsed and duplicate triangles are removed before libigl repair. `split_nonmanifold` may duplicate topology vertices but never creates faces, so authored holes/breaches remain open.
+- After orientation, editor-owned code rebuilds normals, hard-normal islands, UV/material-aware render vertices, canonical edges and bounds. libigl/Embree never enter runtime asset metadata or game targets.
+- Added viewport modes `ИСХОДНИК` (resident pre-PREPARE RAW snapshot, DoubleSide), `БЕЗ ОТСЕЧЕНИЯ` (prepared mesh, DoubleSide) and `РАБОЧИЙ` (prepared mesh, FrontSide). RAW snapshots are session-only and are never serialized into `.elmodel`/`.elmesh`.
+- Updated `build/logs/model_asset_mesh_repair.log` and wizard schema 6 with split topology vertex, raycast patch and raycast-flip counters.
+- libigl v2.6.0 + Embree are fetched only when the offline Model Asset Editor or diagnostic spike target is built.
+
+## 0.10.15 — minimal macro-patch mesh repair loop
+
+- `ПОДГОТОВИТЬ МЕШИ` ориентирует открытые/пробитые оболочки, а не только closed volumes. Манifold-connected component рассматривается как большой parent patch ("лапоть"): boundary loops/дырки не мешают определить общее направление, локальные faces сначала выравниваются BFS, затем весь parent patch при необходимости переворачивается целиком.
+- Для open parent patch используется дешёвый area-weighted radial envelope score относительно его собственного AABB center. Высокоуверенный inward patch переворачивается; почти плоский/двусторонний patch считается ambiguous и не угадывается разрушительно. Никакого raycast/remesh/Blender-подобного repair.
+- Подготовка выполняет bounded repair loop до `GOOD_ENOUGH` или `NO_PROGRESS`; after-state измеряется по фактическому candidate, а не заполняется нулями.
+- После первого rebuild выполняется только дешёвая стабилизация canonical point/render projection, если rebuilt authoritative edges уточнили connectivity. Это делает повторный PREPARE byte-idempotent на station LOD0/LOD1.
+- Добавлен подробный developer log `build/logs/model_asset_mesh_repair.log`: по каждому mesh — input, repair pass, open-component orientation score/confidence/action, output и точная причина отказа. UI получает только короткий итог.
+- Новый preparation record id: `canonical_mesh_builder_v7`; records v6 считаются stale и требуют одного явного PREPARE.
+
+## 0.10.14 — topology-aware canonical winding / outward shells
+
+- `ПОДГОТОВИТЬ МЕШИ` снова является именно authoring canonicalization, но остаётся одним проходом без fixed-point/скрытого ANALYZE.
+- Новый preparation record id: `canonical_mesh_builder_v6`; `runtime_mesh_normalizer_v1` и старые canonical records считаются stale и требуют одного явного PREPARE.
+- Runtime `RuntimeMeshNormalizer` оставлен отдельным tolerant render contract игры; editor больше не выдаёт его глобальный positional weld за canonical topology.
+- positional `1e-4` используется как кандидат на geometric weld; независимые coincident/touching sheets не объединяются, а rebuilt edge adjacency помечается `EdgeCanonicalTopology` и становится авторитетной для последующих анализов.
+- adjacency-BFS исправляет локально перевёрнутые triangles; замкнутые компоненты ориентируются наружу по signed volume, вычисленному уже на canonical snapped positions.
+- normals и render vertices перестраиваются только после финального winding; UV/material/hard-normal islands сохраняются.
+- open boundaries не закрываются: ThinTwoSided/Breached geometry сохраняет реальные отверстия.
+- station LOD0/LOD1 acceptance проходит: после preparation `windingFlipsRequired=0`, `insideOutClosedComponents=0`, включая `LOD1/station_solar_panels`.
+
+## 0.10.13 — shared runtime mesh normalization / analysis split
+
+- Added `src/model_asset/RuntimeMeshNormalizer.*` as the single positional-weld/triangle-cleanup implementation shared by the game `ObjLoader` and Model Asset Editor. Both now use the same `1e-4` weld, degenerate cleanup, exact duplicate cleanup and triangle remap contract.
+- Simplified `ПОДГОТОВИТЬ МЕШИ`: it now performs only runtime-equivalent normalization, normal reconstruction, render-vertex rebuild preserving UV/material splits, bounds and edge rebuild. It does not solve winding, classify topology, run fixed-point passes or reject renderable open/non-manifold meshes.
+- Removed the expensive implicit topology audit/classification from the preparation command. `АНАЛИЗИРОВАТЬ` is now the only operation that runs `ClosedVolume / ThinTwoSided / BreachedVolume / Invalid` analysis.
+- Removed the multi-pass canonical stabilization loop and the deep copy of the complete input `MeshLod`. Preparation builds one transactional output mesh and swaps it into `geometry.mesh` only on success.
+- Genuine non-manifold or inside-out topology is now an analysis result, not a normalization failure. Broken indices, non-finite positions or a mesh with no usable triangles remain normalization failures.
+- Bumped preparation records from `canonical_mesh_builder_v5` to shared `runtime_mesh_normalizer_v1`, so old records are intentionally stale and one explicit preparation is required. Asset format remains v4; wizard state remains schema 5.
+
+## 0.10.12 — explicit mesh preparation / non-blocking load
+
+- Reverted the over-eager 0.10.9–0.10.11 SOURCE-boundary policy: asset load, source reimport, manual LOD load/reload and checkpoint restore now publish exactly the geometry that was read. They do not canonicalize, validate or hide meshes during I/O.
+- Restored one explicit `PREPARE MESHES` action in the LOD Preflight block. Only this command runs `CanonicalMeshBuilder` and replaces resident working `MeshLod` payloads. `ANALYZE` remains read-only.
+- `sendAsset()` no longer refuses RAW/stale geometry. A failed canonical build leaves that mesh unchanged and visible, reports `MESH PREPARATION INCOMPLETE`, and allows inspection instead of turning a geometry problem into a load/server failure.
+- SOURCE stage completion validates only source availability/basic asset serialization. Canonical fingerprint/classification gates move to LODS completion and LOD Generator, eliminating the SOURCE→LODS deadlock for intentionally raw restored/reimported meshes.
+- Additional OBJ refresh is again a literal source reload: fresh OBJ data becomes resident RAW geometry and invalidates previous preparation/classification evidence for that variant.
+- Preflight can audit mixed RAW/canonical working sets. RAW rows are reported as `PREPARE` rather than prematurely labelled `Invalid`; structural `Invalid` becomes authoritative only after a current canonical preparation record exists.
+
+## 0.10.11 — topology-aware canonical weld fixes false station non-manifold
+
+- Fixed the station blocker exposed by real SOURCE acceptance: `1e-4` positional coincidence is now a weld candidate, not unconditional topology identity. Independent panels/shells that touch on the same coordinates stay separate geometric sheets instead of becoming artificial 3/4-face non-manifold edges.
+- Canonical cleanup now removes collapsed/duplicate triangles first, then builds topological geometric points from ordinary two-face positional adjacency plus explicit source-edge adjacency preserved by the importer. A real canonical edge that still has more than two faces remains `Invalid`.
+- Edge metadata transfer is keyed by canonical topology edge rather than raw position pair, so one authored edge can no longer contaminate another coincident-but-independent edge with flags/render masks.
+- `NativeObjImporter` now computes `EdgeNonManifold` only from real OBJ polygon perimeter edges. Fan-triangulation diagonals no longer manufacture source non-manifold evidence.
+- Legacy `.elmesh`/checkpoint payloads with incomplete old edge adjacency are driven to a stable canonical fixed point before their fingerprint is recorded, so the first published payload is already idempotent.
+- Bumped the builder record to `canonical_mesh_builder_v5` and added regressions for coincident independent sheets, fan-diagonal false positives, genuine shared-edge non-manifold geometry, and canonical idempotency.
+
+## 0.10.10 — RAW topology can no longer bypass canonicalization
+
+- Fixed the SOURCE-boundary bug in 0.10.9: decoded `EdgeNonManifold` evidence is no longer treated as a blocker before `CanonicalMeshBuilder` runs. RAW authored flags, winding, normals, duplicate faces and collapsed faces are repair inputs, not preflight gates.
+- Bumped the builder contract to `canonical_mesh_builder_v4`. A source non-manifold marker is now rejected only when the same positional edge is still used by more than two cleaned triangles after degenerate/duplicate cleanup. Stale/source flags that disappear after cleanup are accepted.
+- `MeshLod.edges` rebuild no longer inherits `EdgeNonManifold` from authored edges. The final canonical edge topology is authoritative; old authored render masks and `EdgeAuthored` metadata may still be preserved where endpoints match.
+- `canonicalizeLoadedWorkingSet()` now hard-fails the SOURCE boundary when any resident geometry cannot be canonicalized. It never keeps a failed RAW mesh as a usable editor payload. Additional OBJ files are canonicalized while still temporary and are rejected before insertion when the builder fails.
+- `verifyLoadedWorkingSetCanonical()` no longer exempts structural failures from fingerprint records. Every resident geometry must carry a current canonical record and satisfy post-build cleanup/orientation invariants.
+- `sendAsset()` now has a final invariant guard: reconnects, catalog requests or future call-site mistakes cannot serialize RAW/stale geometry into the browser viewport. Basis conversion and interactive source refresh explicitly re-cross the SOURCE boundary before full geometry publication.
+- Preparation records retain pre-cleanup source non-manifold evidence only as diagnostics. Preflight reports it separately from the canonical topology; it is not an `Invalid` reason by itself.
+- Added behavioral regressions proving that a stale `EdgeNonManifold` flag is cleaned rather than inherited, while a real three-face source edge that survives cleanup is still rejected. Asset format remains v4; wizard state remains schema 5.
+
+## 0.10.9 — canonical SOURCE boundary / classification-only Preflight
+
+- Canonicalization is now an automatic invariant of SOURCE load/import. Before any asset payload is sent to the browser or consumed by later wizard stages, every resident mesh is migrated through `CanonicalMeshBuilder` unless its current fingerprint already proves the same canonical payload.
+- Bumped the builder contract to `canonical_mesh_builder_v3`: the working render mesh now snaps every welded geometric point to one representative position and rebuilds GPU vertices from `geometric point + UV + material + reconstructed normal island`. Source OBJ vertex/normal identity is no longer preserved accidentally, so authored-normal-only duplicates collapse while UV/material/hard-normal splits remain. Existing v2 records are deliberately stale and migrate once on 0.10.9 load.
+- Existing `.elmesh` packages and wizard checkpoints from older editor versions cross the same one-time migration boundary on load; structural changes mark the affected LOD dirty and invalidate stale wizard work instead of exposing authored/raw topology.
+- Additional OBJ meshes discovered by SOURCE/GEOMETRY refresh are canonicalized before the refreshed geometry payload is broadcast. Manual LOD load/reload and checkpoint restore use the same boundary.
+- Removed the user-facing `ПОДГОТОВИТЬ МЕШИ` command and the browser-side `КАК В ИГРЕ` fake normalization preview. The viewport now always renders the actual canonical working mesh; Preflight only audits/classifies `ClosedVolume`, `ThinTwoSided`, `BreachedVolume` or genuine `Invalid`.
+- Preflight and LOD generation no longer invoke canonicalization at all. They only verify the SOURCE fingerprint invariant and block if an impossible stale working mesh is detected. Ambiguous open geometry remains the only normal user decision; canonical cleanup itself is no longer a user action.
+- Asset format remains v4. `wizard_state.json` schema 5 preparation records are retained as migration/fingerprint evidence, not as an opt-in preparation workflow.
+
 ## 0.10.8 — canonical mesh builder / explicit preparation contract
 
 - Replaced the transitional Preflight repair path with a dedicated `CanonicalMeshBuilder`. Positional weld at `1e-4` now defines geometric points while render vertices remain independently split by UV/material identity and by reconstructed hard-normal islands.

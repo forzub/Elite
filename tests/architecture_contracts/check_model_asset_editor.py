@@ -266,9 +266,21 @@ require(
     "Source OBJ/assembly files are read-only",
 )
 
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.8"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.16"')
 require(
     "tools/model_asset_editor/CHANGELOG.md",
+    "0.10.16",
+    "production libigl + Embree canonical preparation",
+    "0.10.15",
+    "minimal macro-patch mesh repair loop",
+    "0.10.13",
+    "shared runtime mesh normalization / analysis split",
+    "0.10.12",
+    "explicit mesh preparation / non-blocking load",
+    "0.10.11",
+    "topology-aware canonical weld fixes false station non-manifold",
+    "0.10.9",
+    "canonical SOURCE boundary / classification-only Preflight",
     "0.10.8",
     "canonical mesh builder / explicit preparation contract",
     "0.10.7",
@@ -312,16 +324,31 @@ require(
 require(
     "src/model_asset/ModelAsset.h",
     "EdgeNonManifold",
+    "EdgeCanonicalTopology",
 )
 require(
     "tools/model_asset_editor/NativeObjImporter.cpp",
-    "useCount",
+    "sourceBoundaryUseCount",
     "EdgeNonManifold",
 )
 require(
+    "src/model_asset/RuntimeMeshNormalizer.h",
+    "RuntimeMeshWeldEpsilon",
+    "RuntimeMeshNormalizerAlgorithmId",
+    "runtime_mesh_normalizer_v1",
+    "normalizeRuntimeMeshTopology",
+)
+require(
+    "src/model_asset/RuntimeMeshNormalizer.cpp",
+    "std::unordered_map<QuantizedPosition",
+    "removedDegenerateTriangles",
+    "removedDuplicateTriangles",
+    "pointForInputVertex",
+)
+require(
     "tools/model_asset_editor/CanonicalMeshBuilder.h",
-    "CanonicalMeshWeldEpsilon",
     "CanonicalMeshAlgorithmId",
+    "canonical_mesh_libigl_embree_v1",
     "CanonicalMeshAnalysis",
     "CanonicalMeshBuildResult",
     "canonicalizeMesh",
@@ -329,22 +356,142 @@ require(
 )
 require(
     "tools/model_asset_editor/CanonicalMeshBuilder.cpp",
-    "buildPointMap",
-    "duplicateTriangles",
-    "solveOrientation",
-    "flipInsideOutClosedComponents",
+    "buildTopologicalPointMap",
+    "repairTopologyAndOrientationWithLibigl",
+    "igl::split_nonmanifold",
+    "igl::embree::reorient_facets_raycast",
     "rebuildRenderVertices",
-    "normalIslands",
-    "rebuildEdges",
-    "EdgeNonManifold",
+    "EdgeCanonicalTopology",
+    "mesh = std::move(candidate)",
 )
 require(
+    "src/game/geometry/ObjLoader.cpp",
+    "normalizeRuntimeMeshTopology",
+    "RuntimeMeshWeldEpsilon",
+    "RUNTIME NORMALIZATION FAILED",
+)
+require(
+    "CMakeLists.txt",
+    "src/model_asset/RuntimeMeshNormalizer.cpp",
+    "EliteModelAsset",
+    "ELITE_MODEL_ASSET_LIBIGL_SPIKE",
+    "igl::core",
+    "igl::embree",
+)
+canonical_builder = text("tools/model_asset_editor/CanonicalMeshBuilder.cpp")
+if "MaxStabilizationPasses" in canonical_builder:
+    raise AssertionError("mesh preparation regressed to multi-pass fixed-point canonicalization")
+if "const MeshLod original = mesh" in canonical_builder:
+    raise AssertionError("mesh preparation restored a full deep copy of the input MeshLod")
+require(
     "src/assets/webui/model_asset_editor.html",
+    "modelPreflightPrepareBtn",
+    "modelPreflightCheckBtn",
+    "prepare_model_meshes",
+    "model_editor.preflight.canonical_note",
+    "ПОДГОТОВИТЬ МЕШИ",
+)
+for forbidden in (
     "modelPreflightRuntimeBtn",
     "runtimeNormalizedThreeGeometry",
-    "preflightGroup",
-    "model_editor.preflight.runtime_note",
-)
+    "apply_mesh_preparation",
+    "safe_fix_model_preflight",
+):
+    if forbidden in web:
+        raise AssertionError(f"obsolete Preflight UI returned: {forbidden!r}")
+
+session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
+for forbidden in ("safeFixModelPreflight", '"apply_mesh_preparation"', '"safe_fix_model_preflight"'):
+    if forbidden in session:
+        raise AssertionError(f"obsolete canonicalization backend path returned: {forbidden!r}")
+for token in (
+    "canonicalizeLoadedWorkingSet",
+    "verifyLoadedWorkingSetCanonical",
+    'command == "prepare_model_meshes"',
+    "MESH PREPARATION INCOMPLETE",
+    "appendMeshRepairDiagnostic",
+    "model_asset_mesh_repair.log",
+):
+    if token not in session:
+        raise AssertionError(f"explicit mesh-preparation contract missing {token!r}")
+
+canonical_start = session.index("bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(")
+canonical_end = session.index("bool ModelAssetEditorSession::verifyLoadedWorkingSetCanonical(", canonical_start)
+canonical_body = session[canonical_start:canonical_end]
+if "sourceAnalysis.structuralInvalid" in canonical_body:
+    raise AssertionError("explicit preparation still pre-rejects RAW topology before CanonicalMeshBuilder")
+for token in ("const auto built = canonicalizeMesh(geometry.mesh)", "MESH PREPARATION INCOMPLETE"):
+    if token not in canonical_body:
+        raise AssertionError(f"explicit canonical preparation missing {token!r}")
+if "auditPreflightGeometry(geometry.mesh)" in canonical_body:
+    raise AssertionError("PREPARE MESHES still performs implicit topology audit/classification")
+if "setGeometryTopologyClass" in canonical_body:
+    raise AssertionError("PREPARE MESHES still mixes normalization with classification")
+if "SOURCE BLOCKED: raw mesh was not exposed" in canonical_body:
+    raise AssertionError("canonical preparation still masquerades as a SOURCE load blocker")
+
+verify_start = session.index("bool ModelAssetEditorSession::verifyLoadedWorkingSetCanonical(")
+verify_end = session.index("bool ModelAssetEditorSession::setGeometryTopologyClass(", verify_start)
+verify_body = session[verify_start:verify_end]
+if "structuralInvalid) continue" in verify_body:
+    raise AssertionError("canonical verification lets invalid payloads bypass downstream records")
+
+send_start = session.index("void ModelAssetEditorSession::sendAsset()")
+send_end = session.index("void ModelAssetEditorSession::sendAssetMetadata", send_start)
+send_body = session[send_start:send_end]
+if "verifyLoadedWorkingSetCanonical" in send_body or "ASSET PAYLOAD BLOCKED" in send_body:
+    raise AssertionError("sendAsset regressed into a load-time canonical gate")
+if "serializeAsset(true)" not in send_body:
+    raise AssertionError("sendAsset no longer publishes the current resident working mesh")
+
+select_start = session.index("bool ModelAssetEditorSession::selectAsset(")
+select_end = session.index("bool ModelAssetEditorSession::saveAsset(", select_start)
+select_body = session[select_start:select_end]
+if "canonicalizeLoadedWorkingSet(" in select_body:
+    raise AssertionError("selectAsset must load/restore/reimport without hidden canonicalization")
+if "refreshSourceVariants(true, false)" not in select_body or "sendAsset();" not in select_body:
+    raise AssertionError("selectAsset no longer materializes the source set and publishes it as-is")
+
+restore_start = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(")
+restore_end = session.index("bool ModelAssetEditorSession::scanRenderDuplicates(", restore_start)
+restore_body = session[restore_start:restore_end]
+if "canonicalizeLoadedWorkingSet(" in restore_body:
+    raise AssertionError("checkpoint restore must not canonicalize implicitly")
+if "sendAsset();" not in restore_body:
+    raise AssertionError("checkpoint restore must publish exactly the restored payload")
+
+load_lod_start = session.index("bool ModelAssetEditorSession::loadLodOnly(")
+load_lod_end = session.index("bool ModelAssetEditorSession::ensureLodLoaded(", load_lod_start)
+if "canonicalizeLoadedWorkingSet(" in session[load_lod_start:load_lod_end]:
+    raise AssertionError("manual LOD load/reload must not canonicalize implicitly")
+
+preflight_start = session.index("bool ModelAssetEditorSession::analyzeModelPreflight()")
+preflight_end = session.index("bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(", preflight_start)
+preflight_body = session[preflight_start:preflight_end]
+if "canonicalizeLoadedWorkingSet(" in preflight_body or "canonicalizeMesh(" in preflight_body:
+    raise AssertionError("ANALYZE regressed into a mutation stage")
+if "verifyLoadedWorkingSetCanonical" in preflight_body:
+    raise AssertionError("ANALYZE must accept RAW/mixed geometry instead of refusing to inspect it")
+for token in ("needsPreparation", 'action = "prepare_required"'):
+    if token not in preflight_body:
+        raise AssertionError(f"mixed RAW/canonical Preflight reporting missing {token!r}")
+
+lod_analysis_start = session.index("bool ModelAssetEditorSession::analyzeLodRequirements(")
+lod_analysis_end = session.index("bool ModelAssetEditorSession::previewLodComponentCull(", lod_analysis_start)
+lod_analysis_body = session[lod_analysis_start:lod_analysis_end]
+if "canonicalizeLoadedWorkingSet(" in lod_analysis_body or "canonicalizeMesh(" in lod_analysis_body:
+    raise AssertionError("LOD analysis regressed into a canonicalization/repair stage")
+if "verifyLoadedWorkingSetCanonical" not in lod_analysis_body:
+    raise AssertionError("LOD analysis must still gate on explicitly prepared canonical geometry")
+
+refresh_start = session.index("bool ModelAssetEditorSession::refreshSourceVariants(")
+refresh_end = session.index("void ModelAssetEditorSession::handleMessage(", refresh_start)
+refresh_body = session[refresh_start:refresh_end]
+if "canonicalizeMesh(mesh)" in refresh_body or "canonicalizeLoadedWorkingSet(" in refresh_body:
+    raise AssertionError("source variant refresh must remain a literal RAW reload")
+for token in ("sameMeshLodExact(existing->mesh, mesh)", "m_meshPreparationRecords", "canonicalEvidenceChanged"):
+    if token not in refresh_body:
+        raise AssertionError(f"RAW source refresh invalidation contract missing {token!r}")
 
 require("src/assets/compiled/models/.gitignore", "Compiled model packages")
 
@@ -501,12 +648,13 @@ for command in metadata_only_commands:
     if "sendAssetMetadata" not in block:
         raise AssertionError(f"command {command!r} does not publish metadata update")
 
-# Model Preflight is now a real canonical-preparation gate before LOD processing.
-# It persists proof for the exact payload, while the dedicated builder owns
-# cleanup/orientation/normal-island/render-edge reconstruction.
+# Canonicalization is an explicit authoring operation. Loading may expose RAW
+# geometry; PREPARE mutates it, ANALYZE is read-only, and downstream LOD work
+# still requires an exact-payload canonical record.
 for token in (
     "analyzeModelPreflight",
-    "safeFixModelPreflight",
+    "canonicalizeLoadedWorkingSet",
+    "verifyLoadedWorkingSetCanonical",
     "setGeometryTopologyClass",
     "modelPreflightReadyForLod",
     "modelPreflightAllLoadedReady",
@@ -516,46 +664,78 @@ for token in (
     "m_meshPreparationRecords",
     "meshPreparationRecords",
     "geometryTopologyClasses",
-    '"schemaVersion", 5',
+    '"schemaVersion", 6',
 ):
     if token not in session_cpp:
-        raise AssertionError(f"model_preflight backend contract missing {token!r}")
+        raise AssertionError(f"canonical SOURCE/preflight backend contract missing {token!r}")
 canonical_cpp = text("tools/model_asset_editor/CanonicalMeshBuilder.cpp")
 for token in (
-    "buildPointMap",
-    "duplicateTriangles",
+    "analyzeCanonicalMesh",
+    "buildTopologicalPointMap",
     "solveOrientation",
-    "flipInsideOutClosedComponents",
-    "rebuildRenderVertices",
-    "normalIslands",
-    "rebuildEdges",
+    "repairTopologyAndOrientationWithLibigl",
+    "igl::split_nonmanifold",
+    "igl::embree::reorient_facets_raycast",
+    "EdgeCanonicalTopology",
     "sourceNonManifoldEdgeCount",
+    "rebuildRenderVertices",
 ):
     if token not in canonical_cpp:
-        raise AssertionError(f"canonical mesh builder contract missing {token!r}")
+        raise AssertionError(f"canonical authoring / explicit analysis contract missing {token!r}")
+canonicalize_start = canonical_cpp.index("CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)")
+canonicalize_body = canonical_cpp[canonicalize_start:canonical_cpp.index("std::uint64_t canonicalMeshFingerprint", canonicalize_start)]
+for required in ("repairTopologyAndOrientationWithLibigl(", "rebuildRenderVertices("):
+    if required not in canonicalize_body:
+        raise AssertionError(f"PREPARE MESHES lost canonical orientation stage {required!r}")
+for forbidden in ("normalizeRuntimeMeshTopology(", "analyzeCanonicalMesh(candidate)", "MaxStabilizationPasses", "const MeshLod original = mesh", "orientOpenComponentsByEnvelope(", "radialScore", "OpenOrientationMinConfidence"):
+    if forbidden in canonicalize_body:
+        raise AssertionError(f"PREPARE MESHES regressed to runtime-only, heuristic, or multi-pass behavior {forbidden!r}")
+for forbidden in ("orientOpenComponentsByEnvelope", "radialScore", "OpenOrientationMinConfidence"):
+    if forbidden in canonical_cpp:
+        raise AssertionError(f"removed radial/open-component orientation heuristic returned: {forbidden!r}")
 model_asset_tests = text("tests/model_asset/ModelAssetBinaryTests.cpp")
 for token in (
+    "testCanonicalBuilderRepairsWindingAndOutwardNormals",
     "testCanonicalBuilderClosedPlateBreachContracts",
+    "testCanonicalBuilderOrientsBreachedShellWithEmbree",
     "testCanonicalBuilderRemovesGarbageAndPreservesUvSeams",
-    "testCanonicalBuilderPreservesHardNormalSplit",
+    "testCanonicalBuilderCollapsesAuthoredNormalOnlySplits",
+    "testCanonicalPreparationKeepsCoincidentSheetsIndependent",
+    "testCanonicalPreparationRebuildsHardNormalIslands",
+    "testRuntimeNormalizerRemainsTolerantRenderContract",
     "testCanonicalBuilderFingerprintTracksStructuralPayload",
-    "testCanonicalBuilderRejectsTrueInvalidTopology",
+    "testPreparationRejectsUnreadableAndRepairsNonManifold",
+    "split_nonmanifold did not split a genuine three-face geometric edge",
+    "closed shell remained inward after canonical preparation",
 ):
     if token not in model_asset_tests:
-        raise AssertionError(f"canonical mesh behavioral regression missing {token!r}")
+        raise AssertionError(f"canonical-authoring behavioral regression missing {token!r}")
 for token in (
+    "modelPreflightPrepareBtn",
     "modelPreflightCheckBtn",
-    "modelPreflightFixBtn",
     "renderModelPreflightPanel",
     "model_preflight_result",
     "set_geometry_topology_class",
     "model_editor.preflight.class_thin",
     "model_editor.preflight.class_breached",
-    "apply_mesh_preparation",
+    "model_editor.preflight.canonical_note",
     "model_editor.preflight.workflow",
+    "meshViewportMode",
+    "ИСХОДНИК",
+    "БЕЗ ОТСЕЧЕНИЯ",
+    "РАБОЧИЙ",
 ):
     if token not in web_sync:
-        raise AssertionError(f"model_preflight Web UI contract missing {token!r}")
+        raise AssertionError(f"classification-only Preflight Web UI contract missing {token!r}")
+for forbidden in (
+    "modelPreflightFixBtn",
+    "modelPreflightRuntimeBtn",
+    "apply_mesh_preparation",
+    "safe_fix_model_preflight",
+    "runtimeNormalizedThreeGeometry",
+):
+    if forbidden in web_sync:
+        raise AssertionError(f"obsolete manual/raw Preflight UI returned {forbidden!r}")
 
 # LOD generator v1 is deliberately preview-only. It must use the fixed project
 # authoring ceiling, analyze component thickness rather than filename/triangle
@@ -637,4 +817,4 @@ for protected_id in (
     if protected_id not in {c.get("id") for c in capability_doc.get("protected_capabilities", [])}:
         raise AssertionError(f"protected editor capability disappeared: {protected_id}")
 
-print("[PASS] model asset editor v0.10.8 canonical mesh builder / explicit preparation state / SOURCE / diagnostic LOD preview / v4 boundary")
+print("[PASS] model asset editor v0.10.16 libigl + Embree canonical preparation / diagnostic viewport / v4")

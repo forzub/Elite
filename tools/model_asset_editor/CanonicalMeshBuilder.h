@@ -5,12 +5,13 @@
 #include <string>
 
 #include "src/model_asset/ModelAsset.h"
+#include "src/model_asset/RuntimeMeshNormalizer.h"
 
 namespace elite::model_asset::editor
 {
 
-inline constexpr double CanonicalMeshWeldEpsilon = 1.0e-4;
-inline constexpr const char* CanonicalMeshAlgorithmId = "canonical_mesh_builder_v2";
+inline constexpr double CanonicalMeshWeldEpsilon = RuntimeMeshWeldEpsilon;
+inline constexpr const char* CanonicalMeshAlgorithmId = "canonical_mesh_libigl_embree_v1";
 
 struct CanonicalMeshAnalysis
 {
@@ -43,10 +44,14 @@ struct CanonicalMeshBuildResult
     std::size_t removedDegenerateTriangles = 0;
     std::size_t removedDuplicateTriangles = 0;
     std::size_t flippedTriangles = 0;
-    std::size_t flippedClosedComponents = 0;
+    std::size_t splitTopologyVertices = 0;
+    std::size_t raycastPatches = 0;
+    std::size_t raycastFlippedTriangles = 0;
+    std::size_t topologyStabilizationPasses = 0;
     std::size_t rebuiltRenderVertices = 0;
     std::size_t normalIslands = 0;
     std::size_t rebuiltEdges = 0;
+    std::string repairStatus;
     std::string error;
 };
 

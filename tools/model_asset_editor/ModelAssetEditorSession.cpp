@@ -523,15 +523,15 @@ struct PreflightGeometryAudit
     double confidence = 0.0;
 };
 
-struct PreflightRuntimeTopology
+struct PreflightCanonicalTopology
 {
     std::vector<std::size_t> canonicalVertex;
     std::map<PreflightEdgeKey, std::vector<PreflightEdgeUse>> edgeUses;
 };
 
-PreflightRuntimeTopology buildPreflightRuntimeTopology(const MeshLod& mesh)
+PreflightCanonicalTopology buildPreflightCanonicalTopology(const MeshLod& mesh)
 {
-    PreflightRuntimeTopology out;
+    PreflightCanonicalTopology out;
     out.canonicalVertex.resize(mesh.vertices.size());
     if (mesh.vertices.empty()) return out;
 
@@ -577,7 +577,7 @@ PreflightGeometryAudit auditPreflightGeometry(const MeshLod& mesh)
     // loader policy: positional weld at 1e-4. Render-vertex splits for UVs are
     // preserved in MeshLod; the weld is the geometric identity used for
     // topology/orientation/normal preparation and later LOD analysis.
-    const auto topology = buildPreflightRuntimeTopology(mesh);
+    const auto topology = buildPreflightCanonicalTopology(mesh);
     LodDisjointSet triangleSets(mesh.triangles.size());
     for (const auto& [key, uses] : topology.edgeUses)
     {
@@ -1176,6 +1176,67 @@ void appendRenderInstanceFitDiagnostic(
     catch (...)
     {
         // Diagnostics must never alter editor behaviour.
+    }
+}
+
+
+void appendMeshRepairDiagnostic(
+    const ModelAsset& asset,
+    std::size_t lodIndex,
+    const RenderGeometryDefinition& geometry,
+    const CanonicalMeshBuildResult& result) noexcept
+{
+    try
+    {
+        const std::filesystem::path logPath =
+            std::filesystem::path("build") / "logs" / "model_asset_mesh_repair.log";
+        std::filesystem::create_directories(logPath.parent_path());
+        std::ofstream out(logPath, std::ios::app);
+        if (!out) return;
+
+        out << "\n=== MESH REPAIR ===\n";
+        out << "asset=" << asset.assetId
+            << " lod=" << lodIndex
+            << " geometry=" << geometry.id
+            << " source=" << geometry.sourcePath << '\n';
+        out << "algorithm=" << CanonicalMeshAlgorithmId
+            << " success=" << result.success
+            << " status=" << (result.repairStatus.empty() ? (result.success ? "GOOD_ENOUGH" : "FAILED") : result.repairStatus)
+            << " changed=" << result.changed << '\n';
+        out << "input render_vertices=" << result.before.renderVertices
+            << " geometric_points=" << result.before.geometricPoints
+            << " triangles=" << result.before.triangles
+            << " degenerate=" << result.before.degenerateTriangles
+            << " duplicate=" << result.before.duplicateTriangles
+            << " boundary_edges=" << result.before.boundaryEdges
+            << " nonmanifold_edges=" << result.before.canonicalMultiUseEdges
+            << " winding_flips=" << result.before.windingFlipsRequired
+            << " winding_conflicts=" << result.before.windingConflicts << '\n';
+
+        out << "libigl split_topology_vertices=" << result.splitTopologyVertices
+            << " raycast_patches=" << result.raycastPatches
+            << " raycast_flipped_triangles=" << result.raycastFlippedTriangles << '\n';
+
+        out << "output render_vertices=" << result.after.renderVertices
+            << " geometric_points=" << result.after.geometricPoints
+            << " triangles=" << result.after.triangles
+            << " boundary_edges=" << result.after.boundaryEdges
+            << " nonmanifold_edges=" << result.after.canonicalMultiUseEdges
+            << " winding_flips=" << result.after.windingFlipsRequired
+            << " winding_conflicts=" << result.after.windingConflicts
+            << " inward_closed=" << result.after.insideOutClosedComponents << '\n';
+        out << "removed_degenerate=" << result.removedDegenerateTriangles
+            << " removed_duplicate=" << result.removedDuplicateTriangles
+            << " flipped_triangles=" << result.flippedTriangles
+            << " topology_stabilization_passes=" << result.topologyStabilizationPasses
+            << " normal_islands=" << result.normalIslands
+            << " rebuilt_edges=" << result.rebuiltEdges << '\n';
+        if (!result.error.empty()) out << "error=" << result.error << '\n';
+        out << "=== END MESH REPAIR ===\n";
+    }
+    catch (...)
+    {
+        // Repair diagnostics must never alter editor behaviour.
     }
 }
 
@@ -1970,6 +2031,7 @@ void ModelAssetEditorSession::loadWizardState()
     m_sourceVariantReplacements.clear();
     m_geometryTopologyClasses.clear();
     m_meshPreparationRecords.clear();
+    m_rawMeshSnapshots.clear();
     m_legacySourceVariantReplacements.clear();
     m_nextBaseVisualOrdinal = 1;
     m_nextSourceVariantOrdinal = 1;
@@ -1983,7 +2045,7 @@ void ModelAssetEditorSession::loadWizardState()
         json state;
         in >> state;
         const int schemaVersion = state.value("schemaVersion", 0);
-        if (schemaVersion < 1 || schemaVersion > 5) return;
+        if (schemaVersion < 1 || schemaVersion > 6) return;
         const auto stages = state.value("stages", json::object());
         for (auto& [id, value] : m_wizardStages)
         {
@@ -2067,8 +2129,12 @@ void ModelAssetEditorSession::loadWizardState()
                     record.outputTriangles = item.value("outputTriangles", std::size_t(0));
                     record.removedDegenerateTriangles = item.value("removedDegenerateTriangles", std::size_t(0));
                     record.removedDuplicateTriangles = item.value("removedDuplicateTriangles", std::size_t(0));
+                    record.sourceNonManifoldEdges = item.value("sourceNonManifoldEdges", std::size_t(0));
                     record.normalIslands = item.value("normalIslands", std::size_t(0));
                     record.rebuiltEdges = item.value("rebuiltEdges", std::size_t(0));
+                    record.splitTopologyVertices = item.value("splitTopologyVertices", std::size_t(0));
+                    record.raycastPatches = item.value("raycastPatches", std::size_t(0));
+                    record.raycastFlippedTriangles = item.value("raycastFlippedTriangles", std::size_t(0));
                     record.outputFingerprint = item.value("outputFingerprint", std::uint64_t(0));
                     if (record.algorithm == CanonicalMeshAlgorithmId && record.outputFingerprint != 0)
                         m_meshPreparationRecords[lodIndex][geometryId] = std::move(record);
@@ -2186,7 +2252,11 @@ bool ModelAssetEditorSession::writeWizardState() const
                         {"outputRenderVertices", record.outputRenderVertices}, {"outputTriangles", record.outputTriangles},
                         {"removedDegenerateTriangles", record.removedDegenerateTriangles},
                         {"removedDuplicateTriangles", record.removedDuplicateTriangles},
+                        {"sourceNonManifoldEdges", record.sourceNonManifoldEdges},
                         {"normalIslands", record.normalIslands}, {"rebuiltEdges", record.rebuiltEdges},
+                        {"splitTopologyVertices", record.splitTopologyVertices},
+                        {"raycastPatches", record.raycastPatches},
+                        {"raycastFlippedTriangles", record.raycastFlippedTriangles},
                         {"outputFingerprint", record.outputFingerprint}
                     });
 
@@ -2199,7 +2269,7 @@ bool ModelAssetEditorSession::writeWizardState() const
                     });
 
         json state = {
-            {"schemaVersion", 5},
+            {"schemaVersion", 6},
             {"assetId", m_selectedId},
             {"editorVersion", ModelAssetEditorVersion},
             {"stages", std::move(stages)},
@@ -2485,7 +2555,6 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
     }
     if (!ensureAllLodsLoaded())
         return false;
-
     if (stage == "source")
     {
         std::size_t sourceBacked = 0;
@@ -2506,6 +2575,12 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
     }
     else if (stage == "lods")
     {
+        std::string canonicalReason;
+        if (!verifyLoadedWorkingSetCanonical(&canonicalReason))
+        {
+            sendStatus("LODS validation failed: prepare meshes first: " + canonicalReason, true);
+            return false;
+        }
         if (m_asset.renderLods.empty())
         {
             sendStatus("LOD validation failed: asset has no render LOD documents", true);
@@ -2529,7 +2604,7 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
         std::string preflightReason;
         if (!modelPreflightAllLoadedReady(&preflightReason))
         {
-            sendStatus("LODS validation failed: canonical mesh preparation is incomplete: " + preflightReason, true);
+            sendStatus("LODS validation failed: canonical geometry contract is incomplete: " + preflightReason, true);
             return false;
         }
     }
@@ -2602,9 +2677,12 @@ bool ModelAssetEditorSession::restoreWizardCheckpoint(const std::string& stage)
     pruneWizardAfter(stage);
     (void)writeWizardState();
     sendProgress("reading", "RESTORE CHECKPOINT", 1, 1, it->second.checkpointManifest);
+    // Restore is deliberately literal: show exactly the mesh payload stored in
+    // the checkpoint. Canonicalization/validation runs only when explicitly
+    // requested by the author from the LOD Preflight block.
     sendAsset();
-    m_server.broadcastText(json({{"type", "wizard_checkpoint_restored"}, {"stage", stage}}).dump());
-    sendStatus("Restored " + stage + " checkpoint into editor memory; production package and source OBJ are unchanged");
+    m_server.broadcastText(json({{"type", "wizard_checkpoint_restored"}, {"stage", stage}, {"migratedCanonicalSource", false}}).dump());
+    sendStatus("Restored " + stage + " checkpoint exactly as stored; mesh preparation was not run");
     return true;
 }
 
@@ -2802,24 +2880,24 @@ bool ModelAssetEditorSession::modelPreflightReadyForLod(std::string* reason) con
             return false;
         }
 
-        bool prepared = false;
+        bool canonicalCurrent = false;
         const auto prepLodIt = m_meshPreparationRecords.find(0);
         if (prepLodIt != m_meshPreparationRecords.end())
         {
             const auto prepIt = prepLodIt->second.find(geometry.id);
-            prepared = prepIt != prepLodIt->second.end() &&
+            canonicalCurrent = prepIt != prepLodIt->second.end() &&
                 prepIt->second.algorithm == CanonicalMeshAlgorithmId &&
                 prepIt->second.outputFingerprint == canonicalMeshFingerprint(geometry.mesh);
         }
-        if (!prepared)
+        if (!canonicalCurrent)
         {
-            if (reason) *reason = "LOD0 G" + std::to_string(gi) + " has not passed canonical mesh preparation";
+            if (reason) *reason = "LOD0 G" + std::to_string(gi) + " is not canonical at the current SOURCE boundary";
             return false;
         }
         if (canonical.degenerateTriangles != 0 || canonical.duplicateTriangles != 0 ||
             canonical.windingConflicts != 0 || canonical.insideOutClosedComponents != 0)
         {
-            if (reason) *reason = "LOD0 G" + std::to_string(gi) + " canonical mesh record is stale";
+            if (reason) *reason = "LOD0 G" + std::to_string(gi) + " canonical SOURCE record is stale";
             return false;
         }
 
@@ -2881,26 +2959,26 @@ bool ModelAssetEditorSession::modelPreflightAllLoadedReady(std::string* reason) 
                 return false;
             }
 
-            bool prepared = false;
+            bool canonicalCurrent = false;
             const auto prepLodIt = m_meshPreparationRecords.find(li);
             if (prepLodIt != m_meshPreparationRecords.end())
             {
                 const auto prepIt = prepLodIt->second.find(geometry.id);
-                prepared = prepIt != prepLodIt->second.end() &&
+                canonicalCurrent = prepIt != prepLodIt->second.end() &&
                     prepIt->second.algorithm == CanonicalMeshAlgorithmId &&
                     prepIt->second.outputFingerprint == canonicalMeshFingerprint(geometry.mesh);
             }
-            if (!prepared)
+            if (!canonicalCurrent)
             {
                 if (reason) *reason = "LOD" + std::to_string(li) + " G" + std::to_string(gi) +
-                    " has not passed canonical mesh preparation";
+                    " is not canonical at the current SOURCE boundary";
                 return false;
             }
             if (canonical.degenerateTriangles != 0 || canonical.duplicateTriangles != 0 ||
                 canonical.windingConflicts != 0 || canonical.insideOutClosedComponents != 0)
             {
                 if (reason) *reason = "LOD" + std::to_string(li) + " G" + std::to_string(gi) +
-                    " canonical mesh record is stale";
+                    " canonical SOURCE record is stale";
                 return false;
             }
 
@@ -2949,6 +3027,9 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
 {
     if (!ensureAllLodsLoaded()) return false;
 
+    // Preflight is an explicit audit, not a load-time gate. It intentionally
+    // accepts a mixed/raw working set so the UI can tell the author which
+    // meshes still need preparation instead of refusing to show the model.
     json rows = json::array();
     std::size_t geometryCount = 0;
     std::size_t componentCount = 0;
@@ -2961,9 +3042,11 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
     std::size_t insideOutComponents = 0;
     std::size_t degenerateTriangles = 0;
     std::size_t duplicateTriangles = 0;
+    std::size_t removedDegenerateTrianglesTotal = 0;
+    std::size_t removedDuplicateTrianglesTotal = 0;
     std::size_t invalidTriangles = 0;
-    std::size_t preparationCount = 0;
-    std::size_t preparedCount = 0;
+    std::size_t sourceReloadCount = 0;
+    std::size_t canonicalCount = 0;
     std::size_t reviewCount = 0;
     std::size_t blockerCount = 0;
     std::size_t structuralBlockerCount = 0;
@@ -2972,7 +3055,7 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
     std::size_t canonicalGeometricPoints = 0;
     std::size_t outputRenderVertices = 0;
 
-    sendStatus("Analyzing meshes for canonical geometry preparation...", false, "working");
+    sendStatus("Checking canonical meshes and geometry contracts...", false, "working");
     for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
     {
         if (li >= m_lodState.size() || !m_lodState[li].loaded) continue;
@@ -2993,7 +3076,8 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
             openComponents += audit.openComponents;
             boundaryEdges += canonical.boundaryEdges;
             canonicalMultiUseEdges += canonical.canonicalMultiUseEdges;
-            sourceNonManifoldEdges += canonical.sourceNonManifoldEdges;
+            // Canonical edges are rebuilt and never inherit RAW EdgeNonManifold.
+            // The preparation record keeps source evidence for diagnostics.
             windingConflicts += canonical.windingConflicts;
             insideOutComponents += canonical.insideOutClosedComponents;
             degenerateTriangles += canonical.degenerateTriangles;
@@ -3008,16 +3092,24 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
                 if (prepIt != prepLodIt->second.end()) record = &prepIt->second;
             }
             const auto currentFingerprint = canonicalMeshFingerprint(geometry.mesh);
-            const bool prepared = record && record->algorithm == CanonicalMeshAlgorithmId &&
+            const bool canonicalCurrent = record && record->algorithm == CanonicalMeshAlgorithmId &&
                 record->outputFingerprint == currentFingerprint;
-            const bool preparationStale = record && !prepared;
-            if (prepared) ++preparedCount;
+            const bool canonicalRecordStale = record && !canonicalCurrent;
+            if (canonicalCurrent)
+            {
+                ++canonicalCount;
+                removedDegenerateTrianglesTotal += record->removedDegenerateTriangles;
+                removedDuplicateTrianglesTotal += record->removedDuplicateTriangles;
+            }
+            const std::size_t rowSourceNonManifoldEdges = canonicalCurrent
+                ? record->sourceNonManifoldEdges : canonical.sourceNonManifoldEdges;
+            sourceNonManifoldEdges += rowSourceNonManifoldEdges;
 
-            const std::size_t rowSourceVertices = prepared ? record->sourceRenderVertices : geometry.mesh.vertices.size();
-            const std::size_t rowSourceTriangles = prepared ? record->sourceTriangles : geometry.mesh.triangles.size();
-            const std::size_t rowGeometricPoints = prepared ? record->geometricPoints : canonical.geometricPoints;
-            const std::size_t rowOutputVertices = prepared ? record->outputRenderVertices : geometry.mesh.vertices.size();
-            const std::size_t rowOutputTriangles = prepared ? record->outputTriangles : geometry.mesh.triangles.size();
+            const std::size_t rowSourceVertices = canonicalCurrent ? record->sourceRenderVertices : geometry.mesh.vertices.size();
+            const std::size_t rowSourceTriangles = canonicalCurrent ? record->sourceTriangles : geometry.mesh.triangles.size();
+            const std::size_t rowGeometricPoints = canonicalCurrent ? record->geometricPoints : canonical.geometricPoints;
+            const std::size_t rowOutputVertices = canonicalCurrent ? record->outputRenderVertices : geometry.mesh.vertices.size();
+            const std::size_t rowOutputTriangles = canonicalCurrent ? record->outputTriangles : geometry.mesh.triangles.size();
             sourceRenderVertices += rowSourceVertices;
             canonicalGeometricPoints += rowGeometricPoints;
             outputRenderVertices += rowOutputVertices;
@@ -3030,14 +3122,16 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
                 if (classIt != lodIt->second.end()) explicitClass = classIt->second;
             }
             const auto explicitParsed = preflightTopologyClassFromName(explicitClass);
-            const auto suggested = canonical.structuralInvalid ? PreflightTopologyClass::Invalid : audit.suggestedClass;
+            const auto suggested = canonicalCurrent && canonical.structuralInvalid
+                ? PreflightTopologyClass::Invalid : audit.suggestedClass;
             const auto effective = explicitParsed == PreflightTopologyClass::Auto ? suggested : explicitParsed;
-            const bool autoResolved = !canonical.structuralInvalid &&
+            const bool autoResolved = canonicalCurrent && !canonical.structuralInvalid &&
                 (suggested == PreflightTopologyClass::ClosedVolume ||
                  (suggested == PreflightTopologyClass::ThinTwoSided && audit.confidence >= 0.90));
-            const bool needsReview = explicitParsed == PreflightTopologyClass::Auto && !autoResolved && !canonical.structuralInvalid;
-            const bool structuralBlocker = canonical.structuralInvalid;
-            const bool needsPreparation = !prepared && !structuralBlocker;
+            const bool needsPreparation = !canonicalCurrent;
+            const bool structuralBlocker = canonicalCurrent && canonical.structuralInvalid;
+            const bool needsReview = canonicalCurrent && explicitParsed == PreflightTopologyClass::Auto &&
+                !autoResolved && !canonical.structuralInvalid;
             const bool sourceBaseGeometry = usage[gi] != 0 && !isRenderVariantGeometryId(geometry.id);
 
             const SurfaceMode desiredSurface = effective == PreflightTopologyClass::ThinTwoSided
@@ -3046,17 +3140,17 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
                 effective == PreflightTopologyClass::ThinTwoSided || effective == PreflightTopologyClass::BreachedVolume;
             const bool surfaceMismatch = classResolved && geometry.surfaceMode != desiredSurface;
             const bool blocksLod0 = li == 0 && sourceBaseGeometry &&
-                (structuralBlocker || needsPreparation || needsReview || surfaceMismatch);
+                (needsPreparation || (canonicalCurrent && structuralBlocker) || needsReview || surfaceMismatch);
 
-            if (needsPreparation) ++preparationCount;
+            if (needsPreparation) ++sourceReloadCount;
             if (needsReview) ++reviewCount;
             if (structuralBlocker) ++structuralBlockerCount;
             if (blocksLod0) ++blockerCount;
-            if (structuralBlocker || needsPreparation || needsReview || surfaceMismatch) ++unresolvedCount;
+            if (needsPreparation || (canonicalCurrent && structuralBlocker) || needsReview || surfaceMismatch) ++unresolvedCount;
 
             std::string action = "ready";
-            if (structuralBlocker) action = "manual_fix";
-            else if (needsPreparation) action = needsReview ? "prepare_then_classify" : "prepare";
+            if (needsPreparation) action = "prepare_required";
+            else if (structuralBlocker) action = "manual_fix";
             else if (needsReview) action = "classify";
             else if (surfaceMismatch) action = "apply_class";
 
@@ -3069,7 +3163,7 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
                 {"openComponents", audit.openComponents}, {"boundaryEdges", canonical.boundaryEdges},
                 {"nonManifoldEdges", canonical.canonicalMultiUseEdges},
                 {"canonicalMultiUseEdges", canonical.canonicalMultiUseEdges},
-                {"sourceNonManifoldEdges", canonical.sourceNonManifoldEdges},
+                {"sourceNonManifoldEdges", rowSourceNonManifoldEdges},
                 {"windingConflicts", canonical.windingConflicts},
                 {"insideOutComponents", canonical.insideOutClosedComponents},
                 {"invertedNormalCorners", std::size_t(0)},
@@ -3080,25 +3174,19 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
                 {"suggestedConfidence", audit.confidence}, {"explicitClass", explicitClass},
                 {"effectiveClass", preflightTopologyClassName(effective)},
                 {"surfaceMode", surfaceModeName(geometry.surfaceMode)}, {"surfaceMismatch", surfaceMismatch},
-                {"needsReview", needsReview}, {"safeFixAvailable", needsPreparation},
-                {"needsPreparation", needsPreparation}, {"prepared", prepared}, {"preparationStale", preparationStale},
+                {"needsReview", needsReview},
+                {"canonicalCurrent", canonicalCurrent}, {"canonicalRecordStale", canonicalRecordStale},
+                {"needsSourceReload", needsPreparation}, {"needsPreparation", needsPreparation},
                 {"structuralBlocker", structuralBlocker}, {"invalidReason", canonical.invalidReason},
                 {"blocksLod0", blocksLod0}, {"orientationProblem", canonical.windingFlipsRequired != 0 || canonical.insideOutClosedComponents != 0},
                 {"action", action},
                 {"sourceRenderVertices", rowSourceVertices}, {"sourceTriangles", rowSourceTriangles},
                 {"canonicalGeometricPoints", rowGeometricPoints},
                 {"outputRenderVertices", rowOutputVertices}, {"outputTriangles", rowOutputTriangles},
-                {"removedDegenerateTriangles", prepared ? record->removedDegenerateTriangles : std::size_t(0)},
-                {"removedDuplicateTriangles", prepared ? record->removedDuplicateTriangles : std::size_t(0)},
-                {"normalIslands", prepared ? record->normalIslands : std::size_t(0)},
-                {"rebuiltEdges", prepared ? record->rebuiltEdges : geometry.mesh.edges.size()},
-                // Compatibility fields retained for the existing browser/runtime comparison panel.
-                {"runtimeSourceVertices", rowSourceVertices},
-                {"runtimeWeldedVertices", rowGeometricPoints},
-                {"runtimeMergedVertices", rowSourceVertices >= rowGeometricPoints ? rowSourceVertices - rowGeometricPoints : 0},
-                {"runtimeComponents", canonical.components},
-                {"runtimeBoundaryEdges", canonical.boundaryEdges},
-                {"runtimeMultiUseEdges", canonical.canonicalMultiUseEdges}
+                {"removedDegenerateTriangles", canonicalCurrent ? record->removedDegenerateTriangles : std::size_t(0)},
+                {"removedDuplicateTriangles", canonicalCurrent ? record->removedDuplicateTriangles : std::size_t(0)},
+                {"normalIslands", canonicalCurrent ? record->normalIslands : std::size_t(0)},
+                {"rebuiltEdges", canonicalCurrent ? record->rebuiltEdges : geometry.mesh.edges.size()}
             });
         }
     }
@@ -3113,70 +3201,89 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
         {"sourceNonManifoldEdges", sourceNonManifoldEdges}, {"windingConflicts", windingConflicts},
         {"insideOutComponents", insideOutComponents}, {"invertedNormalCorners", std::size_t(0)},
         {"degenerateTriangles", degenerateTriangles}, {"duplicateTriangles", duplicateTriangles},
+        {"removedDegenerateTriangles", removedDegenerateTrianglesTotal},
+        {"removedDuplicateTriangles", removedDuplicateTrianglesTotal},
         {"invalidTriangles", invalidTriangles},
-        {"safeFixCount", preparationCount}, {"preparationCount", preparationCount}, {"preparedCount", preparedCount},
+        {"sourceReloadCount", sourceReloadCount}, {"canonicalCount", canonicalCount},
         {"reviewCount", reviewCount}, {"blockerCount", blockerCount},
         {"structuralBlockerCount", structuralBlockerCount}, {"unresolvedCount", unresolvedCount},
-        {"runtimeSourceVertices", sourceRenderVertices}, {"runtimeWeldedVertices", canonicalGeometricPoints},
-        {"runtimeMergedVertices", sourceRenderVertices >= canonicalGeometricPoints ? sourceRenderVertices - canonicalGeometricPoints : 0},
+        {"sourceRenderVertices", sourceRenderVertices},
+        {"canonicalGeometricPoints", canonicalGeometricPoints},
         {"outputRenderVertices", outputRenderVertices},
         {"allLoadedGeometryResolved", unresolvedCount == 0},
         {"readyForLod", readyForLod}, {"readyReason", reason}, {"rows", std::move(rows)},
         {"algorithm", CanonicalMeshAlgorithmId}
     }).dump());
     sendStatus(
-        std::string("Model preflight: ") + (readyForLod ? "LOD0 ready" : "preparation/review required") +
-        ", prepare=" + std::to_string(preparationCount) +
+        std::string("Model preflight: ") + (readyForLod ? "LOD0 ready" : "review required") +
         ", invalid=" + std::to_string(structuralBlockerCount) +
         ", review=" + std::to_string(reviewCount));
     return true;
 }
 
-bool ModelAssetEditorSession::safeFixModelPreflight()
+bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
+    const std::string& invalidationStage,
+    bool reportStatus,
+    bool* payloadChangedOut)
 {
-    if (!ensureAllLodsLoaded()) return false;
-    std::size_t preparedGeometries = 0;
+    std::size_t canonicalizedGeometries = 0;
     std::size_t changedGeometries = 0;
     std::size_t invalidGeometries = 0;
-    std::size_t removedDegenerateTriangles = 0;
-    std::size_t removedDuplicateTriangles = 0;
-    std::size_t flippedTriangles = 0;
-    std::size_t flippedClosedComponents = 0;
-    std::size_t rebuiltRenderVertices = 0;
-    std::size_t normalIslands = 0;
-    std::size_t rebuiltEdges = 0;
+    std::size_t splitTopologyVertices = 0;
+    std::size_t raycastPatches = 0;
+    std::size_t raycastFlippedTriangles = 0;
+    std::vector<std::string> canonicalFailures;
     bool payloadChanged = false;
-    bool metadataChanged = false;
+    bool authoringStateChanged = false;
 
-    sendStatus("Building canonical mesh geometry...", false, "working");
+    // Explicit authoring operation. Load/restore/reimport deliberately leave
+    // resident meshes untouched; this function mutates the working copy only
+    // after the user presses PREPARE MESHES. Current canonical payloads are
+    // skipped by their fingerprint so repeated preparation is idempotent.
     for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
     {
         if (li >= m_lodState.size() || !m_lodState[li].loaded) continue;
         auto& lod = m_asset.renderLods[li];
         for (auto& geometry : lod.geometries)
         {
-            bool prepared = false;
+            bool canonicalCurrent = false;
+            bool hadPreviousCanonicalEvidence = false;
+            std::uint64_t previousCanonicalFingerprint = 0;
             auto prepLodIt = m_meshPreparationRecords.find(li);
             if (prepLodIt != m_meshPreparationRecords.end())
             {
                 const auto prepIt = prepLodIt->second.find(geometry.id);
-                prepared = prepIt != prepLodIt->second.end() &&
-                    prepIt->second.algorithm == CanonicalMeshAlgorithmId &&
-                    prepIt->second.outputFingerprint == canonicalMeshFingerprint(geometry.mesh);
+                if (prepIt != prepLodIt->second.end())
+                {
+                    hadPreviousCanonicalEvidence = true;
+                    previousCanonicalFingerprint = prepIt->second.outputFingerprint;
+                    canonicalCurrent = prepIt->second.algorithm == CanonicalMeshAlgorithmId &&
+                        prepIt->second.outputFingerprint == canonicalMeshFingerprint(geometry.mesh);
+                }
             }
 
-            if (!prepared)
+            if (!canonicalCurrent)
             {
-                const auto sourceAnalysis = analyzeCanonicalMesh(geometry.mesh);
-                if (sourceAnalysis.structuralInvalid)
-                {
-                    ++invalidGeometries;
-                    continue;
-                }
+                // PREPARE is the explicit authoring mutation boundary. It performs
+                // topology-aware cleanup, libigl/Embree orientation and
+                // normal/render-edge rebuild. Geometry-class decisions remain
+                // exclusively in ANALYZE. Keep the exact resident pre-PREPARE
+                // payload for the session-only SOURCE viewport.
+                m_rawMeshSnapshots[li][geometry.id] = geometry.mesh;
                 const auto built = canonicalizeMesh(geometry.mesh);
+                appendMeshRepairDiagnostic(m_asset, li, geometry, built);
                 if (!built.success)
                 {
+                    auto recordLodIt = m_meshPreparationRecords.find(li);
+                    if (recordLodIt != m_meshPreparationRecords.end())
+                    {
+                        authoringStateChanged = recordLodIt->second.erase(geometry.id) != 0 || authoringStateChanged;
+                        if (recordLodIt->second.empty()) m_meshPreparationRecords.erase(recordLodIt);
+                    }
                     ++invalidGeometries;
+                    canonicalFailures.push_back(
+                        "LOD" + std::to_string(li) + "/" + geometry.id + ": " +
+                        (built.error.empty() ? std::string("canonical authoring pass failed") : built.error));
                     continue;
                 }
 
@@ -3189,21 +3296,37 @@ bool ModelAssetEditorSession::safeFixModelPreflight()
                 record.outputTriangles = built.after.triangles;
                 record.removedDegenerateTriangles = built.removedDegenerateTriangles;
                 record.removedDuplicateTriangles = built.removedDuplicateTriangles;
+                record.sourceNonManifoldEdges = built.before.sourceNonManifoldEdges;
                 record.normalIslands = built.normalIslands;
                 record.rebuiltEdges = built.rebuiltEdges;
+                record.splitTopologyVertices = built.splitTopologyVertices;
+                record.raycastPatches = built.raycastPatches;
+                record.raycastFlippedTriangles = built.raycastFlippedTriangles;
                 record.outputFingerprint = canonicalMeshFingerprint(geometry.mesh);
                 m_meshPreparationRecords[li][geometry.id] = record;
-                prepared = true;
-                ++preparedGeometries;
-                metadataChanged = true;
 
-                removedDegenerateTriangles += built.removedDegenerateTriangles;
-                removedDuplicateTriangles += built.removedDuplicateTriangles;
-                flippedTriangles += built.flippedTriangles;
-                flippedClosedComponents += built.flippedClosedComponents;
-                rebuiltRenderVertices += built.rebuiltRenderVertices;
-                normalIslands += built.normalIslands;
-                rebuiltEdges += built.rebuiltEdges;
+                // An explicit open-geometry classification is valid only for
+                // the canonical payload on which the author made that choice.
+                // Preserve it across a byte-equivalent reimport; otherwise
+                // force one new ThinTwoSided/Breached decision instead of
+                // silently carrying topology intent onto different geometry.
+                if (!hadPreviousCanonicalEvidence ||
+                    previousCanonicalFingerprint != record.outputFingerprint)
+                {
+                    auto classLodIt = m_geometryTopologyClasses.find(li);
+                    if (classLodIt != m_geometryTopologyClasses.end())
+                    {
+                        authoringStateChanged = classLodIt->second.erase(geometry.id) != 0 || authoringStateChanged;
+                        if (classLodIt->second.empty()) m_geometryTopologyClasses.erase(classLodIt);
+                    }
+                }
+                canonicalCurrent = true;
+                ++canonicalizedGeometries;
+                authoringStateChanged = true;
+
+                splitTopologyVertices += built.splitTopologyVertices;
+                raycastPatches += built.raycastPatches;
+                raycastFlippedTriangles += built.raycastFlippedTriangles;
                 if (built.changed)
                 {
                     ++changedGeometries;
@@ -3212,55 +3335,119 @@ bool ModelAssetEditorSession::safeFixModelPreflight()
                 }
             }
 
-            if (!prepared) continue;
-            const auto audit = auditPreflightGeometry(geometry.mesh);
-            PreflightTopologyClass effective = audit.suggestedClass;
-            bool explicitTopology = false;
-            const auto classLodIt = m_geometryTopologyClasses.find(li);
-            if (classLodIt != m_geometryTopologyClasses.end())
-            {
-                const auto classIt = classLodIt->second.find(geometry.id);
-                if (classIt != classLodIt->second.end())
-                {
-                    explicitTopology = true;
-                    effective = preflightTopologyClassFromName(classIt->second);
-                }
-            }
-            const bool autoResolved = effective == PreflightTopologyClass::ClosedVolume ||
-                (!explicitTopology && effective == PreflightTopologyClass::ThinTwoSided && audit.confidence >= 0.90);
-            if (!explicitTopology && !autoResolved) continue;
-            const auto desired = effective == PreflightTopologyClass::ThinTwoSided
-                ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
-            if (geometry.surfaceMode != desired)
-            {
-                geometry.surfaceMode = desired;
-                markLodDirty(li);
-                metadataChanged = true;
-            }
+            // Preparation ends here. Topology classification/validation is intentionally
+            // NOT run by this command; ANALYZE is the only expensive audit path.
+            (void)canonicalCurrent;
         }
     }
 
-    if (preparedGeometries != 0 || metadataChanged)
-        invalidateWizardFrom("lods");
-    else
+    // Drop preparation records for geometry ids that no longer exist.
+    for (auto lodIt = m_meshPreparationRecords.begin(); lodIt != m_meshPreparationRecords.end(); )
+    {
+        const auto li = lodIt->first;
+        if (li >= m_asset.renderLods.size() || li >= m_lodState.size() || !m_lodState[li].loaded)
+        {
+            ++lodIt;
+            continue;
+        }
+        const auto& geometries = m_asset.renderLods[li].geometries;
+        for (auto recordIt = lodIt->second.begin(); recordIt != lodIt->second.end(); )
+        {
+            const bool exists = std::any_of(
+                geometries.begin(), geometries.end(),
+                [&](const RenderGeometryDefinition& geometry) { return geometry.id == recordIt->first; });
+            if (!exists)
+            {
+                recordIt = lodIt->second.erase(recordIt);
+                authoringStateChanged = true;
+            }
+            else ++recordIt;
+        }
+        if (lodIt->second.empty()) lodIt = m_meshPreparationRecords.erase(lodIt);
+        else ++lodIt;
+    }
+
+    if (payloadChanged && !invalidationStage.empty())
+        invalidateWizardFrom(invalidationStage);
+    else if (authoringStateChanged)
         (void)writeWizardState();
 
-    if (payloadChanged) sendAsset();
-    else if (metadataChanged) sendAssetMetadata();
+    if (payloadChangedOut) *payloadChangedOut = payloadChanged;
 
-    sendStatus(
-        "Canonical preparation: prepared=" + std::to_string(preparedGeometries) +
-        ", changed=" + std::to_string(changedGeometries) +
-        ", invalid=" + std::to_string(invalidGeometries) +
-        ", removed degenerate=" + std::to_string(removedDegenerateTriangles) +
-        ", removed duplicate=" + std::to_string(removedDuplicateTriangles) +
-        ", flipped triangles=" + std::to_string(flippedTriangles) +
-        ", closed shells flipped=" + std::to_string(flippedClosedComponents) +
-        ", render vertices=" + std::to_string(rebuiltRenderVertices) +
-        ", normal islands=" + std::to_string(normalIslands) +
-        ", edges=" + std::to_string(rebuiltEdges));
-    analyzeModelPreflight();
-    return invalidGeometries == 0;
+    if (reportStatus && (canonicalizedGeometries != 0 || invalidGeometries != 0))
+    {
+        sendStatus(
+            "Mesh preparation: ready=" + std::to_string(canonicalizedGeometries) +
+            ", changed=" + std::to_string(changedGeometries) +
+            ", failed=" + std::to_string(invalidGeometries) +
+            ", split vertices=" + std::to_string(splitTopologyVertices) +
+            ", raycast patches=" + std::to_string(raycastPatches) +
+            ", raycast flips=" + std::to_string(raycastFlippedTriangles) +
+            "; details: build/logs/model_asset_mesh_repair.log");
+    }
+    else if (reportStatus)
+    {
+        sendStatus("Mesh preparation: already GOOD_ENOUGH; changed=0");
+    }
+
+    if (!canonicalFailures.empty())
+    {
+        std::string message =
+            "MESH PREPARATION INCOMPLETE: canonical authoring pass failed for " +
+            std::to_string(canonicalFailures.size()) + " geometry(s); failed meshes remain unchanged and visible. " + canonicalFailures.front();
+        if (canonicalFailures.size() > 1)
+            message += " (and " + std::to_string(canonicalFailures.size() - 1) + " more)";
+        sendStatus(message, true);
+        return false;
+    }
+    return true;
+}
+
+bool ModelAssetEditorSession::verifyLoadedWorkingSetCanonical(std::string* reason) const
+{
+    for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
+    {
+        if (li >= m_lodState.size() || !m_lodState[li].loaded) continue;
+        const auto& lod = m_asset.renderLods[li];
+        for (std::size_t gi = 0; gi < lod.geometries.size(); ++gi)
+        {
+            const auto& geometry = lod.geometries[gi];
+            const auto lodIt = m_meshPreparationRecords.find(li);
+            if (lodIt == m_meshPreparationRecords.end())
+            {
+                if (reason) *reason = "LOD" + std::to_string(li) + " G" + std::to_string(gi) +
+                    " has no canonical SOURCE record";
+                return false;
+            }
+            const auto recordIt = lodIt->second.find(geometry.id);
+            if (recordIt == lodIt->second.end())
+            {
+                if (reason) *reason = "LOD" + std::to_string(li) + " G" + std::to_string(gi) +
+                    " has no canonical SOURCE record";
+                return false;
+            }
+            const auto fingerprint = canonicalMeshFingerprint(geometry.mesh);
+            if (recordIt->second.algorithm != CanonicalMeshAlgorithmId ||
+                recordIt->second.outputFingerprint != fingerprint)
+            {
+                if (reason) *reason = "LOD" + std::to_string(li) + " G" + std::to_string(gi) +
+                    " changed after the canonical SOURCE boundary";
+                return false;
+            }
+            const auto analysis = analyzeCanonicalMesh(geometry.mesh);
+            if (analysis.structuralInvalid || analysis.degenerateTriangles != 0 ||
+                analysis.duplicateTriangles != 0 || analysis.windingConflicts != 0 ||
+                analysis.insideOutClosedComponents != 0)
+            {
+                if (reason) *reason = "LOD" + std::to_string(li) + " G" + std::to_string(gi) +
+                    " violates canonical SOURCE invariants" +
+                    (analysis.invalidReason.empty() ? std::string() : ": " + analysis.invalidReason);
+                return false;
+            }
+        }
+    }
+    if (reason) reason->clear();
+    return true;
 }
 
 bool ModelAssetEditorSession::setGeometryTopologyClass(
@@ -3333,6 +3520,13 @@ bool ModelAssetEditorSession::setGeometryTopologyClass(
 
 bool ModelAssetEditorSession::analyzeLodRequirements(std::size_t lodIndex)
 {
+    if (!ensureAllLodsLoaded()) return false;
+    std::string canonicalReason;
+    if (!verifyLoadedWorkingSetCanonical(&canonicalReason))
+    {
+        sendStatus("LOD Generator blocked: canonical SOURCE invariant failed: " + canonicalReason, true);
+        return false;
+    }
     std::string preflightReason;
     if (!modelPreflightReadyForLod(&preflightReason))
     {
@@ -4157,6 +4351,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     ModelAsset loaded;
     std::string error;
     std::string warning;
+    bool sourceImported = false;
     const auto binary = compiledPath(id);
     const auto legacyBinary = legacyCompiledPath(id);
     const bool havePackage = std::filesystem::exists(binary);
@@ -4218,6 +4413,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
                 loaded.formatVersion = ModelAssetFormatVersion;
                 m_asset = std::move(loaded);
                 resetLodState(true, true);
+                sourceImported = true;
             }
             else
             {
@@ -4282,17 +4478,25 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         loaded.formatVersion = ModelAssetFormatVersion;
         m_asset = std::move(loaded);
         resetLodState(true, true);
+        sourceImported = true;
     }
 
-    // SOURCE owns the complete authoring set. Before the first wizard stage is
-    // presented, keep every declared render LOD resident and discover/import
-    // every additional OBJ under those LOD source trees. Later stages consume
-    // this snapshot; they do not rediscover missing pieces implicitly.
+    // Keep every declared render LOD resident before the wizard is shown. A
+    // restored checkpoint/compiled package remains an exact stored snapshot;
+    // recursive additional-OBJ discovery runs only for a real source import.
     if (!loadAllDeclaredLodsForSource()) return false;
-    if (!refreshSourceVariants(true, false)) return false;
+
+    // Loading is intentionally non-mutating. A checkpoint or compiled package
+    // is shown exactly as stored. Only an actual source import/reimport performs
+    // recursive discovery of additional OBJ files, and those are inserted RAW.
+    // Mesh preparation is a separate explicit LOD-Preflight action.
+    if (sourceImported && !refreshSourceVariants(true, false)) return false;
 
     if (forceReimport)
     {
+        m_meshPreparationRecords.clear();
+        m_rawMeshSnapshots.clear();
+        m_geometryTopologyClasses.clear();
         invalidateWizardFrom("source");
         (void)writeWizardState();
     }
@@ -4494,6 +4698,26 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
                     const auto& edge = mesh.edges[ei];
                     g["edges"].push_back({{"index", ei}, {"a", edge.a}, {"b", edge.b}, {"triangleA", edge.triangleA}, {"triangleB", edge.triangleB}, {"flags", edge.flags}, {"renderMask", edge.renderMask}});
                 }
+                const auto rawLodIt = m_rawMeshSnapshots.find(li);
+                if (rawLodIt != m_rawMeshSnapshots.end())
+                {
+                    const auto rawIt = rawLodIt->second.find(geometry.id);
+                    if (rawIt != rawLodIt->second.end())
+                    {
+                        const auto& raw = rawIt->second;
+                        json rawJson = {{"positions", json::array()}, {"normals", json::array()}, {"indices", json::array()}};
+                        for (const auto& vertex : raw.vertices)
+                        {
+                            rawJson["positions"].push_back(vertex.position.x); rawJson["positions"].push_back(vertex.position.y); rawJson["positions"].push_back(vertex.position.z);
+                            rawJson["normals"].push_back(vertex.normal.x); rawJson["normals"].push_back(vertex.normal.y); rawJson["normals"].push_back(vertex.normal.z);
+                        }
+                        for (const auto& triangle : raw.triangles)
+                        {
+                            rawJson["indices"].push_back(triangle.a); rawJson["indices"].push_back(triangle.b); rawJson["indices"].push_back(triangle.c);
+                        }
+                        g["rawSource"] = std::move(rawJson);
+                    }
+                }
             }
             jl["geometries"].push_back(std::move(g));
         }
@@ -4596,6 +4820,9 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
 
 void ModelAssetEditorSession::sendAsset()
 {
+    // Viewport publication is deliberately independent from mesh preparation.
+    // Raw, restored and partially prepared meshes must remain inspectable;
+    // canonical readiness is enforced only by explicit Preflight/LOD gates.
     reconcileAuthoringVisualRegistry();
     m_server.broadcastText(json({{"type", "asset"}, {"dirty", m_dirty}, {"asset", serializeAsset(true)}}).dump());
 }
@@ -4788,6 +5015,7 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
 
     std::size_t added = 0, updated = 0, unchanged = 0, failed = 0, completed = 0;
     bool manifestChanged = false;
+    bool canonicalEvidenceChanged = false;
     std::set<std::size_t> changedLods;
     std::vector<std::string> failures = discoveryWarnings;
     for (const auto& job : jobs)
@@ -4795,7 +5023,6 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
         if (job.lodIndex >= m_asset.renderLods.size()) continue;
         auto& lod = m_asset.renderLods[job.lodIndex];
         const std::string variantGeometryId = makeRenderVariantGeometryId(job.variantId);
-
         sendProgress(
             "reading", "REFRESH EXTRA LOD MESHES", completed, jobs.size(),
             job.source.file);
@@ -4816,6 +5043,8 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
             continue;
         }
 
+        // Refresh is a literal source reload. Keep the decoded OBJ payload raw;
+        // an explicit PREPARE MESHES action may canonicalize it afterwards.
         auto existing = std::find_if(
             lod.geometries.begin(), lod.geometries.end(),
             [&](const RenderGeometryDefinition& geometry)
@@ -4825,8 +5054,10 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
                     return true;
                 return sourceVariantAuthoringId(job.lodIndex, geometry) == job.variantId;
             });
+        std::size_t residentGeometryIndex = 0;
         if (existing == lod.geometries.end())
         {
+            residentGeometryIndex = lod.geometries.size();
             RenderGeometryDefinition variant;
             variant.id = variantGeometryId;
             variant.sourcePath = job.source.runtimePath;
@@ -4835,19 +5066,47 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
             changedLods.insert(job.lodIndex);
             ++added;
         }
-        else if (existing->id == variantGeometryId &&
-                 existing->sourcePath == job.source.runtimePath &&
-                 sameMeshLodExact(existing->mesh, mesh))
-        {
-            ++unchanged;
-        }
         else
         {
-            existing->id = variantGeometryId;
-            existing->sourcePath = job.source.runtimePath;
-            existing->mesh = std::move(mesh);
-            changedLods.insert(job.lodIndex);
-            ++updated;
+            residentGeometryIndex = static_cast<std::size_t>(std::distance(lod.geometries.begin(), existing));
+            if (existing->id == variantGeometryId &&
+                existing->sourcePath == job.source.runtimePath &&
+                sameMeshLodExact(existing->mesh, mesh))
+            {
+                ++unchanged;
+            }
+            else
+            {
+                existing->id = variantGeometryId;
+                existing->sourcePath = job.source.runtimePath;
+                existing->mesh = std::move(mesh);
+                changedLods.insert(job.lodIndex);
+                ++updated;
+            }
+        }
+        auto& residentGeometry = lod.geometries[residentGeometryIndex];
+        (void)residentGeometry;
+
+        // A source refresh intentionally invalidates previous preparation evidence
+        // for this variant, even when the decoded RAW payload happens to compare
+        // equal. The next PREPARE MESHES click establishes fresh evidence.
+        auto prepLodIt = m_meshPreparationRecords.find(job.lodIndex);
+        if (prepLodIt != m_meshPreparationRecords.end())
+        {
+            canonicalEvidenceChanged = prepLodIt->second.erase(variantGeometryId) != 0 || canonicalEvidenceChanged;
+            if (prepLodIt->second.empty()) m_meshPreparationRecords.erase(prepLodIt);
+        }
+        auto rawLodIt = m_rawMeshSnapshots.find(job.lodIndex);
+        if (rawLodIt != m_rawMeshSnapshots.end())
+        {
+            rawLodIt->second.erase(variantGeometryId);
+            if (rawLodIt->second.empty()) m_rawMeshSnapshots.erase(rawLodIt);
+        }
+        auto classLodIt = m_geometryTopologyClasses.find(job.lodIndex);
+        if (classLodIt != m_geometryTopologyClasses.end())
+        {
+            canonicalEvidenceChanged = classLodIt->second.erase(variantGeometryId) != 0 || canonicalEvidenceChanged;
+            if (classLodIt->second.empty()) m_geometryTopologyClasses.erase(classLodIt);
         }
         ++completed;
         sendProgress(
@@ -4861,9 +5120,10 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
         markLodDirty(lodIndex);
     }
     if (manifestChanged) markManifestDirty();
-    if (registryChanged && !writeWizardState())
+
+    if ((registryChanged || canonicalEvidenceChanged) && !writeWizardState())
     {
-        sendStatus("Extra meshes were refreshed, but their stable authoring ids could not be saved", true);
+        sendStatus("Extra meshes were refreshed, but their stable authoring/canonical SOURCE state could not be saved", true);
         return false;
     }
     if (!changedLods.empty() || manifestChanged || registryChanged)
@@ -4929,8 +5189,19 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         }
 
         if (m_asset.assetId.empty()) { sendStatus("No asset loaded", true); return; }
+        if (command == "prepare_model_meshes")
+        {
+            if (!ensureAllLodsLoaded()) return;
+            const bool complete = canonicalizeLoadedWorkingSet("lods", true);
+            // Publication is never gated by preparation. Successful meshes are
+            // replaced by their canonical payload; failed meshes stay untouched
+            // and visible so the author can inspect them.
+            sendAsset();
+            if (complete)
+                sendStatus("Mesh preparation complete; run ANALYZE to classify/audit the canonical working set");
+            return;
+        }
         if (command == "analyze_model_preflight") { analyzeModelPreflight(); return; }
-        if (command == "safe_fix_model_preflight" || command == "apply_mesh_preparation") { safeFixModelPreflight(); return; }
         if (command == "set_geometry_topology_class")
         {
             setGeometryTopologyClass(
@@ -4942,7 +5213,12 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         if (command == "analyze_lod_requirements") { analyzeLodRequirements(message.value("lodIndex", std::size_t(0))); return; }
         if (command == "preview_lod_component_cull") { previewLodComponentCull(message.value("lodIndex", std::size_t(0)), message.value("thresholdMeters", 0.0)); return; }
         if (command == "preview_lod_coplanar_collapse") { previewLodCoplanarCollapse(message.value("lodIndex", std::size_t(0))); return; }
-        if (command == "refresh_source_variants") { if (loadAllDeclaredLodsForSource()) refreshSourceVariants(true, true); return; }
+        if (command == "refresh_source_variants")
+        {
+            if (loadAllDeclaredLodsForSource())
+                refreshSourceVariants(true, true);
+            return;
+        }
         if (command == "set_source_variant_replacement")
         {
             const auto lodIndex = message.value("lodIndex", std::size_t(-1));
@@ -4966,7 +5242,8 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
                 throw std::runtime_error("basis conversion already applied; reimport source before applying another preset");
             if (!ensureAllLodsLoaded()) return;
             convertAssetBasisToCanonical(m_asset, basisPreset(preset));
-            markManifestDirty(); markAllLoadedLodsDirty(); sendAsset(); sendStatus("Converted source basis to canonical +X/+Y/-Z"); return;
+            markManifestDirty(); markAllLoadedLodsDirty();
+            sendAsset(); sendStatus("Converted source basis to canonical +X/+Y/-Z; mesh preparation is now stale until explicitly rerun"); return;
         }
         if (command == "set_node_transform")
         {

@@ -1,5 +1,6 @@
 
 #include "ObjLoader.h"
+#include "src/model_asset/RuntimeMeshNormalizer.h"
 
 #include <iostream>
 #include <unordered_map>
@@ -120,91 +121,79 @@ bool ObjLoader::load(
 
 
     // -------------------------
-    // Сварка вершин (удаление дубликатов)
+    // Shared runtime mesh normalization
     // -------------------------
-    const float weldEps = 1e-4f;
-
-    struct VecHash
-    {
-        size_t operator()(const glm::ivec3& v) const
-        {
-            return std::hash<int>()(v.x * 73856093) ^ 
-                   std::hash<int>()(v.y * 19349663) ^ 
-                   std::hash<int>()(v.z * 83492791);
-        }
-    };
-
-    std::unordered_map<glm::ivec3, int, VecHash> weldMap;
-    std::vector<MeshVertex> weldedVertices;
-    std::vector<int> remap(mesh.vertices.size());
-
-    for(size_t i = 0; i < mesh.vertices.size(); i++)
-    {
-        glm::vec3 p = mesh.vertices[i].position;
-        glm::ivec3 key(
-            int(std::round(p.x / weldEps)),
-            int(std::round(p.y / weldEps)),
-            int(std::round(p.z / weldEps))
-        );
-
-        auto it = weldMap.find(key);
-        if(it == weldMap.end())
-        {
-            int newIndex = weldedVertices.size();
-            weldMap[key] = newIndex;
-            weldedVertices.push_back(mesh.vertices[i]);
-            remap[i] = newIndex;
-        }
-        else
-        {
-            remap[i] = it->second;
-        }
-    }
-
-    mesh.vertices = weldedVertices;
-
-    // -------------------------
-    // Загрузка треугольников (триангуляция полигонов)
-    // -------------------------
+    // The editor uses the same topology normalizer. Keep OBJ parsing here, but
+    // do not maintain a second weld/cleanup implementation: one contract now
+    // owns positional weld, collapsed triangles and exact duplicate removal.
+    std::vector<elite::model_asset::RuntimeMeshTriangleInput> rawTriangles;
     int globalFaceId = 0;
-
     for (const auto& shape : shapes)
     {
         size_t indexOffset = 0;
-
-        for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
+        for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f)
         {
-            int fv = shape.mesh.num_face_vertices[f];
-            
+            const int fv = shape.mesh.num_face_vertices[f];
             if (fv < 3)
             {
-                indexOffset += fv;
+                indexOffset += static_cast<size_t>(std::max(fv, 0));
+                ++globalFaceId;
                 continue;
             }
 
-            tinyobj::index_t i0 = shape.mesh.indices[indexOffset + 0];
-
-            for (int k = 1; k < fv - 1; k++)
+            const tinyobj::index_t i0 = shape.mesh.indices[indexOffset];
+            for (int k = 1; k < fv - 1; ++k)
             {
-                tinyobj::index_t i1 = shape.mesh.indices[indexOffset + k];
-                tinyobj::index_t i2 = shape.mesh.indices[indexOffset + k + 1];
-
-                int v0 = remap[i0.vertex_index];
-                int v1 = remap[i1.vertex_index];
-                int v2 = remap[i2.vertex_index];
-
-                if(v0 == v1 || v1 == v2 || v2 == v0)
+                const tinyobj::index_t i1 = shape.mesh.indices[indexOffset + static_cast<size_t>(k)];
+                const tinyobj::index_t i2 = shape.mesh.indices[indexOffset + static_cast<size_t>(k + 1)];
+                if (i0.vertex_index < 0 || i1.vertex_index < 0 || i2.vertex_index < 0)
                     continue;
-
-                mesh.triangles.push_back({
-                    v0, v1, v2,
+                rawTriangles.push_back({
+                    static_cast<std::uint32_t>(i0.vertex_index),
+                    static_cast<std::uint32_t>(i1.vertex_index),
+                    static_cast<std::uint32_t>(i2.vertex_index),
                     globalFaceId
                 });
             }
-
-            indexOffset += fv;
-            globalFaceId++;
+            indexOffset += static_cast<size_t>(fv);
+            ++globalFaceId;
         }
+    }
+
+    std::vector<glm::vec3> rawPositions;
+    rawPositions.reserve(mesh.vertices.size());
+    for (const auto& vertex : mesh.vertices)
+        rawPositions.push_back(vertex.position);
+
+    const auto normalized = elite::model_asset::normalizeRuntimeMeshTopology(
+        rawPositions, rawTriangles, elite::model_asset::RuntimeMeshWeldEpsilon);
+    if (!normalized.success)
+    {
+        std::cout << "[ObjLoader] RUNTIME NORMALIZATION FAILED: " << normalized.error << std::endl;
+        return false;
+    }
+
+    mesh.vertices.clear();
+    mesh.vertices.reserve(normalized.positions.size());
+    for (const auto& position : normalized.positions)
+    {
+        MeshVertex vertex;
+        vertex.position = position;
+        vertex.normal = glm::vec3(0.0f);
+        vertex.bary = glm::vec3(0.0f);
+        mesh.vertices.push_back(vertex);
+    }
+
+    mesh.triangles.clear();
+    mesh.triangles.reserve(normalized.triangles.size());
+    for (const auto& triangle : normalized.triangles)
+    {
+        mesh.triangles.push_back({
+            static_cast<int>(triangle.a),
+            static_cast<int>(triangle.b),
+            static_cast<int>(triangle.c),
+            triangle.sourceTag
+        });
     }
 
     // -------------------------

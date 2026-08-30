@@ -1,18 +1,26 @@
 #include "tools/model_asset_editor/CanonicalMeshBuilder.h"
+#include "src/model_asset/RuntimeMeshNormalizer.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
+#include <exception>
 #include <limits>
 #include <map>
 #include <numeric>
 #include <set>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include <glm/glm.hpp>
+
+#include <Eigen/Core>
+#include <igl/embree/reorient_facets_raycast.h>
+#include <igl/split_nonmanifold.h>
 
 namespace elite::model_asset::editor
 {
@@ -50,14 +58,6 @@ QuantizedPosition quantizedPosition(const glm::vec3& p)
     };
 }
 
-PositionEdgeKey positionEdgeKey(const glm::vec3& a, const glm::vec3& b)
-{
-    auto qa = quantizedPosition(a);
-    auto qb = quantizedPosition(b);
-    if (qb < qa) std::swap(qa, qb);
-    return {qa, qb};
-}
-
 struct DisjointSet
 {
     explicit DisjointSet(std::size_t count) : parent(count), rank(count, 0)
@@ -90,7 +90,7 @@ struct CanonicalPointMap
     std::vector<std::size_t> representativeVertex;
 };
 
-CanonicalPointMap buildPointMap(const MeshLod& mesh)
+CanonicalPointMap buildPositionalPointMap(const MeshLod& mesh)
 {
     CanonicalPointMap out;
     out.pointForVertex.resize(mesh.vertices.size(), 0);
@@ -131,6 +131,7 @@ struct WorkingTriangle
 {
     Triangle triangle;
     std::array<std::size_t, 3> point {0, 0, 0};
+    std::size_t sourceTriangleIndex = 0;
 };
 
 struct EdgeUse
@@ -167,6 +168,128 @@ std::array<std::size_t, 3> sortedTriangleKey(const std::array<std::size_t, 3>& p
     return sorted;
 }
 
+struct PositionalEdgeUse
+{
+    std::size_t workingTriangleIndex = 0;
+    std::uint32_t renderA = 0;
+    std::uint32_t renderB = 0;
+    QuantizedPosition positionA {};
+    QuantizedPosition positionB {};
+};
+
+CanonicalPointMap buildTopologicalPointMap(
+    const MeshLod& mesh,
+    const std::vector<WorkingTriangle>& triangles)
+{
+    CanonicalPointMap out;
+    out.pointForVertex.resize(mesh.vertices.size(), 0);
+    if (mesh.vertices.empty()) return out;
+
+    // A 1e-4 positional match is a weld candidate, not proof of topological
+    // identity. Multiple independent panels on the station intentionally touch
+    // at exactly the same positions. Globally welding those positions creates
+    // artificial 3/4-face edges that did not exist in the authored topology.
+    DisjointSet sets(mesh.vertices.size());
+    std::map<PositionEdgeKey, std::vector<PositionalEdgeUse>> positionalUses;
+    std::map<std::size_t, std::size_t> workingBySourceTriangle;
+
+    for (std::size_t ti = 0; ti < triangles.size(); ++ti)
+    {
+        workingBySourceTriangle.emplace(triangles[ti].sourceTriangleIndex, ti);
+        const auto& t = triangles[ti].triangle;
+        const std::uint32_t r[3] = {t.a, t.b, t.c};
+        for (int e = 0; e < 3; ++e)
+        {
+            const int next = (e + 1) % 3;
+            if (r[e] >= mesh.vertices.size() || r[next] >= mesh.vertices.size()) continue;
+            auto qa = quantizedPosition(mesh.vertices[r[e]].position);
+            auto qb = quantizedPosition(mesh.vertices[r[next]].position);
+            if (qa == qb) continue;
+            auto keyA = qa, keyB = qb;
+            std::uint32_t renderA = r[e], renderB = r[next];
+            if (keyB < keyA)
+            {
+                std::swap(keyA, keyB);
+                std::swap(renderA, renderB);
+            }
+            positionalUses[{keyA, keyB}].push_back({ti, renderA, renderB, keyA, keyB});
+        }
+    }
+
+    auto unionUseEndpoints = [&](const PositionalEdgeUse& a, const PositionalEdgeUse& b)
+    {
+        if (a.positionA == b.positionA) sets.unite(a.renderA, b.renderA);
+        if (a.positionB == b.positionB) sets.unite(a.renderB, b.renderB);
+    };
+
+    // Canonical builder output persists its recovered connectivity in MeshLod
+    // edges. Once that marker is present, stored triangle adjacency is
+    // authoritative and positional coincidence must never reconnect unrelated
+    // boundary sheets on a later ANALYZE/reprepare pass. RAW/imported payloads
+    // do not have that marker, so the 1e-4 two-use fallback remains available
+    // to recover OBJ seams whose source indices differ despite equal positions.
+    const bool trustStoredAdjacency = !mesh.edges.empty() && std::all_of(
+        mesh.edges.begin(), mesh.edges.end(),
+        [](const Edge& edge) { return (edge.flags & EdgeCanonicalTopology) != 0; });
+
+    if (!trustStoredAdjacency)
+    {
+        for (const auto& [key, uses] : positionalUses)
+        {
+            (void)key;
+            if (uses.size() == 2) unionUseEndpoints(uses[0], uses[1]);
+        }
+    }
+
+    auto triangleEndpoint = [&](const WorkingTriangle& triangle, const QuantizedPosition& position) -> std::uint32_t
+    {
+        const std::uint32_t r[3] = {triangle.triangle.a, triangle.triangle.b, triangle.triangle.c};
+        for (const auto vi : r)
+        {
+            if (vi < mesh.vertices.size() && quantizedPosition(mesh.vertices[vi].position) == position)
+                return vi;
+        }
+        return std::numeric_limits<std::uint32_t>::max();
+    };
+
+    // NativeObjImporter preserves source-edge triangle adjacency. Use it to
+    // reconnect render splits across UV/material/hard-normal seams when a
+    // positional edge has more than two coincident uses. Crucially, unrelated
+    // coincident edges are not all welded together.
+    for (const auto& edge : mesh.edges)
+    {
+        if (edge.a >= mesh.vertices.size() || edge.b >= mesh.vertices.size() ||
+            edge.triangleA < 0 || edge.triangleB < 0)
+            continue;
+        const auto ita = workingBySourceTriangle.find(static_cast<std::size_t>(edge.triangleA));
+        const auto itb = workingBySourceTriangle.find(static_cast<std::size_t>(edge.triangleB));
+        if (ita == workingBySourceTriangle.end() || itb == workingBySourceTriangle.end()) continue;
+
+        const auto qa = quantizedPosition(mesh.vertices[edge.a].position);
+        const auto qb = quantizedPosition(mesh.vertices[edge.b].position);
+        if (qa == qb) continue;
+        const auto& ta = triangles[ita->second];
+        const auto& tb = triangles[itb->second];
+        const auto aa = triangleEndpoint(ta, qa);
+        const auto ab = triangleEndpoint(tb, qa);
+        const auto ba = triangleEndpoint(ta, qb);
+        const auto bb = triangleEndpoint(tb, qb);
+        const auto invalid = std::numeric_limits<std::uint32_t>::max();
+        if (aa != invalid && ab != invalid) sets.unite(aa, ab);
+        if (ba != invalid && bb != invalid) sets.unite(ba, bb);
+    }
+
+    std::map<std::size_t, std::size_t> pointByRoot;
+    for (std::size_t vi = 0; vi < mesh.vertices.size(); ++vi)
+    {
+        const auto root = sets.find(vi);
+        const auto [it, inserted] = pointByRoot.emplace(root, pointByRoot.size());
+        out.pointForVertex[vi] = it->second;
+        if (inserted) out.representativeVertex.push_back(vi);
+    }
+    return out;
+}
+
 struct PreparedWorkingSet
 {
     CanonicalPointMap points;
@@ -179,20 +302,26 @@ struct PreparedWorkingSet
 PreparedWorkingSet buildWorkingSet(const MeshLod& mesh)
 {
     PreparedWorkingSet out;
-    out.points = buildPointMap(mesh);
+
+    // Positional identity is intentionally used first only for garbage cleanup:
+    // collapsed and duplicate triangles should disappear even when authored OBJ
+    // render splits use different indices. Topological welding happens only
+    // after that cleanup so duplicate faces cannot manufacture a 3-use edge.
+    const auto positionalPoints = buildPositionalPointMap(mesh);
     std::set<std::tuple<std::size_t, std::size_t, std::size_t, std::int32_t>> duplicateKeys;
     out.triangles.reserve(mesh.triangles.size());
-    for (const auto& triangle : mesh.triangles)
+    for (std::size_t sourceTriangleIndex = 0; sourceTriangleIndex < mesh.triangles.size(); ++sourceTriangleIndex)
     {
+        const auto& triangle = mesh.triangles[sourceTriangleIndex];
         if (triangle.a >= mesh.vertices.size() || triangle.b >= mesh.vertices.size() || triangle.c >= mesh.vertices.size())
         {
             ++out.invalidTriangles;
             continue;
         }
         const std::array<std::size_t, 3> points = {
-            out.points.pointForVertex[triangle.a],
-            out.points.pointForVertex[triangle.b],
-            out.points.pointForVertex[triangle.c]
+            positionalPoints.pointForVertex[triangle.a],
+            positionalPoints.pointForVertex[triangle.b],
+            positionalPoints.pointForVertex[triangle.c]
         };
         if (points[0] == points[1] || points[1] == points[2] || points[2] == points[0] || !usableTriangle(mesh, triangle))
         {
@@ -206,9 +335,208 @@ PreparedWorkingSet buildWorkingSet(const MeshLod& mesh)
             ++out.duplicateTriangles;
             continue;
         }
-        out.triangles.push_back({triangle, points});
+        out.triangles.push_back({triangle, points, sourceTriangleIndex});
+    }
+
+    out.points = buildTopologicalPointMap(mesh, out.triangles);
+    for (auto& triangle : out.triangles)
+    {
+        triangle.point = {
+            out.points.pointForVertex[triangle.triangle.a],
+            out.points.pointForVertex[triangle.triangle.b],
+            out.points.pointForVertex[triangle.triangle.c]
+        };
     }
     return out;
+}
+
+struct LibiglRepairStats
+{
+    std::size_t splitTopologyVertices = 0;
+    std::size_t raycastPatches = 0;
+    std::size_t raycastFlippedTriangles = 0;
+};
+
+bool repairTopologyAndOrientationWithLibigl(
+    const MeshLod& mesh,
+    PreparedWorkingSet& working,
+    LibiglRepairStats& stats,
+    std::string& error)
+{
+    if (working.triangles.empty() || working.points.representativeVertex.empty())
+    {
+        error = "libigl repair received empty topology";
+        return false;
+    }
+
+    // Compact only points referenced by the cleaned triangles before handing
+    // the soup to libigl. Removed/unused OBJ vertices must not influence split
+    // statistics or Embree patch orientation.
+    std::vector<int> oldPointToCompact(working.points.representativeVertex.size(), -1);
+    std::vector<std::size_t> compactToOldPoint;
+    compactToOldPoint.reserve(working.points.representativeVertex.size());
+    for (const auto& wt : working.triangles)
+    {
+        for (const auto oldPoint : wt.point)
+        {
+            if (oldPoint >= oldPointToCompact.size())
+            {
+                error = "canonical triangle references missing geometric point";
+                return false;
+            }
+            if (oldPointToCompact[oldPoint] >= 0) continue;
+            oldPointToCompact[oldPoint] = static_cast<int>(compactToOldPoint.size());
+            compactToOldPoint.push_back(oldPoint);
+        }
+    }
+    if (compactToOldPoint.empty())
+    {
+        error = "libigl repair received no referenced topology vertices";
+        return false;
+    }
+
+    Eigen::MatrixXd V(static_cast<Eigen::Index>(compactToOldPoint.size()), 3);
+    for (std::size_t compact = 0; compact < compactToOldPoint.size(); ++compact)
+    {
+        const auto oldPoint = compactToOldPoint[compact];
+        const auto vi = working.points.representativeVertex[oldPoint];
+        if (vi >= mesh.vertices.size())
+        {
+            error = "canonical point representative outside render vertex array";
+            return false;
+        }
+        const auto& p = mesh.vertices[vi].position;
+        V(static_cast<Eigen::Index>(compact), 0) = p.x;
+        V(static_cast<Eigen::Index>(compact), 1) = p.y;
+        V(static_cast<Eigen::Index>(compact), 2) = p.z;
+    }
+
+    Eigen::MatrixXi F(static_cast<Eigen::Index>(working.triangles.size()), 3);
+    for (std::size_t ti = 0; ti < working.triangles.size(); ++ti)
+    {
+        for (int corner = 0; corner < 3; ++corner)
+        {
+            const int compact = oldPointToCompact[working.triangles[ti].point[corner]];
+            if (compact < 0)
+            {
+                error = "canonical triangle references an unregistered topology vertex";
+                return false;
+            }
+            F(static_cast<Eigen::Index>(ti), corner) = compact;
+        }
+    }
+
+    Eigen::MatrixXd SV;
+    Eigen::MatrixXi SF;
+    Eigen::VectorXi SVI;
+    igl::split_nonmanifold(V, F, SV, SF, SVI);
+    if (SF.rows() != F.rows() || SVI.size() != SV.rows())
+    {
+        error = "libigl split_nonmanifold returned an incompatible face mapping";
+        return false;
+    }
+
+    // Keep pre-existing canonical point ids for the first copy of every
+    // topology vertex. split_nonmanifold-created copies receive fresh ids, so
+    // authored metadata remains stable on every edge that did not need a cut.
+    CanonicalPointMap repairedPoints = working.points;
+    std::vector<std::size_t> splitPointId(static_cast<std::size_t>(SV.rows()), 0);
+    std::vector<bool> claimed(compactToOldPoint.size(), false);
+    for (Eigen::Index svi = 0; svi < SVI.size(); ++svi)
+    {
+        const int originalCompact = SVI(svi);
+        if (originalCompact < 0 || static_cast<std::size_t>(originalCompact) >= compactToOldPoint.size())
+        {
+            error = "libigl split_nonmanifold returned an invalid vertex source index";
+            return false;
+        }
+        const auto compact = static_cast<std::size_t>(originalCompact);
+        const auto oldPoint = compactToOldPoint[compact];
+        if (!claimed[compact])
+        {
+            claimed[compact] = true;
+            splitPointId[static_cast<std::size_t>(svi)] = oldPoint;
+        }
+        else
+        {
+            const auto newPoint = repairedPoints.representativeVertex.size();
+            repairedPoints.representativeVertex.push_back(working.points.representativeVertex[oldPoint]);
+            splitPointId[static_cast<std::size_t>(svi)] = newPoint;
+            ++stats.splitTopologyVertices;
+        }
+    }
+
+    for (Eigen::Index fi = 0; fi < SF.rows(); ++fi)
+    {
+        auto& wt = working.triangles[static_cast<std::size_t>(fi)];
+        for (int corner = 0; corner < 3; ++corner)
+        {
+            const int splitIndex = SF(fi, corner);
+            if (splitIndex < 0 || static_cast<std::size_t>(splitIndex) >= splitPointId.size())
+            {
+                error = "libigl split_nonmanifold returned an invalid split vertex index";
+                return false;
+            }
+            wt.point[corner] = splitPointId[static_cast<std::size_t>(splitIndex)];
+        }
+    }
+    working.points = std::move(repairedPoints);
+
+    // Match the station spike budget. libigl's default 100*faces is excessive
+    // for an interactive offline editor; this bounded patch-wise budget already
+    // produced the visually accepted S3 result under MinGW64.
+    const int faceCount = static_cast<int>(SF.rows());
+    const int raysTotal = std::clamp(faceCount * 8, 200000, 1000000);
+    constexpr int raysMinimum = 16;
+    Eigen::VectorXi flips;
+    Eigen::VectorXi components;
+    try
+    {
+        igl::embree::reorient_facets_raycast(
+            SV, SF,
+            raysTotal,
+            raysMinimum,
+            false,  // patch-wise
+            false,  // ambient-occlusion mode accepted by the station spike
+            false,  // editor writes its own concise repair log
+            flips,
+            components);
+    }
+    catch (const std::exception& ex)
+    {
+        error = std::string("Embree orientation failed: ") + ex.what();
+        return false;
+    }
+
+    if (flips.size() != SF.rows() || components.size() != SF.rows())
+    {
+        error = "Embree orientation returned incompatible result vectors";
+        return false;
+    }
+    stats.raycastPatches = components.size() == 0
+        ? 0u
+        : static_cast<std::size_t>(components.maxCoeff() + 1);
+
+    for (Eigen::Index fi = 0; fi < flips.size(); ++fi)
+    {
+        if (flips(fi) == 0) continue;
+        auto& wt = working.triangles[static_cast<std::size_t>(fi)];
+        std::swap(wt.triangle.b, wt.triangle.c);
+        std::swap(wt.point[1], wt.point[2]);
+        ++stats.raycastFlippedTriangles;
+    }
+
+    const auto repairedTopology = buildTopology(working.triangles);
+    for (const auto& [key, uses] : repairedTopology.edgeUses)
+    {
+        (void)key;
+        if (uses.size() > 2)
+        {
+            error = "split_nonmanifold left a multi-use canonical edge";
+            return false;
+        }
+    }
+    return true;
 }
 
 std::vector<glm::dvec3> faceNormals(const MeshLod& mesh, const std::vector<WorkingTriangle>& triangles)
@@ -345,13 +673,21 @@ void applyParity(std::vector<WorkingTriangle>& triangles, const OrientationSolut
     }
 }
 
-std::size_t flipInsideOutClosedComponents(
+glm::dvec3 canonicalPointPosition(
     const MeshLod& mesh,
-    std::vector<WorkingTriangle>& triangles,
-    const WorkingTopology& topology,
-    std::size_t& flippedTriangles)
+    const CanonicalPointMap& points,
+    std::size_t point)
 {
-    std::size_t flippedComponents = 0;
+    return glm::dvec3(mesh.vertices[points.representativeVertex[point]].position);
+}
+
+std::size_t countInsideOutClosedComponents(
+    const MeshLod& mesh,
+    const CanonicalPointMap& points,
+    const std::vector<WorkingTriangle>& triangles,
+    const WorkingTopology& topology)
+{
+    std::size_t inward = 0;
     const auto components = buildComponents(topology, triangles.size());
     for (std::size_t ci = 0; ci < components.triangles.size(); ++ci)
     {
@@ -359,22 +695,15 @@ std::size_t flipInsideOutClosedComponents(
         double volume6 = 0.0;
         for (const auto ti : components.triangles[ci])
         {
-            const auto& t = triangles[ti].triangle;
-            const glm::dvec3 a(mesh.vertices[t.a].position);
-            const glm::dvec3 b(mesh.vertices[t.b].position);
-            const glm::dvec3 c(mesh.vertices[t.c].position);
+            const auto& t = triangles[ti];
+            const auto a = canonicalPointPosition(mesh, points, t.point[0]);
+            const auto b = canonicalPointPosition(mesh, points, t.point[1]);
+            const auto c = canonicalPointPosition(mesh, points, t.point[2]);
             volume6 += glm::dot(a, glm::cross(b, c));
         }
-        if (volume6 >= -1.0e-10) continue;
-        for (const auto ti : components.triangles[ci])
-        {
-            std::swap(triangles[ti].triangle.b, triangles[ti].triangle.c);
-            std::swap(triangles[ti].point[1], triangles[ti].point[2]);
-            ++flippedTriangles;
-        }
-        ++flippedComponents;
+        if (volume6 < -1.0e-10) ++inward;
     }
-    return flippedComponents;
+    return inward;
 }
 
 bool edgeIsSmooth(
@@ -406,15 +735,18 @@ struct OldEdgeMetadata
     bool hasMask = false;
 };
 
-std::map<PositionEdgeKey, OldEdgeMetadata> collectOldEdgeMetadata(const MeshLod& mesh)
+std::map<EdgeKey, OldEdgeMetadata> collectOldEdgeMetadata(
+    const MeshLod& mesh,
+    const CanonicalPointMap& points)
 {
-    std::map<PositionEdgeKey, OldEdgeMetadata> out;
+    std::map<EdgeKey, OldEdgeMetadata> out;
     for (const auto& edge : mesh.edges)
     {
         if (edge.a >= mesh.vertices.size() || edge.b >= mesh.vertices.size()) continue;
-        const auto key = positionEdgeKey(mesh.vertices[edge.a].position, mesh.vertices[edge.b].position);
-        if (key.first == key.second) continue;
-        auto& meta = out[key];
+        const auto pa = points.pointForVertex[edge.a];
+        const auto pb = points.pointForVertex[edge.b];
+        if (pa == pb) continue;
+        auto& meta = out[edgeKey(pa, pb)];
         meta.flags |= edge.flags;
         if (!meta.hasMask)
         {
@@ -433,13 +765,15 @@ struct RebuiltRenderMesh
 {
     std::vector<Vertex> vertices;
     std::vector<Triangle> triangles;
+    std::vector<std::size_t> pointForVertex;
     std::size_t normalIslands = 0;
 };
 
 RebuiltRenderMesh rebuildRenderVertices(
     const MeshLod& source,
     const std::vector<WorkingTriangle>& triangles,
-    const WorkingTopology& topology)
+    const WorkingTopology& topology,
+    const CanonicalPointMap& sourcePoints)
 {
     RebuiltRenderMesh out;
     if (triangles.empty()) return out;
@@ -481,7 +815,20 @@ RebuiltRenderMesh rebuildRenderVertices(
     }
     out.normalIslands = islandNormal.size();
 
-    using RenderKey = std::pair<std::uint32_t, std::size_t>;
+    // A render vertex is rebuilt from canonical geometric identity plus the
+    // render-only splits that actually matter. Source OBJ vertex identity and
+    // authored normal index are deliberately NOT part of this key: otherwise a
+    // dirty OBJ normal split would survive forever even after normals ceased to
+    // be authoritative. UV, material and reconstructed hard-normal islands do
+    // remain valid reasons to create multiple GPU vertices at one point.
+    auto floatBits = [](float value)
+    {
+        std::uint32_t bits = 0;
+        static_assert(sizeof(bits) == sizeof(value), "unexpected float width");
+        std::memcpy(&bits, &value, sizeof(bits));
+        return bits;
+    };
+    using RenderKey = std::tuple<std::size_t, std::uint32_t, std::uint32_t, std::int32_t, std::size_t>;
     std::map<RenderKey, std::uint32_t> renderMap;
     out.triangles.reserve(triangles.size());
     for (std::size_t ti = 0; ti < triangles.size(); ++ti)
@@ -496,17 +843,31 @@ RebuiltRenderMesh rebuildRenderVertices(
         for (std::size_t corner = 0; corner < 3; ++corner)
         {
             const auto root = normalSets.find(ti * 3u + corner);
-            const RenderKey key {src[corner], root};
+            const auto point = triangles[ti].point[corner];
+            const auto& sourceVertex = source.vertices[src[corner]];
+            const RenderKey key {
+                point,
+                floatBits(sourceVertex.uv.x),
+                floatBits(sourceVertex.uv.y),
+                rebuilt.materialIndex,
+                root
+            };
             const auto found = renderMap.find(key);
             if (found != renderMap.end())
             {
                 *dst[corner] = found->second;
                 continue;
             }
-            Vertex vertex = source.vertices[src[corner]];
+            Vertex vertex = sourceVertex;
+            // Positional weld is now real in the working render payload: all
+            // render splits of one geometric point share one representative
+            // canonical position. Only their UV/material/normal identity may
+            // remain distinct.
+            vertex.position = source.vertices[sourcePoints.representativeVertex[point]].position;
             vertex.normal = islandNormal[root];
             const auto newIndex = static_cast<std::uint32_t>(out.vertices.size());
             out.vertices.push_back(vertex);
+            out.pointForVertex.push_back(point);
             renderMap.emplace(key, newIndex);
             *dst[corner] = newIndex;
         }
@@ -543,8 +904,8 @@ struct RenderEdgeUse
 
 std::vector<Edge> rebuildEdges(
     const MeshLod& mesh,
-    const CanonicalPointMap& points,
-    const std::map<PositionEdgeKey, OldEdgeMetadata>& oldMetadata)
+    const std::vector<std::size_t>& pointForVertex,
+    const std::map<EdgeKey, OldEdgeMetadata>& oldMetadata)
 {
     std::map<EdgeKey, std::vector<RenderEdgeUse>> uses;
     std::vector<glm::dvec3> normals(mesh.triangles.size(), glm::dvec3(0.0));
@@ -553,7 +914,7 @@ std::vector<Edge> rebuildEdges(
         const auto& t = mesh.triangles[ti];
         const std::uint32_t r[3] = {t.a, t.b, t.c};
         const std::size_t p[3] = {
-            points.pointForVertex[t.a], points.pointForVertex[t.b], points.pointForVertex[t.c]
+            pointForVertex[t.a], pointForVertex[t.b], pointForVertex[t.c]
         };
         const glm::dvec3 a(mesh.vertices[t.a].position);
         const glm::dvec3 b(mesh.vertices[t.b].position);
@@ -576,17 +937,17 @@ std::vector<Edge> rebuildEdges(
         if (edgeUses.empty()) continue;
         const auto& first = edgeUses.front();
         Edge edge;
+        edge.flags |= EdgeCanonicalTopology;
         edge.a = first.renderA;
         edge.b = first.renderB;
         edge.triangleA = static_cast<std::int32_t>(first.triangleIndex);
         if (edgeUses.size() >= 2)
             edge.triangleB = static_cast<std::int32_t>(edgeUses[1].triangleIndex);
 
-        const auto oldKey = positionEdgeKey(mesh.vertices[first.renderA].position, mesh.vertices[first.renderB].position);
-        const auto old = oldMetadata.find(oldKey);
+        const auto old = oldMetadata.find(key);
         if (old != oldMetadata.end())
         {
-            edge.flags |= old->second.flags & (EdgeAuthored | EdgeNonManifold);
+            edge.flags |= old->second.flags & EdgeAuthored;
             if (old->second.hasMask) edge.renderMask = old->second.renderMask;
         }
 
@@ -608,8 +969,8 @@ std::vector<Edge> rebuildEdges(
             if (dot < static_cast<double>(CreaseCos)) edge.flags |= EdgeCrease;
             if (a.materialIndex != b.materialIndex) edge.flags |= EdgeMaterialSeam;
 
-            WorkingTriangle wa {a, {points.pointForVertex[a.a], points.pointForVertex[a.b], points.pointForVertex[a.c]}};
-            WorkingTriangle wb {b, {points.pointForVertex[b.a], points.pointForVertex[b.b], points.pointForVertex[b.c]}};
+            WorkingTriangle wa {a, {pointForVertex[a.a], pointForVertex[a.b], pointForVertex[a.c]}};
+            WorkingTriangle wb {b, {pointForVertex[b.a], pointForVertex[b.b], pointForVertex[b.c]}};
             if (!edgeIsSmooth(wa, wb, normals[edgeUses[0].triangleIndex], normals[edgeUses[1].triangleIndex]))
                 edge.flags |= EdgeNormalSeam;
 
@@ -624,40 +985,11 @@ std::vector<Edge> rebuildEdges(
         }
         out.push_back(edge);
     }
+    std::sort(out.begin(), out.end(), [](const Edge& a, const Edge& b) {
+        return std::tie(a.triangleA, a.triangleB, a.a, a.b, a.flags, a.renderMask) <
+               std::tie(b.triangleA, b.triangleB, b.a, b.b, b.flags, b.renderMask);
+    });
     return out;
-}
-
-bool sameVec2(const glm::vec2& a, const glm::vec2& b)
-{
-    return a.x == b.x && a.y == b.y;
-}
-
-bool sameVec3(const glm::vec3& a, const glm::vec3& b)
-{
-    return a.x == b.x && a.y == b.y && a.z == b.z;
-}
-
-bool meshPayloadEqual(const MeshLod& a, const MeshLod& b)
-{
-    if (a.vertices.size() != b.vertices.size() || a.triangles.size() != b.triangles.size() || a.edges.size() != b.edges.size()) return false;
-    for (std::size_t i = 0; i < a.vertices.size(); ++i)
-    {
-        const auto& av = a.vertices[i]; const auto& bv = b.vertices[i];
-        if (!sameVec3(av.position, bv.position) || !sameVec3(av.normal, bv.normal) || !sameVec2(av.uv, bv.uv)) return false;
-    }
-    for (std::size_t i = 0; i < a.triangles.size(); ++i)
-    {
-        const auto& x = a.triangles[i]; const auto& y = b.triangles[i];
-        if (x.a != y.a || x.b != y.b || x.c != y.c || x.sourcePolygonId != y.sourcePolygonId ||
-            x.materialIndex != y.materialIndex || x.smoothingGroupId != y.smoothingGroupId) return false;
-    }
-    for (std::size_t i = 0; i < a.edges.size(); ++i)
-    {
-        const auto& x = a.edges[i]; const auto& y = b.edges[i];
-        if (x.a != y.a || x.b != y.b || x.triangleA != y.triangleA || x.triangleB != y.triangleB ||
-            x.flags != y.flags || x.renderMask != y.renderMask) return false;
-    }
-    return sameVec3(a.minBounds, b.minBounds) && sameVec3(a.maxBounds, b.maxBounds);
 }
 
 void hashBytes(std::uint64_t& hash, const void* data, std::size_t size)
@@ -713,11 +1045,13 @@ CanonicalMeshAnalysis analyzeCanonicalMesh(const MeshLod& mesh)
         out.invalidReason = "mesh has no usable triangles after canonical cleanup";
         return out;
     }
-    if (out.sourceNonManifoldEdges != 0)
-    {
-        out.structuralInvalid = true;
-        out.invalidReason = "source topology contains an edge used by more than two faces";
-    }
+    // EdgeNonManifold on the decoded/authored payload is diagnostic evidence,
+    // not a reason to skip canonicalization. More importantly, coincident
+    // positions are no longer assumed to be one topological vertex. The
+    // working set reconnects ordinary two-face seams but keeps ambiguous 3+
+    // coincident edge uses as independent sheets unless authored adjacency
+    // explicitly connects them. Only a multi-use edge that still exists in
+    // that topology-aware graph is a genuine canonical non-manifold defect.
 
     const auto topology = buildTopology(working.triangles);
     for (const auto& [key, uses] : topology.edgeUses)
@@ -725,6 +1059,12 @@ CanonicalMeshAnalysis analyzeCanonicalMesh(const MeshLod& mesh)
         (void)key;
         if (uses.size() == 1) ++out.boundaryEdges;
         else if (uses.size() > 2) ++out.canonicalMultiUseEdges;
+    }
+    if (out.canonicalMultiUseEdges != 0)
+    {
+        out.structuralInvalid = true;
+        out.invalidReason = "canonical topology contains an edge used by more than two faces";
+        return out;
     }
     const auto orientation = solveOrientation(topology, working.triangles.size());
     out.windingFlipsRequired = orientation.flipsRequired;
@@ -744,79 +1084,243 @@ CanonicalMeshAnalysis analyzeCanonicalMesh(const MeshLod& mesh)
     {
         const bool closed = components.boundaryEdges[ci] == 0;
         if (closed) ++out.closedComponents; else ++out.openComponents;
-        if (!closed) continue;
-        double volume6 = 0.0;
-        for (const auto ti : components.triangles[ci])
-        {
-            const auto& t = oriented[ti].triangle;
-            const glm::dvec3 a(mesh.vertices[t.a].position);
-            const glm::dvec3 b(mesh.vertices[t.b].position);
-            const glm::dvec3 c(mesh.vertices[t.c].position);
-            volume6 += glm::dot(a, glm::cross(b, c));
-        }
-        if (volume6 < -1.0e-10) ++out.insideOutClosedComponents;
     }
+    out.insideOutClosedComponents =
+        countInsideOutClosedComponents(mesh, working.points, oriented, orientedTopology);
     return out;
 }
 
 CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)
 {
     CanonicalMeshBuildResult result;
-    result.before = analyzeCanonicalMesh(mesh);
-    if (result.before.structuralInvalid)
+    result.before.renderVertices = mesh.vertices.size();
+    result.before.triangles = mesh.triangles.size();
+    result.before.sourceNonManifoldEdges = sourceNonManifoldEdgeCount(mesh);
+
+    // PREPARE repairs authored topology. Only payload defects that make the
+    // mesh unreadable are blockers before libigl gets a chance to repair it.
+    for (const auto& vertex : mesh.vertices)
     {
+        if (!finiteVec3(vertex.position))
+        {
+            result.before.finitePositions = false;
+            result.before.structuralInvalid = true;
+            result.before.invalidReason = "non-finite vertex position";
+            result.repairStatus = "FAILED";
+            result.error = result.before.invalidReason;
+            return result;
+        }
+    }
+
+    const auto beforeFingerprint = canonicalMeshFingerprint(mesh);
+    auto working = buildWorkingSet(mesh);
+    result.before.geometricPoints = working.points.representativeVertex.size();
+    result.before.invalidTriangles = working.invalidTriangles;
+    result.before.degenerateTriangles = working.degenerateTriangles;
+    result.before.duplicateTriangles = working.duplicateTriangles;
+    result.removedDegenerateTriangles = working.degenerateTriangles;
+    result.removedDuplicateTriangles = working.duplicateTriangles;
+
+    if (working.invalidTriangles != 0)
+    {
+        result.before.structuralInvalid = true;
+        result.before.invalidReason = "triangle index outside render vertex array";
+        result.repairStatus = "FAILED";
+        result.error = result.before.invalidReason;
+        return result;
+    }
+    if (working.triangles.empty())
+    {
+        result.before.structuralInvalid = true;
+        result.before.invalidReason = "mesh has no usable triangles after canonical cleanup";
+        result.repairStatus = "FAILED";
         result.error = result.before.invalidReason;
         return result;
     }
 
-    const MeshLod original = mesh;
-    auto working = buildWorkingSet(mesh);
-    result.removedDegenerateTriangles = working.degenerateTriangles;
-    result.removedDuplicateTriangles = working.duplicateTriangles;
-
-    auto topology = buildTopology(working.triangles);
-    const auto orientation = solveOrientation(topology, working.triangles.size());
-    if (orientation.conflicts != 0)
+    const auto originalTopology = buildTopology(working.triangles);
+    for (const auto& [key, uses] : originalTopology.edgeUses)
     {
-        result.error = "topology cannot be oriented consistently";
+        (void)key;
+        if (uses.size() == 1) ++result.before.boundaryEdges;
+        else if (uses.size() > 2) ++result.before.canonicalMultiUseEdges;
+    }
+    const auto beforeOrientation = solveOrientation(originalTopology, working.triangles.size());
+    result.before.windingFlipsRequired = beforeOrientation.flipsRequired;
+    result.before.windingConflicts = beforeOrientation.conflicts;
+
+    // Preserve authored edge masks/metadata before topology repair. New point
+    // copies created by split_nonmanifold intentionally have no inherited edge
+    // identity unless rebuild can map them back unambiguously.
+    const auto oldMetadata = collectOldEdgeMetadata(mesh, working.points);
+
+    // Production topology/orientation authority. The previous v7 radial
+    // envelope/open-component heuristic is deliberately gone from PREPARE.
+    LibiglRepairStats libiglStats;
+    if (!repairTopologyAndOrientationWithLibigl(mesh, working, libiglStats, result.error))
+    {
+        result.repairStatus = "LIBIGL_FAILED";
         return result;
     }
-    result.flippedTriangles += orientation.flipsRequired;
-    applyParity(working.triangles, orientation);
+    result.splitTopologyVertices = libiglStats.splitTopologyVertices;
+    result.raycastPatches = libiglStats.raycastPatches;
+    result.raycastFlippedTriangles = libiglStats.raycastFlippedTriangles;
+    result.flippedTriangles = libiglStats.raycastFlippedTriangles;
 
-    topology = buildTopology(working.triangles);
-    result.flippedClosedComponents = flipInsideOutClosedComponents(mesh, working.triangles, topology, result.flippedTriangles);
-    topology = buildTopology(working.triangles);
+    auto topology = buildTopology(working.triangles);
+    const auto finalOrientation = solveOrientation(topology, working.triangles.size());
+    result.after.windingFlipsRequired = finalOrientation.flipsRequired;
+    result.after.windingConflicts = finalOrientation.conflicts;
+    const auto components = buildComponents(topology, working.triangles.size());
+    result.after.components = components.triangles.size();
+    for (std::size_t ci = 0; ci < components.triangles.size(); ++ci)
+    {
+        result.after.boundaryEdges += components.boundaryEdges[ci];
+        result.after.canonicalMultiUseEdges += components.multiUseEdges[ci];
+        if (components.boundaryEdges[ci] == 0) ++result.after.closedComponents;
+        else ++result.after.openComponents;
+    }
+    result.after.insideOutClosedComponents =
+        countInsideOutClosedComponents(mesh, working.points, working.triangles, topology);
 
-    const auto oldMetadata = collectOldEdgeMetadata(mesh);
-    auto rebuilt = rebuildRenderVertices(mesh, working.triangles, topology);
+    if (result.after.canonicalMultiUseEdges != 0 ||
+        result.after.windingConflicts != 0 || result.after.windingFlipsRequired != 0 ||
+        result.after.insideOutClosedComponents != 0)
+    {
+        result.repairStatus = "LIBIGL_FAILED";
+        result.error = "libigl/Embree repair did not satisfy canonical topology/orientation invariants";
+        return result;
+    }
+
+    // Everything below this line is editor-owned reconstruction. libigl never
+    // owns UVs, materials, smoothing metadata, hard-normal islands or .elmesh
+    // identity.
+    auto rebuilt = rebuildRenderVertices(mesh, working.triangles, topology, working.points);
     if (rebuilt.vertices.empty() || rebuilt.triangles.empty())
     {
+        result.repairStatus = "FAILED";
         result.error = "canonical builder produced an empty mesh";
         return result;
     }
-    result.normalIslands = rebuilt.normalIslands;
-    result.rebuiltRenderVertices = rebuilt.vertices.size();
 
     MeshLod candidate;
     candidate.vertices = std::move(rebuilt.vertices);
     candidate.triangles = std::move(rebuilt.triangles);
     updateBounds(candidate);
-    const auto rebuiltPoints = buildPointMap(candidate);
-    candidate.edges = rebuildEdges(candidate, rebuiltPoints, oldMetadata);
-    result.rebuiltEdges = candidate.edges.size();
+    candidate.edges = rebuildEdges(candidate, rebuilt.pointForVertex, oldMetadata);
+    result.normalIslands = rebuilt.normalIslands;
 
-    result.after = analyzeCanonicalMesh(candidate);
-    if (result.after.structuralInvalid || result.after.degenerateTriangles != 0 || result.after.duplicateTriangles != 0 ||
-        result.after.windingConflicts != 0 || result.after.insideOutClosedComponents != 0)
+    // Preserve v7's cheap render-projection stabilization. It may recover
+    // additional seam adjacency from freshly rebuilt canonical edges, but it
+    // never reruns a heuristic orientation policy. Any topology/orientation
+    // regression aborts transactionally instead of silently guessing.
+    std::size_t expectedGeometricPoints = working.points.representativeVertex.size();
+    PreparedWorkingSet finalWorking;
+    WorkingTopology finalTopology;
+    bool projectionStable = false;
+    for (std::size_t projectionPass = 0; projectionPass < 3; ++projectionPass)
     {
-        result.error = result.after.invalidReason.empty() ? "canonical mesh validation failed" : result.after.invalidReason;
+        auto candidateWorking = buildWorkingSet(candidate);
+        if (candidateWorking.invalidTriangles != 0 || candidateWorking.triangles.empty())
+        {
+            result.repairStatus = "FAILED";
+            result.error = "canonical render projection became unreadable";
+            return result;
+        }
+        auto candidateTopology = buildTopology(candidateWorking.triangles);
+        bool multiUse = false;
+        for (const auto& [key, uses] : candidateTopology.edgeUses)
+        {
+            (void)key;
+            if (uses.size() > 2) { multiUse = true; break; }
+        }
+        const auto candidateOrientation = solveOrientation(candidateTopology, candidateWorking.triangles.size());
+        if (multiUse || candidateOrientation.conflicts != 0 || candidateOrientation.flipsRequired != 0)
+        {
+            result.repairStatus = "FAILED";
+            result.error = "canonical render projection changed repaired topology";
+            return result;
+        }
+
+        const auto currentGeometricPoints = candidateWorking.points.representativeVertex.size();
+        if (currentGeometricPoints == expectedGeometricPoints)
+        {
+            finalWorking = std::move(candidateWorking);
+            finalTopology = std::move(candidateTopology);
+            projectionStable = true;
+            break;
+        }
+
+        expectedGeometricPoints = currentGeometricPoints;
+        const auto projectionMetadata = collectOldEdgeMetadata(candidate, candidateWorking.points);
+        auto projected = rebuildRenderVertices(
+            candidate, candidateWorking.triangles, candidateTopology, candidateWorking.points);
+        if (projected.vertices.empty() || projected.triangles.empty())
+        {
+            result.repairStatus = "FAILED";
+            result.error = "canonical topology stabilization produced an empty mesh";
+            return result;
+        }
+        MeshLod stabilized;
+        stabilized.vertices = std::move(projected.vertices);
+        stabilized.triangles = std::move(projected.triangles);
+        updateBounds(stabilized);
+        stabilized.edges = rebuildEdges(stabilized, projected.pointForVertex, projectionMetadata);
+        candidate = std::move(stabilized);
+        result.normalIslands = projected.normalIslands;
+        ++result.topologyStabilizationPasses;
+    }
+
+    if (!projectionStable)
+    {
+        result.repairStatus = "FAILED";
+        result.error = "canonical topology projection did not stabilize";
         return result;
     }
 
-    result.changed = !meshPayloadEqual(original, candidate);
+    // Measure the exact payload that will be committed. This final gate is
+    // cheap and deterministic; it does not invoke the removed radial heuristic.
+    CanonicalMeshAnalysis measured;
+    measured.renderVertices = candidate.vertices.size();
+    measured.geometricPoints = finalWorking.points.representativeVertex.size();
+    measured.triangles = candidate.triangles.size();
+    measured.sourceNonManifoldEdges = sourceNonManifoldEdgeCount(candidate);
+    measured.finitePositions = true;
+    for (const auto& [key, uses] : finalTopology.edgeUses)
+    {
+        (void)key;
+        if (uses.size() == 1) ++measured.boundaryEdges;
+        else if (uses.size() > 2) ++measured.canonicalMultiUseEdges;
+    }
+    const auto finalComponents = buildComponents(finalTopology, finalWorking.triangles.size());
+    measured.components = finalComponents.triangles.size();
+    for (std::size_t ci = 0; ci < finalComponents.triangles.size(); ++ci)
+    {
+        if (finalComponents.boundaryEdges[ci] == 0) ++measured.closedComponents;
+        else ++measured.openComponents;
+    }
+    const auto measuredOrientation = solveOrientation(finalTopology, finalWorking.triangles.size());
+    measured.windingFlipsRequired = measuredOrientation.flipsRequired;
+    measured.windingConflicts = measuredOrientation.conflicts;
+    measured.insideOutClosedComponents =
+        countInsideOutClosedComponents(candidate, finalWorking.points, finalWorking.triangles, finalTopology);
+    result.after = measured;
+    result.rebuiltRenderVertices = candidate.vertices.size();
+    result.rebuiltEdges = candidate.edges.size();
+
+    if (measured.canonicalMultiUseEdges != 0 || measured.windingConflicts != 0 ||
+        measured.windingFlipsRequired != 0 || measured.insideOutClosedComponents != 0)
+    {
+        result.repairStatus = "FAILED";
+        result.error = "repaired candidate does not satisfy render mesh contract";
+        return result;
+    }
+
+    const auto afterFingerprint = canonicalMeshFingerprint(candidate);
+    result.changed = beforeFingerprint != afterFingerprint;
     mesh = std::move(candidate);
     result.success = true;
+    result.repairStatus = "GOOD_ENOUGH";
     return result;
 }
 
@@ -840,9 +1344,9 @@ std::uint64_t canonicalMeshFingerprint(const MeshLod& mesh)
         hashValue(hash, triangle.a); hashValue(hash, triangle.b); hashValue(hash, triangle.c);
         hashValue(hash, triangle.sourcePolygonId); hashValue(hash, triangle.materialIndex); hashValue(hash, triangle.smoothingGroupId);
     }
-    // Edge renderMask is intentionally authorable after preparation and does
-    // not invalidate canonical geometry. Structural edge identity/adjacency
-    // does: a stale or externally rewritten edge topology must be prepared again.
+    // Edge renderMask is intentionally authorable after the SOURCE boundary and
+    // does not invalidate canonical geometry. Structural edge identity/adjacency
+    // does: a stale or externally rewritten edge topology must cross the boundary again.
     for (const auto& edge : mesh.edges)
     {
         hashValue(hash, edge.a); hashValue(hash, edge.b);

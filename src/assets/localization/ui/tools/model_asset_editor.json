@@ -2440,20 +2440,20 @@
       "ru": "Рисует выборочные нормали, вычисленные из порядка вершин треугольников независимо от авторских vertex normals. Помогает находить перевёрнутые грани."
     },
     "model_editor.preflight.title": {
-      "en": "MESH PREPARATION",
-      "ru": "ПОДГОТОВКА МЕШЕЙ"
+      "en": "GEOMETRY CONTRACT",
+      "ru": "КОНТРАКТ ГЕОМЕТРИИ"
+    },
+    "model_editor.preflight.prepare": {
+      "en": "PREPARE MESHES",
+      "ru": "ПОДГОТОВИТЬ МЕШИ"
     },
     "model_editor.preflight.check": {
       "en": "ANALYZE",
       "ru": "АНАЛИЗИРОВАТЬ"
     },
-    "model_editor.preflight.fix": {
-      "en": "APPLY PREPARATION",
-      "ru": "ПРИМЕНИТЬ ПОДГОТОВКУ"
-    },
     "model_editor.preflight.help": {
-      "en": "Prepare every loaded mesh before LOD generation. Canonical output keeps geometric points separate from GPU render vertices and resolves to Closed volume, Thin two-sided, Breached volume or genuine Invalid.",
-      "ru": "Перед генерацией LOD подготовьте каждый загруженный меш. Канонический результат различает геометрические точки и GPU render-вершины и приводит mesh к «Замкнутому объёму», «Тонкой двусторонней», «Пробитому объёму» либо к настоящему Invalid."
+      "en": "Load, reimport and restore show geometry exactly as stored/read. PREPARE MESHES explicitly replaces the working copy with canonical geometry; ANALYZE only audits the current state.",
+      "ru": "Загрузка, reimport и restore показывают геометрию как она есть. «ПОДГОТОВИТЬ МЕШИ» явно заменяет рабочую копию canonical-геометрией; «АНАЛИЗИРОВАТЬ» только проверяет текущее состояние."
     },
     "model_editor.preflight.geometry": {
       "en": "geometries / components",
@@ -2500,36 +2500,36 @@
       "ru": "тип геометрии"
     },
     "model_editor.preflight.legend": {
-      "en": "P = geometric points; V = render vertices; T = triangles; B = authored/open boundary; MU = multi-use only after positional weld (warning); NM/Invalid = genuine source non-manifold or another structural failure. ThinTwoSided and BreachedVolume boundaries are intentional and are never capped.",
-      "ru": "P — геометрические точки; V — render-вершины; T — треугольники; B — открытая граница; MU — multi-use только после positional weld (предупреждение); NM/Invalid — настоящий source non-manifold или другая структурная поломка. Границы ThinTwoSided и BreachedVolume штатны и никогда автоматически не заделываются."
+      "en": "P = welded geometric points; V = render vertices; T = triangles; B = open boundary; MU = multi-use after runtime weld; src NM = RAW evidence. PREPARE MESHES does not reject renderable B/MU/winding cases; ANALYZE evaluates those topology contracts. ThinTwoSided and BreachedVolume boundaries are intentional and are never capped.",
+      "ru": "P — welded geometric points; V — render-вершины; T — треугольники; B — открытая граница; MU — multi-use после runtime weld; src NM — RAW evidence. «ПОДГОТОВИТЬ МЕШИ» не отклоняет renderable B/MU/winding; topology contract проверяет только «АНАЛИЗИРОВАТЬ». Границы ThinTwoSided и BreachedVolume штатны и не заделываются."
+    },
+    "model_editor.preflight.command.prepare": {
+      "en": "prepare model meshes",
+      "ru": "подготовка мешей"
     },
     "model_editor.preflight.command.check": {
       "en": "check model preflight",
       "ru": "проверка модели"
     },
-    "model_editor.preflight.command.fix": {
-      "en": "build canonical meshes",
-      "ru": "построение канонических мешей"
-    },
     "model_editor.preflight.command.classify": {
       "en": "set topology class",
       "ru": "назначение типа геометрии"
     },
+    "model_editor.preflight.prepare_tip.title": {
+      "en": "Prepare meshes",
+      "ru": "Подготовить меши"
+    },
+    "model_editor.preflight.prepare_tip.desc": {
+      "en": "Run one canonical authoring pass: topology-aware 1e-4 weld, collapsed/duplicate cleanup, consistent winding, outward closed shells, then normal/render/edge rebuild. Real boundary holes are preserved. Classification is a separate action.",
+      "ru": "Выполнить один canonical authoring-pass: topology-aware weld 1e-4, удалить collapsed/duplicate мусор, согласовать winding, развернуть замкнутые оболочки наружу, затем пересчитать normals и rebuild render/edge topology. Настоящие boundary-отверстия сохраняются. Классификация выполняется отдельно."
+    },
     "model_editor.preflight.check_tip.title": {
-      "en": "Analyze meshes",
-      "ru": "Анализировать меши"
+      "en": "Check geometry contract",
+      "ru": "Проверить контракт геометрии"
     },
     "model_editor.preflight.check_tip.desc": {
-      "en": "Analyze canonical geometric-point topology, preparation state, cleanup requirements and target geometry class before LOD processing.",
-      "ru": "Проверить topology геометрических точек, состояние подготовки, требуемую очистку и конечный тип geometry перед обработкой LOD."
-    },
-    "model_editor.preflight.fix_tip.title": {
-      "en": "Apply mesh preparation",
-      "ru": "Применить подготовку"
-    },
-    "model_editor.preflight.fix_tip.desc": {
-      "en": "Build canonical meshes: 1e-4 positional geometric weld, degenerate/duplicate cleanup, consistent outward winding, normal islands and complete edge-topology rebuild. UV/material/hard-normal render splits are preserved.",
-      "ru": "Построить canonical mesh: positional weld 1e-4 для геометрических точек, удалить degenerate/duplicate мусор, согласовать наружный winding, построить normal islands и полностью перестроить edge topology. UV/material/hard-normal render-разрывы сохраняются."
+      "en": "Audit the current working meshes without hidden mutation. Unprepared meshes remain visible and are reported as requiring preparation.",
+      "ru": "Проверить текущие рабочие meshes без скрытой мутации. Неподготовленные meshes остаются видимыми и помечаются как требующие подготовки."
     },
     "model_editor.source.state": {
       "en": "state",
@@ -2567,17 +2567,13 @@
       "en": "READY",
       "ru": "ГОТОВО"
     },
-    "model_editor.preflight.action.safe_fix": {
-      "en": "PREPARE",
-      "ru": "ПОДГОТОВИТЬ"
-    },
     "model_editor.preflight.action.classify": {
       "en": "SET TYPE",
       "ru": "НАЗНАЧИТЬ ТИП"
     },
-    "model_editor.preflight.action.fix_classify": {
-      "en": "PREPARE → TYPE",
-      "ru": "ПОДГОТОВИТЬ → ТИП"
+    "model_editor.preflight.action.prepare": {
+      "en": "PREPARE",
+      "ru": "ПОДГОТОВИТЬ"
     },
     "model_editor.preflight.action.manual": {
       "en": "FIX MESH",
@@ -2603,6 +2599,10 @@
       "en": "open",
       "ru": "откр."
     },
+    "model_editor.preflight.raw_short": {
+      "en": "RAW",
+      "ru": "RAW"
+    },
     "model_editor.preflight.closed_short": {
       "en": "closed",
       "ru": "замкн."
@@ -2616,8 +2616,8 @@
       "ru": "доп."
     },
     "model_editor.preflight.all_ready": {
-      "en": "ALL LOADED GEOMETRY IS CANONICALLY PREPARED",
-      "ru": "ВСЯ ЗАГРУЖЕННАЯ ГЕОМЕТРИЯ КАНОНИЧЕСКИ ПОДГОТОВЛЕНА"
+      "en": "ALL LOADED GEOMETRY IS NORMALIZED AND CLASSIFIED",
+      "ru": "ВСЯ ЗАГРУЖЕННАЯ ГЕОМЕТРИЯ НОРМАЛИЗОВАНА И КЛАССИФИЦИРОВАНА"
     },
     "model_editor.preflight.actions_needed": {
       "en": "ACTIONS REQUIRED",
@@ -2652,8 +2652,8 @@
       "ru": "тип поверхности не соответствует классификации"
     },
     "model_editor.preflight.workflow": {
-      "en": "Workflow: 1) Prepare meshes; 2) ClosedVolume and high-confidence ThinTwoSided resolve automatically; 3) choose ThinTwoSided or BreachedVolume once only for ambiguous open geometry. Invalid is reserved for genuine structural failure. LOD generation starts only after this contract is complete.",
-      "ru": "Порядок: 1) «ПОДГОТОВИТЬ МЕШИ»; 2) ClosedVolume и уверенный ThinTwoSided принимаются автоматически; 3) только неоднозначному открытому mesh один раз назначить ThinTwoSided или BreachedVolume. Invalid оставлен для настоящей структурной поломки. Генерация LOD начинается только после выполнения этого контракта."
+      "en": "Workflow: load/restore without mutation, run PREPARE MESHES for shared runtime normalization, then ANALYZE for topology/classification. ClosedVolume and high-confidence ThinTwoSided may resolve automatically; choose ThinTwoSided or BreachedVolume for ambiguous open geometry.",
+      "ru": "Workflow: загрузить/восстановить mesh без мутации, выполнить «ПОДГОТОВИТЬ МЕШИ» для общей с игрой runtime-нормализации, затем «АНАЛИЗИРОВАТЬ» для topology/classification. ClosedVolume и уверенный ThinTwoSided могут определиться автоматически; для неоднозначного открытого mesh выберите ThinTwoSided или BreachedVolume."
     },
     "model_editor.meta.semantic_parts": {
       "en": "semantic parts",
@@ -2736,16 +2736,8 @@
       "ru": "Сокеты скрыты"
     },
     "model_editor.server.preflight_running": {
-      "en": "Analyzing meshes for canonical preparation...",
-      "ru": "Анализ мешей перед канонической подготовкой..."
-    },
-    "model_editor.server.preflight_fixing": {
-      "en": "Applying runtime-equivalent mesh preparation...",
-      "ru": "Применение подготовки мешей по правилам игрового загрузчика..."
-    },
-    "model_editor.server.preflight_no_changes": {
-      "en": "NO CHANGES: no unambiguous preflight fixes were needed",
-      "ru": "БЕЗ ИЗМЕНЕНИЙ: однозначных исправлений preflight не требуется"
+      "en": "Checking canonical meshes and geometry contracts...",
+      "ru": "Проверка canonical meshes и контрактов геометрии..."
     },
     "model_editor.server.source_importing": {
       "en": "Importing source OBJ/assembly...",
@@ -2787,30 +2779,6 @@
       "en": "failed",
       "ru": "ошибок"
     },
-    "model_editor.preflight.runtime_view": {
-      "en": "AS IN GAME",
-      "ru": "КАК В ИГРЕ"
-    },
-    "model_editor.preflight.author_view": {
-      "en": "AUTHOR VIEW",
-      "ru": "АВТОРСКИЙ ВИД"
-    },
-    "model_editor.preflight.runtime_tip.title": {
-      "en": "Game runtime view",
-      "ru": "Вид как в игре"
-    },
-    "model_editor.preflight.runtime_tip.desc": {
-      "en": "Read-only simulation of the current game OBJ loader: 1e-4 positional weld, recomputed normals and two-sided rendering.",
-      "ru": "Только просмотр: имитация текущего загрузчика OBJ игры — positional weld 1e-4, пересчёт нормалей и двусторонний рендер."
-    },
-    "model_editor.preflight.runtime_status": {
-      "en": "Game runtime normalization shown: positional weld 1e-4, recomputed normals, two-sided rendering.",
-      "ru": "Показана runtime-нормализация игры: positional weld 1e-4, пересчитанные нормали, двусторонний рендер."
-    },
-    "model_editor.preflight.author_status": {
-      "en": "Author asset geometry shown without runtime normalization.",
-      "ru": "Показана авторская геометрия asset без runtime-нормализации."
-    },
     "model_editor.preflight.group_base": {
       "en": "DEFAULT MESHES",
       "ru": "ОСНОВНЫЕ МЕШИ"
@@ -2822,14 +2790,6 @@
     "model_editor.preflight.topology_author": {
       "en": "canonical boundaries / multi-use / collapsed",
       "ru": "канонические границы / multi-use / схлопнутые"
-    },
-    "model_editor.preflight.runtime_weld": {
-      "en": "render vertices → geometric points",
-      "ru": "render-вершины → геометрические точки"
-    },
-    "model_editor.preflight.runtime_note": {
-      "en": "Canonical preparation uses the game-proven 1e-4 positional weld only as geometric identity. It removes collapsed/duplicate triangles, solves winding, rebuilds edge topology and reconstructs normals as smoothing/hard-edge islands. UV/material render splits remain distinct GPU vertices.",
-      "ru": "Canonical preparation использует проверенный игрой positional weld 1e-4 только как геометрическую идентичность. Она удаляет collapsed/duplicate triangles, согласует winding, перестраивает edge topology и нормали как smoothing/hard-edge islands. UV/material render-разрывы остаются отдельными GPU-вершинами."
     },
     "model_editor.preflight.action.apply_class": {
       "en": "APPLY TYPE",
@@ -2844,32 +2804,48 @@
       "ru": "исходник"
     },
     "model_editor.preflight.canonical": {
-      "en": "after preparation",
-      "ru": "после подготовки"
+      "en": "normalized working mesh",
+      "ru": "рабочий normalized mesh"
     },
     "model_editor.preflight.not_prepared_short": {
-      "en": "not prepared",
-      "ru": "не подготовлен"
+      "en": "normalization stale",
+      "ru": "normalization stale"
     },
     "model_editor.preflight.prepared_summary": {
-      "en": "prepared / total meshes",
-      "ru": "подготовлено / всего meshes"
+      "en": "normalized / total meshes",
+      "ru": "нормализовано / всего meshes"
     },
     "model_editor.preflight.cleanup_summary": {
-      "en": "degenerate / duplicate to remove",
-      "ru": "degenerate / duplicate к удалению"
+      "en": "removed degenerate / duplicate",
+      "ru": "удалено degenerate / duplicate"
     },
     "model_editor.preflight.topology_summary": {
-      "en": "boundary / canonical multi-use / source non-manifold",
-      "ru": "boundary / canonical multi-use / source non-manifold"
+      "en": "boundary / canonical multi-use / RAW NM evidence",
+      "ru": "boundary / canonical multi-use / RAW NM evidence"
     },
     "model_editor.preflight.invalid_summary": {
       "en": "Invalid meshes / need type choice",
       "ru": "Invalid meshes / требуют выбора типа"
     },
-    "model_editor.preflight.prepare_count": {
-      "en": "prepare",
-      "ru": "подготовить"
+    "model_editor.preflight.canonical_counts": {
+      "en": "source render V → geometric P → working render V",
+      "ru": "исходные render V → geometric P → рабочие render V"
+    },
+    "model_editor.preflight.canonical_note": {
+      "en": "Working geometry is built only by PREPARE MESHES with the same runtime normalizer as the game: 1e-4 weld, degenerate/duplicate cleanup, normals and edge rebuild. Winding/manifold/classification are NOT checked here; use ANALYZE.",
+      "ru": "Working geometry строится только по команде «ПОДГОТОВИТЬ МЕШИ» тем же runtime-normalizer, что использует игра: weld 1e-4, degenerate/duplicate cleanup, normals и edge rebuild. Winding/manifold/classification здесь НЕ проверяются — используйте «АНАЛИЗИРОВАТЬ»."
+    },
+    "model_editor.preflight.reason.prepare": {
+      "en": "run PREPARE MESHES",
+      "ru": "нужно выполнить «ПОДГОТОВИТЬ МЕШИ»"
+    },
+    "model_editor.preflight.reason.reload": {
+      "en": "normalization record is stale; prepare meshes again",
+      "ru": "normalization record устарел; снова выполните «ПОДГОТОВИТЬ МЕШИ»"
+    },
+    "model_editor.preflight.action.reload": {
+      "en": "RELOAD SOURCE",
+      "ru": "ПЕРЕЗАГРУЗИТЬ SOURCE"
     }
   }
 }

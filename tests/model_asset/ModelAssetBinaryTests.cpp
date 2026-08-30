@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <filesystem>
@@ -16,6 +17,7 @@
 #include "src/model_asset/ModelAssetVariantNaming.h"
 #include "tools/model_asset_editor/NativeObjImporter.h"
 #include "tools/model_asset_editor/CanonicalMeshBuilder.h"
+#include "src/model_asset/RuntimeMeshNormalizer.h"
 #include "tools/model_asset_editor/GeometryInstanceFitter.h"
 
 #include <glm/gtc/quaternion.hpp>
@@ -412,6 +414,35 @@ void testNativeImporterKeepsSmallValidTriangles()
     require(lod.triangles.size() == 1,
         "native OBJ importer rejected a small but valid triangle");
 }
+
+void testNativeImporterDoesNotMarkFanDiagonalNonManifold()
+{
+    const auto path = std::filesystem::temp_directory_path() /
+        "elite_model_asset_fan_diagonal.obj";
+    {
+        std::ofstream source(path);
+        source << "v 0 0 0\n"
+               << "v 2 0 0\n"
+               << "v 2 2 0\n"
+               << "v 0 2 0\n"
+               << "v 1 1 1\n"
+               // Quad fan creates internal triangulation diagonal 1-3.
+               << "f 1 2 3 4\n"
+               // Another polygon uses 1-3 as a real perimeter edge. This is
+               // not a three-face source edge and must not be flagged NM.
+               << "f 1 3 5\n";
+    }
+
+    ModelAsset asset;
+    MeshLod lod;
+    std::string error;
+    const bool ok = elite::model_asset::editor::importObjNative(path, asset, lod, &error);
+    std::filesystem::remove(path);
+    require(ok, error.c_str());
+    for (const auto& edge : lod.edges)
+        require((edge.flags & EdgeNonManifold) == 0,
+            "fan triangulation diagonal was misclassified as source non-manifold");
+}
 }
 
 
@@ -438,6 +469,46 @@ MeshLod makeCanonicalCube(bool removeTop = false)
     mesh.minBounds = {-1,-1,-1};
     mesh.maxBounds = { 1, 1, 1};
     return mesh;
+}
+
+void testCanonicalBuilderRepairsWindingAndOutwardNormals()
+{
+    using namespace elite::model_asset::editor;
+
+    auto locallyReversed = makeCanonicalCube(false);
+    std::swap(locallyReversed.triangles[0].b, locallyReversed.triangles[0].c);
+    std::swap(locallyReversed.triangles[7].b, locallyReversed.triangles[7].c);
+    const auto localBuild = canonicalizeMesh(locallyReversed);
+    require(localBuild.success, localBuild.error.c_str());
+    require(localBuild.flippedTriangles >= 2,
+        "canonical builder did not repair locally reversed cube triangles");
+    const auto localAudit = analyzeCanonicalMesh(locallyReversed);
+    require(localAudit.windingFlipsRequired == 0 && localAudit.windingConflicts == 0 &&
+            localAudit.insideOutClosedComponents == 0,
+        "canonical builder left inconsistent or inward winding after local repair");
+
+    auto insideOut = makeCanonicalCube(false);
+    for (auto& triangle : insideOut.triangles)
+        std::swap(triangle.b, triangle.c);
+    const auto insideOutBuild = canonicalizeMesh(insideOut);
+    require(insideOutBuild.success, insideOutBuild.error.c_str());
+    require(insideOutBuild.raycastPatches >= 1 && insideOutBuild.raycastFlippedTriangles > 0,
+        "Embree raycast did not reorient an inside-out closed shell");
+    const auto insideAudit = analyzeCanonicalMesh(insideOut);
+    require(insideAudit.closedComponents == 1 && insideAudit.insideOutClosedComponents == 0 &&
+            insideAudit.windingFlipsRequired == 0,
+        "closed shell remained inward after canonical preparation");
+
+    for (const auto& triangle : insideOut.triangles)
+    {
+        const glm::vec3 a = insideOut.vertices[triangle.a].position;
+        const glm::vec3 b = insideOut.vertices[triangle.b].position;
+        const glm::vec3 c = insideOut.vertices[triangle.c].position;
+        const glm::vec3 faceNormal = glm::normalize(glm::cross(b - a, c - a));
+        const glm::vec3 faceCenter = (a + b + c) / 3.0f;
+        require(glm::dot(faceNormal, faceCenter) > 0.0f,
+            "closed cube face normal does not point outward after preparation");
+    }
 }
 
 void testCanonicalBuilderClosedPlateBreachContracts()
@@ -480,6 +551,37 @@ void testCanonicalBuilderClosedPlateBreachContracts()
         "canonical builder filled an authored breach");
 }
 
+void testCanonicalBuilderOrientsBreachedShellWithEmbree()
+{
+    using namespace elite::model_asset::editor;
+
+    auto breached = makeCanonicalCube(true);
+    for (auto& triangle : breached.triangles)
+        std::swap(triangle.b, triangle.c);
+
+    const auto built = canonicalizeMesh(breached);
+    require(built.success, built.error.c_str());
+    require(built.raycastPatches >= 1 && built.raycastFlippedTriangles > 0,
+        "Embree raycast did not reorient an inward breached/open shell");
+
+    const auto audit = analyzeCanonicalMesh(breached);
+    require(!audit.structuralInvalid && audit.openComponents == 1 && audit.windingFlipsRequired == 0,
+        "breached shell remained topologically inconsistent after preparation");
+    require(audit.boundaryEdges == 4,
+        "breached shell opening was filled while orienting the parent shell");
+
+    for (const auto& triangle : breached.triangles)
+    {
+        const glm::vec3 a = breached.vertices[triangle.a].position;
+        const glm::vec3 b = breached.vertices[triangle.b].position;
+        const glm::vec3 c = breached.vertices[triangle.c].position;
+        const glm::vec3 faceNormal = glm::normalize(glm::cross(b - a, c - a));
+        const glm::vec3 faceCenter = (a + b + c) / 3.0f;
+        require(glm::dot(faceNormal, faceCenter) > 0.0f,
+            "breached cube face normal does not point outward after Embree repair");
+    }
+}
+
 void testCanonicalBuilderRemovesGarbageAndPreservesUvSeams()
 {
     using namespace elite::model_asset::editor;
@@ -514,35 +616,138 @@ void testCanonicalBuilderRemovesGarbageAndPreservesUvSeams()
         "UV seam vertices did not receive the same canonical smooth normal");
 }
 
-void testCanonicalBuilderPreservesHardNormalSplit()
+void testCanonicalBuilderCollapsesAuthoredNormalOnlySplits()
 {
     using namespace elite::model_asset::editor;
     MeshLod mesh;
     mesh.vertices = {
-        {{0,0,0},{0,0,0},{0,0}},
-        {{1,0,0},{0,0,0},{1,0}},
-        {{0,1,0},{0,0,0},{0,1}},
-        {{0,0,1},{0,0,0},{1,1}}
+        {{0,0,0},{0,0,-1},{0,0}}, {{2,0,0},{0,0,-1},{1,0}}, {{2,2,0},{0,0,-1},{1,1}},
+        // Same geometric corners within the 1e-4 weld bucket, same UVs, but
+        // deliberately different authored normals / source render identities.
+        {{0.00004f,0,0},{1,0,0},{0,0}}, {{2.00004f,2,0},{1,0,0},{1,1}}, {{0,2,0},{1,0,0},{0,1}}
     };
-    // Two polygons meet at 90 degrees on edge 0-1. smoothingGroup=0 means
-    // canonical auto-crease logic may create a hard normal island boundary.
     mesh.triangles = {
-        {0,1,2,0,0,0},
-        {0,3,1,1,0,0}
+        {0,1,2,0,0,7},
+        {3,4,5,1,0,7}
     };
-    mesh.minBounds = {0,0,0}; mesh.maxBounds = {1,1,1};
+    mesh.minBounds = {0,0,0}; mesh.maxBounds = {2.00004f,2,0};
+
     const auto built = canonicalizeMesh(mesh);
     require(built.success, built.error.c_str());
-    require(analyzeCanonicalMesh(mesh).geometricPoints == 4,
-        "hard-edge test lost geometric vertex identity");
-    require(mesh.vertices.size() == 6,
-        "hard edge did not split shared render vertices into separate normal islands");
+    const auto audit = analyzeCanonicalMesh(mesh);
+    require(audit.geometricPoints == 4,
+        "canonical weld did not identify near-coincident geometric points");
+    require(mesh.vertices.size() == 4,
+        "authored-normal-only render splits survived canonical render rebuild");
+    require(std::abs(mesh.maxBounds.x - 2.0f) < 1.0e-6f,
+        "canonical positional weld did not snap render vertices to one representative geometric position");
+    for (const auto& vertex : mesh.vertices)
+        require(vertex.normal.z > 0.999f,
+            "authored normals leaked through canonical normal reconstruction");
+}
 
-    std::vector<glm::vec3> originNormals;
-    for (const auto& v : mesh.vertices)
-        if (glm::length(v.position) < 1.0e-6f) originNormals.push_back(v.normal);
-    require(originNormals.size() == 2 && glm::dot(originNormals[0], originNormals[1]) < 0.1f,
-        "hard-normal render splits were flattened to one welded normal");
+void testCanonicalPreparationKeepsCoincidentSheetsIndependent()
+{
+    using namespace elite::model_asset::editor;
+    MeshLod mesh;
+    // Three independent sheets occupy the same positional edge. A 1e-4 match
+    // is only a weld candidate; canonical authoring must not manufacture one
+    // three-face non-manifold edge from unrelated sheets.
+    mesh.vertices = {
+        {{0,0,0},{0,0,0},{0,0}}, {{1,0,0},{0,0,0},{1,0}}, {{0,1,0},{0,0,0},{0,1}},
+        {{0,0,0},{0,0,0},{0,0}}, {{1,0,0},{0,0,0},{1,0}}, {{0,-1,0},{0,0,0},{0,1}},
+        {{0,0,0},{0,0,0},{0,0}}, {{1,0,0},{0,0,0},{1,0}}, {{0,0,1},{0,0,0},{0,1}}
+    };
+    mesh.triangles = {
+        {0,1,2,0,0,0},
+        {4,3,5,1,0,0},
+        {6,7,8,2,0,0}
+    };
+    // Explicit boundary edges are authoritative evidence that these sheets are
+    // not adjacent despite coincident positions.
+    for (std::size_t ti = 0; ti < mesh.triangles.size(); ++ti)
+    {
+        const auto& t = mesh.triangles[ti];
+        const std::uint32_t v[3] = {t.a,t.b,t.c};
+        for (int e=0;e<3;++e)
+        {
+            Edge edge;
+            edge.a=v[e]; edge.b=v[(e+1)%3]; edge.triangleA=static_cast<std::int32_t>(ti);
+            edge.flags=EdgeBoundary|EdgePolygonBoundary;
+            mesh.edges.push_back(edge);
+        }
+    }
+    mesh.minBounds={0,-1,0}; mesh.maxBounds={1,1,1};
+
+    const auto built = canonicalizeMesh(mesh);
+    require(built.success, built.error.c_str());
+    const auto after = analyzeCanonicalMesh(mesh);
+    require(!after.structuralInvalid && after.canonicalMultiUseEdges == 0 &&
+            after.components == 3 && after.openComponents == 3,
+        "canonical preparation fused independent coincident sheets");
+    require(std::all_of(mesh.edges.begin(), mesh.edges.end(), [](const Edge& edge) {
+        return (edge.flags & EdgeCanonicalTopology) != 0;
+    }), "canonical rebuilt edges were not marked authoritative");
+}
+
+void testCanonicalPreparationRebuildsHardNormalIslands()
+{
+    using namespace elite::model_asset::editor;
+    MeshLod mesh;
+    mesh.vertices = {
+        {{0,0,0},{0,0,-1},{0,0}},
+        {{1,0,0},{0,0,-1},{1,0}},
+        {{0,1,0},{0,0,-1},{0,1}},
+        {{0,0,0},{1,0,0},{0,0}},
+        {{1,0,0},{1,0,0},{1,0}},
+        {{0,0,1},{1,0,0},{0,1}}
+    };
+    mesh.triangles = {
+        {0,1,2,0,0,0},
+        {3,5,4,1,0,0}
+    };
+    mesh.minBounds = {0,0,0}; mesh.maxBounds = {1,1,1};
+
+    const auto built = canonicalizeMesh(mesh);
+    require(built.success, built.error.c_str());
+    require(built.normalIslands >= 2,
+        "canonical preparation did not reconstruct separate hard-normal islands");
+    require(mesh.vertices.size() == 6,
+        "hard edge was incorrectly collapsed into one smooth GPU vertex pair");
+    bool hasZAxis = false;
+    bool hasYAxis = false;
+    for (const auto& vertex : mesh.vertices)
+    {
+        require(std::isfinite(vertex.normal.x) && std::isfinite(vertex.normal.y) && std::isfinite(vertex.normal.z),
+            "canonical preparation produced a non-finite reconstructed normal");
+        // This synthetic L-shaped open sheet has no authored semantic outside.
+        // The macro-patch envelope may flip the whole component, but the hard
+        // normal islands must remain the two expected orthogonal directions.
+        hasZAxis = hasZAxis || std::abs(vertex.normal.z) > 0.99f;
+        hasYAxis = hasYAxis || std::abs(vertex.normal.y) > 0.99f;
+    }
+    require(hasZAxis && hasYAxis,
+        "authored normals leaked through or hard-normal directions were lost");
+}
+
+void testRuntimeNormalizerRemainsTolerantRenderContract()
+{
+    using namespace elite::model_asset;
+    // The game normalizer deliberately performs global positional weld. This
+    // remains a tolerant render contract and is intentionally NOT the editor's
+    // canonical topology contract.
+    std::vector<glm::vec3> positions = {
+        {0,0,0}, {1,0,0}, {0,1,0},
+        {0,0,0}, {1,0,0}, {0,-1,0},
+        {0,0,0}, {1,0,0}, {0,0,1}
+    };
+    std::vector<RuntimeMeshTriangleInput> triangles = {
+        {0,1,2,10}, {4,3,5,11}, {6,7,8,12}
+    };
+    const auto normalized = normalizeRuntimeMeshTopology(positions, triangles);
+    require(normalized.success, normalized.error.c_str());
+    require(normalized.positions.size() == 5 && normalized.triangles.size() == 3,
+        "game runtime normalizer no longer follows its tolerant positional-weld contract");
 }
 
 void testCanonicalBuilderFingerprintTracksStructuralPayload()
@@ -554,6 +759,12 @@ void testCanonicalBuilderFingerprintTracksStructuralPayload()
     const auto original = canonicalMeshFingerprint(mesh);
     require(!mesh.edges.empty(), "canonical fingerprint test has no rebuilt edges");
 
+    const auto secondPass = canonicalizeMesh(mesh);
+    require(secondPass.success && !secondPass.changed,
+        "canonical builder is not idempotent on its own working payload");
+    require(canonicalMeshFingerprint(mesh) == original,
+        "canonical builder changed fingerprint on an idempotent second pass");
+
     mesh.edges[0].renderMask ^= EdgeRenderElite;
     require(canonicalMeshFingerprint(mesh) == original,
         "authoring-only edge render mask invalidated canonical preparation");
@@ -563,7 +774,7 @@ void testCanonicalBuilderFingerprintTracksStructuralPayload()
         "structural edge adjacency did not invalidate canonical preparation fingerprint");
 }
 
-void testCanonicalBuilderRejectsTrueInvalidTopology()
+void testPreparationRejectsUnreadableAndRepairsNonManifold()
 {
     using namespace elite::model_asset::editor;
     MeshLod broken = makeCanonicalCube(false);
@@ -575,6 +786,44 @@ void testCanonicalBuilderRejectsTrueInvalidTopology()
     require(!indexBuild.success,
         "canonical builder silently repaired broken indexing");
 
+    // A stale/source diagnostic flag is not allowed to gate the builder. The
+    // final edge topology is authoritative and must not inherit EdgeNonManifold
+    // from the authored payload when cleanup leaves an ordinary two-face edge.
+    MeshLod staleFlag = makeCanonicalCube(false);
+    const auto initialStaleBuild = canonicalizeMesh(staleFlag);
+    require(initialStaleBuild.success && !staleFlag.edges.empty(),
+        "canonical cube helper did not produce rebuilt edges");
+    staleFlag.edges.front().flags |= EdgeNonManifold;
+    const auto staleAudit = analyzeCanonicalMesh(staleFlag);
+    require(!staleAudit.structuralInvalid && staleAudit.sourceNonManifoldEdges == 1,
+        "RAW EdgeNonManifold evidence incorrectly blocked pre-build analysis");
+    const auto staleBuild = canonicalizeMesh(staleFlag);
+    require(staleBuild.success,
+        "RAW EdgeNonManifold evidence incorrectly prevented canonicalization");
+    const auto staleAfter = analyzeCanonicalMesh(staleFlag);
+    require(!staleAfter.structuralInvalid && staleAfter.sourceNonManifoldEdges == 0,
+        "canonical edge rebuild inherited stale EdgeNonManifold evidence");
+
+    MeshLod repairable;
+    repairable.vertices = {
+        {{0,0,0},{0,0,0},{0,0}}, {{1,0,0},{0,0,0},{0,0}},
+        {{0,1,0},{0,0,0},{0,0}}, {{0,-1,0},{0,0,0},{0,0}}
+    };
+    repairable.triangles = {
+        {0,1,2,0,0,0}, {1,0,3,1,0,0}, {0,1,2,2,0,0}
+    };
+    Edge repairableEdge; repairableEdge.a=0; repairableEdge.b=1; repairableEdge.triangleA=0; repairableEdge.triangleB=1; repairableEdge.flags=EdgeNonManifold;
+    repairable.edges.push_back(repairableEdge);
+    repairable.minBounds={0,-1,0}; repairable.maxBounds={1,1,0};
+    const auto repairableBuild = canonicalizeMesh(repairable);
+    require(repairableBuild.success && repairableBuild.removedDuplicateTriangles == 1,
+        "source non-manifold evidence caused by a duplicate face was not healed by cleanup");
+    require(analyzeCanonicalMesh(repairable).sourceNonManifoldEdges == 0,
+        "healed duplicate-face non-manifold evidence leaked into canonical edges");
+
+    // A genuine three-face source edge remains invalid only when it is still
+    // multi-use after degenerate/duplicate cleanup. This check happens inside
+    // the builder, after cleanup, rather than as a RAW preflight gate.
     MeshLod nonManifold;
     nonManifold.vertices = {
         {{0,0,0},{0,0,0},{0,0}}, {{1,0,0},{0,0,0},{0,0}},
@@ -585,8 +834,15 @@ void testCanonicalBuilderRejectsTrueInvalidTopology()
     nonManifold.edges.push_back(sourceEdge);
     nonManifold.minBounds={0,-1,0}; nonManifold.maxBounds={1,1,1};
     const auto nmAudit = analyzeCanonicalMesh(nonManifold);
-    require(nmAudit.structuralInvalid && nmAudit.sourceNonManifoldEdges == 1,
-        "real source non-manifold edge was downgraded to a canonical weld warning");
+    require(nmAudit.structuralInvalid && nmAudit.sourceNonManifoldEdges == 1 && nmAudit.canonicalMultiUseEdges == 1,
+        "genuine shared-vertex non-manifold topology was not diagnosed");
+    const auto nmBuild = canonicalizeMesh(nonManifold);
+    require(nmBuild.success, nmBuild.error.c_str());
+    require(nmBuild.splitTopologyVertices > 0,
+        "split_nonmanifold did not split a genuine three-face geometric edge");
+    const auto repairedAudit = analyzeCanonicalMesh(nonManifold);
+    require(!repairedAudit.structuralInvalid && repairedAudit.canonicalMultiUseEdges == 0,
+        "libigl preparation left genuine non-manifold topology unresolved");
 }
 
 int main()
@@ -594,11 +850,17 @@ int main()
     try
     {
         testNativeImporterKeepsSmallValidTriangles();
+        testNativeImporterDoesNotMarkFanDiagonalNonManifold();
+        testCanonicalBuilderRepairsWindingAndOutwardNormals();
         testCanonicalBuilderClosedPlateBreachContracts();
+        testCanonicalBuilderOrientsBreachedShellWithEmbree();
         testCanonicalBuilderRemovesGarbageAndPreservesUvSeams();
-        testCanonicalBuilderPreservesHardNormalSplit();
+        testCanonicalBuilderCollapsesAuthoredNormalOnlySplits();
+        testCanonicalPreparationKeepsCoincidentSheetsIndependent();
+        testCanonicalPreparationRebuildsHardNormalIslands();
+        testRuntimeNormalizerRemainsTolerantRenderContract();
         testCanonicalBuilderFingerprintTracksStructuralPayload();
-        testCanonicalBuilderRejectsTrueInvalidTopology();
+        testPreparationRejectsUnreadableAndRepairsNonManifold();
         testRigidInstanceFitRecoversBakedTransform();
         testRigidInstanceFitIgnoresLegacyObjIndexOrder();
         testRigidInstanceFitIgnoresDuplicatedSeamVertices();

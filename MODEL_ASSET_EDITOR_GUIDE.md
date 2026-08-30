@@ -1,196 +1,91 @@
 # Elite Model Asset Editor — рабочая инструкция / архитектурный контекст
 
-**Актуально:** 2026-08-28 · canonical mesh contract завершён в 0.10.8
-**Редактор:** `Elite Model Asset Editor 0.10.8`
+**Актуально:** 2026-08-30 · production libigl + Embree canonical preparation в 0.10.16
+**Редактор:** `Elite Model Asset Editor 0.10.16`
 **Asset format:** v4
-**Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`. В `LODS` перед необязательным генератором теперь обязателен этап подготовки мешей к каноническому render-контракту. Последующие стадии пока остаются capability slots.
+**Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`. LOAD/restore/reimport показывают mesh как есть. `ПОДГОТОВИТЬ МЕШИ` выполняет cleanup → topology-aware identity → libigl `split_nonmanifold` → Embree raycast orientation → editor rebuild. `АНАЛИЗИРОВАТЬ` отдельно классифицирует geometry и проверяет downstream contract.
 
 > Этот файл является источником контекста для продолжения работы над Model Asset Editor.
 > Старые предположения из эпохи format v2/v3 о единой `Node -> GeometryDefinition -> LOD0/LOD1` структуре больше не применять к v4.
 
 ---
 
-# 0A. Текущее состояние 0.10.8 — Canonical Mesh Builder
+# 0A. Текущее состояние 0.10.16 — libigl + Embree production preparation
 
-`0.10.7` считать переходной реализацией. Начиная с `0.10.8`, Model Preflight в стадии `LODS` имеет реальный контракт **mesh preparation**, а не набор диагностических safe-fix операций.
+`0.10.16` завершает эксперимент с самодельной absolute-orientation эвристикой. Продуктом `ПОДГОТОВИТЬ МЕШИ` остаётся **исправленный working MeshLod**, но topology/orientation authority теперь делегирован проверенным geometry-processing библиотекам.
 
-Главный поток:
+## 0A.1 Render contract
 
-```text
-RAW / imported MeshLod
-    ↓
-positional weld 1e-4 → geometric points
-    ↓
-index / finite-position validation
-    ↓
-remove collapsed + duplicate geometric triangles
-    ↓
-build canonical edge topology
-    ↓
-solve consistent winding
-    ↓
-closed shells outward
-    ↓
-normal islands (polygon / smoothing group / 25° crease)
-    ↓
-rebuild render vertices
-    ↓
-rebuild triangles + MeshLod.edges
-    ↓
-classify geometry contract
-    ↓
-CANONICAL ASSET GEOMETRY
-```
+Mesh считается подготовленным, когда:
 
-## 0A.1 Geometric point != render vertex
+- positions finite, triangle indices читаемы;
+- collapsed/zero-area и geometric duplicate triangles удалены;
+- positional `1e-4` используется как cleanup/weld candidate, но не склеивает независимые coincident/touching sheets;
+- residual non-manifold/non-orientable topology проходит через `libigl::split_nonmanifold`;
+- patch winding и absolute front/back определяются `igl::embree::reorient_facets_raycast`;
+- настоящие boundary loops/пробоины не закрываются и новые faces не создаются;
+- normals пересчитываются **после** окончательного winding;
+- UV/material/hard-normal seams сохраняются при rebuild render vertices;
+- authoritative `EdgeCanonicalTopology` и bounds перестроены;
+- итоговый working mesh проходит дешёвую deterministic проверку topology/winding.
 
-`positional weld = 1e-4` задаёт только **геометрическую идентичность**. Он не означает, что совпавшие OBJ/GPU vertices надо физически схлопнуть в одну вершину.
+`CanonicalMeshAlgorithmId = canonical_mesh_libigl_embree_v1`. Старые `canonical_mesh_builder_v7` records считаются stale и требуют одного явного PREPARE.
 
-Одна geometric point может иметь несколько render vertices из-за:
-
-- UV seam;
-- material/render split;
-- hard normal;
-- других render-only атрибутов.
-
-Canonical builder сохраняет существующие UV/material splits. Hard normals не копируются из грязного OBJ: они реконструируются как отдельные **normal islands** по source polygon, smoothing group и автоматическому crease `25°`. Поэтому shared render vertex при необходимости разделяется, а UV seam при сглаженной поверхности остаётся двумя GPU vertices с одинаковой вычисленной normal.
-
-Это обязательный контракт для дальнейших `LOD`, `SURFACES` и `DAMAGE`. Нельзя снова вводить алгоритм «одна welded point → одна normal».
-
-## 0A.2 Что именно меняет подготовка
-
-Canonical builder:
-
-1. проверяет finite positions и triangle indices;
-2. строит geometric points через quantized weld `1e-4`;
-3. удаляет triangles, схлопнувшиеся после weld или имеющие практически нулевую площадь;
-4. удаляет duplicate geometric triangles независимо от их winding, сохраняя coincident face с другим material как отдельную authored поверхность;
-5. согласует winding на однозначной two-face adjacency;
-6. разворачивает целиком замкнутую inside-out оболочку наружу;
-7. **никогда не заделывает boundary loops**;
-8. полностью перестраивает render vertices/normals;
-9. полностью перестраивает `MeshLod.edges`, включая актуальные `triangleA/triangleB` и seam/crease/boundary flags;
-10. сохраняет authored edge render-mask metadata по геометрическим концам ребра, где это возможно.
-
-После операции старые authored normals/winding больше не считаются authoritative. Source OBJ остаётся read-only input.
-
-## 0A.3 Geometry contracts
-
-Каждый подготовленный mesh должен закончить стадию одним из контрактов:
-
-- `ClosedVolume` — закрытый manifold volume, normals наружу, `SurfaceMode::Closed`;
-- `ThinTwoSided` — поверхность без толщины, штатные boundary edges, `SurfaceMode::ThinTwoSided`;
-- `BreachedVolume` — намеренно открытый объём; boundary пробоины сохраняется, `SurfaceMode::Closed`;
-- `Invalid` — только реальная структурная поломка, которую canonical builder не имеет права угадывать/чинить.
-
-`Invalid` включает как минимум:
-
-- triangle index вне массива render vertices;
-- non-finite position;
-- настоящий source edge, использованный более чем двумя faces и помеченный importer как `EdgeNonManifold`;
-- topology, которую невозможно согласованно ориентировать;
-- отсутствие usable triangles после cleanup.
-
-Важно: `canonical multi-use` после positional weld **не равен автоматически source non-manifold**. Он может появиться у двух независимых coincident/touching shells и остаётся warning. Настоящий source non-manifold importer фиксирует отдельно.
-
-## 0A.4 Автоклассификация
-
-После preparation:
-
-- однозначный closed mesh автоматически принимает `ClosedVolume`;
-- уверенная тонкая открытая геометрия (`ThinTwoSided`, confidence >= 0.90) принимается автоматически;
-- неоднозначная open geometry требует **одного** решения пользователя: `ThinTwoSided` или `BreachedVolume`;
-- `Invalid` не маскируется ручным выбором класса — сначала нужна реальная правка geometry/source.
-
-Boundary у `ThinTwoSided` и `BreachedVolume` — штатная геометрия, а не ошибка.
-
-## 0A.5 Persistent preparation state
-
-`wizard_state.json` schema `5` хранит для каждого `LOD + geometryId` запись подготовки:
-
-- algorithm id: `canonical_mesh_builder_v2`;
-- source render-vertex / triangle counts;
-- canonical geometric-point count;
-- output render-vertex / triangle counts;
-- removed degenerate / duplicate triangles;
-- normal-island count;
-- rebuilt-edge count;
-- fingerprint итогового mesh payload.
-
-Preparation считается действительной только если fingerprint текущего `MeshLod` совпадает с записью. Любое последующее структурное изменение mesh payload/topology автоматически делает запись stale и снова блокирует LOD Generator до повторной подготовки. Изменение только authoring `edge.renderMask` не инвалидирует preparation. Поэтому факт «mesh когда-то анализировали» больше не подменяет факт «этот payload канонически подготовлен».
-
-## 0A.6 Preflight UI
-
-Целевой смысл таблицы:
+## 0A.2 Production pipeline
 
 ```text
-mesh
-    source:       render V / T
-    canonical:    geometric P · render V / T
-    cleanup:      removed degenerate / duplicate
-    topology:     boundary / canonical multi-use / source non-manifold
-    type:         Closed / ThinTwoSided / Breached / Invalid
-    state:        READY / PREPARE / SET TYPE / FIX MESH
+resident RAW MeshLod
+  ↓
+remove collapsed / degenerate / duplicate triangles
+  ↓
+topology-aware geometric point identity
+  ↓
+libigl::split_nonmanifold
+  ↓
+Embree reorient_facets_raycast
+  ↓
+rebuild normals + hard-normal islands
+  ↓
+rebuild UV/material-aware render vertices
+  ↓
+rebuild canonical edges + bounds
+  ↓
+cheap render-projection stabilization
+  ↓
+GOOD_ENOUGH or transactional failure
 ```
 
-Основные и дополнительные meshes показываются отдельными группами. Кнопка `ПОДГОТОВИТЬ МЕШИ` активна, пока хотя бы у одного загруженного mesh нет актуальной preparation record.
+The v7 `area-weighted radial envelope`, `OpenOrientationMinConfidence`, open-component flip loop and `radial_score` decisions are removed. `solveOrientation` remains only as a cheap consistency audit for already prepared topology; it is not the production absolute-orientation authority.
 
-Режим `КАК В ИГРЕ` остаётся **read-only сравнением** со старым runtime OBJ-loader: positional weld `1e-4`, runtime-style normals, two-sided rendering. Он не является canonical builder и ничего не пишет в asset.
+## 0A.3 Non-manifold policy
 
-## 0A.7 Gate для LOD Generator
+A genuine canonical edge with more than two incident faces is no longer an automatic PREPARE failure. `split_nonmanifold` may duplicate topology vertices to separate orientable manifold sheets. It **must not add triangles**, cap holes or stitch unrelated boundary loops.
 
-LOD Generator можно запускать только если используемая базовая геометрия `LOD0`:
+The 0.10.11/0.10.14 safeguard remains mandatory: equal coordinates alone do not prove topology identity. Native/source edge adjacency and canonical rebuilt edges decide which coincident render vertices belong to one sheet.
 
-- имеет актуальную preparation record;
-- не `Invalid`;
-- после canonicalization не содержит cleanup/orientation leftovers;
-- имеет разрешённый geometry contract;
-- имеет `SurfaceMode`, соответствующий этому контракту.
+## 0A.4 Three viewport modes
 
-**Не добавлять новые LOD algorithms, пока этот gate не подтверждён на реальной station/ship geometry.**
+The toolbar exposes:
 
-Поведенческие regression contracts canonical builder:
+1. `ИСХОДНИК` — exact resident pre-PREPARE RAW snapshot, `DoubleSide`;
+2. `БЕЗ ОТСЕЧЕНИЯ` — prepared mesh, `DoubleSide`;
+3. `РАБОЧИЙ` — prepared mesh, `FrontSide`.
+
+RAW snapshots live only in `ModelAssetEditorSession`. They are diagnostic data and are never written into `.elmodel` or `.elmesh`. If no RAW snapshot exists in the current session, SOURCE mode falls back to the resident mesh rather than fabricating source history.
+
+## 0A.5 Repair evidence
+
+Detailed diagnostics remain in:
 
 ```text
-closed cube
-    → remains closed / outward / rebuilt edges
-
-single plate
-    → remains open; hole/boundary is not filled
-
-breached cube
-    → authored opening survives
-
-dirty UV-seam quad
-    → degenerate + duplicate removed
-    → UV render splits survive
-
-hard edge
-    → one geometric point may own multiple render vertices/normals
-
-broken indices / real source non-manifold
-    → Invalid
+build/logs/model_asset_mesh_repair.log
 ```
 
-Правильный рабочий порядок:
+For every geometry the log records input cleanup counts, source/canonical non-manifold evidence, `split_topology_vertices`, `raycast_patches`, `raycast_flipped_triangles`, output topology/winding state, render-vertex/edge rebuild counts and exact failure reason. Wizard state schema 6 persists the same libigl/Embree counters beside the canonical fingerprint.
 
-```text
-SOURCE
-  → load complete authoring set
-LODS / MESH PREPARATION
-  → ANALYZE
-  → PREPARE MESHES
-  → classify only ambiguous open meshes
-  → verify READY для всех загруженных meshes
-  → checkpoint (LODS не завершится при незаконченной canonical preparation)
-LOD GENERATOR (optional, downstream)
-GEOMETRY
-  → instances / replacements / placement
-```
+## 0A.6 Runtime boundary
 
-
----
-
+libigl, Eigen and Embree belong only to the offline `EliteAssetEditor` and optional diagnostic spike. `EliteModelAsset`, client/server game runtime and `RuntimeMeshNormalizer` do not link these libraries. Runtime remains tolerant; production authoring remains stricter.
 
 # 0. Изменения 0.9.3: синхронизация UI и контрольные точки
 
@@ -1165,33 +1060,140 @@ UI явно сообщает, что копии используют общую 
 
 ---
 
-# 24. Состояние после 0.10.8 и следующий шаг
+# 24. Состояние после 0.10.16 и следующий шаг
 
-Canonical geometry contract считается **реализованным на уровне редактора и покрытым поведенческими regression tests в source tree**. `LOD Generator` в 0.10.8 намеренно не развивается.
+Ближайший acceptance — реальная станция и визуальное сравнение трёх viewport modes:
 
-Перед возобновлением LOD-pass'ов провести acceptance на реальных моделях:
+1. load/restore/reimport остаются non-mutating I/O;
+2. `LODS → ПОДГОТОВИТЬ МЕШИ` запускает production libigl/Embree path только по явной команде;
+3. station S3 после PREPARE не содержит canonical multi-use edges и winding conflicts;
+4. reversed source normals/winding не должны создавать исчезающие FrontSide faces;
+5. настоящие boundary loops/пробоины остаются, triangle count не растёт из-за repair;
+6. UV/material/hard-normal seams и authored edge metadata сохраняются через editor rebuild;
+7. второй PREPARE над уже подготовленной geometry должен дать `changed=0`;
+8. при странном результате сначала смотреть `build/logs/model_asset_mesh_repair.log` и сравнивать `ИСХОДНИК → БЕЗ ОТСЕЧЕНИЯ → РАБОЧИЙ`.
 
-1. reimport Orbital Station из source;
-2. `ANALYZE → ПОДГОТОВИТЬ МЕШИ`;
-3. проверить несколько больших `ClosedVolume`;
-4. проверить отдельную `ThinTwoSided` plate;
-5. проверить authored `BreachedVolume` с удалёнными полигонами;
-6. визуально подтвердить сценарий **detached plate → настоящая дыра → видимые внутренности**;
-7. сохранить/перезапустить editor и убедиться, что preparation records восстанавливаются и `READY` не теряется;
-8. изменить mesh payload и убедиться, что fingerprint делает preparation stale;
-9. только после этого продолжать LOD Generator.
+Контрольный spike для `station_Habitat_Module_S3` остаётся диагностическим эталоном метода, но production intermediate vertex count может отличаться из-за topology-aware защиты independent coincident sheets.
 
-План дальнейших LOD-pass'ов остаётся:
+План LOD после закрытия canonical repair остаётся:
 
 ```text
 1. Coplanar Region Collapse
 2. Thin Shell Collapse
-   thin box → ThinTwoSided sheet
 3. Thin/Small Component Cull
 4. Surface Detail Cull
-5. general simplifier — только если действительно понадобится
+5. general simplifier — только если реально понадобится
 ```
 
-Каждый LOD строится **независимо из canonical LOD0**, а не цепочкой `LOD0 → LOD1 → LOD2`.
+Каждый LOD строится независимо из canonical LOD0. Далее: `SURFACES → SEMANTICS → PHYSICS → DAMAGE → VALIDATE → BUILD`.
 
-После стабилизации LOD Generator pipeline продолжается: `SURFACES → SEMANTICS → PHYSICS → DAMAGE → VALIDATE → BUILD`.
+---
+
+# 25. Historical libigl repair spike
+
+This section preserves the spike that justified the 0.10.16 production switch. It is diagnostic history, not a second production pipeline.
+
+The root CMake option:
+
+```text
+ELITE_MODEL_ASSET_LIBIGL_SPIKE=ON
+```
+
+fetches pinned `libigl v2.6.0` and builds only the isolated target:
+
+```text
+model_asset_libigl_spike
+```
+
+This spike does **not** change `EliteAssetEditor`, checkpoints or `.elmesh`. It runs:
+
+```text
+RAW OBJ
+  -> libigl read_triangle_mesh
+  -> split_nonmanifold
+  -> bfs_orient
+  -> diagnostic OBJ
+```
+
+Acceptance stage A:
+
+1. libigl + Eigen configure and compile under the project's MSYS2 MinGW64 toolchain;
+2. `station_Habitat_Module_S1/S3.obj` complete without crash/assert;
+3. output is edge/vertex manifold where libigl can split the source soup into orientable patches;
+4. output OBJ opens in Blender and the problematic pocket still physically exists;
+5. no production repair code is removed until the real station result is inspected.
+
+The spike intentionally does **not** solve absolute outside for open patches yet. If stage A passes, stage B enables only libigl's Embree module and tests `igl::embree::reorient_facets_raycast` on the same source mesh. If Embree is troublesome under MinGW64, core libigl remains usable and outward-orientation can be evaluated separately.
+
+## 25.1 Stage A result and Stage B contract
+
+Stage A passed on the real MinGW64 workstation for both habitat sources:
+
+```text
+RAW vertices=118879 triangles=90162 edge_manifold=yes vertex_manifold=no
+SPLIT vertices=118881 triangles=90162 edge_manifold=yes vertex_manifold=yes
+PATCHES=16364
+DUPLICATED_TOPOLOGY_VERTICES=2
+LIBIGL_SPIKE PASS
+```
+
+This proves libigl core works and `split_nonmanifold` repairs the actual vertex-manifold defect by duplicating only two topology vertices. It also exposes an important input issue: raw OBJ render vertices still contain UV/normal seam duplication, so `bfs_orient` sees 16364 tiny patches. Stage B therefore does **not** raycast that raw render topology.
+
+Stage B pipeline is deliberately small:
+
+```text
+RAW OBJ render vertices
+  -> remove_duplicate_vertices(epsilon=1e-4)
+  -> remove collapsed triangles
+  -> remove combinatorial duplicate triangles
+  -> remove unreferenced vertices
+  -> split_nonmanifold
+  -> reorient_facets_raycast (Embree)
+  -> diagnostic OBJ
+```
+
+`reorient_facets_raycast` proved to be the better authority for absolute front/back on the real station. The accepted Stage B result is the basis for production 0.10.16, so the previous editor `radial_score` / open-component envelope heuristic is removed from canonical preparation. The editor keeps the validated bounded 0.2-1.0M ray budget instead of libigl's default `100 * face_count`.
+
+---
+# 26. Production canonical mesh preparation — 0.10.16
+
+`ПОДГОТОВИТЬ МЕШИ` is the explicit offline authoring boundary for imported OBJ geometry. Production preparation uses pinned `libigl v2.6.0` core plus its Embree module; these dependencies are not linked into the game runtime.
+
+Pipeline:
+
+```text
+resident RAW MeshLod
+  -> positional 1e-4 cleanup candidates
+  -> remove collapsed/degenerate triangles
+  -> remove geometric duplicate triangles
+  -> topology-aware point identity (do not merge independent touching sheets)
+  -> libigl::split_nonmanifold
+  -> igl::embree::reorient_facets_raycast
+  -> rebuild normals / hard-normal islands
+  -> rebuild UV/material-aware render vertices
+  -> rebuild canonical edges + bounds
+```
+
+`split_nonmanifold` may duplicate topology vertices but never creates triangles. No preparation stage caps boundaries or fills authored openings. Embree ray casting is the authority for absolute patch front/back; radial/centroid/open-component orientation heuristics are not part of production PREPARE.
+
+Viewport diagnostics:
+
+1. `ИСХОДНИК` — the resident pre-PREPARE RAW snapshot, `DoubleSide`;
+2. `БЕЗ ОТСЕЧЕНИЯ` — prepared mesh, `DoubleSide`;
+3. `РАБОЧИЙ` — the same prepared mesh, `FrontSide`.
+
+The RAW snapshot exists only in the editor session and is never written into `.elmodel` or `.elmesh`. Technical preparation evidence is appended to `build/logs/model_asset_mesh_repair.log`; wizard schema 6 also stores cleanup counts, split topology vertex count, raycast patch count and raycast-flipped triangle count.
+
+Real-station spike reference for `station_Habitat_Module_S3`:
+
+```text
+RAW V=118879 T=90162
+WELDED V=55163
+CLEAN T=90160
+SPLIT V=56934 edge_manifold=yes vertex_manifold=yes
+RAYCAST_PATCHES=1834
+RAYCAST_FLIPPED_TRIANGLES=39122
+LIBIGL_SPIKE PASS
+```
+
+Production output is not required to have the same intermediate vertex count as the isolated spike because the editor preserves authored topology identity across coincident/touching sheets. Acceptance requires repaired manifold topology, preserved real boundaries, preserved UV/material/hard-edge seams and correct FrontSide appearance in `РАБОЧИЙ`.

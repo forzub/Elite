@@ -102,22 +102,25 @@ transforms/pivots, render transforms, joints, collision, sockets and inertia to
 canonical game coordinates. Basis conversion is a deliberate one-time authoring
 operation, not runtime correction.
 
-## Canonical render-mesh preparation
+## Shared runtime mesh normalization
 
-Imported OBJ topology is source input, not a sacred runtime topology. Before LOD generation the editor runs a dedicated `CanonicalMeshBuilder` over every loaded render geometry. A positional weld at `1e-4` defines **geometric points** for topology, but does not destructively merge GPU/render vertices. UV/material seams stay split, and hard-normal continuity is reconstructed as normal islands from source polygon identity, smoothing groups and a 25-degree crease policy.
+Source loading and mesh normalization are separate operations. LOAD/restore/reimport preserve and publish the resident payload as read; they never hide geometry because of topology diagnostics. In the Model Asset Editor the author explicitly runs `ПОДГОТОВИТЬ МЕШИ` from the LODS stage.
 
-Canonical preparation:
+The positional weld/triangle cleanup primitive is shared with the game runtime in `src/model_asset/RuntimeMeshNormalizer.*`. Both the game `ObjLoader` and the editor adapter use the same contract:
 
-- rejects invalid indices, non-finite positions, genuine source non-manifold edges and non-orientable topology as `Invalid`;
-- removes triangles collapsed by the geometric weld and duplicate geometric triangles;
-- solves consistent winding and turns closed inside-out shells outward;
-- never caps authored open boundaries;
-- rebuilds render vertices/normals and then rebuilds `MeshLod.edges` against the final triangle indices;
-- preserves `ThinTwoSided` sheets and authored `BreachedVolume` openings as valid geometry contracts.
+- positional weld at `1e-4`;
+- reject non-finite positions or invalid triangle indices;
+- remove collapsed/zero-area triangles;
+- remove exact duplicate geometric triangles;
+- remap surviving triangles to normalized geometric points.
 
-A canonical multi-use edge created only by positional weld is a warning, not automatically a true source non-manifold failure: independent touching/coincident shells may share geometric positions. The importer persists genuine source non-manifold evidence separately through `EdgeNonManifold`.
+This normalizer deliberately does **not** prove manifoldness, solve winding, flip closed shells, classify openings or reject otherwise renderable open/non-manifold geometry. Those are explicit editor analysis concerns. The game can render a normalized mesh regardless of whether the later authoring contract is `ClosedVolume`, `ThinTwoSided`, `BreachedVolume` or `Invalid`.
 
-Editor preparation state is fingerprinted. LOD processing is allowed only when the current LOD0 mesh payload still matches its canonical-preparation record and its final geometry contract/surface mode is resolved. Render LODs remain independent documents; generated LOD1/LOD2/... will be derived independently from canonical LOD0 rather than chained from one simplified LOD to the next.
+The editor adapter reconstructs face-derived normals, preserves UV/material render splits, rebuilds bounds and `MeshLod.edges`, then transactionally replaces the resident `geometry.mesh`. Preparation records use `runtime_mesh_normalizer_v1` plus a fingerprint so repeated preparation can be skipped.
+
+`АНАЛИЗИРОВАТЬ` is a separate read-only step. It may report boundary edges, non-manifold topology, winding conflicts, inside-out components and the final geometry class, but it never mutates the mesh and never participates in LOAD/restore. LOD processing may require both a current normalization record and an accepted analysis/classification.
+
+Render LODs remain independent documents; generated LOD1/LOD2/... are derived independently from normalized/canonical LOD0 rather than chained from one simplified LOD to the next.
 
 ## Binary format v4: semantic manifest + independent render LOD payloads
 
@@ -220,9 +223,7 @@ stage `complete` again and removes all later checkpoints.
 
 ## Native OBJ compilation
 
-Stage 2 no longer routes editor mesh import through runtime `ObjLoader`,
-`MeshData` or `AssemblyMeshLibrary`. `NativeObjImporter` reads source OBJ/MTL
-directly and preserves:
+Stage 2 still imports editor OBJ/MTL through `NativeObjImporter` rather than the runtime `ObjLoader`, because authoring must preserve UV/material/polygon metadata. After import, the explicit preparation action passes its positions/triangles through the same shared `RuntimeMeshNormalizer` used by the game. `NativeObjImporter` preserves:
 
 - original polygon identity through triangulation;
 - authored corner normals when present;

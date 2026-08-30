@@ -69,7 +69,11 @@ enum EdgeFlag : std::uint32_t
     // Source edge is used by more than two triangles. Persisted as a generic
     // flag so Preflight can distinguish real author-topology non-manifold
     // edges from coincident-but-separate positional seams.
-    EdgeNonManifold = 1u << 7
+    EdgeNonManifold = 1u << 7,
+    // This edge adjacency was rebuilt by the editor canonical authoring pass
+    // and is authoritative geometric topology. Positional coincidence must not
+    // reconnect unrelated boundary sheets once this marker is present.
+    EdgeCanonicalTopology = 1u << 8
 };
 
 enum EdgeRenderMask : std::uint8_t

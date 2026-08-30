@@ -213,9 +213,9 @@ bool importObjNative(
         std::int32_t materialA = NoIndex;
         std::int32_t materialB = NoIndex;
         bool normalSeam = false;
-        std::size_t useCount = 0;
     };
     std::map<SourceEdge, EdgeBuild> edgeBuilds;
+    std::map<SourceEdge, std::size_t> sourceBoundaryUseCount;
 
     for (const auto& shape : shapes)
     {
@@ -225,6 +225,18 @@ bool importObjNative(
             ++sourceFaces;
             const int fv = shape.mesh.num_face_vertices[face];
             if (fv < 3) { offset += static_cast<std::size_t>(std::max(fv, 0)); continue; }
+
+            // Count only real OBJ polygon perimeter edges. Fan-triangulation
+            // diagonals are implementation detail and must never manufacture
+            // EdgeNonManifold evidence merely because another polygon happens
+            // to use the same pair of source positions.
+            for (int e = 0; e < fv; ++e)
+            {
+                const int next = (e + 1) % fv;
+                const auto& a = shape.mesh.indices[offset + static_cast<std::size_t>(e)];
+                const auto& b = shape.mesh.indices[offset + static_cast<std::size_t>(next)];
+                ++sourceBoundaryUseCount[edgeKey(a.vertex_index, b.vertex_index)];
+            }
 
             const std::uint32_t smoothingGroup = face < shape.mesh.smoothing_group_ids.size()
                 ? shape.mesh.smoothing_group_ids[face] : 0u;
@@ -266,7 +278,6 @@ bool importObjNative(
                     const int next = (e + 1) % 3;
                     const SourceEdge key = edgeKey(corners[e].vertex_index, corners[next].vertex_index);
                     auto& build = edgeBuilds[key];
-                    ++build.useCount;
                     const bool seam = corners[e].normal_index != corners[next].normal_index;
                     if (build.edge.triangleA < 0)
                     {
@@ -283,13 +294,6 @@ bool importObjNative(
                         build.materialB = materialIndex;
                         build.normalSeam = build.normalSeam || seam;
                     }
-                    // Keep the first two adjacent triangles in the stable Edge
-                    // payload, but preserve the fact that the source topology
-                    // used this edge more than twice. Older editor preflight
-                    // inferred this after a positional weld and therefore
-                    // reported false non-manifold errors for touching panels.
-                    if (build.useCount > 2)
-                        build.edge.flags |= EdgeNonManifold;
                 }
             }
             offset += static_cast<std::size_t>(fv);
@@ -337,6 +341,10 @@ bool importObjNative(
     out.edges.reserve(edgeBuilds.size());
     for (auto& [key, build] : edgeBuilds)
     {
+        const auto boundaryUses = sourceBoundaryUseCount.find(key);
+        if (boundaryUses != sourceBoundaryUseCount.end() && boundaryUses->second > 2)
+            build.edge.flags |= EdgeNonManifold;
+
         if (build.edge.triangleB < 0)
         {
             build.edge.flags |= EdgeBoundary | EdgePolygonBoundary;

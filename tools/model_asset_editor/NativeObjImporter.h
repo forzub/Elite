@@ -8,9 +8,11 @@
 namespace elite::model_asset::editor
 {
 
-// Native editor-side OBJ importer. It deliberately does not use the runtime
-// ObjLoader: authored corner normals/UV/material ids and source polygon ids must
-// survive compilation into .elmodel.
+// Native editor-side RAW OBJ decoder. It deliberately does not use the runtime
+// ObjLoader because corner UV/material/polygon authoring data is needed while
+// decoding. The returned MeshLod is not a working editor mesh yet: every load/
+// import path must immediately cross ModelAssetEditorSession's canonical SOURCE
+// boundary before the mesh is exposed to UI or later wizard stages.
 bool importObjNative(
     const std::filesystem::path& path,
     ModelAsset& asset,

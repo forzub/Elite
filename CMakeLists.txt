@@ -7,6 +7,7 @@ option(ELITE_BUILD_CLIENT "Build the graphical EliteGame client" ON)
 option(ELITE_BUILD_SERVER "Build the headless EliteServer executable" OFF)
 option(ELITE_BUILD_ASSET_EDITOR "Build the standalone model asset editor" OFF)
 option(ELITE_REQUIRE_BUNDLED_UI_FONTS "Fail client UI pack build when declared bundled fonts are missing" OFF)
+option(ELITE_MODEL_ASSET_LIBIGL_SPIKE "Build the isolated libigl mesh-repair spike" OFF)
 
 if(ELITE_BUILD_CLIENT OR ELITE_BUILD_ASSET_EDITOR)
     set(WEBVIEW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -41,12 +42,49 @@ if(ELITE_BUILD_CLIENT)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glad)
 endif()
 
+
+# Offline Model Asset Editor geometry processing --------------------------------
+# libigl + Embree are authoring-only dependencies. They are intentionally absent
+# from EliteModelAsset and all game/runtime targets.
+if(ELITE_BUILD_ASSET_EDITOR OR ELITE_MODEL_ASSET_LIBIGL_SPIKE)
+    if(POLICY CMP0169)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
+
+    set(LIBIGL_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_BUILD_TUTORIALS OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_INSTALL OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_USE_STATIC_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_EMBREE ON CACHE BOOL "" FORCE)
+    set(LIBIGL_OPENGL OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_GLFW OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_IMGUI OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_PREDICATES OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_XML OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_COPYLEFT_CORE OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_COPYLEFT_CGAL OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_COPYLEFT_COMISO OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_COPYLEFT_TETGEN OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_RESTRICTED_MATLAB OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_RESTRICTED_MOSEK OFF CACHE BOOL "" FORCE)
+    set(LIBIGL_RESTRICTED_TRIANGLE OFF CACHE BOOL "" FORCE)
+
+    FetchContent_Declare(
+        libigl
+        GIT_REPOSITORY https://github.com/libigl/libigl.git
+        GIT_TAG v2.6.0
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(libigl)
+endif()
+
 # Shared compiled-model format. This is the single binary asset implementation
 # consumed by the standalone editor now and by the game runtime after the
 # offline-asset migration gate.
 add_library(EliteModelAsset STATIC
     src/model_asset/ModelAssetBinary.cpp
     src/model_asset/ModelAssetMigration.cpp
+    src/model_asset/RuntimeMeshNormalizer.cpp
 )
 target_include_directories(EliteModelAsset PUBLIC
     "${CMAKE_SOURCE_DIR}"
@@ -86,6 +124,8 @@ if(ELITE_BUILD_ASSET_EDITOR)
         nlohmann_json::nlohmann_json
         Threads::Threads
         webview::core_static
+        igl::core
+        igl::embree
     )
     if(WIN32)
         target_link_libraries(EliteAssetEditor PRIVATE
@@ -777,6 +817,7 @@ target_include_directories(EliteGame PRIVATE
 )
 
 target_link_libraries(EliteGame PRIVATE
+    EliteModelAsset
     glfw
     opengl32
     Freetype::Freetype
@@ -820,4 +861,12 @@ endif()
 
 if(TARGET EliteAssetEditor)
     elite_configure_executable_runtime(EliteAssetEditor)
+endif()
+
+# Diagnostic libigl/Embree station spike ---------------------------------------
+if(ELITE_MODEL_ASSET_LIBIGL_SPIKE)
+    add_executable(model_asset_libigl_spike
+        tools/model_asset_editor/LibiglMeshRepairSpike.cpp
+    )
+    target_link_libraries(model_asset_libigl_spike PRIVATE igl::core igl::embree)
 endif()

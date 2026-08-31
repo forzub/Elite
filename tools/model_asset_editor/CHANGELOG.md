@@ -1,3 +1,91 @@
+## 0.10.24 — explicit heavy-operation boundary / lazy LOD data-plane
+
+- UI contract follow-up: SOURCE now describes the actual lazy model instead of the obsolete “complete authoring set” behavior. Its inventory shows declared geometry/render-node counts plus checkpoint/production payload provenance, treats `METADATA` as a normal unloaded state, and exposes an explicit per-LOD `OPEN` viewport action. The storage panel now separates production-package file sizes from the workspace's actual per-LOD payload source, so a checkpoint-backed LOD is no longer displayed as if it were simply missing because production has no corresponding `.elmesh`.
+- Selecting/restoring an asset document now drops any browser-resident geometry cache before metadata merge, so a same-asset checkpoint restore cannot silently retain the previous `.elmesh` payload. Collision/socket overlays are also suppressed while no LOD payload is resident, preventing a metadata-only open from drawing a misleading “ghost model”.
+- Wizard tabs are now passive navigation only. `SOURCE`/`LODS`/`GEOMETRY`/`SURFACES` stage entry does not load an `.elmesh`, run topology analysis, reset viewport state or call `rebuildScene()`. Heavy work belongs to explicit commands.
+- Opening a v4 production asset or restoring/resuming a v4 wizard checkpoint loads only the semantic manifest and wizard metadata. Every LOD remains unloaded until an explicit viewport/heavy-tool request needs it.
+- Lazy checkpoint resume records per-LOD payload provenance. An unloaded LOD may come from the checkpoint package while another falls back to production; `Save all` can promote an unopened checkpoint `.elmesh` into production by file copy without decoding the mesh.
+- Surface intent is metadata-only. `ClosedVolume`, `BreachedVolume`, `ThinOneSided` and `ThinTwoSided` update the whole geometry contract without triangle scans or automatic topology analysis; cross-LOD propagation uses stable authoring identity and does not eagerly load sibling LODs. `Save all` persists pending surface metadata for an unopened LOD with a surface-only v4 cursor rewrite that skips mesh arrays.
+- Web synchronization now has a strict control/data split: authored state and diagnostics use JSON, while explicit viewport LOD payloads use binary WebSocket wire format `ELVPD001`. Vertex/normal/index/material/edge arrays are no longer serialized as JSON. Metadata refreshes do not call `rebuildScene()`.
+- Added derived-geometry caches for vertex/triangle/edge counts, bounds/storage estimates, material usage/unassigned counts and topology audit. Mesh/material-assignment mutations invalidate only the corresponding cache.
+- v4 `.elmesh` loading now reads the file into one memory buffer and decodes it through a bounds-checked memory cursor. The on-disk v4 layout and semantics are unchanged.
+- CanonicalMeshBuilder/libigl/Embree, GeometryInstanceFitter, LOD generation algorithms, stable identities and asset format v4 remain unchanged.
+
+## 0.10.23a — editor-only build deployment hotfix
+
+- Keep shared `copy_assets` rules game/server-owned. An editor-only configure uses `build/tools/model_asset_editor` as `CMAKE_BINARY_DIR`, which is also the editor artifact root; defining the generic copy tree there collided with `copy_model_asset_editor_webui` on the same `model_asset_editor.html` output.
+- The editor now has exactly one asset deployment authority in editor-only builds: `copy_model_asset_editor_webui` plus `build_model_asset_editor_ui_pack`.
+
+## 0.10.23 — executable-owned UI package isolation
+
+- Split the universal WebUI resource artifact into `elite_game_ui.pak` and `model_asset_editor_ui.pak`. The game pack explicitly excludes the editor document; the editor pack explicitly includes only its document plus the Three.js modules it imports.
+- `HtmlUiServer` no longer guesses or auto-loads `assets/ui/elite_ui.pak`. Every executable explicitly supplies the pack it owns; an empty pack path is filesystem-only serving.
+- Model Asset Editor now runs from `build/tools/model_asset_editor` as its actual runtime root, with its own `assets/webui` fallback and `assets/ui/model_asset_editor_ui.pak`; it no longer depends on the shared/game `copy_assets` tree.
+- Building either executable removes the obsolete universal `elite_ui.pak` from the relevant runtime tree during migration, preventing a stale packed HTML document from shadowing current source/fallback files.
+- Added include/exclude filters to `build_ui_pack.py` and regression contracts that prevent game/editor WebUI package ownership from merging again.
+- Unified manual tab changes and automatic checkpoint progression through one wizard stage-entry transaction. GEOMETRY no longer unconditionally rebuilds the complete scene on every tab entry; an active LOD-generator preview is cleared without an intermediate rebuild and at most one rebuild is performed when the viewport representation contract actually changes.
+
+## 0.10.22a — SURFACES manual-entry hotfix
+
+- Entering SURFACES no longer rebuilds the full station scene while the surface audit is still gated. Both manual tab entry and the automatic GEOMETRY→SURFACES wizard transition stay lightweight until the author explicitly presses ANALYZE SURFACES.
+- The successful explicit surface-analysis response now performs the one required SURFACES scene rebuild, so material groups/sidedness preview are prepared only after the requested audit completes.
+
+## 0.10.22 — explicit SURFACES analysis / cross-LOD surface intent
+
+- SURFACES no longer runs topology analysis merely because the tab was opened. An explicit `ANALYZE SURFACES` action gates the workspace; reopening the tab reuses the existing result.
+- Added a default-on `apply to the same geometry in all LODs` authoring option. Matching uses stable base-visual or replacement-variant family identity, never transient per-LOD `G#`/geometry indices.
+- Cross-LOD surface propagation batches all matching LOD edits, writes/publishes once and runs the expensive model preflight once after the batch.
+- Clarified surface-intent labels around actual render behavior while retaining `ThinOneSided` for cockpit cards, labels and other intentionally one-sided sheets. Geometry surface intent is now the ordinary sidedness authority: Closed/Breached/ThinOneSided => FrontSide/culling ON; ThinTwoSided => DoubleSide/culling OFF. The legacy material `twoSided` field is no longer edited or used by the SURFACES preview.
+
+## 0.10.21 — SURFACES authoring workspace
+
+- Implemented SURFACES as the fourth real wizard stage with its own validation, dirty state and checkpoint; the next unimplemented stage is SEMANTICS.
+- Moved final render-surface intent to the stage that owns it. Used/replacement open geometry must explicitly resolve to `ClosedVolume`, `ThinOneSided`, `ThinTwoSided` or `BreachedVolume` before the SURFACES checkpoint; these edits invalidate SURFACES+ only and no longer reopen LODS/GEOMETRY.
+- Added a per-LOD surface workspace with geometry selection, complete-LOD/single-geometry preview, compact material-slot usage and explicit unassigned-triangle diagnostics.
+- Added conservative missing-material repair: a chosen existing material may be assigned only to triangles whose material index is currently unassigned; existing mixed assignments are preserved.
+- Added MaterialDefinition authoring for stable id, base RGBA, emissive color/strength, metallic, roughness, two-sided state and base/emissive texture references. Texture import/baking and UV painting remain outside this stage.
+- SURFACES viewport now renders the actual triangle material groups with base/emissive/PBR/two-sided properties instead of the generic diagnostic material, including a visible fallback for invalid/unassigned material references.
+- SURFACES checkpoint validates surface intent, SurfaceMode consistency, per-triangle material indices and finite/ranged material properties. Binary regression coverage now protects the expanded material fields through `.elmodel` save/load.
+
+## 0.10.20 — restored GEOMETRY authoring workspace
+
+- Restored GEOMETRY as a full authoring workspace instead of presenting rigid duplicate comparison as the entire stage. The active Render LOD selector is now the first control because every LOD owns an independent geometry/render graph.
+- Entering GEOMETRY resets LOD-stage diagnostic state: generated-preview isolation, additional-mesh preview, semantic hide/isolate state, diagnostic wireframe/normals and viewport mode. Automatic LODS → GEOMETRY transition uses the same reset and starts on complete authored LOD0.
+- Added a first-class per-LOD geometry browser split into MAIN MESHES and ADDITIONAL / REPLACEMENT MESHES. Clicking a main geometry isolates every RenderNode using it while preserving transform hierarchy; clicking an additional mesh shows it standalone for inspection; SHOW COMPLETE LOD restores the complete authored view.
+- Restored instance authoring directly inside the GEOMETRY workflow: duplicate instance, break shared instance and radial instance array are visible as a dedicated vertical action block for the selected main render element. Existing backend commands/data contracts are reused.
+- Kept rigid-fit comparison/consolidation as one GEOMETRY tool rather than the stage itself. Comparison, consolidation, replacement and cleanup actions are arranged vertically.
+- Restored the additional-mesh replacement master/detail table in the same workflow: select an additional mesh, declare compatible base visual families and preview the replacement on a representative instance before DAMAGE semantics decide when to use it.
+- LOD switching from GEOMETRY loads/request-publishes the selected LOD payload on demand, resets transient geometry preview state and never propagates G-index/instance edits across LODs.
+
+## 0.10.19 — LOD apply feedback / on-demand viewport payloads
+
+- Fixed individual main-mesh inspection in the LOD generator. Transform parent groups remain alive while the mesh filter controls only mesh visibility, so selecting a child mesh no longer hides it together with its parent transform hierarchy.
+- APPLY now enters an explicit working/progress state immediately, disables duplicate execution while generation is in flight, and reports each generated LOD level as it is built.
+- Generated LOD APPLY no longer broadcasts every geometry payload for every resident LOD in one giant JSON message. It publishes compact authored metadata immediately and loads one LOD geometry payload on demand only when that LOD is opened in the viewport.
+- Metadata invalidates stale browser geometry caches for replaced/generated LOD slots. The Render LOD list therefore updates immediately to show generated provenance/dirty authored state instead of continuing to display the pre-APPLY LOD list.
+- The LOD panel keeps explicit current-session `APPLIED` state and a visible `AUTHORED LOD UPDATED ... · LODS checkpoint required` marker. The APPLY button stays disabled until a new analysis or newly selected unapplied LOD makes repetition meaningful.
+- LOD generator actions are laid out vertically. ANALYZE LOD0, repeated identical preview actions and APPLY also disable while their result is current/in-flight.
+- APPLY invalidates the LODS wizard checkpoint before compact metadata publication, so `COMPLETE STAGE + CHECKPOINT` becomes active immediately after a successful authored LOD change.
+
+## 0.10.18 — full-asset generated LOD authoring
+
+- LOD0 analysis and component-cull preview now include the complete resident geometry pool: ordinary/main meshes and additional/replacement meshes, even when the latter have no RenderNode usage.
+- The LOD Generator can isolate any LOD0 mesh for inspection. Additional/replacement meshes are shown as standalone geometry while the same LOD cull preview is applied to them.
+- Every generated level is built independently from canonical LOD0 and carries the complete geometry pool plus the copied LOD0 render-node graph. Generated documents are marked `sourceKind=generated`, `generatedFromLod=0`.
+- Added explicit per-level `USE` selection and `APPLY SELECTED LODS`. Existing selected LOD slots are replaced; missing contiguous slots are created. LOD0 is never modified. All generated levels are selected by default after analysis.
+- APPLY is transactional: every candidate level is built and checked against the canonical geometry contract before any authored RenderLod is replaced.
+- Stable base-visual ids, additional/replacement mesh ids, replacement compatibility and explicit topology classes are propagated from LOD0 into generated LOD documents.
+- Generated LOD preparation fingerprints are accepted by the LODS technical gate and persisted in wizard authoring state. Completing the LODS stage writes the full selected LOD set into the checkpoint for GEOMETRY.
+
+## 0.10.17 — LOD gate split / stable editor artifact layout
+
+- LOD0 analysis and LODS checkpoint validation now depend only on technical canonical geometry: current PREPARE records, usable topology, no degenerate/duplicate faces, no winding conflicts and no inward closed shells. `ClosedVolume / ThinTwoSided / BreachedVolume` classification is a later SURFACES authoring concern and no longer blocks LOD analysis or saving the LODS checkpoint.
+- Model Preflight separates technical LOD blockers from surface-authoring review. Prepared open geometry that still needs an explicit surface class is shown as review/advisory instead of a red LOD blocker.
+- `ANALYZE LOD0` is no longer disabled by stale/missing Preflight classification state. The backend remains authoritative and rejects the command only when canonical LOD0 preparation itself is missing or invalid.
+- Editor artifacts have one stable root: `build/tools/model_asset_editor/`. Executables go to `bin/`, per-asset checkpoints/state/logs go to `workspaces/<asset>/`, and spike output defaults to `diagnostics/libigl/`.
+- Mesh preparation log is now `workspaces/<asset>/logs/mesh_repair.log` and is truncated at the start of every PREPARE operation, so one file always describes one preparation run instead of accumulating historical algorithms. Instance-fit diagnostics are asset-local as `workspaces/<asset>/logs/instance_fit.log`.
+- The diagnostic spike accepts MSYS2 UTF-8 argv paths with `std::filesystem::u8path` and no longer defaults to a CWD-relative `build/libigl_spike` directory.
+
 ## 0.10.16 — production libigl + Embree canonical preparation
 
 - `ПОДГОТОВИТЬ МЕШИ` now uses libigl `split_nonmanifold` plus Embree `reorient_facets_raycast` as the production topology/orientation authority; the v7 radial-envelope/open-component orientation heuristic is removed.

@@ -118,11 +118,11 @@
       "ja": "LOD ファイル"
     },
     "model_editor.section.storage": {
-      "en": "Asset storage",
-      "ru": "Хранилище модели",
-      "zh-Hans": "资源存储",
-      "es": "Almacenamiento",
-      "ja": "アセット保存領域"
+      "en": "Production / workspace storage",
+      "ru": "Production / workspace хранилище",
+      "zh-Hans": "Production / workspace 存储",
+      "es": "Almacenamiento production / workspace",
+      "ja": "Production / workspace 保存領域"
     },
     "model_editor.section.selected_node": {
       "en": "Selected node",
@@ -1056,18 +1056,18 @@
       "ja": "共有インスタンスはありますが、この GeometryDefinition にはアクティブ LOD の表現がありません。"
     },
     "model_editor.lod.view.title": {
-      "en": "VIEW LOD",
-      "ru": "ПОКАЗАТЬ LOD",
-      "zh-Hans": "查看 LOD",
-      "es": "VER LOD",
-      "ja": "LOD 表示"
+      "en": "OPEN LOD IN VIEWPORT",
+      "ru": "ОТКРЫТЬ LOD В VIEWPORT",
+      "zh-Hans": "在视口中打开 LOD",
+      "es": "ABRIR LOD EN VIEWPORT",
+      "ja": "LOD を VIEWPORT で開く"
     },
     "model_editor.lod.view.desc": {
-      "en": "Make this loaded LOD the active viewport/edit representation. Shared Node/instance links do not change.",
-      "ru": "Сделать загруженный LOD активным для просмотра и редактирования. Общие Node/instance-связи не меняются.",
-      "zh-Hans": "将已加载 LOD 设为当前查看/编辑表示；共享 Node/实例关联不变。",
-      "es": "Activa este LOD cargado para vista/edición. Los enlaces Node/instancia compartidos no cambian.",
-      "ja": "読み込み済み LOD を表示・編集対象にします。共有 Node/インスタンス関連は変わりません。"
+      "en": "Explicitly load this LOD's .elmesh if needed, transfer its binary payload, and make it the active viewport/edit representation. Other LODs remain unloaded.",
+      "ru": "Явно загрузить .elmesh этого LOD при необходимости, передать его binary payload и сделать активным во viewport/редактировании. Остальные LOD остаются выгруженными.",
+      "zh-Hans": "如有需要显式读取该 LOD 的 .elmesh，传输二进制 payload，并将其设为当前视口/编辑表示；其他 LOD 保持未加载。",
+      "es": "Carga explícitamente el .elmesh de este LOD si hace falta, transfiere su payload binario y lo activa para vista/edición. Los demás LOD permanecen descargados.",
+      "ja": "必要ならこの LOD の .elmesh を明示的に読み込み、binary payload を転送して viewport/編集対象にします。他の LOD は未ロードのままです。"
     },
     "model_editor.lod.load.title": {
       "en": "LOAD LOD",
@@ -1588,11 +1588,11 @@
       "ja": "アセットを選択して処理ウィザードを開始してください。"
     },
     "model_editor.wizard.source.desc": {
-      "en": "SOURCE loads the complete authoring set: every declared LOD plus every additional OBJ discovered recursively under its LOD tree. Later stages process this loaded snapshot.",
-      "ru": "SOURCE загружает полный рабочий набор: все объявленные LOD и все дополнительные OBJ, найденные рекурсивно в их каталогах. Следующие этапы работают только с этим загруженным снимком.",
-      "zh-Hans": "确认源路径，并从只读 OBJ/装配数据重建内存中的资源。",
-      "es": "Verifica la ruta de origen y reconstruye el asset en memoria desde OBJ/assembly de solo lectura.",
-      "ja": "ソースルートを確認し、読み取り専用 OBJ/assembly からメモリ上のアセットを再構築します。"
+      "en": "SOURCE opens only manifest/checkpoint metadata. No .elmesh is read automatically. A LOD enters memory only after an explicit viewport or heavy-tool command; source refresh/reimport are explicit heavy operations.",
+      "ru": "SOURCE открывает только metadata manifest/checkpoint. Ни один .elmesh автоматически не читается. LOD попадает в память только после явной команды viewport или тяжёлого инструмента; обновление/реимпорт исходников — отдельные явные тяжёлые операции.",
+      "zh-Hans": "SOURCE 仅打开 manifest/checkpoint 元数据，不会自动读取 .elmesh。只有显式视口或重型工具命令才会把 LOD 载入内存；源刷新/重新导入属于显式重型操作。",
+      "es": "SOURCE abre solo los metadatos de manifest/checkpoint. Ningún .elmesh se lee automáticamente. Un LOD entra en memoria solo mediante una orden explícita del viewport o una herramienta pesada; actualizar/reimportar fuentes son operaciones pesadas explícitas.",
+      "ja": "SOURCE は manifest/checkpoint のメタデータだけを開き、.elmesh を自動読込しません。LOD は明示的な viewport/重処理コマンドでのみメモリへ入り、source refresh/reimport は明示的な重処理です。"
     },
     "model_editor.wizard.source.root": {
       "en": "source root",
@@ -1614,6 +1614,14 @@
       "zh-Hans": "源几何体",
       "es": "geometrías desde origen",
       "ja": "ソース由来ジオメトリ"
+    },
+    "model_editor.wizard.source.resident": {
+      "en": "resident viewport LODs",
+      "ru": "LOD в памяти viewport"
+    },
+    "model_editor.wizard.source.available": {
+      "en": "available LOD payloads",
+      "ru": "доступно LOD payload"
     },
     "model_editor.wizard.source.saved": {
       "en": "saved LOD payloads",
@@ -2296,8 +2304,8 @@
       "ru": "Анализировать LOD0"
     },
     "model_editor.lod_generator.analyze_tip.desc": {
-      "en": "Read-only feature analysis. It does not generate, replace, save or dirty any LOD.",
-      "ru": "Анализ только для чтения. Он ничего не генерирует, не заменяет, не сохраняет и не делает LOD изменённым."
+      "en": "Read-only LOD0 geometry analysis requires canonical PREPARE MESHES output, but it does not require ClosedVolume / ThinTwoSided / BreachedVolume authoring.",
+      "ru": "Анализ LOD0 только читает геометрию и требует результат «ПОДГОТОВИТЬ МЕШИ», но не требует заранее выбирать ClosedVolume / ThinTwoSided / BreachedVolume."
     },
     "model_editor.lod_generator.empty": {
       "en": "Analysis is read-only. It measures disconnected component thickness using a 2560×1440 maximum render target, 70° vertical FOV and a 2 px visibility cutoff.",
@@ -2352,8 +2360,8 @@
       "ru": "УБРАТЬ ПРОСМОТР"
     },
     "model_editor.lod_generator.scope": {
-      "en": "Component Cull only hides disconnected thin/small components. Coplanar Preview separately collapses topologically connected coplanar triangle regions without crossing material, smoothing, UV or normal seams. Both are preview-only; asset data is unchanged.",
-      "ru": "Отсечение компонентов скрывает только отдельные тонкие/мелкие компоненты. Просмотр плоскостей отдельно объединяет топологически связанные копланарные треугольники, не переходя через границы материала, smoothing, UV или нормалей. Оба режима только для просмотра; данные asset не изменяются."
+      "en": "Component Cull preview shows the generated disconnected-component reduction before APPLY. APPLY writes selected Component Cull levels into the authored asset. Coplanar Preview remains diagnostic-only and never changes authored data.",
+      "ru": "Просмотр отсечения компонентов показывает результат удаления отдельных мелких/тонких компонентов до APPLY. APPLY записывает выбранные уровни Component Cull в authored asset. Просмотр плоскостей остаётся только диагностическим и никогда не меняет authored-данные."
     },
     "model_editor.lod_generator.preview_active": {
       "en": "Preview active",
@@ -2472,12 +2480,12 @@
       "ru": "границ / non-manifold / вырожденных"
     },
     "model_editor.preflight.ready": {
-      "en": "LOD0 READY FOR LOD PROCESSING",
-      "ru": "LOD0 ГОТОВ К ОБРАБОТКЕ LOD"
+      "en": "LOD0 TECHNICALLY READY FOR LOD ANALYSIS",
+      "ru": "LOD0 ТЕХНИЧЕСКИ ГОТОВ К АНАЛИЗУ LOD"
     },
     "model_editor.preflight.not_ready": {
-      "en": "LOD0 NOT READY",
-      "ru": "LOD0 НЕ ГОТОВ"
+      "en": "LOD0 NOT TECHNICALLY READY",
+      "ru": "LOD0 НЕ ГОТОВ ТЕХНИЧЕСКИ"
     },
     "model_editor.preflight.mesh": {
       "en": "mesh",
@@ -2555,6 +2563,58 @@
       "en": "not loaded",
       "ru": "не загружен"
     },
+    "model_editor.source.resident": {
+      "en": "RESIDENT",
+      "ru": "В ПАМЯТИ"
+    },
+    "model_editor.source.metadata_only": {
+      "en": "METADATA",
+      "ru": "METADATA"
+    },
+    "model_editor.source.declared": {
+      "en": "declared",
+      "ru": "объявлено"
+    },
+    "model_editor.source.payload": {
+      "en": "payload",
+      "ru": "payload"
+    },
+    "model_editor.source.viewport": {
+      "en": "viewport",
+      "ru": "viewport"
+    },
+    "model_editor.source.open": {
+      "en": "OPEN",
+      "ru": "ОТКРЫТЬ"
+    },
+    "model_editor.source.active": {
+      "en": "OPEN",
+      "ru": "ОТКРЫТ"
+    },
+    "model_editor.source.missing": {
+      "en": "MISSING",
+      "ru": "НЕТ ФАЙЛА"
+    },
+    "model_editor.active_lod.metadata_help": {
+      "en": "No geometry payload is resident. Use OPEN LOD IN VIEWPORT to read this .elmesh explicitly.",
+      "ru": "Geometry payload не находится в памяти. Используйте «ОТКРЫТЬ LOD В VIEWPORT», чтобы явно прочитать этот .elmesh."
+    },
+    "model_editor.storage.production": {
+      "en": "PRODUCTION PACKAGE",
+      "ru": "PRODUCTION-ПАКЕТ"
+    },
+    "model_editor.storage.workspace_sources": {
+      "en": "WORKSPACE LOD SOURCES",
+      "ru": "ИСТОЧНИКИ LOD В WORKSPACE"
+    },
+    "model_editor.storage.unsaved": {
+      "en": "Unsaved workspace changes exist. Production files are not updated until Save all.",
+      "ru": "В workspace есть несохранённые изменения. Production-файлы не меняются до явного «Сохранить всё»."
+    },
+    "model_editor.storage.help_lazy": {
+      "en": "Production sizes describe files under the compiled package. Workspace LOD sources may instead point at a newer checkpoint; metadata-only LODs are not decoded until explicitly opened.",
+      "ru": "Размеры production относятся только к файлам compiled-пакета. Источник LOD в workspace может указывать на более новый checkpoint; metadata-only LOD не декодируется до явного открытия."
+    },
     "model_editor.source.source_files_short": {
       "en": "from source",
       "ru": "из исходников"
@@ -2616,12 +2676,12 @@
       "ru": "доп."
     },
     "model_editor.preflight.all_ready": {
-      "en": "ALL LOADED GEOMETRY IS NORMALIZED AND CLASSIFIED",
-      "ru": "ВСЯ ЗАГРУЖЕННАЯ ГЕОМЕТРИЯ НОРМАЛИЗОВАНА И КЛАССИФИЦИРОВАНА"
+      "en": "ALL LOADED GEOMETRY IS PREPARED; SURFACES CLASSIFICATION IS RESOLVED",
+      "ru": "ВСЯ ЗАГРУЖЕННАЯ ГЕОМЕТРИЯ ПОДГОТОВЛЕНА; SURFACES-КЛАССИФИКАЦИЯ ЗАВЕРШЕНА"
     },
     "model_editor.preflight.actions_needed": {
-      "en": "ACTIONS REQUIRED",
-      "ru": "ТРЕБУЮТ ДЕЙСТВИЙ"
+      "en": "SURFACES AUTHORING DECISIONS REMAIN",
+      "ru": "SURFACES ТРЕБУЕТ РЕШЕНИЙ"
     },
     "model_editor.preflight.auto_count": {
       "en": "auto",
@@ -2652,8 +2712,8 @@
       "ru": "тип поверхности не соответствует классификации"
     },
     "model_editor.preflight.workflow": {
-      "en": "Workflow: load/restore without mutation, run PREPARE MESHES for shared runtime normalization, then ANALYZE for topology/classification. ClosedVolume and high-confidence ThinTwoSided may resolve automatically; choose ThinTwoSided or BreachedVolume for ambiguous open geometry.",
-      "ru": "Workflow: загрузить/восстановить mesh без мутации, выполнить «ПОДГОТОВИТЬ МЕШИ» для общей с игрой runtime-нормализации, затем «АНАЛИЗИРОВАТЬ» для topology/classification. ClosedVolume и уверенный ThinTwoSided могут определиться автоматически; для неоднозначного открытого mesh выберите ThinTwoSided или BreachedVolume."
+      "en": "Workflow: PREPARE MESHES creates canonical geometry. LOD0 analysis is then available independently of surface class. ClosedVolume / ThinTwoSided / BreachedVolume remain SURFACES authoring decisions and do not block LODS.",
+      "ru": "Workflow: «ПОДГОТОВИТЬ МЕШИ» создаёт canonical geometry. Анализ LOD0 после этого доступен независимо от surface-класса. ClosedVolume / ThinTwoSided / BreachedVolume остаются authoring-решениями SURFACES и не блокируют LODS."
     },
     "model_editor.meta.semantic_parts": {
       "en": "semantic parts",
@@ -2760,8 +2820,8 @@
       "ru": "Обновить исходный набор"
     },
     "model_editor.wizard.source.refresh_tip.desc": {
-      "en": "Rescans all loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any change invalidates SOURCE and later checkpoints.",
-      "ru": "Повторно просматривает все загруженные деревья LOD и подхватывает дополнительные OBJ без пересборки основной модели. Любое изменение помечает SOURCE устаревшим и удаляет более поздние контрольные точки."
+      "en": "Explicit heavy operation: loads every declared LOD needed to recover source paths, then rescans the LOD source trees for additional OBJ meshes. Any change invalidates SOURCE and later checkpoints.",
+      "ru": "Явная тяжёлая операция: загружает объявленные LOD, нужные для восстановления путей исходников, затем повторно сканирует их каталоги на дополнительные OBJ. Любое изменение инвалидирует SOURCE и более поздние контрольные точки."
     },
     "model_editor.server.extras_refreshed": {
       "en": "Source set refreshed",
@@ -2832,8 +2892,8 @@
       "ru": "исходные render V → geometric P → рабочие render V"
     },
     "model_editor.preflight.canonical_note": {
-      "en": "Working geometry is built only by PREPARE MESHES with the same runtime normalizer as the game: 1e-4 weld, degenerate/duplicate cleanup, normals and edge rebuild. Winding/manifold/classification are NOT checked here; use ANALYZE.",
-      "ru": "Working geometry строится только по команде «ПОДГОТОВИТЬ МЕШИ» тем же runtime-normalizer, что использует игра: weld 1e-4, degenerate/duplicate cleanup, normals и edge rebuild. Winding/manifold/classification здесь НЕ проверяются — используйте «АНАЛИЗИРОВАТЬ»."
+      "en": "Working geometry is built only by PREPARE MESHES using the offline libigl + Embree canonical pipeline. ANALYZE reports topology and proposes surface classes, but class selection is not a LOD-analysis gate.",
+      "ru": "Working geometry строится только по «ПОДГОТОВИТЬ МЕШИ» через offline canonical pipeline libigl + Embree. «АНАЛИЗИРОВАТЬ» показывает topology и предлагает surface-классы, но выбор класса не блокирует анализ LOD."
     },
     "model_editor.preflight.reason.prepare": {
       "en": "run PREPARE MESHES",
@@ -2846,6 +2906,366 @@
     "model_editor.preflight.action.reload": {
       "en": "RELOAD SOURCE",
       "ru": "ПЕРЕЗАГРУЗИТЬ SOURCE"
+    },
+    "model_editor.lod_generator.mesh_all": {
+      "en": "ALL ASSET MESHES",
+      "ru": "ВСЕ МЕШИ ASSET",
+      "zh-Hans": "全部资产网格",
+      "es": "TODAS LAS MALLAS DEL ASSET",
+      "ja": "ASSET の全メッシュ"
+    },
+    "model_editor.lod_generator.mesh_main": {
+      "en": "MAIN MESHES",
+      "ru": "ОСНОВНЫЕ МЕШИ",
+      "zh-Hans": "主网格",
+      "es": "MALLAS PRINCIPALES",
+      "ja": "メインメッシュ"
+    },
+    "model_editor.lod_generator.mesh_extra": {
+      "en": "ADDITIONAL / REPLACEMENT MESHES",
+      "ru": "ДОПОЛНИТЕЛЬНЫЕ / МЕШИ ЗАМЕНЫ",
+      "zh-Hans": "附加 / 替换网格",
+      "es": "MALLAS ADICIONALES / DE REEMPLAZO",
+      "ja": "追加 / 置換メッシュ"
+    },
+    "model_editor.lod_generator.meshes": {
+      "en": "meshes / additional",
+      "ru": "мешей / дополнительных",
+      "zh-Hans": "网格 / 附加",
+      "es": "mallas / adicionales",
+      "ja": "メッシュ / 追加"
+    },
+    "model_editor.lod_generator.mesh_view": {
+      "en": "VIEW MESH",
+      "ru": "ПРОСМОТР МЕША",
+      "zh-Hans": "查看网格",
+      "es": "VER MALLA",
+      "ja": "メッシュ表示"
+    },
+    "model_editor.lod_generator.replace": {
+      "en": "REPLACE",
+      "ru": "ЗАМЕНИТЬ",
+      "zh-Hans": "替换",
+      "es": "REEMPLAZAR",
+      "ja": "置換"
+    },
+    "model_editor.lod_generator.add": {
+      "en": "ADD",
+      "ru": "ДОБАВИТЬ",
+      "zh-Hans": "添加",
+      "es": "AÑADIR",
+      "ja": "追加"
+    },
+    "model_editor.lod_generator.apply": {
+      "en": "APPLY SELECTED LODS",
+      "ru": "ПРИМЕНИТЬ ВЫБРАННЫЕ LOD",
+      "zh-Hans": "应用所选 LOD",
+      "es": "APLICAR LOD SELECCIONADOS",
+      "ja": "選択 LOD を適用"
+    },
+    "model_editor.lod_generator.apply_scope": {
+      "en": "Every generated level contains the complete LOD0 geometry pool: main meshes plus additional/replacement meshes. USE replaces an existing LOD slot or creates a new one. Complete the LODS stage afterwards to save the full authored set for GEOMETRY.",
+      "ru": "Каждый сгенерированный уровень содержит полный набор геометрии LOD0: основные меши и дополнительные/меши замены. USE заменяет существующий слот LOD или создаёт новый. После применения завершите этап LODS, чтобы сохранить полный authored-набор для GEOMETRY.",
+      "zh-Hans": "每个生成级别都包含完整的 LOD0 几何池：主网格以及附加/替换网格。USE 会替换现有 LOD 槽或创建新槽。之后完成 LODS 阶段，将完整 authored 集合保存给 GEOMETRY。",
+      "es": "Cada nivel generado contiene todo el conjunto geométrico de LOD0: mallas principales y adicionales/de reemplazo. USE reemplaza un LOD existente o crea uno nuevo. Después complete LODS para guardar el conjunto completo para GEOMETRY.",
+      "ja": "各生成レベルには LOD0 の完全なジオメトリプール（メイン＋追加/置換メッシュ）が含まれます。USE は既存 LOD を置換するか新規作成します。その後 LODS を完了して GEOMETRY 用に保存します。"
+    },
+    "model_editor.lod_generator.apply_confirm": {
+      "en": "Apply generated LODs to the authored asset?",
+      "ru": "Применить сгенерированные LOD к authored asset?",
+      "zh-Hans": "将生成的 LOD 应用到 authored asset？",
+      "es": "¿Aplicar los LOD generados al asset authored?",
+      "ja": "生成 LOD を authored asset に適用しますか？"
+    },
+    "model_editor.lod_generator.apply_confirm_detail": {
+      "en": "Existing selected LOD slots will be replaced; missing selected slots will be created. LOD0 is never changed.",
+      "ru": "Выбранные существующие LOD будут заменены; отсутствующие выбранные LOD будут созданы. LOD0 никогда не изменяется.",
+      "zh-Hans": "选中的现有 LOD 槽将被替换；缺失的选中槽将被创建。LOD0 永远不变。",
+      "es": "Los LOD existentes seleccionados se reemplazarán y los seleccionados que falten se crearán. LOD0 nunca se modifica.",
+      "ja": "選択した既存 LOD は置換され、存在しない選択 LOD は作成されます。LOD0 は変更されません。"
+    },
+    "model_editor.lod_generator.applied": {
+      "en": "Generated LODs applied",
+      "ru": "Сгенерированные LOD применены",
+      "zh-Hans": "已应用生成 LOD",
+      "es": "LOD generados aplicados",
+      "ja": "生成 LOD を適用しました"
+    },
+    "model_editor.lod_generator.replaced": {
+      "en": "replaced",
+      "ru": "заменено",
+      "zh-Hans": "已替换",
+      "es": "reemplazados",
+      "ja": "置換"
+    },
+    "model_editor.lod_generator.created": {
+      "en": "created",
+      "ru": "создано",
+      "zh-Hans": "已创建",
+      "es": "creados",
+      "ja": "作成"
+    },
+    "model_editor.lod_generator.mesh_all_status": {
+      "en": "LOD preview: full asset",
+      "ru": "Просмотр LOD: весь asset",
+      "zh-Hans": "LOD 预览：完整资产",
+      "es": "Vista LOD: asset completo",
+      "ja": "LOD プレビュー: 全 asset"
+    },
+    "model_editor.lod_generator.mesh_one_status": {
+      "en": "LOD preview: selected mesh only",
+      "ru": "Просмотр LOD: только выбранный меш",
+      "zh-Hans": "LOD 预览：仅所选网格",
+      "es": "Vista LOD: solo malla seleccionada",
+      "ja": "LOD プレビュー: 選択メッシュのみ"
+    },
+    "model_editor.geometry_workspace.help": {
+      "en": "Work one render LOD at a time. Choose a LOD first, inspect its complete main/replacement geometry set, then consolidate instances, author repeated instance arrays and declare which additional meshes may replace each base geometry family.",
+      "ru": "Работайте с одним render LOD за раз. Сначала выберите LOD, просмотрите полный набор основных и дополнительных мешей, затем сведите экземпляры, создайте массивы и укажите, какие дополнительные меши могут заменять основные семейства геометрии."
+    },
+    "model_editor.geometry_workspace.lod": {
+      "en": "ACTIVE RENDER LOD",
+      "ru": "АКТИВНЫЙ RENDER LOD"
+    },
+    "model_editor.geometry_workspace.lod_help": {
+      "en": "Every LOD is an independent render document. Geometry and instance edits here affect only the selected LOD.",
+      "ru": "Каждый LOD — независимый render-документ. Изменения геометрии и экземпляров на этом этапе относятся только к выбранному LOD."
+    },
+    "model_editor.geometry_workspace.browser": {
+      "en": "LOD GEOMETRY / PREVIEW",
+      "ru": "ГЕОМЕТРИЯ LOD / ПРЕДПРОСМОТР"
+    },
+    "model_editor.geometry_workspace.show_all": {
+      "en": "SHOW COMPLETE LOD",
+      "ru": "ПОКАЗАТЬ LOD ЦЕЛИКОМ"
+    },
+    "model_editor.geometry_workspace.show_all_status": {
+      "en": "GEOMETRY viewport: complete active LOD",
+      "ru": "GEOMETRY: показан полный активный LOD"
+    },
+    "model_editor.geometry_workspace.full_view": {
+      "en": "Viewport: complete authored LOD",
+      "ru": "Viewport: полный authored LOD"
+    },
+    "model_editor.geometry_workspace.single_view": {
+      "en": "Viewport: selected mesh only",
+      "ru": "Viewport: только выбранный меш"
+    },
+    "model_editor.geometry_workspace.main": {
+      "en": "MAIN MESHES",
+      "ru": "ОСНОВНЫЕ МЕШИ"
+    },
+    "model_editor.geometry_workspace.extra": {
+      "en": "ADDITIONAL / REPLACEMENT MESHES",
+      "ru": "ДОПОЛНИТЕЛЬНЫЕ / МЕШИ ЗАМЕНЫ"
+    },
+    "model_editor.geometry_workspace.instances": {
+      "en": "INSTANCE / ARRAY AUTHORING",
+      "ru": "ЭКЗЕМПЛЯРЫ / ТИРАЖИРОВАНИЕ"
+    },
+    "model_editor.geometry_workspace.select_instance": {
+      "en": "Select a main mesh/render element to use instance tools.",
+      "ru": "Выберите основной меш/render-элемент для работы с экземплярами и массивами."
+    },
+    "model_editor.geometry_workspace.consolidation": {
+      "en": "MATCH / CONSOLIDATE INSTANCES",
+      "ru": "СРАВНЕНИЕ / СВЕДЕНИЕ В ЭКЗЕМПЛЯРЫ"
+    },
+    "model_editor.wizard.surfaces.desc": {
+      "en": "Define surface intent and material properties for every render geometry. This stage does not change topology or instance placement.",
+      "ru": "Назначьте тип поверхности и свойства материалов каждой render-геометрии. Этот этап не меняет топологию и размещение экземпляров."
+    },
+    "model_editor.surfaces.help": {
+      "en": "Define how every render geometry behaves as a surface and verify the material contract that came from OBJ/MTL. Work one independent RenderLod at a time; mesh shape and instance placement are already owned by earlier stages.",
+      "ru": "Определите поведение каждой render-геометрии как поверхности и проверьте материалы, пришедшие из OBJ/MTL. Каждый RenderLod обрабатывается независимо; форма меша и размещение экземпляров уже зафиксированы предыдущими этапами."
+    },
+    "model_editor.surfaces.analysis_required": {
+      "en": "SURFACE ANALYSIS",
+      "ru": "АНАЛИЗ ПОВЕРХНОСТЕЙ"
+    },
+    "model_editor.surfaces.analysis_required_hint": {
+      "en": "Run the topology/surface audit explicitly. Reopening this tab does not start analysis again.",
+      "ru": "Запустите проверку топологии и поверхностей явно. Повторное открытие вкладки само по себе анализ не запускает."
+    },
+    "model_editor.surfaces.analyze": {
+      "en": "ANALYZE SURFACES",
+      "ru": "АНАЛИЗИРОВАТЬ ПОВЕРХНОСТИ"
+    },
+    "model_editor.surfaces.analyzing": {
+      "en": "ANALYZING...",
+      "ru": "ИДЁТ АНАЛИЗ..."
+    },
+    "model_editor.surfaces.apply_all_lods": {
+      "en": "APPLY TO THE SAME GEOMETRY IN ALL LODS",
+      "ru": "ПРИМЕНИТЬ К ЭТОЙ ЖЕ ГЕОМЕТРИИ ВО ВСЕХ LOD"
+    },
+    "model_editor.surfaces.apply_all_lods_hint": {
+      "en": "Matches the same stable base/replacement visual family in every LOD where it exists; transient G# indices are never used.",
+      "ru": "Совпадение ищется по стабильному семейству основной/replacement-геометрии во всех LOD, где оно существует; временные индексы G# не используются."
+    },
+    "model_editor.surfaces.active_lod": {
+      "en": "ACTIVE RENDER LOD",
+      "ru": "АКТИВНЫЙ RENDER LOD"
+    },
+    "model_editor.surfaces.review": {
+      "en": "SURFACES REVIEW REQUIRED",
+      "ru": "SURFACES ТРЕБУЕТ РЕШЕНИЙ"
+    },
+    "model_editor.surfaces.intent_decisions": {
+      "en": "intent decisions",
+      "ru": "решений по типу поверхности"
+    },
+    "model_editor.surfaces.unassigned": {
+      "en": "unassigned triangles",
+      "ru": "треугольников без материала"
+    },
+    "model_editor.surfaces.ready": {
+      "en": "SURFACE CONTRACT READY FOR CHECKPOINT",
+      "ru": "КОНТРАКТ SURFACES ГОТОВ К КОНТРОЛЬНОЙ ТОЧКЕ"
+    },
+    "model_editor.surfaces.geometry": {
+      "en": "GEOMETRY SURFACES",
+      "ru": "ПОВЕРХНОСТИ ГЕОМЕТРИИ"
+    },
+    "model_editor.surfaces.selected": {
+      "en": "SELECTED GEOMETRY",
+      "ru": "ВЫБРАННАЯ ГЕОМЕТРИЯ"
+    },
+    "model_editor.surfaces.intent": {
+      "en": "Surface intent",
+      "ru": "Тип поверхности"
+    },
+    "model_editor.surfaces.intent_auto": {
+      "en": "DECISION NOT SET / source",
+      "ru": "РЕШЕНИЕ НЕ ПРИНЯТО / исходный"
+    },
+    "model_editor.surfaces.intent_closed": {
+      "en": "Closed hull / volume",
+      "ru": "Обычный замкнутый корпус / объём"
+    },
+    "model_editor.surfaces.intent_thin_one": {
+      "en": "Thin one-sided surface",
+      "ru": "Тонкая односторонняя поверхность"
+    },
+    "model_editor.surfaces.intent_thin_two": {
+      "en": "Thin two-sided surface",
+      "ru": "Тонкая двусторонняя поверхность"
+    },
+    "model_editor.surfaces.intent_breached": {
+      "en": "Open / damaged hull",
+      "ru": "Открытый / повреждённый корпус"
+    },
+    "model_editor.surfaces.render_mode": {
+      "en": "renderer",
+      "ru": "рендер"
+    },
+    "model_editor.surfaces.render_front": {
+      "en": "FrontSide · back-face culling ON",
+      "ru": "FrontSide · отсечение обратных граней ВКЛ"
+    },
+    "model_editor.surfaces.render_double": {
+      "en": "DoubleSide · back-face culling OFF",
+      "ru": "DoubleSide · отсечение обратных граней ВЫКЛ"
+    },
+    "model_editor.surfaces.material_slots": {
+      "en": "material slots",
+      "ru": "материалов"
+    },
+    "model_editor.surfaces.assign_unassigned": {
+      "en": "ASSIGN ONLY UNASSIGNED TRIANGLES",
+      "ru": "НАЗНАЧИТЬ ТОЛЬКО ТРЕУГОЛЬНИКАМ БЕЗ МАТЕРИАЛА"
+    },
+    "model_editor.surfaces.intent_help": {
+      "en": "Closed/Breached use a front-sided shell. Thin one-sided remains front-sided; Thin two-sided is visible from both sides. Choosing an intent never fills holes or changes topology.",
+      "ru": "Closed/Breached используют одностороннюю оболочку. Thin one-sided остаётся односторонней; Thin two-sided видна с обеих сторон. Выбор типа не заделывает отверстия и не меняет топологию."
+    },
+    "model_editor.surfaces.material_editor": {
+      "en": "MATERIAL",
+      "ru": "МАТЕРИАЛ"
+    },
+    "model_editor.surfaces.material": {
+      "en": "Material",
+      "ru": "Материал"
+    },
+    "model_editor.surfaces.used_here": {
+      "en": "Selected geometry uses this material on",
+      "ru": "Выбранная геометрия использует этот материал на"
+    },
+    "model_editor.surfaces.not_used_here": {
+      "en": "This material is not used by the selected geometry.",
+      "ru": "Этот материал не используется выбранной геометрией."
+    },
+    "model_editor.surfaces.source_name": {
+      "en": "Source MTL name",
+      "ru": "Имя в исходном MTL"
+    },
+    "model_editor.surfaces.base_color": {
+      "en": "Base color",
+      "ru": "Базовый цвет"
+    },
+    "model_editor.surfaces.opacity": {
+      "en": "Opacity",
+      "ru": "Непрозрачность"
+    },
+    "model_editor.surfaces.emissive_color": {
+      "en": "Emissive",
+      "ru": "Свечение"
+    },
+    "model_editor.surfaces.emissive_strength": {
+      "en": "Emit strength",
+      "ru": "Сила свечения"
+    },
+    "model_editor.surfaces.metallic": {
+      "en": "Metallic",
+      "ru": "Металличность"
+    },
+    "model_editor.surfaces.roughness": {
+      "en": "Roughness",
+      "ru": "Шероховатость"
+    },
+    "model_editor.surfaces.material_two_sided": {
+      "en": "Material forces two-sided rendering",
+      "ru": "Материал принудительно двусторонний"
+    },
+    "model_editor.surfaces.base_texture": {
+      "en": "Base-color texture",
+      "ru": "Текстура базового цвета"
+    },
+    "model_editor.surfaces.emissive_texture": {
+      "en": "Emissive texture",
+      "ru": "Текстура свечения"
+    },
+    "model_editor.surfaces.apply_material": {
+      "en": "APPLY MATERIAL PROPERTIES",
+      "ru": "ПРИМЕНИТЬ СВОЙСТВА МАТЕРИАЛА"
+    },
+    "model_editor.surfaces.texture_note": {
+      "en": "Texture names are authored references. This pass does not import or bake texture files.",
+      "ru": "Имена текстур сохраняются как ссылки. Этот этап не импортирует и не запекает файлы текстур."
+    },
+    "model_editor.surfaces.no_geometry": {
+      "en": "No geometry in this LOD.",
+      "ru": "В этом LOD нет геометрии."
+    },
+    "model_editor.surfaces.no_materials": {
+      "en": "No materials are defined in this asset.",
+      "ru": "В asset не определены материалы."
+    },
+    "model_editor.surfaces.assign_confirm": {
+      "en": "Assign the selected material only to currently unassigned triangles?",
+      "ru": "Назначить выбранный материал только треугольникам, у которых материал пока не задан?"
+    },
+    "model_editor.surfaces.command.set_material": {
+      "en": "Update material",
+      "ru": "Обновить материал"
+    },
+    "model_editor.surfaces.command.assign_unassigned": {
+      "en": "Assign unassigned material",
+      "ru": "Назначить материал незаданным треугольникам"
+    },
+    "model_editor.preflight.class_thin_one": {
+      "en": "Thin one-sided",
+      "ru": "Тонкая односторонняя"
     }
   }
 }

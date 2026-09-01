@@ -1,5 +1,11 @@
 ## 0.10.24 — binary geometry transport / block `.elmesh` read
 
+- Checkpoints are now durable stage snapshots instead of a destructively pruned linear cache. Reimport/restore/invalidation mark incompatible stages `stale` but never delete another stage checkpoint.
+- Every new checkpoint stores stage-local `editor_state.json` beside the v4 package, using the same `EditorAuthoringState` serializer as workspace `wizard_state.json`; PREPARE evidence, stable authoring ids, replacement compatibility and topology/surface intent therefore restore with the mesh snapshot.
+- Explicit restore can open a saved stale stage even when the current workspace lineage has not unlocked it for editing; that view is restore-only until the checkpoint is restored. Automatic reopen/resume considers only `complete` checkpoints, never stale rollback snapshots.
+- Checkpoint invalidation is defined over the full reserved pipeline (`SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD`) so future stages inherit the same non-destructive contract.
+- Backend mutations already present for future SEMANTICS/PHYSICS/DAMAGE pages now invalidate from their owning future stage, so enabling those pages later cannot silently bypass checkpoint validity.
+- Durable checkpoint discovery no longer depends on a healthy `wizard_state.json`: canonical stage snapshot directories are rediscovered after missing/corrupt/unsupported workspace-head metadata and exposed as stale restore-only points.
 - PREPARE transport hotfix: canonical preparation now records the exact Render LODs whose mesh bytes changed. The preserved full-asset application terminal is still used, but its binary transport delta contains only those changed LODs; an idempotent `changed=0` PREPARE sends metadata only and no geometry payload.
 - Session-only pre-PREPARE RAW snapshots no longer ride in every normal asset/LOD publication. The `ИСХОДНИК` viewport requests RAW explicitly for the active LOD on first use; ordinary WORKING/prepared transport contains only the current mesh.
 - Added per-geometry and whole-PREPARE timing logs (`[ModelAssetEditor][prepare]`) without instrumenting or changing CanonicalMeshBuilder/libigl/Embree internals.

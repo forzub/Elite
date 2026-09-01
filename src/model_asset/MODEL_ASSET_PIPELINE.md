@@ -225,14 +225,17 @@ scene graph around those cached GPU buffers, but it must not recreate or retrans
 unchanged mesh payloads. A newly broken instance may clone an already-resident geometry
 locally; an edge-mask edit transmits only the changed mask.
 
-### Wizard checkpoints form one linear history
+### Wizard checkpoints are durable snapshots, not the current branch
 
-Wizard checkpoints are stage snapshots, not independent branches. When an earlier stage
-is edited, restored, or completed, every later stage checkpoint is invalid for the new
-asset state and must be physically removed from the workspace and reset to
-`not_started`. The current stage's previous checkpoint may remain while that stage is
-`stale`, providing one explicit rollback point. Restoring that checkpoint makes the
-stage `complete` again and removes all later checkpoints.
+Workspace validity and checkpoint storage are independent. Editing, restoring or recompleting an earlier stage marks that stage and every downstream stage `stale`/`not_started` as appropriate, but never deletes a checkpoint directory. A stale checkpoint is an explicit rollback snapshot from another workspace lineage, not garbage.
+
+Every new checkpoint stores the v4 ModelAsset package plus stage-local `editor_state.json`. The latter is serialized through the same `EditorAuthoringState` contract as workspace `wizard_state.json`, so PREPARE evidence, stable authoring identities, replacement compatibility and topology/surface intent are restored together with mesh bytes. Future SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD editor-only state must extend that same authoring-state serializer.
+
+Existing backend mutations reserved for future wizard pages already use the same invalidation order: semantic hierarchy/joint/socket edits start at SEMANTICS, physics/collision edits at PHYSICS, and state/damage/opening/repair edits at DAMAGE. Future UI enablement must reuse those boundaries rather than bypass checkpoint validity.
+
+Automatic reopen/resume considers only checkpoints whose stage validity is `complete`. Stale snapshots remain visible and explicitly restorable but are never silently promoted to the workspace head. Restoring a checkpoint marks all upstream stages complete in that snapshot and later saved snapshots stale; no checkpoint is physically pruned.
+
+`wizard_state.json` is mutable workspace-head metadata, not checkpoint ownership. If it is missing, unreadable or from an unsupported schema, canonical stage checkpoint directories are rediscovered and exposed conservatively as stale/restore-only snapshots instead of disappearing or auto-resuming.
 
 ## Native OBJ compilation
 

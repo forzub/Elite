@@ -156,13 +156,15 @@
     },
     {
       "id": "wizard_checkpoints",
-      "description": "Finished wizard stages create restorable non-production checkpoints in one linear history; later checkpoints are pruned when an earlier stage changes, and reopening an asset resumes the latest surviving checkpoint before production output.",
+      "description": "Finished wizard stages create durable non-production rollback snapshots. Workspace invalidation marks incompatible current/future stages stale without deleting checkpoints; each checkpoint carries stage-local editor_state.json, snapshot discovery survives missing/corrupt wizard_state.json, and only complete checkpoints may auto-resume as the current workspace head.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.h",
           "tokens": [
             "WizardStageState",
-            "wizardCheckpointPath"
+            "EditorAuthoringState",
+            "wizardCheckpointPath",
+            "wizardCheckpointEditorStatePath"
           ]
         },
         "backend": {
@@ -170,10 +172,14 @@
           "tokens": [
             "complete_wizard_stage",
             "restore_wizard_checkpoint",
-            "pruneWizardAfter",
-            "remove_all(wizardCheckpointPath",
+            "writeCheckpointEditorState",
+            "loadCheckpointEditorState",
+            "markWizardDescendantsStale",
+            "restoreWizardValidityAt",
             "latestWizardCheckpoint",
-            "RESUME CHECKPOINT"
+            "RESUME CHECKPOINT",
+            "invalidateWizardFrom",
+            "wizard state ignored:"
           ]
         },
         "ui": {
@@ -181,6 +187,7 @@
           "tokens": [
             "wizardCompleteBtn",
             "wizardRestoreBtn",
+            "restoreOnly",
             "wizardBar"
           ]
         },

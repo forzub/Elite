@@ -108,7 +108,7 @@ Detailed diagnostics remain in:
 build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log
 ```
 
-For every geometry the log records input cleanup counts, source/canonical non-manifold evidence, `split_topology_vertices`, `raycast_patches`, `raycast_flipped_triangles`, output topology/winding state, render-vertex/edge rebuild counts and exact failure reason. Wizard state schema 6 persists the same libigl/Embree counters beside the canonical fingerprint.
+For every geometry the log records input cleanup counts, source/canonical non-manifold evidence, `split_topology_vertices`, `raycast_patches`, `raycast_flipped_triangles`, output topology/winding state, render-vertex/edge rebuild counts and exact failure reason. Wizard state schema 7 persists the same libigl/Embree counters beside the canonical fingerprint; every new checkpoint also snapshots that editor-owned authoring state in its own `editor_state.json`.
 
 ## 0A.6 Runtime boundary
 
@@ -146,25 +146,46 @@ Binary decoder оставляет bulk arrays typed (`Float32Array` / `Uint32Arr
 
 `.elmodel/.elmesh v4` на диске не меняется. `.elmesh` при чтении теперь забирается одним большим блоком в память и разбирается memory cursor-ом через тот же бинарный layout вместо миллионов мелких `istream::read()`.
 
-## 0.2 Wizard checkpoints — линейная история
+## 0.2 Wizard checkpoints — независимые rollback snapshots
 
-Checkpoint не является независимой веткой. Если изменили, восстановили или повторно завершили более ранний stage, все более поздние checkpoints относятся к старой версии asset и должны быть удалены физически.
+Checkpoint и validity текущего wizard — разные сущности. Изменение раннего stage может сделать более позднюю работу несовместимой с текущим workspace head, но **не имеет права удалять её checkpoint**.
+
+Для каждой стадии существует максимум один явный «последний checkpoint» в её каноническом каталоге. Повторное `COMPLETE STAGE + CHECKPOINT` этой же стадии заменяет только её собственный снимок; checkpoints других стадий не удаляются автоматически.
 
 Правило:
 
 ```text
-SOURCE complete
-LODS complete
-GEOMETRY complete
+SOURCE complete      checkpoint-SOURCE exists
+LODS complete        checkpoint-LODS exists
+GEOMETRY complete    checkpoint-GEOMETRY exists
 
-изменили LODS
+REIMPORT SOURCE
 
-SOURCE complete
-LODS stale       # старый LODS checkpoint можно восстановить
-GEOMETRY not_started + checkpoint directory removed
+SOURCE stale         checkpoint-SOURCE exists
+LODS stale           checkpoint-LODS exists
+GEOMETRY stale       checkpoint-GEOMETRY exists
 ```
 
-После `RESTORE LODS` сам LODS снова `complete`, а всё после него удалено. После `COMPLETE SOURCE + CHECKPOINT` все старые LODS/GEOMETRY/... checkpoints также удаляются.
+`stale` означает только: «этот snapshot больше не является продолжением текущего workspace head». Он остаётся полноценной точкой отката и может быть явно восстановлен.
+
+`RESTORE LODS` делает asset + editor authoring state из LODS checkpoint новым workspace head. `SOURCE` и `LODS` становятся `complete`; более поздние stages получают `stale`, если у них есть сохранённые checkpoints, либо `not_started`, если их никогда не сохраняли. Ни один каталог checkpoint при restore не удаляется.
+
+Автоматический resume при повторном открытии выбирает только последний checkpoint со статусом `complete`. `stale` snapshots никогда не становятся workspace head автоматически: их можно восстановить только явной командой пользователя. Поэтому несохранённый SOURCE reimport не способен сначала уничтожить поздние точки, а затем молча воскресить старый stale SOURCE snapshot.
+
+`wizard_state.json` не владеет временем жизни checkpoints. При его отсутствии, повреждении или неподдерживаемой версии редактор заново обнаруживает канонические `checkpoint-<stage>/` каталоги на диске и показывает найденные snapshots как `stale`/restore-only. Потеря mutable workspace-head metadata не должна делать rollback-снимки недоступными.
+
+Каждый новый checkpoint самодостаточен и содержит два слоя:
+
+```text
+checkpoint-<STAGE>/
+    <asset>.elmodel
+    <asset>.lod*.elmesh
+    editor_state.json
+```
+
+`editor_state.json` хранит editor-owned authoring state, который не является частью runtime v4 asset: stable base/variant identities, replacement compatibility, explicit topology/surface intent metadata, PREPARE fingerprints/counters и identity ordinals. RAW diagnostic snapshots остаются session-only и намеренно не checkpoint-ятся.
+
+Workspace `wizard_state.json` и checkpoint `editor_state.json` используют **один и тот же serializer/parser authoring state**. Это обязательный сквозной контракт для будущих `SEMANTICS / PHYSICS / DAMAGE / VALIDATE / BUILD`: если новый stage добавляет editor-only authored state, он должен быть добавлен в общий `EditorAuthoringState`, а не сохраняться отдельным случайным sidecar, иначе restore перестанет быть точным.
 
 ---
 
@@ -303,8 +324,9 @@ BUILD
 1. `SOURCE`
 2. `LODS`
 3. `GEOMETRY`
+4. `SURFACES`
 
-Остальные стадии видимы как будущий pipeline contract и не должны имитировать готовый функционал.
+`SEMANTICS / PHYSICS / DAMAGE / VALIDATE / BUILD` уже входят в общий порядок invalidation/checkpoint validity, хотя их wizard-панели ещё не реализованы. Уже существующие backend-команды, которые позднее будут подключены к этим стадиям, заранее маршрутизированы в этот контракт: semantic hierarchy/joints/sockets инвалидируют `SEMANTICS`, rigid-body/collision authoring — `PHYSICS`, state variants/render-state selectors/hit regions/openings/repair targets — `DAMAGE`. Поэтому включение будущей UI-стадии не должно потребовать изобретать отдельную checkpoint-семантику.
 
 ## Checkpoints
 
@@ -316,11 +338,12 @@ build/tools/model_asset_editor/workspaces/<asset>/
 
 Checkpoint нужен для:
 
-- восстановления законченного этапа;
-- защиты от последующей порчи состояния;
-- маркировки поздних стадий как stale после возврата назад.
+- точного восстановления законченного этапа;
+- защиты от последующей порчи текущего workspace;
+- сохранения альтернативной более поздней точки даже после возврата к ранней стадии;
+- маркировки несовместимых с текущим workspace head snapshots как `stale` **без удаления**.
 
-Checkpoint не является production asset.
+Checkpoint не является production asset и не меняется от `REIMPORT`, `RESTORE` другой стадии или обычной invalidation. Заменить checkpoint стадии можно только новым явным `COMPLETE STAGE + CHECKPOINT` этой же стадии; удалить — только будущей отдельной явной housekeeping-командой/retention policy.
 
 ---
 
@@ -1225,7 +1248,7 @@ Viewport diagnostics:
 2. `БЕЗ ОТСЕЧЕНИЯ` — prepared mesh, `DoubleSide`;
 3. `РАБОЧИЙ` — the same prepared mesh, `FrontSide`.
 
-The RAW snapshot exists only in the editor session and is never written into `.elmodel` or `.elmesh`. Technical preparation evidence is written to `build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log` and replaced at the start of each PREPARE run; wizard schema 6 also stores cleanup counts, split topology vertex count, raycast patch count and raycast-flipped triangle count.
+The RAW snapshot exists only in the editor session and is never written into `.elmodel` or `.elmesh`. Technical preparation evidence is written to `build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log` and replaced at the start of each PREPARE run; wizard schema 7 also stores cleanup counts, split topology vertex count, raycast patch count and raycast-flipped triangle count, and the same authoring-state serializer is used for stage-local checkpoint snapshots.
 
 Real-station spike reference for `station_Habitat_Module_S3`:
 
@@ -1291,9 +1314,20 @@ build/tools/model_asset_editor/
     workspaces/
         <asset>/
             wizard_state.json
-            checkpoint-SOURCE/
-            checkpoint-LODS/
-            checkpoint-GEOMETRY/
+            checkpoint-source/
+                <asset>.elmodel
+                <asset>.lod*.elmesh
+                editor_state.json
+            checkpoint-lods/
+                ...
+                editor_state.json
+            checkpoint-geometry/
+                ...
+                editor_state.json
+            checkpoint-surfaces/
+                ...
+                editor_state.json
+            # same contract is reserved for semantics/physics/damage/validate/build
             logs/
                 mesh_repair.log
                 instance_fit.log

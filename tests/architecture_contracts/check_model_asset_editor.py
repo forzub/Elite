@@ -155,7 +155,9 @@ require(
     "scan_render_duplicates",
     "consolidate_render_duplicates",
     "wizardCheckpointPath",
-    "pruneWizardAfter",
+    "wizardCheckpointEditorStatePath",
+    "markWizardDescendantsStale",
+    "restoreWizardValidityAt",
     "sendAssetMetadata",
     "serializeAssetMetadata",
     "asset_binary_begin",
@@ -504,6 +506,24 @@ if "canonicalizeLoadedWorkingSet(" in restore_body:
 if "sendAsset();" not in restore_body:
     raise AssertionError("checkpoint restore must publish exactly the restored payload")
 
+for token in (
+    'loadCheckpointEditorState(stage',
+    'applyEditorAuthoringState(std::move(restoredEditorState))',
+    'restoreWizardValidityAt(stage)',
+):
+    if token not in restore_body:
+        raise AssertionError(f"checkpoint restore is not a self-contained workspace snapshot: {token!r}")
+
+complete_start = session.index("bool ModelAssetEditorSession::completeWizardStage(")
+complete_end = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(", complete_start)
+complete_body = session[complete_start:complete_end]
+for token in (
+    'writeCheckpointEditorState(stage',
+    'markWizardDescendantsStale(stage)',
+):
+    if token not in complete_body:
+        raise AssertionError(f"checkpoint completion does not preserve future rollback snapshots: {token!r}")
+
 load_lod_start = session.index("bool ModelAssetEditorSession::loadLodOnly(")
 load_lod_end = session.index("bool ModelAssetEditorSession::ensureLodLoaded(", load_lod_start)
 load_lod_body = session[load_lod_start:load_lod_end]
@@ -650,7 +670,12 @@ for token in (
     'serializeAssetMetadata()',
     '"type", "asset_binary_begin"',
     '"type", "lod_payload_binary_begin"',
-    'std::filesystem::remove_all(wizardCheckpointPath(laterId).parent_path()',
+    'wizardCheckpointEditorStatePath',
+    '"editor_state.json"',
+    'writeCheckpointEditorState',
+    'loadCheckpointEditorState',
+    'markWizardDescendantsStale',
+    'restoreWizardValidityAt',
     'latestWizardCheckpoint',
     '"RESUME CHECKPOINT"',
     'ModelAssetBinary::load(resumeCheckpoint.string()',
@@ -658,6 +683,72 @@ for token in (
 ):
     if token not in session_cpp:
         raise AssertionError(f"metadata/checkpoint architecture missing {token!r}")
+
+for forbidden in (
+    'pruneWizardAfter',
+    'std::filesystem::remove_all(wizardCheckpointPath',
+):
+    if forbidden in session_cpp:
+        raise AssertionError(f"checkpoint snapshots are still destructively pruned: {forbidden!r}")
+
+latest_start = session_cpp.index("std::filesystem::path ModelAssetEditorSession::latestWizardCheckpoint")
+latest_end = session_cpp.index("ModelAssetEditorSession::EditorAuthoringState", latest_start)
+latest_body = session_cpp[latest_start:latest_end]
+if 'state->second.status != "complete"' not in latest_body or 'status != "stale"' in latest_body:
+    raise AssertionError("stale checkpoints can still auto-resume as the current workspace head")
+
+load_state_start = session_cpp.index("void ModelAssetEditorSession::loadWizardState()")
+load_state_end = session_cpp.index("bool ModelAssetEditorSession::writeWizardState() const", load_state_start)
+load_state_body = session_cpp[load_state_start:load_state_end]
+for token in (
+    'bool stateLoaded = false',
+    'wizard state ignored:',
+    'const auto checkpoint = wizardCheckpointPath(id)',
+    'if (!stateLoaded) value.status = "stale"',
+):
+    if token not in load_state_body:
+        raise AssertionError(f"durable checkpoint discovery/recovery missing {token!r}")
+
+# Commands already present for reserved future stages must participate in the
+# same stage-validity contract now, before those wizard pages are enabled.
+planned_mutation_stages = {
+    "convert_source_basis": "source",
+    "set_node_transform": "semantics",
+    "set_render_node_semantic": "semantics",
+    "set_joint": "semantics",
+    "add_socket": "semantics",
+    "set_physics": "physics",
+    "estimate_physics": "physics",
+    "add_collision": "physics",
+    "set_collision": "physics",
+    "set_node_default_state": "damage",
+    "add_state_variant": "damage",
+    "set_render_node_states": "damage",
+    "add_hit_region": "damage",
+    "add_opening": "damage",
+    "add_repair_target": "damage",
+}
+for command_name, stage_name in planned_mutation_stages.items():
+    marker = f'if (command == "{command_name}")'
+    start = session_cpp.index(marker)
+    next_command = session_cpp.find('if (command == "', start + len(marker))
+    body = session_cpp[start: next_command if next_command != -1 else len(session_cpp)]
+    expected = f'invalidateWizardFrom("{stage_name}")'
+    if expected not in body:
+        raise AssertionError(
+            f"planned {stage_name.upper()} mutation {command_name!r} does not invalidate its stage/downstream checkpoints"
+        )
+
+for token in (
+    'restoreOnly',
+    'Other checkpoints remain stored',
+    'Other checkpoints are preserved',
+    'restoreOnly||!groups.includes(state.wizardStage)',
+):
+    if token not in web:
+        raise AssertionError(f"non-destructive checkpoint restore UI missing {token!r}")
+if 'later-stage checkpoints will be removed' in web or 'later-stage checkpoints are pruned' in web:
+    raise AssertionError("checkpoint restore UI still promises destructive pruning")
 
 for forbidden in ('g["positions"]', 'g["normals"]', 'g["indices"]', 'rawJson["positions"]', 'serializeAsset(true)'):
     if forbidden in session_cpp:
@@ -725,6 +816,25 @@ compiled_branch = session_cpp.find("else if (!forceReimport && (havePackage || h
 if resume_branch < 0 or compiled_branch < 0 or resume_branch > compiled_branch:
     raise AssertionError("asset selection no longer resumes wizard checkpoint before production package")
 
+for token in (
+    'loadCheckpointEditorState(resumedCheckpointStage',
+    'applyEditorAuthoringState(std::move(resumedEditorState))',
+    'restoreWizardValidityAt(resumedCheckpointStage)',
+):
+    if token not in session_cpp[resume_branch:compiled_branch]:
+        raise AssertionError(f"checkpoint auto-resume is not self-contained: {token!r}")
+
+invalidate_start = session_cpp.index("void ModelAssetEditorSession::invalidateWizardFrom")
+invalidate_end = session_cpp.index("nlohmann::json ModelAssetEditorSession::serializeWizard", invalidate_start)
+invalidate_body = session_cpp[invalidate_start:invalidate_end]
+for token in (
+    'for (std::size_t i = first; i < order.size(); ++i)',
+    'value.status = "stale"',
+    'value.status = "not_started"',
+):
+    if token not in invalidate_body:
+        raise AssertionError(f"future-stage checkpoint invalidation contract missing {token!r}")
+
 web_sync = text("src/assets/webui/model_asset_editor.html")
 for token in (
     "mergeAssetMetadata",
@@ -781,7 +891,7 @@ for token in (
     "m_meshPreparationRecords",
     "meshPreparationRecords",
     "geometryTopologyClasses",
-    '"schemaVersion", 6',
+    'state["schemaVersion"] = 7',
 ):
     if token not in session_cpp:
         raise AssertionError(f"canonical SOURCE/preflight backend contract missing {token!r}")
@@ -1192,4 +1302,4 @@ for token in (
     if token not in session_cpp:
         raise AssertionError(f"0.10.22 cross-LOD surface batch missing {token!r}")
 
-print("[PASS] model asset editor v0.10.24 binary geometry transport / block .elmesh read / preserved viewport terminals / v4")
+print("[PASS] model asset editor v0.10.24 binary geometry transport / durable checkpoints / preserved viewport terminals / v4")

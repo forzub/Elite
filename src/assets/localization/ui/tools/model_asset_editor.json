@@ -1560,11 +1560,11 @@
       "ja": "最後のチェックポイントを復元"
     },
     "model_editor.wizard.restore_confirm": {
-      "en": "Return editor memory to the exact state saved at the last checkpoint for this stage? Changes made after that checkpoint will be discarded and later-stage checkpoints will be removed. Source OBJ and the production package remain unchanged until an explicit save.",
-      "ru": "Вернуть редактор в точное состояние, сохранённое в последней контрольной точке этого этапа? Все изменения после неё будут отброшены, а контрольные точки более поздних этапов удалены. Исходные OBJ и production-пакет не изменятся до явного сохранения.",
-      "zh-Hans": "将编辑器恢复到本阶段上次检查点保存的精确状态？该检查点之后的更改将被丢弃，后续阶段的检查点将被删除。源 OBJ 和正式包在显式保存前不会改变。",
-      "es": "¿Volver al estado exacto guardado en el último punto de control de esta etapa? Se descartarán los cambios posteriores y se eliminarán los puntos de control de etapas posteriores. Los OBJ fuente y el paquete de producción no cambiarán hasta guardar explícitamente.",
-      "ja": "この工程で最後に保存したチェックポイントの正確な状態へ戻しますか？それ以降の変更は破棄され、後続工程のチェックポイントは削除されます。明示的に保存するまでソース OBJ と本番パッケージは変更されません。"
+      "en": "Return editor memory to the exact state saved at the last checkpoint for this stage? Current in-memory changes will be discarded. Other checkpoints remain stored and become stale rollback snapshots when they are no longer descendants of the restored stage. Source OBJ and the production package remain unchanged until an explicit save.",
+      "ru": "Вернуть редактор в точное состояние последней контрольной точки этого этапа? Текущие изменения в памяти будут отброшены. Остальные контрольные точки останутся на диске и, если они больше не являются продолжением восстановленного состояния, будут помечены как устаревшие снимки для отката. Исходные OBJ и production-пакет не изменятся до явного сохранения.",
+      "zh-Hans": "将编辑器恢复到本阶段上次检查点保存的精确状态？当前内存中的更改将被丢弃。其他检查点会继续保留；如果它们不再属于恢复状态的后续链，则会标记为可回退的过期快照。源 OBJ 和正式包在显式保存前不会改变。",
+      "es": "¿Volver al estado exacto guardado en el último punto de control de esta etapa? Se descartarán los cambios actuales en memoria. Los demás puntos de control se conservarán y, si ya no descienden del estado restaurado, quedarán marcados como instantáneas obsoletas disponibles para volver atrás. Los OBJ fuente y el paquete de producción no cambiarán hasta guardar explícitamente.",
+      "ja": "この工程で最後に保存したチェックポイントの正確な状態へ戻しますか？現在メモリ上の変更は破棄されます。他のチェックポイントは保存されたままで、復元した状態の後続ではなくなったものはロールバック可能な stale スナップショットとして扱われます。明示的に保存するまでソース OBJ と本番パッケージは変更されません。"
     },
     "model_editor.wizard.completed_notice": {
       "en": "Checkpoint saved",
@@ -2124,8 +2124,8 @@
       "ru": "Восстановить последнюю контрольную точку"
     },
     "model_editor.wizard.restore_tip.desc": {
-      "en": "Returns the editor to the exact state stored when this stage was last completed. Changes made after that checkpoint are discarded and later-stage checkpoints are pruned. Source OBJ and the production package are not changed until Save.",
-      "ru": "Возвращает редактор в точное состояние, сохранённое при последнем завершении этого этапа. Изменения после этой точки отбрасываются, более поздние контрольные точки удаляются. Исходные OBJ и production-пакет не меняются до сохранения."
+      "en": "Restores both the asset package snapshot and the stage-local editor authoring state. Other checkpoints are preserved; incompatible later snapshots become stale but remain explicitly restorable. Source OBJ and the production package are not changed until Save.",
+      "ru": "Восстанавливает и снимок asset-пакета, и локальное editor-state этого этапа. Остальные контрольные точки сохраняются; несовместимые более поздние снимки становятся stale, но остаются доступными для явного восстановления. Исходные OBJ и production-пакет не меняются до сохранения."
     },
     "model_editor.wizard.source.reimport_tip.title": {
       "en": "Reload all source meshes",
@@ -2760,8 +2760,8 @@
       "ru": "Обновить исходный набор"
     },
     "model_editor.wizard.source.refresh_tip.desc": {
-      "en": "Rescans all loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any change invalidates SOURCE and later checkpoints.",
-      "ru": "Повторно просматривает все загруженные деревья LOD и подхватывает дополнительные OBJ без пересборки основной модели. Любое изменение помечает SOURCE устаревшим и удаляет более поздние контрольные точки."
+      "en": "Rescans all loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any authored change marks SOURCE and downstream stages stale; saved checkpoints remain available.",
+      "ru": "Повторно просматривает все загруженные деревья LOD и подхватывает дополнительные OBJ без пересборки основной модели. Любое изменение помечает SOURCE и последующие стадии как stale; сохранённые контрольные точки не удаляются."
     },
     "model_editor.server.extras_refreshed": {
       "en": "Source set refreshed",
@@ -3206,6 +3206,13 @@
     "model_editor.preflight.class_thin_one": {
       "en": "Thin one-sided",
       "ru": "Тонкая односторонняя"
+    },
+    "model_editor.wizard.restore_only": {
+      "en": "This stage is not editable from the current workspace head, but its saved checkpoint is still available. Restore it to make this stage and its upstream state current again.",
+      "ru": "Этот этап нельзя редактировать из текущего состояния workspace, но его сохранённая контрольная точка остаётся доступной. Восстановите её, чтобы снова сделать этот этап и все предыдущие стадии текущей веткой.",
+      "zh-Hans": "当前工作区状态下不能编辑此阶段，但其已保存的检查点仍可用。恢复该检查点即可让此阶段及其上游状态重新成为当前状态。",
+      "es": "Esta etapa no se puede editar desde el estado actual del espacio de trabajo, pero su punto de control guardado sigue disponible. Restáuralo para volver a hacer actuales esta etapa y sus etapas anteriores.",
+      "ja": "現在のワークスペース状態からこの工程を編集することはできませんが、保存済みチェックポイントは利用できます。復元すると、この工程とそれ以前の状態が再び現在の状態になります。"
     }
   }
 }

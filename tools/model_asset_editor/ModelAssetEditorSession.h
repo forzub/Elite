@@ -93,15 +93,38 @@ private:
         std::size_t raycastFlippedTriangles = 0;
         std::uint64_t outputFingerprint = 0;
     };
+    struct EditorAuthoringState
+    {
+        std::map<std::size_t, std::map<std::string, std::string>> baseVisualIds;
+        std::map<std::size_t, std::map<std::string, std::string>> sourceExtraMeshIds;
+        std::map<std::string, std::vector<std::string>> sourceVariantReplacements;
+        std::map<std::size_t, std::map<std::string, std::string>> geometryTopologyClasses;
+        std::map<std::size_t, std::map<std::string, MeshPreparationRecord>> meshPreparationRecords;
+        std::map<std::size_t, std::map<std::string, std::vector<std::string>>> legacySourceVariantReplacements;
+        std::size_t nextBaseVisualOrdinal = 1;
+        std::size_t nextSourceVariantOrdinal = 1;
+    };
     std::filesystem::path wizardWorkspacePath() const;
     std::filesystem::path wizardStatePath() const;
     std::filesystem::path wizardCheckpointPath(const std::string& stage) const;
+    std::filesystem::path wizardCheckpointEditorStatePath(const std::string& stage) const;
     std::filesystem::path wizardLogPath(const std::string& fileName) const;
     std::filesystem::path latestWizardCheckpoint(std::string* stage = nullptr) const;
+    EditorAuthoringState captureEditorAuthoringState() const;
+    void applyEditorAuthoringState(EditorAuthoringState state);
+    nlohmann::json serializeEditorAuthoringState(const EditorAuthoringState& state) const;
+    bool parseEditorAuthoringState(
+        const nlohmann::json& state,
+        int schemaVersion,
+        EditorAuthoringState& parsed,
+        std::string* error = nullptr) const;
+    bool writeCheckpointEditorState(const std::string& stage, std::string* error = nullptr) const;
+    bool loadCheckpointEditorState(const std::string& stage, EditorAuthoringState& state, std::string* error = nullptr) const;
     void loadWizardState();
     bool writeWizardState() const;
     void invalidateWizardFrom(const std::string& stage);
-    void pruneWizardAfter(const std::string& stage);
+    void markWizardDescendantsStale(const std::string& stage);
+    void restoreWizardValidityAt(const std::string& stage);
     bool completeWizardStage(const std::string& stage);
     bool restoreWizardCheckpoint(const std::string& stage);
     bool scanRenderDuplicates(

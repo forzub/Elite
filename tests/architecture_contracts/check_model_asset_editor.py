@@ -452,6 +452,22 @@ if 'build/logs' in canonical_body or 'model_asset_mesh_repair.log' in canonical_
     raise AssertionError("PREPARE MESHES regressed to CWD-relative/global diagnostics")
 if "SOURCE BLOCKED: raw mesh was not exposed" in canonical_body:
     raise AssertionError("canonical preparation still masquerades as a SOURCE load blocker")
+if "changedLods.insert(li)" not in canonical_body or "changedLodsOut->assign" not in canonical_body:
+    raise AssertionError("PREPARE no longer reports exactly which LOD payloads changed")
+
+prepare_command_start = session.index('if (command == "prepare_model_meshes")')
+prepare_command_end = session.index('if (command == "analyze_model_preflight")', prepare_command_start)
+prepare_command_body = session[prepare_command_start:prepare_command_end]
+for token in (
+    "std::vector<std::size_t> changedLods",
+    'sendAsset(changedLods)',
+    'sendAssetMetadata()',
+    '[ModelAssetEditor][prepare]',
+):
+    if token not in prepare_command_body:
+        raise AssertionError(f"PREPARE transport boundary missing {token!r}")
+if "sendAsset();" in prepare_command_body:
+    raise AssertionError("PREPARE still republishes every resident LOD unconditionally")
 
 verify_start = session.index("bool ModelAssetEditorSession::verifyLoadedWorkingSetCanonical(")
 verify_end = session.index("bool ModelAssetEditorSession::setGeometryTopologyClass(", verify_start)
@@ -469,6 +485,8 @@ for token in ("asset_binary_begin", "serializeAssetMetadata", "broadcastBinary",
         raise AssertionError(f"sendAsset binary transport missing {token!r}")
 if "serializeAsset(true)" in send_body or '"positions"' in send_body:
     raise AssertionError("sendAsset regressed to JSON geometry publication")
+if "m_rawMeshSnapshots" in send_body:
+    raise AssertionError("ordinary asset publication still retransmits session-only RAW snapshots")
 
 select_start = session.index("bool ModelAssetEditorSession::selectAsset(")
 select_end = session.index("bool ModelAssetEditorSession::saveAsset(", select_start)
@@ -493,6 +511,13 @@ if "canonicalizeLoadedWorkingSet(" in load_lod_body:
     raise AssertionError("manual LOD load/reload must not canonicalize implicitly")
 if "sendAsset({lodIndex})" not in load_lod_body or "sendLodPayload(lodIndex)" in load_lod_body:
     raise AssertionError("manual LOD load no longer preserves the old full-asset application terminal through a targeted transport delta")
+
+send_lod_start = session.index("void ModelAssetEditorSession::sendLodPayload(")
+send_lod_end = session.index("std::vector<std::string> ModelAssetEditorSession::sourceVariantReplacementIds", send_lod_start)
+send_lod_body = session[send_lod_start:send_lod_end]
+for token in ("includeRawSnapshots", "m_rawMeshSnapshots.find(lodIndex)", 'raw="'):
+    if token not in send_lod_body:
+        raise AssertionError(f"explicit RAW viewport payload path missing {token!r}")
 
 preflight_start = session.index("bool ModelAssetEditorSession::analyzeModelPreflight()")
 preflight_end = session.index("bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(", preflight_start)
@@ -680,6 +705,8 @@ for token in (
     "ArrayBuffer.isView(indices)?new THREE.BufferAttribute(indices,1):indices",
     "edges=new Array(edgeCount)",
     "logEditorWireTiming",
+    "activeLodNeedsRawSource",
+    "includeRaw:true",
 ):
     if token not in web:
         raise AssertionError(f"binary viewport compatibility/perf guard missing {token!r}")

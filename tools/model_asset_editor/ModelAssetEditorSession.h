@@ -34,7 +34,7 @@ private:
     void sendSettings();
     void sendAsset(const std::vector<std::size_t>& payloadLods = {});
     void sendAssetMetadata(const nlohmann::json& hints = nlohmann::json::object());
-    void sendLodPayload(std::size_t lodIndex);
+    void sendLodPayload(std::size_t lodIndex, bool includeRawSnapshots = false);
     std::uint32_t nextWireTransferId();
     void sendStatus(const std::string& message, bool error = false, const std::string& activity = "idle");
     void sendProgress(
@@ -112,7 +112,8 @@ private:
     bool canonicalizeLoadedWorkingSet(
         const std::string& invalidationStage = {},
         bool reportStatus = false,
-        bool* payloadChangedOut = nullptr);
+        bool* payloadChangedOut = nullptr,
+        std::vector<std::size_t>* changedLodsOut = nullptr);
     bool verifyLoadedWorkingSetCanonical(std::string* reason = nullptr) const;
     bool modelPreflightAllLoadedReady(std::string* reason = nullptr) const;
     bool setGeometryTopologyClass(

@@ -142,6 +142,8 @@ Binary decoder оставляет bulk arrays typed (`Float32Array` / `Uint32Arr
 
 Для профилирования reimport backend пишет `[ModelAssetEditor][perf]` / `[ModelAssetEditor][transport]` с временем source import, additional-source import, metadata serialization, binary encode и размером wire payload; browser console отдельно пишет decode/legacy-terminal время. Это позволяет отличить тяжёлый OBJ/topology import от transport/viewport задержки.
 
+`ПОДГОТОВИТЬ МЕШИ` остаётся полностью backend-операцией: browser посылает только маленькую команду, CanonicalMeshBuilder/libigl/Embree работают над resident `RenderLod` в C++ памяти. После PREPARE transport публикует только LOD, где реально изменились mesh bytes; повторный `changed=0` проход синхронизирует только metadata. Session-only RAW snapshot не входит в обычный payload и запрашивается отдельно только при выборе viewport-режима `ИСХОДНИК`. Backend пишет `[ModelAssetEditor][prepare]` отдельно для каждой реально обрабатываемой geometry и общий `compute_ms / changed_lods / publish_ms`.
+
 `.elmodel/.elmesh v4` на диске не меняется. `.elmesh` при чтении теперь забирается одним большим блоком в память и разбирается memory cursor-ом через тот же бинарный layout вместо миллионов мелких `istream::read()`.
 
 ## 0.2 Wizard checkpoints — линейная история

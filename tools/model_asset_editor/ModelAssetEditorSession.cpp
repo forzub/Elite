@@ -3457,7 +3457,8 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
 bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
     const std::string& invalidationStage,
     bool reportStatus,
-    bool* payloadChangedOut)
+    bool* payloadChangedOut,
+    std::vector<std::size_t>* changedLodsOut)
 {
     std::size_t canonicalizedGeometries = 0;
     std::size_t changedGeometries = 0;
@@ -3468,6 +3469,7 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
     std::vector<std::string> canonicalFailures;
     bool payloadChanged = false;
     bool authoringStateChanged = false;
+    std::set<std::size_t> changedLods;
     const auto repairLogPath = wizardLogPath("mesh_repair.log");
     resetMeshRepairDiagnostic(repairLogPath, m_asset);
 
@@ -3504,8 +3506,23 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
                 // normal/render-edge rebuild. Geometry-class decisions remain
                 // exclusively in ANALYZE. Keep the exact resident pre-PREPARE
                 // payload for the session-only SOURCE viewport.
+                const auto rawSnapshotStarted = std::chrono::steady_clock::now();
                 m_rawMeshSnapshots[li][geometry.id] = geometry.mesh;
+                const auto rawSnapshotMs = std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - rawSnapshotStarted).count();
+                const auto geometryPrepareStarted = std::chrono::steady_clock::now();
                 const auto built = canonicalizeMesh(geometry.mesh);
+                const auto geometryPrepareMs = std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - geometryPrepareStarted).count();
+                std::cerr << "[ModelAssetEditor][prepare] LOD" << li
+                          << " geometry=" << geometry.id
+                          << " raw_snapshot_ms=" << std::fixed << std::setprecision(1) << rawSnapshotMs
+                          << " canonical_ms=" << geometryPrepareMs
+                          << " success=" << (built.success ? 1 : 0)
+                          << " changed=" << (built.changed ? 1 : 0)
+                          << " raycast_patches=" << built.raycastPatches
+                          << " raycast_flips=" << built.raycastFlippedTriangles
+                          << '\n';
                 appendMeshRepairDiagnostic(repairLogPath, m_asset, li, geometry, built);
                 if (!built.success)
                 {
@@ -3566,6 +3583,7 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
                 {
                     ++changedGeometries;
                     payloadChanged = true;
+                    changedLods.insert(li);
                     markLodDirty(li);
                 }
             }
@@ -3608,6 +3626,8 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
         (void)writeWizardState();
 
     if (payloadChangedOut) *payloadChangedOut = payloadChanged;
+    if (changedLodsOut)
+        changedLodsOut->assign(changedLods.begin(), changedLods.end());
 
     if (reportStatus && (canonicalizedGeometries != 0 || invalidGeometries != 0))
     {
@@ -5395,14 +5415,11 @@ void ModelAssetEditorSession::sendAsset(const std::vector<std::size_t>& requeste
     double encodeMs = 0.0;
     for (const auto lodIndex : selectedPayloadLods)
     {
-        const auto rawIt = m_rawMeshSnapshots.find(lodIndex);
-        const auto* raw = rawIt == m_rawMeshSnapshots.end() ? nullptr : &rawIt->second;
         const auto encodeStarted = std::chrono::steady_clock::now();
         auto frame = wire::encodeLodGeometryPayload(
             transferId,
             static_cast<std::uint32_t>(lodIndex),
-            m_asset.renderLods[lodIndex],
-            raw);
+            m_asset.renderLods[lodIndex]);
         encodeMs += std::chrono::duration<double, std::milli>(
             std::chrono::steady_clock::now() - encodeStarted).count();
         wireBytes += static_cast<std::uint64_t>(frame.size());
@@ -5427,7 +5444,7 @@ void ModelAssetEditorSession::sendAssetMetadata(const nlohmann::json& hints)
     m_server.broadcastText(payload.dump());
 }
 
-void ModelAssetEditorSession::sendLodPayload(std::size_t lodIndex)
+void ModelAssetEditorSession::sendLodPayload(std::size_t lodIndex, bool includeRawSnapshots)
 {
     if (lodIndex >= m_asset.renderLods.size() ||
         lodIndex >= m_lodState.size() || !m_lodState[lodIndex].loaded)
@@ -5454,7 +5471,7 @@ void ModelAssetEditorSession::sendLodPayload(std::size_t lodIndex)
         {"lod", lods.at(lodIndex)}
     }).dump());
 
-    const auto rawIt = m_rawMeshSnapshots.find(lodIndex);
+    const auto rawIt = includeRawSnapshots ? m_rawMeshSnapshots.find(lodIndex) : m_rawMeshSnapshots.end();
     const auto* raw = rawIt == m_rawMeshSnapshots.end() ? nullptr : &rawIt->second;
     const auto encodeStarted = std::chrono::steady_clock::now();
     auto frame = wire::encodeLodGeometryPayload(
@@ -5470,6 +5487,7 @@ void ModelAssetEditorSession::sendLodPayload(std::size_t lodIndex)
               << " lod=" << lodIndex
               << " encode_ms=" << std::fixed << std::setprecision(1) << encodeMs
               << " wire_mib=" << (static_cast<double>(wireBytes) / (1024.0 * 1024.0))
+              << " raw=" << (includeRawSnapshots && raw ? 1 : 0)
               << '\n';
     sendStatus("LOD" + std::to_string(lodIndex) + " viewport payload ready");
 }
@@ -5829,11 +5847,32 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         if (command == "prepare_model_meshes")
         {
             if (!ensureAllLodsLoaded()) return;
-            const bool complete = canonicalizeLoadedWorkingSet("lods", true);
-            // Publication is never gated by preparation. Successful meshes are
-            // replaced by their canonical payload; failed meshes stay untouched
-            // and visible so the author can inspect them.
-            sendAsset();
+            const auto prepareStarted = std::chrono::steady_clock::now();
+            bool payloadChanged = false;
+            std::vector<std::size_t> changedLods;
+            const bool complete = canonicalizeLoadedWorkingSet(
+                "lods", true, &payloadChanged, &changedLods);
+            const auto computeMs = std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - prepareStarted).count();
+
+            // PREPARE mutates only backend-resident geometry. Preserve the old
+            // full-asset application terminal, but let the transport delta carry
+            // only LOD payloads whose mesh bytes actually changed. If the pass is
+            // already current, synchronize metadata only; no mesh crosses the wire.
+            const auto publishStarted = std::chrono::steady_clock::now();
+            if (!changedLods.empty())
+                sendAsset(changedLods);
+            else
+                sendAssetMetadata();
+            const auto publishMs = std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - publishStarted).count();
+            std::cerr << "[ModelAssetEditor][prepare] compute_ms=" << std::fixed << std::setprecision(1)
+                      << computeMs
+                      << " changed_lods=" << changedLods.size()
+                      << " payload_changed=" << (payloadChanged ? 1 : 0)
+                      << " publish_ms=" << publishMs
+                      << '\n';
+
             if (complete)
                 sendStatus("Mesh preparation complete; run ANALYZE to classify/audit the canonical working set");
             return;
@@ -5901,7 +5940,9 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         }
         if (command == "request_lod_payload")
         {
-            sendLodPayload(message.value("lodIndex", std::size_t(-1)));
+            sendLodPayload(
+                message.value("lodIndex", std::size_t(-1)),
+                message.value("includeRaw", false));
             return;
         }
         if (command == "refresh_source_variants")

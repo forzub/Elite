@@ -1,5 +1,8 @@
 ## 0.10.24 — binary geometry transport / block `.elmesh` read
 
+- PREPARE transport hotfix: canonical preparation now records the exact Render LODs whose mesh bytes changed. The preserved full-asset application terminal is still used, but its binary transport delta contains only those changed LODs; an idempotent `changed=0` PREPARE sends metadata only and no geometry payload.
+- Session-only pre-PREPARE RAW snapshots no longer ride in every normal asset/LOD publication. The `ИСХОДНИК` viewport requests RAW explicitly for the active LOD on first use; ordinary WORKING/prepared transport contains only the current mesh.
+- Added per-geometry and whole-PREPARE timing logs (`[ModelAssetEditor][prepare]`) without instrumenting or changing CanonicalMeshBuilder/libigl/Embree internals.
 - Hotfix: preserve the old Three.js index-buffer terminal when binary transport supplies `Uint32Array`. Typed index arrays are now wrapped in `THREE.BufferAttribute` before `BufferGeometry.setIndex()`, fixing the case where the asset/LOD reported loaded but only collision overlays were visible.
 - Reduced transport-side CPU churn without changing payload semantics: the C++ wire writer preallocates its output buffer instead of growing it byte-by-byte, and the browser preallocates the legacy edge-object array before decoding.
 - Added transport timing diagnostics. Backend logs separate source-assembly import, additional-source import, metadata serialization, binary encoding and wire MiB; the browser console logs binary decode and unchanged legacy-terminal/rebuild time.

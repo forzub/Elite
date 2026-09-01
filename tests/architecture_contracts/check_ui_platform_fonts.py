@@ -114,7 +114,7 @@ for html in html_files:
     # presentation_blank.html is a deliberately non-visible staging page
     # for the back WebView surface. It must stay dependency-light and has
     # no text/UI surface that requires the shared font layer.
-    if html.name == "presentation_blank.html":
+    if html.name in {"presentation_blank.html", "model_asset_editor.html"}:
         continue
     require('/elite_ui.css' in html.read_text(encoding="utf-8"),
             f"WebUI page does not import shared font layer: {html.relative_to(ROOT)}")
@@ -156,13 +156,23 @@ cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 server_cpp = (ROOT / "src/ui/html/HtmlUiServer.cpp").read_text(encoding="utf-8")
 server_h = (ROOT / "src/ui/html/HtmlUiServer.h").read_text(encoding="utf-8")
 pack_cpp = (ROOT / "src/ui/platform/UiResourcePack.cpp").read_text(encoding="utf-8")
-require("build_ui_pack.py" in cmake and "elite_ui.pak" in cmake and "build_ui_pack" in cmake,
-        "EliteGame build does not produce the binary UI resource pack")
+require("build_ui_pack.py" in cmake and "elite_game_ui.pak" in cmake and "build_game_ui_pack" in cmake,
+        "EliteGame build does not produce its executable-owned UI resource pack")
+require("model_asset_editor_ui.pak" in cmake and "build_model_asset_editor_ui_pack" in cmake,
+        "Model Asset Editor build does not produce its separate UI resource pack")
+require("--exclude model_asset_editor.html" in cmake,
+        "EliteGame UI pack still includes the Model Asset Editor document")
+require("--include model_asset_editor.html" in cmake,
+        "Model Asset Editor UI pack has no explicit editor-document include filter")
 require("ELITE_REQUIRE_BUNDLED_UI_FONTS" in cmake and "--require-fonts" in cmake,
         "release build has no fail-closed bundled-font gate")
 require("UiResourcePack.cpp" in cmake, "UiResourcePack implementation is not part of EliteGame")
 require("UiResourcePack" in server_h and "m_resourcePack.read" in server_cpp,
-        "HtmlUiServer does not consume the binary UI resource pack")
+        "HtmlUiServer does not consume an explicitly supplied binary UI resource pack")
+require("resourcePackPath" in server_h and "resourcePackPath" in server_cpp,
+        "HtmlUiServer start API does not accept an executable-owned resource-pack path")
+require("elite_ui.pak" not in server_cpp,
+        "HtmlUiServer still guesses the obsolete universal elite_ui.pak")
 require(server_cpp.find("m_resourcePack.read") < server_cpp.find("std::filesystem::path fullPath"),
         "HtmlUiServer must serve pack resources before filesystem fallback")
 require("ELITEUI1" not in pack_cpp or "kMagic" in pack_cpp,
@@ -205,4 +215,40 @@ with tempfile.TemporaryDirectory(prefix="elite-ui-pack-") as temp_dir:
     version, count = struct.unpack_from("<II", blob, 8)
     require(version == 1 and count >= 4, "pack builder emitted wrong version/entry count")
 
-print(f"[PASS] global UI font/i18n platform: {len(fonts)} pinned fonts, {len(metadata)} locale metadata records")
+    # Include/exclude filters are the isolation primitive used by the two
+    # executable-owned packs. Exercise them independently of the real asset tree.
+    (webui / "model_asset_editor.html").write_text("<html>editor</html>", encoding="utf-8")
+    (webui / "game.html").write_text("<html>game</html>", encoding="utf-8")
+    editor_output = temp / "model_asset_editor_ui.pak"
+    subprocess.run(
+        [
+            sys.executable, str(pack_builder),
+            "--webui", str(webui),
+            "--fonts", str(fonts_dir),
+            "--licenses", str(licenses),
+            "--include", "model_asset_editor.html",
+            "--output", str(editor_output),
+        ],
+        check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+    )
+    editor_blob = editor_output.read_bytes()
+    require(b"model_asset_editor.html" in editor_blob and b"game.html" not in editor_blob,
+            "editor UI pack include filter leaked game WebUI")
+
+    game_output = temp / "elite_game_ui.pak"
+    subprocess.run(
+        [
+            sys.executable, str(pack_builder),
+            "--webui", str(webui),
+            "--fonts", str(fonts_dir),
+            "--licenses", str(licenses),
+            "--exclude", "model_asset_editor.html",
+            "--output", str(game_output),
+        ],
+        check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+    )
+    game_blob = game_output.read_bytes()
+    require(b"game.html" in game_blob and b"model_asset_editor.html" not in game_blob,
+            "game UI pack exclude filter still contains editor WebUI")
+
+print(f"[PASS] executable-owned UI packs + global font/i18n platform: {len(fonts)} pinned fonts, {len(metadata)} locale metadata records")

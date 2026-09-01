@@ -686,3 +686,25 @@ Only after this milestone is accepted should LOD Generator work resume.
 - libigl: `bfs_orient()` for local consistent patches, then `reorient_facets_raycast()` for outward orientation of closed/nearly-closed surfaces using free-space/occlusion ray casting.
 
 These references support the minimal architecture above; they do not require importing CGAL/libigl as project dependencies. We can implement only the small subset needed by our assets.
+
+---
+## 14. Accepted production boundary after 0.10.16
+
+Real Orbital Station production preparation validates the offline libigl + Embree path. Canonical PREPARE is considered sufficient for downstream LOD analysis when the current prepared payload has no structural invalidity, degenerate/duplicate triangles, winding conflicts or inward closed components.
+
+Surface intent is orthogonal:
+
+```text
+technical canonical mesh  -> LODS analysis allowed
+ClosedVolume / ThinTwoSided / BreachedVolume -> SURFACES authoring
+```
+
+An unresolved surface class may be shown as an authoring review item, but must not be represented as a failed mesh repair or a red LOD blocker.
+
+The canonical per-run diagnostic path is:
+
+```text
+build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log
+```
+
+The file is replaced on each PREPARE operation.

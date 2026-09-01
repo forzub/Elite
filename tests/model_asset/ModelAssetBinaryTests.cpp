@@ -879,7 +879,14 @@ int main()
         MaterialDefinition material;
         material.id = "hull_outer";
         material.sourceName = "Hull.Outer";
-        material.baseColor = {0.4f, 0.45f, 0.5f, 1.0f};
+        material.baseColor = {0.4f, 0.45f, 0.5f, 0.85f};
+        material.emissiveColor = {0.1f, 0.2f, 0.3f};
+        material.emissiveStrength = 2.5f;
+        material.metallic = 0.7f;
+        material.roughness = 0.28f;
+        material.twoSided = true;
+        material.baseColorTexture = "textures/hull_base.png";
+        material.emissiveTexture = "textures/hull_emit.png";
         asset.materials.push_back(material);
 
         Node a;
@@ -1095,6 +1102,14 @@ int main()
         ModelAsset loaded;
         require(ModelAssetBinary::load(path.string(), loaded, &error), error.c_str());
         require(loaded.assetId == asset.assetId, "asset id lost");
+        require(loaded.materials.size() == 1 && loaded.materials[0].id == "hull_outer",
+            "material identity lost");
+        require(near(loaded.materials[0].baseColor.w, 0.85f) &&
+                near(loaded.materials[0].emissiveStrength, 2.5f) &&
+                near(loaded.materials[0].metallic, 0.7f) && near(loaded.materials[0].roughness, 0.28f) &&
+                loaded.materials[0].twoSided && loaded.materials[0].baseColorTexture == "textures/hull_base.png" &&
+                loaded.materials[0].emissiveTexture == "textures/hull_emit.png",
+            "surface material properties lost in binary round trip");
         require(loaded.nodes.size() == 2 && loaded.nodes[0].geometryIndex == NoIndex,
             "semantic nodes retained a render-LOD geometry dependency");
         require(loaded.stateVariants.size() == 1 && loaded.stateVariants[0].id == "breached",

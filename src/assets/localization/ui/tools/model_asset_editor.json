@@ -118,11 +118,11 @@
       "ja": "LOD ファイル"
     },
     "model_editor.section.storage": {
-      "en": "Production / workspace storage",
-      "ru": "Production / workspace хранилище",
-      "zh-Hans": "Production / workspace 存储",
-      "es": "Almacenamiento production / workspace",
-      "ja": "Production / workspace 保存領域"
+      "en": "Asset storage",
+      "ru": "Хранилище модели",
+      "zh-Hans": "资源存储",
+      "es": "Almacenamiento",
+      "ja": "アセット保存領域"
     },
     "model_editor.section.selected_node": {
       "en": "Selected node",
@@ -1056,18 +1056,18 @@
       "ja": "共有インスタンスはありますが、この GeometryDefinition にはアクティブ LOD の表現がありません。"
     },
     "model_editor.lod.view.title": {
-      "en": "OPEN LOD IN VIEWPORT",
-      "ru": "ОТКРЫТЬ LOD В VIEWPORT",
-      "zh-Hans": "在视口中打开 LOD",
-      "es": "ABRIR LOD EN VIEWPORT",
-      "ja": "LOD を VIEWPORT で開く"
+      "en": "VIEW LOD",
+      "ru": "ПОКАЗАТЬ LOD",
+      "zh-Hans": "查看 LOD",
+      "es": "VER LOD",
+      "ja": "LOD 表示"
     },
     "model_editor.lod.view.desc": {
-      "en": "Explicitly load this LOD's .elmesh if needed, transfer its binary payload, and make it the active viewport/edit representation. Other LODs remain unloaded.",
-      "ru": "Явно загрузить .elmesh этого LOD при необходимости, передать его binary payload и сделать активным во viewport/редактировании. Остальные LOD остаются выгруженными.",
-      "zh-Hans": "如有需要显式读取该 LOD 的 .elmesh，传输二进制 payload，并将其设为当前视口/编辑表示；其他 LOD 保持未加载。",
-      "es": "Carga explícitamente el .elmesh de este LOD si hace falta, transfiere su payload binario y lo activa para vista/edición. Los demás LOD permanecen descargados.",
-      "ja": "必要ならこの LOD の .elmesh を明示的に読み込み、binary payload を転送して viewport/編集対象にします。他の LOD は未ロードのままです。"
+      "en": "Make this loaded LOD the active viewport/edit representation. Shared Node/instance links do not change.",
+      "ru": "Сделать загруженный LOD активным для просмотра и редактирования. Общие Node/instance-связи не меняются.",
+      "zh-Hans": "将已加载 LOD 设为当前查看/编辑表示；共享 Node/实例关联不变。",
+      "es": "Activa este LOD cargado para vista/edición. Los enlaces Node/instancia compartidos no cambian.",
+      "ja": "読み込み済み LOD を表示・編集対象にします。共有 Node/インスタンス関連は変わりません。"
     },
     "model_editor.lod.load.title": {
       "en": "LOAD LOD",
@@ -1588,11 +1588,11 @@
       "ja": "アセットを選択して処理ウィザードを開始してください。"
     },
     "model_editor.wizard.source.desc": {
-      "en": "SOURCE opens only manifest/checkpoint metadata. No .elmesh is read automatically. A LOD enters memory only after an explicit viewport or heavy-tool command; source refresh/reimport are explicit heavy operations.",
-      "ru": "SOURCE открывает только metadata manifest/checkpoint. Ни один .elmesh автоматически не читается. LOD попадает в память только после явной команды viewport или тяжёлого инструмента; обновление/реимпорт исходников — отдельные явные тяжёлые операции.",
-      "zh-Hans": "SOURCE 仅打开 manifest/checkpoint 元数据，不会自动读取 .elmesh。只有显式视口或重型工具命令才会把 LOD 载入内存；源刷新/重新导入属于显式重型操作。",
-      "es": "SOURCE abre solo los metadatos de manifest/checkpoint. Ningún .elmesh se lee automáticamente. Un LOD entra en memoria solo mediante una orden explícita del viewport o una herramienta pesada; actualizar/reimportar fuentes son operaciones pesadas explícitas.",
-      "ja": "SOURCE は manifest/checkpoint のメタデータだけを開き、.elmesh を自動読込しません。LOD は明示的な viewport/重処理コマンドでのみメモリへ入り、source refresh/reimport は明示的な重処理です。"
+      "en": "SOURCE loads the complete authoring set: every declared LOD plus every additional OBJ discovered recursively under its LOD tree. Later stages process this loaded snapshot.",
+      "ru": "SOURCE загружает полный рабочий набор: все объявленные LOD и все дополнительные OBJ, найденные рекурсивно в их каталогах. Следующие этапы работают только с этим загруженным снимком.",
+      "zh-Hans": "确认源路径，并从只读 OBJ/装配数据重建内存中的资源。",
+      "es": "Verifica la ruta de origen y reconstruye el asset en memoria desde OBJ/assembly de solo lectura.",
+      "ja": "ソースルートを確認し、読み取り専用 OBJ/assembly からメモリ上のアセットを再構築します。"
     },
     "model_editor.wizard.source.root": {
       "en": "source root",
@@ -1614,14 +1614,6 @@
       "zh-Hans": "源几何体",
       "es": "geometrías desde origen",
       "ja": "ソース由来ジオメトリ"
-    },
-    "model_editor.wizard.source.resident": {
-      "en": "resident viewport LODs",
-      "ru": "LOD в памяти viewport"
-    },
-    "model_editor.wizard.source.available": {
-      "en": "available LOD payloads",
-      "ru": "доступно LOD payload"
     },
     "model_editor.wizard.source.saved": {
       "en": "saved LOD payloads",
@@ -2563,58 +2555,6 @@
       "en": "not loaded",
       "ru": "не загружен"
     },
-    "model_editor.source.resident": {
-      "en": "RESIDENT",
-      "ru": "В ПАМЯТИ"
-    },
-    "model_editor.source.metadata_only": {
-      "en": "METADATA",
-      "ru": "METADATA"
-    },
-    "model_editor.source.declared": {
-      "en": "declared",
-      "ru": "объявлено"
-    },
-    "model_editor.source.payload": {
-      "en": "payload",
-      "ru": "payload"
-    },
-    "model_editor.source.viewport": {
-      "en": "viewport",
-      "ru": "viewport"
-    },
-    "model_editor.source.open": {
-      "en": "OPEN",
-      "ru": "ОТКРЫТЬ"
-    },
-    "model_editor.source.active": {
-      "en": "OPEN",
-      "ru": "ОТКРЫТ"
-    },
-    "model_editor.source.missing": {
-      "en": "MISSING",
-      "ru": "НЕТ ФАЙЛА"
-    },
-    "model_editor.active_lod.metadata_help": {
-      "en": "No geometry payload is resident. Use OPEN LOD IN VIEWPORT to read this .elmesh explicitly.",
-      "ru": "Geometry payload не находится в памяти. Используйте «ОТКРЫТЬ LOD В VIEWPORT», чтобы явно прочитать этот .elmesh."
-    },
-    "model_editor.storage.production": {
-      "en": "PRODUCTION PACKAGE",
-      "ru": "PRODUCTION-ПАКЕТ"
-    },
-    "model_editor.storage.workspace_sources": {
-      "en": "WORKSPACE LOD SOURCES",
-      "ru": "ИСТОЧНИКИ LOD В WORKSPACE"
-    },
-    "model_editor.storage.unsaved": {
-      "en": "Unsaved workspace changes exist. Production files are not updated until Save all.",
-      "ru": "В workspace есть несохранённые изменения. Production-файлы не меняются до явного «Сохранить всё»."
-    },
-    "model_editor.storage.help_lazy": {
-      "en": "Production sizes describe files under the compiled package. Workspace LOD sources may instead point at a newer checkpoint; metadata-only LODs are not decoded until explicitly opened.",
-      "ru": "Размеры production относятся только к файлам compiled-пакета. Источник LOD в workspace может указывать на более новый checkpoint; metadata-only LOD не декодируется до явного открытия."
-    },
     "model_editor.source.source_files_short": {
       "en": "from source",
       "ru": "из исходников"
@@ -2820,8 +2760,8 @@
       "ru": "Обновить исходный набор"
     },
     "model_editor.wizard.source.refresh_tip.desc": {
-      "en": "Explicit heavy operation: loads every declared LOD needed to recover source paths, then rescans the LOD source trees for additional OBJ meshes. Any change invalidates SOURCE and later checkpoints.",
-      "ru": "Явная тяжёлая операция: загружает объявленные LOD, нужные для восстановления путей исходников, затем повторно сканирует их каталоги на дополнительные OBJ. Любое изменение инвалидирует SOURCE и более поздние контрольные точки."
+      "en": "Rescans all loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any change invalidates SOURCE and later checkpoints.",
+      "ru": "Повторно просматривает все загруженные деревья LOD и подхватывает дополнительные OBJ без пересборки основной модели. Любое изменение помечает SOURCE устаревшим и удаляет более поздние контрольные точки."
     },
     "model_editor.server.extras_refreshed": {
       "en": "Source set refreshed",

@@ -332,7 +332,10 @@ void startDebugUiCompatibilityRedirect(
 
     try
     {
-        redirectServer.start(CompatibilityPort, webUiRoot);
+        redirectServer.start(
+            CompatibilityPort,
+            webUiRoot,
+            (std::filesystem::path(webUiRoot).parent_path() / "ui" / "elite_game_ui.pak").string());
         std::cout << "[App] debug compatibility URL: "
                   << "http://localhost:"
                   << CompatibilityPort
@@ -626,7 +629,10 @@ void Application::init()
                     ? PrimaryDebugUiPort
                     : 0;
 
-            m_gameUiHttpPort = m_htmlUi.start(requestedWebUiPort, webUiRoot);
+            m_gameUiHttpPort = m_htmlUi.start(
+                requestedWebUiPort,
+                webUiRoot,
+                (std::filesystem::path(webUiRoot).parent_path() / "ui" / "elite_game_ui.pak").string());
             std::cout << "\n[DEBUG CONTROL] http://localhost:"
                       << m_gameUiHttpPort
                       << "/debug_control.html\n\n";

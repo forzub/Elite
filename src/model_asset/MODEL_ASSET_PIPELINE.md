@@ -1,5 +1,12 @@
 # Model Asset Pipeline
 
+## GEOMETRY authoring boundary (editor 0.10.20)
+
+GEOMETRY edits one `RenderLod` at a time. The active LOD owns its `RenderNode` graph, geometry pool, instance sharing and replacement compatibility authoring; no G-index or RenderNode identity is propagated to another LOD. The editor may preview one main geometry, one standalone additional geometry, or a temporary replacement, but those are viewport-only states.
+
+Instance consolidation and radial duplication reuse LOD-local geometry definitions. Additional/replacement meshes remain independent geometry definitions and record only which stable base visual families they may replace; later DAMAGE/state authoring decides when a compatible replacement is selected. Completing GEOMETRY checkpoints the full authored RenderLod set.
+
+
 ## Purpose
 
 `EliteAssetEditor` is the offline authority for model preparation. The game
@@ -102,25 +109,19 @@ transforms/pivots, render transforms, joints, collision, sockets and inertia to
 canonical game coordinates. Basis conversion is a deliberate one-time authoring
 operation, not runtime correction.
 
-## Shared runtime mesh normalization
+## Runtime normalization vs offline canonical preparation
 
-Source loading and mesh normalization are separate operations. LOAD/restore/reimport preserve and publish the resident payload as read; they never hide geometry because of topology diagnostics. In the Model Asset Editor the author explicitly runs `ПОДГОТОВИТЬ МЕШИ` from the LODS stage.
+Source loading and mesh preparation are separate operations. LOAD/restore/reimport preserve and publish the resident payload as read. In the Model Asset Editor the author explicitly runs `ПОДГОТОВИТЬ МЕШИ` from the LODS stage.
 
-The positional weld/triangle cleanup primitive is shared with the game runtime in `src/model_asset/RuntimeMeshNormalizer.*`. Both the game `ObjLoader` and the editor adapter use the same contract:
+The game runtime keeps the tolerant `src/model_asset/RuntimeMeshNormalizer.*` contract for render ingestion: positional weld/cleanup may make a mesh renderable without asserting authoring topology semantics.
 
-- positional weld at `1e-4`;
-- reject non-finite positions or invalid triangle indices;
-- remove collapsed/zero-area triangles;
-- remove exact duplicate geometric triangles;
-- remap surviving triangles to normalized geometric points.
+The **offline editor** has a stronger canonical authoring boundary. `CanonicalMeshBuilder` uses topology-aware point identity, collapsed/duplicate face cleanup, libigl `split_nonmanifold`, Embree raycast orientation, then editor-owned normal/render-vertex/edge rebuild while preserving UV/material/hard-normal seams. Real authored holes are never capped. libigl/Embree are editor-only and are not runtime dependencies.
 
-This normalizer deliberately does **not** prove manifoldness, solve winding, flip closed shells, classify openings or reject otherwise renderable open/non-manifold geometry. Those are explicit editor analysis concerns. The game can render a normalized mesh regardless of whether the later authoring contract is `ClosedVolume`, `ThinTwoSided`, `BreachedVolume` or `Invalid`.
+Preparation records store the canonical algorithm id plus an output fingerprint. A resident mesh is technically ready for downstream LOD analysis only when the record matches the exact payload and post-inspection reports no structural invalidity, degenerate/duplicate triangles, winding conflicts or inward closed components.
 
-The editor adapter reconstructs face-derived normals, preserves UV/material render splits, rebuilds bounds and `MeshLod.edges`, then transactionally replaces the resident `geometry.mesh`. Preparation records use `runtime_mesh_normalizer_v1` plus a fingerprint so repeated preparation can be skipped.
+`АНАЛИЗИРОВАТЬ` remains a separate read-only report. It may recommend/record `ClosedVolume`, `ThinTwoSided` or `BreachedVolume`, but these are **SURFACES authoring decisions**. They do not gate read-only LOD0 analysis and do not block completing the LODS checkpoint.
 
-`АНАЛИЗИРОВАТЬ` is a separate read-only step. It may report boundary edges, non-manifold topology, winding conflicts, inside-out components and the final geometry class, but it never mutates the mesh and never participates in LOAD/restore. LOD processing may require both a current normalization record and an accepted analysis/classification.
-
-Render LODs remain independent documents; generated LOD1/LOD2/... are derived independently from normalized/canonical LOD0 rather than chained from one simplified LOD to the next.
+Render LODs remain independent documents; generated LOD1/LOD2/... are derived independently from canonical LOD0 rather than chained from one simplified LOD to the next.
 
 ## Binary format v4: semantic manifest + independent render LOD payloads
 
@@ -206,6 +207,18 @@ commands must use metadata-only synchronization. Position/pivot edits, instance
 consolidation, geometry bindings, semantic/damage metadata, collision and socket edits
 must not retransmit unchanged vertices, normals, indices or edge lists.
 
+The transport itself has two planes. Small commands/state and render-LOD descriptors use
+JSON. Bulk viewport geometry never does: positions, normals, triangle indices, triangle
+material/smoothing data, authored edges and optional RAW diagnostic arrays travel in the
+versioned editor-only `ELWIR001` binary WebSocket frame. The browser transport adapter
+reassembles those arrays into the same `asset` / `lod_payload` objects consumed by the
+existing viewport handlers; changing transport must not change viewport ownership or scene
+semantics. `ELWIR001` is not an asset format and does not change `.elmodel/.elmesh` v4.
+Known targeted mesh changes may use a transport delta: only changed resident LOD frames are
+sent, unchanged LOD arrays are reused from the browser's already-resident payload, and the
+adapter still reconstructs the complete legacy `asset` object before invoking its handler.
+Initial load/reconnect/checkpoint restore/full mesh replacement remain self-contained snapshots.
+
 The browser retains source mesh arrays and `THREE.BufferGeometry` objects in a cache
 keyed by stable `LOD + render-geometry id`. A metadata refresh may rebuild the light
 scene graph around those cached GPU buffers, but it must not recreate or retransmit
@@ -240,18 +253,32 @@ Technical and Elite edge masks remain separately authorable.
 Materials use stable semantic ids rather than transient OBJ material numbers.
 The asset stores base/emissive semantics, roughness/metallicity, two-sided state
 and texture names. Technical/Anime/Elite renderers will interpret the same
-material differently.
+material differently. Triangle `materialIndex` values reference this shared asset
+material table; one RenderGeometryDefinition may therefore contain several
+material slots without being split into separate geometry definitions.
+
+SURFACES authoring edits material definitions and audits those existing per-triangle
+assignments. A conservative repair may assign a material only to triangles whose
+index is `NoIndex`; arbitrary per-face painting/repartitioning and texture import or
+baking are separate future tools. Texture fields remain authored references.
 
 Visible glowing geometry is an emissive material. A real light source is a
 `Socket` with `LightProperties` (`Point` or `Spot`). One fixture may use both.
 
 ## Thin surfaces
 
-`SurfaceMode` is per geometry:
+`SurfaceMode` is LOD-local, per `RenderGeometryDefinition`:
 
 - `Closed`
 - `ThinOneSided`
 - `ThinTwoSided`
+
+The editor keeps a separate authoring surface intent for the SURFACES workflow:
+`ClosedVolume`, `ThinOneSided`, `ThinTwoSided`, `BreachedVolume`. The intent answers
+what an open/closed shell represents; `SurfaceMode` answers how it is rendered.
+`ClosedVolume` and `BreachedVolume` map to front-sided `Closed`, while the two thin
+intents map to their corresponding render modes. Selecting an intent never repairs
+or fills mesh topology.
 
 Visual sheets do not require duplicated front/back shells. Collision thickness
 is authored separately.
@@ -390,3 +417,7 @@ The model viewport must label the **ends of the world grid/axes** with `+X/-X`,
 status overlay or in a corner-only camera widget. Numeric transforms and radial-
 array controls must never require the user to infer axis orientation from the
 model silhouette.
+
+## Generated render LOD authoring (editor 0.10.18)
+
+LOD0 is the canonical generation source. A generated RenderLod is a complete independent render document, not a delta from another LOD. Generation includes the entire LOD0 geometry pool, including additional/replacement meshes that are not bound to default RenderNodes. The editor may replace an existing LOD slot or create a new contiguous slot, but never mutates LOD0 through the generator. Stable replacement authoring identities are propagated across generated LOD documents.

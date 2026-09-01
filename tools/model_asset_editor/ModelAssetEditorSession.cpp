@@ -1,7 +1,9 @@
 #include "tools/model_asset_editor/ModelAssetEditorSession.h"
+#include "tools/model_asset_editor/ModelAssetEditorWire.h"
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -50,6 +52,12 @@ glm::vec3 jsonVec3(const json& value, const glm::vec3& fallback)
 {
     if (!value.is_array() || value.size() != 3) return fallback;
     return glm::vec3(value[0].get<float>(), value[1].get<float>(), value[2].get<float>());
+}
+
+glm::vec4 jsonVec4(const json& value, const glm::vec4& fallback)
+{
+    if (!value.is_array() || value.size() != 4) return fallback;
+    return glm::vec4(value[0].get<float>(), value[1].get<float>(), value[2].get<float>(), value[3].get<float>());
 }
 
 std::vector<std::string> jsonStrings(const json& value)
@@ -220,6 +228,7 @@ constexpr double LodReferenceVerticalFovDeg = 70.0;
 constexpr double LodVisibilityCutoffPx = 2.0;
 constexpr std::size_t LodMaximumRecommendedLevels = 5; // including LOD0
 constexpr double LodFeatureBandFactor = 4.0;
+constexpr const char* GeneratedLodComponentCullAlgorithmId = "generated_lod_component_cull_v1";
 
 struct LodDisjointSet
 {
@@ -449,6 +458,7 @@ enum class PreflightTopologyClass : std::uint8_t
 {
     Auto = 0,
     ClosedVolume,
+    ThinOneSided,
     ThinTwoSided,
     BreachedVolume,
     Mixed,
@@ -460,6 +470,7 @@ const char* preflightTopologyClassName(PreflightTopologyClass value)
     switch (value)
     {
         case PreflightTopologyClass::ClosedVolume: return "closed_volume";
+        case PreflightTopologyClass::ThinOneSided: return "thin_one_sided";
         case PreflightTopologyClass::ThinTwoSided: return "thin_two_sided";
         case PreflightTopologyClass::BreachedVolume: return "breached_volume";
         case PreflightTopologyClass::Mixed: return "mixed";
@@ -471,6 +482,7 @@ const char* preflightTopologyClassName(PreflightTopologyClass value)
 PreflightTopologyClass preflightTopologyClassFromName(const std::string& value)
 {
     if (value == "closed_volume") return PreflightTopologyClass::ClosedVolume;
+    if (value == "thin_one_sided") return PreflightTopologyClass::ThinOneSided;
     if (value == "thin_two_sided") return PreflightTopologyClass::ThinTwoSided;
     if (value == "breached_volume") return PreflightTopologyClass::BreachedVolume;
     if (value == "mixed") return PreflightTopologyClass::Mixed;
@@ -1100,6 +1112,7 @@ std::size_t diagnosticUniquePositionCount(const MeshLod& lod)
 }
 
 void appendRenderInstanceFitDiagnostic(
+    const std::filesystem::path& logPath,
     const ModelAsset& asset,
     std::size_t lodIndex,
     std::size_t referenceRenderNodeIndex,
@@ -1118,8 +1131,6 @@ void appendRenderInstanceFitDiagnostic(
         const auto targetGeometryIndex = static_cast<std::size_t>(targetNode.geometryIndex);
         if (referenceGeometryIndex >= lod.geometries.size() || targetGeometryIndex >= lod.geometries.size()) return;
 
-        const std::filesystem::path logPath =
-            std::filesystem::path("build") / "logs" / "model_asset_instance_fit.log";
         std::filesystem::create_directories(logPath.parent_path());
         std::ofstream out(logPath, std::ios::app);
         if (!out) return;
@@ -1180,7 +1191,29 @@ void appendRenderInstanceFitDiagnostic(
 }
 
 
+void resetMeshRepairDiagnostic(
+    const std::filesystem::path& logPath,
+    const ModelAsset& asset) noexcept
+{
+    try
+    {
+        std::filesystem::create_directories(logPath.parent_path());
+        std::ofstream out(logPath, std::ios::trunc);
+        if (!out) return;
+        out << "MODEL ASSET EDITOR MESH PREPARATION\n";
+        out << "editor_version=" << ModelAssetEditorVersion << '\n';
+        out << "algorithm=" << CanonicalMeshAlgorithmId << '\n';
+        out << "asset=" << asset.assetId << '\n';
+        out << "scope=one PREPARE MESHES operation; file is replaced on every run\n";
+    }
+    catch (...)
+    {
+        // Diagnostics must never alter editor behaviour.
+    }
+}
+
 void appendMeshRepairDiagnostic(
+    const std::filesystem::path& logPath,
     const ModelAsset& asset,
     std::size_t lodIndex,
     const RenderGeometryDefinition& geometry,
@@ -1188,8 +1221,6 @@ void appendMeshRepairDiagnostic(
 {
     try
     {
-        const std::filesystem::path logPath =
-            std::filesystem::path("build") / "logs" / "model_asset_mesh_repair.log";
         std::filesystem::create_directories(logPath.parent_path());
         std::ofstream out(logPath, std::ios::app);
         if (!out) return;
@@ -1677,6 +1708,130 @@ void recomputeRenderLodBounds(RenderLod& lod)
     lod.maxBounds = haveBounds ? maxBounds : glm::vec3(0.0f);
 }
 
+struct LodCullBuildStats
+{
+    std::size_t removedTriangles = 0;
+    std::size_t removedComponents = 0;
+};
+
+MeshLod buildComponentCullMesh(
+    const MeshLod& source,
+    double thresholdMeters,
+    LodCullBuildStats* stats = nullptr)
+{
+    LodCullBuildStats local;
+    if (source.triangles.empty() || thresholdMeters <= 0.0)
+    {
+        if (stats) *stats = local;
+        return source;
+    }
+
+    std::vector<std::uint8_t> removed(source.triangles.size(), 0);
+    for (const auto& component : analyzeConnectedComponents(source))
+    {
+        if (component.protectedStructure || component.featureMeters >= thresholdMeters)
+            continue;
+        ++local.removedComponents;
+        for (const auto triangleIndex : component.triangleIndices)
+        {
+            if (triangleIndex >= removed.size() || removed[triangleIndex]) continue;
+            removed[triangleIndex] = 1;
+            ++local.removedTriangles;
+        }
+    }
+
+    if (local.removedTriangles == 0)
+    {
+        if (stats) *stats = local;
+        return source;
+    }
+
+    MeshLod out;
+    std::vector<std::int32_t> triangleMap(source.triangles.size(), -1);
+    std::vector<std::uint8_t> usedVertex(source.vertices.size(), 0);
+    out.triangles.reserve(source.triangles.size() - local.removedTriangles);
+    for (std::size_t ti = 0; ti < source.triangles.size(); ++ti)
+    {
+        if (removed[ti]) continue;
+        const auto& triangle = source.triangles[ti];
+        if (triangle.a >= source.vertices.size() ||
+            triangle.b >= source.vertices.size() ||
+            triangle.c >= source.vertices.size())
+            continue;
+        triangleMap[ti] = static_cast<std::int32_t>(out.triangles.size());
+        out.triangles.push_back(triangle);
+        usedVertex[triangle.a] = usedVertex[triangle.b] = usedVertex[triangle.c] = 1;
+    }
+
+    std::vector<std::int32_t> vertexMap(source.vertices.size(), -1);
+    out.vertices.reserve(source.vertices.size());
+    for (std::size_t vi = 0; vi < source.vertices.size(); ++vi)
+    {
+        if (!usedVertex[vi]) continue;
+        vertexMap[vi] = static_cast<std::int32_t>(out.vertices.size());
+        out.vertices.push_back(source.vertices[vi]);
+    }
+    for (auto& triangle : out.triangles)
+    {
+        triangle.a = static_cast<std::uint32_t>(vertexMap[triangle.a]);
+        triangle.b = static_cast<std::uint32_t>(vertexMap[triangle.b]);
+        triangle.c = static_cast<std::uint32_t>(vertexMap[triangle.c]);
+    }
+
+    out.edges.reserve(source.edges.size());
+    for (const auto& edge : source.edges)
+    {
+        if (edge.a >= vertexMap.size() || edge.b >= vertexMap.size()) continue;
+        if (vertexMap[edge.a] < 0 || vertexMap[edge.b] < 0) continue;
+        const auto remapTriangle = [&](std::int32_t oldIndex) -> std::int32_t
+        {
+            if (oldIndex < 0 || static_cast<std::size_t>(oldIndex) >= triangleMap.size()) return -1;
+            return triangleMap[static_cast<std::size_t>(oldIndex)];
+        };
+        const std::int32_t triangleA = remapTriangle(edge.triangleA);
+        const std::int32_t triangleB = remapTriangle(edge.triangleB);
+        const bool standaloneAuthoredEdge = edge.triangleA < 0 && edge.triangleB < 0;
+        if (triangleA < 0 && triangleB < 0 && !standaloneAuthoredEdge) continue;
+
+        Edge mapped = edge;
+        mapped.a = static_cast<std::uint32_t>(vertexMap[edge.a]);
+        mapped.b = static_cast<std::uint32_t>(vertexMap[edge.b]);
+        mapped.triangleA = triangleA;
+        mapped.triangleB = triangleB;
+        out.edges.push_back(mapped);
+    }
+    recomputeLodBounds(out);
+    if (stats) *stats = local;
+    return out;
+}
+
+RenderLod buildGeneratedComponentCullLod(
+    const RenderLod& source,
+    std::size_t targetLevel,
+    double thresholdMeters,
+    std::size_t* removedTriangles = nullptr,
+    std::size_t* removedComponents = nullptr)
+{
+    RenderLod generated = source;
+    generated.level = static_cast<std::uint32_t>(targetLevel);
+    generated.sourceKind = "generated";
+    generated.generatedFromLod = static_cast<std::int32_t>(source.level);
+
+    std::size_t totalRemovedTriangles = 0;
+    std::size_t totalRemovedComponents = 0;
+    for (auto& geometry : generated.geometries)
+    {
+        LodCullBuildStats stats;
+        geometry.mesh = buildComponentCullMesh(geometry.mesh, thresholdMeters, &stats);
+        totalRemovedTriangles += stats.removedTriangles;
+        totalRemovedComponents += stats.removedComponents;
+    }
+    recomputeRenderLodBounds(generated);
+    if (removedTriangles) *removedTriangles = totalRemovedTriangles;
+    if (removedComponents) *removedComponents = totalRemovedComponents;
+    return generated;
+}
+
 void convertAssetBasisToCanonical(ModelAsset& asset, const SourceBasis& source)
 {
     const glm::mat3 basis = sourceToCanonical(source);
@@ -2000,6 +2155,11 @@ std::filesystem::path ModelAssetEditorSession::wizardCheckpointPath(const std::s
     return wizardWorkspacePath() / ("checkpoint-" + stage) / (m_selectedId + ".elmodel");
 }
 
+std::filesystem::path ModelAssetEditorSession::wizardLogPath(const std::string& fileName) const
+{
+    return wizardWorkspacePath() / "logs" / fileName;
+}
+
 std::filesystem::path ModelAssetEditorSession::latestWizardCheckpoint(std::string* stage) const
 {
     const auto& order = wizardStageOrder();
@@ -2107,6 +2267,7 @@ void ModelAssetEditorSession::loadWizardState()
                     if (lodIndex == std::size_t(-1) || geometryId.empty() || topologyClass.empty()) continue;
                     const auto parsed = preflightTopologyClassFromName(topologyClass);
                     if (parsed == PreflightTopologyClass::ClosedVolume ||
+                        parsed == PreflightTopologyClass::ThinOneSided ||
                         parsed == PreflightTopologyClass::ThinTwoSided ||
                         parsed == PreflightTopologyClass::BreachedVolume)
                         m_geometryTopologyClasses[lodIndex][geometryId] = topologyClass;
@@ -2514,7 +2675,7 @@ nlohmann::json ModelAssetEditorSession::serializeWizard() const
         const std::string id = order[i];
         const auto it = m_wizardStages.find(id);
         const WizardStageState value = it == m_wizardStages.end() ? WizardStageState{} : it->second;
-        const bool implemented = i < 3;
+        const bool implemented = i < 4;
         const bool previousComplete = i == 0 ||
             (m_wizardStages.count(order[i - 1]) && m_wizardStages.at(order[i - 1]).status == "complete");
         stages.push_back({
@@ -2534,7 +2695,7 @@ nlohmann::json ModelAssetEditorSession::serializeWizard() const
 bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
 {
     const auto stageIndex = wizardStageIndex(stage);
-    if (stageIndex >= 3)
+    if (stageIndex >= 4)
     {
         sendStatus("Wizard stage '" + stage + "' is visible but not implemented yet", true);
         return false;
@@ -2601,12 +2762,10 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
                     " render LOD document(s). Reimport/migration lost an LOD or the saved payload is stale.", true);
                 return false;
             }
-        std::string preflightReason;
-        if (!modelPreflightAllLoadedReady(&preflightReason))
-        {
-            sendStatus("LODS validation failed: canonical geometry contract is incomplete: " + preflightReason, true);
-            return false;
-        }
+        // LODS owns render-document readiness, not SURFACES semantics.
+        // Explicit ClosedVolume / ThinTwoSided / BreachedVolume authoring and
+        // surface-mode reconciliation must not block saving a technically
+        // canonical LOD checkpoint or running read-only LOD0 analysis.
     }
     else if (stage == "geometry")
     {
@@ -2617,6 +2776,97 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
                     sendStatus("GEOMETRY validation failed: invalid render-node geometry binding", true);
                     return false;
                 }
+    }
+    else if (stage == "surfaces")
+    {
+        for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
+        {
+            const auto& lod = m_asset.renderLods[li];
+            std::vector<std::size_t> usage(lod.geometries.size(), 0);
+            for (const auto& node : lod.nodes)
+                if (node.enabled && node.geometryIndex >= 0 &&
+                    static_cast<std::size_t>(node.geometryIndex) < usage.size())
+                    ++usage[static_cast<std::size_t>(node.geometryIndex)];
+
+            for (std::size_t gi = 0; gi < lod.geometries.size(); ++gi)
+            {
+                const auto& geometry = lod.geometries[gi];
+                const bool relevant = usage[gi] != 0 || isRenderVariantGeometryId(geometry.id);
+                if (!relevant) continue;
+
+                const auto audit = auditPreflightGeometry(geometry.mesh);
+                std::string explicitClass;
+                const auto classLodIt = m_geometryTopologyClasses.find(li);
+                if (classLodIt != m_geometryTopologyClasses.end())
+                {
+                    const auto classIt = classLodIt->second.find(geometry.id);
+                    if (classIt != classLodIt->second.end()) explicitClass = classIt->second;
+                }
+                const auto explicitParsed = preflightTopologyClassFromName(explicitClass);
+                const bool autoClosed = explicitParsed == PreflightTopologyClass::Auto &&
+                    audit.suggestedClass == PreflightTopologyClass::ClosedVolume;
+                if (audit.openComponents != 0 && explicitParsed == PreflightTopologyClass::Auto)
+                {
+                    sendStatus("SURFACES validation failed: LOD" + std::to_string(li) + " G" +
+                        std::to_string(gi) + " " + geometry.id +
+                        " is open and needs an explicit surface intent", true);
+                    return false;
+                }
+                const auto effective = autoClosed ? PreflightTopologyClass::ClosedVolume : explicitParsed;
+                const bool validIntent = effective == PreflightTopologyClass::ClosedVolume ||
+                    effective == PreflightTopologyClass::ThinOneSided ||
+                    effective == PreflightTopologyClass::ThinTwoSided ||
+                    effective == PreflightTopologyClass::BreachedVolume;
+                if (!validIntent)
+                {
+                    sendStatus("SURFACES validation failed: LOD" + std::to_string(li) + " G" +
+                        std::to_string(gi) + " " + geometry.id + " has no valid surface intent", true);
+                    return false;
+                }
+                const SurfaceMode expectedMode = effective == PreflightTopologyClass::ThinOneSided
+                    ? SurfaceMode::ThinOneSided
+                    : effective == PreflightTopologyClass::ThinTwoSided
+                        ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
+                if (geometry.surfaceMode != expectedMode)
+                {
+                    sendStatus("SURFACES validation failed: LOD" + std::to_string(li) + " G" +
+                        std::to_string(gi) + " surface mode does not match authored intent", true);
+                    return false;
+                }
+                for (const auto& triangle : geometry.mesh.triangles)
+                {
+                    if (triangle.materialIndex == NoIndex)
+                    {
+                        sendStatus("SURFACES validation failed: LOD" + std::to_string(li) + " G" +
+                            std::to_string(gi) + " contains triangles without a material", true);
+                        return false;
+                    }
+                    if (triangle.materialIndex < 0 ||
+                        static_cast<std::size_t>(triangle.materialIndex) >= m_asset.materials.size())
+                    {
+                        sendStatus("SURFACES validation failed: LOD" + std::to_string(li) + " G" +
+                            std::to_string(gi) + " references an invalid material index", true);
+                        return false;
+                    }
+                }
+            }
+        }
+        for (std::size_t mi = 0; mi < m_asset.materials.size(); ++mi)
+        {
+            const auto& material = m_asset.materials[mi];
+            if (material.id.empty())
+            {
+                sendStatus("SURFACES validation failed: material M" + std::to_string(mi) + " has an empty id", true);
+                return false;
+            }
+            if (!std::isfinite(material.emissiveStrength) || material.emissiveStrength < 0.0f ||
+                !std::isfinite(material.metallic) || material.metallic < 0.0f || material.metallic > 1.0f ||
+                !std::isfinite(material.roughness) || material.roughness < 0.0f || material.roughness > 1.0f)
+            {
+                sendStatus("SURFACES validation failed: material " + material.id + " has invalid PBR values", true);
+                return false;
+            }
+        }
     }
 
     std::string error;
@@ -2646,7 +2896,7 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
     }
     sendProgress("writing", "CHECKPOINT " + stage, 1, 1, checkpoint);
     sendAssetMetadata();
-    const std::string next = stageIndex + 1 < 3 ? wizardStageOrder()[stageIndex + 1] : std::string();
+    const std::string next = stageIndex + 1 < 4 ? wizardStageOrder()[stageIndex + 1] : std::string();
     m_server.broadcastText(json({{"type", "wizard_stage_completed"}, {"stage", stage}, {"nextStage", next}, {"checkpoint", checkpoint.generic_string()}}).dump());
     sendStatus("Wizard stage complete: " + stage + "; checkpoint saved outside the production package");
     return true;
@@ -2862,6 +3112,13 @@ bool ModelAssetEditorSession::modelPreflightReadyForLod(std::string* reason) con
         if (reason) *reason = "LOD0 is not loaded";
         return false;
     }
+
+    // LOD analysis is a geometric operation. Its gate is deliberately narrower
+    // than the later SURFACES authoring contract: every used base LOD0 mesh
+    // must be the current canonical PREPARE result and must satisfy technical
+    // topology/orientation invariants. Whether an open mesh is authored as
+    // ThinTwoSided or BreachedVolume is a separate semantic decision and must
+    // not disable LOD analysis.
     const auto& lod = m_asset.renderLods[0];
     std::vector<std::size_t> usage(lod.geometries.size(), 0);
     for (const auto& node : lod.nodes)
@@ -2898,39 +3155,6 @@ bool ModelAssetEditorSession::modelPreflightReadyForLod(std::string* reason) con
             canonical.windingConflicts != 0 || canonical.insideOutClosedComponents != 0)
         {
             if (reason) *reason = "LOD0 G" + std::to_string(gi) + " canonical SOURCE record is stale";
-            return false;
-        }
-
-        const auto audit = auditPreflightGeometry(geometry.mesh);
-        std::string explicitClass;
-        const auto classLodIt = m_geometryTopologyClasses.find(0);
-        if (classLodIt != m_geometryTopologyClasses.end())
-        {
-            const auto explicitIt = classLodIt->second.find(geometry.id);
-            if (explicitIt != classLodIt->second.end()) explicitClass = explicitIt->second;
-        }
-        const auto explicitParsed = preflightTopologyClassFromName(explicitClass);
-        const bool autoResolved = audit.suggestedClass == PreflightTopologyClass::ClosedVolume ||
-            (audit.suggestedClass == PreflightTopologyClass::ThinTwoSided && audit.confidence >= 0.90);
-        if (explicitParsed == PreflightTopologyClass::Auto && !autoResolved)
-        {
-            if (reason) *reason = "LOD0 G" + std::to_string(gi) + " needs an explicit target geometry class";
-            return false;
-        }
-        const auto effectiveClass = explicitParsed == PreflightTopologyClass::Auto
-            ? audit.suggestedClass : explicitParsed;
-        if (effectiveClass != PreflightTopologyClass::ClosedVolume &&
-            effectiveClass != PreflightTopologyClass::ThinTwoSided &&
-            effectiveClass != PreflightTopologyClass::BreachedVolume)
-        {
-            if (reason) *reason = "LOD0 G" + std::to_string(gi) + " has no valid geometry contract";
-            return false;
-        }
-        const auto desiredSurface = effectiveClass == PreflightTopologyClass::ThinTwoSided
-            ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
-        if (geometry.surfaceMode != desiredSurface)
-        {
-            if (reason) *reason = "LOD0 G" + std::to_string(gi) + " surface mode does not match geometry class";
             return false;
         }
     }
@@ -3002,6 +3226,7 @@ bool ModelAssetEditorSession::modelPreflightAllLoadedReady(std::string* reason) 
             const auto effectiveClass = explicitParsed == PreflightTopologyClass::Auto
                 ? audit.suggestedClass : explicitParsed;
             if (effectiveClass != PreflightTopologyClass::ClosedVolume &&
+                effectiveClass != PreflightTopologyClass::ThinOneSided &&
                 effectiveClass != PreflightTopologyClass::ThinTwoSided &&
                 effectiveClass != PreflightTopologyClass::BreachedVolume)
             {
@@ -3009,8 +3234,10 @@ bool ModelAssetEditorSession::modelPreflightAllLoadedReady(std::string* reason) 
                     " has no valid geometry contract";
                 return false;
             }
-            const auto desiredSurface = effectiveClass == PreflightTopologyClass::ThinTwoSided
-                ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
+            const auto desiredSurface = effectiveClass == PreflightTopologyClass::ThinOneSided
+                ? SurfaceMode::ThinOneSided
+                : effectiveClass == PreflightTopologyClass::ThinTwoSided
+                    ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
             if (geometry.surfaceMode != desiredSurface)
             {
                 if (reason) *reason = "LOD" + std::to_string(li) + " G" + std::to_string(gi) +
@@ -3134,13 +3361,19 @@ bool ModelAssetEditorSession::analyzeModelPreflight()
                 !autoResolved && !canonical.structuralInvalid;
             const bool sourceBaseGeometry = usage[gi] != 0 && !isRenderVariantGeometryId(geometry.id);
 
-            const SurfaceMode desiredSurface = effective == PreflightTopologyClass::ThinTwoSided
-                ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
+            const SurfaceMode desiredSurface = effective == PreflightTopologyClass::ThinOneSided
+                ? SurfaceMode::ThinOneSided
+                : effective == PreflightTopologyClass::ThinTwoSided
+                    ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
             const bool classResolved = effective == PreflightTopologyClass::ClosedVolume ||
+                effective == PreflightTopologyClass::ThinOneSided ||
                 effective == PreflightTopologyClass::ThinTwoSided || effective == PreflightTopologyClass::BreachedVolume;
             const bool surfaceMismatch = classResolved && geometry.surfaceMode != desiredSurface;
+            // Classification/surface authoring is intentionally advisory in
+            // the LODS stage. Only an unprepared or structurally invalid LOD0
+            // base mesh blocks geometric LOD analysis.
             const bool blocksLod0 = li == 0 && sourceBaseGeometry &&
-                (needsPreparation || (canonicalCurrent && structuralBlocker) || needsReview || surfaceMismatch);
+                (needsPreparation || (canonicalCurrent && structuralBlocker));
 
             if (needsPreparation) ++sourceReloadCount;
             if (needsReview) ++reviewCount;
@@ -3235,6 +3468,8 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
     std::vector<std::string> canonicalFailures;
     bool payloadChanged = false;
     bool authoringStateChanged = false;
+    const auto repairLogPath = wizardLogPath("mesh_repair.log");
+    resetMeshRepairDiagnostic(repairLogPath, m_asset);
 
     // Explicit authoring operation. Load/restore/reimport deliberately leave
     // resident meshes untouched; this function mutates the working copy only
@@ -3271,7 +3506,7 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
                 // payload for the session-only SOURCE viewport.
                 m_rawMeshSnapshots[li][geometry.id] = geometry.mesh;
                 const auto built = canonicalizeMesh(geometry.mesh);
-                appendMeshRepairDiagnostic(m_asset, li, geometry, built);
+                appendMeshRepairDiagnostic(repairLogPath, m_asset, li, geometry, built);
                 if (!built.success)
                 {
                     auto recordLodIt = m_meshPreparationRecords.find(li);
@@ -3383,7 +3618,7 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
             ", split vertices=" + std::to_string(splitTopologyVertices) +
             ", raycast patches=" + std::to_string(raycastPatches) +
             ", raycast flips=" + std::to_string(raycastFlippedTriangles) +
-            "; details: build/logs/model_asset_mesh_repair.log");
+            "; details: " + repairLogPath.generic_string());
     }
     else if (reportStatus)
     {
@@ -3427,7 +3662,10 @@ bool ModelAssetEditorSession::verifyLoadedWorkingSetCanonical(std::string* reaso
                 return false;
             }
             const auto fingerprint = canonicalMeshFingerprint(geometry.mesh);
-            if (recordIt->second.algorithm != CanonicalMeshAlgorithmId ||
+            const bool generatedRecord =
+                lod.sourceKind == "generated" && lod.generatedFromLod >= 0 &&
+                recordIt->second.algorithm == GeneratedLodComponentCullAlgorithmId;
+            if ((!generatedRecord && recordIt->second.algorithm != CanonicalMeshAlgorithmId) ||
                 recordIt->second.outputFingerprint != fingerprint)
             {
                 if (reason) *reason = "LOD" + std::to_string(li) + " G" + std::to_string(gi) +
@@ -3453,7 +3691,9 @@ bool ModelAssetEditorSession::verifyLoadedWorkingSetCanonical(std::string* reaso
 bool ModelAssetEditorSession::setGeometryTopologyClass(
     std::size_t lodIndex,
     std::size_t geometryIndex,
-    const std::string& topologyClass)
+    const std::string& topologyClass,
+    bool analyzeAfter,
+    bool publishAfter)
 {
     if (!ensureLodLoaded(lodIndex)) return false;
     if (geometryIndex >= m_asset.renderLods[lodIndex].geometries.size())
@@ -3461,6 +3701,7 @@ bool ModelAssetEditorSession::setGeometryTopologyClass(
     const auto parsed = preflightTopologyClassFromName(topologyClass);
     if (parsed != PreflightTopologyClass::Auto &&
         parsed != PreflightTopologyClass::ClosedVolume &&
+        parsed != PreflightTopologyClass::ThinOneSided &&
         parsed != PreflightTopologyClass::ThinTwoSided &&
         parsed != PreflightTopologyClass::BreachedVolume)
         throw std::runtime_error("unsupported preflight topology class");
@@ -3494,8 +3735,10 @@ bool ModelAssetEditorSession::setGeometryTopologyClass(
         auto& value = m_geometryTopologyClasses[lodIndex][geometry.id];
         const std::string normalized = preflightTopologyClassName(parsed);
         if (value != normalized) { value = normalized; changed = true; }
-        const auto desired = parsed == PreflightTopologyClass::ThinTwoSided
-            ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
+        const auto desired = parsed == PreflightTopologyClass::ThinOneSided
+            ? SurfaceMode::ThinOneSided
+            : parsed == PreflightTopologyClass::ThinTwoSided
+                ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
         if (geometry.surfaceMode != desired)
         {
             geometry.surfaceMode = desired;
@@ -3505,16 +3748,18 @@ bool ModelAssetEditorSession::setGeometryTopologyClass(
     }
     if (!changed)
     {
-        sendStatus("NO CHANGES: topology classification already matches");
-        analyzeModelPreflight();
+        if (publishAfter) sendStatus("NO CHANGES: topology classification already matches");
+        if (analyzeAfter) analyzeModelPreflight();
         return true;
     }
-    invalidateWizardFrom("lods");
-    if (!writeWizardState()) sendStatus("Topology class changed, but wizard authoring state could not be saved", true);
-    sendAssetMetadata();
-    sendStatus("Topology class: LOD" + std::to_string(lodIndex) + " G" + std::to_string(geometryIndex) + " → " +
-        std::string(parsed == PreflightTopologyClass::Auto ? "AUTO" : preflightTopologyClassName(parsed)));
-    analyzeModelPreflight();
+    if (publishAfter)
+    {
+        invalidateWizardFrom("surfaces");
+        sendAssetMetadata();
+        sendStatus("Topology class: LOD" + std::to_string(lodIndex) + " G" + std::to_string(geometryIndex) + " → " +
+            std::string(parsed == PreflightTopologyClass::Auto ? "AUTO" : preflightTopologyClassName(parsed)));
+    }
+    if (analyzeAfter) analyzeModelPreflight();
     return true;
 }
 
@@ -3552,13 +3797,20 @@ bool ModelAssetEditorSession::analyzeLodRequirements(std::size_t lodIndex)
     std::size_t totalConnectedComponents = 0;
     std::size_t removableComponents = 0;
     std::size_t totalRenderedTriangles = 0;
+    std::size_t totalStoredTriangles = 0;
     std::size_t analyzedGeometries = 0;
+    std::size_t additionalGeometryCount = 0;
+    json meshCatalog = json::array();
 
+    // LOD generation is an asset-wide operation. The visible default assembly
+    // determines rendered-triangle budgets, but every resident LOD0 geometry --
+    // including additional/replacement meshes with no RenderNode -- is analyzed
+    // and receives the same generated LOD levels.
     for (std::size_t geometryIndex = 0; geometryIndex < lod.geometries.size(); ++geometryIndex)
     {
-        if (usage[geometryIndex] == 0) continue;
         const auto& geometry = lod.geometries[geometryIndex];
-        if (isRenderVariantGeometryId(geometry.id)) continue;
+        const bool variant = isRenderVariantGeometryId(geometry.id);
+        if (variant) ++additionalGeometryCount;
 
         LodGeometryAnalysis analysis;
         analysis.geometryIndex = geometryIndex;
@@ -3566,6 +3818,7 @@ bool ModelAssetEditorSession::analyzeLodRequirements(std::size_t lodIndex)
         analysis.totalTriangles = geometry.mesh.triangles.size();
         analysis.components = analyzeConnectedComponents(geometry.mesh);
         totalConnectedComponents += analysis.components.size();
+        totalStoredTriangles += analysis.totalTriangles;
         totalRenderedTriangles += analysis.totalTriangles * analysis.usageCount;
         ++analyzedGeometries;
         for (const auto& component : analysis.components)
@@ -3575,6 +3828,14 @@ bool ModelAssetEditorSession::analyzeLodRequirements(std::size_t lodIndex)
             if (component.featureMeters > 1.0e-6)
                 removableFeatures.push_back(component.featureMeters);
         }
+        meshCatalog.push_back({
+            {"geometryIndex", geometryIndex},
+            {"geometryId", geometry.id},
+            {"sourcePath", geometry.sourcePath},
+            {"isSourceVariant", variant},
+            {"usageCount", usage[geometryIndex]},
+            {"triangles", geometry.mesh.triangles.size()}
+        });
         analyses.push_back(std::move(analysis));
     }
 
@@ -3644,6 +3905,7 @@ bool ModelAssetEditorSession::analyzeLodRequirements(std::size_t lodIndex)
     for (std::size_t targetLevel = 1; targetLevel < LodMaximumRecommendedLevels; ++targetLevel)
     {
         std::size_t candidateRenderedTriangles = 0;
+        std::size_t candidateStoredTriangles = 0;
         std::size_t candidateComponents = 0;
         for (const auto& analysis : analyses)
         {
@@ -3651,6 +3913,7 @@ bool ModelAssetEditorSession::analyzeLodRequirements(std::size_t lodIndex)
             {
                 if (component.protectedStructure || component.featureMeters >= threshold) continue;
                 candidateRenderedTriangles += component.triangleIndices.size() * analysis.usageCount;
+                candidateStoredTriangles += component.triangleIndices.size();
                 ++candidateComponents;
             }
         }
@@ -3660,8 +3923,10 @@ bool ModelAssetEditorSession::analyzeLodRequirements(std::size_t lodIndex)
             {"twoPixelDistanceMeters", lodDistanceForPixels(threshold, LodVisibilityCutoffPx)},
             {"candidateComponents", candidateComponents},
             {"candidateRenderedTriangles", candidateRenderedTriangles},
+            {"candidateStoredTriangles", candidateStoredTriangles},
             {"candidatePercent", totalRenderedTriangles == 0 ? 0.0 :
-                100.0 * static_cast<double>(candidateRenderedTriangles) / static_cast<double>(totalRenderedTriangles)}
+                100.0 * static_cast<double>(candidateRenderedTriangles) / static_cast<double>(totalRenderedTriangles)},
+            {"existing", targetLevel < m_asset.renderLods.size()}
         });
         if (threshold >= modelCharacteristic * 0.25) break;
         threshold *= LodFeatureBandFactor;
@@ -3676,9 +3941,12 @@ bool ModelAssetEditorSession::analyzeLodRequirements(std::size_t lodIndex)
         {"visibilityCutoffPx", LodVisibilityCutoffPx},
         {"modelCharacteristicMeters", modelCharacteristic},
         {"analyzedGeometries", analyzedGeometries},
+        {"additionalGeometryCount", additionalGeometryCount},
         {"connectedComponents", totalConnectedComponents},
         {"removableComponents", removableComponents},
         {"totalRenderedTriangles", totalRenderedTriangles},
+        {"totalStoredTriangles", totalStoredTriangles},
+        {"meshes", std::move(meshCatalog)},
         {"featureMinMeters", featureMin},
         {"featureMedianMeters", featureMedian},
         {"featureMaxMeters", featureMax},
@@ -3715,6 +3983,7 @@ bool ModelAssetEditorSession::previewLodComponentCull(
     std::size_t removedUniqueTriangles = 0;
     std::size_t removedRenderedTriangles = 0;
     std::size_t totalRenderedTriangles = 0;
+    std::size_t totalStoredTriangles = 0;
     std::size_t removedComponents = 0;
 
     sendStatus(
@@ -3723,9 +3992,8 @@ bool ModelAssetEditorSession::previewLodComponentCull(
         "working");
     for (std::size_t geometryIndex = 0; geometryIndex < lod.geometries.size(); ++geometryIndex)
     {
-        if (usage[geometryIndex] == 0) continue;
         const auto& geometry = lod.geometries[geometryIndex];
-        if (isRenderVariantGeometryId(geometry.id)) continue;
+        totalStoredTriangles += geometry.mesh.triangles.size();
         totalRenderedTriangles += geometry.mesh.triangles.size() * usage[geometryIndex];
 
         std::vector<std::size_t> removed;
@@ -3753,7 +4021,8 @@ bool ModelAssetEditorSession::previewLodComponentCull(
             {"originalTriangles", geometry.mesh.triangles.size()},
             {"remainingTriangles", geometry.mesh.triangles.size() - std::min(geometry.mesh.triangles.size(), removedCount)},
             {"removedTriangles", removedCount},
-            {"usageCount", usage[geometryIndex]}
+            {"usageCount", usage[geometryIndex]},
+            {"isSourceVariant", isRenderVariantGeometryId(geometry.id)}
         });
     }
 
@@ -3770,6 +4039,7 @@ bool ModelAssetEditorSession::previewLodComponentCull(
         {"removedUniqueTriangles", removedUniqueTriangles},
         {"removedRenderedTriangles", removedRenderedTriangles},
         {"totalRenderedTriangles", totalRenderedTriangles},
+        {"totalStoredTriangles", totalStoredTriangles},
         {"removedRenderedPercent", totalRenderedTriangles == 0 ? 0.0 :
             100.0 * static_cast<double>(removedRenderedTriangles) / static_cast<double>(totalRenderedTriangles)},
         {"geometries", std::move(geometries)}
@@ -3781,6 +4051,254 @@ bool ModelAssetEditorSession::previewLodComponentCull(
     return true;
 }
 
+
+
+bool ModelAssetEditorSession::applyGeneratedLods(
+    std::size_t sourceLodIndex,
+    const nlohmann::json& levels)
+{
+    if (sourceLodIndex != 0)
+    {
+        sendStatus("Generated LOD authoring currently requires canonical LOD0 as source", true);
+        return false;
+    }
+    if (!levels.is_array())
+    {
+        sendStatus("Generated LOD apply request has no level selection", true);
+        return false;
+    }
+    if (!ensureAllLodsLoaded()) return false;
+
+    std::string canonicalReason;
+    if (!verifyLoadedWorkingSetCanonical(&canonicalReason))
+    {
+        sendStatus("Generated LOD apply blocked: canonical SOURCE invariant failed: " + canonicalReason, true);
+        return false;
+    }
+    std::string preflightReason;
+    if (!modelPreflightReadyForLod(&preflightReason))
+    {
+        sendStatus("Generated LOD apply blocked by Model Preflight: " + preflightReason, true);
+        return false;
+    }
+    if (m_asset.renderLods.empty() || sourceLodIndex >= m_asset.renderLods.size())
+    {
+        sendStatus("Generated LOD apply blocked: LOD0 is missing", true);
+        return false;
+    }
+
+    struct Selection
+    {
+        std::size_t level = 0;
+        double thresholdMeters = 0.0;
+    };
+    std::vector<Selection> selected;
+    for (const auto& item : levels)
+    {
+        if (!item.is_object() || !item.value("selected", true)) continue;
+        const auto level = item.value("level", std::size_t(0));
+        const double threshold = item.value("thresholdMeters", 0.0);
+        if (level == 0 || level > 32 || !std::isfinite(threshold) || threshold <= 0.0)
+        {
+            sendStatus("Generated LOD apply request contains an invalid level/threshold", true);
+            return false;
+        }
+        selected.push_back({level, threshold});
+    }
+    std::sort(selected.begin(), selected.end(), [](const Selection& a, const Selection& b) {
+        return a.level < b.level;
+    });
+    selected.erase(std::unique(selected.begin(), selected.end(), [](const Selection& a, const Selection& b) {
+        return a.level == b.level;
+    }), selected.end());
+    if (selected.empty())
+    {
+        sendStatus("NO CHANGES: no generated LOD levels were selected");
+        return true;
+    }
+
+    // RenderLod is vector-backed and therefore cannot contain holes. Existing
+    // authored levels may be kept by leaving their checkbox off, but a brand-new
+    // LOD slot may only be created when all preceding slots already exist or are
+    // selected in this apply operation.
+    std::size_t simulatedLodCount = m_asset.renderLods.size();
+    for (const auto& selection : selected)
+    {
+        if (selection.level > simulatedLodCount)
+        {
+            sendStatus(
+                "Cannot create LOD" + std::to_string(selection.level) +
+                " while LOD" + std::to_string(simulatedLodCount) +
+                " is missing; generated LOD slots must remain contiguous", true);
+            return false;
+        }
+        if (selection.level == simulatedLodCount) ++simulatedLodCount;
+    }
+
+    const RenderLod source = m_asset.renderLods[sourceLodIndex];
+    const auto sourceBaseVisuals = m_baseVisualIds.find(sourceLodIndex);
+    const auto sourceExtraIds = m_sourceExtraMeshIds.find(sourceLodIndex);
+    const auto sourceTopologyClasses = m_geometryTopologyClasses.find(sourceLodIndex);
+
+    struct Candidate
+    {
+        Selection selection;
+        RenderLod lod;
+        std::size_t removedTriangles = 0;
+        std::size_t removedComponents = 0;
+    };
+    std::vector<Candidate> candidates;
+    candidates.reserve(selected.size());
+
+    sendStatus(
+        "Generating " + std::to_string(selected.size()) +
+        " selected LOD level(s) from canonical LOD0...", false, "working");
+    std::size_t generationCompleted = 0;
+
+    // Build and validate every selected level before mutating the authored
+    // asset. APPLY is transactional: one bad generated mesh must not leave half
+    // the LOD chain replaced and half untouched.
+    for (const auto& selection : selected)
+    {
+        sendProgress(
+            "working",
+            "GENERATE LOD" + std::to_string(selection.level),
+            generationCompleted, selected.size());
+        Candidate candidate;
+        candidate.selection = selection;
+        candidate.lod = buildGeneratedComponentCullLod(
+            source,
+            selection.level,
+            selection.thresholdMeters,
+            &candidate.removedTriangles,
+            &candidate.removedComponents);
+        for (std::size_t gi = 0; gi < candidate.lod.geometries.size(); ++gi)
+        {
+            const auto analysis = analyzeCanonicalMesh(candidate.lod.geometries[gi].mesh);
+            if (analysis.structuralInvalid || analysis.degenerateTriangles != 0 ||
+                analysis.duplicateTriangles != 0 || analysis.windingConflicts != 0 ||
+                analysis.insideOutClosedComponents != 0)
+            {
+                sendStatus(
+                    "Generated LOD" + std::to_string(selection.level) + "/G" + std::to_string(gi) +
+                    " violates canonical geometry contract" +
+                    (analysis.invalidReason.empty() ? std::string() : ": " + analysis.invalidReason), true);
+                return false;
+            }
+        }
+        candidates.push_back(std::move(candidate));
+        ++generationCompleted;
+        sendProgress(
+            "working",
+            "GENERATE LOD" + std::to_string(selection.level),
+            generationCompleted, selected.size());
+    }
+
+    json applied = json::array();
+    std::size_t replaced = 0;
+    std::size_t created = 0;
+    for (auto& candidate : candidates)
+    {
+        const auto& selection = candidate.selection;
+        const bool replacing = selection.level < m_asset.renderLods.size();
+        if (replacing)
+        {
+            m_asset.renderLods[selection.level] = std::move(candidate.lod);
+            ++replaced;
+        }
+        else
+        {
+            m_asset.renderLods.push_back(std::move(candidate.lod));
+            ++created;
+        }
+
+        if (m_lodState.size() < m_asset.renderLods.size())
+            m_lodState.resize(m_asset.renderLods.size());
+        m_lodState[selection.level].loaded = true;
+        m_lodState[selection.level].dirty = true;
+
+        // Generated LODs inherit stable authoring identity from LOD0. This is
+        // essential for additional/replacement meshes: their opaque variant id
+        // and the base visual family they may replace must stay the same across
+        // every generated render document.
+        if (sourceBaseVisuals != m_baseVisualIds.end())
+            m_baseVisualIds[selection.level] = sourceBaseVisuals->second;
+        else
+            m_baseVisualIds.erase(selection.level);
+        if (sourceExtraIds != m_sourceExtraMeshIds.end())
+            m_sourceExtraMeshIds[selection.level] = sourceExtraIds->second;
+        else
+            m_sourceExtraMeshIds.erase(selection.level);
+        if (sourceTopologyClasses != m_geometryTopologyClasses.end())
+            m_geometryTopologyClasses[selection.level] = sourceTopologyClasses->second;
+        else
+            m_geometryTopologyClasses.erase(selection.level);
+        m_rawMeshSnapshots.erase(selection.level);
+
+        auto& preparation = m_meshPreparationRecords[selection.level];
+        preparation.clear();
+        const auto& resident = m_asset.renderLods[selection.level];
+        for (std::size_t gi = 0; gi < resident.geometries.size(); ++gi)
+        {
+            const auto& geometry = resident.geometries[gi];
+            const auto& sourceGeometry = source.geometries[gi];
+            const auto analysis = analyzeCanonicalMesh(geometry.mesh);
+            MeshPreparationRecord record;
+            record.algorithm = GeneratedLodComponentCullAlgorithmId;
+            record.sourceRenderVertices = sourceGeometry.mesh.vertices.size();
+            record.sourceTriangles = sourceGeometry.mesh.triangles.size();
+            record.geometricPoints = analysis.geometricPoints;
+            record.outputRenderVertices = analysis.renderVertices;
+            record.outputTriangles = analysis.triangles;
+            record.normalIslands = analysis.renderVertices;
+            record.rebuiltEdges = geometry.mesh.edges.size();
+            record.outputFingerprint = canonicalMeshFingerprint(geometry.mesh);
+            preparation[geometry.id] = std::move(record);
+        }
+
+        applied.push_back({
+            {"level", selection.level},
+            {"replaced", replacing},
+            {"thresholdMeters", selection.thresholdMeters},
+            {"geometries", resident.geometries.size()},
+            {"additionalGeometries", std::count_if(
+                resident.geometries.begin(), resident.geometries.end(),
+                [](const RenderGeometryDefinition& geometry) { return isRenderVariantGeometryId(geometry.id); })},
+            {"removedTriangles", candidate.removedTriangles},
+            {"removedComponents", candidate.removedComponents}
+        });
+    }
+
+    markManifestDirty();
+    for (const auto& selection : selected) markLodDirty(selection.level);
+    invalidateWizardFrom("lods");
+    if (!writeWizardState())
+    {
+        sendStatus("Generated LODs were applied, but wizard authoring state could not be saved", true);
+        return false;
+    }
+
+    json invalidatedPayloads = json::array();
+    for (const auto& selection : selected) invalidatedPayloads.push_back(selection.level);
+
+    // Do not publish every generated geometry payload in one giant browser
+    // message. The station can easily turn that into hundreds of megabytes of
+    // JSON and makes APPLY look frozen. Publish compact authored metadata now;
+    // an individual LOD payload is requested only when the author views it.
+    sendAssetMetadata({{"invalidatedLodPayloads", invalidatedPayloads}});
+    m_server.broadcastText(json({
+        {"type", "lod_generator_apply_result"},
+        {"sourceLodIndex", sourceLodIndex},
+        {"replaced", replaced},
+        {"created", created},
+        {"levels", std::move(applied)}
+    }).dump());
+    sendStatus(
+        "Generated LODs applied to authored asset: replaced=" + std::to_string(replaced) +
+        ", created=" + std::to_string(created) +
+        "; complete the LODS stage to persist the full asset set into the checkpoint");
+    return true;
+}
 
 bool ModelAssetEditorSession::previewLodCoplanarCollapse(std::size_t lodIndex)
 {
@@ -3807,9 +4325,7 @@ bool ModelAssetEditorSession::previewLodCoplanarCollapse(std::size_t lodIndex)
     for (std::size_t geometryIndex = 0; geometryIndex < lod.geometries.size(); ++geometryIndex)
     {
         sendProgress("working", "COPLANAR LOD PREVIEW", geometryIndex, lod.geometries.size());
-        if (usage[geometryIndex] == 0) continue;
         const auto& geometry = lod.geometries[geometryIndex];
-        if (isRenderVariantGeometryId(geometry.id)) continue;
         totalUniqueTriangles += geometry.mesh.triangles.size();
         totalRenderedTriangles += geometry.mesh.triangles.size() * usage[geometryIndex];
 
@@ -3843,7 +4359,8 @@ bool ModelAssetEditorSession::previewLodCoplanarCollapse(std::size_t lodIndex)
             {"addedTriangleCount", addedCount},
             {"collapsedRegions", preview.collapsedRegions},
             {"candidateRegions", preview.candidateRegions},
-            {"usageCount", usage[geometryIndex]}
+            {"usageCount", usage[geometryIndex]},
+            {"isSourceVariant", isRenderVariantGeometryId(geometry.id)}
         });
     }
 
@@ -4028,7 +4545,11 @@ bool ModelAssetEditorSession::loadLodOnly(std::size_t lodIndex, bool forceReload
     state.dirty = false;
     syncDirty();
     sendProgress("reading", forceReload ? "RELOAD LOD" : "LOAD LOD", 1, 1, lodPath);
-    sendAsset();
+    // Preserve the 0.10.23 application terminal (`asset`) while transporting
+    // only the LOD whose resident payload actually changed. The browser wire
+    // adapter reuses the already resident payloads for the other LODs before
+    // invoking the untouched legacy asset handler.
+    sendAsset({lodIndex});
     sendStatus(std::string(forceReload ? "Reloaded " : "Loaded ") + "LOD" + std::to_string(lodIndex) + " from " + lodPath.filename().string());
     return true;
 }
@@ -4467,6 +4988,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     else
     {
         sendStatus("Importing source OBJ/assembly...", false, "reading");
+        const auto sourceImportStarted = std::chrono::steady_clock::now();
         if (!importRuntimeAssembly(
                 m_sourceAssetsRoot, it->type, it->id, it->displayName, loaded,
                 &error, &warning, importProgress))
@@ -4474,6 +4996,11 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
             sendStatus("Cannot import source assembly: " + error, true);
             return false;
         }
+        std::cerr << "[ModelAssetEditor][perf] source assembly import_ms="
+                  << std::fixed << std::setprecision(1)
+                  << std::chrono::duration<double, std::milli>(
+                         std::chrono::steady_clock::now() - sourceImportStarted).count()
+                  << '\n';
         buildIndependentRenderLodsFromLegacy(loaded);
         loaded.formatVersion = ModelAssetFormatVersion;
         m_asset = std::move(loaded);
@@ -4490,7 +5017,16 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     // is shown exactly as stored. Only an actual source import/reimport performs
     // recursive discovery of additional OBJ files, and those are inserted RAW.
     // Mesh preparation is a separate explicit LOD-Preflight action.
-    if (sourceImported && !refreshSourceVariants(true, false)) return false;
+    if (sourceImported)
+    {
+        const auto variantsStarted = std::chrono::steady_clock::now();
+        if (!refreshSourceVariants(true, false)) return false;
+        std::cerr << "[ModelAssetEditor][perf] additional source meshes import_ms="
+                  << std::fixed << std::setprecision(1)
+                  << std::chrono::duration<double, std::milli>(
+                         std::chrono::steady_clock::now() - variantsStarted).count()
+                  << '\n';
+    }
 
     if (forceReimport)
     {
@@ -4590,7 +5126,7 @@ bool ModelAssetEditorSession::saveAsset()
     return true;
 }
 
-nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPayload) const
+nlohmann::json ModelAssetEditorSession::serializeAssetMetadata() const
 {
     json out;
     out["assetId"] = m_asset.assetId;
@@ -4603,7 +5139,7 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
     out["binaryPath"] = compiledPath(m_asset.assetId).generic_string();
     out["sourceBasis"] = {{"preset", m_asset.sourceBasis.preset}, {"right", static_cast<int>(m_asset.sourceBasis.right)}, {"up", static_cast<int>(m_asset.sourceBasis.up)}, {"forward", static_cast<int>(m_asset.sourceBasis.forward)}, {"canonicalized", m_asset.sourceBasis.canonicalized}};
     out["manifestDirty"] = m_manifestDirty;
-    out["geometryPayloadIncluded"] = includeGeometryPayload;
+    out["geometryPayloadIncluded"] = false;
     out["wizard"] = serializeWizard();
 
     out["materials"] = json::array();
@@ -4668,10 +5204,31 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
                 ? std::string() : baseVisualId(li, geometry.id);
             const auto replacementIds = variantIdentity.isVariant
                 ? sourceVariantReplacementIds(authoringVariantId) : std::vector<std::string>{};
+            std::map<std::int32_t, std::size_t> materialUsage;
+            std::size_t unassignedMaterialTriangles = 0;
+            for (const auto& triangle : mesh.triangles)
+            {
+                if (triangle.materialIndex == NoIndex) ++unassignedMaterialTriangles;
+                else ++materialUsage[triangle.materialIndex];
+            }
+            json materialSlots = json::array();
+            for (const auto& [materialIndex, triangleCount] : materialUsage)
+                materialSlots.push_back({{"materialIndex", materialIndex}, {"triangleCount", triangleCount}});
+            std::string explicitTopologyClass;
+            const auto topologyLodIt = m_geometryTopologyClasses.find(li);
+            if (topologyLodIt != m_geometryTopologyClasses.end())
+            {
+                const auto topologyIt = topologyLodIt->second.find(geometry.id);
+                if (topologyIt != topologyLodIt->second.end()) explicitTopologyClass = topologyIt->second;
+            }
             json g = {
                 {"index", gi}, {"id", geometry.id}, {"sourcePath", geometry.sourcePath},
                 {"sourceFileName", std::filesystem::path(geometry.sourcePath).filename().string()},
-                {"surfaceMode", surfaceModeName(geometry.surfaceMode)}, {"usageCount", usedBy.size()}, {"usedBy", std::move(usedBy)},
+                {"surfaceMode", surfaceModeName(geometry.surfaceMode)},
+                {"surfaceIntent", explicitTopologyClass.empty() ? std::string("auto") : explicitTopologyClass},
+                {"materialSlots", std::move(materialSlots)},
+                {"unassignedMaterialTriangles", unassignedMaterialTriangles},
+                {"usageCount", usedBy.size()}, {"usedBy", std::move(usedBy)},
                 {"isSourceVariant", variantIdentity.isVariant},
                 {"variantId", authoringVariantId},
                 {"baseVisualId", stableBaseVisualId},
@@ -4680,45 +5237,6 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
                 {"vertexCount", mesh.vertices.size()}, {"triangleCount", mesh.triangles.size()}, {"edgeCount", mesh.edges.size()},
                 {"estimatedBinaryBytes", estimatedRenderGeometryBinaryBytes(geometry)}
             };
-            if (includeGeometryPayload)
-            {
-                g["positions"] = json::array(); g["normals"] = json::array(); g["indices"] = json::array(); g["triangleMaterials"] = json::array(); g["smoothingGroups"] = json::array(); g["edges"] = json::array();
-                for (const auto& vertex : mesh.vertices)
-                {
-                    g["positions"].push_back(vertex.position.x); g["positions"].push_back(vertex.position.y); g["positions"].push_back(vertex.position.z);
-                    g["normals"].push_back(vertex.normal.x); g["normals"].push_back(vertex.normal.y); g["normals"].push_back(vertex.normal.z);
-                }
-                for (const auto& triangle : mesh.triangles)
-                {
-                    g["indices"].push_back(triangle.a); g["indices"].push_back(triangle.b); g["indices"].push_back(triangle.c);
-                    g["triangleMaterials"].push_back(triangle.materialIndex); g["smoothingGroups"].push_back(triangle.smoothingGroupId);
-                }
-                for (std::size_t ei = 0; ei < mesh.edges.size(); ++ei)
-                {
-                    const auto& edge = mesh.edges[ei];
-                    g["edges"].push_back({{"index", ei}, {"a", edge.a}, {"b", edge.b}, {"triangleA", edge.triangleA}, {"triangleB", edge.triangleB}, {"flags", edge.flags}, {"renderMask", edge.renderMask}});
-                }
-                const auto rawLodIt = m_rawMeshSnapshots.find(li);
-                if (rawLodIt != m_rawMeshSnapshots.end())
-                {
-                    const auto rawIt = rawLodIt->second.find(geometry.id);
-                    if (rawIt != rawLodIt->second.end())
-                    {
-                        const auto& raw = rawIt->second;
-                        json rawJson = {{"positions", json::array()}, {"normals", json::array()}, {"indices", json::array()}};
-                        for (const auto& vertex : raw.vertices)
-                        {
-                            rawJson["positions"].push_back(vertex.position.x); rawJson["positions"].push_back(vertex.position.y); rawJson["positions"].push_back(vertex.position.z);
-                            rawJson["normals"].push_back(vertex.normal.x); rawJson["normals"].push_back(vertex.normal.y); rawJson["normals"].push_back(vertex.normal.z);
-                        }
-                        for (const auto& triangle : raw.triangles)
-                        {
-                            rawJson["indices"].push_back(triangle.a); rawJson["indices"].push_back(triangle.b); rawJson["indices"].push_back(triangle.c);
-                        }
-                        g["rawSource"] = std::move(rawJson);
-                    }
-                }
-            }
             jl["geometries"].push_back(std::move(g));
         }
         jl["nodes"] = json::array();
@@ -4818,23 +5336,142 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
     return out;
 }
 
-void ModelAssetEditorSession::sendAsset()
+std::uint32_t ModelAssetEditorSession::nextWireTransferId()
 {
-    // Viewport publication is deliberately independent from mesh preparation.
-    // Raw, restored and partially prepared meshes must remain inspectable;
-    // canonical readiness is enforced only by explicit Preflight/LOD gates.
+    if (m_nextWireTransferId == 0u)
+        m_nextWireTransferId = 1u;
+    return m_nextWireTransferId++;
+}
+
+void ModelAssetEditorSession::sendAsset(const std::vector<std::size_t>& requestedPayloadLods)
+{
+    // Preserve the old application terminal: the browser receives metadata and
+    // binary mesh arrays, reassembles the same full asset object, then invokes
+    // the existing `asset` handler. Geometry never enters JSON.
+    //
+    // An empty requestedPayloadLods means a self-contained/full publication
+    // (initial load, checkpoint restore, reconnect, whole-mesh rewrite). A
+    // non-empty list is a transport delta: only those changed LOD arrays cross
+    // the socket; unchanged resident LOD arrays are reused by the transport
+    // adapter before the exact same old `asset` handler is invoked.
     reconcileAuthoringVisualRegistry();
-    m_server.broadcastText(json({{"type", "asset"}, {"dirty", m_dirty}, {"asset", serializeAsset(true)}}).dump());
+    const bool reuseExistingPayloads = !requestedPayloadLods.empty();
+    std::set<std::size_t> selectedPayloadLods;
+    if (reuseExistingPayloads)
+    {
+        for (const auto lodIndex : requestedPayloadLods)
+        {
+            if (lodIndex >= m_asset.renderLods.size() ||
+                lodIndex >= m_lodState.size() || !m_lodState[lodIndex].loaded)
+                throw std::runtime_error("cannot publish non-resident LOD transport delta");
+            selectedPayloadLods.insert(lodIndex);
+        }
+    }
+    else
+    {
+        for (std::size_t lodIndex = 0; lodIndex < m_asset.renderLods.size(); ++lodIndex)
+            if (lodIndex < m_lodState.size() && m_lodState[lodIndex].loaded)
+                selectedPayloadLods.insert(lodIndex);
+    }
+
+    const auto transferId = nextWireTransferId();
+    json payloadLods = json::array();
+    for (const auto lodIndex : selectedPayloadLods) payloadLods.push_back(lodIndex);
+
+    const auto metadataStarted = std::chrono::steady_clock::now();
+    auto metadata = serializeAssetMetadata();
+    const auto metadataMs = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - metadataStarted).count();
+    m_server.broadcastText(json({
+        {"type", "asset_binary_begin"},
+        {"transferId", transferId},
+        {"dirty", m_dirty},
+        {"payloadLods", payloadLods},
+        {"reuseExistingPayloads", reuseExistingPayloads},
+        {"asset", std::move(metadata)}
+    }).dump());
+
+    std::uint64_t wireBytes = 0;
+    double encodeMs = 0.0;
+    for (const auto lodIndex : selectedPayloadLods)
+    {
+        const auto rawIt = m_rawMeshSnapshots.find(lodIndex);
+        const auto* raw = rawIt == m_rawMeshSnapshots.end() ? nullptr : &rawIt->second;
+        const auto encodeStarted = std::chrono::steady_clock::now();
+        auto frame = wire::encodeLodGeometryPayload(
+            transferId,
+            static_cast<std::uint32_t>(lodIndex),
+            m_asset.renderLods[lodIndex],
+            raw);
+        encodeMs += std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - encodeStarted).count();
+        wireBytes += static_cast<std::uint64_t>(frame.size());
+        m_server.broadcastBinary(std::move(frame));
+    }
+    std::cerr << "[ModelAssetEditor][transport] asset transfer=" << transferId
+              << " lods=" << selectedPayloadLods.size()
+              << " mode=" << (reuseExistingPayloads ? "delta" : "full")
+              << " metadata_ms=" << std::fixed << std::setprecision(1) << metadataMs
+              << " encode_ms=" << encodeMs
+              << " wire_mib=" << (static_cast<double>(wireBytes) / (1024.0 * 1024.0))
+              << '\n';
 }
 
 void ModelAssetEditorSession::sendAssetMetadata(const nlohmann::json& hints)
 {
     reconcileAuthoringVisualRegistry();
-    json payload = {{"type", "asset_metadata"}, {"dirty", m_dirty}, {"asset", serializeAsset(false)}};
+    json payload = {{"type", "asset_metadata"}, {"dirty", m_dirty}, {"asset", serializeAssetMetadata()}};
     if (hints.is_object())
         for (const auto& [key, value] : hints.items())
             payload[key] = value;
     m_server.broadcastText(payload.dump());
+}
+
+void ModelAssetEditorSession::sendLodPayload(std::size_t lodIndex)
+{
+    if (lodIndex >= m_asset.renderLods.size() ||
+        lodIndex >= m_lodState.size() || !m_lodState[lodIndex].loaded)
+    {
+        sendStatus("LOD" + std::to_string(lodIndex) + " viewport payload is not resident", true);
+        return;
+    }
+
+    reconcileAuthoringVisualRegistry();
+    const auto metadata = serializeAssetMetadata();
+    const auto& lods = metadata.at("renderLods");
+    if (lodIndex >= lods.size())
+    {
+        sendStatus("LOD" + std::to_string(lodIndex) + " viewport payload could not be serialized", true);
+        return;
+    }
+
+    const auto transferId = nextWireTransferId();
+    m_server.broadcastText(json({
+        {"type", "lod_payload_binary_begin"},
+        {"transferId", transferId},
+        {"lodIndex", lodIndex},
+        {"dirty", m_dirty},
+        {"lod", lods.at(lodIndex)}
+    }).dump());
+
+    const auto rawIt = m_rawMeshSnapshots.find(lodIndex);
+    const auto* raw = rawIt == m_rawMeshSnapshots.end() ? nullptr : &rawIt->second;
+    const auto encodeStarted = std::chrono::steady_clock::now();
+    auto frame = wire::encodeLodGeometryPayload(
+        transferId,
+        static_cast<std::uint32_t>(lodIndex),
+        m_asset.renderLods[lodIndex],
+        raw);
+    const auto encodeMs = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - encodeStarted).count();
+    const auto wireBytes = frame.size();
+    m_server.broadcastBinary(std::move(frame));
+    std::cerr << "[ModelAssetEditor][transport] lod transfer=" << transferId
+              << " lod=" << lodIndex
+              << " encode_ms=" << std::fixed << std::setprecision(1) << encodeMs
+              << " wire_mib=" << (static_cast<double>(wireBytes) / (1024.0 * 1024.0))
+              << '\n';
+    sendStatus("LOD" + std::to_string(lodIndex) + " viewport payload ready");
 }
 
 std::vector<std::string> ModelAssetEditorSession::sourceVariantReplacementIds(
@@ -5131,7 +5768,7 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
     if (broadcastUpdates)
     {
         if (!changedLods.empty())
-            sendAsset(); // Geometry payload really changed; refresh browser cache once.
+            sendAsset(std::vector<std::size_t>(changedLods.begin(), changedLods.end())); // Preserve old asset terminal; transport only changed LOD arrays.
         else if (manifestChanged || registryChanged)
             sendAssetMetadata();
     }
@@ -5204,15 +5841,69 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         if (command == "analyze_model_preflight") { analyzeModelPreflight(); return; }
         if (command == "set_geometry_topology_class")
         {
-            setGeometryTopologyClass(
-                message.value("lodIndex", std::size_t(0)),
-                message.value("geometryIndex", std::size_t(-1)),
-                message.value("topologyClass", std::string("auto")));
+            const auto lodIndex = message.value("lodIndex", std::size_t(0));
+            const auto geometryIndex = message.value("geometryIndex", std::size_t(-1));
+            const auto topologyClass = message.value("topologyClass", std::string("auto"));
+            if (!message.value("applyAllLods", false))
+            {
+                setGeometryTopologyClass(lodIndex, geometryIndex, topologyClass);
+                return;
+            }
+
+            if (!ensureAllLodsLoaded()) return;
+            if (lodIndex >= m_asset.renderLods.size() || geometryIndex >= m_asset.renderLods[lodIndex].geometries.size())
+                throw std::runtime_error("invalid render geometry index");
+            const auto& selectedGeometry = m_asset.renderLods[lodIndex].geometries[geometryIndex];
+            const auto selectedVariant = renderVariantIdentity(selectedGeometry.id);
+            const std::string familyId = selectedVariant.isVariant
+                ? sourceVariantAuthoringId(lodIndex, selectedGeometry)
+                : baseVisualId(lodIndex, selectedGeometry.id);
+
+            std::vector<std::pair<std::size_t, std::size_t>> targets;
+            for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
+            {
+                const auto& geometries = m_asset.renderLods[li].geometries;
+                for (std::size_t gi = 0; gi < geometries.size(); ++gi)
+                {
+                    const auto& candidate = geometries[gi];
+                    const auto candidateVariant = renderVariantIdentity(candidate.id);
+                    if (candidateVariant.isVariant != selectedVariant.isVariant) continue;
+                    const std::string candidateFamily = candidateVariant.isVariant
+                        ? sourceVariantAuthoringId(li, candidate)
+                        : baseVisualId(li, candidate.id);
+                    const bool sameFamily = !familyId.empty() && candidateFamily == familyId;
+                    const bool sameStableGeometryId = !selectedVariant.isVariant && candidate.id == selectedGeometry.id;
+                    if (sameFamily || sameStableGeometryId)
+                    {
+                        targets.emplace_back(li, gi);
+                        break;
+                    }
+                }
+            }
+            for (const auto& [li, gi] : targets)
+                setGeometryTopologyClass(li, gi, topologyClass, false, false);
+            invalidateWizardFrom("surfaces");
+            sendAssetMetadata();
+            analyzeModelPreflight();
+            sendStatus("Surface intent applied to " + std::to_string(targets.size()) +
+                " LOD(s) for visual family " + familyId);
             return;
         }
         if (command == "analyze_lod_requirements") { analyzeLodRequirements(message.value("lodIndex", std::size_t(0))); return; }
         if (command == "preview_lod_component_cull") { previewLodComponentCull(message.value("lodIndex", std::size_t(0)), message.value("thresholdMeters", 0.0)); return; }
         if (command == "preview_lod_coplanar_collapse") { previewLodCoplanarCollapse(message.value("lodIndex", std::size_t(0))); return; }
+        if (command == "apply_generated_lods")
+        {
+            applyGeneratedLods(
+                message.value("sourceLodIndex", std::size_t(0)),
+                message.value("levels", json::array()));
+            return;
+        }
+        if (command == "request_lod_payload")
+        {
+            sendLodPayload(message.value("lodIndex", std::size_t(-1)));
+            return;
+        }
         if (command == "refresh_source_variants")
         {
             if (loadAllDeclaredLodsForSource())
@@ -5397,10 +6088,10 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             referenceGeometry.id = lod.geometries[referenceGi].id; referenceGeometry.lods.push_back(lod.geometries[referenceGi].mesh);
             targetGeometry.id = lod.geometries[targetGi].id; targetGeometry.lods.push_back(lod.geometries[targetGi].mesh);
             const GeometryInstanceFit fit = fitGeometryAsRigidInstance(referenceGeometry, targetGeometry);
-            appendRenderInstanceFitDiagnostic(m_asset, lodIndex, referenceNodeIndex, renderNodeIndex, fit);
+            appendRenderInstanceFitDiagnostic(wizardLogPath("instance_fit.log"), m_asset, lodIndex, referenceNodeIndex, renderNodeIndex, fit);
             if (!fit.valid) throw std::runtime_error(
                 "cannot consolidate render instance: " + fit.message +
-                "; see build/logs/model_asset_instance_fit.log");
+                "; see " + wizardLogPath("instance_fit.log").generic_string());
             applyRenderInstanceFit(lod, renderNodeIndex, referenceNodeIndex, fit);
             markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
             sendStatus("Consolidated LOD" + std::to_string(lodIndex) + " element " + node.id + " as an instance of " + referenceNode.id + "; RMS=" + std::to_string(fit.rmsErrorMeters) + " m"); return;
@@ -5435,7 +6126,7 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
                 targetGeometry.id = lod.geometries[targetGi].id;
                 targetGeometry.lods.push_back(lod.geometries[targetGi].mesh);
                 const GeometryInstanceFit fit = fitGeometryAsRigidInstance(referenceGeometry, targetGeometry);
-                appendRenderInstanceFitDiagnostic(m_asset, lodIndex, referenceNodeIndex, targetNodeIndex, fit);
+                appendRenderInstanceFitDiagnostic(wizardLogPath("instance_fit.log"), m_asset, lodIndex, referenceNodeIndex, targetNodeIndex, fit);
                 if (!fit.valid)
                 {
                     throw std::runtime_error(
@@ -5657,8 +6348,72 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (!ensureLodLoaded(li)) return;
             if (li >= m_asset.renderLods.size() || gi >= m_asset.renderLods[li].geometries.size()) throw std::runtime_error("invalid render geometry index");
             auto& geometry = m_asset.renderLods[li].geometries[gi];
-            geometry.surfaceMode = surfaceModeFromName(message.value("surfaceMode", "closed")); markLodDirty(li); sendAssetMetadata();
+            const auto desired = surfaceModeFromName(message.value("surfaceMode", "closed"));
+            if (geometry.surfaceMode == desired)
+            {
+                sendStatus("NO CHANGES: surface mode already matches");
+                return;
+            }
+            geometry.surfaceMode = desired;
+            markLodDirty(li);
+            invalidateWizardFrom("surfaces");
+            sendAssetMetadata();
             sendStatus("Set LOD" + std::to_string(li) + " G" + std::to_string(gi) + " surface mode to " + std::string(surfaceModeName(geometry.surfaceMode))); return;
+        }
+        if (command == "set_material_definition")
+        {
+            const auto mi = message.value("materialIndex", std::size_t(-1));
+            if (mi >= m_asset.materials.size()) throw std::runtime_error("invalid material index");
+            auto& material = m_asset.materials[mi];
+            const std::string requestedId = message.value("id", material.id);
+            if (requestedId.empty()) throw std::runtime_error("material id cannot be empty");
+            for (std::size_t other = 0; other < m_asset.materials.size(); ++other)
+                if (other != mi && m_asset.materials[other].id == requestedId)
+                    throw std::runtime_error("material id must be unique");
+
+            material.id = requestedId;
+            if (message.contains("baseColor")) material.baseColor = glm::clamp(jsonVec4(message["baseColor"], material.baseColor), glm::vec4(0.0f), glm::vec4(1.0f));
+            if (message.contains("emissiveColor")) material.emissiveColor = glm::max(jsonVec3(message["emissiveColor"], material.emissiveColor), glm::vec3(0.0f));
+            material.emissiveStrength = std::max(0.0f, message.value("emissiveStrength", material.emissiveStrength));
+            material.metallic = std::clamp(message.value("metallic", material.metallic), 0.0f, 1.0f);
+            material.roughness = std::clamp(message.value("roughness", material.roughness), 0.0f, 1.0f);
+            material.twoSided = message.value("twoSided", material.twoSided);
+            material.baseColorTexture = message.value("baseColorTexture", material.baseColorTexture);
+            material.emissiveTexture = message.value("emissiveTexture", material.emissiveTexture);
+            markManifestDirty();
+            invalidateWizardFrom("surfaces");
+            sendAssetMetadata();
+            sendStatus("Updated material M" + std::to_string(mi) + ": " + material.id);
+            return;
+        }
+        if (command == "assign_unassigned_material")
+        {
+            const auto li = message.value("lodIndex", std::size_t(0));
+            const auto gi = message.value("geometryIndex", std::size_t(-1));
+            const auto mi = message.value("materialIndex", std::size_t(-1));
+            if (!ensureLodLoaded(li)) return;
+            if (li >= m_asset.renderLods.size() || gi >= m_asset.renderLods[li].geometries.size()) throw std::runtime_error("invalid render geometry index");
+            if (mi >= m_asset.materials.size()) throw std::runtime_error("invalid material index");
+            auto& geometry = m_asset.renderLods[li].geometries[gi];
+            std::size_t changed = 0;
+            for (auto& triangle : geometry.mesh.triangles)
+                if (triangle.materialIndex == NoIndex)
+                {
+                    triangle.materialIndex = static_cast<std::int32_t>(mi);
+                    ++changed;
+                }
+            if (changed == 0)
+            {
+                sendStatus("NO CHANGES: selected geometry has no unassigned triangles");
+                return;
+            }
+            markLodDirty(li);
+            invalidateWizardFrom("surfaces");
+            sendLodPayload(li);
+            sendAssetMetadata();
+            sendStatus("Assigned material M" + std::to_string(mi) + " to " + std::to_string(changed) +
+                " previously unassigned triangles in LOD" + std::to_string(li) + " G" + std::to_string(gi));
+            return;
         }
         if (command == "set_edge_render_mask")
         {

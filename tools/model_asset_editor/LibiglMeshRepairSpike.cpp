@@ -120,17 +120,18 @@ int main(int argc, char** argv)
         return 2;
     }
 
-    const std::filesystem::path input = argv[1];
+    const std::filesystem::path input = std::filesystem::u8path(argv[1]);
     const std::filesystem::path output = argc == 3
-        ? std::filesystem::path(argv[2])
-        : std::filesystem::path("build/libigl_spike/") /
-            (input.stem().string() + "_libigl_raycast.obj");
+        ? std::filesystem::u8path(argv[2])
+        : std::filesystem::path(ELITE_SOURCE_ROOT) / "build" / "tools" /
+            "model_asset_editor" / "diagnostics" / "libigl" /
+            (input.stem().u8string() + "_libigl_raycast.obj");
 
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
-    if (!igl::read_triangle_mesh(input.string(), V, F))
+    if (!igl::read_triangle_mesh(input.u8string(), V, F))
     {
-        std::cerr << "LIBIGL_SPIKE FAIL: cannot read " << input.string() << '\n';
+        std::cerr << "LIBIGL_SPIKE FAIL: cannot read " << input.u8string() << '\n';
         return 3;
     }
     if (V.cols() != 3 || F.cols() != 3 || V.rows() == 0 || F.rows() == 0)
@@ -207,13 +208,13 @@ int main(int argc, char** argv)
     {
         std::cerr
             << "LIBIGL_SPIKE FAIL: cannot create output directory "
-            << output.parent_path().string() << ": " << ec.message() << '\n';
+            << output.parent_path().u8string() << ": " << ec.message() << '\n';
         return 5;
     }
 
-    if (!igl::writeOBJ(output.string(), SV, OF))
+    if (!igl::writeOBJ(output.u8string(), SV, OF))
     {
-        std::cerr << "LIBIGL_SPIKE FAIL: cannot write " << output.string() << '\n';
+        std::cerr << "LIBIGL_SPIKE FAIL: cannot write " << output.u8string() << '\n';
         return 6;
     }
 
@@ -224,7 +225,7 @@ int main(int argc, char** argv)
         << "DUPLICATED_TOPOLOGY_VERTICES=" << (SV.rows() - CV.rows()) << '\n'
         << "RAYCAST_PATCHES=" << patchCount(components) << '\n'
         << "RAYCAST_FLIPPED_TRIANGLES=" << flips.cast<int>().sum() << '\n'
-        << "OUTPUT=" << output.string() << '\n'
+        << "OUTPUT=" << output.u8string() << '\n'
         << "LIBIGL_SPIKE PASS\n";
     return 0;
 }

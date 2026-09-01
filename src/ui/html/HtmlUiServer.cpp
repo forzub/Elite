@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
+#include <utility>
 
 HtmlUiServer::HtmlUiServer()
 {
@@ -37,21 +38,37 @@ HtmlUiServer::~HtmlUiServer()
 
 std::uint16_t HtmlUiServer::start(
     std::uint16_t port,
-    const std::string& rootDir
+    const std::string& rootDir,
+    const std::string& resourcePackPath
 )
 {
     m_rootDir = rootDir;
     m_resourcePack.clear();
 
-    const std::filesystem::path packPath =
-        std::filesystem::path(m_rootDir).parent_path() / "ui" / "elite_ui.pak";
-    if (std::filesystem::exists(packPath))
+    // Resource-pack ownership belongs to the executable, never to HtmlUiServer.
+    // The game and authoring tools use separate packs and pass the exact one
+    // they own. An empty path means filesystem-only development serving.
+    if (!resourcePackPath.empty())
     {
-        std::string packError;
-        if (!m_resourcePack.load(packPath.string(), &packError))
+        const std::filesystem::path packPath(resourcePackPath);
+        if (std::filesystem::exists(packPath))
         {
-            std::cerr << "[HtmlUiServer] failed to load UI resource pack: "
-                      << packError << '\n';
+            std::string packError;
+            if (!m_resourcePack.load(packPath.string(), &packError))
+            {
+                std::cerr << "[HtmlUiServer] failed to load UI resource pack "
+                          << packPath.string() << ": " << packError << '\n';
+            }
+            else
+            {
+                std::cout << "[HtmlUiServer] resource pack: "
+                          << packPath.string() << "\n";
+            }
+        }
+        else
+        {
+            std::cerr << "[HtmlUiServer] requested UI resource pack not found: "
+                      << packPath.string() << "; filesystem fallback remains available\n";
         }
     }
 
@@ -154,6 +171,38 @@ void HtmlUiServer::broadcastText(const std::string& text)
             try
             {
                 m_server.send(hdl, text, websocketpp::frame::opcode::text);
+            }
+            catch (...)
+            {
+                dead.push_back(hdl);
+            }
+        }
+
+        for (const auto& hdl : dead)
+        {
+            m_connections.erase(hdl);
+        }
+    });
+}
+
+void HtmlUiServer::broadcastBinary(std::vector<std::uint8_t> data)
+{
+    if (!m_running || data.empty())
+        return;
+
+    m_server.get_io_service().post([this, data = std::move(data)]()
+    {
+        std::vector<websocketpp::connection_hdl> dead;
+
+        for (const auto& hdl : m_connections)
+        {
+            try
+            {
+                m_server.send(
+                    hdl,
+                    data.data(),
+                    data.size(),
+                    websocketpp::frame::opcode::binary);
             }
             catch (...)
             {

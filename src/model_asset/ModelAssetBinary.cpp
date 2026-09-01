@@ -54,15 +54,38 @@ struct Writer
 
 struct Reader
 {
-    std::istream& in;
+    std::istream* in = nullptr;
+    const std::uint8_t* cursor = nullptr;
+    const std::uint8_t* end = nullptr;
     bool ok = true;
+
+    explicit Reader(std::istream& stream) : in(&stream) {}
+    Reader(const std::uint8_t* data, std::size_t size) : cursor(data), end(data + size) {}
+
+    void bytes(void* destination, std::size_t size)
+    {
+        if (!ok) return;
+        if (cursor)
+        {
+            const auto remaining = static_cast<std::size_t>(end - cursor);
+            if (size > remaining)
+            {
+                ok = false;
+                return;
+            }
+            if (size) std::memcpy(destination, cursor, size);
+            cursor += size;
+            return;
+        }
+        in->read(reinterpret_cast<char*>(destination), static_cast<std::streamsize>(size));
+        ok = static_cast<bool>(*in);
+    }
 
     template <typename T>
     void pod(T& value)
     {
         static_assert(std::is_trivially_copyable_v<T>);
-        in.read(reinterpret_cast<char*>(&value), sizeof(T));
-        ok = ok && static_cast<bool>(in);
+        bytes(&value, sizeof(T));
     }
 
     bool count(std::uint32_t& value)
@@ -86,9 +109,7 @@ struct Reader
             return;
         }
         value.resize(size);
-        if (size)
-            in.read(value.data(), static_cast<std::streamsize>(size));
-        ok = ok && static_cast<bool>(in);
+        if (size) bytes(value.data(), size);
     }
 
     void vec2(glm::vec2& v) { pod(v.x); pod(v.y); }
@@ -932,12 +953,11 @@ bool writeLodPayload(
 }
 
 bool readLegacyLodPayloadV3(
-    std::istream& file,
+    Reader& r,
     ModelAsset& asset,
     std::size_t expectedLodIndex,
     std::string* error)
 {
-    Reader r {file};
     std::uint32_t version = 0, lodIndex = 0, entryCount = 0;
     r.pod(version); r.pod(lodIndex);
     if (!r.count(entryCount) || version != 2u || lodIndex != expectedLodIndex)
@@ -975,25 +995,48 @@ bool readLodPayload(
     std::size_t expectedLodIndex,
     std::string* error)
 {
-    std::ifstream file(path, std::ios::binary);
+    // .elmesh files are the heavy path. Read the file once into contiguous
+    // memory, then parse through Reader's memory cursor instead of issuing
+    // millions of tiny istream::read() calls for vertices and triangles.
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file)
     {
         setError(error, "missing LOD payload: " + path.string());
         return false;
     }
-    std::array<char, 8> magic {};
-    file.read(magic.data(), static_cast<std::streamsize>(magic.size()));
-    if (!file) { setError(error, "invalid LOD payload header: " + path.string()); return false; }
+    const auto endPosition = file.tellg();
+    if (endPosition < static_cast<std::streamoff>(8))
+    {
+        setError(error, "invalid LOD payload header: " + path.string());
+        return false;
+    }
+    const auto fileSize = static_cast<std::uint64_t>(endPosition);
+    if (fileSize > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()) ||
+        fileSize > static_cast<std::uint64_t>(std::numeric_limits<std::streamsize>::max()))
+    {
+        setError(error, "LOD payload is too large to map into editor memory: " + path.string());
+        return false;
+    }
+    std::vector<std::uint8_t> bytes(static_cast<std::size_t>(fileSize));
+    file.seekg(0, std::ios::beg);
+    file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+    if (!file)
+    {
+        setError(error, "failed reading LOD payload: " + path.string());
+        return false;
+    }
 
+    std::array<char, 8> magic {};
+    std::memcpy(magic.data(), bytes.data(), magic.size());
+    Reader r(bytes.data() + magic.size(), bytes.size() - magic.size());
     if (magic == MeshMagicV2)
-        return readLegacyLodPayloadV3(file, asset, expectedLodIndex, error);
+        return readLegacyLodPayloadV3(r, asset, expectedLodIndex, error);
     if (magic != MeshMagicV4)
     {
         setError(error, "invalid LOD payload magic: " + path.string());
         return false;
     }
 
-    Reader r {file};
     std::uint32_t version = 0, lodIndex = 0;
     r.pod(version); r.pod(lodIndex);
     if (!r.ok || version != MeshPayloadFormatVersion || lodIndex != expectedLodIndex)

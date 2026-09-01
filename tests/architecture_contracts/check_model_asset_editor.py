@@ -157,8 +157,9 @@ require(
     "wizardCheckpointPath",
     "pruneWizardAfter",
     "sendAssetMetadata",
-    "serializeAsset()",
-    "geometryPayloadIncluded",
+    "serializeAssetMetadata",
+    "asset_binary_begin",
+    "lod_payload_binary_begin",
     "ModelAssetBinary::validate",
     "preflight failed",
     "ModelAssetEditorVersion",
@@ -213,6 +214,9 @@ require(
     "asset_metadata",
     "mergeAssetMetadata",
     "geometryCacheKey",
+    "ELWIR001",
+    "handleEditorBinary",
+    "binaryType='arraybuffer'",
     "rebuildScene(true)",
     "ioProgressOverlay",
     "ioPathSep",
@@ -270,8 +274,7 @@ require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "
 require(
     "tools/model_asset_editor/CHANGELOG.md",
     "0.10.24",
-    "explicit heavy-operation boundary / lazy LOD data-plane",
-    "ELVPD001",
+    "binary geometry transport / block `.elmesh` read",
     "0.10.23",
     "executable-owned UI package isolation",
     "0.10.22",
@@ -456,39 +459,40 @@ verify_body = session[verify_start:verify_end]
 if "structuralInvalid) continue" in verify_body:
     raise AssertionError("canonical verification lets invalid payloads bypass downstream records")
 
-send_start = session.index("void ModelAssetEditorSession::sendAsset()")
+send_start = session.index("void ModelAssetEditorSession::sendAsset(")
 send_end = session.index("void ModelAssetEditorSession::sendAssetMetadata", send_start)
 send_body = session[send_start:send_end]
-if "serializeAsset(true)" in send_body or '"type", "asset"' in send_body:
-    raise AssertionError("0.10.24 sendAsset compatibility path still publishes geometry through JSON")
-if "sendAssetMetadata();" not in send_body:
-    raise AssertionError("0.10.24 sendAsset is not a metadata-only compatibility guardrail")
+if "verifyLoadedWorkingSetCanonical" in send_body or "ASSET PAYLOAD BLOCKED" in send_body:
+    raise AssertionError("sendAsset regressed into a load-time canonical gate")
+for token in ("asset_binary_begin", "serializeAssetMetadata", "broadcastBinary", "encodeLodGeometryPayload", "reuseExistingPayloads"):
+    if token not in send_body:
+        raise AssertionError(f"sendAsset binary transport missing {token!r}")
+if "serializeAsset(true)" in send_body or '"positions"' in send_body:
+    raise AssertionError("sendAsset regressed to JSON geometry publication")
 
 select_start = session.index("bool ModelAssetEditorSession::selectAsset(")
 select_end = session.index("bool ModelAssetEditorSession::saveAsset(", select_start)
 select_body = session[select_start:select_end]
 if "canonicalizeLoadedWorkingSet(" in select_body:
     raise AssertionError("selectAsset must load/restore/reimport without hidden canonicalization")
-for forbidden in ("ModelAssetBinary::loadLod(binary.string(), m_asset, 0", "loadAllDeclaredLodsForSource();", "sendAsset();"):
-    if forbidden in select_body:
-        raise AssertionError(f"0.10.24 selectAsset retained eager mesh publication/load: {forbidden!r}")
-for token in ("ModelAssetBinary::loadManifest", "setLazyLodSources", "sendAssetMetadata"):
-    if token not in select_body:
-        raise AssertionError(f"0.10.24 selectAsset lazy metadata boundary missing {token!r}")
+if "refreshSourceVariants(true, false)" not in select_body or "sendAsset();" not in select_body:
+    raise AssertionError("selectAsset no longer materializes the source set and publishes it as-is")
 
 restore_start = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(")
 restore_end = session.index("bool ModelAssetEditorSession::scanRenderDuplicates(", restore_start)
 restore_body = session[restore_start:restore_end]
-if "canonicalizeLoadedWorkingSet(" in restore_body or "ModelAssetBinary::load(" in restore_body or "sendAsset();" in restore_body:
-    raise AssertionError("0.10.24 checkpoint restore must remain metadata-only/lazy")
-for token in ("ModelAssetBinary::loadManifest", "setLazyLodSources", "sendAssetMetadata"):
-    if token not in restore_body:
-        raise AssertionError(f"0.10.24 checkpoint restore lazy provenance missing {token!r}")
+if "canonicalizeLoadedWorkingSet(" in restore_body:
+    raise AssertionError("checkpoint restore must not canonicalize implicitly")
+if "sendAsset();" not in restore_body:
+    raise AssertionError("checkpoint restore must publish exactly the restored payload")
 
 load_lod_start = session.index("bool ModelAssetEditorSession::loadLodOnly(")
 load_lod_end = session.index("bool ModelAssetEditorSession::ensureLodLoaded(", load_lod_start)
-if "canonicalizeLoadedWorkingSet(" in session[load_lod_start:load_lod_end]:
+load_lod_body = session[load_lod_start:load_lod_end]
+if "canonicalizeLoadedWorkingSet(" in load_lod_body:
     raise AssertionError("manual LOD load/reload must not canonicalize implicitly")
+if "sendAsset({lodIndex})" not in load_lod_body or "sendLodPayload(lodIndex)" in load_lod_body:
+    raise AssertionError("manual LOD load no longer preserves the old full-asset application terminal through a targeted transport delta")
 
 preflight_start = session.index("bool ModelAssetEditorSession::analyzeModelPreflight()")
 preflight_end = session.index("bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(", preflight_start)
@@ -517,11 +521,13 @@ if "canonicalizeMesh(mesh)" in refresh_body or "canonicalizeLoadedWorkingSet(" i
 for token in ("sameMeshLodExact(existing->mesh, mesh)", "m_meshPreparationRecords", "canonicalEvidenceChanged"):
     if token not in refresh_body:
         raise AssertionError(f"RAW source refresh invalidation contract missing {token!r}")
+if "sendAsset(std::vector<std::size_t>(changedLods.begin(), changedLods.end()))" not in refresh_body:
+    raise AssertionError("source refresh retransmits unchanged resident LOD geometry instead of using an asset-terminal transport delta")
 
 require("src/assets/compiled/models/.gitignore", "Compiled model packages")
 
 cmake = text("CMakeLists.txt")
-for token in ("ELITE_BUILD_ASSET_EDITOR", "EliteModelAsset", "NativeObjImporter.cpp", "CanonicalMeshBuilder.cpp", "GeometryInstanceFitter.cpp", "ModelAssetMigration.cpp"):
+for token in ("ELITE_BUILD_ASSET_EDITOR", "EliteModelAsset", "NativeObjImporter.cpp", "CanonicalMeshBuilder.cpp", "GeometryInstanceFitter.cpp", "ModelAssetEditorWire.cpp", "ModelAssetMigration.cpp"):
     if token not in cmake:
         raise AssertionError(f"asset editor v4 target missing {token!r}")
 
@@ -599,40 +605,93 @@ importer_cpp = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
 if "entry.path().stem().string()" in importer_cpp:
     raise AssertionError("additional mesh authoring identity still depends on OBJ filename stem")
 
-# 0.10.24 control-plane synchronization must remain an actual transport boundary.
-# JSON never carries full mesh payloads; explicit viewport LODs use binary frames.
+# Metadata-only synchronization must remain an actual transport boundary, not merely
+# a UI label. Full mesh payloads are allowed on full asset snapshots only.
 session_cpp = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
 if "const bool protectedVariant = isRenderVariantGeometryId" not in session_cpp:
     raise AssertionError("source variants can be deleted by unused-geometry cleanup")
 for token in ("refreshSourceVariants", 'command == "refresh_source_variants"', "discoverAdditionalLodMeshes", "runtimeAssemblyLodSourcePaths"):
     if token not in session_cpp:
         raise AssertionError(f"source-variant refresh workflow missing {token!r}")
-# SOURCE itself is metadata-only. Full source-tree recovery remains available only
-# behind explicit refresh/reimport commands, where loading all LODs is intentional.
 for token in ("loadAllDeclaredLodsForSource", "refreshSourceVariants(true, false)", 'sourceOwned ? "source" : "geometry"'):
     if token not in session_cpp:
-        raise AssertionError(f"explicit SOURCE heavy-operation path missing {token!r}")
+        raise AssertionError(f"SOURCE complete-authoring-set contract missing {token!r}")
 source_ui = text("src/assets/webui/model_asset_editor.html")
-for token in ("wizardSourceRefreshBtn", "sourceInventoryRow", "model_editor.source.metadata_only", "data-open-source-lod", "payloadSourceKind", "model_editor.storage.workspace_sources", "workspace LOD"):
+for token in ("wizardSourceRefreshBtn", "sourceInventoryRow", "model_editor.source.loaded"):
     if token not in source_ui:
-        raise AssertionError(f"SOURCE lazy inventory/storage UI contract missing {token!r}")
-if "SOURCE loads the complete authoring set" in source_ui or "SOURCE загружает полный рабочий набор" in source_ui:
-    raise AssertionError("SOURCE UI still describes obsolete eager-load semantics")
+        raise AssertionError(f"SOURCE inventory UI contract missing {token!r}")
 for token in (
-    'copyLodWithSurfaceModes',
     '"type", "asset_metadata"',
-    'serializeAsset()',
-    'buildLodViewportBinary',
-    'broadcastBinary',
+    'serializeAssetMetadata()',
+    '"type", "asset_binary_begin"',
+    '"type", "lod_payload_binary_begin"',
     'std::filesystem::remove_all(wizardCheckpointPath(laterId).parent_path()',
     'latestWizardCheckpoint',
     '"RESUME CHECKPOINT"',
-    'ModelAssetBinary::loadManifest(resumeCheckpoint.string()',
-    'setLazyLodSources(resumeCheckpoint, binary, true)',
+    'ModelAssetBinary::load(resumeCheckpoint.string()',
     'Production package was not loaded instead.',
 ):
     if token not in session_cpp:
         raise AssertionError(f"metadata/checkpoint architecture missing {token!r}")
+
+for forbidden in ('g["positions"]', 'g["normals"]', 'g["indices"]', 'rawJson["positions"]', 'serializeAsset(true)'):
+    if forbidden in session_cpp:
+        raise AssertionError(f"bulk geometry returned to JSON transport: {forbidden!r}")
+
+require(
+    "tools/model_asset_editor/ModelAssetEditorWire.cpp",
+    "'E','L','W','I','R','0','0','1'",
+    "WireVersion",
+    "encodeLodGeometryPayload",
+    "writeMeshArrays",
+    "writeRawMeshArrays",
+)
+require(
+    "src/ui/html/HtmlUiServer.cpp",
+    "broadcastBinary",
+    "websocketpp::frame::opcode::binary",
+)
+require(
+    "src/model_asset/ModelAssetBinary.cpp",
+    "memory cursor",
+    "std::ios::binary | std::ios::ate",
+    "Reader(const std::uint8_t* data, std::size_t size)",
+)
+for token in (
+    "asset_binary_begin",
+    "lod_payload_binary_begin",
+    "ELWIR001",
+    "decodeEditorLodGeometry",
+    "applyEditorLodGeometry",
+    "reuseEditorLodGeometry",
+    "reuseExistingPayloads",
+    "handle({type:'asset'",
+    "handle({type:'lod_payload'",
+    "binaryType='arraybuffer'",
+):
+    if token not in web:
+        raise AssertionError(f"binary geometry transport missing browser terminal {token!r}")
+
+# Binary arrays must be adapted back into the exact Three.js types expected by
+# the preserved viewport terminal. BufferGeometry.setIndex() treats a typed
+# array as an already-built BufferAttribute, so passing Uint32Array directly
+# silently produces a non-renderable indexed mesh.
+for token in (
+    "ArrayBuffer.isView(indices)?new THREE.BufferAttribute(indices,1):indices",
+    "edges=new Array(edgeCount)",
+    "logEditorWireTiming",
+):
+    if token not in web:
+        raise AssertionError(f"binary viewport compatibility/perf guard missing {token!r}")
+
+wire_cpp = text("tools/model_asset_editor/ModelAssetEditorWire.cpp")
+for token in (
+    "Writer w(estimatedPayloadBytes(lod, rawSnapshots))",
+    "data[offset++] = value",
+    "return w.finish()",
+):
+    if token not in wire_cpp:
+        raise AssertionError(f"binary writer regressed to byte-at-a-time vector growth: {token!r}")
 
 resume_branch = session_cpp.find("if (resumeWorkspace)")
 compiled_branch = session_cpp.find("else if (!forceReimport && (havePackage || haveLegacyV2))")
@@ -871,8 +930,8 @@ for token in (
     "sendLodPayload",
     "request_lod_payload",
     "invalidatedLodPayloads",
-    "buildLodViewportBinary",
-    "broadcastBinary",
+    '"type", "lod_payload_binary_begin"',
+    "encodeLodGeometryPayload",
     "sendAssetMetadata({{\"invalidatedLodPayloads\", invalidatedPayloads}})",
 ):
     if token not in session_cpp:
@@ -1083,77 +1142,27 @@ for forbidden in (
 ):
     if forbidden in web_sync:
         raise AssertionError(f"0.10.22 SURFACES retained obsolete automatic/material-sided behavior: {forbidden!r}")
-# 0.10.24: stage navigation is completely passive. It may render workflow UI,
-# but may not clear/change/rebuild the viewport or request LOD data.
-stage_start = web_sync.index("function setWizardStage(")
-stage_end = web_sync.index("function renderWizard()", stage_start)
-stage_body = web_sync[stage_start:stage_end]
-for forbidden in ("rebuildScene(", "fitView(", "clearLodGeneratorPreview", "resetGeometryViewportState", "resetSurfaceViewportState", "send('"):
-    if forbidden in stage_body:
-        raise AssertionError(f"0.10.24 passive wizard tab retained side effect {forbidden!r}")
-if "if(next)setWizardStage(next,true)" not in web_sync:
-    raise AssertionError("automatic checkpoint progression no longer uses the passive stage-entry path")
-
-# Explicit viewport payload is binary; JSON is control-plane only.
-for token in ("buildLodViewportBinary", "ELVPD001", "broadcastBinary", "serializeAsset()", "setLazyLodSources", "lodSourceManifest"):
-    if token not in session_cpp:
-        raise AssertionError(f"0.10.24 binary/lazy backend boundary missing {token!r}")
-for token in ("handleLodBinary", "binaryType='arraybuffer'", "pendingLodBinary", "refreshResidentViewportMetadata", "payloadAvailable", "payloadSourceKind"):
+for token in (
+    "state.surfaceAnalysisReady=true;rebuildScene(true);fitView(false)",
+    "clearLodGeneratorPreview(false,false)",
+    "viewportContractChanged",
+    "if(next)setWizardStage(next,true)",
+):
     if token not in web_sync:
-        raise AssertionError(f"0.10.24 binary/lazy UI boundary missing {token!r}")
-if "view.disabled=!declaredHere||(!loaded&&!available);" not in web_sync:
-    raise AssertionError("0.10.24 checkpoint-backed unloaded LOD cannot be explicitly opened from the LOD manager")
-if '"payloadAvailable", payloadAvailable' not in session_cpp or '"payloadSourceKind", checkpointPayload ? "checkpoint" : "production"' not in session_cpp:
-    raise AssertionError("0.10.24 lazy provenance is not exposed to the control plane")
-if 'g["positions"]' in session_cpp or 'g["indices"]' in session_cpp or 'g["edges"]' in session_cpp:
-    raise AssertionError("0.10.24 serializeAsset still emits heavy geometry arrays into JSON")
-metadata_accept_start = web_sync.index("function acceptAssetState(")
-metadata_accept_end = web_sync.index("function handleLodBinary(", metadata_accept_start)
-metadata_accept_body = web_sync[metadata_accept_start:metadata_accept_end]
-if "rebuildScene(true)" in metadata_accept_body:
-    raise AssertionError("0.10.24 metadata refresh still calls rebuildScene()")
-for token in ("selectedAssetChanged", "state.pendingLodBinary=null", "clearViewportScene(true)"):
-    if token not in metadata_accept_body:
-        raise AssertionError(f"0.10.24 asset-change stale viewport guard missing {token!r}")
-if "if(msg?.selectedAssetChanged||!previous||previous.assetId!==next?.assetId)return next;" not in web_sync:
-    raise AssertionError("0.10.24 selected-asset/checkpoint metadata can retain stale browser mesh payload")
-clear_view_start = web_sync.index("function clearViewportScene(")
-clear_view_end = web_sync.index("function makeAxisLabel", clear_view_start)
-clear_view_body = web_sync[clear_view_start:clear_view_end]
-for token in ("clearGroup(state.collisionGroup)", "clearGroup(state.socketGroup)", "state.geometryCache.clear()"):
-    if token not in clear_view_body:
-        raise AssertionError(f"0.10.24 viewport clear does not remove stale data-plane state {token!r}")
-for fn in ("function rebuildCollisions()", "function rebuildSockets()"):
-    start = web_sync.index(fn)
-    end = web_sync.index("function ", start + len(fn))
-    body = web_sync[start:end]
-    for token in ("lod?.loaded", "lodHasGeometryPayload(lod)"):
-        if token not in body:
-            raise AssertionError(f"0.10.24 metadata-only viewport overlay guard missing {token!r} in {fn}")
+        raise AssertionError(f"0.10.23 wizard stage-entry transaction missing {token!r}")
+if "if(next==='geometry'||(next==='surfaces'&&state.surfaceAnalysisReady)){rebuildScene(true);fitView(false);}" in web_sync:
+    raise AssertionError("automatic wizard progression still owns a second independent scene-rebuild path")
+if "if(id==='geometry'&&previousStage!==id){rebuildScene(true);fitView(false);}" in web_sync:
+    raise AssertionError("GEOMETRY tab entry still unconditionally rebuilds the complete scene")
 
-# Surface intent propagation must not load all sibling LODs or auto-analyze.
-surface_cmd_start = session_cpp.index('if (command == "set_geometry_topology_class")')
-surface_cmd_end = session_cpp.index('if (command == "analyze_lod_requirements")', surface_cmd_start)
-surface_cmd = session_cpp[surface_cmd_start:surface_cmd_end]
 for token in (
     'message.value("applyAllLods", false)',
     "sourceVariantAuthoringId(lodIndex, selectedGeometry)",
     "baseVisualId(lodIndex, selectedGeometry.id)",
-    "m_baseVisualIds.find(li)",
-    "m_sourceExtraMeshIds.find(li)",
-    'sendStatus("Surface intent applied metadata-only to "',
-    "m_lodState[li].dirty = true",
+    "setGeometryTopologyClass(li, gi, topologyClass, false, false)",
+    'sendStatus("Surface intent applied to "',
 ):
-    if token not in surface_cmd:
-        raise AssertionError(f"0.10.24 lazy cross-LOD surface intent missing {token!r}")
-for forbidden in ("ensureAllLodsLoaded()", "analyzeModelPreflight()"):
-    if forbidden in surface_cmd:
-        raise AssertionError(f"0.10.24 surface assignment retained heavy side effect {forbidden!r}")
+    if token not in session_cpp:
+        raise AssertionError(f"0.10.22 cross-LOD surface batch missing {token!r}")
 
-# v4 .elmesh reader is one block read + bounded memory cursor; disk format stays v4.
-binary_cpp = text("src/model_asset/ModelAssetBinary.cpp")
-for token in ("struct MemoryReader", "std::ios::ate", "std::vector<std::uint8_t> bytes", "MemoryReader r", "MeshMagicV4", "skipMeshLod", "copyLodWithSurfaceModes"):
-    if token not in binary_cpp:
-        raise AssertionError(f"0.10.24 block .elmesh reader missing {token!r}")
-
-print("[PASS] model asset editor v0.10.24 passive tabs / lazy LOD provenance / binary viewport data-plane / cached diagnostics / v4")
+print("[PASS] model asset editor v0.10.24 binary geometry transport / block .elmesh read / preserved viewport terminals / v4")

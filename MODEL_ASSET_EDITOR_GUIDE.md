@@ -1,49 +1,22 @@
 # Elite Model Asset Editor — рабочая инструкция / архитектурный контекст
 
-**Актуально:** 2026-09-01 · explicit heavy-operation boundary / lazy LOD data-plane в 0.10.24
-**Редактор:** `Elite Model Asset Editor 0.10.24`
+**Актуально:** 2026-08-31 · executable-owned UI package isolation в 0.10.23
+**Редактор:** `Elite Model Asset Editor 0.10.23`
 **Asset format:** v4
 **Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`, `SURFACES`. SOURCE/LODS владеют canonical mesh и render-LOD documents, GEOMETRY — LOD-local geometry/instances/replacements, SURFACES — surface intent и material contract. Следующий незакрытый stage — `SEMANTICS`.
 
 > Этот файл является источником контекста для продолжения работы над Model Asset Editor.
 > Старые предположения из эпохи format v2/v3 о единой `Node -> GeometryDefinition -> LOD0/LOD1` структуре больше не применять к v4.
 
-## Heavy-operation boundary / lazy LOD contract (0.10.24)
-
-The editor now has an explicit boundary between **control-plane state** and **geometry data-plane**. Opening a production v4 asset, resuming the latest wizard checkpoint, or restoring a checkpoint reads only `.elmodel` manifest/wizard metadata. No `.elmesh` is decoded at asset-open time. Every LOD stores its current payload provenance (`checkpoint` package when present, otherwise production) and remains `UNLOADED` until an explicit user action needs the mesh.
-
-Wizard tabs are strictly passive. `setWizardStage()` may change panel visibility and selected workflow stage, but it must not call `loadLod`, topology/preflight analysis, `rebuildScene()`, LOD-preview cleanup that rebuilds the scene, or silently switch the viewport to LOD0. Stage navigation is not an authoring/heavy-operation boundary.
-
-The explicit mesh boundaries are commands such as **OPEN LOD IN VIEWPORT**, PREPARE MESHES, ANALYZE, LOD generation/preview/apply, source reimport and other tools whose semantics genuinely require geometry. Internal tool loads are allowed, but they do not automatically publish every resident LOD to the browser.
-
-Browser synchronization is split:
-
-- compact asset/wizard/transform/material/surface/semantic state uses JSON `asset_metadata`;
-- one explicitly requested resident LOD uses binary WebSocket frame `ELVPD001`;
-- vertex, normal, index, triangle-material, smoothing and edge arrays are never JSON fields;
-- metadata refresh must not call `rebuildScene()`. Targeted lightweight updates may adjust transforms/materials only for an already resident viewport LOD. If no LOD payload is resident, geometry, collision and socket viewport groups stay empty; a metadata-only asset/checkpoint open must never draw a “ghost model”. Stale browser geometry caches are dropped on an explicit asset/checkpoint document change and reopened only by a later explicit LOD request.
-
-Surface intent (`ClosedVolume`, `BreachedVolume`, `ThinOneSided`, `ThinTwoSided`) is a geometry-level property. Changing it does not scan triangles, run topology analysis or force LOD siblings into memory. Cross-LOD propagation uses stable authoring visual identity; unloaded siblings record the intent in wizard metadata. When a LOD is explicitly opened, its O(geometry-count) `SurfaceMode` metadata is reconciled in memory. If `Save all` happens first, the same metadata is persisted with a surface-only memory-cursor rewrite that skips vertex/triangle/edge payloads instead of decoding the mesh. `AUTO` clears explicit authoring intent; only explicit ANALYZE owns topology inference.
-
-Derived geometry diagnostics are cached per `LOD + stable geometry id`: counts, bounds/storage estimate, material usage/unassigned count and topology audit. A mesh replacement/preparation/generation/basis conversion invalidates the affected geometry/LOD cache; triangle material assignment invalidates that geometry cache. Pure transforms, surface intent and other metadata do not.
-
-`ModelAssetBinary::loadLod()` keeps asset format v4 unchanged but now reads each `.elmesh` into one contiguous memory buffer and parses through a bounds-checked memory cursor instead of issuing millions of tiny `istream::read()` calls.
-
-Lazy checkpoint save has a specific invariant: if an unopened dirty LOD is still backed by a checkpoint payload, `Save all` promotes that `.elmesh` to production without mesh decode. A byte-identical LOD is copied directly; if only explicit `SurfaceMode` metadata changed, `copyLodWithSurfaceModes()` patches the small geometry metadata bytes while skipping the heavy arrays through the memory cursor. It must never construct a `MeshLod` merely to persist metadata.
-
-The SOURCE panel follows the same contract. `METADATA`/unloaded is a healthy state, not an error. The panel shows manifest-declared `geometryCount`/`renderNodeCount` and per-LOD payload provenance (`checkpoint` or `production`) without decoding the `.elmesh`. The only path from that panel into the geometry data-plane is an explicit per-LOD **OPEN** action or an explicitly labelled heavy source refresh/reimport command.
-
-The storage panel distinguishes two different truths that must never be conflated: **production package files** under the compiled asset path, and the **current workspace payload source** for each LOD. During lazy checkpoint resume, production may legitimately contain only LOD0/LOD1 while LOD2+ are sourced from the checkpoint package. Production byte counts therefore do not mean that the workspace LOD is unavailable; the per-LOD provenance row is authoritative for what an explicit OPEN will read.
-
 ---
 
-# 0A. Историческая база 0.10.16 — libigl + Embree production preparation
+# 0A. Текущее состояние 0.10.16 — libigl + Embree production preparation
 
 `0.10.16` завершает эксперимент с самодельной absolute-orientation эвристикой. Продуктом `ПОДГОТОВИТЬ МЕШИ` остаётся **исправленный working MeshLod**, но topology/orientation authority теперь делегирован проверенным geometry-processing библиотекам.
 
 ## GEOMETRY workspace contract (0.10.20)
 
-GEOMETRY is a per-RenderLod authoring stage. **Entering the tab itself is passive in 0.10.24:** it preserves the current viewport and does not load/switch/rebuild a LOD. The author explicitly chooses/opens the RenderLod to inspect or edit. G-indices, RenderNodes, instance sharing and cleanup are local to that LOD only.
+GEOMETRY is a per-RenderLod authoring stage. Entering it resets transient LOD-generator and replacement previews and starts from the complete authored LOD0. The author chooses the active LOD at the top of the stage; G-indices, RenderNodes, instance sharing and cleanup are local to that LOD only.
 
 The stage exposes, in order: the full main/additional geometry browser with single-mesh preview; instance/array authoring (duplicate, break, radial array); rigid duplicate comparison and consolidation; additional/replacement mesh compatibility plus temporary replacement preview; unused ordinary geometry cleanup; and finally the GEOMETRY checkpoint. Additional meshes are protected from ordinary unused-geometry cleanup.
 
@@ -53,7 +26,7 @@ The stage exposes, in order: the full main/additional geometry browser with sing
 
 The Model Asset Editor runtime root is the same stable artifact root that owns its executable/workspaces: `build/tools/model_asset_editor`. Its filesystem fallback contains only the editor document and required Three.js modules. The editor build does not depend on the game `copy_assets` tree. Legacy `elite_ui.pak` files are migration debris and are removed by the new pack build commands. A stale game pack therefore cannot shadow a newer editor HTML again.
 
-Wizard stage entry is now deliberately **non-transactional with respect to the viewport**. Manual tab clicks and automatic checkpoint progression both use `setWizardStage`, but that function only changes workflow UI state. It does not clear previews, reset viewport mode, choose LOD0, load `.elmesh`, analyze geometry or call `rebuildScene()`. Viewport representation changes only as the result of a separate explicit viewport/tool action.
+Wizard stage entry is also a single transaction. Manual tab clicks and automatic checkpoint progression both use `setWizardStage`; leaving an LOD preview clears its transient state without rebuilding first, and GEOMETRY does not rebuild the whole station merely because its tab was selected. A scene rebuild occurs only when the viewport representation actually changes (for example generated-preview → authored geometry, SURFACES material preview on/off, or a viewport-mode change).
 
 ## SURFACES workspace contract (0.10.22)
 
@@ -61,7 +34,7 @@ SURFACES is downstream of GEOMETRY and is side-effect free until the author expl
 
 The author then chooses a RenderLod and geometry and resolves one of four production surface intents: `ClosedVolume`, `ThinOneSided`, `ThinTwoSided`, `BreachedVolume`. `ClosedVolume`, `BreachedVolume` and `ThinOneSided` render `FrontSide` with back-face culling enabled. `ThinTwoSided` renders `DoubleSide` with back-face culling disabled. The intent is the authority for sidedness; `MaterialDefinition::twoSided` remains only a legacy/binary-compatible field and is not an ordinary SURFACES authoring control.
 
-A default-on `APPLY TO ... ALL LODS` option propagates the chosen intent to the same stable visual family wherever it exists. Matching uses stable base-visual identity for ordinary geometry and stable variant identity for replacement geometry; transient `G#` indices and coincidental per-LOD geometry indices are never cross-LOD identity. The batch writes/publishes metadata once and runs **no** post-change analysis. Loaded sibling geometries receive only the O(1) geometry-level `SurfaceMode` update; unloaded siblings retain their stable-id intent in wizard state and are not decoded. Opening such a LOD reconciles the small geometry metadata in memory; `Save all` can instead persist that metadata with the surface-only v4 payload rewrite. This is useful for station modules whose physical surface class is identical across LODs while still allowing the checkbox to be disabled for deliberately different ship/damage representations.
+A default-on `APPLY TO ... ALL LODS` option propagates the chosen intent to the same stable visual family wherever it exists. Matching uses stable base-visual identity for ordinary geometry and stable variant identity for replacement geometry; transient `G#` indices and coincidental per-LOD geometry indices are never cross-LOD identity. The batch writes/publishes once and runs one post-change surface analysis. This is useful for station modules whose physical surface class is identical across LODs while still allowing the checkbox to be disabled for deliberately different ship/damage representations.
 
 Material assignment stays per triangle and materials stay in the shared asset material table. Missing/invalid material indices remain an independent SURFACES blocker after surface intent is resolved. The conservative repair still assigns a chosen existing material only to currently unassigned triangles. Material editing covers stable id, base RGBA, emissive color/strength, metallic, roughness and base/emissive texture references. Texture files are references only; import/bake/UV painting is outside this stage.
 
@@ -145,11 +118,31 @@ libigl, Eigen and Embree belong only to the offline `EliteAssetEditor` and optio
 
 ## 0.1 Mesh не гоняется при обычных командах
 
-С 0.10.24 geometry payload **никогда не входит в JSON**. Открытие asset и restore/resume checkpoint публикуют только metadata. Тяжёлый payload конкретного LOD отправляется отдельным binary data-plane только после явного открытия LOD в viewport (или другой явно тяжёлой команды, которой нужен resident mesh).
+Полный geometry payload (`positions`, `normals`, `indices`, `edges`) передаётся из C++ backend в browser только когда geometry действительно загружается или заменяется:
+
+- первое открытие asset;
+- source reimport;
+- restore checkpoint;
+- load/reload LOD;
+- операция, реально меняющая vertex/index payload.
 
 Обычные authoring-команды используют `asset_metadata` и **не имеют права повторно посылать неизменившийся mesh**. Это относится как минимум к transforms/pivots, geometry binding, instance consolidation, duplicate/radial instances, semantic state metadata, collision, sockets, hit/opening/repair metadata.
 
-Browser сохраняет mesh arrays и `THREE.BufferGeometry` в cache по стабильному ключу `LOD + RenderGeometryDefinition.id`. Metadata refresh не вызывает `rebuildScene()`; он обновляет только лёгкое состояние/overlays либо инвалидирует stale LOD payload, после чего viewport открывается заново явно. После `break instance` новая unique geometry локально клонируется из уже загруженного mesh; изменение edge mask передаёт только изменившийся mask.
+Browser сохраняет mesh arrays и `THREE.BufferGeometry` в cache по стабильному ключу `LOD + RenderGeometryDefinition.id`. Metadata refresh может перестроить лёгкий scene graph, но не пересоздаёт неизменившиеся GPU geometry buffers. После `break instance` новая unique geometry локально клонируется из уже загруженного mesh; изменение edge mask передаёт только изменившийся mask.
+
+### 0.1.1 Транспорт geometry с 0.10.24
+
+JSON остаётся только control-plane для маленьких команд и metadata. Bulk geometry (`positions`, `normals`, triangle indices/materials/smoothing groups, authored edges и RAW diagnostic snapshot) передаётся отдельным versioned binary WebSocket frame `ELWIR001`.
+
+Это **не новый viewport contract** и не новый asset format. Backend сначала посылает маленький descriptor (`asset_binary_begin` или `lod_payload_binary_begin`), затем binary geometry. Browser transport-adapter проверяет `LOD index + geometry index + stable geometry id`, подставляет typed arrays в descriptor и только после полной сборки вызывает старый application terminal `asset` / `lod_payload`. Поэтому `acceptAssetState(..., true)`, `state.asset.renderLods[...]` и существующий `rebuildScene()` остаются владельцами поведения отображения.
+
+Если операция изменила только один/несколько уже известных LOD, `asset_binary_begin` может быть transport-delta: неизменившиеся LOD payload не пересылаются, а берутся из уже resident browser state. Это **не delta application-state**: перед вызовом старого `asset` handler adapter обязан собрать полный объект и строго проверить совпадение asset/LOD/geometry identity. При первичной загрузке, reconnect, restore checkpoint или полном mesh rewrite отправляется self-contained snapshot всех resident LOD.
+
+Binary decoder оставляет bulk arrays typed (`Float32Array` / `Uint32Array` / `Int32Array`). Это требует явного terminal-adapter там, где старый API различает обычный JS `Array` и typed view: в частности `THREE.BufferGeometry.setIndex()` должен получать `THREE.BufferAttribute`, а не голый `Uint32Array`. Этот контракт защищён architecture regression.
+
+Для профилирования reimport backend пишет `[ModelAssetEditor][perf]` / `[ModelAssetEditor][transport]` с временем source import, additional-source import, metadata serialization, binary encode и размером wire payload; browser console отдельно пишет decode/legacy-terminal время. Это позволяет отличить тяжёлый OBJ/topology import от transport/viewport задержки.
+
+`.elmodel/.elmesh v4` на диске не меняется. `.elmesh` при чтении теперь забирается одним большим блоком в память и разбирается memory cursor-ом через тот же бинарный layout вместо миллионов мелких `istream::read()`.
 
 ## 0.2 Wizard checkpoints — линейная история
 

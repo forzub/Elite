@@ -11,16 +11,18 @@ EliteGame
        -> UiNavigation / message bridge
        -> UiComponent contracts
        -> FontRegistry / glyph coverage policy
-  -> elite_ui.pak
-       -> manifest + version + content hashes
-       -> compiled elite-ui.js / elite-ui.css
-       -> page templates / fragments
-       -> locale JSON
-       -> icons
-       -> bundled fonts
+  -> elite_game_ui.pak
+       -> game WebUI documents + shared UI resources
+       -> locale JSON / icons / bundled fonts
+
+EliteAssetEditor
+  -> model_asset_editor_ui.pak
+       -> model_asset_editor.html
+       -> required Three.js modules
+       -> shared font/license resources where packaged
 ```
 
-`elite_ui.pak` is a runtime asset, not gameplay authority and not server state. WebView pages become thin compositions over shared components instead of owning independent copies of form/button/layout logic.
+UI packs are executable-owned runtime assets, not gameplay authority and not server state. `HtmlUiServer` never guesses a universal pack name; each executable passes its exact resource-pack path. The obsolete `elite_ui.pak` name is migration-only and must not be consumed. WebView pages become thin compositions over shared components instead of owning independent copies of form/button/layout logic.
 
 ## Bundled-font guarantee
 
@@ -36,7 +38,7 @@ Initial declared WebUI glyph coverage is deliberately broader than the currently
 - Armenian, Georgian and Ethiopic;
 - symbols and emoji fallback.
 
-The first implementation uses pinned, unmodified Noto binaries fetched from immutable upstream commits by `tools/fetch_ui_fonts.ps1`. `tools/fetch_ui_fonts_mingw64.sh` keeps those fetched binaries out of the current checkout via `.git/info/exclude`; UI tooling must not create, replace or assume the contents of the repository root `.gitignore`. The repository stores the manifest/license metadata, not redistributed font binaries; release/build preparation fetches them into `third_party/fonts/noto`, then `tools/build_ui_pack.py` places them in `elite_ui.pak`. `THIRD_PARTY_LICENSES.md` is the central external-content license/provenance index.
+The first implementation uses pinned, unmodified Noto binaries fetched from immutable upstream commits by `tools/fetch_ui_fonts.ps1`. `tools/fetch_ui_fonts_mingw64.sh` keeps those fetched binaries out of the current checkout via `.git/info/exclude`; UI tooling must not create, replace or assume the contents of the repository root `.gitignore`. The repository stores the manifest/license metadata, not redistributed font binaries; release/build preparation fetches them into `third_party/fonts/noto`, then `tools/build_ui_pack.py` places them in the executable-owned resource pack (normally `elite_game_ui.pak` for the client). `THIRD_PARTY_LICENSES.md` is the central external-content license/provenance index.
 
 WebView consumes packaged faces through `/ui/fonts/...` from the resource pack. Locale/script fallback order is explicit; Chinese regional variants and Japanese/Korean use separate CJK faces because Han glyph design differs by locale. Native FreeType/HUD text remains a separate follow-up: broad Unicode glyph files alone are not enough for complex-script shaping (Arabic/Indic/etc.), so native global-text support must use a shaping layer (for example HarfBuzz) behind the future shared `FontRegistry` instead of pretending raw FreeType glyph lookup is sufficient.
 
@@ -56,8 +58,8 @@ The first UI-platform slice now establishes the resource and internationalizatio
 
 - `src/assets/ui/font_manifest.json` is the authoritative pinned font manifest;
 - `tools/fetch_ui_fonts.ps1` downloads the declared binaries and records SHA-256 in a generated local lock file;
-- `tools/build_ui_pack.py` builds versioned `ELITEUI1` binary `elite_ui.pak`;
-- `UiResourcePack` validates the binary index and `HtmlUiServer` serves pack resources before the filesystem development fallback;
+- `tools/build_ui_pack.py` builds versioned `ELITEUI1` binaries with include/exclude filtering: `elite_game_ui.pak` and `model_asset_editor_ui.pak`;
+- `UiResourcePack` validates the binary index and `HtmlUiServer` serves the explicitly supplied executable-owned pack before the filesystem development fallback;
 - every current WebUI page imports shared `elite_ui.css`;
 - `languages.json` carries locale script/direction metadata beyond the currently enabled translations;
 - `game_i18n.js` applies `lang`, `dir` and script metadata so RTL is an architectural property, not page-specific CSS;

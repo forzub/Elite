@@ -92,9 +92,17 @@ target_include_directories(EliteModelAsset PUBLIC
 )
 
 if(ELITE_BUILD_ASSET_EDITOR)
+    # The editor owns a completely separate runtime tree from EliteGame.
+    # Its executable, workspaces, WebUI fallback and resource pack all live here.
+    set(ELITE_MODEL_ASSET_EDITOR_ARTIFACT_ROOT
+        "${CMAKE_SOURCE_DIR}/build/tools/model_asset_editor")
+    set(ELITE_MODEL_ASSET_EDITOR_BIN_DIR
+        "${ELITE_MODEL_ASSET_EDITOR_ARTIFACT_ROOT}/bin")
+
     add_executable(EliteAssetEditor
         tools/model_asset_editor/main.cpp
         tools/model_asset_editor/ModelAssetEditorSession.cpp
+        tools/model_asset_editor/ModelAssetEditorWire.cpp
         tools/model_asset_editor/CanonicalMeshBuilder.cpp
         tools/model_asset_editor/GeometryInstanceFitter.cpp
         tools/model_asset_editor/RuntimeAssemblyImporter.cpp
@@ -118,6 +126,7 @@ if(ELITE_BUILD_ASSET_EDITOR)
     )
     target_compile_definitions(EliteAssetEditor PRIVATE
         ELITE_SOURCE_ROOT=\"${CMAKE_SOURCE_DIR}\"
+        ELITE_EDITOR_RUNTIME_ROOT=\"${ELITE_MODEL_ASSET_EDITOR_ARTIFACT_ROOT}\"
     )
     target_link_libraries(EliteAssetEditor PRIVATE
         EliteModelAsset
@@ -135,6 +144,11 @@ if(ELITE_BUILD_ASSET_EDITOR)
             shell32
         )
     endif()
+
+    # Stable developer-facing executable location. The compile-time runtime
+    # root above points to the same editor-owned artifact tree.
+    set_target_properties(EliteAssetEditor PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${ELITE_MODEL_ASSET_EDITOR_BIN_DIR}")
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -693,45 +707,43 @@ function(elite_copy_asset_tree TARGET_NAME SOURCE_DIR DEST_DIR)
     )
 endfunction()
 
-elite_copy_asset_tree(
-    copy_static_assets
-    "${ELITE_STATIC_ASSETS_DIR}"
-    "${ELITE_RUNTIME_ASSETS_DIR}"
-)
-
-elite_copy_asset_tree(
-    copy_external_assets
-    "${ELITE_EXTERNAL_ASSETS_DIR}"
-    "${ELITE_RUNTIME_ASSETS_DIR}"
-)
-
-add_custom_target(
-    copy_assets ALL
-    DEPENDS
+# Shared runtime asset deployment belongs only to the game/server tree.
+# The standalone Model Asset Editor has its own artifact root and its own WebUI
+# deployment below; defining both copy pipelines in an editor-only build would
+# create duplicate custom rules for the same files when CMAKE_BINARY_DIR equals
+# build/tools/model_asset_editor.
+if(TARGET EliteGame OR TARGET EliteServer)
+    elite_copy_asset_tree(
         copy_static_assets
-        copy_external_assets
-)
+        "${ELITE_STATIC_ASSETS_DIR}"
+        "${ELITE_RUNTIME_ASSETS_DIR}"
+    )
 
-if(TARGET EliteAssetEditor)
-    add_dependencies(EliteAssetEditor copy_assets)
+    elite_copy_asset_tree(
+        copy_external_assets
+        "${ELITE_EXTERNAL_ASSETS_DIR}"
+        "${ELITE_RUNTIME_ASSETS_DIR}"
+    )
+
+    add_custom_target(
+        copy_assets
+        DEPENDS
+            copy_static_assets
+            copy_external_assets
+    )
 endif()
 
-if(TARGET EliteGame)
+# UI resource packs are executable-owned artifacts. HtmlUiServer never guesses a
+# universal pack name: EliteGame and EliteAssetEditor pass their exact pack path.
+if(TARGET EliteGame OR TARGET EliteAssetEditor)
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
     set(ELITE_UI_FONT_DIR
         "${CMAKE_SOURCE_DIR}/third_party/fonts/noto"
     )
-    set(ELITE_UI_PACK_FILE
-        "${ELITE_RUNTIME_ASSETS_DIR}/ui/elite_ui.pak"
-    )
     set(ELITE_THIRD_PARTY_LICENSE_INDEX
         "${CMAKE_SOURCE_DIR}/THIRD_PARTY_LICENSES.md"
     )
-    set(ELITE_RUNTIME_THIRD_PARTY_LICENSE_INDEX
-        "${ELITE_RUNTIME_ASSETS_DIR}/licenses/THIRD_PARTY_LICENSES.md"
-    )
-
     set(ELITE_UI_PACK_FONT_REQUIRE_ARG)
     if(ELITE_REQUIRE_BUNDLED_UI_FONTS)
         set(ELITE_UI_PACK_FONT_REQUIRE_ARG --require-fonts)
@@ -740,6 +752,8 @@ if(TARGET EliteGame)
     file(GLOB_RECURSE ELITE_UI_WEB_FILES CONFIGURE_DEPENDS
         "${ELITE_STATIC_ASSETS_DIR}/webui/*"
     )
+    set(ELITE_GAME_UI_WEB_FILES ${ELITE_UI_WEB_FILES})
+    list(FILTER ELITE_GAME_UI_WEB_FILES EXCLUDE REGEX "/model_asset_editor\\.html$")
     file(GLOB_RECURSE ELITE_UI_LICENSE_FILES CONFIGURE_DEPENDS
         "${ELITE_STATIC_ASSETS_DIR}/licenses/*"
     )
@@ -749,11 +763,49 @@ if(TARGET EliteGame)
         "${ELITE_UI_FONT_DIR}/*.woff2"
         "${ELITE_UI_FONT_DIR}/font-lock.json"
     )
+endif()
+
+if(TARGET EliteAssetEditor)
+    set(ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR
+        "${ELITE_MODEL_ASSET_EDITOR_ARTIFACT_ROOT}/assets")
+    set(ELITE_MODEL_ASSET_EDITOR_UI_PACK_FILE
+        "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/ui/model_asset_editor_ui.pak")
+
+    set(ELITE_MODEL_ASSET_EDITOR_WEBUI_FILES
+        "${ELITE_STATIC_ASSETS_DIR}/webui/model_asset_editor.html"
+        "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/three.module.js"
+        "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/examples/jsm/controls/OrbitControls.js"
+    )
 
     add_custom_command(
-        OUTPUT "${ELITE_UI_PACK_FILE}"
+        OUTPUT "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/model_asset_editor.html"
         COMMAND ${CMAKE_COMMAND} -E make_directory
-                "${ELITE_RUNTIME_ASSETS_DIR}/ui"
+                "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/vendor/three/examples/jsm/controls"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${ELITE_STATIC_ASSETS_DIR}/webui/model_asset_editor.html"
+                "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/model_asset_editor.html"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/three.module.js"
+                "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/vendor/three/three.module.js"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/examples/jsm/controls/OrbitControls.js"
+                "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/vendor/three/examples/jsm/controls/OrbitControls.js"
+        DEPENDS ${ELITE_MODEL_ASSET_EDITOR_WEBUI_FILES}
+        COMMENT "Copying Model Asset Editor WebUI fallback"
+        VERBATIM
+    )
+    add_custom_target(copy_model_asset_editor_webui
+        DEPENDS "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/model_asset_editor.html")
+
+    add_custom_command(
+        OUTPUT "${ELITE_MODEL_ASSET_EDITOR_UI_PACK_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/ui"
+        # Migration cleanup: these universal packs predate executable-owned UI.
+        COMMAND ${CMAKE_COMMAND} -E rm -f
+                "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/ui/elite_ui.pak"
+        COMMAND ${CMAKE_COMMAND} -E rm -f
+                "${ELITE_RUNTIME_ASSETS_DIR}/ui/elite_ui.pak"
         COMMAND "${Python3_EXECUTABLE}"
                 "${CMAKE_SOURCE_DIR}/tools/build_ui_pack.py"
                 --webui "${ELITE_STATIC_ASSETS_DIR}/webui"
@@ -761,19 +813,64 @@ if(TARGET EliteGame)
                 --licenses "${ELITE_STATIC_ASSETS_DIR}/licenses"
                 --font-manifest "${ELITE_STATIC_ASSETS_DIR}/ui/font_manifest.json"
                 --license-index "${ELITE_THIRD_PARTY_LICENSE_INDEX}"
-                ${ELITE_UI_PACK_FONT_REQUIRE_ARG}
-                --output "${ELITE_UI_PACK_FILE}"
+                --include model_asset_editor.html
+                --include vendor/three/three.module.js
+                --include vendor/three/examples/jsm/controls/OrbitControls.js
+                --output "${ELITE_MODEL_ASSET_EDITOR_UI_PACK_FILE}"
         DEPENDS
             "${CMAKE_SOURCE_DIR}/tools/build_ui_pack.py"
             "${ELITE_STATIC_ASSETS_DIR}/ui/font_manifest.json"
             "${ELITE_THIRD_PARTY_LICENSE_INDEX}"
-            ${ELITE_UI_WEB_FILES}
+            ${ELITE_MODEL_ASSET_EDITOR_WEBUI_FILES}
             ${ELITE_UI_LICENSE_FILES}
             ${ELITE_UI_FONT_FILES}
-        COMMENT "Building binary Elite UI resource pack"
+        COMMENT "Building Model Asset Editor UI resource pack"
         VERBATIM
     )
-    add_custom_target(build_ui_pack DEPENDS "${ELITE_UI_PACK_FILE}")
+    add_custom_target(build_model_asset_editor_ui_pack
+        DEPENDS "${ELITE_MODEL_ASSET_EDITOR_UI_PACK_FILE}")
+
+    add_dependencies(EliteAssetEditor
+        copy_model_asset_editor_webui
+        build_model_asset_editor_ui_pack
+    )
+endif()
+
+if(TARGET EliteGame)
+    set(ELITE_GAME_UI_PACK_FILE
+        "${ELITE_RUNTIME_ASSETS_DIR}/ui/elite_game_ui.pak"
+    )
+    set(ELITE_RUNTIME_THIRD_PARTY_LICENSE_INDEX
+        "${ELITE_RUNTIME_ASSETS_DIR}/licenses/THIRD_PARTY_LICENSES.md"
+    )
+
+    add_custom_command(
+        OUTPUT "${ELITE_GAME_UI_PACK_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                "${ELITE_RUNTIME_ASSETS_DIR}/ui"
+        COMMAND ${CMAKE_COMMAND} -E rm -f
+                "${ELITE_RUNTIME_ASSETS_DIR}/ui/elite_ui.pak"
+        COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_SOURCE_DIR}/tools/build_ui_pack.py"
+                --webui "${ELITE_STATIC_ASSETS_DIR}/webui"
+                --fonts "${ELITE_UI_FONT_DIR}"
+                --licenses "${ELITE_STATIC_ASSETS_DIR}/licenses"
+                --font-manifest "${ELITE_STATIC_ASSETS_DIR}/ui/font_manifest.json"
+                --license-index "${ELITE_THIRD_PARTY_LICENSE_INDEX}"
+                --exclude model_asset_editor.html
+                ${ELITE_UI_PACK_FONT_REQUIRE_ARG}
+                --output "${ELITE_GAME_UI_PACK_FILE}"
+        DEPENDS
+            "${CMAKE_SOURCE_DIR}/tools/build_ui_pack.py"
+            "${ELITE_STATIC_ASSETS_DIR}/ui/font_manifest.json"
+            "${ELITE_THIRD_PARTY_LICENSE_INDEX}"
+            ${ELITE_GAME_UI_WEB_FILES}
+            ${ELITE_UI_LICENSE_FILES}
+            ${ELITE_UI_FONT_FILES}
+        COMMENT "Building EliteGame UI resource pack"
+        VERBATIM
+    )
+    add_custom_target(build_game_ui_pack DEPENDS "${ELITE_GAME_UI_PACK_FILE}")
 
     add_custom_command(
         OUTPUT "${ELITE_RUNTIME_THIRD_PARTY_LICENSE_INDEX}"
@@ -791,7 +888,7 @@ if(TARGET EliteGame)
 
     add_dependencies(EliteGame
         copy_assets
-        build_ui_pack
+        build_game_ui_pack
         copy_third_party_license_index
     )
 endif()
@@ -869,4 +966,15 @@ if(ELITE_MODEL_ASSET_LIBIGL_SPIKE)
         tools/model_asset_editor/LibiglMeshRepairSpike.cpp
     )
     target_link_libraries(model_asset_libigl_spike PRIVATE igl::core igl::embree)
+    target_compile_definitions(model_asset_libigl_spike PRIVATE
+        ELITE_SOURCE_ROOT=\"${CMAKE_SOURCE_DIR}\"
+    )
+    if(NOT DEFINED ELITE_MODEL_ASSET_EDITOR_BIN_DIR)
+        set(ELITE_MODEL_ASSET_EDITOR_ARTIFACT_ROOT
+            "${CMAKE_SOURCE_DIR}/build/tools/model_asset_editor")
+        set(ELITE_MODEL_ASSET_EDITOR_BIN_DIR
+            "${ELITE_MODEL_ASSET_EDITOR_ARTIFACT_ROOT}/bin")
+    endif()
+    set_target_properties(model_asset_libigl_spike PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${ELITE_MODEL_ASSET_EDITOR_BIN_DIR}")
 endif()

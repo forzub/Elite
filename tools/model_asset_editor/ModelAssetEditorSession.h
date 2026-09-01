@@ -32,8 +32,10 @@ private:
 
     void sendCatalog();
     void sendSettings();
-    void sendAsset();
+    void sendAsset(const std::vector<std::size_t>& payloadLods = {});
     void sendAssetMetadata(const nlohmann::json& hints = nlohmann::json::object());
+    void sendLodPayload(std::size_t lodIndex);
+    std::uint32_t nextWireTransferId();
     void sendStatus(const std::string& message, bool error = false, const std::string& activity = "idle");
     void sendProgress(
         const std::string& activity,
@@ -94,6 +96,7 @@ private:
     std::filesystem::path wizardWorkspacePath() const;
     std::filesystem::path wizardStatePath() const;
     std::filesystem::path wizardCheckpointPath(const std::string& stage) const;
+    std::filesystem::path wizardLogPath(const std::string& fileName) const;
     std::filesystem::path latestWizardCheckpoint(std::string* stage = nullptr) const;
     void loadWizardState();
     bool writeWizardState() const;
@@ -115,11 +118,16 @@ private:
     bool setGeometryTopologyClass(
         std::size_t lodIndex,
         std::size_t geometryIndex,
-        const std::string& topologyClass);
+        const std::string& topologyClass,
+        bool analyzeAfter = true,
+        bool publishAfter = true);
     bool modelPreflightReadyForLod(std::string* reason = nullptr) const;
     bool analyzeLodRequirements(std::size_t lodIndex);
     bool previewLodComponentCull(std::size_t lodIndex, double thresholdMeters);
     bool previewLodCoplanarCollapse(std::size_t lodIndex);
+    bool applyGeneratedLods(
+        std::size_t sourceLodIndex,
+        const nlohmann::json& levels);
     bool refreshSourceVariants(bool sourceOwned = false, bool broadcastUpdates = true);
     bool setSourceVariantReplacement(
         std::size_t lodIndex,
@@ -139,7 +147,7 @@ private:
     std::string allocateSourceVariantId();
     nlohmann::json serializeWizard() const;
 
-    nlohmann::json serializeAsset(bool includeGeometryPayload = true) const;
+    nlohmann::json serializeAssetMetadata() const;
 
 private:
     struct LodEditState
@@ -181,6 +189,7 @@ private:
     std::map<std::size_t, std::map<std::string, std::vector<std::string>>> m_legacySourceVariantReplacements;
     std::size_t m_nextBaseVisualOrdinal = 1;
     std::size_t m_nextSourceVariantOrdinal = 1;
+    std::uint32_t m_nextWireTransferId = 1;
 };
 
 } // namespace elite::model_asset::editor

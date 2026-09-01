@@ -31,10 +31,14 @@ public:
     HtmlUiServer();
     ~HtmlUiServer();
 
-    std::uint16_t start(std::uint16_t port, const std::string& rootDir);
+    std::uint16_t start(
+        std::uint16_t port,
+        const std::string& rootDir,
+        const std::string& resourcePackPath = {});
     void stop();
 
     void broadcastText(const std::string& text);
+    void broadcastBinary(std::vector<std::uint8_t> data);
 
     void setVirtualFile(
         const std::string& resource,

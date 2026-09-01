@@ -26,7 +26,12 @@
           "tokens": [
             "wizardGeometryScanBtn",
             "wizardGeometryCandidates",
-            "fit_render_node_as_instance"
+            "fit_render_node_as_instance",
+            "wizardGeometryLodSelect",
+            "wizardGeometryMainMeshes",
+            "wizardGeometryDuplicateBtn",
+            "wizardGeometryRadialBtn",
+            "geometryMeshSelection"
           ]
         },
         "test": {
@@ -189,12 +194,13 @@
     },
     {
       "id": "incremental_editor_sync",
-      "description": "Ordinary Web UI edits synchronize metadata without retransmitting unchanged mesh payloads or rebuilding GPU geometry buffers.",
+      "description": "Small editor state stays on the JSON control plane; bulk geometry uses the versioned binary data plane and unchanged mesh payloads are not retransmitted.",
       "contracts": {
         "data_model": {
           "path": "src/model_asset/MODEL_ASSET_PIPELINE.md",
           "tokens": [
             "Web UI synchronization is metadata-first",
+            "ELWIR001",
             "must not retransmit unchanged vertices"
           ]
         },
@@ -202,9 +208,10 @@
           "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
           "tokens": [
             "sendAssetMetadata",
-            "serializeAsset(false)",
-            "includeGeometryPayload",
-            "asset_metadata"
+            "serializeAssetMetadata",
+            "asset_binary_begin",
+            "lod_payload_binary_begin",
+            "broadcastBinary"
           ]
         },
         "ui": {
@@ -212,7 +219,9 @@
           "tokens": [
             "asset_metadata",
             "mergeAssetMetadata",
-            "geometryCacheKey",
+            "ELWIR001",
+            "binaryType='arraybuffer'",
+            "handleEditorBinary",
             "rebuildScene(true)"
           ]
         },
@@ -220,7 +229,8 @@
           "path": "tests/architecture_contracts/check_model_asset_editor.py",
           "tokens": [
             "incremental_editor_sync",
-            "geometryPayloadIncluded"
+            "ELWIR001",
+            "binary geometry transport"
           ]
         }
       }
@@ -258,7 +268,10 @@
             "baseVisualId",
             "set_source_variant_replacement",
             "variantPreviewByNode",
-            "initWorldAxes"
+            "initWorldAxes",
+            "wizardGeometryExtraMeshes",
+            "wizardBaseReplacementTable",
+            "wizardVariantPreviewResetBtn"
           ]
         },
         "test": {
@@ -273,7 +286,7 @@
     },
     {
       "id": "model_preflight",
-      "description": "Load/restore/reimport remain non-mutating. PREPARE MESHES performs topology-aware cleanup, libigl split_nonmanifold repair, Embree raycast orientation, then editor-owned normals/render vertices/authoritative edges. Independent coincident sheets and real holes are preserved. ANALYZE remains separate. SOURCE/prepared diagnostic viewport modes and detailed repair trace are editor-only.",
+      "description": "Explicit PREPARE creates technically canonical geometry with libigl + Embree; Preflight reports later surface-class authoring separately from LOD readiness, and RAW/PREPARED viewport diagnostics remain available.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/CanonicalMeshBuilder.h",
@@ -296,9 +309,10 @@
             "prepare_model_meshes",
             "Mesh preparation: ready=",
             "appendMeshRepairDiagnostic",
-            "model_asset_mesh_repair.log",
+            "mesh_repair.log",
             "raycastPatches",
-            "m_rawMeshSnapshots"
+            "m_rawMeshSnapshots",
+            "wizardLogPath"
           ]
         },
         "ui": {
@@ -332,7 +346,7 @@
     },
     {
       "id": "lod_generator_preview",
-      "description": "LOD Generator remains gated by explicit mesh preparation plus Preflight classification. Loading itself is non-mutating and never blocks viewport publication.",
+      "description": "LOD Generator preview is gated by technical canonical LOD0 preparation only; it inspects every main and additional/replacement mesh without mutating authored LOD documents.",
       "contracts": {
         "data_model": {
           "path": "src/render/RenderResolutionPolicy.h",
@@ -368,6 +382,102 @@
           "tokens": [
             "lod_generator_preview",
             "MaximumSupportedRenderWidth = 2560"
+          ]
+        }
+      }
+    },
+    {
+      "id": "lod_generator_authoring",
+      "description": "Generated LOD levels are built independently from canonical LOD0 for the complete geometry pool, including additional/replacement meshes. APPLY publishes compact authored metadata immediately, invalidates stale browser payloads, and fetches one LOD viewport payload on demand. LOD0 is never changed.",
+      "contracts": {
+        "data_model": {
+          "path": "src/model_asset/ModelAsset.h",
+          "tokens": [
+            "std::string sourceKind = \"source\"",
+            "std::int32_t generatedFromLod = NoIndex"
+          ]
+        },
+        "backend": {
+          "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
+          "tokens": [
+            "GeneratedLodComponentCullAlgorithmId",
+            "buildGeneratedComponentCullLod",
+            "applyGeneratedLods",
+            "apply_generated_lods",
+            "m_sourceExtraMeshIds[selection.level] = sourceExtraIds->second",
+            "sendLodPayload",
+            "request_lod_payload",
+            "invalidatedLodPayloads"
+          ]
+        },
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "lodGeneratorApplyBtn",
+            "lodGeneratorApplyLevels",
+            "lodGeneratorMeshSelect",
+            "apply_generated_lods",
+            "lodGeneratorApplying",
+            "lodGeneratorAppliedLevels",
+            "lodGeneratorActions",
+            "AUTHORED LOD UPDATED",
+            "request_lod_payload"
+          ]
+        },
+        "test": {
+          "path": "tests/architecture_contracts/check_model_asset_editor.py",
+          "tokens": [
+            "generated LOD authoring is full-asset and transactional",
+            "lod_generator_authoring",
+            "LOD apply payload boundary",
+            "LOD apply feedback/isolation UI"
+          ]
+        }
+      }
+    },
+    {
+      "id": "surface_authoring",
+      "description": "Explicit SURFACES analysis, stable-family cross-LOD surface intent, geometry-authoritative sidedness, shared material/PBR authoring, triangle material audit, visible viewport preview and a dedicated SURFACES checkpoint.",
+      "contracts": {
+        "data_model": {
+          "path": "src/model_asset/ModelAsset.h",
+          "tokens": [
+            "enum class SurfaceMode",
+            "struct MaterialDefinition",
+            "materialIndex"
+          ]
+        },
+        "backend": {
+          "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
+          "tokens": [
+            "set_material_definition",
+            "assign_unassigned_material",
+            "SURFACES validation failed",
+            "PreflightTopologyClass::ThinOneSided"
+          ]
+        },
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "wizardSurfaceLodSelect",
+            "wizardSurfaceGeometryTable",
+            "wizardSurfaceIntent",
+            "wizardSurfaceAnalyzeBtn",
+            "wizardSurfaceApplyAllLods",
+            "surfaceAnalysisReady",
+            "surfaceFamilyKey",
+            "surfaceRenderConsequence",
+            "applyAllLods",
+            "wizardSurfaceMaterialSelect",
+            "makeSurfacePreviewMaterials"
+          ]
+        },
+        "test": {
+          "path": "tests/model_asset/ModelAssetBinaryTests.cpp",
+          "tokens": [
+            "surface material properties lost in binary round trip",
+            "material.emissiveStrength = 2.5f",
+            "material.twoSided = true"
           ]
         }
       }

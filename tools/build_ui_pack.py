@@ -2,6 +2,7 @@
 """Build the deterministic binary resource pack used by the embedded Elite WebUI."""
 
 import argparse
+import fnmatch
 import json
 import mimetypes
 import struct
@@ -21,13 +22,21 @@ def add_item(items, resource, path):
     items[resource] = path
 
 
-def collect(webui, fonts, licenses, font_manifest=None, license_index=None):
+def collect(webui, fonts, licenses, font_manifest=None, license_index=None, includes=None, excludes=None):
     items = {}
 
     webui = Path(webui)
+    include_patterns = list(includes or [])
+    exclude_patterns = list(excludes or [])
     for path in sorted(webui.rglob("*")):
-        if path.is_file():
-            add_item(items, "/" + path.relative_to(webui).as_posix(), path)
+        if not path.is_file():
+            continue
+        relative = path.relative_to(webui).as_posix()
+        if include_patterns and not any(fnmatch.fnmatch(relative, pattern) for pattern in include_patterns):
+            continue
+        if any(fnmatch.fnmatch(relative, pattern) for pattern in exclude_patterns):
+            continue
+        add_item(items, "/" + relative, path)
 
     fonts = Path(fonts)
     if fonts.exists():
@@ -93,6 +102,8 @@ def build(args):
         args.licenses,
         args.font_manifest,
         args.license_index,
+        args.include,
+        args.exclude,
     )
 
     entries = []
@@ -144,6 +155,8 @@ def parse_args():
     parser.add_argument("--font-manifest")
     parser.add_argument("--license-index")
     parser.add_argument("--require-fonts", action="store_true")
+    parser.add_argument("--include", action="append", default=[], help="Include matching WebUI relative paths (repeatable glob)")
+    parser.add_argument("--exclude", action="append", default=[], help="Exclude matching WebUI relative paths (repeatable glob)")
     parser.add_argument("--output", required=True)
     return parser.parse_args()
 

@@ -337,3 +337,22 @@ The plan follows established geometry-processing patterns rather than inventing 
 - **Assimp:** import post-processing separates invalid-data cleanup, identical-vertex joining, normal generation and heuristic infacing-normal correction rather than treating diagnostics as a final product.
 
 These references reinforce the same architecture: detect a concrete defect, apply the matching repair, rebuild/reinspect, and stop only at a stable usable mesh or an explicitly unresolved defect.
+
+---
+## 11. Milestone closure — 0.10.16 / handoff to LODS
+
+The real station production run accepted the libigl + Embree canonical preparation path. `station_habitat_s3` finished with 90160 triangles after removing two degenerates, zero non-manifold edges, zero winding conflicts and zero inward closed components.
+
+Canonical mesh preparation is therefore no longer the active blocker for LOD work. Future mesh-repair changes require a concrete failing asset/regression; do not extend the repair engine speculatively.
+
+0.10.17 corrects the downstream workflow boundary discovered during acceptance:
+
+- technical canonical readiness gates LOD analysis;
+- `ClosedVolume / ThinTwoSided / BreachedVolume` classification belongs to SURFACES and does not gate LODS;
+- PREPARE diagnostics are one-run asset-local logs under `build/tools/model_asset_editor/workspaces/<asset>/logs/`.
+
+## 0.10.18 LOD handoff
+
+Canonical mesh repair is no longer the active blocker. The LOD authoring handoff now requires that every generated render level include both default/main and additional/replacement geometry. Generated levels are independently derived from LOD0, explicitly selected by the author, and committed as complete RenderLod documents before GEOMETRY.
+
+The next reduction experiment is **not** stronger component deletion. It is a second pass for consolidation/simplification of surviving large structures while preserving silhouette, material/UV/normal boundaries and authored replacement identity.

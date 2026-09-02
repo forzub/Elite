@@ -47,6 +47,7 @@ private:
     bool saveAsset();
     bool saveManifestOnly();
     bool saveLodOnly(std::size_t lodIndex);
+    bool loadLodData(std::size_t lodIndex, bool forceReload, std::string* error = nullptr);
     bool loadLodOnly(std::size_t lodIndex, bool forceReload);
     bool unloadLod(std::size_t lodIndex);
     bool ensureLodLoaded(std::size_t lodIndex);
@@ -106,11 +107,16 @@ private:
     };
     std::filesystem::path wizardWorkspacePath() const;
     std::filesystem::path wizardStatePath() const;
+    std::filesystem::path productionEditorStatePath() const;
     std::filesystem::path wizardCheckpointPath(const std::string& stage) const;
     std::filesystem::path wizardCheckpointEditorStatePath(const std::string& stage) const;
     std::filesystem::path wizardLogPath(const std::string& fileName) const;
-    std::filesystem::path latestWizardCheckpoint(std::string* stage = nullptr) const;
+    using StageValidityState = std::map<std::string, std::string>;
     EditorAuthoringState captureEditorAuthoringState() const;
+    StageValidityState captureStageValidity() const;
+    void applyStageValidity(const StageValidityState& state);
+    nlohmann::json serializeStageValidity(const StageValidityState& state) const;
+    bool parseStageValidity(const nlohmann::json& state, StageValidityState& parsed, std::string* error = nullptr) const;
     void applyEditorAuthoringState(EditorAuthoringState state);
     nlohmann::json serializeEditorAuthoringState(const EditorAuthoringState& state) const;
     bool parseEditorAuthoringState(
@@ -118,8 +124,19 @@ private:
         int schemaVersion,
         EditorAuthoringState& parsed,
         std::string* error = nullptr) const;
-    bool writeCheckpointEditorState(const std::string& stage, std::string* error = nullptr) const;
-    bool loadCheckpointEditorState(const std::string& stage, EditorAuthoringState& state, std::string* error = nullptr) const;
+    bool writeCheckpointEditorState(const std::string& stage, const StageValidityState& validity, std::string* error = nullptr) const;
+    bool loadCheckpointEditorState(
+        const std::string& stage,
+        EditorAuthoringState& state,
+        StageValidityState* validity = nullptr,
+        std::string* error = nullptr) const;
+    nlohmann::json productionPackageStamp() const;
+    bool productionPackageStampMatches(const nlohmann::json& expected) const;
+    bool writeProductionEditorState(std::string* error = nullptr) const;
+    bool loadProductionEditorState(
+        EditorAuthoringState& state,
+        StageValidityState& validity,
+        std::string* error = nullptr) const;
     void loadWizardState();
     bool writeWizardState() const;
     void invalidateWizardFrom(const std::string& stage);

@@ -45,13 +45,15 @@
     },
     {
       "id": "independent_render_lods",
-      "description": "Each render LOD owns an independent graph and can be loaded/saved separately.",
+      "description": "Each render LOD owns an independent graph and v4 payload file. The editor may open the full production working set eagerly for correctness while still supporting separate LOD load/save/reload operations.",
       "contracts": {
         "data_model": {
           "path": "src/model_asset/ModelAsset.h",
           "tokens": [
             "struct RenderLod",
-            "std::vector<RenderLod> renderLods"
+            "std::vector<RenderLod> renderLods",
+            "declaredGeometryCount",
+            "declaredNodeCount"
           ]
         },
         "backend": {
@@ -60,7 +62,9 @@
             "load_lod",
             "save_lod",
             "unload_lod",
-            "renderLods"
+            "renderLods",
+            "loadLodData",
+            "resetLodState(true, false)"
           ]
         },
         "ui": {
@@ -75,7 +79,9 @@
           "path": "tests/model_asset/ModelAssetBinaryTests.cpp",
           "tokens": [
             "independent LOD1 payload",
-            "saving LOD0 rewrote or changed independent LOD1 payload"
+            "saving LOD0 rewrote or changed independent LOD1 payload",
+            "manifest-only load eagerly pulled heavy render graphs",
+            "metadata-only manifest save zeroed counts for unloaded LOD payloads"
           ]
         }
       }
@@ -156,7 +162,7 @@
     },
     {
       "id": "wizard_checkpoints",
-      "description": "Finished wizard stages create durable non-production rollback snapshots. Workspace invalidation marks incompatible current/future stages stale without deleting checkpoints; each checkpoint carries stage-local editor_state.json, snapshot discovery survives missing/corrupt wizard_state.json, and only complete checkpoints may auto-resume as the current workspace head.",
+      "description": "Finished wizard stages create durable non-production rollback snapshots. Ordinary OPEN always uses production; checkpoints are restored only by explicit user action, never deleted by invalidation, and each new snapshot carries its own editor/stage state.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.h",
@@ -164,7 +170,9 @@
             "WizardStageState",
             "EditorAuthoringState",
             "wizardCheckpointPath",
-            "wizardCheckpointEditorStatePath"
+            "wizardCheckpointEditorStatePath",
+            "productionEditorStatePath",
+            "StageValidityState"
           ]
         },
         "backend": {
@@ -174,12 +182,12 @@
             "restore_wizard_checkpoint",
             "writeCheckpointEditorState",
             "loadCheckpointEditorState",
-            "markWizardDescendantsStale",
-            "restoreWizardValidityAt",
-            "latestWizardCheckpoint",
-            "RESUME CHECKPOINT",
+            "writeProductionEditorState",
+            "loadProductionEditorState",
+            "productionPackageStamp",
+            "applyStageValidity",
             "invalidateWizardFrom",
-            "wizard state ignored:"
+            "model_asset_editor_session_index"
           ]
         },
         "ui": {

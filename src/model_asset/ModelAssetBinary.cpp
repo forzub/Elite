@@ -655,8 +655,16 @@ void writeLodManifestV4(Writer& w, const ModelAsset& a)
         w.pod(lod.level); w.string(lod.sourceKind); w.pod(lod.generatedFromLod);
         w.vec3(lod.minBounds); w.vec3(lod.maxBounds);
         // Counts are diagnostics only; heavy graph content remains in .elmesh.
-        w.pod(static_cast<std::uint32_t>(lod.geometries.size()));
-        w.pod(static_cast<std::uint32_t>(lod.nodes.size()));
+        // When a LOD is not resident, preserve the counts read from the manifest
+        // instead of serializing the empty payload vectors as 0/0.
+        const auto geometryCount = !lod.geometries.empty()
+            ? static_cast<std::uint32_t>(lod.geometries.size())
+            : lod.declaredGeometryCount;
+        const auto nodeCount = !lod.nodes.empty()
+            ? static_cast<std::uint32_t>(lod.nodes.size())
+            : lod.declaredNodeCount;
+        w.pod(geometryCount);
+        w.pod(nodeCount);
     }
 }
 
@@ -668,9 +676,8 @@ void readLodManifestV4(Reader& r, ModelAsset& a)
         std::uint32_t geometryCount = 0, nodeCount = 0;
         r.pod(lod.level); r.string(lod.sourceKind); r.pod(lod.generatedFromLod);
         r.vec3(lod.minBounds); r.vec3(lod.maxBounds); r.pod(geometryCount); r.pod(nodeCount);
-        // reserve() communicates expected size without pretending payload arrays
-        // are loaded from the manifest.
-        lod.geometries.reserve(geometryCount); lod.nodes.reserve(nodeCount);
+        lod.declaredGeometryCount = geometryCount;
+        lod.declaredNodeCount = nodeCount;
     }
 }
 
@@ -1077,6 +1084,8 @@ bool readLodPayload(
         else if (!r.ok) setError(error, "corrupt LOD payload: " + path.string());
         return false;
     }
+    loaded.declaredGeometryCount = static_cast<std::uint32_t>(loaded.geometries.size());
+    loaded.declaredNodeCount = static_cast<std::uint32_t>(loaded.nodes.size());
     asset.renderLods[expectedLodIndex] = std::move(loaded);
     return true;
 }

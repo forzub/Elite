@@ -1079,6 +1079,13 @@ int main()
             "v4 manifest did not preserve render LOD descriptors");
         require(manifestOnly.renderLods[0].geometries.empty() && manifestOnly.renderLods[1].geometries.empty(),
             "manifest-only load eagerly pulled heavy render graphs");
+        require(manifestOnly.renderLods[0].declaredGeometryCount == 2 &&
+                manifestOnly.renderLods[0].declaredNodeCount == 3 &&
+                manifestOnly.renderLods[1].declaredGeometryCount == 1 &&
+                manifestOnly.renderLods[1].declaredNodeCount == 1 &&
+                manifestOnly.renderLods[2].declaredGeometryCount == 2 &&
+                manifestOnly.renderLods[2].declaredNodeCount == 2,
+            "manifest-only load lost declared render graph counts");
         require(ModelAssetBinary::loadLod(path.string(), manifestOnly, 0, &error), error.c_str());
         require(manifestOnly.renderLods[0].geometries.size() == 2 && manifestOnly.renderLods[1].geometries.empty(),
             "LOD0-only load also loaded sibling render graphs");
@@ -1098,6 +1105,13 @@ int main()
             "saving semantic manifest rewrote LOD0 payload");
         require(readFileBytes(lod1Path) == lod1Before,
             "saving semantic manifest rewrote LOD1 payload");
+        ModelAsset manifestAfterMetadataSave;
+        require(ModelAssetBinary::loadManifest(path.string(), manifestAfterMetadataSave, &legacyPackage, &error), error.c_str());
+        require(manifestAfterMetadataSave.renderLods[1].declaredGeometryCount == 1 &&
+                manifestAfterMetadataSave.renderLods[1].declaredNodeCount == 1 &&
+                manifestAfterMetadataSave.renderLods[2].declaredGeometryCount == 2 &&
+                manifestAfterMetadataSave.renderLods[2].declaredNodeCount == 2,
+            "metadata-only manifest save zeroed counts for unloaded LOD payloads");
 
         ModelAsset loaded;
         require(ModelAssetBinary::load(path.string(), loaded, &error), error.c_str());

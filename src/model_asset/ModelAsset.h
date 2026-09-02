@@ -271,6 +271,14 @@ struct RenderLod
     std::int32_t generatedFromLod = NoIndex;
     glm::vec3 minBounds {0.0f};
     glm::vec3 maxBounds {0.0f};
+
+    // v4 manifest diagnostics are available even while the independent .elmesh
+    // payload is not resident. They are runtime metadata, not a new wire field:
+    // the existing LODS chunk already stores these two counts. Keeping them
+    // explicitly avoids abusing vector::capacity() as hidden manifest state.
+    std::uint32_t declaredGeometryCount = 0;
+    std::uint32_t declaredNodeCount = 0;
+
     std::vector<RenderGeometryDefinition> geometries;
     std::vector<RenderNode> nodes;
 };

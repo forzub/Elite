@@ -1,11 +1,14 @@
-## 0.10.24 — binary geometry transport / block `.elmesh` read
+## 0.10.24 — production authority / durable checkpoints / binary geometry transport
 
-- Checkpoints are now durable stage snapshots instead of a destructively pruned linear cache. Reimport/restore/invalidation mark incompatible stages `stale` but never delete another stage checkpoint.
-- Every new checkpoint stores stage-local `editor_state.json` beside the v4 package, using the same `EditorAuthoringState` serializer as workspace `wizard_state.json`; PREPARE evidence, stable authoring ids, replacement compatibility and topology/surface intent therefore restore with the mesh snapshot.
-- Explicit restore can open a saved stale stage even when the current workspace lineage has not unlocked it for editing; that view is restore-only until the checkpoint is restored. Automatic reopen/resume considers only `complete` checkpoints, never stale rollback snapshots.
-- Checkpoint invalidation is defined over the full reserved pipeline (`SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD`) so future stages inherit the same non-destructive contract.
-- Backend mutations already present for future SEMANTICS/PHYSICS/DAMAGE pages now invalidate from their owning future stage, so enabling those pages later cannot silently bypass checkpoint validity.
-- Durable checkpoint discovery no longer depends on a healthy `wizard_state.json`: canonical stage snapshot directories are rediscovered after missing/corrupt/unsupported workspace-head metadata and exposed as stale restore-only points.
+- Fixed the editor lifecycle authority: ordinary OPEN always starts from the saved production `.elmodel/.elmesh` package. Stage checkpoints are durable rollback snapshots and are never auto-resumed or silently preferred over production.
+- Explicit `RESTORE CHECKPOINT` replaces only the current in-memory working copy and marks it dirty relative to production. Closing without `SAVE ALL` discards that restored working copy; the next OPEN returns to production.
+- Added `production_state.json` for editor-only authoring/stage state that belongs to the saved production package. It is bound to the current production package-member stamp; missing/mismatched state is rejected conservatively instead of being mixed with unrelated geometry.
+- `wizard_state.json` is now only a session/checkpoint index. It no longer persists or reattaches unbound PREPARE fingerprints, topology intent, stable authoring ids or other editor-owned state to whatever production geometry happens to open next.
+- Checkpoint `editor_state.json` schema 8 now snapshots both the shared `EditorAuthoringState` and the complete nine-stage validity map. New checkpoint restore therefore restores exact authoring evidence and validity; legacy checkpoints without a validity map use conservative fallback semantics.
+- Stage validity and checkpoint availability are separate axes. Invalidation can mark current work stale/not-started without deleting or promoting rollback snapshots, and merely writing a checkpoint no longer invalidates downstream work.
+- Returned ordinary production OPEN to a simple coherent working-set load. The editor may still load/save individual v4 LOD documents, but production correctness is no longer subordinated to residency/lazy-loading policy. Backend residency helpers remain side-effect-free with respect to viewport publication.
+- v4 manifest LOD counts remain explicit runtime descriptor metadata (`declaredGeometryCount` / `declaredNodeCount`) rather than hidden in `vector::capacity()`, preserving correct descriptors during separate LOD I/O.
+
 - PREPARE transport hotfix: canonical preparation now records the exact Render LODs whose mesh bytes changed. The preserved full-asset application terminal is still used, but its binary transport delta contains only those changed LODs; an idempotent `changed=0` PREPARE sends metadata only and no geometry payload.
 - Session-only pre-PREPARE RAW snapshots no longer ride in every normal asset/LOD publication. The `ИСХОДНИК` viewport requests RAW explicitly for the active LOD on first use; ordinary WORKING/prepared transport contains only the current mesh.
 - Added per-geometry and whole-PREPARE timing logs (`[ModelAssetEditor][prepare]`) without instrumenting or changing CanonicalMeshBuilder/libigl/Embree internals.

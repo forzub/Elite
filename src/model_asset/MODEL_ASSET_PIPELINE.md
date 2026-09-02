@@ -170,9 +170,12 @@ and old instance relations *inside that LOD*. Semantic Nodes then drop the legac
 ### Independent LOD editor documents
 
 The editor loads the semantic manifest and selected render documents independently.
+Opening an ordinary v4 asset reads the manifest/descriptors only; no `.elmesh` is read
+until an explicit LOAD/RELOAD or a backend operation actually needs that LOD geometry.
 Each LOD has `LOADED`/`UNLOADED` and `CLEAN`/`DIRTY` state and can be loaded, reloaded,
-unloaded or saved without touching siblings. `Save manifest` writes semantic state
-only; `Save all` writes only dirty/missing package members.
+unloaded or saved without touching siblings. Backend-only residency helpers do not publish
+geometry as a side effect. `Save manifest` writes semantic state only; declared geometry/node
+counts remain available for unloaded LODs, and `Save all` writes only dirty/missing package members.
 
 This is also the intended runtime streaming boundary: a distant ship can load its
 semantic manifest plus only a coarse render LOD without reading LOD0.
@@ -201,8 +204,9 @@ LOD identity must never be inferred from filenames.
 ### Web UI synchronization is metadata-first
 
 The browser viewport receives full render-mesh payloads only when geometry is actually
-loaded or replaced: initial asset open, source reimport, checkpoint restore, LOD
-load/reload, or an operation that changes vertex/index payloads. Ordinary authoring
+requested/replaced: explicit LOD load/reload, source reimport, checkpoint restore, or an
+operation that changes vertex/index payloads. Ordinary v4 asset open is metadata-only.
+Ordinary authoring
 commands must use metadata-only synchronization. Position/pivot edits, instance
 consolidation, geometry bindings, semantic/damage metadata, collision and socket edits
 must not retransmit unchanged vertices, normals, indices or edge lists.
@@ -229,13 +233,13 @@ locally; an edge-mask edit transmits only the changed mask.
 
 Workspace validity and checkpoint storage are independent. Editing, restoring or recompleting an earlier stage marks that stage and every downstream stage `stale`/`not_started` as appropriate, but never deletes a checkpoint directory. A stale checkpoint is an explicit rollback snapshot from another workspace lineage, not garbage.
 
-Every new checkpoint stores the v4 ModelAsset package plus stage-local `editor_state.json`. The latter is serialized through the same `EditorAuthoringState` contract as workspace `wizard_state.json`, so PREPARE evidence, stable authoring identities, replacement compatibility and topology/surface intent are restored together with mesh bytes. Future SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD editor-only state must extend that same authoring-state serializer.
+Every new checkpoint stores the v4 ModelAsset package plus stage-local `editor_state.json`. The latter is serialized through the same `EditorAuthoringState` contract as production `production_state.json`, so PREPARE evidence, stable authoring identities, replacement compatibility and topology/surface intent are restored together with mesh bytes. Future SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD editor-only state must extend that same authoring-state serializer.
 
 Existing backend mutations reserved for future wizard pages already use the same invalidation order: semantic hierarchy/joint/socket edits start at SEMANTICS, physics/collision edits at PHYSICS, and state/damage/opening/repair edits at DAMAGE. Future UI enablement must reuse those boundaries rather than bypass checkpoint validity.
 
-Automatic reopen/resume considers only checkpoints whose stage validity is `complete`. Stale snapshots remain visible and explicitly restorable but are never silently promoted to the workspace head. Restoring a checkpoint marks all upstream stages complete in that snapshot and later saved snapshots stale; no checkpoint is physically pruned.
+Ordinary OPEN never auto-resumes a checkpoint: production `.elmodel/.elmesh` is the saved authority. A checkpoint enters the current working copy only through explicit RESTORE and remains dirty relative to production until SAVE ALL. Closing without SAVE discards that restored working copy and the next OPEN returns to production.
 
-`wizard_state.json` is mutable workspace-head metadata, not checkpoint ownership. If it is missing, unreadable or from an unsupported schema, canonical stage checkpoint directories are rediscovered and exposed conservatively as stale/restore-only snapshots instead of disappearing or auto-resuming.
+Editor-only state that survives a session is bound to the same geometry snapshot. `production_state.json` stores production authoring/stage state plus a package-member stamp; each checkpoint stores its own `editor_state.json`. `wizard_state.json` is only a session/checkpoint index and must never be attached as authoritative authoring metadata to freshly opened production geometry.
 
 ## Native OBJ compilation
 

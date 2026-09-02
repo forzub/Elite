@@ -108,7 +108,7 @@ Detailed diagnostics remain in:
 build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log
 ```
 
-For every geometry the log records input cleanup counts, source/canonical non-manifold evidence, `split_topology_vertices`, `raycast_patches`, `raycast_flipped_triangles`, output topology/winding state, render-vertex/edge rebuild counts and exact failure reason. Wizard state schema 7 persists the same libigl/Embree counters beside the canonical fingerprint; every new checkpoint also snapshots that editor-owned authoring state in its own `editor_state.json`.
+For every geometry the log records input cleanup counts, source/canonical non-manifold evidence, `split_topology_vertices`, `raycast_patches`, `raycast_flipped_triangles`, output topology/winding state, render-vertex/edge rebuild counts and exact failure reason. Snapshot schema 8 persists the same libigl/Embree counters beside the canonical fingerprint; every new checkpoint also snapshots that editor-owned authoring state in its own `editor_state.json`.
 
 ## 0A.6 Runtime boundary
 
@@ -146,6 +146,14 @@ Binary decoder оставляет bulk arrays typed (`Float32Array` / `Uint32Arr
 
 `.elmodel/.elmesh v4` на диске не меняется. `.elmesh` при чтении теперь забирается одним большим блоком в память и разбирается memory cursor-ом через тот же бинарный layout вместо миллионов мелких `istream::read()`.
 
+### 0.1.2 Demand-driven residency
+
+Обычное `OPEN` сохранённого asset всегда открывает **production package как единый authoritative working set**: `.elmodel` и все объявленные `.elmesh` читаются в C++ память, после чего существующий binary transport публикует working copy в viewport. Для offline authoring editor-а предсказуемость и целостность рабочего набора важнее сложной residency-косметики. Отдельные `LOAD/RELOAD/UNLOAD` остаются сервисными LOD-командами, но не определяют authority модели.
+
+Disk residency и viewport publication всё равно остаются разными действиями для внутренних backend-операций: `ensureLodLoaded()/ensureAllLodsLoaded()` не должны сами по себе вызывать лишнюю публикацию. Это transport/orchestration контракт, а не отдельная lazy-loading подсистема.
+
+Manifest хранит declared `geometry/node` counts отдельно от resident vectors; это защищает v4 descriptors при отдельных LOD I/O операциях, но обычный production `OPEN` не обязан оставлять LOD unloaded.
+
 ## 0.2 Wizard checkpoints — независимые rollback snapshots
 
 Checkpoint и validity текущего wizard — разные сущности. Изменение раннего stage может сделать более позднюю работу несовместимой с текущим workspace head, но **не имеет права удалять её checkpoint**.
@@ -168,11 +176,11 @@ GEOMETRY stale       checkpoint-GEOMETRY exists
 
 `stale` означает только: «этот snapshot больше не является продолжением текущего workspace head». Он остаётся полноценной точкой отката и может быть явно восстановлен.
 
-`RESTORE LODS` делает asset + editor authoring state из LODS checkpoint новым workspace head. `SOURCE` и `LODS` становятся `complete`; более поздние stages получают `stale`, если у них есть сохранённые checkpoints, либо `not_started`, если их никогда не сохраняли. Ни один каталог checkpoint при restore не удаляется.
+`RESTORE LODS` по явной команде делает asset + editor authoring/stage state из LODS checkpoint текущей **несохранённой working copy**. Production при этом не меняется, другие checkpoints не удаляются. Новый schema-8 checkpoint хранит точную validity-карту всех стадий на момент снимка; legacy checkpoint без неё восстанавливается консервативно как `complete` до своей стадии и `not_started` после неё.
 
-Автоматический resume при повторном открытии выбирает только последний checkpoint со статусом `complete`. `stale` snapshots никогда не становятся workspace head автоматически: их можно восстановить только явной командой пользователя. Поэтому несохранённый SOURCE reimport не способен сначала уничтожить поздние точки, а затем молча воскресить старый stale SOURCE snapshot.
+**Автоматического checkpoint resume больше нет.** Повторный `OPEN` всегда читает production. Checkpoint может попасть в working copy только через явный `RESTORE CHECKPOINT`; если после restore закрыть редактор без `SAVE ALL`, следующий `OPEN` снова покажет production. Именно это отделяет rollback snapshot от autosave/workspace head.
 
-`wizard_state.json` не владеет временем жизни checkpoints. При его отсутствии, повреждении или неподдерживаемой версии редактор заново обнаруживает канонические `checkpoint-<stage>/` каталоги на диске и показывает найденные snapshots как `stale`/restore-only. Потеря mutable workspace-head metadata не должна делать rollback-снимки недоступными.
+`wizard_state.json` теперь только session/checkpoint index и не хранит authoritative editor-owned authoring state. Editor-state, который должен пережить закрытие, всегда связан с конкретными mesh bytes: `production_state.json` рядом с workspace для production и `checkpoint-<stage>/editor_state.json` для checkpoint. Оба содержат общий `EditorAuthoringState` + validity стадий; production-state дополнительно привязан к текущим package members stamp и не применяется к чужой/изменённой production geometry.
 
 Каждый новый checkpoint самодостаточен и содержит два слоя:
 
@@ -185,7 +193,7 @@ checkpoint-<STAGE>/
 
 `editor_state.json` хранит editor-owned authoring state, который не является частью runtime v4 asset: stable base/variant identities, replacement compatibility, explicit topology/surface intent metadata, PREPARE fingerprints/counters и identity ordinals. RAW diagnostic snapshots остаются session-only и намеренно не checkpoint-ятся.
 
-Workspace `wizard_state.json` и checkpoint `editor_state.json` используют **один и тот же serializer/parser authoring state**. Это обязательный сквозной контракт для будущих `SEMANTICS / PHYSICS / DAMAGE / VALIDATE / BUILD`: если новый stage добавляет editor-only authored state, он должен быть добавлен в общий `EditorAuthoringState`, а не сохраняться отдельным случайным sidecar, иначе restore перестанет быть точным.
+Production `production_state.json` и checkpoint `editor_state.json` используют **один и тот же serializer/parser authoring state**. Это обязательный сквозной контракт для будущих `SEMANTICS / PHYSICS / DAMAGE / VALIDATE / BUILD`: если новый stage добавляет editor-only authored state, он должен быть добавлен в общий `EditorAuthoringState`, а не сохраняться отдельным случайным sidecar, иначе restore перестанет быть точным.
 
 ---
 
@@ -1248,7 +1256,7 @@ Viewport diagnostics:
 2. `БЕЗ ОТСЕЧЕНИЯ` — prepared mesh, `DoubleSide`;
 3. `РАБОЧИЙ` — the same prepared mesh, `FrontSide`.
 
-The RAW snapshot exists only in the editor session and is never written into `.elmodel` or `.elmesh`. Technical preparation evidence is written to `build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log` and replaced at the start of each PREPARE run; wizard schema 7 also stores cleanup counts, split topology vertex count, raycast patch count and raycast-flipped triangle count, and the same authoring-state serializer is used for stage-local checkpoint snapshots.
+The RAW snapshot exists only in the editor session and is never written into `.elmodel` or `.elmesh`. Technical preparation evidence is written to `build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log` and replaced at the start of each PREPARE run; snapshot schema 8 also stores cleanup counts, split topology vertex count, raycast patch count and raycast-flipped triangle count, and the same authoring-state serializer is used for stage-local checkpoint snapshots.
 
 Real-station spike reference for `station_Habitat_Module_S3`:
 

@@ -29,6 +29,8 @@ require(
     "struct RenderGeometryDefinition",
     "struct RenderNode",
     "struct RenderLod",
+    "declaredGeometryCount",
+    "declaredNodeCount",
     "struct StateVariant",
     "defaultStateId",
     "transformOverride",
@@ -87,6 +89,8 @@ require(
     "loadManifest",
     "saveLod",
     "loadLod",
+    "declaredGeometryCount",
+    "declaredNodeCount",
     "buildIndependentRenderLodsFromLegacy",
 )
 
@@ -148,6 +152,7 @@ require(
     "source OBJ/assembly",
     "saveManifestOnly",
     "saveLodOnly",
+    "loadLodData",
     "loadLodOnly",
     "unloadLod",
     "complete_wizard_stage",
@@ -276,7 +281,7 @@ require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "
 require(
     "tools/model_asset_editor/CHANGELOG.md",
     "0.10.24",
-    "binary geometry transport / block `.elmesh` read",
+    "production authority / durable checkpoints / binary geometry transport",
     "0.10.23",
     "executable-owned UI package isolation",
     "0.10.22",
@@ -496,7 +501,14 @@ select_body = session[select_start:select_end]
 if "canonicalizeLoadedWorkingSet(" in select_body:
     raise AssertionError("selectAsset must load/restore/reimport without hidden canonicalization")
 if "refreshSourceVariants(true, false)" not in select_body or "sendAsset();" not in select_body:
-    raise AssertionError("selectAsset no longer materializes the source set and publishes it as-is")
+    raise AssertionError("selectAsset no longer preserves explicit source-import publication")
+if 'ModelAssetBinary::load(readPath.string(), loaded, &error)' not in select_body:
+    raise AssertionError("ordinary OPEN no longer loads the authoritative production working set")
+if "resetLodState(true, false)" not in select_body:
+    raise AssertionError("ordinary OPEN no longer marks the loaded production LOD set resident/clean")
+for forbidden in ("latestWizardCheckpoint", "RESUME CHECKPOINT", "resumeWorkspace", "resumeCheckpoint"):
+    if forbidden in select_body:
+        raise AssertionError(f"ordinary OPEN can still be hijacked by checkpoint auto-resume: {forbidden!r}")
 
 restore_start = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(")
 restore_end = session.index("bool ModelAssetEditorSession::scanRenderDuplicates(", restore_start)
@@ -518,13 +530,22 @@ complete_start = session.index("bool ModelAssetEditorSession::completeWizardStag
 complete_end = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(", complete_start)
 complete_body = session[complete_start:complete_end]
 for token in (
-    'writeCheckpointEditorState(stage',
-    'markWizardDescendantsStale(stage)',
+    'checkpointValidity[stage] = "complete"',
+    'writeCheckpointEditorState(stage, checkpointValidity',
 ):
     if token not in complete_body:
-        raise AssertionError(f"checkpoint completion does not preserve future rollback snapshots: {token!r}")
+        raise AssertionError(f"checkpoint completion does not snapshot current editor/stage state: {token!r}")
+if 'markWizardDescendantsStale(stage)' in complete_body:
+    raise AssertionError("writing a checkpoint still invalidates downstream work even though checkpoint creation is non-mutating")
 
-load_lod_start = session.index("bool ModelAssetEditorSession::loadLodOnly(")
+load_data_start = session.index("bool ModelAssetEditorSession::loadLodData(")
+load_lod_start = session.index("bool ModelAssetEditorSession::loadLodOnly(", load_data_start)
+load_data_body = session[load_data_start:load_lod_start]
+if "sendAsset(" in load_data_body or "sendLodPayload(" in load_data_body:
+    raise AssertionError("backend-only LOD residency helper still publishes geometry as a side effect")
+if "ModelAssetBinary::loadLod" not in load_data_body:
+    raise AssertionError("backend-only LOD residency helper no longer owns the disk read boundary")
+
 load_lod_end = session.index("bool ModelAssetEditorSession::ensureLodLoaded(", load_lod_start)
 load_lod_body = session[load_lod_start:load_lod_end]
 if "canonicalizeLoadedWorkingSet(" in load_lod_body:
@@ -671,18 +692,20 @@ for token in (
     '"type", "asset_binary_begin"',
     '"type", "lod_payload_binary_begin"',
     'wizardCheckpointEditorStatePath',
+    'productionEditorStatePath',
     '"editor_state.json"',
+    '"production_state.json"',
     'writeCheckpointEditorState',
     'loadCheckpointEditorState',
-    'markWizardDescendantsStale',
-    'restoreWizardValidityAt',
-    'latestWizardCheckpoint',
-    '"RESUME CHECKPOINT"',
-    'ModelAssetBinary::load(resumeCheckpoint.string()',
-    'Production package was not loaded instead.',
+    'writeProductionEditorState',
+    'loadProductionEditorState',
+    'productionPackageStamp',
+    'productionPackageStampMatches',
+    'captureStageValidity',
+    'applyStageValidity',
 ):
     if token not in session_cpp:
-        raise AssertionError(f"metadata/checkpoint architecture missing {token!r}")
+        raise AssertionError(f"production/checkpoint lifecycle architecture missing {token!r}")
 
 for forbidden in (
     'pruneWizardAfter',
@@ -691,23 +714,55 @@ for forbidden in (
     if forbidden in session_cpp:
         raise AssertionError(f"checkpoint snapshots are still destructively pruned: {forbidden!r}")
 
-latest_start = session_cpp.index("std::filesystem::path ModelAssetEditorSession::latestWizardCheckpoint")
-latest_end = session_cpp.index("ModelAssetEditorSession::EditorAuthoringState", latest_start)
-latest_body = session_cpp[latest_start:latest_end]
-if 'state->second.status != "complete"' not in latest_body or 'status != "stale"' in latest_body:
-    raise AssertionError("stale checkpoints can still auto-resume as the current workspace head")
+if 'latestWizardCheckpoint' in session_cpp:
+    raise AssertionError("checkpoint auto-resume authority still exists; ordinary OPEN must start from production")
 
 load_state_start = session_cpp.index("void ModelAssetEditorSession::loadWizardState()")
 load_state_end = session_cpp.index("bool ModelAssetEditorSession::writeWizardState() const", load_state_start)
 load_state_body = session_cpp[load_state_start:load_state_end]
 for token in (
-    'bool stateLoaded = false',
-    'wizard state ignored:',
+    'wizard_state.json is not a persisted working copy',
     'const auto checkpoint = wizardCheckpointPath(id)',
-    'if (!stateLoaded) value.status = "stale"',
+    'value.status = "not_started"',
 ):
     if token not in load_state_body:
-        raise AssertionError(f"durable checkpoint discovery/recovery missing {token!r}")
+        raise AssertionError(f"session/checkpoint index separation missing {token!r}")
+for forbidden in ('parseEditorAuthoringState(', 'applyEditorAuthoringState(std::move(authoring))'):
+    if forbidden in load_state_body:
+        raise AssertionError(f"mutable wizard_state can still overwrite production editor state: {forbidden!r}")
+
+write_state_start = session_cpp.index("bool ModelAssetEditorSession::writeWizardState() const")
+write_state_end = session_cpp.index("std::string ModelAssetEditorSession::allocateBaseVisualId", write_state_start)
+write_state_body = session_cpp[write_state_start:write_state_end]
+if 'serializeEditorAuthoringState(captureEditorAuthoringState())' in write_state_body:
+    raise AssertionError("wizard_state still persists an unbound authoring working copy")
+if 'model_asset_editor_session_index' not in write_state_body:
+    raise AssertionError("wizard_state is no longer explicitly a session/checkpoint index")
+
+select_start2 = session_cpp.index("bool ModelAssetEditorSession::selectAsset(")
+select_end2 = session_cpp.index("bool ModelAssetEditorSession::saveAsset()", select_start2)
+select_lifecycle = session_cpp[select_start2:select_end2]
+for token in (
+    'Authority contract: ordinary OPEN always starts from the saved production',
+    'loadProductionEditorState(productionEditorState, productionValidity',
+    'applyStageValidity(productionValidity)',
+    'checkpoints are available only through explicit restore',
+):
+    if token not in select_lifecycle:
+        raise AssertionError(f"production authority OPEN contract missing {token!r}")
+
+save_start2 = session_cpp.index("bool ModelAssetEditorSession::saveAsset()")
+save_end2 = session_cpp.index("nlohmann::json ModelAssetEditorSession::serializeAssetMetadata", save_start2)
+save_lifecycle = session_cpp[save_start2:save_end2]
+if 'writeProductionEditorState(&error)' not in save_lifecycle:
+    raise AssertionError("SAVE ALL no longer binds editor/stage state to the saved production package")
+
+checkpoint_state_start = session_cpp.index("bool ModelAssetEditorSession::writeCheckpointEditorState")
+checkpoint_state_end = session_cpp.index("void ModelAssetEditorSession::loadWizardState()", checkpoint_state_start)
+checkpoint_state_body = session_cpp[checkpoint_state_start:checkpoint_state_end]
+for token in ('state["stages"] = serializeStageValidity(validity)', 'schemaVersion"] = 8'):
+    if token not in checkpoint_state_body:
+        raise AssertionError(f"checkpoint is not a complete stage-validity snapshot: {token!r}")
 
 # Commands already present for reserved future stages must participate in the
 # same stage-validity contract now, before those wizard pages are enabled.
@@ -811,19 +866,6 @@ for token in (
     if token not in wire_cpp:
         raise AssertionError(f"binary writer regressed to byte-at-a-time vector growth: {token!r}")
 
-resume_branch = session_cpp.find("if (resumeWorkspace)")
-compiled_branch = session_cpp.find("else if (!forceReimport && (havePackage || haveLegacyV2))")
-if resume_branch < 0 or compiled_branch < 0 or resume_branch > compiled_branch:
-    raise AssertionError("asset selection no longer resumes wizard checkpoint before production package")
-
-for token in (
-    'loadCheckpointEditorState(resumedCheckpointStage',
-    'applyEditorAuthoringState(std::move(resumedEditorState))',
-    'restoreWizardValidityAt(resumedCheckpointStage)',
-):
-    if token not in session_cpp[resume_branch:compiled_branch]:
-        raise AssertionError(f"checkpoint auto-resume is not self-contained: {token!r}")
-
 invalidate_start = session_cpp.index("void ModelAssetEditorSession::invalidateWizardFrom")
 invalidate_end = session_cpp.index("nlohmann::json ModelAssetEditorSession::serializeWizard", invalidate_start)
 invalidate_body = session_cpp[invalidate_start:invalidate_end]
@@ -891,7 +933,7 @@ for token in (
     "m_meshPreparationRecords",
     "meshPreparationRecords",
     "geometryTopologyClasses",
-    'state["schemaVersion"] = 7',
+    'state["schemaVersion"] = 8',
 ):
     if token not in session_cpp:
         raise AssertionError(f"canonical SOURCE/preflight backend contract missing {token!r}")
@@ -1302,4 +1344,4 @@ for token in (
     if token not in session_cpp:
         raise AssertionError(f"0.10.22 cross-LOD surface batch missing {token!r}")
 
-print("[PASS] model asset editor v0.10.24 binary geometry transport / durable checkpoints / preserved viewport terminals / v4")
+print("[PASS] model asset editor v0.10.24 production authority / explicit durable checkpoints / binary geometry transport / v4")

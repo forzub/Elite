@@ -2150,6 +2150,11 @@ std::filesystem::path ModelAssetEditorSession::wizardStatePath() const
     return wizardWorkspacePath() / "wizard_state.json";
 }
 
+std::filesystem::path ModelAssetEditorSession::productionEditorStatePath() const
+{
+    return wizardWorkspacePath() / "production_state.json";
+}
+
 std::filesystem::path ModelAssetEditorSession::wizardCheckpointPath(const std::string& stage) const
 {
     return wizardWorkspacePath() / ("checkpoint-" + stage) / (m_selectedId + ".elmodel");
@@ -2165,28 +2170,6 @@ std::filesystem::path ModelAssetEditorSession::wizardLogPath(const std::string& 
     return wizardWorkspacePath() / "logs" / fileName;
 }
 
-std::filesystem::path ModelAssetEditorSession::latestWizardCheckpoint(std::string* stage) const
-{
-    const auto& order = wizardStageOrder();
-    for (auto it = order.rbegin(); it != order.rend(); ++it)
-    {
-        const auto state = m_wizardStages.find(*it);
-        if (state == m_wizardStages.end() || state->second.status != "complete")
-            continue;
-
-        // Checkpoints are editor-owned files at canonical workspace paths. Do
-        // not trust a persisted arbitrary path when deciding what to resume.
-        const auto checkpoint = wizardCheckpointPath(*it);
-        if (!std::filesystem::exists(checkpoint))
-            continue;
-
-        if (stage) *stage = *it;
-        return checkpoint;
-    }
-    if (stage) stage->clear();
-    return {};
-}
-
 ModelAssetEditorSession::EditorAuthoringState ModelAssetEditorSession::captureEditorAuthoringState() const
 {
     EditorAuthoringState state;
@@ -2199,6 +2182,74 @@ ModelAssetEditorSession::EditorAuthoringState ModelAssetEditorSession::captureEd
     state.nextBaseVisualOrdinal = m_nextBaseVisualOrdinal;
     state.nextSourceVariantOrdinal = m_nextSourceVariantOrdinal;
     return state;
+}
+
+ModelAssetEditorSession::StageValidityState ModelAssetEditorSession::captureStageValidity() const
+{
+    StageValidityState state;
+    for (const char* id : wizardStageOrder())
+    {
+        const auto it = m_wizardStages.find(id);
+        state[id] = it == m_wizardStages.end() ? "not_started" : it->second.status;
+    }
+    return state;
+}
+
+void ModelAssetEditorSession::applyStageValidity(const StageValidityState& state)
+{
+    for (const char* id : wizardStageOrder())
+    {
+        auto& target = m_wizardStages[id];
+        const auto it = state.find(id);
+        const std::string status = it == state.end() ? "not_started" : it->second;
+        target.status = status == "complete" || status == "stale" ? status : "not_started";
+        const auto checkpoint = wizardCheckpointPath(id);
+        target.checkpointManifest = std::filesystem::exists(checkpoint) ? checkpoint : std::filesystem::path{};
+    }
+}
+
+nlohmann::json ModelAssetEditorSession::serializeStageValidity(const StageValidityState& state) const
+{
+    json stages = json::object();
+    for (const char* id : wizardStageOrder())
+    {
+        const auto it = state.find(id);
+        const std::string status = it == state.end() ? "not_started" : it->second;
+        stages[id] = status == "complete" || status == "stale" ? status : "not_started";
+    }
+    return stages;
+}
+
+bool ModelAssetEditorSession::parseStageValidity(
+    const nlohmann::json& state,
+    StageValidityState& parsed,
+    std::string* error) const
+{
+    try
+    {
+        StageValidityState next;
+        const auto stages = state.value("stages", json::object());
+        for (const char* id : wizardStageOrder())
+        {
+            const std::string status = stages.is_object()
+                ? stages.value(id, std::string("not_started"))
+                : std::string("not_started");
+            if (status != "complete" && status != "stale" && status != "not_started")
+            {
+                if (error) *error = "invalid stage validity for " + std::string(id);
+                return false;
+            }
+            next[id] = status;
+        }
+        parsed = std::move(next);
+        if (error) error->clear();
+        return true;
+    }
+    catch (const std::exception& ex)
+    {
+        if (error) *error = ex.what();
+        return false;
+    }
 }
 
 void ModelAssetEditorSession::applyEditorAuthoringState(EditorAuthoringState state)
@@ -2426,16 +2477,20 @@ bool ModelAssetEditorSession::parseEditorAuthoringState(
     }
 }
 
-bool ModelAssetEditorSession::writeCheckpointEditorState(const std::string& stage, std::string* error) const
+bool ModelAssetEditorSession::writeCheckpointEditorState(
+    const std::string& stage,
+    const StageValidityState& validity,
+    std::string* error) const
 {
     try
     {
         json state = serializeEditorAuthoringState(captureEditorAuthoringState());
-        state["schemaVersion"] = 7;
+        state["schemaVersion"] = 8;
         state["snapshotKind"] = "model_asset_editor_checkpoint_state";
         state["assetId"] = m_selectedId;
         state["checkpointStage"] = stage;
         state["editorVersion"] = ModelAssetEditorVersion;
+        state["stages"] = serializeStageValidity(validity);
         const auto path = wizardCheckpointEditorStatePath(stage);
         std::ofstream out(path, std::ios::trunc);
         if (!out)
@@ -2462,6 +2517,7 @@ bool ModelAssetEditorSession::writeCheckpointEditorState(const std::string& stag
 bool ModelAssetEditorSession::loadCheckpointEditorState(
     const std::string& stage,
     EditorAuthoringState& state,
+    StageValidityState* validity,
     std::string* error) const
 {
     const auto path = wizardCheckpointEditorStatePath(stage);
@@ -2476,7 +2532,7 @@ bool ModelAssetEditorSession::loadCheckpointEditorState(
         json snapshot;
         in >> snapshot;
         const int schemaVersion = snapshot.value("schemaVersion", 0);
-        if (schemaVersion < 3 || schemaVersion > 7)
+        if (schemaVersion < 3 || schemaVersion > 8)
         {
             if (error) *error = "unsupported checkpoint editor-state schema " + std::to_string(schemaVersion);
             return false;
@@ -2493,7 +2549,135 @@ bool ModelAssetEditorSession::loadCheckpointEditorState(
             if (error) *error = "checkpoint editor-state stage does not match requested stage";
             return false;
         }
-        return parseEditorAuthoringState(snapshot, schemaVersion, state, error);
+        if (!parseEditorAuthoringState(snapshot, schemaVersion, state, error)) return false;
+        if (validity)
+        {
+            if (schemaVersion >= 8 && snapshot.contains("stages"))
+            {
+                if (!parseStageValidity(snapshot, *validity, error)) return false;
+            }
+            else
+            {
+                validity->clear();
+            }
+        }
+        if (error) error->clear();
+        return true;
+    }
+    catch (const std::exception& ex)
+    {
+        if (error) *error = ex.what();
+        return false;
+    }
+}
+
+nlohmann::json ModelAssetEditorSession::productionPackageStamp() const
+{
+    json stamp = {
+        {"assetId", m_selectedId},
+        {"formatVersion", m_asset.formatVersion},
+        {"members", json::array()}
+    };
+    const auto manifest = compiledPath(m_selectedId);
+    const auto append = [&](const std::filesystem::path& path)
+    {
+        std::error_code ec;
+        json member = {{"name", path.filename().generic_string()}};
+        const bool exists = std::filesystem::exists(path, ec) && !ec;
+        member["exists"] = exists;
+        if (exists)
+        {
+            ec.clear();
+            member["size"] = std::filesystem::file_size(path, ec);
+            if (ec) member["size"] = 0;
+            ec.clear();
+            const auto time = std::filesystem::last_write_time(path, ec);
+            member["mtime"] = ec ? 0 : static_cast<std::int64_t>(time.time_since_epoch().count());
+        }
+        stamp["members"].push_back(std::move(member));
+    };
+    append(manifest);
+    for (std::size_t i = 0; i < m_asset.renderLods.size(); ++i)
+        append(ModelAssetBinary::lodPayloadPath(manifest.string(), i));
+    return stamp;
+}
+
+bool ModelAssetEditorSession::productionPackageStampMatches(const nlohmann::json& expected) const
+{
+    return expected.is_object() && expected == productionPackageStamp();
+}
+
+bool ModelAssetEditorSession::writeProductionEditorState(std::string* error) const
+{
+    try
+    {
+        std::filesystem::create_directories(wizardWorkspacePath());
+        json state = serializeEditorAuthoringState(captureEditorAuthoringState());
+        state["schemaVersion"] = 8;
+        state["snapshotKind"] = "model_asset_editor_production_state";
+        state["assetId"] = m_selectedId;
+        state["editorVersion"] = ModelAssetEditorVersion;
+        state["stages"] = serializeStageValidity(captureStageValidity());
+        state["packageStamp"] = productionPackageStamp();
+        const auto path = productionEditorStatePath();
+        std::ofstream out(path, std::ios::trunc);
+        if (!out)
+        {
+            if (error) *error = "cannot open " + path.generic_string();
+            return false;
+        }
+        out << std::setw(2) << state << '\n';
+        if (!out)
+        {
+            if (error) *error = "cannot write " + path.generic_string();
+            return false;
+        }
+        if (error) error->clear();
+        return true;
+    }
+    catch (const std::exception& ex)
+    {
+        if (error) *error = ex.what();
+        return false;
+    }
+}
+
+bool ModelAssetEditorSession::loadProductionEditorState(
+    EditorAuthoringState& state,
+    StageValidityState& validity,
+    std::string* error) const
+{
+    const auto path = productionEditorStatePath();
+    std::ifstream in(path);
+    if (!in)
+    {
+        if (error) *error = "production_state.json does not exist";
+        return false;
+    }
+    try
+    {
+        json snapshot;
+        in >> snapshot;
+        const int schemaVersion = snapshot.value("schemaVersion", 0);
+        if (schemaVersion != 8 || snapshot.value("snapshotKind", std::string()) != "model_asset_editor_production_state")
+        {
+            if (error) *error = "unsupported production editor-state schema";
+            return false;
+        }
+        if (snapshot.value("assetId", std::string()) != m_selectedId)
+        {
+            if (error) *error = "production editor-state asset id does not match selected asset";
+            return false;
+        }
+        if (!productionPackageStampMatches(snapshot.value("packageStamp", json::object())))
+        {
+            if (error) *error = "production editor-state belongs to different package bytes";
+            return false;
+        }
+        if (!parseEditorAuthoringState(snapshot, schemaVersion, state, error)) return false;
+        if (!parseStageValidity(snapshot, validity, error)) return false;
+        if (error) error->clear();
+        return true;
     }
     catch (const std::exception& ex)
     {
@@ -2509,68 +2693,17 @@ void ModelAssetEditorSession::loadWizardState()
     for (const char* id : wizardStageOrder())
         m_wizardStages.emplace(id, WizardStageState{});
 
-    bool stateLoaded = false;
-    std::ifstream in(wizardStatePath());
-    if (in)
-    {
-        try
-        {
-            json state;
-            in >> state;
-            const int schemaVersion = state.value("schemaVersion", 0);
-            if (schemaVersion < 1 || schemaVersion > 7)
-                throw std::runtime_error("unsupported wizard-state schema " + std::to_string(schemaVersion));
-
-            const auto stages = state.value("stages", json::object());
-            for (auto& [id, value] : m_wizardStages)
-            {
-                if (!stages.contains(id) || !stages[id].is_object()) continue;
-                const auto status = stages[id].value("status", std::string("not_started"));
-                if (status == "complete" || status == "stale" || status == "not_started")
-                    value.status = status;
-            }
-
-            EditorAuthoringState authoring;
-            std::string authoringError;
-            if (!parseEditorAuthoringState(state, schemaVersion, authoring, &authoringError))
-                throw std::runtime_error("cannot parse editor authoring state: " + authoringError);
-            applyEditorAuthoringState(std::move(authoring));
-            stateLoaded = true;
-        }
-        catch (const std::exception& ex)
-        {
-            // wizard_state.json is the mutable workspace head, not the owner of
-            // checkpoint lifetime. A damaged/newer workspace-state file must not
-            // make durable stage snapshots disappear from the UI.
-            std::cerr << "[ModelAssetEditor] wizard state ignored: " << ex.what() << '\n';
-            applyEditorAuthoringState(EditorAuthoringState{});
-            for (auto& [id, value] : m_wizardStages)
-            {
-                (void)id;
-                value.status = "not_started";
-                value.checkpointManifest.clear();
-            }
-        }
-    }
-
-    // Discover durable snapshots from their canonical stage directories even if
-    // wizard_state.json is absent or unreadable. Without a trustworthy workspace
-    // head their lineage is unknown, so expose them conservatively as STALE
-    // restore-only snapshots instead of auto-resuming or deleting them.
+    // wizard_state.json is not a persisted working copy. Geometry lives either
+    // in production or in an explicit checkpoint, and editor-only authoring
+    // state is bound to the same snapshot through production_state.json or
+    // checkpoint-*/editor_state.json. Never attach mutable wizard JSON from a
+    // previous session to newly opened production geometry.
     for (auto& [id, value] : m_wizardStages)
     {
         const auto checkpoint = wizardCheckpointPath(id);
-        if (std::filesystem::exists(checkpoint))
-        {
-            value.checkpointManifest = checkpoint;
-            if (!stateLoaded) value.status = "stale";
-        }
-        else
-        {
-            value.checkpointManifest.clear();
-            if (value.status == "complete" || value.status == "stale")
-                value.status = "not_started";
-        }
+        value.checkpointManifest = std::filesystem::exists(checkpoint)
+            ? checkpoint : std::filesystem::path{};
+        value.status = "not_started";
     }
 }
 
@@ -2588,11 +2721,13 @@ bool ModelAssetEditorSession::writeWizardState() const
             };
         }
 
-        json state = serializeEditorAuthoringState(captureEditorAuthoringState());
-        state["schemaVersion"] = 7;
-        state["assetId"] = m_selectedId;
-        state["editorVersion"] = ModelAssetEditorVersion;
-        state["stages"] = std::move(stages);
+        json state = {
+            {"schemaVersion", 8},
+            {"snapshotKind", "model_asset_editor_session_index"},
+            {"assetId", m_selectedId},
+            {"editorVersion", ModelAssetEditorVersion},
+            {"stages", std::move(stages)}
+        };
         std::ofstream out(wizardStatePath(), std::ios::trunc);
         if (!out) return false;
         out << std::setw(2) << state << '\n';
@@ -2603,7 +2738,6 @@ bool ModelAssetEditorSession::writeWizardState() const
         return false;
     }
 }
-
 
 std::string ModelAssetEditorSession::allocateBaseVisualId()
 {
@@ -2774,8 +2908,7 @@ void ModelAssetEditorSession::reconcileAuthoringVisualRegistry()
         m_legacySourceVariantReplacements = std::move(pendingLegacy);
     }
 
-    if (changed && !writeWizardState())
-        std::cerr << "[ModelAssetEditor] authoring visual registry could not be persisted\n";
+    (void)changed; // authoring registry persists only with SAVE ALL or a stage checkpoint
 }
 
 void ModelAssetEditorSession::markWizardDescendantsStale(const std::string& stage)
@@ -2784,24 +2917,14 @@ void ModelAssetEditorSession::markWizardDescendantsStale(const std::string& stag
     const auto& order = wizardStageOrder();
     if (first >= order.size()) return;
 
-    // A checkpoint is a durable rollback snapshot, not a cache entry owned by
-    // the current linear wizard head. Completing/restoring an earlier stage only
-    // changes validity of later work; it never deletes later snapshots.
     for (std::size_t i = first + 1; i < order.size(); ++i)
     {
-        const std::string laterId = order[i];
-        auto& later = m_wizardStages[laterId];
-        const auto checkpoint = wizardCheckpointPath(laterId);
-        if (std::filesystem::exists(checkpoint))
-        {
-            later.checkpointManifest = checkpoint;
-            later.status = "stale";
-        }
-        else
-        {
-            later.checkpointManifest.clear();
-            later.status = "not_started";
-        }
+        auto& later = m_wizardStages[order[i]];
+        if (later.status == "complete" || later.status == "stale") later.status = "stale";
+        else later.status = "not_started";
+        const auto checkpoint = wizardCheckpointPath(order[i]);
+        later.checkpointManifest = std::filesystem::exists(checkpoint)
+            ? checkpoint : std::filesystem::path{};
     }
 }
 
@@ -2811,21 +2934,15 @@ void ModelAssetEditorSession::restoreWizardValidityAt(const std::string& stage)
     const auto& order = wizardStageOrder();
     if (restored >= order.size()) return;
 
-    // The restored snapshot is now the workspace head. Every upstream stage is
-    // valid in that snapshot; every downstream checkpoint remains available but
-    // belongs to an older branch until explicitly restored/recompleted.
+    // Legacy checkpoints did not persist stage validity. Conservatively treat
+    // the snapshot as complete through its own stage and unknown afterwards.
     for (std::size_t i = 0; i < order.size(); ++i)
     {
-        const std::string id = order[i];
-        auto& value = m_wizardStages[id];
-        const auto checkpoint = wizardCheckpointPath(id);
-        if (std::filesystem::exists(checkpoint)) value.checkpointManifest = checkpoint;
-        else value.checkpointManifest.clear();
-
-        if (i <= restored)
-            value.status = "complete";
-        else
-            value.status = value.checkpointManifest.empty() ? "not_started" : "stale";
+        auto& value = m_wizardStages[order[i]];
+        value.status = i <= restored ? "complete" : "not_started";
+        const auto checkpoint = wizardCheckpointPath(order[i]);
+        value.checkpointManifest = std::filesystem::exists(checkpoint)
+            ? checkpoint : std::filesystem::path{};
     }
 }
 
@@ -2835,25 +2952,17 @@ void ModelAssetEditorSession::invalidateWizardFrom(const std::string& stage)
     const auto& order = wizardStageOrder();
     if (first >= order.size()) return;
 
-    // Invalidation is a workspace-validity operation only. It is deliberately
-    // defined over the complete nine-stage pipeline, including stages whose UI
-    // is not implemented yet, so future SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD
-    // work inherits the same non-destructive checkpoint contract automatically.
+    // Validity describes the current working copy only. Checkpoint availability
+    // is a separate rollback axis and never determines whether current work is
+    // complete/stale/not-started.
     for (std::size_t i = first; i < order.size(); ++i)
     {
-        const std::string id = order[i];
-        auto& value = m_wizardStages[id];
-        const auto checkpoint = wizardCheckpointPath(id);
-        if (std::filesystem::exists(checkpoint))
-        {
-            value.checkpointManifest = checkpoint;
-            value.status = "stale";
-        }
-        else
-        {
-            value.checkpointManifest.clear();
-            value.status = "not_started";
-        }
+        auto& value = m_wizardStages[order[i]];
+        if (value.status == "complete" || value.status == "stale") value.status = "stale";
+        else value.status = "not_started";
+        const auto checkpoint = wizardCheckpointPath(order[i]);
+        value.checkpointManifest = std::filesystem::exists(checkpoint)
+            ? checkpoint : std::filesystem::path{};
     }
     (void)writeWizardState();
 }
@@ -3082,7 +3191,9 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
         sendStatus("Cannot write wizard checkpoint: " + error, true);
         return false;
     }
-    if (!writeCheckpointEditorState(stage, &error))
+    auto checkpointValidity = captureStageValidity();
+    checkpointValidity[stage] = "complete";
+    if (!writeCheckpointEditorState(stage, checkpointValidity, &error))
     {
         sendStatus("Checkpoint mesh package was written, but its editor-state snapshot failed: " + error, true);
         return false;
@@ -3090,7 +3201,9 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
     auto& value = m_wizardStages[stage];
     value.status = "complete";
     value.checkpointManifest = checkpoint;
-    markWizardDescendantsStale(stage);
+    // Completing a stage is non-mutating. Any downstream invalidation must have
+    // happened when the authored data changed, not merely because a snapshot
+    // was written.
     if (!writeWizardState())
     {
         sendStatus("Checkpoint was written, but wizard_state.json could not be saved", true);
@@ -3116,6 +3229,7 @@ bool ModelAssetEditorSession::restoreWizardCheckpoint(const std::string& stage)
 
     ModelAsset restored;
     EditorAuthoringState restoredEditorState;
+    StageValidityState restoredValidity;
     std::string error;
     sendStatus("Restoring wizard checkpoint " + stage + "...", false, "reading");
     sendProgress("reading", "RESTORE CHECKPOINT", 0, 1, it->second.checkpointManifest);
@@ -3126,7 +3240,7 @@ bool ModelAssetEditorSession::restoreWizardCheckpoint(const std::string& stage)
     }
 
     const bool hasEditorSnapshot = std::filesystem::exists(wizardCheckpointEditorStatePath(stage));
-    if (hasEditorSnapshot && !loadCheckpointEditorState(stage, restoredEditorState, &error))
+    if (hasEditorSnapshot && !loadCheckpointEditorState(stage, restoredEditorState, &restoredValidity, &error))
     {
         sendStatus("Cannot restore checkpoint editor state: " + error, true);
         return false;
@@ -3144,7 +3258,8 @@ bool ModelAssetEditorSession::restoreWizardCheckpoint(const std::string& stage)
     m_asset = std::move(restored);
     applyEditorAuthoringState(std::move(restoredEditorState));
     resetLodState(true, true); // restored work is intentionally unsaved relative to production output
-    restoreWizardValidityAt(stage);
+    if (!restoredValidity.empty()) applyStageValidity(restoredValidity);
+    else restoreWizardValidityAt(stage);
     (void)writeWizardState();
     sendProgress("reading", "RESTORE CHECKPOINT", 1, 1, it->second.checkpointManifest);
     // Restore is deliberately literal: show exactly the mesh payload stored in
@@ -3153,7 +3268,7 @@ bool ModelAssetEditorSession::restoreWizardCheckpoint(const std::string& stage)
     sendAsset();
     m_server.broadcastText(json({{"type", "wizard_checkpoint_restored"}, {"stage", stage}, {"migratedCanonicalSource", false}}).dump());
     if (hasEditorSnapshot)
-        sendStatus("Restored " + stage + " checkpoint with its stage-local editor state; later checkpoints remain available as stale rollback snapshots");
+        sendStatus("Restored " + stage + " checkpoint into the unsaved working copy with its stage-local editor/state snapshot; production and all other checkpoints are unchanged");
     else
         sendStatus("Restored legacy " + stage + " checkpoint geometry. It predates stage-local editor_state.json, so PREPARE/topology evidence requires review; later checkpoints were not deleted.");
     return true;
@@ -3845,8 +3960,9 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
 
     if (payloadChanged && !invalidationStage.empty())
         invalidateWizardFrom(invalidationStage);
-    else if (authoringStateChanged)
-        (void)writeWizardState();
+    // Authoring evidence without mesh mutation remains session-local until the
+    // user explicitly SAVE ALLs production or creates a stage checkpoint.
+    (void)authoringStateChanged;
 
     if (payloadChangedOut) *payloadChangedOut = payloadChanged;
     if (changedLodsOut)
@@ -4515,11 +4631,6 @@ bool ModelAssetEditorSession::applyGeneratedLods(
     markManifestDirty();
     for (const auto& selection : selected) markLodDirty(selection.level);
     invalidateWizardFrom("lods");
-    if (!writeWizardState())
-    {
-        sendStatus("Generated LODs were applied, but wizard authoring state could not be saved", true);
-        return false;
-    }
 
     json invalidatedPayloads = json::array();
     for (const auto& selection : selected) invalidatedPayloads.push_back(selection.level);
@@ -4718,6 +4829,12 @@ void ModelAssetEditorSession::syncDirty()
 void ModelAssetEditorSession::resetLodState(bool loaded, bool dirty)
 {
     m_lodState.assign(lodCount(), LodEditState{loaded, dirty});
+    if (loaded)
+        for (auto& lod : m_asset.renderLods)
+        {
+            lod.declaredGeometryCount = static_cast<std::uint32_t>(lod.geometries.size());
+            lod.declaredNodeCount = static_cast<std::uint32_t>(lod.nodes.size());
+        }
     m_manifestDirty = dirty;
     syncDirty();
 }
@@ -4732,6 +4849,12 @@ void ModelAssetEditorSession::markLodDirty(std::size_t lodIndex)
 {
     if (lodIndex >= m_lodState.size())
         m_lodState.resize(lodIndex + 1);
+    if (lodIndex < m_asset.renderLods.size())
+    {
+        auto& lod = m_asset.renderLods[lodIndex];
+        lod.declaredGeometryCount = static_cast<std::uint32_t>(lod.geometries.size());
+        lod.declaredNodeCount = static_cast<std::uint32_t>(lod.nodes.size());
+    }
     m_lodState[lodIndex].loaded = true;
     m_lodState[lodIndex].dirty = true;
     syncDirty();
@@ -4745,55 +4868,83 @@ void ModelAssetEditorSession::markAllLoadedLodsDirty()
     syncDirty();
 }
 
+bool ModelAssetEditorSession::loadLodData(
+    std::size_t lodIndex,
+    bool forceReload,
+    std::string* error)
+{
+    if (error) error->clear();
+    const auto fail = [&](const std::string& message)
+    {
+        if (error) *error = message;
+        return false;
+    };
+
+    if (m_selectedId.empty() || m_asset.assetId.empty())
+        return fail("No asset selected");
+    if (lodIndex >= m_lodState.size())
+        return fail("LOD" + std::to_string(lodIndex) + " is not declared by this asset");
+
+    auto& state = m_lodState[lodIndex];
+    if (state.loaded && !forceReload)
+        return true;
+    if (state.dirty && !forceReload)
+        return fail("LOD" + std::to_string(lodIndex) +
+            " has unsaved changes; use Reload LOD only after confirming discard");
+
+    const auto manifest = compiledPath(m_selectedId);
+    if (!std::filesystem::exists(manifest))
+        return fail("Cannot load independent LOD before the v4 package has been saved");
+
+    std::string loadError;
+    if (!ModelAssetBinary::loadLod(manifest.string(), m_asset, lodIndex, &loadError))
+        return fail("LOD" + std::to_string(lodIndex) + " load failed: " + loadError);
+
+    state.loaded = true;
+    state.dirty = false;
+    syncDirty();
+    return true;
+}
+
 bool ModelAssetEditorSession::loadLodOnly(std::size_t lodIndex, bool forceReload)
 {
-    if (m_selectedId.empty() || m_asset.assetId.empty())
-    {
-        sendStatus("No asset selected", true);
-        return false;
-    }
     if (lodIndex >= m_lodState.size())
     {
         sendStatus("LOD" + std::to_string(lodIndex) + " is not declared by this asset", true);
         return false;
     }
-    auto& state = m_lodState[lodIndex];
-    if (state.loaded && !forceReload)
+    const bool wasLoaded = m_lodState[lodIndex].loaded;
+    if (wasLoaded && !forceReload)
     {
-        sendStatus("NO CHANGES: LOD" + std::to_string(lodIndex) + " is already loaded");
+        // The LOD may have become backend-resident because a computation needed
+        // it while the browser still has no payload. An explicit UI LOAD must
+        // therefore publish the resident document rather than treating backend
+        // residency as proof that the viewport already owns it.
+        sendAsset({lodIndex});
+        sendStatus("LOD" + std::to_string(lodIndex) + " was already resident; viewport payload published");
         return true;
-    }
-    if (state.dirty && !forceReload)
-    {
-        sendStatus("LOD" + std::to_string(lodIndex) + " has unsaved changes; use Reload LOD only after confirming discard", true);
-        return false;
     }
 
     const auto manifest = compiledPath(m_selectedId);
-    if (!std::filesystem::exists(manifest))
-    {
-        sendStatus("Cannot load independent LOD before the v4 package has been saved", true);
-        return false;
-    }
-    std::string error;
     const auto lodPath = ModelAssetBinary::lodPayloadPath(manifest.string(), lodIndex);
-    sendStatus((forceReload ? "Reloading " : "Loading ") + std::string("LOD") + std::to_string(lodIndex) + "...", false, "reading");
+    sendStatus((forceReload ? "Reloading " : "Loading ") + std::string("LOD") +
+        std::to_string(lodIndex) + "...", false, "reading");
     sendProgress("reading", forceReload ? "RELOAD LOD" : "LOAD LOD", 0, 1, lodPath);
-    if (!ModelAssetBinary::loadLod(manifest.string(), m_asset, lodIndex, &error))
+
+    std::string error;
+    if (!loadLodData(lodIndex, forceReload, &error))
     {
-        sendStatus("LOD" + std::to_string(lodIndex) + " load failed: " + error, true);
+        sendStatus(error, true);
         return false;
     }
-    state.loaded = true;
-    state.dirty = false;
-    syncDirty();
+
     sendProgress("reading", forceReload ? "RELOAD LOD" : "LOAD LOD", 1, 1, lodPath);
-    // Preserve the 0.10.23 application terminal (`asset`) while transporting
-    // only the LOD whose resident payload actually changed. The browser wire
-    // adapter reuses the already resident payloads for the other LODs before
-    // invoking the untouched legacy asset handler.
+    // Explicit LOAD/RELOAD is a viewport-facing command. Internal algorithms use
+    // loadLodData()/ensure*() and therefore do not publish geometry merely because
+    // they needed it in backend memory.
     sendAsset({lodIndex});
-    sendStatus(std::string(forceReload ? "Reloaded " : "Loaded ") + "LOD" + std::to_string(lodIndex) + " from " + lodPath.filename().string());
+    sendStatus(std::string(forceReload ? "Reloaded " : "Loaded ") + "LOD" +
+        std::to_string(lodIndex) + " from " + lodPath.filename().string());
     return true;
 }
 
@@ -4803,14 +4954,27 @@ bool ModelAssetEditorSession::ensureLodLoaded(std::size_t lodIndex)
         return false;
     if (m_lodState[lodIndex].loaded)
         return true;
-    return loadLodOnly(lodIndex, false);
+    std::string error;
+    if (!loadLodData(lodIndex, false, &error))
+    {
+        sendStatus(error, true);
+        return false;
+    }
+    return true;
 }
 
 bool ModelAssetEditorSession::ensureAllLodsLoaded()
 {
     for (std::size_t lodIndex = 0; lodIndex < m_lodState.size(); ++lodIndex)
-        if (!m_lodState[lodIndex].loaded && !loadLodOnly(lodIndex, false))
+    {
+        if (m_lodState[lodIndex].loaded) continue;
+        std::string error;
+        if (!loadLodData(lodIndex, false, &error))
+        {
+            sendStatus(error, true);
             return false;
+        }
+    }
     return true;
 }
 
@@ -4833,14 +4997,11 @@ bool ModelAssetEditorSession::loadAllDeclaredLodsForSource()
         std::string error;
         const auto lodPath = ModelAssetBinary::lodPayloadPath(manifest.string(), lodIndex);
         sendProgress("reading", "SOURCE LOAD LOD", lodIndex, m_asset.renderLods.size(), lodPath);
-        if (!ModelAssetBinary::loadLod(manifest.string(), m_asset, lodIndex, &error))
+        if (!loadLodData(lodIndex, false, &error))
         {
-            sendStatus("Cannot load complete SOURCE set: LOD" + std::to_string(lodIndex) +
-                " failed: " + error, true);
+            sendStatus("Cannot load complete SOURCE set: " + error, true);
             return false;
         }
-        m_lodState[lodIndex].loaded = true;
-        m_lodState[lodIndex].dirty = false;
     }
     syncDirty();
     sendProgress("reading", "SOURCE LOAD LOD", m_asset.renderLods.size(), m_asset.renderLods.size());
@@ -4910,9 +5071,14 @@ bool ModelAssetEditorSession::saveManifestOnly()
     }
     m_manifestDirty = false;
     syncDirty();
+    if (!m_dirty && !writeProductionEditorState(&error))
+    {
+        sendStatus("Manifest was saved, but production editor state failed: " + error, true);
+        return false;
+    }
     sendProgress("writing", "SAVE MANIFEST", 1, 1, path);
     sendAssetMetadata();
-    sendStatus("Saved manifest only; LOD payload files and source OBJ/assembly unchanged");
+    sendStatus("Saved manifest only; production editor state refreshed when the package became fully clean");
     sendCatalog();
     return true;
 }
@@ -4952,9 +5118,14 @@ bool ModelAssetEditorSession::saveLodOnly(std::size_t lodIndex)
     }
     state.dirty = false;
     syncDirty();
+    if (!m_dirty && !writeProductionEditorState(&error))
+    {
+        sendStatus("LOD was saved, but production editor state failed: " + error, true);
+        return false;
+    }
     sendProgress("writing", "SAVE LOD" + std::to_string(lodIndex), 1, 1, lodPath);
     sendAssetMetadata();
-    sendStatus("Saved LOD" + std::to_string(lodIndex) + " only; manifest, other LOD files and source OBJ/assembly unchanged");
+    sendStatus("Saved LOD" + std::to_string(lodIndex) + " only; production editor state refreshed only if the whole package is now clean");
     return true;
 }
 
@@ -5116,6 +5287,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     std::string error;
     std::string warning;
     bool sourceImported = false;
+    bool productionLoaded = false;
     const auto binary = compiledPath(id);
     const auto legacyBinary = legacyCompiledPath(id);
     const bool havePackage = std::filesystem::exists(binary);
@@ -5126,67 +5298,19 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         sendProgress("reading", update.stage, update.completed, update.total, update.path);
     };
 
-    std::string resumedCheckpointStage;
-    const auto resumeCheckpoint = forceReimport ? std::filesystem::path{} :
-        latestWizardCheckpoint(&resumedCheckpointStage);
-    const bool resumeWorkspace = !resumeCheckpoint.empty();
-
-    if (resumeWorkspace)
+    // Authority contract: ordinary OPEN always starts from the saved production
+    // package. Durable checkpoints are rollback snapshots and enter the working
+    // copy only through explicit RESTORE CHECKPOINT.
+    if (!forceReimport && (havePackage || haveLegacyV2))
     {
-        sendStatus("Resuming editor workspace from " + resumedCheckpointStage + " checkpoint...", false, "reading");
-        sendProgress("reading", "RESUME CHECKPOINT", 0, 1, resumeCheckpoint);
-        if (!ModelAssetBinary::load(resumeCheckpoint.string(), loaded, &error))
-        {
-            // Never silently fall back to an older production package: that
-            // would make saved editor work appear to have vanished.
-            sendStatus("Cannot resume latest wizard checkpoint '" + resumedCheckpointStage +
-                "': " + error + ". Production package was not loaded instead.", true);
-            return false;
-        }
-        if (!loaded.assetId.empty() && loaded.assetId != id)
-        {
-            sendStatus("Cannot resume wizard checkpoint: checkpoint asset id '" + loaded.assetId +
-                "' does not match selected asset '" + id + "'", true);
-            return false;
-        }
-
-        EditorAuthoringState resumedEditorState;
-        const bool hasEditorSnapshot =
-            std::filesystem::exists(wizardCheckpointEditorStatePath(resumedCheckpointStage));
-        if (hasEditorSnapshot &&
-            !loadCheckpointEditorState(resumedCheckpointStage, resumedEditorState, &error))
-        {
-            sendStatus("Cannot resume checkpoint editor state '" + resumedCheckpointStage +
-                "': " + error + ". Production package was not loaded instead.", true);
-            return false;
-        }
-        if (!hasEditorSnapshot)
-        {
-            resumedEditorState = captureEditorAuthoringState();
-            resumedEditorState.meshPreparationRecords.clear();
-            resumedEditorState.geometryTopologyClasses.clear();
-        }
-
-        m_asset = std::move(loaded);
-        applyEditorAuthoringState(std::move(resumedEditorState));
-        // Checkpoints are complete authoring snapshots. They are current with
-        // respect to the wizard checkpoint, but intentionally dirty relative
-        // to the production package until the user explicitly saves output.
-        resetLodState(true, true);
-        restoreWizardValidityAt(resumedCheckpointStage);
-        (void)writeWizardState();
-        sendProgress("reading", "RESUME CHECKPOINT", 1, 1, resumeCheckpoint);
-    }
-    else if (!forceReimport && (havePackage || haveLegacyV2))
-    {
-        sendStatus("Reading compiled model asset " + readPath.filename().string() + "...", false, "reading");
-        sendProgress("reading", "READ MANIFEST", 0, 1, readPath);
+        sendStatus("Reading production model asset " + readPath.filename().string() + "...", false, "reading");
+        sendProgress("reading", "READ PRODUCTION", 0, 1, readPath);
         bool legacyPackage = false;
         if (!ModelAssetBinary::loadManifest(readPath.string(), loaded, &legacyPackage, &error))
         {
             if (error == "unsupported model asset version")
             {
-                sendStatus("Compiled asset format is obsolete; reimporting source...", false, "reading");
+                sendStatus("Compiled asset format is obsolete; reimporting source into an unsaved working copy...", false, "reading");
                 if (!importRuntimeAssembly(
                         m_sourceAssetsRoot, it->type, it->id, it->displayName, loaded,
                         &error, &warning, importProgress))
@@ -5202,7 +5326,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
             }
             else
             {
-                sendStatus("Cannot load compiled asset: " + error, true);
+                sendStatus("Cannot load production asset: " + error, true);
                 return false;
             }
         }
@@ -5212,7 +5336,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
             sendProgress("reading", "MIGRATE LEGACY PACKAGE", 0, 1, readPath);
             if (!ModelAssetBinary::load(readPath.string(), loaded, &error))
             {
-                sendStatus("Cannot migrate legacy compiled asset: " + error, true);
+                sendStatus("Cannot migrate legacy production asset: " + error, true);
                 return false;
             }
             loaded.formatVersion = ModelAssetFormatVersion;
@@ -5220,38 +5344,34 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
             resetLodState(true, true);
             if (oldVersion == 3u && havePackage)
             {
-                warning = "Legacy asset v3 loaded and converted in memory to asset v4. Save all upgrades the compiled package in place to independent render LOD graphs; source OBJ/assembly files remain unchanged.";
+                warning = "Legacy production asset v3 loaded and converted in memory to asset v4. Save all upgrades the production package; checkpoints remain independent rollback snapshots.";
             }
             else
             {
-                warning = "Legacy asset v" + std::to_string(oldVersion) +
-                    " loaded and converted in memory to asset v4. Save all writes the v4 package beside the untouched legacy monolithic binary; source OBJ/assembly files remain unchanged.";
+                warning = "Legacy production asset v" + std::to_string(oldVersion) +
+                    " loaded and converted in memory to asset v4. Save all writes the v4 production package; checkpoints remain independent rollback snapshots.";
             }
             sendProgress("reading", "MIGRATE LEGACY PACKAGE", 1, 1, readPath);
         }
         else
         {
-            sendProgress("reading", "READ V4 MANIFEST", 1, 1, readPath);
-            m_asset = std::move(loaded);
-            resetLodState(false, false);
-            if (!m_lodState.empty())
+            // Editor correctness is more important than residency cosmetics:
+            // open the saved production working set as one coherent snapshot.
+            if (!ModelAssetBinary::load(readPath.string(), loaded, &error))
             {
-                const auto lod0Path = ModelAssetBinary::lodPayloadPath(binary.string(), 0);
-                sendProgress("reading", "LOAD RENDER LOD0", 0, 1, lod0Path);
-                if (!ModelAssetBinary::loadLod(binary.string(), m_asset, 0, &error))
-                {
-                    sendStatus("Cannot load LOD0 render graph: " + error, true);
-                    return false;
-                }
-                m_lodState[0].loaded = true;
-                sendProgress("reading", "LOAD RENDER LOD0", 1, 1, lod0Path);
+                sendStatus("Cannot load production asset payloads: " + error, true);
+                return false;
             }
+            m_asset = std::move(loaded);
+            resetLodState(true, false);
             syncDirty();
+            productionLoaded = true;
+            sendProgress("reading", "READ PRODUCTION", 1, 1, readPath);
         }
     }
     else
     {
-        sendStatus("Importing source OBJ/assembly...", false, "reading");
+        sendStatus("Importing source OBJ/assembly into an unsaved working copy...", false, "reading");
         const auto sourceImportStarted = std::chrono::steady_clock::now();
         if (!importRuntimeAssembly(
                 m_sourceAssetsRoot, it->type, it->id, it->displayName, loaded,
@@ -5272,15 +5392,32 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         sourceImported = true;
     }
 
-    // Keep every declared render LOD resident before the wizard is shown. A
-    // restored checkpoint/compiled package remains an exact stored snapshot;
-    // recursive additional-OBJ discovery runs only for a real source import.
-    if (!loadAllDeclaredLodsForSource()) return false;
+    if (productionLoaded)
+    {
+        EditorAuthoringState productionEditorState;
+        StageValidityState productionValidity;
+        std::string stateError;
+        if (loadProductionEditorState(productionEditorState, productionValidity, &stateError))
+        {
+            applyEditorAuthoringState(std::move(productionEditorState));
+            applyStageValidity(productionValidity);
+        }
+        else
+        {
+            // Never combine today's production geometry with yesterday's mutable
+            // wizard/session JSON. Missing/mismatched editor evidence is safer as
+            // unknown and can be recreated/validated explicitly.
+            applyEditorAuthoringState(EditorAuthoringState{});
+            applyStageValidity(StageValidityState{});
+            warning = warning.empty()
+                ? "Production asset loaded. No matching production_state.json was found (" + stateError + "); editor-only PREPARE/topology/stage evidence requires review. Existing checkpoints are still available for explicit restore."
+                : warning + " " + "No matching production_state.json was found; editor-only evidence requires review.";
+        }
+        reconcileAuthoringVisualRegistry();
+    }
 
-    // Loading is intentionally non-mutating. A checkpoint or compiled package
-    // is shown exactly as stored. Only an actual source import/reimport performs
-    // recursive discovery of additional OBJ files, and those are inserted RAW.
-    // Mesh preparation is a separate explicit LOD-Preflight action.
+    // Source import is explicitly mutating and may discover extra source meshes.
+    // Ordinary production OPEN never refreshes source files behind the author's back.
     if (sourceImported)
     {
         const auto variantsStarted = std::chrono::steady_clock::now();
@@ -5303,11 +5440,12 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     sendProgress("reading", "LOAD VIEW", 0, 1, readPath.empty() ? binary : readPath);
     sendAsset();
     if (!warning.empty()) sendStatus(warning);
-    else if (resumeWorkspace)
-        sendStatus("Workspace resumed from the latest " + resumedCheckpointStage +
-            " checkpoint; production package and source OBJ are unchanged");
-    else sendStatus(forceReimport ? "Source assembly imported into independent render LODs" :
-        "Asset loaded; semantic state is shared, render LOD graphs are independent");
+    else if (forceReimport)
+        sendStatus("Source assembly imported into the current unsaved working copy; production and checkpoints are unchanged");
+    else if (productionLoaded)
+        sendStatus("Production asset loaded as the working copy; checkpoints are available only through explicit restore");
+    else
+        sendStatus("Unsaved working copy created from source; production and checkpoints are unchanged until SAVE ALL / COMPLETE STAGE");
     return true;
 }
 
@@ -5323,7 +5461,15 @@ bool ModelAssetEditorSession::saveAsset()
             anyLodFileMissing = true;
     if (!m_dirty && manifestExists && !anyLodFileMissing)
     {
-        sendStatus("NO CHANGES: manifest and LOD payloads are clean");
+        std::string stateError;
+        if (!writeProductionEditorState(&stateError))
+        {
+            sendStatus("Production mesh bytes are clean, but production editor state could not be saved: " + stateError, true);
+            return false;
+        }
+        (void)writeWizardState();
+        sendAssetMetadata();
+        sendStatus("Production mesh bytes unchanged; production editor/stage state saved");
         return true;
     }
 
@@ -5383,9 +5529,15 @@ bool ModelAssetEditorSession::saveAsset()
         return false;
     }
     syncDirty();
+    if (!writeProductionEditorState(&error))
+    {
+        sendStatus("Production package was saved, but production editor state failed: " + error, true);
+        return false;
+    }
+    (void)writeWizardState();
     sendProgress("writing", "SAVE ALL", completed, std::max<std::size_t>(work, completed), path);
     sendAssetMetadata();
-    sendStatus("Saved dirty package members only; clean LOD files and source OBJ/assembly were not rewritten");
+    sendStatus("Saved production package and matching production editor/stage state; checkpoints were not changed");
     sendCatalog();
     return true;
 }
@@ -5447,11 +5599,14 @@ nlohmann::json ModelAssetEditorSession::serializeAssetMetadata() const
     for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
     {
         const auto& lod = m_asset.renderLods[li];
+        const bool lodLoaded = li < m_lodState.size() && m_lodState[li].loaded;
         json jl = {
             {"index", li}, {"level", lod.level}, {"sourceKind", lod.sourceKind}, {"generatedFromLod", lod.generatedFromLod},
             {"minBounds", vec3Json(lod.minBounds)}, {"maxBounds", vec3Json(lod.maxBounds)},
-            {"loaded", li < m_lodState.size() && m_lodState[li].loaded},
-            {"dirty", li < m_lodState.size() && m_lodState[li].dirty}
+            {"loaded", lodLoaded},
+            {"dirty", li < m_lodState.size() && m_lodState[li].dirty},
+            {"declaredGeometryCount", lodLoaded ? lod.geometries.size() : lod.declaredGeometryCount},
+            {"declaredNodeCount", lodLoaded ? lod.nodes.size() : lod.declaredNodeCount}
         };
         jl["geometries"] = json::array();
         for (std::size_t gi = 0; gi < lod.geometries.size(); ++gi)
@@ -5904,7 +6059,6 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
 
     if (jobs.empty())
     {
-        if (registryChanged) (void)writeWizardState();
         if (broadcastUpdates)
             sendStatus(
                 "NO CHANGES: no additional OBJ files found recursively under loaded LOD directories" +
@@ -6020,11 +6174,9 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
     }
     if (manifestChanged) markManifestDirty();
 
-    if ((registryChanged || canonicalEvidenceChanged) && !writeWizardState())
-    {
-        sendStatus("Extra meshes were refreshed, but their stable authoring/canonical SOURCE state could not be saved", true);
-        return false;
-    }
+    // Stable authoring/canonical evidence is part of the current working copy
+    // and persists only through SAVE ALL or a stage checkpoint.
+    (void)canonicalEvidenceChanged;
     if (!changedLods.empty() || manifestChanged || registryChanged)
         invalidateWizardFrom(sourceOwned ? "source" : "geometry");
     if (broadcastUpdates)

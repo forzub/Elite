@@ -2104,20 +2104,29 @@
       "ru": "Завершить этап + контрольная точка"
     },
     "model_editor.wizard.complete_tip.desc": {
-      "en": "Validates the current stage, writes an internal restorable checkpoint and unlocks the next implemented stage. Production files are not overwritten.",
-      "ru": "Проверяет текущий этап, сохраняет внутреннюю восстанавливаемую контрольную точку и открывает следующий реализованный этап. Production-файлы не перезаписываются."
+      "en": "Saves the current working snapshot first, then validates this stage. The checkpoint is kept and becomes the resume point even if validation fails; only a passing stage unlocks the next tab. Every later-stage checkpoint is removed. Production files are not overwritten.",
+      "ru": "Сначала сохраняет полный текущий снимок работы, затем проверяет этап. Контрольная точка сохраняется и становится точкой продолжения даже при ошибке проверки; следующая вкладка открывается только после успешной проверки. Все контрольные точки последующих этапов удаляются. Production-файлы не перезаписываются.",
+      "zh-Hans": "先保存当前完整工作快照，再验证此阶段。即使验证失败，检查点仍会保留并成为恢复点；只有验证通过才会解锁下一页签。所有后续阶段的检查点都会删除。不会覆盖 production 文件。",
+      "es": "Primero guarda una instantánea completa del estado actual y después valida la etapa. El checkpoint se conserva y pasa a ser el punto de reanudación aunque falle la validación; solo una validación correcta desbloquea la siguiente pestaña. Se eliminan los checkpoints de etapas posteriores. No se sobrescriben archivos de producción.",
+      "ja": "まず現在の作業状態を完全なスナップショットとして保存し、その後この段階を検証します。検証に失敗してもチェックポイントは保持され再開点になります。次のタブは検証成功時のみ解除されます。後続段階のチェックポイントはすべて削除されます。production ファイルは上書きしません。"
     },
     "model_editor.wizard.complete_current_tip.title": {
       "en": "Checkpoint is current",
       "ru": "Контрольная точка актуальна"
     },
     "model_editor.wizard.complete_current_tip.desc": {
-      "en": "No changes have been made in this stage since the last checkpoint. The button becomes active as soon as this stage changes.",
-      "ru": "После последней контрольной точки этот этап не менялся. Кнопка станет активной сразу после изменения этапа."
+      "en": "The current state may be saved again. Each successful checkpoint write creates a new checkpointSequence even if there were no edits.",
+      "ru": "Текущее состояние можно сохранить повторно. Каждая успешная запись контрольной точки создаёт новый checkpointSequence, даже если правок не было.",
+      "zh-Hans": "可以再次保存当前状态。每次成功写入检查点都会创建新的 checkpointSequence，即使没有编辑。",
+      "es": "El estado actual puede guardarse de nuevo. Cada escritura correcta de checkpoint crea un nuevo checkpointSequence aunque no haya cambios.",
+      "ja": "現在の状態は再度保存できます。編集がなくても、チェックポイントの書き込みに成功するたびに新しい checkpointSequence が作成されます。"
     },
     "model_editor.wizard.checkpoint_current": {
-      "en": "Checkpoint is current: this stage has no changes since it was recorded.",
-      "ru": "Контрольная точка актуальна: после её записи этот этап не изменялся."
+      "en": "Checkpoint is current. Saving again records a new checkpoint sequence even without edits.",
+      "ru": "Контрольная точка актуальна. Повторное сохранение создаст новую последовательность checkpointSequence даже без правок.",
+      "zh-Hans": "检查点是最新的。即使没有编辑，再次保存也会记录新的 checkpointSequence。",
+      "es": "El checkpoint está actualizado. Guardarlo de nuevo registra un nuevo checkpointSequence incluso sin cambios.",
+      "ja": "チェックポイントは最新です。編集がなくても再保存すると新しい checkpointSequence が記録されます。"
     },
     "model_editor.wizard.restore_tip.title": {
       "en": "Restore last checkpoint",
@@ -3213,6 +3222,20 @@
       "zh-Hans": "当前工作区状态下不能编辑此阶段，但其已保存的检查点仍可用。恢复该检查点即可让此阶段及其上游状态重新成为当前状态。",
       "es": "Esta etapa no se puede editar desde el estado actual del espacio de trabajo, pero su punto de control guardado sigue disponible. Restáuralo para volver a hacer actuales esta etapa y sus etapas anteriores.",
       "ja": "現在のワークスペース状態からこの工程を編集することはできませんが、保存済みチェックポイントは利用できます。復元すると、この工程とそれ以前の状態が再び現在の状態になります。"
+    },
+    "model_editor.wizard.status.needs_fix": {
+      "en": "NEEDS FIX",
+      "ru": "НУЖНО ИСПРАВИТЬ",
+      "zh-Hans": "需要修正",
+      "es": "REQUIERE CORRECCIÓN",
+      "ja": "要修正"
+    },
+    "model_editor.wizard.checkpoint_saved_needs_fix": {
+      "en": "Checkpoint saved · stage needs fix",
+      "ru": "Контрольная точка сохранена · этап требует исправления",
+      "zh-Hans": "检查点已保存 · 阶段需要修正",
+      "es": "Checkpoint guardado · la etapa requiere corrección",
+      "ja": "チェックポイント保存済み · 段階は要修正"
     }
   }
 }

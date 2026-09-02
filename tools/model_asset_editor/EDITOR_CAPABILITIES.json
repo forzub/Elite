@@ -162,7 +162,7 @@
     },
     {
       "id": "wizard_checkpoints",
-      "description": "Finished wizard stages create durable non-production rollback snapshots. Ordinary OPEN always uses production; checkpoints are restored only by explicit user action, never deleted by invalidation, and each new snapshot carries its own editor/stage state.",
+      "description": "Wizard checkpoints form the linear editor save history. OPEN resumes the most recently written stage checkpoint; reimport/reload/edit never move it; saving a stage replaces that point and deletes all later-stage checkpoints.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.h",
@@ -187,7 +187,10 @@
             "productionPackageStamp",
             "applyStageValidity",
             "invalidateWizardFrom",
-            "model_asset_editor_session_index"
+            "model_asset_editor_session_index",
+            "latestSavedWizardCheckpoint",
+            "checkpointSequenceForStage",
+            "pruneWizardCheckpointsAfter"
           ]
         },
         "ui": {

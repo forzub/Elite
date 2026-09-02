@@ -92,7 +92,7 @@ Hard rules:
 
 Source registries are allowed to reuse a human-facing token for different roles. In particular, a module and its child mesh may both be named `station_solar_panels`. The importer must qualify the child deterministically (for example `station_solar_panels.mesh`) instead of creating duplicate semantic Nodes. Legacy v2/v3 migration also normalizes old empty/duplicate IDs before copying semantic identity into v4 RenderNodes.
 
-Wizard checkpoints run the same reusable `ModelAssetBinary::validate` preflight as production serialization. Diagnostics must identify the offending ID and indices, e.g. `LOD0 duplicate RenderNode id 'x': node[2] and node[7]`. The serializer remains the final safety net, not the first user-visible validator.
+Wizard stage validation and checkpoint persistence are independent. A stage check may fail while the current working snapshot is still saved and becomes the resume head. The v4 serializer remains the final hard safety net for structural/identity/I/O failures that would make a checkpoint physically unreadable; diagnostics must identify the offending ID and indices, e.g. `LOD0 duplicate RenderNode id 'x': node[2] and node[7]`.
 
 ## Canonical coordinates / source basis
 
@@ -229,17 +229,19 @@ scene graph around those cached GPU buffers, but it must not recreate or retrans
 unchanged mesh payloads. A newly broken instance may clone an already-resident geometry
 locally; an edge-mask edit transmits only the changed mask.
 
-### Wizard checkpoints are durable snapshots, not the current branch
+### Wizard checkpoints are linear editor save points
 
-Workspace validity and checkpoint storage are independent. Editing, restoring or recompleting an earlier stage marks that stage and every downstream stage `stale`/`not_started` as appropriate, but never deletes a checkpoint directory. A stale checkpoint is an explicit rollback snapshot from another workspace lineage, not garbage.
+The editor resumes from the stage checkpoint with the highest explicit monotonic `checkpointSequence`. That sequence is written after every successfully persisted `COMPLETE STAGE + CHECKPOINT`, regardless of whether stage validation passes; REIMPORT, RELOAD, RESTORE, tab navigation, ordinary edits and session-index rewrites cannot move the saved head. If no checkpoint exists yet, production `.elmodel/.elmesh` is used as the initial working copy. Legacy checkpoints without a sequence use stage-local `editor_state.json` write time only as a migration fallback; once a sequenced checkpoint exists, filesystem timestamps do not participate in resume selection.
 
-Every new checkpoint stores the v4 ModelAsset package plus stage-local `editor_state.json`. The latter is serialized through the same `EditorAuthoringState` contract as production `production_state.json`, so PREPARE evidence, stable authoring identities, replacement compatibility and topology/surface intent are restored together with mesh bytes. Future SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD editor-only state must extend that same authoring-state serializer.
+Every checkpoint stores the complete v4 ModelAsset package plus stage-local `editor_state.json`. The latter uses the shared `EditorAuthoringState` serializer and carries the full stage-validity map, so PREPARE evidence, stable authoring identities, replacement compatibility and topology/surface intent are restored with the same mesh bytes. Future SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD editor-only state must extend that serializer.
 
-Existing backend mutations reserved for future wizard pages already use the same invalidation order: semantic hierarchy/joint/socket edits start at SEMANTICS, physics/collision edits at PHYSICS, and state/damage/opening/repair edits at DAMAGE. Future UI enablement must reuse those boundaries rather than bypass checkpoint validity.
+Checkpoint history is deliberately linear. `RESTORE` only replaces the current RAM working copy and never deletes snapshots. `COMPLETE STAGE + CHECKPOINT` is the explicit editor SAVE operation: the current full snapshot is written first, receives the next `checkpointSequence`, and becomes the new resume head even if stage validation fails. A PASS marks the stage COMPLETE and unlocks the next stage; a FAIL records NEEDS FIX and leaves progression locked. After the new stage snapshot and editor-state snapshot have been written successfully, every later-stage checkpoint directory is removed.
 
-Ordinary OPEN never auto-resumes a checkpoint: production `.elmodel/.elmesh` is the saved authority. A checkpoint enters the current working copy only through explicit RESTORE and remains dirty relative to production until SAVE ALL. Closing without SAVE discards that restored working copy and the next OPEN returns to production.
+Consequently, source reimport/reload followed by exit without a new checkpoint is harmless: the temporary RAM branch is discarded and the next OPEN resumes the same last saved checkpoint. Saving an earlier stage intentionally forks the workflow there and removes all later saved points.
 
-Editor-only state that survives a session is bound to the same geometry snapshot. `production_state.json` stores production authoring/stage state plus a package-member stamp; each checkpoint stores its own `editor_state.json`. `wizard_state.json` is only a session/checkpoint index and must never be attached as authoritative authoring metadata to freshly opened production geometry.
+Production remains the runtime/output package written by SAVE ALL. `production_state.json` binds editor-only evidence to those production bytes for the no-checkpoint/initial-load case; it does not override an existing editor checkpoint history. `wizard_state.json` is only a session/index aid and is never authoritative for the saved resume head.
+
+Existing backend mutations reserved for future wizard pages already use the same invalidation order: semantic hierarchy/joint/socket edits start at SEMANTICS, physics/collision edits at PHYSICS, and state/damage/opening/repair edits at DAMAGE. Future UI enablement must reuse those boundaries.
 
 ## Native OBJ compilation
 
@@ -279,6 +281,8 @@ Visible glowing geometry is an emissive material. A real light source is a
 - `Closed`
 - `ThinOneSided`
 - `ThinTwoSided`
+
+Explicit SURFACES intent edits are geometry-level metadata operations. `ClosedVolume`, `ThinOneSided`, `ThinTwoSided` and `BreachedVolume` do not traverse triangle arrays, invoke PREPARE/model preflight, regenerate mesh buffers, retransmit geometry payloads or rebuild the complete browser scene. A targeted metadata patch updates the affected GeometryDefinition and resident renderer sidedness; topology analysis remains an explicit ANALYZE operation. `AUTO` is the exception because automatic classification needs topology evidence for the selected geometry.
 
 The editor keeps a separate authoring surface intent for the SURFACES workflow:
 `ClosedVolume`, `ThinOneSided`, `ThinTwoSided`, `BreachedVolume`. The intent answers

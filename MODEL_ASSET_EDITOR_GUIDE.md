@@ -34,11 +34,13 @@ SURFACES is downstream of GEOMETRY and is side-effect free until the author expl
 
 The author then chooses a RenderLod and geometry and resolves one of four production surface intents: `ClosedVolume`, `ThinOneSided`, `ThinTwoSided`, `BreachedVolume`. `ClosedVolume`, `BreachedVolume` and `ThinOneSided` render `FrontSide` with back-face culling enabled. `ThinTwoSided` renders `DoubleSide` with back-face culling disabled. The intent is the authority for sidedness; `MaterialDefinition::twoSided` remains only a legacy/binary-compatible field and is not an ordinary SURFACES authoring control.
 
-A default-on `APPLY TO ... ALL LODS` option propagates the chosen intent to the same stable visual family wherever it exists. Matching uses stable base-visual identity for ordinary geometry and stable variant identity for replacement geometry; transient `G#` indices and coincidental per-LOD geometry indices are never cross-LOD identity. The batch writes/publishes once and runs one post-change surface analysis. This is useful for station modules whose physical surface class is identical across LODs while still allowing the checkbox to be disabled for deliberately different ship/damage representations.
+A default-on `APPLY TO ... ALL LODS` option propagates the chosen intent to the same stable visual family wherever it exists. Matching uses stable base-visual identity for ordinary geometry and stable variant identity for replacement geometry; transient `G#` indices and coincidental per-LOD geometry indices are never cross-LOD identity. The batch publishes one targeted metadata patch and does **not** run topology analysis. `ANALYZE SURFACES` remains the explicit expensive audit. This is useful for station modules whose physical surface class is identical across LODs while still allowing the checkbox to be disabled for deliberately different ship/damage representations.
 
 Material assignment stays per triangle and materials stay in the shared asset material table. Missing/invalid material indices remain an independent SURFACES blocker after surface intent is resolved. The conservative repair still assigns a chosen existing material only to currently unassigned triangles. Material editing covers stable id, base RGBA, emissive color/strength, metallic, roughness and base/emissive texture references. Texture files are references only; import/bake/UV painting is outside this stage.
 
 SURFACES never changes topology, transforms, instance sharing or replacement compatibility. Surface/material edits invalidate SURFACES and later checkpoints only; completed LODS and GEOMETRY remain valid.
+
+Explicit surface-intent changes are metadata-only operations. `ClosedVolume / ThinOneSided / ThinTwoSided / BreachedVolume` must not scan triangles, run PREPARE/preflight, rebuild mesh buffers, resend geometry payloads or rebuild the complete Three.js scene. The backend publishes only the affected geometry metadata and the browser updates sidedness on the resident mesh. `AUTO` may inspect the selected geometry because automatic classification itself requires topology evidence.
 
 
 ## 0A.1 Render contract
@@ -146,43 +148,68 @@ Binary decoder оставляет bulk arrays typed (`Float32Array` / `Uint32Arr
 
 `.elmodel/.elmesh v4` на диске не меняется. `.elmesh` при чтении теперь забирается одним большим блоком в память и разбирается memory cursor-ом через тот же бинарный layout вместо миллионов мелких `istream::read()`.
 
-### 0.1.2 Demand-driven residency
+### 0.1.2 Working-set load / resume
 
-Обычное `OPEN` сохранённого asset всегда открывает **production package как единый authoritative working set**: `.elmodel` и все объявленные `.elmesh` читаются в C++ память, после чего существующий binary transport публикует working copy в viewport. Для offline authoring editor-а предсказуемость и целостность рабочего набора важнее сложной residency-косметики. Отдельные `LOAD/RELOAD/UNLOAD` остаются сервисными LOD-командами, но не определяют authority модели.
+Обычное `OPEN` продолжает editor-workflow с **последней явно сохранённой контрольной точки**. Если checkpoint ещё ни разу не создавался, initial working copy берётся из production package; source import выполняется только когда нет ни checkpoint, ни production либо по явному `REIMPORT SOURCE`. Это простой authoring resume-контракт, а не autosave: только `COMPLETE STAGE + CHECKPOINT` двигает сохранённую точку работы.
 
-Disk residency и viewport publication всё равно остаются разными действиями для внутренних backend-операций: `ensureLodLoaded()/ensureAllLodsLoaded()` не должны сами по себе вызывать лишнюю публикацию. Это transport/orchestration контракт, а не отдельная lazy-loading подсистема.
+`.elmodel/.elmesh` читаются как coherent working set; отдельные `LOAD/RELOAD/UNLOAD` остаются сервисными LOD-командами. Внутренние `ensureLodLoaded()/ensureAllLodsLoaded()` не публикуют mesh сами по себе: disk residency и viewport publication остаются раздельными transport-операциями.
 
-Manifest хранит declared `geometry/node` counts отдельно от resident vectors; это защищает v4 descriptors при отдельных LOD I/O операциях, но обычный production `OPEN` не обязан оставлять LOD unloaded.
+## 0.2 Wizard checkpoints — линейные save points
 
-## 0.2 Wizard checkpoints — независимые rollback snapshots
+Checkpoint — это **явное сохранение editor-workflow**. Для каждой стадии существует максимум один snapshot. Каждый новый checkpoint получает монотонный `checkpointSequence`, который увеличивается после **успешной записи snapshot** внутри `COMPLETE STAGE + CHECKPOINT`, независимо от результата stage validation; переключение вкладки, `REIMPORT`, `RELOAD`, `RESTORE`, обычные edits и перезапись `wizard_state.json` sequence не меняют. При OPEN resume-head выбирается по максимальному `checkpointSequence`, поэтому filesystem `mtime` больше не является частью нормального контракта сохранения. Для старых checkpoints без sequence действует только миграционный fallback: сначала время `checkpoint-*/editor_state.json` (этот файл создаётся именно checkpoint SAVE), а для совсем старых точек без editor-state — время package. После первого нового SAVE sequenced checkpoint всегда имеет приоритет. `wizard_state.json` не определяет head: временная invalidation текущей RAM-ветки не может сдвинуть сохранённую точку.
 
-Checkpoint и validity текущего wizard — разные сущности. Изменение раннего stage может сделать более позднюю работу несовместимой с текущим workspace head, но **не имеет права удалять её checkpoint**.
-
-Для каждой стадии существует максимум один явный «последний checkpoint» в её каноническом каталоге. Повторное `COMPLETE STAGE + CHECKPOINT` этой же стадии заменяет только её собственный снимок; checkpoints других стадий не удаляются автоматически.
-
-Правило:
+Главные правила:
 
 ```text
-SOURCE complete      checkpoint-SOURCE exists
-LODS complete        checkpoint-LODS exists
-GEOMETRY complete    checkpoint-GEOMETRY exists
+OPEN / restart
+    → load latest saved checkpoint
+    → if no checkpoint exists: load production
 
-REIMPORT SOURCE
+REIMPORT / RELOAD / ordinary edit
+    → mutate current RAM working copy
+    → checkpoints on disk are untouched
 
-SOURCE stale         checkpoint-SOURCE exists
-LODS stale           checkpoint-LODS exists
-GEOMETRY stale       checkpoint-GEOMETRY exists
+exit without COMPLETE STAGE + CHECKPOINT
+    → current RAM changes are discarded
+    → next OPEN loads the same latest saved checkpoint again
+
+COMPLETE STAGE + CHECKPOINT at stage S
+    → always write/replace checkpoint-S first
+    → checkpointSequence++ and S becomes the new saved resume point
+    → delete every checkpoint after S
+    → if stage validation PASS: S = COMPLETE, unlock next stage
+    → if stage validation FAIL: S = NEEDS FIX, keep next stage locked
+
+RESTORE checkpoint
+    → replace only current RAM working copy
+    → do not delete any checkpoint
+    → deleting later checkpoints happens only if the author subsequently SAVES this restored/edited stage
 ```
 
-`stale` означает только: «этот snapshot больше не является продолжением текущего workspace head». Он остаётся полноценной точкой отката и может быть явно восстановлен.
+Пример:
 
-`RESTORE LODS` по явной команде делает asset + editor authoring/stage state из LODS checkpoint текущей **несохранённой working copy**. Production при этом не меняется, другие checkpoints не удаляются. Новый schema-8 checkpoint хранит точную validity-карту всех стадий на момент снимка; legacy checkpoint без неё восстанавливается консервативно как `complete` до своей стадии и `not_started` после неё.
+```text
+checkpoint-SOURCE
+checkpoint-LODS
+checkpoint-GEOMETRY   ← latest saved point
 
-**Автоматического checkpoint resume больше нет.** Повторный `OPEN` всегда читает production. Checkpoint может попасть в working copy только через явный `RESTORE CHECKPOINT`; если после restore закрыть редактор без `SAVE ALL`, следующий `OPEN` снова покажет production. Именно это отделяет rollback snapshot от autosave/workspace head.
+REIMPORT SOURCE
+    checkpoints unchanged
+    current RAM branch is stale/unsaved
 
-`wizard_state.json` теперь только session/checkpoint index и не хранит authoritative editor-owned authoring state. Editor-state, который должен пережить закрытие, всегда связан с конкретными mesh bytes: `production_state.json` рядом с workspace для production и `checkpoint-<stage>/editor_state.json` для checkpoint. Оба содержат общий `EditorAuthoringState` + validity стадий; production-state дополнительно привязан к текущим package members stamp и не применяется к чужой/изменённой production geometry.
+close without save
+OPEN
+    → checkpoint-GEOMETRY again
 
-Каждый новый checkpoint самодостаточен и содержит два слоя:
+REIMPORT SOURCE
+COMPLETE SOURCE + CHECKPOINT
+    → checkpoint-SOURCE replaced
+    → checkpoint-LODS deleted
+    → checkpoint-GEOMETRY deleted
+    → SOURCE is now the latest saved point
+```
+
+Каждый schema-8 checkpoint самодостаточен:
 
 ```text
 checkpoint-<STAGE>/
@@ -191,9 +218,9 @@ checkpoint-<STAGE>/
     editor_state.json
 ```
 
-`editor_state.json` хранит editor-owned authoring state, который не является частью runtime v4 asset: stable base/variant identities, replacement compatibility, explicit topology/surface intent metadata, PREPARE fingerprints/counters и identity ordinals. RAW diagnostic snapshots остаются session-only и намеренно не checkpoint-ятся.
+`editor_state.json` хранит stage-local `EditorAuthoringState` и validity-карту всех стадий: PREPARE fingerprints/counters, topology/surface authoring metadata, stable base/variant identities, replacement compatibility и identity ordinals. RAW diagnostic snapshots остаются session-only. Legacy checkpoint без `editor_state.json` восстанавливает geometry, но PREPARE/topology evidence считается требующим проверки.
 
-Production `production_state.json` и checkpoint `editor_state.json` используют **один и тот же serializer/parser authoring state**. Это обязательный сквозной контракт для будущих `SEMANTICS / PHYSICS / DAMAGE / VALIDATE / BUILD`: если новый stage добавляет editor-only authored state, он должен быть добавлен в общий `EditorAuthoringState`, а не сохраняться отдельным случайным sidecar, иначе restore перестанет быть точным.
+Production package остаётся runtime/output-снимком и обновляется `SAVE ALL`; он **не является editor resume head**, пока существуют stage checkpoints. `production_state.json` по-прежнему связывает editor-only evidence с конкретными production bytes и используется как initial state только когда checkpoint history ещё отсутствует.
 
 ---
 

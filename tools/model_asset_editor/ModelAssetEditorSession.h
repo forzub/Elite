@@ -34,6 +34,7 @@ private:
     void sendSettings();
     void sendAsset(const std::vector<std::size_t>& payloadLods = {});
     void sendAssetMetadata(const nlohmann::json& hints = nlohmann::json::object());
+    void sendSurfaceMetadataPatch(const std::vector<std::pair<std::size_t, std::size_t>>& targets);
     void sendLodPayload(std::size_t lodIndex, bool includeRawSnapshots = false);
     std::uint32_t nextWireTransferId();
     void sendStatus(const std::string& message, bool error = false, const std::string& activity = "idle");
@@ -75,6 +76,7 @@ private:
     {
         std::string status = "not_started"; // not_started / complete / stale
         std::filesystem::path checkpointManifest;
+        std::uint64_t checkpointSequence = 0; // 0 = legacy checkpoint without an explicit save sequence
     };
     struct MeshPreparationRecord
     {
@@ -111,6 +113,9 @@ private:
     std::filesystem::path wizardCheckpointPath(const std::string& stage) const;
     std::filesystem::path wizardCheckpointEditorStatePath(const std::string& stage) const;
     std::filesystem::path wizardLogPath(const std::string& fileName) const;
+    std::filesystem::path latestSavedWizardCheckpoint(std::string* stage = nullptr) const;
+    std::uint64_t checkpointSequenceForStage(const std::string& stage) const;
+    bool pruneWizardCheckpointsAfter(const std::string& stage, std::string* error = nullptr);
     using StageValidityState = std::map<std::string, std::string>;
     EditorAuthoringState captureEditorAuthoringState() const;
     StageValidityState captureStageValidity() const;
@@ -124,11 +129,16 @@ private:
         int schemaVersion,
         EditorAuthoringState& parsed,
         std::string* error = nullptr) const;
-    bool writeCheckpointEditorState(const std::string& stage, const StageValidityState& validity, std::string* error = nullptr) const;
+    bool writeCheckpointEditorState(
+        const std::string& stage,
+        const StageValidityState& validity,
+        std::uint64_t checkpointSequence,
+        std::string* error = nullptr) const;
     bool loadCheckpointEditorState(
         const std::string& stage,
         EditorAuthoringState& state,
         StageValidityState* validity = nullptr,
+        std::uint64_t* checkpointSequence = nullptr,
         std::string* error = nullptr) const;
     nlohmann::json productionPackageStamp() const;
     bool productionPackageStampMatches(const nlohmann::json& expected) const;
@@ -140,8 +150,8 @@ private:
     void loadWizardState();
     bool writeWizardState() const;
     void invalidateWizardFrom(const std::string& stage);
-    void markWizardDescendantsStale(const std::string& stage);
     void restoreWizardValidityAt(const std::string& stage);
+    bool validateWizardStage(const std::string& stage, std::string* error = nullptr);
     bool completeWizardStage(const std::string& stage);
     bool restoreWizardCheckpoint(const std::string& stage);
     bool scanRenderDuplicates(
@@ -160,7 +170,7 @@ private:
         std::size_t lodIndex,
         std::size_t geometryIndex,
         const std::string& topologyClass,
-        bool analyzeAfter = true,
+        bool analyzeAfter = false,
         bool publishAfter = true);
     bool modelPreflightReadyForLod(std::string* reason = nullptr) const;
     bool analyzeLodRequirements(std::size_t lodIndex);
@@ -230,6 +240,7 @@ private:
     std::map<std::size_t, std::map<std::string, std::vector<std::string>>> m_legacySourceVariantReplacements;
     std::size_t m_nextBaseVisualOrdinal = 1;
     std::size_t m_nextSourceVariantOrdinal = 1;
+    std::uint64_t m_nextCheckpointSequence = 1;
     std::uint32_t m_nextWireTransferId = 1;
 };
 

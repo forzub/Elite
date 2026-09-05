@@ -1,3 +1,4 @@
+#include <chrono>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -51,8 +52,17 @@ int main()
             session.handleMessage(message);
         });
 
+        // The editor WebView uses a persistent browser profile. The HTTP server
+        // serves the executable-owned resource pack before the filesystem fallback,
+        // but the document URL used to be stable across launches. Without an explicit
+        // cache policy WebView2 may reuse an older model_asset_editor.html even after
+        // the resource pack has been rebuilt. Give every editor process a unique
+        // document URL; HtmlUiServer strips the query before resource lookup.
+        const auto uiSessionNonce =
+            std::chrono::steady_clock::now().time_since_epoch().count();
         const std::string url = "http://localhost:" + std::to_string(port) +
-            "/model_asset_editor.html";
+            "/model_asset_editor.html?editor_session=" +
+            std::to_string(uiSessionNonce);
         std::cerr << "[MODEL ASSET EDITOR " << elite::model_asset::editor::ModelAssetEditorVersion << "] " << url << std::endl;
         editor.navigate(url);
         editor.run();

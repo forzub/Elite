@@ -57,6 +57,7 @@ void buildIndependentRenderLodsFromLegacy(ModelAsset& asset)
         RenderLod renderLod;
         renderLod.level = static_cast<std::uint32_t>(lodIndex);
         renderLod.sourceKind = "source";
+        renderLod.relativeGeometricError = lodIndex == 0 ? 0.0f : -1.0f;
 
         std::vector<std::int32_t> geometryMap(asset.geometries.size(), NoIndex);
         std::set<std::string> renderGeometryIds;

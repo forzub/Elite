@@ -1,3 +1,66 @@
+## 0.10.32 — persistent WORKING ASSET / rollback-only checkpoints
+
+- Added a persistent mutable editor package at `build/tools/model_asset_editor/workspaces/<asset>/working/`. `OPEN` resumes this WORKING ASSET first; production is adopted only when no working package exists, and source import is the final fallback. Checkpoint history never selects the resume head.
+- Ordinary `SAVE` and debounced autosave now persist one coherent WORKING `.elmodel/.elmesh` package plus matching editor-only `working/editor_state.json`. Saving does not invalidate stages, rewrite production or create/prune checkpoints. Legacy manifest/LOD save commands remain compatibility aliases to the coherent working save instead of producing partial resume states.
+- Split stage completion from rollback history. `VALIDATE / COMPLETE STAGE` validates current state and stores stage validity/debt in WORKING ASSET; `CREATE ROLLBACK SNAPSHOT` is a separate manual action that copies the exact current state without validating, unlocking, invalidating or deleting any other snapshot.
+- `RESTORE` now replaces the mutable working head and immediately persists it, so the restored state survives editor restart. Production and every other rollback snapshot remain untouched. Legacy checkpoints remain readable.
+- `BUILD` is the only normal production-write boundary and always writes the complete current WORKING ASSET, independent of working dirty flags. `production_state.json` is refreshed only by BUILD.
+- Maintenance-mode stages are available directly for an existing production asset; readiness comes from current WORKING stage validity and per-component maintenance debt, not checkpoint ancestry. Initial authoring still uses the ordered SOURCE → … → BUILD gate.
+- Rebased Storage/LOD save indicators onto WORKING bytes. The UI reports the last BUILD package separately, and stale working `.elmesh` members are pruned by ordinary working save.
+
+## 0.10.31 — maintenance work set / delta-only SOURCE baseline
+
+- Reworked SOURCE maintenance scanning into a true delta view. Current unchanged source files are no longer emitted as table rows; changed/new/missing ordinary meshes and variants are the only per-file entries.
+- Added one-time baseline migration for production assets created before source fingerprints existed. One action accepts all currently linked source revisions and persists that editor-only baseline without rewriting `.elmodel/.elmesh` bytes.
+- Added a persistent maintenance work-set view (`CHANGES` / `WHOLE MODEL`) driven by per-component maintenance debt. GEOMETRY and SURFACES can focus on only affected geometries while the complete production model remains available as context.
+- Reworked LODS maintenance UX around changed components: each pending part exposes local PREPARE, CHECK and generated-LOD regeneration actions; legacy whole-model PREPARE/ANALYZE/LOD-generator tools are retained under an explicit whole-model/advanced section.
+- Made SOURCE rows compact and filename-first: status is a glyph, filename gets the main width, path/status become secondary text. Full destructive SOURCE refresh/reimport moved under an advanced section.
+
+## 0.10.30 — granular production-asset maintenance
+
+- Added an editor-only source provenance index for folder-authoritative assets. SOURCE CHANGE SCAN compares the open production working copy with ordinary `LOD<N>/*.obj` and `LOD<N>/variants/**/*.obj`, including referenced/sibling MTL bytes, without rebuilding the asset.
+- Added local `ADD PART` / `REIMPORT PART` and `ADD VARIANT` / `REIMPORT VARIANT` operations. Replacing one ordinary geometry preserves stable RenderNode, semantic, joint, physics, damage and socket ownership; a new part is intentionally left semantically unbound instead of guessing gameplay identity.
+- Added per-component maintenance debt (`prepare`, `lods`, `surfaces`, `semantics`, `replacement`) in editor production/checkpoint state. Local maintenance does not invalidate unrelated completed wizard stages; VALIDATE/BUILD refuse to publish while any local debt remains.
+- Added selected-geometry PREPARE and preflight checks plus selected LOD0 derived-LOD regeneration. Existing generated LODs update only the selected base visual/variant; missing selected geometry is added to generated LODs, while manual LOD documents remain untouched and explicitly require review.
+- Extended hidden replacement variants to the same maintenance workflow. New variants remain geometry-only (no normal RenderNode), preserve opaque variant identity, and resolve replacement debt through the existing GEOMETRY compatibility authoring.
+- Added the GEOMETRY `ASSET MAINTENANCE` panel with whole-LOD vs selected-part scope, source-change actions, local debt badges and direct selected-part prepare/check/LOD regeneration controls.
+
+## 0.10.29 — complete wizard chain / PHYSICS-DAMAGE-VALIDATE-BUILD
+
+- Removed hard-coded wizard stage-count gates. All nine production stages are now implemented and unlock strictly from the previous stage COMPLETE state: SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD.
+- Fixed the broken SURFACES -> SEMANTICS progression: completion now derives the next stage from the canonical nine-stage order instead of stopping after stage 4.
+- Added PHYSICS checkpoint validation and stage-owned editors for collision primitives and resolved rigid-body mass/inertia. State scoping is deliberately deferred to DAMAGE.
+- Added DAMAGE checkpoint validation and stage-owned authoring for state variants, exact-id cross-LOD RenderNode state selectors, collision/socket state scopes, hit regions, openings and repair targets.
+- Added a read-only full VALIDATE report covering SOURCE through DAMAGE plus the shared v4 binary contract.
+- Made BUILD the terminal production commit: it writes a durable checkpoint first, reruns full validation, then writes the production .elmodel/.elmesh package; production I/O failure leaves BUILD NEEDS FIX with the checkpoint still restorable.
+- Preserved stage ownership/invalidation: semantic structure/joints/sockets start at SEMANTICS, collision/mass edits at PHYSICS, and state selectors/damage semantics at DAMAGE.
+
+## 0.10.28 — SEMANTICS foundation / cross-LOD render bindings
+
+- Enabled the first production SEMANTICS wizard stage. The stage edits the asset-wide semantic Node hierarchy independently from every RenderLod and checkpoints it with the existing linear/durable checkpoint contract.
+- Added a dedicated top LOD button grid (three columns): the active LOD is rendered pressed, inactive LODs are ordinary buttons, and selecting an unloaded LOD is an explicit load/view action rather than a passive-tab side effect.
+- Added semantic tree authoring (root/child creation, reparenting, base transform/pivot editing and guarded deletion) plus current-LOD RenderNode -> semantic Node binding.
+- Added `APPLY TO ALL LODS` for render bindings. Cross-LOD application is transactional and matches only the exact stable RenderNode id; it never guesses from RN/G indices, geometry indices or similar names. Coarse/welded proxy nodes with different ids remain explicit manual bindings.
+- Render binding changes use a targeted `semantic_binding_patch` control-plane update: no triangle scan, geometry payload or complete scene rebuild is required.
+- SEMANTICS checkpoint validation is intentionally linear-time in nodes/render nodes: semantic ids/hierarchy must be valid, and every enabled geometry-bearing RenderNode in every LOD must have a semantic binding. Geometry-less render grouping nodes may remain unbound.
+
+## 0.10.27 — runtime screen-space LOD error contract
+
+- Completed the existing 2-pixel LOD idea as a scale-independent runtime contract. Every authored RenderLod may carry `relativeGeometricError = omittedFeature / modelCharacteristic`; LOD0 is zero and legacy/manual LODs with unknown error remain conservative instead of inventing a switch distance.
+- Added the optional v4 `LERR` manifest chunk without changing the format version or the existing `LODS`/`.elmesh` layouts. Older v4 readers skip the unknown chunk; old assets remain readable and simply have unknown runtime SSE for LOD1+.
+- Generated LODs now persist their relative error. The editor reports the projected object characteristic size at which that error becomes 2 px and allows metadata-only authoring/clearing of SSE for manual LODs. Raw Blender/source-unit distances are no longer presented as runtime authority.
+- Added shared `ModelAssetLodSelection.h`: runtime computes `errorPx = relativeGeometricError * projectedCharacteristicPixels` from the final world-scaled object projection and chooses the coarsest safe LOD with 1.8 px coarsen / 2.2 px refine hysteresis around the 2 px target. Unknown SSE is a hard conservative boundary.
+- The legacy OBJ/ObjectAssembly `lodSwitchDistance` path is intentionally untouched until EliteGame consumes compiled `.elmodel` render LODs; the new selector is the runtime authority for that migration rather than a second distance heuristic.
+- Clarified material/render direction for the planned anime renderer: Blender owns face grouping/window/emissive layout; the editor should validate/map stable visual roles and palette policy rather than become a polygon-painting tool. Ordinary emission is high-contrast without mandatory glow/bloom; global softening/blur is renderer policy and haze/glow remains an explicit rare environmental/VFX effect.
+
+## 0.10.26 — implicit DEFAULT material / truthful SURFACES diagnostics
+
+- `Triangle::materialIndex == NoIndex` is now a valid implicit DEFAULT visual surface. SURFACES no longer blocks a checkpoint merely because an OBJ/LOD has no explicit materials, and the editor no longer paints those triangles diagnostic red. Invalid non-`NoIndex` material references remain hard errors.
+- SURFACES diagnostics now separate unresolved surface intent, surface-metadata mismatches and invalid explicit material references. Preparation/topology diagnostics from the earlier LODS audit are no longer mislabeled as "surface intent decisions", and selected geometry shows the concrete blocker.
+- Explicit surface intent also avoids topology audit during SURFACES checkpoint validation; only AUTO needs topology evidence.
+- Documented the renderer-facing material direction: DEFAULT for ordinary hull, sparse explicit visual roles for colour/emission, semantic light sockets for real point/spot lights, and VFX for exhaust/explosions.
+- Documented the LOD runtime direction: generator `2 px` distances are raw-scale diagnostics only; authoritative switching must be screen-space/geometric-error based against actual world-scaled bounds. Asset format v4 is unchanged.
+
 ## 0.10.25 — metadata-only surface edits / checkpoint-save independence
 
 - Decoupled explicit wizard checkpoint SAVE from stage validation. `COMPLETE STAGE + CHECKPOINT` now writes the current full v4 snapshot and stage-local editor state first, advances `checkpointSequence`, and makes that point the resume head even when the current stage check fails. A passing check marks the stage COMPLETE and unlocks the next stage; a failing check records `NEEDS FIX` and keeps progression locked.

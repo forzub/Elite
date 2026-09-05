@@ -1,7 +1,7 @@
 # Elite Model Asset Editor — рабочая инструкция / архитектурный контекст
 
-**Актуально:** 2026-08-31 · executable-owned UI package isolation в 0.10.23
-**Редактор:** `Elite Model Asset Editor 0.10.23`
+**Актуально:** 2026-09-02 · runtime screen-space LOD error contract в 0.10.27
+**Редактор:** `Elite Model Asset Editor 0.10.27`
 **Asset format:** v4
 **Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`, `SURFACES`. SOURCE/LODS владеют canonical mesh и render-LOD documents, GEOMETRY — LOD-local geometry/instances/replacements, SURFACES — surface intent и material contract. Следующий незакрытый stage — `SEMANTICS`.
 
@@ -26,7 +26,7 @@ The stage exposes, in order: the full main/additional geometry browser with sing
 
 The Model Asset Editor runtime root is the same stable artifact root that owns its executable/workspaces: `build/tools/model_asset_editor`. Its filesystem fallback contains only the editor document and required Three.js modules. The editor build does not depend on the game `copy_assets` tree. Legacy `elite_ui.pak` files are migration debris and are removed by the new pack build commands. A stale game pack therefore cannot shadow a newer editor HTML again.
 
-Wizard stage entry is also a single transaction. Manual tab clicks and automatic checkpoint progression both use `setWizardStage`; leaving an LOD preview clears its transient state without rebuilding first, and GEOMETRY does not rebuild the whole station merely because its tab was selected. A scene rebuild occurs only when the viewport representation actually changes (for example generated-preview → authored geometry, SURFACES material preview on/off, or a viewport-mode change).
+Wizard stage entry is also a single transaction. Manual tab clicks and automatic initial-wizard stage progression both use `setWizardStage`; leaving an LOD preview clears its transient state without rebuilding first, and GEOMETRY does not rebuild the whole station merely because its tab was selected. A scene rebuild occurs only when the viewport representation actually changes (for example generated-preview → authored geometry, SURFACES material preview on/off, or a viewport-mode change).
 
 ## SURFACES workspace contract (0.10.22)
 
@@ -36,11 +36,29 @@ The author then chooses a RenderLod and geometry and resolves one of four produc
 
 A default-on `APPLY TO ... ALL LODS` option propagates the chosen intent to the same stable visual family wherever it exists. Matching uses stable base-visual identity for ordinary geometry and stable variant identity for replacement geometry; transient `G#` indices and coincidental per-LOD geometry indices are never cross-LOD identity. The batch publishes one targeted metadata patch and does **not** run topology analysis. `ANALYZE SURFACES` remains the explicit expensive audit. This is useful for station modules whose physical surface class is identical across LODs while still allowing the checkbox to be disabled for deliberately different ship/damage representations.
 
-Material assignment stays per triangle and materials stay in the shared asset material table. Missing/invalid material indices remain an independent SURFACES blocker after surface intent is resolved. The conservative repair still assigns a chosen existing material only to currently unassigned triangles. Material editing covers stable id, base RGBA, emissive color/strength, metallic, roughness and base/emissive texture references. Texture files are references only; import/bake/UV painting is outside this stage.
+Material assignment stays per triangle and explicit materials stay in the shared asset material table, but `Triangle::materialIndex == NoIndex` is now the **valid implicit DEFAULT visual surface**, not a SURFACES error. This matches the planned renderer: most hull triangles need no individual physical/PBR material at all, while sparse explicit material assignments mark special visual roles such as emissive windows, navigation lights or deliberately coloured regions. Only a non-`NoIndex` reference outside the material table is invalid. The existing assign command may replace implicit DEFAULT on a geometry with a chosen explicit material, but the editor never mass-creates a dummy material merely to satisfy validation. Material editing still retains base RGBA/emissive/PBR-compatible fields for binary compatibility and future styles; they are optional appearance data, not a requirement that every triangle be PBR-authored.
 
 SURFACES never changes topology, transforms, instance sharing or replacement compatibility. Surface/material edits invalidate SURFACES and later checkpoints only; completed LODS and GEOMETRY remain valid.
 
 Explicit surface-intent changes are metadata-only operations. `ClosedVolume / ThinOneSided / ThinTwoSided / BreachedVolume` must not scan triangles, run PREPARE/preflight, rebuild mesh buffers, resend geometry payloads or rebuild the complete Three.js scene. The backend publishes only the affected geometry metadata and the browser updates sidedness on the resident mesh. `AUTO` may inspect the selected geometry because automatic classification itself requires topology evidence.
+
+## Render-material intent / authoring split (0.10.26–0.10.27)
+
+The production material contract is **semantic/sparse**, not a commitment to a realistic PBR renderer. `NoIndex` means ordinary DEFAULT surface and is sufficient for the bulk of a ship/station in Elite-classic, monochrome/dissolve and anime render styles. Explicit material slots exist only where the renderer needs a visual distinction. Blender/OBJ is the preferred place to partition faces into material groups because face selection, window layout, emissive panels and colour-region layout are authoring tasks; the editor preserves/imports those groups and owns stable runtime ids/properties.
+
+For the anime renderer, source RGB is not the long-term authority. The intended production gate is a small approved palette / stable visual-role mapping: Blender authors which faces belong together, then the editor validates that imported non-emissive colours map to allowed palette roles and may offer an explicit author-approved snap/remap operation. It must not silently recolour geometry during import/checkpoint. Emissive surfaces use a separate emissive role/palette. A facade with hundreds or thousands of lit windows should normally be authored in Blender as emissive faces/material groups or an emissive mask/atlas; it must **not** create one real light per window. Point/spot illumination is reserved for semantic light sockets such as a searchlight or a small number of gameplay-relevant lamps. Beacons/sirens combine emissive visual geometry with state/animation/VFX; engine exhaust and explosions remain VFX. Ordinary emissive surfaces do **not** imply bloom/glow: high-contrast colour/emission is the default cheap presentation. Global image softening/blur is a renderer/post-process concern used to move the picture away from a raw 3D-editor look. Haze/glow is reserved for explicit rare environmental/VFX states (for example an anomalous murky field around lost generation ships), not encoded as a normal material requirement.
+
+## Runtime screen-space LOD contract (0.10.27)
+
+The existing generator's `2 px` visibility idea is now an authored/runtime contract rather than a source-unit distance heuristic. For every generated `RenderLod N>0` the editor stores:
+
+`relativeGeometricError = omittedFeatureCharacteristic / completePlacedLod0Characteristic`
+
+The ratio is dimensionless, so a station that is 2.3 Blender units but several kilometres in the game carries exactly the same authored LOD metadata. `LOD0` has error `0`. A manual/legacy LOD with unknown error uses a negative sentinel and is never automatically selected past that boundary until an error is authored. Generated errors must be non-decreasing with coarser LODs.
+
+At runtime the renderer measures the **final world-scaled object's projected characteristic size in pixels** after gameplay scale, camera projection/FOV and viewport size are known. It then evaluates `projectedErrorPx = relativeGeometricError * projectedCharacteristicPixels`. The shared selector chooses the coarsest LOD whose error is safely below the 2-pixel target and uses hysteresis (`1.8 px` to coarsen, `2.2 px` to refine) to prevent LOD chatter. A perspective size/distance helper exists only as a convenience; if the renderer can project the final world-space bounds directly, that projected size is preferred.
+
+The value is stored in a new optional v4 manifest chunk `LERR`. The asset format version stays **v4**, existing `LODS` and `.elmesh` layouts are unchanged, and older readers skip the unknown chunk. The legacy game `ObjectAssembly::lodSwitchDistance` path remains compatibility-only until EliteGame switches from OBJ assemblies to compiled `.elmodel` render LODs; it must not become a competing authority for new v4 assets.
 
 
 ## 0A.1 Render contract
@@ -148,68 +166,68 @@ Binary decoder оставляет bulk arrays typed (`Float32Array` / `Uint32Arr
 
 `.elmodel/.elmesh v4` на диске не меняется. `.elmesh` при чтении теперь забирается одним большим блоком в память и разбирается memory cursor-ом через тот же бинарный layout вместо миллионов мелких `istream::read()`.
 
-### 0.1.2 Working-set load / resume
+### 0.1.2 Persistent WORKING ASSET / resume (0.10.32)
 
-Обычное `OPEN` продолжает editor-workflow с **последней явно сохранённой контрольной точки**. Если checkpoint ещё ни разу не создавался, initial working copy берётся из production package; source import выполняется только когда нет ни checkpoint, ни production либо по явному `REIMPORT SOURCE`. Это простой authoring resume-контракт, а не autosave: только `COMPLETE STAGE + CHECKPOINT` двигает сохранённую точку работы.
+Обычное `OPEN` продолжает работу с **persistent WORKING ASSET**, а не с checkpoint history. Для каждого asset редактор держит отдельный mutable package:
 
-`.elmodel/.elmesh` читаются как coherent working set; отдельные `LOAD/RELOAD/UNLOAD` остаются сервисными LOD-командами. Внутренние `ensureLodLoaded()/ensureAllLodsLoaded()` не публикуют mesh сами по себе: disk residency и viewport publication остаются раздельными transport-операциями.
+```text
+build/tools/model_asset_editor/workspaces/<asset>/working/
+    <asset>.elmodel
+    <asset>.lod*.elmesh
+    editor_state.json
+```
 
-## 0.2 Wizard checkpoints — линейные save points
+Порядок выбора head детерминированный:
 
-Checkpoint — это **явное сохранение editor-workflow**. Для каждой стадии существует максимум один snapshot. Каждый новый checkpoint получает монотонный `checkpointSequence`, который увеличивается после **успешной записи snapshot** внутри `COMPLETE STAGE + CHECKPOINT`, независимо от результата stage validation; переключение вкладки, `REIMPORT`, `RELOAD`, `RESTORE`, обычные edits и перезапись `wizard_state.json` sequence не меняют. При OPEN resume-head выбирается по максимальному `checkpointSequence`, поэтому filesystem `mtime` больше не является частью нормального контракта сохранения. Для старых checkpoints без sequence действует только миграционный fallback: сначала время `checkpoint-*/editor_state.json` (этот файл создаётся именно checkpoint SAVE), а для совсем старых точек без editor-state — время package. После первого нового SAVE sequenced checkpoint всегда имеет приоритет. `wizard_state.json` не определяет head: временная invalidation текущей RAM-ветки не может сдвинуть сохранённую точку.
+```text
+OPEN / restart
+    → load WORKING ASSET, if it exists
+    → otherwise load production and adopt it as the initial WORKING ASSET
+    → otherwise import SOURCE and create the initial WORKING ASSET
+```
+
+`working/editor_state.json` хранит editor-only authoring state, SOURCE fingerprints, maintenance debt и текущую validity-карту стадий и привязан к конкретным working package bytes через package stamp. Если sidecar отсутствует/не совпадает, geometry можно открыть, но непроверяемое PREPARE/topology/source-baseline evidence сбрасывается в безопасное состояние и новый working sidecar фиксирует именно это состояние. Checkpoints при OPEN не просматриваются для выбора head.
+
+Обычный `SAVE` и debounced autosave сохраняют **весь coherent current state** в WORKING package. Они не записывают production, не создают checkpoint, не инвалидируют downstream и не меняют stage progression. Старые `save_manifest` / `save_lod` backend-команды оставлены только как compatibility aliases на coherent working save: частично записанный package больше не считается допустимой editor resume point.
+
+`.elmodel/.elmesh` по-прежнему могут быть lazy-resident в backend, а viewport payload запрашивается отдельно. Но persistence boundary одна: перед SAVE backend гарантирует необходимую residency и записывает согласованный working snapshot.
+
+## 0.2 Checkpoints — только ручные rollback snapshots
+
+Checkpoint больше **не является SAVE, progression gate или resume head**. Это необязательный ручной снимок для возврата к известному состоянию. Кнопка `CREATE ROLLBACK SNAPSHOT` существует отдельно от `VALIDATE / COMPLETE STAGE`.
 
 Главные правила:
 
 ```text
-OPEN / restart
-    → load latest saved checkpoint
-    → if no checkpoint exists: load production
+ordinary edit / REIMPORT / local maintenance
+    → mutate current WORKING ASSET
+    → SAVE/autosave persists it
+    → checkpoints and production are untouched
 
-REIMPORT / RELOAD / ordinary edit
-    → mutate current RAM working copy
-    → checkpoints on disk are untouched
+VALIDATE / COMPLETE STAGE S
+    → validate current WORKING state/debt
+    → store S = COMPLETE or NEEDS FIX in WORKING editor_state
+    → do not create/prune/advance checkpoints
 
-exit without COMPLETE STAGE + CHECKPOINT
-    → current RAM changes are discarded
-    → next OPEN loads the same latest saved checkpoint again
+CREATE ROLLBACK SNAPSHOT at S
+    → copy exact current WORKING package + editor state
+    → do not run stage validation
+    → do not change stage validity/progression
+    → do not delete or rewrite any other checkpoint
 
-COMPLETE STAGE + CHECKPOINT at stage S
-    → always write/replace checkpoint-S first
-    → checkpointSequence++ and S becomes the new saved resume point
-    → delete every checkpoint after S
-    → if stage validation PASS: S = COMPLETE, unlock next stage
-    → if stage validation FAIL: S = NEEDS FIX, keep next stage locked
+RESTORE checkpoint S
+    → replace current mutable state with that snapshot
+    → immediately SAVE it as the new persistent WORKING head
+    → production and every other checkpoint remain unchanged
 
-RESTORE checkpoint
-    → replace only current RAM working copy
-    → do not delete any checkpoint
-    → deleting later checkpoints happens only if the author subsequently SAVES this restored/edited stage
+BUILD
+    → rerun required production validation
+    → write the complete WORKING state to production .elmodel/.elmesh
+    → refresh production_state.json
+    → do not create/prune/advance checkpoints
 ```
 
-Пример:
-
-```text
-checkpoint-SOURCE
-checkpoint-LODS
-checkpoint-GEOMETRY   ← latest saved point
-
-REIMPORT SOURCE
-    checkpoints unchanged
-    current RAM branch is stale/unsaved
-
-close without save
-OPEN
-    → checkpoint-GEOMETRY again
-
-REIMPORT SOURCE
-COMPLETE SOURCE + CHECKPOINT
-    → checkpoint-SOURCE replaced
-    → checkpoint-LODS deleted
-    → checkpoint-GEOMETRY deleted
-    → SOURCE is now the latest saved point
-```
-
-Каждый schema-8 checkpoint самодостаточен:
+Для каждой стадии по-прежнему может существовать именованный `checkpoint-<stage>/` snapshot, а `checkpointSequence` сохраняется как монотонная metadata для хронологии/совместимости старых файлов. Sequence изменяется только при успешном **ручном** создании rollback snapshot и никогда не участвует в выборе editor resume head.
 
 ```text
 checkpoint-<STAGE>/
@@ -218,9 +236,11 @@ checkpoint-<STAGE>/
     editor_state.json
 ```
 
-`editor_state.json` хранит stage-local `EditorAuthoringState` и validity-карту всех стадий: PREPARE fingerprints/counters, topology/surface authoring metadata, stable base/variant identities, replacement compatibility и identity ordinals. RAW diagnostic snapshots остаются session-only. Legacy checkpoint без `editor_state.json` восстанавливает geometry, но PREPARE/topology evidence считается требующим проверки.
+Checkpoint snapshot самодостаточен: package + stage-local `EditorAuthoringState` + validity map. Legacy checkpoints без современного `editor_state.json` остаются loadable, но PREPARE/topology evidence после restore считается требующим проверки.
 
-Production package остаётся runtime/output-снимком и обновляется `SAVE ALL`; он **не является editor resume head**, пока существуют stage checkpoints. `production_state.json` по-прежнему связывает editor-only evidence с конкретными production bytes и используется как initial state только когда checkpoint history ещё отсутствует.
+Stage status теперь принадлежит текущему WORKING ASSET. При **первом build** исходный wizard остаётся упорядоченным `SOURCE → LODS → GEOMETRY → SURFACES → SEMANTICS → PHYSICS → DAMAGE → VALIDATE → BUILD`. После появления production package редактор работает как maintenance editor: можно открыть нужную стадию напрямую, а блокеры определяются current validity и локальным maintenance debt изменённых компонентов, не lineage контрольных точек.
+
+Production package — runtime/output snapshot **последнего BUILD**, а не editor save file. `production_state.json` связывает editor-only evidence только с этими production bytes. `wizard_state.json` остаётся вспомогательным индексом session/checkpoint metadata и не является authority ни для working head, ни для stage validity.
 
 ---
 
@@ -365,20 +385,15 @@ BUILD
 
 ## Checkpoints
 
-Завершённая рабочая стадия создаёт **non-production checkpoint** под:
+Checkpoint — **ручной non-production rollback snapshot** под `build/tools/model_asset_editor/workspaces/<asset>/checkpoint-<stage>/`. Завершение стадии само checkpoint не создаёт.
 
-```text
-build/tools/model_asset_editor/workspaces/<asset>/
-```
+Checkpoint нужен только для:
 
-Checkpoint нужен для:
+- точного ручного возврата к известному working state;
+- хранения нескольких независимых точек страховки по стадиям;
+- безопасного эксперимента без изменения production package.
 
-- точного восстановления законченного этапа;
-- защиты от последующей порчи текущего workspace;
-- сохранения альтернативной более поздней точки даже после возврата к ранней стадии;
-- маркировки несовместимых с текущим workspace head snapshots как `stale` **без удаления**.
-
-Checkpoint не является production asset и не меняется от `REIMPORT`, `RESTORE` другой стадии или обычной invalidation. Заменить checkpoint стадии можно только новым явным `COMPLETE STAGE + CHECKPOINT` этой же стадии; удалить — только будущей отдельной явной housekeeping-командой/retention policy.
+`CREATE ROLLBACK SNAPSHOT` заменяет snapshot только выбранной стадии и не трогает остальные. `RESTORE` делает snapshot новым persistent WORKING head и сразу сохраняет его туда. Ни создание, ни восстановление snapshot не являются progression gate; checkpoints не выбирают resume head и автоматически не удаляются. Production меняется только через BUILD.
 
 ---
 
@@ -1424,4 +1439,4 @@ After analysis all generated levels are selected by default. APPLY never changes
 
 APPLY is transactional. All selected candidates are built and validated before any authored LOD is replaced. Generated documents carry `sourceKind=generated` and `generatedFromLod=0`, preserve stable base-visual / source-variant authoring ids, and receive canonical-generation fingerprints for the LODS technical gate.
 
-After APPLY, **ЗАВЕРШИТЬ ЭТАП + КОНТРОЛЬНАЯ ТОЧКА** persists the complete authored LOD set into the LODS checkpoint. GEOMETRY therefore receives one coherent asset containing the selected main and replacement meshes at every retained/generated LOD.
+After APPLY, ordinary WORKING ASSET autosave persists the complete authored LOD set. **VALIDATE / COMPLETE STAGE** only validates/stores the current LODS validity; GEOMETRY therefore receives the same coherent persistent working asset without requiring a checkpoint. A rollback snapshot may be created separately if the author wants one.

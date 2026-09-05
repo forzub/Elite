@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -681,6 +682,35 @@ void readLodManifestV4(Reader& r, ModelAsset& a)
     }
 }
 
+// v4-compatible optional manifest extension. Keeping screen-space LOD error in
+// its own chunk leaves the existing META/LODS layouts readable by older v4
+// binaries; unknown chunks are skipped by the generic chunk reader.
+void writeLodScreenErrorV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.renderLods.size()));
+    for (const auto& lod : a.renderLods)
+    {
+        w.pod(lod.level);
+        const float value = lod.level == 0 ? 0.0f : lod.relativeGeometricError;
+        w.pod(value);
+    }
+}
+
+void readLodScreenErrorV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0;
+    if (!r.count(count)) return;
+    for (std::uint32_t i = 0; i < count; ++i)
+    {
+        std::uint32_t level = 0;
+        float value = -1.0f;
+        r.pod(level); r.pod(value);
+        if (!r.ok) return;
+        if (level < a.renderLods.size())
+            a.renderLods[level].relativeGeometricError = level == 0 ? 0.0f : value;
+    }
+}
+
 struct ChunkSpec
 {
     std::array<char, 4> id;
@@ -688,7 +718,7 @@ struct ChunkSpec
     ChunkReader reader;
 };
 
-constexpr std::array<ChunkSpec, 10> ManifestChunksV4 {{
+constexpr std::array<ChunkSpec, 11> ManifestChunksV4 {{
     {{{'M','E','T','A'}}, writeMeta, readMeta},
     {{{'M','A','T','L'}}, writeMaterials, readMaterials},
     {{{'S','E','M','N'}}, writeSemanticNodesV4, readSemanticNodesV4},
@@ -698,7 +728,8 @@ constexpr std::array<ChunkSpec, 10> ManifestChunksV4 {{
     {{{'H','I','T','R'}}, writeHitRegionsV4, readHitRegionsV4},
     {{{'O','P','E','N'}}, writeOpeningsV4, readOpeningsV4},
     {{{'R','E','P','R'}}, writeRepairTargetsV4, readRepairTargetsV4},
-    {{{'L','O','D','S'}}, writeLodManifestV4, readLodManifestV4}
+    {{{'L','O','D','S'}}, writeLodManifestV4, readLodManifestV4},
+    {{{'L','E','R','R'}}, writeLodScreenErrorV4, readLodScreenErrorV4}
 }};
 
 constexpr std::array<ChunkSpec, 6> ManifestChunksV3 {{
@@ -884,8 +915,37 @@ bool validateSemanticAsset(const ModelAsset& asset, std::string* error)
         }
     }
 
+    float previousAuthoredError = 0.0f;
+    bool havePreviousAuthoredError = true;
     for (const auto& lod : asset.renderLods)
     {
+        if (lod.level == 0)
+        {
+            if (std::isfinite(lod.relativeGeometricError) && lod.relativeGeometricError > 1.0e-6f)
+            {
+                setError(error, "LOD0 relative geometric error must be zero/unspecified");
+                return false;
+            }
+        }
+        else if (lod.relativeGeometricError >= 0.0f)
+        {
+            if (!std::isfinite(lod.relativeGeometricError) || lod.relativeGeometricError <= 0.0f)
+            {
+                setError(error, "LOD" + std::to_string(lod.level) + " has invalid relative geometric error");
+                return false;
+            }
+            if (havePreviousAuthoredError && lod.relativeGeometricError + 1.0e-7f < previousAuthoredError)
+            {
+                setError(error, "LOD relative geometric error must be non-decreasing");
+                return false;
+            }
+            previousAuthoredError = lod.relativeGeometricError;
+            havePreviousAuthoredError = true;
+        }
+        else
+        {
+            havePreviousAuthoredError = false;
+        }
         if (!validateRenderLod(lod, asset.nodes.size(), error)) return false;
         for (const auto& renderNode : lod.nodes)
         {
@@ -1057,8 +1117,11 @@ bool readLodPayload(
         return false;
     }
 
+    const float manifestRelativeGeometricError =
+        asset.renderLods[expectedLodIndex].relativeGeometricError;
     RenderLod loaded;
     loaded.level = lodIndex;
+    loaded.relativeGeometricError = manifestRelativeGeometricError;
     r.string(loaded.sourceKind); r.pod(loaded.generatedFromLod);
     r.vec3(loaded.minBounds); r.vec3(loaded.maxBounds);
     std::uint32_t geometryCount = 0; if (!r.count(geometryCount)) return false;

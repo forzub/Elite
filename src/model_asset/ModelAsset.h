@@ -269,6 +269,13 @@ struct RenderLod
     std::uint32_t level = 0;
     std::string sourceKind = "source"; // source / generated / manual
     std::int32_t generatedFromLod = NoIndex;
+
+    // Scale-independent runtime screen-space-error authority. For LOD0 the
+    // effective value is always 0. For LOD1+ a positive value means
+    // omittedFeature / modelCharacteristic. Negative means legacy/manual data
+    // has no authored SSE yet and must not be selected automatically.
+    float relativeGeometricError = -1.0f;
+
     glm::vec3 minBounds {0.0f};
     glm::vec3 maxBounds {0.0f};
 
@@ -381,6 +388,8 @@ struct ModelAsset
     std::string assetId;
     std::string displayName;
     std::uint16_t sourceObjectType = 0;
+    // Legacy OBJ/ObjectAssembly compatibility only. New compiled-v4 runtime LOD
+    // selection is per RenderLod via relativeGeometricError / screen-space error.
     float lodSwitchDistance = 2500.0f;
 
     SourceBasis sourceBasis;

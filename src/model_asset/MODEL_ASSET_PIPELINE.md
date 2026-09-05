@@ -4,7 +4,7 @@
 
 GEOMETRY edits one `RenderLod` at a time. The active LOD owns its `RenderNode` graph, geometry pool, instance sharing and replacement compatibility authoring; no G-index or RenderNode identity is propagated to another LOD. The editor may preview one main geometry, one standalone additional geometry, or a temporary replacement, but those are viewport-only states.
 
-Instance consolidation and radial duplication reuse LOD-local geometry definitions. Additional/replacement meshes remain independent geometry definitions and record only which stable base visual families they may replace; later DAMAGE/state authoring decides when a compatible replacement is selected. Completing GEOMETRY checkpoints the full authored RenderLod set.
+Instance consolidation and radial duplication reuse LOD-local geometry definitions. Additional/replacement meshes remain independent geometry definitions and record only which stable base visual families they may replace; later DAMAGE/state authoring decides when a compatible replacement is selected. Completing GEOMETRY validates the current authored RenderLod set and persists its validity in WORKING ASSET; rollback snapshots are separate manual actions.
 
 
 ## Purpose
@@ -41,6 +41,18 @@ No geometry id, G-index, topology, node count or instance relationship is requir
 to exist in another LOD. Instancing is local to one render document. For example,
 three station habitat sectors may share one geometry in LOD0 while LOD1 contains
 only a single welded station shell.
+
+### Complete wizard / maintenance chain (editor 0.10.32)
+
+Initial authoring keeps the ordered nine-stage contract: `SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD`. Before the first production BUILD, a stage becomes editable only when its immediate predecessor is `COMPLETE`. After a production package exists, the editor is a maintenance editor: any stage may be opened directly and readiness is computed from the current persistent WORKING ASSET plus per-component maintenance debt, never from checkpoint ancestry.
+
+`SEMANTICS` owns the shared gameplay hierarchy, pivots/joints, sockets and per-LOD render-to-semantic bindings. `PHYSICS` owns base collision geometry and resolved rigid-body mass/inertia. `DAMAGE` owns state variants plus state selectors for render nodes/collisions/sockets, hit regions, openings and repair targets. `VALIDATE` is read-only and reruns every upstream production contract plus `ModelAssetBinary::validate`. `BUILD` is the terminal production commit and the only normal writer of production `.elmodel/.elmesh`; it writes the complete validated WORKING ASSET and does not create or mutate rollback checkpoints.
+
+Collision and socket state scopes are metadata owned by DAMAGE even though their base shape/transform belongs to PHYSICS/SEMANTICS respectively. Editing only `activeStates` therefore invalidates from DAMAGE rather than rolling back the earlier owning stage.
+
+### SEMANTICS authoring boundary (editor 0.10.28)
+
+The SEMANTICS wizard authors one asset-wide `Node` hierarchy and explicit per-LOD `RenderNode::semanticNodeIndex` bindings. LOD switching in this stage is only an inspection boundary: buttons select/load one independent render document, while the semantic tree remains unchanged. The `APPLY TO ALL LODS` binding convenience matches exact stable RenderNode ids only; it never infers identity from LOD-local indices or fuzzy geometry/name similarity. Geometry-bearing enabled RenderNodes must be bound before the SEMANTICS stage validates; geometry-less render grouping nodes may stay unbound.
 
 Gameplay semantics do not disappear when a coarse LOD is active. Collision, damage,
 repair, sockets, joints and physical state remain attached to the semantic asset,
@@ -92,7 +104,7 @@ Hard rules:
 
 Source registries are allowed to reuse a human-facing token for different roles. In particular, a module and its child mesh may both be named `station_solar_panels`. The importer must qualify the child deterministically (for example `station_solar_panels.mesh`) instead of creating duplicate semantic Nodes. Legacy v2/v3 migration also normalizes old empty/duplicate IDs before copying semantic identity into v4 RenderNodes.
 
-Wizard stage validation and checkpoint persistence are independent. A stage check may fail while the current working snapshot is still saved and becomes the resume head. The v4 serializer remains the final hard safety net for structural/identity/I/O failures that would make a checkpoint physically unreadable; diagnostics must identify the offending ID and indices, e.g. `LOD0 duplicate RenderNode id 'x': node[2] and node[7]`.
+Wizard stage validation and rollback persistence are independent. A stage check updates validity/debt in the persistent WORKING ASSET; it never creates a checkpoint. A manual rollback snapshot may be created whether or not the current stage validates. The v4 serializer remains the final hard safety net for structural/identity/I/O failures; diagnostics must identify the offending ID and indices, e.g. `LOD0 duplicate RenderNode id 'x': node[2] and node[7]`.
 
 ## Canonical coordinates / source basis
 
@@ -172,20 +184,36 @@ and old instance relations *inside that LOD*. Semantic Nodes then drop the legac
 The editor loads the semantic manifest and selected render documents independently.
 Opening an ordinary v4 asset reads the manifest/descriptors only; no `.elmesh` is read
 until an explicit LOAD/RELOAD or a backend operation actually needs that LOD geometry.
-Each LOD has `LOADED`/`UNLOADED` and `CLEAN`/`DIRTY` state and can be loaded, reloaded,
-unloaded or saved without touching siblings. Backend-only residency helpers do not publish
-geometry as a side effect. `Save manifest` writes semantic state only; declared geometry/node
-counts remain available for unloaded LODs, and `Save all` writes only dirty/missing package members.
+Each LOD has `LOADED`/`UNLOADED` and `CLEAN`/`DIRTY` state and can be loaded, reloaded or
+unloaded independently. Backend-only residency helpers do not publish geometry as a side effect.
+Persistence is deliberately coherent in 0.10.32: ordinary SAVE/autosave writes the persistent
+WORKING package plus its matching editor_state. Legacy `save_manifest` / `save_lod` commands
+are compatibility aliases to that whole working save; partial package states are not resume heads.
 
 This is also the intended runtime streaming boundary: a distant ship can load its
 semantic manifest plus only a coarse render LOD without reading LOD0.
 
 `Generate LOD` is an optional offline authoring operation, not a required wizard gate or
-a structural contract. The project maximum supported render resolution is
-**2560x1440** and desktop window sizing uses the same central policy. LOD analysis
-therefore never preserves geometry solely for a target above that ceiling. It currently
-assumes a 70 degree vertical FOV and treats a feature below 2 screen pixels as a
-candidate for removal. Smaller runtime resolutions may simplify earlier.
+a structural contract. The generator uses the existing 2-pixel visibility rule to derive
+a **dimensionless** per-level runtime error instead of a Blender/source-unit camera
+distance. There is no fixed authoring FOV/resolution in this authority: current viewport
+height and FOV are evaluated only when the runtime projects the real game object.
+
+`relativeGeometricError = omittedFeatureCharacteristic / completePlacedLod0Characteristic`
+
+Generated LODs persist that value in the optional v4 `LERR` manifest chunk. LOD0 is
+zero; a negative value on LOD1+ means legacy/manual SSE is unknown and is a conservative
+runtime boundary. The existing `LODS` and `.elmesh` layouts are unchanged and old v4
+readers safely skip `LERR`.
+
+At runtime the final gameplay/world-scaled object bounds are projected through the current
+camera/FOV/viewport. The renderer evaluates
+`projectedErrorPx = relativeGeometricError * projectedCharacteristicPixels` and selects
+the coarsest safe LOD. The shared policy uses 1.8 px to coarsen and 2.2 px to refine around
+the 2 px target so an object does not flicker between levels at the boundary. Source mesh
+units never enter this runtime decision. A distance can be derived from real world size as
+a diagnostic, but is not authored authority. The legacy OBJ `lodSwitchDistance` remains
+compatibility-only until EliteGame consumes compiled `.elmodel` LODs.
 
 The first generator pass is conservative and read-only. It welds coincident positions
 for analysis only (so OBJ UV/normal seams do not create false islands), finds connected
@@ -229,19 +257,21 @@ scene graph around those cached GPU buffers, but it must not recreate or retrans
 unchanged mesh payloads. A newly broken instance may clone an already-resident geometry
 locally; an edge-mask edit transmits only the changed mask.
 
-### Wizard checkpoints are linear editor save points
+### Persistent WORKING ASSET and rollback-only checkpoints (editor 0.10.32)
 
-The editor resumes from the stage checkpoint with the highest explicit monotonic `checkpointSequence`. That sequence is written after every successfully persisted `COMPLETE STAGE + CHECKPOINT`, regardless of whether stage validation passes; REIMPORT, RELOAD, RESTORE, tab navigation, ordinary edits and session-index rewrites cannot move the saved head. If no checkpoint exists yet, production `.elmodel/.elmesh` is used as the initial working copy. Legacy checkpoints without a sequence use stage-local `editor_state.json` write time only as a migration fallback; once a sequenced checkpoint exists, filesystem timestamps do not participate in resume selection.
+The editor resume head is `workspaces/<asset>/working/<asset>.elmodel` plus its `.elmesh` payloads and matching `working/editor_state.json`. OPEN always prefers this package. If it does not exist, production is adopted as the initial working state; if production does not exist either, SOURCE import creates it. Checkpoint timestamps and `checkpointSequence` never select the resume head.
 
-Every checkpoint stores the complete v4 ModelAsset package plus stage-local `editor_state.json`. The latter uses the shared `EditorAuthoringState` serializer and carries the full stage-validity map, so PREPARE evidence, stable authoring identities, replacement compatibility and topology/surface intent are restored with the same mesh bytes. Future SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD editor-only state must extend that serializer.
+Ordinary SAVE and autosave persist the coherent WORKING package. The editor-only sidecar carries PREPARE evidence, stable authoring identities, SOURCE fingerprints, replacement compatibility, per-component maintenance debt and the current stage-validity map, bound to the exact package bytes by a package stamp. SAVE does not invalidate anything, write production or mutate checkpoint history.
 
-Checkpoint history is deliberately linear. `RESTORE` only replaces the current RAM working copy and never deletes snapshots. `COMPLETE STAGE + CHECKPOINT` is the explicit editor SAVE operation: the current full snapshot is written first, receives the next `checkpointSequence`, and becomes the new resume head even if stage validation fails. A PASS marks the stage COMPLETE and unlocks the next stage; a FAIL records NEEDS FIX and leaves progression locked. After the new stage snapshot and editor-state snapshot have been written successfully, every later-stage checkpoint directory is removed.
+A checkpoint is now only an explicit manual rollback snapshot. `CREATE ROLLBACK SNAPSHOT` stores the exact current package plus editor state without validating the stage, changing stage status, unlocking anything or pruning another snapshot. `checkpointSequence` remains monotonic metadata for snapshot chronology/legacy compatibility and advances only after a manual snapshot is successfully persisted.
 
-Consequently, source reimport/reload followed by exit without a new checkpoint is harmless: the temporary RAM branch is discarded and the next OPEN resumes the same last saved checkpoint. Saving an earlier stage intentionally forks the workflow there and removes all later saved points.
+RESTORE loads that literal snapshot and immediately persists it as the new WORKING head so restart returns to the restored state. Other snapshots and production are untouched. Legacy snapshots remain readable; missing legacy editor-only evidence is conservatively marked for review.
 
-Production remains the runtime/output package written by SAVE ALL. `production_state.json` binds editor-only evidence to those production bytes for the no-checkpoint/initial-load case; it does not override an existing editor checkpoint history. `wizard_state.json` is only a session/index aid and is never authoritative for the saved resume head.
+BUILD is the sole normal production-write boundary. It writes the complete current WORKING asset regardless of working dirty flags and refreshes `production_state.json`. Rollback checkpoints are untouched. `wizard_state.json` is only a session/checkpoint index; current stage validity is owned by the WORKING sidecar.
 
-Existing backend mutations reserved for future wizard pages already use the same invalidation order: semantic hierarchy/joint/socket edits start at SEMANTICS, physics/collision edits at PHYSICS, and state/damage/opening/repair edits at DAMAGE. Future UI enablement must reuse those boundaries.
+For first-time authoring, stage unlock still follows the ordered wizard. For an asset with an existing production package, maintenance-mode stage access is direct and blockers come from current validity and local component debt rather than saved checkpoint lineage.
+
+Wizard mutations use the same invalidation order: semantic hierarchy/joint/socket base edits start at SEMANTICS, base physics/collision edits at PHYSICS, and state selectors/damage/opening/repair edits at DAMAGE.
 
 ## Native OBJ compilation
 
@@ -259,20 +289,21 @@ Technical and Elite edge masks remain separately authorable.
 
 ## Materials and lights
 
-Materials use stable semantic ids rather than transient OBJ material numbers.
-The asset stores base/emissive semantics, roughness/metallicity, two-sided state
-and texture names. Technical/Anime/Elite renderers will interpret the same
-material differently. Triangle `materialIndex` values reference this shared asset
-material table; one RenderGeometryDefinition may therefore contain several
-material slots without being split into separate geometry definitions.
+Materials use stable semantic ids rather than transient OBJ material numbers, but they
+are **sparse visual-role overrides**, not a requirement that every triangle carry a PBR
+material. `Triangle::materialIndex == NoIndex` is the valid implicit `DEFAULT` surface.
+Technical/Anime/Elite renderers may interpret DEFAULT and the same explicit material
+roles differently. One RenderGeometryDefinition may therefore contain mostly DEFAULT
+triangles plus a few explicit slots without being split into separate geometry definitions.
 
-SURFACES authoring edits material definitions and audits those existing per-triangle
-assignments. A conservative repair may assign a material only to triangles whose
-index is `NoIndex`; arbitrary per-face painting/repartitioning and texture import or
-baking are separate future tools. Texture fields remain authored references.
+Blender/OBJ is the preferred place to partition faces into explicit material groups because
+that is a visual face-selection task; the editor imports those groups and owns the stable
+runtime ids/properties. A conservative editor command may replace implicit DEFAULT on
+selected geometry with one existing explicit material, but validation never mass-creates a
+dummy material. Base/emissive/PBR-compatible fields remain optional appearance data for
+future styles; texture import/baking and arbitrary face painting are separate tools.
 
-Visible glowing geometry is an emissive material. A real light source is a
-`Socket` with `LightProperties` (`Point` or `Spot`). One fixture may use both.
+A visibly self-lit surface is an emissive material, but emission does **not** imply bloom/glow. The default renderer may show it only as a high-contrast colour/value. A real light source is a `Socket` with `LightProperties` (`Point` or `Spot`); use those sparsely for gameplay-relevant lamps/searchlights rather than dense window fields. Global cartoon softening/blur belongs to renderer/post-process policy, while haze/glow is reserved for explicit environmental/VFX states. Engine exhaust and explosions are VFX/gameplay effects, not static surface materials.
 
 ## Thin surfaces
 

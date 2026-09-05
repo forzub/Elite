@@ -162,13 +162,15 @@
     },
     {
       "id": "wizard_checkpoints",
-      "description": "Wizard checkpoints form the linear editor save history. OPEN resumes the most recently written stage checkpoint; reimport/reload/edit never move it; saving a stage replaces that point and deletes all later-stage checkpoints.",
+      "description": "The persistent WORKING ASSET is the editor resume head. Ordinary SAVE/autosave persists it, BUILD alone writes production, and checkpoints are independent manual rollback snapshots that never gate stages or prune one another.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.h",
           "tokens": [
             "WizardStageState",
             "EditorAuthoringState",
+            "workingAssetPath",
+            "workingEditorStatePath",
             "wizardCheckpointPath",
             "wizardCheckpointEditorStatePath",
             "productionEditorStatePath",
@@ -178,8 +180,12 @@
         "backend": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
           "tokens": [
-            "complete_wizard_stage",
+            "saveWorkingAsset",
+            "buildProductionAsset",
+            "create_wizard_checkpoint",
             "restore_wizard_checkpoint",
+            "writeWorkingEditorState",
+            "loadWorkingEditorState",
             "writeCheckpointEditorState",
             "loadCheckpointEditorState",
             "writeProductionEditorState",
@@ -188,24 +194,24 @@
             "applyStageValidity",
             "invalidateWizardFrom",
             "model_asset_editor_session_index",
-            "latestSavedWizardCheckpoint",
-            "checkpointSequenceForStage",
-            "pruneWizardCheckpointsAfter"
+            "checkpointSequenceForStage"
           ]
         },
         "ui": {
           "path": "src/assets/webui/model_asset_editor.html",
           "tokens": [
             "wizardCompleteBtn",
+            "wizardCheckpointBtn",
             "wizardRestoreBtn",
-            "restoreOnly",
+            "create_wizard_checkpoint",
             "wizardBar"
           ]
         },
         "test": {
           "path": "tests/architecture_contracts/check_model_asset_editor.py",
           "tokens": [
-            "wizard_checkpoints"
+            "persistent working-state resume contract",
+            "rollback-only checkpoint UI contract"
           ]
         }
       }
@@ -344,9 +350,9 @@
             "model_editor.preflight.group_extra",
             "model_editor.preflight.canonical_note",
             "meshViewportMode",
-            "ИСХОДНИК",
-            "БЕЗ ОТСЕЧЕНИЯ",
-            "РАБОЧИЙ"
+            "\u0418\u0421\u0425\u041e\u0414\u041d\u0418\u041a",
+            "\u0411\u0415\u0417 \u041e\u0422\u0421\u0415\u0427\u0415\u041d\u0418\u042f",
+            "\u0420\u0410\u0411\u041e\u0427\u0418\u0419"
           ]
         },
         "test": {

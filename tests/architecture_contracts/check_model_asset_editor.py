@@ -31,6 +31,7 @@ require(
     "struct RenderLod",
     "declaredGeometryCount",
     "declaredNodeCount",
+    "relativeGeometricError",
     "struct StateVariant",
     "defaultStateId",
     "transformOverride",
@@ -79,6 +80,9 @@ require(
     "{'O','P','E','N'}",
     "{'R','E','P','R'}",
     "{'L','O','D','S'}",
+    "{'L','E','R','R'}",
+    "writeLodScreenErrorV4",
+    "readLodScreenErrorV4",
     "writeLodPayload",
     "validateRenderLod",
     "validateSemanticAsset",
@@ -161,8 +165,9 @@ require(
     "consolidate_render_duplicates",
     "wizardCheckpointPath",
     "wizardCheckpointEditorStatePath",
-    "latestSavedWizardCheckpoint",
-    "pruneWizardCheckpointsAfter",
+    "workingAssetPath",
+    "workingEditorStatePath",
+    "createWizardCheckpoint",
     "restoreWizardValidityAt",
     "sendAssetMetadata",
     "serializeAssetMetadata",
@@ -276,9 +281,13 @@ require(
     "Source OBJ/assembly files are read-only",
 )
 
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.25"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.32"')
 require(
     "tools/model_asset_editor/CHANGELOG.md",
+    "0.10.27",
+    "runtime screen-space LOD error contract",
+    "0.10.26",
+    "implicit DEFAULT material / truthful SURFACES diagnostics",
     "0.10.25",
     "metadata-only surface edits / checkpoint-save independence",
     "0.10.24",
@@ -504,63 +513,64 @@ if "canonicalizeLoadedWorkingSet(" in select_body:
 if "refreshSourceVariants(true, false)" not in select_body or "sendAsset();" not in select_body:
     raise AssertionError("selectAsset no longer preserves explicit source-import publication")
 for token in (
-    "latestSavedWizardCheckpoint",
-    "resumeSavedPoint",
-    "ModelAssetBinary::load(resumeCheckpoint.string(), loaded, &error)",
-    '"wizard_checkpoint_restored"',
+    "workingAssetPath()",
+    "ModelAssetBinary::load(working.string(), loaded, &error)",
+    "loadWorkingEditorState",
+    "saveWorkingAsset(true)",
 ):
     if token not in select_body:
-        raise AssertionError(f"last-saved checkpoint resume contract missing {token!r}")
+        raise AssertionError(f"persistent working-state resume contract missing {token!r}")
+for forbidden in ("latestSavedWizardCheckpoint", "resumeSavedPoint", "wizard_checkpoint_restored"):
+    if forbidden in select_body:
+        raise AssertionError(f"OPEN still treats checkpoint history as resume authority: {forbidden!r}")
 if 'ModelAssetBinary::load(readPath.string(), loaded, &error)' not in select_body:
-    raise AssertionError("production fallback disappeared when no editor checkpoint exists")
+    raise AssertionError("production fallback disappeared when no persistent working asset exists")
 
 restore_start = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(")
 restore_end = session.index("bool ModelAssetEditorSession::scanRenderDuplicates(", restore_start)
 restore_body = session[restore_start:restore_end]
 if "canonicalizeLoadedWorkingSet(" in restore_body:
     raise AssertionError("checkpoint restore must not canonicalize implicitly")
-if "sendAsset();" not in restore_body:
-    raise AssertionError("checkpoint restore must publish exactly the restored payload")
-
 for token in (
-    'loadCheckpointEditorState(',
-    'applyEditorAuthoringState(std::move(restoredEditorState))',
-    'restoreWizardValidityAt(stage)',
+    "sendAsset();",
+    "loadCheckpointEditorState(",
+    "applyEditorAuthoringState(std::move(restoredEditorState))",
+    "saveWorkingAsset(true)",
 ):
     if token not in restore_body:
-        raise AssertionError(f"checkpoint restore is not a self-contained workspace snapshot: {token!r}")
+        raise AssertionError(f"rollback restore is not a persistent working-state replacement: {token!r}")
 
 complete_start = session.index("bool ModelAssetEditorSession::completeWizardStage(")
-complete_end = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(", complete_start)
-complete_body = session[complete_start:complete_end]
+checkpoint_create_start = session.index("bool ModelAssetEditorSession::createWizardCheckpoint(", complete_start)
+complete_body = session[complete_start:checkpoint_create_start]
 for token in (
-    'checkpointValidity[stage] = validationPassed ? "complete" : "needs_fix"',
-    'checkpointValidity[wizardStageOrder()[i]] = "not_started"',
-    'const std::uint64_t checkpointSequence = m_nextCheckpointSequence',
-    'writeCheckpointEditorState(stage, checkpointValidity, checkpointSequence',
-    'm_nextCheckpointSequence = checkpointSequence + 1',
-    'pruneWizardCheckpointsAfter(stage, &error)',
-):
-    if token not in complete_body:
-        raise AssertionError(f"linear checkpoint SAVE contract missing {token!r}")
-
-# 0.10.25: checkpoint persistence is independent of stage validation. The full
-# package is written before validateWizardStage(), failed validation becomes
-# NEEDS FIX, and only PASS may publish automatic progression.
-save_pos = complete_body.index("ModelAssetBinary::save(checkpoint.string(), m_asset, &error)")
-validate_pos = complete_body.index("validateWizardStage(stage, &validationError)")
-if save_pos >= validate_pos:
-    raise AssertionError("stage validation still blocks checkpoint package persistence")
-for token in (
-    'value.status = validationPassed ? "complete" : "needs_fix"',
+    "validateWizardStage(stage, &validationError)",
+    'value.status = completionPassed ? "complete" : "needs_fix"',
+    "saveWorkingAsset(true)",
+    'stage == "build"',
+    "buildProductionAsset()",
     '"type", "wizard_state_patch"',
-    '"type", "wizard_checkpoint_saved"',
-    'if (validationPassed)',
 ):
     if token not in complete_body:
-        raise AssertionError(f"validation-independent checkpoint contract missing {token!r}")
-if 'sendAssetMetadata()' in complete_body or 'sendAsset();' in complete_body:
-    raise AssertionError("checkpoint SAVE still republishes/rebuilds whole asset geometry")
+        raise AssertionError(f"working stage-completion contract missing {token!r}")
+for forbidden in ("wizardCheckpointPath", "writeCheckpointEditorState", "pruneWizardCheckpointsAfter"):
+    if forbidden in complete_body:
+        raise AssertionError(f"stage completion still mutates rollback checkpoint history: {forbidden!r}")
+
+checkpoint_create_end = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(", checkpoint_create_start)
+checkpoint_create_body = session[checkpoint_create_start:checkpoint_create_end]
+for token in (
+    "wizardCheckpointPath(stage)",
+    "ModelAssetBinary::save(checkpoint.string(), m_asset, &error)",
+    "writeCheckpointEditorState(stage, validity, checkpointSequence",
+    "++m_nextCheckpointSequence",
+    '"type", "wizard_checkpoint_saved"',
+):
+    if token not in checkpoint_create_body:
+        raise AssertionError(f"manual rollback checkpoint contract missing {token!r}")
+for forbidden in ("validateWizardStage", "pruneWizardCheckpointsAfter", "remove_all"):
+    if forbidden in checkpoint_create_body:
+        raise AssertionError(f"manual rollback snapshot incorrectly changes stage lineage: {forbidden!r}")
 
 load_data_start = session.index("bool ModelAssetEditorSession::loadLodData(")
 load_lod_start = session.index("bool ModelAssetEditorSession::loadLodOnly(", load_data_start)
@@ -679,7 +689,7 @@ require(
     "wizardBaseReplacementTable",
     "previewToggle",
     "wizardUnusedGeometrySummary",
-    "checkpointCurrent",
+    "wizardCheckpointBtn",
     "updateActionAvailability",
     "initWorldAxes",
     "['+X'",
@@ -716,57 +726,42 @@ for token in (
     '"type", "asset_binary_begin"',
     '"type", "lod_payload_binary_begin"',
     'wizardCheckpointEditorStatePath',
+    'workingAssetPath',
+    'workingEditorStatePath',
     'productionEditorStatePath',
-    '"editor_state.json"',
-    '"production_state.json"',
+    'writeWorkingEditorState',
+    'loadWorkingEditorState',
     'writeCheckpointEditorState',
     'loadCheckpointEditorState',
     'writeProductionEditorState',
     'loadProductionEditorState',
     'captureStageValidity',
     'applyStageValidity',
-    'latestSavedWizardCheckpoint',
     'checkpointSequenceForStage',
     'm_nextCheckpointSequence',
-    'pruneWizardCheckpointsAfter',
+    'createWizardCheckpoint',
 ):
     if token not in session_cpp:
-        raise AssertionError(f"checkpoint/workspace lifecycle architecture missing {token!r}")
+        raise AssertionError(f"working/checkpoint lifecycle architecture missing {token!r}")
+for forbidden in ('latestSavedWizardCheckpoint', 'pruneWizardCheckpointsAfter'):
+    if forbidden in session_cpp:
+        raise AssertionError(f"retired linear checkpoint authority survived: {forbidden!r}")
 
-# Checkpoint deletion is legal only at explicit COMPLETE STAGE + CHECKPOINT.
+# Checkpoints are never deleted by invalidation, restore, stage completion or
+# another checkpoint save. They are independent rollback snapshots.
 invalidate_start = session_cpp.index("void ModelAssetEditorSession::invalidateWizardFrom")
 invalidate_end = session_cpp.index("nlohmann::json ModelAssetEditorSession::serializeWizard", invalidate_start)
-if "pruneWizardCheckpointsAfter" in session_cpp[invalidate_start:invalidate_end] or "remove_all" in session_cpp[invalidate_start:invalidate_end]:
-    raise AssertionError("ordinary invalidation/reimport can still delete saved checkpoints")
-if "pruneWizardCheckpointsAfter" in restore_body or "remove_all" in restore_body:
-    raise AssertionError("RESTORE must not delete later saved checkpoints")
-if "std::filesystem::remove_all(directory, ec)" not in session_cpp:
-    raise AssertionError("explicit checkpoint SAVE no longer prunes later-stage snapshots")
+if "remove_all" in session_cpp[invalidate_start:invalidate_end] or "remove_all" in restore_body or "remove_all" in checkpoint_create_body:
+    raise AssertionError("rollback snapshots can still be pruned by normal editor operations")
 
-latest_start = session_cpp.index("std::filesystem::path ModelAssetEditorSession::latestSavedWizardCheckpoint")
-latest_end = session_cpp.index("bool ModelAssetEditorSession::pruneWizardCheckpointsAfter", latest_start)
-latest_body = session_cpp[latest_start:latest_end]
-for token in (
-    'checkpointSequenceForStage(currentStage)',
-    'bestSequence',
-    'wizardCheckpointEditorStatePath(currentStage)',
-    'last_write_time(timeSource, ec)',
-):
-    if token not in latest_body:
-        raise AssertionError(f"checkpoint sequence resume authority missing {token!r}")
-if 'last_write_time(checkpoint, ec)' in latest_body:
-    raise AssertionError("new checkpoint resume still uses package mtime instead of logical checkpoint sequence")
-
-if session_cpp.count('m_nextCheckpointSequence = checkpointSequence + 1') != 1:
-    raise AssertionError("checkpoint timeline must advance in exactly one explicit SAVE path")
-if '++m_nextCheckpointSequence' in session_cpp or 'm_nextCheckpointSequence++' in session_cpp:
-    raise AssertionError("checkpoint sequence can advance outside the explicit SAVE assignment")
+if session_cpp.count('++m_nextCheckpointSequence') != 1:
+    raise AssertionError("checkpoint sequence must advance in exactly one manual rollback-snapshot path")
 
 load_state_start = session_cpp.index("void ModelAssetEditorSession::loadWizardState()")
 load_state_end = session_cpp.index("bool ModelAssetEditorSession::writeWizardState() const", load_state_start)
 load_state_body = session_cpp[load_state_start:load_state_end]
 for token in (
-    'wizard_state.json is not a persisted working copy',
+    'wizard_state.json is only a checkpoint/session index',
     'const auto checkpoint = wizardCheckpointPath(id)',
     'm_nextCheckpointSequence = 1',
     'checkpointSequenceForStage(id)',
@@ -775,7 +770,7 @@ for token in (
         raise AssertionError(f"session/checkpoint index separation missing {token!r}")
 for forbidden in ('parseEditorAuthoringState(', 'applyEditorAuthoringState(std::move(authoring))'):
     if forbidden in load_state_body:
-        raise AssertionError(f"mutable wizard_state can still become the saved resume head: {forbidden!r}")
+        raise AssertionError(f"wizard_state can still become mutable working-state authority: {forbidden!r}")
 
 write_state_start = session_cpp.index("bool ModelAssetEditorSession::writeWizardState() const")
 write_state_end = session_cpp.index("std::string ModelAssetEditorSession::allocateBaseVisualId", write_state_start)
@@ -786,22 +781,40 @@ if 'model_asset_editor_session_index' not in write_state_body:
     raise AssertionError("wizard_state is no longer explicitly a session/checkpoint index")
 
 select_start2 = session_cpp.index("bool ModelAssetEditorSession::selectAsset(")
-select_end2 = session_cpp.index("bool ModelAssetEditorSession::saveAsset()", select_start2)
+select_end2 = session_cpp.index("bool ModelAssetEditorSession::saveWorkingAsset", select_start2)
 select_lifecycle = session_cpp[select_start2:select_end2]
 for token in (
-    'latestSavedWizardCheckpoint(&resumedCheckpointStage)',
-    'the last explicitly saved stage checkpoint is',
-    'Source assembly reloaded into RAM. Saved checkpoints are unchanged',
-    'Unsaved reimport/reload/edit state from the previous session was discarded',
+    'const bool haveWorking = std::filesystem::exists(working)',
+    'if (!forceReimport && haveWorking)',
+    'loadWorkingEditorState',
+    'saveWorkingAsset(true)',
 ):
     if token not in select_lifecycle:
-        raise AssertionError(f"linear editor resume contract missing {token!r}")
+        raise AssertionError(f"persistent editor resume contract missing {token!r}")
 
-save_start2 = session_cpp.index("bool ModelAssetEditorSession::saveAsset()")
-save_end2 = session_cpp.index("nlohmann::json ModelAssetEditorSession::serializeAssetMetadata", save_start2)
+save_start2 = session_cpp.index("bool ModelAssetEditorSession::saveWorkingAsset")
+save_end2 = session_cpp.index("bool ModelAssetEditorSession::saveAsset()", save_start2)
 save_lifecycle = session_cpp[save_start2:save_end2]
-if 'writeProductionEditorState(&error)' not in save_lifecycle:
-    raise AssertionError("SAVE ALL no longer binds editor/stage evidence to production output")
+for token in ('workingAssetPath()', 'writeWorkingEditorState(&error)', 'ModelAssetBinary::saveLod', 'ModelAssetBinary::saveManifest'):
+    if token not in save_lifecycle:
+        raise AssertionError(f"ordinary SAVE no longer persists coherent WORKING ASSET state: {token!r}")
+if 'compiledPath(m_selectedId)' in save_lifecycle or 'writeProductionEditorState' in save_lifecycle:
+    raise AssertionError("ordinary WORKING SAVE can still write production")
+for token in ('"workingManifestBytes"', '"workingPackageBytes"', '"productionPackageBytes"', 'workingSavedLodPayloads'):
+    if token not in session_cpp:
+        raise AssertionError(f"WORKING/production storage split missing {token!r}")
+for token in ('storage.workingManifestBytes', 'WORKING package total', 'PRODUCTION package (last BUILD)', "msg.type==='working_saved'"):
+    if token not in web:
+        raise AssertionError(f"browser persistence/storage authority missing {token!r}")
+if "actions.appendChild(save)" in web or "STALE PRODUCTION PAYLOAD · PRUNED ON BUILD" in web:
+    raise AssertionError("UI still exposes partial LOD save or treats working payloads as production")
+
+build_start = session_cpp.index("bool ModelAssetEditorSession::buildProductionAsset()")
+build_end = session_cpp.index("bool ModelAssetEditorSession::saveManifestOnly()", build_start)
+build_body = session_cpp[build_start:build_end]
+for token in ('compiledPath(m_selectedId)', 'ModelAssetBinary::save(path.string(), m_asset, &error)', 'writeProductionEditorState(&error)'):
+    if token not in build_body:
+        raise AssertionError(f"BUILD production boundary missing {token!r}")
 
 checkpoint_state_start = session_cpp.index("bool ModelAssetEditorSession::writeCheckpointEditorState")
 checkpoint_state_end = session_cpp.index("void ModelAssetEditorSession::loadWizardState()", checkpoint_state_start)
@@ -818,6 +831,8 @@ for token in (
 # same stage-validity contract now, before those wizard pages are enabled.
 planned_mutation_stages = {
     "convert_source_basis": "source",
+    "add_semantic_node": "semantics",
+    "set_node_parent": "semantics",
     "set_node_transform": "semantics",
     "set_render_node_semantic": "semantics",
     "set_joint": "semantics",
@@ -825,7 +840,6 @@ planned_mutation_stages = {
     "set_physics": "physics",
     "estimate_physics": "physics",
     "add_collision": "physics",
-    "set_collision": "physics",
     "set_node_default_state": "damage",
     "add_state_variant": "damage",
     "set_render_node_states": "damage",
@@ -844,15 +858,22 @@ for command_name, stage_name in planned_mutation_stages.items():
             f"planned {stage_name.upper()} mutation {command_name!r} does not invalidate its stage/downstream checkpoints"
         )
 
+# Collision/socket base data belongs upstream, while activeStates is a DAMAGE-only selector.
+for token in ('physicsEdit ? "physics" : "damage"', 'semanticEdit ? "semantics" : "damage"'):
+    if token not in session_cpp:
+        raise AssertionError(f"split ownership invalidation missing {token!r}")
+
 for token in (
-    'restoreOnly',
-    'Other checkpoints remain stored',
-    'Other checkpoints are preserved',
-    'restoreOnly||!groups.includes(state.wizardStage)',
-    'Every later-stage checkpoint is removed',
+    'wizardCheckpointBtn',
+    'create_wizard_checkpoint',
+    'CREATE ROLLBACK SNAPSHOT',
+    'Rollback snapshot only',
+    'Production and all other rollback snapshots stay unchanged',
 ):
     if token not in web:
-        raise AssertionError(f"linear checkpoint UI contract missing {token!r}")
+        raise AssertionError(f"rollback-only checkpoint UI contract missing {token!r}")
+if 'Every later-stage checkpoint is removed' in web:
+    raise AssertionError("UI still advertises destructive checkpoint lineage")
 
 for forbidden in ('g["positions"]', 'g["normals"]', 'g["indices"]', 'rawJson["positions"]', 'serializeAsset(true)'):
     if forbidden in session_cpp:
@@ -927,6 +948,7 @@ for token in (
         raise AssertionError(f"future-stage checkpoint invalidation contract missing {token!r}")
 
 web_sync = text("src/assets/webui/model_asset_editor.html")
+localization = text("src/assets/localization/ui/tools/model_asset_editor.json")
 for token in (
     "mergeAssetMetadata",
     "retainGeometryPayload",
@@ -1065,9 +1087,9 @@ for forbidden in (
         raise AssertionError(f"obsolete manual/raw Preflight UI returned {forbidden!r}")
 
 # LOD generator v1 uses preview for inspection and an explicit APPLY boundary for
-# authored LOD documents. It must use the fixed project authoring ceiling, analyze
-# component thickness rather than filename/triangle count heuristics, and include
-# both main and additional/replacement meshes in every generated LOD.
+# authored LOD documents. Project/window maximum resolution remains centralized,
+# but LOD authoring/runtime selection is scale-independent and uses actual projected
+# size rather than fixed 2560x1440 / 70-degree authoring optics.
 require(
     "src/render/RenderResolutionPolicy.h",
     "MaximumSupportedRenderWidth = 2560",
@@ -1079,9 +1101,6 @@ require(
     "elite::render::MaximumSupportedRenderHeight",
 )
 for token in (
-    "LodReferenceWidthPx = render::MaximumSupportedRenderWidth",
-    "LodReferenceHeightPx = render::MaximumSupportedRenderHeight",
-    "LodReferenceVerticalFovDeg = 70.0",
     "LodVisibilityCutoffPx = 2.0",
     "analyzeConnectedComponents",
     "component.featureMeters = component.principalExtents.y",
@@ -1320,8 +1339,6 @@ if "if(next)setWizardStage(next,true)" not in web_sync:
 # checkpoint. It must not invalidate LODS/GEOMETRY merely because an author
 # resolves a surface classification.
 for token in (
-    'const bool implemented = i < 4',
-    'stageIndex >= 4',
     'else if (stage == "surfaces")',
     'SURFACES validation failed',
     'PreflightTopologyClass::ThinOneSided',
@@ -1422,16 +1439,16 @@ set_class_end = session_cpp.index("bool ModelAssetEditorSession::analyzeLodRequi
 set_class_body = session_cpp[set_class_start:set_class_end]
 if "bool analyzeAfter = false" not in text("tools/model_asset_editor/ModelAssetEditorSession.h"):
     raise AssertionError("surface classification default still requests automatic topology analysis")
-if "sendAssetMetadata()" in set_class_body or "sendAsset();" in set_class_body:
-    raise AssertionError("surface classification still publishes full asset/geometry payload")
+if "sendAsset();" in set_class_body:
+    raise AssertionError("surface classification still publishes full geometry payload")
 
 set_cmd_start = session_cpp.index('if (command == "set_geometry_topology_class")')
 set_cmd_end = session_cpp.index('if (command == "analyze_lod_requirements")', set_cmd_start)
 set_cmd_body = session_cpp[set_cmd_start:set_cmd_end]
 if "analyzeModelPreflight()" in set_cmd_body:
     raise AssertionError("explicit/cross-LOD surface classification still auto-runs model preflight")
-if "sendAssetMetadata()" in set_cmd_body or "sendAsset();" in set_cmd_body:
-    raise AssertionError("surface classification command still retransmits full asset/geometry")
+if "sendAsset();" in set_cmd_body:
+    raise AssertionError("surface classification command still retransmits full geometry")
 
 patch_js_start = web_sync.index("function applySurfaceMetadataPatch(msg)")
 patch_js_end = web_sync.index("function handle(msg)", patch_js_start)
@@ -1444,4 +1461,149 @@ if "triangleMaterials" in patch_js_body or ".indices" in patch_js_body:
 if "completeDisabled=checkpointCurrent" in web_sync:
     raise AssertionError("current checkpoint still disables explicit re-save / sequence advance")
 
-print("[PASS] model asset editor v0.10.25 metadata-only SURFACES / validation-independent checkpoint SAVE / v4")
+# 0.10.26: ordinary triangles may use the implicit DEFAULT visual surface.
+# Missing explicit materials are not a SURFACES failure and must not be painted
+# diagnostic red; the UI must report the actual remaining blocker categories.
+for token in (
+    "NoIndex is the implicit default visual surface",
+    "surfaceGeometryBlockers",
+    "surfaceInvalidMaterialSlots",
+    "no_materials_valid",
+    "default_material_hint",
+    "invalid_material_refs",
+    "formatSourceUnits",
+    "scale_warning",
+):
+    if token not in session_cpp and token not in web_sync and token not in localization:
+        raise AssertionError(f"0.10.26 implicit DEFAULT/SURFACES diagnostics missing {token!r}")
+if "contains triangles without a material" in session_cpp:
+    raise AssertionError("NoIndex still blocks SURFACES validation")
+if "0xff3b5c" in web_sync:
+    raise AssertionError("implicit DEFAULT triangles are still rendered as diagnostic red")
+if "bad=!!row?.structuralBlocker||Number(g.unassignedMaterialTriangles||0)>0" in web_sync:
+    raise AssertionError("SURFACES UI still treats LODS topology/default triangles as a material blocker")
+if "if (explicitParsed == PreflightTopologyClass::Auto)" not in session_cpp:
+    raise AssertionError("SURFACES validation no longer gates topology audit behind AUTO")
+
+# 0.10.27: generated/manual RenderLods own scale-independent screen-space
+# error metadata. Source-unit distances must not return as runtime authority;
+# the browser edit is metadata-only and runtime selection is shared C++ policy.
+require(
+    "src/model_asset/ModelAssetLodSelection.h",
+    "DefaultLodVisibilityCutoffPx = 2.0f",
+    "DefaultLodCoarsenCutoffPx = 1.8f",
+    "DefaultLodRefineCutoffPx = 2.2f",
+    "projectedGeometricErrorPixels",
+    "perspectiveProjectedCharacteristicPixels",
+    "selectRenderLodScreenSpace",
+)
+for token in (
+    '"relativeGeometricError"',
+    '"twoPixelProjectedCharacteristicPx"',
+    '"type", "lod_runtime_metadata_patch"',
+    'set_lod_relative_error',
+    'renderLodPlacedCharacteristicSize',
+):
+    if token not in session_cpp:
+        raise AssertionError(f"0.10.27 backend SSE contract missing {token!r}")
+for token in (
+    "formatRelativeLodError",
+    "twoPixelProjectedCharacteristicPx",
+    "applyLodRuntimeMetadataPatch",
+    "set_lod_relative_error",
+    "relative_error_hint",
+):
+    if token not in web_sync and token not in localization:
+        raise AssertionError(f"0.10.27 UI SSE contract missing {token!r}")
+if "twoPixelDistanceMeters" in web_sync:
+    raise AssertionError("source-unit 2 px distance returned as browser/runtime LOD authority")
+for obsolete in ("LodReferenceWidthPx", "LodReferenceHeightPx", "LodReferenceVerticalFovDeg"):
+    if obsolete in session_cpp:
+        raise AssertionError(f"fixed authoring optics still leak into runtime SSE contract: {obsolete}")
+lod_patch_start = web_sync.index("function applyLodRuntimeMetadataPatch(msg)")
+lod_patch_end = web_sync.index("function handle(msg)", lod_patch_start)
+lod_patch_body = web_sync[lod_patch_start:lod_patch_end]
+if "rebuildScene(" in lod_patch_body:
+    raise AssertionError("metadata-only LOD SSE edit rebuilds the scene")
+
+# 0.10.28: SEMANTICS is an implemented asset-wide hierarchy + per-LOD render
+# binding stage. LOD buttons are explicit view/load actions and cross-LOD binding
+# uses exact stable RenderNode ids only. Binding edits stay metadata-only.
+for token in (
+    'else if (stage == "semantics")',
+    'SEMANTICS validation failed',
+    'add_semantic_node',
+    'set_node_parent',
+    'sendSemanticBindingPatch',
+    '"type", "semantic_binding_patch"',
+    'stableRenderNodeId',
+    'applyAllLods',
+):
+    if token not in session_cpp:
+        raise AssertionError(f"0.10.28 SEMANTICS backend contract missing {token!r}")
+for token in (
+    "semanticLodGrid",
+    "semanticLodButton",
+    "data-semantic-lod",
+    "semanticApplyAllLods",
+    "wizardSemanticApplyAllLods",
+    "applySemanticBindingPatch",
+    "data-semantic-bind",
+    "semanticTreeRows",
+):
+    if token not in web_sync:
+        raise AssertionError(f"0.10.28 SEMANTICS workspace missing {token!r}")
+if "grid-template-columns:repeat(3,minmax(0,1fr))" not in web_sync:
+    raise AssertionError("SEMANTICS LOD selector is no longer a three-column button grid")
+semantic_cmd_start = session_cpp.index('if (command == "set_render_node_semantic")')
+semantic_cmd_end = session_cpp.index('if (command == "duplicate_render_node_instance")', semantic_cmd_start)
+semantic_cmd_body = session_cpp[semantic_cmd_start:semantic_cmd_end]
+for forbidden in ("sendAsset();", "analyzeModelPreflight", "auditPreflightGeometry"):
+    if forbidden in semantic_cmd_body:
+        raise AssertionError(f"semantic render binding regained heavy/full-asset side effect: {forbidden}")
+semantic_patch_start = web_sync.index("function applySemanticBindingPatch(msg)")
+semantic_patch_end = web_sync.index("function applyLodRuntimeMetadataPatch(msg)", semantic_patch_start)
+if "rebuildScene(" in web_sync[semantic_patch_start:semantic_patch_end]:
+    raise AssertionError("targeted semantic binding patch rebuilds the complete scene")
+
+# 0.10.29: the wizard is a complete linear production chain. No stage-count
+# magic numbers may silently stop SURFACES -> SEMANTICS or leave later stages planned.
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.32"')
+for forbidden in ("i < 5", "stageIndex >= 5", "stageIndex + 1 < 4"):
+    if forbidden in session_cpp:
+        raise AssertionError(f"partial wizard hard-code survived 0.10.29: {forbidden}")
+for token in (
+    "const bool implemented = true;",
+    "stageIndex + 1 < wizardStageOrder().size()",
+    'else if (stage == "physics")',
+    'else if (stage == "damage")',
+    'else if (stage == "validate" || stage == "build")',
+    "sendWizardValidationReport",
+    'command == "run_wizard_validation"',
+    'completionPassed && stage == "build"',
+    "saveAsset()",
+    'physicsEdit ? "physics" : "damage"',
+    'semanticEdit ? "semantics" : "damage"',
+):
+    if token not in session_cpp:
+        raise AssertionError(f"0.10.29 complete wizard backend missing {token!r}")
+for token in (
+    "if(stage==='physics')",
+    "if(stage==='damage')",
+    "if(stage==='validate')",
+    "if(stage==='build')",
+    "wizard_validation_report",
+    "run_wizard_validation",
+    "renderStatesApplyAllLods",
+    "damageApplyAllLods",
+    "BUILD PRODUCTION PACKAGE",
+    "CREATE ROLLBACK SNAPSHOT",
+):
+    if token not in web_sync:
+        raise AssertionError(f"0.10.29 complete wizard UI missing {token!r}")
+if 'data-wizard-groups="geometry damage"' not in web_sync:
+    raise AssertionError("DAMAGE cannot inspect active-LOD RenderNode state selectors")
+if "implemented:wizardStageIds.indexOf(id)<5" in web_sync:
+    raise AssertionError("browser fallback still pretends later wizard stages are unimplemented")
+
+print("[PASS] model asset editor v0.10.32 persistent working state / rollback-only checkpoints / BUILD boundary")

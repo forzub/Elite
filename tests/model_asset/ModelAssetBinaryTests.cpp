@@ -12,6 +12,7 @@
 
 #include "src/model_asset/ModelAsset.h"
 #include "src/model_asset/ModelAssetIdentity.h"
+#include "src/model_asset/ModelAssetLodSelection.h"
 #include "src/model_asset/ModelAssetBinary.h"
 #include "src/model_asset/ModelAssetMigration.h"
 #include "src/model_asset/ModelAssetVariantNaming.h"
@@ -992,6 +993,7 @@ int main()
         RenderLod lod0;
         lod0.level = 0;
         lod0.sourceKind = "source";
+        lod0.relativeGeometricError = 0.0f;
         RenderGeometryDefinition detail;
         detail.id = "habitat_detail";
         detail.sourcePath = "assets/models/stations/LOD0/habitat.obj";
@@ -1026,6 +1028,7 @@ int main()
         RenderLod lod1;
         lod1.level = 1;
         lod1.sourceKind = "source";
+        lod1.relativeGeometricError = 0.01f;
         RenderGeometryDefinition shell;
         shell.id = "station_welded_shell";
         shell.sourcePath = "assets/models/stations/LOD1/station_shell.obj";
@@ -1043,6 +1046,7 @@ int main()
         RenderLod lod2;
         lod2.level = 2;
         lod2.sourceKind = "manual";
+        lod2.relativeGeometricError = 0.04f;
         RenderGeometryDefinition proxyA;
         proxyA.id = "proxy_core";
         proxyA.mesh = makeMesh(8.0f, 200);
@@ -1086,11 +1090,17 @@ int main()
                 manifestOnly.renderLods[2].declaredGeometryCount == 2 &&
                 manifestOnly.renderLods[2].declaredNodeCount == 2,
             "manifest-only load lost declared render graph counts");
+        require(near(manifestOnly.renderLods[0].relativeGeometricError, 0.0f) &&
+                near(manifestOnly.renderLods[1].relativeGeometricError, 0.01f) &&
+                near(manifestOnly.renderLods[2].relativeGeometricError, 0.04f),
+            "v4 LERR manifest extension lost runtime screen-space LOD metadata");
         require(ModelAssetBinary::loadLod(path.string(), manifestOnly, 0, &error), error.c_str());
         require(manifestOnly.renderLods[0].geometries.size() == 2 && manifestOnly.renderLods[1].geometries.empty(),
             "LOD0-only load also loaded sibling render graphs");
         require(manifestOnly.renderLods[0].nodes[0].geometryIndex == manifestOnly.renderLods[0].nodes[1].geometryIndex,
             "LOD0 render instancing was lost");
+        require(near(manifestOnly.renderLods[0].relativeGeometricError, 0.0f),
+            "loading the heavy LOD0 payload erased manifest SSE metadata");
 
         const auto lod1Before = readFileBytes(lod1Path);
         manifestOnly.renderLods[0].geometries[0].mesh.vertices[0].position.x += 0.125f;
@@ -1112,6 +1122,9 @@ int main()
                 manifestAfterMetadataSave.renderLods[2].declaredGeometryCount == 2 &&
                 manifestAfterMetadataSave.renderLods[2].declaredNodeCount == 2,
             "metadata-only manifest save zeroed counts for unloaded LOD payloads");
+        require(near(manifestAfterMetadataSave.renderLods[1].relativeGeometricError, 0.01f) &&
+                near(manifestAfterMetadataSave.renderLods[2].relativeGeometricError, 0.04f),
+            "metadata-only manifest save lost per-LOD runtime screen-space error");
 
         ModelAsset loaded;
         require(ModelAssetBinary::load(path.string(), loaded, &error), error.c_str());
@@ -1152,6 +1165,35 @@ int main()
             "unrelated welded LOD1 graph was forced into LOD0 structure");
         require(loaded.renderLods[2].geometries.size() == 2 && loaded.renderLods[2].nodes.size() == 2,
             "coarse LOD2 proxy graph was lost");
+        require(near(loaded.renderLods[0].relativeGeometricError, 0.0f) &&
+                near(loaded.renderLods[1].relativeGeometricError, 0.01f) &&
+                near(loaded.renderLods[2].relativeGeometricError, 0.04f),
+            "full v4 load lost per-LOD runtime screen-space error");
+
+        // Runtime SSE is scale independent. The same projected apparent size
+        // produces the same decision even when the real game object is many
+        // kilometres rather than a few Blender/source units. Hysteresis keeps
+        // the active LOD stable around the 2 px visibility boundary.
+        std::vector<RenderLod> sseLods(3);
+        sseLods[0].level = 0; sseLods[0].relativeGeometricError = 0.0f;
+        sseLods[1].level = 1; sseLods[1].relativeGeometricError = 0.01f;
+        sseLods[2].level = 2; sseLods[2].relativeGeometricError = 0.04f;
+        require(selectRenderLodScreenSpace(sseLods, 0, 100.0f) == 1,
+            "runtime SSE did not select the coarsest LOD below the 1.8 px coarsen threshold");
+        require(selectRenderLodScreenSpace(sseLods, 1, 40.0f) == 2,
+            "runtime SSE did not coarsen to LOD2 when its projected error became sub-pixel");
+        require(selectRenderLodScreenSpace(sseLods, 1, 190.0f) == 1,
+            "runtime SSE hysteresis did not hold LOD1 inside the 1.8/2.2 px band");
+        require(selectRenderLodScreenSpace(sseLods, 1, 230.0f) == 0,
+            "runtime SSE did not refine when current LOD error exceeded 2.2 px");
+        sseLods[2].relativeGeometricError = -1.0f;
+        require(selectRenderLodScreenSpace(sseLods, 1, 20.0f) == 1,
+            "runtime SSE crossed an unknown/manual LOD metadata boundary");
+        constexpr float kPi = 3.14159265358979323846f;
+        const float stationProjected = perspectiveProjectedCharacteristicPixels(4000.0f, 20000.0f, 70.0f * kPi / 180.0f, 1440.0f);
+        const float scaledSameView = perspectiveProjectedCharacteristicPixels(20.0f, 100.0f, 70.0f * kPi / 180.0f, 1440.0f);
+        require(near(stationProjected, scaledSameView, 1.0e-3f),
+            "runtime SSE helper depends on source scale instead of final size/distance projection");
 
         // Legacy v2/v3-style shared geometry migrates once into independent
         // render graphs; after migration each LOD can diverge freely.
@@ -1167,6 +1209,9 @@ int main()
         legacy.nodes = {legacyA, legacyB};
         buildIndependentRenderLodsFromLegacy(legacy);
         require(legacy.renderLods.size() == 2, "legacy migration did not create one independent graph per LOD");
+        require(near(legacy.renderLods[0].relativeGeometricError, 0.0f) &&
+                legacy.renderLods[1].relativeGeometricError < 0.0f,
+            "legacy migration invented unsafe runtime SSE metadata");
         require(legacy.renderLods[0].geometries.size() == 1 && legacy.renderLods[1].geometries.size() == 1,
             "legacy migration did not split per-LOD geometry pools");
         require(legacy.renderLods[0].nodes.size() == 2 && legacy.renderLods[1].nodes.size() == 2,

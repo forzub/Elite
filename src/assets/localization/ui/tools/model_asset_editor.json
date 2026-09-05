@@ -174,18 +174,18 @@
       "ja": "OBJ/アセンブリから再読込。メモリ上の編集を破棄。ソースは読み取り専用。"
     },
     "model_editor.toolbar.save.title": {
-      "en": "SAVE ALL",
-      "ru": "СОХРАНИТЬ ВСЁ",
-      "zh-Hans": "全部保存",
-      "es": "GUARDAR TODO",
-      "ja": "すべて保存"
+      "en": "SAVE WORKING ASSET",
+      "ru": "СОХРАНИТЬ WORKING ASSET",
+      "zh-Hans": "SAVE WORKING ASSET",
+      "es": "SAVE WORKING ASSET",
+      "ja": "SAVE WORKING ASSET"
     },
     "model_editor.toolbar.save.desc": {
-      "en": "Save all dirty v3 package members. Clean LOD files are not rewritten.",
-      "ru": "Сохранить все изменённые части пакета v3. Неизменённые LOD не переписываются.",
-      "zh-Hans": "保存所有已修改的 v3 包成员；未修改的 LOD 不会重写。",
-      "es": "Guarda los miembros modificados del paquete v3. Los LOD limpios no se reescriben.",
-      "ja": "変更された v3 パッケージのみ保存。未変更 LOD は書き換えない。"
+      "en": "Save the coherent persistent WORKING ASSET. This does not rewrite production and does not create a rollback checkpoint.",
+      "ru": "Сохранить целостный постоянный WORKING ASSET. Production не переписывается, rollback checkpoint не создаётся.",
+      "zh-Hans": "Save the coherent persistent WORKING ASSET. This does not rewrite production and does not create a rollback checkpoint.",
+      "es": "Save the coherent persistent WORKING ASSET. This does not rewrite production and does not create a rollback checkpoint.",
+      "ja": "Save the coherent persistent WORKING ASSET. This does not rewrite production and does not create a rollback checkpoint."
     },
     "model_editor.toolbar.fit.title": {
       "en": "FIT VIEW",
@@ -522,6 +522,22 @@
       "zh-Hans": "已加载 · 未修改",
       "es": "CARGADO · LIMPIO",
       "ja": "LOADED · CLEAN"
+    },
+    "model_editor.lod.runtime_sse": {
+      "en": "runtime screen-space error",
+      "ru": "runtime screen-space error"
+    },
+    "model_editor.lod.relative_error": {
+      "en": "Relative geometric error (0..1)",
+      "ru": "Относительная геометрическая ошибка (0..1)"
+    },
+    "model_editor.lod.relative_error_hint": {
+      "en": "Generated LODs receive this automatically. Manual LODs may author it here. Runtime multiplies this ratio by the final projected world-scaled object size; source/Blender metres are not used.",
+      "ru": "Сгенерированные LOD получают это значение автоматически. Для ручного LOD его можно задать здесь. Runtime умножает отношение на фактический экранный размер объекта после игрового масштаба; метры Blender/исходного меша не используются."
+    },
+    "model_editor.lod.clear_sse": {
+      "en": "CLEAR SSE",
+      "ru": "СБРОСИТЬ SSE"
     },
     "model_editor.lod.unloaded": {
       "en": "UNLOADED",
@@ -1098,18 +1114,18 @@
       "ja": "この .elmesh を再読込します。確認後、この LOD の未保存編集は破棄されます。"
     },
     "model_editor.lod.save.title": {
-      "en": "SAVE LOD",
-      "ru": "СОХРАНИТЬ LOD",
-      "zh-Hans": "保存 LOD",
-      "es": "GUARDAR LOD",
-      "ja": "LOD 保存"
+      "en": "SAVE WORKING ASSET",
+      "ru": "СОХРАНИТЬ WORKING ASSET",
+      "zh-Hans": "SAVE WORKING ASSET",
+      "es": "SAVE WORKING ASSET",
+      "ja": "SAVE WORKING ASSET"
     },
     "model_editor.lod.save.desc": {
-      "en": "Write only this active/loaded LOD .elmesh. Manifest and other LOD files are not rewritten.",
-      "ru": "Записать только этот .elmesh. Manifest и остальные LOD-файлы не переписываются.",
-      "zh-Hans": "仅写入此 LOD 的 .elmesh；manifest 与其他 LOD 不会重写。",
-      "es": "Guarda solo este .elmesh. El manifest y los demás LOD no se reescriben.",
-      "ja": "この LOD の .elmesh だけを書き込みます。manifest と他 LOD は書き換えません。"
+      "en": "Compatibility command: saves the coherent WORKING ASSET rather than one isolated LOD.",
+      "ru": "Команда совместимости: сохраняет целостный WORKING ASSET, а не один изолированный LOD.",
+      "zh-Hans": "Compatibility command: saves the coherent WORKING ASSET rather than one isolated LOD.",
+      "es": "Compatibility command: saves the coherent WORKING ASSET rather than one isolated LOD.",
+      "ja": "Compatibility command: saves the coherent WORKING ASSET rather than one isolated LOD."
     },
     "model_editor.lod.unload.title": {
       "en": "UNLOAD LOD",
@@ -1126,18 +1142,18 @@
       "ja": "このクリーンな LOD をメモリから解放します。ディスク上のファイルは変わりません。"
     },
     "model_editor.lod.manifest.title": {
-      "en": "SAVE MANIFEST",
-      "ru": "СОХРАНИТЬ MANIFEST",
-      "zh-Hans": "保存 MANIFEST",
-      "es": "GUARDAR MANIFEST",
-      "ja": "MANIFEST 保存"
+      "en": "SAVE WORKING ASSET",
+      "ru": "СОХРАНИТЬ WORKING ASSET",
+      "zh-Hans": "SAVE WORKING ASSET",
+      "es": "SAVE WORKING ASSET",
+      "ja": "SAVE WORKING ASSET"
     },
     "model_editor.lod.manifest.desc": {
-      "en": "Write only shared semantic metadata: Nodes, instance links, transforms, collision, sockets, materials and LOD descriptors. Geometry .elmesh files are not rewritten.",
-      "ru": "Записать только общие семантические данные: Node, instance-связи, transforms, collision, sockets, materials и описания LOD. Геометрия .elmesh не переписывается.",
-      "zh-Hans": "仅写入共享语义数据：Node、实例关联、变换、碰撞体、插槽、材质与 LOD 描述；不会重写 .elmesh。",
-      "es": "Guarda solo metadatos compartidos: Nodes, instancias, transformaciones, colisión, sockets, materiales y descriptores LOD. No reescribe .elmesh.",
-      "ja": "共有セマンティック情報（Node、インスタンス関連、変換、collision、socket、material、LOD 記述）のみ保存。.elmesh は書き換えません。"
+      "en": "Compatibility command: saves the coherent WORKING ASSET. Partial manifest-only persistence is disabled because editor state and mesh bytes must remain one resume snapshot.",
+      "ru": "Команда совместимости: сохраняет целостный WORKING ASSET. Частичное сохранение только manifest отключено, потому что editor state и mesh bytes должны оставаться единым resume-снимком.",
+      "zh-Hans": "Compatibility command: saves the coherent WORKING ASSET. Partial manifest-only persistence is disabled because editor state and mesh bytes must remain one resume snapshot.",
+      "es": "Compatibility command: saves the coherent WORKING ASSET. Partial manifest-only persistence is disabled because editor state and mesh bytes must remain one resume snapshot.",
+      "ja": "Compatibility command: saves the coherent WORKING ASSET. Partial manifest-only persistence is disabled because editor state and mesh bytes must remain one resume snapshot."
     },
     "model_editor.v4.section.semantic": {
       "en": "Semantic assembly",
@@ -1546,32 +1562,32 @@
       "ja": "ロック中"
     },
     "model_editor.wizard.complete": {
-      "en": "COMPLETE STAGE + CHECKPOINT",
-      "ru": "ЗАВЕРШИТЬ ЭТАП + КОНТРОЛЬНАЯ ТОЧКА",
-      "zh-Hans": "完成阶段并保存检查点",
-      "es": "COMPLETAR ETAPA + PUNTO DE CONTROL",
-      "ja": "工程完了 + チェックポイント"
+      "en": "VALIDATE / COMPLETE STAGE",
+      "ru": "ПРОВЕРИТЬ / ЗАВЕРШИТЬ ЭТАП",
+      "zh-Hans": "VALIDATE / COMPLETE STAGE",
+      "es": "VALIDATE / COMPLETE STAGE",
+      "ja": "VALIDATE / COMPLETE STAGE"
     },
     "model_editor.wizard.restore": {
-      "en": "RESTORE LAST CHECKPOINT",
-      "ru": "ВОССТАНОВИТЬ ПОСЛЕДНЮЮ КОНТРОЛЬНУЮ ТОЧКУ",
-      "zh-Hans": "恢复上次检查点",
-      "es": "RESTAURAR ÚLTIMO PUNTO DE CONTROL",
-      "ja": "最後のチェックポイントを復元"
+      "en": "RESTORE SNAPSHOT",
+      "ru": "ВОССТАНОВИТЬ СНИМОК",
+      "zh-Hans": "RESTORE SNAPSHOT",
+      "es": "RESTORE SNAPSHOT",
+      "ja": "RESTORE SNAPSHOT"
     },
     "model_editor.wizard.restore_confirm": {
-      "en": "Return editor memory to the exact state saved at the last checkpoint for this stage? Current in-memory changes will be discarded. Other checkpoints remain stored and become stale rollback snapshots when they are no longer descendants of the restored stage. Source OBJ and the production package remain unchanged until an explicit save.",
-      "ru": "Вернуть редактор в точное состояние последней контрольной точки этого этапа? Текущие изменения в памяти будут отброшены. Остальные контрольные точки останутся на диске и, если они больше не являются продолжением восстановленного состояния, будут помечены как устаревшие снимки для отката. Исходные OBJ и production-пакет не изменятся до явного сохранения.",
-      "zh-Hans": "将编辑器恢复到本阶段上次检查点保存的精确状态？当前内存中的更改将被丢弃。其他检查点会继续保留；如果它们不再属于恢复状态的后续链，则会标记为可回退的过期快照。源 OBJ 和正式包在显式保存前不会改变。",
-      "es": "¿Volver al estado exacto guardado en el último punto de control de esta etapa? Se descartarán los cambios actuales en memoria. Los demás puntos de control se conservarán y, si ya no descienden del estado restaurado, quedarán marcados como instantáneas obsoletas disponibles para volver atrás. Los OBJ fuente y el paquete de producción no cambiarán hasta guardar explícitamente.",
-      "ja": "この工程で最後に保存したチェックポイントの正確な状態へ戻しますか？現在メモリ上の変更は破棄されます。他のチェックポイントは保存されたままで、復元した状態の後続ではなくなったものはロールバック可能な stale スナップショットとして扱われます。明示的に保存するまでソース OBJ と本番パッケージは変更されません。"
+      "en": "Replace the current WORKING ASSET with this rollback snapshot? Production and all other snapshots remain unchanged.",
+      "ru": "Заменить текущий WORKING ASSET этим rollback-снимком? Production и все остальные снимки останутся без изменений.",
+      "zh-Hans": "Replace the current WORKING ASSET with this rollback snapshot? Production and all other snapshots remain unchanged.",
+      "es": "Replace the current WORKING ASSET with this rollback snapshot? Production and all other snapshots remain unchanged.",
+      "ja": "Replace the current WORKING ASSET with this rollback snapshot? Production and all other snapshots remain unchanged."
     },
     "model_editor.wizard.completed_notice": {
-      "en": "Checkpoint saved",
-      "ru": "Контрольная точка сохранена",
-      "zh-Hans": "检查点已保存",
-      "es": "Punto de control guardado",
-      "ja": "チェックポイント保存済み"
+      "en": "Stage complete",
+      "ru": "Этап завершён",
+      "zh-Hans": "Stage complete",
+      "es": "Stage complete",
+      "ja": "Stage complete"
     },
     "model_editor.wizard.not_implemented": {
       "en": "This stage is reserved in the pipeline but its tools have not been migrated yet. Earlier completed stages remain protected by checkpoints and capability tests.",
@@ -1630,11 +1646,11 @@
       "ja": "ソース再インポート"
     },
     "model_editor.wizard.lods.desc": {
-      "en": "Review every independent render document. Saved-only or missing LODs are shown explicitly instead of disappearing from the UI.",
-      "ru": "Проверьте каждый независимый render-документ. LOD, существующие только на диске или отсутствующие в текущем asset, показываются явно и больше не исчезают из интерфейса.",
-      "zh-Hans": "检查每个独立渲染文档。仅存在于磁盘或缺失的 LOD 会明确显示，不再从界面消失。",
-      "es": "Revisa cada documento de render independiente. Los LOD solo guardados o ausentes se muestran explícitamente en vez de desaparecer.",
-      "ja": "各独立レンダードキュメントを確認します。保存済みのみ／欠落 LOD も明示し、UI から消えません。"
+      "en": "Review every independent render document. Saved-only production payloads are stale package residue; they are not part of the current asset and BUILD removes them.",
+      "ru": "Проверьте каждый независимый render-документ. Файлы, оставшиеся только от предыдущего production package, являются устаревшим остатком: они не входят в текущий asset и удаляются при BUILD.",
+      "zh-Hans": "检查每个独立渲染文档。仅存在于旧生产包中的已保存载荷是陈旧残留，不属于当前资源，并会在 BUILD 时删除。",
+      "es": "Revisa cada documento de render independiente. Los payloads que solo quedan del paquete de producción anterior son residuos obsoletos; no forman parte del asset actual y BUILD los elimina.",
+      "ja": "各独立レンダードキュメントを確認します。以前の production package にだけ残る保存済み payload は古い残骸で、現在の asset には属さず BUILD 時に削除されます。"
     },
     "model_editor.wizard.lods.declared": {
       "en": "declared",
@@ -1658,11 +1674,11 @@
       "ja": "欠落/利用不可"
     },
     "model_editor.wizard.lods.saved_only": {
-      "en": "SAVED ONLY · NOT DECLARED",
-      "ru": "ЕСТЬ НА ДИСКЕ · НЕ ОБЪЯВЛЕН",
-      "zh-Hans": "仅磁盘存在 · 当前资源未声明",
-      "es": "SOLO GUARDADO · NO DECLARADO",
-      "ja": "保存のみ · 未宣言"
+      "en": "STALE WORKING PAYLOAD · PRUNED ON SAVE",
+      "ru": "УСТАРЕВШИЙ WORKING PAYLOAD · УДАЛИТСЯ ПРИ SAVE",
+      "zh-Hans": "STALE WORKING PAYLOAD · PRUNED ON SAVE",
+      "es": "STALE WORKING PAYLOAD · PRUNED ON SAVE",
+      "ja": "STALE WORKING PAYLOAD · PRUNED ON SAVE"
     },
     "model_editor.wizard.lods.not_declared": {
       "en": "NOT DECLARED",
@@ -2100,41 +2116,53 @@
       "ru": "Некорректный угол радиального массива"
     },
     "model_editor.wizard.complete_tip.title": {
-      "en": "Complete stage + checkpoint",
-      "ru": "Завершить этап + контрольная точка"
+      "en": "Validate / complete stage",
+      "ru": "Проверить / завершить этап",
+      "zh-Hans": "Validate / complete stage",
+      "es": "Validate / complete stage",
+      "ja": "Validate / complete stage"
     },
     "model_editor.wizard.complete_tip.desc": {
-      "en": "Saves the current working snapshot first, then validates this stage. The checkpoint is kept and becomes the resume point even if validation fails; only a passing stage unlocks the next tab. Every later-stage checkpoint is removed. Production files are not overwritten.",
-      "ru": "Сначала сохраняет полный текущий снимок работы, затем проверяет этап. Контрольная точка сохраняется и становится точкой продолжения даже при ошибке проверки; следующая вкладка открывается только после успешной проверки. Все контрольные точки последующих этапов удаляются. Production-файлы не перезаписываются.",
-      "zh-Hans": "先保存当前完整工作快照，再验证此阶段。即使验证失败，检查点仍会保留并成为恢复点；只有验证通过才会解锁下一页签。所有后续阶段的检查点都会删除。不会覆盖 production 文件。",
-      "es": "Primero guarda una instantánea completa del estado actual y después valida la etapa. El checkpoint se conserva y pasa a ser el punto de reanudación aunque falle la validación; solo una validación correcta desbloquea la siguiente pestaña. Se eliminan los checkpoints de etapas posteriores. No se sobrescriben archivos de producción.",
-      "ja": "まず現在の作業状態を完全なスナップショットとして保存し、その後この段階を検証します。検証に失敗してもチェックポイントは保持され再開点になります。次のタブは検証成功時のみ解除されます。後続段階のチェックポイントはすべて削除されます。production ファイルは上書きしません。"
+      "en": "Validates the current stage and saves its validity into the persistent WORKING ASSET. No checkpoint is created or required.",
+      "ru": "Проверяет текущий этап и сохраняет его статус в постоянный WORKING ASSET. Контрольная точка не создаётся и не требуется.",
+      "zh-Hans": "Validates the current stage and saves its validity into the persistent WORKING ASSET. No checkpoint is created or required.",
+      "es": "Validates the current stage and saves its validity into the persistent WORKING ASSET. No checkpoint is created or required.",
+      "ja": "Validates the current stage and saves its validity into the persistent WORKING ASSET. No checkpoint is created or required."
     },
     "model_editor.wizard.complete_current_tip.title": {
-      "en": "Checkpoint is current",
-      "ru": "Контрольная точка актуальна"
+      "en": "Rollback snapshot",
+      "ru": "Rollback-снимок",
+      "zh-Hans": "Rollback snapshot",
+      "es": "Rollback snapshot",
+      "ja": "Rollback snapshot"
     },
     "model_editor.wizard.complete_current_tip.desc": {
-      "en": "The current state may be saved again. Each successful checkpoint write creates a new checkpointSequence even if there were no edits.",
-      "ru": "Текущее состояние можно сохранить повторно. Каждая успешная запись контрольной точки создаёт новый checkpointSequence, даже если правок не было.",
-      "zh-Hans": "可以再次保存当前状态。每次成功写入检查点都会创建新的 checkpointSequence，即使没有编辑。",
-      "es": "El estado actual puede guardarse de nuevo. Cada escritura correcta de checkpoint crea un nuevo checkpointSequence aunque no haya cambios.",
-      "ja": "現在の状態は再度保存できます。編集がなくても、チェックポイントの書き込みに成功するたびに新しい checkpointSequence が作成されます。"
+      "en": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
+      "ru": "Сохраняет точный текущий WORKING ASSET как необязательную точку отката. Не проверяет, не открывает, не инвалидирует, не удаляет и не продвигает этапы.",
+      "zh-Hans": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
+      "es": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
+      "ja": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages."
     },
     "model_editor.wizard.checkpoint_current": {
-      "en": "Checkpoint is current. Saving again records a new checkpoint sequence even without edits.",
-      "ru": "Контрольная точка актуальна. Повторное сохранение создаст новую последовательность checkpointSequence даже без правок.",
-      "zh-Hans": "检查点是最新的。即使没有编辑，再次保存也会记录新的 checkpointSequence。",
-      "es": "El checkpoint está actualizado. Guardarlo de nuevo registra un nuevo checkpointSequence incluso sin cambios.",
-      "ja": "チェックポイントは最新です。編集がなくても再保存すると新しい checkpointSequence が記録されます。"
+      "en": "Rollback snapshot only · it does not control stage progression or editor resume.",
+      "ru": "Только rollback-снимок · он не управляет прогрессом этапов и точкой продолжения редактора.",
+      "zh-Hans": "Rollback snapshot only · it does not control stage progression or editor resume.",
+      "es": "Rollback snapshot only · it does not control stage progression or editor resume.",
+      "ja": "Rollback snapshot only · it does not control stage progression or editor resume."
     },
     "model_editor.wizard.restore_tip.title": {
-      "en": "Restore last checkpoint",
-      "ru": "Восстановить последнюю контрольную точку"
+      "en": "Restore rollback snapshot",
+      "ru": "Восстановить rollback-снимок",
+      "zh-Hans": "Restore rollback snapshot",
+      "es": "Restore rollback snapshot",
+      "ja": "Restore rollback snapshot"
     },
     "model_editor.wizard.restore_tip.desc": {
-      "en": "Restores both the asset package snapshot and the stage-local editor authoring state. Other checkpoints are preserved; incompatible later snapshots become stale but remain explicitly restorable. Source OBJ and the production package are not changed until Save.",
-      "ru": "Восстанавливает и снимок asset-пакета, и локальное editor-state этого этапа. Остальные контрольные точки сохраняются; несовместимые более поздние снимки становятся stale, но остаются доступными для явного восстановления. Исходные OBJ и production-пакет не меняются до сохранения."
+      "en": "Restores this snapshot as the persistent WORKING ASSET. Production and all other rollback snapshots stay unchanged.",
+      "ru": "Восстанавливает этот снимок как постоянный WORKING ASSET. Production и все остальные rollback-снимки остаются без изменений.",
+      "zh-Hans": "Restores this snapshot as the persistent WORKING ASSET. Production and all other rollback snapshots stay unchanged.",
+      "es": "Restores this snapshot as the persistent WORKING ASSET. Production and all other rollback snapshots stay unchanged.",
+      "ja": "Restores this snapshot as the persistent WORKING ASSET. Production and all other rollback snapshots stay unchanged."
     },
     "model_editor.wizard.source.reimport_tip.title": {
       "en": "Reload all source meshes",
@@ -2309,8 +2337,8 @@
       "ru": "Анализ LOD0 только читает геометрию и требует результат «ПОДГОТОВИТЬ МЕШИ», но не требует заранее выбирать ClosedVolume / ThinTwoSided / BreachedVolume."
     },
     "model_editor.lod_generator.empty": {
-      "en": "Analysis is read-only. It measures disconnected component thickness using a 2560×1440 maximum render target, 70° vertical FOV and a 2 px visibility cutoff.",
-      "ru": "Анализ ничего не меняет. Толщина отдельных связных компонентов оценивается для максимального рендера 2560×1440, вертикального FOV 70° и порога видимости 2 px."
+      "en": "Analysis is read-only. Generated levels store scale-independent relative geometric error; runtime evaluates it against the final projected object size with a 2 px visibility target.",
+      "ru": "Анализ ничего не меняет. Сгенерированные LOD хранят безразмерную относительную геометрическую ошибку; runtime сравнивает её с фактическим экранным размером объекта при целевом пороге 2 px."
     },
     "model_editor.lod_generator.reference": {
       "en": "maximum render target",
@@ -2333,12 +2361,12 @@
       "ru": "диапазон толщины деталей"
     },
     "model_editor.lod_generator.threshold": {
-      "en": "min. feature",
-      "ru": "мин. деталь"
+      "en": "min. feature · source units",
+      "ru": "мин. деталь · единицы меша"
     },
     "model_editor.lod_generator.distance": {
-      "en": "2 px distance",
-      "ru": "дистанция 2 px"
+      "en": "2 px · projected object size",
+      "ru": "2 px · экранный размер объекта"
     },
     "model_editor.lod_generator.candidates": {
       "en": "first-pass candidates",
@@ -2363,6 +2391,10 @@
     "model_editor.lod_generator.scope": {
       "en": "Component Cull preview shows the generated disconnected-component reduction before APPLY. APPLY writes selected Component Cull levels into the authored asset. Coplanar Preview remains diagnostic-only and never changes authored data.",
       "ru": "Просмотр отсечения компонентов показывает результат удаления отдельных мелких/тонких компонентов до APPLY. APPLY записывает выбранные уровни Component Cull в authored asset. Просмотр плоскостей остаётся только диагностическим и никогда не меняет authored-данные."
+    },
+    "model_editor.lod_generator.scale_warning": {
+      "en": "Feature threshold is a source-unit generator diagnostic. Runtime authority is the scale-independent relative geometric error. The 2 px column shows the projected object characteristic size at which that LOD reaches the visibility policy; runtime evaluates final world scale, FOV and viewport.",
+      "ru": "Порог детали в единицах исходного меша нужен только генератору. Runtime authority — безразмерная относительная геометрическая ошибка. Колонка 2 px показывает экранный размер характерного габарита объекта, при котором этот LOD достигает порога видимости; runtime учитывает итоговый игровой масштаб, FOV и viewport."
     },
     "model_editor.lod_generator.preview_active": {
       "en": "Preview active",
@@ -3025,8 +3057,8 @@
       "ru": "Назначьте тип поверхности и свойства материалов каждой render-геометрии. Этот этап не меняет топологию и размещение экземпляров."
     },
     "model_editor.surfaces.help": {
-      "en": "Define how every render geometry behaves as a surface and verify the material contract that came from OBJ/MTL. Work one independent RenderLod at a time; mesh shape and instance placement are already owned by earlier stages.",
-      "ru": "Определите поведение каждой render-геометрии как поверхности и проверьте материалы, пришедшие из OBJ/MTL. Каждый RenderLod обрабатывается независимо; форма меша и размещение экземпляров уже зафиксированы предыдущими этапами."
+      "en": "Define surface intent for every render geometry. Explicit materials are optional visual-role overrides imported from OBJ/MTL; triangles without one use the implicit DEFAULT surface.",
+      "ru": "Определите тип поверхности каждой render-геометрии. Явные материалы — необязательные визуальные роли, импортированные из OBJ/MTL; треугольники без них используют неявную поверхность DEFAULT."
     },
     "model_editor.surfaces.analysis_required": {
       "en": "SURFACE ANALYSIS",
@@ -3061,8 +3093,20 @@
       "ru": "SURFACES ТРЕБУЕТ РЕШЕНИЙ"
     },
     "model_editor.surfaces.intent_decisions": {
-      "en": "intent decisions",
-      "ru": "решений по типу поверхности"
+      "en": "surface intent decisions",
+      "ru": "не задан тип поверхности"
+    },
+    "model_editor.surfaces.surface_mismatch": {
+      "en": "surface metadata mismatches",
+      "ru": "несоответствий metadata поверхности"
+    },
+    "model_editor.surfaces.invalid_material_refs": {
+      "en": "invalid explicit material refs",
+      "ru": "ошибочных ссылок на явные материалы"
+    },
+    "model_editor.surfaces.default_triangles": {
+      "en": "implicit-default triangles",
+      "ru": "треугольников с неявным DEFAULT"
     },
     "model_editor.surfaces.unassigned": {
       "en": "unassigned triangles",
@@ -3117,12 +3161,12 @@
       "ru": "DoubleSide · отсечение обратных граней ВЫКЛ"
     },
     "model_editor.surfaces.material_slots": {
-      "en": "material slots",
-      "ru": "материалов"
+      "en": "explicit material slots",
+      "ru": "явных материалов"
     },
     "model_editor.surfaces.assign_unassigned": {
-      "en": "ASSIGN ONLY UNASSIGNED TRIANGLES",
-      "ru": "НАЗНАЧИТЬ ТОЛЬКО ТРЕУГОЛЬНИКАМ БЕЗ МАТЕРИАЛА"
+      "en": "ASSIGN IMPLICIT-DEFAULT TRIANGLES TO THIS MATERIAL",
+      "ru": "НАЗНАЧИТЬ ЭТОТ МАТЕРИАЛ ТРЕУГОЛЬНИКАМ DEFAULT"
     },
     "model_editor.surfaces.intent_help": {
       "en": "Closed/Breached use a front-sided shell. Thin one-sided remains front-sided; Thin two-sided is visible from both sides. Choosing an intent never fills holes or changes topology.",
@@ -3197,31 +3241,63 @@
       "ru": "В этом LOD нет геометрии."
     },
     "model_editor.surfaces.no_materials": {
-      "en": "No materials are defined in this asset.",
-      "ru": "В asset не определены материалы."
+      "en": "No explicit materials are defined in this asset.",
+      "ru": "В asset нет явных материалов."
+    },
+    "model_editor.surfaces.no_materials_valid": {
+      "en": "No explicit materials are defined. This is valid: geometry uses the implicit DEFAULT visual surface.",
+      "ru": "Явные материалы не определены. Это допустимо: геометрия использует неявную визуальную поверхность DEFAULT."
+    },
+    "model_editor.surfaces.default_material_hint": {
+      "en": "Triangles without an explicit material use the implicit DEFAULT visual surface. Add/assign a material only when a region needs a special colour, emission or another visual role.",
+      "ru": "Треугольники без явного материала используют неявную поверхность DEFAULT. Назначайте материал только областям, которым нужен особый цвет, свечение или другая визуальная роль."
+    },
+    "model_editor.surfaces.material_authoring_hint": {
+      "en": "Explicit materials are optional visual-role overrides; import them from Blender/OBJ or author them later for emissive/coloured regions.",
+      "ru": "Явные материалы — необязательные визуальные роли. Их можно импортировать из Blender/OBJ или добавить позже для светящихся и цветных областей."
+    },
+    "model_editor.surfaces.issue_title": {
+      "en": "WHY THIS GEOMETRY IS NOT READY",
+      "ru": "ПОЧЕМУ ГЕОМЕТРИЯ НЕ ГОТОВА"
+    },
+    "model_editor.surfaces.issue_intent": {
+      "en": "Surface intent is not resolved.",
+      "ru": "Тип поверхности не определён."
+    },
+    "model_editor.surfaces.issue_mismatch": {
+      "en": "Stored surface mode does not match the authored intent.",
+      "ru": "Сохранённый режим поверхности не соответствует выбранному типу."
+    },
+    "model_editor.surfaces.issue_invalid_material": {
+      "en": "Invalid explicit material reference",
+      "ru": "Ошибочная ссылка на явный материал"
+    },
+    "model_editor.surfaces.geometry_ready": {
+      "en": "Surface intent is resolved; implicit-default triangles are valid.",
+      "ru": "Тип поверхности определён; треугольники с неявным DEFAULT допустимы."
     },
     "model_editor.surfaces.assign_confirm": {
-      "en": "Assign the selected material only to currently unassigned triangles?",
-      "ru": "Назначить выбранный материал только треугольникам, у которых материал пока не задан?"
+      "en": "Assign the selected explicit material only to triangles that currently use implicit DEFAULT?",
+      "ru": "Назначить выбранный явный материал только треугольникам, которые сейчас используют неявный DEFAULT?"
     },
     "model_editor.surfaces.command.set_material": {
       "en": "Update material",
       "ru": "Обновить материал"
     },
     "model_editor.surfaces.command.assign_unassigned": {
-      "en": "Assign unassigned material",
-      "ru": "Назначить материал незаданным треугольникам"
+      "en": "Assign explicit material to DEFAULT triangles",
+      "ru": "Назначить явный материал треугольникам DEFAULT"
     },
     "model_editor.preflight.class_thin_one": {
       "en": "Thin one-sided",
       "ru": "Тонкая односторонняя"
     },
     "model_editor.wizard.restore_only": {
-      "en": "This stage is not editable from the current workspace head, but its saved checkpoint is still available. Restore it to make this stage and its upstream state current again.",
-      "ru": "Этот этап нельзя редактировать из текущего состояния workspace, но его сохранённая контрольная точка остаётся доступной. Восстановите её, чтобы снова сделать этот этап и все предыдущие стадии текущей веткой.",
-      "zh-Hans": "当前工作区状态下不能编辑此阶段，但其已保存的检查点仍可用。恢复该检查点即可让此阶段及其上游状态重新成为当前状态。",
-      "es": "Esta etapa no se puede editar desde el estado actual del espacio de trabajo, pero su punto de control guardado sigue disponible. Restáuralo para volver a hacer actuales esta etapa y sus etapas anteriores.",
-      "ja": "現在のワークスペース状態からこの工程を編集することはできませんが、保存済みチェックポイントは利用できます。復元すると、この工程とそれ以前の状態が再び現在の状態になります。"
+      "en": "Rollback snapshots never lock a stage in the persistent working-state model.",
+      "ru": "В модели постоянного working state rollback-снимки никогда не блокируют этап.",
+      "zh-Hans": "Rollback snapshots never lock a stage in the persistent working-state model.",
+      "es": "Rollback snapshots never lock a stage in the persistent working-state model.",
+      "ja": "Rollback snapshots never lock a stage in the persistent working-state model."
     },
     "model_editor.wizard.status.needs_fix": {
       "en": "NEEDS FIX",
@@ -3231,11 +3307,835 @@
       "ja": "要修正"
     },
     "model_editor.wizard.checkpoint_saved_needs_fix": {
-      "en": "Checkpoint saved · stage needs fix",
-      "ru": "Контрольная точка сохранена · этап требует исправления",
-      "zh-Hans": "检查点已保存 · 阶段需要修正",
-      "es": "Checkpoint guardado · la etapa requiere corrección",
-      "ja": "チェックポイント保存済み · 段階は要修正"
+      "en": "Rollback snapshot saved",
+      "ru": "Rollback-снимок сохранён",
+      "zh-Hans": "Rollback snapshot saved",
+      "es": "Rollback snapshot saved",
+      "ja": "Rollback snapshot saved"
+    },
+    "model_editor.lod_generator.runtime_policy": {
+      "en": "runtime SSE policy",
+      "ru": "runtime SSE policy"
+    },
+    "model_editor.lod_generator.source_characteristic": {
+      "en": "LOD0 characteristic · source units",
+      "ru": "характерный размер LOD0 · единицы меша"
+    },
+    "model_editor.wizard.semantics.desc": {
+      "en": "Build the asset-wide gameplay hierarchy and bind each independent render LOD to it.",
+      "ru": "Создайте общую gameplay-семантику объекта и привяжите к ней независимые render LOD."
+    },
+    "model_editor.semantics.help": {
+      "en": "Author one gameplay/semantic hierarchy shared by every render LOD, then bind each LOD-local render element to that stable meaning. Render geometry remains independent per LOD.",
+      "ru": "Создайте одно общее semantic/gameplay-дерево для всех LOD, затем привяжите к нему render-элементы каждого LOD. Геометрия разных LOD остаётся независимой."
+    },
+    "model_editor.semantics.active_lod": {
+      "en": "ACTIVE RENDER LOD",
+      "ru": "АКТИВНЫЙ RENDER LOD"
+    },
+    "model_editor.semantics.loaded": {
+      "en": "LOADED",
+      "ru": "ЗАГРУЖЕН"
+    },
+    "model_editor.semantics.load": {
+      "en": "LOAD",
+      "ru": "ЗАГРУЗИТЬ"
+    },
+    "model_editor.semantics.lod_help": {
+      "en": "LOD buttons change only the render document being inspected. The semantic tree itself is asset-wide and does not change when LOD changes.",
+      "ru": "Кнопки LOD переключают только просматриваемый render-документ. Semantic-дерево общее для asset и при смене LOD не меняется."
+    },
+    "model_editor.semantics.current_lod": {
+      "en": "CURRENT LOD",
+      "ru": "ТЕКУЩИЙ LOD"
+    },
+    "model_editor.semantics.geometry_bound": {
+      "en": "geometry render nodes bound",
+      "ru": "render-узлов с геометрией привязано"
+    },
+    "model_editor.semantics.unbound_count": {
+      "en": "unbound",
+      "ru": "без привязки"
+    },
+    "model_editor.semantics.tree": {
+      "en": "SEMANTIC TREE · SHARED BY ALL LODS",
+      "ru": "SEMANTIC-ДЕРЕВО · ОБЩЕЕ ДЛЯ ВСЕХ LOD"
+    },
+    "model_editor.semantics.no_nodes": {
+      "en": "No semantic nodes yet.",
+      "ru": "Semantic-узлов пока нет."
+    },
+    "model_editor.semantics.select_node": {
+      "en": "Select a semantic node to edit its hierarchy and render bindings.",
+      "ru": "Выберите semantic-узел, чтобы редактировать иерархию и render-привязки."
+    },
+    "model_editor.semantics.root": {
+      "en": "ROOT",
+      "ru": "КОРЕНЬ"
+    },
+    "model_editor.semantics.parent": {
+      "en": "Parent",
+      "ru": "Родитель"
+    },
+    "model_editor.semantics.position": {
+      "en": "Position",
+      "ru": "Позиция"
+    },
+    "model_editor.semantics.rotation": {
+      "en": "Rotation XYZ deg",
+      "ru": "Поворот XYZ, градусы"
+    },
+    "model_editor.semantics.pivot": {
+      "en": "Pivot",
+      "ru": "Pivot"
+    },
+    "model_editor.semantics.apply_node": {
+      "en": "APPLY NODE",
+      "ru": "ПРИМЕНИТЬ УЗЕЛ"
+    },
+    "model_editor.semantics.delete_node": {
+      "en": "DELETE NODE",
+      "ru": "УДАЛИТЬ УЗЕЛ"
+    },
+    "model_editor.semantics.add_root": {
+      "en": "ROOT",
+      "ru": "КОРНЕВОЙ УЗЕЛ"
+    },
+    "model_editor.semantics.add_child": {
+      "en": "CHILD OF SELECTED",
+      "ru": "ДОЧЕРНИЙ К ВЫБРАННОМУ"
+    },
+    "model_editor.semantics.selected": {
+      "en": "SELECTED SEMANTIC NODE",
+      "ru": "ВЫБРАННЫЙ SEMANTIC-УЗЕЛ"
+    },
+    "model_editor.semantics.bindings": {
+      "en": "RENDER BINDINGS",
+      "ru": "RENDER-ПРИВЯЗКИ"
+    },
+    "model_editor.semantics.apply_all_lods": {
+      "en": "APPLY TO ALL LODS",
+      "ru": "ПРИМЕНИТЬ КО ВСЕМ LOD"
+    },
+    "model_editor.semantics.apply_all_hint": {
+      "en": "When a binding changes, apply it to render nodes with the exact same stable RenderNode id in other LODs. No fuzzy matching: welded/coarse proxy nodes with different ids are assigned manually.",
+      "ru": "При изменении привязки применить её к render-узлам с точно таким же стабильным RenderNode id в остальных LOD. Никакого нечёткого совпадения: сваренные/грубые proxy с другими id назначаются вручную."
+    },
+    "model_editor.semantics.render_node": {
+      "en": "RENDER NODE",
+      "ru": "RENDER-УЗЕЛ"
+    },
+    "model_editor.semantics.binding": {
+      "en": "BINDING",
+      "ru": "ПРИВЯЗКА"
+    },
+    "model_editor.semantics.unbound": {
+      "en": "UNBOUND",
+      "ru": "НЕ ПРИВЯЗАН"
+    },
+    "model_editor.semantics.lod_not_loaded": {
+      "en": "Choose a LOD button to load/view its render bindings.",
+      "ru": "Выберите кнопку LOD, чтобы загрузить/просмотреть его render-привязки."
+    },
+    "model_editor.semantics.new_id": {
+      "en": "Stable semantic id",
+      "ru": "Стабильный semantic id"
+    },
+    "model_editor.semantics.add_cancelled": {
+      "en": "CANCELLED: semantic node was not added",
+      "ru": "ОТМЕНЕНО: semantic-узел не добавлен"
+    },
+    "model_editor.semantics.delete_confirm": {
+      "en": "Delete semantic node?",
+      "ru": "Удалить semantic-узел?"
+    },
+    "model_editor.semantics.command.add_node": {
+      "en": "ADD SEMANTIC NODE",
+      "ru": "ДОБАВИТЬ SEMANTIC-УЗЕЛ"
+    },
+    "model_editor.semantics.command.set_parent": {
+      "en": "SET SEMANTIC PARENT",
+      "ru": "ИЗМЕНИТЬ РОДИТЕЛЯ SEMANTIC-УЗЛА"
+    },
+    "model_editor.wizard.physics_help": {
+      "en": "Author gameplay collision and resolved rigid-body properties. Select a semantic node on the left; collision shapes and mass/inertia belong here, not to render LOD geometry.",
+      "ru": "Настройте игровую коллизию и свойства твёрдого тела. Выберите semantic-узел слева; формы коллизии, масса и инерция принадлежат этому этапу, а не render LOD.",
+      "zh-Hans": "Author gameplay collision and resolved rigid-body properties. Select a semantic node on the left; collision shapes and mass/inertia belong here, not to render LOD geometry.",
+      "es": "Author gameplay collision and resolved rigid-body properties. Select a semantic node on the left; collision shapes and mass/inertia belong here, not to render LOD geometry.",
+      "ja": "Author gameplay collision and resolved rigid-body properties. Select a semantic node on the left; collision shapes and mass/inertia belong here, not to render LOD geometry."
+    },
+    "model_editor.wizard.physics_nodes": {
+      "en": "semantic parts",
+      "ru": "semantic-частей",
+      "zh-Hans": "semantic parts",
+      "es": "semantic parts",
+      "ja": "semantic parts"
+    },
+    "model_editor.wizard.physics_bodies": {
+      "en": "active rigid bodies",
+      "ru": "активных твёрдых тел",
+      "zh-Hans": "active rigid bodies",
+      "es": "active rigid bodies",
+      "ja": "active rigid bodies"
+    },
+    "model_editor.wizard.physics_collisions": {
+      "en": "collision volumes",
+      "ru": "объёмов коллизии",
+      "zh-Hans": "collision volumes",
+      "es": "collision volumes",
+      "ja": "collision volumes"
+    },
+    "model_editor.wizard.physics_hint": {
+      "en": "Use the Selected semantic node and Hit volumes panels. Disabled rigid body is valid for non-physical/group nodes. Auto-from-collision requires at least one enabled collision volume.",
+      "ru": "Используйте панели выбранного semantic-узла и коллизий. Disabled допустим для групповых/нефизических узлов. Auto-from-collision требует хотя бы одного включённого объёма коллизии.",
+      "zh-Hans": "Use the Selected semantic node and Hit volumes panels. Disabled rigid body is valid for non-physical/group nodes. Auto-from-collision requires at least one enabled collision volume.",
+      "es": "Use the Selected semantic node and Hit volumes panels. Disabled rigid body is valid for non-physical/group nodes. Auto-from-collision requires at least one enabled collision volume.",
+      "ja": "Use the Selected semantic node and Hit volumes panels. Disabled rigid body is valid for non-physical/group nodes. Auto-from-collision requires at least one enabled collision volume."
+    },
+    "model_editor.wizard.damage_help": {
+      "en": "Author semantic state variants and state-scoped presentation/gameplay data. State ownership is asset-wide; render selectors remain local to each independent LOD.",
+      "ru": "Настройте варианты semantic-состояний и зависящие от состояния render/gameplay данные. Состояние общее для asset, а render-селекторы локальны для каждого независимого LOD.",
+      "zh-Hans": "Author semantic state variants and state-scoped presentation/gameplay data. State ownership is asset-wide; render selectors remain local to each independent LOD.",
+      "es": "Author semantic state variants and state-scoped presentation/gameplay data. State ownership is asset-wide; render selectors remain local to each independent LOD.",
+      "ja": "Author semantic state variants and state-scoped presentation/gameplay data. State ownership is asset-wide; render selectors remain local to each independent LOD."
+    },
+    "model_editor.wizard.damage_states": {
+      "en": "state variants",
+      "ru": "вариантов состояния",
+      "zh-Hans": "state variants",
+      "es": "state variants",
+      "ja": "state variants"
+    },
+    "model_editor.wizard.damage_render_scopes": {
+      "en": "state-scoped render nodes in active LOD",
+      "ru": "state-scoped render-узлов активного LOD",
+      "zh-Hans": "state-scoped render nodes in active LOD",
+      "es": "state-scoped render nodes in active LOD",
+      "ja": "state-scoped render nodes in active LOD"
+    },
+    "model_editor.wizard.damage_collision_scopes": {
+      "en": "state-scoped collision volumes",
+      "ru": "state-scoped объёмов коллизии",
+      "zh-Hans": "state-scoped collision volumes",
+      "es": "state-scoped collision volumes",
+      "ja": "state-scoped collision volumes"
+    },
+    "model_editor.wizard.damage_hint": {
+      "en": "Select a semantic node to create/edit states. Select a render node to assign its state selector; APPLY TO ALL LODS uses exact stable RenderNode ids only. Collision/socket state scopes and damage/repair targets are edited in their panels.",
+      "ru": "Выберите semantic-узел для состояний. Выберите render-узел для его state selector; APPLY TO ALL LODS использует только точный stable RenderNode id. Scope коллизий/сокетов и damage/repair targets редактируются в соответствующих панелях.",
+      "zh-Hans": "Select a semantic node to create/edit states. Select a render node to assign its state selector; APPLY TO ALL LODS uses exact stable RenderNode ids only. Collision/socket state scopes and damage/repair targets are edited in their panels.",
+      "es": "Select a semantic node to create/edit states. Select a render node to assign its state selector; APPLY TO ALL LODS uses exact stable RenderNode ids only. Collision/socket state scopes and damage/repair targets are edited in their panels.",
+      "ja": "Select a semantic node to create/edit states. Select a render node to assign its state selector; APPLY TO ALL LODS uses exact stable RenderNode ids only. Collision/socket state scopes and damage/repair targets are edited in their panels."
+    },
+    "model_editor.wizard.validate_help": {
+      "en": "Run the complete production contract against SOURCE through DAMAGE plus the shared v4 binary validator. This stage is read-only: it reports blockers and does not repair them.",
+      "ru": "Запустите полный production-контракт от SOURCE до DAMAGE и общий v4 binary validator. Этап только проверяет: он показывает блокеры и ничего не исправляет.",
+      "zh-Hans": "Run the complete production contract against SOURCE through DAMAGE plus the shared v4 binary validator. This stage is read-only: it reports blockers and does not repair them.",
+      "es": "Run the complete production contract against SOURCE through DAMAGE plus the shared v4 binary validator. This stage is read-only: it reports blockers and does not repair them.",
+      "ja": "Run the complete production contract against SOURCE through DAMAGE plus the shared v4 binary validator. This stage is read-only: it reports blockers and does not repair them."
+    },
+    "model_editor.wizard.validate_run": {
+      "en": "RUN FULL VALIDATION",
+      "ru": "ПОЛНАЯ ПРОВЕРКА",
+      "zh-Hans": "RUN FULL VALIDATION",
+      "es": "RUN FULL VALIDATION",
+      "ja": "RUN FULL VALIDATION"
+    },
+    "model_editor.wizard.validate_pass": {
+      "en": "ALL PRODUCTION CONTRACTS PASS",
+      "ru": "ВСЕ PRODUCTION-КОНТРАКТЫ ПРОЙДЕНЫ",
+      "zh-Hans": "ALL PRODUCTION CONTRACTS PASS",
+      "es": "ALL PRODUCTION CONTRACTS PASS",
+      "ja": "ALL PRODUCTION CONTRACTS PASS"
+    },
+    "model_editor.wizard.validate_fail": {
+      "en": "VALIDATION FOUND BLOCKERS",
+      "ru": "ПРОВЕРКА НАШЛА БЛОКЕРЫ",
+      "zh-Hans": "VALIDATION FOUND BLOCKERS",
+      "es": "VALIDATION FOUND BLOCKERS",
+      "ja": "VALIDATION FOUND BLOCKERS"
+    },
+    "model_editor.wizard.validate_none": {
+      "en": "Run validation before completing this stage.",
+      "ru": "Запустите проверку перед завершением этапа.",
+      "zh-Hans": "Run validation before completing this stage.",
+      "es": "Run validation before completing this stage.",
+      "ja": "Run validation before completing this stage."
+    },
+    "model_editor.wizard.build_help": {
+      "en": "Terminal production commit. Full validation is rerun, then the complete persistent WORKING ASSET is written to the compiled v4 package.",
+      "ru": "Финальный production commit. Полная проверка запускается повторно, затем весь постоянный WORKING ASSET записывается в compiled v4 package.",
+      "zh-Hans": "Terminal production commit. Full validation is rerun, then the complete persistent WORKING ASSET is written to the compiled v4 package.",
+      "es": "Terminal production commit. Full validation is rerun, then the complete persistent WORKING ASSET is written to the compiled v4 package.",
+      "ja": "Terminal production commit. Full validation is rerun, then the complete persistent WORKING ASSET is written to the compiled v4 package."
+    },
+    "model_editor.wizard.build_target": {
+      "en": "production manifest",
+      "ru": "production manifest",
+      "zh-Hans": "production manifest",
+      "es": "production manifest",
+      "ja": "production manifest"
+    },
+    "model_editor.wizard.build_lods": {
+      "en": "saved LOD payloads",
+      "ru": "сохранённых LOD payloads",
+      "zh-Hans": "saved LOD payloads",
+      "es": "saved LOD payloads",
+      "ja": "saved LOD payloads"
+    },
+    "model_editor.wizard.build_dirty": {
+      "en": "working copy dirty",
+      "ru": "working copy изменена",
+      "zh-Hans": "working copy dirty",
+      "es": "working copy dirty",
+      "ja": "working copy dirty"
+    },
+    "model_editor.wizard.build_warning": {
+      "en": "BUILD is the production boundary. It never creates, deletes or advances rollback checkpoints.",
+      "ru": "BUILD — единственная штатная граница записи production. Он не создаёт, не удаляет и не продвигает rollback checkpoints.",
+      "zh-Hans": "BUILD is the production boundary. It never creates, deletes or advances rollback checkpoints.",
+      "es": "BUILD is the production boundary. It never creates, deletes or advances rollback checkpoints.",
+      "ja": "BUILD is the production boundary. It never creates, deletes or advances rollback checkpoints."
+    },
+    "model_editor.wizard.build_complete": {
+      "en": "BUILD PRODUCTION PACKAGE",
+      "ru": "СОБРАТЬ PRODUCTION PACKAGE",
+      "zh-Hans": "BUILD PRODUCTION PACKAGE",
+      "es": "BUILD PRODUCTION PACKAGE",
+      "ja": "BUILD PRODUCTION PACKAGE"
+    },
+    "model_editor.wizard.physics.desc": {
+      "en": "Author collision and rigid-body properties.",
+      "ru": "Настройка коллизии и свойств твёрдого тела.",
+      "zh-Hans": "Author collision and rigid-body properties.",
+      "es": "Author collision and rigid-body properties.",
+      "ja": "Author collision and rigid-body properties."
+    },
+    "model_editor.wizard.damage.desc": {
+      "en": "Author state variants, state-scoped render/collision/socket data, damage openings and repair targets.",
+      "ru": "Настройка состояний, state-scoped render/collision/socket данных, повреждений, отверстий и ремонта.",
+      "zh-Hans": "Author state variants, state-scoped render/collision/socket data, damage openings and repair targets.",
+      "es": "Author state variants, state-scoped render/collision/socket data, damage openings and repair targets.",
+      "ja": "Author state variants, state-scoped render/collision/socket data, damage openings and repair targets."
+    },
+    "model_editor.wizard.validate.desc": {
+      "en": "Run the complete read-only production validation chain.",
+      "ru": "Полная read-only проверка production-цепочки.",
+      "zh-Hans": "Run the complete read-only production validation chain.",
+      "es": "Run the complete read-only production validation chain.",
+      "ja": "Run the complete read-only production validation chain."
+    },
+    "model_editor.wizard.build.desc": {
+      "en": "Validate and write the terminal compiled v4 production package.",
+      "ru": "Финальная проверка и запись compiled v4 production package.",
+      "zh-Hans": "Validate and write the terminal compiled v4 production package.",
+      "es": "Validate and write the terminal compiled v4 production package.",
+      "ja": "Validate and write the terminal compiled v4 production package."
+    },
+    "model_editor.surfaces.lod_help": {
+      "en": "Surface authoring is LOD-local. Select the render document first.",
+      "ru": "Редактирование поверхностей относится к конкретному LOD. Сначала выберите render-документ."
+    },
+    "model_editor.semantics.help_v2": {
+      "en": "Build the gameplay assembly visually: select a semantic part, inspect the complete highlighted subtree, preview its joint motion/detachment, then bind the current LOD render nodes to that meaning.",
+      "ru": "Собирайте gameplay-структуру визуально: выберите semantic-часть, проверьте всю подсвеченную ветвь, движение/отрыв её шарнира и затем привяжите render-узлы текущего LOD к этому смыслу."
+    },
+    "model_editor.semantics.base_transform": {
+      "en": "BASE TRANSFORM · PRECISE INPUT",
+      "ru": "БАЗОВЫЙ TRANSFORM · ТОЧНЫЙ ВВОД"
+    },
+    "model_editor.semantics.motion": {
+      "en": "JOINT / MOTION PREVIEW",
+      "ru": "ШАРНИР / ПРОВЕРКА ДВИЖЕНИЯ"
+    },
+    "model_editor.semantics.joint_pivot": {
+      "en": "Joint pivot",
+      "ru": "Pivot шарнира"
+    },
+    "model_editor.semantics.axis": {
+      "en": "Rotation axis",
+      "ru": "Ось вращения"
+    },
+    "model_editor.semantics.range": {
+      "en": "Range",
+      "ru": "Диапазон"
+    },
+    "model_editor.semantics.fixed_hint": {
+      "en": "FIXED does not move in normal operation. It may still be previewed as detached when the attachment is breakable.",
+      "ru": "FIXED штатно не двигается. Если крепление разрушаемое, можно отдельно проверить его отрыв."
+    },
+    "model_editor.semantics.detach_preview": {
+      "en": "⚡ PREVIEW DETACH",
+      "ru": "⚡ ПРОВЕРИТЬ ОТРЫВ"
+    },
+    "model_editor.semantics.attach_preview": {
+      "en": "↩ ATTACH PREVIEW",
+      "ru": "↩ ВЕРНУТЬ НА МЕСТО"
+    },
+    "model_editor.semantics.reset_preview": {
+      "en": "RESET PREVIEW",
+      "ru": "СБРОСИТЬ ПРОВЕРКУ"
+    },
+    "model_editor.semantics.preview_only": {
+      "en": "Preview only: motion and detachment never modify the asset. The selected semantic subtree is transformed as one assembly so incorrect parentage becomes obvious.",
+      "ru": "Только предпросмотр: движение и отрыв не меняют asset. Выбранная semantic-ветвь движется как единая сборка, поэтому неверная иерархия сразу становится заметна."
+    },
+    "model_editor.semantics.joint_authoring": {
+      "en": "JOINT AUTHORING · PRECISE INPUT",
+      "ru": "ПАРАМЕТРЫ ШАРНИРА · ТОЧНЫЙ ВВОД"
+    },
+    "model_editor.semantics.joint_type": {
+      "en": "Joint type",
+      "ru": "Тип шарнира"
+    },
+    "model_editor.semantics.breakable": {
+      "en": "BREAKABLE",
+      "ru": "РАЗРУШАЕМОЕ КРЕПЛЕНИЕ"
+    },
+    "model_editor.semantics.breakable_hint": {
+      "en": "When broken, this semantic subtree may become a detached body. No extra invisible mesh is required.",
+      "ru": "После разрушения эта semantic-ветвь может стать отдельным телом. Дополнительный невидимый mesh для крепления не нужен."
+    },
+    "model_editor.wizard.lods.stale_saved": {
+      "en": "stale production payloads",
+      "ru": "устаревших production-файлов",
+      "zh-Hans": "旧生产载荷",
+      "es": "payloads de producción obsoletos",
+      "ja": "古い production payload"
+    },
+    "model_editor.wizard.lods.stale_note": {
+      "en": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; ordinary SAVE/autosave prunes them from the working package.",
+      "ru": "Файлы .elmesh, оставшиеся только на диске, относятся к предыдущей ревизии WORKING ASSET. Они не загружены в текущий asset и не блокируют LODS; обычный SAVE/autosave удалит их из working package.",
+      "zh-Hans": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; ordinary SAVE/autosave prunes them from the working package.",
+      "es": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; ordinary SAVE/autosave prunes them from the working package.",
+      "ja": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; ordinary SAVE/autosave prunes them from the working package."
+    },
+    "model_editor.maintenance.title": {
+      "en": "ASSET MAINTENANCE",
+      "ru": "ОБСЛУЖИВАНИЕ ASSET",
+      "zh-Hans": "ASSET MAINTENANCE",
+      "es": "ASSET MAINTENANCE",
+      "ja": "ASSET MAINTENANCE"
+    },
+    "model_editor.maintenance.scope_whole": {
+      "en": "WHOLE LOD",
+      "ru": "ВЕСЬ LOD",
+      "zh-Hans": "WHOLE LOD",
+      "es": "WHOLE LOD",
+      "ja": "WHOLE LOD"
+    },
+    "model_editor.maintenance.scope_selected": {
+      "en": "SELECTED PART",
+      "ru": "ВЫБРАННАЯ ЧАСТЬ",
+      "zh-Hans": "SELECTED PART",
+      "es": "SELECTED PART",
+      "ja": "SELECTED PART"
+    },
+    "model_editor.maintenance.select_part": {
+      "en": "Select one main or additional mesh in the geometry list below.",
+      "ru": "Выберите один основной или дополнительный меш в списке геометрии ниже.",
+      "zh-Hans": "Select one main or additional mesh in the geometry list below.",
+      "es": "Select one main or additional mesh in the geometry list below.",
+      "ja": "Select one main or additional mesh in the geometry list below."
+    },
+    "model_editor.maintenance.issue_prepare": {
+      "en": "PREPARE",
+      "ru": "ПОДГОТОВКА",
+      "zh-Hans": "PREPARE",
+      "es": "PREPARE",
+      "ja": "PREPARE"
+    },
+    "model_editor.maintenance.issue_lods": {
+      "en": "LODS",
+      "ru": "LOD",
+      "zh-Hans": "LODS",
+      "es": "LODS",
+      "ja": "LODS"
+    },
+    "model_editor.maintenance.issue_surfaces": {
+      "en": "SURFACES",
+      "ru": "ПОВЕРХНОСТИ",
+      "zh-Hans": "SURFACES",
+      "es": "SURFACES",
+      "ja": "SURFACES"
+    },
+    "model_editor.maintenance.issue_semantics": {
+      "en": "SEMANTICS",
+      "ru": "СЕМАНТИКА",
+      "zh-Hans": "SEMANTICS",
+      "es": "SEMANTICS",
+      "ja": "SEMANTICS"
+    },
+    "model_editor.maintenance.issue_replacement": {
+      "en": "REPLACEMENT",
+      "ru": "ПРИВЯЗКА ЗАМЕНЫ",
+      "zh-Hans": "REPLACEMENT",
+      "es": "REPLACEMENT",
+      "ja": "REPLACEMENT"
+    },
+    "model_editor.maintenance.clean": {
+      "en": "NO LOCAL DEBT",
+      "ru": "ЛОКАЛЬНЫХ ПРОВЕРОК НЕТ",
+      "zh-Hans": "NO LOCAL DEBT",
+      "es": "NO LOCAL DEBT",
+      "ja": "NO LOCAL DEBT"
+    },
+    "model_editor.maintenance.changed": {
+      "en": "CHANGED",
+      "ru": "ИЗМЕНЁН",
+      "zh-Hans": "CHANGED",
+      "es": "CHANGED",
+      "ja": "CHANGED"
+    },
+    "model_editor.maintenance.new": {
+      "en": "NEW",
+      "ru": "НОВЫЙ",
+      "zh-Hans": "NEW",
+      "es": "NEW",
+      "ja": "NEW"
+    },
+    "model_editor.maintenance.missing": {
+      "en": "MISSING",
+      "ru": "ИСТОЧНИК УДАЛЁН",
+      "zh-Hans": "MISSING",
+      "es": "MISSING",
+      "ja": "MISSING"
+    },
+    "model_editor.maintenance.untracked": {
+      "en": "UNTRACKED",
+      "ru": "БАЗА НЕ ЗАФИКСИРОВАНА",
+      "zh-Hans": "UNTRACKED",
+      "es": "UNTRACKED",
+      "ja": "UNTRACKED"
+    },
+    "model_editor.maintenance.new_lod": {
+      "en": "NEW LOD SOURCE",
+      "ru": "НОВЫЙ ИСХОДНЫЙ LOD",
+      "zh-Hans": "NEW LOD SOURCE",
+      "es": "NEW LOD SOURCE",
+      "ja": "NEW LOD SOURCE"
+    },
+    "model_editor.maintenance.variant_changed": {
+      "en": "VARIANT CHANGED",
+      "ru": "ВАРИАНТ ИЗМЕНЁН",
+      "zh-Hans": "VARIANT CHANGED",
+      "es": "VARIANT CHANGED",
+      "ja": "VARIANT CHANGED"
+    },
+    "model_editor.maintenance.variant_new": {
+      "en": "NEW VARIANT",
+      "ru": "НОВЫЙ ВАРИАНТ",
+      "zh-Hans": "NEW VARIANT",
+      "es": "NEW VARIANT",
+      "ja": "NEW VARIANT"
+    },
+    "model_editor.maintenance.variant_missing": {
+      "en": "VARIANT MISSING",
+      "ru": "ИСТОЧНИК ВАРИАНТА УДАЛЁН",
+      "zh-Hans": "VARIANT MISSING",
+      "es": "VARIANT MISSING",
+      "ja": "VARIANT MISSING"
+    },
+    "model_editor.maintenance.variant_untracked": {
+      "en": "VARIANT UNTRACKED",
+      "ru": "БАЗА ВАРИАНТА НЕ ЗАФИКСИРОВАНА",
+      "zh-Hans": "VARIANT UNTRACKED",
+      "es": "VARIANT UNTRACKED",
+      "ja": "VARIANT UNTRACKED"
+    },
+    "model_editor.maintenance.replace_variant": {
+      "en": "REIMPORT VARIANT",
+      "ru": "ЗАМЕНИТЬ ВАРИАНТ ИЗ SOURCE",
+      "zh-Hans": "REIMPORT VARIANT",
+      "es": "REIMPORT VARIANT",
+      "ja": "REIMPORT VARIANT"
+    },
+    "model_editor.maintenance.replace_part": {
+      "en": "REIMPORT PART",
+      "ru": "ЗАМЕНИТЬ ЧАСТЬ ИЗ SOURCE",
+      "zh-Hans": "REIMPORT PART",
+      "es": "REIMPORT PART",
+      "ja": "REIMPORT PART"
+    },
+    "model_editor.maintenance.prepare": {
+      "en": "PREPARE SELECTED",
+      "ru": "ПОДГОТОВИТЬ ВЫБРАННОЕ",
+      "zh-Hans": "PREPARE SELECTED",
+      "es": "PREPARE SELECTED",
+      "ja": "PREPARE SELECTED"
+    },
+    "model_editor.maintenance.check": {
+      "en": "CHECK SELECTED",
+      "ru": "ПРОВЕРИТЬ ВЫБРАННОЕ",
+      "zh-Hans": "CHECK SELECTED",
+      "es": "CHECK SELECTED",
+      "ja": "CHECK SELECTED"
+    },
+    "model_editor.maintenance.regen_lods": {
+      "en": "REGENERATE DERIVED LODS",
+      "ru": "ПЕРЕСОЗДАТЬ ПРОИЗВОДНЫЕ LOD",
+      "zh-Hans": "REGENERATE DERIVED LODS",
+      "es": "REGENERATE DERIVED LODS",
+      "ja": "REGENERATE DERIVED LODS"
+    },
+    "model_editor.maintenance.open_semantics": {
+      "en": "OPEN SEMANTICS",
+      "ru": "ОТКРЫТЬ СЕМАНТИКУ",
+      "zh-Hans": "OPEN SEMANTICS",
+      "es": "OPEN SEMANTICS",
+      "ja": "OPEN SEMANTICS"
+    },
+    "model_editor.maintenance.variant_hint": {
+      "en": "This is hidden replacement geometry. Reimport preserves its opaque variant identity and replacement compatibility; a new variant must be assigned to at least one base visual.",
+      "ru": "Это скрытая геометрия замены. Повторный импорт сохраняет identity варианта и его совместимость; новый вариант нужно привязать хотя бы к одному основному visual.",
+      "zh-Hans": "This is hidden replacement geometry. Reimport preserves its opaque variant identity and replacement compatibility; a new variant must be assigned to at least one base visual.",
+      "es": "This is hidden replacement geometry. Reimport preserves its opaque variant identity and replacement compatibility; a new variant must be assigned to at least one base visual.",
+      "ja": "This is hidden replacement geometry. Reimport preserves its opaque variant identity and replacement compatibility; a new variant must be assigned to at least one base visual."
+    },
+    "model_editor.maintenance.part_hint": {
+      "en": "Reimport replaces only this geometry payload. Stable RenderNode/semantic/joint/physics/damage identity stays intact; only dependent local checks become stale.",
+      "ru": "Повторный импорт заменяет только payload этой геометрии. Stable RenderNode, семантика, шарнир, физика и damage сохраняются; устаревают только зависимые локальные проверки.",
+      "zh-Hans": "Reimport replaces only this geometry payload. Stable RenderNode/semantic/joint/physics/damage identity stays intact; only dependent local checks become stale.",
+      "es": "Reimport replaces only this geometry payload. Stable RenderNode/semantic/joint/physics/damage identity stays intact; only dependent local checks become stale.",
+      "ja": "Reimport replaces only this geometry payload. Stable RenderNode/semantic/joint/physics/damage identity stays intact; only dependent local checks become stale."
+    },
+    "model_editor.maintenance.whole_hint": {
+      "en": "Whole-LOD / whole-asset tools remain the normal wizard operations below. Use SELECTED PART when maintaining an already-built production asset without reopening unrelated work.",
+      "ru": "Операции над всем LOD/asset остаются обычными инструментами мастера ниже. Для готовой production-модели используйте «ВЫБРАННАЯ ЧАСТЬ», чтобы не открывать заново несвязанные этапы.",
+      "zh-Hans": "Whole-LOD / whole-asset tools remain the normal wizard operations below. Use SELECTED PART when maintaining an already-built production asset without reopening unrelated work.",
+      "es": "Whole-LOD / whole-asset tools remain the normal wizard operations below. Use SELECTED PART when maintaining an already-built production asset without reopening unrelated work.",
+      "ja": "Whole-LOD / whole-asset tools remain the normal wizard operations below. Use SELECTED PART when maintaining an already-built production asset without reopening unrelated work."
+    },
+    "model_editor.maintenance.source_changes": {
+      "en": "SOURCE CHANGES",
+      "ru": "ИЗМЕНЕНИЙ SOURCE",
+      "zh-Hans": "SOURCE CHANGES",
+      "es": "SOURCE CHANGES",
+      "ja": "SOURCE CHANGES"
+    },
+    "model_editor.maintenance.source_current": {
+      "en": "SOURCE CURRENT",
+      "ru": "SOURCE АКТУАЛЕН",
+      "zh-Hans": "SOURCE CURRENT",
+      "es": "SOURCE CURRENT",
+      "ja": "SOURCE CURRENT"
+    },
+    "model_editor.maintenance.not_scanned": {
+      "en": "NOT SCANNED",
+      "ru": "НЕ СКАНИРОВАЛСЯ",
+      "zh-Hans": "NOT SCANNED",
+      "es": "NOT SCANNED",
+      "ja": "NOT SCANNED"
+    },
+    "model_editor.maintenance.scan": {
+      "en": "SCAN SOURCE CHANGES",
+      "ru": "СКАНИРОВАТЬ ИЗМЕНЕНИЯ SOURCE",
+      "zh-Hans": "SCAN SOURCE CHANGES",
+      "es": "SCAN SOURCE CHANGES",
+      "ja": "SCAN SOURCE CHANGES"
+    },
+    "model_editor.maintenance.source_scan_title": {
+      "en": "SOURCE CHANGES",
+      "ru": "ИЗМЕНЕНИЯ ИСХОДНИКОВ",
+      "zh-Hans": "SOURCE CHANGES",
+      "es": "SOURCE CHANGES",
+      "ja": "SOURCE CHANGES"
+    },
+    "model_editor.maintenance.scan_hint": {
+      "en": "Read-only comparison with source files. Nothing is imported until you choose an action for a changed or new file.",
+      "ru": "Только сравнивает текущий asset с файлами исходников. Ничего не импортируется, пока вы явно не выберете действие для изменённого или нового файла.",
+      "zh-Hans": "Read-only comparison with source files. Nothing is imported until you choose an action for a changed or new file.",
+      "es": "Read-only comparison with source files. Nothing is imported until you choose an action for a changed or new file.",
+      "ja": "Read-only comparison with source files. Nothing is imported until you choose an action for a changed or new file."
+    },
+    "model_editor.maintenance.pending_components": {
+      "en": "components pending",
+      "ru": "частей требуют проверки",
+      "zh-Hans": "components pending",
+      "es": "components pending",
+      "ja": "components pending"
+    },
+    "model_editor.maintenance.pending_issues": {
+      "en": "checks",
+      "ru": "проверок",
+      "zh-Hans": "checks",
+      "es": "checks",
+      "ja": "checks"
+    },
+    "model_editor.maintenance.action_replace": {
+      "en": "REPLACE",
+      "ru": "ЗАМЕНИТЬ",
+      "zh-Hans": "REPLACE",
+      "es": "REPLACE",
+      "ja": "REPLACE"
+    },
+    "model_editor.maintenance.action_add": {
+      "en": "ADD",
+      "ru": "ДОБАВИТЬ",
+      "zh-Hans": "ADD",
+      "es": "ADD",
+      "ja": "ADD"
+    },
+    "model_editor.maintenance.action_adopt": {
+      "en": "ADOPT BASELINE",
+      "ru": "ПРИНЯТЬ КАК БАЗУ",
+      "zh-Hans": "ADOPT BASELINE",
+      "es": "ADOPT BASELINE",
+      "ja": "ADOPT BASELINE"
+    },
+    "model_editor.maintenance.action_replace_variant": {
+      "en": "REPLACE VARIANT",
+      "ru": "ЗАМЕНИТЬ ВАРИАНТ",
+      "zh-Hans": "REPLACE VARIANT",
+      "es": "REPLACE VARIANT",
+      "ja": "REPLACE VARIANT"
+    },
+    "model_editor.maintenance.action_add_variant": {
+      "en": "ADD VARIANT",
+      "ru": "ДОБАВИТЬ ВАРИАНТ",
+      "zh-Hans": "ADD VARIANT",
+      "es": "ADD VARIANT",
+      "ja": "ADD VARIANT"
+    },
+    "model_editor.maintenance.manual_lod": {
+      "en": "manual LOD document review",
+      "ru": "нужно отдельно решить судьбу LOD",
+      "zh-Hans": "manual LOD document review",
+      "es": "manual LOD document review",
+      "ja": "manual LOD document review"
+    },
+    "model_editor.maintenance.no_auto_delete": {
+      "en": "no automatic delete",
+      "ru": "не удаляется автоматически",
+      "zh-Hans": "no automatic delete",
+      "es": "no automatic delete",
+      "ja": "no automatic delete"
+    },
+    "model_editor.maintenance.baseline_required": {
+      "en": "SOURCE BASELINE NOT INITIALIZED",
+      "ru": "БАЗА SOURCE НЕ ИНИЦИАЛИЗИРОВАНА",
+      "zh-Hans": "SOURCE BASELINE NOT INITIALIZED",
+      "es": "SOURCE BASELINE NOT INITIALIZED",
+      "ja": "SOURCE BASELINE NOT INITIALIZED"
+    },
+    "model_editor.maintenance.baseline_files": {
+      "en": "linked source files have no stored accepted fingerprint. Fix this once; do not accept them one by one.",
+      "ru": "связанных source-файлов не имеют сохранённого принятого хеша. Это одноразовая миграция; подтверждать файлы по одному не нужно.",
+      "zh-Hans": "linked source files have no stored accepted fingerprint. Fix this once; do not accept them one by one.",
+      "es": "linked source files have no stored accepted fingerprint. Fix this once; do not accept them one by one.",
+      "ja": "linked source files have no stored accepted fingerprint. Fix this once; do not accept them one by one."
+    },
+    "model_editor.maintenance.adopt_all": {
+      "en": "ACCEPT CURRENT LINKED SOURCE AS BASELINE",
+      "ru": "ЗАФИКСИРОВАТЬ ТЕКУЩИЙ SOURCE КАК БАЗУ",
+      "zh-Hans": "ACCEPT CURRENT LINKED SOURCE AS BASELINE",
+      "es": "ACCEPT CURRENT LINKED SOURCE AS BASELINE",
+      "ja": "ACCEPT CURRENT LINKED SOURCE AS BASELINE"
+    },
+    "model_editor.maintenance.adopt_all_confirm": {
+      "en": "Use the currently linked source files as the comparison baseline for this production asset?",
+      "ru": "Зафиксировать текущие связанные source-файлы как базу сравнения для этой production-модели?",
+      "zh-Hans": "Use the currently linked source files as the comparison baseline for this production asset?",
+      "es": "Use the currently linked source files as the comparison baseline for this production asset?",
+      "ja": "Use the currently linked source files as the comparison baseline for this production asset?"
+    },
+    "model_editor.maintenance.workset": {
+      "en": "WORK SET",
+      "ru": "РАБОЧИЙ НАБОР",
+      "zh-Hans": "WORK SET",
+      "es": "WORK SET",
+      "ja": "WORK SET"
+    },
+    "model_editor.maintenance.items": {
+      "en": "items",
+      "ru": "элементов",
+      "zh-Hans": "items",
+      "es": "items",
+      "ja": "items"
+    },
+    "model_editor.maintenance.only_changes": {
+      "en": "CHANGES",
+      "ru": "ИЗМЕНЕНИЯ",
+      "zh-Hans": "CHANGES",
+      "es": "CHANGES",
+      "ja": "CHANGES"
+    },
+    "model_editor.maintenance.whole_model": {
+      "en": "WHOLE MODEL",
+      "ru": "ВСЯ МОДЕЛЬ",
+      "zh-Hans": "WHOLE MODEL",
+      "es": "WHOLE MODEL",
+      "ja": "WHOLE MODEL"
+    },
+    "model_editor.maintenance.full_source_tools": {
+      "en": "FULL SOURCE REIMPORT · ADVANCED",
+      "ru": "ПОЛНЫЙ REIMPORT SOURCE · ДОПОЛНИТЕЛЬНО",
+      "zh-Hans": "FULL SOURCE REIMPORT · ADVANCED",
+      "es": "FULL SOURCE REIMPORT · ADVANCED",
+      "ja": "FULL SOURCE REIMPORT · ADVANCED"
+    },
+    "model_editor.maintenance.full_model_tools": {
+      "en": "WHOLE MODEL TOOLS",
+      "ru": "ИНСТРУМЕНТЫ ДЛЯ ВСЕЙ МОДЕЛИ",
+      "zh-Hans": "WHOLE MODEL TOOLS",
+      "es": "WHOLE MODEL TOOLS",
+      "ja": "WHOLE MODEL TOOLS"
+    },
+    "model_editor.maintenance.lod_work": {
+      "en": "CHANGED PARTS · PREPARE / LOD",
+      "ru": "ИЗМЕНЁННЫЕ ЧАСТИ · ПОДГОТОВКА / LOD",
+      "zh-Hans": "CHANGED PARTS · PREPARE / LOD",
+      "es": "CHANGED PARTS · PREPARE / LOD",
+      "ja": "CHANGED PARTS · PREPARE / LOD"
+    },
+    "model_editor.maintenance.no_lod_work": {
+      "en": "No changed parts require LOD work.",
+      "ru": "Нет изменённых частей, требующих обработки LOD.",
+      "zh-Hans": "No changed parts require LOD work.",
+      "es": "No changed parts require LOD work.",
+      "ja": "No changed parts require LOD work."
+    },
+    "model_editor.wizard.checkpoint_create": {
+      "en": "CREATE ROLLBACK SNAPSHOT",
+      "ru": "СОЗДАТЬ СНИМОК ДЛЯ ОТКАТА",
+      "zh-Hans": "CREATE ROLLBACK SNAPSHOT",
+      "es": "CREATE ROLLBACK SNAPSHOT",
+      "ja": "CREATE ROLLBACK SNAPSHOT"
+    },
+    "model_editor.wizard.checkpoint_create_desc": {
+      "en": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
+      "ru": "Сохраняет точный текущий WORKING ASSET как необязательную точку отката. Не проверяет, не открывает, не инвалидирует, не удаляет и не продвигает этапы.",
+      "zh-Hans": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
+      "es": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
+      "ja": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages."
+    },
+    "model_editor.wizard.checkpoint_rollback_only": {
+      "en": "Rollback snapshot only · it does not control stage progression or editor resume.",
+      "ru": "Только rollback-снимок · он не управляет прогрессом этапов и точкой продолжения редактора.",
+      "zh-Hans": "Rollback snapshot only · it does not control stage progression or editor resume.",
+      "es": "Rollback snapshot only · it does not control stage progression or editor resume.",
+      "ja": "Rollback snapshot only · it does not control stage progression or editor resume."
+    },
+    "model_editor.wizard.command.checkpoint": {
+      "en": "create rollback snapshot",
+      "ru": "создание rollback-снимка",
+      "zh-Hans": "create rollback snapshot",
+      "es": "create rollback snapshot",
+      "ja": "create rollback snapshot"
+    },
+    "model_editor.command.autosave_working": {
+      "en": "autosave working asset",
+      "ru": "автосохранение WORKING ASSET",
+      "zh-Hans": "autosave working asset",
+      "es": "autosave working asset",
+      "ja": "autosave working asset"
+    },
+    "model_editor.lod_generator.working_saved": {
+      "en": "WORKING ASSET autosave pending",
+      "ru": "ожидается автосохранение WORKING ASSET",
+      "zh-Hans": "WORKING ASSET autosave pending",
+      "es": "WORKING ASSET autosave pending",
+      "ja": "WORKING ASSET autosave pending"
     }
   }
 }

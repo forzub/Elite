@@ -2,9 +2,11 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <initializer_list>
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 
 #include <nlohmann/json.hpp>
 
@@ -28,6 +30,9 @@ private:
         std::string id;
         std::string displayName;
         ObjectType type = ObjectType::None;
+        // Optional asset-level folder authority. Mesh membership is discovered
+        // from LOD<N>/*.obj; this is not a per-mesh registration list.
+        std::filesystem::path sourceDirectory;
     };
 
     void sendCatalog();
@@ -35,6 +40,7 @@ private:
     void sendAsset(const std::vector<std::size_t>& payloadLods = {});
     void sendAssetMetadata(const nlohmann::json& hints = nlohmann::json::object());
     void sendSurfaceMetadataPatch(const std::vector<std::pair<std::size_t, std::size_t>>& targets);
+    void sendSemanticBindingPatch(const std::vector<std::pair<std::size_t, std::size_t>>& targets);
     void sendLodPayload(std::size_t lodIndex, bool includeRawSnapshots = false);
     std::uint32_t nextWireTransferId();
     void sendStatus(const std::string& message, bool error = false, const std::string& activity = "idle");
@@ -45,7 +51,9 @@ private:
         std::size_t total,
         const std::filesystem::path& path = {});
     bool selectAsset(const std::string& id, bool forceReimport);
-    bool saveAsset();
+    bool saveAsset(); // ordinary WORKING ASSET save
+    bool saveWorkingAsset(bool quiet = false);
+    bool buildProductionAsset();
     bool saveManifestOnly();
     bool saveLodOnly(std::size_t lodIndex);
     bool loadLodData(std::size_t lodIndex, bool forceReload, std::string* error = nullptr);
@@ -104,18 +112,22 @@ private:
         std::map<std::size_t, std::map<std::string, std::string>> geometryTopologyClasses;
         std::map<std::size_t, std::map<std::string, MeshPreparationRecord>> meshPreparationRecords;
         std::map<std::size_t, std::map<std::string, std::vector<std::string>>> legacySourceVariantReplacements;
+        // Ordinary source provenance and granular maintenance debt are editor-only.
+        // They never enter the runtime .elmodel contract.
+        std::map<std::size_t, std::map<std::string, std::uint64_t>> sourceMeshFingerprints; // source path -> accepted file revision
+        std::map<std::string, std::set<std::string>> componentMaintenanceIssues; // base visual id -> prepare/lods/surfaces/semantics
         std::size_t nextBaseVisualOrdinal = 1;
         std::size_t nextSourceVariantOrdinal = 1;
     };
     std::filesystem::path wizardWorkspacePath() const;
     std::filesystem::path wizardStatePath() const;
+    std::filesystem::path workingAssetPath() const;
+    std::filesystem::path workingEditorStatePath() const;
     std::filesystem::path productionEditorStatePath() const;
     std::filesystem::path wizardCheckpointPath(const std::string& stage) const;
     std::filesystem::path wizardCheckpointEditorStatePath(const std::string& stage) const;
     std::filesystem::path wizardLogPath(const std::string& fileName) const;
-    std::filesystem::path latestSavedWizardCheckpoint(std::string* stage = nullptr) const;
     std::uint64_t checkpointSequenceForStage(const std::string& stage) const;
-    bool pruneWizardCheckpointsAfter(const std::string& stage, std::string* error = nullptr);
     using StageValidityState = std::map<std::string, std::string>;
     EditorAuthoringState captureEditorAuthoringState() const;
     StageValidityState captureStageValidity() const;
@@ -140,8 +152,14 @@ private:
         StageValidityState* validity = nullptr,
         std::uint64_t* checkpointSequence = nullptr,
         std::string* error = nullptr) const;
+    nlohmann::json packageStampFor(const std::filesystem::path& manifest) const;
     nlohmann::json productionPackageStamp() const;
     bool productionPackageStampMatches(const nlohmann::json& expected) const;
+    bool writeWorkingEditorState(std::string* error = nullptr) const;
+    bool loadWorkingEditorState(
+        EditorAuthoringState& state,
+        StageValidityState& validity,
+        std::string* error = nullptr) const;
     bool writeProductionEditorState(std::string* error = nullptr) const;
     bool loadProductionEditorState(
         EditorAuthoringState& state,
@@ -152,7 +170,9 @@ private:
     void invalidateWizardFrom(const std::string& stage);
     void restoreWizardValidityAt(const std::string& stage);
     bool validateWizardStage(const std::string& stage, std::string* error = nullptr);
+    void sendWizardValidationReport();
     bool completeWizardStage(const std::string& stage);
+    bool createWizardCheckpoint(const std::string& stage);
     bool restoreWizardCheckpoint(const std::string& stage);
     bool scanRenderDuplicates(
         std::size_t lodIndex,
@@ -163,7 +183,9 @@ private:
         const std::string& invalidationStage = {},
         bool reportStatus = false,
         bool* payloadChangedOut = nullptr,
-        std::vector<std::size_t>* changedLodsOut = nullptr);
+        std::vector<std::size_t>* changedLodsOut = nullptr,
+        std::size_t scopeLod = std::size_t(-1),
+        const std::string& scopeGeometryId = {});
     bool verifyLoadedWorkingSetCanonical(std::string* reason = nullptr) const;
     bool modelPreflightAllLoadedReady(std::string* reason = nullptr) const;
     bool setGeometryTopologyClass(
@@ -174,6 +196,7 @@ private:
         bool publishAfter = true);
     bool modelPreflightReadyForLod(std::string* reason = nullptr) const;
     bool analyzeLodRequirements(std::size_t lodIndex);
+    bool setLodRelativeGeometricError(std::size_t lodIndex, double relativeError);
     bool previewLodComponentCull(std::size_t lodIndex, double thresholdMeters);
     bool previewLodCoplanarCollapse(std::size_t lodIndex);
     bool applyGeneratedLods(
@@ -197,6 +220,24 @@ private:
     std::string allocateBaseVisualId();
     std::string allocateSourceVariantId();
     nlohmann::json serializeWizard() const;
+    void captureCurrentSourceFingerprintBaseline();
+    void sendSourceChangeScan();
+    bool adoptSourceRevision(std::size_t lodIndex, const std::string& sourcePath);
+    bool adoptAllSourceRevisions();
+    bool replaceSourcePart(std::size_t lodIndex, std::size_t geometryIndex);
+    bool addSourcePart(std::size_t lodIndex, const std::string& sourcePath);
+    bool importSourceVariantMaintenance(
+        std::size_t lodIndex,
+        const std::string& sourcePath,
+        bool requireExisting);
+    bool prepareOneGeometry(std::size_t lodIndex, std::size_t geometryIndex);
+    bool analyzeOneGeometry(std::size_t lodIndex, std::size_t geometryIndex);
+    bool regenerateDerivedLodsForGeometry(std::size_t lodIndex, std::size_t geometryIndex);
+    std::string maintenanceComponentId(std::size_t lodIndex, const RenderGeometryDefinition& geometry) const;
+    void markMaintenanceIssues(const std::string& componentId, std::initializer_list<const char*> issues);
+    void clearMaintenanceIssue(const std::string& componentId, const std::string& issue);
+    void refreshMaintenanceSemanticIssue(const std::string& componentId);
+    nlohmann::json serializeMaintenance() const;
 
     nlohmann::json serializeAssetMetadata() const;
 
@@ -238,6 +279,8 @@ private:
     // Session-only RAW snapshots for the diagnostic SOURCE viewport. Never serialized into .elmodel/.elmesh.
     std::map<std::size_t, std::map<std::string, MeshLod>> m_rawMeshSnapshots;
     std::map<std::size_t, std::map<std::string, std::vector<std::string>>> m_legacySourceVariantReplacements;
+    std::map<std::size_t, std::map<std::string, std::uint64_t>> m_sourceMeshFingerprints;
+    std::map<std::string, std::set<std::string>> m_componentMaintenanceIssues;
     std::size_t m_nextBaseVisualOrdinal = 1;
     std::size_t m_nextSourceVariantOrdinal = 1;
     std::uint64_t m_nextCheckpointSequence = 1;

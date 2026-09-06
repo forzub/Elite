@@ -108,6 +108,7 @@ if(ELITE_BUILD_ASSET_EDITOR)
         tools/model_asset_editor/RuntimeAssemblyImporter.cpp
         tools/model_asset_editor/SourceFolderImporter.cpp
         tools/model_asset_editor/NativeObjImporter.cpp
+        src/model_asset/ModelAssetSemantics.cpp
 
         src/platform/RuntimeRoot.cpp
         src/ui/html/HtmlUiServer.cpp
@@ -774,6 +775,8 @@ if(TARGET EliteAssetEditor)
 
     set(ELITE_MODEL_ASSET_EDITOR_WEBUI_FILES
         "${ELITE_STATIC_ASSETS_DIR}/webui/model_asset_editor.html"
+        "${ELITE_STATIC_ASSETS_DIR}/webui/elite_ui.css"
+        "${ELITE_STATIC_ASSETS_DIR}/webui/elite_ui.js"
         "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/three.module.js"
         "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/examples/jsm/controls/OrbitControls.js"
     )
@@ -785,6 +788,12 @@ if(TARGET EliteAssetEditor)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${ELITE_STATIC_ASSETS_DIR}/webui/model_asset_editor.html"
                 "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/model_asset_editor.html"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${ELITE_STATIC_ASSETS_DIR}/webui/elite_ui.css"
+                "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/elite_ui.css"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${ELITE_STATIC_ASSETS_DIR}/webui/elite_ui.js"
+                "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/elite_ui.js"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/three.module.js"
                 "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/vendor/three/three.module.js"
@@ -815,6 +824,8 @@ if(TARGET EliteAssetEditor)
                 --font-manifest "${ELITE_STATIC_ASSETS_DIR}/ui/font_manifest.json"
                 --license-index "${ELITE_THIRD_PARTY_LICENSE_INDEX}"
                 --include model_asset_editor.html
+                --include elite_ui.css
+                --include elite_ui.js
                 --include vendor/three/three.module.js
                 --include vendor/three/examples/jsm/controls/OrbitControls.js
                 --output "${ELITE_MODEL_ASSET_EDITOR_UI_PACK_FILE}"

@@ -188,6 +188,8 @@ struct NodeJoint
     glm::vec3 pivot {0.0f};
     glm::vec3 axis {0.0f, 1.0f, 0.0f};
     float defaultRateDegPerSec = 0.0f;
+    // Revolute ranges spanning 360 degrees or more are continuous rotation.
+    // Narrower ranges are mechanical angular limits.
     float minAngleDeg = -360.0f;
     float maxAngleDeg = 360.0f;
     bool breakable = false;

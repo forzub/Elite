@@ -1,12 +1,19 @@
 # Elite Model Asset Editor — рабочая инструкция / архитектурный контекст
 
-**Актуально:** 2026-09-02 · runtime screen-space LOD error contract в 0.10.27
-**Редактор:** `Elite Model Asset Editor 0.10.27`
+**Актуально:** 2026-09-06 · 0.10.45 semantic link authoring / radial-support graph / global hit overlay
+**Редактор:** `Elite Model Asset Editor 0.10.45`
 **Asset format:** v4
-**Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`, `SURFACES`. SOURCE/LODS владеют canonical mesh и render-LOD documents, GEOMETRY — LOD-local geometry/instances/replacements, SURFACES — surface intent и material contract. Следующий незакрытый stage — `SEMANTICS`.
+**Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`, `SURFACES`, `SEMANTICS`. SOURCE/LODS владеют canonical mesh и render-LOD documents, GEOMETRY — LOD-local geometry/instances/replacements, SURFACES — surface intent и material contract. Следующий stage после SEMANTICS — `PHYSICS`.
 
 > Этот файл является источником контекста для продолжения работы над Model Asset Editor.
 > Старые предположения из эпохи format v2/v3 о единой `Node -> GeometryDefinition -> LOD0/LOD1` структуре больше не применять к v4.
+
+## 0.10.34: два жёстких UX/placement-инварианта
+
+1. **Selection не сбрасывает scroll.** Любой list/table/tree сохраняет текущий viewport при выборе строки, обновлении inspector и metadata rerender в том же asset/stage/LOD контексте. Новый scrollable container обязан подключаться к общему `data-preserve-scroll` контракту.
+2. **Instance authoring не имеет права менять placement сам по себе.** Consolidate/duplicate/radial array могут менять geometry sharing или создавать новый RenderNode, но матричный transform должен сериализоваться обратно в тот же XYZ transform без дрейфа. Matrix→Euler encoding использует только extractor, обратный `eulerAngleXYZ`; generic quaternion Euler extraction для asset transform запрещён.
+
+GEOMETRY также имеет явные repair/authoring инструменты для уже существующего экземпляра: относительный `MOVE XYZ` и `MOVE IN RADIAL ARRAY` на заданное число слотов. Эти команды **перемещают существующий RenderNode и не создают копию**.
 
 ---
 
@@ -14,11 +21,50 @@
 
 `0.10.16` завершает эксперимент с самодельной absolute-orientation эвристикой. Продуктом `ПОДГОТОВИТЬ МЕШИ` остаётся **исправленный working MeshLod**, но topology/orientation authority теперь делегирован проверенным geometry-processing библиотекам.
 
-## GEOMETRY workspace contract (0.10.20)
+## SEMANTICS tree/link authoring contract (0.10.37)
 
-GEOMETRY is a per-RenderLod authoring stage. Entering it resets transient LOD-generator and replacement previews and starts from the complete authored LOD0. The author chooses the active LOD at the top of the stage; G-indices, RenderNodes, instance sharing and cleanup are local to that LOD only.
+SEMANTICS is asset-wide and tree-first. The tree is the authority for parent/child structure; multiple nodes may be selected with Ctrl+click and dragged onto a parent. Reparenting is one backend transaction and preserves each moved subtree root's world pose. The joint stored on a child Node is presented as the incoming parent→child link, with FIXED / ROTATE / DETACH / ROT+DETACH edited directly in the tree row. ROTATE/DETACH preview transforms the entire child subtree and never writes asset data.
 
-The stage exposes, in order: the full main/additional geometry browser with single-mesh preview; instance/array authoring (duplicate, break, radial array); rigid duplicate comparison and consolidation; additional/replacement mesh compatibility plus temporary replacement preview; unused ordinary geometry cleanup; and finally the GEOMETRY checkpoint. Additional meshes are protected from ordinary unused-geometry cleanup.
+The viewport may show the same hierarchy as a preview-only 3D semantic graph: parent-child lines, clickable node/link markers and an explode factor that separates semantic parts without altering saved transforms. Multiple current roots must still separate visually before the hierarchy is authored. RenderNode bindings remain LOD-local and are summarized per LOD for the selected semantic node; exact stable-id APPLY TO ALL LODS remains available only in the binding editor. SEMANTICS CHECK requires exactly one semantic asset root.
+
+**0.10.38 binding invariant:** GEOMETRY duplicate/circular-copy operations create new visual RenderNodes but never copy semantic identity. New copies start UNBOUND and must be assigned explicitly in SEMANTICS. `VIS` in the tree is the count of active-LOD RenderNodes bound to that semantic node: `0 VIS` is legitimate for a semantic-only grouping root, while an ordinary visible part with `0 VIS` usually means its visual is currently bound elsewhere. A selected semantic node can repair this by entering visual-pick mode and clicking the intended mesh in the 3D viewport. Selection follows desktop tree conventions: click = one, Ctrl = toggle one, Shift = contiguous visible-tree range, Ctrl+Shift = add range.
+
+
+**0.10.41 semantic interaction invariant:** parent/reorder/joint/frame edits are semantic-only deltas. They must not call full asset metadata serialization or scan render triangles. Collapsing a branch hides the entire descendant subtree; hidden descendants must never reappear through fallback tree enumeration. 3D semantic graph anchors use precomputed geometry metadata bounds transformed by current RenderNode placement, not runtime vertex scans.
+
+**0.10.42 3D semantic graph invariant:** graph layout and exploded visual placement must use one canonical anchor snapshot derived from authored RenderNode transforms plus geometry metadata bounds. Overlay node/link objects are persistent and update in place; slider/motion hot paths must not rebuild/dispose the graph object set or read already-exploded viewport matrices back as layout input. The selected joint gizmo is a separate overlay layer.
+
+
+**0.10.43/0.10.45 runtime-overlay invariant:** SEMANTICS graph selection/explode/motion uses `semanticDescendantSet` as the only subtree authority. Collision EDIT/PICK authority remains PHYSICS/DAMAGE, but the global Hit Volumes toolbar toggle controls viewport visibility in any loaded 3D stage; visible collision overlays follow semantic preview transforms without intercepting SEMANTICS selection. ROOT nodes have no incoming joint gizmo.
+
+**0.10.44 radial-graph invariant:** semantic explode has one spatial rule: with exactly one semantic root, its canonical visual center (or its semantic frame if it has no visual) is the fixed center; before a single root exists, world origin `(0,0,0)` is the temporary center. Every other logical part moves only along the ray from this center to its canonical visual center, and displacement is monotonic in original radius. Graph markers/links are created hidden and may become visible only after a successful update; uninitialized unit cubes are never a valid preview state.
+**0.10.45 semantic-link authoring invariant:** the incoming joint belongs to the parent→child link, not to either mesh. `NodeJoint::pivot` and `axis` remain stored in the child semantic-local frame; the editor must hide that coordinate-system detail behind explicit authoring tools: parent-origin preset, child-visual-center preset, or exact 3D surface pick. Preview speed is editor-only; `defaultRateDegPerSec` is a runtime property. Base semantic Position/Rotation/Pivot are advanced logical-frame data, not mesh-placement controls. `VISUAL REPRESENTATION / LOD BINDINGS` is repair/identity metadata and should stay secondary when all loaded LODs are already bound.
+
+**0.10.45 radial-support invariant:** explode direction remains the ray from the single ROOT center (or world origin before a single root exists) to the logical part visual center, but explode magnitude is based on the farthest transformed visual-bounds point projected along that ray. This keeps inner/nearby details closer while a large outer ring travels farther even when their centers are close.
+
+
+**0.10.40 lifecycle invariant:** semantic identity and render representation have separate lifecycles, but their relationship is governed by one shared `ModelAssetSemantics` authority. The SEMANTICS tree lists logical/gameplay parts, not meshes; names may initially match LOD0 OBJ names only because SOURCE creates a starter logical identity for each initial LOD0 visual. A logical part with no visual is legal only when it still has a real role (children, socket/collision/state/damage/physics ownership). A leaf with no visual and no role is an ORPHAN and SEMANTICS CHECK must reject it. Deleting a semantic part never deletes geometry: its RenderNodes become UNBOUND and are repaired/reused separately. SOURCE must not create collision/physics payload; that belongs to PHYSICS.
+
+The semantic tree is a real authoring tree: depth is shown by indentation/connectors, branches may collapse, and drag/drop supports BEFORE / INSIDE / AFTER. Reordering siblings is editor-only stable-ID presentation metadata and must never reorder the runtime semantic-node vector or change runtime indices. Ordinary selection must use partial UI refresh rather than rebuilding the whole tree.
+
+ROTATE/DETACH are properties of the incoming parent→child link. Their preview always starts from canonical current RenderNode transforms, applies motion/detach to the whole semantic subtree, and never persists preview transforms. `3D SEMANTIC GRAPH` is also preview-only; its explode anchors are world-space centers of the actual rendered meshes (not RenderNode origins), which is required for folder-authoritative OBJ geometry with baked vertex placement.
+
+
+## GEOMETRY workspace contract (0.10.36)
+
+GEOMETRY is a per-RenderLod authoring stage, but the UI must expose one coherent workflow rather than the historical order in which tools were added. The active LOD selector is sticky at the top of the right workspace and is paired with `WHOLE MODEL / RECENTLY LOADED / CHANGED`. The recent-work option is disabled when the active LOD has no local maintenance debt.
+
+The visible order is fixed:
+
+1. **СРАВНЕНИЕ / СВЕДЕНИЕ В ЭКЗЕМПЛЯРЫ** — the primary RenderNode list and selection authority. Each row keeps the full RenderNode id plus geometry/source OBJ identity readable; long names wrap to a second line instead of being silently ellipsized. `VIEW` checkboxes isolate one element or a checked group in the viewport; with no checks the whole model is visible. `REF` is a radio reference for rigid duplicate comparison. `CLEAN UNUSED` belongs to this group because unused geometry is a consequence of consolidation.
+2. **Замены дополнительными мешами** — source variants and their compatible base visual families. Additional-mesh and source-file names follow the same readable two-line rule.
+3. **РЕДАКТИРОВАНИЕ** — exactly one selected RenderNode, chosen either from the table or by viewport click. Exact Position/Rotation/Pivot, relative MOVE XYZ, one circular MOVE/ARRAY dialog, duplicate, break instance, advanced/manual geometry repair and delete all act on this one authority.
+4. **CHECK GEOMETRY** — validates the current in-memory stage and unlocks SURFACES; it never saves.
+5. **LOD statistics** — informational counts only, placed below CHECK so they do not interrupt the authoring workflow.
+
+The old visible `LOD GEOMETRY / PREVIEW`, separate `INSTANCE / ARRAY AUTHORING`, GEOMETRY-time `Render LOD files`, separate selected-element inspector and detached delete group are not part of the GEOMETRY workflow anymore. Their functionality is either merged into the primary table/editor or belongs to LODS/diagnostics.
+
+Selection/rerender must preserve every list scroll position. This applies equally to row clicks, viewport selection, reference changes, VIEW checkbox changes and backend metadata refreshes.
 
 ## UI runtime/package contract (0.10.23)
 
@@ -38,7 +84,7 @@ A default-on `APPLY TO ... ALL LODS` option propagates the chosen intent to the 
 
 Material assignment stays per triangle and explicit materials stay in the shared asset material table, but `Triangle::materialIndex == NoIndex` is now the **valid implicit DEFAULT visual surface**, not a SURFACES error. This matches the planned renderer: most hull triangles need no individual physical/PBR material at all, while sparse explicit material assignments mark special visual roles such as emissive windows, navigation lights or deliberately coloured regions. Only a non-`NoIndex` reference outside the material table is invalid. The existing assign command may replace implicit DEFAULT on a geometry with a chosen explicit material, but the editor never mass-creates a dummy material merely to satisfy validation. Material editing still retains base RGBA/emissive/PBR-compatible fields for binary compatibility and future styles; they are optional appearance data, not a requirement that every triangle be PBR-authored.
 
-SURFACES never changes topology, transforms, instance sharing or replacement compatibility. Surface/material edits invalidate SURFACES and later checkpoints only; completed LODS and GEOMETRY remain valid.
+SURFACES never changes topology, transforms, instance sharing or replacement compatibility. Surface/material edits invalidate SURFACES and later stage validity only; completed LODS and GEOMETRY remain valid.
 
 Explicit surface-intent changes are metadata-only operations. `ClosedVolume / ThinOneSided / ThinTwoSided / BreachedVolume` must not scan triangles, run PREPARE/preflight, rebuild mesh buffers, resend geometry payloads or rebuild the complete Three.js scene. The backend publishes only the affected geometry metadata and the browser updates sidedness on the resident mesh. `AUTO` may inspect the selected geometry because automatic classification itself requires topology evidence.
 
@@ -46,7 +92,7 @@ Explicit surface-intent changes are metadata-only operations. `ClosedVolume / Th
 
 The production material contract is **semantic/sparse**, not a commitment to a realistic PBR renderer. `NoIndex` means ordinary DEFAULT surface and is sufficient for the bulk of a ship/station in Elite-classic, monochrome/dissolve and anime render styles. Explicit material slots exist only where the renderer needs a visual distinction. Blender/OBJ is the preferred place to partition faces into material groups because face selection, window layout, emissive panels and colour-region layout are authoring tasks; the editor preserves/imports those groups and owns stable runtime ids/properties.
 
-For the anime renderer, source RGB is not the long-term authority. The intended production gate is a small approved palette / stable visual-role mapping: Blender authors which faces belong together, then the editor validates that imported non-emissive colours map to allowed palette roles and may offer an explicit author-approved snap/remap operation. It must not silently recolour geometry during import/checkpoint. Emissive surfaces use a separate emissive role/palette. A facade with hundreds or thousands of lit windows should normally be authored in Blender as emissive faces/material groups or an emissive mask/atlas; it must **not** create one real light per window. Point/spot illumination is reserved for semantic light sockets such as a searchlight or a small number of gameplay-relevant lamps. Beacons/sirens combine emissive visual geometry with state/animation/VFX; engine exhaust and explosions remain VFX. Ordinary emissive surfaces do **not** imply bloom/glow: high-contrast colour/emission is the default cheap presentation. Global image softening/blur is a renderer/post-process concern used to move the picture away from a raw 3D-editor look. Haze/glow is reserved for explicit rare environmental/VFX states (for example an anomalous murky field around lost generation ships), not encoded as a normal material requirement.
+For the anime renderer, source RGB is not the long-term authority. The intended production gate is a small approved palette / stable visual-role mapping: Blender authors which faces belong together, then the editor validates that imported non-emissive colours map to allowed palette roles and may offer an explicit author-approved snap/remap operation. It must not silently recolour geometry during import/CHECK. Emissive surfaces use a separate emissive role/palette. A facade with hundreds or thousands of lit windows should normally be authored in Blender as emissive faces/material groups or an emissive mask/atlas; it must **not** create one real light per window. Point/spot illumination is reserved for semantic light sockets such as a searchlight or a small number of gameplay-relevant lamps. Beacons/sirens combine emissive visual geometry with state/animation/VFX; engine exhaust and explosions remain VFX. Ordinary emissive surfaces do **not** imply bloom/glow: high-contrast colour/emission is the default cheap presentation. Global image softening/blur is a renderer/post-process concern used to move the picture away from a raw 3D-editor look. Haze/glow is reserved for explicit rare environmental/VFX states (for example an anomalous murky field around lost generation ships), not encoded as a normal material requirement.
 
 ## Runtime screen-space LOD contract (0.10.27)
 
@@ -128,7 +174,7 @@ Detailed diagnostics remain in:
 build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log
 ```
 
-For every geometry the log records input cleanup counts, source/canonical non-manifold evidence, `split_topology_vertices`, `raycast_patches`, `raycast_flipped_triangles`, output topology/winding state, render-vertex/edge rebuild counts and exact failure reason. Snapshot schema 8 persists the same libigl/Embree counters beside the canonical fingerprint; every new checkpoint also snapshots that editor-owned authoring state in its own `editor_state.json`.
+For every geometry the log records input cleanup counts, source/canonical non-manifold evidence, `split_topology_vertices`, `raycast_patches`, `raycast_flipped_triangles`, output topology/winding state, render-vertex/edge rebuild counts and exact failure reason. The saved WORKING `editor_state.json` persists the same libigl/Embree counters beside the canonical fingerprint when the user presses SAVE.
 
 ## 0A.6 Runtime boundary
 
@@ -142,7 +188,7 @@ libigl, Eigen and Embree belong only to the offline `EliteAssetEditor` and optio
 
 - первое открытие asset;
 - source reimport;
-- restore checkpoint;
+- RESTORE the last saved WORKING ASSET;
 - load/reload LOD;
 - операция, реально меняющая vertex/index payload.
 
@@ -156,7 +202,7 @@ JSON остаётся только control-plane для маленьких ко�
 
 Это **не новый viewport contract** и не новый asset format. Backend сначала посылает маленький descriptor (`asset_binary_begin` или `lod_payload_binary_begin`), затем binary geometry. Browser transport-adapter проверяет `LOD index + geometry index + stable geometry id`, подставляет typed arrays в descriptor и только после полной сборки вызывает старый application terminal `asset` / `lod_payload`. Поэтому `acceptAssetState(..., true)`, `state.asset.renderLods[...]` и существующий `rebuildScene()` остаются владельцами поведения отображения.
 
-Если операция изменила только один/несколько уже известных LOD, `asset_binary_begin` может быть transport-delta: неизменившиеся LOD payload не пересылаются, а берутся из уже resident browser state. Это **не delta application-state**: перед вызовом старого `asset` handler adapter обязан собрать полный объект и строго проверить совпадение asset/LOD/geometry identity. При первичной загрузке, reconnect, restore checkpoint или полном mesh rewrite отправляется self-contained snapshot всех resident LOD.
+Если операция изменила только один/несколько уже известных LOD, `asset_binary_begin` может быть transport-delta: неизменившиеся LOD payload не пересылаются, а берутся из уже resident browser state. Это **не delta application-state**: перед вызовом старого `asset` handler adapter обязан собрать полный объект и строго проверить совпадение asset/LOD/geometry identity. При первичной загрузке, reconnect, RESTORE или полном mesh rewrite отправляется self-contained snapshot всех resident LOD.
 
 Binary decoder оставляет bulk arrays typed (`Float32Array` / `Uint32Array` / `Int32Array`). Это требует явного terminal-adapter там, где старый API различает обычный JS `Array` и typed view: в частности `THREE.BufferGeometry.setIndex()` должен получать `THREE.BufferAttribute`, а не голый `Uint32Array`. Этот контракт защищён architecture regression.
 
@@ -166,9 +212,9 @@ Binary decoder оставляет bulk arrays typed (`Float32Array` / `Uint32Arr
 
 `.elmodel/.elmesh v4` на диске не меняется. `.elmesh` при чтении теперь забирается одним большим блоком в память и разбирается memory cursor-ом через тот же бинарный layout вместо миллионов мелких `istream::read()`.
 
-### 0.1.2 Persistent WORKING ASSET / resume (0.10.32)
+### 0.1.2 WORKING ASSET: простой SAVE / RESTORE (0.10.33)
 
-Обычное `OPEN` продолжает работу с **persistent WORKING ASSET**, а не с checkpoint history. Для каждого asset редактор держит отдельный mutable package:
+Для каждого asset существует ровно **одно сохранённое рабочее состояние**:
 
 ```text
 build/tools/model_asset_editor/workspaces/<asset>/working/
@@ -177,70 +223,63 @@ build/tools/model_asset_editor/workspaces/<asset>/working/
     editor_state.json
 ```
 
-Порядок выбора head детерминированный:
+Порядок OPEN детерминирован:
 
 ```text
 OPEN / restart
-    → load WORKING ASSET, if it exists
-    → otherwise load production and adopt it as the initial WORKING ASSET
-    → otherwise import SOURCE and create the initial WORKING ASSET
+    → load saved WORKING ASSET, if it exists
+    → otherwise load production and create the initial saved WORKING ASSET
+    → otherwise import SOURCE and create the initial saved WORKING ASSET
 ```
 
-`working/editor_state.json` хранит editor-only authoring state, SOURCE fingerprints, maintenance debt и текущую validity-карту стадий и привязан к конкретным working package bytes через package stamp. Если sidecar отсутствует/не совпадает, geometry можно открыть, но непроверяемое PREPARE/topology/source-baseline evidence сбрасывается в безопасное состояние и новый working sidecar фиксирует именно это состояние. Checkpoints при OPEN не просматриваются для выбора head.
-
-Обычный `SAVE` и debounced autosave сохраняют **весь coherent current state** в WORKING package. Они не записывают production, не создают checkpoint, не инвалидируют downstream и не меняют stage progression. Старые `save_manifest` / `save_lod` backend-команды оставлены только как compatibility aliases на coherent working save: частично записанный package больше не считается допустимой editor resume point.
-
-`.elmodel/.elmesh` по-прежнему могут быть lazy-resident в backend, а viewport payload запрашивается отдельно. Но persistence boundary одна: перед SAVE backend гарантирует необходимую residency и записывает согласованный working snapshot.
-
-## 0.2 Checkpoints — только ручные rollback snapshots
-
-Checkpoint больше **не является SAVE, progression gate или resume head**. Это необязательный ручной снимок для возврата к известному состоянию. Кнопка `CREATE ROLLBACK SNAPSHOT` существует отдельно от `VALIDATE / COMPLETE STAGE`.
-
-Главные правила:
+После открытия все изменения живут в памяти и поднимают общий `dirty`. Никакого фонового autosave нет. В верхней панели во всех стадиях доступны две глобальные операции:
 
 ```text
-ordinary edit / REIMPORT / local maintenance
-    → mutate current WORKING ASSET
-    → SAVE/autosave persists it
-    → checkpoints and production are untouched
+SAVE
+    → enabled only when dirty
+    → save the complete coherent WORKING ASSET
+    → clear dirty
+    → production is untouched
 
-VALIDATE / COMPLETE STAGE S
-    → validate current WORKING state/debt
-    → store S = COMPLETE or NEEDS FIX in WORKING editor_state
-    → do not create/prune/advance checkpoints
-
-CREATE ROLLBACK SNAPSHOT at S
-    → copy exact current WORKING package + editor state
-    → do not run stage validation
-    → do not change stage validity/progression
-    → do not delete or rewrite any other checkpoint
-
-RESTORE checkpoint S
-    → replace current mutable state with that snapshot
-    → immediately SAVE it as the new persistent WORKING head
-    → production and every other checkpoint remain unchanged
-
-BUILD
-    → rerun required production validation
-    → write the complete WORKING state to production .elmodel/.elmesh
-    → refresh production_state.json
-    → do not create/prune/advance checkpoints
+RESTORE
+    → enabled only when dirty
+    → discard every unsaved in-memory change
+    → reload the last saved WORKING ASSET
+    → production is untouched
 ```
 
-Для каждой стадии по-прежнему может существовать именованный `checkpoint-<stage>/` snapshot, а `checkpointSequence` сохраняется как монотонная metadata для хронологии/совместимости старых файлов. Sequence изменяется только при успешном **ручном** создании rollback snapshot и никогда не участвует в выборе editor resume head.
+Отдельных `SAVE MANIFEST`, `SAVE LOD`, checkpoint/snapshot/rollback history и `wizard_state.json` как второго persistence authority **нет**. Source reimport, maintenance import, PREPARE, LOD generation и metadata authoring сами себя не сохраняют: после любой мутации автор явно выбирает SAVE или RESTORE.
+
+`working/editor_state.json` хранит editor-only identities, SOURCE fingerprints, preparation evidence, maintenance debt и stage validity вместе с тем же saved working revision. Package stamp защищает от применения sidecar к другим `.elmodel/.elmesh` bytes.
+
+### 0.1.3 UX-инвариант: выбор не сбрасывает список (0.10.34)
+
+Для **любого** списка, дерева или таблицы Model Asset Editor действует железное правило: выбор элемента, обновление inspector, локальный backend response или rerender текущей стадии **не имеет права сбрасывать scroll-позицию** и заставлять пользователя снова листать от начала.
+
+Scrollable-контейнеры получают стабильный `data-preserve-scroll` key. Позиция хранится с контекстом asset / stage / LOD; asset-wide списки могут использовать asset scope. `renderWizardPanel()` выполняет DOM rebuild через общий `preserveUiScroll()` transaction: перед заменой DOM сохраняются `scrollTop/scrollLeft`, после rebuild и на следующем animation frame они восстанавливаются.
+
+Новый scrollable list/table/tree нельзя добавлять как голый `overflow:auto`: он обязан подключаться к этому контракту. Исключение — осознанная смена контекста пользователем (другой asset/stage/LOD), где используется отдельная scroll-позиция.
+
+## 0.2 Stage CHECK — только проверка и progression
+
+В конце каждой стадии одна операция `CHECK`:
 
 ```text
-checkpoint-<STAGE>/
-    <asset>.elmodel
-    <asset>.lod*.elmesh
-    editor_state.json
+CHECK stage S
+    → run checks owned by S
+    → PASS: mark S green in current state and unlock the next stage
+    → FAIL: mark S NEEDS FIX and report concrete blockers
+    → never save WORKING ASSET
+    → never write production
 ```
 
-Checkpoint snapshot самодостаточен: package + stage-local `EditorAuthoringState` + validity map. Legacy checkpoints без современного `editor_state.json` остаются loadable, но PREPARE/topology evidence после restore считается требующим проверки.
+Если CHECK изменил stage status, это обычное изменение текущего editor state: глобальный SAVE становится активным и пользователь сам решает, фиксировать ли его. Изменение upstream данных снова делает затронутую стадию и downstream `stale`.
 
-Stage status теперь принадлежит текущему WORKING ASSET. При **первом build** исходный wizard остаётся упорядоченным `SOURCE → LODS → GEOMETRY → SURFACES → SEMANTICS → PHYSICS → DAMAGE → VALIDATE → BUILD`. После появления production package редактор работает как maintenance editor: можно открыть нужную стадию напрямую, а блокеры определяются current validity и локальным maintenance debt изменённых компонентов, не lineage контрольных точек.
+`VALIDATE` использует ту же кнопку CHECK, но дополнительно показывает полный production validation report. Отдельной второй кнопки `RUN FULL VALIDATION` нет.
 
-Production package — runtime/output snapshot **последнего BUILD**, а не editor save file. `production_state.json` связывает editor-only evidence только с этими production bytes. `wizard_state.json` остаётся вспомогательным индексом session/checkpoint metadata и не является authority ни для working head, ни для stage validity.
+`BUILD` — единственное исключение: это terminal production action. Перед BUILD рабочее состояние должно быть сохранено (`dirty == false`). BUILD повторно проверяет production contract и записывает именно сохранённый WORKING ASSET в production `.elmodel/.elmesh`, после чего обновляет `production_state.json`.
+
+При первом build порядок остаётся `SOURCE → LODS → GEOMETRY → SURFACES → SEMANTICS → PHYSICS → DAMAGE → VALIDATE → BUILD`. После появления production package maintenance editor может открыть нужную стадию напрямую; блокеры определяются current state/debt, а не историей сохранений.
 
 ---
 
@@ -350,7 +389,7 @@ Source OBJ / assembly registry являются **read-only input**.
 - canonicalize в памяти;
 - строить semantic/render asset;
 - писать `.elmodel` / `.elmesh`;
-- писать wizard checkpoints.
+- сохранять текущий WORKING ASSET только через глобальный SAVE.
 
 Редактор не должен менять исходные OBJ/assembly в процессе authoring.
 
@@ -381,19 +420,11 @@ BUILD
 3. `GEOMETRY`
 4. `SURFACES`
 
-`SEMANTICS / PHYSICS / DAMAGE / VALIDATE / BUILD` уже входят в общий порядок invalidation/checkpoint validity, хотя их wizard-панели ещё не реализованы. Уже существующие backend-команды, которые позднее будут подключены к этим стадиям, заранее маршрутизированы в этот контракт: semantic hierarchy/joints/sockets инвалидируют `SEMANTICS`, rigid-body/collision authoring — `PHYSICS`, state variants/render-state selectors/hit regions/openings/repair targets — `DAMAGE`. Поэтому включение будущей UI-стадии не должно потребовать изобретать отдельную checkpoint-семантику.
+`SEMANTICS / PHYSICS / DAMAGE / VALIDATE / BUILD` входят в общий порядок invalidation/stage validity. Semantic hierarchy/joints/sockets инвалидируют `SEMANTICS`, rigid-body/collision authoring — `PHYSICS`, state variants/render-state selectors/hit regions/openings/repair targets — `DAMAGE`.
 
-## Checkpoints
+## SAVE / RESTORE
 
-Checkpoint — **ручной non-production rollback snapshot** под `build/tools/model_asset_editor/workspaces/<asset>/checkpoint-<stage>/`. Завершение стадии само checkpoint не создаёт.
-
-Checkpoint нужен только для:
-
-- точного ручного возврата к известному working state;
-- хранения нескольких независимых точек страховки по стадиям;
-- безопасного эксперимента без изменения production package.
-
-`CREATE ROLLBACK SNAPSHOT` заменяет snapshot только выбранной стадии и не трогает остальные. `RESTORE` делает snapshot новым persistent WORKING head и сразу сохраняет его туда. Ни создание, ни восстановление snapshot не являются progression gate; checkpoints не выбирают resume head и автоматически не удаляются. Production меняется только через BUILD.
+В редакторе нет истории snapshots. Глобальный SAVE сохраняет единственный WORKING ASSET; RESTORE выбрасывает несохранённую ветку и возвращает последний SAVE. Stage CHECK не выполняет persistence I/O. Production меняется только через BUILD.
 
 ---
 
@@ -437,11 +468,11 @@ State / collision / socket / hit-region / opening / repair IDs также дол
 Симптом:
 
 ```text
-Cannot write wizard checkpoint:
+Cannot save model asset:
 empty/duplicate render node id in LOD0
 ```
 
-На station ошибка возникла не в checkpoint и не в пути `station.elmodel`.
+На station ошибка возникла не в пути `station.elmodel` и не в самой операции сохранения.
 
 ## Реальная причина
 
@@ -478,7 +509,7 @@ Serializer v4 затем корректно запрещал запись.
 
 ## Вывод
 
-Checkpoint был только местом обнаружения.
+Сохранение было только местом обнаружения.
 
 **Ошибка — в producer path: source importer / legacy-to-v4 migration не обеспечили ID invariants.**
 
@@ -561,9 +592,9 @@ uniqueRenderNodeId(lod, preferred)
 Нельзя иметь ситуацию:
 
 ```text
-wizard stage says OK
+stage CHECK says OK
 ↓
-checkpoint ModelAssetBinary::save says INVALID
+SAVE/BUILD ModelAssetBinary validation says INVALID
 ```
 
 Нужен единый reusable validator, которым пользуются:
@@ -573,7 +604,7 @@ checkpoint ModelAssetBinary::save says INVALID
 - wizard preflight;
 - Save binary;
 - Save LOD;
-- checkpoint write;
+- global WORKING SAVE / BUILD;
 - tests.
 
 Минимум:
@@ -619,7 +650,7 @@ LOD0 RenderNode node[7] has empty id
 
 # 10. Wizard preflight
 
-Перед `ModelAssetBinary::save(checkpoint...)` стадия должна проверять все serializer invariants, относящиеся к уже существующему состоянию.
+Stage CHECK должен проверять все serializer invariants, относящиеся к уже существующему состоянию, до SAVE/BUILD.
 
 Для `LODS` минимум:
 
@@ -815,13 +846,13 @@ Game canonical:
 - Save LOD0 не переписывает LOD1;
 - unload/load LOD сохраняет authored state.
 
-## Checkpoints
+## SAVE / CHECK / RESTORE
 
-- SOURCE checkpoint пишется;
-- LODS checkpoint пишется;
-- GEOMETRY checkpoint пишется;
-- restore возвращает состояние;
-- поздние стадии становятся stale после restore ранней.
+- CHECK SOURCE/LODS/GEOMETRY ставит зелёный PASS и открывает следующую стадию;
+- CHECK ничего не сохраняет;
+- SAVE фиксирует полный WORKING ASSET;
+- RESTORE возвращает последний SAVE и отбрасывает несохранённые изменения;
+- upstream edits делают затронутую стадию и downstream stale.
 
 ## Round trip
 
@@ -860,14 +891,14 @@ all asset.nodes[i].id are non-empty and unique
 all lod.nodes[i].id are non-empty and unique per LOD
 ```
 
-## Test C — station checkpoint
+## Test C — station stage checks
 
 Полный imported station должен успешно пройти:
 
 ```text
-SOURCE checkpoint
-LODS checkpoint
-GEOMETRY checkpoint
+SOURCE CHECK
+LODS CHECK
+GEOMETRY CHECK
 ```
 
 без ручного rename.
@@ -986,7 +1017,7 @@ producer + validator + regression test
 - independent render LODs;
 - semantic damage states;
 - source reimport read-only;
-- wizard checkpoints.
+- global WORKING SAVE / RESTORE and stage CHECK.
 
 Если новая UI/data-model переделка оставила C++ функцию, но убрала доступ к ней или тест — capability считается потерянной.
 
@@ -1014,12 +1045,12 @@ producer + validator + regression test
 2. применить его в `RuntimeAssemblyImporter`;
 3. защитить legacy -> v4 migration от duplicate/empty IDs;
 4. вынести render-ID validation в reusable preflight;
-5. вызывать preflight до wizard checkpoint;
+5. вызывать preflight в stage CHECK до SAVE/BUILD;
 6. улучшить diagnostic: ID + indices + LOD;
 7. добавить exact regression для `station_solar_panels`;
 8. прогнать ModelAssetBinary tests + architecture contracts;
 9. reimport Orbital Station;
-10. повторить SOURCE -> LODS -> GEOMETRY checkpoints.
+10. повторить SOURCE -> LODS -> GEOMETRY CHECK.
 
 Этот список закрыт в `0.9.1`; он сохранён ниже только как история архитектурного решения.
 
@@ -1030,10 +1061,10 @@ producer + validator + regression test
 Если снова появляется:
 
 ```text
-Cannot write wizard checkpoint: ...
+Cannot save model asset: ...
 ```
 
-не считать checkpoint источником ошибки.
+не считать SAVE/BUILD источником producer-ошибки.
 
 Сначала спросить:
 
@@ -1073,7 +1104,7 @@ LOD-local uniqueness
 - при `moduleId == meshId` child получает `<module>.mesh`;
 - legacy v2/v3 migration нормализует пустые/дублирующиеся semantic IDs до создания RenderNode;
 - `ModelAssetBinary::validate` доступен как reusable preflight;
-- wizard вызывает preflight до записи checkpoint;
+- wizard CHECK вызывает preflight без сохранения;
 - diagnostics называют ID и оба индекса;
 - status bar имеет явный разделитель между ошибкой и путём.
 
@@ -1154,10 +1185,12 @@ Transform render node
 
 Параметры задаются в одном modal dialog:
 
-- количество instances, включая выбранный;
+- количество positions/instances;
 - total angle;
 - axis X/Y/Z;
-- center: selected pivot / origin / custom XYZ.
+- center: selected pivot / parent origin / custom XYZ.
+
+Круговое размещение использует одно окно и одно поле общего количества. `count = 1` означает MOVE: выбранный RenderNode поворачивается вокруг center на заданный угол без создания копии. `count >= 2` означает ARRAY: выбранный RenderNode остаётся первой позицией 0°, а создаётся ровно `count - 1` новых instances. Для незамкнутой дуги конечная точка включается: 120° / 2 объекта = 0° и 120°; 120° / 4 объекта = 0°, 40°, 80°, 120°. Только точный ±360° считается замкнутым кругом и распределяется без дубля 0°/360°. По умолчанию center = parent origin. Если выбран `selected pivot`, geometry-local pivot сначала переводится в parent coordinates; raw `node.pivot` нельзя напрямую трактовать как orbit center.
 
 UI явно сообщает, что копии используют общую geometry, а выбранная axis задаёт ось вращения; плоскость массива ей перпендикулярна.
 
@@ -1221,7 +1254,7 @@ fetches pinned `libigl v2.6.0` and builds only the isolated target:
 model_asset_libigl_spike
 ```
 
-This spike does **not** change `EliteAssetEditor`, checkpoints or `.elmesh`. It runs:
+This spike does **not** change `EliteAssetEditor`, WORKING persistence or `.elmesh`. It runs:
 
 ```text
 RAW OBJ
@@ -1298,7 +1331,7 @@ Viewport diagnostics:
 2. `БЕЗ ОТСЕЧЕНИЯ` — prepared mesh, `DoubleSide`;
 3. `РАБОЧИЙ` — the same prepared mesh, `FrontSide`.
 
-The RAW snapshot exists only in the editor session and is never written into `.elmodel` or `.elmesh`. Technical preparation evidence is written to `build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log` and replaced at the start of each PREPARE run; snapshot schema 8 also stores cleanup counts, split topology vertex count, raycast patch count and raycast-flipped triangle count, and the same authoring-state serializer is used for stage-local checkpoint snapshots.
+The RAW snapshot exists only in the editor session and is never written into `.elmodel` or `.elmesh`. Technical preparation evidence is written to `build/tools/model_asset_editor/workspaces/<asset>/logs/mesh_repair.log` and replaced at the start of each PREPARE run; the saved WORKING `editor_state.json` stores cleanup counts, split topology vertex count, raycast patch count and raycast-flipped triangle count.
 
 Real-station spike reference for `station_Habitat_Module_S3`:
 
@@ -1329,7 +1362,7 @@ Are closed components no longer inward?
 Is the geometry structurally usable for LOD analysis?
 ```
 
-If yes, `ANALYZE LOD0` is allowed and the LODS checkpoint may be written.
+If yes, `ANALYZE LOD0` and the LODS CHECK are allowed.
 
 The following are **not** LODS gates:
 
@@ -1363,21 +1396,11 @@ build/tools/model_asset_editor/
 
     workspaces/
         <asset>/
-            wizard_state.json
-            checkpoint-source/
+            working/
                 <asset>.elmodel
                 <asset>.lod*.elmesh
                 editor_state.json
-            checkpoint-lods/
-                ...
-                editor_state.json
-            checkpoint-geometry/
-                ...
-                editor_state.json
-            checkpoint-surfaces/
-                ...
-                editor_state.json
-            # same contract is reserved for semantics/physics/damage/validate/build
+            production_state.json
             logs/
                 mesh_repair.log
                 instance_fit.log
@@ -1439,4 +1462,4 @@ After analysis all generated levels are selected by default. APPLY never changes
 
 APPLY is transactional. All selected candidates are built and validated before any authored LOD is replaced. Generated documents carry `sourceKind=generated` and `generatedFromLod=0`, preserve stable base-visual / source-variant authoring ids, and receive canonical-generation fingerprints for the LODS technical gate.
 
-After APPLY, ordinary WORKING ASSET autosave persists the complete authored LOD set. **VALIDATE / COMPLETE STAGE** only validates/stores the current LODS validity; GEOMETRY therefore receives the same coherent persistent working asset without requiring a checkpoint. A rollback snapshot may be created separately if the author wants one.
+After APPLY the authored LOD set remains dirty in memory. Press global SAVE to persist it. LODS CHECK validates the current state and unlocks GEOMETRY; it does not save anything.

@@ -15,6 +15,7 @@
 #include "src/model_asset/ModelAssetLodSelection.h"
 #include "src/model_asset/ModelAssetBinary.h"
 #include "src/model_asset/ModelAssetMigration.h"
+#include "src/model_asset/ModelAssetSemantics.h"
 #include "src/model_asset/ModelAssetVariantNaming.h"
 #include "tools/model_asset_editor/NativeObjImporter.h"
 #include "tools/model_asset_editor/CanonicalMeshBuilder.h"
@@ -846,6 +847,134 @@ void testPreparationRejectsUnreadableAndRepairsNonManifold()
         "libigl preparation left genuine non-manifold topology unresolved");
 }
 
+
+void testSemanticLifecycleIntegrity()
+{
+    ModelAsset asset;
+    asset.assetId = "semantic_lifecycle";
+
+    Node root;
+    root.id = "root";
+    root.moduleId = "root";
+    root.parentIndex = NoIndex;
+    asset.nodes.push_back(root);
+
+    Node leaf;
+    leaf.id = "leaf";
+    leaf.moduleId = "leaf";
+    leaf.parentIndex = 0;
+    asset.nodes.push_back(leaf);
+
+    Node survivor;
+    survivor.id = "survivor";
+    survivor.moduleId = "survivor";
+    survivor.parentIndex = 0;
+    asset.nodes.push_back(survivor);
+
+    RenderLod lod0;
+    RenderNode leafVisual0;
+    leafVisual0.id = "leaf.visual.lod0";
+    leafVisual0.semanticNodeIndex = 1;
+    leafVisual0.activeStates = {"damaged"};
+    lod0.nodes.push_back(leafVisual0);
+    RenderNode survivorVisual;
+    survivorVisual.id = "survivor.visual";
+    survivorVisual.semanticNodeIndex = 2;
+    lod0.nodes.push_back(survivorVisual);
+    asset.renderLods.push_back(lod0);
+
+    RenderLod lod1;
+    RenderNode leafVisual1 = leafVisual0;
+    leafVisual1.id = "leaf.visual.lod1";
+    lod1.nodes.push_back(leafVisual1);
+    asset.renderLods.push_back(lod1);
+
+    CollisionVolume bootstrap;
+    bootstrap.id = "hit.leaf";
+    bootstrap.moduleId = "leaf";
+    bootstrap.parentNodeIndex = 1;
+    bootstrap.shape = CollisionShape::Box;
+    asset.collisionVolumes.push_back(bootstrap);
+
+    Socket survivorSocket;
+    survivorSocket.id = "survivor.socket";
+    survivorSocket.parentNodeIndex = 2;
+    asset.sockets.push_back(survivorSocket);
+
+    StateVariant survivorState;
+    survivorState.id = "survivor.damaged";
+    survivorState.nodeIndex = 2;
+    asset.stateVariants.push_back(survivorState);
+
+    const auto before = inspectSemanticNodeUsage(asset, 1);
+    require(before.renderBindings == 2, "semantic usage did not count cross-LOD render bindings");
+    require(before.legacySourceBootstrapCollisions == 1,
+        "legacy SOURCE bootstrap collision was not recognized");
+    require(!before.hasRuntimePayload(),
+        "legacy SOURCE bootstrap collision incorrectly became semantic gameplay payload");
+
+    const auto erased = eraseSemanticNode(asset, 1, false);
+    require(erased.deletedId == "leaf" && erased.unboundRenderNodes == 2,
+        "semantic erase did not report/unbind all visual owners");
+    require(asset.nodes.size() == 2 && asset.nodes[1].id == "survivor",
+        "semantic erase did not preserve surviving stable identity");
+    require(asset.renderLods[0].nodes[0].semanticNodeIndex == NoIndex &&
+            asset.renderLods[0].nodes[0].activeStates.empty() &&
+            asset.renderLods[1].nodes[0].semanticNodeIndex == NoIndex &&
+            asset.renderLods[1].nodes[0].activeStates.empty(),
+        "deleted semantic identity left visual binding/state scope behind");
+    require(asset.renderLods[0].nodes[1].semanticNodeIndex == 1,
+        "semantic erase did not remap surviving RenderNode semantic index");
+    require(asset.sockets.size() == 1 && asset.sockets[0].parentNodeIndex == 1 &&
+            asset.stateVariants.size() == 1 && asset.stateVariants[0].nodeIndex == 1,
+        "semantic erase did not remap surviving gameplay references");
+    require(asset.collisionVolumes.empty(),
+        "legacy SOURCE bootstrap collision survived deletion of its semantic scaffold");
+
+    ModelAsset orphanAsset;
+    Node orphan;
+    orphan.id = "orphan";
+    orphan.moduleId = "orphan";
+    orphanAsset.nodes.push_back(orphan);
+    CollisionVolume orphanBootstrap;
+    orphanBootstrap.id = "hit.orphan";
+    orphanBootstrap.moduleId = "orphan";
+    orphanBootstrap.parentNodeIndex = 0;
+    orphanBootstrap.shape = CollisionShape::Box;
+    orphanAsset.collisionVolumes.push_back(orphanBootstrap);
+    require(inspectSemanticNodeUsage(orphanAsset, 0).isOrphanCandidate(),
+        "legacy bootstrap collision hid a dead semantic orphan");
+
+    Socket ownedSocket;
+    ownedSocket.id = "owned.socket";
+    ownedSocket.parentNodeIndex = 0;
+    orphanAsset.sockets.push_back(ownedSocket);
+    require(!inspectSemanticNodeUsage(orphanAsset, 0).isOrphanCandidate(),
+        "real semantic gameplay payload was misclassified as orphan");
+    bool rejectedPayloadDelete = false;
+    try { eraseSemanticNode(orphanAsset, 0, false); }
+    catch (const std::runtime_error&) { rejectedPayloadDelete = true; }
+    require(rejectedPayloadDelete,
+        "semantic erase silently deleted owned gameplay payload without confirmation");
+    const auto payloadErase = eraseSemanticNode(orphanAsset, 0, true);
+    require(payloadErase.removedSockets == 1 && orphanAsset.nodes.empty(),
+        "confirmed semantic erase did not remove owned gameplay payload");
+
+    ModelAsset branchAsset;
+    Node branchRoot;
+    branchRoot.id = "branch.root";
+    branchAsset.nodes.push_back(branchRoot);
+    Node branchChild;
+    branchChild.id = "branch.child";
+    branchChild.parentIndex = 0;
+    branchAsset.nodes.push_back(branchChild);
+    bool rejectedBranchDelete = false;
+    try { eraseSemanticNode(branchAsset, 0, true); }
+    catch (const std::runtime_error&) { rejectedBranchDelete = true; }
+    require(rejectedBranchDelete,
+        "semantic erase deleted a parent while child branches still existed");
+}
+
 int main()
 {
     try
@@ -868,6 +997,7 @@ int main()
         testRigidInstanceFitReportsMaterialDifferenceAfterGeometryMatch();
         testRigidInstanceFitAcceptsSingleMaterialLodAreaDrift();
         testRigidInstanceFitHandlesDegeneratePrincipalPlane();
+        testSemanticLifecycleIntegrity();
 
         ModelAsset asset;
         asset.assetId = "station_test";
@@ -895,10 +1025,14 @@ int main()
         a.moduleId = "habitat";
         a.defaultStateId = "intact";
         a.joint.type = JointType::Revolute;
-        a.joint.axis = {0.0f, 1.0f, 0.0f};
-        a.joint.defaultRateDegPerSec = 2.0f;
+        a.joint.pivot = {1.25f, -2.5f, 3.75f};
+        a.joint.axis = {1.0f, 0.0f, 0.0f};
+        a.joint.defaultRateDegPerSec = 2.864789f;
+        a.joint.minAngleDeg = -45.0f;
+        a.joint.maxAngleDeg = 135.0f;
         a.joint.breakable = true;
         a.joint.breakForceN = 250000.0f;
+        a.joint.breakTorqueNm = 900000.0f;
         a.physics.mode = MassPropertyMode::Manual;
         a.physics.massKg = 1200.0f;
         a.physics.centerOfMass = {0.2f, 0.0f, -0.1f};
@@ -1139,6 +1273,14 @@ int main()
             "surface material properties lost in binary round trip");
         require(loaded.nodes.size() == 2 && loaded.nodes[0].geometryIndex == NoIndex,
             "semantic nodes retained a render-LOD geometry dependency");
+        require(loaded.nodes[0].joint.type == JointType::Revolute &&
+                near(loaded.nodes[0].joint.pivot.x, 1.25f) && near(loaded.nodes[0].joint.pivot.y, -2.5f) &&
+                near(loaded.nodes[0].joint.pivot.z, 3.75f) && near(loaded.nodes[0].joint.axis.x, 1.0f) &&
+                near(loaded.nodes[0].joint.defaultRateDegPerSec, 2.864789f) &&
+                near(loaded.nodes[0].joint.minAngleDeg, -45.0f) && near(loaded.nodes[0].joint.maxAngleDeg, 135.0f) &&
+                loaded.nodes[0].joint.breakable && near(loaded.nodes[0].joint.breakForceN, 250000.0f) &&
+                near(loaded.nodes[0].joint.breakTorqueNm, 900000.0f),
+            "semantic joint pivot/axis/runtime rate/limits/break thresholds lost in binary round trip");
         require(loaded.stateVariants.size() == 1 && loaded.stateVariants[0].id == "breached",
             "semantic damage state lost");
         require(loaded.stateVariants[0].transformOverride && near(loaded.stateVariants[0].localPosition.x, 0.15f) &&

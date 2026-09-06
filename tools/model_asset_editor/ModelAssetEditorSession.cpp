@@ -31,6 +31,7 @@
 #include "src/model_asset/ModelAssetIdentity.h"
 #include "src/model_asset/ModelAssetMigration.h"
 #include "src/model_asset/ModelAssetLodSelection.h"
+#include "src/model_asset/ModelAssetSemantics.h"
 #include "src/model_asset/ModelAssetVariantNaming.h"
 #include "src/render/core/earcut.hpp"
 #include "tools/model_asset_editor/RuntimeAssemblyImporter.h"
@@ -1426,9 +1427,34 @@ glm::mat3 eulerRotation(const glm::vec3& deg)
     return glm::mat3(m);
 }
 
+glm::vec3 eulerDegrees(const glm::mat3& rotation)
+{
+    // ModelAsset stores Euler angles using an explicit XYZ convention, and both
+    // the editor renderer (THREE.Euler(..., "XYZ")) and eulerRotation() decode
+    // them as XYZ. the generic quaternion Euler extractor uses a different convention
+    // for general multi-axis rotations, so matrix -> quat -> eulerAngles was not
+    // the inverse of eulerAngleXYZ(). That could corrupt one radial/consolidated
+    // instance while the fit matrix itself was correct. Extract with the matching
+    // XYZ routine instead.
+    float x = 0.0f, y = 0.0f, z = 0.0f;
+    glm::extractEulerAngleXYZ(glm::mat4(rotation), x, y, z);
+    const glm::vec3 deg = glm::degrees(glm::vec3(x, y, z));
+
+    // Guard the persistence representation itself: any encoded rotation must
+    // reconstruct the same matrix under the asset's XYZ decoder.
+    const glm::mat3 roundTrip = eulerRotation(deg);
+    float maxError = 0.0f;
+    for (int c = 0; c < 3; ++c)
+        for (int r = 0; r < 3; ++r)
+            maxError = std::max(maxError, std::abs(roundTrip[c][r] - rotation[c][r]));
+    if (!std::isfinite(maxError) || maxError > 2.0e-4f)
+        throw std::runtime_error("cannot encode rigid rotation as ModelAsset XYZ Euler angles");
+    return deg;
+}
+
 glm::vec3 eulerDegrees(const glm::quat& q)
 {
-    return glm::degrees(glm::eulerAngles(glm::normalize(q)));
+    return eulerDegrees(glm::mat3_cast(glm::normalize(q)));
 }
 
 
@@ -1477,6 +1503,89 @@ void setNodeRigidTransform(Node& node, const RigidTransform& transform, const gl
     node.pivot = pivot;
     node.localRotationDeg = eulerDegrees(glm::quat_cast(transform.rotation));
     node.localPosition = transform.translation - pivot + transform.rotation * pivot;
+}
+
+RigidTransform semanticNodeWorldTransform(const ModelAsset& asset, std::size_t index)
+{
+    if (index >= asset.nodes.size())
+        throw std::runtime_error("invalid semantic node index");
+    std::vector<RigidTransform> cache(asset.nodes.size());
+    std::vector<std::uint8_t> state(asset.nodes.size(), 0);
+    std::function<RigidTransform(std::size_t)> resolve = [&](std::size_t i) -> RigidTransform
+    {
+        if (i >= asset.nodes.size()) throw std::runtime_error("invalid semantic parent index");
+        if (state[i] == 2) return cache[i];
+        if (state[i] == 1) throw std::runtime_error("semantic hierarchy cycle");
+        state[i] = 1;
+        const auto& node = asset.nodes[i];
+        const RigidTransform local = nodeRigidTransform(node);
+        if (node.parentIndex >= 0)
+            cache[i] = composeRigid(resolve(static_cast<std::size_t>(node.parentIndex)), local);
+        else
+            cache[i] = local;
+        state[i] = 2;
+        return cache[i];
+    };
+    return resolve(index);
+}
+
+void reparentSemanticNodesPreserveWorld(
+    ModelAsset& asset,
+    std::vector<std::size_t> nodeIndices,
+    std::int32_t parentIndex)
+{
+    if (parentIndex < NoIndex || parentIndex >= static_cast<std::int32_t>(asset.nodes.size()))
+        throw std::runtime_error("invalid semantic parent index");
+    std::sort(nodeIndices.begin(), nodeIndices.end());
+    nodeIndices.erase(std::unique(nodeIndices.begin(), nodeIndices.end()), nodeIndices.end());
+    if (nodeIndices.empty()) throw std::runtime_error("no semantic nodes selected for reparent");
+    const std::set<std::size_t> moving(nodeIndices.begin(), nodeIndices.end());
+    if (parentIndex >= 0 && moving.count(static_cast<std::size_t>(parentIndex)))
+        throw std::runtime_error("semantic parent cannot be inside the moved selection");
+
+    // A batch represents sibling/subtree roots. Passing both an ancestor and one
+    // of its descendants would flatten the descendant, so reject that ambiguous
+    // request instead of silently changing the authored tree shape.
+    for (const auto index : nodeIndices)
+    {
+        if (index >= asset.nodes.size()) throw std::runtime_error("invalid semantic node index");
+        std::int32_t cursor = asset.nodes[index].parentIndex;
+        while (cursor >= 0)
+        {
+            if (moving.count(static_cast<std::size_t>(cursor)))
+                throw std::runtime_error("semantic batch reparent contains both ancestor and descendant");
+            cursor = asset.nodes[static_cast<std::size_t>(cursor)].parentIndex;
+        }
+    }
+
+    // Validate cycles against the original hierarchy before mutating anything.
+    for (const auto index : nodeIndices)
+    {
+        std::int32_t cursor = parentIndex;
+        while (cursor >= 0)
+        {
+            if (cursor == static_cast<std::int32_t>(index))
+                throw std::runtime_error("semantic reparent would create a hierarchy cycle");
+            cursor = asset.nodes[static_cast<std::size_t>(cursor)].parentIndex;
+        }
+    }
+
+    std::vector<RigidTransform> oldWorld;
+    oldWorld.reserve(nodeIndices.size());
+    for (const auto index : nodeIndices)
+        oldWorld.push_back(semanticNodeWorldTransform(asset, index));
+    const RigidTransform parentWorld = parentIndex >= 0
+        ? semanticNodeWorldTransform(asset, static_cast<std::size_t>(parentIndex))
+        : RigidTransform{};
+    const RigidTransform inverseParent = inverseRigid(parentWorld);
+
+    for (std::size_t i = 0; i < nodeIndices.size(); ++i)
+    {
+        auto& node = asset.nodes[nodeIndices[i]];
+        node.parentIndex = parentIndex;
+        const RigidTransform local = composeRigid(inverseParent, oldWorld[i]);
+        setNodeRigidTransform(node, local, node.pivot);
+    }
 }
 
 RigidTransform renderNodeRigidTransform(const RenderNode& node)
@@ -1541,9 +1650,32 @@ double renderLodPlacedCharacteristicSize(const RenderLod& lod)
 
 void setRenderNodeRigidTransform(RenderNode& node, const RigidTransform& transform, const glm::vec3& pivot)
 {
-    node.pivot = pivot;
-    node.localRotationDeg = eulerDegrees(glm::quat_cast(transform.rotation));
-    node.localPosition = transform.translation - pivot + transform.rotation * pivot;
+    // Encode into a temporary node first. Instance/array authoring must be
+    // placement preserving: a serialization convention mismatch is an error,
+    // never a reason to silently move one copy onto another.
+    RenderNode encoded = node;
+    encoded.pivot = pivot;
+    encoded.localRotationDeg = eulerDegrees(transform.rotation);
+    encoded.localPosition = transform.translation - pivot + transform.rotation * pivot;
+
+    const RigidTransform roundTrip = renderNodeRigidTransform(encoded);
+    float maxRotationError = 0.0f;
+    for (int c = 0; c < 3; ++c)
+        for (int r = 0; r < 3; ++r)
+            maxRotationError = std::max(
+                maxRotationError,
+                std::abs(roundTrip.rotation[c][r] - transform.rotation[c][r]));
+    const float translationError = glm::length(roundTrip.translation - transform.translation);
+    if (!std::isfinite(maxRotationError) || !std::isfinite(translationError) ||
+        maxRotationError > 2.0e-4f || translationError > 2.0e-4f)
+    {
+        throw std::runtime_error(
+            "render-node transform XYZ round-trip changed placement");
+    }
+
+    node.pivot = encoded.pivot;
+    node.localRotationDeg = encoded.localRotationDeg;
+    node.localPosition = encoded.localPosition;
 }
 
 void applyRenderInstanceFit(
@@ -2269,11 +2401,6 @@ std::filesystem::path ModelAssetEditorSession::wizardWorkspacePath() const
     return m_sourceRoot / "build" / "tools" / "model_asset_editor" / "workspaces" / m_selectedId;
 }
 
-std::filesystem::path ModelAssetEditorSession::wizardStatePath() const
-{
-    return wizardWorkspacePath() / "wizard_state.json";
-}
-
 std::filesystem::path ModelAssetEditorSession::workingAssetPath() const
 {
     return wizardWorkspacePath() / "working" / (m_selectedId + ".elmodel");
@@ -2289,40 +2416,9 @@ std::filesystem::path ModelAssetEditorSession::productionEditorStatePath() const
     return wizardWorkspacePath() / "production_state.json";
 }
 
-std::filesystem::path ModelAssetEditorSession::wizardCheckpointPath(const std::string& stage) const
-{
-    return wizardWorkspacePath() / ("checkpoint-" + stage) / (m_selectedId + ".elmodel");
-}
-
-std::filesystem::path ModelAssetEditorSession::wizardCheckpointEditorStatePath(const std::string& stage) const
-{
-    return wizardCheckpointPath(stage).parent_path() / "editor_state.json";
-}
-
 std::filesystem::path ModelAssetEditorSession::wizardLogPath(const std::string& fileName) const
 {
     return wizardWorkspacePath() / "logs" / fileName;
-}
-
-std::uint64_t ModelAssetEditorSession::checkpointSequenceForStage(const std::string& stage) const
-{
-    const auto path = wizardCheckpointEditorStatePath(stage);
-    std::ifstream in(path);
-    if (!in) return 0;
-    try
-    {
-        json snapshot;
-        in >> snapshot;
-        if (snapshot.value("schemaVersion", 0) < 9) return 0;
-        if (snapshot.value("snapshotKind", std::string()) != "model_asset_editor_checkpoint_state") return 0;
-        if (snapshot.value("assetId", std::string()) != m_selectedId) return 0;
-        if (snapshot.value("checkpointStage", std::string()) != stage) return 0;
-        return snapshot.value("checkpointSequence", std::uint64_t(0));
-    }
-    catch (...)
-    {
-        return 0;
-    }
 }
 
 ModelAssetEditorSession::EditorAuthoringState ModelAssetEditorSession::captureEditorAuthoringState() const
@@ -2336,6 +2432,7 @@ ModelAssetEditorSession::EditorAuthoringState ModelAssetEditorSession::captureEd
     state.legacySourceVariantReplacements = m_legacySourceVariantReplacements;
     state.sourceMeshFingerprints = m_sourceMeshFingerprints;
     state.componentMaintenanceIssues = m_componentMaintenanceIssues;
+    state.semanticChildOrder = m_semanticChildOrder;
     state.nextBaseVisualOrdinal = m_nextBaseVisualOrdinal;
     state.nextSourceVariantOrdinal = m_nextSourceVariantOrdinal;
     return state;
@@ -2360,9 +2457,6 @@ void ModelAssetEditorSession::applyStageValidity(const StageValidityState& state
         const auto it = state.find(id);
         const std::string status = it == state.end() ? "not_started" : it->second;
         target.status = status == "complete" || status == "stale" || status == "needs_fix" ? status : "not_started";
-        const auto checkpoint = wizardCheckpointPath(id);
-        target.checkpointManifest = std::filesystem::exists(checkpoint) ? checkpoint : std::filesystem::path{};
-        target.checkpointSequence = target.checkpointManifest.empty() ? 0 : checkpointSequenceForStage(id);
     }
 }
 
@@ -2420,10 +2514,11 @@ void ModelAssetEditorSession::applyEditorAuthoringState(EditorAuthoringState sta
     m_legacySourceVariantReplacements = std::move(state.legacySourceVariantReplacements);
     m_sourceMeshFingerprints = std::move(state.sourceMeshFingerprints);
     m_componentMaintenanceIssues = std::move(state.componentMaintenanceIssues);
+    m_semanticChildOrder = std::move(state.semanticChildOrder);
     m_nextBaseVisualOrdinal = std::max<std::size_t>(1, state.nextBaseVisualOrdinal);
     m_nextSourceVariantOrdinal = std::max<std::size_t>(1, state.nextSourceVariantOrdinal);
-    // RAW source snapshots are deliberately session-only. A restored checkpoint
-    // can request/rebuild them explicitly; they never leak across workspace heads.
+    // RAW source snapshots are deliberately session-only. RESTORE reloads the saved
+    // WORKING ASSET; raw source data is requested/rebuilt explicitly when needed.
     m_rawMeshSnapshots.clear();
 }
 
@@ -2500,6 +2595,10 @@ nlohmann::json ModelAssetEditorSession::serializeEditorAuthoringState(const Edit
                 {"issues", std::vector<std::string>(issues.begin(), issues.end())}
             });
 
+    json semanticTreeOrder = json::object();
+    for (const auto& [parentId, childIds] : state.semanticChildOrder)
+        if (!parentId.empty() && !childIds.empty()) semanticTreeOrder[parentId] = childIds;
+
     return {
         {"nextBaseVisualOrdinal", state.nextBaseVisualOrdinal},
         {"nextSourceVariantOrdinal", state.nextSourceVariantOrdinal},
@@ -2510,7 +2609,8 @@ nlohmann::json ModelAssetEditorSession::serializeEditorAuthoringState(const Edit
         {"meshPreparationRecords", std::move(meshPreparationRecords)},
         {"legacySourceVariantReplacements", std::move(legacySourceVariantReplacements)},
         {"sourceMeshFingerprints", std::move(sourceMeshFingerprints)},
-        {"componentMaintenance", std::move(componentMaintenance)}
+        {"componentMaintenance", std::move(componentMaintenance)},
+        {"semanticTreeOrder", std::move(semanticTreeOrder)}
     };
 }
 
@@ -2645,6 +2745,21 @@ bool ModelAssetEditorSession::parseEditorAuthoringState(
                         issues.insert(value.get<std::string>());
                 if (!issues.empty()) next.componentMaintenanceIssues[componentId] = std::move(issues);
             }
+            const auto treeOrder = state.value("semanticTreeOrder", json::object());
+            if (treeOrder.is_object())
+                for (auto it = treeOrder.begin(); it != treeOrder.end(); ++it)
+                {
+                    if (!it.value().is_array() || it.key().empty()) continue;
+                    std::vector<std::string> ids;
+                    std::set<std::string> seenIds;
+                    for (const auto& value : it.value())
+                        if (value.is_string())
+                        {
+                            const auto id = value.get<std::string>();
+                            if (!id.empty() && seenIds.insert(id).second) ids.push_back(id);
+                        }
+                    if (!ids.empty()) next.semanticChildOrder[it.key()] = std::move(ids);
+                }
 
         }
         else if (schemaVersion >= 2)
@@ -2668,114 +2783,6 @@ bool ModelAssetEditorSession::parseEditorAuthoringState(
             }
         }
         parsed = std::move(next);
-        if (error) error->clear();
-        return true;
-    }
-    catch (const std::exception& ex)
-    {
-        if (error) *error = ex.what();
-        return false;
-    }
-}
-
-bool ModelAssetEditorSession::writeCheckpointEditorState(
-    const std::string& stage,
-    const StageValidityState& validity,
-    std::uint64_t checkpointSequence,
-    std::string* error) const
-{
-    try
-    {
-        json state = serializeEditorAuthoringState(captureEditorAuthoringState());
-        state["schemaVersion"] = 10;
-        state["snapshotKind"] = "model_asset_editor_checkpoint_state";
-        state["assetId"] = m_selectedId;
-        state["checkpointStage"] = stage;
-        state["checkpointSequence"] = checkpointSequence;
-        state["editorVersion"] = ModelAssetEditorVersion;
-        state["stages"] = serializeStageValidity(validity);
-        const auto path = wizardCheckpointEditorStatePath(stage);
-        std::ofstream out(path, std::ios::trunc);
-        if (!out)
-        {
-            if (error) *error = "cannot open " + path.generic_string();
-            return false;
-        }
-        out << std::setw(2) << state << '\n';
-        if (!out)
-        {
-            if (error) *error = "cannot write " + path.generic_string();
-            return false;
-        }
-        if (error) error->clear();
-        return true;
-    }
-    catch (const std::exception& ex)
-    {
-        if (error) *error = ex.what();
-        return false;
-    }
-}
-
-bool ModelAssetEditorSession::loadCheckpointEditorState(
-    const std::string& stage,
-    EditorAuthoringState& state,
-    StageValidityState* validity,
-    std::uint64_t* checkpointSequence,
-    std::string* error) const
-{
-    const auto path = wizardCheckpointEditorStatePath(stage);
-    std::ifstream in(path);
-    if (!in)
-    {
-        if (error) *error = "checkpoint has no stage-local editor_state.json";
-        return false;
-    }
-    try
-    {
-        json snapshot;
-        in >> snapshot;
-        const int schemaVersion = snapshot.value("schemaVersion", 0);
-        if (schemaVersion < 3 || schemaVersion > 10)
-        {
-            if (error) *error = "unsupported checkpoint editor-state schema " + std::to_string(schemaVersion);
-            return false;
-        }
-        const auto assetId = snapshot.value("assetId", std::string());
-        if (!assetId.empty() && assetId != m_selectedId)
-        {
-            if (error) *error = "checkpoint editor-state asset id does not match selected asset";
-            return false;
-        }
-        const auto checkpointStage = snapshot.value("checkpointStage", std::string());
-        if (!checkpointStage.empty() && checkpointStage != stage)
-        {
-            if (error) *error = "checkpoint editor-state stage does not match requested stage";
-            return false;
-        }
-        if (!parseEditorAuthoringState(snapshot, schemaVersion, state, error)) return false;
-        if (checkpointSequence)
-        {
-            *checkpointSequence = schemaVersion >= 9
-                ? snapshot.value("checkpointSequence", std::uint64_t(0))
-                : std::uint64_t(0);
-            if (schemaVersion >= 9 && *checkpointSequence == 0)
-            {
-                if (error) *error = "checkpoint editor-state has an invalid zero save sequence";
-                return false;
-            }
-        }
-        if (validity)
-        {
-            if (schemaVersion >= 8 && snapshot.contains("stages"))
-            {
-                if (!parseStageValidity(snapshot, *validity, error)) return false;
-            }
-            else
-            {
-                validity->clear();
-            }
-        }
         if (error) error->clear();
         return true;
     }
@@ -2986,59 +2993,12 @@ bool ModelAssetEditorSession::loadProductionEditorState(
 
 void ModelAssetEditorSession::loadWizardState()
 {
+    // Stage validity belongs only to the current in-memory/WORKING editor state.
+    // There is no separate wizard-state authority; stage validity is part of the saved WORKING ASSET.
     m_wizardStages.clear();
-    m_nextCheckpointSequence = 1;
     applyEditorAuthoringState(EditorAuthoringState{});
     for (const char* id : wizardStageOrder())
         m_wizardStages.emplace(id, WizardStageState{});
-
-    // wizard_state.json is only a checkpoint/session index. The persistent
-    // WORKING ASSET lives under workspace/working and carries its own matching
-    // editor_state.json. Checkpoints are rollback snapshots only and never
-    // select the editor resume head.
-    for (auto& [id, value] : m_wizardStages)
-    {
-        const auto checkpoint = wizardCheckpointPath(id);
-        value.checkpointManifest = std::filesystem::exists(checkpoint)
-            ? checkpoint : std::filesystem::path{};
-        value.checkpointSequence = value.checkpointManifest.empty() ? 0 : checkpointSequenceForStage(id);
-        if (value.checkpointSequence != 0)
-            m_nextCheckpointSequence = std::max(m_nextCheckpointSequence, value.checkpointSequence + 1);
-        value.status = "not_started";
-    }
-}
-
-bool ModelAssetEditorSession::writeWizardState() const
-{
-    try
-    {
-        std::filesystem::create_directories(wizardWorkspacePath());
-        json stages = json::object();
-        for (const auto& [id, value] : m_wizardStages)
-        {
-            stages[id] = {
-                {"checkpoint", value.checkpointManifest.empty() ? std::string() : value.checkpointManifest.generic_string()},
-                {"checkpointSequence", value.checkpointSequence}
-            };
-        }
-
-        json state = {
-            {"schemaVersion", 9},
-            {"snapshotKind", "model_asset_editor_session_index"},
-            {"assetId", m_selectedId},
-            {"editorVersion", ModelAssetEditorVersion},
-            {"nextCheckpointSequence", m_nextCheckpointSequence},
-            {"stages", std::move(stages)}
-        };
-        std::ofstream out(wizardStatePath(), std::ios::trunc);
-        if (!out) return false;
-        out << std::setw(2) << state << '\n';
-        return static_cast<bool>(out);
-    }
-    catch (...)
-    {
-        return false;
-    }
 }
 
 std::string ModelAssetEditorSession::allocateBaseVisualId()
@@ -3144,8 +3104,8 @@ void ModelAssetEditorSession::reconcileAuthoringVisualRegistry()
             auto& id = m_sourceExtraMeshIds[lodIndex][geometry.sourcePath];
             if (id.empty())
             {
-                // Existing v0.9.4-v0.9.6 checkpoints encoded a filename stem in
-                // geometry.id. Do not preserve that as semantic identity: assign
+                // Legacy editor states encoded a filename stem in geometry.id. Do not
+                // preserve that as semantic identity: assign
                 // a new opaque authoring id while keeping sourcePath only as the
                 // reload pointer.
                 id = allocateSourceVariantId();
@@ -3210,25 +3170,7 @@ void ModelAssetEditorSession::reconcileAuthoringVisualRegistry()
         m_legacySourceVariantReplacements = std::move(pendingLegacy);
     }
 
-    (void)changed; // authoring registry persists with the coherent WORKING ASSET save/autosave
-}
-
-void ModelAssetEditorSession::restoreWizardValidityAt(const std::string& stage)
-{
-    const auto restored = wizardStageIndex(stage);
-    const auto& order = wizardStageOrder();
-    if (restored >= order.size()) return;
-
-    // Legacy checkpoints did not persist stage validity. Conservatively treat
-    // the snapshot as complete through its own stage and unknown afterwards.
-    for (std::size_t i = 0; i < order.size(); ++i)
-    {
-        auto& value = m_wizardStages[order[i]];
-        value.status = i <= restored ? "complete" : "not_started";
-        const auto checkpoint = wizardCheckpointPath(order[i]);
-        value.checkpointManifest = std::filesystem::exists(checkpoint)
-            ? checkpoint : std::filesystem::path{};
-    }
+    (void)changed; // authoring registry persists only when the user presses SAVE
 }
 
 void ModelAssetEditorSession::invalidateWizardFrom(const std::string& stage)
@@ -3237,20 +3179,17 @@ void ModelAssetEditorSession::invalidateWizardFrom(const std::string& stage)
     const auto& order = wizardStageOrder();
     if (first >= order.size()) return;
 
-    // Validity describes the current working copy only. Checkpoint availability
-    // is a separate rollback axis and never determines whether current work is
-    // complete/stale/not-started.
+    bool changed = false;
     for (std::size_t i = first; i < order.size(); ++i)
     {
         auto& value = m_wizardStages[order[i]];
+        const std::string previous = value.status;
         if (value.status == "complete" || value.status == "stale") value.status = "stale";
         else if (value.status == "needs_fix") value.status = "needs_fix";
         else value.status = "not_started";
-        const auto checkpoint = wizardCheckpointPath(order[i]);
-        value.checkpointManifest = std::filesystem::exists(checkpoint)
-            ? checkpoint : std::filesystem::path{};
+        changed = changed || value.status != previous;
     }
-    (void)writeWizardState();
+    if (changed) markEditorStateDirty();
 }
 
 nlohmann::json ModelAssetEditorSession::serializeWizard() const
@@ -3266,20 +3205,13 @@ nlohmann::json ModelAssetEditorSession::serializeWizard() const
         const bool previousComplete = i == 0 ||
             (m_wizardStages.count(order[i - 1]) && m_wizardStages.at(order[i - 1]).status == "complete");
         const bool maintenanceMode = !m_selectedId.empty() && std::filesystem::exists(compiledPath(m_selectedId));
-        const bool checkpointExists =
-            !value.checkpointManifest.empty() && std::filesystem::exists(value.checkpointManifest);
         stages.push_back({
             {"id", id}, {"index", i}, {"status", value.status},
-            {"implemented", implemented}, {"unlocked", implemented && (maintenanceMode || previousComplete)},
-            {"checkpointPath", value.checkpointManifest.empty() ? std::string() : value.checkpointManifest.generic_string()},
-            {"checkpointEditorStatePath", checkpointExists ? wizardCheckpointEditorStatePath(id).generic_string() : std::string()},
-            {"checkpointExists", checkpointExists},
-            {"checkpointSequence", value.checkpointSequence}
+            {"implemented", implemented}, {"unlocked", implemented && (maintenanceMode || previousComplete)}
         });
     }
     return {
         {"workspacePath", wizardWorkspacePath().generic_string()},
-        {"statePath", wizardStatePath().generic_string()},
         {"workingAssetPath", workingAssetPath().generic_string()},
         {"workingEditorStatePath", workingEditorStatePath().generic_string()},
         {"maintenanceMode", !m_selectedId.empty() && std::filesystem::exists(compiledPath(m_selectedId))},
@@ -3323,7 +3255,7 @@ bool ModelAssetEditorSession::validateWizardStage(const std::string& stage, std:
         // Saved payloads are not part of current authoring validity. A source
         // reimport may intentionally declare a different LOD set (for example,
         // only a fresh LOD0 before regenerated LODs are authored). Stale members
-        // in WORKING are pruned by ordinary SAVE/autosave; stale production
+        // in WORKING are pruned by SAVE; stale production
         // members remain until BUILD. They are diagnostics, never LODS blockers.
         // LODS owns current render-document readiness, not saved package debris
         // and not SURFACES semantics.
@@ -3365,7 +3297,7 @@ bool ModelAssetEditorSession::validateWizardStage(const std::string& stage, std:
                 {
                     // AUTO is the only SURFACES validation path that needs
                     // topology evidence. Explicit author intent is metadata and
-                    // must not pay for an audit merely to save a checkpoint.
+                    // must not pay for an audit merely to validate unrelated metadata.
                     const auto audit = auditPreflightGeometry(geometry.mesh);
                     autoClosed = audit.suggestedClass == PreflightTopologyClass::ClosedVolume;
                     if (audit.openComponents != 0)
@@ -3418,6 +3350,37 @@ bool ModelAssetEditorSession::validateWizardStage(const std::string& stage, std:
     {
         if (m_asset.nodes.empty())
             return fail("SEMANTICS validation failed: asset has no semantic nodes");
+        const auto rootCount = static_cast<std::size_t>(std::count_if(
+            m_asset.nodes.begin(), m_asset.nodes.end(), [](const Node& node) { return node.parentIndex < 0; }));
+        std::vector<std::string> semanticEntryProblems;
+        if (rootCount != 1)
+            semanticEntryProblems.push_back("asset must have exactly one semantic root; found " + std::to_string(rootCount));
+        std::vector<std::string> orphanIds;
+        for (std::size_t ni = 0; ni < m_asset.nodes.size(); ++ni)
+            if (inspectSemanticNodeUsage(m_asset, ni).isOrphanCandidate()) orphanIds.push_back(m_asset.nodes[ni].id);
+        if (!orphanIds.empty())
+        {
+            std::string names;
+            constexpr std::size_t MaxNamedOrphans = 8;
+            for (std::size_t i = 0; i < std::min(orphanIds.size(), MaxNamedOrphans); ++i)
+            {
+                if (!names.empty()) names += ", ";
+                names += orphanIds[i];
+            }
+            if (orphanIds.size() > MaxNamedOrphans) names += ", ...";
+            semanticEntryProblems.push_back("orphan semantic parts=" + std::to_string(orphanIds.size()) + " [" + names +
+                "]; delete them or give them visual/children/gameplay ownership");
+        }
+        if (!semanticEntryProblems.empty())
+        {
+            std::string message = "SEMANTICS validation failed: ";
+            for (std::size_t i = 0; i < semanticEntryProblems.size(); ++i)
+            {
+                if (i) message += "; ";
+                message += semanticEntryProblems[i];
+            }
+            return fail(message);
+        }
 
         std::set<std::string> ids;
         for (std::size_t ni = 0; ni < m_asset.nodes.size(); ++ni)
@@ -3727,7 +3690,7 @@ void ModelAssetEditorSession::sendWizardValidationReport()
     sendStatus(passed ? "Full wizard validation passed" : "Full wizard validation found blockers", !passed);
 }
 
-bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
+bool ModelAssetEditorSession::checkWizardStage(const std::string& stage)
 {
     const auto stageIndex = wizardStageIndex(stage);
     if (stageIndex >= wizardStageOrder().size())
@@ -3741,44 +3704,51 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
         return false;
     }
 
-    // Initial authoring still follows the ordered wizard. A production asset is
-    // maintenance-mode and may enter any stage directly; local debt determines
-    // readiness, not checkpoint ancestry.
+    // Initial authoring follows the ordered pipeline. Production assets are
+    // maintenance-mode and can enter any stage directly; local debt determines
+    // readiness. No stage check saves anything.
     const bool maintenanceMode = std::filesystem::exists(compiledPath(m_selectedId));
     if (!maintenanceMode && stageIndex > 0)
     {
         const std::string previous = wizardStageOrder()[stageIndex - 1];
         if (m_wizardStages[previous].status != "complete")
         {
-            sendStatus("Complete wizard stage '" + previous + "' first", true);
+            sendStatus("Check wizard stage '" + previous + "' first", true);
             return false;
         }
     }
     if (!ensureAllLodsLoaded()) return false;
 
     std::string validationError;
-    bool completionPassed = validateWizardStage(stage, &validationError);
+    bool passed = validateWizardStage(stage, &validationError);
     auto& value = m_wizardStages[stage];
-    value.status = completionPassed ? "complete" : "needs_fix";
+    const std::string previousStatus = value.status;
+    value.status = passed ? "complete" : "needs_fix";
+    if (value.status != previousStatus) markEditorStateDirty();
 
-    // Stage validity belongs to the mutable WORKING ASSET. Completing/checking a
-    // stage no longer creates, advances, prunes or otherwise touches checkpoints.
-    if (!saveWorkingAsset(true))
-    {
-        value.status = "needs_fix";
-        completionPassed = false;
-        validationError = "cannot persist current WORKING ASSET";
-    }
+    // VALIDATE uses the same CHECK action but also publishes the per-contract
+    // report consumed by the validation panel. This remains read-only.
+    if (stage == "validate") sendWizardValidationReport();
 
-    if (completionPassed && stage == "build")
+    // BUILD is the only exception to the read-only CHECK rule: it is the
+    // explicit terminal production write. Require the working state to be saved
+    // first so RESTORE and BUILD can never point at two different revisions.
+    if (passed && stage == "build")
     {
-        if (!buildProductionAsset())
+        syncDirty();
+        if (m_dirty)
         {
-            completionPassed = false;
+            passed = false;
+            validationError = "save the current WORKING ASSET before BUILD";
+            value.status = "needs_fix";
+            markEditorStateDirty();
+        }
+        else if (!buildProductionAsset())
+        {
+            passed = false;
             validationError = "BUILD production package save failed";
             value.status = "needs_fix";
-            (void)writeWorkingEditorState(nullptr);
-            (void)writeWizardState();
+            markEditorStateDirty();
         }
     }
 
@@ -3788,154 +3758,24 @@ bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
         {"wizard", serializeWizard()}
     }).dump());
 
-    if (completionPassed)
+    if (passed)
     {
         const std::string next = stageIndex + 1 < wizardStageOrder().size()
             ? wizardStageOrder()[stageIndex + 1] : std::string();
         m_server.broadcastText(json({
-            {"type", "wizard_stage_completed"},
+            {"type", "wizard_stage_checked"},
             {"stage", stage},
-            {"nextStage", maintenanceMode ? std::string() : next},
-            {"checkpoint", std::string()},
-            {"checkpointSequence", std::uint64_t(0)}
+            {"nextStage", maintenanceMode ? std::string() : next}
         }).dump());
         sendStatus(stage == "build"
-            ? "BUILD complete. Production was written from the persistent WORKING ASSET; rollback checkpoints are unchanged."
-            : "Wizard stage complete: " + stage + ". WORKING ASSET saved; no checkpoint was created.");
+            ? "BUILD complete: production package written from the saved WORKING ASSET."
+            : "Stage check passed: " + stage + ". Nothing was saved; the next stage is now available.");
     }
     else
     {
-        sendStatus("Wizard stage needs fix: " + stage + ": " + validationError +
-            ". Current WORKING ASSET was preserved; checkpoints were not changed.", true);
+        sendStatus("Stage check failed: " + stage + ": " + validationError + ". Nothing was saved.", true);
     }
-    return completionPassed;
-}
-
-bool ModelAssetEditorSession::createWizardCheckpoint(const std::string& stage)
-{
-    const auto stageIndex = wizardStageIndex(stage);
-    if (stageIndex >= wizardStageOrder().size())
-    {
-        sendStatus("Unknown checkpoint stage: " + stage, true);
-        return false;
-    }
-    if (m_asset.assetId.empty())
-    {
-        sendStatus("No asset selected", true);
-        return false;
-    }
-    if (!ensureAllLodsLoaded()) return false;
-
-    // A checkpoint is a literal manual rollback snapshot of the current state.
-    // It is intentionally independent of validation and stage progression.
-    std::string error;
-    const auto checkpoint = wizardCheckpointPath(stage);
-    std::filesystem::create_directories(checkpoint.parent_path());
-    sendStatus("Writing rollback checkpoint for " + stage + "...", false, "writing");
-    sendProgress("writing", "CREATE ROLLBACK CHECKPOINT " + stage, 0, 1, checkpoint);
-    if (!ModelAssetBinary::save(checkpoint.string(), m_asset, &error))
-    {
-        sendStatus("Cannot write rollback checkpoint: " + error, true);
-        return false;
-    }
-
-    const std::uint64_t checkpointSequence = m_nextCheckpointSequence;
-    const auto validity = captureStageValidity();
-    if (!writeCheckpointEditorState(stage, validity, checkpointSequence, &error))
-    {
-        sendStatus("Checkpoint mesh package was written, but editor-state snapshot failed: " + error, true);
-        return false;
-    }
-
-    ++m_nextCheckpointSequence;
-    auto& value = m_wizardStages[stage];
-    value.checkpointManifest = checkpoint;
-    value.checkpointSequence = checkpointSequence;
-    if (!writeWizardState())
-    {
-        sendStatus("Rollback checkpoint was written, but wizard_state.json could not be updated", true);
-        return false;
-    }
-    sendProgress("writing", "CREATE ROLLBACK CHECKPOINT " + stage, 1, 1, checkpoint);
-    m_server.broadcastText(json({
-        {"type", "wizard_state_patch"},
-        {"dirty", m_dirty},
-        {"wizard", serializeWizard()}
-    }).dump());
-    m_server.broadcastText(json({
-        {"type", "wizard_checkpoint_saved"},
-        {"stage", stage},
-        {"checkpoint", checkpoint.generic_string()},
-        {"checkpointSequence", checkpointSequence},
-        {"validationPassed", true}
-    }).dump());
-    sendStatus("Rollback checkpoint saved: " + stage + " sequence=" +
-        std::to_string(checkpointSequence) + ". WORKING ASSET, production and all other checkpoints are unchanged.");
-    return true;
-}
-
-bool ModelAssetEditorSession::restoreWizardCheckpoint(const std::string& stage)
-{
-    const auto it = m_wizardStages.find(stage);
-    if (it == m_wizardStages.end() || it->second.checkpointManifest.empty() ||
-        !std::filesystem::exists(it->second.checkpointManifest))
-    {
-        sendStatus("No checkpoint exists for wizard stage '" + stage + "'", true);
-        return false;
-    }
-
-    ModelAsset restored;
-    EditorAuthoringState restoredEditorState;
-    StageValidityState restoredValidity;
-    std::string error;
-    sendStatus("Restoring wizard checkpoint " + stage + "...", false, "reading");
-    sendProgress("reading", "RESTORE CHECKPOINT", 0, 1, it->second.checkpointManifest);
-    if (!ModelAssetBinary::load(it->second.checkpointManifest.string(), restored, &error))
-    {
-        sendStatus("Cannot restore wizard checkpoint: " + error, true);
-        return false;
-    }
-
-    const bool hasEditorSnapshot = std::filesystem::exists(wizardCheckpointEditorStatePath(stage));
-    std::uint64_t restoredCheckpointSequence = 0;
-    if (hasEditorSnapshot && !loadCheckpointEditorState(
-            stage, restoredEditorState, &restoredValidity, &restoredCheckpointSequence, &error))
-    {
-        sendStatus("Cannot restore checkpoint editor state: " + error, true);
-        return false;
-    }
-    if (!hasEditorSnapshot)
-    {
-        // Checkpoints written before schema 7 did not carry stage-local editor
-        // authoring metadata. Geometry can still be restored, but do not claim
-        // stale PREPARE/topology evidence as exact snapshot state.
-        restoredEditorState = captureEditorAuthoringState();
-        restoredEditorState.meshPreparationRecords.clear();
-        restoredEditorState.geometryTopologyClasses.clear();
-    }
-
-    m_asset = std::move(restored);
-    applyEditorAuthoringState(std::move(restoredEditorState));
-    resetLodState(true, true); // rollback changes the mutable working head, never production
-    if (!restoredValidity.empty()) applyStageValidity(restoredValidity);
-    else restoreWizardValidityAt(stage);
-    m_wizardStages[stage].checkpointSequence = restoredCheckpointSequence;
-    if (!saveWorkingAsset(true))
-    {
-        sendStatus("Checkpoint was restored in memory, but the persistent WORKING ASSET could not be updated", true);
-        return false;
-    }
-    sendProgress("reading", "RESTORE CHECKPOINT", 1, 1, it->second.checkpointManifest);
-    // Restore is deliberately literal: show exactly the mesh payload stored in
-    // the checkpoint. Canonicalization/validation runs only when explicitly
-    // requested by the author from the LOD Preflight block.
-    sendAsset();
-    m_server.broadcastText(json({{"type", "wizard_checkpoint_restored"}, {"stage", stage}, {"migratedCanonicalSource", false}}).dump());
-    if (hasEditorSnapshot)
-        sendStatus("Restored " + stage + " rollback checkpoint and saved it as the current WORKING ASSET; production and all other checkpoints are unchanged");
-    else
-        sendStatus("Restored legacy " + stage + " checkpoint into the persistent WORKING ASSET. It predates stage-local editor_state.json, so PREPARE/topology evidence requires review; other checkpoints and production were not changed.");
-    return true;
+    return passed;
 }
 
 bool ModelAssetEditorSession::scanRenderDuplicates(
@@ -4629,7 +4469,7 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
     if (payloadChanged && !invalidationStage.empty())
         invalidateWizardFrom(invalidationStage);
     // Authoring evidence without mesh mutation belongs to the mutable working
-    // state and is persisted by ordinary SAVE/autosave, never by stage lineage.
+    // state and is persisted only by the global SAVE action.
     (void)authoringStateChanged;
 
     if (payloadChangedOut) *payloadChangedOut = payloadChanged;
@@ -5353,7 +5193,7 @@ bool ModelAssetEditorSession::applyGeneratedLods(
     sendStatus(
         "Generated LODs applied to authored asset: replaced=" + std::to_string(replaced) +
         ", created=" + std::to_string(created) +
-        "; current authored LODs will persist through WORKING ASSET autosave");
+        "; press SAVE to persist the current authored LODs");
     return true;
 }
 
@@ -5522,7 +5362,7 @@ std::size_t ModelAssetEditorSession::lodCount() const
 
 void ModelAssetEditorSession::syncDirty()
 {
-    m_dirty = m_manifestDirty || std::any_of(
+    m_dirty = m_editorStateDirty || m_manifestDirty || std::any_of(
         m_lodState.begin(), m_lodState.end(), [](const LodEditState& state) { return state.dirty; });
 }
 
@@ -5536,12 +5376,19 @@ void ModelAssetEditorSession::resetLodState(bool loaded, bool dirty)
             lod.declaredNodeCount = static_cast<std::uint32_t>(lod.nodes.size());
         }
     m_manifestDirty = dirty;
+    m_editorStateDirty = dirty;
     syncDirty();
 }
 
 void ModelAssetEditorSession::markManifestDirty()
 {
     m_manifestDirty = true;
+    syncDirty();
+}
+
+void ModelAssetEditorSession::markEditorStateDirty()
+{
+    m_editorStateDirty = true;
     syncDirty();
 }
 
@@ -5937,8 +5784,8 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
             &error, &warning, importProgress);
     };
 
-    // v0.10.32: the persistent WORKING ASSET is the editor resume head.
-    // Checkpoints are never consulted here; they are explicit rollback snapshots.
+    // v0.10.33: the saved WORKING ASSET is the editor resume head.
+    // There is no snapshot history and no background save.
     if (!forceReimport && haveWorking)
     {
         sendStatus("Reading persistent working asset...", false, "reading");
@@ -5970,6 +5817,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
             applyStageValidity(StageValidityState{});
             warning = "Persistent working geometry loaded, but its editor_state.json is unavailable or mismatched (" +
                 stateError + "). Editor-only PREPARE/topology/source-baseline evidence requires review.";
+            markEditorStateDirty();
         }
         reconcileAuthoringVisualRegistry();
         workingLoaded = true;
@@ -6094,24 +5942,22 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         invalidateWizardFrom("source");
     }
 
-    // First open of a production/source asset migrates it into the independent
-    // persistent workspace. This is not BUILD and never writes compiled output.
-    // Every successful OPEN has one persistent resume head. For an existing
-    // working package this also repairs/rebinds a missing editor_state.json to
-    // the safely reset authoring evidence chosen above; it never touches production.
-    if (!saveWorkingAsset(true)) return false;
+    // Create a saved baseline only on first adoption. Normal edits and REIMPORT
+    // remain in memory until the author presses the global SAVE button.
+    const bool createInitialWorkingBaseline = !haveWorking && !forceReimport;
+    if (createInitialWorkingBaseline && !saveWorkingAsset(true)) return false;
 
     sendProgress("reading", "LOAD VIEW", 0, 1, workingAssetPath());
     sendAsset();
     if (!warning.empty()) sendStatus(warning);
     else if (forceReimport)
-        sendStatus("Source model reloaded and autosaved as the current WORKING ASSET. Checkpoints and production are unchanged.");
+        sendStatus("Source model reloaded into the current working state. Nothing was saved; use SAVE to keep it or RESTORE to discard it.");
     else if (workingLoaded)
-        sendStatus("Loaded persistent WORKING ASSET. Checkpoints remain rollback snapshots only.");
+        sendStatus("Loaded saved WORKING ASSET.");
     else if (productionLoaded)
-        sendStatus("Production asset adopted as the initial persistent WORKING ASSET; production bytes were not rewritten.");
+        sendStatus("Production asset adopted as the initial saved WORKING ASSET; production bytes were not rewritten.");
     else
-        sendStatus("Source asset imported and saved as the persistent WORKING ASSET; BUILD has not been written yet.");
+        sendStatus("Source asset imported as the initial saved WORKING ASSET; BUILD has not been written yet.");
     return true;
 }
 
@@ -6189,7 +6035,8 @@ bool ModelAssetEditorSession::saveWorkingAsset(bool quiet)
         sendStatus("WORKING ASSET bytes were saved, but editor state failed: " + error, true);
         return false;
     }
-    (void)writeWizardState();
+    m_editorStateDirty = false;
+    syncDirty();
     if (quiet)
     {
         json savedLods = json::array();
@@ -6213,7 +6060,7 @@ bool ModelAssetEditorSession::saveWorkingAsset(bool quiet)
     else
     {
         sendAssetMetadata();
-        sendStatus("Saved persistent WORKING ASSET. Production and rollback checkpoints are unchanged.");
+        sendStatus("Saved current WORKING ASSET. Production changes only at BUILD.");
     }
     return true;
 }
@@ -6221,6 +6068,26 @@ bool ModelAssetEditorSession::saveWorkingAsset(bool quiet)
 bool ModelAssetEditorSession::saveAsset()
 {
     return saveWorkingAsset(false);
+}
+
+bool ModelAssetEditorSession::restoreWorkingAsset()
+{
+    if (m_selectedId.empty() || m_asset.assetId.empty())
+    {
+        sendStatus("No asset selected", true);
+        return false;
+    }
+    if (!std::filesystem::exists(workingAssetPath()))
+    {
+        sendStatus("No saved WORKING ASSET exists yet", true);
+        return false;
+    }
+
+    const std::string id = m_selectedId;
+    sendStatus("Restoring last saved WORKING ASSET...", false, "reading");
+    if (!selectAsset(id, false)) return false;
+    sendStatus("Restored last saved WORKING ASSET. Unsaved changes were discarded.");
+    return true;
 }
 
 bool ModelAssetEditorSession::buildProductionAsset()
@@ -6258,27 +6125,9 @@ bool ModelAssetEditorSession::buildProductionAsset()
     sendProgress("writing", "BUILD PRODUCTION", 1, 1, path);
     sendCatalog();
     sendAssetMetadata();
-    sendStatus("BUILD complete: production package now matches the persistent WORKING ASSET. Checkpoints were not changed.");
+    sendStatus("BUILD complete: production package now matches the saved WORKING ASSET.");
     return true;
 }
-
-bool ModelAssetEditorSession::saveManifestOnly()
-{
-    // v0.10.32 removes ad-hoc production writes from ordinary editor SAVE paths.
-    // Keep the command for compatibility, but persist one coherent working state.
-    return saveWorkingAsset(false);
-}
-
-bool ModelAssetEditorSession::saveLodOnly(std::size_t lodIndex)
-{
-    if (lodIndex >= m_asset.renderLods.size())
-    {
-        sendStatus("Invalid LOD index", true);
-        return false;
-    }
-    return saveWorkingAsset(false);
-}
-
 
 std::string ModelAssetEditorSession::maintenanceComponentId(
     std::size_t lodIndex,
@@ -6404,16 +6253,10 @@ bool ModelAssetEditorSession::adoptSourceRevision(
         return false;
     }
     m_sourceMeshFingerprints[lodIndex][sourcePath] = fingerprint;
-    std::string persistError;
-    if (!writeWorkingEditorState(&persistError))
-    {
-        sendStatus("Cannot persist source revision baseline in WORKING ASSET: " + persistError, true);
-        return false;
-    }
-    (void)writeWizardState();
+    markEditorStateDirty();
     sendAssetMetadata();
     sendSourceChangeScan();
-    sendStatus("Accepted current source revision as maintenance baseline: " + sourcePath);
+    sendStatus("Accepted current source revision in the working state: " + sourcePath + ". Press SAVE to persist it.");
     return true;
 }
 
@@ -6426,18 +6269,10 @@ bool ModelAssetEditorSession::adoptAllSourceRevisions()
     }
     if (!ensureAllLodsLoaded()) return false;
     captureCurrentSourceFingerprintBaseline();
-    std::string error;
-    // Baseline migration is editor metadata only. Persist it in the mutable
-    // WORKING ASSET sidecar without rewriting production .elmodel/.elmesh bytes.
-    if (!writeWorkingEditorState(&error))
-    {
-        sendStatus("Cannot persist source baseline: " + error, true);
-        return false;
-    }
-    (void)writeWizardState();
+    markEditorStateDirty();
     sendAssetMetadata();
     sendSourceChangeScan();
-    sendStatus("Current linked source files accepted as the maintenance baseline");
+    sendStatus("Current linked source files accepted as the maintenance baseline in memory. Press SAVE to persist it.");
     return true;
 }
 
@@ -7149,6 +6984,43 @@ bool ModelAssetEditorSession::regenerateDerivedLodsForGeometry(
     return true;
 }
 
+nlohmann::json ModelAssetEditorSession::serializeSemanticTreeOrder() const
+{
+    json out = json::object();
+    for (const auto& [parentId, childIds] : m_semanticChildOrder)
+        if (!parentId.empty() && !childIds.empty()) out[parentId] = childIds;
+    return out;
+}
+
+nlohmann::json ModelAssetEditorSession::serializeSemanticNodes() const
+{
+    json nodes = json::array();
+    for (std::size_t ni = 0; ni < m_asset.nodes.size(); ++ni)
+    {
+        const auto& n = m_asset.nodes[ni];
+        std::size_t variantCount = 0;
+        for (const auto& variant : m_asset.stateVariants)
+            if (variant.nodeIndex == static_cast<std::int32_t>(ni)) ++variantCount;
+        const auto semanticUsage = inspectSemanticNodeUsage(m_asset, ni);
+        nodes.push_back({
+            {"index", ni}, {"id", n.id}, {"moduleId", n.moduleId}, {"parentIndex", n.parentIndex},
+            {"defaultStateId", n.defaultStateId}, {"stateVariantCount", variantCount},
+            {"localPosition", vec3Json(n.localPosition)}, {"localRotationDeg", vec3Json(n.localRotationDeg)}, {"pivot", vec3Json(n.pivot)}, {"enabled", n.enabled},
+            {"joint", {{"type", jointTypeName(n.joint.type)}, {"pivot", vec3Json(n.joint.pivot)}, {"axis", vec3Json(n.joint.axis)}, {"defaultRateDegPerSec", n.joint.defaultRateDegPerSec}, {"minAngleDeg", n.joint.minAngleDeg}, {"maxAngleDeg", n.joint.maxAngleDeg}, {"breakable", n.joint.breakable}, {"breakForceN", n.joint.breakForceN}, {"breakTorqueNm", n.joint.breakTorqueNm}}},
+            {"physics", {{"mode", massModeName(n.physics.mode)}, {"densityKgM3", n.physics.densityKgM3}, {"massKg", n.physics.massKg}, {"centerOfMass", vec3Json(n.physics.centerOfMass)}, {"inertiaDiagonal", vec3Json(n.physics.inertiaDiagonal)}, {"inertiaProducts", vec3Json(n.physics.inertiaProducts)}}},
+            {"semanticUsage", {
+                {"renderBindings", semanticUsage.renderBindings}, {"children", semanticUsage.children},
+                {"collisions", semanticUsage.collisions}, {"legacySourceBootstrapCollisions", semanticUsage.legacySourceBootstrapCollisions},
+                {"sockets", semanticUsage.sockets}, {"stateVariants", semanticUsage.stateVariants},
+                {"hitRegions", semanticUsage.hitRegions}, {"openings", semanticUsage.openings},
+                {"repairTargets", semanticUsage.repairTargets}, {"physicsEnabled", semanticUsage.physicsEnabled},
+                {"orphanCandidate", semanticUsage.isOrphanCandidate()}
+            }}
+        });
+    }
+    return nodes;
+}
+
 nlohmann::json ModelAssetEditorSession::serializeAssetMetadata() const
 {
     json out;
@@ -7166,6 +7038,7 @@ nlohmann::json ModelAssetEditorSession::serializeAssetMetadata() const
     out["geometryPayloadIncluded"] = false;
     out["wizard"] = serializeWizard();
     out["maintenance"] = serializeMaintenance();
+    out["semanticTreeOrder"] = serializeSemanticTreeOrder();
 
     out["materials"] = json::array();
     for (std::size_t i = 0; i < m_asset.materials.size(); ++i)
@@ -7174,22 +7047,10 @@ nlohmann::json ModelAssetEditorSession::serializeAssetMetadata() const
         out["materials"].push_back({{"index", i}, {"id", m.id}, {"sourceName", m.sourceName}, {"baseColor", vec4Json(m.baseColor)}, {"emissiveColor", vec3Json(m.emissiveColor)}, {"emissiveStrength", m.emissiveStrength}, {"metallic", m.metallic}, {"roughness", m.roughness}, {"twoSided", m.twoSided}, {"baseColorTexture", m.baseColorTexture}, {"emissiveTexture", m.emissiveTexture}});
     }
 
-    // Semantic assembly is deliberately render-LOD agnostic.
-    out["nodes"] = json::array();
-    for (std::size_t ni = 0; ni < m_asset.nodes.size(); ++ni)
-    {
-        const auto& n = m_asset.nodes[ni];
-        std::size_t variantCount = 0;
-        for (const auto& variant : m_asset.stateVariants)
-            if (variant.nodeIndex == static_cast<std::int32_t>(ni)) ++variantCount;
-        out["nodes"].push_back({
-            {"index", ni}, {"id", n.id}, {"moduleId", n.moduleId}, {"parentIndex", n.parentIndex},
-            {"defaultStateId", n.defaultStateId}, {"stateVariantCount", variantCount},
-            {"localPosition", vec3Json(n.localPosition)}, {"localRotationDeg", vec3Json(n.localRotationDeg)}, {"pivot", vec3Json(n.pivot)}, {"enabled", n.enabled},
-            {"joint", {{"type", jointTypeName(n.joint.type)}, {"pivot", vec3Json(n.joint.pivot)}, {"axis", vec3Json(n.joint.axis)}, {"defaultRateDegPerSec", n.joint.defaultRateDegPerSec}, {"minAngleDeg", n.joint.minAngleDeg}, {"maxAngleDeg", n.joint.maxAngleDeg}, {"breakable", n.joint.breakable}, {"breakForceN", n.joint.breakForceN}, {"breakTorqueNm", n.joint.breakTorqueNm}}},
-            {"physics", {{"mode", massModeName(n.physics.mode)}, {"densityKgM3", n.physics.densityKgM3}, {"massKg", n.physics.massKg}, {"centerOfMass", vec3Json(n.physics.centerOfMass)}, {"inertiaDiagonal", vec3Json(n.physics.inertiaDiagonal)}, {"inertiaProducts", vec3Json(n.physics.inertiaProducts)}}}
-        });
-    }
+    // Semantic assembly is deliberately render-LOD agnostic. Keep this
+    // serializer independent from render geometry so semantic-only edits can
+    // publish a bounded delta instead of rescanning every triangle.
+    out["nodes"] = serializeSemanticNodes();
 
     out["stateVariants"] = json::array();
     for (std::size_t i = 0; i < m_asset.stateVariants.size(); ++i)
@@ -7343,8 +7204,8 @@ nlohmann::json ModelAssetEditorSession::serializeAssetMetadata() const
     const auto workingBinary = workingAssetPath();
     const auto legacyBinary = legacyCompiledPath(m_asset.assetId);
 
-    // Ordinary editor SAVE/autosave owns the workspace/working package. Dirty
-    // flags and LOD-save affordances therefore describe WORKING bytes, while
+    // Global SAVE owns the workspace/working package. Dirty flags therefore
+    // describe unsaved WORKING changes, while
     // production bytes are reported separately and change only at BUILD.
     json lodPayloads = json::array();
     std::uint64_t workingPackageBytes = safeFileBytes(workingBinary);
@@ -7416,7 +7277,7 @@ void ModelAssetEditorSession::sendAsset(const std::vector<std::size_t>& requeste
     // the existing `asset` handler. Geometry never enters JSON.
     //
     // An empty requestedPayloadLods means a self-contained/full publication
-    // (initial load, checkpoint restore, reconnect, whole-mesh rewrite). A
+    // (initial load, RESTORE, reconnect, whole-mesh rewrite). A
     // non-empty list is a transport delta: only those changed LOD arrays cross
     // the socket; unchanged resident LOD arrays are reused by the transport
     // adapter before the exact same old `asset` handler is invoked.
@@ -7487,6 +7348,23 @@ void ModelAssetEditorSession::sendAssetMetadata(const nlohmann::json& hints)
     if (hints.is_object())
         for (const auto& [key, value] : hints.items())
             payload[key] = value;
+    m_server.broadcastText(payload.dump());
+}
+
+
+void ModelAssetEditorSession::sendSemanticTreePatch()
+{
+    // Parent/joint/semantic-frame edits do not touch render geometry. Publishing
+    // the full asset metadata here used to rescan every triangle merely to
+    // rebuild material statistics, making a 29-node tree edit take seconds.
+    // Keep the semantic authoring path bounded by semantic data size.
+    json payload = {
+        {"type", "semantic_tree_patch"},
+        {"dirty", m_dirty},
+        {"wizard", serializeWizard()},
+        {"nodes", serializeSemanticNodes()},
+        {"semanticTreeOrder", serializeSemanticTreeOrder()}
+    };
     m_server.broadcastText(payload.dump());
 }
 
@@ -7930,7 +7808,7 @@ bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broad
     if (manifestChanged) markManifestDirty();
 
     // Stable authoring/canonical evidence is part of the current WORKING ASSET
-    // and persists through ordinary SAVE/autosave independently of checkpoints.
+    // and persists only when the user presses the global SAVE button.
     (void)canonicalEvidenceChanged;
     if (!changedLods.empty() || manifestChanged || registryChanged)
         invalidateWizardFrom(sourceOwned ? "source" : "geometry");
@@ -7978,16 +7856,11 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         if (command == "select_asset") { selectAsset(message.value("assetId", ""), false); return; }
         if (command == "reimport_asset") { selectAsset(m_selectedId, true); return; }
         if (command == "save_asset") { saveAsset(); return; }
-        if (command == "autosave_working") { saveWorkingAsset(true); return; }
-        if (command == "save_manifest") { saveManifestOnly(); return; }
-        if (command == "save_lod") { saveLodOnly(message.value("lodIndex", std::size_t(-1))); return; }
+        if (command == "restore_working_asset") { restoreWorkingAsset(); return; }
         if (command == "load_lod") { loadLodOnly(message.value("lodIndex", std::size_t(-1)), false); return; }
         if (command == "reload_lod") { loadLodOnly(message.value("lodIndex", std::size_t(-1)), true); return; }
         if (command == "unload_lod") { unloadLod(message.value("lodIndex", std::size_t(-1))); return; }
-        if (command == "complete_wizard_stage") { completeWizardStage(message.value("stage", std::string())); return; }
-        if (command == "create_wizard_checkpoint") { createWizardCheckpoint(message.value("stage", std::string())); return; }
-        if (command == "run_wizard_validation") { sendWizardValidationReport(); return; }
-        if (command == "restore_wizard_checkpoint") { restoreWizardCheckpoint(message.value("stage", std::string())); return; }
+        if (command == "check_wizard_stage") { checkWizardStage(message.value("stage", std::string())); return; }
         if (command == "scan_render_duplicates")
         {
             scanRenderDuplicates(
@@ -8209,28 +8082,121 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             node.localRotationDeg = jsonVec3(message.value("rotationDeg", json::array()), glm::vec3(0.0f));
             node.pivot = jsonVec3(message.value("pivot", json::array()), glm::vec3(0.0f));
             m_asset.nodes.push_back(std::move(node));
-            markManifestDirty(); invalidateWizardFrom("semantics"); sendAssetMetadata();
+            const std::string orderKey = parentIndex >= 0 ? m_asset.nodes[static_cast<std::size_t>(parentIndex)].id : std::string("__ROOTS__");
+            m_semanticChildOrder[orderKey].push_back(m_asset.nodes.back().id);
+            markManifestDirty(); markEditorStateDirty(); invalidateWizardFrom("semantics"); sendSemanticTreePatch();
             sendStatus("Added semantic node: " + m_asset.nodes.back().id); return;
         }
-        if (command == "set_node_parent")
+        if (command == "set_node_parents")
         {
-            const auto index = message.value("nodeIndex", std::size_t(-1));
-            const auto parentIndex = message.value("parentIndex", std::int32_t(NoIndex));
-            if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
-            if (parentIndex < NoIndex || parentIndex >= static_cast<std::int32_t>(m_asset.nodes.size()))
-                throw std::runtime_error("invalid semantic parent index");
-            if (parentIndex == static_cast<std::int32_t>(index))
-                throw std::runtime_error("semantic node cannot be its own parent");
-            std::int32_t cursor = parentIndex;
-            while (cursor >= 0)
+            std::vector<std::size_t> indices;
+            if (message.contains("nodeIndices") && message["nodeIndices"].is_array())
+                for (const auto& value : message["nodeIndices"])
+                    if (value.is_number_unsigned() || value.is_number_integer())
+                    {
+                        const auto raw = value.get<std::int64_t>();
+                        if (raw >= 0) indices.push_back(static_cast<std::size_t>(raw));
+                    }
+            if (indices.empty()) throw std::runtime_error("semantic move requires at least one node");
+            std::sort(indices.begin(), indices.end());
+            indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+            for (const auto index : indices)
+                if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid semantic node index");
+
+            const std::string placement = message.value("placement", std::string("inside"));
+            const auto targetIndex = message.value("targetIndex", std::size_t(-1));
+            std::int32_t parentIndex = message.value("parentIndex", std::int32_t(NoIndex));
+            if (placement == "inside")
             {
-                if (cursor == static_cast<std::int32_t>(index))
-                    throw std::runtime_error("semantic reparent would create a hierarchy cycle");
-                cursor = m_asset.nodes[static_cast<std::size_t>(cursor)].parentIndex;
+                if (targetIndex != std::size_t(-1))
+                {
+                    if (targetIndex >= m_asset.nodes.size()) throw std::runtime_error("invalid semantic drop target");
+                    parentIndex = static_cast<std::int32_t>(targetIndex);
+                }
             }
-            m_asset.nodes[index].parentIndex = parentIndex;
-            markManifestDirty(); invalidateWizardFrom("semantics"); sendAssetMetadata();
-            sendStatus("Updated semantic parent: " + m_asset.nodes[index].id); return;
+            else if (placement == "before" || placement == "after")
+            {
+                if (targetIndex >= m_asset.nodes.size()) throw std::runtime_error("semantic reorder requires a valid target node");
+                parentIndex = m_asset.nodes[targetIndex].parentIndex;
+            }
+            else throw std::runtime_error("invalid semantic tree placement");
+
+            std::vector<std::string> movingIds;
+            movingIds.reserve(indices.size());
+            for (const auto index : indices) movingIds.push_back(m_asset.nodes[index].id);
+            const std::string targetId = targetIndex < m_asset.nodes.size() ? m_asset.nodes[targetIndex].id : std::string();
+
+            const bool parentChanged = std::any_of(indices.begin(), indices.end(), [&](std::size_t index) {
+                return m_asset.nodes[index].parentIndex != parentIndex;
+            });
+            if (parentChanged)
+                reparentSemanticNodesPreserveWorld(m_asset, indices, parentIndex);
+
+            // Tree display order is editor-only and stable-id based. Never reorder
+            // ModelAsset::nodes merely to move a row in the authoring tree.
+            for (auto& [parentId, order] : m_semanticChildOrder)
+                order.erase(std::remove_if(order.begin(), order.end(), [&](const std::string& id) {
+                    return std::find(movingIds.begin(), movingIds.end(), id) != movingIds.end();
+                }), order.end());
+            const std::string parentKey = parentIndex >= 0
+                ? m_asset.nodes[static_cast<std::size_t>(parentIndex)].id : std::string("__ROOTS__");
+            std::vector<std::string> actualChildren;
+            for (std::size_t i = 0; i < m_asset.nodes.size(); ++i)
+                if (m_asset.nodes[i].parentIndex == parentIndex) actualChildren.push_back(m_asset.nodes[i].id);
+            auto& order = m_semanticChildOrder[parentKey];
+            std::vector<std::string> normalized;
+            for (const auto& id : order)
+                if (std::find(actualChildren.begin(), actualChildren.end(), id) != actualChildren.end() &&
+                    std::find(normalized.begin(), normalized.end(), id) == normalized.end()) normalized.push_back(id);
+            for (const auto& id : actualChildren)
+                if (std::find(normalized.begin(), normalized.end(), id) == normalized.end()) normalized.push_back(id);
+            for (const auto& id : movingIds)
+                normalized.erase(std::remove(normalized.begin(), normalized.end(), id), normalized.end());
+            auto insertAt = normalized.end();
+            if ((placement == "before" || placement == "after") && !targetId.empty())
+            {
+                insertAt = std::find(normalized.begin(), normalized.end(), targetId);
+                if (insertAt != normalized.end() && placement == "after") ++insertAt;
+            }
+            normalized.insert(insertAt, movingIds.begin(), movingIds.end());
+            order = std::move(normalized);
+
+            if (parentChanged)
+            {
+                markManifestDirty();
+                invalidateWizardFrom("semantics");
+            }
+            markEditorStateDirty();
+            sendSemanticTreePatch();
+            sendStatus((parentChanged ? "Reparented " : "Reordered ") + std::to_string(indices.size()) +
+                " semantic subtree root(s) (" + placement + ")" +
+                (parentChanged ? " without changing world pose" : " in editor tree only")); return;
+        }
+        if (command == "create_semantic_asset_root")
+        {
+            std::vector<std::size_t> roots;
+            std::set<std::string> used;
+            for (std::size_t i = 0; i < m_asset.nodes.size(); ++i)
+            {
+                used.insert(m_asset.nodes[i].id);
+                if (m_asset.nodes[i].parentIndex < 0) roots.push_back(i);
+            }
+            if (roots.empty()) throw std::runtime_error("asset has no semantic roots to attach");
+            if (roots.size() == 1) throw std::runtime_error("asset already has a single semantic root");
+            Node root;
+            root.id = allocateChildStableId("", message.value("id", std::string()), "root", used);
+            root.moduleId = root.id;
+            root.parentIndex = NoIndex;
+            m_asset.nodes.push_back(std::move(root));
+            const auto rootIndex = static_cast<std::int32_t>(m_asset.nodes.size() - 1);
+            reparentSemanticNodesPreserveWorld(m_asset, roots, rootIndex);
+            const std::string rootId = m_asset.nodes.back().id;
+            m_semanticChildOrder["__ROOTS__"] = {rootId};
+            auto& childOrder = m_semanticChildOrder[rootId];
+            childOrder.clear();
+            for (const auto index : roots) childOrder.push_back(m_asset.nodes[index].id);
+            markManifestDirty(); markEditorStateDirty(); invalidateWizardFrom("semantics"); sendSemanticTreePatch();
+            sendStatus("Created semantic asset root " + rootId + " and attached " + std::to_string(roots.size()) + " former roots"); return;
         }
 
         if (command == "set_node_transform")
@@ -8241,7 +8207,7 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (message.contains("position")) n.localPosition = jsonVec3(message["position"], n.localPosition);
             if (message.contains("rotationDeg")) n.localRotationDeg = jsonVec3(message["rotationDeg"], n.localRotationDeg);
             if (message.contains("pivot")) n.pivot = jsonVec3(message["pivot"], n.pivot);
-            markManifestDirty(); invalidateWizardFrom("semantics"); sendAssetMetadata(); sendStatus("Updated node transform: " + n.id); return;
+            markManifestDirty(); invalidateWizardFrom("semantics"); sendSemanticTreePatch(); sendStatus("Updated node transform: " + n.id); return;
         }
         if (command == "set_node_default_state")
         {
@@ -8580,36 +8546,104 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
             RenderNode clone = lod.nodes[renderNodeIndex];
             clone.id = uniqueRenderNodeId(lod, message.value("id", clone.id + "_instance"));
+            // GEOMETRY duplicates visual placement/geometry only. Semantic identity
+            // is never cloned implicitly: one semantic part accidentally owning two
+            // RenderNodes makes distinct visuals behave as one part in SEMANTICS.
+            clone.semanticNodeIndex = NoIndex;
+            clone.activeStates.clear();
             lod.nodes.push_back(std::move(clone));
             markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
-            sendStatus("Created LOD" + std::to_string(lodIndex) + " render instance: " + lod.nodes.back().id); return;
+            sendStatus("Created LOD" + std::to_string(lodIndex) + " render instance: " + lod.nodes.back().id +
+                " (semantic binding intentionally UNBOUND)"); return;
         }
-        if (command == "create_radial_render_instances")
+        if (command == "move_render_node_delta")
         {
             const auto lodIndex = message.value("lodIndex", std::size_t(-1));
             const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
-            const int count = std::clamp(message.value("count", 3), 2, 64);
-            const float totalAngle = message.value("totalAngleDeg", 360.0f);
-            const std::string axisName = message.value("axis", std::string("y"));
-            const glm::vec3 pivot = jsonVec3(message.value("pivot", json::array()), glm::vec3(0.0f));
+            const glm::vec3 delta = jsonVec3(
+                message.value("deltaPosition", json::array()), glm::vec3(0.0f));
             if (!ensureLodLoaded(lodIndex)) return;
             auto& lod = m_asset.renderLods.at(lodIndex);
-            if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            if (renderNodeIndex >= lod.nodes.size())
+                throw std::runtime_error("invalid render node index");
+            auto& node = lod.nodes[renderNodeIndex];
+            node.localPosition += delta;
+            markLodDirty(lodIndex);
+            invalidateWizardFrom("geometry");
+            sendAssetMetadata();
+            sendStatus(
+                "Moved LOD" + std::to_string(lodIndex) + " render element " + node.id +
+                " by [" + std::to_string(delta.x) + ", " + std::to_string(delta.y) +
+                ", " + std::to_string(delta.z) + "]");
+            return;
+        }
+        if (command == "apply_radial_render_layout")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            const int count = std::clamp(message.value("count", 2), 1, 64);
+            const float totalAngle = message.value("totalAngleDeg", 120.0f);
+            const std::string axisName = message.value("axis", std::string("y"));
+            const glm::vec3 center = jsonVec3(
+                message.value("pivot", json::array()), glm::vec3(0.0f));
+            if (!std::isfinite(totalAngle) || std::abs(totalAngle) < 1.0e-6f)
+                throw std::runtime_error("invalid or zero circular layout angle");
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (renderNodeIndex >= lod.nodes.size())
+                throw std::runtime_error("invalid render node index");
+
+            const glm::vec3 axis = axisName == "x" ? glm::vec3(1,0,0)
+                : axisName == "z" ? glm::vec3(0,0,1) : glm::vec3(0,1,0);
+            const auto orbitTransform = [&](float angleDeg)
+            {
+                const glm::quat q = glm::angleAxis(glm::radians(angleDeg), axis);
+                const glm::mat3 rotation = glm::mat3_cast(q);
+                return RigidTransform {rotation, center - rotation * center};
+            };
+
+            if (count == 1)
+            {
+                auto& node = lod.nodes[renderNodeIndex];
+                const RigidTransform moved = composeRigid(
+                    orbitTransform(totalAngle), renderNodeRigidTransform(node));
+                setRenderNodeRigidTransform(node, moved, node.pivot);
+                markLodDirty(lodIndex);
+                invalidateWizardFrom("geometry");
+                sendAssetMetadata();
+                sendStatus(
+                    "Moved LOD" + std::to_string(lodIndex) + " render element " + node.id +
+                    " around the circular center by " + std::to_string(totalAngle) + " deg");
+                return;
+            }
+
             const RenderNode base = lod.nodes[renderNodeIndex];
-            const glm::vec3 axis = axisName == "x" ? glm::vec3(1,0,0) : axisName == "z" ? glm::vec3(0,0,1) : glm::vec3(0,1,0);
+            const bool closedCircle = std::abs(std::abs(totalAngle) - 360.0f) <= 1.0e-4f;
+            const float divisor = static_cast<float>(closedCircle ? count : count - 1);
             for (int i = 1; i < count; ++i)
             {
-                const float angleDeg = totalAngle * static_cast<float>(i) / static_cast<float>(count);
-                const glm::quat q = glm::angleAxis(glm::radians(angleDeg), axis);
-                const RigidTransform orbit {glm::mat3_cast(q), pivot - glm::mat3_cast(q) * pivot};
+                const float angleDeg = totalAngle * static_cast<float>(i) / divisor;
                 RenderNode clone = base;
-                clone.id = uniqueRenderNodeId(lod, base.id + "_radial_" + std::to_string(i + 1));
-                const RigidTransform transformed = composeRigid(orbit, renderNodeRigidTransform(base));
+                clone.id = uniqueRenderNodeId(
+                    lod, base.id + "_radial_" + std::to_string(i + 1));
+                // A circular copy is a new visual element, not another occurrence
+                // of the source semantic part. Bind it explicitly in SEMANTICS.
+                clone.semanticNodeIndex = NoIndex;
+                clone.activeStates.clear();
+                const RigidTransform transformed = composeRigid(
+                    orbitTransform(angleDeg), renderNodeRigidTransform(base));
                 setRenderNodeRigidTransform(clone, transformed, base.pivot);
                 lod.nodes.push_back(std::move(clone));
             }
-            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
-            sendStatus("Created " + std::to_string(count - 1) + " LOD" + std::to_string(lodIndex) + " radial render instances"); return;
+            markLodDirty(lodIndex);
+            invalidateWizardFrom("geometry");
+            sendAssetMetadata();
+            sendStatus(
+                "Created " + std::to_string(count - 1) + " LOD" + std::to_string(lodIndex) +
+                " circular render instance(s) across " + std::to_string(totalAngle) +
+                " deg" + (closedCircle ? " closed circle" : " inclusive arc") +
+                "; new copies are semantic UNBOUND until explicitly assigned");
+            return;
         }
         if (command == "delete_render_node")
         {
@@ -8622,35 +8656,45 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
                 if (child.parentIndex == static_cast<std::int32_t>(renderNodeIndex))
                     throw std::runtime_error("cannot delete render node with children");
             const std::string id = lod.nodes[renderNodeIndex].id;
+            const auto formerSemanticIndex = lod.nodes[renderNodeIndex].semanticNodeIndex;
             lod.nodes.erase(lod.nodes.begin() + static_cast<std::ptrdiff_t>(renderNodeIndex));
             for (auto& node : lod.nodes)
                 if (node.parentIndex > static_cast<std::int32_t>(renderNodeIndex)) --node.parentIndex;
-            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata(); sendStatus("Deleted LOD" + std::to_string(lodIndex) + " render node: " + id); return;
+            std::string orphanNote;
+            if (formerSemanticIndex >= 0 && static_cast<std::size_t>(formerSemanticIndex) < m_asset.nodes.size())
+            {
+                const auto usage = inspectSemanticNodeUsage(m_asset, static_cast<std::size_t>(formerSemanticIndex));
+                if (usage.isOrphanCandidate())
+                    orphanNote = "; semantic part '" + m_asset.nodes[static_cast<std::size_t>(formerSemanticIndex)].id +
+                        "' is now ORPHAN and must be deleted or reused in SEMANTICS";
+            }
+            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
+            sendStatus("Deleted LOD" + std::to_string(lodIndex) + " render node: " + id + orphanNote); return;
         }
 
-        if (command == "delete_node")
+        if (command == "delete_semantic_node")
         {
             if (!ensureAllLodsLoaded()) return;
             const auto index = message.value("nodeIndex", std::size_t(-1));
-            if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
+            if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid semantic node index");
+            const auto usage = inspectSemanticNodeUsage(m_asset, index);
+            const bool removeOwnedPayload = message.value("removeOwnedPayload", false);
             const std::string deletedId = m_asset.nodes[index].id;
-            for (const auto& n : m_asset.nodes) if (n.parentIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("cannot delete node with children");
-            for (const auto& c : m_asset.collisionVolumes) if (c.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent collision volumes first");
-            for (const auto& s : m_asset.sockets) if (s.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent sockets first");
-            for (const auto& v : m_asset.stateVariants) if (v.nodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete semantic state variants first");
-            for (const auto& h : m_asset.hitRegions) if (h.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent hit regions first");
-            for (const auto& o : m_asset.openings) if (o.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent openings first");
-            for (const auto& r : m_asset.repairTargets) if (r.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent repair targets first");
-            m_asset.nodes.erase(m_asset.nodes.begin() + static_cast<std::ptrdiff_t>(index));
-            for (auto& n : m_asset.nodes) if (n.parentIndex > static_cast<std::int32_t>(index)) --n.parentIndex;
-            for (auto& c : m_asset.collisionVolumes) if (c.parentNodeIndex > static_cast<std::int32_t>(index)) --c.parentNodeIndex;
-            for (auto& s : m_asset.sockets) if (s.parentNodeIndex > static_cast<std::int32_t>(index)) --s.parentNodeIndex;
-            for (auto& v : m_asset.stateVariants) if (v.nodeIndex > static_cast<std::int32_t>(index)) --v.nodeIndex;
-            for (auto& h : m_asset.hitRegions) if (h.parentNodeIndex > static_cast<std::int32_t>(index)) --h.parentNodeIndex;
-            for (auto& o : m_asset.openings) if (o.parentNodeIndex > static_cast<std::int32_t>(index)) --o.parentNodeIndex;
-            for (auto& r : m_asset.repairTargets) if (r.parentNodeIndex > static_cast<std::int32_t>(index)) --r.parentNodeIndex;
-            for (auto& lod : m_asset.renderLods) for (auto& rn : lod.nodes) { if (rn.semanticNodeIndex == static_cast<std::int32_t>(index)) rn.semanticNodeIndex = NoIndex; else if (rn.semanticNodeIndex > static_cast<std::int32_t>(index)) --rn.semanticNodeIndex; }
-            markManifestDirty(); markAllLoadedLodsDirty(); invalidateWizardFrom("semantics"); sendAssetMetadata(); sendStatus("Deleted semantic node: " + deletedId + "; all render LOD bindings were remapped"); return;
+            const auto result = eraseSemanticNode(m_asset, index, removeOwnedPayload);
+            for (const auto lodIndex : result.affectedRenderLods)
+                if (lodIndex < m_lodState.size()) markLodDirty(lodIndex);
+            for (auto& [parentId, order] : m_semanticChildOrder)
+                order.erase(std::remove(order.begin(), order.end(), deletedId), order.end());
+            m_semanticChildOrder.erase(deletedId);
+            markManifestDirty(); markEditorStateDirty(); invalidateWizardFrom("semantics"); sendAssetMetadata();
+            sendStatus(
+                "Deleted semantic part " + result.deletedId +
+                "; visuals unbound=" + std::to_string(result.unboundRenderNodes) +
+                ", owned payload removed=" + std::to_string(
+                    result.removedCollisions + result.removedSockets + result.removedStateVariants +
+                    result.removedHitRegions + result.removedOpenings + result.removedRepairTargets) +
+                (usage.isOrphanCandidate() ? " (orphan cleanup)" : ""));
+            return;
         }
         if (command == "delete_unused_geometries")
         {
@@ -8690,14 +8734,38 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         {
             const auto index = message.value("nodeIndex", std::size_t(-1));
             if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
-            auto& j = m_asset.nodes[index].joint;
-            j.type = jointTypeFromName(message.value("type", std::string(jointTypeName(j.type))));
-            if (message.contains("pivot")) j.pivot = jsonVec3(message["pivot"], j.pivot);
-            if (message.contains("axis")) j.axis = glm::normalize(jsonVec3(message["axis"], j.axis));
-            j.defaultRateDegPerSec = message.value("defaultRateDegPerSec", j.defaultRateDegPerSec);
-            j.minAngleDeg = message.value("minAngleDeg", j.minAngleDeg); j.maxAngleDeg = message.value("maxAngleDeg", j.maxAngleDeg);
-            j.breakable = message.value("breakable", j.breakable); j.breakForceN = message.value("breakForceN", j.breakForceN); j.breakTorqueNm = message.value("breakTorqueNm", j.breakTorqueNm);
-            markManifestDirty(); invalidateWizardFrom("semantics"); sendAssetMetadata(); sendStatus("Updated joint: " + m_asset.nodes[index].id); return;
+
+            // Build and validate the complete incoming-link state before publishing it.
+            // In particular, glm::normalize(vec3(0)) produces NaNs, which used to poison
+            // the working state until a later SEMANTICS CHECK discovered the damage.
+            auto next = m_asset.nodes[index].joint;
+            next.type = jointTypeFromName(message.value("type", std::string(jointTypeName(next.type))));
+            if (message.contains("pivot")) next.pivot = jsonVec3(message["pivot"], next.pivot);
+            if (message.contains("axis")) next.axis = jsonVec3(message["axis"], next.axis);
+            next.defaultRateDegPerSec = message.value("defaultRateDegPerSec", next.defaultRateDegPerSec);
+            next.minAngleDeg = message.value("minAngleDeg", next.minAngleDeg);
+            next.maxAngleDeg = message.value("maxAngleDeg", next.maxAngleDeg);
+            next.breakable = message.value("breakable", next.breakable);
+            next.breakForceN = message.value("breakForceN", next.breakForceN);
+            next.breakTorqueNm = message.value("breakTorqueNm", next.breakTorqueNm);
+
+            const auto finiteVec3 = [](const glm::vec3& v) {
+                return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z);
+            };
+            const bool revolute = next.type == model_asset::JointType::Revolute;
+            const float axisLengthSq = glm::dot(next.axis, next.axis);
+            if (!finiteVec3(next.pivot) || !finiteVec3(next.axis) ||
+                !std::isfinite(next.defaultRateDegPerSec) || !std::isfinite(next.minAngleDeg) ||
+                !std::isfinite(next.maxAngleDeg) || next.minAngleDeg > next.maxAngleDeg ||
+                !std::isfinite(next.breakForceN) || !std::isfinite(next.breakTorqueNm) ||
+                next.breakForceN < 0.0f || next.breakTorqueNm < 0.0f ||
+                (revolute && (!std::isfinite(axisLengthSq) || axisLengthSq <= 1.0e-8f)))
+                throw std::runtime_error("invalid joint parameters");
+
+            if (revolute)
+                next.axis *= 1.0f / std::sqrt(axisLengthSq);
+            m_asset.nodes[index].joint = next;
+            markManifestDirty(); invalidateWizardFrom("semantics"); sendSemanticTreePatch(); sendStatus("Updated joint: " + m_asset.nodes[index].id); return;
         }
         if (command == "set_physics")
         {

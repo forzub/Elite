@@ -83,7 +83,7 @@ for required in (
     "staleSaved=payloads.filter",
     "model_editor.wizard.lods.stale_saved",
     "STALE WORKING PAYLOAD · PRUNED ON SAVE",
-    "p.declared===false&&Number(p.bytes||0)>0",
+    "p.declared===false&&Number(p.bytes)>0",
 ):
     if required not in web:
         raise AssertionError(f"missing stale-working LOD UI contract {required!r}")

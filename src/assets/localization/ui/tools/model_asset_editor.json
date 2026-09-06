@@ -174,18 +174,18 @@
       "ja": "OBJ/アセンブリから再読込。メモリ上の編集を破棄。ソースは読み取り専用。"
     },
     "model_editor.toolbar.save.title": {
-      "en": "SAVE WORKING ASSET",
-      "ru": "СОХРАНИТЬ WORKING ASSET",
-      "zh-Hans": "SAVE WORKING ASSET",
-      "es": "SAVE WORKING ASSET",
-      "ja": "SAVE WORKING ASSET"
+      "en": "SAVE",
+      "ru": "СОХРАНИТЬ",
+      "zh-Hans": "SAVE",
+      "es": "SAVE",
+      "ja": "SAVE"
     },
     "model_editor.toolbar.save.desc": {
-      "en": "Save the coherent persistent WORKING ASSET. This does not rewrite production and does not create a rollback checkpoint.",
-      "ru": "Сохранить целостный постоянный WORKING ASSET. Production не переписывается, rollback checkpoint не создаётся.",
-      "zh-Hans": "Save the coherent persistent WORKING ASSET. This does not rewrite production and does not create a rollback checkpoint.",
-      "es": "Save the coherent persistent WORKING ASSET. This does not rewrite production and does not create a rollback checkpoint.",
-      "ja": "Save the coherent persistent WORKING ASSET. This does not rewrite production and does not create a rollback checkpoint."
+      "en": "Save the current WORKING ASSET. Enabled only when there are unsaved changes. Production is unchanged.",
+      "ru": "Сохранить текущий WORKING ASSET. Кнопка активна только при несохранённых изменениях. Production не меняется.",
+      "zh-Hans": "Save the current WORKING ASSET. Enabled only when there are unsaved changes. Production is unchanged.",
+      "es": "Save the current WORKING ASSET. Enabled only when there are unsaved changes. Production is unchanged.",
+      "ja": "Save the current WORKING ASSET. Enabled only when there are unsaved changes. Production is unchanged."
     },
     "model_editor.toolbar.fit.title": {
       "en": "FIT VIEW",
@@ -903,6 +903,27 @@
       "es": "Matriz radial",
       "ja": "放射状配列"
     },
+    "model_editor.action.radial_layout": {
+      "en": "Move / radial array",
+      "ru": "Переместить / круговой массив",
+      "zh-Hans": "移动 / 径向阵列",
+      "es": "Mover / matriz radial",
+      "ja": "移動 / 放射状配列"
+    },
+    "model_editor.action.move_instance": {
+      "en": "Move XYZ",
+      "ru": "Переместить XYZ",
+      "zh-Hans": "Move XYZ",
+      "es": "Move XYZ",
+      "ja": "Move XYZ"
+    },
+    "model_editor.action.radial_move": {
+      "en": "Move in radial array",
+      "ru": "Переместить по радиальному массиву",
+      "zh-Hans": "Move in radial array",
+      "es": "Move in radial array",
+      "ja": "Move in radial array"
+    },
     "model_editor.action.delete_node": {
       "en": "Delete node",
       "ru": "Удалить узел",
@@ -1428,6 +1449,27 @@
       "es": "DUPLICAR INSTANCIA RENDER",
       "ja": "レンダーインスタンス複製"
     },
+    "model_editor.v4.command.move_render_instance": {
+      "en": "MOVE RENDER INSTANCE",
+      "ru": "ПЕРЕМЕСТИТЬ RENDER-ЭКЗЕМПЛЯР",
+      "zh-Hans": "MOVE RENDER INSTANCE",
+      "es": "MOVE RENDER INSTANCE",
+      "ja": "MOVE RENDER INSTANCE"
+    },
+    "model_editor.v4.command.radial_render_layout": {
+      "en": "APPLY CIRCULAR RENDER LAYOUT",
+      "ru": "ПРИМЕНИТЬ КРУГОВОЕ РАЗМЕЩЕНИЕ RENDER",
+      "zh-Hans": "APPLY CIRCULAR RENDER LAYOUT",
+      "es": "APPLY CIRCULAR RENDER LAYOUT",
+      "ja": "APPLY CIRCULAR RENDER LAYOUT"
+    },
+    "model_editor.v4.command.move_radial_render_instance": {
+      "en": "MOVE RENDER INSTANCE IN RADIAL ARRAY",
+      "ru": "ПЕРЕМЕСТИТЬ RENDER-ЭКЗЕМПЛЯР ПО РАДИАЛЬНОМУ МАССИВУ",
+      "zh-Hans": "MOVE RENDER INSTANCE IN RADIAL ARRAY",
+      "es": "MOVE RENDER INSTANCE IN RADIAL ARRAY",
+      "ja": "MOVE RENDER INSTANCE IN RADIAL ARRAY"
+    },
     "model_editor.v4.command.break_render_instance": {
       "en": "BREAK RENDER INSTANCE",
       "ru": "РАЗОРВАТЬ RENDER-ЭКЗЕМПЛЯР",
@@ -1562,11 +1604,11 @@
       "ja": "ロック中"
     },
     "model_editor.wizard.complete": {
-      "en": "VALIDATE / COMPLETE STAGE",
-      "ru": "ПРОВЕРИТЬ / ЗАВЕРШИТЬ ЭТАП",
-      "zh-Hans": "VALIDATE / COMPLETE STAGE",
-      "es": "VALIDATE / COMPLETE STAGE",
-      "ja": "VALIDATE / COMPLETE STAGE"
+      "en": "CHECK",
+      "ru": "ПРОВЕРИТЬ",
+      "zh-Hans": "CHECK",
+      "es": "CHECK",
+      "ja": "CHECK"
     },
     "model_editor.wizard.restore": {
       "en": "RESTORE SNAPSHOT",
@@ -1574,13 +1616,6 @@
       "zh-Hans": "RESTORE SNAPSHOT",
       "es": "RESTORE SNAPSHOT",
       "ja": "RESTORE SNAPSHOT"
-    },
-    "model_editor.wizard.restore_confirm": {
-      "en": "Replace the current WORKING ASSET with this rollback snapshot? Production and all other snapshots remain unchanged.",
-      "ru": "Заменить текущий WORKING ASSET этим rollback-снимком? Production и все остальные снимки останутся без изменений.",
-      "zh-Hans": "Replace the current WORKING ASSET with this rollback snapshot? Production and all other snapshots remain unchanged.",
-      "es": "Replace the current WORKING ASSET with this rollback snapshot? Production and all other snapshots remain unchanged.",
-      "ja": "Replace the current WORKING ASSET with this rollback snapshot? Production and all other snapshots remain unchanged."
     },
     "model_editor.wizard.completed_notice": {
       "en": "Stage complete",
@@ -1590,11 +1625,11 @@
       "ja": "Stage complete"
     },
     "model_editor.wizard.not_implemented": {
-      "en": "This stage is reserved in the pipeline but its tools have not been migrated yet. Earlier completed stages remain protected by checkpoints and capability tests.",
-      "ru": "Этот этап уже зарезервирован в конвейере, но его инструменты ещё не перенесены. Завершённые ранее этапы защищены контрольными точками и тестами возможностей.",
-      "zh-Hans": "该阶段已在流程中预留，但工具尚未迁移。之前完成的阶段由检查点和能力测试保护。",
-      "es": "Esta etapa está reservada en el flujo, pero sus herramientas aún no se han migrado. Las etapas anteriores quedan protegidas por puntos de control y pruebas de capacidades.",
-      "ja": "この工程はパイプラインに予約済みですが、ツールはまだ移行されていません。完了済み工程はチェックポイントと機能テストで保護されます。"
+      "en": "This stage is reserved in the pipeline but its tools have not been migrated yet. Earlier completed stages remain protected by stage checks and capability tests.",
+      "ru": "Этот этап зарезервирован в pipeline, но его инструменты ещё не перенесены. Пройденные этапы защищаются проверками стадий и capability-тестами.",
+      "zh-Hans": "This stage is reserved in the pipeline but its tools have not been migrated yet. Earlier completed stages remain protected by stage checks and capability tests.",
+      "es": "This stage is reserved in the pipeline but its tools have not been migrated yet. Earlier completed stages remain protected by stage checks and capability tests.",
+      "ja": "This stage is reserved in the pipeline but its tools have not been migrated yet. Earlier completed stages remain protected by stage checks and capability tests."
     },
     "model_editor.wizard.no_asset": {
       "en": "Select an asset to start the processing wizard.",
@@ -1785,13 +1820,6 @@
       "es": "COMPLETAR ETAPA DEL ASISTENTE",
       "ja": "ウィザード工程を完了"
     },
-    "model_editor.wizard.command.restore": {
-      "en": "RESTORE WIZARD CHECKPOINT",
-      "ru": "ВОССТАНОВИТЬ КОНТРОЛЬНУЮ ТОЧКУ",
-      "zh-Hans": "恢复向导检查点",
-      "es": "RESTAURAR PUNTO DE CONTROL",
-      "ja": "ウィザードチェックポイント復元"
-    },
     "model_editor.wizard.command.scan_duplicates": {
       "en": "SCAN DUPLICATE GEOMETRY",
       "ru": "ПОИСК ДУБЛИКАТОВ ГЕОМЕТРИИ",
@@ -1808,12 +1836,12 @@
       "ru": "Эталон"
     },
     "model_editor.geometry_compare.select_all": {
-      "en": "Select all",
-      "ru": "Выбрать все"
+      "en": "Show / select all",
+      "ru": "Показать / отметить все"
     },
     "model_editor.geometry_compare.clear": {
-      "en": "Clear",
-      "ru": "Снять все"
+      "en": "Clear / show model",
+      "ru": "Снять / показать модель"
     },
     "model_editor.geometry_compare.result": {
       "en": "Result",
@@ -2068,16 +2096,16 @@
       "ru": "Проверяет и сводит только эту пару. Для обычной чистки лучше использовать таблицу сравнения."
     },
     "model_editor.radial.title": {
-      "en": "Radial instance array",
-      "ru": "Радиальный массив экземпляров"
+      "en": "Circular placement / radial array",
+      "ru": "Круговое размещение / массив"
     },
     "model_editor.radial.count": {
-      "en": "Instances including selected",
-      "ru": "Количество, включая выбранный"
+      "en": "Total objects (1 = move selected)",
+      "ru": "Всего объектов (1 = переместить выбранный)"
     },
     "model_editor.radial.angle": {
-      "en": "Total angle, degrees",
-      "ru": "Общий угол, градусы"
+      "en": "Arc angle, degrees",
+      "ru": "Угол дуги, градусы"
     },
     "model_editor.radial.axis": {
       "en": "Rotation axis",
@@ -2092,12 +2120,68 @@
       "ru": "Центр XYZ"
     },
     "model_editor.radial.help": {
-      "en": "Copies share the selected element geometry. The chosen axis defines rotation; the array lies in the plane perpendicular to that axis.",
-      "ru": "Копии используют ту же геометрию, что выбранный элемент. Выбранная ось задаёт вращение; массив располагается в плоскости, перпендикулярной этой оси."
+      "en": "1 object moves the selected element to the end angle. 2 or more keep the selected element at 0° and create copies through the requested arc, including the end angle. Exactly ±360° is a closed circle and never duplicates 0°/360°.",
+      "ru": "1 объект перемещает выбранный элемент на заданный угол. 2 и больше оставляют выбранный элемент в позиции 0° и создают копии по дуге, включая конечную точку. Ровно ±360° считается замкнутым кругом без дубля 0°/360°."
     },
     "model_editor.radial.create": {
-      "en": "Create array",
-      "ru": "Создать массив"
+      "en": "Create copies",
+      "ru": "Создать копии"
+    },
+    "model_editor.radial.create_count": {
+      "en": "Create {count} new",
+      "ru": "Создать новых: {count}"
+    },
+    "model_editor.radial.inline_help": {
+      "en": "1 object moves the selected element by the requested angle. 2 or more keep it as the first position and create the remaining objects across the arc.",
+      "ru": "1 объект перемещает выбранный элемент на заданный угол. 2 и больше оставляют его первой позицией и создают остальные объекты по дуге."
+    },
+    "model_editor.radial.summary_move": {
+      "en": "MOVE · selected → {angle}",
+      "ru": "ПЕРЕМЕСТИТЬ · выбранный → {angle}"
+    },
+    "model_editor.radial.summary_arc": {
+      "en": "ARC · positions: {angles} · new copies: {copies}",
+      "ru": "ДУГА · позиции: {angles} · новых копий: {copies}"
+    },
+    "model_editor.radial.summary_closed": {
+      "en": "CLOSED CIRCLE · positions: {angles}",
+      "ru": "ЗАМКНУТЫЙ КРУГ · позиции: {angles}"
+    },
+    "model_editor.radial.apply_tip.title": {
+      "en": "Apply circular placement",
+      "ru": "Применить круговое размещение"
+    },
+    "model_editor.radial.apply_tip.desc": {
+      "en": "Count 1 moves the selected element. Count 2 or more creates the remaining positions as shared-geometry instances.",
+      "ru": "Количество 1 перемещает выбранный элемент. Количество 2 и больше создаёт остальные позиции как экземпляры общей геометрии."
+    },
+    "model_editor.radial.move_title": {
+      "en": "Move in radial array",
+      "ru": "Перемещение по радиальному массиву"
+    },
+    "model_editor.radial.slots": {
+      "en": "Array slots",
+      "ru": "Количество позиций массива"
+    },
+    "model_editor.radial.steps": {
+      "en": "Move by slots",
+      "ru": "Сдвиг на позиций"
+    },
+    "model_editor.radial.move": {
+      "en": "Move selected",
+      "ru": "Переместить выбранный"
+    },
+    "model_editor.radial.move_help": {
+      "en": "Moves the selected existing element by an exact number of slots. No copy is created.",
+      "ru": "Перемещает уже существующий выбранный элемент на точное число позиций массива. Новая копия не создаётся."
+    },
+    "model_editor.radial.zero_steps": {
+      "en": "Radial move: slot offset is zero",
+      "ru": "Радиальное перемещение: сдвиг равен нулю"
+    },
+    "model_editor.move.zero": {
+      "en": "MOVE XYZ: delta is zero",
+      "ru": "MOVE XYZ: смещение равно нулю"
     },
     "model_editor.radial.center_pivot": {
       "en": "Selected element pivot",
@@ -2116,53 +2200,18 @@
       "ru": "Некорректный угол радиального массива"
     },
     "model_editor.wizard.complete_tip.title": {
-      "en": "Validate / complete stage",
-      "ru": "Проверить / завершить этап",
-      "zh-Hans": "Validate / complete stage",
-      "es": "Validate / complete stage",
-      "ja": "Validate / complete stage"
+      "en": "Check stage",
+      "ru": "Проверить этап",
+      "zh-Hans": "Check stage",
+      "es": "Check stage",
+      "ja": "Check stage"
     },
     "model_editor.wizard.complete_tip.desc": {
-      "en": "Validates the current stage and saves its validity into the persistent WORKING ASSET. No checkpoint is created or required.",
-      "ru": "Проверяет текущий этап и сохраняет его статус в постоянный WORKING ASSET. Контрольная точка не создаётся и не требуется.",
-      "zh-Hans": "Validates the current stage and saves its validity into the persistent WORKING ASSET. No checkpoint is created or required.",
-      "es": "Validates the current stage and saves its validity into the persistent WORKING ASSET. No checkpoint is created or required.",
-      "ja": "Validates the current stage and saves its validity into the persistent WORKING ASSET. No checkpoint is created or required."
-    },
-    "model_editor.wizard.complete_current_tip.title": {
-      "en": "Rollback snapshot",
-      "ru": "Rollback-снимок",
-      "zh-Hans": "Rollback snapshot",
-      "es": "Rollback snapshot",
-      "ja": "Rollback snapshot"
-    },
-    "model_editor.wizard.complete_current_tip.desc": {
-      "en": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
-      "ru": "Сохраняет точный текущий WORKING ASSET как необязательную точку отката. Не проверяет, не открывает, не инвалидирует, не удаляет и не продвигает этапы.",
-      "zh-Hans": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
-      "es": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
-      "ja": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages."
-    },
-    "model_editor.wizard.checkpoint_current": {
-      "en": "Rollback snapshot only · it does not control stage progression or editor resume.",
-      "ru": "Только rollback-снимок · он не управляет прогрессом этапов и точкой продолжения редактора.",
-      "zh-Hans": "Rollback snapshot only · it does not control stage progression or editor resume.",
-      "es": "Rollback snapshot only · it does not control stage progression or editor resume.",
-      "ja": "Rollback snapshot only · it does not control stage progression or editor resume."
-    },
-    "model_editor.wizard.restore_tip.title": {
-      "en": "Restore rollback snapshot",
-      "ru": "Восстановить rollback-снимок",
-      "zh-Hans": "Restore rollback snapshot",
-      "es": "Restore rollback snapshot",
-      "ja": "Restore rollback snapshot"
-    },
-    "model_editor.wizard.restore_tip.desc": {
-      "en": "Restores this snapshot as the persistent WORKING ASSET. Production and all other rollback snapshots stay unchanged.",
-      "ru": "Восстанавливает этот снимок как постоянный WORKING ASSET. Production и все остальные rollback-снимки остаются без изменений.",
-      "zh-Hans": "Restores this snapshot as the persistent WORKING ASSET. Production and all other rollback snapshots stay unchanged.",
-      "es": "Restores this snapshot as the persistent WORKING ASSET. Production and all other rollback snapshots stay unchanged.",
-      "ja": "Restores this snapshot as the persistent WORKING ASSET. Production and all other rollback snapshots stay unchanged."
+      "en": "Run stage checks. PASS marks the stage complete in memory and unlocks the next stage. Nothing is saved.",
+      "ru": "Запустить проверки этапа. PASS помечает этап пройденным в памяти и открывает следующий. Ничего не сохраняется.",
+      "zh-Hans": "Run stage checks. PASS marks the stage complete in memory and unlocks the next stage. Nothing is saved.",
+      "es": "Run stage checks. PASS marks the stage complete in memory and unlocks the next stage. Nothing is saved.",
+      "ja": "Run stage checks. PASS marks the stage complete in memory and unlocks the next stage. Nothing is saved."
     },
     "model_editor.wizard.source.reimport_tip.title": {
       "en": "Reload all source meshes",
@@ -2177,16 +2226,16 @@
       "ru": "Выбрать все"
     },
     "model_editor.geometry_compare.select_all_tip.desc": {
-      "en": "Checks every geometry-bearing element that is not already an instance of the reference.",
-      "ru": "Отмечает все элементы с геометрией, которые ещё не используют геометрию эталона."
+      "en": "Checks every current row. The same checkboxes define the viewport isolation group and the comparison set.",
+      "ru": "Отмечает все строки текущего списка. Галочки одновременно задают группу изоляции в viewport и набор для сравнения."
     },
     "model_editor.geometry_compare.clear_tip.title": {
       "en": "Clear selection",
       "ru": "Снять все"
     },
     "model_editor.geometry_compare.clear_tip.desc": {
-      "en": "Clears comparison checkboxes. It does not change the model.",
-      "ru": "Снимает флажки сравнения. Модель при этом не изменяется."
+      "en": "Clears all checkboxes and returns the viewport to the whole model. The asset is not modified.",
+      "ru": "Снимает все галочки и возвращает отображение всей модели. Asset при этом не изменяется."
     },
     "model_editor.geometry_inspector.manual_geometry_tip.title": {
       "en": "Manual geometry assignment",
@@ -2203,6 +2252,14 @@
     "model_editor.radial.create_tip.desc": {
       "en": "Creates the requested copies as instances sharing the selected geometry.",
       "ru": "Создаёт указанное количество копий как экземпляры с общей геометрией выбранного элемента."
+    },
+    "model_editor.radial.move_tip.title": {
+      "en": "Move in radial array",
+      "ru": "Переместить по радиальному массиву"
+    },
+    "model_editor.radial.move_tip.desc": {
+      "en": "Moves the selected existing render element to another radial slot without creating a copy.",
+      "ru": "Перемещает выбранный существующий render-элемент на другую позицию радиального массива без создания копии."
     },
     "model_editor.radial.cancel_tip.title": {
       "en": "Cancel",
@@ -2801,8 +2858,11 @@
       "ru": "Обновить исходный набор"
     },
     "model_editor.wizard.source.refresh_tip.desc": {
-      "en": "Rescans all loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any authored change marks SOURCE and downstream stages stale; saved checkpoints remain available.",
-      "ru": "Повторно просматривает все загруженные деревья LOD и подхватывает дополнительные OBJ без пересборки основной модели. Любое изменение помечает SOURCE и последующие стадии как stale; сохранённые контрольные точки не удаляются."
+      "en": "Rescans loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any change marks SOURCE and downstream stages stale. Use SAVE to keep the change or RESTORE to discard it.",
+      "ru": "Повторно сканирует загруженные деревья LOD на дополнительные OBJ без пересборки основной модели. Изменение помечает SOURCE и следующие этапы stale. Нажмите СОХРАНИТЬ, чтобы оставить изменение, или ВОССТАНОВИТЬ, чтобы его отбросить.",
+      "zh-Hans": "Rescans loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any change marks SOURCE and downstream stages stale. Use SAVE to keep the change or RESTORE to discard it.",
+      "es": "Rescans loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any change marks SOURCE and downstream stages stale. Use SAVE to keep the change or RESTORE to discard it.",
+      "ja": "Rescans loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any change marks SOURCE and downstream stages stale. Use SAVE to keep the change or RESTORE to discard it."
     },
     "model_editor.server.extras_refreshed": {
       "en": "Source set refreshed",
@@ -3113,8 +3173,11 @@
       "ru": "треугольников без материала"
     },
     "model_editor.surfaces.ready": {
-      "en": "SURFACE CONTRACT READY FOR CHECKPOINT",
-      "ru": "КОНТРАКТ SURFACES ГОТОВ К КОНТРОЛЬНОЙ ТОЧКЕ"
+      "en": "SURFACE CONTRACT READY FOR CHECK",
+      "ru": "КОНТРАКТ SURFACES ГОТОВ К ПРОВЕРКЕ",
+      "zh-Hans": "SURFACE CONTRACT READY FOR CHECK",
+      "es": "SURFACE CONTRACT READY FOR CHECK",
+      "ja": "SURFACE CONTRACT READY FOR CHECK"
     },
     "model_editor.surfaces.geometry": {
       "en": "GEOMETRY SURFACES",
@@ -3292,26 +3355,12 @@
       "en": "Thin one-sided",
       "ru": "Тонкая односторонняя"
     },
-    "model_editor.wizard.restore_only": {
-      "en": "Rollback snapshots never lock a stage in the persistent working-state model.",
-      "ru": "В модели постоянного working state rollback-снимки никогда не блокируют этап.",
-      "zh-Hans": "Rollback snapshots never lock a stage in the persistent working-state model.",
-      "es": "Rollback snapshots never lock a stage in the persistent working-state model.",
-      "ja": "Rollback snapshots never lock a stage in the persistent working-state model."
-    },
     "model_editor.wizard.status.needs_fix": {
       "en": "NEEDS FIX",
       "ru": "НУЖНО ИСПРАВИТЬ",
       "zh-Hans": "需要修正",
       "es": "REQUIERE CORRECCIÓN",
       "ja": "要修正"
-    },
-    "model_editor.wizard.checkpoint_saved_needs_fix": {
-      "en": "Rollback snapshot saved",
-      "ru": "Rollback-снимок сохранён",
-      "zh-Hans": "Rollback snapshot saved",
-      "es": "Rollback snapshot saved",
-      "ja": "Rollback snapshot saved"
     },
     "model_editor.lod_generator.runtime_policy": {
       "en": "runtime SSE policy",
@@ -3528,11 +3577,11 @@
       "ja": "Select a semantic node to create/edit states. Select a render node to assign its state selector; APPLY TO ALL LODS uses exact stable RenderNode ids only. Collision/socket state scopes and damage/repair targets are edited in their panels."
     },
     "model_editor.wizard.validate_help": {
-      "en": "Run the complete production contract against SOURCE through DAMAGE plus the shared v4 binary validator. This stage is read-only: it reports blockers and does not repair them.",
-      "ru": "Запустите полный production-контракт от SOURCE до DAMAGE и общий v4 binary validator. Этап только проверяет: он показывает блокеры и ничего не исправляет.",
-      "zh-Hans": "Run the complete production contract against SOURCE through DAMAGE plus the shared v4 binary validator. This stage is read-only: it reports blockers and does not repair them.",
-      "es": "Run the complete production contract against SOURCE through DAMAGE plus the shared v4 binary validator. This stage is read-only: it reports blockers and does not repair them.",
-      "ja": "Run the complete production contract against SOURCE through DAMAGE plus the shared v4 binary validator. This stage is read-only: it reports blockers and does not repair them."
+      "en": "CHECK runs the complete production contract against SOURCE → DAMAGE plus the shared v4 binary validator. It reports blockers and never saves or repairs anything.",
+      "ru": "ПРОВЕРИТЬ запускает полный production-контракт SOURCE → DAMAGE и общий v4 binary validator. Он показывает блокеры и ничего не сохраняет и не исправляет.",
+      "zh-Hans": "CHECK runs the complete production contract against SOURCE → DAMAGE plus the shared v4 binary validator. It reports blockers and never saves or repairs anything.",
+      "es": "CHECK runs the complete production contract against SOURCE → DAMAGE plus the shared v4 binary validator. It reports blockers and never saves or repairs anything.",
+      "ja": "CHECK runs the complete production contract against SOURCE → DAMAGE plus the shared v4 binary validator. It reports blockers and never saves or repairs anything."
     },
     "model_editor.wizard.validate_run": {
       "en": "RUN FULL VALIDATION",
@@ -3556,11 +3605,11 @@
       "ja": "VALIDATION FOUND BLOCKERS"
     },
     "model_editor.wizard.validate_none": {
-      "en": "Run validation before completing this stage.",
-      "ru": "Запустите проверку перед завершением этапа.",
-      "zh-Hans": "Run validation before completing this stage.",
-      "es": "Run validation before completing this stage.",
-      "ja": "Run validation before completing this stage."
+      "en": "Press CHECK to run validation.",
+      "ru": "Нажмите ПРОВЕРИТЬ, чтобы запустить validation.",
+      "zh-Hans": "Press CHECK to run validation.",
+      "es": "Press CHECK to run validation.",
+      "ja": "Press CHECK to run validation."
     },
     "model_editor.wizard.build_help": {
       "en": "Terminal production commit. Full validation is rerun, then the complete persistent WORKING ASSET is written to the compiled v4 package.",
@@ -3591,11 +3640,11 @@
       "ja": "working copy dirty"
     },
     "model_editor.wizard.build_warning": {
-      "en": "BUILD is the production boundary. It never creates, deletes or advances rollback checkpoints.",
-      "ru": "BUILD — единственная штатная граница записи production. Он не создаёт, не удаляет и не продвигает rollback checkpoints.",
-      "zh-Hans": "BUILD is the production boundary. It never creates, deletes or advances rollback checkpoints.",
-      "es": "BUILD is the production boundary. It never creates, deletes or advances rollback checkpoints.",
-      "ja": "BUILD is the production boundary. It never creates, deletes or advances rollback checkpoints."
+      "en": "BUILD is the production boundary. Save the WORKING ASSET first; BUILD then writes that saved state to production.",
+      "ru": "BUILD — граница production. Сначала сохраните WORKING ASSET; затем BUILD запишет именно это сохранённое состояние в production.",
+      "zh-Hans": "BUILD is the production boundary. Save the WORKING ASSET first; BUILD then writes that saved state to production.",
+      "es": "BUILD is the production boundary. Save the WORKING ASSET first; BUILD then writes that saved state to production.",
+      "ja": "BUILD is the production boundary. Save the WORKING ASSET first; BUILD then writes that saved state to production."
     },
     "model_editor.wizard.build_complete": {
       "en": "BUILD PRODUCTION PACKAGE",
@@ -3704,11 +3753,11 @@
       "ja": "古い production payload"
     },
     "model_editor.wizard.lods.stale_note": {
-      "en": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; ordinary SAVE/autosave prunes them from the working package.",
-      "ru": "Файлы .elmesh, оставшиеся только на диске, относятся к предыдущей ревизии WORKING ASSET. Они не загружены в текущий asset и не блокируют LODS; обычный SAVE/autosave удалит их из working package.",
-      "zh-Hans": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; ordinary SAVE/autosave prunes them from the working package.",
-      "es": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; ordinary SAVE/autosave prunes them from the working package.",
-      "ja": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; ordinary SAVE/autosave prunes them from the working package."
+      "en": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; SAVE prunes them from the working package.",
+      "ru": "Оставшиеся на диске .elmesh относятся к предыдущей ревизии WORKING ASSET. Они не загружены в текущий asset и не блокируют LODS; СОХРАНИТЬ удалит их из working package.",
+      "zh-Hans": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; SAVE prunes them from the working package.",
+      "es": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; SAVE prunes them from the working package.",
+      "ja": "Saved-only .elmesh files belong to the previous WORKING ASSET revision. They are not loaded into the current asset and do not block LODS; SAVE prunes them from the working package."
     },
     "model_editor.maintenance.title": {
       "en": "ASSET MAINTENANCE",
@@ -4095,47 +4144,198 @@
       "es": "No changed parts require LOD work.",
       "ja": "No changed parts require LOD work."
     },
-    "model_editor.wizard.checkpoint_create": {
-      "en": "CREATE ROLLBACK SNAPSHOT",
-      "ru": "СОЗДАТЬ СНИМОК ДЛЯ ОТКАТА",
-      "zh-Hans": "CREATE ROLLBACK SNAPSHOT",
-      "es": "CREATE ROLLBACK SNAPSHOT",
-      "ja": "CREATE ROLLBACK SNAPSHOT"
-    },
-    "model_editor.wizard.checkpoint_create_desc": {
-      "en": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
-      "ru": "Сохраняет точный текущий WORKING ASSET как необязательную точку отката. Не проверяет, не открывает, не инвалидирует, не удаляет и не продвигает этапы.",
-      "zh-Hans": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
-      "es": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages.",
-      "ja": "Stores the exact current WORKING ASSET as an optional rollback point. It does not validate, unlock, invalidate, prune or advance stages."
-    },
-    "model_editor.wizard.checkpoint_rollback_only": {
-      "en": "Rollback snapshot only · it does not control stage progression or editor resume.",
-      "ru": "Только rollback-снимок · он не управляет прогрессом этапов и точкой продолжения редактора.",
-      "zh-Hans": "Rollback snapshot only · it does not control stage progression or editor resume.",
-      "es": "Rollback snapshot only · it does not control stage progression or editor resume.",
-      "ja": "Rollback snapshot only · it does not control stage progression or editor resume."
-    },
-    "model_editor.wizard.command.checkpoint": {
-      "en": "create rollback snapshot",
-      "ru": "создание rollback-снимка",
-      "zh-Hans": "create rollback snapshot",
-      "es": "create rollback snapshot",
-      "ja": "create rollback snapshot"
-    },
-    "model_editor.command.autosave_working": {
-      "en": "autosave working asset",
-      "ru": "автосохранение WORKING ASSET",
-      "zh-Hans": "autosave working asset",
-      "es": "autosave working asset",
-      "ja": "autosave working asset"
-    },
     "model_editor.lod_generator.working_saved": {
-      "en": "WORKING ASSET autosave pending",
-      "ru": "ожидается автосохранение WORKING ASSET",
-      "zh-Hans": "WORKING ASSET autosave pending",
-      "es": "WORKING ASSET autosave pending",
-      "ja": "WORKING ASSET autosave pending"
+      "en": "PRESS SAVE TO KEEP CHANGES",
+      "ru": "НАЖМИТЕ СОХРАНИТЬ",
+      "zh-Hans": "PRESS SAVE TO KEEP CHANGES",
+      "es": "PRESS SAVE TO KEEP CHANGES",
+      "ja": "PRESS SAVE TO KEEP CHANGES"
+    },
+    "model_editor.toolbar.restore.title": {
+      "en": "RESTORE",
+      "ru": "ВОССТАНОВИТЬ",
+      "zh-Hans": "RESTORE",
+      "es": "RESTORE",
+      "ja": "RESTORE"
+    },
+    "model_editor.toolbar.restore.desc": {
+      "en": "Discard unsaved changes and reload the last saved WORKING ASSET.",
+      "ru": "Отбросить несохранённые изменения и загрузить последний сохранённый WORKING ASSET.",
+      "zh-Hans": "Discard unsaved changes and reload the last saved WORKING ASSET.",
+      "es": "Discard unsaved changes and reload the last saved WORKING ASSET.",
+      "ja": "Discard unsaved changes and reload the last saved WORKING ASSET."
+    },
+    "model_editor.confirm.restore_working": {
+      "en": "Discard all unsaved changes and restore the last saved WORKING ASSET?",
+      "ru": "Отбросить все несохранённые изменения и восстановить последний сохранённый WORKING ASSET?",
+      "zh-Hans": "Discard all unsaved changes and restore the last saved WORKING ASSET?",
+      "es": "Discard all unsaved changes and restore the last saved WORKING ASSET?",
+      "ja": "Discard all unsaved changes and restore the last saved WORKING ASSET?"
+    },
+    "model_editor.wizard.check": {
+      "en": "CHECK",
+      "ru": "ПРОВЕРИТЬ",
+      "zh-Hans": "CHECK",
+      "es": "CHECK",
+      "ja": "CHECK"
+    },
+    "model_editor.wizard.check_tip.title": {
+      "en": "Check stage",
+      "ru": "Проверить этап",
+      "zh-Hans": "Check stage",
+      "es": "Check stage",
+      "ja": "Check stage"
+    },
+    "model_editor.wizard.check_tip.desc": {
+      "en": "Run this stage checks. PASS marks the tab green and unlocks the next stage. CHECK never saves the WORKING ASSET.",
+      "ru": "Запустить проверки этого этапа. PASS ставит зелёную галочку на вкладке и открывает следующий этап. ПРОВЕРИТЬ никогда не сохраняет WORKING ASSET.",
+      "zh-Hans": "Run this stage checks. PASS marks the tab green and unlocks the next stage. CHECK never saves the WORKING ASSET.",
+      "es": "Run this stage checks. PASS marks the tab green and unlocks the next stage. CHECK never saves the WORKING ASSET.",
+      "ja": "Run this stage checks. PASS marks the tab green and unlocks the next stage. CHECK never saves the WORKING ASSET."
+    },
+    "model_editor.wizard.command.check": {
+      "en": "check stage",
+      "ru": "проверить этап",
+      "zh-Hans": "check stage",
+      "es": "check stage",
+      "ja": "check stage"
+    },
+    "model_editor.command.restore_working": {
+      "en": "restore saved working asset",
+      "ru": "восстановить сохранённый working asset",
+      "zh-Hans": "restore saved working asset",
+      "es": "restore saved working asset",
+      "ja": "restore saved working asset"
+    },
+    "model_editor.wizard.checked_notice": {
+      "en": "Stage check passed",
+      "ru": "Проверка этапа пройдена",
+      "zh-Hans": "Stage check passed",
+      "es": "Stage check passed",
+      "ja": "Stage check passed"
+    },
+    "model_editor.toolbar.save.label": {
+      "en": "⇩ SAVE",
+      "ru": "⇩ СОХРАНИТЬ",
+      "zh-Hans": "⇩ SAVE",
+      "es": "⇩ SAVE",
+      "ja": "⇩ SAVE"
+    },
+    "model_editor.toolbar.restore.label": {
+      "en": "↶ RESTORE",
+      "ru": "↶ ВОССТАНОВИТЬ",
+      "zh-Hans": "↶ RESTORE",
+      "es": "↶ RESTORE",
+      "ja": "↶ RESTORE"
+    },
+    "model_editor.geometry_workspace.recent": {
+      "en": "RECENTLY LOADED / CHANGED",
+      "ru": "НЕДАВНО ЗАГРУЖЕННОЕ / ИЗМЕНЁННОЕ",
+      "zh-Hans": "最近加载 / 已更改",
+      "es": "RECIÉN CARGADO / CAMBIADO",
+      "ja": "最近読み込み / 変更"
+    },
+    "model_editor.geometry_workspace.no_recent_main": {
+      "en": "No recently loaded/changed main render elements in this LOD.",
+      "ru": "В этом LOD нет недавно загруженных или изменённых основных render-элементов.",
+      "zh-Hans": "此 LOD 中没有最近加载或更改的主渲染元素。",
+      "es": "No hay elementos de render principales recién cargados o cambiados en este LOD.",
+      "ja": "この LOD には最近読み込まれた、または変更されたメイン render 要素はありません。"
+    },
+    "model_editor.geometry_compare.show": {
+      "en": "VIEW",
+      "ru": "ВИД",
+      "zh-Hans": "显示",
+      "es": "VISTA",
+      "ja": "表示"
+    },
+    "model_editor.geometry_compare.reference_short": {
+      "en": "REF",
+      "ru": "ЭТАЛОН",
+      "zh-Hans": "基准",
+      "es": "REF",
+      "ja": "基準"
+    },
+    "model_editor.geometry_compare.uses": {
+      "en": "USES",
+      "ru": "ИСП.",
+      "zh-Hans": "使用",
+      "es": "USOS",
+      "ja": "使用"
+    },
+    "model_editor.geometry_compare.visible": {
+      "en": "shown",
+      "ru": "показано",
+      "zh-Hans": "显示",
+      "es": "mostrados",
+      "ja": "表示"
+    },
+    "model_editor.geometry_compare.all_visible": {
+      "en": "all",
+      "ru": "все",
+      "zh-Hans": "全部",
+      "es": "todos",
+      "ja": "すべて"
+    },
+    "model_editor.geometry_compare.help_v2": {
+      "en": "Click a row or the viewport to choose the element being edited. VIEW checkboxes isolate one element or a group. REF chooses the comparison reference. File and mesh names stay visible in each row.",
+      "ru": "Щёлкните строку или элемент в окне просмотра, чтобы выбрать объект редактирования. Галочки «ВИД» изолируют один элемент или группу. «ЭТАЛОН» выбирает базу сравнения. Имена мешей и исходных файлов всегда остаются читаемыми в строке.",
+      "zh-Hans": "单击列表行或视口元素以选择编辑对象。VIEW 复选框可隔离一个元素或一组元素，REF 用于选择比较基准。每行始终显示可读的网格和源文件名称。",
+      "es": "Haga clic en una fila o en el visor para elegir el elemento que se edita. Las casillas VISTA aíslan uno o varios elementos y REF elige la referencia de comparación. Los nombres de malla y archivo fuente permanecen legibles.",
+      "ja": "行またはビューポートをクリックして編集対象を選択します。VIEW チェックは 1 要素またはグループを分離表示し、REF は比較基準を選択します。メッシュ名とソースファイル名は常に読める形で表示されます。"
+    },
+    "model_editor.geometry_editor.title": {
+      "en": "EDITING",
+      "ru": "РЕДАКТИРОВАНИЕ",
+      "zh-Hans": "编辑",
+      "es": "EDICIÓN",
+      "ja": "編集"
+    },
+    "model_editor.geometry_editor.editing": {
+      "en": "EDITING",
+      "ru": "РЕДАКТИРУЕТСЯ",
+      "zh-Hans": "编辑对象",
+      "es": "EDITANDO",
+      "ja": "編集中"
+    },
+    "model_editor.geometry_editor.none": {
+      "en": "Select an element in the table or click it in the viewport.",
+      "ru": "Выберите элемент в таблице или щёлкните по нему в окне просмотра.",
+      "zh-Hans": "请在表格中选择元素或在视口中单击它。",
+      "es": "Seleccione un elemento en la tabla o haga clic en él en el visor.",
+      "ja": "表で要素を選択するか、ビューポートでクリックしてください。"
+    },
+    "model_editor.geometry_editor.move": {
+      "en": "MOVE EXISTING ELEMENT",
+      "ru": "ПЕРЕМЕЩЕНИЕ СУЩЕСТВУЮЩЕГО ЭЛЕМЕНТА",
+      "zh-Hans": "移动现有元素",
+      "es": "MOVER ELEMENTO EXISTENTE",
+      "ja": "既存要素を移動"
+    },
+    "model_editor.geometry_editor.circular": {
+      "en": "Circular placement",
+      "ru": "Круговое размещение"
+    },
+    "model_editor.geometry_editor.copy": {
+      "en": "COPY / INSTANCE",
+      "ru": "КОПИРОВАНИЕ / ЭКЗЕМПЛЯРЫ",
+      "zh-Hans": "复制 / 实例",
+      "es": "COPIA / INSTANCIA",
+      "ja": "コピー / インスタンス"
+    },
+    "model_editor.geometry_stats.title": {
+      "en": "LOD STATISTICS",
+      "ru": "СТАТИСТИКА LOD",
+      "zh-Hans": "LOD 统计",
+      "es": "ESTADÍSTICAS LOD",
+      "ja": "LOD 統計"
+    },
+    "model_editor.geometry_variants.none_recent": {
+      "en": "No recently loaded/changed additional meshes in this LOD.",
+      "ru": "В этом LOD нет недавно загруженных или изменённых дополнительных мешей.",
+      "zh-Hans": "此 LOD 中没有最近加载或更改的附加网格。",
+      "es": "No hay mallas adicionales recién cargadas o cambiadas en este LOD.",
+      "ja": "この LOD には最近読み込まれた、または変更された追加メッシュはありません。"
     }
   }
 }

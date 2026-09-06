@@ -39,6 +39,7 @@ private:
     void sendSettings();
     void sendAsset(const std::vector<std::size_t>& payloadLods = {});
     void sendAssetMetadata(const nlohmann::json& hints = nlohmann::json::object());
+    void sendSemanticTreePatch();
     void sendSurfaceMetadataPatch(const std::vector<std::pair<std::size_t, std::size_t>>& targets);
     void sendSemanticBindingPatch(const std::vector<std::pair<std::size_t, std::size_t>>& targets);
     void sendLodPayload(std::size_t lodIndex, bool includeRawSnapshots = false);
@@ -52,10 +53,9 @@ private:
         const std::filesystem::path& path = {});
     bool selectAsset(const std::string& id, bool forceReimport);
     bool saveAsset(); // ordinary WORKING ASSET save
+    bool restoreWorkingAsset(); // discard unsaved edits and reload last saved WORKING ASSET
     bool saveWorkingAsset(bool quiet = false);
     bool buildProductionAsset();
-    bool saveManifestOnly();
-    bool saveLodOnly(std::size_t lodIndex);
     bool loadLodData(std::size_t lodIndex, bool forceReload, std::string* error = nullptr);
     bool loadLodOnly(std::size_t lodIndex, bool forceReload);
     bool unloadLod(std::size_t lodIndex);
@@ -64,6 +64,7 @@ private:
     bool loadAllDeclaredLodsForSource();
     void resetLodState(bool loaded, bool dirty);
     void markManifestDirty();
+    void markEditorStateDirty();
     void markLodDirty(std::size_t lodIndex);
     void markAllLoadedLodsDirty();
     void syncDirty();
@@ -82,9 +83,7 @@ private:
 
     struct WizardStageState
     {
-        std::string status = "not_started"; // not_started / complete / stale
-        std::filesystem::path checkpointManifest;
-        std::uint64_t checkpointSequence = 0; // 0 = legacy checkpoint without an explicit save sequence
+        std::string status = "not_started"; // not_started / complete / stale / needs_fix
     };
     struct MeshPreparationRecord
     {
@@ -116,18 +115,17 @@ private:
         // They never enter the runtime .elmodel contract.
         std::map<std::size_t, std::map<std::string, std::uint64_t>> sourceMeshFingerprints; // source path -> accepted file revision
         std::map<std::string, std::set<std::string>> componentMaintenanceIssues; // base visual id -> prepare/lods/surfaces/semantics
+        // Editor-only tree presentation order keyed by stable parent semantic id;
+        // "__ROOTS__" stores top-level order. Runtime semantic identity never depends on this.
+        std::map<std::string, std::vector<std::string>> semanticChildOrder;
         std::size_t nextBaseVisualOrdinal = 1;
         std::size_t nextSourceVariantOrdinal = 1;
     };
     std::filesystem::path wizardWorkspacePath() const;
-    std::filesystem::path wizardStatePath() const;
     std::filesystem::path workingAssetPath() const;
     std::filesystem::path workingEditorStatePath() const;
     std::filesystem::path productionEditorStatePath() const;
-    std::filesystem::path wizardCheckpointPath(const std::string& stage) const;
-    std::filesystem::path wizardCheckpointEditorStatePath(const std::string& stage) const;
     std::filesystem::path wizardLogPath(const std::string& fileName) const;
-    std::uint64_t checkpointSequenceForStage(const std::string& stage) const;
     using StageValidityState = std::map<std::string, std::string>;
     EditorAuthoringState captureEditorAuthoringState() const;
     StageValidityState captureStageValidity() const;
@@ -140,17 +138,6 @@ private:
         const nlohmann::json& state,
         int schemaVersion,
         EditorAuthoringState& parsed,
-        std::string* error = nullptr) const;
-    bool writeCheckpointEditorState(
-        const std::string& stage,
-        const StageValidityState& validity,
-        std::uint64_t checkpointSequence,
-        std::string* error = nullptr) const;
-    bool loadCheckpointEditorState(
-        const std::string& stage,
-        EditorAuthoringState& state,
-        StageValidityState* validity = nullptr,
-        std::uint64_t* checkpointSequence = nullptr,
         std::string* error = nullptr) const;
     nlohmann::json packageStampFor(const std::filesystem::path& manifest) const;
     nlohmann::json productionPackageStamp() const;
@@ -166,14 +153,10 @@ private:
         StageValidityState& validity,
         std::string* error = nullptr) const;
     void loadWizardState();
-    bool writeWizardState() const;
     void invalidateWizardFrom(const std::string& stage);
-    void restoreWizardValidityAt(const std::string& stage);
     bool validateWizardStage(const std::string& stage, std::string* error = nullptr);
     void sendWizardValidationReport();
-    bool completeWizardStage(const std::string& stage);
-    bool createWizardCheckpoint(const std::string& stage);
-    bool restoreWizardCheckpoint(const std::string& stage);
+    bool checkWizardStage(const std::string& stage);
     bool scanRenderDuplicates(
         std::size_t lodIndex,
         std::size_t referenceRenderNodeIndex = std::size_t(-1),
@@ -240,6 +223,8 @@ private:
     nlohmann::json serializeMaintenance() const;
 
     nlohmann::json serializeAssetMetadata() const;
+    nlohmann::json serializeSemanticNodes() const;
+    nlohmann::json serializeSemanticTreeOrder() const;
 
 private:
     struct LodEditState
@@ -258,6 +243,7 @@ private:
     std::string m_selectedId;
     bool m_dirty = false;
     bool m_manifestDirty = false;
+    bool m_editorStateDirty = false;
     std::vector<LodEditState> m_lodState;
     std::map<std::string, WizardStageState> m_wizardStages;
     // Authoring identities are intentionally independent of OBJ filenames and
@@ -281,9 +267,9 @@ private:
     std::map<std::size_t, std::map<std::string, std::vector<std::string>>> m_legacySourceVariantReplacements;
     std::map<std::size_t, std::map<std::string, std::uint64_t>> m_sourceMeshFingerprints;
     std::map<std::string, std::set<std::string>> m_componentMaintenanceIssues;
+    std::map<std::string, std::vector<std::string>> m_semanticChildOrder;
     std::size_t m_nextBaseVisualOrdinal = 1;
     std::size_t m_nextSourceVariantOrdinal = 1;
-    std::uint64_t m_nextCheckpointSequence = 1;
     std::uint32_t m_nextWireTransferId = 1;
 };
 

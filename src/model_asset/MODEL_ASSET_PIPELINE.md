@@ -4,7 +4,7 @@
 
 GEOMETRY edits one `RenderLod` at a time. The active LOD owns its `RenderNode` graph, geometry pool, instance sharing and replacement compatibility authoring; no G-index or RenderNode identity is propagated to another LOD. The editor may preview one main geometry, one standalone additional geometry, or a temporary replacement, but those are viewport-only states.
 
-Instance consolidation and radial duplication reuse LOD-local geometry definitions. Additional/replacement meshes remain independent geometry definitions and record only which stable base visual families they may replace; later DAMAGE/state authoring decides when a compatible replacement is selected. Completing GEOMETRY validates the current authored RenderLod set and persists its validity in WORKING ASSET; rollback snapshots are separate manual actions.
+Instance consolidation and radial duplication reuse LOD-local geometry definitions. Additional/replacement meshes remain independent geometry definitions and record only which stable base visual families they may replace; later DAMAGE/state authoring decides when a compatible replacement is selected. GEOMETRY CHECK validates the current authored RenderLod set and updates stage validity in memory; global SAVE persists it only when the author chooses to save.
 
 
 ## Purpose
@@ -44,9 +44,9 @@ only a single welded station shell.
 
 ### Complete wizard / maintenance chain (editor 0.10.32)
 
-Initial authoring keeps the ordered nine-stage contract: `SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD`. Before the first production BUILD, a stage becomes editable only when its immediate predecessor is `COMPLETE`. After a production package exists, the editor is a maintenance editor: any stage may be opened directly and readiness is computed from the current persistent WORKING ASSET plus per-component maintenance debt, never from checkpoint ancestry.
+Initial authoring keeps the ordered nine-stage contract: `SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD`. Before the first production BUILD, a stage becomes editable only when its immediate predecessor is `COMPLETE`. After a production package exists, the editor is a maintenance editor: any stage may be opened directly and readiness is computed from the current persistent WORKING ASSET plus per-component maintenance debt, never from saved-history ancestry.
 
-`SEMANTICS` owns the shared gameplay hierarchy, pivots/joints, sockets and per-LOD render-to-semantic bindings. `PHYSICS` owns base collision geometry and resolved rigid-body mass/inertia. `DAMAGE` owns state variants plus state selectors for render nodes/collisions/sockets, hit regions, openings and repair targets. `VALIDATE` is read-only and reruns every upstream production contract plus `ModelAssetBinary::validate`. `BUILD` is the terminal production commit and the only normal writer of production `.elmodel/.elmesh`; it writes the complete validated WORKING ASSET and does not create or mutate rollback checkpoints.
+`SEMANTICS` owns the shared gameplay hierarchy, pivots/joints, sockets and per-LOD render-to-semantic bindings. `PHYSICS` owns base collision geometry and resolved rigid-body mass/inertia. `DAMAGE` owns state variants plus state selectors for render nodes/collisions/sockets, hit regions, openings and repair targets. `VALIDATE` is read-only and reruns every upstream production contract plus `ModelAssetBinary::validate`. `BUILD` is the terminal production commit and the only normal writer of production `.elmodel/.elmesh`; it writes the complete validated WORKING ASSET .
 
 Collision and socket state scopes are metadata owned by DAMAGE even though their base shape/transform belongs to PHYSICS/SEMANTICS respectively. Editing only `activeStates` therefore invalidates from DAMAGE rather than rolling back the earlier owning stage.
 
@@ -93,7 +93,7 @@ overrides become active together. Render LOD switching must never own gameplay s
 
 ## Stable identity invariants
 
-Stable IDs are authored identity, not display labels. Invalid identity must be rejected or repaired at the producer boundary, not discovered only when a checkpoint is serialized.
+Stable IDs are authored identity, not display labels. Invalid identity must be rejected or repaired at the producer boundary, not discovered only when the working package is serialized.
 
 Hard rules:
 
@@ -104,7 +104,7 @@ Hard rules:
 
 Source registries are allowed to reuse a human-facing token for different roles. In particular, a module and its child mesh may both be named `station_solar_panels`. The importer must qualify the child deterministically (for example `station_solar_panels.mesh`) instead of creating duplicate semantic Nodes. Legacy v2/v3 migration also normalizes old empty/duplicate IDs before copying semantic identity into v4 RenderNodes.
 
-Wizard stage validation and rollback persistence are independent. A stage check updates validity/debt in the persistent WORKING ASSET; it never creates a checkpoint. A manual rollback snapshot may be created whether or not the current stage validates. The v4 serializer remains the final hard safety net for structural/identity/I/O failures; diagnostics must identify the offending ID and indices, e.g. `LOD0 duplicate RenderNode id 'x': node[2] and node[7]`.
+Wizard stage validation and persistence are independent. A stage CHECK updates validity/debt only in memory and never saves. The global SAVE persists the current coherent WORKING ASSET; RESTORE discards unsaved changes. The v4 serializer remains the final hard safety net for structural/identity/I/O failures; diagnostics must identify the offending ID and indices, e.g. `LOD0 duplicate RenderNode id 'x': node[2] and node[7]`.
 
 ## Canonical coordinates / source basis
 
@@ -131,7 +131,7 @@ The **offline editor** has a stronger canonical authoring boundary. `CanonicalMe
 
 Preparation records store the canonical algorithm id plus an output fingerprint. A resident mesh is technically ready for downstream LOD analysis only when the record matches the exact payload and post-inspection reports no structural invalidity, degenerate/duplicate triangles, winding conflicts or inward closed components.
 
-`АНАЛИЗИРОВАТЬ` remains a separate read-only report. It may recommend/record `ClosedVolume`, `ThinTwoSided` or `BreachedVolume`, but these are **SURFACES authoring decisions**. They do not gate read-only LOD0 analysis and do not block completing the LODS checkpoint.
+`АНАЛИЗИРОВАТЬ` remains a separate read-only report. It may recommend/record `ClosedVolume`, `ThinTwoSided` or `BreachedVolume`, but these are **SURFACES authoring decisions**. They do not gate read-only LOD0 analysis and do not block passing the LODS CHECK.
 
 Render LODs remain independent documents; generated LOD1/LOD2/... are derived independently from canonical LOD0 rather than chained from one simplified LOD to the next.
 
@@ -186,9 +186,9 @@ Opening an ordinary v4 asset reads the manifest/descriptors only; no `.elmesh` i
 until an explicit LOAD/RELOAD or a backend operation actually needs that LOD geometry.
 Each LOD has `LOADED`/`UNLOADED` and `CLEAN`/`DIRTY` state and can be loaded, reloaded or
 unloaded independently. Backend-only residency helpers do not publish geometry as a side effect.
-Persistence is deliberately coherent in 0.10.32: ordinary SAVE/autosave writes the persistent
-WORKING package plus its matching editor_state. Legacy `save_manifest` / `save_lod` commands
-are compatibility aliases to that whole working save; partial package states are not resume heads.
+Persistence is deliberately coherent in 0.10.33: the global manual SAVE writes the persistent
+WORKING package plus its matching editor_state. There is no ongoing autosave and no partial
+manifest/LOD save UX; RESTORE discards unsaved edits and reloads that one saved working state.
 
 This is also the intended runtime streaming boundary: a distant ship can load its
 semantic manifest plus only a coarse render LOD without reading LOD0.
@@ -222,7 +222,7 @@ as a visual thickness proxy: for a long tube it behaves like diameter; for a fla
 it behaves like the smaller in-plane width rather than sheet thickness. The largest
 structural island and any island carrying at least 25% of one geometry are protected.
 `Preview Cull` sends only compressed triangle-removal ranges to the browser and never
-changes the asset or checkpoint state.
+changes the asset or saved working state.
 
 Later generator passes may remove surface detail embedded in a carrier patch, collapse
 bevels, simplify topology or replace assemblies with proxies. Any generated result must
@@ -232,7 +232,7 @@ LOD identity must never be inferred from filenames.
 ### Web UI synchronization is metadata-first
 
 The browser viewport receives full render-mesh payloads only when geometry is actually
-requested/replaced: explicit LOD load/reload, source reimport, checkpoint restore, or an
+requested/replaced: explicit LOD load/reload, source reimport, RESTORE, or an
 operation that changes vertex/index payloads. Ordinary v4 asset open is metadata-only.
 Ordinary authoring
 commands must use metadata-only synchronization. Position/pivot edits, instance
@@ -249,7 +249,7 @@ semantics. `ELWIR001` is not an asset format and does not change `.elmodel/.elme
 Known targeted mesh changes may use a transport delta: only changed resident LOD frames are
 sent, unchanged LOD arrays are reused from the browser's already-resident payload, and the
 adapter still reconstructs the complete legacy `asset` object before invoking its handler.
-Initial load/reconnect/checkpoint restore/full mesh replacement remain self-contained snapshots.
+Initial load/reconnect/RESTORE/full mesh replacement remain self-contained snapshots.
 
 The browser retains source mesh arrays and `THREE.BufferGeometry` objects in a cache
 keyed by stable `LOD + render-geometry id`. A metadata refresh may rebuild the light
@@ -257,21 +257,19 @@ scene graph around those cached GPU buffers, but it must not recreate or retrans
 unchanged mesh payloads. A newly broken instance may clone an already-resident geometry
 locally; an edge-mask edit transmits only the changed mask.
 
-### Persistent WORKING ASSET and rollback-only checkpoints (editor 0.10.32)
+### Manual WORKING SAVE / RESTORE and stage CHECK (editor 0.10.33)
 
-The editor resume head is `workspaces/<asset>/working/<asset>.elmodel` plus its `.elmesh` payloads and matching `working/editor_state.json`. OPEN always prefers this package. If it does not exist, production is adopted as the initial working state; if production does not exist either, SOURCE import creates it. Checkpoint timestamps and `checkpointSequence` never select the resume head.
+The editor has one saved resume head: `workspaces/<asset>/working/<asset>.elmodel` plus its `.elmesh` payloads and matching `working/editor_state.json`. OPEN always prefers it; otherwise production, then SOURCE, creates the initial saved working state.
 
-Ordinary SAVE and autosave persist the coherent WORKING package. The editor-only sidecar carries PREPARE evidence, stable authoring identities, SOURCE fingerprints, replacement compatibility, per-component maintenance debt and the current stage-validity map, bound to the exact package bytes by a package stamp. SAVE does not invalidate anything, write production or mutate checkpoint history.
+All authoring after OPEN is in-memory and sets one dirty flag. There is no ongoing autosave and no checkpoint/snapshot history. Global SAVE is enabled only while dirty and writes the complete coherent WORKING package. Global RESTORE is enabled only while dirty and discards all unsaved edits by reloading the last saved WORKING package. Neither operation changes production.
 
-A checkpoint is now only an explicit manual rollback snapshot. `CREATE ROLLBACK SNAPSHOT` stores the exact current package plus editor state without validating the stage, changing stage status, unlocking anything or pruning another snapshot. `checkpointSequence` remains monotonic metadata for snapshot chronology/legacy compatibility and advances only after a manual snapshot is successfully persisted.
+The working sidecar carries PREPARE evidence, stable authoring identities, SOURCE fingerprints, replacement compatibility, per-component maintenance debt and stage-validity state, bound to the exact package bytes by a package stamp. SOURCE reimport and local maintenance never save implicitly.
 
-RESTORE loads that literal snapshot and immediately persists it as the new WORKING head so restart returns to the restored state. Other snapshots and production are untouched. Legacy snapshots remain readable; missing legacy editor-only evidence is conservatively marked for review.
+Every normal wizard stage ends in CHECK. CHECK runs that stage's validation, marks PASS/NEEDS FIX in the current in-memory state and unlocks the next ordered stage after PASS. CHECK never persists the WORKING ASSET. VALIDATE uses the same CHECK action and publishes its detailed production-contract report.
 
-BUILD is the sole normal production-write boundary. It writes the complete current WORKING asset regardless of working dirty flags and refreshes `production_state.json`. Rollback checkpoints are untouched. `wizard_state.json` is only a session/checkpoint index; current stage validity is owned by the WORKING sidecar.
+BUILD is the sole normal production-write boundary. It requires a clean/saved WORKING state, reruns the production contract and writes exactly that saved state to production `.elmodel/.elmesh`, then refreshes `production_state.json`.
 
-For first-time authoring, stage unlock still follows the ordered wizard. For an asset with an existing production package, maintenance-mode stage access is direct and blockers come from current validity and local component debt rather than saved checkpoint lineage.
-
-Wizard mutations use the same invalidation order: semantic hierarchy/joint/socket base edits start at SEMANTICS, base physics/collision edits at PHYSICS, and state selectors/damage/opening/repair edits at DAMAGE.
+For first-time authoring, stage unlock follows the ordered wizard. For an asset with an existing production package, maintenance-mode stage access is direct and blockers come from current validity and local component debt. Wizard mutations use the same invalidation order: semantic hierarchy/joint/socket base edits start at SEMANTICS, base physics/collision edits at PHYSICS, and state selectors/damage/opening/repair edits at DAMAGE.
 
 ## Native OBJ compilation
 
@@ -343,12 +341,14 @@ the narrow-phase/navigation representation.
 
 ## Joints and structural separation
 
-Every node carries an authored `NodeJoint`:
+Every node carries an authored `NodeJoint` describing the **incoming parent→child link**:
 
 - `Fixed` or `Revolute`;
-- local pivot and axis;
-- default angular rate and angle limits;
+- pivot and axis stored in the child node's semantic-local frame;
+- default runtime angular rate and angle limits;
 - optional breakability with break force/torque thresholds.
+
+The editor must not hard-code all joints to the parent origin: a turret, hinge or ring may rotate about an arbitrary connection point. Authoring helpers may derive the stored child-local pivot from the parent semantic origin, the child visual centre, or a world-space 3D pick. Preview speed is editor-only and must not overwrite the runtime default rate.
 
 This keeps rotation axes and structural attachment geometry out of later object
 descriptors. Runtime state supplies only current angle/rate/damage state.

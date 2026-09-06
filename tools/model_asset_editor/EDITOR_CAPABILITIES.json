@@ -3,7 +3,7 @@
   "protected_capabilities": [
     {
       "id": "geometry_instance_fit",
-      "description": "Detect and consolidate baked rigid duplicates inside one render LOD.",
+      "description": "Compare/consolidate baked rigid duplicates inside one render LOD with readable source identity, explicit viewport isolation, one selected RenderNode authority, placement-safe move/copy tools, inclusive-arc circular placement and preserved placement.",
       "contracts": {
         "data_model": {
           "path": "src/model_asset/ModelAsset.h",
@@ -18,7 +18,11 @@
           "tokens": [
             "fit_render_node_as_instance",
             "scan_render_duplicates",
-            "fitGeometryAsRigidInstance"
+            "fitGeometryAsRigidInstance",
+            "move_render_node_delta",
+            "apply_radial_render_layout",
+            "glm::extractEulerAngleXYZ",
+            "render-node transform XYZ round-trip changed placement"
           ]
         },
         "ui": {
@@ -28,10 +32,17 @@
             "wizardGeometryCandidates",
             "fit_render_node_as_instance",
             "wizardGeometryLodSelect",
-            "wizardGeometryMainMeshes",
+            "compareShowToggle",
+            "compareReferenceToggle",
+            "wizardGeometryEditor",
             "wizardGeometryDuplicateBtn",
+            "wizardGeometryMoveBtn",
             "wizardGeometryRadialBtn",
-            "geometryMeshSelection"
+            "geometryMoveDx",
+            "radialLayoutAngles",
+            "radialApplyBtn",
+            "geometryStickyToolbar",
+            "geometryStatsHtml"
           ]
         },
         "test": {
@@ -60,7 +71,7 @@
           "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
           "tokens": [
             "load_lod",
-            "save_lod",
+            "save_asset",
             "unload_lod",
             "renderLods",
             "loadLodData",
@@ -161,8 +172,8 @@
       }
     },
     {
-      "id": "wizard_checkpoints",
-      "description": "The persistent WORKING ASSET is the editor resume head. Ordinary SAVE/autosave persists it, BUILD alone writes production, and checkpoints are independent manual rollback snapshots that never gate stages or prune one another.",
+      "id": "working_state_controls",
+      "description": "The editor has one saved WORKING ASSET. A global manual SAVE persists it, RESTORE discards unsaved edits, stage CHECK only validates/unlocks in memory, and BUILD alone writes production. Snapshot/checkpoint history and ongoing autosave are forbidden.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.h",
@@ -171,47 +182,44 @@
             "EditorAuthoringState",
             "workingAssetPath",
             "workingEditorStatePath",
-            "wizardCheckpointPath",
-            "wizardCheckpointEditorStatePath",
             "productionEditorStatePath",
-            "StageValidityState"
+            "StageValidityState",
+            "restoreWorkingAsset",
+            "checkWizardStage"
           ]
         },
         "backend": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
           "tokens": [
             "saveWorkingAsset",
+            "restoreWorkingAsset",
+            "check_wizard_stage",
+            "restore_working_asset",
             "buildProductionAsset",
-            "create_wizard_checkpoint",
-            "restore_wizard_checkpoint",
             "writeWorkingEditorState",
             "loadWorkingEditorState",
-            "writeCheckpointEditorState",
-            "loadCheckpointEditorState",
             "writeProductionEditorState",
             "loadProductionEditorState",
             "productionPackageStamp",
             "applyStageValidity",
-            "invalidateWizardFrom",
-            "model_asset_editor_session_index",
-            "checkpointSequenceForStage"
+            "invalidateWizardFrom"
           ]
         },
         "ui": {
           "path": "src/assets/webui/model_asset_editor.html",
           "tokens": [
-            "wizardCompleteBtn",
-            "wizardCheckpointBtn",
-            "wizardRestoreBtn",
-            "create_wizard_checkpoint",
+            "id=\"saveBtn\"",
+            "id=\"restoreBtn\"",
+            "check_wizard_stage",
+            "restore_working_asset",
             "wizardBar"
           ]
         },
         "test": {
           "path": "tests/architecture_contracts/check_model_asset_editor.py",
           "tokens": [
-            "persistent working-state resume contract",
-            "rollback-only checkpoint UI contract"
+            "manual working-state save/restore contract",
+            "stage CHECK is persistence read-only"
           ]
         }
       }
@@ -293,7 +301,7 @@
             "set_source_variant_replacement",
             "variantPreviewByNode",
             "initWorldAxes",
-            "wizardGeometryExtraMeshes",
+            "wizardExtraMeshTable",
             "wizardBaseReplacementTable",
             "wizardVariantPreviewResetBtn"
           ]
@@ -350,9 +358,9 @@
             "model_editor.preflight.group_extra",
             "model_editor.preflight.canonical_note",
             "meshViewportMode",
-            "\u0418\u0421\u0425\u041e\u0414\u041d\u0418\u041a",
-            "\u0411\u0415\u0417 \u041e\u0422\u0421\u0415\u0427\u0415\u041d\u0418\u042f",
-            "\u0420\u0410\u0411\u041e\u0427\u0418\u0419"
+            "ИСХОДНИК",
+            "БЕЗ ОТСЕЧЕНИЯ",
+            "РАБОЧИЙ"
           ]
         },
         "test": {
@@ -461,7 +469,7 @@
     },
     {
       "id": "surface_authoring",
-      "description": "Explicit SURFACES analysis, stable-family cross-LOD surface intent, geometry-authoritative sidedness, shared material/PBR authoring, triangle material audit, visible viewport preview and a dedicated SURFACES checkpoint.",
+      "description": "Explicit SURFACES analysis, stable-family cross-LOD surface intent, geometry-authoritative sidedness, shared material/PBR authoring, triangle material audit, visible viewport preview and a dedicated SURFACES stage CHECK.",
       "contracts": {
         "data_model": {
           "path": "src/model_asset/ModelAsset.h",
@@ -502,6 +510,150 @@
             "surface material properties lost in binary round trip",
             "material.emissiveStrength = 2.5f",
             "material.twoSided = true"
+          ]
+        }
+      }
+    },
+    {
+      "id": "stable_list_scroll",
+      "description": "Selecting an item or rerendering its inspector preserves every scrollable list/tree/table viewport in the same asset/stage/LOD context.",
+      "contracts": {
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "uiScrollPositions",
+            "uiScrollContextKey",
+            "preserveUiScroll",
+            "data-preserve-scroll=\"side-panel\"",
+            "data-preserve-scroll=\"geometry-compare\"",
+            "function renderGeometryCandidates(){return preserveUiScroll(renderGeometryCandidatesContents);}",
+            "function renderVariantAssignment(){return preserveUiScroll(renderVariantAssignmentContents);}",
+            "data-preserve-scroll=\"surface-geometries\"",
+            "data-preserve-scroll=\"semantic-tree\""
+          ]
+        },
+        "guide": {
+          "path": "MODEL_ASSET_EDITOR_GUIDE.md",
+          "tokens": [
+            "UX-инвариант: выбор не сбрасывает список",
+            "Новый scrollable list/table/tree нельзя добавлять как голый `overflow:auto`"
+          ]
+        },
+        "test": {
+          "path": "tests/architecture_contracts/check_model_asset_editor.py",
+          "tokens": [
+            "list scroll stability"
+          ]
+        }
+      }
+    },
+    {
+      "id": "geometry_workspace_flow",
+      "description": "GEOMETRY exposes one sticky LOD/work-set header, one readable RenderNode compare/selection table, replacement compatibility, one selected-element editor, CHECK, then statistics.",
+      "contracts": {
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "geometryStickyToolbar",
+            "data-geometry-scope=\"all\"",
+            "data-geometry-scope=\"changes\"",
+            "compareShowToggle",
+            "compareReferenceToggle",
+            "wizardGeometryEditor",
+            "geometryStatsHtml(lod)",
+            "geometrySelectionNeedsAncestor"
+          ]
+        },
+        "test": {
+          "path": "tests/architecture_contracts/check_model_asset_editor.py",
+          "tokens": [
+            "GEOMETRY workflow order regressed",
+            "historical duplicate GEOMETRY panel returned"
+          ]
+        }
+      }
+    },
+    {
+      "id": "semantic_tree_link_authoring",
+      "description": "SEMANTICS is an asset-wide logical tree with fast delta authoring, link-owned joint controls, explicit semantic-frame/visual-binding repair tools, a persistent single-authority 3D graph overlay, and global hit-volume viewport visibility. Explode is root-centered and uses the far support point of visual bounds along each radial ray.",
+      "contracts": {
+        "data_model": {
+          "path": "src/model_asset/ModelAsset.h",
+          "tokens": [
+            "struct Node",
+            "Joint joint"
+          ]
+        },
+        "backend": {
+          "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
+          "tokens": [
+            "reparentSemanticNodesPreserveWorld",
+            "set_node_parents",
+            "create_semantic_asset_root",
+            "delete_semantic_node",
+            "inspectSemanticNodeUsage",
+            "asset must have exactly one semantic root; found",
+            "clone.semanticNodeIndex = NoIndex;",
+            "clone.activeStates.clear();",
+            "m_semanticChildOrder",
+            "sendSemanticTreePatch",
+            "semantic_tree_patch",
+            "serializeSemanticNodes"
+          ]
+        },
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "semanticSelectedNodes",
+            "data-semantic-relation-select",
+            "data-semantic-toggle",
+            "semanticReparentSelection",
+            "semanticRefreshSelectionUi",
+            "applySemanticGraphExplode",
+            "semanticRenderBaseMatrix",
+            "semanticLinkChildIndex",
+            "semanticNodeIndex=i",
+            "semanticSelectionModeFromEvent",
+            "semanticBindingPickTarget",
+            "semanticBindingSummaryHtml",
+            "semanticsWorkspaceWide",
+            "markHidden",
+            "applySemanticTreePatch",
+            "scheduleSemanticGraphPreview",
+            "semanticCanonicalNodeAnchorMap",
+            "semanticCanonicalRenderWorldMatrices",
+            "geometry.minBounds",
+            "geometry.maxBounds",
+            "semanticGraphGroup:new THREE.Group()",
+            "semanticJointGizmoGroup:new THREE.Group()",
+            "semanticGraphNodeObjects:new Map()",
+            "ensureSemanticGraphObjects",
+            "semanticGraphDisplayAnchorMap",
+            "semanticGraphRootCenter",
+            "applySemanticGraphExplode(canonicalAnchors)",
+            "rebuildSemanticGraphGizmos(canonicalAnchors)",
+            "semanticGraphRadialMetrics",
+            "semanticJointPivotPickTarget",
+            "semanticSetJointPivotWorld",
+            "semanticPreviewRateDegPerSec",
+            "VISUAL REPRESENTATION / LOD BINDINGS",
+            "ДОПОЛНИТЕЛЬНО · SEMANTIC FRAME",
+            "rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset"
+          ]
+        },
+        "test": {
+          "path": "tests/architecture_contracts/check_model_asset_editor.py",
+          "tokens": [
+            "0.10.45 semantic authoring/radial-support contract"
+          ]
+        },
+        "semantic_lifecycle": {
+          "path": "src/model_asset/ModelAssetSemantics.cpp",
+          "tokens": [
+            "inspectSemanticNodeUsage",
+            "eraseSemanticNode",
+            "renderNode.activeStates.clear();",
+            "remapNodeIndex"
           ]
         }
       }

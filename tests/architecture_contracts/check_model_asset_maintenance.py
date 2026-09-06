@@ -147,8 +147,14 @@ for token in (
 for forbidden in ('{"kind", "untracked"}', '{"kind", "variant_untracked"}'):
     if forbidden in scan_body:
         raise AssertionError(f"maintenance V2 still emits per-file baseline spam: {forbidden!r}")
-if "adoptAllSourceRevisions" not in session or "writeWorkingEditorState(&error)" not in session[session.index("bool ModelAssetEditorSession::adoptAllSourceRevisions()"):scan_start]:
-    raise AssertionError("one-shot source baseline migration is not persisted")
+if "adoptAllSourceRevisions" not in session:
+    raise AssertionError("one-shot source baseline migration disappeared")
+adopt_body = session[session.index("bool ModelAssetEditorSession::adoptAllSourceRevisions()"):scan_start]
+if "markEditorStateDirty()" not in adopt_body:
+    raise AssertionError("source baseline adoption must become an explicit unsaved WORKING change")
+for forbidden in ("writeWorkingEditorState", "saveWorkingAsset"):
+    if forbidden in adopt_body:
+        raise AssertionError(f"source baseline adoption still saves implicitly: {forbidden!r}")
 
 # VALIDATE/BUILD must refuse to publish a package with unresolved local debt.
 require(
@@ -209,7 +215,7 @@ for token in (
 
 require(
     "tools/model_asset_editor/EditorVersion.h",
-    'ModelAssetEditorVersion = "0.10.32"',
+    'ModelAssetEditorVersion = "0.10.45"',
 )
 
-print("[PASS] model asset editor v0.10.32 maintenance work set / delta-only SOURCE baseline / persistent working state")
+print("[PASS] model asset editor v0.10.45 maintenance work set / delta-only SOURCE baseline / manual SAVE / coherent GEOMETRY workspace")

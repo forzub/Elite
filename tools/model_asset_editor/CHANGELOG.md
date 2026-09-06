@@ -1,3 +1,122 @@
+## 0.10.46 — rigid exploded-joint preview / persisted joint runtime contract
+
+- Fixed SEMANTICS transform composition when 3D explode and ROTATE preview are active together. Explode is now applied first and the complete exploded child subtree is then transformed by the one joint delta (`R_joint * T_explode * M`), so separated station segments orbit the common authored joint pivot instead of appearing to spin around their own exploded centres. Graph markers, sockets and visible collision overlays follow the same order.
+- The selected joint gizmo now keeps its authored pivot/axis in canonical semantic space while the exploded child origin may move away from it. This makes the preview show the actual connection point instead of dragging the hinge itself with the editor-only explode offset.
+- Runtime rotation rate/angle limits and DETACH break force/torque are visible directly in the selected parent→child link block. Preview speed remains explicitly editor-only. Strength remains link-owned SEMANTICS data; detached-body mass/COM/inertia remain PHYSICS data.
+- Fixed the DETACH-only parameter editor reading non-existent rotation-axis inputs. Joint updates now send only fields relevant to the current ROTATE/DETACH mode.
+- `set_joint` is transactional and rejects non-finite data, inverted angle limits, negative break thresholds and zero axes before mutating working state; unchecked `glm::normalize(0)` can no longer inject NaNs.
+- Added an explicit v4 binary round-trip regression for joint pivot, axis, runtime angular rate, angle limits and break force/torque.
+- Revolute preview no longer reverses direction for a full-circle range (360 degrees or more). Such joints wrap continuously; narrower authored ranges still ping-pong between their limits. This matches the legacy station habitat rotation contract instead of making an unrestricted station periodically reverse.
+
+## 0.10.45 — semantic link authoring / radial-support graph / global hit overlay
+
+- 3D semantic explode remains root-centered but now uses the far support point of each visual world-space bounds along its radial ray. Nearby/nested objects therefore separate less than a large outer ring whose far boundary lies farther from the root.
+- Incoming parent→child joint authoring is now the primary panel directly below the semantic tree. The link pivot is explicitly described as a connection point stored in the child semantic frame, with presets for parent origin, child visual center, and exact 3D surface picking.
+- Rotation-axis fields and all runtime joint parameters are visibly labelled. Preview speed is editor-only and no longer masquerades as the runtime default angular rate.
+- Semantic-frame Position/Rotation/Pivot moved under an Advanced section because they define logical coordinate frames, not ordinary mesh placement. Visual LOD bindings are presented as representation/repair metadata instead of a primary authoring task.
+- Hit/collision volumes again obey the global viewport toolbar toggle in every loaded 3D stage. Editing/picking remains owned by PHYSICS/DAMAGE, and semantic explode/motion updates visible hit-volume transforms without stealing SEMANTICS selection.
+
+## 0.10.44 — radial semantic explode / fail-safe graph markers
+
+- Fixed the `color is not defined` runtime error in the persistent semantic graph marker update. The error occurred immediately after graph objects were allocated, leaving default 1×1×1 white node/link boxes stacked at the origin and zero-length link lines; visually this appeared as one giant white cube with all other markers/connections missing.
+- Graph node/link objects now start hidden with explicit colors and become visible only after their position/scale/color update succeeds, so a future preview exception cannot leave uninitialized unit cubes in the viewport.
+- Replaced hierarchy/fan-out explode placement with a spherical radial contract. With one semantic root, the root visual center (or the root semantic frame for a visual-less root) is the explosion center and remains fixed. Without one root, world origin `(0,0,0)` is the temporary center. Every other part moves strictly along the ray from that center to its canonical visual center; displacement increases with original radius, so farther parts move farther along the same ray.
+- Node cubes and parent→child lines continue to use the same canonical-anchor plus radial-offset snapshot as the exploded meshes.
+
+## 0.10.43 — semantic graph runtime integrity / stage-owned overlays
+
+- Fixed the latent `isDescendant` JavaScript reference left in the SEMANTICS hot path. Selection, explode, isolate and motion now use the existing semantic-tree descendant authority instead of an undefined legacy helper.
+- 3D SEMANTIC GRAPH, joint gizmos and PHYSICS/DAMAGE collision overlays now have explicit stage ownership. Collision boxes no longer intercept or visually compete with SEMANTICS picking.
+- Collision overlays follow semantic preview transforms through a lightweight matrix update when PHYSICS/DAMAGE own them; no geometry rebuild is required.
+- ROOT semantic parts no longer receive an incoming-joint pivot gizmo because a root has no parent→child link.
+
+## 0.10.42 — persistent single-authority 3D semantic graph
+
+- Reworked `3D SEMANTIC GRAPH` so the preview has one coordinate authority. Canonical semantic anchors are calculated from authored RenderNode transforms plus geometry metadata bounds; neither graph layout nor marker placement reads back already-exploded viewport matrices.
+- Split the semantic overlay into a persistent graph layer and an isolated selected-joint layer. Node/link THREE objects are allocated only when semantic structure changes; moving the explode slider updates positions/line buffers in place instead of disposing/recreating dozens of geometries and materials every animation frame.
+- The same canonical anchor/layout snapshot now drives both temporary mesh explode offsets and graph node/link positions, preventing the two visual representations from diverging after slider interaction.
+- Slider `input` performs only the cheap persistent graph/mesh update; selected-joint gizmos are rebuilt once on `change`. Graph-preview exceptions are reported explicitly instead of silently leaving an empty overlay.
+- Dynamic graph lines and markers disable frustum culling because their world-space positions are edited in place.
+
+## 0.10.41 — fast semantic tree delta / correct collapse / bounded 3D graph
+
+- Fixed collapsed semantic branches reappearing as top-level rows: hidden descendants are now marked visited and are never re-emitted by the disconnected-node fallback.
+- Semantic reparent/reorder/joint/frame edits now publish a dedicated `semantic_tree_patch` instead of full asset metadata. This removes the accidental full-geometry material-statistics rescan from a parent-link edit and makes tree operations proportional to semantic node count, not triangle count.
+- 3D SEMANTIC GRAPH anchors now use already-available LOD geometry min/max metadata transformed by RenderNode placement; preview no longer calls `computeBoundingBox()` over viewport buffers.
+- Continuous ROTATE preview throttles semantic gizmo reconstruction while still updating mesh transforms every frame, avoiding geometry/material allocation churn during animation. Graph slider updates are coalesced to animation frames.
+- Increased semantic tree indentation to make parent/child depth visually unambiguous.
+
+## 0.10.40 — semantic/render lifecycle integrity / usable semantic tree / stable preview
+
+- Added one shared semantic lifecycle authority (`ModelAssetSemantics`) for usage inspection, orphan detection and safe semantic deletion. Deleting a semantic part never deletes RenderNode/Geometry meshes: affected visuals become UNBOUND, active semantic-state scopes are cleared and all surviving semantic indices are remapped across RenderLods and gameplay records. Parent nodes with children cannot be deleted; owned gameplay payload requires explicit confirmation.
+- SOURCE no longer creates bootstrap collision boxes. Initial LOD0 import creates only the visual/semantic identity scaffold; collision and mass authoring belong to PHYSICS. Legacy `hit.<node>` bootstrap boxes remain recognizable only for cleanup/orphan migration.
+- SEMANTICS CHECK now rejects dead orphan logical parts in addition to invalid root count, links and bindings. A semantic-only node remains valid when it owns children or real gameplay payload.
+- Rebuilt the semantic tree as a usable authoring tree: real depth indentation/connectors, collapse/expand, desktop Ctrl/Shift selection, and drag/drop zones for INSERT BEFORE / REPARENT INSIDE / INSERT AFTER. Sibling/root display order is editor-only stable-ID metadata and never reorders the runtime `ModelAsset::nodes` vector.
+- Selection uses partial UI refresh instead of rebuilding the entire SEMANTICS workspace, preserving list position and reducing click latency.
+- Restored and stabilized relation preview controls: ROTATE shows slider/MIN/0/MAX/PLAY; DETACH visually offsets the selected subtree. Preview state is rebuilt from canonical current RenderNode transforms instead of stale captured matrices.
+- Fixed 3D SEMANTIC GRAPH explode for folder-authoritative meshes whose placement is baked into OBJ vertices: semantic anchors now come from real world-space mesh bounds. Explode is repeatable, preview-only and does not mutate asset transforms.
+- Clarified SEMANTICS terminology and actions: the tree lists logical semantic parts, not meshes; visual binding changes ownership only and does not move geometry; semantic deletion explicitly reports what is unbound/removed.
+- Added C++ lifecycle regression scenarios covering cross-LOD unbind, state cleanup, index remapping, orphan classification, payload-confirmation and parent-with-children protection.
+
+## 0.10.39 — render-loop recovery hotfix
+
+- Restored `updateSemanticMotionAnimation()`, which is called by the animation loop before `renderer.render()`. Its accidental removal in 0.10.38 caused a per-frame JavaScript `ReferenceError` and a black viewport despite valid loaded asset metadata.
+- Added an architecture guard so the render loop cannot reference a missing semantic animation function again.
+
+## 0.10.38 — semantic binding integrity / standard tree selection / real root explode
+
+- GEOMETRY visual duplication/circular copy no longer clones `semanticNodeIndex` or semantic active-state scope. New visual copies are intentionally UNBOUND until SEMANTICS assigns identity, preventing two distinct RenderNodes from silently becoming one semantic part.
+- SEMANTICS tree uses standard selection semantics: click selects one, Ctrl toggles individual rows, Shift selects a contiguous visible-tree range, Ctrl+Shift adds a range. The same selection-mode resolver is used by semantic 3D markers/meshes.
+- Incoming link type is shown before the child name in the tree. Active-LOD visual ownership is labelled `VIS`; 0 VIS is explicit and the selected semantic node can repair a wrong binding by clicking the intended visual directly in the 3D viewport.
+- The semantic graph now creates clickable node markers even for roots/0-VIS semantic nodes. Explode lays multiple roots out deterministically around the asset rather than relying on their authored direction, so an all-root imported station visibly separates before hierarchy authoring begins.
+- Binding patches refresh motion/explode preview immediately, and semantic selection anchors stay coherent when relation/socket operations change the primary node.
+
+## 0.10.37 — tree-first SEMANTICS / link authoring / 3D semantic graph
+
+- SEMANTICS now uses one wide tree-first workspace. Ctrl+click multi-selects semantic nodes and drag/drop reparents the selected subtree roots transactionally while preserving their world pose.
+- Connection semantics belong to the incoming parent→child link and are edited directly in each child row as FIXED / ROTATE / DETACH / ROT+DETACH. Motion/detach preview remains subtree-wide.
+- Added preview-only 3D semantic graph lines, clickable link cubes and an explode slider; the flat tree and 3D graph are two views of the same hierarchy.
+- Render bindings are summarized per LOD for the selected semantic node; the full active-LOD binding table is now an explicit edit disclosure and retains exact-id APPLY TO ALL LODS.
+- SEMANTICS CHECK now requires exactly one asset semantic root. A one-shot action can create a zero-transform asset root and attach all current root branches.
+- LOD selectors in LOD-aware wizard workspaces are sticky; SEMANTICS widens the right authoring pane instead of squeezing the tree into the generic inspector width.
+
+## 0.10.36 — circular placement semantics / real scroll transaction
+
+- Replaced the split radial-array / radial-move UX with one circular-placement dialog acting on the selected RenderNode. `count = 1` moves the existing node by the requested angle and creates nothing; `count >= 2` keeps the selected node at 0° and creates exactly `count - 1` shared-geometry instances.
+- Open arcs include both endpoints: 120° with total count 2 yields 0°/120°; total count 4 yields 0°/40°/80°/120°. Exact ±360° is treated as a closed circle and uses `angle/count`, avoiding a duplicate 0°/360° node.
+- Removed the separate slot-based radial-move control and its confusing hidden field. The dialog now shows a live textual placement summary and a dynamic APPLY action: MOVE for one object, COPY for two or more.
+- Fixed scroll preservation as a true outermost transaction. Nested rerenders no longer recapture a newly rebuilt list at scrollTop=0 and overwrite the original position; restore uses an immutable per-transaction snapshot.
+- Added a generic `.hidden` rule so dynamically hidden controls actually disappear rather than depending on element-specific selectors.
+
+## 0.10.35 — GEOMETRY workspace consolidation / readable identities
+
+- Rebuilt GEOMETRY around the actual workflow: sticky LOD + whole/recent scope, one comparison/consolidation table, additional-mesh replacements, one selected-element editor, CHECK, then LOD statistics.
+- Removed the visible duplicate LOD browser, separate instance-authoring block, GEOMETRY-time Render LOD files panel and separate selected-element/delete panels.
+- The comparison table is now the primary RenderNode selector. VIEW checkboxes isolate one element or a group in the viewport; REF is a per-row radio reference for duplicate comparison. Viewport clicks and table clicks share the same selected RenderNode authority.
+- RenderNode id, geometry id and source OBJ path remain readable instead of being truncated; replacement tables use the same two-line identity rule.
+- Comparison-table priority hotfix: reference/result are compact icon columns, the identity/file column gets the flexible width, and G#/usage are narrow trailing badges; per-row triangle counts stay out of the selector and remain in the statistics block below CHECK.
+- CLEAN UNUSED moved into the comparison/consolidation group. Move XYZ, radial move, duplicate, radial array, break-instance, exact placement and delete are grouped under EDITING.
+- GEOMETRY statistics live only below the stage CHECK button.
+- Preserved the 0.10.34 scroll-position invariant across direct table rerenders.
+
+## 0.10.34 — stable list scroll / placement-safe instances / move tools
+
+- Added a global UI invariant for every scrollable list/table/tree: selecting an item or rerendering its inspector must preserve the current scroll position instead of jumping back to the beginning.
+- Added context-aware scroll keys scoped by asset / stage / LOD so the same list keeps its position during local selection updates without leaking an unrelated position into another document.
+- Wrapped wizard-panel DOM rebuilds in one scroll-preservation transaction and covered GEOMETRY main/additional lists, compare candidates, variant replacement tables, SURFACES geometry, SEMANTICS tree/bindings, SOURCE maintenance deltas, LOD preflight, unused geometry, the right-side panel and the horizontal wizard bar.
+- Fixed a real instance-placement bug: rigid transforms were encoded with `glm::eulerAngles(quat)` but decoded as explicit XYZ (`eulerAngleXYZ` / `THREE.Euler(..., "XYZ")`). Multi-axis fits/array rotations could therefore serialize to a different rotation and move one instance onto another. Encoding now uses `extractEulerAngleXYZ` plus a strict matrix/translation round-trip guard.
+- Added explicit existing-instance movement tools in GEOMETRY: relative `MOVE XYZ` and `MOVE IN RADIAL ARRAY` by slot count. Radial movement reuses the same axis/total-angle/center contract as array creation and creates no copy.
+- Radial dialogs now default to parent origin; when `Selected element pivot` is chosen the UI converts the geometry-local pivot into parent coordinates instead of misusing the raw local pivot as an orbit center.
+- Added architecture guards and capability metadata so future list UI and instance-placement code retain these contracts.
+
+## 0.10.33 — global SAVE / RESTORE / stage CHECK
+
+- Replaced editor persistence UX with two global top-bar actions available in every stage: `SAVE` writes the one coherent WORKING ASSET and `RESTORE` discards unsaved edits by reloading the last saved WORKING ASSET. Both buttons are enabled only while the current state is dirty.
+- Removed ongoing autosave, partial manifest/LOD save UX and the rollback checkpoint/snapshot subsystem. SOURCE reimport, maintenance import, PREPARE, LOD generation and metadata edits never save implicitly.
+- Replaced stage completion/checkpoint controls with one `CHECK` action per stage. CHECK runs stage-owned validation, marks PASS/NEEDS FIX and unlocks the next stage after PASS; it never performs persistence I/O. VALIDATE uses the same CHECK and publishes the detailed validation report.
+- BUILD remains the only production-write boundary and requires the WORKING ASSET to be saved first, so production is built from an explicit saved revision.
+- Added architecture guards that reject reintroduction of autosave/checkpoint commands and protect the single working-state SAVE/RESTORE contract.
+
 ## 0.10.32 — persistent WORKING ASSET / rollback-only checkpoints
 
 - Added a persistent mutable editor package at `build/tools/model_asset_editor/workspaces/<asset>/working/`. `OPEN` resumes this WORKING ASSET first; production is adopted only when no working package exists, and source import is the final fallback. Checkpoint history never selects the resume head.
@@ -382,6 +501,11 @@
 - Added `EDITOR_CAPABILITIES.json` plus architecture checks that require every protected editor capability to have a data-model/backend/UI/test contract. This prevents working tools from silently disappearing during later UI/data-model rewrites.
 
 # Elite Model Asset Editor changelog
+
+## 0.10.39 — render-loop recovery
+
+- Restores `updateSemanticMotionAnimation()`, which the 0.10.38 patch accidentally removed while `loop()` still called it before `renderer.render()`. The resulting per-frame ReferenceError prevented every viewport frame from being drawn even though geometry was loaded.
+- Architecture guard now requires the animation callback whenever the render loop calls it.
 
 ## 0.8.2 — reliable settings save / native window close
 

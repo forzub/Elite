@@ -714,3 +714,67 @@ GEOMETRY workspace restored after the LOD-generator work: automatic stage entry 
 - `[x]` Runtime root редактора перенесён на его стабильный artifact tree `build/tools/model_asset_editor`; editor больше не зависит от shared/game `copy_assets`.
 - `[x]` При сборке новых packs удаляется legacy `elite_ui.pak`, чтобы старый packed HTML больше не мог иметь приоритет над актуальным editor UI.
 - `[x]` Manual tab entry и automatic checkpoint progression сведены в один stage-entry transaction. GEOMETRY больше не делает unconditional full-scene rebuild при каждом входе; LOD preview очищается без промежуточного rebuild, а scene перестраивается только при реальной смене viewport representation contract.
+
+
+### Model Asset Editor 0.10.40 — semantic/render lifecycle integrity / usable tree / stable preview
+
+- `[x]` Semantic lifecycle вынесен в shared `ModelAssetSemantics`: usage/orphan classification, safe delete, cross-LOD unbind, active-state cleanup и remap всех surviving semantic indices имеют одну authority.
+- `[x]` SOURCE больше не создаёт collision boxes; PHYSICS снова единственный authoring stage для collision/mass. Legacy bootstrap `hit.<node>` распознаётся только для migration/cleanup.
+- `[x]` SEMANTICS CHECK блокирует dead ORPHAN logical parts; semantic-only node разрешён, если у него есть children или реальный gameplay payload.
+- `[x]` Semantic delete не удаляет mesh/Geometry/RenderNode: visual становится UNBOUND. Parent с детьми удалить нельзя; реальный gameplay payload удаляется только после explicit confirmation.
+- `[x]` Tree получил depth indentation/connectors, collapse/expand и BEFORE/INSIDE/AFTER drag/drop. Порядок siblings хранится editor-only по stable IDs и не переставляет runtime `ModelAsset::nodes`.
+- `[x]` Обычный selection использует partial refresh и больше не rebuild'ит весь SEMANTICS workspace.
+- `[x]` ROTATE/DETACH preview возвращён и каждый раз строится от canonical current RenderNode transforms; 3D semantic explode использует world-space bounds реальных mesh и работает с baked OBJ placement.
+- `[x]` Добавлены C++ lifecycle scenario tests плюс architecture guards на stage ownership, delete lifecycle, tree ordering, preview restoration и hot-path selection.
+
+### Model Asset Editor 0.10.38 — semantic binding integrity / selection / explode repair
+
+- `[x]` GEOMETRY duplicate and circular-copy operations no longer clone semantic identity; every newly created visual RenderNode starts UNBOUND and is mapped explicitly in SEMANTICS.
+- `[x]` SEMANTICS exposes active-LOD ownership as VIS counts and supports one-click 3D rebinding to repair legacy `2 VIS / 0 VIS` mistakes without deleting geometry.
+- `[x]` Tree selection follows click/Ctrl/Shift/Ctrl+Shift desktop conventions; incoming link selector is placed before the child name.
+- `[x]` 3D semantic graph creates clickable markers even for roots and 0-VIS semantic nodes; multiple roots explode to deterministic separated positions before parent links exist.
+
+### Model Asset Editor 0.10.37 — SEMANTICS tree/link workspace
+
+- `[x]` Tree is the primary semantic assembly UI; multi-select drag/drop batch reparent preserves world pose.
+- `[x]` FIXED/ROTATE/DETACH/ROT+DETACH is authored on the incoming parent→child link directly in the child row.
+- `[x]` 3D semantic graph preview mirrors the tree with connection lines, clickable markers and exploded separation.
+- `[x]` Render bindings are summarized per LOD and the full active-LOD binding table is only an explicit edit disclosure.
+- `[x]` SEMANTICS CHECK requires exactly one semantic root; a helper can create an identity asset root and attach existing root branches.
+
+
+
+### Model Asset Editor 0.10.42 — persistent single-authority 3D semantic graph
+
+- `3D SEMANTIC GRAPH` no longer has two competing transform authorities. Canonical anchors are calculated from authored RenderNode transforms + geometry metadata bounds, then the same offsets drive temporary mesh explode and graph overlay positions.
+- Graph nodes/links are persistent THREE objects; slider updates positions and dynamic line buffers in place. The graph is not cleared/recreated during slider input.
+- Graph overlay and selected joint/motion gizmos are separate groups so refreshing one cannot erase the other.
+- Slider input uses the cheap graph path; joint gizmos rebuild on slider release/change.
+
+### Model Asset Editor 0.10.41 — fast semantic tree delta / correct collapse / bounded 3D graph
+
+- SEMANTICS tree collapse now suppresses the complete descendant subtree instead of letting hidden descendants fall through the disconnected-node fallback as apparent roots.
+- Semantic reparent/reorder/joint/frame changes use `semantic_tree_patch`; they no longer invoke full metadata serialization/material scans over loaded geometry.
+- 3D semantic graph anchors are derived from geometry metadata bounds and RenderNode world placement; continuous motion throttles gizmo rebuilds and graph-slider updates are requestAnimationFrame-coalesced.
+
+### Model Asset Editor 0.10.43 — semantic graph runtime integrity / stage-owned overlays
+
+- Fixed undefined legacy `isDescendant` calls that broke SEMANTICS after selecting a node and then moving the 3D graph slider.
+- SEMANTICS graph/joint overlays and PHYSICS/DAMAGE collision overlays now have explicit stage ownership; collision hit volumes no longer intercept semantic mesh clicks.
+- Collision overlay transforms follow semantic preview matrices only while PHYSICS/DAMAGE own the overlay.
+- ROOT nodes no longer show an incoming-joint pivot cube.
+
+### Model Asset Editor 0.10.44 — radial semantic explode / fail-safe graph markers
+
+- `[x]` Исправлен runtime `SEMANTIC GRAPH: color is not defined`: node/link marker update объявляет локальный `color`, а не пишет в несуществующую глобальную переменную ES module.
+- `[x]` Node/link graph objects создаются скрытыми и с явным цветом; ошибка обновления больше не оставляет десятки default 1×1×1 cubes в origin, выглядящих как один огромный белый куб.
+- `[x]` Explode layout стал сферически-радиальным: единственный semantic root задаёт центр (visual center либо semantic frame), при нескольких roots временный центр — world origin. Каждая part движется строго по лучу root→visual-center; чем больше исходный радиус, тем больше explode displacement.
+- `[x]` Mesh explode, node markers и parent→child links используют один canonical-anchor/offset snapshot.
+
+### Model Asset Editor 0.10.45 — semantic link authoring / radial-support graph / global hit overlay
+
+- `[x]` Semantic explode magnitude uses the far support point of transformed visual bounds along the ROOT→part radial ray, not only visual-center distance; nested/nearby parts therefore separate more naturally.
+- `[x]` Incoming parent→child link panel is immediately below the semantic tree. Joint pivot is explicitly link-owned and stored child-local, with parent-origin, child-visual-center and 3D-pick authoring presets.
+- `[x]` Rotation axis and runtime joint fields are visibly labelled. Preview speed is editor-only and independent of runtime `defaultRateDegPerSec`.
+- `[x]` Base semantic Position/Rotation/Pivot moved under Advanced semantic-frame controls; visual LOD bindings are presented as representation/repair metadata.
+- `[x]` Global Hit Volumes toolbar visibility works in SEMANTICS and other loaded 3D stages; collision editing/picking remains PHYSICS/DAMAGE-only, and visible volumes follow semantic explode/motion.

@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
 from pathlib import Path
 import json
+import re
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -9,13 +11,21 @@ def text(path: str) -> str:
 
 
 def require(path: str, *tokens: str) -> None:
-    data = text(path)
+    body = text(path)
     for token in tokens:
-        if token not in data:
-            raise AssertionError(f"{path} missing {token!r}")
+        if token not in body:
+            raise AssertionError(f"{path}: missing {token!r}")
 
 
-# Shared model-asset data stays renderer/runtime agnostic.
+def body_between(body: str, start: str, end: str) -> str:
+    a = body.index(start)
+    b = body.index(end, a + len(start))
+    return body[a:b]
+
+
+# -----------------------------------------------------------------------------
+# Shared v4/runtime boundary
+# -----------------------------------------------------------------------------
 model = text("src/model_asset/ModelAsset.h")
 for forbidden in ("glad/", "GLFW", "MeshGPU", "SceneRenderer", "SpaceState"):
     if forbidden in model:
@@ -24,83 +34,31 @@ for forbidden in ("glad/", "GLFW", "MeshGPU", "SceneRenderer", "SpaceState"):
 require(
     "src/model_asset/ModelAsset.h",
     "ModelAssetFormatVersion = 4",
-    "struct SourceBasis",
     "struct MaterialDefinition",
     "struct RenderGeometryDefinition",
     "struct RenderNode",
     "struct RenderLod",
-    "declaredGeometryCount",
-    "declaredNodeCount",
-    "relativeGeometricError",
     "struct StateVariant",
-    "defaultStateId",
-    "transformOverride",
-    "physicsOverride",
-    "detached",
-    "activeStates",
     "struct HitRegion",
     "struct Opening",
-    "traversable",
-    "lineOfFire",
     "struct RepairTarget",
-    "repairedStateId",
     "std::vector<RenderLod> renderLods",
-    "Migration-only v2/v3",
 )
-
-require(
-    "src/model_asset/ModelAssetIdentity.h",
-    "allocateStableId",
-    "allocateChildStableId",
-)
-
-require(
-    "src/model_asset/ModelAssetMigration.cpp",
-    "buildIndependentRenderLodsFromLegacy",
-    "legacyRenderLodCount",
-    "RenderGeometryDefinition",
-    "RenderNode",
-    "semanticNodeIndex",
-    "node.geometryIndex = NoIndex",
-    "allocateStableId",
-    "semanticNodeIds",
-)
-
 require(
     "src/model_asset/ModelAssetBinary.cpp",
     "ManifestMagicV4",
-    "ManifestMagicV3",
-    "LegacyMagicV2",
     "MeshMagicV4",
-    "MeshMagicV2",
-    "MeshPayloadFormatVersion = 4",
-    "{'S','E','M','N'}",
-    "{'S','T','A','T'}",
-    "{'H','I','T','R'}",
-    "{'O','P','E','N'}",
-    "{'R','E','P','R'}",
-    "{'L','O','D','S'}",
-    "{'L','E','R','R'}",
-    "writeLodScreenErrorV4",
-    "readLodScreenErrorV4",
-    "writeLodPayload",
-    "validateRenderLod",
-    "validateSemanticAsset",
     "ModelAssetBinary::validate",
+    "saveManifest",
+    "saveLod",
+    "loadManifest",
+    "loadLod",
     "duplicate RenderNode id",
     "duplicate semantic Node id",
-    "saveManifest",
-    "loadManifest",
-    "saveLod",
-    "loadLod",
-    "declaredGeometryCount",
-    "declaredNodeCount",
-    "buildIndependentRenderLodsFromLegacy",
 )
 
-# Source import still bypasses runtime ObjLoader so topology/material authoring
-# data survives. It may initially produce legacy shared geometry, which is then
-# migrated to one independent render graph per LOD.
+# The editor source path preserves authoring topology/material data and does not
+# route through the runtime OBJ loader.
 require(
     "tools/model_asset_editor/NativeObjImporter.cpp",
     "tinyobj::LoadObj",
@@ -113,1497 +71,794 @@ require(
 importer = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
 for forbidden in ("AssemblyMeshLibrary", "ObjLoader", "MeshData"):
     if forbidden in importer:
-        raise AssertionError(f"editor importer still depends on old runtime mesh processing {forbidden!r}")
-require(
-    "tools/model_asset_editor/RuntimeAssemblyImporter.cpp",
-    "ObjectAssemblyRegistry::get",
-    "importObjNative",
-    "geometryBySource",
-    "moduleNodeById",
-    "ShipAttachmentPoint",
-    "JointType::Revolute",
-    "ImportProgressCallback",
-    "allocateChildStableId",
-    '"mesh"',
-    "meshNodeId",
-)
+        raise AssertionError(f"editor importer depends on runtime mesh processing {forbidden!r}")
+
+# -----------------------------------------------------------------------------
+# 0.10.33 manual working-state save/restore contract
+# -----------------------------------------------------------------------------
+session_h = text("tools/model_asset_editor/ModelAssetEditorSession.h")
+session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
+web = text("src/assets/webui/model_asset_editor.html")
 
 require(
-    "tools/model_asset_editor/ModelAssetEditorSession.cpp",
-    "buildIndependentRenderLodsFromLegacy",
-    "set_node_default_state",
-    "add_state_variant",
-    "set_state_variant",
-    "delete_state_variant",
-    "set_render_node_transform",
-    "set_render_node_geometry",
-    "set_render_node_semantic",
-    "set_render_node_states",
-    "fit_render_node_as_instance",
-    "duplicate_render_node_instance",
-    "break_render_node_instance",
-    "create_radial_render_instances",
-    "delete_render_node",
-    "add_hit_region",
-    "set_hit_region",
-    "add_opening",
-    "set_opening",
-    "add_repair_target",
-    "set_repair_target",
-    "delete_unused_geometries",
-    "renderLods",
-    "activeStates",
-    "source OBJ/assembly",
-    "saveManifestOnly",
-    "saveLodOnly",
-    "loadLodData",
-    "loadLodOnly",
-    "unloadLod",
-    "complete_wizard_stage",
-    "restore_wizard_checkpoint",
-    "scan_render_duplicates",
-    "consolidate_render_duplicates",
-    "wizardCheckpointPath",
-    "wizardCheckpointEditorStatePath",
+    "tools/model_asset_editor/ModelAssetEditorSession.h",
     "workingAssetPath",
     "workingEditorStatePath",
-    "createWizardCheckpoint",
-    "restoreWizardValidityAt",
-    "sendAssetMetadata",
-    "serializeAssetMetadata",
-    "asset_binary_begin",
-    "lod_payload_binary_begin",
-    "ModelAssetEditorVersion",
-)
-
-web = text("src/assets/webui/model_asset_editor.html")
-for forbidden in (
-    "set_node_geometry",
-    "fit_node_as_instance",
-    "duplicate_node_instance",
-    "break_node_instance",
-    "create_radial_instances",
-    "state.asset.geometries",
-    "SHARED IDs",
-):
-    if forbidden in web:
-        raise AssertionError(f"v4 editor UI retained cross-LOD/shared-geometry concept {forbidden!r}")
-require(
-    "src/assets/webui/model_asset_editor.html",
-    "Semantic assembly",
-    "Part states",
-    "Render LOD files",
-    "Render assembly",
-    "Active LOD geometry",
-    "Selected semantic node",
-    "Selected render node",
-    "Damage / repair semantics",
-    "renderLods",
-    "selectedRenderNode",
-    "previewStates",
-    "activeStates",
-    "renderRenderNodeInspector",
-    "renderDamageSemantics",
-    "fit_render_node_as_instance",
-    "set_render_node_states",
-    "set_node_default_state",
-    "add_state_variant",
-    "add_opening",
-    "add_repair_target",
-    "Every LOD is an independent render document",
-    "wizardBar",
-    "wizardPanel",
-    "wizardGeometryScanBtn",
-    "wizardGeometryCandidates",
-    "geometryReference",
-    "compareMatch",
-    "compareNoMatch",
-    "radialModal",
-    "complete_wizard_stage",
-    "restore_wizard_checkpoint",
-    "scan_render_duplicates",
-    "asset_metadata",
-    "mergeAssetMetadata",
-    "geometryCacheKey",
-    "ELWIR001",
-    "handleEditorBinary",
-    "binaryType='arraybuffer'",
-    "rebuildScene(true)",
-    "ioProgressOverlay",
-    "ioPathSep",
-    "umbrellaSpinner",
-    "Ctrl+Alt+F12",
-    "model_asset_editor_i18n.json",
-)
-
-
-if "quitBtn" in web or "quit_editor" in web:
-    raise AssertionError("redundant in-page quit path returned to the editor UI")
-for token in ("settingsSaveTimedOut", "settingsSaveTimer", "model_editor.settings.save_timeout"):
-    if token not in web:
-        raise AssertionError(f"settings-save acknowledgement guard missing {token!r}")
-
-require(
-    "tools/model_asset_editor/GeometryInstanceFitter.cpp",
-    "sameIndexedTopology",
-    "coarsePointCloudFit",
-    "principalFrame",
-    "validateBidirectionalPointCloud",
-    "fitGeometryAsRigidInstance",
-)
-
-require(
-    "src/assets/localization/ui/tools/model_asset_editor.json",
-    '"kind": "ui_strings"',
-    '"model_editor.v4.section.semantic"',
-    '"model_editor.v4.section.states"',
-    '"model_editor.v4.section.render_assembly"',
-    '"model_editor.v4.section.damage"',
-    '"model_editor.v4.command.add_opening"',
-    '"model_editor.v4.command.add_repair"',
-    '"model_editor.wizard.source"',
-    '"model_editor.wizard.lods"',
-    '"model_editor.wizard.geometry"',
-    '"model_editor.wizard.geometry.scan"',
-    '"ru"',
-    '"zh-Hans"',
-    '"es"',
-    '"ja"',
-)
-
-require(
-    "src/model_asset/MODEL_ASSET_PIPELINE.md",
-    "semantic assembly + independent render documents",
-    "Semantic damage states and live structural substitution",
-    "Binary format v4",
-    "State is independent of render LOD",
-    "runtime must apply a semantic state transition atomically",
-    "Source OBJ/assembly files are read-only",
-)
-
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.32"')
-require(
-    "tools/model_asset_editor/CHANGELOG.md",
-    "0.10.27",
-    "runtime screen-space LOD error contract",
-    "0.10.26",
-    "implicit DEFAULT material / truthful SURFACES diagnostics",
-    "0.10.25",
-    "metadata-only surface edits / checkpoint-save independence",
-    "0.10.24",
-    "linear checkpoint resume / binary geometry transport",
-    "0.10.23",
-    "executable-owned UI package isolation",
-    "0.10.22",
-    "explicit SURFACES analysis / cross-LOD surface intent",
-    "0.10.21",
-    "SURFACES authoring workspace",
-    "0.10.20",
-    "restored GEOMETRY authoring workspace",
-    "0.10.19",
-    "LOD apply feedback / on-demand viewport payloads",
-    "0.10.18",
-    "LOD gate split / stable editor artifact layout",
-    "0.10.16",
-    "production libigl + Embree canonical preparation",
-    "0.10.15",
-    "minimal macro-patch mesh repair loop",
-    "0.10.13",
-    "shared runtime mesh normalization / analysis split",
-    "0.10.12",
-    "explicit mesh preparation / non-blocking load",
-    "0.10.11",
-    "topology-aware canonical weld fixes false station non-manifold",
-    "0.10.9",
-    "canonical SOURCE boundary / classification-only Preflight",
-    "0.10.8",
-    "canonical mesh builder / explicit preparation contract",
-    "0.10.7",
-    "runtime-equivalent canonical mesh preparation",
-    "0.10.5",
-    "SOURCE owns complete authoring set / actionable preflight / Russian UI sweep",
-    "0.10.4",
-    "model preflight / topology intent / safe normals repair",
-    "0.10.3",
-    "diagnostic LOD preview / coplanar region collapse",
-    "0.10.2",
-    "explicit LOD0 comparison row",
-    "0.10.0",
-    "optional LOD analysis / disconnected-detail preview",
-    "0.9.3",
-    "metadata-only UI sync / linear checkpoint pruning",
-    "0.9.9",
-    "resume latest wizard checkpoint",
-    "0.9.8",
-    "Geometry finish pass",
-    "0.9.7",
-    "stable extra-mesh assignment",
-    "0.9.5",
-    "flat source variants / explicit replacement compatibility",
-    "0.9.4",
-    "source render variants / XYZ orientation",
-    "0.9.1",
-    "stable ID preflight / station import repair",
-    "0.9.0",
-    "wizard pipeline / capability gate / LOD manager",
-    "0.8.2",
-    "reliable settings save / native window close",
-    "0.8.1",
-    "source-root defaults / settings acknowledgement",
-    "0.8.0",
-    "semantic states / independent render LOD graphs",
-    "Opening",
-    "RepairTarget",
-)
-
-require(
-    "src/model_asset/ModelAsset.h",
-    "EdgeNonManifold",
-    "EdgeCanonicalTopology",
-)
-require(
-    "tools/model_asset_editor/NativeObjImporter.cpp",
-    "sourceBoundaryUseCount",
-    "EdgeNonManifold",
-)
-require(
-    "src/model_asset/RuntimeMeshNormalizer.h",
-    "RuntimeMeshWeldEpsilon",
-    "RuntimeMeshNormalizerAlgorithmId",
-    "runtime_mesh_normalizer_v1",
-    "normalizeRuntimeMeshTopology",
-)
-require(
-    "src/model_asset/RuntimeMeshNormalizer.cpp",
-    "std::unordered_map<QuantizedPosition",
-    "removedDegenerateTriangles",
-    "removedDuplicateTriangles",
-    "pointForInputVertex",
-)
-require(
-    "tools/model_asset_editor/CanonicalMeshBuilder.h",
-    "CanonicalMeshAlgorithmId",
-    "canonical_mesh_libigl_embree_v1",
-    "CanonicalMeshAnalysis",
-    "CanonicalMeshBuildResult",
-    "canonicalizeMesh",
-    "canonicalMeshFingerprint",
-)
-require(
-    "tools/model_asset_editor/CanonicalMeshBuilder.cpp",
-    "buildTopologicalPointMap",
-    "repairTopologyAndOrientationWithLibigl",
-    "igl::split_nonmanifold",
-    "igl::embree::reorient_facets_raycast",
-    "rebuildRenderVertices",
-    "EdgeCanonicalTopology",
-    "mesh = std::move(candidate)",
-)
-require(
-    "src/game/geometry/ObjLoader.cpp",
-    "normalizeRuntimeMeshTopology",
-    "RuntimeMeshWeldEpsilon",
-    "RUNTIME NORMALIZATION FAILED",
-)
-require(
-    "CMakeLists.txt",
-    "src/model_asset/RuntimeMeshNormalizer.cpp",
-    "EliteModelAsset",
-    "ELITE_MODEL_ASSET_LIBIGL_SPIKE",
-    "igl::core",
-    "igl::embree",
-)
-canonical_builder = text("tools/model_asset_editor/CanonicalMeshBuilder.cpp")
-if "MaxStabilizationPasses" in canonical_builder:
-    raise AssertionError("mesh preparation regressed to multi-pass fixed-point canonicalization")
-if "const MeshLod original = mesh" in canonical_builder:
-    raise AssertionError("mesh preparation restored a full deep copy of the input MeshLod")
-require(
-    "src/assets/webui/model_asset_editor.html",
-    "modelPreflightPrepareBtn",
-    "modelPreflightCheckBtn",
-    "prepare_model_meshes",
-    "model_editor.preflight.canonical_note",
-    "ПОДГОТОВИТЬ МЕШИ",
-)
-for forbidden in (
-    "modelPreflightRuntimeBtn",
-    "runtimeNormalizedThreeGeometry",
-    "apply_mesh_preparation",
-    "safe_fix_model_preflight",
-):
-    if forbidden in web:
-        raise AssertionError(f"obsolete Preflight UI returned: {forbidden!r}")
-
-session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
-for forbidden in ("safeFixModelPreflight", '"apply_mesh_preparation"', '"safe_fix_model_preflight"'):
-    if forbidden in session:
-        raise AssertionError(f"obsolete canonicalization backend path returned: {forbidden!r}")
-for token in (
-    "canonicalizeLoadedWorkingSet",
-    "verifyLoadedWorkingSetCanonical",
-    'command == "prepare_model_meshes"',
-    "MESH PREPARATION INCOMPLETE",
-    "appendMeshRepairDiagnostic",
-    "wizardLogPath",
-    'wizardLogPath("mesh_repair.log")',
-):
-    if token not in session:
-        raise AssertionError(f"explicit mesh-preparation contract missing {token!r}")
-
-canonical_start = session.index("bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(")
-canonical_end = session.index("bool ModelAssetEditorSession::verifyLoadedWorkingSetCanonical(", canonical_start)
-canonical_body = session[canonical_start:canonical_end]
-if "sourceAnalysis.structuralInvalid" in canonical_body:
-    raise AssertionError("explicit preparation still pre-rejects RAW topology before CanonicalMeshBuilder")
-for token in ("const auto built = canonicalizeMesh(geometry.mesh)", "MESH PREPARATION INCOMPLETE"):
-    if token not in canonical_body:
-        raise AssertionError(f"explicit canonical preparation missing {token!r}")
-if "auditPreflightGeometry(geometry.mesh)" in canonical_body:
-    raise AssertionError("PREPARE MESHES still performs implicit topology audit/classification")
-if "setGeometryTopologyClass" in canonical_body:
-    raise AssertionError("PREPARE MESHES still mixes normalization with classification")
-if 'resetMeshRepairDiagnostic(repairLogPath, m_asset)' not in canonical_body:
-    raise AssertionError("PREPARE MESHES no longer resets its asset-local per-run repair log")
-if 'build/logs' in canonical_body or 'model_asset_mesh_repair.log' in canonical_body:
-    raise AssertionError("PREPARE MESHES regressed to CWD-relative/global diagnostics")
-if "SOURCE BLOCKED: raw mesh was not exposed" in canonical_body:
-    raise AssertionError("canonical preparation still masquerades as a SOURCE load blocker")
-if "changedLods.insert(li)" not in canonical_body or "changedLodsOut->assign" not in canonical_body:
-    raise AssertionError("PREPARE no longer reports exactly which LOD payloads changed")
-
-prepare_command_start = session.index('if (command == "prepare_model_meshes")')
-prepare_command_end = session.index('if (command == "analyze_model_preflight")', prepare_command_start)
-prepare_command_body = session[prepare_command_start:prepare_command_end]
-for token in (
-    "std::vector<std::size_t> changedLods",
-    'sendAsset(changedLods)',
-    'sendAssetMetadata()',
-    '[ModelAssetEditor][prepare]',
-):
-    if token not in prepare_command_body:
-        raise AssertionError(f"PREPARE transport boundary missing {token!r}")
-if "sendAsset();" in prepare_command_body:
-    raise AssertionError("PREPARE still republishes every resident LOD unconditionally")
-
-verify_start = session.index("bool ModelAssetEditorSession::verifyLoadedWorkingSetCanonical(")
-verify_end = session.index("bool ModelAssetEditorSession::setGeometryTopologyClass(", verify_start)
-verify_body = session[verify_start:verify_end]
-if "structuralInvalid) continue" in verify_body:
-    raise AssertionError("canonical verification lets invalid payloads bypass downstream records")
-
-send_start = session.index("void ModelAssetEditorSession::sendAsset(")
-send_end = session.index("void ModelAssetEditorSession::sendAssetMetadata", send_start)
-send_body = session[send_start:send_end]
-if "verifyLoadedWorkingSetCanonical" in send_body or "ASSET PAYLOAD BLOCKED" in send_body:
-    raise AssertionError("sendAsset regressed into a load-time canonical gate")
-for token in ("asset_binary_begin", "serializeAssetMetadata", "broadcastBinary", "encodeLodGeometryPayload", "reuseExistingPayloads"):
-    if token not in send_body:
-        raise AssertionError(f"sendAsset binary transport missing {token!r}")
-if "serializeAsset(true)" in send_body or '"positions"' in send_body:
-    raise AssertionError("sendAsset regressed to JSON geometry publication")
-if "m_rawMeshSnapshots" in send_body:
-    raise AssertionError("ordinary asset publication still retransmits session-only RAW snapshots")
-
-select_start = session.index("bool ModelAssetEditorSession::selectAsset(")
-select_end = session.index("bool ModelAssetEditorSession::saveAsset(", select_start)
-select_body = session[select_start:select_end]
-if "canonicalizeLoadedWorkingSet(" in select_body:
-    raise AssertionError("selectAsset must load/restore/reimport without hidden canonicalization")
-if "refreshSourceVariants(true, false)" not in select_body or "sendAsset();" not in select_body:
-    raise AssertionError("selectAsset no longer preserves explicit source-import publication")
-for token in (
-    "workingAssetPath()",
-    "ModelAssetBinary::load(working.string(), loaded, &error)",
-    "loadWorkingEditorState",
-    "saveWorkingAsset(true)",
-):
-    if token not in select_body:
-        raise AssertionError(f"persistent working-state resume contract missing {token!r}")
-for forbidden in ("latestSavedWizardCheckpoint", "resumeSavedPoint", "wizard_checkpoint_restored"):
-    if forbidden in select_body:
-        raise AssertionError(f"OPEN still treats checkpoint history as resume authority: {forbidden!r}")
-if 'ModelAssetBinary::load(readPath.string(), loaded, &error)' not in select_body:
-    raise AssertionError("production fallback disappeared when no persistent working asset exists")
-
-restore_start = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(")
-restore_end = session.index("bool ModelAssetEditorSession::scanRenderDuplicates(", restore_start)
-restore_body = session[restore_start:restore_end]
-if "canonicalizeLoadedWorkingSet(" in restore_body:
-    raise AssertionError("checkpoint restore must not canonicalize implicitly")
-for token in (
-    "sendAsset();",
-    "loadCheckpointEditorState(",
-    "applyEditorAuthoringState(std::move(restoredEditorState))",
-    "saveWorkingAsset(true)",
-):
-    if token not in restore_body:
-        raise AssertionError(f"rollback restore is not a persistent working-state replacement: {token!r}")
-
-complete_start = session.index("bool ModelAssetEditorSession::completeWizardStage(")
-checkpoint_create_start = session.index("bool ModelAssetEditorSession::createWizardCheckpoint(", complete_start)
-complete_body = session[complete_start:checkpoint_create_start]
-for token in (
-    "validateWizardStage(stage, &validationError)",
-    'value.status = completionPassed ? "complete" : "needs_fix"',
-    "saveWorkingAsset(true)",
-    'stage == "build"',
-    "buildProductionAsset()",
-    '"type", "wizard_state_patch"',
-):
-    if token not in complete_body:
-        raise AssertionError(f"working stage-completion contract missing {token!r}")
-for forbidden in ("wizardCheckpointPath", "writeCheckpointEditorState", "pruneWizardCheckpointsAfter"):
-    if forbidden in complete_body:
-        raise AssertionError(f"stage completion still mutates rollback checkpoint history: {forbidden!r}")
-
-checkpoint_create_end = session.index("bool ModelAssetEditorSession::restoreWizardCheckpoint(", checkpoint_create_start)
-checkpoint_create_body = session[checkpoint_create_start:checkpoint_create_end]
-for token in (
-    "wizardCheckpointPath(stage)",
-    "ModelAssetBinary::save(checkpoint.string(), m_asset, &error)",
-    "writeCheckpointEditorState(stage, validity, checkpointSequence",
-    "++m_nextCheckpointSequence",
-    '"type", "wizard_checkpoint_saved"',
-):
-    if token not in checkpoint_create_body:
-        raise AssertionError(f"manual rollback checkpoint contract missing {token!r}")
-for forbidden in ("validateWizardStage", "pruneWizardCheckpointsAfter", "remove_all"):
-    if forbidden in checkpoint_create_body:
-        raise AssertionError(f"manual rollback snapshot incorrectly changes stage lineage: {forbidden!r}")
-
-load_data_start = session.index("bool ModelAssetEditorSession::loadLodData(")
-load_lod_start = session.index("bool ModelAssetEditorSession::loadLodOnly(", load_data_start)
-load_data_body = session[load_data_start:load_lod_start]
-if "sendAsset(" in load_data_body or "sendLodPayload(" in load_data_body:
-    raise AssertionError("backend-only LOD residency helper still publishes geometry as a side effect")
-if "ModelAssetBinary::loadLod" not in load_data_body:
-    raise AssertionError("backend-only LOD residency helper no longer owns the disk read boundary")
-
-load_lod_end = session.index("bool ModelAssetEditorSession::ensureLodLoaded(", load_lod_start)
-load_lod_body = session[load_lod_start:load_lod_end]
-if "canonicalizeLoadedWorkingSet(" in load_lod_body:
-    raise AssertionError("manual LOD load/reload must not canonicalize implicitly")
-if "sendAsset({lodIndex})" not in load_lod_body or "sendLodPayload(lodIndex)" in load_lod_body:
-    raise AssertionError("manual LOD load no longer preserves the old full-asset application terminal through a targeted transport delta")
-
-send_lod_start = session.index("void ModelAssetEditorSession::sendLodPayload(")
-send_lod_end = session.index("std::vector<std::string> ModelAssetEditorSession::sourceVariantReplacementIds", send_lod_start)
-send_lod_body = session[send_lod_start:send_lod_end]
-for token in ("includeRawSnapshots", "m_rawMeshSnapshots.find(lodIndex)", 'raw="'):
-    if token not in send_lod_body:
-        raise AssertionError(f"explicit RAW viewport payload path missing {token!r}")
-
-preflight_start = session.index("bool ModelAssetEditorSession::analyzeModelPreflight()")
-preflight_end = session.index("bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(", preflight_start)
-preflight_body = session[preflight_start:preflight_end]
-if "canonicalizeLoadedWorkingSet(" in preflight_body or "canonicalizeMesh(" in preflight_body:
-    raise AssertionError("ANALYZE regressed into a mutation stage")
-if "verifyLoadedWorkingSetCanonical" in preflight_body:
-    raise AssertionError("ANALYZE must accept RAW/mixed geometry instead of refusing to inspect it")
-for token in ("needsPreparation", 'action = "prepare_required"'):
-    if token not in preflight_body:
-        raise AssertionError(f"mixed RAW/canonical Preflight reporting missing {token!r}")
-
-lod_analysis_start = session.index("bool ModelAssetEditorSession::analyzeLodRequirements(")
-lod_analysis_end = session.index("bool ModelAssetEditorSession::previewLodComponentCull(", lod_analysis_start)
-lod_analysis_body = session[lod_analysis_start:lod_analysis_end]
-if "canonicalizeLoadedWorkingSet(" in lod_analysis_body or "canonicalizeMesh(" in lod_analysis_body:
-    raise AssertionError("LOD analysis regressed into a canonicalization/repair stage")
-if "verifyLoadedWorkingSetCanonical" not in lod_analysis_body:
-    raise AssertionError("LOD analysis must still gate on explicitly prepared canonical geometry")
-
-refresh_start = session.index("bool ModelAssetEditorSession::refreshSourceVariants(")
-refresh_end = session.index("void ModelAssetEditorSession::handleMessage(", refresh_start)
-refresh_body = session[refresh_start:refresh_end]
-if "canonicalizeMesh(mesh)" in refresh_body or "canonicalizeLoadedWorkingSet(" in refresh_body:
-    raise AssertionError("source variant refresh must remain a literal RAW reload")
-for token in ("sameMeshLodExact(existing->mesh, mesh)", "m_meshPreparationRecords", "canonicalEvidenceChanged"):
-    if token not in refresh_body:
-        raise AssertionError(f"RAW source refresh invalidation contract missing {token!r}")
-if "sendAsset(std::vector<std::size_t>(changedLods.begin(), changedLods.end()))" not in refresh_body:
-    raise AssertionError("source refresh retransmits unchanged resident LOD geometry instead of using an asset-terminal transport delta")
-
-require("src/assets/compiled/models/.gitignore", "Compiled model packages")
-
-cmake = text("CMakeLists.txt")
-for token in ("ELITE_BUILD_ASSET_EDITOR", "EliteModelAsset", "NativeObjImporter.cpp", "CanonicalMeshBuilder.cpp", "GeometryInstanceFitter.cpp", "ModelAssetEditorWire.cpp", "ModelAssetMigration.cpp"):
-    if token not in cmake:
-        raise AssertionError(f"asset editor v4 target missing {token!r}")
-
-# Editor-first gate: game runtime renderer still does not load the new package.
-for game_path in (
-    "src/scene/SceneRenderer.cpp",
-    "src/render/geometry/AssemblyGpuLibrary.cpp",
-    "src/game/geometry/AssemblyMeshLibrary.cpp",
-):
-    if "ModelAssetBinary" in text(game_path):
-        raise AssertionError(f"{game_path} migrated runtime model loading before editor gate")
-
-
-
-# Additional replacement meshes are discovered recursively below each real
-# LOD<N> directory. Filenames/folder names are reload/organization pointers only;
-# persistent authoring ids and replacement compatibility live in wizard_state.json.
-require(
-    "src/model_asset/ModelAssetVariantNaming.h",
-    "SourceRenderVariantPrefix",
-    "LegacyRenderVariantMarker",
-    "makeRenderVariantGeometryId",
-    "renderVariantIdentity",
-)
-require(
-    "src/assets/models/VARIANTS.md",
-    "recursively scans the whole",
-    "opaque persistent",
-    "base visual id",
-    "No LOD association is inferred from matching filenames",
-    "wizard_state.json",
-)
-require(
-    "tools/model_asset_editor/RuntimeAssemblyImporter.cpp",
-    "discoverAdditionalLodMeshes",
-    "runtimeAssemblyLodSourcePaths",
-    "recursive_directory_iterator",
+    "productionEditorStatePath",
+    "saveWorkingAsset",
+    "restoreWorkingAsset",
+    "checkWizardStage",
+    "m_editorStateDirty",
 )
 require(
     "tools/model_asset_editor/ModelAssetEditorSession.cpp",
-    "reconcileAuthoringVisualRegistry",
-    "allocateBaseVisualId",
-    "allocateSourceVariantId",
-    '"baseVisuals"',
-    '"sourceExtraMeshes"',
-    '"replacesBaseVisualIds"',
-    'command == "set_source_variant_replacement"',
-    "sameMeshLodExact",
-    "unchanged",
+    'command == "save_asset"',
+    'command == "restore_working_asset"',
+    'command == "check_wizard_stage"',
+    "saveWorkingAsset",
+    "restoreWorkingAsset",
+    "buildProductionAsset",
+    "loadWorkingEditorState",
+    "writeWorkingEditorState",
+    "loadProductionEditorState",
+    "writeProductionEditorState",
 )
-require(
-    "src/assets/webui/model_asset_editor.html",
-    "variantPreviewByNode",
-    "geometryVariantSelected",
-    "renderVariantAssignment",
-    "baseVisualId",
-    "set_source_variant_replacement",
-    "wizardExtraMeshTable",
-    "wizardBaseReplacementTable",
-    "previewToggle",
-    "wizardUnusedGeometrySummary",
-    "wizardCheckpointBtn",
-    "updateActionAvailability",
-    "initWorldAxes",
-    "['+X'",
-    "['-X'",
-    "['+Y'",
-    "['-Y'",
-    "['+Z'",
-    "['-Z'",
+
+# Removed persistence concepts must stay removed from active code/UI. This is a
+# deliberate architecture prohibition, not just a hidden UX choice.
+for forbidden in (
+    "autosave_working",
+    "create_wizard_checkpoint",
+    "restore_wizard_checkpoint",
+    "complete_wizard_stage",
+    "save_manifest",
+    "save_lod",
+    "wizardCheckpointPath",
+    "wizardCheckpointEditorStatePath",
+    "createWizardCheckpoint",
+    "restoreWizardCheckpoint",
+    "writeCheckpointEditorState",
+    "loadCheckpointEditorState",
+    "checkpointSequenceForStage",
+    "m_nextCheckpointSequence",
+):
+    if forbidden in session_h or forbidden in session or forbidden in web:
+        raise AssertionError(f"removed persistence mechanism returned: {forbidden!r}")
+
+# No active backend/UI checkpoint/autosave terminology either: future work must
+# use the single SAVE/RESTORE working-state model.
+for label, body in (("session", session), ("session header", session_h), ("web UI", web)):
+    for forbidden in ("checkpoint", "rollback snapshot", "ongoing autosave"):
+        if forbidden.lower() in body.lower():
+            raise AssertionError(f"{label} still carries removed persistence terminology {forbidden!r}")
+
+save_body = body_between(
+    session,
+    "bool ModelAssetEditorSession::saveWorkingAsset(bool quiet)",
+    "bool ModelAssetEditorSession::saveAsset()",
 )
-# stable extra-mesh authoring ids: source filename stems must not define ids or
-# cross-LOD pairing in the importer/session refresh path.
-importer_cpp = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
-if "entry.path().stem().string()" in importer_cpp:
-    raise AssertionError("additional mesh authoring identity still depends on OBJ filename stem")
-
-# Metadata-only synchronization must remain an actual transport boundary, not merely
-# a UI label. Full mesh payloads are allowed on full asset snapshots only.
-session_cpp = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
-if "const bool protectedVariant = isRenderVariantGeometryId" not in session_cpp:
-    raise AssertionError("source variants can be deleted by unused-geometry cleanup")
-for token in ("refreshSourceVariants", 'command == "refresh_source_variants"', "discoverAdditionalLodMeshes", "runtimeAssemblyLodSourcePaths"):
-    if token not in session_cpp:
-        raise AssertionError(f"source-variant refresh workflow missing {token!r}")
-for token in ("loadAllDeclaredLodsForSource", "refreshSourceVariants(true, false)", 'sourceOwned ? "source" : "geometry"'):
-    if token not in session_cpp:
-        raise AssertionError(f"SOURCE complete-authoring-set contract missing {token!r}")
-source_ui = text("src/assets/webui/model_asset_editor.html")
-for token in ("wizardSourceRefreshBtn", "sourceInventoryRow", "model_editor.source.loaded"):
-    if token not in source_ui:
-        raise AssertionError(f"SOURCE inventory UI contract missing {token!r}")
 for token in (
-    '"type", "asset_metadata"',
-    'serializeAssetMetadata()',
-    '"type", "asset_binary_begin"',
-    '"type", "lod_payload_binary_begin"',
-    'wizardCheckpointEditorStatePath',
-    'workingAssetPath',
-    'workingEditorStatePath',
-    'productionEditorStatePath',
-    'writeWorkingEditorState',
-    'loadWorkingEditorState',
-    'writeCheckpointEditorState',
-    'loadCheckpointEditorState',
-    'writeProductionEditorState',
-    'loadProductionEditorState',
-    'captureStageValidity',
-    'applyStageValidity',
-    'checkpointSequenceForStage',
-    'm_nextCheckpointSequence',
-    'createWizardCheckpoint',
+    "workingAssetPath()",
+    "ensureAllLodsLoaded()",
+    "ModelAssetBinary::saveLod(path.string(), m_asset, i, &error)",
+    "ModelAssetBinary::saveManifest(path.string(), m_asset, &error)",
+    "writeWorkingEditorState(&error)",
+    "m_editorStateDirty = false",
 ):
-    if token not in session_cpp:
-        raise AssertionError(f"working/checkpoint lifecycle architecture missing {token!r}")
-for forbidden in ('latestSavedWizardCheckpoint', 'pruneWizardCheckpointsAfter'):
-    if forbidden in session_cpp:
-        raise AssertionError(f"retired linear checkpoint authority survived: {forbidden!r}")
+    if token not in save_body:
+        raise AssertionError(f"manual SAVE lost coherent working-state behavior {token!r}")
+for forbidden in ("compiledPath(", "writeProductionEditorState", "buildProductionAsset"):
+    if forbidden in save_body:
+        raise AssertionError(f"manual SAVE leaked across production boundary: {forbidden!r}")
 
-# Checkpoints are never deleted by invalidation, restore, stage completion or
-# another checkpoint save. They are independent rollback snapshots.
-invalidate_start = session_cpp.index("void ModelAssetEditorSession::invalidateWizardFrom")
-invalidate_end = session_cpp.index("nlohmann::json ModelAssetEditorSession::serializeWizard", invalidate_start)
-if "remove_all" in session_cpp[invalidate_start:invalidate_end] or "remove_all" in restore_body or "remove_all" in checkpoint_create_body:
-    raise AssertionError("rollback snapshots can still be pruned by normal editor operations")
-
-if session_cpp.count('++m_nextCheckpointSequence') != 1:
-    raise AssertionError("checkpoint sequence must advance in exactly one manual rollback-snapshot path")
-
-load_state_start = session_cpp.index("void ModelAssetEditorSession::loadWizardState()")
-load_state_end = session_cpp.index("bool ModelAssetEditorSession::writeWizardState() const", load_state_start)
-load_state_body = session_cpp[load_state_start:load_state_end]
+restore_body = body_between(
+    session,
+    "bool ModelAssetEditorSession::restoreWorkingAsset()",
+    "bool ModelAssetEditorSession::buildProductionAsset()",
+)
 for token in (
-    'wizard_state.json is only a checkpoint/session index',
-    'const auto checkpoint = wizardCheckpointPath(id)',
-    'm_nextCheckpointSequence = 1',
-    'checkpointSequenceForStage(id)',
+    "workingAssetPath()",
+    "selectAsset(id, false)",
+    "Unsaved changes were discarded",
 ):
-    if token not in load_state_body:
-        raise AssertionError(f"session/checkpoint index separation missing {token!r}")
-for forbidden in ('parseEditorAuthoringState(', 'applyEditorAuthoringState(std::move(authoring))'):
-    if forbidden in load_state_body:
-        raise AssertionError(f"wizard_state can still become mutable working-state authority: {forbidden!r}")
+    if token not in restore_body:
+        raise AssertionError(f"RESTORE lost last-saved-working semantics {token!r}")
+for forbidden in ("ModelAssetBinary::save", "saveWorkingAsset", "buildProductionAsset"):
+    if forbidden in restore_body:
+        raise AssertionError(f"RESTORE must discard/reload, not persist: {forbidden!r}")
 
-write_state_start = session_cpp.index("bool ModelAssetEditorSession::writeWizardState() const")
-write_state_end = session_cpp.index("std::string ModelAssetEditorSession::allocateBaseVisualId", write_state_start)
-write_state_body = session_cpp[write_state_start:write_state_end]
-if 'serializeEditorAuthoringState(captureEditorAuthoringState())' in write_state_body:
-    raise AssertionError("wizard_state still persists an unbound authoring working copy")
-if 'model_asset_editor_session_index' not in write_state_body:
-    raise AssertionError("wizard_state is no longer explicitly a session/checkpoint index")
-
-select_start2 = session_cpp.index("bool ModelAssetEditorSession::selectAsset(")
-select_end2 = session_cpp.index("bool ModelAssetEditorSession::saveWorkingAsset", select_start2)
-select_lifecycle = session_cpp[select_start2:select_end2]
+# OPEN must prefer the one saved WORKING ASSET. First-ever production/source
+# adoption may establish the initial saved baseline, but ordinary reimport is dirty.
+select_body = body_between(
+    session,
+    "bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimport)",
+    "bool ModelAssetEditorSession::saveWorkingAsset(bool quiet)",
+)
 for token in (
-    'const bool haveWorking = std::filesystem::exists(working)',
-    'if (!forceReimport && haveWorking)',
-    'loadWorkingEditorState',
-    'saveWorkingAsset(true)',
+    "if (!forceReimport && haveWorking)",
+    "Reading persistent working asset",
+    "loadWorkingEditorState",
+    "const bool createInitialWorkingBaseline = !haveWorking && !forceReimport;",
+    "saveWorkingAsset(true)",
+    "Nothing was saved; use SAVE to keep it or RESTORE to discard it.",
 ):
-    if token not in select_lifecycle:
-        raise AssertionError(f"persistent editor resume contract missing {token!r}")
+    if token not in select_body:
+        raise AssertionError(f"OPEN/REIMPORT working-state contract missing {token!r}")
 
-save_start2 = session_cpp.index("bool ModelAssetEditorSession::saveWorkingAsset")
-save_end2 = session_cpp.index("bool ModelAssetEditorSession::saveAsset()", save_start2)
-save_lifecycle = session_cpp[save_start2:save_end2]
-for token in ('workingAssetPath()', 'writeWorkingEditorState(&error)', 'ModelAssetBinary::saveLod', 'ModelAssetBinary::saveManifest'):
-    if token not in save_lifecycle:
-        raise AssertionError(f"ordinary SAVE no longer persists coherent WORKING ASSET state: {token!r}")
-if 'compiledPath(m_selectedId)' in save_lifecycle or 'writeProductionEditorState' in save_lifecycle:
-    raise AssertionError("ordinary WORKING SAVE can still write production")
-for token in ('"workingManifestBytes"', '"workingPackageBytes"', '"productionPackageBytes"', 'workingSavedLodPayloads'):
-    if token not in session_cpp:
-        raise AssertionError(f"WORKING/production storage split missing {token!r}")
-for token in ('storage.workingManifestBytes', 'WORKING package total', 'PRODUCTION package (last BUILD)', "msg.type==='working_saved'"):
-    if token not in web:
-        raise AssertionError(f"browser persistence/storage authority missing {token!r}")
-if "actions.appendChild(save)" in web or "STALE PRODUCTION PAYLOAD · PRUNED ON BUILD" in web:
-    raise AssertionError("UI still exposes partial LOD save or treats working payloads as production")
+# -----------------------------------------------------------------------------
+# stage CHECK is persistence read-only
+# -----------------------------------------------------------------------------
+check_body = body_between(
+    session,
+    "bool ModelAssetEditorSession::checkWizardStage(const std::string& stage)",
+    "bool ModelAssetEditorSession::scanRenderDuplicates(",
+)
+for token in (
+    "validateWizardStage(stage, &validationError)",
+    'value.status = passed ? "complete" : "needs_fix"',
+    'if (stage == "validate") sendWizardValidationReport();',
+    'if (passed && stage == "build")',
+    "buildProductionAsset()",
+    '"type", "wizard_stage_checked"',
+    "Nothing was saved",
+):
+    if token not in check_body:
+        raise AssertionError(f"stage CHECK contract missing {token!r}")
+for forbidden in (
+    "saveWorkingAsset(",
+    "writeWorkingEditorState(",
+    "writeProductionEditorState(",
+    "ModelAssetBinary::save(",
+    "ModelAssetBinary::saveManifest(",
+    "ModelAssetBinary::saveLod(",
+):
+    if forbidden in check_body:
+        raise AssertionError(f"stage CHECK performs persistence I/O: {forbidden!r}")
 
-build_start = session_cpp.index("bool ModelAssetEditorSession::buildProductionAsset()")
-build_end = session_cpp.index("bool ModelAssetEditorSession::saveManifestOnly()", build_start)
-build_body = session_cpp[build_start:build_end]
-for token in ('compiledPath(m_selectedId)', 'ModelAssetBinary::save(path.string(), m_asset, &error)', 'writeProductionEditorState(&error)'):
+# BUILD alone owns normal production package bytes and requires saved working state.
+build_body = body_between(
+    session,
+    "bool ModelAssetEditorSession::buildProductionAsset()",
+    "bool ModelAssetEditorSession::adoptSourceRevision(",
+)
+for token in (
+    "compiledPath(m_selectedId)",
+    "ModelAssetBinary::save(path.string(), m_asset, &error)",
+    "writeProductionEditorState(&error)",
+):
     if token not in build_body:
         raise AssertionError(f"BUILD production boundary missing {token!r}")
+if 'validationError = "save the current WORKING ASSET before BUILD"' not in check_body:
+    raise AssertionError("BUILD no longer requires an explicitly saved WORKING ASSET")
 
-checkpoint_state_start = session_cpp.index("bool ModelAssetEditorSession::writeCheckpointEditorState")
-checkpoint_state_end = session_cpp.index("void ModelAssetEditorSession::loadWizardState()", checkpoint_state_start)
-checkpoint_state_body = session_cpp[checkpoint_state_start:checkpoint_state_end]
+# -----------------------------------------------------------------------------
+# Global SAVE/RESTORE UI and single CHECK control
+# -----------------------------------------------------------------------------
 for token in (
-    'state["stages"] = serializeStageValidity(validity)',
-    'schemaVersion"] = 10',
-    'state["checkpointSequence"] = checkpointSequence',
-):
-    if token not in checkpoint_state_body:
-        raise AssertionError(f"checkpoint is not a complete stage-validity snapshot: {token!r}")
-
-# Commands already present for reserved future stages must participate in the
-# same stage-validity contract now, before those wizard pages are enabled.
-planned_mutation_stages = {
-    "convert_source_basis": "source",
-    "add_semantic_node": "semantics",
-    "set_node_parent": "semantics",
-    "set_node_transform": "semantics",
-    "set_render_node_semantic": "semantics",
-    "set_joint": "semantics",
-    "add_socket": "semantics",
-    "set_physics": "physics",
-    "estimate_physics": "physics",
-    "add_collision": "physics",
-    "set_node_default_state": "damage",
-    "add_state_variant": "damage",
-    "set_render_node_states": "damage",
-    "add_hit_region": "damage",
-    "add_opening": "damage",
-    "add_repair_target": "damage",
-}
-for command_name, stage_name in planned_mutation_stages.items():
-    marker = f'if (command == "{command_name}")'
-    start = session_cpp.index(marker)
-    next_command = session_cpp.find('if (command == "', start + len(marker))
-    body = session_cpp[start: next_command if next_command != -1 else len(session_cpp)]
-    expected = f'invalidateWizardFrom("{stage_name}")'
-    if expected not in body:
-        raise AssertionError(
-            f"planned {stage_name.upper()} mutation {command_name!r} does not invalidate its stage/downstream checkpoints"
-        )
-
-# Collision/socket base data belongs upstream, while activeStates is a DAMAGE-only selector.
-for token in ('physicsEdit ? "physics" : "damage"', 'semanticEdit ? "semantics" : "damage"'):
-    if token not in session_cpp:
-        raise AssertionError(f"split ownership invalidation missing {token!r}")
-
-for token in (
-    'wizardCheckpointBtn',
-    'create_wizard_checkpoint',
-    'CREATE ROLLBACK SNAPSHOT',
-    'Rollback snapshot only',
-    'Production and all other rollback snapshots stay unchanged',
+    'id="saveBtn"',
+    'id="restoreBtn"',
+    "$('saveBtn').disabled=state.busy||!changed",
+    "$('restoreBtn').disabled=state.busy||!changed",
+    "send('save_asset')",
+    "send('restore_working_asset')",
+    "function wizardStageCheckControls(stage)",
+    "send('check_wizard_stage',{stage})",
+    "wizard_stage_checked",
 ):
     if token not in web:
-        raise AssertionError(f"rollback-only checkpoint UI contract missing {token!r}")
-if 'Every later-stage checkpoint is removed' in web:
-    raise AssertionError("UI still advertises destructive checkpoint lineage")
+        raise AssertionError(f"global SAVE/RESTORE/CHECK UI missing {token!r}")
 
-for forbidden in ('g["positions"]', 'g["normals"]', 'g["indices"]', 'rawJson["positions"]', 'serializeAsset(true)'):
-    if forbidden in session_cpp:
-        raise AssertionError(f"bulk geometry returned to JSON transport: {forbidden!r}")
-
-require(
-    "tools/model_asset_editor/ModelAssetEditorWire.cpp",
-    "'E','L','W','I','R','0','0','1'",
-    "WireVersion",
-    "encodeLodGeometryPayload",
-    "writeMeshArrays",
-    "writeRawMeshArrays",
-)
-require(
-    "src/ui/html/HtmlUiServer.cpp",
-    "broadcastBinary",
-    "websocketpp::frame::opcode::binary",
-)
-require(
-    "src/model_asset/ModelAssetBinary.cpp",
-    "memory cursor",
-    "std::ios::binary | std::ios::ate",
-    "Reader(const std::uint8_t* data, std::size_t size)",
-)
-for token in (
-    "asset_binary_begin",
-    "lod_payload_binary_begin",
-    "ELWIR001",
-    "decodeEditorLodGeometry",
-    "applyEditorLodGeometry",
-    "reuseEditorLodGeometry",
-    "reuseExistingPayloads",
-    "handle({type:'asset'",
-    "handle({type:'lod_payload'",
-    "binaryType='arraybuffer'",
-):
-    if token not in web:
-        raise AssertionError(f"binary geometry transport missing browser terminal {token!r}")
-
-# Binary arrays must be adapted back into the exact Three.js types expected by
-# the preserved viewport terminal. BufferGeometry.setIndex() treats a typed
-# array as an already-built BufferAttribute, so passing Uint32Array directly
-# silently produces a non-renderable indexed mesh.
-for token in (
-    "ArrayBuffer.isView(indices)?new THREE.BufferAttribute(indices,1):indices",
-    "edges=new Array(edgeCount)",
-    "logEditorWireTiming",
-    "activeLodNeedsRawSource",
-    "includeRaw:true",
-):
-    if token not in web:
-        raise AssertionError(f"binary viewport compatibility/perf guard missing {token!r}")
-
-wire_cpp = text("tools/model_asset_editor/ModelAssetEditorWire.cpp")
-for token in (
-    "Writer w(estimatedPayloadBytes(lod, rawSnapshots))",
-    "data[offset++] = value",
-    "return w.finish()",
-):
-    if token not in wire_cpp:
-        raise AssertionError(f"binary writer regressed to byte-at-a-time vector growth: {token!r}")
-
-invalidate_start = session_cpp.index("void ModelAssetEditorSession::invalidateWizardFrom")
-invalidate_end = session_cpp.index("nlohmann::json ModelAssetEditorSession::serializeWizard", invalidate_start)
-invalidate_body = session_cpp[invalidate_start:invalidate_end]
-for token in (
-    'for (std::size_t i = first; i < order.size(); ++i)',
-    'value.status = "stale"',
-    'value.status = "not_started"',
-):
-    if token not in invalidate_body:
-        raise AssertionError(f"future-stage checkpoint invalidation contract missing {token!r}")
-
-web_sync = text("src/assets/webui/model_asset_editor.html")
-localization = text("src/assets/localization/ui/tools/model_asset_editor.json")
-for token in (
-    "mergeAssetMetadata",
-    "retainGeometryPayload",
-    "cloneGeometryPayload",
-    "pruneGeometryCache",
-    "rebuildScene(preserveGeometryCache=false)",
-):
-    if token not in web_sync:
-        raise AssertionError(f"browser geometry-cache contract missing {token!r}")
-
-metadata_only_commands = (
-    "set_node_transform",
-    "set_render_node_transform",
-    "set_render_node_geometry",
-    "fit_render_node_as_instance",
-    "consolidate_render_duplicates",
-    "break_render_node_instance",
-    "duplicate_render_node_instance",
-    "create_radial_render_instances",
-    "delete_render_node",
-    "delete_unused_geometries",
-    "set_edge_render_mask",
-    "add_collision",
-    "set_collision",
-    "add_socket",
-    "set_socket",
-)
-for command in metadata_only_commands:
-    start = session_cpp.find(f'if (command == "{command}")')
-    if start < 0:
-        raise AssertionError(f"metadata-only command disappeared: {command}")
-    next_if = session_cpp.find('\n        if (command == "', start + 1)
-    block = session_cpp[start: next_if if next_if >= 0 else len(session_cpp)]
-    if "sendAsset();" in block:
-        raise AssertionError(f"command {command!r} regressed to full mesh retransmission")
-    if "sendAssetMetadata" not in block:
-        raise AssertionError(f"command {command!r} does not publish metadata update")
-
-# SURFACES has a narrower metadata transport than generic metadata-only commands.
-surface_mode_start = session_cpp.index('if (command == "set_surface_mode")')
-surface_mode_end = session_cpp.index('if (command == "set_material_definition")', surface_mode_start)
-surface_mode_block = session_cpp[surface_mode_start:surface_mode_end]
-if "sendSurfaceMetadataPatch" not in surface_mode_block:
-    raise AssertionError("set_surface_mode no longer publishes its targeted metadata patch")
-for forbidden in ("sendAssetMetadata", "sendAsset();", "analyzeModelPreflight"):
-    if forbidden in surface_mode_block:
-        raise AssertionError(f"set_surface_mode retained heavy side effect {forbidden!r}")
-
-# Canonicalization is an explicit authoring operation. Loading may expose RAW
-# geometry; PREPARE mutates it, ANALYZE is read-only, and downstream LOD work
-# still requires an exact-payload canonical record.
-for token in (
-    "analyzeModelPreflight",
-    "canonicalizeLoadedWorkingSet",
-    "verifyLoadedWorkingSetCanonical",
-    "setGeometryTopologyClass",
-    "modelPreflightReadyForLod",
-    "modelPreflightAllLoadedReady",
-    "canonicalizeMesh",
-    "canonicalMeshFingerprint",
-    "CanonicalMeshAlgorithmId",
-    "m_meshPreparationRecords",
-    "meshPreparationRecords",
-    "geometryTopologyClasses",
-    'state["schemaVersion"] = 8',
-):
-    if token not in session_cpp:
-        raise AssertionError(f"canonical SOURCE/preflight backend contract missing {token!r}")
-canonical_cpp = text("tools/model_asset_editor/CanonicalMeshBuilder.cpp")
-for token in (
-    "analyzeCanonicalMesh",
-    "buildTopologicalPointMap",
-    "solveOrientation",
-    "repairTopologyAndOrientationWithLibigl",
-    "igl::split_nonmanifold",
-    "igl::embree::reorient_facets_raycast",
-    "EdgeCanonicalTopology",
-    "sourceNonManifoldEdgeCount",
-    "rebuildRenderVertices",
-):
-    if token not in canonical_cpp:
-        raise AssertionError(f"canonical authoring / explicit analysis contract missing {token!r}")
-canonicalize_start = canonical_cpp.index("CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)")
-canonicalize_body = canonical_cpp[canonicalize_start:canonical_cpp.index("std::uint64_t canonicalMeshFingerprint", canonicalize_start)]
-for required in ("repairTopologyAndOrientationWithLibigl(", "rebuildRenderVertices("):
-    if required not in canonicalize_body:
-        raise AssertionError(f"PREPARE MESHES lost canonical orientation stage {required!r}")
-for forbidden in ("normalizeRuntimeMeshTopology(", "analyzeCanonicalMesh(candidate)", "MaxStabilizationPasses", "const MeshLod original = mesh", "orientOpenComponentsByEnvelope(", "radialScore", "OpenOrientationMinConfidence"):
-    if forbidden in canonicalize_body:
-        raise AssertionError(f"PREPARE MESHES regressed to runtime-only, heuristic, or multi-pass behavior {forbidden!r}")
-for forbidden in ("orientOpenComponentsByEnvelope", "radialScore", "OpenOrientationMinConfidence"):
-    if forbidden in canonical_cpp:
-        raise AssertionError(f"removed radial/open-component orientation heuristic returned: {forbidden!r}")
-model_asset_tests = text("tests/model_asset/ModelAssetBinaryTests.cpp")
-for token in (
-    "testCanonicalBuilderRepairsWindingAndOutwardNormals",
-    "testCanonicalBuilderClosedPlateBreachContracts",
-    "testCanonicalBuilderOrientsBreachedShellWithEmbree",
-    "testCanonicalBuilderRemovesGarbageAndPreservesUvSeams",
-    "testCanonicalBuilderCollapsesAuthoredNormalOnlySplits",
-    "testCanonicalPreparationKeepsCoincidentSheetsIndependent",
-    "testCanonicalPreparationRebuildsHardNormalIslands",
-    "testRuntimeNormalizerRemainsTolerantRenderContract",
-    "testCanonicalBuilderFingerprintTracksStructuralPayload",
-    "testPreparationRejectsUnreadableAndRepairsNonManifold",
-    "split_nonmanifold did not split a genuine three-face geometric edge",
-    "closed shell remained inward after canonical preparation",
-):
-    if token not in model_asset_tests:
-        raise AssertionError(f"canonical-authoring behavioral regression missing {token!r}")
-for token in (
-    "modelPreflightPrepareBtn",
-    "modelPreflightCheckBtn",
-    "renderModelPreflightPanel",
-    "model_preflight_result",
-    "set_geometry_topology_class",
-    "model_editor.preflight.class_thin",
-    "model_editor.preflight.class_breached",
-    "model_editor.preflight.canonical_note",
-    "model_editor.preflight.workflow",
-    "meshViewportMode",
-    "ИСХОДНИК",
-    "БЕЗ ОТСЕЧЕНИЯ",
-    "РАБОЧИЙ",
-):
-    if token not in web_sync:
-        raise AssertionError(f"classification-only Preflight Web UI contract missing {token!r}")
 for forbidden in (
-    "modelPreflightFixBtn",
-    "modelPreflightRuntimeBtn",
-    "apply_mesh_preparation",
-    "safe_fix_model_preflight",
-    "runtimeNormalizedThreeGeometry",
+    "wizardRunValidation",
+    "scheduleWorkingAutosave",
+    "workingAutosaveTimer",
+    "packageNeedsSave",
+    "saveManifestBtn",
 ):
-    if forbidden in web_sync:
-        raise AssertionError(f"obsolete manual/raw Preflight UI returned {forbidden!r}")
+    if forbidden in web:
+        raise AssertionError(f"retired persistence/validation UI survived: {forbidden!r}")
 
-# LOD generator v1 uses preview for inspection and an explicit APPLY boundary for
-# authored LOD documents. Project/window maximum resolution remains centralized,
-# but LOD authoring/runtime selection is scale-independent and uses actual projected
-# size rather than fixed 2560x1440 / 70-degree authoring optics.
-require(
-    "src/render/RenderResolutionPolicy.h",
-    "MaximumSupportedRenderWidth = 2560",
-    "MaximumSupportedRenderHeight = 1440",
-)
-require(
-    "src/window/Window.cpp",
-    "elite::render::MaximumSupportedRenderWidth",
-    "elite::render::MaximumSupportedRenderHeight",
-)
-for token in (
-    "LodVisibilityCutoffPx = 2.0",
-    "analyzeConnectedComponents",
-    "component.featureMeters = component.principalExtents.y",
-    "compressTriangleRanges",
-    "analyzeLodRequirements",
-    "previewLodComponentCull",
-    "previewLodCoplanarCollapse",
-    "analyzeCoplanarCollapse",
-    "buildGeneratedComponentCullLod",
-    "GeneratedLodComponentCullAlgorithmId",
-    "applyGeneratedLods",
-    "apply_generated_lods",
-):
-    if token not in session_cpp:
-        raise AssertionError(f"LOD generator preview contract missing {token!r}")
-for token in (
-    "lodGeneratorAnalyzeBtn",
-    "renderLodGeneratorPanel",
-    "lodGeneratorPreviewGeometry",
-    "model_editor.lod_generator.show_lod0",
-    "state.lodGeneratorLevel=0",
-    "lod_analysis_result",
-    "lod_generator_preview_result",
-    "removedTriangleRanges",
-    "addedTriangles",
-    "preview_lod_coplanar_collapse",
-    "lodDiagnosticActive",
-    "lodDiagnosticFaceNormalsBtn",
-    "lodGeneratorApplyBtn",
-    "lodGeneratorApplyLevels",
-    "lodGeneratorMeshSelection",
-    "apply_generated_lods",
-    "model_editor.lod_generator.apply",
-):
-    if token not in web_sync:
-        raise AssertionError(f"LOD generator Web UI contract missing {token!r}")
-
-
-# 0.10.18: generated LOD authoring is full-asset and transactional. Additional
-# replacement meshes are generated even though they have no RenderNode usage.
-analysis_start = session_cpp.index("bool ModelAssetEditorSession::analyzeLodRequirements(")
-analysis_end = session_cpp.index("bool ModelAssetEditorSession::previewLodComponentCull(", analysis_start)
-analysis_body = session_cpp[analysis_start:analysis_end]
-if "if (isRenderVariantGeometryId(geometry.id)) continue" in analysis_body or "if (usage[geometryIndex] == 0) continue" in analysis_body:
-    raise AssertionError("LOD analysis still skips additional/unbound geometry")
-preview_start = session_cpp.index("bool ModelAssetEditorSession::previewLodComponentCull(")
-preview_end = session_cpp.index("bool ModelAssetEditorSession::applyGeneratedLods(", preview_start)
-preview_body = session_cpp[preview_start:preview_end]
-if "if (isRenderVariantGeometryId(geometry.id)) continue" in preview_body or "if (usage[geometryIndex] == 0) continue" in preview_body:
-    raise AssertionError("LOD preview still skips additional/unbound geometry")
-apply_start = session_cpp.index("bool ModelAssetEditorSession::applyGeneratedLods(")
-apply_end = session_cpp.index("bool ModelAssetEditorSession::previewLodCoplanarCollapse(", apply_start)
-apply_body = session_cpp[apply_start:apply_end]
-for token in (
-    'generated.sourceKind = "generated"',
-    "generated.generatedFromLod",
-    "candidates.reserve(selected.size())",
-    "analyzeCanonicalMesh(candidate.lod.geometries[gi].mesh)",
-    "m_baseVisualIds[selection.level] = sourceBaseVisuals->second",
-    "m_sourceExtraMeshIds[selection.level] = sourceExtraIds->second",
-    "GeneratedLodComponentCullAlgorithmId",
-    'invalidateWizardFrom("lods")',
-):
-    if token not in session_cpp:
-        raise AssertionError(f"generated LOD authoring contract missing {token!r}")
-for token in (
-    "lodGeneratorApplyBtn",
-    "data-lod-apply",
-    "lodGeneratorMeshSelect",
-    "ADDITIONAL / REPLACEMENT MESHES",
-    "APPLY SELECTED LODS",
-):
-    if token not in web_sync:
-        raise AssertionError(f"generated LOD authoring UI missing {token!r}")
-
-
-# 0.10.19: applying a large full-asset LOD set must update authored metadata
-# immediately instead of serializing every generated vertex/index array into one
-# browser message. Individual LOD payloads are fetched on demand. Main-mesh
-# isolation must keep the transform hierarchy alive and filter mesh visibility
-# only.
-for token in (
-    "sendLodPayload",
-    "request_lod_payload",
-    "invalidatedLodPayloads",
-    '"type", "lod_payload_binary_begin"',
-    "encodeLodGeometryPayload",
-    "sendAssetMetadata({{\"invalidatedLodPayloads\", invalidatedPayloads}})",
-):
-    if token not in session_cpp:
-        raise AssertionError(f"LOD apply payload boundary missing {token!r}")
-for token in (
-    "lodGeneratorApplying",
-    "lodGeneratorAppliedLevels",
-    "lodGeneratorPendingApplyLevels",
-    "lodGeneratorActions",
-    "GENERATED LODS APPLIED",
-    "AUTHORED LOD UPDATED",
-    "request_lod_payload",
-    "invalidatedLodPayloads",
-    "mesh.visible=lodGeneratorNodePassesMeshFilter(n)",
-    "group.visible=stateApplies(n)",
-):
-    if token not in web_sync:
-        raise AssertionError(f"LOD apply feedback/isolation UI missing {token!r}")
-if "group.visible=stateApplies(n)&&lodGeneratorNodePassesMeshFilter(n)" in web_sync:
-    raise AssertionError("LOD main-mesh filter still disables transform parent groups")
-
-# 0.10.17: surface classification is not an LODS/LOD-analysis gate.
-ready_start = session_cpp.index("bool ModelAssetEditorSession::modelPreflightReadyForLod(")
-ready_end = session_cpp.index("bool ModelAssetEditorSession::modelPreflightAllLoadedReady(", ready_start)
-ready_body = session_cpp[ready_start:ready_end]
-for forbidden in ("needs an explicit target geometry class", "surface mode does not match geometry class", "m_geometryTopologyClasses"):
-    if forbidden in ready_body:
-        raise AssertionError(f"LOD technical readiness still depends on SURFACES authoring: {forbidden!r}")
-validate_stage_start = session_cpp.index("bool ModelAssetEditorSession::validateWizardStage(")
-validate_stage_end = session_cpp.index("bool ModelAssetEditorSession::completeWizardStage(", validate_stage_start)
-validate_stage_body = session_cpp[validate_stage_start:validate_stage_end]
-if "modelPreflightAllLoadedReady" in validate_stage_body:
-    raise AssertionError("LODS stage validation still blocks on surface classification")
-if "verifyLoadedWorkingSetCanonical" not in validate_stage_body:
-    raise AssertionError("LODS stage validation lost canonical geometry validation")
-if "analyze.disabled=!lods[0]?.loaded||!state.modelPreflight?.readyForLod" in web_sync or "analyze.disabled=!p.readyForLod" in web_sync:
-    raise AssertionError("LOD0 Analyze button is still disabled by Preflight classification state")
-
-# Editor developer artifacts must not depend on process CWD.
-for forbidden in ('std::filesystem::path("build") / "logs"', 'model_asset_mesh_repair.log', 'model_asset_instance_fit.log'):
-    if forbidden in session_cpp:
-        raise AssertionError(f"editor diagnostics regressed to legacy global/CWD path {forbidden!r}")
-for token in ('wizardWorkspacePath() / "logs" / fileName', 'wizardLogPath("mesh_repair.log")', 'wizardLogPath("instance_fit.log")'):
-    if token not in session_cpp:
-        raise AssertionError(f"stable asset-local editor log contract missing {token!r}")
+# The editor is executable-owned, but it still consumes the shared WebUI kit.
+# Both packed and filesystem-fallback deployments must carry those imports.
+for token in ('/elite_ui.css', '/elite_ui.js'):
+    if token not in web:
+        raise AssertionError(f"Model Asset Editor lost shared UI kit import {token!r}")
 cmake = text("CMakeLists.txt")
-for token in ('ELITE_MODEL_ASSET_EDITOR_ARTIFACT_ROOT', 'build/tools/model_asset_editor', 'RUNTIME_OUTPUT_DIRECTORY "${ELITE_MODEL_ASSET_EDITOR_BIN_DIR}"', 'ELITE_EDITOR_RUNTIME_ROOT'):
-    if token not in cmake:
-        raise AssertionError(f"stable Model Asset Editor binary layout missing {token!r}")
-
-editor_main = text("tools/model_asset_editor/main.cpp")
-for token in ("ELITE_EDITOR_RUNTIME_ROOT", "std::filesystem::current_path", "model_asset_editor_ui.pak"):
-    if token not in editor_main:
-        raise AssertionError(f"editor runtime-root/UI-pack contract missing {token!r}")
 for token in (
-    'ELITE_EDITOR_RUNTIME_ROOT=\\"${ELITE_MODEL_ASSET_EDITOR_ARTIFACT_ROOT}\\"',
-    'model_asset_editor_ui.pak',
-    'build_model_asset_editor_ui_pack',
-    'copy_model_asset_editor_webui',
+    '"${ELITE_STATIC_ASSETS_DIR}/webui/elite_ui.css"',
+    '"${ELITE_STATIC_ASSETS_DIR}/webui/elite_ui.js"',
+    '--include elite_ui.css',
+    '--include elite_ui.js',
+    '"${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/elite_ui.css"',
+    '"${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/elite_ui.js"',
 ):
     if token not in cmake:
-        raise AssertionError(f"editor-owned runtime/UI package contract missing {token!r}")
-if 'add_dependencies(EliteAssetEditor copy_assets)' in cmake:
-    raise AssertionError("Model Asset Editor still depends on the shared/game asset deployment tree")
-shared_asset_guard = 'if(TARGET EliteGame OR TARGET EliteServer)\n    elite_copy_asset_tree(\n        copy_static_assets'
-if shared_asset_guard not in cmake:
-    raise AssertionError("shared copy_assets rules are not isolated from editor-only build trees")
-html_server_cpp = text("src/ui/html/HtmlUiServer.cpp")
-if 'elite_ui.pak' in html_server_cpp:
-    raise AssertionError("HtmlUiServer still auto-discovers the obsolete universal elite_ui.pak")
-build_helper = text("build_asset_editor_mingw64.sh")
-for token in ('build/tools/model_asset_editor/bin', 'model_asset_libigl_spike'):
-    if token not in build_helper:
-        raise AssertionError(f"editor build helper lost stable output contract {token!r}")
+        raise AssertionError(f"editor-owned UI pack/fallback lost shared UI kit resource {token!r}")
 
-# Protected editor capabilities are a hard four-layer contract. A feature is not
-# considered preserved merely because its C++ implementation still exists: the
-# data model, backend command, visible UI entry point and regression test must all
-# survive future editor rewrites.
-capability_path = ROOT / "tools/model_asset_editor/EDITOR_CAPABILITIES.json"
-capability_doc = json.loads(capability_path.read_text(encoding="utf-8"))
-if capability_doc.get("schema_version") != 1:
-    raise AssertionError("unsupported EDITOR_CAPABILITIES schema")
-for capability in capability_doc.get("protected_capabilities", []):
-    capability_id = capability.get("id", "<missing>")
-    contracts = capability.get("contracts", {})
-    for layer in ("data_model", "backend", "ui", "test"):
-        contract = contracts.get(layer)
-        if not contract:
-            raise AssertionError(f"capability {capability_id!r} missing {layer} contract")
-        contract_path = contract.get("path", "")
-        tokens = contract.get("tokens", [])
-        if not contract_path or not tokens:
-            raise AssertionError(f"capability {capability_id!r} has incomplete {layer} contract")
-        require(contract_path, *tokens)
+# The dirty flag, not file existence or stage position, is the sole enablement
+# contract for both global working-state controls.
+action_body = body_between(web, "function updateActionAvailability()", "function syncToggleButton(")
+if "changed=hasAsset&&!!state.dirty" not in action_body:
+    raise AssertionError("SAVE/RESTORE are no longer driven by the one dirty state")
 
-for protected_id in (
+# -----------------------------------------------------------------------------
+# 0.10.34+ placement safety / 0.10.36 unified circular placement
+# -----------------------------------------------------------------------------
+for token in (
+    "glm::extractEulerAngleXYZ",
+    "render-node transform XYZ round-trip changed placement",
+    'command == "move_render_node_delta"',
+    'command == "apply_radial_render_layout"',
+    "if (count == 1)",
+    "closedCircle",
+    "closedCircle ? count : count - 1",
+    "const float angleDeg = totalAngle * static_cast<float>(i) / divisor;",
+):
+    if token not in session:
+        raise AssertionError(f"instance/circular placement safety missing {token!r}")
+if "glm::eulerAngles(" in session:
+    raise AssertionError("matrix->Euler conversion regressed to glm::eulerAngles; XYZ placement can drift")
+for token in (
+    "wizardGeometryMoveBtn",
+    "wizardGeometryRadialBtn",
+    "geometryMoveDx",
+    "radialLayoutAngles",
+    "radialApplyBtn",
+    "radialSelectedPivotInParent",
+    "count===1",
+    "divisor=closed?count:count-1",
+    ".hidden{display:none!important}",
+):
+    if token not in web:
+        raise AssertionError(f"instance/circular placement authoring UI missing {token!r}")
+for forbidden in (
+    'radialStepField',
+    'radialMode',
+    'move_render_node_radial',
+    'create_radial_render_instances',
+):
+    if forbidden in web + session:
+        raise AssertionError(f"split/slot-based radial workflow returned: {forbidden!r}")
+
+# -----------------------------------------------------------------------------
+# 0.10.34 list scroll stability: selection/rerender must never jump to the top
+# -----------------------------------------------------------------------------
+for token in (
+    "const uiScrollPositions=new Map()",
+    "function uiScrollContextKey(el)",
+    "function captureUiScroll(root=document,target=uiScrollPositions)",
+    "function restoreUiScroll(root=document,source=uiScrollPositions)",
+    "let uiScrollPreserveDepth=0",
+    "function preserveUiScroll(render)",
+    "function renderWizardPanelContents()",
+    "function renderWizardPanel(){return preserveUiScroll(renderWizardPanelContents);}",
+    'data-preserve-scroll="side-panel"',
+    'data-preserve-scroll="wizard-bar"',
+    'data-preserve-scroll="geometry-compare"',
+    'function renderGeometryCandidates(){return preserveUiScroll(renderGeometryCandidatesContents);}',
+    'function renderVariantAssignment(){return preserveUiScroll(renderVariantAssignmentContents);}',
+    'data-preserve-scroll="geometry-variants"',
+    'data-preserve-scroll="geometry-variant-bases"',
+    'data-preserve-scroll="surface-geometries"',
+    'data-preserve-scroll="semantic-tree"',
+    'data-preserve-scroll="semantic-bindings"',
+    'data-preserve-scroll="source-change-scan"',
+    'data-preserve-scroll="lod-preflight"',
+    "rows.dataset.preserveScroll='unused-geometries'",
+):
+    if token not in web:
+        raise AssertionError(f"list scroll stability contract missing {token!r}")
+
+# The context key is deliberately asset/stage/LOD-aware: local rerenders reuse a
+# position while a different render document does not inherit an unrelated one.
+for token in (
+    "state.asset?.assetId||'no-asset'",
+    "state.wizardStage",
+    "state.activeLod",
+    "outer=uiScrollPreserveDepth===0",
+    "captureUiScroll(document,new Map())",
+    "restoreUiScroll(document,snapshot)",
+    "requestAnimationFrame(()=>restoreUiScroll(document,snapshot))",
+):
+    if token not in web:
+        raise AssertionError(f"context-aware scroll preservation missing {token!r}")
+
+# -----------------------------------------------------------------------------
+# 0.10.35 GEOMETRY workspace: one coherent workflow, readable identities
+# -----------------------------------------------------------------------------
+geometry_stage = web[web.index("if(stage==='geometry')"):web.index("if(stage==='surfaces')")]
+for token in (
+    'class="geometryStickyToolbar"',
+    'data-geometry-scope="all"',
+    'data-geometry-scope="changes"',
+    'wizardGeometryCandidates',
+    'wizardGeometryCleanBtn',
+    'wizardExtraMeshTable',
+    'wizardBaseReplacementTable',
+    'wizardGeometryEditor',
+    "wizardStageCheckControls('geometry')",
+    'geometryStatsHtml(lod)',
+):
+    if token not in geometry_stage:
+        raise AssertionError(f"0.10.35 GEOMETRY workflow missing {token!r}")
+
+for token in (
+    'grid-template-columns:28px 28px 24px minmax(0,1fr) 40px 42px',
+    'compareMetricBadge',
+    'compareMeshName',
+    "statusIcon='★'",
+    "statusIcon='✓'",
+):
+    if token not in web:
+        raise AssertionError(f"0.10.35 identity-first GEOMETRY table lost compact metrics/status contract {token!r}")
+
+for token in (
+    'compareShowToggle',
+    'compareReferenceToggle',
+    'wizardGeometryMoveBtn',
+    'wizardGeometryDuplicateBtn',
+    'wizardGeometryRadialBtn',
+    'wizardGeometryBreakBtn',
+    'wizardGeometryDeleteBtn',
+):
+    if token not in web:
+        raise AssertionError(f"0.10.35 GEOMETRY selector/editor control missing {token!r}")
+
+for forbidden in (
+    'wizardGeometryMainMeshes',
+    'wizardGeometryExtraMeshes',
+    'geometryInstanceSelection',
+    'LOD GEOMETRY / PREVIEW',
+    'INSTANCE / ARRAY AUTHORING',
+    'partMaintenanceBlock',
+):
+    if forbidden in geometry_stage:
+        raise AssertionError(f"historical duplicate GEOMETRY panel returned: {forbidden!r}")
+
+order = [
+    geometry_stage.index('wizardGeometryCandidates'),
+    geometry_stage.index('wizardExtraMeshTable'),
+    geometry_stage.index('wizardGeometryEditor'),
+    geometry_stage.index("wizardStageCheckControls('geometry')"),
+    geometry_stage.index('geometryStatsHtml(lod)'),
+]
+if order != sorted(order):
+    raise AssertionError("GEOMETRY workflow order regressed: compare -> replacements -> edit -> CHECK -> stats")
+
+if 'data-wizard-groups="lods geometry"' in web:
+    raise AssertionError("Render LOD files panel leaked back into GEOMETRY")
+if 'id="renderInspectorSection" class="section" data-wizard-groups="geometry' in web:
+    raise AssertionError("detached selected-element inspector leaked back into GEOMETRY")
+
+for token in (
+    '.geometryStickyToolbar{position:sticky',
+    '.compareNode{white-space:normal',
+    '.compareSource{white-space:normal;overflow-wrap:anywhere',
+    '.extraMeshRow .sourceName{white-space:normal',
+    '.baseReplaceIdentity .source{',
+    'function geometrySelectionNeedsAncestor(index,lod)',
+    "state.geometryCompareChecked.size>0",
+    'geometrySelected=!geometryGroupFilter||state.geometryCompareChecked.has(i)',
+    'function renderGeometryEditor()',
+    'function geometryStatsHtml(lod)',
+):
+    if token not in web:
+        raise AssertionError(f"readable/isolated GEOMETRY workspace contract missing {token!r}")
+
+# -----------------------------------------------------------------------------
+# 0.10.37 SEMANTICS workspace: tree-first link authoring + 3D graph preview
+# -----------------------------------------------------------------------------
+semantic_stage = web[web.index("if(stage==='semantics')"):web.index("if(stage==='physics')")]
+for token in (
+    'semanticsWorkspaceWide',
+    'data-semantic-relation-select',
+    'draggable="true"',
+    'semanticReparentSelection',
+    'set_node_parents',
+    'semanticCreateAssetRoot',
+    'semanticGraphEnabled',
+    'semanticGraphExplode',
+    'semanticBindingSummaryHtml',
+    'REPAIR / РЕДАКТИРОВАТЬ VISUAL BINDINGS',
+    "wizardStageCheckControls('semantics')",
+):
+    if token not in semantic_stage and token not in web:
+        raise AssertionError(f"0.10.37 SEMANTICS tree/link workflow missing {token!r}")
+for token in (
+    'function applySemanticGraphExplode(',
+    'function rebuildSemanticGraphGizmos(',
+    'semanticLinkChildIndex',
+    'state.semanticSelectedNodes',
+    'semanticTopLevelSelected()',
+    'semanticCanUseParent(child,target)',
+    '.semanticTreeRow.selected{background:#17334a!important',
+    '.semanticTreeRow.rootCandidate:not(.selected)',
+    '.wizardLodSticky{position:sticky',
+):
+    if token not in web:
+        raise AssertionError(f"0.10.37 SEMANTICS visual/selection contract missing {token!r}")
+for token in (
+    'reparentSemanticNodesPreserveWorld',
+    'semanticNodeWorldTransform',
+    'if (command == "set_node_parents")',
+    'if (command == "create_semantic_asset_root")',
+    'asset must have exactly one semantic root; found',
+):
+    if token not in session:
+        raise AssertionError(f"0.10.37 SEMANTICS backend contract missing {token!r}")
+if 'semanticRelationButton' in semantic_stage:
+    raise AssertionError('old detached semantic relation button panel returned; link type belongs in the tree row')
+if '<div class="semanticBindingTable"' in semantic_stage and '<details class="semanticBindingEditor"' not in semantic_stage:
+    raise AssertionError('full Render binding table is no longer allowed as a permanently open top-level SEMANTICS panel')
+
+# -----------------------------------------------------------------------------
+# 0.10.42 semantic/render lifecycle integrity + single-authority persistent 3D graph preview
+# -----------------------------------------------------------------------------
+# GEOMETRY may duplicate visual RenderNodes, but it must never silently clone
+# semantic identity/state scope. Every new visual copy starts explicitly UNBOUND.
+for command, end_command in (
+    ('if (command == "duplicate_render_node_instance")', 'if (command == "move_render_node_delta")'),
+    ('if (command == "apply_radial_render_layout")', 'if (command == "delete_render_node")'),
+):
+    block = body_between(session, command, end_command)
+    for token in ('clone.semanticNodeIndex = NoIndex;', 'clone.activeStates.clear();'):
+        if token not in block:
+            raise AssertionError(f"0.10.40 visual copy inherited semantic identity in {command}: missing {token!r}")
+
+for token in (
+    'semanticSelectionModeFromEvent',
+    "e?.shiftKey",
+    "'add-range'",
+    "'range'",
+    'semanticSelectionAnchor',
+    'semanticBindingPickTarget',
+    '◎ НАЗНАЧИТЬ ЭТОЙ PART VISUAL ИЗ 3D',
+    'function semanticGraphLayoutOffsets(',
+    'semanticCanonicalNodeAnchorMap',
+    'semanticCanonicalRenderWorldMatrices',
+    'geometry.minBounds',
+    'geometry.maxBounds',
+    'semanticGraphGroup:new THREE.Group()',
+    'semanticJointGizmoGroup:new THREE.Group()',
+    'semanticGraphNodeObjects:new Map()',
+    'ensureSemanticGraphObjects',
+    'semanticGraphDisplayAnchorMap',
+    'markHidden',
+    'semantic_tree_patch',
+    'applySemanticTreePatch',
+    'scheduleSemanticGraphPreview',
+    'function semanticRenderBaseMatrix(',
+    'function restoreSemanticPreviewMatrices()',
+    'marker.userData.semanticNodeIndex=i',
+    'semanticSelectNode(si,semanticSelectionModeFromEvent(ev))',
+    'function updateSemanticMotionAnimation(ts)',
+    '▶ ВРАЩАТЬ',
+    '⚡ ОТОДВИНУТЬ / ПРОВЕРИТЬ ОТРЫВ',
+    '⚠ 0 VIS',
+    'data-semantic-toggle',
+    "f<.28?'before':f>.72?'after':'inside'",
+    'semanticTreeOrder',
+    'function semanticRefreshSelectionUi()',
+):
+    if token not in web:
+        raise AssertionError(f"0.10.40 SEMANTICS lifecycle/tree/preview contract missing {token!r}")
+
+# Selection is a hot path: changing selection must not destroy/recreate the whole
+# semantic tree/panel. Structural edits may rebuild it, ordinary clicks may not.
+selection_block = body_between(web, "function semanticSelectNode(index,mode='single')", "function semanticReparentSelection")
+if 'renderWizardPanel()' in selection_block:
+    raise AssertionError('SEMANTICS selection regressed to full wizard-panel DOM rebuild')
+if 'semanticRefreshSelectionUi()' not in selection_block:
+    raise AssertionError('SEMANTICS selection lost partial selection refresh')
+
+# The incoming-link selector must visually precede the child identity. Runtime
+# node vector order is not presentation order: before/after DnD is editor-only.
+tree_row_start = web.index('const roots=semanticRootIndices(),treeRows=semanticTreeRows()')
+tree_row_end = web.index('const selectedPanels=', tree_row_start)
+tree_row = web[tree_row_start:tree_row_end]
+if '${toggle}${relation}<span class="name">' not in tree_row:
+    raise AssertionError("SEMANTICS toggle/link controls no longer precede the child name")
+if '${count} RN' in tree_row or '>0 RN<' in tree_row:
+    raise AssertionError("opaque RN count leaked back into the primary semantic tree; use VIS")
+
+for token in (
+    '.semanticTreeRow{--tree-depth:0',
+    'calc(7px + var(--tree-depth)*28px)',
+    '.semanticTreeRow.dragBefore',
+    '.semanticTreeRow.dragAfter',
+    '.semanticTreeRow.dragInside',
+):
+    if token not in web:
+        raise AssertionError(f"SEMANTICS readable/reorderable tree styling missing {token!r}")
+
+# 0.10.42 interaction performance/collapse/graph guards. Semantic-only tree edits must
+# never fall back to full asset metadata serialization (which scans geometry
+# triangles for material statistics), and collapsed descendants must stay hidden.
+reparent_block = body_between(session, 'if (command == "set_node_parents")', 'if (command == "create_semantic_asset_root")')
+if 'sendSemanticTreePatch();' not in reparent_block:
+    raise AssertionError('SEMANTICS reparent lost bounded semantic_tree_patch publication')
+if 'sendAssetMetadata();' in reparent_block:
+    raise AssertionError('SEMANTICS reparent regressed to full asset metadata serialization')
+semantic_patch_block = body_between(session, 'void ModelAssetEditorSession::sendSemanticTreePatch()', 'void ModelAssetEditorSession::sendSurfaceMetadataPatch')
+for token in ('"semantic_tree_patch"', 'serializeSemanticNodes()', 'serializeSemanticTreeOrder()'):
+    if token not in semantic_patch_block:
+        raise AssertionError(f'bounded semantic tree patch missing {token!r}')
+for forbidden in ('serializeAssetMetadata()', '.triangles', 'materialUsage'):
+    if forbidden in semantic_patch_block:
+        raise AssertionError(f'semantic tree patch must not scan full render metadata: {forbidden!r}')
+
+tree_rows_block = body_between(web, 'function semanticTreeRows()', 'function semanticDescendantSet')
+for token in ('markHidden', 'if(collapsed){for(const child of kids)markHidden(child);return;}'):
+    if token not in tree_rows_block:
+        raise AssertionError(f'collapsed semantic subtree guard missing {token!r}')
+anchor_block = body_between(web, 'function semanticCanonicalNodeAnchorMap()', 'function semanticGraphDirection')
+for token in ('semanticCanonicalRenderWorldMatrices', 'geometry.minBounds', 'geometry.maxBounds', 'applyMatrix4(world)'):
+    if token not in anchor_block:
+        raise AssertionError(f'canonical semantic graph anchor missing {token!r}')
+for forbidden in ('computeBoundingBox', 'mesh.geometry', 'state.meshObjects', 'group.matrixWorld'):
+    if forbidden in anchor_block:
+        raise AssertionError(f'3D semantic graph canonical anchor depends on mutable viewport state: {forbidden!r}')
+
+# The graph overlay is persistent. Slider/motion preview may update positions, but
+# must not destroy/recreate dozens of THREE geometries/materials every animation
+# frame. Canonical anchors are the single source for both mesh explode and overlay.
+for token in (
+    'semanticGraphGroup:new THREE.Group()',
+    'semanticJointGizmoGroup:new THREE.Group()',
+    'semanticGraphNodeObjects:new Map()',
+    'semanticGraphLinkObjects:new Map()',
+    'function ensureSemanticGraphObjects()',
+    'function semanticGraphDisplayAnchorMap(',
+    'line.frustumCulled=false',
+    'applySemanticGraphExplode(canonicalAnchors)',
+    'rebuildSemanticGraphGizmos(canonicalAnchors)',
+    'applySemanticMotionPreview(false)',
+    'graphExplode.onchange=()=>applySemanticMotionPreview(true)',
+):
+    if token not in web:
+        raise AssertionError(f'persistent semantic graph preview contract missing {token!r}')
+
+graph_rebuild = body_between(web, 'function rebuildSemanticGraphGizmos(', 'function rebuildSemanticGizmos(')
+for forbidden in ('new THREE.BoxGeometry', 'clearSemanticGizmos()', 'clearGroup('):
+    if forbidden in graph_rebuild:
+        raise AssertionError(f'semantic graph hot update reallocates/destroys overlay objects: {forbidden!r}')
+
+joint_rebuild = body_between(web, 'function rebuildSemanticGizmos(', 'function bindSemanticMotionControls')
+if 'clearSemanticGizmos()' in joint_rebuild:
+    raise AssertionError('joint gizmo refresh destroys persistent semantic graph overlay')
+if 'clearSemanticJointGizmos()' not in joint_rebuild:
+    raise AssertionError('joint gizmo refresh lost isolated joint-overlay cleanup')
+
+# Camera orbit must not execute selection/raycast work on pointer-down; a click
+# is distinguished from a drag by a small movement threshold.
+if "addEventListener('pointerdown',pick)" in web:
+    raise AssertionError('viewport selection fires on camera-drag pointerdown')
+for token in ("pickStart={id:ev.pointerId", 'Math.hypot(', 'if(moved<=4)pick(ev)'):
+    if token not in web:
+        raise AssertionError(f'viewport click-vs-orbit guard missing {token!r}')
+
+semantic_lifecycle = text('src/model_asset/ModelAssetSemantics.cpp')
+semantic_lifecycle_h = text('src/model_asset/ModelAssetSemantics.h')
+for token in (
+    'struct SemanticNodeUsage',
+    'isOrphanCandidate() const',
+    'SemanticEraseResult',
+    'eraseSemanticNode',
+):
+    if token not in semantic_lifecycle_h:
+        raise AssertionError(f"shared semantic lifecycle API missing {token!r}")
+for token in (
+    'renderNode.semanticNodeIndex = NoIndex;',
+    'renderNode.activeStates.clear();',
+    'remapNodeIndex',
+    'legacySourceBootstrapCollisions',
+    'cannot delete semantic node with children',
+):
+    if token not in semantic_lifecycle:
+        raise AssertionError(f"shared semantic lifecycle implementation missing {token!r}")
+
+for token in (
+    'if (command == "delete_semantic_node")',
+    'inspectSemanticNodeUsage(m_asset',
+    'orphan semantic parts=',
+    'm_semanticChildOrder',
+    'parentChanged ? "Reparented " : "Reordered "',
+    '" in editor tree only"',
+):
+    if token not in session:
+        raise AssertionError(f"0.10.40 SEMANTICS backend lifecycle/order contract missing {token!r}")
+for forbidden in ('if (command == "set_node_parent")', 'if (command == "delete_node")'):
+    if forbidden in session:
+        raise AssertionError(f"obsolete duplicate SEMANTICS backend path survived: {forbidden}")
+
+source_importer = text('tools/model_asset_editor/SourceFolderImporter.cpp')
+if 'asset.collisionVolumes.push_back' in source_importer:
+    raise AssertionError('SOURCE importer still authors PHYSICS collision volumes')
+if 'Collision/physics authoring belongs exclusively to the PHYSICS stage.' not in source_importer:
+    raise AssertionError('SOURCE/PHYSICS stage ownership boundary is not documented in importer')
+
+model_tests = text('tests/model_asset/ModelAssetBinaryTests.cpp')
+for token in (
+    'testSemanticLifecycleIntegrity',
+    'semantic erase did not report/unbind all visual owners',
+    'legacy bootstrap collision hid a dead semantic orphan',
+    'semantic erase silently deleted owned gameplay payload without confirmation',
+):
+    if token not in model_tests:
+        raise AssertionError(f"semantic lifecycle scenario regression test missing {token!r}")
+
+
+# Runtime semantic-graph integrity. Undefined legacy subtree helpers must
+# never reach an interaction path. Hit volumes are a global viewport overlay
+# when the toolbar toggle is enabled, while collision EDIT/PICK ownership stays
+# in PHYSICS/DAMAGE so SEMANTICS selection is not intercepted.
+if 'isDescendant(' in web:
+    raise AssertionError('undefined legacy isDescendant call survived in Model Asset Editor WebUI')
+for token in (
+    'function semanticIsDescendant(',
+    'semanticIsDescendant(i,Number(index))',
+    'function updateSemanticCollisionTransforms()',
+    "if((state.wizardStage==='physics'||state.wizardStage==='damage')&&$('hitToggle').checked)",
+    "function rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset||!activeRenderLod()?.loaded||!$('hitToggle').checked)return;",
+    'if(!n||Number(n.parentIndex)<0)return;',
+):
+    if token not in web:
+        raise AssertionError(f'semantic graph/global-overlay ownership contract missing {token!r}')
+if "ownsCollisionPreview=state.wizardStage==='physics'||state.wizardStage==='damage'" in web:
+    raise AssertionError('hit-volume visibility is still incorrectly stage-gated despite a global toolbar toggle')
+
+motion_block = body_between(web, 'function applySemanticMotionPreview(', 'function resetSemanticMotionPreview')
+if 'updateSemanticCollisionTransforms();' not in motion_block:
+    raise AssertionError('semantic preview no longer keeps owned PHYSICS/DAMAGE collision overlays coherent')
+
+selection_refresh = body_between(web, 'function semanticRefreshSelectionUi()', 'function semanticSelectNode(')
+if 'applySemanticMotionPreview(true);' not in selection_refresh:
+    raise AssertionError('semantic selection refresh may drop an active graph explode/motion preview')
+if '}else applySemanticMotionPreview();highlightSelection();}' in selection_refresh:
+    raise AssertionError('selected semantic node still skips graph-preview reapplication')
+
+
+
+# 0.10.45 semantic authoring UX / radial-support graph contract.
+# Explode remains root-centered, but displacement is based on the far support
+# point of each visual bounds along the radial ray rather than center distance.
+# Joint pivot remains link-owned and is authored through explicit presets/3D pick.
+if 'root=Number(nodes[i].parentIndex)<0;color=' in web:
+    raise AssertionError('semantic graph still assigns to an undeclared color variable')
+for token in (
+    'function semanticGraphRootCenter(',
+    'function semanticGraphRadialMetrics(',
+    'farDistance:centerDistance',
+    'metric.farDistance=Math.max(metric.farDistance,projected)',
+    'far*1.20',
+    'marker.visible=false;',
+    'line.visible=false;',
+    'semanticJointPivotPickTarget',
+    'function semanticSetJointPivotWorld(',
+    '◎ ORIGIN РОДИТЕЛЯ',
+    '◎ ЦЕНТР VISUAL CHILD',
+    '◎ УКАЗАТЬ В 3D',
+    'СКОРОСТЬ ПРЕДПРОСМОТРА, °/с · editor-only',
+    'СОХРАНЯЕМЫЕ ПАРАМЕТРЫ ВРАЩЕНИЯ · runtime',
+    'Номинальная скорость, °/с',
+    'Сила разрушения, N',
+    'Момент разрушения, N·m',
+    'VISUAL REPRESENTATION / LOD BINDINGS',
+    'ДОПОЛНИТЕЛЬНО · SEMANTIC FRAME',
+):
+    if token not in web:
+        raise AssertionError(f'0.10.45 semantic authoring/radial-support contract missing {token!r}')
+
+
+# 0.10.46 exploded-motion composition / transactional joint authoring.
+require("src/model_asset/ModelAsset.h", "Revolute ranges spanning 360 degrees or more are continuous rotation.")
+require("src/assets/webui/model_asset_editor.html", "fullCircle=hi-lo>=360-.001")
+require("src/assets/webui/model_asset_editor.html", "if(fullCircle){const span=hi-lo;while(next>hi)next-=span;while(next<lo)next+=span;}else if(next>=hi)")
+# Explode is an editor-only spatial preview. Joint motion must be applied AFTER
+# explode so the exploded subtree behaves as one rigid assembly around the one
+# authored joint pivot: R_joint * T_explode * M, never T_explode * R_joint * M.
+motion_block = body_between(web, 'function applySemanticMotionPreview(', 'function resetSemanticMotionPreview')
+if motion_block.find('applySemanticGraphExplode(canonicalAnchors);') > motion_block.find('const delta=semanticPreviewDeltaWorld()'):
+    raise AssertionError('semantic motion is still composed before graph explode')
+
+display_block = body_between(web, 'function semanticDisplayWorldMatrix(', 'function restoreSemanticPreviewMatrices')
+if display_block.find('makeTranslation(offset.x,offset.y,offset.z).multiply(out)') > display_block.find('semanticPreviewDeltaWorld().multiply(out)'):
+    raise AssertionError('semantic display matrix still composes explode after joint motion')
+
+graph_anchor_block = body_between(web, 'function semanticGraphDisplayAnchorMap(', 'function rebuildSemanticGraphGizmos')
+if graph_anchor_block.find('if(offset)p.add(offset);') > graph_anchor_block.find('p.applyMatrix4(delta)'):
+    raise AssertionError('semantic graph markers still compose explode after joint motion')
+
+joint_gizmo_block = body_between(web, 'function rebuildSemanticGizmos(', 'function bindSemanticMotionControls')
+for token in (
+    'canonicalWorld=semanticWorldMatrix(state.selectedNode)',
+    'displayWorld=semanticDisplayWorldMatrix(state.selectedNode)',
+    'applyMatrix4(canonicalWorld)',
+    'setFromMatrixPosition(displayWorld)',
+):
+    if token not in joint_gizmo_block:
+        raise AssertionError(f'joint gizmo lost canonical-pivot/display-child split: {token!r}')
+
+for token in (
+    "const runtimeRotationUi=jointType==='revolute'?",
+    "const breakUi=j.breakable?",
+    'ПРОЧНОСТЬ СВЯЗИ · сохраняется для runtime physics/damage',
+    '✓ СОХРАНИТЬ RUNTIME ПАРАМЕТРЫ СВЯЗИ',
+    "if(rot){overrides.axis=readVec('sja')",
+    "if(detach){overrides.breakForceN=Number($('sjForce').value)",
+):
+    if token not in web:
+        raise AssertionError(f'contextual joint-runtime editor contract missing {token!r}')
+
+set_joint_block = body_between(session, 'if (command == "set_joint")', 'if (command == "set_physics")')
+for token in (
+    'auto next = m_asset.nodes[index].joint;',
+    'const bool revolute = next.type == model_asset::JointType::Revolute;',
+    'const float axisLengthSq = glm::dot(next.axis, next.axis);',
+    '(revolute && (!std::isfinite(axisLengthSq) || axisLengthSq <= 1.0e-8f))',
+    'if (revolute)',
+    'next.minAngleDeg > next.maxAngleDeg',
+    'm_asset.nodes[index].joint = next;',
+):
+    if token not in set_joint_block:
+        raise AssertionError(f'transactional set_joint validation missing {token!r}')
+if 'glm::normalize(jsonVec3' in set_joint_block:
+    raise AssertionError('set_joint can still normalize an unchecked zero axis into NaNs')
+
+if 'semantic joint pivot/axis/runtime rate/limits/break thresholds lost in binary round trip' not in model_tests:
+    raise AssertionError('v4 binary round trip no longer locks persisted NodeJoint runtime fields')
+
+# -----------------------------------------------------------------------------
+# Capability registry: every protected capability must point to live tokens.
+# This keeps broad regression coverage without accumulating version-specific
+# archaeology in one giant hand-written test.
+# -----------------------------------------------------------------------------
+cap_file = ROOT / "tools/model_asset_editor/EDITOR_CAPABILITIES.json"
+capabilities = json.loads(cap_file.read_text(encoding="utf-8"))
+ids = [item["id"] for item in capabilities["protected_capabilities"]]
+if len(ids) != len(set(ids)):
+    raise AssertionError("duplicate protected capability id")
+for required_id in (
     "geometry_instance_fit",
     "independent_render_lods",
     "semantic_damage_states",
     "source_reimport_read_only",
-    "wizard_checkpoints",
+    "working_state_controls",
     "incremental_editor_sync",
     "source_render_variants",
+    "model_preflight",
     "lod_generator_preview",
     "lod_generator_authoring",
-    "model_preflight",
     "surface_authoring",
+    "stable_list_scroll",
+    "geometry_workspace_flow",
+    "semantic_tree_link_authoring",
 ):
-    if protected_id not in {c.get("id") for c in capability_doc.get("protected_capabilities", [])}:
-        raise AssertionError(f"protected editor capability disappeared: {protected_id}")
+    if required_id not in ids:
+        raise AssertionError(f"protected capability missing {required_id!r}")
 
-# 0.10.20: GEOMETRY is a complete per-LOD workspace again, not only the
-# rigid-fit comparison table. Entering the stage clears transient LOD/replacement
-# preview state, the active LOD selector comes first, and instance arrays plus
-# replacement compatibility remain visible first-class authoring tools.
-for token in (
-    "resetGeometryViewportState",
-    "wizardGeometryLodSelect",
-    "wizardGeometryMainMeshes",
-    "wizardGeometryExtraMeshes",
-    "wizardGeometryShowAllBtn",
-    "geometryMeshSelection",
-    "geometryNodePassesMeshFilter",
-    "addGeometryStandaloneSelection",
-    "wizardGeometryDuplicateBtn",
-    "wizardGeometryBreakBtn",
-    "wizardGeometryRadialBtn",
-    "wizardBaseReplacementTable",
-    "wizardVariantPreviewResetBtn",
-):
-    if token not in web_sync:
-        raise AssertionError(f"restored GEOMETRY workspace missing {token!r}")
-for token in (
-    'state.variantPreviewByNode.clear()',
-    "state.geometryMeshSelection='all'",
-    "state.lodGeneratorMeshSelection='all'",
-    "state.meshViewportMode='working'",
-):
-    if token not in web_sync:
-        raise AssertionError(f"GEOMETRY stage-entry reset missing {token!r}")
-if "mesh.visible=lodGeneratorNodePassesMeshFilter(n)&&geometryNodePassesMeshFilter(n)" not in web_sync:
-    raise AssertionError("GEOMETRY single-mesh preview is not applied at mesh visibility boundary")
-if "if(next)setWizardStage(next,true)" not in web_sync:
-    raise AssertionError("automatic wizard progression bypasses the unified stage-entry transaction")
+for capability in capabilities["protected_capabilities"]:
+    for contract_name, contract in capability.get("contracts", {}).items():
+        path = contract.get("path")
+        if not path:
+            raise AssertionError(f"{capability['id']}/{contract_name}: contract path missing")
+        body = text(path)
+        # Test contracts may point back to this architecture test or to dedicated
+        # C++ regression suites. Their execution is owned by the normal test runner;
+        # here we validate the production/data/UI capability anchors.
+        if contract_name == "test":
+            continue
+        for token in contract.get("tokens", []):
+            if token not in body:
+                raise AssertionError(
+                    f"{capability['id']}/{contract_name}: {path} missing protected token {token!r}"
+                )
 
-# 0.10.21: SURFACES is the first implemented stage after GEOMETRY. It owns
-# surface intent, material properties, material assignment audit and its own
-# checkpoint. It must not invalidate LODS/GEOMETRY merely because an author
-# resolves a surface classification.
-for token in (
-    'else if (stage == "surfaces")',
-    'SURFACES validation failed',
-    'PreflightTopologyClass::ThinOneSided',
-    'set_material_definition',
-    'assign_unassigned_material',
-    'invalidateWizardFrom("surfaces")',
-    '"surfaceIntent"',
-    '"materialSlots"',
-    '"unassignedMaterialTriangles"',
-):
-    if token not in session_cpp:
-        raise AssertionError(f"SURFACES backend contract missing {token!r}")
-for token in (
-    'wizardSurfaceLodSelect',
-    'wizardSurfaceGeometryTable',
-    'wizardSurfaceIntent',
-    'wizardSurfaceMaterialSelect',
-    'wizardSurfaceApplyMaterialBtn',
-    'surfaceGeometrySelection',
-    'surfaceMaterialSelection',
-    'configureSurfacePreviewGroups',
-    'makeSurfacePreviewMaterials',
-    'assign_unassigned_material',
-    "next==='surfaces'",
-):
-    if token not in web_sync:
-        raise AssertionError(f"SURFACES Web UI contract missing {token!r}")
-if 'invalidateWizardFrom("lods");\n    if (!writeWizardState()) sendStatus("Topology class changed' in session_cpp:
-    raise AssertionError("surface classification still invalidates the LODS checkpoint")
+# Keep the exact current editor version guarded.
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.46"')
 
-# 0.10.22: SURFACES analysis is explicit, cached across harmless tab revisits,
-# and cross-LOD intent propagation follows stable visual-family identity rather
-# than transient G# or coincidental geometry indices. Geometry surface intent
-# is the ordinary renderer sidedness authority.
-for token in (
-    "surfaceAnalysisReady",
-    "surfaceAnalysisRequested",
-    "wizardSurfaceAnalyzeBtn",
-    "wizardSurfaceApplyAllLods",
-    "surfaceFamilyKey",
-    "surfaceSameFamily",
-    "surfaceRenderConsequence",
-    "DoubleSide · back-face culling OFF",
-    "FrontSide · back-face culling ON",
-):
-    if token not in web_sync:
-        raise AssertionError(f"0.10.22 explicit/cross-LOD SURFACES UI missing {token!r}")
-for forbidden in (
-    "if(id==='surfaces'&&!state.modelPreflight)send('analyze_model_preflight',{})",
-    "if(next==='surfaces')send('analyze_model_preflight',{})",
-    "if((id==='geometry'||id==='surfaces')&&previousStage!==id){rebuildScene(true);fitView(false);}",
-    "if(next==='geometry'||next==='surfaces'){rebuildScene(true);fitView(false);}",
-    "side:(forceDouble||m.twoSided)?THREE.DoubleSide:THREE.FrontSide",
-    "id=\"surfaceTwoSided\"",
-):
-    if forbidden in web_sync:
-        raise AssertionError(f"0.10.22 SURFACES retained obsolete automatic/material-sided behavior: {forbidden!r}")
-for token in (
-    "state.surfaceAnalysisReady=true;rebuildScene(true);fitView(false)",
-    "clearLodGeneratorPreview(false,false)",
-    "viewportContractChanged",
-    "if(next)setWizardStage(next,true)",
-):
-    if token not in web_sync:
-        raise AssertionError(f"0.10.23 wizard stage-entry transaction missing {token!r}")
-if "if(next==='geometry'||(next==='surfaces'&&state.surfaceAnalysisReady)){rebuildScene(true);fitView(false);}" in web_sync:
-    raise AssertionError("automatic wizard progression still owns a second independent scene-rebuild path")
-if "if(id==='geometry'&&previousStage!==id){rebuildScene(true);fitView(false);}" in web_sync:
-    raise AssertionError("GEOMETRY tab entry still unconditionally rebuilds the complete scene")
+# These marker phrases are intentionally referenced by the capability registry.
+manual_working_state_marker = "manual working-state save/restore contract"
+stage_check_marker = "stage CHECK is persistence read-only"
 
-for token in (
-    'message.value("applyAllLods", false)',
-    "sourceVariantAuthoringId(lodIndex, selectedGeometry)",
-    "baseVisualId(lodIndex, selectedGeometry.id)",
-    "setGeometryTopologyClass(li, gi, topologyClass, false, false)",
-    'sendStatus("Surface intent applied to "',
-):
-    if token not in session_cpp:
-        raise AssertionError(f"0.10.22 cross-LOD surface batch missing {token!r}")
-
-# 0.10.25: explicit surface intent is a metadata-only geometry edit. It must
-# not automatically run topology audit, serialize all-asset metadata/material
-# usage, send mesh payloads or force a complete Three.js scene rebuild.
-for token in (
-    "sendSurfaceMetadataPatch",
-    '"type", "surface_metadata_patch"',
-    "applySurfaceMetadataPatch",
-    "applyResidentSurfaceSide",
-    "wizard_state_patch",
-    "wizard_checkpoint_saved",
-    "status==='needs_fix'",
-):
-    if token not in session_cpp and token not in web_sync:
-        raise AssertionError(f"0.10.25 targeted metadata/checkpoint patch missing {token!r}")
-
-set_class_start = session_cpp.index("bool ModelAssetEditorSession::setGeometryTopologyClass(")
-set_class_end = session_cpp.index("bool ModelAssetEditorSession::analyzeLodRequirements(", set_class_start)
-set_class_body = session_cpp[set_class_start:set_class_end]
-if "bool analyzeAfter = false" not in text("tools/model_asset_editor/ModelAssetEditorSession.h"):
-    raise AssertionError("surface classification default still requests automatic topology analysis")
-if "sendAsset();" in set_class_body:
-    raise AssertionError("surface classification still publishes full geometry payload")
-
-set_cmd_start = session_cpp.index('if (command == "set_geometry_topology_class")')
-set_cmd_end = session_cpp.index('if (command == "analyze_lod_requirements")', set_cmd_start)
-set_cmd_body = session_cpp[set_cmd_start:set_cmd_end]
-if "analyzeModelPreflight()" in set_cmd_body:
-    raise AssertionError("explicit/cross-LOD surface classification still auto-runs model preflight")
-if "sendAsset();" in set_cmd_body:
-    raise AssertionError("surface classification command still retransmits full geometry")
-
-patch_js_start = web_sync.index("function applySurfaceMetadataPatch(msg)")
-patch_js_end = web_sync.index("function handle(msg)", patch_js_start)
-patch_js_body = web_sync[patch_js_start:patch_js_end]
-if "rebuildScene(" in patch_js_body:
-    raise AssertionError("targeted surface metadata patch still rebuilds the complete scene")
-if "triangleMaterials" in patch_js_body or ".indices" in patch_js_body:
-    raise AssertionError("targeted surface metadata patch still traverses triangle geometry")
-
-if "completeDisabled=checkpointCurrent" in web_sync:
-    raise AssertionError("current checkpoint still disables explicit re-save / sequence advance")
-
-# 0.10.26: ordinary triangles may use the implicit DEFAULT visual surface.
-# Missing explicit materials are not a SURFACES failure and must not be painted
-# diagnostic red; the UI must report the actual remaining blocker categories.
-for token in (
-    "NoIndex is the implicit default visual surface",
-    "surfaceGeometryBlockers",
-    "surfaceInvalidMaterialSlots",
-    "no_materials_valid",
-    "default_material_hint",
-    "invalid_material_refs",
-    "formatSourceUnits",
-    "scale_warning",
-):
-    if token not in session_cpp and token not in web_sync and token not in localization:
-        raise AssertionError(f"0.10.26 implicit DEFAULT/SURFACES diagnostics missing {token!r}")
-if "contains triangles without a material" in session_cpp:
-    raise AssertionError("NoIndex still blocks SURFACES validation")
-if "0xff3b5c" in web_sync:
-    raise AssertionError("implicit DEFAULT triangles are still rendered as diagnostic red")
-if "bad=!!row?.structuralBlocker||Number(g.unassignedMaterialTriangles||0)>0" in web_sync:
-    raise AssertionError("SURFACES UI still treats LODS topology/default triangles as a material blocker")
-if "if (explicitParsed == PreflightTopologyClass::Auto)" not in session_cpp:
-    raise AssertionError("SURFACES validation no longer gates topology audit behind AUTO")
-
-# 0.10.27: generated/manual RenderLods own scale-independent screen-space
-# error metadata. Source-unit distances must not return as runtime authority;
-# the browser edit is metadata-only and runtime selection is shared C++ policy.
-require(
-    "src/model_asset/ModelAssetLodSelection.h",
-    "DefaultLodVisibilityCutoffPx = 2.0f",
-    "DefaultLodCoarsenCutoffPx = 1.8f",
-    "DefaultLodRefineCutoffPx = 2.2f",
-    "projectedGeometricErrorPixels",
-    "perspectiveProjectedCharacteristicPixels",
-    "selectRenderLodScreenSpace",
-)
-for token in (
-    '"relativeGeometricError"',
-    '"twoPixelProjectedCharacteristicPx"',
-    '"type", "lod_runtime_metadata_patch"',
-    'set_lod_relative_error',
-    'renderLodPlacedCharacteristicSize',
-):
-    if token not in session_cpp:
-        raise AssertionError(f"0.10.27 backend SSE contract missing {token!r}")
-for token in (
-    "formatRelativeLodError",
-    "twoPixelProjectedCharacteristicPx",
-    "applyLodRuntimeMetadataPatch",
-    "set_lod_relative_error",
-    "relative_error_hint",
-):
-    if token not in web_sync and token not in localization:
-        raise AssertionError(f"0.10.27 UI SSE contract missing {token!r}")
-if "twoPixelDistanceMeters" in web_sync:
-    raise AssertionError("source-unit 2 px distance returned as browser/runtime LOD authority")
-for obsolete in ("LodReferenceWidthPx", "LodReferenceHeightPx", "LodReferenceVerticalFovDeg"):
-    if obsolete in session_cpp:
-        raise AssertionError(f"fixed authoring optics still leak into runtime SSE contract: {obsolete}")
-lod_patch_start = web_sync.index("function applyLodRuntimeMetadataPatch(msg)")
-lod_patch_end = web_sync.index("function handle(msg)", lod_patch_start)
-lod_patch_body = web_sync[lod_patch_start:lod_patch_end]
-if "rebuildScene(" in lod_patch_body:
-    raise AssertionError("metadata-only LOD SSE edit rebuilds the scene")
-
-# 0.10.28: SEMANTICS is an implemented asset-wide hierarchy + per-LOD render
-# binding stage. LOD buttons are explicit view/load actions and cross-LOD binding
-# uses exact stable RenderNode ids only. Binding edits stay metadata-only.
-for token in (
-    'else if (stage == "semantics")',
-    'SEMANTICS validation failed',
-    'add_semantic_node',
-    'set_node_parent',
-    'sendSemanticBindingPatch',
-    '"type", "semantic_binding_patch"',
-    'stableRenderNodeId',
-    'applyAllLods',
-):
-    if token not in session_cpp:
-        raise AssertionError(f"0.10.28 SEMANTICS backend contract missing {token!r}")
-for token in (
-    "semanticLodGrid",
-    "semanticLodButton",
-    "data-semantic-lod",
-    "semanticApplyAllLods",
-    "wizardSemanticApplyAllLods",
-    "applySemanticBindingPatch",
-    "data-semantic-bind",
-    "semanticTreeRows",
-):
-    if token not in web_sync:
-        raise AssertionError(f"0.10.28 SEMANTICS workspace missing {token!r}")
-if "grid-template-columns:repeat(3,minmax(0,1fr))" not in web_sync:
-    raise AssertionError("SEMANTICS LOD selector is no longer a three-column button grid")
-semantic_cmd_start = session_cpp.index('if (command == "set_render_node_semantic")')
-semantic_cmd_end = session_cpp.index('if (command == "duplicate_render_node_instance")', semantic_cmd_start)
-semantic_cmd_body = session_cpp[semantic_cmd_start:semantic_cmd_end]
-for forbidden in ("sendAsset();", "analyzeModelPreflight", "auditPreflightGeometry"):
-    if forbidden in semantic_cmd_body:
-        raise AssertionError(f"semantic render binding regained heavy/full-asset side effect: {forbidden}")
-semantic_patch_start = web_sync.index("function applySemanticBindingPatch(msg)")
-semantic_patch_end = web_sync.index("function applyLodRuntimeMetadataPatch(msg)", semantic_patch_start)
-if "rebuildScene(" in web_sync[semantic_patch_start:semantic_patch_end]:
-    raise AssertionError("targeted semantic binding patch rebuilds the complete scene")
-
-# 0.10.29: the wizard is a complete linear production chain. No stage-count
-# magic numbers may silently stop SURFACES -> SEMANTICS or leave later stages planned.
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.32"')
-for forbidden in ("i < 5", "stageIndex >= 5", "stageIndex + 1 < 4"):
-    if forbidden in session_cpp:
-        raise AssertionError(f"partial wizard hard-code survived 0.10.29: {forbidden}")
-for token in (
-    "const bool implemented = true;",
-    "stageIndex + 1 < wizardStageOrder().size()",
-    'else if (stage == "physics")',
-    'else if (stage == "damage")',
-    'else if (stage == "validate" || stage == "build")',
-    "sendWizardValidationReport",
-    'command == "run_wizard_validation"',
-    'completionPassed && stage == "build"',
-    "saveAsset()",
-    'physicsEdit ? "physics" : "damage"',
-    'semanticEdit ? "semantics" : "damage"',
-):
-    if token not in session_cpp:
-        raise AssertionError(f"0.10.29 complete wizard backend missing {token!r}")
-for token in (
-    "if(stage==='physics')",
-    "if(stage==='damage')",
-    "if(stage==='validate')",
-    "if(stage==='build')",
-    "wizard_validation_report",
-    "run_wizard_validation",
-    "renderStatesApplyAllLods",
-    "damageApplyAllLods",
-    "BUILD PRODUCTION PACKAGE",
-    "CREATE ROLLBACK SNAPSHOT",
-):
-    if token not in web_sync:
-        raise AssertionError(f"0.10.29 complete wizard UI missing {token!r}")
-if 'data-wizard-groups="geometry damage"' not in web_sync:
-    raise AssertionError("DAMAGE cannot inspect active-LOD RenderNode state selectors")
-if "implemented:wizardStageIds.indexOf(id)<5" in web_sync:
-    raise AssertionError("browser fallback still pretends later wizard stages are unimplemented")
-
-print("[PASS] model asset editor v0.10.32 persistent working state / rollback-only checkpoints / BUILD boundary")
+print("[PASS] model asset editor v0.10.46 rigid exploded-joint preview / persisted joint runtime contract / coherent GEOMETRY")

@@ -341,14 +341,8 @@ bool importSourceFolderAsset(
                     asset.nodes.push_back(std::move(semantic));
                     visualId = asset.nodes.back().id;
 
-                    CollisionVolume collision;
-                    collision.id = "hit." + visualId;
-                    collision.moduleId = visualId;
-                    collision.parentNodeIndex = semanticNodeIndex;
-                    collision.shape = CollisionShape::Box;
-                    collision.localPosition = (mesh.minBounds + mesh.maxBounds) * 0.5f;
-                    collision.halfSize = glm::max((mesh.maxBounds - mesh.minBounds) * 0.5f, glm::vec3(0.001f));
-                    asset.collisionVolumes.push_back(std::move(collision));
+                    // SOURCE creates only the initial visual/semantic identity scaffold.
+                    // Collision/physics authoring belongs exclusively to the PHYSICS stage.
                 }
                 else
                 {

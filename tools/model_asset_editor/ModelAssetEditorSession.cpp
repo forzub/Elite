@@ -7412,20 +7412,17 @@ void ModelAssetEditorSession::recordMeshStageResult(const std::string& stage, bo
             (void)lodIndex;
             (void)geometryId;
             auto& value = record.stageChecks[stage];
+            if (value == "passed")
+            {
+                // Already-certified SOURCE meshes are outside the pending workset.
+                // New/replaced meshes have their graph cleared by SOURCE maintenance,
+                // so a later stage CHECK only transitions those pending records.
+                continue;
+            }
             if (passed)
-            {
-                // A successful whole-stage CHECK certifies every resident SOURCE
-                // mesh against the current revision of that stage.
                 value = "passed";
-            }
-            else if (value != "passed")
-            {
-                // Preserve evidence for unchanged meshes that had already passed
-                // this stage. SOURCE replacement/new import clears only the
-                // affected mesh first, so a later failed CHECK marks precisely
-                // the still-unverified workset instead of painting the whole model red.
+            else
                 value = "failed";
-            }
         }
     if (markDirty) markEditorStateDirty();
 }

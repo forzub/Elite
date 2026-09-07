@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v0.10.63: LOD tab is a per-mesh PREPARE workspace with read-only ANALYZE."""
+"""v0.10.64: LOD tab is a per-mesh PREPARE workspace with read-only ANALYZE."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -146,7 +146,7 @@ for token in (
     "function selectPreflightGeometry(",
     "selectRenderNode(ri,{scrollPreflight:false});",
     "syncPreflightSelectionUi(!!options.scrollPreflight)",
-    "selectRenderNode(ri,{scrollPreflight:state.wizardStage==='lods'});",
+    "selectRenderNode(ri,{scrollPreflight:state.wizardStage==='lods',scrollGeometry:state.wizardStage==='geometry'});",
     "scrollPreflightRowIntoView",
 ):
     if token not in web:
@@ -204,7 +204,7 @@ for token in (
     if token not in contract:
         raise AssertionError(f"PATCH_CONTRACT missing LOD protection {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.63"' not in version:
-    raise AssertionError("editor version is not 0.10.63")
+if 'ModelAssetEditorVersion = "0.10.64"' not in version:
+    raise AssertionError("editor version is not 0.10.64")
 
-print("[PASS] model asset editor v0.10.63 LOD per-mesh PREPARE workspace / selection / visibility / ANALYZE fence")
+print("[PASS] model asset editor v0.10.64 LOD per-mesh PREPARE workspace / selection / visibility / ANALYZE fence")

@@ -133,5 +133,5 @@ if "state.wizardStage!==\'source\'" not in function_body(web, "geometryInventory
 # Contract and visible version fence.
 require("tools/model_asset_editor/PATCH_CONTRACT.md", "SOURCE active-LOD mesh browser is viewport-only")
 require("tools/model_asset_editor/PATCH_CONTRACT.md", "first checkbox interaction isolates that mesh")
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.63"')
-print("[PASS] model asset editor v0.10.63 SOURCE geometry LOD browser / visibility / selection")
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.64"')
+print("[PASS] model asset editor v0.10.64 SOURCE geometry LOD browser / visibility / selection")

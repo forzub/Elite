@@ -208,17 +208,18 @@ for function_start, function_end in (
         if forbidden in body:
             raise AssertionError(f"SOURCE apply helper auto-saves: {function_start} -> {forbidden}")
 
-# A failed whole-stage check preserves already-passed evidence for unaffected
-# meshes; a successful check certifies all current source meshes.
+# Whole-stage CHECK leaves already-passed evidence untouched and only transitions
+# pending source-mesh records. SOURCE add/replace is what clears affected graphs.
 record = body_between(
     session,
     "void ModelAssetEditorSession::recordMeshStageResult(",
     "bool ModelAssetEditorSession::meshSourceRecordPending(",
 )
 for token in (
+    'if (value == "passed")',
+    'continue;',
     'if (passed)',
     'value = "passed"',
-    'else if (value != "passed")',
     'value = "failed"',
 ):
     if token not in record:
@@ -287,5 +288,5 @@ cap = json.loads(text("tools/model_asset_editor/EDITOR_CAPABILITIES.json"))
 if "source_hash_mesh_graph" not in {x["id"] for x in cap["protected_capabilities"]}:
     raise AssertionError("source_hash_mesh_graph capability is not protected")
 
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.63"')
-print("[PASS] v0.10.63 exact-hash SOURCE synchronization / per-mesh source graph")
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.64"')
+print("[PASS] v0.10.64 exact-hash SOURCE synchronization / per-mesh source graph")

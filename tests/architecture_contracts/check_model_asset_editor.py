@@ -377,13 +377,14 @@ for token in (
         raise AssertionError(f"context-aware scroll preservation missing {token!r}")
 
 # -----------------------------------------------------------------------------
-# 0.10.35 GEOMETRY workspace: one coherent workflow, readable identities
+# 0.10.64 GEOMETRY workspace: per-mesh certification, readable identities
 # -----------------------------------------------------------------------------
 geometry_stage = web[web.index("if(stage==='geometry')"):web.index("if(stage==='surfaces')")]
 for token in (
     'class="geometryStickyToolbar"',
-    'data-geometry-scope="all"',
-    'data-geometry-scope="changes"',
+    'geometryStageTable',
+    'geometryCompareAllBtn',
+    'geometryCompareNoneBtn',
     'wizardGeometryCandidates',
     'wizardGeometryCleanBtn',
     'wizardExtraMeshTable',
@@ -393,7 +394,7 @@ for token in (
     'geometryStatsHtml(lod)',
 ):
     if token not in geometry_stage:
-        raise AssertionError(f"0.10.35 GEOMETRY workflow missing {token!r}")
+        raise AssertionError(f"0.10.64 GEOMETRY workflow missing {token!r}")
 
 for token in (
     'grid-template-columns:28px 28px 24px minmax(0,1fr) 40px 42px',
@@ -403,7 +404,7 @@ for token in (
     "statusIcon='✓'",
 ):
     if token not in web:
-        raise AssertionError(f"0.10.35 identity-first GEOMETRY table lost compact metrics/status contract {token!r}")
+        raise AssertionError(f"0.10.64 identity-first GEOMETRY table lost compact metrics/status contract {token!r}")
 
 for token in (
     'compareShowToggle',
@@ -415,9 +416,11 @@ for token in (
     'wizardGeometryDeleteBtn',
 ):
     if token not in web:
-        raise AssertionError(f"0.10.35 GEOMETRY selector/editor control missing {token!r}")
+        raise AssertionError(f"0.10.64 GEOMETRY selector/editor control missing {token!r}")
 
 for forbidden in (
+    'geometryScopeSelector',
+    'data-geometry-scope',
     'wizardGeometryMainMeshes',
     'wizardGeometryExtraMeshes',
     'geometryInstanceSelection',
@@ -445,6 +448,10 @@ if 'id="renderInspectorSection" class="section" data-wizard-groups="geometry' in
 
 for token in (
     '.geometryStickyToolbar{position:sticky',
+    '.geometryWorkspace .geometryStageTable{max-height:min(66vh,720px);min-height:390px}',
+    'geometryStageVisibleByLod:new Map()',
+    "meshStageVisualClass(item.geometry,'geometry')",
+    'syncGeometryWorkspaceSelectionUi',
     '.compareNode{white-space:normal',
     '.compareSource{white-space:normal;overflow-wrap:anywhere',
     '.extraMeshRow .sourceName{white-space:normal',
@@ -1009,7 +1016,7 @@ for token in (
         raise AssertionError(f"LOD mesh visibility/cached-preflight UI contract missing {token!r}")
 
 # Keep the exact current editor version guarded.
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.63"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.64"')
 
 # These marker phrases are intentionally referenced by the capability registry.
 manual_working_state_marker = "manual working-state save/restore contract"
@@ -1207,4 +1214,4 @@ require(
     "meshSourceRecords",
 )
 
-print("[PASS] model asset editor v0.10.63 LOD workspace / source graph / WORKING revision")
+print("[PASS] model asset editor v0.10.64 LOD workspace / source graph / WORKING revision")

@@ -77,9 +77,10 @@ record = between(
     "bool ModelAssetEditorSession::meshSourceRecordPending(",
 )
 for token in (
+    'if (value == "passed")',
+    'continue;',
     'if (passed)',
     'value = "passed";',
-    'else if (value != "passed")',
     'value = "failed";',
 ):
     if token not in record:
@@ -197,7 +198,7 @@ cap = caps.get("source_hash_mesh_graph")
 if not cap or "sourceMissing" not in str(cap) or "confirm_source_mesh_deletion" not in str(cap):
     raise AssertionError("source_hash_mesh_graph capability does not protect two-phase deletion")
 
-if 'ModelAssetEditorVersion = "0.10.63"' not in text("tools/model_asset_editor/EditorVersion.h"):
-    raise AssertionError("editor version is not 0.10.63")
+if 'ModelAssetEditorVersion = "0.10.64"' not in text("tools/model_asset_editor/EditorVersion.h"):
+    raise AssertionError("editor version is not 0.10.64")
 
-print("[PASS] model asset editor v0.10.63 stage certification / confirmed SOURCE deletion")
+print("[PASS] model asset editor v0.10.64 stage certification / confirmed SOURCE deletion")

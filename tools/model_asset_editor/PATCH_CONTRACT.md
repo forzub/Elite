@@ -293,3 +293,17 @@ The LOD workspace is per-mesh. It is not a second SOURCE workset selector and it
 - The accepted SOURCE freeze from section 18 remains untouched. LOD patches must pass the SOURCE fingerprint guard.
 
 Regression protection is provided by `tests/architecture_contracts/check_model_asset_lod_workspace.py` in addition to the general editor and frozen-SOURCE tests.
+
+## 20. GEOMETRY workspace — per-mesh CHECK evidence and viewport filtering
+
+The GEOMETRY workspace is per-mesh and LOD-local. It must not reintroduce the retired `WHOLE MODEL / RECENTLY LOADED` workset selector. The existing duplicate comparison/consolidation, additional replacement assignment and geometry editing tools remain the functional core; this UI pass only changes operator navigation, stage evidence and viewport filtering around them.
+
+- Every source-backed geometry row uses `stageChecks.geometry` as its certification authority. `passed` is green text on a dark green-black row; `not_checked` / `failed` is red text on a dark brown row. Comparison state (`REFERENCE`, `MATCH`, `DIFFERENT`, `INSTANCE`) may add icons/labels but must not overwrite the stage color.
+- A successful GEOMETRY CHECK transitions only mesh records that are not already `geometry=passed`. Already-certified source meshes remain green and their evidence is not rewritten. SOURCE add/replace resets the affected mesh graph, so only new/changed meshes return to red and need GEOMETRY CHECK again. The global structural safety validation may still inspect the render graph; the per-mesh certification workset is what changes.
+- The main table is vertically expanded. Row click selects the canonical RenderNode in the viewport; a 3D mesh click selects and scrolls the corresponding row. No secondary selection authority may be introduced.
+- Per-row checkboxes are viewport-only visibility controls, independent per LOD. Default is all visible; the first checkbox interaction isolates that mesh. Compact `SHOW ALL / HIDE ALL` actions restore all or hide all. These controls never mutate geometry, source provenance, validation graph, SAVE state or runtime data.
+- The old GEOMETRY workset/scope controls are retired. Do not bring back `geometryScopeSelector`, `data-geometry-scope`, `RECENTLY LOADED / CHANGED` or a second `WHOLE MODEL` mode as a maintenance fallback.
+- The existing duplicate comparison/consolidation route (`scan_render_duplicates` / `consolidate_render_duplicates`) and editing operations are not redesigned by this patch. Future changes to those algorithms require a separate task and tests.
+- The frozen SOURCE contract from section 18 remains untouched, and LOD PREPARE/ANALYZE behavior from section 19 remains unchanged.
+
+Regression protection is provided by `tests/architecture_contracts/check_model_asset_geometry_workspace.py` together with the general editor, LOD workspace and frozen-SOURCE tests.

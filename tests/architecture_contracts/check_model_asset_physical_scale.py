@@ -175,7 +175,7 @@ for token in (
     if token not in pipeline:
         raise AssertionError(f"MODEL_ASSET_PIPELINE physical boundary missing {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.63"' not in version:
-    raise AssertionError("editor version is not 0.10.63")
+if 'ModelAssetEditorVersion = "0.10.64"' not in version:
+    raise AssertionError("editor version is not 0.10.64")
 
-print("[PASS] model asset editor v0.10.63 authoring-space scale / metric BUILD copy / SI physics")
+print("[PASS] model asset editor v0.10.64 authoring-space scale / metric BUILD copy / SI physics")

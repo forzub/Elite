@@ -22,7 +22,9 @@
             "move_render_node_delta",
             "apply_radial_render_layout",
             "glm::extractEulerAngleXYZ",
-            "render-node transform XYZ round-trip changed placement"
+            "render-node transform XYZ round-trip changed placement",
+            "recordMeshStageResult",
+            "resetMeshStageChecks"
           ]
         },
         "ui": {
@@ -42,7 +44,12 @@
             "radialLayoutAngles",
             "radialApplyBtn",
             "geometryStickyToolbar",
-            "geometryStatsHtml"
+            "geometryStatsHtml",
+            "geometryStageVisibleByLod",
+            "geometryStageNodeVisible",
+            "geometryTechButton",
+            "meshStageVisualClass(item.geometry,'geometry')",
+            "syncGeometryWorkspaceSelectionUi"
           ]
         },
         "test": {
@@ -561,16 +568,18 @@
     },
     {
       "id": "geometry_workspace_flow",
-      "description": "GEOMETRY exposes one sticky LOD/work-set header, one readable RenderNode compare/selection table, replacement compatibility, one selected-element editor, CHECK, then statistics.",
+      "description": "GEOMETRY exposes one sticky LOD header, one taller per-mesh certified RenderNode table with viewport isolation, replacement compatibility, one selected-element editor, CHECK, then statistics.",
       "contracts": {
         "ui": {
           "path": "src/assets/webui/model_asset_editor.html",
           "tokens": [
             "geometryStickyToolbar",
-            "data-geometry-scope=\"all\"",
-            "data-geometry-scope=\"changes\"",
+            "geometryStageTable",
+            "geometryStageVisibleByLod",
             "compareShowToggle",
             "compareReferenceToggle",
+            "meshStageVisualClass(item.geometry,'geometry')",
+            "syncGeometryWorkspaceSelectionUi",
             "wizardGeometryEditor",
             "geometryStatsHtml(lod)",
             "geometrySelectionNeedsAncestor"

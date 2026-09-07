@@ -1,3 +1,10 @@
+# 0.10.64 — GEOMETRY per-mesh certification workspace
+
+- Simplified the GEOMETRY stage by removing its old WHOLE MODEL / RECENTLY LOADED workset switch. The active LOD remains the authority and the existing duplicate comparison/consolidation, replacement assignment and editing tools are preserved.
+- Enlarged the main geometry table and made the persisted per-mesh `stageChecks.geometry` graph its row-color authority: passed source meshes are green/dark-green; new/replaced/not-checked meshes are red-brown until GEOMETRY CHECK succeeds. Already-passed mesh records are left untouched by later checks; SOURCE maintenance resets only the affected mesh graph.
+- Added compact SHOW ALL / HIDE ALL controls plus per-row viewport checkboxes with first-click isolation, independent visibility state per LOD, and table↔3D RenderNode selection synchronization with scroll-to-row on viewport picks. Visibility remains editor-only and is never saved.
+- Kept the existing geometry duplicate comparison/consolidation and editing logic intact. Added an architecture contract for the GEOMETRY workspace and retained the frozen SOURCE contract and LOD behavior.
+
 # 0.10.63 — LOD per-mesh PREPARE workspace
 
 - Simplified the LOD stage to one mesh table: removed the old WORKING SET / CHANGES / WHOLE MODEL switch and expanded the table vertically. Compact SHOW ALL / HIDE ALL visibility controls and per-mesh isolation checkboxes are viewport-only.

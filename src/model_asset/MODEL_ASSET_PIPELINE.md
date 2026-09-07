@@ -46,7 +46,7 @@ only a single welded station shell.
 
 Initial authoring keeps the ordered nine-stage contract: `SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD`. Before the first production BUILD, a stage becomes editable only when its immediate predecessor is `COMPLETE`. After a production package exists, the editor is a maintenance editor: any stage may be opened directly and readiness is computed from the current persistent WORKING ASSET plus per-component maintenance debt, never from saved-history ancestry.
 
-`SEMANTICS` owns the shared gameplay hierarchy, pivots/joints, sockets and per-LOD render-to-semantic bindings. `PHYSICS` owns base collision geometry and resolved rigid-body mass/inertia. `DAMAGE` owns state variants plus state selectors for render nodes/collisions/sockets, hit regions, openings and repair targets. `VALIDATE` is read-only and reruns every upstream production contract plus `ModelAssetBinary::validate`. `BUILD` is the terminal production commit and the only normal writer of production `.elmodel/.elmesh`; it writes the complete validated WORKING ASSET .
+`SEMANTICS` owns the shared transform TREE, independent structural GRAPH, pivots/kinematic joints, sockets and per-LOD render-to-semantic bindings. `PHYSICS` owns base collision geometry and resolved rigid-body mass/inertia. `DAMAGE` owns state variants plus state selectors for render nodes/collisions/sockets, hit regions, openings and repair targets. `VALIDATE` is read-only and reruns every upstream production contract plus `ModelAssetBinary::validate`. `BUILD` is the terminal production commit and the only normal writer of production `.elmodel/.elmesh`; it writes the complete validated WORKING ASSET .
 
 Collision and socket state scopes are metadata owned by DAMAGE even though their base shape/transform belongs to PHYSICS/SEMANTICS respectively. Editing only `activeStates` therefore invalidates from DAMAGE rather than rolling back the earlier owning stage.
 
@@ -57,6 +57,13 @@ The SEMANTICS wizard authors one asset-wide `Node` hierarchy and explicit per-LO
 Gameplay semantics do not disappear when a coarse LOD is active. Collision, damage,
 repair, sockets, joints and physical state remain attached to the semantic asset,
 not to the currently visible render proxy.
+
+### Dual semantic topology: TREE + STRUCTURAL GRAPH (editor 0.10.47)
+
+Every asset has both structures simultaneously. The semantic TREE has exactly one parent per child and owns coordinate-frame inheritance/kinematics. `StructuralLinkDefinition` is a separate arbitrary graph edge between two semantic nodes and answers what physically holds those parts together. Welds, equipment mounts, fixed mounts and controlled locks therefore never have to be forced into the transform hierarchy.
+
+A structural link is not itself a hit volume. It owns zero or more `StructuralDamageProxy` records (box/capsule in this draft) that define where weapon damage can reach the connection. A controlled lock may be released by command even when it has no damage proxy; a long weld may later use several capsule proxies. GRAPH explode and 3D picking are editor-only presentation. Automatic weld seeds are computed from canonical/unexploded LOD boundary edges.
+
 
 ## Semantic damage states and live structural substitution
 
@@ -130,6 +137,8 @@ The game runtime keeps the tolerant `src/model_asset/RuntimeMeshNormalizer.*` co
 The **offline editor** has a stronger canonical authoring boundary. `CanonicalMeshBuilder` uses topology-aware point identity, collapsed/duplicate face cleanup, libigl `split_nonmanifold`, Embree raycast orientation, then editor-owned normal/render-vertex/edge rebuild while preserving UV/material/hard-normal seams. Real authored holes are never capped. libigl/Embree are editor-only and are not runtime dependencies.
 
 Preparation records store the canonical algorithm id plus an output fingerprint. A resident mesh is technically ready for downstream LOD analysis only when the record matches the exact payload and post-inspection reports no structural invalidity, degenerate/duplicate triangles, winding conflicts or inward closed components.
+
+Automatic orientation is not infallible for open/thin authored parts. The editor may therefore store an editor-only whole-mesh orientation override (`AUTO` or `FLIPPED`) keyed to the accepted source revision. `FLIPPED` is applied *after* automatic canonical preparation by reversing triangle winding and matching vertex normals; the resulting `.elmesh` is the runtime authority. The override metadata stays in the working/production editor sidecar only so an unchanged source reimport can reproduce the decision. When the source fingerprint changes the override becomes stale and is not silently applied to the new geometry.
 
 `АНАЛИЗИРОВАТЬ` remains a separate read-only report. It may recommend/record `ClosedVolume`, `ThinTwoSided` or `BreachedVolume`, but these are **SURFACES authoring decisions**. They do not gate read-only LOD0 analysis and do not block passing the LODS CHECK.
 
@@ -267,7 +276,7 @@ The working sidecar carries PREPARE evidence, stable authoring identities, SOURC
 
 Every normal wizard stage ends in CHECK. CHECK runs that stage's validation, marks PASS/NEEDS FIX in the current in-memory state and unlocks the next ordered stage after PASS. CHECK never persists the WORKING ASSET. VALIDATE uses the same CHECK action and publishes its detailed production-contract report.
 
-BUILD is the sole normal production-write boundary. It requires a clean/saved WORKING state, reruns the production contract and writes exactly that saved state to production `.elmodel/.elmesh`, then refreshes `production_state.json`.
+BUILD is the sole normal production-write boundary. It requires a clean/saved WORKING state and reruns the production contract. WORKING remains in raw authoring coordinates; BUILD clones that saved state, applies the asset-wide `PhysicalSizeProfile::sourceToMeters` exactly once to authored distances/geometry on the temporary copy, marks the production package `PhysicalGeometrySpace::Meters`, writes that metric copy to production `.elmodel/.elmesh`, then refreshes `production_state.json`.
 
 For first-time authoring, stage unlock follows the ordered wizard. For an asset with an existing production package, maintenance-mode stage access is direct and blockers come from current validity and local component debt. Wizard mutations use the same invalidation order: semantic hierarchy/joint/socket base edits start at SEMANTICS, base physics/collision edits at PHYSICS, and state selectors/damage/opening/repair edits at DAMAGE.
 
@@ -376,10 +385,11 @@ motion of detached panels/reactors/station sectors later.
 
 ## Sockets / anchors
 
-Sockets remain stable semantic attachment points for cameras, weapons,
-equipment, docks, main/RCS thrusters, lights, VFX, sensors and future gameplay
-anchors. They retain parent node plus local position/orientation. Existing ship
-attachment points are imported without deleting the legacy source descriptors.
+Sockets remain stable semantic attachment points for cameras, weapons, equipment, docks, main/RCS thrusters, lights, VFX, sensors and future gameplay anchors. They retain parent node plus local position/orientation. `interfaceProfile` describes compatibility (`weapon.small`, `container.mount`, `camera.cockpit`, etc.) without hard-coding a concrete item into the ship asset. Camera sockets also carry editor preview FOV; the editor can render the complete model from the canonical socket transform. Existing ship attachment points are imported without deleting the legacy source descriptors.
+
+## Offline physical size
+
+SOURCE and saved WORKING geometry stay exactly in their shared authoring coordinate space. `PhysicalSizeProfile` stores one asset-wide calibration: reference axis, raw `sourceExtent`, requested `targetMeters`, and `sourceToMeters = targetMeters / sourceExtent`. Runtime `LogicalDimensions` are read-only game-size context and may suggest a target, but they never resize SOURCE/WORKING or enable calibration automatically. Hit/collision volumes, sockets, pivots and semantic positions stay in authoring space with the render mesh. BUILD applies the uniform coefficient once to a temporary production copy and writes metric `.elmodel/.elmesh`; renderer/physics consume that package as meters and must not apply a second scale. Incremental SOURCE add/replace/reload therefore never mixes scaled and raw mesh coordinates.
 
 ## Editor I/O status
 

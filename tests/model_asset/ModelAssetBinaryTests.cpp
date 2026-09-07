@@ -973,6 +973,120 @@ void testSemanticLifecycleIntegrity()
     catch (const std::runtime_error&) { rejectedBranchDelete = true; }
     require(rejectedBranchDelete,
         "semantic erase deleted a parent while child branches still existed");
+
+    ModelAsset graphAsset;
+    Node graphA; graphA.id = "graph.a"; graphAsset.nodes.push_back(graphA);
+    Node graphMiddle; graphMiddle.id = "graph.middle"; graphAsset.nodes.push_back(graphMiddle);
+    Node graphB; graphB.id = "graph.b"; graphAsset.nodes.push_back(graphB);
+    StructuralLinkDefinition graphLink;
+    graphLink.id = "weld.a.b";
+    graphLink.nodeAIndex = 0;
+    graphLink.nodeBIndex = 2;
+    graphLink.kind = StructuralLinkKind::WeldSeam;
+    StructuralDamageProxy graphProxy;
+    graphProxy.id = "weld.a.b.proxy";
+    graphProxy.shape = StructuralDamageShape::Capsule;
+    graphProxy.parentNodeIndex = 2;
+    graphLink.damageProxies.push_back(graphProxy);
+    graphAsset.structuralLinks.push_back(graphLink);
+    const auto middleErase = eraseSemanticNode(graphAsset, 1, false);
+    require(middleErase.removedStructuralLinks == 0 &&
+            graphAsset.structuralLinks.size() == 1 &&
+            graphAsset.structuralLinks[0].nodeAIndex == 0 &&
+            graphAsset.structuralLinks[0].nodeBIndex == 1 &&
+            graphAsset.structuralLinks[0].damageProxies[0].parentNodeIndex == 1,
+        "semantic erase did not remap surviving structural graph indices");
+    require(inspectSemanticNodeUsage(graphAsset, 0).structuralLinks == 1,
+        "semantic usage did not count structural graph incidence");
+    bool rejectedStructuralDelete = false;
+    try { eraseSemanticNode(graphAsset, 0, false); }
+    catch (const std::runtime_error&) { rejectedStructuralDelete = true; }
+    require(rejectedStructuralDelete,
+        "semantic erase silently removed an incident structural link without confirmation");
+    const auto structuralErase = eraseSemanticNode(graphAsset, 0, true);
+    require(structuralErase.removedStructuralLinks == 1 && graphAsset.structuralLinks.empty(),
+        "confirmed semantic erase did not remove incident structural links");
+
+    ModelAsset legacyVisualAsset;
+    Node module;
+    module.id = "module";
+    module.moduleId = "module";
+    legacyVisualAsset.nodes.push_back(module);
+    Node syntheticVisual;
+    syntheticVisual.id = "module.mesh";
+    syntheticVisual.moduleId = "module";
+    syntheticVisual.parentIndex = 0;
+    syntheticVisual.localPosition = {3.0f, 0.0f, 0.0f};
+    legacyVisualAsset.nodes.push_back(syntheticVisual);
+    Node other;
+    other.id = "other";
+    other.moduleId = "other";
+    legacyVisualAsset.nodes.push_back(other);
+
+    RenderLod legacyLod;
+    RenderGeometryDefinition legacyGeometry;
+    legacyGeometry.id = "module.geometry";
+    legacyLod.geometries.push_back(legacyGeometry);
+    RenderNode moduleTransform;
+    moduleTransform.id = "module";
+    moduleTransform.semanticNodeIndex = 0;
+    legacyLod.nodes.push_back(moduleTransform);
+    RenderNode visual;
+    visual.id = "module.mesh";
+    visual.parentIndex = 0;
+    visual.geometryIndex = 0;
+    visual.semanticNodeIndex = 1;
+    visual.localPosition = syntheticVisual.localPosition;
+    legacyLod.nodes.push_back(visual);
+    RenderNode otherVisual;
+    otherVisual.id = "other";
+    otherVisual.semanticNodeIndex = 2;
+    legacyLod.nodes.push_back(otherVisual);
+    legacyVisualAsset.renderLods.push_back(legacyLod);
+
+    StructuralLinkDefinition preservedLink;
+    preservedLink.id = "module.other";
+    preservedLink.nodeAIndex = 0;
+    preservedLink.nodeBIndex = 2;
+    legacyVisualAsset.structuralLinks.push_back(preservedLink);
+
+    const auto legacyCleanup = cleanLegacySyntheticVisualSemanticNodes(legacyVisualAsset);
+    require(legacyCleanup.removedNodeIds.size() == 1 && legacyCleanup.removedNodeIds[0] == "module.mesh",
+        "legacy semantic cleanup did not remove the recognized synthetic visual child");
+    require(legacyCleanup.reboundRenderNodes == 1 && legacyCleanup.clearedTransformOnlyBindings == 1,
+        "legacy semantic cleanup did not transfer visual ownership cleanly");
+    require(legacyVisualAsset.nodes.size() == 2 && legacyVisualAsset.nodes[0].id == "module" &&
+            legacyVisualAsset.nodes[1].id == "other",
+        "legacy semantic cleanup damaged surviving semantic identity");
+    require(legacyVisualAsset.renderLods[0].nodes[0].semanticNodeIndex == NoIndex &&
+            legacyVisualAsset.renderLods[0].nodes[1].semanticNodeIndex == 0 &&
+            glm::length(legacyVisualAsset.renderLods[0].nodes[1].localPosition - glm::vec3(3.0f, 0.0f, 0.0f)) < 1.0e-6f,
+        "legacy semantic cleanup changed render transform placement instead of only rebinding semantics");
+    require(legacyVisualAsset.renderLods[0].nodes[2].semanticNodeIndex == 1 &&
+            legacyVisualAsset.structuralLinks.size() == 1 &&
+            legacyVisualAsset.structuralLinks[0].nodeAIndex == 0 &&
+            legacyVisualAsset.structuralLinks[0].nodeBIndex == 1,
+        "legacy semantic cleanup did not preserve/remap the structural graph and surviving render bindings");
+
+    ModelAsset intentionalChildAsset;
+    intentionalChildAsset.nodes.push_back(module);
+    Node intentional = syntheticVisual;
+    intentional.id = "module.intentional";
+    intentional.localRotationDeg = {0.0f, 10.0f, 0.0f};
+    intentionalChildAsset.nodes.push_back(intentional);
+    RenderLod intentionalLod;
+    RenderGeometryDefinition intentionalGeometry;
+    intentionalGeometry.id = "intentional.geometry";
+    intentionalLod.geometries.push_back(intentionalGeometry);
+    RenderNode intentionalParentRender = moduleTransform;
+    intentionalLod.nodes.push_back(intentionalParentRender);
+    RenderNode intentionalRender = visual;
+    intentionalRender.id = intentional.id;
+    intentionalRender.semanticNodeIndex = 1;
+    intentionalLod.nodes.push_back(intentionalRender);
+    intentionalChildAsset.renderLods.push_back(intentionalLod);
+    require(cleanLegacySyntheticVisualSemanticNodes(intentionalChildAsset).removedNodeIds.empty(),
+        "legacy semantic cleanup removed an authored transform child outside the exact bootstrap pattern");
 }
 
 int main()
@@ -1079,7 +1193,38 @@ int main()
         sparks.parentNodeIndex = 1;
         sparks.localPosition = {0.0f, 0.5f, 1.0f};
         sparks.activeStates = {"breached"};
+        sparks.interfaceProfile = "vfx.output";
+        sparks.previewFovDeg = 82.0f;
         asset.sockets.push_back(sparks);
+
+        asset.physicalSize.enabled = true;
+        asset.physicalSize.axis = PhysicalSizeAxis::Z;
+        asset.physicalSize.targetMeters = 5021.38f;
+        asset.physicalSize.sourceExtent = 2.5f;
+        asset.physicalSize.sourceToMeters = asset.physicalSize.targetMeters / asset.physicalSize.sourceExtent;
+        asset.physicalSize.gameLinked = true;
+        asset.physicalSize.gameDimensionsMeters = {4000.0f, 4089.56f, 5021.38f};
+        asset.physicalSize.geometrySpace = PhysicalGeometrySpace::Authoring;
+        asset.physicalSize.autoApplyOnSourceImport = false;
+
+        StructuralLinkDefinition weld;
+        weld.id = "weld.habitat.a.b";
+        weld.nodeAIndex = 0;
+        weld.nodeBIndex = 1;
+        weld.kind = StructuralLinkKind::WeldSeam;
+        weld.loadBearing = true;
+        weld.breakForceN = 125000.0f;
+        weld.breakTorqueNm = 64000.0f;
+        StructuralDamageProxy weldProxy;
+        weldProxy.id = "weld.habitat.a.b.hit.0";
+        weldProxy.shape = StructuralDamageShape::Capsule;
+        weldProxy.parentNodeIndex = 0;
+        weldProxy.localPosition = {0.5f, 0.25f, -0.75f};
+        weldProxy.localRotationDeg = {0.0f, 0.0f, 90.0f};
+        weldProxy.radius = 0.08f;
+        weldProxy.halfHeight = 1.2f;
+        weld.damageProxies.push_back(weldProxy);
+        asset.structuralLinks.push_back(weld);
 
         HitRegion hit;
         hit.id = "damage.exposed_interior";
@@ -1291,6 +1436,25 @@ int main()
         require(loaded.collisionVolumes.size() == 2 && loaded.collisionVolumes[1].activeStates.size() == 1 &&
                 loaded.collisionVolumes[1].activeStates[0] == "breached",
             "state-scoped collision lost");
+        require(loaded.physicalSize.enabled && loaded.physicalSize.axis == PhysicalSizeAxis::Z &&
+                near(loaded.physicalSize.targetMeters, 5021.38f) && near(loaded.physicalSize.sourceExtent, 2.5f) &&
+                near(loaded.physicalSize.sourceToMeters, 5021.38f / 2.5f) && loaded.physicalSize.gameLinked &&
+                near(loaded.physicalSize.gameDimensionsMeters.x, 4000.0f) &&
+                loaded.physicalSize.geometrySpace == PhysicalGeometrySpace::Authoring &&
+                !loaded.physicalSize.autoApplyOnSourceImport,
+            "physical-scale graph lost in v4 SIZE chunk round trip");
+        require(loaded.sockets.size() == 1 && loaded.sockets[0].interfaceProfile == "vfx.output" &&
+                near(loaded.sockets[0].previewFovDeg, 82.0f),
+            "socket metadata lost in additive v4 SMET chunk round trip");
+        require(loaded.structuralLinks.size() == 1 &&
+                loaded.structuralLinks[0].kind == StructuralLinkKind::WeldSeam &&
+                loaded.structuralLinks[0].nodeAIndex == 0 && loaded.structuralLinks[0].nodeBIndex == 1 &&
+                near(loaded.structuralLinks[0].breakForceN, 125000.0f) &&
+                loaded.structuralLinks[0].damageProxies.size() == 1 &&
+                loaded.structuralLinks[0].damageProxies[0].shape == StructuralDamageShape::Capsule &&
+                near(loaded.structuralLinks[0].damageProxies[0].radius, 0.08f) &&
+                near(loaded.structuralLinks[0].damageProxies[0].halfHeight, 1.2f),
+            "structural graph / damage proxy lost in v4 STRL chunk round trip");
         require(loaded.hitRegions.size() == 1 && loaded.hitRegions[0].activeStates[0] == "breached",
             "state-scoped hit region lost");
         require(loaded.openings.size() == 1 && loaded.openings[0].traversable && loaded.openings[0].lineOfFire,

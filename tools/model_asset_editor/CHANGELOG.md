@@ -1,3 +1,27 @@
+# 0.10.62 — authoring-space physical scale contract
+
+- Replaced destructive WORKING resize with one asset-wide `sourceToMeters` calibration. SOURCE and WORKING geometry, render-node transforms, collisions, hit regions, sockets and authored semantic distances now remain permanently in their raw shared authoring coordinate space.
+- Physical calibration stores the measured authoring reference extent plus the requested physical extent in meters. Runtime descriptor dimensions are displayed as read-only game context; they no longer auto-resize imported geometry. Per-mesh source records inherit the asset scale authority instead of owning independent scale factors.
+- BUILD now creates a temporary copy, applies the uniform authoring→meter conversion once to every authored distance, marks the production package as metric, and leaves the saved WORKING asset untouched. A metric production package adopted back into the editor is converted to authoring space before editing.
+- Density-based mass/inertia estimation converts collision dimensions through `sourceToMeters` before computing SI values. Positions remain authoring-space in WORKING; kg, kg·m², N, Nm and already-meter-valued light ranges are not double-scaled at BUILD.
+- Incremental SOURCE scan/reload is blocked for legacy pre-0.10.62 destructive SIZE state because its original coefficient cannot be recovered safely. Explicit `RELOAD ALL SOURCE MESHES` is the migration boundary: it restores raw SOURCE coordinates, derives a new stored coefficient from the previous target extent, and waits for explicit SAVE.
+- WORKING/production editor-state schema is now 15 and mirrors the asset physical-scale graph for diagnostics. The old AUTO-after-reimport / `RESIZE MODEL` UI is removed; calibration changes only the scale contract and invalidates physical evidence, never GPU or WORKING geometry.
+
+# 0.10.61 — checked SOURCE changes become accepted work
+
+- A successful SOURCE `CHECK` now consumes resolved `ADDED` / `REPLACED` rows from the transient SOURCE-change queue after the corresponding mesh source-stage flag becomes `passed`.
+- Accepted rows are folded into the current/unchanged count; `new` / `replaced` counters are cleared accordingly, so the panel no longer reports already-certified import history as pending work.
+- `MISSING`, hash/import failures and other unresolved SOURCE events are never consumed by CHECK. Missing files still require explicit deletion confirmation.
+- SOURCE-change results are therefore an operator work queue, not a historical scan log.
+
+# 0.10.60 — stage-certified mesh state / confirmed SOURCE deletion
+
+- Stage CHECK now republishes the per-mesh validation graph immediately. A source-backed mesh whose current editor stage has passed is shown with green text on a dark green-black background; a new/replaced mesh keeps its cleared stage evidence and stays red on dark brown until that stage is checked again. Unchanged meshes retain their previous evidence across SOURCE scans.
+- SOURCE scan missing-file handling is now explicitly two-phase. A missing source file sets persisted `sourceMissing` on the mesh graph, keeps the resident WORKING geometry intact, and renders the mesh as yellow text on a dark red background with `DELETED` / `CONFIRM`. SCAN never removes geometry automatically.
+- Added `confirm_source_mesh_deletion`. Confirmation rechecks that the SOURCE file is still absent, removes the geometry definition and all of its RenderNode instances, preserves surviving child world transforms when a removed render node was a transform parent, and clears geometry-owned source/preparation/topology/orientation/variant maintenance records. LOD-independent semantic/gameplay nodes are deliberately preserved; their removed RenderNode binding disappears with the render instance.
+- WORKING/production editor-state schema is now 14 and persists `sourceMissing` together with source filename/path/hash and per-stage checks. The deletion remains an unsaved WORKING mutation until explicit SAVE.
+- Extended the patch contract and architecture guards for stage-aware green/red/missing visuals and explicit deletion confirmation, so future SOURCE maintenance cannot silently return to auto-delete or erase validation evidence for unchanged meshes.
+
 # 0.10.59 — SOURCE geometry LOD browser / visibility selection
 
 - Added a compact active-LOD selector directly above the SOURCE `Active LOD geometry` list. It exposes every declared LOD and follows the normal resident/load path without conflating VIEW with `RELOAD LOD` or SOURCE reimport.

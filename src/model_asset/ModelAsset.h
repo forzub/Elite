@@ -57,6 +57,37 @@ enum class LightType : std::uint8_t
     Spot = 2
 };
 
+enum class PhysicalSizeAxis : std::uint8_t
+{
+    X = 0,
+    Y = 1,
+    Z = 2
+};
+
+enum class PhysicalGeometrySpace : std::uint8_t
+{
+    // Editor/SOURCE/WORKING coordinates are preserved exactly as authored.
+    Authoring = 0,
+    // BUILD-only production copy after the single asset-wide sourceToMeters scale.
+    Meters = 1,
+    // v0.10.61 and older SIZE chunks cannot prove whether destructive resize was applied.
+    LegacyUnknown = 2
+};
+
+enum class StructuralLinkKind : std::uint8_t
+{
+    WeldSeam = 0,
+    FixedMount = 1,
+    EquipmentMount = 2,
+    ControlledLock = 3
+};
+
+enum class StructuralDamageShape : std::uint8_t
+{
+    Box = 0,
+    Capsule = 1
+};
+
 enum EdgeFlag : std::uint32_t
 {
     EdgeBoundary = 1u << 0,
@@ -197,8 +228,12 @@ struct NodeJoint
     float breakTorqueNm = 0.0f;
 };
 
-// A node is an assembly transform. Multiple nodes may reference the same
-// geometryIndex; that is the canonical representation of model instancing.
+// A semantic node may own an assembly transform. parentIndex == NoIndex means
+// the part is authored directly in the asset coordinate frame (ASSET SPACE).
+// Semantic transforms therefore form a forest; a unique semantic root is not
+// required. Physical support/detach topology belongs to Structural Graph.
+// Multiple legacy nodes may reference the same geometryIndex; v4 visual
+// representation lives in independent RenderNodes.
 struct Node
 {
     std::string id;
@@ -337,9 +372,74 @@ struct Socket
     LightProperties light;
     std::vector<std::string> activeStates;
 
+    // Optional v4 extension metadata is serialized in SMET rather than SOCK,
+    // so older v4 readers retain the original socket payload layout.
+    std::string interfaceProfile;
+    float previewFovDeg = 75.0f;
+
     bool enabled = true;
 };
 
+// Asset-wide authoring-space -> meter calibration. SOURCE and WORKING geometry
+// are never destructively resized: all source-backed meshes, semantic positions,
+// collision/hit volumes and sockets stay in the same authoring coordinate space.
+// BUILD applies sourceToMeters once to a temporary production copy and marks that
+// copy as PhysicalGeometrySpace::Meters. Runtime must never apply a second scale.
+struct PhysicalSizeProfile
+{
+    bool enabled = false; // true only after explicit manual calibration
+    PhysicalSizeAxis axis = PhysicalSizeAxis::Z;
+    float targetMeters = 0.0f;
+
+    // Reference extent measured in raw authoring units when calibration was set.
+    float sourceExtent = 0.0f;
+    // Single uniform authority inherited by every LOD/mesh and every authored
+    // distance. targetMeters == sourceExtent * sourceToMeters at calibration.
+    float sourceToMeters = 1.0f;
+
+    // Read-only descriptor context shown by the editor. It does not calibrate or
+    // resize the asset automatically. X=width, Y=height, Z=length in game meters.
+    bool gameLinked = false;
+    glm::vec3 gameDimensionsMeters {0.0f};
+
+    PhysicalGeometrySpace geometrySpace = PhysicalGeometrySpace::Authoring;
+
+    // Serialized only for backward compatibility with pre-0.10.62 SIZE chunks.
+    // The editor no longer auto-applies physical scale on SOURCE import.
+    bool autoApplyOnSourceImport = false;
+};
+
+// Geometry used only to damage a structural connection. It is intentionally
+// separate from the link itself: one connection may have zero, one, or many
+// hittable proxies, and controlled locks can be released without damage.
+struct StructuralDamageProxy
+{
+    std::string id;
+    StructuralDamageShape shape = StructuralDamageShape::Box;
+    std::int32_t parentNodeIndex = NoIndex;
+    glm::vec3 localPosition {0.0f};
+    glm::vec3 localRotationDeg {0.0f};
+    glm::vec3 halfSize {0.25f};
+    float radius = 0.1f;
+    float halfHeight = 0.25f;
+    bool enabled = true;
+};
+
+// Transform hierarchy remains a tree. Structural topology is a separate graph:
+// arbitrary pairs of semantic nodes may be joined by welds, mounts or locks.
+struct StructuralLinkDefinition
+{
+    std::string id;
+    std::int32_t nodeAIndex = NoIndex;
+    std::int32_t nodeBIndex = NoIndex;
+    StructuralLinkKind kind = StructuralLinkKind::FixedMount;
+    bool loadBearing = true;
+    bool commandable = false;
+    float breakForceN = 0.0f;
+    float breakTorqueNm = 0.0f;
+    std::vector<StructuralDamageProxy> damageProxies;
+    bool enabled = true;
+};
 
 
 // State-scoped damage target. It is intentionally separate from collision so
@@ -395,6 +495,7 @@ struct ModelAsset
     float lodSwitchDistance = 2500.0f;
 
     SourceBasis sourceBasis;
+    PhysicalSizeProfile physicalSize;
     glm::vec3 minBounds {0.0f};
     glm::vec3 maxBounds {0.0f};
 
@@ -408,6 +509,7 @@ struct ModelAsset
     std::vector<HitRegion> hitRegions;
     std::vector<Opening> openings;
     std::vector<RepairTarget> repairTargets;
+    std::vector<StructuralLinkDefinition> structuralLinks;
 
     // Independent render documents. Their hierarchy/geometry/instances do not
     // need to correspond across LOD levels.

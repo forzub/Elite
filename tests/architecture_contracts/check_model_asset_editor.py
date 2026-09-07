@@ -229,7 +229,10 @@ build_body = body_between(
 )
 for token in (
     "compiledPath(m_selectedId)",
-    "ModelAssetBinary::save(path.string(), m_asset, &error)",
+    "ModelAssetBinary::save(path.string(), productionAsset, &error)",
+    "ModelAsset productionAsset = m_asset;",
+    "scaleAuthoringDistancesUniform(productionAsset, productionAsset.physicalSize.sourceToMeters);",
+    "productionAsset.physicalSize.geometrySpace = PhysicalGeometrySpace::Meters;",
     "production editor sidecar is finalized by checkWizardStage()",
 ):
     if token not in build_body:
@@ -840,8 +843,11 @@ for token in (
 for token in (
     'command == "set_physical_size_profile"',
     'command == "apply_physical_size"',
-    'const float scale = profile.targetMeters / current;',
-    "scaleModelAssetUniform(m_asset, scale)",
+    'command == "calibrate_physical_scale"',
+    "profile.sourceExtent = sourceExtent;",
+    "profile.sourceToMeters = profile.targetMeters / sourceExtent;",
+    "ModelAsset productionAsset = m_asset;",
+    "scaleAuthoringDistancesUniform(productionAsset, productionAsset.physicalSize.sourceToMeters);",
     "semanticBoundarySegments",
     "makeStructuralProxySeed",
     'command == "add_structural_link"',
@@ -851,14 +857,18 @@ for token in (
     if token not in session:
         raise AssertionError(f"0.10.47 editor backend contract missing {token!r}")
 
+if "scaleModelAssetUniform(m_asset" in session:
+    raise AssertionError("destructive WORKING physical resize survived 0.10.62 scale boundary")
+
 for token in (
     "TREE · СБОРКА / КИНЕМАТИКА",
     "GRAPH · КОНСТРУКЦИОННЫЕ СВЯЗИ",
     "NEW LINK · 3D PICK A ↔ B",
     "WELD SEAM · auto hit-capsule",
     "Exploded viewport никогда не является coordinate authority.",
-    "PHYSICAL SIZE · UNIFORM ASSET SCALE",
-    "APPLY AFTER SOURCE REIMPORT",
+    "PHYSICAL SCALE · AUTHORING → METERS",
+    "AUTHORING SIZE · RAW SOURCE SPACE",
+    "SET SCALE CONTRACT",
     "VIEW FROM SOCKET",
     "INTERFACE PROFILE",
 ):
@@ -869,13 +879,15 @@ importer_contract = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
 for token in (
     "logicalDimensions.scaleReference",
     "PhysicalSizeAxis::Z",
-    "asset.physicalSize.autoApplyOnSourceImport = true",
+    "asset.physicalSize.gameLinked = true",
+    "asset.physicalSize.gameDimensionsMeters",
+    "asset.physicalSize.enabled = false",
 ):
     if token not in importer_contract:
         raise AssertionError(f"legacy logical-size adoption contract missing {token!r}")
 
 for token in (
-    "physical-size profile lost in v4 SIZE chunk round trip",
+    "physical-scale graph lost in v4 SIZE chunk round trip",
     "socket metadata lost in additive v4 SMET chunk round trip",
     "structural graph / damage proxy lost in v4 STRL chunk round trip",
     "semantic erase did not remap surviving structural graph indices",
@@ -992,7 +1004,7 @@ for token in (
         raise AssertionError(f"LOD mesh visibility/cached-preflight UI contract missing {token!r}")
 
 # Keep the exact current editor version guarded.
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.59"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.62"')
 
 # These marker phrases are intentionally referenced by the capability registry.
 manual_working_state_marker = "manual working-state save/restore contract"
@@ -1119,7 +1131,7 @@ if "const forceVisible=state.wizardStage==='semantics'" in web:
 # 0.10.58 SOURCE lifecycle: Folder geometry authority is independent from
 # runtime semantic bootstrap; scan is exact-hash synchronization; folder OPEN
 # keeps every declared LOD resident; one WORKING revision is visible in status.
-scan_body = body_between(session, "void ModelAssetEditorSession::sendSourceChangeScan()", "bool ModelAssetEditorSession::reloadMeshFromSource(")
+scan_body = body_between(session, "void ModelAssetEditorSession::sendSourceChangeScan()", "bool ModelAssetEditorSession::confirmSourceMeshDeletion(")
 for token in (
     "scanSourceFolderMetadataInventory",
     "sourceFileFingerprint(entry.file)",
@@ -1127,7 +1139,7 @@ for token in (
     "addSourcePart(li, candidate.entry.sourcePath, false, false)",
     "replaceSourcePart(li, gi, false, false)",
     "resetMeshStageChecks(li, geometry.id)",
-    'record.stageChecks["source"] = "failed"',
+    'record.sourceMissing = true',
     '"ambiguous_filename"',
     '"missing_source"',
     '"sourceAssetDirectory"',
@@ -1190,4 +1202,4 @@ require(
     "meshSourceRecords",
 )
 
-print("[PASS] model asset editor v0.10.59 source graph / exact-hash synchronization / WORKING revision")
+print("[PASS] model asset editor v0.10.62 source graph / exact-hash synchronization / WORKING revision")

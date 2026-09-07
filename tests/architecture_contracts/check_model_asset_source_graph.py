@@ -55,7 +55,7 @@ for token in (
         raise AssertionError(f"per-mesh source graph header missing {token!r}")
 
 for token in (
-    'state["schemaVersion"] = 13',
+    'state["schemaVersion"] = 15',
     'state["saveRevision"] = saveRevision',
     'state["savedAtUtc"] = savedAtUtc',
     'state["sourceAssetDirectory"] = m_loadedSourceAssetDirectory.generic_string()',
@@ -67,7 +67,7 @@ for token in (
     if token not in session:
         raise AssertionError(f"save/source graph serialization missing {token!r}")
 
-# Both WORKING and final production sidecars carry schema-13 revision/check data.
+# Both WORKING and final production sidecars carry schema-15 revision/check/scale data.
 working_state = body_between(
     session,
     "bool ModelAssetEditorSession::writeWorkingEditorState(",
@@ -80,7 +80,7 @@ production_state = body_between(
 )
 for label, body in (("working", working_state), ("production", production_state)):
     for token in (
-        'state["schemaVersion"] = 13',
+        'state["schemaVersion"] = 15',
         'state["saveRevision"]',
         'state["sourceAssetDirectory"]',
         'state["stages"]',
@@ -150,7 +150,7 @@ if select_body.count(
 scan = body_between(
     session,
     "void ModelAssetEditorSession::sendSourceChangeScan()",
-    "bool ModelAssetEditorSession::reloadMeshFromSource(",
+    "bool ModelAssetEditorSession::confirmSourceMeshDeletion(",
 )
 for token in (
     "m_loadedSourceAssetDirectory.empty()",
@@ -162,7 +162,7 @@ for token in (
     "addSourcePart(li, candidate.entry.sourcePath, false, false)",
     "replaceSourcePart(li, gi, false, false)",
     "resetMeshStageChecks(li, geometry.id)",
-    'record.stageChecks["source"] = "failed"',
+    'record.sourceMissing = true',
     'row["kind"] = "added"',
     'row["kind"] = "replaced"',
     '"missing_source"',
@@ -253,18 +253,21 @@ if "WORKING r${rev}" not in status_fn:
 if "$('ioPath').textContent=revision" not in status_fn:
     raise AssertionError("status bar path field was not replaced by save revision")
 
-# Common red-brown styling must be used by multiple independent mesh lists.
-if web.count("meshValidationPending(g)") < 6:
-    raise AssertionError("validation-pending mesh styling is not shared across mesh lists")
+# Common stage-aware styling must be used by independent mesh lists.
+if web.count("meshStageVisualClass(") < 6:
+    raise AssertionError("stage-aware mesh styling is not shared across mesh lists")
 for token in (
     ".meshValidationPending{background:#321b1b!important;color:#d98282!important",
+    ".meshStagePassed{background:#07170f!important;color:#7fd7a0!important",
+    ".meshSourceMissing{background:#351116!important;color:#ffd166!important",
+    "function meshStageVisualClass",
     "renderGeometries()",
     "renderRenderTree()",
     "renderModelPreflightInventory(root)",
     "structuralGraphMeshRowsHtml()",
 ):
     if token not in web:
-        raise AssertionError(f"validation-pending mesh list contract missing {token!r}")
+        raise AssertionError(f"stage-aware mesh list contract missing {token!r}")
 
 # Contract itself must lock the exact boundaries so later patches cannot quietly
 # reintroduce runtime geometry authority or passive/metadata-only scan behavior.
@@ -284,5 +287,5 @@ cap = json.loads(text("tools/model_asset_editor/EDITOR_CAPABILITIES.json"))
 if "source_hash_mesh_graph" not in {x["id"] for x in cap["protected_capabilities"]}:
     raise AssertionError("source_hash_mesh_graph capability is not protected")
 
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.59"')
-print("[PASS] v0.10.59 exact-hash SOURCE synchronization / per-mesh source graph")
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.62"')
+print("[PASS] v0.10.62 exact-hash SOURCE synchronization / per-mesh source graph")

@@ -162,7 +162,7 @@ if "invalidateWizardFrom(" in regen_body:
 scan = between(
     session,
     "void ModelAssetEditorSession::sendSourceChangeScan()",
-    "bool ModelAssetEditorSession::reloadMeshFromSource(",
+    "bool ModelAssetEditorSession::confirmSourceMeshDeletion(",
 )
 for token in (
     "scanSourceFolderMetadataInventory",
@@ -171,7 +171,7 @@ for token in (
     "addSourcePart(li, candidate.entry.sourcePath, false, false)",
     "replaceSourcePart(li, gi, false, false)",
     "resetMeshStageChecks(li, geometry.id)",
-    'record.stageChecks["source"] = "failed"',
+    'record.sourceMissing = true',
     '"sourceAssetDirectory"',
     '"hashReads"',
     '"elapsedMs"',
@@ -250,7 +250,7 @@ for token in (
 
 require(
     "tools/model_asset_editor/EditorVersion.h",
-    'ModelAssetEditorVersion = "0.10.59"',
+    'ModelAssetEditorVersion = "0.10.62"',
 )
 
-print("[PASS] model asset editor v0.10.59 maintenance / exact-hash SOURCE apply / manual SAVE")
+print("[PASS] model asset editor v0.10.62 maintenance / exact-hash SOURCE apply / manual SAVE")

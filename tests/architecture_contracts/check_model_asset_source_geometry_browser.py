@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Architecture contract for the SOURCE active-LOD geometry browser (v0.10.59)."""
+"""Architecture contract for the SOURCE active-LOD geometry browser (v0.10.62)."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -133,5 +133,5 @@ if "state.wizardStage!==\'source\'" not in function_body(web, "geometryInventory
 # Contract and visible version fence.
 require("tools/model_asset_editor/PATCH_CONTRACT.md", "SOURCE active-LOD mesh browser is viewport-only")
 require("tools/model_asset_editor/PATCH_CONTRACT.md", "first checkbox interaction isolates that mesh")
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.59"')
-print("[PASS] model asset editor v0.10.59 SOURCE geometry LOD browser / visibility / selection")
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.62"')
+print("[PASS] model asset editor v0.10.62 SOURCE geometry LOD browser / visibility / selection")

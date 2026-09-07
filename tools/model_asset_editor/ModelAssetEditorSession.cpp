@@ -1808,37 +1808,25 @@ double renderLodPlacedCharacteristicSize(const RenderLod& lod)
 }
 
 
-void scaleModelAssetUniform(ModelAsset& asset, float scale)
+void scaleAuthoringDistancesUniform(ModelAsset& asset, float scale)
 {
-    if (!std::isfinite(scale) || scale <= 0.0f) throw std::runtime_error("invalid physical scale");
+    // Authoring -> meter conversion used only on a temporary BUILD copy (or the
+    // inverse when a metric production package is adopted into the editor).
+    // Physical values already expressed in SI units -- kg, kg*m^2, N, Nm and
+    // LightProperties::rangeMeters -- are deliberately NOT multiplied again.
+    if (!std::isfinite(scale) || scale <= 0.0f) throw std::runtime_error("invalid authoring-to-meter scale");
     if (std::abs(scale - 1.0f) <= 1.0e-7f) return;
-    const float s2 = scale * scale;
-    const float s3 = s2 * scale;
-    const float s5 = s3 * s2;
-    const auto scalePhysics = [&](RigidBodyProperties& p) {
-        p.centerOfMass *= scale;
-        if (p.mode == MassPropertyMode::AutoFromCollision)
-        {
-            p.massKg *= s3;
-            p.inertiaDiagonal *= s5;
-            p.inertiaProducts *= s5;
-        }
-        else
-        {
-            p.inertiaDiagonal *= s2;
-            p.inertiaProducts *= s2;
-        }
-    };
+    const auto scalePhysicsPosition = [&](RigidBodyProperties& p) { p.centerOfMass *= scale; };
     asset.minBounds *= scale;
     asset.maxBounds *= scale;
     for (auto& node : asset.nodes)
     {
         node.localPosition *= scale; node.pivot *= scale; node.joint.pivot *= scale;
-        scalePhysics(node.physics);
+        scalePhysicsPosition(node.physics);
     }
     for (auto& state : asset.stateVariants)
     {
-        state.localPosition *= scale; state.pivot *= scale; scalePhysics(state.physics);
+        state.localPosition *= scale; state.pivot *= scale; scalePhysicsPosition(state.physics);
     }
     for (auto& c : asset.collisionVolumes)
     {
@@ -1846,7 +1834,7 @@ void scaleModelAssetUniform(ModelAsset& asset, float scale)
     }
     for (auto& socket : asset.sockets)
     {
-        socket.localPosition *= scale; socket.extent *= scale; socket.light.rangeMeters *= scale;
+        socket.localPosition *= scale; socket.extent *= scale;
     }
     for (auto& hit : asset.hitRegions) { hit.localPosition *= scale; hit.halfSize *= scale; }
     for (auto& opening : asset.openings) { opening.localPosition *= scale; opening.halfSize *= scale; }
@@ -1874,6 +1862,25 @@ void scaleModelAssetUniform(ModelAsset& asset, float scale)
         }
 }
 
+const char* physicalGeometrySpaceName(PhysicalGeometrySpace space)
+{
+    switch (space)
+    {
+        case PhysicalGeometrySpace::Authoring: return "authoring";
+        case PhysicalGeometrySpace::Meters: return "meters";
+        case PhysicalGeometrySpace::LegacyUnknown: return "legacy_unknown";
+    }
+    return "legacy_unknown";
+}
+
+float authoringToMetersScale(const ModelAsset& asset)
+{
+    return asset.physicalSize.enabled && std::isfinite(asset.physicalSize.sourceToMeters) &&
+        asset.physicalSize.sourceToMeters > 0.0f
+        ? asset.physicalSize.sourceToMeters
+        : 1.0f;
+}
+
 std::vector<RigidTransform> renderWorldTransforms(const RenderLod& lod)
 {
     std::vector<RigidTransform> out(lod.nodes.size());
@@ -1894,7 +1901,7 @@ std::vector<RigidTransform> renderWorldTransforms(const RenderLod& lod)
     return out;
 }
 
-glm::vec3 physicalPlacedExtents(const ModelAsset& asset)
+glm::vec3 authoringPlacedExtents(const ModelAsset& asset)
 {
     const glm::vec3 fallback = glm::max(asset.maxBounds - asset.minBounds, glm::vec3(0.0f));
     if (asset.renderLods.empty()) return fallback;
@@ -1927,9 +1934,9 @@ glm::vec3 physicalPlacedExtents(const ModelAsset& asset)
     return have ? glm::max(mx - mn, glm::vec3(0.0f)) : fallback;
 }
 
-float physicalAxisExtent(const ModelAsset& asset, PhysicalSizeAxis axis)
+float authoringAxisExtent(const ModelAsset& asset, PhysicalSizeAxis axis)
 {
-    const glm::vec3 size = physicalPlacedExtents(asset);
+    const glm::vec3 size = authoringPlacedExtents(asset);
     switch (axis) { case PhysicalSizeAxis::X: return size.x; case PhysicalSizeAxis::Y: return size.y; case PhysicalSizeAxis::Z: return size.z; }
     return size.z;
 }
@@ -2204,23 +2211,24 @@ struct PrimitiveMass
     glm::mat3 inertia {0.0f};
 };
 
-PrimitiveMass primitiveMass(const CollisionVolume& c, float density)
+PrimitiveMass primitiveMass(const CollisionVolume& c, float density, float sourceToMeters)
 {
     PrimitiveMass out;
-    out.center = c.localPosition;
+    const float scale = std::max(sourceToMeters, 1.0e-9f);
+    out.center = c.localPosition * scale;
     glm::vec3 diag(0.0f);
 
     if (c.shape == CollisionShape::Sphere)
     {
-        const float r = std::max(c.radius, 0.001f);
+        const float r = std::max(c.radius * scale, 0.001f);
         const float volume = (4.0f / 3.0f) * Pi * r * r * r;
         out.mass = density * volume;
         diag = glm::vec3(0.4f * out.mass * r * r);
     }
     else if (c.shape == CollisionShape::Capsule)
     {
-        const float r = std::max(c.radius, 0.001f);
-        const float half = std::max(c.halfHeight, 0.0f);
+        const float r = std::max(c.radius * scale, 0.001f);
+        const float half = std::max(c.halfHeight * scale, 0.0f);
         const float length = 2.0f * half;
         const float cylVolume = Pi * r * r * length;
         const float sphereVolume = (4.0f / 3.0f) * Pi * r * r * r;
@@ -2234,7 +2242,7 @@ PrimitiveMass primitiveMass(const CollisionVolume& c, float density)
     }
     else
     {
-        const glm::vec3 h = glm::max(c.halfSize, glm::vec3(0.001f));
+        const glm::vec3 h = glm::max(c.halfSize * scale, glm::vec3(0.001f));
         out.mass = density * (8.0f * h.x * h.y * h.z);
         diag.x = (out.mass / 3.0f) * (h.y * h.y + h.z * h.z);
         diag.y = (out.mass / 3.0f) * (h.x * h.x + h.z * h.z);
@@ -2250,12 +2258,16 @@ PrimitiveMass primitiveMass(const CollisionVolume& c, float density)
 
 bool estimatePhysicsFromCollision(ModelAsset& asset, std::size_t nodeIndex, float density)
 {
-    if (nodeIndex >= asset.nodes.size()) return false;
+    if (nodeIndex >= asset.nodes.size() || !asset.physicalSize.enabled ||
+        asset.physicalSize.geometrySpace != PhysicalGeometrySpace::Authoring ||
+        !std::isfinite(asset.physicalSize.sourceToMeters) || asset.physicalSize.sourceToMeters <= 0.0f)
+        return false;
+    const float metricScale = asset.physicalSize.sourceToMeters;
     std::vector<PrimitiveMass> pieces;
     for (const auto& collision : asset.collisionVolumes)
     {
         if (collision.enabled && collision.parentNodeIndex == static_cast<std::int32_t>(nodeIndex))
-            pieces.push_back(primitiveMass(collision, density));
+            pieces.push_back(primitiveMass(collision, density, metricScale));
     }
     if (pieces.empty()) return false;
 
@@ -2278,7 +2290,7 @@ bool estimatePhysicsFromCollision(ModelAsset& asset, std::size_t nodeIndex, floa
     physics.mode = MassPropertyMode::AutoFromCollision;
     physics.densityKgM3 = density;
     physics.massKg = totalMass;
-    physics.centerOfMass = com;
+    physics.centerOfMass = com / metricScale;
     physics.inertiaDiagonal = glm::vec3(inertia[0][0], inertia[1][1], inertia[2][2]);
     physics.inertiaProducts = glm::vec3(inertia[0][1], inertia[0][2], inertia[1][2]);
     return true;
@@ -3220,7 +3232,8 @@ nlohmann::json ModelAssetEditorSession::serializeEditorAuthoringState(const Edit
             meshSourceRecords.push_back({
                 {"lod", lodIndex}, {"geometryId", geometryId},
                 {"sourceFileName", record.sourceFileName}, {"sourcePath", record.sourcePath},
-                {"sourceHash", record.sourceHash}, {"stageChecks", std::move(checks)}
+                {"sourceHash", record.sourceHash}, {"sourceMissing", record.sourceMissing},
+                {"stageChecks", std::move(checks)}
             });
         }
 
@@ -3410,6 +3423,7 @@ bool ModelAssetEditorSession::parseEditorAuthoringState(
                     record.sourceFileName = item.value("sourceFileName", std::string());
                     record.sourcePath = item.value("sourcePath", std::string());
                     record.sourceHash = item.value("sourceHash", std::uint64_t(0));
+                    record.sourceMissing = schemaVersion >= 14 && item.value("sourceMissing", false);
                     const auto checks = item.value("stageChecks", json::object());
                     for (const char* stage : wizardStageOrder())
                     {
@@ -3532,7 +3546,7 @@ bool ModelAssetEditorSession::writeWorkingEditorState(
     {
         std::filesystem::create_directories(workingEditorStatePath().parent_path());
         json state = serializeEditorAuthoringState(captureEditorAuthoringState());
-        state["schemaVersion"] = 13;
+        state["schemaVersion"] = 15;
         state["snapshotKind"] = "model_asset_editor_working_state";
         state["assetId"] = m_selectedId;
         state["editorVersion"] = ModelAssetEditorVersion;
@@ -3542,6 +3556,16 @@ bool ModelAssetEditorSession::writeWorkingEditorState(
         state["sourceAssetRoot"] = selectedSourceAssetRoot().generic_string();
         state["stages"] = serializeStageValidity(captureStageValidity());
         state["aggregateStageChecks"] = aggregateStageChecksJson();
+        state["physicalScaleGraph"] = {
+            {"enabled", m_asset.physicalSize.enabled},
+            {"axis", physicalSizeAxisName(m_asset.physicalSize.axis)},
+            {"sourceExtent", m_asset.physicalSize.sourceExtent},
+            {"targetMeters", m_asset.physicalSize.targetMeters},
+            {"sourceToMeters", m_asset.physicalSize.sourceToMeters},
+            {"geometrySpace", physicalGeometrySpaceName(m_asset.physicalSize.geometrySpace)},
+            {"gameLinked", m_asset.physicalSize.gameLinked},
+            {"gameDimensionsMeters", vec3Json(m_asset.physicalSize.gameDimensionsMeters)}
+        };
         state["packageStamp"] = packageStampFor(workingAssetPath());
         const auto path = workingEditorStatePath();
         std::ofstream out(path, std::ios::trunc);
@@ -3586,7 +3610,7 @@ bool ModelAssetEditorSession::loadWorkingEditorState(
         json snapshot;
         in >> snapshot;
         const int schemaVersion = snapshot.value("schemaVersion", 0);
-        if ((schemaVersion != 11 && schemaVersion != 12 && schemaVersion != 13) ||
+        if ((schemaVersion != 11 && schemaVersion != 12 && schemaVersion != 13 && schemaVersion != 14 && schemaVersion != 15) ||
             snapshot.value("snapshotKind", std::string()) != "model_asset_editor_working_state")
         {
             if (error) *error = "unsupported working editor-state schema";
@@ -3624,7 +3648,7 @@ bool ModelAssetEditorSession::writeProductionEditorState(std::string* error) con
     {
         std::filesystem::create_directories(wizardWorkspacePath());
         json state = serializeEditorAuthoringState(captureEditorAuthoringState());
-        state["schemaVersion"] = 13;
+        state["schemaVersion"] = 15;
         state["snapshotKind"] = "model_asset_editor_production_state";
         state["assetId"] = m_selectedId;
         state["editorVersion"] = ModelAssetEditorVersion;
@@ -3634,6 +3658,16 @@ bool ModelAssetEditorSession::writeProductionEditorState(std::string* error) con
         state["sourceAssetRoot"] = selectedSourceAssetRoot().generic_string();
         state["stages"] = serializeStageValidity(captureStageValidity());
         state["aggregateStageChecks"] = aggregateStageChecksJson();
+        state["physicalScaleGraph"] = {
+            {"enabled", m_asset.physicalSize.enabled},
+            {"axis", physicalSizeAxisName(m_asset.physicalSize.axis)},
+            {"sourceExtent", m_asset.physicalSize.sourceExtent},
+            {"targetMeters", m_asset.physicalSize.targetMeters},
+            {"sourceToMeters", m_asset.physicalSize.sourceToMeters},
+            {"geometrySpace", "meters"},
+            {"gameLinked", m_asset.physicalSize.gameLinked},
+            {"gameDimensionsMeters", vec3Json(m_asset.physicalSize.gameDimensionsMeters)}
+        };
         state["packageStamp"] = productionPackageStamp();
         const auto path = productionEditorStatePath();
         std::ofstream out(path, std::ios::trunc);
@@ -3677,7 +3711,7 @@ bool ModelAssetEditorSession::loadProductionEditorState(
         json snapshot;
         in >> snapshot;
         const int schemaVersion = snapshot.value("schemaVersion", 0);
-        if ((schemaVersion != 8 && schemaVersion != 13) ||
+        if ((schemaVersion != 8 && schemaVersion != 13 && schemaVersion != 14 && schemaVersion != 15) ||
             snapshot.value("snapshotKind", std::string()) != "model_asset_editor_production_state")
         {
             if (error) *error = "unsupported production editor-state schema";
@@ -4323,6 +4357,11 @@ bool ModelAssetEditorSession::validateWizardStage(const std::string& stage, std:
     }
     else if (stage == "validate" || stage == "build")
     {
+        if (!m_asset.physicalSize.enabled ||
+            m_asset.physicalSize.geometrySpace != PhysicalGeometrySpace::Authoring ||
+            !std::isfinite(m_asset.physicalSize.sourceToMeters) || m_asset.physicalSize.sourceToMeters <= 0.0f)
+            return fail(std::string(stage == "build" ? "BUILD" : "VALIDATE") +
+                " requires an explicit SOURCE/WORKING authoring-space -> meter calibration");
         if (!m_componentMaintenanceIssues.empty())
         {
             const auto& first = *m_componentMaintenanceIssues.begin();
@@ -4490,6 +4529,11 @@ bool ModelAssetEditorSession::checkWizardStage(const std::string& stage)
                 }
         }
     }
+
+    // CHECK updates the per-mesh stage graph. Publish lightweight metadata so
+    // every mesh table immediately reflects the current stage evidence; this
+    // is not a SAVE and does not serialize any geometry payload.
+    sendAssetMetadata();
 
     m_server.broadcastText(json({
         {"type", "wizard_state_patch"},
@@ -6600,7 +6644,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     if (it == m_catalog.end()) { sendStatus("Unknown asset id: " + id, true); return false; }
 
     const bool sameSelection = m_selectedId == id;
-    const bool preservePhysicalProfile = forceReimport && sameSelection && m_asset.physicalSize.enabled;
+    const bool preservePhysicalProfile = forceReimport && sameSelection;
     const PhysicalSizeProfile previousPhysicalProfile = m_asset.physicalSize;
     const bool preserveOrientationOverrides = forceReimport && sameSelection;
     const auto previousOrientationOverrides = m_meshOrientationOverrides;
@@ -6713,6 +6757,23 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         // resident. The source/change graph is per-mesh across all LODs; a hidden
         // unloaded sibling is not an acceptable source-maintenance state.
         if (it->sourceAuthority == CatalogSourceAuthority::Folder && !ensureAllLodsLoaded()) return false;
+        if (m_asset.physicalSize.geometrySpace == PhysicalGeometrySpace::Meters)
+        {
+            if (!m_asset.physicalSize.enabled || !std::isfinite(m_asset.physicalSize.sourceToMeters) ||
+                m_asset.physicalSize.sourceToMeters <= 0.0f)
+            {
+                sendStatus("WORKING package says geometry is metric but has no valid sourceToMeters calibration", true);
+                return false;
+            }
+            if (!ensureAllLodsLoaded()) return false;
+            scaleAuthoringDistancesUniform(m_asset, 1.0f / m_asset.physicalSize.sourceToMeters);
+            m_asset.physicalSize.geometrySpace = PhysicalGeometrySpace::Authoring;
+            markManifestDirty();
+            markAllLoadedLodsDirty();
+            warning = warning.empty()
+                ? "Metric WORKING package was converted back to raw authoring space in memory. SAVE to persist the corrected editor contract."
+                : warning + " Metric WORKING package was converted back to raw authoring space in memory.";
+        }
         synchronizeMeshSourceRecords(true);
         reconcileAuthoringVisualRegistry();
         workingLoaded = true;
@@ -6777,6 +6838,23 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
             m_lodState[0].loaded = true;
             m_lodState[0].dirty = false;
             if (it->sourceAuthority == CatalogSourceAuthority::Folder && !ensureAllLodsLoaded()) return false;
+            if (m_asset.physicalSize.geometrySpace == PhysicalGeometrySpace::Meters)
+            {
+                if (!m_asset.physicalSize.enabled || !std::isfinite(m_asset.physicalSize.sourceToMeters) ||
+                    m_asset.physicalSize.sourceToMeters <= 0.0f)
+                {
+                    sendStatus("Production package says geometry is metric but has no valid sourceToMeters calibration", true);
+                    return false;
+                }
+                // Production is stored in meters, but the editor always authors in
+                // SOURCE coordinates. Load every payload before applying the one
+                // inverse scale so later lazy LOD loads cannot mix coordinate spaces.
+                if (!ensureAllLodsLoaded()) return false;
+                scaleAuthoringDistancesUniform(m_asset, 1.0f / m_asset.physicalSize.sourceToMeters);
+                m_asset.physicalSize.geometrySpace = PhysicalGeometrySpace::Authoring;
+                markManifestDirty();
+                markAllLoadedLodsDirty();
+            }
             productionLoaded = true;
             m_openAuthority = "production";
             sendProgress("reading", "READ PRODUCTION LODS", m_asset.renderLods.size(), m_asset.renderLods.size());
@@ -6799,7 +6877,32 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         buildIndependentRenderLodsFromLegacy(loaded);
         loaded.formatVersion = ModelAssetFormatVersion;
         m_asset = std::move(loaded);
-        if (preservePhysicalProfile) m_asset.physicalSize = previousPhysicalProfile;
+        if (preservePhysicalProfile)
+        {
+            const PhysicalSizeProfile importedContext = m_asset.physicalSize;
+            m_asset.physicalSize = previousPhysicalProfile;
+            // A SOURCE reimport refreshes only the read-only game link. Manual
+            // calibration remains the user's authority and is never auto-applied.
+            m_asset.physicalSize.gameLinked = importedContext.gameLinked;
+            m_asset.physicalSize.gameDimensionsMeters = importedContext.gameDimensionsMeters;
+            m_asset.physicalSize.autoApplyOnSourceImport = false;
+            m_asset.physicalSize.geometrySpace = PhysicalGeometrySpace::Authoring;
+            if (!std::isfinite(m_asset.physicalSize.targetMeters) || m_asset.physicalSize.targetMeters <= 0.0f)
+            {
+                m_asset.physicalSize.axis = importedContext.axis;
+                m_asset.physicalSize.targetMeters = importedContext.targetMeters;
+            }
+            // Old SIZE chunks do not contain the applied coefficient. Explicit
+            // full SOURCE reimport is the migration boundary: raw coordinates are
+            // restored first, then the old target is converted into a new stored
+            // coefficient after all source meshes are resident.
+            if (previousPhysicalProfile.geometrySpace == PhysicalGeometrySpace::LegacyUnknown)
+            {
+                m_asset.physicalSize.enabled = false;
+                m_asset.physicalSize.sourceExtent = 0.0f;
+                m_asset.physicalSize.sourceToMeters = 1.0f;
+            }
+        }
         resetLodState(true, true);
         sourceImported = true;
         m_openAuthority = "source";
@@ -6844,22 +6947,28 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
                   << '\n';
         m_componentMaintenanceIssues.clear();
 
-        // Physical-size normalization is an offline SOURCE boundary. The profile
-        // is persisted in the manifest, but every application is computed from
-        // the newly imported current extent, so reimport never compounds scale.
-        if (m_asset.physicalSize.enabled && m_asset.physicalSize.autoApplyOnSourceImport)
+        // SOURCE/WORKING are permanently raw authoring space. Never resize newly
+        // imported meshes here. If this explicit full reimport is migrating an
+        // old destructive SIZE profile, derive the new coefficient from the raw
+        // complete SOURCE extent and the previously authored physical target.
+        if (preservePhysicalProfile &&
+            previousPhysicalProfile.geometrySpace == PhysicalGeometrySpace::LegacyUnknown)
         {
             if (!ensureAllLodsLoaded()) return false;
-            const float current = physicalAxisExtent(m_asset, m_asset.physicalSize.axis);
+            const float current = authoringAxisExtent(m_asset, m_asset.physicalSize.axis);
             const float target = m_asset.physicalSize.targetMeters;
             if (std::isfinite(current) && current > 1.0e-6f &&
                 std::isfinite(target) && target > 0.0f)
             {
-                const float scale = target / current;
-                if (std::abs(scale - 1.0f) > 1.0e-6f)
-                    scaleModelAssetUniform(m_asset, scale);
+                m_asset.physicalSize.enabled = true;
+                m_asset.physicalSize.sourceExtent = current;
+                m_asset.physicalSize.sourceToMeters = target / current;
+                m_asset.physicalSize.geometrySpace = PhysicalGeometrySpace::Authoring;
+                m_asset.physicalSize.autoApplyOnSourceImport = false;
+                warning = warning.empty()
+                    ? "Legacy destructive physical scale migrated by full SOURCE reimport; WORKING is now raw authoring space. SAVE to keep the migration."
+                    : warning + " Legacy destructive physical scale migrated by full SOURCE reimport; WORKING is now raw authoring space.";
                 markManifestDirty();
-                for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li) markLodDirty(li);
             }
         }
         captureCurrentSourceFingerprintBaseline();
@@ -7079,21 +7188,34 @@ bool ModelAssetEditorSession::buildProductionAsset()
         return false;
     }
     if (!ensureAllLodsLoaded()) return false;
+    if (!m_asset.physicalSize.enabled ||
+        m_asset.physicalSize.geometrySpace != PhysicalGeometrySpace::Authoring ||
+        !std::isfinite(m_asset.physicalSize.sourceToMeters) || m_asset.physicalSize.sourceToMeters <= 0.0f)
+    {
+        sendStatus("BUILD requires an explicit authoring-space -> meter calibration", true);
+        return false;
+    }
 
-    // BUILD is the only normal production-write boundary. It deliberately writes
-    // the complete current working snapshot, independent of working dirty flags.
+    // SOURCE/WORKING are immutable authoring-space coordinates. BUILD is the
+    // only normal meter-conversion boundary and operates on a copy so viewport,
+    // hit volumes, SOURCE reload and saved WORKING geometry can never diverge.
+    ModelAsset productionAsset = m_asset;
+    productionAsset.formatVersion = ModelAssetFormatVersion;
+    scaleAuthoringDistancesUniform(productionAsset, productionAsset.physicalSize.sourceToMeters);
+    productionAsset.physicalSize.geometrySpace = PhysicalGeometrySpace::Meters;
+    productionAsset.physicalSize.autoApplyOnSourceImport = false;
+
     std::string error;
     const auto path = compiledPath(m_selectedId);
     std::filesystem::create_directories(path.parent_path());
-    m_asset.formatVersion = ModelAssetFormatVersion;
-    sendStatus("BUILD: writing complete production package...", false, "writing");
+    sendStatus("BUILD: writing metric production copy...", false, "writing");
     sendProgress("writing", "BUILD PRODUCTION", 0, 1, path);
-    if (!ModelAssetBinary::save(path.string(), m_asset, &error))
+    if (!ModelAssetBinary::save(path.string(), productionAsset, &error))
     {
         sendStatus("BUILD production save failed: " + error, true);
         return false;
     }
-    if (!ModelAssetBinary::pruneStaleLods(path.string(), m_asset, &error))
+    if (!ModelAssetBinary::pruneStaleLods(path.string(), productionAsset, &error))
     {
         sendStatus("BUILD wrote production package but stale-LOD cleanup failed: " + error, true);
         return false;
@@ -7104,7 +7226,7 @@ bool ModelAssetEditorSession::buildProductionAsset()
     sendProgress("writing", "BUILD PRODUCTION", 1, 1, path);
     sendCatalog();
     sendAssetMetadata();
-    sendStatus("BUILD complete: production package now matches the saved WORKING ASSET.");
+    sendStatus("BUILD complete: production package is metric; saved WORKING remains unchanged authoring space.");
     return true;
 }
 
@@ -7271,6 +7393,7 @@ void ModelAssetEditorSession::recordMeshStageResult(const std::string& stage, bo
 
 bool ModelAssetEditorSession::meshSourceRecordPending(const MeshSourceRecord& record) const
 {
+    if (record.sourceMissing) return true;
     // Certification is complete only after every editor stage, including the
     // terminal VALIDATE and BUILD checks, has passed for this SOURCE revision.
     for (const char* stage : wizardStageOrder())
@@ -7297,6 +7420,9 @@ nlohmann::json ModelAssetEditorSession::serializeMeshSourceRecords() const
                 {"lodIndex", lodIndex}, {"geometryId", geometryId},
                 {"sourceFileName", record.sourceFileName}, {"sourcePath", record.sourcePath},
                 {"sourceHash", sourceHashHex(record.sourceHash)},
+                {"sourceMissing", record.sourceMissing},
+                {"scalePolicy", "asset"},
+                {"sourceToMeters", m_asset.physicalSize.sourceToMeters},
                 {"stageChecks", std::move(checks)},
                 {"validationPending", meshSourceRecordPending(record)}
             });
@@ -7317,6 +7443,7 @@ nlohmann::json ModelAssetEditorSession::aggregateStageChecksJson() const
                 {
                     (void)lodIndex;
                     (void)geometryId;
+                    if (record.sourceMissing) passed = false;
                     const auto it = record.stageChecks.find(stage);
                     if (it == record.stageChecks.end() || it->second != "passed") passed = false;
                 }
@@ -7366,6 +7493,11 @@ void ModelAssetEditorSession::captureCurrentSourceFingerprintBaseline()
 
 void ModelAssetEditorSession::sendSourceChangeScan()
 {
+    if (m_asset.physicalSize.geometrySpace == PhysicalGeometrySpace::LegacyUnknown)
+    {
+        sendStatus("SOURCE scan refused: legacy destructive scale state must be migrated with RELOAD ALL SOURCE MESHES first", true);
+        return;
+    }
     if (m_asset.assetId.empty())
     {
         sendStatus("No asset loaded", true);
@@ -7617,6 +7749,12 @@ void ModelAssetEditorSession::sendSourceChangeScan()
         }
 
         const auto existing = existingIt->second;
+        auto& existingRecord = m_meshSourceRecords[li][existing.geometryId];
+        if (existingRecord.sourceMissing)
+        {
+            existingRecord.sourceMissing = false;
+            markEditorStateDirty();
+        }
         const auto gi = geometryIndexById(li, existing.geometryId);
         if (gi == std::size_t(-1))
         {
@@ -7716,6 +7854,7 @@ void ModelAssetEditorSession::sendSourceChangeScan()
             record.sourceFileName = candidate.fileName;
             record.sourcePath = candidate.entry.sourcePath;
             record.sourceHash = candidate.hash;
+            record.sourceMissing = false;
             resetMeshStageChecks(li, geometry.id);
         }
         rows.push_back(std::move(row));
@@ -7730,8 +7869,11 @@ void ModelAssetEditorSession::sendSourceChangeScan()
         ++missingSource;
         const auto li = std::get<0>(key);
         auto& record = m_meshSourceRecords[li][existing.geometryId];
-        record.stageChecks["source"] = "failed";
-        markEditorStateDirty();
+        if (!record.sourceMissing)
+        {
+            record.sourceMissing = true;
+            markEditorStateDirty();
+        }
         rows.push_back({
             {"kind", "missing_source"}, {"lodIndex", li}, {"variant", existing.variant},
             {"geometryId", existing.geometryId}, {"sourceFileName", record.sourceFileName},
@@ -7780,10 +7922,223 @@ void ModelAssetEditorSession::sendSourceChangeScan()
     sendStatus(result.str(), failed != 0);
 }
 
+bool ModelAssetEditorSession::confirmSourceMeshDeletion(
+    std::size_t lodIndex,
+    const std::string& geometryId)
+{
+    if (!ensureLodLoaded(lodIndex)) return false;
+    if (lodIndex >= m_asset.renderLods.size() || geometryId.empty())
+    {
+        sendStatus("Cannot confirm SOURCE deletion: invalid mesh identity", true);
+        return false;
+    }
+
+    auto sourceLodIt = m_meshSourceRecords.find(lodIndex);
+    if (sourceLodIt == m_meshSourceRecords.end())
+    {
+        sendStatus("Cannot confirm SOURCE deletion: mesh has no saved SOURCE graph", true);
+        return false;
+    }
+    auto sourceIt = sourceLodIt->second.find(geometryId);
+    if (sourceIt == sourceLodIt->second.end() || !sourceIt->second.sourceMissing)
+    {
+        sendStatus("Cannot confirm SOURCE deletion: SCAN has not marked this mesh as deleted", true);
+        return false;
+    }
+
+    const std::string sourcePath = sourceIt->second.sourcePath;
+    std::string sourceError;
+    const auto sourceFile = selectedSourceFilePath(sourcePath, &sourceError);
+    if (!sourceFile.empty())
+    {
+        sendStatus("SOURCE deletion refused: the file exists again; run SCAN SOURCE CHANGES", true);
+        return false;
+    }
+
+    auto& lod = m_asset.renderLods[lodIndex];
+    const auto geometryIt = std::find_if(
+        lod.geometries.begin(), lod.geometries.end(), [&](const RenderGeometryDefinition& geometry) {
+            return geometry.id == geometryId;
+        });
+    if (geometryIt == lod.geometries.end())
+    {
+        sendStatus("Cannot confirm SOURCE deletion: saved geometry identity is no longer resident", true);
+        return false;
+    }
+    const std::size_t geometryIndex = static_cast<std::size_t>(
+        std::distance(lod.geometries.begin(), geometryIt));
+    const RenderGeometryDefinition deletedGeometry = *geometryIt;
+    const bool variant = isRenderVariantGeometryId(deletedGeometry.id);
+    const std::string variantId = variant
+        ? sourceVariantAuthoringId(lodIndex, deletedGeometry) : std::string();
+    const std::string baseId = variant
+        ? std::string() : baseVisualId(lodIndex, deletedGeometry.id);
+    const std::string maintenanceId = maintenanceComponentId(lodIndex, deletedGeometry);
+
+    // Remove every render instance of this geometry. If one of those render
+    // nodes was also a transform parent, preserve surviving children's world
+    // placement while bypassing the removed node. Semantic nodes are not
+    // deleted here: they are LOD-independent gameplay objects and can still be
+    // represented by another LOD or intentionally remain semantic-only.
+    std::set<std::size_t> removedNodes;
+    for (std::size_t ri = 0; ri < lod.nodes.size(); ++ri)
+        if (lod.nodes[ri].geometryIndex == static_cast<std::int32_t>(geometryIndex))
+            removedNodes.insert(ri);
+
+    if (!removedNodes.empty())
+    {
+        std::vector<RigidTransform> oldWorld(lod.nodes.size());
+        std::vector<std::uint8_t> state(lod.nodes.size(), 0);
+        std::function<RigidTransform(std::size_t)> resolveWorld = [&](std::size_t nodeIndex) -> RigidTransform
+        {
+            if (nodeIndex >= lod.nodes.size()) return {};
+            if (state[nodeIndex] == 2) return oldWorld[nodeIndex];
+            if (state[nodeIndex] == 1) return renderNodeRigidTransform(lod.nodes[nodeIndex]);
+            state[nodeIndex] = 1;
+            const auto local = renderNodeRigidTransform(lod.nodes[nodeIndex]);
+            const auto parent = lod.nodes[nodeIndex].parentIndex;
+            oldWorld[nodeIndex] = parent >= 0 && static_cast<std::size_t>(parent) < lod.nodes.size()
+                ? composeRigid(resolveWorld(static_cast<std::size_t>(parent)), local)
+                : local;
+            state[nodeIndex] = 2;
+            return oldWorld[nodeIndex];
+        };
+        for (std::size_t ri = 0; ri < lod.nodes.size(); ++ri) resolveWorld(ri);
+
+        std::vector<std::int32_t> oldToNew(lod.nodes.size(), NoIndex);
+        std::vector<RenderNode> survivors;
+        survivors.reserve(lod.nodes.size() - removedNodes.size());
+        for (std::size_t ri = 0; ri < lod.nodes.size(); ++ri)
+            if (!removedNodes.count(ri))
+            {
+                oldToNew[ri] = static_cast<std::int32_t>(survivors.size());
+                survivors.push_back(lod.nodes[ri]);
+            }
+
+        std::size_t survivorIndex = 0;
+        for (std::size_t oldIndex = 0; oldIndex < lod.nodes.size(); ++oldIndex)
+        {
+            if (removedNodes.count(oldIndex)) continue;
+            auto& node = survivors[survivorIndex++];
+            std::int32_t survivingParent = lod.nodes[oldIndex].parentIndex;
+            while (survivingParent >= 0 &&
+                   removedNodes.count(static_cast<std::size_t>(survivingParent)))
+                survivingParent = lod.nodes[static_cast<std::size_t>(survivingParent)].parentIndex;
+
+            const bool parentChanged = survivingParent != lod.nodes[oldIndex].parentIndex;
+            node.parentIndex = survivingParent >= 0
+                ? oldToNew[static_cast<std::size_t>(survivingParent)] : NoIndex;
+            if (parentChanged)
+            {
+                const RigidTransform parentWorld = survivingParent >= 0
+                    ? oldWorld[static_cast<std::size_t>(survivingParent)] : RigidTransform{};
+                const RigidTransform local = composeRigid(inverseRigid(parentWorld), oldWorld[oldIndex]);
+                setRenderNodeRigidTransform(node, local, node.pivot);
+            }
+            if (node.geometryIndex > static_cast<std::int32_t>(geometryIndex)) --node.geometryIndex;
+            else if (node.geometryIndex == static_cast<std::int32_t>(geometryIndex)) node.geometryIndex = NoIndex;
+        }
+        lod.nodes = std::move(survivors);
+    }
+    else
+    {
+        // Defensive remap for an unused geometry definition.
+        remapRenderGeometryAfterErase(lod, geometryIndex);
+    }
+
+    lod.geometries.erase(lod.geometries.begin() + static_cast<std::ptrdiff_t>(geometryIndex));
+    lod.declaredGeometryCount = static_cast<std::uint32_t>(lod.geometries.size());
+    lod.declaredNodeCount = static_cast<std::uint32_t>(lod.nodes.size());
+    recomputeRenderLodBounds(lod);
+    if (lodIndex == 0)
+    {
+        m_asset.minBounds = lod.minBounds;
+        m_asset.maxBounds = lod.maxBounds;
+    }
+
+    // Remove all editor-only records that are owned by this render geometry.
+    m_meshPreparationRecords[lodIndex].erase(geometryId);
+    m_meshOrientationOverrides[lodIndex].erase(geometryId);
+    m_geometryTopologyClasses[lodIndex].erase(geometryId);
+    m_rawMeshSnapshots[lodIndex].erase(geometryId);
+    m_sourceMeshFingerprints[lodIndex].erase(sourcePath);
+    m_sourceMeshQuickStamps[lodIndex].erase(sourcePath);
+    m_meshSourceRecords[lodIndex].erase(geometryId);
+
+    if (variant)
+    {
+        m_sourceExtraMeshIds[lodIndex].erase(sourcePath);
+        if (!variantId.empty())
+        {
+            m_sourceVariantReplacements.erase(variantId);
+            auto legacyLod = m_legacySourceVariantReplacements.find(lodIndex);
+            if (legacyLod != m_legacySourceVariantReplacements.end())
+            {
+                legacyLod->second.erase(variantId);
+                if (legacyLod->second.empty()) m_legacySourceVariantReplacements.erase(legacyLod);
+            }
+        }
+    }
+    else
+    {
+        m_baseVisualIds[lodIndex].erase(geometryId);
+        if (!baseId.empty())
+            for (auto it = m_sourceVariantReplacements.begin(); it != m_sourceVariantReplacements.end(); )
+            {
+                auto& replacements = it->second;
+                replacements.erase(std::remove(replacements.begin(), replacements.end(), baseId), replacements.end());
+                if (replacements.empty()) it = m_sourceVariantReplacements.erase(it);
+                else ++it;
+            }
+        auto legacyLod = m_legacySourceVariantReplacements.find(lodIndex);
+        if (legacyLod != m_legacySourceVariantReplacements.end())
+            for (auto it = legacyLod->second.begin(); it != legacyLod->second.end(); )
+            {
+                auto& geometryIds = it->second;
+                geometryIds.erase(std::remove(geometryIds.begin(), geometryIds.end(), geometryId), geometryIds.end());
+                if (geometryIds.empty()) it = legacyLod->second.erase(it);
+                else ++it;
+            }
+    }
+
+    bool maintenanceStillOwned = false;
+    for (std::size_t li = 0; li < m_asset.renderLods.size() && !maintenanceStillOwned; ++li)
+        for (const auto& geometry : m_asset.renderLods[li].geometries)
+            if (maintenanceComponentId(li, geometry) == maintenanceId)
+            {
+                maintenanceStillOwned = true;
+                break;
+            }
+    if (!maintenanceStillOwned) m_componentMaintenanceIssues.erase(maintenanceId);
+
+    markLodDirty(lodIndex);
+    markManifestDirty();
+    markEditorStateDirty();
+    invalidateWizardFrom("source");
+    syncDirty();
+    sendAsset({lodIndex}, true);
+    m_server.broadcastText(json({
+        {"type", "source_mesh_deletion_confirmed"},
+        {"lodIndex", lodIndex}, {"geometryId", geometryId},
+        {"sourceFileName", deletedGeometry.sourcePath.empty()
+            ? std::string() : std::filesystem::path(deletedGeometry.sourcePath).filename().string()}
+    }).dump());
+    sendStatus(
+        "Confirmed SOURCE deletion: removed LOD" + std::to_string(lodIndex) + "/" + geometryId +
+        ", " + std::to_string(removedNodes.size()) +
+        " render instance(s), source/check graph and geometry-owned editor metadata. SAVE is still required.");
+    return true;
+}
+
 bool ModelAssetEditorSession::reloadMeshFromSource(
     std::size_t lodIndex,
     std::size_t geometryIndex)
 {
+    if (m_asset.physicalSize.geometrySpace == PhysicalGeometrySpace::LegacyUnknown)
+    {
+        sendStatus("SOURCE reload refused: legacy destructive scale state must be migrated with RELOAD ALL SOURCE MESHES first", true);
+        return false;
+    }
     if (!ensureLodLoaded(lodIndex)) return false;
     if (lodIndex >= m_asset.renderLods.size() ||
         geometryIndex >= m_asset.renderLods[lodIndex].geometries.size())
@@ -7855,6 +8210,7 @@ bool ModelAssetEditorSession::replaceSourcePart(
     sourceRecord.sourcePath = geometry.sourcePath;
     sourceRecord.sourceFileName = sourceFile.filename().string();
     sourceRecord.sourceHash = sourceHash;
+    sourceRecord.sourceMissing = false;
     resetMeshStageChecks(lodIndex, geometry.id);
     markMaintenanceIssues(componentId, {"prepare", "surfaces"});
     if (lodIndex == 0 && std::any_of(
@@ -7988,6 +8344,7 @@ bool ModelAssetEditorSession::addSourcePart(
     sourceRecord.sourcePath = sourcePath;
     sourceRecord.sourceFileName = sourceFile.filename().string();
     sourceRecord.sourceHash = sourceHash;
+    sourceRecord.sourceMissing = false;
     resetMeshStageChecks(lodIndex, resident.id);
     markMaintenanceIssues(componentId, {"prepare", "surfaces", "semantics"});
     if (lodIndex == 0 && std::any_of(
@@ -8088,6 +8445,7 @@ bool ModelAssetEditorSession::importSourceVariantMaintenance(
     sourceRecord.sourcePath = sourcePath;
     sourceRecord.sourceFileName = sourceFile.filename().string();
     sourceRecord.sourceHash = sourceHash;
+    sourceRecord.sourceMissing = false;
     resetMeshStageChecks(lodIndex, resident.id);
     markMaintenanceIssues(componentId, {"prepare", "surfaces"});
     const auto variantId = sourceVariantAuthoringId(lodIndex, resident);
@@ -8515,13 +8873,23 @@ nlohmann::json ModelAssetEditorSession::serializeAssetMetadata() const
     out["lodSwitchDistance"] = m_asset.lodSwitchDistance;
     out["minBounds"] = vec3Json(m_asset.minBounds);
     out["maxBounds"] = vec3Json(m_asset.maxBounds);
+    const glm::vec3 authoringExtents = authoringPlacedExtents(m_asset);
+    const float sourceToMeters = authoringToMetersScale(m_asset);
+    const glm::vec3 physicalExtents = m_asset.physicalSize.enabled
+        ? authoringExtents * sourceToMeters
+        : glm::vec3(0.0f);
     out["physicalSize"] = {
         {"enabled", m_asset.physicalSize.enabled},
         {"axis", physicalSizeAxisName(m_asset.physicalSize.axis)},
         {"targetMeters", m_asset.physicalSize.targetMeters},
-        {"autoApplyOnSourceImport", m_asset.physicalSize.autoApplyOnSourceImport},
-        {"currentMeters", physicalAxisExtent(m_asset, m_asset.physicalSize.axis)},
-        {"currentExtents", vec3Json(physicalPlacedExtents(m_asset))}
+        {"sourceExtent", m_asset.physicalSize.sourceExtent},
+        {"sourceToMeters", m_asset.physicalSize.sourceToMeters},
+        {"geometrySpace", physicalGeometrySpaceName(m_asset.physicalSize.geometrySpace)},
+        {"legacyMigrationRequired", m_asset.physicalSize.geometrySpace == PhysicalGeometrySpace::LegacyUnknown},
+        {"authoringExtents", vec3Json(authoringExtents)},
+        {"physicalExtents", vec3Json(physicalExtents)},
+        {"gameLinked", m_asset.physicalSize.gameLinked},
+        {"gameDimensionsMeters", vec3Json(m_asset.physicalSize.gameDimensionsMeters)}
     };
     out["binaryPath"] = compiledPath(m_asset.assetId).generic_string();
     out["workingAssetPath"] = workingAssetPath().generic_string();
@@ -8641,6 +9009,7 @@ nlohmann::json ModelAssetEditorSession::serializeAssetMetadata() const
                 {"sourceFileName", haveSourceRecord && !sourceRecord.sourceFileName.empty()
                     ? sourceRecord.sourceFileName : std::filesystem::path(geometry.sourcePath).filename().string()},
                 {"sourceHash", haveSourceRecord ? sourceHashHex(sourceRecord.sourceHash) : std::string()},
+                {"sourceMissing", haveSourceRecord && sourceRecord.sourceMissing},
                 {"stageChecks", std::move(stageChecks)},
                 {"validationPending", haveSourceRecord && meshSourceRecordPending(sourceRecord)},
                 {"surfaceMode", surfaceModeName(geometry.surfaceMode)},
@@ -9101,6 +9470,11 @@ bool ModelAssetEditorSession::setSourceVariantReplacement(
 
 bool ModelAssetEditorSession::refreshSourceVariants(bool sourceOwned, bool broadcastUpdates)
 {
+    if (!sourceOwned && m_asset.physicalSize.geometrySpace == PhysicalGeometrySpace::LegacyUnknown)
+    {
+        sendStatus("SOURCE set refresh refused: legacy destructive scale state must be migrated with RELOAD ALL SOURCE MESHES first", true);
+        return false;
+    }
     if (m_asset.assetId.empty())
     {
         sendStatus("No asset loaded", true);
@@ -9416,6 +9790,13 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
 
         if (m_asset.assetId.empty()) { sendStatus("No asset loaded", true); return; }
         if (command == "scan_source_changes") { sendSourceChangeScan(); return; }
+        if (command == "confirm_source_mesh_deletion")
+        {
+            confirmSourceMeshDeletion(
+                message.value("lodIndex", std::size_t(-1)),
+                message.value("geometryId", std::string()));
+            return;
+        }
         if (command == "reload_mesh_from_source")
         {
             reloadMeshFromSource(
@@ -10442,6 +10823,8 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         {
             const auto index = message.value("nodeIndex", std::size_t(-1));
             const float density = std::max(0.001f, message.value("densityKgM3", 780.0f));
+            if (!m_asset.physicalSize.enabled || m_asset.physicalSize.geometrySpace != PhysicalGeometrySpace::Authoring)
+                throw std::runtime_error("set the asset physical scale before estimating mass from collision");
             if (!estimatePhysicsFromCollision(m_asset, index, density)) throw std::runtime_error("node has no enabled local collision volumes");
             markManifestDirty(); invalidateWizardFrom("physics"); sendAssetMetadata(); sendStatus("Estimated rigid-body properties from collision: " + m_asset.nodes[index].id); return;
         }
@@ -10598,36 +10981,36 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             }
             (void)ringAxis; markManifestDirty(); invalidateWizardFrom("physics"); sendAssetMetadata(); sendStatus("Generated " + std::to_string(count) + " radial collision capsules for " + m_asset.nodes[nodeIndex].id); return;
         }
-        if (command == "set_physical_size_profile")
-        {
-            auto next = m_asset.physicalSize;
-            next.enabled = message.value("enabled", next.enabled);
-            if (message.contains("axis")) next.axis = physicalSizeAxisFromName(message.value("axis", std::string("z")));
-            next.targetMeters = message.value("targetMeters", next.targetMeters);
-            next.autoApplyOnSourceImport = message.value("autoApplyOnSourceImport", next.autoApplyOnSourceImport);
-            if (next.enabled && (!std::isfinite(next.targetMeters) || next.targetMeters <= 0.0f))
-                throw std::runtime_error("physical target size must be > 0 meters");
-            m_asset.physicalSize = next;
-            markManifestDirty(); invalidateWizardFrom("source"); sendAssetMetadata();
-            sendStatus("Updated physical-size normalization profile"); return;
-        }
-        if (command == "apply_physical_size")
+        if (command == "set_physical_size_profile" || command == "apply_physical_size" ||
+            command == "calibrate_physical_scale")
         {
             if (!ensureAllLodsLoaded()) return;
             auto& profile = m_asset.physicalSize;
+            if (profile.geometrySpace == PhysicalGeometrySpace::LegacyUnknown)
+                throw std::runtime_error("legacy destructive scale must be migrated with RELOAD ALL SOURCE MESHES before calibration");
+            if (profile.geometrySpace != PhysicalGeometrySpace::Authoring)
+                throw std::runtime_error("physical scale can only be calibrated in authoring space");
             if (message.contains("axis")) profile.axis = physicalSizeAxisFromName(message.value("axis", std::string("z")));
             if (message.contains("targetMeters")) profile.targetMeters = message.value("targetMeters", profile.targetMeters);
+            if (!std::isfinite(profile.targetMeters) || profile.targetMeters <= 0.0f)
+                throw std::runtime_error("physical target size must be > 0 meters");
+            const float sourceExtent = authoringAxisExtent(m_asset, profile.axis);
+            if (!std::isfinite(sourceExtent) || sourceExtent <= 1.0e-6f)
+                throw std::runtime_error("cannot calibrate asset with zero/invalid authoring extent");
             profile.enabled = true;
-            profile.autoApplyOnSourceImport = message.value("autoApplyOnSourceImport", profile.autoApplyOnSourceImport);
-            const float current = physicalAxisExtent(m_asset, profile.axis);
-            if (!std::isfinite(current) || current <= 1.0e-6f) throw std::runtime_error("cannot resize asset with zero/invalid measured extent");
-            if (!std::isfinite(profile.targetMeters) || profile.targetMeters <= 0.0f) throw std::runtime_error("physical target size must be > 0 meters");
-            const float scale = profile.targetMeters / current;
-            scaleModelAssetUniform(m_asset, scale);
-            for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li) markLodDirty(li);
-            markManifestDirty(); invalidateWizardFrom("source"); sendAssetMetadata();
-            sendStatus("Applied uniform physical scale x" + std::to_string(scale) +
-                "; authored " + std::string(physicalSizeAxisName(profile.axis)) + " extent = " + std::to_string(profile.targetMeters) + " m");
+            profile.sourceExtent = sourceExtent;
+            profile.sourceToMeters = profile.targetMeters / sourceExtent;
+            profile.autoApplyOnSourceImport = false;
+            profile.geometrySpace = PhysicalGeometrySpace::Authoring;
+            markManifestDirty();
+            // Geometry does not change. Only physical interpretation and any
+            // density-derived rigid-body evidence depend on the calibration.
+            invalidateWizardFrom("physics");
+            sendAssetMetadata();
+            sendStatus("Set physical scale contract: " + std::string(physicalSizeAxisName(profile.axis)) +
+                " " + std::to_string(profile.sourceExtent) + " authoring units -> " +
+                std::to_string(profile.targetMeters) + " m; sourceToMeters=" +
+                std::to_string(profile.sourceToMeters) + ". WORKING geometry was not resized.");
             return;
         }
 

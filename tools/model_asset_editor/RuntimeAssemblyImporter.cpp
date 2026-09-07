@@ -16,11 +16,14 @@
 
 #include "src/game/geometry/ObjectAssemblyRegistry.h"
 #include "src/model_asset/ModelAssetIdentity.h"
+#include "src/model_asset/ModelAssetMigration.h"
+#include "src/model_asset/ModelAssetSemantics.h"
 #include "src/model_asset/ModelAssetVariantNaming.h"
 #include "src/game/ship/ShipAttachmentPoint.h"
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "tools/model_asset_editor/NativeObjImporter.h"
+#include "tools/model_asset_editor/SourceFolderImporter.h"
 
 namespace elite::model_asset::editor
 {
@@ -46,6 +49,36 @@ std::string attachmentKindToString(ShipAttachmentKind kind)
         case ShipAttachmentKind::Generic: return "generic";
     }
     return "generic";
+}
+
+std::string attachmentInterfaceProfile(ShipAttachmentKind kind)
+{
+    switch (kind)
+    {
+        case ShipAttachmentKind::CameraCockpit: return "camera.cockpit";
+        case ShipAttachmentKind::CameraRear: return "camera.rear";
+        case ShipAttachmentKind::CameraDrone: return "camera.drone";
+        case ShipAttachmentKind::DroneDock: return "drone.dock";
+        case ShipAttachmentKind::DroneLaunch: return "drone.launch";
+        case ShipAttachmentKind::DroneRecovery: return "drone.recovery";
+        case ShipAttachmentKind::RepairWorkPoint: return "repair.work";
+        case ShipAttachmentKind::EquipmentMount: return "equipment.generic";
+        case ShipAttachmentKind::MissileRack: return "weapon.missile";
+        case ShipAttachmentKind::ContainerMount: return "container.mount";
+        case ShipAttachmentKind::WeaponMuzzle: return "weapon.muzzle";
+        case ShipAttachmentKind::Generic: return "generic";
+    }
+    return "generic";
+}
+
+StructuralLinkKind legacyStructuralKind(ModuleStructuralKind kind)
+{
+    switch (kind)
+    {
+        case ModuleStructuralKind::Equipment: return StructuralLinkKind::EquipmentMount;
+        case ModuleStructuralKind::ContainerLock: return StructuralLinkKind::ControlledLock;
+        default: return StructuralLinkKind::FixedMount;
+    }
 }
 
 std::filesystem::path sourceMeshPath(
@@ -87,6 +120,20 @@ void expandBounds(glm::vec3& minB, glm::vec3& maxB, const glm::vec3& p)
 {
     minB = glm::min(minB, p);
     maxB = glm::max(maxB, p);
+}
+
+void expandRenderBounds(RenderLod& lod, const MeshLod& mesh, bool& haveBounds)
+{
+    if (mesh.vertices.empty()) return;
+    if (!haveBounds)
+    {
+        lod.minBounds = mesh.minBounds;
+        lod.maxBounds = mesh.maxBounds;
+        haveBounds = true;
+        return;
+    }
+    lod.minBounds = glm::min(lod.minBounds, mesh.minBounds);
+    lod.maxBounds = glm::max(lod.maxBounds, mesh.maxBounds);
 }
 
 bool isLodDirectoryName(std::string name)
@@ -264,6 +311,7 @@ std::vector<SourceAdditionalMesh> discoverAdditionalLodMeshes(
 
 bool importRuntimeAssembly(
     const std::filesystem::path& sourceRoot,
+    const std::filesystem::path& sourceDirectory,
     ObjectType typeId,
     const std::string& assetId,
     const std::string& displayName,
@@ -289,28 +337,112 @@ bool importRuntimeAssembly(
             ? assembly.lodSwitchDistance : 2500.0f;
         asset.sourceBasis.preset = "game_current";
 
+        // Runtime LogicalDimensions are read-only game context, not an automatic
+        // geometry operation. SOURCE/WORKING remain exactly in authoring units;
+        // the user explicitly calibrates one sourceToMeters coefficient later.
+        const auto& logicalDimensions = descriptor.logicalDimensions();
+        if (logicalDimensions.enabled)
+        {
+            asset.physicalSize.gameLinked = true;
+            asset.physicalSize.gameDimensionsMeters = {
+                logicalDimensions.width,
+                logicalDimensions.height,
+                logicalDimensions.length
+            };
+            asset.physicalSize.geometrySpace = PhysicalGeometrySpace::Authoring;
+            asset.physicalSize.autoApplyOnSourceImport = false;
+            switch (logicalDimensions.scaleReference)
+            {
+                case ScaleReference::Width:
+                    asset.physicalSize.axis = PhysicalSizeAxis::X;
+                    asset.physicalSize.targetMeters = logicalDimensions.width;
+                    break;
+                case ScaleReference::Height:
+                    asset.physicalSize.axis = PhysicalSizeAxis::Y;
+                    asset.physicalSize.targetMeters = logicalDimensions.height;
+                    break;
+                case ScaleReference::Length:
+                    asset.physicalSize.axis = PhysicalSizeAxis::Z;
+                    asset.physicalSize.targetMeters = logicalDimensions.length;
+                    break;
+                case ScaleReference::None:
+                    asset.physicalSize.targetMeters = 0.0f;
+                    break;
+            }
+            asset.physicalSize.enabled = false;
+            asset.physicalSize.sourceExtent = 0.0f;
+            asset.physicalSize.sourceToMeters = 1.0f;
+        }
+
         std::unordered_map<std::string, std::int32_t> geometryBySource;
         std::unordered_map<std::string, std::int32_t> moduleNodeById;
         std::set<std::string> semanticNodeIds;
         std::vector<std::string> warnings;
 
+        // Runtime descriptors own logical/module semantics and the detailed LOD0
+        // assembly. They must not act as an allow-list for render LODs: once the
+        // catalog knows the asset source directory, every ordinary OBJ found in
+        // every LOD<N> folder is source authority for that independent RenderLod.
+        // This restores the original editor behavior where adding LOD1/LOD2/...
+        // to the source folder makes them visible without editing C++ descriptors.
+        const auto folderMeshes = sourceDirectory.empty()
+            ? std::vector<SourceFolderMesh>{}
+            : discoverSourceFolderOrdinaryMeshes(sourceRoot, sourceDirectory, &warnings);
+        std::map<std::size_t, std::vector<SourceFolderMesh>> folderMeshesByLod;
+        for (const auto& mesh : folderMeshes)
+            folderMeshesByLod[mesh.lodIndex].push_back(mesh);
+        const bool folderOwnsHigherLods = std::any_of(
+            folderMeshes.begin(), folderMeshes.end(),
+            [](const SourceFolderMesh& mesh) { return mesh.lodIndex > 0; });
+
+        if (folderOwnsHigherLods)
+        {
+            const std::size_t highest = folderMeshesByLod.rbegin()->first;
+            for (std::size_t level = 0; level <= highest; ++level)
+            {
+                const auto found = folderMeshesByLod.find(level);
+                if (found == folderMeshesByLod.end() || found->second.empty())
+                    throw std::runtime_error(
+                        "runtime source LOD directories must be contiguous from LOD0; missing LOD" +
+                        std::to_string(level) + " under " + sourceDirectory.generic_string());
+            }
+        }
+
         std::unordered_set<std::string> countedGeometrySources;
+        std::set<std::string> runtimeLod0FileKeys;
+        for (const auto& module : assembly.modules)
+            for (const auto& part : module.meshes)
+                if (!part.lod0Path.empty())
+                    runtimeLod0FileKeys.insert(sourcePathKey(sourceMeshPath(sourceRoot, part.lod0Path)));
+
         std::size_t totalObjLoads = 0;
         for (const auto& module : assembly.modules)
         {
             for (const auto& part : module.meshes)
             {
-                const std::string sourceKey = part.lod0Path + "\n" + part.lod1Path;
+                const std::string sourceKey = folderOwnsHigherLods
+                    ? part.lod0Path
+                    : part.lod0Path + "\n" + part.lod1Path;
                 if (!countedGeometrySources.insert(sourceKey).second)
                     continue;
                 if (!part.lod0Path.empty()) ++totalObjLoads;
-                if (!part.lod1Path.empty() && part.lod1Path != part.lod0Path) ++totalObjLoads;
+                if (!folderOwnsHigherLods && !part.lod1Path.empty() && part.lod1Path != part.lod0Path)
+                    ++totalObjLoads;
             }
         }
+        if (folderOwnsHigherLods)
+            for (const auto& mesh : folderMeshes)
+                if (mesh.lodIndex > 0) ++totalObjLoads;
+        // Runtime descriptors are semantic bootstrap, never a geometry allow-list.
+        // Count every ordinary LOD0 OBJ that exists in the selected SOURCE folder
+        // but is not named by the runtime descriptor; it will be appended below.
+        for (const auto& mesh : folderMeshes)
+            if (mesh.lodIndex == 0 && !runtimeLod0FileKeys.count(sourcePathKey(mesh.file)))
+                ++totalObjLoads;
 
-        // Additional sibling OBJ files are intentionally not imported here.
-        // Their authoring identity is created by the editor session, where it can
-        // be persisted independently of filenames and independently for every LOD.
+        // Additional sibling OBJ files inside an authored LOD are normal render
+        // geometry for that LOD. Variant subtrees remain excluded by the folder
+        // discovery contract and are still managed separately by the editor.
         std::size_t completedObjLoads = 0;
         auto report = [&](
             const std::string& stage,
@@ -320,6 +452,67 @@ bool importRuntimeAssembly(
                 progress(ImportProgress{stage, completedObjLoads, totalObjLoads, path});
         };
         report("ASSEMBLY");
+
+        const auto appendFolderOnlyLod0Meshes = [&]()
+        {
+            const auto found = folderMeshesByLod.find(0);
+            if (found == folderMeshesByLod.end() || found->second.empty() || asset.renderLods.empty()) return;
+            auto& lod0 = asset.renderLods[0];
+            std::set<std::string> residentFiles;
+            std::set<std::string> geometryIds;
+            std::set<std::string> renderNodeIds;
+            std::map<std::string, std::string> folderSourcePathByFile;
+            for (const auto& sourceMesh : found->second)
+                folderSourcePathByFile[sourcePathKey(sourceMesh.file)] = sourceMesh.sourcePath;
+            for (auto& geometry : lod0.geometries)
+            {
+                geometryIds.insert(geometry.id);
+                if (geometry.sourcePath.empty()) continue;
+                const auto fileKey = sourcePathKey(sourceMeshPath(sourceRoot, geometry.sourcePath));
+                residentFiles.insert(fileKey);
+                // Persist Folder-authoritative provenance relative to the configured
+                // SOURCE root. Legacy registry paths such as assets/models/... are
+                // semantic-bootstrap input only and must not survive as geometry authority.
+                const auto canonical = folderSourcePathByFile.find(fileKey);
+                if (canonical != folderSourcePathByFile.end()) geometry.sourcePath = canonical->second;
+            }
+            for (const auto& render : lod0.nodes) renderNodeIds.insert(render.id);
+
+            bool haveBounds = !lod0.geometries.empty();
+            for (const auto& sourceMesh : found->second)
+            {
+                const auto fileKey = sourcePathKey(sourceMesh.file);
+                if (residentFiles.count(fileKey)) continue;
+
+                MeshLod mesh;
+                std::string importError;
+                report("READ / PARSE / TOPOLOGY", sourceMesh.file);
+                if (!importObjNative(sourceMesh.file, asset, mesh, &importError))
+                    throw std::runtime_error(importError);
+                ++completedObjLoads;
+                report("ASSEMBLE", sourceMesh.file);
+
+                const std::string preferred = sourceMesh.file.stem().string();
+                RenderGeometryDefinition geometry;
+                geometry.id = allocateStableId(preferred, "geometry", geometryIds);
+                geometryIds.insert(geometry.id);
+                geometry.sourcePath = sourceMesh.sourcePath;
+                geometry.mesh = std::move(mesh);
+                expandRenderBounds(lod0, geometry.mesh, haveBounds);
+                const auto geometryIndex = static_cast<std::int32_t>(lod0.geometries.size());
+                lod0.geometries.push_back(std::move(geometry));
+
+                RenderNode render;
+                render.id = allocateStableId(preferred, "render_node", renderNodeIds);
+                renderNodeIds.insert(render.id);
+                render.geometryIndex = geometryIndex;
+                render.semanticNodeIndex = NoIndex; // new SOURCE mesh: SEMANTICS must bind it explicitly
+                lod0.nodes.push_back(std::move(render));
+                residentFiles.insert(fileKey);
+            }
+            lod0.declaredGeometryCount = static_cast<std::uint32_t>(lod0.geometries.size());
+            lod0.declaredNodeCount = static_cast<std::uint32_t>(lod0.nodes.size());
+        };
 
         for (const auto& module : assembly.modules)
         {
@@ -362,7 +555,9 @@ bool importRuntimeAssembly(
 
             for (const auto& part : module.meshes)
             {
-                const std::string sourceKey = part.lod0Path + "\n" + part.lod1Path;
+                const std::string sourceKey = folderOwnsHigherLods
+                    ? part.lod0Path
+                    : part.lod0Path + "\n" + part.lod1Path;
                 std::int32_t geometryIndex = NoIndex;
                 const auto existing = geometryBySource.find(sourceKey);
                 if (existing != geometryBySource.end())
@@ -391,7 +586,7 @@ bool importRuntimeAssembly(
                     report("ASSEMBLE", lod0Path);
                     geometry.lods.push_back(std::move(lod0));
 
-                    if (!part.lod1Path.empty() && part.lod1Path != part.lod0Path)
+                    if (!folderOwnsHigherLods && !part.lod1Path.empty() && part.lod1Path != part.lod0Path)
                     {
                         MeshLod lod1;
                         const auto lod1Path = sourceMeshPath(sourceRoot, part.lod1Path);
@@ -454,6 +649,55 @@ bool importRuntimeAssembly(
         }
 
 
+        // Transitional adoption of explicitly described legacy structural supports.
+        // These become graph edges only; legacy impulseTolerance is NOT copied
+        // into breakForceN because impulse and force have different dimensions.
+        // Old runtime panel-seam discovery remains migration debt and is not
+        // promoted to authored weld topology behind the user's back.
+        std::set<std::string> importedStructuralKeys;
+        std::set<std::string> importedStructuralIds;
+        for (const auto& module : descriptor.moduleDescriptors())
+        {
+            const auto moduleIt = moduleNodeById.find(module.moduleId);
+            if (moduleIt == moduleNodeById.end()) continue;
+            const auto importSupport = [&](
+                const std::string& supportModuleId,
+                const std::string& requestedId,
+                bool loadBearing)
+            {
+                const auto supportIt = moduleNodeById.find(supportModuleId);
+                if (supportIt == moduleNodeById.end() || supportIt->second == moduleIt->second) return;
+                const std::int32_t a = supportIt->second;
+                const std::int32_t b = moduleIt->second;
+                const std::string pairKey = std::to_string(std::min(a, b)) + ":" + std::to_string(std::max(a, b));
+                if (!importedStructuralKeys.insert(pairKey).second) return;
+                StructuralLinkDefinition link;
+                const std::string baseId = requestedId.empty()
+                    ? "legacy.link." + supportModuleId + "." + module.moduleId
+                    : requestedId;
+                link.id = baseId;
+                for (std::uint32_t suffix = 2; !importedStructuralIds.insert(link.id).second; ++suffix)
+                    link.id = baseId + "." + std::to_string(suffix);
+                link.nodeAIndex = a;
+                link.nodeBIndex = b;
+                link.kind = legacyStructuralKind(module.structuralKind);
+                link.loadBearing = loadBearing;
+                link.commandable = module.structuralKind == ModuleStructuralKind::ContainerLock;
+                asset.structuralLinks.push_back(std::move(link));
+            };
+
+            if (!module.supportLinks.empty())
+            {
+                for (const auto& support : module.supportLinks)
+                    importSupport(support.supportModuleId, support.linkId, support.loadBearing);
+            }
+            else
+            {
+                for (const auto& supportId : module.supportModuleIds)
+                    importSupport(supportId, {}, true);
+            }
+        }
+
         if (const auto* ship = dynamic_cast<const ShipDescriptor*>(&descriptor))
         {
             for (const auto& attachment : ship->attachments)
@@ -461,6 +705,7 @@ bool importRuntimeAssembly(
                 Socket socket;
                 socket.id = attachment.id;
                 socket.kind = attachmentKindToString(attachment.kind);
+                socket.interfaceProfile = attachmentInterfaceProfile(attachment.kind);
                 socket.moduleId = attachment.parentModuleId;
                 const auto parentIt = moduleNodeById.find(attachment.parentModuleId);
                 if (parentIt != moduleNodeById.end()) socket.parentNodeIndex = parentIt->second;
@@ -470,6 +715,93 @@ bool importRuntimeAssembly(
                 asset.sockets.push_back(std::move(socket));
             }
         }
+
+        if (folderOwnsHigherLods)
+        {
+            // Materialize the descriptor-authored LOD0 into the v4 independent
+            // RenderLod representation, then append every higher LOD discovered
+            // in the selected source directory. Higher LOD topology may be
+            // completely different (for example Cobra LOD0 = many parts while
+            // LOD1 = one whole-ship proxy), so there is deliberately no per-part
+            // matching requirement and no registry path whitelist.
+            buildIndependentRenderLodsFromLegacy(asset);
+            if (asset.renderLods.empty())
+                throw std::runtime_error("runtime assembly produced no LOD0 render document");
+            asset.renderLods.resize(1);
+            appendFolderOnlyLod0Meshes();
+
+            const std::size_t highest = folderMeshesByLod.rbegin()->first;
+            for (std::size_t level = 1; level <= highest; ++level)
+            {
+                const auto found = folderMeshesByLod.find(level);
+                if (found == folderMeshesByLod.end() || found->second.empty())
+                    throw std::runtime_error(
+                        "runtime source LOD directories must be contiguous from LOD0; missing LOD" +
+                        std::to_string(level));
+
+                RenderLod lod;
+                lod.level = static_cast<std::uint32_t>(level);
+                lod.sourceKind = "source";
+                lod.relativeGeometricError = -1.0f;
+                bool haveLodBounds = false;
+                std::set<std::string> geometryIds;
+                std::set<std::string> renderNodeIds;
+
+                for (const auto& sourceMesh : found->second)
+                {
+                    MeshLod mesh;
+                    std::string importError;
+                    report("READ / PARSE / TOPOLOGY", sourceMesh.file);
+                    if (!importObjNative(sourceMesh.file, asset, mesh, &importError))
+                        throw std::runtime_error(importError);
+                    ++completedObjLoads;
+                    report("ASSEMBLE", sourceMesh.file);
+
+                    const std::string preferred = sourceMesh.file.stem().string();
+                    RenderGeometryDefinition geometry;
+                    geometry.id = allocateStableId(preferred, "geometry", geometryIds);
+                    geometryIds.insert(geometry.id);
+                    geometry.sourcePath = sourceMesh.sourcePath;
+                    geometry.mesh = std::move(mesh);
+                    expandRenderBounds(lod, geometry.mesh, haveLodBounds);
+                    const auto geometryIndex = static_cast<std::int32_t>(lod.geometries.size());
+                    lod.geometries.push_back(std::move(geometry));
+
+                    RenderNode render;
+                    render.id = allocateStableId(preferred, "render_node", renderNodeIds);
+                    renderNodeIds.insert(render.id);
+                    render.geometryIndex = geometryIndex;
+                    const auto semantic = moduleNodeById.find(preferred);
+                    if (semantic != moduleNodeById.end())
+                        render.semanticNodeIndex = semantic->second;
+                    // Folder LODs share the authored assembly frame. A whole-ship
+                    // proxy therefore needs no synthetic transform or semantic
+                    // parent just to resemble the detailed LOD0 hierarchy.
+                    lod.nodes.push_back(std::move(render));
+                }
+
+                lod.declaredGeometryCount = static_cast<std::uint32_t>(lod.geometries.size());
+                lod.declaredNodeCount = static_cast<std::uint32_t>(lod.nodes.size());
+                asset.renderLods.push_back(std::move(lod));
+            }
+        }
+        else
+        {
+            // Runtime assembly descriptors still enter through the legacy
+            // geometry/node bootstrap, but no legacy semantic scaffold leaves
+            // this importer. Materialize the independent render documents now
+            // so synthetic visual semantic children can be collapsed safely.
+            buildIndependentRenderLodsFromLegacy(asset);
+            appendFolderOnlyLod0Meshes();
+        }
+
+        // The transitional importer historically emitted module -> module.mesh
+        // semantic pairs solely to carry visual geometry/localOffset into the
+        // v4 RenderLod bootstrap. RenderNode now owns that visual binding, so
+        // collapse only the exact recognized legacy scaffold before publishing
+        // the imported asset. Real module parent chains and structural links are
+        // intentionally preserved for separate authoring/migration decisions.
+        (void)cleanLegacySyntheticVisualSemanticNodes(asset);
 
         asset.minBounds = haveBounds ? minBounds : glm::vec3(-1.0f);
         asset.maxBounds = haveBounds ? maxBounds : glm::vec3(1.0f);

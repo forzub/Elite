@@ -116,6 +116,19 @@ struct Reader
     void vec2(glm::vec2& v) { pod(v.x); pod(v.y); }
     void vec3(glm::vec3& v) { pod(v.x); pod(v.y); pod(v.z); }
     void vec4(glm::vec4& v) { pod(v.x); pod(v.y); pod(v.z); pod(v.w); }
+
+    std::size_t remaining()
+    {
+        if (cursor) return static_cast<std::size_t>(end - cursor);
+        if (!in) return 0;
+        const auto current = in->tellg();
+        if (current == std::streampos(-1)) return 0;
+        in->seekg(0, std::ios::end);
+        const auto finish = in->tellg();
+        in->seekg(current);
+        if (finish == std::streampos(-1) || finish < current) return 0;
+        return static_cast<std::size_t>(finish - current);
+    }
 };
 
 void writeStrings(Writer& w, const std::vector<std::string>& values)
@@ -711,6 +724,146 @@ void readLodScreenErrorV4(Reader& r, ModelAsset& a)
     }
 }
 
+
+void writePhysicalSizeV4(Writer& w, const ModelAsset& a)
+{
+    // Keep the original four fields first so older v4 readers can still read
+    // the SIZE prefix. autoApply is deliberately serialized as false: 0.10.62+
+    // never mutates SOURCE/WORKING geometry during import.
+    w.pod(static_cast<std::uint8_t>(a.physicalSize.enabled ? 1 : 0));
+    w.pod(static_cast<std::uint8_t>(a.physicalSize.axis));
+    w.pod(a.physicalSize.targetMeters);
+    w.pod(static_cast<std::uint8_t>(0));
+
+    w.pod(a.physicalSize.sourceExtent);
+    w.pod(a.physicalSize.sourceToMeters);
+    w.pod(static_cast<std::uint8_t>(a.physicalSize.gameLinked ? 1 : 0));
+    w.vec3(a.physicalSize.gameDimensionsMeters);
+    w.pod(static_cast<std::uint8_t>(a.physicalSize.geometrySpace));
+}
+
+void readPhysicalSizeV4(Reader& r, ModelAsset& a)
+{
+    std::uint8_t enabled = 0, axis = 2, legacyAutoApply = 0;
+    r.pod(enabled); r.pod(axis); r.pod(a.physicalSize.targetMeters); r.pod(legacyAutoApply);
+    a.physicalSize.enabled = enabled != 0;
+    a.physicalSize.axis = static_cast<PhysicalSizeAxis>(axis);
+    a.physicalSize.autoApplyOnSourceImport = false;
+
+    // 0.10.62 extends the existing length-delimited SIZE chunk without changing
+    // the v4 package magic. Old chunks end after legacyAutoApply and are marked
+    // explicitly so the editor never mixes a raw SOURCE mesh into an unknown
+    // destructively-resized WORKING coordinate space.
+    constexpr std::size_t ExtendedBytes = sizeof(float) * 2 + sizeof(std::uint8_t) + sizeof(float) * 3 + sizeof(std::uint8_t);
+    if (r.remaining() >= ExtendedBytes)
+    {
+        std::uint8_t gameLinked = 0, geometrySpace = 0;
+        r.pod(a.physicalSize.sourceExtent);
+        r.pod(a.physicalSize.sourceToMeters);
+        r.pod(gameLinked);
+        r.vec3(a.physicalSize.gameDimensionsMeters);
+        r.pod(geometrySpace);
+        a.physicalSize.gameLinked = gameLinked != 0;
+        a.physicalSize.geometrySpace = static_cast<PhysicalGeometrySpace>(geometrySpace);
+    }
+    else
+    {
+        a.physicalSize.sourceExtent = 0.0f;
+        a.physicalSize.sourceToMeters = 1.0f;
+        a.physicalSize.gameLinked = false;
+        a.physicalSize.gameDimensionsMeters = glm::vec3(0.0f);
+        a.physicalSize.geometrySpace = a.physicalSize.enabled
+            ? PhysicalGeometrySpace::LegacyUnknown
+            : PhysicalGeometrySpace::Authoring;
+        a.physicalSize.autoApplyOnSourceImport = legacyAutoApply != 0;
+    }
+}
+
+void writeSocketMetadataV4(Writer& w, const ModelAsset& a)
+{
+    std::uint32_t count = 0;
+    for (const auto& socket : a.sockets)
+        if (!socket.interfaceProfile.empty() || std::abs(socket.previewFovDeg - 75.0f) > 1.0e-6f) ++count;
+    w.pod(count);
+    for (const auto& socket : a.sockets)
+    {
+        if (socket.interfaceProfile.empty() && std::abs(socket.previewFovDeg - 75.0f) <= 1.0e-6f) continue;
+        w.string(socket.id);
+        w.string(socket.interfaceProfile);
+        w.pod(socket.previewFovDeg);
+    }
+}
+
+void readSocketMetadataV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0;
+    if (!r.count(count)) return;
+    for (std::uint32_t i = 0; i < count; ++i)
+    {
+        std::string id, profile;
+        float fov = 75.0f;
+        r.string(id); r.string(profile); r.pod(fov);
+        if (!r.ok) return;
+        const auto it = std::find_if(a.sockets.begin(), a.sockets.end(), [&](const Socket& s) { return s.id == id; });
+        if (it != a.sockets.end())
+        {
+            it->interfaceProfile = std::move(profile);
+            it->previewFovDeg = fov;
+        }
+    }
+}
+
+void writeStructuralLinksV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.structuralLinks.size()));
+    for (const auto& link : a.structuralLinks)
+    {
+        w.string(link.id); w.pod(link.nodeAIndex); w.pod(link.nodeBIndex);
+        w.pod(static_cast<std::uint8_t>(link.kind));
+        w.pod(static_cast<std::uint8_t>(link.loadBearing ? 1 : 0));
+        w.pod(static_cast<std::uint8_t>(link.commandable ? 1 : 0));
+        w.pod(link.breakForceN); w.pod(link.breakTorqueNm);
+        w.pod(static_cast<std::uint8_t>(link.enabled ? 1 : 0));
+        w.pod(static_cast<std::uint32_t>(link.damageProxies.size()));
+        for (const auto& proxy : link.damageProxies)
+        {
+            w.string(proxy.id); w.pod(static_cast<std::uint8_t>(proxy.shape)); w.pod(proxy.parentNodeIndex);
+            w.vec3(proxy.localPosition); w.vec3(proxy.localRotationDeg); w.vec3(proxy.halfSize);
+            w.pod(proxy.radius); w.pod(proxy.halfHeight);
+            w.pod(static_cast<std::uint8_t>(proxy.enabled ? 1 : 0));
+        }
+    }
+}
+
+void readStructuralLinksV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0;
+    if (!r.count(count)) return;
+    a.structuralLinks.resize(count);
+    for (auto& link : a.structuralLinks)
+    {
+        std::uint8_t kind = 0, loadBearing = 0, commandable = 0, enabled = 0;
+        r.string(link.id); r.pod(link.nodeAIndex); r.pod(link.nodeBIndex); r.pod(kind);
+        r.pod(loadBearing); r.pod(commandable); r.pod(link.breakForceN); r.pod(link.breakTorqueNm); r.pod(enabled);
+        link.kind = static_cast<StructuralLinkKind>(kind);
+        link.loadBearing = loadBearing != 0;
+        link.commandable = commandable != 0;
+        link.enabled = enabled != 0;
+        std::uint32_t proxyCount = 0;
+        if (!r.count(proxyCount)) return;
+        link.damageProxies.resize(proxyCount);
+        for (auto& proxy : link.damageProxies)
+        {
+            std::uint8_t shape = 0, proxyEnabled = 0;
+            r.string(proxy.id); r.pod(shape); r.pod(proxy.parentNodeIndex);
+            r.vec3(proxy.localPosition); r.vec3(proxy.localRotationDeg); r.vec3(proxy.halfSize);
+            r.pod(proxy.radius); r.pod(proxy.halfHeight); r.pod(proxyEnabled);
+            proxy.shape = static_cast<StructuralDamageShape>(shape);
+            proxy.enabled = proxyEnabled != 0;
+        }
+    }
+}
+
 struct ChunkSpec
 {
     std::array<char, 4> id;
@@ -718,16 +871,19 @@ struct ChunkSpec
     ChunkReader reader;
 };
 
-constexpr std::array<ChunkSpec, 11> ManifestChunksV4 {{
+constexpr std::array<ChunkSpec, 14> ManifestChunksV4 {{
     {{{'M','E','T','A'}}, writeMeta, readMeta},
     {{{'M','A','T','L'}}, writeMaterials, readMaterials},
     {{{'S','E','M','N'}}, writeSemanticNodesV4, readSemanticNodesV4},
     {{{'S','T','A','T'}}, writeStateVariantsV4, readStateVariantsV4},
     {{{'C','O','L','L'}}, writeCollisionsV4, readCollisionsV4},
     {{{'S','O','C','K'}}, writeSocketsV4, readSocketsV4},
+    {{{'S','M','E','T'}}, writeSocketMetadataV4, readSocketMetadataV4},
     {{{'H','I','T','R'}}, writeHitRegionsV4, readHitRegionsV4},
     {{{'O','P','E','N'}}, writeOpeningsV4, readOpeningsV4},
     {{{'R','E','P','R'}}, writeRepairTargetsV4, readRepairTargetsV4},
+    {{{'S','I','Z','E'}}, writePhysicalSizeV4, readPhysicalSizeV4},
+    {{{'S','T','R','L'}}, writeStructuralLinksV4, readStructuralLinksV4},
     {{{'L','O','D','S'}}, writeLodManifestV4, readLodManifestV4},
     {{{'L','E','R','R'}}, writeLodScreenErrorV4, readLodScreenErrorV4}
 }};
@@ -911,6 +1067,91 @@ bool validateSemanticAsset(const ModelAsset& asset, std::string* error)
         if (!r.repairedStateId.empty() && r.parentNodeIndex >= 0 && !stateDeclared(r.parentNodeIndex, r.repairedStateId))
         {
             setError(error, "repair target references undeclared repaired state: " + r.id + " / " + r.repairedStateId);
+            return false;
+        }
+    }
+
+    {
+        const auto axis = static_cast<std::uint8_t>(asset.physicalSize.axis);
+        const auto space = static_cast<std::uint8_t>(asset.physicalSize.geometrySpace);
+        if (axis > static_cast<std::uint8_t>(PhysicalSizeAxis::Z) ||
+            space > static_cast<std::uint8_t>(PhysicalGeometrySpace::LegacyUnknown))
+        {
+            setError(error, "invalid physical-scale profile enum");
+            return false;
+        }
+        if (asset.physicalSize.enabled &&
+            asset.physicalSize.geometrySpace != PhysicalGeometrySpace::LegacyUnknown)
+        {
+            if (!std::isfinite(asset.physicalSize.targetMeters) || asset.physicalSize.targetMeters <= 0.0f ||
+                !std::isfinite(asset.physicalSize.sourceExtent) || asset.physicalSize.sourceExtent <= 0.0f ||
+                !std::isfinite(asset.physicalSize.sourceToMeters) || asset.physicalSize.sourceToMeters <= 0.0f)
+            {
+                setError(error, "invalid physical-scale calibration");
+                return false;
+            }
+            const float expected = asset.physicalSize.sourceExtent * asset.physicalSize.sourceToMeters;
+            const float tolerance = std::max(1.0e-4f, std::abs(asset.physicalSize.targetMeters) * 1.0e-4f);
+            if (std::abs(expected - asset.physicalSize.targetMeters) > tolerance)
+            {
+                setError(error, "physical-scale calibration coefficient does not match reference extent");
+                return false;
+            }
+        }
+        if (asset.physicalSize.gameLinked)
+        {
+            const auto& d = asset.physicalSize.gameDimensionsMeters;
+            if (!std::isfinite(d.x) || !std::isfinite(d.y) || !std::isfinite(d.z) ||
+                d.x <= 0.0f || d.y <= 0.0f || d.z <= 0.0f)
+            {
+                setError(error, "invalid linked game dimensions");
+                return false;
+            }
+        }
+    }
+
+    std::set<std::string> structuralIds;
+    for (const auto& link : asset.structuralLinks)
+    {
+        if (link.id.empty() || !structuralIds.insert(link.id).second)
+        {
+            setError(error, "empty/duplicate structural link id");
+            return false;
+        }
+        if (link.nodeAIndex < 0 || link.nodeBIndex < 0 ||
+            link.nodeAIndex >= static_cast<std::int32_t>(asset.nodes.size()) ||
+            link.nodeBIndex >= static_cast<std::int32_t>(asset.nodes.size()) ||
+            link.nodeAIndex == link.nodeBIndex)
+        {
+            setError(error, "structural link endpoint out of range: " + link.id);
+            return false;
+        }
+        if (!std::isfinite(link.breakForceN) || !std::isfinite(link.breakTorqueNm) ||
+            link.breakForceN < 0.0f || link.breakTorqueNm < 0.0f)
+        {
+            setError(error, "invalid structural link strength: " + link.id);
+            return false;
+        }
+        for (const auto& proxy : link.damageProxies)
+        {
+            if (proxy.parentNodeIndex < 0 || proxy.parentNodeIndex >= static_cast<std::int32_t>(asset.nodes.size()))
+            {
+                setError(error, "structural damage proxy parent out of range: " + link.id + " / " + proxy.id);
+                return false;
+            }
+            if (!std::isfinite(proxy.radius) || !std::isfinite(proxy.halfHeight) || proxy.radius < 0.0f || proxy.halfHeight < 0.0f)
+            {
+                setError(error, "invalid structural damage proxy dimensions: " + link.id + " / " + proxy.id);
+                return false;
+            }
+        }
+    }
+
+    for (const auto& socket : asset.sockets)
+    {
+        if (!std::isfinite(socket.previewFovDeg) || socket.previewFovDeg <= 1.0f || socket.previewFovDeg >= 179.0f)
+        {
+            setError(error, "invalid socket preview FOV: " + socket.id);
             return false;
         }
     }

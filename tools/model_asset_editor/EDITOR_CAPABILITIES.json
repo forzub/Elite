@@ -725,7 +725,7 @@
     },
     {
       "id": "physical_size_socket_profiles",
-      "description": "Physical model size is normalized offline with one uniform scale and sockets persist compatibility profiles plus camera-preview metadata without changing the legacy SOCK payload.",
+      "description": "Physical size is an asset-wide authoring-to-meter calibration: SOURCE/WORKING stay raw, BUILD scales a temporary production copy once, and sockets persist compatibility profiles plus camera-preview metadata.",
       "contracts": {
         "data_model": {
           "path": "src/model_asset/ModelAsset.h",
@@ -745,15 +745,17 @@
         "backend": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
           "tokens": [
-            "scaleModelAssetUniform",
-            "apply_physical_size",
-            "const float scale = profile.targetMeters / current;"
+            "scaleAuthoringDistancesUniform",
+            "calibrate_physical_scale",
+            "profile.sourceToMeters = profile.targetMeters / sourceExtent;",
+            "ModelAsset productionAsset = m_asset;"
           ]
         },
         "source_import": {
           "path": "tools/model_asset_editor/RuntimeAssemblyImporter.cpp",
           "tokens": [
-            "asset.physicalSize.autoApplyOnSourceImport = true",
+            "asset.physicalSize.gameLinked = true",
+            "asset.physicalSize.gameDimensionsMeters",
             "ScaleReference::Length",
             "PhysicalSizeAxis::Z"
           ]
@@ -761,8 +763,9 @@
         "ui": {
           "path": "src/assets/webui/model_asset_editor.html",
           "tokens": [
-            "PHYSICAL SIZE · UNIFORM ASSET SCALE",
-            "APPLY AFTER SOURCE REIMPORT",
+            "PHYSICAL SCALE · AUTHORING → METERS",
+            "AUTHORING SIZE · RAW SOURCE SPACE",
+            "SET SCALE CONTRACT",
             "INTERFACE PROFILE",
             "VIEW FROM SOCKET",
             "socketCanonicalWorldMatrix"
@@ -771,7 +774,7 @@
         "test": {
           "path": "tests/model_asset/ModelAssetBinaryTests.cpp",
           "tokens": [
-            "physical-size profile lost in v4 SIZE chunk round trip",
+            "physical-scale graph lost in v4 SIZE chunk round trip",
             "socket metadata lost in additive v4 SMET chunk round trip"
           ]
         }
@@ -779,7 +782,7 @@
     },
     {
       "id": "source_hash_mesh_graph",
-      "description": "Folder SOURCE maintenance is keyed by saved source folder plus exact file hash. Each source-backed mesh persists provenance and per-stage validation evidence; scan imports only new/changed source meshes and keeps unchanged identities/evidence untouched. SOURCE also owns a compact per-LOD mesh browser with viewport-only visibility/selection controls.",
+      "description": "Folder SOURCE maintenance is keyed by saved source folder plus exact file hash. Each source-backed mesh persists provenance, missing-file state and per-stage validation evidence; scan imports only new/changed source meshes, keeps unchanged identities/evidence untouched, never auto-deletes a missing mesh, and the SOURCE change panel retains only unresolved operator work after successful certification.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.h",
@@ -787,6 +790,7 @@
             "struct MeshSourceRecord",
             "sourceFileName",
             "sourceHash",
+            "sourceMissing",
             "stageChecks",
             "meshSourceRecords"
           ]
@@ -800,7 +804,10 @@
             "resetMeshStageChecks",
             "recordMeshStageResult",
             "ambiguous_filename",
-            "missing_source"
+            "missing_source",
+            "sourceMissing",
+            "confirmSourceMeshDeletion",
+            "confirm_source_mesh_deletion"
           ]
         },
         "ui": {
@@ -815,14 +822,27 @@
             "geometryInventoryVisibleByLod",
             "switchGeometryInventoryLod",
             "selectGeometryInventoryDefinition",
-            "geometryVisibilityCheck"
+            "geometryVisibilityCheck",
+            "meshStagePassed",
+            "meshSourceMissing",
+            "sourceDeleteConfirm",
+            "settleSourceChangeScanAfterCheck",
+            "sourceChangeRowAcceptedByStageCheck"
           ]
         },
         "test": {
-          "path": "tests/architecture_contracts/check_model_asset_source_graph.py",
+          "path": "tests/architecture_contracts/check_model_asset_source_delete_confirmation.py",
           "tokens": [
-            "exact-hash SOURCE synchronization",
-            "per-mesh source graph"
+            "stage certification / confirmed SOURCE deletion"
+          ]
+        },
+        "contract": {
+          "path": "tools/model_asset_editor/PATCH_CONTRACT.md",
+          "tokens": [
+            "Per-mesh stage certification and two-phase SOURCE deletion",
+            "MeshSourceRecord::sourceMissing = true",
+            "confirm_source_mesh_deletion",
+            "SOURCE change panel is an unresolved-work queue"
           ]
         }
       }

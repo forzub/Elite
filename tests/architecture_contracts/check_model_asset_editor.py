@@ -139,15 +139,18 @@ save_body = body_between(
 )
 for token in (
     "workingAssetPath()",
-    "ensureAllLodsLoaded()",
     "ModelAssetBinary::saveLod(path.string(), m_asset, i, &error)",
     "ModelAssetBinary::saveManifest(path.string(), m_asset, &error)",
-    "writeWorkingEditorState(&error)",
+    "std::filesystem::copy_file",
+    "utcTimestampNow()",
+    "writeWorkingEditorState(savedAtUtc, nextSaveRevision, &error)",
     "m_editorStateDirty = false",
 ):
     if token not in save_body:
         raise AssertionError(f"manual SAVE lost coherent working-state behavior {token!r}")
-for forbidden in ("compiledPath(", "writeProductionEditorState", "buildProductionAsset"):
+if "ensureAllLodsLoaded()" in save_body:
+    raise AssertionError("manual SAVE must stay lazy and must not load every LOD")
+for forbidden in ("writeProductionEditorState", "buildProductionAsset"):
     if forbidden in save_body:
         raise AssertionError(f"manual SAVE leaked across production boundary: {forbidden!r}")
 
@@ -176,11 +179,11 @@ select_body = body_between(
 )
 for token in (
     "if (!forceReimport && haveWorking)",
-    "Reading persistent working asset",
+    "Reading persistent working manifest",
     "loadWorkingEditorState",
     "const bool createInitialWorkingBaseline = !haveWorking && !forceReimport;",
     "saveWorkingAsset(true)",
-    "Nothing was saved; use SAVE to keep it or RESTORE to discard it.",
+    "loaded WORKING revision remains r",
 ):
     if token not in select_body:
         raise AssertionError(f"OPEN/REIMPORT working-state contract missing {token!r}")
@@ -207,24 +210,27 @@ for token in (
 for forbidden in (
     "saveWorkingAsset(",
     "writeWorkingEditorState(",
-    "writeProductionEditorState(",
     "ModelAssetBinary::save(",
     "ModelAssetBinary::saveManifest(",
     "ModelAssetBinary::saveLod(",
 ):
     if forbidden in check_body:
         raise AssertionError(f"stage CHECK performs persistence I/O: {forbidden!r}")
+# BUILD is the terminal exception: after production bytes are written, its final
+# per-mesh BUILD evidence is serialized once to the production editor sidecar.
+if 'if (passed && stage == "build")' not in check_body or 'writeProductionEditorState(&finalStateError)' not in check_body:
+    raise AssertionError("BUILD final production-state sidecar boundary disappeared")
 
 # BUILD alone owns normal production package bytes and requires saved working state.
 build_body = body_between(
     session,
     "bool ModelAssetEditorSession::buildProductionAsset()",
-    "bool ModelAssetEditorSession::adoptSourceRevision(",
+    "void ModelAssetEditorSession::synchronizeMeshSourceRecords(",
 )
 for token in (
     "compiledPath(m_selectedId)",
     "ModelAssetBinary::save(path.string(), m_asset, &error)",
-    "writeProductionEditorState(&error)",
+    "production editor sidecar is finalized by checkWizardStage()",
 ):
     if token not in build_body:
         raise AssertionError(f"BUILD production boundary missing {token!r}")
@@ -455,7 +461,6 @@ for token in (
     'draggable="true"',
     'semanticReparentSelection',
     'set_node_parents',
-    'semanticCreateAssetRoot',
     'semanticGraphEnabled',
     'semanticGraphExplode',
     'semanticBindingSummaryHtml',
@@ -472,7 +477,7 @@ for token in (
     'semanticTopLevelSelected()',
     'semanticCanUseParent(child,target)',
     '.semanticTreeRow.selected{background:#17334a!important',
-    '.semanticTreeRow.rootCandidate:not(.selected)',
+    '.semanticAssetSpaceRow{display:grid',
     '.wizardLodSticky{position:sticky',
 ):
     if token not in web:
@@ -481,8 +486,6 @@ for token in (
     'reparentSemanticNodesPreserveWorld',
     'semanticNodeWorldTransform',
     'if (command == "set_node_parents")',
-    'if (command == "create_semantic_asset_root")',
-    'asset must have exactly one semantic root; found',
 ):
     if token not in session:
         raise AssertionError(f"0.10.37 SEMANTICS backend contract missing {token!r}")
@@ -553,7 +556,7 @@ if 'semanticRefreshSelectionUi()' not in selection_block:
 
 # The incoming-link selector must visually precede the child identity. Runtime
 # node vector order is not presentation order: before/after DnD is editor-only.
-tree_row_start = web.index('const roots=semanticRootIndices(),treeRows=semanticTreeRows()')
+tree_row_start = web.index("const roots=semanticRootIndices(),assetSpaceCollapsed=state.semanticCollapsed.has('__ASSET_SPACE__')")
 tree_row_end = web.index('const selectedPanels=', tree_row_start)
 tree_row = web[tree_row_start:tree_row_end]
 if '${toggle}${relation}<span class="name">' not in tree_row:
@@ -574,7 +577,7 @@ for token in (
 # 0.10.42 interaction performance/collapse/graph guards. Semantic-only tree edits must
 # never fall back to full asset metadata serialization (which scans geometry
 # triangles for material statistics), and collapsed descendants must stay hidden.
-reparent_block = body_between(session, 'if (command == "set_node_parents")', 'if (command == "create_semantic_asset_root")')
+reparent_block = body_between(session, 'if (command == "set_node_parents")', 'if (command == "clean_legacy_semantics")')
 if 'sendSemanticTreePatch();' not in reparent_block:
     raise AssertionError('SEMANTICS reparent lost bounded semantic_tree_patch publication')
 if 'sendAssetMetadata();' in reparent_block:
@@ -809,6 +812,78 @@ if 'semantic joint pivot/axis/runtime rate/limits/break thresholds lost in binar
     raise AssertionError('v4 binary round trip no longer locks persisted NodeJoint runtime fields')
 
 # -----------------------------------------------------------------------------
+# 0.10.47 dual semantic views / structural graph / physical-size authoring
+# -----------------------------------------------------------------------------
+for token in (
+    "struct PhysicalSizeProfile",
+    "struct StructuralDamageProxy",
+    "struct StructuralLinkDefinition",
+    "std::vector<StructuralLinkDefinition> structuralLinks",
+    "std::string interfaceProfile",
+    "float previewFovDeg",
+):
+    if token not in model:
+        raise AssertionError(f"0.10.47 asset-data contract missing {token!r}")
+
+binary = text("src/model_asset/ModelAssetBinary.cpp")
+for token in (
+    "{{{'S','I','Z','E'}}, writePhysicalSizeV4, readPhysicalSizeV4}",
+    "{{{'S','M','E','T'}}, writeSocketMetadataV4, readSocketMetadataV4}",
+    "{{{'S','T','R','L'}}, writeStructuralLinksV4, readStructuralLinksV4}",
+    "writePhysicalSizeV4",
+    "writeSocketMetadataV4",
+    "writeStructuralLinksV4",
+):
+    if token not in binary:
+        raise AssertionError(f"0.10.47 additive v4 persistence contract missing {token!r}")
+
+for token in (
+    'command == "set_physical_size_profile"',
+    'command == "apply_physical_size"',
+    'const float scale = profile.targetMeters / current;',
+    "scaleModelAssetUniform(m_asset, scale)",
+    "semanticBoundarySegments",
+    "makeStructuralProxySeed",
+    'command == "add_structural_link"',
+    'command == "set_structural_link"',
+    'command == "set_structural_proxy"',
+):
+    if token not in session:
+        raise AssertionError(f"0.10.47 editor backend contract missing {token!r}")
+
+for token in (
+    "TREE · СБОРКА / КИНЕМАТИКА",
+    "GRAPH · КОНСТРУКЦИОННЫЕ СВЯЗИ",
+    "NEW LINK · 3D PICK A ↔ B",
+    "WELD SEAM · auto hit-capsule",
+    "Exploded viewport никогда не является coordinate authority.",
+    "PHYSICAL SIZE · UNIFORM ASSET SCALE",
+    "APPLY AFTER SOURCE REIMPORT",
+    "VIEW FROM SOCKET",
+    "INTERFACE PROFILE",
+):
+    if token not in web:
+        raise AssertionError(f"0.10.47 TREE/GRAPH/size/socket UI contract missing {token!r}")
+
+importer_contract = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
+for token in (
+    "logicalDimensions.scaleReference",
+    "PhysicalSizeAxis::Z",
+    "asset.physicalSize.autoApplyOnSourceImport = true",
+):
+    if token not in importer_contract:
+        raise AssertionError(f"legacy logical-size adoption contract missing {token!r}")
+
+for token in (
+    "physical-size profile lost in v4 SIZE chunk round trip",
+    "socket metadata lost in additive v4 SMET chunk round trip",
+    "structural graph / damage proxy lost in v4 STRL chunk round trip",
+    "semantic erase did not remap surviving structural graph indices",
+):
+    if token not in model_tests:
+        raise AssertionError(f"0.10.47 C++ regression anchor missing {token!r}")
+
+# -----------------------------------------------------------------------------
 # Capability registry: every protected capability must point to live tokens.
 # This keeps broad regression coverage without accumulating version-specific
 # archaeology in one giant hand-written test.
@@ -833,6 +908,8 @@ for required_id in (
     "stable_list_scroll",
     "geometry_workspace_flow",
     "semantic_tree_link_authoring",
+    "structural_graph_authoring",
+    "physical_size_socket_profiles",
 ):
     if required_id not in ids:
         raise AssertionError(f"protected capability missing {required_id!r}")
@@ -854,11 +931,263 @@ for capability in capabilities["protected_capabilities"]:
                     f"{capability['id']}/{contract_name}: {path} missing protected token {token!r}"
                 )
 
+# Ship source catalog must be filesystem-visible instead of collapsing every
+# Cobra source folder into one opaque logical entry. The folder used by the
+# current game runtime keeps the canonical cobra_mk1 identity and registry
+# semantics; sibling folders remain independently selectable source assets.
+for token in (
+    "discoverShipSourceDirectories",
+    "runtimeAssemblySourceDirectory",
+    "catalogIdForShipFolder",
+    "CatalogSourceAuthority::RuntimeAssembly",
+    "CatalogSourceAuthority::Folder",
+    'std::string("Cobra Mk.I — ") + directory.filename().string()',
+):
+    if token not in session:
+        raise AssertionError(f"ship source catalog contract missing {token!r}")
+
+# Whole-mesh orientation repair is an editor-authoring override layered after
+# automatic canonical PREPARE. The runtime stores only corrected mesh winding;
+# the sidecar retains the decision and source revision so reimport can mark it stale.
+canonical_header = text("tools/model_asset_editor/CanonicalMeshBuilder.h")
+for token in (
+    "void flipMeshOrientation(MeshLod& mesh);",
+):
+    if token not in canonical_header:
+        raise AssertionError(f"manual mesh orientation primitive missing {token!r}")
+for token in (
+    "MeshOrientationOverrideRecord",
+    "meshOrientationOverrides",
+    'command == "set_geometry_orientation_override"',
+    "flipMeshOrientation(geometry.mesh);",
+    "source revision changed; reimport and PREPARE",
+    "preserveOrientationOverrides",
+):
+    if token not in session and token not in session_h:
+        raise AssertionError(f"manual mesh orientation authoring contract missing {token!r}")
+for token in (
+    "data-preflight-orientation",
+    "FLIP ORIENTATION",
+    "MANUAL FLIP · STALE",
+):
+    if token not in web:
+        raise AssertionError(f"manual mesh orientation UI contract missing {token!r}")
+
+
+# LOD mesh table is always available for navigation/repair; a previous ANALYZE
+# result stays visible as cached evidence across same-asset geometry refreshes.
+# Render-node visibility is editor-only and independent from semantic hiding.
+for token in (
+    "hiddenRenderNodes:new Set()",
+    "preflightMeshToolbarHtml",
+    "preflightFlipSelected",
+    "selectedMeshOrientationAction",
+    "HIDE SELECTED",
+    "SHOW SELECTED",
+    "SHOW ALL",
+    "renderModelPreflightInventory",
+    "cachedAfterGeometryChange",
+):
+    if token not in web:
+        raise AssertionError(f"LOD mesh visibility/cached-preflight UI contract missing {token!r}")
+
 # Keep the exact current editor version guarded.
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.46"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.59"')
 
 # These marker phrases are intentionally referenced by the capability registry.
 manual_working_state_marker = "manual working-state save/restore contract"
 stage_check_marker = "stage CHECK is persistence read-only"
 
-print("[PASS] model asset editor v0.10.46 rigid exploded-joint preview / persisted joint runtime contract / coherent GEOMETRY")
+for token in (
+    "renderNodeForPreflightGeometry",
+    "syncPreflightSelectionUi",
+    "scrollPreflightRowIntoView",
+    "selectRenderNode(i,options={})",
+    "scrollPreflight:state.wizardStage==='lods'",
+    "grid-template-columns:1fr 1fr",
+):
+    if token not in web:
+        raise AssertionError(f"0.10.48 unified LOD mesh-selection UI contract missing {token!r}")
+
+# Runtime-backed assets with a known source folder must discover every authored
+# render LOD from LOD<N> directories. The registry remains semantic/LOD0
+# authority and is explicitly not a whitelist for higher render documents.
+for token in (
+    "discoverSourceFolderOrdinaryMeshes",
+    "folderOwnsHigherLods",
+    "buildIndependentRenderLodsFromLegacy(asset);",
+    "asset.renderLods.resize(1);",
+    "for (std::size_t level = 1; level <= highest; ++level)",
+    "Higher LOD topology may be",
+):
+    if token not in importer:
+        raise AssertionError(f"0.10.49 runtime all-LOD source discovery contract missing {token!r}")
+if "m_sourceAssetsRoot, it->sourceDirectory, it->type" not in session:
+    raise AssertionError("0.10.49 runtime importer is not scoped to the selected source directory")
+
+
+html_050 = text("src/assets/webui/model_asset_editor.html")
+for token in [
+    'MESHES · ACTIVE LOD',
+    'data-struct-mesh-ri',
+    'id="structMakeRoot"',
+    'A ← SELECTED',
+    'B ← SELECTED',
+    'structuralPickNode(si,ri)',
+    'structEndpointPair',
+    'structNewLinkOptions',
+]:
+    if token not in html_050:
+        raise AssertionError(f"0.10.50 structural graph mesh/root selection contract missing {token!r}")
+if 'EXPLODE ROOT <select id="structGraphRoot"' in html_050:
+    raise AssertionError("0.10.50 must not restore the structural root dropdown; root is selected from the mesh table/3D selection")
+
+for token in (
+    "primaryVisual?0xd6ff54",
+    "semanticAdditional?0xffd166",
+    "semanticSelected?0x365f66",
+    "selectedMarker=selected&&!hasVisual",
+):
+    if token not in html_050:
+        raise AssertionError(f"0.10.53 semantic primary-mesh visual contract missing {token!r}")
+
+for token in (
+    "cleanLegacySyntheticVisualSemanticNodes",
+    "geometryBindingWithLegacyIdentity",
+    "parentTransformOnlyBinding",
+    "RenderNode now owns that visual binding",
+):
+    if token not in text("src/model_asset/ModelAssetSemantics.cpp") and token not in importer:
+        raise AssertionError(f"0.10.52 legacy semantic cleanup contract missing {token!r}")
+for token in (
+    'command == "clean_legacy_semantics"',
+    'transform parent chains and structural graph links were not changed',
+):
+    if token not in session:
+        raise AssertionError(f"0.10.52 TREE legacy cleanup backend contract missing {token!r}")
+for token in (
+    'id="semanticCleanLegacyTree"',
+    'id="semanticCleanLegacyGraph" disabled',
+    "send('clean_legacy_semantics')",
+    'GRAPH cleanup intentionally not wired yet',
+):
+    if token not in web:
+        raise AssertionError(f"0.10.52 TREE/GRAPH cleanup UI contract missing {token!r}")
+
+for token in (
+    "semanticStaticFlattenCandidates()",
+    "semanticMoveSelectionToAssetSpace()",
+    "semanticFlattenStaticTree()",
+    'id="semanticSelectionToAssetSpace"',
+    'id="semanticFlattenStaticTree"',
+    "FLATTEN STATIC → ASSET SPACE",
+    "◇ ASSET SPACE · implicit transform parent",
+    "TRANSFORM FOREST:",
+    "STRUCTURAL GRAPH is not changed",
+):
+    if token not in web:
+        raise AssertionError(f"0.10.54 asset-space transform-forest UI contract missing {token!r}")
+for token in (
+    "staticSemanticFlattenCandidates",
+    'command == "flatten_static_semantic_tree"',
+    "reparentSemanticNodesPreserveWorld(m_asset, {index}, NoIndex);",
+    "Semantic transforms form a forest in asset space",
+    "STRUCTURAL GRAPH unchanged",
+):
+    if token not in session:
+        raise AssertionError(f"0.10.54 asset-space transform-forest backend contract missing {token!r}")
+for forbidden in (
+    "TRANSFORM TREE AUDIT · READ-ONLY",
+    "semanticTransformAuditHtml()",
+    "asset must have exactly one semantic root; found",
+    'command == "create_semantic_asset_root"',
+):
+    if forbidden in web or forbidden in session:
+        raise AssertionError(f"0.10.54 obsolete unique-root/audit contract returned: {forbidden!r}")
+
+for token in (
+    "if(state.wizardStage!=='semantics')return;",
+    "replaceSourcePartByPath",
+    "resident render geometry verified unchanged",
+    "collect mtllib declarations",
+):
+    if token not in web and token not in session and token not in session_h:
+        raise AssertionError(f"0.10.55 semantic hotfix contract missing {token!r}")
+if "const forceVisible=state.wizardStage==='semantics'" in web:
+    raise AssertionError("0.10.55 must not allow socket markers to leak outside SEMANTICS through the global toggle")
+
+# 0.10.58 SOURCE lifecycle: Folder geometry authority is independent from
+# runtime semantic bootstrap; scan is exact-hash synchronization; folder OPEN
+# keeps every declared LOD resident; one WORKING revision is visible in status.
+scan_body = body_between(session, "void ModelAssetEditorSession::sendSourceChangeScan()", "bool ModelAssetEditorSession::reloadMeshFromSource(")
+for token in (
+    "scanSourceFolderMetadataInventory",
+    "sourceFileFingerprint(entry.file)",
+    'existing.hash == candidate.hash',
+    "addSourcePart(li, candidate.entry.sourcePath, false, false)",
+    "replaceSourcePart(li, gi, false, false)",
+    "resetMeshStageChecks(li, geometry.id)",
+    'record.stageChecks["source"] = "failed"',
+    '"ambiguous_filename"',
+    '"missing_source"',
+    '"sourceAssetDirectory"',
+    '"directoryEnumerations"',
+    '"hashReads"',
+):
+    if token not in scan_body:
+        raise AssertionError(f"0.10.58 exact-hash SOURCE synchronization missing {token!r}")
+for forbidden in (
+    "ModelAssetBinary::",
+    "ensureAllLodsLoaded()",
+    "ensureLodLoaded(",
+    "prepareOneGeometry(",
+    "analyzeOneGeometry(",
+    "canonicalizeLoadedWorkingSet(",
+    "prepareOneGeometry(",
+    "analyzeOneGeometry(",
+):
+    if forbidden in scan_body:
+        raise AssertionError(f"0.10.58 SOURCE scan leaked forbidden heavy path {forbidden!r}")
+
+for token in (
+    'runtime ? CatalogBootstrapMode::RuntimeAssembly : CatalogBootstrapMode::Folder',
+    'CatalogSourceAuthority::Folder',
+    'if (it->sourceAuthority == CatalogSourceAuthority::Folder && !ensureAllLodsLoaded()) return false;',
+    'command == "reload_mesh_from_source"',
+    "selectedSourceFilePath",
+    "sendAsset({lodIndex}, true)",
+    '"preserveUiSelection", preserveUiSelection',
+    'out["workingSavedAtUtc"]',
+    'out["workingSaveRevision"]',
+    'out["sourceAssetDirectory"]',
+    'out["meshSourceRecords"]',
+    'out["aggregateStageChecks"]',
+    '"workingFilesRoot"',
+):
+    if token not in session:
+        raise AssertionError(f"0.10.58 source/open/persistence authority missing {token!r}")
+
+for token in (
+    "workingSaveStamp",
+    "WORKING r",
+    "settingsWorkingRoot",
+    "meshValidationPending",
+    "↻ SOURCE",
+    "reload_mesh_from_source",
+    "Never reads SOURCE OBJ",
+    "preserveUiSelection",
+    'id="geometrySection" class="section" data-wizard-groups="source"',
+):
+    if token not in web:
+        raise AssertionError(f"0.10.58 source lifecycle UI missing {token!r}")
+
+require(
+    "tools/model_asset_editor/PATCH_CONTRACT.md",
+    "exact-hash synchronization",
+    "RELOAD LOD is not RELOAD FROM SOURCE",
+    "SEMANTICS-only sockets",
+    "exactly one WORKING save",
+    "meshSourceRecords",
+)
+
+print("[PASS] model asset editor v0.10.59 source graph / exact-hash synchronization / WORKING revision")

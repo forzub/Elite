@@ -1,3 +1,106 @@
+# 0.10.59 — SOURCE geometry LOD browser / visibility selection
+
+- Added a compact active-LOD selector directly above the SOURCE `Active LOD geometry` list. It exposes every declared LOD and follows the normal resident/load path without conflating VIEW with `RELOAD LOD` or SOURCE reimport.
+- Added per-geometry viewport checkboxes plus compact `ALL` / `NONE` controls. Visibility is editor-only and independent per LOD; hiding geometry never edits semantic state, validation evidence or persisted mesh data.
+- Geometry rows now share the canonical RenderNode selection path with the 3D viewport. Clicking a used geometry highlights its render mesh; viewport picks synchronize the list selection. Hidden selected geometry cannot leak edge/normal overlays.
+- Catalog authority decoration now derives from `sourceAuthority`: folder-backed entries show `[SOURCE]`, while registry-only entries show `[RUNTIME]`. Orbital Station therefore no longer looks unclassified next to the Cobra folders.
+- Extended `PATCH_CONTRACT.md` and architecture guards for SOURCE geometry inventory selection/visibility so future maintenance patches cannot silently remove the controls or turn them into persistence/authority operations.
+
+# 0.10.58 — per-mesh source graph / exact-hash SOURCE synchronization
+
+- Split semantic bootstrap from geometry authority. The canonical Cobra may still bootstrap semantic identity from the runtime assembly descriptor, but when its authored folder exists the geometry authority is `Folder`, the catalog shows `[SOURCE]`, and SOURCE maintenance no longer exits through the legacy runtime-registry gate.
+- Added a persisted per-mesh SOURCE graph (`meshSourceRecords`) keyed by LOD + stable geometry id. Each record stores source filename, source path, exact 64-bit source hash and pass/fail/not-checked evidence for every editor stage. New or replaced SOURCE meshes clear only their own stage evidence.
+- `SCAN SOURCE CHANGES` now uses the source asset directory recorded by the loaded save, inventories all authored LOD/variant OBJ files, exact-hashes them, and synchronizes by `LOD + ordinary/variant + filename`: equal hash is untouched, a new filename is imported, a changed hash replaces the existing stable geometry, and a vanished source file is retained but marked SOURCE-failed. The scan never reads `.elmesh` and never runs PREPARE/ANALYZE/repair; OBJ parsing occurs only for new/changed files that must actually be applied.
+- Folder-authoritative OPEN makes every declared render LOD resident again. Runtime assembly import also appends ordinary LOD0 OBJ files that exist in the selected folder but are absent from the legacy registry descriptor; authored sibling LOD folders remain independent render documents.
+- WORKING `editor_state.json` schema 13 and production `production_state.json` persist `saveRevision`, `savedAtUtc`, `sourceAssetDirectory`, `meshSourceRecords`, and aggregate pass/fail state for every editor stage. WORKING remains one mutable save; each successful SAVE increments only the revision stored in that one state file.
+- Added a configurable `workingFilesRoot` to editor settings. The status bar and toolbar show the loaded WORKING revision (`rN`) rather than the filesystem path; the path remains available only as transient I/O diagnostics/tooltips.
+- Source-backed meshes that are not fully certified through all editor stages are rendered with a red-brown background and red-tinted text in mesh lists. Existing selection/scroll preservation, SAVE-vs-CHECK separation, per-mesh SOURCE reload, and SEMANTICS-only socket rules remain protected by `PATCH_CONTRACT.md`.
+
+# 0.10.57 — source lifecycle authority / lazy WORKING open
+
+- Traced and separated the three geometry authorities. Ordinary OPEN resumes the saved WORKING manifest and lazily loads LOD0; RELOAD LOD reads saved `.elmesh`; explicit whole-asset or per-mesh SOURCE reload reads the selected source folder. Modern folder-authoritative source links no longer use the multi-candidate legacy path fallback.
+- Replaced per-OBJ quick-stamp directory scans with one metadata inventory per source tree. `SCAN SOURCE CHANGES` never reads OBJ/MTL contents, `.elmesh`, PREPARE/ANALYZE/repair paths, or LOD residency.
+- Added `↻ SOURCE` to every source-backed resident mesh. Targeted source reload preserves stable mesh identity plus current editor selection/navigation, marks dependent authoring evidence stale, and remains unsaved until the explicit SAVE action.
+- Restored the lazy-LOD persistence contract: modern OPEN no longer full-loads every `.elmesh`, and SAVE no longer calls `ensureAllLodsLoaded()`. Initial production adoption may copy untouched unloaded payloads byte-for-byte; an existing damaged WORKING package fails rather than borrowing another authority.
+- WORKING `editor_state.json` schema 12 records `savedAtUtc`. Asset metadata exposes `workingSavedAtUtc`, `openAuthority`, configured `sourceAssetsRoot`, and resolved `sourceAssetRoot`; the toolbar shows the last persisted save time continuously.
+- Added `PATCH_CONTRACT.md` locking source authority, scan cost, per-mesh reload, selection/scroll, SAVE vs CHECK, lazy LOD, and SEMANTICS-only socket rules.
+
+# 0.10.56
+
+- `SCAN SOURCE CHANGES` is now metadata-only in the normal path: it compares a persisted quick source stamp instead of rereading/hashing every OBJ. A quick stamp covers the OBJ file stat plus direct sibling MTL file stats; exact content fingerprints are still computed when a revision is imported or explicitly adopted.
+- Existing pre-0.10.56 exact fingerprint baselines are not silently trusted as current metadata. They appear as `LEGACY BASELINE · REIMPORT ONCE`; the scan remains fast, and reimporting only the rows that matter establishes their quick stamps without accepting unrelated source changes.
+- Source-part/variant import, replace and baseline-adopt operations persist the quick stamp alongside the existing exact fingerprint. Subsequent scans are O(file metadata) and never page `.elmesh` payloads or authored OBJ payloads into memory.
+- Socket visibility hotfix from 0.10.55 remains stage-scoped to SEMANTICS. Semantic flatten remains geometry-byte-invariant.
+
+## 0.10.55 — semantic hotfix / source-scan residency fix
+
+- Socket markers are viewport-local to SEMANTICS again. Leaving SEMANTICS clears them; the global socket toolbar button is hidden outside that stage.
+- SOURCE CHANGE SCAN no longer loads every `.elmesh` payload during a normal scan when the persisted source fingerprint baseline exists. It hashes source files directly, publishes per-file progress, and can reimport a changed ordinary source part by stable `sourcePath` even when its LOD was not resident when the scan ran.
+- OBJ source fingerprinting preserves the persisted FNV contract but collects `mtllib` declarations during the hashing pass, removing the previous second full read of every OBJ.
+- `FLATTEN STATIC → ASSET SPACE` now verifies canonical fingerprints of all resident render geometries before/after the operation and aborts if triangle winding, normals, coordinates, or geometry inventory changed. The command remains semantic-transform-only.
+
+## 0.10.54 — asset-space transform forest / static flatten
+
+- SEMANTICS no longer requires or fabricates one semantic ROOT. `Node::parentIndex == NoIndex` now explicitly means the semantic part is authored directly in the asset coordinate frame; any number of top-level parts is valid. SEMANTICS CHECK accepts this transform forest while still rejecting invalid parents, cycles, orphan parts and broken visual bindings.
+- Added `FLATTEN STATIC → ASSET SPACE`: every safe FIXED/non-breakable branch with no state/inherited runtime-varying transform dependency is reparented to asset space while preserving its exact current world pose. Structural links, sockets, collision, render bindings and node indices are untouched.
+- Added `SELECTED → ASSET SPACE` for explicit manual reparent of selected subtree roots with world-pose preservation. This is a transform edit only; STRUCTURAL GRAPH is never rewritten implicitly.
+- Removed the temporary `TRANSFORM TREE AUDIT` panel after it established the migration rule. The tree is now grouped under a collapsible pseudo-row `ASSET SPACE`; top-level semantic parts are displayed as ordinary `◇ ASSET` parts rather than fake ROOT objects.
+- The old `CREATE COMMON LOGICAL ROOT` UI/backend path is removed. A unique transform root may still arise naturally for a kinematic asset, but it is no longer a semantic validation requirement.
+
+## 0.10.53 — transform-tree audit / mesh-primary selection
+
+- SEMANTICS TREE now exposes a read-only `TRANSFORM TREE AUDIT` for every parent→child edge: parent, child, local transform, joint state, and a dependency classification (`STATIC`, `INHERITED`, `STATE`, `JOINT`). `STATIC` means no runtime-varying transform source exists on that branch; it is explicitly a candidate for later review, not an automatic flatten verdict.
+- The TREE help text now states the narrowed contract: parent→child is transform dependency only; structural support/detach authority belongs to STRUCTURAL GRAPH. Drag/reparent therefore changes transform parent, not physical support.
+- Exact semantic selection now prioritizes the bound RenderNode mesh with a stronger lime highlight while descendant context is substantially dimmed. If the selected semantic node has a visual in the active LOD, its semantic marker is no longer the green primary cue; green marker fallback is reserved for visual-less semantic nodes.
+- No asset data is rewritten by the audit. No flatten operation is introduced in this version.
+
+## 0.10.52 — conservative legacy semantic cleanup
+
+- TREE gets an active `CLEAN LEGACY SEMANTICS` migration for the exact old runtime-import bootstrap `module -> synthetic visual child`. It rebinds geometry RenderNodes to the real module semantic Node and removes only the recognized redundant child.
+- The cleanup preserves RenderNode hierarchy/local transforms, real `parentModuleId` transform chains, sockets/collision payload, and Structural Graph links. It does not flatten the Cobretti tree and it does not perform graph cleanup.
+- Runtime source import now collapses the same recognized bootstrap before publishing the imported v4 asset, so a future SOURCE reimport does not recreate the redundant semantic layer.
+- GRAPH shows its own `CLEAN LEGACY SEMANTICS` control in disabled state; Structural Graph migration is intentionally deferred until its legacy links/proxies are audited separately.
+- Existing saved working assets are not silently rewritten: run TREE cleanup explicitly, inspect the result, then SAVE if accepted.
+
+## 0.10.51 — primary semantic visual selection
+
+- SEMANTICS now distinguishes the exact primary logical/render selection from its selected subtree in the 3D viewport. The primary visual is highlighted green; descendants retain a muted cyan subtree tint instead of making the whole branch look equally selected.
+- Ctrl/Shift secondary logical selections use a separate amber tint. Tree-row primary selection and the semantic node marker use the same green identity cue.
+- GRAPH keeps exact RenderNode selection visible even when its structural endpoint is a parent semantic node.
+
+## 0.10.50 — Structural Graph mesh table / explicit root / coherent 3D selection
+
+- Clarified authority: runtime-imported Cobra TREE comes from `ModuleDescriptor.parentModuleId`; it is not inferred from OBJ geometry. Structural links remain the separate many-to-many graph imported from support metadata or authored in GRAPH.
+- Replaced the GRAPH root dropdown with an active-LOD render-mesh table synchronized with 3D picking. The selected mesh is now the explicit source for `MAKE ROOT`, `A <- SELECTED`, and `B <- SELECTED`.
+- Reworked `NEW LINK · 3D PICK A ↔ B` into separated A/B cards, options, and action rows so controls no longer collide.
+- 3D mesh picks and table rows share `selectedRenderNode`; 3D picks scroll the corresponding row into view.
+
+## 0.10.49 — restore source-folder discovery for every runtime Render LOD
+- Runtime-assembly catalog entries no longer treat `ObjectAssemblyRegistry` mesh paths as an allow-list for higher render LODs. When the selected runtime asset has a source directory, the importer discovers every ordinary OBJ directly under every contiguous `LOD<N>` folder and materializes each higher level as an independent v4 `RenderLod`.
+- Runtime descriptors remain the semantic/detailed LOD0 authority, while higher LOD topology is free to diverge completely. Cobra may therefore keep 62 detailed LOD0 render nodes and one whole-ship LOD1 proxy without synthetic per-part matching.
+- Future `LOD2`, `LOD3`, ... folders are picked up automatically on source import/reimport; adding a render LOD no longer requires another C++ registry entry. Variant subtrees remain excluded from ordinary LOD discovery.
+- Version bumped to make the restored all-LOD source import immediately visible in the editor title.
+
+## 0.10.48 — unified LOD mesh selection / compact repair toolbar
+- LODS mesh repair selection now has one authority: `state.selectedRenderNode`. Viewport picks derive the corresponding preflight geometry row from that render node; table-row picks resolve back to a render node and use the same selection path.
+- A viewport pick updates/highlights the matching mesh row and scrolls it vertically into view without resetting the table horizontal scroll. A table pick highlights the same render mesh immediately without rerendering the whole LOD panel.
+- FLIP ORIENTATION, HIDE SELECTED, SHOW SELECTED and SHOW ALL are a fixed 2×2 equal-size toolbar.
+- Version bumped so an old WebUI/editor executable is immediately distinguishable from this selection-sync build.
+
+## 0.10.47 — dual SEMANTICS TREE/GRAPH / structural links / physical-size and socket preview draft
+- LODS now always shows an active-LOD mesh inventory even before a fresh ANALYZE. A prior preflight table is retained as explicitly cached evidence across same-asset geometry refreshes, so PREPARE/reload does not erase the author's navigation/repair table or force immediate recomputation.
+- Added editor-only render-node visibility controls for the selected mesh: HIDE SELECTED, SHOW SELECTED and SHOW ALL. This is viewport state only; semantic visibility and asset/runtime data are untouched.
+- LODS preflight now supports a persisted whole-mesh manual orientation override: FLIP reverses triangle winding plus vertex normals after canonical PREPARE, survives unchanged-source reimport through the editor sidecar, and becomes STALE on a new source fingerprint.
+
+- SEMANTICS now exposes two simultaneous authoring views of one asset: TREE remains the transform/kinematic hierarchy, while GRAPH authors arbitrary node-to-node structural topology. Switching views never changes the asset type; every object may use both.
+- Added additive v4 manifest chunks `STRL`, `SIZE` and `SMET`. `STRL` stores structural links plus independent 0..N damage proxies; `SIZE` stores offline uniform physical-size normalization; `SMET` stores socket interface profiles and camera-preview FOV without changing the existing `SOCK` payload layout.
+- GRAPH supports editor-root radial explode, 3D A/B selection and weld/fixed/equipment/controlled-lock links. Legacy mesh-child picks are lifted to their module endpoint; weld proxy generation searches canonical/unexploded boundary edges across visual descendants, so editor explode is never coordinate authority.
+- Welds seed capsule damage proxies (the existing “hit-sausage” concept); mounts and locks seed editable box proxies. Structural links are not hit volumes themselves: a link can have zero or many damage proxies and a controlled lock can be released by command without being destroyed.
+- Semantic deletion now treats incident structural links as owned payload and remaps surviving graph/proxy node indices transactionally. C++ round-trip/lifecycle tests lock this contract.
+- SOURCE has a physical-size profile and uniform `RESIZE MODEL` action. Scale is always `target/current`, so repeated application does not compound. Reimport preserves the authored profile; legacy descriptor `LogicalDimensions/ScaleReference` are adopted as an auto-apply offline size contract.
+- Legacy descriptor support-links are imported conservatively as initial structural graph edges without pretending `impulseTolerance` is a force threshold and without silently promoting runtime panel-seam heuristics to authored weld topology.
+- Sockets now carry an interface/compatibility profile. Camera sockets also carry preview FOV and can switch the editor viewport to the canonical authored socket transform while rendering the full model plus editor-only exterior reference objects.
+
 ## 0.10.46 — rigid exploded-joint preview / persisted joint runtime contract
 
 - Fixed SEMANTICS transform composition when 3D explode and ROTATE preview are active together. Explode is now applied first and the complete exploded child subtree is then transformed by the one joint delta (`R_joint * T_explode * M`), so separated station segments orbit the common authored joint pivot instead of appearing to spin around their own exploded centres. Graph markers, sockets and visible collision overlays follow the same order.

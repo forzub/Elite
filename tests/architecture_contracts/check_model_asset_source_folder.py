@@ -3,14 +3,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+
 def text(path: str) -> str:
-    return (ROOT / path).read_text(encoding="utf-8")
+    return (ROOT / path).read_text(encoding="utf-8", errors="replace")
+
 
 def require(path: str, *tokens: str) -> None:
     body = text(path)
     for token in tokens:
         if token not in body:
             raise AssertionError(f"{path}: missing {token!r}")
+
 
 source = text("tools/model_asset_editor/SourceFolderImporter.cpp")
 for forbidden in (
@@ -26,6 +29,7 @@ for forbidden in (
 require(
     "tools/model_asset_editor/SourceFolderImporter.cpp",
     "importSourceFolderAsset",
+    "discoverLodFolders",
     "std::filesystem::directory_iterator",
     "directObjFiles",
     "RenderLod lod",
@@ -36,35 +40,56 @@ require(
     'const auto variantsRoot = lodRoot / "variants"',
     "std::filesystem::recursive_directory_iterator",
     "discoverSourceFolderVariants",
+    "scanSourceFolderMetadataInventory",
 )
 
-require(
-    "tools/model_asset_editor/ModelAssetEditorSession.cpp",
-    '{"station", "Orbital Station", ObjectType::Station, "stations"}',
+session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
+for token in (
+    '{"station", "Orbital Station", ObjectType::Station, "stations", CatalogSourceAuthority::Folder, CatalogBootstrapMode::Folder}',
     "sourceFolderAssetAvailable",
     "importSourceFolderAsset",
     "discoverSourceFolderVariants",
-    "Legacy assets keep the old registry-assisted discovery",
-)
+    "CatalogBootstrapMode::RuntimeAssembly",
+    "CatalogSourceAuthority::Folder",
+    "selectedSourceAssetRoot",
+):
+    if token not in session:
+        raise AssertionError(f"Folder SOURCE/catalog contract missing {token!r}")
+
+runtime_importer = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
+for token in (
+    "runtimeLod0FileKeys",
+    "appendFolderOnlyLod0Meshes",
+    "Runtime descriptors are semantic bootstrap, never a geometry allow-list.",
+    "folderOwnsHigherLods",
+):
+    if token not in runtime_importer:
+        raise AssertionError(f"runtime bootstrap/folder geometry split missing {token!r}")
 
 require(
     "CMakeLists.txt",
     "tools/model_asset_editor/SourceFolderImporter.cpp",
 )
 
-# The modern path must not need a per-mesh source list. The only registration is
-# the asset-level directory. Default geometry comes from direct LOD-root OBJ
-# discovery; replacement geometry comes exclusively from variants/.
+# The modern folder importer has no per-mesh registration list. Ordinary meshes
+# are direct LOD-root OBJ; variants are under variants/ only.
 if "knownRuntimePaths" in source:
     raise AssertionError("modern source importer still carries a registered mesh path list")
 if "module.meshes" in source or "assembly.modules" in source:
     raise AssertionError("modern source importer still iterates a C++ assembly mesh list")
 
+# Folder import requires contiguous authored LOD directories from LOD0 and loads
+# every direct OBJ in each of them into an independent RenderLod.
+for token in (
+    "source LOD directories must be contiguous from LOD0",
+    "for (std::size_t lodIndex = 0; lodIndex < ordinaryFiles.size(); ++lodIndex)",
+    "asset.renderLods.push_back(std::move(lod))",
+):
+    if token not in source:
+        raise AssertionError(f"all-authored-LOD import contract missing {token!r}")
 
 # Reimport may intentionally change the declared LOD set. Stale production
-# .elmesh files are diagnostics only; LODS validates the current authoring
-# snapshot and BUILD/save owns package cleanup.
-session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
+# payloads are diagnostics; SAVE/BUILD owns package cleanup.
 for forbidden in (
     'saved " + savedPath.filename().string()',
     'current asset declares only " + std::to_string(m_asset.renderLods.size())',
@@ -78,7 +103,10 @@ for required in (
 ):
     if required not in session:
         raise AssertionError(f"missing stale-production LOD contract {required!r}")
+
 web = text("src/assets/webui/model_asset_editor.html")
+if "i.sourceAuthority==='folder'?'SOURCE':'RUNTIME'" not in web:
+    raise AssertionError("catalog authority decoration no longer derives from sourceAuthority")
 for required in (
     "staleSaved=payloads.filter",
     "model_editor.wizard.lods.stale_saved",
@@ -88,4 +116,4 @@ for required in (
     if required not in web:
         raise AssertionError(f"missing stale-working LOD UI contract {required!r}")
 
-print("[PASS] model asset folder-authoritative SOURCE / variants boundary / stale working/production LOD cleanup")
+print("[PASS] model asset folder-authoritative SOURCE / all authored LODs / runtime semantic bootstrap")

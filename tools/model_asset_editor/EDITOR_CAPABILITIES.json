@@ -56,7 +56,7 @@
     },
     {
       "id": "independent_render_lods",
-      "description": "Each render LOD owns an independent graph and v4 payload file. The editor may open the full production working set eagerly for correctness while still supporting separate LOD load/save/reload operations.",
+      "description": "Each render LOD owns an independent graph and v4 payload file. Folder-authoritative editor sessions keep every declared LOD resident on OPEN; LOAD/RELOAD/UNLOAD remain explicit binary-package operations for non-folder/diagnostic workflows.",
       "contracts": {
         "data_model": {
           "path": "src/model_asset/ModelAsset.h",
@@ -75,7 +75,9 @@
             "unload_lod",
             "renderLods",
             "loadLodData",
-            "resetLodState(true, false)"
+            "resetLodState(false, false)",
+            "ensureAllLodsLoaded",
+            "CatalogSourceAuthority::Folder"
           ]
         },
         "ui": {
@@ -173,7 +175,7 @@
     },
     {
       "id": "working_state_controls",
-      "description": "The editor has one saved WORKING ASSET. A global manual SAVE persists it, RESTORE discards unsaved edits, stage CHECK only validates/unlocks in memory, and BUILD alone writes production. Snapshot/checkpoint history and ongoing autosave are forbidden.",
+      "description": "The editor has one saved WORKING ASSET under configurable workingFilesRoot. SAVE overwrites that one state and increments saveRevision; RESTORE discards unsaved edits; CHECK records validation evidence without persistence; BUILD alone writes production. Snapshot/checkpoint history and ongoing autosave are forbidden.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/ModelAssetEditorSession.h",
@@ -185,7 +187,11 @@
             "productionEditorStatePath",
             "StageValidityState",
             "restoreWorkingAsset",
-            "checkWizardStage"
+            "checkWizardStage",
+            "MeshSourceRecord",
+            "m_workingFilesRoot",
+            "m_workingSaveRevision",
+            "m_loadedSourceAssetDirectory"
           ]
         },
         "backend": {
@@ -202,7 +208,11 @@
             "loadProductionEditorState",
             "productionPackageStamp",
             "applyStageValidity",
-            "invalidateWizardFrom"
+            "invalidateWizardFrom",
+            "workingFilesRoot",
+            "saveRevision",
+            "aggregateStageChecksJson",
+            "serializeMeshSourceRecords"
           ]
         },
         "ui": {
@@ -212,7 +222,9 @@
             "id=\"restoreBtn\"",
             "check_wizard_stage",
             "restore_working_asset",
-            "wizardBar"
+            "wizardBar",
+            "settingsWorkingRoot",
+            "WORKING r"
           ]
         },
         "test": {
@@ -575,7 +587,7 @@
     },
     {
       "id": "semantic_tree_link_authoring",
-      "description": "SEMANTICS is an asset-wide logical tree with fast delta authoring, link-owned joint controls, explicit semantic-frame/visual-binding repair tools, a persistent single-authority 3D graph overlay, and global hit-volume viewport visibility. Explode is root-centered and uses the far support point of visual bounds along each radial ray.",
+      "description": "SEMANTICS owns an asset-wide transform forest plus semantic parts. parentIndex == NoIndex means ASSET SPACE; multiple top-level parts are valid. Parent→child exists only for real transform dependency. Structural support/detach remains in STRUCTURAL GRAPH.",
       "contracts": {
         "data_model": {
           "path": "src/model_asset/ModelAsset.h",
@@ -589,16 +601,18 @@
           "tokens": [
             "reparentSemanticNodesPreserveWorld",
             "set_node_parents",
-            "create_semantic_asset_root",
+            "clean_legacy_semantics",
+            "cleanLegacySyntheticVisualSemanticNodes",
             "delete_semantic_node",
             "inspectSemanticNodeUsage",
-            "asset must have exactly one semantic root; found",
             "clone.semanticNodeIndex = NoIndex;",
             "clone.activeStates.clear();",
             "m_semanticChildOrder",
             "sendSemanticTreePatch",
             "semantic_tree_patch",
-            "serializeSemanticNodes"
+            "serializeSemanticNodes",
+            "staticSemanticFlattenCandidates",
+            "flatten_static_semantic_tree"
           ]
         },
         "ui": {
@@ -638,13 +652,17 @@
             "semanticPreviewRateDegPerSec",
             "VISUAL REPRESENTATION / LOD BINDINGS",
             "ДОПОЛНИТЕЛЬНО · SEMANTIC FRAME",
-            "rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset"
+            "rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset",
+            "semanticStaticFlattenCandidates",
+            "semanticSelectionToAssetSpace",
+            "semanticFlattenStaticTree",
+            "◇ ASSET SPACE · implicit transform parent"
           ]
         },
         "test": {
           "path": "tests/architecture_contracts/check_model_asset_editor.py",
           "tokens": [
-            "0.10.45 semantic authoring/radial-support contract"
+            "0.10.54 asset-space transform-forest"
           ]
         },
         "semantic_lifecycle": {
@@ -654,6 +672,189 @@
             "eraseSemanticNode",
             "renderNode.activeStates.clear();",
             "remapNodeIndex"
+          ]
+        }
+      }
+    },
+    {
+      "id": "structural_graph_authoring",
+      "description": "Transform TREE and arbitrary Structural GRAPH coexist for every model; links persist independently from their damage proxies and are authored from canonical geometry while the viewport may be exploded.",
+      "contracts": {
+        "data_model": {
+          "path": "src/model_asset/ModelAsset.h",
+          "tokens": [
+            "struct StructuralLinkDefinition",
+            "std::vector<StructuralDamageProxy> damageProxies",
+            "std::vector<StructuralLinkDefinition> structuralLinks"
+          ]
+        },
+        "binary": {
+          "path": "src/model_asset/ModelAssetBinary.cpp",
+          "tokens": [
+            "{{{'S','T','R','L'}}, writeStructuralLinksV4, readStructuralLinksV4}",
+            "empty/duplicate structural link id"
+          ]
+        },
+        "backend": {
+          "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
+          "tokens": [
+            "semanticBoundarySegments",
+            "semanticNodeIsDescendantOrSelf",
+            "makeStructuralProxySeed",
+            "add_structural_link",
+            "set_structural_proxy"
+          ]
+        },
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "TREE · СБОРКА / КИНЕМАТИКА",
+            "GRAPH · КОНСТРУКЦИОННЫЕ СВЯЗИ",
+            "NEW LINK · 3D PICK A ↔ B",
+            "structuralEndpointForPick",
+            "Exploded viewport никогда не является coordinate authority."
+          ]
+        },
+        "test": {
+          "path": "tests/model_asset/ModelAssetBinaryTests.cpp",
+          "tokens": [
+            "structural graph / damage proxy lost in v4 STRL chunk round trip"
+          ]
+        }
+      }
+    },
+    {
+      "id": "physical_size_socket_profiles",
+      "description": "Physical model size is normalized offline with one uniform scale and sockets persist compatibility profiles plus camera-preview metadata without changing the legacy SOCK payload.",
+      "contracts": {
+        "data_model": {
+          "path": "src/model_asset/ModelAsset.h",
+          "tokens": [
+            "struct PhysicalSizeProfile",
+            "std::string interfaceProfile",
+            "float previewFovDeg"
+          ]
+        },
+        "binary": {
+          "path": "src/model_asset/ModelAssetBinary.cpp",
+          "tokens": [
+            "{{{'S','M','E','T'}}, writeSocketMetadataV4, readSocketMetadataV4}",
+            "{{{'S','I','Z','E'}}, writePhysicalSizeV4, readPhysicalSizeV4}"
+          ]
+        },
+        "backend": {
+          "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
+          "tokens": [
+            "scaleModelAssetUniform",
+            "apply_physical_size",
+            "const float scale = profile.targetMeters / current;"
+          ]
+        },
+        "source_import": {
+          "path": "tools/model_asset_editor/RuntimeAssemblyImporter.cpp",
+          "tokens": [
+            "asset.physicalSize.autoApplyOnSourceImport = true",
+            "ScaleReference::Length",
+            "PhysicalSizeAxis::Z"
+          ]
+        },
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "PHYSICAL SIZE · UNIFORM ASSET SCALE",
+            "APPLY AFTER SOURCE REIMPORT",
+            "INTERFACE PROFILE",
+            "VIEW FROM SOCKET",
+            "socketCanonicalWorldMatrix"
+          ]
+        },
+        "test": {
+          "path": "tests/model_asset/ModelAssetBinaryTests.cpp",
+          "tokens": [
+            "physical-size profile lost in v4 SIZE chunk round trip",
+            "socket metadata lost in additive v4 SMET chunk round trip"
+          ]
+        }
+      }
+    },
+    {
+      "id": "source_hash_mesh_graph",
+      "description": "Folder SOURCE maintenance is keyed by saved source folder plus exact file hash. Each source-backed mesh persists provenance and per-stage validation evidence; scan imports only new/changed source meshes and keeps unchanged identities/evidence untouched. SOURCE also owns a compact per-LOD mesh browser with viewport-only visibility/selection controls.",
+      "contracts": {
+        "data_model": {
+          "path": "tools/model_asset_editor/ModelAssetEditorSession.h",
+          "tokens": [
+            "struct MeshSourceRecord",
+            "sourceFileName",
+            "sourceHash",
+            "stageChecks",
+            "meshSourceRecords"
+          ]
+        },
+        "backend": {
+          "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
+          "tokens": [
+            "sendSourceChangeScan",
+            "sourceFileFingerprint",
+            "sourceAssetDirectory",
+            "resetMeshStageChecks",
+            "recordMeshStageResult",
+            "ambiguous_filename",
+            "missing_source"
+          ]
+        },
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "meshValidationPending",
+            "sourceHash",
+            "source_change_scan_result",
+            "WORKING r",
+            "settingsWorkingRoot",
+            "geometryInventoryToolbar",
+            "geometryInventoryVisibleByLod",
+            "switchGeometryInventoryLod",
+            "selectGeometryInventoryDefinition",
+            "geometryVisibilityCheck"
+          ]
+        },
+        "test": {
+          "path": "tests/architecture_contracts/check_model_asset_source_graph.py",
+          "tokens": [
+            "exact-hash SOURCE synchronization",
+            "per-mesh source graph"
+          ]
+        }
+      }
+    },
+    {
+      "id": "source_geometry_inventory_browser",
+      "description": "SOURCE Active LOD geometry inventory exposes compact LOD switching, per-LOD viewport visibility checkboxes and canonical RenderNode selection without becoming a persistence or geometry-authority path.",
+      "contracts": {
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "geometryInventoryToolbar",
+            "geometryInventoryVisibleByLod",
+            "switchGeometryInventoryLod",
+            "selectGeometryInventoryDefinition",
+            "geometryInventoryNodeVisible",
+            "data-geometry-all-on",
+            "data-geometry-all-off"
+          ]
+        },
+        "contract": {
+          "path": "tools/model_asset_editor/PATCH_CONTRACT.md",
+          "tokens": [
+            "SOURCE geometry inventory controls",
+            "Per-mesh checkboxes are editor-only visibility state",
+            "sourceAuthority == folder"
+          ]
+        },
+        "test": {
+          "path": "tests/architecture_contracts/check_model_asset_source_geometry_browser.py",
+          "tokens": [
+            "SOURCE geometry LOD browser / visibility / selection"
           ]
         }
       }

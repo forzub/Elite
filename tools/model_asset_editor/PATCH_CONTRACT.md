@@ -254,3 +254,26 @@ Physical size is an asset-wide interpretation contract, **not a destructive edit
 - WORKING/production editor sidecar schema 15 mirrors the scale graph for diagnostics, but the `.elmodel` `SIZE` chunk remains the asset-level scale authority.
 
 Regression tests for scaling patches must prove the absence of destructive WORKING resize and the presence of BUILD-copy conversion. Do not reintroduce `scaleModelAssetUniform(m_asset, ...)`, AUTO-after-source-import, per-mesh scale ownership, or source-reimport scaling as a convenience fallback.
+
+
+## 18. Frozen editor shell and SOURCE tab — v0.10.62 acceptance baseline
+
+As of Model Asset Editor **v0.10.62**, the overall nine-stage wizard structure and the first **SOURCE** stage are accepted and frozen. Subsequent feature patches must treat this area as protected infrastructure, not convenient UI/code to refactor while working elsewhere.
+
+The frozen editor workflow order is exactly:
+
+`SOURCE → LOD → GEOMETRY → SURFACES → SEMANTICS → PHYSICS → DAMAGE → VALIDATE → BUILD`.
+
+SOURCE remains the first/default stage. Its accepted surface includes the source summary/inventory, authoring→meters physical scale contract, unresolved SOURCE-change queue, advanced whole-SOURCE reimport controls, stage CHECK, active-LOD geometry browser, LOD0…LODN viewport selector, ALL/NONE/per-mesh visibility, mesh↔viewport selection synchronization, per-mesh `↻ SOURCE`, validation colors and confirmed missing-SOURCE deletion.
+
+**Freeze rule:** patches whose stated task is outside editor structure/SOURCE must not modify this protected surface. No cleanup, renaming, restyling, helper extraction, fallback addition, control relocation or opportunistic refactor is allowed there merely because nearby code is being edited.
+
+An exception is allowed only when the requested bug/feature directly requires changing SOURCE or the editor shell. Such a patch must:
+
+1. state the exceptional SOURCE/structure reason explicitly;
+2. preserve every unrelated accepted SOURCE contract;
+3. update this section and CHANGELOG with the intentional delta;
+4. deliberately update the SOURCE lock fingerprint only after review;
+5. run both the general editor architecture test and the dedicated SOURCE freeze test.
+
+Enforcement lives in `tests/architecture_contracts/model_asset_source_tab_lock.py`. The general `check_model_asset_editor.py` invokes it automatically, and `check_model_asset_source_tab_frozen.py` provides a focused diagnostic. The lock checks the exact wizard order/default stage, SOURCE-only side-panel ownership and the accepted SOURCE implementation fingerprint. A digest mismatch is a **test failure by design**, not an instruction to mechanically regenerate the hash.

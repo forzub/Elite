@@ -1,3 +1,7 @@
+## 0.10.62 — SOURCE/editor structure acceptance freeze
+
+- The nine-stage editor shell and completed SOURCE tab are frozen by architecture-contract fingerprint tests.
+
 # 0.10.62 — authoring-space physical scale contract
 
 - Replaced destructive WORKING resize with one asset-wide `sourceToMeters` calibration. SOURCE and WORKING geometry, render-node transforms, collisions, hit regions, sockets and authored semantic distances now remain permanently in their raw shared authoring coordinate space.

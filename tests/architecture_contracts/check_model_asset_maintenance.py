@@ -250,7 +250,7 @@ for token in (
 
 require(
     "tools/model_asset_editor/EditorVersion.h",
-    'ModelAssetEditorVersion = "0.10.62"',
+    'ModelAssetEditorVersion = "0.10.63"',
 )
 
-print("[PASS] model asset editor v0.10.62 maintenance / exact-hash SOURCE apply / manual SAVE")
+print("[PASS] model asset editor v0.10.63 maintenance / exact-hash SOURCE apply / manual SAVE")

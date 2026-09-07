@@ -287,5 +287,5 @@ cap = json.loads(text("tools/model_asset_editor/EDITOR_CAPABILITIES.json"))
 if "source_hash_mesh_graph" not in {x["id"] for x in cap["protected_capabilities"]}:
     raise AssertionError("source_hash_mesh_graph capability is not protected")
 
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.62"')
-print("[PASS] v0.10.62 exact-hash SOURCE synchronization / per-mesh source graph")
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.63"')
+print("[PASS] v0.10.63 exact-hash SOURCE synchronization / per-mesh source graph")

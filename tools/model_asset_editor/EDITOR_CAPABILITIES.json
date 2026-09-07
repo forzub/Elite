@@ -878,6 +878,47 @@
           ]
         }
       }
+    },
+    {
+      "id": "lod_per_mesh_prepare_workspace",
+      "description": "LOD stage is one per-mesh PREPARE workspace: persisted lods-stage evidence drives red/green rows, certified SOURCE meshes are skipped by global PREPARE, table and 3D selection are synchronized, visibility filtering is viewport-only, and ANALYZE remains the established read-only audit.",
+      "contracts": {
+        "backend": {
+          "path": "tools/model_asset_editor/ModelAssetEditorSession.cpp",
+          "tokens": [
+            "onlyUncheckedLodMeshes",
+            "skippedCertifiedGeometries",
+            "setLodStageValue",
+            "synchronizeMeshSourceRecords(true)",
+            "analyze_model_preflight"
+          ]
+        },
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "lodPreflightVisibleByLod",
+            "setLodPreflightGeometryVisible",
+            "preflightShowAll",
+            "preflightHideAll",
+            "meshStageVisualClass(g,'lods')",
+            "selectPreflightGeometry"
+          ]
+        },
+        "contract": {
+          "path": "tools/model_asset_editor/PATCH_CONTRACT.md",
+          "tokens": [
+            "LOD workspace is per-mesh",
+            "already `lods=passed` meshes",
+            "ANALYZE remains read-only"
+          ]
+        },
+        "test": {
+          "path": "tests/architecture_contracts/check_model_asset_lod_workspace.py",
+          "tokens": [
+            "LOD per-mesh PREPARE workspace / selection / visibility / ANALYZE fence"
+          ]
+        }
+      }
     }
   ]
 }

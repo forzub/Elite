@@ -5122,7 +5122,8 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
     bool* payloadChangedOut,
     std::vector<std::size_t>* changedLodsOut,
     std::size_t scopeLod,
-    const std::string& scopeGeometryId)
+    const std::string& scopeGeometryId,
+    bool onlyUncheckedLodMeshes)
 {
     std::size_t canonicalizedGeometries = 0;
     std::size_t changedGeometries = 0;
@@ -5130,12 +5131,35 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
     std::size_t splitTopologyVertices = 0;
     std::size_t raycastPatches = 0;
     std::size_t raycastFlippedTriangles = 0;
+    std::size_t skippedCertifiedGeometries = 0;
     std::vector<std::string> canonicalFailures;
     bool payloadChanged = false;
     bool authoringStateChanged = false;
     std::set<std::size_t> changedLods;
     const auto repairLogPath = wizardLogPath("mesh_repair.log");
     resetMeshRepairDiagnostic(repairLogPath, m_asset);
+
+    const auto lodStageValue = [&](std::size_t lodIndex, const std::string& geometryId) -> std::string {
+        const auto lodIt = m_meshSourceRecords.find(lodIndex);
+        if (lodIt == m_meshSourceRecords.end()) return {};
+        const auto geometryIt = lodIt->second.find(geometryId);
+        if (geometryIt == lodIt->second.end()) return {};
+        const auto stageIt = geometryIt->second.stageChecks.find("lods");
+        return stageIt == geometryIt->second.stageChecks.end() ? std::string("not_checked") : stageIt->second;
+    };
+    const auto setLodStageValue = [&](std::size_t lodIndex, const RenderGeometryDefinition& geometry, const char* value) {
+        if (geometry.sourcePath.empty()) return;
+        auto lodIt = m_meshSourceRecords.find(lodIndex);
+        if (lodIt == m_meshSourceRecords.end()) return;
+        auto geometryIt = lodIt->second.find(geometry.id);
+        if (geometryIt == lodIt->second.end()) return;
+        auto& stage = geometryIt->second.stageChecks["lods"];
+        if (stage != value)
+        {
+            stage = value;
+            authoringStateChanged = true;
+        }
+    };
 
     // Explicit authoring operation. Load/restore/reimport deliberately leave
     // resident meshes untouched; this function mutates the working copy only
@@ -5149,6 +5173,11 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
         for (auto& geometry : lod.geometries)
         {
             if (!scopeGeometryId.empty() && geometry.id != scopeGeometryId) continue;
+            if (onlyUncheckedLodMeshes && !geometry.sourcePath.empty() && lodStageValue(li, geometry.id) == "passed")
+            {
+                ++skippedCertifiedGeometries;
+                continue;
+            }
             bool canonicalCurrent = false;
             bool hadPreviousCanonicalEvidence = false;
             std::uint64_t previousCanonicalFingerprint = 0;
@@ -5225,6 +5254,7 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
                         if (recordLodIt->second.empty()) m_meshPreparationRecords.erase(recordLodIt);
                     }
                     ++invalidGeometries;
+                    setLodStageValue(li, geometry, "failed");
                     canonicalFailures.push_back(
                         "LOD" + std::to_string(li) + "/" + geometry.id + ": " +
                         (built.error.empty() ? std::string("canonical authoring pass failed") : built.error));
@@ -5279,6 +5309,11 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
                     markLodDirty(li);
                 }
             }
+
+            // PREPARE is the LODS per-mesh certification boundary. A SOURCE-backed
+            // mesh turns green as soon as its resident payload is canonical/current.
+            // ANALYZE remains a separate read-only topology/classification audit.
+            if (canonicalCurrent) setLodStageValue(li, geometry, "passed");
 
             // Preparation ends here. Topology classification/validation is intentionally
             // NOT run by this command; ANALYZE is the only expensive audit path.
@@ -5341,8 +5376,10 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
     if (payloadChanged && !invalidationStage.empty())
         invalidateWizardFrom(invalidationStage);
     // Authoring evidence without mesh mutation belongs to the mutable working
-    // state and is persisted only by the global SAVE action.
-    (void)authoringStateChanged;
+    // state and is persisted only by the global SAVE action. PREPARE therefore
+    // makes the per-mesh LODS graph dirty even when the canonical bytes were
+    // already current and no payload crossed the transport boundary.
+    if (authoringStateChanged) markEditorStateDirty();
 
     if (payloadChangedOut) *payloadChangedOut = payloadChanged;
     if (changedLodsOut)
@@ -5353,6 +5390,7 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
         sendStatus(
             "Mesh preparation: ready=" + std::to_string(canonicalizedGeometries) +
             ", changed=" + std::to_string(changedGeometries) +
+            ", skipped certified=" + std::to_string(skippedCertifiedGeometries) +
             ", failed=" + std::to_string(invalidGeometries) +
             ", split vertices=" + std::to_string(splitTopologyVertices) +
             ", raycast patches=" + std::to_string(raycastPatches) +
@@ -5361,7 +5399,8 @@ bool ModelAssetEditorSession::canonicalizeLoadedWorkingSet(
     }
     else if (reportStatus)
     {
-        sendStatus("Mesh preparation: already GOOD_ENOUGH; changed=0");
+        sendStatus("Mesh preparation: pending workset empty; certified meshes skipped=" +
+            std::to_string(skippedCertifiedGeometries) + "; changed=0");
     }
 
     if (!canonicalFailures.empty())
@@ -9869,11 +9908,13 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         if (command == "prepare_model_meshes")
         {
             if (!ensureAllLodsLoaded()) return;
+            synchronizeMeshSourceRecords(true);
             const auto prepareStarted = std::chrono::steady_clock::now();
             bool payloadChanged = false;
             std::vector<std::size_t> changedLods;
             const bool complete = canonicalizeLoadedWorkingSet(
-                "lods", true, &payloadChanged, &changedLods);
+                "lods", true, &payloadChanged, &changedLods,
+                std::size_t(-1), {}, true);
             const auto computeMs = std::chrono::duration<double, std::milli>(
                 std::chrono::steady_clock::now() - prepareStarted).count();
 

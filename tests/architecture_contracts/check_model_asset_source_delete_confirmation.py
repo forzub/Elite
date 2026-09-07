@@ -197,7 +197,7 @@ cap = caps.get("source_hash_mesh_graph")
 if not cap or "sourceMissing" not in str(cap) or "confirm_source_mesh_deletion" not in str(cap):
     raise AssertionError("source_hash_mesh_graph capability does not protect two-phase deletion")
 
-if 'ModelAssetEditorVersion = "0.10.62"' not in text("tools/model_asset_editor/EditorVersion.h"):
-    raise AssertionError("editor version is not 0.10.62")
+if 'ModelAssetEditorVersion = "0.10.63"' not in text("tools/model_asset_editor/EditorVersion.h"):
+    raise AssertionError("editor version is not 0.10.63")
 
-print("[PASS] model asset editor v0.10.62 stage certification / confirmed SOURCE deletion")
+print("[PASS] model asset editor v0.10.63 stage certification / confirmed SOURCE deletion")

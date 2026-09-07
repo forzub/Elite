@@ -1,3 +1,11 @@
+# 0.10.63 — LOD per-mesh PREPARE workspace
+
+- Simplified the LOD stage to one mesh table: removed the old WORKING SET / CHANGES / WHOLE MODEL switch and expanded the table vertically. Compact SHOW ALL / HIDE ALL visibility controls and per-mesh isolation checkboxes are viewport-only.
+- LOD rows now use the persisted per-mesh stage graph: pending/new/replaced meshes are red-brown; meshes whose resident payload passed PREPARE are green/dark-green. Global PREPARE skips source-backed meshes already certified `lods=passed` and processes only the pending source workset.
+- PREPARE records `stageChecks.lods` per source mesh and marks the mutable editor state dirty without auto-SAVE. SOURCE add/replace continues to reset only the affected mesh graph, so previously prepared meshes remain green.
+- LOD table selection and 3D RenderNode selection are synchronized in both directions; the viewport pick scrolls the matching table row. Visibility filters are independent per LOD.
+- Kept `ANALYZE` on the existing read-only `analyzeModelPreflight()` path and kept optional LOD generator analysis separate. Added an architecture fence proving ANALYZE does not route through canonical PREPARE and proving the frozen SOURCE tab remains byte-contract unchanged.
+
 ## 0.10.62 — SOURCE/editor structure acceptance freeze
 
 - The nine-stage editor shell and completed SOURCE tab are frozen by architecture-contract fingerprint tests.

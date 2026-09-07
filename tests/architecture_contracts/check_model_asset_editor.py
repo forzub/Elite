@@ -994,13 +994,14 @@ for token in (
 # result stays visible as cached evidence across same-asset geometry refreshes.
 # Render-node visibility is editor-only and independent from semantic hiding.
 for token in (
-    "hiddenRenderNodes:new Set()",
+    "lodPreflightVisibleByLod:new Map()",
     "preflightMeshToolbarHtml",
     "preflightFlipSelected",
     "selectedMeshOrientationAction",
-    "HIDE SELECTED",
-    "SHOW SELECTED",
-    "SHOW ALL",
+    "preflightShowAll",
+    "preflightHideAll",
+    "lodPreflightVisibilitySet",
+    "setLodPreflightGeometryVisible",
     "renderModelPreflightInventory",
     "cachedAfterGeometryChange",
 ):
@@ -1008,7 +1009,7 @@ for token in (
         raise AssertionError(f"LOD mesh visibility/cached-preflight UI contract missing {token!r}")
 
 # Keep the exact current editor version guarded.
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.62"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.63"')
 
 # These marker phrases are intentionally referenced by the capability registry.
 manual_working_state_marker = "manual working-state save/restore contract"
@@ -1020,7 +1021,7 @@ for token in (
     "scrollPreflightRowIntoView",
     "selectRenderNode(i,options={})",
     "scrollPreflight:state.wizardStage==='lods'",
-    "grid-template-columns:1fr 1fr",
+    "preflightMeshToolbar{display:flex",
 ):
     if token not in web:
         raise AssertionError(f"0.10.48 unified LOD mesh-selection UI contract missing {token!r}")
@@ -1206,4 +1207,4 @@ require(
     "meshSourceRecords",
 )
 
-print("[PASS] model asset editor v0.10.62 source graph / exact-hash synchronization / WORKING revision")
+print("[PASS] model asset editor v0.10.63 LOD workspace / source graph / WORKING revision")

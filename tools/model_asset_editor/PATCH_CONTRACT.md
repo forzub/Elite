@@ -277,3 +277,19 @@ An exception is allowed only when the requested bug/feature directly requires ch
 5. run both the general editor architecture test and the dedicated SOURCE freeze test.
 
 Enforcement lives in `tests/architecture_contracts/model_asset_source_tab_lock.py`. The general `check_model_asset_editor.py` invokes it automatically, and `check_model_asset_source_tab_frozen.py` provides a focused diagnostic. The lock checks the exact wizard order/default stage, SOURCE-only side-panel ownership and the accepted SOURCE implementation fingerprint. A digest mismatch is a **test failure by design**, not an instruction to mechanically regenerate the hash.
+
+## 19. LOD workspace — per-mesh PREPARE evidence, viewport filtering, read-only ANALYZE
+
+The LOD workspace is per-mesh. It is not a second SOURCE workset selector and it must not reintroduce the old `CHANGES / WHOLE MODEL` maintenance mode switch.
+
+- The LOD table is the persistent operator surface for the resident render documents. Rows use the existing per-mesh graph as visual authority: `stageChecks.lods == passed` is green on dark green-black; source-backed `not_checked` / `failed` is red on dark brown. Selection outline must not replace those colors.
+- `PREPARE MESHES` is the certification boundary for the LOD stage. A source-backed mesh becomes `lods=passed` when its resident canonical payload is current/successfully prepared. A preparation failure records `lods=failed` for that mesh. This metadata is mutable WORKING state and is persisted only by the ordinary SAVE.
+- Global LOD PREPARE is pending-only: already `lods=passed` meshes are skipped before canonical fingerprint/canonicalization work. SOURCE add/replace already resets the affected mesh stage graph, so only new/changed meshes return to the red pending set. Unchanged certified meshes stay green and are not prepared again.
+- Non-SOURCE/generated diagnostic geometry may still use the existing canonical preparation record path; the per-mesh SOURCE graph must not disable PREPARE merely because such a geometry has no `MeshSourceRecord`.
+- The LOD table and 3D viewport share canonical RenderNode selection. Row click selects the representative RenderNode; 3D click highlights and scrolls the matching table row. Cross-LOD analysis rows may switch only to an already-resident target LOD.
+- LOD visibility checkboxes are editor-only and independent per LOD. Initial state is all visible; the first checkbox interaction isolates that mesh. Compact `SHOW ALL / HIDE ALL` controls restore all or hide all. These controls never mutate geometry, source provenance, stage checks, SAVE state or other wizard stages.
+- The old LOD `WORKING SET`, `CHANGES`, `WHOLE MODEL`, `HIDE SELECTED` and `SHOW SELECTED` mode/control surface is retired. The table has more vertical space instead of being constrained to the former short workset panel.
+- **ANALYZE remains read-only.** `analyze_model_preflight` continues to call the established `analyzeModelPreflight()` audit directly. It must not route through PREPARE/canonicalization, set `lods` stage evidence, or mutate resident geometry as a side effect of the LOD workspace cleanup. The optional LOD generator analysis (`analyze_lod_requirements`) is likewise kept as its existing separate path.
+- The accepted SOURCE freeze from section 18 remains untouched. LOD patches must pass the SOURCE fingerprint guard.
+
+Regression protection is provided by `tests/architecture_contracts/check_model_asset_lod_workspace.py` in addition to the general editor and frozen-SOURCE tests.

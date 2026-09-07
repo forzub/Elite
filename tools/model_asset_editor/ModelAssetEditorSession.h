@@ -25,19 +25,35 @@ public:
     void handleMessage(const std::string& payload);
 
 private:
+    enum class CatalogSourceAuthority
+    {
+        RuntimeAssembly,
+        Folder
+    };
+
+    enum class CatalogBootstrapMode
+    {
+        Folder,
+        RuntimeAssembly
+    };
+
     struct CatalogEntry
     {
         std::string id;
         std::string displayName;
         ObjectType type = ObjectType::None;
-        // Optional asset-level folder authority. Mesh membership is discovered
-        // from LOD<N>/*.obj; this is not a per-mesh registration list.
+        // Optional asset-level folder identity. Folder-authoritative entries
+        // import directly from LOD<N>/*.obj. RuntimeAssembly entries may still
+        // expose the resolved source folder so the catalog tells the truth about
+        // which on-disk model the game currently uses.
         std::filesystem::path sourceDirectory;
+        CatalogSourceAuthority sourceAuthority = CatalogSourceAuthority::RuntimeAssembly;
+        CatalogBootstrapMode bootstrapMode = CatalogBootstrapMode::RuntimeAssembly;
     };
 
     void sendCatalog();
     void sendSettings();
-    void sendAsset(const std::vector<std::size_t>& payloadLods = {});
+    void sendAsset(const std::vector<std::size_t>& payloadLods = {}, bool preserveUiSelection = false);
     void sendAssetMetadata(const nlohmann::json& hints = nlohmann::json::object());
     void sendSemanticTreePatch();
     void sendSurfaceMetadataPatch(const std::vector<std::pair<std::size_t, std::size_t>>& targets);
@@ -76,6 +92,7 @@ private:
     bool saveSettings(
         const std::filesystem::path& sourceAssetsRoot,
         const std::filesystem::path& compiledModelsRoot,
+        const std::filesystem::path& workingFilesRoot,
         const std::string& locale);
     void installLocalizationBundle();
     bool writeSettingsFile();
@@ -84,6 +101,25 @@ private:
     struct WizardStageState
     {
         std::string status = "not_started"; // not_started / complete / stale / needs_fix
+    };
+    struct MeshOrientationOverrideRecord
+    {
+        // "flipped" means invert the entire canonical mesh after automatic PREPARE.
+        // The source fingerprint makes this decision stale after a changed OBJ/MTL revision.
+        std::string mode;
+        std::uint64_t sourceFingerprint = 0;
+    };
+    struct MeshSourceRecord
+    {
+        std::string sourceFileName;
+        std::string sourcePath;
+        std::uint64_t sourceHash = 0;
+        // SOURCE inventory found the saved file missing. This is a two-phase
+        // deletion marker only: SCAN never removes geometry automatically.
+        bool sourceMissing = false;
+        // Per-mesh editor-stage evidence. Values are "passed", "failed" or
+        // "not_checked". SOURCE replacement/new import resets every stage.
+        std::map<std::string, std::string> stageChecks;
     };
     struct MeshPreparationRecord
     {
@@ -110,10 +146,16 @@ private:
         std::map<std::string, std::vector<std::string>> sourceVariantReplacements;
         std::map<std::size_t, std::map<std::string, std::string>> geometryTopologyClasses;
         std::map<std::size_t, std::map<std::string, MeshPreparationRecord>> meshPreparationRecords;
+        std::map<std::size_t, std::map<std::string, MeshOrientationOverrideRecord>> meshOrientationOverrides;
         std::map<std::size_t, std::map<std::string, std::vector<std::string>>> legacySourceVariantReplacements;
         // Ordinary source provenance and granular maintenance debt are editor-only.
         // They never enter the runtime .elmodel contract.
-        std::map<std::size_t, std::map<std::string, std::uint64_t>> sourceMeshFingerprints; // source path -> accepted file revision
+        std::map<std::size_t, std::map<std::string, std::uint64_t>> sourceMeshFingerprints; // source path -> accepted exact file revision
+        // Fast metadata stamp used by normal SOURCE CHANGE SCAN. The exact content
+        // fingerprint remains authoritative when a source revision is imported/adopted;
+        // the quick stamp exists only so a read-only scan never rereads every OBJ.
+        std::map<std::size_t, std::map<std::string, std::uint64_t>> sourceMeshQuickStamps;
+        std::map<std::size_t, std::map<std::string, MeshSourceRecord>> meshSourceRecords; // geometry id -> provenance + per-stage checks
         std::map<std::string, std::set<std::string>> componentMaintenanceIssues; // base visual id -> prepare/lods/surfaces/semantics
         // Editor-only tree presentation order keyed by stable parent semantic id;
         // "__ROOTS__" stores top-level order. Runtime semantic identity never depends on this.
@@ -126,6 +168,10 @@ private:
     std::filesystem::path workingEditorStatePath() const;
     std::filesystem::path productionEditorStatePath() const;
     std::filesystem::path wizardLogPath(const std::string& fileName) const;
+    std::filesystem::path selectedSourceFilePath(
+        const std::string& sourcePath,
+        std::string* error = nullptr) const;
+    std::filesystem::path selectedSourceAssetRoot() const;
     using StageValidityState = std::map<std::string, std::string>;
     EditorAuthoringState captureEditorAuthoringState() const;
     StageValidityState captureStageValidity() const;
@@ -142,15 +188,23 @@ private:
     nlohmann::json packageStampFor(const std::filesystem::path& manifest) const;
     nlohmann::json productionPackageStamp() const;
     bool productionPackageStampMatches(const nlohmann::json& expected) const;
-    bool writeWorkingEditorState(std::string* error = nullptr) const;
+    bool writeWorkingEditorState(
+        const std::string& savedAtUtc,
+        std::uint64_t saveRevision,
+        std::string* error = nullptr) const;
     bool loadWorkingEditorState(
         EditorAuthoringState& state,
         StageValidityState& validity,
+        std::string* savedAtUtc = nullptr,
+        std::uint64_t* saveRevision = nullptr,
+        std::filesystem::path* sourceAssetDirectory = nullptr,
         std::string* error = nullptr) const;
     bool writeProductionEditorState(std::string* error = nullptr) const;
     bool loadProductionEditorState(
         EditorAuthoringState& state,
         StageValidityState& validity,
+        std::uint64_t* saveRevision = nullptr,
+        std::filesystem::path* sourceAssetDirectory = nullptr,
         std::string* error = nullptr) const;
     void loadWizardState();
     void invalidateWizardFrom(const std::string& stage);
@@ -168,7 +222,8 @@ private:
         bool* payloadChangedOut = nullptr,
         std::vector<std::size_t>* changedLodsOut = nullptr,
         std::size_t scopeLod = std::size_t(-1),
-        const std::string& scopeGeometryId = {});
+        const std::string& scopeGeometryId = {},
+        bool onlyUncheckedLodMeshes = false);
     bool verifyLoadedWorkingSetCanonical(std::string* reason = nullptr) const;
     bool modelPreflightAllLoadedReady(std::string* reason = nullptr) const;
     bool setGeometryTopologyClass(
@@ -204,16 +259,26 @@ private:
     std::string allocateSourceVariantId();
     nlohmann::json serializeWizard() const;
     void captureCurrentSourceFingerprintBaseline();
-    void sendSourceChangeScan();
-    bool adoptSourceRevision(std::size_t lodIndex, const std::string& sourcePath);
-    bool adoptAllSourceRevisions();
-    bool replaceSourcePart(std::size_t lodIndex, std::size_t geometryIndex);
-    bool addSourcePart(std::size_t lodIndex, const std::string& sourcePath);
+    void synchronizeMeshSourceRecords(bool preserveChecks = true);
+    void resetMeshStageChecks(std::size_t lodIndex, const std::string& geometryId);
+    void recordMeshStageResult(const std::string& stage, bool passed, bool markDirty = true);
+    bool meshSourceRecordPending(const MeshSourceRecord& record) const;
+    nlohmann::json serializeMeshSourceRecords() const;
+    nlohmann::json aggregateStageChecksJson() const;
+    void sendSourceChangeScan(); // exact-hash scan + targeted SOURCE apply
+    bool confirmSourceMeshDeletion(std::size_t lodIndex, const std::string& geometryId);
+    bool reloadMeshFromSource(std::size_t lodIndex, std::size_t geometryIndex);
+    bool replaceSourcePart(std::size_t lodIndex, std::size_t geometryIndex, bool publish = true, bool rescan = true);
+    bool replaceSourcePartByPath(std::size_t lodIndex, const std::string& sourcePath);
+    bool addSourcePart(std::size_t lodIndex, const std::string& sourcePath, bool publish = true, bool rescan = true);
     bool importSourceVariantMaintenance(
         std::size_t lodIndex,
         const std::string& sourcePath,
-        bool requireExisting);
+        bool requireExisting,
+        bool publish = true,
+        bool rescan = true);
     bool prepareOneGeometry(std::size_t lodIndex, std::size_t geometryIndex);
+    bool setGeometryOrientationOverride(std::size_t lodIndex, std::size_t geometryIndex, const std::string& mode);
     bool analyzeOneGeometry(std::size_t lodIndex, std::size_t geometryIndex);
     bool regenerateDerivedLodsForGeometry(std::size_t lodIndex, std::size_t geometryIndex);
     std::string maintenanceComponentId(std::size_t lodIndex, const RenderGeometryDefinition& geometry) const;
@@ -236,11 +301,16 @@ private:
     std::filesystem::path m_sourceRoot;
     std::filesystem::path m_sourceAssetsRoot;
     std::filesystem::path m_compiledModelsRoot;
+    std::filesystem::path m_workingFilesRoot;
     std::string m_locale = "en";
     HtmlUiServer& m_server;
     std::vector<CatalogEntry> m_catalog;
     ModelAsset m_asset;
     std::string m_selectedId;
+    std::string m_openAuthority = "none"; // working / production / source
+    std::string m_workingSavedAtUtc;
+    std::uint64_t m_workingSaveRevision = 0;
+    std::filesystem::path m_loadedSourceAssetDirectory;
     bool m_dirty = false;
     bool m_manifestDirty = false;
     bool m_editorStateDirty = false;
@@ -262,10 +332,15 @@ private:
     // this sidecar only gates downstream LOD authoring when its fingerprint
     // matches the current resident payload.
     std::map<std::size_t, std::map<std::string, MeshPreparationRecord>> m_meshPreparationRecords;
+    // Persisted editor-only decision relative to automatic canonical orientation.
+    // Runtime sees only the already-flipped .elmesh payload.
+    std::map<std::size_t, std::map<std::string, MeshOrientationOverrideRecord>> m_meshOrientationOverrides;
     // Session-only RAW snapshots for the diagnostic SOURCE viewport. Never serialized into .elmodel/.elmesh.
     std::map<std::size_t, std::map<std::string, MeshLod>> m_rawMeshSnapshots;
     std::map<std::size_t, std::map<std::string, std::vector<std::string>>> m_legacySourceVariantReplacements;
     std::map<std::size_t, std::map<std::string, std::uint64_t>> m_sourceMeshFingerprints;
+    std::map<std::size_t, std::map<std::string, std::uint64_t>> m_sourceMeshQuickStamps;
+    std::map<std::size_t, std::map<std::string, MeshSourceRecord>> m_meshSourceRecords;
     std::map<std::string, std::set<std::string>> m_componentMaintenanceIssues;
     std::map<std::string, std::vector<std::string>> m_semanticChildOrder;
     std::size_t m_nextBaseVisualOrdinal = 1;

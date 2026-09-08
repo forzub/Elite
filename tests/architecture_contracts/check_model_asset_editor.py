@@ -1067,8 +1067,8 @@ if 'EXPLODE ROOT <select id="structGraphRoot"' in html_050:
     raise AssertionError("0.10.50 must not restore the structural root dropdown; root is selected from the mesh table/3D selection")
 
 for token in (
-    "primaryVisual?0xd6ff54",
-    "semanticAdditional?0xffd166",
+    "primaryVisual?selectionColor",
+    "semanticAdditional?0x73d6b0",
     "semanticSelected?0x365f66",
     "selectedMarker=selected&&!hasVisual",
 ):

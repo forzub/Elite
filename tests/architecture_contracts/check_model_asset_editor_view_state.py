@@ -167,11 +167,11 @@ for forbidden in (
     if forbidden in visibility:
         raise AssertionError(f"competing viewport visibility owner survived: {forbidden!r}")
 
-# Later stages all expose the same LOD/mesh navigation surface. Stage tools stay
-# in their own branches below/alongside this shared panel.
+# SEMANTICS and later stages expose the shared LOD/mesh navigation surface.
+# SURFACES owns a richer combined mesh/surface table instead of duplicating it.
 for token in (
     'id="sharedStageMeshSection"',
-    'data-wizard-groups="surfaces semantics physics damage validate build"',
+    'data-wizard-groups="semantics physics damage validate build"',
     "function renderSharedStageMeshPanel()",
     "data-shared-mesh-lod",
     "● ПОКАЗАТЬ ВСЕ",

@@ -1,6 +1,11 @@
 ## 0.10.64 — authoritative EditorViewState hotfix (2026-09-08)
 
-- Final first-three-tab acceptance polish: 3D picks in SOURCE/LODS/GEOMETRY now move focus to the right-side mesh table and scroll the selected row into view; ordinary viewport selection uses a much stronger amber/emissive highlight.
+- SURFACES workspace follow-up: merged the duplicate `ACTIVE LOD MESHES` and `GEOMETRY SURFACES` views into one geometry-authoritative active-LOD table with shared visibility controls, per-mesh SURFACES stage status, Ctrl additive/toggle selection and Shift range selection. Surface intent applies to the selected group; material editing remains anchored to the primary geometry.
+- SURFACES row color is now strictly stage-evidence driven: `stageChecks.surfaces == passed` is green; every not-passed mesh is red-brown. Review/blocker reasons stay in status text/tooltips instead of introducing a third row color.
+- Viewport selection feedback is now saturated green instead of amber across editor stages. SURFACES preserves authored material appearance and overlays a strong green tint/emissive selection cue, including all geometries in the current SURFACES multi-selection.
+- A 3D pick in SURFACES focuses and scrolls the matching row in the combined table; ordinary table clicks preserve the right-panel scroll position and do not jump to the surface-type editor.
+
+- Final first-three-tab acceptance polish: 3D picks in SOURCE/LODS/GEOMETRY now move focus to the right-side mesh table and scroll the selected row into view; ordinary viewport selection uses a much stronger high-contrast highlight; the same 0.10.64 UX pass later standardized that palette to saturated green across all stages.
 - SOURCE, LODS and GEOMETRY are now frozen together by a combined architecture lock. SOURCE keeps its existing v0.10.62 fingerprint; LODS/GEOMETRY get v0.10.64 protected fingerprints, with the shared 3D↔table navigation path token-guarded.
 
 - LOD workspace UI follow-up: added the same explicit `ACTIVE RENDER LOD` selector used by GEOMETRY, scoped the analyzed mesh table to the active LOD, and regrouped selected-mesh identity separately from a single-line SHOW ALL / HIDE ALL / orientation action row.

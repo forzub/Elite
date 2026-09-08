@@ -152,8 +152,10 @@ def validate_core_tabs_lock() -> None:
         "row.scrollIntoView({block:'nearest',inline:'nearest'})",
         "if(options.focusTable)focusActiveMeshTableSelection()",
         "focusTable:['source','lods','geometry'].includes(state.wizardStage)",
-        "m.color?.setHex(renderPrimary?0xffb21f:0x7d91a7)",
-        "m.emissive?.setHex(renderPrimary?0x6a2b00:0x000000)",
+        "m.color?.setHex(renderPrimary?selectionColor:0x7d91a7)",
+        "m.emissive?.setHex(renderPrimary?selectionEmissive:0x000000)",
+        "selectionColor=0x5dff9a",
+        "selectionEmissive=0x0f5f31",
     )
     for token in shared_required:
         if token not in body:

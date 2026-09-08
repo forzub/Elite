@@ -4,7 +4,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WEBUI = ROOT / "src/assets/webui/model_asset_editor.html"
+SESSION_CPP = ROOT / "tools/model_asset_editor/ModelAssetEditorSession.cpp"
+SESSION_H = ROOT / "tools/model_asset_editor/ModelAssetEditorSession.h"
 web = WEBUI.read_text(encoding="utf-8", errors="replace")
+cpp = SESSION_CPP.read_text(encoding="utf-8", errors="replace")
+header = SESSION_H.read_text(encoding="utf-8", errors="replace")
 
 start = web.index("if(stage==='surfaces')")
 end = web.index("if(stage==='semantics')", start)
@@ -26,26 +30,39 @@ for token in (
     if token not in web:
         raise AssertionError(f"SURFACES combined table contract missing {token!r}")
 
-# Per-mesh state colour is binary at this stage: passed is green, everything
-# not passed remains red/brown. Review state may be explained by icon/text but
-# must not introduce a third row-colour authority.
+# Per-mesh state colour is evidence-driven, but NOT_CHECKED is neutral. Only an
+# actual failed SURFACES check is red/brown; passed is green/dark-green. A
+# failed mesh must not poison every other row merely because the stage as a
+# whole did not pass.
 for token in (
-    "stageValue=meshStageCheckValue(g,'surfaces')",
-    "passed=stageValue==='passed'",
-    "stageClass=passed?'meshStagePassed':'meshValidationPending'",
+    "function surfaceStageVisualClass(g)",
+    "if(value==='passed')return'meshStagePassed'",
+    "if(value==='failed'||value==='missing')return'meshValidationPending'",
+    "return'surfaceStageUnchecked'",
+    '.surfaceGeometryRow.surfaceStageUnchecked{',
     '.surfaceGeometryRow.meshStagePassed.selected',
     '.surfaceGeometryRow.meshValidationPending.selected',
+    "function surfaceStageGlyph(g)",
 ):
     if token not in web:
-        raise AssertionError(f"SURFACES pass/fail row colouring missing {token!r}")
+        raise AssertionError(f"SURFACES pass/fail/unchecked row colouring missing {token!r}")
+for token in (
+    'validateSurfaceGeometryStage',
+    'recordSurfaceMeshStageResults',
+    'record.stageChecks["surfaces"] = passed ? "passed" : "failed"',
+    'if (stage == "surfaces") recordSurfaceMeshStageResults(stage != "build")',
+):
+    if token not in cpp and token not in header:
+        raise AssertionError(f"SURFACES per-geometry CHECK evidence missing {token!r}")
 for forbidden in (
+    "stageClass=passed?'meshStagePassed':'meshValidationPending'",
     "intentReview?'review '",
     "bad?'badRow'",
     '.surfaceGeometryRow.review{',
     '.surfaceGeometryRow.badRow{',
 ):
     if forbidden in web:
-        raise AssertionError(f"SURFACES third row-colour state survived: {forbidden!r}")
+        raise AssertionError(f"SURFACES incorrect/third row-colour state survived: {forbidden!r}")
 
 # Multi-select is stage-local and does not compete with EditorViewState's
 # single primary render/mesh selection. Plain click replaces, Ctrl toggles one,
@@ -89,17 +106,20 @@ for token in (
     if token not in web:
         raise AssertionError(f"SURFACES 3D/table synchronization missing {token!r}")
 
-# Selection colour is now a saturated green shared by all viewport stages.
+# Viewport selection is an exact saturated green replacement, not a tint of
+# the authored/base colour. This avoids the old white/blue -> cyan blend that
+# was almost invisible on pale meshes.
 for token in (
-    'selectionColor=0x5dff9a',
-    'selectionEmissive=0x0f5f31',
+    'selectionColor=0x00a84f',
+    'selectionEmissive=0x00ff70',
     'm.color?.setHex(renderPrimary?selectionColor:0x7d91a7)',
     'm.emissive?.setHex(renderPrimary?selectionEmissive:0x000000)',
-    'm.color?.lerp(new THREE.Color(selectionColor),.42)',
-    'm.emissive?.lerp(new THREE.Color(selectionEmissive),.82)',
-    'm.emissiveIntensity=Math.max(1.35',
+    'm.color?.setHex(selectionColor);m.emissive?.setHex(selectionEmissive)',
+    'm.emissiveIntensity=Math.max(.72',
 ):
     if token not in web:
-        raise AssertionError(f"green viewport selection contract missing {token!r}")
+        raise AssertionError(f"high-contrast green viewport selection contract missing {token!r}")
+if 'm.color?.lerp(new THREE.Color(selectionColor)' in web:
+    raise AssertionError('SURFACES selection regressed to low-contrast authored-colour tinting')
 
-print('[PASS] model asset editor SURFACES combined table / multiselect / green viewport selection')
+print('[PASS] model asset editor SURFACES combined table / per-mesh CHECK / multiselect / high-contrast selection')

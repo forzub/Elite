@@ -209,6 +209,7 @@ private:
     void loadWizardState();
     void invalidateWizardFrom(const std::string& stage);
     bool validateWizardStage(const std::string& stage, std::string* error = nullptr);
+    bool validateSurfaceGeometryStage(std::size_t lodIndex, std::size_t geometryIndex, std::string* error = nullptr) const;
     void sendWizardValidationReport();
     bool checkWizardStage(const std::string& stage);
     bool scanRenderDuplicates(
@@ -262,6 +263,7 @@ private:
     void synchronizeMeshSourceRecords(bool preserveChecks = true);
     void resetMeshStageChecks(std::size_t lodIndex, const std::string& geometryId);
     void recordMeshStageResult(const std::string& stage, bool passed, bool markDirty = true);
+    void recordSurfaceMeshStageResults(bool markDirty = true);
     bool meshSourceRecordPending(const MeshSourceRecord& record) const;
     nlohmann::json serializeMeshSourceRecords() const;
     nlohmann::json aggregateStageChecksJson() const;

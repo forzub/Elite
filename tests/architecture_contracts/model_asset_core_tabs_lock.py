@@ -154,8 +154,8 @@ def validate_core_tabs_lock() -> None:
         "focusTable:['source','lods','geometry'].includes(state.wizardStage)",
         "m.color?.setHex(renderPrimary?selectionColor:0x7d91a7)",
         "m.emissive?.setHex(renderPrimary?selectionEmissive:0x000000)",
-        "selectionColor=0x5dff9a",
-        "selectionEmissive=0x0f5f31",
+        "selectionColor=0x00a84f",
+        "selectionEmissive=0x00ff70",
     )
     for token in shared_required:
         if token not in body:

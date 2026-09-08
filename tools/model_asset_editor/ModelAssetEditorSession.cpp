@@ -3970,6 +3970,92 @@ nlohmann::json ModelAssetEditorSession::serializeWizard() const
     };
 }
 
+bool ModelAssetEditorSession::validateSurfaceGeometryStage(
+    std::size_t lodIndex,
+    std::size_t geometryIndex,
+    std::string* error) const
+{
+    const auto fail = [&](const std::string& message)
+    {
+        if (error) *error = message;
+        return false;
+    };
+
+    if (lodIndex >= m_asset.renderLods.size())
+        return fail("SURFACES validation failed: invalid LOD index " + std::to_string(lodIndex));
+    const auto& lod = m_asset.renderLods[lodIndex];
+    if (geometryIndex >= lod.geometries.size())
+        return fail("SURFACES validation failed: LOD" + std::to_string(lodIndex) +
+            " invalid geometry index " + std::to_string(geometryIndex));
+
+    const auto& geometry = lod.geometries[geometryIndex];
+    std::size_t usage = 0;
+    for (const auto& node : lod.nodes)
+        if (node.enabled && node.geometryIndex == static_cast<std::int32_t>(geometryIndex)) ++usage;
+    const bool relevant = usage != 0 || isRenderVariantGeometryId(geometry.id);
+    if (!relevant) return true;
+
+    std::string explicitClass;
+    const auto classLodIt = m_geometryTopologyClasses.find(lodIndex);
+    if (classLodIt != m_geometryTopologyClasses.end())
+    {
+        const auto classIt = classLodIt->second.find(geometry.id);
+        if (classIt != classLodIt->second.end()) explicitClass = classIt->second;
+    }
+    const auto explicitParsed = preflightTopologyClassFromName(explicitClass);
+    bool autoClosed = false;
+    if (explicitParsed == PreflightTopologyClass::Auto)
+    {
+        const auto audit = auditPreflightGeometry(geometry.mesh);
+        autoClosed = audit.suggestedClass == PreflightTopologyClass::ClosedVolume;
+        if (audit.openComponents != 0)
+            return fail("SURFACES validation failed: LOD" + std::to_string(lodIndex) + " G" +
+                std::to_string(geometryIndex) + " " + geometry.id +
+                " is open and needs an explicit surface intent");
+    }
+    const auto effective = autoClosed ? PreflightTopologyClass::ClosedVolume : explicitParsed;
+    const bool validIntent = effective == PreflightTopologyClass::ClosedVolume ||
+        effective == PreflightTopologyClass::ThinOneSided ||
+        effective == PreflightTopologyClass::ThinTwoSided ||
+        effective == PreflightTopologyClass::BreachedVolume;
+    if (!validIntent)
+        return fail("SURFACES validation failed: LOD" + std::to_string(lodIndex) + " G" +
+            std::to_string(geometryIndex) + " " + geometry.id + " has no valid surface intent");
+
+    const SurfaceMode expectedMode = effective == PreflightTopologyClass::ThinOneSided
+        ? SurfaceMode::ThinOneSided
+        : effective == PreflightTopologyClass::ThinTwoSided
+            ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
+    if (geometry.surfaceMode != expectedMode)
+        return fail("SURFACES validation failed: LOD" + std::to_string(lodIndex) + " G" +
+            std::to_string(geometryIndex) + " surface mode does not match authored intent");
+
+    std::set<std::int32_t> usedMaterials;
+    for (const auto& triangle : geometry.mesh.triangles)
+    {
+        if (triangle.materialIndex == NoIndex) continue;
+        if (triangle.materialIndex < 0 ||
+            static_cast<std::size_t>(triangle.materialIndex) >= m_asset.materials.size())
+            return fail("SURFACES validation failed: LOD" + std::to_string(lodIndex) + " G" +
+                std::to_string(geometryIndex) + " references an invalid explicit material index");
+        usedMaterials.insert(triangle.materialIndex);
+    }
+    for (const auto materialIndex : usedMaterials)
+    {
+        const auto& material = m_asset.materials[static_cast<std::size_t>(materialIndex)];
+        if (material.id.empty())
+            return fail("SURFACES validation failed: LOD" + std::to_string(lodIndex) + " G" +
+                std::to_string(geometryIndex) + " uses material M" + std::to_string(materialIndex) +
+                " with an empty id");
+        if (!std::isfinite(material.emissiveStrength) || material.emissiveStrength < 0.0f ||
+            !std::isfinite(material.metallic) || material.metallic < 0.0f || material.metallic > 1.0f ||
+            !std::isfinite(material.roughness) || material.roughness < 0.0f || material.roughness > 1.0f)
+            return fail("SURFACES validation failed: LOD" + std::to_string(lodIndex) + " G" +
+                std::to_string(geometryIndex) + " uses material " + material.id + " with invalid PBR values");
+    }
+    return true;
+}
+
 bool ModelAssetEditorSession::validateWizardStage(const std::string& stage, std::string* error)
 {
     const auto fail = [&](const std::string& message)
@@ -4021,71 +4107,11 @@ bool ModelAssetEditorSession::validateWizardStage(const std::string& stage, std:
     else if (stage == "surfaces")
     {
         for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
-        {
-            const auto& lod = m_asset.renderLods[li];
-            std::vector<std::size_t> usage(lod.geometries.size(), 0);
-            for (const auto& node : lod.nodes)
-                if (node.enabled && node.geometryIndex >= 0 &&
-                    static_cast<std::size_t>(node.geometryIndex) < usage.size())
-                    ++usage[static_cast<std::size_t>(node.geometryIndex)];
-
-            for (std::size_t gi = 0; gi < lod.geometries.size(); ++gi)
+            for (std::size_t gi = 0; gi < m_asset.renderLods[li].geometries.size(); ++gi)
             {
-                const auto& geometry = lod.geometries[gi];
-                const bool relevant = usage[gi] != 0 || isRenderVariantGeometryId(geometry.id);
-                if (!relevant) continue;
-
-                std::string explicitClass;
-                const auto classLodIt = m_geometryTopologyClasses.find(li);
-                if (classLodIt != m_geometryTopologyClasses.end())
-                {
-                    const auto classIt = classLodIt->second.find(geometry.id);
-                    if (classIt != classLodIt->second.end()) explicitClass = classIt->second;
-                }
-                const auto explicitParsed = preflightTopologyClassFromName(explicitClass);
-                bool autoClosed = false;
-                if (explicitParsed == PreflightTopologyClass::Auto)
-                {
-                    // AUTO is the only SURFACES validation path that needs
-                    // topology evidence. Explicit author intent is metadata and
-                    // must not pay for an audit merely to validate unrelated metadata.
-                    const auto audit = auditPreflightGeometry(geometry.mesh);
-                    autoClosed = audit.suggestedClass == PreflightTopologyClass::ClosedVolume;
-                    if (audit.openComponents != 0)
-                        return fail("SURFACES validation failed: LOD" + std::to_string(li) + " G" +
-                            std::to_string(gi) + " " + geometry.id +
-                            " is open and needs an explicit surface intent");
-                }
-                const auto effective = autoClosed ? PreflightTopologyClass::ClosedVolume : explicitParsed;
-                const bool validIntent = effective == PreflightTopologyClass::ClosedVolume ||
-                    effective == PreflightTopologyClass::ThinOneSided ||
-                    effective == PreflightTopologyClass::ThinTwoSided ||
-                    effective == PreflightTopologyClass::BreachedVolume;
-                if (!validIntent)
-                    return fail("SURFACES validation failed: LOD" + std::to_string(li) + " G" +
-                        std::to_string(gi) + " " + geometry.id + " has no valid surface intent");
-                const SurfaceMode expectedMode = effective == PreflightTopologyClass::ThinOneSided
-                    ? SurfaceMode::ThinOneSided
-                    : effective == PreflightTopologyClass::ThinTwoSided
-                        ? SurfaceMode::ThinTwoSided : SurfaceMode::Closed;
-                if (geometry.surfaceMode != expectedMode)
-                    return fail("SURFACES validation failed: LOD" + std::to_string(li) + " G" +
-                        std::to_string(gi) + " surface mode does not match authored intent");
-                for (const auto& triangle : geometry.mesh.triangles)
-                {
-                    // NoIndex is the implicit default visual surface. Most triangles
-                    // do not need an explicit material merely to render in the game's
-                    // style families; explicit materials are sparse overrides for
-                    // colour/emission/other authored visual roles.
-                    if (triangle.materialIndex == NoIndex)
-                        continue;
-                    if (triangle.materialIndex < 0 ||
-                        static_cast<std::size_t>(triangle.materialIndex) >= m_asset.materials.size())
-                        return fail("SURFACES validation failed: LOD" + std::to_string(li) + " G" +
-                            std::to_string(gi) + " references an invalid explicit material index");
-                }
+                std::string geometryError;
+                if (!validateSurfaceGeometryStage(li, gi, &geometryError)) return fail(geometryError);
             }
-        }
         for (std::size_t mi = 0; mi < m_asset.materials.size(); ++mi)
         {
             const auto& material = m_asset.materials[mi];
@@ -4511,7 +4537,8 @@ bool ModelAssetEditorSession::checkWizardStage(const std::string& stage)
     // Non-terminal stage evidence is an unsaved WORKING edit and therefore
     // makes SAVE available. BUILD certification belongs to the final production
     // state: it must not make the already-built WORKING revision dirty.
-    recordMeshStageResult(stage, passed, stage != "build");
+    if (stage == "surfaces") recordSurfaceMeshStageResults(stage != "build");
+    else recordMeshStageResult(stage, passed, stage != "build");
     if (passed && stage == "build")
     {
         std::string finalStateError;
@@ -7423,6 +7450,35 @@ void ModelAssetEditorSession::recordMeshStageResult(const std::string& stage, bo
                 value = "passed";
             else
                 value = "failed";
+        }
+    if (markDirty) markEditorStateDirty();
+}
+
+void ModelAssetEditorSession::recordSurfaceMeshStageResults(bool markDirty)
+{
+    synchronizeMeshSourceRecords(true);
+    for (auto& [lodIndex, byGeometry] : m_meshSourceRecords)
+        for (auto& [geometryId, record] : byGeometry)
+        {
+            bool passed = !record.sourceMissing;
+            if (passed)
+            {
+                if (lodIndex >= m_asset.renderLods.size()) passed = false;
+                else
+                {
+                    const auto& geometries = m_asset.renderLods[lodIndex].geometries;
+                    const auto geometryIt = std::find_if(
+                        geometries.begin(), geometries.end(),
+                        [&](const RenderGeometryDefinition& geometry) { return geometry.id == geometryId; });
+                    if (geometryIt == geometries.end()) passed = false;
+                    else
+                    {
+                        const auto geometryIndex = static_cast<std::size_t>(std::distance(geometries.begin(), geometryIt));
+                        passed = validateSurfaceGeometryStage(lodIndex, geometryIndex, nullptr);
+                    }
+                }
+            }
+            record.stageChecks["surfaces"] = passed ? "passed" : "failed";
         }
     if (markDirty) markEditorStateDirty();
 }

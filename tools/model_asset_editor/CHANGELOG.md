@@ -1,8 +1,10 @@
 ## 0.10.64 — authoritative EditorViewState hotfix (2026-09-08)
 
+- SURFACES CHECK evidence is now recorded per geometry instead of broadcasting one global pass/fail value to every mesh row. Passed rows are dark green/green, failed rows are red-brown/red, and not-yet-checked rows are neutral. One failed mesh no longer paints the whole table red.
+- Viewport selection across all stages now uses an exact saturated emerald body colour plus bright green emissive cue. SURFACES no longer lerps the selection into pale authored colours, eliminating the low-contrast cyan/white selection failure.
 - SURFACES workspace follow-up: merged the duplicate `ACTIVE LOD MESHES` and `GEOMETRY SURFACES` views into one geometry-authoritative active-LOD table with shared visibility controls, per-mesh SURFACES stage status, Ctrl additive/toggle selection and Shift range selection. Surface intent applies to the selected group; material editing remains anchored to the primary geometry.
-- SURFACES row color is now strictly stage-evidence driven: `stageChecks.surfaces == passed` is green; every not-passed mesh is red-brown. Review/blocker reasons stay in status text/tooltips instead of introducing a third row color.
-- Viewport selection feedback is now saturated green instead of amber across editor stages. SURFACES preserves authored material appearance and overlays a strong green tint/emissive selection cue, including all geometries in the current SURFACES multi-selection.
+- SURFACES row color is stage-evidence driven: `passed` is green, `failed` is red-brown, and `not_checked` remains neutral until CHECK. Review/blocker reasons stay in status text/tooltips instead of becoming a competing row-color authority.
+- Viewport selection feedback is saturated green instead of amber across editor stages. The final correction uses an exact emerald replacement plus emissive cue while selected, rather than blending toward green and accidentally producing cyan on pale authored materials.
 - A 3D pick in SURFACES focuses and scrolls the matching row in the combined table; ordinary table clicks preserve the right-panel scroll position and do not jump to the surface-type editor.
 
 - Final first-three-tab acceptance polish: 3D picks in SOURCE/LODS/GEOMETRY now move focus to the right-side mesh table and scroll the selected row into view; ordinary viewport selection uses a much stronger high-contrast highlight; the same 0.10.64 UX pass later standardized that palette to saturated green across all stages.

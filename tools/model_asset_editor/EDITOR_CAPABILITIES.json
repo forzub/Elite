@@ -595,7 +595,7 @@
     },
     {
       "id": "semantic_tree_link_authoring",
-      "description": "SEMANTICS owns an asset-wide transform forest plus semantic parts. parentIndex == NoIndex means ASSET SPACE; multiple top-level parts are valid. Parent→child exists only for real transform dependency. Structural support/detach remains in STRUCTURAL GRAPH.",
+      "description": "SEMANTICS owns an asset-wide transform forest plus an implicit MODEL ROOT. MODEL ROOT is not a serialized semantic Node; parentIndex == NoIndex means direct child of MODEL ROOT / asset space. Visual representation is always the authoritative active LOD. Parent→child below MODEL ROOT exists only for real transform dependency. Structural support/detach remains in STRUCTURAL GRAPH.",
       "contracts": {
         "data_model": {
           "path": "src/model_asset/ModelAsset.h",
@@ -664,13 +664,17 @@
             "semanticStaticFlattenCandidates",
             "semanticSelectionToAssetSpace",
             "semanticFlattenStaticTree",
-            "◇ ASSET SPACE · implicit transform parent"
+            "data-semantic-model-root",
+            "◆ MODEL ROOT · ASSET SPACE · implicit identity root",
+            "assertSemanticVisualLodInvariant",
+            "restoreSemanticSelectionAfterLodSwitch",
+            "SEMANTIC SEPARATION UNAVAILABLE"
           ]
         },
         "test": {
           "path": "tests/architecture_contracts/check_model_asset_editor.py",
           "tokens": [
-            "0.10.54 asset-space transform-forest"
+            "MODEL ROOT semantics foundation"
           ]
         },
         "semantic_lifecycle": {

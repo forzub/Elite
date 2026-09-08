@@ -1098,19 +1098,25 @@ for token in (
     if token not in web:
         raise AssertionError(f"0.10.52 TREE/GRAPH cleanup UI contract missing {token!r}")
 
+# MODEL ROOT semantics foundation: the tree has one always-visible implicit
+# identity root in the UI/runtime model, but no synthetic serialized Node.
+# Active visual LOD remains authoritative for scene, tables and bindings.
 for token in (
     "semanticStaticFlattenCandidates()",
     "semanticMoveSelectionToAssetSpace()",
     "semanticFlattenStaticTree()",
     'id="semanticSelectionToAssetSpace"',
     'id="semanticFlattenStaticTree"',
-    "FLATTEN STATIC → ASSET SPACE",
-    "◇ ASSET SPACE · implicit transform parent",
-    "TRANSFORM FOREST:",
+    "FLATTEN STATIC → MODEL ROOT",
+    "data-semantic-model-root",
+    "◆ MODEL ROOT · ASSET SPACE · implicit identity root",
+    "assertSemanticVisualLodInvariant",
+    "restoreSemanticSelectionAfterLodSwitch",
+    "SEMANTIC SEPARATION UNAVAILABLE",
     "STRUCTURAL GRAPH is not changed",
 ):
     if token not in web:
-        raise AssertionError(f"0.10.54 asset-space transform-forest UI contract missing {token!r}")
+        raise AssertionError(f"MODEL ROOT semantics foundation UI contract missing {token!r}")
 for token in (
     "staticSemanticFlattenCandidates",
     'command == "flatten_static_semantic_tree"',

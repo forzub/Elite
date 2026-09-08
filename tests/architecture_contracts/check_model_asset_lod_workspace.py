@@ -162,7 +162,7 @@ for token in (
     "function selectPreflightGeometry(",
     "selectRenderNode(ri,{scrollPreflight:false});",
     "syncPreflightSelectionUi(!!options.scrollPreflight)",
-    "selectRenderNode(ri,{scrollPreflight:state.wizardStage==='lods',scrollGeometry:state.wizardStage==='geometry'});",
+    "selectRenderNode(ri,{scrollPreflight:state.wizardStage==='lods',scrollGeometry:state.wizardStage==='geometry',focusTable:['source','lods','geometry'].includes(state.wizardStage)});",
     "scrollPreflightRowIntoView",
 ):
     if token not in web:

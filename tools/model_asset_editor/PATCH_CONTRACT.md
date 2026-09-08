@@ -324,3 +324,16 @@ Regression protection is provided by `tests/architecture_contracts/check_model_a
 - Browser diagnostics capture JavaScript exceptions, `unhandledrejection`, WebSocket dispatch/receive errors, UI command dispatch errors and state invariant failures. Every record carries client timestamp, stage, active LOD, scene LOD and selected mesh/RenderNode. The backend appends JSONL to `wizardLogPath("editor_ui.log")`, i.e. the selected asset's `logs/editor_ui.log` beside its WORKING/intermediate workspace.
 
 Regression protection is provided by `tests/architecture_contracts/check_model_asset_editor_view_state.py` together with the general editor, LOD/GEOMETRY workspace and frozen-SOURCE tests.
+
+## 22. Frozen SOURCE / LODS / GEOMETRY acceptance baseline — v0.10.64
+
+After the final navigation polish, the first three authoring tabs are accepted as a stable editor surface and are frozen together.
+
+- **SOURCE** retains its existing v0.10.62 protected fingerprint and all section 18 contracts. This final polish does not alter the protected SOURCE implementation surface.
+- **LODS** is frozen with the explicit `ACTIVE RENDER LOD` block, active-LOD-only mesh table, per-mesh PREPARE evidence, compact one-line `SHOW ALL / HIDE ALL / FLIP / visible-count` controls, table↔3D selection and read-only ANALYZE boundary.
+- **GEOMETRY** is frozen with the matching active-LOD navigation pattern, per-mesh stage evidence/visibility, duplicate comparison/consolidation tools, existing geometry editing tools and canonical table↔3D RenderNode selection.
+- A 3D pick in SOURCE/LODS/GEOMETRY must move keyboard/UI focus into the right-side mesh table and scroll the selected row into view. This is navigation only; it must not create another selection authority or mutate asset data.
+- The ordinary non-SEMANTICS viewport selection highlight for these accepted tabs is deliberately high-contrast amber (`0xffb21f`) with a stronger emissive component (`0x6a2b00`) so selected geometry is visually obvious against the normal blue-grey mesh material.
+- Later SURFACES/SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD work must not opportunistically reorganize, rename, restyle or refactor the protected SOURCE/LODS/GEOMETRY surfaces. Changes require an explicit user-approved reopening of the affected accepted tab and an intentional lock fingerprint update.
+
+Enforcement lives in `tests/architecture_contracts/model_asset_core_tabs_lock.py` and `check_model_asset_core_tabs_frozen.py`. The general `check_model_asset_editor.py` invokes the combined lock automatically. LODS and GEOMETRY use protected stage/function/CSS fingerprints; shared selection/focus behavior is token-guarded so later stages can evolve shared code without silently weakening the accepted first-three-tab contract.

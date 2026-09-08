@@ -1,5 +1,8 @@
 ## 0.10.64 — authoritative EditorViewState hotfix (2026-09-08)
 
+- Final first-three-tab acceptance polish: 3D picks in SOURCE/LODS/GEOMETRY now move focus to the right-side mesh table and scroll the selected row into view; ordinary viewport selection uses a much stronger amber/emissive highlight.
+- SOURCE, LODS and GEOMETRY are now frozen together by a combined architecture lock. SOURCE keeps its existing v0.10.62 fingerprint; LODS/GEOMETRY get v0.10.64 protected fingerprints, with the shared 3D↔table navigation path token-guarded.
+
 - LOD workspace UI follow-up: added the same explicit `ACTIVE RENDER LOD` selector used by GEOMETRY, scoped the analyzed mesh table to the active LOD, and regrouped selected-mesh identity separately from a single-line SHOW ALL / HIDE ALL / orientation action row.
 
 - Replaced competing stage-local LOD/selection/visibility owners with one browser `EditorViewState`. SOURCE/LOD/GEOMETRY compatibility map names are projections over the same per-LOD visibility state rather than independent `Map` instances.

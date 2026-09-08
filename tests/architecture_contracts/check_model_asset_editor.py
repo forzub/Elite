@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 import re
 
-from model_asset_source_tab_lock import validate_source_tab_lock
+from model_asset_core_tabs_lock import validate_core_tabs_lock
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -25,7 +25,7 @@ def body_between(body: str, start: str, end: str) -> str:
     return body[a:b]
 
 
-validate_source_tab_lock()
+validate_core_tabs_lock()
 
 # -----------------------------------------------------------------------------
 # Shared v4/runtime boundary

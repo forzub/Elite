@@ -1,4 +1,17 @@
+## 0.10.64 — explicit per-LOD SOURCE axis mapping / fixed game frame (2026-09-08)
+
+- Made the runtime/editor canonical game frame explicit and non-negotiable: `RIGHT = +X`, `UP = +Y`, `NOSE/FORWARD = -Z`; the viewport ground plane is `XZ` and vertical is `Y`. The axis/grid overlay now labels these semantic directions directly instead of relying on raw RGB axes alone.
+- Replaced the one-click Blender preset action with an active-LOD axis-mapping dialog. The user selects which signed SOURCE axis (`±X/±Y/±Z`) means RIGHT, UP and NOSE; all three absolute axes must be unique. Blender (`R +X / U +Z / N -Y`) and already-game (`R +X / U +Y / N -Z`) presets remain one-click choices.
+- Persisted custom signed permutations through the existing per-LOD basis field using canonical `axis:<right>,<up>,<forward>` keys; exact Blender/game mappings normalize back to their named presets. SOURCE reload/reimport continues to reapply the configured mapping before geometry enters WORKING.
+- Applying a new mapping atomically rebuilds source-backed geometry of only the active LOD under the requested mapping, applies the delta to source-less geometry and that LOD's RenderNode placement, and leaves every other render LOD resident but untouched. When LOD0 is remapped, the shared SOURCE semantic/collision/hit frame follows LOD0 exactly once by the mapping delta.
+
 ## 0.10.64 — per-LOD SOURCE basis / reload consistency hotfix (2026-09-08)
+
+## 0.10.64 — eager declared-LOD OPEN hotfix
+
+- Restored eager viewport residency for every declared render LOD on WORKING resume and modern production adoption. OPEN no longer presents LOD0 alone while LOD1+ wait for an explicit LOAD.
+- Kept coordinate-basis mutation strictly per LOD: eager residency and per-LOD editing are separate concerns. Switching tabs/LOD therefore does not change which documents are loaded, while `convert_lod_source_basis` still modifies only its explicit target LOD.
+- SAVE remains a persistence boundary and does not gain a new implicit load side effect; the hotfix changes OPEN/RESTORE residency only.
 
 - Replaced the old asset-wide axis conversion with explicit active-LOD conversion. `XYZ↻` now sends the selected `lodIndex`; converting LOD1/LOD2/... never rotates another visual LOD.
 - Persisted the source-basis preset independently for every render LOD in editor-state schema 16. Generated LODs inherit the source LOD basis, while legacy pre-v16 asset-wide conversion metadata is migrated as the initial per-LOD profile.

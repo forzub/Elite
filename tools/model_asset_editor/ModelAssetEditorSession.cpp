@@ -2310,6 +2310,66 @@ glm::vec3 axisVector(AxisDirection axis)
     return {1,0,0};
 }
 
+std::string axisDirectionToken(AxisDirection axis)
+{
+    switch (axis)
+    {
+        case AxisDirection::PositiveX: return "+X";
+        case AxisDirection::NegativeX: return "-X";
+        case AxisDirection::PositiveY: return "+Y";
+        case AxisDirection::NegativeY: return "-Y";
+        case AxisDirection::PositiveZ: return "+Z";
+        case AxisDirection::NegativeZ: return "-Z";
+    }
+    return "+X";
+}
+
+bool parseAxisDirectionToken(const std::string& token, AxisDirection& out)
+{
+    if (token == "+X") { out = AxisDirection::PositiveX; return true; }
+    if (token == "-X") { out = AxisDirection::NegativeX; return true; }
+    if (token == "+Y") { out = AxisDirection::PositiveY; return true; }
+    if (token == "-Y") { out = AxisDirection::NegativeY; return true; }
+    if (token == "+Z") { out = AxisDirection::PositiveZ; return true; }
+    if (token == "-Z") { out = AxisDirection::NegativeZ; return true; }
+    return false;
+}
+
+int axisFamily(AxisDirection axis)
+{
+    switch (axis)
+    {
+        case AxisDirection::PositiveX:
+        case AxisDirection::NegativeX: return 0;
+        case AxisDirection::PositiveY:
+        case AxisDirection::NegativeY: return 1;
+        case AxisDirection::PositiveZ:
+        case AxisDirection::NegativeZ: return 2;
+    }
+    return -1;
+}
+
+bool validSourceBasis(const SourceBasis& basis)
+{
+    const int r = axisFamily(basis.right);
+    const int u = axisFamily(basis.up);
+    const int f = axisFamily(basis.forward);
+    return r >= 0 && u >= 0 && f >= 0 && r != u && r != f && u != f;
+}
+
+std::string customBasisKey(const SourceBasis& basis)
+{
+    const SourceBasis game = []{ SourceBasis b; b.preset = "game_current"; b.right = AxisDirection::PositiveX; b.up = AxisDirection::PositiveY; b.forward = AxisDirection::NegativeZ; b.canonicalized = true; return b; }();
+    const SourceBasis blender = []{ SourceBasis b; b.preset = "blender_model"; b.right = AxisDirection::PositiveX; b.up = AxisDirection::PositiveZ; b.forward = AxisDirection::NegativeY; b.canonicalized = true; return b; }();
+    const auto same = [](const SourceBasis& a, const SourceBasis& b) {
+        return a.right == b.right && a.up == b.up && a.forward == b.forward;
+    };
+    if (same(basis, game)) return "game_current";
+    if (same(basis, blender)) return "blender_model";
+    return "axis:" + axisDirectionToken(basis.right) + "," +
+        axisDirectionToken(basis.up) + "," + axisDirectionToken(basis.forward);
+}
+
 SourceBasis basisPreset(const std::string& preset)
 {
     SourceBasis basis;
@@ -2319,6 +2379,29 @@ SourceBasis basisPreset(const std::string& preset)
         basis.right = AxisDirection::PositiveX;
         basis.up = AxisDirection::PositiveZ;
         basis.forward = AxisDirection::NegativeY;
+    }
+    else if (preset.rfind("axis:", 0) == 0)
+    {
+        const std::string spec = preset.substr(5);
+        const auto comma1 = spec.find(',');
+        const auto comma2 = comma1 == std::string::npos ? std::string::npos : spec.find(',', comma1 + 1);
+        AxisDirection right = AxisDirection::PositiveX;
+        AxisDirection up = AxisDirection::PositiveY;
+        AxisDirection forward = AxisDirection::NegativeZ;
+        const bool parsed = comma1 != std::string::npos && comma2 != std::string::npos &&
+            parseAxisDirectionToken(spec.substr(0, comma1), right) &&
+            parseAxisDirectionToken(spec.substr(comma1 + 1, comma2 - comma1 - 1), up) &&
+            parseAxisDirectionToken(spec.substr(comma2 + 1), forward);
+        basis.right = right;
+        basis.up = up;
+        basis.forward = forward;
+        if (!parsed || !validSourceBasis(basis))
+        {
+            basis.preset = "game_current";
+            basis.right = AxisDirection::PositiveX;
+            basis.up = AxisDirection::PositiveY;
+            basis.forward = AxisDirection::NegativeZ;
+        }
     }
     else
     {
@@ -2511,9 +2594,8 @@ RenderLod buildGeneratedComponentCullLod(
     return generated;
 }
 
-void convertMeshBasisToCanonical(MeshLod& lod, const SourceBasis& source)
+void transformMeshBasis(MeshLod& lod, const glm::mat3& basis)
 {
-    const glm::mat3 basis = sourceToCanonical(source);
     const bool flipWinding = glm::determinant(basis) < 0.0f;
     for (auto& v : lod.vertices)
     {
@@ -2521,36 +2603,39 @@ void convertMeshBasisToCanonical(MeshLod& lod, const SourceBasis& source)
         const glm::vec3 n = basis * v.normal;
         if (glm::dot(n, n) > 1.0e-12f) v.normal = glm::normalize(n);
     }
-    // A reflected basis changes the handedness of transformed triangle
-    // positions. Flip the INDEX ORDER only as part of this explicit axis
-    // conversion so authored front faces still agree with transformed normals.
+    // Explicit coordinate-frame changes may contain a reflection. Keep authored
+    // front faces aligned with transformed normals by changing winding only for
+    // that explicit frame transformation. PREPARE never owns this operation.
     if (flipWinding)
         for (auto& t : lod.triangles) std::swap(t.b, t.c);
     recomputeLodBounds(lod);
 }
 
-void convertRenderLodBasisToCanonical(RenderLod& lod, const SourceBasis& source)
+void convertMeshBasisToCanonical(MeshLod& lod, const SourceBasis& source)
 {
-    const glm::mat3 basis = sourceToCanonical(source);
-    for (auto& geometry : lod.geometries)
-        convertMeshBasisToCanonical(geometry.mesh, source);
+    transformMeshBasis(lod, sourceToCanonical(source));
+}
+
+void transformRenderLodPlacement(RenderLod& lod, const glm::mat3& basis)
+{
     for (auto& renderNode : lod.nodes)
     {
         renderNode.localPosition = basis * renderNode.localPosition;
         renderNode.localRotationDeg = convertEuler(renderNode.localRotationDeg, basis);
         renderNode.pivot = basis * renderNode.pivot;
     }
+}
+
+void convertRenderLodBasisToCanonical(RenderLod& lod, const SourceBasis& source)
+{
+    const glm::mat3 basis = sourceToCanonical(source);
+    for (auto& geometry : lod.geometries) transformMeshBasis(geometry.mesh, basis);
+    transformRenderLodPlacement(lod, basis);
     recomputeRenderLodBounds(lod);
 }
 
-void convertSharedSourceFrameToCanonical(ModelAsset& asset, const SourceBasis& source)
+void transformSharedSourceFrame(ModelAsset& asset, const glm::mat3& basis)
 {
-    // Semantic/collision authoring is shared by every visual LOD, therefore it
-    // cannot be converted once per visual document. LOD0 owns the one explicit
-    // shared-frame conversion. In particular the source/bootstrap hit volumes
-    // travel with that source frame exactly once instead of being rotated again
-    // whenever LOD1/LOD2/... is converted.
-    const glm::mat3 basis = sourceToCanonical(source);
     for (auto& n : asset.nodes)
     {
         n.localPosition = basis * n.localPosition;
@@ -2612,6 +2697,14 @@ void convertSharedSourceFrameToCanonical(ModelAsset& asset, const SourceBasis& s
             proxy.localPosition = basis * proxy.localPosition;
             proxy.localRotationDeg = convertEuler(proxy.localRotationDeg, basis);
         }
+}
+
+void convertSharedSourceFrameToCanonical(ModelAsset& asset, const SourceBasis& source)
+{
+    // Semantic/collision authoring is shared by every visual LOD, therefore it
+    // cannot be converted once per visual document. LOD0 owns the shared SOURCE
+    // frame; hit volumes move exactly once with that frame.
+    transformSharedSourceFrame(asset, sourceToCanonical(source));
 }
 
 void remapGeometryAfterErase(ModelAsset& asset, std::size_t erased)
@@ -6837,12 +6930,16 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         }
         m_asset = std::move(loaded);
         resetLodState(false, false);
-        std::string lodError;
-        if (m_asset.renderLods.empty() || !loadLodData(0, false, &lodError))
+        if (m_asset.renderLods.empty())
         {
-            sendStatus("Cannot load WORKING LOD0: " + lodError, true);
+            sendStatus("WORKING package declares no render LODs", true);
             return false;
         }
+        // OPEN is an eager viewport-residency boundary. Coordinate-basis edits
+        // remain per-LOD operations, but residency is not: every declared LOD
+        // must be available immediately so tab/LOD navigation never changes the
+        // loaded working set as a side effect.
+        if (!ensureAllLodsLoaded()) return false;
 
         EditorAuthoringState workingEditorState;
         StageValidityState workingValidity;
@@ -6870,10 +6967,9 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
                 stateError + "). Editor-only PREPARE/topology/source-baseline evidence requires review.";
             markEditorStateDirty();
         }
-        // Folder-authoritative editor sessions keep every declared render LOD
-        // resident. The source/change graph is per-mesh across all LODs; a hidden
-        // unloaded sibling is not an acceptable source-maintenance state.
-        if (it->sourceAuthority == CatalogSourceAuthority::Folder && !ensureAllLodsLoaded()) return false;
+        // Every selected asset keeps every declared render LOD resident. SOURCE
+        // authority changes where geometry comes from; it must not change what
+        // the viewport has loaded.
         if (m_asset.physicalSize.geometrySpace == PhysicalGeometrySpace::Meters)
         {
             if (!m_asset.physicalSize.enabled || !std::isfinite(m_asset.physicalSize.sourceToMeters) ||
@@ -6946,15 +7042,16 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         {
             m_asset = std::move(loaded);
             resetLodState(false, false);
-            if (m_asset.renderLods.empty() || !ModelAssetBinary::loadLod(readPath.string(), m_asset, 0, &error))
+            if (m_asset.renderLods.empty())
             {
-                sendStatus("Cannot load production LOD0: " + error, true);
+                sendStatus("Production package declares no render LODs", true);
                 return false;
             }
-            if (m_lodState.empty()) m_lodState.resize(1);
-            m_lodState[0].loaded = true;
-            m_lodState[0].dirty = false;
-            if (it->sourceAuthority == CatalogSourceAuthority::Folder && !ensureAllLodsLoaded()) return false;
+            // Production adoption follows the same eager OPEN contract as
+            // WORKING resume: publish every declared LOD in the first viewport
+            // payload. Per-LOD basis conversion must never be confused with
+            // per-LOD residency.
+            if (!ensureAllLodsLoaded()) return false;
             if (m_asset.physicalSize.geometrySpace == PhysicalGeometrySpace::Meters)
             {
                 if (!m_asset.physicalSize.enabled || !std::isfinite(m_asset.physicalSize.sourceToMeters) ||
@@ -8516,7 +8613,9 @@ void ModelAssetEditorSession::applyConfiguredLodBasis(std::size_t lodIndex, Mesh
     convertMeshBasisToCanonical(mesh, basisPreset(preset));
 }
 
-bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(std::size_t lodIndex)
+bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(
+    std::size_t lodIndex,
+    const std::string& requestedPreset)
 {
     if (!ensureLodLoaded(lodIndex)) return false;
     if (lodIndex >= m_asset.renderLods.size())
@@ -8524,14 +8623,20 @@ bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(std::size_
         sendStatus("Invalid LOD for SOURCE basis rebuild", true);
         return false;
     }
-    const auto preset = lodSourceBasisPreset(lodIndex);
-    if (preset.empty() || preset == "game_current")
+
+    const std::string previousPreset = lodSourceBasisPreset(lodIndex);
+    const std::string targetPreset = requestedPreset.empty() ? previousPreset : requestedPreset;
+    const SourceBasis previousBasis = basisPreset(previousPreset);
+    const SourceBasis targetBasis = basisPreset(targetPreset);
+    if (!validSourceBasis(targetBasis) || customBasisKey(targetBasis) != targetPreset)
     {
-        sendStatus(
-            "LOD" + std::to_string(lodIndex) +
-            " has no configured source-axis conversion. Convert this LOD first; no geometry was changed.", true);
+        sendStatus("LOD" + std::to_string(lodIndex) + " axis mapping is invalid", true);
         return false;
     }
+
+    const glm::mat3 previousToGame = sourceToCanonical(previousBasis);
+    const glm::mat3 targetToGame = sourceToCanonical(targetBasis);
+    const glm::mat3 visualDelta = targetToGame * glm::transpose(previousToGame);
 
     struct PendingSourceMesh
     {
@@ -8548,9 +8653,9 @@ bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(std::size_
     const auto materialsBefore = m_asset.materials;
     std::string error;
 
-    // Two-phase rebuild: read and transform every source-backed canonical mesh
-    // first. If one file cannot be imported, restore material-table mutations
-    // made by the importer and leave ALL resident geometry untouched.
+    // Two-phase rebuild. Every source-backed mesh is reread from immutable SOURCE
+    // and transformed directly by the selected semantic-axis mapping. Nothing is
+    // committed until every SOURCE mesh has imported successfully.
     for (std::size_t gi = 0; gi < lod.geometries.size(); ++gi)
     {
         const auto& geometry = lod.geometries[gi];
@@ -8560,7 +8665,7 @@ bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(std::size_
         {
             m_asset.materials = materialsBefore;
             sendStatus(
-                "LOD" + std::to_string(lodIndex) + " SOURCE basis rebuild refused: " + error,
+                "LOD" + std::to_string(lodIndex) + " axis rebuild refused: " + error,
                 true);
             return false;
         }
@@ -8572,25 +8677,20 @@ bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(std::size_
         {
             m_asset.materials = materialsBefore;
             sendStatus(
-                "LOD" + std::to_string(lodIndex) + " SOURCE basis rebuild failed for " +
+                "LOD" + std::to_string(lodIndex) + " axis rebuild failed for " +
                 sourceFile.filename().string() + ": " + error,
                 true);
             return false;
         }
-        applyConfiguredLodBasis(lodIndex, item.mesh);
+        transformMeshBasis(item.mesh, targetToGame);
         item.sourceHash = sourceFileFingerprint(sourceFile);
         pending.push_back(std::move(item));
     }
 
-    if (pending.empty())
-    {
-        m_asset.materials = materialsBefore;
-        sendStatus("LOD" + std::to_string(lodIndex) + " has no source-backed geometry to rebuild");
-        return true;
-    }
-
+    std::set<std::size_t> rebuiltGeometryIndices;
     for (auto& item : pending)
     {
+        rebuiltGeometryIndices.insert(item.geometryIndex);
         auto& geometry = lod.geometries[item.geometryIndex];
         geometry.mesh = std::move(item.mesh);
         m_meshPreparationRecords[lodIndex].erase(geometry.id);
@@ -8598,6 +8698,31 @@ bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(std::size_
         m_rawMeshSnapshots[lodIndex].erase(geometry.id);
         m_sourceMeshFingerprints[lodIndex][item.sourcePath] = item.sourceHash;
         m_sourceMeshQuickStamps[lodIndex].erase(item.sourcePath);
+    }
+
+    // Geometry without an immutable SOURCE file (generated/editor-authored data)
+    // is already resident in the previous canonical frame. Move it by the delta
+    // between the previous and requested mappings instead of reinterpreting it.
+    for (std::size_t gi = 0; gi < lod.geometries.size(); ++gi)
+        if (rebuiltGeometryIndices.find(gi) == rebuiltGeometryIndices.end())
+            transformMeshBasis(lod.geometries[gi].mesh, visualDelta);
+
+    // RenderNode placement belongs to the LOD document and must follow the same
+    // frame change even when its geometry was rebuilt from SOURCE.
+    transformRenderLodPlacement(lod, visualDelta);
+
+    if (targetPreset == "game_current") m_lodSourceBasisPresets.erase(lodIndex);
+    else m_lodSourceBasisPresets[lodIndex] = targetPreset;
+
+    bool sharedFrameChanged = false;
+    if (lodIndex == 0)
+    {
+        const SourceBasis sharedPrevious = basisPreset(m_sharedSourceBasisPreset);
+        const glm::mat3 sharedDelta = targetToGame * glm::transpose(sourceToCanonical(sharedPrevious));
+        transformSharedSourceFrame(m_asset, sharedDelta);
+        m_sharedSourceBasisPreset = targetPreset;
+        sharedFrameChanged = true;
+        markManifestDirty();
     }
 
     synchronizeMeshSourceRecords(true);
@@ -8618,6 +8743,15 @@ bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(std::size_
         markMaintenanceIssues(componentId, {"prepare", "surfaces"});
         if (derivedLodsExist) markMaintenanceIssues(componentId, {"lods"});
     }
+    // A frame change invalidates geometry-derived evidence even for source-less
+    // meshes because positions/normals/winding may have changed by the explicit
+    // coordinate transform.
+    for (const auto& geometry : lod.geometries)
+    {
+        m_meshPreparationRecords[lodIndex].erase(geometry.id);
+        m_rawMeshSnapshots[lodIndex].erase(geometry.id);
+        resetMeshStageChecks(lodIndex, geometry.id);
+    }
 
     recomputeRenderLodBounds(lod);
     if (lodIndex == 0)
@@ -8626,16 +8760,20 @@ bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(std::size_
         m_asset.maxBounds = lod.maxBounds;
     }
     markLodDirty(lodIndex);
-    if (m_asset.materials.size() != materialsBefore.size()) markManifestDirty();
+    if (m_asset.materials.size() != materialsBefore.size() || sharedFrameChanged) markManifestDirty();
     markEditorStateDirty();
-    invalidateWizardFrom("source");
+    invalidateWizardFrom("lods");
     syncDirty();
     sendAsset({lodIndex}, true);
     sendSourceChangeScan();
     sendStatus(
-        "Rebuilt LOD" + std::to_string(lodIndex) + " from " + std::to_string(pending.size()) +
-        " SOURCE mesh(es) and reapplied " + preset +
-        " -> game axes. RenderNode identity/placement and instance-family links were preserved; PREPARE/SURFACES are stale.");
+        "LOD" + std::to_string(lodIndex) + " axis mapping applied: SOURCE RIGHT=" +
+        axisDirectionToken(targetBasis.right) + " UP=" + axisDirectionToken(targetBasis.up) +
+        " NOSE=" + axisDirectionToken(targetBasis.forward) +
+        " -> GAME RIGHT=+X UP=+Y NOSE=-Z; rebuilt " + std::to_string(pending.size()) +
+        " SOURCE mesh(es), preserved RenderNode/instance identity" +
+        (lodIndex == 0 ? "; shared SOURCE hit volumes followed LOD0" : std::string()) +
+        ". Other LODs were not changed; PREPARE/SURFACES are stale.");
     return true;
 }
 
@@ -10543,60 +10681,35 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             return;
         }
 
-        if (command == "convert_lod_source_basis" || command == "convert_source_basis")
+        if (command == "set_lod_axis_mapping")
         {
             const auto lodIndex = message.value("lodIndex", std::size_t(-1));
-            const std::string preset = message.value("preset", std::string("game_current"));
+            if (lodIndex == std::size_t(-1) || lodIndex >= m_asset.renderLods.size())
+                throw std::runtime_error("axis mapping requires an explicit active LOD");
+            SourceBasis requested;
+            requested.preset = "custom";
+            requested.canonicalized = true;
+            if (!parseAxisDirectionToken(message.value("right", std::string()), requested.right) ||
+                !parseAxisDirectionToken(message.value("up", std::string()), requested.up) ||
+                !parseAxisDirectionToken(message.value("forward", std::string()), requested.forward) ||
+                !validSourceBasis(requested))
+                throw std::runtime_error("axis mapping requires three distinct signed SOURCE axes for RIGHT / UP / NOSE");
+            reimportLodSourcePartsInConfiguredBasis(lodIndex, customBasisKey(requested));
+            return;
+        }
+        if (command == "convert_lod_source_basis" || command == "convert_source_basis")
+        {
+            // Backward-compatible command path. It now routes through the same
+            // authoritative per-LOD mapping/rebuild operation instead of owning a
+            // second axis-conversion mechanism.
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const std::string preset = message.value("preset", std::string("blender_model"));
             if (lodIndex == std::size_t(-1) || lodIndex >= m_asset.renderLods.size())
                 throw std::runtime_error("axis conversion requires an explicit active LOD");
-            if (preset != "blender_model")
+            const SourceBasis requested = basisPreset(preset);
+            if (customBasisKey(requested) != preset)
                 throw std::runtime_error("unsupported SOURCE basis preset");
-            if (!ensureLodLoaded(lodIndex)) return;
-
-            const std::string currentVisualPreset = lodSourceBasisPreset(lodIndex);
-            const bool visualNeedsConversion = currentVisualPreset == "game_current";
-            const bool sharedNeedsConversion = lodIndex == 0 && m_sharedSourceBasisPreset == "game_current" &&
-                !(m_asset.sourceBasis.canonicalized && m_asset.sourceBasis.preset != "game_current");
-            if (!visualNeedsConversion && currentVisualPreset != preset)
-                throw std::runtime_error("LOD basis conversion already uses a different preset; reimport that LOD before changing basis");
-            if (lodIndex == 0 && !sharedNeedsConversion && m_sharedSourceBasisPreset != "game_current" &&
-                m_sharedSourceBasisPreset != preset && !(m_asset.sourceBasis.canonicalized && m_asset.sourceBasis.preset != "game_current"))
-                throw std::runtime_error("shared SOURCE frame already uses a different basis preset");
-            if (!visualNeedsConversion && !sharedNeedsConversion)
-            {
-                sendStatus("NO CHANGES: LOD" + std::to_string(lodIndex) + " already uses the requested game-axis conversion");
-                return;
-            }
-
-            const auto sourceBasis = basisPreset(preset);
-            if (visualNeedsConversion)
-            {
-                convertRenderLodBasisToCanonical(m_asset.renderLods[lodIndex], sourceBasis);
-                m_lodSourceBasisPresets[lodIndex] = preset;
-                m_meshPreparationRecords.erase(lodIndex);
-                m_rawMeshSnapshots.erase(lodIndex);
-                for (const auto& geometry : m_asset.renderLods[lodIndex].geometries)
-                    resetMeshStageChecks(lodIndex, geometry.id);
-                markLodDirty(lodIndex);
-                if (lodIndex == 0)
-                {
-                    m_asset.minBounds = m_asset.renderLods[0].minBounds;
-                    m_asset.maxBounds = m_asset.renderLods[0].maxBounds;
-                }
-            }
-            if (sharedNeedsConversion)
-            {
-                convertSharedSourceFrameToCanonical(m_asset, sourceBasis);
-                m_sharedSourceBasisPreset = preset;
-                markManifestDirty();
-            }
-            markEditorStateDirty();
-            invalidateWizardFrom("lods");
-            sendAsset({lodIndex}, true);
-            sendStatus(
-                "Converted LOD" + std::to_string(lodIndex) + " source axes to game +X/+Y/-Z" +
-                (sharedNeedsConversion ? "; LOD0 shared SOURCE frame and source hit volumes converted with it" : std::string()) +
-                ". Other visual LODs were not changed; PREPARE evidence for this LOD is stale.");
+            reimportLodSourcePartsInConfiguredBasis(lodIndex, preset);
             return;
         }
         if (command == "reimport_lod_source_basis")

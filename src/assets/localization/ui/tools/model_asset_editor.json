@@ -230,18 +230,18 @@
       "ja": "どの Node からも参照されない GeometryDefinition を削除。事前に一覧表示。"
     },
     "model_editor.toolbar.axes.title": {
-      "en": "BLENDER AXES → GAME",
-      "ru": "ОСИ BLENDER → GAME",
-      "zh-Hans": "BLENDER 坐标轴 → 游戏",
-      "es": "EJES BLENDER → JUEGO",
-      "ja": "BLENDER 軸 → GAME"
+      "en": "LOD AXIS MAPPING",
+      "ru": "ОСИ АКТИВНОГО LOD",
+      "zh-Hans": "LOD 坐标轴映射",
+      "es": "MAPEO DE EJES LOD",
+      "ja": "LOD 軸マッピング"
     },
     "model_editor.toolbar.axes.desc": {
-      "en": "Convert Blender model axes to canonical game +X/+Y/-Z. Do not use on game_current assets.",
-      "ru": "Преобразовать оси Blender в канонические игровые +X/+Y/-Z. Не применять к game_current.",
-      "zh-Hans": "将 Blender 模型坐标轴转换为游戏标准 +X/+Y/-Z。不要用于 game_current。",
-      "es": "Convierte ejes Blender a +X/+Y/-Z del juego. No usar en game_current.",
-      "ja": "Blender 軸をゲーム標準 +X/+Y/-Z に変換。game_current には使用しない。"
+      "en": "Map the active LOD SOURCE axes into the fixed game frame: RIGHT +X, UP +Y, NOSE -Z. Other LODs stay untouched.",
+      "ru": "Сопоставить оси SOURCE активного LOD с фиксированной игровой системой: ВПРАВО +X, ВВЕРХ +Y, НОС -Z. Другие LOD не изменяются.",
+      "zh-Hans": "将当前 LOD 的 SOURCE 坐标轴映射到固定游戏坐标系：右 +X，上 +Y，机头 -Z。其他 LOD 不变。",
+      "es": "Mapea los ejes SOURCE del LOD activo al marco fijo del juego: DERECHA +X, ARRIBA +Y, MORRO -Z. Los demás LOD no cambian.",
+      "ja": "アクティブ LOD の SOURCE 軸を固定 GAME 座標（RIGHT +X / UP +Y / NOSE -Z）へ対応付けます。他の LOD は変更しません。"
     },
     "model_editor.toolbar.edges.title": {
       "en": "EDIT EDGES",

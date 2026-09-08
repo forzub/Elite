@@ -1176,7 +1176,8 @@ for forbidden in (
 for token in (
     'runtime ? CatalogBootstrapMode::RuntimeAssembly : CatalogBootstrapMode::Folder',
     'CatalogSourceAuthority::Folder',
-    'if (it->sourceAuthority == CatalogSourceAuthority::Folder && !ensureAllLodsLoaded()) return false;',
+    'OPEN is an eager viewport-residency boundary',
+    'if (!ensureAllLodsLoaded()) return false;',
     'command == "reload_mesh_from_source"',
     "selectedSourceFilePath",
     "sendAsset({lodIndex}, true)",

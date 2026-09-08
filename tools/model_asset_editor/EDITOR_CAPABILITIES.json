@@ -63,7 +63,7 @@
     },
     {
       "id": "independent_render_lods",
-      "description": "Each render LOD owns an independent graph and v4 payload file. Folder-authoritative editor sessions keep every declared LOD resident on OPEN; LOAD/RELOAD/UNLOAD remain explicit binary-package operations for non-folder/diagnostic workflows.",
+      "description": "Each render LOD owns an independent graph and v4 payload file. OPEN/RESTORE keep every declared LOD resident and publish every LOD to the viewport regardless of SOURCE authority; LOAD/RELOAD/UNLOAD remain explicit diagnostic/package operations.",
       "contracts": {
         "data_model": {
           "path": "src/model_asset/ModelAsset.h",

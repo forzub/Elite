@@ -48,7 +48,7 @@ Authority order remains explicit:
 2. Otherwise, if production exists, production becomes the initial WORKING basis.
 3. Otherwise, or on explicit whole-asset SOURCE reimport, import SOURCE.
 
-For `CatalogSourceAuthority::Folder`, OPEN must make every **declared** render LOD resident before the asset is presented for source maintenance. The editor must not recreate the 0.10.57 state where LOD0 was resident while an authored/saved LOD1 remained hidden/unloaded.
+OPEN/RESTORE must make every **declared** render LOD resident before the asset is presented to the viewport, regardless of SOURCE authority. The editor must never recreate a state where LOD0 is resident while a declared LOD1+ remains hidden/unloaded merely because no tab has requested it yet. Per-LOD edit operations may mutate only their target LOD; that isolation must not be implemented by making residency lazy.
 
 Initial folder SOURCE import discovers every contiguous `LOD0`, `LOD1`, `LOD2`, ... directory and all ordinary OBJ files directly in those LOD directories. `variants/**/*.obj` are additional/replacement meshes and are discovered separately.
 
@@ -369,3 +369,16 @@ Coordinate-basis conversion is owned by a render LOD, not by the asset as one ir
 - A recovery rebuild of an already converted LOD transforms only newly decoded visual meshes. It must not transform the shared SOURCE/hit frame again.
 
 Regression protection is provided by `tests/architecture_contracts/check_model_asset_per_lod_basis.py` together with the SOURCE maintenance, physical-scale, frozen-core-tabs and EditorViewState contracts.
+
+### Explicit semantic mapping and fixed game frame
+
+The canonical game frame is not user-configurable: `RIGHT = +X`, `UP = +Y`, `NOSE/FORWARD = -Z`; therefore the editor ground plane is `XZ` and the vertical axis is `Y`. Axis authoring configures how a SOURCE LOD is interpreted, not what the game coordinate system means.
+
+- The active-LOD mapping is expressed by three signed SOURCE directions: semantic RIGHT, UP and NOSE. Their absolute axis families must be X, Y and Z exactly once; signs are independently selectable.
+- Named Blender compatibility is `RIGHT=+X, UP=+Z, NOSE=-Y`. An arbitrary authored ship may use a different mapping, for example a source whose nose lies on +X can select `NOSE=+X` and assign RIGHT/UP from the remaining signed Y/Z axes.
+- Custom mappings persist in the same per-LOD basis authority as `axis:<right>,<up>,<nose>`. They are reapplied on every SOURCE reload/add/replace/reimport boundary for that LOD.
+- Changing an already-configured mapping is an explicit remap, not an incremental blind rotation: source-backed geometry is rebuilt from immutable SOURCE under the requested mapping, source-less geometry and RenderNode placement follow the old→new mapping delta, and other LOD documents are untouched.
+- LOD0 owns the shared SOURCE semantic/collision/hit frame for coordinate mapping purposes. Remapping LOD0 applies the old→new delta to that frame; remapping LOD1+ never rotates the same shared volumes again.
+- The viewport must show the fixed semantic game-frame labels plus the active LOD's SOURCE mapping so that geometry orientation can be judged without guessing which raw axis is intended as ship nose/up/right.
+
+Regression protection is also provided by `tests/architecture_contracts/check_model_asset_axis_mapping.py`.

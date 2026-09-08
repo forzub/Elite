@@ -294,7 +294,9 @@ private:
     bool reloadMeshFromSource(std::size_t lodIndex, std::size_t geometryIndex);
     std::string lodSourceBasisPreset(std::size_t lodIndex) const;
     void applyConfiguredLodBasis(std::size_t lodIndex, MeshLod& mesh) const;
-    bool reimportLodSourcePartsInConfiguredBasis(std::size_t lodIndex);
+    bool reimportLodSourcePartsInConfiguredBasis(
+        std::size_t lodIndex,
+        const std::string& requestedPreset = {});
     bool replaceSourcePart(std::size_t lodIndex, std::size_t geometryIndex, bool publish = true, bool rescan = true);
     bool replaceSourcePartByPath(std::size_t lodIndex, const std::string& sourcePath);
     bool addSourcePart(std::size_t lodIndex, const std::string& sourcePath, bool publish = true, bool rescan = true);

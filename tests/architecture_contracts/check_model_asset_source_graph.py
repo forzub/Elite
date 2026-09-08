@@ -133,16 +133,17 @@ for token in (
     if token not in runtime_importer:
         raise AssertionError(f"runtime bootstrap still suppresses folder geometry: {token!r}")
 
-# Folder-authoritative OPEN must not leave sibling declared LODs unloaded.
+# OPEN residency is independent of SOURCE authority: both modern WORKING resume
+# and modern production adoption must load every declared LOD before publication.
 select_body = body_between(
     session,
     "bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimport)",
     "bool ModelAssetEditorSession::saveWorkingAsset(bool quiet)",
 )
-if select_body.count(
-    "if (it->sourceAuthority == CatalogSourceAuthority::Folder && !ensureAllLodsLoaded()) return false;"
-) < 2:
-    raise AssertionError("Folder OPEN must eagerly load declared WORKING and production LODs")
+if select_body.count("if (!ensureAllLodsLoaded()) return false;") < 2:
+    raise AssertionError("OPEN must eagerly load declared WORKING and production LODs")
+if "sourceAuthority == CatalogSourceAuthority::Folder && !ensureAllLodsLoaded()" in select_body:
+    raise AssertionError("OPEN residency is still incorrectly conditional on SOURCE authority")
 
 # ---------------------------------------------------------------------------
 # Exact-hash SOURCE synchronization.

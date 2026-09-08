@@ -202,19 +202,8 @@ require(
 for token in (
     "maintenanceSourceScanHtml",
     "bindMaintenanceSourceScan",
-    "maintenanceScopeWhole",
-    "maintenanceScopeSelected",
-    "maintenanceWorksetBarHtml",
-    "maintenanceLodWorkHtml",
     "maintenanceFileName",
     "data-maintenance-scan-source",
-    "replace_source_part",
-    "add_source_part",
-    "replace_source_variant",
-    "add_source_variant",
-    "prepare_geometry",
-    "analyze_geometry_preflight",
-    "regenerate_geometry_lods",
     "source_change_scan_result",
     "reload_mesh_from_source",
     "↻ SOURCE",
@@ -222,7 +211,9 @@ for token in (
 ):
     if token not in web:
         raise AssertionError(f"maintenance UI missing {token!r}")
-for forbidden in ("data-maintenance-adopt-all", "ADOPT SOURCE REVISION", "ACCEPT BASELINE"):
+for forbidden in ("data-maintenance-adopt-all", "ADOPT SOURCE REVISION", "ACCEPT BASELINE",
+                  "maintenanceScopeWhole", "maintenanceScopeSelected", "maintenanceWorksetBarHtml",
+                  "bindMaintenanceWorkset", "renderPartMaintenance", "maintenanceLodWorkHtml"):
     if forbidden in web:
         raise AssertionError(f"unsafe/passive source adoption UI returned: {forbidden!r}")
 
@@ -243,7 +234,6 @@ for token in (
     "source_change_scan_result",
     "state.wizardStage==='source'",
     "renderWizardPanel()",
-    "renderPartMaintenance()",
 ):
     if token not in handle:
         raise AssertionError(f"SOURCE scan result routing missing {token!r}")

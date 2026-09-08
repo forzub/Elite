@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -35,6 +36,30 @@ struct SourceFolderVariant
 {
     std::filesystem::path file;
     std::string sourcePath;
+};
+
+// Bounded filesystem inventory used by the first phase of SCAN SOURCE CHANGES.
+// It records directory entries plus file metadata in one traversal per source
+// directory/tree. The inventory itself never opens OBJ/MTL payload bytes and no
+// .elmesh package participates. The session then exact-hashes each discovered
+// SOURCE file and imports only new/changed hashes. quickStamp is retained only
+// for backward-compatible state parsing/diagnostics; exact sourceHash is the
+// schema-13 comparison authority.
+struct SourceFolderMetadataEntry
+{
+    std::size_t lodIndex = 0;
+    std::filesystem::path file;
+    std::string sourcePath;
+    bool variant = false;
+    std::uint64_t quickStamp = 0;
+};
+
+struct SourceFolderMetadataInventory
+{
+    std::filesystem::path assetRoot;
+    std::vector<SourceFolderMetadataEntry> entries;
+    std::size_t directoryEnumerations = 0;
+    std::size_t metadataFiles = 0;
 };
 
 // Resolve an asset-level source directory against the editor's configured
@@ -80,6 +105,12 @@ std::vector<SourceFolderVariant> discoverSourceFolderVariants(
     const std::filesystem::path& sourceRoot,
     const std::filesystem::path& relativeDirectory,
     std::size_t lodIndex,
+    std::vector<std::string>* warnings = nullptr);
+
+bool scanSourceFolderMetadataInventory(
+    const std::filesystem::path& sourceRoot,
+    const std::filesystem::path& relativeDirectory,
+    SourceFolderMetadataInventory& out,
     std::vector<std::string>* warnings = nullptr);
 
 } // namespace elite::model_asset::editor

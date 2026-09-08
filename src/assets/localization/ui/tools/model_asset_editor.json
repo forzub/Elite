@@ -3506,6 +3506,10 @@
       "en": "SET SEMANTIC PARENT",
       "ru": "ИЗМЕНИТЬ РОДИТЕЛЯ SEMANTIC-УЗЛА"
     },
+    "model_editor.semantics.command.clean_legacy": {
+      "en": "CLEAN LEGACY SEMANTICS",
+      "ru": "ОЧИСТИТЬ LEGACY-СЕМАНТИКУ"
+    },
     "model_editor.wizard.physics_help": {
       "en": "Author gameplay collision and resolved rigid-body properties. Select a semantic node on the left; collision shapes and mass/inertia belong here, not to render LOD geometry.",
       "ru": "Настройте игровую коллизию и свойства твёрдого тела. Выберите semantic-узел слева; формы коллизии, масса и инерция принадлежат этому этапу, а не render LOD.",
@@ -4336,6 +4340,41 @@
       "zh-Hans": "此 LOD 中没有最近加载或更改的附加网格。",
       "es": "No hay mallas adicionales recién cargadas o cambiadas en este LOD.",
       "ja": "この LOD には最近読み込まれた、または変更された追加メッシュはありません。"
+    },
+    "model_editor.source.deleted": {
+      "en": "DELETED",
+      "ru": "УДАЛЕН",
+      "zh-Hans": "已删除",
+      "es": "ELIMINADO",
+      "ja": "削除済み"
+    },
+    "model_editor.source.confirm_delete": {
+      "en": "CONFIRM",
+      "ru": "ПОДТВЕРДИТЬ",
+      "zh-Hans": "确认",
+      "es": "CONFIRMAR",
+      "ja": "確認"
+    },
+    "model_editor.source.confirm_delete_hint": {
+      "en": "Confirm that the missing SOURCE file means this mesh must be removed from WORKING.",
+      "ru": "Подтвердить, что отсутствие SOURCE-файла означает удаление этого меша из WORKING.",
+      "zh-Hans": "确认缺失的 SOURCE 文件意味着应从 WORKING 中移除此网格。",
+      "es": "Confirmar que la ausencia del archivo SOURCE implica eliminar esta malla de WORKING.",
+      "ja": "SOURCE ファイルが存在しないため、このメッシュを WORKING から削除することを確認します。"
+    },
+    "model_editor.source.confirm_delete_question": {
+      "en": "Remove this missing SOURCE mesh from the WORKING object?",
+      "ru": "Удалить этот отсутствующий в SOURCE меш из рабочего объекта?",
+      "zh-Hans": "从 WORKING 对象中移除此缺失的 SOURCE 网格吗？",
+      "es": "¿Eliminar de WORKING esta malla ausente en SOURCE?",
+      "ja": "SOURCE から消えたこのメッシュを WORKING オブジェクトから削除しますか？"
+    },
+    "model_editor.source.confirm_delete_scope": {
+      "en": "Render instances and mesh-owned editor metadata will be removed. Semantic/gameplay nodes shared with other LODs are preserved. SAVE is still required.",
+      "ru": "Будут удалены render-инстансы и данные редактора, принадлежащие мешу. Семантические/gameplay-узлы, общие с другими LOD, сохраняются. После этого всё равно нужен SAVE.",
+      "zh-Hans": "将移除渲染实例和该网格拥有的编辑器元数据。与其他 LOD 共享的语义/玩法节点会保留。之后仍需 SAVE。",
+      "es": "Se eliminarán las instancias de render y los metadatos del editor propios de la malla. Se conservan los nodos semánticos/gameplay compartidos con otros LOD. Aún se requiere SAVE.",
+      "ja": "レンダーインスタンスとメッシュ固有のエディタメタデータを削除します。他の LOD と共有するセマンティック/gameplay ノードは保持します。その後も SAVE が必要です。"
     }
   }
 }

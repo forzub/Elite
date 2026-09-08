@@ -9792,6 +9792,41 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
 
         if (command == "request_catalog") { sendCatalog(); if (!m_selectedId.empty()) sendAsset(); return; }
         if (command == "request_settings") { sendSettings(); return; }
+        if (command == "editor_ui_diagnostic")
+        {
+            try
+            {
+                const auto path = wizardLogPath("editor_ui.log");
+                std::filesystem::create_directories(path.parent_path());
+                auto clipped = [&](const char* key, std::size_t limit) {
+                    auto value = message.value(key, std::string());
+                    if (value.size() > limit) value.resize(limit);
+                    return value;
+                };
+                json record = {
+                    {"serverTimestampUtc", utcTimestampNow()},
+                    {"clientTimestamp", clipped("timestamp", 96)},
+                    {"category", clipped("category", 96)},
+                    {"stage", clipped("stage", 64)},
+                    {"selectedMesh", clipped("selectedMesh", 512)},
+                    {"selectedRenderNode", clipped("selectedRenderNode", 512)},
+                    {"message", clipped("message", 8192)},
+                    {"stack", clipped("stack", 16384)},
+                    {"assetId", m_selectedId}
+                };
+                for (const char* key : {"activeLod", "sceneLod", "source", "line", "column", "context", "commandName"})
+                    if (message.contains(key)) record[key] = message[key];
+                std::ofstream out(path, std::ios::app);
+                if (!out) throw std::runtime_error("cannot open editor UI diagnostic log");
+                out << record.dump() << '\n';
+            }
+            catch (const std::exception& ex)
+            {
+                std::cerr << "[ModelAssetEditor] editor_ui_diagnostic write failed: " << ex.what() << '\n';
+            }
+            return;
+        }
+
         if (command == "save_settings")
         {
             const auto source = std::filesystem::path(message.value("sourceAssetsRoot", std::string()));

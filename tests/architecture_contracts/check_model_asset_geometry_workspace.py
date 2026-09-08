@@ -129,14 +129,14 @@ for token in (
 # Visibility is viewport-local and independent per LOD. The first checkbox
 # interaction from default-all isolates the clicked mesh, matching SOURCE/LOD.
 for token in (
-    "geometryStageVisibleByLod:new Map()",
+    "geometryStageVisibleByLod:{get:()=>editorViewState.geometryStageVisibility}",
     "function geometryStageVisibilitySet(",
     "function geometryStageNodeVisible(",
     "function setGeometryStageNodeVisible(",
     "if(existing===null){set=new Set([i]);}",
     "function showAllGeometryStageMeshes(",
     "function hideAllGeometryStageMeshes(",
-    "geometryStageVisible=state.wizardStage!=='geometry'||geometryStageNodeVisible(i)",
+    "editorViewVisible=editorViewState.renderNodeVisible(state.activeLod,i,rn)",
 ):
     if token not in web:
         raise AssertionError(f"GEOMETRY visibility contract missing {token!r}")

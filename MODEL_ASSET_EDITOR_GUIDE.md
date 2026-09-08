@@ -1,7 +1,7 @@
 # Elite Model Asset Editor — рабочая инструкция / архитектурный контекст
 
-**Актуально:** 2026-09-06 · 0.10.45 semantic link authoring / radial-support graph / global hit overlay
-**Редактор:** `Elite Model Asset Editor 0.10.45`
+**Актуально:** 2026-09-07 · 0.10.55 semantic hotfix / bounded source scan
+**Редактор:** `Elite Model Asset Editor 0.10.55`
 **Asset format:** v4
 **Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`, `SURFACES`, `SEMANTICS`. SOURCE/LODS владеют canonical mesh и render-LOD documents, GEOMETRY — LOD-local geometry/instances/replacements, SURFACES — surface intent и material contract. Следующий stage после SEMANTICS — `PHYSICS`.
 
@@ -23,9 +23,13 @@ GEOMETRY также имеет явные repair/authoring инструмент�
 
 ## SEMANTICS tree/link authoring contract (0.10.37)
 
-SEMANTICS is asset-wide and tree-first. The tree is the authority for parent/child structure; multiple nodes may be selected with Ctrl+click and dragged onto a parent. Reparenting is one backend transaction and preserves each moved subtree root's world pose. The joint stored on a child Node is presented as the incoming parent→child link, with FIXED / ROTATE / DETACH / ROT+DETACH edited directly in the tree row. ROTATE/DETACH preview transforms the entire child subtree and never writes asset data.
+SEMANTICS is asset-wide, but the transform structure is now a **forest**, not a mandatory single-root tree. `Node::parentIndex == NoIndex` means the part is authored directly in **ASSET SPACE**. Multiple top-level semantic parts are valid. Parent→child exists only when the child transform must really follow the parent; reparenting preserves the moved subtree root's world pose. The joint stored on a child Node remains the incoming transform-link control (FIXED / ROTATE / DETACH / ROT+DETACH). Structural support and physical detach authority belong to STRUCTURAL GRAPH, not to the transform parent.
 
-The viewport may show the same hierarchy as a preview-only 3D semantic graph: parent-child lines, clickable node/link markers and an explode factor that separates semantic parts without altering saved transforms. Multiple current roots must still separate visually before the hierarchy is authored. RenderNode bindings remain LOD-local and are summarized per LOD for the selected semantic node; exact stable-id APPLY TO ALL LODS remains available only in the binding editor. SEMANTICS CHECK requires exactly one semantic asset root.
+The viewport may show transform parent-child lines and explode preview without altering saved transforms. With one transform root it may be used as the preview center; with several ASSET SPACE parts the asset origin is the preview center. RenderNode bindings remain LOD-local and are summarized per LOD for the selected semantic node. SEMANTICS CHECK accepts any acyclic transform forest with valid bindings/payload; it no longer requires a unique semantic root. `FLATTEN STATIC → ASSET SPACE` removes only safe static transform edges while preserving world pose, and `SELECTED → ASSET SPACE` is the explicit manual equivalent.
+
+**0.10.54 transform-forest invariant:** ASSET SPACE is the implicit transform parent and is not a semantic Node. Top-level parts are ordinary semantic parts, not special ROOT objects. The temporary transform audit UI is removed; its conservative rule is encoded in the flatten command: FIXED, non-breakable, no state-transform/detached state, and no inherited dynamic transform. Structural graph, sockets, collisions, bindings and node indices are not rewritten by flatten.
+
+**0.10.55 hotfix invariant:** socket markers are SEMANTICS-only; SOURCE CHANGE SCAN is provenance-only and normally does not page unloaded `.elmesh` payloads into memory; static semantic flatten verifies resident geometry fingerprints before and after so it cannot silently mutate winding/normals/mesh coordinates.
 
 **0.10.38 binding invariant:** GEOMETRY duplicate/circular-copy operations create new visual RenderNodes but never copy semantic identity. New copies start UNBOUND and must be assigned explicitly in SEMANTICS. `VIS` in the tree is the count of active-LOD RenderNodes bound to that semantic node: `0 VIS` is legitimate for a semantic-only grouping root, while an ordinary visible part with `0 VIS` usually means its visual is currently bound elsewhere. A selected semantic node can repair this by entering visual-pick mode and clicking the intended mesh in the 3D viewport. Selection follows desktop tree conventions: click = one, Ctrl = toggle one, Shift = contiguous visible-tree range, Ctrl+Shift = add range.
 
@@ -1463,3 +1467,7 @@ After analysis all generated levels are selected by default. APPLY never changes
 APPLY is transactional. All selected candidates are built and validated before any authored LOD is replaced. Generated documents carry `sourceKind=generated` and `generatedFromLod=0`, preserve stable base-visual / source-variant authoring ids, and receive canonical-generation fingerprints for the LODS technical gate.
 
 After APPLY the authored LOD set remains dirty in memory. Press global SAVE to persist it. LODS CHECK validates the current state and unlocks GEOMETRY; it does not save anything.
+
+
+### Fast source-change scan (0.10.56)
+`SCAN SOURCE CHANGES` does not reread all authored OBJ bytes. Imported/adopted revisions keep the existing exact fingerprint and an editor-only quick metadata stamp. Normal scans compare quick stamps only. Older saved workspaces that predate quick stamps are shown as `LEGACY BASELINE · REIMPORT ONCE`; reimport only the relevant row(s) to establish the fast baseline.

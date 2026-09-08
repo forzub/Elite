@@ -45,12 +45,18 @@ std::vector<std::string> runtimeAssemblyLodSourcePaths(
     ObjectType typeId,
     std::size_t lodIndex);
 
-// Transitional assembly importer: hierarchy still comes from the current
+// Transitional assembly importer: module hierarchy still comes from the current
 // descriptor registry, but mesh data is parsed directly from source OBJ files
-// by the editor-side native importer. Runtime ObjLoader/MeshData processing is
-// deliberately bypassed so normals/UV/material/topology survive.
+// by the editor-side native importer. The legacy module->visual semantic scaffold
+// exists only transiently during bootstrap and is collapsed before this function
+// returns; RenderNode owns visual identity/placement in v4. When sourceDirectory
+// is available, every ordinary OBJ in every contiguous LOD<N> folder is imported
+// as an independent RenderLod; the registry remains semantic/LOD0 authority, not
+// an LOD whitelist. Runtime ObjLoader/MeshData processing is deliberately
+// bypassed so normals/UV/material/topology survive.
 bool importRuntimeAssembly(
     const std::filesystem::path& sourceRoot,
+    const std::filesystem::path& sourceDirectory,
     ObjectType typeId,
     const std::string& assetId,
     const std::string& displayName,

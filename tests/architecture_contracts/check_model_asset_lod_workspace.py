@@ -112,7 +112,7 @@ for token in (
     ".preflightMeshToolbar button,.lodTechButton{min-width:0;height:25px",
     ".preflightRow.meshStagePassed.blocker",
     ".preflightRow.meshValidationPending.blocker",
-    "lodPreflightVisibleByLod:new Map()",
+    "lodPreflightVisibleByLod:{get:()=>editorViewState.lodPreflightVisibility}",
     "function lodPreflightVisibilitySet(",
     "function setLodPreflightGeometryVisible(",
     "if(existing===null){set=new Set([id]);}",

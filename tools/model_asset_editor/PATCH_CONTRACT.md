@@ -307,3 +307,19 @@ The GEOMETRY workspace is per-mesh and LOD-local. It must not reintroduce the re
 - The frozen SOURCE contract from section 18 remains untouched, and LOD PREPARE/ANALYZE behavior from section 19 remains unchanged.
 
 Regression protection is provided by `tests/architecture_contracts/check_model_asset_geometry_workspace.py` together with the general editor, LOD workspace and frozen-SOURCE tests.
+
+## 21. Authoritative EditorViewState / tab-neutral viewport lifecycle — 0.10.64 architecture hotfix
+
+`EditorViewState` is the sole persistent browser view-state authority for the editor. Stage tabs may own stage-specific tool state, previews and authored operations, but they must not own another copy of viewport navigation state.
+
+- `EditorViewState` owns `activeLod`, `sceneLod`, the pending explicit LOD target, selected RenderNode/mesh/semantic node identity, per-LOD mesh visibility, per-LOD semantic hidden/isolation state, and the loaded/resident LOD sets. Historical names such as `geometryInventoryVisibleByLod`, `lodPreflightVisibleByLod`, `geometryStageVisibleByLod` and `hiddenRenderNodes` are compatibility projections over that one state, never independent stores.
+- A stage transition is view-state neutral. Switching SOURCE/LOD/GEOMETRY/SURFACES/SEMANTICS/PHYSICS/DAMAGE/VALIDATE/BUILD must not change active LOD, selected mesh/RenderNode, per-LOD visibility/isolation or camera transform/target. Stage-specific preview objects may be rebuilt, but the persistent view snapshot before and after the transition must compare equal.
+- While an asset is open, `sceneLod == activeLod` is an invariant. A mismatch is a state error, is written to diagnostics and must not be silently repaired by another fallback path. A scene with render-node geometry also requires that LOD to be resident.
+- `loadedLods` and `residentLods` are distinct. `loaded` means the native editor session owns the LOD document; `resident` means the browser has the geometry payload needed to build the scene. An async `lod_payload` only activates a LOD when it satisfies the explicit `pendingActiveLod`; unsolicited/cache payloads must never steal the active viewport.
+- Physical mesh visibility is evaluated from `EditorViewState` once. SOURCE, LOD and GEOMETRY visibility controls project geometry IDs or RenderNode indices into the same typed per-LOD visibility set. The LOD generator may still apply its temporary preview-only mesh filter, because that filter is a stage tool and is not persistent editor view state.
+- The accepted SOURCE branch/functions remain frozen. The exceptional architecture change required by this bug is below that protected surface: the SOURCE visibility/selection APIs now project onto the shared state. No SOURCE control, wording, layout or protected implementation fingerprint is changed.
+- SURFACES, SEMANTICS, PHYSICS, DAMAGE, VALIDATE and BUILD expose the shared mesh navigation panel: LOD0…LODN, compact `SHOW ALL / HIDE ALL`, per-row visibility/isolation checkbox behavior, table↔3D RenderNode selection, and per-stage red-brown pending / green passed coloring. Their stage-specific authoring tools remain separate and unchanged.
+- The retired `WORKING SET / WHOLE MODEL / RECENTLY LOADED / CHANGES` maintenance selector must not return as a second view-state authority or fallback.
+- Browser diagnostics capture JavaScript exceptions, `unhandledrejection`, WebSocket dispatch/receive errors, UI command dispatch errors and state invariant failures. Every record carries client timestamp, stage, active LOD, scene LOD and selected mesh/RenderNode. The backend appends JSONL to `wizardLogPath("editor_ui.log")`, i.e. the selected asset's `logs/editor_ui.log` beside its WORKING/intermediate workspace.
+
+Regression protection is provided by `tests/architecture_contracts/check_model_asset_editor_view_state.py` together with the general editor, LOD/GEOMETRY workspace and frozen-SOURCE tests.

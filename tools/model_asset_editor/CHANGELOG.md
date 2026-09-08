@@ -1,3 +1,11 @@
+## 0.10.64 — authoritative EditorViewState hotfix (2026-09-08)
+
+- Replaced competing stage-local LOD/selection/visibility owners with one browser `EditorViewState`. SOURCE/LOD/GEOMETRY compatibility map names are projections over the same per-LOD visibility state rather than independent `Map` instances.
+- Made tab transitions state-neutral: they no longer force LOD0, clear selection/visibility, or fit/reset the camera. `sceneLod == activeLod` is now a checked invariant; loaded native LODs are tracked separately from browser-resident geometry payloads, and an asynchronous payload can activate only the explicitly pending LOD.
+- Unified post-GEOMETRY mesh navigation for SURFACES through BUILD with LOD buttons, compact SHOW/HIDE ALL, per-row visibility/isolation behavior, 3D↔table selection and stage-check colors, while leaving stage-specific authoring tools intact. Removed the remaining retired maintenance workset UI/runtime bindings.
+- Added persistent editor UI diagnostics for JavaScript exceptions, unhandled rejections, WebSocket/UI dispatch failures and state-invariant failures. JSONL records are appended to `workspaces/<asset>/logs/editor_ui.log` under the configured WORKING/intermediate root.
+- Added an architecture contract for the complete EditorViewState lifecycle and kept the v0.10.62 SOURCE freeze fingerprint unchanged.
+
 # 0.10.64 — GEOMETRY per-mesh certification workspace
 
 - Simplified the GEOMETRY stage by removing its old WHOLE MODEL / RECENTLY LOADED workset switch. The active LOD remains the authority and the existing duplicate comparison/consolidation, replacement assignment and editing tools are preserved.

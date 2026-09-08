@@ -59,8 +59,8 @@ for token in [
 # The SOURCE geometry group has its own compact LOD browser and visibility controls.
 for token in [
     'id="geometryInventoryToolbar"',
-    "geometryInventoryVisibleByLod:new Map()",
-    "geometryInventorySelectedId:null",
+    "geometryInventoryVisibleByLod:{get:()=>editorViewState.geometryInventoryVisibility}",
+    "geometryInventorySelectedId:{get:()=>editorViewState.selectedMeshId",
     "function renderGeometryInventoryToolbar",
     "data-geometry-inventory-lod",
     "data-geometry-all-on",
@@ -84,10 +84,13 @@ for token in [
 if "send('save" in toolbar or "save_working" in toolbar:
     raise AssertionError("geometry visibility toolbar must remain viewport-only")
 
-# Checkbox state gates actual render meshes, not semantic/group hierarchy.
+# Checkbox state projects into the authoritative EditorViewState; physical mesh
+# visibility reads that one state rather than independently ANDing the SOURCE map.
 visibility = function_body(web, "updateVisibility")
-if "geometryInventoryNodeVisible(rn,lod)" not in visibility:
-    raise AssertionError("geometry inventory visibility is not applied to viewport meshes")
+if "editorViewState.renderNodeVisible(state.activeLod,i,rn)" not in visibility:
+    raise AssertionError("SOURCE geometry visibility no longer reaches authoritative viewport state")
+if "geometryInventoryNodeVisible(rn,lod)" in visibility:
+    raise AssertionError("SOURCE geometry map returned as an independent viewport visibility owner")
 for name in ("rebuildNormals", "rebuildEdgeOverlay"):
     if "geometryInventoryNodeVisible(node,lod)" not in function_body(web, name):
         raise AssertionError(f"{name} can leak an overlay for a hidden geometry")
@@ -121,14 +124,14 @@ for forbidden in ("reload_lod", "reload_mesh_from_source", "reimport_asset", "sa
     if forbidden in switch:
         raise AssertionError(f"geometry LOD view selector leaked mutating operation {forbidden!r}")
 
-# Asset switch clears viewport-only source filters; they are never serialized.
-if "state.geometryInventoryVisibleByLod.clear()" not in function_body(web, "acceptAssetState"):
-    raise AssertionError("asset switch does not clear SOURCE geometry visibility state")
+# A different asset resets the single editor view state. Visibility is not serialized.
+if "editorViewState.resetForAsset()" not in function_body(web, "acceptAssetState"):
+    raise AssertionError("asset switch does not reset authoritative EditorViewState")
 
-# The visibility gate is explicitly scoped to the SOURCE stage, so GEOMETRY /
-# SURFACES / SEMANTICS and later stages retain their own viewport behavior.
+# The accepted SOURCE helper remains SOURCE-scoped for its own UI projection.
+# Physical visibility persists across tabs through EditorViewState/updateVisibility.
 if "state.wizardStage!==\'source\'" not in function_body(web, "geometryInventoryNodeVisible"):
-    raise AssertionError("SOURCE geometry visibility filter leaks outside SOURCE stage")
+    raise AssertionError("accepted SOURCE projection helper lost its stage scope")
 
 # Contract and visible version fence.
 require("tools/model_asset_editor/PATCH_CONTRACT.md", "SOURCE active-LOD mesh browser is viewport-only")

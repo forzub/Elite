@@ -1,3 +1,12 @@
+
+## Model Asset Editor 0.10.56
+- SOURCE CHANGE SCAN is metadata-only and must not reread all OBJ payloads. Exact source hashes remain import/adopt provenance; persisted quick stamps make normal scans bounded by directory/stat work. Legacy exact-hash-only rows are shown as unverified and can be reimported individually to establish the fast baseline.
+## Model Asset Editor 0.10.55 — semantic/source-scan hotfix
+
+- Socket markers are again restricted to the SEMANTICS viewport.
+- Normal SOURCE CHANGE SCAN uses persisted source fingerprints instead of forcing every LOD payload resident; it publishes per-file progress and supports changed-part reimport by stable source path.
+- Static semantic flatten now verifies resident geometry fingerprints before/after and aborts on any render-geometry mutation.
+
 # PROJECT STATE
 
 Краткая живая записка о состоянии проекта. Это не замена архитектурным контрактам и тестам, а быстрый ориентир: что уже принято, что сейчас делаем и что намеренно оставлено на потом.
@@ -16,6 +25,14 @@
 - `[D]` — сознательно отложено.
 
 ---
+
+## Model Asset Editor 0.10.54 — ASSET SPACE transform forest
+
+- `[x]` SEMANTICS больше не требует единственного semantic root. `parentIndex == NoIndex` означает обычную semantic part непосредственно в ASSET SPACE; таких top-level parts может быть сколько угодно.
+- `[x]` `FLATTEN STATIC → ASSET SPACE` переносит только безопасные static transform branches с сохранением world pose; STRUCTURAL GRAPH, sockets, collision, RenderNode bindings и indices не меняются.
+- `[x]` `SELECTED → ASSET SPACE` даёт явное ручное reparent без необходимости создавать фиктивный общий root.
+- `[x]` Временный `TRANSFORM TREE AUDIT` удалён; ASSET SPACE показан как сворачиваемая псевдогруппа, а top-level parts маркируются `◇ ASSET`, а не `ROOT`.
+- `[~]` Legacy Cobretti после `CLEAN LEGACY SEMANTICS` должна пройти static flatten; после этого отдельно аудируем STRUCTURAL GRAPH и sockets.
 
 ## 1. Базовые принципы проекта
 
@@ -740,7 +757,7 @@ GEOMETRY workspace restored after the LOD-generator work: automatic stage entry 
 - `[x]` FIXED/ROTATE/DETACH/ROT+DETACH is authored on the incoming parent→child link directly in the child row.
 - `[x]` 3D semantic graph preview mirrors the tree with connection lines, clickable markers and exploded separation.
 - `[x]` Render bindings are summarized per LOD and the full active-LOD binding table is only an explicit edit disclosure.
-- `[x]` SEMANTICS CHECK requires exactly one semantic root; a helper can create an identity asset root and attach existing root branches.
+- `[x]` (historical 0.10.37, superseded by 0.10.54) SEMANTICS CHECK тогда требовал exactly one semantic root; текущий контракт допускает ASSET SPACE forest.
 
 
 
@@ -778,3 +795,41 @@ GEOMETRY workspace restored after the LOD-generator work: automatic stage entry 
 - `[x]` Rotation axis and runtime joint fields are visibly labelled. Preview speed is editor-only and independent of runtime `defaultRateDegPerSec`.
 - `[x]` Base semantic Position/Rotation/Pivot moved under Advanced semantic-frame controls; visual LOD bindings are presented as representation/repair metadata.
 - `[x]` Global Hit Volumes toolbar visibility works in SEMANTICS and other loaded 3D stages; collision editing/picking remains PHYSICS/DAMAGE-only, and visible volumes follow semantic explode/motion.
+## Model Asset Editor 0.10.47 draft (2026-09-06)
+
+- SEMANTICS is now dual-view: TREE = transform/kinematics, GRAPH = arbitrary structural links; both coexist in every asset.
+- Structural links are separate from their damage proxies. Welds use capsule proxies; mounts/locks use box proxies; controlled locks are commandable.
+- `.elmodel` v4 gains additive `STRL` / `SIZE` / `SMET` chunks without modifying legacy `SOCK`.
+- SOURCE owns offline physical-size normalization. Repeated resize is non-cumulative; legacy `LogicalDimensions` can seed/auto-apply the profile.
+- Socket compatibility profiles and camera viewport preview are authored in the model asset; concrete equipment remains gameplay/item data.
+- Legacy runtime panel seam discovery is not treated as authored truth; Cobra weld topology should be reviewed/created in GRAPH.
+## Model Asset Editor 0.10.48 UI selection sync (2026-09-06)
+- LODS viewport and preflight mesh table share `selectedRenderNode` as the only selection authority.
+- Viewport pick selects/scrolls the corresponding geometry row; row pick selects the corresponding render mesh without full-panel rerender.
+- Selected-mesh repair toolbar is a fixed equal 2×2 grid.
+## Model Asset Editor 0.10.49 all-source-LOD restore (2026-09-06)
+- Runtime-assembly source import now uses the selected asset folder as Render LOD authority beyond LOD0: every contiguous `LOD<N>` directory is discovered and loaded.
+- `ObjectAssemblyRegistry` remains semantic/LOD0 bootstrap authority only; it no longer suppresses a folder-authored whole-ship LOD1 or future LOD2+.
+- Higher LODs are independent render documents and do not need to mirror LOD0 part topology.
+
+## Model Asset Editor 0.10.50 structural graph selection UX (2026-09-06)
+
+- Runtime Cobra semantic TREE is explicitly recognized as migrated descriptor hierarchy (`ModuleDescriptor.parentModuleId` plus imported mesh-child semantic nodes), not geometry inference.
+- GRAPH now has an active-LOD render-mesh table synchronized with 3D picking; root assignment is an explicit action on the current mesh selection.
+- NEW LINK layout uses separate endpoint cards/options/actions; table selection may be assigned to A/B explicitly while direct 3D picking still fills A then B.
+
+## Model Asset Editor 0.10.51 semantic primary highlight (2026-09-07)
+- The selected logical/render item has a distinct green 3D highlight; selected descendants are a muted cyan subtree context, not the same visual state.
+- Semantic tree primary row and 3D semantic node marker use the same green cue.
+## Model Asset Editor 0.10.52 conservative legacy semantic cleanup (2026-09-07)
+- TREE has an explicit `CLEAN LEGACY SEMANTICS` action for the proven old runtime-import scaffold only: same-module synthetic visual semantic children are removed and their geometry RenderNodes are rebound directly to the module semantic Node.
+- Cleanup is deliberately conservative: real module parent chains are not flattened, RenderNode transforms/world placement are preserved, and Structural Graph links are only index-remapped as required by semantic deletion rather than created/deleted.
+- Runtime source reimport applies the same collapse automatically before publishing the imported v4 asset; existing saved working assets require the explicit TREE action and a later manual SAVE.
+- GRAPH has a separate disabled cleanup button as a visible placeholder; no Structural Graph cleanup/migration is implemented until legacy link/proxy authority is reviewed independently.
+
+
+## Model Asset Editor 0.10.53 transform-tree audit / primary mesh highlight (2026-09-07)
+- Added a read-only per-edge Transform Tree audit with `STATIC / INHERITED / STATE / JOINT` dependency classification before any flatten migration is attempted.
+- `STATIC` is intentionally diagnostic only: no runtime-varying transform source exists on that branch; non-zero static local transforms can still be baked during a later flatten. Sockets/collision/gameplay payload are not yet part of flatten safety.
+- TREE copy now states that parent→child is transform dependency, not physical support; Structural Graph remains physical connectivity authority.
+- Selected semantic parts prioritize the real bound RenderNode mesh with a bright lime highlight; descendants are dim context. Semantic marker gets the green primary cue only when the selected semantic node has no visual in the active LOD.

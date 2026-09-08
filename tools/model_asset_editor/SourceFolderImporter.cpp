@@ -129,6 +129,93 @@ std::string identityKey(const std::string& id)
     return lower(id);
 }
 
+struct SourceMetadataFile
+{
+    std::filesystem::path path;
+    std::string lowerName;
+    std::uintmax_t size = 0;
+    std::int64_t mtimeTicks = 0;
+};
+
+struct SourceMetadataDirectory
+{
+    std::vector<SourceMetadataFile> objects;
+    std::vector<SourceMetadataFile> materials;
+};
+
+void appendMetadataHashBytes(std::uint64_t& hash, const void* data, std::size_t size)
+{
+    const auto* bytes = static_cast<const unsigned char*>(data);
+    for (std::size_t i = 0; i < size; ++i)
+    {
+        hash ^= bytes[i];
+        hash *= 1099511628211ull;
+    }
+}
+
+void appendMetadataHashString(std::uint64_t& hash, const std::string& value)
+{
+    appendMetadataHashBytes(hash, value.data(), value.size());
+    const unsigned char separator = 0xffu;
+    appendMetadataHashBytes(hash, &separator, 1);
+}
+
+bool readSourceMetadata(
+    const std::filesystem::directory_entry& entry,
+    SourceMetadataFile& out,
+    std::vector<std::string>* warnings)
+{
+    std::error_code ec;
+    if (!entry.is_regular_file(ec) || ec) return false;
+    ec.clear();
+    const auto size = entry.file_size(ec);
+    if (ec)
+    {
+        if (warnings) warnings->push_back("cannot stat source file " + entry.path().generic_string() + ": " + ec.message());
+        return false;
+    }
+    ec.clear();
+    const auto time = entry.last_write_time(ec);
+    if (ec)
+    {
+        if (warnings) warnings->push_back("cannot read source mtime " + entry.path().generic_string() + ": " + ec.message());
+        return false;
+    }
+    out.path = entry.path().lexically_normal();
+    out.lowerName = lower(out.path.filename().generic_string());
+    out.size = size;
+    out.mtimeTicks = static_cast<std::int64_t>(time.time_since_epoch().count());
+    return true;
+}
+
+std::uint64_t sourceMetadataQuickStamp(
+    const SourceMetadataFile& object,
+    const std::vector<SourceMetadataFile>& materials)
+{
+    std::uint64_t hash = 1469598103934665603ull;
+    appendMetadataHashString(hash, object.lowerName);
+    appendMetadataHashBytes(hash, &object.size, sizeof(object.size));
+    appendMetadataHashBytes(hash, &object.mtimeTicks, sizeof(object.mtimeTicks));
+    for (const auto& material : materials)
+    {
+        appendMetadataHashString(hash, material.lowerName);
+        appendMetadataHashBytes(hash, &material.size, sizeof(material.size));
+        appendMetadataHashBytes(hash, &material.mtimeTicks, sizeof(material.mtimeTicks));
+    }
+    return hash;
+}
+
+void sortSourceMetadataDirectory(SourceMetadataDirectory& directory)
+{
+    const auto order = [](const SourceMetadataFile& a, const SourceMetadataFile& b) {
+        return a.lowerName == b.lowerName
+            ? a.path.generic_string() < b.path.generic_string()
+            : a.lowerName < b.lowerName;
+    };
+    std::sort(directory.objects.begin(), directory.objects.end(), order);
+    std::sort(directory.materials.begin(), directory.materials.end(), order);
+}
+
 void expandBounds(glm::vec3& minB, glm::vec3& maxB, const MeshLod& mesh, bool& haveBounds)
 {
     if (mesh.vertices.empty()) return;
@@ -469,6 +556,104 @@ std::vector<SourceFolderVariant> discoverSourceFolderVariants(
         return lower(a.sourcePath) < lower(b.sourcePath);
     });
     return result;
+}
+
+
+bool scanSourceFolderMetadataInventory(
+    const std::filesystem::path& sourceRoot,
+    const std::filesystem::path& relativeDirectory,
+    SourceFolderMetadataInventory& out,
+    std::vector<std::string>* warnings)
+{
+    out = SourceFolderMetadataInventory{};
+    const auto assetRoot = resolveSourceFolderAssetRoot(sourceRoot, relativeDirectory);
+    if (assetRoot.empty())
+    {
+        if (warnings) warnings->push_back("source asset directory not found: " + relativeDirectory.generic_string());
+        return false;
+    }
+    out.assetRoot = assetRoot;
+
+    const auto lodFolders = discoverLodFolders(assetRoot, warnings);
+    for (const auto& lod : lodFolders)
+    {
+        SourceMetadataDirectory direct;
+        std::error_code ec;
+        std::filesystem::directory_iterator it(
+            lod.path, std::filesystem::directory_options::skip_permission_denied, ec);
+        const std::filesystem::directory_iterator end;
+        ++out.directoryEnumerations;
+        for (; !ec && it != end; it.increment(ec))
+        {
+            SourceMetadataFile metadata;
+            if (!readSourceMetadata(*it, metadata, warnings)) continue;
+            const auto extension = lower(metadata.path.extension().string());
+            if (extension == ".obj") direct.objects.push_back(std::move(metadata));
+            else if (extension == ".mtl") direct.materials.push_back(std::move(metadata));
+            else continue;
+            ++out.metadataFiles;
+        }
+        if (ec && warnings)
+            warnings->push_back("cannot fully scan source directory " + lod.path.generic_string() + ": " + ec.message());
+        sortSourceMetadataDirectory(direct);
+        for (const auto& object : direct.objects)
+            out.entries.push_back({
+                lod.level, object.path, sourcePathFor(sourceRoot, object.path), false,
+                sourceMetadataQuickStamp(object, direct.materials)
+            });
+
+        const auto variantsRoot = lod.path / "variants";
+        ec.clear();
+        if (!std::filesystem::is_directory(variantsRoot, ec) || ec) continue;
+
+        std::map<std::filesystem::path, SourceMetadataDirectory> variantDirectories;
+        std::set<std::filesystem::path> visitedDirectories;
+        std::filesystem::recursive_directory_iterator recursive(
+            variantsRoot, std::filesystem::directory_options::skip_permission_denied, ec);
+        const std::filesystem::recursive_directory_iterator recursiveEnd;
+        for (; !ec && recursive != recursiveEnd; recursive.increment(ec))
+        {
+            const auto& entry = *recursive;
+            if (entry.is_directory(ec))
+            {
+                if (!ec) visitedDirectories.insert(entry.path().lexically_normal());
+                continue;
+            }
+            SourceMetadataFile metadata;
+            if (!readSourceMetadata(entry, metadata, warnings)) continue;
+            const auto extension = lower(metadata.path.extension().string());
+            if (extension != ".obj" && extension != ".mtl") continue;
+            auto& directory = variantDirectories[metadata.path.parent_path().lexically_normal()];
+            if (extension == ".obj") directory.objects.push_back(std::move(metadata));
+            else directory.materials.push_back(std::move(metadata));
+            ++out.metadataFiles;
+        }
+        // The recursive iterator itself is one traversal of the variants tree.
+        // Count it as one enumeration plus the unique nested directories only for
+        // diagnostics; no directory is reopened for an individual OBJ.
+        ++out.directoryEnumerations;
+        out.directoryEnumerations += visitedDirectories.size();
+        if (ec && warnings)
+            warnings->push_back("cannot fully scan variants directory " + variantsRoot.generic_string() + ": " + ec.message());
+
+        for (auto& [unusedDirectoryPath, directory] : variantDirectories)
+        {
+            (void)unusedDirectoryPath;
+            sortSourceMetadataDirectory(directory);
+            for (const auto& object : directory.objects)
+                out.entries.push_back({
+                    lod.level, object.path, sourcePathFor(sourceRoot, object.path), true,
+                    sourceMetadataQuickStamp(object, directory.materials)
+                });
+        }
+    }
+
+    std::sort(out.entries.begin(), out.entries.end(), [](const auto& a, const auto& b) {
+        if (a.lodIndex != b.lodIndex) return a.lodIndex < b.lodIndex;
+        if (a.variant != b.variant) return a.variant < b.variant;
+        return lower(a.sourcePath) < lower(b.sourcePath);
+    });
+    return true;
 }
 
 } // namespace elite::model_asset::editor

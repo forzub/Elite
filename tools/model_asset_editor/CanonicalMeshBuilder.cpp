@@ -1324,6 +1324,14 @@ CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)
     return result;
 }
 
+void flipMeshOrientation(MeshLod& mesh)
+{
+    for (auto& triangle : mesh.triangles)
+        std::swap(triangle.b, triangle.c);
+    for (auto& vertex : mesh.vertices)
+        vertex.normal = -vertex.normal;
+}
+
 std::uint64_t canonicalMeshFingerprint(const MeshLod& mesh)
 {
     std::uint64_t hash = 1469598103934665603ull;

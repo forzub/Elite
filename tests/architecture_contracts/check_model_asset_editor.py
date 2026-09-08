@@ -344,7 +344,7 @@ for token in (
     "let uiScrollPreserveDepth=0",
     "function preserveUiScroll(render)",
     "function renderWizardPanelContents()",
-    "function renderWizardPanel(){return preserveUiScroll(renderWizardPanelContents);}",
+    "function renderWizardPanel(){const result=preserveUiScroll(renderWizardPanelContents);renderSharedStageMeshPanel();return result;}",
     'data-preserve-scroll="side-panel"',
     'data-preserve-scroll="wizard-bar"',
     'data-preserve-scroll="geometry-compare"',
@@ -449,7 +449,7 @@ if 'id="renderInspectorSection" class="section" data-wizard-groups="geometry' in
 for token in (
     '.geometryStickyToolbar{position:sticky',
     '.geometryWorkspace .geometryStageTable{max-height:min(66vh,720px);min-height:390px}',
-    'geometryStageVisibleByLod:new Map()',
+    'geometryStageVisibleByLod:{get:()=>editorViewState.geometryStageVisibility}',
     "meshStageVisualClass(item.geometry,'geometry')",
     'syncGeometryWorkspaceSelectionUi',
     '.compareNode{white-space:normal',
@@ -458,7 +458,7 @@ for token in (
     '.baseReplaceIdentity .source{',
     'function geometrySelectionNeedsAncestor(index,lod)',
     "state.geometryCompareChecked.size>0",
-    'geometrySelected=!geometryGroupFilter||state.geometryCompareChecked.has(i)',
+    'editorViewVisible=editorViewState.renderNodeVisible(state.activeLod,i,rn)',
     'function renderGeometryEditor()',
     'function geometryStatsHtml(lod)',
 ):
@@ -1001,7 +1001,7 @@ for token in (
 # result stays visible as cached evidence across same-asset geometry refreshes.
 # Render-node visibility is editor-only and independent from semantic hiding.
 for token in (
-    "lodPreflightVisibleByLod:new Map()",
+    "lodPreflightVisibleByLod:{get:()=>editorViewState.lodPreflightVisibility}",
     "preflightMeshToolbarHtml",
     "preflightFlipSelected",
     "selectedMeshOrientationAction",

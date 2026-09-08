@@ -57,6 +57,10 @@ struct CanonicalMeshBuildResult
 
 CanonicalMeshAnalysis analyzeCanonicalMesh(const MeshLod& mesh);
 CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh);
+// Explicit authoring override applied after automatic canonical orientation.
+// This changes triangle winding and matching vertex normals for the whole mesh;
+// it does not alter topology, UVs, materials, bounds or edge identity.
+void flipMeshOrientation(MeshLod& mesh);
 std::uint64_t canonicalMeshFingerprint(const MeshLod& mesh);
 
 } // namespace elite::model_asset::editor

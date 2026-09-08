@@ -395,3 +395,10 @@ The shared LOD0 SOURCE frame contains both hierarchical semantic coordinate fram
 - The migration changes only primitive leaf orientation; current authored positions/sizes and the semantic hierarchy are retained. After migration, further LOD0 mappings are delta-based and non-cumulative. LOD1+ never touch this shared frame.
 
 Regression protection is provided by `tests/architecture_contracts/check_model_asset_shared_hit_frame.py`.
+
+## Axis rotation UI contract
+
+- Axis editing is expressed to the user as rotations around fixed GAME/world X/Y/Z axes, not as SOURCE semantic-axis remapping.
+- Each axis exposes +90°, -90°, and 180° buttons.
+- Dialog button presses do not mutate the asset; APPLY composes the pending orientation and rebuilds only the active LOD from immutable SOURCE.
+- Existing per-LOD basis persistence, eager all-LOD residency, and LOD0 shared hit-frame ownership remain unchanged.

@@ -791,3 +791,9 @@
 - Collision, sockets, joints and detached rigid-body metadata.
 - Baked duplicate -> instance consolidation with LOD0 rigid fitting.
 - Operation status/progress feedback and storage diagnostics.
+
+## 0.10.64 — axis rotation UI hotfix
+
+- Replaced the direct SOURCE-axis remap form with literal per-axis rotation buttons for the active LOD: X/Y/Z × (+90°, -90°, 180°).
+- Button presses are pending UI state only; APPLY rebuilds the active LOD from SOURCE into the composed final orientation, avoiding cumulative geometry drift.
+- Rotations are explicitly around the fixed GAME/world axes shown in the viewport. LOD0 keeps the shared SOURCE hit-volume frame synchronized through the existing axis-mapping backend contract.

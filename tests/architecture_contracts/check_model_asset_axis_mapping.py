@@ -9,16 +9,17 @@ html = (ROOT / 'src/assets/webui/model_asset_editor.html').read_text(encoding='u
 
 checks = [
     ('runtime canonical frame is explicitly +X right +Y up -Z nose', '+X right, +Y up, -Z forward/nose' in model),
-    ('viewport declares fixed game frame', 'GAME AXES · FIXED DESTINATION' in html and '+X = RIGHT' in html and '+Y = UP' in html and '-Z = NOSE' in html),
+    ('viewport declares fixed game frame', 'ROTATION AXES = FIXED GAME / VIEWPORT AXES' in html and '+X = RIGHT' in html and '+Y = UP' in html and '-Z = NOSE' in html),
     ('viewport ground plane is XZ with Y vertical', 'GROUND = XZ' in html and 'VERTICAL Y' in html),
     ('world gizmo has semantic direction labels', "'RIGHT +X'" in html and "'UP +Y'" in html and "'NOSE -Z'" in html and "'TAIL +Z'" in html),
-    ('axis modal uses direct SOURCE-to-GAME rows', 'id="axisSourceX"' in html and 'id="axisSourceY"' in html and 'id="axisSourceZ"' in html and 'SOURCE AXIS' in html and 'BECOMES IN GAME' in html),
-    ('opposite signed directions are shown automatically', 'OPPOSITE FOLLOWS' in html and 'oppositeAxisToken' in html and 'axisOppositeX' in html),
-    ('Blender and no-remap presets are explicit in direct notation', 'BLENDER DEFAULT · X→X / Y→Z / Z→Y' in html and 'NO REMAP · X→X / Y→Y / Z→Z' in html),
-    ('requested cyclic example is one-click direct mapping', "setAxisModalDirectMapping({x:'+Y',y:'+Z',z:'+X'})" in html),
-    ('direct mapping prevents duplicate target axis families', 'function validDirectAxisMapping' in html and 'new Set(values.map(axisFamily)).size===3' in html),
-    ('direct UI is converted to existing semantic backend command', 'semanticAxisMappingFromDirect' in html and "send('set_lod_axis_mapping',{lodIndex:li,right:mapping.right,up:mapping.up,forward:mapping.forward})" in html),
-    ('UI warns when a signed permutation mirrors handedness', 'MIRROR / HANDEDNESS FLIP' in html and 'directMappingDeterminant' in html),
+    ('axis modal exposes literal X/Y/Z rotation controls', 'ROTATE ACTIVE LOD' in html and html.count('data-axis-rotate="x"') == 3 and html.count('data-axis-rotate="y"') == 3 and html.count('data-axis-rotate="z"') == 3),
+    ('each axis offers +90 -90 and 180 degree steps', 'data-axis-deg="90"' in html and 'data-axis-deg="-90"' in html and 'data-axis-deg="180"' in html),
+    ('rotations are around fixed GAME viewport axes', 'ROTATION AXES = FIXED GAME / VIEWPORT AXES' in html and 'same fixed X/Y/Z axes drawn in the 3D viewport' in html),
+    ('rotation buttons compose only pending dialog orientation', 'function rotateDirectMapping' in html and 'state.axisModalDirectMapping=rotateDirectMapping' in html and 'Nothing is changed until APPLY' in html),
+    ('cancel/reset can discard pending rotation', 'RESET BUTTON PRESSES' in html and 'function resetAxisModalPending' in html and 'function closeAxisMappingModal' in html),
+    ('source no-rotation recovery remains explicit', 'SOURCE / NO ROTATION' in html and "{x:'+X',y:'+Y',z:'+Z'}" in html),
+    ('quarter-turn math follows fixed GAME right-handed axes', "axis==='x'" in html and "axis==='y'" in html and "axis==='z'" in html and 'rotateGameAxisTokenQuarterTurn' in html),
+    ('final rotation still uses the existing semantic backend command', 'semanticAxisMappingFromDirect' in html and "send('set_lod_axis_mapping',{lodIndex:li,right:mapping.right,up:mapping.up,forward:mapping.forward})" in html),
     ('backend supports serialized custom axis basis keys', 'return "axis:" + axisDirectionToken(basis.right)' in session),
     ('backend preserves reflected front-face winding explicitly', 'const bool flipWinding = glm::determinant(basis) < 0.0f;' in session),
     ('mapping command rebuilds only selected LOD', 'if (command == "set_lod_axis_mapping")' in session and 'reimportLodSourcePartsInConfiguredBasis(lodIndex, customBasisKey(requested));' in session),
@@ -28,4 +29,4 @@ failed=[name for name,ok in checks if not ok]
 if failed:
     for name in failed: print(f'[FAIL] {name}')
     sys.exit(1)
-print('[PASS] model asset editor exposes a fixed game frame with direct per-LOD SOURCE-axis remapping UI')
+print('[PASS] model asset editor exposes fixed GAME axes with per-LOD X/Y/Z rotation controls')

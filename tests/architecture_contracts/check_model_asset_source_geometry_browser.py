@@ -104,15 +104,15 @@ for token in [
     "checkbox.onclick=e=>e.stopPropagation()",
     "checkbox.onchange=e=>",
     "existing=geometryInventoryVisibilitySet(li,false)",
-    "set=new Set([id])",
+    "set=new Set([effectiveId])",
     "state.geometryInventoryVisibleByLod.set(li,set)",
 ]:
     if token not in render:
         raise AssertionError(f"geometry row interaction missing {token!r}")
 select = function_body(web, "selectGeometryInventoryDefinition")
-for token in ["representativeRenderNodeForGeometry", "selectRenderNode(representative.index)"]:
+for token in ["representativeRenderNodeForGeometry", "aliasRepresentativeRenderNode", "selectRenderNode(representative.index)"]:
     if token not in select:
-        raise AssertionError(f"geometry list does not use canonical RenderNode selection: {token!r}")
+        raise AssertionError(f"geometry list does not use canonical/instance RenderNode selection: {token!r}")
 
 # Switching from this local control follows the normal resident-LOD path and never
 # mixes RELOAD LOD/SOURCE semantics into a view-only operation.

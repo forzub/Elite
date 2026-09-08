@@ -117,6 +117,15 @@ private:
         // SOURCE inventory found the saved file missing. This is a two-phase
         // deletion marker only: SCAN never removes geometry automatically.
         bool sourceMissing = false;
+        // Editor-only SOURCE representation. "geometry" means this SOURCE mesh
+        // owns an independent resident RenderGeometryDefinition. "instance"
+        // means the SOURCE identity is intentionally represented by one or more
+        // RenderNodes that reference another canonical geometry. This survives
+        // SAVE/RESTORE so SOURCE reconciliation never resurrects a consolidated
+        // duplicate as an independent mesh.
+        std::string representation = "geometry";
+        std::string instanceOfGeometryId;
+        std::vector<std::string> instanceRenderNodeIds;
         // Per-mesh editor-stage evidence. Values are "passed", "failed" or
         // "not_checked". SOURCE replacement/new import resets every stage.
         std::map<std::string, std::string> stageChecks;
@@ -261,6 +270,11 @@ private:
     nlohmann::json serializeWizard() const;
     void captureCurrentSourceFingerprintBaseline();
     void synchronizeMeshSourceRecords(bool preserveChecks = true);
+    bool finalizeGeometryInstanceAlias(
+        std::size_t lodIndex,
+        const std::string& sourceGeometryId,
+        const std::string& canonicalGeometryId,
+        const std::vector<std::string>& renderNodeIds);
     void resetMeshStageChecks(std::size_t lodIndex, const std::string& geometryId);
     void recordMeshStageResult(const std::string& stage, bool passed, bool markDirty = true);
     void recordSurfaceMeshStageResults(bool markDirty = true);

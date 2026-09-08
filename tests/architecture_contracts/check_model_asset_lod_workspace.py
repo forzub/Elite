@@ -145,14 +145,17 @@ if ".filter(r=>Number(r.lodIndex)===Number(state.activeLod))" not in analysis_pa
     raise AssertionError("post-ANALYZE LOD mesh table is not scoped to the active render LOD")
 for body, label in ((inventory, "pre-ANALYZE inventory"), (analysis_panel, "post-ANALYZE table")):
     for token in (
-        "meshStageVisualClass(g,'lods')",
-        "meshStageCheckValue(g,'lods')",
         "data-preflight-select",
+        "data-preflight-logical-id",
         "data-lod-preflight-visible",
-        "selectPreflightGeometry",
+        "selectPreflightLogicalGeometry",
     ):
         if token not in body:
             raise AssertionError(f"{label} missing {token!r}")
+    if "meshStageVisualClass(logical,'lods')" not in body and "meshStageVisualClass(logical||g,'lods')" not in body:
+        raise AssertionError(f"{label} is not using canonical/instance-aware LODS stage coloring")
+    if "meshStageCheckValue(logical,'lods')" not in body and "meshStageCheckValue(logical||g,'lods')" not in body:
+        raise AssertionError(f"{label} is not using canonical/instance-aware LODS stage checks")
 
 if "✓ ПОДГОТОВЛЕН" not in inventory or "! НЕ ПОДГОТОВЛЕН" not in inventory:
     raise AssertionError("LOD inventory does not expose prepared/pending state")

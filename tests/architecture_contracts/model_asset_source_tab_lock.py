@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Frozen UI/behavior contract for the Model Asset Editor shell + SOURCE tab.
 
-The SOURCE tab was declared structurally complete at v0.10.62.  This helper is
-imported by the general editor architecture test and by a dedicated lock test.
-Changing the protected surface is intentionally noisy: update the lock only for
-an explicitly approved SOURCE/structure change and document the reason in
-PATCH_CONTRACT.md / CHANGELOG.md.
+The SOURCE tab was declared structurally complete at v0.10.62. The v0.10.64
+instance-family patch is an explicitly approved contract exception: SOURCE keeps
+logical identities that were consolidated into canonical geometry instances.
+The accepted layout remains frozen; only the instance-link semantics changed.
+Further protected changes still require PATCH_CONTRACT.md / CHANGELOG.md rationale.
 """
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ WIZARD_STAGE_ORDER = [
 ]
 
 # SHA-256 over the protected SOURCE implementation surface below.
-# Baseline: Model Asset Editor v0.10.62.
-SOURCE_TAB_SHA256 = "28e33bb8d5fcc3d2966d9a2d83aff052e541edf652009cc11878ace5d1c65771"
+# Baseline: v0.10.62 layout + v0.10.64 approved persistent instance-link semantics.
+SOURCE_TAB_SHA256 = "195b79be75a360d6685484b137e7ba12eec2aba22276add7db2cd6fb7aea990a"
 
 PROTECTED_FUNCTIONS = [
     "maintenanceSourceScanHtml",
@@ -234,7 +234,7 @@ def validate_source_tab_lock() -> None:
     actual_hash = current_source_tab_sha256(body)
     if actual_hash != SOURCE_TAB_SHA256:
         raise AssertionError(
-            "SOURCE TAB IS FROZEN at v0.10.62: protected SOURCE behavior/layout changed. "
+            "SOURCE TAB IS FROZEN at the accepted v0.10.64 instance-link baseline: protected SOURCE behavior/layout changed. "
             f"expected {SOURCE_TAB_SHA256}, got {actual_hash}. "
             "Do not update this digest as a drive-by fix. An intentional SOURCE/structure "
             "change requires an explicit exceptional case plus PATCH_CONTRACT.md/CHANGELOG.md rationale."

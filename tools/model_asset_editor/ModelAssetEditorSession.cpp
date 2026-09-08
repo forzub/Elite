@@ -3233,6 +3233,9 @@ nlohmann::json ModelAssetEditorSession::serializeEditorAuthoringState(const Edit
                 {"lod", lodIndex}, {"geometryId", geometryId},
                 {"sourceFileName", record.sourceFileName}, {"sourcePath", record.sourcePath},
                 {"sourceHash", record.sourceHash}, {"sourceMissing", record.sourceMissing},
+                {"representation", record.representation},
+                {"instanceOfGeometryId", record.instanceOfGeometryId},
+                {"instanceRenderNodeIds", record.instanceRenderNodeIds},
                 {"stageChecks", std::move(checks)}
             });
         }
@@ -3424,6 +3427,18 @@ bool ModelAssetEditorSession::parseEditorAuthoringState(
                     record.sourcePath = item.value("sourcePath", std::string());
                     record.sourceHash = item.value("sourceHash", std::uint64_t(0));
                     record.sourceMissing = schemaVersion >= 14 && item.value("sourceMissing", false);
+                    record.representation = item.value("representation", std::string("geometry"));
+                    if (record.representation != "instance") record.representation = "geometry";
+                    record.instanceOfGeometryId = item.value("instanceOfGeometryId", std::string());
+                    for (const auto& value : item.value("instanceRenderNodeIds", json::array()))
+                        if (value.is_string() && !value.get<std::string>().empty())
+                            record.instanceRenderNodeIds.push_back(value.get<std::string>());
+                    std::sort(record.instanceRenderNodeIds.begin(), record.instanceRenderNodeIds.end());
+                    record.instanceRenderNodeIds.erase(
+                        std::unique(record.instanceRenderNodeIds.begin(), record.instanceRenderNodeIds.end()),
+                        record.instanceRenderNodeIds.end());
+                    if (record.representation == "instance" && record.instanceOfGeometryId.empty())
+                        record.representation = "geometry";
                     const auto checks = item.value("stageChecks", json::object());
                     for (const char* stage : wizardStageOrder())
                     {
@@ -7382,6 +7397,61 @@ nlohmann::json ModelAssetEditorSession::serializeMaintenance() const
 void ModelAssetEditorSession::synchronizeMeshSourceRecords(bool preserveChecks)
 {
     std::map<std::size_t, std::map<std::string, MeshSourceRecord>> next;
+    const auto ensureChecks = [&](MeshSourceRecord& record)
+    {
+        for (const char* stage : wizardStageOrder())
+        {
+            auto it = record.stageChecks.find(stage);
+            if (it != record.stageChecks.end() &&
+                (it->second == "passed" || it->second == "failed" || it->second == "not_checked"))
+                continue;
+            const auto global = m_wizardStages.find(stage);
+            record.stageChecks[stage] = global != m_wizardStages.end() && global->second.status == "complete"
+                ? "passed" : "not_checked";
+        }
+    };
+
+    // Instance aliases are editor/source identities, not runtime geometry
+    // definitions. Preserve them even after the duplicate geometry payload has
+    // been removed: their RenderNodes now reference the canonical geometry.
+    if (preserveChecks)
+        for (const auto& [li, byGeometry] : m_meshSourceRecords)
+        {
+            if (li >= m_asset.renderLods.size() || li >= m_lodState.size() || !m_lodState[li].loaded) continue;
+            const auto& lod = m_asset.renderLods[li];
+            for (const auto& [geometryId, oldRecord] : byGeometry)
+            {
+                if (oldRecord.representation != "instance" || oldRecord.instanceOfGeometryId.empty()) continue;
+                const auto canonical = std::find_if(
+                    lod.geometries.begin(), lod.geometries.end(), [&](const RenderGeometryDefinition& geometry) {
+                        return geometry.id == oldRecord.instanceOfGeometryId;
+                    });
+                if (canonical == lod.geometries.end()) continue;
+
+                MeshSourceRecord record = oldRecord;
+                record.representation = "instance";
+                auto& ids = record.instanceRenderNodeIds;
+                ids.erase(std::remove_if(ids.begin(), ids.end(), [&](const std::string& id) {
+                    const auto node = std::find_if(lod.nodes.begin(), lod.nodes.end(), [&](const RenderNode& rn) {
+                        return rn.id == id;
+                    });
+                    return node == lod.nodes.end() || node->geometryIndex < 0 ||
+                        static_cast<std::size_t>(node->geometryIndex) >= lod.geometries.size() ||
+                        lod.geometries[static_cast<std::size_t>(node->geometryIndex)].id != record.instanceOfGeometryId;
+                }), ids.end());
+                std::sort(ids.begin(), ids.end());
+                ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+                const auto fpLod = m_sourceMeshFingerprints.find(li);
+                if (fpLod != m_sourceMeshFingerprints.end())
+                {
+                    const auto fp = fpLod->second.find(record.sourcePath);
+                    if (fp != fpLod->second.end() && fp->second != 0) record.sourceHash = fp->second;
+                }
+                ensureChecks(record);
+                next[li][geometryId] = std::move(record);
+            }
+        }
+
     for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
     {
         if (li >= m_lodState.size() || !m_lodState[li].loaded) continue;
@@ -7395,6 +7465,18 @@ void ModelAssetEditorSession::synchronizeMeshSourceRecords(bool preserveChecks)
                 const auto old = lodIt->second.find(geometry.id);
                 if (old != lodIt->second.end()) record = old->second;
             }
+            // A resident geometry definition is authoritative for this identity.
+            // If an old *finalized* alias id was explicitly restored, it is no
+            // longer an alias. During multi-node consolidation, however, the
+            // geometry can remain resident until its last RenderNode is moved;
+            // preserve that pending family link across synchronization calls.
+            const bool restoredFinalizedAlias = record.representation == "instance";
+            record.representation = "geometry";
+            if (restoredFinalizedAlias)
+            {
+                record.instanceOfGeometryId.clear();
+                record.instanceRenderNodeIds.clear();
+            }
             record.sourcePath = geometry.sourcePath;
             record.sourceFileName = std::filesystem::path(geometry.sourcePath).filename().string();
             const auto fpLod = m_sourceMeshFingerprints.find(li);
@@ -7403,20 +7485,105 @@ void ModelAssetEditorSession::synchronizeMeshSourceRecords(bool preserveChecks)
                 const auto fp = fpLod->second.find(geometry.sourcePath);
                 if (fp != fpLod->second.end() && fp->second != 0) record.sourceHash = fp->second;
             }
-            for (const char* stage : wizardStageOrder())
-            {
-                auto it = record.stageChecks.find(stage);
-                if (it != record.stageChecks.end() &&
-                    (it->second == "passed" || it->second == "failed" || it->second == "not_checked"))
-                    continue;
-                const auto global = m_wizardStages.find(stage);
-                record.stageChecks[stage] = global != m_wizardStages.end() && global->second.status == "complete"
-                    ? "passed" : "not_checked";
-            }
+            ensureChecks(record);
             next[li][geometry.id] = std::move(record);
         }
     }
     m_meshSourceRecords = std::move(next);
+}
+
+bool ModelAssetEditorSession::finalizeGeometryInstanceAlias(
+    std::size_t lodIndex,
+    const std::string& sourceGeometryId,
+    const std::string& canonicalGeometryId,
+    const std::vector<std::string>& renderNodeIds)
+{
+    if (sourceGeometryId.empty() || canonicalGeometryId.empty() || sourceGeometryId == canonicalGeometryId) return false;
+    if (lodIndex >= m_asset.renderLods.size()) return false;
+    auto& lod = m_asset.renderLods[lodIndex];
+    const auto sourceIt = std::find_if(
+        lod.geometries.begin(), lod.geometries.end(), [&](const RenderGeometryDefinition& geometry) {
+            return geometry.id == sourceGeometryId;
+        });
+    const auto canonicalIt = std::find_if(
+        lod.geometries.begin(), lod.geometries.end(), [&](const RenderGeometryDefinition& geometry) {
+            return geometry.id == canonicalGeometryId;
+        });
+    if (sourceIt == lod.geometries.end() || canonicalIt == lod.geometries.end()) return false;
+    if (isRenderVariantGeometryId(sourceGeometryId)) return false;
+
+    // SOURCE records are synchronized before geometry is erased. The source
+    // identity must remain present even when it is generated/no-path: the alias
+    // is an editor identity contract, not merely a filesystem convenience.
+    synchronizeMeshSourceRecords(true);
+    auto recordIt = m_meshSourceRecords[lodIndex].find(sourceGeometryId);
+    if (recordIt == m_meshSourceRecords[lodIndex].end()) return false;
+    auto& record = recordIt->second;
+    if (!record.instanceOfGeometryId.empty() && record.instanceOfGeometryId != canonicalGeometryId)
+        return false;
+
+    const std::size_t sourceGeometryIndex = static_cast<std::size_t>(std::distance(lod.geometries.begin(), sourceIt));
+    const bool stillUsed = std::any_of(lod.nodes.begin(), lod.nodes.end(), [&](const RenderNode& node) {
+        return node.geometryIndex == static_cast<std::int32_t>(sourceGeometryIndex);
+    });
+    if (stillUsed) return false;
+
+    // Older aliases that pointed at this source geometry already own some of
+    // the family RenderNodes. Keep that ownership unique when the old canonical
+    // mesh itself becomes an instance of another mesh: those aliases are
+    // rebased, while this source identity claims only the previously-unclaimed
+    // members of the family.
+    std::set<std::string> claimedByOlderAliases;
+    for (const auto& [aliasId, alias] : m_meshSourceRecords[lodIndex])
+    {
+        if (aliasId == sourceGeometryId || alias.representation != "instance" ||
+            alias.instanceOfGeometryId != sourceGeometryId) continue;
+        claimedByOlderAliases.insert(alias.instanceRenderNodeIds.begin(), alias.instanceRenderNodeIds.end());
+    }
+
+    record.representation = "instance";
+    record.instanceOfGeometryId = canonicalGeometryId;
+    record.instanceRenderNodeIds.clear();
+    for (const auto& renderNodeId : renderNodeIds)
+        if (!renderNodeId.empty() && claimedByOlderAliases.find(renderNodeId) == claimedByOlderAliases.end())
+            record.instanceRenderNodeIds.push_back(renderNodeId);
+    std::sort(record.instanceRenderNodeIds.begin(), record.instanceRenderNodeIds.end());
+    record.instanceRenderNodeIds.erase(
+        std::unique(record.instanceRenderNodeIds.begin(), record.instanceRenderNodeIds.end()),
+        record.instanceRenderNodeIds.end());
+
+    // Family rebase: every older SOURCE alias now points directly at the new
+    // canonical geometry. Their RenderNode ids remain theirs, so a 3D click can
+    // still resolve the exact logical SOURCE/instance row.
+    for (auto& [aliasId, alias] : m_meshSourceRecords[lodIndex])
+    {
+        if (aliasId == sourceGeometryId) continue;
+        if (alias.representation == "instance" && alias.instanceOfGeometryId == sourceGeometryId)
+            alias.instanceOfGeometryId = canonicalGeometryId;
+    }
+
+    // The alias is now the persistent editor/source identity. Remove the
+    // duplicate runtime mesh payload: every family member already references
+    // the canonical RenderGeometryDefinition and therefore shares topology,
+    // normals, surface mode and material bindings by construction.
+    lod.geometries.erase(lod.geometries.begin() + static_cast<std::ptrdiff_t>(sourceGeometryIndex));
+    remapRenderGeometryAfterErase(lod, sourceGeometryIndex);
+    lod.declaredGeometryCount = static_cast<std::uint32_t>(lod.geometries.size());
+    recomputeRenderLodBounds(lod);
+    if (lodIndex == 0)
+    {
+        m_asset.minBounds = lod.minBounds;
+        m_asset.maxBounds = lod.maxBounds;
+    }
+
+    // Geometry-owned authoring data must now come from the canonical geometry.
+    // SOURCE provenance and the stable logical source id deliberately survive.
+    m_meshPreparationRecords[lodIndex].erase(sourceGeometryId);
+    m_meshOrientationOverrides[lodIndex].erase(sourceGeometryId);
+    m_geometryTopologyClasses[lodIndex].erase(sourceGeometryId);
+    m_rawMeshSnapshots[lodIndex].erase(sourceGeometryId);
+    markEditorStateDirty();
+    return true;
 }
 
 void ModelAssetEditorSession::resetMeshStageChecks(
@@ -7424,8 +7591,17 @@ void ModelAssetEditorSession::resetMeshStageChecks(
     const std::string& geometryId)
 {
     if (geometryId.empty()) return;
-    auto& record = m_meshSourceRecords[lodIndex][geometryId];
+    auto& byGeometry = m_meshSourceRecords[lodIndex];
+    auto& record = byGeometry[geometryId];
     for (const char* stage : wizardStageOrder()) record.stageChecks[stage] = "not_checked";
+    // Geometry-level authoring is shared by every RenderNode instance. Alias
+    // rows therefore inherit the canonical mesh's validation debt immediately.
+    for (auto& [aliasId, alias] : byGeometry)
+    {
+        (void)aliasId;
+        if (alias.representation != "instance" || alias.instanceOfGeometryId != geometryId) continue;
+        for (const char* stage : wizardStageOrder()) alias.stageChecks[stage] = "not_checked";
+    }
     markEditorStateDirty();
 }
 
@@ -7467,9 +7643,11 @@ void ModelAssetEditorSession::recordSurfaceMeshStageResults(bool markDirty)
                 else
                 {
                     const auto& geometries = m_asset.renderLods[lodIndex].geometries;
+                    const std::string effectiveGeometryId = record.representation == "instance"
+                        ? record.instanceOfGeometryId : geometryId;
                     const auto geometryIt = std::find_if(
                         geometries.begin(), geometries.end(),
-                        [&](const RenderGeometryDefinition& geometry) { return geometry.id == geometryId; });
+                        [&](const RenderGeometryDefinition& geometry) { return geometry.id == effectiveGeometryId; });
                     if (geometryIt == geometries.end()) passed = false;
                     else
                     {
@@ -7513,6 +7691,9 @@ nlohmann::json ModelAssetEditorSession::serializeMeshSourceRecords() const
                 {"sourceFileName", record.sourceFileName}, {"sourcePath", record.sourcePath},
                 {"sourceHash", sourceHashHex(record.sourceHash)},
                 {"sourceMissing", record.sourceMissing},
+                {"representation", record.representation},
+                {"instanceOfGeometryId", record.instanceOfGeometryId},
+                {"instanceRenderNodeIds", record.instanceRenderNodeIds},
                 {"scalePolicy", "asset"},
                 {"sourceToMeters", m_asset.physicalSize.sourceToMeters},
                 {"stageChecks", std::move(checks)},
@@ -7847,6 +8028,39 @@ void ModelAssetEditorSession::sendSourceChangeScan()
             existingRecord.sourceMissing = false;
             markEditorStateDirty();
         }
+        row["geometryId"] = existing.geometryId;
+        row["representation"] = existingRecord.representation;
+        row["instanceOfGeometryId"] = existingRecord.instanceOfGeometryId;
+        row["previousHash"] = sourceHashHex(existing.hash);
+
+        if (existingRecord.representation == "instance")
+        {
+            // This SOURCE file intentionally no longer owns a separate mesh.
+            // SCAN tracks provenance but must never resurrect it and silently
+            // break the explicit instance family.
+            if (existing.hash == candidate.hash && existing.hash != 0)
+            {
+                ++unchanged;
+                if (existingRecord.sourcePath != candidate.entry.sourcePath)
+                {
+                    const auto oldPath = existingRecord.sourcePath;
+                    existingRecord.sourcePath = candidate.entry.sourcePath;
+                    existingRecord.sourceFileName = candidate.fileName;
+                    m_sourceMeshFingerprints[li].erase(oldPath);
+                    m_sourceMeshFingerprints[li][candidate.entry.sourcePath] = candidate.hash;
+                    markEditorStateDirty();
+                }
+                continue;
+            }
+
+            ++failed;
+            existingRecord.stageChecks["source"] = "failed";
+            markEditorStateDirty();
+            row["kind"] = "instance_source_changed";
+            rows.push_back(std::move(row));
+            continue;
+        }
+
         const auto gi = geometryIndexById(li, existing.geometryId);
         if (gi == std::size_t(-1))
         {
@@ -7856,9 +8070,6 @@ void ModelAssetEditorSession::sendSourceChangeScan()
             rows.push_back(std::move(row));
             continue;
         }
-        row["geometryId"] = existing.geometryId;
-        row["previousHash"] = sourceHashHex(existing.hash);
-
         auto& geometry = m_asset.renderLods[li].geometries[gi];
         if (existing.hash == candidate.hash && existing.hash != 0)
         {
@@ -7969,7 +8180,9 @@ void ModelAssetEditorSession::sendSourceChangeScan()
         rows.push_back({
             {"kind", "missing_source"}, {"lodIndex", li}, {"variant", existing.variant},
             {"geometryId", existing.geometryId}, {"sourceFileName", record.sourceFileName},
-            {"sourcePath", record.sourcePath}, {"previousHash", sourceHashHex(record.sourceHash)}
+            {"sourcePath", record.sourcePath}, {"previousHash", sourceHashHex(record.sourceHash)},
+            {"representation", record.representation},
+            {"instanceOfGeometryId", record.instanceOfGeometryId}
         });
     }
 
@@ -8035,6 +8248,14 @@ bool ModelAssetEditorSession::confirmSourceMeshDeletion(
     if (sourceIt == sourceLodIt->second.end() || !sourceIt->second.sourceMissing)
     {
         sendStatus("Cannot confirm SOURCE deletion: SCAN has not marked this mesh as deleted", true);
+        return false;
+    }
+    if (sourceIt->second.representation == "instance")
+    {
+        sendStatus(
+            "SOURCE deletion refused: this SOURCE identity is a persistent instance link to " +
+            sourceIt->second.instanceOfGeometryId + ". The canonical mesh is still valid; repair or break the instance family explicitly.",
+            true);
         return false;
     }
 
@@ -10544,21 +10765,80 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (!ensureLodLoaded(lodIndex)) return;
             auto& lod = m_asset.renderLods.at(lodIndex);
             if (renderNodeIndex >= lod.nodes.size() || referenceNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
-            auto& node = lod.nodes[renderNodeIndex]; const auto& referenceNode = lod.nodes[referenceNodeIndex];
+            const auto& node = lod.nodes[renderNodeIndex];
+            const auto& referenceNode = lod.nodes[referenceNodeIndex];
             if (node.geometryIndex < 0 || referenceNode.geometryIndex < 0) throw std::runtime_error("both render nodes must have geometry");
             if (node.geometryIndex == referenceNode.geometryIndex) throw std::runtime_error("render nodes already share one geometry");
             const auto targetGi = static_cast<std::size_t>(node.geometryIndex), referenceGi = static_cast<std::size_t>(referenceNode.geometryIndex);
+            const std::string targetGeometryId = lod.geometries[targetGi].id;
+            const std::string referenceGeometryId = lod.geometries[referenceGi].id;
+            const std::string targetRenderNodeId = node.id;
+            const std::string referenceRenderNodeId = referenceNode.id;
+
             GeometryDefinition referenceGeometry, targetGeometry;
-            referenceGeometry.id = lod.geometries[referenceGi].id; referenceGeometry.lods.push_back(lod.geometries[referenceGi].mesh);
-            targetGeometry.id = lod.geometries[targetGi].id; targetGeometry.lods.push_back(lod.geometries[targetGi].mesh);
+            referenceGeometry.id = referenceGeometryId;
+            referenceGeometry.lods.push_back(lod.geometries[referenceGi].mesh);
+            targetGeometry.id = targetGeometryId;
+            targetGeometry.lods.push_back(lod.geometries[targetGi].mesh);
             const GeometryInstanceFit fit = fitGeometryAsRigidInstance(referenceGeometry, targetGeometry);
             appendRenderInstanceFitDiagnostic(wizardLogPath("instance_fit.log"), m_asset, lodIndex, referenceNodeIndex, renderNodeIndex, fit);
             if (!fit.valid) throw std::runtime_error(
                 "cannot consolidate render instance: " + fit.message +
                 "; see " + wizardLogPath("instance_fit.log").generic_string());
-            applyRenderInstanceFit(lod, renderNodeIndex, referenceNodeIndex, fit);
-            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
-            sendStatus("Consolidated LOD" + std::to_string(lodIndex) + " element " + node.id + " as an instance of " + referenceNode.id + "; RMS=" + std::to_string(fit.rmsErrorMeters) + " m"); return;
+
+            // An independent RenderGeometryDefinition is the shared payload of
+            // its whole instance family. Converting one member must therefore
+            // convert every RenderNode currently using that geometry, including
+            // the old canonical/reference member and older aliases.
+            std::vector<std::size_t> familyNodeIndices;
+            std::vector<std::string> familyNodeIds;
+            for (std::size_t ri = 0; ri < lod.nodes.size(); ++ri)
+                if (lod.nodes[ri].geometryIndex == static_cast<std::int32_t>(targetGi))
+                {
+                    familyNodeIndices.push_back(ri);
+                    familyNodeIds.push_back(lod.nodes[ri].id);
+                }
+            if (familyNodeIndices.empty()) throw std::runtime_error("target geometry family has no render nodes");
+
+            synchronizeMeshSourceRecords(true);
+            const RenderLod lodBefore = lod;
+            const auto sourceRecordsBefore = m_meshSourceRecords[lodIndex];
+            const auto preparationBefore = m_meshPreparationRecords[lodIndex];
+            const auto orientationBefore = m_meshOrientationOverrides[lodIndex];
+            const auto topologyBefore = m_geometryTopologyClasses[lodIndex];
+            const auto rawBefore = m_rawMeshSnapshots[lodIndex];
+            const glm::vec3 minBefore = m_asset.minBounds;
+            const glm::vec3 maxBefore = m_asset.maxBounds;
+            try
+            {
+                for (const auto familyNodeIndex : familyNodeIndices)
+                    applyRenderInstanceFit(lod, familyNodeIndex, referenceNodeIndex, fit);
+                if (!finalizeGeometryInstanceAlias(
+                        lodIndex, targetGeometryId, referenceGeometryId, familyNodeIds))
+                    throw std::runtime_error("cannot finalize persistent instance family link");
+            }
+            catch (...)
+            {
+                lod = lodBefore;
+                m_meshSourceRecords[lodIndex] = sourceRecordsBefore;
+                m_meshPreparationRecords[lodIndex] = preparationBefore;
+                m_meshOrientationOverrides[lodIndex] = orientationBefore;
+                m_geometryTopologyClasses[lodIndex] = topologyBefore;
+                m_rawMeshSnapshots[lodIndex] = rawBefore;
+                m_asset.minBounds = minBefore;
+                m_asset.maxBounds = maxBefore;
+                throw;
+            }
+
+            markLodDirty(lodIndex);
+            invalidateWizardFrom("geometry");
+            sendAssetMetadata();
+            sendStatus(
+                "Consolidated LOD" + std::to_string(lodIndex) + " geometry family " + targetGeometryId +
+                " (selected " + targetRenderNodeId + ", " + std::to_string(familyNodeIds.size()) +
+                " render instance(s)) as a persistent instance link to " + referenceGeometryId +
+                " via " + referenceRenderNodeId + "; RMS=" + std::to_string(fit.rmsErrorMeters) + " m");
+            return;
         }
         if (command == "consolidate_render_duplicates")
         {
@@ -10571,11 +10851,20 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             const auto& referenceNode = lod.nodes[referenceNodeIndex];
             if (referenceNode.geometryIndex < 0) throw std::runtime_error("reference render node has no geometry");
             const auto referenceGi = static_cast<std::size_t>(referenceNode.geometryIndex);
+            const std::string referenceGeometryId = lod.geometries[referenceGi].id;
+            const std::string referenceRenderNodeId = referenceNode.id;
 
-            struct PendingFit { std::size_t nodeIndex; GeometryInstanceFit fit; };
-            std::vector<PendingFit> pending;
+            struct PendingFamily
+            {
+                std::string sourceGeometryId;
+                GeometryInstanceFit fit;
+                std::vector<std::size_t> nodeIndices;
+                std::vector<std::string> nodeIds;
+            };
+            std::vector<PendingFamily> pending;
+            std::set<std::string> queuedGeometryIds;
             GeometryDefinition referenceGeometry;
-            referenceGeometry.id = lod.geometries[referenceGi].id;
+            referenceGeometry.id = referenceGeometryId;
             referenceGeometry.lods.push_back(lod.geometries[referenceGi].mesh);
 
             for (const auto targetNodeIndex : targets)
@@ -10584,35 +10873,83 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
                 const auto& targetNode = lod.nodes[targetNodeIndex];
                 if (targetNode.geometryIndex < 0) continue;
                 const auto targetGi = static_cast<std::size_t>(targetNode.geometryIndex);
-                if (targetGi == referenceGi) continue; // already an instance of the selected geometry
+                if (targetGi == referenceGi) continue; // already a member of the selected family
+                const std::string sourceGeometryId = lod.geometries[targetGi].id;
+                if (!queuedGeometryIds.insert(sourceGeometryId).second) continue;
 
                 GeometryDefinition targetGeometry;
-                targetGeometry.id = lod.geometries[targetGi].id;
+                targetGeometry.id = sourceGeometryId;
                 targetGeometry.lods.push_back(lod.geometries[targetGi].mesh);
                 const GeometryInstanceFit fit = fitGeometryAsRigidInstance(referenceGeometry, targetGeometry);
                 appendRenderInstanceFitDiagnostic(wizardLogPath("instance_fit.log"), m_asset, lodIndex, referenceNodeIndex, targetNodeIndex, fit);
                 if (!fit.valid)
                 {
                     throw std::runtime_error(
-                        "cannot consolidate selected element '" + targetNode.id + "': " + fit.message +
+                        "cannot consolidate selected geometry family '" + sourceGeometryId + "': " + fit.message +
                         "; comparison is stale or geometry changed");
                 }
-                pending.push_back({targetNodeIndex, fit});
+
+                PendingFamily family;
+                family.sourceGeometryId = sourceGeometryId;
+                family.fit = fit;
+                for (std::size_t ri = 0; ri < lod.nodes.size(); ++ri)
+                    if (lod.nodes[ri].geometryIndex == static_cast<std::int32_t>(targetGi))
+                    {
+                        family.nodeIndices.push_back(ri);
+                        family.nodeIds.push_back(lod.nodes[ri].id);
+                    }
+                if (!family.nodeIndices.empty()) pending.push_back(std::move(family));
             }
 
             if (pending.empty())
             {
-                sendStatus("No selected elements need consolidation; they already use the reference geometry");
+                sendStatus("No selected geometry families need consolidation; they already use the reference geometry");
                 return;
             }
 
-            for (const auto& item : pending)
-                applyRenderInstanceFit(lod, item.nodeIndex, referenceNodeIndex, item.fit);
+            synchronizeMeshSourceRecords(true);
+            const RenderLod lodBefore = lod;
+            const auto sourceRecordsBefore = m_meshSourceRecords[lodIndex];
+            const auto preparationBefore = m_meshPreparationRecords[lodIndex];
+            const auto orientationBefore = m_meshOrientationOverrides[lodIndex];
+            const auto topologyBefore = m_geometryTopologyClasses[lodIndex];
+            const auto rawBefore = m_rawMeshSnapshots[lodIndex];
+            const glm::vec3 minBefore = m_asset.minBounds;
+            const glm::vec3 maxBefore = m_asset.maxBounds;
+            std::size_t convertedNodes = 0;
+            try
+            {
+                for (const auto& family : pending)
+                {
+                    for (const auto nodeIndex : family.nodeIndices)
+                        applyRenderInstanceFit(lod, nodeIndex, referenceNodeIndex, family.fit);
+                    if (!finalizeGeometryInstanceAlias(
+                            lodIndex, family.sourceGeometryId, referenceGeometryId, family.nodeIds))
+                        throw std::runtime_error(
+                            "cannot finalize persistent instance family link for " + family.sourceGeometryId);
+                    convertedNodes += family.nodeIds.size();
+                }
+            }
+            catch (...)
+            {
+                lod = lodBefore;
+                m_meshSourceRecords[lodIndex] = sourceRecordsBefore;
+                m_meshPreparationRecords[lodIndex] = preparationBefore;
+                m_meshOrientationOverrides[lodIndex] = orientationBefore;
+                m_geometryTopologyClasses[lodIndex] = topologyBefore;
+                m_rawMeshSnapshots[lodIndex] = rawBefore;
+                m_asset.minBounds = minBefore;
+                m_asset.maxBounds = maxBefore;
+                throw;
+            }
 
-            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
+            markLodDirty(lodIndex);
+            invalidateWizardFrom("geometry");
+            sendAssetMetadata();
             sendStatus(
-                "Consolidated " + std::to_string(pending.size()) + " selected LOD" + std::to_string(lodIndex) +
-                " elements as instances of " + referenceNode.id);
+                "Consolidated " + std::to_string(pending.size()) + " geometry family/families (" +
+                std::to_string(convertedNodes) + " render instance(s)) in LOD" + std::to_string(lodIndex) +
+                " as persistent links to " + referenceGeometryId + " via " + referenceRenderNodeId);
             return;
         }
         if (command == "break_render_node_instance")

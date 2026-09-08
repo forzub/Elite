@@ -24,7 +24,7 @@ for token in (
     'id="wizardSurfaceGeometryTable"',
     'id="wizardSurfaceShowAllBtn"',
     'id="wizardSurfaceHideAllBtn"',
-    'data-surface-geometry-id',
+    'data-surface-logical-id',
     "setSurfaceGeometryVisible(g,check.checked)",
 ):
     if token not in web:
@@ -71,12 +71,12 @@ for token in (
     'surfaceSelectedGeometryIdsByLod:new Map()',
     'surfaceSelectionAnchorByLod:new Map()',
     'function surfaceSelectionSet(',
-    'const ids=geometries.map(x=>String(x.id))',
+    'const logicalRows=logicalGeometryRows(lod,state.activeLod)',
     'ctrl=!!(event?.ctrlKey||event?.metaKey)',
     'shift=!!event?.shiftKey',
-    'if(!ctrl)selected.clear();for(let i=lo;i<=hi;i++)selected.add(ids[i])',
+    'if(!ctrl)selected.clear();for(let i=lo;i<=hi;i++){const effective=effectiveGeometry(logicalRows[i],lod);if(effective)selected.add(String(effective.id));}',
     'if(selected.has(id)&&selected.size>1)selected.delete(id);else selected.add(id)',
-    'else{selected.clear();selected.add(String(g.id));surfaceSetSelectionAnchor(g.id);}',
+    'else{selected.clear();selected.add(String(g.id));surfaceSetSelectionAnchor(logicalId);}',
 ):
     if token not in web:
         raise AssertionError(f"SURFACES multiselect contract missing {token!r}")
@@ -88,7 +88,7 @@ for token in (
     'selectedTargets=selectedGeometries.length?selectedGeometries:[selected]',
     "for(const target of selectedTargets)send('set_geometry_topology_class'",
     'PRIMARY MESH ONLY',
-    'el.onclick=e=>surfaceSelectGeometry(g.id,e)',
+    "el.onclick=e=>surfaceSelectGeometry(g.id,e,{logicalId:String(display.id),renderNodeId:aliasRn?.node?.id||\'\'})",
     'renderWizardPanel();highlightSelection();if(options.focusTable)',
 ):
     if token not in web:
@@ -99,9 +99,9 @@ if 'el.onclick=e=>surfaceSelectGeometry(g.id,e,{focusTable:true})' in web:
 # 3D click remains single-primary and focuses the matching combined table row.
 for token in (
     "if(stage==='surfaces')",
-    "$('wizardSurfaceGeometryTable')?.querySelectorAll('[data-surface-geometry-id]')",
+    "$('wizardSurfaceGeometryTable')?.querySelectorAll('[data-surface-logical-id]')",
     "requestAnimationFrame(()=>focusActiveMeshTableSelection())",
-    "selected.clear();selected.add(String(g.id));surfaceSetSelectionAnchor(g.id)",
+    "selected.clear();selected.add(String(g.id));surfaceSetSelectionAnchor(alias?.geometryId||g.id)",
 ):
     if token not in web:
         raise AssertionError(f"SURFACES 3D/table synchronization missing {token!r}")

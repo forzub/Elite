@@ -909,7 +909,7 @@
             "setLodPreflightGeometryVisible",
             "preflightShowAll",
             "preflightHideAll",
-            "meshStageVisualClass(g,'lods')",
+            "meshStageVisualClass(logical||g,'lods')",
             "selectPreflightGeometry"
           ]
         },

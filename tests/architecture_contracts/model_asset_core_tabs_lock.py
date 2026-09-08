@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Frozen acceptance contract for SOURCE + LODS + GEOMETRY editor tabs.
 
-SOURCE keeps its v0.10.62 fingerprint. LODS and GEOMETRY are frozen at the
-v0.10.64 acceptance baseline after authoritative EditorViewState, matched
-workspace controls, 3D->table focus, and stronger viewport selection feedback.
+SOURCE/LODS/GEOMETRY remain frozen at the v0.10.64 acceptance baseline.
+The approved instance-family contract extends their table semantics so a source
+mesh consolidated into another geometry remains visible as an INSTANCE link
+whose effective mesh properties come from the canonical family payload.
 """
 from __future__ import annotations
 
@@ -18,8 +19,8 @@ from model_asset_source_tab_lock import (
     validate_source_tab_lock,
 )
 
-LOD_TAB_SHA256 = "9fb545df9b62581c58da922925630c903d4e157df1b5b6821ff049aad0080f16"
-GEOMETRY_TAB_SHA256 = "7e7fd0b7f8b4c0dbf7272395c81a401b3518a9e992412049d21871584ed20365"
+LOD_TAB_SHA256 = "602ca9287e855193d198a272ee622692ea3f54767e22b75afe451ca7e93e199d"
+GEOMETRY_TAB_SHA256 = "e20154a0bfffd6fffc2bd6b585209755868be9bb152dbb7e3672a147fd6d705e"
 
 LOD_FUNCTIONS = [
     "selectedRenderMeshInfo",

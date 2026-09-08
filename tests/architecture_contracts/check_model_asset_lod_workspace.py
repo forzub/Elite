@@ -104,11 +104,25 @@ for required in (
     if required not in lods_branch:
         raise AssertionError(f"LOD workspace missing {required!r}")
 
+# LODS uses the same explicit active-render-LOD selector pattern as GEOMETRY.
+# The selector is a distinct semantic block; switching it goes through the
+# canonical EditorViewState LOD path instead of a stage-local assignment.
+for required in (
+    "wizardLodSelector(lods,'data-lods-lod'",
+    "root.querySelectorAll('[data-lods-lod]')",
+    "switchEditorLod(Number(btn.dataset.lodsLod),'lods-selector')",
+):
+    if required not in lods_branch:
+        raise AssertionError(f"LOD active-render selector missing {required!r}")
+
 # The table is deliberately taller, uses the existing per-mesh graph colors,
 # and exposes compact viewport-only visibility controls.
 for token in (
     ".preflightTable{max-height:min(64vh,640px)",
-    ".preflightMeshToolbar{display:flex",
+    ".preflightMeshToolbar{display:flex;flex-direction:column",
+    ".preflightMeshSelectionLine{display:flex",
+    ".preflightMeshActions{display:flex;gap:10px;align-items:center;flex-wrap:nowrap",
+    ".preflightVisibilityActions,.preflightMeshEditActions{display:flex",
     ".preflightMeshToolbar button,.lodTechButton{min-width:0;height:25px",
     ".preflightRow.meshStagePassed.blocker",
     ".preflightRow.meshValidationPending.blocker",
@@ -127,6 +141,8 @@ for token in (
 
 inventory = js_function(web, "renderModelPreflightInventory")
 analysis_panel = js_function(web, "renderModelPreflightPanel")
+if ".filter(r=>Number(r.lodIndex)===Number(state.activeLod))" not in analysis_panel:
+    raise AssertionError("post-ANALYZE LOD mesh table is not scoped to the active render LOD")
 for body, label in ((inventory, "pre-ANALYZE inventory"), (analysis_panel, "post-ANALYZE table")):
     for token in (
         "meshStageVisualClass(g,'lods')",

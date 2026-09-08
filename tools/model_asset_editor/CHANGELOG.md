@@ -1,5 +1,7 @@
 ## 0.10.64 — authoritative EditorViewState hotfix (2026-09-08)
 
+- LOD workspace UI follow-up: added the same explicit `ACTIVE RENDER LOD` selector used by GEOMETRY, scoped the analyzed mesh table to the active LOD, and regrouped selected-mesh identity separately from a single-line SHOW ALL / HIDE ALL / orientation action row.
+
 - Replaced competing stage-local LOD/selection/visibility owners with one browser `EditorViewState`. SOURCE/LOD/GEOMETRY compatibility map names are projections over the same per-LOD visibility state rather than independent `Map` instances.
 - Made tab transitions state-neutral: they no longer force LOD0, clear selection/visibility, or fit/reset the camera. `sceneLod == activeLod` is now a checked invariant; loaded native LODs are tracked separately from browser-resident geometry payloads, and an asynchronous payload can activate only the explicitly pending LOD.
 - Unified post-GEOMETRY mesh navigation for SURFACES through BUILD with LOD buttons, compact SHOW/HIDE ALL, per-row visibility/isolation behavior, 3D↔table selection and stage-check colors, while leaving stage-specific authoring tools intact. Removed the remaining retired maintenance workset UI/runtime bindings.

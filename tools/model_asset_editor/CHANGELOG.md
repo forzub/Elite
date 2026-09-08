@@ -1,3 +1,10 @@
+## 0.10.64 — pre-SEMANTICS acceptance freeze / localization / viewport deselect (2026-09-08)
+
+- Accepted and froze the complete pre-SEMANTICS authoring baseline: SOURCE, LODS, GEOMETRY and SURFACES. Their protected fingerprints must not change in later SEMANTICS work without an explicit contract exception.
+- Unified ordinary blank-space picking across every 3D stage: a click that hits no selectable object clears the authoritative mesh/RenderNode selection plus table, SURFACES multi-selection, semantic, collision/socket and damage/structural selection projections. It does not change active/scene LOD, visibility/isolation or camera state.
+- Completed the Model Asset Editor localization table for all active locales: English, Russian, Simplified Chinese, Spanish and Japanese. Missing locale values and accidental English fallback copies were filled; only deliberate international/technical tokens remain identical.
+- Localized the accepted active-LOD rotation dialog itself, including its dynamic status/preview/apply text, so the latest pre-SEMANTICS axis workflow does not remain English-only.
+
 ## 0.10.64 — direct SOURCE→GAME axis-remap UI (2026-09-08)
 
 - Replaced the RIGHT/UP/NOSE input form with literal SOURCE-axis routing: `SOURCE +X/+Y/+Z → GAME signed axis`. The opposite negative axis is shown automatically, so an operation such as `X→Y, Y→Z, Z→X` can be entered exactly as stated without semantic-basis translation.

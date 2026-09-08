@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Frozen acceptance contract for SOURCE + LODS + GEOMETRY editor tabs.
+"""Frozen acceptance contract for SOURCE + LODS + GEOMETRY + SURFACES editor tabs.
 
-SOURCE/LODS/GEOMETRY remain frozen at the v0.10.64 acceptance baseline.
+SOURCE/LODS/GEOMETRY/SURFACES remain frozen at the v0.10.64 acceptance baseline.
 The approved instance-family contract extends their table semantics so a source
 mesh consolidated into another geometry remains visible as an INSTANCE link
 whose effective mesh properties come from the canonical family payload.
@@ -21,6 +21,7 @@ from model_asset_source_tab_lock import (
 
 LOD_TAB_SHA256 = "602ca9287e855193d198a272ee622692ea3f54767e22b75afe451ca7e93e199d"
 GEOMETRY_TAB_SHA256 = "e20154a0bfffd6fffc2bd6b585209755868be9bb152dbb7e3672a147fd6d705e"
+SURFACES_TAB_SHA256 = "332222c87303c6b26837a6c3993f6560bccdb2120a3dc7fec15598df55e3841a"
 
 LOD_FUNCTIONS = [
     "selectedRenderMeshInfo",
@@ -91,6 +92,31 @@ GEOMETRY_CSS = [
     ".compareRow.selected",
 ]
 
+SURFACES_FUNCTIONS = [
+    "surfaceStageVisualClass",
+    "surfaceStageGlyph",
+    "surfaceSelectedGeometry",
+    "surfaceSelectionSet",
+    "surfaceSelectionIds",
+    "surfaceSetSelectionAnchor",
+    "surfaceSelectionAnchor",
+    "surfaceGeometryVisibility",
+    "setSurfaceGeometryVisible",
+    "surfaceSelectGeometry",
+]
+
+SURFACES_CSS = [
+    ".surfaceWorkspace",
+    ".surfaceBrowser,.surfaceToolBlock",
+    ".surfaceGeometryTable",
+    ".surfaceGeometryRow",
+    ".surfaceGeometryRow.selected",
+    ".surfaceGeometryRow.meshStagePassed.selected,.surfaceGeometryRow.meshStagePassed.primarySelection",
+    ".surfaceGeometryRow.meshValidationPending.selected,.surfaceGeometryRow.meshValidationPending.primarySelection",
+    ".surfaceGeometryRow.surfaceStageUnchecked",
+    ".surfaceGeometryRow.surfaceStageUnchecked.selected,.surfaceGeometryRow.surfaceStageUnchecked.primarySelection",
+]
+
 
 def _stage_branch(body: str, stage: str) -> str:
     marker = f"if(stage==='{stage}'){{"
@@ -119,6 +145,11 @@ def current_geometry_tab_sha256(body: str | None = None) -> str:
     return hashlib.sha256(_payload(body, "geometry", GEOMETRY_FUNCTIONS, GEOMETRY_CSS).encode("utf-8")).hexdigest()
 
 
+def current_surfaces_tab_sha256(body: str | None = None) -> str:
+    body = body if body is not None else WEBUI.read_text(encoding="utf-8", errors="replace")
+    return hashlib.sha256(_payload(body, "surfaces", SURFACES_FUNCTIONS, SURFACES_CSS).encode("utf-8")).hexdigest()
+
+
 def validate_core_tabs_lock() -> None:
     validate_source_tab_lock()
     body = WEBUI.read_text(encoding="utf-8", errors="replace")
@@ -139,9 +170,17 @@ def validate_core_tabs_lock() -> None:
             "Update only for an explicitly approved GEOMETRY change documented in PATCH_CONTRACT/CHANGELOG."
         )
 
+    actual_surfaces = current_surfaces_tab_sha256(body)
+    if actual_surfaces != SURFACES_TAB_SHA256:
+        raise AssertionError(
+            "SURFACES TAB IS FROZEN at v0.10.64: protected SURFACES behavior/layout changed. "
+            f"expected {SURFACES_TAB_SHA256}, got {actual_surfaces}. "
+            "Update only for an explicitly approved SURFACES change documented in PATCH_CONTRACT/CHANGELOG."
+        )
+
     # Shared UX path is intentionally token-guarded rather than whole-function
     # hashed so later SEMANTICS/PHYSICS work can evolve shared functions without
-    # reopening the three accepted tabs.
+    # reopening the four accepted tabs.
     shared_required = (
         ".editorMeshTableFocus:focus",
         "function focusEditorMeshTableRow(row)",
@@ -160,4 +199,4 @@ def validate_core_tabs_lock() -> None:
     )
     for token in shared_required:
         if token not in body:
-            raise AssertionError(f"accepted SOURCE/LODS/GEOMETRY shared UX contract missing {token!r}")
+            raise AssertionError(f"accepted SOURCE/LODS/GEOMETRY/SURFACES shared UX contract missing {token!r}")

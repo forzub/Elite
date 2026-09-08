@@ -1,3 +1,9 @@
+## Model Asset Editor 0.10.64 — pre-SEMANTICS baseline frozen (2026-09-08)
+
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES accepted and fingerprint-frozen before SEMANTICS.
+- `[x]` Empty 3D click is global deselect across viewport/table/stage selections without changing LOD, visibility or camera.
+- `[x]` Model Asset Editor localization is complete for EN / RU / zh-Hans / ES / JA, including the active-LOD rotation workflow.
+
 
 ## Model Asset Editor 0.10.56
 - SOURCE CHANGE SCAN is metadata-only and must not reread all OBJ payloads. Exact source hashes remain import/adopt provenance; persisted quick stamps make normal scans bounded by directory/stat work. Legacy exact-hash-only rows are shown as unverified and can be reimported individually to establish the fast baseline.

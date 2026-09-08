@@ -2933,8 +2933,8 @@
       "ru": "исходные render V → geometric P → рабочие render V"
     },
     "model_editor.preflight.canonical_note": {
-      "en": "Working geometry is built only by PREPARE MESHES using the offline libigl + Embree canonical pipeline. ANALYZE reports topology and proposes surface classes, but class selection is not a LOD-analysis gate.",
-      "ru": "Working geometry строится только по «ПОДГОТОВИТЬ МЕШИ» через offline canonical pipeline libigl + Embree. «АНАЛИЗИРОВАТЬ» показывает topology и предлагает surface-классы, но выбор класса не блокирует анализ LOD."
+      "en": "Working geometry is built only by PREPARE MESHES. libigl repairs non-manifold topology; coherent open/thin authored winding is preserved, and only closed shells may be flipped as a whole when signed volume proves they are inside-out. ANALYZE reports topology and proposes surface classes, but class selection is not a LOD-analysis gate.",
+      "ru": "Working geometry строится только по «ПОДГОТОВИТЬ МЕШИ». libigl исправляет non-manifold topology; согласованный authored winding открытых/тонких компонентов сохраняется, а целиком переворачивать автоматически можно только замкнутую оболочку, если signed volume доказывает inside-out. «АНАЛИЗИРОВАТЬ» показывает topology и предлагает surface-классы, но выбор класса не блокирует анализ LOD."
     },
     "model_editor.preflight.reason.prepare": {
       "en": "run PREPARE MESHES",

@@ -353,3 +353,19 @@ SURFACES is geometry-authoritative: topology/surface intent and material ownersh
 - SOURCE, LODS and GEOMETRY remain frozen. SURFACES work must pass `check_model_asset_core_tabs_frozen.py` without changing their protected fingerprints.
 
 Regression protection is provided by `tests/architecture_contracts/check_model_asset_surfaces_workspace.py` together with the authoritative EditorViewState and frozen-core-tabs tests.
+
+## 24. Per-LOD SOURCE basis authority / reload consistency — 0.10.64
+
+Coordinate-basis conversion is owned by a render LOD, not by the asset as one irreversible global switch. A visual LOD must never become a mixture of raw Blender coordinates and game coordinates after SOURCE maintenance.
+
+- Every render LOD has one persisted SOURCE-basis state. `game_current` means its resident payload needs no Blender→game transform; a preset such as `blender_model` means raw SOURCE OBJ data for that LOD must be transformed by that preset before it is admitted to the resident WORKING document.
+- The toolbar axis operation always carries an explicit `lodIndex` and may load/modify only that visual LOD. It must not call `ensureAllLodsLoaded()` or transform another render document as a side effect.
+- SOURCE replace, add, replacement-variant import and broad variant refresh are raw-import boundaries. Immediately after OBJ decode and before comparing/storing the mesh, the target LOD's configured basis is reapplied. This rule prevents old SOURCE reloads from silently reintroducing Blender Z-up coordinates into a converted Y-up LOD.
+- Same-asset full SOURCE reimport preserves the existing per-LOD basis profile and reapplies it to the freshly imported visual documents before they become authoritative WORKING geometry. A full reimport may still replace other authored WORKING content according to its existing contract; it must not lose coordinate-basis state.
+- Generated LODs inherit the basis state of the source LOD from which they were generated.
+- Legacy pre-schema-16 snapshots with an asset-wide canonicalized `sourceBasis` are migrated as the initial per-LOD basis profile. Because historical individual SOURCE reloads may already have produced a physically mixed LOD, the marker alone is not proof that every resident mesh is correctly transformed.
+- `reimport_lod_source_basis` is the recovery path for that legacy corruption. It stages every source-backed canonical geometry of exactly one selected LOD from its exact SOURCE file, reapplies that LOD's configured basis, and commits only after every staged import succeeds. Geometry ids, RenderNode ids/placement and persistent instance-family aliases are preserved. PREPARE/topology/raw snapshots and downstream mesh stage evidence are invalidated because the resident payload changed.
+- Semantic/collision authoring is one shared SOURCE frame rather than one copy per render LOD. LOD0 owns the explicit shared-frame conversion: source/bootstrap collision volumes, hit regions, semantic transforms, sockets, openings, repair targets and structural damage proxies rotate with LOD0 exactly once. Converting or rebuilding LOD1+ must never rotate this shared frame again.
+- A recovery rebuild of an already converted LOD transforms only newly decoded visual meshes. It must not transform the shared SOURCE/hit frame again.
+
+Regression protection is provided by `tests/architecture_contracts/check_model_asset_per_lod_basis.py` together with the SOURCE maintenance, physical-scale, frozen-core-tabs and EditorViewState contracts.

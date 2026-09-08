@@ -131,13 +131,13 @@ for forbidden in ("PHYSICAL SIZE · UNIFORM ASSET SCALE", "APPLY AFTER SOURCE RE
         raise AssertionError(f"retired destructive-scale UI survived: {forbidden!r}")
 
 for token in (
-    'state["schemaVersion"] = 15',
+    'state["schemaVersion"] = 16',
     'state["physicalScaleGraph"]',
     '{"sourceToMeters", m_asset.physicalSize.sourceToMeters}',
     '{"geometrySpace", physicalGeometrySpaceName(m_asset.physicalSize.geometrySpace)}',
 ):
     if token not in session:
-        raise AssertionError(f"schema-15 physical scale graph missing {token!r}")
+        raise AssertionError(f"schema-16 physical scale graph missing {token!r}")
 
 for token in (
     "PrimitiveMass primitiveMass(const CollisionVolume& c, float density, float sourceToMeters)",

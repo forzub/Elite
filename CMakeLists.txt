@@ -44,8 +44,8 @@ endif()
 
 
 # Offline Model Asset Editor geometry processing --------------------------------
-# libigl + Embree are authoring-only dependencies. They are intentionally absent
-# from EliteModelAsset and all game/runtime targets.
+# libigl is an authoring-only dependency of the editor. Embree is enabled only
+# for the isolated diagnostic spike. Both are absent from game/runtime targets.
 if(ELITE_BUILD_ASSET_EDITOR OR ELITE_MODEL_ASSET_LIBIGL_SPIKE)
     if(POLICY CMP0169)
         cmake_policy(SET CMP0169 OLD)
@@ -55,7 +55,7 @@ if(ELITE_BUILD_ASSET_EDITOR OR ELITE_MODEL_ASSET_LIBIGL_SPIKE)
     set(LIBIGL_BUILD_TUTORIALS OFF CACHE BOOL "" FORCE)
     set(LIBIGL_INSTALL OFF CACHE BOOL "" FORCE)
     set(LIBIGL_USE_STATIC_LIBRARY OFF CACHE BOOL "" FORCE)
-    set(LIBIGL_EMBREE ON CACHE BOOL "" FORCE)
+    set(LIBIGL_EMBREE ${ELITE_MODEL_ASSET_LIBIGL_SPIKE} CACHE BOOL "" FORCE)
     set(LIBIGL_OPENGL OFF CACHE BOOL "" FORCE)
     set(LIBIGL_GLFW OFF CACHE BOOL "" FORCE)
     set(LIBIGL_IMGUI OFF CACHE BOOL "" FORCE)
@@ -136,7 +136,6 @@ if(ELITE_BUILD_ASSET_EDITOR)
         Threads::Threads
         webview::core_static
         igl::core
-        igl::embree
     )
     if(WIN32)
         target_link_libraries(EliteAssetEditor PRIVATE

@@ -169,6 +169,14 @@ private:
         // Editor-only tree presentation order keyed by stable parent semantic id;
         // "__ROOTS__" stores top-level order. Runtime semantic identity never depends on this.
         std::map<std::string, std::vector<std::string>> semanticChildOrder;
+        // Per-render-document SOURCE basis authority. A value such as
+        // "blender_model" means that raw SOURCE OBJ geometry for this LOD is
+        // converted into game axes when entering WORKING. This is editor-only
+        // state because RenderLod payloads must stay independently editable.
+        std::map<std::size_t, std::string> lodSourceBasisPresets;
+        // Semantic/collision/source hit-volume authoring is shared across LODs;
+        // LOD0 owns its one-time SOURCE-frame conversion.
+        std::string sharedSourceBasisPreset = "game_current";
         std::size_t nextBaseVisualOrdinal = 1;
         std::size_t nextSourceVariantOrdinal = 1;
     };
@@ -284,6 +292,9 @@ private:
     void sendSourceChangeScan(); // exact-hash scan + targeted SOURCE apply
     bool confirmSourceMeshDeletion(std::size_t lodIndex, const std::string& geometryId);
     bool reloadMeshFromSource(std::size_t lodIndex, std::size_t geometryIndex);
+    std::string lodSourceBasisPreset(std::size_t lodIndex) const;
+    void applyConfiguredLodBasis(std::size_t lodIndex, MeshLod& mesh) const;
+    bool reimportLodSourcePartsInConfiguredBasis(std::size_t lodIndex);
     bool replaceSourcePart(std::size_t lodIndex, std::size_t geometryIndex, bool publish = true, bool rescan = true);
     bool replaceSourcePartByPath(std::size_t lodIndex, const std::string& sourcePath);
     bool addSourcePart(std::size_t lodIndex, const std::string& sourcePath, bool publish = true, bool rescan = true);
@@ -359,6 +370,8 @@ private:
     std::map<std::size_t, std::map<std::string, MeshSourceRecord>> m_meshSourceRecords;
     std::map<std::string, std::set<std::string>> m_componentMaintenanceIssues;
     std::map<std::string, std::vector<std::string>> m_semanticChildOrder;
+    std::map<std::size_t, std::string> m_lodSourceBasisPresets;
+    std::string m_sharedSourceBasisPreset = "game_current";
     std::size_t m_nextBaseVisualOrdinal = 1;
     std::size_t m_nextSourceVariantOrdinal = 1;
     std::uint32_t m_nextWireTransferId = 1;

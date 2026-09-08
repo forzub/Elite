@@ -494,8 +494,10 @@ void testCanonicalBuilderRepairsWindingAndOutwardNormals()
         std::swap(triangle.b, triangle.c);
     const auto insideOutBuild = canonicalizeMesh(insideOut);
     require(insideOutBuild.success, insideOutBuild.error.c_str());
-    require(insideOutBuild.raycastPatches >= 1 && insideOutBuild.raycastFlippedTriangles > 0,
-        "Embree raycast did not reorient an inside-out closed shell");
+    require(insideOutBuild.flippedTriangles >= insideOut.triangles.size(),
+        "deterministic closed-shell repair did not reorient an inside-out volume");
+    require(insideOutBuild.raycastPatches == 0 && insideOutBuild.raycastFlippedTriangles == 0,
+        "canonical PREPARE unexpectedly invoked the removed Embree orientation path");
     const auto insideAudit = analyzeCanonicalMesh(insideOut);
     require(insideAudit.closedComponents == 1 && insideAudit.insideOutClosedComponents == 0 &&
             insideAudit.windingFlipsRequired == 0,
@@ -553,7 +555,7 @@ void testCanonicalBuilderClosedPlateBreachContracts()
         "canonical builder filled an authored breach");
 }
 
-void testCanonicalBuilderOrientsBreachedShellWithEmbree()
+void testCanonicalBuilderPreservesAuthoredOrientationForOpenShell()
 {
     using namespace elite::model_asset::editor;
 
@@ -561,17 +563,8 @@ void testCanonicalBuilderOrientsBreachedShellWithEmbree()
     for (auto& triangle : breached.triangles)
         std::swap(triangle.b, triangle.c);
 
-    const auto built = canonicalizeMesh(breached);
-    require(built.success, built.error.c_str());
-    require(built.raycastPatches >= 1 && built.raycastFlippedTriangles > 0,
-        "Embree raycast did not reorient an inward breached/open shell");
-
-    const auto audit = analyzeCanonicalMesh(breached);
-    require(!audit.structuralInvalid && audit.openComponents == 1 && audit.windingFlipsRequired == 0,
-        "breached shell remained topologically inconsistent after preparation");
-    require(audit.boundaryEdges == 4,
-        "breached shell opening was filled while orienting the parent shell");
-
+    std::vector<float> authoredSigns;
+    authoredSigns.reserve(breached.triangles.size());
     for (const auto& triangle : breached.triangles)
     {
         const glm::vec3 a = breached.vertices[triangle.a].position;
@@ -579,8 +572,33 @@ void testCanonicalBuilderOrientsBreachedShellWithEmbree()
         const glm::vec3 c = breached.vertices[triangle.c].position;
         const glm::vec3 faceNormal = glm::normalize(glm::cross(b - a, c - a));
         const glm::vec3 faceCenter = (a + b + c) / 3.0f;
-        require(glm::dot(faceNormal, faceCenter) > 0.0f,
-            "breached cube face normal does not point outward after Embree repair");
+        authoredSigns.push_back(glm::dot(faceNormal, faceCenter));
+    }
+
+    const auto built = canonicalizeMesh(breached);
+    require(built.success, built.error.c_str());
+    require(built.raycastPatches == 0 && built.raycastFlippedTriangles == 0,
+        "canonical PREPARE unexpectedly used Embree orientation for an open shell");
+
+    const auto audit = analyzeCanonicalMesh(breached);
+    require(!audit.structuralInvalid && audit.openComponents == 1 && audit.windingFlipsRequired == 0,
+        "open shell remained topologically inconsistent after preparation");
+    require(audit.boundaryEdges == 4,
+        "open shell boundary changed while preserving authored orientation");
+
+    require(breached.triangles.size() == authoredSigns.size(),
+        "open-shell PREPARE changed triangle inventory while preserving orientation");
+    for (std::size_t i = 0; i < breached.triangles.size(); ++i)
+    {
+        const auto& triangle = breached.triangles[i];
+        const glm::vec3 a = breached.vertices[triangle.a].position;
+        const glm::vec3 b = breached.vertices[triangle.b].position;
+        const glm::vec3 c = breached.vertices[triangle.c].position;
+        const glm::vec3 faceNormal = glm::normalize(glm::cross(b - a, c - a));
+        const glm::vec3 faceCenter = (a + b + c) / 3.0f;
+        const float preparedSign = glm::dot(faceNormal, faceCenter);
+        require(authoredSigns[i] * preparedSign > 0.0f,
+            "PREPARE globally flipped a coherent authored open component");
     }
 }
 
@@ -1097,7 +1115,7 @@ int main()
         testNativeImporterDoesNotMarkFanDiagonalNonManifold();
         testCanonicalBuilderRepairsWindingAndOutwardNormals();
         testCanonicalBuilderClosedPlateBreachContracts();
-        testCanonicalBuilderOrientsBreachedShellWithEmbree();
+        testCanonicalBuilderPreservesAuthoredOrientationForOpenShell();
         testCanonicalBuilderRemovesGarbageAndPreservesUvSeams();
         testCanonicalBuilderCollapsesAuthoredNormalOnlySplits();
         testCanonicalPreparationKeepsCoincidentSheetsIndependent();

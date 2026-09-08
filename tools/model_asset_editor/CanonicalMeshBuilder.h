@@ -11,7 +11,7 @@ namespace elite::model_asset::editor
 {
 
 inline constexpr double CanonicalMeshWeldEpsilon = RuntimeMeshWeldEpsilon;
-inline constexpr const char* CanonicalMeshAlgorithmId = "canonical_mesh_libigl_embree_v1";
+inline constexpr const char* CanonicalMeshAlgorithmId = "canonical_mesh_libigl_authored_orientation_v2";
 
 struct CanonicalMeshAnalysis
 {

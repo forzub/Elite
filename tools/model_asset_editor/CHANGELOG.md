@@ -1,3 +1,19 @@
+## 0.10.64 — per-LOD SOURCE basis / reload consistency hotfix (2026-09-08)
+
+- Replaced the old asset-wide axis conversion with explicit active-LOD conversion. `XYZ↻` now sends the selected `lodIndex`; converting LOD1/LOD2/... never rotates another visual LOD.
+- Persisted the source-basis preset independently for every render LOD in editor-state schema 16. Generated LODs inherit the source LOD basis, while legacy pre-v16 asset-wide conversion metadata is migrated as the initial per-LOD profile.
+- Every SOURCE replace/add/variant refresh now reapplies the configured basis of its target LOD immediately after raw OBJ import. A later Blender reload therefore cannot silently insert Z-up source geometry into an already converted Y-up render document.
+- Full same-asset SOURCE reimport preserves and reapplies the existing per-LOD basis profile before the fresh payload becomes WORKING state.
+- Added `reimport_lod_source_basis`: an atomic, identity-preserving rebuild of one legacy/mixed-axis LOD from its exact SOURCE OBJ files. Canonical geometry ids, RenderNode placement and persistent instance-family links are retained; PREPARE/SURFACES evidence for rebuilt meshes is invalidated.
+- The shared SOURCE authoring frame (semantic transforms, source collision/hit volumes, sockets, hit regions, openings, repair targets and damage proxies) is converted exactly once with LOD0. Converting later visual LODs never rotates those shared volumes again.
+
+## 0.10.64 — preserve authored open/thin orientation hotfix (2026-09-08)
+
+- Removed Embree `reorient_facets_raycast` from the production PREPARE path. The patch-wise raycast heuristic could flip only part of a valid Blender-authored open/thin component; with back-face culling this appeared as new holes even though the source mesh was correct.
+- PREPARE now uses libigl only for genuine non-manifold topology splitting, then performs deterministic local winding consistency repair. Coherent open/thin components keep their authored winding; only a closed orientable shell may be flipped as one whole component when signed volume proves it is inside-out.
+- Bumped the canonical preparation algorithm id to `canonical_mesh_libigl_authored_orientation_v2`, invalidating stale v1 PREPARE evidence. Existing v1-corrupted WORKING meshes must be reloaded from SOURCE before the new PREPARE pass because authored winding cannot be reconstructed from an already mutated payload.
+- The editor target no longer links `igl::embree`; Embree remains available only for the explicitly enabled diagnostic spike target. Added a regression test that an intentionally reversed but coherent breached/open shell retains its authored direction through PREPARE.
+
 ## 0.10.64 — authoritative EditorViewState hotfix (2026-09-08)
 
 - SURFACES CHECK evidence is now recorded per geometry instead of broadcasting one global pass/fail value to every mesh row. Passed rows are dark green/green, failed rows are red-brown/red, and not-yet-checked rows are neutral. One failed mesh no longer paints the whole table red.

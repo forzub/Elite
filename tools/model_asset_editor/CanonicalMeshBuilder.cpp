@@ -19,7 +19,6 @@
 #include <glm/glm.hpp>
 
 #include <Eigen/Core>
-#include <igl/embree/reorient_facets_raycast.h>
 #include <igl/split_nonmanifold.h>
 
 namespace elite::model_asset::editor
@@ -353,11 +352,9 @@ PreparedWorkingSet buildWorkingSet(const MeshLod& mesh)
 struct LibiglRepairStats
 {
     std::size_t splitTopologyVertices = 0;
-    std::size_t raycastPatches = 0;
-    std::size_t raycastFlippedTriangles = 0;
 };
 
-bool repairTopologyAndOrientationWithLibigl(
+bool repairTopologyWithLibigl(
     const MeshLod& mesh,
     PreparedWorkingSet& working,
     LibiglRepairStats& stats,
@@ -371,7 +368,7 @@ bool repairTopologyAndOrientationWithLibigl(
 
     // Compact only points referenced by the cleaned triangles before handing
     // the soup to libigl. Removed/unused OBJ vertices must not influence split
-    // statistics or Embree patch orientation.
+    // statistics or topology repair.
     std::vector<int> oldPointToCompact(working.points.representativeVertex.size(), -1);
     std::vector<std::size_t> compactToOldPoint;
     compactToOldPoint.reserve(working.points.representativeVertex.size());
@@ -482,49 +479,14 @@ bool repairTopologyAndOrientationWithLibigl(
     }
     working.points = std::move(repairedPoints);
 
-    // Match the station spike budget. libigl's default 100*faces is excessive
-    // for an interactive offline editor; this bounded patch-wise budget already
-    // produced the visually accepted S3 result under MinGW64.
-    const int faceCount = static_cast<int>(SF.rows());
-    const int raysTotal = std::clamp(faceCount * 8, 200000, 1000000);
-    constexpr int raysMinimum = 16;
-    Eigen::VectorXi flips;
-    Eigen::VectorXi components;
-    try
-    {
-        igl::embree::reorient_facets_raycast(
-            SV, SF,
-            raysTotal,
-            raysMinimum,
-            false,  // patch-wise
-            false,  // ambient-occlusion mode accepted by the station spike
-            false,  // editor writes its own concise repair log
-            flips,
-            components);
-    }
-    catch (const std::exception& ex)
-    {
-        error = std::string("Embree orientation failed: ") + ex.what();
-        return false;
-    }
-
-    if (flips.size() != SF.rows() || components.size() != SF.rows())
-    {
-        error = "Embree orientation returned incompatible result vectors";
-        return false;
-    }
-    stats.raycastPatches = components.size() == 0
-        ? 0u
-        : static_cast<std::size_t>(components.maxCoeff() + 1);
-
-    for (Eigen::Index fi = 0; fi < flips.size(); ++fi)
-    {
-        if (flips(fi) == 0) continue;
-        auto& wt = working.triangles[static_cast<std::size_t>(fi)];
-        std::swap(wt.triangle.b, wt.triangle.c);
-        std::swap(wt.point[1], wt.point[2]);
-        ++stats.raycastFlippedTriangles;
-    }
+    // IMPORTANT: PREPARE must not invent an "outside" for authored open/thin
+    // components. Older versions ran Embree reorient_facets_raycast here and
+    // could flip an arbitrary patch of a valid Blender mesh. With back-face
+    // culling that looked exactly like deleted triangles / holes. libigl is
+    // now used only to split genuine non-manifold topology. Orientation is
+    // handled deterministically below: local winding inconsistencies are made
+    // coherent, closed shells may be flipped as a whole by signed volume, and
+    // coherent open components keep their authored winding.
 
     const auto repairedTopology = buildTopology(working.triangles);
     for (const auto& [key, uses] : repairedTopology.edgeUses)
@@ -598,7 +560,23 @@ OrientationSolution solveOrientation(const WorkingTopology& topology, std::size_
                 }
             }
         }
-        if (componentConflict) ++out.conflicts;
+        if (componentConflict)
+        {
+            ++out.conflicts;
+            continue;
+        }
+
+        // The seed triangle is arbitrary, so parity 0 vs 1 has an arbitrary
+        // global sign for an open component. Choose the equivalent solution
+        // that changes the fewest authored triangles. This keeps a local
+        // winding mistake local instead of allowing the seed to invert the
+        // majority of an otherwise correct Blender-authored component.
+        const auto ones = static_cast<std::size_t>(std::count_if(
+            queue.begin(), queue.end(), [&](std::size_t ti) { return out.parity[ti] == 1; }));
+        if (ones > queue.size() - ones)
+        {
+            for (const auto ti : queue) out.parity[ti] ^= 1;
+        }
     }
     out.flipsRequired = static_cast<std::size_t>(std::count(out.parity.begin(), out.parity.end(), 1));
     return out;
@@ -1154,20 +1132,59 @@ CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)
     // identity unless rebuild can map them back unambiguously.
     const auto oldMetadata = collectOldEdgeMetadata(mesh, working.points);
 
-    // Production topology/orientation authority. The previous v7 radial
-    // envelope/open-component heuristic is deliberately gone from PREPARE.
+    // Production topology repair authority. PREPARE deliberately preserves the
+    // authored orientation of coherent open/thin components. libigl only splits
+    // genuine non-manifold topology; deterministic winding repair follows.
     LibiglRepairStats libiglStats;
-    if (!repairTopologyAndOrientationWithLibigl(mesh, working, libiglStats, result.error))
+    if (!repairTopologyWithLibigl(mesh, working, libiglStats, result.error))
     {
         result.repairStatus = "LIBIGL_FAILED";
         return result;
     }
     result.splitTopologyVertices = libiglStats.splitTopologyVertices;
-    result.raycastPatches = libiglStats.raycastPatches;
-    result.raycastFlippedTriangles = libiglStats.raycastFlippedTriangles;
-    result.flippedTriangles = libiglStats.raycastFlippedTriangles;
 
     auto topology = buildTopology(working.triangles);
+    const auto authoredOrientation = solveOrientation(topology, working.triangles.size());
+    if (authoredOrientation.conflicts != 0)
+    {
+        result.repairStatus = "LIBIGL_FAILED";
+        result.error = "topology cannot be oriented consistently after non-manifold split";
+        return result;
+    }
+
+    // Preserve the authored direction of every coherent component. Only local
+    // triangles that contradict their manifold neighbours are flipped.
+    result.flippedTriangles = authoredOrientation.flipsRequired;
+    applyParity(working.triangles, authoredOrientation);
+    topology = buildTopology(working.triangles);
+
+    // A closed orientable shell has an unambiguous outside: signed volume.
+    // Flip such a shell as one unit when it is inside-out. Open components are
+    // intentionally never globally reoriented by PREPARE.
+    const auto orientedComponents = buildComponents(topology, working.triangles.size());
+    for (std::size_t ci = 0; ci < orientedComponents.triangles.size(); ++ci)
+    {
+        if (orientedComponents.boundaryEdges[ci] != 0) continue;
+        double volume6 = 0.0;
+        for (const auto ti : orientedComponents.triangles[ci])
+        {
+            const auto& wt = working.triangles[ti];
+            const auto a = canonicalPointPosition(mesh, working.points, wt.point[0]);
+            const auto b = canonicalPointPosition(mesh, working.points, wt.point[1]);
+            const auto c = canonicalPointPosition(mesh, working.points, wt.point[2]);
+            volume6 += glm::dot(a, glm::cross(b, c));
+        }
+        if (volume6 >= -1.0e-10) continue;
+        for (const auto ti : orientedComponents.triangles[ci])
+        {
+            auto& wt = working.triangles[ti];
+            std::swap(wt.triangle.b, wt.triangle.c);
+            std::swap(wt.point[1], wt.point[2]);
+            ++result.flippedTriangles;
+        }
+    }
+
+    topology = buildTopology(working.triangles);
     const auto finalOrientation = solveOrientation(topology, working.triangles.size());
     result.after.windingFlipsRequired = finalOrientation.flipsRequired;
     result.after.windingConflicts = finalOrientation.conflicts;
@@ -1188,7 +1205,7 @@ CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)
         result.after.insideOutClosedComponents != 0)
     {
         result.repairStatus = "LIBIGL_FAILED";
-        result.error = "libigl/Embree repair did not satisfy canonical topology/orientation invariants";
+        result.error = "deterministic canonical repair did not satisfy topology/orientation invariants";
         return result;
     }
 

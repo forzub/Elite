@@ -337,13 +337,13 @@
     },
     {
       "id": "model_preflight",
-      "description": "Explicit PREPARE creates technically canonical geometry with libigl + Embree; Preflight reports later surface-class authoring separately from LOD readiness, and RAW/PREPARED viewport diagnostics remain available.",
+      "description": "Explicit PREPARE creates technically canonical geometry with libigl topology repair while preserving coherent authored open/thin orientation; closed shells are oriented deterministically by signed volume. Preflight reports later surface-class authoring separately from LOD readiness, and RAW/PREPARED viewport diagnostics remain available.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/CanonicalMeshBuilder.h",
           "tokens": [
             "CanonicalMeshAlgorithmId",
-            "canonical_mesh_libigl_embree_v1",
+            "canonical_mesh_libigl_authored_orientation_v2",
             "CanonicalMeshWeldEpsilon",
             "canonicalizeMesh"
           ]
@@ -361,7 +361,6 @@
             "Mesh preparation: ready=",
             "appendMeshRepairDiagnostic",
             "mesh_repair.log",
-            "raycastPatches",
             "m_rawMeshSnapshots",
             "wizardLogPath"
           ]
@@ -390,7 +389,7 @@
             "testCanonicalPreparationKeepsCoincidentSheetsIndependent",
             "testCanonicalBuilderFingerprintTracksStructuralPayload",
             "testPreparationRejectsUnreadableAndRepairsNonManifold",
-            "testCanonicalBuilderOrientsBreachedShellWithEmbree"
+            "testCanonicalBuilderPreservesAuthoredOrientationForOpenShell"
           ]
         }
       }

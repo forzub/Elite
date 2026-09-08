@@ -42,13 +42,13 @@ for token in (
         raise AssertionError(f"missing deletion/source-graph header contract: {token!r}")
 
 for token in (
-    'state["schemaVersion"] = 16',
+    'state["schemaVersion"] = 17',
     '{"sourceHash", record.sourceHash}, {"sourceMissing", record.sourceMissing}',
     'record.sourceMissing = schemaVersion >= 14 && item.value("sourceMissing", false);',
     '{"sourceMissing", haveSourceRecord && sourceRecord.sourceMissing}',
 ):
     if token not in session:
-        raise AssertionError(f"schema-16 missing state not persisted/exposed: {token!r}")
+        raise AssertionError(f"schema-17 missing state not persisted/exposed: {token!r}")
 
 # CHECK is still persistence-read-only but must push new per-mesh evidence to UI
 # immediately. A successful whole-stage check certifies all current meshes;

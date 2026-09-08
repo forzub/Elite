@@ -2434,6 +2434,37 @@ glm::vec3 convertEuler(const glm::vec3& deg, const glm::mat3& basis)
     return eulerDegrees(glm::quat_cast(converted));
 }
 
+// Collision/hit primitives are leaves, not child coordinate systems. Their
+// generated local box/capsule geometry stays numerically unchanged while the
+// parent semantic frame is remapped. Therefore their local orientation must be
+// left-multiplied by the frame delta rather than conjugated like a semantic
+// child transform. Signed axis mappings may contain a reflection; centered
+// boxes/spheres/capsules are invariant under a local X sign flip, so use that
+// symmetry to keep the stored Euler frame a proper rotation.
+glm::mat3 properSymmetricPrimitiveFrame(glm::mat3 frame)
+{
+    if (glm::determinant(frame) < 0.0f) frame[0] = -frame[0];
+    return frame;
+}
+
+glm::vec3 transformSymmetricPrimitiveEuler(const glm::vec3& deg, const glm::mat3& basis)
+{
+    const glm::mat3 converted = properSymmetricPrimitiveFrame(basis * eulerRotation(deg));
+    return eulerDegrees(glm::quat_cast(converted));
+}
+
+glm::vec3 migrateLegacySymmetricPrimitiveEuler(const glm::vec3& deg, const glm::mat3& currentBasis)
+{
+    // v1 encoded primitive leaves as if they were semantic child coordinate
+    // systems: B * R * B^-1. Recover the authored/source orientation and then
+    // encode the physical primitive in the current frame as B * R. This works
+    // even when the user reapplies the exact same LOD0 mapping.
+    const glm::mat3 legacy = eulerRotation(deg);
+    const glm::mat3 source = glm::transpose(currentBasis) * legacy * currentBasis;
+    const glm::mat3 converted = properSymmetricPrimitiveFrame(currentBasis * source);
+    return eulerDegrees(glm::quat_cast(converted));
+}
+
 void recomputeLodBounds(MeshLod& lod)
 {
     if (lod.vertices.empty()) { lod.minBounds = glm::vec3(0); lod.maxBounds = glm::vec3(0); return; }
@@ -2659,7 +2690,7 @@ void transformSharedSourceFrame(ModelAsset& asset, const glm::mat3& basis)
     for (auto& c : asset.collisionVolumes)
     {
         c.localPosition = basis * c.localPosition;
-        c.localRotationDeg = convertEuler(c.localRotationDeg, basis);
+        c.localRotationDeg = transformSymmetricPrimitiveEuler(c.localRotationDeg, basis);
     }
     for (auto& socket : asset.sockets)
     {
@@ -2679,12 +2710,12 @@ void transformSharedSourceFrame(ModelAsset& asset, const glm::mat3& basis)
     for (auto& hit : asset.hitRegions)
     {
         hit.localPosition = basis * hit.localPosition;
-        hit.localRotationDeg = convertEuler(hit.localRotationDeg, basis);
+        hit.localRotationDeg = transformSymmetricPrimitiveEuler(hit.localRotationDeg, basis);
     }
     for (auto& opening : asset.openings)
     {
         opening.localPosition = basis * opening.localPosition;
-        opening.localRotationDeg = convertEuler(opening.localRotationDeg, basis);
+        opening.localRotationDeg = transformSymmetricPrimitiveEuler(opening.localRotationDeg, basis);
     }
     for (auto& repair : asset.repairTargets)
     {
@@ -2695,8 +2726,22 @@ void transformSharedSourceFrame(ModelAsset& asset, const glm::mat3& basis)
         for (auto& proxy : link.damageProxies)
         {
             proxy.localPosition = basis * proxy.localPosition;
-            proxy.localRotationDeg = convertEuler(proxy.localRotationDeg, basis);
+            proxy.localRotationDeg = transformSymmetricPrimitiveEuler(proxy.localRotationDeg, basis);
         }
+}
+
+
+void migrateLegacySharedPrimitiveFrames(ModelAsset& asset, const glm::mat3& currentBasis)
+{
+    for (auto& c : asset.collisionVolumes)
+        c.localRotationDeg = migrateLegacySymmetricPrimitiveEuler(c.localRotationDeg, currentBasis);
+    for (auto& hit : asset.hitRegions)
+        hit.localRotationDeg = migrateLegacySymmetricPrimitiveEuler(hit.localRotationDeg, currentBasis);
+    for (auto& opening : asset.openings)
+        opening.localRotationDeg = migrateLegacySymmetricPrimitiveEuler(opening.localRotationDeg, currentBasis);
+    for (auto& link : asset.structuralLinks)
+        for (auto& proxy : link.damageProxies)
+            proxy.localRotationDeg = migrateLegacySymmetricPrimitiveEuler(proxy.localRotationDeg, currentBasis);
 }
 
 void convertSharedSourceFrameToCanonical(ModelAsset& asset, const SourceBasis& source)
@@ -3116,6 +3161,7 @@ ModelAssetEditorSession::EditorAuthoringState ModelAssetEditorSession::captureEd
     state.semanticChildOrder = m_semanticChildOrder;
     state.lodSourceBasisPresets = m_lodSourceBasisPresets;
     state.sharedSourceBasisPreset = m_sharedSourceBasisPreset;
+    state.sharedSourceFrameTransformVersion = m_sharedSourceFrameTransformVersion;
     state.nextBaseVisualOrdinal = m_nextBaseVisualOrdinal;
     state.nextSourceVariantOrdinal = m_nextSourceVariantOrdinal;
     return state;
@@ -3213,6 +3259,7 @@ void ModelAssetEditorSession::applyEditorAuthoringState(EditorAuthoringState sta
     m_semanticChildOrder = std::move(state.semanticChildOrder);
     m_lodSourceBasisPresets = std::move(state.lodSourceBasisPresets);
     m_sharedSourceBasisPreset = state.sharedSourceBasisPreset.empty() ? "game_current" : std::move(state.sharedSourceBasisPreset);
+    m_sharedSourceFrameTransformVersion = state.sharedSourceFrameTransformVersion >= 2 ? 2 : 1;
     m_nextBaseVisualOrdinal = std::max<std::size_t>(1, state.nextBaseVisualOrdinal);
     m_nextSourceVariantOrdinal = std::max<std::size_t>(1, state.nextSourceVariantOrdinal);
     // RAW source snapshots are deliberately session-only. RESTORE reloads the saved
@@ -3358,7 +3405,8 @@ nlohmann::json ModelAssetEditorSession::serializeEditorAuthoringState(const Edit
         {"componentMaintenance", std::move(componentMaintenance)},
         {"semanticTreeOrder", std::move(semanticTreeOrder)},
         {"lodSourceBasis", std::move(lodSourceBasis)},
-        {"sharedSourceBasisPreset", state.sharedSourceBasisPreset.empty() ? "game_current" : state.sharedSourceBasisPreset}
+        {"sharedSourceBasisPreset", state.sharedSourceBasisPreset.empty() ? "game_current" : state.sharedSourceBasisPreset},
+        {"sharedSourceFrameTransformVersion", state.sharedSourceFrameTransformVersion >= 2 ? 2 : 1}
     };
 }
 
@@ -3582,6 +3630,10 @@ bool ModelAssetEditorSession::parseEditorAuthoringState(
                     next.lodSourceBasisPresets[lodIndex] = preset;
                 }
                 next.sharedSourceBasisPreset = state.value("sharedSourceBasisPreset", std::string("game_current"));
+                if (schemaVersion >= 17)
+                    next.sharedSourceFrameTransformVersion = std::max(1, state.value("sharedSourceFrameTransformVersion", 2));
+                else
+                    next.sharedSourceFrameTransformVersion = next.sharedSourceBasisPreset == "game_current" ? 2 : 1;
             }
 
         }
@@ -3611,6 +3663,7 @@ bool ModelAssetEditorSession::parseEditorAuthoringState(
             for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
                 next.lodSourceBasisPresets[li] = m_asset.sourceBasis.preset;
             next.sharedSourceBasisPreset = m_asset.sourceBasis.preset;
+            next.sharedSourceFrameTransformVersion = 1;
         }
         parsed = std::move(next);
         if (error) error->clear();
@@ -3672,7 +3725,7 @@ bool ModelAssetEditorSession::writeWorkingEditorState(
     {
         std::filesystem::create_directories(workingEditorStatePath().parent_path());
         json state = serializeEditorAuthoringState(captureEditorAuthoringState());
-        state["schemaVersion"] = 16;
+        state["schemaVersion"] = 17;
         state["snapshotKind"] = "model_asset_editor_working_state";
         state["assetId"] = m_selectedId;
         state["editorVersion"] = ModelAssetEditorVersion;
@@ -3736,7 +3789,7 @@ bool ModelAssetEditorSession::loadWorkingEditorState(
         json snapshot;
         in >> snapshot;
         const int schemaVersion = snapshot.value("schemaVersion", 0);
-        if ((schemaVersion != 11 && schemaVersion != 12 && schemaVersion != 13 && schemaVersion != 14 && schemaVersion != 15 && schemaVersion != 16) ||
+        if ((schemaVersion != 11 && schemaVersion != 12 && schemaVersion != 13 && schemaVersion != 14 && schemaVersion != 15 && schemaVersion != 16 && schemaVersion != 17) ||
             snapshot.value("snapshotKind", std::string()) != "model_asset_editor_working_state")
         {
             if (error) *error = "unsupported working editor-state schema";
@@ -3774,7 +3827,7 @@ bool ModelAssetEditorSession::writeProductionEditorState(std::string* error) con
     {
         std::filesystem::create_directories(wizardWorkspacePath());
         json state = serializeEditorAuthoringState(captureEditorAuthoringState());
-        state["schemaVersion"] = 16;
+        state["schemaVersion"] = 17;
         state["snapshotKind"] = "model_asset_editor_production_state";
         state["assetId"] = m_selectedId;
         state["editorVersion"] = ModelAssetEditorVersion;
@@ -3837,7 +3890,7 @@ bool ModelAssetEditorSession::loadProductionEditorState(
         json snapshot;
         in >> snapshot;
         const int schemaVersion = snapshot.value("schemaVersion", 0);
-        if ((schemaVersion != 8 && schemaVersion != 13 && schemaVersion != 14 && schemaVersion != 15 && schemaVersion != 16) ||
+        if ((schemaVersion != 8 && schemaVersion != 13 && schemaVersion != 14 && schemaVersion != 15 && schemaVersion != 16 && schemaVersion != 17) ||
             snapshot.value("snapshotKind", std::string()) != "model_asset_editor_production_state")
         {
             if (error) *error = "unsupported production editor-state schema";
@@ -7160,7 +7213,14 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
                 convertRenderLodBasisToCanonical(m_asset.renderLods[lodIndex], basisPreset(preset));
             }
             if (m_sharedSourceBasisPreset != "game_current")
+            {
                 convertSharedSourceFrameToCanonical(m_asset, basisPreset(m_sharedSourceBasisPreset));
+                m_sharedSourceFrameTransformVersion = 2;
+            }
+            else
+            {
+                m_sharedSourceFrameTransformVersion = 2;
+            }
             if (!m_asset.renderLods.empty())
             {
                 m_asset.minBounds = m_asset.renderLods[0].minBounds;
@@ -7209,6 +7269,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         {
             m_lodSourceBasisPresets.clear();
             m_sharedSourceBasisPreset = "game_current";
+            m_sharedSourceFrameTransformVersion = 2;
         }
         m_meshPreparationRecords.clear();
         m_rawMeshSnapshots.clear();
@@ -8715,12 +8776,28 @@ bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(
     else m_lodSourceBasisPresets[lodIndex] = targetPreset;
 
     bool sharedFrameChanged = false;
+    bool sharedPrimitiveFrameMigrated = false;
     if (lodIndex == 0)
     {
         const SourceBasis sharedPrevious = basisPreset(m_sharedSourceBasisPreset);
-        const glm::mat3 sharedDelta = targetToGame * glm::transpose(sourceToCanonical(sharedPrevious));
+        const glm::mat3 sharedPreviousToGame = sourceToCanonical(sharedPrevious);
+
+        // editor_state <= v16 encoded collision/hit primitives like semantic
+        // child coordinate systems. That leaves an identity-aligned box/capsule
+        // unrotated when Blender Y/Z are remapped, which is exactly the visible
+        // "hit volumes left behind" regression. Repair the leaf encoding first,
+        // even when the requested LOD0 mapping is identical to the current one.
+        if (m_sharedSourceFrameTransformVersion < 2)
+        {
+            migrateLegacySharedPrimitiveFrames(m_asset, sharedPreviousToGame);
+            m_sharedSourceFrameTransformVersion = 2;
+            sharedPrimitiveFrameMigrated = true;
+        }
+
+        const glm::mat3 sharedDelta = targetToGame * glm::transpose(sharedPreviousToGame);
         transformSharedSourceFrame(m_asset, sharedDelta);
         m_sharedSourceBasisPreset = targetPreset;
+        m_sharedSourceFrameTransformVersion = 2;
         sharedFrameChanged = true;
         markManifestDirty();
     }
@@ -8772,7 +8849,8 @@ bool ModelAssetEditorSession::reimportLodSourcePartsInConfiguredBasis(
         " NOSE=" + axisDirectionToken(targetBasis.forward) +
         " -> GAME RIGHT=+X UP=+Y NOSE=-Z; rebuilt " + std::to_string(pending.size()) +
         " SOURCE mesh(es), preserved RenderNode/instance identity" +
-        (lodIndex == 0 ? "; shared SOURCE hit volumes followed LOD0" : std::string()) +
+        (lodIndex == 0 ? "; shared SOURCE hit volumes followed LOD0 without cumulative rotation" : std::string()) +
+        (sharedPrimitiveFrameMigrated ? "; legacy hit-volume orientation repaired" : std::string()) +
         ". Other LODs were not changed; PREPARE/SURFACES are stale.");
     return true;
 }
@@ -9553,6 +9631,7 @@ nlohmann::json ModelAssetEditorSession::serializeAssetMetadata() const
     out["meshSourceRecords"] = serializeMeshSourceRecords();
     out["sourceBasis"] = {{"preset", m_asset.sourceBasis.preset}, {"right", static_cast<int>(m_asset.sourceBasis.right)}, {"up", static_cast<int>(m_asset.sourceBasis.up)}, {"forward", static_cast<int>(m_asset.sourceBasis.forward)}, {"canonicalized", m_asset.sourceBasis.canonicalized}};
     out["sharedSourceBasisPreset"] = m_sharedSourceBasisPreset;
+    out["sharedSourceFrameTransformVersion"] = m_sharedSourceFrameTransformVersion;
     out["manifestDirty"] = m_manifestDirty;
     out["geometryPayloadIncluded"] = false;
     out["wizard"] = serializeWizard();

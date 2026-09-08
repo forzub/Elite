@@ -1,3 +1,16 @@
+## 0.10.64 — direct SOURCE→GAME axis-remap UI (2026-09-08)
+
+- Replaced the RIGHT/UP/NOSE input form with literal SOURCE-axis routing: `SOURCE +X/+Y/+Z → GAME signed axis`. The opposite negative axis is shown automatically, so an operation such as `X→Y, Y→Z, Z→X` can be entered exactly as stated without semantic-basis translation.
+- GAME-axis choices are labelled with both axis and meaning (`+X RIGHT`, `+Y UP`, `-Z NOSE`, etc.). The preview expands all six signed directions and flags negative-determinant mappings as a mirror/handedness flip before APPLY.
+- Kept the persisted/backend per-LOD basis contract unchanged by converting the direct UI mapping to the existing semantic RIGHT/UP/NOSE representation only at dispatch. No SOURCE reload, hit-volume, residency or per-LOD mutation behavior is changed by this UI patch.
+
+## 0.10.64 — shared hit-volume frame remap fix (2026-09-08)
+
+- Fixed LOD0 axis remapping for collision/hit primitives. Collision boxes/capsules, hit regions, openings and structural damage proxies are leaf primitives, not semantic child coordinate systems: their local orientation now follows the physical frame delta instead of using semantic-frame conjugation.
+- Added editor-state schema 17 with `sharedSourceFrameTransformVersion`. Existing schema-16 projects with a converted shared SOURCE frame are marked legacy and repaired on the next explicit LOD0 axis APPLY, even if the selected mapping is unchanged.
+- The repair is non-cumulative: semantic hierarchy/socket/state frames still use coordinate-frame conjugation; primitive hit/collision leaves use a proper physical primitive frame. Reflected signed-axis mappings are represented without invalid reflection Euler matrices by using centered primitive symmetry.
+- LOD1+ remain visual-only axis operations and never mutate the shared hit/collision frame.
+
 ## 0.10.64 — explicit per-LOD SOURCE axis mapping / fixed game frame (2026-09-08)
 
 - Made the runtime/editor canonical game frame explicit and non-negotiable: `RIGHT = +X`, `UP = +Y`, `NOSE/FORWARD = -Z`; the viewport ground plane is `XZ` and vertical is `Y`. The axis/grid overlay now labels these semantic directions directly instead of relying on raw RGB axes alone.

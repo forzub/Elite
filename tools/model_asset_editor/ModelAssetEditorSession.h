@@ -177,6 +177,10 @@ private:
         // Semantic/collision/source hit-volume authoring is shared across LODs;
         // LOD0 owns its one-time SOURCE-frame conversion.
         std::string sharedSourceBasisPreset = "game_current";
+        // v2 stores collision/hit primitive orientations in the current LOD0/game
+        // frame without accumulating coordinate remaps. v1 is the legacy
+        // conjugated-leaf encoding and is migrated on the next explicit LOD0 map.
+        int sharedSourceFrameTransformVersion = 2;
         std::size_t nextBaseVisualOrdinal = 1;
         std::size_t nextSourceVariantOrdinal = 1;
     };
@@ -374,6 +378,7 @@ private:
     std::map<std::string, std::vector<std::string>> m_semanticChildOrder;
     std::map<std::size_t, std::string> m_lodSourceBasisPresets;
     std::string m_sharedSourceBasisPreset = "game_current";
+    int m_sharedSourceFrameTransformVersion = 2;
     std::size_t m_nextBaseVisualOrdinal = 1;
     std::size_t m_nextSourceVariantOrdinal = 1;
     std::uint32_t m_nextWireTransferId = 1;

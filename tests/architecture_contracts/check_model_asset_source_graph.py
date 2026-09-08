@@ -55,7 +55,7 @@ for token in (
         raise AssertionError(f"per-mesh source graph header missing {token!r}")
 
 for token in (
-    'state["schemaVersion"] = 16',
+    'state["schemaVersion"] = 17',
     'state["saveRevision"] = saveRevision',
     'state["savedAtUtc"] = savedAtUtc',
     'state["sourceAssetDirectory"] = m_loadedSourceAssetDirectory.generic_string()',
@@ -67,7 +67,7 @@ for token in (
     if token not in session:
         raise AssertionError(f"save/source graph serialization missing {token!r}")
 
-# Both WORKING and final production sidecars carry schema-16 revision/check/scale data.
+# Both WORKING and final production sidecars carry schema-17 revision/check/scale data.
 working_state = body_between(
     session,
     "bool ModelAssetEditorSession::writeWorkingEditorState(",
@@ -80,7 +80,7 @@ production_state = body_between(
 )
 for label, body in (("working", working_state), ("production", production_state)):
     for token in (
-        'state["schemaVersion"] = 16',
+        'state["schemaVersion"] = 17',
         'state["saveRevision"]',
         'state["sourceAssetDirectory"]',
         'state["stages"]',

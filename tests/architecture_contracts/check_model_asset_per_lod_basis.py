@@ -34,7 +34,7 @@ checks = [
     ('full SOURCE reimport reapplies visual LOD bases', 'convertRenderLodBasisToCanonical(m_asset.renderLods[lodIndex], basisPreset(preset));' in session),
     ('full SOURCE reimport reapplies shared SOURCE/hit frame once', 'convertSharedSourceFrameToCanonical(m_asset, basisPreset(m_sharedSourceBasisPreset));' in session),
     ('recovery rebuild is atomic before resident geometry commit', 'Two-phase rebuild.' in rebuild and 'PendingSourceMesh' in rebuild),
-    ('editor sidecar schema remains per-LOD basis capable', 'state["schemaVersion"] = 16;' in session),
+    ('editor sidecar schema remains per-LOD basis capable', 'state["schemaVersion"] = 17;' in session),
 ]
 failed = [name for name, ok in checks if not ok]
 if failed:

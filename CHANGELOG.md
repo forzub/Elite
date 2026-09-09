@@ -1,5 +1,18 @@
 # Changelog
 
+## Model Asset Editor v0.10.66 — dynamic UI localization fence
+
+- Completed dynamic Model Asset Editor localization for SEMANTICS and the shared SEMANTICS/PHYSICS/DAMAGE inspectors, including runtime statuses, confirmations, prompts, socket/collision/damage controls, structural graph authoring and the 3D viewport mode selector.
+- Added complete `en` / `ru` / `zh-Hans` / `es` / `ja` entries for every new key; Russian is no longer an implicit fallback path for other locales.
+- Strengthened the localization architecture contract: every literal `tr()` key must exist, and uncontrolled hardcoded user-facing text is rejected in unfrozen dynamic UI. SOURCE / LODS / GEOMETRY / SURFACES fingerprints remain unchanged.
+- Bumped the visible editor version to 0.10.66.
+
+## Model Asset Editor v0.10.65 — SEMANTICS higher-LOD visual explode fix
+
+- Fixed SEMANTICS explode for higher-LOD RenderNodes that are present/resident but still UNBOUND to the asset-wide semantic tree.
+- Such RenderNodes separate as temporary visual clusters around MODEL ROOT for preview/binding work; semantic ownership is never guessed or persisted by the preview.
+- Bumped the visible editor version to 0.10.65.
+
 ## Model Asset Editor v0.10.64 — pre-SEMANTICS acceptance freeze
 
 - SOURCE, LODS, GEOMETRY and SURFACES are now the frozen accepted authoring baseline before SEMANTICS.

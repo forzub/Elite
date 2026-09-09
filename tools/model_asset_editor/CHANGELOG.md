@@ -1,3 +1,18 @@
+## 0.10.66 — dynamic SEMANTICS/shared UI localization + regression fence (2026-09-09)
+
+- Routed the remaining SEMANTICS and shared SEMANTICS/PHYSICS/DAMAGE dynamic user-facing strings through `tr()`, including tree/binding/motion/structural panels, inspectors, prompts, confirmations, statuses and backend status translation at the WebUI boundary.
+- Localized the shared viewport mode selector (`SOURCE` / `NO CULLING` / `WORKING`) instead of leaving Russian option text outside `applyLocale()`.
+- Expanded the localization dictionary to all active locales (`en`, `ru`, `zh-Hans`, `es`, `ja`) and closed previously missing `tr()` keys.
+- `check_model_asset_localization_complete.py` now validates dictionary completeness, rejects accidental English fallback copies, requires every literal WebUI `tr()` key to exist, and scans controlled unfrozen dynamic UI for hardcoded visible text / prompt / status sinks.
+- SOURCE / LODS / GEOMETRY / SURFACES implementation fingerprints are unchanged.
+
+## 0.10.65 — SEMANTICS unbound higher-LOD explode / visible version fence (2026-09-08)
+
+- Bumped the editor version to 0.10.65 so the title/catalog badge can distinguish this SEMANTICS build from the long 0.10.64 patch chain.
+- Traced the remaining LOD1 explode failure to unbound RenderNodes: LOD switching already changed the scene, but `semanticRenderOwner()` returned `-1` for LOD1 visuals with no semantic binding and the explode path therefore applied a zero offset.
+- Unbound RenderNodes now form temporary visual clusters for SEMANTICS explode preview. Bound visuals still use their semantic owner; unbound visuals are separated radially from MODEL ROOT without writing or guessing `semanticNodeIndex`.
+- The active-LOD summary explicitly reports temporary UNBOUND visual clusters and directs the user to VISUAL REPRESENTATION / LOD BINDINGS. No fuzzy cross-LOD binding was introduced. SOURCE / LODS / GEOMETRY / SURFACES remain frozen.
+
 ## 0.10.64 — pre-SEMANTICS acceptance freeze / localization / viewport deselect (2026-09-08)
 
 - Accepted and froze the complete pre-SEMANTICS authoring baseline: SOURCE, LODS, GEOMETRY and SURFACES. Their protected fingerprints must not change in later SEMANTICS work without an explicit contract exception.

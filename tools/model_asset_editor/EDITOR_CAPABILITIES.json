@@ -376,9 +376,9 @@
             "model_editor.preflight.group_extra",
             "model_editor.preflight.canonical_note",
             "meshViewportMode",
-            "ИСХОДНИК",
-            "БЕЗ ОТСЕЧЕНИЯ",
-            "РАБОЧИЙ"
+            "model_editor.viewport.mode.source",
+            "model_editor.viewport.mode.double_sided",
+            "model_editor.viewport.mode.working"
           ]
         },
         "test": {
@@ -658,17 +658,21 @@
             "semanticJointPivotPickTarget",
             "semanticSetJointPivotWorld",
             "semanticPreviewRateDegPerSec",
-            "VISUAL REPRESENTATION / LOD BINDINGS",
-            "ДОПОЛНИТЕЛЬНО · SEMANTIC FRAME",
+            "model_editor.semantics.binding.title",
+            "model_editor.semantics.node.advanced",
             "rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset",
             "semanticStaticFlattenCandidates",
             "semanticSelectionToAssetSpace",
             "semanticFlattenStaticTree",
             "data-semantic-model-root",
-            "◆ MODEL ROOT · ASSET SPACE · implicit identity root",
+            "model_editor.semantics.tree.asset_header",
             "assertSemanticVisualLodInvariant",
             "restoreSemanticSelectionAfterLodSwitch",
-            "SEMANTIC SEPARATION UNAVAILABLE"
+            "model_editor.semantics.tree.separation_unavailable",
+            "semanticUnboundRenderClusterRoot",
+            "semanticUnboundRenderClusterOffsets",
+            "model_editor.semantics.tree.unbound_clusters",
+            "model_editor.semantics.tree.unbound_clusters"
           ]
         },
         "test": {
@@ -720,11 +724,11 @@
         "ui": {
           "path": "src/assets/webui/model_asset_editor.html",
           "tokens": [
-            "TREE · СБОРКА / КИНЕМАТИКА",
-            "GRAPH · КОНСТРУКЦИОННЫЕ СВЯЗИ",
-            "NEW LINK · 3D PICK A ↔ B",
+            "model_editor.semantics.mode.tree",
+            "model_editor.semantics.mode.graph",
+            "model_editor.structural.new_link",
             "structuralEndpointForPick",
-            "Exploded viewport никогда не является coordinate authority."
+            "model_editor.structural.new_link_help"
           ]
         },
         "test": {
@@ -928,6 +932,55 @@
           "path": "tests/architecture_contracts/check_model_asset_lod_workspace.py",
           "tokens": [
             "LOD per-mesh PREPARE workspace / selection / visibility / ANALYZE fence"
+          ]
+        }
+      }
+    },
+    {
+      "id": "dynamic_model_editor_localization",
+      "description": "Unfrozen Model Asset Editor dynamic UI is locale-authoritative: SEMANTICS and shared SEMANTICS/PHYSICS/DAMAGE user-facing text routes through tr(), all five active locales are complete, and regression checks reject missing keys or uncontrolled hardcoded UI while frozen SOURCE/LODS/GEOMETRY/SURFACES fingerprints remain unchanged.",
+      "contracts": {
+        "ui": {
+          "path": "src/assets/webui/model_asset_editor.html",
+          "tokens": [
+            "model_editor.semantics.binding.title",
+            "model_editor.semantics.tree.asset_header",
+            "model_editor.viewport.mode.source",
+            "model_editor.viewport.mode.working",
+            "function translateServerMessage(message)",
+            "model_editor.server.semantic_node_added",
+            "model_editor.damage.active_states",
+            "model_editor.socket.interface_profile"
+          ]
+        },
+        "localization": {
+          "path": "src/assets/localization/ui/tools/model_asset_editor.json",
+          "tokens": [
+            "model_editor.semantics.tree.unbound_clusters",
+            "model_editor.semantics.motion.save_runtime",
+            "model_editor.structural.new_link",
+            "model_editor.physics.base_rigid_body",
+            "model_editor.damage.render_selector",
+            "model_editor.socket.interface_profile",
+            "model_editor.viewport.mode.double_sided",
+            "model_editor.server.collision_updated"
+          ]
+        },
+        "test": {
+          "path": "tests/architecture_contracts/check_model_asset_localization_complete.py",
+          "tokens": [
+            "hardcoded user-facing",
+            "controlled dynamic UI",
+            "used_tr_keys",
+            "unknown_tr_keys"
+          ]
+        },
+        "contract": {
+          "path": "tools/model_asset_editor/PATCH_CONTRACT.md",
+          "tokens": [
+            "Dynamic localization authority (v0.10.66)",
+            "Russian is never an implicit fallback",
+            "implementation fingerprints remain unchanged"
           ]
         }
       }

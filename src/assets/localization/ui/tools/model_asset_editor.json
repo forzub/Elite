@@ -5716,6 +5716,2715 @@
       "zh-Hans": "未更改：未加载资源",
       "es": "SIN CAMBIOS: no hay ningún recurso cargado",
       "ja": "変更なし: アセットが読み込まれていません"
+    },
+    "model_editor.viewport.mode.title": {
+      "en": "Mesh viewport mode",
+      "ru": "Режим отображения меша",
+      "zh-Hans": "网格视口模式",
+      "es": "Modo de malla en la vista",
+      "ja": "メッシュ表示モード"
+    },
+    "model_editor.viewport.mode.source": {
+      "en": "SOURCE",
+      "ru": "ИСХОДНИК",
+      "zh-Hans": "源数据",
+      "es": "ORIGEN",
+      "ja": "ソース"
+    },
+    "model_editor.viewport.mode.double_sided": {
+      "en": "NO CULLING",
+      "ru": "БЕЗ ОТСЕЧЕНИЯ",
+      "zh-Hans": "不剔除背面",
+      "es": "SIN DESCARTE",
+      "ja": "カリングなし"
+    },
+    "model_editor.viewport.mode.working": {
+      "en": "WORKING",
+      "ru": "РАБОЧИЙ",
+      "zh-Hans": "工作网格",
+      "es": "TRABAJO",
+      "ja": "作業中"
+    },
+    "model_editor.status.settings_loading": {
+      "en": "Settings are still loading",
+      "ru": "Настройки ещё загружаются",
+      "zh-Hans": "设置仍在加载",
+      "es": "La configuración aún se está cargando",
+      "ja": "設定を読み込み中です"
+    },
+    "model_editor.settings.reset_status": {
+      "en": "Settings form reset to project defaults; press Save settings to apply",
+      "ru": "Форма настроек сброшена к значениям проекта; нажмите «Сохранить настройки», чтобы применить",
+      "zh-Hans": "设置表单已恢复为项目默认值；按“保存设置”以应用",
+      "es": "El formulario volvió a los valores predeterminados del proyecto; pulsa Guardar configuración para aplicar",
+      "ja": "設定フォームをプロジェクト既定値に戻しました。適用するには「設定を保存」を押してください"
+    },
+    "model_editor.settings.paths_required": {
+      "en": "settings paths cannot be empty",
+      "ru": "пути в настройках не могут быть пустыми",
+      "zh-Hans": "设置路径不能为空",
+      "es": "las rutas de configuración no pueden estar vacías",
+      "ja": "設定パスは空にできません"
+    },
+    "model_editor.status.transport_error": {
+      "en": "TRANSPORT ERROR: {error}",
+      "ru": "ОШИБКА ТРАНСПОРТА: {error}",
+      "zh-Hans": "传输错误：{error}",
+      "es": "ERROR DE TRANSPORTE: {error}",
+      "ja": "通信エラー: {error}"
+    },
+    "model_editor.status.no_visible_fit": {
+      "en": "NO CHANGES: nothing visible to fit",
+      "ru": "БЕЗ ИЗМЕНЕНИЙ: нет видимых объектов для вписывания",
+      "zh-Hans": "未更改：没有可用于适配视图的可见对象",
+      "es": "SIN CAMBIOS: no hay nada visible que encuadrar",
+      "ja": "変更なし: ビューに収める表示対象がありません"
+    },
+    "model_editor.status.view_fitted": {
+      "en": "View fitted to {size}",
+      "ru": "Вид вписан в размер {size}",
+      "zh-Hans": "视图已适配到 {size}",
+      "es": "Vista encuadrada a {size}",
+      "ja": "ビューを {size} に合わせました"
+    },
+    "model_editor.overlay.size": {
+      "en": "size {size}",
+      "ru": "размер {size}",
+      "zh-Hans": "尺寸 {size}",
+      "es": "tamaño {size}",
+      "ja": "サイズ {size}"
+    },
+    "model_editor.overlay.selected": {
+      "en": "selected: {item}",
+      "ru": "выбрано: {item}",
+      "zh-Hans": "已选择：{item}",
+      "es": "seleccionado: {item}",
+      "ja": "選択: {item}"
+    },
+    "model_editor.common.none": {
+      "en": "none",
+      "ru": "нет",
+      "zh-Hans": "无",
+      "es": "ninguno",
+      "ja": "なし"
+    },
+    "model_editor.common.unbound": {
+      "en": "unbound",
+      "ru": "не привязано",
+      "zh-Hans": "未绑定",
+      "es": "sin vincular",
+      "ja": "未バインド"
+    },
+    "model_editor.common.active": {
+      "en": "ACTIVE",
+      "ru": "АКТИВЕН",
+      "zh-Hans": "活动",
+      "es": "ACTIVO",
+      "ja": "アクティブ"
+    },
+    "model_editor.common.not_loaded": {
+      "en": "NOT LOADED",
+      "ru": "НЕ ЗАГРУЖЕН",
+      "zh-Hans": "未加载",
+      "es": "NO CARGADO",
+      "ja": "未読込"
+    },
+    "model_editor.common.not_bound": {
+      "en": "NOT BOUND",
+      "ru": "НЕ ПРИВЯЗАНО",
+      "zh-Hans": "未绑定",
+      "es": "SIN VINCULAR",
+      "ja": "未バインド"
+    },
+    "model_editor.common.selected": {
+      "en": "SELECTED",
+      "ru": "ВЫБРАНО",
+      "zh-Hans": "已选择",
+      "es": "SELECCIONADO",
+      "ja": "選択済み"
+    },
+    "model_editor.common.children": {
+      "en": "children",
+      "ru": "дочерних",
+      "zh-Hans": "子节点",
+      "es": "hijos",
+      "ja": "子要素"
+    },
+    "model_editor.common.gameplay": {
+      "en": "gameplay",
+      "ru": "gameplay-данных",
+      "zh-Hans": "玩法数据",
+      "es": "datos de juego",
+      "ja": "ゲームプレイ"
+    },
+    "model_editor.common.parts": {
+      "en": "parts",
+      "ru": "частей",
+      "zh-Hans": "部件",
+      "es": "partes",
+      "ja": "パーツ"
+    },
+    "model_editor.common.visuals": {
+      "en": "visuals",
+      "ru": "визуалов",
+      "zh-Hans": "视觉节点",
+      "es": "visuales",
+      "ja": "ビジュアル"
+    },
+    "model_editor.common.owner": {
+      "en": "OWNER",
+      "ru": "ВЛАДЕЛЕЦ",
+      "zh-Hans": "归属",
+      "es": "PROPIETARIO",
+      "ja": "所有者"
+    },
+    "model_editor.semantics.mode.workspace": {
+      "en": "SEMANTICS WORKSPACE",
+      "ru": "РАБОЧАЯ ОБЛАСТЬ SEMANTICS",
+      "zh-Hans": "语义工作区",
+      "es": "ÁREA DE SEMÁNTICA",
+      "ja": "セマンティクス作業領域"
+    },
+    "model_editor.semantics.mode.tree": {
+      "en": "TREE · ASSEMBLY / KINEMATICS",
+      "ru": "ДЕРЕВО · СБОРКА / КИНЕМАТИКА",
+      "zh-Hans": "树 · 装配 / 运动学",
+      "es": "ÁRBOL · ENSAMBLAJE / CINEMÁTICA",
+      "ja": "ツリー · 組立 / キネマティクス"
+    },
+    "model_editor.semantics.mode.graph": {
+      "en": "GRAPH · STRUCTURAL LINKS",
+      "ru": "ГРАФ · КОНСТРУКЦИОННЫЕ СВЯЗИ",
+      "zh-Hans": "图 · 结构连接",
+      "es": "GRAFO · ENLACES ESTRUCTURALES",
+      "ja": "グラフ · 構造リンク"
+    },
+    "model_editor.semantics.relation.root": {
+      "en": "ROOT",
+      "ru": "КОРЕНЬ",
+      "zh-Hans": "根",
+      "es": "RAÍZ",
+      "ja": "ルート"
+    },
+    "model_editor.semantics.relation.fixed": {
+      "en": "FIXED",
+      "ru": "ФИКСИРОВАНО",
+      "zh-Hans": "固定",
+      "es": "FIJO",
+      "ja": "固定"
+    },
+    "model_editor.semantics.relation.rotate": {
+      "en": "ROTATE",
+      "ru": "ВРАЩЕНИЕ",
+      "zh-Hans": "旋转",
+      "es": "GIRAR",
+      "ja": "回転"
+    },
+    "model_editor.semantics.relation.detach": {
+      "en": "DETACH",
+      "ru": "ОТДЕЛЕНИЕ",
+      "zh-Hans": "分离",
+      "es": "SEPARAR",
+      "ja": "分離"
+    },
+    "model_editor.semantics.relation.rotate_detach": {
+      "en": "ROT+DETACH",
+      "ru": "ВРАЩ.+ОТРЫВ",
+      "zh-Hans": "旋转+分离",
+      "es": "GIRO+SEPARAR",
+      "ja": "回転+分離"
+    },
+    "model_editor.semantics.status.lod_switched": {
+      "en": "SEMANTICS: visual LOD{lod} · scene/table/bindings synchronized",
+      "ru": "SEMANTICS: visual LOD{lod} · сцена/таблица/привязки синхронизированы",
+      "zh-Hans": "语义：视觉 LOD{lod} · 场景/表格/绑定已同步",
+      "es": "SEMÁNTICA: LOD visual {lod} · escena/tabla/vínculos sincronizados",
+      "ja": "セマンティクス: visual LOD{lod} · シーン/表/バインドを同期しました"
+    },
+    "model_editor.semantics.status.already_asset_space": {
+      "en": "SEMANTICS: selected part(s) are already children of MODEL ROOT",
+      "ru": "SEMANTICS: выбранные части уже являются дочерними для MODEL ROOT",
+      "zh-Hans": "语义：所选部件已经是 MODEL ROOT 的子项",
+      "es": "SEMÁNTICA: las partes seleccionadas ya son hijas de MODEL ROOT",
+      "ja": "セマンティクス: 選択パーツはすでに MODEL ROOT の子です"
+    },
+    "model_editor.semantics.confirm.move_to_root": {
+      "en": "Move {count} selected transform subtree root(s) directly to MODEL ROOT?\n\nWorld pose is preserved. The removed incoming joint is cleared. STRUCTURAL GRAPH is not changed.",
+      "ru": "Переместить {count} выбранных корней transform-поддеревьев непосредственно под MODEL ROOT?\n\nМировое положение сохранится. Удаляемая входящая связь joint будет очищена. STRUCTURAL GRAPH не изменится.",
+      "zh-Hans": "将 {count} 个所选变换子树根直接移到 MODEL ROOT 下？\n\n世界姿态会保留。被移除的入向关节会清除。STRUCTURAL GRAPH 不会改变。",
+      "es": "¿Mover {count} raíz/raíces de subárbol de transformación seleccionadas directamente a MODEL ROOT?\n\nSe conserva la pose mundial. Se elimina la articulación entrante retirada. STRUCTURAL GRAPH no cambia.",
+      "ja": "選択した変換サブツリーのルート {count} 個を MODEL ROOT 直下へ移動しますか？\n\nワールド姿勢は保持されます。削除される入力ジョイントはクリアされます。STRUCTURAL GRAPH は変更されません。"
+    },
+    "model_editor.semantics.status.no_static_flatten": {
+      "en": "SEMANTICS: no safe STATIC transform edges to flatten",
+      "ru": "SEMANTICS: нет безопасных STATIC transform-связей для выравнивания",
+      "zh-Hans": "语义：没有可安全展平的 STATIC 变换边",
+      "es": "SEMÁNTICA: no hay enlaces de transformación STATIC seguros para aplanar",
+      "ja": "セマンティクス: 安全にフラット化できる STATIC 変換エッジがありません"
+    },
+    "model_editor.semantics.confirm.flatten_static": {
+      "en": "FLATTEN STATIC TREE → MODEL ROOT\n\nMove {count} safe STATIC transform part(s) directly under MODEL ROOT?\n\nWorld pose is preserved. REVOLUTE / BREAKABLE / state-transform / inherited-dynamic branches stay in the tree. STRUCTURAL GRAPH is not changed. SAVE is not automatic.",
+      "ru": "FLATTEN STATIC TREE → MODEL ROOT\n\nПереместить {count} безопасных STATIC transform-частей непосредственно под MODEL ROOT?\n\nМировое положение сохранится. Ветки REVOLUTE / BREAKABLE / state-transform / inherited-dynamic останутся в дереве. STRUCTURAL GRAPH не изменится. SAVE автоматически не выполняется.",
+      "zh-Hans": "FLATTEN STATIC TREE → MODEL ROOT\n\n将 {count} 个安全的 STATIC 变换部件直接移到 MODEL ROOT 下？\n\n世界姿态会保留。REVOLUTE / BREAKABLE / 状态变换 / 继承动态分支仍留在树中。STRUCTURAL GRAPH 不变。不会自动 SAVE。",
+      "es": "FLATTEN STATIC TREE → MODEL ROOT\n\n¿Mover {count} parte(s) STATIC seguras directamente bajo MODEL ROOT?\n\nSe conserva la pose mundial. Las ramas REVOLUTE / BREAKABLE / state-transform / inherited-dynamic permanecen en el árbol. STRUCTURAL GRAPH no cambia. SAVE no es automático.",
+      "ja": "FLATTEN STATIC TREE → MODEL ROOT\n\n安全な STATIC 変換パーツ {count} 個を MODEL ROOT 直下へ移動しますか？\n\nワールド姿勢は保持されます。REVOLUTE / BREAKABLE / state-transform / inherited-dynamic の枝はツリーに残ります。STRUCTURAL GRAPH は変更されません。SAVE は自動ではありません。"
+    },
+    "model_editor.semantics.selection_count": {
+      "en": "SELECTED: {count}",
+      "ru": "ВЫБРАНО: {count}",
+      "zh-Hans": "已选择：{count}",
+      "es": "SELECCIONADOS: {count}",
+      "ja": "選択数: {count}"
+    },
+    "model_editor.semantics.selection_to_root": {
+      "en": "◆ SELECTED → MODEL ROOT{count}",
+      "ru": "◆ ВЫБРАННЫЕ → MODEL ROOT{count}",
+      "zh-Hans": "◆ 所选项 → MODEL ROOT{count}",
+      "es": "◆ SELECCIÓN → MODEL ROOT{count}",
+      "ja": "◆ 選択 → MODEL ROOT{count}"
+    },
+    "model_editor.semantics.status.binding_pick_cancelled": {
+      "en": "SEMANTICS: visual binding pick cancelled",
+      "ru": "SEMANTICS: выбор visual binding отменён",
+      "zh-Hans": "语义：已取消视觉绑定拾取",
+      "es": "SEMÁNTICA: selección de vínculo visual cancelada",
+      "ja": "セマンティクス: visual binding の選択をキャンセルしました"
+    },
+    "model_editor.semantics.status.pick_visual": {
+      "en": "SEMANTICS: click a visual mesh for {id}",
+      "ru": "SEMANTICS: кликните по visual mesh для {id}",
+      "zh-Hans": "语义：单击 {id} 对应的视觉网格",
+      "es": "SEMÁNTICA: haz clic en una malla visual para {id}",
+      "ja": "セマンティクス: {id} に割り当てる visual mesh をクリックしてください"
+    },
+    "model_editor.semantics.overlay.selected": {
+      "en": "semantic: {id}\nselected: {count}\npreview state: {state}",
+      "ru": "semantic: {id}\nвыбрано: {count}\nсостояние preview: {state}",
+      "zh-Hans": "语义：{id}\n已选择：{count}\n预览状态：{state}",
+      "es": "semántica: {id}\nseleccionados: {count}\nestado de vista previa: {state}",
+      "ja": "semantic: {id}\n選択数: {count}\nプレビュー状態: {state}"
+    },
+    "model_editor.semantics.status.selected_node": {
+      "en": "Selected semantic node: {id}{extra}",
+      "ru": "Выбран semantic-узел: {id}{extra}",
+      "zh-Hans": "已选择语义节点：{id}{extra}",
+      "es": "Nodo semántico seleccionado: {id}{extra}",
+      "ja": "選択したセマンティックノード: {id}{extra}"
+    },
+    "model_editor.semantics.status.select_children": {
+      "en": "SEMANTICS: select one or more child nodes first",
+      "ru": "SEMANTICS: сначала выберите один или несколько дочерних узлов",
+      "zh-Hans": "语义：请先选择一个或多个子节点",
+      "es": "SEMÁNTICA: selecciona primero uno o varios nodos hijos",
+      "ja": "セマンティクス: 先に1つ以上の子ノードを選択してください"
+    },
+    "model_editor.semantics.status.invalid_drop": {
+      "en": "SEMANTICS: invalid drop target",
+      "ru": "SEMANTICS: недопустимая цель перетаскивания",
+      "zh-Hans": "语义：无效的放置目标",
+      "es": "SEMÁNTICA: destino de colocación no válido",
+      "ja": "セマンティクス: 無効なドロップ先です"
+    },
+    "model_editor.semantics.status.self_drop": {
+      "en": "SEMANTICS: cannot drop a branch onto itself",
+      "ru": "SEMANTICS: ветку нельзя перетащить саму на себя",
+      "zh-Hans": "语义：不能把分支放到自身上",
+      "es": "SEMÁNTICA: no se puede soltar una rama sobre sí misma",
+      "ja": "セマンティクス: ブランチを自分自身へドロップできません"
+    },
+    "model_editor.semantics.status.cannot_parent": {
+      "en": "SEMANTICS: {parent} cannot parent {child}",
+      "ru": "SEMANTICS: {parent} не может быть transform-родителем для {child}",
+      "zh-Hans": "语义：{parent} 不能作为 {child} 的父节点",
+      "es": "SEMÁNTICA: {parent} no puede ser padre de {child}",
+      "ja": "セマンティクス: {parent} を {child} の親にはできません"
+    },
+    "model_editor.semantics.status.reorder_cycle": {
+      "en": "SEMANTICS: reorder would create a hierarchy cycle",
+      "ru": "SEMANTICS: перестановка создаст цикл в иерархии",
+      "zh-Hans": "语义：重新排序会形成层级循环",
+      "es": "SEMÁNTICA: la reordenación crearía un ciclo jerárquico",
+      "ja": "セマンティクス: 並べ替えると階層に循環が発生します"
+    },
+    "model_editor.semantics.status.root_no_connection": {
+      "en": "SEMANTICS: ASSET SPACE part has no incoming transform connection",
+      "ru": "SEMANTICS: у ASSET SPACE part нет входящей transform-связи",
+      "zh-Hans": "语义：ASSET SPACE 部件没有入向变换连接",
+      "es": "SEMÁNTICA: una parte en ASSET SPACE no tiene conexión de transformación entrante",
+      "ja": "セマンティクス: ASSET SPACE パーツには入力変換接続がありません"
+    },
+    "model_editor.semantics.status.pivot_set": {
+      "en": "SEMANTICS: pivot {id} ← {source} · local ({coords})",
+      "ru": "SEMANTICS: pivot {id} ← {source} · локально ({coords})",
+      "zh-Hans": "语义：pivot {id} ← {source} · 局部 ({coords})",
+      "es": "SEMÁNTICA: pivote {id} ← {source} · local ({coords})",
+      "ja": "セマンティクス: pivot {id} ← {source} · ローカル ({coords})"
+    },
+    "model_editor.semantics.pivot.source_3d_point": {
+      "en": "3D point",
+      "ru": "3D-точка",
+      "zh-Hans": "3D 点",
+      "es": "punto 3D",
+      "ja": "3D 点"
+    },
+    "model_editor.semantics.pivot.source_visual_center": {
+      "en": "child visual center",
+      "ru": "центр visual child",
+      "zh-Hans": "子视觉中心",
+      "es": "centro visual del hijo",
+      "ja": "子ビジュアルの中心"
+    },
+    "model_editor.semantics.pivot.source_mesh_point": {
+      "en": "3D mesh point",
+      "ru": "3D-точка mesh",
+      "zh-Hans": "3D 网格点",
+      "es": "punto 3D de malla",
+      "ja": "3D メッシュ点"
+    },
+    "model_editor.semantics.status.no_visual_center": {
+      "en": "SEMANTICS: selected logical part has no visual center in active LOD",
+      "ru": "SEMANTICS: у выбранной logical part нет visual-центра в активном LOD",
+      "zh-Hans": "语义：所选逻辑部件在活动 LOD 中没有视觉中心",
+      "es": "SEMÁNTICA: la parte lógica seleccionada no tiene centro visual en el LOD activo",
+      "ja": "セマンティクス: 選択した logical part にはアクティブ LOD の visual center がありません"
+    },
+    "model_editor.semantics.status.pivot_pick_cancelled": {
+      "en": "SEMANTICS: joint-pivot pick cancelled",
+      "ru": "SEMANTICS: выбор pivot связи отменён",
+      "zh-Hans": "语义：已取消关节 pivot 拾取",
+      "es": "SEMÁNTICA: selección del pivote de unión cancelada",
+      "ja": "セマンティクス: joint pivot の選択をキャンセルしました"
+    },
+    "model_editor.semantics.status.pick_joint_point": {
+      "en": "SEMANTICS: click the mesh at the joint point {parent} → {child}",
+      "ru": "SEMANTICS: кликните по mesh в точке соединения {parent} → {child}",
+      "zh-Hans": "语义：在连接点 {parent} → {child} 处单击网格",
+      "es": "SEMÁNTICA: haz clic en la malla en el punto de unión {parent} → {child}",
+      "ja": "セマンティクス: 接続点 {parent} → {child} のメッシュをクリックしてください"
+    },
+    "model_editor.semantics.status.pick_visible_surface": {
+      "en": "SEMANTICS: click a visible mesh surface to set the joint pivot",
+      "ru": "SEMANTICS: кликните по видимой поверхности mesh для установки pivot связи",
+      "zh-Hans": "语义：单击可见网格表面以设置关节 pivot",
+      "es": "SEMÁNTICA: haz clic en una superficie de malla visible para fijar el pivote de unión",
+      "ja": "セマンティクス: joint pivot を設定するため表示中のメッシュ面をクリックしてください"
+    },
+    "model_editor.semantics.status.invalid_rate": {
+      "en": "SEMANTICS: invalid runtime rotation rate",
+      "ru": "SEMANTICS: недопустимая runtime-скорость вращения",
+      "zh-Hans": "语义：无效的运行时旋转速度",
+      "es": "SEMÁNTICA: velocidad de rotación de runtime no válida",
+      "ja": "セマンティクス: runtime 回転速度が無効です"
+    },
+    "model_editor.semantics.status.has_children": {
+      "en": "SEMANTICS: semantic part has children; move or delete child branches first",
+      "ru": "SEMANTICS: у semantic part есть дети; сначала перенесите или удалите дочерние ветви",
+      "zh-Hans": "语义：该语义部件有子项；请先移动或删除子分支",
+      "es": "SEMÁNTICA: la parte semántica tiene hijos; mueve o elimina primero las ramas hijas",
+      "ja": "セマンティクス: semantic part に子があります。先に子ブランチを移動または削除してください"
+    },
+    "model_editor.semantics.delete.question": {
+      "en": "Delete semantic part?",
+      "ru": "Удалить semantic part?",
+      "zh-Hans": "删除语义部件？",
+      "es": "¿Eliminar la parte semántica?",
+      "ja": "semantic part を削除しますか？"
+    },
+    "model_editor.semantics.delete.visual_bindings": {
+      "en": "Visual bindings: {count} (meshes are NOT deleted; they become UNBOUND)",
+      "ru": "Visual bindings: {count} (меши НЕ удаляются; станут UNBOUND)",
+      "zh-Hans": "视觉绑定：{count}（不会删除网格；它们会变为 UNBOUND）",
+      "es": "Vínculos visuales: {count} (las mallas NO se eliminan; quedan UNBOUND)",
+      "ja": "Visual bindings: {count}（メッシュは削除されず UNBOUND になります）"
+    },
+    "model_editor.semantics.delete.gameplay_payload": {
+      "en": "Gameplay payload: {count}",
+      "ru": "Игровые данные: {count}",
+      "zh-Hans": "玩法数据：{count}",
+      "es": "Datos de juego: {count}",
+      "ja": "ゲームプレイデータ: {count}"
+    },
+    "model_editor.semantics.delete.owned_payload_note": {
+      "en": "Owned collision/socket/state/damage records will be deleted after confirmation.",
+      "ru": "Связанные collision/socket/state/damage записи будут удалены после подтверждения.",
+      "zh-Hans": "确认后将删除归属的 collision/socket/state/damage 记录。",
+      "es": "Tras confirmar se eliminarán los registros collision/socket/state/damage pertenecientes.",
+      "ja": "確認後、所有する collision/socket/state/damage レコードも削除されます。"
+    },
+    "model_editor.semantics.delete.payload_confirm": {
+      "en": "Confirm deletion of gameplay data owned by {id}?\nThis does not delete RenderNode/Geometry.",
+      "ru": "Подтвердить удаление gameplay-данных, принадлежащих {id}?\nЭто не удаляет RenderNode/Geometry.",
+      "zh-Hans": "确认删除 {id} 所属的玩法数据？\n这不会删除 RenderNode/Geometry。",
+      "es": "¿Confirmar la eliminación de los datos de juego pertenecientes a {id}?\nEsto no elimina RenderNode/Geometry.",
+      "ja": "{id} が所有するゲームプレイデータを削除しますか？\nRenderNode/Geometry は削除されません。"
+    },
+    "model_editor.semantics.status.binding_set": {
+      "en": "SEMANTICS: binding {render} → {semantic}",
+      "ru": "SEMANTICS: привязка {render} → {semantic}",
+      "zh-Hans": "语义：绑定 {render} → {semantic}",
+      "es": "SEMÁNTICA: vínculo {render} → {semantic}",
+      "ja": "セマンティクス: binding {render} → {semantic}"
+    },
+    "model_editor.semantics.status.graph_error": {
+      "en": "SEMANTIC GRAPH: {error}",
+      "ru": "СЕМАНТИЧЕСКИЙ ГРАФ: {error}",
+      "zh-Hans": "语义图：{error}",
+      "es": "GRAFO SEMÁNTICO: {error}",
+      "ja": "セマンティックグラフ: {error}"
+    },
+    "model_editor.semantics.node.select_help": {
+      "en": "Select a logical part in the tree or on the 3D model. Left click selects one; Ctrl toggles individual nodes; Shift selects a range.",
+      "ru": "Выберите logical part в дереве или на 3D-модели. ЛКМ — один, Ctrl — отдельные узлы, Shift — диапазон.",
+      "zh-Hans": "在树或 3D 模型中选择一个逻辑部件。左键选择单个；Ctrl 切换单个节点；Shift 选择范围。",
+      "es": "Selecciona una parte lógica en el árbol o en el modelo 3D. Clic izquierdo selecciona una; Ctrl alterna nodos individuales; Shift selecciona un rango.",
+      "ja": "ツリーまたは3Dモデルで logical part を選択します。左クリックで1つ、Ctrlで個別切替、Shiftで範囲選択です。"
+    },
+    "model_editor.semantics.node.logical_part": {
+      "en": "LOGICAL PART",
+      "ru": "ЛОГИЧЕСКАЯ ЧАСТЬ",
+      "zh-Hans": "逻辑部件",
+      "es": "PARTE LÓGICA",
+      "ja": "論理パーツ"
+    },
+    "model_editor.semantics.node.parent": {
+      "en": "PARENT",
+      "ru": "РОДИТЕЛЬ",
+      "zh-Hans": "父节点",
+      "es": "PADRE",
+      "ja": "親"
+    },
+    "model_editor.semantics.node.connection": {
+      "en": "CONNECTION",
+      "ru": "СВЯЗЬ",
+      "zh-Hans": "连接",
+      "es": "CONEXIÓN",
+      "ja": "接続"
+    },
+    "model_editor.semantics.node.subtree": {
+      "en": "SUBTREE",
+      "ru": "ПОДДЕРЕВО",
+      "zh-Hans": "子树",
+      "es": "SUBÁRBOL",
+      "ja": "サブツリー"
+    },
+    "model_editor.semantics.node.visuals_payload": {
+      "en": "VISUALS / PAYLOAD",
+      "ru": "VISUALS / ДАННЫЕ",
+      "zh-Hans": "视觉 / 数据",
+      "es": "VISUALES / DATOS",
+      "ja": "ビジュアル / データ"
+    },
+    "model_editor.semantics.node.part_count": {
+      "en": "{count} part(s)",
+      "ru": "частей: {count}",
+      "zh-Hans": "{count} 个部件",
+      "es": "{count} parte(s)",
+      "ja": "{count} パーツ"
+    },
+    "model_editor.semantics.node.usage": {
+      "en": "{visuals} VIS · {children} children · {payload} gameplay",
+      "ru": "{visuals} VIS · детей {children} · gameplay {payload}",
+      "zh-Hans": "{visuals} VIS · {children} 个子项 · {payload} 项玩法数据",
+      "es": "{visuals} VIS · {children} hijos · {payload} datos de juego",
+      "ja": "{visuals} VIS · 子 {children} · gameplay {payload}"
+    },
+    "model_editor.semantics.node.delete": {
+      "en": "× DELETE LOGICAL PART",
+      "ru": "× УДАЛИТЬ LOGICAL PART",
+      "zh-Hans": "× 删除逻辑部件",
+      "es": "× ELIMINAR PARTE LÓGICA",
+      "ja": "× LOGICAL PART を削除"
+    },
+    "model_editor.semantics.node.advanced": {
+      "en": "ADVANCED · SEMANTIC FRAME",
+      "ru": "ДОПОЛНИТЕЛЬНО · SEMANTIC FRAME",
+      "zh-Hans": "高级 · 语义坐标系",
+      "es": "AVANZADO · MARCO SEMÁNTICO",
+      "ja": "詳細 · SEMANTIC FRAME"
+    },
+    "model_editor.semantics.node.frame_help": {
+      "en": "These fields define the logical part local frame relative to its parent. They do not move OBJ/mesh geometry. For ordinary imported parts they normally remain zero.",
+      "ru": "Эти поля задают локальную систему координат logical part относительно родителя. Они не двигают OBJ/mesh в GEOMETRY. Для обычных импортированных частей обычно остаются нулевыми.",
+      "zh-Hans": "这些字段定义逻辑部件相对父节点的局部坐标系。它们不会移动 OBJ/mesh 几何。普通导入部件通常保持为零。",
+      "es": "Estos campos definen el marco local de la parte lógica respecto a su padre. No mueven la geometría OBJ/mesh. En piezas importadas normales suelen permanecer en cero.",
+      "ja": "これらは logical part の親に対するローカル座標系を定義します。OBJ/mesh のジオメトリは動かしません。通常のインポート部品では一般にゼロのままです。"
+    },
+    "model_editor.semantics.node.frame_position": {
+      "en": "Semantic-frame position relative to parent",
+      "ru": "Положение semantic frame относительно родителя",
+      "zh-Hans": "语义坐标系相对父节点的位置",
+      "es": "Posición del marco semántico respecto al padre",
+      "ja": "親に対する semantic frame の位置"
+    },
+    "model_editor.semantics.node.frame_rotation": {
+      "en": "Semantic-frame orientation relative to parent, XYZ °",
+      "ru": "Ориентация semantic frame относительно родителя, XYZ °",
+      "zh-Hans": "语义坐标系相对父节点的方向，XYZ °",
+      "es": "Orientación del marco semántico respecto al padre, XYZ °",
+      "ja": "親に対する semantic frame の姿勢、XYZ °"
+    },
+    "model_editor.semantics.node.frame_pivot": {
+      "en": "Base semantic-transform pivot",
+      "ru": "Pivot базового semantic transform",
+      "zh-Hans": "基础语义变换 pivot",
+      "es": "Pivote de la transformación semántica base",
+      "ja": "基本 semantic transform の pivot"
+    },
+    "model_editor.semantics.node.apply_frame": {
+      "en": "✓ APPLY SEMANTIC FRAME",
+      "ru": "✓ ПРИМЕНИТЬ SEMANTIC FRAME",
+      "zh-Hans": "✓ 应用语义坐标系",
+      "es": "✓ APLICAR MARCO SEMÁNTICO",
+      "ja": "✓ SEMANTIC FRAME を適用"
+    },
+    "model_editor.semantics.motion.root_title": {
+      "en": "MODEL ROOT · NO INCOMING TRANSFORM CONNECTION",
+      "ru": "MODEL ROOT · НЕТ ВХОДЯЩЕЙ TRANSFORM-СВЯЗИ",
+      "zh-Hans": "MODEL ROOT · 无入向变换连接",
+      "es": "MODEL ROOT · SIN CONEXIÓN DE TRANSFORMACIÓN ENTRANTE",
+      "ja": "MODEL ROOT · 入力変換接続なし"
+    },
+    "model_editor.semantics.motion.root_help": {
+      "en": "This part is a direct child of MODEL ROOT and is already in asset space. ROTATE / DETACH are authored only on a real incoming parent → child transform connection.",
+      "ru": "Эта part является непосредственным ребёнком MODEL ROOT и находится прямо в системе координат asset. ROTATE / DETACH задаются только на реальной входящей transform-связи parent → child.",
+      "zh-Hans": "该部件是 MODEL ROOT 的直接子项，已处于资源坐标系中。ROTATE / DETACH 仅定义在真实的 parent → child 入向变换连接上。",
+      "es": "Esta parte es hija directa de MODEL ROOT y ya está en el espacio del recurso. ROTATE / DETACH solo se definen en una conexión de transformación parent → child real.",
+      "ja": "このパーツは MODEL ROOT の直接の子で、asset space にあります。ROTATE / DETACH は実在する parent → child の入力変換接続にのみ設定します。"
+    },
+    "model_editor.semantics.motion.pivot_label": {
+      "en": "JOINT POINT / CONNECTION PIVOT · local in child frame",
+      "ru": "ТОЧКА СОЕДИНЕНИЯ / PIVOT СВЯЗИ · локально в frame child",
+      "zh-Hans": "连接点 / 连接 PIVOT · 位于子节点局部坐标系",
+      "es": "PUNTO DE UNIÓN / PIVOTE DE CONEXIÓN · local en el marco hijo",
+      "ja": "接続点 / CONNECTION PIVOT · 子フレームのローカル座標"
+    },
+    "model_editor.semantics.motion.pivot_help": {
+      "en": "This is the physical parent → child connection point. It does not have to match either part center. Choose the real hinge or mount for the mechanism.",
+      "ru": "Это точка физической связи parent → child. Она не обязана совпадать ни с центром parent, ни с центром child. Для разных механизмов выбирайте реальный шарнир/крепление.",
+      "zh-Hans": "这是 parent → child 的物理连接点。它不必与任一部件中心重合。请为机构选择真实铰链或安装点。",
+      "es": "Este es el punto físico de conexión parent → child. No tiene que coincidir con el centro de ninguna de las partes. Elige la bisagra o soporte real del mecanismo.",
+      "ja": "これは parent → child の物理的な接続点です。どちらのパーツ中心とも一致する必要はありません。機構の実際のヒンジ／取付点を選んでください。"
+    },
+    "model_editor.semantics.motion.parent_origin": {
+      "en": "◎ PARENT ORIGIN",
+      "ru": "◎ ORIGIN РОДИТЕЛЯ",
+      "zh-Hans": "◎ 父节点原点",
+      "es": "◎ ORIGEN DEL PADRE",
+      "ja": "◎ 親の原点"
+    },
+    "model_editor.semantics.motion.visual_center": {
+      "en": "◎ CHILD VISUAL CENTER",
+      "ru": "◎ ЦЕНТР VISUAL CHILD",
+      "zh-Hans": "◎ 子视觉中心",
+      "es": "◎ CENTRO VISUAL DEL HIJO",
+      "ja": "◎ 子ビジュアル中心"
+    },
+    "model_editor.semantics.motion.cancel_pick": {
+      "en": "× CANCEL 3D PICK",
+      "ru": "× ОТМЕНИТЬ 3D PICK",
+      "zh-Hans": "× 取消 3D 拾取",
+      "es": "× CANCELAR SELECCIÓN 3D",
+      "ja": "× 3D PICK をキャンセル"
+    },
+    "model_editor.semantics.motion.pick_3d": {
+      "en": "◎ PICK IN 3D",
+      "ru": "◎ УКАЗАТЬ В 3D",
+      "zh-Hans": "◎ 在 3D 中拾取",
+      "es": "◎ ELEGIR EN 3D",
+      "ja": "◎ 3D で指定"
+    },
+    "model_editor.semantics.motion.axis": {
+      "en": "ROTATION AXIS · local in child frame",
+      "ru": "ОСЬ ВРАЩЕНИЯ · локально в frame child",
+      "zh-Hans": "旋转轴 · 位于子节点局部坐标系",
+      "es": "EJE DE ROTACIÓN · local en el marco hijo",
+      "ja": "回転軸 · 子フレームのローカル座標"
+    },
+    "model_editor.semantics.motion.preview_rate": {
+      "en": "PREVIEW SPEED, °/s · editor-only",
+      "ru": "СКОРОСТЬ ПРЕДПРОСМОТРА, °/с · только editor",
+      "zh-Hans": "预览速度，°/s · 仅编辑器",
+      "es": "VELOCIDAD DE VISTA PREVIA, °/s · solo editor",
+      "ja": "プレビュー速度 °/s · エディタのみ"
+    },
+    "model_editor.semantics.motion.not_saved": {
+      "en": "NOT SAVED",
+      "ru": "НЕ СОХР.",
+      "zh-Hans": "不保存",
+      "es": "NO SE GUARDA",
+      "ja": "保存されません"
+    },
+    "model_editor.semantics.motion.rotate_button": {
+      "en": "▶ ROTATE",
+      "ru": "▶ ВРАЩАТЬ",
+      "zh-Hans": "▶ 旋转",
+      "es": "▶ GIRAR",
+      "ja": "▶ 回転"
+    },
+    "model_editor.semantics.motion.stop_button": {
+      "en": "■ STOP",
+      "ru": "■ СТОП",
+      "zh-Hans": "■ 停止",
+      "es": "■ DETENER",
+      "ja": "■ 停止"
+    },
+    "model_editor.semantics.motion.rotate_hint": {
+      "en": "To test rotation, choose ROTATE or ROT+DETACH in this tree row dropdown.",
+      "ru": "Для проверки вращения выберите ROTATE или ROT+DETACH в dropdown этой строки дерева.",
+      "zh-Hans": "要测试旋转，请在该树行的下拉框中选择 ROTATE 或 ROT+DETACH。",
+      "es": "Para probar la rotación, elige ROTATE o ROT+DETACH en el desplegable de esta fila del árbol.",
+      "ja": "回転を確認するには、このツリー行のドロップダウンで ROTATE または ROT+DETACH を選択してください。"
+    },
+    "model_editor.semantics.motion.detach_unavailable": {
+      "en": "⚡ DETACH PREVIEW UNAVAILABLE",
+      "ru": "⚡ DETACH PREVIEW НЕДОСТУПЕН",
+      "zh-Hans": "⚡ 分离预览不可用",
+      "es": "⚡ VISTA PREVIA DE SEPARACIÓN NO DISPONIBLE",
+      "ja": "⚡ DETACH プレビュー利用不可"
+    },
+    "model_editor.semantics.motion.runtime_params": {
+      "en": "SAVED ROTATION PARAMETERS · runtime",
+      "ru": "СОХРАНЯЕМЫЕ ПАРАМЕТРЫ ВРАЩЕНИЯ · runtime",
+      "zh-Hans": "保存的旋转参数 · runtime",
+      "es": "PARÁMETROS DE ROTACIÓN GUARDADOS · runtime",
+      "ja": "保存される回転パラメータ · runtime"
+    },
+    "model_editor.semantics.motion.nominal_rate": {
+      "en": "Nominal speed, °/s",
+      "ru": "Номинальная скорость, °/с",
+      "zh-Hans": "标称速度，°/s",
+      "es": "Velocidad nominal, °/s",
+      "ja": "公称速度 °/s"
+    },
+    "model_editor.semantics.motion.min_angle": {
+      "en": "Minimum angle, °",
+      "ru": "Минимальный угол, °",
+      "zh-Hans": "最小角度，°",
+      "es": "Ángulo mínimo, °",
+      "ja": "最小角度 °"
+    },
+    "model_editor.semantics.motion.max_angle": {
+      "en": "Maximum angle, °",
+      "ru": "Максимальный угол, °",
+      "zh-Hans": "最大角度，°",
+      "es": "Ángulo máximo, °",
+      "ja": "最大角度 °"
+    },
+    "model_editor.semantics.motion.link_strength": {
+      "en": "CONNECTION STRENGTH · saved for runtime physics/damage",
+      "ru": "ПРОЧНОСТЬ СВЯЗИ · сохраняется для runtime physics/damage",
+      "zh-Hans": "连接强度 · 保存用于 runtime physics/damage",
+      "es": "RESISTENCIA DE LA CONEXIÓN · guardada para runtime physics/damage",
+      "ja": "接続強度 · runtime physics/damage 用に保存"
+    },
+    "model_editor.semantics.motion.break_force": {
+      "en": "Break force, N",
+      "ru": "Сила разрушения, N",
+      "zh-Hans": "断裂力，N",
+      "es": "Fuerza de rotura, N",
+      "ja": "破断力 N"
+    },
+    "model_editor.semantics.motion.break_torque": {
+      "en": "Break torque, N·m",
+      "ru": "Момент разрушения, N·m",
+      "zh-Hans": "断裂扭矩，N·m",
+      "es": "Par de rotura, N·m",
+      "ja": "破断トルク N·m"
+    },
+    "model_editor.semantics.motion.strength_help": {
+      "en": "These are properties of the parent → child connection, so they belong to SEMANTICS. Mass, center of mass and inertia of a detached body belong to PHYSICS.",
+      "ru": "Это свойства самой связи parent → child, поэтому они принадлежат SEMANTICS. Масса, центр масс и инерция отделившегося тела принадлежат PHYSICS.",
+      "zh-Hans": "这些是 parent → child 连接本身的属性，因此属于 SEMANTICS。分离刚体的质量、质心和惯量属于 PHYSICS。",
+      "es": "Son propiedades de la propia conexión parent → child y por eso pertenecen a SEMANTICS. La masa, el centro de masa y la inercia del cuerpo separado pertenecen a PHYSICS.",
+      "ja": "これは parent → child 接続そのものの属性なので SEMANTICS に属します。分離した剛体の質量・重心・慣性は PHYSICS に属します。"
+    },
+    "model_editor.semantics.motion.save_runtime": {
+      "en": "✓ SAVE RUNTIME CONNECTION PARAMETERS",
+      "ru": "✓ СОХРАНИТЬ RUNTIME ПАРАМЕТРЫ СВЯЗИ",
+      "zh-Hans": "✓ 保存运行时连接参数",
+      "es": "✓ GUARDAR PARÁMETROS RUNTIME DE CONEXIÓN",
+      "ja": "✓ RUNTIME 接続パラメータを保存"
+    },
+    "model_editor.semantics.motion.connection_title": {
+      "en": "CONNECTION {parent} → {child}",
+      "ru": "СВЯЗЬ {parent} → {child}",
+      "zh-Hans": "连接 {parent} → {child}",
+      "es": "CONEXIÓN {parent} → {child}",
+      "ja": "接続 {parent} → {child}"
+    },
+    "model_editor.semantics.motion.connection_help": {
+      "en": "The connection belongs to the parent → child edge. ROTATE moves the entire child subtree around the connection pivot. PREVIEW never saves changes.",
+      "ru": "Связь принадлежит ребру parent → child. ROTATE вращает весь subtree child вокруг pivot связи. PREVIEW ничего не сохраняет.",
+      "zh-Hans": "连接属于 parent → child 边。ROTATE 会让整个子树绕连接 pivot 旋转。PREVIEW 不会保存任何更改。",
+      "es": "La conexión pertenece al enlace parent → child. ROTATE gira todo el subárbol hijo alrededor del pivote de conexión. PREVIEW nunca guarda cambios.",
+      "ja": "接続は parent → child エッジに属します。ROTATE は子サブツリー全体を接続 pivot の周りに回転します。PREVIEW は変更を保存しません。"
+    },
+    "model_editor.semantics.motion.reset": {
+      "en": "↺ RESET PREVIEW",
+      "ru": "↺ СБРОСИТЬ PREVIEW",
+      "zh-Hans": "↺ 重置预览",
+      "es": "↺ RESTABLECER VISTA PREVIA",
+      "ja": "↺ プレビューをリセット"
+    },
+    "model_editor.semantics.binding.select_node_help": {
+      "en": "Select a semantic node to see its visual representations.",
+      "ru": "Выберите semantic-узел, чтобы увидеть его визуальные представления.",
+      "zh-Hans": "选择语义节点以查看其视觉表示。",
+      "es": "Selecciona un nodo semántico para ver sus representaciones visuales.",
+      "ja": "セマンティックノードを選択すると visual representation を確認できます。"
+    },
+    "model_editor.semantics.binding.health_warn": {
+      "en": "⚠ REPAIR NEEDED: missing LOD bindings {missing} · UNBOUND visual in active LOD {unbound}{orphan}",
+      "ru": "⚠ НУЖЕН REPAIR: отсутствующих LOD bindings {missing} · UNBOUND visual в активном LOD {unbound}{orphan}",
+      "zh-Hans": "⚠ 需要修复：缺失 LOD 绑定 {missing} · 活动 LOD 中 UNBOUND visual {unbound}{orphan}",
+      "es": "⚠ REQUIERE REPARACIÓN: vínculos LOD ausentes {missing} · visual UNBOUND en LOD activo {unbound}{orphan}",
+      "ja": "⚠ 修復が必要: LOD binding 欠落 {missing} · アクティブ LOD の UNBOUND visual {unbound}{orphan}"
+    },
+    "model_editor.semantics.binding.health_ok": {
+      "en": "✓ VISUAL REPRESENTATION is bound in every loaded LOD.",
+      "ru": "✓ VISUAL REPRESENTATION привязано во всех загруженных LOD.",
+      "zh-Hans": "✓ 所有已加载 LOD 均已绑定 VISUAL REPRESENTATION。",
+      "es": "✓ VISUAL REPRESENTATION está vinculada en todos los LOD cargados.",
+      "ja": "✓ すべてのロード済み LOD で VISUAL REPRESENTATION がバインドされています。"
+    },
+    "model_editor.semantics.binding.help": {
+      "en": "VISUAL BINDING connects one RenderNode in the selected LOD to this logical part. It does not move the mesh or change geometry; it only tells the game which visual represents the semantic part.",
+      "ru": "VISUAL BINDING связывает один RenderNode выбранного LOD с этой logical part. Он не двигает mesh и не меняет geometry — только говорит игре, какой visual представляет semantic part.",
+      "zh-Hans": "VISUAL BINDING 将所选 LOD 的一个 RenderNode 连接到该逻辑部件。它不会移动网格或改变 geometry，只告诉游戏哪个 visual 表示该 semantic part。",
+      "es": "VISUAL BINDING conecta un RenderNode del LOD seleccionado con esta parte lógica. No mueve la malla ni cambia la geometría; solo indica al juego qué visual representa la parte semántica.",
+      "ja": "VISUAL BINDING は選択 LOD の1つの RenderNode をこの logical part に結び付けます。mesh を動かしたり geometry を変更したりせず、どの visual が semantic part を表すかだけをゲームへ伝えます。"
+    },
+    "model_editor.semantics.binding.cancel_pick": {
+      "en": "× CANCEL PICK MODE",
+      "ru": "× ОТМЕНИТЬ РЕЖИМ ВЫБОРА",
+      "zh-Hans": "× 取消拾取模式",
+      "es": "× CANCELAR MODO DE SELECCIÓN",
+      "ja": "× PICK モードを解除"
+    },
+    "model_editor.semantics.binding.assign_3d": {
+      "en": "◎ ASSIGN THIS PART A VISUAL FROM 3D",
+      "ru": "◎ НАЗНАЧИТЬ ЭТОЙ PART VISUAL ИЗ 3D",
+      "zh-Hans": "◎ 从 3D 为该部件指定 VISUAL",
+      "es": "◎ ASIGNAR A ESTA PARTE UN VISUAL DESDE 3D",
+      "ja": "◎ 3D からこの PART に VISUAL を割当"
+    },
+    "model_editor.semantics.binding.current_count": {
+      "en": "currently {count} VIS",
+      "ru": "сейчас {count} VIS",
+      "zh-Hans": "当前 {count} VIS",
+      "es": "actualmente {count} VIS",
+      "ja": "現在 {count} VIS"
+    },
+    "model_editor.semantics.binding.pick_exact": {
+      "en": "Click exactly the required mesh. Its owner changes to {id}; placement and geometry stay unchanged.",
+      "ru": "Кликните ровно по нужному mesh. Его owner сменится на {id}; положение и geometry останутся прежними.",
+      "zh-Hans": "准确单击所需网格。其 owner 将改为 {id}；位置和 geometry 保持不变。",
+      "es": "Haz clic exactamente en la malla necesaria. Su propietario cambiará a {id}; la posición y la geometría permanecerán iguales.",
+      "ja": "必要な mesh を正確にクリックしてください。owner は {id} に変わりますが、配置と geometry は変わりません。"
+    },
+    "model_editor.semantics.binding.orphan_help": {
+      "en": "⚠ ORPHAN: this part has no visual, children or gameplay role. SEMANTICS CHECK requires deleting it or assigning a role.",
+      "ru": "⚠ ORPHAN: у этой part нет visual, детей или gameplay-роли. SEMANTICS CHECK потребует удалить её или назначить ей роль.",
+      "zh-Hans": "⚠ ORPHAN：该部件没有 visual、子项或玩法角色。SEMANTICS CHECK 会要求删除它或赋予角色。",
+      "es": "⚠ ORPHAN: esta parte no tiene visual, hijos ni función de juego. SEMANTICS CHECK exigirá eliminarla o asignarle una función.",
+      "ja": "⚠ ORPHAN: この part には visual、子、gameplay role がありません。SEMANTICS CHECK では削除するか役割を割り当てる必要があります。"
+    },
+    "model_editor.semantics.tree.lod_hint": {
+      "en": "LOD changes only the visual RenderLod. Semantic parts, transform-parent links, joints and sockets are shared by the whole asset.",
+      "ru": "LOD переключает только visual RenderLod. Semantic parts, transform-parent links, joints и sockets общие для всего asset.",
+      "zh-Hans": "LOD 只切换视觉 RenderLod。Semantic parts、transform-parent links、joints 和 sockets 在整个资源中共享。",
+      "es": "LOD cambia solo el RenderLod visual. Las partes semánticas, enlaces transform-parent, articulaciones y sockets son comunes a todo el recurso.",
+      "ja": "LOD は visual RenderLod だけを切り替えます。Semantic parts、transform-parent links、joints、sockets はアセット全体で共有されます。"
+    },
+    "model_editor.semantics.tree.root_lead": {
+      "en": "MODEL ROOT always exists as the non-serialized identity root of the model. It is neither a semantic part nor a mesh. Every top-level semantic part has parentIndex = NoIndex and appears as its child. Parent → child below it means only a real transform dependency. Structural support / detach remain authoritative in STRUCTURAL GRAPH.",
+      "ru": "MODEL ROOT всегда существует как не-сериализуемый identity root модели. Это не semantic part и не mesh. Все top-level semantic parts имеют parentIndex = NoIndex и отображаются его детьми. Parent → child ниже означает только реальную зависимость transform. Structural support / detach остаются authority STRUCTURAL GRAPH.",
+      "zh-Hans": "MODEL ROOT 始终作为模型不序列化的 identity root 存在。它既不是 semantic part，也不是 mesh。所有顶层 semantic parts 的 parentIndex = NoIndex，并显示为其子项。其下的 Parent → child 仅表示真实变换依赖。Structural support / detach 的权威仍在 STRUCTURAL GRAPH。",
+      "es": "MODEL ROOT existe siempre como raíz identity no serializada del modelo. No es una parte semántica ni una malla. Todas las partes semánticas de nivel superior tienen parentIndex = NoIndex y aparecen como hijas suyas. Parent → child por debajo solo significa dependencia de transformación real. Structural support / detach siguen bajo la autoridad de STRUCTURAL GRAPH.",
+      "ja": "MODEL ROOT はモデルの非シリアライズ identity root として常に存在します。semantic part でも mesh でもありません。トップレベル semantic parts はすべて parentIndex = NoIndex で、その子として表示されます。下位の Parent → child は実際の transform 依存だけを意味します。Structural support / detach の authority は STRUCTURAL GRAPH に残ります。"
+    },
+    "model_editor.semantics.tree.cleanup_help": {
+      "en": "TREE CLEANUP removes only recognized legacy module → synthetic-visual semantic children and rebinds their RenderNodes to the module node. Real transform links and STRUCTURAL GRAPH are unchanged.",
+      "ru": "TREE CLEANUP удаляет только распознанные legacy module → synthetic visual semantic children и перепривязывает их RenderNode к module node. Реальные transform links и STRUCTURAL GRAPH не меняются.",
+      "zh-Hans": "TREE CLEANUP 仅删除识别出的 legacy module → synthetic visual semantic children，并将其 RenderNode 重新绑定到 module node。真实 transform links 与 STRUCTURAL GRAPH 不变。",
+      "es": "TREE CLEANUP elimina solo los hijos semánticos synthetic visual reconocidos del antiguo module → y vuelve a vincular sus RenderNode al nodo module. Los transform links reales y STRUCTURAL GRAPH no cambian.",
+      "ja": "TREE CLEANUP は認識された legacy module → synthetic visual semantic children だけを削除し、それらの RenderNode を module node へ再バインドします。実際の transform links と STRUCTURAL GRAPH は変更しません。"
+    },
+    "model_editor.semantics.tree.structure_summary": {
+      "en": "MODEL ROOT: identity · {roots} TOP-LEVEL PARTS · TRANSFORM EDGES: {edges} · VISUAL LOD{lod}: {visuals} RN / {owners} semantic owner(s)",
+      "ru": "MODEL ROOT: identity · TOP-LEVEL PARTS: {roots} · TRANSFORM EDGES: {edges} · VISUAL LOD{lod}: {visuals} RN / semantic owners: {owners}",
+      "zh-Hans": "MODEL ROOT：identity · 顶层部件 {roots} · 变换边 {edges} · VISUAL LOD{lod}：{visuals} RN / {owners} 个语义 owner",
+      "es": "MODEL ROOT: identity · PARTES SUPERIORES: {roots} · ENLACES TRANSFORM: {edges} · VISUAL LOD{lod}: {visuals} RN / {owners} propietario(s) semánticos",
+      "ja": "MODEL ROOT: identity · トップレベルパーツ {roots} · TRANSFORM EDGE {edges} · VISUAL LOD{lod}: {visuals} RN / semantic owner {owners}"
+    },
+    "model_editor.semantics.tree.asset_header": {
+      "en": "◆ MODEL ROOT · ASSET SPACE · implicit identity root",
+      "ru": "◆ MODEL ROOT · ASSET SPACE · неявный identity root",
+      "zh-Hans": "◆ MODEL ROOT · ASSET SPACE · 隐式 identity root",
+      "es": "◆ MODEL ROOT · ASSET SPACE · raíz identity implícita",
+      "ja": "◆ MODEL ROOT · ASSET SPACE · 暗黙の identity root"
+    },
+    "model_editor.semantics.tree.child_count": {
+      "en": "{count} child part(s)",
+      "ru": "дочерних частей: {count}",
+      "zh-Hans": "{count} 个子部件",
+      "es": "{count} parte(s) hija(s)",
+      "ja": "子パーツ {count}"
+    },
+    "model_editor.semantics.tree.incoming_title": {
+      "en": "Incoming transform connection {parent} → {child}",
+      "ru": "Тип входящей transform-связи {parent} → {child}",
+      "zh-Hans": "入向变换连接 {parent} → {child}",
+      "es": "Conexión de transformación entrante {parent} → {child}",
+      "ja": "入力 transform 接続 {parent} → {child}"
+    },
+    "model_editor.semantics.tree.expand": {
+      "en": "Expand branch",
+      "ru": "Развернуть ветвь",
+      "zh-Hans": "展开分支",
+      "es": "Expandir rama",
+      "ja": "ブランチを展開"
+    },
+    "model_editor.semantics.tree.collapse": {
+      "en": "Collapse branch",
+      "ru": "Свернуть ветвь",
+      "zh-Hans": "折叠分支",
+      "es": "Contraer rama",
+      "ja": "ブランチを折りたたむ"
+    },
+    "model_editor.semantics.tree.empty": {
+      "en": "Semantic transform forest is empty.",
+      "ru": "Semantic transform forest пока пуст.",
+      "zh-Hans": "语义变换森林为空。",
+      "es": "El bosque de transformaciones semánticas está vacío.",
+      "ja": "semantic transform forest は空です。"
+    },
+    "model_editor.semantics.tree.lod_summary": {
+      "en": "LOD{lod}: {bound}/{total} visuals bound · UNBOUND visuals: {unbound} · logical parts without visuals in all LODs: {zero} · ORPHAN: {orphan} · >1 VIS in active LOD: {multi}",
+      "ru": "LOD{lod}: {bound}/{total} visual привязано · UNBOUND visual: {unbound} · logical parts без visual во всех LOD: {zero} · ORPHAN: {orphan} · >1 VIS в активном LOD: {multi}",
+      "zh-Hans": "LOD{lod}：已绑定 visual {bound}/{total} · UNBOUND visual：{unbound} · 所有 LOD 中无 visual 的逻辑部件：{zero} · ORPHAN：{orphan} · 活动 LOD 中 >1 VIS：{multi}",
+      "es": "LOD{lod}: visuales vinculados {bound}/{total} · visuales UNBOUND: {unbound} · partes lógicas sin visual en ningún LOD: {zero} · ORPHAN: {orphan} · >1 VIS en LOD activo: {multi}",
+      "ja": "LOD{lod}: visual binding {bound}/{total} · UNBOUND visual: {unbound} · 全LODでvisualなしのlogical part: {zero} · ORPHAN: {orphan} · active LODで>1 VIS: {multi}"
+    },
+    "model_editor.semantics.tree.separation_monolithic": {
+      "en": "this LOD has only one render mesh",
+      "ru": "в этом LOD только один render mesh",
+      "zh-Hans": "此 LOD 只有一个 render mesh",
+      "es": "este LOD solo tiene una malla de render",
+      "ja": "この LOD には render mesh が1つしかありません"
+    },
+    "model_editor.semantics.tree.separation_single_group": {
+      "en": "the active LOD has only one visual group",
+      "ru": "в активном LOD только одна visual-группа",
+      "zh-Hans": "活动 LOD 只有一个 visual 组",
+      "es": "el LOD activo solo tiene un grupo visual",
+      "ja": "アクティブ LOD には visual group が1つしかありません"
+    },
+    "model_editor.semantics.tree.separation_unavailable": {
+      "en": "⚠ LOD{lod} SEMANTIC SEPARATION UNAVAILABLE: {reason}. Explode can move it only as one unit. Separate cockpit/body preview requires at least two independent visual groups.",
+      "ru": "⚠ LOD{lod} SEMANTIC SEPARATION НЕДОСТУПЕН: {reason}. Explode может двигать его только целиком. Для отдельного cockpit/body нужны минимум две независимые visual-группы.",
+      "zh-Hans": "⚠ LOD{lod} 无法进行语义分离：{reason}。Explode 只能将其整体移动。要分别预览 cockpit/body，至少需要两个独立 visual 组。",
+      "es": "⚠ LOD{lod} SIN SEPARACIÓN SEMÁNTICA: {reason}. Explode solo puede moverlo como una unidad. Para previsualizar cockpit/body por separado se necesitan al menos dos grupos visuales independientes.",
+      "ja": "⚠ LOD{lod} SEMANTIC SEPARATION 利用不可: {reason}。Explode では全体としてしか動かせません。cockpit/body を別々にプレビューするには独立 visual group が最低2つ必要です。"
+    },
+    "model_editor.semantics.tree.unbound_clusters": {
+      "en": "LOD{lod}: {visuals} UNBOUND visuals · {clusters} temporary visual cluster(s). Until bindings are assigned, explode separates these RenderNodes as independent visual groups from MODEL ROOT. This is only a binding-preview fallback; it does not create semantic ownership. Assign OWNER in VISUAL REPRESENTATION / LOD BINDINGS.",
+      "ru": "LOD{lod}: {visuals} UNBOUND visual · временных visual clusters: {clusters}. Пока binding не назначен, explode разносит эти RenderNode как независимые visual-группы от MODEL ROOT. Это только preview fallback для привязки; semantic ownership он не создаёт. Назначьте OWNER в VISUAL REPRESENTATION / LOD BINDINGS.",
+      "zh-Hans": "LOD{lod}：{visuals} 个 UNBOUND visual · {clusters} 个临时 visual cluster。在分配 binding 前，explode 会把这些 RenderNode 作为相对 MODEL ROOT 的独立 visual 组分开。这只是绑定预览的 fallback，不会创建 semantic ownership。请在 VISUAL REPRESENTATION / LOD BINDINGS 中分配 OWNER。",
+      "es": "LOD{lod}: {visuals} visuales UNBOUND · {clusters} clúster(es) visual(es) temporales. Hasta asignar bindings, explode separa estos RenderNode como grupos visuales independientes desde MODEL ROOT. Es solo un fallback de vista previa para vinculación; no crea semantic ownership. Asigna OWNER en VISUAL REPRESENTATION / LOD BINDINGS.",
+      "ja": "LOD{lod}: UNBOUND visual {visuals} · temporary visual cluster {clusters}。binding を割り当てるまでは explode がこれらの RenderNode を MODEL ROOT から独立 visual group として分離します。これは binding 用 preview fallback にすぎず semantic ownership は作りません。VISUAL REPRESENTATION / LOD BINDINGS で OWNER を割り当ててください。"
+    },
+    "model_editor.semantics.tree.preview_title": {
+      "en": "3D TRANSFORM PREVIEW · VISUAL LOD{lod}",
+      "ru": "3D-ПРЕДПРОСМОТР TRANSFORM · VISUAL LOD{lod}",
+      "zh-Hans": "3D 变换预览 · VISUAL LOD{lod}",
+      "es": "VISTA PREVIA 3D DE TRANSFORM · VISUAL LOD{lod}",
+      "ja": "3D TRANSFORM プレビュー · VISUAL LOD{lod}"
+    },
+    "model_editor.semantics.tree.preview_help": {
+      "en": "Preview only. Explode is always centered on MODEL ROOT / asset origin; MODEL ROOT is not a semantic node and never moves. Markers and lines show transform links only, not structural support.",
+      "ru": "Только preview. Разлёт всегда центрируется на MODEL ROOT / origin asset; MODEL ROOT сам не является semantic node и не двигается. Маркеры и линии показывают только transform links, не structural support.",
+      "zh-Hans": "仅用于预览。Explode 始终以 MODEL ROOT / 资源原点为中心；MODEL ROOT 不是 semantic node，也不会移动。标记和线条只显示 transform links，不表示 structural support。",
+      "es": "Solo vista previa. Explode siempre se centra en MODEL ROOT / origen del recurso; MODEL ROOT no es un nodo semántico y no se mueve. Los marcadores y líneas muestran solo transform links, no structural support.",
+      "ja": "プレビュー専用。Explode は常に MODEL ROOT / asset origin を中心にします。MODEL ROOT 自体は semantic node ではなく移動しません。マーカーと線は transform links のみを示し structural support は示しません。"
+    },
+    "model_editor.semantics.tree.show_links": {
+      "en": "SHOW TRANSFORM LINKS / MARKERS",
+      "ru": "ПОКАЗАТЬ TRANSFORM-СВЯЗИ / МАРКЕРЫ",
+      "zh-Hans": "显示变换连接 / 标记",
+      "es": "MOSTRAR ENLACES TRANSFORM / MARCADORES",
+      "ja": "TRANSFORM LINK / マーカーを表示"
+    },
+    "model_editor.semantics.tree.explode_meshes": {
+      "en": "EXPLODE MESHES",
+      "ru": "РАЗНЕСТИ МЕШИ",
+      "zh-Hans": "分离网格",
+      "es": "SEPARAR MALLAS",
+      "ja": "メッシュを展開"
+    },
+    "model_editor.semantics.tree.title": {
+      "en": "SEMANTIC PARTS / TRANSFORM FOREST · SHARED BY ALL LODS",
+      "ru": "SEMANTIC PARTS / TRANSFORM FOREST · ОБЩЕЕ ДЛЯ ВСЕХ LOD",
+      "zh-Hans": "语义部件 / 变换森林 · 所有 LOD 共享",
+      "es": "PARTES SEMÁNTICAS / BOSQUE TRANSFORM · COMPARTIDO POR TODOS LOS LOD",
+      "ja": "SEMANTIC PARTS / TRANSFORM FOREST · 全LOD共有"
+    },
+    "model_editor.semantics.tree.selection_help": {
+      "en": "Left click — one · Ctrl — add/remove · Shift — range · ▾/▸ — collapse branch",
+      "ru": "ЛКМ — один · Ctrl — добавить/убрать · Shift — диапазон · ▾/▸ — свернуть ветвь",
+      "zh-Hans": "左键 — 单选 · Ctrl — 添加/移除 · Shift — 范围 · ▾/▸ — 折叠分支",
+      "es": "Clic izq. — uno · Ctrl — añadir/quitar · Shift — rango · ▾/▸ — contraer rama",
+      "ja": "左クリック — 1つ · Ctrl — 追加/解除 · Shift — 範囲 · ▾/▸ — ブランチ折畳み"
+    },
+    "model_editor.semantics.tree.flatten_static": {
+      "en": "⇱ FLATTEN STATIC → MODEL ROOT{count}",
+      "ru": "⇱ СТАТИЧЕСКИЕ УЗЛЫ → MODEL ROOT{count}",
+      "zh-Hans": "⇱ 展平 STATIC → MODEL ROOT{count}",
+      "es": "⇱ APLANAR STATIC → MODEL ROOT{count}",
+      "ja": "⇱ STATIC をフラット化 → MODEL ROOT{count}"
+    },
+    "model_editor.semantics.tree.drop_help": {
+      "en": "Dragging changes only the transform parent. Top/bottom of a row places at the sibling level; middle makes a transform child. MODEL ROOT means no incoming transform connection (parentIndex = NoIndex). Structural support is unchanged.",
+      "ru": "Перетаскивание меняет только transform-parent. Верх/низ строки — соседний уровень; середина — сделать transform-child. MODEL ROOT — отсутствие входящей transform-связи (parentIndex = NoIndex). Structural support этим не меняется.",
+      "zh-Hans": "拖动只改变 transform parent。行的上/下区域放到同级；中间区域设为 transform child。MODEL ROOT 表示没有入向 transform 连接（parentIndex = NoIndex）。Structural support 不变。",
+      "es": "Arrastrar solo cambia el transform parent. La parte superior/inferior de la fila coloca al mismo nivel; el centro crea un transform child. MODEL ROOT significa que no hay conexión transform entrante (parentIndex = NoIndex). Structural support no cambia.",
+      "ja": "ドラッグで変わるのは transform parent だけです。行の上/下は同階層、中央は transform child にします。MODEL ROOT は入力 transform 接続なし（parentIndex = NoIndex）を意味します。Structural support は変わりません。"
+    },
+    "model_editor.semantics.tree.add_root": {
+      "en": "+ CREATE ASSET-SPACE LOGICAL PART / PIVOT",
+      "ru": "+ СОЗДАТЬ ASSET-SPACE LOGICAL PART / PIVOT",
+      "zh-Hans": "+ 创建 ASSET-SPACE 逻辑部件 / PIVOT",
+      "es": "+ CREAR PARTE LÓGICA / PIVOTE EN ASSET SPACE",
+      "ja": "+ ASSET-SPACE LOGICAL PART / PIVOT を作成"
+    },
+    "model_editor.semantics.tree.add_child": {
+      "en": "+ TRANSFORM CHILD / PIVOT OF SELECTED",
+      "ru": "+ TRANSFORM CHILD / PIVOT К ВЫБРАННОМУ",
+      "zh-Hans": "+ 为所选项添加 TRANSFORM CHILD / PIVOT",
+      "es": "+ TRANSFORM CHILD / PIVOTE DE LA SELECCIÓN",
+      "ja": "+ 選択へ TRANSFORM CHILD / PIVOT"
+    },
+    "model_editor.semantics.tree.child_help": {
+      "en": "A separate visual/static part is normally a direct child of MODEL ROOT. Use a child only for a real transform dependency such as a rotating assembly, door, turret or shared moving pivot.",
+      "ru": "Отдельная visual/static part обычно является непосредственным ребёнком MODEL ROOT. Child нужен только при настоящей transform-зависимости: поворотный узел, дверь, башня, общий moving pivot и т.п.",
+      "zh-Hans": "独立 visual/static 部件通常直接位于 MODEL ROOT 下。只有在真实 transform 依赖时才使用 child，例如旋转组件、门、炮塔或共享移动 pivot。",
+      "es": "Una parte visual/static independiente suele ser hija directa de MODEL ROOT. Usa child solo para una dependencia transform real, como un conjunto giratorio, puerta, torreta o pivote móvil compartido.",
+      "ja": "独立した visual/static part は通常 MODEL ROOT の直接の子です。回転ユニット、ドア、砲塔、共有 moving pivot など実際の transform 依存がある場合だけ child を使います。"
+    },
+    "model_editor.semantics.tree.selected_part": {
+      "en": "SELECTED LOGICAL PART",
+      "ru": "ВЫБРАННАЯ LOGICAL PART",
+      "zh-Hans": "所选逻辑部件",
+      "es": "PARTE LÓGICA SELECCIONADA",
+      "ja": "選択中の LOGICAL PART"
+    },
+    "model_editor.semantics.binding.title": {
+      "en": "VISUAL REPRESENTATION / LOD BINDINGS · ACTIVE LOD{lod}",
+      "ru": "ВИЗУАЛЬНОЕ ПРЕДСТАВЛЕНИЕ / ПРИВЯЗКИ LOD · АКТИВНЫЙ LOD{lod}",
+      "zh-Hans": "视觉表示 / LOD 绑定 · 活动 LOD{lod}",
+      "es": "REPRESENTACIÓN VISUAL / VÍNCULOS LOD · LOD ACTIVO {lod}",
+      "ja": "ビジュアル表現 / LOD バインド · アクティブ LOD{lod}"
+    },
+    "model_editor.semantics.binding.workspace_help": {
+      "en": "Semantic parts are shared by the asset, but every LOD has independent RenderNodes. A binding answers only which visual in this LOD represents the selected logical part. It does not create a transform parent or change geometry.",
+      "ru": "Semantic parts общие для всего asset, но каждый LOD имеет независимые RenderNode. Binding отвечает только на вопрос, какой visual этого LOD представляет выбранную logical part. Он не создаёт transform-parent и не меняет geometry.",
+      "zh-Hans": "Semantic parts 在整个资源中共享，但每个 LOD 都有独立 RenderNode。Binding 只回答该 LOD 的哪个 visual 表示所选 logical part。它不会创建 transform parent，也不会改变 geometry。",
+      "es": "Las partes semánticas son comunes al recurso, pero cada LOD tiene RenderNodes independientes. Un binding solo indica qué visual de este LOD representa la parte lógica seleccionada. No crea un transform parent ni cambia la geometría.",
+      "ja": "Semantic parts はアセット全体で共有されますが、各 LOD は独立した RenderNode を持ちます。Binding はこの LOD のどの visual が選択した logical part を表すかだけを指定します。transform parent を作らず geometry も変えません。"
+    },
+    "model_editor.semantics.binding.repair": {
+      "en": "REPAIR / EDIT VISUAL BINDINGS",
+      "ru": "REPAIR / РЕДАКТИРОВАТЬ VISUAL BINDINGS",
+      "zh-Hans": "修复 / 编辑 VISUAL BINDINGS",
+      "es": "REPARAR / EDITAR VÍNCULOS VISUALES",
+      "ja": "REPAIR / VISUAL BINDING を編集"
+    },
+    "model_editor.semantics.binding.apply_all_exact": {
+      "en": "Only RenderNodes with the exact same stable id. No fuzzy matching.",
+      "ru": "Только к RenderNode с точно тем же stable id. Никаких fuzzy совпадений.",
+      "zh-Hans": "仅应用到 stable id 完全相同的 RenderNode。不会进行模糊匹配。",
+      "es": "Solo a RenderNodes con exactamente el mismo stable id. Sin coincidencias aproximadas.",
+      "ja": "stable id が完全一致する RenderNode のみ。fuzzy matching は行いません。"
+    },
+    "model_editor.semantics.binding.render_node_header": {
+      "en": "RENDER NODE",
+      "ru": "УЗЕЛ РЕНДЕРА",
+      "zh-Hans": "渲染节点",
+      "es": "NODO DE RENDER",
+      "ja": "レンダーノード"
+    },
+    "model_editor.semantics.binding.owner_header": {
+      "en": "OWNER",
+      "ru": "ВЛАДЕЛЕЦ",
+      "zh-Hans": "归属",
+      "es": "PROPIETARIO",
+      "ja": "所有者"
+    },
+    "model_editor.semantics.binding.choose_loaded_lod": {
+      "en": "Choose a loaded LOD to inspect visual bindings.",
+      "ru": "Выберите загруженный LOD для просмотра visual bindings.",
+      "zh-Hans": "选择已加载的 LOD 以查看 visual bindings。",
+      "es": "Elige un LOD cargado para inspeccionar los vínculos visuales.",
+      "ja": "visual binding を確認するロード済み LOD を選択してください。"
+    },
+    "model_editor.semantics.clean.confirm": {
+      "en": "CLEAN LEGACY SEMANTICS\n\nRemove only recognized legacy synthetic visual semantic nodes and rebind their RenderNodes to module nodes?\n\nTransform parent chains and STRUCTURAL GRAPH are unchanged. SAVE is not automatic.",
+      "ru": "CLEAN LEGACY SEMANTICS\n\nУдалить только распознанные legacy synthetic visual semantic nodes и перепривязать их RenderNode к module nodes?\n\nTransform parent chains и STRUCTURAL GRAPH не изменяются. SAVE не выполняется автоматически.",
+      "zh-Hans": "CLEAN LEGACY SEMANTICS\n\n仅移除识别出的 legacy synthetic visual semantic nodes，并将其 RenderNode 重新绑定到 module nodes？\n\nTransform parent chains 与 STRUCTURAL GRAPH 不变。不会自动 SAVE。",
+      "es": "CLEAN LEGACY SEMANTICS\n\n¿Eliminar solo los legacy synthetic visual semantic nodes reconocidos y volver a vincular sus RenderNode a module nodes?\n\nTransform parent chains y STRUCTURAL GRAPH no cambian. SAVE no es automático.",
+      "ja": "CLEAN LEGACY SEMANTICS\n\n認識された legacy synthetic visual semantic nodes だけを削除し、その RenderNode を module nodes に再バインドしますか？\n\nTransform parent chains と STRUCTURAL GRAPH は変更されません。SAVE は自動ではありません。"
+    },
+    "model_editor.structural.empty": {
+      "en": "Structural graph is empty. Pick A and B in 3D and create a link.",
+      "ru": "Structural graph пока пуст. Выберите A и B в 3D и создайте связь.",
+      "zh-Hans": "结构图为空。在 3D 中选择 A 和 B 并创建连接。",
+      "es": "El grafo estructural está vacío. Elige A y B en 3D y crea un enlace.",
+      "ja": "Structural graph は空です。3D で A と B を選びリンクを作成してください。"
+    },
+    "model_editor.structural.selected_link": {
+      "en": "SELECTED LINK · {id}",
+      "ru": "ВЫБРАННАЯ СВЯЗЬ · {id}",
+      "zh-Hans": "所选连接 · {id}",
+      "es": "ENLACE SELECCIONADO · {id}",
+      "ja": "選択中のリンク · {id}"
+    },
+    "model_editor.structural.type": {
+      "en": "TYPE",
+      "ru": "ТИП",
+      "zh-Hans": "类型",
+      "es": "TIPO",
+      "ja": "種類"
+    },
+    "model_editor.structural.kind.weld": {
+      "en": "WELD SEAM · hit capsule",
+      "ru": "СВАРНОЙ ШОВ · hit-капсула",
+      "zh-Hans": "焊缝 · 命中胶囊",
+      "es": "CORDÓN DE SOLDADURA · cápsula de impacto",
+      "ja": "溶接シーム · hit capsule"
+    },
+    "model_editor.structural.kind.fixed": {
+      "en": "FIXED MOUNT",
+      "ru": "ЖЁСТКОЕ КРЕПЛЕНИЕ",
+      "zh-Hans": "固定安装",
+      "es": "SOPORTE FIJO",
+      "ja": "固定マウント"
+    },
+    "model_editor.structural.kind.equipment": {
+      "en": "EQUIPMENT MOUNT",
+      "ru": "КРЕПЛЕНИЕ ОБОРУДОВАНИЯ",
+      "zh-Hans": "设备安装点",
+      "es": "SOPORTE DE EQUIPO",
+      "ja": "装備マウント"
+    },
+    "model_editor.structural.kind.lock": {
+      "en": "CONTROLLED LOCK",
+      "ru": "УПРАВЛЯЕМЫЙ ЗАМОК",
+      "zh-Hans": "受控锁定",
+      "es": "BLOQUEO CONTROLADO",
+      "ja": "制御ロック"
+    },
+    "model_editor.structural.load_bearing": {
+      "en": "LOAD BEARING",
+      "ru": "НЕСУЩАЯ",
+      "zh-Hans": "承载",
+      "es": "PORTANTE",
+      "ja": "荷重支持"
+    },
+    "model_editor.structural.commandable": {
+      "en": "COMMANDABLE",
+      "ru": "УПРАВЛЯЕМАЯ",
+      "zh-Hans": "可控制",
+      "es": "CONTROLABLE",
+      "ja": "コマンド可能"
+    },
+    "model_editor.structural.break_force": {
+      "en": "BREAK FORCE N",
+      "ru": "СИЛА РАЗРУШЕНИЯ N",
+      "zh-Hans": "断裂力 N",
+      "es": "FUERZA DE ROTURA N",
+      "ja": "破断力 N"
+    },
+    "model_editor.structural.break_torque": {
+      "en": "BREAK TORQUE Nm",
+      "ru": "МОМЕНТ РАЗРУШЕНИЯ Nm",
+      "zh-Hans": "断裂扭矩 Nm",
+      "es": "PAR DE ROTURA Nm",
+      "ja": "破断トルク Nm"
+    },
+    "model_editor.structural.apply_link": {
+      "en": "✓ APPLY LINK",
+      "ru": "✓ ПРИМЕНИТЬ СВЯЗЬ",
+      "zh-Hans": "✓ 应用连接",
+      "es": "✓ APLICAR ENLACE",
+      "ja": "✓ リンクを適用"
+    },
+    "model_editor.structural.delete_link": {
+      "en": "DELETE LINK",
+      "ru": "УДАЛИТЬ СВЯЗЬ",
+      "zh-Hans": "删除连接",
+      "es": "ELIMINAR ENLACE",
+      "ja": "リンクを削除"
+    },
+    "model_editor.structural.damage_proxy": {
+      "en": "DAMAGE PROXY · {shape} · local to N{node}",
+      "ru": "DAMAGE PROXY · {shape} · локально для N{node}",
+      "zh-Hans": "DAMAGE PROXY · {shape} · N{node} 局部",
+      "es": "DAMAGE PROXY · {shape} · local a N{node}",
+      "ja": "DAMAGE PROXY · {shape} · N{node} ローカル"
+    },
+    "model_editor.structural.position": {
+      "en": "POSITION",
+      "ru": "ПОЛОЖЕНИЕ",
+      "zh-Hans": "位置",
+      "es": "POSICIÓN",
+      "ja": "位置"
+    },
+    "model_editor.structural.rotation": {
+      "en": "ROTATION XYZ",
+      "ru": "ВРАЩЕНИЕ XYZ",
+      "zh-Hans": "旋转 XYZ",
+      "es": "ROTACIÓN XYZ",
+      "ja": "回転 XYZ"
+    },
+    "model_editor.structural.radius": {
+      "en": "RADIUS",
+      "ru": "РАДИУС",
+      "zh-Hans": "半径",
+      "es": "RADIO",
+      "ja": "半径"
+    },
+    "model_editor.structural.half_length": {
+      "en": "HALF LENGTH",
+      "ru": "ПОЛУДЛИНА",
+      "zh-Hans": "半长",
+      "es": "SEMILONGITUD",
+      "ja": "半長"
+    },
+    "model_editor.structural.apply_capsule": {
+      "en": "✓ APPLY HIT CAPSULE",
+      "ru": "✓ ПРИМЕНИТЬ HIT-КАПСУЛУ",
+      "zh-Hans": "✓ 应用命中胶囊",
+      "es": "✓ APLICAR CÁPSULA DE IMPACTO",
+      "ja": "✓ HIT CAPSULE を適用"
+    },
+    "model_editor.structural.box_half_size": {
+      "en": "BOX HALF SIZE",
+      "ru": "ПОЛУРАЗМЕР BOX",
+      "zh-Hans": "盒体半尺寸",
+      "es": "SEMIDIMENSIONES DE CAJA",
+      "ja": "BOX 半サイズ"
+    },
+    "model_editor.structural.apply_box": {
+      "en": "✓ APPLY HIT BOX",
+      "ru": "✓ ПРИМЕНИТЬ HIT-BOX",
+      "zh-Hans": "✓ 应用命中盒",
+      "es": "✓ APLICAR CAJA DE IMPACTO",
+      "ja": "✓ HIT BOX を適用"
+    },
+    "model_editor.structural.no_proxy": {
+      "en": "This link has no hittable proxy. That is valid: a structural link and a hit region are separate entities.",
+      "ru": "Эта связь не имеет hittable proxy. Это допустимо: structural link и область попадания — разные сущности.",
+      "zh-Hans": "该连接没有可命中的 proxy。这是有效状态：structural link 与命中区域是不同实体。",
+      "es": "Este enlace no tiene un proxy alcanzable. Es válido: un structural link y una región de impacto son entidades distintas.",
+      "ja": "このリンクには hittable proxy がありません。これは有効です。structural link と hit region は別のエンティティです。"
+    },
+    "model_editor.structural.lod_hint": {
+      "en": "GRAPH uses visuals from the active LOD only for selection and proxy generation. Structural links are shared by the whole asset.",
+      "ru": "GRAPH использует visual активного LOD только для выбора и генерации proxy. Structural links общие для всего asset.",
+      "zh-Hans": "GRAPH 仅使用活动 LOD 的 visual 进行选择和 proxy 生成。Structural links 在整个资源中共享。",
+      "es": "GRAPH usa los visuales del LOD activo solo para selección y generación de proxy. Los structural links son comunes a todo el recurso.",
+      "ja": "GRAPH は選択と proxy 生成のためだけにアクティブ LOD の visual を使います。Structural links はアセット全体で共有されます。"
+    },
+    "model_editor.structural.lead": {
+      "en": "STRUCTURAL GRAPH: the transform tree exists in parallel and owns only transform hierarchy. This workspace authors an arbitrary graph of physical connections. A 3D mesh click and a table row select the same RenderNode; ROOT is assigned with a separate button.",
+      "ru": "STRUCTURAL GRAPH: transform tree существует параллельно и отвечает только за transform hierarchy. Здесь задаётся произвольный граф физических связей. Клик по mesh в 3D и строка таблицы используют одно выбранное RenderNode; ROOT назначается отдельной кнопкой.",
+      "zh-Hans": "STRUCTURAL GRAPH：transform tree 并行存在，只负责 transform hierarchy。此处定义任意物理连接图。3D 中点击 mesh 与表格行选择的是同一个 RenderNode；ROOT 通过单独按钮指定。",
+      "es": "STRUCTURAL GRAPH: el transform tree existe en paralelo y solo controla la jerarquía transform. Aquí se define un grafo arbitrario de conexiones físicas. Un clic en mesh 3D y una fila de tabla seleccionan el mismo RenderNode; ROOT se asigna con un botón aparte.",
+      "ja": "STRUCTURAL GRAPH: transform tree は並行して存在し transform hierarchy だけを担当します。ここでは任意の物理接続グラフを定義します。3D mesh のクリックと表の行は同じ RenderNode を選択し、ROOT は専用ボタンで設定します。"
+    },
+    "model_editor.structural.cleanup_help": {
+      "en": "GRAPH CLEANUP: structural-graph migration is not defined yet. First resolve legacy links/proxies and their authority.",
+      "ru": "GRAPH CLEANUP: отдельная миграция structural graph пока не определена. Сначала разбираем legacy links/proxies и их authority.",
+      "zh-Hans": "GRAPH CLEANUP：structural graph 迁移尚未定义。先处理 legacy links/proxies 及其 authority。",
+      "es": "GRAPH CLEANUP: la migración del structural graph aún no está definida. Primero hay que resolver legacy links/proxies y su authority.",
+      "ja": "GRAPH CLEANUP: structural graph の移行はまだ定義されていません。まず legacy links/proxies とその authority を整理します。"
+    },
+    "model_editor.structural.cleanup_disabled": {
+      "en": "GRAPH cleanup is intentionally not wired yet",
+      "ru": "GRAPH cleanup намеренно пока не подключён",
+      "zh-Hans": "GRAPH cleanup 目前有意未接入",
+      "es": "GRAPH cleanup aún no está conectado intencionadamente",
+      "ja": "GRAPH cleanup は意図的にまだ接続されていません"
+    },
+    "model_editor.structural.explode_root": {
+      "en": "EXPLODE ROOT",
+      "ru": "КОРЕНЬ EXPLODE",
+      "zh-Hans": "EXPLODE 根",
+      "es": "RAÍZ DE EXPLODE",
+      "ja": "EXPLODE ルート"
+    },
+    "model_editor.structural.meshes_title": {
+      "en": "MESHES · ACTIVE LOD{lod}",
+      "ru": "МЕШИ · ACTIVE LOD{lod}",
+      "zh-Hans": "网格 · 活动 LOD{lod}",
+      "es": "MALLAS · LOD ACTIVO {lod}",
+      "ja": "メッシュ · ACTIVE LOD{lod}"
+    },
+    "model_editor.structural.mesh_link": {
+      "en": "3D ↔ TABLE",
+      "ru": "3D ↔ ТАБЛИЦА",
+      "zh-Hans": "3D ↔ 表格",
+      "es": "3D ↔ TABLA",
+      "ja": "3D ↔ 表"
+    },
+    "model_editor.structural.select_mesh": {
+      "en": "SELECT MESH",
+      "ru": "ВЫБЕРИТЕ МЕШ",
+      "zh-Hans": "选择网格",
+      "es": "SELECCIONAR MALLA",
+      "ja": "メッシュを選択"
+    },
+    "model_editor.structural.endpoint": {
+      "en": "endpoint N{node} · {id}",
+      "ru": "точка связи N{node} · {id}",
+      "zh-Hans": "端点 N{node} · {id}",
+      "es": "extremo N{node} · {id}",
+      "ja": "接続点 N{node} · {id}"
+    },
+    "model_editor.structural.pick_mesh_hint": {
+      "en": "click a mesh in 3D or a table row",
+      "ru": "кликните mesh в 3D или строку таблицы",
+      "zh-Hans": "单击 3D 网格或表格行",
+      "es": "haz clic en una malla 3D o una fila de tabla",
+      "ja": "3D mesh または表の行をクリック"
+    },
+    "model_editor.structural.make_root": {
+      "en": "◆ MAKE ROOT",
+      "ru": "◆ СДЕЛАТЬ ROOT",
+      "zh-Hans": "◆ 设为根",
+      "es": "◆ HACER RAÍZ",
+      "ja": "◆ ROOT に設定"
+    },
+    "model_editor.structural.a_selected": {
+      "en": "A ← SELECTED",
+      "ru": "A ← ВЫБРАННОЕ",
+      "zh-Hans": "A ← 所选项",
+      "es": "A ← SELECCIÓN",
+      "ja": "A ← 選択"
+    },
+    "model_editor.structural.b_selected": {
+      "en": "B ← SELECTED",
+      "ru": "B ← ВЫБРАННОЕ",
+      "zh-Hans": "B ← 所选项",
+      "es": "B ← SELECCIÓN",
+      "ja": "B ← 選択"
+    },
+    "model_editor.structural.render_mesh": {
+      "en": "RENDER MESH",
+      "ru": "РЕНДЕР-МЕШ",
+      "zh-Hans": "渲染网格",
+      "es": "MALLA DE RENDER",
+      "ja": "レンダーメッシュ"
+    },
+    "model_editor.structural.geometry": {
+      "en": "GEOMETRY",
+      "ru": "ГЕОМЕТРИЯ",
+      "zh-Hans": "几何",
+      "es": "GEOMETRÍA",
+      "ja": "ジオメトリ"
+    },
+    "model_editor.structural.endpoint_header": {
+      "en": "STRUCTURAL ENDPOINT",
+      "ru": "ТОЧКА КОНСТРУКЦИОННОЙ СВЯЗИ",
+      "zh-Hans": "结构端点",
+      "es": "EXTREMO ESTRUCTURAL",
+      "ja": "構造接続点"
+    },
+    "model_editor.structural.new_link": {
+      "en": "NEW LINK · 3D PICK A ↔ B",
+      "ru": "НОВАЯ СВЯЗЬ · 3D PICK A ↔ B",
+      "zh-Hans": "新连接 · 3D 拾取 A ↔ B",
+      "es": "NUEVO ENLACE · SELECCIÓN 3D A ↔ B",
+      "ja": "新規リンク · 3D PICK A ↔ B"
+    },
+    "model_editor.structural.kind.weld_auto": {
+      "en": "WELD SEAM · auto hit capsule",
+      "ru": "СВАРНОЙ ШОВ · auto hit-капсула",
+      "zh-Hans": "焊缝 · 自动命中胶囊",
+      "es": "CORDÓN DE SOLDADURA · cápsula automática",
+      "ja": "溶接シーム · auto hit capsule"
+    },
+    "model_editor.structural.kind.fixed_auto": {
+      "en": "FIXED MOUNT · auto hit box",
+      "ru": "ЖЁСТКОЕ КРЕПЛЕНИЕ · auto hit-box",
+      "zh-Hans": "固定安装 · 自动命中盒",
+      "es": "SOPORTE FIJO · caja automática",
+      "ja": "固定マウント · auto hit box"
+    },
+    "model_editor.structural.kind.equipment_auto": {
+      "en": "EQUIPMENT MOUNT · auto hit box",
+      "ru": "КРЕПЛЕНИЕ ОБОРУДОВАНИЯ · auto hit-box",
+      "zh-Hans": "设备安装点 · 自动命中盒",
+      "es": "SOPORTE DE EQUIPO · caja automática",
+      "ja": "装備マウント · auto hit box"
+    },
+    "model_editor.structural.kind.lock_auto": {
+      "en": "CONTROLLED LOCK · auto hit box",
+      "ru": "УПРАВЛЯЕМЫЙ ЗАМОК · auto hit-box",
+      "zh-Hans": "受控锁定 · 自动命中盒",
+      "es": "BLOQUEO CONTROLADO · caja automática",
+      "ja": "制御ロック · auto hit box"
+    },
+    "model_editor.structural.auto_proxy": {
+      "en": "AUTO DAMAGE PROXY",
+      "ru": "АВТОМАТИЧЕСКИЙ DAMAGE PROXY",
+      "zh-Hans": "自动 DAMAGE PROXY",
+      "es": "DAMAGE PROXY AUTOMÁTICO",
+      "ja": "自動 DAMAGE PROXY"
+    },
+    "model_editor.structural.clear_pair": {
+      "en": "CLEAR A / B",
+      "ru": "ОЧИСТИТЬ A / B",
+      "zh-Hans": "清除 A / B",
+      "es": "LIMPIAR A / B",
+      "ja": "A / B をクリア"
+    },
+    "model_editor.structural.create_link": {
+      "en": "＋ CREATE LINK",
+      "ru": "＋ СОЗДАТЬ СВЯЗЬ",
+      "zh-Hans": "＋ 创建连接",
+      "es": "＋ CREAR ENLACE",
+      "ja": "＋ リンクを作成"
+    },
+    "model_editor.structural.new_link_help": {
+      "en": "3D pick fills A, then B. The table only selects a mesh; A/B buttons explicitly assign the selected mesh. Weld seed is computed from canonical/unexploded boundary edges. Exploded viewport is never coordinate authority.",
+      "ru": "3D pick заполняет A, затем B. Таблица только выбирает mesh; кнопки A/B позволяют назначить выбранный mesh явно. Weld seed вычисляется по canonical/unexploded boundary edges. Exploded viewport никогда не является coordinate authority.",
+      "zh-Hans": "3D 拾取先填 A，再填 B。表格只选择 mesh；A/B 按钮可显式指定所选 mesh。Weld seed 从 canonical/unexploded boundary edges 计算。Exploded viewport 从不作为坐标 authority。",
+      "es": "La selección 3D rellena A y luego B. La tabla solo selecciona una malla; los botones A/B asignan explícitamente la malla seleccionada. Weld seed se calcula a partir de canonical/unexploded boundary edges. El viewport explotado nunca es la autoridad de coordenadas.",
+      "ja": "3D pick は A、次に B を埋めます。表は mesh の選択だけを行い、A/B ボタンで選択 mesh を明示割当できます。Weld seed は canonical/unexploded boundary edges から計算されます。Exploded viewport は座標 authority にはなりません。"
+    },
+    "model_editor.structural.links_title": {
+      "en": "STRUCTURAL LINKS · {count}",
+      "ru": "КОНСТРУКЦИОННЫЕ СВЯЗИ · {count}",
+      "zh-Hans": "结构连接 · {count}",
+      "es": "ENLACES ESTRUCTURALES · {count}",
+      "ja": "構造リンク · {count}"
+    },
+    "model_editor.structural.status.selected": {
+      "en": "STRUCTURE: selected {render}{endpoint}",
+      "ru": "STRUCTURE: выбран {render}{endpoint}",
+      "zh-Hans": "结构：已选择 {render}{endpoint}",
+      "es": "ESTRUCTURA: seleccionado {render}{endpoint}",
+      "ja": "STRUCTURE: 選択 {render}{endpoint}"
+    },
+    "model_editor.structural.status.slot": {
+      "en": "STRUCTURE: {slot} = {id}",
+      "ru": "КОНСТРУКЦИЯ: {slot} = {id}",
+      "zh-Hans": "结构：{slot} = {id}",
+      "es": "ESTRUCTURA: {slot} = {id}",
+      "ja": "構造: {slot} = {id}"
+    },
+    "model_editor.structural.status.root": {
+      "en": "STRUCTURE ROOT: N{node} · {id}",
+      "ru": "КОРЕНЬ КОНСТРУКЦИИ: N{node} · {id}",
+      "zh-Hans": "结构根：N{node} · {id}",
+      "es": "RAÍZ ESTRUCTURAL: N{node} · {id}",
+      "ja": "構造ルート: N{node} · {id}"
+    },
+    "model_editor.structural.confirm.delete": {
+      "en": "Delete structural link {id}?",
+      "ru": "Удалить structural link {id}?",
+      "zh-Hans": "删除结构连接 {id}？",
+      "es": "¿Eliminar el enlace estructural {id}?",
+      "ja": "structural link {id} を削除しますか？"
+    },
+    "model_editor.damage.summary_targets": {
+      "en": "hit / openings / repair",
+      "ru": "попадания / отверстия / ремонт",
+      "zh-Hans": "命中 / 开口 / 修复",
+      "es": "impactos / aberturas / reparación",
+      "ja": "ヒット / 開口 / 修理"
+    },
+    "model_editor.physics.status.wrong_stage": {
+      "en": "Collision geometry is authored in PHYSICS",
+      "ru": "Collision geometry редактируется в PHYSICS",
+      "zh-Hans": "碰撞几何在 PHYSICS 中编辑",
+      "es": "La geometría de colisión se edita en PHYSICS",
+      "ja": "Collision geometry は PHYSICS で編集します"
+    },
+    "model_editor.common.select_module_first": {
+      "en": "NO CHANGES: select a module/submodel first",
+      "ru": "БЕЗ ИЗМЕНЕНИЙ: сначала выберите модуль/подмодель",
+      "zh-Hans": "未更改：请先选择模块/子模型",
+      "es": "SIN CAMBIOS: selecciona primero un módulo/submodelo",
+      "ja": "変更なし: 先にモジュール/サブモデルを選択してください"
+    },
+    "model_editor.common.select_semantic_first": {
+      "en": "NO CHANGES: select a semantic part first",
+      "ru": "БЕЗ ИЗМЕНЕНИЙ: сначала выберите semantic part",
+      "zh-Hans": "未更改：请先选择语义部件",
+      "es": "SIN CAMBIOS: selecciona primero una parte semántica",
+      "ja": "変更なし: 先に semantic part を選択してください"
+    },
+    "model_editor.physics.prompt.hit_id": {
+      "en": "Hit volume id",
+      "ru": "ID hit volume",
+      "zh-Hans": "命中体积 ID",
+      "es": "ID del volumen de impacto",
+      "ja": "Hit volume ID"
+    },
+    "model_editor.physics.prompt.shape": {
+      "en": "Shape: box / sphere / capsule",
+      "ru": "Форма: box / sphere / capsule",
+      "zh-Hans": "形状：box / sphere / capsule",
+      "es": "Forma: box / sphere / capsule",
+      "ja": "形状: box / sphere / capsule"
+    },
+    "model_editor.physics.status.add_cancelled": {
+      "en": "CANCELLED: collision volume was not added",
+      "ru": "ОТМЕНЕНО: collision volume не добавлен",
+      "zh-Hans": "已取消：未添加碰撞体积",
+      "es": "CANCELADO: no se añadió el volumen de colisión",
+      "ja": "キャンセル: collision volume は追加されませんでした"
+    },
+    "model_editor.physics.prompt.ring_count": {
+      "en": "Capsules around ring",
+      "ru": "Число капсул по кольцу",
+      "zh-Hans": "环上的胶囊数量",
+      "es": "Cápsulas alrededor del anillo",
+      "ja": "リング周囲のカプセル数"
+    },
+    "model_editor.physics.prompt.ring_radius": {
+      "en": "Ring radius",
+      "ru": "Радиус кольца",
+      "zh-Hans": "环半径",
+      "es": "Radio del anillo",
+      "ja": "リング半径"
+    },
+    "model_editor.physics.prompt.capsule_radius": {
+      "en": "Capsule radius",
+      "ru": "Радиус капсулы",
+      "zh-Hans": "胶囊半径",
+      "es": "Radio de la cápsula",
+      "ja": "カプセル半径"
+    },
+    "model_editor.physics.prompt.ring_axis": {
+      "en": "Ring axis x / y / z",
+      "ru": "Ось кольца x / y / z",
+      "zh-Hans": "环轴 x / y / z",
+      "es": "Eje del anillo x / y / z",
+      "ja": "リング軸 x / y / z"
+    },
+    "model_editor.physics.status.ring_cancelled": {
+      "en": "CANCELLED: radial collision was not generated",
+      "ru": "ОТМЕНЕНО: радиальная collision не создана",
+      "zh-Hans": "已取消：未生成径向碰撞体",
+      "es": "CANCELADO: no se generó la colisión radial",
+      "ja": "キャンセル: radial collision は生成されませんでした"
+    },
+    "model_editor.socket.status.wrong_stage": {
+      "en": "Sockets are authored in SEMANTICS",
+      "ru": "Sockets редактируются в SEMANTICS",
+      "zh-Hans": "Sockets 在 SEMANTICS 中编辑",
+      "es": "Los sockets se editan en SEMANTICS",
+      "ja": "Sockets は SEMANTICS で編集します"
+    },
+    "model_editor.socket.prompt.id": {
+      "en": "Socket id",
+      "ru": "ID socket",
+      "zh-Hans": "Socket ID",
+      "es": "ID del socket",
+      "ja": "Socket ID"
+    },
+    "model_editor.socket.status.add_cancelled": {
+      "en": "CANCELLED: socket was not added",
+      "ru": "ОТМЕНЕНО: socket не добавлен",
+      "zh-Hans": "已取消：未添加 socket",
+      "es": "CANCELADO: no se añadió el socket",
+      "ja": "キャンセル: socket は追加されませんでした"
+    },
+    "model_editor.socket.prompt.kind": {
+      "en": "Socket kind (camera, weapon_muzzle, equipment_mount, dock, light_point, light_spot, ...)",
+      "ru": "Тип socket (camera, weapon_muzzle, equipment_mount, dock, light_point, light_spot, ...)",
+      "zh-Hans": "Socket 类型（camera、weapon_muzzle、equipment_mount、dock、light_point、light_spot…）",
+      "es": "Tipo de socket (camera, weapon_muzzle, equipment_mount, dock, light_point, light_spot, ...)",
+      "ja": "Socket 種別 (camera, weapon_muzzle, equipment_mount, dock, light_point, light_spot, ...)"
+    },
+    "model_editor.socket.prompt.profile": {
+      "en": "Interface profile / compatibility (camera.cockpit, weapon.small, container.iso20, ...)",
+      "ru": "Профиль интерфейса / совместимость (camera.cockpit, weapon.small, container.iso20, ...)",
+      "zh-Hans": "接口配置 / 兼容性（camera.cockpit、weapon.small、container.iso20…）",
+      "es": "Perfil de interfaz / compatibilidad (camera.cockpit, weapon.small, container.iso20, ...)",
+      "ja": "インターフェースプロファイル / 互換性 (camera.cockpit, weapon.small, container.iso20, ...)"
+    },
+    "model_editor.damage.prompt.states": {
+      "en": "Active states, comma separated (empty = all)",
+      "ru": "Активные состояния через запятую (пусто = все)",
+      "zh-Hans": "活动状态，用逗号分隔（空 = 全部）",
+      "es": "Estados activos, separados por comas (vacío = todos)",
+      "ja": "アクティブ状態をカンマ区切り（空 = すべて）"
+    },
+    "model_editor.damage.prompt.hit_id": {
+      "en": "Hit region id",
+      "ru": "ID hit region",
+      "zh-Hans": "命中区域 ID",
+      "es": "ID de región de impacto",
+      "ja": "Hit region ID"
+    },
+    "model_editor.damage.prompt.opening_id": {
+      "en": "Opening id",
+      "ru": "ID opening",
+      "zh-Hans": "开口 ID",
+      "es": "ID de abertura",
+      "ja": "Opening ID"
+    },
+    "model_editor.damage.prompt.repair_id": {
+      "en": "Repair target id",
+      "ru": "ID repair target",
+      "zh-Hans": "修复目标 ID",
+      "es": "ID del objetivo de reparación",
+      "ja": "Repair target ID"
+    },
+    "model_editor.damage.prompt.repair_kind": {
+      "en": "Repair kind",
+      "ru": "Тип ремонта",
+      "zh-Hans": "修复类型",
+      "es": "Tipo de reparación",
+      "ja": "修理種別"
+    },
+    "model_editor.damage.prompt.repaired_state": {
+      "en": "State after successful repair",
+      "ru": "Состояние после успешного ремонта",
+      "zh-Hans": "成功修复后的状态",
+      "es": "Estado tras una reparación correcta",
+      "ja": "修理成功後の状態"
+    },
+    "model_editor.action.apply": {
+      "en": "Apply",
+      "ru": "Применить",
+      "zh-Hans": "应用",
+      "es": "Aplicar",
+      "ja": "適用"
+    },
+    "model_editor.lod_generator.analysis_current": {
+      "en": "LOD0 ANALYSIS CURRENT",
+      "ru": "АНАЛИЗ LOD0 АКТУАЛЕН",
+      "zh-Hans": "LOD0 分析已是最新",
+      "es": "ANÁLISIS DE LOD0 ACTUAL",
+      "ja": "LOD0 解析は最新です"
+    },
+    "model_editor.lod_generator.applied_short": {
+      "en": "APPLIED",
+      "ru": "ПРИМЕНЕНО",
+      "zh-Hans": "已应用",
+      "es": "APLICADO",
+      "ja": "適用済み"
+    },
+    "model_editor.lod_generator.applying": {
+      "en": "APPLYING GENERATED LODS",
+      "ru": "ПРИМЕНЕНИЕ СОЗДАННЫХ LOD",
+      "zh-Hans": "正在应用生成的 LOD",
+      "es": "APLICANDO LOD GENERADOS",
+      "ja": "生成 LOD を適用中"
+    },
+    "model_editor.lod_generator.authored_generated": {
+      "en": "AUTHORED · GENERATED",
+      "ru": "СОХРАНЁН · СГЕНЕРИРОВАН",
+      "zh-Hans": "已编写 · 已生成",
+      "es": "AUTORADO · GENERADO",
+      "ja": "作成済み · 生成"
+    },
+    "model_editor.lod_generator.authored_updated": {
+      "en": "AUTHORED LOD UPDATED",
+      "ru": "СОХРАНЁННЫЙ LOD ОБНОВЛЁН",
+      "zh-Hans": "已更新编写的 LOD",
+      "es": "LOD AUTORADO ACTUALIZADO",
+      "ja": "作成済み LOD を更新しました"
+    },
+    "model_editor.lod_workspace.lod_help": {
+      "en": "Each LOD is an independent render document. PREPARE, visibility and mesh selection below apply to the active LOD.",
+      "ru": "Каждый LOD — независимый render-документ. PREPARE, видимость и выбор mesh ниже относятся к активному LOD.",
+      "zh-Hans": "每个 LOD 都是独立的渲染文档。下方的 PREPARE、可见性和网格选择仅作用于活动 LOD。",
+      "es": "Cada LOD es un documento de render independiente. PREPARE, la visibilidad y la selección de malla de abajo se aplican al LOD activo.",
+      "ja": "各 LOD は独立したレンダードキュメントです。下の PREPARE、表示、メッシュ選択はアクティブ LOD に適用されます。"
+    },
+    "model_editor.preflight.action.manual_fix": {
+      "en": "MANUAL FIX",
+      "ru": "РУЧНАЯ ПРАВКА",
+      "zh-Hans": "手动修复",
+      "es": "CORRECCIÓN MANUAL",
+      "ja": "手動修正"
+    },
+    "model_editor.preflight.orientation_auto": {
+      "en": "AUTO ORIENTATION",
+      "ru": "АВТООРИЕНТАЦИЯ",
+      "zh-Hans": "自动朝向",
+      "es": "ORIENTACIÓN AUTOMÁTICA",
+      "ja": "自動向き"
+    },
+    "model_editor.preflight.orientation_flip": {
+      "en": "↺ FLIP ORIENTATION",
+      "ru": "↺ ПЕРЕВЕРНУТЬ ОРИЕНТАЦИЮ",
+      "zh-Hans": "↺ 翻转朝向",
+      "es": "↺ INVERTIR ORIENTACIÓN",
+      "ja": "↺ 向きを反転"
+    },
+    "model_editor.preflight.orientation_reapply": {
+      "en": "↺ REAPPLY FLIP",
+      "ru": "↺ ПОВТОРИТЬ ПЕРЕВОРОТ",
+      "zh-Hans": "↺ 重新应用翻转",
+      "es": "↺ REAPLICAR INVERSIÓN",
+      "ja": "↺ 反転を再適用"
+    },
+    "model_editor.preflight.reason.invalid": {
+      "en": "geometry is genuinely invalid",
+      "ru": "геометрия действительно некорректна",
+      "zh-Hans": "几何确实无效",
+      "es": "la geometría es realmente no válida",
+      "ja": "ジオメトリが実際に無効です"
+    },
+    "model_editor.semantics.motion.play_button": {
+      "en": "▶ PLAY",
+      "ru": "▶ ЗАПУСТИТЬ",
+      "zh-Hans": "▶ 播放",
+      "es": "▶ REPRODUCIR",
+      "ja": "▶ 再生"
+    },
+    "model_editor.semantics.node.semantic_only": {
+      "en": "SEMANTIC-ONLY",
+      "ru": "ТОЛЬКО СЕМАНТИКА",
+      "zh-Hans": "仅语义",
+      "es": "SOLO SEMÁNTICA",
+      "ja": "セマンティクスのみ"
+    },
+    "model_editor.semantics.node.visual_part": {
+      "en": "VISUAL PART",
+      "ru": "ВИЗУАЛЬНАЯ ЧАСТЬ",
+      "zh-Hans": "视觉部件",
+      "es": "PARTE VISUAL",
+      "ja": "ビジュアルパーツ"
+    },
+    "model_editor.inspector.id_module": {
+      "en": "ID / module",
+      "ru": "ID / модуль",
+      "zh-Hans": "ID / 模块",
+      "es": "ID / módulo",
+      "ja": "ID / モジュール"
+    },
+    "model_editor.inspector.base_semantic_transform": {
+      "en": "Base semantic transform",
+      "ru": "Базовый semantic transform",
+      "zh-Hans": "基础语义变换",
+      "es": "Transformación semántica base",
+      "ja": "基本セマンティック変換"
+    },
+    "model_editor.inspector.position": {
+      "en": "Position",
+      "ru": "Положение",
+      "zh-Hans": "位置",
+      "es": "Posición",
+      "ja": "位置"
+    },
+    "model_editor.inspector.rotation_deg": {
+      "en": "Rotation XYZ deg",
+      "ru": "Поворот XYZ, град.",
+      "zh-Hans": "旋转 XYZ（度）",
+      "es": "Rotación XYZ, grados",
+      "ja": "回転 XYZ（度）"
+    },
+    "model_editor.inspector.pivot": {
+      "en": "Pivot",
+      "ru": "Опорная точка",
+      "zh-Hans": "枢轴",
+      "es": "Pivote",
+      "ja": "ピボット"
+    },
+    "model_editor.inspector.joint_attachment": {
+      "en": "Joint / structural attachment",
+      "ru": "Joint / конструкционная связь",
+      "zh-Hans": "关节 / 结构连接",
+      "es": "Articulación / unión estructural",
+      "ja": "ジョイント / 構造接続"
+    },
+    "model_editor.inspector.type": {
+      "en": "Type",
+      "ru": "Тип",
+      "zh-Hans": "类型",
+      "es": "Tipo",
+      "ja": "種類"
+    },
+    "model_editor.inspector.fixed": {
+      "en": "Fixed",
+      "ru": "Фиксированная",
+      "zh-Hans": "固定",
+      "es": "Fija",
+      "ja": "固定"
+    },
+    "model_editor.inspector.revolute": {
+      "en": "Revolute",
+      "ru": "Вращательная",
+      "zh-Hans": "旋转",
+      "es": "Revoluta",
+      "ja": "回転"
+    },
+    "model_editor.inspector.joint_pivot": {
+      "en": "Joint pivot",
+      "ru": "Pivot связи",
+      "zh-Hans": "关节枢轴",
+      "es": "Pivote de articulación",
+      "ja": "ジョイントピボット"
+    },
+    "model_editor.inspector.rotation_axis": {
+      "en": "Rotation axis",
+      "ru": "Ось вращения",
+      "zh-Hans": "旋转轴",
+      "es": "Eje de rotación",
+      "ja": "回転軸"
+    },
+    "model_editor.inspector.default_rate": {
+      "en": "default rate deg/s",
+      "ru": "номинальная скорость, град/с",
+      "zh-Hans": "默认速度（度/秒）",
+      "es": "velocidad predeterminada, grados/s",
+      "ja": "既定速度（度/秒）"
+    },
+    "model_editor.inspector.min_angle": {
+      "en": "min angle",
+      "ru": "минимальный угол",
+      "zh-Hans": "最小角度",
+      "es": "ángulo mínimo",
+      "ja": "最小角度"
+    },
+    "model_editor.inspector.max_angle": {
+      "en": "max angle",
+      "ru": "максимальный угол",
+      "zh-Hans": "最大角度",
+      "es": "ángulo máximo",
+      "ja": "最大角度"
+    },
+    "model_editor.inspector.breakable": {
+      "en": "Breakable",
+      "ru": "Разрушаемая связь",
+      "zh-Hans": "可断裂",
+      "es": "Rompible",
+      "ja": "破断可能"
+    },
+    "model_editor.inspector.break_force": {
+      "en": "break force N",
+      "ru": "усилие разрыва, Н",
+      "zh-Hans": "断裂力 N",
+      "es": "fuerza de rotura, N",
+      "ja": "破断力 N"
+    },
+    "model_editor.inspector.break_torque": {
+      "en": "break torque Nm",
+      "ru": "момент разрыва, Н·м",
+      "zh-Hans": "断裂扭矩 N·m",
+      "es": "par de rotura, N·m",
+      "ja": "破断トルク N·m"
+    },
+    "model_editor.inspector.semantic_part": {
+      "en": "Semantic part",
+      "ru": "Семантическая часть",
+      "zh-Hans": "语义部件",
+      "es": "Parte semántica",
+      "ja": "セマンティックパーツ"
+    },
+    "model_editor.inspector.enabled": {
+      "en": "Enabled",
+      "ru": "Включено",
+      "zh-Hans": "启用",
+      "es": "Activado",
+      "ja": "有効"
+    },
+    "model_editor.inspector.mesh_stats": {
+      "en": "{vertices} vertices · {triangles} triangles",
+      "ru": "{vertices} вершин · {triangles} треугольников",
+      "zh-Hans": "{vertices} 顶点 · {triangles} 三角形",
+      "es": "{vertices} vértices · {triangles} triángulos",
+      "ja": "{vertices} 頂点 · {triangles} 三角形"
+    },
+    "model_editor.physics.base_rigid_body": {
+      "en": "Base rigid body",
+      "ru": "Базовое твёрдое тело",
+      "zh-Hans": "基础刚体",
+      "es": "Cuerpo rígido base",
+      "ja": "基本剛体"
+    },
+    "model_editor.physics.mass_mode": {
+      "en": "Mass mode",
+      "ru": "Режим массы",
+      "zh-Hans": "质量模式",
+      "es": "Modo de masa",
+      "ja": "質量モード"
+    },
+    "model_editor.physics.disabled": {
+      "en": "Disabled",
+      "ru": "Отключено",
+      "zh-Hans": "禁用",
+      "es": "Desactivado",
+      "ja": "無効"
+    },
+    "model_editor.physics.auto_collision": {
+      "en": "Auto from collision",
+      "ru": "Авто по collision",
+      "zh-Hans": "从碰撞体自动计算",
+      "es": "Auto desde colisión",
+      "ja": "コリジョンから自動"
+    },
+    "model_editor.physics.manual": {
+      "en": "Manual",
+      "ru": "Вручную",
+      "zh-Hans": "手动",
+      "es": "Configuración manual",
+      "ja": "手動"
+    },
+    "model_editor.physics.density": {
+      "en": "density kg/m3",
+      "ru": "плотность, кг/м³",
+      "zh-Hans": "密度 kg/m³",
+      "es": "densidad kg/m³",
+      "ja": "密度 kg/m³"
+    },
+    "model_editor.physics.mass": {
+      "en": "mass kg",
+      "ru": "масса, кг",
+      "zh-Hans": "质量 kg",
+      "es": "masa kg",
+      "ja": "質量 kg"
+    },
+    "model_editor.physics.center_of_mass": {
+      "en": "Center of mass",
+      "ru": "Центр масс",
+      "zh-Hans": "质心",
+      "es": "Centro de masa",
+      "ja": "重心"
+    },
+    "model_editor.physics.inertia_diagonal": {
+      "en": "Inertia diagonal",
+      "ru": "Диагональ тензора инерции",
+      "zh-Hans": "惯性张量对角项",
+      "es": "Diagonal de inercia",
+      "ja": "慣性テンソル対角成分"
+    },
+    "model_editor.physics.inertia_products": {
+      "en": "Inertia products",
+      "ru": "Произведения инерции",
+      "zh-Hans": "惯性积",
+      "es": "Productos de inercia",
+      "ja": "慣性乗積"
+    },
+    "model_editor.damage.transform_override": {
+      "en": "Transform / pivot override",
+      "ru": "Переопределение transform / pivot",
+      "zh-Hans": "覆盖变换 / 枢轴",
+      "es": "Sobrescribir transformación / pivote",
+      "ja": "変換 / ピボットの上書き"
+    },
+    "model_editor.damage.state_position": {
+      "en": "State position",
+      "ru": "Положение состояния",
+      "zh-Hans": "状态位置",
+      "es": "Posición del estado",
+      "ja": "状態位置"
+    },
+    "model_editor.damage.state_rotation": {
+      "en": "State rotation XYZ deg",
+      "ru": "Поворот состояния XYZ, град.",
+      "zh-Hans": "状态旋转 XYZ（度）",
+      "es": "Rotación XYZ del estado, grados",
+      "ja": "状態回転 XYZ（度）"
+    },
+    "model_editor.damage.state_pivot": {
+      "en": "State pivot",
+      "ru": "Pivot состояния",
+      "zh-Hans": "状态枢轴",
+      "es": "Pivote del estado",
+      "ja": "状態ピボット"
+    },
+    "model_editor.damage.physics_override": {
+      "en": "Physics override",
+      "ru": "Переопределение physics",
+      "zh-Hans": "覆盖物理属性",
+      "es": "Sobrescribir física",
+      "ja": "物理設定の上書き"
+    },
+    "model_editor.damage.detached_state": {
+      "en": "Detached / separate body state",
+      "ru": "Состояние отделённого / отдельного тела",
+      "zh-Hans": "分离 / 独立刚体状态",
+      "es": "Estado separado / cuerpo independiente",
+      "ja": "分離 / 独立ボディ状態"
+    },
+    "model_editor.damage.state_center_of_mass": {
+      "en": "State center of mass",
+      "ru": "Центр масс состояния",
+      "zh-Hans": "状态质心",
+      "es": "Centro de masa del estado",
+      "ja": "状態の重心"
+    },
+    "model_editor.damage.state_inertia_diagonal": {
+      "en": "State inertia diagonal",
+      "ru": "Диагональ инерции состояния",
+      "zh-Hans": "状态惯性对角项",
+      "es": "Diagonal de inercia del estado",
+      "ja": "状態慣性対角成分"
+    },
+    "model_editor.damage.state_inertia_products": {
+      "en": "State inertia products",
+      "ru": "Произведения инерции состояния",
+      "zh-Hans": "状态惯性积",
+      "es": "Productos de inercia del estado",
+      "ja": "状態慣性乗積"
+    },
+    "model_editor.damage.preview_state": {
+      "en": "Preview state",
+      "ru": "Состояние preview",
+      "zh-Hans": "预览状态",
+      "es": "Estado de previsualización",
+      "ja": "プレビュー状態"
+    },
+    "model_editor.damage.default_state": {
+      "en": "Default gameplay state",
+      "ru": "Gameplay-состояние по умолчанию",
+      "zh-Hans": "默认游戏状态",
+      "es": "Estado de juego predeterminado",
+      "ja": "既定ゲームプレイ状態"
+    },
+    "model_editor.damage.prompt.state_id": {
+      "en": "State id (damaged, breached, destroyed, ...)",
+      "ru": "ID состояния (damaged, breached, destroyed, ...)",
+      "zh-Hans": "状态 ID（damaged、breached、destroyed…）",
+      "es": "ID de estado (damaged, breached, destroyed, ...)",
+      "ja": "状態 ID (damaged, breached, destroyed, ...)"
+    },
+    "model_editor.damage.status.state_add_cancelled": {
+      "en": "CANCELLED: state variant was not added",
+      "ru": "ОТМЕНЕНО: вариант состояния не добавлен",
+      "zh-Hans": "已取消：未添加状态变体",
+      "es": "CANCELADO: no se añadió la variante de estado",
+      "ja": "キャンセル: 状態バリアントは追加されませんでした"
+    },
+    "model_editor.damage.confirm.delete_state": {
+      "en": "Delete state {id}?",
+      "ru": "Удалить состояние {id}?",
+      "zh-Hans": "删除状态 {id}？",
+      "es": "¿Eliminar el estado {id}?",
+      "ja": "状態 {id} を削除しますか？"
+    },
+    "model_editor.status.hidden": {
+      "en": "Hidden: {id}",
+      "ru": "Скрыто: {id}",
+      "zh-Hans": "已隐藏：{id}",
+      "es": "Oculto: {id}",
+      "ja": "非表示: {id}"
+    },
+    "model_editor.status.isolated": {
+      "en": "Isolated: {id}",
+      "ru": "Изолировано: {id}",
+      "zh-Hans": "已隔离：{id}",
+      "es": "Aislado: {id}",
+      "ja": "分離表示: {id}"
+    },
+    "model_editor.damage.render_selector": {
+      "en": "Damage-state render selector",
+      "ru": "Render selector состояния повреждения",
+      "zh-Hans": "损伤状态渲染选择器",
+      "es": "Selector de render por estado de daño",
+      "ja": "ダメージ状態レンダーセレクター"
+    },
+    "model_editor.damage.semantic_binding": {
+      "en": "Semantic binding",
+      "ru": "Semantic-привязка",
+      "zh-Hans": "语义绑定",
+      "es": "Vínculo semántico",
+      "ja": "セマンティックバインド"
+    },
+    "model_editor.damage.active_states": {
+      "en": "Active semantic states (empty = all)",
+      "ru": "Активные semantic-состояния (пусто = все)",
+      "zh-Hans": "活动语义状态（空 = 全部）",
+      "es": "Estados semánticos activos (vacío = todos)",
+      "ja": "アクティブなセマンティック状態（空 = すべて）"
+    },
+    "model_editor.damage.apply_all_lods": {
+      "en": "APPLY TO ALL LODS",
+      "ru": "ПРИМЕНИТЬ КО ВСЕМ LOD",
+      "zh-Hans": "应用到所有 LOD",
+      "es": "APLICAR A TODOS LOS LOD",
+      "ja": "すべての LOD に適用"
+    },
+    "model_editor.damage.apply_all_lods_hint": {
+      "en": "Exact stable RenderNode id only; coarse/welded nodes with another id are edited manually.",
+      "ru": "Только точный стабильный RenderNode id; укрупнённые/объединённые узлы с другим id редактируются вручную.",
+      "zh-Hans": "仅匹配完全相同的稳定 RenderNode ID；具有其他 ID 的粗化/合并节点需手动编辑。",
+      "es": "Solo el id estable exacto de RenderNode; los nodos simplificados/fusionados con otro id se editan manualmente.",
+      "ja": "完全一致する安定 RenderNode ID のみ。別 ID の粗粒度/統合ノードは手動編集します。"
+    },
+    "model_editor.damage.apply_state_selector": {
+      "en": "✓ APPLY STATE SELECTOR",
+      "ru": "✓ ПРИМЕНИТЬ SELECTOR СОСТОЯНИЙ",
+      "zh-Hans": "✓ 应用状态选择器",
+      "es": "✓ APLICAR SELECTOR DE ESTADO",
+      "ja": "✓ 状態セレクターを適用"
+    },
+    "model_editor.surface_mode.closed": {
+      "en": "Closed volume",
+      "ru": "Замкнутый объём",
+      "zh-Hans": "封闭体积",
+      "es": "Volumen cerrado",
+      "ja": "閉じたボリューム"
+    },
+    "model_editor.surface_mode.thin_one_sided": {
+      "en": "Thin one-sided",
+      "ru": "Тонкая односторонняя",
+      "zh-Hans": "单面薄片",
+      "es": "Delgada de una cara",
+      "ja": "薄い片面"
+    },
+    "model_editor.surface_mode.thin_two_sided": {
+      "en": "Thin two-sided",
+      "ru": "Тонкая двусторонняя",
+      "zh-Hans": "双面薄片",
+      "es": "Delgada de dos caras",
+      "ja": "薄い両面"
+    },
+    "model_editor.geometry_inspector.select_reference": {
+      "en": "select reference element…",
+      "ru": "выберите эталонный элемент…",
+      "zh-Hans": "选择参考元素…",
+      "es": "selecciona elemento de referencia…",
+      "ja": "参照要素を選択…"
+    },
+    "model_editor.common.root": {
+      "en": "root",
+      "ru": "корень",
+      "zh-Hans": "根",
+      "es": "raíz",
+      "ja": "ルート"
+    },
+    "model_editor.common.none_cap": {
+      "en": "None",
+      "ru": "Нет",
+      "zh-Hans": "无",
+      "es": "Ninguno",
+      "ja": "なし"
+    },
+    "model_editor.common.confirm_delete": {
+      "en": "Delete {id}?",
+      "ru": "Удалить {id}?",
+      "zh-Hans": "删除 {id}？",
+      "es": "¿Eliminar {id}?",
+      "ja": "{id} を削除しますか？"
+    },
+    "model_editor.damage.pass_short": {
+      "en": "PASS",
+      "ru": "ПРОХОД",
+      "zh-Hans": "可通过",
+      "es": "PASO",
+      "ja": "通行"
+    },
+    "model_editor.damage.fire_short": {
+      "en": "FIRE",
+      "ru": "ОГОНЬ",
+      "zh-Hans": "射界",
+      "es": "FUEGO",
+      "ja": "射線"
+    },
+    "model_editor.damage.none": {
+      "en": "No state-scoped damage/repair semantics yet.",
+      "ru": "Пока нет damage/repair semantics с привязкой к состояниям.",
+      "zh-Hans": "尚无按状态限定的损伤/修复语义。",
+      "es": "Aún no hay semántica de daño/reparación limitada por estado.",
+      "ja": "状態スコープ付きのダメージ/修理セマンティクスはまだありません。"
+    },
+    "model_editor.damage.half_size": {
+      "en": "Half size",
+      "ru": "Полуразмер",
+      "zh-Hans": "半尺寸",
+      "es": "Semitamaño",
+      "ja": "半サイズ"
+    },
+    "model_editor.damage.traversable": {
+      "en": "Traversable",
+      "ru": "Проходимо",
+      "zh-Hans": "可通行",
+      "es": "Transitable",
+      "ja": "通行可能"
+    },
+    "model_editor.damage.line_of_fire": {
+      "en": "Line of fire",
+      "ru": "Линия огня",
+      "zh-Hans": "射线",
+      "es": "Línea de fuego",
+      "ja": "射線"
+    },
+    "model_editor.damage.repair_kind": {
+      "en": "Repair kind",
+      "ru": "Тип ремонта",
+      "zh-Hans": "修复类型",
+      "es": "Tipo de reparación",
+      "ja": "修理種別"
+    },
+    "model_editor.damage.state_after_repair": {
+      "en": "State after repair",
+      "ru": "Состояние после ремонта",
+      "zh-Hans": "修复后状态",
+      "es": "Estado tras la reparación",
+      "ja": "修理後の状態"
+    },
+    "model_editor.action.apply_marked": {
+      "en": "✓ APPLY",
+      "ru": "✓ ПРИМЕНИТЬ",
+      "zh-Hans": "✓ 应用",
+      "es": "✓ APLICAR",
+      "ja": "✓ 適用"
+    },
+    "model_editor.damage.apply_state_scope": {
+      "en": "✓ APPLY STATE SCOPE",
+      "ru": "✓ ПРИМЕНИТЬ ОБЛАСТЬ СОСТОЯНИЙ",
+      "zh-Hans": "✓ 应用状态范围",
+      "es": "✓ APLICAR ÁMBITO DE ESTADOS",
+      "ja": "✓ 状態スコープを適用"
+    },
+    "model_editor.damage.collision_scope_hint": {
+      "en": "Collision shape/placement belongs to PHYSICS; DAMAGE only selects the semantic states in which this volume is active.",
+      "ru": "Форма/положение collision относятся к PHYSICS; DAMAGE только выбирает semantic-состояния, в которых этот объём активен.",
+      "zh-Hans": "碰撞体形状/位置属于 PHYSICS；DAMAGE 仅选择此体积在哪些语义状态下有效。",
+      "es": "La forma/posición de colisión pertenece a PHYSICS; DAMAGE solo selecciona los estados semánticos en los que el volumen está activo.",
+      "ja": "コリジョンの形状/配置は PHYSICS 所有です。DAMAGE はこのボリュームが有効なセマンティック状態だけを選択します。"
+    },
+    "model_editor.collision.shape": {
+      "en": "Shape",
+      "ru": "Форма",
+      "zh-Hans": "形状",
+      "es": "Forma",
+      "ja": "形状"
+    },
+    "model_editor.collision.box": {
+      "en": "Box / OBB",
+      "ru": "Параллелепипед / OBB",
+      "zh-Hans": "盒 / OBB",
+      "es": "Caja / OBB",
+      "ja": "ボックス / OBB"
+    },
+    "model_editor.collision.sphere": {
+      "en": "Sphere",
+      "ru": "Сфера",
+      "zh-Hans": "球体",
+      "es": "Esfera",
+      "ja": "球"
+    },
+    "model_editor.collision.capsule": {
+      "en": "Capsule (+Y)",
+      "ru": "Капсула (+Y)",
+      "zh-Hans": "胶囊 (+Y)",
+      "es": "Cápsula (+Y)",
+      "ja": "カプセル (+Y)"
+    },
+    "model_editor.collision.center": {
+      "en": "Center",
+      "ru": "Центр",
+      "zh-Hans": "中心",
+      "es": "Centro",
+      "ja": "中心"
+    },
+    "model_editor.collision.box_half_size": {
+      "en": "Box half size",
+      "ru": "Полуразмер box",
+      "zh-Hans": "盒半尺寸",
+      "es": "Semitamaño de caja",
+      "ja": "ボックス半サイズ"
+    },
+    "model_editor.collision.radius": {
+      "en": "radius",
+      "ru": "радиус",
+      "zh-Hans": "半径",
+      "es": "radio",
+      "ja": "半径"
+    },
+    "model_editor.collision.half_length": {
+      "en": "capsule half length",
+      "ru": "полудлина капсулы",
+      "zh-Hans": "胶囊半长度",
+      "es": "semilongitud de cápsula",
+      "ja": "カプセル半長"
+    },
+    "model_editor.collision.delete_cancelled": {
+      "en": "CANCELLED: collision volume was not deleted",
+      "ru": "ОТМЕНЕНО: collision volume не удалён",
+      "zh-Hans": "已取消：未删除碰撞体积",
+      "es": "CANCELADO: no se eliminó el volumen de colisión",
+      "ja": "キャンセル: collision volume は削除されませんでした"
+    },
+    "model_editor.damage.socket_scope_hint": {
+      "en": "Socket kind, transform and light payload belong to SEMANTICS; DAMAGE only controls state visibility/availability.",
+      "ru": "Тип socket, transform и light payload относятся к SEMANTICS; DAMAGE только управляет видимостью/доступностью по состояниям.",
+      "zh-Hans": "Socket 类型、变换和灯光数据属于 SEMANTICS；DAMAGE 仅控制按状态的可见性/可用性。",
+      "es": "El tipo, transformación y datos de luz del socket pertenecen a SEMANTICS; DAMAGE solo controla visibilidad/disponibilidad por estado.",
+      "ja": "Socket 種別、変換、ライト情報は SEMANTICS 所有です。DAMAGE は状態ごとの表示/利用可否だけを制御します。"
+    },
+    "model_editor.socket.interface_profile": {
+      "en": "INTERFACE PROFILE",
+      "ru": "ПРОФИЛЬ ИНТЕРФЕЙСА",
+      "zh-Hans": "接口配置",
+      "es": "PERFIL DE INTERFAZ",
+      "ja": "インターフェースプロファイル"
+    },
+    "model_editor.socket.preview_fov": {
+      "en": "PREVIEW FOV",
+      "ru": "FOV PREVIEW",
+      "zh-Hans": "预览 FOV",
+      "es": "FOV DE PREVISUALIZACIÓN",
+      "ja": "プレビュー FOV"
+    },
+    "model_editor.socket.view_from_socket": {
+      "en": "◉ VIEW FROM SOCKET",
+      "ru": "◉ ВИД ИЗ SOCKET",
+      "zh-Hans": "◉ 从 SOCKET 查看",
+      "es": "◉ VER DESDE SOCKET",
+      "ja": "◉ SOCKET から表示"
+    },
+    "model_editor.socket.camera_preview_hint": {
+      "en": "Camera preview uses the authored canonical socket transform and the full current mesh. The external reference objects are editor-only.",
+      "ru": "Camera preview использует сохранённый canonical transform socket и полный текущий mesh. Внешние reference objects существуют только в редакторе.",
+      "zh-Hans": "相机预览使用已编写的 canonical socket 变换和完整当前网格。外部参考对象仅存在于编辑器中。",
+      "es": "La vista de cámara usa la transformación canonical del socket y la malla actual completa. Los objetos de referencia externos son solo del editor.",
+      "ja": "カメラプレビューは作成済み canonical socket 変換と現在の完全な mesh を使用します。外部参照オブジェクトはエディター専用です。"
+    },
+    "model_editor.socket.light_payload": {
+      "en": "Light payload",
+      "ru": "Данные света",
+      "zh-Hans": "灯光数据",
+      "es": "Datos de luz",
+      "ja": "ライト情報"
+    },
+    "model_editor.socket.light_point": {
+      "en": "Point",
+      "ru": "Точечный",
+      "zh-Hans": "点光源",
+      "es": "Puntual",
+      "ja": "ポイント"
+    },
+    "model_editor.socket.light_spot": {
+      "en": "Spot",
+      "ru": "Прожектор",
+      "zh-Hans": "聚光灯",
+      "es": "Foco",
+      "ja": "スポット"
+    },
+    "model_editor.socket.light_rgb": {
+      "en": "Light RGB (linear)",
+      "ru": "RGB света (linear)",
+      "zh-Hans": "灯光 RGB（线性）",
+      "es": "RGB de luz (lineal)",
+      "ja": "ライト RGB（リニア）"
+    },
+    "model_editor.socket.intensity": {
+      "en": "intensity",
+      "ru": "интенсивность",
+      "zh-Hans": "强度",
+      "es": "intensidad",
+      "ja": "強度"
+    },
+    "model_editor.socket.range_m": {
+      "en": "range m",
+      "ru": "дальность, м",
+      "zh-Hans": "范围 m",
+      "es": "alcance m",
+      "ja": "範囲 m"
+    },
+    "model_editor.socket.cone_deg": {
+      "en": "spot cone deg",
+      "ru": "угол конуса, град.",
+      "zh-Hans": "聚光锥角（度）",
+      "es": "ángulo de cono, grados",
+      "ja": "スポット角度（度）"
+    },
+    "model_editor.socket.delete_cancelled": {
+      "en": "CANCELLED: socket was not deleted",
+      "ru": "ОТМЕНЕНО: socket не удалён",
+      "zh-Hans": "已取消：未删除 socket",
+      "es": "CANCELADO: no se eliminó el socket",
+      "ja": "キャンセル: socket は削除されませんでした"
+    },
+    "model_editor.structural.no_render_mesh": {
+      "en": "No render mesh in the active LOD.",
+      "ru": "В активном LOD нет render mesh.",
+      "zh-Hans": "活动 LOD 中没有渲染网格。",
+      "es": "No hay malla de render en el LOD activo.",
+      "ja": "アクティブ LOD に render mesh がありません。"
+    },
+    "model_editor.structural.not_selected": {
+      "en": "— not selected —",
+      "ru": "— не выбрано —",
+      "zh-Hans": "— 未选择 —",
+      "es": "— sin seleccionar —",
+      "ja": "— 未選択 —"
+    },
+    "model_editor.status.reimport_cancelled": {
+      "en": "CANCELLED: source reimport was not started",
+      "ru": "ОТМЕНЕНО: повторный импорт SOURCE не запущен",
+      "zh-Hans": "已取消：未启动 SOURCE 重新导入",
+      "es": "CANCELADO: no se inició la reimportación de SOURCE",
+      "ja": "キャンセル: SOURCE の再インポートは開始されませんでした"
+    },
+    "model_editor.status.viewport_loading_source": {
+      "en": "Viewport: {mode} · loading SOURCE snapshot",
+      "ru": "Viewport: {mode} · загрузка SOURCE snapshot",
+      "zh-Hans": "视口：{mode} · 正在加载 SOURCE 快照",
+      "es": "Vista: {mode} · cargando snapshot SOURCE",
+      "ja": "ビューポート: {mode} · SOURCE スナップショットを読み込み中"
+    },
+    "model_editor.status.viewport_mode": {
+      "en": "Viewport: {mode}",
+      "ru": "Режим 3D: {mode}",
+      "zh-Hans": "视口：{mode}",
+      "es": "Vista: {mode}",
+      "ja": "ビューポート: {mode}"
+    },
+    "model_editor.status.edge_target": {
+      "en": "Edge target: {target}",
+      "ru": "Цель рёбер: {target}",
+      "zh-Hans": "边目标：{target}",
+      "es": "Objetivo de aristas: {target}",
+      "ja": "エッジ対象: {target}"
+    },
+    "model_editor.common.state": {
+      "en": "STATE",
+      "ru": "СОСТОЯНИЕ",
+      "zh-Hans": "状态",
+      "es": "ESTADO",
+      "ja": "状態"
+    },
+    "model_editor.server.semantic_node_added": {
+      "en": "Added semantic node: {id}",
+      "ru": "Добавлен семантический узел: {id}",
+      "zh-Hans": "已添加语义节点：{id}",
+      "es": "Nodo semántico añadido: {id}",
+      "ja": "セマンティックノードを追加: {id}"
+    },
+    "model_editor.server.semantic_reparented": {
+      "en": "Reparented {count} semantic subtree root(s) ({placement}) without changing world pose",
+      "ru": "Переподчинено корней семантических поддеревьев: {count} ({placement}), мировая поза сохранена",
+      "zh-Hans": "已重新设置 {count} 个语义子树根的父级（{placement}），世界姿态保持不变",
+      "es": "Se reasignaron {count} raíces de subárbol semántico ({placement}) sin cambiar la pose global",
+      "ja": "セマンティック部分木ルート {count} 個を再親子付け（{placement}）、ワールド姿勢は維持"
+    },
+    "model_editor.server.semantic_reordered": {
+      "en": "Reordered {count} semantic subtree root(s) ({placement}) in editor tree only",
+      "ru": "Изменён порядок корней семантических поддеревьев: {count} ({placement}), только в дереве редактора",
+      "zh-Hans": "已重新排序 {count} 个语义子树根（{placement}），仅影响编辑器树",
+      "es": "Se reordenaron {count} raíces de subárbol semántico ({placement}) solo en el árbol del editor",
+      "ja": "セマンティック部分木ルート {count} 個を並べ替え（{placement}）、エディターツリーのみ"
+    },
+    "model_editor.server.legacy_semantics_none": {
+      "en": "CLEAN LEGACY SEMANTICS: no recognized module→visual semantic bootstrap nodes found",
+      "ru": "ОЧИСТКА LEGACY SEMANTICS: распознанные служебные semantic-узлы module→visual не найдены",
+      "zh-Hans": "清理旧版 SEMANTICS：未找到可识别的 module→visual 引导语义节点",
+      "es": "LIMPIAR SEMANTICS LEGACY: no se encontraron nodos semánticos de arranque module→visual reconocidos",
+      "ja": "LEGACY SEMANTICS クリーンアップ: 認識可能な module→visual ブートストラップ・セマンティックノードはありません"
+    },
+    "model_editor.server.legacy_semantics_cleaned": {
+      "en": "CLEAN LEGACY SEMANTICS: removed {removed} synthetic visual semantic node(s), rebound {rebound} RenderNode binding(s); transform parent chains and structural graph links were not changed",
+      "ru": "ОЧИСТКА LEGACY SEMANTICS: удалено синтетических visual semantic-узлов: {removed}, перепривязано RenderNode: {rebound}; цепочки transform-parent и связи structural graph не изменены",
+      "zh-Hans": "清理旧版 SEMANTICS：移除 {removed} 个合成视觉语义节点，重新绑定 {rebound} 个 RenderNode；变换父链和结构图连接未改变",
+      "es": "LIMPIAR SEMANTICS LEGACY: se eliminaron {removed} nodos semánticos visuales sintéticos y se reasignaron {rebound} RenderNode; no cambiaron las cadenas padre de transformación ni los enlaces del grafo estructural",
+      "ja": "LEGACY SEMANTICS クリーンアップ: 合成 visual semantic ノードを {removed} 個削除し RenderNode バインドを {rebound} 件再設定。transform 親チェーンと structural graph リンクは未変更"
+    },
+    "model_editor.server.static_flatten_none": {
+      "en": "STATIC TREE → ASSET SPACE: no safe static transform edges found",
+      "ru": "STATIC TREE → ASSET SPACE: безопасные статические transform-связи не найдены",
+      "zh-Hans": "STATIC TREE → ASSET SPACE：未找到可安全展平的静态变换边",
+      "es": "STATIC TREE → ASSET SPACE: no se encontraron enlaces de transformación estáticos seguros",
+      "ja": "STATIC TREE → ASSET SPACE: 安全に平坦化できる静的 transform エッジはありません"
+    },
+    "model_editor.server.static_flatten_unchanged": {
+      "en": "STATIC TREE → ASSET SPACE: nothing changed",
+      "ru": "STATIC TREE → ASSET SPACE: изменений нет",
+      "zh-Hans": "STATIC TREE → ASSET SPACE：没有更改",
+      "es": "STATIC TREE → ASSET SPACE: sin cambios",
+      "ja": "STATIC TREE → ASSET SPACE: 変更なし"
+    },
+    "model_editor.server.node_transform_updated": {
+      "en": "Updated node transform: {id}",
+      "ru": "Обновлён transform узла: {id}",
+      "zh-Hans": "已更新节点变换：{id}",
+      "es": "Transformación de nodo actualizada: {id}",
+      "ja": "ノード transform を更新: {id}"
+    },
+    "model_editor.server.default_state_updated": {
+      "en": "Updated default semantic state: {id} / {state}",
+      "ru": "Обновлено semantic-состояние по умолчанию: {id} / {state}",
+      "zh-Hans": "已更新默认语义状态：{id} / {state}",
+      "es": "Estado semántico predeterminado actualizado: {id} / {state}",
+      "ja": "既定 semantic state を更新: {id} / {state}"
+    },
+    "model_editor.server.state_variant_added": {
+      "en": "Added semantic state variant: {id}",
+      "ru": "Добавлен вариант semantic-состояния: {id}",
+      "zh-Hans": "已添加语义状态变体：{id}",
+      "es": "Variante de estado semántico añadida: {id}",
+      "ja": "semantic state variant を追加: {id}"
+    },
+    "model_editor.server.state_variant_updated": {
+      "en": "Updated semantic state variant: {id}",
+      "ru": "Обновлён вариант semantic-состояния: {id}",
+      "zh-Hans": "已更新语义状态变体：{id}",
+      "es": "Variante de estado semántico actualizada: {id}",
+      "ja": "semantic state variant を更新: {id}"
+    },
+    "model_editor.server.state_variant_deleted": {
+      "en": "Deleted semantic state variant: {id}",
+      "ru": "Удалён вариант semantic-состояния: {id}",
+      "zh-Hans": "已删除语义状态变体：{id}",
+      "es": "Variante de estado semántico eliminada: {id}",
+      "ja": "semantic state variant を削除: {id}"
+    },
+    "model_editor.server.render_selector_updated": {
+      "en": "Updated render state selector: {id}",
+      "ru": "Обновлён selector render-state: {id}",
+      "zh-Hans": "已更新渲染状态选择器：{id}",
+      "es": "Selector de estado de render actualizado: {id}",
+      "ja": "render state selector を更新: {id}"
+    },
+    "model_editor.server.semantic_binding_updated": {
+      "en": "Updated semantic binding for RenderNode {id} in {scope}",
+      "ru": "Обновлена semantic-привязка RenderNode {id} в {scope}",
+      "zh-Hans": "已更新 RenderNode {id} 在 {scope} 中的语义绑定",
+      "es": "Vinculación semántica de RenderNode {id} actualizada en {scope}",
+      "ja": "RenderNode {id} の semantic binding を {scope} で更新"
+    },
+    "model_editor.server.joint_updated": {
+      "en": "Updated joint: {id}",
+      "ru": "Обновлён joint: {id}",
+      "zh-Hans": "已更新关节：{id}",
+      "es": "Articulación actualizada: {id}",
+      "ja": "joint を更新: {id}"
+    },
+    "model_editor.server.rigid_updated": {
+      "en": "Updated rigid-body properties: {id}",
+      "ru": "Обновлены свойства rigid body: {id}",
+      "zh-Hans": "已更新刚体属性：{id}",
+      "es": "Propiedades del cuerpo rígido actualizadas: {id}",
+      "ja": "rigid-body プロパティを更新: {id}"
+    },
+    "model_editor.server.rigid_estimated": {
+      "en": "Estimated rigid-body properties from collision: {id}",
+      "ru": "Свойства rigid body рассчитаны по collision: {id}",
+      "zh-Hans": "已根据碰撞体估算刚体属性：{id}",
+      "es": "Propiedades del cuerpo rígido estimadas a partir de la colisión: {id}",
+      "ja": "collision から rigid-body プロパティを推定: {id}"
+    },
+    "model_editor.server.collision_added": {
+      "en": "Added collision volume: {id}",
+      "ru": "Добавлен collision volume: {id}",
+      "zh-Hans": "已添加碰撞体：{id}",
+      "es": "Volumen de colisión añadido: {id}",
+      "ja": "collision volume を追加: {id}"
+    },
+    "model_editor.server.collision_deleted": {
+      "en": "Deleted collision volume: {id}",
+      "ru": "Удалён collision volume: {id}",
+      "zh-Hans": "已删除碰撞体：{id}",
+      "es": "Volumen de colisión eliminado: {id}",
+      "ja": "collision volume を削除: {id}"
+    },
+    "model_editor.server.collision_duplicated": {
+      "en": "Duplicated collision volume: {id}",
+      "ru": "Дублирован collision volume: {id}",
+      "zh-Hans": "已复制碰撞体：{id}",
+      "es": "Volumen de colisión duplicado: {id}",
+      "ja": "collision volume を複製: {id}"
+    },
+    "model_editor.server.collision_updated": {
+      "en": "Updated collision volume: {id}",
+      "ru": "Обновлён collision volume: {id}",
+      "zh-Hans": "已更新碰撞体：{id}",
+      "es": "Volumen de colisión actualizado: {id}",
+      "ja": "collision volume を更新: {id}"
+    },
+    "model_editor.server.collision_ring_generated": {
+      "en": "Generated {count} radial collision capsules for {id}",
+      "ru": "Создано радиальных collision-капсул: {count} для {id}",
+      "zh-Hans": "已为 {id} 生成 {count} 个径向碰撞胶囊体",
+      "es": "Se generaron {count} cápsulas de colisión radiales para {id}",
+      "ja": "{id} 用の放射状 collision capsule を {count} 個生成"
+    },
+    "model_editor.server.socket_added": {
+      "en": "Added socket: {id}",
+      "ru": "Добавлен socket: {id}",
+      "zh-Hans": "已添加插槽：{id}",
+      "es": "Socket añadido: {id}",
+      "ja": "socket を追加: {id}"
+    },
+    "model_editor.server.socket_deleted": {
+      "en": "Deleted socket: {id}",
+      "ru": "Удалён socket: {id}",
+      "zh-Hans": "已删除插槽：{id}",
+      "es": "Socket eliminado: {id}",
+      "ja": "socket を削除: {id}"
+    },
+    "model_editor.server.socket_updated": {
+      "en": "Updated socket: {id}",
+      "ru": "Обновлён socket: {id}",
+      "zh-Hans": "已更新插槽：{id}",
+      "es": "Socket actualizado: {id}",
+      "ja": "socket を更新: {id}"
+    },
+    "model_editor.server.structural_link_added": {
+      "en": "Added structural link: {id}",
+      "ru": "Добавлена structural-связь: {id}",
+      "zh-Hans": "已添加结构连接：{id}",
+      "es": "Enlace estructural añadido: {id}",
+      "ja": "structural link を追加: {id}"
+    },
+    "model_editor.server.structural_link_updated": {
+      "en": "Updated structural link: {id}",
+      "ru": "Обновлена structural-связь: {id}",
+      "zh-Hans": "已更新结构连接：{id}",
+      "es": "Enlace estructural actualizado: {id}",
+      "ja": "structural link を更新: {id}"
+    },
+    "model_editor.server.structural_link_deleted": {
+      "en": "Deleted structural link: {id}",
+      "ru": "Удалена structural-связь: {id}",
+      "zh-Hans": "已删除结构连接：{id}",
+      "es": "Enlace estructural eliminado: {id}",
+      "ja": "structural link を削除: {id}"
+    },
+    "model_editor.server.structural_proxy_updated": {
+      "en": "Updated structural damage proxy: {id}",
+      "ru": "Обновлён structural damage proxy: {id}",
+      "zh-Hans": "已更新结构损伤代理：{id}",
+      "es": "Proxy de daño estructural actualizado: {id}",
+      "ja": "structural damage proxy を更新: {id}"
+    },
+    "model_editor.server.hit_added": {
+      "en": "Added state-scoped hit region",
+      "ru": "Добавлена hit-region с областью состояний",
+      "zh-Hans": "已添加按状态限定的命中区域",
+      "es": "Región de impacto con ámbito de estado añadida",
+      "ja": "state-scoped hit region を追加"
+    },
+    "model_editor.server.hit_updated": {
+      "en": "Updated hit region: {id}",
+      "ru": "Обновлена hit-region: {id}",
+      "zh-Hans": "已更新命中区域：{id}",
+      "es": "Región de impacto actualizada: {id}",
+      "ja": "hit region を更新: {id}"
+    },
+    "model_editor.server.hit_deleted": {
+      "en": "Deleted hit region: {id}",
+      "ru": "Удалена hit-region: {id}",
+      "zh-Hans": "已删除命中区域：{id}",
+      "es": "Región de impacto eliminada: {id}",
+      "ja": "hit region を削除: {id}"
+    },
+    "model_editor.server.opening_added": {
+      "en": "Added state-scoped opening",
+      "ru": "Добавлено opening с областью состояний",
+      "zh-Hans": "已添加按状态限定的开口",
+      "es": "Abertura con ámbito de estado añadida",
+      "ja": "state-scoped opening を追加"
+    },
+    "model_editor.server.opening_updated": {
+      "en": "Updated opening: {id}",
+      "ru": "Обновлено opening: {id}",
+      "zh-Hans": "已更新开口：{id}",
+      "es": "Abertura actualizada: {id}",
+      "ja": "opening を更新: {id}"
+    },
+    "model_editor.server.opening_deleted": {
+      "en": "Deleted opening: {id}",
+      "ru": "Удалено opening: {id}",
+      "zh-Hans": "已删除开口：{id}",
+      "es": "Abertura eliminada: {id}",
+      "ja": "opening を削除: {id}"
+    },
+    "model_editor.server.repair_added": {
+      "en": "Added repair target",
+      "ru": "Добавлена repair target",
+      "zh-Hans": "已添加维修目标",
+      "es": "Objetivo de reparación añadido",
+      "ja": "repair target を追加"
+    },
+    "model_editor.server.repair_updated": {
+      "en": "Updated repair target: {id}",
+      "ru": "Обновлена repair target: {id}",
+      "zh-Hans": "已更新维修目标：{id}",
+      "es": "Objetivo de reparación actualizado: {id}",
+      "ja": "repair target を更新: {id}"
+    },
+    "model_editor.server.repair_deleted": {
+      "en": "Deleted repair target: {id}",
+      "ru": "Удалена repair target: {id}",
+      "zh-Hans": "已删除维修目标：{id}",
+      "es": "Objetivo de reparación eliminado: {id}",
+      "ja": "repair target を削除: {id}"
+    },
+    "model_editor.semantics.tree.asset_relation": {
+      "en": "◇ ASSET",
+      "ru": "◇ МОДЕЛЬ",
+      "zh-Hans": "◇ 资产",
+      "es": "◇ MODELO",
+      "ja": "◇ アセット"
+    },
+    "model_editor.semantics.tree.visual_count": {
+      "en": "{count} VIS",
+      "ru": "{count} ВИЗ.",
+      "zh-Hans": "{count} 个 VIS",
+      "es": "{count} VISUALES",
+      "ja": "表示 {count}"
+    },
+    "model_editor.semantics.tree.zero_visual": {
+      "en": "⚠ 0 VIS",
+      "ru": "⚠ 0 ВИЗ.",
+      "zh-Hans": "⚠ 0 个 VIS",
+      "es": "⚠ 0 VISUALES",
+      "ja": "⚠ 表示 0"
+    },
+    "model_editor.semantics.tree.orphan_badge": {
+      "en": "ORPHAN",
+      "ru": "СИРОТА",
+      "zh-Hans": "孤立",
+      "es": "HUÉRFANO",
+      "ja": "孤立"
+    },
+    "model_editor.common.min": {
+      "en": "MIN",
+      "ru": "МИН",
+      "zh-Hans": "最小",
+      "es": "MÍN",
+      "ja": "最小"
+    },
+    "model_editor.common.max": {
+      "en": "MAX",
+      "ru": "МАКС",
+      "zh-Hans": "最大",
+      "es": "MÁX",
+      "ja": "最大"
+    },
+    "model_editor.server.static_flatten_done": {
+      "en": "STATIC TREE → ASSET SPACE: moved {count} semantic part(s) to asset space without changing world pose; resident render geometry verified unchanged; STRUCTURAL GRAPH unchanged",
+      "ru": "STATIC TREE → ASSET SPACE: частей перенесено в asset space: {count}; мировая поза сохранена, resident render geometry проверена без изменений, STRUCTURAL GRAPH не изменён",
+      "zh-Hans": "STATIC TREE → ASSET SPACE：已将 {count} 个语义部件移动到资产空间且世界姿态不变；驻留渲染几何已确认未改变；STRUCTURAL GRAPH 未改变",
+      "es": "STATIC TREE → ASSET SPACE: se movieron {count} partes semánticas al espacio del asset sin cambiar la pose global; la geometría render residente se verificó sin cambios; STRUCTURAL GRAPH no cambió",
+      "ja": "STATIC TREE → ASSET SPACE: semantic part {count} 個をワールド姿勢を変えず asset space へ移動。常駐 render geometry は未変更を確認し、STRUCTURAL GRAPH も未変更"
+    },
+    "model_editor.action.show_all": {
+      "en": "SHOW ALL",
+      "ru": "ПОКАЗАТЬ ВСЕ",
+      "zh-Hans": "全部显示",
+      "es": "MOSTRAR TODO",
+      "ja": "すべて表示"
+    },
+    "model_editor.action.hide_all": {
+      "en": "HIDE ALL",
+      "ru": "СКРЫТЬ ВСЕ",
+      "zh-Hans": "全部隐藏",
+      "es": "OCULTAR TODO",
+      "ja": "すべて非表示"
     }
   }
 }

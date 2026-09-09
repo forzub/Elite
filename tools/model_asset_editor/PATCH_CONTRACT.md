@@ -1,5 +1,9 @@
 # Elite Model Asset Editor — patch contract
 
+## 0B. Dynamic localization authority (v0.10.66)
+
+All unfrozen user-facing dynamic UI must go through `tr()` / the Model Asset Editor localization dictionary. Every literal key referenced by `tr()` must exist and provide non-empty `en`, `ru`, `zh-Hans`, `es`, and `ja` values. Russian is never an implicit fallback for another locale. The regression contract scans SEMANTICS and shared SEMANTICS/PHYSICS/DAMAGE panels plus prompt/status sinks for uncontrolled hardcoded visible text. Server status protocol text may remain stable English internally, but SEMANTICS/PHYSICS/DAMAGE statuses exposed to the user are translated at the WebUI boundary. SOURCE / LODS / GEOMETRY / SURFACES implementation fingerprints remain unchanged.
+
 ## 0. Pre-SEMANTICS acceptance freeze
 
 The accepted authoring baseline before SEMANTICS consists of **SOURCE, LODS, GEOMETRY and SURFACES**. Their protected functions/CSS fingerprints are frozen. Later SEMANTICS/PHYSICS/DAMAGE work must not silently rewrite those tabs; an intentional exception requires an explicit contract/test update.
@@ -9,6 +13,16 @@ A normal click on empty space in any 3D viewport is a global **deselect** operat
 Model Asset Editor UI localization is complete for the active locale set `en`, `ru`, `zh-Hans`, `es`, `ja`: every localization key must have a non-empty value in every locale. Exact English copies are allowed only for deliberate international/technical tokens or words whose spelling is genuinely shared. New visible UI introduced in the frozen pre-SEMANTICS workflow must use the localization table rather than add English-only text.
 
 This file is a regression contract for changes to `tools/model_asset_editor` and its WebUI. A patch that changes one of these boundaries must update the matching tests and this document deliberately; it must not silently restore an older path as a fallback.
+
+## 0A. SEMANTICS higher-LOD preview ownership
+
+SEMANTICS has one asset-wide logical transform tree, while each RenderLod has an independent visual document. A higher-LOD RenderNode may legitimately be resident before a semantic owner is assigned. That unbound state must not make the explode slider appear broken.
+
+- Bound RenderNodes use the radial offset of their semantic owner.
+- Unbound RenderNodes are grouped only by their RenderNode parent chain into temporary visual clusters and receive preview-only radial offsets from implicit MODEL ROOT.
+- Temporary visual clustering must never write, infer, fuzzy-match or otherwise mutate `semanticNodeIndex`. Persistent ownership is authored only through the explicit VISUAL REPRESENTATION / LOD BINDINGS workflow.
+- Switching LOD must still keep `activeLod == sceneLod == semantics visual LOD`; this fallback is not a second LOD state.
+- SOURCE / LODS / GEOMETRY / SURFACES remain frozen.
 
 ## 1. Persistence authority: exactly one WORKING save
 

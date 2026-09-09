@@ -1,3 +1,10 @@
+## Model Asset Editor 0.10.66 — dynamic localization complete (2026-09-09)
+
+- `[x]` SEMANTICS and shared SEMANTICS/PHYSICS/DAMAGE dynamic UI route user-facing text through `tr()` for EN / RU / zh-Hans / ES / JA.
+- `[x]` Shared viewport mode selector is locale-driven; Russian labels are not baked into other locales.
+- `[x]` Localization regression now guards missing `tr()` keys and uncontrolled hardcoded text in unfrozen dynamic UI.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES accepted fingerprints remain unchanged.
+
 ## Model Asset Editor 0.10.64 — pre-SEMANTICS baseline frozen (2026-09-08)
 
 - `[x]` SOURCE / LODS / GEOMETRY / SURFACES accepted and fingerprint-frozen before SEMANTICS.

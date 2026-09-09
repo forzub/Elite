@@ -29,7 +29,7 @@ for token in (
     "applySemanticMotionPreview(true)",
     "assertSemanticVisualLodInvariant('switch')",
     'data-semantic-visual-lod="${state.activeLod}"',
-    'VISUAL REPRESENTATION / LOD BINDINGS · ACTIVE LOD${state.activeLod}',
+    "tr('model_editor.semantics.binding.title'",
 ):
     require(token)
 
@@ -49,10 +49,10 @@ for token in (
 # MODEL ROOT is a permanent implicit identity root, not a serialized semantic Node.
 for token in (
     'data-semantic-model-root',
-    '◆ MODEL ROOT · ASSET SPACE · implicit identity root',
-    'MODEL ROOT: identity',
+    "tr('model_editor.semantics.tree.asset_header'",
+    "tr('model_editor.semantics.tree.structure_summary'",
     "send('set_node_parents',{nodeIndices:moving,placement:'inside',parentIndex:-1})",
-    'MODEL ROOT · НЕТ ВХОДЯЩЕЙ TRANSFORM-СВЯЗИ',
+    "tr('model_editor.semantics.status.root_no_connection'",
 ):
     require(token)
 for forbidden in (
@@ -72,11 +72,27 @@ if "state.semanticStructureMode==='graph'" not in root_body or 'return-1;' not i
 # pretending the semantic explode can split geometry that does not exist.
 for token in (
     'function semanticVisualLodProfile(',
-    'SEMANTIC SEPARATION UNAVAILABLE',
-    'в этом LOD только один render mesh',
-    'Для отдельного cockpit/body нужны разные RenderNode',
+    "tr('model_editor.semantics.tree.separation_unavailable'",
+    "tr('model_editor.semantics.tree.separation_monolithic'",
 ):
     require(token)
+
+
+# Unbound visuals in a higher LOD must still separate as temporary visual clusters.
+# This is preview-only and must not invent semantic ownership or fuzzy bindings.
+for token in (
+    'function semanticUnboundRenderClusterRoot(',
+    'function semanticUnboundRenderClusterOffsets(',
+    'const unboundOffsets=semanticUnboundRenderClusterOffsets(lod,amount)',
+    'owner>=0?(state.semanticGraphOffsets.get(owner)||new THREE.Vector3()):(unboundOffsets.get(cluster)||new THREE.Vector3())',
+    "tr('model_editor.semantics.tree.unbound_clusters'",
+):
+    require(token)
+
+explode_body = body_between('function applySemanticGraphExplode(', 'function applySemanticMotionPreview')
+for forbidden in ('semanticNodeIndex=', "send('set_render_node_semantic'"):
+    if forbidden in explode_body:
+        raise AssertionError('SEMANTICS unbound explode preview must not mutate semantic ownership')
 
 # Capability registry now protects this semantics-only foundation.
 for token in (
@@ -84,6 +100,8 @@ for token in (
     'data-semantic-model-root',
     'assertSemanticVisualLodInvariant',
     'restoreSemanticSelectionAfterLodSwitch',
+    'semanticUnboundRenderClusterRoot',
+    'semanticUnboundRenderClusterOffsets',
 ):
     require(token, 'cap')
 

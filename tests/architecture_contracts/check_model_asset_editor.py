@@ -478,7 +478,7 @@ for token in (
     'semanticGraphEnabled',
     'semanticGraphExplode',
     'semanticBindingSummaryHtml',
-    'REPAIR / РЕДАКТИРОВАТЬ VISUAL BINDINGS',
+    "tr('model_editor.semantics.binding.repair'",
     "wizardStageCheckControls('semantics')",
 ):
     if token not in semantic_stage and token not in web:
@@ -529,7 +529,7 @@ for token in (
     "'range'",
     'semanticSelectionAnchor',
     'semanticBindingPickTarget',
-    '◎ НАЗНАЧИТЬ ЭТОЙ PART VISUAL ИЗ 3D',
+    "tr('model_editor.semantics.binding.assign_3d'",
     'function semanticGraphLayoutOffsets(',
     'semanticCanonicalNodeAnchorMap',
     'semanticCanonicalRenderWorldMatrices',
@@ -549,9 +549,9 @@ for token in (
     'marker.userData.semanticNodeIndex=i',
     'semanticSelectNode(si,semanticSelectionModeFromEvent(ev))',
     'function updateSemanticMotionAnimation(ts)',
-    '▶ ВРАЩАТЬ',
-    '⚡ ОТОДВИНУТЬ / ПРОВЕРИТЬ ОТРЫВ',
-    '⚠ 0 VIS',
+    "tr('model_editor.semantics.motion.rotate_button'",
+    "tr('model_editor.semantics.detach_preview'",
+    "tr('model_editor.semantics.tree.zero_visual'",
     'data-semantic-toggle',
     "f<.28?'before':f>.72?'after':'inside'",
     'semanticTreeOrder',
@@ -752,16 +752,16 @@ for token in (
     'line.visible=false;',
     'semanticJointPivotPickTarget',
     'function semanticSetJointPivotWorld(',
-    '◎ ORIGIN РОДИТЕЛЯ',
-    '◎ ЦЕНТР VISUAL CHILD',
-    '◎ УКАЗАТЬ В 3D',
-    'СКОРОСТЬ ПРЕДПРОСМОТРА, °/с · editor-only',
-    'СОХРАНЯЕМЫЕ ПАРАМЕТРЫ ВРАЩЕНИЯ · runtime',
-    'Номинальная скорость, °/с',
-    'Сила разрушения, N',
-    'Момент разрушения, N·m',
-    'VISUAL REPRESENTATION / LOD BINDINGS',
-    'ДОПОЛНИТЕЛЬНО · SEMANTIC FRAME',
+    "tr('model_editor.semantics.motion.parent_origin'",
+    "tr('model_editor.semantics.motion.visual_center'",
+    "tr('model_editor.semantics.motion.pick_3d'",
+    "tr('model_editor.semantics.motion.preview_rate'",
+    "tr('model_editor.semantics.motion.runtime_params'",
+    "tr('model_editor.semantics.motion.nominal_rate'",
+    "tr('model_editor.semantics.motion.break_force'",
+    "tr('model_editor.semantics.motion.break_torque'",
+    "tr('model_editor.semantics.binding.title'",
+    "tr('model_editor.semantics.node.advanced'",
 ):
     if token not in web:
         raise AssertionError(f'0.10.45 semantic authoring/radial-support contract missing {token!r}')
@@ -799,8 +799,8 @@ for token in (
 for token in (
     "const runtimeRotationUi=jointType==='revolute'?",
     "const breakUi=j.breakable?",
-    'ПРОЧНОСТЬ СВЯЗИ · сохраняется для runtime physics/damage',
-    '✓ СОХРАНИТЬ RUNTIME ПАРАМЕТРЫ СВЯЗИ',
+    "tr('model_editor.semantics.motion.link_strength'",
+    "tr('model_editor.semantics.motion.save_runtime'",
     "if(rot){overrides.axis=readVec('sja')",
     "if(detach){overrides.breakForceN=Number($('sjForce').value)",
 ):
@@ -872,11 +872,11 @@ if "scaleModelAssetUniform(m_asset" in session:
     raise AssertionError("destructive WORKING physical resize survived 0.10.62 scale boundary")
 
 for token in (
-    "TREE · СБОРКА / КИНЕМАТИКА",
-    "GRAPH · КОНСТРУКЦИОННЫЕ СВЯЗИ",
-    "NEW LINK · 3D PICK A ↔ B",
-    "WELD SEAM · auto hit-capsule",
-    "Exploded viewport никогда не является coordinate authority.",
+    "tr('model_editor.semantics.mode.tree'",
+    "tr('model_editor.semantics.mode.graph'",
+    "tr('model_editor.structural.new_link'",
+    "tr('model_editor.structural.kind.weld_auto'",
+    "tr('model_editor.structural.new_link_help'",
     "PHYSICAL SCALE · AUTHORING → METERS",
     "AUTHORING SIZE · RAW SOURCE SPACE",
     "SET SCALE CONTRACT",
@@ -1016,7 +1016,7 @@ for token in (
         raise AssertionError(f"LOD mesh visibility/cached-preflight UI contract missing {token!r}")
 
 # Keep the exact current editor version guarded.
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.64"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.66"')
 
 # These marker phrases are intentionally referenced by the capability registry.
 manual_working_state_marker = "manual working-state save/restore contract"
@@ -1093,7 +1093,7 @@ for token in (
     'id="semanticCleanLegacyTree"',
     'id="semanticCleanLegacyGraph" disabled',
     "send('clean_legacy_semantics')",
-    'GRAPH cleanup intentionally not wired yet',
+    "tr('model_editor.structural.cleanup_disabled'",
 ):
     if token not in web:
         raise AssertionError(f"0.10.52 TREE/GRAPH cleanup UI contract missing {token!r}")
@@ -1107,13 +1107,13 @@ for token in (
     "semanticFlattenStaticTree()",
     'id="semanticSelectionToAssetSpace"',
     'id="semanticFlattenStaticTree"',
-    "FLATTEN STATIC → MODEL ROOT",
+    "tr('model_editor.semantics.tree.flatten_static'",
     "data-semantic-model-root",
-    "◆ MODEL ROOT · ASSET SPACE · implicit identity root",
+    "tr('model_editor.semantics.tree.asset_header'",
     "assertSemanticVisualLodInvariant",
     "restoreSemanticSelectionAfterLodSwitch",
-    "SEMANTIC SEPARATION UNAVAILABLE",
-    "STRUCTURAL GRAPH is not changed",
+    "tr('model_editor.semantics.tree.separation_unavailable'",
+    "tr('model_editor.semantics.confirm.flatten_static'",
 ):
     if token not in web:
         raise AssertionError(f"MODEL ROOT semantics foundation UI contract missing {token!r}")
@@ -1221,4 +1221,4 @@ require(
     "meshSourceRecords",
 )
 
-print("[PASS] model asset editor v0.10.64 LOD workspace / source graph / WORKING revision")
+print("[PASS] model asset editor v0.10.66 LOD workspace / source graph / WORKING revision")

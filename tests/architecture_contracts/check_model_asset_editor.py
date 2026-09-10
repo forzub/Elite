@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 import re
 
-from model_asset_core_tabs_lock import validate_core_tabs_lock
+from model_asset_core_tabs_lock import _function_source, validate_core_tabs_lock
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -338,7 +338,7 @@ for forbidden in (
 # -----------------------------------------------------------------------------
 for token in (
     "const uiScrollPositions=new Map()",
-    "function uiScrollContextKey(el)",
+    "function uiScrollContextKey(el,assetId,wizardStage,activeLod)",
     "function captureUiScroll(root=document,target=uiScrollPositions)",
     "function restoreUiScroll(root=document,source=uiScrollPositions)",
     "let uiScrollPreserveDepth=0",
@@ -365,9 +365,10 @@ for token in (
 # The context key is deliberately asset/stage/LOD-aware: local rerenders reuse a
 # position while a different render document does not inherit an unrelated one.
 for token in (
-    "state.asset?.assetId||'no-asset'",
-    "state.wizardStage",
-    "state.activeLod",
+    "const scope=el.dataset.scrollScope||'stage-lod',asset=assetId||'no-asset';",
+    "return `${asset}:${wizardStage}:${name}`;",
+    "return `${asset}:${wizardStage}:LOD${activeLod}:${name}`;",
+    "uiScrollContextKey(el,state.asset?.assetId,state.wizardStage,state.activeLod)",
     "outer=uiScrollPreserveDepth===0",
     "captureUiScroll(document,new Map())",
     "restoreUiScroll(document,snapshot)",
@@ -379,7 +380,7 @@ for token in (
 # -----------------------------------------------------------------------------
 # 0.10.64 GEOMETRY workspace: per-mesh certification, readable identities
 # -----------------------------------------------------------------------------
-geometry_stage = web[web.index("if(stage==='geometry')"):web.index("if(stage==='surfaces')")]
+geometry_stage = web[web.index("if(stage==='geometry')"):web.index("if(stage==='surfaces')")] + _function_source(web, "wizardGeometryStageModel") + _function_source(web, "wizardGeometryStageHtml") + _function_source(web, "renderWizardGeometryStage")
 for token in (
     'class="geometryStickyToolbar"',
     'geometryStageTable',
@@ -488,8 +489,8 @@ for token in (
     'function rebuildSemanticGraphGizmos(',
     'semanticLinkChildIndex',
     'state.semanticSelectedNodes',
-    'semanticTopLevelSelected()',
-    'semanticCanUseParent(child,target)',
+    'semanticTopLevelSelected(state.asset?.nodes||[],state.semanticSelectedNodes,state.selectedNode)',
+    'semanticCanUseParent(state.asset?.nodes||[],child,target)',
     '.semanticTreeRow.selected{background:#17334a!important',
     '.semanticAssetSpaceRow{display:grid',
     '.wizardLodSticky{position:sticky',
@@ -570,7 +571,7 @@ if 'semanticRefreshSelectionUi()' not in selection_block:
 
 # The incoming-link selector must visually precede the child identity. Runtime
 # node vector order is not presentation order: before/after DnD is editor-only.
-tree_row_start = web.index("const roots=semanticRootIndices(),assetSpaceCollapsed=state.semanticCollapsed.has('__ASSET_SPACE__')")
+tree_row_start = web.index("const roots=semanticRootIndices(state.asset?.nodes||[]),assetSpaceCollapsed=state.semanticCollapsed.has('__ASSET_SPACE__')")
 tree_row_end = web.index('const selectedPanels=', tree_row_start)
 tree_row = web[tree_row_start:tree_row_end]
 if '${toggle}${relation}<span class="name">' not in tree_row:
@@ -604,7 +605,7 @@ for forbidden in ('serializeAssetMetadata()', '.triangles', 'materialUsage'):
     if forbidden in semantic_patch_block:
         raise AssertionError(f'semantic tree patch must not scan full render metadata: {forbidden!r}')
 
-tree_rows_block = body_between(web, 'function semanticTreeRows()', 'function semanticDescendantSet')
+tree_rows_block = body_between(web, 'function semanticTreeRows(', 'function semanticDescendantSet')
 for token in ('markHidden', 'if(collapsed){for(const child of kids)markHidden(child);return;}'):
     if token not in tree_rows_block:
         raise AssertionError(f'collapsed semantic subtree guard missing {token!r}')
@@ -713,10 +714,10 @@ if 'isDescendant(' in web:
     raise AssertionError('undefined legacy isDescendant call survived in Model Asset Editor WebUI')
 for token in (
     'function semanticIsDescendant(',
-    'semanticIsDescendant(i,Number(index))',
+    'semanticIsDescendant(nodes||[],i,Number(index))',
     'function updateSemanticCollisionTransforms()',
     "if((state.wizardStage==='physics'||state.wizardStage==='damage')&&$('hitToggle').checked)",
-    "function rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset||!activeRenderLod()?.loaded||!$('hitToggle').checked)return;",
+    "function rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset||!activeRenderLod(state.asset?.renderLods,state.activeLod)?.loaded||!$('hitToggle').checked)return;",
     'if(!n||Number(n.parentIndex)<0)return;',
 ):
     if token not in web:
@@ -1102,7 +1103,7 @@ for token in (
 # identity root in the UI/runtime model, but no synthetic serialized Node.
 # Active visual LOD remains authoritative for scene, tables and bindings.
 for token in (
-    "semanticStaticFlattenCandidates()",
+    "function semanticStaticFlattenCandidates(",
     "semanticMoveSelectionToAssetSpace()",
     "semanticFlattenStaticTree()",
     'id="semanticSelectionToAssetSpace"',

@@ -79,6 +79,12 @@ contract = text("tools/model_asset_editor/PATCH_CONTRACT.md")
 lods_start = web.index("if(stage==='lods'){")
 lods_end = web.index("if(stage==='geometry')", lods_start)
 lods_branch = web[lods_start:lods_end]
+lods_impl = "\n".join((
+    lods_branch,
+    js_function(web, "wizardLodsStageModel"),
+    js_function(web, "wizardLodsStageHtml"),
+    js_function(web, "renderWizardLodsStage"),
+))
 for forbidden in (
     "maintenanceWorksetBarHtml",
     "data-maint-view",
@@ -87,7 +93,7 @@ for forbidden in (
     "ВСЯ МОДЕЛЬ",
     "ИЗМЕНЕНИЯ",
 ):
-    if forbidden in lods_branch:
+    if forbidden in lods_impl:
         raise AssertionError(f"old LOD working-set UI survived: {forbidden!r}")
 
 for required in (
@@ -101,7 +107,7 @@ for required in (
     "lodGeneratorAnalyzeBtn",
     "analyze_lod_requirements",
 ):
-    if required not in lods_branch:
+    if required not in lods_impl:
         raise AssertionError(f"LOD workspace missing {required!r}")
 
 # LODS uses the same explicit active-render-LOD selector pattern as GEOMETRY.
@@ -112,7 +118,7 @@ for required in (
     "root.querySelectorAll('[data-lods-lod]')",
     "switchEditorLod(Number(btn.dataset.lodsLod),'lods-selector')",
 ):
-    if required not in lods_branch:
+    if required not in lods_impl:
         raise AssertionError(f"LOD active-render selector missing {required!r}")
 
 # The table is deliberately taller, uses the existing per-mesh graph colors,

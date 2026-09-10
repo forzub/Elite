@@ -217,7 +217,7 @@ for forbidden in ("data-maintenance-adopt-all", "ADOPT SOURCE REVISION", "ACCEPT
     if forbidden in web:
         raise AssertionError(f"unsafe/passive source adoption UI returned: {forbidden!r}")
 
-source_stage = web[web.index("if(stage==='source')"):web.index("if(stage==='lods')")]
+source_stage = between(web, "function renderWizardSourceStage(", "function renderWizardPanelContents()")
 for token in (
     "maintenanceSourceScanHtml()",
     "bindMaintenanceSourceScan(root)",

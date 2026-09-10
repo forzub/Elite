@@ -1,0 +1,670 @@
+{
+  "schema": 1,
+  "editor_baseline": "0.10.66",
+  "source": "src/assets/webui/model_asset_editor.html",
+  "description": "Static call-graph purity baseline. PURE may only remain PURE. EASY may remain EASY or become PURE. TRANSITIVE may remain low-risk or improve. Hidden mutable-global dependencies may only shrink. Deferred functions are inventoried but intentionally not purity-protected yet.",
+  "pure": [
+    "axisFamily",
+    "axisMappingSummary",
+    "axisRotationStepLabel",
+    "baseLocale",
+    "collisionPrimitive",
+    "colorArrayToHex",
+    "composeMatrix",
+    "deg",
+    "diagnosticValue",
+    "directAxisMappingFromSemantic",
+    "directAxisShort",
+    "directMappingDeterminant",
+    "editorViewSnapshotsEqual",
+    "escapeMarkup",
+    "formatBytes",
+    "formatMeters",
+    "formatProjectedCharacteristic",
+    "formatRelativeLodError",
+    "formatSourceUnits",
+    "gameAxisMeaning",
+    "hexToColorArray",
+    "lodHasGeometryPayload",
+    "maintenanceFileDir",
+    "maintenanceFileName",
+    "maintenanceGeometryPending",
+    "maintenanceRowStatus",
+    "maintenanceStatusGlyph",
+    "meshValidationPending",
+    "oppositeAxisToken",
+    "radialLayoutAngles",
+    "renderNodeVisibilityKey",
+    "rotateDirectMapping",
+    "rotateGameAxisTokenQuarterTurn",
+    "semanticAxisMappingFromDirect",
+    "semanticGraphDirection",
+    "semanticOwnedPayloadCount",
+    "semanticRelationIcon",
+    "semanticRelationKind",
+    "semanticRelationOptions",
+    "semanticSelectionModeFromEvent",
+    "semanticUsageForNode",
+    "socketIndexFromObject",
+    "socketKindColor",
+    "socketLocalMatrix",
+    "sourceAxisToken",
+    "sourceBasisMappingFromPreset",
+    "sourceVariantCanReplace",
+    "statesInput",
+    "surfaceFamilyKey",
+    "surfaceSameFamily",
+    "validAxisMapping",
+    "validDirectAxisMapping",
+    "vecInputs",
+    "wizardGeometryStageHtml",
+    "wizardGeometryStageModel",
+    "wizardLodsStageHtml",
+    "wizardLodsStageModel",
+    "wizardSourceStageHtml",
+    "wizardSourceStageModel"
+  ],
+  "easy_candidates": {
+    "activeRenderLod": [
+      "state"
+    ],
+    "geometryCacheKey": [
+      "state"
+    ],
+    "geometryResultMap": [
+      "state"
+    ],
+    "languageName": [
+      "state"
+    ],
+    "lodDiagnosticActive": [
+      "state"
+    ],
+    "maintenancePendingComponents": [
+      "state"
+    ],
+    "maintenanceRows": [
+      "state"
+    ],
+    "makeSurfacePreviewMaterials": [
+      "state"
+    ],
+    "meshSourceRecordsForLod": [
+      "state"
+    ],
+    "meshStageCheckValue": [
+      "state"
+    ],
+    "physicalSizePanelHtml": [
+      "state"
+    ],
+    "previewStateForNode": [
+      "state"
+    ],
+    "renderNodeForPreflightGeometry": [
+      "state"
+    ],
+    "semanticDescendantSet": [
+      "state"
+    ],
+    "semanticGraphRootIndex": [
+      "state"
+    ],
+    "semanticGraphStructureSignature": [
+      "state"
+    ],
+    "semanticJointPayload": [
+      "state"
+    ],
+    "semanticNodeDepth": [
+      "state"
+    ],
+    "semanticNodeHasTransformVariant": [
+      "state"
+    ],
+    "semanticRootIndices": [
+      "state"
+    ],
+    "semanticSelectedIndices": [
+      "state"
+    ],
+    "semanticTreeOrderKey": [
+      "state"
+    ],
+    "sharedStageMeshStage": [
+      "state"
+    ],
+    "structuralEndpointForPick": [
+      "state"
+    ],
+    "surfaceInvalidMaterialSlots": [
+      "state"
+    ],
+    "surfaceMaterialForIndex": [
+      "state"
+    ],
+    "surfacePreflightRow": [
+      "state"
+    ],
+    "surfaceSelectionAnchor": [
+      "state"
+    ],
+    "tr": [
+      "state"
+    ],
+    "uiScrollContextKey": [
+      "state"
+    ],
+    "variantPreviewKey": [
+      "state"
+    ],
+    "wizardRecord": [
+      "state"
+    ]
+  },
+  "transitive_candidates": {
+    "activeLodAxisMapping": [
+      "state"
+    ],
+    "activeLodDirectAxisMapping": [
+      "state"
+    ],
+    "activeLodNeedsRawSource": [
+      "state"
+    ],
+    "aliasRepresentativeRenderNode": [
+      "state"
+    ],
+    "canonicalGeometryForAlias": [
+      "state"
+    ],
+    "compareTargets": [
+      "state"
+    ],
+    "defaultPreviewMaterial": [
+      "state"
+    ],
+    "editorDiagnosticRecord": [
+      "editorViewState",
+      "state"
+    ],
+    "effectiveGeometry": [
+      "state"
+    ],
+    "extraMeshLabel": [
+      "state"
+    ],
+    "geometryComparableNodes": [
+      "state"
+    ],
+    "geometryReadableSource": [
+      "state"
+    ],
+    "geometryStatsHtml": [
+      "state"
+    ],
+    "geometryWorkspaceChangeCount": [
+      "state"
+    ],
+    "geometryWorkspaceChangedGeometries": [
+      "state"
+    ],
+    "geometryWorkspaceRows": [
+      "state"
+    ],
+    "instanceAliasProxy": [
+      "state"
+    ],
+    "instanceAliasRecordForRenderNode": [
+      "state"
+    ],
+    "instanceAliasRecordsForLod": [
+      "state"
+    ],
+    "lodGeneratorNodePassesMeshFilter": [
+      "state"
+    ],
+    "lodGeneratorSelectedGeometry": [
+      "state"
+    ],
+    "logicalGeometryRows": [
+      "state"
+    ],
+    "logicalGeometrySelectedId": [
+      "state"
+    ],
+    "maintenanceChangeCount": [
+      "state"
+    ],
+    "maintenanceIssueLabel": [
+      "state"
+    ],
+    "maintenancePendingIds": [
+      "state"
+    ],
+    "maintenanceSourceScanHtml": [
+      "state"
+    ],
+    "matchingCheckedTargets": [
+      "state"
+    ],
+    "meshSourceRecordForGeometry": [
+      "state"
+    ],
+    "meshStageVisualClass": [
+      "state"
+    ],
+    "radialSelectedPivotInParent": [
+      "state"
+    ],
+    "representativeRenderNodeForGeometry": [
+      "state"
+    ],
+    "selectedMeshOrientationAction": [
+      "state"
+    ],
+    "selectedRenderMeshInfo": [
+      "state"
+    ],
+    "semanticAncestorHasDynamicTransform": [
+      "state"
+    ],
+    "semanticBindingHealthHtml": [
+      "state"
+    ],
+    "semanticBindingRepairHtml": [
+      "state"
+    ],
+    "semanticBindingSummaryHtml": [
+      "state"
+    ],
+    "semanticCanUseParent": [
+      "state"
+    ],
+    "semanticCanonicalRenderWorldMatrices": [
+      "state"
+    ],
+    "semanticCurrentLodUnbound": [
+      "state"
+    ],
+    "semanticIsDescendant": [
+      "state"
+    ],
+    "semanticNodeHasDynamicIncoming": [
+      "state"
+    ],
+    "semanticNodePose": [
+      "state"
+    ],
+    "semanticOrderedChildren": [
+      "state"
+    ],
+    "semanticRelationLabel": [
+      "state"
+    ],
+    "semanticRenderBaseMatrix": [
+      "state"
+    ],
+    "semanticRenderOwner": [
+      "state"
+    ],
+    "semanticSelectionSet": [
+      "state"
+    ],
+    "semanticStaticFlattenCandidates": [
+      "state"
+    ],
+    "semanticStructureModeHtml": [
+      "state"
+    ],
+    "semanticTopLevelSelected": [
+      "state"
+    ],
+    "semanticTreeRows": [
+      "state"
+    ],
+    "semanticUnboundRenderClusterOffsets": [
+      "state"
+    ],
+    "semanticUnboundRenderClusterRoot": [
+      "state"
+    ],
+    "semanticVisualLodProfile": [
+      "state"
+    ],
+    "sourceChangeRowAcceptedByStageCheck": [
+      "state"
+    ],
+    "sourceVariantsForRenderNode": [
+      "state"
+    ],
+    "stateApplies": [
+      "state"
+    ],
+    "structuralEndpointCard": [
+      "state"
+    ],
+    "structuralGraphMeshRowsHtml": [
+      "state"
+    ],
+    "structuralSelectedEndpoint": [
+      "state"
+    ],
+    "surfaceGeometryBlockers": [
+      "state"
+    ],
+    "surfaceGeometryNeedsReview": [
+      "state"
+    ],
+    "surfaceGeometryRenderNodeIndices": [
+      "state"
+    ],
+    "surfaceIntentForGeometry": [
+      "state"
+    ],
+    "surfaceIntentLabel": [
+      "state"
+    ],
+    "surfaceIntentNeedsDecision": [
+      "state"
+    ],
+    "surfaceMaterialUsage": [
+      "state"
+    ],
+    "surfaceRenderConsequence": [
+      "state"
+    ],
+    "surfaceSelectedGeometry": [
+      "state"
+    ],
+    "surfaceStageGlyph": [
+      "state"
+    ],
+    "surfaceStageVisualClass": [
+      "state"
+    ],
+    "translateServerMessage": [
+      "state"
+    ],
+    "unusedGeometries": [
+      "state"
+    ],
+    "wizardLodButtons": [
+      "state"
+    ],
+    "wizardLodSelector": [
+      "state"
+    ],
+    "wizardStageAllowed": [
+      "state"
+    ],
+    "wizardStageCheckControls": [
+      "state"
+    ],
+    "wizardStageLabel": [
+      "state"
+    ],
+    "wizardStatusLabel": [
+      "state"
+    ]
+  },
+  "deferred": [
+    "acceptAssetState",
+    "addLodGeneratorStandaloneVariant",
+    "applyAxisMapping",
+    "applyEditorLodGeometry",
+    "applyGeometryVisibilitySelection",
+    "applyLocale",
+    "applyLodRuntimeMetadataPatch",
+    "applyResidentSurfaceSide",
+    "applySemanticBindingPatch",
+    "applySemanticGraphExplode",
+    "applySemanticMotionPreview",
+    "applySemanticTreePatch",
+    "applySurfaceMetadataPatch",
+    "applyTooltips",
+    "applyWizardVisibility",
+    "assertEditorViewInvariant",
+    "assertEditorViewTransitionPreserved",
+    "assertSemanticVisualLodInvariant",
+    "attachDynamicToolTip",
+    "beginEditorAssetBinary",
+    "beginEditorLodBinary",
+    "bindMaintenanceSourceScan",
+    "bindPhysicalSizePanel",
+    "bindPreflightMeshToolbar",
+    "bindSemanticMotionControls",
+    "bindSemanticStructureMode",
+    "bindStructuralGraphPanel",
+    "bindToolTipElement",
+    "bindWizardStageCheckControls",
+    "captureEditorViewTransition",
+    "captureUiScroll",
+    "clearEdgeOverlay",
+    "clearEditorMeshTableFocus",
+    "clearGroup",
+    "clearLodFaceNormals",
+    "clearLodGeneratorPreview",
+    "clearNormalOverlay",
+    "clearProgress",
+    "clearRenderVariantPreview",
+    "clearSemanticGizmos",
+    "clearSemanticGraphObjects",
+    "clearSemanticJointGizmos",
+    "clearSettingsSaveTimer",
+    "clearViewportSelection",
+    "cloneGeometryPayload",
+    "closeAxisMappingModal",
+    "closeRadialModal",
+    "closeSettings",
+    "configureSurfacePreviewGroups",
+    "confirmMissingSourceMesh",
+    "connect",
+    "cycleLocale",
+    "decodeEditorLodGeometry",
+    "ensureGeometryCompareState",
+    "ensureSemanticGraphObjects",
+    "fitView",
+    "flushEditorDiagnostics",
+    "focusActiveMeshTableSelection",
+    "focusEditorMeshTableRow",
+    "geometryInventoryGeometryVisible",
+    "geometryInventoryNodeVisible",
+    "geometryInventoryVisibilitySet",
+    "geometryInventoryVisibleCount",
+    "geometrySelectionNeedsAncestor",
+    "geometryStageNodeVisible",
+    "geometryStageVisibilitySet",
+    "geometryStageVisibleCount",
+    "handle",
+    "handleEditorBinary",
+    "hideAllGeometryStageMeshes",
+    "hideAllLodPreflightMeshes",
+    "highlightSelection",
+    "initScene",
+    "initWorldAxes",
+    "loadI18n",
+    "localStatus",
+    "lodGeneratorPreviewGeometry",
+    "lodPreflightGeometryVisible",
+    "lodPreflightNodeVisible",
+    "lodPreflightVisibilitySet",
+    "lodPreflightVisibleCount",
+    "logEditorWireTiming",
+    "loop",
+    "makeAxisLabel",
+    "mergeAssetMetadata",
+    "notice",
+    "openAxisMappingModal",
+    "openRadialModal",
+    "openSettings",
+    "persistLocale",
+    "pick",
+    "populateLanguageSelect",
+    "positionToolTip",
+    "preflightMeshToolbarHtml",
+    "preserveUiScroll",
+    "previewGeometryForRenderNode",
+    "progress",
+    "pruneGeometryCache",
+    "radialCenterFromMode",
+    "readEditorWireMesh",
+    "readEditorWireRawMesh",
+    "readStates",
+    "readVec",
+    "rebuildCollisions",
+    "rebuildEdgeOverlay",
+    "rebuildLodFaceNormals",
+    "rebuildNormals",
+    "rebuildScene",
+    "rebuildSemanticGizmos",
+    "rebuildSemanticGraphGizmos",
+    "rebuildSockets",
+    "rebuildStructuralProxies",
+    "refreshDynamicUi",
+    "refreshSurfacePreflightSummary",
+    "renderActiveLodDetails",
+    "renderCatalog",
+    "renderCollisionInspector",
+    "renderCollisionList",
+    "renderDamageSemantics",
+    "renderGeometries",
+    "renderGeometryCandidates",
+    "renderGeometryCandidatesContents",
+    "renderGeometryCompareSummary",
+    "renderGeometryEditor",
+    "renderGeometryInventoryToolbar",
+    "renderLodFiles",
+    "renderLodGeneratorPanel",
+    "renderMaterials",
+    "renderModelPreflightInventory",
+    "renderModelPreflightPanel",
+    "renderNodeInspector",
+    "renderRenderNodeInspector",
+    "renderRenderTree",
+    "renderSharedStageMeshPanel",
+    "renderSocketInspector",
+    "renderSocketList",
+    "renderStateVariants",
+    "renderStorage",
+    "renderTree",
+    "renderUnusedGeometrySummary",
+    "renderVariantAssignment",
+    "renderVariantAssignmentContents",
+    "renderWizard",
+    "renderWizardGeometryStage",
+    "renderWizardLodsStage",
+    "renderWizardPanel",
+    "renderWizardPanelContents",
+    "renderWizardSourceStage",
+    "reportEditorDiagnostic",
+    "requestDeleteUnusedGeometry",
+    "resetAxisModalPending",
+    "resetAxisModalToSource",
+    "resetSemanticMotionPreview",
+    "resize",
+    "restoreSemanticPreviewMatrices",
+    "restoreSemanticSelectionAfterLodSwitch",
+    "restoreUiScroll",
+    "retainGeometryPayload",
+    "reuseEditorLodGeometry",
+    "rotateAxisModal",
+    "scheduleBusyModal",
+    "scheduleEditorViewInvariantCheck",
+    "scheduleSemanticGraphPreview",
+    "scrollPreflightRowIntoView",
+    "selectGeometryInventoryDefinition",
+    "selectNode",
+    "selectPreflightGeometry",
+    "selectPreflightLogicalGeometry",
+    "selectRenderNode",
+    "selectSocket",
+    "semanticBeginJointPivotPick",
+    "semanticCanonicalNodeAnchorMap",
+    "semanticDeleteSelectedNode",
+    "semanticDisplayWorldMatrix",
+    "semanticFlattenStaticTree",
+    "semanticGraphDisplayAnchorMap",
+    "semanticGraphLayoutOffsets",
+    "semanticGraphRadialMetrics",
+    "semanticGraphRootCenter",
+    "semanticJointLocalPointFromWorld",
+    "semanticMoveSelectionToAssetSpace",
+    "semanticPreviewDeltaWorld",
+    "semanticRefreshSelectionUi",
+    "semanticReparentSelection",
+    "semanticSelectNode",
+    "semanticSelectedPanels",
+    "semanticSendJoint",
+    "semanticSetJointPivotWorld",
+    "semanticSetNominalRate",
+    "semanticSetRelation",
+    "semanticSetRelationFor",
+    "semanticUseParentOriginPivot",
+    "semanticUseVisualCenterPivot",
+    "semanticWorldMatrix",
+    "send",
+    "setBusy",
+    "setGeometryStageNodeVisible",
+    "setLodDiagnosticFaceNormals",
+    "setLodDiagnosticWireframe",
+    "setLodPreflightGeometryVisible",
+    "setRenderVariantPreview",
+    "setSelectedRenderMeshHidden",
+    "setSettingsSaving",
+    "setSurfaceGeometryVisible",
+    "setText",
+    "setWizardStage",
+    "settingsSaveTimedOut",
+    "settleSourceChangeScanAfterCheck",
+    "showAllGeometryStageMeshes",
+    "showAllLodPreflightMeshes",
+    "showAllViewportMeshes",
+    "socketCanonicalWorldMatrix",
+    "socketWorldMatrix",
+    "stateScopeForSelectedNode",
+    "status",
+    "structuralGraphPanelHtml",
+    "structuralPickNode",
+    "structuralScrollSelectedMesh",
+    "structuralSelectEndpoint",
+    "structuralSelectRenderNode",
+    "surfaceGeometryVisibility",
+    "surfaceHideCompleteLod",
+    "surfaceSelectGeometry",
+    "surfaceSelectedGeometries",
+    "surfaceSelectionIds",
+    "surfaceSelectionSet",
+    "surfaceSetSelectionAnchor",
+    "surfaceShowCompleteLod",
+    "switchEditorLod",
+    "switchGeometryInventoryLod",
+    "switchGeometryLod",
+    "switchSemanticLod",
+    "switchSurfaceLod",
+    "syncGeometryCompareCheckedToVisibility",
+    "syncGeometryInventorySelectionUi",
+    "syncGeometryWorkspaceSelectionUi",
+    "syncPreflightSelectionUi",
+    "syncRadialCenterInputs",
+    "syncRadialOperationUi",
+    "syncSemanticMotionButtons",
+    "syncSharedStageMeshSelectionUi",
+    "syncToggleButton",
+    "threeGeometry",
+    "toggleEdge",
+    "trackedScrollElements",
+    "updateActionAvailability",
+    "updateAxisLegend",
+    "updateAxisRotationUi",
+    "updateGeometryCompareButtons",
+    "updatePreflightMeshToolbarUi",
+    "updateSemanticCollisionTransforms",
+    "updateSemanticMotionAnimation",
+    "updateSemanticSocketTransforms",
+    "updateVariantPreviewControls",
+    "updateVisibility",
+    "updateWorkingSaveStamp",
+    "viewFromSocket"
+  ]
+}

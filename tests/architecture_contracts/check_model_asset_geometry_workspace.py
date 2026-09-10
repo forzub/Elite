@@ -76,6 +76,7 @@ contract = text("tools/model_asset_editor/PATCH_CONTRACT.md")
 geometry_start = web.index("if(stage==='geometry'){")
 geometry_end = web.index("if(stage==='surfaces')", geometry_start)
 geometry_branch = web[geometry_start:geometry_end]
+geometry_block = geometry_branch + js_function(web, "wizardGeometryStageModel") + js_function(web, "wizardGeometryStageHtml") + js_function(web, "renderWizardGeometryStage")
 
 # Retire the old maintenance workset selector only from GEOMETRY. Shared helpers
 # are allowed to remain because SOURCE/SURFACES are separate accepted surfaces.
@@ -85,21 +86,23 @@ for forbidden in (
     "bindGeometryScopeControls",
     "RECENTLY LOADED / CHANGED",
 ):
-    if forbidden in geometry_branch:
+    if forbidden in geometry_block:
         raise AssertionError(f"old GEOMETRY workset UI survived: {forbidden!r}")
 
 for required in (
     "geometryStageTable",
     "geometryCompareAllBtn",
     "geometryCompareNoneBtn",
-    "● ПОКАЗАТЬ ВСЕ",
-    "○ СПРЯТАТЬ ВСЕ",
+    "showAll:'ПОКАЗАТЬ ВСЕ'",
+    "hideAll:'СПРЯТАТЬ ВСЕ'",
+    ">● ${text.showAll}</button>",
+    ">○ ${text.hideAll}</button>",
     "wizardStageCheckControls('geometry')",
     "wizardGeometryScanBtn",
     "wizardGeometryConsolidateBtn",
     "wizardGeometryCleanBtn",
 ):
-    if required not in geometry_branch:
+    if required not in geometry_block:
         raise AssertionError(f"GEOMETRY workspace missing {required!r}")
 
 # Table is taller and stage color remains the primary row state even when the

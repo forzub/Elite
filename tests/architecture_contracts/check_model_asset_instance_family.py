@@ -71,7 +71,7 @@ require(
     "INSTANCE LINK · properties from canonical mesh",
     "data-surface-logical-id",
     "surfaceDisplayRows=logicalGeometryRows",
-    "logicalGeometryRows(lod,state.activeLod).forEach",
+    "logicalGeometryRows(lod,state.activeLod,state.asset?.meshSourceRecords).forEach",
     "SOURCE CHANGED · INSTANCE LINK KEPT",
 )
 
@@ -82,7 +82,7 @@ require(
     "const g=effectiveGeometry(display,lod)",
     "selected.add(String(g.id))",
     "data-preflight-orientation=",
-    "instanceAliasRecordForRenderNode(rn?.id,state.activeLod)",
+    "instanceAliasRecordForRenderNode(state.asset?.meshSourceRecords,rn?.id,state.activeLod)",
 )
 
 print("[PASS] model asset editor persistent instance-family / canonical mesh authority")

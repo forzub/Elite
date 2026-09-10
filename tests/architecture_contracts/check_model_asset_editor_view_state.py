@@ -153,7 +153,7 @@ visibility = js_function(web, "updateVisibility")
 for token in (
     "editorViewVisible=editorViewState.renderNodeVisible(state.activeLod,i,rn)",
     "transformCarrier=!editorViewVisible&&geometrySelectionNeedsAncestor(i,lod)",
-    "child.visible=editorViewVisible&&lodGeneratorNodePassesMeshFilter(rn)",
+    "child.visible=editorViewVisible&&lodGeneratorNodePassesMeshFilter(rn,lodGeneratorSelectedGeometry(state.wizardStage,state.lodAnalysis,state.lodGeneratorMeshSelection,state.activeLod,activeRenderLod(state.asset?.renderLods,state.activeLod)))",
 ):
     if token not in visibility:
         raise AssertionError(f"authoritative viewport visibility missing {token!r}")

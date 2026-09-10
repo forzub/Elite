@@ -64,8 +64,8 @@ for forbidden in (
 
 # TREE explode is rooted in the model/asset origin. STRUCTURAL GRAPH may still
 # choose its own explicit endpoint root.
-root_body = body_between('function semanticGraphRootIndex()', 'function semanticGraphRootCenter')
-if "state.semanticStructureMode==='graph'" not in root_body or 'return-1;' not in root_body:
+root_body = body_between('function semanticGraphRootIndex(', 'function semanticGraphRootCenter')
+if "semanticStructureMode==='graph'" not in root_body or 'return-1;' not in root_body:
     raise AssertionError('TREE explode no longer uses implicit MODEL ROOT / asset origin')
 
 # A single visual mesh is explicitly reported as non-separable rather than

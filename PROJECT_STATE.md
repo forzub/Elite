@@ -1,3 +1,36 @@
+## Model Asset Editor 0.10.66 — function-purity migration wave 4 (2026-09-10)
+
+- `[x]` 13 additional direct hidden-state WebUI helpers are behaviourally frozen and promoted to explicit-argument PURE functions.
+- `[x]` Dynamic purity coverage is now 101 certified PURE functions; every certified function keeps an immutable per-function v0.10.66 oracle hash.
+- `[x]` Static call-graph census is now `108 PURE / 5 EASY / 53 TRANSITIVE / 254 deferred-hard`.
+- `[x]` SOURCE and SURFACES fingerprints were explicitly re-accepted only for oracle-covered purity wiring; LODS and GEOMETRY fingerprints did not move.
+- `[x]` Remaining direct EASY layer is intentionally limited to `activeRenderLod`, THREE material helpers, `physicalSizePanelHtml` and `tr`; these require separate high-fanout/runtime-aware waves.
+
+## Model Asset Editor 0.10.66 — function-purity migration wave 3 (2026-09-10)
+
+- `[x]` 88 WebUI functions now have immutable per-function v0.10.66 behavioural oracles; all 88 are currently statically PURE.
+- `[x]` 18 direct hidden-state helpers were converted to explicit-argument pure functions after freezing their old outputs.
+- `[x]` Static call graph is now `95 PURE / 13 EASY_CANDIDATE / 58 TRANSITIVE_CANDIDATE / 254 deferred-hard`; low-risk uncontracted queue fell from 96 to 78.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES fingerprints were explicitly re-accepted only for oracle-covered purity wiring.
+- `[x]` Persistent instance-family acceptance now checks the explicit `meshSourceRecords` argument instead of the legacy hidden-state call signature.
+
+## Model Asset Editor 0.10.66 — function-purity migration wave 2 (2026-09-10)
+
+- `[x]` 70 WebUI functions now have immutable per-function v0.10.66 behavioural oracles and are statically classified PURE.
+- `[x]` 15 functions were promoted in this wave by replacing hidden `state` reads with explicit arguments; old inputs/results remain frozen.
+- `[x]` Call-graph low-risk layer is now 75 PURE / 26 EASY / 65 TRANSITIVE; 254 complex state/DOM/backend/orchestration functions remain deferred.
+- `[x]` SOURCE / GEOMETRY / SURFACES protected fingerprints were explicitly re-accepted for purity-only call wiring; LODS fingerprint did not move.
+- `[ ]` Continue bottom-up with the 26 direct EASY candidates before touching transitive or complex orchestration functions.
+
+## Model Asset Editor 0.10.66 — function-purity migration (2026-09-10)
+
+- `[~]` Перед физическим разносом вкладок WebUI вычислительное ядро очищается под frozen behavioural-equivalence contract.
+- `[x]` Call-graph census: 420 named functions; после первой волны 60 `PURE`, 32 direct `EASY_CANDIDATE`, 74 `TRANSITIVE_CANDIDATE`, 254 hard/deferred.
+- `[x]` 56 функций уже имеют frozen v0.10.66 input/output fixtures; 55 из них сейчас pure, одна остаётся кандидатом.
+- `[x]` Каждый сертифицированный function oracle имеет отдельный hash; расширение fixture-набора не размораживает ранее зафиксированные результаты.
+- `[x]` Семь ранее state-reading helpers переведены на явные аргументы без изменения frozen outputs; accepted SOURCE / LODS / GEOMETRY / SURFACES fingerprints не изменились.
+- `[ ]` Следующая очередь: сертифицировать direct `EASY_CANDIDATE` перед каждым рефакторингом и поднимать transitive chains снизу вверх.
+
 ## Model Asset Editor 0.10.66 — dynamic localization complete (2026-09-09)
 
 - `[x]` SEMANTICS and shared SEMANTICS/PHYSICS/DAMAGE dynamic UI route user-facing text through `tr()` for EN / RU / zh-Hans / ES / JA.
@@ -846,3 +879,34 @@ GEOMETRY workspace restored after the LOD-generator work: automatic stage entry 
 - `STATIC` is intentionally diagnostic only: no runtime-varying transform source exists on that branch; non-zero static local transforms can still be baked during a later flatten. Sockets/collision/gameplay payload are not yet part of flatten safety.
 - TREE copy now states that parent→child is transform dependency, not physical support; Structural Graph remains physical connectivity authority.
 - Selected semantic parts prioritize the real bound RenderNode mesh with a bright lime highlight; descendants are dim context. Semantic marker gets the green primary cue only when the selected semantic node has no visual in the active LOD.
+
+## Model Asset Editor 0.10.66 — function purity wave 5 (2026-09-10)
+
+- `[x]` `activeRenderLod` no longer reads global `state`; callers pass `renderLods` and `activeLod` explicitly.
+- `[x]` 28 functions in this wave have immutable pre-change behavioural oracles and are now PURE; total dynamic certification is 129 PURE functions.
+- `[x]` Static purity census is now 136 PURE / 6 EASY / 24 TRANSITIVE / 254 deferred-hard.
+- `[x]` Shared SOURCE / LODS / GEOMETRY / SURFACES fingerprint movement is accepted only as purity-equivalent wiring; no feature/layout/protocol change is authorized by this wave.
+## Model Asset Editor 0.10.66 — wizard decomposition wave 1 / SOURCE (2026-09-10)
+
+- `[x]` SOURCE calculations moved out of `renderWizardPanelContents()` into certified PURE `wizardSourceStageModel(asset, settings)`.
+- `[x]` SOURCE deterministic HTML assembly moved into certified PURE `wizardSourceStageHtml(model, text, fragments)`.
+- `[x]` DOM/event/backend effects are isolated in `renderWizardSourceStage(root, asset, settings)`; the mega-function SOURCE branch is dispatch-only.
+- `[x]` A dedicated architecture test protects the decomposition boundary and frozen behavioural oracles.
+- `[ ]` Next: apply the same pattern incrementally to LODS, then GEOMETRY/SURFACES, leaving SEMANTICS until the shell pattern is proven.
+## Model Asset Editor 0.10.66 — wizard decomposition wave 2 / LODS (2026-09-10)
+
+- `[x]` LODS counts/PREPARE workset derivation moved out of `renderWizardPanelContents()` into certified PURE `wizardLodsStageModel(lods, payloads)`.
+- `[x]` LODS deterministic workspace markup moved into certified PURE `wizardLodsStageHtml(model, text, fragments)`.
+- `[x]` DOM/event/backend effects are isolated in `renderWizardLodsStage(root, lods, payloads)`; the mega-function LODS branch is dispatch-only.
+- `[x]` LODS freeze fingerprint now includes the extracted model/view/effect functions, preserving the accepted-tab fence after decomposition.
+- `[x]` Dynamic behavioural certification is 133 PURE functions; static census is 140 PURE / 6 EASY / 24 TRANSITIVE / 256 deferred-hard.
+- `[ ]` Next: decompose GEOMETRY with the same pure-model / pure-view / narrow-effect pattern.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 3 / GEOMETRY (2026-09-10)
+
+- `[x]` GEOMETRY stage model/count derivation is isolated in certified PURE `wizardGeometryStageModel(...)`.
+- `[x]` GEOMETRY deterministic workspace markup is isolated in certified PURE `wizardGeometryStageHtml(...)`.
+- `[x]` DOM/event/backend effects are isolated in `renderWizardGeometryStage(root, lods)`; the mega-function GEOMETRY branch is dispatch-only.
+- `[x]` GEOMETRY freeze now covers dispatch + extracted model/view/effect functions; accepted selection, visibility, duplicate consolidation, variant and clean-unused behaviour remains protected.
+- `[x]` Dynamic behavioural certification is 135 PURE functions; static census is 142 PURE / 6 EASY / 24 TRANSITIVE / 257 deferred-hard.
+- `[ ]` Next: decompose SURFACES with the same pure-model / pure-view / narrow-effect boundary, then reassess SEMANTICS before touching its larger orchestration block.

@@ -19,7 +19,7 @@ surfaces = web[start:end]
 # presented by two competing lists again.
 for token in (
     'data-wizard-groups="semantics physics damage validate build"',
-    "function sharedStageMeshStage(){return ['semantics','physics','damage','validate','build']",
+    "function sharedStageMeshStage(",
     'ACTIVE LOD MESHES /',
     'id="wizardSurfaceGeometryTable"',
     'id="wizardSurfaceShowAllBtn"',
@@ -71,7 +71,7 @@ for token in (
     'surfaceSelectedGeometryIdsByLod:new Map()',
     'surfaceSelectionAnchorByLod:new Map()',
     'function surfaceSelectionSet(',
-    'const logicalRows=logicalGeometryRows(lod,state.activeLod)',
+    'const logicalRows=logicalGeometryRows(lod,state.activeLod,state.asset?.meshSourceRecords)',
     'ctrl=!!(event?.ctrlKey||event?.metaKey)',
     'shift=!!event?.shiftKey',
     'if(!ctrl)selected.clear();for(let i=lo;i<=hi;i++){const effective=effectiveGeometry(logicalRows[i],lod);if(effective)selected.add(String(effective.id));}',

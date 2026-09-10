@@ -5,6 +5,12 @@ The SOURCE tab was declared structurally complete at v0.10.62. The v0.10.64
 instance-family patch is an explicitly approved contract exception: SOURCE keeps
 logical identities that were consolidated into canonical geometry instances.
 The accepted layout remains frozen; only the instance-link semantics changed.
+The v0.10.66 purity migration is a second explicitly approved structural-only exception:
+SOURCE call wiring may pass formerly hidden state as explicit arguments to behaviourally
+frozen pure helpers, without changing SOURCE layout, UX or authored data semantics.
+The v0.10.66 wizard decomposition is a third structural-only exception: the SOURCE branch
+may dispatch to a dedicated stage wrapper while its calculations/HTML assembly move behind
+behaviourally frozen pure functions. The accepted SOURCE controls/order remain frozen.
 Further protected changes still require PATCH_CONTRACT.md / CHANGELOG.md rationale.
 """
 from __future__ import annotations
@@ -22,10 +28,15 @@ WIZARD_STAGE_ORDER = [
 ]
 
 # SHA-256 over the protected SOURCE implementation surface below.
-# Baseline: v0.10.62 layout + v0.10.64 approved persistent instance-link semantics.
-SOURCE_TAB_SHA256 = "195b79be75a360d6685484b137e7ba12eec2aba22276add7db2cd6fb7aea990a"
+# Baseline: v0.10.62 layout + v0.10.64 persistent instance links + v0.10.66
+# behaviourally equivalent purity call wiring through wave 5 plus SOURCE stage decomposition
+# into certified pure model/HTML builders and a narrow effect adapter.
+SOURCE_TAB_SHA256 = "228026eba5285df8014f26253d2fe3bbb7ec7a30e16bd911bab7cca312374fbb"
 
 PROTECTED_FUNCTIONS = [
+    "wizardSourceStageModel",
+    "wizardSourceStageHtml",
+    "renderWizardSourceStage",
     "maintenanceSourceScanHtml",
     "bindMaintenanceSourceScan",
     "confirmMissingSourceMesh",
@@ -213,28 +224,39 @@ def validate_source_tab_lock() -> None:
     # The established SOURCE panel order is part of the contract, not just the
     # existence of controls.
     branch = _source_stage_branch(body)
+    dispatch = "renderWizardSourceStage(root,state.asset,state.settings)"
+    if dispatch not in branch:
+        raise AssertionError("SOURCE structure freeze: SOURCE branch no longer dispatches through renderWizardSourceStage")
+    source_stage = _function_source(body, "renderWizardSourceStage")
     ordered_tokens = [
-        "sourceInventory",
+        "wizardSourceStageModel(asset,settings)",
         "physicalSizePanelHtml()",
         "maintenanceSourceScanHtml()",
-        "FULL SOURCE REIMPORT · ADVANCED",
+        "wizardStageCheckControls('source')",
+        "wizardSourceStageHtml(model,text,fragments)",
+        "bindPhysicalSizePanel()",
+        "bindMaintenanceSourceScan(root)",
         "wizardSourceRefreshBtn",
         "wizardSourceReimportBtn",
-        "wizardStageCheckControls('source')",
+        "bindWizardStageCheckControls('source')",
     ]
     cursor = -1
     for token in ordered_tokens:
-        pos = branch.find(token, cursor + 1)
+        pos = source_stage.find(token, cursor + 1)
         if pos < 0:
-            raise AssertionError(f"SOURCE structure freeze: missing ordered element {token!r}")
+            raise AssertionError(f"SOURCE structure freeze: missing ordered stage element {token!r}")
         if pos < cursor:
             raise AssertionError(f"SOURCE structure freeze: order changed near {token!r}")
         cursor = pos
+    html_builder = _function_source(body, "wizardSourceStageHtml")
+    for token in ("sourceInventory", "FULL SOURCE REIMPORT · ADVANCED", "wizardSourceRefreshBtn", "wizardSourceReimportBtn"):
+        if token not in html_builder and token != "FULL SOURCE REIMPORT · ADVANCED":
+            raise AssertionError(f"SOURCE structure freeze: pure SOURCE HTML builder missing {token!r}")
 
     actual_hash = current_source_tab_sha256(body)
     if actual_hash != SOURCE_TAB_SHA256:
         raise AssertionError(
-            "SOURCE TAB IS FROZEN at the accepted v0.10.64 instance-link baseline: protected SOURCE behavior/layout changed. "
+            "SOURCE TAB IS FROZEN at the accepted v0.10.66 purity-equivalent baseline: protected SOURCE behavior/layout changed. "
             f"expected {SOURCE_TAB_SHA256}, got {actual_hash}. "
             "Do not update this digest as a drive-by fix. An intentional SOURCE/structure "
             "change requires an explicit exceptional case plus PATCH_CONTRACT.md/CHANGELOG.md rationale."

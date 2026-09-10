@@ -5,6 +5,10 @@ SOURCE/LODS/GEOMETRY/SURFACES remain frozen at the v0.10.64 acceptance baseline.
 The approved instance-family contract extends their table semantics so a source
 mesh consolidated into another geometry remains visible as an INSTANCE link
 whose effective mesh properties come from the canonical family payload.
+The v0.10.66 function-purity / wizard-decomposition migration is an explicitly approved
+structural-only exception for SOURCE / LODS / GEOMETRY / SURFACES: formerly hidden state
+reads are passed as explicit pure-helper arguments and accepted stage branches may be
+reduced to dispatch-only adapters while frozen behavioural outputs remain identical.
 """
 from __future__ import annotations
 
@@ -19,11 +23,14 @@ from model_asset_source_tab_lock import (
     validate_source_tab_lock,
 )
 
-LOD_TAB_SHA256 = "602ca9287e855193d198a272ee622692ea3f54767e22b75afe451ca7e93e199d"
-GEOMETRY_TAB_SHA256 = "e20154a0bfffd6fffc2bd6b585209755868be9bb152dbb7e3672a147fd6d705e"
-SURFACES_TAB_SHA256 = "332222c87303c6b26837a6c3993f6560bccdb2120a3dc7fec15598df55e3841a"
+LOD_TAB_SHA256 = "a1d2590219a408837c251577ffd7518aef5b3f497e86b7085382f55623cf41cb"
+GEOMETRY_TAB_SHA256 = "d9ff18f3bc8e9f2487eccd57787168dc6b2e284e04c3c0f7a02115c43514208b"
+SURFACES_TAB_SHA256 = "ce6ad6e32a84a454d05e870cc30c8a020481065e80cc42295ebfebe3e121b722"
 
 LOD_FUNCTIONS = [
+    "wizardLodsStageModel",
+    "wizardLodsStageHtml",
+    "renderWizardLodsStage",
     "selectedRenderMeshInfo",
     "lodPreflightVisibilitySet",
     "lodPreflightGeometryVisible",
@@ -57,6 +64,9 @@ LOD_CSS = [
 ]
 
 GEOMETRY_FUNCTIONS = [
+    "wizardGeometryStageModel",
+    "wizardGeometryStageHtml",
+    "renderWizardGeometryStage",
     "geometryComparableNodes",
     "geometryWorkspaceChangedGeometries",
     "geometryWorkspaceChangeCount",
@@ -165,7 +175,7 @@ def validate_core_tabs_lock() -> None:
     actual_geometry = current_geometry_tab_sha256(body)
     if actual_geometry != GEOMETRY_TAB_SHA256:
         raise AssertionError(
-            "GEOMETRY TAB IS FROZEN at v0.10.64: protected GEOMETRY behavior/layout changed. "
+            "GEOMETRY TAB IS FROZEN at the v0.10.66 purity-equivalent baseline: protected GEOMETRY behavior/layout changed. "
             f"expected {GEOMETRY_TAB_SHA256}, got {actual_geometry}. "
             "Update only for an explicitly approved GEOMETRY change documented in PATCH_CONTRACT/CHANGELOG."
         )
@@ -173,7 +183,7 @@ def validate_core_tabs_lock() -> None:
     actual_surfaces = current_surfaces_tab_sha256(body)
     if actual_surfaces != SURFACES_TAB_SHA256:
         raise AssertionError(
-            "SURFACES TAB IS FROZEN at v0.10.64: protected SURFACES behavior/layout changed. "
+            "SURFACES TAB IS FROZEN at the v0.10.66 purity-equivalent baseline: protected SURFACES behavior/layout changed. "
             f"expected {SURFACES_TAB_SHA256}, got {actual_surfaces}. "
             "Update only for an explicitly approved SURFACES change documented in PATCH_CONTRACT/CHANGELOG."
         )

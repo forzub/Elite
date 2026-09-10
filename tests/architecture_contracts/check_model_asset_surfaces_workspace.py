@@ -12,7 +12,13 @@ header = SESSION_H.read_text(encoding="utf-8", errors="replace")
 
 start = web.index("if(stage==='surfaces')")
 end = web.index("if(stage==='semantics')", start)
-surfaces = web[start:end]
+from model_asset_source_tab_lock import _function_source as _locked_function_source
+surfaces = (
+    web[start:end]
+    + _locked_function_source(web, "wizardSurfacesStageModel")
+    + _locked_function_source(web, "wizardSurfacesStageHtml")
+    + _locked_function_source(web, "renderWizardSurfacesStage")
+)
 
 # SURFACES has one authoritative mesh/surface table. The generic post-GEOMETRY
 # mesh panel is deliberately not shown here, otherwise the same active LOD is
@@ -85,7 +91,8 @@ for token in (
 # anchored to the primary geometry. Row clicks rerender under preserveUiScroll
 # but never focus/scroll the lower surface-type block.
 for token in (
-    'selectedTargets=selectedGeometries.length?selectedGeometries:[selected]',
+    'const selectedTargets=selectedGeometries.length?selectedGeometries:(selected?[selected]:[])',
+    'selectedTargets=model.selectedTargets',
     "for(const target of selectedTargets)send('set_geometry_topology_class'",
     'PRIMARY MESH ONLY',
     "el.onclick=e=>surfaceSelectGeometry(g.id,e,{logicalId:String(display.id),renderNodeId:aliasRn?.node?.id||\'\'})",

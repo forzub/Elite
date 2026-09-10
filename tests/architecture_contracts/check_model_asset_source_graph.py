@@ -266,7 +266,7 @@ for token in (
     "renderGeometries()",
     "renderRenderTree()",
     "renderModelPreflightInventory(root)",
-    "structuralGraphMeshRowsHtml()",
+    "structuralGraphMeshRowsHtml(model.lod,model.nodes,model.selectedRenderNode,model.structuralGraphRoot,model.wizardStage",
 ):
     if token not in web:
         raise AssertionError(f"stage-aware mesh list contract missing {token!r}")

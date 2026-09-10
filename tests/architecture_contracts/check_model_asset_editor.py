@@ -571,9 +571,10 @@ if 'semanticRefreshSelectionUi()' not in selection_block:
 
 # The incoming-link selector must visually precede the child identity. Runtime
 # node vector order is not presentation order: before/after DnD is editor-only.
-tree_row_start = web.index("const roots=semanticRootIndices(state.asset?.nodes||[]),assetSpaceCollapsed=state.semanticCollapsed.has('__ASSET_SPACE__')")
-tree_row_end = web.index('const selectedPanels=', tree_row_start)
-tree_row = web[tree_row_start:tree_row_end]
+semantics_render_block = body_between(web, "function renderWizardSemanticsStage(root,lods)", "function renderWizardPanelContents()")
+tree_row = _function_source(web, "wizardSemanticsTreeRowsHtml")
+if "wizardSemanticsTreeRowsHtml(treeBlock" not in semantics_render_block:
+    raise AssertionError("SEMANTICS effect adapter no longer consumes the extracted TREE row builder")
 if '${toggle}${relation}<span class="name">' not in tree_row:
     raise AssertionError("SEMANTICS toggle/link controls no longer precede the child name")
 if '${count} RN' in tree_row or '>0 RN<' in tree_row:
@@ -798,12 +799,14 @@ for token in (
         raise AssertionError(f'joint gizmo lost canonical-pivot/display-child split: {token!r}')
 
 for token in (
-    "const runtimeRotationUi=jointType==='revolute'?",
-    "const breakUi=j.breakable?",
+    "const runtimeRotationUi=model.jointType==='revolute'?",
+    "const breakUi=model.breakable?",
     "tr('model_editor.semantics.motion.link_strength'",
     "tr('model_editor.semantics.motion.save_runtime'",
-    "if(rot){overrides.axis=readVec('sja')",
-    "if(detach){overrides.breakForceN=Number($('sjForce').value)",
+    "function wizardSemanticsJointUpdateCommand(",
+    "if(rot){overrides.axis=axis;overrides.defaultRateDegPerSec=Number(defaultRateDegPerSec)",
+    "if(detach){overrides.breakForceN=Number(breakForceN);overrides.breakTorqueNm=Number(breakTorqueNm)",
+    "wizardSemanticsJointUpdateCommand(state.selectedNode,kind,readVec('sjp'),rot?readVec('sja'):null",
 ):
     if token not in web:
         raise AssertionError(f'contextual joint-runtime editor contract missing {token!r}')

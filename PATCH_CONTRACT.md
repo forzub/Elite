@@ -1,3 +1,19 @@
+### v0.10.66 wizard decomposition wave 5K / SEMANTICS transform-math purity boundary
+
+- `semanticRelationLabel(node, text)`, `semanticRenderBaseMatrix(index, lod, semanticNodes, stateVariants, previewStates)`, `semanticCanonicalRenderWorldMatrices(input)` and `semanticUnboundRenderClusterOffsets(input)` are protected explicit-input PURE boundaries. They must not regain hidden reads from `state` / `editorViewState` or direct localization through `tr()`.
+- Effectful callers remain responsible for projecting the current semantic nodes/state variants/preview states, root `matrixWorld`, asset bounds and localized relation labels into those pure helpers. Moving those reads back into transform helpers violates this boundary.
+- `deg`, `composeMatrix`, `semanticGraphDirection` and `socketLocalMatrix` remain transitively PURE and dynamically oracle-certified. The purity harness may import the editor-owned vendored Three.js module solely to execute deterministic `Matrix4` / `Vector3` behavioural fixtures; canonical matrix/vector output is part of the frozen oracle.
+- Frozen fixtures were recorded from the pre-refactor wave5J implementation. Signature/invoke adapters may project the same legacy inputs explicitly, but fixture inputs, expected outputs and oracle hashes may not be rebased to make a changed algorithm pass.
+- This wave is SEMANTICS-only and does not reopen SOURCE / LODS / GEOMETRY / SURFACES or authorize command, persistence, authored-data, control-layout or visible preview changes.
+
+### v0.10.66 wizard decomposition wave 5I / SEMANTICS selected-panels boundary
+
+- `semanticSelectedPanels()` may own localization lookup and the legacy preview-angle normalization write, but selected-panel derivation and deterministic markup must remain behind certified PURE `wizardSemanticsSelectedPanelsModel(input)` and `wizardSemanticsSelectedPanelsHtml(model, text, fragments)`.
+- The pure selected-panels model/view must not read `state` / `editorViewState`, call `tr()` / `send()`, mutate DOM, or bind events.
+- The compatibility wrapper must preserve the historical render-time assignment `state.semanticPreviewAngleDeg = model.previewAngleDeg` only when the selected semantic node has a real parent; MODEL ROOT children must not gain that write.
+- Selected-node metadata, semantic-frame fields, joint pivot/axis/runtime controls, preview range/play/detach controls and all existing control IDs/order are behavioural-frozen by the v0.10.66 purity oracle plus differential legacy/new parity.
+- SOURCE / LODS / GEOMETRY / SURFACES accepted fingerprints are not re-baselined by this SEMANTICS-only decomposition.
+
 # Model Asset Editor patch contract
 
 ## v0.10.66 behaviour-preserving function-purity migration
@@ -60,3 +76,50 @@ Wave 2 applies the wizard-stage decomposition contract to LODS. The accepted LOD
 ### v0.10.66 wizard decomposition wave 3 / GEOMETRY accepted fingerprint movement
 
 Wave 3 applies the wizard-stage decomposition contract to GEOMETRY. The accepted stage counts and deterministic workspace markup are isolated in certified PURE `wizardGeometryStageModel(...)` and `wizardGeometryStageHtml(...)`; DOM/event/backend work remains in `renderWizardGeometryStage(root, lods)`. The GEOMETRY branch in `renderWizardPanelContents()` is dispatch-only. The protected GEOMETRY fingerprint is re-baselined to cover that dispatch plus the complete extracted model/view/effect block, so the freeze remains at least as strong after extraction. Existing visibility/isolation, duplicate comparison/consolidation, variant-preview, clean-unused, selection and stage-check behaviour remains unchanged.
+
+### v0.10.66 wizard decomposition wave 4 / SURFACES accepted fingerprint movement
+
+Wave 4 applies the wizard-stage decomposition contract to SURFACES. Deterministic surface/material/selection summary derivation is isolated in certified PURE `wizardSurfacesStageModel(input)` and the main analysis/ready markup in certified PURE `wizardSurfacesStageHtml(model, text, fragments)`. Selection-set normalization, EditorViewState visibility reads, DOM table/event wiring and surface/material backend commands remain in `renderWizardSurfacesStage(root, lods)`. The `renderWizardPanelContents()` SURFACES branch is dispatch-only. The frozen SURFACES fingerprint is re-baselined to include dispatch + model/view/effect functions plus the existing SURFACES helper/CSS contract, so extraction does not weaken the accepted-tab fence. No control IDs/order, authored data, persistence, command protocol or intended user-visible behaviour is changed.
+
+### v0.10.66 wizard decomposition wave 5A / SEMANTICS core
+
+Wave 5A begins SEMANTICS decomposition without treating its large orchestration surface as a single pure rewrite. `renderWizardPanelContents()` may contain only the dispatch call `renderWizardSemanticsStage(root, lods)` for the SEMANTICS stage. Deterministic selection, binding-count, semantic-tree projection and summary derivation is owned by certified PURE `wizardSemanticsStageModel(input)` and must retain its immutable behavioural oracle. Selection normalization, TREE/GRAPH HTML, DOM/event binding, preview mutation and backend commands remain explicitly effectful inside `renderWizardSemanticsStage` until later subwaves split those boundaries. This wave does not reopen the frozen SOURCE / LODS / GEOMETRY / SURFACES stages and does not authorize UI, semantic-data, command-protocol or persistence changes.
+
+### v0.10.66 wizard decomposition wave 5B / SEMANTICS TREE + BINDINGS
+
+Inside `renderWizardSemanticsStage`, TREE and active-LOD visual-binding row computation/markup are now separate certified PURE boundaries. `wizardSemanticsTreeBlockModel(input)` and `wizardSemanticsBindingsBlockModel(input)` may derive only from explicit inputs; `wizardSemanticsTreeRowsHtml(model, text)` and `wizardSemanticsBindingRowsHtml(model, text)` may only assemble deterministic markup from their explicit model/text inputs. The SEMANTICS effect adapter must not reintroduce the former inline `model.treeItems.map(...)` or active-LOD `(lod.nodes||[]).map((rn,ri)=>...)` renderers. DOM/event wiring, localization lookup, selection normalization, structural-graph mode, preview mutation and backend commands remain effectful and quarantined in the adapter. All four new pure boundaries retain immutable behavioural oracles; this subwave does not authorize any semantic-data, UI, command-protocol or persistence change.
+
+### SEMANTICS workspace decomposition exception (0.10.66)
+`renderWizardSemanticsStage()` may delegate deterministic workspace state/markup to `wizardSemanticsWorkspaceModel()` and `wizardSemanticsWorkspaceHtml()` only when both remain statically PURE and have immutable behavioural oracles. DOM mutation, event binding, preview mutation, and backend commands remain in the SEMANTICS effect adapter. The inline `semanticWorkspace` template must not return to the adapter.
+
+### v0.10.66 wizard decomposition wave 5D / SEMANTICS TREE + BINDINGS effect boundaries
+
+`renderWizardSemanticsStage()` must delegate TREE row interactions/drag-drop to `bindWizardSemanticsTreeInteractions(root, nodes)` and visual binding interactions to `bindWizardSemanticsBindingInteractions(root, selected)`. Those adapters are intentionally effectful and may own DOM events, global editor selection state and backend dispatch, but they must not own cross-stage wizard dispatch. TREE drop-zone classification/validation, binding-command payload derivation and new-node suggestion derivation are separate PURE boundaries (`wizardSemanticsTreeDropPlacement`, `wizardSemanticsTreeDropValid`, `wizardSemanticsBindingCommandModel`, `wizardSemanticsNewNodeSuggestion`) with immutable behavioural oracles. Reintroducing direct TREE/BINDINGS row event wiring into the main SEMANTICS adapter is not permitted by this exception.
+### v0.10.66 wizard decomposition wave 5E / SEMANTICS PREVIEW effects
+
+Wave 5E isolates TREE-mode SEMANTICS transform-preview/explode controls from the main stage adapter. `wizardSemanticsPreviewControlModel(graphEnabled, graphExplode)` is a certified PURE normalization boundary for enabled state, explode amount, percent label and slider-disabled state. `bindWizardSemanticsPreviewInteractions(root)` is explicitly effectful and owns DOM event binding, preview state writes, scheduled preview updates and immediate THREE preview rebuilds. `renderWizardSemanticsStage()` may only call this adapter; inline preview-control wiring must not return to the main SEMANTICS controller. No preview geometry/layout algorithm, command protocol, authored semantic data, persistence or user-visible control behaviour is changed.
+## Model Asset Editor v0.10.66 — wizard decomposition wave 5F / SEMANTICS STRUCTURAL GRAPH
+
+STRUCTURAL GRAPH may be decomposed structurally without changing its authored-data semantics, control IDs/order, backend command payloads, persistence, explode/selection behaviour or intended user-visible output. The deterministic graph state/markup boundary must remain explicit-input and certified by the function-purity oracle. Legacy normalization of invalid STRUCTURAL GRAPH root/A/B/selected-link state is an effect and remains owned by the dedicated structural adapter before DOM binding.
+
+`renderWizardSemanticsStage()` must not regain STRUCTURAL GRAPH markup/event implementation; GRAPH mode dispatches to `renderWizardStructuralGraphStage(root, lods)`. `wizardSemanticsStructuralGraphModel`, `structuralGraphPanelHtml`, `semanticStructureModeHtml`, `structuralGraphMeshRowsHtml`, and `structuralEndpointCard` are protected PURE boundaries. `renderWizardStructuralGraphStage` and `bindStructuralGraphPanel` are explicitly effectful and are not claimed pure.
+### v0.10.66 wizard decomposition wave 5G / SEMANTICS STRUCTURAL interaction boundaries
+
+`bindStructuralGraphPanel(root)` is an orchestration shell only. Concrete STRUCTURAL GRAPH interaction wiring must remain delegated to `bindWizardStructuralGraphViewportInteractions(root)`, `bindWizardStructuralGraphEndpointInteractions(root)`, `bindWizardStructuralGraphLinkInteractions(root)`, and `bindWizardStructuralGraphProxyInteractions()`. These adapters are intentionally effectful and may own DOM reads/events, editor-state writes, status/confirm calls, THREE preview application and backend dispatch, but they must not own wizard-stage dispatch.
+
+Endpoint/root/A-B assignment decisions and structural command payload construction are protected PURE boundaries with immutable v0.10.66 behavioural oracles: `wizardSemanticsStructuralEndpointActionModel`, `wizardSemanticsStructuralCreateLinkCommand`, `wizardSemanticsStructuralLinkUpdateCommand`, and `wizardSemanticsStructuralProxyUpdateCommand`. Their outputs must remain equivalent to the pre-extraction inline formulas. This exception does not authorize changes to structural-link ids, command names, payload fields/coercions, proxy shape handling, control order, persistence or intended UI behaviour.
+
+### v0.10.66 wizard decomposition wave 5H / SEMANTICS selected-node + motion interaction boundaries
+
+`semanticRefreshSelectionUi()` may refresh selection-dependent markup/state, but concrete semantic-frame authoring and motion-control event wiring must remain delegated to dedicated adapters. `bindWizardSemanticsSelectedNodeInteractions(selected)` owns APPLY SEMANTIC FRAME / DELETE LOGICAL PART dispatch and delegates motion authoring to `bindSemanticMotionControls(selected)`. `bindSemanticMotionControls(selected)` is orchestration-only and delegates concrete preview-range/play/rate/detach/reset wiring to `bindWizardSemanticsMotionPreviewInteractions()` and joint pivot/axis/runtime-parameter wiring to `bindWizardSemanticsJointInteractions(selected)`. These adapters are explicitly effectful.
+
+Semantic-frame payload construction, motion angle/zero/rate normalization and joint runtime payload construction are protected certified PURE boundaries with immutable v0.10.66 behavioural oracles: `wizardSemanticsNodeTransformCommand`, `wizardSemanticsMotionAngleModel`, `wizardSemanticsMotionZeroModel`, `wizardSemanticsPreviewRateModel`, and `wizardSemanticsJointUpdateCommand`. Their outputs must remain equivalent to the pre-extraction inline formulas. This exception does not authorize changes to `set_node_transform` / `set_joint` command names or payload fields/coercions, motion preview algorithms, control IDs/order, persistence or intended UI behaviour.
+
+### v0.10.66 wizard decomposition wave 5J / SEMANTICS selection-refresh boundary
+
+Accepted structural movement only:
+- `wizardSemanticsSelectionRefreshModel(input)` is the authoritative pure derivation boundary for selection/binding refresh state.
+- `semanticBindingSummaryHtml(selectedIndex, lods, activeLod, text)`, `semanticBindingHealthHtml(selectedIndex, lods, unboundCurrent, node, text)` and `semanticBindingRepairHtml(selected, selectedVisualCount, bindingPickActive, text)` are certified PURE presentation helpers with explicit inputs.
+- `semanticRefreshSelectionUi()` remains effectful and must own DOM writes, binding-pick mutation, selected-node interaction binding and preview reapplication; it must not regain binding-count / missing-LOD / top-level-selection derivation.
+- Existing SEMANTICS UI ids/order, localization keys, active-LOD binding semantics, backend commands and authored/persistent data are frozen by behavioural parity; no feature redesign is authorized by this wave.
+- SOURCE / LODS / GEOMETRY / SURFACES frozen fingerprints remain unchanged.

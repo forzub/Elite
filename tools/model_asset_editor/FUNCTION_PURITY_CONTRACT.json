@@ -8840,8 +8840,5937 @@
         }
       ],
       "oracle_sha256": "35996ac62a8d219663c2be0e45333e0e06f6082cf1c39920064308f190dafa47"
+    },
+    {
+      "name": "wizardSurfacesStageModel",
+      "support": [
+        "surfaceSelectedGeometry",
+        "surfacePreflightRow",
+        "surfaceIntentForGeometry",
+        "surfaceMaterialUsage",
+        "surfaceMaterialForIndex",
+        "surfaceInvalidMaterialSlots",
+        "surfaceIntentNeedsDecision",
+        "surfaceSameFamily"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "analysisReady": false,
+              "activeLodIndex": 2
+            }
+          ],
+          "invoke": "wizardSurfacesStageModel(args[0])",
+          "expected": {
+            "activeLodIndex": 2,
+            "analysisReady": false
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "analysisReady": true,
+              "activeLodIndex": 0,
+              "lods": [
+                {
+                  "geometries": [
+                    {
+                      "id": "hull",
+                      "index": 0,
+                      "usageCount": 1,
+                      "baseVisualId": "hull",
+                      "surfaceIntent": "auto",
+                      "surfaceMode": "closed_volume",
+                      "triangleCount": 100,
+                      "unassignedMaterialTriangles": 10,
+                      "materialSlots": [
+                        {
+                          "materialIndex": 0,
+                          "triangleCount": 90
+                        }
+                      ]
+                    },
+                    {
+                      "id": "panel",
+                      "index": 1,
+                      "usageCount": 1,
+                      "isSourceVariant": true,
+                      "variantId": "panel-v",
+                      "surfaceIntent": "thin_two_sided",
+                      "surfaceMode": "thin_two_sided",
+                      "triangleCount": 12,
+                      "unassignedMaterialTriangles": 0,
+                      "materialSlots": []
+                    }
+                  ]
+                },
+                {
+                  "geometries": [
+                    {
+                      "id": "hull_l1",
+                      "index": 0,
+                      "usageCount": 1,
+                      "baseVisualId": "hull",
+                      "surfaceIntent": "closed_volume",
+                      "surfaceMode": "closed_volume",
+                      "triangleCount": 40,
+                      "unassignedMaterialTriangles": 0,
+                      "materialSlots": []
+                    }
+                  ]
+                }
+              ],
+              "geometries": [
+                {
+                  "id": "hull",
+                  "index": 0,
+                  "usageCount": 1,
+                  "baseVisualId": "hull",
+                  "surfaceIntent": "auto",
+                  "surfaceMode": "closed_volume",
+                  "triangleCount": 100,
+                  "unassignedMaterialTriangles": 10,
+                  "materialSlots": [
+                    {
+                      "materialIndex": 0,
+                      "triangleCount": 90
+                    }
+                  ]
+                },
+                {
+                  "id": "panel",
+                  "index": 1,
+                  "usageCount": 1,
+                  "isSourceVariant": true,
+                  "variantId": "panel-v",
+                  "surfaceIntent": "thin_two_sided",
+                  "surfaceMode": "thin_two_sided",
+                  "triangleCount": 12,
+                  "unassignedMaterialTriangles": 0,
+                  "materialSlots": []
+                }
+              ],
+              "surfaceDisplayRows": [
+                {
+                  "id": "hull"
+                },
+                {
+                  "id": "panel"
+                }
+              ],
+              "materials": [
+                {
+                  "index": 0,
+                  "id": "Hull",
+                  "baseColor": [
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.8
+                  ],
+                  "emissiveColor": [
+                    0.1,
+                    0.0,
+                    0.0
+                  ],
+                  "emissiveStrength": 2,
+                  "metallic": 0.5,
+                  "roughness": 0.4,
+                  "baseColorTexture": "hull.png",
+                  "emissiveTexture": ""
+                }
+              ],
+              "preflightRows": [
+                {
+                  "lodIndex": 0,
+                  "geometryIndex": 0,
+                  "usageCount": 1,
+                  "needsReview": true,
+                  "surfaceMismatch": false,
+                  "suggestedClass": "closed_volume",
+                  "suggestedConfidence": 0.9,
+                  "openComponents": 1
+                }
+              ],
+              "selectedGeometryIds": [
+                "hull"
+              ],
+              "surfaceGeometrySelection": "hull",
+              "surfaceMaterialSelection": null,
+              "visibleGeometryCount": 1
+            }
+          ],
+          "invoke": "wizardSurfacesStageModel(args[0])",
+          "expected": {
+            "activeLodIndex": 0,
+            "analysisReady": true,
+            "currentSlot": {
+              "material": {
+                "baseColor": [
+                  0.2,
+                  0.3,
+                  0.4,
+                  0.8
+                ],
+                "baseColorTexture": "hull.png",
+                "emissiveColor": [
+                  0.1,
+                  0,
+                  0
+                ],
+                "emissiveStrength": 2,
+                "emissiveTexture": "",
+                "id": "Hull",
+                "index": 0,
+                "metallic": 0.5,
+                "roughness": 0.4
+              },
+              "materialIndex": 0,
+              "triangleCount": 90
+            },
+            "implicitDefaultTotal": 10,
+            "intentDecisionCount": 1,
+            "invalidMaterialRowsCount": 0,
+            "matchingFamilies": 2,
+            "materials": [
+              {
+                "baseColor": [
+                  0.2,
+                  0.3,
+                  0.4,
+                  0.8
+                ],
+                "baseColorTexture": "hull.png",
+                "emissiveColor": [
+                  0.1,
+                  0,
+                  0
+                ],
+                "emissiveStrength": 2,
+                "emissiveTexture": "",
+                "id": "Hull",
+                "index": 0,
+                "metallic": 0.5,
+                "roughness": 0.4
+              }
+            ],
+            "mixedIntent": false,
+            "rowCount": 2,
+            "selected": {
+              "baseVisualId": "hull",
+              "id": "hull",
+              "index": 0,
+              "materialSlots": [
+                {
+                  "materialIndex": 0,
+                  "triangleCount": 90
+                }
+              ],
+              "surfaceIntent": "auto",
+              "surfaceMode": "closed_volume",
+              "triangleCount": 100,
+              "unassignedMaterialTriangles": 10,
+              "usageCount": 1
+            },
+            "selectedGeometries": [
+              {
+                "baseVisualId": "hull",
+                "id": "hull",
+                "index": 0,
+                "materialSlots": [
+                  {
+                    "materialIndex": 0,
+                    "triangleCount": 90
+                  }
+                ],
+                "surfaceIntent": "auto",
+                "surfaceMode": "closed_volume",
+                "triangleCount": 100,
+                "unassignedMaterialTriangles": 10,
+                "usageCount": 1
+              }
+            ],
+            "selectedIntent": "auto",
+            "selectedIssues": {
+              "intent": true,
+              "invalidMaterialIndices": [],
+              "surfaceMismatch": false
+            },
+            "selectedMaterial": {
+              "baseColor": [
+                0.2,
+                0.3,
+                0.4,
+                0.8
+              ],
+              "baseColorTexture": "hull.png",
+              "emissiveColor": [
+                0.1,
+                0,
+                0
+              ],
+              "emissiveStrength": 2,
+              "emissiveTexture": "",
+              "id": "Hull",
+              "index": 0,
+              "metallic": 0.5,
+              "roughness": 0.4
+            },
+            "selectedRow": {
+              "geometryIndex": 0,
+              "lodIndex": 0,
+              "needsReview": true,
+              "openComponents": 1,
+              "suggestedClass": "closed_volume",
+              "suggestedConfidence": 0.9,
+              "surfaceMismatch": false,
+              "usageCount": 1
+            },
+            "selectedTargets": [
+              {
+                "baseVisualId": "hull",
+                "id": "hull",
+                "index": 0,
+                "materialSlots": [
+                  {
+                    "materialIndex": 0,
+                    "triangleCount": 90
+                  }
+                ],
+                "surfaceIntent": "auto",
+                "surfaceMode": "closed_volume",
+                "triangleCount": 100,
+                "unassignedMaterialTriangles": 10,
+                "usageCount": 1
+              }
+            ],
+            "slotIndices": [
+              0
+            ],
+            "slots": [
+              {
+                "material": {
+                  "baseColor": [
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.8
+                  ],
+                  "baseColorTexture": "hull.png",
+                  "emissiveColor": [
+                    0.1,
+                    0,
+                    0
+                  ],
+                  "emissiveStrength": 2,
+                  "emissiveTexture": "",
+                  "id": "Hull",
+                  "index": 0,
+                  "metallic": 0.5,
+                  "roughness": 0.4
+                },
+                "materialIndex": 0,
+                "triangleCount": 90
+              }
+            ],
+            "statusClass": "surfaceWarn",
+            "surfaceBlockerCount": 1,
+            "surfaceMaterialSelection": 0,
+            "surfaceMismatchCount": 0,
+            "visibleGeometryCount": 1
+          }
+        }
+      ],
+      "oracle_sha256": "98fc37dd65eec0343c4a5154777729a542f532756934269e02cea20f76fb9533"
+    },
+    {
+      "name": "wizardSurfacesStageHtml",
+      "support": [
+        "escapeMarkup",
+        "colorArrayToHex"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "analysisReady": false,
+              "activeLodIndex": 1
+            },
+            {
+              "stageLabel": "SURFACES",
+              "helpShort": "SHORT",
+              "help": "HELP",
+              "analysisRequired": "ANALYSIS",
+              "analysisRequiredHint": "RUN",
+              "analyze": "ANALYZE",
+              "review": "REVIEW",
+              "intentDecisions": "INTENTS",
+              "surfaceMismatch": "MISMATCH",
+              "invalidMaterialRefs": "INVALID",
+              "ready": "READY",
+              "defaultTriangles": "DEFAULT T",
+              "geometry": "GEOMETRY",
+              "selected": "SELECTED",
+              "intent": "INTENT",
+              "renderMode": "RENDERER",
+              "renderDouble": "DOUBLE",
+              "renderFront": "FRONT",
+              "materialSlots": "M SLOTS",
+              "issueTitle": "ISSUES",
+              "issueIntent": "NEEDS INTENT",
+              "issueMismatch": "BAD META",
+              "issueInvalidMaterial": "BAD MAT",
+              "geometryReady": "GEOM READY",
+              "assignUnassigned": "ASSIGN",
+              "defaultMaterialHint": "DEFAULT HINT",
+              "intentHelp": "INTENT HELP",
+              "noGeometry": "NO GEOM",
+              "materialEditor": "MATERIAL",
+              "material": "MAT",
+              "usedHere": "USED",
+              "notUsedHere": "NOT USED",
+              "sourceName": "SOURCE NAME",
+              "baseColor": "BASE",
+              "opacity": "OPACITY",
+              "emissiveColor": "EMIT",
+              "emissiveStrength": "EMIT STR",
+              "metallic": "METAL",
+              "roughness": "ROUGH",
+              "baseTexture": "BASE TEX",
+              "emissiveTexture": "EMIT TEX",
+              "applyMaterial": "APPLY MAT",
+              "textureNote": "TEX NOTE",
+              "noMaterialsValid": "NO MATS OK",
+              "materialAuthoringHint": "MAT HINT",
+              "intentLabels": {
+                "auto": "AUTO",
+                "closed_volume": "CLOSED",
+                "thin_one_sided": "ONE",
+                "thin_two_sided": "TWO",
+                "breached_volume": "BREACHED"
+              }
+            },
+            {
+              "lodSelector": "<LOD>",
+              "stageCheck": ""
+            }
+          ],
+          "invoke": "wizardSurfacesStageHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"surfaceWorkspace\"><LOD><div class=\"title\">4 · SURFACES</div><div class=\"wizardLead\">SHORT</div><div class=\"surfaceToolBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">ANALYSIS</span></div><div class=\"geometryBlockBody\"><div class=\"sectionHint\">RUN</div><div class=\"geometryActionColumn\"><button id=\"wizardSurfaceAnalyzeBtn\" class=\"wizardPrimary\">✓ ANALYZE</button></div></div></div></div>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "analysisReady": true,
+              "activeLodIndex": 0,
+              "rowCount": 2,
+              "visibleGeometryCount": 1,
+              "materials": [
+                {
+                  "index": 0,
+                  "id": "Hull",
+                  "baseColor": [
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.8
+                  ],
+                  "emissiveColor": [
+                    0.1,
+                    0,
+                    0
+                  ],
+                  "emissiveStrength": 2,
+                  "metallic": 0.5,
+                  "roughness": 0.4,
+                  "baseColorTexture": "hull.png",
+                  "emissiveTexture": ""
+                }
+              ],
+              "surfaceMaterialSelection": 0,
+              "selected": {
+                "id": "hull",
+                "index": 0,
+                "surfaceMode": "closed_volume",
+                "triangleCount": 100,
+                "unassignedMaterialTriangles": 10
+              },
+              "selectedGeometries": [
+                {
+                  "id": "hull",
+                  "index": 0
+                }
+              ],
+              "selectedRow": {
+                "suggestedClass": "closed_volume",
+                "suggestedConfidence": 0.9
+              },
+              "selectedIntent": "auto",
+              "mixedIntent": false,
+              "slots": [
+                {
+                  "materialIndex": 0,
+                  "triangleCount": 90
+                }
+              ],
+              "slotIndices": [
+                0
+              ],
+              "selectedMaterial": {
+                "index": 0,
+                "id": "Hull",
+                "sourceName": "HullMat",
+                "baseColor": [
+                  0.2,
+                  0.3,
+                  0.4,
+                  0.8
+                ],
+                "emissiveColor": [
+                  0.1,
+                  0,
+                  0
+                ],
+                "emissiveStrength": 2,
+                "metallic": 0.5,
+                "roughness": 0.4,
+                "baseColorTexture": "hull.png",
+                "emissiveTexture": ""
+              },
+              "currentSlot": {
+                "materialIndex": 0,
+                "triangleCount": 90
+              },
+              "intentDecisionCount": 1,
+              "surfaceMismatchCount": 0,
+              "invalidMaterialRowsCount": 0,
+              "implicitDefaultTotal": 10,
+              "surfaceBlockerCount": 1,
+              "statusClass": "surfaceWarn",
+              "selectedIssues": {
+                "intent": true,
+                "surfaceMismatch": false,
+                "invalidMaterialIndices": []
+              },
+              "selectedTargets": [
+                {
+                  "id": "hull",
+                  "index": 0
+                }
+              ],
+              "matchingFamilies": 2
+            },
+            {
+              "stageLabel": "SURFACES",
+              "helpShort": "SHORT",
+              "help": "HELP",
+              "analysisRequired": "ANALYSIS",
+              "analysisRequiredHint": "RUN",
+              "analyze": "ANALYZE",
+              "review": "REVIEW",
+              "intentDecisions": "INTENTS",
+              "surfaceMismatch": "MISMATCH",
+              "invalidMaterialRefs": "INVALID",
+              "ready": "READY",
+              "defaultTriangles": "DEFAULT T",
+              "geometry": "GEOMETRY",
+              "selected": "SELECTED",
+              "intent": "INTENT",
+              "renderMode": "RENDERER",
+              "renderDouble": "DOUBLE",
+              "renderFront": "FRONT",
+              "materialSlots": "M SLOTS",
+              "issueTitle": "ISSUES",
+              "issueIntent": "NEEDS INTENT",
+              "issueMismatch": "BAD META",
+              "issueInvalidMaterial": "BAD MAT",
+              "geometryReady": "GEOM READY",
+              "assignUnassigned": "ASSIGN",
+              "defaultMaterialHint": "DEFAULT HINT",
+              "intentHelp": "INTENT HELP",
+              "noGeometry": "NO GEOM",
+              "materialEditor": "MATERIAL",
+              "material": "MAT",
+              "usedHere": "USED",
+              "notUsedHere": "NOT USED",
+              "sourceName": "SOURCE NAME",
+              "baseColor": "BASE",
+              "opacity": "OPACITY",
+              "emissiveColor": "EMIT",
+              "emissiveStrength": "EMIT STR",
+              "metallic": "METAL",
+              "roughness": "ROUGH",
+              "baseTexture": "BASE TEX",
+              "emissiveTexture": "EMIT TEX",
+              "applyMaterial": "APPLY MAT",
+              "textureNote": "TEX NOTE",
+              "noMaterialsValid": "NO MATS OK",
+              "materialAuthoringHint": "MAT HINT",
+              "intentLabels": {
+                "auto": "AUTO",
+                "closed_volume": "CLOSED",
+                "thin_one_sided": "ONE",
+                "thin_two_sided": "TWO",
+                "breached_volume": "BREACHED"
+              }
+            },
+            {
+              "lodSelector": "<LOD>",
+              "stageCheck": "<CHECK>"
+            }
+          ],
+          "invoke": "wizardSurfacesStageHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"surfaceWorkspace\"><LOD><div class=\"title\">4 · SURFACES</div><div class=\"wizardLead\">HELP</div><div class=\"surfaceWarn\">REVIEW · INTENTS: 1 · MISMATCH: 0 · INVALID: 0</div><div class=\"surfaceBrowser\"><div class=\"surfaceBrowserHead\"><b class=\"grow\">ACTIVE LOD MESHES / GEOMETRY</b><button id=\"wizardSurfaceShowAllBtn\" class=\"geometryInventoryMini visibilityAction\">● ПОКАЗАТЬ ВСЕ</button><button id=\"wizardSurfaceHideAllBtn\" class=\"geometryInventoryMini visibilityAction\">○ СПРЯТАТЬ ВСЕ</button><span class=\"surfaceVisibleCount\">1/2 VISIBLE</span></div><div class=\"sectionHint\" style=\"padding:6px 8px\">Click = one mesh · Ctrl = add/remove one · Shift = select range. Surface type applies to the whole selected group; material editing stays on the primary row.</div><div id=\"wizardSurfaceGeometryTable\" class=\"surfaceGeometryTable\" data-preserve-scroll=\"surface-geometries\"></div></div><div class=\"surfaceToolBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">SELECTED</span></div><div class=\"surfaceSelectionHead\"><span class=\"badge\">G0</span><b>hull</b><span class=\"muted\">100 T</span></div><div class=\"geometryBlockBody\"><div class=\"field\"><label>INTENT</label><select id=\"wizardSurfaceIntent\"><option value=\"auto\" selected>AUTO · CLOSED 90%</option><option value=\"closed_volume\" >CLOSED</option><option value=\"thin_one_sided\" >ONE</option><option value=\"thin_two_sided\" >TWO</option><option value=\"breached_volume\" >BREACHED</option></select></div><div class=\"surfaceFacts\"><span>RENDERER</span><span>FRONT</span><span>M SLOTS</span><span>1</span><span>DEFAULT T</span><span class=\"ok\">10</span></div><div class=\"surfaceIssues\"><b>ISSUES</b><div>! NEEDS INTENT</div></div><div class=\"surfaceAssign\"><select id=\"wizardSurfaceAssignMaterial\"><option value=\"0\" selected>M0 · Hull · USED HERE</option></select><button id=\"wizardSurfaceAssignBtn\">ASSIGN</button></div><div class=\"sectionHint\">DEFAULT HINT</div><div class=\"sectionHint\">INTENT HELP</div></div></div><div class=\"surfaceToolBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">MATERIAL</span></div><div class=\"geometryBlockBody\"><div class=\"field\"><label>MAT</label><select id=\"wizardSurfaceMaterialSelect\"><option value=\"0\" selected>M0 · Hull · USED HERE</option></select></div><div class=\"surfaceMaterialUsage\">USED 90 T</div><div class=\"field\"><label>ID</label><input id=\"surfaceMatId\" value=\"Hull\"></div><div class=\"field\"><label>SOURCE NAME</label><input value=\"HullMat\" disabled></div><div class=\"surfaceMaterialGrid\"><label>BASE<input id=\"surfaceBaseColor\" type=\"color\" value=\"#334d66\"></label><label>OPACITY<input id=\"surfaceOpacity\" type=\"number\" min=\"0\" max=\"1\" step=\"0.01\" value=\"0.8\"></label><label>EMIT<input id=\"surfaceEmitColor\" type=\"color\" value=\"#1a0000\"></label><label>EMIT STR<input id=\"surfaceEmitStrength\" type=\"number\" min=\"0\" step=\"0.1\" value=\"2\"></label><label>METAL<input id=\"surfaceMetallic\" type=\"number\" min=\"0\" max=\"1\" step=\"0.01\" value=\"0.5\"></label><label>ROUGH<input id=\"surfaceRoughness\" type=\"number\" min=\"0\" max=\"1\" step=\"0.01\" value=\"0.4\"></label></div><div class=\"field\"><label>BASE TEX</label><input id=\"surfaceBaseTexture\" value=\"hull.png\"></div><div class=\"field\"><label>EMIT TEX</label><input id=\"surfaceEmitTexture\" value=\"\"></div><div class=\"geometryActionColumn\"><button id=\"wizardSurfaceApplyMaterialBtn\" class=\"wizardPrimary\">✓ APPLY MAT</button></div><div class=\"sectionHint\">TEX NOTE</div></div></div><CHECK></div>"
+        }
+      ],
+      "oracle_sha256": "c1225121398bf87ce75678b02198bc205310e18c5424646c40afdb3369b4b55a"
+    },
+    {
+      "name": "wizardSemanticsStageModel",
+      "support": [
+        "semanticDescendantSet",
+        "semanticCurrentLodUnbound",
+        "semanticUsageForNode",
+        "semanticRootIndices",
+        "semanticTreeRows",
+        "semanticStaticFlattenCandidates",
+        "semanticTopLevelSelected",
+        "semanticSelectedIndices"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "lod": null,
+              "lods": [],
+              "activeLod": 0,
+              "selectedNode": null,
+              "semanticSelectedNodes": [],
+              "semanticTreeOrder": {},
+              "semanticCollapsed": [],
+              "stateVariants": [],
+              "visualProfile": {
+                "visualCount": 0,
+                "ownerCount": 0,
+                "unboundVisualCount": 0,
+                "unboundClusterCount": 0,
+                "clusterCount": 0,
+                "monolithic": false,
+                "separable": false
+              }
+            }
+          ],
+          "invoke": "wizardSemanticsStageModel(args[0])",
+          "expected": {
+            "activeLod": 0,
+            "selectedNode": null,
+            "selected": null,
+            "descendantIndices": [],
+            "bindingCountsEntries": [],
+            "unbound": 0,
+            "geometryNodes": 0,
+            "bound": 0,
+            "zeroVisualParts": 0,
+            "orphanParts": 0,
+            "multiVisualParts": 0,
+            "roots": [],
+            "assetSpaceCollapsed": false,
+            "treeItems": [],
+            "transformEdges": 0,
+            "staticFlattenCount": 0,
+            "selectedToAssetCount": 0,
+            "selectedCount": 0,
+            "selectedMissingLods": 0,
+            "bindingNeedsRepair": false,
+            "visualProfile": {
+              "visualCount": 0,
+              "ownerCount": 0,
+              "unboundVisualCount": 0,
+              "unboundClusterCount": 0,
+              "clusterCount": 0,
+              "monolithic": false,
+              "separable": false
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "root",
+                  "parentIndex": -1,
+                  "semanticUsage": {
+                    "renderBindings": 2,
+                    "children": 1
+                  }
+                },
+                {
+                  "id": "child",
+                  "parentIndex": 0,
+                  "semanticUsage": {
+                    "renderBindings": 0,
+                    "orphanCandidate": true
+                  }
+                },
+                {
+                  "id": "root2",
+                  "parentIndex": -1,
+                  "semanticUsage": {
+                    "renderBindings": 0,
+                    "orphanCandidate": true
+                  }
+                }
+              ],
+              "lod": {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "id": "RN0",
+                    "enabled": true,
+                    "geometryIndex": 0,
+                    "semanticNodeIndex": 0
+                  },
+                  {
+                    "id": "RN1",
+                    "enabled": true,
+                    "geometryIndex": 1,
+                    "semanticNodeIndex": -1
+                  },
+                  {
+                    "id": "RN2",
+                    "enabled": true,
+                    "geometryIndex": 2,
+                    "semanticNodeIndex": 0
+                  }
+                ]
+              },
+              "lods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "semanticNodeIndex": 0
+                    },
+                    {
+                      "semanticNodeIndex": -1
+                    },
+                    {
+                      "semanticNodeIndex": 0
+                    }
+                  ]
+                },
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "semanticNodeIndex": 0
+                    }
+                  ]
+                }
+              ],
+              "activeLod": 0,
+              "selectedNode": 1,
+              "semanticSelectedNodes": [
+                1
+              ],
+              "semanticTreeOrder": {},
+              "semanticCollapsed": [],
+              "stateVariants": [],
+              "visualProfile": {
+                "visualCount": 3,
+                "ownerCount": 1,
+                "unboundVisualCount": 1,
+                "unboundClusterCount": 1,
+                "clusterCount": 2,
+                "monolithic": false,
+                "separable": true
+              }
+            }
+          ],
+          "invoke": "wizardSemanticsStageModel(args[0])",
+          "expected": {
+            "activeLod": 0,
+            "selectedNode": 1,
+            "selected": {
+              "id": "child",
+              "parentIndex": 0,
+              "semanticUsage": {
+                "renderBindings": 0,
+                "orphanCandidate": true
+              }
+            },
+            "descendantIndices": [],
+            "bindingCountsEntries": [
+              [
+                0,
+                2
+              ]
+            ],
+            "unbound": 1,
+            "geometryNodes": 3,
+            "bound": 2,
+            "zeroVisualParts": 2,
+            "orphanParts": 2,
+            "multiVisualParts": 1,
+            "roots": [
+              0,
+              2
+            ],
+            "assetSpaceCollapsed": false,
+            "treeItems": [
+              {
+                "index": 0,
+                "depth": 0,
+                "hasChildren": true,
+                "collapsed": false
+              },
+              {
+                "index": 1,
+                "depth": 1,
+                "hasChildren": false,
+                "collapsed": false
+              },
+              {
+                "index": 2,
+                "depth": 0,
+                "hasChildren": false,
+                "collapsed": false
+              }
+            ],
+            "transformEdges": 1,
+            "staticFlattenCount": 1,
+            "selectedToAssetCount": 1,
+            "selectedCount": 1,
+            "selectedMissingLods": 2,
+            "bindingNeedsRepair": true,
+            "visualProfile": {
+              "visualCount": 3,
+              "ownerCount": 1,
+              "unboundVisualCount": 1,
+              "unboundClusterCount": 1,
+              "clusterCount": 2,
+              "monolithic": false,
+              "separable": true
+            }
+          }
+        }
+      ],
+      "oracle_sha256": "8f3037ffbb3dea75244141a6157c49302dd95250288723ba9e0df488bc588d35"
+    },
+    {
+      "name": "wizardSemanticsTreeBlockModel",
+      "support": [
+        "semanticUsageForNode",
+        "semanticRelationOptions",
+        "semanticRelationKind"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "treeItems": [],
+              "selectedNode": null,
+              "selectedNodeIndices": [],
+              "bindingCountsEntries": [],
+              "activeLod": 0
+            }
+          ],
+          "invoke": "wizardSemanticsTreeBlockModel(args[0])",
+          "expected": {
+            "activeLod": 0,
+            "rows": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "root",
+                  "parentIndex": -1,
+                  "semanticUsage": {
+                    "renderBindings": 2
+                  }
+                },
+                {
+                  "id": "child",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "revolute"
+                  },
+                  "semanticUsage": {
+                    "orphanCandidate": true
+                  }
+                }
+              ],
+              "treeItems": [
+                {
+                  "index": 0,
+                  "depth": 0,
+                  "hasChildren": true,
+                  "collapsed": false
+                },
+                {
+                  "index": 1,
+                  "depth": 1,
+                  "hasChildren": false,
+                  "collapsed": false
+                }
+              ],
+              "selectedNode": 1,
+              "selectedNodeIndices": [
+                0,
+                1
+              ],
+              "bindingCountsEntries": [
+                [
+                  0,
+                  2
+                ],
+                [
+                  1,
+                  0
+                ]
+              ],
+              "activeLod": 2
+            }
+          ],
+          "invoke": "wizardSemanticsTreeBlockModel(args[0])",
+          "expected": {
+            "activeLod": 2,
+            "rows": [
+              {
+                "assetSpacePart": true,
+                "collapsed": false,
+                "depth": 0,
+                "hasChildren": true,
+                "id": "root",
+                "index": 0,
+                "orphan": false,
+                "parentId": "",
+                "primary": false,
+                "relationOptions": "",
+                "selected": true,
+                "visualCount": 2
+              },
+              {
+                "assetSpacePart": false,
+                "collapsed": false,
+                "depth": 1,
+                "hasChildren": false,
+                "id": "child",
+                "index": 1,
+                "orphan": true,
+                "parentId": "root",
+                "primary": true,
+                "relationOptions": "<option value=\"fixed\" >■ FIXED</option><option value=\"rotating\" selected>↻ ROTATE</option><option value=\"detachable\" >⚡ DETACH</option><option value=\"rot_detach\" >↻⚡ ROT+DETACH</option>",
+                "selected": true,
+                "visualCount": 0
+              }
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "only",
+                  "parentIndex": -1,
+                  "semanticUsage": {}
+                }
+              ],
+              "treeItems": [
+                {
+                  "index": 0,
+                  "depth": 0,
+                  "hasChildren": false,
+                  "collapsed": false
+                }
+              ],
+              "selectedNode": null,
+              "selectedNodeIndices": [],
+              "bindingCountsEntries": [],
+              "activeLod": 0
+            }
+          ],
+          "invoke": "wizardSemanticsTreeBlockModel(args[0])",
+          "expected": {
+            "activeLod": 0,
+            "rows": [
+              {
+                "assetSpacePart": true,
+                "collapsed": false,
+                "depth": 0,
+                "hasChildren": false,
+                "id": "only",
+                "index": 0,
+                "orphan": false,
+                "parentId": "",
+                "primary": false,
+                "relationOptions": "",
+                "selected": false,
+                "visualCount": 0
+              }
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "d2d606a307b6913b1e2dcbb30d60daa7f3deff4a3848dd84b0f5ab39cef67cec"
+    },
+    {
+      "name": "wizardSemanticsTreeRowsHtml",
+      "support": [
+        "escapeMarkup"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "activeLod": 0,
+              "rows": []
+            },
+            {
+              "empty": "EMPTY"
+            }
+          ],
+          "invoke": "wizardSemanticsTreeRowsHtml(args[0],args[1])",
+          "expected": "<div class=\"variantEmpty\">EMPTY</div>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "activeLod": 2,
+              "rows": [
+                {
+                  "index": 0,
+                  "depth": 0,
+                  "hasChildren": true,
+                  "collapsed": false,
+                  "id": "root",
+                  "parentId": "",
+                  "selected": true,
+                  "primary": false,
+                  "visualCount": 2,
+                  "assetSpacePart": true,
+                  "relationOptions": "",
+                  "orphan": false
+                },
+                {
+                  "index": 1,
+                  "depth": 1,
+                  "hasChildren": false,
+                  "collapsed": false,
+                  "id": "child",
+                  "parentId": "root",
+                  "selected": true,
+                  "primary": true,
+                  "visualCount": 0,
+                  "assetSpacePart": false,
+                  "relationOptions": "<option value=\"rotating\" selected>↻ ROTATE</option>",
+                  "orphan": true
+                }
+              ]
+            },
+            {
+              "empty": "EMPTY",
+              "assetRelation": "◇ ASSET",
+              "incomingTitle": "Incoming {parent} → {child}",
+              "expand": "EXPAND",
+              "collapse": "COLLAPSE",
+              "visualCount": "{count} VIS",
+              "zeroVisual": "⚠ 0 VIS",
+              "orphanBadge": "ORPHAN"
+            }
+          ],
+          "invoke": "wizardSemanticsTreeRowsHtml(args[0],args[1])",
+          "expected": "<div class=\"semanticTreeRow selected assetSpacePart \" style=\"--tree-depth:1\" data-depth=\"1\" data-semantic-node=\"0\" draggable=\"true\"><button class=\"semanticTreeToggle\" data-semantic-toggle=\"0\" title=\"COLLAPSE\">▾</button><span class=\"relationRoot\">◇ ASSET</span><span class=\"name\">root</span><span class=\"metric \">LOD2: 2 VIS</span></div><div class=\"semanticTreeRow selected primary \" style=\"--tree-depth:2\" data-depth=\"2\" data-semantic-node=\"1\" draggable=\"true\"><button class=\"semanticTreeToggle empty\" tabindex=\"-1\">·</button><select class=\"relationSelect\" data-semantic-relation-select=\"1\" title=\"Incoming root → child\"><option value=\"rotating\" selected>↻ ROTATE</option></select><span class=\"name\">child <span class=\"bad\">· ORPHAN</span></span><span class=\"metric zeroVisual\">LOD2: ⚠ 0 VIS</span></div>"
+        }
+      ],
+      "oracle_sha256": "87751d03d1e6d1b4c12bc31e982c40d95440ab95e4eef8dbe879c98c02ba0a91"
+    },
+    {
+      "name": "wizardSemanticsBindingsBlockModel",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "lod": null,
+              "selectedNode": null,
+              "selectedRenderNode": null
+            }
+          ],
+          "invoke": "wizardSemanticsBindingsBlockModel(args[0])",
+          "expected": {
+            "loaded": false,
+            "rows": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "root"
+                }
+              ],
+              "lod": {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "id": "RN0",
+                    "geometryIndex": 0,
+                    "semanticNodeIndex": 0
+                  },
+                  {
+                    "id": "RN1",
+                    "geometryIndex": 1,
+                    "semanticNodeIndex": -1
+                  },
+                  {
+                    "id": "RN2",
+                    "geometryIndex": -1,
+                    "semanticNodeIndex": 5
+                  }
+                ]
+              },
+              "selectedNode": 0,
+              "selectedRenderNode": 1
+            }
+          ],
+          "invoke": "wizardSemanticsBindingsBlockModel(args[0])",
+          "expected": {
+            "loaded": true,
+            "rows": [
+              {
+                "binding": "root",
+                "checked": true,
+                "disabled": false,
+                "geometryLabel": "G0",
+                "id": "RN0",
+                "renderNodeIndex": 0,
+                "selected": false,
+                "unbound": false
+              },
+              {
+                "binding": null,
+                "checked": false,
+                "disabled": false,
+                "geometryLabel": "G1",
+                "id": "RN1",
+                "renderNodeIndex": 1,
+                "selected": true,
+                "unbound": true
+              },
+              {
+                "binding": "N5",
+                "checked": false,
+                "disabled": false,
+                "geometryLabel": "—",
+                "id": "RN2",
+                "renderNodeIndex": 2,
+                "selected": false,
+                "unbound": false
+              }
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "root"
+                }
+              ],
+              "lod": {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "id": "RN0",
+                    "geometryIndex": 0,
+                    "semanticNodeIndex": 0
+                  }
+                ]
+              },
+              "selectedNode": null,
+              "selectedRenderNode": null
+            }
+          ],
+          "invoke": "wizardSemanticsBindingsBlockModel(args[0])",
+          "expected": {
+            "loaded": true,
+            "rows": [
+              {
+                "binding": "root",
+                "checked": false,
+                "disabled": true,
+                "geometryLabel": "G0",
+                "id": "RN0",
+                "renderNodeIndex": 0,
+                "selected": false,
+                "unbound": false
+              }
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "22e397a79c627878f495ede2f087117d220e4a221b6477fafe76ca203902e601"
+    },
+    {
+      "name": "wizardSemanticsBindingRowsHtml",
+      "support": [
+        "escapeMarkup"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "loaded": false,
+              "rows": []
+            },
+            {
+              "chooseLoadedLod": "CHOOSE",
+              "unbound": "UNBOUND"
+            }
+          ],
+          "invoke": "wizardSemanticsBindingRowsHtml(args[0],args[1])",
+          "expected": "<div class=\"variantEmpty\">CHOOSE</div>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "loaded": true,
+              "rows": [
+                {
+                  "renderNodeIndex": 0,
+                  "id": "RN<0>",
+                  "selected": false,
+                  "unbound": false,
+                  "checked": true,
+                  "disabled": false,
+                  "geometryLabel": "G0",
+                  "binding": "root"
+                },
+                {
+                  "renderNodeIndex": 1,
+                  "id": "RN1",
+                  "selected": true,
+                  "unbound": true,
+                  "checked": false,
+                  "disabled": false,
+                  "geometryLabel": "G1",
+                  "binding": null
+                }
+              ]
+            },
+            {
+              "chooseLoadedLod": "CHOOSE",
+              "unbound": "UNBOUND"
+            }
+          ],
+          "invoke": "wizardSemanticsBindingRowsHtml(args[0],args[1])",
+          "expected": "<div class=\"semanticBindingRow \" data-semantic-render-row=\"0\"><input type=\"checkbox\" data-semantic-bind=\"0\" checked ><span class=\"metric\">RN0</span><span class=\"name\">RN&lt;0&gt;</span><span class=\"metric\">G0</span><span class=\"binding\">root</span></div><div class=\"semanticBindingRow selected unbound\" data-semantic-render-row=\"1\"><input type=\"checkbox\" data-semantic-bind=\"1\"  ><span class=\"metric\">RN1</span><span class=\"name\">RN1</span><span class=\"metric\">G1</span><span class=\"binding\">UNBOUND</span></div>"
+        }
+      ],
+      "oracle_sha256": "4d0028065f1141a448e070b8913bc2b23fa38e16008fbbb188751fedde1100a4"
+    },
+    {
+      "name": "wizardSemanticsWorkspaceModel",
+      "support": [
+        "wizardSemanticsPreviewControlModel"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "activeLod": 0,
+              "lodLoaded": false,
+              "unbound": 0,
+              "orphanParts": 0,
+              "visualProfile": {},
+              "graphEnabled": false,
+              "graphExplode": 0,
+              "selectedCount": 0,
+              "selectedToAssetCount": 0,
+              "staticFlattenCount": 0,
+              "selectedNode": null,
+              "nodeCount": 0,
+              "bindingNeedsRepair": false,
+              "applyAllLods": true
+            }
+          ],
+          "invoke": "wizardSemanticsWorkspaceModel(args[0])",
+          "expected": {
+            "activeLod": 0,
+            "applyAllLods": true,
+            "bindingNeedsRepair": false,
+            "graphEnabled": false,
+            "graphExplode": 0,
+            "graphExplodePercent": 0,
+            "hasSelectedNode": false,
+            "lodLoaded": false,
+            "nodesEmpty": true,
+            "selectedCount": 0,
+            "selectedNode": null,
+            "selectedToAssetCount": 0,
+            "separationReasonMonolithic": false,
+            "separationUnavailable": false,
+            "staticFlattenCount": 0,
+            "summaryWarn": false,
+            "unboundClustersVisible": false
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "activeLod": 3,
+              "lodLoaded": true,
+              "unbound": 2,
+              "orphanParts": 1,
+              "visualProfile": {
+                "visualCount": 4,
+                "separable": true,
+                "monolithic": false,
+                "unboundVisualCount": 2
+              },
+              "graphEnabled": true,
+              "graphExplode": 0.42,
+              "selectedCount": 3,
+              "selectedToAssetCount": 2,
+              "staticFlattenCount": 5,
+              "selectedNode": 7,
+              "nodeCount": 8,
+              "bindingNeedsRepair": true,
+              "applyAllLods": false
+            }
+          ],
+          "invoke": "wizardSemanticsWorkspaceModel(args[0])",
+          "expected": {
+            "activeLod": 3,
+            "applyAllLods": false,
+            "bindingNeedsRepair": true,
+            "graphEnabled": true,
+            "graphExplode": 0.42,
+            "graphExplodePercent": 42,
+            "hasSelectedNode": true,
+            "lodLoaded": true,
+            "nodesEmpty": false,
+            "selectedCount": 3,
+            "selectedNode": 7,
+            "selectedToAssetCount": 2,
+            "separationReasonMonolithic": false,
+            "separationUnavailable": false,
+            "staticFlattenCount": 5,
+            "summaryWarn": true,
+            "unboundClustersVisible": true
+          }
+        }
+      ],
+      "oracle_sha256": "8678c9400b7cae1493a3d89ad9c45004ae4b9b6ace22cd3ff513902279e8d9e5"
+    },
+    {
+      "name": "wizardSemanticsWorkspaceHtml",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "activeLod": 0,
+              "summaryWarn": false,
+              "separationUnavailable": false,
+              "unboundClustersVisible": false,
+              "graphEnabled": false,
+              "graphExplode": 0,
+              "graphExplodePercent": 0,
+              "selectedCount": 0,
+              "selectedToAssetCount": 0,
+              "staticFlattenCount": 0,
+              "hasSelectedNode": false,
+              "selectedNode": null,
+              "nodesEmpty": true,
+              "bindingNeedsRepair": false,
+              "applyAllLods": true
+            },
+            {
+              "rootLead": "ROOT_LEAD",
+              "cleanupHelp": "CLEANUP_HELP",
+              "cleanLegacy": "CLEAN_LEGACY",
+              "lodSummary": "LOD_SUMMARY",
+              "separationUnavailable": "SEPARATION_UNAVAILABLE",
+              "unboundClusters": "UNBOUND_CLUSTERS",
+              "previewTitle": "PREVIEW_TITLE",
+              "previewHelp": "PREVIEW_HELP",
+              "showLinks": "SHOW_LINKS",
+              "explodeMeshes": "EXPLODE_MESHES",
+              "treeTitle": "TREE_TITLE",
+              "selectionCount": "SELECTED_COUNT",
+              "selectionHelp": "SELECTION_HELP",
+              "selectionToRoot": "SELECTION_TO_ROOT",
+              "flattenStatic": "FLATTEN_STATIC",
+              "dropHelp": "DROP_HELP",
+              "addRoot": "ADD_ROOT",
+              "addChild": "ADD_CHILD",
+              "childHelp": "CHILD_HELP",
+              "selectedPart": "SELECTED_PART",
+              "bindingTitle": "BINDING_TITLE",
+              "bindingHelp": "BINDING_HELP",
+              "bindingRepair": "BINDING_REPAIR",
+              "applyAllLods": "APPLY_ALL_LODS",
+              "applyAllExact": "APPLY_ALL_EXACT",
+              "renderNodeHeader": "RENDER_NODE",
+              "ownerHeader": "OWNER"
+            },
+            {
+              "lodSelector": "<LOD/>",
+              "stageLabel": "SEMANTICS",
+              "structureMode": "<MODE/>",
+              "structureUi": "<STRUCTURE/>",
+              "assetSpaceHeader": "<ASSET/>",
+              "treeRows": "<TREE/>",
+              "motionUi": "<MOTION/>",
+              "selectedUi": "<SELECTED/>",
+              "bindingHealth": "<HEALTH/>",
+              "bindingSummary": "<SUMMARY/>",
+              "bindingRepair": "<REPAIR/>",
+              "bindingRows": "<ROWS/>",
+              "stageCheck": "<CHECK/>"
+            }
+          ],
+          "invoke": "wizardSemanticsWorkspaceHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"semanticWorkspace\"><LOD/><div class=\"title\">5 · SEMANTICS</div><MODE/><div class=\"wizardLead\">ROOT_LEAD</div><div class=\"semanticLegacyCleanup\"><span class=\"grow\">CLEANUP_HELP</span><button id=\"semanticCleanLegacyTree\">CLEAN_LEGACY</button></div><STRUCTURE/><div class=\"semanticSummary \">LOD_SUMMARY</div><div class=\"semanticGraphControls\"><b>PREVIEW_TITLE</b><div class=\"semanticHint\">PREVIEW_HELP</div><div class=\"row\"><label><input id=\"semanticGraphEnabled\" type=\"checkbox\" > SHOW_LINKS</label><span class=\"grow\"></span><button id=\"semanticGraphReset\">0%</button></div><div class=\"row\"><span>EXPLODE_MESHES</span><input id=\"semanticGraphExplode\" type=\"range\" min=\"0\" max=\"1\" step=\"0.02\" value=\"0\" disabled><span id=\"semanticGraphExplodeValue\" class=\"badge\">0%</span></div></div><div class=\"semanticTreeBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">TREE_TITLE</span></div><div class=\"semanticTreeSelectionBar\"><b id=\"semanticSelectedCount\">SELECTED_COUNT</b><span>SELECTION_HELP</span></div><div class=\"semanticTreeBulkActions\"><button id=\"semanticSelectionToAssetSpace\" disabled>SELECTION_TO_ROOT</button><button id=\"semanticFlattenStaticTree\" class=\"safe\" disabled>FLATTEN_STATIC</button></div><div class=\"semanticTree\" data-preserve-scroll=\"semantic-tree\" data-scroll-scope=\"asset\"><ASSET/><TREE/></div><div class=\"semanticTreeDropHint\">DROP_HELP</div><div class=\"semanticNodeActions\"><button id=\"wizardSemanticAddRoot\">ADD_ROOT</button><button id=\"wizardSemanticAddChild\" disabled>ADD_CHILD</button></div><div class=\"semanticHint\">CHILD_HELP</div></div><div id=\"semanticMotionHost\"><MOTION/></div><div class=\"semanticNodeBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">SELECTED_PART</span></div><div id=\"semanticSelectedNodeHost\"><SELECTED/></div></div><div class=\"semanticBindingBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">BINDING_TITLE</span><span id=\"semanticVisualLodBadge\" class=\"badge\">LOD0</span></div><div class=\"semanticHint\">BINDING_HELP</div><div id=\"semanticBindingHealthHost\"><HEALTH/></div><div id=\"semanticBindingSummaryHost\" class=\"semanticBindingSummary\"><SUMMARY/></div><details class=\"semanticBindingEditor\" ><summary>▸ BINDING_REPAIR</summary><div id=\"semanticBindingRepairHost\"><REPAIR/></div><div class=\"semanticBindingEditorBody\"><label class=\"semanticApplyAll\"><input id=\"wizardSemanticApplyAllLods\" type=\"checkbox\" checked> <span><b>APPLY_ALL_LODS</b><br>APPLY_ALL_EXACT</span></label><div class=\"semanticBindingTable\" data-preserve-scroll=\"semantic-bindings\" data-semantic-visual-lod=\"0\"><div class=\"semanticBindingHeader\"><span></span><span>RN</span><span>RENDER_NODE</span><span>G#</span><span>OWNER</span></div><ROWS/></div></div></details></div><CHECK/></div>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "activeLod": 3,
+              "summaryWarn": true,
+              "separationUnavailable": true,
+              "unboundClustersVisible": true,
+              "graphEnabled": true,
+              "graphExplode": 0.42,
+              "graphExplodePercent": 42,
+              "selectedCount": 3,
+              "selectedToAssetCount": 2,
+              "staticFlattenCount": 5,
+              "hasSelectedNode": true,
+              "selectedNode": 7,
+              "nodesEmpty": false,
+              "bindingNeedsRepair": true,
+              "applyAllLods": false
+            },
+            {
+              "rootLead": "ROOT_LEAD",
+              "cleanupHelp": "CLEANUP_HELP",
+              "cleanLegacy": "CLEAN_LEGACY",
+              "lodSummary": "LOD_SUMMARY",
+              "separationUnavailable": "SEPARATION_UNAVAILABLE",
+              "unboundClusters": "UNBOUND_CLUSTERS",
+              "previewTitle": "PREVIEW_TITLE",
+              "previewHelp": "PREVIEW_HELP",
+              "showLinks": "SHOW_LINKS",
+              "explodeMeshes": "EXPLODE_MESHES",
+              "treeTitle": "TREE_TITLE",
+              "selectionCount": "SELECTED_COUNT",
+              "selectionHelp": "SELECTION_HELP",
+              "selectionToRoot": "SELECTION_TO_ROOT",
+              "flattenStatic": "FLATTEN_STATIC",
+              "dropHelp": "DROP_HELP",
+              "addRoot": "ADD_ROOT",
+              "addChild": "ADD_CHILD",
+              "childHelp": "CHILD_HELP",
+              "selectedPart": "SELECTED_PART",
+              "bindingTitle": "BINDING_TITLE",
+              "bindingHelp": "BINDING_HELP",
+              "bindingRepair": "BINDING_REPAIR",
+              "applyAllLods": "APPLY_ALL_LODS",
+              "applyAllExact": "APPLY_ALL_EXACT",
+              "renderNodeHeader": "RENDER_NODE",
+              "ownerHeader": "OWNER"
+            },
+            {
+              "lodSelector": "<LOD/>",
+              "stageLabel": "SEMANTICS",
+              "structureMode": "<MODE/>",
+              "structureUi": "<STRUCTURE/>",
+              "assetSpaceHeader": "<ASSET/>",
+              "treeRows": "<TREE/>",
+              "motionUi": "<MOTION/>",
+              "selectedUi": "<SELECTED/>",
+              "bindingHealth": "<HEALTH/>",
+              "bindingSummary": "<SUMMARY/>",
+              "bindingRepair": "<REPAIR/>",
+              "bindingRows": "<ROWS/>",
+              "stageCheck": "<CHECK/>"
+            }
+          ],
+          "invoke": "wizardSemanticsWorkspaceHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"semanticWorkspace\"><LOD/><div class=\"title\">5 · SEMANTICS</div><MODE/><div class=\"wizardLead\">ROOT_LEAD</div><div class=\"semanticLegacyCleanup\"><span class=\"grow\">CLEANUP_HELP</span><button id=\"semanticCleanLegacyTree\">CLEAN_LEGACY</button></div><STRUCTURE/><div class=\"semanticSummary warn\">LOD_SUMMARY</div><div class=\"semanticPreviewNote warn\">SEPARATION_UNAVAILABLE</div><div class=\"semanticPreviewNote warn\">UNBOUND_CLUSTERS</div><div class=\"semanticGraphControls\"><b>PREVIEW_TITLE</b><div class=\"semanticHint\">PREVIEW_HELP</div><div class=\"row\"><label><input id=\"semanticGraphEnabled\" type=\"checkbox\" checked> SHOW_LINKS</label><span class=\"grow\"></span><button id=\"semanticGraphReset\">0%</button></div><div class=\"row\"><span>EXPLODE_MESHES</span><input id=\"semanticGraphExplode\" type=\"range\" min=\"0\" max=\"1\" step=\"0.02\" value=\"0.42\" ><span id=\"semanticGraphExplodeValue\" class=\"badge\">42%</span></div></div><div class=\"semanticTreeBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">TREE_TITLE</span></div><div class=\"semanticTreeSelectionBar\"><b id=\"semanticSelectedCount\">SELECTED_COUNT</b><span>SELECTION_HELP</span></div><div class=\"semanticTreeBulkActions\"><button id=\"semanticSelectionToAssetSpace\" >SELECTION_TO_ROOT</button><button id=\"semanticFlattenStaticTree\" class=\"safe\" >FLATTEN_STATIC</button></div><div class=\"semanticTree\" data-preserve-scroll=\"semantic-tree\" data-scroll-scope=\"asset\"><ASSET/><TREE/></div><div class=\"semanticTreeDropHint\">DROP_HELP</div><div class=\"semanticNodeActions\"><button id=\"wizardSemanticAddChild\" >ADD_CHILD</button></div><div class=\"semanticHint\">CHILD_HELP</div></div><div id=\"semanticMotionHost\"><MOTION/></div><div class=\"semanticNodeBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">SELECTED_PART</span><span id=\"semanticSelectedNodeBadge\" class=\"badge\">N7</span></div><div id=\"semanticSelectedNodeHost\"><SELECTED/></div></div><div class=\"semanticBindingBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">BINDING_TITLE</span><span id=\"semanticVisualLodBadge\" class=\"badge\">LOD3</span></div><div class=\"semanticHint\">BINDING_HELP</div><div id=\"semanticBindingHealthHost\"><HEALTH/></div><div id=\"semanticBindingSummaryHost\" class=\"semanticBindingSummary\"><SUMMARY/></div><details class=\"semanticBindingEditor\" open><summary>⚠ BINDING_REPAIR</summary><div id=\"semanticBindingRepairHost\"><REPAIR/></div><div class=\"semanticBindingEditorBody\"><label class=\"semanticApplyAll\"><input id=\"wizardSemanticApplyAllLods\" type=\"checkbox\" > <span><b>APPLY_ALL_LODS</b><br>APPLY_ALL_EXACT</span></label><div class=\"semanticBindingTable\" data-preserve-scroll=\"semantic-bindings\" data-semantic-visual-lod=\"3\"><div class=\"semanticBindingHeader\"><span></span><span>RN</span><span>RENDER_NODE</span><span>G#</span><span>OWNER</span></div><ROWS/></div></div></details></div><CHECK/></div>"
+        }
+      ],
+      "oracle_sha256": "830738ff6cc5e98f6bb6e185806aa4bba43251777444dc79a22c62f892400b0d"
+    },
+    {
+      "name": "wizardSemanticsTreeDropPlacement",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            10,
+            0,
+            100
+          ],
+          "invoke": "wizardSemanticsTreeDropPlacement(args[0],args[1],args[2])",
+          "expected": "before"
+        },
+        {
+          "state": {},
+          "args": [
+            50,
+            0,
+            100
+          ],
+          "invoke": "wizardSemanticsTreeDropPlacement(args[0],args[1],args[2])",
+          "expected": "inside"
+        },
+        {
+          "state": {},
+          "args": [
+            90,
+            0,
+            100
+          ],
+          "invoke": "wizardSemanticsTreeDropPlacement(args[0],args[1],args[2])",
+          "expected": "after"
+        }
+      ],
+      "oracle_sha256": "cd2d041c2af1617b43b82b6b13ed496fc1006290b5b0b807464a1f49630bd367"
+    },
+    {
+      "name": "wizardSemanticsTreeDropValid",
+      "support": [
+        "semanticCanUseParent",
+        "semanticDescendantSet"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "parentIndex": -1
+              },
+              {
+                "parentIndex": 0
+              },
+              {
+                "parentIndex": 0
+              },
+              {
+                "parentIndex": 1
+              }
+            ],
+            [
+              3
+            ],
+            2,
+            "inside"
+          ],
+          "invoke": "wizardSemanticsTreeDropValid(args[0],args[1],args[2],args[3])",
+          "expected": true
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "parentIndex": -1
+              },
+              {
+                "parentIndex": 0
+              },
+              {
+                "parentIndex": 0
+              },
+              {
+                "parentIndex": 1
+              }
+            ],
+            [
+              1
+            ],
+            3,
+            "inside"
+          ],
+          "invoke": "wizardSemanticsTreeDropValid(args[0],args[1],args[2],args[3])",
+          "expected": false
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "parentIndex": -1
+              },
+              {
+                "parentIndex": 0
+              },
+              {
+                "parentIndex": 0
+              },
+              {
+                "parentIndex": 1
+              }
+            ],
+            [
+              2
+            ],
+            3,
+            "before"
+          ],
+          "invoke": "wizardSemanticsTreeDropValid(args[0],args[1],args[2],args[3])",
+          "expected": true
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "parentIndex": -1
+              },
+              {
+                "parentIndex": 0
+              },
+              {
+                "parentIndex": 0
+              },
+              {
+                "parentIndex": 1
+              }
+            ],
+            [
+              1
+            ],
+            3,
+            "before"
+          ],
+          "invoke": "wizardSemanticsTreeDropValid(args[0],args[1],args[2],args[3])",
+          "expected": false
+        }
+      ],
+      "oracle_sha256": "d4e5c5a4dc6ef69037289723774c3b8792e1bf4ef24ef0f794884b6b19d515b5"
+    },
+    {
+      "name": "wizardSemanticsBindingCommandModel",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            null,
+            true,
+            1,
+            4,
+            true
+          ],
+          "invoke": "wizardSemanticsBindingCommandModel(args[0],args[1],args[2],args[3],args[4])",
+          "expected": null
+        },
+        {
+          "state": {},
+          "args": [
+            2,
+            true,
+            1,
+            4,
+            true
+          ],
+          "invoke": "wizardSemanticsBindingCommandModel(args[0],args[1],args[2],args[3],args[4])",
+          "expected": {
+            "applyAllLods": true,
+            "lodIndex": 1,
+            "renderNodeIndex": 4,
+            "semanticNodeIndex": 2
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            2,
+            false,
+            1,
+            4,
+            false
+          ],
+          "invoke": "wizardSemanticsBindingCommandModel(args[0],args[1],args[2],args[3],args[4])",
+          "expected": {
+            "applyAllLods": false,
+            "lodIndex": 1,
+            "renderNodeIndex": 4,
+            "semanticNodeIndex": -1
+          }
+        }
+      ],
+      "oracle_sha256": "f438a92d80be813e6895b7e500f537736b29db8dd69626c5dd31535cad8e1c85"
+    },
+    {
+      "name": "wizardSemanticsNewNodeSuggestion",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "body"
+              }
+            ],
+            0,
+            "cobra"
+          ],
+          "invoke": "wizardSemanticsNewNodeSuggestion(args[0],args[1],args[2])",
+          "expected": "body.pivot"
+        },
+        {
+          "state": {},
+          "args": [
+            [],
+            -1,
+            "cobra"
+          ],
+          "invoke": "wizardSemanticsNewNodeSuggestion(args[0],args[1],args[2])",
+          "expected": "cobra.part"
+        },
+        {
+          "state": {},
+          "args": [
+            [],
+            -1,
+            ""
+          ],
+          "invoke": "wizardSemanticsNewNodeSuggestion(args[0],args[1],args[2])",
+          "expected": "part"
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {}
+            ],
+            0,
+            "cobra"
+          ],
+          "invoke": "wizardSemanticsNewNodeSuggestion(args[0],args[1],args[2])",
+          "expected": "part.pivot"
+        }
+      ],
+      "oracle_sha256": "215e34d1b21d6f2738164ce4db8c87cad8878c350799831d39f2835c9c98335f"
+    },
+    {
+      "name": "wizardSemanticsPreviewControlModel",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            false,
+            0
+          ],
+          "invoke": "wizardSemanticsPreviewControlModel(args[0],args[1])",
+          "expected": {
+            "graphEnabled": false,
+            "graphExplode": 0,
+            "graphExplodePercent": 0,
+            "graphExplodeLabel": "0%",
+            "explodeDisabled": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            true,
+            0.42
+          ],
+          "invoke": "wizardSemanticsPreviewControlModel(args[0],args[1])",
+          "expected": {
+            "graphEnabled": true,
+            "graphExplode": 0.42,
+            "graphExplodePercent": 42,
+            "graphExplodeLabel": "42%",
+            "explodeDisabled": false
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            true,
+            "0.376"
+          ],
+          "invoke": "wizardSemanticsPreviewControlModel(args[0],args[1])",
+          "expected": {
+            "graphEnabled": true,
+            "graphExplode": 0.376,
+            "graphExplodePercent": 38,
+            "graphExplodeLabel": "38%",
+            "explodeDisabled": false
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            false,
+            "garbage"
+          ],
+          "invoke": "wizardSemanticsPreviewControlModel(args[0],args[1])",
+          "expected": {
+            "graphEnabled": false,
+            "graphExplode": 0,
+            "graphExplodePercent": 0,
+            "graphExplodeLabel": "0%",
+            "explodeDisabled": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            1,
+            -0.3
+          ],
+          "invoke": "wizardSemanticsPreviewControlModel(args[0],args[1])",
+          "expected": {
+            "graphEnabled": true,
+            "graphExplode": -0.3,
+            "graphExplodePercent": -30,
+            "graphExplodeLabel": "-30%",
+            "explodeDisabled": false
+          }
+        }
+      ],
+      "oracle_sha256": "f46489881e8d97faaf087e10e93ed2cc53af580ebc855925e6db093c3d2f00b0"
+    },
+    {
+      "name": "semanticStructureModeHtml",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            "tree",
+            {
+              "workspace": "SEMANTICS WORKSPACE",
+              "tree": "TREE · ASSEMBLY / KINEMATICS",
+              "graph": "GRAPH · STRUCTURAL LINKS"
+            }
+          ],
+          "invoke": "semanticStructureModeHtml(args[0],args[1])",
+          "expected": "<div class=\"semanticStructureSummary\"><b>SEMANTICS WORKSPACE</b> <label><input type=\"radio\" name=\"semanticStructureMode\" value=\"tree\" checked> TREE · ASSEMBLY / KINEMATICS</label> <label><input type=\"radio\" name=\"semanticStructureMode\" value=\"graph\" > GRAPH · STRUCTURAL LINKS</label></div>"
+        },
+        {
+          "state": {},
+          "args": [
+            "graph",
+            {
+              "workspace": "WS",
+              "tree": "TREE",
+              "graph": "GRAPH"
+            }
+          ],
+          "invoke": "semanticStructureModeHtml(args[0],args[1])",
+          "expected": "<div class=\"semanticStructureSummary\"><b>WS</b> <label><input type=\"radio\" name=\"semanticStructureMode\" value=\"tree\" > TREE</label> <label><input type=\"radio\" name=\"semanticStructureMode\" value=\"graph\" checked> GRAPH</label></div>"
+        }
+      ],
+      "oracle_sha256": "7c0bc8c9db5b10e0d42f822b4b7893f2a04296febc6080b983bf4f02fd6adba5"
+    },
+    {
+      "name": "structuralEndpointCard",
+      "support": [
+        "escapeMarkup"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            "A",
+            null,
+            [
+              {
+                "id": "body"
+              }
+            ],
+            {
+              "notSelected": "— not selected —",
+              "pickMeshHint": "pick mesh"
+            }
+          ],
+          "invoke": "structuralEndpointCard(args[0],args[1],args[2],args[3])",
+          "expected": "<div class=\"structEndpointCard\"><span class=\"structEndpointLetter\">A</span><span class=\"structEndpointIdentity\"><b>body</b><small>N0</small></span><button data-struct-clear=\"a\" >×</button></div>"
+        },
+        {
+          "state": {},
+          "args": [
+            "B",
+            0,
+            [
+              {
+                "id": "body<&>"
+              }
+            ],
+            {
+              "notSelected": "none",
+              "pickMeshHint": "pick"
+            }
+          ],
+          "invoke": "structuralEndpointCard(args[0],args[1],args[2],args[3])",
+          "expected": "<div class=\"structEndpointCard\"><span class=\"structEndpointLetter\">B</span><span class=\"structEndpointIdentity\"><b>body&lt;&amp;&gt;</b><small>N0</small></span><button data-struct-clear=\"b\" >×</button></div>"
+        }
+      ],
+      "oracle_sha256": "75cc36f387755702f538f1f49a97eed80294ad85cbebfde9a5140fd0a84679af"
+    },
+    {
+      "name": "structuralGraphMeshRowsHtml",
+      "support": [
+        "structuralEndpointForPick",
+        "meshStageVisualClass",
+        "escapeMarkup"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "loaded": false
+            },
+            [],
+            null,
+            null,
+            "semantics",
+            {
+              "lodNotLoaded": "LOD not loaded",
+              "unbound": "unbound",
+              "noRenderMesh": "No render mesh"
+            }
+          ],
+          "invoke": "structuralGraphMeshRowsHtml(args[0],args[1],args[2],args[3],args[4],args[5])",
+          "expected": "<div class=\"variantEmpty\">LOD not loaded</div>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "loaded": true,
+              "nodes": [
+                {
+                  "id": "RN0<&>",
+                  "geometryIndex": 0,
+                  "semanticNodeIndex": 1
+                },
+                {
+                  "id": "RN-no-geo",
+                  "geometryIndex": -1,
+                  "semanticNodeIndex": -1
+                }
+              ],
+              "geometries": [
+                {
+                  "id": "Hull<&>",
+                  "sourcePath": "hull.obj",
+                  "stageChecks": {
+                    "semantics": "passed"
+                  }
+                }
+              ]
+            },
+            [
+              {
+                "id": "module",
+                "parentIndex": -1,
+                "moduleId": "m"
+              },
+              {
+                "id": "visual",
+                "parentIndex": 0,
+                "moduleId": "m"
+              }
+            ],
+            0,
+            0,
+            "semantics",
+            {
+              "lodNotLoaded": "LOD not loaded",
+              "unbound": "unbound",
+              "noRenderMesh": "No render mesh"
+            }
+          ],
+          "invoke": "structuralGraphMeshRowsHtml(args[0],args[1],args[2],args[3],args[4],args[5])",
+          "expected": "<div class=\"structGraphMeshRow meshStagePassed selected rootEndpoint\" data-struct-mesh-ri=\"0\" title=\"RN0&lt;&amp;&gt;\nHull&lt;&amp;&gt;\nmodule\"><span class=\"metric\">RN0</span><span class=\"name\">RN0&lt;&amp;&gt;</span><span class=\"geometry\">G0 · Hull&lt;&amp;&gt;</span><span class=\"endpoint\">N0 · module</span></div>"
+        }
+      ],
+      "oracle_sha256": "9117e27bf2820e09fa74f2eaa1cd7a614b5815663bde0efe496ec11869a3827b"
+    },
+    {
+      "name": "wizardSemanticsStructuralGraphModel",
+      "support": [
+        "semanticRootIndices",
+        "structuralSelectedEndpoint"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "links": [],
+              "lod": null,
+              "activeLod": 2,
+              "wizardStage": "semantics",
+              "selectedRenderNode": null,
+              "structuralGraphRoot": null,
+              "structuralNodeA": 99,
+              "structuralNodeB": null,
+              "selectedStructuralLink": 7,
+              "selectedStructuralProxy": 0,
+              "graphExplode": "bad"
+            }
+          ],
+          "invoke": "wizardSemanticsStructuralGraphModel(args[0])",
+          "expected": {
+            "activeLod": 2,
+            "graphExplode": {
+              "__number__": "NaN"
+            },
+            "graphExplodePercent": {
+              "__number__": "NaN"
+            },
+            "links": [],
+            "lod": null,
+            "nodes": [],
+            "proxy": null,
+            "rootNode": {
+              "__undefined__": true
+            },
+            "selectedEndpoint": null,
+            "selectedEndpointNode": null,
+            "selectedLink": null,
+            "selectedRenderNode": null,
+            "selectedRn": {
+              "__undefined__": true
+            },
+            "selectedStructuralLink": null,
+            "selectedStructuralProxy": 0,
+            "structuralGraphRoot": 0,
+            "structuralNodeA": null,
+            "structuralNodeB": null,
+            "wizardStage": "semantics"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "root",
+                  "parentIndex": -1,
+                  "moduleId": "m"
+                },
+                {
+                  "id": "child",
+                  "parentIndex": 0,
+                  "moduleId": "m"
+                }
+              ],
+              "links": [
+                {
+                  "id": "link.root.child",
+                  "nodeAIndex": 0,
+                  "nodeBIndex": 1,
+                  "kind": "weld_seam",
+                  "damageProxies": [
+                    {
+                      "shape": "capsule",
+                      "parentNodeIndex": 0,
+                      "localPosition": [
+                        1,
+                        2,
+                        3
+                      ],
+                      "localRotationDeg": [
+                        4,
+                        5,
+                        6
+                      ],
+                      "radius": 0.2,
+                      "halfHeight": 0.4
+                    }
+                  ]
+                }
+              ],
+              "lod": {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "id": "RN-child",
+                    "geometryIndex": 0,
+                    "semanticNodeIndex": 1
+                  }
+                ],
+                "geometries": [
+                  {
+                    "id": "g0"
+                  }
+                ]
+              },
+              "activeLod": 0,
+              "wizardStage": "semantics",
+              "selectedRenderNode": 0,
+              "structuralGraphRoot": 1,
+              "structuralNodeA": 0,
+              "structuralNodeB": 1,
+              "selectedStructuralLink": 0,
+              "selectedStructuralProxy": 0,
+              "graphExplode": "0.42"
+            }
+          ],
+          "invoke": "wizardSemanticsStructuralGraphModel(args[0])",
+          "expected": {
+            "activeLod": 0,
+            "graphExplode": 0.42,
+            "graphExplodePercent": 42,
+            "links": [
+              {
+                "damageProxies": [
+                  {
+                    "halfHeight": 0.4,
+                    "localPosition": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "localRotationDeg": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "parentNodeIndex": 0,
+                    "radius": 0.2,
+                    "shape": "capsule"
+                  }
+                ],
+                "id": "link.root.child",
+                "kind": "weld_seam",
+                "nodeAIndex": 0,
+                "nodeBIndex": 1
+              }
+            ],
+            "lod": {
+              "geometries": [
+                {
+                  "id": "g0"
+                }
+              ],
+              "loaded": true,
+              "nodes": [
+                {
+                  "geometryIndex": 0,
+                  "id": "RN-child",
+                  "semanticNodeIndex": 1
+                }
+              ]
+            },
+            "nodes": [
+              {
+                "id": "root",
+                "moduleId": "m",
+                "parentIndex": -1
+              },
+              {
+                "id": "child",
+                "moduleId": "m",
+                "parentIndex": 0
+              }
+            ],
+            "proxy": {
+              "halfHeight": 0.4,
+              "localPosition": [
+                1,
+                2,
+                3
+              ],
+              "localRotationDeg": [
+                4,
+                5,
+                6
+              ],
+              "parentNodeIndex": 0,
+              "radius": 0.2,
+              "shape": "capsule"
+            },
+            "rootNode": {
+              "id": "child",
+              "moduleId": "m",
+              "parentIndex": 0
+            },
+            "selectedEndpoint": 0,
+            "selectedEndpointNode": {
+              "id": "root",
+              "moduleId": "m",
+              "parentIndex": -1
+            },
+            "selectedLink": {
+              "damageProxies": [
+                {
+                  "halfHeight": 0.4,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "parentNodeIndex": 0,
+                  "radius": 0.2,
+                  "shape": "capsule"
+                }
+              ],
+              "id": "link.root.child",
+              "kind": "weld_seam",
+              "nodeAIndex": 0,
+              "nodeBIndex": 1
+            },
+            "selectedRenderNode": 0,
+            "selectedRn": {
+              "geometryIndex": 0,
+              "id": "RN-child",
+              "semanticNodeIndex": 1
+            },
+            "selectedStructuralLink": 0,
+            "selectedStructuralProxy": 0,
+            "structuralGraphRoot": 1,
+            "structuralNodeA": 0,
+            "structuralNodeB": 1,
+            "wizardStage": "semantics"
+          }
+        }
+      ],
+      "oracle_sha256": "c5c9582898ff5808dddc728100e1c61c5f870a412a74b44be2cf7ac9a2937a8e"
+    },
+    {
+      "name": "structuralGraphPanelHtml",
+      "support": [
+        "escapeMarkup"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "links": [],
+              "structuralNodeA": null,
+              "structuralNodeB": null,
+              "selectedEndpoint": null,
+              "selectedRn": null,
+              "selectedEndpointNode": null,
+              "rootNode": null,
+              "selectedStructuralLink": null,
+              "selectedLink": null,
+              "proxy": null,
+              "structuralGraphRoot": 0,
+              "graphExplode": 0,
+              "graphExplodePercent": 0
+            },
+            {
+              "empty": "EMPTY",
+              "selectedLink": "SELECTED LINK · L0",
+              "type": "TYPE",
+              "kindWeld": "WELD",
+              "kindFixed": "FIXED",
+              "kindEquipment": "EQUIP",
+              "kindLock": "LOCK",
+              "loadBearing": "LOAD",
+              "commandable": "CMD",
+              "breakForce": "FORCE",
+              "breakTorque": "TORQUE",
+              "applyLink": "APPLY",
+              "deleteLink": "DELETE",
+              "damageProxy": "PROXY capsule N0",
+              "position": "POS",
+              "rotation": "ROT",
+              "radius": "RAD",
+              "halfLength": "HALF",
+              "applyCapsule": "APPLY CAP",
+              "boxHalfSize": "BOX",
+              "applyBox": "APPLY BOX",
+              "noProxy": "NO PROXY",
+              "lead": "LEAD",
+              "cleanupHelp": "CLEAN HELP",
+              "cleanupDisabled": "disabled <unsafe>",
+              "cleanLegacy": "CLEAN LEGACY",
+              "explodeRoot": "EXP ROOT",
+              "explodeMeshes": "EXP MESH",
+              "meshesTitle": "MESHES LOD0",
+              "meshLink": "3D ↔ TABLE",
+              "selectMesh": "SELECT MESH",
+              "endpointSelected": "endpoint N0 · root",
+              "pickMeshHint": "pick mesh",
+              "makeRoot": "MAKE ROOT",
+              "aSelected": "A SEL",
+              "bSelected": "B SEL",
+              "renderMesh": "RENDER MESH",
+              "geometry": "GEOMETRY",
+              "endpointHeader": "ENDPOINT",
+              "newLink": "NEW LINK",
+              "kindWeldAuto": "WELD AUTO",
+              "kindFixedAuto": "FIXED AUTO",
+              "kindEquipmentAuto": "EQUIP AUTO",
+              "kindLockAuto": "LOCK AUTO",
+              "autoProxy": "AUTO PROXY",
+              "clearPair": "CLEAR",
+              "createLink": "CREATE",
+              "newLinkHelp": "HELP",
+              "linksTitle": "LINKS · 1"
+            },
+            {
+              "lodSelector": "<LOD>",
+              "stageLabel": "SEMANTICS",
+              "structureMode": "<MODE>",
+              "meshRows": "<MESHROWS>",
+              "endpointA": "<A>",
+              "endpointB": "<B>",
+              "proxyPosition": "<P>",
+              "proxyRotation": "<R>",
+              "proxyHalfSize": "<H>",
+              "stageCheck": "<CHECK>"
+            }
+          ],
+          "invoke": "structuralGraphPanelHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"semanticWorkspace\"><LOD><div class=\"title\">5 · SEMANTICS</div><MODE><div class=\"wizardLead\">LEAD</div><div class=\"semanticLegacyCleanup\"><span class=\"grow\">CLEAN HELP</span><button id=\"semanticCleanLegacyGraph\" disabled title=\"disabled &lt;unsafe&gt;\">CLEAN LEGACY</button></div><div class=\"semanticGraphControls\"><div class=\"structGraphExplodeHead\"><span class=\"rootIdentity\">EXP ROOT · <b>N0 · ?</b></span><button id=\"structGraphReset\">0%</button></div><div class=\"row\"><span>EXP MESH</span><input id=\"semanticGraphExplode\" type=\"range\" min=\"0\" max=\"1\" step=\"0.02\" value=\"0\"><span id=\"semanticGraphExplodeValue\" class=\"badge\">0%</span></div></div><div class=\"structGraphMeshBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">MESHES LOD0</span><span class=\"badge\">3D ↔ TABLE</span></div><div class=\"structGraphSelectionBar\"><span class=\"structGraphSelectionIdentity\"><b>SELECT MESH</b><small>pick mesh</small></span><button id=\"structMakeRoot\" disabled>MAKE ROOT</button><button id=\"structSetA\" disabled>A SEL</button><button id=\"structSetB\" disabled>B SEL</button></div><div class=\"structGraphMeshTable\" data-preserve-scroll=\"structural-mesh-table\"><div class=\"structGraphMeshHeader\"><span>RN</span><span>RENDER MESH</span><span>GEOMETRY</span><span>ENDPOINT</span></div><MESHROWS></div></div><div class=\"maintenanceBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">NEW LINK</span></div><div class=\"structEndpointPair\"><A><B></div><div class=\"structNewLinkOptions\"><label>TYPE<select id=\"structNewKind\"><option value=\"weld_seam\">WELD AUTO</option><option value=\"fixed_mount\">FIXED AUTO</option><option value=\"equipment_mount\">EQUIP AUTO</option><option value=\"controlled_lock\">LOCK AUTO</option></select></label><label class=\"structAutoProxyLine\"><input id=\"structAutoProxy\" type=\"checkbox\" checked> AUTO PROXY</label></div><div class=\"structNewLinkActions\"><button id=\"structClearPair\">CLEAR</button><button id=\"structCreateLink\" class=\"wizardPrimary\" disabled>CREATE</button></div><div class=\"structGraphHint\">HELP</div></div><div class=\"semanticBindingBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">LINKS · 1</span></div><div class=\"semanticBindingTable\" data-preserve-scroll=\"structural-links\"><div class=\"variantEmpty\">EMPTY</div></div></div><CHECK></div>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "root"
+                },
+                {
+                  "id": "child"
+                }
+              ],
+              "links": [
+                {
+                  "id": "L0<&>",
+                  "nodeAIndex": 0,
+                  "nodeBIndex": 1,
+                  "kind": "weld_seam",
+                  "loadBearing": true,
+                  "commandable": false,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 20
+                }
+              ],
+              "structuralNodeA": 0,
+              "structuralNodeB": 1,
+              "selectedEndpoint": 0,
+              "selectedRn": {
+                "id": "RN0<&>"
+              },
+              "selectedEndpointNode": {
+                "id": "root<&>"
+              },
+              "rootNode": {
+                "id": "root<&>"
+              },
+              "selectedStructuralLink": 0,
+              "selectedLink": {
+                "id": "L0<&>",
+                "nodeAIndex": 0,
+                "nodeBIndex": 1,
+                "kind": "weld_seam",
+                "loadBearing": true,
+                "commandable": false,
+                "breakForceN": 100,
+                "breakTorqueNm": 20
+              },
+              "proxy": {
+                "shape": "capsule",
+                "parentNodeIndex": 0,
+                "radius": 0.2,
+                "halfHeight": 0.4
+              },
+              "structuralGraphRoot": 0,
+              "graphExplode": 0.42,
+              "graphExplodePercent": 42
+            },
+            {
+              "empty": "EMPTY",
+              "selectedLink": "SELECTED LINK · L0",
+              "type": "TYPE",
+              "kindWeld": "WELD",
+              "kindFixed": "FIXED",
+              "kindEquipment": "EQUIP",
+              "kindLock": "LOCK",
+              "loadBearing": "LOAD",
+              "commandable": "CMD",
+              "breakForce": "FORCE",
+              "breakTorque": "TORQUE",
+              "applyLink": "APPLY",
+              "deleteLink": "DELETE",
+              "damageProxy": "PROXY capsule N0",
+              "position": "POS",
+              "rotation": "ROT",
+              "radius": "RAD",
+              "halfLength": "HALF",
+              "applyCapsule": "APPLY CAP",
+              "boxHalfSize": "BOX",
+              "applyBox": "APPLY BOX",
+              "noProxy": "NO PROXY",
+              "lead": "LEAD",
+              "cleanupHelp": "CLEAN HELP",
+              "cleanupDisabled": "disabled <unsafe>",
+              "cleanLegacy": "CLEAN LEGACY",
+              "explodeRoot": "EXP ROOT",
+              "explodeMeshes": "EXP MESH",
+              "meshesTitle": "MESHES LOD0",
+              "meshLink": "3D ↔ TABLE",
+              "selectMesh": "SELECT MESH",
+              "endpointSelected": "endpoint N0 · root",
+              "pickMeshHint": "pick mesh",
+              "makeRoot": "MAKE ROOT",
+              "aSelected": "A SEL",
+              "bSelected": "B SEL",
+              "renderMesh": "RENDER MESH",
+              "geometry": "GEOMETRY",
+              "endpointHeader": "ENDPOINT",
+              "newLink": "NEW LINK",
+              "kindWeldAuto": "WELD AUTO",
+              "kindFixedAuto": "FIXED AUTO",
+              "kindEquipmentAuto": "EQUIP AUTO",
+              "kindLockAuto": "LOCK AUTO",
+              "autoProxy": "AUTO PROXY",
+              "clearPair": "CLEAR",
+              "createLink": "CREATE",
+              "newLinkHelp": "HELP",
+              "linksTitle": "LINKS · 1"
+            },
+            {
+              "lodSelector": "<LOD>",
+              "stageLabel": "SEMANTICS",
+              "structureMode": "<MODE>",
+              "meshRows": "<MESHROWS>",
+              "endpointA": "<A>",
+              "endpointB": "<B>",
+              "proxyPosition": "<P>",
+              "proxyRotation": "<R>",
+              "proxyHalfSize": "<H>",
+              "stageCheck": "<CHECK>"
+            }
+          ],
+          "invoke": "structuralGraphPanelHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"semanticWorkspace\"><LOD><div class=\"title\">5 · SEMANTICS</div><MODE><div class=\"wizardLead\">LEAD</div><div class=\"semanticLegacyCleanup\"><span class=\"grow\">CLEAN HELP</span><button id=\"semanticCleanLegacyGraph\" disabled title=\"disabled &lt;unsafe&gt;\">CLEAN LEGACY</button></div><div class=\"semanticGraphControls\"><div class=\"structGraphExplodeHead\"><span class=\"rootIdentity\">EXP ROOT · <b>N0 · root&lt;&amp;&gt;</b></span><button id=\"structGraphReset\">0%</button></div><div class=\"row\"><span>EXP MESH</span><input id=\"semanticGraphExplode\" type=\"range\" min=\"0\" max=\"1\" step=\"0.02\" value=\"0.42\"><span id=\"semanticGraphExplodeValue\" class=\"badge\">42%</span></div></div><div class=\"structGraphMeshBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">MESHES LOD0</span><span class=\"badge\">3D ↔ TABLE</span></div><div class=\"structGraphSelectionBar\"><span class=\"structGraphSelectionIdentity\"><b>RN0&lt;&amp;&gt;</b><small>endpoint N0 · root</small></span><button id=\"structMakeRoot\" >MAKE ROOT</button><button id=\"structSetA\" >A SEL</button><button id=\"structSetB\" >B SEL</button></div><div class=\"structGraphMeshTable\" data-preserve-scroll=\"structural-mesh-table\"><div class=\"structGraphMeshHeader\"><span>RN</span><span>RENDER MESH</span><span>GEOMETRY</span><span>ENDPOINT</span></div><MESHROWS></div></div><div class=\"maintenanceBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">NEW LINK</span></div><div class=\"structEndpointPair\"><A><B></div><div class=\"structNewLinkOptions\"><label>TYPE<select id=\"structNewKind\"><option value=\"weld_seam\">WELD AUTO</option><option value=\"fixed_mount\">FIXED AUTO</option><option value=\"equipment_mount\">EQUIP AUTO</option><option value=\"controlled_lock\">LOCK AUTO</option></select></label><label class=\"structAutoProxyLine\"><input id=\"structAutoProxy\" type=\"checkbox\" checked> AUTO PROXY</label></div><div class=\"structNewLinkActions\"><button id=\"structClearPair\">CLEAR</button><button id=\"structCreateLink\" class=\"wizardPrimary\" >CREATE</button></div><div class=\"structGraphHint\">HELP</div></div><div class=\"semanticBindingBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">LINKS · 1</span></div><div class=\"semanticBindingTable\" data-preserve-scroll=\"structural-links\"><div class=\"semanticBindingRow selected\" data-struct-link=\"0\"><span class=\"metric\">L0</span><span class=\"name\">L0&lt;&amp;&gt;</span><span class=\"binding\">root ↔ child</span><span class=\"badge\">weld_seam</span></div></div></div><div class=\"maintenanceBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">SELECTED LINK · L0</span></div><div class=\"row\"><label>TYPE <select id=\"structEditKind\"><option value=\"weld_seam\" selected>WELD</option><option value=\"fixed_mount\" >FIXED</option><option value=\"equipment_mount\" >EQUIP</option><option value=\"controlled_lock\" >LOCK</option></select></label><label><input id=\"structLoadBearing\" type=\"checkbox\" checked> LOAD</label><label><input id=\"structCommandable\" type=\"checkbox\" > CMD</label></div><div class=\"row\"><label>FORCE <input id=\"structForce\" type=\"number\" min=\"0\" step=\"1\" value=\"100\"></label><label>TORQUE <input id=\"structTorque\" type=\"number\" min=\"0\" step=\"1\" value=\"20\"></label><button id=\"structApplyLink\" class=\"wizardPrimary\">APPLY</button><button id=\"structDeleteLink\">DELETE</button></div><div class=\"field\"><label>PROXY capsule N0</label></div><div class=\"field\"><label>POS</label><P></div><div class=\"field\"><label>ROT</label><R></div><div class=\"row\"><label>RAD <input id=\"strRadius\" type=\"number\" step=\"0.01\" value=\"0.2\"></label><label>HALF <input id=\"strHalfHeight\" type=\"number\" step=\"0.01\" value=\"0.4\"></label><button id=\"structApplyProxy\">APPLY CAP</button></div></div><CHECK></div>"
+        }
+      ],
+      "oracle_sha256": "8fd60b364a383f86dade45f1efcc80e5377f6a1c1e561a3f6d033d52b96be5ba"
+    },
+    {
+      "name": "wizardSemanticsStructuralEndpointActionModel",
+      "support": [],
+      "fixtures": [
+        {
+          "args": [
+            "root",
+            2,
+            0,
+            1
+          ],
+          "expected": {
+            "structuralGraphRoot": 2
+          }
+        },
+        {
+          "args": [
+            "a",
+            1,
+            0,
+            1
+          ],
+          "expected": {
+            "structuralNodeA": 1,
+            "structuralNodeB": null
+          }
+        },
+        {
+          "args": [
+            "b",
+            1,
+            1,
+            2
+          ],
+          "expected": {
+            "structuralNodeA": null,
+            "structuralNodeB": 1
+          }
+        },
+        {
+          "args": [
+            "a",
+            null,
+            0,
+            2
+          ],
+          "expected": null
+        }
+      ],
+      "oracle_sha256": "82947d2ca7e4e4a9d6547f10e0b16b8a7d189fcf226091e474aa9b49d3520cdc"
+    },
+    {
+      "name": "wizardSemanticsStructuralCreateLinkCommand",
+      "support": [],
+      "fixtures": [
+        {
+          "args": [
+            [
+              {
+                "id": "hull"
+              },
+              {
+                "id": "cockpit"
+              }
+            ],
+            [
+              {
+                "id": "old"
+              }
+            ],
+            "0",
+            1,
+            "weld_seam",
+            2,
+            true
+          ],
+          "expected": {
+            "autoProxy": true,
+            "id": "link.hull.cockpit.2",
+            "kind": "weld_seam",
+            "lodIndex": 2,
+            "nodeAIndex": 0,
+            "nodeBIndex": 1
+          }
+        },
+        {
+          "args": [
+            [
+              {
+                "id": "a"
+              },
+              {
+                "id": "b"
+              }
+            ],
+            [],
+            1,
+            1,
+            "fixed_mount",
+            0,
+            false
+          ],
+          "expected": null
+        },
+        {
+          "args": [
+            [
+              {
+                "id": "a"
+              },
+              {
+                "id": "b"
+              }
+            ],
+            [],
+            null,
+            1,
+            "fixed_mount",
+            0,
+            false
+          ],
+          "expected": {
+            "autoProxy": false,
+            "id": "link.a.b.1",
+            "kind": "fixed_mount",
+            "lodIndex": 0,
+            "nodeAIndex": 0,
+            "nodeBIndex": 1
+          }
+        }
+      ],
+      "oracle_sha256": "17e1321426941cde95558f4dd8cba8c126a4921415a0b858d515558ce449f948"
+    },
+    {
+      "name": "wizardSemanticsStructuralLinkUpdateCommand",
+      "support": [],
+      "fixtures": [
+        {
+          "args": [
+            3,
+            "controlled_lock",
+            true,
+            false,
+            "1250",
+            "2.5"
+          ],
+          "expected": {
+            "breakForceN": 1250,
+            "breakTorqueNm": 2.5,
+            "commandable": false,
+            "kind": "controlled_lock",
+            "linkIndex": 3,
+            "loadBearing": true
+          }
+        },
+        {
+          "args": [
+            null,
+            "fixed_mount",
+            false,
+            true,
+            "0",
+            "0"
+          ],
+          "expected": {
+            "breakForceN": 0,
+            "breakTorqueNm": 0,
+            "commandable": true,
+            "kind": "fixed_mount",
+            "linkIndex": null,
+            "loadBearing": false
+          }
+        }
+      ],
+      "oracle_sha256": "7f8422af982d6262f37126dfec81fdc03cbb62ddba9f4df2ce4650feec543e48"
+    },
+    {
+      "name": "wizardSemanticsStructuralProxyUpdateCommand",
+      "support": [],
+      "fixtures": [
+        {
+          "args": [
+            2,
+            null,
+            {
+              "shape": "capsule"
+            },
+            [
+              1,
+              2,
+              3
+            ],
+            [
+              10,
+              20,
+              30
+            ],
+            "0.4",
+            "1.25",
+            null
+          ],
+          "expected": {
+            "halfHeight": 1.25,
+            "linkIndex": 2,
+            "position": [
+              1,
+              2,
+              3
+            ],
+            "proxyIndex": 0,
+            "radius": 0.4,
+            "rotationDeg": [
+              10,
+              20,
+              30
+            ]
+          }
+        },
+        {
+          "args": [
+            4,
+            1,
+            {
+              "shape": "box"
+            },
+            [
+              -1,
+              0,
+              2
+            ],
+            [
+              0,
+              90,
+              0
+            ],
+            null,
+            null,
+            [
+              3,
+              4,
+              5
+            ]
+          ],
+          "expected": {
+            "halfSize": [
+              3,
+              4,
+              5
+            ],
+            "linkIndex": 4,
+            "position": [
+              -1,
+              0,
+              2
+            ],
+            "proxyIndex": 1,
+            "rotationDeg": [
+              0,
+              90,
+              0
+            ]
+          }
+        },
+        {
+          "args": [
+            0,
+            0,
+            null,
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            "1",
+            "2",
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "expected": null
+        }
+      ],
+      "oracle_sha256": "7a49c44aff8639b57749ecb44eeeb75759b45bfe1e69699edda186ef2b8a8d6f"
+    },
+    {
+      "name": "wizardSemanticsNodeTransformCommand",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            3,
+            [
+              1,
+              2,
+              3
+            ],
+            [
+              4,
+              5,
+              6
+            ],
+            [
+              7,
+              8,
+              9
+            ]
+          ],
+          "invoke": "wizardSemanticsNodeTransformCommand(args[0],args[1],args[2],args[3])",
+          "expected": {
+            "nodeIndex": 3,
+            "pivot": [
+              7,
+              8,
+              9
+            ],
+            "position": [
+              1,
+              2,
+              3
+            ],
+            "rotationDeg": [
+              4,
+              5,
+              6
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            "5",
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              -1,
+              90,
+              2
+            ],
+            [
+              0.5,
+              0,
+              1
+            ]
+          ],
+          "invoke": "wizardSemanticsNodeTransformCommand(args[0],args[1],args[2],args[3])",
+          "expected": {
+            "nodeIndex": "5",
+            "pivot": [
+              0.5,
+              0,
+              1
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "rotationDeg": [
+              -1,
+              90,
+              2
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "aee80d4ca7a595d85f11a5d27f821f6d6264bf564197d0f4bea7704eeeda583f"
+    },
+    {
+      "name": "wizardSemanticsMotionAngleModel",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            "12.5"
+          ],
+          "invoke": "wizardSemanticsMotionAngleModel(args[0])",
+          "expected": 12.5
+        },
+        {
+          "state": {},
+          "args": [
+            "bad"
+          ],
+          "invoke": "wizardSemanticsMotionAngleModel(args[0])",
+          "expected": 0
+        },
+        {
+          "state": {},
+          "args": [
+            0
+          ],
+          "invoke": "wizardSemanticsMotionAngleModel(args[0])",
+          "expected": 0
+        }
+      ],
+      "oracle_sha256": "a5c719e0e6d3d3a291be1773976580284426a3a9923533b7013687f9a4709e77"
+    },
+    {
+      "name": "wizardSemanticsMotionZeroModel",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            -30,
+            40
+          ],
+          "invoke": "wizardSemanticsMotionZeroModel(args[0],args[1])",
+          "expected": 0
+        },
+        {
+          "state": {},
+          "args": [
+            5,
+            15
+          ],
+          "invoke": "wizardSemanticsMotionZeroModel(args[0],args[1])",
+          "expected": 5
+        },
+        {
+          "state": {},
+          "args": [
+            -20,
+            -5
+          ],
+          "invoke": "wizardSemanticsMotionZeroModel(args[0],args[1])",
+          "expected": -5
+        }
+      ],
+      "oracle_sha256": "e068057ec187d6c26a14205778715925d0245194a86ab400988726fd7700a4ff"
+    },
+    {
+      "name": "wizardSemanticsPreviewRateModel",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            "-12"
+          ],
+          "invoke": "wizardSemanticsPreviewRateModel(args[0])",
+          "expected": 12
+        },
+        {
+          "state": {},
+          "args": [
+            ""
+          ],
+          "invoke": "wizardSemanticsPreviewRateModel(args[0])",
+          "expected": 25
+        },
+        {
+          "state": {},
+          "args": [
+            0.01
+          ],
+          "invoke": "wizardSemanticsPreviewRateModel(args[0])",
+          "expected": 0.1
+        }
+      ],
+      "oracle_sha256": "d9839059e182675aba926c1f47c37bb26525d71feaae93173a4ff58aec13d0f2"
+    },
+    {
+      "name": "wizardSemanticsJointUpdateCommand",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            2,
+            "fixed",
+            [
+              1,
+              2,
+              3
+            ],
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "invoke": "wizardSemanticsJointUpdateCommand(...args)",
+          "expected": {
+            "nodeIndex": 2,
+            "overrides": {
+              "pivot": [
+                1,
+                2,
+                3
+              ]
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            4,
+            "rotating",
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ],
+            "25.5",
+            "-90",
+            "90",
+            null,
+            null
+          ],
+          "invoke": "wizardSemanticsJointUpdateCommand(...args)",
+          "expected": {
+            "nodeIndex": 4,
+            "overrides": {
+              "axis": [
+                0,
+                0,
+                1
+              ],
+              "defaultRateDegPerSec": 25.5,
+              "maxAngleDeg": 90,
+              "minAngleDeg": -90,
+              "pivot": [
+                0,
+                1,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            7,
+            "rot_detach",
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            "15",
+            "-180",
+            "180",
+            "12000",
+            "3200"
+          ],
+          "invoke": "wizardSemanticsJointUpdateCommand(...args)",
+          "expected": {
+            "nodeIndex": 7,
+            "overrides": {
+              "axis": [
+                0,
+                1,
+                0
+              ],
+              "breakForceN": 12000,
+              "breakTorqueNm": 3200,
+              "defaultRateDegPerSec": 15,
+              "maxAngleDeg": 180,
+              "minAngleDeg": -180,
+              "pivot": [
+                1,
+                0,
+                0
+              ]
+            }
+          }
+        }
+      ],
+      "oracle_sha256": "1e113d4e559aab0a26908d29c4289e2a80dedd7cd0cc2f6d12723baa3b8494bf"
+    },
+    {
+      "name": "wizardSemanticsSelectedPanelsModel",
+      "support": [
+        "semanticUsageForNode",
+        "semanticOwnedPayloadCount",
+        "semanticRelationIcon"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "selected": null,
+              "nodes": []
+            }
+          ],
+          "invoke": "wizardSemanticsSelectedPanelsModel(args[0])",
+          "expected": {
+            "hasSelection": false
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "selected": {
+                "id": "Hull",
+                "parentIndex": -1,
+                "localPosition": [
+                  1,
+                  2,
+                  3
+                ],
+                "localRotationDeg": [
+                  4,
+                  5,
+                  6
+                ],
+                "pivot": [
+                  7,
+                  8,
+                  9
+                ],
+                "semanticUsage": {
+                  "renderBindings": 2,
+                  "children": 1,
+                  "sockets": 1
+                }
+              },
+              "nodes": [
+                {
+                  "id": "Hull"
+                }
+              ],
+              "descendantCount": 3,
+              "selectedNodeIndex": 0,
+              "semanticPreviewAngleDeg": 77,
+              "semanticJointPivotPickTarget": 0,
+              "semanticPreviewRateDegPerSec": 30,
+              "semanticMotionPlaying": true,
+              "semanticPreviewDetached": true
+            }
+          ],
+          "invoke": "wizardSemanticsSelectedPanelsModel(args[0])",
+          "expected": {
+            "descendantCount": 3,
+            "hasParent": false,
+            "hasSelection": true,
+            "jointType": "fixed",
+            "localPosition": [
+              1,
+              2,
+              3
+            ],
+            "localRotationDeg": [
+              4,
+              5,
+              6
+            ],
+            "parentId": "",
+            "payload": 1,
+            "relationIcon": "◇",
+            "selectedId": "Hull",
+            "semanticPivot": [
+              7,
+              8,
+              9
+            ],
+            "usage": {
+              "children": 1,
+              "collisions": 0,
+              "hitRegions": 0,
+              "legacySourceBootstrapCollisions": 0,
+              "openings": 0,
+              "orphanCandidate": false,
+              "physicsEnabled": false,
+              "renderBindings": 2,
+              "repairTargets": 0,
+              "sockets": 1,
+              "stateVariants": 0
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "selected": {
+                "id": "Door<&>",
+                "parentIndex": 0,
+                "localPosition": [
+                  0,
+                  0,
+                  0
+                ],
+                "localRotationDeg": [
+                  0,
+                  0,
+                  0
+                ],
+                "pivot": [
+                  0,
+                  0,
+                  0
+                ],
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    1.5,
+                    -2,
+                    3
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "minAngleDeg": "-45",
+                  "maxAngleDeg": "120",
+                  "defaultRateDegPerSec": "15",
+                  "breakable": true,
+                  "breakForceN": "900",
+                  "breakTorqueNm": "450"
+                },
+                "semanticUsage": {
+                  "renderBindings": 0,
+                  "children": 0,
+                  "orphanCandidate": true,
+                  "collisions": 2,
+                  "legacySourceBootstrapCollisions": 1,
+                  "sockets": 2
+                }
+              },
+              "nodes": [
+                {
+                  "id": "Parent<&>"
+                },
+                {
+                  "id": "Door<&>"
+                }
+              ],
+              "descendantCount": 0,
+              "selectedNodeIndex": 1,
+              "semanticPreviewAngleDeg": "999",
+              "semanticJointPivotPickTarget": "1",
+              "semanticPreviewRateDegPerSec": "12.5",
+              "semanticMotionPlaying": false,
+              "semanticPreviewDetached": true
+            }
+          ],
+          "invoke": "wizardSemanticsSelectedPanelsModel(args[0])",
+          "expected": {
+            "breakForceN": 900,
+            "breakTorqueNm": 450,
+            "breakable": true,
+            "defaultRateDegPerSec": 15,
+            "descendantCount": 0,
+            "hasParent": true,
+            "hasSelection": true,
+            "jointAxis": [
+              0,
+              0,
+              1
+            ],
+            "jointPivot": [
+              1.5,
+              -2,
+              3
+            ],
+            "jointType": "revolute",
+            "localPosition": [
+              0,
+              0,
+              0
+            ],
+            "localRotationDeg": [
+              0,
+              0,
+              0
+            ],
+            "max": 120,
+            "min": -45,
+            "motionPlaying": false,
+            "parentId": "Parent<&>",
+            "payload": 3,
+            "pivotPick": true,
+            "previewAngleDeg": 120,
+            "previewDetached": true,
+            "previewRateDegPerSec": 12.5,
+            "relationIcon": "↻⚡",
+            "safeMax": 120,
+            "safeMin": -45,
+            "selectedId": "Door<&>",
+            "semanticPivot": [
+              0,
+              0,
+              0
+            ],
+            "usage": {
+              "children": 0,
+              "collisions": 2,
+              "hitRegions": 0,
+              "legacySourceBootstrapCollisions": 1,
+              "openings": 0,
+              "orphanCandidate": true,
+              "physicsEnabled": false,
+              "renderBindings": 0,
+              "repairTargets": 0,
+              "sockets": 2,
+              "stateVariants": 0
+            }
+          }
+        }
+      ],
+      "oracle_sha256": "4c7bccd6a9f8f0983cec6d92f8282bb9f98bb456e8b5c87db8eb4bc37cd8011c"
+    },
+    {
+      "name": "wizardSemanticsSelectedPanelsHtml",
+      "support": [
+        "escapeMarkup",
+        "vecInputs"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "hasSelection": false
+            },
+            {
+              "selectHelp": "SELECT_HELP",
+              "visualPart": "VISUAL_PART",
+              "semanticOnly": "SEMANTIC_ONLY",
+              "logicalPart": "LOGICAL_PART",
+              "parent": "PARENT",
+              "connection": "CONNECTION",
+              "subtree": "SUBTREE",
+              "partCount": "{count} PARTS",
+              "visualsPayload": "VIS_PAYLOAD",
+              "usage": "{visuals} VIS · {children} CHILD · {payload} PAYLOAD",
+              "deleteNode": "DELETE_NODE",
+              "advanced": "ADVANCED",
+              "frameHelp": "FRAME_HELP",
+              "framePosition": "FRAME_POS",
+              "frameRotation": "FRAME_ROT",
+              "framePivot": "FRAME_PIVOT",
+              "applyFrame": "APPLY_FRAME",
+              "rootTitle": "ROOT_TITLE",
+              "rootHelp": "ROOT_HELP",
+              "pivotLabel": "PIVOT_LABEL",
+              "pivotHelp": "PIVOT_HELP",
+              "parentOrigin": "PARENT_ORIGIN",
+              "visualCenter": "VISUAL_CENTER",
+              "cancelPick": "CANCEL_PICK",
+              "pick3d": "PICK_3D",
+              "axis": "AXIS",
+              "previewRate": "PREVIEW_RATE",
+              "notSaved": "NOT_SAVED",
+              "min": "MIN",
+              "max": "MAX",
+              "stopButton": "STOP",
+              "rotateButton": "ROTATE",
+              "rotateHint": "ROTATE_HINT",
+              "attachPreview": "ATTACH",
+              "detachPreview": "DETACH",
+              "detachUnavailable": "DETACH_NA",
+              "runtimeParams": "RUNTIME_PARAMS",
+              "nominalRate": "RATE",
+              "minAngle": "MIN_ANGLE",
+              "maxAngle": "MAX_ANGLE",
+              "linkStrength": "LINK_STRENGTH",
+              "breakForce": "BREAK_FORCE",
+              "breakTorque": "BREAK_TORQUE",
+              "strengthHelp": "STRENGTH_HELP",
+              "saveRuntime": "SAVE_RUNTIME",
+              "connectionTitle": "CONNECTION {parent} -> {child}",
+              "connectionHelp": "CONNECTION_HELP",
+              "reset": "RESET"
+            },
+            {
+              "relationLabel": ""
+            }
+          ],
+          "invoke": "wizardSemanticsSelectedPanelsHtml(args[0],args[1],args[2])",
+          "expected": {
+            "motion": "",
+            "node": "<div class=\"variantEmpty\">SELECT_HELP</div>"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "hasSelection": true,
+              "selectedId": "Hull",
+              "parentId": "",
+              "hasParent": false,
+              "jointType": "fixed",
+              "usage": {
+                "renderBindings": 2,
+                "children": 1,
+                "orphanCandidate": false
+              },
+              "payload": 1,
+              "descendantCount": 3,
+              "relationIcon": "◇",
+              "localPosition": [
+                1,
+                2,
+                3
+              ],
+              "localRotationDeg": [
+                4,
+                5,
+                6
+              ],
+              "semanticPivot": [
+                7,
+                8,
+                9
+              ]
+            },
+            {
+              "selectHelp": "SELECT_HELP",
+              "visualPart": "VISUAL_PART",
+              "semanticOnly": "SEMANTIC_ONLY",
+              "logicalPart": "LOGICAL_PART",
+              "parent": "PARENT",
+              "connection": "CONNECTION",
+              "subtree": "SUBTREE",
+              "partCount": "{count} PARTS",
+              "visualsPayload": "VIS_PAYLOAD",
+              "usage": "{visuals} VIS · {children} CHILD · {payload} PAYLOAD",
+              "deleteNode": "DELETE_NODE",
+              "advanced": "ADVANCED",
+              "frameHelp": "FRAME_HELP",
+              "framePosition": "FRAME_POS",
+              "frameRotation": "FRAME_ROT",
+              "framePivot": "FRAME_PIVOT",
+              "applyFrame": "APPLY_FRAME",
+              "rootTitle": "ROOT_TITLE",
+              "rootHelp": "ROOT_HELP",
+              "pivotLabel": "PIVOT_LABEL",
+              "pivotHelp": "PIVOT_HELP",
+              "parentOrigin": "PARENT_ORIGIN",
+              "visualCenter": "VISUAL_CENTER",
+              "cancelPick": "CANCEL_PICK",
+              "pick3d": "PICK_3D",
+              "axis": "AXIS",
+              "previewRate": "PREVIEW_RATE",
+              "notSaved": "NOT_SAVED",
+              "min": "MIN",
+              "max": "MAX",
+              "stopButton": "STOP",
+              "rotateButton": "ROTATE",
+              "rotateHint": "ROTATE_HINT",
+              "attachPreview": "ATTACH",
+              "detachPreview": "DETACH",
+              "detachUnavailable": "DETACH_NA",
+              "runtimeParams": "RUNTIME_PARAMS",
+              "nominalRate": "RATE",
+              "minAngle": "MIN_ANGLE",
+              "maxAngle": "MAX_ANGLE",
+              "linkStrength": "LINK_STRENGTH",
+              "breakForce": "BREAK_FORCE",
+              "breakTorque": "BREAK_TORQUE",
+              "strengthHelp": "STRENGTH_HELP",
+              "saveRuntime": "SAVE_RUNTIME",
+              "connectionTitle": "CONNECTION {parent} -> {child}",
+              "connectionHelp": "CONNECTION_HELP",
+              "reset": "RESET"
+            },
+            {
+              "relationLabel": "ROOT"
+            }
+          ],
+          "invoke": "wizardSemanticsSelectedPanelsHtml(args[0],args[1],args[2])",
+          "expected": {
+            "motion": "<div class=\"semanticMotionBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">ROOT_TITLE</span></div><div class=\"semanticHint\">ROOT_HELP</div></div>",
+            "node": "<div class=\"semanticNodeMeta\"><span class=\"key\">LOGICAL_PART</span><span class=\"value\"><b>Hull</b> · VISUAL_PART</span><span class=\"key\">PARENT</span><span class=\"value\">MODEL ROOT</span><span class=\"key\">CONNECTION</span><span class=\"value\">◇ ROOT</span><span class=\"key\">SUBTREE</span><span class=\"value\">4 PARTS</span><span class=\"key\">VIS_PAYLOAD</span><span class=\"value\">2 VIS · 1 CHILD · 1 PAYLOAD</span></div><div class=\"semanticNodeActions\"><button id=\"wizardSemanticDeleteNode\" disabled>DELETE_NODE</button></div><details class=\"semanticAdvanced\"><summary>ADVANCED</summary><div class=\"semanticAdvancedBody\"><div class=\"semanticFrameSummary\">FRAME_HELP</div><div class=\"field\"><label>FRAME_POS</label><div class=\"grid3\"><input id=\"semPosx\" type=\"number\" step=\"0.01\" value=\"1\"><input id=\"semPosy\" type=\"number\" step=\"0.01\" value=\"2\"><input id=\"semPosz\" type=\"number\" step=\"0.01\" value=\"3\"></div></div><div class=\"field\"><label>FRAME_ROT</label><div class=\"grid3\"><input id=\"semRotx\" type=\"number\" step=\"0.01\" value=\"4\"><input id=\"semRoty\" type=\"number\" step=\"0.01\" value=\"5\"><input id=\"semRotz\" type=\"number\" step=\"0.01\" value=\"6\"></div></div><div class=\"field\"><label>FRAME_PIVOT</label><div class=\"grid3\"><input id=\"semPivotx\" type=\"number\" step=\"0.01\" value=\"7\"><input id=\"semPivoty\" type=\"number\" step=\"0.01\" value=\"8\"><input id=\"semPivotz\" type=\"number\" step=\"0.01\" value=\"9\"></div></div><button id=\"wizardSemanticApplyNode\" class=\"wizardPrimary\">APPLY_FRAME</button></div></details>"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "hasSelection": true,
+              "selectedId": "Door<&>",
+              "parentId": "Parent<&>",
+              "hasParent": true,
+              "jointType": "revolute",
+              "usage": {
+                "renderBindings": 0,
+                "children": 0,
+                "orphanCandidate": true
+              },
+              "payload": 3,
+              "descendantCount": 0,
+              "relationIcon": "↻⚡",
+              "localPosition": [
+                0,
+                0,
+                0
+              ],
+              "localRotationDeg": [
+                0,
+                0,
+                0
+              ],
+              "semanticPivot": [
+                0,
+                0,
+                0
+              ],
+              "min": -45,
+              "max": 120,
+              "safeMin": -45,
+              "safeMax": 120,
+              "previewAngleDeg": 120,
+              "pivotPick": true,
+              "jointPivot": [
+                1.5,
+                -2,
+                3
+              ],
+              "jointAxis": [
+                0,
+                0,
+                1
+              ],
+              "previewRateDegPerSec": 12.5,
+              "motionPlaying": false,
+              "previewDetached": true,
+              "breakable": true,
+              "defaultRateDegPerSec": 15,
+              "breakForceN": 900,
+              "breakTorqueNm": 450
+            },
+            {
+              "selectHelp": "SELECT_HELP",
+              "visualPart": "VISUAL_PART",
+              "semanticOnly": "SEMANTIC_ONLY",
+              "logicalPart": "LOGICAL_PART",
+              "parent": "PARENT",
+              "connection": "CONNECTION",
+              "subtree": "SUBTREE",
+              "partCount": "{count} PARTS",
+              "visualsPayload": "VIS_PAYLOAD",
+              "usage": "{visuals} VIS · {children} CHILD · {payload} PAYLOAD",
+              "deleteNode": "DELETE_NODE",
+              "advanced": "ADVANCED",
+              "frameHelp": "FRAME_HELP",
+              "framePosition": "FRAME_POS",
+              "frameRotation": "FRAME_ROT",
+              "framePivot": "FRAME_PIVOT",
+              "applyFrame": "APPLY_FRAME",
+              "rootTitle": "ROOT_TITLE",
+              "rootHelp": "ROOT_HELP",
+              "pivotLabel": "PIVOT_LABEL",
+              "pivotHelp": "PIVOT_HELP",
+              "parentOrigin": "PARENT_ORIGIN",
+              "visualCenter": "VISUAL_CENTER",
+              "cancelPick": "CANCEL_PICK",
+              "pick3d": "PICK_3D",
+              "axis": "AXIS",
+              "previewRate": "PREVIEW_RATE",
+              "notSaved": "NOT_SAVED",
+              "min": "MIN",
+              "max": "MAX",
+              "stopButton": "STOP",
+              "rotateButton": "ROTATE",
+              "rotateHint": "ROTATE_HINT",
+              "attachPreview": "ATTACH",
+              "detachPreview": "DETACH",
+              "detachUnavailable": "DETACH_NA",
+              "runtimeParams": "RUNTIME_PARAMS",
+              "nominalRate": "RATE",
+              "minAngle": "MIN_ANGLE",
+              "maxAngle": "MAX_ANGLE",
+              "linkStrength": "LINK_STRENGTH",
+              "breakForce": "BREAK_FORCE",
+              "breakTorque": "BREAK_TORQUE",
+              "strengthHelp": "STRENGTH_HELP",
+              "saveRuntime": "SAVE_RUNTIME",
+              "connectionTitle": "CONNECTION {parent} -> {child}",
+              "connectionHelp": "CONNECTION_HELP",
+              "reset": "RESET"
+            },
+            {
+              "relationLabel": "ROT+DETACH"
+            }
+          ],
+          "invoke": "wizardSemanticsSelectedPanelsHtml(args[0],args[1],args[2])",
+          "expected": {
+            "motion": "<div class=\"semanticMotionBlock\"><div class=\"geometryBlockHead\"><span class=\"grow\">CONNECTION Parent&lt;&amp;&gt; -> Door&lt;&amp;&gt;</span><span class=\"semanticModeBadge\">ROT+DETACH</span></div><div class=\"semanticMotionBody\"><div class=\"semanticHint\">CONNECTION_HELP</div><div class=\"field\"><label>PIVOT_LABEL</label><div class=\"semanticLabeledGrid\"><label>X<input id=\"sjpx\" type=\"number\" step=\"0.01\" value=\"1.5\"></label><label>Y<input id=\"sjpy\" type=\"number\" step=\"0.01\" value=\"-2\"></label><label>Z<input id=\"sjpz\" type=\"number\" step=\"0.01\" value=\"3\"></label></div><div class=\"semanticHint\">PIVOT_HELP</div><div class=\"semanticJointPresetRow\"><button id=\"semanticPivotParent\">PARENT_ORIGIN</button><button id=\"semanticPivotVisual\">VISUAL_CENTER</button><button id=\"semanticPivotPick\" class=\"wizardComplete\">CANCEL_PICK</button></div></div><div class=\"field\"><label>AXIS</label><div class=\"semanticLabeledGrid\"><label>X<input id=\"sjax\" type=\"number\" step=\"0.01\" value=\"0\"></label><label>Y<input id=\"sjay\" type=\"number\" step=\"0.01\" value=\"0\"></label><label>Z<input id=\"sjaz\" type=\"number\" step=\"0.01\" value=\"1\"></label></div><div class=\"semanticJointPresetRow\"><button data-sem-axis=\"1,0,0\">X</button><button data-sem-axis=\"0,1,0\">Y</button><button data-sem-axis=\"0,0,1\">Z</button></div></div><div class=\"field\"><label>RUNTIME_PARAMS</label><div class=\"semanticLabeledGrid\"><label>RATE<input id=\"sjRate\" type=\"number\" step=\"0.1\" value=\"15\"></label><label>MIN_ANGLE<input id=\"sjMin\" type=\"number\" step=\"1\" value=\"-45\"></label><label>MAX_ANGLE<input id=\"sjMax\" type=\"number\" step=\"1\" value=\"120\"></label></div></div><div class=\"field\"><label>LINK_STRENGTH</label><div class=\"semanticLabeledGrid\"><label>BREAK_FORCE<input id=\"sjForce\" type=\"number\" min=\"0\" step=\"100\" value=\"900\"></label><label>BREAK_TORQUE<input id=\"sjTorque\" type=\"number\" min=\"0\" step=\"100\" value=\"450\"></label><span></span></div><div class=\"semanticHint\">STRENGTH_HELP</div></div><button id=\"semanticApplyJoint\" class=\"wizardPrimary\" style=\"margin:4px 0 8px\">SAVE_RUNTIME</button><div class=\"semanticRateRow\"><label>PREVIEW_RATE</label><input id=\"semanticPreviewRate\" type=\"number\" min=\"0.1\" step=\"1\" value=\"12.5\"><span class=\"badge\">NOT_SAVED</span></div><div class=\"semanticMotionRange\"><span>-45°</span><input id=\"semanticMotionRange\" type=\"range\" min=\"-45\" max=\"120\" step=\"0.1\" value=\"120\"><span id=\"semanticMotionValue\" class=\"semanticMotionValue\">120.0°</span></div><div class=\"semanticMotionButtons\"><button id=\"semanticMotionMin\">MIN</button><button id=\"semanticMotionZero\">0°</button><button id=\"semanticMotionMax\">MAX</button><button id=\"semanticMotionPlay\" class=\"\">ROTATE</button></div><div class=\"semanticMotionButtons\"><button id=\"semanticDetachPreview\" class=\"active\">ATTACH</button><button id=\"semanticMotionReset\">RESET</button></div></div></div>",
+            "node": "<div class=\"semanticNodeMeta\"><span class=\"key\">LOGICAL_PART</span><span class=\"value\"><b>Door&lt;&amp;&gt;</b> · ⚠ ORPHAN</span><span class=\"key\">PARENT</span><span class=\"value\">Parent&lt;&amp;&gt;</span><span class=\"key\">CONNECTION</span><span class=\"value\">↻⚡ ROT+DETACH</span><span class=\"key\">SUBTREE</span><span class=\"value\">1 PARTS</span><span class=\"key\">VIS_PAYLOAD</span><span class=\"value\">0 VIS · 0 CHILD · 3 PAYLOAD</span></div><div class=\"semanticNodeActions\"><button id=\"wizardSemanticDeleteNode\" >DELETE_NODE</button></div><details class=\"semanticAdvanced\"><summary>ADVANCED</summary><div class=\"semanticAdvancedBody\"><div class=\"semanticFrameSummary\">FRAME_HELP</div><div class=\"field\"><label>FRAME_POS</label><div class=\"grid3\"><input id=\"semPosx\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"semPosy\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"semPosz\" type=\"number\" step=\"0.01\" value=\"0\"></div></div><div class=\"field\"><label>FRAME_ROT</label><div class=\"grid3\"><input id=\"semRotx\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"semRoty\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"semRotz\" type=\"number\" step=\"0.01\" value=\"0\"></div></div><div class=\"field\"><label>FRAME_PIVOT</label><div class=\"grid3\"><input id=\"semPivotx\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"semPivoty\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"semPivotz\" type=\"number\" step=\"0.01\" value=\"0\"></div></div><button id=\"wizardSemanticApplyNode\" class=\"wizardPrimary\">APPLY_FRAME</button></div></details>"
+          }
+        }
+      ],
+      "oracle_sha256": "0da3ec3d29fec6b9aa898516e52a632ddb7a02a3343942d597ae77003fd2eeaf"
+    },
+    {
+      "name": "wizardSemanticsSelectionRefreshModel",
+      "support": [
+        "semanticDescendantSet",
+        "semanticCurrentLodUnbound",
+        "semanticSelectedIndices",
+        "semanticTopLevelSelected",
+        "semanticUsageForNode"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "lods": [],
+              "lod": null,
+              "selectedNode": null,
+              "selectedNodeIndices": [],
+              "bindingPickTarget": null
+            }
+          ],
+          "invoke": "wizardSemanticsSelectionRefreshModel(args[0])",
+          "expected": {
+            "badge": "",
+            "bindingChecks": [],
+            "bindingDetailsOpen": null,
+            "bindingDisabled": true,
+            "bindingPickActive": false,
+            "childDisabled": true,
+            "descendantIndices": [],
+            "missingLods": 0,
+            "nodeRows": [],
+            "orphanCandidate": false,
+            "selectedCount": 0,
+            "selectedExists": false,
+            "selectedToAssetCount": 0,
+            "selectedVisualCount": 0,
+            "unboundCurrent": 0
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "Root",
+                  "parentIndex": -1,
+                  "semanticUsage": {
+                    "orphanCandidate": false
+                  }
+                },
+                {
+                  "id": "Door",
+                  "parentIndex": 0,
+                  "semanticUsage": {
+                    "orphanCandidate": false
+                  }
+                },
+                {
+                  "id": "Loose",
+                  "parentIndex": -1,
+                  "semanticUsage": {
+                    "orphanCandidate": true
+                  }
+                },
+                {
+                  "id": "DoorChild",
+                  "parentIndex": 1,
+                  "semanticUsage": {
+                    "orphanCandidate": false
+                  }
+                }
+              ],
+              "lods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "RN0",
+                      "enabled": true,
+                      "geometryIndex": 0,
+                      "semanticNodeIndex": 1
+                    },
+                    {
+                      "id": "RN1",
+                      "enabled": true,
+                      "geometryIndex": 1,
+                      "semanticNodeIndex": -1
+                    },
+                    {
+                      "id": "RN2",
+                      "enabled": false,
+                      "geometryIndex": 2,
+                      "semanticNodeIndex": 1
+                    }
+                  ]
+                },
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "L1Root",
+                      "enabled": true,
+                      "geometryIndex": 0,
+                      "semanticNodeIndex": 0
+                    }
+                  ]
+                },
+                {
+                  "loaded": false,
+                  "nodes": []
+                }
+              ],
+              "lod": {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "id": "RN0",
+                    "enabled": true,
+                    "geometryIndex": 0,
+                    "semanticNodeIndex": 1
+                  },
+                  {
+                    "id": "RN1",
+                    "enabled": true,
+                    "geometryIndex": 1,
+                    "semanticNodeIndex": -1
+                  },
+                  {
+                    "id": "RN2",
+                    "enabled": false,
+                    "geometryIndex": 2,
+                    "semanticNodeIndex": 1
+                  }
+                ]
+              },
+              "selectedNode": 1,
+              "selectedNodeIndices": [
+                1,
+                2
+              ],
+              "bindingPickTarget": null
+            }
+          ],
+          "invoke": "wizardSemanticsSelectionRefreshModel(args[0])",
+          "expected": {
+            "badge": "N1",
+            "bindingChecks": [
+              {
+                "checked": true,
+                "renderNodeIndex": 0
+              },
+              {
+                "checked": false,
+                "renderNodeIndex": 1
+              },
+              {
+                "checked": true,
+                "renderNodeIndex": 2
+              }
+            ],
+            "bindingDetailsOpen": true,
+            "bindingDisabled": false,
+            "bindingPickActive": false,
+            "childDisabled": false,
+            "descendantIndices": [
+              3
+            ],
+            "missingLods": 1,
+            "nodeRows": [
+              {
+                "index": 0,
+                "primary": false,
+                "selected": false
+              },
+              {
+                "index": 1,
+                "primary": true,
+                "selected": true
+              },
+              {
+                "index": 2,
+                "primary": false,
+                "selected": true
+              },
+              {
+                "index": 3,
+                "primary": false,
+                "selected": false
+              }
+            ],
+            "orphanCandidate": false,
+            "selectedCount": 2,
+            "selectedExists": true,
+            "selectedToAssetCount": 1,
+            "selectedVisualCount": 2,
+            "unboundCurrent": 1
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "Root",
+                  "parentIndex": -1,
+                  "semanticUsage": {
+                    "orphanCandidate": true
+                  }
+                }
+              ],
+              "lods": [
+                {
+                  "loaded": false,
+                  "nodes": [
+                    {
+                      "id": "cached",
+                      "enabled": true,
+                      "geometryIndex": 0,
+                      "semanticNodeIndex": 0
+                    }
+                  ]
+                }
+              ],
+              "lod": {
+                "loaded": false,
+                "nodes": [
+                  {
+                    "id": "cached",
+                    "enabled": true,
+                    "geometryIndex": 0,
+                    "semanticNodeIndex": 0
+                  }
+                ]
+              },
+              "selectedNode": 0,
+              "selectedNodeIndices": [],
+              "bindingPickTarget": 0
+            }
+          ],
+          "invoke": "wizardSemanticsSelectionRefreshModel(args[0])",
+          "expected": {
+            "badge": "N0",
+            "bindingChecks": [
+              {
+                "checked": true,
+                "renderNodeIndex": 0
+              }
+            ],
+            "bindingDetailsOpen": true,
+            "bindingDisabled": false,
+            "bindingPickActive": true,
+            "childDisabled": false,
+            "descendantIndices": [],
+            "missingLods": 0,
+            "nodeRows": [
+              {
+                "index": 0,
+                "primary": true,
+                "selected": true
+              }
+            ],
+            "orphanCandidate": true,
+            "selectedCount": 1,
+            "selectedExists": true,
+            "selectedToAssetCount": 0,
+            "selectedVisualCount": 0,
+            "unboundCurrent": 0
+          }
+        }
+      ],
+      "oracle_sha256": "c8fa86df95f1613beb99fe7e0be115f6475a54dfeb98b238103cf908227a589d"
+    },
+    {
+      "name": "semanticBindingSummaryHtml",
+      "support": [
+        "escapeMarkup"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            null,
+            [],
+            0,
+            {
+              "selectNodeHelp": "SELECT NODE",
+              "notBound": "NOT BOUND",
+              "notLoaded": "NOT LOADED",
+              "active": "ACTIVE"
+            }
+          ],
+          "invoke": "semanticBindingSummaryHtml(args[0],args[1],args[2],args[3])",
+          "expected": "<div class=\"variantEmpty\">SELECT NODE</div>"
+        },
+        {
+          "state": {},
+          "args": [
+            1,
+            [
+              {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "id": "Hull<&>",
+                    "semanticNodeIndex": 1
+                  },
+                  {
+                    "id": "Other",
+                    "semanticNodeIndex": 0
+                  }
+                ]
+              },
+              {
+                "loaded": true,
+                "nodes": []
+              },
+              {
+                "loaded": false,
+                "nodes": [
+                  {
+                    "id": "Cached",
+                    "semanticNodeIndex": 1
+                  }
+                ]
+              }
+            ],
+            1,
+            {
+              "selectNodeHelp": "SELECT NODE",
+              "notBound": "NO OWNER",
+              "notLoaded": "OFFLINE",
+              "active": "NOW"
+            }
+          ],
+          "invoke": "semanticBindingSummaryHtml(args[0],args[1],args[2],args[3])",
+          "expected": "<div class=\"semanticBindingSummaryRow \"><b>LOD0</b><div class=\"names\">Hull&lt;&amp;&gt;</div><span class=\"state\">1 RN</span></div><div class=\"semanticBindingSummaryRow active\"><b>LOD1 · NOW</b><div class=\"names\">—</div><span class=\"state\">NO OWNER</span></div><div class=\"semanticBindingSummaryRow \"><b>LOD2</b><div class=\"names\">Cached</div><span class=\"state\">1 RN</span></div>"
+        }
+      ],
+      "oracle_sha256": "bf1649432c454f1315463719fb20dcf993629dba40b2a216dfab7a34318dd924"
+    },
+    {
+      "name": "semanticBindingHealthHtml",
+      "support": [
+        "semanticUsageForNode"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            null,
+            [],
+            0,
+            null,
+            {
+              "warn": "WARN {missing}/{unbound}{orphan}",
+              "ok": "OK"
+            }
+          ],
+          "invoke": "semanticBindingHealthHtml(args[0],args[1],args[2],args[3],args[4])",
+          "expected": ""
+        },
+        {
+          "state": {},
+          "args": [
+            1,
+            [
+              {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "semanticNodeIndex": 0
+                  }
+                ]
+              },
+              {
+                "loaded": true,
+                "nodes": []
+              }
+            ],
+            2,
+            {
+              "semanticUsage": {
+                "orphanCandidate": true
+              }
+            },
+            {
+              "warn": "WARN missing={missing} unbound={unbound}{orphan}",
+              "ok": "OK"
+            }
+          ],
+          "invoke": "semanticBindingHealthHtml(args[0],args[1],args[2],args[3],args[4])",
+          "expected": "<div class=\"semanticBindingWarn\">WARN missing=2 unbound=2 · ORPHAN</div>"
+        },
+        {
+          "state": {},
+          "args": [
+            0,
+            [
+              {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "semanticNodeIndex": 0
+                  }
+                ]
+              },
+              {
+                "loaded": false,
+                "nodes": []
+              }
+            ],
+            0,
+            {
+              "semanticUsage": {
+                "orphanCandidate": false
+              }
+            },
+            {
+              "warn": "WARN {missing} {unbound}{orphan}",
+              "ok": "HEALTHY"
+            }
+          ],
+          "invoke": "semanticBindingHealthHtml(args[0],args[1],args[2],args[3],args[4])",
+          "expected": "<div class=\"semanticBindingReady\">HEALTHY</div>"
+        }
+      ],
+      "oracle_sha256": "4642fab7990f5878be51b5f55aa1f4c33d3f1ac7bb5a3de5faf9a82b5522be08"
+    },
+    {
+      "name": "semanticBindingRepairHtml",
+      "support": [
+        "semanticUsageForNode",
+        "escapeMarkup"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            null,
+            0,
+            false,
+            {
+              "help": "HELP",
+              "cancelPick": "CANCEL",
+              "assign3d": "ASSIGN",
+              "currentCount": "count={count}",
+              "pickExact": "pick {id}",
+              "orphanHelp": "ORPHAN"
+            }
+          ],
+          "invoke": "semanticBindingRepairHtml(args[0],args[1],args[2],args[3])",
+          "expected": ""
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "id": "Door<&>",
+              "semanticUsage": {
+                "orphanCandidate": true
+              }
+            },
+            2,
+            true,
+            {
+              "help": "HELP",
+              "cancelPick": "CANCEL",
+              "assign3d": "ASSIGN",
+              "currentCount": "count={count}",
+              "pickExact": "pick {id}",
+              "orphanHelp": "ORPHAN"
+            }
+          ],
+          "invoke": "semanticBindingRepairHtml(args[0],args[1],args[2],args[3])",
+          "expected": "<div class=\"semanticBindingRepair pick\"><div class=\"sectionHint\">HELP</div><button id=\"semanticPickVisualBtn\" class=\"wizardComplete\">CANCEL · count=2</button><div class=\"semanticPreviewNote warn\">pick <b>Door&lt;&amp;&gt;</b></div><div class=\"semanticPreviewNote warn\">ORPHAN</div></div>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "id": "Hull",
+              "semanticUsage": {
+                "orphanCandidate": false
+              }
+            },
+            "3",
+            false,
+            {
+              "help": "H",
+              "cancelPick": "C",
+              "assign3d": "A",
+              "currentCount": "{count} VIS",
+              "pickExact": "P {id}",
+              "orphanHelp": "O"
+            }
+          ],
+          "invoke": "semanticBindingRepairHtml(args[0],args[1],args[2],args[3])",
+          "expected": "<div class=\"semanticBindingRepair \"><div class=\"sectionHint\">H</div><button id=\"semanticPickVisualBtn\" class=\"wizardPrimary\">A · 3 VIS</button></div>"
+        }
+      ],
+      "oracle_sha256": "fc9686528e8338b1b2e2ffe6e8e93dc7d2c3f3183b05b37b7217320998e6b0d5"
+    },
+    {
+      "name": "deg",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            0
+          ],
+          "expected": 0
+        },
+        {
+          "state": {},
+          "args": [
+            90
+          ],
+          "expected": 1.5707963267948966
+        },
+        {
+          "state": {},
+          "args": [
+            -45
+          ],
+          "expected": -0.7853981633974483
+        },
+        {
+          "state": {},
+          "args": [
+            null
+          ],
+          "expected": 0
+        }
+      ],
+      "oracle_sha256": "85693c7be992f4ae955193d8bad6697aa095fd293dcaf5a0ce28dd4dd0f03b70"
+    },
+    {
+      "name": "composeMatrix",
+      "support": [
+        "deg"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "expected": {
+            "__matrix4__": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "localPosition": [
+                1,
+                2,
+                3
+              ],
+              "localRotationDeg": [
+                0,
+                0,
+                0
+              ],
+              "pivot": [
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          "expected": {
+            "__matrix4__": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              1,
+              2,
+              3,
+              1
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "localPosition": [
+                0,
+                0,
+                0
+              ],
+              "localRotationDeg": [
+                0,
+                0,
+                90
+              ],
+              "pivot": [
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          "expected": {
+            "__matrix4__": [
+              6.123233995736766e-17,
+              1,
+              0,
+              0,
+              -1,
+              6.123233995736766e-17,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "localPosition": [
+                1,
+                -2,
+                0.5
+              ],
+              "localRotationDeg": [
+                30,
+                45,
+                -60
+              ],
+              "pivot": [
+                2,
+                0,
+                -1
+              ]
+            }
+          ],
+          "expected": {
+            "__matrix4__": [
+              0.35355339059327384,
+              -0.5732233047033631,
+              -0.7391989197401165,
+              0,
+              0.6123724356957946,
+              0.7391989197401166,
+              -0.2803300858899106,
+              0,
+              0.7071067811865475,
+              -0.35355339059327373,
+              0.6123724356957946,
+              0,
+              3,
+              -1.2071067811865475,
+              1.5907702751760278,
+              1
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "2b18782cdef3b765e612162fb889a5a9469fcd8db0ce44e4ff18dadb9ddf4089"
+    },
+    {
+      "name": "semanticGraphDirection",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            0,
+            1
+          ],
+          "expected": {
+            "__vector3__": [
+              1,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            0,
+            4
+          ],
+          "expected": {
+            "__vector3__": [
+              0.774632081803243,
+              0.6324121582015751,
+              0
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            1,
+            4
+          ],
+          "expected": {
+            "__vector3__": [
+              -0.7249481769228119,
+              0.18277173119013615,
+              0.6641119145551087
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            3,
+            4
+          ],
+          "expected": {
+            "__vector3__": [
+              0.47131626153005024,
+              -0.6324121582015751,
+              0.614748602093704
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            -2,
+            0
+          ],
+          "expected": {
+            "__vector3__": [
+              1,
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "27422d65040fdf0de8c4ea349feaf8ac8af0f07046d693dd78bc4964d0a0faf4"
+    },
+    {
+      "name": "socketLocalMatrix",
+      "support": [
+        "composeMatrix",
+        "deg"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "expected": {
+            "__matrix4__": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "localPosition": [
+                3,
+                -2,
+                5
+              ],
+              "localRotationDeg": [
+                0,
+                90,
+                0
+              ]
+            }
+          ],
+          "expected": {
+            "__matrix4__": [
+              6.123233995736766e-17,
+              0,
+              -1,
+              0,
+              0,
+              1,
+              0,
+              0,
+              1,
+              0,
+              6.123233995736766e-17,
+              0,
+              3,
+              -2,
+              5,
+              1
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "localPosition": [
+                -1,
+                4,
+                2
+              ],
+              "localRotationDeg": [
+                15,
+                -20,
+                35
+              ],
+              "pivot": [
+                99,
+                99,
+                99
+              ]
+            }
+          ],
+          "expected": {
+            "__matrix4__": [
+              0.7697511313200572,
+              0.48151986732788643,
+              0.4190725631677964,
+              0,
+              -0.5389855446957562,
+              0.8420138624613815,
+              0.02252194556170667,
+              0,
+              -0.3420201433256687,
+              -0.24321034680169396,
+              0.9076733711903687,
+              0,
+              -1,
+              4,
+              2,
+              1
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "d4a79abf12fdd469ac81dbebf3859f09a99b612d0c54e6c5e82277d6f73b7744"
+    },
+    {
+      "name": "semanticRelationLabel",
+      "support": [
+        "semanticRelationKind",
+        "tr",
+        "baseLocale"
+      ],
+      "fixtures": [
+        {
+          "state": {
+            "locale": "en",
+            "i18n": null
+          },
+          "args": [
+            {
+              "parentIndex": -1
+            }
+          ],
+          "expected": "ROOT",
+          "invoke": "semanticRelationLabel(args[0],{root:tr('model_editor.semantics.relation.root','ROOT'),fixed:tr('model_editor.semantics.relation.fixed','FIXED'),rotating:tr('model_editor.semantics.relation.rotate','ROTATE'),detachable:tr('model_editor.semantics.relation.detach','DETACH'),rotDetach:tr('model_editor.semantics.relation.rotate_detach','ROT+DETACH')})"
+        },
+        {
+          "state": {
+            "locale": "en",
+            "i18n": null
+          },
+          "args": [
+            {
+              "parentIndex": 0,
+              "joint": {
+                "type": "fixed",
+                "breakable": false
+              }
+            }
+          ],
+          "expected": "FIXED",
+          "invoke": "semanticRelationLabel(args[0],{root:tr('model_editor.semantics.relation.root','ROOT'),fixed:tr('model_editor.semantics.relation.fixed','FIXED'),rotating:tr('model_editor.semantics.relation.rotate','ROTATE'),detachable:tr('model_editor.semantics.relation.detach','DETACH'),rotDetach:tr('model_editor.semantics.relation.rotate_detach','ROT+DETACH')})"
+        },
+        {
+          "state": {
+            "locale": "en",
+            "i18n": null
+          },
+          "args": [
+            {
+              "parentIndex": 0,
+              "joint": {
+                "type": "revolute",
+                "breakable": false
+              }
+            }
+          ],
+          "expected": "ROTATE",
+          "invoke": "semanticRelationLabel(args[0],{root:tr('model_editor.semantics.relation.root','ROOT'),fixed:tr('model_editor.semantics.relation.fixed','FIXED'),rotating:tr('model_editor.semantics.relation.rotate','ROTATE'),detachable:tr('model_editor.semantics.relation.detach','DETACH'),rotDetach:tr('model_editor.semantics.relation.rotate_detach','ROT+DETACH')})"
+        },
+        {
+          "state": {
+            "locale": "en",
+            "i18n": null
+          },
+          "args": [
+            {
+              "parentIndex": 0,
+              "joint": {
+                "type": "fixed",
+                "breakable": true
+              }
+            }
+          ],
+          "expected": "DETACH",
+          "invoke": "semanticRelationLabel(args[0],{root:tr('model_editor.semantics.relation.root','ROOT'),fixed:tr('model_editor.semantics.relation.fixed','FIXED'),rotating:tr('model_editor.semantics.relation.rotate','ROTATE'),detachable:tr('model_editor.semantics.relation.detach','DETACH'),rotDetach:tr('model_editor.semantics.relation.rotate_detach','ROT+DETACH')})"
+        },
+        {
+          "state": {
+            "locale": "en",
+            "i18n": null
+          },
+          "args": [
+            {
+              "parentIndex": 0,
+              "joint": {
+                "type": "revolute",
+                "breakable": true
+              }
+            }
+          ],
+          "expected": "ROT+DETACH",
+          "invoke": "semanticRelationLabel(args[0],{root:tr('model_editor.semantics.relation.root','ROOT'),fixed:tr('model_editor.semantics.relation.fixed','FIXED'),rotating:tr('model_editor.semantics.relation.rotate','ROTATE'),detachable:tr('model_editor.semantics.relation.detach','DETACH'),rotDetach:tr('model_editor.semantics.relation.rotate_detach','ROT+DETACH')})"
+        },
+        {
+          "state": {
+            "locale": "ru",
+            "i18n": {
+              "strings": {
+                "model_editor.semantics.relation.root": {
+                  "en": "ROOT",
+                  "ru": "КОРЕНЬ"
+                },
+                "model_editor.semantics.relation.fixed": {
+                  "en": "FIXED",
+                  "ru": "ФИКС"
+                },
+                "model_editor.semantics.relation.rotate": {
+                  "en": "ROTATE",
+                  "ru": "ВРАЩ"
+                },
+                "model_editor.semantics.relation.detach": {
+                  "en": "DETACH",
+                  "ru": "ОТСТ"
+                },
+                "model_editor.semantics.relation.rotate_detach": {
+                  "en": "ROT+DETACH",
+                  "ru": "ВРАЩ+ОТСТ"
+                }
+              }
+            }
+          },
+          "args": [
+            {
+              "parentIndex": 0,
+              "joint": {
+                "type": "revolute",
+                "breakable": true
+              }
+            }
+          ],
+          "expected": "ВРАЩ+ОТСТ",
+          "invoke": "semanticRelationLabel(args[0],{root:tr('model_editor.semantics.relation.root','ROOT'),fixed:tr('model_editor.semantics.relation.fixed','FIXED'),rotating:tr('model_editor.semantics.relation.rotate','ROTATE'),detachable:tr('model_editor.semantics.relation.detach','DETACH'),rotDetach:tr('model_editor.semantics.relation.rotate_detach','ROT+DETACH')})"
+        }
+      ],
+      "oracle_sha256": "390193dc068cfa42e0daa47adebdfe83e02cffd859b4ce85aad0706eaf655d1d"
+    },
+    {
+      "name": "semanticRenderBaseMatrix",
+      "support": [
+        "composeMatrix",
+        "deg",
+        "semanticNodePose",
+        "previewStateForNode"
+      ],
+      "fixtures": [
+        {
+          "state": {
+            "asset": {
+              "nodes": [],
+              "stateVariants": []
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            3,
+            {
+              "nodes": []
+            }
+          ],
+          "expected": null,
+          "invoke": "semanticRenderBaseMatrix(args[0],args[1],state.asset?.nodes||[],state.asset?.stateVariants||[],state.previewStates)"
+        },
+        {
+          "state": {
+            "asset": {
+              "nodes": [],
+              "stateVariants": []
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            0,
+            {
+              "nodes": [
+                {
+                  "id": "RN0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "__matrix4__": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              1,
+              2,
+              3,
+              1
+            ]
+          },
+          "invoke": "semanticRenderBaseMatrix(args[0],args[1],state.asset?.nodes||[],state.asset?.stateVariants||[],state.previewStates)"
+        },
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "Part",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact"
+                }
+              ],
+              "stateVariants": []
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            0,
+            {
+              "nodes": [
+                {
+                  "id": "RN0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 0,
+                  "localPosition": [
+                    10,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "__matrix4__": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              10,
+              0,
+              0,
+              1
+            ]
+          },
+          "invoke": "semanticRenderBaseMatrix(args[0],args[1],state.asset?.nodes||[],state.asset?.stateVariants||[],state.previewStates)"
+        },
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "Part",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact"
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 0,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    2,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            "previewStates": {
+              "__map__": [
+                [
+                  0,
+                  "open"
+                ]
+              ]
+            }
+          },
+          "args": [
+            0,
+            {
+              "nodes": [
+                {
+                  "id": "RN0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 0,
+                  "localPosition": [
+                    10,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "__matrix4__": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              12,
+              0,
+              0,
+              1
+            ]
+          },
+          "invoke": "semanticRenderBaseMatrix(args[0],args[1],state.asset?.nodes||[],state.asset?.stateVariants||[],state.previewStates)"
+        },
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "Part",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact"
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 0,
+                  "id": "rot",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            "previewStates": {
+              "__map__": [
+                [
+                  0,
+                  "rot"
+                ]
+              ]
+            }
+          },
+          "args": [
+            0,
+            {
+              "nodes": [
+                {
+                  "id": "RN0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 0,
+                  "localPosition": [
+                    2,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "__matrix4__": [
+              6.123233995736766e-17,
+              1,
+              0,
+              0,
+              -1,
+              6.123233995736766e-17,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              1.2246467991473532e-16,
+              2,
+              0,
+              1
+            ]
+          },
+          "invoke": "semanticRenderBaseMatrix(args[0],args[1],state.asset?.nodes||[],state.asset?.stateVariants||[],state.previewStates)"
+        }
+      ],
+      "oracle_sha256": "5dfca37aef8c08072c4da7d64e706e1295729a061a907c03fd92aa778f792fe2"
+    },
+    {
+      "name": "semanticCanonicalRenderWorldMatrices",
+      "support": [
+        "semanticRenderBaseMatrix",
+        "composeMatrix",
+        "deg",
+        "semanticNodePose",
+        "previewStateForNode"
+      ],
+      "fixtures": [
+        {
+          "state": {
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            },
+            "asset": {
+              "nodes": [],
+              "stateVariants": []
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            {
+              "nodes": []
+            }
+          ],
+          "expected": [],
+          "invoke": "semanticCanonicalRenderWorldMatrices({lod:args[0],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld})"
+        },
+        {
+          "state": {
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  100,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            },
+            "asset": {
+              "nodes": [],
+              "stateVariants": []
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": -1,
+                  "localPosition": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "semanticNodeIndex": -1,
+                  "localPosition": [
+                    0,
+                    2,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "__matrix4__": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                101,
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "__matrix4__": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                101,
+                2,
+                0,
+                1
+              ]
+            }
+          ],
+          "invoke": "semanticCanonicalRenderWorldMatrices({lod:args[0],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld})"
+        },
+        {
+          "state": {
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            },
+            "asset": {
+              "nodes": [
+                {
+                  "id": "Part",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact"
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 0,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            "previewStates": {
+              "__map__": [
+                [
+                  0,
+                  "open"
+                ]
+              ]
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 0,
+                  "localPosition": [
+                    5,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "semanticNodeIndex": -1,
+                  "localPosition": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "__matrix4__": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                8,
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "__matrix4__": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                8,
+                1,
+                0,
+                1
+              ]
+            }
+          ],
+          "invoke": "semanticCanonicalRenderWorldMatrices({lod:args[0],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld})"
+        },
+        {
+          "state": {
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  1,
+                  2,
+                  3,
+                  1
+                ]
+              }
+            },
+            "asset": {
+              "nodes": [],
+              "stateVariants": []
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "CycleA",
+                  "parentIndex": 1,
+                  "semanticNodeIndex": -1,
+                  "localPosition": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "id": "CycleB",
+                  "parentIndex": 0,
+                  "semanticNodeIndex": -1,
+                  "localPosition": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "__matrix4__": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                3,
+                3,
+                3,
+                1
+              ]
+            },
+            {
+              "__matrix4__": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                2,
+                3,
+                3,
+                1
+              ]
+            }
+          ],
+          "invoke": "semanticCanonicalRenderWorldMatrices({lod:args[0],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld})"
+        }
+      ],
+      "oracle_sha256": "42bf7102c4248e65f957405e692281119ad595a93483a3b31ea98b0edb7953dd"
+    },
+    {
+      "name": "semanticUnboundRenderClusterOffsets",
+      "support": [
+        "semanticCanonicalRenderWorldMatrices",
+        "semanticRenderBaseMatrix",
+        "semanticRenderOwner",
+        "semanticUnboundRenderClusterRoot",
+        "semanticGraphDirection",
+        "composeMatrix",
+        "deg",
+        "semanticNodePose",
+        "previewStateForNode"
+      ],
+      "fixtures": [
+        {
+          "state": {
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            },
+            "asset": {
+              "nodes": [],
+              "stateVariants": [],
+              "minBounds": [
+                0,
+                0,
+                0
+              ],
+              "maxBounds": [
+                10,
+                10,
+                10
+              ]
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            null,
+            0.5
+          ],
+          "expected": {
+            "__map__": []
+          },
+          "invoke": "semanticUnboundRenderClusterOffsets({lod:args[0],amount:args[1],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld,minBounds:state.asset?.minBounds||[0,0,0],maxBounds:state.asset?.maxBounds||[1,1,1]})"
+        },
+        {
+          "state": {
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            },
+            "asset": {
+              "nodes": [],
+              "stateVariants": [],
+              "minBounds": [
+                0,
+                0,
+                0
+              ],
+              "maxBounds": [
+                10,
+                10,
+                10
+              ]
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "U0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": -1,
+                  "geometryIndex": 0,
+                  "enabled": true,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "geometries": [
+                {
+                  "index": 0,
+                  "minBounds": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "maxBounds": [
+                    3,
+                    2,
+                    2
+                  ]
+                }
+              ]
+            },
+            0
+          ],
+          "expected": {
+            "__map__": []
+          },
+          "invoke": "semanticUnboundRenderClusterOffsets({lod:args[0],amount:args[1],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld,minBounds:state.asset?.minBounds||[0,0,0],maxBounds:state.asset?.maxBounds||[1,1,1]})"
+        },
+        {
+          "state": {
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            },
+            "asset": {
+              "nodes": [],
+              "stateVariants": [],
+              "minBounds": [
+                0,
+                0,
+                0
+              ],
+              "maxBounds": [
+                10,
+                10,
+                10
+              ]
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "U0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": -1,
+                  "geometryIndex": 0,
+                  "enabled": true,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "geometries": [
+                {
+                  "index": 0,
+                  "minBounds": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "maxBounds": [
+                    3,
+                    2,
+                    2
+                  ]
+                }
+              ]
+            },
+            0.5
+          ],
+          "expected": {
+            "__map__": [
+              [
+                0,
+                {
+                  "__vector3__": [
+                    2.204124145231932,
+                    1.102062072615966,
+                    1.102062072615966
+                  ]
+                }
+              ]
+            ]
+          },
+          "invoke": "semanticUnboundRenderClusterOffsets({lod:args[0],amount:args[1],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld,minBounds:state.asset?.minBounds||[0,0,0],maxBounds:state.asset?.maxBounds||[1,1,1]})"
+        },
+        {
+          "state": {
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  2,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            },
+            "asset": {
+              "nodes": [],
+              "stateVariants": [],
+              "minBounds": [
+                -5,
+                -5,
+                -5
+              ],
+              "maxBounds": [
+                5,
+                5,
+                5
+              ]
+            },
+            "previewStates": {
+              "__map__": []
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "U0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": -1,
+                  "geometryIndex": 0,
+                  "enabled": true,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "id": "U1",
+                  "parentIndex": 0,
+                  "semanticNodeIndex": -1,
+                  "geometryIndex": 1,
+                  "enabled": true,
+                  "localPosition": [
+                    2,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "id": "U2",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": -1,
+                  "geometryIndex": 2,
+                  "enabled": true,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "id": "Bound",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 0,
+                  "geometryIndex": 3,
+                  "enabled": true,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "geometries": [
+                {
+                  "index": 0,
+                  "minBounds": [
+                    -1,
+                    -1,
+                    -1
+                  ],
+                  "maxBounds": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                {
+                  "index": 1,
+                  "minBounds": [
+                    -0.5,
+                    -0.5,
+                    -0.5
+                  ],
+                  "maxBounds": [
+                    0.5,
+                    0.5,
+                    0.5
+                  ]
+                },
+                {
+                  "index": 2,
+                  "minBounds": [
+                    -1,
+                    -1,
+                    -1
+                  ],
+                  "maxBounds": [
+                    1,
+                    1,
+                    1
+                  ]
+                },
+                {
+                  "index": 3,
+                  "minBounds": [
+                    -1,
+                    -1,
+                    -1
+                  ],
+                  "maxBounds": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              ]
+            },
+            1
+          ],
+          "expected": {
+            "__map__": [
+              [
+                0,
+                {
+                  "__vector3__": [
+                    5.8999999999999995,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              [
+                2,
+                {
+                  "__vector3__": [
+                    3.3436067977499793,
+                    6.6872135954999585,
+                    0
+                  ]
+                }
+              ]
+            ]
+          },
+          "invoke": "semanticUnboundRenderClusterOffsets({lod:args[0],amount:args[1],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld,minBounds:state.asset?.minBounds||[0,0,0],maxBounds:state.asset?.maxBounds||[1,1,1]})"
+        }
+      ],
+      "oracle_sha256": "fc54463da0ad1cfbe9759c08879b4046969f3af588b4d4b2ace1a7c0c403cada"
     }
   ],
   "easy_candidates": [],
-  "baseline_sha256": "9b7f5489ff842b8ba2ae6af1fa117f19cbc16091aa3fae208fb5c32c588fbb6b"
+  "baseline_sha256": "67d9d7ea6b2f59f26795506a438b7533cda73b9de3580aa521a0a6b12f561c45"
 }

@@ -28,7 +28,7 @@ for token in (
     "rebuildScene(true)",
     "applySemanticMotionPreview(true)",
     "assertSemanticVisualLodInvariant('switch')",
-    'data-semantic-visual-lod="${state.activeLod}"',
+    'data-semantic-visual-lod="${model.activeLod}"',
     "tr('model_editor.semantics.binding.title'",
 ):
     require(token)
@@ -83,7 +83,7 @@ for token in (
 for token in (
     'function semanticUnboundRenderClusterRoot(',
     'function semanticUnboundRenderClusterOffsets(',
-    'const unboundOffsets=semanticUnboundRenderClusterOffsets(lod,amount)',
+    'const unboundOffsets=semanticUnboundRenderClusterOffsets({lod,amount,semanticNodes:state.asset?.nodes||[]',
     'owner>=0?(state.semanticGraphOffsets.get(owner)||new THREE.Vector3()):(unboundOffsets.get(cluster)||new THREE.Vector3())',
     "tr('model_editor.semantics.tree.unbound_clusters'",
 ):

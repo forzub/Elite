@@ -1,3 +1,63 @@
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5K / SEMANTICS transform-math purity (2026-09-11)
+
+- `[x]` `semanticRelationLabel` now receives localized relation text explicitly; it no longer calls `tr()` internally.
+- `[x]` `semanticRenderBaseMatrix` now receives LOD + semantic nodes + state variants + preview state explicitly; no global editor `state` read remains.
+- `[x]` `semanticCanonicalRenderWorldMatrices` now receives an explicit projection containing LOD, semantic state and root world matrix.
+- `[x]` `semanticUnboundRenderClusterOffsets` now receives semantic state, root world matrix and asset bounds explicitly.
+- `[x]` `deg`, `composeMatrix`, `semanticGraphDirection` and `socketLocalMatrix` are dynamically certified with real vendored Three.js execution in the purity harness.
+- `[x]` Frozen v0.10.66 behavioural oracles pass; legacy wave5J/new wave5K differential parity passes 7,674 deterministic comparisons.
+- `[x]` Dynamic purity: 177 certified PURE. Static census: 180 PURE / 5 EASY / 15 TRANSITIVE / 269 deferred-hard.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES stay frozen and unchanged.
+- `[ ]` Next: continue SEMANTICS by tracing the remaining hard graph/world-matrix orchestration and binding/selection effect synchronization before any physical module/file split.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5I / SEMANTICS selected panels (2026-09-10)
+
+- `[x]` `semanticSelectedPanels()` is now a narrow compatibility/effect wrapper around certified PURE `wizardSemanticsSelectedPanelsModel(input)` + `wizardSemanticsSelectedPanelsHtml(model, text, fragments)`.
+- `[x]` The hidden render-time write to `state.semanticPreviewAngleDeg` is explicit in the wrapper; angle range fallback/clamp semantics remain unchanged.
+- `[x]` Selected logical-part metadata, semantic-frame editor, MODEL ROOT connection help and incoming joint/motion UI are deterministic pure markup from explicit model/text/fragments.
+- `[x]` Legacy/new selected-panels parity passed for 700 deterministic synthetic states, comparing both final `{node,motion}` HTML and the normalized preview-angle side effect.
+- `[x]` Dynamic purity coverage is now 165 certified PURE functions; static census is `172 PURE / 6 EASY / 21 TRANSITIVE / 269 deferred-hard`.
+- `[x]` Full Model Asset Editor architecture suite remains 25/25 PASS; SOURCE / LODS / GEOMETRY / SURFACES frozen fingerprints remain unchanged.
+- `[ ]` Next SEMANTICS split: reduce `semanticRefreshSelectionUi()` binding-health / repair / summary derivation and remaining selection synchronization, then reassess whether SEMANTICS is ready for physical module extraction.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5H / SEMANTICS selected-node + motion interactions (2026-09-10)
+
+- `[x]` `semanticRefreshSelectionUi()` no longer owns APPLY SEMANTIC FRAME / DELETE LOGICAL PART / motion-control event wiring; selected-node authoring delegates to `bindWizardSemanticsSelectedNodeInteractions(selected)`.
+- `[x]` `bindSemanticMotionControls(selected)` is orchestration-only for two dedicated effect sub-adapters: motion-preview controls and joint-authoring controls.
+- `[x]` Certified PURE command/value boundaries added for semantic-frame payloads, motion angle/zero/rate normalization and joint runtime payload construction: `wizardSemanticsNodeTransformCommand`, `wizardSemanticsMotionAngleModel`, `wizardSemanticsMotionZeroModel`, `wizardSemanticsPreviewRateModel`, `wizardSemanticsJointUpdateCommand`.
+- `[x]` Legacy/new selected-node/motion command parity passed for 1,592 deterministic cases. `set_node_transform` and `set_joint` protocol/field coercions are unchanged.
+- `[x]` Dynamic purity coverage is now 163 certified PURE functions; static census is `170 PURE / 6 EASY / 21 TRANSITIVE / 269 deferred-hard`. The three additional hard functions are explicit effect sub-adapters.
+- `[x]` Full Model Asset Editor architecture suite remains 25/25 PASS; SOURCE / LODS / GEOMETRY / SURFACES frozen fingerprints remain unchanged.
+- `[ ]` Next SEMANTICS split: isolate the remaining ~10 KB `semanticSelectedPanels()` model/HTML composition and reduce `semanticRefreshSelectionUi()` binding-health/summary work before any physical file/module move.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5G / SEMANTICS STRUCTURAL interactions (2026-09-10)
+
+- `[x]` `bindStructuralGraphPanel(root)` is orchestration-only and delegates viewport/explode, endpoint/root/A-B, structural-link and damage-proxy wiring to four dedicated effect sub-adapters.
+- `[x]` MAKE ROOT / SET A-B decisions are isolated in certified PURE `wizardSemanticsStructuralEndpointActionModel(...)`.
+- `[x]` CREATE LINK, APPLY LINK and APPLY PROXY payload derivation are isolated in certified PURE `wizardSemanticsStructuralCreateLinkCommand(...)`, `wizardSemanticsStructuralLinkUpdateCommand(...)` and `wizardSemanticsStructuralProxyUpdateCommand(...)`.
+- `[x]` Legacy/new structural command parity passed for 776 deterministic cases; existing `add_structural_link`, `set_structural_link`, `delete_structural_link` and `set_structural_proxy` backend protocol is unchanged.
+- `[x]` Dynamic purity coverage is now 158 certified PURE functions; static census is `165 PURE / 6 EASY / 21 TRANSITIVE / 266 deferred-hard`. The four extra hard functions are explicit effect boundaries.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES frozen fingerprints remain unchanged.
+- `[ ]` Next SEMANTICS split: audit the remaining ~10.8 KB main effect shell and isolate selected-node/motion/socket interaction wiring before any physical file/module move.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5F / SEMANTICS STRUCTURAL GRAPH (2026-09-10)
+
+- `[x]` STRUCTURAL GRAPH composition is isolated behind certified PURE `wizardSemanticsStructuralGraphModel(input)` + `structuralGraphPanelHtml(model, text, fragments)`.
+- `[x]` Existing `semanticStructureModeHtml`, `structuralGraphMeshRowsHtml`, and `structuralEndpointCard` now take explicit inputs and are certified PURE instead of reading `state` / `tr()` transitively.
+- `[x]` `renderWizardStructuralGraphStage(root, lods)` owns the legacy normalization writes (`structuralGraphRoot`, A/B, selected link), localization/fragments, DOM assignment and graph effect binding; `renderWizardSemanticsStage()` only dispatches GRAPH mode to it.
+- `[x]` Differential parity against the pre-extraction STRUCTURAL GRAPH implementation passed for 240 deterministic synthetic states, comparing both final HTML and the four legacy normalization side effects.
+- `[x]` Dynamic purity coverage is now 154 certified PURE functions; static census is `161 PURE / 6 EASY / 21 TRANSITIVE / 262 deferred-hard`.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES frozen fingerprints remain unchanged; structural backend commands, persistence and intended UI behaviour are unchanged.
+- `[ ]` Next SEMANTICS split: isolate STRUCTURAL GRAPH interaction decisions/payload builders from `bindStructuralGraphPanel()`; keep actual DOM/send/THREE effects in narrow adapters.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5E / SEMANTICS PREVIEW (2026-09-10)
+
+- `[x]` TREE-mode SEMANTICS preview/explode DOM wiring moved out of `renderWizardSemanticsStage()` into dedicated effect adapter `bindWizardSemanticsPreviewInteractions(root)`.
+- `[x]` `wizardSemanticsPreviewControlModel(graphEnabled, graphExplode)` is certified PURE and freezes the legacy enabled/explode/percent/disabled-state calculation.
+- `[x]` Dynamic purity coverage is now 149 certified PURE functions; static census is `156 PURE / 6 EASY / 24 TRANSITIVE / 262 deferred-hard`.
+- `[x]` Legacy/new preview-control calculation parity checked across scalar toggle/range edge cases; SOURCE / LODS / GEOMETRY / SURFACES frozen contracts remain unchanged.
+- `[ ]` Next SEMANTICS split: isolate STRUCTURAL GRAPH composition/effects without changing structural authoring behaviour.
+
 ## Model Asset Editor 0.10.66 — function-purity migration wave 4 (2026-09-10)
 
 - `[x]` 13 additional direct hidden-state WebUI helpers are behaviourally frozen and promoted to explicit-argument PURE functions.
@@ -910,3 +970,55 @@ GEOMETRY workspace restored after the LOD-generator work: automatic stage entry 
 - `[x]` GEOMETRY freeze now covers dispatch + extracted model/view/effect functions; accepted selection, visibility, duplicate consolidation, variant and clean-unused behaviour remains protected.
 - `[x]` Dynamic behavioural certification is 135 PURE functions; static census is 142 PURE / 6 EASY / 24 TRANSITIVE / 257 deferred-hard.
 - `[ ]` Next: decompose SURFACES with the same pure-model / pure-view / narrow-effect boundary, then reassess SEMANTICS before touching its larger orchestration block.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 4 / SURFACES (2026-09-10)
+
+- `[x]` SURFACES deterministic view-model derivation is isolated in certified PURE `wizardSurfacesStageModel(input)`.
+- `[x]` SURFACES analysis-required / ready workspace markup is isolated in certified PURE `wizardSurfacesStageHtml(model, text, fragments)`.
+- `[x]` Selection normalization, visibility reads, DOM/event wiring and backend surface/material commands are isolated in `renderWizardSurfacesStage(root, lods)`; the mega-function SURFACES branch is dispatch-only.
+- `[x]` SURFACES freeze now covers dispatch + extracted model/view/effect functions; SOURCE / LODS / GEOMETRY fingerprints remain unchanged.
+- `[x]` Dynamic behavioural certification is 137 PURE functions; static census is 144 PURE / 6 EASY / 24 TRANSITIVE / 258 deferred-hard.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES are all extracted from `renderWizardPanelContents()` under the same stage boundary.
+- `[ ]` Next: reassess the remaining mega-function size and split SEMANTICS incrementally, keeping its computational sub-blocks pure before any physical file/module move.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5A / SEMANTICS core (2026-09-10)
+
+- `[x]` The SEMANTICS branch is removed from `renderWizardPanelContents()`; the mega-function now dispatches only to `renderWizardSemanticsStage(root, lods)`.
+- `[x]` Deterministic semantic selection/tree/binding/count derivation is isolated in certified PURE `wizardSemanticsStageModel(input)` with explicit inputs and immutable behavioural fixtures.
+- `[x]` Existing TREE/GRAPH markup, selection normalization, DOM/event wiring, preview operations and backend commands remain quarantined in `renderWizardSemanticsStage`; they are not claimed to be pure in this subwave.
+- `[x]` Dynamic behavioural certification is 138 PURE functions; static census is 145 PURE / 6 EASY / 24 TRANSITIVE / 259 deferred-hard.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES frozen fingerprints remain unchanged.
+- `[ ]` Next: split the SEMANTICS adapter internally into TREE / BINDINGS / STRUCTURAL GRAPH / preview-summary boundaries, preferring pure model/markup builders before physical file extraction.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5B / SEMANTICS TREE + BINDINGS (2026-09-10)
+
+- `[x]` SEMANTICS TREE row derivation is isolated in certified PURE `wizardSemanticsTreeBlockModel(input)`.
+- `[x]` SEMANTICS TREE deterministic row markup is isolated in certified PURE `wizardSemanticsTreeRowsHtml(model, text)`.
+- `[x]` Active-LOD visual-binding row derivation is isolated in certified PURE `wizardSemanticsBindingsBlockModel(input)`.
+- `[x]` Active-LOD visual-binding row markup is isolated in certified PURE `wizardSemanticsBindingRowsHtml(model, text)`.
+- `[x]` TREE/BINDINGS extraction was differentially checked against the old inline algorithms over 250 deterministic synthetic cases per block, in addition to immutable behavioural fixtures.
+- `[x]` Dynamic behavioural certification is 142 PURE functions; static census is 149 PURE / 6 EASY / 24 TRANSITIVE / 259 deferred-hard.
+- `[ ]` Next: continue SEMANTICS internal decomposition with summary/workspace and STRUCTURAL/PREVIEW boundaries before any physical file/module move.
+
+### Model Asset Editor 0.10.66 — SEMANTICS decomposition checkpoint
+- SOURCE / LODS / GEOMETRY / SURFACES remain extracted as pure model + pure HTML + narrow effect adapters.
+- SEMANTICS now has certified pure stage model, TREE model/HTML, BINDINGS model/HTML, and WORKSPACE model/HTML boundaries.
+- `renderWizardSemanticsStage()` remains the quarantined effect shell for DOM handlers, drag/drop, preview state, and backend commands; STRUCTURAL GRAPH/preview effects are not yet decomposed.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5D / SEMANTICS TREE + BINDINGS effects (2026-09-10)
+
+- `[x]` TREE selection/relation/collapse/asset-root/drag-drop/add-node/legacy-clean wiring moved into `bindWizardSemanticsTreeInteractions(root, nodes)`.
+- `[x]` BINDINGS visual-row selection, bind/unbind checkbox, apply-all-LODs and visual-pick wiring moved into `bindWizardSemanticsBindingInteractions(root, selected)`.
+- `[x]` TREE drop placement, TREE drop validity, binding command payload and new-node suggestion are certified PURE helpers with immutable behavioural oracles.
+- `[x]` Legacy/new pure decision parity verified across 4,152 deterministic cases.
+- `[x]` Purity census: 446 named / 148 dynamically certified PURE / 155 static PURE / 6 EASY / 24 TRANSITIVE / 261 deferred-hard.
+- `[ ]` Next: isolate SEMANTICS preview/explode controls and then STRUCTURAL GRAPH effect ownership before physical module/file extraction.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5J / SEMANTICS selection refresh (2026-09-10)
+
+- `[x]` `wizardSemanticsSelectionRefreshModel(input)` now owns deterministic selection/binding refresh derivation as a certified PURE boundary.
+- `[x]` `semanticBindingSummaryHtml`, `semanticBindingHealthHtml` and `semanticBindingRepairHtml` no longer read global `state` or call `tr()`; localized strings and state projections are supplied explicitly.
+- `[x]` `semanticRefreshSelectionUi()` is now a narrower DOM/effect shell and no longer owns binding-count, selected-to-root, missing-LOD or active-unbound calculations.
+- `[x]` Legacy/new parity passed 1,600 deterministic cases; full Model Asset Editor architecture suite remains 25/25 PASS.
+- `[x]` Dynamic purity is 169 certified PURE; static census is 176 PURE / 6 EASY / 18 TRANSITIVE / 269 deferred-hard.
+- `[ ]` Next: reassess the remaining SEMANTICS effect surface (binding-pick/selection synchronization and relation/visual helper chain) before declaring SEMANTICS ready for physical module extraction.

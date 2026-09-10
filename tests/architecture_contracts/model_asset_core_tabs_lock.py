@@ -25,7 +25,7 @@ from model_asset_source_tab_lock import (
 
 LOD_TAB_SHA256 = "a1d2590219a408837c251577ffd7518aef5b3f497e86b7085382f55623cf41cb"
 GEOMETRY_TAB_SHA256 = "d9ff18f3bc8e9f2487eccd57787168dc6b2e284e04c3c0f7a02115c43514208b"
-SURFACES_TAB_SHA256 = "ce6ad6e32a84a454d05e870cc30c8a020481065e80cc42295ebfebe3e121b722"
+SURFACES_TAB_SHA256 = "0c8423af9a5d8944d5f837e10239e6f324d91951062b5c98a2d2f2e7c8a2c7b2"
 
 LOD_FUNCTIONS = [
     "wizardLodsStageModel",
@@ -103,6 +103,9 @@ GEOMETRY_CSS = [
 ]
 
 SURFACES_FUNCTIONS = [
+    "wizardSurfacesStageModel",
+    "wizardSurfacesStageHtml",
+    "renderWizardSurfacesStage",
     "surfaceStageVisualClass",
     "surfaceStageGlyph",
     "surfaceSelectedGeometry",

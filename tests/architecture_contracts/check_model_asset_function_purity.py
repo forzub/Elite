@@ -887,7 +887,7 @@ def build_node_program(web: str, contract: dict[str, Any]) -> str:
     source = "\n".join(source_parts)
     payload = json.dumps(contract, ensure_ascii=False)
     return f"""
-'use strict';
+import * as THREE from './src/assets/webui/vendor/three/three.module.js';
 const contract = {payload};
 {source}
 let state = {{}};
@@ -900,6 +900,8 @@ function revive(value) {{
   if (value && typeof value === 'object') {{
     if (Object.prototype.hasOwnProperty.call(value, '__set__')) return new Set(value.__set__.map(revive));
     if (Object.prototype.hasOwnProperty.call(value, '__map__')) return new Map(value.__map__.map(([k,v]) => [revive(k), revive(v)]));
+    if (Object.prototype.hasOwnProperty.call(value, '__matrix4__')) return new THREE.Matrix4().fromArray(value.__matrix4__.map(Number));
+    if (Object.prototype.hasOwnProperty.call(value, '__vector3__')) return new THREE.Vector3(...value.__vector3__.map(Number));
     const out = {{}};
     for (const [k,v] of Object.entries(value)) out[k] = revive(v);
     return out;
@@ -913,6 +915,8 @@ function canonical(value) {{
   if (value === -Infinity) return {{__number__: '-Infinity'}};
   if (value instanceof Set) return {{__set__: [...value].map(canonical)}};
   if (value instanceof Map) return {{__map__: [...value.entries()].map(([k,v]) => [canonical(k), canonical(v)])}};
+  if (value?.isMatrix4) return {{__matrix4__: value.elements.map(Number)}};
+  if (value?.isVector3) return {{__vector3__: [Number(value.x),Number(value.y),Number(value.z)]}};
   if (Array.isArray(value)) return value.map(canonical);
   if (value && typeof value === 'object') {{
     const out = {{}};
@@ -931,7 +935,7 @@ function deepFreeze(value, seen = new Set()) {{
   Object.freeze(value);
   return value;
 }}
-function callNamed(name, args) {{ return globalThis[name](...args); }}
+function callNamed(name, args) {{ return eval(name)(...args); }}
 const results = {{pure: {{}}, easy_candidates: {{}}}};
 for (const group of ['pure','easy_candidates']) {{
   for (const entry of contract[group]) {{
@@ -1031,7 +1035,7 @@ def run_dynamic(web: str, contract: dict[str, Any]) -> dict[str, Any]:
     program = build_node_program(web, contract)
     node = resolve_node_executable()
     result = subprocess.run(
-        [node, "-"],
+        [node, "--input-type=module", "-"],
         input=program,
         encoding="utf-8",
         errors="strict",

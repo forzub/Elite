@@ -38,12 +38,20 @@
     "rotateDirectMapping",
     "rotateGameAxisTokenQuarterTurn",
     "semanticAxisMappingFromDirect",
+    "semanticBindingHealthHtml",
+    "semanticBindingRepairHtml",
+    "semanticBindingSummaryHtml",
+    "semanticCanonicalRenderWorldMatrices",
     "semanticGraphDirection",
     "semanticOwnedPayloadCount",
     "semanticRelationIcon",
     "semanticRelationKind",
+    "semanticRelationLabel",
     "semanticRelationOptions",
+    "semanticRenderBaseMatrix",
     "semanticSelectionModeFromEvent",
+    "semanticStructureModeHtml",
+    "semanticUnboundRenderClusterOffsets",
     "semanticUsageForNode",
     "socketIndexFromObject",
     "socketKindColor",
@@ -52,6 +60,9 @@
     "sourceBasisMappingFromPreset",
     "sourceVariantCanReplace",
     "statesInput",
+    "structuralEndpointCard",
+    "structuralGraphMeshRowsHtml",
+    "structuralGraphPanelHtml",
     "surfaceFamilyKey",
     "surfaceSameFamily",
     "validAxisMapping",
@@ -61,8 +72,35 @@
     "wizardGeometryStageModel",
     "wizardLodsStageHtml",
     "wizardLodsStageModel",
+    "wizardSemanticsBindingCommandModel",
+    "wizardSemanticsBindingRowsHtml",
+    "wizardSemanticsBindingsBlockModel",
+    "wizardSemanticsJointUpdateCommand",
+    "wizardSemanticsMotionAngleModel",
+    "wizardSemanticsMotionZeroModel",
+    "wizardSemanticsNewNodeSuggestion",
+    "wizardSemanticsNodeTransformCommand",
+    "wizardSemanticsPreviewControlModel",
+    "wizardSemanticsPreviewRateModel",
+    "wizardSemanticsSelectedPanelsHtml",
+    "wizardSemanticsSelectedPanelsModel",
+    "wizardSemanticsSelectionRefreshModel",
+    "wizardSemanticsStageModel",
+    "wizardSemanticsStructuralCreateLinkCommand",
+    "wizardSemanticsStructuralEndpointActionModel",
+    "wizardSemanticsStructuralGraphModel",
+    "wizardSemanticsStructuralLinkUpdateCommand",
+    "wizardSemanticsStructuralProxyUpdateCommand",
+    "wizardSemanticsTreeBlockModel",
+    "wizardSemanticsTreeDropPlacement",
+    "wizardSemanticsTreeDropValid",
+    "wizardSemanticsTreeRowsHtml",
+    "wizardSemanticsWorkspaceHtml",
+    "wizardSemanticsWorkspaceModel",
     "wizardSourceStageHtml",
-    "wizardSourceStageModel"
+    "wizardSourceStageModel",
+    "wizardSurfacesStageHtml",
+    "wizardSurfacesStageModel"
   ],
   "easy_candidates": {
     "activeRenderLod": [
@@ -269,19 +307,7 @@
     "semanticAncestorHasDynamicTransform": [
       "state"
     ],
-    "semanticBindingHealthHtml": [
-      "state"
-    ],
-    "semanticBindingRepairHtml": [
-      "state"
-    ],
-    "semanticBindingSummaryHtml": [
-      "state"
-    ],
     "semanticCanUseParent": [
-      "state"
-    ],
-    "semanticCanonicalRenderWorldMatrices": [
       "state"
     ],
     "semanticCurrentLodUnbound": [
@@ -299,12 +325,6 @@
     "semanticOrderedChildren": [
       "state"
     ],
-    "semanticRelationLabel": [
-      "state"
-    ],
-    "semanticRenderBaseMatrix": [
-      "state"
-    ],
     "semanticRenderOwner": [
       "state"
     ],
@@ -314,16 +334,10 @@
     "semanticStaticFlattenCandidates": [
       "state"
     ],
-    "semanticStructureModeHtml": [
-      "state"
-    ],
     "semanticTopLevelSelected": [
       "state"
     ],
     "semanticTreeRows": [
-      "state"
-    ],
-    "semanticUnboundRenderClusterOffsets": [
       "state"
     ],
     "semanticUnboundRenderClusterRoot": [
@@ -339,12 +353,6 @@
       "state"
     ],
     "stateApplies": [
-      "state"
-    ],
-    "structuralEndpointCard": [
-      "state"
-    ],
-    "structuralGraphMeshRowsHtml": [
       "state"
     ],
     "structuralSelectedEndpoint": [
@@ -437,7 +445,17 @@
     "bindSemanticStructureMode",
     "bindStructuralGraphPanel",
     "bindToolTipElement",
+    "bindWizardSemanticsBindingInteractions",
+    "bindWizardSemanticsJointInteractions",
+    "bindWizardSemanticsMotionPreviewInteractions",
+    "bindWizardSemanticsPreviewInteractions",
+    "bindWizardSemanticsSelectedNodeInteractions",
+    "bindWizardSemanticsTreeInteractions",
     "bindWizardStageCheckControls",
+    "bindWizardStructuralGraphEndpointInteractions",
+    "bindWizardStructuralGraphLinkInteractions",
+    "bindWizardStructuralGraphProxyInteractions",
+    "bindWizardStructuralGraphViewportInteractions",
     "captureEditorViewTransition",
     "captureUiScroll",
     "clearEdgeOverlay",
@@ -556,7 +574,10 @@
     "renderWizardLodsStage",
     "renderWizardPanel",
     "renderWizardPanelContents",
+    "renderWizardSemanticsStage",
     "renderWizardSourceStage",
+    "renderWizardStructuralGraphStage",
+    "renderWizardSurfacesStage",
     "reportEditorDiagnostic",
     "requestDeleteUnusedGeometry",
     "resetAxisModalPending",
@@ -624,7 +645,6 @@
     "socketWorldMatrix",
     "stateScopeForSelectedNode",
     "status",
-    "structuralGraphPanelHtml",
     "structuralPickNode",
     "structuralScrollSelectedMesh",
     "structuralSelectEndpoint",

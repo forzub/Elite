@@ -1,3 +1,11 @@
+### v0.10.66 wizard decomposition wave 5O / SEMANTICS joint-pick-binding decision boundary
+
+- Joint-pivot conversion/payload, parent-origin and visual-center preset derivation, pivot-pick start/cancel state, nominal runtime-rate validation/payload, binding-pick transition and viewport binding assignment payload must pass through the certified PURE wave5O helpers before effectful application.
+- The eight wave5O helpers may read only explicit arguments and certified PURE support. They must not read editor `state` / `editorViewState`, touch DOM/raycaster/scene objects, call localization/status APIs, refresh THREE world matrices, or dispatch backend commands.
+- `semanticSetJointPivotWorld`, `semanticUseParentOriginPivot`, `semanticUseVisualCenterPivot`, `semanticBeginJointPivotPick`, `semanticSetNominalRate`, binding interaction callbacks and viewport `pick()` remain effect adapters. Root `updateMatrixWorld(true)` and hit-testing stay outside PURE boundaries.
+- Visual-center behaviour is order-frozen: selected-node/parent eligibility is checked first; canonical render-world snapshot is taken second; root world refresh remains effectful; canonical anchor reduction then chooses the child visual center.
+- `set_joint` and `set_render_node_semantic` command names, numeric coercions, `applyAllLods !== false` semantics, pick cancel/start behaviour and status-visible IDs are behaviour-frozen. SOURCE / LODS / GEOMETRY / SURFACES remain closed.
+
 ### v0.10.66 wizard decomposition wave 5N / SEMANTICS command-decision boundary
 
 - SEMANTICS selection, reparent, relation, MODEL ROOT move/flatten and delete operations must derive deterministic decisions through certified PURE helpers before performing effects. `wizardSemanticsSelectionTransition`, `wizardSemanticsReparentCommand`, `wizardSemanticsRelationCommand`, `wizardSemanticsMoveToAssetSpaceCommand`, `wizardSemanticsFlattenStaticTreeCommand`, `wizardSemanticsDeletePlan` and `wizardSemanticsDeleteConfirmText` are protected v0.10.66 behavioural boundaries.

@@ -31069,8 +31069,6495 @@
         }
       ],
       "oracle_sha256": "4f61d286647b782b5dd23365417468055c3cd409a783fc0236fae2469fdc65d3"
+    },
+    {
+      "name": "wizardSemanticsJointPivotCommand",
+      "support": [
+        "composeMatrix",
+        "deg",
+        "previewStateForNode",
+        "semanticJointLocalPointFromWorld",
+        "semanticJointPayload",
+        "semanticNodePose",
+        "semanticRelationKind",
+        "semanticWorldMatrix"
+      ],
+      "fixtures": [
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "renderLods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "R0",
+                      "parentIndex": -1,
+                      "semanticNodeIndex": 0,
+                      "geometryIndex": 0,
+                      "localPosition": [
+                        1,
+                        2,
+                        3
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R1",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": 1,
+                      "geometryIndex": 1,
+                      "localPosition": [
+                        0,
+                        4,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        90
+                      ],
+                      "pivot": [
+                        1,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R2",
+                      "parentIndex": 1,
+                      "semanticNodeIndex": 2,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        -2,
+                        0,
+                        1
+                      ],
+                      "localRotationDeg": [
+                        20,
+                        -10,
+                        5
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "RU",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": -1,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        3,
+                        -1,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        15,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    }
+                  ],
+                  "geometries": [
+                    {
+                      "minBounds": [
+                        -1,
+                        -1,
+                        -1
+                      ],
+                      "maxBounds": [
+                        1,
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.5,
+                        -2,
+                        -0.5
+                      ],
+                      "maxBounds": [
+                        0.5,
+                        2,
+                        0.5
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.25,
+                        -0.25,
+                        -0.25
+                      ],
+                      "maxBounds": [
+                        0.25,
+                        0.25,
+                        0.25
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "minBounds": [
+                -6,
+                -5,
+                -4
+              ],
+              "maxBounds": [
+                8,
+                9,
+                7
+              ]
+            },
+            "activeLod": 0,
+            "previewStates": {
+              "__map__": [
+                [
+                  1,
+                  "open"
+                ]
+              ]
+            },
+            "selectedNode": 1,
+            "wizardStage": "semantics",
+            "semanticPreviewAngleDeg": 30,
+            "semanticPreviewDetached": true,
+            "semanticGraphOffsets": {
+              "__map__": [
+                [
+                  0,
+                  {
+                    "__vector3__": [
+                      1,
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  1,
+                  {
+                    "__vector3__": [
+                      0,
+                      2,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "__vector3__": [
+                      0,
+                      0,
+                      -1
+                    ]
+                  }
+                ]
+              ]
+            },
+            "semanticStructureMode": "graph",
+            "structuralGraphRoot": 0,
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "index": 1,
+              "worldPoint": {
+                "__vector3__": [
+                  10,
+                  5,
+                  3
+                ]
+              },
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "previewStates": {
+                "__map__": [
+                  [
+                    1,
+                    "open"
+                  ]
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "coords": "5.2426, -7.0711, 0.0000",
+            "nodeId": "ARM",
+            "nodeIndex": 1,
+            "ok": true,
+            "payload": {
+              "axis": [
+                0,
+                0,
+                1
+              ],
+              "breakForceN": 0,
+              "breakTorqueNm": 0,
+              "breakable": true,
+              "defaultRateDegPerSec": 0,
+              "maxAngleDeg": 360,
+              "minAngleDeg": -360,
+              "nodeIndex": 1,
+              "pivot": [
+                5.2426406871192865,
+                -7.071067811865475,
+                0
+              ],
+              "type": "revolute"
+            },
+            "pivot": [
+              5.2426406871192865,
+              -7.071067811865475,
+              0
+            ]
+          }
+        },
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "renderLods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "R0",
+                      "parentIndex": -1,
+                      "semanticNodeIndex": 0,
+                      "geometryIndex": 0,
+                      "localPosition": [
+                        1,
+                        2,
+                        3
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R1",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": 1,
+                      "geometryIndex": 1,
+                      "localPosition": [
+                        0,
+                        4,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        90
+                      ],
+                      "pivot": [
+                        1,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R2",
+                      "parentIndex": 1,
+                      "semanticNodeIndex": 2,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        -2,
+                        0,
+                        1
+                      ],
+                      "localRotationDeg": [
+                        20,
+                        -10,
+                        5
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "RU",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": -1,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        3,
+                        -1,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        15,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    }
+                  ],
+                  "geometries": [
+                    {
+                      "minBounds": [
+                        -1,
+                        -1,
+                        -1
+                      ],
+                      "maxBounds": [
+                        1,
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.5,
+                        -2,
+                        -0.5
+                      ],
+                      "maxBounds": [
+                        0.5,
+                        2,
+                        0.5
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.25,
+                        -0.25,
+                        -0.25
+                      ],
+                      "maxBounds": [
+                        0.25,
+                        0.25,
+                        0.25
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "minBounds": [
+                -6,
+                -5,
+                -4
+              ],
+              "maxBounds": [
+                8,
+                9,
+                7
+              ]
+            },
+            "activeLod": 0,
+            "previewStates": {
+              "__map__": [
+                [
+                  1,
+                  "open"
+                ]
+              ]
+            },
+            "selectedNode": 1,
+            "wizardStage": "semantics",
+            "semanticPreviewAngleDeg": 30,
+            "semanticPreviewDetached": true,
+            "semanticGraphOffsets": {
+              "__map__": [
+                [
+                  0,
+                  {
+                    "__vector3__": [
+                      1,
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  1,
+                  {
+                    "__vector3__": [
+                      0,
+                      2,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "__vector3__": [
+                      0,
+                      0,
+                      -1
+                    ]
+                  }
+                ]
+              ]
+            },
+            "semanticStructureMode": "graph",
+            "structuralGraphRoot": 0,
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "index": 2,
+              "worldPoint": {
+                "__vector3__": [
+                  -4,
+                  8,
+                  2
+                ]
+              },
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "previewStates": {
+                "__map__": [
+                  [
+                    1,
+                    "open"
+                  ]
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "coords": "-0.7976, 4.0521, -3.4250",
+            "nodeId": "TIP",
+            "nodeIndex": 2,
+            "ok": true,
+            "payload": {
+              "axis": [
+                0,
+                1,
+                0
+              ],
+              "breakForceN": 0,
+              "breakTorqueNm": 0,
+              "breakable": false,
+              "defaultRateDegPerSec": 0,
+              "maxAngleDeg": 360,
+              "minAngleDeg": -360,
+              "nodeIndex": 2,
+              "pivot": [
+                -0.7975893161811105,
+                4.052134970263596,
+                -3.425032850920436
+              ],
+              "type": "fixed"
+            },
+            "pivot": [
+              -0.7975893161811105,
+              4.052134970263596,
+              -3.425032850920436
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "index": 0,
+              "worldPoint": {
+                "__vector3__": [
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "stateVariants": [],
+              "previewStates": {
+                "__map__": []
+              }
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "index": 99,
+              "worldPoint": {
+                "__vector3__": [
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "stateVariants": [],
+              "previewStates": {
+                "__map__": []
+              }
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        }
+      ],
+      "oracle_sha256": "56c79be8a849c21a67bb4983b4b3b4620ae6ac4bc8eccf53c4743fd8600743f1"
+    },
+    {
+      "name": "wizardSemanticsParentOriginPivotRequest",
+      "support": [
+        "composeMatrix",
+        "deg",
+        "previewStateForNode",
+        "semanticNodePose",
+        "semanticWorldMatrix"
+      ],
+      "fixtures": [
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "renderLods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "R0",
+                      "parentIndex": -1,
+                      "semanticNodeIndex": 0,
+                      "geometryIndex": 0,
+                      "localPosition": [
+                        1,
+                        2,
+                        3
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R1",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": 1,
+                      "geometryIndex": 1,
+                      "localPosition": [
+                        0,
+                        4,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        90
+                      ],
+                      "pivot": [
+                        1,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R2",
+                      "parentIndex": 1,
+                      "semanticNodeIndex": 2,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        -2,
+                        0,
+                        1
+                      ],
+                      "localRotationDeg": [
+                        20,
+                        -10,
+                        5
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "RU",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": -1,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        3,
+                        -1,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        15,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    }
+                  ],
+                  "geometries": [
+                    {
+                      "minBounds": [
+                        -1,
+                        -1,
+                        -1
+                      ],
+                      "maxBounds": [
+                        1,
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.5,
+                        -2,
+                        -0.5
+                      ],
+                      "maxBounds": [
+                        0.5,
+                        2,
+                        0.5
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.25,
+                        -0.25,
+                        -0.25
+                      ],
+                      "maxBounds": [
+                        0.25,
+                        0.25,
+                        0.25
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "minBounds": [
+                -6,
+                -5,
+                -4
+              ],
+              "maxBounds": [
+                8,
+                9,
+                7
+              ]
+            },
+            "activeLod": 0,
+            "previewStates": {
+              "__map__": [
+                [
+                  1,
+                  "open"
+                ]
+              ]
+            },
+            "selectedNode": 1,
+            "wizardStage": "semantics",
+            "semanticPreviewAngleDeg": 30,
+            "semanticPreviewDetached": true,
+            "semanticGraphOffsets": {
+              "__map__": [
+                [
+                  0,
+                  {
+                    "__vector3__": [
+                      1,
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  1,
+                  {
+                    "__vector3__": [
+                      0,
+                      2,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "__vector3__": [
+                      0,
+                      0,
+                      -1
+                    ]
+                  }
+                ]
+              ]
+            },
+            "semanticStructureMode": "graph",
+            "structuralGraphRoot": 0,
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "selectedNode": 1,
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "previewStates": {
+                "__map__": [
+                  [
+                    1,
+                    "open"
+                  ]
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "nodeIndex": 1,
+            "ok": true,
+            "parentIndex": 0,
+            "worldPoint": {
+              "__vector3__": [
+                1,
+                2,
+                3
+              ]
+            }
+          }
+        },
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "renderLods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "R0",
+                      "parentIndex": -1,
+                      "semanticNodeIndex": 0,
+                      "geometryIndex": 0,
+                      "localPosition": [
+                        1,
+                        2,
+                        3
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R1",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": 1,
+                      "geometryIndex": 1,
+                      "localPosition": [
+                        0,
+                        4,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        90
+                      ],
+                      "pivot": [
+                        1,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R2",
+                      "parentIndex": 1,
+                      "semanticNodeIndex": 2,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        -2,
+                        0,
+                        1
+                      ],
+                      "localRotationDeg": [
+                        20,
+                        -10,
+                        5
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "RU",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": -1,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        3,
+                        -1,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        15,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    }
+                  ],
+                  "geometries": [
+                    {
+                      "minBounds": [
+                        -1,
+                        -1,
+                        -1
+                      ],
+                      "maxBounds": [
+                        1,
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.5,
+                        -2,
+                        -0.5
+                      ],
+                      "maxBounds": [
+                        0.5,
+                        2,
+                        0.5
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.25,
+                        -0.25,
+                        -0.25
+                      ],
+                      "maxBounds": [
+                        0.25,
+                        0.25,
+                        0.25
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "minBounds": [
+                -6,
+                -5,
+                -4
+              ],
+              "maxBounds": [
+                8,
+                9,
+                7
+              ]
+            },
+            "activeLod": 0,
+            "previewStates": {
+              "__map__": [
+                [
+                  1,
+                  "open"
+                ]
+              ]
+            },
+            "selectedNode": 1,
+            "wizardStage": "semantics",
+            "semanticPreviewAngleDeg": 30,
+            "semanticPreviewDetached": true,
+            "semanticGraphOffsets": {
+              "__map__": [
+                [
+                  0,
+                  {
+                    "__vector3__": [
+                      1,
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  1,
+                  {
+                    "__vector3__": [
+                      0,
+                      2,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "__vector3__": [
+                      0,
+                      0,
+                      -1
+                    ]
+                  }
+                ]
+              ]
+            },
+            "semanticStructureMode": "graph",
+            "structuralGraphRoot": 0,
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "selectedNode": 2,
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "previewStates": {
+                "__map__": [
+                  [
+                    1,
+                    "open"
+                  ]
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "nodeIndex": 2,
+            "ok": true,
+            "parentIndex": 1,
+            "worldPoint": {
+              "__vector3__": [
+                1.2928932188134525,
+                6.292893218813452,
+                3
+              ]
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "selectedNode": 0,
+              "stateVariants": [],
+              "previewStates": {
+                "__map__": []
+              }
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "selectedNode": 99,
+              "stateVariants": [],
+              "previewStates": {
+                "__map__": []
+              }
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        }
+      ],
+      "oracle_sha256": "49aa8c825511934c2c062d213c9446304494d8897b0a54b26a057e7ed771613f"
+    },
+    {
+      "name": "wizardSemanticsVisualCenterPivotEligibility",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            0
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            1
+          ],
+          "expected": {
+            "nodeIndex": 1,
+            "ok": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            2
+          ],
+          "expected": {
+            "nodeIndex": 2,
+            "ok": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            99
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            null
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        }
+      ],
+      "oracle_sha256": "05c88b915e960c51b994d2ba632d45e3b6a0dd972304de4a0182eab3e366036d"
+    },
+    {
+      "name": "wizardSemanticsVisualCenterPivotRequest",
+      "support": [
+        "composeMatrix",
+        "deg",
+        "previewStateForNode",
+        "semanticCanonicalNodeAnchorMap",
+        "semanticCanonicalRenderWorldMatrices",
+        "semanticDescendantSet",
+        "semanticIsDescendant",
+        "semanticNodePose",
+        "semanticRenderBaseMatrix",
+        "semanticWorldMatrix",
+        "wizardSemanticsVisualCenterPivotEligibility"
+      ],
+      "fixtures": [
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "renderLods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "R0",
+                      "parentIndex": -1,
+                      "semanticNodeIndex": 0,
+                      "geometryIndex": 0,
+                      "localPosition": [
+                        1,
+                        2,
+                        3
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R1",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": 1,
+                      "geometryIndex": 1,
+                      "localPosition": [
+                        0,
+                        4,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        90
+                      ],
+                      "pivot": [
+                        1,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R2",
+                      "parentIndex": 1,
+                      "semanticNodeIndex": 2,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        -2,
+                        0,
+                        1
+                      ],
+                      "localRotationDeg": [
+                        20,
+                        -10,
+                        5
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "RU",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": -1,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        3,
+                        -1,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        15,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    }
+                  ],
+                  "geometries": [
+                    {
+                      "minBounds": [
+                        -1,
+                        -1,
+                        -1
+                      ],
+                      "maxBounds": [
+                        1,
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.5,
+                        -2,
+                        -0.5
+                      ],
+                      "maxBounds": [
+                        0.5,
+                        2,
+                        0.5
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.25,
+                        -0.25,
+                        -0.25
+                      ],
+                      "maxBounds": [
+                        0.25,
+                        0.25,
+                        0.25
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "minBounds": [
+                -6,
+                -5,
+                -4
+              ],
+              "maxBounds": [
+                8,
+                9,
+                7
+              ]
+            },
+            "activeLod": 0,
+            "previewStates": {
+              "__map__": [
+                [
+                  1,
+                  "open"
+                ]
+              ]
+            },
+            "selectedNode": 1,
+            "wizardStage": "semantics",
+            "semanticPreviewAngleDeg": 30,
+            "semanticPreviewDetached": true,
+            "semanticGraphOffsets": {
+              "__map__": [
+                [
+                  0,
+                  {
+                    "__vector3__": [
+                      1,
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  1,
+                  {
+                    "__vector3__": [
+                      0,
+                      2,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "__vector3__": [
+                      0,
+                      0,
+                      -1
+                    ]
+                  }
+                ]
+              ]
+            },
+            "semanticStructureMode": "graph",
+            "structuralGraphRoot": 0,
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          "args": [
+            1
+          ],
+          "invoke": "wizardSemanticsVisualCenterPivotRequest({nodes:state.asset?.nodes||[],selectedNode:args[0],lod:state.asset?.renderLods?.[state.activeLod],canonicalWorldMatrices:semanticCanonicalRenderWorldMatrices({lod:state.asset?.renderLods?.[state.activeLod],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld}),stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates})",
+          "expected": {
+            "nodeIndex": 1,
+            "ok": true,
+            "worldPoint": {
+              "__vector3__": [
+                11.292893218813454,
+                6.292893218813452,
+                3
+              ]
+            }
+          }
+        },
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "renderLods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "R0",
+                      "parentIndex": -1,
+                      "semanticNodeIndex": 0,
+                      "geometryIndex": 0,
+                      "localPosition": [
+                        1,
+                        2,
+                        3
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R1",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": 1,
+                      "geometryIndex": 1,
+                      "localPosition": [
+                        0,
+                        4,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        90
+                      ],
+                      "pivot": [
+                        1,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R2",
+                      "parentIndex": 1,
+                      "semanticNodeIndex": 2,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        -2,
+                        0,
+                        1
+                      ],
+                      "localRotationDeg": [
+                        20,
+                        -10,
+                        5
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "RU",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": -1,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        3,
+                        -1,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        15,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    }
+                  ],
+                  "geometries": [
+                    {
+                      "minBounds": [
+                        -1,
+                        -1,
+                        -1
+                      ],
+                      "maxBounds": [
+                        1,
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.5,
+                        -2,
+                        -0.5
+                      ],
+                      "maxBounds": [
+                        0.5,
+                        2,
+                        0.5
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.25,
+                        -0.25,
+                        -0.25
+                      ],
+                      "maxBounds": [
+                        0.25,
+                        0.25,
+                        0.25
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "minBounds": [
+                -6,
+                -5,
+                -4
+              ],
+              "maxBounds": [
+                8,
+                9,
+                7
+              ]
+            },
+            "activeLod": 0,
+            "previewStates": {
+              "__map__": [
+                [
+                  1,
+                  "open"
+                ]
+              ]
+            },
+            "selectedNode": 1,
+            "wizardStage": "semantics",
+            "semanticPreviewAngleDeg": 30,
+            "semanticPreviewDetached": true,
+            "semanticGraphOffsets": {
+              "__map__": [
+                [
+                  0,
+                  {
+                    "__vector3__": [
+                      1,
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  1,
+                  {
+                    "__vector3__": [
+                      0,
+                      2,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "__vector3__": [
+                      0,
+                      0,
+                      -1
+                    ]
+                  }
+                ]
+              ]
+            },
+            "semanticStructureMode": "graph",
+            "structuralGraphRoot": 0,
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          "args": [
+            2
+          ],
+          "invoke": "wizardSemanticsVisualCenterPivotRequest({nodes:state.asset?.nodes||[],selectedNode:args[0],lod:state.asset?.renderLods?.[state.activeLod],canonicalWorldMatrices:semanticCanonicalRenderWorldMatrices({lod:state.asset?.renderLods?.[state.activeLod],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld}),stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates})",
+          "expected": {
+            "nodeIndex": 2,
+            "ok": true,
+            "worldPoint": {
+              "__vector3__": [
+                9.878679656440358,
+                4.878679656440357,
+                4
+              ]
+            }
+          }
+        },
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "renderLods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "R0",
+                      "parentIndex": -1,
+                      "semanticNodeIndex": 0,
+                      "geometryIndex": 0,
+                      "localPosition": [
+                        1,
+                        2,
+                        3
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R1",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": 1,
+                      "geometryIndex": 1,
+                      "localPosition": [
+                        0,
+                        4,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        90
+                      ],
+                      "pivot": [
+                        1,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R2",
+                      "parentIndex": 1,
+                      "semanticNodeIndex": 2,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        -2,
+                        0,
+                        1
+                      ],
+                      "localRotationDeg": [
+                        20,
+                        -10,
+                        5
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "RU",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": -1,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        3,
+                        -1,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        15,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    }
+                  ],
+                  "geometries": [
+                    {
+                      "minBounds": [
+                        -1,
+                        -1,
+                        -1
+                      ],
+                      "maxBounds": [
+                        1,
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.5,
+                        -2,
+                        -0.5
+                      ],
+                      "maxBounds": [
+                        0.5,
+                        2,
+                        0.5
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.25,
+                        -0.25,
+                        -0.25
+                      ],
+                      "maxBounds": [
+                        0.25,
+                        0.25,
+                        0.25
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "minBounds": [
+                -6,
+                -5,
+                -4
+              ],
+              "maxBounds": [
+                8,
+                9,
+                7
+              ]
+            },
+            "activeLod": 0,
+            "previewStates": {
+              "__map__": [
+                [
+                  1,
+                  "open"
+                ]
+              ]
+            },
+            "selectedNode": 1,
+            "wizardStage": "semantics",
+            "semanticPreviewAngleDeg": 30,
+            "semanticPreviewDetached": true,
+            "semanticGraphOffsets": {
+              "__map__": [
+                [
+                  0,
+                  {
+                    "__vector3__": [
+                      1,
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  1,
+                  {
+                    "__vector3__": [
+                      0,
+                      2,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "__vector3__": [
+                      0,
+                      0,
+                      -1
+                    ]
+                  }
+                ]
+              ]
+            },
+            "semanticStructureMode": "graph",
+            "structuralGraphRoot": 0,
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          "args": [
+            0
+          ],
+          "invoke": "wizardSemanticsVisualCenterPivotRequest({nodes:state.asset?.nodes||[],selectedNode:args[0],lod:state.asset?.renderLods?.[state.activeLod],canonicalWorldMatrices:semanticCanonicalRenderWorldMatrices({lod:state.asset?.renderLods?.[state.activeLod],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld}),stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates})",
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        },
+        {
+          "state": {
+            "asset": {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    4,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    90
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "breakable": true
+                  }
+                },
+                {
+                  "id": "TIP",
+                  "parentIndex": 1,
+                  "localPosition": [
+                    -2,
+                    0,
+                    1
+                  ],
+                  "localRotationDeg": [
+                    20,
+                    -10,
+                    5
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact",
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "stateVariants": [
+                {
+                  "nodeIndex": 1,
+                  "id": "open",
+                  "transformOverride": true,
+                  "localPosition": [
+                    0,
+                    5,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    45
+                  ],
+                  "pivot": [
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "renderLods": [
+                {
+                  "loaded": true,
+                  "nodes": [
+                    {
+                      "id": "R0",
+                      "parentIndex": -1,
+                      "semanticNodeIndex": 0,
+                      "geometryIndex": 0,
+                      "localPosition": [
+                        1,
+                        2,
+                        3
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R1",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": 1,
+                      "geometryIndex": 1,
+                      "localPosition": [
+                        0,
+                        4,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        0,
+                        90
+                      ],
+                      "pivot": [
+                        1,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "R2",
+                      "parentIndex": 1,
+                      "semanticNodeIndex": 2,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        -2,
+                        0,
+                        1
+                      ],
+                      "localRotationDeg": [
+                        20,
+                        -10,
+                        5
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    },
+                    {
+                      "id": "RU",
+                      "parentIndex": 0,
+                      "semanticNodeIndex": -1,
+                      "geometryIndex": 2,
+                      "localPosition": [
+                        3,
+                        -1,
+                        0
+                      ],
+                      "localRotationDeg": [
+                        0,
+                        15,
+                        0
+                      ],
+                      "pivot": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "enabled": true
+                    }
+                  ],
+                  "geometries": [
+                    {
+                      "minBounds": [
+                        -1,
+                        -1,
+                        -1
+                      ],
+                      "maxBounds": [
+                        1,
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.5,
+                        -2,
+                        -0.5
+                      ],
+                      "maxBounds": [
+                        0.5,
+                        2,
+                        0.5
+                      ]
+                    },
+                    {
+                      "minBounds": [
+                        -0.25,
+                        -0.25,
+                        -0.25
+                      ],
+                      "maxBounds": [
+                        0.25,
+                        0.25,
+                        0.25
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "minBounds": [
+                -6,
+                -5,
+                -4
+              ],
+              "maxBounds": [
+                8,
+                9,
+                7
+              ]
+            },
+            "activeLod": 0,
+            "previewStates": {
+              "__map__": [
+                [
+                  1,
+                  "open"
+                ]
+              ]
+            },
+            "selectedNode": 1,
+            "wizardStage": "semantics",
+            "semanticPreviewAngleDeg": 30,
+            "semanticPreviewDetached": true,
+            "semanticGraphOffsets": {
+              "__map__": [
+                [
+                  0,
+                  {
+                    "__vector3__": [
+                      1,
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  1,
+                  {
+                    "__vector3__": [
+                      0,
+                      2,
+                      0
+                    ]
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "__vector3__": [
+                      0,
+                      0,
+                      -1
+                    ]
+                  }
+                ]
+              ]
+            },
+            "semanticStructureMode": "graph",
+            "structuralGraphRoot": 0,
+            "root": {
+              "matrixWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          "args": [
+            99
+          ],
+          "invoke": "wizardSemanticsVisualCenterPivotRequest({nodes:state.asset?.nodes||[],selectedNode:args[0],lod:state.asset?.renderLods?.[state.activeLod],canonicalWorldMatrices:semanticCanonicalRenderWorldMatrices({lod:state.asset?.renderLods?.[state.activeLod],semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root?.matrixWorld}),stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates})",
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        }
+      ],
+      "oracle_sha256": "5101f1188549e453e7fe86f26bf707639a5f771ccfd3428a85c5ab03373b9f9a"
+    },
+    {
+      "name": "wizardSemanticsJointPivotPickTransition",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "selectedNode": 1,
+              "currentTarget": null
+            }
+          ],
+          "expected": {
+            "childId": "B",
+            "mode": "start",
+            "nodeIndex": 1,
+            "ok": true,
+            "parentId": "A",
+            "parentIndex": 0,
+            "preview": {
+              "angleDeg": 0,
+              "detached": false,
+              "graphExplode": 0,
+              "motionPlaying": false
+            },
+            "target": 1
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "selectedNode": 2,
+              "currentTarget": 4
+            }
+          ],
+          "expected": {
+            "mode": "cancel",
+            "nodeIndex": 2,
+            "ok": true,
+            "parentIndex": 1,
+            "target": null
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "selectedNode": 0,
+              "currentTarget": null
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "selectedNode": 99,
+              "currentTarget": null
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "selectedNode": 1
+            }
+          ],
+          "expected": {
+            "mode": "cancel",
+            "nodeIndex": 1,
+            "ok": true,
+            "parentIndex": 0,
+            "target": null
+          }
+        }
+      ],
+      "oracle_sha256": "6e4de728f4849cb02c6d50099838eb8cca9b90e4f6b8a573e051feecee2896b7"
+    },
+    {
+      "name": "wizardSemanticsNominalRateCommand",
+      "support": [
+        "semanticJointPayload",
+        "semanticRelationKind"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            2,
+            "12.5"
+          ],
+          "expected": {
+            "nodeIndex": 2,
+            "ok": true,
+            "payload": {
+              "axis": [
+                0,
+                0,
+                1
+              ],
+              "breakForceN": 100,
+              "breakTorqueNm": 200,
+              "breakable": true,
+              "defaultRateDegPerSec": 12.5,
+              "maxAngleDeg": 60,
+              "minAngleDeg": -30,
+              "nodeIndex": 2,
+              "pivot": [
+                4,
+                5,
+                6
+              ],
+              "type": "revolute"
+            },
+            "rate": 12.5
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            2,
+            "-7"
+          ],
+          "expected": {
+            "nodeIndex": 2,
+            "ok": true,
+            "payload": {
+              "axis": [
+                0,
+                0,
+                1
+              ],
+              "breakForceN": 100,
+              "breakTorqueNm": 200,
+              "breakable": true,
+              "defaultRateDegPerSec": -7,
+              "maxAngleDeg": 60,
+              "minAngleDeg": -30,
+              "nodeIndex": 2,
+              "pivot": [
+                4,
+                5,
+                6
+              ],
+              "type": "revolute"
+            },
+            "rate": -7
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            2,
+            "abc"
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid_rate"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            1,
+            "5"
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "ineligible"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 0,
+                  "minAngleDeg": -360,
+                  "maxAngleDeg": 360,
+                  "breakable": false,
+                  "breakForceN": 0,
+                  "breakTorqueNm": 0
+                }
+              },
+              {
+                "id": "B",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "axis": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "defaultRateDegPerSec": 2.5,
+                  "minAngleDeg": -45,
+                  "maxAngleDeg": 90,
+                  "breakable": false,
+                  "breakForceN": 10,
+                  "breakTorqueNm": 20
+                }
+              },
+              {
+                "id": "C",
+                "parentIndex": 1,
+                "joint": {
+                  "type": "revolute",
+                  "pivot": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "axis": [
+                    0,
+                    0,
+                    1
+                  ],
+                  "defaultRateDegPerSec": 7,
+                  "minAngleDeg": -30,
+                  "maxAngleDeg": 60,
+                  "breakable": true,
+                  "breakForceN": 100,
+                  "breakTorqueNm": 200
+                }
+              },
+              {
+                "id": "D",
+                "parentIndex": -1,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              },
+              {
+                "id": "E",
+                "parentIndex": 0,
+                "joint": {
+                  "type": "fixed",
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "axis": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "breakable": false
+                }
+              }
+            ],
+            null,
+            "5"
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "ineligible"
+          }
+        }
+      ],
+      "oracle_sha256": "93f3cf456d66e83554370104cce39aaeec449e38462a15c55f66e15eb2eab938"
+    },
+    {
+      "name": "wizardSemanticsBindingPickTransition",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            1,
+            "ARM",
+            null
+          ],
+          "expected": {
+            "mode": "start",
+            "nodeId": "ARM",
+            "nodeIndex": 1,
+            "ok": true,
+            "target": 1
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            1,
+            "ARM",
+            2
+          ],
+          "expected": {
+            "mode": "cancel",
+            "nodeId": "ARM",
+            "nodeIndex": 1,
+            "ok": true,
+            "target": null
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            2,
+            "TIP",
+            null
+          ],
+          "expected": {
+            "mode": "start",
+            "nodeId": "TIP",
+            "nodeIndex": 2,
+            "ok": true,
+            "target": 2
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            null,
+            "",
+            null
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            "3",
+            "NODE3",
+            null
+          ],
+          "expected": {
+            "mode": "start",
+            "nodeId": "NODE3",
+            "nodeIndex": 3,
+            "ok": true,
+            "target": 3
+          }
+        }
+      ],
+      "oracle_sha256": "c5c7ec6af639a474bc5c32222f6db8d34c0d4178b66ca7e3067e7364ed70ca39"
+    },
+    {
+      "name": "wizardSemanticsBindingAssignmentCommand",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "targetIndex": 1,
+              "lodIndex": 0,
+              "renderNodeIndex": 3,
+              "renderNodeId": "R_ARM",
+              "applyAllLods": true
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "payload": {
+              "applyAllLods": true,
+              "lodIndex": 0,
+              "renderNodeIndex": 3,
+              "semanticNodeIndex": 1
+            },
+            "renderId": "R_ARM",
+            "renderNodeIndex": 3,
+            "targetId": "B",
+            "targetIndex": 1
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "targetIndex": 2,
+              "lodIndex": 2,
+              "renderNodeIndex": "4",
+              "renderNodeId": "",
+              "applyAllLods": false
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "payload": {
+              "applyAllLods": false,
+              "lodIndex": 2,
+              "renderNodeIndex": 4,
+              "semanticNodeIndex": 2
+            },
+            "renderId": "RenderNode",
+            "renderNodeIndex": 4,
+            "targetId": "C",
+            "targetIndex": 2
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "targetIndex": 2,
+              "lodIndex": "1",
+              "renderNodeIndex": 0,
+              "renderNodeId": null
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "payload": {
+              "applyAllLods": true,
+              "lodIndex": "1",
+              "renderNodeIndex": 0,
+              "semanticNodeIndex": 2
+            },
+            "renderId": "RenderNode",
+            "renderNodeIndex": 0,
+            "targetId": "C",
+            "targetIndex": 2
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 0,
+                    "minAngleDeg": -360,
+                    "maxAngleDeg": 360,
+                    "breakable": false,
+                    "breakForceN": 0,
+                    "breakTorqueNm": 0
+                  }
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "axis": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "defaultRateDegPerSec": 2.5,
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": false,
+                    "breakForceN": 10,
+                    "breakTorqueNm": 20
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1,
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      4,
+                      5,
+                      6
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "defaultRateDegPerSec": 7,
+                    "minAngleDeg": -30,
+                    "maxAngleDeg": 60,
+                    "breakable": true,
+                    "breakForceN": 100,
+                    "breakTorqueNm": 200
+                  }
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                },
+                {
+                  "id": "E",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "breakable": false
+                  }
+                }
+              ],
+              "targetIndex": 99,
+              "lodIndex": 0,
+              "renderNodeIndex": 3,
+              "renderNodeId": "R_BAD",
+              "applyAllLods": true
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "reason": "invalid_target",
+            "renderNodeIndex": 3,
+            "targetIndex": 99
+          }
+        }
+      ],
+      "oracle_sha256": "a72ca980c8a0462a993af1c304025ee9bb2bf11cf06a64a84f73c74a9a70b718"
     }
   ],
   "easy_candidates": [],
-  "baseline_sha256": "e89cfaad87bc9ebeb2aebcf074846b5a6b9406b28b9b257989ffe5185c36af67"
+  "baseline_sha256": "b5fb16b4005098bc1f7ae03b9ded02c23a87b7e863271478add0722674858d0b"
 }

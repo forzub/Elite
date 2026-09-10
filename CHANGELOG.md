@@ -1,3 +1,12 @@
+## Model Asset Editor v0.10.66 — wizard decomposition wave 5O / SEMANTICS joint-pick-binding decisions
+
+- Extracted eight deterministic SEMANTICS joint/pick/binding boundaries: `wizardSemanticsJointPivotCommand`, `wizardSemanticsParentOriginPivotRequest`, `wizardSemanticsVisualCenterPivotEligibility`, `wizardSemanticsVisualCenterPivotRequest`, `wizardSemanticsJointPivotPickTransition`, `wizardSemanticsNominalRateCommand`, `wizardSemanticsBindingPickTransition` and `wizardSemanticsBindingAssignmentCommand`.
+- Joint world→local pivot conversion/payload formatting, parent-origin and child-visual-center presets, pivot-pick start/cancel state, nominal runtime-rate validation/payload, binding-pick start/cancel state and viewport binding payload construction are now explicit-input PURE calculations.
+- Existing effect shells retain `state` mutation, root `updateMatrixWorld`, DOM/raycaster work, localization/status and backend `send(...)`. The visual-center adapter preserves the legacy eligibility guard before root refresh/canonical-anchor work.
+- Frozen behavioural oracles cover all eight new PURE boundaries. Legacy wave5N versus wave5O differential validation passes 6,400 deterministic comparisons (800 per boundary), including randomized transforms, canonical visual anchors and exact binding payload flags.
+- Dynamic certification rises from 196 to 204 PURE functions; static census moves from `199 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard` to `207 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard`. The hard count is intentionally unchanged because the original joint/pick/binding functions remain genuine effect adapters.
+- SOURCE / LODS / GEOMETRY / SURFACES remain frozen and untouched; command names, payload semantics, authored data, persistence, UI controls and intended THREE behaviour are unchanged.
+
 ## Model Asset Editor v0.10.66 — wizard decomposition wave 5N / SEMANTICS command decisions
 
 - Extracted seven deterministic command/selection boundaries from the remaining SEMANTICS effect shells: `wizardSemanticsSelectionTransition`, `wizardSemanticsReparentCommand`, `wizardSemanticsRelationCommand`, `wizardSemanticsMoveToAssetSpaceCommand`, `wizardSemanticsFlattenStaticTreeCommand`, `wizardSemanticsDeletePlan` and `wizardSemanticsDeleteConfirmText`.

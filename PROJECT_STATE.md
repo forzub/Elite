@@ -1,3 +1,15 @@
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5O / SEMANTICS joint-pick-binding decisions (2026-09-11)
+
+- `[x]` Joint world→local pivot calculation plus `set_joint` payload is isolated in PURE `wizardSemanticsJointPivotCommand(input)`.
+- `[x]` Parent-origin and child-visual-center pivot preset derivation are explicit-input PURE; the visual-center effect adapter preserves the legacy pre-refresh eligibility guard and owns root world refresh.
+- `[x]` Joint-pivot 3D pick start/cancel state is isolated in PURE `wizardSemanticsJointPivotPickTransition(input)`; DOM graph controls, preview application and status remain effects.
+- `[x]` Nominal revolute runtime-rate validation/payload is isolated in PURE `wizardSemanticsNominalRateCommand`.
+- `[x]` Binding-pick start/cancel transition and viewport `set_render_node_semantic` payload construction are isolated in PURE helpers.
+- `[x]` Frozen behavioural oracles cover all eight new boundaries; legacy wave5N/new wave5O differential parity passes 6,400 deterministic cases.
+- `[x]` Dynamic purity: 204 certified PURE. Static census: 207 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard.
+- `[x]` Hard count remains unchanged because joint/pick/binding adapters retain real DOM/THREE/state/backend effects. SOURCE / LODS / GEOMETRY / SURFACES remain frozen.
+- `[ ]` Next: continue SEMANTICS effect-shell decomposition around tree interaction inline mutations, graph/selection synchronization and motion-animation state transitions before physical module extraction.
+
 ## Model Asset Editor 0.10.66 — wizard decomposition wave 5N / SEMANTICS command decisions (2026-09-11)
 
 - `[x]` Selection state transition is isolated in PURE `wizardSemanticsSelectionTransition(input)`; `semanticSelectNode()` only applies the transition and performs preview/DOM/status effects.

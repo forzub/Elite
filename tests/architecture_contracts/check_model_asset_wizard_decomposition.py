@@ -140,6 +140,21 @@ semantics_relation_adapter = function_source("semanticSetRelationFor")
 semantics_move_to_asset_adapter = function_source("semanticMoveSelectionToAssetSpace")
 semantics_flatten_static_adapter = function_source("semanticFlattenStaticTree")
 semantics_delete_adapter = function_source("semanticDeleteSelectedNode")
+semantics_joint_pivot_command = function_source("wizardSemanticsJointPivotCommand")
+semantics_parent_origin_pivot_request = function_source("wizardSemanticsParentOriginPivotRequest")
+semantics_visual_center_pivot_eligibility = function_source("wizardSemanticsVisualCenterPivotEligibility")
+semantics_visual_center_pivot_request = function_source("wizardSemanticsVisualCenterPivotRequest")
+semantics_joint_pivot_pick_transition = function_source("wizardSemanticsJointPivotPickTransition")
+semantics_nominal_rate_command = function_source("wizardSemanticsNominalRateCommand")
+semantics_binding_pick_transition = function_source("wizardSemanticsBindingPickTransition")
+semantics_binding_assignment_command = function_source("wizardSemanticsBindingAssignmentCommand")
+semantics_joint_pivot_adapter = function_source("semanticSetJointPivotWorld")
+semantics_parent_origin_pivot_adapter = function_source("semanticUseParentOriginPivot")
+semantics_visual_center_pivot_adapter = function_source("semanticUseVisualCenterPivot")
+semantics_joint_pivot_pick_adapter = function_source("semanticBeginJointPivotPick")
+semantics_nominal_rate_adapter = function_source("semanticSetNominalRate")
+semantics_pick_adapter = function_source("pick")
+semantics_binding_interactions_adapter = function_source("bindWizardSemanticsBindingInteractions")
 
 certified = {entry["name"]: entry for entry in CONTRACT.get("pure", [])}
 
@@ -571,7 +586,7 @@ for forbidden in ("state.", "activeRenderLod(", "updateMatrixWorld("):
         if forbidden in body:
             raise AssertionError(f"wizard decomposition: SEMANTICS wave5L pure transform helper {fn_name} regained adapter dependency {forbidden!r}")
 for token in (
-    "semanticJointLocalPointFromWorld(i,worldPoint,state.asset?.nodes||[],state.asset?.stateVariants||[],state.previewStates)",
+    "semanticJointLocalPointFromWorld(i,input?.worldPoint,nodes,input?.stateVariants||[],input?.previewStates)",
     "semanticGraphLayoutOffsets(canonicalAnchors,amount,{nodes:state.asset?.nodes||[],lod,stateVariants:",
     "semanticGraphDisplayAnchorMap(canonicalAnchors,{nodes:state.asset?.nodes||[],stateVariants:",
     "socketCanonicalWorldMatrix(s,state.asset?.nodes||[],state.asset?.stateVariants||[],state.previewStates)",
@@ -639,4 +654,46 @@ for adapter_name, body, required, forbidden in (
 if "wizardSemanticsDeleteConfirmText(plan,{" not in semantics_delete_adapter:
     raise AssertionError("wizard decomposition: SEMANTICS wave5N delete adapter missing pure confirmation-text builder")
 
-print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS pure boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND effect shells")
+# SEMANTICS wave5O: joint presets/pick mode/runtime-rate and visual binding pick/assignment
+# decisions are explicit-input PURE values. Raycasting, root refresh, DOM/status, state
+# mutation and backend sends stay in the pre-existing effect shells.
+for fn_name, body in (
+    ("wizardSemanticsJointPivotCommand", semantics_joint_pivot_command),
+    ("wizardSemanticsParentOriginPivotRequest", semantics_parent_origin_pivot_request),
+    ("wizardSemanticsVisualCenterPivotEligibility", semantics_visual_center_pivot_eligibility),
+    ("wizardSemanticsVisualCenterPivotRequest", semantics_visual_center_pivot_request),
+    ("wizardSemanticsJointPivotPickTransition", semantics_joint_pivot_pick_transition),
+    ("wizardSemanticsNominalRateCommand", semantics_nominal_rate_command),
+    ("wizardSemanticsBindingPickTransition", semantics_binding_pick_transition),
+    ("wizardSemanticsBindingAssignmentCommand", semantics_binding_assignment_command),
+):
+    assert_pure_block(fn_name, body)
+
+for adapter_name, body, required, forbidden in (
+    ("joint-pivot", semantics_joint_pivot_adapter, "wizardSemanticsJointPivotCommand({", ("semanticJointLocalPointFromWorld(", "semanticJointPayload(")),
+    ("parent-origin", semantics_parent_origin_pivot_adapter, "wizardSemanticsParentOriginPivotRequest({", ("new THREE.Vector3().setFromMatrixPosition", "semanticWorldMatrix(")),
+    ("visual-center", semantics_visual_center_pivot_adapter, "wizardSemanticsVisualCenterPivotRequest({", (".get(i)",)),
+    ("pivot-pick", semantics_joint_pivot_pick_adapter, "wizardSemanticsJointPivotPickTransition({", ("const i=Number(state.selectedNode)", "const n=state.asset?.nodes?.[i]")),
+    ("nominal-rate", semantics_nominal_rate_adapter, "wizardSemanticsNominalRateCommand(state.asset?.nodes||[],state.selectedNode,value)", ("Number.isFinite(rate)", "String(j.type||'fixed')")),
+):
+    if required not in body:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5O {adapter_name} adapter missing pure boundary {required!r}")
+    for token in forbidden:
+        if token in body:
+            raise AssertionError(f"wizard decomposition: SEMANTICS wave5O {adapter_name} adapter regained derivation logic {token!r}")
+
+if "wizardSemanticsVisualCenterPivotEligibility(nodes,state.selectedNode)" not in semantics_visual_center_pivot_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5O visual-center adapter must preserve pre-refresh eligibility guard")
+if "state.root.updateMatrixWorld(true)" not in semantics_visual_center_pivot_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5O visual-center adapter lost root-world refresh effect")
+if "wizardSemanticsBindingPickTransition(state.selectedNode,selected.id,state.semanticBindingPickTarget)" not in semantics_selection_refresh:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5O selection-refresh binding pick missing PURE transition")
+if "wizardSemanticsBindingPickTransition(state.selectedNode,selected.id,state.semanticBindingPickTarget)" not in semantics_binding_interactions_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5O binding-interactions adapter missing PURE transition")
+if "wizardSemanticsBindingAssignmentCommand({" not in semantics_pick_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5O viewport binding assignment missing PURE payload builder")
+for forbidden in ("targetNode=state.asset?.nodes?.[target]", "send('set_render_node_semantic',{lodIndex:"):
+    if forbidden in semantics_pick_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5O viewport binding adapter regained payload derivation {forbidden!r}")
+
+print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS/JOINT-PICK-BINDING-DECISIONS pure boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND/JOINT-PICK-BINDING effect shells")

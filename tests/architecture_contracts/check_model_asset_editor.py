@@ -490,7 +490,8 @@ for token in (
     'semanticLinkChildIndex',
     'state.semanticSelectedNodes',
     'semanticTopLevelSelected(state.asset?.nodes||[],state.semanticSelectedNodes,state.selectedNode)',
-    'semanticCanUseParent(state.asset?.nodes||[],child,target)',
+    'function wizardSemanticsReparentCommand(input)',
+    'semanticCanUseParent(nodes,child,target)',
     '.semanticTreeRow.selected{background:#17334a!important',
     '.semanticAssetSpaceRow{display:grid',
     '.wizardLodSticky{position:sticky',
@@ -610,13 +611,19 @@ tree_rows_block = body_between(web, 'function semanticTreeRows(', 'function sema
 for token in ('markHidden', 'if(collapsed){for(const child of kids)markHidden(child);return;}'):
     if token not in tree_rows_block:
         raise AssertionError(f'collapsed semantic subtree guard missing {token!r}')
-anchor_block = body_between(web, 'function semanticCanonicalNodeAnchorMap()', 'function semanticGraphDirection')
-for token in ('semanticCanonicalRenderWorldMatrices', 'geometry.minBounds', 'geometry.maxBounds', 'applyMatrix4(world)'):
+anchor_block = body_between(web, 'function semanticCanonicalNodeAnchorMap(', 'function semanticGraphDirection')
+for token in ('geometry.minBounds', 'geometry.maxBounds', 'applyMatrix4(world)', 'semanticIsDescendant(nodes', 'semanticWorldMatrix(i,nodes,stateVariants||[],previewStates)'):
     if token not in anchor_block:
         raise AssertionError(f'canonical semantic graph anchor missing {token!r}')
-for forbidden in ('computeBoundingBox', 'mesh.geometry', 'state.meshObjects', 'group.matrixWorld'):
+for forbidden in ('computeBoundingBox', 'mesh.geometry', 'state.', 'group.matrixWorld', 'updateMatrixWorld('):
     if forbidden in anchor_block:
-        raise AssertionError(f'3D semantic graph canonical anchor depends on mutable viewport state: {forbidden!r}')
+        raise AssertionError(f'3D semantic graph canonical anchor depends on mutable viewport/effect state: {forbidden!r}')
+for token in (
+    'anchorWorlds=semanticCanonicalRenderWorldMatrices({lod:anchorLod,semanticNodes:nodes,stateVariants,previewStates,rootWorld:state.root.matrixWorld})',
+    'state.root.updateMatrixWorld(true);const canonicalAnchors=semanticCanonicalNodeAnchorMap(nodes,anchorLod,anchorWorlds,stateVariants,previewStates)',
+):
+    if token not in web:
+        raise AssertionError(f'canonical semantic graph anchor adapter wiring missing {token!r}')
 
 # The graph overlay is persistent. Slider/motion preview may update positions, but
 # must not destroy/recreate dozens of THREE geometries/materials every animation
@@ -777,11 +784,11 @@ require("src/assets/webui/model_asset_editor.html", "if(fullCircle){const span=h
 # explode so the exploded subtree behaves as one rigid assembly around the one
 # authored joint pivot: R_joint * T_explode * M, never T_explode * R_joint * M.
 motion_block = body_between(web, 'function applySemanticMotionPreview(', 'function resetSemanticMotionPreview')
-if motion_block.find('applySemanticGraphExplode(canonicalAnchors);') > motion_block.find('const delta=semanticPreviewDeltaWorld()'):
+if motion_block.find('applySemanticGraphExplode(canonicalAnchors);') > motion_block.find('const delta=semanticPreviewDeltaWorld({'):
     raise AssertionError('semantic motion is still composed before graph explode')
 
 display_block = body_between(web, 'function semanticDisplayWorldMatrix(', 'function restoreSemanticPreviewMatrices')
-if display_block.find('makeTranslation(offset.x,offset.y,offset.z).multiply(out)') > display_block.find('semanticPreviewDeltaWorld().multiply(out)'):
+if display_block.find('makeTranslation(offset.x,offset.y,offset.z).multiply(out)') > display_block.find('semanticPreviewDeltaWorld(input).multiply(out)'):
     raise AssertionError('semantic display matrix still composes explode after joint motion')
 
 graph_anchor_block = body_between(web, 'function semanticGraphDisplayAnchorMap(', 'function rebuildSemanticGraphGizmos')
@@ -790,8 +797,8 @@ if graph_anchor_block.find('if(offset)p.add(offset);') > graph_anchor_block.find
 
 joint_gizmo_block = body_between(web, 'function rebuildSemanticGizmos(', 'function bindSemanticMotionControls')
 for token in (
-    'canonicalWorld=semanticWorldMatrix(state.selectedNode)',
-    'displayWorld=semanticDisplayWorldMatrix(state.selectedNode)',
+    'canonicalWorld=semanticWorldMatrix(state.selectedNode,transformInput.nodes,transformInput.stateVariants,transformInput.previewStates)',
+    'displayWorld=semanticDisplayWorldMatrix(state.selectedNode,transformInput)',
     'applyMatrix4(canonicalWorld)',
     'setFromMatrixPosition(displayWorld)',
 ):

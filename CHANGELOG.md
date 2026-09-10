@@ -1,3 +1,27 @@
+## Model Asset Editor v0.10.66 — wizard decomposition wave 5N / SEMANTICS command decisions
+
+- Extracted seven deterministic command/selection boundaries from the remaining SEMANTICS effect shells: `wizardSemanticsSelectionTransition`, `wizardSemanticsReparentCommand`, `wizardSemanticsRelationCommand`, `wizardSemanticsMoveToAssetSpaceCommand`, `wizardSemanticsFlattenStaticTreeCommand`, `wizardSemanticsDeletePlan` and `wizardSemanticsDeleteConfirmText`.
+- `semanticSelectNode`, reparent/relation actions, MODEL ROOT move/flatten actions and semantic deletion remain effect adapters that own state mutation, confirmation/status UI, preview reset and backend dispatch only. Ctrl/Shift selection ordering, DnD cycle validation, joint payload coercion and delete confirmation content are now explicit-input PURE calculations.
+- Frozen behavioural oracles cover all seven new PURE boundaries. Legacy wave5M versus wave5N differential validation passes 8,400 deterministic comparisons (1,200 per boundary), including selection Set insertion order, collapsed/tree-order range selection, DnD cycle rejection, static-flatten candidates and owned-payload deletion.
+- Dynamic certification rises from 189 to 196 PURE functions; static census moves from `192 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard` to `199 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard`. Hard count is intentionally unchanged because the seven original effect shells still perform real state/DOM/status/backend effects; their decision logic is no longer embedded in those shells.
+- SOURCE / LODS / GEOMETRY / SURFACES remain untouched; backend command names/payload semantics, authored data, persistence, control order and intended visible behaviour are unchanged.
+
+## Model Asset Editor v0.10.66 — wizard decomposition wave 5M / SEMANTICS residual derivation purity
+
+- Purified the last two SEMANTICS helpers that were hard only because of hidden editor-state mutation: `semanticCanonicalNodeAnchorMap` and `semanticSelectedPanels`.
+- `semanticCanonicalNodeAnchorMap(nodes, lod, worlds, stateVariants, previewStates)` now derives canonical per-node anchors solely from explicit geometry/world inputs. Existing effectful callers preserve the historical root-matrix refresh ordering by computing canonical render worlds first, calling `state.root.updateMatrixWorld(true)`, then invoking the pure anchor reduction.
+- `semanticSelectedPanels(selected, model, text, relationText)` is now deterministic presentation only. The existing `semanticRefreshSelectionUi()` effect shell owns the legacy parent-only preview-angle normalization and localization projection before calling the pure helper.
+- Frozen behavioural oracles cover both promoted helpers. Legacy wave5L versus wave5M differential validation passes 4,800 deterministic cases: 2,400 canonical-anchor cases (including a deliberately changing root matrix on refresh) and 2,400 selected-panel/output+preview-angle cases.
+- Dynamic certification rises from 187 to 189 PURE functions; static census moves from `190 PURE / 5 EASY / 15 TRANSITIVE / 259 deferred-hard` to `192 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard`. The remaining hard SEMANTICS functions are genuine DOM/backend/state effect shells; SOURCE / LODS / GEOMETRY / SURFACES remain untouched.
+
+## Model Asset Editor v0.10.66 — wizard decomposition wave 5L / SEMANTICS world + graph transform purity
+
+- Converted the remaining SEMANTICS canonical/display transform chain to explicit-input PURE functions: `semanticWorldMatrix`, `semanticJointLocalPointFromWorld`, `semanticPreviewDeltaWorld`, `semanticDisplayWorldMatrix`, `semanticGraphRootCenter`, `semanticGraphRadialMetrics`, `semanticGraphLayoutOffsets` and `semanticGraphDisplayAnchorMap`.
+- Purified the semantic socket transform projections `socketWorldMatrix` and `socketCanonicalWorldMatrix`; scene/root/state projection remains in existing apply/rebuild/view effect adapters.
+- Preserved the established composition order: canonical semantic world → editor graph explode → joint preview delta. The general editor architecture contract was updated only to recognize the explicit-input call form.
+- Frozen behavioural oracles cover all ten new PURE boundaries. Legacy wave5K versus wave5L differential validation passes 13,108 deterministic comparisons across semantic world matrices, joint-point conversion, preview/display matrices, graph center/radial/layout/display anchors and socket transforms.
+- Dynamic certification rises from 177 to 187 PURE functions; static census moves from `180 PURE / 5 EASY / 15 TRANSITIVE / 269 deferred-hard` to `190 PURE / 5 EASY / 15 TRANSITIVE / 259 deferred-hard`. SOURCE / LODS / GEOMETRY / SURFACES remain untouched.
+
 ## Model Asset Editor v0.10.66 — wizard decomposition wave 5K / SEMANTICS transform-math purity
 
 - Removed the remaining low-risk SEMANTICS hidden reads from `semanticRelationLabel`, `semanticRenderBaseMatrix`, `semanticCanonicalRenderWorldMatrices` and `semanticUnboundRenderClusterOffsets`; localization, asset semantic state, preview state, root world matrix and asset bounds are now explicit inputs projected by their effectful callers.

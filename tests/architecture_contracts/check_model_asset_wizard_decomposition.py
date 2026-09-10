@@ -116,6 +116,30 @@ semantics_graph_direction = function_source("semanticGraphDirection")
 semantics_socket_local_matrix = function_source("socketLocalMatrix")
 semantics_compose_matrix = function_source("composeMatrix")
 semantics_deg = function_source("deg")
+semantics_world_matrix = function_source("semanticWorldMatrix")
+semantics_joint_local_point = function_source("semanticJointLocalPointFromWorld")
+semantics_preview_delta_world = function_source("semanticPreviewDeltaWorld")
+semantics_display_world_matrix = function_source("semanticDisplayWorldMatrix")
+semantics_graph_root_center = function_source("semanticGraphRootCenter")
+semantics_graph_radial_metrics = function_source("semanticGraphRadialMetrics")
+semantics_graph_layout_offsets = function_source("semanticGraphLayoutOffsets")
+semantics_graph_display_anchor_map = function_source("semanticGraphDisplayAnchorMap")
+semantics_socket_world_matrix = function_source("socketWorldMatrix")
+semantics_socket_canonical_world_matrix = function_source("socketCanonicalWorldMatrix")
+semantics_canonical_node_anchor_map = function_source("semanticCanonicalNodeAnchorMap")
+semantics_selection_transition = function_source("wizardSemanticsSelectionTransition")
+semantics_reparent_command = function_source("wizardSemanticsReparentCommand")
+semantics_relation_command = function_source("wizardSemanticsRelationCommand")
+semantics_move_to_asset_command = function_source("wizardSemanticsMoveToAssetSpaceCommand")
+semantics_flatten_static_command = function_source("wizardSemanticsFlattenStaticTreeCommand")
+semantics_delete_plan = function_source("wizardSemanticsDeletePlan")
+semantics_delete_confirm_text = function_source("wizardSemanticsDeleteConfirmText")
+semantics_select_node_adapter = function_source("semanticSelectNode")
+semantics_reparent_adapter = function_source("semanticReparentSelection")
+semantics_relation_adapter = function_source("semanticSetRelationFor")
+semantics_move_to_asset_adapter = function_source("semanticMoveSelectionToAssetSpace")
+semantics_flatten_static_adapter = function_source("semanticFlattenStaticTree")
+semantics_delete_adapter = function_source("semanticDeleteSelectedNode")
 
 certified = {entry["name"]: entry for entry in CONTRACT.get("pure", [])}
 
@@ -449,18 +473,11 @@ for adapter_name, body in (("selected-node", semantics_selected_node_interaction
         raise AssertionError(f"wizard decomposition: SEMANTICS {adapter_name} adapter must not own cross-stage dispatch")
 
 # SEMANTICS wave5I: selected-node/motion panel derivation is a pure model + pure HTML
-# boundary. The compatibility wrapper owns localization and the legacy preview-angle write.
+# boundary. Wave5M later removes the compatibility wrapper's hidden state/localization reads.
 for forbidden in (r"\bstate\b", r"\beditorViewState\b", r"\btr\s*\(", r"\bsend\s*\(", r"\.innerHTML\s*=", r"\.onclick\s*="):
     for name, body in (("selected panels model", semantics_selected_panels_model), ("selected panels HTML", semantics_selected_panels_html)):
         if re.search(forbidden, body):
             raise AssertionError(f"wizard decomposition: pure {name} regained hidden/effect dependency: {forbidden}")
-for token in (
-    "wizardSemanticsSelectedPanelsModel({selected,nodes",
-    "if(model.hasParent)state.semanticPreviewAngleDeg=model.previewAngleDeg",
-    "wizardSemanticsSelectedPanelsHtml(model,text,{relationLabel:selected?semanticRelationLabel(selected,{root:tr(",
-):
-    if token not in semantics_selected_panels_wrapper:
-        raise AssertionError(f"wizard decomposition: SEMANTICS selected-panels effect wrapper missing {token!r}")
 for forbidden in ("state.semanticPreviewAngleDeg=angle", "const min=Number.isFinite(Number(j.minAngleDeg))", "const pivotUi=`", "const motion=`"):
     if forbidden in semantics_selected_panels_wrapper:
         raise AssertionError(f"wizard decomposition: SEMANTICS selected-panels legacy calculation/markup leaked back into wrapper: {forbidden!r}")
@@ -515,12 +532,111 @@ for fn_name, body in (
 if "tr(" in semantics_relation_label:
     raise AssertionError("wizard decomposition: semanticRelationLabel regained implicit localization")
 for token in (
-    "semanticRelationLabel(selected,{root:tr('model_editor.semantics.relation.root'",
+    "const relationText={root:tr('model_editor.semantics.relation.root'",
     "semanticRenderBaseMatrix(i,lod,semanticNodes,stateVariants,state.previewStates)",
-    "semanticCanonicalRenderWorldMatrices({lod,semanticNodes:nodes,stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root.matrixWorld})",
+    "semanticCanonicalRenderWorldMatrices({lod,semanticNodes:nodes,stateVariants,previewStates,rootWorld:state.root.matrixWorld})",
     "semanticUnboundRenderClusterOffsets({lod,amount,semanticNodes:state.asset?.nodes||[],stateVariants:state.asset?.stateVariants||[],previewStates:state.previewStates,rootWorld:state.root.matrixWorld,minBounds:state.asset?.minBounds||[0,0,0],maxBounds:state.asset?.maxBounds||[1,1,1]})",
 ):
     if token not in WEB:
         raise AssertionError(f"wizard decomposition: SEMANTICS wave5K explicit-input adapter wiring missing {token!r}")
 
-print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH pure boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION effect shells")
+# SEMANTICS wave5L: canonical semantic world/display transforms, radial graph layout,
+# preview delta and socket transforms are value functions. Runtime scene mutation remains
+# in the existing apply/rebuild adapters.
+for fn_name, body in (
+    ("semanticWorldMatrix", semantics_world_matrix),
+    ("semanticJointLocalPointFromWorld", semantics_joint_local_point),
+    ("semanticPreviewDeltaWorld", semantics_preview_delta_world),
+    ("semanticDisplayWorldMatrix", semantics_display_world_matrix),
+    ("semanticGraphRootCenter", semantics_graph_root_center),
+    ("semanticGraphRadialMetrics", semantics_graph_radial_metrics),
+    ("semanticGraphLayoutOffsets", semantics_graph_layout_offsets),
+    ("semanticGraphDisplayAnchorMap", semantics_graph_display_anchor_map),
+    ("socketWorldMatrix", semantics_socket_world_matrix),
+    ("socketCanonicalWorldMatrix", semantics_socket_canonical_world_matrix),
+):
+    assert_pure_block(fn_name, body)
+for forbidden in ("state.", "activeRenderLod(", "updateMatrixWorld("):
+    for fn_name, body in (
+        ("semanticWorldMatrix", semantics_world_matrix),
+        ("semanticPreviewDeltaWorld", semantics_preview_delta_world),
+        ("semanticDisplayWorldMatrix", semantics_display_world_matrix),
+        ("semanticGraphRootCenter", semantics_graph_root_center),
+        ("semanticGraphRadialMetrics", semantics_graph_radial_metrics),
+        ("semanticGraphLayoutOffsets", semantics_graph_layout_offsets),
+        ("semanticGraphDisplayAnchorMap", semantics_graph_display_anchor_map),
+        ("socketWorldMatrix", semantics_socket_world_matrix),
+        ("socketCanonicalWorldMatrix", semantics_socket_canonical_world_matrix),
+    ):
+        if forbidden in body:
+            raise AssertionError(f"wizard decomposition: SEMANTICS wave5L pure transform helper {fn_name} regained adapter dependency {forbidden!r}")
+for token in (
+    "semanticJointLocalPointFromWorld(i,worldPoint,state.asset?.nodes||[],state.asset?.stateVariants||[],state.previewStates)",
+    "semanticGraphLayoutOffsets(canonicalAnchors,amount,{nodes:state.asset?.nodes||[],lod,stateVariants:",
+    "semanticGraphDisplayAnchorMap(canonicalAnchors,{nodes:state.asset?.nodes||[],stateVariants:",
+    "socketCanonicalWorldMatrix(s,state.asset?.nodes||[],state.asset?.stateVariants||[],state.previewStates)",
+):
+    if token not in WEB:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5L explicit-input adapter wiring missing {token!r}")
+
+# SEMANTICS wave5M: the two residual state-mutation-only SEMANTICS helpers become
+# certified explicit-input value functions. Root matrix refresh and preview-angle writes
+# remain in their already-effectful callers; no new effect adapter is introduced.
+for fn_name, body in (
+    ("semanticCanonicalNodeAnchorMap", semantics_canonical_node_anchor_map),
+    ("semanticSelectedPanels", semantics_selected_panels_wrapper),
+):
+    assert_pure_block(fn_name, body)
+for forbidden in ("state.", "tr(", "updateMatrixWorld("):
+    for fn_name, body in (
+        ("semanticCanonicalNodeAnchorMap", semantics_canonical_node_anchor_map),
+        ("semanticSelectedPanels", semantics_selected_panels_wrapper),
+    ):
+        if forbidden in body:
+            raise AssertionError(f"wizard decomposition: SEMANTICS wave5M pure helper {fn_name} regained adapter dependency {forbidden!r}")
+for token in (
+    "const panelModel=wizardSemanticsSelectedPanelsModel({selected,nodes",
+    "if(panelModel.hasParent)state.semanticPreviewAngleDeg=panelModel.previewAngleDeg",
+    "semanticSelectedPanels(selected,panelModel,panelText,relationText)",
+    "semanticCanonicalNodeAnchorMap(nodes,anchorLod,anchorWorlds,stateVariants,previewStates)",
+):
+    if token not in semantics_selection_refresh and token.startswith("const panelModel"):
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5M selected-panel effect wiring missing {token!r}")
+    if token not in semantics_selection_refresh and token.startswith("if(panelModel"):
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5M selected-panel preview write missing {token!r}")
+    if token not in semantics_selection_refresh and token.startswith("semanticSelectedPanels"):
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5M selected-panel pure call missing {token!r}")
+    if token.startswith("semanticCanonicalNodeAnchorMap") and token not in WEB:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5M canonical-anchor adapter wiring missing {token!r}")
+
+# SEMANTICS wave5N: command/selection effect shells retain only state/DOM/status/send
+# work. Selection-range calculation, DnD validation, relation payloads, MODEL ROOT
+# commands and delete confirmation derivation are frozen pure decision boundaries.
+for fn_name, body in (
+    ("wizardSemanticsSelectionTransition", semantics_selection_transition),
+    ("wizardSemanticsReparentCommand", semantics_reparent_command),
+    ("wizardSemanticsRelationCommand", semantics_relation_command),
+    ("wizardSemanticsMoveToAssetSpaceCommand", semantics_move_to_asset_command),
+    ("wizardSemanticsFlattenStaticTreeCommand", semantics_flatten_static_command),
+    ("wizardSemanticsDeletePlan", semantics_delete_plan),
+    ("wizardSemanticsDeleteConfirmText", semantics_delete_confirm_text),
+):
+    assert_pure_block(fn_name, body)
+
+for adapter_name, body, required, forbidden in (
+    ("selection", semantics_select_node_adapter, "wizardSemanticsSelectionTransition({", ("if(mode==='range'", "ordered.indexOf(", "semanticTreeRows(")),
+    ("reparent", semantics_reparent_adapter, "wizardSemanticsReparentCommand({", ("semanticTopLevelSelected(", "semanticCanUseParent(")),
+    ("relation", semantics_relation_adapter, "wizardSemanticsRelationCommand(state.asset?.nodes||[],index,kind)", ("kind==='rotating'", "defaultRateDegPerSec:Number(j.defaultRateDegPerSec")),
+    ("move-to-root", semantics_move_to_asset_adapter, "wizardSemanticsMoveToAssetSpaceCommand({", ("semanticTopLevelSelected(", ".filter(i=>Number(nodes[i]?.parentIndex)>=0)")),
+    ("flatten-static", semantics_flatten_static_adapter, "wizardSemanticsFlattenStaticTreeCommand(state.asset?.nodes||[],state.asset?.stateVariants||[])", ("semanticStaticFlattenCandidates(",)),
+    ("delete", semantics_delete_adapter, "wizardSemanticsDeletePlan(state.asset?.nodes||[],state.selectedNode)", ("semanticUsageForNode(", "semanticOwnedPayloadCount(", "const payload=", "lines=[")),
+):
+    if required not in body:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5N {adapter_name} adapter missing pure decision boundary {required!r}")
+    for token in forbidden:
+        if token in body:
+            raise AssertionError(f"wizard decomposition: SEMANTICS wave5N {adapter_name} adapter regained decision logic {token!r}")
+if "wizardSemanticsDeleteConfirmText(plan,{" not in semantics_delete_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5N delete adapter missing pure confirmation-text builder")
+
+print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS pure boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND effect shells")

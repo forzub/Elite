@@ -1,3 +1,26 @@
+### v0.10.66 wizard decomposition wave 5N / SEMANTICS command-decision boundary
+
+- SEMANTICS selection, reparent, relation, MODEL ROOT move/flatten and delete operations must derive deterministic decisions through certified PURE helpers before performing effects. `wizardSemanticsSelectionTransition`, `wizardSemanticsReparentCommand`, `wizardSemanticsRelationCommand`, `wizardSemanticsMoveToAssetSpaceCommand`, `wizardSemanticsFlattenStaticTreeCommand`, `wizardSemanticsDeletePlan` and `wizardSemanticsDeleteConfirmText` are protected v0.10.66 behavioural boundaries.
+- Pure command/transition helpers may read only explicit arguments and certified pure helpers. They must not read editor `state` / `editorViewState`, touch DOM/THREE scene objects, call localization/status/confirmation APIs, or dispatch backend commands.
+- Existing effect shells retain state mutation, preview reset, confirmation/status UI and `send(...)` ownership. They must not re-embed range-selection traversal, DnD cycle validation, relation payload construction, static-flatten candidate calculation or delete-payload/count derivation.
+- Selection Set ordering, Ctrl/Shift/range semantics, DnD placement/cycle rejection, `set_node_parents` / `set_joint` / `delete_semantic_node` payloads and two-stage owned-payload deletion confirmation are behaviour-frozen.
+- SOURCE / LODS / GEOMETRY / SURFACES remain closed; this wave authorizes structural extraction only, not feature/protocol/persistence/UI changes.
+
+### v0.10.66 wizard decomposition wave 5M / SEMANTICS residual derivation purity boundary
+
+- `semanticCanonicalNodeAnchorMap(nodes, lod, worlds, stateVariants, previewStates)` and `semanticSelectedPanels(selected, model, text, relationText)` are protected certified PURE boundaries with immutable v0.10.66 behavioural oracles. This supersedes the wave5I allowance for `semanticSelectedPanels()` to own localization or preview-angle state writes.
+- Canonical anchor derivation must not read editor `state`, resolve active LOD/root transforms implicitly, or call `updateMatrixWorld()`. Effectful callers must compute the same pre-refresh canonical render-world snapshot, perform the legacy root refresh externally, then pass the snapshot into the pure reducer.
+- Selected-panel presentation must not call `tr()` or mutate `semanticPreviewAngleDeg`. `semanticRefreshSelectionUi()` remains the effect shell responsible for localization projection and the historical parent-only preview-angle normalization before applying returned markup.
+- Geometry bounds, hierarchy fallback anchors, panel HTML/control IDs and preview normalization are behaviour-frozen. Signature/projection movement is authorized; authored semantic data, backend command protocol, persistence, control order and visible THREE behaviour are not.
+- SOURCE / LODS / GEOMETRY / SURFACES remain closed and are not re-baselined by this SEMANTICS-only wave.
+
+### v0.10.66 wizard decomposition wave 5L / SEMANTICS world + graph transform purity boundary
+
+- `semanticWorldMatrix`, `semanticJointLocalPointFromWorld`, `semanticPreviewDeltaWorld`, `semanticDisplayWorldMatrix`, `semanticGraphRootCenter`, `semanticGraphRadialMetrics`, `semanticGraphLayoutOffsets`, `semanticGraphDisplayAnchorMap`, `socketWorldMatrix` and `socketCanonicalWorldMatrix` are explicit-input PURE boundaries with immutable v0.10.66 behavioural oracles.
+- These helpers must not read editor `state` / `editorViewState`, resolve active LOD implicitly, mutate scene/root objects, or perform DOM/backend/status effects. Effect adapters must project semantic nodes, state variants, preview state, graph offsets, bounds, root matrix and current selection/motion state explicitly.
+- The semantic transform composition order is frozen: canonical semantic transform first, graph explode second, joint preview delta last. Purification may change signatures and adapter wiring only; it must not change matrix multiplication order or socket/joint/graph positions.
+- Frozen SOURCE / LODS / GEOMETRY / SURFACES stages remain closed. This wave does not authorize command, persistence, authored-data, control-layout or visible preview changes.
+
 ### v0.10.66 wizard decomposition wave 5K / SEMANTICS transform-math purity boundary
 
 - `semanticRelationLabel(node, text)`, `semanticRenderBaseMatrix(index, lod, semanticNodes, stateVariants, previewStates)`, `semanticCanonicalRenderWorldMatrices(input)` and `semanticUnboundRenderClusterOffsets(input)` are protected explicit-input PURE boundaries. They must not regain hidden reads from `state` / `editorViewState` or direct localization through `tr()`.

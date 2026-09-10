@@ -1,3 +1,36 @@
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5N / SEMANTICS command decisions (2026-09-11)
+
+- `[x]` Selection state transition is isolated in PURE `wizardSemanticsSelectionTransition(input)`; `semanticSelectNode()` only applies the transition and performs preview/DOM/status effects.
+- `[x]` TREE reparent validation/payload and relation/joint payload derivation are isolated in PURE `wizardSemanticsReparentCommand(input)` and `wizardSemanticsRelationCommand(nodes,index,kind)`.
+- `[x]` MODEL ROOT move and static-tree flatten decisions are isolated in PURE command models; effect shells retain confirmation/reset/send only.
+- `[x]` Semantic deletion usage/payload planning and confirmation text are isolated in PURE `wizardSemanticsDeletePlan` + `wizardSemanticsDeleteConfirmText`; the effect shell retains confirmation, selection mutation and backend dispatch.
+- `[x]` Frozen behavioural oracles cover all seven new boundaries; legacy wave5M/new wave5N differential parity passes 8,400 deterministic cases.
+- `[x]` Dynamic purity: 196 certified PURE. Static census: 199 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard.
+- `[x]` The unchanged hard count is expected: original command functions remain real effect adapters, but their non-effect decision logic has been removed.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES remain frozen and unchanged.
+- `[ ]` Next: continue SEMANTICS effect-shell decomposition around joint-pivot picking / nominal-rate / binding-pick and selection synchronization, then reassess readiness for physical module extraction.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5M / SEMANTICS residual derivation purity (2026-09-11)
+
+- `[x]` `semanticCanonicalNodeAnchorMap` is explicit-input PURE; geometry bounds, precomputed canonical render worlds, semantic hierarchy/state variants and preview states are its only inputs.
+- `[x]` Root `matrixWorld` refresh remains effectful and outside the anchor reducer; caller ordering preserves the legacy pre-refresh world snapshot used by anchor calculation.
+- `[x]` `semanticSelectedPanels` is PURE presentation; localization and the historical parent-only `semanticPreviewAngleDeg` normalization live in `semanticRefreshSelectionUi()`.
+- `[x]` Frozen behavioural oracles cover both helpers; legacy wave5L/new wave5M differential parity passes 4,800 deterministic cases.
+- `[x]` Dynamic purity: 189 certified PURE. Static census: 192 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard.
+- `[x]` No SEMANTICS helper remains hard solely because of a local hidden-state derivation; the remaining SEMANTICS hard set is effectful orchestration.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES remain frozen and unchanged.
+- `[ ]` Next: decompose the remaining SEMANTICS command/selection/joint effect shells into explicit PURE decision/state-transition payload builders plus narrow mutation/DOM/backend adapters, still without physical file splitting.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5L / SEMANTICS world + graph transform purity (2026-09-11)
+
+- `[x]` `semanticWorldMatrix`, joint world→local conversion, preview delta and display world matrix are explicit-input PURE helpers.
+- `[x]` Graph root-center/radial metrics/layout offsets/display-anchor calculations are explicit-input PURE helpers.
+- `[x]` `socketWorldMatrix` and `socketCanonicalWorldMatrix` are PURE; runtime scene/view adapters supply current semantic/preview state explicitly.
+- `[x]` Frozen behavioural oracles cover all ten new pure boundaries. Legacy wave5K/new wave5L differential parity passes 13,108 deterministic comparisons.
+- `[x]` Dynamic purity: 187 certified PURE. Static census: 190 PURE / 5 EASY / 15 TRANSITIVE / 259 deferred-hard.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES remain frozen and unchanged.
+- `[ ]` Next: split `semanticCanonicalNodeAnchorMap()` into a pure anchor derivation plus the minimal root/scene update adapter, then reassess the remaining SEMANTICS selection/joint command shells.
+
 ## Model Asset Editor 0.10.66 — wizard decomposition wave 5K / SEMANTICS transform-math purity (2026-09-11)
 
 - `[x]` `semanticRelationLabel` now receives localized relation text explicitly; it no longer calls `tr()` internally.

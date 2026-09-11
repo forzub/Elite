@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "editor_baseline": "0.10.66-wave6C",
+  "editor_baseline": "0.10.66-wave6D",
   "source": "src/assets/webui/model_asset_editor.html",
-  "description": "Complete ownership and cross-module API contract for the Model Asset Editor before physical extraction. Every named function, class method and top-level module binding is owned. PURE core/presentation code may depend only on explicit function imports and explicit external libraries; runtime/editor effects remain in adapter/infrastructure roles.",
+  "description": "Complete ownership and cross-module API contract for the Model Asset Editor. Every named function, class method and top-level module binding is owned. PURE core/presentation code may depend only on explicit function imports and explicit external libraries; runtime/editor effects remain in adapter/infrastructure roles. Portable modules are mechanically extracted and imported by check_model_asset_extraction_proof.py.",
   "policy": {
     "transitive_calls_inside_a_module_are_allowed": true,
     "all_named_functions_must_be_owned_exactly_once": true,
@@ -12,7 +12,8 @@
     "cross_module_named_calls_must_match_imports": true,
     "cross_module_targets_must_be_exports": true,
     "portable_code_must_not_import_adapter_or_infrastructure_functions": true,
-    "top_level_executable_wiring_owner": "app_shell"
+    "top_level_executable_wiring_owner": "app_shell",
+    "portable_modules_must_pass_standalone_extraction": true
   },
   "blocks": {
     "source": {
@@ -115,7 +116,7 @@
       ]
     },
     "physics": {
-      "status": "foundation",
+      "status": "portable",
       "modules": [
         "physics"
       ],
@@ -135,7 +136,7 @@
       ]
     },
     "hit_volumes": {
-      "status": "foundation",
+      "status": "portable",
       "modules": [
         "hit_volumes"
       ],
@@ -160,7 +161,7 @@
       ]
     },
     "damage": {
-      "status": "foundation",
+      "status": "portable",
       "modules": [
         "damage"
       ],
@@ -200,7 +201,7 @@
       ]
     },
     "final_assembly": {
-      "status": "foundation",
+      "status": "portable",
       "modules": [
         "final_assembly"
       ],

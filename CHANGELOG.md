@@ -1,3 +1,11 @@
+## Model Asset Editor v0.10.66 — wave 6E / standalone extraction proof + logical decomposition complete
+
+- Added `check_model_asset_extraction_proof.py`, the final logical-decomposition gate before physical source splitting. It mechanically regenerates temporary ES modules from `MODULE_OWNERSHIP_CONTRACT.json` instead of executing PURE functions inside the monolithic editor script.
+- Extraction currently produces 23 portable ES modules and 9 block-facing facades. Modules may import only ownership-declared portable functions plus declared external libraries (`THREE` where required); adapter/infrastructure functions are never copied into the extracted core.
+- Replayed all 259 frozen behavioural-oracle functions / 704 fixtures through the imported temporary module graph, including deterministic THREE transform helpers. Hidden `state` used by a few historical fixture invoke adapters remains harness-only and is not available inside extracted modules.
+- Promoted PHYSICS / HIT VOLUMES / DAMAGE / FINAL ASSEMBLY from `foundation` to proven `portable`; all nine editor pipeline blocks now have explicit public API/presentation facades.
+- No runtime editor HTML, authored data, backend protocol or existing function-purity oracle changed. Passing wave6E marks the logical decomposition complete; subsequent work should be physical ES-module extraction/composition rather than further purity-wave decomposition.
+
 ## Model Asset Editor v0.10.66 — wave 6D / complete module ownership + hard API wiring
 
 - Added `MODULE_OWNERSHIP_CONTRACT.json` as the complete pre-extraction ownership map for the browser editor: all 546 named functions, 5 classes / 45 class methods and all 15 discovered top-level module bindings have exactly one logical owner.

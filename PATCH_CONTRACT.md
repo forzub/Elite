@@ -1,3 +1,9 @@
+## v0.10.66 wave6E contract — standalone extraction proof / logical decomposition completion
+
+The completion criterion is mechanical portability, not a lower `hard` count. `check_model_asset_extraction_proof.py` must be able to reconstruct each portable logical module from the ownership contract, wire only declared portable imports/external libraries, expose exactly the block API/presentation facade declared by `PORTABLE_BLOCK_CONTRACT.json`, import the generated `.mjs` graph with Node, and replay the frozen behavioural oracle. The current frozen proof is 23 portable modules, 9 block facades, 259 certified functions and 704 fixtures.
+
+`state`, `editorViewState`, DOM, backend/status/prompt APIs, raycast/scene mutation and other adapter/infrastructure ownership must never be copied into generated portable modules. Historical fixture adapters may use local harness state solely to construct explicit arguments for an extracted function; that harness state is not a module import or runtime dependency. PHYSICS, HIT VOLUMES, DAMAGE and FINAL ASSEMBLY are now promoted from foundation to portable only because this extraction proof passes. After this gate, logical decomposition is considered complete; new refactors should preserve these APIs while moving code physically into real modules.
+
 ## Model Asset Editor 0.10.66 — wave 6D / complete ownership + hard API boundary
 
 - `tools/model_asset_editor/MODULE_OWNERSHIP_CONTRACT.json` is the authoritative pre-extraction module ownership map. Every named browser function, every class/method inventory and every discovered top-level module binding must have exactly one owner.

@@ -1,3 +1,7 @@
+## Portable-module completion rule (v0.10.66 wave6E)
+
+The editor's logical decomposition is complete when a block can be reconstructed as real ES modules using only `MODULE_OWNERSHIP_CONTRACT.json` / `PORTABLE_BLOCK_CONTRACT.json`, imported without editor globals, and run against the frozen behavioural oracle. This proof is now enforced by `tests/architecture_contracts/check_model_asset_extraction_proof.py`. Internal transitive helper calls are valid; hidden runtime wiring is not. Browser/editor effects (`state`, DOM, backend commands, THREE scene mutation, raycast, prompts/status, timers/storage) remain in owned adapters/infrastructure. The next architectural work is physical file extraction, not further decomposition for purity-count purposes.
+
 # Elite Model Asset Editor — рабочая инструкция / архитектурный контекст
 
 **Актуально:** 2026-09-11 · 0.10.66 portable-block decomposition + complete module ownership through wave6D

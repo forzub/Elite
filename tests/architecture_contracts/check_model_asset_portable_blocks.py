@@ -54,11 +54,11 @@ if BLOCKS.get("ownership_contract") != "tools/model_asset_editor/MODULE_OWNERSHI
 
 for block_name, block in BLOCKS.get("blocks", {}).items():
     status = block.get("status")
-    if status not in {"portable", "foundation", "pending"}:
-        raise AssertionError(f"portable blocks: {block_name} has invalid status {status!r}")
+    if status != "portable":
+        raise AssertionError(f"portable blocks: {block_name} must be extraction-proved portable, got {status!r}")
     portable = list(block.get("api", [])) + list(block.get("presentation", []))
     adapters = list(block.get("adapters", []))
-    if status != "pending" and not portable:
+    if not portable:
         raise AssertionError(f"portable blocks: {block_name} must expose an explicit API")
     overlap = sorted(set(portable) & set(adapters))
     if overlap:
@@ -118,4 +118,4 @@ for forbidden in ("wizardValidationReport,rows=", "st=state.asset.storage", "lod
     if forbidden in shell:
         raise AssertionError(f"portable blocks: FINAL ASSEMBLY implementation leaked into renderWizardPanelContents: {forbidden}")
 
-print("[PASS] Model Asset Editor portable block API: SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS portable; PHYSICS/HIT-VOLUMES/DAMAGE/FINAL-ASSEMBLY foundation isolated")
+print("[PASS] Model Asset Editor portable block API: SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS/PHYSICS/HIT-VOLUMES/DAMAGE/FINAL-ASSEMBLY portable + extraction-proof linked")

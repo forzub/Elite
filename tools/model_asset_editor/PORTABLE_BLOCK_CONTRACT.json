@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "description": "Portable functional blocks for Model Asset Editor. API functions are behaviourally certified PURE and may depend only on explicit arguments plus other certified PURE helpers. Adapters own state/DOM/THREE scene/backend wiring. Complete function/class/global ownership and cross-module imports are frozen by MODULE_OWNERSHIP_CONTRACT.json.",
+  "description": "Portable functional blocks for Model Asset Editor. Every block-facing API/presentation function is behaviourally certified PURE; complete function/class/global ownership and cross-module imports are frozen by MODULE_OWNERSHIP_CONTRACT.json; standalone extraction/import plus frozen-oracle execution is proved by check_model_asset_extraction_proof.py.",
   "blocks": {
     "source": {
       "status": "portable",
@@ -80,7 +80,7 @@
       ]
     },
     "physics": {
-      "status": "foundation",
+      "status": "portable",
       "api": [
         "wizardPhysicsStageModel",
         "physicsNodeModel",
@@ -97,7 +97,7 @@
       ]
     },
     "hit_volumes": {
-      "status": "foundation",
+      "status": "portable",
       "api": [
         "hitVolumeListModel",
         "hitVolumeInspectorModel",
@@ -119,7 +119,7 @@
       ]
     },
     "damage": {
-      "status": "foundation",
+      "status": "portable",
       "api": [
         "wizardDamageStageModel",
         "damageStateVariantsModel",
@@ -156,7 +156,7 @@
       ]
     },
     "final_assembly": {
-      "status": "foundation",
+      "status": "portable",
       "api": [
         "finalAssemblyValidationModel",
         "finalAssemblyBuildModel",
@@ -174,5 +174,6 @@
       ]
     }
   },
-  "ownership_contract": "tools/model_asset_editor/MODULE_OWNERSHIP_CONTRACT.json"
+  "ownership_contract": "tools/model_asset_editor/MODULE_OWNERSHIP_CONTRACT.json",
+  "extraction_proof": "tests/architecture_contracts/check_model_asset_extraction_proof.py"
 }

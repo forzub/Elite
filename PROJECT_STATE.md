@@ -1,3 +1,12 @@
+## 2026-09-11 — v0.10.66 wave6E: logical decomposition COMPLETE / extraction proof
+
+- Final logical gate added: ownership-declared portable code is physically regenerated into temporary ES modules and imported outside `model_asset_editor.html`.
+- Proof baseline: 23 portable modules + 9 block facades; all 259 certified PURE functions / 704 frozen behavioural fixtures execute through those extracted imports.
+- All pipeline blocks are now proven portable: SOURCE, LODS, GEOMETRY, SURFACES, SEMANTICS, PHYSICS, HIT VOLUMES, DAMAGE and FINAL ASSEMBLY.
+- Complete ownership remains 546/546 named functions, 5 classes / 45 methods, 15 top-level bindings, 33 logical modules. Effect adapters/infrastructure remain explicit and are not targets for forced purification.
+- Runtime `model_asset_editor.html` is unchanged by wave6E.
+- **Next phase:** physical ES-module split. Move ownership-declared modules without changing behaviour or API; keep composition/browser wiring in the app shell and keep frozen extraction/oracle tests green. Do not resume wave5-style purity extraction merely to reduce the hard-function count.
+
 ## Model Asset Editor 0.10.66 — wave 6D / complete module ownership + hard API wiring (2026-09-11)
 
 - `[x]` Added complete `MODULE_OWNERSHIP_CONTRACT.json`: 546/546 named browser functions have one logical module+role owner.

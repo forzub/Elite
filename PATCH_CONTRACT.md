@@ -154,3 +154,18 @@ Accepted structural movement only:
 - `semanticRefreshSelectionUi()` remains effectful and must own DOM writes, binding-pick mutation, selected-node interaction binding and preview reapplication; it must not regain binding-count / missing-LOD / top-level-selection derivation.
 - Existing SEMANTICS UI ids/order, localization keys, active-LOD binding semantics, backend commands and authored/persistent data are frozen by behavioural parity; no feature redesign is authorized by this wave.
 - SOURCE / LODS / GEOMETRY / SURFACES frozen fingerprints remain unchanged.
+
+### v0.10.66 wizard decomposition wave 5P / SEMANTICS TREE + motion transitions
+
+Runtime motion advancement and selection/collapse synchronization may be computed only through certified PURE `wizardSemanticsMotionAnimationStep`, `wizardSemanticsMotionPlayTransition`, `wizardSemanticsMotionDetachTransition`, `wizardSemanticsCollapsedTransition`, `wizardSemanticsTreeDragStartTransition`, `wizardSemanticsStageSelectionNormalization`, and `wizardSemanticsLodSelectionRestoreModel`. `updateSemanticMotionAnimation`, TREE event binding, stage rendering and LOD-selection restoration remain effect adapters and retain DOM/THREE/editorViewState mutation. This wave does not authorize changes to preview timing, angle limits/wrap/bounce rules, selection ordering, drag payloads, collapse keys, backend commands, persistence or frozen pre-SEMANTICS stages.
+
+### v0.10.66 wizard decomposition wave 5Q / SEMANTICS preview-application plans
+
+`applySemanticGraphExplode()` and `applySemanticMotionPreview()` remain effect adapters and may own live THREE-object matrix copies, `updateMatrixWorld()` calls and downstream socket/collision/gizmo/proxy refreshes. Deterministic selection of affected RenderNodes and world-to-local matrix planning must remain delegated to certified PURE `wizardSemanticsGraphExplodeApplicationPlan(input)`, `wizardSemanticsMotionPreviewTargetModel(nodes, lod, selectedNode)` and `wizardSemanticsMotionPreviewApplicationPlan(input)` with explicit matrix/state projections. Reintroducing owner/cluster offset application recursion or selected-subtree/top-level-target derivation into the adapters is not permitted. This wave does not authorize changes to graph explode offsets, motion preview transforms, RenderNode hierarchy semantics, gizmo/collision/socket behaviour, backend commands, persistence or frozen pre-SEMANTICS stages.
+
+### v0.10.66 wizard decomposition wave 5R / SEMANTICS graph + viewport plan boundaries
+
+- `wizardSemanticsGraphObjectModel`, `wizardSemanticsGraphGizmoPlan`, `wizardSemanticsJointGizmoPlan`, `wizardSemanticsViewportGizmoPickDecision` and `wizardSemanticsViewportMeshPickDecision` are certified PURE boundaries with frozen behavioural oracles.
+- `ensureSemanticGraphObjects`, `rebuildSemanticGraphGizmos`, `rebuildSemanticGizmos` and `pick` remain effect adapters; THREE construction/mutation, raycasting, state mutation, DOM/status and backend sends must not migrate into the PURE plan functions.
+- Viewport hit ordering is contractual: GRAPH structural-link routing precedes graph node routing; TREE semantic link/node routing preserves event selection mode; binding-pick mesh routing preserves the existing `set_render_node_semantic` payload semantics.
+- SOURCE / LODS / GEOMETRY / SURFACES acceptance fingerprints remain frozen. Wave5R may update only SEMANTICS implementation/contracts/tests/documentation required for this logical boundary.

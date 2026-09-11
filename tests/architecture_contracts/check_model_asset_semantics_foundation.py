@@ -41,7 +41,8 @@ if "state.activeLod=0" in switch_body or "LOD0" in switch_body:
 # ids differ between LOD documents.
 for token in (
     'function restoreSemanticSelectionAfterLodSwitch(',
-    'editorViewState.selectedSemanticNode=validPrimary',
+    'function wizardSemanticsLodSelectionRestoreModel(',
+    'editorViewState.selectedSemanticNode=model.primaryIndex',
     "findIndex(rn=>Number(rn?.semanticNodeIndex)===validPrimary)",
 ):
     require(token)
@@ -84,7 +85,9 @@ for token in (
     'function semanticUnboundRenderClusterRoot(',
     'function semanticUnboundRenderClusterOffsets(',
     'const unboundOffsets=semanticUnboundRenderClusterOffsets({lod,amount,semanticNodes:state.asset?.nodes||[]',
-    'owner>=0?(state.semanticGraphOffsets.get(owner)||new THREE.Vector3()):(unboundOffsets.get(cluster)||new THREE.Vector3())',
+    'function wizardSemanticsGraphExplodeApplicationPlan(',
+    'offset=owner>=0?(semanticOffsets.get(owner)||new THREE.Vector3()):(unboundOffsets.get(cluster)||new THREE.Vector3())',
+    'wizardSemanticsGraphExplodeApplicationPlan({lod,semanticOffsets:state.semanticGraphOffsets,unboundOffsets',
     "tr('model_editor.semantics.tree.unbound_clusters'",
 ):
     require(token)

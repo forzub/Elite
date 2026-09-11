@@ -549,7 +549,7 @@ for token in (
     'function semanticRenderBaseMatrix(',
     'function restoreSemanticPreviewMatrices()',
     'marker.userData.semanticNodeIndex=i',
-    'semanticSelectNode(si,semanticSelectionModeFromEvent(ev))',
+    'wizardSemanticsViewportMeshPickDecision({',
     'function updateSemanticMotionAnimation(ts)',
     "tr('model_editor.semantics.motion.rotate_button'",
     "tr('model_editor.semantics.detach_preview'",
@@ -726,7 +726,7 @@ for token in (
     'function updateSemanticCollisionTransforms()',
     "if((state.wizardStage==='physics'||state.wizardStage==='damage')&&$('hitToggle').checked)",
     "function rebuildCollisions(){clearGroup(state.collisionGroup);if(!state.asset||!activeRenderLod(state.asset?.renderLods,state.activeLod)?.loaded||!$('hitToggle').checked)return;",
-    'if(!n||Number(n.parentIndex)<0)return;',
+    'Number(n.parentIndex)<0)return null;',
 ):
     if token not in web:
         raise AssertionError(f'semantic graph/global-overlay ownership contract missing {token!r}')
@@ -795,10 +795,10 @@ graph_anchor_block = body_between(web, 'function semanticGraphDisplayAnchorMap('
 if graph_anchor_block.find('if(offset)p.add(offset);') > graph_anchor_block.find('p.applyMatrix4(delta)'):
     raise AssertionError('semantic graph markers still compose explode after joint motion')
 
-joint_gizmo_block = body_between(web, 'function rebuildSemanticGizmos(', 'function bindSemanticMotionControls')
+joint_gizmo_block = body_between(web, 'function wizardSemanticsJointGizmoPlan(', 'function wizardSemanticsViewportGizmoPickDecision')
 for token in (
-    'canonicalWorld=semanticWorldMatrix(state.selectedNode,transformInput.nodes,transformInput.stateVariants,transformInput.previewStates)',
-    'displayWorld=semanticDisplayWorldMatrix(state.selectedNode,transformInput)',
+    'canonicalWorld=semanticWorldMatrix(index,nodes,transformInput.stateVariants,transformInput.previewStates)',
+    'displayWorld=semanticDisplayWorldMatrix(index,transformInput)',
     'applyMatrix4(canonicalWorld)',
     'setFromMatrixPosition(displayWorld)',
 ):
@@ -1068,7 +1068,7 @@ for token in [
     'id="structMakeRoot"',
     'A ← SELECTED',
     'B ← SELECTED',
-    'structuralPickNode(si,ri)',
+    'structuralPickNode(decision.nodeIndex,decision.renderNodeIndex)',
     'structEndpointPair',
     'structNewLinkOptions',
 ]:

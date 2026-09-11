@@ -1067,3 +1067,33 @@ GEOMETRY workspace restored after the LOD-generator work: automatic stage entry 
 - `[x]` Legacy/new parity passed 1,600 deterministic cases; full Model Asset Editor architecture suite remains 25/25 PASS.
 - `[x]` Dynamic purity is 169 certified PURE; static census is 176 PURE / 6 EASY / 18 TRANSITIVE / 269 deferred-hard.
 - `[ ]` Next: reassess the remaining SEMANTICS effect surface (binding-pick/selection synchronization and relation/visual helper chain) before declaring SEMANTICS ready for physical module extraction.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5P / SEMANTICS TREE + motion transitions (2026-09-11)
+
+- `[x]` Runtime revolute-preview animation advancement is isolated in certified PURE `wizardSemanticsMotionAnimationStep(input)`; timestamp mutation and preview application remain in `updateSemanticMotionAnimation()`.
+- `[x]` PLAY / DETACH transitions are isolated in certified PURE models while DOM/button/preview effects remain in the motion adapter.
+- `[x]` TREE collapse and drag-start selection transitions are isolated from DOM/dataTransfer effects.
+- `[x]` SEMANTICS stage selection repair and LOD-switch semantic/render selection synchronization now derive from explicit-input PURE models.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES remain frozen; physical JS file splitting is still deferred.
+- `[ ]` Next: continue through remaining SEMANTICS effect shells, prioritizing preview-application planning and graph/viewport synchronization before physical module extraction.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5Q / SEMANTICS preview application plans (2026-09-11)
+
+- `[x]` Graph-explode RenderNode application planning is isolated in certified PURE `wizardSemanticsGraphExplodeApplicationPlan(input)`.
+- `[x]` Selected-subtree motion-preview targeting/top-level RenderNode filtering is isolated in certified PURE `wizardSemanticsMotionPreviewTargetModel(...)`; local-matrix planning is isolated in certified PURE `wizardSemanticsMotionPreviewApplicationPlan(input)`.
+- `[x]` Live THREE `.matrix.copy()` / `updateMatrixWorld()` and socket/collision/gizmo/proxy rebuilds remain in narrow effect adapters.
+- `[x]` Legacy/new preview planning parity passed 7,200 deterministic randomized cases; existing behavioural oracles remain frozen.
+- `[x]` Purity census: 494 named / 214 dynamically certified PURE / 217 static PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES remain frozen; physical JS file splitting is still deferred.
+- `[ ]` Next: continue SEMANTICS graph/viewport synchronization and residual preview-effect decomposition before physical module extraction.
+
+## Model Asset Editor 0.10.66 — wizard decomposition wave 5R / SEMANTICS graph + viewport plans (2026-09-11)
+
+- `[x]` Semantic graph object topology/rebuild decisions are isolated in certified PURE `wizardSemanticsGraphObjectModel(...)`.
+- `[x]` Graph node/link/STRUCTURAL-link visibility, colors, opacity, marker scale and positions are isolated in certified PURE `wizardSemanticsGraphGizmoPlan(input)`.
+- `[x]` Selected joint pivot/axis/origin/arc geometry is isolated in certified PURE `wizardSemanticsJointGizmoPlan(input)`; THREE mesh/line/arrow creation remains effectful.
+- `[x]` Gizmo and mesh viewport semantic routing are isolated in certified PURE decision models; raycasting and actual selection/binding effects remain in `pick()`.
+- `[x]` Legacy wave5Q/new wave5R differential parity passes 6,000 deterministic comparisons. Existing 214 behavioural oracle hashes are unchanged.
+- `[x]` Purity census: 499 named / 219 dynamically certified PURE / 222 static PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard.
+- `[x]` SOURCE / LODS / GEOMETRY / SURFACES remain frozen; physical JS file splitting is still deferred.
+- `[ ]` Next: continue SEMANTICS residual effect orchestration, especially structural endpoint selection/state synchronization and gizmo/proxy rebuild planning, then reassess readiness for physical module extraction.

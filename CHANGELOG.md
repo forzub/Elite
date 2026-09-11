@@ -226,3 +226,27 @@
 - `semanticRefreshSelectionUi()` remains the explicit DOM/effect shell: it applies the pure model, updates hosts/classes/controls, owns binding-pick state mutation and delegates selected-node authoring/preview effects.
 - Added immutable behavioural fixtures for all four pure boundaries and differentially verified legacy/new output over 1,600 deterministic cases (summary 320, health 320, repair 320, refresh model 640).
 - Dynamic certification rises from 165 to 169 PURE functions; static purity rises from 172 to 176; TRANSITIVE candidates fall from 21 to 18; deferred-hard remains 269. No UI/control order, localization keys, semantic authored data, backend protocol or persistence behaviour changes.
+
+## Model Asset Editor v0.10.66 — wizard decomposition wave 5P / SEMANTICS TREE + motion transitions
+
+- Extracted seven certified PURE transition/model boundaries from remaining SEMANTICS TREE/motion orchestration: animation tick, play toggle, detach toggle, collapse toggle, drag-start selection, stage selection normalization and LOD-switch selection restore.
+- `updateSemanticMotionAnimation`, TREE DOM handlers, `renderWizardSemanticsStage` and `restoreSemanticSelectionAfterLodSwitch` remain effect adapters; preview application, DOM/dataTransfer work and `editorViewState` mutation stay outside the pure models.
+- Added immutable behavioural fixtures for all seven functions; previous certified oracles are not re-baselined.
+- SOURCE / LODS / GEOMETRY / SURFACES remain frozen; no command protocol, persistence, semantic authored data, control ids/order or intended UI behaviour changes.
+
+## Model Asset Editor v0.10.66 — wizard decomposition wave 5Q / SEMANTICS preview application plans
+
+- Extracted graph-explode RenderNode matrix planning into certified PURE `wizardSemanticsGraphExplodeApplicationPlan(input)`; owner/unbound cluster offsets and parent-before-child local-matrix derivation now use explicit inputs.
+- Extracted selected-subtree motion preview targeting into certified PURE `wizardSemanticsMotionPreviewTargetModel(nodes, lod, selectedNode)` and local-matrix planning into certified PURE `wizardSemanticsMotionPreviewApplicationPlan(input)`; top-level RenderNode filtering no longer lives in the THREE effect shell.
+- `applySemanticGraphExplode()` and `applySemanticMotionPreview()` remain explicit THREE/effect adapters that capture current world matrices, apply planned local matrices, refresh world transforms and rebuild sockets/collisions/gizmos/proxies.
+- Added immutable behavioural fixtures for all three boundaries and verified legacy/new behaviour over 7,200 deterministic randomized cases (2,400 graph explode plans + 2,400 motion target models + 2,400 motion matrix plans).
+- Dynamic certification rises from 211 to 214 PURE functions and static purity from 214 to 217; EASY=5, TRANSITIVE=15 and deferred-hard=257 remain unchanged. SOURCE / LODS / GEOMETRY / SURFACES stay frozen and physical JS file splitting remains deferred.
+
+## Model Asset Editor v0.10.66 — wizard decomposition wave 5R / SEMANTICS graph + viewport plans
+
+- Extracted five deterministic SEMANTICS boundaries from graph/viewport effect shells: `wizardSemanticsGraphObjectModel`, `wizardSemanticsGraphGizmoPlan`, `wizardSemanticsJointGizmoPlan`, `wizardSemanticsViewportGizmoPickDecision` and `wizardSemanticsViewportMeshPickDecision`.
+- Graph topology rebuild decisions, graph-node/link presentation, joint-gizmo geometry, gizmo hit routing and semantic mesh-hit routing are now explicit-input PURE calculations. THREE object creation/material updates, raycasting, DOM/state mutation, status and backend dispatch remain in the existing adapters.
+- Preserved legacy viewport priority: STRUCTURAL link hit wins only in GRAPH mode; semantic link/node hits route to STRUCTURAL endpoints in GRAPH mode and semantic selection in TREE mode; visual-binding pick still overrides ordinary semantic mesh selection.
+- Frozen behavioural oracles cover all five new PURE boundaries. Legacy wave5Q versus wave5R differential validation passes 6,000 deterministic comparisons (1,200 per boundary), including randomized graph topology, missing anchors, joint transforms/limits and viewport hit combinations.
+- Dynamic certification rises from 214 to 219 PURE functions; static census moves from `217 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard` to `222 PURE / 5 EASY / 15 TRANSITIVE / 257 deferred-hard`. All previous 214 oracle hashes remain unchanged.
+- SOURCE / LODS / GEOMETRY / SURFACES remain frozen. No command protocol, authored-data semantics, graph mode behaviour, viewport selection priority or intended THREE rendering behaviour changes.

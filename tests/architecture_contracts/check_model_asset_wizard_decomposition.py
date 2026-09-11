@@ -155,6 +155,30 @@ semantics_joint_pivot_pick_adapter = function_source("semanticBeginJointPivotPic
 semantics_nominal_rate_adapter = function_source("semanticSetNominalRate")
 semantics_pick_adapter = function_source("pick")
 semantics_binding_interactions_adapter = function_source("bindWizardSemanticsBindingInteractions")
+semantics_motion_animation_step = function_source("wizardSemanticsMotionAnimationStep")
+semantics_motion_play_transition = function_source("wizardSemanticsMotionPlayTransition")
+semantics_motion_detach_transition = function_source("wizardSemanticsMotionDetachTransition")
+semantics_collapsed_transition = function_source("wizardSemanticsCollapsedTransition")
+semantics_tree_drag_start_transition = function_source("wizardSemanticsTreeDragStartTransition")
+semantics_stage_selection_normalization = function_source("wizardSemanticsStageSelectionNormalization")
+semantics_lod_selection_restore_model = function_source("wizardSemanticsLodSelectionRestoreModel")
+semantics_motion_animation_adapter = function_source("updateSemanticMotionAnimation")
+semantics_tree_interactions_adapter = function_source("bindWizardSemanticsTreeInteractions")
+semantics_semantics_stage_adapter = function_source("renderWizardSemanticsStage")
+semantics_lod_selection_restore_adapter = function_source("restoreSemanticSelectionAfterLodSwitch")
+semantics_graph_explode_application_plan = function_source("wizardSemanticsGraphExplodeApplicationPlan")
+semantics_motion_preview_target_model = function_source("wizardSemanticsMotionPreviewTargetModel")
+semantics_motion_preview_application_plan = function_source("wizardSemanticsMotionPreviewApplicationPlan")
+semantics_graph_explode_adapter = function_source("applySemanticGraphExplode")
+semantics_motion_preview_adapter = function_source("applySemanticMotionPreview")
+semantics_graph_object_model = function_source("wizardSemanticsGraphObjectModel")
+semantics_graph_gizmo_plan = function_source("wizardSemanticsGraphGizmoPlan")
+semantics_joint_gizmo_plan = function_source("wizardSemanticsJointGizmoPlan")
+semantics_viewport_gizmo_pick_decision = function_source("wizardSemanticsViewportGizmoPickDecision")
+semantics_viewport_mesh_pick_decision = function_source("wizardSemanticsViewportMeshPickDecision")
+semantics_graph_objects_adapter = function_source("ensureSemanticGraphObjects")
+semantics_graph_gizmos_adapter = function_source("rebuildSemanticGraphGizmos")
+semantics_joint_gizmos_adapter = function_source("rebuildSemanticGizmos")
 
 certified = {entry["name"]: entry for entry in CONTRACT.get("pure", [])}
 
@@ -468,7 +492,7 @@ for token in (
     "wizardSemanticsMotionAngleModel(a)",
     "wizardSemanticsMotionZeroModel(range?.min,range?.max)",
     "wizardSemanticsPreviewRateModel(previewRate.value)",
-    "state.semanticPreviewDetached=!state.semanticPreviewDetached",
+    "wizardSemanticsMotionDetachTransition(state.semanticPreviewDetached)",
     "resetSemanticMotionPreview(true)",
 ):
     if token not in semantics_motion_preview_interactions:
@@ -690,10 +714,108 @@ if "wizardSemanticsBindingPickTransition(state.selectedNode,selected.id,state.se
     raise AssertionError("wizard decomposition: SEMANTICS wave5O selection-refresh binding pick missing PURE transition")
 if "wizardSemanticsBindingPickTransition(state.selectedNode,selected.id,state.semanticBindingPickTarget)" not in semantics_binding_interactions_adapter:
     raise AssertionError("wizard decomposition: SEMANTICS wave5O binding-interactions adapter missing PURE transition")
-if "wizardSemanticsBindingAssignmentCommand({" not in semantics_pick_adapter:
-    raise AssertionError("wizard decomposition: SEMANTICS wave5O viewport binding assignment missing PURE payload builder")
+if "wizardSemanticsBindingAssignmentCommand({" not in semantics_viewport_mesh_pick_decision:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5O viewport binding assignment missing PURE payload builder in viewport decision boundary")
 for forbidden in ("targetNode=state.asset?.nodes?.[target]", "send('set_render_node_semantic',{lodIndex:"):
     if forbidden in semantics_pick_adapter:
         raise AssertionError(f"wizard decomposition: SEMANTICS wave5O viewport binding adapter regained payload derivation {forbidden!r}")
 
-print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS/JOINT-PICK-BINDING-DECISIONS pure boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND/JOINT-PICK-BINDING effect shells")
+# SEMANTICS wave5P: runtime motion advancement and TREE/LOD selection state transitions
+# are explicit-input PURE values. DOM event wiring, editorViewState synchronization,
+# animation preview application and rendering remain effectful adapters.
+for fn_name, body in (
+    ("wizardSemanticsMotionAnimationStep", semantics_motion_animation_step),
+    ("wizardSemanticsMotionPlayTransition", semantics_motion_play_transition),
+    ("wizardSemanticsMotionDetachTransition", semantics_motion_detach_transition),
+    ("wizardSemanticsCollapsedTransition", semantics_collapsed_transition),
+    ("wizardSemanticsTreeDragStartTransition", semantics_tree_drag_start_transition),
+    ("wizardSemanticsStageSelectionNormalization", semantics_stage_selection_normalization),
+    ("wizardSemanticsLodSelectionRestoreModel", semantics_lod_selection_restore_model),
+):
+    assert_pure_block(fn_name, body)
+
+for adapter_name, body, required, forbidden in (
+    ("motion-animation", semantics_motion_animation_adapter, "wizardSemanticsMotionAnimationStep({", ("const dt=Math.min(.05", "while(next>hi)", "state.semanticMotionDirection=-1")),
+    ("tree-drag", semantics_tree_interactions_adapter, "wizardSemanticsTreeDragStartTransition({", ("if(!state.semanticSelectedNodes.has(target))", "setData('text/plain',semanticTopLevelSelected")),
+    ("tree-collapse", semantics_tree_interactions_adapter, "wizardSemanticsCollapsedTransition([...state.semanticCollapsed],id)", ("state.semanticCollapsed.delete(String(id))", "state.semanticCollapsed.add(String(id))")),
+    ("stage-selection", semantics_semantics_stage_adapter, "wizardSemanticsStageSelectionNormalization({", ("state.selectedNode<0||state.selectedNode>=nodes.length", "if(i<0||i>=nodes.length)state.semanticSelectedNodes.delete(i)")),
+    ("lod-selection", semantics_lod_selection_restore_adapter, "wizardSemanticsLodSelectionRestoreModel({", ("Number.isInteger(Number(i))&&Number(i)>=0", ".findIndex(rn=>Number(rn?.semanticNodeIndex)===validPrimary)")),
+):
+    if required not in body:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5P {adapter_name} adapter missing pure boundary {required!r}")
+    for token in forbidden:
+        if token in body:
+            raise AssertionError(f"wizard decomposition: SEMANTICS wave5P {adapter_name} adapter regained transition derivation {token!r}")
+if "wizardSemanticsMotionPlayTransition(state.semanticMotionPlaying)" not in semantics_motion_preview_interactions:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5P motion play adapter missing PURE transition")
+if "wizardSemanticsMotionDetachTransition(state.semanticPreviewDetached)" not in semantics_motion_preview_interactions:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5P detach adapter missing PURE transition")
+if "wizardSemanticsCollapsedTransition([...state.semanticCollapsed],'__ASSET_SPACE__')" not in semantics_tree_interactions_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5P MODEL ROOT collapse missing PURE transition")
+
+# SEMANTICS wave5Q: graph explode and motion preview application plans are explicit-input PURE
+# matrix plans. THREE matrix copies/updateMatrixWorld and downstream gizmo/collision/socket rebuilds
+# remain effectful adapters.
+for fn_name, body in (
+    ("wizardSemanticsGraphExplodeApplicationPlan", semantics_graph_explode_application_plan),
+    ("wizardSemanticsMotionPreviewTargetModel", semantics_motion_preview_target_model),
+    ("wizardSemanticsMotionPreviewApplicationPlan", semantics_motion_preview_application_plan),
+):
+    assert_pure_block(fn_name, body)
+
+if "wizardSemanticsGraphExplodeApplicationPlan({" not in semantics_graph_explode_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5Q graph explode adapter missing PURE application plan")
+for forbidden in ("const desired=[]", "const done=new Set(),apply=i=>", "parentWorld.invert().multiply(desired[i])"):
+    if forbidden in semantics_graph_explode_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5Q graph explode adapter regained matrix-plan derivation {forbidden!r}")
+if "wizardSemanticsMotionPreviewTargetModel(state.asset?.nodes||[],lod,state.selectedNode)" not in semantics_motion_preview_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5Q motion preview adapter missing PURE target model")
+if "wizardSemanticsMotionPreviewApplicationPlan({" not in semantics_motion_preview_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5Q motion preview adapter missing PURE application plan")
+for forbidden in ("const selectedSet=semanticSelectionSet", "targets=new Set()", "parentIndex>=0&&targets.has(parentIndex)", "parentWorld.invert().multiply(desired)"):
+    if forbidden in semantics_motion_preview_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5Q motion preview adapter regained target/matrix planning {forbidden!r}")
+for required in ("g.matrix.copy(item.localMatrix)", "g.updateMatrixWorld(true)"):
+    if required not in semantics_graph_explode_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5Q graph adapter lost THREE effect {required!r}")
+if "g.matrix.copy(item.localMatrix)" not in semantics_motion_preview_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5Q motion adapter lost THREE matrix-copy effect")
+
+# SEMANTICS wave5R: graph object topology, graph/joint gizmo presentation and viewport
+# semantic routing are explicit-input PURE plans. THREE object construction/application,
+# raycasting, state mutation and backend/status effects remain in the existing adapters.
+for fn_name, body in (
+    ("wizardSemanticsGraphObjectModel", semantics_graph_object_model),
+    ("wizardSemanticsGraphGizmoPlan", semantics_graph_gizmo_plan),
+    ("wizardSemanticsJointGizmoPlan", semantics_joint_gizmo_plan),
+    ("wizardSemanticsViewportGizmoPickDecision", semantics_viewport_gizmo_pick_decision),
+    ("wizardSemanticsViewportMeshPickDecision", semantics_viewport_mesh_pick_decision),
+):
+    assert_pure_block(fn_name, body)
+
+if "wizardSemanticsGraphObjectModel(nodes,structuralLinks,state.semanticGraphStructureKey,state.semanticGraphNodeObjects.size)" not in semantics_graph_objects_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5R graph-object adapter missing PURE topology model")
+for forbidden in ("signature=semanticGraphStructureSignature", "for(let i=0;i<nodes.length;i++){const p=Number(nodes[i].parentIndex)"):
+    if forbidden in semantics_graph_objects_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5R graph-object adapter regained topology derivation {forbidden!r}")
+if "wizardSemanticsGraphGizmoPlan({" not in semantics_graph_gizmos_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5R graph-gizmo adapter missing PURE presentation plan")
+for forbidden in ("visualCounts=new Map()", "selectedMarker=selected&&!hasVisual", "kind=semanticRelationKind(nodes[i])"):
+    if forbidden in semantics_graph_gizmos_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5R graph-gizmo adapter regained presentation derivation {forbidden!r}")
+if "wizardSemanticsJointGizmoPlan({" not in semantics_joint_gizmos_adapter:
+    raise AssertionError("wizard decomposition: SEMANTICS wave5R joint-gizmo adapter missing PURE presentation plan")
+for forbidden in ("canonicalWorld=semanticWorldMatrix", "rawA0=deg(", "new THREE.Vector3(...(j.axis"):
+    if forbidden in semantics_joint_gizmos_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5R joint-gizmo adapter regained geometry derivation {forbidden!r}")
+for required in ("new THREE.Mesh(", "new THREE.Line(", "new THREE.ArrowHelper("):
+    if required not in semantics_joint_gizmos_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5R joint-gizmo adapter lost THREE effect {required!r}")
+for required in ("wizardSemanticsViewportGizmoPickDecision({", "wizardSemanticsViewportMeshPickDecision({"):
+    if required not in semantics_pick_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5R viewport adapter missing PURE routing boundary {required!r}")
+for forbidden in ("if(structHit&&state.semanticStructureMode==='graph')", "const command=wizardSemanticsBindingAssignmentCommand({nodes:state.asset?.nodes"):
+    if forbidden in semantics_pick_adapter:
+        raise AssertionError(f"wizard decomposition: SEMANTICS wave5R viewport adapter regained routing derivation {forbidden!r}")
+
+print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS/JOINT-PICK-BINDING-DECISIONS/TREE-MOTION-TRANSITIONS/PREVIEW-APPLICATION-PLANS/GRAPH-VIEWPORT-PLANS pure boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND/JOINT-PICK-BINDING/TREE-MOTION/PREVIEW-APPLICATION/GRAPH-VIEWPORT effect shells")

@@ -37556,8 +37556,3720 @@
         }
       ],
       "oracle_sha256": "a72ca980c8a0462a993af1c304025ee9bb2bf11cf06a64a84f73c74a9a70b718"
+    },
+    {
+      "name": "wizardSemanticsLodSelectionRestoreModel",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                },
+                {
+                  "id": "C"
+                }
+              ],
+              "lod": {
+                "nodes": [
+                  {
+                    "id": "RA",
+                    "semanticNodeIndex": 0
+                  },
+                  {
+                    "id": "RB",
+                    "semanticNodeIndex": 1
+                  }
+                ]
+              },
+              "primaryIndex": 1,
+              "selectedIndices": [
+                1,
+                2
+              ]
+            }
+          ],
+          "expected": {
+            "primaryIndex": 1,
+            "renderNodeIndex": 1,
+            "selectedNodeIndices": [
+              1,
+              2
+            ],
+            "selectionAnchor": 1
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                },
+                {
+                  "id": "C"
+                }
+              ],
+              "lod": {
+                "nodes": [
+                  {
+                    "id": "RA",
+                    "semanticNodeIndex": 0
+                  },
+                  {
+                    "id": "RC",
+                    "semanticNodeIndex": 2
+                  }
+                ]
+              },
+              "primaryIndex": 99,
+              "selectedIndices": [
+                2
+              ]
+            }
+          ],
+          "expected": {
+            "primaryIndex": 2,
+            "renderNodeIndex": 1,
+            "selectedNodeIndices": [
+              2
+            ],
+            "selectionAnchor": 2
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                }
+              ],
+              "lod": {
+                "nodes": []
+              },
+              "primaryIndex": 1,
+              "selectedIndices": []
+            }
+          ],
+          "expected": {
+            "primaryIndex": 1,
+            "renderNodeIndex": -1,
+            "selectedNodeIndices": [
+              1
+            ],
+            "selectionAnchor": 1
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                }
+              ],
+              "lod": {
+                "nodes": [
+                  {
+                    "semanticNodeIndex": 0
+                  }
+                ]
+              },
+              "primaryIndex": null,
+              "selectedIndices": [
+                "0",
+                "99",
+                -1
+              ]
+            }
+          ],
+          "expected": {
+            "primaryIndex": 0,
+            "renderNodeIndex": 0,
+            "selectedNodeIndices": [
+              0
+            ],
+            "selectionAnchor": 0
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "lod": null,
+              "primaryIndex": 0,
+              "selectedIndices": [
+                0
+              ]
+            }
+          ],
+          "expected": {
+            "primaryIndex": null,
+            "renderNodeIndex": -1,
+            "selectedNodeIndices": [],
+            "selectionAnchor": null
+          }
+        }
+      ],
+      "oracle_sha256": "aa7ca6a0ec18a3171897abda0879e9c5148fb1fe81ce4abc50c701e5cfb2de9e"
+    },
+    {
+      "name": "wizardSemanticsMotionAnimationStep",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "motionPlaying": false,
+              "wizardStage": "semantics",
+              "selectedNode": 1,
+              "joint": {
+                "type": "revolute"
+              },
+              "ts": 1000,
+              "motionLastTs": 900,
+              "gizmoLastUpdateTs": 800,
+              "rateDegPerSec": 25,
+              "angleDeg": 0,
+              "direction": 1
+            }
+          ],
+          "expected": {
+            "active": false
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "motionPlaying": true,
+              "wizardStage": "semantics",
+              "selectedNode": 1,
+              "joint": {
+                "type": "fixed"
+              },
+              "ts": 1000,
+              "motionLastTs": 900,
+              "gizmoLastUpdateTs": 800,
+              "rateDegPerSec": 25,
+              "angleDeg": 10,
+              "direction": 1
+            }
+          ],
+          "expected": {
+            "active": true,
+            "applyPreview": true,
+            "motionPlaying": false,
+            "refreshGizmos": true,
+            "stop": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "motionPlaying": true,
+              "wizardStage": "semantics",
+              "selectedNode": 1,
+              "joint": {
+                "type": "revolute",
+                "minAngleDeg": -45,
+                "maxAngleDeg": 90
+              },
+              "ts": 1000,
+              "motionLastTs": 0,
+              "gizmoLastUpdateTs": 0,
+              "rateDegPerSec": 25,
+              "angleDeg": 10,
+              "direction": 1
+            }
+          ],
+          "expected": {
+            "active": true,
+            "applyPreview": false,
+            "gizmoLastUpdateTs": 1000,
+            "initialize": true,
+            "motionLastTs": 1000
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "motionPlaying": true,
+              "wizardStage": "semantics",
+              "selectedNode": 1,
+              "joint": {
+                "type": "revolute",
+                "minAngleDeg": -10,
+                "maxAngleDeg": 10
+              },
+              "ts": 1100,
+              "motionLastTs": 1000,
+              "gizmoLastUpdateTs": 900,
+              "rateDegPerSec": 100,
+              "angleDeg": 9,
+              "direction": 1
+            }
+          ],
+          "expected": {
+            "active": true,
+            "angleDeg": 10,
+            "applyPreview": true,
+            "direction": -1,
+            "gizmoLastUpdateTs": 1100,
+            "initialize": false,
+            "motionLastTs": 1100,
+            "refreshGizmos": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "motionPlaying": true,
+              "wizardStage": "semantics",
+              "selectedNode": 1,
+              "joint": {
+                "type": "revolute",
+                "minAngleDeg": -180,
+                "maxAngleDeg": 180
+              },
+              "ts": 1200,
+              "motionLastTs": 1000,
+              "gizmoLastUpdateTs": 1000,
+              "rateDegPerSec": 1000,
+              "angleDeg": 179,
+              "direction": 1
+            }
+          ],
+          "expected": {
+            "active": true,
+            "angleDeg": -131,
+            "applyPreview": true,
+            "direction": 1,
+            "gizmoLastUpdateTs": 1200,
+            "initialize": false,
+            "motionLastTs": 1200,
+            "refreshGizmos": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "motionPlaying": true,
+              "wizardStage": "geometry",
+              "selectedNode": 1,
+              "joint": {
+                "type": "revolute"
+              },
+              "ts": 1000,
+              "motionLastTs": 900,
+              "gizmoLastUpdateTs": 800,
+              "rateDegPerSec": 25,
+              "angleDeg": 0,
+              "direction": 1
+            }
+          ],
+          "expected": {
+            "active": false
+          }
+        }
+      ],
+      "oracle_sha256": "26564a395f5d36e84e6585f456593f0e22742004e2072a4ca29e4c204ac9d4d1"
+    },
+    {
+      "name": "wizardSemanticsMotionPlayTransition",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            false
+          ],
+          "expected": {
+            "applyPreview": false,
+            "gizmoLastUpdateTs": 0,
+            "motionLastTs": 0,
+            "motionPlaying": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            true
+          ],
+          "expected": {
+            "applyPreview": true,
+            "gizmoLastUpdateTs": 0,
+            "motionLastTs": 0,
+            "motionPlaying": false
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            0
+          ],
+          "expected": {
+            "applyPreview": false,
+            "gizmoLastUpdateTs": 0,
+            "motionLastTs": 0,
+            "motionPlaying": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            1
+          ],
+          "expected": {
+            "applyPreview": true,
+            "gizmoLastUpdateTs": 0,
+            "motionLastTs": 0,
+            "motionPlaying": false
+          }
+        }
+      ],
+      "oracle_sha256": "c959685f7396c5471401d200788e67093e2651791bc9fbb88ec5bc04ea2ff889"
+    },
+    {
+      "name": "wizardSemanticsMotionDetachTransition",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            false
+          ],
+          "expected": {
+            "previewDetached": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            true
+          ],
+          "expected": {
+            "previewDetached": false
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            0
+          ],
+          "expected": {
+            "previewDetached": true
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            1
+          ],
+          "expected": {
+            "previewDetached": false
+          }
+        }
+      ],
+      "oracle_sha256": "8ebb535c2d36655539c8fb654755326649313ac42e96a85158adeff051e2abef"
+    },
+    {
+      "name": "wizardSemanticsCollapsedTransition",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            [],
+            "A"
+          ],
+          "expected": [
+            "A"
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              "A",
+              "B"
+            ],
+            "A"
+          ],
+          "expected": [
+            "B"
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              "A",
+              "B"
+            ],
+            "C"
+          ],
+          "expected": [
+            "A",
+            "B",
+            "C"
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              "__ASSET_SPACE__"
+            ],
+            "__ASSET_SPACE__"
+          ],
+          "expected": []
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              "1",
+              2
+            ],
+            2
+          ],
+          "expected": [
+            "1"
+          ]
+        }
+      ],
+      "oracle_sha256": "f6c2e1684f509e23f91bffa3ddb39e93373f7a2185d99451f51b3fdf28e43263"
+    },
+    {
+      "name": "wizardSemanticsTreeDragStartTransition",
+      "support": [
+        "semanticSelectedIndices",
+        "semanticTopLevelSelected"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1
+                }
+              ],
+              "selectedNodeIndices": [
+                1,
+                2
+              ],
+              "selectedNode": 1,
+              "selectionAnchor": 1,
+              "target": 2
+            }
+          ],
+          "expected": {
+            "moving": [
+              1
+            ],
+            "selectedNode": 1,
+            "selectedNodeIndices": [
+              1,
+              2
+            ],
+            "selectionAnchor": 1,
+            "selectionChanged": false,
+            "transferText": "1"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1
+                },
+                {
+                  "id": "D",
+                  "parentIndex": -1
+                }
+              ],
+              "selectedNodeIndices": [
+                1,
+                2
+              ],
+              "selectedNode": 1,
+              "selectionAnchor": 1,
+              "target": 3
+            }
+          ],
+          "expected": {
+            "moving": [
+              3
+            ],
+            "selectedNode": 3,
+            "selectedNodeIndices": [
+              3
+            ],
+            "selectionAnchor": 3,
+            "selectionChanged": true,
+            "transferText": "3"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 0
+                }
+              ],
+              "selectedNodeIndices": [
+                1,
+                2
+              ],
+              "selectedNode": 2,
+              "selectionAnchor": 1,
+              "target": 1
+            }
+          ],
+          "expected": {
+            "moving": [
+              1,
+              2
+            ],
+            "selectedNode": 2,
+            "selectedNodeIndices": [
+              1,
+              2
+            ],
+            "selectionAnchor": 1,
+            "selectionChanged": false,
+            "transferText": "1,2"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 1
+                }
+              ],
+              "selectedNodeIndices": [],
+              "selectedNode": null,
+              "selectionAnchor": null,
+              "target": 1
+            }
+          ],
+          "expected": {
+            "moving": [
+              1
+            ],
+            "selectedNode": 1,
+            "selectedNodeIndices": [
+              1
+            ],
+            "selectionAnchor": 1,
+            "selectionChanged": true,
+            "transferText": "1"
+          }
+        }
+      ],
+      "oracle_sha256": "11a335db81214e482f39d97901598404fdc8e02255c4ec03c0d0756d934c49da"
+    },
+    {
+      "name": "wizardSemanticsStageSelectionNormalization",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                },
+                {
+                  "id": "C"
+                }
+              ],
+              "selectedNode": 1,
+              "selectedNodeIndices": [
+                1,
+                2
+              ]
+            }
+          ],
+          "expected": {
+            "selectedNode": 1,
+            "selectedNodeIndices": [
+              1,
+              2
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                },
+                {
+                  "id": "C"
+                }
+              ],
+              "selectedNode": 1,
+              "selectedNodeIndices": []
+            }
+          ],
+          "expected": {
+            "selectedNode": 1,
+            "selectedNodeIndices": [
+              1
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                }
+              ],
+              "selectedNode": 99,
+              "selectedNodeIndices": [
+                0,
+                99,
+                -1
+              ]
+            }
+          ],
+          "expected": {
+            "selectedNode": null,
+            "selectedNodeIndices": [
+              0
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                }
+              ],
+              "selectedNode": null,
+              "selectedNodeIndices": [
+                "1",
+                0
+              ]
+            }
+          ],
+          "expected": {
+            "selectedNode": null,
+            "selectedNodeIndices": [
+              "1",
+              0
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "selectedNode": 0,
+              "selectedNodeIndices": [
+                0
+              ]
+            }
+          ],
+          "expected": {
+            "selectedNode": null,
+            "selectedNodeIndices": []
+          }
+        }
+      ],
+      "oracle_sha256": "4c4a57a8b7c387f36020e308d0f972418e95306478e2b6b7e2fb0fde614c9e42"
+    },
+    {
+      "name": "wizardSemanticsGraphExplodeApplicationPlan",
+      "support": [
+        "semanticRenderOwner",
+        "semanticUnboundRenderClusterRoot"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "lod": {
+                "nodes": []
+              },
+              "semanticOffsets": {
+                "__map__": []
+              },
+              "unboundOffsets": {
+                "__map__": []
+              },
+              "renderWorldMatrices": [],
+              "rootWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          ],
+          "expected": []
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "lod": {
+                "nodes": [
+                  {
+                    "id": "R0",
+                    "parentIndex": -1,
+                    "semanticNodeIndex": 0
+                  },
+                  {
+                    "id": "R1",
+                    "parentIndex": 0,
+                    "semanticNodeIndex": 1
+                  }
+                ]
+              },
+              "semanticOffsets": {
+                "__map__": [
+                  [
+                    0,
+                    {
+                      "__vector3__": [
+                        10,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  [
+                    1,
+                    {
+                      "__vector3__": [
+                        0,
+                        20,
+                        0
+                      ]
+                    }
+                  ]
+                ]
+              },
+              "unboundOffsets": {
+                "__map__": []
+              },
+              "renderWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    2,
+                    0,
+                    1
+                  ]
+                }
+              ],
+              "rootWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          ],
+          "expected": [
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  11,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              "renderNodeIndex": 0
+            },
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  -10,
+                  22,
+                  0,
+                  1
+                ]
+              },
+              "renderNodeIndex": 1
+            }
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "lod": {
+                "nodes": [
+                  {
+                    "id": "U0",
+                    "parentIndex": -1,
+                    "semanticNodeIndex": -1
+                  },
+                  {
+                    "id": "U1",
+                    "parentIndex": 0,
+                    "semanticNodeIndex": -1
+                  }
+                ]
+              },
+              "semanticOffsets": {
+                "__map__": []
+              },
+              "unboundOffsets": {
+                "__map__": [
+                  [
+                    0,
+                    {
+                      "__vector3__": [
+                        0,
+                        0,
+                        5
+                      ]
+                    }
+                  ]
+                ]
+              },
+              "renderWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    2,
+                    0,
+                    1
+                  ]
+                }
+              ],
+              "rootWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          ],
+          "expected": [
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  1,
+                  0,
+                  5,
+                  1
+                ]
+              },
+              "renderNodeIndex": 0
+            },
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  2,
+                  0,
+                  1
+                ]
+              },
+              "renderNodeIndex": 1
+            }
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "lod": {
+                "nodes": [
+                  {
+                    "id": "MISSING",
+                    "parentIndex": -1,
+                    "semanticNodeIndex": 0
+                  },
+                  {
+                    "id": "R1",
+                    "parentIndex": 0,
+                    "semanticNodeIndex": 1
+                  }
+                ]
+              },
+              "semanticOffsets": {
+                "__map__": [
+                  [
+                    0,
+                    {
+                      "__vector3__": [
+                        3,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  [
+                    1,
+                    {
+                      "__vector3__": [
+                        0,
+                        4,
+                        0
+                      ]
+                    }
+                  ]
+                ]
+              },
+              "unboundOffsets": {
+                "__map__": []
+              },
+              "renderWorldMatrices": [
+                null,
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    2,
+                    3,
+                    0,
+                    1
+                  ]
+                }
+              ],
+              "rootWorld": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          ],
+          "expected": [
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  -8,
+                  7,
+                  0,
+                  1
+                ]
+              },
+              "renderNodeIndex": 1
+            }
+          ]
+        }
+      ],
+      "oracle_sha256": "7bd897d675131f52bdfc94e770ddd3ce145d00ecedcd9588472f3c0871232d54"
+    },
+    {
+      "name": "wizardSemanticsMotionPreviewTargetModel",
+      "support": [
+        "semanticDescendantSet",
+        "semanticIsDescendant",
+        "semanticSelectionSet"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1
+              },
+              {
+                "id": "B",
+                "parentIndex": 0
+              }
+            ],
+            {
+              "nodes": [
+                {
+                  "id": "R0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 0
+                },
+                {
+                  "id": "R1",
+                  "parentIndex": 0,
+                  "semanticNodeIndex": 1
+                },
+                {
+                  "id": "R2",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 1
+                }
+              ]
+            },
+            null
+          ],
+          "expected": {
+            "targetRenderNodeIndices": [],
+            "topLevelTargetRenderNodeIndices": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1
+              },
+              {
+                "id": "B",
+                "parentIndex": 0
+              }
+            ],
+            {
+              "nodes": [
+                {
+                  "id": "R0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 0
+                },
+                {
+                  "id": "R1",
+                  "parentIndex": 0,
+                  "semanticNodeIndex": 1
+                },
+                {
+                  "id": "R2",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 1
+                }
+              ]
+            },
+            0
+          ],
+          "expected": {
+            "targetRenderNodeIndices": [
+              0,
+              1,
+              2
+            ],
+            "topLevelTargetRenderNodeIndices": [
+              0,
+              2
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1
+              },
+              {
+                "id": "B",
+                "parentIndex": 0
+              }
+            ],
+            {
+              "nodes": [
+                {
+                  "id": "R0",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 0
+                },
+                {
+                  "id": "R1",
+                  "parentIndex": 0,
+                  "semanticNodeIndex": 1
+                },
+                {
+                  "id": "R2",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": 1
+                }
+              ]
+            },
+            1
+          ],
+          "expected": {
+            "targetRenderNodeIndices": [
+              1,
+              2
+            ],
+            "topLevelTargetRenderNodeIndices": [
+              1,
+              2
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1
+              },
+              {
+                "id": "B",
+                "parentIndex": 0
+              }
+            ],
+            {
+              "nodes": [
+                {
+                  "id": "U",
+                  "parentIndex": -1,
+                  "semanticNodeIndex": -1
+                }
+              ]
+            },
+            0
+          ],
+          "expected": {
+            "targetRenderNodeIndices": [],
+            "topLevelTargetRenderNodeIndices": []
+          }
+        }
+      ],
+      "oracle_sha256": "e3fd9cbf31f997042a81b7c904920f9d80aa5b96020765c0cd67f756b01c3281"
+    },
+    {
+      "name": "wizardSemanticsMotionPreviewApplicationPlan",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "topLevelTargetRenderNodeIndices": [],
+              "delta": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              "renderWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ]
+                }
+              ],
+              "parentWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": []
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "topLevelTargetRenderNodeIndices": [
+                0,
+                2
+              ],
+              "delta": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  5,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              "renderWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    2,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    3,
+                    0,
+                    0,
+                    1
+                  ]
+                }
+              ],
+              "parentWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  6,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              "renderNodeIndex": 0
+            },
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  8,
+                  0,
+                  0,
+                  1
+                ]
+              },
+              "renderNodeIndex": 2
+            }
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "topLevelTargetRenderNodeIndices": [
+                1,
+                2
+              ],
+              "delta": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  2,
+                  1
+                ]
+              },
+              "renderWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    2,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    3,
+                    0,
+                    0,
+                    1
+                  ]
+                }
+              ],
+              "parentWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  2,
+                  2,
+                  1
+                ]
+              },
+              "renderNodeIndex": 1
+            },
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  3,
+                  0,
+                  2,
+                  1
+                ]
+              },
+              "renderNodeIndex": 2
+            }
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "topLevelTargetRenderNodeIndices": [
+                1,
+                2
+              ],
+              "delta": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  1,
+                  0,
+                  1
+                ]
+              },
+              "renderWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                null,
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    3,
+                    0,
+                    0,
+                    1
+                  ]
+                }
+              ],
+              "parentWorldMatrices": [
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "__matrix4__": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "localMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  3,
+                  1,
+                  0,
+                  1
+                ]
+              },
+              "renderNodeIndex": 2
+            }
+          ]
+        }
+      ],
+      "oracle_sha256": "6647268796af04544d239982995cbd80700f1e11b6c8aa8d5da39c1c34144b85"
+    },
+    {
+      "name": "wizardSemanticsGraphObjectModel",
+      "support": [
+        "semanticGraphStructureSignature"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            [],
+            [],
+            "",
+            0
+          ],
+          "expected": {
+            "nodeIndices": [],
+            "rebuild": true,
+            "semanticLinks": [],
+            "signature": "#",
+            "structuralLinkIndices": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1
+              },
+              {
+                "id": "B",
+                "parentIndex": 0
+              }
+            ],
+            [],
+            "",
+            0
+          ],
+          "expected": {
+            "nodeIndices": [
+              0,
+              1
+            ],
+            "rebuild": true,
+            "semanticLinks": [
+              {
+                "childIndex": 1,
+                "parentIndex": 0
+              }
+            ],
+            "signature": "0:A@-1|1:B@0#",
+            "structuralLinkIndices": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1
+              },
+              {
+                "id": "B",
+                "parentIndex": 0
+              }
+            ],
+            [
+              {
+                "id": "S0",
+                "nodeAIndex": 0,
+                "nodeBIndex": 1,
+                "kind": "weld_seam"
+              }
+            ],
+            "0:A@-1|1:B@0#0:S0@0-1:weld_seam",
+            2
+          ],
+          "expected": {
+            "nodeIndices": [],
+            "rebuild": false,
+            "semanticLinks": [],
+            "signature": "0:A@-1|1:B@0#0:S0@0-1:weld_seam",
+            "structuralLinkIndices": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            [
+              {
+                "id": "A",
+                "parentIndex": -1
+              },
+              {
+                "id": "B",
+                "parentIndex": 99
+              },
+              {
+                "id": "C",
+                "parentIndex": 1
+              }
+            ],
+            [
+              {
+                "id": "S0",
+                "nodeAIndex": 0,
+                "nodeBIndex": 2,
+                "kind": "controlled_lock"
+              }
+            ],
+            "stale",
+            3
+          ],
+          "expected": {
+            "nodeIndices": [
+              0,
+              1,
+              2
+            ],
+            "rebuild": true,
+            "semanticLinks": [
+              {
+                "childIndex": 2,
+                "parentIndex": 1
+              }
+            ],
+            "signature": "0:A@-1|1:B@99|2:C@1#0:S0@0-2:controlled_lock",
+            "structuralLinkIndices": [
+              0
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "aa8bd606268ff5ba199ba811b4ca93c45fd590af813f2bc513e60f8a14078f1c"
+    },
+    {
+      "name": "wizardSemanticsGraphGizmoPlan",
+      "support": [
+        "semanticRelationKind"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "structuralLinks": [],
+              "anchors": {
+                "__map__": []
+              },
+              "lod": {
+                "loaded": true,
+                "nodes": []
+              },
+              "selectedNode": null,
+              "selectedStructuralLink": null,
+              "semanticStructureMode": "tree",
+              "minBounds": [
+                0,
+                0,
+                0
+              ],
+              "maxBounds": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "expected": {
+            "nodes": [],
+            "semanticLinks": [],
+            "size": 0.045,
+            "structuralLinks": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed"
+                  }
+                }
+              ],
+              "structuralLinks": [],
+              "anchors": {
+                "__map__": [
+                  [
+                    0,
+                    {
+                      "__vector3__": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  [
+                    1,
+                    {
+                      "__vector3__": [
+                        2,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                ]
+              },
+              "lod": {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "enabled": true,
+                    "geometryIndex": 0,
+                    "semanticNodeIndex": 0
+                  },
+                  {
+                    "enabled": true,
+                    "geometryIndex": 1,
+                    "semanticNodeIndex": 1
+                  }
+                ]
+              },
+              "selectedNode": 1,
+              "selectedStructuralLink": null,
+              "semanticStructureMode": "tree",
+              "minBounds": [
+                -1,
+                -1,
+                -1
+              ],
+              "maxBounds": [
+                3,
+                2,
+                1
+              ]
+            }
+          ],
+          "expected": {
+            "nodes": [
+              {
+                "color": 7981311,
+                "index": 0,
+                "opacity": 0.82,
+                "position": {
+                  "__vector3__": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "scale": 0.06899999999999999,
+                "visible": true
+              },
+              {
+                "color": 7981311,
+                "index": 1,
+                "opacity": 0.32,
+                "position": {
+                  "__vector3__": [
+                    2,
+                    0,
+                    0
+                  ]
+                },
+                "scale": 0.06899999999999999,
+                "visible": true
+              }
+            ],
+            "semanticLinks": [
+              {
+                "childIndex": 1,
+                "color": 7981311,
+                "end": {
+                  "__vector3__": [
+                    2,
+                    0,
+                    0
+                  ]
+                },
+                "lineOpacity": 1,
+                "markerOpacity": 0.95,
+                "markerPosition": {
+                  "__vector3__": [
+                    1,
+                    0,
+                    0
+                  ]
+                },
+                "markerScale": 0.087,
+                "start": {
+                  "__vector3__": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "visible": true
+              }
+            ],
+            "size": 0.06,
+            "structuralLinks": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "revolute"
+                  }
+                },
+                {
+                  "id": "C",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "fixed",
+                    "breakable": true
+                  }
+                }
+              ],
+              "structuralLinks": [
+                {
+                  "id": "L0",
+                  "nodeAIndex": 1,
+                  "nodeBIndex": 2,
+                  "kind": "weld_seam",
+                  "enabled": true
+                },
+                {
+                  "id": "L1",
+                  "nodeAIndex": 0,
+                  "nodeBIndex": 2,
+                  "kind": "controlled_lock",
+                  "enabled": false
+                }
+              ],
+              "anchors": {
+                "__map__": [
+                  [
+                    0,
+                    {
+                      "__vector3__": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  [
+                    1,
+                    {
+                      "__vector3__": [
+                        1,
+                        2,
+                        0
+                      ]
+                    }
+                  ],
+                  [
+                    2,
+                    {
+                      "__vector3__": [
+                        -1,
+                        0,
+                        3
+                      ]
+                    }
+                  ]
+                ]
+              },
+              "lod": {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "enabled": true,
+                    "geometryIndex": 0,
+                    "semanticNodeIndex": 0
+                  },
+                  {
+                    "enabled": true,
+                    "geometryIndex": 1,
+                    "semanticNodeIndex": 1
+                  }
+                ]
+              },
+              "selectedNode": 2,
+              "selectedStructuralLink": 0,
+              "semanticStructureMode": "graph",
+              "minBounds": [
+                -2,
+                -2,
+                -2
+              ],
+              "maxBounds": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "expected": {
+            "nodes": [
+              {
+                "color": 7981311,
+                "index": 0,
+                "opacity": 0.82,
+                "position": {
+                  "__vector3__": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "scale": 0.13799999999999998,
+                "visible": true
+              },
+              {
+                "color": 7981311,
+                "index": 1,
+                "opacity": 0.82,
+                "position": {
+                  "__vector3__": [
+                    1,
+                    2,
+                    0
+                  ]
+                },
+                "scale": 0.13799999999999998,
+                "visible": true
+              },
+              {
+                "color": 14090068,
+                "index": 2,
+                "opacity": 1,
+                "position": {
+                  "__vector3__": [
+                    -1,
+                    0,
+                    3
+                  ]
+                },
+                "scale": 0.19799999999999998,
+                "visible": true
+              }
+            ],
+            "semanticLinks": [
+              {
+                "childIndex": 1,
+                "visible": false
+              },
+              {
+                "childIndex": 2,
+                "visible": false
+              }
+            ],
+            "size": 0.12,
+            "structuralLinks": [
+              {
+                "color": 16758861,
+                "end": {
+                  "__vector3__": [
+                    -1,
+                    0,
+                    3
+                  ]
+                },
+                "index": 0,
+                "lineOpacity": 1,
+                "markerPosition": {
+                  "__vector3__": [
+                    0,
+                    1,
+                    1.5
+                  ]
+                },
+                "markerScale": 0.186,
+                "start": {
+                  "__vector3__": [
+                    1,
+                    2,
+                    0
+                  ]
+                },
+                "visible": true
+              },
+              {
+                "index": 1,
+                "visible": false
+              }
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A",
+                  "parentIndex": -1
+                },
+                {
+                  "id": "B",
+                  "parentIndex": 0,
+                  "joint": {
+                    "type": "revolute",
+                    "breakable": true
+                  }
+                }
+              ],
+              "structuralLinks": [
+                {
+                  "id": "L0",
+                  "nodeAIndex": 0,
+                  "nodeBIndex": 1,
+                  "kind": "equipment_mount",
+                  "enabled": true
+                }
+              ],
+              "anchors": {
+                "__map__": [
+                  [
+                    0,
+                    {
+                      "__vector3__": [
+                        5,
+                        0,
+                        -1
+                      ]
+                    }
+                  ]
+                ]
+              },
+              "lod": {
+                "loaded": false,
+                "nodes": []
+              },
+              "selectedNode": 1,
+              "selectedStructuralLink": 0,
+              "semanticStructureMode": "tree",
+              "minBounds": [
+                0,
+                0,
+                0
+              ],
+              "maxBounds": [
+                10,
+                1,
+                1
+              ]
+            }
+          ],
+          "expected": {
+            "nodes": [
+              {
+                "color": 7981311,
+                "index": 0,
+                "opacity": 0.82,
+                "position": {
+                  "__vector3__": [
+                    5,
+                    0,
+                    -1
+                  ]
+                },
+                "scale": 0.1725,
+                "visible": true
+              }
+            ],
+            "semanticLinks": [
+              {
+                "childIndex": 1,
+                "visible": false
+              }
+            ],
+            "size": 0.15,
+            "structuralLinks": [
+              {
+                "index": 0,
+                "visible": false
+              }
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "2e60270b26e3e53438a8a7e4562d83f9080ed95bf55847e14027207fd8084905"
+    },
+    {
+      "name": "wizardSemanticsJointGizmoPlan",
+      "support": [
+        "deg",
+        "composeMatrix",
+        "previewStateForNode",
+        "semanticNodePose",
+        "semanticWorldMatrix",
+        "semanticSelectionSet",
+        "semanticPreviewDeltaWorld",
+        "semanticDisplayWorldMatrix",
+        "semanticDescendantSet",
+        "semanticIsDescendant"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [],
+              "stateVariants": [],
+              "previewStates": {
+                "__map__": []
+              },
+              "selectedNode": null,
+              "wizardStage": "semantics",
+              "previewAngleDeg": 0,
+              "previewDetached": false,
+              "minBounds": [
+                0,
+                0,
+                0
+              ],
+              "maxBounds": [
+                1,
+                1,
+                1
+              ],
+              "graphOffsets": {
+                "__map__": []
+              }
+            }
+          ],
+          "expected": null
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "stateVariants": [],
+              "previewStates": {
+                "__map__": []
+              },
+              "selectedNode": 0,
+              "wizardStage": "semantics",
+              "previewAngleDeg": 0,
+              "previewDetached": false,
+              "minBounds": [
+                0,
+                0,
+                0
+              ],
+              "maxBounds": [
+                4,
+                2,
+                1
+              ],
+              "graphOffsets": {
+                "__map__": []
+              }
+            }
+          ],
+          "expected": null
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    0,
+                    2,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "joint": {
+                    "type": "fixed",
+                    "pivot": [
+                      0.5,
+                      0,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      1,
+                      0
+                    ]
+                  }
+                }
+              ],
+              "stateVariants": [],
+              "previewStates": {
+                "__map__": []
+              },
+              "selectedNode": 1,
+              "wizardStage": "semantics",
+              "previewAngleDeg": 0,
+              "previewDetached": false,
+              "minBounds": [
+                -1,
+                -2,
+                -3
+              ],
+              "maxBounds": [
+                5,
+                4,
+                3
+              ],
+              "graphOffsets": {
+                "__map__": [
+                  [
+                    1,
+                    {
+                      "__vector3__": [
+                        2,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "arcPoints": [],
+            "arrowHeadLength": 0.15000000000000002,
+            "arrowHeadWidth": 0.07200000000000001,
+            "arrowLength": 0.6000000000000001,
+            "axis": {
+              "__vector3__": [
+                0,
+                1,
+                0
+              ]
+            },
+            "cubeColor": 7981311,
+            "originPoint": {
+              "__vector3__": [
+                3,
+                2,
+                0
+              ]
+            },
+            "pivot": {
+              "__vector3__": [
+                1.5,
+                2,
+                0
+              ]
+            },
+            "revolute": false,
+            "size": 0.10799999999999998
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "ROOT",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "id": "ARM",
+                  "parentIndex": 0,
+                  "localPosition": [
+                    1,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    30
+                  ],
+                  "joint": {
+                    "type": "revolute",
+                    "pivot": [
+                      0,
+                      1,
+                      0
+                    ],
+                    "axis": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "minAngleDeg": -45,
+                    "maxAngleDeg": 90,
+                    "breakable": true
+                  }
+                }
+              ],
+              "stateVariants": [],
+              "previewStates": {
+                "__map__": []
+              },
+              "selectedNode": 1,
+              "wizardStage": "semantics",
+              "previewAngleDeg": 30,
+              "previewDetached": true,
+              "minBounds": [
+                -2,
+                -2,
+                -2
+              ],
+              "maxBounds": [
+                2,
+                2,
+                2
+              ],
+              "graphOffsets": {
+                "__map__": [
+                  [
+                    1,
+                    {
+                      "__vector3__": [
+                        0.5,
+                        0.25,
+                        0
+                      ]
+                    }
+                  ]
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "arcPoints": [
+              {
+                "__vector3__": [
+                  0.34443650813895954,
+                  1.021588895645479,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.33881606023206917,
+                  1.0157576232994383,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.33341405376857336,
+                  1.0097234292342696,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3282378097141392,
+                  1.0034944911757637,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3232943430742581,
+                  0.997079250772774,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.31859035338729447,
+                  0.9904864021568336,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.31413221564506444,
+                  0.9837248801596001,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3099259716532509,
+                  0.9768038482040966,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3059773218433619,
+                  0.9697326858861581,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.30229161754733014,
+                  0.9625209762629148,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.29887385374522324,
+                  0.9551784928655365,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.29572866229589256,
+                  0.9477151864538429,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.2928603056597354,
+                  0.9401411715307271,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.29027267112207733,
+                  0.9324667126346688,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28796926552500324,
+                  0.9247022104289163,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28595321051477673,
+                  0.9168581876061863,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28422723831128927,
+                  0.9089452746279869,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28279368800527116,
+                  0.9009741953178882,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.2816545023882838,
+                  0.8929557523282663,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28081122531978886,
+                  0.8849008125002155,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28026499963486207,
+                  0.8768202921364707,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28001656559538823,
+                  0.8687251422072971,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.2800662598868351,
+                  0.860626333509398,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.2804140151619672,
+                  0.8525348417979528,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.2810593601321167,
+                  0.8444616329119353,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28200142020588836,
+                  0.836417647912871,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28323891867443296,
+                  0.8284137882571725,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28477017844168195,
+                  0.8204609010221506,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.2865931242972003,
+                  0.8125697642057207,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.28870528572857557,
+                  0.8047510721197271,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.2911038002695319,
+                  0.7970154208966825,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.29378541737923347,
+                  0.7893732941295631,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.2967465028475169,
+                  0.781835048664119,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.2999830437200851,
+                  0.7744109005629585,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.30349065373698664,
+                  0.7671109112604253,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.30726457927701056,
+                  0.7599449739270316,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.31129970579994015,
+                  0.7529228000619299,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3155905647779356,
+                  0.7460539063315885,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3201313411066516,
+                  0.7393476016725128,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3249158809860456,
+                  0.7328129746754871,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.32993770026019786,
+                  0.7264588812684367,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.33518999320483894,
+                  0.720293932714601,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.34066564175067726,
+                  0.714326483942284,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.346357225130026,
+                  0.7085646222219986,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.35225702993365593,
+                  0.7030161562063477,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3583570605642459,
+                  0.6976886053474978,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3646490500722621,
+                  0.6925891897065853,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.37112447135958343,
+                  0.6877248201688678,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3777745487356875,
+                  0.6831020890778787,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.38459026981073685,
+                  0.6787272613012804,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3915623977094475,
+                  0.6746062657405222,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.3986814835891872,
+                  0.6707446872958108,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.40593787944533793,
+                  0.6671477592972812,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.41332175118656944,
+                  0.6638203564126259,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.4208230919623026,
+                  0.6607669880407961,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.4284317357243021,
+                  0.657991792200724,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.4361373710040183,
+                  0.6554985299233528,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.4439295548870068,
+                  0.6532905801545712,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.4517977271654886,
+                  0.6513709351759625,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.45973122464986904,
+                  0.6497421965495711,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.4677192956198204,
+                  0.6484065715921868,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.4757511143953457,
+                  0.6473658703839203,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.4838157960080731,
+                  0.6466215033151268,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.49190241095290105,
+                  0.6461744791750018,
+                  0
+                ]
+              },
+              {
+                "__vector3__": [
+                  0.5,
+                  0.6460254037844387,
+                  0
+                ]
+              }
+            ],
+            "arrowHeadLength": 0.1,
+            "arrowHeadWidth": 0.048,
+            "arrowLength": 0.4,
+            "axis": {
+              "__vector3__": [
+                0,
+                0,
+                1
+              ]
+            },
+            "cubeColor": 16760909,
+            "originPoint": {
+              "__vector3__": [
+                1.834038105676658,
+                1.1096598839415686,
+                0
+              ]
+            },
+            "pivot": {
+              "__vector3__": [
+                0.5,
+                0.8660254037844387,
+                0
+              ]
+            },
+            "revolute": true,
+            "size": 0.072
+          }
+        }
+      ],
+      "oracle_sha256": "8ac17519b1913df1c148c03477443b6b5d6dc00f99cc70d5f80402b34a2ff834"
+    },
+    {
+      "name": "wizardSemanticsViewportGizmoPickDecision",
+      "support": [],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "semanticStructureMode": "tree",
+              "selectionMode": "toggle"
+            }
+          ],
+          "expected": {
+            "action": "none"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "semanticStructureMode": "graph",
+              "selectionMode": "single",
+              "structuralLinkIndex": 3,
+              "semanticLinkChildIndex": 2,
+              "semanticNodeIndex": 1
+            }
+          ],
+          "expected": {
+            "action": "structural_link",
+            "structuralLinkIndex": 3
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "semanticStructureMode": "tree",
+              "selectionMode": "range",
+              "structuralLinkIndex": 4,
+              "semanticLinkChildIndex": 2,
+              "semanticNodeIndex": 1
+            }
+          ],
+          "expected": {
+            "action": "semantic_node",
+            "nodeIndex": 2,
+            "selectionMode": "range"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "semanticStructureMode": "graph",
+              "selectionMode": "add-range",
+              "semanticNodeIndex": 5
+            }
+          ],
+          "expected": {
+            "action": "structural_node",
+            "nodeIndex": 5
+          }
+        }
+      ],
+      "oracle_sha256": "23d9c59d678cedded0b2e31b08765d6b88fd6e9d63f30b19b9073b8e37ef3afb"
+    },
+    {
+      "name": "wizardSemanticsViewportMeshPickDecision",
+      "support": [
+        "wizardSemanticsBindingAssignmentCommand"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                }
+              ],
+              "bindingPickTarget": 0,
+              "lodIndex": 2,
+              "renderNodeIndex": 4,
+              "renderNodeId": "R4",
+              "semanticNodeIndex": -1,
+              "applyAllLods": true,
+              "semanticStructureMode": "tree",
+              "selectionMode": "single"
+            }
+          ],
+          "expected": {
+            "action": "binding",
+            "command": {
+              "ok": true,
+              "payload": {
+                "applyAllLods": true,
+                "lodIndex": 2,
+                "renderNodeIndex": 4,
+                "semanticNodeIndex": 0
+              },
+              "renderId": "R4",
+              "renderNodeIndex": 4,
+              "targetId": "A",
+              "targetIndex": 0
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                }
+              ],
+              "bindingPickTarget": 9,
+              "lodIndex": 0,
+              "renderNodeIndex": 1,
+              "renderNodeId": "R1",
+              "semanticNodeIndex": 0,
+              "applyAllLods": false,
+              "semanticStructureMode": "tree",
+              "selectionMode": "toggle"
+            }
+          ],
+          "expected": {
+            "action": "binding",
+            "command": {
+              "ok": false,
+              "reason": "invalid_target",
+              "renderNodeIndex": 1,
+              "targetIndex": 9
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                }
+              ],
+              "bindingPickTarget": null,
+              "lodIndex": 0,
+              "renderNodeIndex": 7,
+              "renderNodeId": "R7",
+              "semanticNodeIndex": 1,
+              "applyAllLods": true,
+              "semanticStructureMode": "tree",
+              "selectionMode": "range"
+            }
+          ],
+          "expected": {
+            "action": "semantic_node",
+            "nodeIndex": 1,
+            "renderNodeIndex": 7,
+            "selectionMode": "range"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                },
+                {
+                  "id": "B"
+                }
+              ],
+              "bindingPickTarget": null,
+              "lodIndex": 0,
+              "renderNodeIndex": 8,
+              "renderNodeId": "R8",
+              "semanticNodeIndex": 1,
+              "applyAllLods": true,
+              "semanticStructureMode": "graph",
+              "selectionMode": "single"
+            }
+          ],
+          "expected": {
+            "action": "structural_node",
+            "nodeIndex": 1,
+            "renderNodeIndex": 8
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "A"
+                }
+              ],
+              "bindingPickTarget": null,
+              "lodIndex": 0,
+              "renderNodeIndex": 3,
+              "renderNodeId": "R3",
+              "semanticNodeIndex": -1,
+              "applyAllLods": true,
+              "semanticStructureMode": "tree",
+              "selectionMode": "single"
+            }
+          ],
+          "expected": {
+            "action": "render_node",
+            "renderNodeIndex": 3
+          }
+        }
+      ],
+      "oracle_sha256": "e48e29a05de243c4124a6bfda7797e274ea0cd0182a96aed178c2ec363abff76"
     }
   ],
   "easy_candidates": [],
-  "baseline_sha256": "b5fb16b4005098bc1f7ae03b9ded02c23a87b7e863271478add0722674858d0b"
+  "baseline_sha256": "3c231cbdc66e308478a5d48f19c30e7625561750af626b382b0f2cc2033359fa"
 }

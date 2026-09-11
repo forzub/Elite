@@ -41268,8 +41268,1172 @@
         }
       ],
       "oracle_sha256": "e48e29a05de243c4124a6bfda7797e274ea0cd0182a96aed178c2ec363abff76"
+    },
+    {
+      "name": "wizardPhysicsStageModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "invoke": "wizardPhysicsStageModel(args[0])",
+          "expected": {
+            "activeRigidBodyCount": 0,
+            "collisionVolumeCount": 0,
+            "semanticPartCount": 0
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "physics": {
+                    "mode": "disabled"
+                  }
+                },
+                {
+                  "physics": {
+                    "mode": "manual"
+                  }
+                },
+                {
+                  "physics": {
+                    "mode": "auto_collision"
+                  }
+                },
+                {}
+              ],
+              "collisionVolumes": [
+                {
+                  "id": "a"
+                },
+                {
+                  "id": "b"
+                }
+              ]
+            }
+          ],
+          "invoke": "wizardPhysicsStageModel(args[0])",
+          "expected": {
+            "activeRigidBodyCount": 2,
+            "collisionVolumeCount": 2,
+            "semanticPartCount": 4
+          }
+        }
+      ],
+      "oracle_sha256": "12de63e3b0d6c3172e3431d3d25585771652a956e4ad65767a8aae15dc31d48e"
+    },
+    {
+      "name": "wizardPhysicsStageHtml",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "semanticPartCount": 3,
+              "activeRigidBodyCount": 2,
+              "collisionVolumeCount": 4
+            },
+            {
+              "title": "PHYSICS",
+              "help": "help",
+              "semanticParts": "parts",
+              "activeBodies": "bodies",
+              "collisionVolumes": "volumes",
+              "hint": "hint"
+            },
+            {
+              "stageCheckControls": "<button>CHECK</button>"
+            }
+          ],
+          "invoke": "wizardPhysicsStageHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"title\">6 · PHYSICS</div><div class=\"wizardLead\">help</div><div class=\"wizardGrid\"><span>parts</span><span class=\"value\">3</span><span>bodies</span><span class=\"value\">2</span><span>volumes</span><span class=\"value\">4</span></div><div class=\"wizardOk\">hint</div><button>CHECK</button>"
+        }
+      ],
+      "oracle_sha256": "ac1ad02c4f9ea913b451fddb5e7704dd42aea104c1cc5043571196f76f42a327"
+    },
+    {
+      "name": "physicsNodeModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "id": "root"
+            }
+          ],
+          "invoke": "physicsNodeModel(args[0])",
+          "expected": {
+            "centerOfMass": [
+              0,
+              0,
+              0
+            ],
+            "densityKgM3": 780,
+            "id": "root",
+            "inertiaDiagonal": [
+              0,
+              0,
+              0
+            ],
+            "inertiaProducts": [
+              0,
+              0,
+              0
+            ],
+            "massKg": 0,
+            "mode": "disabled"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "id": "hull",
+              "physics": {
+                "mode": "manual",
+                "densityKgM3": 1234,
+                "massKg": 55,
+                "centerOfMass": [
+                  1,
+                  2,
+                  3
+                ],
+                "inertiaDiagonal": [
+                  4,
+                  5,
+                  6
+                ],
+                "inertiaProducts": [
+                  0.1,
+                  0.2,
+                  0.3
+                ]
+              }
+            }
+          ],
+          "invoke": "physicsNodeModel(args[0])",
+          "expected": {
+            "centerOfMass": [
+              1,
+              2,
+              3
+            ],
+            "densityKgM3": 1234,
+            "id": "hull",
+            "inertiaDiagonal": [
+              4,
+              5,
+              6
+            ],
+            "inertiaProducts": [
+              0.1,
+              0.2,
+              0.3
+            ],
+            "massKg": 55,
+            "mode": "manual"
+          }
+        }
+      ],
+      "oracle_sha256": "9bff195179a2cd97b7d27ab5e59ff071a6dd6c86ded089a6a31b90597ae34f11"
+    },
+    {
+      "name": "physicsNodeHtml",
+      "support": [
+        "escapeMarkup",
+        "vecInputs"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "id": "hull",
+              "mode": "manual",
+              "densityKgM3": 780,
+              "massKg": 12,
+              "centerOfMass": [
+                1,
+                2,
+                3
+              ],
+              "inertiaDiagonal": [
+                4,
+                5,
+                6
+              ],
+              "inertiaProducts": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "semanticPart": "Semantic part",
+              "baseRigidBody": "Base rigid body",
+              "massMode": "Mass mode",
+              "disabled": "Disabled",
+              "autoCollision": "Auto",
+              "manual": "Manual",
+              "density": "density",
+              "mass": "mass",
+              "estimate": "Estimate",
+              "centerOfMass": "COM",
+              "inertiaDiagonal": "ID",
+              "inertiaProducts": "IP",
+              "applyPhysics": "Apply"
+            },
+            {
+              "actions": "<div>ACTIONS</div>"
+            }
+          ],
+          "invoke": "physicsNodeHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"field\"><label>Semantic part</label><div><b>hull</b></div></div><div class=\"title\" style=\"margin-top:10px\">Base rigid body</div><div class=\"field\"><label>Mass mode</label><select id=\"massMode\"><option value=\"disabled\" >Disabled</option><option value=\"auto_collision\" >Auto</option><option value=\"manual\" selected>Manual</option></select></div><div class=\"grid3\"><input id=\"density\" type=\"number\" step=\"10\" value=\"780\" title=\"density\"><input id=\"mass\" type=\"number\" step=\"1\" value=\"12\" title=\"mass\"><button id=\"estimateMass\" class=\"mini\">Estimate</button></div><div class=\"field\"><label>COM</label><div class=\"grid3\"><input id=\"pcx\" type=\"number\" step=\"0.01\" value=\"1\"><input id=\"pcy\" type=\"number\" step=\"0.01\" value=\"2\"><input id=\"pcz\" type=\"number\" step=\"0.01\" value=\"3\"></div></div><div class=\"field\"><label>ID</label><div class=\"grid3\"><input id=\"pix\" type=\"number\" step=\"0.01\" value=\"4\"><input id=\"piy\" type=\"number\" step=\"0.01\" value=\"5\"><input id=\"piz\" type=\"number\" step=\"0.01\" value=\"6\"></div></div><div class=\"field\"><label>IP</label><div class=\"grid3\"><input id=\"ppx\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"ppy\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"ppz\" type=\"number\" step=\"0.01\" value=\"0\"></div></div><button id=\"applyPhysics\" class=\"mini\">Apply</button><div>ACTIONS</div>"
+        }
+      ],
+      "oracle_sha256": "8d9048745b8ab0a5eef7cb7dbeb21cfb801f21f973cc24a0c56446483f870b16"
+    },
+    {
+      "name": "physicsSetCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": "2",
+              "mode": "manual",
+              "densityKgM3": "780",
+              "massKg": "12.5",
+              "centerOfMass": [
+                1,
+                2,
+                3
+              ],
+              "inertiaDiagonal": [
+                4,
+                5,
+                6
+              ],
+              "inertiaProducts": [
+                0.1,
+                0.2,
+                0.3
+              ]
+            }
+          ],
+          "invoke": "physicsSetCommand(args[0])",
+          "expected": {
+            "centerOfMass": [
+              1,
+              2,
+              3
+            ],
+            "densityKgM3": 780,
+            "inertiaDiagonal": [
+              4,
+              5,
+              6
+            ],
+            "inertiaProducts": [
+              0.1,
+              0.2,
+              0.3
+            ],
+            "massKg": 12.5,
+            "mode": "manual",
+            "nodeIndex": 2
+          }
+        }
+      ],
+      "oracle_sha256": "f165f4e25917af24147a673656c7aad42a09c28f19d4d3e4e35161a8f030a38a"
+    },
+    {
+      "name": "physicsEstimateCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": "3",
+              "densityKgM3": "920"
+            }
+          ],
+          "invoke": "physicsEstimateCommand(args[0])",
+          "expected": {
+            "densityKgM3": 920,
+            "nodeIndex": 3
+          }
+        }
+      ],
+      "oracle_sha256": "d89a6875103c860a0f360bcd20bd01101da276180fde29200bee04f2db3d42c5"
+    },
+    {
+      "name": "hitVolumeListModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "invoke": "hitVolumeListModel(args[0])",
+          "expected": {
+            "rows": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "selectedCollision": 1,
+              "collisionVolumes": [
+                {
+                  "index": 0,
+                  "id": "a",
+                  "shape": "box",
+                  "activeStates": []
+                },
+                {
+                  "index": 1,
+                  "id": "b",
+                  "shape": "sphere",
+                  "activeStates": [
+                    "damaged"
+                  ]
+                }
+              ]
+            }
+          ],
+          "invoke": "hitVolumeListModel(args[0])",
+          "expected": {
+            "rows": [
+              {
+                "activeStates": [],
+                "id": "a",
+                "index": 0,
+                "selected": false,
+                "shape": "box"
+              },
+              {
+                "activeStates": [
+                  "damaged"
+                ],
+                "id": "b",
+                "index": 1,
+                "selected": true,
+                "shape": "sphere"
+              }
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "selectedCollision": null,
+              "collisionVolumes": [
+                {
+                  "index": 0,
+                  "id": "zero",
+                  "shape": "box",
+                  "activeStates": []
+                }
+              ]
+            }
+          ],
+          "invoke": "hitVolumeListModel(args[0])",
+          "expected": {
+            "rows": [
+              {
+                "activeStates": [],
+                "id": "zero",
+                "index": 0,
+                "selected": false,
+                "shape": "box"
+              }
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "c5bdec722c58f574ff6421c18973ff238108cee54f6eda0801d5a0791e27e0f3"
+    },
+    {
+      "name": "hitVolumeListHtml",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "rows": [
+                {
+                  "index": 0,
+                  "id": "a",
+                  "shape": "box",
+                  "activeStates": [],
+                  "selected": false
+                },
+                {
+                  "index": 1,
+                  "id": "b",
+                  "shape": "sphere",
+                  "activeStates": [
+                    "damaged"
+                  ],
+                  "selected": true
+                }
+              ]
+            }
+          ],
+          "invoke": "hitVolumeListHtml(args[0])",
+          "expected": "<div class=\"listRow \" data-hit-volume-index=\"0\"><span class=\"grow\">a</span><span class=\"badge\">BOX</span><span class=\"badge\">*</span></div><div class=\"listRow selected\" data-hit-volume-index=\"1\"><span class=\"grow\">b</span><span class=\"badge\">SPHERE</span><span class=\"badge\">damaged</span></div>"
+        }
+      ],
+      "oracle_sha256": "df5c09be3a2104f5a8ffcf6551c652300bac14af215f1fd38a58a58d81ccc4b0"
+    },
+    {
+      "name": "hitVolumeInspectorModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "stage": "physics"
+            }
+          ],
+          "invoke": "hitVolumeInspectorModel(args[0])",
+          "expected": null
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "stage": "damage",
+              "collision": {
+                "index": 2,
+                "id": "hit.hull",
+                "shape": "capsule",
+                "localPosition": [
+                  1,
+                  2,
+                  3
+                ],
+                "localRotationDeg": [
+                  10,
+                  20,
+                  30
+                ],
+                "halfSize": [
+                  4,
+                  5,
+                  6
+                ],
+                "radius": 2,
+                "halfHeight": 7,
+                "enabled": true,
+                "activeStates": [
+                  "breached"
+                ]
+              }
+            }
+          ],
+          "invoke": "hitVolumeInspectorModel(args[0])",
+          "expected": {
+            "activeStates": [
+              "breached"
+            ],
+            "enabled": true,
+            "halfHeight": 7,
+            "halfSize": [
+              4,
+              5,
+              6
+            ],
+            "id": "hit.hull",
+            "index": 2,
+            "localPosition": [
+              1,
+              2,
+              3
+            ],
+            "localRotationDeg": [
+              10,
+              20,
+              30
+            ],
+            "radius": 2,
+            "shape": "capsule",
+            "stage": "damage"
+          }
+        }
+      ],
+      "oracle_sha256": "89c629dcb6966f45111ef3670d928abe47f98f45389cb3a709732b78544317a9"
+    },
+    {
+      "name": "hitVolumeInspectorHtml",
+      "support": [
+        "escapeMarkup",
+        "vecInputs",
+        "statesInput"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "stage": "damage",
+              "index": 1,
+              "id": "hit.a",
+              "activeStates": [
+                "damaged"
+              ]
+            },
+            {
+              "activeStates": "Active states",
+              "applyStateScope": "Apply scope",
+              "scopeHint": "Scope hint",
+              "shape": "Shape",
+              "box": "Box",
+              "sphere": "Sphere",
+              "capsule": "Capsule",
+              "center": "Center",
+              "rotation": "Rotation",
+              "halfSize": "Half size",
+              "radius": "radius",
+              "halfLength": "half length",
+              "enabled": "Enabled",
+              "applyVolume": "Apply",
+              "duplicate": "Duplicate",
+              "delete": "Delete"
+            }
+          ],
+          "invoke": "hitVolumeInspectorHtml(args[0],args[1])",
+          "expected": "<div class=\"field\"><label>hit.a</label></div><div class=\"field\"><label>Active states</label><input id=\"cStates\" type=\"text\" value=\"damaged\" placeholder=\"intact, breached\"></div><button id=\"applyCollisionScope\" class=\"wizardPrimary\">Apply scope</button><div class=\"sectionHint\">Scope hint</div>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "stage": "physics",
+              "index": 1,
+              "id": "hit.a",
+              "shape": "box",
+              "localPosition": [
+                1,
+                2,
+                3
+              ],
+              "localRotationDeg": [
+                0,
+                90,
+                0
+              ],
+              "halfSize": [
+                4,
+                5,
+                6
+              ],
+              "radius": 2,
+              "halfHeight": 3,
+              "enabled": true,
+              "activeStates": []
+            },
+            {
+              "activeStates": "Active states",
+              "applyStateScope": "Apply scope",
+              "scopeHint": "Scope hint",
+              "shape": "Shape",
+              "box": "Box",
+              "sphere": "Sphere",
+              "capsule": "Capsule",
+              "center": "Center",
+              "rotation": "Rotation",
+              "halfSize": "Half size",
+              "radius": "radius",
+              "halfLength": "half length",
+              "enabled": "Enabled",
+              "applyVolume": "Apply",
+              "duplicate": "Duplicate",
+              "delete": "Delete"
+            }
+          ],
+          "invoke": "hitVolumeInspectorHtml(args[0],args[1])",
+          "expected": "<div class=\"field\"><label>Shape</label><select id=\"cshape\"><option value=\"box\" selected>Box</option><option value=\"sphere\" >Sphere</option><option value=\"capsule\" >Capsule</option></select></div><div class=\"field\"><label>Center</label><div class=\"grid3\"><input id=\"cpx\" type=\"number\" step=\"0.01\" value=\"1\"><input id=\"cpy\" type=\"number\" step=\"0.01\" value=\"2\"><input id=\"cpz\" type=\"number\" step=\"0.01\" value=\"3\"></div></div><div class=\"field\"><label>Rotation</label><div class=\"grid3\"><input id=\"crx\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"cry\" type=\"number\" step=\"0.01\" value=\"90\"><input id=\"crz\" type=\"number\" step=\"0.01\" value=\"0\"></div></div><div class=\"field\"><label>Half size</label><div class=\"grid3\"><input id=\"chx\" type=\"number\" step=\"0.01\" value=\"4\"><input id=\"chy\" type=\"number\" step=\"0.01\" value=\"5\"><input id=\"chz\" type=\"number\" step=\"0.01\" value=\"6\"></div></div><div class=\"grid3\"><input id=\"cRadius\" type=\"number\" step=\"0.1\" value=\"2\" title=\"radius\"><input id=\"cHalfHeight\" type=\"number\" step=\"0.1\" value=\"3\" title=\"half length\"><span></span></div><label><input id=\"cEnabled\" type=\"checkbox\" checked> Enabled</label><div class=\"row\"><button id=\"applyCollision\">Apply</button><button id=\"dupCollision\">Duplicate</button><button id=\"deleteCollision\">Delete</button></div>"
+        }
+      ],
+      "oracle_sha256": "52ad9443145a7e4c791615d5246c679614103d5b9d4bf4490385464d3b715ce8"
+    },
+    {
+      "name": "hitVolumePhysicsUpdateCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "collisionIndex": "4",
+              "shape": "sphere",
+              "position": [
+                1,
+                2,
+                3
+              ],
+              "rotationDeg": [
+                4,
+                5,
+                6
+              ],
+              "halfSize": [
+                7,
+                8,
+                9
+              ],
+              "radius": "2.5",
+              "halfHeight": "3.5",
+              "enabled": 1
+            }
+          ],
+          "invoke": "hitVolumePhysicsUpdateCommand(args[0])",
+          "expected": {
+            "collisionIndex": 4,
+            "enabled": true,
+            "halfHeight": 3.5,
+            "halfSize": [
+              7,
+              8,
+              9
+            ],
+            "position": [
+              1,
+              2,
+              3
+            ],
+            "radius": 2.5,
+            "rotationDeg": [
+              4,
+              5,
+              6
+            ],
+            "shape": "sphere"
+          }
+        }
+      ],
+      "oracle_sha256": "55572c86c914cfb65884f6cad27c712e7906f4ed4616296fe9e9ded654eeb29b"
+    },
+    {
+      "name": "hitVolumeDamageScopeCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "collisionIndex": "4",
+              "activeStates": [
+                "damaged",
+                "breached"
+              ]
+            }
+          ],
+          "invoke": "hitVolumeDamageScopeCommand(args[0])",
+          "expected": {
+            "activeStates": [
+              "damaged",
+              "breached"
+            ],
+            "collisionIndex": 4
+          }
+        }
+      ],
+      "oracle_sha256": "1d1af714602311f92ad7bfc753c4c0f654c7b986f9172cdd9a2b585e54e178ec"
+    },
+    {
+      "name": "hitVolumeAddCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": 2,
+              "node": {
+                "id": "hull"
+              },
+              "id": "",
+              "shape": "box"
+            }
+          ],
+          "invoke": "hitVolumeAddCommand(args[0])",
+          "expected": null
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": 2,
+              "node": {
+                "id": "hull",
+                "moduleId": "body"
+              },
+              "id": "hit.body",
+              "shape": "CAPSULE"
+            }
+          ],
+          "invoke": "hitVolumeAddCommand(args[0])",
+          "expected": {
+            "halfHeight": 1,
+            "halfSize": [
+              1,
+              1,
+              1
+            ],
+            "id": "hit.body",
+            "moduleId": "body",
+            "parentNodeIndex": 2,
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "radius": 1,
+            "shape": "capsule"
+          }
+        }
+      ],
+      "oracle_sha256": "9be5369d9ef3807e9c912554a5fde8757f0c00a49e084bbf960d6ef2e3ed06de"
+    },
+    {
+      "name": "hitVolumeRadialCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": 2,
+              "count": 0,
+              "ringRadius": 10,
+              "capsuleRadius": 1,
+              "axis": "y"
+            }
+          ],
+          "invoke": "hitVolumeRadialCommand(args[0])",
+          "expected": null
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": "2",
+              "count": "16",
+              "ringRadius": "10.5",
+              "capsuleRadius": "1.25",
+              "axis": "Z"
+            }
+          ],
+          "invoke": "hitVolumeRadialCommand(args[0])",
+          "expected": {
+            "axis": "z",
+            "capsuleRadius": 1.25,
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "count": 16,
+            "nodeIndex": 2,
+            "ringRadius": 10.5
+          }
+        }
+      ],
+      "oracle_sha256": "4cdd02daab9b4d39325aabffb7349c9660726efd23ea6814b98ad5545d347ef2"
+    },
+    {
+      "name": "hitVolumeRenderPlan",
+      "support": [
+        "stateApplies",
+        "previewStateForNode",
+        "composeMatrix",
+        "deg",
+        "semanticDisplayWorldMatrix",
+        "semanticWorldMatrix",
+        "semanticNodePose",
+        "semanticSelectionSet",
+        "semanticPreviewDeltaWorld",
+        "semanticIsDescendant"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "collisionVolumes": [],
+              "nodes": [],
+              "previewStateEntries": [],
+              "selectedCollision": null,
+              "transformInput": {
+                "nodes": [],
+                "stateVariants": [],
+                "selectedNode": null,
+                "wizardStage": "physics",
+                "previewAngleDeg": 0,
+                "previewDetached": false,
+                "minBounds": [
+                  0,
+                  0,
+                  0
+                ],
+                "maxBounds": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          ],
+          "invoke": "hitVolumeRenderPlan({...args[0],previewStates:new Map(args[0].previewStateEntries||[]),transformInput:{...args[0].transformInput,previewStates:new Map(args[0].previewStateEntries||[]),graphOffsets:new Map()}})",
+          "expected": []
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "collisionVolumes": [
+                {
+                  "index": 0,
+                  "enabled": true,
+                  "shape": "box",
+                  "parentNodeIndex": -1,
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    90,
+                    0
+                  ],
+                  "halfSize": [
+                    2,
+                    3,
+                    4
+                  ],
+                  "radius": 1,
+                  "halfHeight": 1,
+                  "activeStates": []
+                }
+              ],
+              "nodes": [],
+              "previewStateEntries": [],
+              "selectedCollision": 0,
+              "transformInput": {
+                "nodes": [],
+                "stateVariants": [],
+                "selectedNode": null,
+                "wizardStage": "physics",
+                "previewAngleDeg": 0,
+                "previewDetached": false,
+                "minBounds": [
+                  0,
+                  0,
+                  0
+                ],
+                "maxBounds": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          ],
+          "invoke": "hitVolumeRenderPlan({...args[0],previewStates:new Map(args[0].previewStateEntries||[]),transformInput:{...args[0].transformInput,previewStates:new Map(args[0].previewStateEntries||[]),graphOffsets:new Map()}})",
+          "expected": [
+            {
+              "halfHeight": 1,
+              "halfSize": [
+                2,
+                3,
+                4
+              ],
+              "index": 0,
+              "radius": 1,
+              "selected": true,
+              "shape": "box",
+              "worldMatrix": {
+                "__matrix4__": [
+                  6.123233995736766e-17,
+                  0,
+                  -1,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  1,
+                  0,
+                  6.123233995736766e-17,
+                  0,
+                  1,
+                  2,
+                  3,
+                  1
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "collisionVolumes": [
+                {
+                  "index": 2,
+                  "enabled": true,
+                  "shape": "sphere",
+                  "parentNodeIndex": 0,
+                  "localPosition": [
+                    0,
+                    1,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "halfSize": [
+                    1,
+                    1,
+                    1
+                  ],
+                  "radius": 3,
+                  "halfHeight": 1,
+                  "activeStates": [
+                    "damaged"
+                  ]
+                },
+                {
+                  "index": 3,
+                  "enabled": false,
+                  "shape": "box",
+                  "parentNodeIndex": 0,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "halfSize": [
+                    1,
+                    1,
+                    1
+                  ],
+                  "activeStates": []
+                }
+              ],
+              "nodes": [
+                {
+                  "id": "hull",
+                  "parentIndex": -1,
+                  "localPosition": [
+                    10,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "pivot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "defaultStateId": "intact"
+                }
+              ],
+              "previewStateEntries": [
+                [
+                  0,
+                  "damaged"
+                ]
+              ],
+              "selectedCollision": 3,
+              "transformInput": {
+                "nodes": [
+                  {
+                    "id": "hull",
+                    "parentIndex": -1,
+                    "localPosition": [
+                      10,
+                      0,
+                      0
+                    ],
+                    "localRotationDeg": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "pivot": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "defaultStateId": "intact"
+                  }
+                ],
+                "stateVariants": [],
+                "selectedNode": null,
+                "wizardStage": "physics",
+                "previewAngleDeg": 0,
+                "previewDetached": false,
+                "minBounds": [
+                  0,
+                  0,
+                  0
+                ],
+                "maxBounds": [
+                  20,
+                  10,
+                  10
+                ]
+              }
+            }
+          ],
+          "invoke": "hitVolumeRenderPlan({...args[0],previewStates:new Map(args[0].previewStateEntries||[]),transformInput:{...args[0].transformInput,previewStates:new Map(args[0].previewStateEntries||[]),graphOffsets:new Map()}})",
+          "expected": [
+            {
+              "halfHeight": 1,
+              "halfSize": [
+                1,
+                1,
+                1
+              ],
+              "index": 2,
+              "radius": 3,
+              "selected": false,
+              "shape": "sphere",
+              "worldMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  10,
+                  1,
+                  0,
+                  1
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "collisionVolumes": [
+                {
+                  "index": 0,
+                  "enabled": true,
+                  "shape": "sphere",
+                  "parentNodeIndex": -1,
+                  "localPosition": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "halfSize": [
+                    1,
+                    1,
+                    1
+                  ],
+                  "radius": 2,
+                  "halfHeight": 1,
+                  "activeStates": []
+                }
+              ],
+              "nodes": [],
+              "previewStateEntries": [],
+              "selectedCollision": null,
+              "transformInput": {
+                "nodes": [],
+                "stateVariants": [],
+                "selectedNode": null,
+                "wizardStage": "physics",
+                "previewAngleDeg": 0,
+                "previewDetached": false,
+                "minBounds": [
+                  0,
+                  0,
+                  0
+                ],
+                "maxBounds": [
+                  1,
+                  1,
+                  1
+                ]
+              }
+            }
+          ],
+          "invoke": "hitVolumeRenderPlan({...args[0],previewStates:new Map(args[0].previewStateEntries||[]),transformInput:{...args[0].transformInput,previewStates:new Map(args[0].previewStateEntries||[]),graphOffsets:new Map()}})",
+          "expected": [
+            {
+              "halfHeight": 1,
+              "halfSize": [
+                1,
+                1,
+                1
+              ],
+              "index": 0,
+              "radius": 2,
+              "selected": false,
+              "shape": "sphere",
+              "worldMatrix": {
+                "__matrix4__": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "oracle_sha256": "1534b4f242ec653eda8a96cfdae9a80bc61d15814489dd46e8c506573ca705b4"
     }
   ],
   "easy_candidates": [],
-  "baseline_sha256": "3c231cbdc66e308478a5d48f19c30e7625561750af626b382b0f2cc2033359fa"
+  "baseline_sha256": "6dcdbfe6193351010ceb745034edba0659b0d08b151cd96b612b71b43cfaf43d"
 }

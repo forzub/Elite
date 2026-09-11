@@ -60,6 +60,26 @@ geometry_adapter = function_source("renderWizardGeometryStage")
 surfaces_model = function_source("wizardSurfacesStageModel")
 surfaces_html = function_source("wizardSurfacesStageHtml")
 surfaces_adapter = function_source("renderWizardSurfacesStage")
+physics_model = function_source("wizardPhysicsStageModel")
+physics_html = function_source("wizardPhysicsStageHtml")
+physics_adapter = function_source("renderWizardPhysicsStage")
+physics_node_model = function_source("physicsNodeModel")
+physics_node_html = function_source("physicsNodeHtml")
+physics_set_command = function_source("physicsSetCommand")
+physics_estimate_command = function_source("physicsEstimateCommand")
+physics_node_adapter = function_source("renderPhysicsNodeInspector")
+hit_volume_list_model = function_source("hitVolumeListModel")
+hit_volume_list_html = function_source("hitVolumeListHtml")
+hit_volume_inspector_model = function_source("hitVolumeInspectorModel")
+hit_volume_inspector_html = function_source("hitVolumeInspectorHtml")
+hit_volume_update_command = function_source("hitVolumePhysicsUpdateCommand")
+hit_volume_scope_command = function_source("hitVolumeDamageScopeCommand")
+hit_volume_add_command = function_source("hitVolumeAddCommand")
+hit_volume_radial_command = function_source("hitVolumeRadialCommand")
+hit_volume_render_plan = function_source("hitVolumeRenderPlan")
+hit_volume_rebuild_adapter = function_source("rebuildCollisions")
+hit_volume_list_adapter = function_source("renderCollisionList")
+hit_volume_inspector_adapter = function_source("renderCollisionInspector")
 semantics_model = function_source("wizardSemanticsStageModel")
 semantics_adapter = function_source("renderWizardSemanticsStage")
 semantics_tree_model = function_source("wizardSemanticsTreeBlockModel")
@@ -818,4 +838,57 @@ for forbidden in ("if(structHit&&state.semanticStructureMode==='graph')", "const
     if forbidden in semantics_pick_adapter:
         raise AssertionError(f"wizard decomposition: SEMANTICS wave5R viewport adapter regained routing derivation {forbidden!r}")
 
-print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS/JOINT-PICK-BINDING-DECISIONS/TREE-MOTION-TRANSITIONS/PREVIEW-APPLICATION-PLANS/GRAPH-VIEWPORT-PLANS pure boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND/JOINT-PICK-BINDING/TREE-MOTION/PREVIEW-APPLICATION/GRAPH-VIEWPORT effect shells")
+
+# PHYSICS / HIT VOLUMES wave6A: the first post-SEMANTICS stages use the portable-block
+# rule directly. Public calculations/presentation/payload builders are certified PURE;
+# editor state/DOM/THREE/backend wiring stays in explicit adapters.
+if "if(stage==='physics'){renderWizardPhysicsStage(root,state.asset);return;}" not in shell:
+    raise AssertionError("wizard decomposition: PHYSICS branch must remain dispatch-only")
+for fn_name, body in (
+    ("wizardPhysicsStageModel", physics_model),
+    ("wizardPhysicsStageHtml", physics_html),
+    ("physicsNodeModel", physics_node_model),
+    ("physicsNodeHtml", physics_node_html),
+    ("physicsSetCommand", physics_set_command),
+    ("physicsEstimateCommand", physics_estimate_command),
+    ("hitVolumeListModel", hit_volume_list_model),
+    ("hitVolumeListHtml", hit_volume_list_html),
+    ("hitVolumeInspectorModel", hit_volume_inspector_model),
+    ("hitVolumeInspectorHtml", hit_volume_inspector_html),
+    ("hitVolumePhysicsUpdateCommand", hit_volume_update_command),
+    ("hitVolumeDamageScopeCommand", hit_volume_scope_command),
+    ("hitVolumeAddCommand", hit_volume_add_command),
+    ("hitVolumeRadialCommand", hit_volume_radial_command),
+    ("hitVolumeRenderPlan", hit_volume_render_plan),
+):
+    assert_pure_block(fn_name, body)
+for required in (
+    "wizardPhysicsStageModel({nodes:asset?.nodes||[],collisionVolumes:asset?.collisionVolumes||[]})",
+    "wizardPhysicsStageHtml(model,text,{stageCheckControls:wizardStageCheckControls('physics')})",
+    "root.innerHTML=",
+    "bindWizardStageCheckControls('physics')",
+):
+    if required not in physics_adapter:
+        raise AssertionError(f"wizard decomposition: PHYSICS stage adapter missing {required!r}")
+for required in (
+    "physicsNodeModel(node)",
+    "physicsNodeHtml(model,text,{actions})",
+    "send('set_physics',physicsSetCommand({",
+    "send('estimate_physics',physicsEstimateCommand({",
+):
+    if required not in physics_node_adapter:
+        raise AssertionError(f"wizard decomposition: PHYSICS node adapter missing {required!r}")
+for required in (
+    "hitVolumeRenderPlan({",
+    "collisionPrimitive(row)",
+    "obj.matrix.copy(row.worldMatrix)",
+):
+    if required not in hit_volume_rebuild_adapter:
+        raise AssertionError(f"wizard decomposition: HIT VOLUMES renderer adapter missing {required!r}")
+if "hitVolumeListModel({collisionVolumes:state.asset.collisionVolumes||[],selectedCollision:state.selectedCollision})" not in hit_volume_list_adapter:
+    raise AssertionError("wizard decomposition: HIT VOLUMES list adapter missing portable model")
+for required in ("hitVolumeInspectorModel({collision:c,stage:state.wizardStage})", "hitVolumeInspectorHtml(model,text)"):
+    if required not in hit_volume_inspector_adapter:
+        raise AssertionError(f"wizard decomposition: HIT VOLUMES inspector adapter missing {required!r}")
+
+print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS/JOINT-PICK-BINDING-DECISIONS/TREE-MOTION-TRANSITIONS/PREVIEW-APPLICATION-PLANS/GRAPH-VIEWPORT-PLANS pure boundaries; PHYSICS/HIT-VOLUMES portable-core boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND/JOINT-PICK-BINDING/TREE-MOTION/PREVIEW-APPLICATION/GRAPH-VIEWPORT effect shells")

@@ -1,3 +1,15 @@
+## Model Asset Editor 0.10.66 — wave 6A / PHYSICS + HIT VOLUMES portable-block foundation (2026-09-11)
+
+- `[x]` Architecture criterion changed from maximizing individual PURE count to portable functional blocks with explicit API, explicit imports/arguments and no hidden editor wiring.
+- `[x]` Added `PORTABLE_BLOCK_CONTRACT.json`: SOURCE / LODS / GEOMETRY / SURFACES / SEMANTICS are declared portable; PHYSICS and HIT VOLUMES have an isolated portable foundation; FINAL ASSEMBLY remains pending.
+- `[x]` PHYSICS stage summary is dispatch-only in `renderWizardPanelContents()` and delegates to `renderWizardPhysicsStage()`. `wizardPhysicsStageModel` + `wizardPhysicsStageHtml` are explicit-input certified PURE.
+- `[x]` PHYSICS rigid-body editor delegates from `renderNodeInspector()` to `renderPhysicsNodeInspector()`. `physicsNodeModel`, `physicsNodeHtml`, `physicsSetCommand`, and `physicsEstimateCommand` form the portable core/API.
+- `[x]` HIT VOLUMES list/inspector, update/add/radial payloads and world-transform application plan are explicit-input certified PURE. DOM events, prompts, backend `send`, raycast and THREE primitive creation/application remain adapters.
+- `[x]` Added `check_model_asset_portable_blocks.py` to enforce that portable API/presentation functions are behaviourally certified PURE and cannot regain `state`, DOM, backend, prompt/status, storage/network or other hidden editor wiring.
+- `[x]` Wave6A differential validation passes 9,900 deterministic calculations/plans. Dynamic purity is 234 certified; static census is 237 PURE / 5 EASY / 15 TRANSITIVE / 259 deferred-hard.
+- `[x]` Full architecture suite is now 26/26 PASS; previous 219 behavioural oracles are unchanged.
+- `[ ]` Next: decompose DAMAGE / FINAL ASSEMBLY (`validate` + `build`) under the same portable-block API rule before any whole-editor physical module split.
+
 ## Model Asset Editor 0.10.66 — wizard decomposition wave 5O / SEMANTICS joint-pick-binding decisions (2026-09-11)
 
 - `[x]` Joint world→local pivot calculation plus `set_joint` payload is isolated in PURE `wizardSemanticsJointPivotCommand(input)`.

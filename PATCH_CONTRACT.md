@@ -1,3 +1,12 @@
+## Model Asset Editor 0.10.66 — wave 6A / portable PHYSICS + HIT VOLUMES boundary
+
+- Portable-block readiness is now a first-class contract. A block may contain arbitrarily deep internal calls, but its named API/presentation functions must be behaviourally certified PURE and may not reach editor state, DOM, backend/status/prompt I/O, timers/storage/network or scene adapters through hidden dependencies.
+- `tools/model_asset_editor/PORTABLE_BLOCK_CONTRACT.json` names portable APIs and effect adapters. `tests/architecture_contracts/check_model_asset_portable_blocks.py` enforces the boundary.
+- PHYSICS stage model/view and rigid-body model/view/payload builders are portable. `renderWizardPhysicsStage` / `renderPhysicsNodeInspector` own editor wiring only.
+- HIT VOLUMES list/inspector models/views, collision command payloads and display-world plan are portable. THREE geometry construction, matrix application, raycast, prompts and backend dispatch remain adapters.
+- Existing SOURCE / LODS / GEOMETRY / SURFACES / SEMANTICS behaviour and frozen contracts are unchanged. FINAL ASSEMBLY remains explicitly pending and must be decomposed before whole-editor physical extraction.
+- No old function-purity oracle may be re-recorded. New wave6A functions receive new frozen oracle hashes only.
+
 ### v0.10.66 wizard decomposition wave 5O / SEMANTICS joint-pick-binding decision boundary
 
 - Joint-pivot conversion/payload, parent-origin and visual-center preset derivation, pivot-pick start/cancel state, nominal runtime-rate validation/payload, binding-pick transition and viewport binding assignment payload must pass through the certified PURE wave5O helpers before effectful application.

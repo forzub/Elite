@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "description": "Portable functional blocks for Model Asset Editor. portable/foundation API functions are behaviourally certified PURE and may depend only on explicit arguments plus other certified PURE helpers. Adapters own state/DOM/THREE scene/backend wiring.",
+  "blocks": {
+    "source": {
+      "status": "portable",
+      "api": ["wizardSourceStageModel"],
+      "presentation": ["wizardSourceStageHtml"],
+      "adapters": ["renderWizardSourceStage"]
+    },
+    "lods": {
+      "status": "portable",
+      "api": ["wizardLodsStageModel"],
+      "presentation": ["wizardLodsStageHtml"],
+      "adapters": ["renderWizardLodsStage"]
+    },
+    "geometry": {
+      "status": "portable",
+      "api": ["wizardGeometryStageModel"],
+      "presentation": ["wizardGeometryStageHtml"],
+      "adapters": ["renderWizardGeometryStage"]
+    },
+    "surfaces": {
+      "status": "portable",
+      "api": ["wizardSurfacesStageModel"],
+      "presentation": ["wizardSurfacesStageHtml"],
+      "adapters": ["renderWizardSurfacesStage"]
+    },
+    "semantics": {
+      "status": "portable",
+      "api": [
+        "wizardSemanticsStageModel",
+        "wizardSemanticsTreeBlockModel",
+        "wizardSemanticsBindingsBlockModel",
+        "wizardSemanticsWorkspaceModel",
+        "wizardSemanticsStructuralGraphModel",
+        "wizardSemanticsSelectionTransition",
+        "wizardSemanticsReparentCommand",
+        "wizardSemanticsJointPivotCommand",
+        "wizardSemanticsMotionAnimationStep",
+        "wizardSemanticsGraphExplodeApplicationPlan",
+        "wizardSemanticsViewportMeshPickDecision"
+      ],
+      "presentation": [
+        "wizardSemanticsTreeRowsHtml",
+        "wizardSemanticsBindingRowsHtml",
+        "wizardSemanticsWorkspaceHtml",
+        "structuralGraphPanelHtml",
+        "wizardSemanticsSelectedPanelsHtml"
+      ],
+      "adapters": [
+        "renderWizardSemanticsStage",
+        "renderWizardStructuralGraphStage",
+        "applySemanticMotionPreview",
+        "pick"
+      ]
+    },
+    "physics": {
+      "status": "foundation",
+      "api": [
+        "wizardPhysicsStageModel",
+        "physicsNodeModel",
+        "physicsSetCommand",
+        "physicsEstimateCommand"
+      ],
+      "presentation": [
+        "wizardPhysicsStageHtml",
+        "physicsNodeHtml"
+      ],
+      "adapters": [
+        "renderWizardPhysicsStage",
+        "renderPhysicsNodeInspector"
+      ]
+    },
+    "hit_volumes": {
+      "status": "foundation",
+      "api": [
+        "hitVolumeListModel",
+        "hitVolumeInspectorModel",
+        "hitVolumePhysicsUpdateCommand",
+        "hitVolumeDamageScopeCommand",
+        "hitVolumeAddCommand",
+        "hitVolumeRadialCommand",
+        "hitVolumeRenderPlan"
+      ],
+      "presentation": [
+        "hitVolumeListHtml",
+        "hitVolumeInspectorHtml"
+      ],
+      "adapters": [
+        "rebuildCollisions",
+        "renderCollisionList",
+        "renderCollisionInspector",
+        "pick"
+      ]
+    },
+    "final_assembly": {
+      "status": "pending",
+      "api": [],
+      "presentation": [],
+      "adapters": ["renderWizardPanelContents"]
+    }
+  }
+}

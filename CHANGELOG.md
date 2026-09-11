@@ -1,3 +1,12 @@
+## 0.10.66 — wave 6A / PHYSICS + HIT VOLUMES portable-block foundation
+
+- Introduced a hard portable-block contract separating transferable core/API functions from editor adapters.
+- Extracted PHYSICS stage summary and rigid-body editor calculations/payloads into explicit-input pure model/view/command functions.
+- Extracted HIT VOLUMES list/inspector models, update/add/radial command payloads and collision display-world planning into explicit-input pure functions.
+- Kept DOM, prompts, status, backend commands, raycast and THREE primitive/application work in effect adapters.
+- Added behavioural oracles for 15 new portable functions and a portable-block architecture test.
+- Differential parity: 9,900 deterministic PHYSICS/HIT-VOLUMES calculations/plans PASS. Architecture gate: 26/26 PASS.
+
 ## Model Asset Editor v0.10.66 — wizard decomposition wave 5O / SEMANTICS joint-pick-binding decisions
 
 - Extracted eight deterministic SEMANTICS joint/pick/binding boundaries: `wizardSemanticsJointPivotCommand`, `wizardSemanticsParentOriginPivotRequest`, `wizardSemanticsVisualCenterPivotEligibility`, `wizardSemanticsVisualCenterPivotRequest`, `wizardSemanticsJointPivotPickTransition`, `wizardSemanticsNominalRateCommand`, `wizardSemanticsBindingPickTransition` and `wizardSemanticsBindingAssignmentCommand`.

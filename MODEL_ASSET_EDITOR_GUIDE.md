@@ -3,7 +3,7 @@
 **Актуально:** 2026-09-07 · 0.10.55 semantic hotfix / bounded source scan
 **Редактор:** `Elite Model Asset Editor 0.10.55`
 **Asset format:** v4
-**Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`, `SURFACES`, `SEMANTICS`. SOURCE/LODS владеют canonical mesh и render-LOD documents, GEOMETRY — LOD-local geometry/instances/replacements, SURFACES — surface intent и material contract. Следующий stage после SEMANTICS — `PHYSICS`.
+**Текущий production pipeline:** wizard; приняты и архитектурно изолированы `SOURCE`, `LODS`, `GEOMETRY`, `SURFACES`, `SEMANTICS`. Для `PHYSICS` и HIT VOLUMES создан portable-core/API foundation, но их функциональность ещё не считается завершённой. DAMAGE / FINAL ASSEMBLY (`VALIDATE` + `BUILD`) ещё должны пройти ту же декомпозицию перед физическим разделением редактора на модули.
 
 > Этот файл является источником контекста для продолжения работы над Model Asset Editor.
 > Старые предположения из эпохи format v2/v3 о единой `Node -> GeometryDefinition -> LOD0/LOD1` структуре больше не применять к v4.

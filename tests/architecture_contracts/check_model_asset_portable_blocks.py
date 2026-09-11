@@ -10,8 +10,10 @@ from pathlib import Path
 import json
 import re
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
-WEB = (ROOT / "src/assets/webui/model_asset_editor.html").read_text(encoding="utf-8")
+WEB = load_source_bundle(ROOT)
 BLOCKS = json.loads((ROOT / "tools/model_asset_editor/PORTABLE_BLOCK_CONTRACT.json").read_text(encoding="utf-8"))
 PURITY = json.loads((ROOT / "tools/model_asset_editor/FUNCTION_PURITY_CONTRACT.json").read_text(encoding="utf-8"))
 CERTIFIED = {entry["name"] for entry in PURITY.get("pure", [])}

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -38,7 +40,7 @@ require(
 
 session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
 header = text("tools/model_asset_editor/ModelAssetEditorSession.h")
-web = text("src/assets/webui/model_asset_editor.html")
+web = load_source_bundle(ROOT)
 
 for token in (
     "sourceMeshFingerprints",

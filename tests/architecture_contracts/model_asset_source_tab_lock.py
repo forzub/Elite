@@ -19,8 +19,11 @@ from pathlib import Path
 import hashlib
 import re
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 WEBUI = ROOT / "src/assets/webui/model_asset_editor.html"
+SOURCE_BUNDLE = load_source_bundle(ROOT)
 
 WIZARD_STAGE_ORDER = [
     "source", "lods", "geometry", "surfaces", "semantics",
@@ -146,12 +149,18 @@ def _balanced_block(body: str, start: int) -> str:
 
 def _function_source(body: str, name: str) -> str:
     marker = f"function {name}("
-    start = body.find(marker)
+    source = body
+    start = source.find(marker)
+    if start < 0:
+        # Physical split is an approved structural-only exception. Frozen function
+        # text may live in a real ES module while the HTML remains the composition root.
+        source = SOURCE_BUNDLE
+        start = source.find(marker)
     if start < 0:
         raise AssertionError(f"SOURCE freeze: missing function {name}")
-    open_at = body.index("{", start)
-    block = _balanced_block(body, start)
-    return body[start:open_at] + block
+    open_at = source.index("{", start)
+    block = _balanced_block(source, start)
+    return source[start:open_at] + block
 
 
 def _source_stage_branch(body: str) -> str:

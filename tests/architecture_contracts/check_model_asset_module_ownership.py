@@ -14,13 +14,14 @@ import json
 import re
 
 import check_model_asset_function_purity as purity
+from model_asset_editor_source_bundle import load_source_bundle
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB_PATH = ROOT / "src/assets/webui/model_asset_editor.html"
 OWNERSHIP_PATH = ROOT / "tools/model_asset_editor/MODULE_OWNERSHIP_CONTRACT.json"
 PORTABLE_PATH = ROOT / "tools/model_asset_editor/PORTABLE_BLOCK_CONTRACT.json"
 
-WEB = WEB_PATH.read_text(encoding="utf-8")
+WEB = load_source_bundle(ROOT)
 CONTRACT = json.loads(OWNERSHIP_PATH.read_text(encoding="utf-8"))
 PORTABLE = json.loads(PORTABLE_PATH.read_text(encoding="utf-8"))
 GRAPH = purity.analyze_function_graph(WEB)

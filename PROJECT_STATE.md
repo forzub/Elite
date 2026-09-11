@@ -1,3 +1,19 @@
+## Current state — v0.10.66 wave7B physical split
+
+Logical decomposition remains complete. Physical extraction now includes the dependency roots from wave7A plus the portable SOURCE / LODS / GEOMETRY / SURFACES stage cores. Eight ownership modules have real source files: `shared`, `transform_math`, `semantics_transform`, `source_maintenance`, `source`, `lods`, `geometry`, and `surfaces`.
+
+Wave7B relocates 55 additional functions with source-identical bodies. `model_asset_editor.html` is still the composition root; stage adapters and all state/DOM/backend effects remain inline. Architecture tests reason over the combined HTML+module source bundle, preserving the 546-function ownership census, 259 certified PURE functions and 704 extraction fixtures.
+
+Next: wave7C physically extracts SEMANTICS portable modules in dependency order. Continue `MOVE, DON'T REDESIGN`; do not mix physical relocation with behavioural changes.
+
+## Current state — v0.10.66 wave7A physical split started
+
+Logical decomposition is complete (wave6E). Physical extraction has started under the relocation-only rule `MOVE, DON'T REDESIGN`. The first dependency-root modules are real ES modules: `shared`, `transform_math`, and `semantics_transform` under `src/assets/webui/model_asset_editor/core/`; the existing HTML module imports them as the composition shell.
+
+The architecture harness now loads HTML + physical JS as one source bundle, so ownership/purity/extraction contracts continue to cover the entire editor while files move. Runtime deployment also copies/packages the module tree. The target invariants remain 546 owned named functions, 259 certified PURE functions / 704 frozen fixtures, and all nine portable block facades.
+
+Next: wave7B physically extracts the next safe portable stage modules (SOURCE / LODS / GEOMETRY / SURFACES) in dependency order. Do not redesign APIs during relocation; adapters stay inline until their dedicated physical wave.
+
 ## 2026-09-11 — v0.10.66 wave6E: logical decomposition COMPLETE / extraction proof
 
 - Final logical gate added: ownership-declared portable code is physically regenerated into temporary ES modules and imported outside `model_asset_editor.html`.

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 HEADER = (ROOT / "tools/model_asset_editor/ModelAssetEditorSession.h").read_text(encoding="utf-8", errors="replace")
 CPP = (ROOT / "tools/model_asset_editor/ModelAssetEditorSession.cpp").read_text(encoding="utf-8", errors="replace")
-UI = (ROOT / "src/assets/webui/model_asset_editor.html").read_text(encoding="utf-8", errors="replace")
+UI = load_source_bundle(ROOT)
 
 
 def require(body: str, *tokens: str) -> None:

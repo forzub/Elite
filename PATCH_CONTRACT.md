@@ -1,3 +1,21 @@
+## Model Asset Editor v0.10.66 — wave 7B physical stage-core split contract
+
+Wave7B extends the approved `MOVE, DON'T REDESIGN` relocation to SOURCE / LODS / GEOMETRY / SURFACES portable cores. `source_maintenance` portable helpers move with them because they are explicit dependencies of those stage models. The corresponding DOM/state/backend adapters remain in the composition root until an adapter-specific physical wave.
+
+All moved function bodies must be text-identical to the wave7A baseline. Frozen SOURCE/LODS/GEOMETRY/SURFACES contracts must resolve moved implementations through the complete source bundle rather than requiring them to remain inline in HTML; their accepted hashes/behaviour must not be rebaselined. `MODULE_OWNERSHIP_CONTRACT.json` remains authoritative for `physical_source`, imports and ownership.
+
+The physical-module contract must prove that every extracted implementation is absent from inline HTML, present in its declared ES module, imported by the composition root, included in runtime/UI-pack deployment, and that the complete editor still has exactly 546 named functions. Purity/extraction baselines remain 259 certified functions / 704 frozen fixtures.
+
+## Model Asset Editor v0.10.66 — wave 7A physical split contract
+
+Wave7 starts only after the wave6E standalone extraction proof. Physical relocation must obey **MOVE, DON'T REDESIGN**. A moved function keeps the same name, signature, observable result, ownership and behavioural oracle; algorithmic redesign belongs in a separate patch.
+
+The first extracted dependency roots are `shared`, `transform_math`, and `semantics_transform`. Their implementation source is authoritative under `src/assets/webui/model_asset_editor/core/`; `model_asset_editor.html` is the composition root and imports only the ownership-declared public surface. No duplicate inline implementation is permitted.
+
+Architecture contracts must inspect the complete source bundle (composition root plus physical modules), preserving the 546-function inventory and the wave6E purity/extraction results. Every physical module must be deployed by both the editor runtime fallback and `model_asset_editor_ui.pak`; a source-only module that is not packaged is a contract failure.
+
+Future wave7 patches may add physical modules incrementally, but must keep ownership/API contracts authoritative and must not mix relocation with behaviour changes.
+
 ## v0.10.66 wave6E contract — standalone extraction proof / logical decomposition completion
 
 The completion criterion is mechanical portability, not a lower `hard` count. `check_model_asset_extraction_proof.py` must be able to reconstruct each portable logical module from the ownership contract, wire only declared portable imports/external libraries, expose exactly the block API/presentation facade declared by `PORTABLE_BLOCK_CONTRACT.json`, import the generated `.mjs` graph with Node, and replay the frozen behavioural oracle. The current frozen proof is 23 portable modules, 9 block facades, 259 certified functions and 704 fixtures.

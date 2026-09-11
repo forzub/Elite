@@ -4,11 +4,14 @@ import json
 import re
 
 from model_asset_core_tabs_lock import _function_source, validate_core_tabs_lock
+from model_asset_editor_source_bundle import load_source_bundle
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def text(path: str) -> str:
+    if path == "src/assets/webui/model_asset_editor.html":
+        return load_source_bundle(ROOT)
     return (ROOT / path).read_text(encoding="utf-8", errors="replace")
 
 
@@ -82,7 +85,7 @@ for forbidden in ("AssemblyMeshLibrary", "ObjLoader", "MeshData"):
 # -----------------------------------------------------------------------------
 session_h = text("tools/model_asset_editor/ModelAssetEditorSession.h")
 session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
-web = text("src/assets/webui/model_asset_editor.html")
+web = load_source_bundle(ROOT)
 
 require(
     "tools/model_asset_editor/ModelAssetEditorSession.h",

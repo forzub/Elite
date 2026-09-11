@@ -8,6 +8,8 @@ targeted add/replace, per-mesh evidence reset, eager Folder LOD residency and th
 absence of .elmesh/repair work from SCAN SOURCE CHANGES.
 """
 from pathlib import Path
+
+from model_asset_editor_source_bundle import load_source_bundle
 import json
 import re
 
@@ -33,7 +35,7 @@ def body_between(body: str, start: str, end: str) -> str:
 
 header = text("tools/model_asset_editor/ModelAssetEditorSession.h")
 session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
-web = text("src/assets/webui/model_asset_editor.html")
+web = load_source_bundle(ROOT)
 runtime_importer = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
 contract = text("tools/model_asset_editor/PATCH_CONTRACT.md")
 

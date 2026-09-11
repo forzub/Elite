@@ -772,12 +772,16 @@ if(TARGET EliteAssetEditor)
     set(ELITE_MODEL_ASSET_EDITOR_UI_PACK_FILE
         "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/ui/model_asset_editor_ui.pak")
 
+    file(GLOB_RECURSE ELITE_MODEL_ASSET_EDITOR_MODULE_FILES CONFIGURE_DEPENDS
+        "${ELITE_STATIC_ASSETS_DIR}/webui/model_asset_editor/*.js"
+    )
     set(ELITE_MODEL_ASSET_EDITOR_WEBUI_FILES
         "${ELITE_STATIC_ASSETS_DIR}/webui/model_asset_editor.html"
         "${ELITE_STATIC_ASSETS_DIR}/webui/elite_ui.css"
         "${ELITE_STATIC_ASSETS_DIR}/webui/elite_ui.js"
         "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/three.module.js"
         "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/examples/jsm/controls/OrbitControls.js"
+        ${ELITE_MODEL_ASSET_EDITOR_MODULE_FILES}
     )
 
     add_custom_command(
@@ -793,6 +797,9 @@ if(TARGET EliteAssetEditor)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${ELITE_STATIC_ASSETS_DIR}/webui/elite_ui.js"
                 "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/elite_ui.js"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${ELITE_STATIC_ASSETS_DIR}/webui/model_asset_editor"
+                "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/model_asset_editor"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${ELITE_STATIC_ASSETS_DIR}/webui/vendor/three/three.module.js"
                 "${ELITE_MODEL_ASSET_EDITOR_RUNTIME_ASSETS_DIR}/webui/vendor/three/three.module.js"
@@ -825,6 +832,7 @@ if(TARGET EliteAssetEditor)
                 --include model_asset_editor.html
                 --include elite_ui.css
                 --include elite_ui.js
+                --include model_asset_editor/*.js
                 --include vendor/three/three.module.js
                 --include vendor/three/examples/jsm/controls/OrbitControls.js
                 --output "${ELITE_MODEL_ASSET_EDITOR_UI_PACK_FILE}"

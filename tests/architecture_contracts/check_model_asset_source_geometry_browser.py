@@ -2,6 +2,8 @@
 """Architecture contract for the SOURCE active-LOD geometry browser (v0.10.62)."""
 from pathlib import Path
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -46,7 +48,7 @@ def function_body(data: str, name: str) -> str:
 
 
 web_rel = "src/assets/webui/model_asset_editor.html"
-web = text(web_rel)
+web = load_source_bundle(ROOT)
 
 # Folder authority, not a hand-maintained label, drives the catalog SOURCE tag.
 for token in [

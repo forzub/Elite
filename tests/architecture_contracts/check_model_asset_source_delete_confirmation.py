@@ -8,6 +8,8 @@ files become a persisted two-phase deletion state that requires explicit user
 confirmation before resident geometry is removed.
 """
 from pathlib import Path
+
+from model_asset_editor_source_bundle import load_source_bundle
 import json
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -25,7 +27,7 @@ def between(body: str, start: str, end: str) -> str:
 
 header = text("tools/model_asset_editor/ModelAssetEditorSession.h")
 session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
-web = text("src/assets/webui/model_asset_editor.html")
+web = load_source_bundle(ROOT)
 contract = text("tools/model_asset_editor/PATCH_CONTRACT.md")
 locale = json.loads(text("src/assets/localization/ui/tools/model_asset_editor.json"))
 capabilities = json.loads(text("tools/model_asset_editor/EDITOR_CAPABILITIES.json"))

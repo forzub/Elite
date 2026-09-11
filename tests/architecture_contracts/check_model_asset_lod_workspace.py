@@ -2,6 +2,8 @@
 """v0.10.64: LOD tab is a per-mesh PREPARE workspace with read-only ANALYZE."""
 from pathlib import Path
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -68,7 +70,7 @@ def cpp_function(data: str, signature: str) -> str:
     raise AssertionError(f"unterminated C++ function {signature}")
 
 
-web = text("src/assets/webui/model_asset_editor.html")
+web = load_source_bundle(ROOT)
 session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
 session_h = text("tools/model_asset_editor/ModelAssetEditorSession.h")
 version = text("tools/model_asset_editor/EditorVersion.h")

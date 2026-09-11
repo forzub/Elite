@@ -23,6 +23,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_PATH = ROOT / "tools/model_asset_editor/FUNCTION_PURITY_CONTRACT.json"
 STATIC_BASELINE_PATH = ROOT / "tools/model_asset_editor/FUNCTION_PURITY_STATIC_BASELINE.json"
@@ -1237,7 +1239,7 @@ def main() -> None:
     if not args.record_goldens:
         verify_baseline_digest(contract)
         verify_entry_oracle_digests(contract)
-    web = (ROOT / contract["source"]).read_text(encoding="utf-8")
+    web = load_source_bundle(ROOT)
 
     pure_names = {entry["name"] for entry in contract["pure"]}
     candidate_names = {entry["name"] for entry in contract["easy_candidates"]}

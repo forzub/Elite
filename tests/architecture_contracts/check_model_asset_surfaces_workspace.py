@@ -2,11 +2,13 @@
 """SURFACES workspace acceptance contract for the post-core-tabs baseline."""
 from pathlib import Path
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 WEBUI = ROOT / "src/assets/webui/model_asset_editor.html"
 SESSION_CPP = ROOT / "tools/model_asset_editor/ModelAssetEditorSession.cpp"
 SESSION_H = ROOT / "tools/model_asset_editor/ModelAssetEditorSession.h"
-web = WEBUI.read_text(encoding="utf-8", errors="replace")
+web = load_source_bundle(ROOT)
 cpp = SESSION_CPP.read_text(encoding="utf-8", errors="replace")
 header = SESSION_H.read_text(encoding="utf-8", errors="replace")
 

@@ -1,3 +1,15 @@
+# Physical module split status — wave7B
+
+The physical split is active under `MOVE, DON'T REDESIGN`. Real ES modules now contain shared/transform dependency roots plus SOURCE / LODS / GEOMETRY / SURFACES portable cores and the portable `source_maintenance` helpers they depend on. Stage adapters remain in `model_asset_editor.html` and continue to own `state`, DOM and backend effects.
+
+Frozen architecture tests must inspect the complete source bundle (HTML + `model_asset_editor/**/*.js`) when they validate JavaScript implementation tokens/functions. Requiring a portable function to remain physically inline in HTML is no longer a valid contract. `MODULE_OWNERSHIP_CONTRACT.json` is authoritative for physical source ownership.
+
+# Physical module split rule (wave7+)
+
+The editor has passed logical ownership and standalone extraction proof. From wave7 onward, relocation follows **MOVE, DON'T REDESIGN**: move an ownership module to a real ES module, import its declared surface from the composition root/owner, preserve signatures and behavioural oracle, and leave algorithm changes for separate patches. Architecture tests inspect the complete source bundle rather than assuming every function remains inline in `model_asset_editor.html`.
+
+A physical module is not complete until both runtime delivery paths contain it: editor filesystem fallback and `model_asset_editor_ui.pak`. `MODULE_OWNERSHIP_CONTRACT.json` records `physical_source` for extracted modules.
+
 ## Portable-module completion rule (v0.10.66 wave6E)
 
 The editor's logical decomposition is complete when a block can be reconstructed as real ES modules using only `MODULE_OWNERSHIP_CONTRACT.json` / `PORTABLE_BLOCK_CONTRACT.json`, imported without editor globals, and run against the frozen behavioural oracle. This proof is now enforced by `tests/architecture_contracts/check_model_asset_extraction_proof.py`. Internal transitive helper calls are valid; hidden runtime wiring is not. Browser/editor effects (`state`, DOM, backend commands, THREE scene mutation, raycast, prompts/status, timers/storage) remain in owned adapters/infrastructure. The next architectural work is physical file extraction, not further decomposition for purity-count purposes.

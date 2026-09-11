@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -104,7 +106,7 @@ for required in (
     if required not in session:
         raise AssertionError(f"missing stale-production LOD contract {required!r}")
 
-web = text("src/assets/webui/model_asset_editor.html")
+web = load_source_bundle(ROOT)
 if "i.sourceAuthority==='folder'?'SOURCE':'RUNTIME'" not in web:
     raise AssertionError("catalog authority decoration no longer derives from sourceAuthority")
 for required in (

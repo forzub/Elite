@@ -23,6 +23,7 @@ import tempfile
 from pathlib import Path
 
 import check_model_asset_function_purity as purity
+from model_asset_editor_source_bundle import load_source_bundle
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB_PATH = ROOT / "src/assets/webui/model_asset_editor.html"
@@ -31,7 +32,7 @@ BLOCKS_PATH = ROOT / "tools/model_asset_editor/PORTABLE_BLOCK_CONTRACT.json"
 PURITY_PATH = ROOT / "tools/model_asset_editor/FUNCTION_PURITY_CONTRACT.json"
 THREE_PATH = ROOT / "src/assets/webui/vendor/three/three.module.js"
 
-WEB = WEB_PATH.read_text(encoding="utf-8")
+WEB = load_source_bundle(ROOT)
 OWNERSHIP = json.loads(OWNERSHIP_PATH.read_text(encoding="utf-8"))
 BLOCKS = json.loads(BLOCKS_PATH.read_text(encoding="utf-8"))
 PURITY = json.loads(PURITY_PATH.read_text(encoding="utf-8"))

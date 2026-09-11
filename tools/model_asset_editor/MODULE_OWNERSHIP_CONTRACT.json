@@ -1147,7 +1147,8 @@
         "READ_state",
         "STATE_MUTATION",
         "STATUS_PROMPT"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/core/geometry.js"
     },
     "hit_volumes": {
       "core": [
@@ -1491,7 +1492,8 @@
         "DOM_UI",
         "READ_state",
         "STATE_MUTATION"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/core/lods.js"
     },
     "materials": {
       "core": [],
@@ -1985,7 +1987,8 @@
       "external_imports": [
         "three:THREE"
       ],
-      "ports": []
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/core/semantics_transform.js"
     },
     "settings": {
       "core": [],
@@ -2056,7 +2059,8 @@
       ],
       "binding_imports": [],
       "external_imports": [],
-      "ports": []
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/core/shared.js"
     },
     "shared_forms": {
       "core": [
@@ -2224,7 +2228,8 @@
         "BACKEND_COMMAND",
         "DOM_UI",
         "STATUS_PROMPT"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/core/source.js"
     },
     "source_maintenance": {
       "core": [
@@ -2291,7 +2296,8 @@
         "READ_state",
         "STATE_MUTATION",
         "STATUS_PROMPT"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/core/source_maintenance.js"
     },
     "surfaces": {
       "core": [
@@ -2416,7 +2422,8 @@
         "STATE_MUTATION",
         "STATUS_PROMPT",
         "TIMERS_EVENTS"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/core/surfaces.js"
     },
     "transform_math": {
       "core": [
@@ -2435,7 +2442,8 @@
       "external_imports": [
         "three:THREE"
       ],
-      "ports": []
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/core/transform_math.js"
     },
     "ui_scroll": {
       "core": [
@@ -2986,5 +2994,21 @@
       "binding": "OrbitControls",
       "kind": "named"
     }
+  },
+  "physical_split": {
+    "stage": "wave7B",
+    "composition_root": "src/assets/webui/model_asset_editor.html",
+    "module_root": "src/assets/webui/model_asset_editor",
+    "extracted_modules": [
+      "shared",
+      "transform_math",
+      "semantics_transform",
+      "source_maintenance",
+      "source",
+      "lods",
+      "geometry",
+      "surfaces"
+    ],
+    "policy": "move_without_redesign"
   }
 }

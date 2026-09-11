@@ -1,3 +1,22 @@
+## Model Asset Editor v0.10.66 — wave 7B / SOURCE + LODS + GEOMETRY + SURFACES physical core extraction
+
+- Continued the relocation-only physical split (`MOVE, DON'T REDESIGN`) after wave7A.
+- Moved 55 source-identical portable functions out of `model_asset_editor.html` into real ES modules: `source_maintenance`, `source`, `lods`, `geometry`, and `surfaces` under `src/assets/webui/model_asset_editor/core/`.
+- `source_maintenance` is extracted with the four stage cores because SOURCE/LODS/GEOMETRY/SURFACES pure models depend on its canonical source-record / stage-check helpers; DOM/backend maintenance adapters remain inline.
+- `model_asset_editor.html` remains the composition root and imports the extracted core/presentation APIs. Existing stage adapters remain inline and keep state/DOM/backend effects.
+- Frozen SOURCE/LODS/GEOMETRY/SURFACES acceptance tests now resolve function text from the complete HTML+module source bundle. Frozen hashes and behavioural outputs are unchanged.
+- Physical-module deployment remains covered by the wave7 module glob in runtime fallback and `model_asset_editor_ui.pak`. Named-function inventory stays 546; purity stays 259 certified / 262 static PURE and standalone extraction remains 259 functions / 704 fixtures.
+- Next physical wave: extract SEMANTICS portable modules in ownership/dependency order; do not redesign adapters during relocation.
+
+## Model Asset Editor v0.10.66 — wave 7A / first physical ES-module extraction
+
+- Began the physical split after wave6E proved the logical boundaries. This wave is relocation-only (`MOVE, DON'T REDESIGN`): behaviour, signatures, command payloads and frozen oracle outputs remain unchanged.
+- Moved the first dependency-root modules out of the monolithic `<script type="module">`: `shared`, `transform_math`, and `semantics_transform` now live under `src/assets/webui/model_asset_editor/core/` and are imported by `model_asset_editor.html`.
+- Added a source-bundle helper so architecture contracts continue to reason about the complete editor program across HTML plus physical JS modules; the named-function census remains 546 and all 259 certified functions retain the same 704 frozen fixtures.
+- Added the wave7 physical-module contract: moved implementations must disappear from inline HTML, ownership metadata names their `physical_source`, and the composition root must import their declared public surface.
+- Extended editor asset deployment so the physical `model_asset_editor/*.js` tree is copied to the editor runtime fallback and included in `model_asset_editor_ui.pak`.
+- Next physical wave: relocate stage portable modules in dependency order without changing APIs or effect behaviour.
+
 ## Model Asset Editor v0.10.66 — wave 6E / standalone extraction proof + logical decomposition complete
 
 - Added `check_model_asset_extraction_proof.py`, the final logical-decomposition gate before physical source splitting. It mechanically regenerates temporary ES modules from `MODULE_OWNERSHIP_CONTRACT.json` instead of executing PURE functions inside the monolithic editor script.

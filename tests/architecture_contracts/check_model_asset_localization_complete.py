@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Model Asset Editor localization completeness contract."""
 from pathlib import Path
+
+from model_asset_editor_source_bundle import load_source_bundle
 import html as html_module
 import json
 import re
@@ -91,7 +93,7 @@ if missing_axis:
 # Every literal tr('...') key used by the WebUI must resolve in the dictionary.
 # A missing key would silently activate the fallback string and can therefore
 # look "localized" in English while every other locale is wrong.
-WEB = (ROOT / "src/assets/webui/model_asset_editor.html").read_text(encoding="utf-8")
+WEB = load_source_bundle(ROOT)
 used_tr_keys = set(re.findall(r"\btr\(\s*['\"]([^'\"]+)['\"]", WEB))
 unknown_tr_keys = sorted(used_tr_keys - strings.keys())
 if unknown_tr_keys:

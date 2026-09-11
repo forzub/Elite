@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """v0.10.61: SOURCE scan results are unresolved work, not scan history."""
 from pathlib import Path
+
+from model_asset_editor_source_bundle import load_source_bundle
+from model_asset_source_tab_lock import _function_source
 import shutil
 import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
-WEB = (ROOT / "src/assets/webui/model_asset_editor.html").read_text(encoding="utf-8", errors="replace")
+WEB = load_source_bundle(ROOT)
 CONTRACT = (ROOT / "tools/model_asset_editor/PATCH_CONTRACT.md").read_text(encoding="utf-8", errors="replace")
 VERSION = (ROOT / "tools/model_asset_editor/EditorVersion.h").read_text(encoding="utf-8", errors="replace")
 
@@ -26,12 +29,11 @@ for token in (
 
 # The helper must not blindly clear the whole scan. Missing/failure rows have to
 # survive and the mesh's actual SOURCE-stage evidence must authorize acceptance.
-start = WEB.index("function sourceChangeRowAcceptedByStageCheck")
-end = WEB.index("function maintenanceRowStatus", start)
-queue_helpers = WEB[start:end]
-ms = WEB.index("function meshStageCheckValue")
-me = WEB.index("function meshStageVisualClass", ms)
-check_helper = WEB[ms:me]
+queue_helpers = "\n".join((
+    _function_source(WEB, "sourceChangeRowAcceptedByStageCheck"),
+    _function_source(WEB, "settleSourceChangeScanAfterCheck"),
+))
+check_helper = _function_source(WEB, "meshStageCheckValue")
 
 script = f"""
 const state={{wizardStage:'source',asset:{{renderLods:[{{geometries:[

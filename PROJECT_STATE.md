@@ -1,3 +1,11 @@
+## Current state — v0.10.66 wave7D remaining portable-core physical split
+
+Wave7D physically extracts the remaining certified portable cores for PHYSICS, HIT VOLUMES, DAMAGE and FINAL ASSEMBLY. Forty function bodies move source-identically into 15 responsibility-focused ES modules; their state/DOM/backend/THREE adapters deliberately remain in the composition shell for the next effect-module wave.
+
+The editor inventory remains 546 named functions / 259 certified / 262 static PURE / 5 EASY / 15 TRANSITIVE / 264 hard. Ownership is now 57 logical modules. Extraction proof imports 43 portable ES modules + 9 block facades and still passes all 704 frozen fixtures.
+
+Next: physically split effect adapters/infrastructure and then reduce `model_asset_editor.html` to layout + bootstrap/composition wiring only. Do not resume purity-count refactoring during relocation.
+
 ## Current state — v0.10.66 wave7C SEMANTICS physical split
 
 Wave7C physically extracted the remaining SEMANTICS portable core by logical responsibility rather than as one `semantics.js` mega-module. 107 SEMANTICS PURE functions now live in nine ES modules under `src/assets/webui/model_asset_editor/semantics/`; 18 required PURE helpers also moved into `core/shared_forms.js` and `core/axis_mapping.js`. All 125 moved function bodies are source-identical to wave7B.

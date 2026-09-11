@@ -1,3 +1,9 @@
+# Physical module split status — wave7D
+
+All certified portable cores are now physically extracted. PHYSICS is split into stage/node/commands; HIT VOLUMES into list/inspector/commands/render-plan; DAMAGE into stage/state-variants/node/render-selector/semantics; FINAL ASSEMBLY into validation/build/commands. Together with earlier waves, extraction proof now imports 43 portable ES modules + 9 block facades while keeping 259 certified functions / 704 frozen fixtures unchanged.
+
+The remaining large inline code is intentionally effectful adapter/infrastructure code. The next phase is to distribute those adapters by responsibility without forcing them to become PURE, then leave `model_asset_editor.html` as layout/bootstrap/composition only.
+
 # Physical module split status — wave7C
 
 The physical split is active under `MOVE, DON'T REDESIGN`. In addition to the wave7A/wave7B dependency and stage cores, SEMANTICS PURE logic is now physically divided by responsibility under `src/assets/webui/model_asset_editor/semantics/`: `tree.js`, `bindings.js`, `workspace.js`, `motion.js`, `structural.js`, `world_graph.js`, `commands.js`, `preview.js`, and `graph_viewport.js`. `core/shared_forms.js` and `core/axis_mapping.js` hold the pure shared helpers required by those modules; their DOM/state adapters remain in the composition shell.

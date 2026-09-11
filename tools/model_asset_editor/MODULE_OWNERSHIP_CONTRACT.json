@@ -35,9 +35,9 @@
     "lods": {
       "status": "portable",
       "modules": [
-        "lods",
+        "axis_mapping",
         "lod_runtime",
-        "axis_mapping"
+        "lods"
       ],
       "api": [
         "wizardLodsStageModel"
@@ -52,9 +52,9 @@
     "geometry": {
       "status": "portable",
       "modules": [
-        "geometry",
         "asset_scene",
         "editor_inspection",
+        "geometry",
         "mesh_overlays"
       ],
       "api": [
@@ -86,16 +86,17 @@
       "status": "portable",
       "modules": [
         "semantics",
-        "semantics_tree",
         "semantics_bindings",
-        "semantics_workspace",
-        "semantics_motion",
-        "semantics_structural",
-        "semantics_world_graph",
         "semantics_commands",
-        "semantics_preview",
         "semantics_graph_viewport",
-        "semantics_transform"
+        "semantics_motion",
+        "semantics_preview",
+        "semantics_structural",
+        "semantics_transform",
+        "semantics_tree",
+        "semantics_workspace",
+        "semantics_world_graph",
+        "viewport"
       ],
       "api": [
         "wizardSemanticsStageModel",
@@ -127,7 +128,11 @@
     "physics": {
       "status": "portable",
       "modules": [
-        "physics"
+        "physics",
+        "physics_commands",
+        "physics_node",
+        "physics_stage",
+        "wizard_shell"
       ],
       "api": [
         "wizardPhysicsStageModel",
@@ -147,7 +152,12 @@
     "hit_volumes": {
       "status": "portable",
       "modules": [
-        "hit_volumes"
+        "hit_volumes",
+        "hit_volumes_commands",
+        "hit_volumes_inspector",
+        "hit_volumes_list",
+        "hit_volumes_render_plan",
+        "viewport"
       ],
       "api": [
         "hitVolumeListModel",
@@ -172,7 +182,13 @@
     "damage": {
       "status": "portable",
       "modules": [
-        "damage"
+        "damage",
+        "damage_node",
+        "damage_render_selector",
+        "damage_semantics",
+        "damage_stage",
+        "damage_state_variants",
+        "editor_inspection"
       ],
       "api": [
         "wizardDamageStageModel",
@@ -212,7 +228,11 @@
     "final_assembly": {
       "status": "portable",
       "modules": [
-        "final_assembly"
+        "final_assembly",
+        "final_assembly_build",
+        "final_assembly_commands",
+        "final_assembly_validation",
+        "wizard_shell"
       ],
       "api": [
         "finalAssemblyValidationModel",
@@ -647,30 +667,8 @@
       ]
     },
     "damage": {
-      "core": [
-        "damageAddStateVariantCommand",
-        "damageDefaultStateCommand",
-        "damageDeleteStateVariantCommand",
-        "damageNodeModel",
-        "damageRenderSelectorModel",
-        "damageRenderStatesCommand",
-        "damageSemanticAddCommand",
-        "damageSemanticDeleteCommand",
-        "damageSemanticUpdateCommand",
-        "damageSemanticsModel",
-        "damageSetStateVariantCommand",
-        "damageStateScopeDefault",
-        "damageStateScopeParse",
-        "damageStateVariantsModel",
-        "wizardDamageStageModel"
-      ],
-      "presentation": [
-        "damageNodeHtml",
-        "damageRenderSelectorHtml",
-        "damageSemanticsHtml",
-        "damageStateVariantsHtml",
-        "wizardDamageStageHtml"
-      ],
+      "core": [],
+      "presentation": [],
       "adapters": [
         "renderDamageNodeInspector",
         "renderDamageRenderNodeInspector",
@@ -687,6 +685,35 @@
         ],
         "asset_scene": [
           "rebuildScene"
+        ],
+        "damage_node": [
+          "damageNodeHtml",
+          "damageNodeModel"
+        ],
+        "damage_render_selector": [
+          "damageRenderSelectorHtml",
+          "damageRenderSelectorModel",
+          "damageRenderStatesCommand"
+        ],
+        "damage_semantics": [
+          "damageSemanticDeleteCommand",
+          "damageSemanticUpdateCommand",
+          "damageSemanticsHtml",
+          "damageSemanticsModel",
+          "damageStateScopeDefault",
+          "damageStateScopeParse"
+        ],
+        "damage_stage": [
+          "wizardDamageStageHtml",
+          "wizardDamageStageModel"
+        ],
+        "damage_state_variants": [
+          "damageAddStateVariantCommand",
+          "damageDefaultStateCommand",
+          "damageDeleteStateVariantCommand",
+          "damageSetStateVariantCommand",
+          "damageStateVariantsHtml",
+          "damageStateVariantsModel"
         ],
         "editor_inspection": [
           "renderNodeInspector",
@@ -707,14 +734,9 @@
         "semantics_transform": [
           "previewStateForNode"
         ],
-        "shared": [
-          "escapeMarkup"
-        ],
         "shared_forms": [
           "readStates",
-          "readVec",
-          "statesInput",
-          "vecInputs"
+          "readVec"
         ],
         "wizard_shell": [
           "wizardLodSelector",
@@ -723,32 +745,12 @@
         ]
       },
       "exports": [
-        "damageAddStateVariantCommand",
-        "damageDefaultStateCommand",
-        "damageDeleteStateVariantCommand",
-        "damageNodeHtml",
-        "damageNodeModel",
-        "damageRenderSelectorHtml",
-        "damageRenderSelectorModel",
-        "damageRenderStatesCommand",
-        "damageSemanticAddCommand",
-        "damageSemanticDeleteCommand",
-        "damageSemanticUpdateCommand",
-        "damageSemanticsHtml",
-        "damageSemanticsModel",
-        "damageSetStateVariantCommand",
-        "damageStateScopeDefault",
-        "damageStateScopeParse",
-        "damageStateVariantsHtml",
-        "damageStateVariantsModel",
         "renderDamageNodeInspector",
         "renderDamageRenderNodeInspector",
         "renderDamageSemantics",
         "renderStateVariants",
         "renderWizardDamageStage",
-        "stateScopeForSelectedNode",
-        "wizardDamageStageHtml",
-        "wizardDamageStageModel"
+        "stateScopeForSelectedNode"
       ],
       "binding_imports": [
         "$",
@@ -965,15 +967,8 @@
       ]
     },
     "final_assembly": {
-      "core": [
-        "finalAssemblyBuildModel",
-        "finalAssemblyStageCommand",
-        "finalAssemblyValidationModel"
-      ],
-      "presentation": [
-        "finalAssemblyBuildHtml",
-        "finalAssemblyValidationHtml"
-      ],
+      "core": [],
+      "presentation": [],
       "adapters": [
         "bindWizardStageCheckControls",
         "renderWizardBuildStage",
@@ -984,12 +979,20 @@
         "app_services": [
           "send"
         ],
+        "final_assembly_build": [
+          "finalAssemblyBuildHtml",
+          "finalAssemblyBuildModel"
+        ],
+        "final_assembly_commands": [
+          "finalAssemblyStageCommand"
+        ],
+        "final_assembly_validation": [
+          "finalAssemblyValidationHtml",
+          "finalAssemblyValidationModel"
+        ],
         "i18n": [
           "attachDynamicToolTip",
           "tr"
-        ],
-        "shared": [
-          "escapeMarkup"
         ],
         "wizard_shell": [
           "wizardStageCheckControls",
@@ -998,11 +1001,6 @@
       },
       "exports": [
         "bindWizardStageCheckControls",
-        "finalAssemblyBuildHtml",
-        "finalAssemblyBuildModel",
-        "finalAssemblyStageCommand",
-        "finalAssemblyValidationHtml",
-        "finalAssemblyValidationModel",
         "renderWizardBuildStage",
         "renderWizardValidateStage"
       ],
@@ -1165,20 +1163,10 @@
     "hit_volumes": {
       "core": [
         "collisionPrimitive",
-        "hitVolumeAddCommand",
-        "hitVolumeDamageScopeCommand",
-        "hitVolumeInspectorModel",
-        "hitVolumeListModel",
-        "hitVolumePhysicsUpdateCommand",
-        "hitVolumeRadialCommand",
-        "hitVolumeRenderPlan",
         "radialLayoutAngles",
         "radialSelectedPivotInParent"
       ],
-      "presentation": [
-        "hitVolumeInspectorHtml",
-        "hitVolumeListHtml"
-      ],
+      "presentation": [],
       "adapters": [
         "closeRadialModal",
         "openRadialModal",
@@ -1200,6 +1188,21 @@
         "editor_inspection": [
           "highlightSelection"
         ],
+        "hit_volumes_commands": [
+          "hitVolumeDamageScopeCommand",
+          "hitVolumePhysicsUpdateCommand"
+        ],
+        "hit_volumes_inspector": [
+          "hitVolumeInspectorHtml",
+          "hitVolumeInspectorModel"
+        ],
+        "hit_volumes_list": [
+          "hitVolumeListHtml",
+          "hitVolumeListModel"
+        ],
+        "hit_volumes_render_plan": [
+          "hitVolumeRenderPlan"
+        ],
         "i18n": [
           "attachDynamicToolTip",
           "tr"
@@ -1210,20 +1213,12 @@
         "scene_runtime": [
           "clearGroup"
         ],
-        "semantics_transform": [
-          "stateApplies"
-        ],
         "semantics_world_graph": [
           "semanticDisplayWorldMatrix"
         ],
-        "shared": [
-          "escapeMarkup"
-        ],
         "shared_forms": [
           "readStates",
-          "readVec",
-          "statesInput",
-          "vecInputs"
+          "readVec"
         ],
         "transform_math": [
           "composeMatrix"
@@ -1231,15 +1226,6 @@
       },
       "exports": [
         "closeRadialModal",
-        "hitVolumeAddCommand",
-        "hitVolumeDamageScopeCommand",
-        "hitVolumeInspectorHtml",
-        "hitVolumeInspectorModel",
-        "hitVolumeListHtml",
-        "hitVolumeListModel",
-        "hitVolumePhysicsUpdateCommand",
-        "hitVolumeRadialCommand",
-        "hitVolumeRenderPlan",
         "openRadialModal",
         "radialCenterFromMode",
         "rebuildCollisions",
@@ -1588,16 +1574,8 @@
       ]
     },
     "physics": {
-      "core": [
-        "physicsEstimateCommand",
-        "physicsNodeModel",
-        "physicsSetCommand",
-        "wizardPhysicsStageModel"
-      ],
-      "presentation": [
-        "physicsNodeHtml",
-        "wizardPhysicsStageHtml"
-      ],
+      "core": [],
+      "presentation": [],
       "adapters": [
         "renderPhysicsNodeInspector"
       ],
@@ -1609,22 +1587,20 @@
         "i18n": [
           "tr"
         ],
-        "shared": [
-          "escapeMarkup"
+        "physics_commands": [
+          "physicsEstimateCommand",
+          "physicsSetCommand"
+        ],
+        "physics_node": [
+          "physicsNodeHtml",
+          "physicsNodeModel"
         ],
         "shared_forms": [
-          "readVec",
-          "vecInputs"
+          "readVec"
         ]
       },
       "exports": [
-        "physicsEstimateCommand",
-        "physicsNodeHtml",
-        "physicsNodeModel",
-        "physicsSetCommand",
-        "renderPhysicsNodeInspector",
-        "wizardPhysicsStageHtml",
-        "wizardPhysicsStageModel"
+        "renderPhysicsNodeInspector"
       ],
       "binding_imports": [
         "$"
@@ -2648,7 +2624,7 @@
         "materials": [
           "renderMaterials"
         ],
-        "physics": [
+        "physics_stage": [
           "wizardPhysicsStageHtml",
           "wizardPhysicsStageModel"
         ],
@@ -3162,6 +3138,362 @@
       ],
       "ports": [],
       "physical_source": "src/assets/webui/model_asset_editor/semantics/graph_viewport.js"
+    },
+    "physics_stage": {
+      "core": [
+        "wizardPhysicsStageModel"
+      ],
+      "presentation": [
+        "wizardPhysicsStageHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "wizardPhysicsStageHtml",
+        "wizardPhysicsStageModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/physics/stage.js"
+    },
+    "physics_node": {
+      "core": [
+        "physicsNodeModel"
+      ],
+      "presentation": [
+        "physicsNodeHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "vecInputs"
+        ]
+      },
+      "exports": [
+        "physicsNodeHtml",
+        "physicsNodeModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/physics/node.js"
+    },
+    "physics_commands": {
+      "core": [
+        "physicsEstimateCommand",
+        "physicsSetCommand"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "physicsEstimateCommand",
+        "physicsSetCommand"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/physics/commands.js"
+    },
+    "hit_volumes_list": {
+      "core": [
+        "hitVolumeListModel"
+      ],
+      "presentation": [
+        "hitVolumeListHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "hitVolumeListHtml",
+        "hitVolumeListModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/hit_volumes/list.js"
+    },
+    "hit_volumes_inspector": {
+      "core": [
+        "hitVolumeInspectorModel"
+      ],
+      "presentation": [
+        "hitVolumeInspectorHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "statesInput",
+          "vecInputs"
+        ]
+      },
+      "exports": [
+        "hitVolumeInspectorHtml",
+        "hitVolumeInspectorModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/hit_volumes/inspector.js"
+    },
+    "hit_volumes_commands": {
+      "core": [
+        "hitVolumeAddCommand",
+        "hitVolumeDamageScopeCommand",
+        "hitVolumePhysicsUpdateCommand",
+        "hitVolumeRadialCommand"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "hitVolumeAddCommand",
+        "hitVolumeDamageScopeCommand",
+        "hitVolumePhysicsUpdateCommand",
+        "hitVolumeRadialCommand"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/hit_volumes/commands.js"
+    },
+    "hit_volumes_render_plan": {
+      "core": [
+        "hitVolumeRenderPlan"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "semantics_transform": [
+          "stateApplies"
+        ],
+        "semantics_world_graph": [
+          "semanticDisplayWorldMatrix"
+        ],
+        "transform_math": [
+          "composeMatrix"
+        ]
+      },
+      "exports": [
+        "hitVolumeRenderPlan"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/hit_volumes/render_plan.js"
+    },
+    "damage_stage": {
+      "core": [
+        "wizardDamageStageModel"
+      ],
+      "presentation": [
+        "wizardDamageStageHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "wizardDamageStageHtml",
+        "wizardDamageStageModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/damage/stage.js"
+    },
+    "damage_state_variants": {
+      "core": [
+        "damageAddStateVariantCommand",
+        "damageDefaultStateCommand",
+        "damageDeleteStateVariantCommand",
+        "damageSetStateVariantCommand",
+        "damageStateVariantsModel"
+      ],
+      "presentation": [
+        "damageStateVariantsHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "damageAddStateVariantCommand",
+        "damageDefaultStateCommand",
+        "damageDeleteStateVariantCommand",
+        "damageSetStateVariantCommand",
+        "damageStateVariantsHtml",
+        "damageStateVariantsModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/damage/state_variants.js"
+    },
+    "damage_node": {
+      "core": [
+        "damageNodeModel"
+      ],
+      "presentation": [
+        "damageNodeHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "vecInputs"
+        ]
+      },
+      "exports": [
+        "damageNodeHtml",
+        "damageNodeModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/damage/node.js"
+    },
+    "damage_render_selector": {
+      "core": [
+        "damageRenderSelectorModel",
+        "damageRenderStatesCommand"
+      ],
+      "presentation": [
+        "damageRenderSelectorHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "statesInput"
+        ]
+      },
+      "exports": [
+        "damageRenderSelectorHtml",
+        "damageRenderSelectorModel",
+        "damageRenderStatesCommand"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/damage/render_selector.js"
+    },
+    "damage_semantics": {
+      "core": [
+        "damageSemanticAddCommand",
+        "damageSemanticDeleteCommand",
+        "damageSemanticUpdateCommand",
+        "damageSemanticsModel",
+        "damageStateScopeDefault",
+        "damageStateScopeParse"
+      ],
+      "presentation": [
+        "damageSemanticsHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "statesInput",
+          "vecInputs"
+        ]
+      },
+      "exports": [
+        "damageSemanticAddCommand",
+        "damageSemanticDeleteCommand",
+        "damageSemanticUpdateCommand",
+        "damageSemanticsHtml",
+        "damageSemanticsModel",
+        "damageStateScopeDefault",
+        "damageStateScopeParse"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/damage/semantics.js"
+    },
+    "final_assembly_validation": {
+      "core": [
+        "finalAssemblyValidationModel"
+      ],
+      "presentation": [
+        "finalAssemblyValidationHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "shared": [
+          "escapeMarkup"
+        ]
+      },
+      "exports": [
+        "finalAssemblyValidationHtml",
+        "finalAssemblyValidationModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/final_assembly/validation.js"
+    },
+    "final_assembly_build": {
+      "core": [
+        "finalAssemblyBuildModel"
+      ],
+      "presentation": [
+        "finalAssemblyBuildHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "shared": [
+          "escapeMarkup"
+        ]
+      },
+      "exports": [
+        "finalAssemblyBuildHtml",
+        "finalAssemblyBuildModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/final_assembly/build.js"
+    },
+    "final_assembly_commands": {
+      "core": [
+        "finalAssemblyStageCommand"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "finalAssemblyStageCommand"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/final_assembly/commands.js"
     }
   },
   "classes": {
@@ -3346,10 +3678,12 @@
         "rotateAxisModal"
       ],
       "damage": [
+        "stateScopeForSelectedNode"
+      ],
+      "damage_semantics": [
         "damageSemanticAddCommand",
         "damageStateScopeDefault",
-        "damageStateScopeParse",
-        "stateScopeForSelectedNode"
+        "damageStateScopeParse"
       ],
       "editor_inspection": [
         "requestDeleteUnusedGeometry",
@@ -3357,12 +3691,14 @@
       ],
       "hit_volumes": [
         "closeRadialModal",
-        "hitVolumeAddCommand",
-        "hitVolumeRadialCommand",
         "radialCenterFromMode",
         "rebuildCollisions",
         "syncRadialCenterInputs",
         "syncRadialOperationUi"
+      ],
+      "hit_volumes_commands": [
+        "hitVolumeAddCommand",
+        "hitVolumeRadialCommand"
       ],
       "i18n": [
         "bindToolTipElement",
@@ -3417,7 +3753,7 @@
     }
   },
   "physical_split": {
-    "stage": "wave7C",
+    "stage": "wave7D",
     "composition_root": "src/assets/webui/model_asset_editor.html",
     "module_root": "src/assets/webui/model_asset_editor",
     "extracted_modules": [
@@ -3439,7 +3775,22 @@
       "semantics_world_graph",
       "semantics_commands",
       "semantics_preview",
-      "semantics_graph_viewport"
+      "semantics_graph_viewport",
+      "physics_stage",
+      "physics_node",
+      "physics_commands",
+      "hit_volumes_list",
+      "hit_volumes_inspector",
+      "hit_volumes_commands",
+      "hit_volumes_render_plan",
+      "damage_stage",
+      "damage_state_variants",
+      "damage_node",
+      "damage_render_selector",
+      "damage_semantics",
+      "final_assembly_validation",
+      "final_assembly_build",
+      "final_assembly_commands"
     ],
     "policy": "move_without_redesign"
   }

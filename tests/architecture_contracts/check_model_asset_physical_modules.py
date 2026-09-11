@@ -23,8 +23,8 @@ OWNERSHIP = json.loads((ROOT / "tools/model_asset_editor/MODULE_OWNERSHIP_CONTRA
 MODULES = OWNERSHIP.get("modules", {})
 SPLIT = OWNERSHIP.get("physical_split", {})
 
-if SPLIT.get("stage") != "wave7C":
-    raise AssertionError(f"physical modules: expected wave7C split metadata, got {SPLIT.get('stage')!r}")
+if SPLIT.get("stage") != "wave7D":
+    raise AssertionError(f"physical modules: expected wave7D split metadata, got {SPLIT.get('stage')!r}")
 if SPLIT.get("policy") != "move_without_redesign":
     raise AssertionError("physical modules: relocation policy drifted from move_without_redesign")
 
@@ -36,9 +36,13 @@ expected_extracted = [
     "semantics_tree", "semantics_bindings", "semantics_workspace",
     "semantics_motion", "semantics_structural", "semantics_world_graph",
     "semantics_commands", "semantics_preview", "semantics_graph_viewport",
+    "physics_stage", "physics_node", "physics_commands",
+    "hit_volumes_list", "hit_volumes_inspector", "hit_volumes_commands", "hit_volumes_render_plan",
+    "damage_stage", "damage_state_variants", "damage_node", "damage_render_selector", "damage_semantics",
+    "final_assembly_validation", "final_assembly_build", "final_assembly_commands",
 ]
 if extracted != expected_extracted:
-    raise AssertionError(f"physical modules: unexpected wave7B extraction set {extracted}")
+    raise AssertionError(f"physical modules: unexpected wave7D extraction set {extracted}")
 
 for module_name in extracted:
     spec = MODULES.get(module_name) or {}
@@ -134,7 +138,7 @@ for module_name in extracted:
         raise AssertionError(f"physical modules: UI pack glob omitted {resource}")
 
 print(
-    "[PASS] Model Asset Editor physical split wave7C: "
-    "shared/core stages + SEMANTICS portable responsibilities extracted to real ES modules; "
+    "[PASS] Model Asset Editor physical split wave7D: "
+    "shared/core stages + SEMANTICS + PHYSICS/HIT-VOLUMES/DAMAGE/FINAL-ASSEMBLY portable responsibilities extracted to real ES modules; "
     "546-function inventory preserved; runtime fallback + UI pack deployment wired"
 )

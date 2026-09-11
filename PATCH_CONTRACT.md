@@ -1,3 +1,10 @@
+## Model Asset Editor v0.10.66 — wave 7D remaining portable-core physical split contract
+
+- Wave7D is relocation-only. The 40 moved PHYSICS / HIT VOLUMES / DAMAGE / FINAL ASSEMBLY function bodies must remain text-identical to wave7C and no frozen behavioural oracle may be re-baselined.
+- Portable responsibilities are split into narrow physical modules: PHYSICS stage/node/commands; HIT VOLUMES list/inspector/commands/render-plan; DAMAGE stage/state-variants/node/render-selector/semantics; FINAL ASSEMBLY validation/build/commands.
+- Every cross-file call must resolve through an explicit relative ESM import to another physical portable module. Portable files may not read `state`, `editorViewState`, DOM, backend/status/prompt ports or mutate THREE scene state.
+- Effect adapters stay owned but inline until the dedicated adapter/infrastructure split. Physical relocation must preserve the 546-function inventory, 259 certified functions / 704 fixtures, ownership completeness and UI-pack/runtime deployment.
+
 ## Model Asset Editor v0.10.66 — wave 7C SEMANTICS physical split contract
 
 - Wave7C is relocation-only: all moved function bodies must remain text-identical to wave7B; frozen behavioural fixtures and command payloads are not re-baselined.

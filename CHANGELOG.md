@@ -1,3 +1,12 @@
+## Model Asset Editor v0.10.66 — wave 7D / PHYSICS + HIT VOLUMES + DAMAGE + FINAL ASSEMBLY logical physical split
+
+- Continued `MOVE, DON'T REDESIGN`: 40 certified PURE functions were relocated source-identically from the composition HTML into 15 narrow ES modules.
+- PHYSICS is split into stage, node inspector model/view, and command payload modules. HIT VOLUMES is split into list, inspector, command payloads, and collision render-plan modules.
+- DAMAGE is split into stage, state-variants, semantic-node inspector, RenderNode state selector, and damage-semantics modules. FINAL ASSEMBLY is split into validation, build summary, and stage-command modules.
+- Effect adapters remain inline for the later adapter/infrastructure wave; portable modules use only explicit relative imports and have no editor-state/DOM/backend/scene wiring.
+- Ownership now contains 57 logical modules. Standalone extraction imports 43 portable ES modules + 9 block facades while preserving 259 certified functions / 704 frozen fixtures and the 546-function census.
+- Next physical wave: split the remaining effect adapters/infrastructure by responsibility, then reduce `model_asset_editor.html` to composition/bootstrap only.
+
 ## Model Asset Editor v0.10.66 — wave 7C / SEMANTICS logical physical split
 
 - Continued physical relocation under `MOVE, DON'T REDESIGN`; no SEMANTICS algorithm, command payload or behavioural oracle was changed.

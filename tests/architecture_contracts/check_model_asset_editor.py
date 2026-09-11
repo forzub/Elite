@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import re
 
+import check_model_asset_function_purity as purity
 from model_asset_core_tabs_lock import _function_source, validate_core_tabs_lock
 from model_asset_editor_source_bundle import load_source_bundle
 
@@ -23,6 +24,9 @@ def require(path: str, *tokens: str) -> None:
 
 
 def body_between(body: str, start: str, end: str) -> str:
+    if start.startswith("function "):
+        name = start[len("function "):].split("(", 1)[0]
+        return purity.extract_function(body, name)
     a = body.index(start)
     b = body.index(end, a + len(start))
     return body[a:b]

@@ -23,8 +23,8 @@ OWNERSHIP = json.loads((ROOT / "tools/model_asset_editor/MODULE_OWNERSHIP_CONTRA
 MODULES = OWNERSHIP.get("modules", {})
 SPLIT = OWNERSHIP.get("physical_split", {})
 
-if SPLIT.get("stage") != "wave7B":
-    raise AssertionError(f"physical modules: expected wave7B split metadata, got {SPLIT.get('stage')!r}")
+if SPLIT.get("stage") != "wave7C":
+    raise AssertionError(f"physical modules: expected wave7C split metadata, got {SPLIT.get('stage')!r}")
 if SPLIT.get("policy") != "move_without_redesign":
     raise AssertionError("physical modules: relocation policy drifted from move_without_redesign")
 
@@ -32,6 +32,10 @@ extracted = list(SPLIT.get("extracted_modules", []))
 expected_extracted = [
     "shared", "transform_math", "semantics_transform",
     "source_maintenance", "source", "lods", "geometry", "surfaces",
+    "shared_forms", "axis_mapping",
+    "semantics_tree", "semantics_bindings", "semantics_workspace",
+    "semantics_motion", "semantics_structural", "semantics_world_graph",
+    "semantics_commands", "semantics_preview", "semantics_graph_viewport",
 ]
 if extracted != expected_extracted:
     raise AssertionError(f"physical modules: unexpected wave7B extraction set {extracted}")
@@ -54,11 +58,38 @@ for module_name in extracted:
             raise AssertionError(f"physical modules: {module_name}.{name} still implemented inline in HTML")
     exports = list(spec.get("exports", []))
     import_path = "./" + str(Path(rel).relative_to("src/assets/webui")).replace("\\", "/")
-    if import_path not in HTML:
-        raise AssertionError(f"physical modules: composition root does not import {import_path}")
-    for name in exports:
-        if not re.search(rf"\b{re.escape(name)}\b", HTML):
-            raise AssertionError(f"physical modules: imported API {module_name}.{name} is not wired in composition root")
+    incoming = any(module_name in (MODULES.get(other, {}).get("imports", {}) or {}) for other in extracted if other != module_name)
+    if import_path not in HTML and not incoming:
+        raise AssertionError(f"physical modules: {module_name} is neither imported by composition root nor another physical module")
+
+
+# Static ESM graph sanity: every relative import resolves and every named import is
+# actually exported by the target physical file. This catches a relocation that
+# passes source-bundle analysis but would fail immediately in the browser loader.
+physical_sources = [ROOT / MODULES[name]["physical_source"] for name in extracted]
+source_by_path = {path.resolve(): path.read_text(encoding="utf-8") for path in physical_sources}
+source_by_path[HTML_PATH.resolve()] = HTML
+import_re = re.compile(r"import\s*\{([^}]*)\}\s*from\s*['\"]([^'\"]+)['\"]\s*;")
+export_re = re.compile(r"export\s*\{([^}]*)\}\s*;")
+for importer, source in source_by_path.items():
+    base = importer.parent
+    for match in import_re.finditer(source):
+        names = {part.strip().split(" as ", 1)[0].strip() for part in match.group(1).split(",") if part.strip()}
+        target_ref = match.group(2)
+        if not target_ref.startswith("."):
+            continue
+        target = (base / target_ref).resolve()
+        if not target.is_file():
+            raise AssertionError(f"physical modules: unresolved relative import {target_ref!r} from {importer}")
+        target_source = target.read_text(encoding="utf-8")
+        exported: set[str] = set()
+        for export_match in export_re.finditer(target_source):
+            exported.update(part.strip().split(" as ", 1)[0].strip() for part in export_match.group(1).split(",") if part.strip())
+        missing = names - exported
+        if missing:
+            raise AssertionError(
+                f"physical modules: {importer.name} imports non-exported names from {target.name}: {sorted(missing)}"
+            )
 
 # The architecture inventory remains invariant across pure relocation.
 bundle = load_source_bundle(ROOT)
@@ -103,7 +134,7 @@ for module_name in extracted:
         raise AssertionError(f"physical modules: UI pack glob omitted {resource}")
 
 print(
-    "[PASS] Model Asset Editor physical split wave7B: "
-    "shared/transform-math/semantics-transform + SOURCE/LODS/GEOMETRY/SURFACES portable cores extracted to real ES modules; "
+    "[PASS] Model Asset Editor physical split wave7C: "
+    "shared/core stages + SEMANTICS portable responsibilities extracted to real ES modules; "
     "546-function inventory preserved; runtime fallback + UI pack deployment wired"
 )

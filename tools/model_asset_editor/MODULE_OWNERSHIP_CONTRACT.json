@@ -86,6 +86,15 @@
       "status": "portable",
       "modules": [
         "semantics",
+        "semantics_tree",
+        "semantics_bindings",
+        "semantics_workspace",
+        "semantics_motion",
+        "semantics_structural",
+        "semantics_world_graph",
+        "semantics_commands",
+        "semantics_preview",
+        "semantics_graph_viewport",
         "semantics_transform"
       ],
       "api": [
@@ -582,7 +591,7 @@
         "lod_runtime": [
           "activeRenderLod"
         ],
-        "semantics": [
+        "semantics_world_graph": [
           "semanticAxisMappingFromDirect"
         ]
       },
@@ -609,7 +618,8 @@
         "READ_state",
         "STATE_MUTATION",
         "STATUS_PROMPT"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/core/axis_mapping.js"
     },
     "catalog": {
       "core": [],
@@ -842,15 +852,17 @@
         "semantics": [
           "resetSemanticMotionPreview",
           "semanticDeleteSelectedNode",
-          "semanticDescendantSet",
-          "semanticIsDescendant",
           "semanticRefreshSelectionUi",
-          "semanticSelectNode",
-          "semanticSelectedIndices"
+          "semanticSelectNode"
         ],
         "semantics_transform": [
           "previewStateForNode",
           "stateApplies"
+        ],
+        "semantics_tree": [
+          "semanticDescendantSet",
+          "semanticIsDescendant",
+          "semanticSelectedIndices"
         ],
         "shared": [
           "escapeMarkup",
@@ -1198,11 +1210,11 @@
         "scene_runtime": [
           "clearGroup"
         ],
-        "semantics": [
-          "semanticDisplayWorldMatrix"
-        ],
         "semantics_transform": [
           "stateApplies"
+        ],
+        "semantics_world_graph": [
+          "semanticDisplayWorldMatrix"
         ],
         "shared": [
           "escapeMarkup"
@@ -1670,117 +1682,8 @@
       ]
     },
     "semantics": {
-      "core": [
-        "semanticAncestorHasDynamicTransform",
-        "semanticAxisMappingFromDirect",
-        "semanticCanUseParent",
-        "semanticCanonicalNodeAnchorMap",
-        "semanticCanonicalRenderWorldMatrices",
-        "semanticCurrentLodUnbound",
-        "semanticDescendantSet",
-        "semanticDisplayWorldMatrix",
-        "semanticGraphDirection",
-        "semanticGraphDisplayAnchorMap",
-        "semanticGraphLayoutOffsets",
-        "semanticGraphRadialMetrics",
-        "semanticGraphRootCenter",
-        "semanticGraphRootIndex",
-        "semanticGraphStructureSignature",
-        "semanticIsDescendant",
-        "semanticJointLocalPointFromWorld",
-        "semanticJointPayload",
-        "semanticNodeDepth",
-        "semanticNodeHasDynamicIncoming",
-        "semanticNodeHasTransformVariant",
-        "semanticOrderedChildren",
-        "semanticOwnedPayloadCount",
-        "semanticPreviewDeltaWorld",
-        "semanticRelationIcon",
-        "semanticRelationKind",
-        "semanticRelationLabel",
-        "semanticRelationOptions",
-        "semanticRenderBaseMatrix",
-        "semanticRenderOwner",
-        "semanticRootIndices",
-        "semanticSelectedIndices",
-        "semanticSelectedPanels",
-        "semanticSelectionModeFromEvent",
-        "semanticSelectionSet",
-        "semanticStaticFlattenCandidates",
-        "semanticTopLevelSelected",
-        "semanticTreeOrderKey",
-        "semanticTreeRows",
-        "semanticUnboundRenderClusterOffsets",
-        "semanticUnboundRenderClusterRoot",
-        "semanticUsageForNode",
-        "semanticVisualLodProfile",
-        "structuralEndpointForPick",
-        "structuralSelectedEndpoint",
-        "wizardSemanticsBindingAssignmentCommand",
-        "wizardSemanticsBindingCommandModel",
-        "wizardSemanticsBindingPickTransition",
-        "wizardSemanticsBindingsBlockModel",
-        "wizardSemanticsCollapsedTransition",
-        "wizardSemanticsDeleteConfirmText",
-        "wizardSemanticsDeletePlan",
-        "wizardSemanticsFlattenStaticTreeCommand",
-        "wizardSemanticsGraphExplodeApplicationPlan",
-        "wizardSemanticsGraphGizmoPlan",
-        "wizardSemanticsGraphObjectModel",
-        "wizardSemanticsJointGizmoPlan",
-        "wizardSemanticsJointPivotCommand",
-        "wizardSemanticsJointPivotPickTransition",
-        "wizardSemanticsJointUpdateCommand",
-        "wizardSemanticsLodSelectionRestoreModel",
-        "wizardSemanticsMotionAngleModel",
-        "wizardSemanticsMotionAnimationStep",
-        "wizardSemanticsMotionDetachTransition",
-        "wizardSemanticsMotionPlayTransition",
-        "wizardSemanticsMotionPreviewApplicationPlan",
-        "wizardSemanticsMotionPreviewTargetModel",
-        "wizardSemanticsMotionZeroModel",
-        "wizardSemanticsMoveToAssetSpaceCommand",
-        "wizardSemanticsNewNodeSuggestion",
-        "wizardSemanticsNodeTransformCommand",
-        "wizardSemanticsNominalRateCommand",
-        "wizardSemanticsParentOriginPivotRequest",
-        "wizardSemanticsPreviewControlModel",
-        "wizardSemanticsPreviewRateModel",
-        "wizardSemanticsRelationCommand",
-        "wizardSemanticsReparentCommand",
-        "wizardSemanticsSelectedPanelsModel",
-        "wizardSemanticsSelectionRefreshModel",
-        "wizardSemanticsSelectionTransition",
-        "wizardSemanticsStageModel",
-        "wizardSemanticsStageSelectionNormalization",
-        "wizardSemanticsStructuralCreateLinkCommand",
-        "wizardSemanticsStructuralEndpointActionModel",
-        "wizardSemanticsStructuralGraphModel",
-        "wizardSemanticsStructuralLinkUpdateCommand",
-        "wizardSemanticsStructuralProxyUpdateCommand",
-        "wizardSemanticsTreeBlockModel",
-        "wizardSemanticsTreeDragStartTransition",
-        "wizardSemanticsTreeDropPlacement",
-        "wizardSemanticsTreeDropValid",
-        "wizardSemanticsViewportGizmoPickDecision",
-        "wizardSemanticsViewportMeshPickDecision",
-        "wizardSemanticsVisualCenterPivotEligibility",
-        "wizardSemanticsVisualCenterPivotRequest",
-        "wizardSemanticsWorkspaceModel"
-      ],
-      "presentation": [
-        "semanticBindingHealthHtml",
-        "semanticBindingRepairHtml",
-        "semanticBindingSummaryHtml",
-        "semanticStructureModeHtml",
-        "structuralEndpointCard",
-        "structuralGraphMeshRowsHtml",
-        "structuralGraphPanelHtml",
-        "wizardSemanticsBindingRowsHtml",
-        "wizardSemanticsSelectedPanelsHtml",
-        "wizardSemanticsTreeRowsHtml",
-        "wizardSemanticsWorkspaceHtml"
-      ],
+      "core": [],
+      "presentation": [],
       "adapters": [
         "applySemanticGraphExplode",
         "applySemanticMotionPreview",
@@ -1845,10 +1748,6 @@
           "lodHasGeometryPayload",
           "rebuildScene"
         ],
-        "axis_mapping": [
-          "axisFamily",
-          "sourceAxisToken"
-        ],
         "editor_inspection": [
           "highlightSelection",
           "selectRenderNode"
@@ -1872,10 +1771,100 @@
         "scene_runtime": [
           "clearGroup"
         ],
+        "semantics_bindings": [
+          "semanticBindingHealthHtml",
+          "semanticBindingRepairHtml",
+          "semanticBindingSummaryHtml",
+          "semanticVisualLodProfile",
+          "wizardSemanticsBindingCommandModel",
+          "wizardSemanticsBindingPickTransition",
+          "wizardSemanticsBindingRowsHtml",
+          "wizardSemanticsBindingsBlockModel"
+        ],
+        "semantics_commands": [
+          "wizardSemanticsDeleteConfirmText",
+          "wizardSemanticsDeletePlan",
+          "wizardSemanticsFlattenStaticTreeCommand",
+          "wizardSemanticsMoveToAssetSpaceCommand",
+          "wizardSemanticsRelationCommand",
+          "wizardSemanticsReparentCommand"
+        ],
+        "semantics_graph_viewport": [
+          "wizardSemanticsGraphGizmoPlan",
+          "wizardSemanticsGraphObjectModel",
+          "wizardSemanticsJointGizmoPlan"
+        ],
+        "semantics_motion": [
+          "semanticJointPayload",
+          "wizardSemanticsJointPivotCommand",
+          "wizardSemanticsJointPivotPickTransition",
+          "wizardSemanticsJointUpdateCommand",
+          "wizardSemanticsMotionAngleModel",
+          "wizardSemanticsMotionAnimationStep",
+          "wizardSemanticsMotionDetachTransition",
+          "wizardSemanticsMotionPlayTransition",
+          "wizardSemanticsMotionZeroModel",
+          "wizardSemanticsNodeTransformCommand",
+          "wizardSemanticsNominalRateCommand",
+          "wizardSemanticsParentOriginPivotRequest",
+          "wizardSemanticsPreviewRateModel",
+          "wizardSemanticsVisualCenterPivotEligibility",
+          "wizardSemanticsVisualCenterPivotRequest"
+        ],
+        "semantics_preview": [
+          "wizardSemanticsGraphExplodeApplicationPlan",
+          "wizardSemanticsMotionPreviewApplicationPlan",
+          "wizardSemanticsMotionPreviewTargetModel",
+          "wizardSemanticsPreviewControlModel"
+        ],
+        "semantics_structural": [
+          "semanticStructureModeHtml",
+          "structuralEndpointCard",
+          "structuralEndpointForPick",
+          "structuralGraphMeshRowsHtml",
+          "structuralGraphPanelHtml",
+          "structuralSelectedEndpoint",
+          "wizardSemanticsStructuralCreateLinkCommand",
+          "wizardSemanticsStructuralEndpointActionModel",
+          "wizardSemanticsStructuralGraphModel",
+          "wizardSemanticsStructuralLinkUpdateCommand",
+          "wizardSemanticsStructuralProxyUpdateCommand"
+        ],
         "semantics_transform": [
-          "previewStateForNode",
-          "semanticNodePose",
-          "semanticWorldMatrix"
+          "previewStateForNode"
+        ],
+        "semantics_tree": [
+          "semanticRelationKind",
+          "semanticRootIndices",
+          "semanticSelectionModeFromEvent",
+          "semanticTopLevelSelected",
+          "wizardSemanticsCollapsedTransition",
+          "wizardSemanticsLodSelectionRestoreModel",
+          "wizardSemanticsNewNodeSuggestion",
+          "wizardSemanticsSelectionTransition",
+          "wizardSemanticsStageSelectionNormalization",
+          "wizardSemanticsTreeBlockModel",
+          "wizardSemanticsTreeDragStartTransition",
+          "wizardSemanticsTreeDropPlacement",
+          "wizardSemanticsTreeDropValid",
+          "wizardSemanticsTreeRowsHtml"
+        ],
+        "semantics_workspace": [
+          "semanticSelectedPanels",
+          "wizardSemanticsSelectedPanelsModel",
+          "wizardSemanticsSelectionRefreshModel",
+          "wizardSemanticsStageModel",
+          "wizardSemanticsWorkspaceHtml",
+          "wizardSemanticsWorkspaceModel"
+        ],
+        "semantics_world_graph": [
+          "semanticCanonicalNodeAnchorMap",
+          "semanticCanonicalRenderWorldMatrices",
+          "semanticGraphDisplayAnchorMap",
+          "semanticGraphLayoutOffsets",
+          "semanticPreviewDeltaWorld",
+          "semanticRenderBaseMatrix",
+          "semanticUnboundRenderClusterOffsets"
         ],
         "shared": [
           "escapeMarkup"
@@ -1886,13 +1875,6 @@
         ],
         "sockets": [
           "updateSemanticSocketTransforms"
-        ],
-        "source_maintenance": [
-          "meshStageVisualClass"
-        ],
-        "transform_math": [
-          "composeMatrix",
-          "deg"
         ],
         "wizard_shell": [
           "renderSharedStageMeshPanel",
@@ -1911,36 +1893,13 @@
         "renderWizardSemanticsStage",
         "renderWizardStructuralGraphStage",
         "resetSemanticMotionPreview",
-        "semanticAxisMappingFromDirect",
         "semanticDeleteSelectedNode",
-        "semanticDescendantSet",
-        "semanticDisplayWorldMatrix",
-        "semanticIsDescendant",
         "semanticRefreshSelectionUi",
         "semanticSelectNode",
-        "semanticSelectedIndices",
-        "semanticSelectionModeFromEvent",
         "semanticSetJointPivotWorld",
-        "structuralGraphPanelHtml",
         "structuralPickNode",
         "switchSemanticLod",
-        "updateSemanticMotionAnimation",
-        "wizardSemanticsBindingRowsHtml",
-        "wizardSemanticsBindingsBlockModel",
-        "wizardSemanticsGraphExplodeApplicationPlan",
-        "wizardSemanticsJointPivotCommand",
-        "wizardSemanticsMotionAnimationStep",
-        "wizardSemanticsReparentCommand",
-        "wizardSemanticsSelectedPanelsHtml",
-        "wizardSemanticsSelectionTransition",
-        "wizardSemanticsStageModel",
-        "wizardSemanticsStructuralGraphModel",
-        "wizardSemanticsTreeBlockModel",
-        "wizardSemanticsTreeRowsHtml",
-        "wizardSemanticsViewportGizmoPickDecision",
-        "wizardSemanticsViewportMeshPickDecision",
-        "wizardSemanticsWorkspaceHtml",
-        "wizardSemanticsWorkspaceModel"
+        "updateSemanticMotionAnimation"
       ],
       "binding_imports": [
         "$",
@@ -2086,7 +2045,8 @@
       "external_imports": [],
       "ports": [
         "DOM_UI"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/core/shared_forms.js"
     },
     "sockets": {
       "core": [
@@ -2129,12 +2089,14 @@
         ],
         "semantics": [
           "applySemanticMotionPreview",
-          "resetSemanticMotionPreview",
-          "semanticDisplayWorldMatrix"
+          "resetSemanticMotionPreview"
         ],
         "semantics_transform": [
           "semanticWorldMatrix",
           "stateApplies"
+        ],
+        "semantics_world_graph": [
+          "semanticDisplayWorldMatrix"
         ],
         "shared": [
           "escapeMarkup"
@@ -2508,11 +2470,15 @@
         ],
         "semantics": [
           "semanticSelectNode",
-          "semanticSelectionModeFromEvent",
           "semanticSetJointPivotWorld",
-          "structuralPickNode",
+          "structuralPickNode"
+        ],
+        "semantics_graph_viewport": [
           "wizardSemanticsViewportGizmoPickDecision",
           "wizardSemanticsViewportMeshPickDecision"
+        ],
+        "semantics_tree": [
+          "semanticSelectionModeFromEvent"
         ],
         "sockets": [
           "selectSocket",
@@ -2741,6 +2707,461 @@
         "STATE_MUTATION",
         "STATUS_PROMPT"
       ]
+    },
+    "semantics_tree": {
+      "core": [
+        "semanticAncestorHasDynamicTransform",
+        "semanticCanUseParent",
+        "semanticDescendantSet",
+        "semanticIsDescendant",
+        "semanticNodeDepth",
+        "semanticNodeHasDynamicIncoming",
+        "semanticNodeHasTransformVariant",
+        "semanticOrderedChildren",
+        "semanticRelationIcon",
+        "semanticRelationKind",
+        "semanticRelationLabel",
+        "semanticRelationOptions",
+        "semanticRootIndices",
+        "semanticSelectedIndices",
+        "semanticSelectionModeFromEvent",
+        "semanticSelectionSet",
+        "semanticStaticFlattenCandidates",
+        "semanticTopLevelSelected",
+        "semanticTreeOrderKey",
+        "semanticTreeRows",
+        "wizardSemanticsCollapsedTransition",
+        "wizardSemanticsLodSelectionRestoreModel",
+        "wizardSemanticsNewNodeSuggestion",
+        "wizardSemanticsSelectionTransition",
+        "wizardSemanticsStageSelectionNormalization",
+        "wizardSemanticsTreeBlockModel",
+        "wizardSemanticsTreeDragStartTransition",
+        "wizardSemanticsTreeDropPlacement",
+        "wizardSemanticsTreeDropValid"
+      ],
+      "presentation": [
+        "wizardSemanticsTreeRowsHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "semantics_bindings": [
+          "semanticUsageForNode"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ]
+      },
+      "exports": [
+        "semanticCanUseParent",
+        "semanticDescendantSet",
+        "semanticIsDescendant",
+        "semanticRelationIcon",
+        "semanticRelationKind",
+        "semanticRelationLabel",
+        "semanticRootIndices",
+        "semanticSelectedIndices",
+        "semanticSelectionModeFromEvent",
+        "semanticSelectionSet",
+        "semanticStaticFlattenCandidates",
+        "semanticTopLevelSelected",
+        "semanticTreeRows",
+        "wizardSemanticsCollapsedTransition",
+        "wizardSemanticsLodSelectionRestoreModel",
+        "wizardSemanticsNewNodeSuggestion",
+        "wizardSemanticsSelectionTransition",
+        "wizardSemanticsStageSelectionNormalization",
+        "wizardSemanticsTreeBlockModel",
+        "wizardSemanticsTreeDragStartTransition",
+        "wizardSemanticsTreeDropPlacement",
+        "wizardSemanticsTreeDropValid",
+        "wizardSemanticsTreeRowsHtml"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/semantics/tree.js"
+    },
+    "semantics_bindings": {
+      "core": [
+        "semanticCurrentLodUnbound",
+        "semanticOwnedPayloadCount",
+        "semanticRenderOwner",
+        "semanticUnboundRenderClusterRoot",
+        "semanticUsageForNode",
+        "semanticVisualLodProfile",
+        "wizardSemanticsBindingAssignmentCommand",
+        "wizardSemanticsBindingCommandModel",
+        "wizardSemanticsBindingPickTransition",
+        "wizardSemanticsBindingsBlockModel"
+      ],
+      "presentation": [
+        "semanticBindingHealthHtml",
+        "semanticBindingRepairHtml",
+        "semanticBindingSummaryHtml",
+        "wizardSemanticsBindingRowsHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "shared": [
+          "escapeMarkup"
+        ]
+      },
+      "exports": [
+        "semanticBindingHealthHtml",
+        "semanticBindingRepairHtml",
+        "semanticBindingSummaryHtml",
+        "semanticCurrentLodUnbound",
+        "semanticOwnedPayloadCount",
+        "semanticRenderOwner",
+        "semanticUnboundRenderClusterRoot",
+        "semanticUsageForNode",
+        "semanticVisualLodProfile",
+        "wizardSemanticsBindingAssignmentCommand",
+        "wizardSemanticsBindingCommandModel",
+        "wizardSemanticsBindingPickTransition",
+        "wizardSemanticsBindingRowsHtml",
+        "wizardSemanticsBindingsBlockModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/semantics/bindings.js"
+    },
+    "semantics_workspace": {
+      "core": [
+        "semanticSelectedPanels",
+        "wizardSemanticsSelectedPanelsModel",
+        "wizardSemanticsSelectionRefreshModel",
+        "wizardSemanticsStageModel",
+        "wizardSemanticsWorkspaceModel"
+      ],
+      "presentation": [
+        "wizardSemanticsSelectedPanelsHtml",
+        "wizardSemanticsWorkspaceHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "semantics_bindings": [
+          "semanticCurrentLodUnbound",
+          "semanticOwnedPayloadCount",
+          "semanticUsageForNode"
+        ],
+        "semantics_preview": [
+          "wizardSemanticsPreviewControlModel"
+        ],
+        "semantics_tree": [
+          "semanticDescendantSet",
+          "semanticRelationIcon",
+          "semanticRelationLabel",
+          "semanticRootIndices",
+          "semanticSelectedIndices",
+          "semanticStaticFlattenCandidates",
+          "semanticTopLevelSelected",
+          "semanticTreeRows"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "vecInputs"
+        ]
+      },
+      "exports": [
+        "semanticSelectedPanels",
+        "wizardSemanticsSelectedPanelsHtml",
+        "wizardSemanticsSelectedPanelsModel",
+        "wizardSemanticsSelectionRefreshModel",
+        "wizardSemanticsStageModel",
+        "wizardSemanticsWorkspaceHtml",
+        "wizardSemanticsWorkspaceModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/semantics/workspace.js"
+    },
+    "semantics_motion": {
+      "core": [
+        "semanticJointPayload",
+        "wizardSemanticsJointPivotCommand",
+        "wizardSemanticsJointPivotPickTransition",
+        "wizardSemanticsJointUpdateCommand",
+        "wizardSemanticsMotionAngleModel",
+        "wizardSemanticsMotionAnimationStep",
+        "wizardSemanticsMotionDetachTransition",
+        "wizardSemanticsMotionPlayTransition",
+        "wizardSemanticsMotionZeroModel",
+        "wizardSemanticsNodeTransformCommand",
+        "wizardSemanticsNominalRateCommand",
+        "wizardSemanticsParentOriginPivotRequest",
+        "wizardSemanticsPreviewRateModel",
+        "wizardSemanticsVisualCenterPivotEligibility",
+        "wizardSemanticsVisualCenterPivotRequest"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "semantics_transform": [
+          "semanticWorldMatrix"
+        ],
+        "semantics_tree": [
+          "semanticRelationKind"
+        ],
+        "semantics_world_graph": [
+          "semanticCanonicalNodeAnchorMap",
+          "semanticJointLocalPointFromWorld"
+        ]
+      },
+      "exports": [
+        "semanticJointPayload",
+        "wizardSemanticsJointPivotCommand",
+        "wizardSemanticsJointPivotPickTransition",
+        "wizardSemanticsJointUpdateCommand",
+        "wizardSemanticsMotionAngleModel",
+        "wizardSemanticsMotionAnimationStep",
+        "wizardSemanticsMotionDetachTransition",
+        "wizardSemanticsMotionPlayTransition",
+        "wizardSemanticsMotionZeroModel",
+        "wizardSemanticsNodeTransformCommand",
+        "wizardSemanticsNominalRateCommand",
+        "wizardSemanticsParentOriginPivotRequest",
+        "wizardSemanticsPreviewRateModel",
+        "wizardSemanticsVisualCenterPivotEligibility",
+        "wizardSemanticsVisualCenterPivotRequest"
+      ],
+      "binding_imports": [],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/semantics/motion.js"
+    },
+    "semantics_structural": {
+      "core": [
+        "structuralEndpointForPick",
+        "structuralSelectedEndpoint",
+        "wizardSemanticsStructuralCreateLinkCommand",
+        "wizardSemanticsStructuralEndpointActionModel",
+        "wizardSemanticsStructuralGraphModel",
+        "wizardSemanticsStructuralLinkUpdateCommand",
+        "wizardSemanticsStructuralProxyUpdateCommand"
+      ],
+      "presentation": [
+        "semanticStructureModeHtml",
+        "structuralEndpointCard",
+        "structuralGraphMeshRowsHtml",
+        "structuralGraphPanelHtml"
+      ],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "semantics_tree": [
+          "semanticRootIndices"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "source_maintenance": [
+          "meshStageVisualClass"
+        ]
+      },
+      "exports": [
+        "semanticStructureModeHtml",
+        "structuralEndpointCard",
+        "structuralEndpointForPick",
+        "structuralGraphMeshRowsHtml",
+        "structuralGraphPanelHtml",
+        "structuralSelectedEndpoint",
+        "wizardSemanticsStructuralCreateLinkCommand",
+        "wizardSemanticsStructuralEndpointActionModel",
+        "wizardSemanticsStructuralGraphModel",
+        "wizardSemanticsStructuralLinkUpdateCommand",
+        "wizardSemanticsStructuralProxyUpdateCommand"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/semantics/structural.js"
+    },
+    "semantics_world_graph": {
+      "core": [
+        "semanticAxisMappingFromDirect",
+        "semanticCanonicalNodeAnchorMap",
+        "semanticCanonicalRenderWorldMatrices",
+        "semanticDisplayWorldMatrix",
+        "semanticGraphDirection",
+        "semanticGraphDisplayAnchorMap",
+        "semanticGraphLayoutOffsets",
+        "semanticGraphRadialMetrics",
+        "semanticGraphRootCenter",
+        "semanticGraphRootIndex",
+        "semanticJointLocalPointFromWorld",
+        "semanticPreviewDeltaWorld",
+        "semanticRenderBaseMatrix",
+        "semanticUnboundRenderClusterOffsets"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "axis_mapping": [
+          "axisFamily",
+          "sourceAxisToken"
+        ],
+        "semantics_bindings": [
+          "semanticRenderOwner",
+          "semanticUnboundRenderClusterRoot"
+        ],
+        "semantics_transform": [
+          "semanticNodePose",
+          "semanticWorldMatrix"
+        ],
+        "semantics_tree": [
+          "semanticIsDescendant",
+          "semanticSelectionSet"
+        ],
+        "transform_math": [
+          "composeMatrix",
+          "deg"
+        ]
+      },
+      "exports": [
+        "semanticAxisMappingFromDirect",
+        "semanticCanonicalNodeAnchorMap",
+        "semanticCanonicalRenderWorldMatrices",
+        "semanticDisplayWorldMatrix",
+        "semanticGraphDisplayAnchorMap",
+        "semanticGraphLayoutOffsets",
+        "semanticJointLocalPointFromWorld",
+        "semanticPreviewDeltaWorld",
+        "semanticRenderBaseMatrix",
+        "semanticUnboundRenderClusterOffsets"
+      ],
+      "binding_imports": [],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/semantics/world_graph.js"
+    },
+    "semantics_commands": {
+      "core": [
+        "wizardSemanticsDeleteConfirmText",
+        "wizardSemanticsDeletePlan",
+        "wizardSemanticsFlattenStaticTreeCommand",
+        "wizardSemanticsMoveToAssetSpaceCommand",
+        "wizardSemanticsRelationCommand",
+        "wizardSemanticsReparentCommand"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "semantics_bindings": [
+          "semanticOwnedPayloadCount",
+          "semanticUsageForNode"
+        ],
+        "semantics_motion": [
+          "semanticJointPayload"
+        ],
+        "semantics_tree": [
+          "semanticCanUseParent",
+          "semanticStaticFlattenCandidates",
+          "semanticTopLevelSelected"
+        ]
+      },
+      "exports": [
+        "wizardSemanticsDeleteConfirmText",
+        "wizardSemanticsDeletePlan",
+        "wizardSemanticsFlattenStaticTreeCommand",
+        "wizardSemanticsMoveToAssetSpaceCommand",
+        "wizardSemanticsRelationCommand",
+        "wizardSemanticsReparentCommand"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/semantics/commands.js"
+    },
+    "semantics_preview": {
+      "core": [
+        "wizardSemanticsGraphExplodeApplicationPlan",
+        "wizardSemanticsMotionPreviewApplicationPlan",
+        "wizardSemanticsMotionPreviewTargetModel",
+        "wizardSemanticsPreviewControlModel"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "semantics_bindings": [
+          "semanticRenderOwner",
+          "semanticUnboundRenderClusterRoot"
+        ],
+        "semantics_tree": [
+          "semanticSelectionSet"
+        ]
+      },
+      "exports": [
+        "wizardSemanticsGraphExplodeApplicationPlan",
+        "wizardSemanticsMotionPreviewApplicationPlan",
+        "wizardSemanticsMotionPreviewTargetModel",
+        "wizardSemanticsPreviewControlModel"
+      ],
+      "binding_imports": [],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/semantics/preview.js"
+    },
+    "semantics_graph_viewport": {
+      "core": [
+        "semanticGraphStructureSignature",
+        "wizardSemanticsGraphGizmoPlan",
+        "wizardSemanticsGraphObjectModel",
+        "wizardSemanticsJointGizmoPlan",
+        "wizardSemanticsViewportGizmoPickDecision",
+        "wizardSemanticsViewportMeshPickDecision"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "semantics_bindings": [
+          "wizardSemanticsBindingAssignmentCommand"
+        ],
+        "semantics_transform": [
+          "semanticWorldMatrix"
+        ],
+        "semantics_tree": [
+          "semanticRelationKind"
+        ],
+        "semantics_world_graph": [
+          "semanticDisplayWorldMatrix"
+        ],
+        "transform_math": [
+          "deg"
+        ]
+      },
+      "exports": [
+        "wizardSemanticsGraphGizmoPlan",
+        "wizardSemanticsGraphObjectModel",
+        "wizardSemanticsJointGizmoPlan",
+        "wizardSemanticsViewportGizmoPickDecision",
+        "wizardSemanticsViewportMeshPickDecision"
+      ],
+      "binding_imports": [],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [],
+      "physical_source": "src/assets/webui/model_asset_editor/semantics/graph_viewport.js"
     }
   },
   "classes": {
@@ -2996,7 +3417,7 @@
     }
   },
   "physical_split": {
-    "stage": "wave7B",
+    "stage": "wave7C",
     "composition_root": "src/assets/webui/model_asset_editor.html",
     "module_root": "src/assets/webui/model_asset_editor",
     "extracted_modules": [
@@ -3007,7 +3428,18 @@
       "source",
       "lods",
       "geometry",
-      "surfaces"
+      "surfaces",
+      "shared_forms",
+      "axis_mapping",
+      "semantics_tree",
+      "semantics_bindings",
+      "semantics_workspace",
+      "semantics_motion",
+      "semantics_structural",
+      "semantics_world_graph",
+      "semantics_commands",
+      "semantics_preview",
+      "semantics_graph_viewport"
     ],
     "policy": "move_without_redesign"
   }

@@ -1,3 +1,12 @@
+## Model Asset Editor v0.10.66 — wave 7C SEMANTICS physical split contract
+
+- Wave7C is relocation-only: all moved function bodies must remain text-identical to wave7B; frozen behavioural fixtures and command payloads are not re-baselined.
+- SEMANTICS portable ownership is physically split by responsibility into `semantics_tree`, `semantics_bindings`, `semantics_workspace`, `semantics_motion`, `semantics_structural`, `semantics_world_graph`, `semantics_commands`, `semantics_preview`, and `semantics_graph_viewport`.
+- `shared_forms` and the PURE part of `axis_mapping` are physical dependency cores because SEMANTICS portable modules may not import pure helpers from inline effect code. Their adapters remain inline.
+- Cross-file dependencies must use relative ESM imports or declared external library imports only. The physical-module test rejects unresolved relative imports and named imports not exported by the target file.
+- `state`, `editorViewState`, DOM mutation, raycasting, THREE scene mutation, status/prompt and backend `send()` remain in effect adapters; none may enter the extracted PURE files.
+- Full named-function census, ownership graph, extraction proof and frozen SOURCE/LODS/GEOMETRY/SURFACES contracts must remain unchanged except for the intentional physical ownership split.
+
 ## Model Asset Editor v0.10.66 — wave 7B physical stage-core split contract
 
 Wave7B extends the approved `MOVE, DON'T REDESIGN` relocation to SOURCE / LODS / GEOMETRY / SURFACES portable cores. `source_maintenance` portable helpers move with them because they are explicit dependencies of those stage models. The corresponding DOM/state/backend adapters remain in the composition root until an adapter-specific physical wave.

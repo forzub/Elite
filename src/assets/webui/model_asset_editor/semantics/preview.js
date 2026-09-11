@@ -1,0 +1,14 @@
+// Model Asset Editor portable core. Physical extraction wave7C: semantics_preview.
+import * as THREE from 'three';
+import {semanticRenderOwner,semanticUnboundRenderClusterRoot} from './bindings.js';
+import {semanticSelectionSet} from './tree.js';
+
+function wizardSemanticsPreviewControlModel(graphEnabled,graphExplode){
+ const amount=Number(graphExplode)||0,percent=Math.round(amount*100);
+ return {graphEnabled:!!graphEnabled,graphExplode:amount,graphExplodePercent:percent,graphExplodeLabel:`${percent}%`,explodeDisabled:!graphEnabled};
+}
+function wizardSemanticsGraphExplodeApplicationPlan(input){const lod=input?.lod||null,semanticOffsets=input?.semanticOffsets||new Map(),unboundOffsets=input?.unboundOffsets||new Map(),worlds=input?.renderWorldMatrices||[],rootWorld=input?.rootWorld?.clone?.()||new THREE.Matrix4(),desired=new Array(worlds.length);for(let i=0;i<worlds.length;i++){const world=worlds[i];if(!world){desired[i]=null;continue;}const owner=semanticRenderOwner(i,lod),cluster=owner<0?semanticUnboundRenderClusterRoot(i,lod):-1,offset=owner>=0?(semanticOffsets.get(owner)||new THREE.Vector3()):(unboundOffsets.get(cluster)||new THREE.Vector3());desired[i]=new THREE.Matrix4().makeTranslation(offset.x,offset.y,offset.z).multiply(world.clone());}const plan=[],done=new Set(),apply=i=>{if(done.has(i)||i<0||!worlds[i])return;const pi=Number(lod?.nodes?.[i]?.parentIndex??-1);if(pi>=0)apply(pi);const parentWorld=(pi>=0&&worlds[pi]?(desired[pi]||worlds[pi]):rootWorld).clone(),local=parentWorld.invert().multiply(desired[i]);plan.push({renderNodeIndex:i,localMatrix:local});done.add(i);};for(let i=0;i<worlds.length;i++)apply(i);return plan;}
+function wizardSemanticsMotionPreviewApplicationPlan(input){const targetIndices=input?.topLevelTargetRenderNodeIndices||[],deltaMatrix=input?.delta||null,worlds=input?.renderWorldMatrices||[],parentWorlds=input?.parentWorldMatrices||[],plan=[];for(const i of targetIndices){const world=worlds[i];if(!world)continue;const parentWorld=new THREE.Matrix4().copy(parentWorlds[i]||new THREE.Matrix4()),desired=new THREE.Matrix4().copy(deltaMatrix||new THREE.Matrix4()).multiply(world.clone()),local=parentWorld.invert().multiply(desired);plan.push({renderNodeIndex:Number(i),localMatrix:local});}return plan;}
+function wizardSemanticsMotionPreviewTargetModel(nodes,lod,selectedNode){const selectedSet=semanticSelectionSet(nodes||[],selectedNode),targets=new Set();for(let i=0;i<(lod?.nodes||[]).length;i++)if(selectedSet.has(Number(lod.nodes[i]?.semanticNodeIndex)))targets.add(i);return{targetRenderNodeIndices:[...targets],topLevelTargetRenderNodeIndices:[...targets].filter(i=>{const parentIndex=Number(lod?.nodes?.[i]?.parentIndex??-1);return parentIndex<0||!targets.has(parentIndex);})};}
+
+export {wizardSemanticsGraphExplodeApplicationPlan,wizardSemanticsMotionPreviewApplicationPlan,wizardSemanticsMotionPreviewTargetModel,wizardSemanticsPreviewControlModel};

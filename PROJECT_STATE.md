@@ -1,3 +1,11 @@
+## Current state — v0.10.66 wave7C SEMANTICS physical split
+
+Wave7C physically extracted the remaining SEMANTICS portable core by logical responsibility rather than as one `semantics.js` mega-module. 107 SEMANTICS PURE functions now live in nine ES modules under `src/assets/webui/model_asset_editor/semantics/`; 18 required PURE helpers also moved into `core/shared_forms.js` and `core/axis_mapping.js`. All 125 moved function bodies are source-identical to wave7B.
+
+The complete editor inventory remains 546 named functions / 259 certified / 262 static PURE / 5 EASY / 15 TRANSITIVE / 264 hard. Ownership is now 42 logical modules. Extraction proof imports 31 portable ES modules + 9 block facades and still passes all 704 frozen fixtures. SEMANTICS DOM/state/THREE/backend adapters deliberately remain inline for the later effect-module wave.
+
+Next: physically extract PHYSICS / HIT VOLUMES / DAMAGE / FINAL ASSEMBLY portable cores, then split effect adapters/infrastructure and reduce `model_asset_editor.html` to composition/bootstrap only.
+
 ## Current state — v0.10.66 wave7B physical split
 
 Logical decomposition remains complete. Physical extraction now includes the dependency roots from wave7A plus the portable SOURCE / LODS / GEOMETRY / SURFACES stage cores. Eight ownership modules have real source files: `shared`, `transform_math`, `semantics_transform`, `source_maintenance`, `source`, `lods`, `geometry`, and `surfaces`.

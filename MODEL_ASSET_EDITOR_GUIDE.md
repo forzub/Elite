@@ -1,3 +1,11 @@
+# Physical module split status — wave7C
+
+The physical split is active under `MOVE, DON'T REDESIGN`. In addition to the wave7A/wave7B dependency and stage cores, SEMANTICS PURE logic is now physically divided by responsibility under `src/assets/webui/model_asset_editor/semantics/`: `tree.js`, `bindings.js`, `workspace.js`, `motion.js`, `structural.js`, `world_graph.js`, `commands.js`, `preview.js`, and `graph_viewport.js`. `core/shared_forms.js` and `core/axis_mapping.js` hold the pure shared helpers required by those modules; their DOM/state adapters remain in the composition shell.
+
+Do not merge these files back into a generic `semantics.js`. New deterministic SEMANTICS logic belongs in the narrowest responsibility module and communicates through explicit imports. Effectful state/DOM/THREE/backend orchestration remains adapter code until the later adapter split.
+
+Current invariant: 546 named functions, 42 logical owners, 259 certified functions / 704 frozen fixtures, and 31 imported portable ES modules in extraction proof.
+
 # Physical module split status — wave7B
 
 The physical split is active under `MOVE, DON'T REDESIGN`. Real ES modules now contain shared/transform dependency roots plus SOURCE / LODS / GEOMETRY / SURFACES portable cores and the portable `source_maintenance` helpers they depend on. Stage adapters remain in `model_asset_editor.html` and continue to own `state`, DOM and backend effects.

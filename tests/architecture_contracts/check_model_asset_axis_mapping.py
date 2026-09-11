@@ -2,10 +2,12 @@
 from pathlib import Path
 import sys
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 model = (ROOT / 'src/model_asset/ModelAsset.h').read_text(encoding='utf-8')
 session = (ROOT / 'tools/model_asset_editor/ModelAssetEditorSession.cpp').read_text(encoding='utf-8')
-html = (ROOT / 'src/assets/webui/model_asset_editor.html').read_text(encoding='utf-8')
+html = load_source_bundle(ROOT)
 
 checks = [
     ('runtime canonical frame is explicitly +X right +Y up -Z nose', '+X right, +Y up, -Z forward/nose' in model),

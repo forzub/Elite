@@ -1,7 +1,10 @@
 from pathlib import Path
 
+from model_asset_editor_source_bundle import load_source_bundle
+import check_model_asset_function_purity as purity
+
 ROOT = Path(__file__).resolve().parents[2]
-WEB = (ROOT / 'src/assets/webui/model_asset_editor.html').read_text(encoding='utf-8')
+WEB = load_source_bundle(ROOT)
 CAP = (ROOT / 'tools/model_asset_editor/EDITOR_CAPABILITIES.json').read_text(encoding='utf-8')
 
 
@@ -12,6 +15,9 @@ def require(token: str, where: str = 'web') -> None:
 
 
 def body_between(start: str, end: str) -> str:
+    if start.startswith('function '):
+        name = start[len('function '):].split('(', 1)[0]
+        return purity.extract_function(WEB, name)
     a = WEB.index(start)
     b = WEB.index(end, a)
     return WEB[a:b]

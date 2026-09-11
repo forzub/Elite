@@ -1,3 +1,13 @@
+## Model Asset Editor v0.10.66 — wave 7C / SEMANTICS logical physical split
+
+- Continued physical relocation under `MOVE, DON'T REDESIGN`; no SEMANTICS algorithm, command payload or behavioural oracle was changed.
+- Moved 107 source-identical SEMANTICS PURE functions into nine responsibility modules: TREE, BINDINGS, WORKSPACE/selection presentation, MOTION/joint decisions, STRUCTURAL GRAPH, WORLD/GRAPH math, COMMAND decisions, PREVIEW application plans, and GRAPH/VIEWPORT plans.
+- Extracted 18 additional source-identical portable dependency helpers into physical `shared_forms` and `axis_mapping` cores so SEMANTICS modules do not reach back into inline HTML for pure dependencies. Total wave7C relocation: 125 functions.
+- `MODULE_OWNERSHIP_CONTRACT.json` now contains 42 logical modules. SEMANTICS effect adapters remain inline and import only the physical pure entrypoints they actually call.
+- Standalone extraction now imports 31 portable ES modules + 9 block facades while preserving the same 259 certified functions / 704 frozen fixtures. Named-function and purity census remains 546 / 259 certified / 262 static PURE / 5 EASY / 15 TRANSITIVE / 264 hard.
+- Physical-module checks now validate the real relative ESM import/export graph, so a missing file or non-exported named import fails before runtime.
+- Next physical wave: PHYSICS / HIT VOLUMES / DAMAGE / FINAL ASSEMBLY portable cores, then effect adapters/infrastructure.
+
 ## Model Asset Editor v0.10.66 — wave 7B / SOURCE + LODS + GEOMETRY + SURFACES physical core extraction
 
 - Continued the relocation-only physical split (`MOVE, DON'T REDESIGN`) after wave7A.

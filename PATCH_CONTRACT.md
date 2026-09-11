@@ -165,6 +165,15 @@ required after GEOMETRY consolidation:
   resurrect a duplicate geometry automatically.
 
 The updated SOURCE/LODS/GEOMETRY fingerprints lock this approved exception.
+### v0.10.67 SOURCE identity / Cobra OPEN behavioural repair
+
+This patch is a deliberate behavioural repair outside the wave7E move-only relocation stream. It fixes a proven hidden runtime dependency in the already-extracted axis module and reopens only SOURCE identity/presence UI sufficiently to make folder authority explicit and relinkable. It must not rebaseline the v0.10.66 purity oracle or redesign SOURCE mesh reconciliation.
+
+- `core/axis_mapping.js` must own the signed-axis token table used by persisted `axis:*` presets; OPEN may not depend on an inline HTML lexical constant.
+- For canonical Cobra, an available authored SOURCE folder owns geometry even when `RuntimeAssembly` supplies optional semantic/bootstrap context.
+- User-facing catalog presence is `📁` for an available SOURCE folder and `📄` when no linked SOURCE folder is available; `[SOURCE]` / `[RUNTIME]` are not asset-type labels.
+- SOURCE may explicitly relink a moved asset root containing `LOD0` OBJ meshes. Relinking persists the SOURCE identity and invalidates SOURCE evidence, but does not replace WORKING geometry until the existing scan/apply/SAVE flow.
+
 ### v0.10.66 function-purity refactor exception
 
 SOURCE / LODS / GEOMETRY / SURFACES remain behaviourally frozen. During the staged v0.10.66 purity migration, a protected frontend fingerprint may change only when all of the following are true: (1) the change removes a hidden read from a named helper by passing the same value explicitly through arguments/call wiring; (2) the helper has an immutable pre-change v0.10.66 input/output oracle in `FUNCTION_PURITY_CONTRACT.json`; (3) the purity harness proves identical outputs, determinism and no mutation; (4) no layout, control, authored-data, command-protocol or user-visible behaviour changes; and (5) the specific fingerprint update and rationale are documented in CHANGELOG/PROJECT_STATE. This is an explicit structural exception, not permission to bypass frozen-tab failures.

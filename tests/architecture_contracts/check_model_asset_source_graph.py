@@ -124,8 +124,10 @@ for token in (
     if token not in catalog_body:
         raise AssertionError(f"Cobra Folder/runtime split missing {token!r}")
 
-if "i.sourceAuthority==='folder'?'SOURCE':'RUNTIME'" not in web:
-    raise AssertionError("catalog SOURCE/RUNTIME marker is not driven by sourceAuthority")
+if "sourceIcon=i.sourceAvailable?'📁':'📄'" not in web:
+    raise AssertionError("catalog source-presence icon is not driven by sourceAvailable")
+if '{"sourceAvailable", sourceAvailable}' not in session:
+    raise AssertionError("catalog payload does not publish actual SOURCE-folder availability")
 
 for token in (
     "Runtime descriptors are semantic bootstrap, never a geometry allow-list.",
@@ -291,5 +293,5 @@ cap = json.loads(text("tools/model_asset_editor/EDITOR_CAPABILITIES.json"))
 if "source_hash_mesh_graph" not in {x["id"] for x in cap["protected_capabilities"]}:
     raise AssertionError("source_hash_mesh_graph capability is not protected")
 
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.66"')
-print("[PASS] v0.10.66 exact-hash SOURCE synchronization / per-mesh source graph")
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.67"')
+print("[PASS] v0.10.67 exact-hash SOURCE synchronization / per-mesh source graph")

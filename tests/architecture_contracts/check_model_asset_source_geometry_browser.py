@@ -50,13 +50,13 @@ def function_body(data: str, name: str) -> str:
 web_rel = "src/assets/webui/model_asset_editor.html"
 web = load_source_bundle(ROOT)
 
-# Folder authority, not a hand-maintained label, drives the catalog SOURCE tag.
-for token in [
-    "i.sourceAuthority==='folder'?'SOURCE':'RUNTIME'",
-    "[${authority}]",
-]:
-    if token not in function_body(web, "renderCatalog"):
-        raise AssertionError(f"catalog SOURCE/runtime authority label missing {token!r}")
+# v0.10.67: actual linked-folder availability, not RuntimeAssembly bootstrap, drives
+# the user-facing catalog SOURCE-presence icon.
+catalog = function_body(web, "renderCatalog")
+if "sourceIcon=i.sourceAvailable?'📁':'📄'" not in catalog:
+    raise AssertionError("catalog SOURCE presence icon is not driven by sourceAvailable")
+if "[SOURCE]" in catalog or "[RUNTIME]" in catalog:
+    raise AssertionError("catalog still exposes SOURCE/RUNTIME authority labels")
 
 # The SOURCE geometry group has its own compact LOD browser and visibility controls.
 for token in [
@@ -138,5 +138,5 @@ if "state.wizardStage!==\'source\'" not in function_body(web, "geometryInventory
 # Contract and visible version fence.
 require("tools/model_asset_editor/PATCH_CONTRACT.md", "SOURCE active-LOD mesh browser is viewport-only")
 require("tools/model_asset_editor/PATCH_CONTRACT.md", "first checkbox interaction isolates that mesh")
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.66"')
-print("[PASS] model asset editor v0.10.66 SOURCE geometry LOD browser / visibility / selection")
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.67"')
+print("[PASS] model asset editor v0.10.67 SOURCE geometry LOD browser / visibility / selection")

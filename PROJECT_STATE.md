@@ -1,3 +1,11 @@
+## Current repair candidate — v0.10.67 Cobra OPEN / SOURCE identity
+
+Runtime evidence from canonical `cobra_mk1` WORKING r31 proved that the backend payload is valid Cobra data, but WebUI OPEN aborted in `acceptAssetState()` with `ReferenceError: axisDirectionTokens is not defined` while parsing the persisted custom axis preset. The extracted `core/axis_mapping.js` depended on an inline HTML lexical constant, so the previous station scene remained visible because `rebuildScene()` never ran. v0.10.67 closes that module dependency.
+
+The same repair makes SOURCE presence literal instead of conflating it with runtime semantic bootstrap: canonical Cobra uses its authored folder for geometry whenever available; the selector shows `📁` for an available linked SOURCE folder and `📄` otherwise; SOURCE exposes an explicit relink action for a moved asset root containing LOD OBJ folders. RuntimeAssembly remains compatibility/bootstrap context only.
+
+This is a separate behavioural repair discovered during wave7E runtime smoke. The accepted v0.10.66 purity/extraction census remains unchanged; after user runtime acceptance, continue wave7E effect/adapter physical relocation.
+
 ## Current state — v0.10.66 wave7D remaining portable-core physical split
 
 Wave7D physically extracts the remaining certified portable cores for PHYSICS, HIT VOLUMES, DAMAGE and FINAL ASSEMBLY. Forty function bodies move source-identically into 15 responsibility-focused ES modules; their state/DOM/backend/THREE adapters deliberately remain in the composition shell for the next effect-module wave.

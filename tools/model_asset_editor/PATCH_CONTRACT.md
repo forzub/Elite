@@ -78,6 +78,8 @@ If a new authored LOD folder appears after a WORKING save, `SCAN SOURCE CHANGES`
 
 Runtime-registry assets that have no folder geometry authority may retain their compatibility behavior. A runtime descriptor is allowed to bootstrap semantic identity, but must never act as a geometry allow-list when an authored Folder SOURCE exists.
 
+A same-asset explicit whole-SOURCE reimport is an in-memory mutation, not a new authoring session. Before the wizard shell is reset for fresh SOURCE import, the current global stage validity must be snapshotted. After the fresh SOURCE payload/provenance graph is rebuilt, that snapshot is restored and only then invalidated from SOURCE. The required transition is `COMPLETE -> STALE`, `STALE -> STALE`, `NEEDS_FIX -> NEEDS_FIX`, `NOT_STARTED -> NOT_STARTED`; a reimport must never erase previously reached stage history to `NOT_STARTED` merely because `loadWizardState()` rebuilt the shell. Ordered progression is unchanged: a stale SOURCE still requires CHECK before the next initial-authoring stage CHECK is unlocked.
+
 ## 4. Geometry authority vs semantic bootstrap
 
 `CatalogSourceAuthority` answers **where geometry is authoritative**. `CatalogBootstrapMode` answers **how initial semantic identity may be bootstrapped**. They are different axes.
@@ -86,10 +88,17 @@ For canonical Cobra when its authored folder exists:
 
 - geometry authority = `Folder`;
 - semantic bootstrap may = `RuntimeAssembly`;
-- catalog label must say `[SOURCE]`, not `[runtime]`;
-- source scan/reload must route to the folder, not return through a runtime-registry gate.
+- catalog/UI SOURCE presence is determined from the actual linked folder, not from the bootstrap enum;
+- the asset selector shows `📁` when that SOURCE folder is available and `📄` when it is unavailable; `[SOURCE]` / `[RUNTIME]` are not user-facing asset-type labels;
+- source scan/reload must route to the linked folder, not return through a runtime-registry gate.
 
 A runtime assembly descriptor may seed module/semantic identity. It must not suppress an ordinary OBJ that exists in the selected Folder SOURCE but is absent from the C++ registry descriptor.
+
+### v0.10.67 explicit SOURCE identity / relink exception
+
+SOURCE remains folder-authoritative for geometry. If the saved folder moved or is unavailable, the SOURCE tab may explicitly relink `sourceAssetDirectory` to a user-supplied asset root only after validating that it contains an authored LOD0 with OBJ meshes. Relinking changes SOURCE identity/evidence and therefore invalidates from SOURCE, but it must not silently replace resident WORKING geometry; the existing SCAN/APPLY/CHECK/SAVE workflow remains authoritative. The restored/relinked physical folder identity, not `CatalogSourceAuthority`, decides whether SOURCE scan is available.
+
+The physical `core/axis_mapping.js` module owns every constant required to parse persisted custom axis presets. A saved `axis:*` mapping must never depend on an inline HTML lexical binding; OPEN must reach `rebuildScene()` for such WORKING assets.
 
 ## 5. RELOAD LOD is not RELOAD FROM SOURCE
 

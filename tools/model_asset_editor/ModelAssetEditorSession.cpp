@@ -2981,18 +2981,37 @@ ModelAssetEditorSession::ModelAssetEditorSession(
     // runtime-assembly import so legacy descriptor semantics are preserved. The
     // other folders are raw folder-authoritative source candidates.
     const auto runtimeCobraDirectory = runtimeAssemblySourceDirectory(ObjectType::CobraMk1);
+    const bool runtimeCobraFolderAvailable = !runtimeCobraDirectory.empty() &&
+        sourceFolderAssetAvailable(m_sourceAssetsRoot, runtimeCobraDirectory);
     bool haveCanonicalCobra = false;
+
+    // The gameplay registry is semantic/bootstrap context, not geometry authority.
+    // If its authored folder is present, register canonical cobra_mk1 directly as
+    // Folder SOURCE even when the generic ship-folder discovery path fails.
+    if (runtimeCobraFolderAvailable)
+    {
+        m_catalog.push_back({
+            "cobra_mk1",
+            std::string("Cobra Mk.I — ") + runtimeCobraDirectory.filename().string(),
+            ObjectType::CobraMk1,
+            runtimeCobraDirectory,
+            CatalogSourceAuthority::Folder,
+            CatalogBootstrapMode::RuntimeAssembly
+        });
+        haveCanonicalCobra = true;
+    }
+
     for (const auto& directory : discoverShipSourceDirectories(m_sourceAssetsRoot))
     {
         const bool runtime = !runtimeCobraDirectory.empty() &&
-            lowerText(directory.generic_string()) == lowerText(runtimeCobraDirectory.generic_string());
+            lowerText(directory.lexically_normal().generic_string()) ==
+            lowerText(runtimeCobraDirectory.lexically_normal().generic_string());
+        if (runtime && haveCanonicalCobra) continue;
         m_catalog.push_back({
             runtime ? "cobra_mk1" : catalogIdForShipFolder(directory),
             std::string("Cobra Mk.I — ") + directory.filename().string(),
             ObjectType::CobraMk1,
             directory,
-            // Geometry is folder-authoritative even when the legacy runtime
-            // assembly is still useful as a bootstrap for semantic identity.
             CatalogSourceAuthority::Folder,
             runtime ? CatalogBootstrapMode::RuntimeAssembly : CatalogBootstrapMode::Folder
         });
@@ -3001,8 +3020,8 @@ ModelAssetEditorSession::ModelAssetEditorSession(
     if (!haveCanonicalCobra)
     {
         const std::string runtimeLabel = runtimeCobraDirectory.empty()
-            ? "Cobra Mk.I — runtime assembly"
-            : std::string("Cobra Mk.I — ") + runtimeCobraDirectory.filename().string() + " [runtime]";
+            ? "Cobra Mk.I"
+            : std::string("Cobra Mk.I — ") + runtimeCobraDirectory.filename().string();
         m_catalog.push_back({
             "cobra_mk1", runtimeLabel, ObjectType::CobraMk1,
             runtimeCobraDirectory, CatalogSourceAuthority::RuntimeAssembly, CatalogBootstrapMode::RuntimeAssembly
@@ -3093,8 +3112,7 @@ std::filesystem::path ModelAssetEditorSession::selectedSourceAssetRoot() const
         m_catalog.begin(), m_catalog.end(), [&](const CatalogEntry& entry) {
             return entry.id == m_selectedId;
         });
-    if (catalog == m_catalog.end() || catalog->sourceAuthority != CatalogSourceAuthority::Folder)
-        return {};
+    if (catalog == m_catalog.end()) return {};
     const auto directory = m_loadedSourceAssetDirectory.empty()
         ? catalog->sourceDirectory : m_loadedSourceAssetDirectory;
     return resolveSourceFolderAssetRoot(m_sourceAssetsRoot, directory);
@@ -3115,17 +3133,14 @@ std::filesystem::path ModelAssetEditorSession::selectedSourceFilePath(
         m_catalog.begin(), m_catalog.end(), [&](const CatalogEntry& entry) {
             return entry.id == m_selectedId;
         });
-    if (catalog == m_catalog.end() || catalog->sourceAuthority != CatalogSourceAuthority::Folder)
-        return editorSourceFilePath(m_sourceAssetsRoot, sourcePath); // legacy runtime-registry assets only
+    if (catalog == m_catalog.end())
+        return editorSourceFilePath(m_sourceAssetsRoot, sourcePath);
 
     const auto directory = m_loadedSourceAssetDirectory.empty()
         ? catalog->sourceDirectory : m_loadedSourceAssetDirectory;
     const auto assetRoot = resolveSourceFolderAssetRoot(m_sourceAssetsRoot, directory);
     if (assetRoot.empty())
-    {
-        if (error) *error = "configured SOURCE asset root is unavailable";
-        return {};
-    }
+        return editorSourceFilePath(m_sourceAssetsRoot, sourcePath); // legacy runtime-registry fallback only
 
     std::filesystem::path candidate(sourcePath);
     if (!candidate.is_absolute()) candidate = m_sourceAssetsRoot / candidate;
@@ -3143,6 +3158,80 @@ std::filesystem::path ModelAssetEditorSession::selectedSourceFilePath(
     }
     return candidate;
 }
+
+bool ModelAssetEditorSession::setSourceAssetDirectory(const std::string& rawPath)
+{
+    if (m_selectedId.empty() || m_asset.assetId.empty())
+    {
+        sendStatus("Cannot link SOURCE folder: no asset is loaded", true);
+        return false;
+    }
+
+    std::filesystem::path requested(rawPath);
+    if (requested.empty())
+    {
+        sendStatus("Cannot link SOURCE folder: path is empty", true);
+        return false;
+    }
+    requested = requested.lexically_normal();
+
+    const auto resolved = resolveSourceFolderAssetRoot(m_sourceAssetsRoot, requested);
+    if (resolved.empty() || !sourceFolderAssetAvailable(m_sourceAssetsRoot, requested))
+    {
+        sendStatus(
+            "Cannot link SOURCE folder: select the asset root containing LOD0 with OBJ meshes: " +
+            requested.generic_string(), true);
+        return false;
+    }
+
+    // Persist a relative identity when the folder is inside the configured SOURCE
+    // root. External folders remain absolute so a moved project root does not
+    // silently redirect this asset to another directory with the same basename.
+    std::filesystem::path stored = resolved;
+    std::error_code ec;
+    const auto relative = std::filesystem::relative(resolved, m_sourceAssetsRoot, ec);
+    if (!ec && !relative.empty())
+    {
+        const auto generic = relative.lexically_normal().generic_string();
+        if (generic != "." && generic != ".." && generic.rfind("../", 0) != 0)
+            stored = relative.lexically_normal();
+    }
+
+    const auto oldDirectory = m_loadedSourceAssetDirectory.lexically_normal();
+    m_loadedSourceAssetDirectory = stored;
+
+    auto catalog = std::find_if(
+        m_catalog.begin(), m_catalog.end(), [&](const CatalogEntry& entry) {
+            return entry.id == m_selectedId;
+        });
+    if (catalog != m_catalog.end())
+    {
+        catalog->sourceDirectory = stored;
+        // A real linked folder owns geometry reconciliation. RuntimeAssembly may
+        // still remain bootstrapMode for gameplay/semantic compatibility.
+        catalog->sourceAuthority = CatalogSourceAuthority::Folder;
+    }
+
+    if (oldDirectory != m_loadedSourceAssetDirectory)
+    {
+        invalidateWizardFrom("source");
+        markEditorStateDirty();
+    }
+    syncDirty();
+
+    m_server.broadcastText(json({
+        {"type", "source_directory_updated"},
+        {"sourceAssetDirectory", m_loadedSourceAssetDirectory.generic_string()},
+        {"sourceAssetRoot", resolved.generic_string()}
+    }).dump());
+    sendCatalog();
+    sendAssetMetadata();
+    sendStatus(
+        "SOURCE folder linked: " + resolved.generic_string() +
+        ". Run SCAN SOURCE CHANGES, then CHECK SOURCE; SAVE persists the link.");
+    return true;
+}
+
 
 ModelAssetEditorSession::EditorAuthoringState ModelAssetEditorSession::captureEditorAuthoringState() const
 {
@@ -6861,6 +6950,11 @@ void ModelAssetEditorSession::sendCatalog()
         const bool haveLegacyV2 = std::filesystem::exists(legacyPath);
         const std::uint32_t packageVersion = havePackage ? packageFormatVersion(packagePath) : 0u;
         const std::uint32_t legacyVersion = havePackage ? packageVersion : (haveLegacyV2 ? packageFormatVersion(legacyPath) : 0u);
+        const auto effectiveSourceDirectory = entry.id == m_selectedId && !m_loadedSourceAssetDirectory.empty()
+            ? m_loadedSourceAssetDirectory.lexically_normal()
+            : entry.sourceDirectory.lexically_normal();
+        const bool sourceAvailable = !effectiveSourceDirectory.empty() &&
+            sourceFolderAssetAvailable(m_sourceAssetsRoot, effectiveSourceDirectory);
         items.push_back({
             {"id", entry.id},
             {"displayName", entry.displayName},
@@ -6869,7 +6963,11 @@ void ModelAssetEditorSession::sendCatalog()
             {"legacyPackage", (havePackage && packageVersion > 0u && packageVersion < ModelAssetFormatVersion) || (!havePackage && haveLegacyV2)},
             {"legacyVersion", legacyVersion},
             {"sourceAuthority", entry.sourceAuthority == CatalogSourceAuthority::Folder ? "folder" : "runtime_registry"},
-            {"sourceDirectory", entry.sourceDirectory.generic_string()}
+            {"sourceAvailable", sourceAvailable},
+            {"sourceDirectory", effectiveSourceDirectory.generic_string()},
+            {"sourceRoot", sourceAvailable
+                ? resolveSourceFolderAssetRoot(m_sourceAssetsRoot, effectiveSourceDirectory).generic_string()
+                : std::string()}
         });
     }
     m_server.broadcastText(json({
@@ -6886,6 +6984,9 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     if (it == m_catalog.end()) { sendStatus("Unknown asset id: " + id, true); return false; }
 
     const bool sameSelection = m_selectedId == id;
+    const bool preserveStageValidity = forceReimport && sameSelection;
+    const StageValidityState previousStageValidity = preserveStageValidity
+        ? captureStageValidity() : StageValidityState{};
     const bool preservePhysicalProfile = forceReimport && sameSelection;
     const PhysicalSizeProfile previousPhysicalProfile = m_asset.physicalSize;
     const bool preserveOrientationOverrides = forceReimport && sameSelection;
@@ -6941,21 +7042,26 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     // Compatibility phrase retained for architecture guards: source OBJ/assembly.
     const auto importSelectedSource = [&](ModelAsset& target) -> bool
     {
-        if (it->sourceAuthority == CatalogSourceAuthority::Folder &&
-            !sourceFolderAssetAvailable(m_sourceAssetsRoot, it->sourceDirectory))
+        const auto sourceDirectory = m_loadedSourceAssetDirectory.empty()
+            ? it->sourceDirectory.lexically_normal()
+            : m_loadedSourceAssetDirectory.lexically_normal();
+        const bool folderAvailable = !sourceDirectory.empty() &&
+            sourceFolderAssetAvailable(m_sourceAssetsRoot, sourceDirectory);
+        if (it->sourceAuthority == CatalogSourceAuthority::Folder && !folderAvailable)
         {
             error = "folder-authoritative source is unavailable for '" + it->id +
-                "': expected " + it->sourceDirectory.generic_string() +
+                "': expected " + sourceDirectory.generic_string() +
                 "/LOD0/*.obj under configured source root " +
                 m_sourceAssetsRoot.generic_string();
             return false;
         }
         if (it->bootstrapMode == CatalogBootstrapMode::RuntimeAssembly)
             return importRuntimeAssembly(
-                m_sourceAssetsRoot, it->sourceDirectory, it->type, it->id, it->displayName, target,
+                m_sourceAssetsRoot, folderAvailable ? sourceDirectory : it->sourceDirectory,
+                it->type, it->id, it->displayName, target,
                 &error, &warning, importProgress);
         return importSourceFolderAsset(
-            m_sourceAssetsRoot, it->sourceDirectory, it->type, it->id,
+            m_sourceAssetsRoot, sourceDirectory, it->type, it->id,
             it->displayName, target, &error, &warning, importProgress);
     };
 
@@ -7008,7 +7114,12 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
             applyStageValidity(workingValidity);
             m_workingSavedAtUtc = savedAtUtc;
             m_workingSaveRevision = saveRevision;
-            if (!savedSourceDirectory.empty()) m_loadedSourceAssetDirectory = savedSourceDirectory.lexically_normal();
+            if (!savedSourceDirectory.empty())
+            {
+                m_loadedSourceAssetDirectory = savedSourceDirectory.lexically_normal();
+                if (sourceFolderAssetAvailable(m_sourceAssetsRoot, m_loadedSourceAssetDirectory))
+                    it->sourceAuthority = CatalogSourceAuthority::Folder;
+            }
         }
         else
         {
@@ -7189,7 +7300,12 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
             applyEditorAuthoringState(std::move(productionEditorState));
             applyStageValidity(productionValidity);
             m_workingSaveRevision = productionRevision;
-            if (!productionSourceDirectory.empty()) m_loadedSourceAssetDirectory = productionSourceDirectory.lexically_normal();
+            if (!productionSourceDirectory.empty())
+            {
+                m_loadedSourceAssetDirectory = productionSourceDirectory.lexically_normal();
+                if (sourceFolderAssetAvailable(m_sourceAssetsRoot, m_loadedSourceAssetDirectory))
+                    it->sourceAuthority = CatalogSourceAuthority::Folder;
+            }
         }
         else
         {
@@ -7274,6 +7390,13 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         m_meshPreparationRecords.clear();
         m_rawMeshSnapshots.clear();
         m_geometryTopologyClasses.clear();
+        // loadWizardState() intentionally resets the in-memory wizard shell before
+        // SOURCE import. For a same-asset explicit reimport, restore the pre-import
+        // stage validity only after every fresh SOURCE payload/record has been
+        // rebuilt, then invalidate SOURCE and downstream in the normal way. This
+        // preserves COMPLETE->STALE / STALE->STALE / NEEDS_FIX->NEEDS_FIX instead
+        // of silently degrading every previously reached stage to NOT_STARTED.
+        if (preserveStageValidity) applyStageValidity(previousStageValidity);
         invalidateWizardFrom("source");
     }
 
@@ -7283,6 +7406,7 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     if (createInitialWorkingBaseline && !saveWorkingAsset(true)) return false;
 
     sendProgress("reading", "LOAD VIEW", 0, 1, workingAssetPath());
+    sendCatalog();
     sendAsset();
     if (!warning.empty()) sendStatus(warning);
     else if (forceReimport)
@@ -7994,26 +8118,26 @@ void ModelAssetEditorSession::sendSourceChangeScan()
         m_catalog.begin(), m_catalog.end(), [&](const CatalogEntry& entry) {
             return entry.id == m_selectedId;
         });
-    if (catalog == m_catalog.end() || catalog->sourceAuthority != CatalogSourceAuthority::Folder)
+    if (catalog == m_catalog.end())
     {
-        m_server.broadcastText(json({
-            {"type", "source_change_scan_result"}, {"supported", false},
-            {"message", "This asset has no folder-authoritative geometry SOURCE"},
-            {"rows", json::array()}
-        }).dump());
-        sendStatus("SOURCE scan refused: selected asset has no folder-authoritative geometry source", true);
+        sendStatus("SOURCE scan refused: selected asset is not in the catalog", true);
         return;
     }
 
-    // The folder identity that created/last saved this working state is the scan
-    // authority. Catalog discovery is only a bootstrap; SCAN never guesses a
-    // sibling folder with a similar name.
+    // The linked folder is SOURCE authority for reconciliation regardless of
+    // whether gameplay/runtime metadata is also used as a semantic bootstrap.
     const auto sourceDirectory = m_loadedSourceAssetDirectory.empty()
         ? catalog->sourceDirectory.lexically_normal()
         : m_loadedSourceAssetDirectory.lexically_normal();
-    if (sourceDirectory.empty())
+    if (sourceDirectory.empty() || !sourceFolderAssetAvailable(m_sourceAssetsRoot, sourceDirectory))
     {
-        sendStatus("SOURCE scan refused: the loaded save has no source folder identity", true);
+        m_server.broadcastText(json({
+            {"type", "source_change_scan_result"}, {"supported", false},
+            {"message", "The linked SOURCE folder is unavailable"},
+            {"sourceAssetDirectory", sourceDirectory.generic_string()},
+            {"rows", json::array()}
+        }).dump());
+        sendStatus("SOURCE scan refused: linked SOURCE folder is unavailable; choose a new SOURCE folder", true);
         return;
     }
 
@@ -10559,6 +10683,11 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         }
 
         if (m_asset.assetId.empty()) { sendStatus("No asset loaded", true); return; }
+        if (command == "set_source_asset_directory")
+        {
+            setSourceAssetDirectory(message.value("path", std::string()));
+            return;
+        }
         if (command == "scan_source_changes") { sendSourceChangeScan(); return; }
         if (command == "confirm_source_mesh_deletion")
         {

@@ -193,6 +193,7 @@ private:
         const std::string& sourcePath,
         std::string* error = nullptr) const;
     std::filesystem::path selectedSourceAssetRoot() const;
+    bool setSourceAssetDirectory(const std::string& rawPath);
     using StageValidityState = std::map<std::string, std::string>;
     EditorAuthoringState captureEditorAuthoringState() const;
     StageValidityState captureStageValidity() const;

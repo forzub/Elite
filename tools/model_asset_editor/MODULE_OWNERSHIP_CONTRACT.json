@@ -1306,7 +1306,9 @@
         "STATUS_PROMPT",
         "STORAGE_NETWORK",
         "TIMERS_EVENTS"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/effects/i18n.js",
+      "physical_factory": "createI18nEffects"
     },
     "lod_runtime": {
       "core": [
@@ -3753,7 +3755,7 @@
     }
   },
   "physical_split": {
-    "stage": "wave7D",
+    "stage": "wave7E",
     "composition_root": "src/assets/webui/model_asset_editor.html",
     "module_root": "src/assets/webui/model_asset_editor",
     "extracted_modules": [
@@ -3792,6 +3794,9 @@
       "final_assembly_build",
       "final_assembly_commands"
     ],
-    "policy": "move_without_redesign"
+    "policy": "move_without_redesign",
+    "effect_extracted_modules": [
+      "i18n"
+    ]
   }
 }

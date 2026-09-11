@@ -315,6 +315,8 @@ CHECK stage S
 
 Если CHECK изменил stage status, это обычное изменение текущего editor state: глобальный SAVE становится активным и пользователь сам решает, фиксировать ли его. Изменение upstream данных снова делает затронутую стадию и downstream `stale`.
 
+Полный `RELOAD ALL SOURCE MESHES` для уже открытого asset сохраняет историю stage validity через сам reimport и затем применяет обычную invalidation от SOURCE. Поэтому ранее пройденные стадии становятся `STALE`, а не `NOT STARTED`; `NEEDS FIX` не маскируется. Это не отменяет progression gate: после изменения SOURCE его CHECK надо пройти заново, прежде чем продолжать первоначальную последовательность проверок.
+
 `VALIDATE` использует ту же кнопку CHECK, но дополнительно показывает полный production validation report. Отдельной второй кнопки `RUN FULL VALIDATION` нет.
 
 `BUILD` — единственное исключение: это terminal production action. Перед BUILD рабочее состояние должно быть сохранено (`dirty == false`). BUILD повторно проверяет production contract и записывает именно сохранённый WORKING ASSET в production `.elmodel/.elmesh`, после чего обновляет `production_state.json`.

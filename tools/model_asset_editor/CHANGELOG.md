@@ -1,3 +1,19 @@
+## 0.10.67 — Cobra OPEN / SOURCE identity and relink repair (2026-09-11)
+
+- Fixed the canonical Cobra WORKING OPEN crash exposed after physical module extraction: `core/axis_mapping.js` referenced `axisDirectionTokens` from the HTML module scope. Saved custom axis presets such as `axis:+Z,+Y,-X` therefore threw `ReferenceError` inside `acceptAssetState()` before `rebuildScene()`, leaving the previously rendered asset visible even though the new Cobra payload had arrived. The token table now belongs to the extracted axis module itself.
+- Canonical `cobra_mk1` now registers authored folder geometry directly whenever the runtime descriptor's SOURCE folder is actually available. `RuntimeAssembly` remains an optional semantic/bootstrap provider and no longer determines whether folder geometry exists.
+- Asset selector SOURCE presence is now explicit and literal: `📁` when the configured/loaded SOURCE asset folder is available, `📄` when it is not. The misleading `[SOURCE]` / `[RUNTIME]` suffix is removed from the user-facing selector.
+- SOURCE now has an explicit **SET SOURCE FOLDER** action. A moved/lost asset root can be relinked to a folder containing `LOD0`, `LOD1`, ... OBJ folders; the path is validated, persisted through the existing editor-state `sourceAssetDirectory`, invalidates SOURCE evidence when changed, and does not mutate WORKING geometry until the existing scan/apply/SAVE workflow is used.
+- SOURCE scan and per-mesh SOURCE resolution use the restored/relinked folder identity rather than treating `CatalogSourceAuthority` as a proxy for physical folder availability.
+- Added `check_model_asset_v01067_source_identity.py` and an explicit SOURCE freeze exception for the relink control/catalog-presence repair. Existing v0.10.66 purity/extraction oracles remain unchanged.
+
+## 0.10.66 — same-asset SOURCE reimport stage-validity hotfix (2026-09-11)
+
+- Fixed a lifecycle ordering defect in `selectAsset(..., forceReimport=true)`: `loadWizardState()` rebuilt the wizard shell before SOURCE invalidation and therefore erased every prior global stage status to `NOT_STARTED`.
+- Same-asset whole-SOURCE reimport now snapshots stage validity before the shell reset, rebuilds fresh SOURCE payload/provenance, restores only the aggregate stage history, and then invalidates from SOURCE. The preserved transitions are `COMPLETE -> STALE`, `STALE -> STALE`, `NEEDS_FIX -> NEEDS_FIX`, `NOT_STARTED -> NOT_STARTED`.
+- The fix deliberately does not restore per-mesh certification for reimported SOURCE bytes and does not bypass ordered wizard progression. Fresh/reimported mesh evidence remains pending, and a stale SOURCE must be CHECKed again before the next initial-authoring stage CHECK.
+- Added `check_model_asset_reimport_stage_validity.py` to lock the snapshot/reset/rebuild/restore/invalidate ordering and prevent this regression.
+
 ## 0.10.66 — dynamic SEMANTICS/shared UI localization + regression fence (2026-09-09)
 
 - Routed the remaining SEMANTICS and shared SEMANTICS/PHYSICS/DAMAGE dynamic user-facing strings through `tr()`, including tree/binding/motion/structural panels, inspectors, prompts, confirmations, statuses and backend status translation at the WebUI boundary.

@@ -107,8 +107,11 @@ for required in (
         raise AssertionError(f"missing stale-production LOD contract {required!r}")
 
 web = load_source_bundle(ROOT)
-if "i.sourceAuthority==='folder'?'SOURCE':'RUNTIME'" not in web:
-    raise AssertionError("catalog authority decoration no longer derives from sourceAuthority")
+if "sourceIcon=i.sourceAvailable?'📁':'📄'" not in web:
+    raise AssertionError("catalog SOURCE-presence decoration is not driven by actual linked-folder availability")
+render_catalog = web[web.index("function renderCatalog()"):web.index("const commandLabels=")]
+if "[SOURCE]" in render_catalog or "[RUNTIME]" in render_catalog:
+    raise AssertionError("catalog must not expose bootstrap/authority enums as user-facing asset type labels")
 for required in (
     "staleSaved=payloads.filter",
     "model_editor.wizard.lods.stale_saved",

@@ -5192,6 +5192,27 @@
       "es": "NO ESCANEADO",
       "ja": "未スキャン"
     },
+    "model_editor.source.relink": {
+      "en": "SET SOURCE FOLDER",
+      "ru": "УКАЗАТЬ ПАПКУ ИСХОДНИКА",
+      "zh-Hans": "设置源文件夹",
+      "es": "DEFINIR CARPETA DE ORIGEN",
+      "ja": "ソースフォルダーを指定"
+    },
+    "model_editor.source.relink_prompt": {
+      "en": "Select the asset SOURCE folder containing LOD0, LOD1, ...",
+      "ru": "Укажите папку SOURCE этого объекта, внутри которой находятся LOD0, LOD1, ...",
+      "zh-Hans": "选择此资源的 SOURCE 文件夹，其中包含 LOD0、LOD1、...",
+      "es": "Seleccione la carpeta SOURCE del recurso que contiene LOD0, LOD1, ...",
+      "ja": "LOD0、LOD1、... を含むこのアセットの SOURCE フォルダーを指定してください"
+    },
+    "model_editor.source.relink_hint": {
+      "en": "SOURCE is the asset folder containing LOD0, LOD1, ... folders with OBJ meshes. If the folder moved, relink it here. Relinking does not replace WORKING geometry until SOURCE changes are scanned/applied and SAVE is pressed.",
+      "ru": "SOURCE — это папка объекта, внутри которой находятся папки LOD0, LOD1, ... с OBJ-мешами. Если папка была перенесена, укажите новый путь здесь. Перепривязка сама по себе не заменяет геометрию WORKING: сначала выполняется сканирование/применение изменений SOURCE, затем SAVE.",
+      "zh-Hans": "SOURCE 是资源根文件夹，其中包含带 OBJ 网格的 LOD0、LOD1、... 文件夹。如果文件夹已移动，请在此重新指定路径。重新绑定本身不会替换 WORKING 几何；需先扫描/应用 SOURCE 更改，然后执行 SAVE。",
+      "es": "SOURCE es la carpeta raíz del recurso que contiene las carpetas LOD0, LOD1, ... con mallas OBJ. Si la carpeta se movió, vuelva a vincularla aquí. Volver a vincular no reemplaza por sí solo la geometría WORKING: primero escanee/aplique los cambios SOURCE y luego pulse SAVE.",
+      "ja": "SOURCE は OBJ メッシュを含む LOD0、LOD1、... フォルダーを持つアセットのルートフォルダーです。移動した場合はここで再リンクしてください。再リンクだけでは WORKING ジオメトリは置き換わりません。SOURCE の変更をスキャン/適用してから SAVE してください。"
+    },
     "model_editor.maintenance.scan": {
       "en": "SCAN SOURCE CHANGES",
       "ru": "СКАНИРОВАТЬ ИЗМЕНЕНИЯ SOURCE",

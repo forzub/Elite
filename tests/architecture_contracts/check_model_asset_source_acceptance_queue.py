@@ -89,7 +89,7 @@ for token in (
     if token not in CONTRACT:
         raise AssertionError(f"PATCH_CONTRACT missing acceptance queue rule: {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.66"' not in VERSION:
-    raise AssertionError("editor version is not 0.10.66")
+if 'ModelAssetEditorVersion = "0.10.67"' not in VERSION:
+    raise AssertionError("editor version is not 0.10.67")
 
-print("[PASS] model asset editor v0.10.66 SOURCE checked-change acceptance queue")
+print("[PASS] model asset editor v0.10.67 SOURCE checked-change acceptance queue")

@@ -10,7 +10,10 @@ SOURCE call wiring may pass formerly hidden state as explicit arguments to behav
 frozen pure helpers, without changing SOURCE layout, UX or authored data semantics.
 The v0.10.66 wizard decomposition is a third structural-only exception: the SOURCE branch
 may dispatch to a dedicated stage wrapper while its calculations/HTML assembly move behind
-behaviourally frozen pure functions. The accepted SOURCE controls/order remain frozen.
+behaviourally frozen pure functions. The v0.10.67 SOURCE identity repair is an explicit
+behavioural exception: SOURCE maintenance gains one relink-folder control because saved
+WORKING assets must be able to recover a moved/missing authoring folder without reimporting
+from runtime metadata. The established stage order and geometry browser remain frozen.
 Further protected changes still require PATCH_CONTRACT.md / CHANGELOG.md rationale.
 """
 from __future__ import annotations
@@ -32,9 +35,9 @@ WIZARD_STAGE_ORDER = [
 
 # SHA-256 over the protected SOURCE implementation surface below.
 # Baseline: v0.10.62 layout + v0.10.64 persistent instance links + v0.10.66
-# behaviourally equivalent purity call wiring through wave 5 plus SOURCE stage decomposition
+# purity/decomposition + explicit v0.10.67 SOURCE-folder relink recovery control.
 # into certified pure model/HTML builders and a narrow effect adapter.
-SOURCE_TAB_SHA256 = "228026eba5285df8014f26253d2fe3bbb7ec7a30e16bd911bab7cca312374fbb"
+SOURCE_TAB_SHA256 = "ddacf6e2cb4d6cbbf22e1b0bfb7ad6ffa242b26394aced4514b47b62c1c7678e"
 
 PROTECTED_FUNCTIONS = [
     "wizardSourceStageModel",
@@ -265,7 +268,7 @@ def validate_source_tab_lock() -> None:
     actual_hash = current_source_tab_sha256(body)
     if actual_hash != SOURCE_TAB_SHA256:
         raise AssertionError(
-            "SOURCE TAB IS FROZEN at the accepted v0.10.66 purity-equivalent baseline: protected SOURCE behavior/layout changed. "
+            "SOURCE TAB IS FROZEN at the accepted v0.10.67 SOURCE-identity baseline: protected SOURCE behavior/layout changed. "
             f"expected {SOURCE_TAB_SHA256}, got {actual_hash}. "
             "Do not update this digest as a drive-by fix. An intentional SOURCE/structure "
             "change requires an explicit exceptional case plus PATCH_CONTRACT.md/CHANGELOG.md rationale."

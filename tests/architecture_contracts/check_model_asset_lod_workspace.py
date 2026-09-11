@@ -231,7 +231,7 @@ for token in (
     if token not in contract:
         raise AssertionError(f"PATCH_CONTRACT missing LOD protection {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.66"' not in version:
-    raise AssertionError("editor version is not 0.10.66")
+if 'ModelAssetEditorVersion = "0.10.67"' not in version:
+    raise AssertionError("editor version is not 0.10.67")
 
-print("[PASS] model asset editor v0.10.66 LOD per-mesh PREPARE workspace / selection / visibility / ANALYZE fence")
+print("[PASS] model asset editor v0.10.67 LOD per-mesh PREPARE workspace / selection / visibility / ANALYZE fence")

@@ -49,6 +49,8 @@ def function_source(name: str) -> str:
 
 if BLOCKS.get("schema") != 1:
     raise AssertionError("portable blocks: unsupported schema")
+if BLOCKS.get("ownership_contract") != "tools/model_asset_editor/MODULE_OWNERSHIP_CONTRACT.json":
+    raise AssertionError("portable blocks: complete module ownership contract is not linked")
 
 for block_name, block in BLOCKS.get("blocks", {}).items():
     status = block.get("status")
@@ -105,4 +107,15 @@ for forbidden in ("rnDamageStates", "set_render_node_states"):
     if forbidden in render_inspector:
         raise AssertionError(f"portable blocks: DAMAGE RenderNode implementation leaked into renderRenderNodeInspector: {forbidden}")
 
-print("[PASS] Model Asset Editor portable block API: SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS portable; PHYSICS/HIT-VOLUMES/DAMAGE foundation isolated; FINAL-ASSEMBLY pending")
+# FINAL ASSEMBLY wave6C: frontend owns portable report/readiness/build presentation and
+# explicit stage payloads; backend remains the validation/build execution port.
+shell = function_source("renderWizardPanelContents")
+if "if(stage==='validate'){renderWizardValidateStage(root,state.wizardValidationReport);return;}" not in shell:
+    raise AssertionError("portable blocks: VALIDATE branch must remain dispatch-only")
+if "if(stage==='build'){renderWizardBuildStage(root,state.asset,lods,state.dirty);return;}" not in shell:
+    raise AssertionError("portable blocks: BUILD branch must remain dispatch-only")
+for forbidden in ("wizardValidationReport,rows=", "st=state.asset.storage", "lodPayloads||[]).filter"):
+    if forbidden in shell:
+        raise AssertionError(f"portable blocks: FINAL ASSEMBLY implementation leaked into renderWizardPanelContents: {forbidden}")
+
+print("[PASS] Model Asset Editor portable block API: SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS portable; PHYSICS/HIT-VOLUMES/DAMAGE/FINAL-ASSEMBLY foundation isolated")

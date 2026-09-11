@@ -1,3 +1,25 @@
+## Model Asset Editor 0.10.66 — wave 6D / complete module ownership + hard API wiring (2026-09-11)
+
+- `[x]` Added complete `MODULE_OWNERSHIP_CONTRACT.json`: 546/546 named browser functions have one logical module+role owner.
+- `[x]` All 5 classes / 45 class methods are owned; all 15 discovered top-level module bindings are owned.
+- `[x]` 262 statically PURE functions are assigned only to `core` / `presentation`; 284 EASY / TRANSITIVE / effectful functions are assigned to `adapter` / `infrastructure`.
+- `[x]` Cross-module named calls are frozen as explicit imports/exports; cross-owner runtime bindings are frozen as explicit `binding_imports`.
+- `[x]` Portable module dependency graph is acyclic and portable code cannot import effect functions.
+- `[x]` `THREE` / `OrbitControls` usage is explicit at module level. Module-scope browser/event/bootstrap wiring belongs to `app_shell`.
+- `[x]` Added `check_model_asset_module_ownership.py`; this wave intentionally changes no editor runtime logic and no old behavioural oracle.
+- `[ ]` Next and final logical-decomposition gate: wave6E standalone extraction proof. When every portable block can be generated/imported from only its declared closure/imports and pass frozen oracles, logical decomposition is DONE; physical module extraction may start.
+
+## Model Asset Editor 0.10.66 — wave 6C / FINAL ASSEMBLY portable-block foundation (2026-09-11)
+
+- `[x]` VALIDATE and BUILD branches are dispatch-only in `renderWizardPanelContents()` and delegate to dedicated adapters.
+- `[x]` `finalAssemblyValidationModel/Html` own deterministic projection/presentation of the backend validation report; frontend does not duplicate the authoritative production validator.
+- `[x]` `finalAssemblyBuildModel/Html` own deterministic production-target / saved-LOD / dirty-working-copy summary.
+- `[x]` `finalAssemblyStageCommand(stage)` is the explicit payload boundary for `check_wizard_stage`; backend validation/build execution remains an adapter port.
+- `[x]` `PORTABLE_BLOCK_CONTRACT.json` now declares FINAL ASSEMBLY `foundation`; every wizard stage now has an explicit portable-core boundary.
+- `[x]` Previous 254 behavioural oracle hashes are unchanged; 5 new FINAL ASSEMBLY functions are certified. Differential parity: 5,610 deterministic comparisons PASS.
+- `[x]` Current purity census: 546 named / 259 certified / 262 static PURE / 5 EASY / 15 TRANSITIVE / 264 deferred-hard.
+- `[ ]` Next: whole-editor portable API audit and boundary hardening, then physical JS module extraction.
+
 ## Model Asset Editor 0.10.66 — wave 6B / DAMAGE portable-block foundation (2026-09-11)
 
 - `[x]` DAMAGE stage summary is dispatch-only in `renderWizardPanelContents()` and delegates to `renderWizardDamageStage()`.

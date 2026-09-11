@@ -43882,8 +43882,288 @@
         }
       ],
       "oracle_sha256": "6b2a2648a53c704b0756f85e4ca4fd52323bb3e43da1bfa825417478d32adba4"
+    },
+    {
+      "name": "finalAssemblyValidationModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            null
+          ],
+          "invoke": "finalAssemblyValidationModel(args[0])",
+          "expected": {
+            "hasReport": false,
+            "passed": false,
+            "rows": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "passed": false,
+              "rows": [
+                {
+                  "stage": "source",
+                  "passed": true,
+                  "message": "ok"
+                },
+                {
+                  "stage": "damage",
+                  "passed": false,
+                  "message": "bad <x>"
+                }
+              ]
+            }
+          ],
+          "invoke": "finalAssemblyValidationModel(args[0])",
+          "expected": {
+            "hasReport": true,
+            "passed": false,
+            "rows": [
+              {
+                "message": "ok",
+                "passed": true,
+                "stage": "SOURCE"
+              },
+              {
+                "message": "bad <x>",
+                "passed": false,
+                "stage": "DAMAGE"
+              }
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "1321801ed878b72057073da1400d55c490ddb2fab374cd1dfebb1350bec38e80"
+    },
+    {
+      "name": "finalAssemblyValidationHtml",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "hasReport": false,
+              "passed": false,
+              "rows": []
+            },
+            {
+              "title": "VALIDATE",
+              "help": "help",
+              "pass": "ALL PASS",
+              "fail": "FAIL",
+              "none": "NO REPORT"
+            },
+            {
+              "stageCheckControls": "<button>CHECK</button>"
+            }
+          ],
+          "invoke": "finalAssemblyValidationHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"title\">8 · VALIDATE</div><div class=\"wizardLead\">help</div><div class=\"wizardWarning\">NO REPORT</div><button>CHECK</button>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "hasReport": true,
+              "passed": false,
+              "rows": [
+                {
+                  "stage": "SOURCE",
+                  "passed": true,
+                  "message": "ok"
+                },
+                {
+                  "stage": "DAMAGE",
+                  "passed": false,
+                  "message": "bad <x>"
+                }
+              ]
+            },
+            {
+              "title": "VALIDATE",
+              "help": "help",
+              "pass": "ALL PASS",
+              "fail": "FAIL",
+              "none": "NO REPORT"
+            },
+            {
+              "stageCheckControls": "<button>CHECK</button>"
+            }
+          ],
+          "invoke": "finalAssemblyValidationHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"title\">8 · VALIDATE</div><div class=\"wizardLead\">help</div><div class=\"wizardWarning\">FAIL</div><div class=\"sourceInventory\"><div class=\"sourceInventoryRow\"><span>SOURCE</span><span class=\"ok\">PASS</span><span style=\"grid-column:3/6\">ok</span></div><div class=\"sourceInventoryRow\"><span>DAMAGE</span><span class=\"bad\">FAIL</span><span style=\"grid-column:3/6\">bad &lt;x&gt;</span></div></div><button>CHECK</button>"
+        }
+      ],
+      "oracle_sha256": "bf760f27d33f739e62e7fd8cf678a248cbf473b536cbcfc6fff4d592a85cb7fa"
+    },
+    {
+      "name": "finalAssemblyBuildModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "invoke": "finalAssemblyBuildModel(args[0])",
+          "expected": {
+            "dirty": false,
+            "lodCount": 0,
+            "productionManifest": "",
+            "savedLodPayloadCount": 0
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "storage": {
+                "binaryPath": "compiled/a.json",
+                "lodPayloads": [
+                  {
+                    "bytes": 12
+                  },
+                  {
+                    "bytes": 0
+                  },
+                  {
+                    "bytes": "8"
+                  }
+                ]
+              },
+              "binaryPath": "fallback.json",
+              "lods": [
+                {},
+                {},
+                {}
+              ],
+              "dirty": true
+            }
+          ],
+          "invoke": "finalAssemblyBuildModel(args[0])",
+          "expected": {
+            "dirty": true,
+            "lodCount": 3,
+            "productionManifest": "compiled/a.json",
+            "savedLodPayloadCount": 2
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "storage": {},
+              "binaryPath": "fallback.json",
+              "lods": [
+                {}
+              ],
+              "dirty": false
+            }
+          ],
+          "invoke": "finalAssemblyBuildModel(args[0])",
+          "expected": {
+            "dirty": false,
+            "lodCount": 1,
+            "productionManifest": "fallback.json",
+            "savedLodPayloadCount": 0
+          }
+        }
+      ],
+      "oracle_sha256": "60da2f9722dda603e66bdc87be98deaf20ada80753cec6475d9e379956f01ff1"
+    },
+    {
+      "name": "finalAssemblyBuildHtml",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "productionManifest": "",
+              "savedLodPayloadCount": 0,
+              "lodCount": 0,
+              "dirty": false
+            },
+            {
+              "title": "BUILD",
+              "help": "help",
+              "target": "target",
+              "lods": "lods",
+              "dirty": "dirty",
+              "warning": "warn"
+            },
+            {
+              "stageCheckControls": "<button>BUILD</button>"
+            }
+          ],
+          "invoke": "finalAssemblyBuildHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"title\">9 · BUILD</div><div class=\"wizardLead\">help</div><div class=\"wizardGrid\"><span>target</span><span class=\"value\">—</span><span>lods</span><span class=\"value\">0 / 0</span><span>dirty</span><span class=\"value\">NO</span></div><div class=\"wizardWarning\">warn</div><button>BUILD</button>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "productionManifest": "compiled/<ship>.json",
+              "savedLodPayloadCount": 2,
+              "lodCount": 3,
+              "dirty": true
+            },
+            {
+              "title": "BUILD",
+              "help": "help",
+              "target": "target",
+              "lods": "lods",
+              "dirty": "dirty",
+              "warning": "warn"
+            },
+            {
+              "stageCheckControls": "<button>BUILD</button>"
+            }
+          ],
+          "invoke": "finalAssemblyBuildHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"title\">9 · BUILD</div><div class=\"wizardLead\">help</div><div class=\"wizardGrid\"><span>target</span><span class=\"value\">compiled/&lt;ship&gt;.json</span><span>lods</span><span class=\"value\">2 / 3</span><span>dirty</span><span class=\"value\">YES</span></div><div class=\"wizardWarning\">warn</div><button>BUILD</button>"
+        }
+      ],
+      "oracle_sha256": "c52a26f1a2d5ff3da19f231babd6b0fc70c64748d6caad81c66904f624d5f2aa"
+    },
+    {
+      "name": "finalAssemblyStageCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            "validate"
+          ],
+          "invoke": "finalAssemblyStageCommand(args[0])",
+          "expected": {
+            "stage": "validate"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            "build"
+          ],
+          "invoke": "finalAssemblyStageCommand(args[0])",
+          "expected": {
+            "stage": "build"
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            null
+          ],
+          "invoke": "finalAssemblyStageCommand(args[0])",
+          "expected": {
+            "stage": ""
+          }
+        }
+      ],
+      "oracle_sha256": "6db9135e57e0b63ccf63199b39467210cc39582a669b86ce49054b21d7760fa1"
     }
   ],
   "easy_candidates": [],
-  "baseline_sha256": "f0d8b38be9377c8d78f0928ac3bdbbe267f6ba6bb8309fcd8a8aaaaacac60205"
+  "baseline_sha256": "1f41ae10d63d9024ae98b48f8f0b8a34961bacb3107f1700fff8ea2ea2d6888e"
 }

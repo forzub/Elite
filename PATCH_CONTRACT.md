@@ -1,3 +1,23 @@
+## Model Asset Editor 0.10.66 — wave 6D / complete ownership + hard API boundary
+
+- `tools/model_asset_editor/MODULE_OWNERSHIP_CONTRACT.json` is the authoritative pre-extraction module ownership map. Every named browser function, every class/method inventory and every discovered top-level module binding must have exactly one owner.
+- `core` and `presentation` ownership is permitted only for functions that the static named-function graph classifies PURE. EASY / TRANSITIVE / effectful functions remain `adapter` or `infrastructure`; they do not need to be artificially purified merely to reduce the hard count.
+- Internal transitive calls are allowed. Cross-module named calls are allowed only when declared by the caller module's `imports` and the target symbol is declared in the target module's `exports`.
+- Portable `core` / `presentation` code may cross a module boundary only to another portable `core` / `presentation` function. A portable function may not reach an adapter/infrastructure function through a declared import.
+- All top-level browser bindings (`state`, `editorViewState`, raycaster/mouse, scroll state, diagnostics, transport state, axis constants, etc.) are owned explicitly. Cross-owner reads must appear in `binding_imports`; portable code may not depend on those runtime bindings.
+- External JavaScript libraries are explicit module imports. Deterministic THREE-based math is allowed only as an explicit `three:THREE` dependency; scene/browser effects remain adapters/infrastructure.
+- The module-scope DOM/event/bootstrap region is owned by the `app_shell` composition root and its domain function/binding dependencies are explicit. This region is intentionally effectful.
+- `tests/architecture_contracts/check_model_asset_module_ownership.py` is mandatory. Wave6D is contract-only: runtime/editor behaviour and prior behavioural oracle hashes are frozen.
+
+## Model Asset Editor 0.10.66 — wave 6C / FINAL ASSEMBLY portable-block foundation
+
+- VALIDATE/BUILD deterministic calculations and HTML are explicit-input portable functions; backend validation/build execution remains authoritative and effectful.
+- `renderWizardPanelContents()` may only dispatch VALIDATE/BUILD to `renderWizardValidateStage()` / `renderWizardBuildStage()`.
+- Portable FINAL ASSEMBLY functions may not read editor state/DOM/backend/status/prompt/storage/network implicitly; all data enters through arguments.
+- `bindWizardStageCheckControls()` must dispatch `check_wizard_stage` through `finalAssemblyStageCommand(stage)`.
+- Existing behavioural oracle hashes are immutable; wave6C adds only new FINAL ASSEMBLY fixtures/oracles.
+- No production-validator logic is duplicated in frontend JavaScript.
+
 ## Model Asset Editor 0.10.66 — wave 6B / portable DAMAGE boundary
 
 - DAMAGE is a first-class portable block under the same rule as PHYSICS/HIT VOLUMES: all deterministic stage/state/selector/damage calculations and command payloads must live behind explicit-input certified PURE functions.

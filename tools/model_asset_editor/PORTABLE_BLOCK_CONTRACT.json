@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "description": "Portable functional blocks for Model Asset Editor. portable/foundation API functions are behaviourally certified PURE and may depend only on explicit arguments plus other certified PURE helpers. Adapters own state/DOM/THREE scene/backend wiring.",
+  "description": "Portable functional blocks for Model Asset Editor. API functions are behaviourally certified PURE and may depend only on explicit arguments plus other certified PURE helpers. Adapters own state/DOM/THREE scene/backend wiring. Complete function/class/global ownership and cross-module imports are frozen by MODULE_OWNERSHIP_CONTRACT.json.",
   "blocks": {
     "source": {
       "status": "portable",
@@ -156,12 +156,23 @@
       ]
     },
     "final_assembly": {
-      "status": "pending",
-      "api": [],
-      "presentation": [],
+      "status": "foundation",
+      "api": [
+        "finalAssemblyValidationModel",
+        "finalAssemblyBuildModel",
+        "finalAssemblyStageCommand"
+      ],
+      "presentation": [
+        "finalAssemblyValidationHtml",
+        "finalAssemblyBuildHtml"
+      ],
       "adapters": [
+        "renderWizardValidateStage",
+        "renderWizardBuildStage",
+        "bindWizardStageCheckControls",
         "renderWizardPanelContents"
       ]
     }
-  }
+  },
+  "ownership_contract": "tools/model_asset_editor/MODULE_OWNERSHIP_CONTRACT.json"
 }

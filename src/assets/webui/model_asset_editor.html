@@ -327,7 +327,7 @@ function setWizardStage(id,force=false){if(!wizardStageIds.includes(id))return;i
 function renderWizard(){document.querySelectorAll('[data-wizard-stage]').forEach((button,index)=>{const id=button.dataset.wizardStage,r=wizardRecord(state.asset?.wizard?.stages,id),status=r.status||'not_started',locked=!r.implemented||!r.unlocked;button.className=`wizardStage ${state.wizardStage===id?'current ':''}${status==='complete'?'complete ':status==='stale'?'stale ':status==='needs_fix'?'needsFix ':''}${locked?'locked':''}`.trim();const mark=status==='complete'?'✓':(status==='stale'||status==='needs_fix')?'!':String(index+1);button.innerHTML=`<span class="wizardNum">${mark}</span><span class="wizardLabel">${wizardStageLabel(id)}</span><span class="wizardState">${r.implemented?wizardStatusLabel(status):tr('model_editor.wizard.planned','PLANNED')}</span>`;button.disabled=locked;button.onclick=()=>setWizardStage(id);const helpKey=`model_editor.wizard.${id}.desc`;attachDynamicToolTip(button,`model_editor.wizard.${id}.label`,helpKey,wizardStageLabel(id),tr(helpKey,'Open this workflow stage.'));});}
 
 function wizardStageCheckControls(stage){const build=stage==='build',label=build?tr('model_editor.wizard.build_complete','BUILD PRODUCTION PACKAGE'):tr('model_editor.wizard.check','CHECK');return `<div class="wizardActions"><button id="wizardStageCheckBtn" class="wizardComplete">✓ ${label}</button></div>`;}
-function bindWizardStageCheckControls(stage){const button=$('wizardStageCheckBtn');if(!button)return;const build=stage==='build';button.onclick=()=>send('check_wizard_stage',{stage});attachDynamicToolTip(button,build?'model_editor.wizard.build_complete':'model_editor.wizard.check_tip.title',build?'model_editor.wizard.build_warning':'model_editor.wizard.check_tip.desc',build?'Build production package':'Check stage',build?'Reruns the production contract and writes the compiled package. Save the WORKING ASSET first.':'Runs this stage checks against the current in-memory state. PASS marks the tab green and unlocks the next stage. It does not save anything.');}
+function bindWizardStageCheckControls(stage){const button=$('wizardStageCheckBtn');if(!button)return;const build=stage==='build';button.onclick=()=>send('check_wizard_stage',finalAssemblyStageCommand(stage));attachDynamicToolTip(button,build?'model_editor.wizard.build_complete':'model_editor.wizard.check_tip.title',build?'model_editor.wizard.build_warning':'model_editor.wizard.check_tip.desc',build?'Build production package':'Check stage',build?'Reruns the production contract and writes the compiled package. Save the WORKING ASSET first.':'Runs this stage checks against the current in-memory state. PASS marks the tab green and unlocks the next stage. It does not save anything.');}
 function geometryComparableNodes(lod){if(!lod)return[];const rows=[];(lod.nodes||[]).forEach((node,index)=>{if(node.geometryIndex<0)return;const geometry=lod.geometries?.[node.geometryIndex];if(!geometry)return;rows.push({index,node,geometry});});return rows;}
 function geometryWorkspaceChangedGeometries(lod){return (lod?.geometries||[]).filter(maintenanceGeometryPending);}
 function geometryWorkspaceChangeCount(lod){return geometryWorkspaceChangedGeometries(lod).length;}
@@ -1014,6 +1014,29 @@ function renderWizardDamageStage(root,asset,lods){
  root.innerHTML=wizardDamageStageHtml(model,text,{lodSelector:wizardLodSelector(lods,'data-damage-lod'),stageCheckControls:wizardStageCheckControls('damage')});
  root.querySelectorAll('[data-damage-lod]').forEach(btn=>btn.onclick=()=>switchSemanticLod(Number(btn.dataset.damageLod)));bindWizardStageCheckControls('damage');
 }
+
+function finalAssemblyValidationModel(report){
+ const hasReport=!!report,rows=hasReport?(report.rows||[]).map(x=>({stage:String(x?.stage||'').toUpperCase(),passed:!!x?.passed,message:String(x?.message||'')})):[];
+ return{hasReport,passed:hasReport&&!!report.passed,rows};
+}
+function finalAssemblyValidationHtml(model,text,fragments){
+ const rows=(model.rows||[]).map(x=>`<div class="sourceInventoryRow"><span>${escapeMarkup(x.stage)}</span><span class="${x.passed?'ok':'bad'}">${x.passed?'PASS':'FAIL'}</span><span style="grid-column:3/6">${escapeMarkup(x.message)}</span></div>`).join('');
+ return `<div class="title">8 · ${text.title}</div><div class="wizardLead">${text.help}</div>${model.hasReport?`<div class="${model.passed?'wizardOk':'wizardWarning'}">${model.passed?text.pass:text.fail}</div><div class="sourceInventory">${rows}</div>`:`<div class="wizardWarning">${text.none}</div>`}${fragments.stageCheckControls}`;
+}
+function finalAssemblyBuildModel(input){
+ const storage=input?.storage||{},lods=input?.lods||[],path=storage.binaryPath||input?.binaryPath||'',savedLodPayloadCount=(storage.lodPayloads||[]).filter(p=>Number(p?.bytes)>0).length;
+ return{productionManifest:String(path||''),savedLodPayloadCount,lodCount:lods.length,dirty:!!input?.dirty};
+}
+function finalAssemblyBuildHtml(model,text,fragments){return `<div class="title">9 · ${text.title}</div><div class="wizardLead">${text.help}</div><div class="wizardGrid"><span>${text.target}</span><span class="value">${escapeMarkup(model.productionManifest||'—')}</span><span>${text.lods}</span><span class="value">${model.savedLodPayloadCount} / ${model.lodCount}</span><span>${text.dirty}</span><span class="value">${model.dirty?'YES':'NO'}</span></div><div class="wizardWarning">${text.warning}</div>${fragments.stageCheckControls}`;}
+function finalAssemblyStageCommand(stage){return{stage:String(stage||'')};}
+function renderWizardValidateStage(root,report){
+ const model=finalAssemblyValidationModel(report),text={title:wizardStageLabel('validate'),help:tr('model_editor.wizard.validate_help','CHECK runs the complete production contract against SOURCE → DAMAGE plus the shared v4 binary validator. It reports blockers and never saves or repairs anything.'),pass:tr('model_editor.wizard.validate_pass','ALL PRODUCTION CONTRACTS PASS'),fail:tr('model_editor.wizard.validate_fail','VALIDATION FOUND BLOCKERS'),none:tr('model_editor.wizard.validate_none','Press CHECK to run validation.')};
+ root.innerHTML=finalAssemblyValidationHtml(model,text,{stageCheckControls:wizardStageCheckControls('validate')});bindWizardStageCheckControls('validate');
+}
+function renderWizardBuildStage(root,asset,lods,dirty){
+ const model=finalAssemblyBuildModel({storage:asset?.storage||{},binaryPath:asset?.binaryPath||'',lods,dirty}),text={title:wizardStageLabel('build'),help:tr('model_editor.wizard.build_help','Terminal production commit. Full validation is rerun, then the complete persistent WORKING ASSET is written to the compiled v4 package.'),target:tr('model_editor.wizard.build_target','production manifest'),lods:tr('model_editor.wizard.build_lods','saved LOD payloads'),dirty:tr('model_editor.wizard.build_dirty','working copy dirty'),warning:tr('model_editor.wizard.build_warning','BUILD is the production boundary. Save the WORKING ASSET first; BUILD then writes that saved state to production.')};
+ root.innerHTML=finalAssemblyBuildHtml(model,text,{stageCheckControls:wizardStageCheckControls('build')});bindWizardStageCheckControls('build');
+}
 function renderWizardPanelContents(){
  const root=$('wizardPanel');if(!root)return;
  if(!state.asset){root.innerHTML=`<div class="wizardLead">${tr('model_editor.wizard.no_asset','Select an asset to start the processing wizard.')}</div>`;return;}
@@ -1026,16 +1049,8 @@ function renderWizardPanelContents(){
  if(stage==='semantics'){renderWizardSemanticsStage(root,lods);return;}
  if(stage==='physics'){renderWizardPhysicsStage(root,state.asset);return;}
  if(stage==='damage'){renderWizardDamageStage(root,state.asset,lods);return;}
- if(stage==='validate'){
-  const report=state.wizardValidationReport,rows=report?(report.rows||[]).map(x=>`<div class="sourceInventoryRow"><span>${escapeMarkup(String(x.stage||'').toUpperCase())}</span><span class="${x.passed?'ok':'bad'}">${x.passed?'PASS':'FAIL'}</span><span style="grid-column:3/6">${escapeMarkup(x.message||'')}</span></div>`).join(''):'';
-  root.innerHTML=`<div class="title">8 · ${wizardStageLabel('validate')}</div><div class="wizardLead">${tr('model_editor.wizard.validate_help','CHECK runs the complete production contract against SOURCE → DAMAGE plus the shared v4 binary validator. It reports blockers and never saves or repairs anything.')}</div>${report?`<div class="${report.passed?'wizardOk':'wizardWarning'}">${report.passed?tr('model_editor.wizard.validate_pass','ALL PRODUCTION CONTRACTS PASS'):tr('model_editor.wizard.validate_fail','VALIDATION FOUND BLOCKERS')}</div><div class="sourceInventory">${rows}</div>`:`<div class="wizardWarning">${tr('model_editor.wizard.validate_none','Press CHECK to run validation.')}</div>`}${wizardStageCheckControls('validate')}`;
-  bindWizardStageCheckControls('validate');return;
- }
- if(stage==='build'){
-  const st=state.asset.storage||{},path=st.binaryPath||state.asset.binaryPath||'',payloads=(st.lodPayloads||[]).filter(p=>Number(p.bytes)>0).length;
-  root.innerHTML=`<div class="title">9 · ${wizardStageLabel('build')}</div><div class="wizardLead">${tr('model_editor.wizard.build_help','Terminal production commit. Full validation is rerun, then the complete persistent WORKING ASSET is written to the compiled v4 package.')}</div><div class="wizardGrid"><span>${tr('model_editor.wizard.build_target','production manifest')}</span><span class="value">${escapeMarkup(path||'—')}</span><span>${tr('model_editor.wizard.build_lods','saved LOD payloads')}</span><span class="value">${payloads} / ${lods.length}</span><span>${tr('model_editor.wizard.build_dirty','working copy dirty')}</span><span class="value">${state.dirty?'YES':'NO'}</span></div><div class="wizardWarning">${tr('model_editor.wizard.build_warning','BUILD is the production boundary. Save the WORKING ASSET first; BUILD then writes that saved state to production.')}</div>${wizardStageCheckControls('build')}`;
-  bindWizardStageCheckControls('build');return;
- }
+ if(stage==='validate'){renderWizardValidateStage(root,state.wizardValidationReport);return;}
+ if(stage==='build'){renderWizardBuildStage(root,state.asset,lods,state.dirty);return;}
 }
 function captureEditorViewTransition(){return {activeLod:state.activeLod,sceneLod:state.sceneLod,selectedRenderNode:state.selectedRenderNode,selectedRenderNodeId:editorViewState.selectedRenderNodeId,selectedMeshId:editorViewState.selectedMeshId,selectedSemanticNode:editorViewState.selectedSemanticNode,semanticSelection:[...state.semanticSelectedNodes].sort((a,b)=>a-b),visibility:[...editorViewState.visibilityByLod].map(([li,set])=>[li,[...set].sort()]),hidden:[...editorViewState.hiddenSemanticByLod].map(([li,set])=>[li,[...set].sort((a,b)=>a-b)]),isolated:[...editorViewState.isolationByLod],camera:state.camera?{position:state.camera.position.toArray(),quaternion:state.camera.quaternion.toArray(),target:state.controls?.target?.toArray?.()||null}:null};}
 function editorViewSnapshotsEqual(a,b){return JSON.stringify(a)===JSON.stringify(b);}

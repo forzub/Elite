@@ -1,0 +1,2989 @@
+{
+  "schema": 1,
+  "editor_baseline": "0.10.66-wave6C",
+  "source": "src/assets/webui/model_asset_editor.html",
+  "description": "Complete ownership and cross-module API contract for the Model Asset Editor before physical extraction. Every named function, class method and top-level module binding is owned. PURE core/presentation code may depend only on explicit function imports and explicit external libraries; runtime/editor effects remain in adapter/infrastructure roles.",
+  "policy": {
+    "transitive_calls_inside_a_module_are_allowed": true,
+    "all_named_functions_must_be_owned_exactly_once": true,
+    "all_class_methods_must_be_owned_by_their_class_module": true,
+    "all_top_level_bindings_must_be_owned_exactly_once": true,
+    "core_and_presentation_must_be_statically_pure": true,
+    "cross_module_named_calls_must_match_imports": true,
+    "cross_module_targets_must_be_exports": true,
+    "portable_code_must_not_import_adapter_or_infrastructure_functions": true,
+    "top_level_executable_wiring_owner": "app_shell"
+  },
+  "blocks": {
+    "source": {
+      "status": "portable",
+      "modules": [
+        "source",
+        "source_maintenance"
+      ],
+      "api": [
+        "wizardSourceStageModel"
+      ],
+      "presentation": [
+        "wizardSourceStageHtml"
+      ],
+      "adapters": [
+        "renderWizardSourceStage"
+      ]
+    },
+    "lods": {
+      "status": "portable",
+      "modules": [
+        "lods",
+        "lod_runtime",
+        "axis_mapping"
+      ],
+      "api": [
+        "wizardLodsStageModel"
+      ],
+      "presentation": [
+        "wizardLodsStageHtml"
+      ],
+      "adapters": [
+        "renderWizardLodsStage"
+      ]
+    },
+    "geometry": {
+      "status": "portable",
+      "modules": [
+        "geometry",
+        "asset_scene",
+        "editor_inspection",
+        "mesh_overlays"
+      ],
+      "api": [
+        "wizardGeometryStageModel"
+      ],
+      "presentation": [
+        "wizardGeometryStageHtml"
+      ],
+      "adapters": [
+        "renderWizardGeometryStage"
+      ]
+    },
+    "surfaces": {
+      "status": "portable",
+      "modules": [
+        "surfaces"
+      ],
+      "api": [
+        "wizardSurfacesStageModel"
+      ],
+      "presentation": [
+        "wizardSurfacesStageHtml"
+      ],
+      "adapters": [
+        "renderWizardSurfacesStage"
+      ]
+    },
+    "semantics": {
+      "status": "portable",
+      "modules": [
+        "semantics",
+        "semantics_transform"
+      ],
+      "api": [
+        "wizardSemanticsStageModel",
+        "wizardSemanticsTreeBlockModel",
+        "wizardSemanticsBindingsBlockModel",
+        "wizardSemanticsWorkspaceModel",
+        "wizardSemanticsStructuralGraphModel",
+        "wizardSemanticsSelectionTransition",
+        "wizardSemanticsReparentCommand",
+        "wizardSemanticsJointPivotCommand",
+        "wizardSemanticsMotionAnimationStep",
+        "wizardSemanticsGraphExplodeApplicationPlan",
+        "wizardSemanticsViewportMeshPickDecision"
+      ],
+      "presentation": [
+        "wizardSemanticsTreeRowsHtml",
+        "wizardSemanticsBindingRowsHtml",
+        "wizardSemanticsWorkspaceHtml",
+        "structuralGraphPanelHtml",
+        "wizardSemanticsSelectedPanelsHtml"
+      ],
+      "adapters": [
+        "renderWizardSemanticsStage",
+        "renderWizardStructuralGraphStage",
+        "applySemanticMotionPreview",
+        "pick"
+      ]
+    },
+    "physics": {
+      "status": "foundation",
+      "modules": [
+        "physics"
+      ],
+      "api": [
+        "wizardPhysicsStageModel",
+        "physicsNodeModel",
+        "physicsSetCommand",
+        "physicsEstimateCommand"
+      ],
+      "presentation": [
+        "wizardPhysicsStageHtml",
+        "physicsNodeHtml"
+      ],
+      "adapters": [
+        "renderWizardPhysicsStage",
+        "renderPhysicsNodeInspector"
+      ]
+    },
+    "hit_volumes": {
+      "status": "foundation",
+      "modules": [
+        "hit_volumes"
+      ],
+      "api": [
+        "hitVolumeListModel",
+        "hitVolumeInspectorModel",
+        "hitVolumePhysicsUpdateCommand",
+        "hitVolumeDamageScopeCommand",
+        "hitVolumeAddCommand",
+        "hitVolumeRadialCommand",
+        "hitVolumeRenderPlan"
+      ],
+      "presentation": [
+        "hitVolumeListHtml",
+        "hitVolumeInspectorHtml"
+      ],
+      "adapters": [
+        "rebuildCollisions",
+        "renderCollisionList",
+        "renderCollisionInspector",
+        "pick"
+      ]
+    },
+    "damage": {
+      "status": "foundation",
+      "modules": [
+        "damage"
+      ],
+      "api": [
+        "wizardDamageStageModel",
+        "damageStateVariantsModel",
+        "damageNodeModel",
+        "damageDefaultStateCommand",
+        "damageAddStateVariantCommand",
+        "damageSetStateVariantCommand",
+        "damageDeleteStateVariantCommand",
+        "damageRenderSelectorModel",
+        "damageRenderStatesCommand",
+        "damageSemanticsModel",
+        "damageSemanticDeleteCommand",
+        "damageSemanticUpdateCommand",
+        "damageStateScopeDefault",
+        "damageStateScopeParse",
+        "damageSemanticAddCommand"
+      ],
+      "presentation": [
+        "wizardDamageStageHtml",
+        "damageStateVariantsHtml",
+        "damageNodeHtml",
+        "damageRenderSelectorHtml",
+        "damageSemanticsHtml"
+      ],
+      "adapters": [
+        "renderWizardDamageStage",
+        "renderStateVariants",
+        "renderDamageNodeInspector",
+        "renderDamageRenderNodeInspector",
+        "renderDamageSemantics",
+        "renderNodeInspector",
+        "renderRenderNodeInspector",
+        "stateScopeForSelectedNode"
+      ]
+    },
+    "final_assembly": {
+      "status": "foundation",
+      "modules": [
+        "final_assembly"
+      ],
+      "api": [
+        "finalAssemblyValidationModel",
+        "finalAssemblyBuildModel",
+        "finalAssemblyStageCommand"
+      ],
+      "presentation": [
+        "finalAssemblyValidationHtml",
+        "finalAssemblyBuildHtml"
+      ],
+      "adapters": [
+        "renderWizardValidateStage",
+        "renderWizardBuildStage",
+        "bindWizardStageCheckControls",
+        "renderWizardPanelContents"
+      ]
+    }
+  },
+  "modules": {
+    "app_services": {
+      "core": [],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "clearProgress",
+        "editorDiagnosticRecord",
+        "flushEditorDiagnostics",
+        "localStatus",
+        "notice",
+        "progress",
+        "reportEditorDiagnostic",
+        "scheduleBusyModal",
+        "send",
+        "setBusy",
+        "status",
+        "updateActionAvailability"
+      ],
+      "imports": {
+        "editor_inspection": [
+          "unusedGeometries"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod"
+        ],
+        "shared": [
+          "diagnosticValue"
+        ]
+      },
+      "exports": [
+        "flushEditorDiagnostics",
+        "localStatus",
+        "notice",
+        "progress",
+        "reportEditorDiagnostic",
+        "send",
+        "status",
+        "updateActionAvailability"
+      ],
+      "binding_imports": [
+        "$",
+        "editorViewState",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "BACKEND_COMMAND",
+        "CONSOLE_IO",
+        "DOM_UI",
+        "GLOBAL_MUTATION",
+        "READ_editorDiagnosticQueue",
+        "READ_editorViewState",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT",
+        "STORAGE_NETWORK",
+        "TIMERS_EVENTS"
+      ]
+    },
+    "app_shell": {
+      "core": [],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [],
+      "binding_imports": [],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": []
+    },
+    "asset_ingress": {
+      "core": [],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "acceptAssetState",
+        "applyLodRuntimeMetadataPatch",
+        "applyResidentSurfaceSide",
+        "applySemanticBindingPatch",
+        "applySemanticTreePatch",
+        "applySurfaceMetadataPatch",
+        "connect",
+        "handle",
+        "refreshSurfacePreflightSummary",
+        "updateWorkingSaveStamp"
+      ],
+      "imports": {
+        "app_services": [
+          "flushEditorDiagnostics",
+          "localStatus",
+          "notice",
+          "progress",
+          "reportEditorDiagnostic",
+          "send",
+          "status",
+          "updateActionAvailability"
+        ],
+        "asset_scene": [
+          "fitView",
+          "mergeAssetMetadata",
+          "pruneGeometryCache",
+          "rebuildScene"
+        ],
+        "axis_mapping": [
+          "activeLodAxisMapping",
+          "updateAxisLegend"
+        ],
+        "catalog": [
+          "renderCatalog"
+        ],
+        "editor_inspection": [
+          "highlightSelection",
+          "renderActiveLodDetails",
+          "renderLodFiles",
+          "renderNodeInspector",
+          "renderRenderNodeInspector",
+          "renderRenderTree",
+          "renderStorage",
+          "renderTree"
+        ],
+        "editor_view_state": [
+          "assertEditorViewInvariant"
+        ],
+        "geometry": [
+          "renderGeometryCandidates"
+        ],
+        "hit_volumes": [
+          "renderCollisionInspector",
+          "renderCollisionList"
+        ],
+        "i18n": [
+          "applyLocale",
+          "tr",
+          "translateServerMessage"
+        ],
+        "lod_runtime": [
+          "activeRenderLod"
+        ],
+        "materials": [
+          "renderMaterials"
+        ],
+        "semantics": [
+          "applySemanticMotionPreview"
+        ],
+        "settings": [
+          "clearSettingsSaveTimer",
+          "openSettings",
+          "setSettingsSaving"
+        ],
+        "sockets": [
+          "renderSocketInspector",
+          "renderSocketList"
+        ],
+        "source_maintenance": [
+          "settleSourceChangeScanAfterCheck"
+        ],
+        "wire_protocol": [
+          "beginEditorAssetBinary",
+          "beginEditorLodBinary",
+          "handleEditorBinary"
+        ],
+        "wizard_shell": [
+          "applyWizardVisibility",
+          "renderWizard",
+          "renderWizardPanel",
+          "setWizardStage",
+          "wizardStageLabel"
+        ]
+      },
+      "exports": [
+        "connect",
+        "handle"
+      ],
+      "binding_imports": [
+        "$",
+        "editorViewState",
+        "editorWireTransfers",
+        "state"
+      ],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [
+        "BACKEND_COMMAND",
+        "CONSOLE_IO",
+        "DOM_UI",
+        "GLOBAL_MUTATION",
+        "READ_editorViewState",
+        "READ_editorWireTransfers",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT",
+        "STORAGE_NETWORK",
+        "TIMERS_EVENTS"
+      ]
+    },
+    "asset_scene": {
+      "core": [
+        "activeLodNeedsRawSource",
+        "lodGeneratorNodePassesMeshFilter",
+        "lodGeneratorSelectedGeometry",
+        "lodHasGeometryPayload",
+        "renderNodeVisibilityKey"
+      ],
+      "presentation": [],
+      "adapters": [
+        "addLodGeneratorStandaloneVariant",
+        "cloneGeometryPayload",
+        "defaultPreviewMaterial",
+        "fitView",
+        "makeSurfacePreviewMaterials",
+        "mergeAssetMetadata",
+        "pruneGeometryCache",
+        "rebuildScene",
+        "retainGeometryPayload",
+        "threeGeometry"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus"
+        ],
+        "damage": [
+          "renderDamageSemantics",
+          "renderStateVariants"
+        ],
+        "editor_inspection": [
+          "configureSurfacePreviewGroups",
+          "renderActiveLodDetails",
+          "renderGeometries",
+          "renderNodeInspector",
+          "renderRenderNodeInspector",
+          "renderRenderTree",
+          "renderTree",
+          "updateVisibility"
+        ],
+        "editor_view_state": [
+          "assertEditorViewInvariant"
+        ],
+        "geometry": [
+          "geometryCacheKey"
+        ],
+        "hit_volumes": [
+          "rebuildCollisions"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod",
+          "lodDiagnosticActive",
+          "lodGeneratorPreviewGeometry",
+          "previewGeometryForRenderNode",
+          "rebuildLodFaceNormals"
+        ],
+        "mesh_overlays": [
+          "clearEdgeOverlay",
+          "clearNormalOverlay",
+          "rebuildEdgeOverlay",
+          "rebuildNormals"
+        ],
+        "scene_runtime": [
+          "clearGroup"
+        ],
+        "semantics": [
+          "applySemanticMotionPreview",
+          "clearSemanticGizmos"
+        ],
+        "semantics_transform": [
+          "semanticNodePose",
+          "stateApplies"
+        ],
+        "sockets": [
+          "rebuildSockets"
+        ],
+        "transform_math": [
+          "composeMatrix"
+        ]
+      },
+      "exports": [
+        "activeLodNeedsRawSource",
+        "fitView",
+        "lodGeneratorNodePassesMeshFilter",
+        "lodGeneratorSelectedGeometry",
+        "lodHasGeometryPayload",
+        "mergeAssetMetadata",
+        "pruneGeometryCache",
+        "rebuildScene",
+        "renderNodeVisibilityKey",
+        "retainGeometryPayload"
+      ],
+      "binding_imports": [
+        "$",
+        "editorViewState",
+        "raycaster",
+        "state"
+      ],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [
+        "ARG_MUTATION",
+        "DOM_UI",
+        "GLOBAL_MUTATION",
+        "READ_editorViewState",
+        "READ_raycaster",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "axis_mapping": {
+      "core": [
+        "activeLodAxisMapping",
+        "activeLodDirectAxisMapping",
+        "axisFamily",
+        "axisMappingSummary",
+        "axisRotationStepLabel",
+        "directAxisMappingFromSemantic",
+        "directAxisShort",
+        "directMappingDeterminant",
+        "gameAxisMeaning",
+        "oppositeAxisToken",
+        "rotateDirectMapping",
+        "rotateGameAxisTokenQuarterTurn",
+        "sourceAxisToken",
+        "sourceBasisMappingFromPreset",
+        "validAxisMapping",
+        "validDirectAxisMapping"
+      ],
+      "presentation": [],
+      "adapters": [
+        "applyAxisMapping",
+        "closeAxisMappingModal",
+        "openAxisMappingModal",
+        "resetAxisModalPending",
+        "resetAxisModalToSource",
+        "rotateAxisModal",
+        "updateAxisLegend",
+        "updateAxisRotationUi"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "progress",
+          "send"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod"
+        ],
+        "semantics": [
+          "semanticAxisMappingFromDirect"
+        ]
+      },
+      "exports": [
+        "activeLodAxisMapping",
+        "applyAxisMapping",
+        "axisFamily",
+        "closeAxisMappingModal",
+        "openAxisMappingModal",
+        "resetAxisModalPending",
+        "resetAxisModalToSource",
+        "rotateAxisModal",
+        "sourceAxisToken",
+        "updateAxisLegend"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "catalog": {
+      "core": [],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "renderCatalog"
+      ],
+      "imports": {
+        "i18n": [
+          "tr"
+        ]
+      },
+      "exports": [
+        "renderCatalog"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "DOM_UI",
+        "READ_state"
+      ]
+    },
+    "damage": {
+      "core": [
+        "damageAddStateVariantCommand",
+        "damageDefaultStateCommand",
+        "damageDeleteStateVariantCommand",
+        "damageNodeModel",
+        "damageRenderSelectorModel",
+        "damageRenderStatesCommand",
+        "damageSemanticAddCommand",
+        "damageSemanticDeleteCommand",
+        "damageSemanticUpdateCommand",
+        "damageSemanticsModel",
+        "damageSetStateVariantCommand",
+        "damageStateScopeDefault",
+        "damageStateScopeParse",
+        "damageStateVariantsModel",
+        "wizardDamageStageModel"
+      ],
+      "presentation": [
+        "damageNodeHtml",
+        "damageRenderSelectorHtml",
+        "damageSemanticsHtml",
+        "damageStateVariantsHtml",
+        "wizardDamageStageHtml"
+      ],
+      "adapters": [
+        "renderDamageNodeInspector",
+        "renderDamageRenderNodeInspector",
+        "renderDamageSemantics",
+        "renderStateVariants",
+        "renderWizardDamageStage",
+        "stateScopeForSelectedNode"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send"
+        ],
+        "asset_scene": [
+          "rebuildScene"
+        ],
+        "editor_inspection": [
+          "renderNodeInspector",
+          "selectNode"
+        ],
+        "final_assembly": [
+          "bindWizardStageCheckControls"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod"
+        ],
+        "semantics": [
+          "switchSemanticLod"
+        ],
+        "semantics_transform": [
+          "previewStateForNode"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "readStates",
+          "readVec",
+          "statesInput",
+          "vecInputs"
+        ],
+        "wizard_shell": [
+          "wizardLodSelector",
+          "wizardStageCheckControls",
+          "wizardStageLabel"
+        ]
+      },
+      "exports": [
+        "damageAddStateVariantCommand",
+        "damageDefaultStateCommand",
+        "damageDeleteStateVariantCommand",
+        "damageNodeHtml",
+        "damageNodeModel",
+        "damageRenderSelectorHtml",
+        "damageRenderSelectorModel",
+        "damageRenderStatesCommand",
+        "damageSemanticAddCommand",
+        "damageSemanticDeleteCommand",
+        "damageSemanticUpdateCommand",
+        "damageSemanticsHtml",
+        "damageSemanticsModel",
+        "damageSetStateVariantCommand",
+        "damageStateScopeDefault",
+        "damageStateScopeParse",
+        "damageStateVariantsHtml",
+        "damageStateVariantsModel",
+        "renderDamageNodeInspector",
+        "renderDamageRenderNodeInspector",
+        "renderDamageSemantics",
+        "renderStateVariants",
+        "renderWizardDamageStage",
+        "stateScopeForSelectedNode",
+        "wizardDamageStageHtml",
+        "wizardDamageStageModel"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "editor_inspection": {
+      "core": [
+        "unusedGeometries"
+      ],
+      "presentation": [],
+      "adapters": [
+        "clearViewportSelection",
+        "configureSurfacePreviewGroups",
+        "focusActiveMeshTableSelection",
+        "highlightSelection",
+        "renderActiveLodDetails",
+        "renderGeometries",
+        "renderGeometryInventoryToolbar",
+        "renderLodFiles",
+        "renderNodeInspector",
+        "renderRenderNodeInspector",
+        "renderRenderTree",
+        "renderStorage",
+        "renderTree",
+        "renderUnusedGeometrySummary",
+        "requestDeleteUnusedGeometry",
+        "selectGeometryInventoryDefinition",
+        "selectNode",
+        "selectRenderNode",
+        "switchGeometryInventoryLod",
+        "syncGeometryInventorySelectionUi",
+        "updateVisibility"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send",
+          "updateActionAvailability"
+        ],
+        "asset_scene": [
+          "lodGeneratorNodePassesMeshFilter",
+          "lodGeneratorSelectedGeometry",
+          "lodHasGeometryPayload",
+          "rebuildScene"
+        ],
+        "damage": [
+          "renderDamageNodeInspector",
+          "renderDamageRenderNodeInspector",
+          "renderStateVariants"
+        ],
+        "geometry": [
+          "aliasRepresentativeRenderNode",
+          "applyGeometryVisibilitySelection",
+          "clearEditorMeshTableFocus",
+          "effectiveGeometry",
+          "focusEditorMeshTableRow",
+          "geometryInventoryGeometryVisible",
+          "geometryInventoryVisibilitySet",
+          "geometryInventoryVisibleCount",
+          "geometrySelectionNeedsAncestor",
+          "logicalGeometryRows",
+          "logicalGeometrySelectedId",
+          "renderGeometryCandidates",
+          "renderGeometryEditor",
+          "representativeRenderNodeForGeometry",
+          "syncGeometryWorkspaceSelectionUi"
+        ],
+        "hit_volumes": [
+          "openRadialModal",
+          "rebuildCollisions",
+          "renderCollisionInspector",
+          "renderCollisionList"
+        ],
+        "i18n": [
+          "attachDynamicToolTip",
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod",
+          "selectedRenderMeshInfo",
+          "syncPreflightSelectionUi"
+        ],
+        "mesh_overlays": [
+          "rebuildEdgeOverlay",
+          "rebuildNormals"
+        ],
+        "physics": [
+          "renderPhysicsNodeInspector"
+        ],
+        "semantics": [
+          "resetSemanticMotionPreview",
+          "semanticDeleteSelectedNode",
+          "semanticDescendantSet",
+          "semanticIsDescendant",
+          "semanticRefreshSelectionUi",
+          "semanticSelectNode",
+          "semanticSelectedIndices"
+        ],
+        "semantics_transform": [
+          "previewStateForNode",
+          "stateApplies"
+        ],
+        "shared": [
+          "escapeMarkup",
+          "formatBytes",
+          "formatRelativeLodError"
+        ],
+        "shared_forms": [
+          "readVec",
+          "vecInputs"
+        ],
+        "sockets": [
+          "rebuildSockets",
+          "renderSocketInspector",
+          "renderSocketList"
+        ],
+        "source_maintenance": [
+          "instanceAliasRecordForRenderNode",
+          "meshStageVisualClass"
+        ],
+        "surfaces": [
+          "surfaceSelectionIds"
+        ],
+        "wizard_shell": [
+          "renderWizardPanel",
+          "switchEditorLod",
+          "syncSharedStageMeshSelectionUi"
+        ]
+      },
+      "exports": [
+        "clearViewportSelection",
+        "configureSurfacePreviewGroups",
+        "focusActiveMeshTableSelection",
+        "highlightSelection",
+        "renderActiveLodDetails",
+        "renderGeometries",
+        "renderLodFiles",
+        "renderNodeInspector",
+        "renderRenderNodeInspector",
+        "renderRenderTree",
+        "renderStorage",
+        "renderTree",
+        "renderUnusedGeometrySummary",
+        "requestDeleteUnusedGeometry",
+        "selectNode",
+        "selectRenderNode",
+        "unusedGeometries",
+        "updateVisibility"
+      ],
+      "binding_imports": [
+        "$",
+        "editorViewState",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_editorViewState",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "editor_view_state": {
+      "core": [
+        "editorViewSnapshotsEqual"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "assertEditorViewInvariant",
+        "assertEditorViewTransitionPreserved",
+        "captureEditorViewTransition",
+        "scheduleEditorViewInvariantCheck"
+      ],
+      "imports": {
+        "app_services": [
+          "reportEditorDiagnostic"
+        ],
+        "asset_scene": [
+          "lodHasGeometryPayload"
+        ]
+      },
+      "exports": [
+        "assertEditorViewInvariant",
+        "assertEditorViewTransitionPreserved",
+        "captureEditorViewTransition"
+      ],
+      "binding_imports": [
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "CONSOLE_IO",
+        "READ_editorInvariantScheduled",
+        "READ_editorViewState",
+        "READ_state",
+        "STATE_MUTATION"
+      ]
+    },
+    "final_assembly": {
+      "core": [
+        "finalAssemblyBuildModel",
+        "finalAssemblyStageCommand",
+        "finalAssemblyValidationModel"
+      ],
+      "presentation": [
+        "finalAssemblyBuildHtml",
+        "finalAssemblyValidationHtml"
+      ],
+      "adapters": [
+        "bindWizardStageCheckControls",
+        "renderWizardBuildStage",
+        "renderWizardValidateStage"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "send"
+        ],
+        "i18n": [
+          "attachDynamicToolTip",
+          "tr"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "wizard_shell": [
+          "wizardStageCheckControls",
+          "wizardStageLabel"
+        ]
+      },
+      "exports": [
+        "bindWizardStageCheckControls",
+        "finalAssemblyBuildHtml",
+        "finalAssemblyBuildModel",
+        "finalAssemblyStageCommand",
+        "finalAssemblyValidationHtml",
+        "finalAssemblyValidationModel",
+        "renderWizardBuildStage",
+        "renderWizardValidateStage"
+      ],
+      "binding_imports": [
+        "$"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI"
+      ]
+    },
+    "geometry": {
+      "core": [
+        "aliasRepresentativeRenderNode",
+        "canonicalGeometryForAlias",
+        "compareTargets",
+        "effectiveGeometry",
+        "geometryCacheKey",
+        "geometryComparableNodes",
+        "geometryResultMap",
+        "geometryWorkspaceChangeCount",
+        "geometryWorkspaceChangedGeometries",
+        "geometryWorkspaceRows",
+        "instanceAliasProxy",
+        "logicalGeometryRows",
+        "logicalGeometrySelectedId",
+        "matchingCheckedTargets",
+        "representativeRenderNodeForGeometry",
+        "wizardGeometryStageModel"
+      ],
+      "presentation": [
+        "wizardGeometryStageHtml"
+      ],
+      "adapters": [
+        "applyGeometryVisibilitySelection",
+        "clearEditorMeshTableFocus",
+        "ensureGeometryCompareState",
+        "focusEditorMeshTableRow",
+        "geometryInventoryGeometryVisible",
+        "geometryInventoryNodeVisible",
+        "geometryInventoryVisibilitySet",
+        "geometryInventoryVisibleCount",
+        "geometryReadableSource",
+        "geometrySelectionNeedsAncestor",
+        "geometryStageNodeVisible",
+        "geometryStageVisibilitySet",
+        "geometryStageVisibleCount",
+        "geometryStatsHtml",
+        "hideAllGeometryStageMeshes",
+        "renderGeometryCandidates",
+        "renderGeometryCandidatesContents",
+        "renderGeometryCompareSummary",
+        "renderGeometryEditor",
+        "renderWizardGeometryStage",
+        "setGeometryStageNodeVisible",
+        "showAllGeometryStageMeshes",
+        "switchGeometryLod",
+        "syncGeometryCompareCheckedToVisibility",
+        "syncGeometryWorkspaceSelectionUi",
+        "updateGeometryCompareButtons"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send"
+        ],
+        "editor_inspection": [
+          "renderUnusedGeometrySummary",
+          "selectRenderNode",
+          "unusedGeometries",
+          "updateVisibility"
+        ],
+        "final_assembly": [
+          "bindWizardStageCheckControls"
+        ],
+        "hit_volumes": [
+          "openRadialModal"
+        ],
+        "i18n": [
+          "attachDynamicToolTip",
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod",
+          "clearRenderVariantPreview"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "readVec",
+          "vecInputs"
+        ],
+        "source_maintenance": [
+          "instanceAliasRecordForRenderNode",
+          "instanceAliasRecordsForLod",
+          "maintenanceGeometryPending",
+          "meshSourceRecordForGeometry",
+          "meshStageVisualClass"
+        ],
+        "surfaces": [
+          "renderVariantAssignment",
+          "updateVariantPreviewControls"
+        ],
+        "ui_scroll": [
+          "captureUiScroll",
+          "preserveUiScroll"
+        ],
+        "wizard_shell": [
+          "switchEditorLod",
+          "wizardLodSelector",
+          "wizardStageCheckControls",
+          "wizardStageLabel"
+        ]
+      },
+      "exports": [
+        "aliasRepresentativeRenderNode",
+        "applyGeometryVisibilitySelection",
+        "clearEditorMeshTableFocus",
+        "effectiveGeometry",
+        "focusEditorMeshTableRow",
+        "geometryCacheKey",
+        "geometryInventoryGeometryVisible",
+        "geometryInventoryNodeVisible",
+        "geometryInventoryVisibilitySet",
+        "geometryInventoryVisibleCount",
+        "geometryReadableSource",
+        "geometrySelectionNeedsAncestor",
+        "instanceAliasProxy",
+        "logicalGeometryRows",
+        "logicalGeometrySelectedId",
+        "renderGeometryCandidates",
+        "renderGeometryEditor",
+        "renderWizardGeometryStage",
+        "representativeRenderNodeForGeometry",
+        "syncGeometryWorkspaceSelectionUi",
+        "wizardGeometryStageHtml",
+        "wizardGeometryStageModel"
+      ],
+      "binding_imports": [
+        "$",
+        "editorViewState",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_editorViewState",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "hit_volumes": {
+      "core": [
+        "collisionPrimitive",
+        "hitVolumeAddCommand",
+        "hitVolumeDamageScopeCommand",
+        "hitVolumeInspectorModel",
+        "hitVolumeListModel",
+        "hitVolumePhysicsUpdateCommand",
+        "hitVolumeRadialCommand",
+        "hitVolumeRenderPlan",
+        "radialLayoutAngles",
+        "radialSelectedPivotInParent"
+      ],
+      "presentation": [
+        "hitVolumeInspectorHtml",
+        "hitVolumeListHtml"
+      ],
+      "adapters": [
+        "closeRadialModal",
+        "openRadialModal",
+        "radialCenterFromMode",
+        "rebuildCollisions",
+        "rebuildStructuralProxies",
+        "renderCollisionInspector",
+        "renderCollisionList",
+        "syncRadialCenterInputs",
+        "syncRadialOperationUi",
+        "updateSemanticCollisionTransforms"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send"
+        ],
+        "editor_inspection": [
+          "highlightSelection"
+        ],
+        "i18n": [
+          "attachDynamicToolTip",
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod"
+        ],
+        "scene_runtime": [
+          "clearGroup"
+        ],
+        "semantics": [
+          "semanticDisplayWorldMatrix"
+        ],
+        "semantics_transform": [
+          "stateApplies"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "readStates",
+          "readVec",
+          "statesInput",
+          "vecInputs"
+        ],
+        "transform_math": [
+          "composeMatrix"
+        ]
+      },
+      "exports": [
+        "closeRadialModal",
+        "hitVolumeAddCommand",
+        "hitVolumeDamageScopeCommand",
+        "hitVolumeInspectorHtml",
+        "hitVolumeInspectorModel",
+        "hitVolumeListHtml",
+        "hitVolumeListModel",
+        "hitVolumePhysicsUpdateCommand",
+        "hitVolumeRadialCommand",
+        "hitVolumeRenderPlan",
+        "openRadialModal",
+        "radialCenterFromMode",
+        "rebuildCollisions",
+        "rebuildStructuralProxies",
+        "renderCollisionInspector",
+        "renderCollisionList",
+        "syncRadialCenterInputs",
+        "syncRadialOperationUi",
+        "updateSemanticCollisionTransforms"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "i18n": {
+      "core": [
+        "baseLocale",
+        "languageName"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "applyLocale",
+        "applyTooltips",
+        "attachDynamicToolTip",
+        "bindToolTipElement",
+        "cycleLocale",
+        "loadI18n",
+        "persistLocale",
+        "populateLanguageSelect",
+        "positionToolTip",
+        "setText",
+        "tr",
+        "translateServerMessage"
+      ],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send"
+        ],
+        "wizard_shell": [
+          "refreshDynamicUi"
+        ]
+      },
+      "exports": [
+        "applyLocale",
+        "attachDynamicToolTip",
+        "bindToolTipElement",
+        "cycleLocale",
+        "loadI18n",
+        "populateLanguageSelect",
+        "tr",
+        "translateServerMessage"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "CONSOLE_IO",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT",
+        "STORAGE_NETWORK",
+        "TIMERS_EVENTS"
+      ]
+    },
+    "lod_runtime": {
+      "core": [
+        "activeRenderLod",
+        "lodDiagnosticActive",
+        "renderNodeForPreflightGeometry",
+        "selectedMeshOrientationAction",
+        "selectedRenderMeshInfo",
+        "sourceVariantCanReplace",
+        "sourceVariantsForRenderNode",
+        "variantPreviewKey"
+      ],
+      "presentation": [],
+      "adapters": [
+        "bindPreflightMeshToolbar",
+        "clearLodFaceNormals",
+        "clearLodGeneratorPreview",
+        "clearRenderVariantPreview",
+        "hideAllLodPreflightMeshes",
+        "lodGeneratorPreviewGeometry",
+        "lodPreflightGeometryVisible",
+        "lodPreflightNodeVisible",
+        "lodPreflightVisibilitySet",
+        "lodPreflightVisibleCount",
+        "preflightMeshToolbarHtml",
+        "previewGeometryForRenderNode",
+        "rebuildLodFaceNormals",
+        "renderLodGeneratorPanel",
+        "renderModelPreflightInventory",
+        "renderModelPreflightPanel",
+        "scrollPreflightRowIntoView",
+        "selectPreflightGeometry",
+        "selectPreflightLogicalGeometry",
+        "setLodDiagnosticFaceNormals",
+        "setLodDiagnosticWireframe",
+        "setLodPreflightGeometryVisible",
+        "setRenderVariantPreview",
+        "setSelectedRenderMeshHidden",
+        "showAllLodPreflightMeshes",
+        "showAllViewportMeshes",
+        "syncPreflightSelectionUi",
+        "updatePreflightMeshToolbarUi"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send"
+        ],
+        "asset_scene": [
+          "fitView",
+          "lodHasGeometryPayload",
+          "rebuildScene",
+          "renderNodeVisibilityKey"
+        ],
+        "editor_inspection": [
+          "renderActiveLodDetails",
+          "renderLodFiles",
+          "renderRenderNodeInspector",
+          "selectRenderNode",
+          "updateVisibility"
+        ],
+        "geometry": [
+          "aliasRepresentativeRenderNode",
+          "effectiveGeometry",
+          "instanceAliasProxy",
+          "logicalGeometryRows",
+          "logicalGeometrySelectedId"
+        ],
+        "i18n": [
+          "attachDynamicToolTip",
+          "tr"
+        ],
+        "shared": [
+          "escapeMarkup",
+          "formatProjectedCharacteristic",
+          "formatRelativeLodError",
+          "formatSourceUnits"
+        ],
+        "source_maintenance": [
+          "instanceAliasRecordForRenderNode",
+          "instanceAliasRecordsForLod",
+          "meshStageCheckValue",
+          "meshStageVisualClass"
+        ],
+        "surfaces": [
+          "renderVariantAssignment",
+          "updateVariantPreviewControls"
+        ],
+        "ui_scroll": [
+          "captureUiScroll"
+        ],
+        "wizard_shell": [
+          "renderWizardPanel"
+        ]
+      },
+      "exports": [
+        "activeRenderLod",
+        "clearLodGeneratorPreview",
+        "clearRenderVariantPreview",
+        "lodDiagnosticActive",
+        "lodGeneratorPreviewGeometry",
+        "previewGeometryForRenderNode",
+        "rebuildLodFaceNormals",
+        "renderLodGeneratorPanel",
+        "renderModelPreflightPanel",
+        "selectedRenderMeshInfo",
+        "setRenderVariantPreview",
+        "sourceVariantCanReplace",
+        "syncPreflightSelectionUi",
+        "variantPreviewKey"
+      ],
+      "binding_imports": [
+        "$",
+        "editorViewState",
+        "state"
+      ],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_editorViewState",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "lods": {
+      "core": [
+        "wizardLodsStageModel"
+      ],
+      "presentation": [
+        "wizardLodsStageHtml"
+      ],
+      "adapters": [
+        "renderWizardLodsStage"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "send"
+        ],
+        "final_assembly": [
+          "bindWizardStageCheckControls"
+        ],
+        "i18n": [
+          "attachDynamicToolTip",
+          "tr"
+        ],
+        "lod_runtime": [
+          "clearLodGeneratorPreview",
+          "renderLodGeneratorPanel",
+          "renderModelPreflightPanel"
+        ],
+        "source_maintenance": [
+          "meshStageCheckValue"
+        ],
+        "wizard_shell": [
+          "switchEditorLod",
+          "wizardLodSelector",
+          "wizardStageCheckControls",
+          "wizardStageLabel"
+        ]
+      },
+      "exports": [
+        "renderWizardLodsStage",
+        "wizardLodsStageHtml",
+        "wizardLodsStageModel"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION"
+      ]
+    },
+    "materials": {
+      "core": [],
+      "presentation": [],
+      "adapters": [
+        "renderMaterials",
+        "viewFromSocket"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus"
+        ],
+        "scene_runtime": [
+          "clearGroup"
+        ],
+        "sockets": [
+          "socketCanonicalWorldMatrix"
+        ]
+      },
+      "exports": [
+        "renderMaterials",
+        "viewFromSocket"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "mesh_overlays": {
+      "core": [],
+      "presentation": [],
+      "adapters": [
+        "clearEdgeOverlay",
+        "clearNormalOverlay",
+        "rebuildEdgeOverlay",
+        "rebuildNormals",
+        "toggleEdge"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "send"
+        ],
+        "geometry": [
+          "geometryInventoryNodeVisible"
+        ],
+        "lod_runtime": [
+          "activeRenderLod"
+        ]
+      },
+      "exports": [
+        "clearEdgeOverlay",
+        "clearNormalOverlay",
+        "rebuildEdgeOverlay",
+        "rebuildNormals",
+        "toggleEdge"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION"
+      ]
+    },
+    "physics": {
+      "core": [
+        "physicsEstimateCommand",
+        "physicsNodeModel",
+        "physicsSetCommand",
+        "wizardPhysicsStageModel"
+      ],
+      "presentation": [
+        "physicsNodeHtml",
+        "wizardPhysicsStageHtml"
+      ],
+      "adapters": [
+        "renderPhysicsNodeInspector"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "send"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "readVec",
+          "vecInputs"
+        ]
+      },
+      "exports": [
+        "physicsEstimateCommand",
+        "physicsNodeHtml",
+        "physicsNodeModel",
+        "physicsSetCommand",
+        "renderPhysicsNodeInspector",
+        "wizardPhysicsStageHtml",
+        "wizardPhysicsStageModel"
+      ],
+      "binding_imports": [
+        "$"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI"
+      ]
+    },
+    "scene_runtime": {
+      "core": [],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "clearGroup",
+        "initScene",
+        "initWorldAxes",
+        "loop",
+        "makeAxisLabel",
+        "resize"
+      ],
+      "imports": {
+        "axis_mapping": [
+          "updateAxisLegend"
+        ],
+        "semantics": [
+          "updateSemanticMotionAnimation"
+        ],
+        "viewport": [
+          "pick"
+        ]
+      },
+      "exports": [
+        "clearGroup",
+        "initScene",
+        "loop",
+        "resize"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [
+        "three/addons/controls/OrbitControls.js:OrbitControls",
+        "three:THREE"
+      ],
+      "ports": [
+        "ARG_MUTATION",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION",
+        "TIMERS_EVENTS"
+      ]
+    },
+    "semantics": {
+      "core": [
+        "semanticAncestorHasDynamicTransform",
+        "semanticAxisMappingFromDirect",
+        "semanticCanUseParent",
+        "semanticCanonicalNodeAnchorMap",
+        "semanticCanonicalRenderWorldMatrices",
+        "semanticCurrentLodUnbound",
+        "semanticDescendantSet",
+        "semanticDisplayWorldMatrix",
+        "semanticGraphDirection",
+        "semanticGraphDisplayAnchorMap",
+        "semanticGraphLayoutOffsets",
+        "semanticGraphRadialMetrics",
+        "semanticGraphRootCenter",
+        "semanticGraphRootIndex",
+        "semanticGraphStructureSignature",
+        "semanticIsDescendant",
+        "semanticJointLocalPointFromWorld",
+        "semanticJointPayload",
+        "semanticNodeDepth",
+        "semanticNodeHasDynamicIncoming",
+        "semanticNodeHasTransformVariant",
+        "semanticOrderedChildren",
+        "semanticOwnedPayloadCount",
+        "semanticPreviewDeltaWorld",
+        "semanticRelationIcon",
+        "semanticRelationKind",
+        "semanticRelationLabel",
+        "semanticRelationOptions",
+        "semanticRenderBaseMatrix",
+        "semanticRenderOwner",
+        "semanticRootIndices",
+        "semanticSelectedIndices",
+        "semanticSelectedPanels",
+        "semanticSelectionModeFromEvent",
+        "semanticSelectionSet",
+        "semanticStaticFlattenCandidates",
+        "semanticTopLevelSelected",
+        "semanticTreeOrderKey",
+        "semanticTreeRows",
+        "semanticUnboundRenderClusterOffsets",
+        "semanticUnboundRenderClusterRoot",
+        "semanticUsageForNode",
+        "semanticVisualLodProfile",
+        "structuralEndpointForPick",
+        "structuralSelectedEndpoint",
+        "wizardSemanticsBindingAssignmentCommand",
+        "wizardSemanticsBindingCommandModel",
+        "wizardSemanticsBindingPickTransition",
+        "wizardSemanticsBindingsBlockModel",
+        "wizardSemanticsCollapsedTransition",
+        "wizardSemanticsDeleteConfirmText",
+        "wizardSemanticsDeletePlan",
+        "wizardSemanticsFlattenStaticTreeCommand",
+        "wizardSemanticsGraphExplodeApplicationPlan",
+        "wizardSemanticsGraphGizmoPlan",
+        "wizardSemanticsGraphObjectModel",
+        "wizardSemanticsJointGizmoPlan",
+        "wizardSemanticsJointPivotCommand",
+        "wizardSemanticsJointPivotPickTransition",
+        "wizardSemanticsJointUpdateCommand",
+        "wizardSemanticsLodSelectionRestoreModel",
+        "wizardSemanticsMotionAngleModel",
+        "wizardSemanticsMotionAnimationStep",
+        "wizardSemanticsMotionDetachTransition",
+        "wizardSemanticsMotionPlayTransition",
+        "wizardSemanticsMotionPreviewApplicationPlan",
+        "wizardSemanticsMotionPreviewTargetModel",
+        "wizardSemanticsMotionZeroModel",
+        "wizardSemanticsMoveToAssetSpaceCommand",
+        "wizardSemanticsNewNodeSuggestion",
+        "wizardSemanticsNodeTransformCommand",
+        "wizardSemanticsNominalRateCommand",
+        "wizardSemanticsParentOriginPivotRequest",
+        "wizardSemanticsPreviewControlModel",
+        "wizardSemanticsPreviewRateModel",
+        "wizardSemanticsRelationCommand",
+        "wizardSemanticsReparentCommand",
+        "wizardSemanticsSelectedPanelsModel",
+        "wizardSemanticsSelectionRefreshModel",
+        "wizardSemanticsSelectionTransition",
+        "wizardSemanticsStageModel",
+        "wizardSemanticsStageSelectionNormalization",
+        "wizardSemanticsStructuralCreateLinkCommand",
+        "wizardSemanticsStructuralEndpointActionModel",
+        "wizardSemanticsStructuralGraphModel",
+        "wizardSemanticsStructuralLinkUpdateCommand",
+        "wizardSemanticsStructuralProxyUpdateCommand",
+        "wizardSemanticsTreeBlockModel",
+        "wizardSemanticsTreeDragStartTransition",
+        "wizardSemanticsTreeDropPlacement",
+        "wizardSemanticsTreeDropValid",
+        "wizardSemanticsViewportGizmoPickDecision",
+        "wizardSemanticsViewportMeshPickDecision",
+        "wizardSemanticsVisualCenterPivotEligibility",
+        "wizardSemanticsVisualCenterPivotRequest",
+        "wizardSemanticsWorkspaceModel"
+      ],
+      "presentation": [
+        "semanticBindingHealthHtml",
+        "semanticBindingRepairHtml",
+        "semanticBindingSummaryHtml",
+        "semanticStructureModeHtml",
+        "structuralEndpointCard",
+        "structuralGraphMeshRowsHtml",
+        "structuralGraphPanelHtml",
+        "wizardSemanticsBindingRowsHtml",
+        "wizardSemanticsSelectedPanelsHtml",
+        "wizardSemanticsTreeRowsHtml",
+        "wizardSemanticsWorkspaceHtml"
+      ],
+      "adapters": [
+        "applySemanticGraphExplode",
+        "applySemanticMotionPreview",
+        "assertSemanticVisualLodInvariant",
+        "bindPhysicalSizePanel",
+        "bindSemanticMotionControls",
+        "bindSemanticStructureMode",
+        "bindStructuralGraphPanel",
+        "bindWizardSemanticsBindingInteractions",
+        "bindWizardSemanticsJointInteractions",
+        "bindWizardSemanticsMotionPreviewInteractions",
+        "bindWizardSemanticsPreviewInteractions",
+        "bindWizardSemanticsSelectedNodeInteractions",
+        "bindWizardSemanticsTreeInteractions",
+        "bindWizardStructuralGraphEndpointInteractions",
+        "bindWizardStructuralGraphLinkInteractions",
+        "bindWizardStructuralGraphProxyInteractions",
+        "bindWizardStructuralGraphViewportInteractions",
+        "clearSemanticGizmos",
+        "clearSemanticGraphObjects",
+        "clearSemanticJointGizmos",
+        "ensureSemanticGraphObjects",
+        "physicalSizePanelHtml",
+        "rebuildSemanticGizmos",
+        "rebuildSemanticGraphGizmos",
+        "renderWizardSemanticsStage",
+        "renderWizardStructuralGraphStage",
+        "resetSemanticMotionPreview",
+        "restoreSemanticPreviewMatrices",
+        "restoreSemanticSelectionAfterLodSwitch",
+        "scheduleSemanticGraphPreview",
+        "semanticBeginJointPivotPick",
+        "semanticDeleteSelectedNode",
+        "semanticFlattenStaticTree",
+        "semanticMoveSelectionToAssetSpace",
+        "semanticRefreshSelectionUi",
+        "semanticReparentSelection",
+        "semanticSelectNode",
+        "semanticSendJoint",
+        "semanticSetJointPivotWorld",
+        "semanticSetNominalRate",
+        "semanticSetRelation",
+        "semanticSetRelationFor",
+        "semanticUseParentOriginPivot",
+        "semanticUseVisualCenterPivot",
+        "structuralPickNode",
+        "structuralScrollSelectedMesh",
+        "structuralSelectEndpoint",
+        "structuralSelectRenderNode",
+        "switchSemanticLod",
+        "syncSemanticMotionButtons",
+        "updateSemanticMotionAnimation"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "reportEditorDiagnostic",
+          "send"
+        ],
+        "asset_scene": [
+          "lodHasGeometryPayload",
+          "rebuildScene"
+        ],
+        "axis_mapping": [
+          "axisFamily",
+          "sourceAxisToken"
+        ],
+        "editor_inspection": [
+          "highlightSelection",
+          "selectRenderNode"
+        ],
+        "editor_view_state": [
+          "assertEditorViewInvariant"
+        ],
+        "final_assembly": [
+          "bindWizardStageCheckControls"
+        ],
+        "hit_volumes": [
+          "rebuildStructuralProxies",
+          "updateSemanticCollisionTransforms"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod"
+        ],
+        "scene_runtime": [
+          "clearGroup"
+        ],
+        "semantics_transform": [
+          "previewStateForNode",
+          "semanticNodePose",
+          "semanticWorldMatrix"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "readVec",
+          "vecInputs"
+        ],
+        "sockets": [
+          "updateSemanticSocketTransforms"
+        ],
+        "source_maintenance": [
+          "meshStageVisualClass"
+        ],
+        "transform_math": [
+          "composeMatrix",
+          "deg"
+        ],
+        "wizard_shell": [
+          "renderSharedStageMeshPanel",
+          "renderWizardPanel",
+          "switchEditorLod",
+          "wizardLodSelector",
+          "wizardStageCheckControls",
+          "wizardStageLabel"
+        ]
+      },
+      "exports": [
+        "applySemanticMotionPreview",
+        "bindPhysicalSizePanel",
+        "clearSemanticGizmos",
+        "physicalSizePanelHtml",
+        "renderWizardSemanticsStage",
+        "renderWizardStructuralGraphStage",
+        "resetSemanticMotionPreview",
+        "semanticAxisMappingFromDirect",
+        "semanticDeleteSelectedNode",
+        "semanticDescendantSet",
+        "semanticDisplayWorldMatrix",
+        "semanticIsDescendant",
+        "semanticRefreshSelectionUi",
+        "semanticSelectNode",
+        "semanticSelectedIndices",
+        "semanticSelectionModeFromEvent",
+        "semanticSetJointPivotWorld",
+        "structuralGraphPanelHtml",
+        "structuralPickNode",
+        "switchSemanticLod",
+        "updateSemanticMotionAnimation",
+        "wizardSemanticsBindingRowsHtml",
+        "wizardSemanticsBindingsBlockModel",
+        "wizardSemanticsGraphExplodeApplicationPlan",
+        "wizardSemanticsJointPivotCommand",
+        "wizardSemanticsMotionAnimationStep",
+        "wizardSemanticsReparentCommand",
+        "wizardSemanticsSelectedPanelsHtml",
+        "wizardSemanticsSelectionTransition",
+        "wizardSemanticsStageModel",
+        "wizardSemanticsStructuralGraphModel",
+        "wizardSemanticsTreeBlockModel",
+        "wizardSemanticsTreeRowsHtml",
+        "wizardSemanticsViewportGizmoPickDecision",
+        "wizardSemanticsViewportMeshPickDecision",
+        "wizardSemanticsWorkspaceHtml",
+        "wizardSemanticsWorkspaceModel"
+      ],
+      "binding_imports": [
+        "$",
+        "editorViewState",
+        "state"
+      ],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "CONSOLE_IO",
+        "DOM_UI",
+        "READ_editorViewState",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT",
+        "TIMERS_EVENTS"
+      ]
+    },
+    "semantics_transform": {
+      "core": [
+        "previewStateForNode",
+        "semanticNodePose",
+        "semanticWorldMatrix",
+        "stateApplies"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {
+        "transform_math": [
+          "composeMatrix"
+        ]
+      },
+      "exports": [
+        "previewStateForNode",
+        "semanticNodePose",
+        "semanticWorldMatrix",
+        "stateApplies"
+      ],
+      "binding_imports": [],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": []
+    },
+    "settings": {
+      "core": [],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "clearSettingsSaveTimer",
+        "closeSettings",
+        "openSettings",
+        "setSettingsSaving",
+        "settingsSaveTimedOut",
+        "syncToggleButton"
+      ],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send",
+          "status"
+        ],
+        "i18n": [
+          "populateLanguageSelect",
+          "tr"
+        ]
+      },
+      "exports": [
+        "clearSettingsSaveTimer",
+        "closeSettings",
+        "openSettings",
+        "setSettingsSaving",
+        "settingsSaveTimedOut",
+        "syncToggleButton"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT",
+        "TIMERS_EVENTS"
+      ]
+    },
+    "shared": {
+      "core": [
+        "diagnosticValue",
+        "escapeMarkup",
+        "formatBytes",
+        "formatMeters",
+        "formatProjectedCharacteristic",
+        "formatRelativeLodError",
+        "formatSourceUnits"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "diagnosticValue",
+        "escapeMarkup",
+        "formatBytes",
+        "formatProjectedCharacteristic",
+        "formatRelativeLodError",
+        "formatSourceUnits"
+      ],
+      "binding_imports": [],
+      "external_imports": [],
+      "ports": []
+    },
+    "shared_forms": {
+      "core": [
+        "statesInput",
+        "vecInputs"
+      ],
+      "presentation": [],
+      "adapters": [
+        "readStates",
+        "readVec"
+      ],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "readStates",
+        "readVec",
+        "statesInput",
+        "vecInputs"
+      ],
+      "binding_imports": [
+        "$"
+      ],
+      "external_imports": [],
+      "ports": [
+        "DOM_UI"
+      ]
+    },
+    "sockets": {
+      "core": [
+        "socketCanonicalWorldMatrix",
+        "socketIndexFromObject",
+        "socketKindColor",
+        "socketLocalMatrix",
+        "socketWorldMatrix"
+      ],
+      "presentation": [],
+      "adapters": [
+        "rebuildSockets",
+        "renderSocketInspector",
+        "renderSocketList",
+        "selectSocket",
+        "updateSemanticSocketTransforms"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send"
+        ],
+        "editor_inspection": [
+          "highlightSelection",
+          "renderNodeInspector",
+          "renderTree"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod"
+        ],
+        "materials": [
+          "viewFromSocket"
+        ],
+        "scene_runtime": [
+          "clearGroup"
+        ],
+        "semantics": [
+          "applySemanticMotionPreview",
+          "resetSemanticMotionPreview",
+          "semanticDisplayWorldMatrix"
+        ],
+        "semantics_transform": [
+          "semanticWorldMatrix",
+          "stateApplies"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "shared_forms": [
+          "readStates",
+          "readVec",
+          "statesInput",
+          "vecInputs"
+        ],
+        "transform_math": [
+          "composeMatrix"
+        ],
+        "wizard_shell": [
+          "renderWizardPanel"
+        ]
+      },
+      "exports": [
+        "rebuildSockets",
+        "renderSocketInspector",
+        "renderSocketList",
+        "selectSocket",
+        "socketCanonicalWorldMatrix",
+        "socketIndexFromObject",
+        "updateSemanticSocketTransforms"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "source": {
+      "core": [
+        "wizardSourceStageModel"
+      ],
+      "presentation": [
+        "wizardSourceStageHtml"
+      ],
+      "adapters": [
+        "renderWizardSourceStage"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "progress",
+          "send"
+        ],
+        "final_assembly": [
+          "bindWizardStageCheckControls"
+        ],
+        "i18n": [
+          "attachDynamicToolTip",
+          "tr"
+        ],
+        "semantics": [
+          "bindPhysicalSizePanel",
+          "physicalSizePanelHtml"
+        ],
+        "source_maintenance": [
+          "bindMaintenanceSourceScan",
+          "instanceAliasRecordsForLod",
+          "maintenanceSourceScanHtml",
+          "meshSourceRecordsForLod"
+        ],
+        "wizard_shell": [
+          "wizardStageCheckControls",
+          "wizardStageLabel"
+        ]
+      },
+      "exports": [
+        "renderWizardSourceStage",
+        "wizardSourceStageHtml",
+        "wizardSourceStageModel"
+      ],
+      "binding_imports": [
+        "$"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "STATUS_PROMPT"
+      ]
+    },
+    "source_maintenance": {
+      "core": [
+        "instanceAliasRecordForRenderNode",
+        "instanceAliasRecordsForLod",
+        "maintenanceChangeCount",
+        "maintenanceFileDir",
+        "maintenanceFileName",
+        "maintenanceGeometryPending",
+        "maintenancePendingComponents",
+        "maintenancePendingIds",
+        "maintenanceRowStatus",
+        "maintenanceRows",
+        "maintenanceStatusGlyph",
+        "meshSourceRecordForGeometry",
+        "meshSourceRecordsForLod",
+        "meshStageCheckValue",
+        "meshStageVisualClass",
+        "meshValidationPending",
+        "sourceChangeRowAcceptedByStageCheck"
+      ],
+      "presentation": [],
+      "adapters": [
+        "bindMaintenanceSourceScan",
+        "confirmMissingSourceMesh",
+        "extraMeshLabel",
+        "maintenanceIssueLabel",
+        "maintenanceSourceScanHtml",
+        "settleSourceChangeScanAfterCheck"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "send"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ]
+      },
+      "exports": [
+        "bindMaintenanceSourceScan",
+        "extraMeshLabel",
+        "instanceAliasRecordForRenderNode",
+        "instanceAliasRecordsForLod",
+        "maintenanceGeometryPending",
+        "maintenanceSourceScanHtml",
+        "meshSourceRecordForGeometry",
+        "meshSourceRecordsForLod",
+        "meshStageCheckValue",
+        "meshStageVisualClass",
+        "settleSourceChangeScanAfterCheck"
+      ],
+      "binding_imports": [
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    },
+    "surfaces": {
+      "core": [
+        "colorArrayToHex",
+        "hexToColorArray",
+        "surfaceFamilyKey",
+        "surfaceGeometryRenderNodeIndices",
+        "surfaceIntentForGeometry",
+        "surfaceIntentNeedsDecision",
+        "surfaceInvalidMaterialSlots",
+        "surfaceMaterialForIndex",
+        "surfaceMaterialUsage",
+        "surfacePreflightRow",
+        "surfaceSameFamily",
+        "surfaceSelectedGeometry",
+        "surfaceSelectionAnchor",
+        "surfaceStageGlyph",
+        "surfaceStageVisualClass",
+        "wizardSurfacesStageModel"
+      ],
+      "presentation": [
+        "wizardSurfacesStageHtml"
+      ],
+      "adapters": [
+        "renderVariantAssignment",
+        "renderVariantAssignmentContents",
+        "renderWizardSurfacesStage",
+        "setSurfaceGeometryVisible",
+        "surfaceGeometryBlockers",
+        "surfaceGeometryNeedsReview",
+        "surfaceGeometryVisibility",
+        "surfaceHideCompleteLod",
+        "surfaceIntentLabel",
+        "surfaceRenderConsequence",
+        "surfaceSelectGeometry",
+        "surfaceSelectedGeometries",
+        "surfaceSelectionIds",
+        "surfaceSelectionSet",
+        "surfaceSetSelectionAnchor",
+        "surfaceShowCompleteLod",
+        "switchSurfaceLod",
+        "updateVariantPreviewControls"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send"
+        ],
+        "asset_scene": [
+          "rebuildScene"
+        ],
+        "editor_inspection": [
+          "focusActiveMeshTableSelection",
+          "highlightSelection",
+          "renderRenderNodeInspector",
+          "renderRenderTree",
+          "selectRenderNode",
+          "updateVisibility"
+        ],
+        "final_assembly": [
+          "bindWizardStageCheckControls"
+        ],
+        "geometry": [
+          "aliasRepresentativeRenderNode",
+          "effectiveGeometry",
+          "geometryReadableSource",
+          "logicalGeometryRows",
+          "representativeRenderNodeForGeometry"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod",
+          "setRenderVariantPreview",
+          "sourceVariantCanReplace",
+          "variantPreviewKey"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "source_maintenance": [
+          "extraMeshLabel",
+          "instanceAliasRecordForRenderNode",
+          "meshStageCheckValue",
+          "meshStageVisualClass"
+        ],
+        "ui_scroll": [
+          "preserveUiScroll"
+        ],
+        "wizard_shell": [
+          "renderWizardPanel",
+          "switchEditorLod",
+          "wizardLodSelector",
+          "wizardStageCheckControls",
+          "wizardStageLabel"
+        ]
+      },
+      "exports": [
+        "renderVariantAssignment",
+        "renderWizardSurfacesStage",
+        "surfaceSelectionIds",
+        "surfaceSelectionSet",
+        "surfaceSetSelectionAnchor",
+        "updateVariantPreviewControls",
+        "wizardSurfacesStageHtml",
+        "wizardSurfacesStageModel"
+      ],
+      "binding_imports": [
+        "$",
+        "editorViewState",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_editorViewState",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT",
+        "TIMERS_EVENTS"
+      ]
+    },
+    "transform_math": {
+      "core": [
+        "composeMatrix",
+        "deg"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [],
+      "imports": {},
+      "exports": [
+        "composeMatrix",
+        "deg"
+      ],
+      "binding_imports": [],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": []
+    },
+    "ui_scroll": {
+      "core": [
+        "uiScrollContextKey"
+      ],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "captureUiScroll",
+        "preserveUiScroll",
+        "restoreUiScroll",
+        "trackedScrollElements"
+      ],
+      "imports": {},
+      "exports": [
+        "captureUiScroll",
+        "preserveUiScroll"
+      ],
+      "binding_imports": [
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "DOM_UI",
+        "GLOBAL_MUTATION",
+        "READ_state",
+        "READ_uiScrollPositions",
+        "READ_uiScrollPreserveDepth",
+        "TIMERS_EVENTS"
+      ]
+    },
+    "viewport": {
+      "core": [],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "pick"
+      ],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send"
+        ],
+        "editor_inspection": [
+          "clearViewportSelection",
+          "focusActiveMeshTableSelection",
+          "selectRenderNode"
+        ],
+        "hit_volumes": [
+          "rebuildCollisions",
+          "renderCollisionInspector"
+        ],
+        "i18n": [
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod"
+        ],
+        "mesh_overlays": [
+          "toggleEdge"
+        ],
+        "semantics": [
+          "semanticSelectNode",
+          "semanticSelectionModeFromEvent",
+          "semanticSetJointPivotWorld",
+          "structuralPickNode",
+          "wizardSemanticsViewportGizmoPickDecision",
+          "wizardSemanticsViewportMeshPickDecision"
+        ],
+        "sockets": [
+          "selectSocket",
+          "socketIndexFromObject"
+        ],
+        "source_maintenance": [
+          "instanceAliasRecordForRenderNode"
+        ],
+        "surfaces": [
+          "surfaceSelectionSet",
+          "surfaceSetSelectionAnchor"
+        ],
+        "wizard_shell": [
+          "renderWizardPanel"
+        ]
+      },
+      "exports": [
+        "pick"
+      ],
+      "binding_imports": [
+        "$",
+        "state"
+      ],
+      "external_imports": [
+        "three:THREE"
+      ],
+      "ports": [
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "GLOBAL_MUTATION",
+        "READ_mouse",
+        "READ_raycaster",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT",
+        "TIMERS_EVENTS"
+      ]
+    },
+    "wire_protocol": {
+      "core": [],
+      "presentation": [],
+      "adapters": [],
+      "infrastructure": [
+        "applyEditorLodGeometry",
+        "beginEditorAssetBinary",
+        "beginEditorLodBinary",
+        "decodeEditorLodGeometry",
+        "handleEditorBinary",
+        "logEditorWireTiming",
+        "readEditorWireMesh",
+        "readEditorWireRawMesh",
+        "reuseEditorLodGeometry"
+      ],
+      "imports": {
+        "asset_ingress": [
+          "handle"
+        ],
+        "asset_scene": [
+          "retainGeometryPayload"
+        ]
+      },
+      "exports": [
+        "beginEditorAssetBinary",
+        "beginEditorLodBinary",
+        "handleEditorBinary"
+      ],
+      "binding_imports": [
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "CONSOLE_IO",
+        "GLOBAL_MUTATION",
+        "NONDETERMINISTIC",
+        "READ_editorWireTransfers",
+        "READ_state"
+      ]
+    },
+    "wizard_shell": {
+      "core": [
+        "sharedStageMeshStage",
+        "wizardRecord",
+        "wizardStageAllowed"
+      ],
+      "presentation": [],
+      "adapters": [
+        "applyWizardVisibility",
+        "refreshDynamicUi",
+        "renderSharedStageMeshPanel",
+        "renderWizard",
+        "renderWizardPanel",
+        "renderWizardPanelContents",
+        "renderWizardPhysicsStage",
+        "setWizardStage",
+        "switchEditorLod",
+        "syncSharedStageMeshSelectionUi",
+        "wizardLodButtons",
+        "wizardLodSelector",
+        "wizardStageCheckControls",
+        "wizardStageLabel",
+        "wizardStatusLabel"
+      ],
+      "infrastructure": [],
+      "imports": {
+        "app_services": [
+          "localStatus",
+          "send"
+        ],
+        "asset_scene": [
+          "fitView",
+          "lodHasGeometryPayload",
+          "rebuildScene"
+        ],
+        "axis_mapping": [
+          "updateAxisLegend"
+        ],
+        "catalog": [
+          "renderCatalog"
+        ],
+        "damage": [
+          "renderDamageSemantics",
+          "renderStateVariants",
+          "renderWizardDamageStage"
+        ],
+        "editor_inspection": [
+          "highlightSelection",
+          "renderActiveLodDetails",
+          "renderGeometries",
+          "renderLodFiles",
+          "renderNodeInspector",
+          "renderRenderNodeInspector",
+          "renderRenderTree",
+          "renderStorage",
+          "renderTree",
+          "selectRenderNode",
+          "updateVisibility"
+        ],
+        "editor_view_state": [
+          "assertEditorViewInvariant",
+          "assertEditorViewTransitionPreserved",
+          "captureEditorViewTransition"
+        ],
+        "final_assembly": [
+          "bindWizardStageCheckControls",
+          "renderWizardBuildStage",
+          "renderWizardValidateStage"
+        ],
+        "geometry": [
+          "renderWizardGeometryStage"
+        ],
+        "hit_volumes": [
+          "renderCollisionInspector",
+          "renderCollisionList"
+        ],
+        "i18n": [
+          "attachDynamicToolTip",
+          "tr"
+        ],
+        "lod_runtime": [
+          "activeRenderLod",
+          "clearLodGeneratorPreview"
+        ],
+        "lods": [
+          "renderWizardLodsStage"
+        ],
+        "materials": [
+          "renderMaterials"
+        ],
+        "physics": [
+          "wizardPhysicsStageHtml",
+          "wizardPhysicsStageModel"
+        ],
+        "semantics": [
+          "renderWizardSemanticsStage",
+          "resetSemanticMotionPreview"
+        ],
+        "shared": [
+          "escapeMarkup"
+        ],
+        "sockets": [
+          "renderSocketInspector",
+          "renderSocketList"
+        ],
+        "source": [
+          "renderWizardSourceStage"
+        ],
+        "source_maintenance": [
+          "meshStageCheckValue",
+          "meshStageVisualClass"
+        ],
+        "surfaces": [
+          "renderWizardSurfacesStage"
+        ],
+        "ui_scroll": [
+          "preserveUiScroll"
+        ]
+      },
+      "exports": [
+        "applyWizardVisibility",
+        "refreshDynamicUi",
+        "renderSharedStageMeshPanel",
+        "renderWizard",
+        "renderWizardPanel",
+        "renderWizardPanelContents",
+        "renderWizardPhysicsStage",
+        "setWizardStage",
+        "switchEditorLod",
+        "syncSharedStageMeshSelectionUi",
+        "wizardLodSelector",
+        "wizardStageCheckControls",
+        "wizardStageLabel"
+      ],
+      "binding_imports": [
+        "$",
+        "editorViewState",
+        "state"
+      ],
+      "external_imports": [],
+      "ports": [
+        "ARG_MUTATION",
+        "BACKEND_COMMAND",
+        "DOM_UI",
+        "READ_editorViewState",
+        "READ_state",
+        "STATE_MUTATION",
+        "STATUS_PROMPT"
+      ]
+    }
+  },
+  "classes": {
+    "ProjectedVisibilitySet": {
+      "module": "editor_view_state",
+      "role": "infrastructure",
+      "methods": [
+        "constructor",
+        "add",
+        "delete",
+        "clear"
+      ]
+    },
+    "EditorVisibilityMapAdapter": {
+      "module": "editor_view_state",
+      "role": "infrastructure",
+      "methods": [
+        "constructor",
+        "has",
+        "get",
+        "set",
+        "delete",
+        "clear"
+      ]
+    },
+    "HiddenRenderNodeAdapter": {
+      "module": "editor_view_state",
+      "role": "infrastructure",
+      "methods": [
+        "constructor",
+        "has",
+        "add",
+        "delete",
+        "clear"
+      ]
+    },
+    "EditorViewState": {
+      "module": "editor_view_state",
+      "role": "infrastructure",
+      "methods": [
+        "constructor",
+        "resetForAsset",
+        "syncResidency",
+        "renderVisibilityToken",
+        "geometryVisibilityToken",
+        "allVisibilityTokens",
+        "visibleTokens",
+        "compactVisibility",
+        "projectVisible",
+        "acceptProjection",
+        "setRenderNodeVisible",
+        "renderNodeVisible",
+        "semanticHiddenSet",
+        "isolatedSemantic",
+        "setIsolatedSemantic",
+        "parseRenderNodeVisibilityKey",
+        "clearSelection",
+        "setActiveLod",
+        "setSelectedRenderNode",
+        "commitSceneLod"
+      ]
+    },
+    "EditorWireReader": {
+      "module": "wire_protocol",
+      "role": "infrastructure",
+      "methods": [
+        "constructor",
+        "require",
+        "u8",
+        "u32",
+        "i32",
+        "align4",
+        "string",
+        "f32Array",
+        "u32Array",
+        "i32Array"
+      ]
+    }
+  },
+  "top_level_bindings": {
+    "$": {
+      "module": "app_shell",
+      "role": "infrastructure",
+      "kind": "dom_lookup"
+    },
+    "editorViewState": {
+      "module": "editor_view_state",
+      "role": "infrastructure",
+      "kind": "authoritative_view_state"
+    },
+    "state": {
+      "module": "app_shell",
+      "role": "infrastructure",
+      "kind": "editor_runtime_context"
+    },
+    "uiScrollPositions": {
+      "module": "ui_scroll",
+      "role": "infrastructure",
+      "kind": "scroll_state"
+    },
+    "uiScrollPreserveDepth": {
+      "module": "ui_scroll",
+      "role": "infrastructure",
+      "kind": "scroll_state"
+    },
+    "raycaster": {
+      "module": "viewport",
+      "role": "infrastructure",
+      "kind": "three_raycast_state"
+    },
+    "mouse": {
+      "module": "viewport",
+      "role": "infrastructure",
+      "kind": "three_pointer_state"
+    },
+    "wizardStageIds": {
+      "module": "wizard_shell",
+      "role": "infrastructure",
+      "kind": "wizard_stage_constants"
+    },
+    "editorInvariantScheduled": {
+      "module": "editor_view_state",
+      "role": "infrastructure",
+      "kind": "invariant_scheduler_state"
+    },
+    "commandLabels": {
+      "module": "app_services",
+      "role": "infrastructure",
+      "kind": "backend_command_labels"
+    },
+    "editorDiagnosticQueue": {
+      "module": "app_services",
+      "role": "infrastructure",
+      "kind": "diagnostic_queue"
+    },
+    "axisDirectionTokens": {
+      "module": "axis_mapping",
+      "role": "infrastructure",
+      "kind": "axis_constants"
+    },
+    "gameAxisLabels": {
+      "module": "axis_mapping",
+      "role": "infrastructure",
+      "kind": "axis_constants"
+    },
+    "editorWireTransfers": {
+      "module": "wire_protocol",
+      "role": "infrastructure",
+      "kind": "transport_state"
+    },
+    "editorWireTextDecoder": {
+      "module": "wire_protocol",
+      "role": "infrastructure",
+      "kind": "transport_decoder"
+    }
+  },
+  "composition_root": {
+    "module": "app_shell",
+    "owns_module_scope_execution": true,
+    "owns_state_binding": "state",
+    "imports": {
+      "app_services": [
+        "localStatus",
+        "progress",
+        "send",
+        "status"
+      ],
+      "asset_ingress": [
+        "connect"
+      ],
+      "asset_scene": [
+        "activeLodNeedsRawSource",
+        "fitView",
+        "rebuildScene"
+      ],
+      "axis_mapping": [
+        "applyAxisMapping",
+        "closeAxisMappingModal",
+        "openAxisMappingModal",
+        "resetAxisModalPending",
+        "resetAxisModalToSource",
+        "rotateAxisModal"
+      ],
+      "damage": [
+        "damageSemanticAddCommand",
+        "damageStateScopeDefault",
+        "damageStateScopeParse",
+        "stateScopeForSelectedNode"
+      ],
+      "editor_inspection": [
+        "requestDeleteUnusedGeometry",
+        "updateVisibility"
+      ],
+      "hit_volumes": [
+        "closeRadialModal",
+        "hitVolumeAddCommand",
+        "hitVolumeRadialCommand",
+        "radialCenterFromMode",
+        "rebuildCollisions",
+        "syncRadialCenterInputs",
+        "syncRadialOperationUi"
+      ],
+      "i18n": [
+        "bindToolTipElement",
+        "cycleLocale",
+        "loadI18n",
+        "tr"
+      ],
+      "lod_runtime": [
+        "activeRenderLod"
+      ],
+      "mesh_overlays": [
+        "rebuildEdgeOverlay",
+        "rebuildNormals"
+      ],
+      "scene_runtime": [
+        "initScene"
+      ],
+      "semantics_transform": [
+        "previewStateForNode"
+      ],
+      "settings": [
+        "clearSettingsSaveTimer",
+        "closeSettings",
+        "openSettings",
+        "setSettingsSaving",
+        "settingsSaveTimedOut",
+        "syncToggleButton"
+      ],
+      "sockets": [
+        "rebuildSockets"
+      ],
+      "wizard_shell": [
+        "renderWizardPanel"
+      ]
+    },
+    "binding_imports": [
+      "editorViewState"
+    ],
+    "external_imports": [],
+    "policy": "Module-scope DOM/event/bootstrap wiring remains effectful composition code. Physical extraction imports domain adapters/cores into this root; runtime state does not move into portable cores."
+  },
+  "external_libraries": {
+    "three:THREE": {
+      "specifier": "three",
+      "binding": "THREE",
+      "kind": "namespace"
+    },
+    "three/addons/controls/OrbitControls.js:OrbitControls": {
+      "specifier": "three/addons/controls/OrbitControls.js",
+      "binding": "OrbitControls",
+      "kind": "named"
+    }
+  }
+}

@@ -1,3 +1,21 @@
+## Model Asset Editor v0.10.66 — wave 6D / complete module ownership + hard API wiring
+
+- Added `MODULE_OWNERSHIP_CONTRACT.json` as the complete pre-extraction ownership map for the browser editor: all 546 named functions, 5 classes / 45 class methods and all 15 discovered top-level module bindings have exactly one logical owner.
+- Classified every named function by role: 262 statically PURE functions are `core` / `presentation`; the remaining 284 EASY / TRANSITIVE / effectful functions are `adapter` / `infrastructure`. TRANSITIVE calls inside a portable module remain explicitly allowed.
+- Frozen every cross-module named dependency as an explicit import/export edge and every cross-owner runtime binding (`state`, `editorViewState`, raycaster/mouse, diagnostics, transport state, etc.) as an explicit binding import.
+- Frozen external library dependencies (`THREE`, `OrbitControls`) at module level and assigned module-scope browser/event/bootstrap wiring to the `app_shell` composition root.
+- Added `check_model_asset_module_ownership.py`: it rejects unowned/stale/duplicate functions, class-method drift, undeclared cross-module calls, undeclared runtime-binding reads, portable→effect calls, external-import drift and portable module cycles.
+- No editor runtime behaviour, HTML controls, backend protocol, authored data or existing purity oracle changed. The next/last logical-decomposition gate is wave6E standalone extraction proof.
+
+## Model Asset Editor v0.10.66 — wave 6C / FINAL ASSEMBLY portable-block foundation
+
+- Extracted VALIDATE report projection/presentation into certified PURE `finalAssemblyValidationModel` and `finalAssemblyValidationHtml`.
+- Extracted BUILD production-target / persisted-LOD / dirty-state summary into certified PURE `finalAssemblyBuildModel` and `finalAssemblyBuildHtml`.
+- Added certified PURE `finalAssemblyStageCommand` as the explicit payload boundary for stage checks/build dispatch.
+- Reduced VALIDATE/BUILD branches in `renderWizardPanelContents()` to dedicated effect-adapter dispatch. The backend remains the sole authority for production validation and package writing.
+- Updated the portable-block contract: every wizard pipeline stage now has an explicit portable-core boundary; FINAL ASSEMBLY is marked foundation rather than pending.
+- Legacy/new differential validation passes 5,610 deterministic comparisons; previous 254 behavioural oracle hashes are unchanged.
+
 ## 0.10.66 — wave 6B / DAMAGE portable-block foundation
 
 - Extracted the entire DAMAGE authoring surface into a portable block: stage summary, Part States list, semantic-node state editor, RenderNode state selector, and HIT / OPEN / REPAIR records.

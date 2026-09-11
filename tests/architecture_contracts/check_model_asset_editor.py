@@ -255,7 +255,7 @@ for token in (
     "send('save_asset')",
     "send('restore_working_asset')",
     "function wizardStageCheckControls(stage)",
-    "send('check_wizard_stage',{stage})",
+    "send('check_wizard_stage',finalAssemblyStageCommand(stage))",
     "wizard_stage_checked",
 ):
     if token not in web:

@@ -105,6 +105,14 @@ damage_node_adapter = function_source("renderDamageNodeInspector")
 damage_render_adapter = function_source("renderDamageRenderNodeInspector")
 damage_semantics_adapter = function_source("renderDamageSemantics")
 damage_variants_adapter = function_source("renderStateVariants")
+final_validation_model = function_source("finalAssemblyValidationModel")
+final_validation_html = function_source("finalAssemblyValidationHtml")
+final_build_model = function_source("finalAssemblyBuildModel")
+final_build_html = function_source("finalAssemblyBuildHtml")
+final_stage_command = function_source("finalAssemblyStageCommand")
+final_validate_adapter = function_source("renderWizardValidateStage")
+final_build_adapter = function_source("renderWizardBuildStage")
+final_check_adapter = function_source("bindWizardStageCheckControls")
 semantics_model = function_source("wizardSemanticsStageModel")
 semantics_adapter = function_source("renderWizardSemanticsStage")
 semantics_tree_model = function_source("wizardSemanticsTreeBlockModel")
@@ -975,4 +983,28 @@ for required in (
         raise AssertionError(f"wizard decomposition: DAMAGE semantics adapter missing {required!r}")
 if "damageStateVariantsModel({" not in damage_variants_adapter or "damageStateVariantsHtml(model" not in damage_variants_adapter:
     raise AssertionError("wizard decomposition: DAMAGE state-variant list must use portable model/html")
-print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS/JOINT-PICK-BINDING-DECISIONS/TREE-MOTION-TRANSITIONS/PREVIEW-APPLICATION-PLANS/GRAPH-VIEWPORT-PLANS pure boundaries; PHYSICS/HIT-VOLUMES/DAMAGE portable-core boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND/JOINT-PICK-BINDING/TREE-MOTION/PREVIEW-APPLICATION/GRAPH-VIEWPORT effect shells")
+
+# FINAL ASSEMBLY wave6C: validation/build models and presentation are portable; backend
+# validation/build execution and DOM/status wiring remain adapters.
+if "if(stage==='validate'){renderWizardValidateStage(root,state.wizardValidationReport);return;}" not in shell:
+    raise AssertionError("wizard decomposition: VALIDATE branch must remain dispatch-only")
+if "if(stage==='build'){renderWizardBuildStage(root,state.asset,lods,state.dirty);return;}" not in shell:
+    raise AssertionError("wizard decomposition: BUILD branch must remain dispatch-only")
+for fn_name, body in (
+    ("finalAssemblyValidationModel", final_validation_model),
+    ("finalAssemblyValidationHtml", final_validation_html),
+    ("finalAssemblyBuildModel", final_build_model),
+    ("finalAssemblyBuildHtml", final_build_html),
+    ("finalAssemblyStageCommand", final_stage_command),
+):
+    assert_pure_block(fn_name, body)
+for required in ("finalAssemblyValidationModel(report)", "finalAssemblyValidationHtml(model,text,{stageCheckControls:", "bindWizardStageCheckControls('validate')"):
+    if required not in final_validate_adapter:
+        raise AssertionError(f"wizard decomposition: VALIDATE adapter missing {required!r}")
+for required in ("finalAssemblyBuildModel({", "finalAssemblyBuildHtml(model,text,{stageCheckControls:", "bindWizardStageCheckControls('build')"):
+    if required not in final_build_adapter:
+        raise AssertionError(f"wizard decomposition: BUILD adapter missing {required!r}")
+if "send('check_wizard_stage',finalAssemblyStageCommand(stage))" not in final_check_adapter:
+    raise AssertionError("wizard decomposition: stage-check adapter must use explicit FINAL ASSEMBLY command payload builder")
+
+print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS/JOINT-PICK-BINDING-DECISIONS/TREE-MOTION-TRANSITIONS/PREVIEW-APPLICATION-PLANS/GRAPH-VIEWPORT-PLANS pure boundaries; PHYSICS/HIT-VOLUMES/DAMAGE/FINAL-ASSEMBLY portable-core boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND/JOINT-PICK-BINDING/TREE-MOTION/PREVIEW-APPLICATION/GRAPH-VIEWPORT effect shells")

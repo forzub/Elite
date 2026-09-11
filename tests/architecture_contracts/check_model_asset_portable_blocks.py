@@ -79,17 +79,30 @@ for block_name, block in BLOCKS.get("blocks", {}).items():
     for name in adapters:
         function_source(name)
 
-# PHYSICS and Hit Volumes are the first post-SEMANTICS blocks migrated under this
+# PHYSICS, Hit Volumes and DAMAGE are post-SEMANTICS blocks migrated under this
 # contract. Keep their dispatch/adapters narrow so implementation cannot leak back
 # into the common wizard/inspector mega-functions.
 shell = function_source("renderWizardPanelContents")
 if "if(stage==='physics'){renderWizardPhysicsStage(root,state.asset);return;}" not in shell:
     raise AssertionError("portable blocks: PHYSICS wizard branch must remain dispatch-only")
+if "if(stage==='damage'){renderWizardDamageStage(root,state.asset,lods);return;}" not in shell:
+    raise AssertionError("portable blocks: DAMAGE wizard branch must remain dispatch-only")
 inspector = function_source("renderNodeInspector")
 if "renderPhysicsNodeInspector(root,state.selectedNode,n,actions);" not in inspector:
     raise AssertionError("portable blocks: PHYSICS node inspector must delegate to its adapter")
 for forbidden in ("massMode", "densityKgM3:Number($('density').value)", "estimate_physics"):
     if forbidden in inspector:
         raise AssertionError(f"portable blocks: PHYSICS implementation leaked into renderNodeInspector: {forbidden}")
+if "renderDamageNodeInspector(root,state.selectedNode,n,actions);" not in inspector:
+    raise AssertionError("portable blocks: DAMAGE semantic-node inspector must delegate to its adapter")
+for forbidden in ("svTransform", "add_state_variant", "set_state_variant"):
+    if forbidden in inspector:
+        raise AssertionError(f"portable blocks: DAMAGE implementation leaked into renderNodeInspector: {forbidden}")
+render_inspector = function_source("renderRenderNodeInspector")
+if "renderDamageRenderNodeInspector(root,info,n);" not in render_inspector:
+    raise AssertionError("portable blocks: DAMAGE RenderNode inspector must delegate to its adapter")
+for forbidden in ("rnDamageStates", "set_render_node_states"):
+    if forbidden in render_inspector:
+        raise AssertionError(f"portable blocks: DAMAGE RenderNode implementation leaked into renderRenderNodeInspector: {forbidden}")
 
-print("[PASS] Model Asset Editor portable block API: SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS portable; PHYSICS/HIT-VOLUMES foundation isolated; FINAL-ASSEMBLY pending")
+print("[PASS] Model Asset Editor portable block API: SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS portable; PHYSICS/HIT-VOLUMES/DAMAGE foundation isolated; FINAL-ASSEMBLY pending")

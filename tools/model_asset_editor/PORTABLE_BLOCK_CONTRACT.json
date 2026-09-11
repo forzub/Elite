@@ -4,27 +4,51 @@
   "blocks": {
     "source": {
       "status": "portable",
-      "api": ["wizardSourceStageModel"],
-      "presentation": ["wizardSourceStageHtml"],
-      "adapters": ["renderWizardSourceStage"]
+      "api": [
+        "wizardSourceStageModel"
+      ],
+      "presentation": [
+        "wizardSourceStageHtml"
+      ],
+      "adapters": [
+        "renderWizardSourceStage"
+      ]
     },
     "lods": {
       "status": "portable",
-      "api": ["wizardLodsStageModel"],
-      "presentation": ["wizardLodsStageHtml"],
-      "adapters": ["renderWizardLodsStage"]
+      "api": [
+        "wizardLodsStageModel"
+      ],
+      "presentation": [
+        "wizardLodsStageHtml"
+      ],
+      "adapters": [
+        "renderWizardLodsStage"
+      ]
     },
     "geometry": {
       "status": "portable",
-      "api": ["wizardGeometryStageModel"],
-      "presentation": ["wizardGeometryStageHtml"],
-      "adapters": ["renderWizardGeometryStage"]
+      "api": [
+        "wizardGeometryStageModel"
+      ],
+      "presentation": [
+        "wizardGeometryStageHtml"
+      ],
+      "adapters": [
+        "renderWizardGeometryStage"
+      ]
     },
     "surfaces": {
       "status": "portable",
-      "api": ["wizardSurfacesStageModel"],
-      "presentation": ["wizardSurfacesStageHtml"],
-      "adapters": ["renderWizardSurfacesStage"]
+      "api": [
+        "wizardSurfacesStageModel"
+      ],
+      "presentation": [
+        "wizardSurfacesStageHtml"
+      ],
+      "adapters": [
+        "renderWizardSurfacesStage"
+      ]
     },
     "semantics": {
       "status": "portable",
@@ -94,11 +118,50 @@
         "pick"
       ]
     },
+    "damage": {
+      "status": "foundation",
+      "api": [
+        "wizardDamageStageModel",
+        "damageStateVariantsModel",
+        "damageNodeModel",
+        "damageDefaultStateCommand",
+        "damageAddStateVariantCommand",
+        "damageSetStateVariantCommand",
+        "damageDeleteStateVariantCommand",
+        "damageRenderSelectorModel",
+        "damageRenderStatesCommand",
+        "damageSemanticsModel",
+        "damageSemanticDeleteCommand",
+        "damageSemanticUpdateCommand",
+        "damageStateScopeDefault",
+        "damageStateScopeParse",
+        "damageSemanticAddCommand"
+      ],
+      "presentation": [
+        "wizardDamageStageHtml",
+        "damageStateVariantsHtml",
+        "damageNodeHtml",
+        "damageRenderSelectorHtml",
+        "damageSemanticsHtml"
+      ],
+      "adapters": [
+        "renderWizardDamageStage",
+        "renderStateVariants",
+        "renderDamageNodeInspector",
+        "renderDamageRenderNodeInspector",
+        "renderDamageSemantics",
+        "renderNodeInspector",
+        "renderRenderNodeInspector",
+        "stateScopeForSelectedNode"
+      ]
+    },
     "final_assembly": {
       "status": "pending",
       "api": [],
       "presentation": [],
-      "adapters": ["renderWizardPanelContents"]
+      "adapters": [
+        "renderWizardPanelContents"
+      ]
     }
   }
 }

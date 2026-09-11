@@ -80,6 +80,31 @@ hit_volume_render_plan = function_source("hitVolumeRenderPlan")
 hit_volume_rebuild_adapter = function_source("rebuildCollisions")
 hit_volume_list_adapter = function_source("renderCollisionList")
 hit_volume_inspector_adapter = function_source("renderCollisionInspector")
+damage_stage_model = function_source("wizardDamageStageModel")
+damage_stage_html = function_source("wizardDamageStageHtml")
+damage_stage_adapter = function_source("renderWizardDamageStage")
+damage_variants_model = function_source("damageStateVariantsModel")
+damage_variants_html = function_source("damageStateVariantsHtml")
+damage_node_model = function_source("damageNodeModel")
+damage_node_html = function_source("damageNodeHtml")
+damage_default_state_command = function_source("damageDefaultStateCommand")
+damage_add_state_command = function_source("damageAddStateVariantCommand")
+damage_set_state_command = function_source("damageSetStateVariantCommand")
+damage_delete_state_command = function_source("damageDeleteStateVariantCommand")
+damage_render_selector_model = function_source("damageRenderSelectorModel")
+damage_render_selector_html = function_source("damageRenderSelectorHtml")
+damage_render_states_command = function_source("damageRenderStatesCommand")
+damage_semantics_model = function_source("damageSemanticsModel")
+damage_semantics_html = function_source("damageSemanticsHtml")
+damage_delete_semantic_command = function_source("damageSemanticDeleteCommand")
+damage_update_semantic_command = function_source("damageSemanticUpdateCommand")
+damage_scope_default = function_source("damageStateScopeDefault")
+damage_scope_parse = function_source("damageStateScopeParse")
+damage_add_semantic_command = function_source("damageSemanticAddCommand")
+damage_node_adapter = function_source("renderDamageNodeInspector")
+damage_render_adapter = function_source("renderDamageRenderNodeInspector")
+damage_semantics_adapter = function_source("renderDamageSemantics")
+damage_variants_adapter = function_source("renderStateVariants")
 semantics_model = function_source("wizardSemanticsStageModel")
 semantics_adapter = function_source("renderWizardSemanticsStage")
 semantics_tree_model = function_source("wizardSemanticsTreeBlockModel")
@@ -839,9 +864,9 @@ for forbidden in ("if(structHit&&state.semanticStructureMode==='graph')", "const
         raise AssertionError(f"wizard decomposition: SEMANTICS wave5R viewport adapter regained routing derivation {forbidden!r}")
 
 
-# PHYSICS / HIT VOLUMES wave6A: the first post-SEMANTICS stages use the portable-block
-# rule directly. Public calculations/presentation/payload builders are certified PURE;
-# editor state/DOM/THREE/backend wiring stays in explicit adapters.
+# PHYSICS / HIT VOLUMES / DAMAGE wave6A-wave6B: post-SEMANTICS stages use the
+# portable-block rule directly. Public calculations/presentation/payload builders are
+# certified PURE; editor state/DOM/THREE/backend wiring stays in explicit adapters.
 if "if(stage==='physics'){renderWizardPhysicsStage(root,state.asset);return;}" not in shell:
     raise AssertionError("wizard decomposition: PHYSICS branch must remain dispatch-only")
 for fn_name, body in (
@@ -891,4 +916,63 @@ for required in ("hitVolumeInspectorModel({collision:c,stage:state.wizardStage})
     if required not in hit_volume_inspector_adapter:
         raise AssertionError(f"wizard decomposition: HIT VOLUMES inspector adapter missing {required!r}")
 
-print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS/JOINT-PICK-BINDING-DECISIONS/TREE-MOTION-TRANSITIONS/PREVIEW-APPLICATION-PLANS/GRAPH-VIEWPORT-PLANS pure boundaries; PHYSICS/HIT-VOLUMES portable-core boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND/JOINT-PICK-BINDING/TREE-MOTION/PREVIEW-APPLICATION/GRAPH-VIEWPORT effect shells")
+
+# DAMAGE wave6B: stage summary, state variants, semantic-node state editing,
+# RenderNode state selectors and HIT/OPEN/REPAIR records are portable.
+if "if(stage==='damage'){renderWizardDamageStage(root,state.asset,lods);return;}" not in shell:
+    raise AssertionError("wizard decomposition: DAMAGE branch must remain dispatch-only")
+for fn_name, body in (
+    ("wizardDamageStageModel", damage_stage_model),
+    ("wizardDamageStageHtml", damage_stage_html),
+    ("damageStateVariantsModel", damage_variants_model),
+    ("damageStateVariantsHtml", damage_variants_html),
+    ("damageNodeModel", damage_node_model),
+    ("damageNodeHtml", damage_node_html),
+    ("damageDefaultStateCommand", damage_default_state_command),
+    ("damageAddStateVariantCommand", damage_add_state_command),
+    ("damageSetStateVariantCommand", damage_set_state_command),
+    ("damageDeleteStateVariantCommand", damage_delete_state_command),
+    ("damageRenderSelectorModel", damage_render_selector_model),
+    ("damageRenderSelectorHtml", damage_render_selector_html),
+    ("damageRenderStatesCommand", damage_render_states_command),
+    ("damageSemanticsModel", damage_semantics_model),
+    ("damageSemanticsHtml", damage_semantics_html),
+    ("damageSemanticDeleteCommand", damage_delete_semantic_command),
+    ("damageSemanticUpdateCommand", damage_update_semantic_command),
+    ("damageStateScopeDefault", damage_scope_default),
+    ("damageStateScopeParse", damage_scope_parse),
+    ("damageSemanticAddCommand", damage_add_semantic_command),
+):
+    assert_pure_block(fn_name, body)
+for required in (
+    "wizardDamageStageModel({",
+    "wizardDamageStageHtml(model,text,{lodSelector:",
+    "bindWizardStageCheckControls('damage')",
+):
+    if required not in damage_stage_adapter:
+        raise AssertionError(f"wizard decomposition: DAMAGE stage adapter missing {required!r}")
+for required in (
+    "damageNodeModel({",
+    "damageNodeHtml(model,text,{actions})",
+    "send('set_state_variant',damageSetStateVariantCommand({",
+):
+    if required not in damage_node_adapter:
+        raise AssertionError(f"wizard decomposition: DAMAGE node adapter missing {required!r}")
+for required in (
+    "damageRenderSelectorModel({",
+    "damageRenderSelectorHtml(model,text)",
+    "send('set_render_node_states',damageRenderStatesCommand({",
+):
+    if required not in damage_render_adapter:
+        raise AssertionError(f"wizard decomposition: DAMAGE RenderNode adapter missing {required!r}")
+for required in (
+    "damageSemanticsModel({",
+    "damageSemanticsHtml(model,text)",
+    "damageSemanticDeleteCommand({kind,index})",
+    "damageSemanticUpdateCommand({",
+):
+    if required not in damage_semantics_adapter:
+        raise AssertionError(f"wizard decomposition: DAMAGE semantics adapter missing {required!r}")
+if "damageStateVariantsModel({" not in damage_variants_adapter or "damageStateVariantsHtml(model" not in damage_variants_adapter:
+    raise AssertionError("wizard decomposition: DAMAGE state-variant list must use portable model/html")
+print("[PASS] Model Asset Editor wizard decomposition: SOURCE + LODS + GEOMETRY + SURFACES extracted; SEMANTICS core/TREE/BINDINGS/WORKSPACE/PREVIEW/STRUCTURAL/SELECTED-PANELS/SELECTION-REFRESH/TRANSFORM-MATH/WORLD-GRAPH-MATH/RESIDUAL-DERIVATION/COMMAND-DECISIONS/JOINT-PICK-BINDING-DECISIONS/TREE-MOTION-TRANSITIONS/PREVIEW-APPLICATION-PLANS/GRAPH-VIEWPORT-PLANS pure boundaries; PHYSICS/HIT-VOLUMES/DAMAGE portable-core boundaries + isolated TREE/BINDINGS/PREVIEW/STRUCTURAL/SELECTED-MOTION/COMMAND/JOINT-PICK-BINDING/TREE-MOTION/PREVIEW-APPLICATION/GRAPH-VIEWPORT effect shells")

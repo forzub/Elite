@@ -1,3 +1,14 @@
+## Model Asset Editor 0.10.66 — wave 6B / DAMAGE portable-block foundation (2026-09-11)
+
+- `[x]` DAMAGE stage summary is dispatch-only in `renderWizardPanelContents()` and delegates to `renderWizardDamageStage()`.
+- `[x]` Part States (`stateVariants`) list/model and semantic-node state authoring are separated into explicit-input portable model/view/command functions plus DOM/state/backend adapters.
+- `[x]` Damage-state RenderNode selector is separated from `renderRenderNodeInspector()` into portable model/view/payload + adapter.
+- `[x]` HIT / OPEN / REPAIR list, selected inspector, state-scope parsing, and add/update/delete command payloads are portable and behaviourally certified.
+- `[x]` `PORTABLE_BLOCK_CONTRACT.json` now declares DAMAGE `foundation`; FINAL ASSEMBLY remains `pending`.
+- `[x]` Previous 234 behavioural oracle hashes are unchanged; 20 new DAMAGE portable functions are certified. Differential core parity: 8,670 deterministic comparisons PASS.
+- `[x]` Current purity census: 539 named / 254 certified / 257 static PURE / 5 EASY / 15 TRANSITIVE / 262 deferred-hard.
+- `[ ]` Next: decompose FINAL ASSEMBLY (`VALIDATE` + `BUILD`) into readiness/validation/build-plan portable core + effect adapters, then run the whole-editor portable API audit before physical module extraction.
+
 ## Model Asset Editor 0.10.66 — wave 6A / PHYSICS + HIT VOLUMES portable-block foundation (2026-09-11)
 
 - `[x]` Architecture criterion changed from maximizing individual PURE count to portable functional blocks with explicit API, explicit imports/arguments and no hidden editor wiring.

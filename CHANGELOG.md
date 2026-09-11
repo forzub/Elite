@@ -1,3 +1,12 @@
+## 0.10.66 — wave 6B / DAMAGE portable-block foundation
+
+- Extracted the entire DAMAGE authoring surface into a portable block: stage summary, Part States list, semantic-node state editor, RenderNode state selector, and HIT / OPEN / REPAIR records.
+- Added explicit-input model/view/command functions for state variants, state-selector payloads, damage/repair list+inspector data, state-scope parsing and add/update/delete commands.
+- Kept prompts/confirmations, `previewStates`, DOM event binding, scene rebuilds, selection mutation and backend `send(...)` in effect adapters.
+- Extended `PORTABLE_BLOCK_CONTRACT.json` and the wizard decomposition contract so DAMAGE implementation cannot leak back into the common wizard/node/RenderNode mega-functions.
+- Added behavioural oracles for 20 new portable functions; all previous 234 oracle hashes remain unchanged. Differential DAMAGE core validation passes 8,670 deterministic comparisons.
+- Purity census: 539 named / 254 dynamically certified / 257 static PURE / 5 EASY / 15 TRANSITIVE / 262 deferred-hard. FINAL ASSEMBLY remains pending.
+
 ## 0.10.66 — wave 6A / PHYSICS + HIT VOLUMES portable-block foundation
 
 - Introduced a hard portable-block contract separating transferable core/API functions from editor adapters.

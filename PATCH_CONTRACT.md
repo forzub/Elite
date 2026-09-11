@@ -1,3 +1,12 @@
+## Model Asset Editor 0.10.66 — wave 6B / portable DAMAGE boundary
+
+- DAMAGE is a first-class portable block under the same rule as PHYSICS/HIT VOLUMES: all deterministic stage/state/selector/damage calculations and command payloads must live behind explicit-input certified PURE functions.
+- `renderWizardDamageStage`, `renderStateVariants`, `renderDamageNodeInspector`, `renderDamageRenderNodeInspector`, `renderDamageSemantics`, `stateScopeForSelectedNode` and the common inspector/wizard dispatchers are effect adapters only. They may own localization, DOM, prompt/confirm, editor-state mutation, scene refresh and backend dispatch, but must not re-embed portable decision/payload logic.
+- `renderWizardPanelContents()` must keep the DAMAGE branch dispatch-only. `renderNodeInspector()` and `renderRenderNodeInspector()` must delegate DAMAGE implementation to dedicated adapters.
+- Part-state list/model, state variant add/update/delete payloads, RenderNode state selector, HIT/OPEN/REPAIR list+inspector model, state-scope parse/default, and damage semantic add/update/delete payloads are frozen portable API/presentation boundaries.
+- Old behavioural oracle hashes may not change. Wave6B adds new oracle entries only. SOURCE / LODS / GEOMETRY / SURFACES / SEMANTICS / PHYSICS / HIT VOLUMES remain behaviour-frozen.
+- FINAL ASSEMBLY (`VALIDATE` + `BUILD`) is still pending and must receive a portable core/API boundary before whole-editor physical module extraction.
+
 ## Model Asset Editor 0.10.66 — wave 6A / portable PHYSICS + HIT VOLUMES boundary
 
 - Portable-block readiness is now a first-class contract. A block may contain arbitrarily deep internal calls, but its named API/presentation functions must be behaviourally certified PURE and may not reach editor state, DOM, backend/status/prompt I/O, timers/storage/network or scene adapters through hidden dependencies.

@@ -1,12 +1,18 @@
 # Elite Model Asset Editor — рабочая инструкция / архитектурный контекст
 
-**Актуально:** 2026-09-07 · 0.10.55 semantic hotfix / bounded source scan
-**Редактор:** `Elite Model Asset Editor 0.10.55`
+**Актуально:** 2026-09-11 · 0.10.66 portable-block decomposition through DAMAGE
+**Редактор:** `Elite Model Asset Editor 0.10.66`
 **Asset format:** v4
-**Текущий production pipeline:** wizard; приняты и архитектурно изолированы `SOURCE`, `LODS`, `GEOMETRY`, `SURFACES`, `SEMANTICS`. Для `PHYSICS` и HIT VOLUMES создан portable-core/API foundation, но их функциональность ещё не считается завершённой. DAMAGE / FINAL ASSEMBLY (`VALIDATE` + `BUILD`) ещё должны пройти ту же декомпозицию перед физическим разделением редактора на модули.
+**Текущий production pipeline:** wizard; приняты и архитектурно изолированы `SOURCE`, `LODS`, `GEOMETRY`, `SURFACES`, `SEMANTICS`. Для `PHYSICS`, HIT VOLUMES и `DAMAGE` создан portable-core/API foundation, но их функциональность ещё не считается завершённой. FINAL ASSEMBLY (`VALIDATE` + `BUILD`) ещё должен пройти ту же декомпозицию перед физическим разделением редактора на модули.
 
 > Этот файл является источником контекста для продолжения работы над Model Asset Editor.
 > Старые предположения из эпохи format v2/v3 о единой `Node -> GeometryDefinition -> LOD0/LOD1` структуре больше не применять к v4.
+
+## Portable-block rule (0.10.66)
+
+Архитектурная цель — не максимальное число отдельных `PURE` функций, а переносимый функциональный блок с жёстким API. Внутренние функции блока могут вызывать друг друга транзитивно сколько угодно; запрещены скрытые провода наружу. Все данные входят через аргументы/явные imports, все результаты выходят через return. `state`, `editorViewState`, DOM, prompt/confirm, THREE scene mutation, timers/storage/network и backend `send()` принадлежат adapter-слою.
+
+Текущая карта: SOURCE / LODS / GEOMETRY / SURFACES / SEMANTICS — portable; PHYSICS / HIT VOLUMES / DAMAGE — portable foundation; FINAL ASSEMBLY — pending. Физическое разнесение по JS-модулям начинается только после portable boundary для FINAL ASSEMBLY и whole-editor API audit.
 
 ## 0.10.34: два жёстких UX/placement-инварианта
 

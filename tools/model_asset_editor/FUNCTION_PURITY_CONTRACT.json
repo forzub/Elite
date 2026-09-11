@@ -42432,8 +42432,1458 @@
         }
       ],
       "oracle_sha256": "1534b4f242ec653eda8a96cfdae9a80bc61d15814489dd46e8c506573ca705b4"
+    },
+    {
+      "name": "wizardDamageStageModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "invoke": "wizardDamageStageModel(args[0])",
+          "expected": {
+            "hitRegionCount": 0,
+            "openingCount": 0,
+            "repairTargetCount": 0,
+            "stateScopedCollisionVolumeCount": 0,
+            "stateScopedRenderNodeCount": 0,
+            "stateVariantCount": 0
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "lod": {
+                "loaded": true,
+                "nodes": [
+                  {
+                    "activeStates": [
+                      "damaged"
+                    ]
+                  },
+                  {
+                    "activeStates": []
+                  },
+                  {
+                    "activeStates": [
+                      "x"
+                    ]
+                  }
+                ]
+              },
+              "stateVariants": [
+                {
+                  "id": "a"
+                },
+                {
+                  "id": "b"
+                }
+              ],
+              "collisionVolumes": [
+                {
+                  "activeStates": []
+                },
+                {
+                  "activeStates": [
+                    "damaged"
+                  ]
+                }
+              ],
+              "hitRegions": [
+                {}
+              ],
+              "openings": [
+                {},
+                {}
+              ],
+              "repairTargets": [
+                {}
+              ]
+            }
+          ],
+          "invoke": "wizardDamageStageModel(args[0])",
+          "expected": {
+            "hitRegionCount": 1,
+            "openingCount": 2,
+            "repairTargetCount": 1,
+            "stateScopedCollisionVolumeCount": 1,
+            "stateScopedRenderNodeCount": 2,
+            "stateVariantCount": 2
+          }
+        }
+      ],
+      "oracle_sha256": "e80642907ca0a1ebd8729fc74ce1d9dab4364f545fd5b82f7c7911ec20747961"
+    },
+    {
+      "name": "wizardDamageStageHtml",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "stateVariantCount": 2,
+              "stateScopedRenderNodeCount": 3,
+              "stateScopedCollisionVolumeCount": 4,
+              "hitRegionCount": 5,
+              "openingCount": 6,
+              "repairTargetCount": 7
+            },
+            {
+              "title": "DAMAGE",
+              "help": "help",
+              "stateVariants": "states",
+              "renderScopes": "renders",
+              "collisionScopes": "collisions",
+              "targets": "targets",
+              "hint": "hint"
+            },
+            {
+              "lodSelector": "<lod/>",
+              "stageCheckControls": "<check/>"
+            }
+          ],
+          "invoke": "wizardDamageStageHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"title\">7 · DAMAGE</div><div class=\"wizardLead\">help</div><lod/><div class=\"wizardGrid\"><span>states</span><span class=\"value\">2</span><span>renders</span><span class=\"value\">3</span><span>collisions</span><span class=\"value\">4</span><span>targets</span><span class=\"value\">5 / 6 / 7</span></div><div class=\"wizardOk\">hint</div><check/>"
+        }
+      ],
+      "oracle_sha256": "0e3e1c32ce25c5bf74087149b33dfb3803079ae89b94d80bab1f3f197dda7c11"
+    },
+    {
+      "name": "damageStateVariantsModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "invoke": "damageStateVariantsModel(args[0])",
+          "expected": {
+            "rows": []
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "hull"
+                },
+                {
+                  "id": "wing"
+                }
+              ],
+              "stateVariants": [
+                {
+                  "id": "damaged",
+                  "nodeIndex": 1,
+                  "detached": true,
+                  "transformOverride": true,
+                  "physicsOverride": false
+                }
+              ],
+              "selectedNode": 1
+            }
+          ],
+          "invoke": "damageStateVariantsModel(args[0])",
+          "expected": {
+            "rows": [
+              {
+                "detached": true,
+                "id": "damaged",
+                "nodeId": "wing",
+                "nodeIndex": 1,
+                "physicsOverride": false,
+                "selected": true,
+                "transformOverride": true
+              }
+            ]
+          }
+        }
+      ],
+      "oracle_sha256": "a054a53874c28c56d6fc7f885bf07006e768503bf7ad9c24d394475732422df0"
+    },
+    {
+      "name": "damageStateVariantsHtml",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "rows": [
+                {
+                  "id": "damaged",
+                  "nodeIndex": 1,
+                  "nodeId": "wing",
+                  "detached": true,
+                  "transformOverride": true,
+                  "physicsOverride": true,
+                  "selected": true
+                }
+              ]
+            },
+            {
+              "empty": "none"
+            }
+          ],
+          "invoke": "damageStateVariantsHtml(args[0],args[1])",
+          "expected": "<div class=\"listRow selected\" data-damage-variant-node=\"1\"><span class=\"badge\">damaged</span><span class=\"grow\">wing · DETACHED</span><span class=\"badge\">T</span><span class=\"badge\">P</span></div>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "rows": []
+            },
+            {
+              "empty": "none"
+            }
+          ],
+          "invoke": "damageStateVariantsHtml(args[0],args[1])",
+          "expected": "<span class=\"muted\">none</span>"
+        }
+      ],
+      "oracle_sha256": "9de5497a07156207e07e8ef9a94f1ac939a829dfcbc18848d84cf36fbfb378ae"
+    },
+    {
+      "name": "damageNodeModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "invoke": "damageNodeModel(args[0])",
+          "expected": null
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": 2,
+              "node": {
+                "id": "hull",
+                "localPosition": [
+                  1,
+                  2,
+                  3
+                ],
+                "localRotationDeg": [
+                  4,
+                  5,
+                  6
+                ],
+                "pivot": [
+                  0.1,
+                  0.2,
+                  0.3
+                ],
+                "defaultStateId": "damaged"
+              },
+              "previewState": "damaged",
+              "stateVariants": [
+                {
+                  "index": 5,
+                  "id": "damaged",
+                  "nodeIndex": 2,
+                  "transformOverride": true,
+                  "localPosition": [
+                    7,
+                    8,
+                    9
+                  ],
+                  "localRotationDeg": [
+                    10,
+                    11,
+                    12
+                  ],
+                  "pivot": [
+                    1,
+                    1,
+                    1
+                  ],
+                  "physicsOverride": true,
+                  "detached": true,
+                  "enabled": true,
+                  "physics": {
+                    "densityKgM3": 900,
+                    "massKg": 44,
+                    "centerOfMass": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "inertiaDiagonal": [
+                      2,
+                      3,
+                      4
+                    ],
+                    "inertiaProducts": [
+                      0.1,
+                      0.2,
+                      0.3
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "invoke": "damageNodeModel(args[0])",
+          "expected": {
+            "defaultStateId": "damaged",
+            "id": "hull",
+            "localPosition": [
+              1,
+              2,
+              3
+            ],
+            "localRotationDeg": [
+              4,
+              5,
+              6
+            ],
+            "nodeIndex": 2,
+            "pivot": [
+              0.1,
+              0.2,
+              0.3
+            ],
+            "previewState": "damaged",
+            "stateIds": [
+              "intact",
+              "damaged"
+            ],
+            "variant": {
+              "detached": true,
+              "enabled": true,
+              "id": "damaged",
+              "index": 5,
+              "localPosition": [
+                7,
+                8,
+                9
+              ],
+              "localRotationDeg": [
+                10,
+                11,
+                12
+              ],
+              "physics": {
+                "centerOfMass": [
+                  1,
+                  0,
+                  0
+                ],
+                "densityKgM3": 900,
+                "inertiaDiagonal": [
+                  2,
+                  3,
+                  4
+                ],
+                "inertiaProducts": [
+                  0.1,
+                  0.2,
+                  0.3
+                ],
+                "massKg": 44
+              },
+              "physicsOverride": true,
+              "pivot": [
+                1,
+                1,
+                1
+              ],
+              "transformOverride": true
+            }
+          }
+        }
+      ],
+      "oracle_sha256": "5ba740c968f0fdc18e2445a42317eb6f5621052aa35bbaac1351d7aa2ab4548b"
+    },
+    {
+      "name": "damageNodeHtml",
+      "support": [
+        "escapeMarkup",
+        "vecInputs"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": 2,
+              "id": "hull",
+              "stateIds": [
+                "intact",
+                "damaged"
+              ],
+              "previewState": "damaged",
+              "defaultStateId": "intact",
+              "variant": {
+                "index": 5,
+                "id": "damaged",
+                "transformOverride": true,
+                "localPosition": [
+                  1,
+                  2,
+                  3
+                ],
+                "localRotationDeg": [
+                  4,
+                  5,
+                  6
+                ],
+                "pivot": [
+                  0,
+                  0,
+                  0
+                ],
+                "physicsOverride": true,
+                "detached": true,
+                "enabled": true,
+                "physics": {
+                  "densityKgM3": 900,
+                  "massKg": 44,
+                  "centerOfMass": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "inertiaDiagonal": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "inertiaProducts": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              }
+            },
+            {
+              "semanticPart": "part",
+              "previewState": "preview",
+              "defaultState": "default",
+              "addState": "add",
+              "state": "STATE",
+              "transformOverride": "T",
+              "statePosition": "pos",
+              "stateRotation": "rot",
+              "statePivot": "pivot",
+              "physicsOverride": "P",
+              "detached": "D",
+              "enabled": "E",
+              "density": "density",
+              "mass": "mass",
+              "centerOfMass": "com",
+              "inertiaDiagonal": "diag",
+              "inertiaProducts": "prod",
+              "updateState": "update",
+              "deleteState": "delete"
+            },
+            {
+              "actions": "<actions/>"
+            }
+          ],
+          "invoke": "damageNodeHtml(args[0],args[1],args[2])",
+          "expected": "<div class=\"field\"><label>part</label><div><b>hull</b></div></div><div class=\"field\"><label>preview</label><select id=\"previewState\"><option value=\"intact\" >intact</option><option value=\"damaged\" selected>damaged</option></select></div><div class=\"field\"><label>default</label><select id=\"defaultState\"><option value=\"intact\" selected>intact</option><option value=\"damaged\" >damaged</option></select></div><button id=\"addState\" class=\"mini\">add</button><div class=\"title\" style=\"margin-top:10px\">undefined: damaged</div><label><input id=\"svTransform\" type=\"checkbox\" checked> T</label><div class=\"field\"><label>pos</label><div class=\"grid3\"><input id=\"svpx\" type=\"number\" step=\"0.01\" value=\"1\"><input id=\"svpy\" type=\"number\" step=\"0.01\" value=\"2\"><input id=\"svpz\" type=\"number\" step=\"0.01\" value=\"3\"></div></div><div class=\"field\"><label>rot</label><div class=\"grid3\"><input id=\"svrx\" type=\"number\" step=\"0.01\" value=\"4\"><input id=\"svry\" type=\"number\" step=\"0.01\" value=\"5\"><input id=\"svrz\" type=\"number\" step=\"0.01\" value=\"6\"></div></div><div class=\"field\"><label>pivot</label><div class=\"grid3\"><input id=\"svvx\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"svvy\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"svvz\" type=\"number\" step=\"0.01\" value=\"0\"></div></div><label><input id=\"svPhysics\" type=\"checkbox\" checked> P</label><label><input id=\"svDetached\" type=\"checkbox\" checked> D</label><label><input id=\"svEnabled\" type=\"checkbox\" checked> E</label><div class=\"grid3\"><input id=\"svDensity\" type=\"number\" step=\"10\" value=\"900\" title=\"density\"><input id=\"svMass\" type=\"number\" step=\"1\" value=\"44\" title=\"mass\"><span></span></div><div class=\"field\"><label>com</label><div class=\"grid3\"><input id=\"svcx\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"svcy\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"svcz\" type=\"number\" step=\"0.01\" value=\"0\"></div></div><div class=\"field\"><label>diag</label><div class=\"grid3\"><input id=\"svix\" type=\"number\" step=\"0.01\" value=\"1\"><input id=\"sviy\" type=\"number\" step=\"0.01\" value=\"2\"><input id=\"sviz\" type=\"number\" step=\"0.01\" value=\"3\"></div></div><div class=\"field\"><label>prod</label><div class=\"grid3\"><input id=\"svqx\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"svqy\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"svqz\" type=\"number\" step=\"0.01\" value=\"0\"></div></div><div class=\"row\"><button id=\"applyState\" class=\"mini\">update</button><button id=\"deleteState\" class=\"mini\">delete</button></div><actions/>"
+        }
+      ],
+      "oracle_sha256": "cae0a85d77f1f05f74bce486a5239bceb295e6eb2738634ff3236fc0ab4074b5"
+    },
+    {
+      "name": "damageDefaultStateCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": "2",
+              "stateId": "damaged"
+            }
+          ],
+          "invoke": "damageDefaultStateCommand(args[0])",
+          "expected": {
+            "nodeIndex": 2,
+            "stateId": "damaged"
+          }
+        }
+      ],
+      "oracle_sha256": "779b2a4bb4b6df7c5f78126fd7da5c4d8b84ef9d2d58b937f76dcf34d487e445"
+    },
+    {
+      "name": "damageAddStateVariantCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": 2,
+              "node": {
+                "localPosition": [
+                  1,
+                  2,
+                  3
+                ],
+                "localRotationDeg": [
+                  4,
+                  5,
+                  6
+                ],
+                "pivot": [
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "id": " damaged "
+            }
+          ],
+          "invoke": "damageAddStateVariantCommand(args[0])",
+          "expected": {
+            "displayName": "damaged",
+            "id": "damaged",
+            "nodeIndex": 2,
+            "pivot": [
+              0,
+              0,
+              0
+            ],
+            "position": [
+              1,
+              2,
+              3
+            ],
+            "rotationDeg": [
+              4,
+              5,
+              6
+            ]
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodeIndex": 2,
+              "node": {},
+              "id": "  "
+            }
+          ],
+          "invoke": "damageAddStateVariantCommand(args[0])",
+          "expected": null
+        }
+      ],
+      "oracle_sha256": "be811b1688c0f9a81a280edbff77fcfc038f73a0858862d1f55bf2716b84e730"
+    },
+    {
+      "name": "damageSetStateVariantCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "variantIndex": "3",
+              "transformOverride": 1,
+              "position": [
+                1,
+                2,
+                3
+              ],
+              "rotationDeg": [
+                4,
+                5,
+                6
+              ],
+              "pivot": [
+                7,
+                8,
+                9
+              ],
+              "physicsOverride": true,
+              "detached": false,
+              "enabled": 1,
+              "densityKgM3": "780",
+              "massKg": "12.5",
+              "centerOfMass": [
+                1,
+                0,
+                0
+              ],
+              "inertiaDiagonal": [
+                2,
+                3,
+                4
+              ],
+              "inertiaProducts": [
+                0.1,
+                0.2,
+                0.3
+              ]
+            }
+          ],
+          "invoke": "damageSetStateVariantCommand(args[0])",
+          "expected": {
+            "centerOfMass": [
+              1,
+              0,
+              0
+            ],
+            "densityKgM3": 780,
+            "detached": false,
+            "enabled": true,
+            "inertiaDiagonal": [
+              2,
+              3,
+              4
+            ],
+            "inertiaProducts": [
+              0.1,
+              0.2,
+              0.3
+            ],
+            "massKg": 12.5,
+            "physicsOverride": true,
+            "pivot": [
+              7,
+              8,
+              9
+            ],
+            "position": [
+              1,
+              2,
+              3
+            ],
+            "rotationDeg": [
+              4,
+              5,
+              6
+            ],
+            "transformOverride": true,
+            "variantIndex": 3
+          }
+        }
+      ],
+      "oracle_sha256": "4a242913e1777c83657745bb3915ca7c53b5e3d0dce650954420a384e0e23559"
+    },
+    {
+      "name": "damageDeleteStateVariantCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "variantIndex": "7"
+            }
+          ],
+          "invoke": "damageDeleteStateVariantCommand(args[0])",
+          "expected": {
+            "variantIndex": 7
+          }
+        }
+      ],
+      "oracle_sha256": "e599efb1b0433244e19d9416a5ea899b8ebe6ed5e9bddbabbc62129ef139fec1"
+    },
+    {
+      "name": "damageRenderSelectorModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "invoke": "damageRenderSelectorModel(args[0])",
+          "expected": null
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "renderNode": {
+                "semanticNodeIndex": 1,
+                "activeStates": [
+                  "damaged"
+                ]
+              },
+              "nodes": [
+                {
+                  "id": "a"
+                },
+                {
+                  "id": "wing"
+                }
+              ],
+              "lodIndex": "2",
+              "renderNodeIndex": "4",
+              "applyAllLods": false
+            }
+          ],
+          "invoke": "damageRenderSelectorModel(args[0])",
+          "expected": {
+            "activeStates": [
+              "damaged"
+            ],
+            "applyAllLods": false,
+            "lodIndex": 2,
+            "renderNodeIndex": 4,
+            "semanticId": "wing"
+          }
+        }
+      ],
+      "oracle_sha256": "ff55e90a6497a0d62d8340e90e3eaa5d04083b5b4fb5e463d2fb52334d9b77bf"
+    },
+    {
+      "name": "damageRenderSelectorHtml",
+      "support": [
+        "escapeMarkup",
+        "statesInput"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "semanticId": "wing",
+              "activeStates": [
+                "damaged"
+              ],
+              "applyAllLods": true
+            },
+            {
+              "title": "selector",
+              "semanticBinding": "binding",
+              "activeStates": "states",
+              "applyAllLods": "all",
+              "applyAllLodsHint": "hint",
+              "applySelector": "apply"
+            }
+          ],
+          "invoke": "damageRenderSelectorHtml(args[0],args[1])",
+          "expected": "<div class=\"inspectorGroup\"><div class=\"inspectorGroupTitle\">selector</div><div class=\"inspectorInfo\"><span class=\"key\">binding</span><span class=\"value\">wing</span></div><div class=\"field\"><label>states</label><input id=\"rnDamageStates\" type=\"text\" value=\"damaged\" placeholder=\"intact, breached\"></div><label class=\"semanticApplyAll\"><input id=\"renderStatesApplyAllLods\" type=\"checkbox\" checked> <span><b>all</b><br>hint</span></label><div class=\"inspectorActions\"><button id=\"applyRenderStates\" class=\"wizardPrimary\">apply</button></div></div>"
+        }
+      ],
+      "oracle_sha256": "307bf3c7b22a490e14d8cd229b4296ab38e72e64fcf4a33c3e884efbeb003bac"
+    },
+    {
+      "name": "damageRenderStatesCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "lodIndex": "2",
+              "renderNodeIndex": "4",
+              "activeStates": [
+                "damaged"
+              ],
+              "applyAllLods": false
+            }
+          ],
+          "invoke": "damageRenderStatesCommand(args[0])",
+          "expected": {
+            "activeStates": [
+              "damaged"
+            ],
+            "applyAllLods": false,
+            "lodIndex": 2,
+            "renderNodeIndex": 4
+          }
+        }
+      ],
+      "oracle_sha256": "4297c92d97fd173421172173aebc55d0f5bcc7eb7769322efbf7d80923a6c9ee"
+    },
+    {
+      "name": "damageSemanticsModel",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {}
+          ],
+          "invoke": "damageSemanticsModel(args[0])",
+          "expected": {
+            "rows": [],
+            "selected": null
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "nodes": [
+                {
+                  "id": "hull"
+                }
+              ],
+              "hitRegions": [
+                {
+                  "id": "hit.hull",
+                  "parentNodeIndex": 0,
+                  "activeStates": [
+                    "damaged"
+                  ],
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "halfSize": [
+                    2,
+                    2,
+                    2
+                  ],
+                  "enabled": true
+                }
+              ],
+              "openings": [
+                {
+                  "id": "breach.hull",
+                  "parentNodeIndex": 0,
+                  "activeStates": [
+                    "breached"
+                  ],
+                  "traversable": true,
+                  "lineOfFire": true
+                }
+              ],
+              "repairTargets": [
+                {
+                  "id": "repair.hull",
+                  "parentNodeIndex": 0,
+                  "activeStates": [
+                    "damaged"
+                  ],
+                  "kind": "hull_patch",
+                  "repairedStateId": "intact",
+                  "enabled": true
+                }
+              ],
+              "selectedKind": "HIT",
+              "selectedIndex": 0
+            }
+          ],
+          "invoke": "damageSemanticsModel(args[0])",
+          "expected": {
+            "rows": [
+              {
+                "activeStates": [
+                  "damaged"
+                ],
+                "id": "hit.hull",
+                "index": 0,
+                "item": {
+                  "activeStates": [
+                    "damaged"
+                  ],
+                  "enabled": true,
+                  "halfSize": [
+                    2,
+                    2,
+                    2
+                  ],
+                  "id": "hit.hull",
+                  "localPosition": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "localRotationDeg": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "parentNodeIndex": 0
+                },
+                "kind": "HIT",
+                "lineOfFire": false,
+                "parentNodeId": "hull",
+                "parentNodeIndex": 0,
+                "repairedStateId": "intact",
+                "selected": true,
+                "traversable": false
+              },
+              {
+                "activeStates": [
+                  "breached"
+                ],
+                "id": "breach.hull",
+                "index": 0,
+                "item": {
+                  "activeStates": [
+                    "breached"
+                  ],
+                  "id": "breach.hull",
+                  "lineOfFire": true,
+                  "parentNodeIndex": 0,
+                  "traversable": true
+                },
+                "kind": "OPEN",
+                "lineOfFire": true,
+                "parentNodeId": "hull",
+                "parentNodeIndex": 0,
+                "repairedStateId": "intact",
+                "selected": false,
+                "traversable": true
+              },
+              {
+                "activeStates": [
+                  "damaged"
+                ],
+                "id": "repair.hull",
+                "index": 0,
+                "item": {
+                  "activeStates": [
+                    "damaged"
+                  ],
+                  "enabled": true,
+                  "id": "repair.hull",
+                  "kind": "hull_patch",
+                  "parentNodeIndex": 0,
+                  "repairedStateId": "intact"
+                },
+                "kind": "REPAIR",
+                "lineOfFire": false,
+                "parentNodeId": "hull",
+                "parentNodeIndex": 0,
+                "repairedStateId": "intact",
+                "selected": false,
+                "traversable": false
+              }
+            ],
+            "selected": {
+              "activeStates": [
+                "damaged"
+              ],
+              "enabled": true,
+              "halfSize": [
+                2,
+                2,
+                2
+              ],
+              "id": "hit.hull",
+              "index": 0,
+              "kind": "HIT",
+              "lineOfFire": false,
+              "localPosition": [
+                1,
+                2,
+                3
+              ],
+              "localRotationDeg": [
+                0,
+                0,
+                0
+              ],
+              "repairKind": "hull_patch",
+              "repairedStateId": "intact",
+              "traversable": false
+            }
+          }
+        }
+      ],
+      "oracle_sha256": "91446e901635078c6bfab33abbe19f3775e16a00f85918079643e919d76980d2"
+    },
+    {
+      "name": "damageSemanticsHtml",
+      "support": [
+        "escapeMarkup",
+        "statesInput",
+        "vecInputs"
+      ],
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "rows": [],
+              "selected": null
+            },
+            {
+              "root": "root",
+              "passShort": "PASS",
+              "fireShort": "FIRE",
+              "none": "none",
+              "activeStates": "states",
+              "position": "pos",
+              "rotation": "rot",
+              "halfSize": "size",
+              "enabled": "enabled",
+              "traversable": "pass",
+              "lineOfFire": "fire",
+              "repairKind": "kind",
+              "repairedState": "after",
+              "apply": "apply"
+            }
+          ],
+          "invoke": "damageSemanticsHtml(args[0],args[1])",
+          "expected": "<span class=\"muted\">none</span>"
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "rows": [
+                {
+                  "kind": "OPEN",
+                  "index": 0,
+                  "id": "breach.hull",
+                  "parentNodeIndex": 0,
+                  "parentNodeId": "hull",
+                  "activeStates": [
+                    "breached"
+                  ],
+                  "traversable": true,
+                  "lineOfFire": true,
+                  "repairedStateId": "intact",
+                  "selected": true
+                }
+              ],
+              "selected": {
+                "kind": "OPEN",
+                "index": 0,
+                "id": "breach.hull",
+                "activeStates": [
+                  "breached"
+                ],
+                "localPosition": [
+                  1,
+                  2,
+                  3
+                ],
+                "localRotationDeg": [
+                  0,
+                  0,
+                  0
+                ],
+                "halfSize": [
+                  1,
+                  1,
+                  1
+                ],
+                "enabled": true,
+                "traversable": true,
+                "lineOfFire": true,
+                "repairKind": "hull_patch",
+                "repairedStateId": "intact"
+              }
+            },
+            {
+              "root": "root",
+              "passShort": "PASS",
+              "fireShort": "FIRE",
+              "none": "none",
+              "activeStates": "states",
+              "position": "pos",
+              "rotation": "rot",
+              "halfSize": "size",
+              "enabled": "enabled",
+              "traversable": "pass",
+              "lineOfFire": "fire",
+              "repairKind": "kind",
+              "repairedState": "after",
+              "apply": "apply"
+            }
+          ],
+          "invoke": "damageSemanticsHtml(args[0],args[1])",
+          "expected": "<div class=\"listRow selected\" data-damage-select data-damage-kind=\"OPEN\" data-damage-index=\"0\"><span class=\"badge\">OPEN</span><span class=\"grow\">breach.hull</span><span class=\"badge\">breached</span><span class=\"muted\">hull PASS/FIRE</span><button class=\"mini\" data-damage-delete>×</button></div><div class=\"inspectorGroup\"><div class=\"inspectorGroupTitle\">OPEN · breach.hull</div><div class=\"field\"><label>states</label><input id=\"damageStates\" type=\"text\" value=\"breached\" placeholder=\"intact, breached\"></div><div class=\"field\"><label>pos</label><div class=\"grid3\"><input id=\"damagePosx\" type=\"number\" step=\"0.01\" value=\"1\"><input id=\"damagePosy\" type=\"number\" step=\"0.01\" value=\"2\"><input id=\"damagePosz\" type=\"number\" step=\"0.01\" value=\"3\"></div></div><div class=\"field\"><label>rot</label><div class=\"grid3\"><input id=\"damageRotx\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"damageRoty\" type=\"number\" step=\"0.01\" value=\"0\"><input id=\"damageRotz\" type=\"number\" step=\"0.01\" value=\"0\"></div></div><div class=\"field\"><label>size</label><div class=\"grid3\"><input id=\"damageSizex\" type=\"number\" step=\"0.01\" value=\"1\"><input id=\"damageSizey\" type=\"number\" step=\"0.01\" value=\"1\"><input id=\"damageSizez\" type=\"number\" step=\"0.01\" value=\"1\"></div></div><label><input id=\"damageTraversable\" type=\"checkbox\" checked> pass</label><label><input id=\"damageLineOfFire\" type=\"checkbox\" checked> fire</label><label><input id=\"damageEnabled\" type=\"checkbox\" checked> enabled</label><div class=\"inspectorActions\"><button id=\"applyDamageSemantic\" class=\"wizardPrimary\">apply</button></div></div>"
+        }
+      ],
+      "oracle_sha256": "5cdff04ecb77f7846f7656d20909a4bfd7f0b1c8b7f82e090e23ebdbb68218ff"
+    },
+    {
+      "name": "damageSemanticDeleteCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "kind": "HIT",
+              "index": "2"
+            }
+          ],
+          "invoke": "damageSemanticDeleteCommand(args[0])",
+          "expected": {
+            "command": "delete_hit_region",
+            "payload": {
+              "hitRegionIndex": 2
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "kind": "OPEN",
+              "index": 3
+            }
+          ],
+          "invoke": "damageSemanticDeleteCommand(args[0])",
+          "expected": {
+            "command": "delete_opening",
+            "payload": {
+              "openingIndex": 3
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "kind": "REPAIR",
+              "index": 4
+            }
+          ],
+          "invoke": "damageSemanticDeleteCommand(args[0])",
+          "expected": {
+            "command": "delete_repair_target",
+            "payload": {
+              "repairTargetIndex": 4
+            }
+          }
+        }
+      ],
+      "oracle_sha256": "526c59d8ea29f4c9dec70629717747c743a22462ea2ed6efb3b3eacb80773624"
+    },
+    {
+      "name": "damageSemanticUpdateCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "kind": "HIT",
+              "index": 1,
+              "activeStates": [
+                "damaged"
+              ],
+              "position": [
+                1,
+                2,
+                3
+              ],
+              "rotationDeg": [
+                4,
+                5,
+                6
+              ],
+              "enabled": true,
+              "halfSize": [
+                7,
+                8,
+                9
+              ]
+            }
+          ],
+          "invoke": "damageSemanticUpdateCommand(args[0])",
+          "expected": {
+            "command": "set_hit_region",
+            "payload": {
+              "activeStates": [
+                "damaged"
+              ],
+              "enabled": true,
+              "halfSize": [
+                7,
+                8,
+                9
+              ],
+              "hitRegionIndex": 1,
+              "position": [
+                1,
+                2,
+                3
+              ],
+              "rotationDeg": [
+                4,
+                5,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "kind": "OPEN",
+              "index": 2,
+              "activeStates": [],
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotationDeg": [
+                0,
+                0,
+                0
+              ],
+              "enabled": false,
+              "halfSize": [
+                1,
+                1,
+                1
+              ],
+              "traversable": true,
+              "lineOfFire": false
+            }
+          ],
+          "invoke": "damageSemanticUpdateCommand(args[0])",
+          "expected": {
+            "command": "set_opening",
+            "payload": {
+              "activeStates": [],
+              "enabled": false,
+              "halfSize": [
+                1,
+                1,
+                1
+              ],
+              "lineOfFire": false,
+              "openingIndex": 2,
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotationDeg": [
+                0,
+                0,
+                0
+              ],
+              "traversable": true
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "kind": "REPAIR",
+              "index": 3,
+              "activeStates": [
+                "broken"
+              ],
+              "position": [
+                1,
+                0,
+                0
+              ],
+              "rotationDeg": [
+                0,
+                0,
+                0
+              ],
+              "enabled": true,
+              "repairKind": " weld ",
+              "repairedStateId": " intact "
+            }
+          ],
+          "invoke": "damageSemanticUpdateCommand(args[0])",
+          "expected": {
+            "command": "set_repair_target",
+            "payload": {
+              "activeStates": [
+                "broken"
+              ],
+              "enabled": true,
+              "kind": "weld",
+              "position": [
+                1,
+                0,
+                0
+              ],
+              "repairTargetIndex": 3,
+              "repairedStateId": "intact",
+              "rotationDeg": [
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        }
+      ],
+      "oracle_sha256": "a1a3b5280f9fa1eb2873568404e720c8d3a6cd567d9a23737707808c6e99b6b0"
+    },
+    {
+      "name": "damageStateScopeDefault",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            "intact"
+          ],
+          "invoke": "damageStateScopeDefault(args[0])",
+          "expected": "breached"
+        },
+        {
+          "state": {},
+          "args": [
+            "damaged"
+          ],
+          "invoke": "damageStateScopeDefault(args[0])",
+          "expected": "damaged"
+        }
+      ],
+      "oracle_sha256": "93dcff37d5836014f422d4191a72f17bfd7e12bb009d0e161b36abccaa2b1d63"
+    },
+    {
+      "name": "damageStateScopeParse",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            "damaged, breached, ,destroyed"
+          ],
+          "invoke": "damageStateScopeParse(args[0])",
+          "expected": [
+            "damaged",
+            "breached",
+            "destroyed"
+          ]
+        },
+        {
+          "state": {},
+          "args": [
+            null
+          ],
+          "invoke": "damageStateScopeParse(args[0])",
+          "expected": null
+        }
+      ],
+      "oracle_sha256": "abcafaad01905c2b7f03925db80f6013df7b5723c589b0259b9776e03e8a7cfb"
+    },
+    {
+      "name": "damageSemanticAddCommand",
+      "fixtures": [
+        {
+          "state": {},
+          "args": [
+            {
+              "kind": "HIT",
+              "id": "hit.a",
+              "parentNodeIndex": 2,
+              "activeStates": [
+                "damaged"
+              ]
+            }
+          ],
+          "invoke": "damageSemanticAddCommand(args[0])",
+          "expected": {
+            "command": "add_hit_region",
+            "payload": {
+              "activeStates": [
+                "damaged"
+              ],
+              "halfSize": [
+                1,
+                1,
+                1
+              ],
+              "id": "hit.a",
+              "parentNodeIndex": 2,
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotationDeg": [
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "kind": "OPEN",
+              "id": "open.a",
+              "parentNodeIndex": 2,
+              "activeStates": []
+            }
+          ],
+          "invoke": "damageSemanticAddCommand(args[0])",
+          "expected": {
+            "command": "add_opening",
+            "payload": {
+              "activeStates": [],
+              "halfSize": [
+                1,
+                1,
+                1
+              ],
+              "id": "open.a",
+              "lineOfFire": true,
+              "parentNodeIndex": 2,
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotationDeg": [
+                0,
+                0,
+                0
+              ],
+              "traversable": true
+            }
+          }
+        },
+        {
+          "state": {},
+          "args": [
+            {
+              "kind": "REPAIR",
+              "id": "repair.a",
+              "parentNodeIndex": 2,
+              "activeStates": [
+                "broken"
+              ],
+              "repairKind": "hull_patch",
+              "repairedStateId": "intact"
+            }
+          ],
+          "invoke": "damageSemanticAddCommand(args[0])",
+          "expected": {
+            "command": "add_repair_target",
+            "payload": {
+              "activeStates": [
+                "broken"
+              ],
+              "id": "repair.a",
+              "kind": "hull_patch",
+              "parentNodeIndex": 2,
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "repairedStateId": "intact",
+              "rotationDeg": [
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        }
+      ],
+      "oracle_sha256": "6b2a2648a53c704b0756f85e4ca4fd52323bb3e43da1bfa825417478d32adba4"
     }
   ],
   "easy_candidates": [],
-  "baseline_sha256": "6dcdbfe6193351010ceb745034edba0659b0d08b151cd96b612b71b43cfaf43d"
+  "baseline_sha256": "f0d8b38be9377c8d78f0928ac3bdbbe267f6ba6bb8309fcd8a8aaaaacac60205"
 }

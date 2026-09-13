@@ -158,7 +158,7 @@ function createEditorSessionMessageHandlers({
   },
   status:msg=>{
    state.dirty=!!msg.dirty;
-   const localizedMessage=translateServerMessage(msg.message);
+   const localizedMessage=msg.messageKey?tr(msg.messageKey,msg.message||msg.messageKey,msg.messageParams||{}):translateServerMessage(msg.message);
    if(state.asset?.storage){
     if(msg.path)state.asset.storage.binaryPath=msg.path;
     if(Number.isFinite(Number(msg.bytes)))state.asset.storage.manifestBytes=Number(msg.bytes);

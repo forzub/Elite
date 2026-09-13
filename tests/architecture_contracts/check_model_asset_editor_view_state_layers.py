@@ -56,7 +56,7 @@ for token in ['createEditorTransportBridge','pendingDiagnostics','bind(next)','s
 if 'const {send,reportEditorDiagnostic,connect,beginEditorAssetBinary,beginEditorLodBinary}=createEditorTransport({' in html:
  fail('HTML still initializes transport after consumers through a TDZ-prone destructuring')
 
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.81"',version):fail('editor version must be 0.10.81')
+if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.82"',version):fail('editor version must be 0.10.82')
 
 print('MODEL ASSET EDITOR VIEW STATE LAYERS: PASS')
 print(' - EditorViewState and visibility projections are outside the HTML shell')

@@ -4693,7 +4693,7 @@ void ModelAssetEditorSession::sendWizardValidationReport()
 {
     if (m_asset.assetId.empty())
     {
-        sendStatus("No asset selected", true);
+        sendStatusKey("model_editor.server.no_asset_selected", json::object(), "No asset selected", true);
         return;
     }
     if (!ensureAllLodsLoaded()) return;
@@ -4750,7 +4750,7 @@ bool ModelAssetEditorSession::checkWizardStage(const std::string& stage)
     }
     if (m_asset.assetId.empty())
     {
-        sendStatus("No asset selected", true);
+        sendStatusKey("model_editor.server.no_asset_selected", json::object(), "No asset selected", true);
         return false;
     }
 
@@ -6820,24 +6820,33 @@ bool ModelAssetEditorSession::unloadLod(std::size_t lodIndex)
 void ModelAssetEditorSession::sendStatus(
     const std::string& message,
     bool error,
-    const std::string& activity
+    const std::string& activity,
+    const std::string& messageKey,
+    const nlohmann::json& messageParams
 )
 {
     json payload = {
-        {"type", "status"}, {"message", message}, {"error", error},
-        {"dirty", m_dirty}, {"activity", error ? "error" : activity}
+        {"type", "status"},
+        {"message", message},
+        {"error", error},
+        {"dirty", m_dirty},
+        {"activity", activity}
     };
-    if (!m_selectedId.empty())
-    {
-        const auto path = compiledPath(m_selectedId);
-        payload["path"] = path.generic_string();
-        std::error_code ec;
-        if (std::filesystem::exists(path, ec))
-            payload["bytes"] = std::filesystem::file_size(path, ec);
-    }
+    if (!messageKey.empty()) payload["messageKey"] = messageKey;
+    if (!messageParams.empty()) payload["messageParams"] = messageParams;
     m_server.broadcastText(payload.dump());
 }
 
+void ModelAssetEditorSession::sendStatusKey(
+    const std::string& messageKey,
+    const nlohmann::json& messageParams,
+    const std::string& fallback,
+    bool error,
+    const std::string& activity
+)
+{
+    sendStatus(fallback, error, activity, messageKey, messageParams);
+}
 
 void ModelAssetEditorSession::sendProgress(
     const std::string& activity,
@@ -7426,7 +7435,7 @@ bool ModelAssetEditorSession::saveWorkingAsset(bool quiet)
 {
     if (m_selectedId.empty() || m_asset.assetId.empty())
     {
-        if (!quiet) sendStatus("No asset selected", true);
+        if (!quiet) sendStatusKey("model_editor.server.no_asset_selected", json::object(), "No asset selected", true);
         return false;
     }
 
@@ -7583,7 +7592,7 @@ bool ModelAssetEditorSession::restoreWorkingAsset()
 {
     if (m_selectedId.empty() || m_asset.assetId.empty())
     {
-        sendStatus("No asset selected", true);
+        sendStatusKey("model_editor.server.no_asset_selected", json::object(), "No asset selected", true);
         return false;
     }
     if (!std::filesystem::exists(workingAssetPath()))
@@ -7603,7 +7612,7 @@ bool ModelAssetEditorSession::buildProductionAsset()
 {
     if (m_selectedId.empty() || m_asset.assetId.empty())
     {
-        sendStatus("No asset selected", true);
+        sendStatusKey("model_editor.server.no_asset_selected", json::object(), "No asset selected", true);
         return false;
     }
     if (!ensureAllLodsLoaded()) return false;

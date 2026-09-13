@@ -154,7 +154,7 @@ function createViewportAttachmentEffects({
   add(new THREE.SphereGeometry(Math.max(diagonal*.035,.5),12,8),position.clone().addScaledVector(forward,focus));
   add(new THREE.BoxGeometry(Math.max(diagonal*.08,1),Math.max(diagonal*.04,.5),Math.max(diagonal*.04,.5)),position.clone().addScaledVector(forward,focus*1.5).addScaledVector(right,focus*.28));
   add(new THREE.BoxGeometry(Math.max(diagonal*.05,.8),Math.max(diagonal*.1,1),Math.max(diagonal*.05,.8)),position.clone().addScaledVector(forward,focus*2).addScaledVector(right,-focus*.25).addScaledVector(up,focus*.08));
-  localStatus(`Camera preview: ${socket.id} · FOV ${state.camera.fov.toFixed(1)}°`);
+  localStatus(tr('model_editor.status.camera_preview','Camera preview: {id} · FOV {fov}°',{id:socket.id,fov:state.camera.fov.toFixed(1)}));
  }
 
  function updateSemanticSocketTransforms(){

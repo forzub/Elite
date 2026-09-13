@@ -2,35 +2,33 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.81
-**Architectural layer separation:** ~100%
-**Line-level HTML extraction:** intentionally not 100%
+**Editor candidate:** v0.10.82
+**WebUI architectural layer separation:** ~100%
+**Localization architecture:** closure candidate
 
-## Verified baseline entering this pass
+## Accepted baseline
 
-User reported v0.10.78 architecture tests PASS and local build success. v0.10.79 viewport-core and v0.10.80 viewport-adapter candidates passed GitHub architecture and JavaScript syntax gates before this closure pass.
+The user locally verified the v0.10.81 architecture contracts, CMake build and runtime startup/basic workflow. Application state, orchestration, transport, backend session/persistence, EditorViewState and THREE viewport responsibilities are physically separated behind explicit module boundaries.
 
-## v0.10.81 architecture closure candidate
+## v0.10.82 localization closure
 
-The last top-level state block is physically isolated:
+Localization now has the same boundary discipline:
 
-- `app/editor_view_state.js` owns EditorViewState and visibility projections;
-- `app/runtime_state.js` constructs the non-reducer runtime container;
-- `app/view_invariants.js` owns view transition/invariant checks;
-- `transport/bridge.js` provides a stable late-bound transport boundary for early-created adapters.
+- `i18n/catalog.js` is a PURE catalog resolver/formatter;
+- `i18n/dom.js` is the generic declarative DOM localization adapter;
+- static shell text uses `data-i18n*` keys instead of a central list of element IDs;
+- `effects/i18n.js` owns locale orchestration only;
+- a locale selected before backend settings arrive is authoritative and is persisted when settings become available;
+- contextual help and the SEMANTICS compact workflow resolve all five locales through the central catalog instead of hard-coded RU-vs-EN branches;
+- backend status messages can carry `messageKey` + `messageParams`, with raw English retained only as a diagnostic/legacy fallback;
+- a localization architecture contract validates catalog completeness, referenced keys and the key boundaries.
 
-The transport bridge also removes a bootstrap-order hazard: i18n/LOD/SEMANTICS adapters previously received lexical `send` / diagnostic bindings before concrete transport initialization. They now receive stable proxy functions and the concrete transport binds later, before connect/load startup.
+The status bar permanently exposes the language shortcut: `Ctrl+Alt+F12`.
 
-A final shell architecture contract prevents extracted application/session/transport/viewport responsibilities from drifting back into `model_asset_editor.html`.
+## Testing strategy
 
-## What ~100% means
+`run_model_asset_editor_impacted.py` maps changed paths to the architecture contracts that can be affected. Use it during normal iterations to avoid rerunning unrelated contracts. A full architecture gate remains mandatory before a release/architecture closure.
 
-The target architectural layers are now separated and have explicit ownership boundaries. The HTML file still contains feature-specific DOM rendering/binding functions. Those are UI-layer code, not unresolved cross-layer architecture. Further moving every UI function into one-function-per-file modules would be code-layout cleanup rather than completion of this separation objective.
+## Remaining architecture debt outside WebUI/localization
 
-## Remaining acceptance
-
-Local CMake/resource-pack build and runtime smoke remain authoritative. In particular verify application startup, because v0.10.81 changes bootstrap ordering while preserving the same transport behavior.
-
-## Separate binary debt
-
-Production binary remains v4. Independent CMake translation units for the binary subsystem are a separate architecture item and are not counted in the WebUI percentage.
+Production ModelAsset binary v4 still has one independent CMake translation-unit closure task: list binary `.cpp` files directly in the target, remove facade `.cpp` aggregation includes, enforce that rule, then build/test v4 save/load.

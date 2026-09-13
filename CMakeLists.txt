@@ -83,6 +83,21 @@ endif()
 # offline-asset migration gate.
 add_library(EliteModelAsset STATIC
     src/model_asset/ModelAssetBinary.cpp
+    src/model_asset/binary/ModelAssetBinaryMeshCodec.cpp
+    src/model_asset/binary/chunks/MetadataChunks.cpp
+    src/model_asset/binary/chunks/SemanticsChunks.cpp
+    src/model_asset/binary/chunks/CollisionChunks.cpp
+    src/model_asset/binary/chunks/SocketChunks.cpp
+    src/model_asset/binary/chunks/DamageChunks.cpp
+    src/model_asset/binary/chunks/StructuralChunks.cpp
+    src/model_asset/binary/chunks/LodChunks.cpp
+    src/model_asset/binary/chunks/LegacyChunks.cpp
+    src/model_asset/binary/ModelAssetBinaryChunkRegistry.cpp
+    src/model_asset/binary/ModelAssetBinaryValidation.cpp
+    src/model_asset/binary/ModelAssetBinaryStorage.cpp
+    src/model_asset/binary/ModelAssetBinaryManifestIO.cpp
+    src/model_asset/binary/ModelAssetBinaryLodIO.cpp
+    src/model_asset/binary/ModelAssetBinaryController.cpp
     src/model_asset/ModelAssetMigration.cpp
     src/model_asset/RuntimeMeshNormalizer.cpp
 )

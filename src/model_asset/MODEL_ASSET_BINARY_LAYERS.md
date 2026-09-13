@@ -91,11 +91,11 @@ A correction to socket metadata must therefore not require editing semantic, str
 
 Lowest reusable v4 wire primitive: bounded reader/writer, POD/string/vector helpers and shared error assignment. No knowledge of chunks, files, controller sequencing or domain meaning.
 
-## Current build-boundary note
+## Build / translation-unit boundary
 
-The source ownership is now physically split into separate files. The root build currently names only `ModelAssetBinary.cpp`, so this iteration uses that file as a **composition-only translation unit** that includes the layer `.cpp` files. No implementation logic is allowed back into the facade.
+The physical layer split is also the build boundary. `EliteModelAsset` lists the facade, controller, manifest/LOD I/O, validation, storage, mesh codec, registry and all eight domain codec `.cpp` files as **independent CMake translation units**. The standalone `model_asset_tests` target compiles the same binary implementation set.
 
-This is intentionally temporary. The next build-isolation gate is to list every layer source independently in `EliteModelAsset` and remove all `.cpp` includes from the facade. That step improves compile/link fault isolation without changing the APIs defined here.
+`ModelAssetBinary.cpp` is a normal compatibility-facade TU and may include headers only. Including implementation `.cpp` files anywhere in the binary subsystem is forbidden by the architecture contract. This gives compile/link fault isolation while preserving the production v4 API and wire format.
 
 ## v5 integration rule
 

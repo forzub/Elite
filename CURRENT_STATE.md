@@ -1,74 +1,80 @@
 # Elite — CURRENT STATE
 
-**Updated:** 2026-09-13  
-**Authoritative working branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Model Asset Editor line:** v0.10.77 candidate
-
-`CURRENT_STATE.md` + `CURRENT_TASK.md` are authoritative for the active iteration.
+**Updated:** 2026-09-14
+**Authoritative working branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
+**Model Asset Editor candidate:** v0.10.78
 
 ## Accepted / frozen baseline
 
-- SOURCE / LODS / GEOMETRY / SURFACES remain accepted unless a regression requires a targeted repair.
-- Cleaned SEMANTICS workflow remains accepted.
-- MODEL ROOT is implicit identity and is not serialized as a semantic node.
-- Semantic parts are asset-wide; each LOD owns its own render geometry / RenderNodes / bindings.
-- PHYSICS is Model Asset authoring metadata. Runtime world simulation remains outside this editor pass.
-- Production model binary remains v4; v5 remains a draft target.
+- SOURCE / LODS / GEOMETRY / SURFACES remain accepted unless a regression forces a targeted repair.
+- SEMANTICS compact workflow remains accepted.
+- MODEL ROOT is implicit identity root and is not serialized as a semantic node.
+- PHYSICS is Model Asset authoring metadata; game-world runtime simulation is out of scope here.
+- production Model Asset binary remains v4; v5 remains draft.
 
-## Application architecture
+## User-local verification before v0.10.78
 
-Authoritative application control remains:
+On 2026-09-14 the user verified v0.10.77 locally:
 
-`action -> ApplicationController -> reducer/store -> selector`
+```text
+MODEL ASSET EDITOR APPLICATION STATE: PASS
+MODEL ASSET EDITOR ORCHESTRATION LAYERS: PASS
+MODEL ASSET EDITOR TRANSPORT LAYERS: PASS
+MODEL ASSET SEMANTICS WORKSPACE LAYOUT: PASS
+```
 
-`EditorViewState` remains authoritative for active/resident LOD, viewport selection, visibility and isolation.
+The local CMake build reconfigured for the new transport JS files, regenerated the UI resource pack, linked `EliteAssetEditor.exe`, and staged the MinGW runtime without an error in the supplied log. A manual runtime smoke was not explicitly reported.
 
-The v0.10.76 orchestration pass is retained:
+## Whole-editor decomposition
 
-- dedicated application bootstrap;
-- workflow transition effect adapter;
-- declarative stage renderer registry;
-- no `setWizardStage(...)` implementation in the HTML shell;
-- no top-level stage `if(stage===...)` dispatch in the HTML shell.
+Current completed boundaries:
 
-## v0.10.77 transport isolation candidate
+1. authoritative application state / reducer / controller;
+2. dedicated application bootstrap;
+3. workflow transition effect adapter;
+4. declarative workflow stage renderer registry;
+5. WebSocket lifecycle and reconnect;
+6. JSON command + diagnostic transport;
+7. ELWIR001 binary codec and binary transfer bookkeeping;
+8. declarative backend JSON message router;
+9. asset metadata/full-payload acceptance effect;
+10. WORKING SAVE persistence acknowledgement;
+11. settings persistence acknowledgement/error handling.
 
-Transport responsibilities are now split under:
+Dependency direction:
 
-`src/assets/webui/model_asset_editor/transport/`
+```text
+UI / feature command
+        ↓
+application / workflow
+        ↓
+command transport
+        ↓
+WebSocket/backend
 
-- `diagnostics.js` — bounded diagnostic queue and global JS error/rejection capture;
-- `commands.js` — JSON command dispatch and command-status behavior;
-- `binary_wire.js` — pure ELWIR001 reader/decoder;
-- `binary_transfers.js` — asset/LOD binary transfer bookkeeping, payload application and delta reuse;
-- `websocket.js` — WebSocket lifecycle, JSON/binary receive split and reconnect;
-- `runtime.js` — transport composition root connecting those adapters to the existing session handler.
+backend JSON / binary
+        ↓
+transport decode
+        ↓
+session message router
+        ↓
+asset / persistence / feature effects
+        ↓
+view + authored asset state
+```
 
-The HTML shell no longer owns:
+Transport does not own backend message semantics. Session/persistence effects do not construct WebSocket or THREE runtime objects.
 
-- `new WebSocket(...)` lifecycle/reconnect;
-- `send(...)` implementation;
-- diagnostic queue/flush implementation;
-- `EditorWireReader` / ELWIR001 binary decoder;
-- binary transfer map/bookkeeping.
+## Progress
 
-The transport layer intentionally does not own THREE, DOM rendering, authored asset algorithms, or EditorViewState rules.
+Estimated whole-editor physical separation after v0.10.78: **~83% by architectural layers**.
 
-Architecture contract:
-`tests/architecture_contracts/check_model_asset_editor_transport_layers.py`
+Remaining large surfaces:
 
-## Remaining whole-editor decomposition
-
-The next boundary is now the large backend/session handler still in the HTML shell:
-
-1. replace monolithic `handle(msg)` with a declarative backend message router;
-2. extract asset metadata/full-payload acceptance and resident LOD merge/reuse effects;
-3. extract SAVE / RESTORE / WORKING-save bookkeeping;
-4. extract settings persistence / acknowledgement / timeout effects;
-5. then isolate THREE / viewport runtime;
-6. physically extract the remaining EditorViewState/view adapters;
-7. reduce `model_asset_editor.html` toward static shell + bootstrap only.
+- THREE / viewport runtime and scene lifecycle;
+- physical extraction of `EditorViewState` plus remaining view adapters;
+- final HTML shell cleanup / architecture closure.
 
 ## Binary subsystem parallel debt
 
-The logical binary split is accepted, but final CMake translation-unit closure remains separate work: register binary `.cpp` files directly, remove `.cpp` aggregation from the facade, strengthen the contract, then rebuild/smoke-test production v4 save/load.
+The binary subsystem is logically split but still needs its independent-CMake-translation-unit closure: direct source registration, removal of `.cpp` aggregation, architecture-contract update, then v4 save/load build smoke.

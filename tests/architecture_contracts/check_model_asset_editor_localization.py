@@ -46,8 +46,43 @@ for rel in ['effects/lod_runtime.js','effects/semantics.js','viewport/attachment
  text=(WEB/rel).read_text(encoding='utf-8')
  for pat in [r"localStatus\(\s*'[^']*[A-Za-z]{3,}",r'localStatus\(\s*`[^`]*[A-Za-z]{3,}']:
   if re.search(pat,text): errors.append(f'{rel}: direct user-facing localStatus literal remains')
+
+# High-visibility shell coverage. Technical identifiers (LOD0, XYZ, file names,
+# numeric badges) may remain literal; human prose must be keyed or call tr().
+for required in [
+ 'data-i18n="model_editor.busy.reading"',
+ 'data-i18n="model_editor.common.state"',
+ 'data-i18n="model_editor.radial.center_pivot"',
+ 'data-i18n="model_editor.radial.center_origin"',
+ 'data-i18n="model_editor.radial.center_custom"',
+ 'data-i18n="model_editor.axis_rotation.apply_button"',
+ 'data-i18n="model_editor.status.idle"',
+ 'data-i18n="model_editor.status.ready"'
+]:
+ if required not in html: errors.append(f'static shell localization marker missing: {required}')
+for forbidden in [
+ '>No used default geometry in this LOD.<',
+ '>LOD not loaded<',
+ '>Selected element pivot<',
+ '>Parent origin (0,0,0)<',
+ '>REBUILD LOD0 + APPLY ROTATION<',
+ '>Ready<',
+ '>IDLE<'
+]:
+ if forbidden in html and 'data-i18n' not in html[max(0,html.find(forbidden)-180):html.find(forbidden)+len(forbidden)+50]:
+  errors.append(f'unkeyed static/user prose remains: {forbidden}')
+for pattern,label in [
+ (r"localStatus\(\s*`[^`]*mesh families selected",'surface selection status'),
+ (r"confirm\(\s*`Delete \$\{unused\.length\}",'unused geometry confirmation'),
+ (r"confirm\(\s*`Reload \$\{g\.id\} directly from SOURCE",'source reload confirmation'),
+ (r"<span>source meshes</span>",'storage labels'),
+ (r"GAME FRAME · FIXED</span>",'axis legend')
+]:
+ if re.search(pattern,html): errors.append(f'direct localization bypass remains: {label}')
+# Fallback English is permitted only when a locale value is actually absent.
+# A present non-English locale may not silently copy full English prose.
 version=VERSION.read_text(encoding='utf-8')
-if 'ModelAssetEditorVersion = "0.10.82"' not in version: errors.append('expected editor version 0.10.82')
+if 'ModelAssetEditorVersion = "0.10.83"' not in version: errors.append('expected editor version 0.10.83')
 if errors:
  print('MODEL ASSET EDITOR LOCALIZATION ARCHITECTURE: FAIL')
  for error in errors: print(' -',error)

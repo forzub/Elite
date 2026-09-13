@@ -8978,6 +8978,335 @@
       "zh-Hans": "SAVE 保存 WORKING。RESTORE 放弃未保存更改。CHECK 验证阶段；BUILD 写入 production。",
       "es": "SAVE guarda WORKING. RESTORE descarta cambios no guardados. CHECK valida una etapa; BUILD escribe production.",
       "ja": "SAVE は WORKING を保存し、RESTORE は未保存変更を破棄します。CHECK はステージを検証し、BUILD は production を書き出します。"
+    },
+    "model_editor.document.title": {
+      "en": "Elite Model Asset Editor",
+      "ru": "Редактор ресурсов моделей Elite",
+      "zh-Hans": "Elite 模型资源编辑器",
+      "es": "Editor de recursos de modelo Elite",
+      "ja": "Elite モデルアセットエディタ"
+    },
+    "model_editor.status.ready": {
+      "en": "Ready",
+      "ru": "Готово",
+      "zh-Hans": "就绪",
+      "es": "Listo",
+      "ja": "準備完了"
+    },
+    "model_editor.geometry_stats.render_nodes": {
+      "en": "render nodes",
+      "ru": "узлы рендера",
+      "zh-Hans": "渲染节点",
+      "es": "nodos de renderizado",
+      "ja": "レンダーノード"
+    },
+    "model_editor.geometry_stats.geometry_definitions": {
+      "en": "geometry definitions",
+      "ru": "описания геометрии",
+      "zh-Hans": "几何定义",
+      "es": "definiciones de geometría",
+      "ja": "ジオメトリ定義"
+    },
+    "model_editor.geometry_stats.geometry_bindings": {
+      "en": "geometry bindings",
+      "ru": "привязки геометрии",
+      "zh-Hans": "几何绑定",
+      "es": "enlaces de geometría",
+      "ja": "ジオメトリバインド"
+    },
+    "model_editor.geometry_stats.shared_groups": {
+      "en": "shared geometry groups",
+      "ru": "группы общей геометрии",
+      "zh-Hans": "共享几何组",
+      "es": "grupos de geometría compartida",
+      "ja": "共有ジオメトリグループ"
+    },
+    "model_editor.geometry_stats.additional_meshes": {
+      "en": "additional meshes",
+      "ru": "дополнительные меши",
+      "zh-Hans": "附加网格",
+      "es": "mallas adicionales",
+      "ja": "追加メッシュ"
+    },
+    "model_editor.geometry_stats.unused_geometry": {
+      "en": "unused ordinary geometry",
+      "ru": "неиспользуемая обычная геометрия",
+      "zh-Hans": "未使用的普通几何",
+      "es": "geometría ordinaria sin usar",
+      "ja": "未使用の通常ジオメトリ"
+    },
+    "model_editor.geometry_stats.vertices": {
+      "en": "vertices",
+      "ru": "вершины",
+      "zh-Hans": "顶点",
+      "es": "vértices",
+      "ja": "頂点"
+    },
+    "model_editor.geometry_stats.triangles": {
+      "en": "triangles",
+      "ru": "треугольники",
+      "zh-Hans": "三角形",
+      "es": "triángulos",
+      "ja": "三角形"
+    },
+    "model_editor.geometry_variants.no_used_default": {
+      "en": "No used default geometry in this LOD.",
+      "ru": "В этом LOD нет используемой основной геометрии.",
+      "zh-Hans": "此 LOD 中没有正在使用的默认几何。",
+      "es": "No hay geometría predeterminada en uso en este LOD.",
+      "ja": "この LOD には使用中の既定ジオメトリがありません。"
+    },
+    "model_editor.status.surface_selected": {
+      "en": "SURFACES: LOD{lod} · {count} mesh families selected · G{geometry} · {id}",
+      "ru": "ПОВЕРХНОСТИ: LOD{lod} · выбрано семейств мешей: {count} · G{geometry} · {id}",
+      "zh-Hans": "表面：LOD{lod} · 已选择 {count} 个网格族 · G{geometry} · {id}",
+      "es": "SUPERFICIES: LOD{lod} · {count} familias de malla seleccionadas · G{geometry} · {id}",
+      "ja": "サーフェス: LOD{lod} · {count} 個のメッシュ系統を選択 · G{geometry} · {id}"
+    },
+    "model_editor.status.active_lod": {
+      "en": "{stage}: LOD{lod}",
+      "ru": "{stage}: активный LOD{lod}",
+      "zh-Hans": "{stage}：LOD{lod}",
+      "es": "{stage}: LOD activo {lod}",
+      "ja": "{stage}: アクティブ LOD{lod}"
+    },
+    "model_editor.axis_legend.game_frame": {
+      "en": "GAME FRAME",
+      "ru": "СИСТЕМА КООРДИНАТ ИГРЫ",
+      "zh-Hans": "游戏坐标系",
+      "es": "SISTEMA DE COORDENADAS DEL JUEGO",
+      "ja": "ゲーム座標系"
+    },
+    "model_editor.axis_legend.game_frame_fixed": {
+      "en": "GAME FRAME · FIXED",
+      "ru": "СИСТЕМА КООРДИНАТ ИГРЫ · ФИКСИРОВАННАЯ",
+      "zh-Hans": "游戏坐标系 · 固定",
+      "es": "SISTEMA DE COORDENADAS DEL JUEGO · FIJO",
+      "ja": "ゲーム座標系 · 固定"
+    },
+    "model_editor.axis_legend.directions": {
+      "en": "RIGHT +X · UP +Y · NOSE -Z",
+      "ru": "ВПРАВО +X · ВВЕРХ +Y · НОС -Z",
+      "zh-Hans": "右 +X · 上 +Y · 舰首 -Z",
+      "es": "DERECHA +X · ARRIBA +Y · PROA -Z",
+      "ja": "右 +X · 上 +Y · 機首 -Z"
+    },
+    "model_editor.axis_legend.ground": {
+      "en": "GROUND XZ · VERTICAL Y",
+      "ru": "ПЛОСКОСТЬ XZ · ВЕРТИКАЛЬ Y",
+      "zh-Hans": "地面 XZ · 垂直 Y",
+      "es": "PLANO XZ · VERTICAL Y",
+      "ja": "地面 XZ · 垂直 Y"
+    },
+    "model_editor.axis_legend.source_to_game": {
+      "en": "LOD{lod} SOURCE → GAME",
+      "ru": "LOD{lod} ИСТОЧНИК → ИГРА",
+      "zh-Hans": "LOD{lod} 源 → 游戏",
+      "es": "LOD{lod} ORIGEN → JUEGO",
+      "ja": "LOD{lod} ソース → ゲーム"
+    },
+    "model_editor.overlay.semantic": {
+      "en": "semantic",
+      "ru": "семантика",
+      "zh-Hans": "语义",
+      "es": "semántica",
+      "ja": "セマンティック"
+    },
+    "model_editor.overlay.preview_state": {
+      "en": "preview state",
+      "ru": "состояние предпросмотра",
+      "zh-Hans": "预览状态",
+      "es": "estado de vista previa",
+      "ja": "プレビュー状態"
+    },
+    "model_editor.overlay.render": {
+      "en": "render LOD{lod}",
+      "ru": "рендер LOD{lod}",
+      "zh-Hans": "渲染 LOD{lod}",
+      "es": "renderizado LOD{lod}",
+      "ja": "レンダー LOD{lod}"
+    },
+    "model_editor.overlay.geometry": {
+      "en": "geometry",
+      "ru": "геометрия",
+      "zh-Hans": "几何",
+      "es": "geometría",
+      "ja": "ジオメトリ"
+    },
+    "model_editor.overlay.unbound": {
+      "en": "unbound",
+      "ru": "не привязано",
+      "zh-Hans": "未绑定",
+      "es": "sin vincular",
+      "ja": "未バインド"
+    },
+    "model_editor.storage.source_meshes": {
+      "en": "source meshes",
+      "ru": "исходные меши",
+      "zh-Hans": "源网格",
+      "es": "mallas de origen",
+      "ja": "ソースメッシュ"
+    },
+    "model_editor.storage.working_manifest": {
+      "en": "WORKING manifest",
+      "ru": "манифест WORKING",
+      "zh-Hans": "WORKING 清单",
+      "es": "manifiesto WORKING",
+      "ja": "WORKING マニフェスト"
+    },
+    "model_editor.storage.working_lod": {
+      "en": "WORKING LOD{lod} .elmesh",
+      "ru": "рабочий LOD{lod} .elmesh (WORKING)",
+      "zh-Hans": "WORKING 的 LOD{lod} .elmesh",
+      "es": "LOD{lod} .elmesh de WORKING",
+      "ja": "WORKING の LOD{lod} .elmesh"
+    },
+    "model_editor.storage.working_total": {
+      "en": "WORKING package total",
+      "ru": "весь пакет WORKING",
+      "zh-Hans": "WORKING 包总计",
+      "es": "total del paquete WORKING",
+      "ja": "WORKING パッケージ合計"
+    },
+    "model_editor.storage.production_last_build": {
+      "en": "PRODUCTION package (last BUILD)",
+      "ru": "пакет PRODUCTION (последний BUILD)",
+      "zh-Hans": "PRODUCTION 包（上次 BUILD）",
+      "es": "paquete PRODUCTION (último BUILD)",
+      "ja": "PRODUCTION パッケージ（前回の BUILD）"
+    },
+    "model_editor.storage.render_payload_estimate": {
+      "en": "current render payload estimate",
+      "ru": "оценка текущего render payload",
+      "zh-Hans": "当前渲染载荷估算",
+      "es": "estimación de la carga de renderizado actual",
+      "ja": "現在のレンダーペイロード推定値"
+    },
+    "model_editor.storage.unused_active_lod": {
+      "en": "unused active-LOD geometry",
+      "ru": "неиспользуемая геометрия активного LOD",
+      "zh-Hans": "活动 LOD 的未使用几何",
+      "es": "geometría sin usar del LOD activo",
+      "ja": "アクティブ LOD の未使用ジオメトリ"
+    },
+    "model_editor.storage.source_variants": {
+      "en": "source variant geometries",
+      "ru": "геометрия вариантов источника",
+      "zh-Hans": "源变体几何",
+      "es": "geometrías de variantes de origen",
+      "ja": "ソースバリアントジオメトリ"
+    },
+    "model_editor.storage.working_path": {
+      "en": "WORKING",
+      "ru": "WORKING",
+      "zh-Hans": "WORKING",
+      "es": "WORKING",
+      "ja": "WORKING"
+    },
+    "model_editor.storage.production_path": {
+      "en": "PRODUCTION",
+      "ru": "PRODUCTION",
+      "zh-Hans": "PRODUCTION",
+      "es": "PRODUCTION",
+      "ja": "PRODUCTION"
+    },
+    "model_editor.storage.help": {
+      "en": "WORKING ASSET is the saved editor resume state. SAVE and RESTORE are the only working-state persistence controls. Production changes only at BUILD. Source OBJ/MTL files are read-only authoring inputs.",
+      "ru": "WORKING ASSET — сохранённое состояние редактора для продолжения работы. SAVE и RESTORE — единственные команды сохранения рабочего состояния. Production меняется только при BUILD. Исходные OBJ/MTL доступны только для чтения.",
+      "zh-Hans": "WORKING ASSET 是编辑器用于继续工作的已保存状态。SAVE 和 RESTORE 是唯一的工作状态持久化控制。Production 仅在 BUILD 时改变。源 OBJ/MTL 文件是只读制作输入。",
+      "es": "WORKING ASSET es el estado guardado para reanudar el editor. SAVE y RESTORE son los únicos controles de persistencia del estado de trabajo. Production solo cambia con BUILD. Los archivos OBJ/MTL de origen son entradas de solo lectura.",
+      "ja": "WORKING ASSET は編集作業を再開するための保存状態です。SAVE と RESTORE が作業状態を永続化する唯一の操作です。Production は BUILD 時だけ変更されます。ソース OBJ/MTL は読み取り専用の制作入力です。"
+    },
+    "model_editor.storage.unsaved_warning": {
+      "en": "Unsaved WORKING ASSET changes exist. SAVE keeps them; RESTORE discards them. BUILD writes production only from a saved state.",
+      "ru": "Есть несохранённые изменения WORKING ASSET. SAVE сохраняет их, RESTORE отменяет. BUILD пишет production только из сохранённого состояния.",
+      "zh-Hans": "存在未保存的 WORKING ASSET 更改。SAVE 会保留它们；RESTORE 会放弃它们。BUILD 只从已保存状态写入 production。",
+      "es": "Hay cambios de WORKING ASSET sin guardar. SAVE los conserva; RESTORE los descarta. BUILD escribe production solo desde un estado guardado.",
+      "ja": "WORKING ASSET に未保存の変更があります。SAVE は保持し、RESTORE は破棄します。BUILD は保存済み状態からのみ production を書き込みます。"
+    },
+    "model_editor.storage.legacy_package": {
+      "en": "Legacy package still exists",
+      "ru": "Старый пакет всё ещё существует",
+      "zh-Hans": "旧版包仍然存在",
+      "es": "El paquete heredado todavía existe",
+      "ja": "旧形式パッケージが残っています"
+    },
+    "model_editor.common.tris_short": {
+      "en": "tris",
+      "ru": "треуг.",
+      "zh-Hans": "三角面",
+      "es": "triáng.",
+      "ja": "三角形"
+    },
+    "model_editor.confirm.delete_unused_geometry": {
+      "en": "Delete {count} unused geometry definition(s) from LOD{lod}?\n\n{listing}\n\nEstimated payload removed: ~{bytes}\n\nOnly the active render LOD changes. Other LODs, the semantic manifest and source OBJ files are unchanged until explicitly saved.",
+      "ru": "Удалить {count} неиспользуемых описаний геометрии из LOD{lod}?\n\n{listing}\n\nОценка удаляемого payload: ~{bytes}\n\nИзменится только активный render LOD. Другие LOD, semantic manifest и исходные OBJ не меняются до явного сохранения.",
+      "zh-Hans": "从 LOD{lod} 删除 {count} 个未使用的几何定义？\n\n{listing}\n\n预计移除载荷：~{bytes}\n\n只会更改活动 render LOD。其他 LOD、semantic manifest 和源 OBJ 文件在显式保存前保持不变。",
+      "es": "¿Eliminar {count} definiciones de geometría sin usar de LOD{lod}?\n\n{listing}\n\nCarga estimada eliminada: ~{bytes}\n\nSolo cambia el render LOD activo. Los demás LOD, el manifiesto semántico y los OBJ de origen no cambian hasta guardar explícitamente.",
+      "ja": "LOD{lod} から未使用のジオメトリ定義 {count} 件を削除しますか？\n\n{listing}\n\n削除予定ペイロード: ~{bytes}\n\n変更されるのはアクティブな render LOD のみです。他の LOD、semantic manifest、ソース OBJ は明示的に保存するまで変更されません。"
+    },
+    "model_editor.confirm.reload_source_mesh": {
+      "en": "Reload {id} directly from SOURCE?\n\n{path}\n\nOnly this mesh payload is replaced in memory. SAVE is still required.",
+      "ru": "Перезагрузить {id} напрямую из SOURCE?\n\n{path}\n\nВ памяти будет заменён только payload этого меша. После этого всё ещё требуется SAVE.",
+      "zh-Hans": "直接从 SOURCE 重新加载 {id}？\n\n{path}\n\n只会替换内存中的该网格载荷。之后仍需 SAVE。",
+      "es": "¿Recargar {id} directamente desde SOURCE?\n\n{path}\n\nSolo se reemplaza en memoria la carga de esta malla. SAVE sigue siendo necesario.",
+      "ja": "{id} を SOURCE から直接再読み込みしますか？\n\n{path}\n\nメモリ上ではこのメッシュのペイロードだけが置き換わります。引き続き SAVE が必要です。"
+    },
+    "model_editor.status.source_instance_selected": {
+      "en": "Selected LOD{lod} instance link: {id} → {target}",
+      "ru": "Выбрана ссылка экземпляра LOD{lod}: {id} → {target}",
+      "zh-Hans": "已选择 LOD{lod} 实例链接：{id} → {target}",
+      "es": "Enlace de instancia LOD{lod} seleccionado: {id} → {target}",
+      "ja": "LOD{lod} インスタンスリンクを選択: {id} → {target}"
+    },
+    "model_editor.status.source_instance_missing": {
+      "en": "INSTANCE link {id} has no resident RenderNode",
+      "ru": "У ссылки INSTANCE {id} нет загруженного RenderNode",
+      "zh-Hans": "INSTANCE 链接 {id} 没有驻留 RenderNode",
+      "es": "El enlace INSTANCE {id} no tiene RenderNode residente",
+      "ja": "INSTANCE リンク {id} には常駐 RenderNode がありません"
+    },
+    "model_editor.status.source_geometry_selected": {
+      "en": "Selected LOD{lod} geometry: {id}",
+      "ru": "Выбрана геометрия LOD{lod}: {id}",
+      "zh-Hans": "已选择 LOD{lod} 几何：{id}",
+      "es": "Geometría LOD{lod} seleccionada: {id}",
+      "ja": "LOD{lod} ジオメトリを選択: {id}"
+    },
+    "model_editor.source.instance_badge": {
+      "en": "INSTANCE",
+      "ru": "ЭКЗЕМПЛЯР",
+      "zh-Hans": "实例",
+      "es": "INSTANCIA",
+      "ja": "インスタンス"
+    },
+    "model_editor.source.missing_link_kept": {
+      "en": "SOURCE MISSING · LINK KEPT",
+      "ru": "SOURCE ОТСУТСТВУЕТ · СВЯЗЬ СОХРАНЕНА",
+      "zh-Hans": "SOURCE 缺失 · 保留链接",
+      "es": "SOURCE AUSENTE · ENLACE CONSERVADO",
+      "ja": "SOURCE 不明 · リンク保持"
+    },
+    "model_editor.source.reload": {
+      "en": "↻ SOURCE",
+      "ru": "↻ SOURCE",
+      "zh-Hans": "↻ SOURCE",
+      "es": "↻ SOURCE",
+      "ja": "↻ SOURCE"
+    },
+    "model_editor.lod.source_kind": {
+      "en": "source kind",
+      "ru": "тип источника",
+      "zh-Hans": "源类型",
+      "es": "tipo de origen",
+      "ja": "ソース種別"
+    },
+    "model_editor.lod.placeholder_unknown": {
+      "en": "SSE unknown",
+      "ru": "SSE неизвестен",
+      "zh-Hans": "SSE 未知",
+      "es": "SSE desconocido",
+      "ja": "SSE 不明"
     }
   }
 }

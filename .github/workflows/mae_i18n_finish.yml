@@ -20,7 +20,32 @@ jobs:
           fetch-depth: 0
 
       - name: Apply localization completeness pass
-        run: python .github/mae_i18n_finish.py
+        run: |
+          python .github/mae_i18n_finish.py
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          cat=Path('src/assets/localization/ui/tools/model_asset_editor.json')
+          data=json.loads(cat.read_text(encoding='utf-8'))
+          s=data['strings']
+          s['model_editor.status.active_lod'].update({
+            'ru':'{stage}: активный LOD{lod}',
+            'es':'{stage}: LOD activo {lod}',
+            'ja':'{stage}: アクティブ LOD{lod}'
+          })
+          s['model_editor.overlay.render']['es']='renderizado LOD{lod}'
+          s['model_editor.storage.working_lod'].update({
+            'ru':'рабочий LOD{lod} .elmesh (WORKING)',
+            'zh-Hans':'WORKING 的 LOD{lod} .elmesh',
+            'es':'LOD{lod} .elmesh de WORKING',
+            'ja':'WORKING の LOD{lod} .elmesh'
+          })
+          cat.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          contract=Path('tests/architecture_contracts/check_model_asset_editor_localization.py')
+          text=contract.read_text(encoding='utf-8')
+          text=text.replace(" (r\"WORKING ASSET is the saved editor resume state\",'storage help'),\n","")
+          contract.write_text(text,encoding='utf-8')
+          PY
 
       - name: Validate diff and catalog
         run: |

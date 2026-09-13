@@ -35,6 +35,7 @@ for noisy in [
     'class="semanticPreviewNote',
     '<div class="semanticHint">${text.previewHelp}</div>',
     '<span class="grow">${text.cleanupHelp}</span>',
+    '<span>${text.selectionHelp}</span>',
 ]:
     assert noisy not in tree, f"TREE workspace exposes retired explanatory UI: {noisy}"
 

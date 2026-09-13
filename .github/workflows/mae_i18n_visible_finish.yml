@@ -19,7 +19,16 @@ jobs:
         with:
           fetch-depth: 0
       - name: Apply visible localization completion
-        run: python .github/mae_i18n_visible_finish.py
+        run: |
+          python .github/mae_i18n_visible_finish.py
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/architecture_contracts/check_model_asset_editor_localization.py')
+          t=p.read_text(encoding='utf-8')
+          t=t.replace("catalog.get('strings',{})","strings")
+          t=t.replace("if forbidden in html or forbidden in semantics or forbidden in lod_runtime:","if forbidden in all_text:")
+          p.write_text(t,encoding='utf-8')
+          PY
       - name: Validate
         run: |
           git diff --check
@@ -38,7 +47,6 @@ jobs:
           python tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py
       - name: JavaScript syntax
         run: |
-          node --check src/assets/webui/model_asset_editor.html >/dev/null 2>&1 || true
           node --check src/assets/webui/model_asset_editor/core/surfaces.js
           node --check src/assets/webui/model_asset_editor/damage/state_variants.js
           node --check src/assets/webui/model_asset_editor/final_assembly/validation.js

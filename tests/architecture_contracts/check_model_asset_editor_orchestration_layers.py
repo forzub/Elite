@@ -36,7 +36,7 @@ if re.search(r"function\s+setWizardStage\s*\(", html):
 if "createWizardStageRendererRegistry" not in html or "renderWizardStage(" not in html:
     fail("HTML shell does not use the declarative stage renderer registry")
 
-match = re.search(r"function\s+renderWizardPanelContents\s*\(\)\s*\{(?P<body>.*?)\n\}\nfunction\s+captureEditorViewTransition", html, flags=re.DOTALL)
+match = re.search(r"function\s+renderWizardPanelContents\s*\(\)\s*\{(?P<body>.*?)\n\}\nfunction\s+sharedStageMeshStage", html, flags=re.DOTALL)
 if not match:
     fail("cannot locate renderWizardPanelContents boundary")
 panel_body = match.group("body")

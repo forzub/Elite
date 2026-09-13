@@ -2,24 +2,24 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.78
-**Whole-editor separation:** ~83%
+**Editor candidate:** v0.10.79
+**Whole-editor separation:** ~90%
 
 ## Immediate goal
 
-Verify the v0.10.78 session/persistence split, then move to the largest remaining boundary: **THREE / viewport runtime isolation**.
+Verify the v0.10.79 viewport-core split, then finish the remaining renderer adapters and extract `EditorViewState`.
 
-## v0.10.78 session/persistence pass
+## v0.10.79 viewport-core pass
 
 Expected complete boundaries:
 
-- `handle(msg)` imperative type chain is removed from `model_asset_editor.html`;
-- backend JSON dispatch is declarative (`type -> handler`);
-- asset metadata/full-payload merge + acceptance is in a session effect adapter;
-- WORKING SAVE acknowledgement/bookkeeping is in a persistence adapter;
-- settings load/save/error acknowledgement is in a persistence adapter;
-- transport remains independent of DOM/THREE/session semantics;
-- feature-specific semantic/surface patch effects remain feature effects rather than being absorbed into transport.
+- scene/bootstrap lifecycle is outside `model_asset_editor.html`;
+- renderer resize/frame loop and world axes are viewport runtime responsibilities;
+- raycaster and camera-fit behavior are viewport runtime responsibilities;
+- geometry cache and THREE BufferGeometry/material creation are outside the shell;
+- `rebuildScene` and visibility orchestration are outside the shell;
+- LOD/SEMANTICS keep their domain calculations and call renderer effects through a narrow scene bridge;
+- transport/session/application modules remain independent of THREE.
 
 ## Verification
 
@@ -30,32 +30,31 @@ python tests/architecture_contracts/check_model_asset_editor_application_state.p
 python tests/architecture_contracts/check_model_asset_editor_orchestration_layers.py
 python tests/architecture_contracts/check_model_asset_editor_transport_layers.py
 python tests/architecture_contracts/check_model_asset_editor_session_layers.py
+python tests/architecture_contracts/check_model_asset_editor_viewport_layers.py
 python tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py
-cmake --build build/tools/model_asset_editor --target EliteAssetEditor -j 8
+cmake --build build/tools/model_asset_editor --target EliteAssetEditor
 ./build/tools/model_asset_editor/bin/EliteAssetEditor.exe
 ```
 
-Manual smoke should cover connect/catalog/settings, open asset, full binary payload, LOD load/reload/switch, stage checks, SAVE/RESTORE, settings/locale, SEMANTICS TREE/GRAPH and PHYSICS editing.
+Manual smoke should include open asset, LOD switching, SOURCE/WORKING viewport mode, fit view, geometry visibility/isolation, SURFACES material preview, SEMANTICS motion preview, collision/socket visibility, SAVE/RESTORE and reconnect.
 
-## Next decomposition wave — THREE / viewport
+## Next decomposition wave — renderer adapters
 
-Trace and separate in controlled passes:
+1. extract edge and normal overlays;
+2. extract collision / structural proxy / socket rendering;
+3. extract socket-camera preview and viewport picking wiring;
+4. keep PHYSICS / DAMAGE / SEMANTICS calculations in their feature domains and expose only render plans to viewport adapters.
 
-1. scene/bootstrap lifecycle (`initScene`, renderer/camera/controls ownership);
-2. geometry-cache construction/disposal and mesh creation;
-3. `rebuildScene` orchestration and RenderNode materialization;
-4. visibility / collision / socket / semantic overlay rebuilds;
-5. picking and camera/fit/gizmo effects;
-6. leave domain calculations in feature modules and keep transport/session independent of THREE.
+Expected progress after renderer-adapter extraction: **95–96%**.
 
-Expected progress after a successful first viewport extraction: approximately **89–91%**.
+## Final WebUI closure
 
-## Final closure after viewport
+- move `EditorViewState`, visibility adapters and invariant scheduling out of HTML;
+- reduce `model_asset_editor.html` to markup, imports, composition/bootstrap and minimal DOM binding;
+- add a final shell contract rejecting application/session/transport/viewport implementations in HTML.
 
-- physically extract `EditorViewState` and remaining view adapters;
-- shrink `model_asset_editor.html` toward static markup + imports + bootstrap;
-- add final architecture contract rejecting application/session/transport/THREE implementations in the shell.
+Expected WebUI architecture completion after this closure: **~100%**.
 
 ## Parallel binary debt
 
-After WebUI architecture closure, finish the independent-CMake-translation-unit gate for the production v4 binary subsystem.
+After WebUI closure, finish the independent-CMake-translation-unit gate for the production v4 binary subsystem. This is tracked separately from the WebUI separation percentage.

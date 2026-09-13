@@ -16,6 +16,9 @@ EXPECTED = [
     WEB / "app/selectors.js",
     WEB / "app/state.js",
     WEB / "app/bootstrap.js",
+    WEB / "app/editor_view_state.js",
+    WEB / "app/runtime_state.js",
+    WEB / "app/view_invariants.js",
     WEB / "APP_STATE_ARCHITECTURE.md",
 ]
 
@@ -38,6 +41,9 @@ controller = read(WEB / "app/controller.js")
 selectors = read(WEB / "app/selectors.js")
 state = read(WEB / "app/state.js")
 bootstrap = read(WEB / "app/bootstrap.js")
+view_state = read(WEB / "app/editor_view_state.js")
+runtime_state = read(WEB / "app/runtime_state.js")
+view_invariants = read(WEB / "app/view_invariants.js")
 i18n = read(WEB / "effects/i18n.js")
 html = read(HTML)
 
@@ -66,8 +72,14 @@ if "installApplicationState" in i18n or "../app/state.js" in i18n:
     fail("i18n effect still owns application-state bootstrap")
 if "bootstrapModelAssetEditorApplication(state)" not in html:
     fail("HTML shell does not invoke the dedicated application bootstrap")
-if "class EditorViewState" not in html or "editorView:editorViewState" not in html:
-    fail("EditorViewState must remain the authoritative viewport/view-state owner during this pass")
+if "class EditorViewState" in html or "class EditorVisibilityMapAdapter" in html:
+    fail("EditorViewState implementation must not live in the HTML shell")
+if "class EditorViewState" not in view_state or "installEditorViewProjection" not in view_state:
+    fail("dedicated EditorViewState/projection module is missing")
+if "createEditorRuntimeState" not in runtime_state or "editorView:editorViewState" not in runtime_state:
+    fail("runtime state composition is not isolated")
+if "createEditorViewInvariants" not in view_invariants:
+    fail("EditorViewState invariant layer is missing")
 
 # Reducers/controllers must stay free of browser, rendering, transport and filesystem effects.
 for name, text in [("workflow", workflow), ("reducer", reducer), ("store", store), ("controller", controller)]:
@@ -88,5 +100,5 @@ print("MODEL ASSET EDITOR APPLICATION STATE: PASS")
 print(" - canonical workflow is reducer/store/controller driven")
 print(" - PHYSICS is part of the asset-authoring workflow")
 print(" - legacy state writes project into authoritative application state")
-print(" - EditorViewState remains the viewport/view-state authority")
+print(" - EditorViewState remains the viewport/view-state authority in a dedicated module")
 print(" - reducer/controller layers are free of DOM/THREE/RPC effects")

@@ -2,37 +2,35 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.80
-**Whole-editor separation:** ~96%
+**Editor candidate:** v0.10.81
+**Architectural layer separation:** ~100%
+**Line-level HTML extraction:** intentionally not 100%
 
 ## Verified baseline entering this pass
 
-User reported the complete v0.10.78 test set PASS and local build success. The v0.10.79 viewport-core extraction passed GitHub architecture and JavaScript syntax validation.
+User reported v0.10.78 architecture tests PASS and local build success. v0.10.79 viewport-core and v0.10.80 viewport-adapter candidates passed GitHub architecture and JavaScript syntax gates before this closure pass.
 
-## v0.10.80 renderer-adapter candidate
+## v0.10.81 architecture closure candidate
 
-Viewport ownership is now split into explicit renderer adapters:
+The last top-level state block is physically isolated:
 
-- `viewport/overlays.js` — edge/normal overlay creation, disposal and edge-hit mutation request;
-- `viewport/attachments.js` — collision volumes, structural proxies, socket markers, semantic transform refresh and socket camera preview;
-- `viewport/picking.js` — raycast decision/effect routing for pivots, edges, semantic graph, sockets, collisions and meshes;
-- existing `viewport/runtime.js`, `geometry.js`, `scene.js` remain the viewport core.
+- `app/editor_view_state.js` owns EditorViewState and visibility projections;
+- `app/runtime_state.js` constructs the non-reducer runtime container;
+- `app/view_invariants.js` owns view transition/invariant checks;
+- `transport/bridge.js` provides a stable late-bound transport boundary for early-created adapters.
 
-The HTML shell no longer implements these renderer algorithms. Feature decisions and backend mutations are injected through callbacks rather than making renderer adapters own transport.
+The transport bridge also removes a bootstrap-order hazard: i18n/LOD/SEMANTICS adapters previously received lexical `send` / diagnostic bindings before concrete transport initialization. They now receive stable proxy functions and the concrete transport binds later, before connect/load startup.
 
-## Remaining WebUI architecture work
+A final shell architecture contract prevents extracted application/session/transport/viewport responsibilities from drifting back into `model_asset_editor.html`.
 
-The principal remaining monolithic block is view-state ownership:
+## What ~100% means
 
-- `ProjectedVisibilitySet`;
-- `EditorVisibilityMapAdapter`;
-- `HiddenRenderNodeAdapter`;
-- `EditorViewState`;
-- view invariant scheduling/projection glue;
-- residual composition/bootstrap cleanup in the HTML shell.
+The target architectural layers are now separated and have explicit ownership boundaries. The HTML file still contains feature-specific DOM rendering/binding functions. Those are UI-layer code, not unresolved cross-layer architecture. Further moving every UI function into one-function-per-file modules would be code-layout cleanup rather than completion of this separation objective.
 
-After extracting that block and adding a final shell contract, WebUI decomposition is expected to be effectively complete.
+## Remaining acceptance
+
+Local CMake/resource-pack build and runtime smoke remain authoritative. In particular verify application startup, because v0.10.81 changes bootstrap ordering while preserving the same transport behavior.
 
 ## Separate binary debt
 
-Production binary remains v4. The CMake independent-translation-unit cleanup is tracked separately and does not reduce the WebUI separation percentage.
+Production binary remains v4. Independent CMake translation units for the binary subsystem are a separate architecture item and are not counted in the WebUI percentage.

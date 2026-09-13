@@ -2,16 +2,14 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.80
-**Whole-editor separation:** ~96%
+**Editor candidate:** v0.10.81
+**Architectural layer separation:** ~100%
 
 ## Immediate goal
 
-Verify the v0.10.80 renderer-adapter split, then perform the final WebUI architecture closure: **extract EditorViewState + visibility projection adapters + invariant scheduling and reduce the HTML to composition/bootstrap**.
+Acceptance-test the v0.10.81 WebUI architecture closure. Do not start another decomposition wave unless runtime smoke exposes a regression or a contract identifies a leaked responsibility.
 
 ## Verification
-
-Run:
 
 ```bash
 python tests/architecture_contracts/check_model_asset_editor_application_state.py
@@ -20,23 +18,21 @@ python tests/architecture_contracts/check_model_asset_editor_transport_layers.py
 python tests/architecture_contracts/check_model_asset_editor_session_layers.py
 python tests/architecture_contracts/check_model_asset_editor_viewport_layers.py
 python tests/architecture_contracts/check_model_asset_editor_viewport_adapters.py
+python tests/architecture_contracts/check_model_asset_editor_view_state_layers.py
+python tests/architecture_contracts/check_model_asset_editor_shell_architecture.py
 python tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py
 cmake --build build/tools/model_asset_editor --target EliteAssetEditor
 ./build/tools/model_asset_editor/bin/EliteAssetEditor.exe
 ```
 
-Manual smoke: open asset, LOD switching, visibility/isolation, edge edit, normals, collision selection/editing, socket selection/camera preview, semantic TREE/GRAPH picking and pivot picking, SOURCE/WORKING viewport, SAVE/RESTORE/reconnect.
+## Runtime acceptance
 
-## Final WebUI closure
+Check startup first, then connect/catalog/settings, asset open/full binary payload, all LOD switches, SOURCE/WORKING viewport, visibility/isolation, edge/normals, SURFACES preview, SEMANTICS TREE/GRAPH/pivot/motion, PHYSICS collisions, sockets/camera preview, SAVE/RESTORE, settings/locale and reconnect.
 
-1. move `ProjectedVisibilitySet`, `EditorVisibilityMapAdapter`, `HiddenRenderNodeAdapter`, and `EditorViewState` to a dedicated view-state module;
-2. move invariant scheduling and state projection glue out of HTML where practical;
-3. keep the application reducer free of THREE/DOM and preserve EditorViewState as viewport state authority;
-4. add final shell contract rejecting application/session/transport/viewport implementation functions in `model_asset_editor.html`;
-5. reduce the remaining script to imports, composition, small DOM binding and feature UI functions that have not yet justified a standalone domain module.
+## If acceptance passes
 
-Expected WebUI separation after closure: **~100%**.
+WebUI architectural decomposition is closed. Future editor work should be feature work or targeted cleanup under the existing boundaries, not another general decomposition campaign.
 
-## Parallel binary debt
+## Separate next architecture item
 
-After WebUI closure, finish the independent-CMake-translation-unit gate for the production v4 binary subsystem.
+The production ModelAsset binary v4 subsystem still has an independent CMake translation-unit closure task: list binary `.cpp` files directly in the target, remove facade `.cpp` aggregation includes, enforce the contract, and build/test v4 save/load. This is separate from the completed WebUI separation metric.

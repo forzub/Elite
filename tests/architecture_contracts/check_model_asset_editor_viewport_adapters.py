@@ -56,7 +56,7 @@ for token in ['createViewportPickingEffects','function pick(event)','raycaster.s
 for forbidden in ['new THREE','WebSocket','send(','request_catalog','workingSaveRevision']:
     if forbidden in picking:fail(f'picking adapter owns forbidden construction/transport {forbidden!r}')
 
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.80"',version):fail('editor version must be 0.10.80')
+if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.81"',version):fail('editor version must be 0.10.81')
 
 print('MODEL ASSET EDITOR VIEWPORT ADAPTERS: PASS')
 print(' - edge and normal overlay rendering is outside the HTML shell')

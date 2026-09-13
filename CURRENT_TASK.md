@@ -5,40 +5,55 @@
 
 ## Goal
 
-Turn SEMANTICS from a technically capable but visually noisy workspace into a guided production workflow, while beginning Model Asset Binary v5 behind an explicit draft boundary.
+Reduce Model Asset Binary blast radius to the minimum practical unit: package orchestration, validation, storage policy, manifest I/O, LOD I/O, mesh encoding and each logical manifest domain must be independently owned. A fix in one domain should not require editing unrelated domains or the package controller.
 
-## Work order
+## Active work order
 
-1. **SEMANTICS visual master**
+1. **Accept the binary layer split candidate**
+   - `ModelAssetBinary.cpp` is facade-only;
+   - `binary::controller` owns only sequencing and migration routing;
+   - validation, storage, manifest I/O and LOD I/O are separate layers;
+   - mesh payload encoding is separate from LOD file framing;
+   - FourCC dispatch is separate from codec implementations;
+   - manifest codecs are split into metadata, semantics/state, collision, sockets, damage/openings/repair, structural, LOD metadata and legacy compatibility files;
+   - production format remains v4.
+
+2. **Verify the candidate**
+   - run `python tests/architecture_contracts/check_model_asset_binary_layers.py`;
+   - run existing model-asset architecture contracts;
+   - build `EliteModelAsset` / `EliteAssetEditor` with the normal MinGW+CMake toolchain;
+   - perform v4 save/load smoke before any v5 implementation work.
+
+3. **Next architecture gate — independent translation units**
+   - add each `src/model_asset/binary/*.cpp` and `binary/chunks/*.cpp` file directly to `EliteModelAsset` in CMake;
+   - remove temporary `.cpp` aggregation from `ModelAssetBinary.cpp`;
+   - keep all public/internal APIs unchanged during this move;
+   - add a contract that rejects `.cpp` includes in the facade after the CMake split.
+
+4. **Then implement v5 under the separated architecture**
+   - explicit LE primitives and v5 common header/directory;
+   - package-id matching;
+   - v5 manifest container and independent LOD container;
+   - per-domain v5 chunk codecs without cross-domain ownership;
+   - keep v4 reader/writer production-active until acceptance.
+
+5. **SEMANTICS UI remains queued, not discarded**
    - visually enforce `STRUCTURE -> VISUAL BINDINGS -> KINEMATICS -> STRUCTURAL LINKS -> CHECK`;
-   - show only controls relevant to the active step;
-   - move tests/technical diagnostics/counters under `?`;
-   - make the active top-level wizard tab slightly lighter;
-   - keep repair/advanced tools contextual instead of permanently open.
+   - move engineering diagnostics/tests under `?`;
+   - expose one obvious task/action at a time;
+   - slightly lighten the active top-level wizard tab.
 
-2. **Binary v5 implementation behind draft/opt-in code**
-   - implement explicit LE read/write primitives;
-   - implement common header + chunk directory parsing/validation;
-   - add package-id matching;
-   - implement `STRS`, then manifest chunks, then `LINF/RGRF/MESH`;
-   - keep v4 production reader/writer unchanged until acceptance.
+## Definition of done for binary architecture
 
-3. **Acceptance**
-   - v5 manifest and independent LOD round trips;
-   - malformed/truncated/overlap tests;
-   - unknown optional vs required chunk behavior;
-   - stale `.elmesh` package-id rejection;
-   - v4 migration coverage;
-   - Cobra + Zenith runtime/editor smoke.
+The architecture phase is complete only when:
 
-## Definition of done for the next SEMANTICS UI iteration
+- public facade contains delegation only;
+- controller contains process sequencing only;
+- each domain codec can be edited without touching unrelated codec files;
+- validation and filesystem policy have no codec knowledge;
+- manifest and LOD I/O have no migration/process orchestration;
+- legacy compatibility is isolated;
+- all binary layer sources compile as independent translation units;
+- architecture contracts and existing v4 save/load tests pass.
 
-A user opening SEMANTICS can answer, without reading engineering diagnostics:
-
-- where am I in the process;
-- what do I need to do now;
-- what button performs that action;
-- what is the next stage;
-- where to open technical details if something fails.
-
-If the screen cannot answer those five questions visually, the UI iteration is not accepted.
+Until the independent-CMake-source gate is complete, call the current state **layer split candidate**, not final binary architecture.

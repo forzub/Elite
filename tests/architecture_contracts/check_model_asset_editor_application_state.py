@@ -15,6 +15,7 @@ EXPECTED = [
     WEB / "app/controller.js",
     WEB / "app/selectors.js",
     WEB / "app/state.js",
+    WEB / "app/bootstrap.js",
     WEB / "APP_STATE_ARCHITECTURE.md",
 ]
 
@@ -36,6 +37,7 @@ store = read(WEB / "app/store.js")
 controller = read(WEB / "app/controller.js")
 selectors = read(WEB / "app/selectors.js")
 state = read(WEB / "app/state.js")
+bootstrap = read(WEB / "app/bootstrap.js")
 i18n = read(WEB / "effects/i18n.js")
 html = read(HTML)
 
@@ -58,8 +60,12 @@ if "Object.defineProperty(legacyState,'wizardStage'" not in state:
     fail("legacy wizardStage is not projected from authoritative application state")
 if "applicationController" not in state or "applicationStore" not in state or "applicationState" not in state:
     fail("application state bridge is not exposed on the editor state object")
-if "installApplicationState" not in i18n or "../app/state.js" not in i18n:
-    fail("current shell bootstrap does not install the application state layer")
+if "installApplicationState" not in bootstrap or "./state.js" not in bootstrap:
+    fail("dedicated application bootstrap does not install the state layer")
+if "installApplicationState" in i18n or "../app/state.js" in i18n:
+    fail("i18n effect still owns application-state bootstrap")
+if "bootstrapModelAssetEditorApplication(state)" not in html:
+    fail("HTML shell does not invoke the dedicated application bootstrap")
 if "class EditorViewState" not in html or "editorView:editorViewState" not in html:
     fail("EditorViewState must remain the authoritative viewport/view-state owner during this pass")
 

@@ -208,9 +208,12 @@ import {damageSemanticsModel,damageSemanticsHtml,damageSemanticDeleteCommand,dam
 import {finalAssemblyValidationModel,finalAssemblyValidationHtml} from './model_asset_editor/final_assembly/validation.js';
 import {finalAssemblyBuildModel,finalAssemblyBuildHtml} from './model_asset_editor/final_assembly/build.js';
 import {finalAssemblyStageCommand} from './model_asset_editor/final_assembly/commands.js';
+import {bootstrapModelAssetEditorApplication} from './model_asset_editor/app/bootstrap.js';
+import {createWizardStageRendererRegistry,renderWizardStage} from './model_asset_editor/app/stage_renderers.js';
 import {createI18nEffects} from './model_asset_editor/effects/i18n.js';
 import {createLodRuntimeEffects} from './model_asset_editor/effects/lod_runtime.js';
 import {createSemanticsEffects} from './model_asset_editor/effects/semantics.js';
+import {createWorkflowEffects} from './model_asset_editor/effects/workflow.js';
 
 
 
@@ -276,6 +279,7 @@ Object.defineProperties(state,{
  geometryInventoryVisibleByLod:{get:()=>editorViewState.geometryInventoryVisibility},lodPreflightVisibleByLod:{get:()=>editorViewState.lodPreflightVisibility},geometryStageVisibleByLod:{get:()=>editorViewState.geometryStageVisibility},hiddenRenderNodes:{get:()=>editorViewState.hiddenRenderNodes},
  hidden:{get:()=>editorViewState.semanticHiddenSet()},isolated:{get:()=>editorViewState.isolatedSemantic(),set:v=>editorViewState.setIsolatedSemantic(v)}
 });
+bootstrapModelAssetEditorApplication(state);
 const {tr,translateServerMessage,loadI18n,bindToolTipElement,attachDynamicToolTip,populateLanguageSelect,applyLocale,cycleLocale}=createI18nEffects({state,$,refreshDynamicUi,localStatus,send,document,window,requestAnimationFrame,fetch,console});
 const {activeRenderLod,clearLodGeneratorPreview,clearRenderVariantPreview,lodDiagnosticActive,lodGeneratorPreviewGeometry,previewGeometryForRenderNode,rebuildLodFaceNormals,renderLodGeneratorPanel,renderModelPreflightPanel,selectedRenderMeshInfo,setRenderVariantPreview,sourceVariantCanReplace,syncPreflightSelectionUi,variantPreviewKey}=createLodRuntimeEffects({state,editorViewState,$,document,confirm:window.confirm.bind(window),localStatus,send,fitView,lodHasGeometryPayload,rebuildScene,renderNodeVisibilityKey,renderActiveLodDetails,renderLodFiles,renderRenderNodeInspector,selectRenderNode,updateVisibility,attachDynamicToolTip,tr,renderVariantAssignment,updateVariantPreviewControls,captureUiScroll,renderWizardPanel});
 const {applySemanticMotionPreview,bindPhysicalSizePanel,clearSemanticGizmos,physicalSizePanelHtml,renderWizardSemanticsStage,renderWizardStructuralGraphStage,resetSemanticMotionPreview,semanticDeleteSelectedNode,semanticRefreshSelectionUi,semanticSelectNode,semanticSetJointPivotWorld,structuralPickNode,switchSemanticLod,updateSemanticMotionAnimation}=createSemanticsEffects({state,editorViewState,$,readVec,localStatus,reportEditorDiagnostic,send,lodHasGeometryPayload,rebuildScene,highlightSelection,selectRenderNode,assertEditorViewInvariant,bindWizardStageCheckControls,rebuildStructuralProxies,updateSemanticCollisionTransforms,tr,activeRenderLod,clearGroup,updateSemanticSocketTransforms,renderSharedStageMeshPanel,renderWizardPanel,switchEditorLod,wizardLodSelector,wizardStageCheckControls,wizardStageLabel});
@@ -314,7 +318,15 @@ function wizardStageLabel(id){return tr(`model_editor.wizard.${id}`,id.toUpperCa
 function wizardStatusLabel(status){return tr(`model_editor.wizard.status.${status}`,String(status||'not_started').toUpperCase());}
 function wizardStageAllowed(stages,id){const r=wizardRecord(stages,id);return !!r.implemented&&!!r.unlocked;}
 function applyWizardVisibility(){document.querySelectorAll('[data-wizard-groups]').forEach(el=>{const groups=(el.dataset.wizardGroups||'').split(/\s+/).filter(Boolean);el.classList.toggle('stageHidden',!groups.includes(state.wizardStage));});const physics=state.wizardStage==='physics',semantics=state.wizardStage==='semantics';if($('ringCollisionBtn'))$('ringCollisionBtn').classList.toggle('hidden',!physics);if($('addCollisionBtn'))$('addCollisionBtn').classList.toggle('hidden',!physics);if($('addSocketBtn'))$('addSocketBtn').classList.toggle('hidden',!semantics);if($('socketBtn'))$('socketBtn').classList.toggle('hidden',!semantics);}
-function setWizardStage(id,force=false){if(!wizardStageIds.includes(id))return;if(!force&&!wizardStageAllowed(state.asset?.wizard?.stages,id))return localStatus(`${wizardStageLabel(id)}: ${tr('model_editor.wizard.locked','LOCKED')}`,'danger');const previousStage=state.wizardStage;if(previousStage===id){document.body.classList.toggle('semanticsWorkspaceWide',id==='semantics');renderWizard();renderWizardPanel();applyWizardVisibility();renderSharedStageMeshPanel();assertEditorViewInvariant('stage-reselect');return;}const viewBefore=captureEditorViewTransition();if(previousStage==='semantics'&&id!=='semantics')resetSemanticMotionPreview(false);if(id!=='lods')clearLodGeneratorPreview(false,false);state.wizardStage=id;document.body.classList.toggle('semanticsWorkspaceWide',id==='semantics');state.geometryScan=null;if(id!=='validate')state.wizardValidationReport=null;rebuildScene(true);renderWizard();renderWizardPanel();applyWizardVisibility();renderSharedStageMeshPanel();if(id==='geometry'){renderRenderTree();renderGeometries();renderRenderNodeInspector();}if(id==='semantics'||id==='physics'||id==='damage'){renderTree();renderNodeInspector();renderRenderTree();renderRenderNodeInspector();renderCollisionList();renderCollisionInspector();renderSocketList();renderSocketInspector();renderDamageSemantics();highlightSelection();}if(['lods','geometry','surfaces','semantics','physics','damage','validate','build'].includes(id)){renderLodFiles();renderActiveLodDetails();}assertEditorViewTransitionPreserved(viewBefore,`tab:${previousStage}->${id}`);assertEditorViewInvariant(`tab:${previousStage}->${id}`);}
+const {setWizardStage}=createWorkflowEffects({
+ state,document,wizardStageIds,wizardStageAllowed,wizardStageLabel,tr,localStatus,
+ captureEditorViewTransition,resetSemanticMotionPreview,clearLodGeneratorPreview,
+ rebuildScene,renderWizard,renderWizardPanel,applyWizardVisibility,renderSharedStageMeshPanel,
+ renderRenderTree,renderGeometries,renderRenderNodeInspector,renderTree,renderNodeInspector,
+ renderCollisionList,renderCollisionInspector,renderSocketList,renderSocketInspector,
+ renderDamageSemantics,highlightSelection,renderLodFiles,renderActiveLodDetails,
+ assertEditorViewTransitionPreserved,assertEditorViewInvariant
+});
 function renderWizard(){document.querySelectorAll('[data-wizard-stage]').forEach((button,index)=>{const id=button.dataset.wizardStage,r=wizardRecord(state.asset?.wizard?.stages,id),status=r.status||'not_started',locked=!r.implemented||!r.unlocked;button.className=`wizardStage ${state.wizardStage===id?'current ':''}${status==='complete'?'complete ':status==='stale'?'stale ':status==='needs_fix'?'needsFix ':''}${locked?'locked':''}`.trim();const mark=status==='complete'?'✓':(status==='stale'||status==='needs_fix')?'!':String(index+1);button.innerHTML=`<span class="wizardNum">${mark}</span><span class="wizardLabel">${wizardStageLabel(id)}</span><span class="wizardState">${r.implemented?wizardStatusLabel(status):tr('model_editor.wizard.planned','PLANNED')}</span>`;button.disabled=locked;button.onclick=()=>setWizardStage(id);const helpKey=`model_editor.wizard.${id}.desc`;attachDynamicToolTip(button,`model_editor.wizard.${id}.label`,helpKey,wizardStageLabel(id),tr(helpKey,'Open this workflow stage.'));});}
 
 function wizardStageCheckControls(stage){const build=stage==='build',label=build?tr('model_editor.wizard.build_complete','BUILD PRODUCTION PACKAGE'):tr('model_editor.wizard.check','CHECK');return `<div class="wizardActions"><button id="wizardStageCheckBtn" class="wizardComplete">✓ ${label}</button></div>`;}
@@ -614,20 +626,23 @@ function renderWizardBuildStage(root,asset,lods,dirty){
  const model=finalAssemblyBuildModel({storage:asset?.storage||{},binaryPath:asset?.binaryPath||'',lods,dirty}),text={title:wizardStageLabel('build'),help:tr('model_editor.wizard.build_help','Terminal production commit. Full validation is rerun, then the complete persistent WORKING ASSET is written to the compiled v4 package.'),target:tr('model_editor.wizard.build_target','production manifest'),lods:tr('model_editor.wizard.build_lods','saved LOD payloads'),dirty:tr('model_editor.wizard.build_dirty','working copy dirty'),warning:tr('model_editor.wizard.build_warning','BUILD is the production boundary. Save the WORKING ASSET first; BUILD then writes that saved state to production.')};
  root.innerHTML=finalAssemblyBuildHtml(model,text,{stageCheckControls:wizardStageCheckControls('build')});bindWizardStageCheckControls('build');
 }
+const wizardStageRendererRegistry=createWizardStageRendererRegistry({
+ source:renderWizardSourceStage,
+ lods:renderWizardLodsStage,
+ geometry:renderWizardGeometryStage,
+ surfaces:renderWizardSurfacesStage,
+ semantics:renderWizardSemanticsStage,
+ physics:renderWizardPhysicsStage,
+ damage:renderWizardDamageStage,
+ validate:renderWizardValidateStage,
+ build:renderWizardBuildStage
+});
 function renderWizardPanelContents(){
  const root=$('wizardPanel');if(!root)return;
  if(!state.asset){root.innerHTML=`<div class="wizardLead">${tr('model_editor.wizard.no_asset','Select an asset to start the processing wizard.')}</div>`;return;}
  const stage=state.wizardStage,r=wizardRecord(state.asset?.wizard?.stages,stage),lods=state.asset.renderLods||[],payloads=state.asset.storage?.lodPayloads||[];
  if(!r.implemented){root.innerHTML=`<div class="title">${wizardStageLabel(stage)}</div><div class="wizardLocked">${tr('model_editor.wizard.not_implemented','This stage is reserved in the pipeline but its tools have not been migrated yet. Earlier completed stages remain protected by stage checks and capability tests.')}</div>`;return;}
- if(stage==='source'){renderWizardSourceStage(root,state.asset,state.settings);return;}
- if(stage==='lods'){renderWizardLodsStage(root,lods,payloads);return;}
- if(stage==='geometry'){renderWizardGeometryStage(root,lods);return;}
- if(stage==='surfaces'){renderWizardSurfacesStage(root,lods);return;}
- if(stage==='semantics'){renderWizardSemanticsStage(root,lods);return;}
- if(stage==='physics'){renderWizardPhysicsStage(root,state.asset);return;}
- if(stage==='damage'){renderWizardDamageStage(root,state.asset,lods);return;}
- if(stage==='validate'){renderWizardValidateStage(root,state.wizardValidationReport);return;}
- if(stage==='build'){renderWizardBuildStage(root,state.asset,lods,state.dirty);return;}
+ renderWizardStage(wizardStageRendererRegistry,stage,{root,state,lods,payloads});
 }
 function captureEditorViewTransition(){return {activeLod:state.activeLod,sceneLod:state.sceneLod,selectedRenderNode:state.selectedRenderNode,selectedRenderNodeId:editorViewState.selectedRenderNodeId,selectedMeshId:editorViewState.selectedMeshId,selectedSemanticNode:editorViewState.selectedSemanticNode,semanticSelection:[...state.semanticSelectedNodes].sort((a,b)=>a-b),visibility:[...editorViewState.visibilityByLod].map(([li,set])=>[li,[...set].sort()]),hidden:[...editorViewState.hiddenSemanticByLod].map(([li,set])=>[li,[...set].sort((a,b)=>a-b)]),isolated:[...editorViewState.isolationByLod],camera:state.camera?{position:state.camera.position.toArray(),quaternion:state.camera.quaternion.toArray(),target:state.controls?.target?.toArray?.()||null}:null};}
 function editorViewSnapshotsEqual(a,b){return JSON.stringify(a)===JSON.stringify(b);}

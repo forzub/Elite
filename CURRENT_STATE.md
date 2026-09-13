@@ -2,105 +2,73 @@
 
 **Updated:** 2026-09-13  
 **Authoritative working branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Model Asset Editor line:** v0.10.76 candidate
+**Model Asset Editor line:** v0.10.77 candidate
 
-This is the short hand-off state for the active branch. `CURRENT_STATE.md` + `CURRENT_TASK.md` are authoritative for the next iteration; `PROJECT_STATE.md` remains the longer historical journal.
+`CURRENT_STATE.md` + `CURRENT_TASK.md` are authoritative for the active iteration.
 
 ## Accepted / frozen baseline
 
-- SOURCE / LODS / GEOMETRY / SURFACES remain accepted unless a regression forces a targeted repair.
-- The cleaned SEMANTICS workspace is accepted by the user.
-- MODEL ROOT is the implicit identity root; it is not a serialized semantic node.
-- semantic transform parentage and structural support/detach are different graphs and must not be conflated.
-- semantic parts are asset-wide; every LOD owns independent visual RenderNodes/bindings.
-- PHYSICS is part of Model Asset authoring: collision / rigid-body / physical metadata belong to the asset. Runtime physics of a concrete world entity belongs to the game and is outside this editor architecture pass.
-- production model binary remains **v4**.
-- Model Asset Binary v5 is still a **draft target**, not the production format.
+- SOURCE / LODS / GEOMETRY / SURFACES remain accepted unless a regression requires a targeted repair.
+- Cleaned SEMANTICS workflow remains accepted.
+- MODEL ROOT is implicit identity and is not serialized as a semantic node.
+- Semantic parts are asset-wide; each LOD owns its own render geometry / RenderNodes / bindings.
+- PHYSICS is Model Asset authoring metadata. Runtime world simulation remains outside this editor pass.
+- Production model binary remains v4; v5 remains a draft target.
 
-## Binary subsystem
+## Application architecture
 
-The former `ModelAssetBinary.cpp` monolith is logically split under `src/model_asset/binary/` into facade, controller, validation, storage, manifest I/O, LOD I/O, MeshLod codec, FourCC registry, domain codecs and bounded wire primitives.
+Authoritative application control remains:
 
-Dependency direction:
+`action -> ApplicationController -> reducer/store -> selector`
 
-`facade -> controller -> validation/storage/I/O -> codecs/registry -> wire`
+`EditorViewState` remains authoritative for active/resident LOD, viewport selection, visibility and isolation.
 
-### Remaining binary isolation gate
+The v0.10.76 orchestration pass is retained:
 
-The root CMake target still uses the temporary composition translation unit. Final binary closure still requires:
+- dedicated application bootstrap;
+- workflow transition effect adapter;
+- declarative stage renderer registry;
+- no `setWizardStage(...)` implementation in the HTML shell;
+- no top-level stage `if(stage===...)` dispatch in the HTML shell.
 
-1. list every `src/model_asset/binary/*.cpp` and `binary/chunks/*.cpp` directly in `EliteModelAsset`;
-2. remove every `.cpp` include from `ModelAssetBinary.cpp`;
-3. make the architecture contract reject `.cpp` aggregation;
-4. rebuild and smoke-test v4 save/load.
+## v0.10.77 transport isolation candidate
 
-This is technical closure, not a reason to continue redesigning authored object data.
+Transport responsibilities are now split under:
 
-## SEMANTICS workspace — accepted
+`src/assets/webui/model_asset_editor/transport/`
 
-The compact visual workflow is the accepted baseline:
+- `diagnostics.js` — bounded diagnostic queue and global JS error/rejection capture;
+- `commands.js` — JSON command dispatch and command-status behavior;
+- `binary_wire.js` — pure ELWIR001 reader/decoder;
+- `binary_transfers.js` — asset/LOD binary transfer bookkeeping, payload application and delta reuse;
+- `websocket.js` — WebSocket lifecycle, JSON/binary receive split and reconnect;
+- `runtime.js` — transport composition root connecting those adapters to the existing session handler.
 
-- TREE / ASSEMBLY-KINEMATICS and GRAPH / STRUCTURAL LINKS are the primary workflow choices;
-- `CHECK` is the final action at the far right;
-- long explanatory banners/prose are removed from the normal workspace;
-- contextual diagnostics/help are behind compact help controls;
-- existing semantic command IDs and behavior are preserved.
+The HTML shell no longer owns:
 
-Contract:
-`tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py`
+- `new WebSocket(...)` lifecycle/reconnect;
+- `send(...)` implementation;
+- diagnostic queue/flush implementation;
+- `EditorWireReader` / ELWIR001 binary decoder;
+- binary transfer map/bookkeeping.
 
-User verification on 2026-09-13: PASS.
+The transport layer intentionally does not own THREE, DOM rendering, authored asset algorithms, or EditorViewState rules.
 
-## Application-state control — verified
-
-The editor has an explicit application control layer under `src/assets/webui/model_asset_editor/app/`:
-
-- `actions.js` — application actions;
-- `workflow.js` — canonical authoring workflow and pure workflow reducer;
-- `reducer.js` — pure application/session/control reducer;
-- `store.js` — dispatch / subscribe store;
-- `controller.js` — workflow/control command boundary;
-- `selectors.js` — application selectors/snapshot;
-- `state.js` — compatibility projection onto the current legacy `state` object;
-- `bootstrap.js` — dedicated application-state installation boundary;
-- `stage_renderers.js` — declarative top-level stage renderer registry.
-
-Canonical top-level workflow:
-
-`SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD`
-
-Legacy scalar writes are projected through `ApplicationController -> action -> reducer -> store`; they no longer own authoritative application-control values.
-
-`EditorViewState` remains authoritative for active LOD, scene/resident LOD, RenderNode/mesh/semantic selection, visibility and isolation. Authored `ModelAsset` data and non-serializable runtime/effect objects stay outside the pure application reducer.
-
-## Application orchestration extraction — v0.10.76
-
-The first physical shell extraction is complete:
-
-- application-state bootstrap was removed from `effects/i18n.js` and moved to `app/bootstrap.js`;
-- the implementation of `setWizardStage(...)` and its redraw fan-out moved out of `model_asset_editor.html` into `effects/workflow.js`;
-- `renderWizardPanelContents()` no longer owns a top-level `if(stage===...)` routing chain;
-- stage rendering now delegates through `app/stage_renderers.js`;
-- locked-stage behavior and `EditorViewState` transition invariants remain enforced;
-- editor version advanced to `0.10.76`.
-
-Architecture contracts:
-
-- `tests/architecture_contracts/check_model_asset_editor_application_state.py`
-- `tests/architecture_contracts/check_model_asset_editor_orchestration_layers.py`
-- `tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py`
-
-GitHub Actions verification for this extraction passed all three contracts plus JavaScript syntax checks. A local C++/runtime smoke still belongs to user acceptance because the hosted extraction job did not build `EliteAssetEditor`.
+Architecture contract:
+`tests/architecture_contracts/check_model_asset_editor_transport_layers.py`
 
 ## Remaining whole-editor decomposition
 
-The state authority and top-level workflow orchestration are separated. Remaining major physical owners are:
+The next boundary is now the large backend/session handler still in the HTML shell:
 
-1. **backend / session / persistence / transport** — WebSocket lifecycle, command dispatch, binary transfer/decode, asset acceptance/merge and save/restore/session effects;
-2. **THREE / viewport runtime** — scene construction, geometry cache/materials, overlays, picking, camera/fit and render loop;
-3. **EditorViewState physical extraction / remaining view orchestration** — move the correct view-state authority and compatibility adapters out of the HTML shell without changing ownership;
-4. **final shell cleanup** — leave `model_asset_editor.html` as static markup/resources plus bootstrap wiring, then close remaining architecture contracts.
+1. replace monolithic `handle(msg)` with a declarative backend message router;
+2. extract asset metadata/full-payload acceptance and resident LOD merge/reuse effects;
+3. extract SAVE / RESTORE / WORKING-save bookkeeping;
+4. extract settings persistence / acknowledgement / timeout effects;
+5. then isolate THREE / viewport runtime;
+6. physically extract the remaining EditorViewState/view adapters;
+7. reduce `model_asset_editor.html` toward static shell + bootstrap only.
 
-At this point the whole-editor separation is approximately **65–70% complete by architectural layers**. The remaining work is infrastructure-heavy rather than feature-domain decomposition.
+## Binary subsystem parallel debt
 
-A defect in one logical layer should invalidate the smallest practical surface instead of the whole editor.
+The logical binary split is accepted, but final CMake translation-unit closure remains separate work: register binary `.cpp` files directly, remove `.cpp` aggregation from the facade, strengthen the contract, then rebuild/smoke-test production v4 save/load.

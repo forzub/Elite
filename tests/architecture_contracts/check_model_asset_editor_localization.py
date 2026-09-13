@@ -79,10 +79,34 @@ for pattern,label in [
  (r"GAME FRAME · FIXED</span>",'axis legend')
 ]:
  if re.search(pattern,html): errors.append(f'direct localization bypass remains: {label}')
+
+# Acceptance regressions from v0.10.84: language must be selectable before any
+# asset/settings payload, dynamic connection state must not be overwritten by
+# static DOM localization, and locale changes must repaint the viewport legend.
+if 'id="toolbarLanguage"' not in html: errors.append('always-available toolbar language selector missing')
+if "$('toolbarLanguage').onchange=()=>persistLocale" not in html: errors.append('toolbar language selector is not immediate')
+if 'persistLocale,cycleLocale' not in html: errors.append('persistLocale is not exposed to shell composition')
+if 'id="status" data-i18n=' in html: errors.append('dynamic connection status is still declaratively reset by locale refresh')
+if 'function refreshDynamicUi(){updateAxisLegend();' not in html: errors.append('locale refresh does not repaint axis legend')
+if "tr('model_editor.version.asset'" not in handlers: errors.append('version badge asset label bypasses localization')
+for required in ['model_editor.version.asset','model_editor.status.working_revision','model_editor.lod.kind.source','model_editor.lod.kind.generated']:
+ if required not in strings: errors.append(f'acceptance localization key missing: {required}')
+for key,locale,forbidden in [
+ ('model_editor.v4.section.lods','zh-Hans',['Render']),
+ ('model_editor.v4.lod.independent_note','zh-Hans',['manifest']),
+ ('model_editor.lod_workspace.lod_help','zh-Hans',['PREPARE']),
+ ('model_editor.v4.section.lods','es',['Render LOD']),
+ ('model_editor.v4.lod.independent_note','es',[' manifest']),
+ ('model_editor.lod_workspace.lod_help','ja',['PREPARE'])
+]:
+ value=str(strings.get(key,{}).get(locale,''))
+ for token in forbidden:
+  if token in value: errors.append(f'{key}: {locale} still contains visible English token {token!r}')
+
 # Fallback English is permitted only when a locale value is actually absent.
 # A present non-English locale may not silently copy full English prose.
 version=VERSION.read_text(encoding='utf-8')
-if 'ModelAssetEditorVersion = "0.10.83"' not in version: errors.append('expected editor version 0.10.83')
+if 'ModelAssetEditorVersion = "0.10.84"' not in version: errors.append('expected editor version 0.10.84')
 for required in [
  'model_editor.physical_scale.title','model_editor.surfaces.selection_help','model_editor.geometry_inventory.shared_tip',
  'model_editor.maintenance.scan_metrics','model_editor.overlay.render_detail','model_editor.common.detached'

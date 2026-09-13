@@ -29,7 +29,7 @@ if 'createEditorTransportBridge' not in html or 'editorTransportBridge.bind(crea
  fail('transport composition bridge is missing')
 if 'createEditorViewState' not in html or 'installEditorViewProjection' not in html:
  fail('view-state composition is missing')
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.84"',version):fail('editor version must be 0.10.84')
+if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.85"',version):fail('editor version must be 0.10.85')
 
 print('MODEL ASSET EDITOR SHELL ARCHITECTURE: PASS')
 print(' - extracted application/session/transport/viewport implementations stay outside the shell')

@@ -2,37 +2,28 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.84
+**Editor candidate:** v0.10.85
 **WebUI architecture:** ~100%
+**Binary architecture:** independent-TU closure candidate
 
 ## Immediate goal
 
-Acceptance-test v0.10.84 localization/runtime fixes:
+Acceptance-test production binary v4 translation-unit closure:
 
-- switch language from the toolbar before selecting any asset;
-- verify `Ctrl+Alt+F12` and Settings language remain synchronized;
-- verify the viewport axis legend changes language immediately;
-- verify connection status says what it is connecting to and is not reset to `connecting` by locale refresh;
-- enter SURFACES, press ANALYZE SURFACES, receive the result and continue editing without a JS exception/reconnect loop;
-- check the visible LOD/right-panel strings in all five locales.
+1. architecture contract rejects every `.cpp` include in the binary subsystem;
+2. `EliteModelAsset` compiles all binary implementation files as independent CMake TUs;
+3. standalone `model_asset_tests` compiles the same implementation set;
+4. v4 save/load and legacy-compatibility binary tests still pass;
+5. local MinGW `EliteAssetEditor` build links against the split library without unresolved/duplicate symbols.
 
 ## Local gate
 
 ```bash
-python tests/architecture_contracts/run_model_asset_editor_impacted.py --base HEAD^
-python tests/architecture_contracts/check_model_asset_editor_localization.py
-python tests/architecture_contracts/check_model_asset_editor_surface_runtime.py
+python tests/architecture_contracts/check_model_asset_binary_layers.py
 cmake --build build/tools/model_asset_editor --target EliteAssetEditor
-./build/tools/model_asset_editor/bin/EliteAssetEditor.exe
+./tests/model_asset/run_mingw64.sh
 ```
 
-## NEXT TASK AFTER LOCALIZATION
+## After acceptance
 
-**Finish binary v4 translation-unit architecture.**
-
-Required closure:
-
-1. list the binary subsystem `.cpp` files directly in the `EliteModelAsset` CMake target;
-2. remove `.cpp` aggregation includes from the facade;
-3. add/strengthen the architecture contract so `.cpp` includes cannot return;
-4. build and test production v4 save/load compatibility.
+Binary v4 architecture is formally closed. Do not expand the v5 draft unless a separate v5 implementation task is explicitly started.

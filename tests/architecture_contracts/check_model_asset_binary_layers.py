@@ -6,6 +6,8 @@ ROOT = Path(__file__).resolve().parents[2]
 BINARY = ROOT / "src/model_asset/binary"
 FACADE = ROOT / "src/model_asset/ModelAssetBinary.cpp"
 MODEL = ROOT / "src/model_asset/ModelAsset.h"
+ROOT_CMAKE = ROOT / "CMakeLists.txt"
+TEST_CMAKE = ROOT / "tests/model_asset/CMakeLists.txt"
 
 EXPECTED = [
     "ModelAssetBinaryWire.h",
@@ -80,21 +82,31 @@ for fourcc in ["M','E','T','A", "S','E','M','N", "S','T','R','L", "L','O','D','S
 model = MODEL.read_text(encoding="utf-8")
 assert re.search(r"ModelAssetFormatVersion\s*=\s*4\s*;", model), "production binary version changed during layer split"
 
-# CMake still names only ModelAssetBinary.cpp; until target_sources is split,
-# the facade explicitly aggregates the layer .cpp files so this refactor cannot
-# leave the branch with unresolved symbols. This is a deliberate temporary
-# composition boundary, not permission to move logic back into the facade.
-for rel in [
-    "ModelAssetBinaryController.cpp",
-    "ModelAssetBinaryManifestIO.cpp",
-    "ModelAssetBinaryLodIO.cpp",
-    "ModelAssetBinaryValidation.cpp",
-]:
-    assert rel in facade, f"temporary composition TU does not include {rel}"
+# Translation-unit closure: implementation files must compile independently.
+all_binary_cpp = [BINARY / rel for rel in EXPECTED if rel.endswith(".cpp")]
+for path in [FACADE, *all_binary_cpp]:
+    text = path.read_text(encoding="utf-8")
+    assert not re.search(r'#\s*include\s*[<"][^>"]+\.cpp[>"]', text), f".cpp aggregation include forbidden: {path.relative_to(ROOT)}"
+
+root_cmake = ROOT_CMAKE.read_text(encoding="utf-8")
+test_cmake = TEST_CMAKE.read_text(encoding="utf-8")
+root_target = re.search(r'add_library\(EliteModelAsset\s+STATIC(?P<body>.*?)\n\)', root_cmake, re.S)
+assert root_target, "EliteModelAsset STATIC target not found"
+root_body = root_target.group("body")
+test_target = re.search(r'add_executable\(model_asset_tests(?P<body>.*?)\n\)', test_cmake, re.S)
+assert test_target, "model_asset_tests target not found"
+test_body = test_target.group("body")
+for rel in ["ModelAssetBinary.cpp", *[str(path.relative_to(ROOT / "src/model_asset")) for path in all_binary_cpp]]:
+    source = f"src/model_asset/{rel}"
+    assert source in root_body, f"EliteModelAsset does not compile independent TU: {source}"
+    assert root_body.count(source) == 1, f"EliteModelAsset source duplicated: {source}"
+    assert source in test_body, f"model_asset_tests does not exercise independent TU: {source}"
 
 print("MODEL ASSET BINARY LAYERS: PASS")
 print(" - public facade delegates only to controller")
 print(" - controller owns orchestration, not wire/chunk details")
 print(" - manifest, LOD, validation and storage layers are isolated")
 print(" - manifest codecs are split into eight domain files")
+print(" - every binary implementation is an independent CMake translation unit")
+print(" - .cpp aggregation includes are forbidden")
 print(" - production format remains v4")

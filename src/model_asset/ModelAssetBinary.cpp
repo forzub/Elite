@@ -1,26 +1,6 @@
 #include "src/model_asset/ModelAssetBinary.h"
 #include "src/model_asset/binary/ModelAssetBinaryController.h"
 
-// Composition-only aggregation for the current explicit CMake source list.
-// Logical ownership is physically split below; this file remains the only
-// EliteModelAsset source known to the existing target until the next build-list
-// isolation step converts the layers into independent translation units.
-#include "src/model_asset/binary/ModelAssetBinaryMeshCodec.cpp"
-#include "src/model_asset/binary/chunks/MetadataChunks.cpp"
-#include "src/model_asset/binary/chunks/SemanticsChunks.cpp"
-#include "src/model_asset/binary/chunks/CollisionChunks.cpp"
-#include "src/model_asset/binary/chunks/SocketChunks.cpp"
-#include "src/model_asset/binary/chunks/DamageChunks.cpp"
-#include "src/model_asset/binary/chunks/StructuralChunks.cpp"
-#include "src/model_asset/binary/chunks/LodChunks.cpp"
-#include "src/model_asset/binary/chunks/LegacyChunks.cpp"
-#include "src/model_asset/binary/ModelAssetBinaryChunkRegistry.cpp"
-#include "src/model_asset/binary/ModelAssetBinaryValidation.cpp"
-#include "src/model_asset/binary/ModelAssetBinaryStorage.cpp"
-#include "src/model_asset/binary/ModelAssetBinaryManifestIO.cpp"
-#include "src/model_asset/binary/ModelAssetBinaryLodIO.cpp"
-#include "src/model_asset/binary/ModelAssetBinaryController.cpp"
-
 namespace elite::model_asset
 {
 

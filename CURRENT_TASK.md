@@ -1,30 +1,22 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-13  
-**Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
+**Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
+**Editor candidate:** v0.10.76
 
 ## Immediate goal
 
-Continue the whole-editor decomposition now that the first authoritative application-state pass is verified. The next wave is physical extraction of orchestration from `model_asset_editor.html` without changing accepted behavior.
+Continue the whole-editor decomposition after the successful application-state and top-level orchestration extraction. The next wave is **backend / session / persistence / transport isolation** from `model_asset_editor.html`, preserving accepted editor behavior.
 
 ## Verified baseline
 
-The following contracts were run by the user on 2026-09-13 and PASS:
+The application state remains authoritative through:
 
-```text
-MODEL ASSET EDITOR APPLICATION STATE: PASS
- - canonical workflow is reducer/store/controller driven
- - PHYSICS is part of the asset-authoring workflow
- - legacy state writes project into authoritative application state
- - EditorViewState remains the viewport/view-state authority
- - reducer/controller layers are free of DOM/THREE/RPC effects
+`action -> ApplicationController -> reducer/store -> selector`
 
-MODEL ASSET SEMANTICS WORKSPACE LAYOUT: PASS
- - TREE and GRAPH workspaces use the compact workflow bar
- - CHECK is the final workflow action
- - explanatory banners are removed from the primary workspace
- - existing semantic control IDs and bindings are preserved
-```
+Top-level workflow orchestration is now physically separated:
+
+`UI stage request -> workflow effect adapter -> authoritative state transition -> declarative stage renderer registry -> feature renderer`
 
 Canonical workflow remains:
 
@@ -32,63 +24,92 @@ Canonical workflow remains:
 
 `PHYSICS` is asset-authoring metadata. Game-world runtime simulation remains out of scope.
 
-## Current architecture invariant
+`EditorViewState` remains authoritative for active LOD, selection, visibility/isolation and loaded/resident LODs.
 
-Authoritative application control state is owned by:
+## v0.10.76 orchestration pass — complete
 
-`action -> ApplicationController -> reducer/store -> selector`
+Completed:
 
-`EditorViewState` remains authoritative for active LOD, view selection, visibility/isolation and loaded/resident LODs.
+- dedicated `app/bootstrap.js` replaces the temporary application-state bootstrap in i18n;
+- `effects/workflow.js` owns stage-transition side effects and redraw fan-out;
+- `app/stage_renderers.js` owns declarative top-level stage dispatch;
+- the HTML shell no longer implements `setWizardStage(...)`;
+- `renderWizardPanelContents()` no longer contains stage `if(stage===...)` dispatch;
+- locked-stage behavior and EditorViewState transition invariants are preserved;
+- editor version is `0.10.76`.
 
-Authored ModelAsset data, THREE objects, geometry caches, backend handles, filesystem I/O and timers must stay outside the pure application reducer/controller.
+Contracts executed successfully in the hosted verification job:
 
-## Next decomposition wave
+```text
+MODEL ASSET EDITOR APPLICATION STATE: PASS
+MODEL ASSET EDITOR ORCHESTRATION LAYERS: PASS
+MODEL ASSET SEMANTICS WORKSPACE LAYOUT: PASS
+```
 
-Do these in order:
+JavaScript syntax checks for bootstrap, stage registry, workflow effects and i18n also passed. Local `EliteAssetEditor` build/runtime smoke is still required for acceptance.
 
-1. create a dedicated application bootstrap and remove application-state installation from the temporary i18n hook;
-2. extract top-level stage transition/re-render side effects from `model_asset_editor.html` into an application/effect adapter;
-3. replace `renderWizardPanelContents()` stage `if(stage===...)` dispatch with a declarative stage renderer registry;
-4. preserve locked-stage behavior and the existing `EditorViewState` invariants during every stage transition;
-5. then separate backend/session/persistence effects;
-6. then separate THREE viewport orchestration;
-7. keep shrinking `model_asset_editor.html` toward static markup + bootstrap imports.
+## Next decomposition wave — backend/session/persistence/transport
 
-### Existing shell debt to remove
+Trace and separate the remaining shell responsibilities in this order:
 
-The HTML shell still owns:
+1. WebSocket lifecycle / reconnect / binary-vs-JSON dispatch;
+2. command transport (`send`) and diagnostic transport;
+3. editor binary transfer reader/decoder and transfer bookkeeping;
+4. asset metadata/full-payload acceptance and resident LOD merge/reuse logic;
+5. SAVE / RESTORE / settings/session persistence effects;
+6. backend message routing (`handle`) into explicit handlers/adapters;
+7. keep domain calculations and `EditorViewState` ownership out of the transport layer.
 
-- `setWizardStage(...)` transition orchestration;
-- `renderWizardPanelContents()` stage `if` chain;
-- stage-specific redraw fan-out after a transition;
-- part of backend/session/persistence orchestration;
-- part of THREE scene orchestration.
+Target dependency direction:
 
-The state itself is no longer owned by those functions; this wave removes the remaining imperative shell routing.
+```text
+UI / feature command
+        ↓
+application / command boundary
+        ↓
+transport adapter
+        ↓
+WebSocket/backend
 
-## Verification for the next candidate
+backend message
+        ↓
+transport decode/router
+        ↓
+session / asset effect handler
+        ↓
+authoritative application/view/domain state
+        ↓
+render/update effects
+```
 
-Keep these contracts green:
+The transport/session modules must not absorb THREE scene ownership or feature-domain algorithms.
+
+## Verification for next candidate
+
+Keep these green:
 
 ```bash
 python tests/architecture_contracts/check_model_asset_editor_application_state.py
+python tests/architecture_contracts/check_model_asset_editor_orchestration_layers.py
 python tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py
 ```
 
-Add/extend an architecture contract so the next candidate rejects:
-
-- application-state bootstrap from `effects/i18n.js`;
-- stage-render `if(stage===...)` chains in the HTML shell;
-- new DOM/THREE/RPC dependencies in reducer/controller modules.
-
-Then run:
+Add architecture contracts for the transport/session split, then run:
 
 ```bash
 cmake --build build/tools/model_asset_editor --target EliteAssetEditor -j 8
 ./build/tools/model_asset_editor/bin/EliteAssetEditor.exe
 ```
 
-Manual smoke should walk all enabled workflow stages forward/backward, verify locked tabs, LOD/selection preservation, SEMANTICS TREE/GRAPH, PHYSICS editing, locale switching and save/reload.
+Manual smoke should cover connection/open asset, all enabled workflow stages, LOD switching, SAVE/RESTORE, settings/locale, source reload, binary LOD loading, SEMANTICS TREE/GRAPH and PHYSICS editing.
+
+## Remaining decomposition after transport
+
+1. THREE / viewport runtime extraction;
+2. EditorViewState physical extraction and remaining view adapters;
+3. final HTML-shell cleanup and architecture closure.
+
+Estimated whole-editor separation after v0.10.76: approximately **65–70% by architectural layers**.
 
 ## Parallel technical debt
 
@@ -99,4 +120,4 @@ Binary data architecture is logically split but still needs the independent-CMak
 - update stale binary aggregate contract;
 - build and smoke-test v4 save/load.
 
-This remains separate from the editor application-state/orchestration pass.
+This remains separate from the editor application decomposition.

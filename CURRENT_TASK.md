@@ -5,69 +5,77 @@
 
 ## Immediate goal
 
-Accept the cleaned SEMANTICS workspace in the real editor without changing the semantic data model or breaking existing controls.
+Verify the first whole-application state-control pass, then continue physical extraction of orchestration from `model_asset_editor.html` without changing accepted editor behavior.
 
-## Current candidate — v0.10.75
+## Current candidate — application state authority
 
-### TREE
+The active candidate introduces:
 
-- keep `LOD` selection and title;
-- one compact workflow row:
-  - `TREE · ASSEMBLY / KINEMATICS`;
-  - `GRAPH · STRUCTURAL LINKS`;
-  - `CHECK` at the far right;
-- remove the long MODEL ROOT explanation from the visible workspace;
-- remove upper summary/counter/warning banners;
-- keep legacy cleanup as a compact secondary button;
-- condense 3D transform preview controls;
-- move long contextual help behind `?`;
-- preserve tree selection, reparenting, motion, bindings and all existing command IDs.
+- explicit application actions;
+- canonical workflow state machine;
+- pure application reducer;
+- application store;
+- application controller;
+- selectors/snapshot;
+- compatibility projection over the current legacy `state` object.
 
-### GRAPH
+Canonical workflow:
 
-- use the same workflow row and final `CHECK` placement;
-- remove the long structural-graph lead and cleanup explanation;
-- move new-link instructions behind `?`;
-- keep mesh selection, ROOT/A/B assignment, link creation/editing, proxy editing and explode controls unchanged functionally.
+`SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD`
 
-## Verification
+`PHYSICS` remains asset-authoring metadata. Game-world runtime simulation is out of scope.
 
-Run:
+### Required invariant
+
+UI/feature/effect code may request or assign a control change through the compatibility surface, but the authoritative value must be owned by:
+
+`action -> ApplicationController -> reducer/store -> selector`
+
+DOM, THREE, backend `send`, filesystem and timers must not enter the reducer/controller layers.
+
+`EditorViewState` remains the authority for active LOD, view selection, visibility/isolation and loaded/resident LODs.
+
+## Verification now
+
+Run from the repository root:
 
 ```bash
+python tests/architecture_contracts/check_model_asset_editor_application_state.py
 python tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py
 cmake --build build/tools/model_asset_editor --target EliteAssetEditor -j 8
 ./build/tools/model_asset_editor/bin/EliteAssetEditor.exe
 ```
 
-Manual smoke in both TREE and GRAPH:
+Manual smoke:
 
-- switch LODs;
-- switch TREE <-> GRAPH radios;
-- verify `CHECK` remains the far-right final action;
-- verify legacy cleanup control;
-- toggle transform links/markers;
-- move explode slider and reset to 0%;
-- select semantic parts and use tree bulk actions;
-- edit a motion connection;
-- inspect/repair visual bindings;
-- in GRAPH select a mesh, set ROOT/A/B, create/select/edit a structural link.
+- open an asset and walk SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD where enabled;
+- move backward between stages;
+- verify locked-stage behavior is unchanged;
+- switch LODs and verify selection/visibility preservation;
+- verify dirty/busy UI still changes normally during commands;
+- switch locale;
+- switch SEMANTICS TREE/GRAPH and use CHECK;
+- edit PHYSICS controls and return to SEMANTICS;
+- save/reload the asset.
 
-The old aggregate `tests/architecture_contracts/check_model_asset_editor.py` has a known stale assertion for `ManifestMagicV4` in the former binary monolith. Do not interpret that specific failure as a SEMANTICS regression; update that contract when closing the binary translation-unit gate.
+## Next decomposition wave after this smoke
 
-## After visual acceptance
+1. create a dedicated application bootstrap and remove state installation from the temporary i18n hook;
+2. extract the body of top-level stage transition/render orchestration from `model_asset_editor.html` into application/effect adapters;
+3. replace the stage-view `if(stage===...)` chain with a declarative stage renderer registry;
+4. separate backend/session/persistence effects;
+5. separate THREE viewport orchestration;
+6. keep shrinking `model_asset_editor.html` toward static markup + bootstrap imports.
 
-1. **Close binary data architecture**
-   - compile every binary layer as an independent CMake translation unit;
-   - remove `.cpp` aggregation from the facade;
-   - update the stale aggregate architecture contract;
-   - run v4 save/load smoke.
+Do **not** move authored ModelAsset data, THREE objects, geometry caches or backend handles into the application reducer merely to make everything look centralized.
 
-2. **Return to whole-editor decomposition**
-   - map the application-level dependency graph;
-   - isolate controller/orchestration from state and views;
-   - isolate pure domain logic from DOM/THREE/send effects;
-   - isolate runtime/3D adapters and persistence/transport;
-   - add contracts so a defect in one logical layer affects the minimum practical area.
+## Parallel technical debt
 
-3. **Only then continue production v5 implementation** under the separated binary boundaries.
+Binary data architecture is logically split but still needs the independent-CMake-translation-unit closure:
+
+- register binary `.cpp` files directly in `EliteModelAsset`;
+- remove `.cpp` aggregation from `ModelAssetBinary.cpp`;
+- update stale binary aggregate contract;
+- build and smoke-test v4 save/load.
+
+This remains separate from the current editor application-state pass.

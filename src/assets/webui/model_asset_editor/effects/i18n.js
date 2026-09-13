@@ -1,6 +1,8 @@
 import './ui_chrome.js';
+import {installApplicationState} from '../app/state.js';
 // Model Asset Editor effect adapter. Physical extraction wave7E: i18n / localized UI runtime.
 const createI18nEffects=({state,$,refreshDynamicUi,localStatus,send,document,window,requestAnimationFrame,fetch,console})=>{
+installApplicationState(state);
 function baseLocale(value){return String(value||'').split(/[-_]/)[0];}
 function tr(key,fallback=key,vars={}){const map=state.i18n?.strings?.[key];let value=fallback;if(map&&typeof map==='object')value=map[state.locale]||map[baseLocale(state.locale)]||map.en||fallback;return String(value).replace(/\{([A-Za-z0-9_]+)\}/g,(m,k)=>vars[k]??m);}
 function translateServerMessage(message){

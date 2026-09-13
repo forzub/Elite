@@ -83,7 +83,7 @@ for required in [
 assert 'data-semantic-workspace-style' in structural, "compact SEMANTICS workspace chrome is missing"
 assert 'class="semanticHelp"' in tree and 'class="semanticHelp"' in graph, "long help text must be moved behind compact ? affordances"
 assert "bindWizardStageCheckControls('semantics')" in effects, "SEMANTICS CHECK button binding is missing"
-assert re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.77"', version), "editor version must be 0.10.77"
+assert re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.78"', version), "editor version must be 0.10.78"
 
 print("MODEL ASSET SEMANTICS WORKSPACE LAYOUT: PASS")
 print(" - TREE and GRAPH workspaces use the compact workflow bar")

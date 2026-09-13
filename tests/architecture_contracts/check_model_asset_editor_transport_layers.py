@@ -82,12 +82,12 @@ for token in ['request_catalog', 'request_settings', 'transfers.handleBinary', '
     if token not in runtime:
         fail(f'transport runtime lost integration {token}')
 
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.77"', version):
-    fail('editor version must be 0.10.77')
+if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.78"', version):
+    fail('editor version must be 0.10.78')
 
 print('MODEL ASSET EDITOR TRANSPORT LAYERS: PASS')
 print(' - WebSocket lifecycle and reconnect are outside the HTML shell')
 print(' - command and diagnostic dispatch are isolated transport adapters')
 print(' - binary wire decoding is independent from editor/domain state')
 print(' - binary transfer bookkeeping is isolated from DOM/THREE')
-print(' - backend session message handling remains a separate next boundary')
+print(' - transport terminates at the isolated session message boundary')

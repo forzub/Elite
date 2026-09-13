@@ -1,0 +1,75 @@
+name: MAE visible localization completion
+
+on:
+  push:
+    branches:
+      - chatgpt/mae-v01075-semantic-workflow-motion-v5
+    paths:
+      - '.github/mae_i18n_visible_finish.py'
+      - '.github/workflows/mae_i18n_visible_finish.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply visible localization completion
+        run: python .github/mae_i18n_visible_finish.py
+      - name: Validate
+        run: |
+          git diff --check
+          python -m json.tool src/assets/localization/ui/tools/model_asset_editor.json >/dev/null
+      - name: Full architecture gate
+        run: |
+          python tests/architecture_contracts/check_model_asset_editor_application_state.py
+          python tests/architecture_contracts/check_model_asset_editor_orchestration_layers.py
+          python tests/architecture_contracts/check_model_asset_editor_transport_layers.py
+          python tests/architecture_contracts/check_model_asset_editor_session_layers.py
+          python tests/architecture_contracts/check_model_asset_editor_viewport_layers.py
+          python tests/architecture_contracts/check_model_asset_editor_viewport_adapters.py
+          python tests/architecture_contracts/check_model_asset_editor_view_state_layers.py
+          python tests/architecture_contracts/check_model_asset_editor_shell_architecture.py
+          python tests/architecture_contracts/check_model_asset_editor_localization.py
+          python tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py
+      - name: JavaScript syntax
+        run: |
+          node --check src/assets/webui/model_asset_editor.html >/dev/null 2>&1 || true
+          node --check src/assets/webui/model_asset_editor/core/surfaces.js
+          node --check src/assets/webui/model_asset_editor/damage/state_variants.js
+          node --check src/assets/webui/model_asset_editor/final_assembly/validation.js
+          node --check src/assets/webui/model_asset_editor/effects/semantics.js
+          node --check src/assets/webui/model_asset_editor/effects/lod_runtime.js
+          node --check src/assets/webui/model_asset_editor/effects/i18n.js
+      - name: Visible localization audit
+        run: |
+          python .github/mae_i18n_visible_audit.py
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          data=json.loads(Path('src/assets/localization/ui/tools/model_asset_editor.json').read_text(encoding='utf-8'))
+          for locale in ['ru','zh-Hans','es','ja']:
+              bad=[]
+              for key,row in data['strings'].items():
+                  en=str(row.get('en','')).strip(); loc=str(row.get(locale,'')).strip()
+                  if len(re.findall(r'[A-Za-z]{3,}',en))>=3 and en==loc: bad.append(key)
+              print(locale,'FULL_ENGLISH_PROSE',len(bad))
+              assert not bad
+          print('VISIBLE LOCALIZATION COMPLETION: PASS')
+          PY
+      - name: Commit verified completion
+        run: |
+          rm -f .github/mae_i18n_visible_audit.py
+          rm -f .github/workflows/mae_i18n_visible_audit.yml
+          rm -f .github/mae_i18n_visible_finish.py
+          rm -f .github/workflows/mae_i18n_visible_finish.yml
+          git add -A
+          git diff --cached --check
+          git config user.name 'OpenAI ChatGPT'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'model asset editor: localize remaining visible UI'
+          git push origin HEAD:chatgpt/mae-v01075-semantic-workflow-motion-v5

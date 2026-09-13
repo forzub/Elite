@@ -1034,7 +1034,7 @@ for token in (
         raise AssertionError(f"LOD mesh visibility/cached-preflight UI contract missing {token!r}")
 
 # Keep the exact current editor version guarded.
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.73"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.74"')
 
 # These marker phrases are intentionally referenced by the capability registry.
 manual_working_state_marker = "manual working-state save/restore contract"

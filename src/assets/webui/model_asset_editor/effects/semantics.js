@@ -140,7 +140,7 @@ function bindWizardSemanticsPreviewInteractions(root){
 }
 function renderWizardSemanticsStage(root,lods){
   const nodes=state.asset.nodes||[],lod=activeRenderLod(state.asset?.renderLods,state.activeLod);assertSemanticVisualLodInvariant('render-panel');
-  const selection=wizardSemanticsStageSelectionNormalization({nodes,selectedNode:stageSelectedNode,selectedNodeIndices:stageSelectedNodeIndices}),stageSelectedNode=selection.selectedNode,stageSelectedNodeIndices=selection.selectedNodeIndices;
+  const selection=wizardSemanticsStageSelectionNormalization({nodes,selectedNode:state.selectedNode,selectedNodeIndices:[...state.semanticSelectedNodes]}),stageSelectedNode=selection.selectedNode,stageSelectedNodeIndices=selection.selectedNodeIndices;
   const model=wizardSemanticsStageModel({nodes,lod,lods,activeLod:state.activeLod,selectedNode:stageSelectedNode,semanticSelectedNodes:stageSelectedNodeIndices,semanticTreeOrder:state.asset?.semanticTreeOrder||{},semanticCollapsed:[...state.semanticCollapsed],stateVariants:state.asset?.stateVariants||[],visualProfile:semanticVisualLodProfile(lod)});
   const {selected,unbound,geometryNodes,bound,zeroVisualParts,orphanParts,multiVisualParts,roots,assetSpaceCollapsed,transformEdges,staticFlattenCount,selectedToAssetCount,selectedCount,selectedMissingLods,bindingNeedsRepair,visualProfile}=model,desc=new Set(model.descendantIndices),bindingCounts=new Map(model.bindingCountsEntries);
   if(state.semanticStructureMode==='graph'){renderWizardStructuralGraphStage(root,lods);return;}

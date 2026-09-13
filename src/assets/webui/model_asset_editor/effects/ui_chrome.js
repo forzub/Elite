@@ -13,7 +13,7 @@ export default (()=>{
     const q=(selector,root=doc)=>root?.querySelector?.(selector)||null;
     const qa=(selector,root=doc)=>[...(root?.querySelectorAll?.(selector)||[])];
     const normalize=chromeModel.normalizeText;
-    const stageName=()=>q('.wizardStage.active')?.dataset?.wizardStage||q('.wizardStage[aria-current="step"]')?.dataset?.wizardStage||'';
+    const stageName=()=>q('.wizardStage.current')?.dataset?.wizardStage||q('.wizardStage[aria-current="step"]')?.dataset?.wizardStage||'';
     const locale=()=>doc.documentElement.lang||'en';
     const unique=items=>[...new Set(items.map(normalize).filter(Boolean))];
     const isOperational=node=>chromeModel.keepVisible(node?.textContent||'',node?.className||'');
@@ -134,7 +134,7 @@ export default (()=>{
       select,input:not([type=checkbox]):not([type=range]){border-radius:2px!important;border-color:#2f506b!important;background:#0a141e!important;box-shadow:inset 0 0 0 1px #111f2c;color:#d9ebf7}
       select:focus,input:focus{outline:1px solid #5a9dcc!important;box-shadow:0 0 10px #0b2a40!important}
       .wizardStage{min-height:31px!important;border-color:#2b465f!important;background:linear-gradient(180deg,#101e2b,#0a131b)!important;color:#8da9bd!important;text-transform:uppercase;letter-spacing:.07em}
-      .wizardStage.active{border-color:var(--ui-cyan)!important;background:linear-gradient(180deg,#153a54,#0c1e2c)!important;color:#e2f5ff!important;box-shadow:inset 0 -2px #69caff,0 0 12px #08283e!important}
+      .wizardStage.current{border-color:#a6ecff!important;background:linear-gradient(180deg,#1b4e70,#0d2536)!important;color:#f3fbff!important;box-shadow:inset 0 -3px #7de0ff,inset 0 0 18px #0d3954,0 0 16px #092a40!important}
       #wizardPanel,.section{background:linear-gradient(180deg,#0e1822,#0a1118)}
       .geometryToolBlock,.surfaceToolBlock,.semanticTreeBlock,.semanticNodeBlock,.semanticBindingBlock,.semanticMotionBlock,.semanticGraphControls,.modelPreflightBlock,.lodGeneratorBlock,.variantAssignBlock,.geometryEditBlock,.maintenanceBlock,.surfaceBrowser,.compareBlock,.inspectorGroup,.structGraphMeshBlock,.physicalSizeBlock,.sourceInventory,.advancedBlock{border-color:#29445b!important;border-radius:7px!important;background:linear-gradient(180deg,#0d1822,#091119)!important;box-shadow:inset 0 0 0 1px #111f2b,0 5px 16px #0004}
       .geometryBlockHead,.variantAssignHead,.surfaceBrowserHead,.uiChromeSyntheticHead,.uiChromeHeader{background:linear-gradient(180deg,#122436,#0d1925)!important;border-color:#29445b!important}

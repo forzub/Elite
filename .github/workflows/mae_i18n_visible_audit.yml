@@ -1,0 +1,16 @@
+name: MAE visible localization audit
+
+on:
+  push:
+    branches:
+      - chatgpt/mae-v01075-semantic-workflow-motion-v5
+    paths:
+      - '.github/mae_i18n_visible_audit.py'
+      - '.github/workflows/mae_i18n_visible_audit.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python .github/mae_i18n_visible_audit.py

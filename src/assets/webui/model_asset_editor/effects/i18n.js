@@ -1,3 +1,4 @@
+import './ui_chrome.js';
 // Model Asset Editor effect adapter. Physical extraction wave7E: i18n / localized UI runtime.
 const createI18nEffects=({state,$,refreshDynamicUi,localStatus,send,document,window,requestAnimationFrame,fetch,console})=>{
 function baseLocale(value){return String(value||'').split(/[-_]/)[0];}

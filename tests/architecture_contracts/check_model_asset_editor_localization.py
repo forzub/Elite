@@ -83,6 +83,18 @@ for pattern,label in [
 # A present non-English locale may not silently copy full English prose.
 version=VERSION.read_text(encoding='utf-8')
 if 'ModelAssetEditorVersion = "0.10.83"' not in version: errors.append('expected editor version 0.10.83')
+for required in [
+ 'model_editor.physical_scale.title','model_editor.surfaces.selection_help','model_editor.geometry_inventory.shared_tip',
+ 'model_editor.maintenance.scan_metrics','model_editor.overlay.render_detail','model_editor.common.detached'
+]:
+ if required not in strings: errors.append(f'visible localization key missing: {required}')
+for forbidden in [
+ 'GAME LINK · NOT LINKED — с игрой пока связи нет.',
+ 'Shared geometry properties come from ${effectiveId}. SOURCE provenance remains',
+ 'SOURCE CURRENT · all stored file hashes match</div>',
+ 'render LOD${state.activeLod}: ${rn.id}\ngeometry:'
+]:
+ if forbidden in all_text: errors.append(f'visible English bypass remains: {forbidden}')
 if errors:
  print('MODEL ASSET EDITOR LOCALIZATION ARCHITECTURE: FAIL')
  for error in errors: print(' -',error)

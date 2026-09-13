@@ -5181,9 +5181,9 @@
     "model_editor.maintenance.source_current": {
       "en": "SOURCE CURRENT",
       "ru": "SOURCE АКТУАЛЕН",
-      "zh-Hans": "源已是最新",
-      "es": "ORIGEN ACTUAL",
-      "ja": "ソース最新"
+      "zh-Hans": "SOURCE 已是最新",
+      "es": "SOURCE ACTUALIZADO",
+      "ja": "SOURCE は最新"
     },
     "model_editor.maintenance.not_scanned": {
       "en": "NOT SCANNED",
@@ -5862,7 +5862,7 @@
       "ru": "ВЫБРАНО",
       "zh-Hans": "已选择",
       "es": "SELECCIONADO",
-      "ja": "選択済み"
+      "ja": "選択中"
     },
     "model_editor.common.children": {
       "en": "children",
@@ -9307,6 +9307,510 @@
       "zh-Hans": "SSE 未知",
       "es": "SSE desconocido",
       "ja": "SSE 不明"
+    },
+    "model_editor.common.main": {
+      "en": "MAIN",
+      "ru": "ОСНОВНОЙ",
+      "zh-Hans": "主网格",
+      "es": "PRINCIPAL",
+      "ja": "メイン"
+    },
+    "model_editor.common.replacement": {
+      "en": "REPLACEMENT",
+      "ru": "ЗАМЕНА",
+      "zh-Hans": "替换",
+      "es": "REEMPLAZO",
+      "ja": "置換"
+    },
+    "model_editor.common.authored": {
+      "en": "AUTHORED",
+      "ru": "АВТОРСКИЙ",
+      "zh-Hans": "已制作",
+      "es": "AUTORÍA",
+      "ja": "作成済み"
+    },
+    "model_editor.common.view": {
+      "en": "VIEW",
+      "ru": "ПОКАЗАТЬ",
+      "zh-Hans": "查看",
+      "es": "VER",
+      "ja": "表示"
+    },
+    "model_editor.common.load": {
+      "en": "LOAD",
+      "ru": "ЗАГРУЗИТЬ",
+      "zh-Hans": "加载",
+      "es": "CARGAR",
+      "ja": "読み込み"
+    },
+    "model_editor.common.use": {
+      "en": "USE",
+      "ru": "ИСПОЛЬЗОВАТЬ",
+      "zh-Hans": "使用",
+      "es": "USAR",
+      "ja": "使用"
+    },
+    "model_editor.common.primary": {
+      "en": "PRIMARY",
+      "ru": "ОСНОВНОЙ",
+      "zh-Hans": "主项",
+      "es": "PRINCIPAL",
+      "ja": "プライマリ"
+    },
+    "model_editor.common.meshes_count": {
+      "en": "{count} MESHES",
+      "ru": "МЕШЕЙ: {count}",
+      "zh-Hans": "{count} 个网格",
+      "es": "{count} MALLAS",
+      "ja": "{count} メッシュ"
+    },
+    "model_editor.common.apply_selected": {
+      "en": "APPLY TO {count} SELECTED",
+      "ru": "ПРИМЕНИТЬ К ВЫБРАННЫМ: {count}",
+      "zh-Hans": "应用到 {count} 个已选项",
+      "es": "APLICAR A {count} SELECCIONADOS",
+      "ja": "選択した {count} 件に適用"
+    },
+    "model_editor.common.primary_mesh_only": {
+      "en": "PRIMARY MESH ONLY",
+      "ru": "ТОЛЬКО ОСНОВНОЙ МЕШ",
+      "zh-Hans": "仅主网格",
+      "es": "SOLO MALLA PRINCIPAL",
+      "ja": "プライマリメッシュのみ"
+    },
+    "model_editor.common.detached": {
+      "en": "DETACHED",
+      "ru": "ОТДЕЛЁН",
+      "zh-Hans": "已分离",
+      "es": "SEPARADO",
+      "ja": "分離済み"
+    },
+    "model_editor.common.pass": {
+      "en": "PASS",
+      "ru": "ПРОЙДЕНО",
+      "zh-Hans": "通过",
+      "es": "CORRECTO",
+      "ja": "合格"
+    },
+    "model_editor.common.fail": {
+      "en": "FAIL",
+      "ru": "ОШИБКА",
+      "zh-Hans": "失败",
+      "es": "FALLO",
+      "ja": "失敗"
+    },
+    "model_editor.common.hide_item": {
+      "en": "Hide {id}",
+      "ru": "Скрыть {id}",
+      "zh-Hans": "隐藏 {id}",
+      "es": "Ocultar {id}",
+      "ja": "{id} を非表示"
+    },
+    "model_editor.common.show_item": {
+      "en": "Show {id}",
+      "ru": "Показать {id}",
+      "zh-Hans": "显示 {id}",
+      "es": "Mostrar {id}",
+      "ja": "{id} を表示"
+    },
+    "model_editor.geometry_inventory.view_lod": {
+      "en": "VIEW LOD{lod}",
+      "ru": "ПОКАЗАТЬ LOD{lod}",
+      "zh-Hans": "查看 LOD{lod}",
+      "es": "VER LOD{lod}",
+      "ja": "LOD{lod} を表示"
+    },
+    "model_editor.geometry_inventory.load_lod": {
+      "en": "LOAD LOD{lod}",
+      "ru": "ЗАГРУЗИТЬ LOD{lod}",
+      "zh-Hans": "加载 LOD{lod}",
+      "es": "CARGAR LOD{lod}",
+      "ja": "LOD{lod} を読み込み"
+    },
+    "model_editor.geometry_inventory.all": {
+      "en": "● ALL",
+      "ru": "● ВСЕ",
+      "zh-Hans": "● 全部",
+      "es": "● TODO",
+      "ja": "● すべて"
+    },
+    "model_editor.geometry_inventory.none": {
+      "en": "○ NONE",
+      "ru": "○ НИЧЕГО",
+      "zh-Hans": "○ 全不显示",
+      "es": "○ NINGUNO",
+      "ja": "○ なし"
+    },
+    "model_editor.geometry_inventory.visible": {
+      "en": "{visible}/{total} VISIBLE",
+      "ru": "ВИДИМО {visible}/{total}",
+      "zh-Hans": "可见 {visible}/{total}",
+      "es": "VISIBLES {visible}/{total}",
+      "ja": "表示 {visible}/{total}"
+    },
+    "model_editor.geometry_inventory.isolate_tip": {
+      "en": "Click to isolate this mesh family",
+      "ru": "Нажмите, чтобы изолировать это семейство мешей",
+      "zh-Hans": "点击以隔离此网格族",
+      "es": "Haz clic para aislar esta familia de mallas",
+      "ja": "クリックしてこのメッシュ系統を分離表示"
+    },
+    "model_editor.geometry_inventory.hide_tip": {
+      "en": "Hide this mesh family",
+      "ru": "Скрыть это семейство мешей",
+      "zh-Hans": "隐藏此网格族",
+      "es": "Ocultar esta familia de mallas",
+      "ja": "このメッシュ系統を非表示"
+    },
+    "model_editor.geometry_inventory.show_tip": {
+      "en": "Show this mesh family",
+      "ru": "Показать это семейство мешей",
+      "zh-Hans": "显示此网格族",
+      "es": "Mostrar esta familia de mallas",
+      "ja": "このメッシュ系統を表示"
+    },
+    "model_editor.geometry_inventory.shared_tip": {
+      "en": "Shared geometry properties come from {id}. SOURCE provenance remains {source}.",
+      "ru": "Свойства общей геометрии берутся из {id}. Происхождение SOURCE остаётся {source}.",
+      "zh-Hans": "共享几何属性来自 {id}。SOURCE 来源仍为 {source}。",
+      "es": "Las propiedades de geometría compartida proceden de {id}. La procedencia SOURCE sigue siendo {source}.",
+      "ja": "共有ジオメトリのプロパティは {id} から取得します。SOURCE の由来は {source} のままです。"
+    },
+    "model_editor.geometry_inventory.reload_tip": {
+      "en": "Reload only this mesh from linked SOURCE OBJ. This is not RELOAD LOD.",
+      "ru": "Перезагрузить только этот меш из связанного SOURCE OBJ. Это не RELOAD LOD.",
+      "zh-Hans": "仅从已链接的 SOURCE OBJ 重新加载此网格。这不是 RELOAD LOD。",
+      "es": "Recarga solo esta malla desde el OBJ SOURCE enlazado. No es RELOAD LOD.",
+      "ja": "リンクされた SOURCE OBJ からこのメッシュだけを再読み込みします。RELOAD LOD ではありません。"
+    },
+    "model_editor.lod.reload_native_tip": {
+      "en": "RELOAD LOD{lod} from saved WORKING/PRODUCTION .elmesh. Never reads SOURCE OBJ.",
+      "ru": "RELOAD LOD{lod} из сохранённого WORKING/PRODUCTION .elmesh. SOURCE OBJ не читается.",
+      "zh-Hans": "从已保存的 WORKING/PRODUCTION .elmesh 重新加载 LOD{lod}。不会读取 SOURCE OBJ。",
+      "es": "RELOAD LOD{lod} desde el .elmesh guardado de WORKING/PRODUCTION. Nunca lee el OBJ SOURCE.",
+      "ja": "保存済み WORKING/PRODUCTION .elmesh から LOD{lod} を再読み込みします。SOURCE OBJ は読みません。"
+    },
+    "model_editor.overlay.render_detail": {
+      "en": "render LOD{lod}: {id}\ngeometry: {geometry}\nsemantic: {semantic}",
+      "ru": "рендер LOD{lod}: {id}\nгеометрия: {geometry}\nсемантика: {semantic}",
+      "zh-Hans": "渲染 LOD{lod}：{id}\n几何：{geometry}\n语义：{semantic}",
+      "es": "render LOD{lod}: {id}\ngeometría: {geometry}\nsemántica: {semantic}",
+      "ja": "レンダー LOD{lod}: {id}\nジオメトリ: {geometry}\nセマンティック: {semantic}"
+    },
+    "model_editor.geometry_compare.instance_link": {
+      "en": "INSTANCE LINK · {from} → {to}",
+      "ru": "СВЯЗЬ ЭКЗЕМПЛЯРА · {from} → {to}",
+      "zh-Hans": "实例链接 · {from} → {to}",
+      "es": "ENLACE DE INSTANCIA · {from} → {to}",
+      "ja": "インスタンスリンク · {from} → {to}"
+    },
+    "model_editor.geometry_compare.isolate_tip": {
+      "en": "Click to isolate this mesh",
+      "ru": "Нажмите, чтобы изолировать этот меш",
+      "zh-Hans": "点击以隔离此网格",
+      "es": "Haz clic para aislar esta malla",
+      "ja": "クリックしてこのメッシュを分離表示"
+    },
+    "model_editor.geometry_compare.hide_tip": {
+      "en": "Hide this mesh",
+      "ru": "Скрыть этот меш",
+      "zh-Hans": "隐藏此网格",
+      "es": "Ocultar esta malla",
+      "ja": "このメッシュを非表示"
+    },
+    "model_editor.geometry_compare.show_tip": {
+      "en": "Show this mesh",
+      "ru": "Показать этот меш",
+      "zh-Hans": "显示此网格",
+      "es": "Mostrar esta malla",
+      "ja": "このメッシュを表示"
+    },
+    "model_editor.maintenance.results": {
+      "en": "{count} RESULT(S)",
+      "ru": "РЕЗУЛЬТАТОВ: {count}",
+      "zh-Hans": "{count} 个结果",
+      "es": "{count} RESULTADO(S)",
+      "ja": "結果 {count} 件"
+    },
+    "model_editor.maintenance.source_current_detail": {
+      "en": "SOURCE CURRENT · all stored file hashes match",
+      "ru": "SOURCE АКТУАЛЕН · все сохранённые хеши файлов совпадают",
+      "zh-Hans": "SOURCE 已是最新 · 所有保存的文件哈希均匹配",
+      "es": "SOURCE ACTUALIZADO · coinciden todos los hashes guardados",
+      "ja": "SOURCE は最新 · 保存済みファイルハッシュはすべて一致"
+    },
+    "model_editor.maintenance.scan_metrics": {
+      "en": "folder: {folder} · {hashes} hashes · {walks} directory walks · {ms} ms · unchanged {unchanged} / replaced {replaced} / added {added} / missing {missing} / failed {failed}",
+      "ru": "папка: {folder} · хешей: {hashes} · обходов папок: {walks} · {ms} мс · без изменений {unchanged} / заменено {replaced} / добавлено {added} / отсутствует {missing} / ошибок {failed}",
+      "zh-Hans": "文件夹：{folder} · 哈希读取 {hashes} · 目录遍历 {walks} · {ms} ms · 未更改 {unchanged} / 已替换 {replaced} / 已添加 {added} / 缺失 {missing} / 失败 {failed}",
+      "es": "carpeta: {folder} · {hashes} hashes · {walks} recorridos · {ms} ms · sin cambios {unchanged} / reemplazados {replaced} / añadidos {added} / ausentes {missing} / fallidos {failed}",
+      "ja": "フォルダ: {folder} · ハッシュ {hashes} · ディレクトリ走査 {walks} · {ms} ms · 未変更 {unchanged} / 置換 {replaced} / 追加 {added} / 不明 {missing} / 失敗 {failed}"
+    },
+    "model_editor.source.missing_instance_link": {
+      "en": "SOURCE FILE MISSING · INSTANCE LINK KEPT",
+      "ru": "SOURCE-ФАЙЛ ОТСУТСТВУЕТ · СВЯЗЬ ЭКЗЕМПЛЯРА СОХРАНЕНА",
+      "zh-Hans": "SOURCE 文件缺失 · 保留实例链接",
+      "es": "FALTA ARCHIVO SOURCE · SE CONSERVA EL ENLACE DE INSTANCIA",
+      "ja": "SOURCE ファイル不明 · インスタンスリンク保持"
+    },
+    "model_editor.surfaces.mixed": {
+      "en": "— MIXED —",
+      "ru": "— СМЕШАННО —",
+      "zh-Hans": "— 混合 —",
+      "es": "— MIXTO —",
+      "ja": "— 混在 —"
+    },
+    "model_editor.surfaces.used_here_tag": {
+      "en": "USED HERE",
+      "ru": "ИСПОЛЬЗУЕТСЯ ЗДЕСЬ",
+      "zh-Hans": "此处使用",
+      "es": "USADO AQUÍ",
+      "ja": "ここで使用"
+    },
+    "model_editor.surfaces.active_meshes": {
+      "en": "ACTIVE LOD MESHES / {geometry}",
+      "ru": "МЕШИ АКТИВНОГО LOD / {geometry}",
+      "zh-Hans": "活动 LOD 网格 / {geometry}",
+      "es": "MALLAS DEL LOD ACTIVO / {geometry}",
+      "ja": "アクティブ LOD メッシュ / {geometry}"
+    },
+    "model_editor.surfaces.visible": {
+      "en": "{visible}/{total} VISIBLE",
+      "ru": "ВИДИМО {visible}/{total}",
+      "zh-Hans": "可见 {visible}/{total}",
+      "es": "VISIBLES {visible}/{total}",
+      "ja": "表示 {visible}/{total}"
+    },
+    "model_editor.surfaces.selection_help": {
+      "en": "Click = one mesh · Ctrl = add/remove one · Shift = select range. Surface type applies to the whole selected group; material editing stays on the primary row.",
+      "ru": "Клик = один меш · Ctrl = добавить/убрать один · Shift = выбрать диапазон. Тип поверхности применяется ко всей выбранной группе; материал редактируется только для основной строки.",
+      "zh-Hans": "单击 = 一个网格 · Ctrl = 添加/移除一个 · Shift = 选择范围。表面类型应用于整个已选组；材质编辑只作用于主行。",
+      "es": "Clic = una malla · Ctrl = añadir/quitar una · Shift = seleccionar rango. El tipo de superficie se aplica a todo el grupo; el material se edita solo en la fila principal.",
+      "ja": "クリック = 1 メッシュ · Ctrl = 1 件追加/解除 · Shift = 範囲選択。サーフェスタイプは選択グループ全体に適用し、マテリアル編集はプライマリ行だけに適用します。"
+    },
+    "model_editor.surfaces.surface_check": {
+      "en": "SURFACES CHECK: {status}",
+      "ru": "ПРОВЕРКА ПОВЕРХНОСТЕЙ: {status}",
+      "zh-Hans": "表面检查：{status}",
+      "es": "COMPROBACIÓN DE SUPERFICIES: {status}",
+      "ja": "サーフェスチェック: {status}"
+    },
+    "model_editor.physical_scale.title": {
+      "en": "PHYSICAL SCALE · AUTHORING → METERS",
+      "ru": "ФИЗИЧЕСКИЙ МАСШТАБ · AUTHORING → МЕТРЫ",
+      "zh-Hans": "物理比例 · 制作空间 → 米",
+      "es": "ESCALA FÍSICA · AUTORÍA → METROS",
+      "ja": "物理スケール · オーサリング → メートル"
+    },
+    "model_editor.physical_scale.help": {
+      "en": "SOURCE and WORKING are never resized. Set one asset-wide coefficient manually; BUILD applies it once to a temporary production copy for renderer/physics.",
+      "ru": "SOURCE и WORKING никогда не масштабируются. Задайте один коэффициент для всего asset; BUILD применит его один раз к временной production-копии для renderer/physics.",
+      "zh-Hans": "SOURCE 和 WORKING 从不缩放。手动设置一个全资源系数；BUILD 仅对用于渲染/物理的临时 production 副本应用一次。",
+      "es": "SOURCE y WORKING nunca se redimensionan. Define un coeficiente para todo el recurso; BUILD lo aplica una vez a una copia temporal de production para render/física.",
+      "ja": "SOURCE と WORKING は拡縮しません。アセット全体の係数を 1 つ設定し、BUILD が renderer/physics 用の一時 production コピーに一度だけ適用します。"
+    },
+    "model_editor.physical_scale.authoring_size": {
+      "en": "AUTHORING SIZE · RAW SOURCE SPACE",
+      "ru": "РАЗМЕР AUTHORING · ИСХОДНОЕ ПРОСТРАНСТВО SOURCE",
+      "zh-Hans": "制作尺寸 · 原始 SOURCE 空间",
+      "es": "TAMAÑO DE AUTORÍA · ESPACIO SOURCE ORIGINAL",
+      "ja": "オーサリングサイズ · RAW SOURCE 空間"
+    },
+    "model_editor.physical_scale.game_size": {
+      "en": "GAME SIZE",
+      "ru": "РАЗМЕР В ИГРЕ",
+      "zh-Hans": "游戏尺寸",
+      "es": "TAMAÑO EN JUEGO",
+      "ja": "ゲームサイズ"
+    },
+    "model_editor.physical_scale.game_width": {
+      "en": "GAME WIDTH · X",
+      "ru": "ШИРИНА В ИГРЕ · X",
+      "zh-Hans": "游戏宽度 · X",
+      "es": "ANCHO EN JUEGO · X",
+      "ja": "ゲーム幅 · X"
+    },
+    "model_editor.physical_scale.game_height": {
+      "en": "GAME HEIGHT · Y",
+      "ru": "ВЫСОТА В ИГРЕ · Y",
+      "zh-Hans": "游戏高度 · Y",
+      "es": "ALTURA EN JUEGO · Y",
+      "ja": "ゲーム高さ · Y"
+    },
+    "model_editor.physical_scale.game_length": {
+      "en": "GAME LENGTH · Z",
+      "ru": "ДЛИНА В ИГРЕ · Z",
+      "zh-Hans": "游戏长度 · Z",
+      "es": "LONGITUD EN JUEGO · Z",
+      "ja": "ゲーム長 · Z"
+    },
+    "model_editor.physical_scale.game_not_linked": {
+      "en": "GAME LINK · NOT LINKED",
+      "ru": "СВЯЗЬ С ИГРОЙ · НЕ ЗАДАНА",
+      "zh-Hans": "游戏链接 · 未连接",
+      "es": "ENLACE CON JUEGO · NO VINCULADO",
+      "ja": "ゲームリンク · 未接続"
+    },
+    "model_editor.physical_scale.physical_x": {
+      "en": "PHYSICAL X",
+      "ru": "ФИЗИЧЕСКИЙ X",
+      "zh-Hans": "物理 X",
+      "es": "X FÍSICO",
+      "ja": "物理 X"
+    },
+    "model_editor.physical_scale.physical_y": {
+      "en": "PHYSICAL Y",
+      "ru": "ФИЗИЧЕСКИЙ Y",
+      "zh-Hans": "物理 Y",
+      "es": "Y FÍSICO",
+      "ja": "物理 Y"
+    },
+    "model_editor.physical_scale.physical_z": {
+      "en": "PHYSICAL Z",
+      "ru": "ФИЗИЧЕСКИЙ Z",
+      "zh-Hans": "物理 Z",
+      "es": "Z FÍSICO",
+      "ja": "物理 Z"
+    },
+    "model_editor.physical_scale.source_to_meters": {
+      "en": "SOURCE → METERS",
+      "ru": "SOURCE → МЕТРЫ",
+      "zh-Hans": "SOURCE → 米",
+      "es": "SOURCE → METROS",
+      "ja": "SOURCE → メートル"
+    },
+    "model_editor.physical_scale.calibration": {
+      "en": "CALIBRATION",
+      "ru": "КАЛИБРОВКА",
+      "zh-Hans": "校准",
+      "es": "CALIBRACIÓN",
+      "ja": "キャリブレーション"
+    },
+    "model_editor.physical_scale.not_calibrated": {
+      "en": "PHYSICAL SCALE · NOT CALIBRATED. WORKING geometry remains raw SOURCE coordinates.",
+      "ru": "ФИЗИЧЕСКИЙ МАСШТАБ · НЕ КАЛИБРОВАН. Геометрия WORKING остаётся в исходных координатах SOURCE.",
+      "zh-Hans": "物理比例 · 未校准。WORKING 几何保持原始 SOURCE 坐标。",
+      "es": "ESCALA FÍSICA · SIN CALIBRAR. La geometría WORKING permanece en coordenadas SOURCE originales.",
+      "ja": "物理スケール · 未校正。WORKING ジオメトリは RAW SOURCE 座標のままです。"
+    },
+    "model_editor.physical_scale.legacy_warning": {
+      "en": "LEGACY DESTRUCTIVE SCALE STATE · incremental SOURCE scan/reload is blocked. Use RELOAD ALL SOURCE MESHES once to migrate back to raw authoring space, then SAVE.",
+      "ru": "УСТАРЕВШЕЕ ДЕСТРУКТИВНОЕ СОСТОЯНИЕ МАСШТАБА · инкрементальные SOURCE scan/reload заблокированы. Один раз выполните RELOAD ALL SOURCE MESHES, чтобы вернуться в исходное authoring-пространство, затем SAVE.",
+      "zh-Hans": "旧版破坏性缩放状态 · 增量 SOURCE 扫描/重载被阻止。执行一次 RELOAD ALL SOURCE MESHES 以迁回原始制作空间，然后 SAVE。",
+      "es": "ESTADO DE ESCALA DESTRUCTIVO HEREDADO · el escaneo/recarga incremental de SOURCE está bloqueado. Ejecuta RELOAD ALL SOURCE MESHES una vez para volver al espacio de autoría original y luego SAVE.",
+      "ja": "旧破壊的スケール状態 · SOURCE の増分 scan/reload は無効です。RELOAD ALL SOURCE MESHES を一度実行して RAW オーサリング空間へ戻し、その後 SAVE してください。"
+    },
+    "model_editor.physical_scale.reference_axis": {
+      "en": "REFERENCE AXIS",
+      "ru": "ОПОРНАЯ ОСЬ",
+      "zh-Hans": "参考轴",
+      "es": "EJE DE REFERENCIA",
+      "ja": "基準軸"
+    },
+    "model_editor.physical_scale.extent": {
+      "en": "PHYSICAL EXTENT",
+      "ru": "ФИЗИЧЕСКИЙ РАЗМЕР",
+      "zh-Hans": "物理尺寸",
+      "es": "EXTENSIÓN FÍSICA",
+      "ja": "物理寸法"
+    },
+    "model_editor.physical_scale.set_contract": {
+      "en": "↔ SET SCALE CONTRACT",
+      "ru": "↔ ЗАДАТЬ КОНТРАКТ МАСШТАБА",
+      "zh-Hans": "↔ 设置比例契约",
+      "es": "↔ DEFINIR CONTRATO DE ESCALA",
+      "ja": "↔ スケール契約を設定"
+    },
+    "model_editor.lod.preflight.selected": {
+      "en": "SELECTED · LOD{lod}/RN{rn}{geometry} · {id}",
+      "ru": "ВЫБРАНО · LOD{lod}/RN{rn}{geometry} · {id}",
+      "zh-Hans": "已选择 · LOD{lod}/RN{rn}{geometry} · {id}",
+      "es": "SELECCIONADO · LOD{lod}/RN{rn}{geometry} · {id}",
+      "ja": "選択中 · LOD{lod}/RN{rn}{geometry} · {id}"
+    },
+    "model_editor.lod.preflight.instance_suffix": {
+      "en": " · INSTANCE {from} → {to}",
+      "ru": " · ЭКЗЕМПЛЯР {from} → {to}",
+      "zh-Hans": " · 实例 {from} → {to}",
+      "es": " · INSTANCIA {from} → {to}",
+      "ja": " · インスタンス {from} → {to}"
+    },
+    "model_editor.lod.preflight.manual_flip": {
+      "en": "MANUAL FLIP",
+      "ru": "РУЧНОЙ FLIP",
+      "zh-Hans": "手动翻转",
+      "es": "VOLTEO MANUAL",
+      "ja": "手動反転"
+    },
+    "model_editor.lod.preflight.manual_flip_stale": {
+      "en": "MANUAL FLIP · STALE",
+      "ru": "РУЧНОЙ FLIP · УСТАРЕЛ",
+      "zh-Hans": "手动翻转 · 已过期",
+      "es": "VOLTEO MANUAL · OBSOLETO",
+      "ja": "手動反転 · 古い"
+    },
+    "model_editor.lod_generator.view_title": {
+      "en": "VIEW",
+      "ru": "ПОКАЗАТЬ",
+      "zh-Hans": "查看",
+      "es": "VER",
+      "ja": "表示"
+    },
+    "model_editor.lod_generator.lod0_authoritative": {
+      "en": "LOD0 is authoritative",
+      "ru": "LOD0 является эталонным",
+      "zh-Hans": "LOD0 为权威版本",
+      "es": "LOD0 es autoritativo",
+      "ja": "LOD0 が基準です"
+    },
+    "model_editor.lod_generator.authored": {
+      "en": "AUTHORED",
+      "ru": "АВТОРСКИЙ",
+      "zh-Hans": "已制作",
+      "es": "AUTORÍA",
+      "ja": "作成済み"
+    },
+    "model_editor.lod_generator.header_view": {
+      "en": "VIEW",
+      "ru": "ВИД",
+      "zh-Hans": "查看",
+      "es": "VER",
+      "ja": "表示"
+    },
+    "model_editor.lod_generator.header_use": {
+      "en": "USE",
+      "ru": "ИСП.",
+      "zh-Hans": "使用",
+      "es": "USAR",
+      "ja": "使用"
+    },
+    "model_editor.lod_generator.mesh_label": {
+      "en": "{kind} · G{geometry} · {id} · {triangles} T",
+      "ru": "{kind} · геометрия G{geometry} · {id} · {triangles} треуг.",
+      "zh-Hans": "{kind} · 几何 G{geometry} · {id} · {triangles} 三角面",
+      "es": "{kind} · geometría G{geometry} · {id} · {triangles} triáng.",
+      "ja": "{kind} · ジオメトリ G{geometry} · {id} · {triangles} 三角形"
+    },
+    "model_editor.save_stamp.title": {
+      "en": "Loaded save revision: {revision}\nSaved: {saved}\nAuthority on OPEN: {authority}{source}",
+      "ru": "Загруженная ревизия сохранения: {revision}\nСохранено: {saved}\nИсточник при OPEN: {authority}{source}",
+      "zh-Hans": "已加载保存版本：{revision}\n保存时间：{saved}\nOPEN 时的权威来源：{authority}{source}",
+      "es": "Revisión cargada: {revision}\nGuardado: {saved}\nAutoridad al ABRIR: {authority}{source}",
+      "ja": "読み込んだ保存リビジョン: {revision}\n保存: {saved}\nOPEN 時の権威: {authority}{source}"
+    },
+    "model_editor.save_stamp.source_suffix": {
+      "en": "\nSOURCE folder: {source}",
+      "ru": "\nпапка SOURCE: {source}",
+      "zh-Hans": "\nSOURCE 文件夹：{source}",
+      "es": "\ncarpeta SOURCE: {source}",
+      "ja": "\nSOURCE フォルダ: {source}"
+    },
+    "model_editor.save_stamp.legacy_unsaved": {
+      "en": "legacy/unsaved",
+      "ru": "устаревшее/не сохранено",
+      "zh-Hans": "旧版/未保存",
+      "es": "heredado/sin guardar",
+      "ja": "旧形式/未保存"
     }
   }
 }

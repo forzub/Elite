@@ -1,80 +1,48 @@
 # Elite — CURRENT STATE
 
 **Updated:** 2026-09-14
-**Authoritative working branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Model Asset Editor candidate:** v0.10.78
+**Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
+**Editor candidate:** v0.10.79
+**Whole-editor separation:** ~90%
 
-## Accepted / frozen baseline
+## Verified baseline entering this pass
 
-- SOURCE / LODS / GEOMETRY / SURFACES remain accepted unless a regression forces a targeted repair.
-- SEMANTICS compact workflow remains accepted.
-- MODEL ROOT is implicit identity root and is not serialized as a semantic node.
-- PHYSICS is Model Asset authoring metadata; game-world runtime simulation is out of scope here.
-- production Model Asset binary remains v4; v5 remains draft.
+User reported the complete v0.10.78 architecture test set PASS and local `EliteAssetEditor` build completed successfully.
 
-## User-local verification before v0.10.78
+## v0.10.79 viewport-core candidate
 
-On 2026-09-14 the user verified v0.10.77 locally:
+This pass moves the renderer-owned core out of `model_asset_editor.html`:
 
-```text
-MODEL ASSET EDITOR APPLICATION STATE: PASS
-MODEL ASSET EDITOR ORCHESTRATION LAYERS: PASS
-MODEL ASSET EDITOR TRANSPORT LAYERS: PASS
-MODEL ASSET SEMANTICS WORKSPACE LAYOUT: PASS
-```
+- scene/bootstrap lifecycle, resize/render loop, world axes, raycaster and camera fit -> `viewport/runtime.js`;
+- geometry cache, BufferGeometry construction, surface preview materials and raw/working geometry selection -> `viewport/geometry.js`;
+- `rebuildScene` and render-node visibility orchestration -> `viewport/scene.js`;
+- cyclic legacy dependencies between LOD/SEMANTICS effects and scene rebuild are contained by a narrow late-bound `viewport/scene_bridge.js` instead of putting renderer implementation back into the shell.
 
-The local CMake build reconfigured for the new transport JS files, regenerated the UI resource pack, linked `EliteAssetEditor.exe`, and staged the MinGW runtime without an error in the supplied log. A manual runtime smoke was not explicitly reported.
+Existing transport, session/persistence and application-state boundaries remain unchanged.
 
-## Whole-editor decomposition
+## Remaining renderer work
 
-Current completed boundaries:
+The shell still owns specialized viewport adapters that are coupled to feature UI:
 
-1. authoritative application state / reducer / controller;
-2. dedicated application bootstrap;
-3. workflow transition effect adapter;
-4. declarative workflow stage renderer registry;
-5. WebSocket lifecycle and reconnect;
-6. JSON command + diagnostic transport;
-7. ELWIR001 binary codec and binary transfer bookkeeping;
-8. declarative backend JSON message router;
-9. asset metadata/full-payload acceptance effect;
-10. WORKING SAVE persistence acknowledgement;
-11. settings persistence acknowledgement/error handling.
+- edge and normal overlays;
+- collision / structural proxy / socket THREE materialization;
+- socket camera preview;
+- picking decision/effect wiring;
+- some semantic gizmo integration remains in the existing semantics effect layer.
 
-Dependency direction:
+These are the next extraction target. After that, physically move `EditorViewState` and the visibility adapters out of the HTML shell, then perform final shell cleanup.
 
-```text
-UI / feature command
-        ↓
-application / workflow
-        ↓
-command transport
-        ↓
-WebSocket/backend
+## Acceptance
 
-backend JSON / binary
-        ↓
-transport decode
-        ↓
-session message router
-        ↓
-asset / persistence / feature effects
-        ↓
-view + authored asset state
-```
+GitHub candidate validation must pass:
 
-Transport does not own backend message semantics. Session/persistence effects do not construct WebSocket or THREE runtime objects.
+- `git diff --check`;
+- application-state architecture;
+- orchestration architecture;
+- transport architecture;
+- session/persistence architecture;
+- viewport architecture;
+- SEMANTICS workspace layout;
+- JS syntax for new viewport modules.
 
-## Progress
-
-Estimated whole-editor physical separation after v0.10.78: **~83% by architectural layers**.
-
-Remaining large surfaces:
-
-- THREE / viewport runtime and scene lifecycle;
-- physical extraction of `EditorViewState` plus remaining view adapters;
-- final HTML shell cleanup / architecture closure.
-
-## Binary subsystem parallel debt
-
-The binary subsystem is logically split but still needs its independent-CMake-translation-unit closure: direct source registration, removal of `.cpp` aggregation, architecture-contract update, then v4 save/load build smoke.
+Local acceptance remains the authoritative C++/pack/runtime gate.

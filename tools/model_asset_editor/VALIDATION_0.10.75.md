@@ -1,0 +1,13 @@
+# v0.10.75 validation commands
+
+```bash
+python tests/architecture_contracts/check_model_asset_v01075_workflow_motion_contract.py
+python tests/architecture_contracts/check_model_asset_v01074_ui_chrome.py
+python tests/architecture_contracts/check_model_asset_v01073_semantics_effect.py
+python tests/architecture_contracts/check_model_asset_dependency_ownership.py
+python tests/architecture_contracts/check_model_asset_physical_modules.py
+python tests/architecture_contracts/check_model_asset_module_ownership.py
+python tests/architecture_contracts/check_model_asset_editor_view_state.py
+python tests/architecture_contracts/check_model_asset_editor.py
+cmake --build build/tools/model_asset_editor --target EliteAssetEditor
+```

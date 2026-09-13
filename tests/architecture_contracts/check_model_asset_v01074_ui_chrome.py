@@ -7,23 +7,27 @@ ROOT = Path(__file__).resolve().parents[2]
 VERSION = (ROOT / 'tools/model_asset_editor/EditorVersion.h').read_text(encoding='utf-8')
 HTML = (ROOT / 'src/assets/webui/model_asset_editor.html').read_text(encoding='utf-8')
 MODEL_REL = 'src/assets/webui/model_asset_editor/ui/chrome_model.js'
-EFFECT_REL = 'src/assets/webui/model_asset_editor/effects/ui_chrome.js'
+EFFECT_REL = 'src/assets/webui/model_asset_editor/effects/ui_chrome_base.js'
+COMPOSITION_REL = 'src/assets/webui/model_asset_editor/effects/ui_chrome.js'
 I18N_REL = 'src/assets/webui/model_asset_editor/effects/i18n.js'
 MODEL = (ROOT / MODEL_REL).read_text(encoding='utf-8')
 EFFECT = (ROOT / EFFECT_REL).read_text(encoding='utf-8')
+COMPOSITION = (ROOT / COMPOSITION_REL).read_text(encoding='utf-8')
 I18N = (ROOT / I18N_REL).read_text(encoding='utf-8')
 
-if 'ModelAssetEditorVersion = "0.10.74"' not in VERSION:
-    raise AssertionError('editor version is not 0.10.74')
+if 'ModelAssetEditorVersion = "0.10.75"' not in VERSION:
+    raise AssertionError('editor version is not 0.10.75')
 
-for path in (ROOT / MODEL_REL, ROOT / EFFECT_REL):
+for path in (ROOT / MODEL_REL, ROOT / EFFECT_REL, ROOT / COMPOSITION_REL):
     if not path.is_file():
         raise AssertionError(f'missing UI chrome module: {path.relative_to(ROOT)}')
 
 if "import './ui_chrome.js';" not in I18N:
-    raise AssertionError('I18N effect must load the shared UI chrome effect')
+    raise AssertionError('I18N effect must load the shared UI chrome composition effect')
 if I18N.count("import './ui_chrome.js';") != 1:
     raise AssertionError('UI chrome bootstrap import must occur exactly once')
+if "import './ui_chrome_base.js';" not in COMPOSITION:
+    raise AssertionError('v0.10.75 UI composition must preserve the accepted v0.10.74 chrome adapter')
 
 # UI chrome is a new subsystem born physically separated. It must not be copied
 # into the composition HTML or any frozen stage-core/presentation module.
@@ -46,7 +50,7 @@ for rel in (
 
 # New modules deliberately expose anonymous object APIs so the established
 # 546 named-function ownership census is not re-opened by visual chrome work.
-for rel,source in ((MODEL_REL,MODEL),(EFFECT_REL,EFFECT)):
+for rel,source in ((MODEL_REL,MODEL),(EFFECT_REL,EFFECT),(COMPOSITION_REL,COMPOSITION)):
     if re.search(r'\bfunction\s+[A-Za-z_$][\w$]*\s*\(', source):
         raise AssertionError(f'new UI module introduced owned named functions without an ownership wave: {rel}')
 
@@ -81,4 +85,4 @@ for token in ('webui/model_asset_editor/*.js','--include model_asset_editor/*.js
     if token not in CMAKE:
         raise AssertionError(f'UI module deployment glob missing {token!r}')
 
-print('[PASS] Model Asset Editor v0.10.74 UI chrome: all wizard tabs + shared side sections use reusable high-tech chrome/context help; stage cores remain untouched')
+print('[PASS] Model Asset Editor v0.10.74 UI chrome preserved under v0.10.75: reusable high-tech chrome/context help remains physically separated and stage cores remain untouched')

@@ -5,69 +5,90 @@
 
 ## Immediate goal
 
-Verify the first whole-application state-control pass, then continue physical extraction of orchestration from `model_asset_editor.html` without changing accepted editor behavior.
+Continue the whole-editor decomposition now that the first authoritative application-state pass is verified. The next wave is physical extraction of orchestration from `model_asset_editor.html` without changing accepted behavior.
 
-## Current candidate — application state authority
+## Verified baseline
 
-The active candidate introduces:
+The following contracts were run by the user on 2026-09-13 and PASS:
 
-- explicit application actions;
-- canonical workflow state machine;
-- pure application reducer;
-- application store;
-- application controller;
-- selectors/snapshot;
-- compatibility projection over the current legacy `state` object.
+```text
+MODEL ASSET EDITOR APPLICATION STATE: PASS
+ - canonical workflow is reducer/store/controller driven
+ - PHYSICS is part of the asset-authoring workflow
+ - legacy state writes project into authoritative application state
+ - EditorViewState remains the viewport/view-state authority
+ - reducer/controller layers are free of DOM/THREE/RPC effects
 
-Canonical workflow:
+MODEL ASSET SEMANTICS WORKSPACE LAYOUT: PASS
+ - TREE and GRAPH workspaces use the compact workflow bar
+ - CHECK is the final workflow action
+ - explanatory banners are removed from the primary workspace
+ - existing semantic control IDs and bindings are preserved
+```
+
+Canonical workflow remains:
 
 `SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD`
 
-`PHYSICS` remains asset-authoring metadata. Game-world runtime simulation is out of scope.
+`PHYSICS` is asset-authoring metadata. Game-world runtime simulation remains out of scope.
 
-### Required invariant
+## Current architecture invariant
 
-UI/feature/effect code may request or assign a control change through the compatibility surface, but the authoritative value must be owned by:
+Authoritative application control state is owned by:
 
 `action -> ApplicationController -> reducer/store -> selector`
 
-DOM, THREE, backend `send`, filesystem and timers must not enter the reducer/controller layers.
+`EditorViewState` remains authoritative for active LOD, view selection, visibility/isolation and loaded/resident LODs.
 
-`EditorViewState` remains the authority for active LOD, view selection, visibility/isolation and loaded/resident LODs.
+Authored ModelAsset data, THREE objects, geometry caches, backend handles, filesystem I/O and timers must stay outside the pure application reducer/controller.
 
-## Verification now
+## Next decomposition wave
 
-Run from the repository root:
+Do these in order:
+
+1. create a dedicated application bootstrap and remove application-state installation from the temporary i18n hook;
+2. extract top-level stage transition/re-render side effects from `model_asset_editor.html` into an application/effect adapter;
+3. replace `renderWizardPanelContents()` stage `if(stage===...)` dispatch with a declarative stage renderer registry;
+4. preserve locked-stage behavior and the existing `EditorViewState` invariants during every stage transition;
+5. then separate backend/session/persistence effects;
+6. then separate THREE viewport orchestration;
+7. keep shrinking `model_asset_editor.html` toward static markup + bootstrap imports.
+
+### Existing shell debt to remove
+
+The HTML shell still owns:
+
+- `setWizardStage(...)` transition orchestration;
+- `renderWizardPanelContents()` stage `if` chain;
+- stage-specific redraw fan-out after a transition;
+- part of backend/session/persistence orchestration;
+- part of THREE scene orchestration.
+
+The state itself is no longer owned by those functions; this wave removes the remaining imperative shell routing.
+
+## Verification for the next candidate
+
+Keep these contracts green:
 
 ```bash
 python tests/architecture_contracts/check_model_asset_editor_application_state.py
 python tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py
+```
+
+Add/extend an architecture contract so the next candidate rejects:
+
+- application-state bootstrap from `effects/i18n.js`;
+- stage-render `if(stage===...)` chains in the HTML shell;
+- new DOM/THREE/RPC dependencies in reducer/controller modules.
+
+Then run:
+
+```bash
 cmake --build build/tools/model_asset_editor --target EliteAssetEditor -j 8
 ./build/tools/model_asset_editor/bin/EliteAssetEditor.exe
 ```
 
-Manual smoke:
-
-- open an asset and walk SOURCE -> LODS -> GEOMETRY -> SURFACES -> SEMANTICS -> PHYSICS -> DAMAGE -> VALIDATE -> BUILD where enabled;
-- move backward between stages;
-- verify locked-stage behavior is unchanged;
-- switch LODs and verify selection/visibility preservation;
-- verify dirty/busy UI still changes normally during commands;
-- switch locale;
-- switch SEMANTICS TREE/GRAPH and use CHECK;
-- edit PHYSICS controls and return to SEMANTICS;
-- save/reload the asset.
-
-## Next decomposition wave after this smoke
-
-1. create a dedicated application bootstrap and remove state installation from the temporary i18n hook;
-2. extract the body of top-level stage transition/render orchestration from `model_asset_editor.html` into application/effect adapters;
-3. replace the stage-view `if(stage===...)` chain with a declarative stage renderer registry;
-4. separate backend/session/persistence effects;
-5. separate THREE viewport orchestration;
-6. keep shrinking `model_asset_editor.html` toward static markup + bootstrap imports.
-
-Do **not** move authored ModelAsset data, THREE objects, geometry caches or backend handles into the application reducer merely to make everything look centralized.
+Manual smoke should walk all enabled workflow stages forward/backward, verify locked tabs, LOD/selection preservation, SEMANTICS TREE/GRAPH, PHYSICS editing, locale switching and save/reload.
 
 ## Parallel technical debt
 
@@ -78,4 +99,4 @@ Binary data architecture is logically split but still needs the independent-CMak
 - update stale binary aggregate contract;
 - build and smoke-test v4 save/load.
 
-This remains separate from the current editor application-state pass.
+This remains separate from the editor application-state/orchestration pass.

@@ -2,24 +2,12 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.79
-**Whole-editor separation:** ~90%
+**Editor candidate:** v0.10.80
+**Whole-editor separation:** ~96%
 
 ## Immediate goal
 
-Verify the v0.10.79 viewport-core split, then finish the remaining renderer adapters and extract `EditorViewState`.
-
-## v0.10.79 viewport-core pass
-
-Expected complete boundaries:
-
-- scene/bootstrap lifecycle is outside `model_asset_editor.html`;
-- renderer resize/frame loop and world axes are viewport runtime responsibilities;
-- raycaster and camera-fit behavior are viewport runtime responsibilities;
-- geometry cache and THREE BufferGeometry/material creation are outside the shell;
-- `rebuildScene` and visibility orchestration are outside the shell;
-- LOD/SEMANTICS keep their domain calculations and call renderer effects through a narrow scene bridge;
-- transport/session/application modules remain independent of THREE.
+Verify the v0.10.80 renderer-adapter split, then perform the final WebUI architecture closure: **extract EditorViewState + visibility projection adapters + invariant scheduling and reduce the HTML to composition/bootstrap**.
 
 ## Verification
 
@@ -31,30 +19,24 @@ python tests/architecture_contracts/check_model_asset_editor_orchestration_layer
 python tests/architecture_contracts/check_model_asset_editor_transport_layers.py
 python tests/architecture_contracts/check_model_asset_editor_session_layers.py
 python tests/architecture_contracts/check_model_asset_editor_viewport_layers.py
+python tests/architecture_contracts/check_model_asset_editor_viewport_adapters.py
 python tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py
 cmake --build build/tools/model_asset_editor --target EliteAssetEditor
 ./build/tools/model_asset_editor/bin/EliteAssetEditor.exe
 ```
 
-Manual smoke should include open asset, LOD switching, SOURCE/WORKING viewport mode, fit view, geometry visibility/isolation, SURFACES material preview, SEMANTICS motion preview, collision/socket visibility, SAVE/RESTORE and reconnect.
-
-## Next decomposition wave — renderer adapters
-
-1. extract edge and normal overlays;
-2. extract collision / structural proxy / socket rendering;
-3. extract socket-camera preview and viewport picking wiring;
-4. keep PHYSICS / DAMAGE / SEMANTICS calculations in their feature domains and expose only render plans to viewport adapters.
-
-Expected progress after renderer-adapter extraction: **95–96%**.
+Manual smoke: open asset, LOD switching, visibility/isolation, edge edit, normals, collision selection/editing, socket selection/camera preview, semantic TREE/GRAPH picking and pivot picking, SOURCE/WORKING viewport, SAVE/RESTORE/reconnect.
 
 ## Final WebUI closure
 
-- move `EditorViewState`, visibility adapters and invariant scheduling out of HTML;
-- reduce `model_asset_editor.html` to markup, imports, composition/bootstrap and minimal DOM binding;
-- add a final shell contract rejecting application/session/transport/viewport implementations in HTML.
+1. move `ProjectedVisibilitySet`, `EditorVisibilityMapAdapter`, `HiddenRenderNodeAdapter`, and `EditorViewState` to a dedicated view-state module;
+2. move invariant scheduling and state projection glue out of HTML where practical;
+3. keep the application reducer free of THREE/DOM and preserve EditorViewState as viewport state authority;
+4. add final shell contract rejecting application/session/transport/viewport implementation functions in `model_asset_editor.html`;
+5. reduce the remaining script to imports, composition, small DOM binding and feature UI functions that have not yet justified a standalone domain module.
 
-Expected WebUI architecture completion after this closure: **~100%**.
+Expected WebUI separation after closure: **~100%**.
 
 ## Parallel binary debt
 
-After WebUI closure, finish the independent-CMake-translation-unit gate for the production v4 binary subsystem. This is tracked separately from the WebUI separation percentage.
+After WebUI closure, finish the independent-CMake-translation-unit gate for the production v4 binary subsystem.

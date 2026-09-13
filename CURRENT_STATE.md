@@ -51,7 +51,13 @@ The compact visual workflow is now the accepted baseline:
 Contract:
 `tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py`
 
-## Application-state control pass
+User verification on 2026-09-13:
+
+```text
+MODEL ASSET SEMANTICS WORKSPACE LAYOUT: PASS
+```
+
+## Application-state control pass — verified
 
 The editor now has an explicit application control layer under:
 
@@ -75,21 +81,32 @@ The current shell still contains expressions such as `state.wizardStage = ...`, 
 
 Authored `ModelAsset` data and non-serializable runtime/effect objects (THREE scenes/groups, geometry caches, timers, WebSocket/backend transport, filesystem) intentionally stay outside the application reducer.
 
-### Temporary bootstrap bridge
-
-`effects/i18n.js` currently invokes `installApplicationState(state)` because its factory is the first stable effect bootstrap after the legacy state object is created. This is explicitly temporary. Once the HTML shell is extracted, installation must move to the dedicated application bootstrap.
-
 Architecture document:
 `src/assets/webui/model_asset_editor/APP_STATE_ARCHITECTURE.md`
 
 Contract:
 `tests/architecture_contracts/check_model_asset_editor_application_state.py`
 
-The new contract/build/runtime smoke have **not** been executed in the assistant environment and must be run on the user's checkout.
+User verification on 2026-09-13:
+
+```text
+MODEL ASSET EDITOR APPLICATION STATE: PASS
+ - canonical workflow is reducer/store/controller driven
+ - PHYSICS is part of the asset-authoring workflow
+ - legacy state writes project into authoritative application state
+ - EditorViewState remains the viewport/view-state authority
+ - reducer/controller layers are free of DOM/THREE/RPC effects
+```
+
+The WebUI incremental build also regenerated the UI pack/fallback successfully before these contract runs. A full manual runtime smoke is still useful as the application shell is physically extracted.
+
+### Temporary bootstrap bridge
+
+`effects/i18n.js` currently invokes `installApplicationState(state)` because its factory is the first stable effect bootstrap after the legacy state object is created. This is explicitly temporary. Once the HTML shell is extracted, installation must move to the dedicated application bootstrap.
 
 ## Remaining whole-editor decomposition
 
-State authority is now explicit, but physical orchestration is not fully extracted yet. Next decomposition boundary:
+State authority is verified; physical orchestration is the next target:
 
 1. move application bootstrap out of the i18n migration hook;
 2. move stage transition/re-render side effects out of `model_asset_editor.html` into application/effect adapters;

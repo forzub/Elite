@@ -69,11 +69,11 @@
       "ja": "アセット未選択"
     },
     "model_editor.connecting": {
-      "en": "connecting…",
-      "ru": "подключение…",
-      "zh-Hans": "正在连接…",
-      "es": "conectando…",
-      "ja": "接続中…"
+      "en": "Connecting to editor backend…",
+      "ru": "Подключение к backend редактора…",
+      "zh-Hans": "正在连接编辑器后端…",
+      "es": "Conectando con el backend del editor…",
+      "ja": "エディターのバックエンドに接続中…"
     },
     "model_editor.ready": {
       "en": "Ready",
@@ -427,10 +427,10 @@
     },
     "model_editor.action.save_manifest": {
       "en": "Save manifest",
-      "ru": "Сохранить manifest",
+      "ru": "Сохранить манифест",
       "zh-Hans": "保存清单",
       "es": "Guardar manifiesto",
-      "ja": "manifest 保存"
+      "ja": "マニフェストを保存"
     },
     "model_editor.action.ring": {
       "en": "+ RING",
@@ -791,10 +791,10 @@
     },
     "model_editor.command.save_manifest": {
       "en": "save manifest",
-      "ru": "сохранение manifest",
+      "ru": "сохранение манифеста",
       "zh-Hans": "保存清单",
       "es": "guardar manifiesto",
-      "ja": "manifest 保存"
+      "ja": "マニフェスト保存"
     },
     "model_editor.command.save_lod": {
       "en": "save LOD",
@@ -1029,10 +1029,10 @@
     },
     "model_editor.lod.shared_note": {
       "en": "Each LOD is a separate .elmesh document. Node → Geometry instance links are stored in the shared manifest and automatically apply to every LOD.",
-      "ru": "Каждый LOD — отдельный .elmesh. Связи экземпляров Node → Geometry хранятся в общем manifest и автоматически действуют для всех LOD.",
-      "zh-Hans": "每个 LOD 都是独立的 .elmesh。Node → Geometry 实例关联存于共享 manifest，并自动应用到所有 LOD。",
-      "es": "Cada LOD es un .elmesh independiente. Los enlaces Node → Geometry se guardan en el manifest compartido y se aplican automáticamente a todos los LOD.",
-      "ja": "各 LOD は独立した .elmesh です。Node → Geometry のインスタンス関連は共有 manifest に保存され、全 LOD に自動適用されます。"
+      "ru": "Каждый LOD — отдельный документ .elmesh. Связи экземпляров Node → Geometry хранятся в общем манифесте и автоматически действуют для всех LOD.",
+      "zh-Hans": "每个 LOD 都是独立的 .elmesh 文档。Node → Geometry 实例关联存储在共享清单中，并自动应用到所有 LOD。",
+      "es": "Cada LOD es un documento .elmesh independiente. Los enlaces de instancia Node → Geometry se guardan en el manifiesto compartido y se aplican automáticamente a todos los LOD.",
+      "ja": "各 LOD は独立した .elmesh ドキュメントです。Node → Geometry のインスタンス関連は共有マニフェストに保存され、すべての LOD に自動適用されます。"
     },
     "model_editor.geometry.used": {
       "en": "USED",
@@ -1232,17 +1232,17 @@
     },
     "model_editor.v4.section.lods": {
       "en": "Render LOD files",
-      "ru": "Файлы Render LOD",
-      "zh-Hans": "Render LOD 文件",
-      "es": "Archivos Render LOD",
-      "ja": "Render LOD ファイル"
+      "ru": "Файлы LOD рендера",
+      "zh-Hans": "LOD 渲染文件",
+      "es": "Archivos LOD de renderizado",
+      "ja": "LOD 描画ファイル"
     },
     "model_editor.v4.section.render_assembly": {
       "en": "Render assembly",
-      "ru": "Render-сборка",
+      "ru": "Сборка рендера",
       "zh-Hans": "渲染装配",
-      "es": "Ensamblaje render",
-      "ja": "レンダー構成"
+      "es": "Ensamblaje de renderizado",
+      "ja": "描画アセンブリ"
     },
     "model_editor.v4.render_assembly.hint": {
       "en": "This hierarchy belongs only to the active LOD. Other LODs may have a completely different graph.",
@@ -1266,18 +1266,18 @@
       "ja": "G# はこの LOD 内だけの番号です。Geometry ID とインスタンスは他の LOD に伝播しません。"
     },
     "model_editor.v4.lod.active_hint": {
-      "en": "Statistics below describe only the active render document.",
-      "ru": "Статистика ниже относится только к активному render-документу.",
-      "zh-Hans": "以下统计仅描述当前渲染文档。",
-      "es": "Las estadísticas siguientes describen solo el documento render activo.",
-      "ja": "以下の統計はアクティブなレンダードキュメントだけを示します。"
+      "en": "Statistics below describe only the currently loaded render document.",
+      "ru": "Статистика ниже относится только к текущему загруженному документу рендера.",
+      "zh-Hans": "以下统计仅描述当前已加载的渲染文档。",
+      "es": "Las estadísticas siguientes describen solo el documento de renderizado cargado actualmente.",
+      "ja": "以下の統計は現在読み込まれている描画ドキュメントだけを示します。"
     },
     "model_editor.v4.lod.independent_note": {
       "en": "Every LOD is an independent render document: its own hierarchy, geometry pool and instances. Semantic gameplay parts stay in the manifest.",
-      "ru": "Каждый LOD — независимый render-документ со своей иерархией, набором геометрии и экземплярами. Игровые семантические части остаются в manifest.",
-      "zh-Hans": "每个 LOD 都是独立渲染文档，拥有自己的层级、几何池和实例。游戏语义部件保留在 manifest 中。",
-      "es": "Cada LOD es un documento render independiente con su propia jerarquía, geometría e instancias. Las piezas semánticas quedan en el manifest.",
-      "ja": "各 LOD は独立したレンダードキュメントで、独自の階層・ジオメトリプール・インスタンスを持ちます。ゲーム用セマンティック部品は manifest に残ります。"
+      "ru": "Каждый LOD — независимый документ рендера со своей иерархией, набором геометрии и экземплярами. Игровые семантические части остаются в манифесте.",
+      "zh-Hans": "每个 LOD 都是独立的渲染文档，拥有自己的层级、几何池和实例。游戏语义部件保留在清单中。",
+      "es": "Cada LOD es un documento de renderizado independiente con su propia jerarquía, conjunto de geometría e instancias. Las piezas semánticas del juego permanecen en el manifiesto.",
+      "ja": "各 LOD は独立した描画ドキュメントで、独自の階層・ジオメトリプール・インスタンスを持ちます。ゲーム用セマンティック部品はマニフェストに残ります。"
     },
     "model_editor.v4.section.selected_semantic": {
       "en": "Selected semantic node",
@@ -4790,7 +4790,7 @@
       "en": "production manifest",
       "ru": "производственный манифест",
       "zh-Hans": "生产清单",
-      "es": "manifest de producción",
+      "es": "manifiesto de producción",
       "ja": "本番マニフェスト"
     },
     "model_editor.wizard.build_lods": {
@@ -7364,10 +7364,10 @@
     },
     "model_editor.lod_workspace.lod_help": {
       "en": "Each LOD is an independent render document. PREPARE, visibility and mesh selection below apply to the active LOD.",
-      "ru": "Каждый LOD — независимый render-документ. PREPARE, видимость и выбор mesh ниже относятся к активному LOD.",
-      "zh-Hans": "每个 LOD 都是独立的渲染文档。下方的 PREPARE、可见性和网格选择仅作用于活动 LOD。",
-      "es": "Cada LOD es un documento de render independiente. PREPARE, la visibilidad y la selección de malla de abajo se aplican al LOD activo.",
-      "ja": "各 LOD は独立したレンダードキュメントです。下の PREPARE、表示、メッシュ選択はアクティブ LOD に適用されます。"
+      "ru": "Каждый LOD — независимый документ рендера. ПОДГОТОВКА, видимость и выбор мешей ниже относятся к активному LOD.",
+      "zh-Hans": "每个 LOD 都是独立的渲染文档。下方的准备、可见性和网格选择仅作用于当前 LOD。",
+      "es": "Cada LOD es un documento de renderizado independiente. PREPARAR, la visibilidad y la selección de mallas de abajo se aplican al LOD activo.",
+      "ja": "各 LOD は独立した描画ドキュメントです。下の準備、表示状態、メッシュ選択はアクティブ LOD にだけ適用されます。"
     },
     "model_editor.preflight.action.manual_fix": {
       "en": "MANUAL FIX",
@@ -9149,10 +9149,10 @@
     },
     "model_editor.storage.working_manifest": {
       "en": "WORKING manifest",
-      "ru": "манифест WORKING",
-      "zh-Hans": "WORKING 清单",
-      "es": "manifiesto WORKING",
-      "ja": "WORKING マニフェスト"
+      "ru": "рабочий манифест",
+      "zh-Hans": "工作清单",
+      "es": "manifiesto de trabajo",
+      "ja": "作業マニフェスト"
     },
     "model_editor.storage.working_lod": {
       "en": "WORKING LOD{lod} .elmesh",
@@ -9965,6 +9965,55 @@
       "zh-Hans": "舰尾",
       "es": "POPA",
       "ja": "尾部"
+    },
+    "model_editor.version.asset": {
+      "en": "asset v{version}",
+      "ru": "модель v{version}",
+      "zh-Hans": "资源 v{version}",
+      "es": "recurso v{version}",
+      "ja": "アセット v{version}"
+    },
+    "model_editor.status.working_revision": {
+      "en": "WORKING r{revision}",
+      "ru": "РАБОЧАЯ r{revision}",
+      "zh-Hans": "工作版本 r{revision}",
+      "es": "TRABAJO r{revision}",
+      "ja": "作業版 r{revision}"
+    },
+    "model_editor.lod.kind.source": {
+      "en": "SOURCE",
+      "ru": "ИСТОЧНИК",
+      "zh-Hans": "源",
+      "es": "ORIGEN",
+      "ja": "ソース"
+    },
+    "model_editor.lod.kind.generated": {
+      "en": "GENERATED",
+      "ru": "СГЕНЕРИРОВАН",
+      "zh-Hans": "生成",
+      "es": "GENERADO",
+      "ja": "生成"
+    },
+    "model_editor.lod.kind.manual": {
+      "en": "MANUAL",
+      "ru": "РУЧНОЙ",
+      "zh-Hans": "手动",
+      "es": "MANUAL",
+      "ja": "手動"
+    },
+    "model_editor.lod.kind.working": {
+      "en": "WORKING",
+      "ru": "РАБОЧИЙ",
+      "zh-Hans": "工作版",
+      "es": "TRABAJO",
+      "ja": "作業版"
+    },
+    "model_editor.lod.kind.production": {
+      "en": "PRODUCTION",
+      "ru": "ПРОДАКШЕН",
+      "zh-Hans": "生产版",
+      "es": "PRODUCCIÓN",
+      "ja": "本番"
     }
   }
 }

@@ -21,7 +21,10 @@ function createEditorTransport({
  });
  const websocket=createWebSocketLifecycle({
   WebSocketClass,locationObject,setTimeoutFn,
-  beforeConnect:transfers.clear,
+  beforeConnect:()=>{
+   transfers.clear();
+   status(tr('model_editor.connecting','Connecting to editor backend…'),'','idle');
+  },
   onOpen:()=>{
    status(tr('model_editor.connected','connected'),'ok','idle');
    diagnostics.flush();

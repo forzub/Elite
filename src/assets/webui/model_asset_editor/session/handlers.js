@@ -149,7 +149,7 @@ function createEditorSessionMessageHandlers({
   settings_saved:handleSettingsSaved,
   catalog:msg=>{
    state.catalog=msg.items||[];
-   $('versionBadge').textContent=`v${msg.editorVersion||'?'} · asset v${msg.assetFormatVersion||'?'}`;
+   $('versionBadge').textContent=`v${msg.editorVersion||'?'} · ${tr('model_editor.version.asset','asset v{version}',{version:msg.assetFormatVersion||'?'})}`;
    renderCatalog();
   },
   progress:msg=>{

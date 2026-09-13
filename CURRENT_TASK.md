@@ -2,34 +2,26 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.83
+**Editor candidate:** v0.10.84
 **WebUI architecture:** ~100%
 
 ## Immediate goal
 
-Acceptance-test localization completeness across all five locales. Verify switching before any asset is selected, permanent `Ctrl+Alt+F12` hint, settings persistence, static shell, contextual `?` help, SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS/PHYSICS/DAMAGE, axis legend, storage panel and representative backend status messages.
+Acceptance-test v0.10.84 localization/runtime fixes:
 
-English fallback is valid only when the requested locale has no translation. A non-English catalog field populated with copied English prose is a defect.
+- switch language from the toolbar before selecting any asset;
+- verify `Ctrl+Alt+F12` and Settings language remain synchronized;
+- verify the viewport axis legend changes language immediately;
+- verify connection status says what it is connecting to and is not reset to `connecting` by locale refresh;
+- enter SURFACES, press ANALYZE SURFACES, receive the result and continue editing without a JS exception/reconnect loop;
+- check the visible LOD/right-panel strings in all five locales.
 
-## Normal iteration gate
+## Local gate
 
 ```bash
 python tests/architecture_contracts/run_model_asset_editor_impacted.py --base HEAD^
-```
-
-## Full gate for v0.10.83
-
-```bash
-python tests/architecture_contracts/check_model_asset_editor_application_state.py
-python tests/architecture_contracts/check_model_asset_editor_orchestration_layers.py
-python tests/architecture_contracts/check_model_asset_editor_transport_layers.py
-python tests/architecture_contracts/check_model_asset_editor_session_layers.py
-python tests/architecture_contracts/check_model_asset_editor_viewport_layers.py
-python tests/architecture_contracts/check_model_asset_editor_viewport_adapters.py
-python tests/architecture_contracts/check_model_asset_editor_view_state_layers.py
-python tests/architecture_contracts/check_model_asset_editor_shell_architecture.py
 python tests/architecture_contracts/check_model_asset_editor_localization.py
-python tests/architecture_contracts/check_model_asset_semantics_workspace_layout.py
+python tests/architecture_contracts/check_model_asset_editor_surface_runtime.py
 cmake --build build/tools/model_asset_editor --target EliteAssetEditor
 ./build/tools/model_asset_editor/bin/EliteAssetEditor.exe
 ```

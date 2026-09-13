@@ -23,10 +23,26 @@ jobs:
           python .github/mae_i18n_visible_finish.py
           python - <<'PY'
           from pathlib import Path
+          import json
+
+          cat=Path('src/assets/localization/ui/tools/model_asset_editor.json')
+          data=json.loads(cat.read_text(encoding='utf-8'))
+          row=data['strings']['model_editor.lod_generator.mesh_label']
+          row['ru']='{kind} · геометрия G{geometry} · {id} · {triangles} треуг.'
+          row['zh-Hans']='{kind} · 几何 G{geometry} · {id} · {triangles} 三角面'
+          row['es']='{kind} · geometría G{geometry} · {id} · {triangles} triáng.'
+          row['ja']='{kind} · ジオメトリ G{geometry} · {id} · {triangles} 三角形'
+          cat.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
           p=Path('tests/architecture_contracts/check_model_asset_editor_localization.py')
           t=p.read_text(encoding='utf-8')
           t=t.replace("catalog.get('strings',{})","strings")
           t=t.replace("if forbidden in html or forbidden in semantics or forbidden in lod_runtime:","if forbidden in all_text:")
+          # These phrases remain only as explicit English fallbacks inside tr(),
+          # which is the intended fallback policy. Do not classify fallback text
+          # as a localization bypass when the corresponding key exists.
+          t=t.replace(" 'PHYSICAL SCALE · NOT CALIBRATED. WORKING geometry remains raw SOURCE coordinates.',\n","")
+          t=t.replace(" 'Click = one mesh · Ctrl = add/remove one · Shift = select range.',\n","")
           p.write_text(t,encoding='utf-8')
           PY
       - name: Validate

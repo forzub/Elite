@@ -6,7 +6,7 @@ const gameAxisLabels={'+X':'+X · RIGHT','-X':'-X · LEFT','+Y':'+Y · UP','-Y':
 function activeLodAxisMapping(lod){return sourceBasisMappingFromPreset(lod?.sourceBasisPreset||'game_current');}
 function activeLodDirectAxisMapping(lod){return directAxisMappingFromSemantic(activeLodAxisMapping(lod));}
 function axisFamily(token){return String(token||'').slice(-1);}
-function axisMappingSummary(mapping){const line=axis=>{const target=mapping[axis.toLowerCase()],opposite=oppositeAxisToken(target);return `SOURCE +${axis} → GAME ${target} · ${gameAxisMeaning(target)}   |   SOURCE -${axis} → GAME ${opposite} · ${gameAxisMeaning(opposite)}`;};return `${line('X')}\n${line('Y')}\n${line('Z')}`;}
+function axisMappingSummary(mapping,labels={}){const source=String(labels.source||'SOURCE'),game=String(labels.game||'GAME'),meaning=typeof labels.meaning==='function'?labels.meaning:gameAxisMeaning;const line=axis=>{const target=mapping[axis.toLowerCase()],opposite=oppositeAxisToken(target);return `${source} +${axis} → ${game} ${target} · ${meaning(target)}   |   ${source} -${axis} → ${game} ${opposite} · ${meaning(opposite)}`;};return `${line('X')}\n${line('Y')}\n${line('Z')}`;}
 function axisRotationStepLabel(axis,degrees){const d=Number(degrees);return `${String(axis).toUpperCase()} ${d>0?'+':''}${d}°`;}
 function directAxisMappingFromSemantic(mapping){const out={x:null,y:null,z:null};const assign=(sourceToken,gameToken)=>{const family=axisFamily(sourceToken).toLowerCase();out[family]=String(sourceToken).startsWith('-')?oppositeAxisToken(gameToken):gameToken;};assign(mapping.right,'+X');assign(mapping.up,'+Y');assign(mapping.forward,'-Z');return out;}
 function directAxisShort(mapping){return `X→${mapping.x} · Y→${mapping.y} · Z→${mapping.z}`;}

@@ -2,12 +2,14 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.82
+**Editor candidate:** v0.10.83
 **WebUI architecture:** ~100%
 
 ## Immediate goal
 
-Acceptance-test the localization architecture closure. In particular verify language switching before any asset is selected, all five locales, the permanent status-bar shortcut hint, settings persistence, static shell text, contextual `?` help, LODS/SURFACES/SEMANTICS/PHYSICS/DAMAGE screens, and backend status messages.
+Acceptance-test localization completeness across all five locales. Verify switching before any asset is selected, permanent `Ctrl+Alt+F12` hint, settings persistence, static shell, contextual `?` help, SOURCE/LODS/GEOMETRY/SURFACES/SEMANTICS/PHYSICS/DAMAGE, axis legend, storage panel and representative backend status messages.
+
+English fallback is valid only when the requested locale has no translation. A non-English catalog field populated with copied English prose is a defect.
 
 ## Normal iteration gate
 
@@ -15,9 +17,7 @@ Acceptance-test the localization architecture closure. In particular verify lang
 python tests/architecture_contracts/run_model_asset_editor_impacted.py --base HEAD^
 ```
 
-The runner selects relevant contracts from changed files. It is an iteration accelerator, not a substitute for the full release gate.
-
-## Full gate for v0.10.82
+## Full gate for v0.10.83
 
 ```bash
 python tests/architecture_contracts/check_model_asset_editor_application_state.py
@@ -34,6 +34,13 @@ cmake --build build/tools/model_asset_editor --target EliteAssetEditor
 ./build/tools/model_asset_editor/bin/EliteAssetEditor.exe
 ```
 
-## Separate next architecture item
+## NEXT TASK AFTER LOCALIZATION
 
-After localization acceptance, the remaining known architecture debt is the production ModelAsset binary v4 CMake translation-unit closure.
+**Finish binary v4 translation-unit architecture.**
+
+Required closure:
+
+1. list the binary subsystem `.cpp` files directly in the `EliteModelAsset` CMake target;
+2. remove `.cpp` aggregation includes from the facade;
+3. add/strengthen the architecture contract so `.cpp` includes cannot return;
+4. build and test production v4 save/load compatibility.

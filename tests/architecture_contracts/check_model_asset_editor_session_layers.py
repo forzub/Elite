@@ -99,8 +99,8 @@ for name, text in [('working persistence', working), ('settings persistence', se
         if forbidden in text:
             fail(f'{name} contains transport/render dependency {forbidden!r}')
 
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.82"', version):
-    fail('editor version must be 0.10.82')
+if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.83"', version):
+    fail('editor version must be 0.10.83')
 
 print('MODEL ASSET EDITOR SESSION LAYERS: PASS')
 print(' - backend JSON dispatch uses a declarative type -> handler registry')

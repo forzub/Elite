@@ -2,47 +2,37 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.79
-**Whole-editor separation:** ~90%
+**Editor candidate:** v0.10.80
+**Whole-editor separation:** ~96%
 
 ## Verified baseline entering this pass
 
-User reported the complete v0.10.78 architecture test set PASS and local `EliteAssetEditor` build completed successfully.
+User reported the complete v0.10.78 test set PASS and local build success. The v0.10.79 viewport-core extraction passed GitHub architecture and JavaScript syntax validation.
 
-## v0.10.79 viewport-core candidate
+## v0.10.80 renderer-adapter candidate
 
-This pass moves the renderer-owned core out of `model_asset_editor.html`:
+Viewport ownership is now split into explicit renderer adapters:
 
-- scene/bootstrap lifecycle, resize/render loop, world axes, raycaster and camera fit -> `viewport/runtime.js`;
-- geometry cache, BufferGeometry construction, surface preview materials and raw/working geometry selection -> `viewport/geometry.js`;
-- `rebuildScene` and render-node visibility orchestration -> `viewport/scene.js`;
-- cyclic legacy dependencies between LOD/SEMANTICS effects and scene rebuild are contained by a narrow late-bound `viewport/scene_bridge.js` instead of putting renderer implementation back into the shell.
+- `viewport/overlays.js` — edge/normal overlay creation, disposal and edge-hit mutation request;
+- `viewport/attachments.js` — collision volumes, structural proxies, socket markers, semantic transform refresh and socket camera preview;
+- `viewport/picking.js` — raycast decision/effect routing for pivots, edges, semantic graph, sockets, collisions and meshes;
+- existing `viewport/runtime.js`, `geometry.js`, `scene.js` remain the viewport core.
 
-Existing transport, session/persistence and application-state boundaries remain unchanged.
+The HTML shell no longer implements these renderer algorithms. Feature decisions and backend mutations are injected through callbacks rather than making renderer adapters own transport.
 
-## Remaining renderer work
+## Remaining WebUI architecture work
 
-The shell still owns specialized viewport adapters that are coupled to feature UI:
+The principal remaining monolithic block is view-state ownership:
 
-- edge and normal overlays;
-- collision / structural proxy / socket THREE materialization;
-- socket camera preview;
-- picking decision/effect wiring;
-- some semantic gizmo integration remains in the existing semantics effect layer.
+- `ProjectedVisibilitySet`;
+- `EditorVisibilityMapAdapter`;
+- `HiddenRenderNodeAdapter`;
+- `EditorViewState`;
+- view invariant scheduling/projection glue;
+- residual composition/bootstrap cleanup in the HTML shell.
 
-These are the next extraction target. After that, physically move `EditorViewState` and the visibility adapters out of the HTML shell, then perform final shell cleanup.
+After extracting that block and adding a final shell contract, WebUI decomposition is expected to be effectively complete.
 
-## Acceptance
+## Separate binary debt
 
-GitHub candidate validation must pass:
-
-- `git diff --check`;
-- application-state architecture;
-- orchestration architecture;
-- transport architecture;
-- session/persistence architecture;
-- viewport architecture;
-- SEMANTICS workspace layout;
-- JS syntax for new viewport modules.
-
-Local acceptance remains the authoritative C++/pack/runtime gate.
+Production binary remains v4. The CMake independent-translation-unit cleanup is tracked separately and does not reduce the WebUI separation percentage.

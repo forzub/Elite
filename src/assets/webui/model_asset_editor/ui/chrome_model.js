@@ -1,43 +1,32 @@
-// Model Asset Editor UI chrome model. Pure descriptors / decisions only.
-export default Object.freeze({
-  normalizeText: value => String(value ?? '').replace(/\s+/g, ' ').trim(),
-  keepVisible: (text, className='') => {
-    const value=String(text||'').replace(/\s+/g,' ').trim();
-    const classes=String(className||'').toLowerCase();
-    if(!value)return true;
-    if(/(?:warn|error|danger|status|issue|block|missing|invalid|ready|passed|failed)/.test(classes))return true;
-    return /(?:⚠|⛔|ERROR|WARNING|WARN|FAILED|MISSING|INVALID|BLOCKED|UNAVAILABLE|REQUIRED|READY|PASS|FAIL|NOT\s+(?:LOADED|LINKED|CALIBRATED|BOUND))/i.test(value);
-  },
-  topicFor: (key,locale='en') => {
-    const lang=String(locale||'en').toLowerCase().split(/[-_]/)[0];
-    const ru=lang==='ru'||lang==='uk';
-    const topics={
-      'stage:source': ru?['SOURCE','Исходные файлы, их идентичность и связь с WORKING asset. Здесь проверяется источник, изменения файлов и физический масштаб.']:['SOURCE','Authored source files, source identity and the link to the WORKING asset. Use this stage for source changes and physical scale.'],
-      'stage:lods': ru?['LODS','Проверка и подготовка render LOD, анализ и генерация уровней детализации.']:['LODS','Validate and prepare render LOD documents, then analyze or generate detail levels.'],
-      'stage:geometry': ru?['GEOMETRY','Работа с геометрией активного LOD: дубликаты, инстансы, варианты и размещение.']:['GEOMETRY','Active-LOD geometry work: duplicates, instances, variants and placement.'],
-      'stage:surfaces': ru?['SURFACES','Типы поверхностей и материалы выбранных мешей.']:['SURFACES','Surface intent and render material authoring for selected meshes.'],
-      'stage:semantics': ru?['SEMANTICS','Общие логические части asset, transform-связи, motion preview и visual bindings по LOD.']:['SEMANTICS','Asset-wide logical parts, transform links, motion preview and per-LOD visual bindings.'],
-      'stage:physics': ru?['PHYSICS','Rigid-body и collision-данные принадлежат semantic parts, а не render mesh.']:['PHYSICS','Rigid-body and collision data belongs to semantic parts rather than render meshes.'],
-      'stage:damage': ru?['DAMAGE','Состояния повреждений, openings, repair targets и state-scoped представления.']:['DAMAGE','Damage states, openings, repair targets and state-scoped representations.'],
-      'stage:validate': ru?['VALIDATE','Финальная проверка готовности asset перед BUILD.']:['VALIDATE','Final asset-readiness validation before BUILD.'],
-      'stage:build': ru?['BUILD','Сборка production/runtime пакета из текущего WORKING asset.']:['BUILD','Build the production/runtime package from the current WORKING asset.'],
-      'section:sharedStageMeshSection': ru?['ACTIVE LOD MESHES','Общий список визуальных мешей активного LOD для текущего этапа.']:['ACTIVE LOD MESHES','Shared active-LOD visual mesh list for the current stage.'],
-      'section:semanticSection': ru?['SEMANTIC ASSEMBLY','Общая gameplay-структура asset. Она не принадлежит отдельному LOD.']:['SEMANTIC ASSEMBLY','Asset-wide gameplay structure; it is not owned by an individual render LOD.'],
-      'section:statesSection': ru?['PART STATES','Состояния части могут менять transform, collision и визуальное представление.']:['PART STATES','Part states may override transform, collision and visual representation.'],
-      'section:lodSection': ru?['RENDER LOD FILES','Файлы и состояние независимых render LOD.']:['RENDER LOD FILES','Files and state of independent render LOD documents.'],
-      'section:renderAssemblySection': ru?['RENDER ASSEMBLY','Render graph только активного LOD. Другие LOD могут иметь совершенно другую структуру.']:['RENDER ASSEMBLY','Render graph of the active LOD only; other LODs may use completely different structures.'],
-      'section:geometrySection': ru?['ACTIVE LOD GEOMETRY','Инвентарь геометрии активного LOD и её source identity.']:['ACTIVE LOD GEOMETRY','Active-LOD geometry inventory and source identity.'],
-      'section:activeLodSection': ru?['ACTIVE LOD DETAILS','Статистика и техническое состояние текущего render document.']:['ACTIVE LOD DETAILS','Statistics and technical state for the current render document.'],
-      'section:storageSection': ru?['ASSET STORAGE','WORKING/production пути, размеры payload и состояние сохранения.']:['ASSET STORAGE','WORKING/production paths, payload sizes and persistence state.'],
-      'section:semanticInspectorSection': ru?['SELECTED SEMANTIC NODE','Инспектор выбранной логической части.']:['SELECTED SEMANTIC NODE','Inspector for the selected logical part.'],
-      'section:renderInspectorSection': ru?['SELECTED LOD ELEMENT','Инспектор выбранного RenderNode активного LOD.']:['SELECTED LOD ELEMENT','Inspector for the selected active-LOD RenderNode.'],
-      'section:collisionSection': ru?['HIT VOLUMES','Collision volumes и их физические параметры.']:['HIT VOLUMES','Collision volumes and their physical parameters.'],
-      'section:socketSection': ru?['SOCKETS','Attachment/camera/weapon точки, связанные с semantic parts.']:['SOCKETS','Attachment, camera and weapon points associated with semantic parts.'],
-      'section:damageSection': ru?['DAMAGE / REPAIR','Hit regions, openings и repair targets.']:['DAMAGE / REPAIR','Hit regions, openings and repair targets.'],
-      'section:materialsSection': ru?['MATERIALS','Материалы asset и их render-параметры.']:['MATERIALS','Asset materials and their render parameters.'],
-      'section:editor': ru?['MODEL ASSET EDITOR','SAVE фиксирует WORKING. RESTORE откатывает несохранённые изменения. CHECK валидирует этап, BUILD пишет production.']:['MODEL ASSET EDITOR','SAVE persists WORKING. RESTORE discards unsaved changes. CHECK validates a stage; BUILD writes production.']
-    };
-    const row=topics[String(key||'')]||null;
-    return row?{title:row[0],intro:row[1]}:{title:'HELP',intro:''};
-  }
+// Model Asset Editor UI chrome model. PURE descriptors / decisions only.
+const topic=(titleKey,titleFallback,introKey,introFallback)=>Object.freeze({titleKey,titleFallback,introKey,introFallback});
+const topics=Object.freeze({
+ 'stage:source':topic('model_editor.wizard.source','SOURCE','model_editor.chrome.stage.source.intro','Authored source files, source identity and the link to the WORKING asset. Use this stage for source changes and physical scale.'),
+ 'stage:lods':topic('model_editor.wizard.lods','LODS','model_editor.chrome.stage.lods.intro','Validate and prepare render LOD documents, then analyze or generate detail levels.'),
+ 'stage:geometry':topic('model_editor.wizard.geometry','GEOMETRY','model_editor.chrome.stage.geometry.intro','Active-LOD geometry work: duplicates, instances, variants and placement.'),
+ 'stage:surfaces':topic('model_editor.wizard.surfaces','SURFACES','model_editor.chrome.stage.surfaces.intro','Surface intent and render material authoring for selected meshes.'),
+ 'stage:semantics':topic('model_editor.wizard.semantics','SEMANTICS','model_editor.chrome.stage.semantics.intro','Asset-wide logical parts, transform links, motion preview and per-LOD visual bindings.'),
+ 'stage:physics':topic('model_editor.wizard.physics','PHYSICS','model_editor.chrome.stage.physics.intro','Rigid-body and collision data belongs to semantic parts rather than render meshes.'),
+ 'stage:damage':topic('model_editor.wizard.damage','DAMAGE','model_editor.chrome.stage.damage.intro','Damage states, openings, repair targets and state-scoped representations.'),
+ 'stage:validate':topic('model_editor.wizard.validate','VALIDATE','model_editor.chrome.stage.validate.intro','Final asset-readiness validation before BUILD.'),
+ 'stage:build':topic('model_editor.wizard.build','BUILD','model_editor.chrome.stage.build.intro','Build the production/runtime package from the current WORKING asset.'),
+ 'section:sharedStageMeshSection':topic('model_editor.section.active_lod_meshes','ACTIVE LOD MESHES','model_editor.chrome.section.active_lod_meshes.intro','Shared active-LOD visual mesh list for the current stage.'),
+ 'section:semanticSection':topic('model_editor.v4.section.semantic','SEMANTIC ASSEMBLY','model_editor.chrome.section.semantic.intro','Asset-wide gameplay structure; it is not owned by an individual render LOD.'),
+ 'section:statesSection':topic('model_editor.v4.section.states','PART STATES','model_editor.chrome.section.states.intro','Part states may override transform, collision and visual representation.'),
+ 'section:lodSection':topic('model_editor.v4.section.lods','RENDER LOD FILES','model_editor.chrome.section.lods.intro','Files and state of independent render LOD documents.'),
+ 'section:renderAssemblySection':topic('model_editor.v4.section.render_assembly','RENDER ASSEMBLY','model_editor.chrome.section.render_assembly.intro','Render graph of the active LOD only; other LODs may use completely different structures.'),
+ 'section:geometrySection':topic('model_editor.v4.section.geometry','ACTIVE LOD GEOMETRY','model_editor.chrome.section.geometry.intro','Active-LOD geometry inventory and source identity.'),
+ 'section:activeLodSection':topic('model_editor.section.active_lod','ACTIVE LOD DETAILS','model_editor.chrome.section.active_lod.intro','Statistics and technical state for the current render document.'),
+ 'section:storageSection':topic('model_editor.section.storage','ASSET STORAGE','model_editor.chrome.section.storage.intro','WORKING/production paths, payload sizes and persistence state.'),
+ 'section:semanticInspectorSection':topic('model_editor.v4.section.selected_semantic','SELECTED SEMANTIC NODE','model_editor.chrome.section.selected_semantic.intro','Inspector for the selected logical part.'),
+ 'section:renderInspectorSection':topic('model_editor.v4.section.selected_render','SELECTED LOD ELEMENT','model_editor.chrome.section.selected_render.intro','Inspector for the selected active-LOD RenderNode.'),
+ 'section:collisionSection':topic('model_editor.section.hit_volumes','HIT VOLUMES','model_editor.chrome.section.hit_volumes.intro','Collision volumes and their physical parameters.'),
+ 'section:socketSection':topic('model_editor.section.sockets','SOCKETS','model_editor.chrome.section.sockets.intro','Attachment, camera and weapon points associated with semantic parts.'),
+ 'section:damageSection':topic('model_editor.v4.section.damage','DAMAGE / REPAIR','model_editor.chrome.section.damage.intro','Hit regions, openings and repair targets.'),
+ 'section:materialsSection':topic('model_editor.section.materials','MATERIALS','model_editor.chrome.section.materials.intro','Asset materials and their render parameters.'),
+ 'section:editor':topic('model_editor.brand','MODEL ASSET EDITOR','model_editor.chrome.section.editor.intro','SAVE persists WORKING. RESTORE discards unsaved changes. CHECK validates a stage; BUILD writes production.')
 });
+const normalizeText=value=>String(value??'').replace(/\s+/g,' ').trim();
+const keepVisible=(text,className='')=>{const value=normalizeText(text),classes=String(className||'').toLowerCase();if(!value)return true;if(/(?:warn|error|danger|status|issue|block|missing|invalid|ready|passed|failed)/.test(classes))return true;return /(?:⚠|⛔|ERROR|WARNING|WARN|FAILED|MISSING|INVALID|BLOCKED|UNAVAILABLE|REQUIRED|READY|PASS|FAIL|NOT\s+(?:LOADED|LINKED|CALIBRATED|BOUND))/i.test(value);};
+const topicFor=(key,translate=(k,fallback)=>fallback)=>{const row=topics[String(key||'')];if(!row)return{title:translate('model_editor.common.help','HELP'),intro:''};return{title:translate(row.titleKey,row.titleFallback),intro:translate(row.introKey,row.introFallback)};};
+export default Object.freeze({normalizeText,keepVisible,topicFor});

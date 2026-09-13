@@ -60,7 +60,8 @@ private:
     void sendSemanticBindingPatch(const std::vector<std::pair<std::size_t, std::size_t>>& targets);
     void sendLodPayload(std::size_t lodIndex, bool includeRawSnapshots = false);
     std::uint32_t nextWireTransferId();
-    void sendStatus(const std::string& message, bool error = false, const std::string& activity = "idle");
+    void sendStatus(const std::string& message, bool error = false, const std::string& activity = "idle", const std::string& messageKey = {}, const nlohmann::json& messageParams = nlohmann::json::object());
+    void sendStatusKey(const std::string& messageKey, const nlohmann::json& messageParams, const std::string& fallback, bool error = false, const std::string& activity = "idle");
     void sendProgress(
         const std::string& activity,
         const std::string& stage,

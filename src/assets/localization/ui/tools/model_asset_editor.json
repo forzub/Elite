@@ -6573,10 +6573,10 @@
     },
     "model_editor.semantics.tree.structure_summary": {
       "en": "MODEL ROOT: identity · {roots} TOP-LEVEL PARTS · TRANSFORM EDGES: {edges} · VISUAL LOD{lod}: {visuals} RN / {owners} semantic owner(s)",
-      "ru": "MODEL ROOT: identity · TOP-LEVEL PARTS: {roots} · TRANSFORM EDGES: {edges} · VISUAL LOD{lod}: {visuals} RN / semantic owners: {owners}",
-      "zh-Hans": "MODEL ROOT：identity · 顶层部件 {roots} · 变换边 {edges} · VISUAL LOD{lod}：{visuals} RN / {owners} 个语义 owner",
+      "ru": "MODEL ROOT: identity · ВЕРХНИХ ЧАСТЕЙ: {roots} · TRANSFORM-СВЯЗЕЙ: {edges} · VISUAL LOD{lod}: {visuals} RN / логических владельцев: {owners}",
+      "zh-Hans": "MODEL ROOT：identity · 顶层部件：{roots} · 变换连接：{edges} · VISUAL LOD{lod}：{visuals} RN / 语义所有者：{owners}",
       "es": "MODEL ROOT: identity · PARTES SUPERIORES: {roots} · ENLACES TRANSFORM: {edges} · VISUAL LOD{lod}: {visuals} RN / {owners} propietario(s) semánticos",
-      "ja": "MODEL ROOT: identity · トップレベルパーツ {roots} · TRANSFORM EDGE {edges} · VISUAL LOD{lod}: {visuals} RN / semantic owner {owners}"
+      "ja": "MODEL ROOT: identity · 最上位部品: {roots} · 変換リンク: {edges} · VISUAL LOD{lod}: {visuals} RN / セマンティック所有者: {owners}"
     },
     "model_editor.semantics.tree.asset_header": {
       "en": "◆ MODEL ROOT · ASSET SPACE · implicit identity root",
@@ -7189,10 +7189,10 @@
     },
     "model_editor.physics.prompt.hit_id": {
       "en": "Hit volume id",
-      "ru": "ID hit volume",
-      "zh-Hans": "命中体积 ID",
+      "ru": "ID collision-объёма",
+      "zh-Hans": "碰撞体 ID",
       "es": "ID del volumen de impacto",
-      "ja": "Hit volume ID"
+      "ja": "コリジョン ID"
     },
     "model_editor.physics.prompt.shape": {
       "en": "Shape: box / sphere / capsule",
@@ -7252,10 +7252,10 @@
     },
     "model_editor.socket.prompt.id": {
       "en": "Socket id",
-      "ru": "ID socket",
-      "zh-Hans": "Socket ID",
+      "ru": "ID сокета",
+      "zh-Hans": "挂点 ID",
       "es": "ID del socket",
-      "ja": "Socket ID"
+      "ja": "ソケット ID"
     },
     "model_editor.socket.status.add_cancelled": {
       "en": "CANCELLED: socket was not added",
@@ -7287,24 +7287,24 @@
     },
     "model_editor.damage.prompt.hit_id": {
       "en": "Hit region id",
-      "ru": "ID hit region",
+      "ru": "ID зоны попадания",
       "zh-Hans": "命中区域 ID",
       "es": "ID de región de impacto",
-      "ja": "Hit region ID"
+      "ja": "ヒット領域 ID"
     },
     "model_editor.damage.prompt.opening_id": {
       "en": "Opening id",
-      "ru": "ID opening",
+      "ru": "ID отверстия",
       "zh-Hans": "开口 ID",
       "es": "ID de abertura",
-      "ja": "Opening ID"
+      "ja": "開口 ID"
     },
     "model_editor.damage.prompt.repair_id": {
       "en": "Repair target id",
-      "ru": "ID repair target",
+      "ru": "ID цели ремонта",
       "zh-Hans": "修复目标 ID",
       "es": "ID del objetivo de reparación",
-      "ja": "Repair target ID"
+      "ja": "修理対象 ID"
     },
     "model_editor.damage.prompt.repair_kind": {
       "en": "Repair kind",
@@ -7994,8 +7994,8 @@
     },
     "model_editor.socket.preview_fov": {
       "en": "PREVIEW FOV",
-      "ru": "FOV PREVIEW",
-      "zh-Hans": "预览 FOV",
+      "ru": "FOV ПРЕДПРОСМОТРА",
+      "zh-Hans": "预览视场角",
       "es": "FOV DE PREVISUALIZACIÓN",
       "ja": "プレビュー FOV"
     },
@@ -8446,6 +8446,538 @@
       "zh-Hans": "全部隐藏",
       "es": "OCULTAR TODO",
       "ja": "すべて非表示"
+    },
+    "model_editor.settings.working_root": {
+      "en": "Intermediate / WORKING save root",
+      "ru": "Каталог промежуточного / WORKING сохранения",
+      "zh-Hans": "中间 / WORKING 保存目录",
+      "es": "Directorio de guardado intermedio / WORKING",
+      "ja": "中間 / WORKING 保存先"
+    },
+    "model_editor.settings.working_hint": {
+      "en": "One mutable WORKING save exists per asset below this directory. SAVE overwrites that logical save and increments its revision; changing the root does not copy old saves.",
+      "ru": "Для каждой модели здесь хранится одно изменяемое WORKING-сохранение. SAVE перезаписывает его и увеличивает ревизию; смена каталога не копирует старые сохранения.",
+      "zh-Hans": "每个资源在此目录下只有一个可变的 WORKING 保存。SAVE 会覆盖该逻辑保存并递增修订号；更改目录不会复制旧保存。",
+      "es": "Aquí existe un único guardado WORKING mutable por recurso. SAVE lo sobrescribe e incrementa su revisión; cambiar el directorio no copia guardados anteriores.",
+      "ja": "各アセットにはこのディレクトリ配下に1つの可変 WORKING 保存があります。SAVE はそれを上書きしてリビジョンを増やし、保存先変更では旧保存をコピーしません。"
+    },
+    "model_editor.status.language_shortcut": {
+      "en": "Change language: Ctrl+Alt+F12",
+      "ru": "Смена языка: Ctrl+Alt+F12",
+      "zh-Hans": "切换语言：Ctrl+Alt+F12",
+      "es": "Cambiar idioma: Ctrl+Alt+F12",
+      "ja": "言語切替: Ctrl+Alt+F12"
+    },
+    "model_editor.status.last_working_save": {
+      "en": "Last persisted WORKING save",
+      "ru": "Последнее сохранённое состояние WORKING",
+      "zh-Hans": "最近一次持久化的 WORKING 保存",
+      "es": "Último guardado WORKING persistido",
+      "ja": "最後に保存された WORKING"
+    },
+    "model_editor.wizard.aria": {
+      "en": "Asset processing workflow",
+      "ru": "Этапы обработки модели",
+      "zh-Hans": "资源处理流程",
+      "es": "Flujo de procesamiento del recurso",
+      "ja": "アセット処理ワークフロー"
+    },
+    "model_editor.section.active_lod_meshes": {
+      "en": "ACTIVE LOD MESHES",
+      "ru": "МЕШИ АКТИВНОГО LOD",
+      "zh-Hans": "活动 LOD 网格",
+      "es": "MALLAS DEL LOD ACTIVO",
+      "ja": "アクティブ LOD メッシュ"
+    },
+    "model_editor.common.help": {
+      "en": "Help",
+      "ru": "Справка",
+      "zh-Hans": "帮助",
+      "es": "Ayuda",
+      "ja": "ヘルプ"
+    },
+    "model_editor.common.tools": {
+      "en": "TOOLS",
+      "ru": "ИНСТРУМЕНТЫ",
+      "zh-Hans": "工具",
+      "es": "HERRAMIENTAS",
+      "ja": "ツール"
+    },
+    "model_editor.common.visible": {
+      "en": "VISIBLE",
+      "ru": "ВИДИМО",
+      "zh-Hans": "可见",
+      "es": "VISIBLE",
+      "ja": "表示中"
+    },
+    "model_editor.radial.center_xyz": {
+      "en": "Center XYZ",
+      "ru": "Центр XYZ",
+      "zh-Hans": "中心 XYZ",
+      "es": "Centro XYZ",
+      "ja": "中心 XYZ"
+    },
+    "model_editor.radial.explanation": {
+      "en": "1 object moves the selected element to the end angle. 2 or more keep the selected element at 0° and create copies through the requested arc, including the end angle.",
+      "ru": "1 объект перемещает выбранный элемент на конечный угол. 2 и более оставляют выбранный элемент на 0° и создают копии по заданной дуге, включая конечный угол.",
+      "zh-Hans": "1 个对象会把所选元素移动到终止角。2 个或更多对象会保留 0° 处的所选元素，并沿指定圆弧创建副本，包括终止角。",
+      "es": "1 objeto mueve el elemento seleccionado al ángulo final. 2 o más mantienen el seleccionado en 0° y crean copias a lo largo del arco, incluido el ángulo final.",
+      "ja": "1個なら選択要素を終端角へ移動します。2個以上なら選択要素を0°に残し、終端角を含む指定円弧上にコピーを作成します。"
+    },
+    "model_editor.radial.apply": {
+      "en": "Create copies",
+      "ru": "Создать копии",
+      "zh-Hans": "创建副本",
+      "es": "Crear copias",
+      "ja": "コピーを作成"
+    },
+    "model_editor.common.cancel": {
+      "en": "Cancel",
+      "ru": "Отмена",
+      "zh-Hans": "取消",
+      "es": "Cancelar",
+      "ja": "キャンセル"
+    },
+    "model_editor.status.geometry_all_visible": {
+      "en": "GEOMETRY LOD{lod}: all meshes visible",
+      "ru": "GEOMETRY LOD{lod}: все меши видимы",
+      "zh-Hans": "GEOMETRY LOD{lod}：所有网格可见",
+      "es": "GEOMETRY LOD{lod}: todas las mallas visibles",
+      "ja": "GEOMETRY LOD{lod}: 全メッシュ表示"
+    },
+    "model_editor.status.geometry_all_hidden": {
+      "en": "GEOMETRY LOD{lod}: all meshes hidden",
+      "ru": "GEOMETRY LOD{lod}: все меши скрыты",
+      "zh-Hans": "GEOMETRY LOD{lod}：所有网格已隐藏",
+      "es": "GEOMETRY LOD{lod}: todas las mallas ocultas",
+      "ja": "GEOMETRY LOD{lod}: 全メッシュ非表示"
+    },
+    "model_editor.status.surfaces_all_visible": {
+      "en": "SURFACES: complete LOD{lod}",
+      "ru": "SURFACES: полностью показан LOD{lod}",
+      "zh-Hans": "SURFACES：完整显示 LOD{lod}",
+      "es": "SURFACES: LOD{lod} completo",
+      "ja": "SURFACES: LOD{lod} を全表示"
+    },
+    "model_editor.status.surfaces_all_hidden": {
+      "en": "SURFACES: hidden LOD{lod}",
+      "ru": "SURFACES: LOD{lod} скрыт",
+      "zh-Hans": "SURFACES：LOD{lod} 已隐藏",
+      "es": "SURFACES: LOD{lod} oculto",
+      "ja": "SURFACES: LOD{lod} を非表示"
+    },
+    "model_editor.status.semantic_hidden": {
+      "en": "Hidden semantic part: {id}",
+      "ru": "Скрыта логическая часть: {id}",
+      "zh-Hans": "已隐藏语义部件：{id}",
+      "es": "Parte semántica oculta: {id}",
+      "ja": "セマンティック部品を非表示: {id}"
+    },
+    "model_editor.status.semantic_shown": {
+      "en": "Shown semantic part: {id}",
+      "ru": "Показана логическая часть: {id}",
+      "zh-Hans": "已显示语义部件：{id}",
+      "es": "Parte semántica mostrada: {id}",
+      "ja": "セマンティック部品を表示: {id}"
+    },
+    "model_editor.status.semantic_selected": {
+      "en": "Selected semantic node: {id}",
+      "ru": "Выбран логический узел: {id}",
+      "zh-Hans": "已选择语义节点：{id}",
+      "es": "Nodo semántico seleccionado: {id}",
+      "ja": "セマンティックノードを選択: {id}"
+    },
+    "model_editor.status.render_selected": {
+      "en": "Selected LOD{lod} element: {id}",
+      "ru": "Выбран элемент LOD{lod}: {id}",
+      "zh-Hans": "已选择 LOD{lod} 元素：{id}",
+      "es": "Elemento LOD{lod} seleccionado: {id}",
+      "ja": "LOD{lod} 要素を選択: {id}"
+    },
+    "model_editor.status.all_geometry_visible": {
+      "en": "LOD{lod}: all geometry visible",
+      "ru": "LOD{lod}: вся геометрия видима",
+      "zh-Hans": "LOD{lod}：所有几何体可见",
+      "es": "LOD{lod}: toda la geometría visible",
+      "ja": "LOD{lod}: 全ジオメトリ表示"
+    },
+    "model_editor.status.all_geometry_hidden": {
+      "en": "LOD{lod}: all geometry hidden",
+      "ru": "LOD{lod}: вся геометрия скрыта",
+      "zh-Hans": "LOD{lod}：所有几何体已隐藏",
+      "es": "LOD{lod}: toda la geometría oculta",
+      "ja": "LOD{lod}: 全ジオメトリ非表示"
+    },
+    "model_editor.status.source_geometry_lod": {
+      "en": "SOURCE GEOMETRY: LOD{lod}",
+      "ru": "ИСХОДНАЯ ГЕОМЕТРИЯ: LOD{lod}",
+      "zh-Hans": "源几何体：LOD{lod}",
+      "es": "GEOMETRÍA SOURCE: LOD{lod}",
+      "ja": "SOURCE ジオメトリ: LOD{lod}"
+    },
+    "model_editor.status.collision_selected": {
+      "en": "Selected collision: {id}",
+      "ru": "Выбран collision-объём: {id}",
+      "zh-Hans": "已选择碰撞体：{id}",
+      "es": "Colisión seleccionada: {id}",
+      "ja": "コリジョンを選択: {id}"
+    },
+    "model_editor.status.socket_selected": {
+      "en": "Selected socket: {id}",
+      "ru": "Выбран сокет: {id}",
+      "zh-Hans": "已选择挂点：{id}",
+      "es": "Socket seleccionado: {id}",
+      "ja": "ソケットを選択: {id}"
+    },
+    "model_editor.status.no_unused_geometry": {
+      "en": "NO CHANGES: no unused geometry in LOD{lod}",
+      "ru": "БЕЗ ИЗМЕНЕНИЙ: в LOD{lod} нет неиспользуемой геометрии",
+      "zh-Hans": "无更改：LOD{lod} 中没有未使用的几何体",
+      "es": "SIN CAMBIOS: no hay geometría sin uso en LOD{lod}",
+      "ja": "変更なし: LOD{lod} に未使用ジオメトリはありません"
+    },
+    "model_editor.status.unused_delete_cancelled": {
+      "en": "CANCELLED: unused geometry was not deleted",
+      "ru": "ОТМЕНЕНО: неиспользуемая геометрия не удалена",
+      "zh-Hans": "已取消：未删除未使用的几何体",
+      "es": "CANCELADO: no se eliminó la geometría sin uso",
+      "ja": "キャンセル: 未使用ジオメトリは削除されませんでした"
+    },
+    "model_editor.status.camera_preview": {
+      "en": "Camera preview: {id} · FOV {fov}°",
+      "ru": "Предпросмотр камеры: {id} · FOV {fov}°",
+      "zh-Hans": "相机预览：{id} · 视场角 {fov}°",
+      "es": "Vista previa de cámara: {id} · FOV {fov}°",
+      "ja": "カメラプレビュー: {id} · FOV {fov}°"
+    },
+    "model_editor.semantics.status.physical_scale_positive": {
+      "en": "PHYSICAL SCALE: target must be > 0 m",
+      "ru": "ФИЗИЧЕСКИЙ МАСШТАБ: целевой размер должен быть > 0 м",
+      "zh-Hans": "物理尺寸：目标值必须 > 0 米",
+      "es": "ESCALA FÍSICA: el objetivo debe ser > 0 m",
+      "ja": "物理スケール: 目標値は 0 m より大きくする必要があります"
+    },
+    "model_editor.lod.status.select_mesh_first": {
+      "en": "LOD: select a mesh first",
+      "ru": "LOD: сначала выберите меш",
+      "zh-Hans": "LOD：请先选择网格",
+      "es": "LOD: seleccione primero una malla",
+      "ja": "LOD: 先にメッシュを選択してください"
+    },
+    "model_editor.lod.status.all_hidden": {
+      "en": "LOD{lod}: all meshes hidden",
+      "ru": "LOD{lod}: все меши скрыты",
+      "zh-Hans": "LOD{lod}：所有网格已隐藏",
+      "es": "LOD{lod}: todas las mallas ocultas",
+      "ja": "LOD{lod}: 全メッシュ非表示"
+    },
+    "model_editor.lod.status.all_visible": {
+      "en": "LOD{lod}: all meshes visible",
+      "ru": "LOD{lod}: все меши видимы",
+      "zh-Hans": "LOD{lod}：所有网格可见",
+      "es": "LOD{lod}: todas las mallas visibles",
+      "ja": "LOD{lod}: 全メッシュ表示"
+    },
+    "model_editor.lod.status.load_before_select": {
+      "en": "LOD{lod}: load this LOD before selecting its mesh",
+      "ru": "LOD{lod}: загрузите этот LOD перед выбором меша",
+      "zh-Hans": "LOD{lod}：选择网格前请先加载该 LOD",
+      "es": "LOD{lod}: cargue este LOD antes de seleccionar su malla",
+      "ja": "LOD{lod}: メッシュ選択前にこの LOD をロードしてください"
+    },
+    "model_editor.lod.status.no_render_node": {
+      "en": "LOD{lod}/G{geometry}: no active render node uses this geometry",
+      "ru": "LOD{lod}/G{geometry}: эту геометрию не использует активный RenderNode",
+      "zh-Hans": "LOD{lod}/G{geometry}：没有活动 RenderNode 使用该几何体",
+      "es": "LOD{lod}/G{geometry}: ningún RenderNode activo usa esta geometría",
+      "ja": "LOD{lod}/G{geometry}: このジオメトリを使う有効な RenderNode がありません"
+    },
+    "model_editor.lod.status.instance_no_render_node": {
+      "en": "LOD{lod}/{id}: instance link has no resident render node",
+      "ru": "LOD{lod}/{id}: у instance-связи нет загруженного RenderNode",
+      "zh-Hans": "LOD{lod}/{id}：实例链接没有驻留 RenderNode",
+      "es": "LOD{lod}/{id}: el enlace de instancia no tiene RenderNode residente",
+      "ja": "LOD{lod}/{id}: インスタンスリンクに常駐 RenderNode がありません"
+    },
+    "model_editor.lod.status.preview_replacement": {
+      "en": "Preview only: replacement on one representative instance",
+      "ru": "Только предпросмотр: замена на одном представительном экземпляре",
+      "zh-Hans": "仅预览：替换一个代表性实例",
+      "es": "Solo vista previa: sustitución en una instancia representativa",
+      "ja": "プレビューのみ: 代表インスタンス1個を置換"
+    },
+    "model_editor.lod.status.preview_restored": {
+      "en": "Preview restored to authored geometry",
+      "ru": "Предпросмотр возвращён к сохранённой геометрии",
+      "zh-Hans": "预览已恢复为已创作几何体",
+      "es": "Vista previa restaurada a la geometría creada",
+      "ja": "プレビューを作成済みジオメトリへ戻しました"
+    },
+    "model_editor.lod.status.select_viewport_mesh": {
+      "en": "LOD: select a mesh in the viewport first",
+      "ru": "LOD: сначала выберите меш во viewport",
+      "zh-Hans": "LOD：请先在视口中选择网格",
+      "es": "LOD: seleccione primero una malla en la vista",
+      "ja": "LOD: 先にビューポートでメッシュを選択してください"
+    },
+    "model_editor.lod.status.mesh_hidden": {
+      "en": "Hidden mesh: {id}",
+      "ru": "Скрыт меш: {id}",
+      "zh-Hans": "已隐藏网格：{id}",
+      "es": "Malla oculta: {id}",
+      "ja": "メッシュを非表示: {id}"
+    },
+    "model_editor.lod.status.mesh_shown": {
+      "en": "Shown mesh: {id}",
+      "ru": "Показан меш: {id}",
+      "zh-Hans": "已显示网格：{id}",
+      "es": "Malla mostrada: {id}",
+      "ja": "メッシュを表示: {id}"
+    },
+    "model_editor.lod.preflight.select_hint": {
+      "en": "SELECTED · click a row or mesh",
+      "ru": "ВЫБРАНО · щёлкните строку или меш",
+      "zh-Hans": "已选择 · 点击行或网格",
+      "es": "SELECCIONADO · haga clic en una fila o malla",
+      "ja": "選択済み · 行またはメッシュをクリック"
+    },
+    "model_editor.lod.preflight.flip": {
+      "en": "↺ FLIP",
+      "ru": "↺ ИНВЕРТИРОВАТЬ",
+      "zh-Hans": "↺ 翻转",
+      "es": "↺ INVERTIR",
+      "ja": "↺ 反転"
+    },
+    "model_editor.preflight.cached": {
+      "en": "CACHED ANALYSIS · mesh table is kept for navigation/repair. Values are from the last ANALYZE; run ANALYZE again only when you need refreshed topology/classification results.",
+      "ru": "КЭШИРОВАННЫЙ АНАЛИЗ · таблица мешей оставлена для навигации/исправления. Значения получены при последнем АНАЛИЗЕ; запускайте его снова только для обновления топологии/классификации.",
+      "zh-Hans": "缓存分析 · 网格表保留用于导航/修复。数值来自上次分析；仅在需要刷新拓扑/分类结果时重新运行分析。",
+      "es": "ANÁLISIS EN CACHÉ · la tabla de mallas se conserva para navegación/reparación. Los valores son del último ANÁLISIS; repítalo solo para actualizar topología/clasificación.",
+      "ja": "キャッシュ済み解析 · メッシュ表はナビゲーション/修復用に保持されます。値は前回の解析結果です。トポロジ/分類を更新する必要がある場合だけ再解析してください。"
+    },
+    "model_editor.server.no_asset_selected": {
+      "en": "No asset selected",
+      "ru": "Модель не выбрана",
+      "zh-Hans": "未选择资源",
+      "es": "No hay recurso seleccionado",
+      "ja": "アセットが選択されていません"
+    },
+    "model_editor.server.settings_saved": {
+      "en": "Settings saved",
+      "ru": "Настройки сохранены",
+      "zh-Hans": "设置已保存",
+      "es": "Configuración guardada",
+      "ja": "設定を保存しました"
+    },
+    "model_editor.semantics.workflow.assembly": {
+      "en": "1 · ASSEMBLY",
+      "ru": "1 · СТРУКТУРА",
+      "zh-Hans": "1 · 结构",
+      "es": "1 · ESTRUCTURA",
+      "ja": "1 · 構造"
+    },
+    "model_editor.semantics.workflow.bindings": {
+      "en": "2 · VISUAL BINDINGS",
+      "ru": "2 · ВИЗУАЛЬНЫЕ СВЯЗИ",
+      "zh-Hans": "2 · 视觉绑定",
+      "es": "2 · ENLACES VISUALES",
+      "ja": "2 · ビジュアル割当"
+    },
+    "model_editor.semantics.workflow.motion": {
+      "en": "3 · KINEMATICS",
+      "ru": "3 · КИНЕМАТИКА",
+      "zh-Hans": "3 · 运动学",
+      "es": "3 · CINEMÁTICA",
+      "ja": "3 · キネマティクス"
+    },
+    "model_editor.semantics.workflow.graph": {
+      "en": "4 · STRUCTURAL LINKS",
+      "ru": "4 · КОНСТРУКЦИОННЫЕ СВЯЗИ",
+      "zh-Hans": "4 · 结构连接",
+      "es": "4 · ENLACES ESTRUCTURALES",
+      "ja": "4 · 構造リンク"
+    },
+    "model_editor.semantics.workflow.check": {
+      "en": "5 · CHECK",
+      "ru": "5 · ПРОВЕРКА",
+      "zh-Hans": "5 · 检查",
+      "es": "5 · COMPROBAR",
+      "ja": "5 · チェック"
+    },
+    "model_editor.semantics.workflow.help_intro": {
+      "en": "SEMANTICS workflow: author logical structure first, then visual bindings, then kinematics, then the separate structural graph, and finish with CHECK. Technical summaries and diagnostics stay out of the work area and are available through ?.",
+      "ru": "Порядок SEMANTICS: сначала логическая структура, затем визуальные связи, кинематика, отдельный конструкционный граф и финальная ПРОВЕРКА. Технические сводки и диагностика вынесены из рабочей области и доступны через ?.",
+      "zh-Hans": "SEMANTICS 流程：先定义逻辑结构，再设置视觉绑定，然后配置运动学和独立结构图，最后执行检查。技术摘要和诊断信息不占用工作区，可通过 ? 查看。",
+      "es": "Flujo de SEMANTICS: primero la estructura lógica, después los enlaces visuales, la cinemática, el grafo estructural separado y finalmente COMPROBAR. Los resúmenes técnicos y diagnósticos están disponibles mediante ?.",
+      "ja": "SEMANTICS の手順: 論理構造、ビジュアル割当、キネマティクス、独立した構造グラフの順に作成し、最後にチェックします。技術サマリーと診断は作業領域から外し、? から確認できます。"
+    },
+    "model_editor.chrome.stage.source.intro": {
+      "en": "Authored source files, source identity and the link to the WORKING asset. Use this stage for source changes and physical scale.",
+      "ru": "Исходные файлы, их идентичность и связь с WORKING. Здесь проверяются изменения исходников и физический масштаб.",
+      "zh-Hans": "源文件、源身份以及与 WORKING 资源的关系。此阶段用于检查源文件变化和物理尺寸。",
+      "es": "Archivos fuente, identidad del origen y vínculo con WORKING. Use esta etapa para cambios del origen y escala física.",
+      "ja": "ソースファイル、ソース識別情報、WORKING との関係を扱います。ソース変更と物理スケールを確認します。"
+    },
+    "model_editor.chrome.stage.lods.intro": {
+      "en": "Validate and prepare render LOD documents, then analyze or generate detail levels.",
+      "ru": "Проверка и подготовка render LOD, затем анализ или генерация уровней детализации.",
+      "zh-Hans": "验证并准备渲染 LOD 文档，然后分析或生成细节层级。",
+      "es": "Valide y prepare documentos LOD de render y después analice o genere niveles de detalle.",
+      "ja": "レンダー LOD を検証・準備し、その後詳細レベルを解析または生成します。"
+    },
+    "model_editor.chrome.stage.geometry.intro": {
+      "en": "Active-LOD geometry work: duplicates, instances, variants and placement.",
+      "ru": "Геометрия активного LOD: дубликаты, экземпляры, варианты и размещение.",
+      "zh-Hans": "活动 LOD 几何体：重复项、实例、变体和放置。",
+      "es": "Geometría del LOD activo: duplicados, instancias, variantes y colocación.",
+      "ja": "アクティブ LOD のジオメトリ: 重複、インスタンス、バリアント、配置。"
+    },
+    "model_editor.chrome.stage.surfaces.intro": {
+      "en": "Surface intent and render material authoring for selected meshes.",
+      "ru": "Типы поверхностей и render-материалы выбранных мешей.",
+      "zh-Hans": "为所选网格定义表面用途和渲染材质。",
+      "es": "Definición del tipo de superficie y materiales de render para las mallas seleccionadas.",
+      "ja": "選択メッシュのサーフェス用途とレンダー材質を設定します。"
+    },
+    "model_editor.chrome.stage.semantics.intro": {
+      "en": "Asset-wide logical parts, transform links, motion preview and per-LOD visual bindings.",
+      "ru": "Общие логические части модели, transform-связи, предпросмотр движения и визуальные связи по LOD.",
+      "zh-Hans": "资源级逻辑部件、变换连接、运动预览以及各 LOD 的视觉绑定。",
+      "es": "Partes lógicas globales del recurso, enlaces de transformación, vista previa de movimiento y enlaces visuales por LOD.",
+      "ja": "アセット共通の論理部品、変換リンク、動作プレビュー、LOD ごとのビジュアル割当。"
+    },
+    "model_editor.chrome.stage.physics.intro": {
+      "en": "Rigid-body and collision data belongs to semantic parts rather than render meshes.",
+      "ru": "Rigid-body и collision-данные принадлежат логическим частям, а не render-мешам.",
+      "zh-Hans": "刚体和碰撞数据属于语义部件，而不是渲染网格。",
+      "es": "Los datos de cuerpo rígido y colisión pertenecen a las partes semánticas, no a las mallas de render.",
+      "ja": "剛体とコリジョンのデータはレンダーメッシュではなくセマンティック部品に属します。"
+    },
+    "model_editor.chrome.stage.damage.intro": {
+      "en": "Damage states, openings, repair targets and state-scoped representations.",
+      "ru": "Состояния повреждений, отверстия, цели ремонта и представления, зависящие от состояния.",
+      "zh-Hans": "损伤状态、开口、修复目标以及按状态限定的表示。",
+      "es": "Estados de daño, aberturas, objetivos de reparación y representaciones por estado.",
+      "ja": "損傷状態、開口、修理対象、状態スコープの表示を設定します。"
+    },
+    "model_editor.chrome.stage.validate.intro": {
+      "en": "Final asset-readiness validation before BUILD.",
+      "ru": "Финальная проверка готовности модели перед BUILD.",
+      "zh-Hans": "BUILD 前的最终资源就绪验证。",
+      "es": "Validación final del recurso antes de BUILD.",
+      "ja": "BUILD 前の最終アセット準備検証。"
+    },
+    "model_editor.chrome.stage.build.intro": {
+      "en": "Build the production/runtime package from the current WORKING asset.",
+      "ru": "Сборка production/runtime пакета из текущего WORKING.",
+      "zh-Hans": "从当前 WORKING 资源构建 production/runtime 包。",
+      "es": "Construya el paquete production/runtime desde el WORKING actual.",
+      "ja": "現在の WORKING から production/runtime パッケージを構築します。"
+    },
+    "model_editor.chrome.section.active_lod_meshes.intro": {
+      "en": "Shared active-LOD visual mesh list for the current stage.",
+      "ru": "Общий список визуальных мешей активного LOD для текущего этапа.",
+      "zh-Hans": "当前阶段共享的活动 LOD 视觉网格列表。",
+      "es": "Lista compartida de mallas visuales del LOD activo para la etapa actual.",
+      "ja": "現在のステージで共有されるアクティブ LOD のビジュアルメッシュ一覧。"
+    },
+    "model_editor.chrome.section.semantic.intro": {
+      "en": "Asset-wide gameplay structure; it is not owned by an individual render LOD.",
+      "ru": "Общая gameplay-структура модели; она не принадлежит отдельному render LOD.",
+      "zh-Hans": "资源级玩法结构；不属于任何单独的渲染 LOD。",
+      "es": "Estructura global de gameplay del recurso; no pertenece a un LOD individual.",
+      "ja": "アセット共通のゲームプレイ構造で、個別のレンダー LOD には属しません。"
+    },
+    "model_editor.chrome.section.states.intro": {
+      "en": "Part states may override transform, collision and visual representation.",
+      "ru": "Состояния части могут менять transform, collision и визуальное представление.",
+      "zh-Hans": "部件状态可覆盖变换、碰撞和视觉表示。",
+      "es": "Los estados de una parte pueden sustituir transformación, colisión y representación visual.",
+      "ja": "部品状態は変換、コリジョン、ビジュアル表現を上書きできます。"
+    },
+    "model_editor.chrome.section.lods.intro": {
+      "en": "Files and state of independent render LOD documents.",
+      "ru": "Файлы и состояние независимых render LOD.",
+      "zh-Hans": "独立渲染 LOD 文档的文件和状态。",
+      "es": "Archivos y estado de documentos LOD de render independientes.",
+      "ja": "独立したレンダー LOD ドキュメントのファイルと状態。"
+    },
+    "model_editor.chrome.section.render_assembly.intro": {
+      "en": "Render graph of the active LOD only; other LODs may use completely different structures.",
+      "ru": "Render-граф только активного LOD; другие LOD могут иметь совершенно другую структуру.",
+      "zh-Hans": "仅活动 LOD 的渲染图；其他 LOD 可以使用完全不同的结构。",
+      "es": "Grafo de render solo del LOD activo; otros LOD pueden usar estructuras totalmente distintas.",
+      "ja": "アクティブ LOD だけのレンダーグラフ。他の LOD は完全に異なる構造でも構いません。"
+    },
+    "model_editor.chrome.section.geometry.intro": {
+      "en": "Active-LOD geometry inventory and source identity.",
+      "ru": "Инвентарь геометрии активного LOD и её source identity.",
+      "zh-Hans": "活动 LOD 的几何体清单和源身份。",
+      "es": "Inventario de geometría del LOD activo e identidad del origen.",
+      "ja": "アクティブ LOD のジオメトリ一覧とソース識別情報。"
+    },
+    "model_editor.chrome.section.active_lod.intro": {
+      "en": "Statistics and technical state for the current render document.",
+      "ru": "Статистика и техническое состояние текущего render-документа.",
+      "zh-Hans": "当前渲染文档的统计和技术状态。",
+      "es": "Estadísticas y estado técnico del documento de render actual.",
+      "ja": "現在のレンダードキュメントの統計と技術状態。"
+    },
+    "model_editor.chrome.section.storage.intro": {
+      "en": "WORKING/production paths, payload sizes and persistence state.",
+      "ru": "Пути WORKING/production, размеры payload и состояние сохранения.",
+      "zh-Hans": "WORKING/production 路径、载荷大小和持久化状态。",
+      "es": "Rutas WORKING/production, tamaños de payload y estado de persistencia.",
+      "ja": "WORKING/production のパス、ペイロードサイズ、保存状態。"
+    },
+    "model_editor.chrome.section.selected_semantic.intro": {
+      "en": "Inspector for the selected logical part.",
+      "ru": "Инспектор выбранной логической части.",
+      "zh-Hans": "所选逻辑部件的检查器。",
+      "es": "Inspector de la parte lógica seleccionada.",
+      "ja": "選択した論理部品のインスペクタ。"
+    },
+    "model_editor.chrome.section.selected_render.intro": {
+      "en": "Inspector for the selected active-LOD RenderNode.",
+      "ru": "Инспектор выбранного RenderNode активного LOD.",
+      "zh-Hans": "所选活动 LOD RenderNode 的检查器。",
+      "es": "Inspector del RenderNode seleccionado del LOD activo.",
+      "ja": "選択したアクティブ LOD RenderNode のインスペクタ。"
+    },
+    "model_editor.chrome.section.hit_volumes.intro": {
+      "en": "Collision volumes and their physical parameters.",
+      "ru": "Collision-объёмы и их физические параметры.",
+      "zh-Hans": "碰撞体及其物理参数。",
+      "es": "Volúmenes de colisión y sus parámetros físicos.",
+      "ja": "コリジョンボリュームと物理パラメータ。"
+    },
+    "model_editor.chrome.section.sockets.intro": {
+      "en": "Attachment, camera and weapon points associated with semantic parts.",
+      "ru": "Точки крепления, камеры и оружия, связанные с логическими частями.",
+      "zh-Hans": "与语义部件关联的挂接、相机和武器点。",
+      "es": "Puntos de anclaje, cámara y armas asociados a partes semánticas.",
+      "ja": "セマンティック部品に関連付けられたアタッチメント、カメラ、武器ポイント。"
+    },
+    "model_editor.chrome.section.damage.intro": {
+      "en": "Hit regions, openings and repair targets.",
+      "ru": "Зоны попаданий, отверстия и цели ремонта.",
+      "zh-Hans": "命中区域、开口和修复目标。",
+      "es": "Regiones de impacto, aberturas y objetivos de reparación.",
+      "ja": "ヒット領域、開口、修理対象。"
+    },
+    "model_editor.chrome.section.materials.intro": {
+      "en": "Asset materials and their render parameters.",
+      "ru": "Материалы модели и их render-параметры.",
+      "zh-Hans": "资源材质及其渲染参数。",
+      "es": "Materiales del recurso y sus parámetros de render.",
+      "ja": "アセット材質とレンダーパラメータ。"
+    },
+    "model_editor.chrome.section.editor.intro": {
+      "en": "SAVE persists WORKING. RESTORE discards unsaved changes. CHECK validates a stage; BUILD writes production.",
+      "ru": "SAVE сохраняет WORKING. RESTORE отменяет несохранённые изменения. CHECK проверяет этап; BUILD записывает production.",
+      "zh-Hans": "SAVE 保存 WORKING。RESTORE 放弃未保存更改。CHECK 验证阶段；BUILD 写入 production。",
+      "es": "SAVE guarda WORKING. RESTORE descarta cambios no guardados. CHECK valida una etapa; BUILD escribe production.",
+      "ja": "SAVE は WORKING を保存し、RESTORE は未保存変更を破棄します。CHECK はステージを検証し、BUILD は production を書き出します。"
     }
   }
 }

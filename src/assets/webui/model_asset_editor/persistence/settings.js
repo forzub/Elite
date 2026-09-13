@@ -1,7 +1,7 @@
-function createSettingsPersistence({state,$,clearSettingsSaveTimer,setSettingsSaving,notice,tr,applyLocale,openSettings,logger}){
+function createSettingsPersistence({state,$,clearSettingsSaveTimer,setSettingsSaving,notice,tr,acceptSettingsLocale,openSettings,logger}){
  function refreshLocale(locale,context){
   if(!locale||state.locale===locale)return;
-  try{applyLocale(locale);}catch(error){logger.error(`${context} locale refresh failed`,error);}
+  try{acceptSettingsLocale(locale);}catch(error){logger.error(`${context} locale refresh failed`,error);}
  }
 
  function handleSettings(msg){

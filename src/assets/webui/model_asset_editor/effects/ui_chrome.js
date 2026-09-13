@@ -2,6 +2,8 @@
 import chromeModel from '../ui/chrome_model.js';
 
 export default (()=>{
+  let translate=(key,fallback=key,vars={})=>String(fallback).replace(/\{([A-Za-z0-9_]+)\}/g,(m,k)=>vars[k]??m);
+  const setTranslator=fn=>{translate=typeof fn==='function'?fn:translate;globalThis.__eliteModelAssetUiChrome?.refresh?.();};
   const install=({document:doc=globalThis.document,window:win=globalThis.window}={})=>{
     if(!doc||!win)return Object.freeze({refresh:()=>{},dispose:()=>{}});
     if(doc.documentElement.dataset.modelAssetUiChrome==='1')return globalThis.__eliteModelAssetUiChrome||Object.freeze({refresh:()=>{},dispose:()=>{}});
@@ -14,7 +16,6 @@ export default (()=>{
     const qa=(selector,root=doc)=>[...(root?.querySelectorAll?.(selector)||[])];
     const normalize=chromeModel.normalizeText;
     const stageName=()=>q('.wizardStage.current')?.dataset?.wizardStage||q('.wizardStage[aria-current="step"]')?.dataset?.wizardStage||'';
-    const locale=()=>doc.documentElement.lang||'en';
     const unique=items=>[...new Set(items.map(normalize).filter(Boolean))];
     const isOperational=node=>chromeModel.keepVisible(node?.textContent||'',node?.className||'');
     const hiddenHintSelector='.wizardLead,.sectionHint,.semanticHint,.variantAssignHint,.structGraphHint,.semanticTreeDropHint,.dialogExplanation,.axisRotateHint,.settingsHint';
@@ -32,8 +33,8 @@ export default (()=>{
       button.className='uiChromeHelpButton';
       button.dataset.uiChromeHelp=key;
       button.textContent='?';
-      button.setAttribute('aria-label','Help');
-      button.title='Help';
+      button.setAttribute('aria-label',translate('model_editor.common.help','Help'));
+      button.title=translate('model_editor.common.help','Help');
       return button;
     };
     const collectHints=(owner,directOnly=false)=>{
@@ -51,7 +52,7 @@ export default (()=>{
     };
     const register=(owner,header,key,title,fallbackKey,directOnly=false)=>{
       if(!owner||!header||!key)return;
-      const resolvedTitle=header.dataset.uiChromeTitle||normalize(title)||chromeModel.topicFor(fallbackKey,locale()).title;
+      const resolvedTitle=header.dataset.uiChromeTitle||normalize(title)||chromeModel.topicFor(fallbackKey,translate).title;
       if(!header.dataset.uiChromeTitle)header.dataset.uiChromeTitle=resolvedTitle;
       if(!header.classList.contains('uiChromeHeader'))header.classList.add('uiChromeHeader');
       let button=header.querySelector(':scope > .uiChromeHelpButton');
@@ -65,7 +66,7 @@ export default (()=>{
       if(!header){
         header=doc.createElement('div');
         header.className='uiChromeSyntheticHead uiChromeHeader';
-        const label=doc.createElement('span');label.className='grow';label.textContent=title||'TOOLS';header.appendChild(label);panel.prepend(header);
+        const label=doc.createElement('span');label.className='grow';label.textContent=title||translate('model_editor.common.tools','TOOLS');header.appendChild(label);panel.prepend(header);
       }
       return header;
     };
@@ -77,7 +78,7 @@ export default (()=>{
       let index=0;
       for(const panel of qa(panelSelector,root)){
         let header=q(headerSelector,panel);
-        const label=header?.dataset?.uiChromeTitle||fallbackTitle(panel)||normalize(q(':scope > b:first-child',panel)?.textContent)||normalize(q(':scope > .grow:first-child',panel)?.textContent)||`TOOLS ${index+1}`;
+        const label=header?.dataset?.uiChromeTitle||fallbackTitle(panel)||normalize(q(':scope > b:first-child',panel)?.textContent)||normalize(q(':scope > .grow:first-child',panel)?.textContent)||`${translate('model_editor.common.tools','TOOLS')} ${index+1}`;
         if(!header)header=ensureSyntheticHeader(panel,label);
         const key=panelKey(stage,index++,label);
         register(panel,header,key,label,`stage:${stage}`,false);
@@ -108,8 +109,8 @@ export default (()=>{
     const openHelp=key=>{
       const modal=q('#uiChromeHelpModal');if(!modal)return;
       const entry=helpEntries.get(key)||{title:'',items:[],fallbackKey:key};
-      const fallback=chromeModel.topicFor(entry.fallbackKey||key,locale());
-      q('#uiChromeHelpTitle').textContent=entry.title||fallback.title||'HELP';
+      const fallback=chromeModel.topicFor(entry.fallbackKey||key,translate);
+      q('#uiChromeHelpTitle').textContent=entry.title||fallback.title||translate('model_editor.common.help','HELP');
       q('#uiChromeHelpIntro').textContent=fallback.intro||'';
       const list=q('#uiChromeHelpList');
       const items=unique(entry.items||[]);
@@ -166,7 +167,7 @@ export default (()=>{
     if(!q('#uiChromeHelpModal')){
       const modal=doc.createElement('div');
       modal.id='uiChromeHelpModal';modal.className='hidden';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
-      modal.innerHTML='<div class="uiChromeHelpPanel"><div class="uiChromeHelpHead"><span id="uiChromeHelpTitle">HELP</span><button id="uiChromeHelpClose" type="button">×</button></div><div class="uiChromeHelpBody"><p id="uiChromeHelpIntro"></p><ul id="uiChromeHelpList"></ul></div></div>';
+      modal.innerHTML=`<div class="uiChromeHelpPanel"><div class="uiChromeHelpHead"><span id="uiChromeHelpTitle">${translate('model_editor.common.help','HELP')}</span><button id="uiChromeHelpClose" type="button">×</button></div><div class="uiChromeHelpBody"><p id="uiChromeHelpIntro"></p><ul id="uiChromeHelpList"></ul></div></div>`;
       doc.body.appendChild(modal);
     }
     doc.addEventListener('click',event=>{
@@ -182,7 +183,7 @@ export default (()=>{
     globalThis.__eliteModelAssetUiChrome=api;
     return api;
   };
-  const api=Object.freeze({install});
+  const api=Object.freeze({install,setTranslator,refresh:()=>globalThis.__eliteModelAssetUiChrome?.refresh?.()});
   if(globalThis.document)install();
   return api;
 })();

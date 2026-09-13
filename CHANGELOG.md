@@ -1,3 +1,33 @@
+## Model Asset Editor 0.10.73 — wave7E SEMANTICS effect extraction (2026-09-13)
+
+- Physically extracted the complete 51-function `semantics` effect/adapter owner into `effects/semantics.js` behind `createSemanticsEffects(...)`.
+- Portable SEMANTICS tree/bindings/workspace/motion/structural/world-graph/command/preview helpers are direct ES imports; mutable editor/DOM/backend/scene dependencies are explicit factory ports.
+- Fixed the remaining `SURFACES -> SEMANTICS` EditorViewState invariant at the extraction boundary: initial selection normalization is render-only and no longer writes persistent semantic selection merely because the tab opened.
+- `assertEditorViewTransitionPreserved()` now reports the exact changed persistent fields on failure.
+- Dependency closure advances from 283 to 334 physically extracted named declarations; inline named functions fall from 263 to 212 while the 546-function inventory and 259/704 frozen oracle remain unchanged.
+- v0.10.72 topology-preserving PREPARE remains untouched and accepted.
+
+## Model Asset Editor 0.10.71 — SEMANTICS initial selected-panel adapter repair (2026-09-12)
+
+- Fixed the fresh-wizard SEMANTICS entry crash caused by `renderWizardSemanticsStage()` still calling the old `semanticSelectedPanels(selected,nodes,desc)` adapter after wave5M changed the portable API to explicit `(selected,panelModel,panelText,relationText)`.
+- Initial SEMANTICS render now uses the same explicit selected-panel projection as `semanticRefreshSelectionUi()`, including preview-angle normalization and localized relation text.
+- Added error-only `semantic_stage` diagnostics around the selected-panel composition boundary and a regression that forbids the stale 3-argument call.
+- This is a focused runtime/API-wiring repair on top of the v0.10.70 LOD runtime relocation; no portable algorithm or frozen behavioural oracle is rebaselined.
+
+## Model Asset Editor 0.10.70 — wave7E LOD runtime/UI effect extraction (2026-09-12)
+
+- Physically extracted the complete 36-function `lod_runtime` owner into `effects/lod_runtime.js` with `createLodRuntimeEffects(...)`.
+- Portable geometry/shared/SOURCE-maintenance helpers are static ES imports; mutable state/DOM/backend/scene and still-inline effect dependencies are explicit factory ports.
+- Added targeted `lod_transition` and `lod_io` diagnostics around deferred LOD switching, switch begin/commit and explicit load/reload/unload requests.
+- Extended dependency-closure local-scope analysis to recognize destructured `for ... of/in` loop bindings, required by the moved runtime code.
+- Added `check_model_asset_v01070_lod_runtime_effect.py`; ownership/purity/extraction inventory remains unchanged.
+
+## Model Asset Editor 0.10.69 — dependency ownership / lexical closure (2026-09-12)
+
+- Added a hard dependency-ownership gate before further wave7E effect relocation. Named calls resolve through module ownership; extracted functions must have zero unresolved free identifiers, hidden physical bindings/calls, or unresolved external write roots.
+- Fixed the latent undeclared `renderRenderInspector()` call and made axis token/label tables true module-local constants in `core/axis_mapping.js`.
+- Next: resume wave7E with the LOD runtime/effect layer, using the new dependency gate before and after each physical move.
+
 ## Model Asset Editor v0.10.66 — wave 7D / PHYSICS + HIT VOLUMES + DAMAGE + FINAL ASSEMBLY logical physical split
 
 - Continued `MOVE, DON'T REDESIGN`: 40 certified PURE functions were relocated source-identically from the composition HTML into 15 narrow ES modules.

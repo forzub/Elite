@@ -94,6 +94,7 @@ if missing_axis:
 # A missing key would silently activate the fallback string and can therefore
 # look "localized" in English while every other locale is wrong.
 WEB = load_source_bundle(ROOT)
+HTML_ONLY = (ROOT / 'src/assets/webui/model_asset_editor.html').read_text(encoding='utf-8')
 used_tr_keys = set(re.findall(r"\btr\(\s*['\"]([^'\"]+)['\"]", WEB))
 unknown_tr_keys = sorted(used_tr_keys - strings.keys())
 if unknown_tr_keys:
@@ -251,7 +252,7 @@ def scan_sinks(label,src):
   return found
 for n in names:issues.extend(scan_sinks(n,balanced_function(WEB,n)))
 # event-handler tail is outside named functions but contains settings/add actions.
-tail=WEB[WEB.index('function connect()'):]
+tail=HTML_ONLY[HTML_ONLY.index('function connect()'):]
 issues.extend(scan_sinks('global-event-handlers',tail))
 
 

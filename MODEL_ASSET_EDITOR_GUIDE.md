@@ -1,3 +1,17 @@
+## Wave7E SEMANTICS effect extraction — v0.10.73
+
+The full 51-function SEMANTICS effect owner now lives in `src/assets/webui/model_asset_editor/effects/semantics.js`. Pure/deterministic SEMANTICS responsibilities remain in the narrow `semantics/*.js` modules and are imported directly; state/DOM/THREE/backend orchestration is injected through `createSemanticsEffects(...)`. The HTML composition root drops from 263 to 212 named functions.
+
+Tab entry is deliberately view-state neutral. `wizardSemanticsStageSelectionNormalization(...)` supplies a normalized render projection, but opening SEMANTICS does not write that projection back to persistent semantic selection. Explicit clicks, tree selection, binding picks and LOD-switch restoration remain legitimate state mutations. A failed transition diagnostic includes the exact persistent fields that changed.
+
+## SEMANTICS initial-render adapter repair — v0.10.71
+
+Fresh wizard progression may enter SEMANTICS with a selected semantic node. `renderWizardSemanticsStage()` must project that selection through `wizardSemanticsSelectedPanelsModel(...)`, localized `panelText` / `relationText`, and the explicit `semanticSelectedPanels(selected,panelModel,panelText,relationText)` API. The obsolete pre-wave5M call shape is forbidden. Failures at this composition boundary emit an error-only `semantic_stage` diagnostic with selected-node identity before the exception is rethrown.
+
+## Wave7E effect extraction — v0.10.70
+
+`lod_runtime` is now a physical effect module. Its 36 owned functions live in `src/assets/webui/model_asset_editor/effects/lod_runtime.js`. Portable helpers are imported directly; mutable editor/runtime capabilities are injected through `createLodRuntimeEffects(...)`. Before and after every later effect move, run `check_model_asset_dependency_ownership.py`. LOD switch and LOD storage I/O boundaries emit targeted diagnostics so a partial state transition can be reconstructed from `editor_ui.log`.
+
 # Physical module split status — wave7D
 
 All certified portable cores are now physically extracted. PHYSICS is split into stage/node/commands; HIT VOLUMES into list/inspector/commands/render-plan; DAMAGE into stage/state-variants/node/render-selector/semantics; FINAL ASSEMBLY into validation/build/commands. Together with earlier waves, extraction proof now imports 43 portable ES modules + 9 block facades while keeping 259 certified functions / 704 frozen fixtures unchanged.
@@ -23,6 +37,10 @@ Frozen architecture tests must inspect the complete source bundle (HTML + `model
 The editor has passed logical ownership and standalone extraction proof. From wave7 onward, relocation follows **MOVE, DON'T REDESIGN**: move an ownership module to a real ES module, import its declared surface from the composition root/owner, preserve signatures and behavioural oracle, and leave algorithm changes for separate patches. Architecture tests inspect the complete source bundle rather than assuming every function remains inline in `model_asset_editor.html`.
 
 A physical module is not complete until both runtime delivery paths contain it: editor filesystem fallback and `model_asset_editor_ui.pak`. `MODULE_OWNERSHIP_CONTRACT.json` records `physical_source` for extracted modules.
+
+## Dependency ownership gate (v0.10.69)
+
+Physical extraction is allowed only when dependency closure is explicit. For each named function, calls are resolved through logical ownership. Once a function is in a real ES module, every free identifier must resolve to a local/module-local symbol, ES import, explicit effect-factory port, or declared platform global. Aggregate HTML+module test-bundle visibility is not considered runtime reachability. Unresolved calls, hidden cross-file bindings/calls and unresolved external writes fail architecture tests. This gate complements purity; it does not force effect adapters to become PURE.
 
 ## Portable-module completion rule (v0.10.66 wave6E)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v0.10.67 regression contract: Cobra OPEN + SOURCE identity/relink.
+"""v0.10.73 regression contract: Cobra OPEN + SOURCE identity/relink.
 
 Locks the two runtime defects found with canonical cobra_mk1 WORKING r31:
 1. physically extracted axis_mapping.js must own the axis token table needed by
@@ -27,8 +27,8 @@ def body_between(body: str, start: str, end: str) -> str:
 
 
 version = text("tools/model_asset_editor/EditorVersion.h")
-if 'ModelAssetEditorVersion = "0.10.67"' not in version:
-    raise AssertionError("v0.10.67 SOURCE identity repair must bump the visible editor version")
+if 'ModelAssetEditorVersion = "0.10.73"' not in version:
+    raise AssertionError("v0.10.73 SOURCE identity repair must bump the visible editor version")
 
 axis = text("src/assets/webui/model_asset_editor/core/axis_mapping.js")
 axis_tokens = "const axisDirectionTokens=['+X','-X','+Y','-Y','+Z','-Z'];"
@@ -125,7 +125,7 @@ for token in (
         raise AssertionError(f"SOURCE scan/relink authority missing {token!r}")
 
 print(
-    "[PASS] Model Asset Editor v0.10.67 SOURCE identity repair: custom axis preset is module-closed; "
+    "[PASS] Model Asset Editor v0.10.73 SOURCE identity repair: custom axis preset is module-closed; "
     "canonical Cobra prefers real Folder SOURCE with RuntimeAssembly bootstrap; selector folder/document icons "
     "and explicit SOURCE relink are wired"
 )

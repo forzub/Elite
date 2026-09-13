@@ -1,3 +1,41 @@
+### v0.10.73 wave7E SEMANTICS effect extraction
+
+- The complete 51-function logical owner `semantics` is physically owned by `src/assets/webui/model_asset_editor/effects/semantics.js` via `createSemanticsEffects(...)`; no owned implementation remains inline.
+- Already-extracted deterministic SEMANTICS helpers are static ES imports. Mutable editor state, backend commands, scene rebuilds, selection/highlight services and still-inline owners cross the boundary only through explicit factory ports.
+- Dependency ownership / lexical closure must pass after the move with zero free identifiers, unresolved bare calls, hidden bindings/calls or unresolved external writes.
+- Opening SEMANTICS is render-only with respect to persistent `EditorViewState`: `wizardSemanticsStageSelectionNormalization(...)` may normalize the stage projection, but `renderWizardSemanticsStage()` must not commit that normalization to `state.selectedNode` or `state.semanticSelectedNodes`. Explicit user selection after entry remains effectful.
+- State-transition invariant diagnostics must report the exact changed persistent fields.
+- Preserve the 546 named-function inventory, 259/704 frozen v0.10.66 oracle, v0.10.72 topology-preserving PREPARE behavior and accepted SOURCE/LOD/GEOMETRY/SURFACES contracts.
+
+### v0.10.71 SEMANTICS initial selected-panel adapter repair
+
+- `renderWizardSemanticsStage()` and `semanticRefreshSelectionUi()` must both call `semanticSelectedPanels(selected,panelModel,panelText,relationText)`; the obsolete `semanticSelectedPanels(selected,nodes,desc)` adapter is forbidden.
+- Initial render owns the same effectful projection as refresh: build `wizardSemanticsSelectedPanelsModel(...)`, preserve parent-only preview-angle normalization, localize panel/relation text, then call the portable presentation helper.
+- The selected-panel composition boundary must emit an error-only `semantic_stage` diagnostic before rethrowing an exception; normal renders must not add diagnostic noise.
+- No SEMANTICS data model, persistence, SOURCE/LOD behavior, v0.10.70 LOD-runtime extraction, named-function inventory, or frozen v0.10.66 behavioural oracle may change.
+
+### v0.10.70 wave7E LOD runtime/UI effect extraction
+
+- Move all 36 functions owned by logical module `lod_runtime` into `effects/lod_runtime.js`; no owned implementation may remain inline.
+- Preserve moved function bodies source-identically; relocation is `MOVE, DON'T REDESIGN`.
+- Pure/portable dependencies are explicit ES imports. Mutable runtime bindings and calls into still-inline effect owners are explicit `createLodRuntimeEffects(...)` factory ports.
+- `check_model_asset_dependency_ownership.py` must pass before and after relocation with free identifiers / unresolved calls / hidden physical edges / external writes all zero.
+- Add low-noise diagnostics only at risky LOD state/I-O boundaries: deferred switch/load, switch begin/commit, load/reload/unload requests.
+- Preserve the 546 named-function inventory, frozen v0.10.66 purity oracle, SOURCE authority, LOD data model and runtime behavior.
+
+### v0.10.69 dependency ownership / lexical-closure gate
+
+- Every named-function call must resolve to an owned function and every cross-owner edge must be declared by the module import contract.
+- Portable core/presentation callers may not call adapter/infrastructure owners.
+- Every function already extracted into a physical ES module must have zero unresolved free identifiers: dependencies must be local/module-local, ES imports, explicit effect-factory ports, or declared platform globals.
+- Unresolved bare calls and unresolved external assignment roots are hard failures.
+- Cross-file named calls and owned runtime bindings in extracted modules must be physically reachable through import or factory port; aggregate source-bundle visibility is not sufficient.
+- The gate must catch the historical `axisDirectionTokens`, `gameAxisLabels`, `lodIcon`, and undeclared `renderRenderInspector` classes of defect before runtime.
+
+### v0.10.68 LOD file-control runtime dependency repair
+
+`renderLodFiles()` must be self-contained with respect to LOD icon-button creation. It may use the already-wired `attachDynamicToolTip(...)` effect port, but must not call an undeclared/global `lodIcon()` helper. The repair must not change the v0.10.66 purity oracle, named-function inventory, LOD storage semantics, or SOURCE reconciliation behaviour.
+
 ## Model Asset Editor v0.10.66 — wave 7D remaining portable-core physical split contract
 
 - Wave7D is relocation-only. The 40 moved PHYSICS / HIT VOLUMES / DAMAGE / FINAL ASSEMBLY function bodies must remain text-identical to wave7C and no frozen behavioural oracle may be re-baselined.

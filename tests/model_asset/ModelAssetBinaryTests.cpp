@@ -515,6 +515,47 @@ void testCanonicalBuilderRepairsWindingAndOutwardNormals()
     }
 }
 
+void testCanonicalBuilderPreservesClosedCobraTopologyWhileRepairingWinding()
+{
+    using namespace elite::model_asset::editor;
+
+    ModelAsset asset;
+    asset.assetId = "cobra_winding_regression";
+    MeshLod mesh;
+    std::string importError;
+    const auto fixture = std::filesystem::path(__FILE__).parent_path() /
+        "fixtures" / "cobramk1T_winding_regression.obj";
+    require(importObjNative(fixture, asset, mesh, &importError), importError.c_str());
+
+    const auto before = analyzeCanonicalMesh(mesh);
+    require(!before.structuralInvalid && before.triangles == 54 &&
+            before.closedComponents == 1 && before.openComponents == 0 &&
+            before.boundaryEdges == 0 && before.canonicalMultiUseEdges == 0,
+        "Cobra winding regression fixture is not the expected closed manifold input");
+    require(before.windingFlipsRequired == 22 && before.windingConflicts == 0,
+        "Cobra winding regression fixture no longer reproduces the 22-face winding defect");
+
+    const auto built = canonicalizeMesh(mesh);
+    require(built.success, built.error.c_str());
+    require(built.splitTopologyVertices == 0,
+        "PREPARE cut an orientable closed shell instead of repairing winding");
+    require(built.flippedTriangles >= 22,
+        "PREPARE did not repair the authored winding defect before topology splitting");
+
+    const auto after = analyzeCanonicalMesh(mesh);
+    require(!after.structuralInvalid && after.triangles == 54 &&
+            after.closedComponents == 1 && after.openComponents == 0 &&
+            after.boundaryEdges == 0 && after.canonicalMultiUseEdges == 0,
+        "PREPARE converted the closed Cobra shell into an open/split topology");
+    require(after.windingFlipsRequired == 0 && after.windingConflicts == 0 &&
+            after.insideOutClosedComponents == 0,
+        "PREPARE did not leave the Cobra shell consistently oriented outward");
+
+    const auto second = canonicalizeMesh(mesh);
+    require(second.success && !second.changed && second.splitTopologyVertices == 0,
+        "topology-preserving PREPARE is not idempotent on the repaired Cobra fixture");
+}
+
 void testCanonicalBuilderClosedPlateBreachContracts()
 {
     using namespace elite::model_asset::editor;
@@ -1114,6 +1155,7 @@ int main()
         testNativeImporterKeepsSmallValidTriangles();
         testNativeImporterDoesNotMarkFanDiagonalNonManifold();
         testCanonicalBuilderRepairsWindingAndOutwardNormals();
+        testCanonicalBuilderPreservesClosedCobraTopologyWhileRepairingWinding();
         testCanonicalBuilderClosedPlateBreachContracts();
         testCanonicalBuilderPreservesAuthoredOrientationForOpenShell();
         testCanonicalBuilderRemovesGarbageAndPreservesUvSeams();

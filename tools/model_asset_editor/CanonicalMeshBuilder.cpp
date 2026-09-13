@@ -1123,18 +1123,49 @@ CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)
         if (uses.size() == 1) ++result.before.boundaryEdges;
         else if (uses.size() > 2) ++result.before.canonicalMultiUseEdges;
     }
+    const auto originalComponents = buildComponents(originalTopology, working.triangles.size());
+    result.before.components = originalComponents.triangles.size();
+    for (std::size_t ci = 0; ci < originalComponents.triangles.size(); ++ci)
+    {
+        if (originalComponents.boundaryEdges[ci] == 0) ++result.before.closedComponents;
+        else ++result.before.openComponents;
+    }
     const auto beforeOrientation = solveOrientation(originalTopology, working.triangles.size());
     result.before.windingFlipsRequired = beforeOrientation.flipsRequired;
     result.before.windingConflicts = beforeOrientation.conflicts;
+
+    // If the cleaned authored topology is already orientable, repair local
+    // winding BEFORE split_nonmanifold. libigl treats orientation-incoherent
+    // adjacency as a split candidate; calling it first can turn a closed shell
+    // into an open one merely to make winding conflicts disappear.
+    if (beforeOrientation.conflicts == 0 && beforeOrientation.flipsRequired != 0)
+    {
+        applyParity(working.triangles, beforeOrientation);
+        result.flippedTriangles += beforeOrientation.flipsRequired;
+    }
+
+    // A manifold/orientable input owns its boundary/component topology. PREPARE
+    // may flip faces and rebuild render vertices, but it must not manufacture
+    // new cuts or merge/split authored components. Genuine non-manifold input
+    // is excluded because topology splitting is exactly the requested repair.
+    const bool preserveAuthoredTopology =
+        result.before.canonicalMultiUseEdges == 0 && result.before.windingConflicts == 0;
+    const auto authoredTopologyPreserved = [&](const CanonicalMeshAnalysis& after) {
+        return after.boundaryEdges == result.before.boundaryEdges &&
+               after.components == result.before.components &&
+               after.closedComponents == result.before.closedComponents &&
+               after.openComponents == result.before.openComponents;
+    };
 
     // Preserve authored edge masks/metadata before topology repair. New point
     // copies created by split_nonmanifold intentionally have no inherited edge
     // identity unless rebuild can map them back unambiguously.
     const auto oldMetadata = collectOldEdgeMetadata(mesh, working.points);
 
-    // Production topology repair authority. PREPARE deliberately preserves the
-    // authored orientation of coherent open/thin components. libigl only splits
-    // genuine non-manifold topology; deterministic winding repair follows.
+    // Production topology repair authority. Local winding has already been
+    // repaired when the authored graph is orientable. libigl therefore sees a
+    // coherent manifold shell and is reserved for actual non-manifold topology
+    // rather than using vertex splitting as a substitute for face flips.
     LibiglRepairStats libiglStats;
     if (!repairTopologyWithLibigl(mesh, working, libiglStats, result.error))
     {
@@ -1152,9 +1183,10 @@ CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)
         return result;
     }
 
-    // Preserve the authored direction of every coherent component. Only local
-    // triangles that contradict their manifold neighbours are flipped.
-    result.flippedTriangles = authoredOrientation.flipsRequired;
+    // Any orientation work that remains after a genuine topology split is
+    // repaired deterministically as well. Keep the pre-libigl flip count: it is
+    // evidence that PREPARE repaired winding instead of cutting adjacency.
+    result.flippedTriangles += authoredOrientation.flipsRequired;
     applyParity(working.triangles, authoredOrientation);
     topology = buildTopology(working.triangles);
 
@@ -1199,6 +1231,16 @@ CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)
     }
     result.after.insideOutClosedComponents =
         countInsideOutClosedComponents(mesh, working.points, working.triangles, topology);
+
+    if (preserveAuthoredTopology && !authoredTopologyPreserved(result.after))
+    {
+        result.repairStatus = "LIBIGL_FAILED";
+        result.error =
+            "PREPARE changed authored topology before render rebuild: boundary_edges " +
+            std::to_string(result.before.boundaryEdges) + "->" + std::to_string(result.after.boundaryEdges) +
+            ", components " + std::to_string(result.before.components) + "->" + std::to_string(result.after.components);
+        return result;
+    }
 
     if (result.after.canonicalMultiUseEdges != 0 ||
         result.after.windingConflicts != 0 || result.after.windingFlipsRequired != 0 ||
@@ -1324,6 +1366,16 @@ CanonicalMeshBuildResult canonicalizeMesh(MeshLod& mesh)
     result.after = measured;
     result.rebuiltRenderVertices = candidate.vertices.size();
     result.rebuiltEdges = candidate.edges.size();
+
+    if (preserveAuthoredTopology && !authoredTopologyPreserved(measured))
+    {
+        result.repairStatus = "FAILED";
+        result.error =
+            "render rebuild changed authored topology: boundary_edges " +
+            std::to_string(result.before.boundaryEdges) + "->" + std::to_string(measured.boundaryEdges) +
+            ", components " + std::to_string(result.before.components) + "->" + std::to_string(measured.components);
+        return result;
+    }
 
     if (measured.canonicalMultiUseEdges != 0 || measured.windingConflicts != 0 ||
         measured.windingFlipsRequired != 0 || measured.insideOutClosedComponents != 0)

@@ -337,13 +337,13 @@
     },
     {
       "id": "model_preflight",
-      "description": "Explicit PREPARE creates technically canonical geometry with libigl topology repair while preserving coherent authored open/thin orientation; closed shells are oriented deterministically by signed volume. Preflight reports later surface-class authoring separately from LOD readiness, and RAW/PREPARED viewport diagnostics remain available.",
+      "description": "Explicit PREPARE creates technically canonical geometry while preserving authored manifold/open topology: local winding is repaired before libigl topology splitting, closed shells are oriented deterministically by signed volume, and PREPARE may not manufacture new cuts in already orientable topology. Preflight reports later surface-class authoring separately from LOD readiness, and RAW/PREPARED viewport diagnostics remain available.",
       "contracts": {
         "data_model": {
           "path": "tools/model_asset_editor/CanonicalMeshBuilder.h",
           "tokens": [
             "CanonicalMeshAlgorithmId",
-            "canonical_mesh_libigl_authored_orientation_v2",
+            "canonical_mesh_libigl_topology_preserving_v3",
             "CanonicalMeshWeldEpsilon",
             "canonicalizeMesh"
           ]
@@ -385,6 +385,7 @@
           "path": "tests/model_asset/ModelAssetBinaryTests.cpp",
           "tokens": [
             "testCanonicalBuilderRepairsWindingAndOutwardNormals",
+            "testCanonicalBuilderPreservesClosedCobraTopologyWhileRepairingWinding",
             "testCanonicalBuilderRemovesGarbageAndPreservesUvSeams",
             "testCanonicalPreparationKeepsCoincidentSheetsIndependent",
             "testCanonicalBuilderFingerprintTracksStructuralPayload",

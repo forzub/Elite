@@ -2,6 +2,8 @@
 """v0.10.62: raw authoring WORKING + asset-wide sourceToMeters + metric BUILD copy."""
 from pathlib import Path
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -19,7 +21,7 @@ model = text("src/model_asset/ModelAsset.h")
 binary = text("src/model_asset/ModelAssetBinary.cpp")
 session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
 importer = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
-web = text("src/assets/webui/model_asset_editor.html")
+web = load_source_bundle(ROOT)
 contract = text("tools/model_asset_editor/PATCH_CONTRACT.md")
 pipeline = text("src/model_asset/MODEL_ASSET_PIPELINE.md")
 model_tests = text("tests/model_asset/ModelAssetBinaryTests.cpp")
@@ -175,7 +177,7 @@ for token in (
     if token not in pipeline:
         raise AssertionError(f"MODEL_ASSET_PIPELINE physical boundary missing {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.67"' not in version:
-    raise AssertionError("editor version is not 0.10.67")
+if 'ModelAssetEditorVersion = "0.10.73"' not in version:
+    raise AssertionError("editor version is not 0.10.73")
 
-print("[PASS] model asset editor v0.10.67 authoring-space scale / metric BUILD copy / SI physics")
+print("[PASS] model asset editor v0.10.73 authoring-space scale / metric BUILD copy / SI physics")

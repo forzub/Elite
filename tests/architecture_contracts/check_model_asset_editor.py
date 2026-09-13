@@ -1034,7 +1034,7 @@ for token in (
         raise AssertionError(f"LOD mesh visibility/cached-preflight UI contract missing {token!r}")
 
 # Keep the exact current editor version guarded.
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.67"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.73"')
 
 # These marker phrases are intentionally referenced by the capability registry.
 manual_working_state_marker = "manual working-state save/restore contract"
@@ -1065,7 +1065,7 @@ for token in (
     if token not in importer:
         raise AssertionError(f"0.10.49 runtime all-LOD source discovery contract missing {token!r}")
 if "m_sourceAssetsRoot, folderAvailable ? sourceDirectory : it->sourceDirectory," not in session:
-    raise AssertionError("0.10.67 runtime importer is not scoped to the restored/relinked selected source directory")
+    raise AssertionError("0.10.73 runtime importer is not scoped to the restored/relinked selected source directory")
 
 
 html_050 = text("src/assets/webui/model_asset_editor.html")
@@ -1239,4 +1239,4 @@ require(
     "meshSourceRecords",
 )
 
-print("[PASS] model asset editor v0.10.67 LOD workspace / source graph / WORKING revision")
+print("[PASS] model asset editor v0.10.73 LOD workspace / source graph / WORKING revision")

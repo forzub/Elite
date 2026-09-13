@@ -44,7 +44,7 @@ expected_extracted = [
 ]
 if portable_extracted != expected_extracted:
     raise AssertionError(f"physical modules: unexpected portable extraction set {portable_extracted}")
-expected_effect_extracted = ["i18n"]
+expected_effect_extracted = ["i18n", "lod_runtime", "semantics"]
 if effect_extracted != expected_effect_extracted:
     raise AssertionError(f"physical modules: unexpected wave7E effect extraction set {effect_extracted}")
 all_extracted = portable_extracted + effect_extracted
@@ -150,6 +150,6 @@ for module_name in all_extracted:
 
 print(
     "[PASS] Model Asset Editor physical split wave7E: "
-    "wave7D portable responsibilities + I18N effect/runtime responsibility extracted to real ES modules; "
+    "wave7D portable responsibilities + I18N + LOD runtime/UI + SEMANTICS effect responsibilities extracted to real ES modules; "
     "546-function inventory preserved; runtime fallback + UI pack deployment wired"
 )

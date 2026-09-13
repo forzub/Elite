@@ -2,6 +2,8 @@
 """EditorViewState authority / tab-neutral viewport lifecycle contract."""
 from pathlib import Path
 
+from model_asset_editor_source_bundle import load_source_bundle
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -40,6 +42,7 @@ def js_function(data: str, name: str) -> str:
 
 
 web = text("src/assets/webui/model_asset_editor.html")
+web_bundle = load_source_bundle(ROOT)
 session = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
 contract = text("tools/model_asset_editor/PATCH_CONTRACT.md")
 
@@ -182,7 +185,7 @@ for token in (
     "meshStageVisualClass(g,stage)",
     "meshStageCheckValue(g,stage).toUpperCase()",
 ):
-    if token not in web:
+    if token not in web_bundle:
         raise AssertionError(f"shared post-GEOMETRY mesh panel missing {token!r}")
 
 # Browser diagnostics are captured before they can disappear into DevTools and

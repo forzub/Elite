@@ -124,16 +124,22 @@ for entry in PURITY.get("pure", []):
     for constant in entry.get("constants", []) or []:
         constant_users.setdefault(constant, set()).add(entry["name"])
 
-binding_specs = OWNERSHIP.get("top_level_bindings", {})
+constant_specs = OWNERSHIP.get("module_constants", {})
 for constant, users in constant_users.items():
-    if constant not in binding_specs:
-        fail(f"fixture/extraction constant {constant} has no owned top-level binding")
+    if constant not in constant_specs:
+        fail(f"fixture/extraction constant {constant} has no owned module constant")
     modules_using = {owner[name] for name in users}
-    if modules_using != {binding_specs[constant].get("module")}:
+    if modules_using != {constant_specs[constant].get("module")}:
         fail(
             f"constant {constant} crosses module ownership implicitly: "
-            f"owner={binding_specs[constant].get('module')}, users={sorted(modules_using)}"
+            f"owner={constant_specs[constant].get('module')}, users={sorted(modules_using)}"
         )
+    rel = constant_specs[constant].get("physical_source")
+    if not rel or not (ROOT / rel).is_file():
+        fail(f"fixture/extraction constant {constant} has no physical module source")
+    physical = (ROOT / rel).read_text(encoding="utf-8")
+    if not re.search(rf"\bconst\s+{re.escape(constant)}\s*=", physical):
+        fail(f"fixture/extraction constant {constant} is not module-local in {rel}")
 
 # Build the exact portable cross-module dependency graph from the current source and
 # assert every generated import is already declared by wave6D ownership contract.

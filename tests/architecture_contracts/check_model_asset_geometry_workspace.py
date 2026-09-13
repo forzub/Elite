@@ -184,7 +184,7 @@ for token in (
     if token not in contract:
         raise AssertionError(f"PATCH_CONTRACT missing GEOMETRY protection {token!r}")
 
-if 'ModelAssetEditorVersion = "0.10.67"' not in version:
-    raise AssertionError("editor version is not 0.10.67")
+if 'ModelAssetEditorVersion = "0.10.73"' not in version:
+    raise AssertionError("editor version is not 0.10.73")
 
-print("[PASS] model asset editor v0.10.67 GEOMETRY per-mesh certification / selection / visibility")
+print("[PASS] model asset editor v0.10.73 GEOMETRY per-mesh certification / selection / visibility")

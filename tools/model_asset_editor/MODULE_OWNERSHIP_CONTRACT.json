@@ -798,6 +798,7 @@
       "imports": {
         "app_services": [
           "localStatus",
+          "reportEditorDiagnostic",
           "send",
           "updateActionAvailability"
         ],
@@ -1437,7 +1438,9 @@
         "READ_state",
         "STATE_MUTATION",
         "STATUS_PROMPT"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/effects/lod_runtime.js",
+      "physical_factory": "createLodRuntimeEffects"
     },
     "lods": {
       "core": [
@@ -1897,7 +1900,9 @@
         "STATE_MUTATION",
         "STATUS_PROMPT",
         "TIMERS_EVENTS"
-      ]
+      ],
+      "physical_source": "src/assets/webui/model_asset_editor/effects/semantics.js",
+      "physical_factory": "createSemanticsEffects"
     },
     "semantics_transform": {
       "core": [
@@ -2564,6 +2569,7 @@
       "imports": {
         "app_services": [
           "localStatus",
+          "reportEditorDiagnostic",
           "send"
         ],
         "asset_scene": [
@@ -3631,16 +3637,6 @@
       "role": "infrastructure",
       "kind": "diagnostic_queue"
     },
-    "axisDirectionTokens": {
-      "module": "axis_mapping",
-      "role": "infrastructure",
-      "kind": "axis_constants"
-    },
-    "gameAxisLabels": {
-      "module": "axis_mapping",
-      "role": "infrastructure",
-      "kind": "axis_constants"
-    },
     "editorWireTransfers": {
       "module": "wire_protocol",
       "role": "infrastructure",
@@ -3796,7 +3792,84 @@
     ],
     "policy": "move_without_redesign",
     "effect_extracted_modules": [
-      "i18n"
+      "i18n",
+      "lod_runtime",
+      "semantics"
     ]
+  },
+  "dependency_policy": {
+    "unresolved_bare_calls": "forbidden",
+    "physical_hidden_dependencies": "forbidden",
+    "cross_owner_named_calls": "declared_import",
+    "platform_globals": [
+      "Array",
+      "ArrayBuffer",
+      "BigInt",
+      "Boolean",
+      "DataView",
+      "Date",
+      "Error",
+      "Float32Array",
+      "Float64Array",
+      "Function",
+      "JSON",
+      "Map",
+      "Math",
+      "Number",
+      "Object",
+      "Promise",
+      "RegExp",
+      "Set",
+      "String",
+      "Symbol",
+      "Uint8Array",
+      "Uint16Array",
+      "Uint32Array",
+      "WeakMap",
+      "WeakSet",
+      "WebSocket",
+      "ResizeObserver",
+      "TextDecoder",
+      "TextEncoder",
+      "URL",
+      "Blob",
+      "console",
+      "document",
+      "window",
+      "location",
+      "navigator",
+      "devicePixelRatio",
+      "performance",
+      "requestAnimationFrame",
+      "cancelAnimationFrame",
+      "setTimeout",
+      "clearTimeout",
+      "setInterval",
+      "clearInterval",
+      "queueMicrotask",
+      "fetch",
+      "confirm",
+      "prompt",
+      "alert",
+      "parseInt",
+      "parseFloat",
+      "isNaN",
+      "isFinite",
+      "structuredClone",
+      "atob",
+      "btoa"
+    ]
+  },
+  "module_constants": {
+    "axisDirectionTokens": {
+      "module": "axis_mapping",
+      "physical_source": "src/assets/webui/model_asset_editor/core/axis_mapping.js",
+      "kind": "immutable_constant"
+    },
+    "gameAxisLabels": {
+      "module": "axis_mapping",
+      "physical_source": "src/assets/webui/model_asset_editor/core/axis_mapping.js",
+      "kind": "immutable_constant"
+    }
   }
 }

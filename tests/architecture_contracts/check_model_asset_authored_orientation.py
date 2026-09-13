@@ -9,11 +9,13 @@ tests = (ROOT / 'tests/model_asset/ModelAssetBinaryTests.cpp').read_text(encodin
 cmake = (ROOT / 'CMakeLists.txt').read_text(encoding='utf-8')
 
 checks = [
-    ('v2 authored-orientation algorithm id', 'canonical_mesh_libigl_authored_orientation_v2' in header),
+    ('v3 topology-preserving algorithm id', 'canonical_mesh_libigl_topology_preserving_v3' in header),
     ('production builder does not include Embree raycast', 'igl/embree/reorient_facets_raycast.h' not in builder),
     ('production builder does not invoke Embree raycast', 'reorient_facets_raycast(' not in builder),
     ('open components explicitly preserved', 'Open components are' in builder and 'never globally reoriented by PREPARE.' in builder),
     ('closed shell uses signed-volume whole-component rule', 'A closed orientable shell has an unambiguous outside: signed volume.' in builder),
+    ('local winding is repaired before libigl split', builder.index('applyParity(working.triangles, beforeOrientation);') < builder.index('repairTopologyWithLibigl(mesh, working, libiglStats, result.error)')),
+    ('authored topology preservation gate exists', 'preserveAuthoredTopology' in builder and 'authoredTopologyPreserved' in builder),
     ('regression test exists', 'testCanonicalBuilderPreservesAuthoredOrientationForOpenShell' in tests),
     ('editor target no longer links Embree', 'webview::core_static\n        igl::core\n        igl::embree' not in cmake),
 ]

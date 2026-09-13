@@ -646,7 +646,7 @@ def _unknown_external_calls(code: str, all_names: set[str], local_names: set[str
         name = match.group(1)
         if name in all_names or name in SAFE_EXTERNAL_CALLS or name in local_names:
             continue
-        if name in {"if", "for", "while", "switch", "catch", "function", "typeof", "return", "throw", "new"}:
+        if name in {"if", "for", "while", "switch", "catch", "function", "typeof", "return", "throw", "new", "of"}:
             continue
         # Explicitly classified effect surfaces are not also UNKNOWN.
         if name in {"send", "localStatus", "status", "confirm", "prompt", "alert", "notice",

@@ -1,4 +1,40 @@
-## Current repair candidate — v0.10.67 Cobra OPEN / SOURCE identity
+## Current architecture candidate — v0.10.73 wave7E SEMANTICS effect extraction
+
+v0.10.72 mesh PREPARE is runtime-verified: the real Cobra regression flips the 22 reversed triangles without topology splitting and preserves a closed 54-triangle shell. That correctness repair is frozen in this iteration.
+
+v0.10.73 resumes the main restructuring line. The complete 51-function `semantics` effect/adapter owner is moved out of `model_asset_editor.html` into `effects/semantics.js` behind explicit factory ports. The known SURFACES → SEMANTICS state invariant is closed at the same ownership boundary by making initial selection normalization a render projection rather than a persistent selection write. Dependency closure now covers 334 physical declarations; inline named functions fall to 212.
+
+After runtime smoke, continue wave7E with the next large effect owner rather than returning to purity-count work.
+
+## Current repair candidate — v0.10.71 SEMANTICS initial selected-panel adapter
+
+v0.10.70 architecture gates pass, but fresh sequential wizard runtime smoke exposed a pre-existing SEMANTICS adapter signature drift. `renderWizardSemanticsStage()` still invoked `semanticSelectedPanels(selected,nodes,desc)` even though wave5M/wave7C physically established the explicit pure API `semanticSelectedPanels(selected,panelModel,panelText,relationText)`. With a selected node this passed `relationText=undefined`, causing `semanticRelationLabel()` to throw while reading `text.root`; the previous SURFACES DOM therefore remained visible.
+
+v0.10.71 restores the accepted explicit projection in initial stage render, adds an error-only composition-boundary diagnostic, and adds a focused regression. After runtime acceptance, resume wave7E effect relocation from the repaired baseline.
+
+## Current architecture candidate — v0.10.70 wave7E LOD runtime/UI effect extraction
+
+Accepted baseline v0.10.69 provides the dependency-ownership / lexical-closure gate. v0.10.70 uses that gate for the first post-hardening physical move: the complete `lod_runtime` logical owner (36 named functions) moves from `model_asset_editor.html` into `src/assets/webui/model_asset_editor/effects/lod_runtime.js` behind `createLodRuntimeEffects(...)`.
+
+Portable helpers are static ES imports; mutable editor bindings and still-inline effect owners are explicit factory ports. The move keeps all 36 owned function bodies source-identical. `switchEditorLod()` and `renderLodFiles()` remain with their existing owners for now, but receive low-noise `lod_transition` / `lod_io` diagnostics at deferred-load, begin/commit, load/reload/unload boundaries.
+
+After runtime acceptance, continue wave7E with the next effect owner; dependency closure remains mandatory before and after every move.
+
+## Current architecture candidate — v0.10.69 dependency ownership gate
+
+Runtime repair baseline v0.10.68 is accepted. Before moving the next effect/runtime responsibility in wave7E, v0.10.69 adds the missing static dependency-closure gate. It resolves named calls through `MODULE_OWNERSHIP_CONTRACT.json`, verifies extracted ES-module lexical closure, rejects unresolved calls/writes, and checks physical import/factory-port reachability.
+
+The gate immediately exposed one latent undeclared call (`renderRenderInspector`) and one still-hidden extracted-module data dependency (`gameAxisLabels`); both are repaired in the same candidate. Axis direction/label tables are now true `axis_mapping.js` module locals rather than duplicate HTML bindings.
+
+After v0.10.69 runtime/architecture acceptance, resume wave7E with the LOD runtime/effect layer. The relocation rule remains `MOVE, DON'T REDESIGN`, now with dependency closure checked before and after each move.
+
+## Previous accepted repair — v0.10.68 LOD file-control runtime dependency
+
+Runtime smoke after v0.10.67 confirmed Cobra OPEN and SOURCE identity repair, then exposed the next pre-existing WebUI failure: `renderLodFiles()` called an undefined global `lodIcon()`. v0.10.68 makes the icon-button factory local to `renderLodFiles()` and keeps tooltip wiring explicit through the existing I18N effect port.
+
+This is a behavioural repair discovered during wave7E smoke. After user runtime acceptance, return to wave7E effect/adapter physical relocation.
+
+## Previous accepted repair — v0.10.67 Cobra OPEN / SOURCE identity
 
 Runtime evidence from canonical `cobra_mk1` WORKING r31 proved that the backend payload is valid Cobra data, but WebUI OPEN aborted in `acceptAssetState()` with `ReferenceError: axisDirectionTokens is not defined` while parsing the persisted custom axis preset. The extracted `core/axis_mapping.js` depended on an inline HTML lexical constant, so the previous station scene remained visible because `rebuildScene()` never ran. v0.10.67 closes that module dependency.
 

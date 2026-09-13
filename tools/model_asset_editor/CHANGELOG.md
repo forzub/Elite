@@ -1,3 +1,41 @@
+## 0.10.73 — wave7E SEMANTICS effect extraction (2026-09-13)
+
+- Moved all 51 functions owned by logical module `semantics` into `effects/semantics.js` behind explicit `createSemanticsEffects(...)` ports.
+- Directly imports the already-extracted portable SEMANTICS cores; still-effectful editor/scene/backend capabilities remain injected.
+- Initial SEMANTICS tab render now treats selection normalization as a render projection instead of mutating persistent `EditorViewState`.
+- State-transition diagnostics report changed field names, and the dedicated v0.10.73 regression locks the 51-function move plus the tab-neutral invariant.
+- Physical dependency closure now checks 334 extracted declarations with zero hidden/free/unresolved dependencies.
+
+## 0.10.71 — SEMANTICS initial selected-panel adapter repair (2026-09-12)
+
+- Fixed fresh-wizard SEMANTICS entry: `renderWizardSemanticsStage()` no longer calls the obsolete `semanticSelectedPanels(selected,nodes,desc)` signature.
+- Initial stage render now supplies the explicit selected-panel model, localized panel text and localized relation text required by the portable workspace API.
+- Added error-only `semantic_stage` diagnostics for this composition boundary and a v0.10.71 regression contract.
+- v0.10.70 LOD runtime extraction and the frozen v0.10.66 behavioural oracle are unchanged.
+
+## 0.10.70 — wave7E LOD runtime/UI effect extraction (2026-09-12)
+
+- Moved all 36 `lod_runtime` owned functions into `effects/lod_runtime.js` behind explicit factory ports.
+- Added static imports for portable geometry/shared/SOURCE-maintenance helpers and retained runtime/state/DOM/backend dependencies as explicit injected capabilities.
+- Added targeted LOD transition and storage-I/O diagnostics in the still-inline boundary owners.
+- Extended dependency closure to understand destructured loop bindings and added the v0.10.70 LOD-runtime extraction regression.
+
+## 0.10.69 — dependency ownership / lexical-closure gate (2026-09-12)
+
+- Added `check_model_asset_dependency_ownership.py`: every named-function call is resolved through logical module ownership, every extracted ES-module function must be lexically closed, and unresolved bare calls / hidden physical bindings / hidden cross-file calls / unresolved external writes are hard failures.
+- The gate distinguishes ownership from purity: effect functions may remain effectful, but their mutable/runtime dependencies must be module-local, imported, or explicit factory ports. Portable callers remain forbidden from crossing into effect owners.
+- Promoted the axis direction/label tables to true module-local immutable data inside `core/axis_mapping.js`; removed their obsolete duplicate composition-root bindings.
+- The new gate exposed and fixed a latent typo in `applySurfaceMetadataPatch()`: `renderRenderInspector()` was undeclared and is now the owned `renderRenderNodeInspector()` call.
+- `for (... of (...))` is no longer misclassified by the static call scanner as an external `of()` call.
+- This patch is architecture hardening before the next wave7E effect relocation; the frozen v0.10.66 behavioural oracle remains unchanged.
+
+## 0.10.68 — LOD file-control runtime dependency repair (2026-09-12)
+
+- Fixed a runtime `ReferenceError: lodIcon is not defined` in `renderLodFiles()` that could abort asset acceptance and LOD/stage switching after the v0.10.67 Cobra OPEN repair exposed the next hidden dependency.
+- The LOD view/reload/load/unload buttons are now created by a renderer-local factory using the existing `attachDynamicToolTip(...)` port; no new top-level named helper or module-scope dependency is introduced.
+- Added `check_model_asset_v01068_lod_icon_runtime.py` to prevent reintroducing a global `lodIcon()` dependency.
+- Behavioural/purity inventory remains the accepted v0.10.66 oracle baseline; this is a focused runtime repair, not a wave7E relocation step.
+
 ## 0.10.67 — Cobra OPEN / SOURCE identity and relink repair (2026-09-11)
 
 - Fixed the canonical Cobra WORKING OPEN crash exposed after physical module extraction: `core/axis_mapping.js` referenced `axisDirectionTokens` from the HTML module scope. Saved custom axis presets such as `axis:+Z,+Y,-X` therefore threw `ReferenceError` inside `acceptAssetState()` before `rebuildScene()`, leaving the previously rendered asset visible even though the new Cobra payload had arrived. The token table now belongs to the extracted axis module itself.

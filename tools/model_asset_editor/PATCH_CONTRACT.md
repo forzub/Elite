@@ -1,3 +1,35 @@
+### v0.10.73 wave7E SEMANTICS effect extraction
+
+- `semantics` is physically owned by `src/assets/webui/model_asset_editor/effects/semantics.js` through `createSemanticsEffects(...)`.
+- All 51 owned functions leave the HTML composition root; deterministic SEMANTICS cores are ES imports and mutable/still-inline effect dependencies are explicit factory ports.
+- Initial SEMANTICS stage selection normalization is projection-only and may not mutate persistent `EditorViewState` during a tab transition.
+- Dependency closure remains a hard gate and `assertEditorViewTransitionPreserved()` reports changed field names on failure.
+- v0.10.72 mesh PREPARE topology-preservation behavior is frozen for this move.
+
+### v0.10.71 SEMANTICS initial selected-panel adapter repair
+
+- Initial SEMANTICS workspace render must use the current explicit `semanticSelectedPanels(selected,panelModel,panelText,relationText)` API; the stale 3-argument pre-wave5M adapter call is forbidden.
+- Selected-panel model derivation, parent-only preview-angle normalization, and localization projection remain effectful caller responsibilities.
+- Failure diagnostics at this composition boundary are error-only and must carry selected-node context.
+- This repair must not change semantic persistence/ownership, LOD runtime semantics, the 546 named-function inventory, or frozen behavioural fixtures.
+
+### v0.10.70 wave7E LOD runtime/UI effect extraction
+
+- `lod_runtime` is physically owned by `src/assets/webui/model_asset_editor/effects/lod_runtime.js` through `createLodRuntimeEffects(...)`.
+- All 36 owned function bodies move source-identically; no relocation-time algorithm redesign.
+- Portable dependencies use ES imports; mutable/still-inline effect dependencies use explicit factory ports.
+- Dependency ownership / lexical closure must remain zero-error.
+- LOD transition/I-O diagnostics are low-noise and restricted to deferred switch/load, switch begin/commit, and load/reload/unload request boundaries.
+
+### v0.10.69 dependency ownership / lexical-closure gate
+
+- Every named-function call must resolve to an owned function and every cross-owner edge must be declared by the module import contract.
+- Portable core/presentation callers may not call adapter/infrastructure owners.
+- Every function already extracted into a physical ES module must have zero unresolved free identifiers: dependencies must be local/module-local, ES imports, explicit effect-factory ports, or declared platform globals.
+- Unresolved bare calls and unresolved external assignment roots are hard failures.
+- Cross-file named calls and owned runtime bindings in extracted modules must be physically reachable through import or factory port; aggregate source-bundle visibility is not sufficient.
+- The gate must catch the historical `axisDirectionTokens`, `gameAxisLabels`, `lodIcon`, and undeclared `renderRenderInspector` classes of defect before runtime.
+
 # Elite Model Asset Editor — patch contract
 
 ## 0B. Dynamic localization authority (v0.10.66)
@@ -99,6 +131,10 @@ A runtime assembly descriptor may seed module/semantic identity. It must not sup
 SOURCE remains folder-authoritative for geometry. If the saved folder moved or is unavailable, the SOURCE tab may explicitly relink `sourceAssetDirectory` to a user-supplied asset root only after validating that it contains an authored LOD0 with OBJ meshes. Relinking changes SOURCE identity/evidence and therefore invalidates from SOURCE, but it must not silently replace resident WORKING geometry; the existing SCAN/APPLY/CHECK/SAVE workflow remains authoritative. The restored/relinked physical folder identity, not `CatalogSourceAuthority`, decides whether SOURCE scan is available.
 
 The physical `core/axis_mapping.js` module owns every constant required to parse persisted custom axis presets. A saved `axis:*` mapping must never depend on an inline HTML lexical binding; OPEN must reach `rebuildScene()` for such WORKING assets.
+
+### v0.10.68 LOD file-control runtime dependency repair
+
+`renderLodFiles()` must create its view/load/reload/unload icon buttons without relying on an undeclared module/global `lodIcon()` helper. Button creation stays local to the effectful renderer and uses the existing `attachDynamicToolTip(...)` I18N effect port. This repair must not alter LOD residency/storage semantics, SOURCE authority, the 546 named-function inventory, or the frozen v0.10.66 behavioural oracle.
 
 ## 5. RELOAD LOD is not RELOAD FROM SOURCE
 

@@ -1,6 +1,7 @@
 // Model Asset Editor portable core. Physical extraction wave7C: axis_mapping.
 
 const axisDirectionTokens=['+X','-X','+Y','-Y','+Z','-Z'];
+const gameAxisLabels={'+X':'+X · RIGHT','-X':'-X · LEFT','+Y':'+Y · UP','-Y':'-Y · DOWN','-Z':'-Z · NOSE','+Z':'+Z · TAIL'};
 
 function activeLodAxisMapping(lod){return sourceBasisMappingFromPreset(lod?.sourceBasisPreset||'game_current');}
 function activeLodDirectAxisMapping(lod){return directAxisMappingFromSemantic(activeLodAxisMapping(lod));}

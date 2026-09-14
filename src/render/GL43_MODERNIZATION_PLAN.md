@@ -6,125 +6,165 @@
 
 ## Goal
 
-Bring every currently working graphical client path onto a modern OpenGL 4.3 rendering foundation while preserving visible behavior. The compatibility context is only a temporary migration scaffold.
+Bring every currently working graphical client path onto a modern OpenGL 4.3 rendering foundation while preserving visible behavior. Compatibility Profile is temporary migration scaffolding.
 
 The phase ends only when `EliteGame` runs in **OpenGL 4.3 Core Profile** and no production render path depends on removed fixed-function/compatibility APIs.
 
-This phase is an API/render-foundation migration, not a performance-offload project. Do not mix in compute culling, starfield compute, System Map sphere offload or other algorithmic GPU migrations until Core Profile acceptance is complete.
+This is an API/render-foundation migration, not a compute-offload project.
 
-## Why this order
-
-A large part of the client is already shader/VBO/VAO based, but several live map/overlay/fallback paths still depend on compatibility-only state. Optimizing those paths before eliminating the legacy API would create two moving targets and force later rework.
-
-Modernizing first gives one stable GPU contract for all later work:
+## Required order
 
 ```text
-OpenGL 4.3 Compatibility baseline
-        -> remove fixed-function dependencies
+OpenGL 4.3 Compatibility scaffold
+        -> machine inventory of compatibility debt
+        -> remove fixed-function dependencies wave by wave
         -> OpenGL 4.3 Core Profile accepted
-        -> capture performance baselines
+        -> capture fresh performance baselines
         -> CPU/GPU offload only where measurements justify it
 ```
 
-## Confirmed legacy areas
-
-This list is confirmed from the current branch but is not yet the complete repository-wide inventory.
-
-- `src/game/system_map/LocalMapPrimitiveRenderer.cpp` — immediate-mode `glBegin/glEnd`, `glVertex2d`.
-- `src/game/system_map/DetailMapGeometryPass.cpp` — fixed-function color state, `GL_CURRENT_COLOR`, immediate-mode orbit/line rendering through local-map primitives.
-- `src/game/system_map/DetailMapPlanetPass.cpp` — immediate-mode sphere-grid/disk/fallback projected geometry and fixed-function color state.
-- `src/game/system_map/HubMapBackend.cpp` — fixed-function projection/model-view matrix stack, `glOrtho`, immediate-mode background quad.
-- `src/game/system_map/HubMapGeometryPass.cpp` — compatibility fallback primitives still use fixed-function color/immediate mode.
-- `src/game/system_map/MapObjectOverlayRenderer.cpp` — fixed-function 2D projection/model-view setup and immediate-mode overlay glyphs.
-
-Other render/HUD/debug/cockpit paths must be audited before declaring the inventory complete. Existing VAO/VBO/shader code such as `RenderCockpitBitmapPass` is already Core-compatible in principle and should not be rewritten merely for stylistic uniformity.
-
 ## Forbidden compatibility surface at final gate
 
-Production client code must not rely on these classes of API after migration:
+Production client code must not rely on:
 
 - `glBegin`, `glEnd`;
-- `glVertex*`, `glColor*`, `glTexCoord*`, `glNormal*` immediate-mode submission;
-- `glMatrixMode`, `glPushMatrix`, `glPopMatrix`, `glLoadIdentity`, `glLoadMatrix*`, `glMultMatrix*`, `glOrtho` fixed-function matrix stack;
-- `GL_CURRENT_COLOR`, `GL_MODELVIEW`, `GL_PROJECTION`, `GL_MATRIX_MODE` fixed-function state;
-- `glEnable/glDisable(GL_TEXTURE_2D)` fixed-function texture enable state;
-- legacy client arrays such as `glVertexPointer`, `glColorPointer`, `glTexCoordPointer`, `glEnableClientState` if any remain.
+- immediate `glVertex*`, `glColor*`, `glTexCoord*`, `glNormal*`;
+- `glMatrixMode`, `glPushMatrix`, `glPopMatrix`, `glLoadIdentity`, `glLoadMatrix*`, `glMultMatrix*`, `glOrtho`;
+- `GL_CURRENT_COLOR`, `GL_MODELVIEW`, `GL_PROJECTION`, `GL_MATRIX_MODE`;
+- `glEnable/glDisable(GL_TEXTURE_2D)` as fixed-function texture state;
+- legacy client arrays (`glVertexPointer`, `glColorPointer`, `glTexCoordPointer`, `glEnableClientState`, `glDisableClientState`).
 
-Normal modern uses of `GL_TEXTURE_2D` as a texture target for `glBindTexture`, storage and sampling remain valid.
+`GL_TEXTURE_2D` remains valid as a texture target for modern texture storage/binding.
 
 ## Migration rules
 
-1. **Preserve behavior first.** Each wave must render the same scene/map/UI before any unrelated visual redesign.
-2. **No algorithmic offload during this phase.** Replacing immediate mode with batched VBO/VAO/shaders is allowed; moving CPU algorithms to compute is deferred.
-3. **Prefer shared primitives.** Do not replace every `glBegin` with a bespoke mini-renderer. Reuse or establish narrow modern primitive submission paths for screen-space lines/triangles/circles and local-map geometry.
-4. **Explicit matrices and color.** Projection/view/model matrices and color become shader uniforms/vertex attributes; no hidden global matrix/color state.
-5. **Explicit GL state ownership.** Each pass owns and restores only the states it actually changes. Avoid dependence on compatibility defaults.
-6. **Keep CPU interaction data on CPU.** Picking, label anchors, semantic overlays and navigation state remain CPU-side even when their drawing becomes shader based.
+1. Preserve behavior before redesign.
+2. Do not mix compute/SSBO algorithm offload into this phase.
+3. Prefer shared primitive/render foundations rather than one bespoke replacement per `glBegin`.
+4. Matrices, coordinates and colors become explicit shader inputs.
+5. Each pass owns the GL state it changes.
+6. CPU interaction/picking/semantic data stays CPU-side.
+7. Compatibility debt must shrink monotonically; migrated files receive static guards preventing regression.
 
-## Work waves
+## GL43-A — scaffold + machine inventory
 
-### GL43-A — runtime Compatibility acceptance and inventory
+### Implemented candidate
 
-- build and launch `EliteGame` with the existing 4.3 Compatibility request;
-- verify `[OpenGL] >= 4.3`, `compute=1`, `ssbo=1`;
-- smoke ordinary flight, cockpit/rear view, Galaxy/System/Detail/Hub maps and close-navigation HUD;
-- perform a repository-wide scan for compatibility-only calls and record every production call site;
-- add an architecture/static contract that can eventually fail on forbidden calls.
+`tests/architecture_contracts/check_gl43_modernization_boundary.py` now:
 
-This gate proves the migration scaffold before changing live render paths.
+- validates the temporary 4.3 Compatibility context request in `Window.cpp`;
+- scans all production C/C++ under `src/`;
+- strips comments before matching;
+- reports compatibility token counts per file;
+- tracks immediate mode, matrix stack, current-color state, fixed texture enable state and legacy client arrays;
+- provides a monotonic `NO_IMMEDIATE_MODE_FILES` guard for files whose immediate submission has been retired.
 
-### GL43-B — shared local/screen primitive foundation
+The contract is intentionally incremental. Existing debt is reported rather than globally rejected until the corresponding wave migrates it; the protected set grows as files become clean.
 
-Migrate the lowest shared primitive seams first, especially `LocalMapPrimitiveRenderer`, to VAO/VBO/shader submission. Provide explicit color and projection inputs instead of reading `GL_CURRENT_COLOR` or matrix-stack state.
+### Confirmed manual debt so far
 
-The goal is to let several maps lose compatibility dependencies through one implementation change rather than by duplicating replacements.
+- `src/render/DebugGrid.cpp`;
+- `src/game/system_map/DetailMapBackend.cpp`;
+- `src/game/system_map/DetailMapGeometryPass.cpp`;
+- `src/game/system_map/DetailMapPlanetPass.cpp`;
+- `src/game/system_map/HubMapBackend.cpp`;
+- `src/game/system_map/HubMapGeometryPass.cpp`;
+- `src/game/system_map/HubMapPlanetPass.cpp`;
+- `src/game/system_map/LocalMapAtmosphereRenderer.cpp`;
+- `src/game/system_map/MapObjectOverlayRenderer.cpp`;
+- transitional current-color dependency in `LocalMapPrimitiveRenderer.cpp`.
 
-### GL43-C — Detail Map
+The contract's local output, not this handwritten list, is the complete inventory authority.
+
+### Pending acceptance
+
+GL43-A is accepted only after local:
+
+```bash
+python tests/architecture_contracts/check_gl43_modernization_boundary.py
+cmake --build build --target EliteGame
+./build/EliteGame.exe
+```
+
+and full Compatibility-profile visual smoke.
+
+## GL43-B — shared local/screen primitive foundation
+
+### B1 candidate — immediate mode retired in LocalMapPrimitiveRenderer
+
+`LocalMapPrimitiveRenderer` line/cross/circle drawing now uses an internal GLSL 4.30 Core program, VAO and streaming VBO.
+
+The shader receives pixel coordinates and converts them to NDC using `GL_VIEWPORT`, so these primitives no longer depend on fixed-function projection/model-view matrices for their coordinate transform.
+
+`glBegin/glEnd` and immediate `glVertex*` are removed from this file and the architecture contract forbids their return.
+
+To keep B1's blast radius narrow, legacy callers still set fixed-function current color. B1 reads `GL_CURRENT_COLOR` once and forwards that value to the shader as `uColor`.
+
+This is deliberately temporary.
+
+### B2 next — explicit color API
+
+After B1 local acceptance:
+
+- add explicit color arguments to line/cross/circle;
+- update every caller;
+- remove all dependence on `GL_CURRENT_COLOR` from the primitive renderer;
+- mark `LocalMapPrimitiveRenderer.cpp` fully compatibility-clean in the architecture contract.
+
+Do not fold Detail/Hub geometry redesign into B2.
+
+## GL43-C — Detail Map
 
 Migrate:
 
-- `DetailMapGeometryPass` orbit/grid/marker compatibility calls;
-- `DetailMapPlanetPass` grid, filled-disk and projected fallback geometry;
-- any Detail-specific fixed-function state setup.
+- `DetailMapBackend` fixed-function projection/background;
+- `DetailMapGeometryPass` orbit/grid/marker compatibility paths;
+- `DetailMapPlanetPass` sphere-grid, filled disk and projected fallback geometry.
 
-Do not redesign the map or change its geometry policy during this wave.
+Preserve current map geometry and layering.
 
-### GL43-D — Hub Map
+## GL43-D — Hub Map and local celestial presentation
 
 Migrate:
 
-- `HubMapBackend` fixed-function 2D background/projection setup;
-- `HubMapGeometryPass` remaining compatibility fallback primitives;
-- any other Hub fixed-function call sites found by the full inventory.
+- `HubMapBackend` projection/background;
+- `HubMapGeometryPass` compatibility fallback;
+- `HubMapPlanetPass` fallback body/local-circle immediate paths;
+- `LocalMapAtmosphereRenderer` remaining fixed-function soft-band path.
 
-Existing GPU geometry, ring, cloud and planet-surface passes stay intact unless Core compatibility requires a narrow state fix.
+Existing shader-driven planet/cloud/atmosphere paths remain intact unless a narrow Core state fix is required.
 
-### GL43-E — object overlays / HUD / remaining client render code
+## GL43-E — overlays, debug and remaining debt
 
-Migrate `MapObjectOverlayRenderer` and every remaining production fixed-function call site in render, scene, HUD, debug and cockpit code. Shader-based code that already satisfies Core 4.3 is left alone.
+Migrate:
 
-### GL43-F — Core Profile cutover
+- `MapObjectOverlayRenderer`;
+- `DebugGrid`;
+- every remaining offender printed by the architecture scan.
 
-Only after the static scan is clean:
+Already modern VAO/VBO/shader paths are not rewritten merely for style.
 
-- regenerate/switch bundled GLAD from 4.3 Compatibility to **OpenGL 4.3 Core**;
+## GL43-F — Core Profile cutover
+
+Only after the scan is clean:
+
+- regenerate/switch bundled GLAD to **OpenGL 4.3 Core**;
 - request `GLFW_OPENGL_CORE_PROFILE`;
 - build `EliteGame`;
-- launch and verify the context is Core 4.3+;
-- run full visual smoke for all currently working render modes;
-- keep the architecture contract permanently preventing reintroduction of fixed-function APIs.
+- launch and confirm Core 4.3+;
+- smoke ordinary flight, cockpit/rear view, Galaxy/System/Detail/Hub maps and close-navigation HUD;
+- keep the static contract permanently.
 
 ## Final acceptance
 
-The GL43 modernization phase is accepted only when all of the following are true:
+The GL43 modernization phase is accepted only when:
 
 - `EliteGame` builds on MinGW64;
-- runtime creates an OpenGL 4.3+ **Core Profile** context;
+- runtime creates an OpenGL 4.3+ Core Profile context;
 - startup capability logging remains valid;
-- repository architecture/static scan reports no forbidden compatibility-only production calls;
-- ordinary flight, cockpit/rear view, Galaxy Map, System Map, Detail Map and Hub Map render correctly;
-- close-navigation HUD/labels work as before;
-- no current working feature was intentionally dropped to make Core Profile pass;
-- no CPU->GPU algorithmic offload is required for acceptance.
+- compatibility scan is clean;
+- all current visual modes pass smoke;
+- no working feature was removed to satisfy Core;
+- no CPU -> GPU algorithmic offload was required.
 
 After this gate, `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` and `src/render/GPU_OFFLOAD_PLAN.md` become active implementation plans again.

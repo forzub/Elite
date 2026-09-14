@@ -7,7 +7,8 @@
 **ModelAsset binary v4 architecture:** independent translation units closed  
 **Game runtime decomposition:** R0 seams + dual-source model ingress accepted  
 **Renderer baseline:** OpenGL 4.3 Core **accepted locally**  
-**Active renderer work:** CPU -> GPU migration, P0 System Map textured-sphere regression correction
+**GPU-P0:** System Map static textured spheres **accepted locally**  
+**Active renderer work:** repeated System Map primitive modernization / profiling
 
 ## Accepted runtime baseline
 
@@ -24,71 +25,61 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 
 The local developer build and runtime smoke passed on 2026-09-15. The client runs on the accepted OpenGL 4.3 Core baseline. The station-adjacent freezes predate that migration and remain explicitly deferred; they are not part of the current CPU -> GPU wave.
 
-## P0 — System Map static textured spheres
+## GPU-P0 — System Map static textured spheres — ACCEPTED
 
-### Original hot path
+### Previous hot path
 
 A large textured body rebuilt `64 x 128 x 6 = 49,152` vertices every System Map frame and uploaded about `1.69 MiB/body/frame` before driver overhead.
 
-### First candidate — visually rejected
+### Accepted implementation
 
-Initial implementation commit: `e9a9cfdef1331f67259d019fd9024054ce30779e`.
+The accepted path keeps two resident indexed unit spheres:
 
-It introduced resident 24x48 and 64x128 indexed unit spheres and a new vertex-shader ABI with per-body center/radius/basis uniforms. Static contracts and MinGW syntax passed, but the local runtime smoke failed: **textured planets and moons disappeared completely while rings, labels, grid and other System Map presentation remained visible**. P0 was therefore not accepted.
+- low: 24 x 48;
+- high: 64 x 128.
 
-A standalone OpenGL 4.3 Core raster diagnostic reproduced the exact indexed sphere topology, current shader pair, `GL_BACK + GL_CCW` culling, EBO/VAO submission and `glDrawElements`. It passed with:
-
-```text
-shader link = PASS
-GL error    = GL_NO_ERROR
-center pixel= 255,255,255,255
-```
-
-That rules out a generic failure of the static sphere topology/index buffer/culling path. The regression is narrowed to integration of the newly introduced shader ABI/state in the full System Map runtime.
-
-### Corrected candidate
-
-Correction commit: `d9f1db5fdd6e72b68fa59e887bfc88535cb3f279`.
-
-The optimization is retained, but the already-proven System Map body shader interface is restored:
+The runtime-proven map-body shader ABI remains:
 
 ```text
-resident 24x48 / 64x128 indexed unit spheres
-        +
-old map_body_preview shader ABI:
-    aPos + aUv + aColor + uMVP
-        +
-per-body bodyModel
-bodyMvp = frameMvp * bodyModel
-        -> glDrawElements
+aPos + aUv + aColor + uMVP
 ```
 
-`textureLongitudeOffsetDeg` and `rotationPhaseRad` are still folded once per body into the prime/east basis. The static mesh stays GPU-resident; no per-frame latitude/longitude tessellation and no full-sphere `GL_DYNAMIC_DRAW` upload return.
+Per body:
 
-The per-body color is supplied through the old `aColor` attribute contract as a constant generic vertex attribute, and the mesh EBO is explicitly rebound before indexed drawing to make the ownership/state boundary unambiguous.
+```text
+center/radius/basis/phase
+    -> bodyModel
+    -> bodyMvp = frameMvp * bodyModel
+    -> constant color attribute
+    -> glDrawElements(static sphere)
+```
 
-## Corrected-candidate automated evidence
+`textureLongitudeOffsetDeg` and `rotationPhaseRad` are folded once per body into the prime/east basis. The static mesh stays GPU-resident; no per-frame latitude/longitude tessellation and no full-sphere `GL_DYNAMIC_DRAW` upload return.
 
-PASS:
+### Acceptance history
 
-- `tests/architecture_contracts/check_system_map_static_sphere.py`;
-- permanent OpenGL 4.3 Core boundary test;
-- Linux hidden OpenGL 4.3 Core raster diagnostic for the original indexed topology;
-- Windows/MSYS2 MinGW64 `g++ -std=c++17` syntax compilation of the complete corrected `SystemMapRenderer.cpp` translation unit.
+The first static-sphere candidate (`e9a9cfdef1331f67259d019fd9024054ce30779e`) introduced a new per-body shader ABI and was visually rejected because textured planets and moons disappeared while rings, labels and the rest of System Map remained visible.
 
-The corrected P0 candidate is therefore pending only the focused local System Map visual smoke.
+A standalone OpenGL 4.3 Core raster diagnostic proved the indexed topology, EBO/VAO submission, `GL_BACK + GL_CCW` culling and `glDrawElements` path itself was valid. Correction commit `d9f1db5fdd6e72b68fa59e887bfc88535cb3f279` restored the old shader ABI and moved the body transform into `uMVP` instead of reverting the GPU optimization.
 
-## Current acceptance boundary
+Automated evidence after the correction:
 
-Do **not** diagnose the known station freeze in this wave.
+- `tests/architecture_contracts/check_system_map_static_sphere.py` PASS;
+- permanent OpenGL 4.3 Core boundary PASS;
+- Windows/MSYS2 MinGW64 syntax compilation of the complete corrected `SystemMapRenderer.cpp` PASS.
 
-Accept corrected P0 only after confirming:
+Local visual acceptance on 2026-09-15: **planets and moons returned**. The disappearance regression is closed and GPU-P0 is accepted. Any later texture-orientation/ring-order defect is a separate regression, not a reason to restore CPU sphere tessellation.
 
-- planets and moons are visible again;
-- sphere winding/visibility is correct;
-- texture orientation and seam match the pre-P0 baseline;
-- axial orientation, longitude offset and rotation phase remain correct;
-- low/high sphere LOD transition remains visually acceptable;
-- ring order remains back -> body -> front.
+## Active next wave — repeated System Map primitives
 
-After P0 acceptance, continue with repeated System Map circles/orbits/markers using shared static parameterized primitives. `SceneRenderer` GPU culling/LOD remains profile-gated and is not automatically next.
+Current CPU-generated topology still includes:
+
+- `addCircleXZ()` — per-segment `sin/cos`, transformed vertices, appended into the dynamic line batch;
+- `addCircleXY()` — same for XY circles;
+- `addOrbitCircle3D()` — per-segment trigonometry plus CPU rotation;
+- `addBillboardBall()` — per-segment trigonometry and dynamic triangle generation;
+- `flushLines()` / `flushSolids()` — `glBufferData(GL_DYNAMIC_DRAW)` uploads of those rebuilt vertices.
+
+The next implementation must remove repeated topology generation **without replacing one batched draw with hundreds of tiny draw calls**. Preferred shape is shared resident unit primitives + compact per-instance transforms/colors, grouped/instanced where practical.
+
+`SceneRenderer` GPU visibility/LOD remains profile-gated. The known station freeze remains out of scope.

@@ -67,33 +67,43 @@ The contract is incremental: existing debt is reported rather than globally reje
 
 The shader receives pixel coordinates and converts them to NDC using `GL_VIEWPORT`; `glBegin/glEnd` and immediate `glVertex*` are gone from this file and statically forbidden from returning.
 
-Local visual smoke reported no visible change after this replacement, which is the required behavioral result.
+Local visual smoke reported no visible change after this replacement.
 
-### B2a — explicit color API + Detail geometry candidate
+### B2a — visually accepted
 
-The primitive API now exposes explicit `glm::vec4` color overloads for line/cross/circle.
+The primitive API exposes explicit `glm::vec4` color submission and batched line endpoints.
 
-`DetailMapGeometryPass` has already moved fully onto them. Its legacy orbit path was also folded onto the shared primitive renderer without changing the orbit algorithm:
+`DetailMapGeometryPass` is fully compatibility-clean:
 
 - no fixed-function `glColor*`;
 - no `GL_CURRENT_COLOR`;
 - no `glBegin/glEnd`;
 - no immediate `glVertex*`;
-- same 192-segment orbit policy at current call sites;
-- same hidden-side alpha attenuation (`0.16x`).
+- orbit rendering preserves current segmentation and hidden-side `0.16x` alpha policy;
+- orbit segments are batched rather than converted into one draw call per segment.
 
-The architecture contract now treats `DetailMapGeometryPass.cpp` as fully compatibility-clean.
+Local smoke again reported no visible change.
 
-Temporary no-color primitive overloads remain for unmigrated Hub/planet callers and still use `GL_CURRENT_COLOR`. Therefore `LocalMapPrimitiveRenderer.cpp` itself is not yet fully Core-clean.
+### B2b — active
 
-### B2b — close the primitive seam
+`HubMapGeometryPass` is now also fully compatibility-clean. Its legacy fallback geometry has been redirected to the explicit-color shared primitive renderer:
 
-After B2a local validation:
+- box edges;
+- axes;
+- velocity lines;
+- screen marker circles/crosses;
+- adaptive grid and grid axes.
 
-- migrate all remaining local-map primitive callers to explicit color;
+The existing modern `HubMapGeometryRenderer` path is unchanged. The architecture contract now permanently protects both Detail and Hub geometry passes from compatibility regression.
+
+B2b is not complete yet because temporary no-color primitive overloads still serve remaining callers in `DetailMapPlanetPass`, `HubMapBackend` and `HubMapPlanetPass` through `GL_CURRENT_COLOR`.
+
+To close B2b:
+
+- migrate those remaining callers to explicit color;
 - delete the no-color overloads;
-- delete `compatibilityCurrentColor()` and the last `GL_CURRENT_COLOR` use from the primitive renderer;
-- upgrade its static guard from no-immediate-mode to no-compatibility-at-all;
+- delete `compatibilityCurrentColor()`;
+- mark `LocalMapPrimitiveRenderer.cpp` fully compatibility-clean;
 - smoke Detail/Hub again.
 
 ## GL43-C — Detail Map
@@ -103,16 +113,17 @@ Migrate remaining Detail compatibility debt:
 - `DetailMapBackend` fixed-function projection/background;
 - `DetailMapPlanetPass` sphere-grid, filled disk and projected fallback geometry.
 
-`DetailMapGeometryPass` is already compatibility-clean as of B2a and should not be reopened except for a regression.
+`DetailMapGeometryPass` is accepted and should not be reopened except for a regression.
 
 ## GL43-D — Hub Map and local celestial presentation
 
-Migrate:
+Migrate remaining Hub/local celestial debt:
 
 - `HubMapBackend` projection/background;
-- `HubMapGeometryPass` compatibility fallback;
 - `HubMapPlanetPass` fallback body/local-circle immediate paths;
 - `LocalMapAtmosphereRenderer` remaining fixed-function soft-band path.
+
+`HubMapGeometryPass` is already compatibility-clean and should not be reopened except for a regression.
 
 Existing shader-driven planet/cloud/atmosphere paths remain intact unless a narrow Core state fix is required.
 
@@ -139,15 +150,13 @@ Only after the scan is clean:
 
 ## Current validation
 
-For B2a:
-
 ```bash
 python tests/architecture_contracts/check_gl43_modernization_boundary.py
 cmake --build build --target EliteGame
 ./build/EliteGame.exe
 ```
 
-Primary visual target is Detail Map geometry: volume edges, hub/player orbits, hidden-half attenuation, small-body circles/crosses, colors and orientation.
+Current visual target is Hub Map geometry: adaptive grid, hub axes, fallback boxes, screen circles/crosses and velocity lines must remain unchanged.
 
 ## Final acceptance
 

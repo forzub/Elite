@@ -3,11 +3,11 @@
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Track:** client CPU -> GPU migration  
-**Stage:** GPU-P0.1 — repeated System Map planar circles, acceptance candidate
+**Stage:** GPU-P0.1 — repeated System Map planar circles, final Core rebuild + visual acceptance
 
 ## Accepted prerequisite
 
-OpenGL 4.3 Core is accepted locally.
+OpenGL 4.3 Core remains the accepted renderer baseline.
 
 GPU-P0 static textured spheres are also accepted locally after the corrected runtime path restored visible planets and moons while retaining resident indexed sphere geometry.
 
@@ -15,7 +15,7 @@ The station-adjacent freezes predate the renderer migration. They remain deferre
 
 ## GPU-P0.1 implementation candidate
 
-The first repeated-primitive slice is implemented and now awaits local build/runtime/visual acceptance.
+The repeated-primitive slice is implemented.
 
 Migrated System Map scene consumers:
 
@@ -44,6 +44,27 @@ The GLSL 4.30 vertex stage expands the resident unit circle into map space. Matc
 
 CPU `sin/cos` for migrated circles therefore occurs only when a new resident segment-count mesh is first created, not every frame.
 
+## Latest local acceptance result
+
+The user ran the three architecture contracts and all reported PASS:
+
+```text
+GL43 CORE MODERNIZATION BOUNDARY: PASS
+SYSTEM MAP STATIC TEXTURED SPHERE: PASS
+SYSTEM MAP GPU CIRCLES: PASS
+```
+
+The following `EliteGame` build then exposed one missed Core incompatibility in `src/ui/components/minicamera/UICameraView.cpp`:
+
+```text
+glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT)
+glPopAttrib()
+```
+
+Those APIs/constants are removed from OpenGL Core and were not covered by the existing static guard.
+
+The branch now fixes that blocker by explicitly saving/restoring the viewport and the software bridge matrix-mode token, while continuing to use the bridge's projection/model-view matrix stacks. The GL43 boundary contract was also tightened to forbid compatibility attribute stacks and their bit tokens so this class of false PASS cannot recur.
+
 ## Intentional remaining renderer debt
 
 This slice does **not** claim that every circular-looking primitive in `SystemMapRenderer` is migrated.
@@ -59,7 +80,7 @@ Still CPU-owned for now:
 
 ## Architecture guard
 
-`tests/architecture_contracts/check_system_map_gpu_circles.py` locks the current boundary:
+`tests/architecture_contracts/check_system_map_gpu_circles.py` locks the current GPU-circle boundary:
 
 - resident `GL_STATIC_DRAW` unit-circle topology;
 - instanced submission;
@@ -67,11 +88,16 @@ Still CPU-owned for now:
 - no return of scene-level XZ/XY circles to the old CPU tessellation API;
 - no per-frame `sin/cos` circle generation in `SystemMapSceneRenderer`.
 
+`tests/architecture_contracts/check_gl43_modernization_boundary.py` additionally rejects compatibility-only GL attribute-stack APIs and tokens.
+
 ## Acceptance now
 
-Run locally:
+Pull the latest branch and rerun:
 
 ```bash
+git fetch origin
+git pull --ff-only
+
 python tests/architecture_contracts/check_gl43_modernization_boundary.py
 python tests/architecture_contracts/check_system_map_static_sphere.py
 python tests/architecture_contracts/check_system_map_gpu_circles.py
@@ -89,11 +115,11 @@ Visual smoke in System Map:
 - selected-hub two rings unchanged;
 - no disappearing/flickering or alpha/order regression.
 
-Do **not** mark GPU-P0.1 accepted until this local smoke passes.
+Do **not** mark GPU-P0.1 accepted until the rebuild and runtime smoke pass.
 
 ## Immediately after GPU-P0.1 acceptance
 
-Switch away from renderer work to **NAV-PERF-0 — route/trajectory performance instrumentation**.
+Stop renderer work and switch to **NAV-PERF-0 — route/trajectory performance instrumentation**.
 
 First navigation wave is measurement only: identify the exact source of the route/planner freeze before changing algorithms or moving work to GPU. At minimum measure planner wall time, predictor calls, integration steps, gravity evaluations, shooting iterations, safety segment/hazard checks and candidate/detour counts.
 

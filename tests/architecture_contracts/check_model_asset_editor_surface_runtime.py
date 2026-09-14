@@ -10,7 +10,7 @@ expected="surfaceDisplayRows.filter(r=>surfaceGeometryVisibility(effectiveGeomet
 if expected not in HTML: errors.append('SURFACES visible-count path does not use authoritative visibility adapter')
 if 'state.surfaceAnalysisRequested=false;' not in HANDLERS or 'state.surfaceAnalysisReady=true;' not in HANDLERS:
  errors.append('surface-analysis result does not close requested->ready transition')
-if 'ModelAssetEditorVersion = "0.10.85"' not in VERSION: errors.append('expected editor version 0.10.85')
+if 'ModelAssetEditorVersion = "0.10.86"' not in VERSION: errors.append('expected editor version 0.10.86')
 if errors:
  print('MODEL ASSET EDITOR SURFACE RUNTIME: FAIL')
  for error in errors: print(' -',error)

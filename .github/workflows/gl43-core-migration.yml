@@ -27,6 +27,29 @@ jobs:
           glad --api='gl:core=4.3' --extensions='' --out-path=/tmp/glad-core c --loader
           cp /tmp/glad-core/include/glad/gl.h glad/include/glad/gl.h
           cp /tmp/glad-core/src/gl.c glad/src/gl.c
+      - name: Normalize transformed bridge lines
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for path in Path('src').rglob('*'):
+              if not path.is_file() or path.suffix.lower() not in {'.c','.cc','.cpp','.cxx','.h','.hh','.hpp'}:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              lines = text.splitlines(keepends=True)
+              changed = False
+              output = []
+              for line in lines:
+                  if 'elite::render::core_legacy::' in line:
+                      newline = '\n' if line.endswith('\n') else ''
+                      body = line[:-1] if newline else line
+                      cleaned = body.rstrip(' \t') + newline
+                      changed = changed or cleaned != line
+                      line = cleaned
+                  output.append(line)
+              if changed:
+                  path.write_text(''.join(output), encoding='utf-8')
+          PY
       - name: Verify GL43 Core boundary
         run: python tests/architecture_contracts/check_gl43_modernization_boundary.py
       - name: Check patch whitespace

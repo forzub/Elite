@@ -13,7 +13,7 @@ Prefer the simplest GPU representation that removes repeated CPU work. Static to
 
 Gameplay authority, navigation/planning, picking answers needed synchronously by CPU, replication and server-compatible simulation remain CPU-owned.
 
-## P0 — System Map textured body geometry
+## P0 — System Map textured body geometry — ACCEPTED
 
 ### Previous hot path
 
@@ -28,61 +28,54 @@ Gameplay authority, navigation/planning, picking answers needed synchronously by
 
 This also paid repeated trigonometry, basis transforms, vector writes and dynamic-buffer submission.
 
-### Static-sphere target
+### Accepted path
 
-Use two one-time resident indexed unit spheres:
+Two one-time resident indexed unit spheres are used:
 
 - 24 x 48 low-resolution mesh;
 - 64 x 128 high-resolution mesh.
 
-Per-frame body data is reduced to texture, center, radius, prime/north/east basis, color and LOD choice. `textureLongitudeOffsetDeg` and `rotationPhaseRad` are folded into the body basis. Drawing uses `glDrawElements`; no full-sphere dynamic vertex upload remains.
+Per-frame body data is reduced to texture, center, radius, prime/north/east basis, color and LOD choice. `textureLongitudeOffsetDeg` and `rotationPhaseRad` are folded into the body basis. The body transform is folded into `bodyMvp = frameMvp * bodyModel` and the runtime-proven `map_body_preview` shader ABI remains unchanged.
 
-### Runtime acceptance history
+The first candidate with a new per-body shader ABI was visually rejected because planets/moons disappeared. The corrected path kept the static mesh optimization, restored the proven shader ABI, and passed Core/static-sphere contracts plus MinGW syntax compilation. Local visual smoke then confirmed that planets and moons returned.
 
-Initial implementation commit `e9a9cfdef1331f67259d019fd9024054ce30779e` introduced a new vertex-shader ABI with explicit center/radius/basis uniforms. Static contracts and MinGW syntax passed, but the local visual smoke failed: textured planets and moons disappeared while rings/labels remained visible. That candidate was rejected.
+**Status:** accepted locally on 2026-09-15.
 
-A hidden OpenGL 4.3 Core raster diagnostic then verified the indexed sphere, EBO/VAO, current shader pair, back-face culling and `glDrawElements` in isolation with no GL error. The correction therefore retains the resident mesh but removes the new shader ABI from the integration boundary.
+## P0.1 — System Map repeated primitives — ACTIVE
 
-Correction commit `d9f1db5fdd6e72b68fa59e887bfc88535cb3f279` restores the old runtime-proven map-body shader contract:
+Current CPU-generated topology still includes:
 
-```text
-aPos + aUv + aColor + uMVP
-```
+- `addCircleXZ()`;
+- `addCircleXY()`;
+- `addOrbitCircle3D()`;
+- `addBillboardBall()`;
+- dynamic `flushLines()` / `flushSolids()` uploads of the generated vertices.
 
-The per-body basis/scale/translation are folded into `bodyModel`, then:
-
-```text
-bodyMvp = frameMvp * bodyModel
-```
-
-The old shader receives that matrix and a constant color attribute; the resident mesh is submitted with `glDrawElements`.
-
-Automated corrected-candidate gates PASS:
-
-- `check_system_map_static_sphere.py`;
-- GL4.3 Core boundary;
-- Windows/MSYS2 MinGW64 syntax compilation of `SystemMapRenderer.cpp`.
-
-**Status:** corrected candidate pending focused local System Map visual acceptance.
-
-## Next after P0 — System Map repeated primitives
-
-Profile and then replace repeated CPU-generated topology such as:
-
-- orbit circles;
-- marker/selection rings;
-- billboard balls/halos;
-- other map circles built with per-frame `sin/cos` loops.
+The simple circle paths currently evaluate `sin/cos` per segment every frame, transform every point on the CPU, append complete line vertices, then upload the full dynamic batch. The orbit and billboard paths do the same with additional transforms/triangle generation.
 
 Preferred target:
 
 ```text
-shared unit circle/ring/disc meshes
+shared resident unit circle/ring/disc topology
     + compact per-instance center/radius/color/basis
-    + vertex shader / instancing
+    + grouped/instanced submission
 ```
 
-Do not use compute for geometry that can remain a static parameterized primitive.
+Important constraint: do not trade CPU tessellation for a draw-call explosion. The existing line path batches many circles and arbitrary lines into one upload/draw, so a replacement must preserve batching economics. Where authored segment counts differ, group instances by topology/segment count rather than rebuilding geometry every frame.
+
+### First slice
+
+Migrate `addCircleXZ()` and `addCircleXY()` first. Keep arbitrary lines on the existing dynamic line path. Preserve current visual semantics for:
+
+- planetary/orbit circles;
+- asteroid belt rings;
+- moon orbits;
+- player marker circles;
+- selected-body and selected-hub rings.
+
+Add an architecture contract preventing the migrated circle path from returning to per-frame CPU trigonometric topology generation.
+
+After that, evaluate `addOrbitCircle3D()` and `addBillboardBall()` separately.
 
 ## P1 — Scene visual traffic culling/LOD, profile-gated
 
@@ -127,7 +120,8 @@ Do not duplicate existing GPU work:
 - Hub planet surface;
 - planet rings;
 - shared `PlanetGlobeMeshRenderer` static sphere path;
-- Hub assembly wire meshes.
+- Hub assembly wire meshes;
+- System Map textured planet/moon spheres.
 
 ## Measurement protocol
 

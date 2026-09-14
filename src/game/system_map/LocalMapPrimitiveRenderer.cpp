@@ -163,6 +163,29 @@ void drawLocalMapLine(
     drawVertices(GL_LINES, vertices, 2, color);
 }
 
+void drawLocalMapLines(
+    const glm::dvec2* endpoints,
+    std::size_t endpointCount,
+    const glm::vec4& color
+)
+{
+    if (!endpoints || endpointCount == 0)
+        return;
+
+    std::vector<glm::vec2> vertices;
+    vertices.reserve(endpointCount);
+
+    for (std::size_t i = 0; i < endpointCount; ++i)
+    {
+        vertices.emplace_back(
+            static_cast<float>(endpoints[i].x),
+            static_cast<float>(endpoints[i].y)
+        );
+    }
+
+    drawVertices(GL_LINES, vertices.data(), vertices.size(), color);
+}
+
 void drawLocalMapCross(
     const glm::dvec2& point,
     float size,

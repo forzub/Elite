@@ -100,6 +100,28 @@ namespace game::system_map
             int segments
         ) = 0;
 
+        // Repeated System-map rings use resident unit-circle meshes and
+        // per-instance center/radius/color data. The legacy addCircle* API
+        // remains available for unmigrated callers, but scene orchestration
+        // should prefer this batched path.
+        virtual void beginGpuCircles() = 0;
+
+        virtual void addGpuCircleXZ(
+            const glm::vec3& center,
+            float radius,
+            const glm::vec4& color,
+            int segments
+        ) = 0;
+
+        virtual void addGpuCircleXY(
+            const glm::vec3& center,
+            float radius,
+            const glm::vec4& color,
+            int segments
+        ) = 0;
+
+        virtual void flushGpuCircles(const glm::mat4& mvp) = 0;
+
         virtual void addCross(
             const glm::vec3& center,
             float size,

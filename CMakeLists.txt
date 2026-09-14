@@ -106,6 +106,35 @@ target_include_directories(EliteModelAsset PUBLIC
     "${CMAKE_SOURCE_DIR}/src"
 )
 
+# Runtime library decomposition ------------------------------------------------
+# Wave R0: lowest-level deterministic navigation geometry. This target is
+# intentionally presentation/server/client agnostic and is linked by both
+# runtime executables instead of compiling the same implementation twice.
+add_library(EliteNavigationGeometry STATIC
+    src/world/navigation/NavigationObstacleGeometry.cpp
+    src/world/navigation/GeometricPathPlanner.cpp
+)
+target_include_directories(EliteNavigationGeometry PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+
+# Shared CPU-side authored/runtime assembly geometry. This is intentionally not
+# a render library: it owns OBJ hydration, authored assembly definitions and the
+# CPU cache consumed by authoritative simulation and client presentation.
+add_library(EliteAssemblyGeometry STATIC
+    src/game/geometry/ObjLoader.cpp
+    src/game/geometry/ObjectAssemblyRegistry.cpp
+    src/game/geometry/AssemblyMeshLibrary.cpp
+)
+target_include_directories(EliteAssemblyGeometry PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+target_link_libraries(EliteAssemblyGeometry PRIVATE
+    EliteModelAsset
+)
+
 if(ELITE_BUILD_ASSET_EDITOR)
     # The editor owns a completely separate runtime tree from EliteGame.
     # Its executable, workspaces, WebUI fallback and resource pack all live here.
@@ -374,7 +403,6 @@ add_executable(EliteGame
     src/render/ship/ShipMeshRenderer.cpp
     src/render/geometry/AssemblyGpuLibrary.cpp
     
-    src/game/geometry/ObjLoader.cpp
     # src/game/geometry/MeshLibrary.cpp
     
     src/render/ShaderLibrary.cpp
@@ -387,8 +415,6 @@ add_executable(EliteGame
     src/debug/FrustumDebugData.cpp
 
     src/world/descriptors/ObjectDescriptorRegistry.cpp
-    src/game/geometry/ObjectAssemblyRegistry.cpp
-    src/game/geometry/AssemblyMeshLibrary.cpp
 
     src/world/modules/ObjectModuleRuntime.cpp
     src/world/modules/ObjectHitBuilder.cpp
@@ -420,9 +446,7 @@ add_executable(EliteGame
     src/world/modules/ObjectDetachedFragmentRuntime.cpp
     src/world/modules/ObjectRepairJobRuntime.cpp
     src/world/navigation/SmallCraftNavigation.cpp
-    src/world/navigation/NavigationObstacleGeometry.cpp
     src/world/navigation/NavigationObstacleFactory.cpp
-    src/world/navigation/GeometricPathPlanner.cpp
     src/world/navigation/SmoothPathOptimizer.cpp
     src/world/navigation/TrajectoryGenerator.cpp
     src/world/navigation/GuidanceTunnel.cpp
@@ -586,8 +610,6 @@ if(ELITE_BUILD_SERVER)
 
         src/game/damage/DamageSystem.cpp
 
-        src/game/geometry/ObjectAssemblyRegistry.cpp
-
         src/world/descriptors/ObjectDescriptorRegistry.cpp
         src/world/objects/StaticObjectDamage.cpp
         src/world/modules/ObjectModuleRuntime.cpp
@@ -600,9 +622,7 @@ if(ELITE_BUILD_SERVER)
         src/world/modules/ObjectRepairJobRuntime.cpp
 
         src/world/navigation/SmallCraftNavigation.cpp
-        src/world/navigation/NavigationObstacleGeometry.cpp
         src/world/navigation/NavigationObstacleFactory.cpp
-        src/world/navigation/GeometricPathPlanner.cpp
         src/world/navigation/SmoothPathOptimizer.cpp
         src/world/navigation/TrajectoryGenerator.cpp
         src/world/navigation/GuidanceTunnel.cpp
@@ -634,6 +654,8 @@ if(ELITE_BUILD_SERVER)
     )
 
     target_link_libraries(EliteServer PRIVATE
+        EliteNavigationGeometry
+        EliteAssemblyGeometry
         nlohmann_json::nlohmann_json
         Threads::Threads
     )
@@ -949,6 +971,8 @@ target_include_directories(EliteGame PRIVATE
 
 target_link_libraries(EliteGame PRIVATE
     EliteModelAsset
+    EliteNavigationGeometry
+    EliteAssemblyGeometry
     glfw
     opengl32
     Freetype::Freetype

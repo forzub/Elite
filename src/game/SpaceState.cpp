@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include <glad/gl.h>
 #include "src/core/RuntimeTrace.h"
 #include <iostream>
@@ -3937,12 +3938,12 @@ m_systemMapRenderer.render(
     // -------------------------------------------------
     glDisable(GL_DEPTH_TEST);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, vx, vy, 0, -1, 1);
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::loadIdentity();
+    elite::render::core_legacy::ortho(0, vx, vy, 0, -1, 1);
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::loadIdentity();
 
 
     // -------------------------------------------------

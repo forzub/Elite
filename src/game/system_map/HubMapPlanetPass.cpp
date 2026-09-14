@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/HubMapPlanetPass.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 #include "src/game/system_map/HubMapBackend.h"
@@ -92,7 +93,7 @@ void HubMapPlanetPass::drawHubMapCircleLocalXY(
             segments
         );
 
-    glBegin(GL_LINE_LOOP);
+    elite::render::core_legacy::begin(GL_LINE_LOOP);
 
     for (int i = 0; i < segments; ++i)
     {
@@ -112,13 +113,13 @@ void HubMapPlanetPass::drawHubMapCircleLocalXY(
         const glm::dvec2 s =
             m_owner.activeCamera().project(p);
 
-        glVertex2d(
+        elite::render::core_legacy::vertex2d(
             s.x,
             s.y
         );
     }
 
-    glEnd();
+    elite::render::core_legacy::end();
 }
 
 
@@ -537,7 +538,7 @@ if (surfaceTexture == 0)
                 c1
             );
 
-        glBegin(GL_TRIANGLE_STRIP);
+        elite::render::core_legacy::begin(GL_TRIANGLE_STRIP);
 
         for (int i = 0; i <= segments; ++i)
         {
@@ -553,33 +554,33 @@ if (surfaceTexture == 0)
                 std::sin(a);
 
             // Вершина внутренней окружности.
-            glColor4f(
+            elite::render::core_legacy::color4f(
                 color0.r,
                 color0.g,
                 color0.b,
                 color0.a
             );
 
-            glVertex2d(
+            elite::render::core_legacy::vertex2d(
                 visualPlanetCenterPx.x + ca * r0,
                 visualPlanetCenterPx.y + sa * r0
             );
 
             // Вершина внешней окружности.
-            glColor4f(
+            elite::render::core_legacy::color4f(
                 color1.r,
                 color1.g,
                 color1.b,
                 color1.a
             );
 
-            glVertex2d(
+            elite::render::core_legacy::vertex2d(
                 visualPlanetCenterPx.x + ca * r1,
                 visualPlanetCenterPx.y + sa * r1
             );
         }
 
-        glEnd();
+        elite::render::core_legacy::end();
     }
 }
 
@@ -913,7 +914,7 @@ const glm::mat3 cameraToPlanetBody =
 
             Поэтому орбита лежит в локальной плоскости XY.
         */
-        glColor4f(
+        elite::render::core_legacy::color4f(
             m_resources.hubVisuals().planetOrbitColor.r,
             m_resources.hubVisuals().planetOrbitColor.g,
             m_resources.hubVisuals().planetOrbitColor.b,
@@ -945,7 +946,7 @@ const glm::mat3 cameraToPlanetBody =
             0.0
         );
 
-    glColor4f(
+    elite::render::core_legacy::color4f(
         m_resources.hubVisuals().hubOriginColor.r,
         m_resources.hubVisuals().hubOriginColor.g,
         m_resources.hubVisuals().hubOriginColor.b,

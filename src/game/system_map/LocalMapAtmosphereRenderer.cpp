@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/LocalMapAtmosphereRenderer.h"
 
 #include <algorithm>
@@ -44,9 +45,7 @@ void drawLocalMapAtmosphereSoftBand(
         );
 
     GLboolean textureWasEnabled =
-        glIsEnabled(
-            GL_TEXTURE_2D
-        );
+        elite::render::core_legacy::texture2DEnabled();
 
     GLboolean blendWasEnabled =
         glIsEnabled(
@@ -82,9 +81,7 @@ void drawLocalMapAtmosphereSoftBand(
     // Если оставить GL_TEXTURE_2D включённым, fixed pipeline будет
     // умножать цвет на текущую текстуру и текущие texture coords.
     // В результате band может стать полностью невидимым.
-    glDisable(
-        GL_TEXTURE_2D
-    );
+    elite::render::core_legacy::enableTexture2D(false);
 
     glBindTexture(
         GL_TEXTURE_2D,
@@ -213,7 +210,7 @@ void drawLocalMapAtmosphereSoftBand(
                 t1
             );
 
-        glBegin(
+        elite::render::core_legacy::begin(
             GL_TRIANGLE_STRIP
         );
 
@@ -234,32 +231,32 @@ void drawLocalMapAtmosphereSoftBand(
                     ang
                 );
 
-            glColor4f(
+            elite::render::core_legacy::color4f(
                 peakColor.r,
                 peakColor.g,
                 peakColor.b,
                 a0
             );
 
-            glVertex2d(
+            elite::render::core_legacy::vertex2d(
                 planetCenterPx.x + ca * r0,
                 planetCenterPx.y + sa * r0
             );
 
-            glColor4f(
+            elite::render::core_legacy::color4f(
                 peakColor.r,
                 peakColor.g,
                 peakColor.b,
                 a1
             );
 
-            glVertex2d(
+            elite::render::core_legacy::vertex2d(
                 planetCenterPx.x + ca * r1,
                 planetCenterPx.y + sa * r1
             );
         }
 
-        glEnd();
+        elite::render::core_legacy::end();
     }
 
     glDepthMask(
@@ -277,9 +274,9 @@ void drawLocalMapAtmosphereSoftBand(
     );
 
     if (textureWasEnabled)
-        glEnable(GL_TEXTURE_2D);
+        elite::render::core_legacy::enableTexture2D(true);
     else
-        glDisable(GL_TEXTURE_2D);
+        elite::render::core_legacy::enableTexture2D(false);
 
     if (blendWasEnabled)
         glEnable(GL_BLEND);

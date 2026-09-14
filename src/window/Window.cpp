@@ -55,12 +55,12 @@ Window::Window(int width, int height, const char* title)
     // initializing, which is the white startup rectangle seen by users.
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-    // GPU modernization baseline. Compatibility profile is intentional for
-    // the transition: a few legacy render paths still use fixed-function
-    // calls, while OpenGL 4.3 already exposes compute shaders and SSBOs.
+    // OpenGL 4.3 Core is the production client baseline. Legacy presentation
+    // syntax is translated by CoreGlLegacyBridge into GLSL/VAO/VBO submission;
+    // the driver no longer exposes or owns fixed-function state.
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
     
     m_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
@@ -94,9 +94,9 @@ Window::Window(int width, int height, const char* title)
 
         glfwSetScrollCallback(m_window, Input::scrollCallback);
 
-        // Load the complete 4.3 compatibility entry-point set before any
-        // client renderer starts. The capability gate prints the exact
-        // driver/runtime limits and fails early below the supported floor.
+        // Load the OpenGL 4.3 Core entry-point set before any client renderer
+        // starts. The capability gate prints the exact driver/runtime limits
+        // and fails early below the supported floor.
         const int gladVersion = gladLoadGL(glfwGetProcAddress);
         if (gladVersion == 0)
             throw std::runtime_error("GLAD init failed");

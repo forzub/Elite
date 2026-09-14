@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
@@ -961,18 +962,18 @@ void WorldLabelRenderer::renderEdgeArrow(const WorldLabel& label)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glColor4f(
+    elite::render::core_legacy::color4f(
         0.7f,
         0.9f,
         1.0f,
         v
     );
 
-    glBegin(GL_TRIANGLES);
-        glVertex2f(tip.x,   tip.y);
-        glVertex2f(left.x,  left.y);
-        glVertex2f(right.x, right.y);
-    glEnd();
+    elite::render::core_legacy::begin(GL_TRIANGLES);
+        elite::render::core_legacy::vertex2f(tip.x,   tip.y);
+        elite::render::core_legacy::vertex2f(left.x,  left.y);
+        elite::render::core_legacy::vertex2f(right.x, right.y);
+    elite::render::core_legacy::end();
 
     // -------------------------------------------------
     // Text (против направления)

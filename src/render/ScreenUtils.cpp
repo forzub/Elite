@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "render/ScreenUtils.h"
 #include <glad/gl.h>
 
@@ -41,11 +42,11 @@ void drawLine(
     const glm::vec3& color
 )
 {
-    glColor3f(color.r, color.g, color.b);
-    glBegin(GL_LINES);
-        glVertex2f(a.x, a.y);
-        glVertex2f(b.x, b.y);
-    glEnd();
+    elite::render::core_legacy::color3f(color.r, color.g, color.b);
+    elite::render::core_legacy::begin(GL_LINES);
+        elite::render::core_legacy::vertex2f(a.x, a.y);
+        elite::render::core_legacy::vertex2f(b.x, b.y);
+    elite::render::core_legacy::end();
 }
 
 
@@ -56,16 +57,16 @@ void drawCircle(const glm::vec2& center, float radius)
 {
     const int segments = 32;
 
-    glBegin(GL_LINE_LOOP);
+    elite::render::core_legacy::begin(GL_LINE_LOOP);
     for (int i = 0; i < segments; ++i)
     {
         float a = (i / (float)segments) * 2.0f * 3.1415926f;
-        glVertex2f(
+        elite::render::core_legacy::vertex2f(
             center.x + std::cos(a) * radius,
             center.y + std::sin(a) * radius
         );
     }
-    glEnd();
+    elite::render::core_legacy::end();
 }
 
 

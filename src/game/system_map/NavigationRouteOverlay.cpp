@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/NavigationRouteOverlay.h"
 
 #include <algorithm>
@@ -25,7 +26,7 @@ constexpr glm::vec4 kDanger(1.00f, 0.34f, 0.30f, 0.96f);
 struct ScreenSpaceState
 {
     GLint program = 0;
-    GLint matrixMode = GL_MODELVIEW;
+    GLint matrixMode = elite::render::core_legacy::ModelViewToken;
     GLint blendSrc = GL_ONE;
     GLint blendDst = GL_ZERO;
     GLboolean depthEnabled = GL_FALSE;
@@ -36,10 +37,10 @@ struct ScreenSpaceState
 ScreenSpaceState beginScreenSpace(const Viewport& viewport)
 {
     ScreenSpaceState previous;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &previous.program);
-    glGetIntegerv(GL_MATRIX_MODE, &previous.matrixMode);
-    glGetIntegerv(GL_BLEND_SRC_RGB, &previous.blendSrc);
-    glGetIntegerv(GL_BLEND_DST_RGB, &previous.blendDst);
+    elite::render::core_legacy::getIntegerv(GL_CURRENT_PROGRAM, &previous.program);
+    elite::render::core_legacy::getIntegerv(elite::render::core_legacy::MatrixModeToken, &previous.matrixMode);
+    elite::render::core_legacy::getIntegerv(GL_BLEND_SRC_RGB, &previous.blendSrc);
+    elite::render::core_legacy::getIntegerv(GL_BLEND_DST_RGB, &previous.blendDst);
     previous.depthEnabled = glIsEnabled(GL_DEPTH_TEST);
     previous.blendEnabled = glIsEnabled(GL_BLEND);
     glGetFloatv(GL_LINE_WIDTH, &previous.lineWidth);
@@ -49,62 +50,62 @@ ScreenSpaceState beginScreenSpace(const Viewport& viewport)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0.0, viewport.width, viewport.height, 0.0, -1.0, 1.0);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::pushMatrix();
+    elite::render::core_legacy::loadIdentity();
+    elite::render::core_legacy::ortho(0.0, viewport.width, viewport.height, 0.0, -1.0, 1.0);
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::pushMatrix();
+    elite::render::core_legacy::loadIdentity();
     return previous;
 }
 
 void endScreenSpace(const ScreenSpaceState& previous)
 {
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::popMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::popMatrix();
     glLineWidth(previous.lineWidth);
     glBlendFunc(previous.blendSrc, previous.blendDst);
     if (previous.blendEnabled) glEnable(GL_BLEND); else glDisable(GL_BLEND);
     if (previous.depthEnabled) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
     glUseProgram(static_cast<GLuint>(previous.program));
-    glMatrixMode(previous.matrixMode);
+    elite::render::core_legacy::matrixMode(previous.matrixMode);
 }
 
 void rect(const glm::dvec2& p, double w, double h, const glm::vec4& c)
 {
-    glColor4f(c.r, c.g, c.b, c.a);
-    glBegin(GL_QUADS);
-    glVertex2d(p.x, p.y);
-    glVertex2d(p.x + w, p.y);
-    glVertex2d(p.x + w, p.y + h);
-    glVertex2d(p.x, p.y + h);
-    glEnd();
+    elite::render::core_legacy::color4f(c.r, c.g, c.b, c.a);
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
+    elite::render::core_legacy::vertex2d(p.x, p.y);
+    elite::render::core_legacy::vertex2d(p.x + w, p.y);
+    elite::render::core_legacy::vertex2d(p.x + w, p.y + h);
+    elite::render::core_legacy::vertex2d(p.x, p.y + h);
+    elite::render::core_legacy::end();
 }
 
 void outline(const glm::dvec2& p, double w, double h, const glm::vec4& c, float width = 1.0f)
 {
-    glColor4f(c.r, c.g, c.b, c.a);
+    elite::render::core_legacy::color4f(c.r, c.g, c.b, c.a);
     glLineWidth(width);
-    glBegin(GL_LINE_LOOP);
-    glVertex2d(p.x, p.y);
-    glVertex2d(p.x + w, p.y);
-    glVertex2d(p.x + w, p.y + h);
-    glVertex2d(p.x, p.y + h);
-    glEnd();
+    elite::render::core_legacy::begin(GL_LINE_LOOP);
+    elite::render::core_legacy::vertex2d(p.x, p.y);
+    elite::render::core_legacy::vertex2d(p.x + w, p.y);
+    elite::render::core_legacy::vertex2d(p.x + w, p.y + h);
+    elite::render::core_legacy::vertex2d(p.x, p.y + h);
+    elite::render::core_legacy::end();
     glLineWidth(1.0f);
 }
 
 void line(const glm::dvec2& a, const glm::dvec2& b, const glm::vec4& c, float width = 1.0f)
 {
-    glColor4f(c.r, c.g, c.b, c.a);
+    elite::render::core_legacy::color4f(c.r, c.g, c.b, c.a);
     glLineWidth(width);
-    glBegin(GL_LINES);
-    glVertex2d(a.x, a.y);
-    glVertex2d(b.x, b.y);
-    glEnd();
+    elite::render::core_legacy::begin(GL_LINES);
+    elite::render::core_legacy::vertex2d(a.x, a.y);
+    elite::render::core_legacy::vertex2d(b.x, b.y);
+    elite::render::core_legacy::end();
     glLineWidth(1.0f);
 }
 

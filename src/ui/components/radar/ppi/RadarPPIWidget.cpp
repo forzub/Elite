@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "RadarPPIWidget.h"
 #include "effects/CRTEffects.h"
 #include "effects/LCDEffects.h"
@@ -212,21 +213,21 @@ void RadarPPIWidget::applyEffectsConfig(const game::IRadarEffectsConfig& effects
 
 void RadarPPIWidget::renderBackground()
 {
-    glColor4f(m_visualConfig.background.color.r, 
+    elite::render::core_legacy::color4f(m_visualConfig.background.color.r,
               m_visualConfig.background.color.g, 
               m_visualConfig.background.color.b, 
               m_visualConfig.background.color.a);
               
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex2f(m_centerX, m_centerY);
+    elite::render::core_legacy::begin(GL_TRIANGLE_FAN);
+    elite::render::core_legacy::vertex2f(m_centerX, m_centerY);
     for (int i = 0; i <= 360; ++i)
     {
         float a = glm::radians((float)i);
         float x = m_centerX + std::cos(a) * m_radius;
         float y = m_centerY + std::sin(a) * m_radius * m_visualConfig.background.perspective;
-        glVertex2f(x, y);
+        elite::render::core_legacy::vertex2f(x, y);
     }
-    glEnd();
+    elite::render::core_legacy::end();
 }
 
 void RadarPPIWidget::renderOverlay()
@@ -251,7 +252,7 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
     glGetIntegerv(GL_VIEWPORT, previousViewport);
     GLboolean previousBlend = glIsEnabled(GL_BLEND);
     GLboolean previousDepthTest = glIsEnabled(GL_DEPTH_TEST);
-    GLboolean previousTexture2D = glIsEnabled(GL_TEXTURE_2D);
+    GLboolean previousTexture2D = elite::render::core_legacy::texture2DEnabled();
 
     // Создаём FBO
     int fboW = std::max(1, std::min(2048, static_cast<int>(pw)));
@@ -265,14 +266,14 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, fboW, fboH, 0, -1, 1);
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::pushMatrix();
+    elite::render::core_legacy::loadIdentity();
+    elite::render::core_legacy::ortho(0, fboW, fboH, 0, -1, 1);
     
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::pushMatrix();
+    elite::render::core_legacy::loadIdentity();
 
     m_centerX = fboW * 0.5f;
     m_centerY = fboH * 0.5f;
@@ -292,10 +293,10 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
     renderSweep();
 
     // Восстанавливаем матрицы
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::popMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::popMatrix();
 
 
 
@@ -320,13 +321,13 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
 
         // Рисуем текстуру
         glBindTexture(GL_TEXTURE_2D, m_renderTarget.texture());
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        glBegin(GL_QUADS);
-            glTexCoord2f(0, 0); glVertex2f(screenX,      screenY);
-            glTexCoord2f(1, 0); glVertex2f(screenX + pw, screenY);
-            glTexCoord2f(1, 1); glVertex2f(screenX + pw, screenY + ph);
-            glTexCoord2f(0, 1); glVertex2f(screenX,      screenY + ph);
-        glEnd();
+        elite::render::core_legacy::color4f(1.0f, 1.0f, 1.0f, 1.0f);
+        elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
+            elite::render::core_legacy::texCoord2f(0, 0); elite::render::core_legacy::vertex2f(screenX,      screenY);
+            elite::render::core_legacy::texCoord2f(1, 0); elite::render::core_legacy::vertex2f(screenX + pw, screenY);
+            elite::render::core_legacy::texCoord2f(1, 1); elite::render::core_legacy::vertex2f(screenX + pw, screenY + ph);
+            elite::render::core_legacy::texCoord2f(0, 1); elite::render::core_legacy::vertex2f(screenX,      screenY + ph);
+        elite::render::core_legacy::end();
         
         m_freezeTestTarget.unbind();
     }
@@ -342,18 +343,18 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
     glViewport(previousViewport[0], previousViewport[1], 
                previousViewport[2], previousViewport[3]);
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, previousViewport[2], previousViewport[3], 0, -1, 1);
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::pushMatrix();
+    elite::render::core_legacy::loadIdentity();
+    elite::render::core_legacy::ortho(0, previousViewport[2], previousViewport[3], 0, -1, 1);
     
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::pushMatrix();
+    elite::render::core_legacy::loadIdentity();
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_TEXTURE_2D);
+    elite::render::core_legacy::enableTexture2D(true);
 
     // Применяем шейдер
     if (m_shaderEnabled && m_postShader && m_effect) {
@@ -378,29 +379,29 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
 
     // Рисуем текстуру
     glBindTexture(GL_TEXTURE_2D, m_renderTarget.texture());
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    glBegin(GL_QUADS);
-        glTexCoord2f(0, 0); glVertex2f(px,      py);
-        glTexCoord2f(1, 0); glVertex2f(px + pw, py);
-        glTexCoord2f(1, 1); glVertex2f(px + pw, py + ph);
-        glTexCoord2f(0, 1); glVertex2f(px,      py + ph);
-    glEnd();
+    elite::render::core_legacy::color4f(1.0f, 1.0f, 1.0f, 1.0f);
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
+        elite::render::core_legacy::texCoord2f(0, 0); elite::render::core_legacy::vertex2f(px,      py);
+        elite::render::core_legacy::texCoord2f(1, 0); elite::render::core_legacy::vertex2f(px + pw, py);
+        elite::render::core_legacy::texCoord2f(1, 1); elite::render::core_legacy::vertex2f(px + pw, py + ph);
+        elite::render::core_legacy::texCoord2f(0, 1); elite::render::core_legacy::vertex2f(px,      py + ph);
+    elite::render::core_legacy::end();
 
     if (m_shaderEnabled && m_postShader)
         glUseProgram(0);
 
-    glDisable(GL_TEXTURE_2D);
+    elite::render::core_legacy::enableTexture2D(false);
     glDisable(GL_BLEND);
 
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::popMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::popMatrix();
 
     // Восстанавливаем состояние OpenGL
     if (!previousBlend) glDisable(GL_BLEND);
     if (previousDepthTest) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
-    if (!previousTexture2D) glDisable(GL_TEXTURE_2D);
+    if (!previousTexture2D) elite::render::core_legacy::enableTexture2D(false);
 }
 
 
@@ -421,7 +422,7 @@ void RadarPPIWidget::renderSweep()
         float angleRad = glm::radians(angleDeg);
         float trailIntensity = std::pow(1.0f - t, m_visualConfig.sweep.trailFadePower);
 
-        glColor4f(m_visualConfig.sweep.color.r, 
+        elite::render::core_legacy::color4f(m_visualConfig.sweep.color.r,
                   m_visualConfig.sweep.color.g * trailIntensity,
                   m_visualConfig.sweep.color.b, 
                   m_visualConfig.sweep.color.a);
@@ -431,10 +432,10 @@ void RadarPPIWidget::renderSweep()
         float x = m_centerX + dirX * m_radius;
         float y = m_centerY - dirY * m_radius * m_visualConfig.background.perspective;
 
-        glBegin(GL_LINES);
-        glVertex2f(m_centerX, m_centerY);
-        glVertex2f(x, y);
-        glEnd();
+        elite::render::core_legacy::begin(GL_LINES);
+        elite::render::core_legacy::vertex2f(m_centerX, m_centerY);
+        elite::render::core_legacy::vertex2f(x, y);
+        elite::render::core_legacy::end();
     }
 
     glLineWidth(1.0f);
@@ -482,27 +483,27 @@ void RadarPPIWidget::renderContacts()
         float heightOffset = heightNorm * usableRadius * m_visualConfig.contact.verticalScale;
         float finalY = baseY + heightOffset;
 
-        glColor4f(finalColor.r, finalColor.g, finalColor.b, finalColor.a);
+        elite::render::core_legacy::color4f(finalColor.r, finalColor.g, finalColor.b, finalColor.a);
 
         // Горизонтальная линия
-        glBegin(GL_LINES);
-        glVertex2f(baseX - m_visualConfig.contact.halfWidth, baseY);
-        glVertex2f(baseX + m_visualConfig.contact.halfWidth, baseY);
-        glEnd();
+        elite::render::core_legacy::begin(GL_LINES);
+        elite::render::core_legacy::vertex2f(baseX - m_visualConfig.contact.halfWidth, baseY);
+        elite::render::core_legacy::vertex2f(baseX + m_visualConfig.contact.halfWidth, baseY);
+        elite::render::core_legacy::end();
 
         // Вертикальная линия
-        glBegin(GL_LINES);
-        glVertex2f(baseX, baseY);
-        glVertex2f(baseX, finalY);
-        glEnd();
+        elite::render::core_legacy::begin(GL_LINES);
+        elite::render::core_legacy::vertex2f(baseX, baseY);
+        elite::render::core_legacy::vertex2f(baseX, finalY);
+        elite::render::core_legacy::end();
 
         // Квадратик
-        glBegin(GL_LINE_LOOP);
-        glVertex2f(baseX - m_visualConfig.contact.boxSize, finalY - m_visualConfig.contact.boxSize);
-        glVertex2f(baseX + m_visualConfig.contact.boxSize, finalY - m_visualConfig.contact.boxSize);
-        glVertex2f(baseX + m_visualConfig.contact.boxSize, finalY + m_visualConfig.contact.boxSize);
-        glVertex2f(baseX - m_visualConfig.contact.boxSize, finalY + m_visualConfig.contact.boxSize);
-        glEnd();
+        elite::render::core_legacy::begin(GL_LINE_LOOP);
+        elite::render::core_legacy::vertex2f(baseX - m_visualConfig.contact.boxSize, finalY - m_visualConfig.contact.boxSize);
+        elite::render::core_legacy::vertex2f(baseX + m_visualConfig.contact.boxSize, finalY - m_visualConfig.contact.boxSize);
+        elite::render::core_legacy::vertex2f(baseX + m_visualConfig.contact.boxSize, finalY + m_visualConfig.contact.boxSize);
+        elite::render::core_legacy::vertex2f(baseX - m_visualConfig.contact.boxSize, finalY + m_visualConfig.contact.boxSize);
+        elite::render::core_legacy::end();
     }
 
     glDisable(GL_BLEND);
@@ -534,19 +535,19 @@ void RadarPPIWidget::renderGraticule()
         float finalIntensity = intensity * ringFactor;
         
         // Яркость RGB и прозрачность зависят от intensity
-        glColor4f(BASE_COLOR.r * finalIntensity, 
+        elite::render::core_legacy::color4f(BASE_COLOR.r * finalIntensity,
                   BASE_COLOR.g * finalIntensity, 
                   BASE_COLOR.b * finalIntensity, 
                   finalIntensity);  // Альфа = той же интенсивности
         
-        glBegin(GL_LINE_LOOP);
+        elite::render::core_legacy::begin(GL_LINE_LOOP);
         for (int i = 0; i <= 360; i += 5) {
             float a = glm::radians((float)i);
             float x = m_centerX + std::cos(a) * ringRadius;
             float y = m_centerY + std::sin(a) * ringRadius * m_visualConfig.background.perspective;
-            glVertex2f(x, y);
+            elite::render::core_legacy::vertex2f(x, y);
         }
-        glEnd();
+        elite::render::core_legacy::end();
     }
     
     // ===== РАДИАЛЬНЫЕ ЛИНИИ =====
@@ -558,15 +559,15 @@ void RadarPPIWidget::renderGraticule()
         // Радиальные линии чуть темнее колец
         float radialIntensity = intensity * 0.8f;
         
-        glColor4f(BASE_COLOR.r * radialIntensity, 
+        elite::render::core_legacy::color4f(BASE_COLOR.r * radialIntensity,
                   BASE_COLOR.g * radialIntensity, 
                   BASE_COLOR.b * radialIntensity, 
                   radialIntensity);
         
-        glBegin(GL_LINES);
-        glVertex2f(m_centerX, m_centerY);
-        glVertex2f(x, y);
-        glEnd();
+        elite::render::core_legacy::begin(GL_LINES);
+        elite::render::core_legacy::vertex2f(m_centerX, m_centerY);
+        elite::render::core_legacy::vertex2f(x, y);
+        elite::render::core_legacy::end();
     }
     
     // ===== МЕТКИ КУРСА (0°, 90°, 180°, 270°) =====
@@ -579,15 +580,15 @@ void RadarPPIWidget::renderGraticule()
         // Кардинальные направления ярче
         float cardinalIntensity = intensity * 1.2f;
         
-        glColor4f(BASE_COLOR.r * cardinalIntensity, 
+        elite::render::core_legacy::color4f(BASE_COLOR.r * cardinalIntensity,
                   BASE_COLOR.g * cardinalIntensity, 
                   BASE_COLOR.b * cardinalIntensity, 
                   cardinalIntensity);
         
-        glBegin(GL_LINES);
-        glVertex2f(m_centerX, m_centerY);
-        glVertex2f(x, y);
-        glEnd();
+        elite::render::core_legacy::begin(GL_LINES);
+        elite::render::core_legacy::vertex2f(m_centerX, m_centerY);
+        elite::render::core_legacy::vertex2f(x, y);
+        elite::render::core_legacy::end();
     }
     
     glDisable(GL_BLEND);

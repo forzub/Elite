@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 #include <glm/gtc/constants.hpp>
 
@@ -564,6 +565,11 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
                 insidePlanetDisc;
         };
 
+    std::vector<glm::dvec2> visibleEndpoints;
+    std::vector<glm::dvec2> hiddenEndpoints;
+    visibleEndpoints.reserve(static_cast<std::size_t>(segments) * 2u);
+    hiddenEndpoints.reserve(static_cast<std::size_t>(segments) * 2u);
+
     for (int i = 0; i < segments; ++i)
     {
         const glm::dvec3 p0 =
@@ -582,22 +588,29 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
         const bool hidden =
             isHiddenBehindPlanet(mid);
 
-        glm::vec4 segmentColor = color;
-        if (hidden)
-            segmentColor.a *= 0.16f;
+        auto& endpoints =
+            hidden
+                ? hiddenEndpoints
+                : visibleEndpoints;
 
-        const glm::dvec2 s0 =
-            activeCamera().project(p0);
-
-        const glm::dvec2 s1 =
-            activeCamera().project(p1);
-
-        drawPlanetMapLine(
-            s0,
-            s1,
-            segmentColor
-        );
+        endpoints.push_back(activeCamera().project(p0));
+        endpoints.push_back(activeCamera().project(p1));
     }
+
+    glm::vec4 hiddenColor = color;
+    hiddenColor.a *= 0.16f;
+
+    drawLocalMapLines(
+        hiddenEndpoints.data(),
+        hiddenEndpoints.size(),
+        hiddenColor
+    );
+
+    drawLocalMapLines(
+        visibleEndpoints.data(),
+        visibleEndpoints.size(),
+        color
+    );
 }
 
 }

@@ -22,7 +22,7 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-glm
       - name: Core boundary
-        shell: msys2 {0}
+        shell: pwsh
         run: python tests/architecture_contracts/check_gl43_modernization_boundary.py
       - name: Compile Core legacy bridge header
         shell: msys2 {0}

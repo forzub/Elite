@@ -1,0 +1,18 @@
+name: GL43 Core Migration Audit
+
+on:
+  push:
+    branches:
+      - chatgpt/mae-v01075-semantic-workflow-motion-v5
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: GL43 compatibility inventory
+        run: python tests/architecture_contracts/check_gl43_modernization_boundary.py

@@ -59,6 +59,7 @@ NO_IMMEDIATE_MODE_FILES = {
 # from the inventory above may return at all.
 NO_COMPATIBILITY_FILES = {
     "src/game/system_map/DetailMapGeometryPass.cpp",
+    "src/game/system_map/HubMapGeometryPass.cpp",
 }
 
 
@@ -111,6 +112,7 @@ primitive_header = (
 for token in (
     "const glm::vec4& color",
     "drawLocalMapLine",
+    "drawLocalMapLines",
     "drawLocalMapCross",
     "drawLocalMapCircle",
 ):
@@ -126,7 +128,8 @@ assert "glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);" in win
 print("GL43 MODERNIZATION BOUNDARY: PASS")
 print(" - OpenGL 4.3 Compatibility remains the temporary migration scaffold")
 print(" - migrated files cannot reintroduce retired compatibility APIs")
-print(" - LocalMapPrimitiveRenderer exposes explicit-color submission")
+print(" - Detail and Hub geometry passes are compatibility-clean")
+print(" - LocalMapPrimitiveRenderer exposes explicit-color batched submission")
 print(" - current compatibility debt inventory:")
 
 if not inventory:

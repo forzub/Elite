@@ -2,7 +2,7 @@
 
 **Started:** 2026-09-14  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Status:** R0 physical seams established; dual-source runtime model ingress accepted; client GPU modernization active
+**Status:** R0 physical seams established; dual-source runtime model ingress accepted; client GPU audit complete / GL43 runtime acceptance pending
 
 ## Purpose
 
@@ -88,35 +88,55 @@ Detailed ingress policy: `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md`.
 
 ## Client GPU modernization boundary
 
-Client GPU modernization is a presentation/runtime-efficiency track, not a relocation of game authority. OpenGL 4.3+ is the new graphical-client baseline candidate so compute shaders and SSBOs can absorb sufficiently parallel presentation workloads.
+Client GPU modernization is a presentation/runtime-efficiency track, not a relocation of game authority. OpenGL 4.3+ is the graphical-client baseline candidate so compute shaders, SSBOs and modern indirect/streaming patterns are available where measurements justify them.
 
-The current implementation uses **OpenGL 4.3 Compatibility Profile** because legacy fixed-function presentation calls still exist. Core Profile is a later dependency-cleanup gate. `render::gpu::GlRuntimeCapabilities` is the startup capability authority; bundled GLAD must expose the same 4.3 compatibility API rather than hiding compute entry points behind an older loader.
+The current implementation uses **OpenGL 4.3 Compatibility Profile** because legacy fixed-function presentation calls still exist. Core Profile is a later dependency-cleanup gate. `render::gpu::GlRuntimeCapabilities` is the startup capability authority; bundled GLAD must expose the same 4.3 compatibility API.
 
 GPU-derived results should normally remain GPU-resident through rendering. A design that requires `dispatch -> barrier -> synchronous readback -> gameplay decision` in the frame path is presumed architecturally wrong until proven otherwise by measurement.
 
-Authoritative simulation, route decisions, damage, economy, replication and other gameplay state remain CPU-owned by default. Presentation-only derivatives may use GPU compute independently of authoritative CPU state.
+Authoritative simulation, route decisions, docking decisions, damage, economy, replication and other gameplay state remain CPU-owned by default. Presentation-only derivatives may use GPU compute independently of authoritative CPU state.
 
-Initial priorities:
+### Full client audit — 2026-09-14
 
-- P0 — `PlanetaryWeatherMapGenerator`, `CloudAppearanceTextureGenerator`;
-- P1 — `GalaxyStarfieldRenderer` derived transforms/filtering/draw preparation;
-- P1/P2 — large instance/frustum visibility only after profiling;
-- P2 — procedural celestial mesh/detail and `PlanetWireRenderer` only if rebuild cadence makes compute worthwhile.
+The code audit is recorded in `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md`; the executable migration order is in `src/render/GPU_OFFLOAD_PLAN.md`.
 
-General world-signal labels are disabled for now; Hub-map and close-navigation label paths remain active. `src/render/GPU_OFFLOAD_PLAN.md` is the authoritative GPU workload/migration plan.
+The old provisional priority order is superseded:
+
+- **P0:** System Map textured celestial-body geometry is rebuilt on CPU every map frame. Large bodies generate 49,152 vertices/body/frame and re-upload the batch. Replace this with one shared indexed unit sphere + vertex shader/per-body parameters. Compute is not required.
+- **P1, profile-gated:** Scene visual-traffic `prepareScene` + frustum/LOD/instance compaction can move to SSBO/compute/indirect rendering only if target-count profiling proves material CPU cost. GPU results stay render-side; no visibility readback.
+- **P1/P2:** repeated map orbit/halo/billboard geometry should prefer static parameterized primitives/instancing over compute.
+- **P2:** starfield GPU rebuild work is deferred because current rebuilds are observer-threshold-triggered rather than per-frame.
+- runtime procedural cloud generation is already GPU shader/FBO driven;
+- `PlanetWireRenderer` geometry generation is initialization-time/static;
+- celestial texture baking is offline and not a runtime GPU migration target.
+
+Navigation prediction/guidance, client snapshot hydration, CPU interaction/picking state, shared/authoritative physics, database parsing and branch-heavy presentation semantics remain CPU by design unless a future architecture changes their consumers.
+
+### Measurement gate
+
+Before implementation waves:
+
+1. locally accept the GL43 runtime baseline (`>=4.3`, `compute=1`, `ssbo=1`, visual smoke);
+2. capture System Map phase timing and upload bytes;
+3. instrument `SceneRenderer::prepareScene()` separately from the existing `ScenePerf` render timings;
+4. profile target-scale ship/part counts;
+5. implement only the workloads that demonstrate a real budget impact.
 
 The GL43 baseline implementation exists in commit `19db31eca5aa2c12475d87f2dfa322f794990c6e`, but remains a **candidate until local build/launch runtime acceptance** confirms actual >=4.3 context, compute/SSBO support and visual parity.
 
 ## Planned order
 
 1. **R0:** seed `EliteNavigationGeometry` and shared CPU assembly geometry — accepted.
-2. **GPU foundation interleave:** establish/accept GL43 capability baseline, then offload measured presentation hot paths.
-3. **Runtime model ingress consumer migration:** first read-only consumer, legacy parity, then one-type `.elmodel` A/B switch.
-4. **R1:** dependency audit and expansion toward `EliteNavigationCore`; separate pure/deterministic planners from workspace/presentation/effects.
-5. **R2:** extract `EliteSimulationPolicy` from already policy-shaped activation/replication calculations where ownership permits.
-6. **R3:** split portable protocol/codecs from transport effects.
-7. **R4+:** progressively establish world/ship/simulation/server/client/presentation libraries.
-8. **Late wave:** reduce `SpaceState` to a composition/coordinator shell; do not start by carving it blindly.
+2. **GPU foundation:** locally accept GL43 capability baseline.
+3. **GPU measurement checkpoint:** System Map phase/upload metrics + separate `SceneRenderer::prepareScene()` metrics.
+4. **GPU P0:** remove System Map per-frame CPU textured-sphere tessellation/upload through a static sphere + vertex shader path if measurements confirm the code-derived cost.
+5. **GPU P1 conditional:** visual-traffic GPU culling/LOD/compaction only when target-count measurements justify it.
+6. **Runtime model ingress consumer migration:** first read-only consumer, legacy parity, then one-type `.elmodel` A/B switch.
+7. **R1:** dependency audit and expansion toward `EliteNavigationCore`; separate pure/deterministic planners from workspace/presentation/effects.
+8. **R2:** extract `EliteSimulationPolicy` from already policy-shaped activation/replication calculations where ownership permits.
+9. **R3:** split portable protocol/codecs from transport effects.
+10. **R4+:** progressively establish world/ship/simulation/server/client/presentation libraries.
+11. **Late wave:** reduce `SpaceState` to a composition/coordinator shell; do not start by carving it blindly.
 
 ## Testing policy
 
@@ -143,6 +163,7 @@ Architectural state, current intent and next work are repository data. Every com
 - `CURRENT_TASK.md` — immediate next acceptance target;
 - this file — long-lived decomposition intent, boundaries and wave history;
 - `src/render/GPU_OFFLOAD_PLAN.md` for GPU work;
-- `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md` for model-ingress work.
+- `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` when audit facts/priorities change;
+- `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md` only for model-ingress work.
 
 Chat history is not the canonical project state.

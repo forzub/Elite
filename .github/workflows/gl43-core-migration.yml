@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           rm -rf /tmp/glad-core
-          glad --api='gl:core=4.3' --extensions='' c --loader --out-path=/tmp/glad-core
+          glad --api='gl:core=4.3' --extensions='' --out-path=/tmp/glad-core c --loader
           cp /tmp/glad-core/include/glad/gl.h glad/include/glad/gl.h
           cp /tmp/glad-core/src/gl.c glad/src/gl.c
       - name: Verify GL43 Core boundary

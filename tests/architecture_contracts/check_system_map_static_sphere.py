@@ -39,8 +39,15 @@ assert "textureLongitudeOffsetDeg" in sphere_body
 assert "batch->bodies.push_back" in sphere_body
 
 for token in (
-    "#version 430 core",
-    "aUnitPosition",
+    "#version 330 core",
+    "aPos",
+    "aUv",
+    "aColor",
+    "uniform mat4 uMVP",
+):
+    assert token in vert, token
+
+for retired in (
     "uBodyCenter",
     "uBodyRadius",
     "uPrimeAxis",
@@ -48,10 +55,16 @@ for token in (
     "uEastAxis",
     "uColor",
 ):
-    assert token in vert, token
+    assert retired not in vert, retired
+
+assert "bodyMvp" in flush_body
+assert "mvp * bodyModel" in flush_body
+assert "glVertexAttrib4fv" in flush_body
+assert "GL_ELEMENT_ARRAY_BUFFER" in flush_body
 
 print("SYSTEM MAP STATIC TEXTURED SPHERE: PASS")
 print(" - 24x48 and 64x128 indexed sphere meshes are one-time GL_STATIC_DRAW resources")
 print(" - per-frame textured body path records only body parameters")
 print(" - draw path uses glDrawElements and performs no dynamic full-sphere upload")
+print(" - runtime-proven map-body shader ABI is preserved; body transform is folded into uMVP")
 print(" - rotation phase / longitude offset are folded into the per-body basis")

@@ -1206,6 +1206,11 @@ void SystemMapRenderer::createTexturedSphereMesh(
         )
     );
 
+    // The proven map-body shader receives color at attribute 2. The static
+    // sphere has no per-vertex color payload, so keep the array disabled and
+    // supply one constant generic attribute per body draw.
+    glDisableVertexAttribArray(2);
+
     mesh.indexCount = static_cast<GLsizei>(indices.size());
 
     glBindBuffer(
@@ -1288,18 +1293,6 @@ void SystemMapRenderer::ensureTexturedShader()
         glGetUniformLocation(m_texturedShader, "uMVP");
     m_texturedSamplerLoc =
         glGetUniformLocation(m_texturedShader, "uTexture");
-    m_texturedCenterLoc =
-        glGetUniformLocation(m_texturedShader, "uBodyCenter");
-    m_texturedRadiusLoc =
-        glGetUniformLocation(m_texturedShader, "uBodyRadius");
-    m_texturedPrimeAxisLoc =
-        glGetUniformLocation(m_texturedShader, "uPrimeAxis");
-    m_texturedNorthAxisLoc =
-        glGetUniformLocation(m_texturedShader, "uNorthAxis");
-    m_texturedEastAxisLoc =
-        glGetUniformLocation(m_texturedShader, "uEastAxis");
-    m_texturedColorLoc =
-        glGetUniformLocation(m_texturedShader, "uColor");
 }
 
 
@@ -1965,12 +1958,6 @@ void SystemMapRenderer::flushTexturedBodies(
     glDisable(GL_BLEND);
 
     glUseProgram(m_texturedShader);
-    glUniformMatrix4fv(
-        m_texturedMvpLoc,
-        1,
-        GL_FALSE,
-        glm::value_ptr(mvp)
-    );
     glUniform1i(m_texturedSamplerLoc, 0);
     glActiveTexture(GL_TEXTURE0);
 
@@ -1988,37 +1975,45 @@ void SystemMapRenderer::flushTexturedBodies(
                     ? m_texturedSphereHigh
                     : m_texturedSphereLow;
 
-            glUniform3fv(
-                m_texturedCenterLoc,
-                1,
-                glm::value_ptr(draw.center)
+            glm::mat4 bodyModel(1.0f);
+            bodyModel[0] = glm::vec4(
+                draw.primeAxis * draw.radius,
+                0.0f
             );
-            glUniform1f(
-                m_texturedRadiusLoc,
-                draw.radius
+            bodyModel[1] = glm::vec4(
+                draw.northAxis * draw.radius,
+                0.0f
             );
-            glUniform3fv(
-                m_texturedPrimeAxisLoc,
-                1,
-                glm::value_ptr(draw.primeAxis)
+            bodyModel[2] = glm::vec4(
+                draw.eastAxis * draw.radius,
+                0.0f
             );
-            glUniform3fv(
-                m_texturedNorthAxisLoc,
-                1,
-                glm::value_ptr(draw.northAxis)
+            bodyModel[3] = glm::vec4(
+                draw.center,
+                1.0f
             );
-            glUniform3fv(
-                m_texturedEastAxisLoc,
+
+            const glm::mat4 bodyMvp =
+                mvp * bodyModel;
+
+            glUniformMatrix4fv(
+                m_texturedMvpLoc,
                 1,
-                glm::value_ptr(draw.eastAxis)
-            );
-            glUniform4fv(
-                m_texturedColorLoc,
-                1,
-                glm::value_ptr(draw.color)
+                GL_FALSE,
+                glm::value_ptr(bodyMvp)
             );
 
             glBindVertexArray(mesh.vao);
+            // Explicit rebind is redundant for a valid VAO but makes the
+            // indexed resource ownership unambiguous across surrounding passes.
+            glBindBuffer(
+                GL_ELEMENT_ARRAY_BUFFER,
+                mesh.indexBuffer
+            );
+            glVertexAttrib4fv(
+                2,
+                glm::value_ptr(draw.color)
+            );
             glDrawElements(
                 GL_TRIANGLES,
                 mesh.indexCount,

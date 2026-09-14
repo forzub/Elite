@@ -1,4 +1,4 @@
-name: GL43 Core Migration Audit
+name: GL43 Core Migration
 
 on:
   push:
@@ -7,31 +7,39 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  audit:
+  migrate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: GL43 compatibility inventory
-        run: python tests/architecture_contracts/check_gl43_modernization_boundary.py
-      - name: Exact legacy call variants
+        with:
+          fetch-depth: 1
+      - name: Install glad 2.0.8
+        run: python -m pip install --disable-pip-version-check glad2==2.0.8
+      - name: Migrate production source to Core bridge
+        run: python tools/gl43_core_migrate.py
+      - name: Generate bundled GLAD 4.3 Core
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          patterns = {
-              'calls': re.compile(r'\bgl(?:Begin|End|Vertex[234][A-Za-z0-9_]*|Color[34][A-Za-z0-9_]*|TexCoord[1-4][A-Za-z0-9_]*|Normal3[A-Za-z0-9_]*|MatrixMode|PushMatrix|PopMatrix|LoadIdentity|LoadMatrix[A-Za-z0-9_]*|MultMatrix[A-Za-z0-9_]*|Ortho|EnableClientState|DisableClientState|VertexPointer|ColorPointer|TexCoordPointer)\s*\('),
-              'begin_modes': re.compile(r'glBegin\s*\(\s*([A-Z0-9_]+)'),
-          }
-          calls=set(); modes=set()
-          for p in Path('src').rglob('*'):
-              if p.suffix.lower() not in {'.c','.cc','.cpp','.cxx','.h','.hh','.hpp'}: continue
-              s=p.read_text(encoding='utf-8',errors='ignore')
-              calls.update(x.group(0).split('(')[0].strip() for x in patterns['calls'].finditer(s))
-              modes.update(patterns['begin_modes'].findall(s))
-          print('LEGACY_CALL_VARIANTS=' + ','.join(sorted(calls)))
-          print('LEGACY_BEGIN_MODES=' + ','.join(sorted(modes)))
-          PY
+          rm -rf /tmp/glad-core
+          glad --api='gl:core=4.3' --extensions='' c --loader --out-path=/tmp/glad-core
+          cp /tmp/glad-core/include/glad/gl.h glad/include/glad/gl.h
+          cp /tmp/glad-core/src/gl.c glad/src/gl.c
+      - name: Verify GL43 Core boundary
+        run: python tests/architecture_contracts/check_gl43_modernization_boundary.py
+      - name: Check patch whitespace
+        run: git diff --check
+      - name: Commit migration result
+        shell: bash
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo 'No migration changes to commit.'
+            exit 0
+          fi
+          git config user.name 'Kostiantyn Zubchenko [FE-30]'
+          git config user.email '90088507+forzub@users.noreply.github.com'
+          git add -A
+          git commit -m 'render: complete OpenGL 4.3 Core API migration'
+          git push origin HEAD:chatgpt/mae-v01075-semantic-workflow-motion-v5

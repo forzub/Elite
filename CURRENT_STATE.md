@@ -1,6 +1,6 @@
 # Elite — CURRENT STATE
 
-**Updated:** 2026-09-14  
+**Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Editor baseline:** v0.10.86 accepted  
 **Model Asset Editor architecture:** closed at the current target boundary  
@@ -16,82 +16,62 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 .elmodel   -> CompiledModelAssetReader -> ModelAssetBinary       -> ModelAsset
 ```
 
-`src/model_asset/ModelAsset.h` remains the single schema/version authority. The first read-only runtime-model consumer migration remains queued but is not the active track.
+`src/model_asset/ModelAsset.h` remains the single schema/version authority. Runtime-model consumer migration is queued behind renderer modernization.
 
 ## Client rendering decision — GL4.3 Core before GPU offload
 
-The graphical client uses a transitional OpenGL 4.3 Compatibility context. Compatibility Profile is migration scaffolding only.
-
-Required order:
+The graphical client still uses OpenGL 4.3 Compatibility as temporary migration scaffolding. Required order remains:
 
 ```text
 4.3 Compatibility scaffold
-    -> inventory + retire compatibility-only rendering
+    -> retire all compatibility-only rendering
     -> 4.3 Core Profile accepted
     -> fresh performance baseline
     -> selective CPU -> GPU offload
 ```
 
-The CPU -> GPU audit remains recorded in `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md`, but its implementation waves are blocked until Core Profile acceptance.
-
-## Accepted GL43 behavior checkpoints
+## Accepted GL43 checkpoints
 
 ### B1 — accepted
 
-The user reported no visible change after `LocalMapPrimitiveRenderer` line/cross/circle submission moved from immediate mode to GLSL 4.30 + VAO/VBO.
+`LocalMapPrimitiveRenderer` line/cross/circle submission moved from immediate mode to GLSL 4.30 + VAO/VBO with no visible regression in local smoke.
 
 ### B2a — accepted
 
-The user again reported Detail Map behavior visually unchanged after `DetailMapGeometryPass` moved to explicit-color primitives and retired its own fixed-function color/current-color/immediate orbit submission.
+`DetailMapGeometryPass` moved to explicit-color modern primitives, including orbit rendering. Hub/player orbits, far-side attenuation, volume edges and small-body markers remained visually unchanged.
 
-Accepted preserved behavior includes hub/player orbits, hidden-half attenuation, volume edges and small-body markers.
+### B2b Hub geometry — accepted
 
-## Current candidate — B2b / Hub geometry cleanup
+`HubMapGeometryPass.cpp` is now fully compatibility-clean and its local smoke is accepted. The user reports Hub Map still looks as before after fallback box/axis/velocity/grid/screen-marker drawing moved to explicit-color modern primitives.
 
-`HubMapGeometryPass.cpp` has now crossed the full compatibility-clean boundary:
+The architecture guard therefore treats both of these files as permanent no-compatibility zones:
 
-- no `glColor*`;
-- no `glBegin/glEnd`;
-- no immediate `glVertex*`;
-- fallback box/axis/velocity/grid rendering passes explicit `glm::vec4` colors to `LocalMapPrimitiveRenderer`;
-- fallback screen marker circle/cross uses the same modern primitive path;
-- the architecture contract permanently forbids compatibility-only API from returning to this file.
+- `src/game/system_map/DetailMapGeometryPass.cpp`;
+- `src/game/system_map/HubMapGeometryPass.cpp`.
 
-This does not redesign Hub geometry; it only replaces the submission/state mechanism.
+## Active seam — finish GL43-B2b
 
-`LocalMapPrimitiveRenderer` itself is **not yet fully Core-clean** because temporary no-color overloads still support unmigrated callers in `DetailMapPlanetPass`, `HubMapBackend` and `HubMapPlanetPass` via `GL_CURRENT_COLOR`.
+`LocalMapPrimitiveRenderer` itself is not yet fully Core-clean because temporary no-color overloads still bridge three callers through `GL_CURRENT_COLOR`:
 
-## Remaining confirmed legacy areas
+- `DetailMapPlanetPass`;
+- `HubMapBackend`;
+- `HubMapPlanetPass`.
 
-Compatibility debt still includes at least:
+The immediate next step is to migrate those calls to explicit `glm::vec4` color, delete the no-color overloads and `compatibilityCurrentColor()`, and move `LocalMapPrimitiveRenderer.cpp` into the full no-compatibility guard.
 
-- `src/render/DebugGrid.cpp`;
-- `src/game/system_map/DetailMapBackend.cpp`;
-- `src/game/system_map/DetailMapPlanetPass.cpp`;
-- `src/game/system_map/HubMapBackend.cpp`;
-- `src/game/system_map/HubMapPlanetPass.cpp`;
-- `src/game/system_map/LocalMapAtmosphereRenderer.cpp`;
-- `src/game/system_map/MapObjectOverlayRenderer.cpp`;
-- transitional compatibility overloads in `LocalMapPrimitiveRenderer.cpp`.
+At that point GL43-B is complete.
 
-`DetailMapGeometryPass.cpp` and `HubMapGeometryPass.cpp` are now static no-compatibility zones.
+## Remaining GL43 waves after B
 
-The architecture scan output is the machine authority; this list is only a readable checkpoint.
+- **GL43-C:** remaining Detail Map fixed-function code in `DetailMapBackend` and `DetailMapPlanetPass`;
+- **GL43-D:** remaining Hub/local celestial code in `HubMapBackend`, `HubMapPlanetPass`, `LocalMapAtmosphereRenderer`;
+- **GL43-E:** `MapObjectOverlayRenderer`, `DebugGrid`, and every remaining machine-inventory offender;
+- **GL43-F:** switch bundled GLAD/context to OpenGL 4.3 Core Profile and run complete visual acceptance.
 
-Authoritative renderer migration plan: `src/render/GL43_MODERNIZATION_PLAN.md`.
-
-## Current validation gate
-
-```bash
-python tests/architecture_contracts/check_gl43_modernization_boundary.py
-cmake --build build --target EliteGame
-./build/EliteGame.exe
-```
-
-Primary visual target is Hub Map geometry: station/module fallback boxes, axis lines, adaptive grid, screen circles/crosses and velocity marker lines must remain visually unchanged.
+CPU -> GPU optimization remains blocked until GL43-F passes.
 
 ## Ownership boundaries unchanged
 
-Render modernization does not move gameplay authority. Authoritative physics, route/path/docking decisions, damage, economy, replication and CPU interaction semantics remain CPU-owned.
+Authoritative physics, route/path/docking decisions, damage, economy, replication and CPU interaction semantics remain CPU-owned.
 
 `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md` remains accepted and unchanged.

@@ -1,9 +1,9 @@
 # Elite — CURRENT TASK
 
-**Updated:** 2026-09-14  
+**Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Track:** OpenGL 4.3 renderer modernization  
-**Stage:** GL43-B explicit-color migration; Detail geometry accepted, Hub geometry candidate is now compatibility-clean
+**Stage:** finish GL43-B2b by closing the shared local-map primitive seam
 
 ## Active rule
 
@@ -21,69 +21,61 @@ Detailed plan: `src/render/GL43_MODERNIZATION_PLAN.md`.
 
 ## Accepted behavior
 
-B1 and B2a are visually accepted by local smoke. The user reports no visible changes after:
+B1, B2a and Hub geometry cleanup are visually accepted by local runtime smoke. No visible regressions were reported after:
 
 - `LocalMapPrimitiveRenderer` moved line/cross/circle drawing off immediate mode;
-- `DetailMapGeometryPass` moved to explicit colors and modern primitive submission.
+- `DetailMapGeometryPass` moved to explicit colors and modern primitive submission;
+- `HubMapGeometryPass` moved all fallback box/axis/velocity/grid/screen-marker drawing to the same explicit-color modern primitive path.
 
-## Current candidate — HubMapGeometryPass cleanup
+`DetailMapGeometryPass.cpp` and `HubMapGeometryPass.cpp` are permanent `NO_COMPATIBILITY_FILES` in the architecture contract.
 
-`HubMapGeometryPass.cpp` no longer uses any compatibility-only API tracked by the GL43 architecture contract.
+## Current implementation — close B2b
 
-Its fallback rendering now uses explicit-color `LocalMapPrimitiveRenderer` calls for:
+Three bridge callers still use temporary no-color primitive overloads and therefore keep `GL_CURRENT_COLOR` alive in `LocalMapPrimitiveRenderer`:
 
-- box edges;
-- X/Y/Z axes;
-- velocity line;
-- screen circle/cross markers;
-- adaptive grid and grid axes.
+1. `DetailMapPlanetPass`;
+2. `HubMapBackend`;
+3. `HubMapPlanetPass`.
 
-The modern `HubMapGeometryRenderer` path remains unchanged. Only the old fallback submission/state mechanism was replaced.
+Next code changes:
 
-The architecture guard now places both:
+1. migrate those calls to explicit `glm::vec4` color;
+2. delete no-color overloads from `LocalMapPrimitiveRenderer.h/.cpp`;
+3. delete `compatibilityCurrentColor()` and the last `GL_CURRENT_COLOR` dependency in that renderer;
+4. promote `LocalMapPrimitiveRenderer.cpp` from the immediate-only guard to `NO_COMPATIBILITY_FILES`;
+5. build and smoke Detail/Hub again.
 
-- `DetailMapGeometryPass.cpp`;
-- `HubMapGeometryPass.cpp`;
-
-inside `NO_COMPATIBILITY_FILES`.
-
-## Required local validation now
-
-```bash
-python tests/architecture_contracts/check_gl43_modernization_boundary.py
-cmake --build build --target EliteGame
-./build/EliteGame.exe
-```
-
-Primary smoke target is Hub Map:
-
-- adaptive grid;
-- hub axes;
-- fallback module/station boxes if visible;
-- screen circles/crosses;
-- velocity marker lines;
-- unchanged colors, position and orientation.
-
-Any regression blocks acceptance.
-
-## Remaining B2b work
-
-After Hub geometry validation:
-
-1. migrate remaining no-color primitive callers in `DetailMapPlanetPass`, `HubMapBackend` and `HubMapPlanetPass`;
-2. delete the temporary no-color overloads from `LocalMapPrimitiveRenderer.h/.cpp`;
-3. delete `compatibilityCurrentColor()` and the last `GL_CURRENT_COLOR` dependency from that renderer;
-4. move `LocalMapPrimitiveRenderer.cpp` into `NO_COMPATIBILITY_FILES`;
-5. smoke Detail/Hub again.
-
-At that point the shared local-map primitive seam is fully closed.
+Once this passes, **GL43-B is complete**.
 
 ## Following waves
 
-- GL43-C: `DetailMapBackend` and remaining `DetailMapPlanetPass` fixed-function paths;
-- GL43-D: `HubMapBackend`, `HubMapPlanetPass`, `LocalMapAtmosphereRenderer`;
-- GL43-E: `MapObjectOverlayRenderer`, `DebugGrid` and every remaining inventory offender;
-- GL43-F: bundled GLAD Core 4.3 + `GLFW_OPENGL_CORE_PROFILE`, full build/runtime/visual acceptance.
+### GL43-C — Detail Map
+
+Remove remaining fixed-function code from:
+
+- `DetailMapBackend` projection/background;
+- `DetailMapPlanetPass` sphere grid, filled disk and fallback projected geometry.
+
+### GL43-D — Hub/local celestial
+
+Remove remaining fixed-function code from:
+
+- `HubMapBackend` projection/background;
+- `HubMapPlanetPass` fallback body/local-circle paths;
+- `LocalMapAtmosphereRenderer` soft-band compatibility path.
+
+### GL43-E — remaining debt
+
+Migrate `MapObjectOverlayRenderer`, `DebugGrid` and every remaining offender printed by `check_gl43_modernization_boundary.py`.
+
+### GL43-F — Core cutover
+
+Only after the machine inventory is clean:
+
+- switch bundled GLAD to OpenGL 4.3 Core;
+- request `GLFW_OPENGL_CORE_PROFILE`;
+- build and launch `EliteGame`;
+- smoke flight, cockpit/rear view, Galaxy/System/Detail/Hub and close-navigation HUD.
 
 ## Deferred until after Core acceptance
 

@@ -55,6 +55,12 @@ NO_IMMEDIATE_MODE_FILES = {
     "src/game/system_map/LocalMapPrimitiveRenderer.cpp",
 }
 
+# These files have crossed the stronger boundary: no compatibility-only API
+# from the inventory above may return at all.
+NO_COMPATIBILITY_FILES = {
+    "src/game/system_map/DetailMapGeometryPass.cpp",
+}
+
 
 def strip_cpp_comments(text: str) -> str:
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
@@ -90,6 +96,28 @@ for relative in sorted(NO_IMMEDIATE_MODE_FILES):
             f"{relative} reintroduced retired immediate-mode API: {name}"
         )
 
+for relative in sorted(NO_COMPATIBILITY_FILES):
+    source = strip_cpp_comments(
+        (ROOT / relative).read_text(encoding="utf-8")
+    )
+    for name, pattern in COMPATIBILITY_PATTERNS.items():
+        assert not pattern.search(source), (
+            f"{relative} reintroduced compatibility-only API: {name}"
+        )
+
+primitive_header = (
+    ROOT / "src/game/system_map/LocalMapPrimitiveRenderer.h"
+).read_text(encoding="utf-8")
+for token in (
+    "const glm::vec4& color",
+    "drawLocalMapLine",
+    "drawLocalMapCross",
+    "drawLocalMapCircle",
+):
+    assert token in primitive_header, (
+        f"LocalMapPrimitiveRenderer lost explicit-color API token: {token}"
+    )
+
 window = (ROOT / "src/window/Window.cpp").read_text(encoding="utf-8")
 assert "glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);" in window
 assert "glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);" in window
@@ -97,7 +125,8 @@ assert "glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);" in win
 
 print("GL43 MODERNIZATION BOUNDARY: PASS")
 print(" - OpenGL 4.3 Compatibility remains the temporary migration scaffold")
-print(" - migrated files cannot reintroduce immediate-mode submission")
+print(" - migrated files cannot reintroduce retired compatibility APIs")
+print(" - LocalMapPrimitiveRenderer exposes explicit-color submission")
 print(" - current compatibility debt inventory:")
 
 if not inventory:

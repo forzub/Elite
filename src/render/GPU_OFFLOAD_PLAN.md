@@ -1,6 +1,7 @@
 # Elite client GPU modernization plan
 
-**Baseline decision:** OpenGL 4.3+ is the minimum graphical-client API.
+**Baseline decision:** OpenGL 4.3+ is the minimum graphical-client API.  
+**Implementation status:** GL43 compatibility baseline candidate implemented in `19db31eca5aa2c12475d87f2dfa322f794990c6e`; local runtime acceptance pending.
 
 ## Transitional profile
 
@@ -8,13 +9,24 @@ The client currently requests **OpenGL 4.3 Compatibility Profile**, not Core Pro
 
 The bundled GLAD loader must be generated for `gl:compatibility=4.3`. A 4.3 context with a 3.3 loader is not accepted because it would hide the APIs needed for GPU offload.
 
-`render::gpu::GlRuntimeCapabilities` is the single runtime capability gate. Startup fails below 4.3 or when compute/SSBO entry points are unavailable, and logs the exact GPU/driver/GLSL and compute limits.
+`render::gpu::GlRuntimeCapabilities` is the single runtime capability gate. Startup must fail below 4.3 or when compute/SSBO entry points are unavailable, and must log the exact GPU/driver/GLSL and compute limits.
 
 ## Ownership rule
 
 GPU offload is for **client presentation and derived data**. Authoritative gameplay/simulation remains CPU-owned and deterministic unless a future design explicitly introduces a server-side accelerator path. Do not move authoritative navigation, damage, economy, replication or ship-state decisions into a client GPU merely because they are expensive.
 
 A workload is a GPU candidate when it has enough parallel work, its inputs can stay resident or upload infrequently, and its result is consumed by rendering without a blocking CPU readback. Avoid `dispatch -> glMemoryBarrier -> readback -> CPU decision` loops in the frame path.
+
+## Current acceptance gate
+
+Before any compute workload migration is accepted locally:
+
+```bash
+cmake --build build --target EliteGame
+./build/EliteGame.exe
+```
+
+Verify startup reports OpenGL >=4.3, `compute=1`, `ssbo=1`, credible compute limits, and visually smoke both ordinary gameplay rendering and Hub map rendering. Compatibility-profile rendering must remain visually equivalent before P0 compute work begins.
 
 ## Initial audit / priority
 
@@ -29,6 +41,12 @@ A workload is a GPU candidate when it has enough parallel work, its inputs can s
 | KEEP | Hub-map GPU geometry and near-navigation labels | keep active; optimize only from measurements | These are current required close-navigation presentation paths. |
 | DISABLED | general `WorldLabelRenderer` world-signal labels | do not optimize now | Presentation contract is intentionally undecided. Renderer infrastructure remains because navigation markers still use it. |
 | CPU | route/path planning, trajectory decisions, authoritative physics | keep CPU by default | Branchy algorithms, determinism/authority requirements and CPU consumers make GPU readback counterproductive. GPU visualization derivatives may be separate. |
+
+## Audit rule for the rest of the client
+
+Do not equate "CPU work" with "GPU candidate". For every suspected hot path record: execution frequency, item/pixel/vertex count, CPU wall time, allocation/buffer-upload cost, whether inputs can remain GPU-resident, whether the output is render-only, and whether any synchronous readback would be required. Only then promote it into a GPU migration wave.
+
+High-value patterns to keep looking for are repeated per-pixel procedural generation, repeated observer-relative transforms over large stable catalogs, repeated CPU culling/compaction before rendering, dynamic VBO rebuilds whose source data is otherwise static, and large independent per-instance calculations. Low-value candidates are small branchy planners, one-time/offline generation, string/UI work and any result immediately needed by authoritative CPU logic.
 
 ## Migration protocol
 

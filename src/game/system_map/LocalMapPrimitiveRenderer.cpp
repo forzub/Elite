@@ -86,10 +86,8 @@ glm::vec4 compatibilityCurrentColor()
 {
     GLfloat color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
-    // Transitional bridge only. Immediate-mode submission is gone from this
-    // renderer, but existing map callers still communicate color through
-    // fixed-function state. GL43-B2 replaces this with explicit color
-    // arguments and removes GL_CURRENT_COLOR completely.
+    // Transitional bridge for callers not yet migrated to the explicit-color
+    // overloads. GL43-B removes these overloads after all callers are moved.
     glGetFloatv(GL_CURRENT_COLOR, color);
 
     return glm::vec4(color[0], color[1], color[2], color[3]);
@@ -98,7 +96,8 @@ glm::vec4 compatibilityCurrentColor()
 void drawVertices(
     GLenum primitive,
     const glm::vec2* vertices,
-    std::size_t vertexCount
+    std::size_t vertexCount,
+    const glm::vec4& color
 )
 {
     if (!vertices || vertexCount == 0)
@@ -117,8 +116,6 @@ void drawVertices(
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previousVao);
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &previousArrayBuffer);
     glGetIntegerv(GL_VIEWPORT, viewport);
-
-    const glm::vec4 color = compatibilityCurrentColor();
 
     glUseProgram(state.program);
 
@@ -154,7 +151,8 @@ namespace game::system_map
 {
 void drawLocalMapLine(
     const glm::dvec2& a,
-    const glm::dvec2& b
+    const glm::dvec2& b,
+    const glm::vec4& color
 )
 {
     const glm::vec2 vertices[] = {
@@ -162,12 +160,13 @@ void drawLocalMapLine(
         glm::vec2(static_cast<float>(b.x), static_cast<float>(b.y))
     };
 
-    drawVertices(GL_LINES, vertices, 2);
+    drawVertices(GL_LINES, vertices, 2, color);
 }
 
 void drawLocalMapCross(
     const glm::dvec2& point,
-    float size
+    float size,
+    const glm::vec4& color
 )
 {
     const glm::vec2 vertices[] = {
@@ -177,13 +176,14 @@ void drawLocalMapCross(
         glm::vec2(static_cast<float>(point.x), static_cast<float>(point.y + size))
     };
 
-    drawVertices(GL_LINES, vertices, 4);
+    drawVertices(GL_LINES, vertices, 4, color);
 }
 
 void drawLocalMapCircle(
     const glm::dvec2& center,
     double radiusPx,
-    int segments
+    int segments,
+    const glm::vec4& color
 )
 {
     segments = std::max(segments, 8);
@@ -204,6 +204,31 @@ void drawLocalMapCircle(
         );
     }
 
-    drawVertices(GL_LINE_LOOP, vertices.data(), vertices.size());
+    drawVertices(GL_LINE_LOOP, vertices.data(), vertices.size(), color);
+}
+
+void drawLocalMapLine(
+    const glm::dvec2& a,
+    const glm::dvec2& b
+)
+{
+    drawLocalMapLine(a, b, compatibilityCurrentColor());
+}
+
+void drawLocalMapCross(
+    const glm::dvec2& point,
+    float size
+)
+{
+    drawLocalMapCross(point, size, compatibilityCurrentColor());
+}
+
+void drawLocalMapCircle(
+    const glm::dvec2& center,
+    double radiusPx,
+    int segments
+)
+{
+    drawLocalMapCircle(center, radiusPx, segments, compatibilityCurrentColor());
 }
 }

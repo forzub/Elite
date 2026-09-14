@@ -19,8 +19,6 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 .elmodel   -> CompiledModelAssetReader -> ModelAssetBinary       -> ModelAsset
 ```
 
-`src/model_asset/ModelAsset.h` remains the single schema/version authority. First read-only runtime consumer migration is queued.
-
 ## Client rendering modernization boundary
 
 OpenGL modernization is presentation infrastructure and does not change gameplay authority.
@@ -41,19 +39,32 @@ Detailed renderer migration: `src/render/GL43_MODERNIZATION_PLAN.md`.
 
 ## GL43 current checkpoint
 
-Two visual parity checkpoints are accepted:
+Accepted visual parity checkpoints now include:
 
-- B1: `LocalMapPrimitiveRenderer` moved line/cross/circle submission from immediate mode to GLSL 4.30 + VAO/VBO with no visible change;
-- B2a: `DetailMapGeometryPass` moved to explicit-color modern primitives, including orbit rendering, again with no visible change.
+- **B1:** `LocalMapPrimitiveRenderer` immediate-mode line/cross/circle submission replaced by GLSL 4.30 + VAO/VBO;
+- **B2a:** `DetailMapGeometryPass` moved to explicit-color modern primitives, including orbit rendering;
+- **B2b Hub geometry:** `HubMapGeometryPass` moved all compatibility fallback drawing to explicit-color modern primitives.
 
-The architecture boundary now contains two full no-compatibility zones:
+The user reported no visible regression at each checkpoint.
+
+Full no-compatibility zones currently include:
 
 - `DetailMapGeometryPass.cpp`;
 - `HubMapGeometryPass.cpp`.
 
-`HubMapGeometryPass` is the current B2b candidate: its fallback box/axis/velocity/grid/screen-marker drawing now uses explicit-color local-map primitives and no longer uses tracked fixed-function/immediate APIs.
+GL43-B remains active only because temporary no-color primitive overloads still support `DetailMapPlanetPass`, `HubMapBackend` and `HubMapPlanetPass` through `GL_CURRENT_COLOR`.
 
-Temporary no-color primitive overloads remain for `DetailMapPlanetPass`, `HubMapBackend` and `HubMapPlanetPass`. They still bridge through `GL_CURRENT_COLOR`; the shared primitive seam is not closed until those callers migrate and the bridge is deleted.
+The next closure is:
+
+```text
+migrate last three bridge callers
+    -> delete no-color overloads
+    -> delete compatibilityCurrentColor()
+    -> protect LocalMapPrimitiveRenderer as fully compatibility-clean
+    -> Detail/Hub smoke
+```
+
+After that GL43-B is complete and work advances to GL43-C.
 
 ## GL43 modernization final acceptance
 
@@ -71,33 +82,22 @@ The phase is complete only when:
 
 `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` remains the evidence base, but implementation is blocked until Core acceptance.
 
-Preserved later candidates include System Map static-sphere conversion and profile-gated scene culling/LOD. Navigation/guidance, gameplay/shared physics, replication state and CPU interaction semantics remain CPU.
-
 ## Planned order
 
 1. R0 shared runtime seams — accepted.
 2. Dual-source runtime model ingress — accepted.
 3. Client CPU -> GPU audit — complete.
 4. **GL43-A:** compatibility inventory/guard — established.
-5. **GL43-B:** shared local/screen primitive foundation — B1 and B2a visually accepted; B2b active, Hub geometry candidate clean.
+5. **GL43-B:** shared local/screen primitive foundation — B1/B2a/Hub geometry accepted; final primitive bridge cleanup active.
 6. **GL43-C:** remaining Detail Map compatibility removal.
 7. **GL43-D:** remaining Hub/local celestial compatibility removal.
 8. **GL43-E:** overlays/debug/all remaining inventory debt.
 9. **GL43-F:** GLAD/context Core 4.3 cutover + complete visual smoke.
 10. Fresh performance baseline, then selective offload.
-11. Resume first read-only runtime-model consumer migration.
+11. Resume runtime-model consumer migration.
 12. Continue R1+ runtime decomposition.
 
 ## Testing policy
-
-Accepted runtime baseline checks remain:
-
-```bash
-python tests/architecture_contracts/check_game_runtime_library_boundaries.py
-python tests/architecture_contracts/check_game_runtime_shared_geometry_boundary.py
-python tests/architecture_contracts/check_runtime_model_asset_ingress.py
-python tests/architecture_contracts/check_html_ui_resource_pack_api.py
-```
 
 Current GL43 check:
 

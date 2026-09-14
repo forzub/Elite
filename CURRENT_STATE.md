@@ -7,7 +7,7 @@
 **ModelAsset binary v4 architecture:** independent translation units closed  
 **Game runtime decomposition:** R0 seams + dual-source model ingress accepted  
 **Renderer baseline:** OpenGL 4.3 Core **accepted locally**  
-**Active renderer work:** CPU -> GPU migration, P0 System Map textured spheres
+**Active renderer work:** CPU -> GPU migration, P0 System Map textured-sphere regression correction
 
 ## Accepted runtime baseline
 
@@ -22,57 +22,73 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 
 ## OpenGL 4.3 Core — ACCEPTED
 
-The local developer build and runtime smoke passed on 2026-09-15. The client now runs on the accepted OpenGL 4.3 Core baseline:
+The local developer build and runtime smoke passed on 2026-09-15. The client runs on the accepted OpenGL 4.3 Core baseline. The station-adjacent freezes predate that migration and remain explicitly deferred; they are not part of the current CPU -> GPU wave.
 
-- GLFW requests OpenGL 4.3 Core Profile;
-- bundled GLAD 2.0.8 is generated for `gl:core=4.3`;
-- production `src/` has zero forbidden fixed-function/Compatibility API tokens under `check_gl43_modernization_boundary.py`;
-- remaining legacy presentation semantics are translated by `CoreGlLegacyBridge` into software state + GLSL 4.30 Core + VAO/VBO submission;
-- flight, cockpit/rear, Galaxy/System/Detail/Hub maps, HUD, radar/PPI, mini-camera and related visible paths were locally reported working.
+## P0 — System Map static textured spheres
 
-The station-adjacent freezes are **not a GL4.3 regression**: they existed before this renderer transformation. They are explicitly deferred and are not part of the current migration scope.
+### Original hot path
 
-## Active P0 — System Map static textured spheres
+A large textured body rebuilt `64 x 128 x 6 = 49,152` vertices every System Map frame and uploaded about `1.69 MiB/body/frame` before driver overhead.
 
-Implementation candidate commit: `e9a9cfdef1331f67259d019fd9024054ce30779e`.
+### First candidate — visually rejected
 
-The old System Map path rebuilt and uploaded textured sphere geometry every frame. A large body used 64 x 128 x 6 = 49,152 `TexturedVertex` records, approximately 1.69 MiB/body/frame before driver overhead.
+Initial implementation commit: `e9a9cfdef1331f67259d019fd9024054ce30779e`.
 
-The candidate now uses:
+It introduced resident 24x48 and 64x128 indexed unit spheres and a new vertex-shader ABI with per-body center/radius/basis uniforms. Static contracts and MinGW syntax passed, but the local runtime smoke failed: **textured planets and moons disappeared completely while rings, labels, grid and other System Map presentation remained visible**. P0 was therefore not accepted.
+
+A standalone OpenGL 4.3 Core raster diagnostic reproduced the exact indexed sphere topology, current shader pair, `GL_BACK + GL_CCW` culling, EBO/VAO submission and `glDrawElements`. It passed with:
 
 ```text
-one-time 24x48 indexed unit sphere VBO/EBO
-one-time 64x128 indexed unit sphere VBO/EBO
+shader link = PASS
+GL error    = GL_NO_ERROR
+center pixel= 255,255,255,255
+```
+
+That rules out a generic failure of the static sphere topology/index buffer/culling path. The regression is narrowed to integration of the newly introduced shader ABI/state in the full System Map runtime.
+
+### Corrected candidate
+
+Correction commit: `d9f1db5fdd6e72b68fa59e887bfc88535cb3f279`.
+
+The optimization is retained, but the already-proven System Map body shader interface is restored:
+
+```text
+resident 24x48 / 64x128 indexed unit spheres
         +
-per-body center/radius/basis/color uniforms
+old map_body_preview shader ABI:
+    aPos + aUv + aColor + uMVP
         +
-vertex shader transform
+per-body bodyModel
+bodyMvp = frameMvp * bodyModel
         -> glDrawElements
 ```
 
-Per-frame CPU latitude/longitude tessellation and full-sphere `GL_DYNAMIC_DRAW` upload are removed. `textureLongitudeOffsetDeg` and `rotationPhaseRad` are folded into the per-body prime/east basis once per body. The existing 3D depth, backface-culling policy and ring back/body/front ordering remain owned by the System Map path.
+`textureLongitudeOffsetDeg` and `rotationPhaseRad` are still folded once per body into the prime/east basis. The static mesh stays GPU-resident; no per-frame latitude/longitude tessellation and no full-sphere `GL_DYNAMIC_DRAW` upload return.
 
-## P0 automated evidence
+The per-body color is supplied through the old `aColor` attribute contract as a constant generic vertex attribute, and the mesh EBO is explicitly rebound before indexed drawing to make the ownership/state boundary unambiguous.
+
+## Corrected-candidate automated evidence
 
 PASS:
 
 - `tests/architecture_contracts/check_system_map_static_sphere.py`;
-- permanent GL4.3 Core boundary test;
-- migration `git diff --check`;
-- Windows/MSYS2 MinGW64 `g++ -std=c++17` syntax compilation of the complete `SystemMapRenderer.cpp` translation unit against the Core GLAD header.
+- permanent OpenGL 4.3 Core boundary test;
+- Linux hidden OpenGL 4.3 Core raster diagnostic for the original indexed topology;
+- Windows/MSYS2 MinGW64 `g++ -std=c++17` syntax compilation of the complete corrected `SystemMapRenderer.cpp` translation unit.
 
-The P0 code is therefore build-syntax/static-contract validated but still requires the developer's short visual System Map smoke before acceptance.
+The corrected P0 candidate is therefore pending only the focused local System Map visual smoke.
 
 ## Current acceptance boundary
 
-Do **not** diagnose the station freeze in this wave.
+Do **not** diagnose the known station freeze in this wave.
 
-Accept P0 only after checking textured planets/moons in System Map for:
+Accept corrected P0 only after confirming:
 
-- correct sphere visibility/winding;
-- correct texture orientation and seam;
-- correct axial orientation, longitude offset and rotation phase;
-- correct low/high sphere LOD appearance while zooming;
-- unchanged ring back/body/front ordering.
+- planets and moons are visible again;
+- sphere winding/visibility is correct;
+- texture orientation and seam match the pre-P0 baseline;
+- axial orientation, longitude offset and rotation phase remain correct;
+- low/high sphere LOD transition remains visually acceptable;
+- ring order remains back -> body -> front.
 
-After P0 acceptance, continue with measured/static-geometry modernization of repeated System Map circles/orbits/markers. `SceneRenderer` GPU culling/LOD remains profile-gated and is not automatically the next step.
+After P0 acceptance, continue with repeated System Map circles/orbits/markers using shared static parameterized primitives. `SceneRenderer` GPU culling/LOD remains profile-gated and is not automatically next.

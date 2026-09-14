@@ -56,6 +56,7 @@
 #include "src/game/system_map/SystemMapSceneFrame.h"
 #include "src/game/system_map/SystemMapSceneFrameBuilder.h"
 #include "src/game/system_map/SystemMapRenderContext.h"
+#include "src/game/system_map/SystemMapGpuCircleBatch.h"
 #include "src/game/system_map/SystemMapSceneRenderer.h"
 #include "src/game/system_map/DetailMapView.h"
 #include "src/game/system_map/HubMapView.h"
@@ -421,6 +422,48 @@ private:
         int segments = 96
     ) override;
 
+    void beginGpuCircles() override
+    {
+        m_gpuCircleBatch.begin();
+    }
+
+    void addGpuCircleXZ(
+        const glm::vec3& center,
+        float radius,
+        const glm::vec4& color,
+        int segments
+    ) override
+    {
+        m_gpuCircleBatch.add(
+            center,
+            radius,
+            color,
+            segments,
+            game::system_map::SystemMapGpuCircleBatch::Plane::XZ
+        );
+    }
+
+    void addGpuCircleXY(
+        const glm::vec3& center,
+        float radius,
+        const glm::vec4& color,
+        int segments
+    ) override
+    {
+        m_gpuCircleBatch.add(
+            center,
+            radius,
+            color,
+            segments,
+            game::system_map::SystemMapGpuCircleBatch::Plane::XY
+        );
+    }
+
+    void flushGpuCircles(const glm::mat4& mvp) override
+    {
+        m_gpuCircleBatch.flush(mvp);
+    }
+
 
     void addOrbitCircle3D(
         const glm::vec3& center,
@@ -671,6 +714,7 @@ private:
     std::vector<Vertex> m_vertices;
     std::vector<Vertex> m_solidVertices;
     std::vector<TexturedBatch> m_texturedBatches;
+    game::system_map::SystemMapGpuCircleBatch m_gpuCircleBatch;
 
     Mode m_mode = Mode::Galaxy;
     float m_rightPanelRatio = 0.28f;

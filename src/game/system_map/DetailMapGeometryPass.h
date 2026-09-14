@@ -31,18 +31,21 @@ private:
 
     void drawPlanetMapLine(
         const glm::dvec2& a,
-        const glm::dvec2& b
+        const glm::dvec2& b,
+        const glm::vec4& color
     );
 
     void drawPlanetMapCross(
         const glm::dvec2& p,
-        float size
+        float size,
+        const glm::vec4& color
     );
 
     void drawPlanetMapCircle(
         const glm::dvec2& center,
         double radiusPx,
-        int segments
+        int segments,
+        const glm::vec4& color
     );
 
     void drawPlanetMapAxes(
@@ -68,7 +71,8 @@ private:
         const world::celestial::DetailMapSnapshot& snapshot,
         double scale,
         const glm::dvec2& centerPx,
-        int segments
+        int segments,
+        const glm::vec4& color
     );
 
 private:

@@ -1,103 +1,114 @@
 # Elite — CURRENT TASK
 
-**Updated:** 2026-09-14
-**Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Track:** OpenGL 4.3 renderer modernization
-**Stage:** migrate all currently working client presentation paths to OpenGL 4.3 Core Profile before CPU -> GPU offload
+**Updated:** 2026-09-14  
+**Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
+**Track:** OpenGL 4.3 renderer modernization  
+**Stage:** validate GL43-A inventory guard + GL43-B1 immediate-mode retirement, then remove hidden current-color state from local-map primitives
 
-## Decision
+## Active rule
 
-Do **not** start the previously planned System Map sphere offload, compute culling or other GPU optimization waves yet.
-
-First complete the render API migration:
+Do **not** start System Map sphere offload, compute culling, starfield compute or other CPU -> GPU optimization work yet.
 
 ```text
 4.3 Compatibility scaffold
-    -> remove all compatibility-only rendering
+    -> remove compatibility-only rendering
     -> 4.3 Core Profile accepted
-    -> measure
-    -> offload only proven CPU hot paths
+    -> measure again
+    -> offload only measured hot paths
 ```
 
 Detailed plan: `src/render/GL43_MODERNIZATION_PLAN.md`.
 
-## Immediate gate GL43-A — accept scaffold and complete inventory
+## Current candidate — GL43-A + GL43-B1
 
-Local commands:
+### Architecture scan
+
+Run:
 
 ```bash
+python tests/architecture_contracts/check_gl43_modernization_boundary.py
+```
+
+The contract:
+
+- verifies the temporary GLFW context remains OpenGL 4.3 Compatibility during migration;
+- scans production C/C++ sources for immediate mode, fixed-function matrix state, current-color state, fixed texture enable state and legacy client arrays;
+- prints every current offender and token count;
+- permanently forbids `LocalMapPrimitiveRenderer.cpp` from returning to immediate-mode submission.
+
+The printed inventory is the mechanical baseline for subsequent waves.
+
+### LocalMapPrimitiveRenderer B1
+
+`LocalMapPrimitiveRenderer` now submits line/cross/circle geometry with:
+
+```text
+pixel-space CPU vertices
+    -> streaming VBO + VAO
+    -> GLSL 4.30 Core vertex shader
+    -> explicit pixel -> NDC transform from GL_VIEWPORT
+    -> uniform color
+    -> glDrawArrays
+```
+
+No `glBegin/glEnd` or immediate `glVertex*` remains in this file.
+
+For behavioral safety, B1 still reads the caller's legacy `GL_CURRENT_COLOR` and forwards it to the shader uniform. This is transitional debt, not the final API.
+
+## Required local validation now
+
+```bash
+python tests/architecture_contracts/check_gl43_modernization_boundary.py
 cmake --build build --target EliteGame
 ./build/EliteGame.exe
 ```
 
-Verify the existing Compatibility candidate first:
+Verify startup still reports OpenGL >= 4.3 with `compute=1`, `ssbo=1`.
 
-- actual OpenGL >= 4.3;
-- `compute=1`;
-- `ssbo=1`;
-- plausible vendor/renderer/GLSL/limits;
-- ordinary flight renders;
-- cockpit/rear view renders;
-- Galaxy/System/Detail/Hub maps render;
-- close-navigation HUD/labels render.
+Visual smoke:
 
-Then perform a repository-wide inventory of compatibility-only production calls. The final Core gate must reject at least these classes of legacy API:
+- ordinary flight;
+- cockpit and rear view;
+- Galaxy Map;
+- System Map;
+- Detail Map;
+- Hub Map;
+- close-navigation HUD;
+- specifically Detail/Hub lines, circles, crosses, grid markers and fallback markers.
 
-- `glBegin/glEnd` and immediate `glVertex*`/`glColor*`/`glTexCoord*`/`glNormal*`;
-- fixed-function matrix stack (`glMatrixMode`, push/pop/load/mult, `glOrtho`);
-- `GL_CURRENT_COLOR`, `GL_MODELVIEW`, `GL_PROJECTION`, `GL_MATRIX_MODE`;
-- fixed-function texture enable state;
-- legacy client arrays if any remain.
+Any color/position/orientation regression blocks acceptance.
 
-Add a static/architecture contract so the forbidden surface cannot silently return later.
+## Next implementation — GL43-B2
 
-## Confirmed first migration seam
+After B1 local acceptance:
 
-`src/game/system_map/LocalMapPrimitiveRenderer.cpp` is a high-leverage first seam because Detail/Hub map code calls it and it is entirely immediate mode today.
+1. extend `LocalMapPrimitiveRenderer` line/cross/circle API with explicit `glm::vec4 color`;
+2. update every caller instead of preceding calls with `glColor*`;
+3. remove `compatibilityCurrentColor()` and `GL_CURRENT_COLOR`;
+4. tighten `check_gl43_modernization_boundary.py` so the whole file is compatibility-clean;
+5. build + smoke again.
 
-Replace it with a shader + VAO/VBO path with explicit projection/color inputs. Do not change map semantics or visual design while doing this.
+Do not combine B2 with Detail planet disk/grid migration. Keep the seam small.
 
-Confirmed dependent legacy areas to migrate afterward:
+## Following waves
 
-1. `DetailMapGeometryPass`;
-2. `DetailMapPlanetPass`;
-3. `HubMapBackend` fixed-function background/projection setup;
-4. `HubMapGeometryPass` compatibility fallbacks;
-5. `MapObjectOverlayRenderer`;
-6. every remaining render/HUD/debug/cockpit compatibility call found by the full inventory.
+After B2:
 
-Existing shader/VBO/VAO code that is already Core-compatible should not be rewritten without a concrete reason.
+- GL43-C: `DetailMapBackend`, `DetailMapGeometryPass`, `DetailMapPlanetPass`;
+- GL43-D: `HubMapBackend`, `HubMapGeometryPass`, `HubMapPlanetPass`, `LocalMapAtmosphereRenderer`;
+- GL43-E: `MapObjectOverlayRenderer`, `DebugGrid` and every remaining inventory offender;
+- GL43-F: GLAD Core 4.3 + `GLFW_OPENGL_CORE_PROFILE`, complete build/runtime/visual acceptance.
 
-## Core cutover gate
-
-After the forbidden-call scan is clean:
-
-- switch/regenerate bundled GLAD to `gl:core=4.3`;
-- request `GLFW_OPENGL_CORE_PROFILE`;
-- build and launch `EliteGame`;
-- confirm runtime Core 4.3+;
-- smoke all currently working visual modes again;
-- accept only if no working feature was removed or visually broken merely to satisfy Core Profile.
-
-## Explicitly deferred until after Core acceptance
+## Deferred until after Core acceptance
 
 - System Map textured-sphere CPU tessellation removal;
-- System/Galaxy primitive optimization beyond what Core migration itself requires;
-- `SceneRenderer` compute culling/LOD/compaction;
-- instance-streaming optimization;
+- SceneRenderer compute culling/LOD/compaction;
+- instance-stream optimization;
 - starfield compute migration;
-- any other CPU -> GPU algorithmic offload.
+- other CPU -> GPU algorithmic offload.
 
-The existing offload audit and priorities are preserved in `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` and `src/render/GPU_OFFLOAD_PLAN.md`.
-
-## Keep CPU boundary
-
-The earlier ownership decision is unchanged: authoritative physics, route/path/docking decisions, replication, `ClientWorldState` gameplay/prediction state and CPU interaction semantics do not move to the client GPU merely because the renderer becomes modern.
-
-## Deferred runtime-model task
-
-The first read-only `RuntimeModelAssetLibrary` consumer migration remains queued until the render modernization reaches a stable checkpoint.
+The prior audit remains preserved in `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` and `src/render/GPU_OFFLOAD_PLAN.md`.
 
 ## State discipline
 
-Every accepted GL43 migration wave updates `CURRENT_STATE.md`, `CURRENT_TASK.md`, `src/render/GL43_MODERNIZATION_PLAN.md` and `src/game/GAME_RUNTIME_DECOMPOSITION.md`. `GPU_OFFLOAD_PLAN.md` changes only if offload sequencing or audit conclusions change. Runtime-model ingress documentation changes only when that boundary itself changes.
+Every accepted GL43 wave updates `CURRENT_STATE.md`, `CURRENT_TASK.md`, `src/render/GL43_MODERNIZATION_PLAN.md` and `src/game/GAME_RUNTIME_DECOMPOSITION.md`. Runtime model-ingress docs change only when that boundary changes.

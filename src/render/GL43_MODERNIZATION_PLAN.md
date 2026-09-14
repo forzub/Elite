@@ -2,64 +2,69 @@
 
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Status:** Core API migration complete; final local runtime acceptance pending
+**Status:** **COMPLETE / ACCEPTED LOCALLY**
 
-## Goal
+## Goal — complete
 
-Bring every working graphical client path onto an OpenGL 4.3 Core foundation without intentionally changing visible behavior, then establish a new performance baseline before any algorithmic CPU -> GPU offload.
+Every working graphical client path now runs on an OpenGL 4.3 Core foundation without a driver Compatibility context. The API migration is closed; current renderer work has moved to selective CPU -> GPU optimization.
 
-## Final architecture
-
-The production client now targets:
+## Accepted architecture
 
 ```text
 OpenGL 4.3 Core context
     + bundled GLAD 2.0.8 generated for gl:core=4.3
-    + explicit modern shader/VAO/VBO paths
-    + CoreGlLegacyBridge for remaining legacy presentation semantics
+    + explicit shader/VAO/VBO paths
+    + CoreGlLegacyBridge for residual legacy presentation semantics
 ```
 
-`CoreGlLegacyBridge` is not an OpenGL Compatibility context. It translates old presentation operations into software state and Core-profile GPU submission:
-
-- software model-view/projection matrices and stacks;
-- software current color and texcoord state;
-- software legacy texture-enable flag;
-- buffered immediate-style vertices;
-- GLSL `#version 430 core`;
-- VAO/VBO streaming;
-- `glDrawArrays`;
-- legacy quads converted to triangles.
-
-This preserves behavior while removing the driver's fixed-function/Compatibility dependency. Later path-specific cleanup may remove bridge usage where worthwhile, but that is not required for the Core API boundary.
+`CoreGlLegacyBridge` is software compatibility inside the engine, not an OpenGL Compatibility profile. It maps residual old presentation operations onto software matrix/color/texcoord state and GLSL 4.30 Core submission. Production code no longer depends on removed driver fixed-function APIs.
 
 ## Migration history
 
 ### GL43-A — machine inventory
 
-Established `tests/architecture_contracts/check_gl43_modernization_boundary.py` and stopped relying on handwritten legacy lists.
+`tests/architecture_contracts/check_gl43_modernization_boundary.py` became the authoritative repository-wide compatibility scan.
 
-### GL43-B — shared local-map primitives
+### GL43-B — local-map primitive foundation
 
-Accepted visually:
+Visually accepted during migration:
 
-- `LocalMapPrimitiveRenderer` moved off immediate-mode driver calls;
-- `DetailMapGeometryPass` became compatibility-clean;
-- `HubMapGeometryPass` became compatibility-clean.
+- `LocalMapPrimitiveRenderer` immediate-mode removal;
+- `DetailMapGeometryPass` Core cleanup;
+- `HubMapGeometryPass` Core cleanup.
 
 ### GL43-C/D/E — remaining production compatibility debt
 
-The final branch-wide machine audit found 23 additional files using removed state/submission APIs across maps, flight rendering, scene rendering, HUD, radar/PPI, mini-camera, world labels, debug rendering and celestial presentation.
-
-Rather than introduce separate ad-hoc mini-renderers for every old call site, the remaining presentation syntax was routed through the shared Core bridge. This completed the API migration while preserving the existing algorithms and screen geometry.
+The branch-wide scan found 23 additional compatibility-dependent production files across maps, flight/scene rendering, HUD, radar/PPI, mini-camera, world labels, debug rendering and celestial presentation. These paths were moved to explicit Core rendering or routed through the shared Core bridge while preserving behavior.
 
 ### GL43-F — Core cutover
 
-Completed in code:
+Completed:
 
 - `Window.cpp` requests OpenGL 4.3 Core Profile;
 - bundled GLAD is `gl:core=4.3`;
-- production `src/` contains zero forbidden compatibility-only API tokens according to the permanent architecture test;
-- temporary migration workflows were removed after validation.
+- production `src/` contains zero forbidden Compatibility/fixed-function API tokens under the permanent test;
+- migration and temporary validation workflows were removed after use.
+
+Core API migration commit: `37999c5588c6e85ef88a24e0efbf2dfff89b9314`.
+
+## Validation evidence
+
+Automated PASS:
+
+- GL4.3 Core boundary test;
+- bundled Core GLAD generation;
+- zero compatibility-token inventory;
+- migration `git diff --check`;
+- Windows/MSYS2 MinGW64 execution of the Core boundary test;
+- Windows/MSYS2 MinGW64 syntax compilation of `CoreGlLegacyBridge.h` against Core GLAD.
+
+Local developer acceptance on 2026-09-15:
+
+- `EliteGame` built and launched;
+- user reported all migrated visible/runtime paths working.
+
+The station-adjacent freezes were present before this transformation and are not classified as a GL4.3 regression. Their diagnosis is deferred by explicit project decision.
 
 ## Permanent forbidden surface
 
@@ -67,39 +72,15 @@ Production source must not reintroduce driver fixed-function/Compatibility API i
 
 - `glBegin/glEnd`;
 - immediate `glVertex*`, `glColor*`, `glTexCoord*`, `glNormal*`;
-- fixed matrix stack calls such as `glMatrixMode`, `glPushMatrix`, `glPopMatrix`, `glLoadIdentity`, `glLoadMatrix*`, `glMultMatrix*`, `glOrtho`;
-- `GL_CURRENT_COLOR`, `GL_MODELVIEW`, `GL_PROJECTION`, `GL_MATRIX_MODE` as driver state;
+- fixed matrix stack calls;
+- driver `GL_CURRENT_COLOR`, `GL_MODELVIEW`, `GL_PROJECTION`, `GL_MATRIX_MODE` state;
 - legacy client arrays;
 - fixed-function `glEnable/glDisable/glIsEnabled(GL_TEXTURE_2D)`.
 
-Normal `GL_TEXTURE_2D` use as a texture target remains valid Core OpenGL.
+Normal Core texture-target use of `GL_TEXTURE_2D` remains valid.
 
-## Automated evidence
+## Handoff
 
-PASS:
+The active plan is now `src/render/GPU_OFFLOAD_PLAN.md`.
 
-- final GL43 Core boundary test;
-- bundled GLAD Core generation;
-- zero compatibility-token inventory;
-- `git diff --check` on the migration;
-- Windows/MSYS2 MinGW64 execution of the Core boundary test;
-- Windows/MSYS2 MinGW64 syntax compilation of `CoreGlLegacyBridge.h` with `g++ -std=c++17` against Core GLAD.
-
-A complete GitHub-hosted `EliteGame` build is not available as a reliable gate because the repository does not contain `third_party/webview` and has no `.gitmodules` entry for it, while `CMakeLists.txt` requires that directory before configuring the client. The developer's local project tree is therefore the authoritative build/runtime gate.
-
-## Final local acceptance
-
-```bash
-python tests/architecture_contracts/check_gl43_modernization_boundary.py
-cmake --build build --target EliteGame
-./build/EliteGame.exe
-```
-
-Accept only if flight, cockpit/rear, Galaxy/System/Detail/Hub maps, close-navigation HUD, radar/PPI, mini-camera, labels, debug rendering and visible celestial/cloud/atmosphere paths remain correct under the Core context.
-
-## After acceptance
-
-1. Record fresh CPU/GPU timings and draw/upload counters.
-2. Reactivate `CLIENT_GPU_OFFLOAD_AUDIT.md` and `GPU_OFFLOAD_PLAN.md`.
-3. Start with measured high-value candidates, not blanket compute conversion.
-4. Keep gameplay authority, interaction/picking semantics, navigation and replication CPU-owned unless a separate architecture decision changes that boundary.
+The first post-Core candidate is the System Map static textured sphere migration. Future work must preserve the authority boundary: rendering derivatives may move to GPU, while gameplay, navigation/planning, replication and synchronous CPU interaction answers remain CPU-owned unless separately redesigned.

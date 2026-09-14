@@ -1,0 +1,36 @@
+name: GL43 Core Windows Build
+
+on:
+  push:
+    branches:
+      - chatgpt/mae-v01075-semantic-workflow-motion-v5
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-glfw
+            mingw-w64-x86_64-freetype
+            mingw-w64-x86_64-nlohmann-json
+      - name: Core boundary
+        shell: msys2 {0}
+        run: python tests/architecture_contracts/check_gl43_modernization_boundary.py
+      - name: Configure EliteGame
+        shell: msys2 {0}
+        run: cmake -S . -B build-ci -G Ninja -DELITE_BUILD_CLIENT=ON -DELITE_BUILD_SERVER=OFF -DELITE_BUILD_ASSET_EDITOR=OFF
+      - name: Build EliteGame
+        shell: msys2 {0}
+        run: cmake --build build-ci --target EliteGame

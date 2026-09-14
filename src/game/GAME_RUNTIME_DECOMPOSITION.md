@@ -121,3 +121,9 @@ This transition is behavior-preserving until a concrete `ObjectType` is explicit
 ### Client acceptance note
 
 The first MinGW client acceptance build exposed a separate UI API ownership drift rather than a runtime-model dependency problem: `Application` already passes an executable-owned UI resource-pack path, `HtmlUiServer` already accepts it, but `HtmlUiManager` and `HtmlUiBridge` still exposed their older two-argument `start()` signatures. The fix propagates the pack path through both adapters and adds an architecture contract. Runtime-ingress acceptance remains pending only until the corrected `EliteGame` build passes locally.
+
+## Client GPU modernization boundary
+
+Client GPU modernization is a presentation/runtime-efficiency track, not a relocation of game authority. The graphical executable now targets OpenGL 4.3+ so compute shaders and SSBOs can absorb sufficiently parallel presentation workloads. Authoritative simulation/server policy remains in CPU libraries. GPU-derived results should normally stay GPU-resident through rendering; a design that requires synchronous readback into gameplay is presumed wrong until measured otherwise.
+
+The transition begins in OpenGL 4.3 Compatibility Profile because fixed-function presentation calls still exist. Core Profile is a later dependency-cleanup gate. `src/render/GPU_OFFLOAD_PLAN.md` is the authoritative workload/migration plan. General world-signal labels are disabled for now; Hub/close-navigation label paths remain in scope and active.

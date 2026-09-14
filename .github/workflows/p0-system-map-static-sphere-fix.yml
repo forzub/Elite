@@ -1,0 +1,41 @@
+name: P0 System Map Static Sphere Fix
+
+on:
+  push:
+    branches:
+      - chatgpt/mae-v01075-semantic-workflow-motion-v5
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Apply shader-contract fix
+        run: python tools/p0_system_map_static_sphere_shader_contract_fix.py
+      - name: Static sphere architecture contract
+        run: python tests/architecture_contracts/check_system_map_static_sphere.py
+      - name: GL43 Core boundary
+        run: python tests/architecture_contracts/check_gl43_modernization_boundary.py
+      - name: Check patch whitespace
+        run: git diff --check
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name 'Kostiantyn Zubchenko [FE-30]'
+          git config user.email '90088507+forzub@users.noreply.github.com'
+          git add src/assets/shaders/system_map/map_body_preview.vert \
+                  src/game/system_map/SystemMapRenderer.h \
+                  src/game/system_map/SystemMapRenderer.cpp \
+                  tests/architecture_contracts/check_system_map_static_sphere.py
+          if git diff --cached --quiet; then
+            echo 'No fix changes.'
+            exit 0
+          fi
+          git commit -m 'render: preserve System Map sphere shader contract'
+          git push origin HEAD:chatgpt/mae-v01075-semantic-workflow-motion-v5

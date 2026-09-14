@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 #include <glm/glm.hpp>
 
 namespace game::system_map
@@ -7,6 +9,12 @@ namespace game::system_map
 void drawLocalMapLine(
     const glm::dvec2& a,
     const glm::dvec2& b,
+    const glm::vec4& color
+);
+
+void drawLocalMapLines(
+    const glm::dvec2* endpoints,
+    std::size_t endpointCount,
     const glm::vec4& color
 );
 

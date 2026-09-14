@@ -41,16 +41,19 @@ Detailed renderer migration: `src/render/GL43_MODERNIZATION_PLAN.md`.
 
 ## GL43 current checkpoint
 
-B1 behavior is visually accepted: replacing `LocalMapPrimitiveRenderer` immediate-mode line/cross/circle submission with GLSL 4.30 + VAO/VBO produced no visible change in local smoke.
+Two visual parity checkpoints are accepted:
 
-B2 is now in progress:
+- B1: `LocalMapPrimitiveRenderer` moved line/cross/circle submission from immediate mode to GLSL 4.30 + VAO/VBO with no visible change;
+- B2a: `DetailMapGeometryPass` moved to explicit-color modern primitives, including orbit rendering, again with no visible change.
 
-- `LocalMapPrimitiveRenderer` exposes explicit-color line/cross/circle overloads;
-- `DetailMapGeometryPass` has migrated fully to the explicit-color API;
-- its old fixed-function color state, `GL_CURRENT_COLOR`, immediate orbit submission and `glVertex*` calls are removed;
-- the architecture contract now forbids any compatibility-only API from returning to `DetailMapGeometryPass.cpp`.
+The architecture boundary now contains two full no-compatibility zones:
 
-Temporary no-color primitive overloads remain for unmigrated Hub/planet callers. They still bridge through `GL_CURRENT_COLOR`; closing that bridge is the next B2 subwave.
+- `DetailMapGeometryPass.cpp`;
+- `HubMapGeometryPass.cpp`.
+
+`HubMapGeometryPass` is the current B2b candidate: its fallback box/axis/velocity/grid/screen-marker drawing now uses explicit-color local-map primitives and no longer uses tracked fixed-function/immediate APIs.
+
+Temporary no-color primitive overloads remain for `DetailMapPlanetPass`, `HubMapBackend` and `HubMapPlanetPass`. They still bridge through `GL_CURRENT_COLOR`; the shared primitive seam is not closed until those callers migrate and the bridge is deleted.
 
 ## GL43 modernization final acceptance
 
@@ -76,9 +79,9 @@ Preserved later candidates include System Map static-sphere conversion and profi
 2. Dual-source runtime model ingress — accepted.
 3. Client CPU -> GPU audit — complete.
 4. **GL43-A:** compatibility inventory/guard — established.
-5. **GL43-B:** shared local/screen primitive foundation — B1 visually accepted; B2 explicit-color migration active.
+5. **GL43-B:** shared local/screen primitive foundation — B1 and B2a visually accepted; B2b active, Hub geometry candidate clean.
 6. **GL43-C:** remaining Detail Map compatibility removal.
-7. **GL43-D:** Hub/local celestial compatibility removal.
+7. **GL43-D:** remaining Hub/local celestial compatibility removal.
 8. **GL43-E:** overlays/debug/all remaining inventory debt.
 9. **GL43-F:** GLAD/context Core 4.3 cutover + complete visual smoke.
 10. Fresh performance baseline, then selective offload.

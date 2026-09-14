@@ -3,90 +3,77 @@
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Track:** OpenGL 4.3 renderer modernization  
-**Stage:** finish GL43-B2b by closing the shared local-map primitive seam
+**Stage:** GL43-F local build/runtime acceptance
 
-## Active rule
+## Current state
 
-Do **not** start System Map sphere offload, compute culling, starfield compute or other CPU -> GPU optimization work yet.
+The repository-side API migration is complete:
 
 ```text
-4.3 Compatibility scaffold
-    -> remove compatibility-only rendering
-    -> 4.3 Core Profile accepted
-    -> measure again
-    -> offload only measured hot paths
+OpenGL 4.3 Compatibility scaffold
+    -> branch-wide compatibility inventory
+    -> modern shared primitives
+    -> software Core legacy bridge for remaining presentation semantics
+    -> bundled GLAD gl:core=4.3
+    -> GLFW_OPENGL_CORE_PROFILE
+    -> zero forbidden compatibility API tokens in src/
 ```
 
-Detailed plan: `src/render/GL43_MODERNIZATION_PLAN.md`.
+Automated static and MinGW64 syntax gates pass. The remaining gate requires the developer's complete local tree because GitHub does not contain `third_party/webview`, which `CMakeLists.txt` requires before `EliteGame` can configure.
 
-## Accepted behavior
+## Run now
 
-B1, B2a and Hub geometry cleanup are visually accepted by local runtime smoke. No visible regressions were reported after:
+```bash
+git fetch origin
+git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
+git pull --ff-only
 
-- `LocalMapPrimitiveRenderer` moved line/cross/circle drawing off immediate mode;
-- `DetailMapGeometryPass` moved to explicit colors and modern primitive submission;
-- `HubMapGeometryPass` moved all fallback box/axis/velocity/grid/screen-marker drawing to the same explicit-color modern primitive path.
+python tests/architecture_contracts/check_gl43_modernization_boundary.py
+cmake --build build --target EliteGame
+./build/EliteGame.exe
+```
 
-`DetailMapGeometryPass.cpp` and `HubMapGeometryPass.cpp` are permanent `NO_COMPATIBILITY_FILES` in the architecture contract.
+Expected architecture-test result:
 
-## Current implementation — close B2b
+```text
+GL43 CORE MODERNIZATION BOUNDARY: PASS
+ - GLFW requests OpenGL 4.3 Core Profile
+ - bundled GLAD is generated for gl:core=4.3
+ - production src/ has zero forbidden compatibility-only API tokens
+ - legacy presentation syntax is translated by the Core GLSL/VAO/VBO bridge
+```
 
-Three bridge callers still use temporary no-color primitive overloads and therefore keep `GL_CURRENT_COLOR` alive in `LocalMapPrimitiveRenderer`:
+## Runtime acceptance checklist
 
-1. `DetailMapPlanetPass`;
-2. `HubMapBackend`;
-3. `HubMapPlanetPass`.
+Verify no visible or behavioral regression in:
 
-Next code changes:
+- ordinary flight;
+- cockpit and rear view;
+- Galaxy Map;
+- System Map;
+- Detail Map, including planet grid/orbits/markers;
+- Hub Map, including grid, station/module geometry and parent-planet presentation;
+- close-navigation HUD and world labels;
+- radar and PPI;
+- mini-camera;
+- debug grid when available;
+- visible cloud/atmosphere/Hub backdrop paths.
 
-1. migrate those calls to explicit `glm::vec4` color;
-2. delete no-color overloads from `LocalMapPrimitiveRenderer.h/.cpp`;
-3. delete `compatibilityCurrentColor()` and the last `GL_CURRENT_COLOR` dependency in that renderer;
-4. promote `LocalMapPrimitiveRenderer.cpp` from the immediate-only guard to `NO_COMPATIBILITY_FILES`;
-5. build and smoke Detail/Hub again.
+Startup must create OpenGL 4.3+ Core and still report valid capabilities, including compute/SSBO support.
 
-Once this passes, **GL43-B is complete**.
+## Acceptance rule
 
-## Following waves
+Any build error or visual regression blocks GL43 acceptance and is fixed before performance work begins.
 
-### GL43-C — Detail Map
+If local build and smoke pass, mark OpenGL 4.3 Core **accepted**, capture fresh performance baselines, then activate the existing CPU -> GPU plan.
 
-Remove remaining fixed-function code from:
+## Deferred until acceptance
 
-- `DetailMapBackend` projection/background;
-- `DetailMapPlanetPass` sphere grid, filled disk and fallback projected geometry.
-
-### GL43-D — Hub/local celestial
-
-Remove remaining fixed-function code from:
-
-- `HubMapBackend` projection/background;
-- `HubMapPlanetPass` fallback body/local-circle paths;
-- `LocalMapAtmosphereRenderer` soft-band compatibility path.
-
-### GL43-E — remaining debt
-
-Migrate `MapObjectOverlayRenderer`, `DebugGrid` and every remaining offender printed by `check_gl43_modernization_boundary.py`.
-
-### GL43-F — Core cutover
-
-Only after the machine inventory is clean:
-
-- switch bundled GLAD to OpenGL 4.3 Core;
-- request `GLFW_OPENGL_CORE_PROFILE`;
-- build and launch `EliteGame`;
-- smoke flight, cockpit/rear view, Galaxy/System/Detail/Hub and close-navigation HUD.
-
-## Deferred until after Core acceptance
+Do not yet start:
 
 - System Map textured-sphere CPU tessellation removal;
-- SceneRenderer compute culling/LOD/compaction;
+- SceneRenderer compute visibility/LOD/compaction;
 - instance-stream optimization;
 - starfield compute migration;
-- other CPU -> GPU algorithmic offload.
-
-The prior audit remains preserved in `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` and `src/render/GPU_OFFLOAD_PLAN.md`.
-
-## State discipline
-
-Every accepted GL43 wave updates `CURRENT_STATE.md`, `CURRENT_TASK.md`, `src/render/GL43_MODERNIZATION_PLAN.md` and `src/game/GAME_RUNTIME_DECOMPOSITION.md`. Runtime model-ingress docs change only when that boundary changes.
+- runtime-model consumer migration;
+- other algorithmic CPU -> GPU offload.

@@ -1,113 +1,69 @@
 # Game Runtime Decomposition
 
-**Started:** 2026-09-14  
+**Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Status:** R0 runtime seams + dual-source model ingress accepted; OpenGL 4.3 Core modernization active
+**Status:** R0 runtime seams + dual-source model ingress accepted; OpenGL 4.3 Core code migration complete, local runtime acceptance pending
 
 ## Purpose
 
-Convert logical runtime boundaries into explicit compile-time libraries and narrow APIs without changing gameplay behavior. Deterministic navigation/simulation-policy layers remain independent from render/UI/client/server/platform effects.
+Keep deterministic gameplay/runtime boundaries explicit while modernizing presentation infrastructure independently. Renderer changes do not move gameplay authority.
 
 ## Accepted runtime seams
 
-`EliteNavigationGeometry` owns deterministic obstacle geometry/path planning. `EliteAssemblyGeometry` owns shared CPU OBJ hydration/assembly caching.
+`EliteNavigationGeometry` owns deterministic obstacle/path geometry. `EliteAssemblyGeometry` owns shared CPU assembly geometry.
 
-Runtime model ingress is accepted through one canonical `ModelAsset` seam:
+Runtime model ingress remains:
 
 ```text
 legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 .elmodel   -> CompiledModelAssetReader -> ModelAssetBinary       -> ModelAsset
 ```
 
-## Client rendering modernization boundary
+`src/model_asset/ModelAsset.h` remains the single schema/version authority.
 
-OpenGL modernization is presentation infrastructure and does not change gameplay authority.
+## Renderer boundary
 
-Required order:
+The graphical client source now targets OpenGL 4.3 Core:
 
-```text
-4.3 Compatibility runtime scaffold
-    -> compatibility inventory + incremental retirement
-    -> 4.3 Core Profile client accepted
-    -> fresh performance baseline
-    -> selective CPU/GPU offload
-```
+- Core GLFW profile request;
+- bundled GLAD `gl:core=4.3`;
+- zero forbidden fixed-function/Compatibility tokens under production `src/`;
+- old presentation semantics translated by `CoreGlLegacyBridge` into software state and Core shader/VAO/VBO submission.
 
-Authoritative simulation, route/docking decisions, damage, economy, replication and other gameplay state remain CPU-owned.
+Incremental Detail/Hub geometry migrations were visually accepted before the branch-wide cutover. The remaining compatibility debt across flight, maps, scene, HUD, radar/PPI, mini-camera, labels and debug/celestial presentation was then migrated through the common Core bridge.
 
-Detailed renderer migration: `src/render/GL43_MODERNIZATION_PLAN.md`.
+This is still presentation infrastructure. Authoritative simulation, ship physics, route/docking decisions, damage, economy, replication, interaction/picking semantics and navigation remain CPU-owned.
 
-## GL43 current checkpoint
+## Acceptance status
 
-Accepted visual parity checkpoints now include:
+Repository-side Core migration gates pass, including Windows/MSYS2 MinGW64 syntax validation of the bridge. Full local `EliteGame` build/runtime acceptance remains mandatory because the GitHub checkout lacks the required `third_party/webview` tree and cannot configure the complete graphical target.
 
-- **B1:** `LocalMapPrimitiveRenderer` immediate-mode line/cross/circle submission replaced by GLSL 4.30 + VAO/VBO;
-- **B2a:** `DetailMapGeometryPass` moved to explicit-color modern primitives, including orbit rendering;
-- **B2b Hub geometry:** `HubMapGeometryPass` moved all compatibility fallback drawing to explicit-color modern primitives.
-
-The user reported no visible regression at each checkpoint.
-
-Full no-compatibility zones currently include:
-
-- `DetailMapGeometryPass.cpp`;
-- `HubMapGeometryPass.cpp`.
-
-GL43-B remains active only because temporary no-color primitive overloads still support `DetailMapPlanetPass`, `HubMapBackend` and `HubMapPlanetPass` through `GL_CURRENT_COLOR`.
-
-The next closure is:
-
-```text
-migrate last three bridge callers
-    -> delete no-color overloads
-    -> delete compatibilityCurrentColor()
-    -> protect LocalMapPrimitiveRenderer as fully compatibility-clean
-    -> Detail/Hub smoke
-```
-
-After that GL43-B is complete and work advances to GL43-C.
-
-## GL43 modernization final acceptance
-
-The phase is complete only when:
-
-- `EliteGame` builds on MinGW64;
-- runtime creates OpenGL 4.3+ Core Profile;
-- bundled GLAD exposes Core 4.3;
-- production client code has no forbidden compatibility-only rendering;
-- the architecture contract prevents regressions;
-- flight, cockpit/rear view, Galaxy/System/Detail/Hub and close-navigation HUD pass visual smoke;
-- no working feature is deleted to achieve Core compatibility.
-
-## CPU -> GPU audit status
-
-`src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` remains the evidence base, but implementation is blocked until Core acceptance.
-
-## Planned order
-
-1. R0 shared runtime seams — accepted.
-2. Dual-source runtime model ingress — accepted.
-3. Client CPU -> GPU audit — complete.
-4. **GL43-A:** compatibility inventory/guard — established.
-5. **GL43-B:** shared local/screen primitive foundation — B1/B2a/Hub geometry accepted; final primitive bridge cleanup active.
-6. **GL43-C:** remaining Detail Map compatibility removal.
-7. **GL43-D:** remaining Hub/local celestial compatibility removal.
-8. **GL43-E:** overlays/debug/all remaining inventory debt.
-9. **GL43-F:** GLAD/context Core 4.3 cutover + complete visual smoke.
-10. Fresh performance baseline, then selective offload.
-11. Resume runtime-model consumer migration.
-12. Continue R1+ runtime decomposition.
-
-## Testing policy
-
-Current GL43 check:
+Required local gate:
 
 ```bash
 python tests/architecture_contracts/check_gl43_modernization_boundary.py
 cmake --build build --target EliteGame
+./build/EliteGame.exe
 ```
 
-Every GL43 wave additionally requires visual parity smoke appropriate to the changed paths.
+## Planned order from here
 
-## State discipline
+1. R0 shared runtime seams — accepted.
+2. Dual-source runtime model ingress — accepted.
+3. Client CPU -> GPU audit — complete.
+4. OpenGL 4.3 Core API migration — code-complete.
+5. **Local Core build + complete visual runtime smoke — active gate.**
+6. Capture fresh CPU/GPU baseline.
+7. Resume selective GPU-offload priorities from `CLIENT_GPU_OFFLOAD_AUDIT.md` / `GPU_OFFLOAD_PLAN.md`.
+8. Resume first read-only runtime-model consumer migration.
+9. Continue R1+ runtime decomposition.
 
-Every completed GL43 wave updates `CURRENT_STATE.md`, `CURRENT_TASK.md`, this file and `src/render/GL43_MODERNIZATION_PLAN.md`. `GPU_OFFLOAD_PLAN.md` changes only when sequencing or offload conclusions change. Runtime model-ingress docs change only when that boundary changes.
+## Testing policy
+
+Existing runtime architecture tests remain applicable. The permanent renderer contract is:
+
+```bash
+python tests/architecture_contracts/check_gl43_modernization_boundary.py
+```
+
+Every future renderer change must keep that contract clean and must not reintroduce driver fixed-function/Compatibility OpenGL.

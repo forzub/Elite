@@ -1,58 +1,53 @@
-# GL43 migration checkpoint — 2026-09-14
+# GL43 migration checkpoint — 2026-09-15
 
-Current branch: `chatgpt/mae-v01075-semantic-workflow-motion-v5`.
+Branch: `chatgpt/mae-v01075-semantic-workflow-motion-v5`.
 
-## Accepted visual checkpoints
+## Status
 
-### B1 — accepted
+**OpenGL 4.3 Core API migration is code-complete. Local build/runtime acceptance is still required.**
 
-The user reported no visible change after `LocalMapPrimitiveRenderer` line/cross/circle submission moved from immediate mode to GLSL 4.30 Core + VAO/VBO.
+Key migration commit:
 
-### B2a — accepted
+`37999c5588c6e85ef88a24e0efbf2dfff89b9314` — `render: complete OpenGL 4.3 Core API migration`
 
-The user reported Detail Map still looked as before after `DetailMapGeometryPass` moved to explicit-color modern primitive submission and retired fixed-function color/current-color/immediate orbit drawing.
+## What changed
 
-Preserved behavior includes hub/player orbits, hidden-side `0.16x` attenuation, volume edges and small-body markers.
+- GLFW now requests OpenGL 4.3 Core Profile.
+- Bundled GLAD 2.0.8 is generated for `gl:core=4.3`.
+- Production `src/` passes a zero-tolerance compatibility-only API scan.
+- Remaining old presentation semantics are handled by `src/render/legacy/CoreGlLegacyBridge.h` using software state + GLSL 4.30 Core + VAO/VBO + `glDrawArrays`.
+- The bridge converts legacy quads to triangles and preserves legacy matrix/color/texcoord/texture-enable semantics without using driver fixed-function state.
 
-## Current candidate — B2b Hub geometry cleanup
+## Audit correction
 
-`HubMapGeometryPass.cpp` is now compatibility-clean under the machine contract:
+The original handwritten map-focused inventory was incomplete. The branch-wide CI audit found compatibility debt in 23 additional production files spanning:
 
-- fallback box edges use explicit-color `drawLocalMapLine`;
-- fallback X/Y/Z axes use explicit colors;
-- fallback velocity line uses explicit color;
-- fallback screen circles/crosses use the modern local-map primitive renderer;
-- adaptive grid and principal grid axes use explicit colors;
-- no tracked `glColor*`, `glBegin/glEnd` or immediate `glVertex*` remains.
+- flight/client rendering;
+- Detail/Hub map backends and planet passes;
+- map overlays and route overlays;
+- scene rendering;
+- HUD/world labels;
+- debug grid;
+- radar/PPI;
+- mini-camera;
+- celestial/cloud presentation.
 
-`DetailMapGeometryPass.cpp` and `HubMapGeometryPass.cpp` are both in `NO_COMPATIBILITY_FILES`.
+All discovered production offenders were migrated. The permanent architecture test is now the authority.
 
-## Transitional debt still retained
+## Validation completed
 
-`LocalMapPrimitiveRenderer` still exposes temporary no-color overloads for callers that have not yet migrated. Those overloads read `GL_CURRENT_COLOR`.
+PASS:
 
-Remaining bridge callers are in:
+- Core GLAD generation;
+- final architecture boundary;
+- zero forbidden compatibility API tokens in `src/`;
+- migration whitespace check;
+- Windows/MSYS2 MinGW64 boundary test;
+- Windows/MSYS2 MinGW64 syntax compile of `CoreGlLegacyBridge.h` against Core GLAD.
 
-- `DetailMapPlanetPass`;
-- `HubMapBackend`;
-- `HubMapPlanetPass`.
+A hosted full `EliteGame` build could not configure because `third_party/webview` is required by `CMakeLists.txt` but is not present in the GitHub repository and is not a submodule. This happens before C++ compilation and is not evidence of a GL4.3 failure.
 
-B2b closes only after those calls become explicit-color and the compatibility overloads/`compatibilityCurrentColor()` are deleted.
-
-## Remaining major legacy areas
-
-- `src/render/DebugGrid.cpp`;
-- `src/game/system_map/DetailMapBackend.cpp`;
-- `src/game/system_map/DetailMapPlanetPass.cpp`;
-- `src/game/system_map/HubMapBackend.cpp`;
-- `src/game/system_map/HubMapPlanetPass.cpp`;
-- `src/game/system_map/LocalMapAtmosphereRenderer.cpp`;
-- `src/game/system_map/MapObjectOverlayRenderer.cpp`;
-- transitional `GL_CURRENT_COLOR` bridge in `LocalMapPrimitiveRenderer.cpp`.
-
-The machine scan output remains authoritative for the complete inventory.
-
-## Local acceptance required now
+## Local acceptance command
 
 ```bash
 python tests/architecture_contracts/check_gl43_modernization_boundary.py
@@ -60,4 +55,6 @@ cmake --build build --target EliteGame
 ./build/EliteGame.exe
 ```
 
-Verify Hub Map adaptive grid, axes, fallback boxes, screen circles/crosses and velocity lines retain their previous colors, positions and orientation.
+Smoke all major render surfaces: flight, cockpit/rear, Galaxy/System/Detail/Hub, HUD/labels, radar/PPI, mini-camera, debug grid and visible celestial/cloud/atmosphere paths.
+
+If that passes, GL4.3 Core becomes accepted and performance/offload work can resume.

@@ -2,17 +2,15 @@
 
 **Started:** 2026-09-14  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Status:** R0 physical seams established; dual-source runtime model ingress accepted; client GPU audit complete; OpenGL 4.3 Core modernization active
+**Status:** R0 runtime seams + dual-source model ingress accepted; OpenGL 4.3 Core modernization active
 
 ## Purpose
 
-Convert existing logical subsystem boundaries into explicit compile-time libraries and narrow APIs without changing gameplay behavior. The objective is smaller change blast-radius, impact-based testing and dependency direction that is visible at compile/link time.
-
-Runtime code remains classified as PURE, deterministic state transition, stateful service or effect/orchestration. Deterministic navigation/simulation-policy layers may not acquire render/UI/client/server/platform dependencies.
+Convert logical runtime boundaries into explicit compile-time libraries and narrow APIs without changing gameplay behavior. Deterministic navigation/simulation-policy layers remain independent from render/UI/client/server/platform effects.
 
 ## Accepted runtime seams
 
-`EliteNavigationGeometry` owns deterministic obstacle geometry/path planning. `EliteAssemblyGeometry` owns shared CPU OBJ hydration/assembly caching. Both are shared by client and server rather than recompiled independently.
+`EliteNavigationGeometry` owns deterministic obstacle geometry/path planning. `EliteAssemblyGeometry` owns shared CPU OBJ hydration/assembly caching.
 
 Runtime model ingress is accepted through one canonical `ModelAsset` seam:
 
@@ -21,71 +19,73 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 .elmodel   -> CompiledModelAssetReader -> ModelAssetBinary       -> ModelAsset
 ```
 
-`src/model_asset/ModelAsset.h` remains the single schema/version authority. The first read-only consumer migration remains queued.
+`src/model_asset/ModelAsset.h` remains the single schema/version authority. First read-only runtime consumer migration is queued.
 
 ## Client rendering modernization boundary
 
 OpenGL modernization is presentation infrastructure and does not change gameplay authority.
 
-The current code candidate requests OpenGL 4.3 Compatibility Profile so the application can remain runnable while legacy presentation code is replaced. That profile is now explicitly temporary. The first rendering milestone is **OpenGL 4.3 Core Profile**, not compute offload.
-
-The required order is:
+Required order:
 
 ```text
 4.3 Compatibility runtime scaffold
-    -> remove fixed-function/compatibility-only presentation
+    -> compatibility inventory + incremental retirement
     -> 4.3 Core Profile client accepted
-    -> performance baseline
+    -> fresh performance baseline
     -> selective CPU/GPU offload
 ```
 
-Authoritative simulation, route/docking decisions, damage, economy, replication and other gameplay state remain CPU-owned. A GPU design requiring synchronous render-GPU readback for gameplay is presumed wrong unless a future architecture explicitly changes that boundary.
+Authoritative simulation, route/docking decisions, damage, economy, replication and other gameplay state remain CPU-owned.
 
 Detailed renderer migration: `src/render/GL43_MODERNIZATION_PLAN.md`.
 
-## GL43 modernization acceptance
+## GL43-A / GL43-B1 checkpoint
+
+The current candidate establishes the first enforceable migration boundary:
+
+- `check_gl43_modernization_boundary.py` scans all production C/C++ for compatibility-only OpenGL and prints the debt inventory;
+- the contract locks the temporary 4.3 Compatibility scaffold while migration is incomplete;
+- `LocalMapPrimitiveRenderer.cpp` retires immediate-mode submission in favor of GLSL 4.30 + VAO/VBO;
+- the contract permanently forbids `glBegin/glEnd` and immediate `glVertex*/glColor*` from returning to that migrated submission seam.
+
+`LocalMapPrimitiveRenderer` still reads `GL_CURRENT_COLOR` as a transitional bridge for unchanged callers. B2 removes that hidden state by making color explicit.
+
+This checkpoint is a code candidate until local architecture test, `EliteGame` build and visual smoke pass.
+
+## GL43 modernization final acceptance
 
 The phase is complete only when:
 
 - `EliteGame` builds on MinGW64;
-- the runtime creates an OpenGL 4.3+ Core Profile context;
-- bundled GLAD exposes the Core 4.3 API;
-- production client code no longer depends on fixed-function/immediate-mode/matrix-stack compatibility calls;
-- an architecture/static contract prevents reintroduction of those APIs;
-- ordinary flight, cockpit/rear view, Galaxy/System/Detail/Hub maps and close-navigation HUD all pass visual smoke;
-- no working feature is deleted merely to achieve Core compatibility.
-
-Shader/VBO/VAO replacement of legacy primitives is allowed and expected during this phase. Compute/SSBO algorithmic offload is not required for acceptance.
+- runtime creates OpenGL 4.3+ Core Profile;
+- bundled GLAD exposes Core 4.3;
+- production client code has no forbidden compatibility-only rendering;
+- the architecture contract prevents regressions;
+- flight, cockpit/rear view, Galaxy/System/Detail/Hub and close-navigation HUD pass visual smoke;
+- no working feature is deleted to achieve Core compatibility.
 
 ## CPU -> GPU audit status
 
-The completed audit in `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` remains authoritative evidence, but implementation is blocked until the Core renderer gate passes.
+`src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` remains the evidence base, but implementation is blocked until Core acceptance.
 
-Preserved later order:
-
-- P0 — System Map textured-body CPU tessellation -> static indexed sphere + vertex shader, subject to measurement;
-- P1, profile-gated — visual traffic culling/LOD/compaction;
-- P1/P2 — repeated map primitives where Core migration has not already solved the problem;
-- P2 — starfield only if scale/rebuild timing justifies it.
-
-Navigation/guidance, client snapshot state, gameplay/shared physics, database parsing and CPU interaction semantics stay CPU by design.
+Preserved later candidates include System Map static-sphere conversion and profile-gated scene culling/LOD. Navigation/guidance, gameplay/shared physics, replication state and CPU interaction semantics remain CPU.
 
 ## Planned order
 
 1. R0 shared runtime seams — accepted.
 2. Dual-source runtime model ingress — accepted.
 3. Client CPU -> GPU audit — complete.
-4. **GL43-A:** accept Compatibility scaffold and inventory all compatibility-only production calls.
-5. **GL43-B..E:** migrate all currently working render paths to explicit shader/VAO/VBO/state ownership.
-6. **GL43-F:** switch GLAD/context to OpenGL 4.3 Core Profile and pass complete visual smoke.
-7. Capture fresh CPU/GPU performance baselines.
-8. Resume selective offload from `GPU_OFFLOAD_PLAN.md`.
-9. Resume first read-only runtime-model consumer migration.
-10. Continue R1+ runtime library decomposition.
+4. **GL43-A:** inventory/guard + local Compatibility acceptance — candidate, local validation pending.
+5. **GL43-B:** shared local/screen primitive foundation; B1 immediate-mode retirement candidate, B2 explicit color next.
+6. **GL43-C:** Detail Map compatibility removal.
+7. **GL43-D:** Hub/local celestial compatibility removal.
+8. **GL43-E:** overlays/debug/all remaining inventory debt.
+9. **GL43-F:** GLAD/context Core 4.3 cutover + complete visual smoke.
+10. Fresh performance baseline, then selective offload.
+11. Resume first read-only runtime-model consumer migration.
+12. Continue R1+ runtime decomposition.
 
 ## Testing policy
-
-Normal development uses impact-based architecture/regression tests plus every affected executable build. GL43 waves additionally require visual parity smoke at each meaningful checkpoint and a final static forbidden-API gate.
 
 Accepted runtime baseline checks remain:
 
@@ -94,14 +94,17 @@ python tests/architecture_contracts/check_game_runtime_library_boundaries.py
 python tests/architecture_contracts/check_game_runtime_shared_geometry_boundary.py
 python tests/architecture_contracts/check_runtime_model_asset_ingress.py
 python tests/architecture_contracts/check_html_ui_resource_pack_api.py
-cmake --build build --target EliteGame
-cmake --build build/headless_server --target EliteServer
 ```
 
-The GL43 track must add its own compatibility-call architecture contract before final Core acceptance.
+GL43 candidate check:
+
+```bash
+python tests/architecture_contracts/check_gl43_modernization_boundary.py
+cmake --build build --target EliteGame
+```
+
+Every GL43 wave additionally requires visual parity smoke appropriate to the changed paths.
 
 ## State discipline
 
-Every completed GL43 wave updates `CURRENT_STATE.md`, `CURRENT_TASK.md`, this file and `src/render/GL43_MODERNIZATION_PLAN.md`. `GPU_OFFLOAD_PLAN.md` is updated when sequencing or offload conclusions change. `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md` changes only when the asset boundary itself changes.
-
-Chat history is not canonical project state.
+Every completed GL43 wave updates `CURRENT_STATE.md`, `CURRENT_TASK.md`, this file and `src/render/GL43_MODERNIZATION_PLAN.md`. `GPU_OFFLOAD_PLAN.md` changes only when sequencing or offload conclusions change. Runtime model-ingress docs change only when that boundary changes.

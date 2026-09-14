@@ -663,12 +663,6 @@ private:
     GLuint m_texturedShader = 0;
     GLint  m_texturedMvpLoc = -1;
     GLint  m_texturedSamplerLoc = -1;
-    GLint  m_texturedCenterLoc = -1;
-    GLint  m_texturedRadiusLoc = -1;
-    GLint  m_texturedPrimeAxisLoc = -1;
-    GLint  m_texturedNorthAxisLoc = -1;
-    GLint  m_texturedEastAxisLoc = -1;
-    GLint  m_texturedColorLoc = -1;
 
     GLuint m_bgVao = 0;
     GLuint m_bgVbo = 0;

@@ -1135,8 +1135,8 @@ void SystemMapRenderer::addSystemBodyGeometry(
 
     if (albedoTexture != 0 &&
         m_texturedShader != 0 &&
-        m_texturedVao != 0 &&
-        m_texturedVbo != 0)
+        m_texturedSphereLow.vao != 0 &&
+        m_texturedSphereHigh.vao != 0)
     {
         const bool largeBody =
             body.type == BodyType::Planet &&
@@ -1401,73 +1401,15 @@ void SystemMapRenderer::addTexturedSystemBodySphere(
     if (texture == 0 || radius <= 0.0f)
         return;
 
-    latSegments =
-        std::max(
-            latSegments,
-            8
-        );
-
-    lonSegments =
-        std::max(
-            lonSegments,
-            16
-        );
+    latSegments = std::max(latSegments, 8);
+    lonSegments = std::max(lonSegments, 16);
 
     TexturedBatch* batch = nullptr;
-
-    const glm::dvec3 north =
-    systemBodyNorthAxisWorld(
-        body
-    );
-
-const glm::dvec3 prime0 =
-    planetPrimeAxisWorld(
-        north
-    );
-
-const glm::dvec3 east0 =
-    planetEastAxisWorld(
-        north,
-        prime0
-    );
-
-const double textureOffset =
-    degToRadD(
-        body.textureLongitudeOffsetDeg
-    );
-
-auto bodyPoint =
-    [&](double latitudeRad, double textureLongitudeRad) -> glm::vec3
+    for (auto& candidate : m_texturedBatches)
     {
-        const double worldLon =
-            textureLongitudeRad +
-            textureOffset +
-            body.rotationPhaseRad;
-
-        const double cosLat =
-            std::cos(latitudeRad);
-
-        const double sinLat =
-            std::sin(latitudeRad);
-
-        const glm::dvec3 local =
-            prime0 * (std::cos(worldLon) * cosLat * radius) +
-            north  * (sinLat * radius) +
-            east0  * (std::sin(worldLon) * cosLat * radius);
-
-        return center +
-            glm::vec3(
-                static_cast<float>(local.x),
-                static_cast<float>(local.y),
-                static_cast<float>(local.z)
-            );
-    };
-
-    for (auto& b : m_texturedBatches)
-    {
-        if (b.texture == texture)
+        if (candidate.texture == texture)
         {
-            batch = &b;
+            batch = &candidate;
             break;
         }
     }
@@ -1476,125 +1418,49 @@ auto bodyPoint =
     {
         TexturedBatch newBatch;
         newBatch.texture = texture;
-
-        m_texturedBatches.push_back(
-            std::move(newBatch)
-        );
-
-        batch =
-            &m_texturedBatches.back();
+        m_texturedBatches.push_back(std::move(newBatch));
+        batch = &m_texturedBatches.back();
     }
 
+    const glm::dvec3 north =
+        systemBodyNorthAxisWorld(body);
+    const glm::dvec3 prime0 =
+        systemBodyPrimeAxisWorld(north);
+    const glm::dvec3 east0 =
+        systemBodyEastAxisWorld(north, prime0);
 
+    // The old CPU tessellator added texture longitude offset and rotation phase
+    // to every vertex longitude. Fold the same rotation into the per-body basis
+    // once, then let the vertex shader transform the resident unit sphere.
+    const double longitudePhase =
+        degToRadD(body.textureLongitudeOffsetDeg) +
+        body.rotationPhaseRad;
+    const double phaseCos = std::cos(longitudePhase);
+    const double phaseSin = std::sin(longitudePhase);
 
-    const std::size_t vertexCountToAdd =
+    const glm::dvec3 prime =
+        prime0 * phaseCos +
+        east0 * phaseSin;
+    const glm::dvec3 east =
+        -prime0 * phaseSin +
+        east0 * phaseCos;
+
+    TexturedBodyDraw draw;
+    draw.center = center;
+    draw.radius = radius;
+    draw.primeAxis = glm::vec3(prime);
+    draw.northAxis = glm::vec3(north);
+    draw.eastAxis = glm::vec3(east);
+    draw.color = color;
+
+    const std::size_t requestedCells =
         static_cast<std::size_t>(latSegments) *
-        static_cast<std::size_t>(lonSegments) *
-        6u;
+        static_cast<std::size_t>(lonSegments);
+    constexpr std::size_t lowResolutionCells = 24u * 48u;
+    draw.highResolution = requestedCells > lowResolutionCells;
 
-    batch->vertices.reserve(
-        batch->vertices.size() + vertexCountToAdd
-    );
-
-
-
-
-
-
-
-
-
-    for (int iy = 0; iy < latSegments; ++iy)
-    {
-        const float v0 =
-            static_cast<float>(iy) /
-            static_cast<float>(latSegments);
-
-        const float v1 =
-            static_cast<float>(iy + 1) /
-            static_cast<float>(latSegments);
-
-        const double lat0 =
-            -glm::half_pi<double>() +
-            static_cast<double>(v0) *
-            glm::pi<double>();
-
-        const double lat1 =
-            -glm::half_pi<double>() +
-            static_cast<double>(v1) *
-            glm::pi<double>();
-
-        for (int ix = 0; ix < lonSegments; ++ix)
-        {
-            const float u0 =
-                static_cast<float>(ix) /
-                static_cast<float>(lonSegments);
-
-            const float u1 =
-                static_cast<float>(ix + 1) /
-                static_cast<float>(lonSegments);
-
-            const double lon0 =
-                -glm::pi<double>() +
-                static_cast<double>(u0) *
-                glm::two_pi<double>();
-
-            const double lon1 =
-                -glm::pi<double>() +
-                static_cast<double>(u1) *
-                glm::two_pi<double>();
-
-            const glm::vec3 p00 =
-                bodyPoint(
-                    lat0,
-                    lon0
-                );
-
-            const glm::vec3 p10 =
-                bodyPoint(
-                    lat0,
-                    lon1
-                );
-
-            const glm::vec3 p11 =
-                bodyPoint(
-                    lat1,
-                    lon1
-                );
-
-            const glm::vec3 p01 =
-                bodyPoint(
-                    lat1,
-                    lon0
-                );
-
-            batch->vertices.push_back(
-                { p00, glm::vec2(u0, v0), color }
-            );
-
-            batch->vertices.push_back(
-                { p10, glm::vec2(u1, v0), color }
-            );
-
-            batch->vertices.push_back(
-                { p11, glm::vec2(u1, v1), color }
-            );
-
-            batch->vertices.push_back(
-                { p00, glm::vec2(u0, v0), color }
-            );
-
-            batch->vertices.push_back(
-                { p11, glm::vec2(u1, v1), color }
-            );
-
-            batch->vertices.push_back(
-                { p01, glm::vec2(u0, v1), color }
-            );
-        }
-    }
+    batch->bodies.push_back(draw);
 }
-
 
 
 // ============================================================================

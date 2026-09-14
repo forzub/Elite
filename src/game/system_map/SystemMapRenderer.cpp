@@ -1063,16 +1063,124 @@ void SystemMapRenderer::ensureGlObjects()
 
 
 
-void SystemMapRenderer::ensureTexturedGlObjects()
+void SystemMapRenderer::createTexturedSphereMesh(
+    TexturedSphereGpuMesh& mesh,
+    int latitudeSegments,
+    int longitudeSegments
+)
 {
-    if (m_texturedVao && m_texturedVbo)
+    if (mesh.vao != 0)
         return;
 
-    glGenVertexArrays(1, &m_texturedVao);
-    glGenBuffers(1, &m_texturedVbo);
+    latitudeSegments = std::max(latitudeSegments, 8);
+    longitudeSegments = std::max(longitudeSegments, 16);
 
-    glBindVertexArray(m_texturedVao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_texturedVbo);
+    std::vector<TexturedSphereVertex> vertices;
+    vertices.reserve(
+        static_cast<std::size_t>(latitudeSegments + 1) *
+        static_cast<std::size_t>(longitudeSegments + 1)
+    );
+
+    for (int latitudeIndex = 0;
+         latitudeIndex <= latitudeSegments;
+         ++latitudeIndex)
+    {
+        const float v =
+            static_cast<float>(latitudeIndex) /
+            static_cast<float>(latitudeSegments);
+        const float latitude =
+            -glm::half_pi<float>() + v * glm::pi<float>();
+        const float cosLatitude = std::cos(latitude);
+        const float sinLatitude = std::sin(latitude);
+
+        for (int longitudeIndex = 0;
+             longitudeIndex <= longitudeSegments;
+             ++longitudeIndex)
+        {
+            const float u =
+                static_cast<float>(longitudeIndex) /
+                static_cast<float>(longitudeSegments);
+            const float longitude =
+                -glm::pi<float>() + u * glm::two_pi<float>();
+
+            TexturedSphereVertex vertex;
+            vertex.unitPosition = glm::vec3(
+                cosLatitude * std::cos(longitude),
+                sinLatitude,
+                cosLatitude * std::sin(longitude)
+            );
+            vertex.uv = glm::vec2(u, v);
+            vertices.push_back(vertex);
+        }
+    }
+
+    std::vector<std::uint32_t> indices;
+    indices.reserve(
+        static_cast<std::size_t>(latitudeSegments) *
+        static_cast<std::size_t>(longitudeSegments) * 6u
+    );
+
+    const int rowStride = longitudeSegments + 1;
+    for (int latitudeIndex = 0;
+         latitudeIndex < latitudeSegments;
+         ++latitudeIndex)
+    {
+        for (int longitudeIndex = 0;
+             longitudeIndex < longitudeSegments;
+             ++longitudeIndex)
+        {
+            const std::uint32_t i00 =
+                static_cast<std::uint32_t>(
+                    latitudeIndex * rowStride + longitudeIndex
+                );
+            const std::uint32_t i10 = i00 + 1u;
+            const std::uint32_t i01 =
+                static_cast<std::uint32_t>(
+                    (latitudeIndex + 1) * rowStride + longitudeIndex
+                );
+            const std::uint32_t i11 = i01 + 1u;
+
+            // Preserve the old System Map winding exactly. The authored
+            // prime/north/east basis is left-handed, so this canonical order
+            // becomes the same outward CCW shell after the body transform.
+            indices.push_back(i00);
+            indices.push_back(i10);
+            indices.push_back(i11);
+            indices.push_back(i00);
+            indices.push_back(i11);
+            indices.push_back(i01);
+        }
+    }
+
+    GLint previousVao = 0;
+    GLint previousArrayBuffer = 0;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previousVao);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &previousArrayBuffer);
+
+    glGenVertexArrays(1, &mesh.vao);
+    glGenBuffers(1, &mesh.vertexBuffer);
+    glGenBuffers(1, &mesh.indexBuffer);
+
+    glBindVertexArray(mesh.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vertexBuffer);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(
+            vertices.size() * sizeof(TexturedSphereVertex)
+        ),
+        vertices.data(),
+        GL_STATIC_DRAW
+    );
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
+    glBufferData(
+        GL_ELEMENT_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(
+            indices.size() * sizeof(std::uint32_t)
+        ),
+        indices.data(),
+        GL_STATIC_DRAW
+    );
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(
@@ -1080,8 +1188,10 @@ void SystemMapRenderer::ensureTexturedGlObjects()
         3,
         GL_FLOAT,
         GL_FALSE,
-        sizeof(TexturedVertex),
-        reinterpret_cast<void*>(offsetof(TexturedVertex, pos))
+        sizeof(TexturedSphereVertex),
+        reinterpret_cast<void*>(
+            offsetof(TexturedSphereVertex, unitPosition)
+        )
     );
 
     glEnableVertexAttribArray(1);
@@ -1090,37 +1200,43 @@ void SystemMapRenderer::ensureTexturedGlObjects()
         2,
         GL_FLOAT,
         GL_FALSE,
-        sizeof(TexturedVertex),
-        reinterpret_cast<void*>(offsetof(TexturedVertex, uv))
+        sizeof(TexturedSphereVertex),
+        reinterpret_cast<void*>(
+            offsetof(TexturedSphereVertex, uv)
+        )
     );
 
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(
-        2,
-        4,
-        GL_FLOAT,
-        GL_FALSE,
-        sizeof(TexturedVertex),
-        reinterpret_cast<void*>(offsetof(TexturedVertex, color))
-    );
+    mesh.indexCount = static_cast<GLsizei>(indices.size());
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        static_cast<GLuint>(previousArrayBuffer)
+    );
+    glBindVertexArray(static_cast<GLuint>(previousVao));
 }
 
 
+void SystemMapRenderer::ensureTexturedGlObjects()
+{
+    if (m_texturedSphereLow.vao != 0 &&
+        m_texturedSphereHigh.vao != 0)
+    {
+        return;
+    }
 
-
-
-
-
-
-
-
-
-
-
-
+    // Keep the exact two tessellation levels used by the previous CPU path,
+    // but build/upload them only once.
+    createTexturedSphereMesh(
+        m_texturedSphereLow,
+        24,
+        48
+    );
+    createTexturedSphereMesh(
+        m_texturedSphereHigh,
+        64,
+        128
+    );
+}
 
 
 void SystemMapRenderer::ensureShader()
@@ -1161,46 +1277,30 @@ void SystemMapRenderer::ensureTexturedShader()
         if (!warned)
         {
             warned = true;
-
             std::cerr
                 << "[SystemMapRenderer] shader system_map_body_preview not available; "
                 << "map body previews disabled.\n";
         }
-
         return;
     }
 
     m_texturedMvpLoc =
         glGetUniformLocation(m_texturedShader, "uMVP");
-
     m_texturedSamplerLoc =
         glGetUniformLocation(m_texturedShader, "uTexture");
+    m_texturedCenterLoc =
+        glGetUniformLocation(m_texturedShader, "uBodyCenter");
+    m_texturedRadiusLoc =
+        glGetUniformLocation(m_texturedShader, "uBodyRadius");
+    m_texturedPrimeAxisLoc =
+        glGetUniformLocation(m_texturedShader, "uPrimeAxis");
+    m_texturedNorthAxisLoc =
+        glGetUniformLocation(m_texturedShader, "uNorthAxis");
+    m_texturedEastAxisLoc =
+        glGetUniformLocation(m_texturedShader, "uEastAxis");
+    m_texturedColorLoc =
+        glGetUniformLocation(m_texturedShader, "uColor");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 void SystemMapRenderer::resetView()
@@ -1824,12 +1924,9 @@ void SystemMapRenderer::beginTexturedBodies()
 {
     for (auto& batch : m_texturedBatches)
     {
-        batch.vertices.clear();
+        batch.bodies.clear();
     }
 }
-
-
-
 
 
 void SystemMapRenderer::flushTexturedBodies(
@@ -1837,8 +1934,8 @@ void SystemMapRenderer::flushTexturedBodies(
 )
 {
     if (!m_texturedShader ||
-        !m_texturedVao ||
-        !m_texturedVbo ||
+        m_texturedSphereLow.vao == 0 ||
+        m_texturedSphereHigh.vao == 0 ||
         m_texturedBatches.empty())
     {
         return;
@@ -1846,113 +1943,97 @@ void SystemMapRenderer::flushTexturedBodies(
 
     GLboolean depthWasEnabled = glIsEnabled(GL_DEPTH_TEST);
     GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
-
     GLboolean cullWasEnabled = glIsEnabled(GL_CULL_FACE);
     GLboolean depthMaskWasEnabled = GL_TRUE;
-
-    glGetBooleanv(
-        GL_DEPTH_WRITEMASK,
-        &depthMaskWasEnabled
-    );
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &depthMaskWasEnabled);
 
     GLint oldDepthFunc = GL_LESS;
-
-    glGetIntegerv(
-        GL_DEPTH_FUNC,
-        &oldDepthFunc
-    );
+    glGetIntegerv(GL_DEPTH_FUNC, &oldDepthFunc);
 
     GLint oldCullFaceMode = GL_BACK;
-
-    glGetIntegerv(
-        GL_CULL_FACE_MODE,
-        &oldCullFaceMode
-    );
+    glGetIntegerv(GL_CULL_FACE_MODE, &oldCullFaceMode);
 
     GLint oldFrontFaceMode = GL_CCW;
-
-    glGetIntegerv(
-        GL_FRONT_FACE,
-        &oldFrontFaceMode
-    );
-
-
-
+    glGetIntegerv(GL_FRONT_FACE, &oldFrontFaceMode);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
-
-    // Textured system bodies are real 3D spheres.
-    // At strong orthographic zoom their front/back depth difference is tiny
-    // relative to the system-map far plane. Rendering both sides causes
-    // z-fighting stripes. Cull backfaces and draw only the visible shell.
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
-
-    // Планеты и луны рисуем как opaque geometry.
-    // Alpha-канал generated texture не должен резать сферу полосами.
     glDisable(GL_BLEND);
 
     glUseProgram(m_texturedShader);
-
     glUniformMatrix4fv(
         m_texturedMvpLoc,
         1,
         GL_FALSE,
         glm::value_ptr(mvp)
     );
-
     glUniform1i(m_texturedSamplerLoc, 0);
-
-    glBindVertexArray(m_texturedVao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_texturedVbo);
-
     glActiveTexture(GL_TEXTURE0);
 
     for (const TexturedBatch& batch : m_texturedBatches)
     {
-        if (batch.texture == 0 ||
-            batch.vertices.empty())
-        {
+        if (batch.texture == 0 || batch.bodies.empty())
             continue;
-        }
 
         glBindTexture(GL_TEXTURE_2D, batch.texture);
 
-        glBufferData(
-            GL_ARRAY_BUFFER,
-            static_cast<GLsizeiptr>(
-                batch.vertices.size() * sizeof(TexturedVertex)
-            ),
-            batch.vertices.data(),
-            GL_DYNAMIC_DRAW
-        );
+        for (const TexturedBodyDraw& draw : batch.bodies)
+        {
+            const TexturedSphereGpuMesh& mesh =
+                draw.highResolution
+                    ? m_texturedSphereHigh
+                    : m_texturedSphereLow;
 
-        glDrawArrays(
-            GL_TRIANGLES,
-            0,
-            static_cast<GLsizei>(batch.vertices.size())
-        );
+            glUniform3fv(
+                m_texturedCenterLoc,
+                1,
+                glm::value_ptr(draw.center)
+            );
+            glUniform1f(
+                m_texturedRadiusLoc,
+                draw.radius
+            );
+            glUniform3fv(
+                m_texturedPrimeAxisLoc,
+                1,
+                glm::value_ptr(draw.primeAxis)
+            );
+            glUniform3fv(
+                m_texturedNorthAxisLoc,
+                1,
+                glm::value_ptr(draw.northAxis)
+            );
+            glUniform3fv(
+                m_texturedEastAxisLoc,
+                1,
+                glm::value_ptr(draw.eastAxis)
+            );
+            glUniform4fv(
+                m_texturedColorLoc,
+                1,
+                glm::value_ptr(draw.color)
+            );
+
+            glBindVertexArray(mesh.vao);
+            glDrawElements(
+                GL_TRIANGLES,
+                mesh.indexCount,
+                GL_UNSIGNED_INT,
+                nullptr
+            );
+        }
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     glUseProgram(0);
 
-    glDepthFunc(
-        oldDepthFunc
-    );
-
-    glDepthMask(
-        depthMaskWasEnabled
-    );
-
-
-
-
+    glDepthFunc(oldDepthFunc);
+    glDepthMask(depthMaskWasEnabled);
     glCullFace(oldCullFaceMode);
     glFrontFace(oldFrontFaceMode);
 
@@ -1960,9 +2041,6 @@ void SystemMapRenderer::flushTexturedBodies(
         glEnable(GL_CULL_FACE);
     else
         glDisable(GL_CULL_FACE);
-
-
-
 
     if (depthWasEnabled)
         glEnable(GL_DEPTH_TEST);
@@ -1974,7 +2052,6 @@ void SystemMapRenderer::flushTexturedBodies(
     else
         glDisable(GL_BLEND);
 }
-
 
 
 void SystemMapRenderer::addCross(

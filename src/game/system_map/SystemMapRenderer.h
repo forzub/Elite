@@ -194,17 +194,35 @@ private:
         glm::vec4 color;
     };
 
-    struct TexturedVertex
+    struct TexturedSphereVertex
     {
-        glm::vec3 pos;
+        glm::vec3 unitPosition;
         glm::vec2 uv;
-        glm::vec4 color;
+    };
+
+    struct TexturedSphereGpuMesh
+    {
+        GLuint vao = 0;
+        GLuint vertexBuffer = 0;
+        GLuint indexBuffer = 0;
+        GLsizei indexCount = 0;
+    };
+
+    struct TexturedBodyDraw
+    {
+        glm::vec3 center { 0.0f };
+        float radius = 0.0f;
+        glm::vec3 primeAxis { 1.0f, 0.0f, 0.0f };
+        glm::vec3 northAxis { 0.0f, 1.0f, 0.0f };
+        glm::vec3 eastAxis { 0.0f, 0.0f, -1.0f };
+        glm::vec4 color { 1.0f };
+        bool highResolution = false;
     };
 
     struct TexturedBatch
     {
         GLuint texture = 0;
-        std::vector<TexturedVertex> vertices;
+        std::vector<TexturedBodyDraw> bodies;
     };
 
     using HubMapPickable = game::system_map::HubMapPickable;
@@ -348,6 +366,11 @@ private:
     void ensureShader();
 
     void ensureTexturedGlObjects();
+    void createTexturedSphereMesh(
+        TexturedSphereGpuMesh& mesh,
+        int latitudeSegments,
+        int longitudeSegments
+    );
     void ensureTexturedShader();
 
     void ensureBackground();
@@ -635,11 +658,17 @@ private:
     GLuint m_shader = 0;
     GLint  m_mvpLoc = -1;
 
-    GLuint m_texturedVao = 0;
-    GLuint m_texturedVbo = 0;
+    TexturedSphereGpuMesh m_texturedSphereLow;
+    TexturedSphereGpuMesh m_texturedSphereHigh;
     GLuint m_texturedShader = 0;
     GLint  m_texturedMvpLoc = -1;
     GLint  m_texturedSamplerLoc = -1;
+    GLint  m_texturedCenterLoc = -1;
+    GLint  m_texturedRadiusLoc = -1;
+    GLint  m_texturedPrimeAxisLoc = -1;
+    GLint  m_texturedNorthAxisLoc = -1;
+    GLint  m_texturedEastAxisLoc = -1;
+    GLint  m_texturedColorLoc = -1;
 
     GLuint m_bgVao = 0;
     GLuint m_bgVbo = 0;

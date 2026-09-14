@@ -28,10 +28,11 @@ HtmlUiBridge::~HtmlUiBridge()
 
 std::uint16_t HtmlUiBridge::start(
     std::uint16_t port,
-    const std::string& rootDir
+    const std::string& rootDir,
+    const std::string& resourcePackPath
 )
 {
-    return m_server.start(port, rootDir);
+    return m_server.start(port, rootDir, resourcePackPath);
 }
 
 void HtmlUiBridge::stop()

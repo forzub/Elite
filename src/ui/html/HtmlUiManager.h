@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <unordered_map>
 #include "ui/html/HtmlUiBridge.h"
 #include "ui/html/HtmlUiState.h"
@@ -8,7 +9,10 @@
 class HtmlUiManager
 {
 public:
-    std::uint16_t start(std::uint16_t port, const std::string& rootDir);
+    std::uint16_t start(
+        std::uint16_t port,
+        const std::string& rootDir,
+        const std::string& resourcePackPath = {});
     void stop();
     void setVirtualFile(const std::string& resource, const std::string& content, const std::string& contentType);
 

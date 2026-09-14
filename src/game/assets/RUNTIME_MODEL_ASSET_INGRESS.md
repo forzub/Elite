@@ -1,7 +1,7 @@
 # Runtime Model Asset Ingress
 
 **Started:** 2026-09-14  
-**Status:** transition seam implemented; consumer migration pending
+**Status:** transition seam implemented; local client acceptance pending
 
 ## Authority
 
@@ -46,6 +46,10 @@ Downstream runtime code should migrate toward `RuntimeModelAssetLibrary::get(typ
 The legacy path is one-way: old `ObjectAssembly` data is lifted into the new shared `ModelAsset` schema. The new binary path is never projected down into `ObjectAssembly`, because that would discard independent RenderLods, semantic state, sockets, collision, hit regions and structural graph data.
 
 The adapter treats `AssemblyMeshLibrary` output as canonical game-meter geometry because the old loader has already applied authoring basis and descriptor-size normalization. It creates v4-compatible semantic/render nodes solely as a transition bridge.
+
+## Acceptance status
+
+Hosted architecture/build validation and the compiled-reader disk roundtrip pass. Local MinGW validation currently confirms all runtime-ingress architecture contracts, `EliteRuntimeModelAssets`, and `EliteServer`. The first local `EliteGame` build exposed an unrelated HTML UI resource-pack API drift. That API is now corrected to preserve `resourcePackPath` through `HtmlUiManager` and `HtmlUiBridge`; `EliteGame` must be rebuilt locally before this transition seam is considered accepted.
 
 ## Next migration
 

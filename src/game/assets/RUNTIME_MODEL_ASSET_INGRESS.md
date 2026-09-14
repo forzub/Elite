@@ -1,7 +1,7 @@
 # Runtime Model Asset Ingress
 
 **Started:** 2026-09-14  
-**Status:** transition seam implemented; local client acceptance pending
+**Status:** transition seam implemented and locally accepted; first consumer migration queued
 
 ## Authority
 
@@ -47,10 +47,27 @@ The legacy path is one-way: old `ObjectAssembly` data is lifted into the new sha
 
 The adapter treats `AssemblyMeshLibrary` output as canonical game-meter geometry because the old loader has already applied authoring basis and descriptor-size normalization. It creates v4-compatible semantic/render nodes solely as a transition bridge.
 
-## Acceptance status
+## Acceptance status — ACCEPTED
 
-Hosted architecture/build validation and the compiled-reader disk roundtrip pass. Local MinGW validation currently confirms all runtime-ingress architecture contracts, `EliteRuntimeModelAssets`, and `EliteServer`. The first local `EliteGame` build exposed an unrelated HTML UI resource-pack API drift. That API is now corrected to preserve `resourcePackPath` through `HtmlUiManager` and `HtmlUiBridge`; `EliteGame` must be rebuilt locally before this transition seam is considered accepted.
+Hosted architecture/build validation and the compiled-reader disk roundtrip pass. Local MinGW validation confirms:
+
+- runtime-ingress architecture contracts: PASS;
+- `EliteRuntimeModelAssets`: build PASS;
+- `EliteServer`: build/link PASS;
+- HTML UI resource-pack API contract: PASS;
+- `EliteGame`: build/link PASS after propagating `resourcePackPath` through `HtmlUiManager -> HtmlUiBridge -> HtmlUiServer`.
+
+The dual-source ingress seam is therefore accepted as the current runtime baseline. The `winsock2.h before windows.h` messages observed during the successful client build are warnings and are not model-ingress failures.
 
 ## Next migration
 
-Do not switch a production object type yet. First migrate one read-only consumer to `RuntimeModelAssetLibrary`, verify legacy parity, then switch that same object type to compiled binary and compare geometry/bounds/semantic results. After that, remove the corresponding direct `AssemblyMeshLibrary` dependency from the migrated consumer.
+Do not globally switch production object types. The next asset step is deliberately narrow:
+
+1. choose one CPU/read-only consumer that directly reads `AssemblyMeshLibrary`;
+2. change that consumer to `RuntimeModelAssetLibrary::get(type)` while keeping the source `LegacyObjAssembly`;
+3. verify no behavior/geometry change;
+4. switch only the same object type to `CompiledBinary`;
+5. compare bounds, RenderLods, semantic bindings and all metadata actually consumed by that runtime path;
+6. remove that consumer's direct `AssemblyMeshLibrary` dependency only after parity.
+
+The goal is to make downstream runtime code source-agnostic. It should consume canonical `ModelAsset` and not care whether the asset originated from legacy OBJ or `.elmodel`.

@@ -2,7 +2,7 @@
 
 **Started:** 2026-09-14  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Status:** R0 physical seams established; runtime model-ingress transition added
+**Status:** R0 physical seams established; dual-source runtime model ingress accepted; client GPU modernization active
 
 ## Purpose
 
@@ -58,49 +58,82 @@ The exact source membership is discovered incrementally. Candidate domains are:
 
 This is a destination map, not permission to create all targets immediately. A library is created only after its dependency direction is traced and acyclic.
 
-## Wave R0 — seed navigation geometry boundary
+## Wave R0 — accepted physical seams
 
-Owned implementation files:
+`EliteNavigationGeometry` owns:
 
 - `src/world/navigation/NavigationObstacleGeometry.cpp`
 - `src/world/navigation/GeometricPathPlanner.cpp`
 
-Required properties:
+Both `EliteGame` and `EliteServer` link the library; neither executable compiles these implementations directly. The library is protected against render/UI/window/client/server/platform dependencies.
 
-- compiled exactly once in `EliteNavigationGeometry`;
-- linked by both `EliteGame` and `EliteServer`;
-- no render/UI/window/client/server/platform dependencies;
-- public behavior unchanged;
-- architecture contract protects ownership.
+The first full headless link also exposed an existing source-ownership defect around `AssemblyMeshLibrary`. R0 therefore established `EliteAssemblyGeometry` for `ObjLoader`, `ObjectAssemblyRegistry` and `AssemblyMeshLibrary`. This is a **STATEFUL SERVICE** boundary, not PURE: it owns synchronized CPU asset cache/I/O and remains free of OpenGL/UI/client/server dependencies. Both runtime executables share it.
 
-R0 is deliberately small. It proves the method before `SpaceState`, `GameSimulation`, `GameClient` or `GameServer` are touched.
+## Runtime model-ingress transition — accepted seam
 
-### R0 dependency finding: shared CPU assembly geometry
+Disk model loading now has one canonical CPU ingress. `EliteRuntimeModelAssets` sits above `EliteModelAsset` and `EliteAssemblyGeometry`:
 
-The first full headless link exposed an existing source-ownership defect: authoritative code calls `AssemblyMeshLibrary`, but `EliteServer` did not compile or link that implementation. Rather than copy client `.cpp` entries into the server, R0 introduces `EliteAssemblyGeometry` for `ObjLoader`, `ObjectAssemblyRegistry` and `AssemblyMeshLibrary`. This is a **STATEFUL SERVICE** boundary, not a PURE library: it owns a synchronized CPU cache and performs asset I/O. It must remain free of OpenGL/UI/client/server dependencies and is shared by both runtime executables. `EliteModelAsset` remains a lower dependency because `ObjLoader` reuses `RuntimeMeshNormalizer`.
+```text
+legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
+.elmodel   -> CompiledModelAssetReader -> ModelAssetBinary       -> ModelAsset
+```
+
+`src/model_asset/ModelAsset.h` is the only schema/version authority. Legacy data is adapted upward into the new schema; compiled `ModelAsset` is never degraded back into `ObjectAssembly`.
+
+The transition seam is locally accepted on MinGW64: ingress contracts pass and `EliteRuntimeModelAssets`, `EliteServer` and `EliteGame` build/link. Production object types remain on legacy input by default until explicitly switched.
+
+Next model-ingress work is consumer migration, not another loader: migrate one read-only `AssemblyMeshLibrary` consumer to `RuntimeModelAssetLibrary`, verify parity on the legacy backend, then switch only that object type to compiled binary.
+
+Detailed ingress policy: `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md`.
+
+## Client GPU modernization boundary
+
+Client GPU modernization is a presentation/runtime-efficiency track, not a relocation of game authority. OpenGL 4.3+ is the new graphical-client baseline candidate so compute shaders and SSBOs can absorb sufficiently parallel presentation workloads.
+
+The current implementation uses **OpenGL 4.3 Compatibility Profile** because legacy fixed-function presentation calls still exist. Core Profile is a later dependency-cleanup gate. `render::gpu::GlRuntimeCapabilities` is the startup capability authority; bundled GLAD must expose the same 4.3 compatibility API rather than hiding compute entry points behind an older loader.
+
+GPU-derived results should normally remain GPU-resident through rendering. A design that requires `dispatch -> barrier -> synchronous readback -> gameplay decision` in the frame path is presumed architecturally wrong until proven otherwise by measurement.
+
+Authoritative simulation, route decisions, damage, economy, replication and other gameplay state remain CPU-owned by default. Presentation-only derivatives may use GPU compute independently of authoritative CPU state.
+
+Initial priorities:
+
+- P0 — `PlanetaryWeatherMapGenerator`, `CloudAppearanceTextureGenerator`;
+- P1 — `GalaxyStarfieldRenderer` derived transforms/filtering/draw preparation;
+- P1/P2 — large instance/frustum visibility only after profiling;
+- P2 — procedural celestial mesh/detail and `PlanetWireRenderer` only if rebuild cadence makes compute worthwhile.
+
+General world-signal labels are disabled for now; Hub-map and close-navigation label paths remain active. `src/render/GPU_OFFLOAD_PLAN.md` is the authoritative GPU workload/migration plan.
+
+The GL43 baseline implementation exists in commit `19db31eca5aa2c12475d87f2dfa322f794990c6e`, but remains a **candidate until local build/launch runtime acceptance** confirms actual >=4.3 context, compute/SSBO support and visual parity.
 
 ## Planned order
 
-1. **R0:** seed `EliteNavigationGeometry` physical boundary.
-2. **R1:** dependency audit and expansion toward `EliteNavigationCore`; separate pure/deterministic planners from workspace/presentation/effects.
-3. **R2:** extract `EliteSimulationPolicy` from already policy-shaped activation/replication calculations where ownership permits.
-4. **R3:** split portable protocol/codecs from transport effects.
-5. **R4+:** progressively establish world/ship/simulation/server/client/presentation libraries.
-6. **Late wave:** reduce `SpaceState` to a composition/coordinator shell; do not start by carving it blindly.
+1. **R0:** seed `EliteNavigationGeometry` and shared CPU assembly geometry — accepted.
+2. **GPU foundation interleave:** establish/accept GL43 capability baseline, then offload measured presentation hot paths.
+3. **Runtime model ingress consumer migration:** first read-only consumer, legacy parity, then one-type `.elmodel` A/B switch.
+4. **R1:** dependency audit and expansion toward `EliteNavigationCore`; separate pure/deterministic planners from workspace/presentation/effects.
+5. **R2:** extract `EliteSimulationPolicy` from already policy-shaped activation/replication calculations where ownership permits.
+6. **R3:** split portable protocol/codecs from transport effects.
+7. **R4+:** progressively establish world/ship/simulation/server/client/presentation libraries.
+8. **Late wave:** reduce `SpaceState` to a composition/coordinator shell; do not start by carving it blindly.
 
 ## Testing policy
 
 Normal development uses impact-based tests selected from changed files/libraries. Each library owns an architecture contract that checks source ownership and forbidden dependencies. Every accepted wave must also build every executable that consumes the changed library. Milestones run the full ready regression suite.
 
-For R0:
+For the accepted R0/runtime-ingress baseline:
 
 ```bash
 python tests/architecture_contracts/check_game_runtime_library_boundaries.py
+python tests/architecture_contracts/check_game_runtime_shared_geometry_boundary.py
+python tests/architecture_contracts/check_runtime_model_asset_ingress.py
+python tests/architecture_contracts/check_html_ui_resource_pack_api.py
 cmake --build build --target EliteGame
 cmake --build build/headless_server --target EliteServer
 ```
 
-Relevant navigation regression suites remain authoritative for behavioral changes; R0 itself is intended to be build-only/no-behavior-change.
+GPU waves additionally require runtime capability logging, CPU/GPU timing and visual/parity checks appropriate to the workload.
 
 ## State discipline
 
@@ -108,22 +141,8 @@ Architectural state, current intent and next work are repository data. Every com
 
 - `CURRENT_STATE.md` — what is true now;
 - `CURRENT_TASK.md` — immediate next acceptance target;
-- this file — long-lived decomposition intent, boundaries and wave history.
+- this file — long-lived decomposition intent, boundaries and wave history;
+- `src/render/GPU_OFFLOAD_PLAN.md` for GPU work;
+- `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md` for model-ingress work.
 
 Chat history is not the canonical project state.
-
-## Runtime model-ingress transition
-
-Before deeper world/render decomposition, disk model loading gets one canonical ingress. `EliteRuntimeModelAssets` sits above `EliteModelAsset` and `EliteAssemblyGeometry`. Native compiled input uses the shared binary codec directly. Legacy OBJ input is adapted upward into `ModelAsset`; the new schema is never adapted downward into `ObjectAssembly`. This preserves the full v4 semantic/render/collision/structural model and creates one migration point for consumers.
-
-This transition is behavior-preserving until a concrete `ObjectType` is explicitly switched to `CompiledBinary`. Consumer migration is incremental and should remove direct `AssemblyMeshLibrary` dependencies one subsystem at a time.
-
-### Client acceptance note
-
-The first MinGW client acceptance build exposed a separate UI API ownership drift rather than a runtime-model dependency problem: `Application` already passes an executable-owned UI resource-pack path, `HtmlUiServer` already accepts it, but `HtmlUiManager` and `HtmlUiBridge` still exposed their older two-argument `start()` signatures. The fix propagates the pack path through both adapters and adds an architecture contract. Runtime-ingress acceptance remains pending only until the corrected `EliteGame` build passes locally.
-
-## Client GPU modernization boundary
-
-Client GPU modernization is a presentation/runtime-efficiency track, not a relocation of game authority. The graphical executable now targets OpenGL 4.3+ so compute shaders and SSBOs can absorb sufficiently parallel presentation workloads. Authoritative simulation/server policy remains in CPU libraries. GPU-derived results should normally stay GPU-resident through rendering; a design that requires synchronous readback into gameplay is presumed wrong until measured otherwise.
-
-The transition begins in OpenGL 4.3 Compatibility Profile because fixed-function presentation calls still exist. Core Profile is a later dependency-cleanup gate. `src/render/GPU_OFFLOAD_PLAN.md` is the authoritative workload/migration plan. General world-signal labels are disabled for now; Hub/close-navigation label paths remain in scope and active.

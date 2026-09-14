@@ -44,9 +44,11 @@ CGTrader currently lists:
 
 The model page marks the asset as **Rigged** and **Low-poly**, with approximately 8,500 polygons and 7,000 vertices. The FBX version is explicitly shown as having passed CGTrader's CGT Standard technical/visual checks. CGTrader reports manifold geometry, no N-gons, PBR textures, assigned materials, UV unwrap, and power-of-two square textures.
 
-### Recommended archival download for Elite
+### Archived source chosen for Elite
 
-Keep the **FBX version plus the texture package** as the local upstream source under `milo_002`. FBX is preferred here because the character is rigged and OBJ would discard the skeleton. The CGTrader page also explicitly verifies the FBX variant. The working game asset may later be converted/exported to the formats required by the Elite Model Asset Editor, while the downloaded FBX and textures remain unchanged as provenance/source material.
+The downloaded upstream source is the **GLB (binary glTF) version**. Keep that GLB unchanged under `milo_002` as the archival source.
+
+GLB is a suitable source container for this character: glTF 2.0 can carry mesh geometry, PBR materials, textures, skinning/skeleton data and animations in one binary package. Whether this particular file actually contains the advertised rig and any animation clips must be verified from the downloaded file itself before production processing. The working game asset may later be converted/exported to the formats required by the Elite Model Asset Editor while the original GLB remains unchanged for provenance.
 
 ## Project use status
 
@@ -58,12 +60,12 @@ Required project-side rules:
 2. Ship the final character only as an incorporated game asset in the compiled/protected Elite asset package.
 3. Do not use this asset as input to ML / neural-network / generative-AI training.
 4. Keep this provenance/license record even if the upstream listing later changes or disappears.
-5. Record the exact downloaded filenames and SHA-256 hashes here after download if long-term reproducibility is required.
+5. Record the exact downloaded filename and SHA-256 hash here after download if long-term reproducibility is required.
 
 ## Download record
 
-- **Downloaded:** pending
-- **Chosen source format:** FBX + texture package
-- **Original filenames:** pending
+- **Downloaded:** 2026-09-14
+- **Chosen source format:** GLB (binary glTF)
+- **Original filename:** pending
 - **SHA-256:** pending
 - **Project modifications:** none yet

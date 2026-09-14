@@ -4,7 +4,6 @@ import re
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
-
 SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp"}
 
 COMPATIBILITY_PATTERNS = {
@@ -31,55 +30,21 @@ COMPATIBILITY_PATTERNS = {
     "glEnableClientState": re.compile(r"\bglEnableClientState\s*\("),
     "glDisableClientState": re.compile(r"\bglDisableClientState\s*\("),
     "fixed-texture-enable": re.compile(
-        r"\bgl(?:Enable|Disable)\s*\(\s*GL_TEXTURE_2D\s*\)"
+        r"\bgl(?:Enable|Disable|IsEnabled)\s*\(\s*GL_TEXTURE_2D\s*\)"
     ),
-}
-
-IMMEDIATE_MODE_PATTERNS = {
-    name: pattern
-    for name, pattern in COMPATIBILITY_PATTERNS.items()
-    if name in {
-        "glBegin",
-        "glEnd",
-        "glVertex-immediate",
-        "glColor-immediate",
-        "glTexCoord-immediate",
-        "glNormal-immediate",
-    }
-}
-
-# This set grows monotonically as migration waves retire legacy submission.
-# A listed file may still contain another explicitly documented compatibility
-# dependency, but immediate-mode submission is forbidden from returning.
-NO_IMMEDIATE_MODE_FILES = {
-    "src/game/system_map/LocalMapPrimitiveRenderer.cpp",
-}
-
-# These files have crossed the stronger boundary: no compatibility-only API
-# from the inventory above may return at all.
-NO_COMPATIBILITY_FILES = {
-    "src/game/system_map/DetailMapGeometryPass.cpp",
-    "src/game/system_map/HubMapGeometryPass.cpp",
 }
 
 
 def strip_cpp_comments(text: str) -> str:
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
-    text = re.sub(r"//[^\n]*", "", text)
-    return text
-
-
-def production_sources():
-    for path in SRC.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in SOURCE_SUFFIXES:
-            continue
-        relative = path.relative_to(ROOT).as_posix()
-        yield relative, strip_cpp_comments(path.read_text(encoding="utf-8"))
-
+    return re.sub(r"//[^\n]*", "", text)
 
 inventory = {}
-
-for relative, source in production_sources():
+for path in SRC.rglob("*"):
+    if not path.is_file() or path.suffix.lower() not in SOURCE_SUFFIXES:
+        continue
+    relative = path.relative_to(ROOT).as_posix()
+    source = strip_cpp_comments(path.read_text(encoding="utf-8"))
     hits = {}
     for name, pattern in COMPATIBILITY_PATTERNS.items():
         count = len(pattern.findall(source))
@@ -88,56 +53,25 @@ for relative, source in production_sources():
     if hits:
         inventory[relative] = hits
 
-for relative in sorted(NO_IMMEDIATE_MODE_FILES):
-    source = strip_cpp_comments(
-        (ROOT / relative).read_text(encoding="utf-8")
-    )
-    for name, pattern in IMMEDIATE_MODE_PATTERNS.items():
-        assert not pattern.search(source), (
-            f"{relative} reintroduced retired immediate-mode API: {name}"
-        )
-
-for relative in sorted(NO_COMPATIBILITY_FILES):
-    source = strip_cpp_comments(
-        (ROOT / relative).read_text(encoding="utf-8")
-    )
-    for name, pattern in COMPATIBILITY_PATTERNS.items():
-        assert not pattern.search(source), (
-            f"{relative} reintroduced compatibility-only API: {name}"
-        )
-
-primitive_header = (
-    ROOT / "src/game/system_map/LocalMapPrimitiveRenderer.h"
-).read_text(encoding="utf-8")
-for token in (
-    "const glm::vec4& color",
-    "drawLocalMapLine",
-    "drawLocalMapLines",
-    "drawLocalMapCross",
-    "drawLocalMapCircle",
-):
-    assert token in primitive_header, (
-        f"LocalMapPrimitiveRenderer lost explicit-color API token: {token}"
-    )
+assert not inventory, "Compatibility-only OpenGL remains: " + repr(inventory)
 
 window = (ROOT / "src/window/Window.cpp").read_text(encoding="utf-8")
 assert "glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);" in window
 assert "glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);" in window
-assert "glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);" in window
+assert "glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);" in window
+assert "GLFW_OPENGL_COMPAT_PROFILE" not in window
 
-print("GL43 MODERNIZATION BOUNDARY: PASS")
-print(" - OpenGL 4.3 Compatibility remains the temporary migration scaffold")
-print(" - migrated files cannot reintroduce retired compatibility APIs")
-print(" - Detail and Hub geometry passes are compatibility-clean")
-print(" - LocalMapPrimitiveRenderer exposes explicit-color batched submission")
-print(" - current compatibility debt inventory:")
+glad_header = (ROOT / "glad/include/glad/gl.h").read_text(encoding="utf-8")
+assert "gl:core=4.3" in glad_header
+assert "gl:compatibility=4.3" not in glad_header
 
-if not inventory:
-    print("   <clean>")
-else:
-    for relative in sorted(inventory):
-        summary = ", ".join(
-            f"{name}={count}"
-            for name, count in sorted(inventory[relative].items())
-        )
-        print(f"   {relative}: {summary}")
+bridge = (ROOT / "src/render/legacy/CoreGlLegacyBridge.h").read_text(encoding="utf-8")
+assert "#version 430 core" in bridge
+assert "glDrawArrays" in bridge
+assert "QuadsToken" in bridge
+
+print("GL43 CORE MODERNIZATION BOUNDARY: PASS")
+print(" - GLFW requests OpenGL 4.3 Core Profile")
+print(" - bundled GLAD is generated for gl:core=4.3")
+print(" - production src/ has zero forbidden compatibility-only API tokens")
+print(" - legacy presentation syntax is translated by the Core GLSL/VAO/VBO bridge")

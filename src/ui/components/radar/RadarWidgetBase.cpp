@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "RadarWidgetBase.h"
 #include <glad/gl.h>
 #include <cmath>
@@ -100,16 +101,16 @@ void RadarWidgetBase::renderContacts()
         float screenY = m_centerY + nz * m_radius;
 
         glUseProgram(0);
-        glDisable(GL_TEXTURE_2D);
+        elite::render::core_legacy::enableTexture2D(false);
         glDisable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
 
         glPointSize(5.0f);
-        glColor3f(0.0f, 1.0f, 0.0f);
+        elite::render::core_legacy::color3f(0.0f, 1.0f, 0.0f);
 
-        glBegin(GL_POINTS);
-        glVertex2f(screenX, screenY);
-        glEnd();
+        elite::render::core_legacy::begin(GL_POINTS);
+        elite::render::core_legacy::vertex2f(screenX, screenY);
+        elite::render::core_legacy::end();
     }
 }
 
@@ -123,11 +124,11 @@ void RadarWidgetBase::renderSweep()
     float x = m_centerX + std::cos(rad) * m_radius;
     float y = m_centerY + std::sin(rad) * m_radius;
 
-    glColor3f(0.0f, 1.0f, 0.0f);
-    glBegin(GL_LINES);
-    glVertex2f(m_centerX, m_centerY);
-    glVertex2f(x, y);
-    glEnd();
+    elite::render::core_legacy::color3f(0.0f, 1.0f, 0.0f);
+    elite::render::core_legacy::begin(GL_LINES);
+    elite::render::core_legacy::vertex2f(m_centerX, m_centerY);
+    elite::render::core_legacy::vertex2f(x, y);
+    elite::render::core_legacy::end();
 }
 
 

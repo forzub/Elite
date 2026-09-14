@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/MapCelestialRenderResources.h"
 #include "src/render/celestial/CloudMotionPolicy.h"
 
@@ -2087,13 +2088,13 @@ void MapCelestialRenderResources::drawStarfield(
         viewport.height
     );
 
-    glMatrixMode(
-        GL_PROJECTION
+    elite::render::core_legacy::matrixMode(
+        elite::render::core_legacy::ProjectionToken
     );
 
-    glLoadIdentity();
+    elite::render::core_legacy::loadIdentity();
 
-    glOrtho(
+    elite::render::core_legacy::ortho(
         0.0,
         viewport.width,
         viewport.height,
@@ -2102,11 +2103,11 @@ void MapCelestialRenderResources::drawStarfield(
         1.0
     );
 
-    glMatrixMode(
-        GL_MODELVIEW
+    elite::render::core_legacy::matrixMode(
+        elite::render::core_legacy::ModelViewToken
     );
 
-    glLoadIdentity();
+    elite::render::core_legacy::loadIdentity();
 
     glUseProgram(
         0

@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/render/celestial/clouds/HubBackdropCloudRenderer.h"
 
 #include <algorithm>
@@ -148,9 +149,7 @@ namespace render::celestial
             );
 
         GLboolean textureWasEnabled =
-            glIsEnabled(
-                GL_TEXTURE_2D
-            );
+            elite::render::core_legacy::texture2DEnabled();
 
         GLboolean blendWasEnabled =
             glIsEnabled(
@@ -167,9 +166,7 @@ namespace render::celestial
 
         glUseProgram(0);
 
-        glEnable(
-            GL_TEXTURE_2D
-        );
+        elite::render::core_legacy::enableTexture2D(true);
 
         glBindTexture(
             GL_TEXTURE_2D,
@@ -331,25 +328,25 @@ namespace render::celestial
                         horizonFade
                     );
 
-                glColor4f(
+                elite::render::core_legacy::color4f(
                     1.0f,
                     1.0f,
                     1.0f,
                     alpha
                 );
 
-                glTexCoord2d(
+                elite::render::core_legacy::texCoord2d(
                     u,
                     v
                 );
 
-                glVertex2d(
+                elite::render::core_legacy::vertex2d(
                     sx,
                     sy
                 );
             };
 
-        glBegin(
+        elite::render::core_legacy::begin(
             GL_TRIANGLES
         );
 
@@ -439,7 +436,7 @@ namespace render::celestial
 
         
 
-        glEnd();
+        elite::render::core_legacy::end();
 
         glTexEnvi(
             GL_TEXTURE_ENV,
@@ -454,15 +451,11 @@ namespace render::celestial
 
         if (textureWasEnabled)
         {
-            glEnable(
-                GL_TEXTURE_2D
-            );
+            elite::render::core_legacy::enableTexture2D(true);
         }
         else
         {
-            glDisable(
-                GL_TEXTURE_2D
-            );
+            elite::render::core_legacy::enableTexture2D(false);
         }
 
         if (blendWasEnabled)

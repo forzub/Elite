@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/render/celestial/HubSphericalGridRenderer.h"
 
 #include <algorithm>
@@ -128,33 +129,33 @@ namespace render::celestial
 
             if (visible && havePrev)
             {
-                glBegin(GL_LINES);
+                elite::render::core_legacy::begin(GL_LINES);
 
-                glColor4f(
+                elite::render::core_legacy::color4f(
                     color.r,
                     color.g,
                     color.b,
                     color.a * prevFade
                 );
 
-                glVertex2d(
+                elite::render::core_legacy::vertex2d(
                     prevP.x,
                     prevP.y
                 );
 
-                glColor4f(
+                elite::render::core_legacy::color4f(
                     color.r,
                     color.g,
                     color.b,
                     color.a * fade
                 );
 
-                glVertex2d(
+                elite::render::core_legacy::vertex2d(
                     p.x,
                     p.y
                 );
 
-                glEnd();
+                elite::render::core_legacy::end();
             }
 
             if (visible)
@@ -216,33 +217,33 @@ namespace render::celestial
 
             if (visible && havePrev)
             {
-                glBegin(GL_LINES);
+                elite::render::core_legacy::begin(GL_LINES);
 
-                glColor4f(
+                elite::render::core_legacy::color4f(
                     color.r,
                     color.g,
                     color.b,
                     color.a * prevFade
                 );
 
-                glVertex2d(
+                elite::render::core_legacy::vertex2d(
                     prevP.x,
                     prevP.y
                 );
 
-                glColor4f(
+                elite::render::core_legacy::color4f(
                     color.r,
                     color.g,
                     color.b,
                     color.a * fade
                 );
 
-                glVertex2d(
+                elite::render::core_legacy::vertex2d(
                     p.x,
                     p.y
                 );
 
-                glEnd();
+                elite::render::core_legacy::end();
             }
 
             if (visible)

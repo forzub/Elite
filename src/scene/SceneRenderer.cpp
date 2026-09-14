@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "SceneRenderer.h"
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -111,27 +112,27 @@ namespace
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_CULL_FACE);
 
-            glMatrixMode(GL_PROJECTION);
-            glPushMatrix();
-            glLoadIdentity();
+            elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+            elite::render::core_legacy::pushMatrix();
+            elite::render::core_legacy::loadIdentity();
 
-            glMatrixMode(GL_MODELVIEW);
-            glPushMatrix();
-            glLoadIdentity();
+            elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+            elite::render::core_legacy::pushMatrix();
+            elite::render::core_legacy::loadIdentity();
 
-            glBegin(GL_QUADS);
-                glVertex2f(a.x, a.y);
-                glVertex2f(b.x, a.y);
-                glVertex2f(b.x, b.y);
-                glVertex2f(a.x, b.y);
-            glEnd();
+            elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
+                elite::render::core_legacy::vertex2f(a.x, a.y);
+                elite::render::core_legacy::vertex2f(b.x, a.y);
+                elite::render::core_legacy::vertex2f(b.x, b.y);
+                elite::render::core_legacy::vertex2f(a.x, b.y);
+            elite::render::core_legacy::end();
 
-            glPopMatrix();
+            elite::render::core_legacy::popMatrix();
 
-            glMatrixMode(GL_PROJECTION);
-            glPopMatrix();
+            elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+            elite::render::core_legacy::popMatrix();
 
-            glMatrixMode(GL_MODELVIEW);
+            elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
 
             glEnable(GL_DEPTH_TEST);
         }

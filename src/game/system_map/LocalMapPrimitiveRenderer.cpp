@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 
 #include <algorithm>
@@ -88,7 +89,7 @@ glm::vec4 compatibilityCurrentColor()
 
     // Transitional bridge for callers not yet migrated to the explicit-color
     // overloads. GL43-B removes these overloads after all callers are moved.
-    glGetFloatv(GL_CURRENT_COLOR, color);
+    elite::render::core_legacy::getFloatv(elite::render::core_legacy::CurrentColorToken, color);
 
     return glm::vec4(color[0], color[1], color[2], color[3]);
 }

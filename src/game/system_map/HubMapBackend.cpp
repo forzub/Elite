@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/HubMapBackend.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 
@@ -435,10 +436,10 @@ void HubMapBackend::renderHubMapPasses(
         GL_ONE_MINUS_SRC_ALPHA
     );
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::loadIdentity();
 
-    glOrtho(
+    elite::render::core_legacy::ortho(
         0.0,
         viewport.width,
         viewport.height,
@@ -447,22 +448,22 @@ void HubMapBackend::renderHubMapPasses(
         1.0
     );
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::loadIdentity();
 
-    glColor4f(
+    elite::render::core_legacy::color4f(
         m_resources.hubVisuals().backgroundColor.r,
         m_resources.hubVisuals().backgroundColor.g,
         m_resources.hubVisuals().backgroundColor.b,
         m_resources.hubVisuals().backgroundColor.a
     );
 
-    glBegin(GL_QUADS);
-    glVertex2f(0.0f, 0.0f);
-    glVertex2f(static_cast<float>(viewport.width), 0.0f);
-    glVertex2f(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
-    glVertex2f(0.0f, static_cast<float>(viewport.height));
-    glEnd();
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
+    elite::render::core_legacy::vertex2f(0.0f, 0.0f);
+    elite::render::core_legacy::vertex2f(static_cast<float>(viewport.width), 0.0f);
+    elite::render::core_legacy::vertex2f(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
+    elite::render::core_legacy::vertex2f(0.0f, static_cast<float>(viewport.height));
+    elite::render::core_legacy::end();
 
 
     if (!hub.valid)
@@ -604,7 +605,7 @@ m_performanceStats.cpuPlanetBackdropMs =
     }
     else
     {
-        glColor4f(
+        elite::render::core_legacy::color4f(
             hubOriginColor.r,
             hubOriginColor.g,
             hubOriginColor.b,

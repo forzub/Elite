@@ -135,6 +135,22 @@ target_link_libraries(EliteAssemblyGeometry PRIVATE
     EliteModelAsset
 )
 
+# Unified game-runtime model ingress. Legacy OBJ/ObjectAssembly and compiled
+# .elmodel both converge on the shared elite::model_asset::ModelAsset schema.
+add_library(EliteRuntimeModelAssets STATIC
+    src/game/assets/CompiledModelAssetReader.cpp
+    src/game/assets/LegacyAssemblyModelAdapter.cpp
+    src/game/assets/RuntimeModelAssetLibrary.cpp
+)
+target_include_directories(EliteRuntimeModelAssets PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+target_link_libraries(EliteRuntimeModelAssets
+    PUBLIC EliteModelAsset
+    PRIVATE EliteAssemblyGeometry
+)
+
 if(ELITE_BUILD_ASSET_EDITOR)
     # The editor owns a completely separate runtime tree from EliteGame.
     # Its executable, workspaces, WebUI fallback and resource pack all live here.
@@ -656,6 +672,7 @@ if(ELITE_BUILD_SERVER)
     target_link_libraries(EliteServer PRIVATE
         EliteNavigationGeometry
         EliteAssemblyGeometry
+        EliteRuntimeModelAssets
         nlohmann_json::nlohmann_json
         Threads::Threads
     )
@@ -973,6 +990,7 @@ target_link_libraries(EliteGame PRIVATE
     EliteModelAsset
     EliteNavigationGeometry
     EliteAssemblyGeometry
+    EliteRuntimeModelAssets
     glfw
     opengl32
     Freetype::Freetype

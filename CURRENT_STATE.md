@@ -5,7 +5,7 @@
 **Editor baseline:** v0.10.86 accepted
 **Model Asset Editor architecture:** closed at the current target boundary
 **ModelAsset binary v4 architecture:** independent translation units closed
-**Game runtime decomposition:** started — Wave R0 candidate (navigation + CPU assembly seams)
+**Game runtime decomposition:** R0 physical seams established; runtime model-ingress transition started
 
 ## Accepted baseline
 
@@ -22,3 +22,9 @@ Authoritative plan and decomposition rules: `src/game/GAME_RUNTIME_DECOMPOSITION
 ## R0 dependency finding
 
 The first hosted headless link exposed a pre-existing CMake ownership gap: authoritative code consumes `AssemblyMeshLibrary`, but `EliteServer` did not own/link its implementation. R0 fixes the architecture instead of duplicating missing `.cpp` files: `EliteAssemblyGeometry` now owns CPU OBJ hydration, authored assembly definitions and the CPU assembly cache, and both runtime executables link the same implementation. It remains separate from render/GPU ownership.
+
+## Runtime model asset ingress
+
+Game runtime now has a dedicated transition seam for disk model loading. `EliteRuntimeModelAssets` converges both sources on the shared `elite::model_asset::ModelAsset`: legacy OBJ goes through `AssemblyMeshLibrary -> LegacyAssemblyModelAdapter`, while compiled `.elmodel` goes through `CompiledModelAssetReader -> ModelAssetBinary`. The format version and all model structures remain owned by `src/model_asset/ModelAsset.h`; no game-side copy is permitted. Default source remains legacy until a type is explicitly switched during bootstrap.
+
+Architecture details: `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md`.

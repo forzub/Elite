@@ -2,7 +2,7 @@
 
 **Started:** 2026-09-14  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Status:** Wave R0 candidate — navigation geometry + shared CPU assembly geometry
+**Status:** R0 physical seams established; runtime model-ingress transition added
 
 ## Purpose
 
@@ -111,3 +111,9 @@ Architectural state, current intent and next work are repository data. Every com
 - this file — long-lived decomposition intent, boundaries and wave history.
 
 Chat history is not the canonical project state.
+
+## Runtime model-ingress transition
+
+Before deeper world/render decomposition, disk model loading gets one canonical ingress. `EliteRuntimeModelAssets` sits above `EliteModelAsset` and `EliteAssemblyGeometry`. Native compiled input uses the shared binary codec directly. Legacy OBJ input is adapted upward into `ModelAsset`; the new schema is never adapted downward into `ObjectAssembly`. This preserves the full v4 semantic/render/collision/structural model and creates one migration point for consumers.
+
+This transition is behavior-preserving until a concrete `ObjectType` is explicitly switched to `CompiledBinary`. Consumer migration is incremental and should remove direct `AssemblyMeshLibrary` dependencies one subsystem at a time.

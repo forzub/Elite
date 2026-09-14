@@ -1,0 +1,74 @@
+name: P0 Sphere Raster Diagnostic
+
+on:
+  push:
+    branches:
+      - chatgpt/mae-v01075-semantic-workflow-motion-v5
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  raster:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenGL test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ libglfw3-dev xvfb mesa-utils
+      - name: Build diagnostic
+        run: |
+          cat > /tmp/p0_sphere_diag.cpp <<'CPP'
+          #include <glad/gl.h>
+          #include <GLFW/glfw3.h>
+          #include <cmath>
+          #include <cstdint>
+          #include <fstream>
+          #include <iostream>
+          #include <sstream>
+          #include <string>
+          #include <vector>
+
+          struct V { float x,y,z,u,v; };
+          static std::string readFile(const char* path) {
+              std::ifstream f(path); std::ostringstream s; s << f.rdbuf(); return s.str();
+          }
+          static GLuint shader(GLenum type, const std::string& src) {
+              GLuint s=glCreateShader(type); const char* p=src.c_str(); glShaderSource(s,1,&p,nullptr); glCompileShader(s);
+              GLint ok=0; glGetShaderiv(s,GL_COMPILE_STATUS,&ok); if(!ok){char log[4096]{}; glGetShaderInfoLog(s,sizeof(log),nullptr,log); std::cerr<<log<<"\n"; return 0;} return s;
+          }
+          int main(){
+              if(!glfwInit()) return 10;
+              glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,4); glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
+              glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE); glfwWindowHint(GLFW_VISIBLE,GLFW_FALSE);
+              GLFWwindow* w=glfwCreateWindow(256,256,"diag",nullptr,nullptr); if(!w){std::cerr<<"window fail\n"; return 11;}
+              glfwMakeContextCurrent(w); if(!gladLoadGL((GLADloadfunc)glfwGetProcAddress)){std::cerr<<"glad fail\n";return 12;}
+              auto vs=shader(GL_VERTEX_SHADER,readFile("src/assets/shaders/system_map/map_body_preview.vert"));
+              auto fs=shader(GL_FRAGMENT_SHADER,readFile("src/assets/shaders/system_map/map_body_preview.frag"));
+              if(!vs||!fs) return 13;
+              GLuint prog=glCreateProgram(); glAttachShader(prog,vs); glAttachShader(prog,fs); glLinkProgram(prog);
+              GLint linked=0; glGetProgramiv(prog,GL_LINK_STATUS,&linked); if(!linked){char log[4096]{}; glGetProgramInfoLog(prog,sizeof(log),nullptr,log); std::cerr<<log<<"\n";return 14;}
+              constexpr int LA=24, LO=48; std::vector<V> verts; std::vector<uint32_t> idx;
+              for(int iy=0;iy<=LA;++iy){ float vv=float(iy)/LA; float lat=-1.57079632679f+vv*3.14159265359f; float c=std::cos(lat),s=std::sin(lat);
+                for(int ix=0;ix<=LO;++ix){float u=float(ix)/LO; float lon=-3.14159265359f+u*6.28318530718f; verts.push_back({c*std::cos(lon),s,c*std::sin(lon),u,vv});}}
+              int row=LO+1; for(int iy=0;iy<LA;++iy) for(int ix=0;ix<LO;++ix){uint32_t i00=iy*row+ix,i10=i00+1,i01=(iy+1)*row+ix,i11=i01+1; idx.insert(idx.end(),{i00,i10,i11,i00,i11,i01});}
+              GLuint vao,vbo,ebo; glGenVertexArrays(1,&vao);glGenBuffers(1,&vbo);glGenBuffers(1,&ebo);glBindVertexArray(vao);
+              glBindBuffer(GL_ARRAY_BUFFER,vbo);glBufferData(GL_ARRAY_BUFFER,verts.size()*sizeof(V),verts.data(),GL_STATIC_DRAW);
+              glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,ebo);glBufferData(GL_ELEMENT_ARRAY_BUFFER,idx.size()*sizeof(uint32_t),idx.data(),GL_STATIC_DRAW);
+              glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(V),(void*)0);
+              glEnableVertexAttribArray(1);glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(V),(void*)(3*sizeof(float)));
+              GLuint tex; glGenTextures(1,&tex);glBindTexture(GL_TEXTURE_2D,tex); unsigned char white[4]={255,255,255,255};glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,1,1,0,GL_RGBA,GL_UNSIGNED_BYTE,white);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+              glViewport(0,0,256,256);glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);glEnable(GL_DEPTH_TEST);glEnable(GL_CULL_FACE);glCullFace(GL_BACK);glFrontFace(GL_CCW);
+              glUseProgram(prog); float I[16]={1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
+              glUniformMatrix4fv(glGetUniformLocation(prog,"uMVP"),1,GL_FALSE,I);glUniform3f(glGetUniformLocation(prog,"uBodyCenter"),0,0,0);glUniform1f(glGetUniformLocation(prog,"uBodyRadius"),0.75f);
+              glUniform3f(glGetUniformLocation(prog,"uPrimeAxis"),1,0,0);glUniform3f(glGetUniformLocation(prog,"uNorthAxis"),0,1,0);glUniform3f(glGetUniformLocation(prog,"uEastAxis"),0,0,-1);glUniform4f(glGetUniformLocation(prog,"uColor"),1,1,1,1);glUniform1i(glGetUniformLocation(prog,"uTexture"),0);
+              glDrawElements(GL_TRIANGLES,(GLsizei)idx.size(),GL_UNSIGNED_INT,nullptr); GLenum err=glGetError(); unsigned char px[4]{};glReadPixels(128,128,1,1,GL_RGBA,GL_UNSIGNED_BYTE,px);
+              std::cout<<"linked="<<linked<<" indices="<<idx.size()<<" error=0x"<<std::hex<<err<<std::dec<<" center="<<(int)px[0]<<","<<(int)px[1]<<","<<(int)px[2]<<","<<(int)px[3]<<"\n";
+              return (err==GL_NO_ERROR && px[0]>0)?0:20;
+          }
+          CPP
+          g++ -std=c++17 -Iglad/include /tmp/p0_sphere_diag.cpp glad/src/gl.c -lglfw -ldl -lGL -pthread -o /tmp/p0_sphere_diag
+      - name: Run diagnostic under Xvfb
+        run: xvfb-run -a /tmp/p0_sphere_diag

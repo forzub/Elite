@@ -48,80 +48,62 @@ Production client code must not rely on:
 
 ## GL43-A — scaffold + machine inventory
 
-### Implemented candidate
-
-`tests/architecture_contracts/check_gl43_modernization_boundary.py` now:
+`tests/architecture_contracts/check_gl43_modernization_boundary.py`:
 
 - validates the temporary 4.3 Compatibility context request in `Window.cpp`;
 - scans all production C/C++ under `src/`;
 - strips comments before matching;
 - reports compatibility token counts per file;
 - tracks immediate mode, matrix stack, current-color state, fixed texture enable state and legacy client arrays;
-- provides a monotonic `NO_IMMEDIATE_MODE_FILES` guard for files whose immediate submission has been retired.
+- provides monotonic per-file guards as migration advances.
 
-The contract is intentionally incremental. Existing debt is reported rather than globally rejected until the corresponding wave migrates it; the protected set grows as files become clean.
-
-### Confirmed manual debt so far
-
-- `src/render/DebugGrid.cpp`;
-- `src/game/system_map/DetailMapBackend.cpp`;
-- `src/game/system_map/DetailMapGeometryPass.cpp`;
-- `src/game/system_map/DetailMapPlanetPass.cpp`;
-- `src/game/system_map/HubMapBackend.cpp`;
-- `src/game/system_map/HubMapGeometryPass.cpp`;
-- `src/game/system_map/HubMapPlanetPass.cpp`;
-- `src/game/system_map/LocalMapAtmosphereRenderer.cpp`;
-- `src/game/system_map/MapObjectOverlayRenderer.cpp`;
-- transitional current-color dependency in `LocalMapPrimitiveRenderer.cpp`.
-
-The contract's local output, not this handwritten list, is the complete inventory authority.
-
-### Pending acceptance
-
-GL43-A is accepted only after local:
-
-```bash
-python tests/architecture_contracts/check_gl43_modernization_boundary.py
-cmake --build build --target EliteGame
-./build/EliteGame.exe
-```
-
-and full Compatibility-profile visual smoke.
+The contract is incremental: existing debt is reported rather than globally rejected until its wave migrates it.
 
 ## GL43-B — shared local/screen primitive foundation
 
-### B1 candidate — immediate mode retired in LocalMapPrimitiveRenderer
+### B1 — visually accepted
 
-`LocalMapPrimitiveRenderer` line/cross/circle drawing now uses an internal GLSL 4.30 Core program, VAO and streaming VBO.
+`LocalMapPrimitiveRenderer` line/cross/circle drawing now uses GLSL 4.30 Core, VAO/VBO and `glDrawArrays`.
 
-The shader receives pixel coordinates and converts them to NDC using `GL_VIEWPORT`, so these primitives no longer depend on fixed-function projection/model-view matrices for their coordinate transform.
+The shader receives pixel coordinates and converts them to NDC using `GL_VIEWPORT`; `glBegin/glEnd` and immediate `glVertex*` are gone from this file and statically forbidden from returning.
 
-`glBegin/glEnd` and immediate `glVertex*` are removed from this file and the architecture contract forbids their return.
+Local visual smoke reported no visible change after this replacement, which is the required behavioral result.
 
-To keep B1's blast radius narrow, legacy callers still set fixed-function current color. B1 reads `GL_CURRENT_COLOR` once and forwards that value to the shader as `uColor`.
+### B2a — explicit color API + Detail geometry candidate
 
-This is deliberately temporary.
+The primitive API now exposes explicit `glm::vec4` color overloads for line/cross/circle.
 
-### B2 next — explicit color API
+`DetailMapGeometryPass` has already moved fully onto them. Its legacy orbit path was also folded onto the shared primitive renderer without changing the orbit algorithm:
 
-After B1 local acceptance:
+- no fixed-function `glColor*`;
+- no `GL_CURRENT_COLOR`;
+- no `glBegin/glEnd`;
+- no immediate `glVertex*`;
+- same 192-segment orbit policy at current call sites;
+- same hidden-side alpha attenuation (`0.16x`).
 
-- add explicit color arguments to line/cross/circle;
-- update every caller;
-- remove all dependence on `GL_CURRENT_COLOR` from the primitive renderer;
-- mark `LocalMapPrimitiveRenderer.cpp` fully compatibility-clean in the architecture contract.
+The architecture contract now treats `DetailMapGeometryPass.cpp` as fully compatibility-clean.
 
-Do not fold Detail/Hub geometry redesign into B2.
+Temporary no-color primitive overloads remain for unmigrated Hub/planet callers and still use `GL_CURRENT_COLOR`. Therefore `LocalMapPrimitiveRenderer.cpp` itself is not yet fully Core-clean.
+
+### B2b — close the primitive seam
+
+After B2a local validation:
+
+- migrate all remaining local-map primitive callers to explicit color;
+- delete the no-color overloads;
+- delete `compatibilityCurrentColor()` and the last `GL_CURRENT_COLOR` use from the primitive renderer;
+- upgrade its static guard from no-immediate-mode to no-compatibility-at-all;
+- smoke Detail/Hub again.
 
 ## GL43-C — Detail Map
 
-Migrate:
+Migrate remaining Detail compatibility debt:
 
 - `DetailMapBackend` fixed-function projection/background;
-- `DetailMapGeometryPass` orbit/grid/marker compatibility paths;
 - `DetailMapPlanetPass` sphere-grid, filled disk and projected fallback geometry.
 
-Preserve current map geometry and layering.
+`DetailMapGeometryPass` is already compatibility-clean as of B2a and should not be reopened except for a regression.
 
 ## GL43-D — Hub Map and local celestial presentation
 
@@ -154,6 +136,18 @@ Only after the scan is clean:
 - launch and confirm Core 4.3+;
 - smoke ordinary flight, cockpit/rear view, Galaxy/System/Detail/Hub maps and close-navigation HUD;
 - keep the static contract permanently.
+
+## Current validation
+
+For B2a:
+
+```bash
+python tests/architecture_contracts/check_gl43_modernization_boundary.py
+cmake --build build --target EliteGame
+./build/EliteGame.exe
+```
+
+Primary visual target is Detail Map geometry: volume edges, hub/player orbits, hidden-half attenuation, small-body circles/crosses, colors and orientation.
 
 ## Final acceptance
 

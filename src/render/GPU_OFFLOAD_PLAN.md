@@ -7,7 +7,7 @@
 
 ## Sequencing rule
 
-The Core prerequisite is closed. CPU -> GPU work is now allowed, but only where the data flow and measured cost justify it.
+The Core prerequisite is closed. CPU -> GPU work is allowed only where the data flow and measured cost justify it.
 
 Prefer the simplest GPU representation that removes repeated CPU work. Static topology + vertex shader/instancing is preferred over compute when topology is stable. Compute remains reserved for genuinely data-parallel variable-output work where results can stay GPU-resident.
 
@@ -28,26 +28,42 @@ Gameplay authority, navigation/planning, picking answers needed synchronously by
 
 This also paid repeated trigonometry, basis transforms, vector writes and dynamic-buffer submission.
 
-### Candidate implemented
+### Static-sphere target
 
-Commit: `e9a9cfdef1331f67259d019fd9024054ce30779e`.
-
-The active candidate uses two one-time resident indexed unit spheres:
+Use two one-time resident indexed unit spheres:
 
 - 24 x 48 low-resolution mesh;
 - 64 x 128 high-resolution mesh.
 
-Per-body dynamic data is reduced to texture, center, radius, prime/north/east basis, color and LOD choice. `textureLongitudeOffsetDeg` and `rotationPhaseRad` are folded into the per-body basis; the vertex shader transforms the resident unit sphere and drawing uses `glDrawElements`.
+Per-frame body data is reduced to texture, center, radius, prime/north/east basis, color and LOD choice. `textureLongitudeOffsetDeg` and `rotationPhaseRad` are folded into the body basis. Drawing uses `glDrawElements`; no full-sphere dynamic vertex upload remains.
 
-The per-frame textured-sphere path no longer performs CPU sphere tessellation and no longer performs a full-sphere dynamic vertex upload.
+### Runtime acceptance history
 
-Automated P0 gates PASS:
+Initial implementation commit `e9a9cfdef1331f67259d019fd9024054ce30779e` introduced a new vertex-shader ABI with explicit center/radius/basis uniforms. Static contracts and MinGW syntax passed, but the local visual smoke failed: textured planets and moons disappeared while rings/labels remained visible. That candidate was rejected.
+
+A hidden OpenGL 4.3 Core raster diagnostic then verified the indexed sphere, EBO/VAO, current shader pair, back-face culling and `glDrawElements` in isolation with no GL error. The correction therefore retains the resident mesh but removes the new shader ABI from the integration boundary.
+
+Correction commit `d9f1db5fdd6e72b68fa59e887bfc88535cb3f279` restores the old runtime-proven map-body shader contract:
+
+```text
+aPos + aUv + aColor + uMVP
+```
+
+The per-body basis/scale/translation are folded into `bodyModel`, then:
+
+```text
+bodyMvp = frameMvp * bodyModel
+```
+
+The old shader receives that matrix and a constant color attribute; the resident mesh is submitted with `glDrawElements`.
+
+Automated corrected-candidate gates PASS:
 
 - `check_system_map_static_sphere.py`;
 - GL4.3 Core boundary;
 - Windows/MSYS2 MinGW64 syntax compilation of `SystemMapRenderer.cpp`.
 
-**Status:** candidate pending focused local System Map visual acceptance.
+**Status:** corrected candidate pending focused local System Map visual acceptance.
 
 ## Next after P0 — System Map repeated primitives
 

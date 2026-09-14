@@ -6,9 +6,9 @@
 **Model Asset Editor architecture:** closed at the current target boundary  
 **ModelAsset binary v4 architecture:** independent translation units closed  
 **Game runtime decomposition:** R0 seams + dual-source model ingress accepted  
-**Renderer baseline:** OpenGL 4.3 Core **accepted locally**  
+**Renderer baseline:** OpenGL 4.3 Core **accepted locally, Core build cleanup still being closed**  
 **GPU-P0:** System Map static textured spheres **accepted locally**  
-**GPU-P0.1:** System Map repeated planar circles **implemented; local acceptance pending**
+**GPU-P0.1:** System Map repeated planar circles **contracts PASS locally; build/runtime acceptance pending**
 
 ## Accepted runtime baseline
 
@@ -21,9 +21,21 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 
 `src/model_asset/ModelAsset.h` remains the single schema/version authority. Runtime-model consumer migration remains queued behind the current renderer/navigation-performance work.
 
-## OpenGL 4.3 Core — ACCEPTED
+## OpenGL 4.3 Core — accepted runtime baseline, final build hygiene in progress
 
-The local developer build and runtime smoke passed on 2026-09-15. The client runs on the accepted OpenGL 4.3 Core baseline. The station-adjacent freezes predate that migration and remain explicitly deferred from renderer modernization.
+The local developer build and runtime smoke passed on 2026-09-15 for the Core migration baseline. The station-adjacent freezes predate that migration and remain explicitly deferred from renderer modernization.
+
+A later GPU-P0.1 rebuild exposed one missed compatibility-only API in `UICameraView::renderToTexture()`: `glPushAttrib/glPopAttrib` with `GL_VIEWPORT_BIT | GL_TRANSFORM_BIT`. The existing architecture scan did not include the attribute-stack API, so it incorrectly reported a clean Core boundary before the compiler caught it.
+
+The branch now replaces that compatibility stack with explicit state handling:
+
+- `GL_VIEWPORT` is captured/restored with `glGetIntegerv` + `glViewport`;
+- the software legacy bridge matrix-mode token is captured/restored explicitly;
+- the projection/model-view matrices continue to use the bridge's software push/pop stacks;
+- the zero-height guard is evaluated before FBO render-state mutation;
+- the GL43 boundary test now forbids `glPushAttrib`, `glPopAttrib`, client-attrib stacks and the compatibility attrib-bit tokens.
+
+This cleanup still requires a fresh local compile before it is considered closed.
 
 ## GPU-P0 — System Map static textured spheres — ACCEPTED
 
@@ -33,7 +45,7 @@ The first candidate that introduced a new shader ABI was visually rejected becau
 
 ## GPU-P0.1 — repeated planar System Map circles — CANDIDATE
 
-The current branch now contains a resident/instanced circle path through `SystemMapGpuCircleBatch`.
+The current branch contains a resident/instanced circle path through `SystemMapGpuCircleBatch`.
 
 ### Migrated scene primitives
 
@@ -52,9 +64,21 @@ This removes per-frame `sin/cos` and complete transformed-circle vertex uploads 
 
 `tests/architecture_contracts/check_system_map_gpu_circles.py` protects this boundary.
 
-### Not yet accepted
+### Local evidence so far
 
-No claim of local build/runtime success is made for GPU-P0.1 yet. It still requires:
+On 2026-09-15 the user ran:
+
+```bash
+python tests/architecture_contracts/check_gl43_modernization_boundary.py
+python tests/architecture_contracts/check_system_map_static_sphere.py
+python tests/architecture_contracts/check_system_map_gpu_circles.py
+```
+
+and all three contracts reported PASS. The subsequent `EliteGame` build stopped in `UICameraView.cpp` on the compatibility attrib-stack symbols described above, so no GPU-P0.1 runtime/visual acceptance claim is made yet.
+
+### Acceptance still required
+
+After pulling the Core attrib-stack fix, run:
 
 ```bash
 python tests/architecture_contracts/check_gl43_modernization_boundary.py

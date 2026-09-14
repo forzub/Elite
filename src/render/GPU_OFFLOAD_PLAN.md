@@ -9,9 +9,9 @@
 
 The Core prerequisite is closed. CPU -> GPU work is allowed only where the data flow and measured cost justify it.
 
-Prefer the simplest GPU representation that removes repeated CPU work. Static topology + vertex shader/instancing is preferred over compute when topology is stable. Compute remains reserved for genuinely data-parallel variable-output work where results can stay GPU-resident.
+Prefer the simplest GPU representation that removes repeated CPU work. Static topology + vertex shader/instancing is preferred over compute when topology is stable. Compute remains reserved for genuinely data-parallel variable-output work where results can stay GPU-resident or can be reduced to a compact result.
 
-Gameplay authority, navigation/planning, picking answers needed synchronously by CPU, replication and server-compatible simulation remain CPU-owned.
+Gameplay authority, route/docking decisions, replication and server-compatible simulation remain CPU-owned. This does not prohibit GPU derivative evaluation of large independent candidate sets when the CPU remains the canonical decision maker.
 
 ## P0 — System Map textured body geometry — ACCEPTED
 
@@ -41,45 +41,86 @@ The first candidate with a new per-body shader ABI was visually rejected because
 
 **Status:** accepted locally on 2026-09-15.
 
-## P0.1 — System Map repeated primitives — ACTIVE
+## P0.1 — System Map repeated planar circles — ACCEPTANCE CANDIDATE
 
-Current CPU-generated topology still includes:
+The first repeated-primitive slice is now implemented.
 
-- `addCircleXZ()`;
-- `addCircleXY()`;
-- `addOrbitCircle3D()`;
-- `addBillboardBall()`;
-- dynamic `flushLines()` / `flushSolids()` uploads of the generated vertices.
+Migrated `SystemMapSceneRenderer` consumers:
 
-The simple circle paths currently evaluate `sin/cos` per segment every frame, transform every point on the CPU, append complete line vertices, then upload the full dynamic batch. The orbit and billboard paths do the same with additional transforms/triangle generation.
+- planet primary orbit circles;
+- asteroid-belt primary orbit and three belt rings;
+- moon orbit circles;
+- player ring;
+- selected-body XZ/XY rings;
+- selected-hub XZ/XY rings.
 
-Preferred target:
+### Implementation
+
+`SystemMapGpuCircleBatch` caches resident unit circles by authored segment count. Topology is generated once and uploaded using `GL_STATIC_DRAW`.
+
+Per-frame instance payload is compact:
 
 ```text
-shared resident unit circle/ring/disc topology
-    + compact per-instance center/radius/color/basis
-    + grouped/instanced submission
+center.xyz + radius
+color.rgba
+plane = XZ / XY
 ```
 
-Important constraint: do not trade CPU tessellation for a draw-call explosion. The existing line path batches many circles and arbitrary lines into one upload/draw, so a replacement must preserve batching economics. Where authored segment counts differ, group instances by topology/segment count rather than rebuilding geometry every frame.
+The GLSL 4.30 vertex shader expands the resident circle. Compatible sequential groups use `glDrawArraysInstanced(GL_LINE_LOOP, ...)` rather than one draw per circle.
 
-### First slice
+This removes repeated per-frame circle `sin/cos`, transformed-circle vertex construction and full-circle dynamic uploads for the migrated scene paths.
 
-Migrate `addCircleXZ()` and `addCircleXY()` first. Keep arbitrary lines on the existing dynamic line path. Preserve current visual semantics for:
+`tests/architecture_contracts/check_system_map_gpu_circles.py` prevents the scene from silently returning to the old CPU circle API.
 
-- planetary/orbit circles;
-- asteroid belt rings;
-- moon orbits;
-- player marker circles;
-- selected-body and selected-hub rings.
+**Status:** implementation complete; local build/runtime/visual acceptance pending.
 
-Add an architecture contract preventing the migrated circle path from returning to per-frame CPU trigonometric topology generation.
+### Deliberately outside this slice
 
-After that, evaluate `addOrbitCircle3D()` and `addBillboardBall()` separately.
+- arbitrary dynamic lines / `flushLines()`;
+- `addOrbitCircle3D()`;
+- billboard/proxy body markers and halos;
+- `addBillboardBall()` and remaining dynamic solids.
+
+Do not migrate dormant helpers merely for purity. Billboard/proxy marker work is now profile-gated rather than automatically sequenced ahead of navigation performance.
+
+## NAV-PERF-0 — route / trajectory freeze — NEXT AFTER P0.1 ACCEPTANCE
+
+The route/trajectory calculation can produce a user-visible machine stall, so it takes priority immediately after the current circle candidate is accepted.
+
+The first wave is instrumentation only. Capture at least:
+
+- total planner wall time;
+- `TrajectoryPredictor` call count;
+- integration-step count;
+- gravity sample/body-evaluation count;
+- `predictLeg()` shooting-correction iterations;
+- safety trajectory-segment count;
+- obstacle/restricted-volume/scheduled-traffic checks;
+- detour/emergency candidate count.
+
+### Working hypothesis
+
+A direct compute-shader port of one current trajectory is not the preferred first move. The integration is sequential in time, uses double-precision state and feeds CPU planner decisions. Algorithmic repetition, fixed integration granularity, safety broad-phase cost and synchronous main-thread execution must be measured first.
+
+Potential CPU-side wins include adaptive integration step, fewer/replaced shooting iterations, spatial broad phase, caching and asynchronous planning with an explicit time/work budget.
+
+### Legitimate future GPU shape
+
+GPU compute becomes attractive if the optimized planner needs to evaluate many independent candidates or many independent candidate-segment/hazard pairs:
+
+```text
+CPU authoritative planner
+    -> generate N independent candidate control programs
+    -> GPU batched trajectory/safety evaluation
+    -> compact scores/conflicts
+    -> CPU selects/validates the winning candidate
+```
+
+The CPU `TrajectoryPredictor` remains the reference implementation. GPU evaluation, if justified by measurements, is a derivative/batched accelerator rather than a replacement for navigation authority.
 
 ## P1 — Scene visual traffic culling/LOD, profile-gated
 
-This remains conditional. Before implementation, record representative target-scale values for:
+This remains conditional and is now behind NAV-PERF-0. Before implementation, record representative target-scale values for:
 
 - `prepareScene()` CPU time;
 - visual ship count;
@@ -91,7 +132,7 @@ This remains conditional. Before implementation, record representative target-sc
 
 Only if target-scale cost is material should the design proceed toward GPU-resident static assembly metadata + compact per-ship dynamic state + compute visibility/LOD/compaction + indirect/instanced rendering. There must be no per-frame GPU -> CPU visibility readback.
 
-The known station-adjacent freeze predates the GL4.3 migration and is explicitly deferred. It is **not** evidence by itself that SceneRenderer compute should be started.
+The known station-adjacent freeze predates the GL4.3 migration and is not evidence by itself that SceneRenderer compute should be started.
 
 ## P1 adjunct — instance streaming
 
@@ -101,15 +142,17 @@ Persistent/ring buffers or SSBO instance streams remain valid transfer/driver op
 
 The starfield catalog rebuild is threshold-triggered rather than per-frame. Leave it deferred unless catalog scale or measured rebuild cost changes materially.
 
-## Keep CPU by design
+## Keep CPU authoritative/reference by design
 
-- `TrajectoryPredictor`, `LocalGuidancePlanner`, route/path/docking decisions;
+- route/path/docking decisions and final navigation authority;
 - authoritative/shared ship physics and gameplay state transitions;
 - `ClientWorldState` replication hydration and CPU prediction state;
 - System/Detail/Hub semantic presentation and CPU interaction state;
 - Hub exact picking unless profiling later proves it is an interaction hitch;
 - `GalaxyDatabase` parsing/validation;
 - offline/cached load-once asset work.
+
+`TrajectoryPredictor` is the CPU reference. Batched GPU candidate/safety evaluation is explicitly allowed only after NAV-PERF profiling demonstrates it is worthwhile and without synchronous fine-grained readback.
 
 ## Already GPU-driven
 
@@ -121,10 +164,11 @@ Do not duplicate existing GPU work:
 - planet rings;
 - shared `PlanetGlobeMeshRenderer` static sphere path;
 - Hub assembly wire meshes;
-- System Map textured planet/moon spheres.
+- System Map textured planet/moon spheres;
+- current candidate: repeated planar System Map orbit/selection/player/hub rings.
 
 ## Measurement protocol
 
 For each proposed wave record execution frequency, item/pixel/vertex count, CPU wall time, allocation/build cost, upload bytes, GPU time where relevant, synchronization/stalls and representative target-scale scenario.
 
-The ownership rule remains strict: presentation-only GPU derivatives are fine; authoritative/gameplay answers that require synchronous readback stay CPU by default.
+The ownership rule remains strict: presentation-only GPU derivatives are fine; authoritative/gameplay answers stay CPU by default, while coarse batched accelerators may return compact evaluation results when explicitly designed to avoid blocking frame-by-frame GPU readback.

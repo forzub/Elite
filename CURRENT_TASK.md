@@ -2,154 +2,102 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Track:** Client GPU modernization
-**Stage:** accept the GL43 runtime baseline, capture measured client CPU baselines, then remove the System Map per-frame CPU sphere rebuild
+**Track:** OpenGL 4.3 renderer modernization
+**Stage:** migrate all currently working client presentation paths to OpenGL 4.3 Core Profile before CPU -> GPU offload
 
-## Accepted prerequisites
+## Decision
 
-The runtime architecture groundwork is accepted on MinGW64:
+Do **not** start the previously planned System Map sphere offload, compute culling or other GPU optimization waves yet.
 
-- `EliteNavigationGeometry` and `EliteAssemblyGeometry` physical seams are established;
-- dual-source runtime model ingress is accepted;
-- runtime-ingress architecture contracts pass;
-- `EliteRuntimeModelAssets`, `EliteServer` and `EliteGame` build/link;
-- `HtmlUiManager -> HtmlUiBridge -> HtmlUiServer` preserves `resourcePackPath`;
-- shared `ModelAsset` schema/version remains authoritative for both editor and game.
+First complete the render API migration:
 
-The first read-only runtime-model consumer migration remains queued and must not be forgotten, but GPU foundation/performance work is the active track by explicit decision.
+```text
+4.3 Compatibility scaffold
+    -> remove all compatibility-only rendering
+    -> 4.3 Core Profile accepted
+    -> measure
+    -> offload only proven CPU hot paths
+```
 
-## Audit checkpoint — complete
+Detailed plan: `src/render/GL43_MODERNIZATION_PLAN.md`.
 
-The full client CPU -> GPU audit is recorded in `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` and summarized in `src/render/GPU_OFFLOAD_PLAN.md`.
+## Immediate gate GL43-A — accept scaffold and complete inventory
 
-The audit invalidated the old provisional order:
-
-- CPU weather/cloud generators are not current P0 because the active `ProceduralCloudLayer` path already generates its texture on GPU;
-- starfield catalog rebuild is threshold-triggered rather than per-frame;
-- `PlanetWireRenderer` generated geometry is initialization/static;
-- the strongest concrete live CPU workload is System Map textured-sphere tessellation and dynamic upload.
-
-## Immediate gate 1 — accept GL43 foundation locally
-
-The code candidate exists in commit `19db31eca5aa2c12475d87f2dfa322f794990c6e`. Do not treat it as accepted until the local runtime gate passes.
+Local commands:
 
 ```bash
 cmake --build build --target EliteGame
 ./build/EliteGame.exe
 ```
 
-Verify:
+Verify the existing Compatibility candidate first:
 
-- startup `[OpenGL]` reports actual OpenGL >= 4.3;
+- actual OpenGL >= 4.3;
 - `compute=1`;
 - `ssbo=1`;
-- logged GPU/vendor/GLSL and compute limits are plausible;
-- ordinary flight/system scene renders correctly;
-- Hub map renders correctly;
-- no regression in active Hub/close-navigation labels;
-- general world-signal labels remain intentionally disabled.
+- plausible vendor/renderer/GLSL/limits;
+- ordinary flight renders;
+- cockpit/rear view renders;
+- Galaxy/System/Detail/Hub maps render;
+- close-navigation HUD/labels render.
 
-OpenGL **4.3 Compatibility Profile** remains transitional. Do not move to Core Profile until legacy fixed-function call sites are removed.
+Then perform a repository-wide inventory of compatibility-only production calls. The final Core gate must reject at least these classes of legacy API:
 
-## Immediate gate 2 — measurement baseline before migration
+- `glBegin/glEnd` and immediate `glVertex*`/`glColor*`/`glTexCoord*`/`glNormal*`;
+- fixed-function matrix stack (`glMatrixMode`, push/pop/load/mult, `glOrtho`);
+- `GL_CURRENT_COLOR`, `GL_MODELVIEW`, `GL_PROJECTION`, `GL_MATRIX_MODE`;
+- fixed-function texture enable state;
+- legacy client arrays if any remain.
 
-Add/collect timings without changing rendering behavior:
+Add a static/architecture contract so the forbidden surface cannot silently return later.
 
-### System Map
+## Confirmed first migration seam
 
-Measure separately:
+`src/game/system_map/LocalMapPrimitiveRenderer.cpp` is a high-leverage first seam because Detail/Hub map code calls it and it is entirely immediate mode today.
 
-- presentation/frame build;
-- orbit/primitive CPU generation;
-- textured body sphere CPU generation;
-- textured body upload/submission;
-- visible textured body count;
-- generated vertex count and upload bytes/frame.
+Replace it with a shader + VAO/VBO path with explicit projection/color inputs. Do not change map semantics or visual design while doing this.
 
-### Main scene
+Confirmed dependent legacy areas to migrate afterward:
 
-Instrument `SceneRenderer::prepareScene()` separately because the current `ScenePerf` phase timer starts inside `renderInternal()` and does not fully represent preparation cost.
+1. `DetailMapGeometryPass`;
+2. `DetailMapPlanetPass`;
+3. `HubMapBackend` fixed-function background/projection setup;
+4. `HubMapGeometryPass` compatibility fallbacks;
+5. `MapObjectOverlayRenderer`;
+6. every remaining render/HUD/debug/cockpit compatibility call found by the full inventory.
 
-Record target-scale cases:
+Existing shader/VBO/VAO code that is already Core-compatible should not be rewritten without a concrete reason.
 
-- visual ship count;
-- prepared part count;
-- proxy/full ship counts;
-- `prepareScene()` CPU ms;
-- existing `cpuVisualShipsMs`;
-- instance matrix upload bytes;
-- draw calls.
+## Core cutover gate
 
-## First implementation wave after measurement — P0 System Map body sphere
+After the forbidden-call scan is clean:
 
-If measurement confirms the code-derived cost, replace `SystemMapRenderer::addTexturedSystemBodySphere()` CPU tessellation with:
+- switch/regenerate bundled GLAD to `gl:core=4.3`;
+- request `GLFW_OPENGL_CORE_PROFILE`;
+- build and launch `EliteGame`;
+- confirm runtime Core 4.3+;
+- smoke all currently working visual modes again;
+- accept only if no working feature was removed or visually broken merely to satisfy Core Profile.
 
-```text
-one shared indexed unit sphere VBO/EBO
-+ per-body center/radius/orientation/rotation/UV parameters
-+ vertex shader
-```
+## Explicitly deferred until after Core acceptance
 
-Do **not** introduce a compute shader for this wave. Static topology means a vertex shader is the simpler and better solution.
+- System Map textured-sphere CPU tessellation removal;
+- System/Galaxy primitive optimization beyond what Core migration itself requires;
+- `SceneRenderer` compute culling/LOD/compaction;
+- instance-streaming optimization;
+- starfield compute migration;
+- any other CPU -> GPU algorithmic offload.
 
-Acceptance:
+The existing offload audit and priorities are preserved in `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` and `src/render/GPU_OFFLOAD_PLAN.md`.
 
-- same body orientation and texture seam;
-- same rotation phase and texture longitude offset;
-- same culling/depth behavior;
-- ring back/body/ring front order unchanged;
-- no per-frame CPU sphere vertex-vector rebuild;
-- no per-frame full-sphere `GL_DYNAMIC_DRAW` upload;
-- before/after CPU and GPU timings documented.
+## Keep CPU boundary
 
-## Conditional P1 — scene visual-traffic GPU culling/LOD
+The earlier ownership decision is unchanged: authoritative physics, route/path/docking decisions, replication, `ClientWorldState` gameplay/prediction state and CPU interaction semantics do not move to the client GPU merely because the renderer becomes modern.
 
-Only promote this to implementation if target-count measurements show material CPU cost.
+## Deferred runtime-model task
 
-Candidate design:
-
-- GPU-resident static assembly bounds/local transforms;
-- compact per-ship dynamic transform/state upload;
-- compute visibility + LOD + visible-instance compaction;
-- instanced/indirect rendering consumes GPU result directly;
-- **no GPU -> CPU readback**.
-
-If the measured target-scale path is already comfortably below budget, leave it CPU.
-
-## Lower-priority rendering cleanup
-
-- System Map repeated circles/halos/billboards: shared static primitives/instancing after P0;
-- Galaxy Map primitive generation: profile only; keep CPU screen points for picking/labels;
-- `MeshGPU::drawInstanced`: evaluate persistent/ring-buffer/SSBO streaming if matrix uploads become material;
-- starfield compute: only if catalog size/rebuild timing grows enough to justify it;
-- HUD/Hub small primitive generation: optimize only from measured counts/timing.
-
-## Keep CPU
-
-Do not move these to GPU under the current architecture:
-
-- `TrajectoryPredictor`, `LocalGuidancePlanner`, route/path/docking decisions;
-- authoritative/shared ship physics and gameplay transitions;
-- `ClientWorldState` replication hydration/prediction state;
-- System/Detail/Hub semantic presentation builders and text/UI logic;
-- Hub exact picking unless a future profile first shows an interaction hitch;
-- `GalaxyDatabase` parsing/validation;
-- offline asset baking and cached load-once OBJ processing.
-
-## Deferred but preserved runtime-asset task
-
-After the current GPU baseline/wave work reaches a stable checkpoint, resume the model-ingress migration:
-
-1. migrate one read-only consumer from direct `AssemblyMeshLibrary` access to `RuntimeModelAssetLibrary::get`;
-2. keep that consumer on legacy source and verify parity first;
-3. switch only the same object type to `.elmodel`;
-4. compare bounds, LOD/render graph, semantic bindings and required runtime metadata;
-5. remove the direct legacy dependency only after parity.
+The first read-only `RuntimeModelAssetLibrary` consumer migration remains queued until the render modernization reaches a stable checkpoint.
 
 ## State discipline
 
-Every accepted GPU wave updates `CURRENT_STATE.md`, `CURRENT_TASK.md`, `src/game/GAME_RUNTIME_DECOMPOSITION.md`, `src/render/GPU_OFFLOAD_PLAN.md` and, when audit facts change, `src/render/CLIENT_GPU_OFFLOAD_AUDIT.md` in the same accepted commit.
-
-Runtime-model ingress changes also update `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md`. GPU-only work does not edit that ingress contract unless the asset boundary actually changes.
-
-Chat history is not canonical project state; these repository MD files are.
+Every accepted GL43 migration wave updates `CURRENT_STATE.md`, `CURRENT_TASK.md`, `src/render/GL43_MODERNIZATION_PLAN.md` and `src/game/GAME_RUNTIME_DECOMPOSITION.md`. `GPU_OFFLOAD_PLAN.md` changes only if offload sequencing or audit conclusions change. Runtime-model ingress documentation changes only when that boundary itself changes.

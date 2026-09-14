@@ -39,18 +39,18 @@ Authoritative simulation, route/docking decisions, damage, economy, replication 
 
 Detailed renderer migration: `src/render/GL43_MODERNIZATION_PLAN.md`.
 
-## GL43-A / GL43-B1 checkpoint
+## GL43 current checkpoint
 
-The current candidate establishes the first enforceable migration boundary:
+B1 behavior is visually accepted: replacing `LocalMapPrimitiveRenderer` immediate-mode line/cross/circle submission with GLSL 4.30 + VAO/VBO produced no visible change in local smoke.
 
-- `check_gl43_modernization_boundary.py` scans all production C/C++ for compatibility-only OpenGL and prints the debt inventory;
-- the contract locks the temporary 4.3 Compatibility scaffold while migration is incomplete;
-- `LocalMapPrimitiveRenderer.cpp` retires immediate-mode submission in favor of GLSL 4.30 + VAO/VBO;
-- the contract permanently forbids `glBegin/glEnd` and immediate `glVertex*/glColor*` from returning to that migrated submission seam.
+B2 is now in progress:
 
-`LocalMapPrimitiveRenderer` still reads `GL_CURRENT_COLOR` as a transitional bridge for unchanged callers. B2 removes that hidden state by making color explicit.
+- `LocalMapPrimitiveRenderer` exposes explicit-color line/cross/circle overloads;
+- `DetailMapGeometryPass` has migrated fully to the explicit-color API;
+- its old fixed-function color state, `GL_CURRENT_COLOR`, immediate orbit submission and `glVertex*` calls are removed;
+- the architecture contract now forbids any compatibility-only API from returning to `DetailMapGeometryPass.cpp`.
 
-This checkpoint is a code candidate until local architecture test, `EliteGame` build and visual smoke pass.
+Temporary no-color primitive overloads remain for unmigrated Hub/planet callers. They still bridge through `GL_CURRENT_COLOR`; closing that bridge is the next B2 subwave.
 
 ## GL43 modernization final acceptance
 
@@ -75,9 +75,9 @@ Preserved later candidates include System Map static-sphere conversion and profi
 1. R0 shared runtime seams — accepted.
 2. Dual-source runtime model ingress — accepted.
 3. Client CPU -> GPU audit — complete.
-4. **GL43-A:** inventory/guard + local Compatibility acceptance — candidate, local validation pending.
-5. **GL43-B:** shared local/screen primitive foundation; B1 immediate-mode retirement candidate, B2 explicit color next.
-6. **GL43-C:** Detail Map compatibility removal.
+4. **GL43-A:** compatibility inventory/guard — established.
+5. **GL43-B:** shared local/screen primitive foundation — B1 visually accepted; B2 explicit-color migration active.
+6. **GL43-C:** remaining Detail Map compatibility removal.
 7. **GL43-D:** Hub/local celestial compatibility removal.
 8. **GL43-E:** overlays/debug/all remaining inventory debt.
 9. **GL43-F:** GLAD/context Core 4.3 cutover + complete visual smoke.
@@ -96,7 +96,7 @@ python tests/architecture_contracts/check_runtime_model_asset_ingress.py
 python tests/architecture_contracts/check_html_ui_resource_pack_api.py
 ```
 
-GL43 candidate check:
+Current GL43 check:
 
 ```bash
 python tests/architecture_contracts/check_gl43_modernization_boundary.py

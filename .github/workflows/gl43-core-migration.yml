@@ -16,3 +16,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: GL43 compatibility inventory
         run: python tests/architecture_contracts/check_gl43_modernization_boundary.py
+      - name: Exact legacy call variants
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          patterns = {
+              'calls': re.compile(r'\bgl(?:Begin|End|Vertex[234][A-Za-z0-9_]*|Color[34][A-Za-z0-9_]*|TexCoord[1-4][A-Za-z0-9_]*|Normal3[A-Za-z0-9_]*|MatrixMode|PushMatrix|PopMatrix|LoadIdentity|LoadMatrix[A-Za-z0-9_]*|MultMatrix[A-Za-z0-9_]*|Ortho|EnableClientState|DisableClientState|VertexPointer|ColorPointer|TexCoordPointer)\s*\('),
+              'begin_modes': re.compile(r'glBegin\s*\(\s*([A-Z0-9_]+)'),
+          }
+          calls=set(); modes=set()
+          for p in Path('src').rglob('*'):
+              if p.suffix.lower() not in {'.c','.cc','.cpp','.cxx','.h','.hh','.hpp'}: continue
+              s=p.read_text(encoding='utf-8',errors='ignore')
+              calls.update(x.group(0).split('(')[0].strip() for x in patterns['calls'].finditer(s))
+              modes.update(patterns['begin_modes'].findall(s))
+          print('LEGACY_CALL_VARIANTS=' + ','.join(sorted(calls)))
+          print('LEGACY_BEGIN_MODES=' + ','.join(sorted(modes)))
+          PY

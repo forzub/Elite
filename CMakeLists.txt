@@ -336,6 +336,7 @@ add_executable(EliteGame
     src/render/Camera.cpp
     src/render/DebugGrid.cpp
     src/render/Renderer.cpp
+    src/render/gpu/GlRuntimeCapabilities.cpp
     src/render/ScreenUtils.cpp
     src/render/ShaderUtils.cpp
     src/render/Font.cpp

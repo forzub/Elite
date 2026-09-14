@@ -3387,7 +3387,9 @@ m_playerView->updateCockpitStateFromSnapshot(
     ship.transform.targetSpeed,
     static_cast<float>(ship.transform.motion.manoeuvreGasPressure01),
     ship.transform.cruiseActive,
-    ship.signalPresentation.labelsVector()
+    game::runtime::WorldSignalLabelsEnabled
+        ? ship.signalPresentation.labelsVector()
+        : std::vector<WorldLabel>{}
 );
 
     m_perfPlayerViewMs = nowMs() - playerViewStartMs;
@@ -3983,15 +3985,18 @@ m_systemMapRenderer.render(
             {
                 const auto& ship = it->second;
 
-                m_playerView->renderWorldLabels(
-                    m_playerView->worldLabels(),
-                    world::coordinates::legacyFloatMeters(
-                        ship.renderTransform.worldPosition
-                    ),
-                    m_activeMainCamera->viewMatrix(),
-                    m_activeMainCamera->projectionMatrix(),
-                    vp
-                );
+                if (game::runtime::WorldSignalLabelsEnabled)
+                {
+                    m_playerView->renderWorldLabels(
+                        m_playerView->worldLabels(),
+                        world::coordinates::legacyFloatMeters(
+                            ship.renderTransform.worldPosition
+                        ),
+                        m_activeMainCamera->viewMatrix(),
+                        m_activeMainCamera->projectionMatrix(),
+                        vp
+                    );
+                }
 
                 game::presentation::NavigationHudVocabulary navVocabulary;
                 if (context().app)

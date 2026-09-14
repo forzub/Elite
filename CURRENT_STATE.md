@@ -5,7 +5,7 @@
 **Editor baseline:** v0.10.86 accepted
 **Model Asset Editor architecture:** closed at the current target boundary
 **ModelAsset binary v4 architecture:** independent translation units closed
-**Game runtime decomposition:** R0 physical seams established; runtime model-ingress transition started
+**Game runtime decomposition:** R0 physical seams established; dual-source runtime model ingress locally accepted; client GPU modernization started
 
 ## Accepted baseline
 
@@ -31,4 +31,8 @@ Architecture details: `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md`.
 
 ## Local acceptance status
 
-On MinGW64, the runtime-ingress architecture contracts pass, `EliteRuntimeModelAssets` builds, and `EliteServer` builds and links successfully. `EliteGame` exposed an unrelated existing UI API drift: `Application.cpp` passes the executable-owned UI resource-pack path, while `HtmlUiManager` / `HtmlUiBridge` still exposed the older two-argument `start()` API even though `HtmlUiServer` already accepts the pack path. The candidate fix propagates `resourcePackPath` through `Application -> HtmlUiManager -> HtmlUiBridge -> HtmlUiServer` and is protected by `check_html_ui_resource_pack_api.py`. Final client acceptance requires a fresh local `EliteGame` build after pulling that fix.
+On MinGW64, the runtime-ingress architecture contracts pass, `EliteRuntimeModelAssets` builds, `EliteServer` builds/links, the HTML UI resource-pack API contract passes, and `EliteGame` builds/links after the `HtmlUiManager -> HtmlUiBridge -> HtmlUiServer` contract fix. The dual-source runtime model ingress is therefore accepted as the current runtime baseline.
+
+## Client GPU modernization
+
+The graphical client is moving to an OpenGL 4.3+ baseline before compute offload begins. The first migration requests **OpenGL 4.3 Compatibility Profile** because legacy fixed-function rendering still exists; Core Profile is explicitly deferred until those call sites are removed. Bundled GLAD is upgraded to compatibility 4.3 and `render::gpu::GlRuntimeCapabilities` becomes the startup authority for context/compute/SSBO support. The general world-signal label path is disabled while Hub-map and close-navigation labels remain active. Detailed policy and workload priorities live in `src/render/GPU_OFFLOAD_PLAN.md`.

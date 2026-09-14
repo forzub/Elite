@@ -28,3 +28,7 @@ The first hosted headless link exposed a pre-existing CMake ownership gap: autho
 Game runtime now has a dedicated transition seam for disk model loading. `EliteRuntimeModelAssets` converges both sources on the shared `elite::model_asset::ModelAsset`: legacy OBJ goes through `AssemblyMeshLibrary -> LegacyAssemblyModelAdapter`, while compiled `.elmodel` goes through `CompiledModelAssetReader -> ModelAssetBinary`. The format version and all model structures remain owned by `src/model_asset/ModelAsset.h`; no game-side copy is permitted. Default source remains legacy until a type is explicitly switched during bootstrap.
 
 Architecture details: `src/game/assets/RUNTIME_MODEL_ASSET_INGRESS.md`.
+
+## Local acceptance status
+
+On MinGW64, the runtime-ingress architecture contracts pass, `EliteRuntimeModelAssets` builds, and `EliteServer` builds and links successfully. `EliteGame` exposed an unrelated existing UI API drift: `Application.cpp` passes the executable-owned UI resource-pack path, while `HtmlUiManager` / `HtmlUiBridge` still exposed the older two-argument `start()` API even though `HtmlUiServer` already accepts the pack path. The candidate fix propagates `resourcePackPath` through `Application -> HtmlUiManager -> HtmlUiBridge -> HtmlUiServer` and is protected by `check_html_ui_resource_pack_api.py`. Final client acceptance requires a fresh local `EliteGame` build after pulling that fix.

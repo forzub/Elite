@@ -3,11 +3,11 @@
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
 **Track:** Runtime model asset ingress migration
-**Stage:** prepare dual-source disk loading before production binary cutover
+**Stage:** finish local client acceptance, then migrate first read-only consumer
 
 ## Immediate goal
 
-Accept the new runtime model-ingress seam without changing production object behavior:
+Close acceptance of the dual-source runtime model-ingress seam without changing production object behavior:
 
 - one shared `ModelAsset` schema/version for editor and game;
 - `CompiledModelAssetReader` reads `.elmodel` only through shared `ModelAssetBinary`;
@@ -15,8 +15,14 @@ Accept the new runtime model-ingress seam without changing production object beh
 - `LegacyAssemblyModelAdapter` lifts old data into `ModelAsset`;
 - `RuntimeModelAssetLibrary` is the only source selector/cache per `ObjectType`;
 - default remains legacy until explicit `useBinary(...)`;
-- build `EliteGame` and `EliteServer` with the new library;
-- run the runtime ingress architecture contract and compiled-reader smoke.
+- MinGW architecture contracts: PASS;
+- MinGW `EliteRuntimeModelAssets`: PASS;
+- MinGW `EliteServer`: PASS;
+- hosted compiled-reader disk smoke: PASS;
+- fix and verify the UI resource-pack API drift exposed by the MinGW `EliteGame` build;
+- rerun `cmake --build build --target EliteGame` as the final local acceptance gate.
+
+The UI API fix must preserve the executable-owned resource-pack path through `Application -> HtmlUiManager -> HtmlUiBridge -> HtmlUiServer`; do not remove the third argument from `Application.cpp`.
 
 ## After acceptance
 

@@ -2,10 +2,11 @@
 
 std::uint16_t HtmlUiManager::start(
     std::uint16_t port,
-    const std::string& rootDir
+    const std::string& rootDir,
+    const std::string& resourcePackPath
 )
 {
-    return m_bridge.start(port, rootDir);
+    return m_bridge.start(port, rootDir, resourcePackPath);
 }
 
 void HtmlUiManager::stop()

@@ -117,3 +117,7 @@ Chat history is not the canonical project state.
 Before deeper world/render decomposition, disk model loading gets one canonical ingress. `EliteRuntimeModelAssets` sits above `EliteModelAsset` and `EliteAssemblyGeometry`. Native compiled input uses the shared binary codec directly. Legacy OBJ input is adapted upward into `ModelAsset`; the new schema is never adapted downward into `ObjectAssembly`. This preserves the full v4 semantic/render/collision/structural model and creates one migration point for consumers.
 
 This transition is behavior-preserving until a concrete `ObjectType` is explicitly switched to `CompiledBinary`. Consumer migration is incremental and should remove direct `AssemblyMeshLibrary` dependencies one subsystem at a time.
+
+### Client acceptance note
+
+The first MinGW client acceptance build exposed a separate UI API ownership drift rather than a runtime-model dependency problem: `Application` already passes an executable-owned UI resource-pack path, `HtmlUiServer` already accepts it, but `HtmlUiManager` and `HtmlUiBridge` still exposed their older two-argument `start()` signatures. The fix propagates the pack path through both adapters and adds an architecture contract. Runtime-ingress acceptance remains pending only until the corrected `EliteGame` build passes locally.

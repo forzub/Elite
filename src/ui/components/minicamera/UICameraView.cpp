@@ -304,25 +304,29 @@ void UICameraView::renderToTexture(
 
     ensureFBO(vp);
 
-    if (fbo == 0) return;
+    if (fbo == 0 || fboHeight <= 0) return;
 
-    // Сохраняем состояние
+    // Сохраняем состояние, которое раньше неявно держал compatibility attrib stack.
+    GLint oldFBO = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFBO);
 
-GLint oldFBO;
-glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFBO);
+    GLboolean oldScissorEnabled = glIsEnabled(GL_SCISSOR_TEST);
+    GLint oldScissorBox[4] = {0, 0, 0, 0};
+    glGetIntegerv(GL_SCISSOR_BOX, oldScissorBox);
 
-GLboolean oldScissorEnabled = glIsEnabled(GL_SCISSOR_TEST);
-GLint oldScissorBox[4] = {0, 0, 0, 0};
-glGetIntegerv(GL_SCISSOR_BOX, oldScissorBox);
+    GLint oldViewport[4] = {0, 0, 0, 0};
+    glGetIntegerv(GL_VIEWPORT, oldViewport);
 
-glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
-   
+    GLint oldMatrixMode = static_cast<GLint>(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::getIntegerv(
+        elite::render::core_legacy::MatrixModeToken,
+        &oldMatrixMode
+    );
+
     elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
     elite::render::core_legacy::pushMatrix();
     elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
     elite::render::core_legacy::pushMatrix();
-    // Сохраняем состояние
-
 
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -340,7 +344,6 @@ glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
     glClearColor(0.02f, 0.02f, 0.04f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (fboHeight <= 0) return;
     float aspect = (float)fboWidth / (float)fboHeight;
     camera->setAspect(aspect);
 
@@ -359,16 +362,21 @@ glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
         GL_FRAMEBUFFER,
         static_cast<GLuint>(oldFBO)
     );
-    glViewport(vp.x, vp.y, vp.width, vp.height);
     glEnable(GL_BLEND);
 
-
-    // Восстанавливаем состояние
+    // Восстанавливаем software matrix state и Core GL viewport явно.
     elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
     elite::render::core_legacy::popMatrix();
     elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
     elite::render::core_legacy::popMatrix();
-    glPopAttrib();
+    elite::render::core_legacy::matrixMode(static_cast<GLenum>(oldMatrixMode));
+
+    glViewport(
+        oldViewport[0],
+        oldViewport[1],
+        oldViewport[2],
+        oldViewport[3]
+    );
 
     if (oldScissorEnabled)
     {

@@ -20,6 +20,12 @@ COMPATIBILITY_PATTERNS = {
     "glLoadMatrix": re.compile(r"\bglLoadMatrix[a-zA-Z]*\s*\("),
     "glMultMatrix": re.compile(r"\bglMultMatrix[a-zA-Z]*\s*\("),
     "glOrtho": re.compile(r"\bglOrtho\s*\("),
+    "glPushAttrib": re.compile(r"\bglPushAttrib\s*\("),
+    "glPopAttrib": re.compile(r"\bglPopAttrib\s*\("),
+    "glPushClientAttrib": re.compile(r"\bglPushClientAttrib\s*\("),
+    "glPopClientAttrib": re.compile(r"\bglPopClientAttrib\s*\("),
+    "GL_VIEWPORT_BIT": re.compile(r"\bGL_VIEWPORT_BIT\b"),
+    "GL_TRANSFORM_BIT": re.compile(r"\bGL_TRANSFORM_BIT\b"),
     "GL_CURRENT_COLOR": re.compile(r"\bGL_CURRENT_COLOR\b"),
     "GL_MODELVIEW": re.compile(r"\bGL_MODELVIEW\b"),
     "GL_PROJECTION": re.compile(r"\bGL_PROJECTION\b"),
@@ -74,4 +80,5 @@ print("GL43 CORE MODERNIZATION BOUNDARY: PASS")
 print(" - GLFW requests OpenGL 4.3 Core Profile")
 print(" - bundled GLAD is generated for gl:core=4.3")
 print(" - production src/ has zero forbidden compatibility-only API tokens")
-print(" - legacy presentation syntax is translated by the Core GLSL/VAO/VBO bridge")
+print(" - legacy matrix/current-color presentation syntax is translated by the Core GLSL/VAO/VBO bridge")
+print(" - compatibility attribute stacks are forbidden; viewport/matrix state must be restored explicitly")

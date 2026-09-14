@@ -83,8 +83,8 @@ for forbidden in ['document.', 'window.', 'WebSocket', '.send(', 'request_catalo
     if forbidden in scene:
         fail(f'viewport scene effects absorbed non-viewport responsibility {forbidden!r}')
 
-if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.85"', version):
-    fail('editor version must be 0.10.85')
+if not re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.86"', version):
+    fail('editor version must be 0.10.86')
 
 print('MODEL ASSET EDITOR VIEWPORT LAYERS: PASS')
 print(' - scene/bootstrap lifecycle is outside the HTML shell')

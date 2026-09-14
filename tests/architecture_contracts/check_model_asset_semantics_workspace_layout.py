@@ -25,9 +25,11 @@ tree = function_body(workspace, "wizardSemanticsWorkspaceHtml")
 graph = function_body(structural, "structuralGraphPanelHtml")
 mode = function_body(structural, "semanticStructureModeHtml")
 
-workflow = '<div class="semanticWorkflowBar">${fragments.structureMode}${fragments.stageCheck}</div>'
-assert workflow in tree, "TREE workspace must place mode selection and CHECK in one workflow bar"
-assert workflow in graph, "GRAPH workspace must place mode selection and CHECK in one workflow bar"
+workflow = '<div class="semanticWorkflowBar">${fragments.structureMode}</div>'
+assert workflow in tree, "TREE workspace must keep structure mode in the compact top workflow bar"
+assert workflow in graph, "GRAPH workspace must keep structure mode in the compact top workflow bar"
+assert 'fragments.stageCheck' not in tree, "TREE workspace must not own stage CHECK placement"
+assert 'fragments.stageCheck' not in graph, "GRAPH workspace must not own stage CHECK placement"
 
 for noisy in [
     'class="wizardLead"',
@@ -82,11 +84,11 @@ for required in [
 
 assert 'data-semantic-workspace-style' in structural, "compact SEMANTICS workspace chrome is missing"
 assert 'class="semanticHelp"' in tree and 'class="semanticHelp"' in graph, "long help text must be moved behind compact ? affordances"
-assert "bindWizardStageCheckControls('semantics')" in effects, "SEMANTICS CHECK button binding is missing"
-assert re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.85"', version), "editor version must be 0.10.85"
+assert "wizardStageCheckControls('semantics')" not in effects, "SEMANTICS must use the common shell footer for stage CHECK"
+assert re.search(r'ModelAssetEditorVersion\s*=\s*"0\.10\.86"', version), "editor version must be 0.10.86"
 
 print("MODEL ASSET SEMANTICS WORKSPACE LAYOUT: PASS")
 print(" - TREE and GRAPH workspaces use the compact workflow bar")
-print(" - CHECK is the final workflow action")
+print(" - CHECK is owned by the common bottom-of-tab shell footer")
 print(" - explanatory banners are removed from the primary workspace")
 print(" - existing semantic control IDs and bindings are preserved")

@@ -2,24 +2,16 @@
 
 **Updated:** 2026-09-14
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
-**Editor candidate:** v0.10.85
+**Editor candidate:** v0.10.86
 **WebUI architectural layer separation:** ~100%
-**ModelAsset binary architecture:** independent-TU closure candidate
-**Production binary format:** v4 (unchanged)
+**ModelAsset binary v4 architecture:** independent translation units closed
 
 ## Accepted baseline
 
-v0.10.84 closed the localization/SURFACES acceptance regressions. The WebUI architecture remains closed unless runtime acceptance exposes a new regression.
+v0.10.85 closed production binary v4 translation-unit isolation: no implementation `.cpp` aggregation remains, production and regression targets compile the same independent binary layers, and hosted v4 save/load regression passed.
 
-## v0.10.85 binary v4 translation-unit closure
+## v0.10.86 UI structure candidate
 
-- `EliteModelAsset` compiles every binary layer `.cpp` independently;
-- `ModelAssetBinary.cpp` is now a normal facade TU and no longer aggregates implementation `.cpp` files;
-- standalone `model_asset_tests` compiles the same independent binary implementation set;
-- the architecture contract forbids `.cpp` includes and requires every implementation TU in both production and regression-test CMake targets;
-- layer ownership and public API remain unchanged;
-- production `ModelAssetFormatVersion` remains 4.
+Stage completion actions now have one shell-owned location: the absolute bottom of the right-side stage scroll column. SOURCE, LODS, GEOMETRY, SURFACES, SEMANTICS, PHYSICS, DAMAGE, VALIDATE and BUILD no longer decide locally where CHECK/BUILD appears. Supplemental sections (LOD details, storage, semantic/physics/damage inspectors, sockets, collision and shared mesh panels) all remain above the common footer. SEMANTICS TREE/GRAPH keeps only structure-mode selection in its top workflow bar.
 
-## Acceptance required
-
-Hosted gate must build `EliteModelAsset`, build/run `tests/model_asset` and pass the architecture contracts. Local MinGW build remains authoritative for Windows integration.
+A dedicated architecture contract prevents stage-local CHECK placement from returning.

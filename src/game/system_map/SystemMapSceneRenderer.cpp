@@ -170,7 +170,11 @@ void SystemMapSceneRenderer::render(
             );
         };
 
-    /* Base cartographic lines: grid, orbits, belts and player position. */
+    /*
+        Base cartographic order is preserved explicitly while repeated circles
+        use the resident GPU unit-ring path:
+            grid -> primary/belt orbits -> player cross -> player ring.
+    */
     context.beginLines();
 
     context.drawSystemNavigationGrid(
@@ -178,6 +182,10 @@ void SystemMapSceneRenderer::render(
         mvp,
         systemScale
     );
+
+    context.flushLines(mvp);
+
+    context.beginGpuCircles();
 
     for (const auto& body : bodies)
     {
@@ -213,7 +221,7 @@ void SystemMapSceneRenderer::render(
                 : viewState.visuals().scene
                     .planetOrbitColor;
 
-        context.addCircleXZ(
+        context.addGpuCircleXZ(
             orbitCenter,
             orbitRadius,
             orbitColor,
@@ -248,7 +256,7 @@ void SystemMapSceneRenderer::render(
                 )
             );
 
-        context.addCircleXZ(
+        context.addGpuCircleXZ(
             beltCenter,
             std::max(
                 0.0f,
@@ -258,20 +266,22 @@ void SystemMapSceneRenderer::render(
             160
         );
 
-        context.addCircleXZ(
+        context.addGpuCircleXZ(
             beltCenter,
             beltRadius,
             glm::vec4(0.65f, 0.68f, 0.72f, 0.24f),
             160
         );
 
-        context.addCircleXZ(
+        context.addGpuCircleXZ(
             beltCenter,
             beltRadius + beltHalfWidth,
             glm::vec4(0.65f, 0.68f, 0.72f, 0.12f),
             160
         );
     }
+
+    context.flushGpuCircles(mvp);
 
     if (system.systemId == nav.currentSystemId)
     {
@@ -290,6 +300,7 @@ void SystemMapSceneRenderer::render(
                 systemCameraOrigin
             );
 
+        context.beginLines();
         context.addCross(
             player,
             static_cast<float>(
@@ -297,8 +308,10 @@ void SystemMapSceneRenderer::render(
             ),
             glm::vec4(1.0f, 0.82f, 0.35f, 1.0f)
         );
+        context.flushLines(mvp);
 
-        context.addCircleXZ(
+        context.beginGpuCircles();
+        context.addGpuCircleXZ(
             player,
             static_cast<float>(
                 systemWorldUnitsPerPixel * 17.0
@@ -306,9 +319,8 @@ void SystemMapSceneRenderer::render(
             glm::vec4(1.0f, 0.82f, 0.35f, 0.55f),
             48
         );
+        context.flushGpuCircles(mvp);
     }
-
-    context.flushLines(mvp);
 
     /*
         Explicit ring order:
@@ -396,7 +408,7 @@ void SystemMapSceneRenderer::render(
         satellite hierarchy, while moon geometry is still drawn
         afterwards and remains visually dominant at its position.
     */
-    context.beginLines();
+    context.beginGpuCircles();
 
     for (const auto& body : bodies)
     {
@@ -420,7 +432,7 @@ void SystemMapSceneRenderer::render(
             ) *
             systemScale;
 
-        context.addCircleXZ(
+        context.addGpuCircleXZ(
             orbitCenter,
             orbitRadius,
             viewState.visuals().scene
@@ -430,7 +442,7 @@ void SystemMapSceneRenderer::render(
         );
     }
 
-    context.flushLines(mvp);
+    context.flushGpuCircles(mvp);
 
     context.beginSolids();
     context.beginTexturedBodies();
@@ -491,8 +503,6 @@ void SystemMapSceneRenderer::render(
         if (posIt != posById.end() &&
                 radiusIt != selectionRadiusById.end())
         {
-            context.beginLines();
-
             const glm::vec3 selectedPos =
                 posIt->second;
 
@@ -532,6 +542,7 @@ void SystemMapSceneRenderer::render(
                 A selected planet gets a separate, visible halo around the
                 sharp body marker. This mirrors selected stars in Galaxy.
             */
+            context.beginLines();
             context.addBillboardHalo(
                 selectedPos,
                 selectedRadius,
@@ -542,22 +553,24 @@ void SystemMapSceneRenderer::render(
                 7,
                 96
             );
+            context.flushLines(mvp);
 
-            context.addCircleXZ(
+            context.beginGpuCircles();
+            context.addGpuCircleXZ(
                 selectedPos,
                 selectedRadius * 1.95f,
                 viewState.visuals().scene.selectedRingColor,
                 96
             );
 
-            context.addCircleXY(
+            context.addGpuCircleXY(
                 selectedPos,
                 selectedRadius * 2.10f,
                 viewState.visuals().scene.selectedSecondaryRingColor,
                 96
             );
 
-            context.flushLines(mvp);
+            context.flushGpuCircles(mvp);
         }
     }
 
@@ -571,7 +584,7 @@ void SystemMapSceneRenderer::render(
         if (selectedHubPosition !=
             objectVisualPosById.end())
         {
-            context.beginLines();
+            context.beginGpuCircles();
 
             const float markerRadius =
                 static_cast<float>(
@@ -579,21 +592,21 @@ void SystemMapSceneRenderer::render(
                     18.0
                 );
 
-            context.addCircleXY(
+            context.addGpuCircleXY(
                 selectedHubPosition->second,
                 markerRadius,
                 viewState.visuals().scene.selectedHubRingColor,
                 64
             );
 
-            context.addCircleXZ(
+            context.addGpuCircleXZ(
                 selectedHubPosition->second,
                 markerRadius * 1.15f,
                 viewState.visuals().scene.selectedHubSecondaryRingColor,
                 64
             );
 
-            context.flushLines(mvp);
+            context.flushGpuCircles(mvp);
         }
     }
 

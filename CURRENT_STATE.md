@@ -96,7 +96,7 @@ Ruckig still does not own obstacle/traffic safety, route policy, docking semanti
 - rejection of an infeasible short horizon;
 - a non-gating 500-solve wall-time benchmark that prints average microseconds/solve.
 
-Local MinGW execution is still required; no hosted result is being claimed.
+The first local MinGW run reached the pinned upstream build but failed before linking because Ruckig v0.19.4 uses the non-standard `M_PI` macro and MinGW hides it under strict `-std=c++20`. This is a toolchain portability issue, not a solver/test failure. The spike CMake now adds `_USE_MATH_DEFINES` only to the upstream `ruckig` target when `MINGW` is active, and the architecture contract permanently guards that shim. A fresh local rerun is pending; no numerical/benchmark result is claimed yet.
 
 ## Next decision after NAV-RUCKIG-0 local result
 

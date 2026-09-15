@@ -69,7 +69,7 @@ The spike disables upstream cloud/client and nonessential build surfaces:
 - Python module OFF;
 - shared library OFF.
 
-This means the experiment uses local/offline Community Edition state-to-state trajectory generation only.
+A MinGW-only `_USE_MATH_DEFINES` definition is applied to the upstream `ruckig` target because v0.19.4 uses `M_PI` in strict C++20 mode. This remains target-local and does not alter the rest of Elite.
 
 ### Adapter model
 
@@ -84,6 +84,10 @@ The adapter does not ask Ruckig to solve directly in orbital-scale world coordin
 7. validate the actual scalar proper-acceleration and proper-jerk envelope;
 8. return the normal `TrajectoryPredictionResult` shape for later planner integration.
 
+Elite's motion envelope is a scalar Euclidean vector limit. Ruckig's acceleration/jerk constraints are per-axis. The first executable run exposed this mismatch: the stationary single-axis case passed, while the orbital-scale multi-axis case exceeded the scalar Elite jerk envelope because each Ruckig axis had been given the full scalar limit.
+
+The adapter now conservatively maps scalar limit `L` to an axis-aligned Ruckig box with half-width `L / sqrt(3)`, which is inscribed in the Elite spherical envelope. The existing gravity-frame allowance remains additive per axis, and final world-space scalar validation remains authoritative. Failure diagnostics now print observed max versus limit.
+
 Ruckig still does not own obstacle/traffic safety, route policy, docking semantics, ship authority or execution.
 
 ### Spike acceptance tests
@@ -96,7 +100,12 @@ Ruckig still does not own obstacle/traffic safety, route policy, docking semanti
 - rejection of an infeasible short horizon;
 - a non-gating 500-solve wall-time benchmark that prints average microseconds/solve.
 
-The first local MinGW run reached the pinned upstream build but failed before linking because Ruckig v0.19.4 uses the non-standard `M_PI` macro and MinGW hides it under strict `-std=c++20`. This is a toolchain portability issue, not a solver/test failure. The spike CMake now adds `_USE_MATH_DEFINES` only to the upstream `ruckig` target when `MINGW` is active, and the architecture contract permanently guards that shim. A fresh local rerun is pending; no numerical/benchmark result is claimed yet.
+Local MinGW results so far:
+
+- architecture contract: PASS;
+- Ruckig build/link: PASS after target-local `M_PI` compatibility fix;
+- stationary local transfer: PASS;
+- orbital-scale case: initially rejected by scalar-vs-per-axis jerk mismatch; adapter correction is now committed and requires rerun.
 
 ## Next decision after NAV-RUCKIG-0 local result
 

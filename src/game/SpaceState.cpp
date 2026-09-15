@@ -2046,9 +2046,12 @@ bool SpaceState::refreshActiveManualDockingGuidance(bool forceRebuild)
     if (player.transform.motion.systemId != m_manualDockingGuidancePlan.systemId)
         return false;
 
-    // The fixed corridor lives in Hub-local coordinates. Only the cheap
-    // Hub-local -> presentation-world conversion is refreshed every frame;
-    // the spline/gates themselves move only on an explicit replan event.
+    // The published generation lives in Hub-local coordinates. Presentation
+    // conversion is cheap and runs every frame, while a low-rate policy below
+    // rebuilds the near tunnel from the current hull pose whenever the ship has
+    // materially departed from that generation. Never translate an old tunnel
+    // rigidly with the ship: a replacement generation must start at the live
+    // pose and reconnect to the accepted physical trajectory.
     const double presentationUniverseTimeSeconds =
         m_client->renderUniverseTimeSeconds();
     const auto hubFrame =
@@ -2274,6 +2277,26 @@ bool SpaceState::refreshActiveManualDockingGuidance(bool forceRebuild)
                     1.0
                 ));
 
+                // A manual tunnel is rolling guidance, not a frozen railway.
+                // Reconnect while the deviation is still small enough to be a
+                // current-pose correction. Previously a ship could move several
+                // metres inside a wide gate (or rotate while drifting in Newton
+                // flight) without satisfying any rebuild condition.
+                const double poseLateralThreshold = std::clamp(
+                    lateralBase * 0.08,
+                    0.75,
+                    3.0
+                );
+                const double poseVerticalThreshold = std::clamp(
+                    verticalBase * 0.08,
+                    0.75,
+                    3.0
+                );
+                const bool currentPoseChanged =
+                    track.lateralMeters > poseLateralThreshold ||
+                    track.verticalMeters > poseVerticalThreshold ||
+                    attitudeError > manualPlan.courseChangeThresholdRadians;
+
                 bool targetMoved = false;
                 if (manualPlan.targetAttachment.valid)
                 {
@@ -2333,7 +2356,12 @@ bool SpaceState::refreshActiveManualDockingGuidance(bool forceRebuild)
                     }
                 }
 
-                if (predictedOutside)
+                if (currentPoseChanged)
+                {
+                    rebuild = true;
+                    replanReason = "current_pose";
+                }
+                else if (predictedOutside)
                 {
                     rebuild = true;
                     replanReason = "predicted_exit";
@@ -2473,9 +2501,12 @@ bool SpaceState::refreshActiveManualDockingGuidance(bool forceRebuild)
         }
 
         ++m_perfDockingTunnelBuilds;
+        const double tunnelBuildStartMs = nowMs();
         auto tunnel = world::navigation::GuidanceTunnelBuilder::build(
             tunnelRequest
         );
+        const double tunnelBuildMs = nowMs() - tunnelBuildStartMs;
+        m_perfDockingTunnelBuildMs += tunnelBuildMs;
         if (!tunnel.valid || tunnel.gates.size() < 2)
             return false;
 
@@ -2498,6 +2529,7 @@ bool SpaceState::refreshActiveManualDockingGuidance(bool forceRebuild)
             << " max_curvature_1pm="
                 << manualPlan.fixedTunnel.maxCurvaturePerMeter
             << " gates=" << manualPlan.fixedTunnel.gates.size()
+            << " build_ms=" << tunnelBuildMs
             << '\n';
     }
 
@@ -2688,6 +2720,8 @@ void SpaceState::updateDockingGuidance(float dt)
     // Seed route planning from one canonical authoritative replication epoch,
     // then resolve the entire problem to one current planning epoch. Render
     // interpolation is a different timeline and is never a legal producer.
+    const double requestPlanningStartMs = nowMs();
+    const double snapshotStartMs = nowMs();
     const auto planningSnapshot =
         game::client::ClientNavigationPlanningSnapshotFactory::
             buildPredictedHubSnapshot(
@@ -2699,6 +2733,7 @@ void SpaceState::updateDockingGuidance(float dt)
                 dockingRequest.target.systemId,
                 dockingRequest.target.stableObjectId
             );
+    const double snapshotBuildMs = nowMs() - snapshotStartMs;
     if (!planningSnapshot.ready())
     {
         failSnapshot(
@@ -2870,7 +2905,9 @@ void SpaceState::updateDockingGuidance(float dt)
         << " start_roundtrip_error_m=" << roundTripErrorMeters
         << '\n';
 
+    const double geometricPlanStartMs = nowMs();
     const auto plan = game::navigation::DockingPathPlanner::plan(request);
+    const double geometricPlanMs = nowMs() - geometricPlanStartMs;
     if (!plan.valid)
     {
         failSnapshot(
@@ -2961,8 +2998,10 @@ void SpaceState::updateDockingGuidance(float dt)
         request.alignmentStandoffMeters
     );
 
+    const double trajectoryPlanStartMs = nowMs();
     const auto trajectoryPlan =
         world::navigation::TrajectoryGenerator::generate(trajectoryRequest);
+    const double trajectoryPlanMs = nowMs() - trajectoryPlanStartMs;
     if (!trajectoryPlan.ready())
     {
         failSnapshot(
@@ -3149,6 +3188,15 @@ void SpaceState::updateDockingGuidance(float dt)
     m_noSafeDockingGuidanceSolution = false;
     m_dockingGuidanceFailureReason.clear();
 
+    std::cerr
+        << "[DockingPerf] request=" << dockingRequest.serial
+        << " total_ms=" << (nowMs() - requestPlanningStartMs)
+        << " snapshot_ms=" << snapshotBuildMs
+        << " geometric_ms=" << geometricPlanMs
+        << " trajectory_ms=" << trajectoryPlanMs
+        << " tunnel_ms=" << m_perfDockingTunnelBuildMs
+        << '\n';
+
     const glm::dvec3 finalDirection = glm::normalize(
         plan.pointsMeters.back() -
         plan.pointsMeters[plan.pointsMeters.size() - 2]
@@ -3304,6 +3352,7 @@ void SpaceState::update(float dt)
 
 
     m_perfDockingTunnelBuilds = 0;
+    m_perfDockingTunnelBuildMs = 0.0;
     const double dockingGuidanceStartMs = nowMs();
     updateDockingGuidance(clientFrameDt);
     m_perfDockingGuidanceMs = nowMs() - dockingGuidanceStartMs;

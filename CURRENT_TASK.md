@@ -3,103 +3,104 @@
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Track:** live docking guidance correctness + performance  
-**Stage:** NAV-LIVE-2 — trajectory smoother profiling + deterministic obstacle field
+**Stage:** NAV-LIVE-3 — collision broadphase + replan-storm containment
 
 ## Measured runtime result
 
-NAV-LIVE-1 did not remove the visible freeze. The latest runtime capture shows the
-first `CALCULATE ROUTE` request dominated by trajectory construction, not global
-geometric search:
+The 19-obstacle diagnostic run made the remaining ownership explicit:
 
 ```text
 [DockingPerf]
-total_ms      ~= 198.1
-snapshot_ms   ~=   0.10
-geometric_ms  ~=   0.47
-trajectory_ms ~= 106.5
-tunnel_ms     ~=  15.7
+total_ms      ~= 470.3
+snapshot_ms   ~=   0.41
+geometric_ms  ~=   7.42
+trajectory_ms ~= 373.3
+tunnel_ms     ~=  15.5
 ```
 
-While manual guidance is active, repeated frames also show roughly
-`dock_ms ~= 110..126 ms` with `tunnel_builds=1`. Therefore the active performance
-problem is synchronous smoothing / tunnel rebuilding on the client frame, not
-render submission and not the current three-obstacle visibility search.
+`navigation_perf.log` shows the initial trajectory smoother at about 367 ms.
+For each support-level candidate, spline sampling itself is only about 7..8 ms,
+while collision/safety validation costs about 39..60 ms. The dominant cost is
+therefore repeated segment-vs-obstacle narrow-phase work, not B-spline math.
 
-## NAV-LIVE-2 changes
-
-### 1. SmoothPathOptimizer instrumentation
-
-`SmoothPathOptimizer` now appends detailed timings to:
+The same runtime file also exposes a worse rolling-guidance defect:
 
 ```text
-navigation_perf.log
+1 initial SmoothPathOptimizer call
+273 rolling SmoothPathOptimizer calls
+= 39 rolling tunnel rebuild attempts * 7 spatial candidates
 ```
 
-For every optimize call it records:
+The rolling calls consumed roughly 14.4 seconds of smoother CPU in the captured
+short run. A reconnect attempt took about 0.37 s, longer than the old 0.25 s
+replan period, so another synchronous attempt could become due on the next frame.
+This is the immediate cause of the near-unusable motion after the stress field was
+introduced.
 
-- total optimizer time;
-- source path point count;
-- obstacle count;
-- requested spacing/chord error/support level;
-- candidates evaluated / safe candidates / selected support level;
-- output sample count;
-- per-candidate control count and sample count;
-- per-candidate spline sampling time;
-- per-candidate collision/safety validation time;
-- per-candidate quality/curvature scoring time.
+## NAV-LIVE-3 changes
 
-The initial trajectory call is easy to distinguish from rolling tunnel calls:
+### 1. Conservative collision broadphase
+
+`src/world/navigation/NavigationObstacleGeometry.cpp` now performs a cheap
+segment-vs-enclosing-sphere broadphase before the exact obstacle test.
+
+- Box: sphere encloses the fully inflated OBB.
+- Capsule: sphere encloses the fully inflated capsule.
+- Sphere: normal inflated radius.
+
+A broadphase miss can safely skip the exact test. A broadphase hit still runs the
+existing exact OBB/capsule/sphere intersection. This does **not** change collision
+radius, clearance, route sampling, or final safety semantics.
+
+The current implementation is deliberately the first acceleration layer. If the
+19-obstacle test still spends material time in collision validation, the next
+step is a spatial obstacle index / candidate set rather than weakening checks.
+
+### 2. Contain synchronous rolling replan storm
+
+`ManualDockingGuidancePlan` now limits rolling replan checks to 1 Hz while the
+solver is still synchronous on the client frame.
+
+The previous hard-envelope branch bypassed the cadence timer entirely. That
+out-of-band heavy solve is temporarily disabled by making the hard-envelope
+scale unreachable in normal flight. Manual guidance is advisory; departures are
+still detected by the normal periodic pose/predicted-exit/course checks.
+
+This is a runtime guard, not the final architecture. The intended final form is:
 
 ```text
-initial trajectory: spacing 3..7 m, chord error 0.03 m, max support 5
-rolling reconnect: spacing 14 m, chord error 0.15 m, max support 1
+frame thread: cheap tracking / invalidation
+worker: immutable reconnect solve
+publication: generation id / latest-request-wins
 ```
 
-### 2. Safe span-lookup optimization
+Once that exists, an immediate hard-envelope event can be restored without
+blocking the frame.
 
-The cubic B-spline knot-span lookup was previously a linear scan for every spline
-evaluation. At high support levels this creates avoidable work across thousands
-of adaptive samples.
+### 3. Stress field corrected
 
-It now uses binary search (`upper_bound`) while preserving the same half-open knot
-span semantics. This changes lookup complexity only; it does **not** reduce:
+The first NAV-LIVE-2 stress layout proved visually wrong: it was a cloud near the
+Hub that did not meaningfully cross the player-to-dock route.
 
-- support levels;
-- spline precision;
-- adaptive sampling criteria;
-- obstacle checks;
-- collision radius / clearance;
-- curvature acceptance.
+The same 16 objects are now arranged as four deterministic obstacle bands across
+the baseline route. Each band has one object centred on the direct path and
+neighbouring cube/cylinder obstacles that make the bypass non-trivial while
+leaving a safe route around the band.
 
-### 3. Deterministic navigation stress field
+The two authored docking targets remain unchanged. Expected route snapshot is
+still approximately `obstacles=19`.
 
-The Hub Motion Lab now contains:
+### 4. Perf log path is explicit
+
+At process startup the executable/tests now print the exact absolute log path:
 
 ```text
-1 station
-2 existing docking targets
-16 stress obstacles: 8 cubes + 8 cylinders
+[NavigationPerf] log_path=<absolute path>/navigation_perf.log
 ```
 
-The 16 new objects use fixed positions and orientations and are attached to the
-same Hub. They are real `StaticObject`s, therefore
-`ClientNavigationPlanningSnapshotFactory` includes them through the normal
-`NavigationObstacleFactory` path. The layout is deterministic so timing and path
-changes can be compared between builds.
-
-Expected normal route snapshot in this scene: approximately `obstacles=19`.
-
-## Logging policy for this iteration
-
-Detailed navigation performance belongs in `navigation_perf.log`, not in a huge
-console paste.
-
-The `[M8E-XPROC]` / `[M8E-STARTUP]` stream is controlled by environment variable
-`ELITE_TRACE_RUNTIME`. For normal navigation profiling run with it disabled.
-
-Failure/error messages remain on console. Existing low-rate `[FramePerf]`,
-`[DockingPerf]` and `[GuidanceReplan]` summaries remain useful until ownership of
-the stall is closed.
+The user observed two files because the logger was relative to the process
+working directory: test executables and `EliteGame` can run with different CWDs.
+The startup line removes that ambiguity.
 
 ## Acceptance
 
@@ -111,52 +112,41 @@ git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
 git pull --ff-only
 
 unset ELITE_TRACE_RUNTIME
-rm -f navigation_perf.log
 
+python tests/architecture_contracts/check_navigation_stress_field.py
 python tests/architecture_contracts/check_live_docking_guidance.py
-python tests/architecture_contracts/check_ruckig_navigation_spike.py
-python tests/architecture_contracts/check_ruckig_navigation_integration.py
-
 bash tests/navigation_guidance/run_mingw64.sh
 cmake --build build --target EliteGame
 D:/__elite/work/build/EliteGame.exe
 ```
 
-Then reproduce one route calculation and several seconds of manual flight with
-the tunnel active.
+At startup record the `[NavigationPerf] log_path=...` line, remove that exact file
+before a clean timing run if desired, then:
 
-Capture only:
+1. visually confirm that the four obstacle bands cross the route rather than sit
+   harmlessly near the station;
+2. calculate one route to cube A;
+3. fly/rotate for several seconds with the tunnel active;
+4. capture `[DockingPerf]`, `[GuidanceReplan]`, `[FramePerf]` and the exact
+   `navigation_perf.log` announced by the executable.
 
-```text
-[DockingPerf] ...
-[GuidanceReplan] ...
-[FramePerf] ...
-```
+## Acceptance questions
 
-and the generated `navigation_perf.log`.
-
-Acceptance questions:
-
-1. Do the 16 added stress objects appear visually around the diagnostic Hub?
-2. Does the route snapshot report about 19 navigation obstacles?
-3. Did the knot-span optimization materially reduce `trajectory_ms`?
-4. In `navigation_perf.log`, is the remaining cost dominated by spline sampling
-   or collision/safety validation?
-5. For rolling reconnect calls, which candidate/phase explains the 100+ ms
-   `dock_ms` spikes?
+1. Does the direct route now visibly detour around the stress objects?
+2. Does the snapshot still report about 19 obstacles?
+3. How far does broadphase reduce candidate `safety_ms` from the old 39..60 ms?
+4. Is `trajectory_ms` materially below the old 373 ms stress baseline?
+5. Is `tunnel_builds=1` no longer present frame after frame?
+6. Is manual flight usable between the throttled reconnect events?
 
 ## Next optimization decision
 
-- If spline sampling dominates: remove redundant full-resolution candidate work
-  while preserving final selected geometry and safety; consider coarse ranking
-  followed by full-resolution validation of finalists.
-- If collision validation dominates: introduce a spatial broadphase / candidate
-  obstacle set while retaining exact swept narrow-phase checks.
-- If rolling tunnel still dominates after local solving: stop rebuilding the
-  full presentation tail; keep accepted trajectory separately and emit only the
-  nearby visible gate window.
-- If the initial synchronous solve is still visually unacceptable even after CPU
-  reduction: move immutable route/trajectory generation to a worker with
-  generation IDs and latest-request-wins publication.
-
-Do not reduce collision/safety fidelity to hide a frame stall.
+- If collision validation remains dominant: add a spatial broadphase/candidate
+  obstacle set shared by geometric, trajectory and local guidance.
+- If rolling reconnect remains expensive: stop evaluating broad/loop candidate
+  families synchronously; keep the accepted topology and move reconnect to a
+  worker/latest-wins job.
+- If the initial solve is still visibly blocking after CPU reduction: move the
+  whole immutable route+trajectory solve off the frame thread.
+- Keep exact swept collision checks as the final narrow phase. Do not trade
+  collision fidelity for frame time.

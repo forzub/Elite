@@ -7,17 +7,26 @@ smoother = (root / "src/world/navigation/SmoothPathOptimizer.cpp").read_text(enc
 obstacles = (root / "src/world/navigation/NavigationObstacleGeometry.cpp").read_text(encoding="utf-8")
 plan = (root / "src/game/navigation/ManualDockingGuidancePlan.h").read_text(encoding="utf-8")
 perf_header = (root / "src/world/navigation/NavigationPerfLog.h").read_text(encoding="utf-8")
+hub_basis = (root / "src/game/navigation/HubFrameBasis.h").read_text(encoding="utf-8")
+
+# Visual Hub local is X=normal, Y=radial, Z=-prograde while navigation local is
+# X=prograde, Y=radial, Z=normal. Pin the sign because the first stress-field
+# version got this transform wrong and put the obstacles away from the route.
+if '-progradeAxis * localVector.z' not in hub_basis:
+    raise SystemExit(
+        "NAVIGATION STRESS FIELD CONTRACT: FAIL\n"
+        "Hub visual/navigation basis sign contract changed"
+    )
 
 required_scene_tokens = [
     '"guidance_dock_cube_a"',
     '"guidance_dock_cylinder_b"',
-    # One exact direct-route blocker in every deterministic band. These values
-    # are Hub attachment coordinates; the planning basis maps approximately as
-    # nav(X,Y,Z)=hubLocal(Z,Y,X).
-    'glm::dvec3(575.0, 2090.0, -8000.0)',
-    'glm::dvec3(1260.0, 1595.0, -5600.0)',
-    'glm::dvec3(1925.0, 1120.0, -3300.0)',
-    'glm::dvec3(2440.0, 750.0, -1500.0)',
+    # One direct-route blocker in every deterministic band. Hub attachment
+    # coordinates map to navigation as nav(X,Y,Z)=(-local.z, local.y, local.x).
+    'glm::dvec3(575.0, 2090.0, 8000.0)',
+    'glm::dvec3(1260.0, 1595.0, 5600.0)',
+    'glm::dvec3(1925.0, 1120.0, 3300.0)',
+    'glm::dvec3(2440.0, 750.0, 1500.0)',
 ]
 for index in range(1, 9):
     required_scene_tokens.append(f'"nav_stress_cube_{index:02d}"')
@@ -83,6 +92,7 @@ if missing_perf:
     )
 
 print("NAVIGATION STRESS FIELD CONTRACT: PASS")
+print(" - Hub visual/navigation basis sign is pinned")
 print(" - 2 authored guidance targets retained")
 print(" - 16 deterministic obstacles retained in 4 route-crossing bands")
 print(" - conservative segment/obstacle broadphase retained")

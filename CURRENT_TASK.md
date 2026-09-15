@@ -9,7 +9,7 @@
 
 OpenGL 4.3 Core remains the accepted renderer baseline.
 
-GPU-P0 static textured spheres are also accepted locally after the corrected runtime path restored visible planets and moons while retaining resident indexed sphere geometry.
+GPU-P0 static textured spheres are accepted locally after the corrected runtime path restored visible planets and moons while retaining resident indexed sphere geometry.
 
 The station-adjacent freezes predate the renderer migration. They remain deferred and must not be investigated as part of this renderer slice.
 
@@ -28,42 +28,20 @@ Migrated System Map scene consumers:
 
 The scene no longer routes these repeated planar circles through per-frame CPU `addCircleXZ()` / `addCircleXY()` tessellation.
 
-### New path
-
-`SystemMapGpuCircleBatch` owns lazy resident unit-circle meshes keyed by authored segment count. A mesh is generated once, uploaded with `GL_STATIC_DRAW`, then reused.
-
-Per frame, migrated circles submit only compact instance data:
-
-```text
-center.xyz + radius
-color.rgba
-plane = XZ / XY
-```
-
-The GLSL 4.30 vertex stage expands the resident unit circle into map space. Matching topology/plane runs use `glDrawArraysInstanced(GL_LINE_LOOP, ...)`, so the migration does not replace one CPU batch with one draw call per circle.
-
-CPU `sin/cos` for migrated circles therefore occurs only when a new resident segment-count mesh is first created, not every frame.
+`SystemMapGpuCircleBatch` owns lazy resident unit-circle meshes keyed by authored segment count. A mesh is generated once, uploaded with `GL_STATIC_DRAW`, then reused. Per frame, migrated circles submit only center/radius/color plus XY/XZ plane selection. Matching topology/plane runs use `glDrawArraysInstanced(GL_LINE_LOOP, ...)`.
 
 ## Latest local acceptance result
 
-The user ran the three architecture contracts and all reported PASS:
+All three architecture contracts passed locally. Two successive clean MinGW builds then exposed Core-profile tails outside the circle code:
 
-```text
-GL43 CORE MODERNIZATION BOUNDARY: PASS
-SYSTEM MAP STATIC TEXTURED SPHERE: PASS
-SYSTEM MAP GPU CIRCLES: PASS
-```
+1. `UICameraView.cpp`: compatibility attribute stack (`glPushAttrib/glPopAttrib`, `GL_VIEWPORT_BIT`, `GL_TRANSFORM_BIT`);
+2. `HubBackdropCloudRenderer.cpp`: fixed-function texture environment (`glGetTexEnviv`, `glTexEnvi`, `GL_TEXTURE_ENV`, `GL_MODULATE`);
+3. `DetailMapPlanetPass.cpp`: removed `GL_ALPHA_TEST` state;
+4. `GlRuntimeCapabilities`: stale requirement for Compatibility Profile instead of Core Profile.
 
-The following `EliteGame` build then exposed one missed Core incompatibility in `src/ui/components/minicamera/UICameraView.cpp`:
+All four are now corrected in source.
 
-```text
-glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT)
-glPopAttrib()
-```
-
-Those APIs/constants are removed from OpenGL Core and were not covered by the existing static guard.
-
-The branch now fixes that blocker by explicitly saving/restoring the viewport and the software bridge matrix-mode token, while continuing to use the bridge's projection/model-view matrix stacks. The GL43 boundary contract was also tightened to forbid compatibility attribute stacks and their bit tokens so this class of false PASS cannot recur.
+The runtime capability gate now requires `GL_CONTEXT_CORE_PROFILE_BIT`. The GL43 architecture test now explicitly rejects texture-environment/alpha-test/attrib-stack compatibility APIs and mechanically checks all production raw `glXxx()` / `GL_*` symbols against the bundled OpenGL 4.3 Core GLAD header. The one-shot CI migration passed all architecture contracts and `git diff --check`.
 
 ## Intentional remaining renderer debt
 
@@ -77,18 +55,6 @@ Still CPU-owned for now:
 - dynamic solid geometry and `flushSolids()` where still used.
 
 `addOrbitCircle3D()` should only be migrated if an active call site/material cost is demonstrated. Do not expand the current slice merely to remove dormant helpers. Billboard/proxy markers are a separate optimization candidate and must not delay the navigation performance investigation unless profiling shows material cost.
-
-## Architecture guard
-
-`tests/architecture_contracts/check_system_map_gpu_circles.py` locks the current GPU-circle boundary:
-
-- resident `GL_STATIC_DRAW` unit-circle topology;
-- instanced submission;
-- compact center/radius/color instance payload;
-- no return of scene-level XZ/XY circles to the old CPU tessellation API;
-- no per-frame `sin/cos` circle generation in `SystemMapSceneRenderer`.
-
-`tests/architecture_contracts/check_gl43_modernization_boundary.py` additionally rejects compatibility-only GL attribute-stack APIs and tokens.
 
 ## Acceptance now
 

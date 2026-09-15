@@ -9,7 +9,7 @@
 **Renderer baseline:** OpenGL 4.3 Core accepted locally  
 **GPU-P0:** System Map static textured spheres accepted locally  
 **GPU-P0.1:** repeated planar System Map circles/orbits accepted locally  
-**Navigation:** NAV-RUCKIG-0 accepted; NAV-LIVE-2 active
+**Navigation:** NAV-RUCKIG-0 accepted; NAV-LIVE-3 active
 
 ## Accepted runtime baseline
 
@@ -33,13 +33,11 @@ OpenGL 4.3 Core, GPU-P0 resident System Map textured spheres and GPU-P0.1
 instanced planar circles/orbits are accepted locally. The renderer wave is
 paused.
 
-The current docking-guidance freeze is measured inside client navigation work,
-not scene submission. Do not conflate it with the older station-adjacent renderer
-freeze.
+The current freeze is measured inside client docking/navigation work, not scene
+submission. The older station-adjacent renderer issue remains a separate deferred
+problem.
 
 ## Live docking path
-
-The active client path remains:
 
 ```text
 SpaceState::updateDockingGuidance()
@@ -50,82 +48,102 @@ SpaceState::updateDockingGuidance()
     -> GuidanceState publication
 ```
 
-The initial solve and rolling tunnel rebuilds are still synchronous inside the
-client update path.
+The initial solve and rolling reconnect are still synchronous on the client
+update thread.
 
-## Measured NAV-LIVE-1 result
+## Measured 19-obstacle baseline
 
-Latest runtime evidence:
+Latest user runtime evidence:
 
 ```text
 [DockingPerf]
-total_ms      ~= 198.1
-snapshot_ms   ~=   0.10
-geometric_ms  ~=   0.47
-trajectory_ms ~= 106.5
-tunnel_ms     ~=  15.7
+total_ms      ~= 470.3
+snapshot_ms   ~=   0.41
+geometric_ms  ~=   7.42
+trajectory_ms ~= 373.3
+tunnel_ms     ~=  15.5
 ```
 
-Repeated active-guidance frames show roughly `dock_ms=110..126 ms` and
-`tunnel_builds=1`.
+The route snapshot correctly contained 19 obstacles, but the first stress layout
+was visually poor: objects clustered around the Hub without forcing the baseline
+route to cross them.
 
-Therefore:
+`navigation_perf.log` resolved the CPU ownership:
 
-- current geometric path search is not the dominant cost in the three-obstacle
-  baseline;
-- `TrajectoryGenerator` / `SmoothPathOptimizer` is the dominant initial stage;
-- rolling `GuidanceTunnelBuilder` still performs expensive work despite the
-  bounded reconnect architecture;
-- the visible freeze is expected while this work remains on the frame thread.
+- initial `SmoothPathOptimizer`: about 367 ms;
+- spline sampling: roughly 7..8 ms per support-level candidate;
+- collision/safety validation: roughly 39..60 ms per candidate;
+- selected trajectory remained support level 2 with 3862 samples.
 
-## NAV-LIVE-2 implementation
+Therefore collision narrow-phase repetition, not spline evaluation, is the main
+cost of the 19-obstacle initial trajectory.
 
-### SmoothPathOptimizer
+## Rolling replan storm
 
-`src/world/navigation/SmoothPathOptimizer.cpp` now:
-
-- replaces the per-evaluation linear knot-span scan with binary search;
-- preserves spline/collision/curvature semantics;
-- writes detailed optimizer diagnostics to `navigation_perf.log`;
-- reports sampling, safety-validation and quality time for every support-level
-  candidate.
-
-This is intended to identify whether the next real optimization belongs in
-adaptive spline sampling or obstacle validation instead of guessing from one
-aggregate `trajectory_ms` value.
-
-### Deterministic stress field
-
-`src/game/scene/GameSceneSetup.cpp` now extends the existing Hub guidance lab.
-Instead of only one cube and one cylinder, the scene contains the two original
-docking targets plus 16 deterministic stress objects (8 cubes, 8 cylinders).
-
-All stress objects are real Hub-attached `StaticObject`s with fixed positions and
-orientations. The existing client planning snapshot converts them through
-`NavigationObstacleFactory`, so visual clutter and navigation workload use the
-same runtime objects.
-
-Expected obstacle count for the diagnostic route scene is approximately 19:
-station + 2 docking targets + 16 stress objects.
-
-## Runtime logging
-
-Detailed navigation performance is now isolated in:
+The same capture contained 274 smoother calls:
 
 ```text
-navigation_perf.log
+1 initial call
+195 rolling calls with 10 control-path points
+78 rolling calls with 12 control-path points
 ```
 
-The large `[M8E-XPROC]` / `[M8E-STARTUP]` console stream is opt-in runtime tracing
-controlled by `ELITE_TRACE_RUNTIME`; disable it for normal navigation profiling.
+The rolling structure is exactly 39 `GuidanceTunnel` rebuild attempts × 7
+candidate curve families. Those rolling calls consumed about 14.4 seconds of
+smoother CPU in the short run.
 
-Existing concise `[DockingPerf]`, `[GuidanceReplan]`, `[FramePerf]` and failure
-messages remain on console for correlation with the file trace.
+The old 0.25 s rolling interval was shorter than one ~0.37 s reconnect attempt,
+so the synchronous client could become due for another heavy solve immediately.
+The hard-envelope branch could also bypass the cadence timer completely. This
+explains the observed near-total loss of interactive motion.
+
+## NAV-LIVE-3 implementation
+
+### Conservative obstacle broadphase
+
+`src/world/navigation/NavigationObstacleGeometry.cpp` now rejects obvious misses
+with an enclosing-sphere broadphase before running the exact inflated OBB,
+capsule, or sphere segment test.
+
+The broadphase encloses the exact inflated shape, so a miss is provably safe to
+skip and a hit still executes the previous narrow phase. Collision radius,
+clearance and exact final collision semantics are unchanged.
+
+### Synchronous reconnect containment
+
+Until reconnect moves off the frame thread:
+
+- rolling checks are capped at 1 Hz;
+- the immediate hard-envelope heavy-solve bypass is disabled;
+- normal pose, predicted-exit, course, attitude and target-motion checks remain
+  on the throttled policy.
+
+This is a temporary client-stall guard, not the intended final architecture.
+Final target remains worker/latest-request-wins publication.
+
+### Route-crossing stress field
+
+The 16 diagnostic obstacles remain real Hub-attached `StaticObject`s and therefore
+use normal render/snapshot/navigation paths. Their layout is now four deterministic
+bands across the baseline player-to-cube-A route rather than a harmless cloud near
+the Hub. The two authored docking targets remain unchanged.
+
+### Navigation performance log
+
+`SmoothPathOptimizer` still writes detailed phase data to
+`navigation_perf.log`. Every process that links the smoother now prints its exact
+absolute path at startup:
+
+```text
+[NavigationPerf] log_path=...
+```
+
+This resolves the previous ambiguity where tests and `EliteGame` could create
+same-named files in different working directories.
 
 ## Navigation architecture baseline
 
-`src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md` remains the authority.
-The intended split is:
+`src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md` remains authoritative:
 
 ```text
 global coarse route
@@ -134,27 +152,27 @@ global coarse route
     -> cheap guidance-tunnel presentation
 ```
 
-Collision/safety fidelity remains non-negotiable. Performance work must reduce
-redundant search/sampling or use acceleration structures / scheduling, not weaken
-geometry checks.
+Collision fidelity remains non-negotiable. Optimization order is broadphase /
+spatial indexing / bounded work / scheduling, not looser collision geometry.
 
 ## Current acceptance gate
 
 Run under MSYS2 MinGW64:
 
 ```bash
+git fetch origin
+git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
+git pull --ff-only
 unset ELITE_TRACE_RUNTIME
-rm -f navigation_perf.log
 
+python tests/architecture_contracts/check_navigation_stress_field.py
 python tests/architecture_contracts/check_live_docking_guidance.py
-python tests/architecture_contracts/check_ruckig_navigation_spike.py
-python tests/architecture_contracts/check_ruckig_navigation_integration.py
 bash tests/navigation_guidance/run_mingw64.sh
 cmake --build build --target EliteGame
+D:/__elite/work/build/EliteGame.exe
 ```
 
-Then run `EliteGame`, confirm the stress field visually, calculate one docking
-route, fly for several seconds, and inspect `navigation_perf.log` together with
-the concise console timing lines.
-
-The next optimization follows measured phase ownership from that file.
+Verify the route-crossing obstacle layout, record the startup navigation log
+path, calculate a route, and test several seconds of manual flight. Compare new
+`safety_ms`, `trajectory_ms`, rolling `dock_ms`, and `tunnel_builds` against the
+19-obstacle baseline above.

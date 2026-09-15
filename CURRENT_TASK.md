@@ -18,7 +18,7 @@ ClientNavigationPlanningSnapshotFactory
 ```
 
 `SmoothPathOptimizer` is forbidden in live route generation and live rolling
-reconnect. Its old B-spline implementation has now been deleted from the `.cpp`.
+reconnect. Its old B-spline implementation has been deleted from the `.cpp`.
 The symbol remains temporarily as a fail-closed migration shim: production calls
 return `retired; use the canonical Ruckig navigation backend`. A minimal
 non-smoothing compatibility path exists only when the legacy test target defines
@@ -85,7 +85,7 @@ is no old-smoother fallback.
 python tests/architecture_contracts/check_ruckig_live_navigation.py
 ```
 
-It now verifies all of the following:
+It verifies:
 
 - route trajectory uses Ruckig;
 - rolling reconnect uses Ruckig;
@@ -114,7 +114,7 @@ only. Do not optimize or restore that algorithm.
 
 ## Acceptance order
 
-First validate the new focused backend independently of stale spline tests:
+First validate the new backend without running stale global-spline assertions:
 
 ```bash
 git fetch origin
@@ -126,13 +126,19 @@ python tests/architecture_contracts/check_ruckig_navigation_integration.py
 python tests/architecture_contracts/check_ruckig_live_navigation.py
 python tests/architecture_contracts/check_live_docking_guidance.py
 
-bash tests/navigation_guidance/run_mingw64.sh
+bash tests/navigation_guidance/run_ruckig_mingw64.sh
 cmake --build build --target EliteGame
 ```
 
-If the all-in-one `navigation_guidance_tests` fails only in the explicitly old
-"global B-spline" expectation, treat that as a stale test to migrate, not as a
-runtime regression. Failures in `ruckig_route_planner`,
+Only after the focused Ruckig/local-horizon suite and `EliteGame` compile pass,
+run the complete legacy aggregate suite:
+
+```bash
+bash tests/navigation_guidance/run_mingw64.sh
+```
+
+If that full suite fails only in the explicitly old "global B-spline" expectation,
+it is a stale-test migration item. Failures in `ruckig_route_planner`,
 `guidance_tunnel_local_horizon`, compile/link, collision safety, terminal state or
 Ruckig integration are real blockers.
 

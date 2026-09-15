@@ -3,13 +3,18 @@
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Track:** route/trajectory performance  
-**Stage:** NAV-RUCKIG-0 — isolated Ruckig state-to-state trajectory spike
+**Stage:** NAV-RUCKIG-1 — production Ruckig-first A/B integration
 
-## Why this task is active
+## Accepted prerequisite
 
-The route/trajectory calculation can stall the machine. The current local planner generates state-to-state legs with the sequential `TrajectoryPredictor` and can repeat a complete prediction up to six times for shooting correction. Docking, detour and emergency branches can multiply those solves.
+NAV-RUCKIG-0 isolated MinGW spike is accepted locally.
 
-The user explicitly chose to try Ruckig Community Edition before doing a direct GPU rewrite of that sequential integrator.
+The complete spike test now passes after two integration fixes:
+
+- MinGW strict-C++20 `M_PI` compatibility is applied only to upstream Ruckig;
+- Elite scalar acceleration/jerk limits are conservatively mapped to Ruckig per-axis bounds and then revalidated against the authoritative scalar envelope.
+
+The user confirmed the full test passed. The benchmark number itself was not pasted into chat, so do not invent or record a speed figure yet.
 
 ## Dependency contract
 
@@ -20,96 +25,93 @@ Ruckig v0.19.4
 commit a8db97a4e9c55e5160a3855f739fa3b270df8e4c
 ```
 
-For this spike:
+Production build setup now lives in `cmake/EliteRuckigNavigation.cmake` and is shared by client, server and navigation-guidance tests.
 
-- fetch the exact commit;
+Requirements remain:
+
+- exact pinned commit;
 - `BUILD_CLOUD_CLIENT=OFF`;
-- examples/tests/benchmark/Python/shared build surfaces OFF;
-- keep upstream C++20 private to the Ruckig adapter target;
-- do not raise the rest of Elite above C++17;
-- do not use Ruckig Pro or cloud waypoint functionality.
+- examples/upstream tests/benchmark/Python/shared build surfaces OFF;
+- upstream generic cache options restored after Ruckig configuration;
+- Ruckig/adapter C++20 private to their targets;
+- `EliteGame` and `EliteServer` remain C++17;
+- no Ruckig Pro or cloud waypoint functionality.
 
-License text is stored at `src/assets/licenses/RUCKIG-MIT.txt`; provenance is in `THIRD_PARTY_LICENSES.md`.
+## Implemented NAV-RUCKIG-1 candidate
 
-## Implemented spike boundary
+`LocalGuidancePlanner::predictLeg()` now tries the accepted `RuckigTrajectorySolver` first for every local state-to-state leg.
 
-Added:
+If Ruckig rejects a leg or fails numerically, the previous deterministic shooting path remains intact and runs as fallback. That fallback still uses up to six `TrajectoryPredictor` calls, preserving the old reference behavior during A/B acceptance.
 
-- `src/game/navigation/RuckigTrajectorySolver.h`;
-- `src/game/navigation/RuckigTrajectorySolver.cpp`;
-- `tests/navigation_ruckig/CMakeLists.txt`;
-- `tests/navigation_ruckig/RuckigTrajectorySolverTests.cpp`;
-- `tests/navigation_ruckig/run_mingw64.sh`;
-- `tests/architecture_contracts/check_ruckig_navigation_spike.py`.
+Safety and policy are unchanged:
 
-The production `LocalGuidancePlanner` and main `EliteGame` build are intentionally untouched in this wave.
+- `TrajectorySafetyEvaluator` still validates every selected candidate;
+- obstacle/restricted-volume/scheduled-traffic logic is unchanged;
+- docking terminal-state policy is unchanged;
+- detour/emergency selection is unchanged;
+- no ship-control or authoritative state ownership moved into Ruckig.
 
-## Solver contract under test
+`LocalGuidanceBackendDiagnostics` now reports per planning call:
 
-The adapter uses an accelerating co-moving terminal frame rather than feeding orbital-scale world coordinates directly to Ruckig. Elite gravity is sampled at the start and target, a reference gravity acceleration is folded into the frame, and Ruckig solves the remaining relative 3-DOF motion.
+- `ruckigLegAttempts`;
+- `ruckigLegSuccesses`;
+- `ruckigFallbacks`;
+- `legacyPredictorCalls`;
+- `ruckigSolveMicroseconds`;
+- `legacyFallbackMicroseconds`;
+- `lastRuckigFailure`.
 
-After generation the adapter reconstructs world-space states and validates the candidate against Elite's scalar proper-acceleration and proper-jerk limits using fresh `GravityFieldSystem` samples. The result is returned as `TrajectoryPredictionResult` so later planner integration does not need to adopt Ruckig types.
-
-Ruckig is only a candidate **leg generator**. It does not replace:
-
-- `TrajectorySafetyEvaluator`;
-- obstacle/restricted-volume/traffic checks;
-- docking terminal policy;
-- route selection;
-- ship control/authority.
-
-## Local results so far
-
-The first local MinGW attempt exposed upstream use of `M_PI` under strict C++20. That is fixed target-locally with `_USE_MATH_DEFINES`; the next build completed and linked.
-
-The first executable run then passed the stationary local transfer but rejected the orbital-scale multi-axis case with:
-
-```text
-Ruckig candidate exceeds Elite proper-jerk envelope
-```
-
-Root cause: Elite defines acceleration/jerk limits as Euclidean vector magnitudes, while Ruckig accepts independent per-axis bounds. Giving every Ruckig axis the full scalar Elite limit creates a cube whose diagonal can exceed the Elite spherical envelope by up to `sqrt(3)`.
-
-The adapter now maps a scalar limit `L` conservatively to `L / sqrt(3)` per Ruckig axis (plus the existing local gravity-frame allowance), while retaining post-generation scalar validation. Failure messages now report observed max versus limit. The architecture contract guards this mapping.
+The production client/server both link the private `EliteNavigationRuckig` library. The existing navigation-guidance regression suite is wired to the same dependency seam.
 
 ## Acceptance now
 
-Pull and rerun:
+Pull and run:
 
 ```bash
 git fetch origin
 git pull --ff-only
 
 python tests/architecture_contracts/check_ruckig_navigation_spike.py
+python tests/architecture_contracts/check_ruckig_navigation_integration.py
+
 bash tests/navigation_ruckig/run_mingw64.sh
+bash tests/navigation_guidance/run_mingw64.sh
+
+cmake --build build --target EliteGame
 ```
 
-Expected functional coverage:
+The main build may re-run CMake and fetch the pinned Ruckig source into the main build tree the first time.
 
-- stationary 100 m transfer reaches exact requested position/velocity;
-- orbital-scale coordinates remain numerically stable through the co-moving frame and stay inside the scalar Elite envelope;
-- Earth-like gravity case preserves endpoint and gravity diagnostics;
-- physically infeasible one-second transfer is rejected;
-- benchmark prints `RUCKIG BENCHMARK: ... avg=... us/solve`;
-- final line: `NAVIGATION RUCKIG SPIKE: PASS`.
+### Acceptance criteria
 
-Do not impose a hard benchmark threshold yet. Record the actual average solve time on the developer machine first.
+1. Both architecture contracts PASS.
+2. Isolated Ruckig suite still ends with `NAVIGATION RUCKIG SPIKE: PASS`.
+3. Existing navigation-guidance regression suite remains green; Ruckig-first must not alter accepted docking/detour/emergency semantics.
+4. `EliteGame` builds successfully without raising the application-wide C++ standard above C++17.
+5. Runtime route calculation no longer produces the previous machine-scale stall in the representative bad case, or the diagnostics clearly identify why fallback is still dominating.
 
-## If the spike passes
+Do not remove the legacy predictor during this wave.
 
-Next wave: NAV-RUCKIG-1 production A/B integration.
+## Runtime evidence needed after build
 
-1. Add a private C++20 Ruckig navigation library to the main CMake graph while leaving the application C++17.
-2. Make local state-to-state `predictLeg()` Ruckig-first.
-3. Keep the existing shooting predictor as deterministic fallback/reference.
-4. Keep safety evaluation unchanged.
-5. Add explicit timing/fallback counters.
-6. Build `EliteGame` and reproduce the previously expensive route calculation.
+Reproduce the same route calculation that used to be expensive and capture the resulting navigation diagnostics. The important distinction is:
 
-Do not delete the old predictor until runtime A/B evidence shows that Ruckig covers the required cases.
+```text
+ruckigLegAttempts ~= ruckigLegSuccesses
+legacyPredictorCalls ~= 0
+```
+
+versus a fallback-heavy result such as:
+
+```text
+ruckigFallbacks > 0
+legacyPredictorCalls >> 0
+```
+
+If Ruckig succeeds for normal legs and the freeze disappears, NAV-RUCKIG-1 can be accepted and the old shooting path can move toward reference-only status. If fallbacks dominate, use `lastRuckigFailure` plus timings to fix the actual unsupported case rather than deleting the fallback.
 
 ## Deferred renderer acceptance
 
-GPU-P0 static spheres remain accepted. GPU-P0.1 repeated System Map circles still has contracts PASS but lacks the final clean rebuild/runtime visual acceptance after Core-tail cleanup. That status is preserved; starting NAV-RUCKIG-0 does not retroactively accept GPU-P0.1.
+GPU-P0 static spheres remain accepted. GPU-P0.1 repeated System Map circles still has contracts PASS but lacks the final clean rebuild/runtime visual acceptance after Core-tail cleanup. That status is preserved.
 
 Station-adjacent renderer freezes remain out of scope.

@@ -2,13 +2,13 @@
 
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Status:** R0 runtime seams + dual-source model ingress accepted; OpenGL 4.3 Core accepted locally; active work is live navigation decomposition/performance
+**Status:** R0 runtime seams + dual-source model ingress + OpenGL 4.3 Core accepted; active work is canonical Ruckig navigation cutover
 
 ## Purpose
 
-Keep deterministic gameplay/runtime boundaries explicit while modernizing
-presentation and navigation infrastructure independently. Renderer changes do
-not move gameplay authority.
+Keep deterministic gameplay/runtime boundaries explicit while renderer,
+asset-ingress and navigation infrastructure evolve independently. Presentation
+never owns simulation or navigation authority.
 
 ## Accepted runtime seams
 
@@ -26,62 +26,68 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 
 ## Renderer boundary
 
-The graphical client targets OpenGL 4.3 Core:
+The graphical client targets OpenGL 4.3 Core. The Core cutover, GPU-P0 System Map
+spheres and GPU-P0.1 instanced circles/orbits are accepted locally. Renderer work
+is paused while navigation is stabilized.
 
-- Core GLFW profile request;
-- bundled GLAD `gl:core=4.3`;
-- zero forbidden fixed-function/Compatibility tokens under production `src/`;
-- old presentation semantics translated by `CoreGlLegacyBridge` into software
-  state and Core shader/VAO/VBO submission.
-
-The branch-wide Core cutover and local visual runtime gate are accepted. GPU-P0
-System Map spheres and GPU-P0.1 instanced circles/orbits are also accepted.
-
-This remains presentation infrastructure. Authoritative simulation, ship
-physics, route/docking decisions, damage, economy, replication,
-interaction/picking semantics and navigation remain CPU-owned unless an explicit
-architecture decision says otherwise.
+Authoritative simulation, physics, navigation, damage, economy and replication
+remain CPU-owned unless a later explicit architecture decision changes that.
 
 ## Navigation decomposition
 
-The client CPU -> GPU audit is complete, but the active performance problem is
-currently CPU navigation rather than renderer submission.
-
-The accepted navigation design is documented in:
+Authoritative design:
 
 ```text
 src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md
 ```
 
-The key runtime split is:
+Current runtime ownership:
 
 ```text
-global coarse route
-    -> bounded local detailed motion
-    -> per-tick execution/control
-    -> cheap guidance presentation
+planning snapshot
+    -> GeometricPathPlanner / DockingPathPlanner   topology
+    -> RuckigRoutePlanner                          constrained motion
+    -> RuckigTrajectorySolver                      local state-to-state primitive
+    -> swept NavigationObstacleGeometry validation safety
+    -> GuidanceTunnel                              presentation sampling
+    -> future trajectory follower                  execution
 ```
 
-The live docking request still has a synchronous initial solve inside
-`SpaceState::update()`. NAV-LIVE-1 first removes unnecessary whole-route work from
-rolling tunnel reconnects; later work will move immutable expensive global solves
-off the frame thread when live timings identify the dominant stage.
+`TrajectoryGenerator` is temporarily only the old public compatibility facade
+for `RuckigRoutePlanner`. The custom global B-spline implementation has been
+removed from that live path.
+
+`GuidanceTunnel` also no longer owns a custom spline reconnect planner. A rolling
+live-pose correction uses `RuckigTrajectorySolver`, preferably over a bounded
+physical horizon, then stitches the immutable accepted tail. A materially moved
+terminal or infeasible bounded join uses a full Ruckig reconnect rather than the
+old smoother.
+
+Hard contract:
+
+```bash
+python tests/architecture_contracts/check_ruckig_live_navigation.py
+```
+
+It rejects `SmoothPathOptimizer` in both live motion sources.
 
 ## Planned order from here
 
 1. R0 shared runtime seams — accepted.
 2. Dual-source runtime model ingress — accepted.
 3. Client CPU -> GPU audit — complete.
-4. OpenGL 4.3 Core migration + local visual acceptance — accepted.
-5. GPU-P0/P0.1 System Map work — accepted; renderer wave paused.
-6. NAV-LIVE-1 bounded rolling docking reconnect — active acceptance gate.
-7. Use `[DockingPerf]` to select the next global navigation optimization.
-8. Move immutable expensive navigation solves off the frame thread with
-   latest-request-wins where measured cost justifies it.
-9. Resume selective GPU-offload priorities from
-   `CLIENT_GPU_OFFLOAD_AUDIT.md` / `GPU_OFFLOAD_PLAN.md`.
-10. Resume first read-only runtime-model consumer migration.
-11. Continue R1+ runtime decomposition.
+4. OpenGL 4.3 Core + GPU-P0/P0.1 — accepted; renderer wave paused.
+5. NAV-RUCKIG-0 isolated Ruckig state-to-state solver — accepted earlier.
+6. NAV-RUCKIG-1 live route + rolling reconnect cutover — implementation active,
+   local MinGW acceptance pending.
+7. Migrate stale B-spline tests and remove the remaining legacy smoother from
+   production targets/source when no runtime consumer remains.
+8. Measure the deterministic/stress docking scenes using Ruckig diagnostics.
+9. Add bounded collision-safe Ruckig through-waypoint blending if motion quality
+   requires it.
+10. Move immutable heavy planning off the frame thread with generation IDs /
+    latest-request-wins if measured stalls remain.
+11. Resume renderer/runtime-model decomposition work.
 
 ## Testing policy
 
@@ -91,13 +97,17 @@ Renderer contract:
 python tests/architecture_contracts/check_gl43_modernization_boundary.py
 ```
 
-Navigation acceptance currently includes:
+Navigation contracts:
 
 ```bash
+python tests/architecture_contracts/check_ruckig_navigation_spike.py
+python tests/architecture_contracts/check_ruckig_navigation_integration.py
+python tests/architecture_contracts/check_ruckig_live_navigation.py
 python tests/architecture_contracts/check_live_docking_guidance.py
 bash tests/navigation_guidance/run_mingw64.sh
 cmake --build build --target EliteGame
 ```
 
-Future renderer changes must not reintroduce Compatibility OpenGL. Future
-navigation optimizations must not reduce canonical collision/safety fidelity.
+Future navigation work must not restore the old global smoother merely to satisfy
+a stale test or make a corner look nicer. Motion quality improvements belong in
+bounded Ruckig transitions plus canonical collision validation.

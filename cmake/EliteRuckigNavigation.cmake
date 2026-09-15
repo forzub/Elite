@@ -5,12 +5,26 @@ function(elite_add_ruckig_navigation TARGET_NAME ELITE_ROOT)
         return()
     endif()
 
-    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(BUILD_PYTHON_MODULE OFF CACHE BOOL "" FORCE)
-    set(BUILD_CLOUD_CLIENT OFF CACHE BOOL "" FORCE)
-    set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(BUILD_BENCHMARK OFF CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    set(_ELITE_RUCKIG_OPTIONS
+        BUILD_EXAMPLES
+        BUILD_PYTHON_MODULE
+        BUILD_CLOUD_CLIENT
+        BUILD_TESTS
+        BUILD_BENCHMARK
+        BUILD_SHARED_LIBS
+    )
+
+    # Ruckig uses generic cache option names. Snapshot them so adding this
+    # dependency cannot silently change unrelated Elite/dependency builds.
+    foreach(_option IN LISTS _ELITE_RUCKIG_OPTIONS)
+        if(DEFINED ${_option})
+            set(_ELITE_RUCKIG_HAD_${_option} TRUE)
+            set(_ELITE_RUCKIG_OLD_${_option} "${${_option}}")
+        else()
+            set(_ELITE_RUCKIG_HAD_${_option} FALSE)
+        endif()
+        set(${_option} OFF CACHE BOOL "" FORCE)
+    endforeach()
 
     FetchContent_Declare(
         ruckig
@@ -19,6 +33,14 @@ function(elite_add_ruckig_navigation TARGET_NAME ELITE_ROOT)
         GIT_SHALLOW FALSE
     )
     FetchContent_MakeAvailable(ruckig)
+
+    foreach(_option IN LISTS _ELITE_RUCKIG_OPTIONS)
+        if(_ELITE_RUCKIG_HAD_${_option})
+            set(${_option} "${_ELITE_RUCKIG_OLD_${_option}}" CACHE BOOL "" FORCE)
+        else()
+            unset(${_option} CACHE)
+        endif()
+    endforeach()
 
     # Ruckig v0.19.4 uses M_PI internally. MinGW strict C++20 does not expose
     # that macro unless the CRT math constants are explicitly enabled.

@@ -37,6 +37,14 @@ add_executable(
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingPortRuntimeStateCatalog.cpp"
 )
 
+# Only the legacy all-in-one suite sees the retired smoother compatibility
+# symbol. EliteGame, EliteServer and the focused Ruckig suites compile the same
+# source without this definition, where SmoothPathOptimizer fails closed.
+target_compile_definitions(
+    navigation_guidance_tests
+    PRIVATE ELITE_LEGACY_SMOOTH_PATH_TEST_COMPAT=1
+)
+
 add_executable(
     ruckig_route_planner_tests
     RuckigRoutePlannerTests.cpp

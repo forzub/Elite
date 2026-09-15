@@ -11,9 +11,7 @@ namespace game::navigation
 {
 namespace
 {
-
 constexpr double TimeEpsilon = 1.0e-9;
-constexpr double VectorEpsilon = 1.0e-12;
 constexpr double ConstraintFloor = 1.0e-6;
 
 bool finite(double value)
@@ -47,11 +45,11 @@ RuckigTrajectoryResult failure(
     const std::string& message
 )
 {
-    RuckigTrajectoryResult result;
-    result.prediction.status = status;
-    result.prediction.systemId = request.systemId;
-    result.prediction.message = message;
-    return result;
+    RuckigTrajectoryResult out;
+    out.prediction.status = status;
+    out.prediction.systemId = request.systemId;
+    out.prediction.message = message;
+    return out;
 }
 
 bool validRequest(const RuckigTrajectoryRequest& request)
@@ -98,7 +96,6 @@ CoMovingFrame makeTerminalFrame(
 )
 {
     const double total = request.horizonSeconds;
-
     CoMovingFrame frame;
     frame.accelerationMps2 = referenceGravityMps2;
     frame.velocity0Mps =
@@ -118,28 +115,18 @@ double derivedAccelerationLimit(
     double duration
 )
 {
-    const double inverseDuration = 1.0 / std::max(duration, TimeEpsilon);
+    const double invT = 1.0 / std::max(duration, TimeEpsilon);
     return std::max({
         1.0,
         std::abs(currentAcceleration),
         std::abs(targetAcceleration),
-        6.0 * std::abs(relativeDistance) * inverseDuration * inverseDuration +
-            4.0 * std::abs(relativeSpeed) * inverseDuration
+        6.0 * std::abs(relativeDistance) * invT * invT +
+            4.0 * std::abs(relativeSpeed) * invT
     });
-}
-
-double derivedJerkLimit(double accelerationLimit, double duration)
-{
-    return std::max(
-        1.0,
-        8.0 * accelerationLimit /
-            std::max(duration, TimeEpsilon)
-    );
 }
 
 struct SampledState
 {
-    double timeOffsetSeconds = 0.0;
     WorldKinematicState state;
     glm::dvec3 properAccelerationMps2 {0.0};
     GravityFieldSample gravity;
@@ -162,33 +149,33 @@ SampledState sampleTrajectory(
         relativeAcceleration
     );
 
-    SampledState sampled;
-    sampled.timeOffsetSeconds = timeOffsetSeconds;
-    sampled.state.positionMeters =
+    SampledState out;
+    out.state.positionMeters =
         frame.positionAt(timeOffsetSeconds) + toVec3(relativePosition);
-    sampled.state.velocityMps =
+    out.state.velocityMps =
         frame.velocityAt(timeOffsetSeconds) + toVec3(relativeVelocity);
-    sampled.state.accelerationMps2 =
+    out.state.accelerationMps2 =
         frame.accelerationMps2 + toVec3(relativeAcceleration);
-    sampled.gravity = GravityFieldSystem::sample(
-        sampled.state.positionMeters,
+    out.gravity = GravityFieldSystem::sample(
+        out.state.positionMeters,
         request.gravityBodies
     );
-    sampled.properAccelerationMps2 =
-        sampled.state.accelerationMps2 - sampled.gravity.accelerationMps2;
-    return sampled;
+    out.properAccelerationMps2 =
+        out.state.accelerationMps2 - out.gravity.accelerationMps2;
+    return out;
 }
 
 TrajectoryPredictionSample makeOutputSample(
     const RuckigTrajectoryRequest& request,
+    double timeOffsetSeconds,
     const SampledState& sampled,
     double cumulativeProperDeltaVMps
 )
 {
     TrajectoryPredictionSample out;
     out.universeTimeSeconds =
-        request.startUniverseTimeSeconds + sampled.timeOffsetSeconds;
-    out.timeOffsetSeconds = sampled.timeOffsetSeconds;
+        request.startUniverseTimeSeconds + timeOffsetSeconds;
+    out.timeOffsetSeconds = timeOffsetSeconds;
     out.state = sampled.state;
     out.properAccelerationMps2 = sampled.properAccelerationMps2;
     out.gravityAccelerationMps2 = sampled.gravity.accelerationMps2;
@@ -213,18 +200,17 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
         );
     }
 
-    const GravityFieldSample gravityStart = GravityFieldSystem::sample(
+    const auto gravityStart = GravityFieldSystem::sample(
         request.initialState.positionMeters,
         request.gravityBodies
     );
-    const GravityFieldSample gravityTarget = GravityFieldSystem::sample(
+    const auto gravityTarget = GravityFieldSystem::sample(
         request.targetPositionMeters,
         request.gravityBodies
     );
     const glm::dvec3 referenceGravity =
         0.5 * (gravityStart.accelerationMps2 +
                gravityTarget.accelerationMps2);
-
     const CoMovingFrame frame = makeTerminalFrame(
         request,
         referenceGravity
@@ -263,23 +249,15 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
             std::abs(gravityTarget.accelerationMps2[axis] - referenceGravity[axis])
         );
 
-        double accelerationLimit = 0.0;
-        if (properAccelerationLimit > 0.0)
-        {
-            accelerationLimit =
-                properAccelerationLimit + gravityVariation;
-        }
-        else
-        {
-            accelerationLimit = derivedAccelerationLimit(
+        double accelerationLimit = properAccelerationLimit > 0.0
+            ? properAccelerationLimit + gravityVariation
+            : derivedAccelerationLimit(
                 relativePosition0[axis],
                 relativeVelocity0[axis],
                 relativeAcceleration0[axis],
                 relativeTargetAcceleration[axis],
                 request.horizonSeconds
-            );
-        }
-
+              );
         accelerationLimit = std::max({
             accelerationLimit,
             std::abs(relativeAcceleration0[axis]) + ConstraintFloor,
@@ -287,21 +265,15 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
             ConstraintFloor
         });
 
-        double jerkLimit = 0.0;
-        if (properJerkLimit > 0.0)
-        {
-            jerkLimit =
-                properJerkLimit +
+        double jerkLimit = properJerkLimit > 0.0
+            ? properJerkLimit +
                 2.0 * gravityVariation /
-                    std::max(request.horizonSeconds, TimeEpsilon);
-        }
-        else
-        {
-            jerkLimit = derivedJerkLimit(
-                accelerationLimit,
-                request.horizonSeconds
-            );
-        }
+                    std::max(request.horizonSeconds, TimeEpsilon)
+            : std::max(
+                1.0,
+                8.0 * accelerationLimit /
+                    std::max(request.horizonSeconds, TimeEpsilon)
+              );
         jerkLimit = std::max(jerkLimit, ConstraintFloor);
 
         const double distanceSpeed =
@@ -330,7 +302,7 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
                 << static_cast<int>(ruckigResult);
         return failure(
             request,
-            ruckigResult == ruckig::Result::ErrorInvalidInput
+            ruckigResult == ruckig::ErrorInvalidInput
                 ? TrajectoryPredictionStatus::InvalidRequest
                 : TrajectoryPredictionStatus::NumericalFailure,
             message.str()
@@ -349,8 +321,7 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
     if (trajectory.get_duration() >
         request.horizonSeconds + durationTolerance)
     {
-        result.prediction.status =
-            TrajectoryPredictionStatus::NumericalFailure;
+        result.prediction.status = TrajectoryPredictionStatus::NumericalFailure;
         result.prediction.message =
             "Ruckig trajectory cannot satisfy requested leg duration";
         return result;
@@ -365,12 +336,12 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
         request.horizonSeconds
     );
 
-    SampledState previous = sampleTrajectory(
-        request,
-        frame,
-        trajectory,
-        0.0
-    );
+    double time = 0.0;
+    double nextOutputTime = sampleInterval;
+    double cumulativeProperDeltaV = 0.0;
+    double travelledDistance = 0.0;
+    SampledState previous = sampleTrajectory(request, frame, trajectory, 0.0);
+
     if (!finite(previous.state.positionMeters) ||
         !finite(previous.state.velocityMps) ||
         !finite(previous.state.accelerationMps2) ||
@@ -384,14 +355,8 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
     }
 
     result.prediction.samples.push_back(
-        makeOutputSample(request, previous, 0.0)
+        makeOutputSample(request, 0.0, previous, 0.0)
     );
-
-    double cumulativeProperDeltaV = 0.0;
-    double travelledDistance = 0.0;
-    double time = 0.0;
-    double nextOutputTime = sampleInterval;
-
     result.prediction.diagnostics.maxSpeedMps =
         magnitude(previous.state.velocityMps);
     result.prediction.diagnostics.maxRequestedProperAccelerationMps2 =
@@ -401,30 +366,23 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
     result.prediction.diagnostics.maxProperLoadGs =
         magnitude(previous.properAccelerationMps2) / StandardGravityMps2;
 
-    const double accelerationTolerance =
-        properAccelerationLimit > 0.0
-            ? std::max(1.0e-6, properAccelerationLimit * 1.0e-6)
-            : 0.0;
-    const double jerkTolerance =
-        properJerkLimit > 0.0
-            ? std::max(1.0e-6, properJerkLimit * 1.0e-6)
-            : 0.0;
+    const double accelerationTolerance = properAccelerationLimit > 0.0
+        ? std::max(1.0e-6, properAccelerationLimit * 1.0e-6)
+        : 0.0;
+    const double jerkTolerance = properJerkLimit > 0.0
+        ? std::max(1.0e-6, properJerkLimit * 1.0e-6)
+        : 0.0;
 
     while (time < request.horizonSeconds - TimeEpsilon)
     {
-        const double remainingToOutput =
-            std::max(0.0, nextOutputTime - time);
-        const double remainingToEnd =
-            std::max(0.0, request.horizonSeconds - time);
-
+        const double remainingToEnd = request.horizonSeconds - time;
+        const double remainingToOutput = nextOutputTime - time;
         double dt = std::min(validationStep, remainingToEnd);
         if (remainingToOutput > TimeEpsilon)
             dt = std::min(dt, remainingToOutput);
 
         if (dt <= TimeEpsilon)
         {
-            if (nextOutputTime >= request.horizonSeconds - TimeEpsilon)
-                break;
             nextOutputTime = std::min(
                 nextOutputTime + sampleInterval,
                 request.horizonSeconds
@@ -433,20 +391,18 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
         }
 
         const double nextTime = time + dt;
-        SampledState current = sampleTrajectory(
+        const SampledState current = sampleTrajectory(
             request,
             frame,
             trajectory,
             nextTime
         );
-
         if (!finite(current.state.positionMeters) ||
             !finite(current.state.velocityMps) ||
             !finite(current.state.accelerationMps2) ||
             !finite(current.properAccelerationMps2))
         {
-            result.prediction.status =
-                TrajectoryPredictionStatus::NumericalFailure;
+            result.prediction.status = TrajectoryPredictionStatus::NumericalFailure;
             result.prediction.message =
                 "Ruckig produced non-finite trajectory state";
             return result;
@@ -456,22 +412,20 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
             magnitude(previous.properAccelerationMps2);
         const double currentProper =
             magnitude(current.properAccelerationMps2);
-        const double appliedJerk =
-            magnitude(
-                current.properAccelerationMps2 -
-                previous.properAccelerationMps2
-            ) / dt;
+        const double currentJerk = magnitude(
+            current.properAccelerationMps2 -
+            previous.properAccelerationMps2
+        ) / dt;
 
         cumulativeProperDeltaV +=
             0.5 * (previousProper + currentProper) * dt;
-        travelledDistance +=
-            0.5 * (
-                magnitude(previous.state.velocityMps) +
-                magnitude(current.state.velocityMps)
-            ) * dt;
+        travelledDistance += 0.5 * (
+            magnitude(previous.state.velocityMps) +
+            magnitude(current.state.velocityMps)
+        ) * dt;
 
-        result.solverDiagnostics.validationSteps += 1;
-        result.prediction.diagnostics.integrationSteps += 1;
+        ++result.solverDiagnostics.validationSteps;
+        ++result.prediction.diagnostics.integrationSteps;
         result.prediction.diagnostics.maxSpeedMps = std::max(
             result.prediction.diagnostics.maxSpeedMps,
             magnitude(current.state.velocityMps)
@@ -492,7 +446,7 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
         );
         result.prediction.diagnostics.maxAppliedProperJerkMps3 = std::max(
             result.prediction.diagnostics.maxAppliedProperJerkMps3,
-            appliedJerk
+            currentJerk
         );
 
         if (properAccelerationLimit > 0.0 &&
@@ -501,29 +455,27 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
             result.solverDiagnostics.accelerationLimitExceeded = true;
         }
         if (properJerkLimit > 0.0 &&
-            appliedJerk > properJerkLimit + jerkTolerance)
+            currentJerk > properJerkLimit + jerkTolerance)
         {
             result.solverDiagnostics.jerkLimitExceeded = true;
         }
 
         time = nextTime;
         previous = current;
-
-        const bool reachedOutput =
-            time >= nextOutputTime - TimeEpsilon;
         const bool reachedEnd =
             time >= request.horizonSeconds - TimeEpsilon;
-
+        const bool reachedOutput =
+            time >= nextOutputTime - TimeEpsilon;
         if (reachedOutput || reachedEnd)
         {
             result.prediction.samples.push_back(
                 makeOutputSample(
                     request,
+                    time,
                     current,
                     cumulativeProperDeltaV
                 )
             );
-
             if (!reachedEnd)
             {
                 nextOutputTime = std::min(
@@ -541,41 +493,35 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
 
     if (result.solverDiagnostics.accelerationLimitExceeded)
     {
-        result.prediction.status =
-            TrajectoryPredictionStatus::NumericalFailure;
+        result.prediction.status = TrajectoryPredictionStatus::NumericalFailure;
         result.prediction.message =
             "Ruckig candidate exceeds Elite proper-acceleration envelope";
         return result;
     }
-
     if (result.solverDiagnostics.jerkLimitExceeded)
     {
-        result.prediction.status =
-            TrajectoryPredictionStatus::NumericalFailure;
+        result.prediction.status = TrajectoryPredictionStatus::NumericalFailure;
         result.prediction.message =
             "Ruckig candidate exceeds Elite proper-jerk envelope";
         return result;
     }
-
     if (result.prediction.samples.empty())
     {
-        result.prediction.status =
-            TrajectoryPredictionStatus::NumericalFailure;
+        result.prediction.status = TrajectoryPredictionStatus::NumericalFailure;
         result.prediction.message = "Ruckig produced no trajectory samples";
         return result;
     }
 
     const auto& end = result.prediction.samples.back().state;
-    const double endpointPositionError =
-        magnitude(end.positionMeters - request.targetPositionMeters);
-    const double endpointVelocityError =
-        magnitude(end.velocityMps - request.targetVelocityMps);
-
-    if (endpointPositionError > 1.0e-4 ||
-        endpointVelocityError > 1.0e-5)
+    const double positionError = magnitude(
+        end.positionMeters - request.targetPositionMeters
+    );
+    const double velocityError = magnitude(
+        end.velocityMps - request.targetVelocityMps
+    );
+    if (positionError > 1.0e-4 || velocityError > 1.0e-5)
     {
-        result.prediction.status =
-            TrajectoryPredictionStatus::NumericalFailure;
+        result.prediction.status = TrajectoryPredictionStatus::NumericalFailure;
         result.prediction.message =
             "Ruckig candidate did not reproduce requested terminal state";
         return result;

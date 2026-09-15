@@ -54,6 +54,20 @@ glm::dquat normalizedQuatOr(
     return glm::normalize(value);
 }
 
+double quaternionAngularDistance(
+    const glm::dquat& a,
+    const glm::dquat& b
+) noexcept
+{
+    const glm::dquat qa = normalizedQuatOr(
+        a,
+        glm::dquat(1.0, 0.0, 0.0, 0.0)
+    );
+    const glm::dquat qb = normalizedQuatOr(b, qa);
+    const double qdot = std::clamp(std::abs(glm::dot(qa, qb)), 0.0, 1.0);
+    return 2.0 * std::acos(qdot);
+}
+
 struct TrajectoryPoint
 {
     glm::dvec3 positionMeters {0.0};
@@ -95,8 +109,10 @@ TrajectoryPoint sampleTrajectoryAtProgress(
 
     const auto& a = trajectory.samples[hi - 1];
     const auto& b = trajectory.samples[hi];
-    const double span = std::max(Epsilon,
-        b.pathProgressMeters - a.pathProgressMeters);
+    const double span = std::max(
+        Epsilon,
+        b.pathProgressMeters - a.pathProgressMeters
+    );
     const double u = std::clamp(
         (clamped - a.pathProgressMeters) / span,
         0.0,
@@ -104,7 +120,10 @@ TrajectoryPoint sampleTrajectoryAtProgress(
     );
     out.positionMeters = a.positionMeters +
         (b.positionMeters - a.positionMeters) * u;
-    glm::dquat qa = normalizedQuatOr(a.orientation, glm::dquat(1.0, 0.0, 0.0, 0.0));
+    glm::dquat qa = normalizedQuatOr(
+        a.orientation,
+        glm::dquat(1.0, 0.0, 0.0, 0.0)
+    );
     glm::dquat qb = normalizedQuatOr(b.orientation, qa);
     if (glm::dot(qa, qb) < 0.0)
         qb = -qb;
@@ -158,7 +177,11 @@ double nearestTrajectoryProgress(
         const glm::dvec3 segment = b.positionMeters - a.positionMeters;
         const double length2 = glm::dot(segment, segment);
         const double u = length2 > Epsilon
-            ? std::clamp(glm::dot(pointMeters - a.positionMeters, segment) / length2, 0.0, 1.0)
+            ? std::clamp(
+                glm::dot(pointMeters - a.positionMeters, segment) / length2,
+                0.0,
+                1.0
+              )
             : 0.0;
         const glm::dvec3 projected = a.positionMeters + segment * u;
         const glm::dvec3 delta = pointMeters - projected;
@@ -189,11 +212,33 @@ void appendControl(
     sourceProgress.push_back(source);
 }
 
+void appendCurvePoint(
+    std::vector<SmoothPathPoint>& points,
+    const SmoothPathPoint& point
+)
+{
+    if (!points.empty() &&
+        glm::length(points.back().positionMeters - point.positionMeters) <= 1.0e-7)
+    {
+        points.back().sourceProgressMeters = std::max(
+            points.back().sourceProgressMeters,
+            point.sourceProgressMeters
+        );
+        return;
+    }
+    points.push_back(point);
+}
+
 struct DynamicCurve
 {
     std::vector<SmoothPathPoint> points;
     double passedTrajectoryProgressMeters = 0.0;
     double maxCurvaturePerMeter = 0.0;
+    bool reconnectSolveBounded = false;
+    bool reconnectFullSolveFallback = false;
+    double reconnectSolveStartProgressMeters = 0.0;
+    double reconnectSolveEndProgressMeters = 0.0;
+    double reconnectLookaheadMeters = 0.0;
 };
 
 DynamicCurve buildTrajectoryBackboneCurve(
@@ -205,21 +250,17 @@ DynamicCurve buildTrajectoryBackboneCurve(
     if (trajectory.samples.size() < 2)
         return out;
 
-    // A manual tunnel created by CALCULATE ROUTE is a presentation sampling
-    // of the trajectory that has already passed geometric/swept-volume safety
-    // validation. Do not run a second B-spline optimizer here: doing so can
-    // cut across a newly-added obstacle (for example the station hull) and
-    // incorrectly turn a valid trajectory into NO SAFE GUIDANCE SOLUTION.
-    //
-    // TrajectoryBackbone is used for the initial CALCULATE ROUTE publication.
-    // Keep the complete accepted trajectory here.  Using the render-time ship
-    // position to retire progress during this first build mixes a later
-    // presentation sample into the planning-epoch backbone and can, on a
-    // curved/looping path, select the terminal segment and collapse the tunnel
-    // to a single point. Passed gates are retired by the rolling tracker after
-    // publication instead.
+    // CALCULATE ROUTE already produced and validated this trajectory. The HUD
+    // backbone is only a presentation sampling of that accepted product.
     const double startProgress = trajectory.samples.front().pathProgressMeters;
     out.passedTrajectoryProgressMeters = startProgress;
+    out.reconnectSolveStartProgressMeters = startProgress;
+    out.reconnectSolveEndProgressMeters =
+        trajectory.samples.back().pathProgressMeters;
+    out.reconnectLookaheadMeters = std::max(
+        0.0,
+        out.reconnectSolveEndProgressMeters - startProgress
+    );
 
     const TrajectoryPoint first = sampleTrajectoryAtProgress(
         trajectory,
@@ -234,57 +275,58 @@ DynamicCurve buildTrajectoryBackboneCurve(
     {
         if (sample.pathProgressMeters <= startProgress + Epsilon)
             continue;
-        const SmoothPathPoint point {
+        appendCurvePoint(out.points, {
             sample.positionMeters,
             sample.sourcePathProgressMeters
-        };
-        if (glm::length(
-                out.points.back().positionMeters - point.positionMeters
-            ) <= 1.0e-7)
-        {
-            out.points.back().sourceProgressMeters = std::max(
-                out.points.back().sourceProgressMeters,
-                point.sourceProgressMeters
-            );
-            continue;
-        }
-        out.points.push_back(point);
+        });
     }
 
     return out;
 }
 
-DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
+struct DynamicSolveSpec
+{
+    double startProgressMeters = 0.0;
+    double endProgressMeters = 0.0;
+    glm::dvec3 terminalPositionMeters {0.0};
+    glm::dquat terminalOrientation {1.0, 0.0, 0.0, 0.0};
+    bool appendAcceptedTail = false;
+};
+
+DynamicCurve solveDynamicCurve(
+    const GuidanceTunnelRequest& request,
+    const DynamicSolveSpec& spec
+)
 {
     DynamicCurve out;
     const Trajectory& trajectory = *request.trajectory;
-    const double startProgress = nearestTrajectoryProgress(
-        trajectory,
-        request.currentPositionMeters
-    );
-    const double endProgress = trajectory.samples.back().pathProgressMeters;
-    out.passedTrajectoryProgressMeters = startProgress;
-
     const TrajectoryPoint startSample = sampleTrajectoryAtProgress(
         trajectory,
-        startProgress
+        spec.startProgressMeters
     );
     const TrajectoryPoint endSample = sampleTrajectoryAtProgress(
         trajectory,
-        endProgress
+        spec.endProgressMeters
     );
+    out.passedTrajectoryProgressMeters = spec.startProgressMeters;
+    out.reconnectSolveStartProgressMeters = spec.startProgressMeters;
+    out.reconnectSolveEndProgressMeters = spec.endProgressMeters;
+    out.reconnectLookaheadMeters = std::max(
+        0.0,
+        spec.endProgressMeters - spec.startProgressMeters
+    );
+
     const glm::dquat currentOrientation = normalizedQuatOr(
         request.currentOrientation,
         startSample.orientation
     );
     const glm::dquat terminalOrientation = normalizedQuatOr(
-        request.terminalOrientation,
+        spec.terminalOrientation,
         endSample.orientation
     );
 
-    // The spatial curve follows actual translational motion, not the nose.
-    // This is essential in Newton flight where hull attitude and velocity may
-    // legitimately point in different directions.
+    // Spatial guidance follows actual translational motion, not the nose. This
+    // is essential in Newton flight where hull attitude and velocity differ.
     const double speedMps = glm::length(request.currentVelocityMps);
     const glm::dvec3 hullForward = normalizedVectorOr(
         currentOrientation * glm::dvec3(0.0, 0.0, -1.0),
@@ -296,10 +338,37 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
     const glm::dvec3 travelForward = speedMps > 2.0
         ? normalizedVectorOr(request.currentVelocityMps, hullForward)
         : hullForward;
-    const glm::dvec3 terminalForward = normalizedVectorOr(
-        terminalOrientation * glm::dvec3(0.0, 0.0, -1.0),
-        travelForward
-    );
+
+    glm::dvec3 terminalForward;
+    if (spec.appendAcceptedTail)
+    {
+        const double tangentProbeDistance = std::max(
+            request.gateSpacingMeters * 2.0,
+            20.0
+        );
+        const double beforeEndProgress = std::max(
+            spec.startProgressMeters,
+            spec.endProgressMeters - tangentProbeDistance
+        );
+        const TrajectoryPoint beforeEnd = sampleTrajectoryAtProgress(
+            trajectory,
+            beforeEndProgress
+        );
+        terminalForward = normalizedVectorOr(
+            endSample.positionMeters - beforeEnd.positionMeters,
+            normalizedVectorOr(
+                terminalOrientation * glm::dvec3(0.0, 0.0, -1.0),
+                travelForward
+            )
+        );
+    }
+    else
+    {
+        terminalForward = normalizedVectorOr(
+            terminalOrientation * glm::dvec3(0.0, 0.0, -1.0),
+            travelForward
+        );
+    }
 
     glm::dvec3 upHint = normalizedVectorOr(
         currentOrientation * glm::dvec3(0.0, 1.0, 0.0),
@@ -316,7 +385,10 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
         upHint
     );
 
-    const double remaining = std::max(0.0, endProgress - startProgress);
+    const double remaining = std::max(
+        0.0,
+        spec.endProgressMeters - spec.startProgressMeters
+    );
     const double minimumTurnRadius = std::max(
         0.0,
         request.minimumTurnRadiusMeters
@@ -331,20 +403,20 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
     );
     double terminalLineDistance = std::min(
         std::max({
-            request.terminalAlignmentDistanceMeters,
-            request.gateSpacingMeters * 10.0,
-            minimumTurnRadius * 1.10
+            spec.appendAcceptedTail
+                ? request.startCaptureDistanceMeters
+                : request.terminalAlignmentDistanceMeters,
+            request.gateSpacingMeters * (spec.appendAcceptedTail ? 4.0 : 10.0),
+            minimumTurnRadius * (spec.appendAcceptedTail ? 0.45 : 1.10)
         }),
-        std::max(request.gateSpacingMeters * 10.0, remaining * 0.55)
+        std::max(
+            request.gateSpacingMeters * (spec.appendAcceptedTail ? 4.0 : 10.0),
+            remaining * (spec.appendAcceptedTail ? 0.35 : 0.55)
+        )
     );
 
-    // Capture and terminal alignment are boundary conditions, not permission
-    // to collapse the route interior. On a short remaining path the nominal
-    // 35% + 55% caps can leave only a few metres between both transition
-    // zones; the five route supports then bunch into that sliver and create a
-    // high-curvature B-spline with visibly snapping gate frames. Reserve an
-    // interior span of up to four gates (or 20% of the remaining source path)
-    // and scale both boundary zones together when necessary.
+    // Capture and end alignment are boundary conditions, not permission to
+    // collapse the route interior. Keep room for multiple route supports.
     const double minimumInteriorSupportDistance = std::min(
         remaining * 0.20,
         request.gateSpacingMeters * 4.0
@@ -362,9 +434,10 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
         startLead *= scale;
         terminalLineDistance *= scale;
     }
+
     const double terminalPathStart = std::max(
-        startProgress,
-        endProgress - terminalLineDistance
+        spec.startProgressMeters,
+        spec.endProgressMeters - terminalLineDistance
     );
     const TrajectoryPoint terminalPathSample = sampleTrajectoryAtProgress(
         trajectory,
@@ -384,7 +457,7 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
 
     const double routeSupportStartProgress = std::min(
         terminalPathStart,
-        startProgress + startLead
+        spec.startProgressMeters + startLead
     );
     const TrajectoryPoint routeSupportStart = sampleTrajectoryAtProgress(
         trajectory,
@@ -397,9 +470,8 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
         routeSupportStart.sourceProgressMeters
     );
 
-    // The accepted trajectory remains a topology hint, not a mandatory line.
-    // Wide candidate generation below is allowed to move these supports by
-    // kilometres when that buys a gentler turn.
+    // The accepted trajectory is a topology hint for the reconnect. The local
+    // smoother may move supports, but collision checks remain authoritative.
     constexpr int RouteSupports = 5;
     for (int i = 1; i <= RouteSupports; ++i)
     {
@@ -425,9 +497,9 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
     }
 
     const glm::dvec3 terminalOuter =
-        request.terminalPositionMeters - terminalForward * terminalLineDistance;
+        spec.terminalPositionMeters - terminalForward * terminalLineDistance;
     const glm::dvec3 terminalMiddle =
-        request.terminalPositionMeters -
+        spec.terminalPositionMeters -
         terminalForward * (terminalLineDistance * 0.45);
     appendControl(
         baseControls,
@@ -446,7 +518,7 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
     appendControl(
         baseControls,
         baseSource,
-        request.terminalPositionMeters,
+        spec.terminalPositionMeters,
         endSample.sourceProgressMeters
     );
 
@@ -459,7 +531,10 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
     candidates.reserve(9);
     candidates.push_back({baseControls, baseSource});
 
-    const std::size_t movableBegin = std::min<std::size_t>(2, baseControls.size());
+    const std::size_t movableBegin = std::min<std::size_t>(
+        2,
+        baseControls.size()
+    );
     const std::size_t movableEnd = baseControls.size() > 3
         ? baseControls.size() - 3
         : movableBegin;
@@ -474,7 +549,9 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
         if (movableEnd <= movableBegin)
             return;
         Candidate c {baseControls, baseSource};
-        const double count = static_cast<double>(movableEnd - movableBegin + 1);
+        const double count = static_cast<double>(
+            movableEnd - movableBegin + 1
+        );
         for (std::size_t i = movableBegin; i < movableEnd; ++i)
         {
             const double u = static_cast<double>(i - movableBegin + 1) / count;
@@ -492,15 +569,14 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
         appendBulge(-up, broadOffset);
     }
 
-    // A sharp reversal cannot be fixed by merely moving old supports. Supply
-    // two broad horseshoe candidates only when a hard radius is requested.
-    // They are intentionally much longer; a readable loop is preferable to a
-    // kinked short route.
     auto appendLoop = [&](const glm::dvec3& axis)
     {
         if (baseControls.size() < 5)
             return;
-        const double radius = std::max(minimumTurnRadius, broadOffset * 0.75);
+        const double radius = std::max(
+            minimumTurnRadius,
+            broadOffset * 0.75
+        );
         Candidate c;
         c.points.reserve(baseControls.size() + 2);
         c.source.reserve(baseSource.size() + 2);
@@ -574,14 +650,187 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
         out.maxCurvaturePerMeter =
             result.diagnostics.maxCurvaturePerMeter;
     }
+
+    if (out.points.size() < 2)
+        return out;
+
+    if (spec.appendAcceptedTail)
+    {
+        // The expensive part ends at the local rejoin. The remainder is the
+        // already accepted collision-safe trajectory; do not re-smooth or
+        // re-check it simply to draw rolling HUD gates.
+        for (const auto& sample : trajectory.samples)
+        {
+            if (sample.pathProgressMeters <= spec.endProgressMeters + Epsilon)
+                continue;
+            appendCurvePoint(out.points, {
+                sample.positionMeters,
+                sample.sourcePathProgressMeters
+            });
+        }
+    }
+
     return out;
 }
 
-std::vector<double> curveProgress(const std::vector<SmoothPathPoint>& points)
+DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
+{
+    DynamicCurve out;
+    const Trajectory& trajectory = *request.trajectory;
+    const double startProgress = nearestTrajectoryProgress(
+        trajectory,
+        request.currentPositionMeters
+    );
+    const double fullEndProgress =
+        trajectory.samples.back().pathProgressMeters;
+    const TrajectoryPoint startSample = sampleTrajectoryAtProgress(
+        trajectory,
+        startProgress
+    );
+    const TrajectoryPoint acceptedEndSample = sampleTrajectoryAtProgress(
+        trajectory,
+        fullEndProgress
+    );
+
+    const glm::dquat currentOrientation = normalizedQuatOr(
+        request.currentOrientation,
+        startSample.orientation
+    );
+    const double speedMps = glm::length(request.currentVelocityMps);
+    const glm::dvec3 hullForward = normalizedVectorOr(
+        currentOrientation * glm::dvec3(0.0, 0.0, -1.0),
+        normalizedVectorOr(
+            acceptedEndSample.positionMeters - request.currentPositionMeters,
+            glm::dvec3(0.0, 0.0, -1.0)
+        )
+    );
+    const glm::dvec3 travelForward = speedMps > 2.0
+        ? normalizedVectorOr(request.currentVelocityMps, hullForward)
+        : hullForward;
+
+    const double terminalPositionDriftMeters = glm::length(
+        request.terminalPositionMeters - acceptedEndSample.positionMeters
+    );
+    const double terminalAngleDriftRadians = quaternionAngularDistance(
+        request.terminalOrientation,
+        acceptedEndSample.orientation
+    );
+    const bool terminalStable =
+        terminalPositionDriftMeters <=
+            request.reconnectMaxTerminalPositionDriftMeters &&
+        terminalAngleDriftRadians <=
+            request.reconnectMaxTerminalAngleDriftRadians;
+
+    const double brakingDistanceMeters =
+        request.vehicle.maxBrakingAccelerationMps2 > Epsilon
+            ? speedMps * speedMps /
+                (2.0 * request.vehicle.maxBrakingAccelerationMps2)
+            : 0.0;
+    const double latencyDistanceMeters =
+        speedMps * request.reconnectPlanningLatencySeconds;
+
+    // Turning need is measured against the already accepted route shortly
+    // ahead. A straight route pays no artificial full-radius penalty, while an
+    // imminent bend increases the solved horizon before the ship reaches it.
+    const double routeProbeDistanceMeters = std::max(
+        request.startCaptureDistanceMeters,
+        request.gateSpacingMeters * 6.0
+    );
+    const double probeProgress = std::min(
+        fullEndProgress,
+        startProgress + routeProbeDistanceMeters
+    );
+    const TrajectoryPoint probeSample = sampleTrajectoryAtProgress(
+        trajectory,
+        probeProgress
+    );
+    const glm::dvec3 routeDirection = normalizedVectorOr(
+        probeSample.positionMeters - startSample.positionMeters,
+        travelForward
+    );
+    const double courseChangeRadians = std::acos(std::clamp(
+        glm::dot(travelForward, routeDirection),
+        -1.0,
+        1.0
+    ));
+    const double turnDistanceMeters =
+        std::max(0.0, request.minimumTurnRadiusMeters) *
+        courseChangeRadians;
+
+    const double automaticSafetyMarginMeters = std::max({
+        request.startCaptureDistanceMeters,
+        request.gateSpacingMeters * 4.0,
+        request.vehicle.collisionRadiusMeters * 4.0
+    });
+    const double safetyMarginMeters = std::max(
+        automaticSafetyMarginMeters,
+        request.reconnectSafetyMarginMeters
+    );
+    const double requestedLookaheadMeters = std::max(
+        request.gateSpacingMeters * 8.0,
+        latencyDistanceMeters +
+            brakingDistanceMeters +
+            turnDistanceMeters +
+            safetyMarginMeters
+    );
+    const double localEndProgress = std::min(
+        fullEndProgress,
+        startProgress + requestedLookaheadMeters
+    );
+    const double minimumTailToKeepMeters = std::max(
+        request.gateSpacingMeters * 2.0,
+        1.0
+    );
+    const bool canBound =
+        terminalStable &&
+        localEndProgress + minimumTailToKeepMeters < fullEndProgress;
+
+    if (canBound)
+    {
+        const TrajectoryPoint localEndSample = sampleTrajectoryAtProgress(
+            trajectory,
+            localEndProgress
+        );
+        DynamicSolveSpec localSpec;
+        localSpec.startProgressMeters = startProgress;
+        localSpec.endProgressMeters = localEndProgress;
+        localSpec.terminalPositionMeters = localEndSample.positionMeters;
+        localSpec.terminalOrientation = localEndSample.orientation;
+        localSpec.appendAcceptedTail = true;
+
+        out = solveDynamicCurve(request, localSpec);
+        if (out.points.size() >= 2)
+        {
+            out.reconnectSolveBounded = true;
+            return out;
+        }
+    }
+
+    // Safety/robustness fallback: moved terminal or an infeasible local rejoin
+    // retains the old whole-remaining-route behavior. A future terminal-tail
+    // local solver can remove the moving-target case without weakening safety.
+    DynamicSolveSpec fullSpec;
+    fullSpec.startProgressMeters = startProgress;
+    fullSpec.endProgressMeters = fullEndProgress;
+    fullSpec.terminalPositionMeters = request.terminalPositionMeters;
+    fullSpec.terminalOrientation = request.terminalOrientation;
+    fullSpec.appendAcceptedTail = false;
+    out = solveDynamicCurve(request, fullSpec);
+    out.reconnectFullSolveFallback = canBound || !terminalStable;
+    return out;
+}
+
+std::vector<double> curveProgress(
+    const std::vector<SmoothPathPoint>& points
+)
 {
     std::vector<double> out(points.size(), 0.0);
     for (std::size_t i = 1; i < points.size(); ++i)
-        out[i] = out[i - 1] + glm::length(points[i].positionMeters - points[i - 1].positionMeters);
+    {
+        out[i] = out[i - 1] + glm::length(
+            points[i].positionMeters - points[i - 1].positionMeters
+        );
+    }
     return out;
 }
 
@@ -593,19 +842,31 @@ SmoothPathPoint sampleCurveAtDistance(
 {
     if (points.size() == 1)
         return points.front();
-    const double clamped = std::clamp(distanceMeters, 0.0, progress.back());
+    const double clamped = std::clamp(
+        distanceMeters,
+        0.0,
+        progress.back()
+    );
     std::size_t hi = 1;
     while (hi < progress.size() && progress[hi] < clamped)
         ++hi;
     if (hi >= progress.size())
         return points.back();
-    const double span = std::max(Epsilon, progress[hi] - progress[hi - 1]);
-    const double u = std::clamp((clamped - progress[hi - 1]) / span, 0.0, 1.0);
+    const double span = std::max(
+        Epsilon,
+        progress[hi] - progress[hi - 1]
+    );
+    const double u = std::clamp(
+        (clamped - progress[hi - 1]) / span,
+        0.0,
+        1.0
+    );
     return {
         points[hi - 1].positionMeters +
             (points[hi].positionMeters - points[hi - 1].positionMeters) * u,
         points[hi - 1].sourceProgressMeters +
-            (points[hi].sourceProgressMeters - points[hi - 1].sourceProgressMeters) * u
+            (points[hi].sourceProgressMeters -
+             points[hi - 1].sourceProgressMeters) * u
     };
 }
 
@@ -625,19 +886,36 @@ glm::dvec3 tangentAt(
     return normalizedVectorOr(delta, fallback);
 }
 
-glm::dquat minimalRotation(const glm::dvec3& from, const glm::dvec3& to)
+glm::dquat minimalRotation(
+    const glm::dvec3& from,
+    const glm::dvec3& to
+)
 {
-    const glm::dvec3 a = normalizedVectorOr(from, glm::dvec3(0.0, 0.0, -1.0));
+    const glm::dvec3 a = normalizedVectorOr(
+        from,
+        glm::dvec3(0.0, 0.0, -1.0)
+    );
     const glm::dvec3 b = normalizedVectorOr(to, a);
     const double c = std::clamp(glm::dot(a, b), -1.0, 1.0);
     if (c > 1.0 - 1.0e-10)
         return glm::dquat(1.0, 0.0, 0.0, 0.0);
     if (c < -1.0 + 1.0e-10)
     {
-        glm::dvec3 axis = glm::cross(a, glm::dvec3(1.0, 0.0, 0.0));
+        glm::dvec3 axis = glm::cross(
+            a,
+            glm::dvec3(1.0, 0.0, 0.0)
+        );
         if (glm::length(axis) <= Epsilon)
-            axis = glm::cross(a, glm::dvec3(0.0, 1.0, 0.0));
-        return glm::angleAxis(glm::pi<double>(), glm::normalize(axis));
+        {
+            axis = glm::cross(
+                a,
+                glm::dvec3(0.0, 1.0, 0.0)
+            );
+        }
+        return glm::angleAxis(
+            glm::pi<double>(),
+            glm::normalize(axis)
+        );
     }
     const glm::dvec3 axis = glm::cross(a, b);
     return glm::angleAxis(std::acos(c), glm::normalize(axis));
@@ -649,10 +927,22 @@ double signedAngleAround(
     const glm::dvec3& to
 )
 {
-    const glm::dvec3 n = normalizedVectorOr(axis, glm::dvec3(0.0, 0.0, -1.0));
-    const glm::dvec3 a = normalizedVectorOr(from - n * glm::dot(from, n), glm::dvec3(0.0, 1.0, 0.0));
-    const glm::dvec3 b = normalizedVectorOr(to - n * glm::dot(to, n), a);
-    return std::atan2(glm::dot(n, glm::cross(a, b)), glm::dot(a, b));
+    const glm::dvec3 n = normalizedVectorOr(
+        axis,
+        glm::dvec3(0.0, 0.0, -1.0)
+    );
+    const glm::dvec3 a = normalizedVectorOr(
+        from - n * glm::dot(from, n),
+        glm::dvec3(0.0, 1.0, 0.0)
+    );
+    const glm::dvec3 b = normalizedVectorOr(
+        to - n * glm::dot(to, n),
+        a
+    );
+    return std::atan2(
+        glm::dot(n, glm::cross(a, b)),
+        glm::dot(a, b)
+    );
 }
 
 std::vector<glm::dquat> rotationMinimizingOrientations(
@@ -662,7 +952,10 @@ std::vector<glm::dquat> rotationMinimizingOrientations(
     const glm::dquat& terminalOrientation
 )
 {
-    std::vector<glm::dquat> out(points.size(), glm::dquat(1.0, 0.0, 0.0, 0.0));
+    std::vector<glm::dquat> out(
+        points.size(),
+        glm::dquat(1.0, 0.0, 0.0, 0.0)
+    );
     if (points.empty())
         return out;
 
@@ -672,7 +965,13 @@ std::vector<glm::dquat> rotationMinimizingOrientations(
         glm::dvec3(0.0, 0.0, -1.0)
     );
     for (std::size_t i = 0; i < points.size(); ++i)
-        tangent[i] = tangentAt(points, i, i ? tangent[i - 1] : currentForward);
+    {
+        tangent[i] = tangentAt(
+            points,
+            i,
+            i ? tangent[i - 1] : currentForward
+        );
+    }
 
     std::vector<glm::dvec3> up(points.size());
     up[0] = normalizedVectorOr(
@@ -685,7 +984,10 @@ std::vector<glm::dquat> rotationMinimizingOrientations(
     );
     for (std::size_t i = 1; i < points.size(); ++i)
     {
-        const glm::dquat transport = minimalRotation(tangent[i - 1], tangent[i]);
+        const glm::dquat transport = minimalRotation(
+            tangent[i - 1],
+            tangent[i]
+        );
         up[i] = normalizedVectorOr(
             transport * up[i - 1] - tangent[i] *
                 glm::dot(transport * up[i - 1], tangent[i]),
@@ -706,8 +1008,14 @@ std::vector<glm::dquat> rotationMinimizingOrientations(
     for (std::size_t i = 0; i < points.size(); ++i)
     {
         const double u = smoothStep01(progress[i] / total);
-        const glm::dquat twist = glm::angleAxis(terminalTwist * u, tangent[i]);
-        const glm::dvec3 twistedUp = normalizedVectorOr(twist * up[i], up[i]);
+        const glm::dquat twist = glm::angleAxis(
+            terminalTwist * u,
+            tangent[i]
+        );
+        const glm::dvec3 twistedUp = normalizedVectorOr(
+            twist * up[i],
+            up[i]
+        );
         out[i] = orientationForForwardUp(tangent[i], twistedUp);
     }
     out.front() = normalizedQuatOr(currentOrientation, out.front());
@@ -723,16 +1031,31 @@ bool validRequest(const GuidanceTunnelRequest& request)
         finite3(request.terminalPositionMeters) &&
         finite(request.minimumTurnRadiusMeters) &&
         request.minimumTurnRadiusMeters >= 0.0 &&
-        finite(request.gateSpacingMeters) && request.gateSpacingMeters > 0.0 &&
-        finite(request.gateWidthMeters) && request.gateWidthMeters > 0.0 &&
-        finite(request.gateHeightMeters) && request.gateHeightMeters > 0.0 &&
-        finite(request.lateralToleranceMeters) && request.lateralToleranceMeters >= 0.0 &&
-        finite(request.verticalToleranceMeters) && request.verticalToleranceMeters >= 0.0;
+        finite(request.gateSpacingMeters) &&
+        request.gateSpacingMeters > 0.0 &&
+        finite(request.gateWidthMeters) &&
+        request.gateWidthMeters > 0.0 &&
+        finite(request.gateHeightMeters) &&
+        request.gateHeightMeters > 0.0 &&
+        finite(request.lateralToleranceMeters) &&
+        request.lateralToleranceMeters >= 0.0 &&
+        finite(request.verticalToleranceMeters) &&
+        request.verticalToleranceMeters >= 0.0 &&
+        finite(request.reconnectPlanningLatencySeconds) &&
+        request.reconnectPlanningLatencySeconds >= 0.0 &&
+        finite(request.reconnectSafetyMarginMeters) &&
+        request.reconnectSafetyMarginMeters >= 0.0 &&
+        finite(request.reconnectMaxTerminalPositionDriftMeters) &&
+        request.reconnectMaxTerminalPositionDriftMeters >= 0.0 &&
+        finite(request.reconnectMaxTerminalAngleDriftRadians) &&
+        request.reconnectMaxTerminalAngleDriftRadians >= 0.0;
 }
 
 } // namespace
 
-GuidanceTunnel GuidanceTunnelBuilder::build(const GuidanceTunnelRequest& request)
+GuidanceTunnel GuidanceTunnelBuilder::build(
+    const GuidanceTunnelRequest& request
+)
 {
     GuidanceTunnel out;
     if (!validRequest(request))
@@ -750,11 +1073,21 @@ GuidanceTunnel GuidanceTunnelBuilder::build(const GuidanceTunnelRequest& request
     if (!finite(total) || total <= Epsilon)
         return out;
 
+    const glm::dquat frameTerminalOrientation =
+        dynamic.reconnectSolveBounded
+            ? request.trajectory->samples.back().orientation
+            : request.terminalOrientation;
     const auto denseOrientation = rotationMinimizingOrientations(
         dynamic.points,
         progress,
-        normalizedQuatOr(request.currentOrientation, glm::dquat(1.0, 0.0, 0.0, 0.0)),
-        normalizedQuatOr(request.terminalOrientation, glm::dquat(1.0, 0.0, 0.0, 0.0))
+        normalizedQuatOr(
+            request.currentOrientation,
+            glm::dquat(1.0, 0.0, 0.0, 0.0)
+        ),
+        normalizedQuatOr(
+            frameTerminalOrientation,
+            glm::dquat(1.0, 0.0, 0.0, 0.0)
+        )
     );
 
     auto orientationAtDistance = [&](double distance)
@@ -765,8 +1098,15 @@ GuidanceTunnel GuidanceTunnelBuilder::build(const GuidanceTunnelRequest& request
             ++hi;
         if (hi >= progress.size())
             return denseOrientation.back();
-        const double span = std::max(Epsilon, progress[hi] - progress[hi - 1]);
-        const double u = std::clamp((clamped - progress[hi - 1]) / span, 0.0, 1.0);
+        const double span = std::max(
+            Epsilon,
+            progress[hi] - progress[hi - 1]
+        );
+        const double u = std::clamp(
+            (clamped - progress[hi - 1]) / span,
+            0.0,
+            1.0
+        );
         glm::dquat a = denseOrientation[hi - 1];
         glm::dquat b = denseOrientation[hi];
         if (glm::dot(a, b) < 0.0)
@@ -775,12 +1115,18 @@ GuidanceTunnel GuidanceTunnelBuilder::build(const GuidanceTunnelRequest& request
     };
 
     const double spacing = std::max(1.0, request.gateSpacingMeters);
-    const std::size_t fullSteps = static_cast<std::size_t>(std::floor(total / spacing));
+    const std::size_t fullSteps = static_cast<std::size_t>(
+        std::floor(total / spacing)
+    );
     out.gates.reserve(fullSteps + 2);
 
     auto appendGate = [&](double distance)
     {
-        const SmoothPathPoint point = sampleCurveAtDistance(dynamic.points, progress, distance);
+        const SmoothPathPoint point = sampleCurveAtDistance(
+            dynamic.points,
+            progress,
+            distance
+        );
         GuidanceTunnelGate gate;
         gate.distanceAlongTunnelMeters = distance;
         gate.sourceTrajectoryProgressMeters = point.sourceProgressMeters;
@@ -816,17 +1162,41 @@ GuidanceTunnel GuidanceTunnelBuilder::build(const GuidanceTunnelRequest& request
             request.currentOrientation,
             out.gates.front().orientation
         );
-        out.gates.back().positionMeters = request.terminalPositionMeters;
-        out.gates.back().orientation = normalizedQuatOr(
-            request.terminalOrientation,
-            out.gates.back().orientation
-        );
+        // Bounded reconnects preserve the exact accepted terminal while they
+        // replace only the near current-pose section. Material terminal motion
+        // disables bounded mode and uses the full live-terminal reconnect.
+        if (dynamic.reconnectSolveBounded)
+        {
+            const auto& acceptedTerminal = request.trajectory->samples.back();
+            out.gates.back().positionMeters = acceptedTerminal.positionMeters;
+            out.gates.back().orientation = normalizedQuatOr(
+                acceptedTerminal.orientation,
+                out.gates.back().orientation
+            );
+        }
+        else
+        {
+            out.gates.back().positionMeters = request.terminalPositionMeters;
+            out.gates.back().orientation = normalizedQuatOr(
+                request.terminalOrientation,
+                out.gates.back().orientation
+            );
+        }
     }
+
     out.systemId = request.trajectory->systemId;
     out.frameId = request.trajectory->frameId;
-    out.passedTrajectoryProgressMeters = dynamic.passedTrajectoryProgressMeters;
+    out.passedTrajectoryProgressMeters =
+        dynamic.passedTrajectoryProgressMeters;
     out.maxCurvaturePerMeter = dynamic.maxCurvaturePerMeter;
     out.minimumTurnRadiusMeters = request.minimumTurnRadiusMeters;
+    out.reconnectSolveBounded = dynamic.reconnectSolveBounded;
+    out.reconnectFullSolveFallback = dynamic.reconnectFullSolveFallback;
+    out.reconnectSolveStartProgressMeters =
+        dynamic.reconnectSolveStartProgressMeters;
+    out.reconnectSolveEndProgressMeters =
+        dynamic.reconnectSolveEndProgressMeters;
+    out.reconnectLookaheadMeters = dynamic.reconnectLookaheadMeters;
     out.valid = true;
     return out;
 }

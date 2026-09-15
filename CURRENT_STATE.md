@@ -6,9 +6,9 @@
 **Model Asset Editor architecture:** closed at the current target boundary  
 **ModelAsset binary v4 architecture:** independent translation units closed  
 **Game runtime decomposition:** R0 seams + dual-source model ingress accepted  
-**Renderer baseline:** OpenGL 4.3 Core **accepted locally, Core build cleanup still being closed**  
+**Renderer baseline:** OpenGL 4.3 Core **accepted locally; final clean rebuild pending after tail cleanup**  
 **GPU-P0:** System Map static textured spheres **accepted locally**  
-**GPU-P0.1:** System Map repeated planar circles **contracts PASS locally; build/runtime acceptance pending**
+**GPU-P0.1:** System Map repeated planar circles **contracts PASS; build/runtime acceptance pending**
 
 ## Accepted runtime baseline
 
@@ -21,21 +21,25 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 
 `src/model_asset/ModelAsset.h` remains the single schema/version authority. Runtime-model consumer migration remains queued behind the current renderer/navigation-performance work.
 
-## OpenGL 4.3 Core — accepted runtime baseline, final build hygiene in progress
+## OpenGL 4.3 Core — accepted baseline, tail cleanup closed in source
 
-The local developer build and runtime smoke passed on 2026-09-15 for the Core migration baseline. The station-adjacent freezes predate that migration and remain explicitly deferred from renderer modernization.
+The local developer runtime smoke passed on 2026-09-15 for the Core migration baseline. The station-adjacent freezes predate that migration and remain explicitly deferred from renderer modernization.
 
-A later GPU-P0.1 rebuild exposed one missed compatibility-only API in `UICameraView::renderToTexture()`: `glPushAttrib/glPopAttrib` with `GL_VIEWPORT_BIT | GL_TRANSFORM_BIT`. The existing architecture scan did not include the attribute-stack API, so it incorrectly reported a clean Core boundary before the compiler caught it.
+Subsequent clean rebuilds exposed compatibility tails that the first static inventory had missed. They have now been removed in source:
 
-The branch now replaces that compatibility stack with explicit state handling:
+- `UICameraView::renderToTexture()` no longer uses `glPushAttrib/glPopAttrib` or compatibility attrib-bit tokens; viewport and software matrix-mode state are restored explicitly;
+- `HubBackdropCloudRenderer` no longer uses fixed-function texture environment (`glGetTexEnviv`, `glTexEnvi`, `GL_TEXTURE_ENV`, `GL_MODULATE`). `CoreGlLegacyBridge` already implements the required MODULATE semantics explicitly in GLSL as texture * vertex color;
+- `DetailMapPlanetPass` no longer queries/disables/restores `GL_ALPHA_TEST`. The affected shape-model path is intentionally opaque, so Core blending state is sufficient;
+- `GlRuntimeCapabilities` now requires and reports `GL_CONTEXT_CORE_PROFILE_BIT` / `coreProfile`, not the obsolete compatibility profile.
 
-- `GL_VIEWPORT` is captured/restored with `glGetIntegerv` + `glViewport`;
-- the software legacy bridge matrix-mode token is captured/restored explicitly;
-- the projection/model-view matrices continue to use the bridge's software push/pop stacks;
-- the zero-height guard is evaluated before FBO render-state mutation;
-- the GL43 boundary test now forbids `glPushAttrib`, `glPopAttrib`, client-attrib stacks and the compatibility attrib-bit tokens.
+The GL43 architecture guard is now materially stronger:
 
-This cleanup still requires a fresh local compile before it is considered closed.
+- fixed-function matrix/color/texture/client-array/attrib-stack APIs remain forbidden;
+- texture-environment and alpha-test symbols are explicitly forbidden;
+- every raw production `glXxx()` call and `GL_*` token is mechanically checked against the bundled OpenGL 4.3 Core GLAD header (with the local helper `glString` explicitly excluded);
+- the runtime capability gate is asserted to require Core profile.
+
+The one-shot CI migration passed all architecture contracts and `git diff --check`. A fresh local MinGW `EliteGame` rebuild is still required before declaring the cleanup fully accepted.
 
 ## GPU-P0 — System Map static textured spheres — ACCEPTED
 
@@ -66,19 +70,11 @@ This removes per-frame `sin/cos` and complete transformed-circle vertex uploads 
 
 ### Local evidence so far
 
-On 2026-09-15 the user ran:
-
-```bash
-python tests/architecture_contracts/check_gl43_modernization_boundary.py
-python tests/architecture_contracts/check_system_map_static_sphere.py
-python tests/architecture_contracts/check_system_map_gpu_circles.py
-```
-
-and all three contracts reported PASS. The subsequent `EliteGame` build stopped in `UICameraView.cpp` on the compatibility attrib-stack symbols described above, so no GPU-P0.1 runtime/visual acceptance claim is made yet.
+The user ran all three contracts locally and they reported PASS. The first clean build exposed `UICameraView` compatibility attrib-stack calls; the next build exposed fixed-function texture environment in `HubBackdropCloudRenderer` and `GL_ALPHA_TEST` in `DetailMapPlanetPass`. All of those tails plus the stale compatibility-profile runtime gate are now removed in source and covered by the stronger Core contract.
 
 ### Acceptance still required
 
-After pulling the Core attrib-stack fix, run:
+Pull the latest branch and run:
 
 ```bash
 python tests/architecture_contracts/check_gl43_modernization_boundary.py

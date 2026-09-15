@@ -43,7 +43,7 @@ The first candidate with a new per-body shader ABI was visually rejected because
 
 ## P0.1 — System Map repeated planar circles — ACCEPTANCE CANDIDATE
 
-The first repeated-primitive slice is now implemented.
+The first repeated-primitive slice is implemented.
 
 Migrated `SystemMapSceneRenderer` consumers:
 
@@ -54,59 +54,44 @@ Migrated `SystemMapSceneRenderer` consumers:
 - selected-body XZ/XY rings;
 - selected-hub XZ/XY rings.
 
-### Implementation
-
-`SystemMapGpuCircleBatch` caches resident unit circles by authored segment count. Topology is generated once and uploaded using `GL_STATIC_DRAW`.
-
-Per-frame instance payload is compact:
-
-```text
-center.xyz + radius
-color.rgba
-plane = XZ / XY
-```
-
-The GLSL 4.30 vertex shader expands the resident circle. Compatible sequential groups use `glDrawArraysInstanced(GL_LINE_LOOP, ...)` rather than one draw per circle.
-
-This removes repeated per-frame circle `sin/cos`, transformed-circle vertex construction and full-circle dynamic uploads for the migrated scene paths.
+`SystemMapGpuCircleBatch` caches resident unit circles by authored segment count and uploads topology once with `GL_STATIC_DRAW`. Per-frame payload is center/radius/color plus XY/XZ plane selection; compatible groups use `glDrawArraysInstanced(GL_LINE_LOOP, ...)`.
 
 `tests/architecture_contracts/check_system_map_gpu_circles.py` prevents the scene from silently returning to the old CPU circle API.
 
-**Status:** implementation complete; local build/runtime/visual acceptance pending.
+**Status:** implementation complete; contracts PASS locally; final clean build/runtime/visual acceptance after Core-tail cleanup is still pending.
 
-### Deliberately outside this slice
+Do not migrate dormant circle helpers, billboard/proxy markers or arbitrary line/solid paths merely for code purity. Those remain profile-gated.
 
-- arbitrary dynamic lines / `flushLines()`;
-- `addOrbitCircle3D()`;
-- billboard/proxy body markers and halos;
-- `addBillboardBall()` and remaining dynamic solids.
+## Navigation freeze — explicit Ruckig experiment before GPU work
 
-Do not migrate dormant helpers merely for purity. Billboard/proxy marker work is now profile-gated rather than automatically sequenced ahead of navigation performance.
+The route/trajectory calculation can produce a user-visible machine stall. The original next step was NAV-PERF-0 instrumentation. The user explicitly chose to try the MIT-licensed Ruckig Community Edition first as a replacement candidate for the expensive repeated state-to-state shooting solve.
 
-## NAV-PERF-0 — route / trajectory freeze — NEXT AFTER P0.1 ACCEPTANCE
+### NAV-RUCKIG-0 — active isolated spike
 
-The route/trajectory calculation can produce a user-visible machine stall, so it takes priority immediately after the current circle candidate is accepted.
+Pinned upstream:
 
-The first wave is instrumentation only. Capture at least:
+```text
+Ruckig v0.19.4
+a8db97a4e9c55e5160a3855f739fa3b270df8e4c
+```
 
-- total planner wall time;
-- `TrajectoryPredictor` call count;
-- integration-step count;
-- gravity sample/body-evaluation count;
-- `predictLeg()` shooting-correction iterations;
-- safety trajectory-segment count;
-- obstacle/restricted-volume/scheduled-traffic checks;
-- detour/emergency candidate count.
+The spike is deliberately outside the production build. `RuckigTrajectorySolver` hides Ruckig behind an Elite-only public seam; only the adapter implementation is C++20. `tests/navigation_ruckig` fetches/builds the exact commit with cloud client, examples, upstream tests, benchmark, Python module and shared-library build disabled.
 
-### Working hypothesis
+The adapter solves in an accelerating co-moving terminal frame rather than feeding orbital-scale world coordinates directly into Ruckig. It then reconstructs world states, resamples `GravityFieldSystem`, and validates Elite scalar proper-acceleration/proper-jerk limits before returning the normal `TrajectoryPredictionResult` form.
 
-A direct compute-shader port of one current trajectory is not the preferred first move. The integration is sequential in time, uses double-precision state and feeds CPU planner decisions. Algorithmic repetition, fixed integration granularity, safety broad-phase cost and synchronous main-thread execution must be measured first.
+The spike measures a 500-solve wall-time benchmark but has no hard performance threshold yet. First acceptance requires endpoint/limit tests, orbital-scale numerical stability, Earth-like gravity behavior and infeasible-horizon rejection on the developer MinGW toolchain.
 
-Potential CPU-side wins include adaptive integration step, fewer/replaced shooting iterations, spatial broad phase, caching and asynchronous planning with an explicit time/work budget.
+### Why this still follows the GPU-offload policy
+
+The current single-trajectory integrator is sequential in time, double-precision-heavy and feeds CPU planner decisions. Replacing repeated shooting iterations with an analytic/online trajectory generator is a more appropriate first experiment than blindly moving the same sequential algorithm to a compute shader.
+
+If Ruckig passes, the next wave is a production A/B path with the old `TrajectoryPredictor` retained as deterministic fallback/reference and `TrajectorySafetyEvaluator` unchanged. Timing and fallback counters then establish whether the route freeze is solved or whether safety/broad-phase work still dominates.
+
+If Ruckig fails or is not materially faster, NAV-PERF instrumentation remains the fallback next step.
 
 ### Legitimate future GPU shape
 
-GPU compute becomes attractive if the optimized planner needs to evaluate many independent candidates or many independent candidate-segment/hazard pairs:
+GPU compute remains attractive if the optimized planner later needs many independent candidates or many independent candidate-segment/hazard checks:
 
 ```text
 CPU authoritative planner
@@ -116,19 +101,11 @@ CPU authoritative planner
     -> CPU selects/validates the winning candidate
 ```
 
-The CPU `TrajectoryPredictor` remains the reference implementation. GPU evaluation, if justified by measurements, is a derivative/batched accelerator rather than a replacement for navigation authority.
+This is a derivative/batched accelerator, not a replacement for navigation authority.
 
 ## P1 — Scene visual traffic culling/LOD, profile-gated
 
-This remains conditional and is now behind NAV-PERF-0. Before implementation, record representative target-scale values for:
-
-- `prepareScene()` CPU time;
-- visual ship count;
-- prepared part count;
-- proxy/full-model counts;
-- `cpuVisualShipsMs`;
-- instance upload bytes;
-- draw-call count.
+This remains conditional and behind the route-performance investigation. Before implementation, record representative target-scale values for `prepareScene()` CPU time, visual ship count, prepared part count, proxy/full-model counts, `cpuVisualShipsMs`, instance upload bytes and draw-call count.
 
 Only if target-scale cost is material should the design proceed toward GPU-resident static assembly metadata + compact per-ship dynamic state + compute visibility/LOD/compaction + indirect/instanced rendering. There must be no per-frame GPU -> CPU visibility readback.
 
@@ -152,7 +129,7 @@ The starfield catalog rebuild is threshold-triggered rather than per-frame. Leav
 - `GalaxyDatabase` parsing/validation;
 - offline/cached load-once asset work.
 
-`TrajectoryPredictor` is the CPU reference. Batched GPU candidate/safety evaluation is explicitly allowed only after NAV-PERF profiling demonstrates it is worthwhile and without synchronous fine-grained readback.
+The existing `TrajectoryPredictor` remains the CPU reference/fallback while Ruckig is evaluated. Batched GPU candidate/safety evaluation is allowed only after measurements justify it and without synchronous fine-grained readback.
 
 ## Already GPU-driven
 

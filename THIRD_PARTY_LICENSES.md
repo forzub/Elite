@@ -36,6 +36,21 @@ the font binary declared in the manifest, which upstream documents as OFL-1.1.
 - `src/assets/data/celestial/environment/**/*.json` contains per-preset `provenance` metadata (for example NASA observational-source identifiers). Those fields document data origin but are **not** treated as redistribution licenses for photographs, textures or 3D models.
 - In the `src(20260817-132129).zip` baseline there is no separate asteroid-model or planetary-surface-image NOTICE/LICENSE file to index. If those source-license files exist outside this archive, or when such assets are added again, copy/retain their original notices and add explicit entries here before release.
 
+## Candidate runtime dependency — Ruckig
+
+- **Component:** Ruckig Community Edition.
+- **Purpose:** candidate real-time trajectory generator for terminal navigation: jerk-limited motion from the current position/velocity/acceleration state to a constrained target state.
+- **Upstream:** `https://github.com/pantor/ruckig`.
+- **Reviewed release:** `v0.19.4` (latest release reviewed on 2026-09-15). Pin the exact integrated release/commit when the dependency is actually added to the build.
+- **License:** MIT License for the open-source/community repository code reviewed here.
+- **Project-use status:** approved for evaluation and integration into Elite, including commercial/proprietary distribution, subject to the MIT notice requirement below. It is not yet recorded here as a bundled runtime dependency.
+- **Obligation:** retain/include the upstream copyright notice and MIT permission notice in all redistributed copies or substantial portions of the Ruckig software.
+- **Copyleft:** none; the MIT license does not require Elite source code or modifications to Elite to be disclosed merely because Ruckig is used.
+- **Modification/distribution:** use, copy, modify, merge, publish, distribute, sublicense and sell are permitted under the MIT terms.
+- **Warranty:** upstream software is provided `AS IS`, without warranty.
+- **Excluded from this approval:** Ruckig Pro or any separately licensed/proprietary component is not covered by this MIT review and requires separate license review before use.
+- **License text:** `src/assets/licenses/RUCKIG-MIT.txt` (verbatim upstream MIT text).
+
 ## Maintenance rule
 
 Any new third-party font, model, texture, photograph, audio asset, icon pack,

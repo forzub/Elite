@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -100,6 +101,25 @@ struct DockingTerminalStateReport
     glm::dvec3 requiredVelocityMps {0.0};
 };
 
+struct LocalGuidanceBackendDiagnostics
+{
+    // One attempt corresponds to one requested state-to-state leg. Ruckig is
+    // tried first; legacy shooting remains the deterministic fallback/reference.
+    std::size_t ruckigLegAttempts = 0;
+    std::size_t ruckigLegSuccesses = 0;
+    std::size_t ruckigFallbacks = 0;
+
+    // Counts actual legacy TrajectoryPredictor invocations. One fallback leg can
+    // still use several shooting iterations, so this is the expensive number
+    // that NAV-RUCKIG-1 is expected to collapse in normal cases.
+    std::size_t legacyPredictorCalls = 0;
+
+    double ruckigSolveMicroseconds = 0.0;
+    double legacyFallbackMicroseconds = 0.0;
+
+    std::string lastRuckigFailure;
+};
+
 struct LocalGuidanceResult
 {
     LocalGuidanceStatus status = LocalGuidanceStatus::InvalidRequest;
@@ -109,6 +129,7 @@ struct LocalGuidanceResult
     TrajectoryPredictionResult prediction;
     TrajectorySafetyReport safety;
     DockingTerminalStateReport terminal;
+    LocalGuidanceBackendDiagnostics backendDiagnostics;
     bool detourUsed = false;
     bool emergencyEscapeUsed = false;
 
@@ -132,10 +153,10 @@ struct LocalGuidanceResult
     perpendicular to that plane. Corridor frames carry the required hull pose
     and converge on dock up/down orientation. The planner never moves the ship.
 
-    Every translational candidate is predicted by TrajectoryPredictor and
-    validated by TrajectorySafetyEvaluator. If docking cannot be made safe, the
-    planner tries a separate EmergencyEscape corridor while leaving the primary
-    docking intent intact for rolling replanning.
+    State-to-state translational legs are Ruckig-first. The existing
+    TrajectoryPredictor shooting path remains the deterministic fallback and
+    reference while NAV-RUCKIG-1 is under runtime A/B acceptance. Every
+    resulting candidate is still validated by TrajectorySafetyEvaluator.
 */
 class LocalGuidancePlanner
 {

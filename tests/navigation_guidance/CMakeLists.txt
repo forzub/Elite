@@ -37,12 +37,28 @@ add_executable(
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingPortRuntimeStateCatalog.cpp"
 )
 
-target_include_directories(
-    navigation_guidance_tests
-    PRIVATE
-        "${ELITE_SOURCE_ROOT}"
-        "${ELITE_SOURCE_ROOT}/src"
+add_executable(
+    guidance_tunnel_local_horizon_tests
+    GuidanceTunnelLocalHorizonTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/NavigationObstacleGeometry.cpp"
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/SmoothPathOptimizer.cpp"
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/GuidanceTunnel.cpp"
 )
+
+foreach(target navigation_guidance_tests guidance_tunnel_local_horizon_tests)
+    target_include_directories(
+        ${target}
+        PRIVATE
+            "${ELITE_SOURCE_ROOT}"
+            "${ELITE_SOURCE_ROOT}/src"
+    )
+
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4 /permissive-)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endforeach()
 
 target_link_libraries(
     navigation_guidance_tests
@@ -51,14 +67,20 @@ target_link_libraries(
         nlohmann_json::nlohmann_json
 )
 
-if(MSVC)
-    target_compile_options(navigation_guidance_tests PRIVATE /W4 /permissive-)
-else()
-    target_compile_options(navigation_guidance_tests PRIVATE -Wall -Wextra -Wpedantic)
-endif()
+target_link_libraries(
+    guidance_tunnel_local_horizon_tests
+    PRIVATE
+        nlohmann_json::nlohmann_json
+)
 
 add_test(NAME navigation_guidance COMMAND navigation_guidance_tests)
+add_test(
+    NAME guidance_tunnel_local_horizon
+    COMMAND guidance_tunnel_local_horizon_tests
+)
+
 set_tests_properties(
     navigation_guidance
+    guidance_tunnel_local_horizon
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )

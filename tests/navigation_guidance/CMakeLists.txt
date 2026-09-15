@@ -38,13 +38,23 @@ add_executable(
 )
 
 add_executable(
+    ruckig_route_planner_tests
+    RuckigRoutePlannerTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/NavigationObstacleGeometry.cpp"
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/TrajectoryGenerator.cpp"
+)
+
+add_executable(
     guidance_tunnel_local_horizon_tests
     GuidanceTunnelLocalHorizonTests.cpp
     "${ELITE_SOURCE_ROOT}/src/world/navigation/NavigationObstacleGeometry.cpp"
     "${ELITE_SOURCE_ROOT}/src/world/navigation/GuidanceTunnel.cpp"
 )
 
-foreach(target navigation_guidance_tests guidance_tunnel_local_horizon_tests)
+foreach(target
+        navigation_guidance_tests
+        ruckig_route_planner_tests
+        guidance_tunnel_local_horizon_tests)
     target_include_directories(
         ${target}
         PRIVATE
@@ -67,6 +77,13 @@ target_link_libraries(
 )
 
 target_link_libraries(
+    ruckig_route_planner_tests
+    PRIVATE
+        EliteNavigationRuckig
+        nlohmann_json::nlohmann_json
+)
+
+target_link_libraries(
     guidance_tunnel_local_horizon_tests
     PRIVATE
         EliteNavigationRuckig
@@ -74,6 +91,7 @@ target_link_libraries(
 )
 
 add_test(NAME navigation_guidance COMMAND navigation_guidance_tests)
+add_test(NAME ruckig_route_planner COMMAND ruckig_route_planner_tests)
 add_test(
     NAME guidance_tunnel_local_horizon
     COMMAND guidance_tunnel_local_horizon_tests
@@ -81,6 +99,7 @@ add_test(
 
 set_tests_properties(
     navigation_guidance
+    ruckig_route_planner
     guidance_tunnel_local_horizon
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )

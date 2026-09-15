@@ -19,9 +19,9 @@ namespace world::navigation
 /*
     Spatial manual-flight guide sampled at equal arc-length intervals.
 
-    The tunnel is deliberately separate from HUD rendering.  Each gate is a
+    The tunnel is deliberately separate from HUD rendering. Each gate is a
     desired vehicle pose in the trajectory's planning frame, so the same data
-    can later feed a trajectory follower.  Width/height describe one constant
+    can later feed a trajectory follower. Width/height describe one constant
     docking aperture-sized visual frame; tolerances describe the allowed
     vehicle-centre window after hull dimensions/clearance are accounted for.
 */
@@ -46,11 +46,21 @@ struct GuidanceTunnel
     int systemId = -1;
     std::string frameId;
     std::vector<GuidanceTunnelGate> gates;
+
     // Progress on the immutable trajectory that is already behind the live
     // ship when this dynamic corridor was rebuilt. No passed gate is emitted.
     double passedTrajectoryProgressMeters = 0.0;
     double maxCurvaturePerMeter = 0.0;
     double minimumTurnRadiusMeters = 0.0;
+
+    // Rolling reconnect diagnostics. A bounded solve changes only the near
+    // current-pose -> accepted-trajectory rejoin. The untouched accepted tail
+    // is then stitched back on, so the tunnel still ends at the real dock.
+    bool reconnectSolveBounded = false;
+    bool reconnectFullSolveFallback = false;
+    double reconnectSolveStartProgressMeters = 0.0;
+    double reconnectSolveEndProgressMeters = 0.0;
+    double reconnectLookaheadMeters = 0.0;
 };
 
 enum class GuidanceTunnelBuildMode
@@ -81,8 +91,8 @@ struct GuidanceTunnelRequest
     glm::dvec3 terminalPositionMeters {0.0};
     glm::dquat terminalOrientation {1.0, 0.0, 0.0, 0.0};
 
-    // Gates are equidistant by actual warped tunnel arc length.  The final
-    // gate is always emitted even when the remaining distance is shorter.
+    // Gates are equidistant by actual warped tunnel arc length. The final gate
+    // is always emitted even when the remaining distance is shorter.
     double gateSpacingMeters = 25.0;
 
     // One size for the complete tunnel, intentionally close to the usable
@@ -93,8 +103,8 @@ struct GuidanceTunnelRequest
     double verticalToleranceMeters = 0.0;
 
     // The near end follows the actual vehicle pose, then smoothly returns to
-    // the immutable planned trajectory.  The far end smoothly follows the
-    // live docking pose while retaining a locked terminal approach.
+    // the immutable planned trajectory. The far end smoothly follows the live
+    // docking pose while retaining a locked terminal approach.
     double startCaptureDistanceMeters = 250.0;
     double terminalAlignmentDistanceMeters = 350.0;
 
@@ -115,6 +125,22 @@ struct GuidanceTunnelRequest
     // kilometres or form a broad loop, but must not exceed this curvature.
     // Zero disables the bound.
     double minimumTurnRadiusMeters = 0.0;
+
+    // NAV-LIVE-1: the expensive rolling reconnect is a local planning problem,
+    // not a second solve of the whole route. Its automatic horizon is at least
+    //
+    //   v*T_latency + v^2/(2*a_brake) + turn_distance + safety_margin
+    //
+    // and is measured along the already accepted trajectory. The accepted tail
+    // remains immutable and is stitched after the locally validated reconnect.
+    double reconnectPlanningLatencySeconds = 0.75;
+    double reconnectSafetyMarginMeters = 0.0; // 0 => automatic conservative margin
+
+    // A visibly moving terminal needs its own bounded terminal-tail solver.
+    // Until that exists, material terminal motion deliberately falls back to
+    // the previous full reconnect rather than making an unsafe approximation.
+    double reconnectMaxTerminalPositionDriftMeters = 2.0;
+    double reconnectMaxTerminalAngleDriftRadians = 0.008726646259971648; // 0.5 deg
 };
 
 class GuidanceTunnelBuilder

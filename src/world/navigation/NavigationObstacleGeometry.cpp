@@ -129,6 +129,49 @@ glm::dvec3 capsuleAxis(const NavigationObstacle& obstacle) noexcept
         return glm::dvec3(0.0, 0.0, 1.0);
     return raw / std::sqrt(length2);
 }
+
+double obstacleBroadphaseRadiusMeters(
+    const NavigationObstacle& obstacle,
+    double inflation
+) noexcept
+{
+    if (obstacle.shape == NavigationObstacleShape::Box)
+    {
+        const glm::dvec3 h =
+            glm::max(obstacle.halfExtentsMeters, glm::dvec3(0.0)) +
+            glm::dvec3(inflation);
+        return glm::length(h);
+    }
+
+    if (obstacle.shape == NavigationObstacleShape::Capsule)
+    {
+        return std::max(0.0, obstacle.capsuleHalfLengthMeters) +
+            std::max(0.0, obstacle.radiusMeters) + inflation;
+    }
+
+    return std::max(0.0, obstacle.radiusMeters) + inflation;
+}
+
+bool segmentOutsideObstacleBroadphase(
+    const glm::dvec3& startMeters,
+    const glm::dvec3& endMeters,
+    const NavigationObstacle& obstacle,
+    double inflation
+) noexcept
+{
+    // Conservative enclosing sphere. If the complete inflated obstacle fits
+    // inside this sphere and the segment misses the sphere, the exact shape
+    // test cannot possibly collide. This changes only cost, never safety.
+    const double radius = obstacleBroadphaseRadiusMeters(obstacle, inflation);
+    if (!std::isfinite(radius) || radius < 0.0)
+        return false;
+
+    return pointSegmentDistanceSquared(
+        obstacle.centerMeters,
+        startMeters,
+        endMeters
+    ) > radius * radius;
+}
 }
 
 double navigationObstacleInflationMeters(
@@ -198,6 +241,15 @@ bool segmentIntersectsNavigationObstacle(
         agentRadiusMeters,
         additionalClearanceMeters
     );
+
+    if (segmentOutsideObstacleBroadphase(
+            startMeters,
+            endMeters,
+            obstacle,
+            inflation))
+    {
+        return false;
+    }
 
     if (obstacle.shape == NavigationObstacleShape::Box)
     {

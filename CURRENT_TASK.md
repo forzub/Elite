@@ -58,9 +58,23 @@ Ruckig is only a candidate **leg generator**. It does not replace:
 - route selection;
 - ship control/authority.
 
+## Latest local result
+
+The architecture contract passed. The first MinGW build then failed inside pinned upstream Ruckig before our solver linked because `ruckig/roots.hpp` uses `M_PI`, while strict MinGW `-std=c++20` hides that non-standard macro.
+
+This is now fixed in the isolated spike CMake with a target-local MinGW portability shim:
+
+```cmake
+if(MINGW)
+    target_compile_definitions(ruckig PUBLIC _USE_MATH_DEFINES)
+endif()
+```
+
+The guard test now requires that shim so the issue cannot silently return. No solver correctness or performance conclusion should be drawn from the failed build; execution never reached the tests.
+
 ## Local acceptance now
 
-Run:
+Pull the fix and rerun:
 
 ```bash
 git fetch origin
@@ -70,7 +84,7 @@ python tests/architecture_contracts/check_ruckig_navigation_spike.py
 bash tests/navigation_ruckig/run_mingw64.sh
 ```
 
-The first CMake configure will fetch the pinned Ruckig commit from GitHub.
+The existing FetchContent checkout/build directory may be reused; no manual deletion should be necessary because CMake will regenerate the target compile definitions.
 
 Expected functional coverage:
 

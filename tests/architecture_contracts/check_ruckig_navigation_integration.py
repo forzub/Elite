@@ -19,14 +19,19 @@ def require(condition: bool, message: str) -> None:
 
 require(PIN in RUCKIG_CMAKE, "runtime Ruckig dependency is not pinned to reviewed commit")
 for option in (
-    "BUILD_EXAMPLES OFF",
-    "BUILD_PYTHON_MODULE OFF",
-    "BUILD_CLOUD_CLIENT OFF",
-    "BUILD_TESTS OFF",
-    "BUILD_BENCHMARK OFF",
-    "BUILD_SHARED_LIBS OFF",
+    "BUILD_EXAMPLES",
+    "BUILD_PYTHON_MODULE",
+    "BUILD_CLOUD_CLIENT",
+    "BUILD_TESTS",
+    "BUILD_BENCHMARK",
+    "BUILD_SHARED_LIBS",
 ):
     require(option in RUCKIG_CMAKE, f"runtime Ruckig build lost isolation option: {option}")
+require("set(${_option} OFF CACHE BOOL \"\" FORCE)" in RUCKIG_CMAKE,
+        "Ruckig dependency options are not forced OFF during dependency configure")
+require("_ELITE_RUCKIG_OLD_${_option}" in RUCKIG_CMAKE and
+        "unset(${_option} CACHE)" in RUCKIG_CMAKE,
+        "Ruckig generic cache options are not restored after dependency configure")
 
 require("target_compile_features(${TARGET_NAME} PRIVATE cxx_std_20)" in RUCKIG_CMAKE,
         "Ruckig C++20 boundary is not private")
@@ -66,4 +71,5 @@ print("RUCKIG NAVIGATION INTEGRATION: PASS")
 print(" - Ruckig-first state-to-state leg generation")
 print(" - legacy shooting predictor retained as deterministic fallback")
 print(" - per-plan attempts/success/fallback/timing diagnostics exposed")
+print(" - generic upstream cache options restored after Ruckig configure")
 print(" - client/server and guidance tests share the pinned C++20 adapter target")

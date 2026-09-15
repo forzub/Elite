@@ -1,8 +1,12 @@
 #include "src/world/navigation/SmoothPathOptimizer.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <fstream>
+#include <iomanip>
 #include <limits>
+#include <mutex>
 #include <utility>
 
 #include "src/world/navigation/NavigationObstacleGeometry.h"
@@ -13,6 +17,82 @@ namespace
 {
 constexpr double Epsilon = 1.0e-9;
 constexpr int MaxAdaptiveDepth = 18;
+
+using PerfClock = std::chrono::steady_clock;
+
+double elapsedMs(const PerfClock::time_point& begin)
+{
+    return std::chrono::duration<double, std::milli>(
+        PerfClock::now() - begin
+    ).count();
+}
+
+struct CandidatePerf
+{
+    std::size_t level = 0;
+    std::size_t controlCount = 0;
+    std::size_t sampleCount = 0;
+    double sampleMs = 0.0;
+    double safetyMs = 0.0;
+    double qualityMs = 0.0;
+    bool safe = false;
+    bool curvatureAccepted = false;
+};
+
+void appendNavigationPerf(
+    const SmoothPathRequest& request,
+    const SmoothPathResult& result,
+    double totalMs,
+    const std::vector<CandidatePerf>& candidates,
+    double fallbackSampleMs = 0.0,
+    double fallbackSafetyMs = 0.0,
+    std::size_t fallbackSamples = 0
+)
+{
+    static std::mutex mutex;
+    static std::ofstream out("navigation_perf.log", std::ios::app);
+    if (!out)
+        return;
+
+    std::lock_guard<std::mutex> lock(mutex);
+    out << std::fixed << std::setprecision(4)
+        << "[SmoothPathPerf] total_ms=" << totalMs
+        << " path_points=" << request.pathPointsMeters.size()
+        << " obstacles=" << request.obstacles.size()
+        << " max_support=" << request.maxSupportLevel
+        << " spacing_m=" << request.maxSampleSpacingMeters
+        << " chord_error_m=" << request.maxChordErrorMeters
+        << " candidates=" << result.diagnostics.candidatesEvaluated
+        << " safe_candidates=" << result.diagnostics.safeCandidates
+        << " selected_support=" << result.diagnostics.selectedSupportLevel
+        << " output_samples=" << result.points.size()
+        << " fallback=" << (result.diagnostics.fellBackToPolyline ? 1 : 0)
+        << " valid=" << (result.valid ? 1 : 0)
+        << '\n';
+
+    for (const CandidatePerf& candidate : candidates)
+    {
+        out << std::fixed << std::setprecision(4)
+            << "[SmoothCandidatePerf] level=" << candidate.level
+            << " controls=" << candidate.controlCount
+            << " samples=" << candidate.sampleCount
+            << " sample_ms=" << candidate.sampleMs
+            << " safety_ms=" << candidate.safetyMs
+            << " quality_ms=" << candidate.qualityMs
+            << " safe=" << (candidate.safe ? 1 : 0)
+            << " curvature_ok=" << (candidate.curvatureAccepted ? 1 : 0)
+            << '\n';
+    }
+
+    if (fallbackSamples > 0)
+    {
+        out << std::fixed << std::setprecision(4)
+            << "[SmoothFallbackPerf] samples=" << fallbackSamples
+            << " sample_ms=" << fallbackSampleMs
+            << " safety_ms=" << fallbackSafetyMs
+            << '\n';
+    }
+}
 
 bool finite(double value) noexcept
 {
@@ -71,7 +151,7 @@ std::vector<ControlPoint> makeControls(
         }
     }
 
-    // Cubic B-spline needs four controls.  A two/three-point route remains a
+    // Cubic B-spline needs four controls. A two/three-point route remains a
     // straight/planar curve by inserting controls on the same segments.
     while (controls.size() < 4 && controls.size() >= 2)
     {
@@ -125,13 +205,22 @@ std::size_t findSpan(
     const std::size_t n = controlCount - 1;
     if (u >= 1.0 - Epsilon)
         return n;
+
     const std::size_t p = static_cast<std::size_t>(degree);
-    for (std::size_t span = p; span <= n; ++span)
-    {
-        if (u >= knots[span] && u < knots[span + 1])
-            return span;
-    }
-    return p;
+
+    // The previous implementation linearly scanned every knot for every
+    // adaptive spline evaluation. With support level 5 this turns thousands
+    // of samples into millions of avoidable comparisons. upper_bound preserves
+    // the exact half-open span semantics (including values exactly on an
+    // interior knot) while reducing lookup to O(log controls).
+    const auto it = std::upper_bound(knots.begin(), knots.end(), u);
+    if (it == knots.begin())
+        return p;
+
+    const std::size_t raw = static_cast<std::size_t>(
+        std::distance(knots.begin(), it) - 1
+    );
+    return std::clamp(raw, p, n);
 }
 
 SmoothPathPoint evaluateSpline(
@@ -333,7 +422,7 @@ CurveQuality quality(const std::vector<SmoothPathPoint>& points)
     for (std::size_t i = 2; i + 1 < points.size(); ++i)
         q.curvatureVariation += std::abs(curvature[i] - curvature[i - 1]);
 
-    // Smoothness dominates distance deliberately.  A longer broad approach is
+    // Smoothness dominates distance deliberately. A longer broad approach is
     // cheaper than a short route that demands a visually abrupt turn.
     q.score = q.maxCurvature * 1.0e8 +
         q.curvatureVariation * 1.0e7 +
@@ -392,10 +481,12 @@ bool validRequest(const SmoothPathRequest& request)
 
 SmoothPathResult SmoothPathOptimizer::optimize(const SmoothPathRequest& request)
 {
+    const auto totalBegin = PerfClock::now();
     SmoothPathResult out;
     if (!validRequest(request))
     {
         out.message = "invalid smooth path request";
+        appendNavigationPerf(request, out, elapsedMs(totalBegin), {});
         return out;
     }
 
@@ -416,26 +507,50 @@ SmoothPathResult SmoothPathOptimizer::optimize(const SmoothPathRequest& request)
         out.diagnostics.coarseLengthMeters <= Epsilon)
     {
         out.message = "smooth path source has zero length";
+        appendNavigationPerf(request, out, elapsedMs(totalBegin), {});
         return out;
     }
+
+    std::vector<CandidatePerf> candidatePerf;
+    candidatePerf.reserve(request.maxSupportLevel + 1);
 
     double bestScore = std::numeric_limits<double>::infinity();
     for (std::size_t level = 0; level <= request.maxSupportLevel; ++level)
     {
         ++out.diagnostics.candidatesEvaluated;
+        CandidatePerf perf;
+        perf.level = level;
+
         const auto controls = makeControls(request.pathPointsMeters, progress, level);
+        perf.controlCount = controls.size();
+
+        const auto sampleBegin = PerfClock::now();
         const auto candidate = sampleSpline(
             controls,
             std::max(0.5, request.maxSampleSpacingMeters),
             std::max(1.0e-4, request.maxChordErrorMeters)
         );
-        if (!pathSafe(candidate, request))
-            continue;
+        perf.sampleMs = elapsedMs(sampleBegin);
+        perf.sampleCount = candidate.size();
 
-        const CurveQuality q = quality(candidate);
-        if (request.maxCurvaturePerMeter > 0.0 &&
-            q.maxCurvature > request.maxCurvaturePerMeter + 1.0e-10)
+        const auto safetyBegin = PerfClock::now();
+        perf.safe = pathSafe(candidate, request);
+        perf.safetyMs = elapsedMs(safetyBegin);
+        if (!perf.safe)
         {
+            candidatePerf.push_back(perf);
+            continue;
+        }
+
+        const auto qualityBegin = PerfClock::now();
+        const CurveQuality q = quality(candidate);
+        perf.qualityMs = elapsedMs(qualityBegin);
+        perf.curvatureAccepted =
+            request.maxCurvaturePerMeter <= 0.0 ||
+            q.maxCurvature <= request.maxCurvaturePerMeter + 1.0e-10;
+        if (!perf.curvatureAccepted)
+        {
+            candidatePerf.push_back(perf);
             continue;
         }
 
@@ -449,26 +564,43 @@ SmoothPathResult SmoothPathOptimizer::optimize(const SmoothPathRequest& request)
             out.diagnostics.maxCurvaturePerMeter = q.maxCurvature;
             out.diagnostics.curvatureVariation = q.curvatureVariation;
         }
+        candidatePerf.push_back(perf);
     }
 
     if (!out.points.empty())
     {
         out.valid = true;
         out.message = "collision-free global cubic B-spline path";
+        appendNavigationPerf(
+            request,
+            out,
+            elapsedMs(totalBegin),
+            candidatePerf
+        );
         return out;
     }
 
     // Trajectory generation may retain a known-safe coarse topology. Manual
     // guidance explicitly disables this: a kinked polyline is not a usable
     // pilot corridor even when it is collision-free.
+    double fallbackSampleMs = 0.0;
+    double fallbackSafetyMs = 0.0;
+    std::size_t fallbackSamples = 0;
     if (request.allowPolylineFallback)
     {
+        const auto fallbackSampleBegin = PerfClock::now();
         auto fallback = rawPolyline(
             request.pathPointsMeters,
             progress,
             std::max(0.5, request.maxSampleSpacingMeters)
         );
-        if (pathSafe(fallback, request))
+        fallbackSampleMs = elapsedMs(fallbackSampleBegin);
+        fallbackSamples = fallback.size();
+
+        const auto fallbackSafetyBegin = PerfClock::now();
+        const bool fallbackSafe = pathSafe(fallback, request);
+        fallbackSafetyMs = elapsedMs(fallbackSafetyBegin);
+        if (fallbackSafe)
         {
             const CurveQuality q = quality(fallback);
             const bool curvatureOk = request.maxCurvaturePerMeter <= 0.0 ||
@@ -482,6 +614,15 @@ SmoothPathResult SmoothPathOptimizer::optimize(const SmoothPathRequest& request)
                 out.diagnostics.fellBackToPolyline = true;
                 out.valid = true;
                 out.message = "safe coarse path fallback";
+                appendNavigationPerf(
+                    request,
+                    out,
+                    elapsedMs(totalBegin),
+                    candidatePerf,
+                    fallbackSampleMs,
+                    fallbackSafetyMs,
+                    fallbackSamples
+                );
                 return out;
             }
         }
@@ -490,6 +631,15 @@ SmoothPathResult SmoothPathOptimizer::optimize(const SmoothPathRequest& request)
     out.message = request.maxCurvaturePerMeter > 0.0
         ? "no collision-free curve within curvature bound"
         : "no collision-free global smooth path";
+    appendNavigationPerf(
+        request,
+        out,
+        elapsedMs(totalBegin),
+        candidatePerf,
+        fallbackSampleMs,
+        fallbackSafetyMs,
+        fallbackSamples
+    );
     return out;
 }
 

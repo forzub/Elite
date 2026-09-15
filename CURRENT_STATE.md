@@ -9,50 +9,47 @@
 **Renderer baseline:** OpenGL 4.3 Core accepted locally  
 **GPU-P0:** System Map static textured spheres accepted locally  
 **GPU-P0.1:** repeated planar System Map circles/orbits accepted locally  
-**Navigation:** NAV-RUCKIG-0 isolated spike accepted; active task is NAV-LIVE-0 on the actual runtime docking path
+**Navigation:** NAV-RUCKIG-0 isolated spike accepted; NAV-LIVE-1 active
 
 ## Accepted runtime baseline
 
-`EliteNavigationGeometry` and `EliteAssemblyGeometry` remain the shared deterministic/runtime geometry seams. Dual-source model ingress remains accepted and unchanged:
+`EliteNavigationGeometry` and `EliteAssemblyGeometry` remain the shared
+runtime/deterministic geometry seams.
+
+Dual-source model ingress remains accepted:
 
 ```text
 legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 .elmodel   -> CompiledModelAssetReader -> ModelAssetBinary       -> ModelAsset
 ```
 
-`src/model_asset/ModelAsset.h` remains the single schema/version authority. Runtime-model consumer migration remains queued behind current navigation/performance work.
+`src/model_asset/ModelAsset.h` is the single schema/version authority.
+Runtime-model consumer migration remains queued behind current
+navigation/performance work.
 
 ## Renderer status
 
-OpenGL 4.3 Core is accepted locally. GPU-P0 resident System Map textured spheres and GPU-P0.1 instanced repeated planar circles/orbits are accepted locally after visual runtime confirmation. The renderer wave is paused.
+OpenGL 4.3 Core is accepted locally. GPU-P0 resident System Map textured spheres
+and GPU-P0.1 instanced repeated planar circles/orbits are accepted after visual
+runtime confirmation. The renderer wave is paused.
 
-The station-adjacent freeze predates renderer modernization and remains explicitly deferred. It must not be conflated with the docking-guidance stall discussed below.
+The old station-adjacent renderer freeze predates renderer modernization and is
+still a separate deferred issue. Do not conflate it with docking guidance stalls.
 
 ## Ruckig status
 
-Ruckig Community Edition is approved under MIT and pinned to:
+Ruckig Community Edition v0.19.4 / commit
+`a8db97a4e9c55e5160a3855f739fa3b270df8e4c` is accepted under MIT; license text
+is retained in `src/assets/licenses/RUCKIG-MIT.txt` and provenance in
+`THIRD_PARTY_LICENSES.md`.
 
-```text
-release: v0.19.4
-commit:  a8db97a4e9c55e5160a3855f739fa3b270df8e4c
-```
+NAV-RUCKIG-0 is accepted locally. The production Ruckig-first
+`LocalGuidancePlanner::predictLeg()` remains useful, with legacy shooting fallback
+and diagnostics, but it is **not** the live `CALCULATE ROUTE` docking path.
 
-The exact MIT text is retained at `src/assets/licenses/RUCKIG-MIT.txt`; provenance and redistribution obligations are recorded in `THIRD_PARTY_LICENSES.md`.
+## Live docking path
 
-NAV-RUCKIG-0 is accepted locally. The MinGW spike passes stationary transfer, orbital-scale local-frame motion, gravity-compensated motion and infeasible-horizon rejection. Integration fixes retained permanently are:
-
-- target-local `_USE_MATH_DEFINES` for Ruckig v0.19.4 under MinGW C++20;
-- conservative conversion of Elite scalar acceleration/jerk magnitude limits to Ruckig per-axis limits using `L / sqrt(3)`, followed by authoritative scalar validation.
-
-The branch also contains a production Ruckig-first `LocalGuidancePlanner::predictLeg()` with the legacy shooting predictor retained as fallback and explicit attempt/fallback/timing diagnostics.
-
-## Critical runtime finding
-
-The user's real docking-route test still shows obvious frame stalls and a stale cockpit tunnel after hull-pose changes. This means the Ruckig production A/B candidate is **not accepted as an end-to-end fix**.
-
-Code tracing found why Ruckig did not affect this test: the current `CALCULATE ROUTE` path does not call `LocalGuidancePlanner::plan()`.
-
-The live path is:
+The active client path is:
 
 ```text
 SpaceState::updateDockingGuidance()
@@ -63,42 +60,54 @@ SpaceState::updateDockingGuidance()
     -> GuidanceState publication
 ```
 
-That chain currently executes synchronously from `SpaceState::update()`. Any expensive solve in it therefore blocks the client frame directly.
+The initial solve still runs synchronously inside `SpaceState::update()`, so a
+slow snapshot/geometric/trajectory/tunnel stage can block a frame.
 
-## NAV-LIVE-0 — current-pose tunnel correction + real-path timing
+NAV-LIVE-0 already added:
 
-Commit:
+- live current-pose tunnel refresh at the existing 4 Hz check;
+- `[DockingPerf] total/snapshot/geometric/trajectory/tunnel` timing;
+- `[GuidanceReplan] ... build_ms=...` timing;
+- `tests/architecture_contracts/check_live_docking_guidance.py`.
+
+## NAV-LIVE-1
+
+Code now targets the main repeated-work defect in rolling guidance: a current
+pose correction must not re-smooth the complete remaining route.
+
+For a stable terminal the reconnect horizon is derived from solve latency,
+braking distance, turn demand and safety margin. Only the near reconnect is
+smoothed/collision-validated. The remainder is the previously accepted immutable
+trajectory and is stitched back on unchanged, so the HUD still reaches the true
+docking terminal.
+
+Material terminal motion or an infeasible bounded reconnect uses the previous
+full-safe reconnect fallback.
+
+Dedicated behavior coverage is added as
+`tests/navigation_guidance/GuidanceTunnelLocalHorizonTests.cpp` and is included
+by the existing `tests/navigation_guidance/run_mingw64.sh` CTest run.
+
+## Navigation architecture baseline
+
+`src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md` is now the architecture
+authority for this work. It fixes the intended split:
 
 ```text
-5f60021cd8339efce7c589a9618864079931a0ff
-navigation: refresh live docking tunnel from current pose
+global coarse route
+    -> bounded detailed local motion
+    -> per-physics-tick execution
+    -> cheap guidance-tunnel presentation
 ```
 
-The manual cockpit tunnel previously kept one immutable generation until a relatively large boundary/prediction/course event. Because attitude was only an explicit fallback at low speed, a moving or drifting ship could visibly change hull pose while the tunnel remained tied to the older generation.
+It also records:
 
-The rolling 4 Hz check now requests a `ReconnectCurrentPose` generation when:
-
-- current lateral offset exceeds 8% of the current tolerance, clamped to 0.75..3.0 m;
-- current vertical offset exceeds the analogous threshold;
-- current hull attitude differs from the tunnel tangent by more than the existing 4 degree threshold.
-
-A new generation starts from the live hull position/orientation/velocity and reconnects to the accepted physical trajectory. Old gates are not rigidly translated with the ship.
-
-The active path now records timing for the actual expensive stages:
-
-- planning-snapshot build;
-- geometric docking path;
-- trajectory generation;
-- guidance-tunnel generation;
-- total request time.
-
-Runtime lines are emitted as `[DockingPerf] ...`, while rolling reconnects include `build_ms` in `[GuidanceReplan] ...`.
-
-Permanent guard:
-
-```text
-tests/architecture_contracts/check_live_docking_guidance.py
-```
+- the physical horizon formula;
+- adaptive/swept collision-validation requirement;
+- the distinction between render, collision, hit and navigation geometry;
+- the requirement that navigation geometry preserve real holes/passages;
+- deterministic obstacle/corridor/moving-object/cargo test scenes;
+- the current `GeometricPathPlanner` visibility-graph complexity risk.
 
 ## Current acceptance gate
 
@@ -112,6 +121,8 @@ bash tests/navigation_guidance/run_mingw64.sh
 cmake --build build --target EliteGame
 ```
 
-Then reproduce the same runtime manoeuvre and capture one `[DockingPerf]` line plus nearby `[GuidanceReplan]` lines.
+Then reproduce the same runtime manoeuvre and compare `[GuidanceReplan] build_ms`
+plus `[DockingPerf]` against the NAV-LIVE-0 baseline.
 
-The next optimization decision must target the measured live stage. If the immutable geometric/trajectory solve dominates, it should leave the frame thread and use latest-request-wins publication. If the rolling tunnel solve dominates, reconnect must become a cheaper bounded local operation and/or asynchronous. Safety fidelity must not be reduced merely to mask a stall.
+The next optimization must follow measured ownership of the remaining stall.
+Safety/collision fidelity is not negotiable for performance.

@@ -16,6 +16,9 @@ get_filename_component(
     ABSOLUTE
 )
 
+include("${ELITE_SOURCE_ROOT}/cmake/EliteRuckigNavigation.cmake")
+elite_add_ruckig_navigation(EliteNavigationRuckig "${ELITE_SOURCE_ROOT}")
+
 add_executable(
     navigation_guidance_tests
     NavigationGuidanceTests.cpp
@@ -44,6 +47,7 @@ target_include_directories(
 target_link_libraries(
     navigation_guidance_tests
     PRIVATE
+        EliteNavigationRuckig
         nlohmann_json::nlohmann_json
 )
 

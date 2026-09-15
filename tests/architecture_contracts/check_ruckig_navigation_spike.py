@@ -55,6 +55,13 @@ for seam in (
     require(seam in source, f"Ruckig adapter lost required seam: {seam}")
 
 require(
+    "ScalarEnvelopeAxisScale" in source and
+    "properAccelerationAxisBudget" in source and
+    "properJerkAxisBudget" in source,
+    "Ruckig per-axis box is not conservatively mapped from Elite scalar vector envelope",
+)
+
+require(
     "RuckigTrajectorySolver.cpp" not in main_cmake and "ruckig::ruckig" not in main_cmake,
     "isolated spike leaked into the production Elite build before acceptance",
 )
@@ -66,4 +73,5 @@ print(f" - pinned community commit: {PIN}")
 print(" - cloud client/examples/upstream tests/shared library disabled")
 print(" - C++20/Ruckig headers remain private to isolated adapter target")
 print(" - MinGW strict-C++ M_PI compatibility is target-local")
+print(" - Elite scalar acceleration/jerk envelope is conservatively mapped to Ruckig axes")
 print(" - production Elite planner/build remains untouched until spike acceptance")

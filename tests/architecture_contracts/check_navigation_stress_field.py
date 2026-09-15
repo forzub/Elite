@@ -58,10 +58,16 @@ if missing_obstacle:
         + ", ".join(missing_obstacle)
     )
 
-if 'double replanCheckIntervalSeconds = 1.0;' not in plan:
+required_replan_tokens = [
+    'double replanCheckIntervalSeconds = 1.0;',
+    'double hardToleranceScale = 1.0e9;',
+]
+missing_replan = [token for token in required_replan_tokens if token not in plan]
+if missing_replan:
     raise SystemExit(
         "NAVIGATION STRESS FIELD CONTRACT: FAIL\n"
-        "synchronous rolling replan cadence is not capped at 1 Hz"
+        "synchronous reconnect storm guards are missing: "
+        + ", ".join(missing_replan)
     )
 
 required_perf_tokens = [
@@ -80,5 +86,5 @@ print("NAVIGATION STRESS FIELD CONTRACT: PASS")
 print(" - 2 authored guidance targets retained")
 print(" - 16 deterministic obstacles retained in 4 route-crossing bands")
 print(" - conservative segment/obstacle broadphase retained")
-print(" - synchronous rolling reconnect cadence capped at 1 Hz")
+print(" - all synchronous rolling reconnect triggers are limited to 1 Hz")
 print(" - navigation perf log announces its absolute startup path")

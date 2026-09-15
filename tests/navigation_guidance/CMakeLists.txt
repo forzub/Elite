@@ -41,7 +41,6 @@ add_executable(
     guidance_tunnel_local_horizon_tests
     GuidanceTunnelLocalHorizonTests.cpp
     "${ELITE_SOURCE_ROOT}/src/world/navigation/NavigationObstacleGeometry.cpp"
-    "${ELITE_SOURCE_ROOT}/src/world/navigation/SmoothPathOptimizer.cpp"
     "${ELITE_SOURCE_ROOT}/src/world/navigation/GuidanceTunnel.cpp"
 )
 
@@ -70,6 +69,7 @@ target_link_libraries(
 target_link_libraries(
     guidance_tunnel_local_horizon_tests
     PRIVATE
+        EliteNavigationRuckig
         nlohmann_json::nlohmann_json
 )
 

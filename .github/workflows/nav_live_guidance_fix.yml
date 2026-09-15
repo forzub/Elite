@@ -1,0 +1,263 @@
+name: Patch live docking guidance path
+
+on:
+  push:
+    branches:
+      - chatgpt/mae-v01075-semantic-workflow-motion-v5
+    paths:
+      - .github/workflows/nav_live_guidance_fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/mae-v01075-semantic-workflow-motion-v5
+          fetch-depth: 0
+
+      - name: Patch live path and diagnostics
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/game/SpaceState.cpp')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''    // The fixed corridor lives in Hub-local coordinates. Only the cheap
+    // Hub-local -> presentation-world conversion is refreshed every frame;
+    // the spline/gates themselves move only on an explicit replan event.
+'''
+          new = '''    // The published generation lives in Hub-local coordinates. Presentation
+    // conversion is cheap and runs every frame, while a low-rate policy below
+    // rebuilds the near tunnel from the current hull pose whenever the ship has
+    // materially departed from that generation. Never translate an old tunnel
+    // rigidly with the ship: a replacement generation must start at the live
+    // pose and reconnect to the accepted physical trajectory.
+'''
+          if old not in text:
+              raise SystemExit('fixed-corridor comment anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''                const double attitudeError = std::acos(std::clamp(
+                    glm::dot(hullForward, track.tangent),
+                    -1.0,
+                    1.0
+                ));
+
+                bool targetMoved = false;
+'''
+          new = '''                const double attitudeError = std::acos(std::clamp(
+                    glm::dot(hullForward, track.tangent),
+                    -1.0,
+                    1.0
+                ));
+
+                // A manual tunnel is rolling guidance, not a frozen railway.
+                // Reconnect while the deviation is still small enough to be a
+                // cheap/current-pose correction. Previously a ship could move
+                // several metres inside a wide gate (or rotate while drifting
+                // in Newton flight) without satisfying any rebuild condition,
+                // leaving the visible tunnel attached to an obsolete hull pose.
+                const double poseLateralThreshold = std::clamp(
+                    lateralBase * 0.08,
+                    0.75,
+                    3.0
+                );
+                const double poseVerticalThreshold = std::clamp(
+                    verticalBase * 0.08,
+                    0.75,
+                    3.0
+                );
+                const bool currentPoseChanged =
+                    track.lateralMeters > poseLateralThreshold ||
+                    track.verticalMeters > poseVerticalThreshold ||
+                    attitudeError > manualPlan.courseChangeThresholdRadians;
+
+                bool targetMoved = false;
+'''
+          if old not in text:
+              raise SystemExit('attitude anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''                if (predictedOutside)
+                {
+                    rebuild = true;
+                    replanReason = "predicted_exit";
+                }
+                else if (courseError >
+                         manualPlan.courseChangeThresholdRadians)
+'''
+          new = '''                if (currentPoseChanged)
+                {
+                    rebuild = true;
+                    replanReason = "current_pose";
+                }
+                else if (predictedOutside)
+                {
+                    rebuild = true;
+                    replanReason = "predicted_exit";
+                }
+                else if (courseError >
+                         manualPlan.courseChangeThresholdRadians)
+'''
+          if old not in text:
+              raise SystemExit('replan decision anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''        ++m_perfDockingTunnelBuilds;
+        auto tunnel = world::navigation::GuidanceTunnelBuilder::build(
+            tunnelRequest
+        );
+        if (!tunnel.valid || tunnel.gates.size() < 2)
+            return false;
+'''
+          new = '''        ++m_perfDockingTunnelBuilds;
+        const double tunnelBuildStartMs = nowMs();
+        auto tunnel = world::navigation::GuidanceTunnelBuilder::build(
+            tunnelRequest
+        );
+        const double tunnelBuildMs = nowMs() - tunnelBuildStartMs;
+        m_perfDockingTunnelBuildMs += tunnelBuildMs;
+        if (!tunnel.valid || tunnel.gates.size() < 2)
+            return false;
+'''
+          if old not in text:
+              raise SystemExit('tunnel build anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''            << " gates=" << manualPlan.fixedTunnel.gates.size()
+            << '\\n';
+'''
+          new = '''            << " gates=" << manualPlan.fixedTunnel.gates.size()
+            << " build_ms=" << tunnelBuildMs
+            << '\\n';
+'''
+          if old not in text:
+              raise SystemExit('GuidanceReplan log anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    // Seed route planning from one canonical authoritative replication epoch,
+    // then resolve the entire problem to one current planning epoch. Render
+    // interpolation is a different timeline and is never a legal producer.
+    const auto planningSnapshot =
+'''
+          new = '''    // Seed route planning from one canonical authoritative replication epoch,
+    // then resolve the entire problem to one current planning epoch. Render
+    // interpolation is a different timeline and is never a legal producer.
+    const double requestPlanningStartMs = nowMs();
+    const double snapshotStartMs = nowMs();
+    const auto planningSnapshot =
+'''
+          if old not in text:
+              raise SystemExit('snapshot timer anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''                dockingRequest.target.stableObjectId
+            );
+    if (!planningSnapshot.ready())
+'''
+          new = '''                dockingRequest.target.stableObjectId
+            );
+    const double snapshotBuildMs = nowMs() - snapshotStartMs;
+    if (!planningSnapshot.ready())
+'''
+          if old not in text:
+              raise SystemExit('snapshot timer end anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    const auto plan = game::navigation::DockingPathPlanner::plan(request);
+    if (!plan.valid)
+'''
+          new = '''    const double geometricPlanStartMs = nowMs();
+    const auto plan = game::navigation::DockingPathPlanner::plan(request);
+    const double geometricPlanMs = nowMs() - geometricPlanStartMs;
+    if (!plan.valid)
+'''
+          if old not in text:
+              raise SystemExit('geometric timer anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    const auto trajectoryPlan =
+        world::navigation::TrajectoryGenerator::generate(trajectoryRequest);
+    if (!trajectoryPlan.ready())
+'''
+          new = '''    const double trajectoryPlanStartMs = nowMs();
+    const auto trajectoryPlan =
+        world::navigation::TrajectoryGenerator::generate(trajectoryRequest);
+    const double trajectoryPlanMs = nowMs() - trajectoryPlanStartMs;
+    if (!trajectoryPlan.ready())
+'''
+          if old not in text:
+              raise SystemExit('trajectory timer anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    m_noSafeDockingGuidanceSolution = false;
+    m_dockingGuidanceFailureReason.clear();
+
+    const glm::dvec3 finalDirection = glm::normalize(
+'''
+          new = '''    m_noSafeDockingGuidanceSolution = false;
+    m_dockingGuidanceFailureReason.clear();
+
+    std::cerr
+        << "[DockingPerf] request=" << dockingRequest.serial
+        << " total_ms=" << (nowMs() - requestPlanningStartMs)
+        << " snapshot_ms=" << snapshotBuildMs
+        << " geometric_ms=" << geometricPlanMs
+        << " trajectory_ms=" << trajectoryPlanMs
+        << " tunnel_ms=" << m_perfDockingTunnelBuildMs
+        << '\\n';
+
+    const glm::dvec3 finalDirection = glm::normalize(
+'''
+          if old not in text:
+              raise SystemExit('DockingPerf log anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '''    m_perfDockingTunnelBuilds = 0;
+    const double dockingGuidanceStartMs = nowMs();
+'''
+          new = '''    m_perfDockingTunnelBuilds = 0;
+    m_perfDockingTunnelBuildMs = 0.0;
+    const double dockingGuidanceStartMs = nowMs();
+'''
+          if old not in text:
+              raise SystemExit('tunnel perf reset anchor not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+
+          header = Path('src/game/SpaceState.h')
+          h = header.read_text(encoding='utf-8')
+          old = '''    std::uint32_t m_perfDockingTunnelBuilds = 0;
+    double m_perfPlayerViewMs = 0.0;
+'''
+          new = '''    std::uint32_t m_perfDockingTunnelBuilds = 0;
+    double m_perfDockingTunnelBuildMs = 0.0;
+    double m_perfPlayerViewMs = 0.0;
+'''
+          if old not in h:
+              raise SystemExit('SpaceState perf member anchor not found')
+          h = h.replace(old, new, 1)
+          header.write_text(h, encoding='utf-8')
+
+          contract = Path('tests/architecture_contracts/check_live_docking_guidance.py')
+          contract.write_text('''#!/usr/bin/env python3\nfrom pathlib import Path\n\nROOT = Path(__file__).resolve().parents[2]\nCPP = (ROOT / "src/game/SpaceState.cpp").read_text(encoding="utf-8")\nHEADER = (ROOT / "src/game/SpaceState.h").read_text(encoding="utf-8")\n\ndef require(condition: bool, message: str) -> None:\n    if not condition:\n        raise SystemExit(f"[FAIL] {message}")\n\nfor marker in (\n    "currentPoseChanged",\n    "replanReason = \\\"current_pose\\\"",\n    "poseLateralThreshold",\n    "poseVerticalThreshold",\n    "tunnelBuildMs",\n    "[DockingPerf]",\n    "snapshot_ms=",\n    "geometric_ms=",\n    "trajectory_ms=",\n    "tunnel_ms=",\n):\n    require(marker in CPP, f"live docking guidance marker missing: {marker}")\n\nrequire("m_perfDockingTunnelBuildMs" in HEADER,\n        "SpaceState does not retain per-frame tunnel build time")\nrequire(\n    CPP.find("currentPoseChanged") < CPP.find('replanReason = "current_pose"'),\n    "current hull pose is not consulted before current-pose replan",\n)\nrequire(\n    "speed <= 2.0 && attitudeError" in CPP,\n    "legacy low-speed attitude fallback unexpectedly disappeared",\n)\nprint("LIVE DOCKING GUIDANCE: PASS")\nprint(" - rolling tunnel can reconnect from material current hull-pose deviation")\nprint(" - active CALCULATE ROUTE path reports snapshot/geometric/trajectory/tunnel timings")\n''', encoding='utf-8')
+
+      - name: Verify patch
+        run: |
+          python tests/architecture_contracts/check_live_docking_guidance.py
+          python tests/architecture_contracts/check_ruckig_navigation_integration.py
+          git diff --check
+
+      - name: Commit patch and remove one-shot workflow
+        run: |
+          git config user.name "ChatGPT"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/nav_live_guidance_fix.yml
+          git add src/game/SpaceState.cpp src/game/SpaceState.h tests/architecture_contracts/check_live_docking_guidance.py
+          git commit -m "navigation: refresh live docking tunnel from current pose"
+          git push origin HEAD:chatgpt/mae-v01075-semantic-workflow-motion-v5

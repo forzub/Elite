@@ -2,12 +2,87 @@
 
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Track:** live docking guidance correctness + performance  
-**Stage:** NAV-LIVE-3 — collision broadphase + replan-storm containment
+**Track:** isolated runtime navigation backend  
+**Stage:** NAV-RUCKIG-1 — replace live custom smoothing with canonical Ruckig motion
 
-## Measured runtime result
+## Decision
 
-The 19-obstacle diagnostic run made the remaining ownership explicit:
+The custom live spline/reconnect stack is no longer an optimization target. The
+runtime motion layer is being rebuilt around Ruckig.
+
+The ownership boundary is now:
+
+```text
+ClientNavigationPlanningSnapshotFactory
+    -> DockingPathPlanner / GeometricPathPlanner   coarse free-space topology
+    -> RuckigRoutePlanner                          canonical route motion
+    -> RuckigTrajectorySolver                      state-to-state primitive
+    -> GuidanceTunnel                              presentation sampler
+```
+
+`SmoothPathOptimizer` is forbidden in both live trajectory generation and live
+rolling tunnel reconnect. A new architecture contract enforces this.
+
+## Implemented in this wave
+
+### Canonical route motion
+
+`src/game/navigation/RuckigRoutePlanner.h` defines the canonical route-to-motion
+seam. `TrajectoryGenerator::generate()` is now a compatibility facade that calls
+`RuckigRoutePlanner::plan()`.
+
+The old global B-spline runtime path has been removed from
+`TrajectoryGenerator.cpp`. Each accepted coarse-route leg is solved with
+`RuckigTrajectorySolver` and swept against canonical navigation obstacles before
+it is published.
+
+Current conservative baseline stops at intermediate coarse topology vertices.
+That is intentionally less elegant than hidden corner shaving. Continuous
+through-waypoint motion will be added only as a bounded Ruckig transition that
+passes the same swept collision validation.
+
+### Ruckig rolling reconnect
+
+`GuidanceTunnel.cpp` no longer builds spline/bulge/loop candidate families.
+`ReconnectCurrentPose` now uses Ruckig:
+
+- stable terminal: solve live pose/velocity -> bounded rejoin state;
+- preserve accepted rejoin velocity;
+- collision-check the generated Ruckig leg;
+- stitch the untouched accepted trajectory tail;
+- keep the real dock as the final tunnel endpoint.
+
+The reconnect horizon remains physical:
+
+```text
+v*T_latency + v^2/(2*a_brake) + turn_distance + safety_margin
+```
+
+If the terminal moved materially, or the bounded join is infeasible, the code
+attempts a full Ruckig reconnect through sparse accepted-route supports plus a
+final docking-axis alignment point. There is no fallback to the old smoother.
+
+### Test/build boundary
+
+`guidance_tunnel_local_horizon_tests` now links the Ruckig backend directly and
+no longer compiles `SmoothPathOptimizer.cpp`.
+
+New architecture contract:
+
+```bash
+python tests/architecture_contracts/check_ruckig_live_navigation.py
+```
+
+It verifies:
+
+- route trajectory uses Ruckig;
+- rolling tunnel reconnect uses Ruckig;
+- both retain canonical swept obstacle checks;
+- neither live source references `SmoothPathOptimizer`.
+
+## Historical performance baseline
+
+The previous 19-obstacle custom-smoother capture was:
 
 ```text
 [DockingPerf]
@@ -18,135 +93,53 @@ trajectory_ms ~= 373.3
 tunnel_ms     ~=  15.5
 ```
 
-`navigation_perf.log` shows the initial trajectory smoother at about 367 ms.
-For each support-level candidate, spline sampling itself is only about 7..8 ms,
-while collision/safety validation costs about 39..60 ms. The dominant cost is
-therefore repeated segment-vs-obstacle narrow-phase work, not B-spline math.
+The old rolling implementation also produced 39 reconnect attempts × 7 spatial
+candidate families and consumed roughly 14.4 seconds of smoother CPU in the
+captured short run.
 
-The same runtime file also exposes a worse rolling-guidance defect:
+These numbers are now comparison data only. Do not optimize that old algorithm
+further.
 
-```text
-1 initial SmoothPathOptimizer call
-273 rolling SmoothPathOptimizer calls
-= 39 rolling tunnel rebuild attempts * 7 spatial candidates
-```
+## Acceptance before motion-quality work
 
-The rolling calls consumed roughly 14.4 seconds of smoother CPU in the captured
-short run. A reconnect attempt took about 0.37 s, longer than the old 0.25 s
-replan period, so another synchronous attempt could become due on the next frame.
-This is the immediate cause of the near-unusable motion after the stress field was
-introduced.
-
-## NAV-LIVE-3 changes
-
-### 1. Conservative collision broadphase
-
-`src/world/navigation/NavigationObstacleGeometry.cpp` now performs a cheap
-segment-vs-enclosing-sphere broadphase before the exact obstacle test.
-
-- Box: sphere encloses the fully inflated OBB.
-- Capsule: sphere encloses the fully inflated capsule.
-- Sphere: normal inflated radius.
-
-A broadphase miss can safely skip the exact test. A broadphase hit still runs the
-existing exact OBB/capsule/sphere intersection. This does **not** change collision
-radius, clearance, route sampling, or final safety semantics.
-
-The current implementation is deliberately the first acceleration layer. If the
-19-obstacle test still spends material time in collision validation, the next
-step is a spatial obstacle index / candidate set rather than weakening checks.
-
-### 2. Contain synchronous rolling replan storm
-
-`ManualDockingGuidancePlan` now limits rolling replan checks to 1 Hz while the
-solver is still synchronous on the client frame.
-
-The previous hard-envelope branch bypassed the cadence timer entirely. That
-out-of-band heavy solve is temporarily disabled by making the hard-envelope
-scale unreachable in normal flight. Manual guidance is advisory; departures are
-still detected by the normal periodic pose/predicted-exit/course checks.
-
-This is a runtime guard, not the final architecture. The intended final form is:
-
-```text
-frame thread: cheap tracking / invalidation
-worker: immutable reconnect solve
-publication: generation id / latest-request-wins
-```
-
-Once that exists, an immediate hard-envelope event can be restored without
-blocking the frame.
-
-### 3. Stress field corrected
-
-The first NAV-LIVE-2 stress layout proved visually wrong: it was a cloud near the
-Hub that did not meaningfully cross the player-to-dock route.
-
-The same 16 objects are now arranged as four deterministic obstacle bands across
-the baseline route. Each band has one object centred on the direct path and
-neighbouring cube/cylinder obstacles that make the bypass non-trivial while
-leaving a safe route around the band.
-
-The two authored docking targets remain unchanged. Expected route snapshot is
-still approximately `obstacles=19`.
-
-### 4. Perf log path is explicit
-
-At process startup the executable/tests now print the exact absolute log path:
-
-```text
-[NavigationPerf] log_path=<absolute path>/navigation_perf.log
-```
-
-The user observed two files because the logger was relative to the process
-working directory: test executables and `EliteGame` can run with different CWDs.
-The startup line removes that ambiguity.
-
-## Acceptance
-
-Under MSYS2 MinGW64:
+Run under MSYS2 MinGW64:
 
 ```bash
 git fetch origin
 git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
 git pull --ff-only
 
-unset ELITE_TRACE_RUNTIME
-
-python tests/architecture_contracts/check_navigation_stress_field.py
+python tests/architecture_contracts/check_ruckig_navigation_spike.py
+python tests/architecture_contracts/check_ruckig_navigation_integration.py
+python tests/architecture_contracts/check_ruckig_live_navigation.py
 python tests/architecture_contracts/check_live_docking_guidance.py
+
 bash tests/navigation_guidance/run_mingw64.sh
 cmake --build build --target EliteGame
-D:/__elite/work/build/EliteGame.exe
 ```
 
-At startup record the `[NavigationPerf] log_path=...` line, remove that exact file
-before a clean timing run if desired, then:
+Important: the large `NavigationGuidanceTests.cpp` still contains several
+legacy B-spline/SmoothPath assertions. Those tests are being migrated next; if
+they fail specifically on old spline expectations, that is a stale-test failure,
+not a reason to restore the old runtime backend. Compile/link failures or Ruckig
+behavior failures are real blockers and must be fixed.
 
-1. visually confirm that the four obstacle bands cross the route rather than sit
-   harmlessly near the station;
-2. calculate one route to cube A;
-3. fly/rotate for several seconds with the tunnel active;
-4. capture `[DockingPerf]`, `[GuidanceReplan]`, `[FramePerf]` and the exact
-   `navigation_perf.log` announced by the executable.
+## Next work
 
-## Acceptance questions
+1. Migrate/remove obsolete B-spline tests and delete the last test-only dependency
+   on `SmoothPathOptimizer`.
+2. Remove `SmoothPathOptimizer.cpp` from `EliteGame` / `EliteServer` production
+   source lists once the branch compile proves no remaining runtime consumer.
+3. Run the docking stress scene and compare new `[DockingPerf]`,
+   `[GuidanceReplan]`, `[FramePerf]` and `[RuckigRoutePerf]` against the historical
+   smoother baseline.
+4. If motion is too stop-and-go, add **bounded Ruckig through-waypoint blending**:
+   never a global spline and never an unchecked corner cut.
+5. If synchronous planning remains visibly blocking, move immutable planning to
+   a worker with request generation/latest-request-wins publication.
 
-1. Does the direct route now visibly detour around the stress objects?
-2. Does the snapshot still report about 19 obstacles?
-3. How far does broadphase reduce candidate `safety_ms` from the old 39..60 ms?
-4. Is `trajectory_ms` materially below the old 373 ms stress baseline?
-5. Is `tunnel_builds=1` no longer present frame after frame?
-6. Is manual flight usable between the throttled reconnect events?
+## Acceptance rule
 
-## Next optimization decision
-
-- If collision validation remains dominant: add a spatial broadphase/candidate
-  obstacle set shared by geometric, trajectory and local guidance.
-- If rolling reconnect remains expensive: stop evaluating broad/loop candidate
-  families synchronously; keep the accepted topology and move reconnect to a
-  worker/latest-wins job.
-- If the initial solve is still visibly blocking after CPU reduction: move the
-  whole immutable route+trajectory solve off the frame thread.
-- Keep exact swept collision checks as the final narrow phase. Do not trade
-  collision fidelity for frame time.
+Do not restore the custom global smoother to make a test or visual artifact pass.
+Fix the Ruckig motion contract, topology, collision geometry, or stale test as
+appropriate.

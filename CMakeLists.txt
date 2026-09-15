@@ -42,6 +42,11 @@ if(ELITE_BUILD_CLIENT)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glad)
 endif()
 
+if(ELITE_BUILD_CLIENT OR ELITE_BUILD_SERVER)
+    include("${CMAKE_SOURCE_DIR}/cmake/EliteRuckigNavigation.cmake")
+    elite_add_ruckig_navigation(EliteNavigationRuckig "${CMAKE_SOURCE_DIR}")
+endif()
+
 
 # Offline Model Asset Editor geometry processing --------------------------------
 # libigl is an authoring-only dependency of the editor. Embree is enabled only
@@ -672,6 +677,7 @@ if(ELITE_BUILD_SERVER)
 
     target_link_libraries(EliteServer PRIVATE
         EliteNavigationGeometry
+        EliteNavigationRuckig
         EliteAssemblyGeometry
         EliteRuntimeModelAssets
         nlohmann_json::nlohmann_json
@@ -990,6 +996,7 @@ target_include_directories(EliteGame PRIVATE
 target_link_libraries(EliteGame PRIVATE
     EliteModelAsset
     EliteNavigationGeometry
+    EliteNavigationRuckig
     EliteAssemblyGeometry
     EliteRuntimeModelAssets
     glfw

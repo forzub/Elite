@@ -27,7 +27,7 @@ bool GlRuntimeCapabilities::meetsOpenGl43Baseline() const
 {
     return atLeast(contextMajor, contextMinor, 4, 3) &&
         atLeast(gladMajor, gladMinor, 4, 3) &&
-        compatibilityProfile &&
+        coreProfile &&
         computeShaders &&
         shaderStorageBuffers;
 }
@@ -43,8 +43,8 @@ GlRuntimeCapabilities queryGlRuntimeCapabilities(int gladLoadedVersion)
 
     GLint profileMask = 0;
     glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &profileMask);
-    caps.compatibilityProfile =
-        (profileMask & GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) != 0;
+    caps.coreProfile =
+        (profileMask & GL_CONTEXT_CORE_PROFILE_BIT) != 0;
 
     caps.vendor = glString(GL_VENDOR);
     caps.renderer = glString(GL_RENDERER);
@@ -87,7 +87,7 @@ void requireOpenGl43Baseline(int gladLoadedVersion)
     std::cout
         << "[OpenGL] context=" << caps.contextMajor << '.' << caps.contextMinor
         << " glad=" << caps.gladMajor << '.' << caps.gladMinor
-        << " profile=" << (caps.compatibilityProfile ? "compatibility" : "non-compatibility")
+        << " profile=" << (caps.coreProfile ? "core" : "non-core")
         << " compute=" << (caps.computeShaders ? 1 : 0)
         << " ssbo=" << (caps.shaderStorageBuffers ? 1 : 0)
         << " max_compute_invocations=" << caps.maxComputeWorkGroupInvocations
@@ -104,10 +104,10 @@ void requireOpenGl43Baseline(int gladLoadedVersion)
 
     std::ostringstream message;
     message
-        << "EliteGame requires OpenGL 4.3+ compatibility profile with compute shaders and SSBO support. "
+        << "EliteGame requires OpenGL 4.3+ core profile with compute shaders and SSBO support. "
         << "Detected context " << caps.contextMajor << '.' << caps.contextMinor
         << ", GLAD " << caps.gladMajor << '.' << caps.gladMinor
-        << ", compatibility=" << (caps.compatibilityProfile ? 1 : 0)
+        << ", core=" << (caps.coreProfile ? 1 : 0)
         << ", compute=" << (caps.computeShaders ? 1 : 0)
         << ", ssbo=" << (caps.shaderStorageBuffers ? 1 : 0);
     throw std::runtime_error(message.str());

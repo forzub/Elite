@@ -173,20 +173,9 @@ namespace render::celestial
             texture
         );
 
-        GLint oldTextureEnvMode =
-            GL_MODULATE;
-
-        glGetTexEnviv(
-            GL_TEXTURE_ENV,
-            GL_TEXTURE_ENV_MODE,
-            &oldTextureEnvMode
-        );
-
-        glTexEnvi(
-            GL_TEXTURE_ENV,
-            GL_TEXTURE_ENV_MODE,
-            GL_MODULATE
-        );
+        // OpenGL Core has no fixed-function texture environment.
+        // CoreGlLegacyBridge already implements the old GL_MODULATE behavior
+        // explicitly in GLSL as texture(uTexture, vTexCoord) * vColor.
 
         glEnable(
             GL_BLEND
@@ -437,12 +426,6 @@ namespace render::celestial
         
 
         elite::render::core_legacy::end();
-
-        glTexEnvi(
-            GL_TEXTURE_ENV,
-            GL_TEXTURE_ENV_MODE,
-            oldTextureEnvMode
-        );
 
         glBindTexture(
             GL_TEXTURE_2D,

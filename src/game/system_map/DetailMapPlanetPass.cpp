@@ -1975,16 +1975,8 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
             GL_CULL_FACE
         );
 
-    GLboolean alphaTestWasEnabled =
-        glIsEnabled(
-            GL_ALPHA_TEST
-        );
-
-
-
-
-
-
+    // Alpha test was removed from the Core profile. This path is
+    // intentionally opaque, so there is no alpha-test state to preserve.
 
     GLint oldTextureBinding =
         0;
@@ -1999,17 +1991,8 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
     );
 
     // Shape model должен быть opaque.
-    // Blend/alpha-test дают эффект дыр, просвечивания и "внутренней" текстуры.
-    glDisable(
-        GL_BLEND
-    );
-
-    glDisable(
-        GL_ALPHA_TEST
-    );
-
-    // Shape model должен быть opaque.
-    // Blend даёт эффект "текстура видна изнутри".
+    // В Core profile alpha test отсутствует; непрозрачность задаётся самим
+    // draw path, поэтому здесь достаточно отключить blending.
     glDisable(
         GL_BLEND
     );
@@ -2102,18 +2085,6 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
         glEnable(GL_CULL_FACE);
     else
         glDisable(GL_CULL_FACE);
-
-
-
-    if (alphaTestWasEnabled)
-        glEnable(GL_ALPHA_TEST);
-    else
-        glDisable(GL_ALPHA_TEST);
-
-
-
-
-
 
 
     return true;

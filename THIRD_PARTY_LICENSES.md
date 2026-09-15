@@ -30,7 +30,6 @@ the font binary declared in the manifest, which upstream documents as OFL-1.1.
 
 - Existing provenance/terms: `src/assets/data/galaxy/sky_cultures/NOTICE.md`.
 
-
 ## Celestial/environment provenance already present
 
 - `src/assets/data/celestial/environment/**/*.json` contains per-preset `provenance` metadata (for example NASA observational-source identifiers). Those fields document data origin but are **not** treated as redistribution licenses for photographs, textures or 3D models.
@@ -39,11 +38,13 @@ the font binary declared in the manifest, which upstream documents as OFL-1.1.
 ## Candidate runtime dependency — Ruckig
 
 - **Component:** Ruckig Community Edition.
-- **Purpose:** candidate real-time trajectory generator for terminal navigation: jerk-limited motion from the current position/velocity/acceleration state to a constrained target state.
+- **Purpose:** candidate real-time trajectory generator for terminal/local navigation: jerk-limited motion from the current position/velocity/acceleration state to a constrained target state.
 - **Upstream:** `https://github.com/pantor/ruckig`.
-- **Reviewed release:** `v0.19.4` (latest release reviewed on 2026-09-15). Pin the exact integrated release/commit when the dependency is actually added to the build.
+- **Pinned source:** release `v0.19.4`, commit `a8db97a4e9c55e5160a3855f739fa3b270df8e4c`.
 - **License:** MIT License for the open-source/community repository code reviewed here.
-- **Project-use status:** approved for evaluation and integration into Elite, including commercial/proprietary distribution, subject to the MIT notice requirement below. It is not yet recorded here as a bundled runtime dependency.
+- **Project-use status:** approved for evaluation and integration into Elite, including commercial/proprietary distribution, subject to the MIT notice requirement below. The first integration is an isolated navigation spike; it is not yet linked into the production `EliteGame` build.
+- **Integration boundary:** `tests/navigation_ruckig` fetches the exact pinned commit. `BUILD_CLOUD_CLIENT=OFF`, examples/upstream tests/benchmark/Python module are disabled, and Ruckig is built static. The spike uses only local/offline state-to-state trajectory generation; no cloud waypoint service is enabled.
+- **Language boundary:** upstream v0.19.4 requires C++20. Elite's public adapter header contains no Ruckig headers; only the isolated adapter implementation target is compiled with C++20 so the rest of Elite remains C++17 during evaluation.
 - **Obligation:** retain/include the upstream copyright notice and MIT permission notice in all redistributed copies or substantial portions of the Ruckig software.
 - **Copyleft:** none; the MIT license does not require Elite source code or modifications to Elite to be disclosed merely because Ruckig is used.
 - **Modification/distribution:** use, copy, modify, merge, publish, distribute, sublicense and sell are permitted under the MIT terms.

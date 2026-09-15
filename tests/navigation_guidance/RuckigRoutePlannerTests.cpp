@@ -113,6 +113,32 @@ void testStraightRouteUsesRuckigAndStopsAtTerminal()
         "straight Ruckig route did not stop at terminal");
 }
 
+void testDiagonalStoppedLegStaysOnCoarseChord()
+{
+    auto request = baseRequest();
+    const glm::dvec3 start(-120.0, 75.0, -40.0);
+    const glm::dvec3 end(430.0, 365.0, 510.0);
+    request.pathPointsMeters = {start, end};
+    request.pointSpeedConstraints.push_back({glm::length(end - start), 0.0});
+
+    const auto result = game::navigation::RuckigRoutePlanner::plan(request);
+    require(result.ready(), "diagonal rest-to-rest Ruckig leg failed");
+
+    const glm::dvec3 chord = end - start;
+    const double chord2 = glm::dot(chord, chord);
+    for (const auto& sample : result.trajectory.samples)
+    {
+        const double u = std::clamp(
+            glm::dot(sample.positionMeters - start, chord) / chord2,
+            0.0,
+            1.0
+        );
+        const glm::dvec3 nearest = start + chord * u;
+        require(glm::length(sample.positionMeters - nearest) < 1.0e-5,
+            "world-axis Ruckig synchronization bowed a stopped leg off its coarse chord");
+    }
+}
+
 void testClearCornerGetsContinuousRuckigWaypointVelocity()
 {
     auto request = baseRequest();
@@ -197,6 +223,7 @@ int main()
         void (*fn)();
     } tests[] = {
         {"straight route uses Ruckig", testStraightRouteUsesRuckigAndStopsAtTerminal},
+        {"diagonal stopped leg stays on coarse chord", testDiagonalStoppedLegStaysOnCoarseChord},
         {"clear corner keeps through velocity", testClearCornerGetsContinuousRuckigWaypointVelocity},
         {"blocked corner falls back to stop", testBlockedCornerBlendFallsBackToSafeStop},
         {"impossible braking is rejected", testImpossibleInitialBrakingIsRejectedBeforePlanning},

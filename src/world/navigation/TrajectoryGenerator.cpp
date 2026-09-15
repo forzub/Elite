@@ -1,511 +1,749 @@
 #include "src/world/navigation/TrajectoryGenerator.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <fstream>
+#include <iomanip>
 #include <limits>
-#include <utility>
+#include <string_view>
+#include <vector>
 
-#include <glm/gtc/constants.hpp>
+#include <glm/gtc/quaternion.hpp>
 
-#include "src/world/navigation/SmoothPathOptimizer.h"
+#include "src/game/navigation/RuckigRoutePlanner.h"
+#include "src/game/navigation/RuckigTrajectorySolver.h"
+#include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/world/navigation/NavigationOrientation.h"
+#include "src/world/navigation/NavigationPerfLog.h"
 
-namespace world::navigation
-{
 namespace
 {
 constexpr double Epsilon = 1.0e-9;
-
-struct CurvePoint
-{
-    glm::dvec3 positionMeters {0.0};
-    double sourceProgressMeters = 0.0;
-};
+using Clock = std::chrono::steady_clock;
 
 bool finite(double value) noexcept
 {
     return std::isfinite(value);
 }
 
-bool finite3(const glm::dvec3& value) noexcept
+bool finite(const glm::dvec3& value) noexcept
 {
     return finite(value.x) && finite(value.y) && finite(value.z);
 }
 
-glm::dvec3 normalizedOr(
-    const glm::dvec3& value,
-    const glm::dvec3& fallback
-) noexcept
+double magnitude(const glm::dvec3& value) noexcept
 {
-    const double length2 = glm::dot(value, value);
-    if (!finite(length2) || length2 <= Epsilon)
-        return fallback;
-    return value / std::sqrt(length2);
+    return std::sqrt(glm::dot(value, value));
 }
 
-std::vector<double> sourceProgress(const std::vector<glm::dvec3>& points)
+double elapsedMilliseconds(Clock::time_point begin, Clock::time_point end)
 {
-    std::vector<double> progress(points.size(), 0.0);
-    for (std::size_t i = 1; i < points.size(); ++i)
-    {
-        progress[i] = progress[i - 1] +
-            glm::length(points[i] - points[i - 1]);
-    }
-    return progress;
+    return std::chrono::duration<double, std::milli>(end - begin).count();
 }
 
-std::vector<CurvePoint> globalSmoothCurve(
-    const TrajectoryGenerationRequest& request,
-    TrajectoryGenerationDiagnostics& diagnostics
+world::navigation::TrajectoryGenerationResult failure(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    world::navigation::TrajectoryStatus status,
+    const char* message
 )
 {
-    SmoothPathRequest smooth;
-    smooth.pathPointsMeters = request.pathPointsMeters;
-    smooth.obstacles = request.obstacles;
-    smooth.vehicle = request.vehicle;
-    smooth.maxSampleSpacingMeters = request.sampleSpacingMeters;
-    smooth.maxChordErrorMeters = request.maxCurveChordErrorMeters;
-    smooth.maxSupportLevel = request.maxSmoothSupportLevel;
-    smooth.terminalAllowedObstacleId = request.terminalAllowedObstacleId;
-    smooth.terminalObstacleEntrySourceProgressMeters =
-        request.terminalObstacleEntrySourceProgressMeters;
-
-    const auto result = SmoothPathOptimizer::optimize(smooth);
-    diagnostics.smoothCandidatesEvaluated =
-        result.diagnostics.candidatesEvaluated;
-    diagnostics.smoothSafeCandidates = result.diagnostics.safeCandidates;
-    diagnostics.selectedSmoothSupportLevel =
-        result.diagnostics.selectedSupportLevel;
-    diagnostics.coarsePathLengthMeters =
-        result.diagnostics.coarseLengthMeters;
-    diagnostics.optimizedPathLengthMeters =
-        result.diagnostics.optimizedLengthMeters;
-    diagnostics.maxCurvaturePerMeter =
-        result.diagnostics.maxCurvaturePerMeter;
-    diagnostics.curvatureVariation =
-        result.diagnostics.curvatureVariation;
-    diagnostics.smoothingFellBackToPolyline =
-        result.diagnostics.fellBackToPolyline;
-
-    std::vector<CurvePoint> curve;
-    curve.reserve(result.points.size());
-    for (const auto& point : result.points)
-        curve.push_back({point.positionMeters, point.sourceProgressMeters});
-    return curve;
-}
-
-std::vector<double> curveProgress(const std::vector<CurvePoint>& points)
-{
-    std::vector<double> progress(points.size(), 0.0);
-    for (std::size_t i = 1; i < points.size(); ++i)
-    {
-        progress[i] = progress[i - 1] +
-            glm::length(points[i].positionMeters - points[i - 1].positionMeters);
-    }
-    return progress;
-}
-
-std::vector<glm::dvec3> tangents(const std::vector<CurvePoint>& points)
-{
-    std::vector<glm::dvec3> out(points.size(), glm::dvec3(1.0, 0.0, 0.0));
-    if (points.size() < 2)
-        return out;
-
-    for (std::size_t i = 0; i < points.size(); ++i)
-    {
-        glm::dvec3 delta(0.0);
-        if (i == 0)
-            delta = points[1].positionMeters - points[0].positionMeters;
-        else if (i + 1 == points.size())
-            delta = points[i].positionMeters - points[i - 1].positionMeters;
-        else
-            delta = points[i + 1].positionMeters - points[i - 1].positionMeters;
-        out[i] = normalizedOr(
-            delta,
-            i > 0 ? out[i - 1] : glm::dvec3(1.0, 0.0, 0.0)
-        );
-    }
+    world::navigation::TrajectoryGenerationResult out;
+    out.trajectory.status = status;
+    out.trajectory.systemId = request.systemId;
+    out.trajectory.frameId = request.frameId;
+    out.trajectory.startUniverseTimeSeconds = request.startUniverseTimeSeconds;
+    out.trajectory.message = message ? message : "Ruckig route planning failed";
     return out;
 }
 
-std::size_t nearestSourceProgressIndex(
-    const std::vector<CurvePoint>& points,
-    double sourceProgressMeters
-)
-{
-    std::size_t best = 0;
-    double bestDistance = std::numeric_limits<double>::infinity();
-    for (std::size_t i = 0; i < points.size(); ++i)
-    {
-        const double distance = std::abs(
-            points[i].sourceProgressMeters - sourceProgressMeters
-        );
-        if (distance < bestDistance)
-        {
-            best = i;
-            bestDistance = distance;
-        }
-    }
-    return best;
-}
-
-std::vector<double> speedLimits(
-    const TrajectoryGenerationRequest& request,
-    const std::vector<CurvePoint>& points,
-    const std::vector<double>& pathProgress,
-    const std::vector<glm::dvec3>& tangent
-)
-{
-    std::vector<double> limits(points.size(), request.vehicle.maxSpeedMps);
-
-    // Curvature speed ceiling from centripetal acceleration a=v^2*kappa.
-    for (std::size_t i = 1; i + 1 < points.size(); ++i)
-    {
-        const double dsA = pathProgress[i] - pathProgress[i - 1];
-        const double dsB = pathProgress[i + 1] - pathProgress[i];
-        const double span = std::max(Epsilon, 0.5 * (dsA + dsB));
-        const double dotValue = std::clamp(
-            glm::dot(tangent[i - 1], tangent[i + 1]),
-            -1.0,
-            1.0
-        );
-        const double angle = std::acos(dotValue);
-        const double curvature = angle / std::max(Epsilon, 2.0 * span);
-        if (curvature > 1.0e-9)
-        {
-            const double curveLimit = std::sqrt(
-                std::max(0.0, request.vehicle.maxLateralAccelerationMps2) /
-                curvature
-            );
-            // Small reserve keeps finite-difference acceleration below the
-            // authored lateral envelope instead of exactly grazing it.
-            limits[i] = std::min(limits[i], curveLimit * 0.92);
-        }
-    }
-
-    for (const auto& range : request.speedLimitRanges)
-    {
-        const double lo = std::min(
-            range.sourcePathStartMeters,
-            range.sourcePathEndMeters
-        );
-        const double hi = std::max(
-            range.sourcePathStartMeters,
-            range.sourcePathEndMeters
-        );
-        for (std::size_t i = 0; i < points.size(); ++i)
-        {
-            if (points[i].sourceProgressMeters >= lo - 1.0e-7 &&
-                points[i].sourceProgressMeters <= hi + 1.0e-7)
-            {
-                limits[i] = std::min(
-                    limits[i],
-                    std::max(0.0, range.maxSpeedMps)
-                );
-            }
-        }
-    }
-
-    for (const auto& constraint : request.pointSpeedConstraints)
-    {
-        if (points.empty())
-            break;
-        const std::size_t index = nearestSourceProgressIndex(
-            points,
-            constraint.sourcePathProgressMeters
-        );
-        limits[index] = std::min(
-            limits[index],
-            std::max(0.0, constraint.maxSpeedMps)
-        );
-    }
-
-    return limits;
-}
-
-glm::dvec3 angularVelocityBetween(
-    glm::dquat a,
-    glm::dquat b,
-    double dt
-)
-{
-    if (dt <= Epsilon)
-        return glm::dvec3(0.0);
-    a = glm::normalize(a);
-    b = glm::normalize(b);
-    glm::dquat delta = glm::normalize(b * glm::conjugate(a));
-    if (delta.w < 0.0)
-        delta = -delta;
-
-    const double w = std::clamp(delta.w, -1.0, 1.0);
-    const double angle = 2.0 * std::acos(w);
-    const double sinHalf = std::sqrt(std::max(0.0, 1.0 - w * w));
-    if (angle <= Epsilon || sinHalf <= Epsilon)
-        return glm::dvec3(0.0);
-    const glm::dvec3 axis(delta.x, delta.y, delta.z);
-    return axis / sinHalf * (angle / dt);
-}
-
-bool validateRequest(const TrajectoryGenerationRequest& request)
+bool validRequest(
+    const world::navigation::TrajectoryGenerationRequest& request
+) noexcept
 {
     if (request.systemId < 0 || request.frameId.empty() ||
         !finite(request.startUniverseTimeSeconds) ||
-        !finite(request.universeTimeScale) || request.universeTimeScale < 0.0 ||
-        request.pathPointsMeters.size() < 2 || !request.vehicle.valid() ||
-        !finite3(request.initialVelocityMps) ||
-        !finite(request.sampleSpacingMeters) ||
-        request.sampleSpacingMeters <= 0.0 ||
-        !finite(request.maxCurveChordErrorMeters) ||
-        request.maxCurveChordErrorMeters <= 0.0)
+        !finite(request.universeTimeScale) || request.universeTimeScale <= 0.0 ||
+        !request.vehicle.valid() || request.pathPointsMeters.size() < 2 ||
+        !finite(request.initialVelocityMps))
     {
         return false;
     }
 
     for (const auto& point : request.pathPointsMeters)
     {
-        if (!finite3(point))
+        if (!finite(point))
             return false;
     }
     return true;
 }
 
+std::vector<double> sourceProgressTable(
+    const std::vector<glm::dvec3>& points
+)
+{
+    std::vector<double> out(points.size(), 0.0);
+    for (std::size_t i = 1; i < points.size(); ++i)
+        out[i] = out[i - 1] + magnitude(points[i] - points[i - 1]);
+    return out;
+}
+
+double positiveMinimum(std::initializer_list<double> values)
+{
+    double out = std::numeric_limits<double>::infinity();
+    for (double value : values)
+    {
+        if (finite(value) && value > Epsilon)
+            out = std::min(out, value);
+    }
+    return finite(out) ? out : 0.0;
+}
+
+double accelerationBudget(
+    const world::navigation::NavigationVehicleProfile& vehicle
+)
+{
+    return positiveMinimum({
+        vehicle.maxForwardAccelerationMps2,
+        vehicle.maxBrakingAccelerationMps2,
+        vehicle.maxLateralAccelerationMps2
+    });
+}
+
+double segmentSpeedLimit(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    double sourceStart,
+    double sourceEnd
+)
+{
+    double limit = request.vehicle.maxSpeedMps;
+    for (const auto& range : request.speedLimitRanges)
+    {
+        if (!finite(range.sourcePathStartMeters) ||
+            !finite(range.sourcePathEndMeters) ||
+            !finite(range.maxSpeedMps) || range.maxSpeedMps <= 0.0)
+        {
+            continue;
+        }
+
+        const double begin = std::min(
+            range.sourcePathStartMeters,
+            range.sourcePathEndMeters
+        );
+        const double end = std::max(
+            range.sourcePathStartMeters,
+            range.sourcePathEndMeters
+        );
+        if (end + Epsilon < sourceStart || begin - Epsilon > sourceEnd)
+            continue;
+        limit = std::min(limit, range.maxSpeedMps);
+    }
+    return std::max(0.1, limit);
+}
+
+double estimateStopToStopSeconds(
+    double distanceMeters,
+    double maxSpeedMps,
+    double accelerationMps2,
+    double currentSpeedMps
+)
+{
+    const double distance = std::max(0.0, distanceMeters);
+    const double speed = std::max(0.1, maxSpeedMps);
+    const double acceleration = std::max(0.1, accelerationMps2);
+
+    const double distanceForAccelAndBrake = speed * speed / acceleration;
+    double ideal = 0.0;
+    if (distance <= distanceForAccelAndBrake)
+        ideal = 2.0 * std::sqrt(distance / acceleration);
+    else
+        ideal = 2.0 * speed / acceleration +
+            (distance - distanceForAccelAndBrake) / speed;
+
+    // The first leg may inherit arbitrary player/NPC velocity. Give Ruckig
+    // explicit room to capture that state instead of hiding a second path
+    // smoother in front of the solver.
+    ideal += std::max(0.0, currentSpeedMps) / acceleration;
+    return std::max(0.5, ideal * 1.20 + 0.25);
+}
+
+bool violatesKnownStopDistance(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const std::vector<double>& sourceProgress
+)
+{
+    if (request.pathPointsMeters.size() < 2)
+        return true;
+
+    double stopProgress = std::numeric_limits<double>::infinity();
+    for (const auto& constraint : request.pointSpeedConstraints)
+    {
+        if (finite(constraint.sourcePathProgressMeters) &&
+            finite(constraint.maxSpeedMps) &&
+            constraint.maxSpeedMps <= Epsilon &&
+            constraint.sourcePathProgressMeters >= 0.0)
+        {
+            stopProgress = std::min(
+                stopProgress,
+                constraint.sourcePathProgressMeters
+            );
+        }
+    }
+    if (!finite(stopProgress))
+        return false;
+
+    const glm::dvec3 firstDelta =
+        request.pathPointsMeters[1] - request.pathPointsMeters[0];
+    const double firstLength = magnitude(firstDelta);
+    if (firstLength <= Epsilon)
+        return false;
+
+    const glm::dvec3 firstDirection = firstDelta / firstLength;
+    const double alongSpeed = std::max(
+        0.0,
+        glm::dot(request.initialVelocityMps, firstDirection)
+    );
+    const double brake = request.vehicle.maxBrakingAccelerationMps2;
+    if (brake <= Epsilon)
+        return alongSpeed > Epsilon;
+
+    const double stoppingDistance = alongSpeed * alongSpeed / (2.0 * brake);
+    const double availableDistance = std::clamp(
+        stopProgress,
+        0.0,
+        sourceProgress.empty() ? 0.0 : sourceProgress.back()
+    );
+    return stoppingDistance > availableDistance + 1.0e-6;
+}
+
+double segmentSourceProgress(
+    const glm::dvec3& position,
+    const glm::dvec3& a,
+    const glm::dvec3& b,
+    double sourceStart,
+    double sourceEnd
+)
+{
+    const glm::dvec3 delta = b - a;
+    const double length2 = glm::dot(delta, delta);
+    if (length2 <= Epsilon)
+        return sourceEnd;
+    const double u = std::clamp(
+        glm::dot(position - a, delta) / length2,
+        0.0,
+        1.0
+    );
+    return sourceStart + (sourceEnd - sourceStart) * u;
+}
+
+double smoothStep01(double value)
+{
+    const double t = std::clamp(value, 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+
+glm::dquat sampleOrientation(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const glm::dvec3& velocity,
+    const glm::dvec3& segmentDirection,
+    double sourceProgress,
+    double totalSourceProgress
+)
+{
+    glm::dvec3 forward = magnitude(velocity) > 0.25
+        ? velocity
+        : segmentDirection;
+    if (magnitude(forward) <= Epsilon)
+        forward = glm::dvec3(0.0, 0.0, -1.0);
+    else
+        forward = glm::normalize(forward);
+
+    glm::dvec3 upHint(0.0, 1.0, 0.0);
+    if (request.hasTerminalOrientation &&
+        magnitude(request.terminalUp) > Epsilon)
+    {
+        upHint = glm::normalize(request.terminalUp);
+    }
+
+    glm::dquat orientation =
+        world::navigation::orientationForForwardUp(forward, upHint);
+
+    if (request.hasTerminalOrientation)
+    {
+        const glm::dquat terminal =
+            world::navigation::orientationForForwardUp(
+                request.terminalForward,
+                request.terminalUp
+            );
+        const double blendDistance = std::max(
+            0.0,
+            request.terminalOrientationBlendDistanceMeters
+        );
+        double blend = 0.0;
+        if (blendDistance > Epsilon)
+        {
+            const double remaining = std::max(
+                0.0,
+                totalSourceProgress - sourceProgress
+            );
+            blend = smoothStep01(1.0 - remaining / blendDistance);
+        }
+        else if (sourceProgress + Epsilon >= totalSourceProgress)
+        {
+            blend = 1.0;
+        }
+        if (glm::dot(orientation, terminal) < 0.0)
+            orientation = -orientation;
+        orientation = glm::normalize(glm::slerp(
+            orientation,
+            terminal,
+            blend
+        ));
+    }
+
+    return orientation;
+}
+
+bool validateSweptLeg(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const game::navigation::TrajectoryPredictionResult& prediction,
+    const glm::dvec3& a,
+    const glm::dvec3& b,
+    double sourceStart,
+    double sourceEnd,
+    std::size_t& checkedSegments
+)
+{
+    if (prediction.samples.size() < 2)
+        return false;
+
+    for (std::size_t i = 1; i < prediction.samples.size(); ++i)
+    {
+        const auto& previous = prediction.samples[i - 1].state.positionMeters;
+        const auto& current = prediction.samples[i].state.positionMeters;
+        const double previousProgress = segmentSourceProgress(
+            previous,
+            a,
+            b,
+            sourceStart,
+            sourceEnd
+        );
+        const double currentProgress = segmentSourceProgress(
+            current,
+            a,
+            b,
+            sourceStart,
+            sourceEnd
+        );
+        const double conservativeProgress = std::min(
+            previousProgress,
+            currentProgress
+        );
+        const bool legalTargetIngress =
+            !request.terminalAllowedObstacleId.empty() &&
+            conservativeProgress + 1.0e-7 >=
+                request.terminalObstacleEntrySourceProgressMeters;
+
+        ++checkedSegments;
+        if (!world::navigation::segmentClearOfNavigationObstacles(
+                previous,
+                current,
+                request.obstacles,
+                request.vehicle.collisionRadiusMeters,
+                request.vehicle.preferredClearanceMeters,
+                legalTargetIngress
+                    ? std::string_view(request.terminalAllowedObstacleId)
+                    : std::string_view{}))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void computeCurvatureDiagnostics(
+    world::navigation::TrajectoryGenerationResult& result
+)
+{
+    auto& samples = result.trajectory.samples;
+    double maxCurvature = 0.0;
+    double previousCurvature = 0.0;
+    double variation = 0.0;
+    bool havePrevious = false;
+
+    for (std::size_t i = 1; i + 1 < samples.size(); ++i)
+    {
+        const glm::dvec3 first =
+            samples[i].positionMeters - samples[i - 1].positionMeters;
+        const glm::dvec3 second =
+            samples[i + 1].positionMeters - samples[i].positionMeters;
+        const double firstLength = magnitude(first);
+        const double secondLength = magnitude(second);
+        if (firstLength <= Epsilon || secondLength <= Epsilon)
+            continue;
+
+        const double cosine = std::clamp(
+            glm::dot(first / firstLength, second / secondLength),
+            -1.0,
+            1.0
+        );
+        const double angle = std::acos(cosine);
+        const double curvature = angle /
+            std::max(Epsilon, 0.5 * (firstLength + secondLength));
+        maxCurvature = std::max(maxCurvature, curvature);
+        if (havePrevious)
+            variation += std::abs(curvature - previousCurvature);
+        previousCurvature = curvature;
+        havePrevious = true;
+    }
+
+    result.diagnostics.maxCurvaturePerMeter = maxCurvature;
+    result.diagnostics.curvatureVariation = variation;
+}
+
+void appendPerfLog(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const world::navigation::TrajectoryGenerationResult& result,
+    double totalMs
+)
+{
+    std::ofstream out(
+        world::navigation::navigationPerfLogPath(),
+        std::ios::app
+    );
+    if (!out)
+        return;
+
+    out << std::fixed << std::setprecision(4)
+        << "[RuckigRoutePerf] total_ms=" << totalMs
+        << " legs=" << result.diagnostics.ruckigLegAttempts
+        << " ruckig_ok=" << result.diagnostics.ruckigLegSuccesses
+        << " ruckig_ms=" << result.diagnostics.ruckigSolveMilliseconds
+        << " collision_segments=" << result.diagnostics.collisionSegmentsChecked
+        << " coarse_points=" << request.pathPointsMeters.size()
+        << " obstacles=" << request.obstacles.size()
+        << " samples=" << result.trajectory.samples.size()
+        << " valid=" << (result.ready() ? 1 : 0)
+        << '\n';
+}
+
 } // namespace
+
+namespace game::navigation
+{
+
+world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
+    const world::navigation::TrajectoryGenerationRequest& request
+)
+{
+    const auto totalStart = Clock::now();
+
+    if (!validRequest(request))
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::InvalidRequest,
+            "invalid Ruckig route request"
+        );
+
+    const auto sourceProgress = sourceProgressTable(request.pathPointsMeters);
+    if (sourceProgress.back() <= Epsilon)
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::InvalidRequest,
+            "Ruckig route has zero length"
+        );
+
+    if (violatesKnownStopDistance(request, sourceProgress))
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::InitialStateInfeasible,
+            "initial along-path speed cannot meet downstream constraints"
+        );
+
+    world::navigation::TrajectoryGenerationResult out;
+    out.trajectory.systemId = request.systemId;
+    out.trajectory.frameId = request.frameId;
+    out.trajectory.startUniverseTimeSeconds = request.startUniverseTimeSeconds;
+    out.trajectory.message = "Ruckig waypoint route trajectory";
+    out.diagnostics.coarsePathLengthMeters = sourceProgress.back();
+
+    const double acceleration = accelerationBudget(request.vehicle);
+    if (acceleration <= Epsilon)
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::InvalidRequest,
+            "Ruckig route has no usable acceleration budget"
+        );
+
+    WorldKinematicState currentState;
+    currentState.positionMeters = request.pathPointsMeters.front();
+    currentState.velocityMps = request.initialVelocityMps;
+    currentState.accelerationMps2 = glm::dvec3(0.0);
+    glm::dvec3 currentProperAcceleration(0.0);
+
+    double accumulatedPhysicalSeconds = 0.0;
+    double accumulatedPathMeters = 0.0;
+    std::size_t checkedCollisionSegments = 0;
+    const double totalSourceProgress = sourceProgress.back();
+
+    const glm::dvec3 firstDelta =
+        request.pathPointsMeters[1] - request.pathPointsMeters[0];
+    const glm::dvec3 firstDirection = magnitude(firstDelta) > Epsilon
+        ? glm::normalize(firstDelta)
+        : glm::dvec3(0.0, 0.0, -1.0);
+    out.diagnostics.initialAlongPathSpeedMps =
+        glm::dot(request.initialVelocityMps, firstDirection);
+    const glm::dvec3 initialCross = request.initialVelocityMps -
+        firstDirection * out.diagnostics.initialAlongPathSpeedMps;
+    out.diagnostics.initialCrossTrackSpeedMps = magnitude(initialCross);
+    out.diagnostics.pathCaptureRequired =
+        out.diagnostics.initialCrossTrackSpeedMps > 0.25;
+
+    for (std::size_t legIndex = 0;
+         legIndex + 1 < request.pathPointsMeters.size();
+         ++legIndex)
+    {
+        const glm::dvec3 legStart = request.pathPointsMeters[legIndex];
+        const glm::dvec3 legEnd = request.pathPointsMeters[legIndex + 1];
+        const glm::dvec3 legDelta = legEnd - legStart;
+        const double legDistance = magnitude(legDelta);
+        if (legDistance <= Epsilon)
+            continue;
+
+        const double speedLimit = segmentSpeedLimit(
+            request,
+            sourceProgress[legIndex],
+            sourceProgress[legIndex + 1]
+        );
+        const double inheritedSpeed = magnitude(currentState.velocityMps);
+        double duration = estimateStopToStopSeconds(
+            legDistance,
+            speedLimit,
+            acceleration,
+            inheritedSpeed
+        );
+
+        TrajectoryPredictionResult acceptedPrediction;
+        bool accepted = false;
+        constexpr int MaxDurationAttempts = 6;
+        for (int attempt = 0; attempt < MaxDurationAttempts; ++attempt)
+        {
+            RuckigTrajectoryRequest ruckigRequest;
+            ruckigRequest.systemId = request.systemId;
+            ruckigRequest.startUniverseTimeSeconds = 0.0;
+            ruckigRequest.initialState = currentState;
+            ruckigRequest.initialProperAccelerationMps2 =
+                currentProperAcceleration;
+            ruckigRequest.motionEnvelope.maxProperAccelerationMps2 =
+                acceleration;
+            ruckigRequest.motionEnvelope.maxProperJerkMps3 =
+                std::max(1.0, acceleration * 4.0);
+            ruckigRequest.horizonSeconds = duration;
+            ruckigRequest.sampleIntervalSeconds = std::min(0.10, duration);
+            ruckigRequest.validationStepSeconds = std::min(0.02, duration);
+            ruckigRequest.targetPositionMeters = legEnd;
+            // Runtime baseline deliberately stops at coarse topology vertices.
+            // This prevents a state-to-state polynomial from shaving an
+            // obstacle corner. Through-waypoint blending can be added later as
+            // a bounded local feature, not as a second global spline solver.
+            ruckigRequest.targetVelocityMps = glm::dvec3(0.0);
+
+            ++out.diagnostics.ruckigLegAttempts;
+            const auto solveStart = Clock::now();
+            auto candidate = RuckigTrajectorySolver::solve(ruckigRequest);
+            const auto solveStop = Clock::now();
+            out.diagnostics.ruckigSolveMilliseconds += elapsedMilliseconds(
+                solveStart,
+                solveStop
+            );
+
+            if (candidate.ok() && !candidate.prediction.samples.empty())
+            {
+                const double permittedPeakSpeed = std::max(
+                    speedLimit,
+                    inheritedSpeed
+                ) + std::max(0.25, speedLimit * 0.01);
+                if (candidate.prediction.diagnostics.maxSpeedMps <=
+                    permittedPeakSpeed)
+                {
+                    acceptedPrediction = std::move(candidate.prediction);
+                    accepted = true;
+                    ++out.diagnostics.ruckigLegSuccesses;
+                    break;
+                }
+            }
+
+            duration *= 1.45;
+        }
+
+        if (!accepted)
+        {
+            auto failed = failure(
+                request,
+                world::navigation::TrajectoryStatus::NumericalFailure,
+                "Ruckig could not solve a bounded coarse-route leg"
+            );
+            failed.diagnostics = out.diagnostics;
+            appendPerfLog(
+                request,
+                failed,
+                elapsedMilliseconds(totalStart, Clock::now())
+            );
+            return failed;
+        }
+
+        if (!validateSweptLeg(
+                request,
+                acceptedPrediction,
+                legStart,
+                legEnd,
+                sourceProgress[legIndex],
+                sourceProgress[legIndex + 1],
+                checkedCollisionSegments))
+        {
+            auto failed = failure(
+                request,
+                world::navigation::TrajectoryStatus::NoSafePath,
+                "Ruckig leg leaves the collision-free coarse corridor"
+            );
+            failed.diagnostics = out.diagnostics;
+            failed.diagnostics.collisionSegmentsChecked =
+                checkedCollisionSegments;
+            appendPerfLog(
+                request,
+                failed,
+                elapsedMilliseconds(totalStart, Clock::now())
+            );
+            return failed;
+        }
+
+        const glm::dvec3 segmentDirection = glm::normalize(legDelta);
+        for (std::size_t sampleIndex = 0;
+             sampleIndex < acceptedPrediction.samples.size();
+             ++sampleIndex)
+        {
+            if (!out.trajectory.samples.empty() && sampleIndex == 0)
+                continue;
+
+            const auto& source = acceptedPrediction.samples[sampleIndex];
+            world::navigation::TrajectorySample sample;
+            sample.timeOffsetSeconds =
+                accumulatedPhysicalSeconds + source.timeOffsetSeconds;
+            sample.universeTimeSeconds =
+                request.startUniverseTimeSeconds +
+                sample.timeOffsetSeconds * request.universeTimeScale;
+            sample.positionMeters = source.state.positionMeters;
+            sample.velocityMps = source.state.velocityMps;
+            sample.accelerationMps2 = source.state.accelerationMps2;
+            sample.speedMps = magnitude(sample.velocityMps);
+            sample.sourcePathProgressMeters = segmentSourceProgress(
+                sample.positionMeters,
+                legStart,
+                legEnd,
+                sourceProgress[legIndex],
+                sourceProgress[legIndex + 1]
+            );
+
+            if (out.trajectory.samples.empty())
+            {
+                sample.pathProgressMeters = 0.0;
+            }
+            else
+            {
+                accumulatedPathMeters += magnitude(
+                    sample.positionMeters -
+                    out.trajectory.samples.back().positionMeters
+                );
+                sample.pathProgressMeters = accumulatedPathMeters;
+            }
+
+            sample.orientation = sampleOrientation(
+                request,
+                sample.velocityMps,
+                segmentDirection,
+                sample.sourcePathProgressMeters,
+                totalSourceProgress
+            );
+            out.diagnostics.maxSpeedMps = std::max(
+                out.diagnostics.maxSpeedMps,
+                sample.speedMps
+            );
+            out.diagnostics.maxAccelerationMps2 = std::max(
+                out.diagnostics.maxAccelerationMps2,
+                magnitude(sample.accelerationMps2)
+            );
+            out.trajectory.samples.push_back(std::move(sample));
+        }
+
+        if (acceptedPrediction.samples.empty())
+            continue;
+        const auto& end = acceptedPrediction.samples.back();
+        currentState = end.state;
+        currentProperAcceleration = end.properAccelerationMps2;
+        accumulatedPhysicalSeconds += end.timeOffsetSeconds;
+    }
+
+    if (out.trajectory.samples.size() < 2)
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::NumericalFailure,
+            "Ruckig route produced too few samples"
+        );
+
+    // The accepted product ends exactly at the authored/coarse terminal.
+    auto& terminal = out.trajectory.samples.back();
+    terminal.positionMeters = request.pathPointsMeters.back();
+    terminal.velocityMps = glm::dvec3(0.0);
+    terminal.speedMps = 0.0;
+    terminal.sourcePathProgressMeters = totalSourceProgress;
+    if (request.hasTerminalOrientation)
+    {
+        terminal.orientation = world::navigation::orientationForForwardUp(
+            request.terminalForward,
+            request.terminalUp
+        );
+    }
+
+    out.trajectory.status = world::navigation::TrajectoryStatus::Ready;
+    out.trajectory.durationSeconds =
+        out.trajectory.samples.back().timeOffsetSeconds;
+    out.trajectory.lengthMeters = accumulatedPathMeters;
+    out.diagnostics.optimizedPathLengthMeters = accumulatedPathMeters;
+    out.diagnostics.collisionSegmentsChecked = checkedCollisionSegments;
+
+    computeCurvatureDiagnostics(out);
+
+    // Compatibility fields remain populated until old diagnostics/tests are
+    // renamed. They no longer mean spline candidates: one successful value is
+    // one accepted Ruckig leg. Production code must use the Ruckig fields.
+    out.diagnostics.smoothCandidatesEvaluated =
+        out.diagnostics.ruckigLegAttempts;
+    out.diagnostics.smoothSafeCandidates =
+        out.diagnostics.ruckigLegSuccesses;
+    out.diagnostics.selectedSmoothSupportLevel = 0;
+    out.diagnostics.smoothingFellBackToPolyline = false;
+
+    appendPerfLog(
+        request,
+        out,
+        elapsedMilliseconds(totalStart, Clock::now())
+    );
+    return out;
+}
+
+} // namespace game::navigation
+
+namespace world::navigation
+{
 
 TrajectoryGenerationResult TrajectoryGenerator::generate(
     const TrajectoryGenerationRequest& request
 )
 {
-    TrajectoryGenerationResult out;
-    out.trajectory.systemId = request.systemId;
-    out.trajectory.frameId = request.frameId;
-    out.trajectory.startUniverseTimeSeconds = request.startUniverseTimeSeconds;
-
-    if (!validateRequest(request))
-    {
-        out.trajectory.status = TrajectoryStatus::InvalidRequest;
-        out.trajectory.message = "invalid trajectory generation request";
-        return out;
-    }
-
-    const auto rawProgress = sourceProgress(request.pathPointsMeters);
-    const double rawLength = rawProgress.back();
-    if (!finite(rawLength) || rawLength <= Epsilon)
-    {
-        out.trajectory.status = TrajectoryStatus::InvalidRequest;
-        out.trajectory.message = "trajectory source path has zero length";
-        return out;
-    }
-
-    const auto curve = globalSmoothCurve(request, out.diagnostics);
-    if (curve.size() < 2)
-    {
-        out.trajectory.status = TrajectoryStatus::NoSafePath;
-        out.trajectory.message = "no collision-free globally smooth trajectory path";
-        return out;
-    }
-
-    const auto progress = curveProgress(curve);
-    const auto tangent = tangents(curve);
-    auto limits = speedLimits(request, curve, progress, tangent);
-    std::vector<double> speeds(curve.size(), 0.0);
-
-    // Backward pass: every point receives the maximum speed from which the
-    // next downstream constraint can still be reached with real braking.
-    std::vector<double> downstream = limits;
-    const double braking = request.vehicle.maxBrakingAccelerationMps2;
-    for (std::size_t i = curve.size() - 1; i-- > 0; )
-    {
-        const double ds = progress[i + 1] - progress[i];
-        const double reachable = std::sqrt(std::max(
-            0.0,
-            downstream[i + 1] * downstream[i + 1] + 2.0 * braking * ds
-        ));
-        downstream[i] = std::min(downstream[i], reachable);
-    }
-
-    const double along = glm::dot(request.initialVelocityMps, tangent.front());
-    const double initialAlong = std::max(0.0, along);
-    const glm::dvec3 alongVector = tangent.front() * along;
-    const double crossTrack = glm::length(
-        request.initialVelocityMps - alongVector
-    );
-    out.diagnostics.initialAlongPathSpeedMps = initialAlong;
-    out.diagnostics.initialCrossTrackSpeedMps = crossTrack;
-    out.diagnostics.pathCaptureRequired =
-        crossTrack > 0.25 || along < -0.25;
-
-    // Reverse motion relative to the route or a large side-slip is a follower
-    // capture problem. Stage 5A does not pretend that projecting the velocity
-    // changes physics; it exposes the diagnostic and parameterizes the forward
-    // route from the non-negative along-path component.
-    if (initialAlong > downstream.front() + 1.0e-6)
-    {
-        out.trajectory.status = TrajectoryStatus::InitialStateInfeasible;
-        out.trajectory.message =
-            "initial along-path speed cannot meet downstream constraints";
-        return out;
-    }
-
-    speeds.front() = std::min(initialAlong, downstream.front());
-    const double acceleration = request.vehicle.maxForwardAccelerationMps2;
-    for (std::size_t i = 1; i < curve.size(); ++i)
-    {
-        const double ds = progress[i] - progress[i - 1];
-        const double reachable = std::sqrt(std::max(
-            0.0,
-            speeds[i - 1] * speeds[i - 1] + 2.0 * acceleration * ds
-        ));
-        speeds[i] = std::min(downstream[i], reachable);
-    }
-
-    out.trajectory.samples.resize(curve.size());
-    double timeOffset = 0.0;
-    for (std::size_t i = 0; i < curve.size(); ++i)
-    {
-        auto& sample = out.trajectory.samples[i];
-        if (i > 0)
-        {
-            const double ds = progress[i] - progress[i - 1];
-            const double speedSum = speeds[i - 1] + speeds[i];
-            double dt = 0.0;
-            if (speedSum > 1.0e-7)
-            {
-                dt = 2.0 * ds / speedSum;
-            }
-            else
-            {
-                // This can only occur for two authored zero-speed hard points.
-                // Allocate a finite conservative dwell/translation time rather
-                // than creating NaN/Inf timestamps.
-                const double fallbackAccel = std::max(
-                    Epsilon,
-                    std::min(acceleration, braking)
-                );
-                dt = 2.0 * std::sqrt(std::max(0.0, ds) / fallbackAccel);
-            }
-            if (!finite(dt) || dt <= 0.0)
-            {
-                out.trajectory.samples.clear();
-                out.trajectory.status = TrajectoryStatus::NumericalFailure;
-                out.trajectory.message = "trajectory time parameterization failed";
-                return out;
-            }
-            timeOffset += dt;
-        }
-
-        sample.timeOffsetSeconds = timeOffset;
-        sample.universeTimeSeconds = request.startUniverseTimeSeconds +
-            timeOffset * request.universeTimeScale;
-        sample.pathProgressMeters = progress[i];
-        sample.sourcePathProgressMeters = curve[i].sourceProgressMeters;
-        sample.positionMeters = curve[i].positionMeters;
-        sample.speedMps = speeds[i];
-        sample.velocityMps = tangent[i] * speeds[i];
-    }
-
-    // Deterministic visible attitude: nose follows the local trajectory. A
-    // terminal docking pose can blend in near the end, while angular control
-    // feasibility remains a Stage 5B/follower concern rather than being hidden.
-    glm::dvec3 upHint(0.0, 1.0, 0.0);
-    const glm::dquat terminalOrientation = orientationForForwardUp(
-        request.terminalForward,
-        request.terminalUp
-    );
-    for (std::size_t i = 0; i < out.trajectory.samples.size(); ++i)
-    {
-        auto& sample = out.trajectory.samples[i];
-        glm::dquat orientation = orientationForForwardUp(tangent[i], upHint);
-        upHint = orientation * glm::dvec3(0.0, 1.0, 0.0);
-
-        if (request.hasTerminalOrientation &&
-            request.terminalOrientationBlendDistanceMeters > Epsilon)
-        {
-            const double remaining =
-                progress.back() - sample.pathProgressMeters;
-            const double u = std::clamp(
-                1.0 - remaining /
-                    request.terminalOrientationBlendDistanceMeters,
-                0.0,
-                1.0
-            );
-            const double smooth = u * u * (3.0 - 2.0 * u);
-            orientation = glm::normalize(glm::slerp(
-                orientation,
-                terminalOrientation,
-                smooth
-            ));
-        }
-        sample.orientation = orientation;
-    }
-    if (request.hasTerminalOrientation)
-        out.trajectory.samples.back().orientation = terminalOrientation;
-
-    for (std::size_t i = 0; i < out.trajectory.samples.size(); ++i)
-    {
-        auto& sample = out.trajectory.samples[i];
-        if (i == 0)
-        {
-            if (out.trajectory.samples.size() > 1)
-            {
-                const double dt = out.trajectory.samples[1].timeOffsetSeconds -
-                    sample.timeOffsetSeconds;
-                sample.accelerationMps2 = dt > Epsilon
-                    ? (out.trajectory.samples[1].velocityMps - sample.velocityMps) / dt
-                    : glm::dvec3(0.0);
-                sample.angularVelocityRadPerSecond = dt > Epsilon
-                    ? angularVelocityBetween(
-                        sample.orientation,
-                        out.trajectory.samples[1].orientation,
-                        dt
-                      )
-                    : glm::dvec3(0.0);
-            }
-        }
-        else
-        {
-            const auto& previous = out.trajectory.samples[i - 1];
-            const double dt = sample.timeOffsetSeconds -
-                previous.timeOffsetSeconds;
-            sample.accelerationMps2 = dt > Epsilon
-                ? (sample.velocityMps - previous.velocityMps) / dt
-                : glm::dvec3(0.0);
-            sample.angularVelocityRadPerSecond = dt > Epsilon
-                ? angularVelocityBetween(previous.orientation, sample.orientation, dt)
-                : glm::dvec3(0.0);
-        }
-
-        if (!finite3(sample.positionMeters) || !finite3(sample.velocityMps) ||
-            !finite3(sample.accelerationMps2) ||
-            !finite3(sample.angularVelocityRadPerSecond) ||
-            !finite(sample.universeTimeSeconds) || !finite(sample.speedMps))
-        {
-            out.trajectory.samples.clear();
-            out.trajectory.status = TrajectoryStatus::NumericalFailure;
-            out.trajectory.message = "trajectory contains non-finite sample";
-            return out;
-        }
-
-        out.diagnostics.maxSpeedMps = std::max(
-            out.diagnostics.maxSpeedMps,
-            sample.speedMps
-        );
-        out.diagnostics.maxAccelerationMps2 = std::max(
-            out.diagnostics.maxAccelerationMps2,
-            glm::length(sample.accelerationMps2)
-        );
-        out.diagnostics.maxAngularVelocityRadPerSecond = std::max(
-            out.diagnostics.maxAngularVelocityRadPerSecond,
-            glm::length(sample.angularVelocityRadPerSecond)
-        );
-    }
-
-    out.trajectory.durationSeconds = timeOffset;
-    out.trajectory.lengthMeters = progress.back();
-    out.trajectory.status = TrajectoryStatus::Ready;
-    out.trajectory.message = out.diagnostics.smoothingFellBackToPolyline
-        ? "safe time-parameterized polyline trajectory"
-        : "safe global B-spline time-parameterized trajectory";
-    return out;
+    // Compatibility facade only. The canonical runtime implementation lives in
+    // game::navigation::RuckigRoutePlanner; the removed spline optimizer is not
+    // part of the live route-to-trajectory path anymore.
+    return game::navigation::RuckigRoutePlanner::plan(request);
 }
 
 } // namespace world::navigation

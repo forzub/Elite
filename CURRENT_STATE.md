@@ -3,16 +3,10 @@
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Editor baseline:** v0.10.86 accepted  
-**Model Asset Editor architecture:** closed at current target boundary  
-**ModelAsset binary v4:** independent translation units closed  
-**Game runtime decomposition:** R0 seams + dual-source model ingress accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted locally  
-**Navigation:** NAV-RUCKIG-1 implementation active; local MinGW acceptance pending
+**Navigation:** NAV-RUCKIG-1 compile gate accepted; live runtime regression fixed in current branch, local re-acceptance pending
 
 ## Stable baseline outside navigation
-
-`EliteNavigationGeometry` and `EliteAssemblyGeometry` remain the shared runtime
-geometry seams.
 
 Runtime model ingress remains:
 
@@ -28,174 +22,149 @@ Renderer work remains paused while navigation is stabilized.
 ```text
 SpaceState::updateDockingGuidance()
     -> ClientNavigationPlanningSnapshotFactory
-    -> DockingPathPlanner::plan()
-    -> TrajectoryGenerator::generate() compatibility facade
-    -> game::navigation::RuckigRoutePlanner::plan()
-    -> RuckigTrajectorySolver::solve()
+    -> DockingPathPlanner / GeometricPathPlanner     coarse topology
+    -> TrajectoryGenerator compatibility facade
+    -> game::navigation::RuckigRoutePlanner          runtime motion
+    -> RuckigTrajectorySolver                        state-to-state primitive
     -> swept NavigationObstacleGeometry validation
-    -> GuidanceState
+    -> GuidanceTunnel                                presentation
 ```
 
-Manual guidance:
+`SmoothPathOptimizer` is not part of either live route generation or rolling
+reconnect. Its old B-spline implementation is retired.
+
+## Accepted local compile gate
+
+The user locally accepted the previous NAV-RUCKIG-1 build at commit `9cae20b`:
+
+- `check_ruckig_navigation_spike.py` PASS;
+- `check_ruckig_navigation_integration.py` PASS;
+- `check_ruckig_live_navigation.py` PASS;
+- `check_live_docking_guidance.py` PASS;
+- focused `ruckig_route_planner` PASS;
+- focused `guidance_tunnel_local_horizon` PASS;
+- `EliteGame` compiled and linked under MinGW.
+
+That compile gate did **not** constitute runtime acceptance.
+
+## Live runtime regression found immediately afterwards
+
+The first real Hub run displayed:
 
 ```text
-accepted route trajectory
-    -> GuidanceTunnelBuilder::build(TrajectoryBackbone)
-
-material live-state change
-    -> GuidanceTunnelBuilder::build(ReconnectCurrentPose)
-    -> Ruckig current-state -> accepted-state reconnect
-    -> swept collision validation
-    -> accepted immutable tail
+НАВИГАЦИЯ НЕДОСТУПНА [Ruckig leg leaves the collision-free coarse corridor]
 ```
 
-Neither live source references `SmoothPathOptimizer`.
+The cause was architectural and deterministic, not the obstacle search itself.
+`RuckigTrajectorySolver` synchronized three independent scalar DoFs directly in
+arbitrary world XYZ. A rest-to-rest diagonal leg can therefore bow away from the
+straight collision-free chord supplied by `GeometricPathPlanner`, because X/Y/Z
+may receive different normalized motion profiles. Swept validation correctly
+rejected that bowed curve.
+
+### Current fix
+
+`RuckigTrajectorySolver` now builds a deterministic orthonormal `MotionBasis`
+for every state-to-state solve:
+
+- local +X follows the relative leg displacement;
+- local Y/Z are transverse DoFs;
+- position/velocity/acceleration/gravity deltas are transformed into that basis;
+- Ruckig solves in the leg basis;
+- sampled results are transformed back to world/planning coordinates;
+- the original proper-acceleration, jerk and terminal-state validation remains;
+- downstream swept obstacle validation remains authoritative.
+
+A new focused regression requires a diagonal stopped leg to remain on its
+coarse collision-free chord to `1e-5 m`.
+
+This does not ask Ruckig to replace obstacle topology. `GeometricPathPlanner`
+still decides where free space is; Ruckig supplies physically bounded state
+motion in a coordinate system aligned with that spatial product.
+
+## Hub navigation stress field
+
+The previous diagnostic layout was rejected: all 16 stress objects had been
+placed in four bands directly across player -> dock, producing an artificial
+barrier rather than a useful Hub field.
+
+Current layout:
+
+- 2 authored docking targets remain on the +/-X service axis;
+- 16 stress objects remain deterministic/reproducible;
+- they are distributed over two staggered shells around the station;
+- shell points have vertical variation;
+- no stress object occupies the exact +/-X docking service axis;
+- several independent passages remain through the field.
+
+`check_navigation_stress_field.py` now forbids the old four-band coordinates.
+
+## Hub Map label rule
+
+Persistent object names on Hub Map are removed.
+
+The single rule is now:
+
+```text
+all visible Hub Map overlay objects
+    -> no permanent text
+    -> mouse hover selects one nearest/highest-priority object
+    -> one semi-transparent name is drawn above it
+```
+
+The policy is shared across Hub infrastructure, ships, the Hub reference and
+future overlay objects. It does not depend on the stress-object type.
 
 ## Ruckig route behavior
 
-The route backend now supports collision-gated continuous waypoint motion.
+Internal coarse waypoints may still request a conservative through velocity when
+local corner-cut eligibility is clear. Every generated Ruckig sample chord is
+validated against canonical navigation obstacles. If a blended corner fails,
+its adjacent waypoint velocities are relaxed to zero and the route is retried;
+there is no spline fallback.
 
-For each internal coarse waypoint it computes a candidate through velocity only
-when:
-
-- the turn is not a U-turn;
-- no explicit point constraint requires a stop;
-- a local entry->exit corner-cut chord is clear for the vehicle envelope;
-- a conservative speed derived from lateral acceleration, local blend distance
-  and adjacent speed limits is non-zero.
-
-The actual adjacent state-to-state motion is still generated by Ruckig and every
-sample chord is swept against canonical navigation geometry. If a blended leg
-fails, only the adjacent candidate waypoint velocities are zeroed and the whole
-route is retried. The safe fallback is therefore a stop at that topology vertex,
-not a spline/polyline deformation outside the selected route.
-
-Current diagnostics include:
+Current diagnostics:
 
 ```text
-ruckigLegAttempts
-ruckigLegSuccesses
-collisionSegmentsChecked
-ruckigSolveMilliseconds
-[RuckigRoutePerf] ... blended_waypoints=...
+[RuckigRoutePerf] total_ms=... legs=... ruckig_ok=...
+                  ruckig_ms=... collision_segments=...
+                  blended_waypoints=... coarse_points=...
+                  obstacles=... samples=... valid=...
 ```
 
-## Rolling reconnect behavior
+## Historical rejected baseline
 
-`GuidanceTunnel.cpp` uses the same `RuckigTrajectorySolver` primitive for rolling
-current-pose corrections.
-
-Stable terminal:
+The retired custom smoother with 19 obstacles produced approximately:
 
 ```text
-D = latency + braking + turning + safety margin
-current state -> Ruckig -> accepted local rejoin state
-accepted tail reused unchanged
+total_ms      ~= 470
+trajectory_ms ~= 373
 ```
 
-Moved terminal or failed bounded join triggers a full Ruckig reconnect through
-sparse accepted-route supports and final docking-axis alignment. All legs remain
-collision checked. There is no spline fallback.
+and repeated synchronous reconnect stalls. These numbers are historical only;
+do not optimize or restore that stack.
 
-## SmoothPath retirement
+## Current re-acceptance
 
-The old custom B-spline implementation has been removed from
-`SmoothPathOptimizer.cpp`.
-
-Production behavior is fail-closed:
-
-```text
-SmoothPathOptimizer retired; use the canonical Ruckig navigation backend
-```
-
-A minimal non-smoothing compatibility branch is compiled only into the old
-`navigation_guidance_tests` target via:
-
-```text
-ELITE_LEGACY_SMOOTH_PATH_TEST_COMPAT=1
-```
-
-Root `EliteGame` / `EliteServer` CMake does not define that macro. This keeps one
-stale direct smoother regression compilable while preventing the retired
-algorithm from existing in production.
-
-The header/source and CMake source-list entries can be deleted completely after
-the remaining global-B-spline test is migrated.
-
-## Tests/contracts added or changed
-
-Hard architecture guard:
-
-```bash
-python tests/architecture_contracts/check_ruckig_live_navigation.py
-```
-
-It verifies Ruckig ownership, swept validation, absence of SmoothPath calls in
-live sources, and fail-closed production retirement of the old smoother.
-
-Focused route suite:
-
-```text
-tests/navigation_guidance/RuckigRoutePlannerTests.cpp
-```
-
-Covers:
-
-- straight Ruckig route and exact stopped terminal;
-- clear corner with non-zero through-waypoint velocity;
-- obstacle-blocked corner that must relax to a stop;
-- impossible initial braking rejection.
-
-`guidance_tunnel_local_horizon_tests` now links Ruckig and has no smoother source
-dependency.
-
-The large `NavigationGuidanceTests.cpp` still contains one explicitly obsolete
-"global B-spline" trajectory expectation plus one direct smoother compatibility
-regression. The latter now uses the test-only shim. The global spline assertion
-is the next test migration; it must not drive runtime architecture backwards.
-
-## Historical performance baseline
-
-Old 19-obstacle smoother capture:
-
-```text
-[DockingPerf]
-total_ms      ~= 470.3
-snapshot_ms   ~=   0.41
-geometric_ms  ~=   7.42
-trajectory_ms ~= 373.3
-tunnel_ms     ~=  15.5
-```
-
-Old rolling run: 39 reconnect attempts × 7 custom candidate families, roughly
-14.4 s smoother CPU. Historical comparison only.
-
-## Current acceptance commands
+Run:
 
 ```bash
 git fetch origin
 git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
 git pull --ff-only
 
-python tests/architecture_contracts/check_ruckig_navigation_spike.py
-python tests/architecture_contracts/check_ruckig_navigation_integration.py
 python tests/architecture_contracts/check_ruckig_live_navigation.py
+python tests/architecture_contracts/check_navigation_stress_field.py
 python tests/architecture_contracts/check_live_docking_guidance.py
-
-bash tests/navigation_guidance/run_mingw64.sh
+bash tests/navigation_guidance/run_ruckig_mingw64.sh
 cmake --build build --target EliteGame
 ```
 
-No compile/runtime acceptance is claimed until these are run locally. Focused
-Ruckig/local-horizon failures are blockers. A failure solely in the stale global
-B-spline assertion means that test still needs migration.
+Then run `EliteGame` and verify all three runtime gates:
 
-## Next
+1. stress objects are distributed around the Hub, not lined up as a wall;
+2. names appear only on hover and are semi-transparent;
+3. CALCULATE ROUTE produces guidance instead of `Ruckig leg leaves the collision-free coarse corridor`.
 
-1. Local MinGW compile + focused tests.
-2. Migrate obsolete global-B-spline test to Ruckig waypoint semantics.
-3. Delete the compatibility `SmoothPathOptimizer` API/source and remove its CMake
-   entries completely.
-4. Re-run docking stress scene and compare new timing/log products.
-5. If necessary, move immutable planning off the frame thread and then optimize
-   the measured remaining topology/validation bottleneck.
+If gate 3 still fails, preserve the exact new failure text and `[RuckigRoutePerf]`
+line; do not weaken collision validation.

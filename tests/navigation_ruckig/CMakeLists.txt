@@ -26,6 +26,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ruckig)
 
+# Ruckig v0.19.4 uses the M_PI macro in its public/internal headers. MinGW's
+# strict -std=c++20 mode hides that non-standard macro unless this compatibility
+# switch is enabled. Upstream already does the equivalent for MSVC; keep the
+# workaround target-local so the rest of Elite remains unaffected.
+if(MINGW)
+    target_compile_definitions(ruckig PUBLIC _USE_MATH_DEFINES)
+endif()
+
 get_filename_component(
     ELITE_SOURCE_ROOT
     "${CMAKE_CURRENT_LIST_DIR}/../.."

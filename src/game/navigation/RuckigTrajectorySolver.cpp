@@ -46,6 +46,77 @@ glm::dvec3 toVec3(const std::array<double, 3>& value)
     return {value[0], value[1], value[2]};
 }
 
+glm::dvec3 normalizedOr(
+    const glm::dvec3& value,
+    const glm::dvec3& fallback
+)
+{
+    const double n2 = glm::dot(value, value);
+    if (!finite(n2) || n2 <= TimeEpsilon)
+        return fallback;
+    return value / std::sqrt(n2);
+}
+
+/*
+    Ruckig synchronizes independent scalar DoFs. Solving directly in arbitrary
+    world XYZ therefore makes the spatial curve depend on world-axis alignment:
+    even a rest-to-rest diagonal leg can bow away from its collision-free chord.
+
+    The runtime route contract is the opposite: GeometricPathPlanner owns the
+    collision-free spatial chord; Ruckig owns its kinematic timing. Rotate every
+    state-to-state solve into a deterministic leg-aligned orthonormal basis so
+    longitudinal motion is the primary DoF and transverse DoFs represent only
+    real incoming/terminal lateral state. This removes the world-axis artifact
+    without weakening any acceleration/jerk or swept-collision checks.
+*/
+struct MotionBasis
+{
+    glm::dvec3 x {1.0, 0.0, 0.0};
+    glm::dvec3 y {0.0, 1.0, 0.0};
+    glm::dvec3 z {0.0, 0.0, 1.0};
+
+    glm::dvec3 toLocal(const glm::dvec3& world) const
+    {
+        return {
+            glm::dot(world, x),
+            glm::dot(world, y),
+            glm::dot(world, z)
+        };
+    }
+
+    glm::dvec3 toWorld(const glm::dvec3& local) const
+    {
+        return x * local.x + y * local.y + z * local.z;
+    }
+};
+
+MotionBasis makeMotionBasis(
+    const glm::dvec3& relativePosition0,
+    const RuckigTrajectoryRequest& request
+)
+{
+    MotionBasis basis;
+    const glm::dvec3 direct =
+        request.targetPositionMeters - request.initialState.positionMeters;
+    basis.x = normalizedOr(
+        -relativePosition0,
+        normalizedOr(direct, glm::dvec3(1.0, 0.0, 0.0))
+    );
+
+    glm::dvec3 seed = std::abs(basis.x.y) < 0.85
+        ? glm::dvec3(0.0, 1.0, 0.0)
+        : glm::dvec3(0.0, 0.0, 1.0);
+    basis.z = normalizedOr(
+        glm::cross(basis.x, seed),
+        glm::dvec3(0.0, 0.0, 1.0)
+    );
+    basis.y = normalizedOr(
+        glm::cross(basis.z, basis.x),
+        seed
+    );
+    return basis;
+}
+
 RuckigTrajectoryResult failure(
     const RuckigTrajectoryRequest& request,
     TrajectoryPredictionStatus status,
@@ -142,6 +213,7 @@ struct SampledState
 SampledState sampleTrajectory(
     const RuckigTrajectoryRequest& request,
     const CoMovingFrame& frame,
+    const MotionBasis& basis,
     const ruckig::Trajectory<3>& trajectory,
     double timeOffsetSeconds
 )
@@ -156,13 +228,18 @@ SampledState sampleTrajectory(
         relativeAcceleration
     );
 
+    const glm::dvec3 positionWorld = basis.toWorld(toVec3(relativePosition));
+    const glm::dvec3 velocityWorld = basis.toWorld(toVec3(relativeVelocity));
+    const glm::dvec3 accelerationWorld =
+        basis.toWorld(toVec3(relativeAcceleration));
+
     SampledState out;
     out.state.positionMeters =
-        frame.positionAt(timeOffsetSeconds) + toVec3(relativePosition);
+        frame.positionAt(timeOffsetSeconds) + positionWorld;
     out.state.velocityMps =
-        frame.velocityAt(timeOffsetSeconds) + toVec3(relativeVelocity);
+        frame.velocityAt(timeOffsetSeconds) + velocityWorld;
     out.state.accelerationMps2 =
-        frame.accelerationMps2 + toVec3(relativeAcceleration);
+        frame.accelerationMps2 + accelerationWorld;
     out.gravity = GravityFieldSystem::sample(
         out.state.positionMeters,
         request.gravityBodies
@@ -223,15 +300,34 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
         referenceGravity
     );
 
-    const glm::dvec3 relativePosition0 =
+    const glm::dvec3 relativePosition0World =
         request.initialState.positionMeters - frame.position0Meters;
-    const glm::dvec3 relativeVelocity0 =
+    const glm::dvec3 relativeVelocity0World =
         request.initialState.velocityMps - frame.velocity0Mps;
-    const glm::dvec3 relativeAcceleration0 =
+    const glm::dvec3 relativeAcceleration0World =
         request.initialProperAccelerationMps2 +
         gravityStart.accelerationMps2 - referenceGravity;
-    const glm::dvec3 relativeTargetAcceleration =
+    const glm::dvec3 relativeTargetAccelerationWorld =
         gravityTarget.accelerationMps2 - referenceGravity;
+
+    const MotionBasis basis = makeMotionBasis(
+        relativePosition0World,
+        request
+    );
+    const glm::dvec3 relativePosition0 =
+        basis.toLocal(relativePosition0World);
+    const glm::dvec3 relativeVelocity0 =
+        basis.toLocal(relativeVelocity0World);
+    const glm::dvec3 relativeAcceleration0 =
+        basis.toLocal(relativeAcceleration0World);
+    const glm::dvec3 relativeTargetAcceleration =
+        basis.toLocal(relativeTargetAccelerationWorld);
+    const glm::dvec3 gravityStartDelta = basis.toLocal(
+        gravityStart.accelerationMps2 - referenceGravity
+    );
+    const glm::dvec3 gravityTargetDelta = basis.toLocal(
+        gravityTarget.accelerationMps2 - referenceGravity
+    );
 
     ruckig::InputParameter<3> input;
     input.current_position = toArray(relativePosition0);
@@ -260,8 +356,8 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
     for (std::size_t axis = 0; axis < 3; ++axis)
     {
         const double gravityVariation = std::max(
-            std::abs(gravityStart.accelerationMps2[axis] - referenceGravity[axis]),
-            std::abs(gravityTarget.accelerationMps2[axis] - referenceGravity[axis])
+            std::abs(gravityStartDelta[axis]),
+            std::abs(gravityTargetDelta[axis])
         );
 
         double accelerationLimit = properAccelerationLimit > 0.0
@@ -355,7 +451,13 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
     double nextOutputTime = sampleInterval;
     double cumulativeProperDeltaV = 0.0;
     double travelledDistance = 0.0;
-    SampledState previous = sampleTrajectory(request, frame, trajectory, 0.0);
+    SampledState previous = sampleTrajectory(
+        request,
+        frame,
+        basis,
+        trajectory,
+        0.0
+    );
 
     if (!finite(previous.state.positionMeters) ||
         !finite(previous.state.velocityMps) ||
@@ -409,6 +511,7 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
         const SampledState current = sampleTrajectory(
             request,
             frame,
+            basis,
             trajectory,
             nextTime
         );

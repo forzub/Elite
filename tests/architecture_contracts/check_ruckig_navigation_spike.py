@@ -36,6 +36,11 @@ for option in (
 
 require("ruckig::ruckig" in cmake, "spike target does not link the upstream Ruckig target")
 require("cxx_std_20" in cmake, "Ruckig adapter is not isolated behind its C++20 target")
+require(
+    "if(MINGW)" in cmake and
+    "target_compile_definitions(ruckig PUBLIC _USE_MATH_DEFINES)" in cmake,
+    "MinGW Ruckig M_PI portability shim is missing",
+)
 require("ruckig/" not in header, "public Elite adapter header leaks Ruckig headers")
 require("#include <ruckig/ruckig.hpp>" in source, "private adapter implementation does not include Ruckig")
 
@@ -60,4 +65,5 @@ print("RUCKIG NAVIGATION SPIKE: PASS")
 print(f" - pinned community commit: {PIN}")
 print(" - cloud client/examples/upstream tests/shared library disabled")
 print(" - C++20/Ruckig headers remain private to isolated adapter target")
+print(" - MinGW strict-C++ M_PI compatibility is target-local")
 print(" - production Elite planner/build remains untouched until spike acceptance")

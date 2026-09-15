@@ -2,116 +2,100 @@
 
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Track:** route/trajectory performance  
-**Stage:** NAV-RUCKIG-1 — production Ruckig-first A/B integration
+**Track:** live docking guidance correctness + performance  
+**Stage:** NAV-LIVE-0 — current-pose tunnel refresh and active-path timing
 
-## Accepted prerequisite
+## Runtime evidence
 
-NAV-RUCKIG-0 isolated MinGW spike is accepted locally.
+The isolated NAV-RUCKIG-0 spike remains accepted locally. The production game test, however, showed two clear problems:
 
-The complete spike test now passes after two integration fixes:
+- visible stalls/freezes remain during docking-route/guidance work;
+- the cockpit guidance tunnel can stay attached to an obsolete solution while the hull has materially changed pose.
 
-- MinGW strict-C++20 `M_PI` compatibility is applied only to upstream Ruckig;
-- Elite scalar acceleration/jerk limits are conservatively mapped to Ruckig per-axis bounds and then revalidated against the authoritative scalar envelope.
+A runtime video supplied by the user is the acceptance evidence for this failure. NAV-RUCKIG-1 is therefore **not accepted as an end-to-end solution**.
 
-The user confirmed the full test passed. The benchmark number itself was not pasted into chat, so do not invent or record a speed figure yet.
+## Critical architecture finding
 
-## Dependency contract
+The live `CALCULATE ROUTE` docking path currently does **not** go through `LocalGuidancePlanner::plan()` and therefore does not exercise the new Ruckig-first `predictLeg()` path.
 
-Use only the reviewed MIT-licensed Community Edition source:
+The active game path is:
 
 ```text
-Ruckig v0.19.4
-commit a8db97a4e9c55e5160a3855f739fa3b270df8e4c
+SpaceState::updateDockingGuidance()
+    -> ClientNavigationPlanningSnapshotFactory
+    -> DockingPathPlanner::plan()
+    -> world::navigation::TrajectoryGenerator::generate()
+    -> GuidanceTunnelBuilder::build()
+    -> publish route + manual cockpit tunnel
 ```
 
-Production build setup now lives in `cmake/EliteRuckigNavigation.cmake` and is shared by client, server and navigation-guidance tests.
+All of this currently executes synchronously inside `SpaceState::update()`. Consequently, a slow geometric/trajectory/tunnel solve can block the frame directly. The previous Ruckig A/B work remains useful for `LocalGuidancePlanner`, but it cannot by itself remove a freeze from this different live path.
 
-Requirements remain:
+## NAV-LIVE-0 patch
 
-- exact pinned commit;
-- `BUILD_CLOUD_CLIENT=OFF`;
-- examples/upstream tests/benchmark/Python/shared build surfaces OFF;
-- upstream generic cache options restored after Ruckig configuration;
-- Ruckig/adapter C++20 private to their targets;
-- `EliteGame` and `EliteServer` remain C++17;
-- no Ruckig Pro or cloud waypoint functionality.
+Commit `5f60021cd8339efce7c589a9618864079931a0ff` changes the live path in two ways.
 
-## Implemented NAV-RUCKIG-1 candidate
+### 1. Rolling tunnel follows the current hull pose
 
-`LocalGuidancePlanner::predictLeg()` now tries the accepted `RuckigTrajectorySolver` first for every local state-to-state leg.
+The old manual-tunnel policy intentionally kept one fixed generation until a relatively large deviation, predicted exit, course change or low-speed attitude event. In a wide docking corridor that allowed the ship to move several metres, or rotate while drifting at speed, without rebuilding the tunnel.
 
-If Ruckig rejects a leg or fails numerically, the previous deterministic shooting path remains intact and runs as fallback. That fallback still uses up to six `TrajectoryPredictor` calls, preserving the old reference behavior during A/B acceptance.
+At the existing 4 Hz replan check the tunnel now requests a current-pose reconnect when any of these are true:
 
-Safety and policy are unchanged:
+- lateral displacement from the current tunnel exceeds 8% of the lateral tolerance, clamped to 0.75..3.0 m;
+- vertical displacement exceeds the analogous threshold;
+- hull attitude differs from the current tunnel tangent by more than the existing 4 degree course threshold.
 
-- `TrajectorySafetyEvaluator` still validates every selected candidate;
-- obstacle/restricted-volume/scheduled-traffic logic is unchanged;
-- docking terminal-state policy is unchanged;
-- detour/emergency selection is unchanged;
-- no ship-control or authoritative state ownership moved into Ruckig.
+A replacement generation still starts from the actual current hull position/orientation/velocity and reconnects to the accepted physical trajectory. We do **not** rigidly drag an old tunnel with the ship.
 
-`LocalGuidanceBackendDiagnostics` now reports per planning call:
+### 2. Time the path that actually freezes
 
-- `ruckigLegAttempts`;
-- `ruckigLegSuccesses`;
-- `ruckigFallbacks`;
-- `legacyPredictorCalls`;
-- `ruckigSolveMicroseconds`;
-- `legacyFallbackMicroseconds`;
-- `lastRuckigFailure`.
+The live route now reports:
 
-The production client/server both link the private `EliteNavigationRuckig` library. The existing navigation-guidance regression suite is wired to the same dependency seam.
+```text
+[DockingPerf] request=...
+ total_ms=...
+ snapshot_ms=...
+ geometric_ms=...
+ trajectory_ms=...
+ tunnel_ms=...
+```
+
+Every rolling tunnel rebuild also reports `build_ms` in `[GuidanceReplan]`.
+
+This separates four materially different costs instead of attributing the freeze to Ruckig without evidence.
 
 ## Acceptance now
 
-Pull and run:
+Run:
 
 ```bash
 git fetch origin
 git pull --ff-only
 
+python tests/architecture_contracts/check_live_docking_guidance.py
 python tests/architecture_contracts/check_ruckig_navigation_spike.py
 python tests/architecture_contracts/check_ruckig_navigation_integration.py
 
-bash tests/navigation_ruckig/run_mingw64.sh
 bash tests/navigation_guidance/run_mingw64.sh
-
 cmake --build build --target EliteGame
 ```
 
-The main build may re-run CMake and fetch the pinned Ruckig source into the main build tree the first time.
+Then reproduce the same manoeuvre from the video.
 
-### Acceptance criteria
+Acceptance questions:
 
-1. Both architecture contracts PASS.
-2. Isolated Ruckig suite still ends with `NAVIGATION RUCKIG SPIKE: PASS`.
-3. Existing navigation-guidance regression suite remains green; Ruckig-first must not alter accepted docking/detour/emergency semantics.
-4. `EliteGame` builds successfully without raising the application-wide C++ standard above C++17.
-5. Runtime route calculation no longer produces the previous machine-scale stall in the representative bad case, or the diagnostics clearly identify why fallback is still dominating.
+1. Does the near cockpit tunnel rebuild from the changed hull pose instead of remaining stale?
+2. Which live stage owns the stall according to `[DockingPerf]`?
+3. Are rolling stalls correlated with `[GuidanceReplan] ... build_ms=...`?
 
-Do not remove the legacy predictor during this wave.
+Paste the `[DockingPerf]` line plus a few `[GuidanceReplan]` lines from one bad run. Do not infer the bottleneck from the isolated Ruckig benchmark.
 
-## Runtime evidence needed after build
+## Next move after timings
 
-Reproduce the same route calculation that used to be expensive and capture the resulting navigation diagnostics. The important distinction is:
+If `trajectory_ms` or `geometric_ms` dominates, move the immutable route solve off the frame thread and make completion latest-request-wins. If rolling `tunnel build_ms` dominates, the current-pose reconnect must become a cheaper bounded local operation and/or asynchronous. If neither dominates, trace the remaining synchronous phase before changing algorithms.
 
-```text
-ruckigLegAttempts ~= ruckigLegSuccesses
-legacyPredictorCalls ~= 0
-```
+Do not reduce collision/safety fidelity merely to hide a frame stall.
 
-versus a fallback-heavy result such as:
+## Renderer status
 
-```text
-ruckigFallbacks > 0
-legacyPredictorCalls >> 0
-```
-
-If Ruckig succeeds for normal legs and the freeze disappears, NAV-RUCKIG-1 can be accepted and the old shooting path can move toward reference-only status. If fallbacks dominate, use `lastRuckigFailure` plus timings to fix the actual unsupported case rather than deleting the fallback.
-
-## Deferred renderer acceptance
-
-GPU-P0 static spheres remain accepted. GPU-P0.1 repeated System Map circles still has contracts PASS but lacks the final clean rebuild/runtime visual acceptance after Core-tail cleanup. That status is preserved.
-
-Station-adjacent renderer freezes remain out of scope.
+OpenGL 4.3 Core, GPU-P0 static System Map spheres and GPU-P0.1 instanced planar System Map circles/orbits are accepted locally. The older station-adjacent renderer freeze remains explicitly out of scope for this navigation task.

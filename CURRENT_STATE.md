@@ -7,16 +7,15 @@
 **ModelAsset binary v4 architecture:** independent translation units closed  
 **Game runtime decomposition:** R0 seams + dual-source model ingress accepted  
 **Renderer baseline:** OpenGL 4.3 Core accepted locally  
-**GPU-P0:** System Map static textured spheres accepted locally  
-**GPU-P0.1:** repeated planar System Map circles/orbits accepted locally  
-**Navigation:** NAV-RUCKIG-0 accepted; NAV-LIVE-3 active
+**GPU-P0/P0.1:** accepted locally  
+**Navigation:** NAV-RUCKIG-0 isolated solver accepted earlier; NAV-RUCKIG-1 live cutover active
 
-## Accepted runtime baseline
+## Accepted non-navigation baseline
 
 `EliteNavigationGeometry` and `EliteAssemblyGeometry` remain the shared
-runtime/deterministic geometry seams.
+deterministic/runtime geometry seams.
 
-Dual-source model ingress remains accepted:
+Dual-source model ingress remains:
 
 ```text
 legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
@@ -24,36 +23,88 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 ```
 
 `src/model_asset/ModelAsset.h` remains the single schema/version authority.
-Runtime-model consumer migration is queued behind current navigation/performance
-work.
+OpenGL 4.3 Core and the first System Map GPU migration waves remain accepted.
+Renderer work is paused while navigation is stabilized.
 
-## Renderer status
+## Live navigation architecture
 
-OpenGL 4.3 Core, GPU-P0 resident System Map textured spheres and GPU-P0.1
-instanced planar circles/orbits are accepted locally. The renderer wave is
-paused.
-
-The current freeze is measured inside client docking/navigation work, not scene
-submission. The older station-adjacent renderer issue remains a separate deferred
-problem.
-
-## Live docking path
+The current docking path is:
 
 ```text
 SpaceState::updateDockingGuidance()
     -> ClientNavigationPlanningSnapshotFactory
     -> DockingPathPlanner::plan()
-    -> world::navigation::TrajectoryGenerator::generate()
-    -> GuidanceTunnelBuilder::build()
+    -> TrajectoryGenerator::generate() compatibility facade
+    -> game::navigation::RuckigRoutePlanner::plan()
+    -> RuckigTrajectorySolver::solve() per local leg
+    -> exact swept navigation-obstacle validation
     -> GuidanceState publication
 ```
 
-The initial solve and rolling reconnect are still synchronous on the client
-update thread.
+Manual rolling guidance is now:
 
-## Measured 19-obstacle baseline
+```text
+accepted Ruckig route trajectory
+    -> GuidanceTunnelBuilder::build(TrajectoryBackbone)   initial presentation
 
-Latest user runtime evidence:
+material live-pose change
+    -> GuidanceTunnelBuilder::build(ReconnectCurrentPose)
+    -> bounded Ruckig current-state -> accepted-state rejoin
+    -> swept collision validation
+    -> accepted immutable tail
+```
+
+There is no `SmoothPathOptimizer` call in either live trajectory generation or
+live rolling reconnect.
+
+## Ruckig route baseline
+
+`src/game/navigation/RuckigRoutePlanner.h` is the canonical route-to-trajectory
+API. The implementation currently lives behind the old
+`world::navigation::TrajectoryGenerator` compatibility facade while call sites
+are migrated.
+
+The baseline is deliberately conservative:
+
+- coarse obstacle topology remains owned by `GeometricPathPlanner` /
+  `DockingPathPlanner`;
+- each consecutive coarse leg is solved by Ruckig;
+- intermediate topology vertices currently terminate with zero velocity;
+- generated motion is swept against canonical navigation obstacles;
+- target-obstacle ingress is allowed only after authored ingress progress;
+- the exact terminal pose/orientation remains a separate contract.
+
+This may produce stop-and-go behavior at coarse vertices. That is accepted for
+this cutover gate. Continuous through-waypoint motion will be implemented as a
+bounded Ruckig transition only after collision validation proves the blend safe.
+
+## Ruckig rolling reconnect
+
+The old reconnect generated spline/bulge/loop candidate families. That code has
+been removed from `GuidanceTunnel.cpp`.
+
+Stable terminal:
+
+```text
+lookahead = latency + braking + turning + safety margin
+live position/velocity -> Ruckig -> accepted local rejoin state
+accepted tail reused unchanged
+```
+
+The rejoin keeps the accepted trajectory velocity rather than fabricating a
+visual-only curve. The final tunnel gate remains the real accepted docking
+terminal.
+
+Moved terminal or failed bounded join:
+
+- a full Ruckig reconnect is attempted through sparse accepted-route supports;
+- a final docking-axis alignment support is inserted;
+- every Ruckig leg remains collision checked;
+- there is no fallback to the custom spline smoother.
+
+## Historical custom-smoother baseline
+
+The previous 19-obstacle measurements remain useful only as comparison data:
 
 ```text
 [DockingPerf]
@@ -64,115 +115,56 @@ trajectory_ms ~= 373.3
 tunnel_ms     ~=  15.5
 ```
 
-The route snapshot correctly contained 19 obstacles, but the first stress layout
-was visually poor: objects clustered around the Hub without forcing the baseline
-route to cross them.
+The same old capture showed 39 rolling reconnect attempts × 7 curve candidate
+families and roughly 14.4 seconds of smoother CPU in a short run. Do not optimize
+or restore that path.
 
-`navigation_perf.log` resolved the CPU ownership:
+## Contracts/tests
 
-- initial `SmoothPathOptimizer`: about 367 ms;
-- spline sampling: roughly 7..8 ms per support-level candidate;
-- collision/safety validation: roughly 39..60 ms per candidate;
-- selected trajectory remained support level 2 with 3862 samples.
+New hard architecture guard:
 
-Therefore collision narrow-phase repetition, not spline evaluation, is the main
-cost of the 19-obstacle initial trajectory.
-
-## Rolling replan storm
-
-The same capture contained 274 smoother calls:
-
-```text
-1 initial call
-195 rolling calls with 10 control-path points
-78 rolling calls with 12 control-path points
+```bash
+python tests/architecture_contracts/check_ruckig_live_navigation.py
 ```
 
-The rolling structure is exactly 39 `GuidanceTunnel` rebuild attempts × 7
-candidate curve families. Those rolling calls consumed about 14.4 seconds of
-smoother CPU in the short run.
+It requires Ruckig in both live motion paths, requires canonical swept obstacle
+validation and rejects `SmoothPathOptimizer` references there.
 
-The old 0.25 s rolling interval was shorter than one ~0.37 s reconnect attempt,
-so the synchronous client could become due for another heavy solve immediately.
-The hard-envelope branch could also bypass the cadence timer completely. This
-explains the observed near-total loss of interactive motion.
+`guidance_tunnel_local_horizon_tests` now links `EliteNavigationRuckig` and no
+longer compiles `SmoothPathOptimizer.cpp`.
 
-## NAV-LIVE-3 implementation
+The large legacy `NavigationGuidanceTests.cpp` still contains old explicit
+B-spline/SmoothPath expectations. Those tests are the next migration item. A
+failure limited to those stale assertions must not cause the removed runtime
+backend to be restored.
 
-### Conservative obstacle broadphase
+## Remaining cleanup
 
-`src/world/navigation/NavigationObstacleGeometry.cpp` now rejects obvious misses
-with an enclosing-sphere broadphase before running the exact inflated OBB,
-capsule, or sphere segment test.
+- migrate/delete the obsolete B-spline tests;
+- remove `SmoothPathOptimizer.cpp` from production `EliteGame`/`EliteServer`
+  source lists after confirming no remaining runtime consumer;
+- ideally move the full `RuckigRoutePlanner` implementation into its own
+  translation unit after the compatibility seam is stable;
+- measure the new docking stress scene;
+- add collision-safe bounded through-waypoint Ruckig blending if needed;
+- move heavy immutable planning off the client update thread if it still causes
+  visible stalls.
 
-The broadphase encloses the exact inflated shape, so a miss is provably safe to
-skip and a hit still executes the previous narrow phase. Collision radius,
-clearance and exact final collision semantics are unchanged.
-
-### Synchronous reconnect containment
-
-Until reconnect moves off the frame thread:
-
-- rolling checks are capped at 1 Hz;
-- the immediate hard-envelope heavy-solve bypass is disabled;
-- normal pose, predicted-exit, course, attitude and target-motion checks remain
-  on the throttled policy.
-
-This is a temporary client-stall guard, not the intended final architecture.
-Final target remains worker/latest-request-wins publication.
-
-### Route-crossing stress field
-
-The 16 diagnostic obstacles remain real Hub-attached `StaticObject`s and therefore
-use normal render/snapshot/navigation paths. Their layout is now four deterministic
-bands across the baseline player-to-cube-A route rather than a harmless cloud near
-the Hub. The two authored docking targets remain unchanged.
-
-### Navigation performance log
-
-`SmoothPathOptimizer` still writes detailed phase data to
-`navigation_perf.log`. Every process that links the smoother now prints its exact
-absolute path at startup:
-
-```text
-[NavigationPerf] log_path=...
-```
-
-This resolves the previous ambiguity where tests and `EliteGame` could create
-same-named files in different working directories.
-
-## Navigation architecture baseline
-
-`src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md` remains authoritative:
-
-```text
-global coarse route
-    -> bounded detailed local motion
-    -> per-physics-tick execution
-    -> cheap guidance-tunnel presentation
-```
-
-Collision fidelity remains non-negotiable. Optimization order is broadphase /
-spatial indexing / bounded work / scheduling, not looser collision geometry.
-
-## Current acceptance gate
-
-Run under MSYS2 MinGW64:
+## Current local acceptance
 
 ```bash
 git fetch origin
 git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
 git pull --ff-only
-unset ELITE_TRACE_RUNTIME
 
-python tests/architecture_contracts/check_navigation_stress_field.py
+python tests/architecture_contracts/check_ruckig_navigation_spike.py
+python tests/architecture_contracts/check_ruckig_navigation_integration.py
+python tests/architecture_contracts/check_ruckig_live_navigation.py
 python tests/architecture_contracts/check_live_docking_guidance.py
+
 bash tests/navigation_guidance/run_mingw64.sh
 cmake --build build --target EliteGame
-D:/__elite/work/build/EliteGame.exe
 ```
 
-Verify the route-crossing obstacle layout, record the startup navigation log
-path, calculate a route, and test several seconds of manual flight. Compare new
-`safety_ms`, `trajectory_ms`, rolling `dock_ms`, and `tunnel_builds` against the
-19-obstacle baseline above.
+No claim of compile/runtime acceptance is made until the MinGW build and focused
+navigation tests are run locally.

@@ -590,9 +590,8 @@ void spawnHubGuidanceTestModules(
 
     // First two objects are the authored docking targets. The remaining 16
     // objects are four deterministic obstacle bands laid directly across the
-    // baseline player -> cube-A route. Hub attachment coordinates map into the
-    // navigation frame approximately as (nav X,Y,Z)=(local Z,Y,X), which is
-    // why the large negative route coordinate is the third component here.
+    // baseline player -> cube-A route. The Hub basis contract is:
+    // nav(X,Y,Z)=(-visualLocal.z, visualLocal.y, visualLocal.x).
     // Each band has one object centred on the direct route plus neighbours that
     // make the bypass meaningful while still leaving a safe way around.
     const Spec specs[] = {
@@ -616,15 +615,15 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_stress_cube_01",
             "NAV STRESS CUBE 01",
-            glm::dvec3(575.0, 2090.0, -8000.0),
+            glm::dvec3(575.0, 2090.0, 8000.0),
             glm::dvec3(0.0, 18.0, 8.0),
             glm::dvec3(0.0)
         },
         {
             ObjectType::GuidanceDockCylinder,
             "nav_stress_cylinder_01",
-            "NAV STRESS CYINDER 01",
-            glm::dvec3(575.0, 1530.0, -8000.0),
+            "NAV STRESS CYLINDER 01",
+            glm::dvec3(575.0, 1530.0, 8000.0),
             glm::dvec3(12.0, 0.0, -16.0),
             glm::dvec3(0.0)
         },
@@ -632,7 +631,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_stress_cube_02",
             "NAV STRESS CUBE 02",
-            glm::dvec3(575.0, 2650.0, -8000.0),
+            glm::dvec3(575.0, 2650.0, 8000.0),
             glm::dvec3(-9.0, 28.0, 0.0),
             glm::dvec3(0.0)
         },
@@ -640,7 +639,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCylinder,
             "nav_stress_cylinder_02",
             "NAV STRESS CYLINDER 02",
-            glm::dvec3(1300.0, 2090.0, -8000.0),
+            glm::dvec3(1300.0, 2090.0, 8000.0),
             glm::dvec3(0.0, 14.0, 22.0),
             glm::dvec3(0.0)
         },
@@ -648,7 +647,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_stress_cube_03",
             "NAV STRESS CUBE 03",
-            glm::dvec3(1260.0, 1595.0, -5600.0),
+            glm::dvec3(1260.0, 1595.0, 5600.0),
             glm::dvec3(15.0, -20.0, 4.0),
             glm::dvec3(0.0)
         },
@@ -656,7 +655,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCylinder,
             "nav_stress_cylinder_03",
             "NAV STRESS CYLINDER 03",
-            glm::dvec3(1260.0, 1035.0, -5600.0),
+            glm::dvec3(1260.0, 1035.0, 5600.0),
             glm::dvec3(-18.0, 10.0, 0.0),
             glm::dvec3(0.0)
         },
@@ -664,7 +663,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_stress_cube_04",
             "NAV STRESS CUBE 04",
-            glm::dvec3(1260.0, 2155.0, -5600.0),
+            glm::dvec3(1260.0, 2155.0, 5600.0),
             glm::dvec3(0.0, 35.0, -12.0),
             glm::dvec3(0.0)
         },
@@ -672,7 +671,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCylinder,
             "nav_stress_cylinder_04",
             "NAV STRESS CYLINDER 04",
-            glm::dvec3(2000.0, 1595.0, -5600.0),
+            glm::dvec3(2000.0, 1595.0, 5600.0),
             glm::dvec3(20.0, -8.0, 14.0),
             glm::dvec3(0.0)
         },
@@ -680,7 +679,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_stress_cube_05",
             "NAV STRESS CUBE 05",
-            glm::dvec3(1925.0, 1120.0, -3300.0),
+            glm::dvec3(1925.0, 1120.0, 3300.0),
             glm::dvec3(-14.0, 12.0, 18.0),
             glm::dvec3(0.0)
         },
@@ -688,7 +687,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCylinder,
             "nav_stress_cylinder_05",
             "NAV STRESS CYLINDER 05",
-            glm::dvec3(1925.0, 560.0, -3300.0),
+            glm::dvec3(1925.0, 560.0, 3300.0),
             glm::dvec3(8.0, 25.0, -10.0),
             glm::dvec3(0.0)
         },
@@ -696,7 +695,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_stress_cube_06",
             "NAV STRESS CUBE 06",
-            glm::dvec3(1925.0, 1680.0, -3300.0),
+            glm::dvec3(1925.0, 1680.0, 3300.0),
             glm::dvec3(5.0, -30.0, 12.0),
             glm::dvec3(0.0)
         },
@@ -704,7 +703,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCylinder,
             "nav_stress_cylinder_06",
             "NAV STRESS CYLINDER 06",
-            glm::dvec3(2650.0, 1120.0, -3300.0),
+            glm::dvec3(2650.0, 1120.0, 3300.0),
             glm::dvec3(-22.0, 5.0, 16.0),
             glm::dvec3(0.0)
         },
@@ -712,7 +711,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_stress_cube_07",
             "NAV STRESS CUBE 07",
-            glm::dvec3(2440.0, 750.0, -1500.0),
+            glm::dvec3(2440.0, 750.0, 1500.0),
             glm::dvec3(10.0, 22.0, -18.0),
             glm::dvec3(0.0)
         },
@@ -720,7 +719,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCylinder,
             "nav_stress_cylinder_07",
             "NAV STRESS CYLINDER 07",
-            glm::dvec3(2440.0, 190.0, -1500.0),
+            glm::dvec3(2440.0, 190.0, 1500.0),
             glm::dvec3(18.0, -15.0, 6.0),
             glm::dvec3(0.0)
         },
@@ -728,7 +727,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_stress_cube_08",
             "NAV STRESS CUBE 08",
-            glm::dvec3(2440.0, 1310.0, -1500.0),
+            glm::dvec3(2440.0, 1310.0, 1500.0),
             glm::dvec3(-8.0, 32.0, 14.0),
             glm::dvec3(0.0)
         },
@@ -736,7 +735,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCylinder,
             "nav_stress_cylinder_08",
             "NAV STRESS CYLINDER 08",
-            glm::dvec3(3160.0, 750.0, -1500.0),
+            glm::dvec3(3160.0, 750.0, 1500.0),
             glm::dvec3(16.0, 8.0, -20.0),
             glm::dvec3(0.0)
         }

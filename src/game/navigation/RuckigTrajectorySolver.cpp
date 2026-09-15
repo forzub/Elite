@@ -14,6 +14,13 @@ namespace
 constexpr double TimeEpsilon = 1.0e-9;
 constexpr double ConstraintFloor = 1.0e-6;
 
+// Elite's motion envelope is Euclidean: |a| and |j| are scalar vector limits.
+// Ruckig constrains every DoF independently, which describes an axis-aligned
+// box. Using L/sqrt(3) for each axis inscribes that box in Elite's radius-L
+// sphere, so simultaneous XYZ control cannot exceed the canonical scalar
+// envelope merely because multiple Ruckig axes saturate at once.
+constexpr double ScalarEnvelopeAxisScale = 0.57735026918962576451;
+
 bool finite(double value)
 {
     return std::isfinite(value);
@@ -241,6 +248,14 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
         request.motionEnvelope.maxProperAccelerationMps2;
     const double properJerkLimit =
         request.motionEnvelope.maxProperJerkMps3;
+    const double properAccelerationAxisBudget =
+        properAccelerationLimit > 0.0
+            ? properAccelerationLimit * ScalarEnvelopeAxisScale
+            : 0.0;
+    const double properJerkAxisBudget =
+        properJerkLimit > 0.0
+            ? properJerkLimit * ScalarEnvelopeAxisScale
+            : 0.0;
 
     for (std::size_t axis = 0; axis < 3; ++axis)
     {
@@ -250,7 +265,7 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
         );
 
         double accelerationLimit = properAccelerationLimit > 0.0
-            ? properAccelerationLimit + gravityVariation
+            ? properAccelerationAxisBudget + gravityVariation
             : derivedAccelerationLimit(
                 relativePosition0[axis],
                 relativeVelocity0[axis],
@@ -266,7 +281,7 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
         });
 
         double jerkLimit = properJerkLimit > 0.0
-            ? properJerkLimit +
+            ? properJerkAxisBudget +
                 2.0 * gravityVariation /
                     std::max(request.horizonSeconds, TimeEpsilon)
             : std::max(
@@ -494,15 +509,21 @@ RuckigTrajectoryResult RuckigTrajectorySolver::solve(
     if (result.solverDiagnostics.accelerationLimitExceeded)
     {
         result.prediction.status = TrajectoryPredictionStatus::NumericalFailure;
-        result.prediction.message =
-            "Ruckig candidate exceeds Elite proper-acceleration envelope";
+        std::ostringstream message;
+        message << "Ruckig candidate exceeds Elite proper-acceleration envelope: max="
+                << result.prediction.diagnostics.maxAppliedProperAccelerationMps2
+                << " limit=" << properAccelerationLimit;
+        result.prediction.message = message.str();
         return result;
     }
     if (result.solverDiagnostics.jerkLimitExceeded)
     {
         result.prediction.status = TrajectoryPredictionStatus::NumericalFailure;
-        result.prediction.message =
-            "Ruckig candidate exceeds Elite proper-jerk envelope";
+        std::ostringstream message;
+        message << "Ruckig candidate exceeds Elite proper-jerk envelope: max="
+                << result.prediction.diagnostics.maxAppliedProperJerkMps3
+                << " limit=" << properJerkLimit;
+        result.prediction.message = message.str();
         return result;
     }
     if (result.prediction.samples.empty())

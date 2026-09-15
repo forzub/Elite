@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Status:** R0 runtime seams + dual-source model ingress + OpenGL 4.3 Core accepted; active work is canonical Ruckig navigation cutover
+**Status:** R0 runtime seams + dual-source model ingress + OpenGL 4.3 Core accepted; active work is canonical Ruckig navigation acceptance
 
 ## Purpose
 
@@ -46,22 +46,34 @@ Current runtime ownership:
 ```text
 planning snapshot
     -> GeometricPathPlanner / DockingPathPlanner   topology
-    -> RuckigRoutePlanner                          constrained motion
+    -> RuckigRoutePlanner                          constrained route motion
     -> RuckigTrajectorySolver                      local state-to-state primitive
     -> swept NavigationObstacleGeometry validation safety
     -> GuidanceTunnel                              presentation sampling
     -> future trajectory follower                  execution
 ```
 
-`TrajectoryGenerator` is temporarily only the old public compatibility facade
-for `RuckigRoutePlanner`. The custom global B-spline implementation has been
-removed from that live path.
+`TrajectoryGenerator` is temporarily the old compatibility facade for
+`RuckigRoutePlanner`.
 
-`GuidanceTunnel` also no longer owns a custom spline reconnect planner. A rolling
-live-pose correction uses `RuckigTrajectorySolver`, preferably over a bounded
-physical horizon, then stitches the immutable accepted tail. A materially moved
-terminal or infeasible bounded join uses a full Ruckig reconnect rather than the
-old smoother.
+Clear internal topology vertices may retain a conservative non-zero through
+velocity when a local corner-cut eligibility chord is free and the actual
+adjacent Ruckig motion passes swept validation. Any failed blended leg relaxes
+only adjacent waypoint velocities to zero and retries; no global smoother is
+invoked.
+
+`GuidanceTunnel` uses `RuckigTrajectorySolver` for rolling live-pose correction,
+preferably over a bounded physical horizon, then stitches the immutable accepted
+tail. Material terminal movement or an infeasible bounded join uses a full Ruckig
+reconnect.
+
+## Retired custom smoother
+
+The old B-spline implementation has been removed from
+`SmoothPathOptimizer.cpp`. Production behavior is now fail-closed. A minimal
+non-smoothing compatibility branch exists only for the old all-in-one navigation
+test target under `ELITE_LEGACY_SMOOTH_PATH_TEST_COMPAT`; root production CMake
+does not enable it.
 
 Hard contract:
 
@@ -69,7 +81,16 @@ Hard contract:
 python tests/architecture_contracts/check_ruckig_live_navigation.py
 ```
 
-It rejects `SmoothPathOptimizer` in both live motion sources.
+Focused runtime-motion coverage:
+
+```text
+tests/navigation_guidance/RuckigRoutePlannerTests.cpp
+tests/navigation_guidance/GuidanceTunnelLocalHorizonTests.cpp
+```
+
+The final obsolete global-B-spline assertion in `NavigationGuidanceTests.cpp`
+still needs migration before the compatibility API/source can be removed from
+the build lists entirely.
 
 ## Planned order from here
 
@@ -77,17 +98,16 @@ It rejects `SmoothPathOptimizer` in both live motion sources.
 2. Dual-source runtime model ingress — accepted.
 3. Client CPU -> GPU audit — complete.
 4. OpenGL 4.3 Core + GPU-P0/P0.1 — accepted; renderer wave paused.
-5. NAV-RUCKIG-0 isolated Ruckig state-to-state solver — accepted earlier.
-6. NAV-RUCKIG-1 live route + rolling reconnect cutover — implementation active,
+5. NAV-RUCKIG-0 isolated state-to-state solver — accepted earlier.
+6. NAV-RUCKIG-1 live route/reconnect cutover + waypoint blending — implemented,
    local MinGW acceptance pending.
-7. Migrate stale B-spline tests and remove the remaining legacy smoother from
-   production targets/source when no runtime consumer remains.
-8. Measure the deterministic/stress docking scenes using Ruckig diagnostics.
-9. Add bounded collision-safe Ruckig through-waypoint blending if motion quality
-   requires it.
-10. Move immutable heavy planning off the frame thread with generation IDs /
-    latest-request-wins if measured stalls remain.
-11. Resume renderer/runtime-model decomposition work.
+7. Migrate stale spline test; remove the compatibility smoother API/source and
+   CMake entries completely.
+8. Measure deterministic/stress docking scenes with `[RuckigRoutePerf]`,
+   `[DockingPerf]` and `[GuidanceReplan]`.
+9. Move immutable heavy planning off the frame thread with generation IDs /
+   latest-request-wins if measured stalls remain.
+10. Resume renderer/runtime-model decomposition work.
 
 ## Testing policy
 
@@ -97,7 +117,7 @@ Renderer contract:
 python tests/architecture_contracts/check_gl43_modernization_boundary.py
 ```
 
-Navigation contracts:
+Navigation acceptance:
 
 ```bash
 python tests/architecture_contracts/check_ruckig_navigation_spike.py
@@ -108,6 +128,6 @@ bash tests/navigation_guidance/run_mingw64.sh
 cmake --build build --target EliteGame
 ```
 
-Future navigation work must not restore the old global smoother merely to satisfy
-a stale test or make a corner look nicer. Motion quality improvements belong in
-bounded Ruckig transitions plus canonical collision validation.
+A failure confined to the named stale global-B-spline assertion is a test
+migration issue. Focused Ruckig/local-horizon, collision, terminal-state,
+compile/link or integration failures are blockers.

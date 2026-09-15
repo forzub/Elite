@@ -63,7 +63,15 @@ struct ManualDockingGuidancePlan
     double nextReplanCheckServerTimeSeconds = -1.0e30;
     double predictedLookAheadSeconds = 0.75;
     double preemptiveToleranceScale = 0.65;
-    double hardToleranceScale = 1.05;
+
+    // IMPORTANT: the old hard-envelope path bypassed the cadence timer and
+    // launched a synchronous reconnect immediately. When one reconnect took
+    // ~0.37 s, that became a frame-by-frame replan storm. Manual guidance is
+    // advisory, so while reconnect remains synchronous all rebuild triggers
+    // must go through the 1 Hz policy above. A future worker/latest-wins
+    // implementation can restore an immediate hard-envelope event safely.
+    double hardToleranceScale = 1.0e9;
+
     double courseChangeThresholdRadians = 0.06981317007977318; // 4 deg
     double targetPositionReplanMeters = 8.0;
     double targetAngleReplanRadians = 0.02617993877991494; // 1.5 deg

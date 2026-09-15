@@ -38,6 +38,11 @@ COMPATIBILITY_PATTERNS = {
     "fixed-texture-enable": re.compile(
         r"\bgl(?:Enable|Disable|IsEnabled)\s*\(\s*GL_TEXTURE_2D\s*\)"
     ),
+    "fixed-texture-env-call": re.compile(r"\bgl(?:Get)?TexEnv[a-zA-Z]*\s*\("),
+    "fixed-alpha-test-call": re.compile(r"\bglAlphaFunc\s*\("),
+    "GL_TEXTURE_ENV": re.compile(r"\bGL_TEXTURE_ENV(?:_MODE)?\b"),
+    "GL_MODULATE": re.compile(r"\bGL_MODULATE\b"),
+    "GL_ALPHA_TEST": re.compile(r"\bGL_ALPHA_TEST(?:_FUNC|_REF)?\b"),
 }
 
 
@@ -70,6 +75,38 @@ assert "GLFW_OPENGL_COMPAT_PROFILE" not in window
 glad_header = (ROOT / "glad/include/glad/gl.h").read_text(encoding="utf-8")
 assert "gl:core=4.3" in glad_header
 assert "gl:compatibility=4.3" not in glad_header
+
+# Mechanical Core-header coverage: every raw OpenGL function/constant used by
+# production sources must actually exist in the bundled Core 4.3 GLAD header.
+# Local helpers that intentionally begin with `gl` are explicitly excluded.
+LOCAL_GL_HELPERS = {"glString"}
+missing_core_symbols = {}
+for path in SRC.rglob("*"):
+    if not path.is_file() or path.suffix.lower() not in SOURCE_SUFFIXES:
+        continue
+    relative = path.relative_to(ROOT).as_posix()
+    source = strip_cpp_comments(path.read_text(encoding="utf-8"))
+    functions = sorted(set(re.findall(r"\b(gl[A-Z][A-Za-z0-9_]*)\s*\(", source)))
+    constants = sorted(set(re.findall(r"\b(GL_[A-Z0-9_]+)\b", source)))
+    missing = [
+        token for token in functions + constants
+        if token not in glad_header and token not in LOCAL_GL_HELPERS
+    ]
+    if missing:
+        missing_core_symbols[relative] = missing
+
+assert not missing_core_symbols, (
+    "Production code references symbols absent from bundled OpenGL 4.3 Core GLAD: "
+    + repr(missing_core_symbols)
+)
+
+runtime_caps_h = (ROOT / "src/render/gpu/GlRuntimeCapabilities.h").read_text(encoding="utf-8")
+runtime_caps_cpp = (ROOT / "src/render/gpu/GlRuntimeCapabilities.cpp").read_text(encoding="utf-8")
+assert "bool coreProfile = false;" in runtime_caps_h
+assert "compatibilityProfile" not in runtime_caps_h
+assert "GL_CONTEXT_CORE_PROFILE_BIT" in runtime_caps_cpp
+assert "GL_CONTEXT_COMPATIBILITY_PROFILE_BIT" not in runtime_caps_cpp
+assert "requires OpenGL 4.3+ core profile" in runtime_caps_cpp
 
 bridge = (ROOT / "src/render/legacy/CoreGlLegacyBridge.h").read_text(encoding="utf-8")
 assert "#version 430 core" in bridge

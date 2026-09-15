@@ -11,7 +11,7 @@ struct GlRuntimeCapabilities
     int contextMinor = 0;
     int gladMajor = 0;
     int gladMinor = 0;
-    bool compatibilityProfile = false;
+    bool coreProfile = false;
     bool computeShaders = false;
     bool shaderStorageBuffers = false;
     int maxComputeWorkGroupInvocations = 0;

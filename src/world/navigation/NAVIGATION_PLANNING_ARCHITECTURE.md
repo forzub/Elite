@@ -1,141 +1,158 @@
 # Navigation Planning Architecture
 
 **Updated:** 2026-09-15  
-**Status:** active design baseline for client/runtime navigation  
-**Current implementation wave:** NAV-LIVE-1 bounded rolling docking reconnect
+**Status:** active runtime navigation authority  
+**Current implementation wave:** NAV-RUCKIG-1 canonical live motion backend
 
 ## Core rule
 
-Navigation is split by time horizon and authority. A long route is not itself a
-reason for high CPU cost. Expensive work appears when global search, smoothing
-and obstacle validation are repeated at interactive/frame frequency.
+Navigation is separated into topology, motion, execution and presentation. No
+presentation component is allowed to grow into another route planner.
 
-The target architecture has four distinct products:
+```text
+navigation snapshot
+    -> GeometricPathPlanner / DockingPathPlanner     coarse collision-free topology
+    -> RuckigRoutePlanner                            time-parameterized motion
+    -> optional bounded Ruckig live-pose reconnect   local correction only
+    -> GuidanceTunnel                                presentation sampling only
+    -> future follower                               per-tick execution/control
+```
+
+The coarse route decides **where free space is**. Ruckig decides **how the vehicle
+can move through an already selected local/topological route under kinematic
+constraints**. Guidance rendering consumes accepted motion; it does not invent a
+new path.
+
+## Canonical runtime backend
+
+`game::navigation::RuckigRoutePlanner` is the canonical route-to-trajectory API.
+`world::navigation::TrajectoryGenerator` remains temporarily as a compatibility
+facade for older callers and delegates to that API.
+
+`game::navigation::RuckigTrajectorySolver` is the state-to-state primitive used
+by both:
+
+- the route trajectory backend;
+- rolling current-pose guidance reconnects.
+
+The old `SmoothPathOptimizer` must not appear in either live path. It may remain
+only as dead/legacy test code until those tests are migrated and the source can
+be deleted completely.
+
+Architecture contract:
+
+```bash
+python tests/architecture_contracts/check_ruckig_live_navigation.py
+```
+
+It rejects any reintroduction of `SmoothPathOptimizer` into
+`TrajectoryGenerator.cpp` or `GuidanceTunnel.cpp`.
+
+## Layer ownership
 
 | Layer | Responsibility | Update policy |
 | --- | --- | --- |
-| Global route | Collision-free coarse polyline/topology through free regions and passages to the target | On new target or route invalidation. Cheap validity check may run around 1 Hz; do not solve again when the old route remains valid. Stagger different actors. |
-| Local motion | Smooth near-term trajectory, speed, orientation and moving-obstacle response | Bounded physical horizon; rebuild when live state materially changes |
-| Execution | Thruster/control commands and tracking-error correction | Every physics tick |
-| Guidance tunnel | Visible nearby gates sampled from an already accepted trajectory | Cheap presentation refresh; must not become another global planner |
+| Global topology | Coarse collision-free polyline through free regions/passages | New target or invalidation; cheap validity checks may be staggered around 1 Hz |
+| Ruckig motion | Position/velocity/acceleration trajectory along accepted topology | New accepted route; bounded local correction on material live-state change |
+| Execution | Follow accepted trajectory, issue control/thruster commands, correct tracking error | Every physics tick |
+| Guidance tunnel | Visible gates and recommended speed sampled from accepted motion | Cheap presentation refresh; no topology search/spline optimization |
 
-The global route and the local trajectory are separate immutable products. HUD
-presentation does not own navigation authority.
+## Ruckig route baseline
 
-## Local planning horizon
+The first deliberately conservative implementation solves every consecutive
+coarse-topology segment as a state-to-state Ruckig leg. Intermediate coarse
+vertices currently use zero terminal velocity. This can look stop-and-go, but it
+has two important properties:
 
-A local solve must extend far enough that a new solution can arrive and the
-vehicle can still stop or turn safely. The translational lower bound is:
+1. a state-to-state polynomial cannot silently shave an obstacle corner;
+2. collision ownership stays explicit and testable.
+
+Through-waypoint velocity blending is a later bounded optimization. It is legal
+only when the blended Ruckig transition itself passes swept collision validation.
+A failed blend falls back to the safe stop-at-waypoint behavior; it must never
+fall back to a global spline smoother.
+
+## Rolling live-pose reconnect
+
+A live manual-guidance correction no longer generates spline/bulge/loop candidate
+families. It uses Ruckig.
+
+For a stable terminal, the expensive correction is bounded to a physical horizon:
 
 ```text
-D >= v * T_latency + v^2 / (2 * a_brake) + safety_margin
+D >= v*T_latency + v^2/(2*a_brake) + turn_distance + safety_margin
 ```
 
-The actual horizon also includes turning demand. Current NAV-LIVE-1 adds a
-turn-distance term derived from the vehicle minimum turn radius and the course
-change toward the already accepted trajectory.
+The current ship state is solved to a rejoin state on the accepted trajectory,
+including the accepted rejoin velocity. The unchanged accepted tail is then
+stitched back onto the product. The local rejoin is never exposed as the real
+docking terminal.
 
-The horizon must look through an upcoming narrow passage early enough to align
-before entry. Replanning only after reaching the aperture is invalid even when
-the aperture itself is collision-free.
+If the live terminal moved materially, or a bounded Ruckig rejoin is infeasible,
+a full Ruckig reconnect is attempted through sparse accepted-route supports and
+a final docking-axis alignment point. Every generated leg must still pass swept
+collision checks.
 
-## Sampling and collision precision
+## Collision invariants
 
-`TrajectoryGenerationRequest::maxCurveChordErrorMeters = 0.03` is a geometric
-curve-to-chord approximation tolerance. It is **not** a three-centimetre motion
-step. Current docking trajectory samples are normally spaced about 3..7 m.
+Ruckig is a motion generator, not a collision system. Every live generated
+segment is accepted only after canonical navigation-geometry validation.
 
-Precision should be adaptive:
+- Render mesh: visual surface.
+- Collision geometry: physical solid matter.
+- Hit volumes: damage/picking ownership.
+- Navigation geometry: blocked/free regions and authored passages for a vehicle envelope.
 
-- clear straight space: validate large spans;
-- turns and obstacle boundaries: refine;
-- narrow passages: refine according to actual clearance;
-- terminal assembly/docking: refine to final alignment accuracy.
+A coarse enclosing box must not fill a real navigable hole. Future authoring work
+must preserve openings/passages in navigation geometry and use the complete
+vehicle envelope, including attached/towed cargo.
 
-Object size alone does not determine the required step. A large vehicle can
-have a small clearance. Collision validation must cover the swept motion between
-poses so a coarse discrete step cannot jump through a thin wall.
+Swept checks remain mandatory. Sampling density is a validation detail; a coarse
+discrete step must never be able to jump through a thin obstacle.
 
-## Geometry responsibilities
+## Performance model
 
-Do not collapse the following concepts into one volume:
+Old NAV-LIVE-3 measurements showed the custom spline stack spending hundreds of
+milliseconds in repeated candidate sampling/collision checks and entering a
+rolling replan storm. Those timings are now a **historical baseline**, not the
+intended implementation.
 
-| Geometry | Responsibility |
-| --- | --- |
-| Render mesh | Visible surface |
-| Collision geometry | Physical solid matter |
-| Hit volumes | Damage/picking ownership of a part |
-| Navigation geometry | Free/blocked regions and passages for a particular vehicle/envelope |
+Current performance should be measured from:
 
-The current verified docking path uses navigation obstacle primitives derived
-from runtime object bounds; it does not yet consume full editor-authored hit or
-collision geometry.
+- `[DockingPerf]` for snapshot / geometric / trajectory / tunnel stages;
+- `[GuidanceReplan]` for rolling correction cost;
+- `[RuckigRoutePerf]` in `navigation_perf.log` for Ruckig legs, solve time and
+  swept collision segment count.
 
-A single enclosing box around a station/ship is unsuitable for navigation when
-the model contains a real passage. A rectangular opening should be represented
-by the surrounding solid beams/walls, not by one box that fills the hole.
-Navigation semantics may additionally describe a passage explicitly: axis,
-cross-section, entry/exit poses and policy. Traversability is still checked
-against the complete moving vehicle envelope and, when towing, the combined
-envelope.
+If the initial global topology search becomes dominant, optimize/cull/cache
+`GeometricPathPlanner` rather than pushing topology responsibility into Ruckig.
+If Ruckig/swept validation becomes dominant, improve local candidate sets,
+validation broadphase/spatial indexing and scheduling without reducing safety.
+If a synchronous initial solve is still visible, move immutable planning to a
+worker and publish latest-request-wins generations.
 
-## Current performance findings
+## Deterministic test scenes
 
-### GeometricPathPlanner
+Keep deterministic scenarios before random stress scenes:
 
-The current visibility-graph search is lazy in construction but can still test
-connections from expanded nodes against many other support nodes. Each segment
-validation iterates navigation obstacles. In dense scenes the practical cost
-can therefore approach a `nodes^2 * obstacles` pattern. Route length is not the
-primary cost driver.
+1. one obstacle and a small obstacle group;
+2. wall with wide, tight and impossible openings;
+3. corridor turn;
+4. dock behind an obstacle requiring a broad detour;
+5. moving object crossing the route;
+6. drone/ship without and with attached cargo;
+7. dense seeded obstacle field and many actors with staggered checks.
 
-This remains a global-planner optimization target after live timings identify
-whether it dominates the real request.
+Tests must distinguish topology failure, motion infeasibility, collision failure,
+terminal-state failure and CPU-budget failure.
 
-### GuidanceTunnel reconnect
+## Non-negotiable rules
 
-Before NAV-LIVE-1 a rolling current-pose reconnect could run `SmoothPathOptimizer`
-over the complete remaining route. Several candidates are generated; every
-candidate can resample and collision-check the path. A visual correction could
-therefore behave like a second route planner.
-
-NAV-LIVE-1 changes the expensive reconnect policy:
-
-1. locate current progress on the accepted trajectory;
-2. derive a local horizon from latency + braking + turning + safety margin;
-3. smooth and collision-check only current pose -> local rejoin;
-4. stitch the untouched, already accepted trajectory tail after the rejoin;
-5. keep the real docking terminal as the final tunnel endpoint.
-
-If the live terminal has moved materially, the code deliberately falls back to
-the previous full reconnect. A separate bounded terminal-tail solver is required
-before that fallback can safely be removed.
-
-## Deterministic navigation test scenes
-
-Build these before a dense stress field so failures have a known cause:
-
-1. one obstacle, then a small obstacle group;
-2. wall with a wide opening;
-3. wall with a tight but passable opening;
-4. wall with an impossible opening;
-5. a turn inside a corridor;
-6. a dock behind an obstacle that requires a broad turning loop;
-7. a moving object crossing the route;
-8. the same passage for a drone without cargo and with an attached/towed part;
-9. only then: dense obstacle field and many actors with staggered route checks.
-
-Each scene should distinguish route-topology failure, orientation/turning
-failure, braking/horizon failure, collision-validation failure and CPU budget
-failure.
-
-## Safety invariants
-
-- Never reduce collision fidelity merely to hide a frame stall.
-- Never label a local planning-horizon endpoint as the real docking terminal.
-- A locally rebuilt trajectory segment must be collision-validated with the
-  same canonical navigation geometry used by the global route.
-- An immutable accepted tail may be reused without re-solving it when its world
-  assumptions remain valid.
-- Material target/obstacle motion invalidates the relevant cached product; it is
-  not solved by visually translating old gates.
+- No `SmoothPathOptimizer` in live route generation or live tunnel reconnect.
+- No collision-fidelity reduction to hide frame stalls.
+- No local horizon endpoint masquerading as the real terminal.
+- No HUD-owned route solving.
+- No second global path search inside Ruckig.
+- Reuse an immutable accepted tail only while its assumptions remain valid.
+- Material environment/target changes invalidate the relevant product; they do
+  not justify visually dragging stale guidance through space.

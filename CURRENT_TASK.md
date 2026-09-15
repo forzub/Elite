@@ -2,91 +2,102 @@
 
 **Updated:** 2026-09-15  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Track:** client CPU -> GPU migration  
-**Stage:** GPU-P0.1 — repeated System Map planar circles, final Core rebuild + visual acceptance
+**Track:** route/trajectory performance  
+**Stage:** NAV-RUCKIG-0 — isolated Ruckig state-to-state trajectory spike
 
-## Accepted prerequisite
+## Why this task is active
 
-OpenGL 4.3 Core remains the accepted renderer baseline.
+The route/trajectory calculation can stall the machine. The current local planner generates state-to-state legs with the sequential `TrajectoryPredictor` and can repeat a complete prediction up to six times for shooting correction. Docking, detour and emergency branches can multiply those solves.
 
-GPU-P0 static textured spheres are accepted locally after the corrected runtime path restored visible planets and moons while retaining resident indexed sphere geometry.
+The user explicitly chose to try Ruckig Community Edition before doing a direct GPU rewrite of that sequential integrator.
 
-The station-adjacent freezes predate the renderer migration. They remain deferred and must not be investigated as part of this renderer slice.
+## Dependency contract
 
-## GPU-P0.1 implementation candidate
+Use only the reviewed MIT-licensed Community Edition source:
 
-The repeated-primitive slice is implemented.
+```text
+Ruckig v0.19.4
+commit a8db97a4e9c55e5160a3855f739fa3b270df8e4c
+```
 
-Migrated System Map scene consumers:
+For this spike:
 
-- primary planet orbit circles;
-- asteroid-belt primary orbit plus the three visible belt rings;
-- moon orbit circles;
-- player position ring;
-- selected-body XZ/XY rings;
-- selected-hub XZ/XY rings.
+- fetch the exact commit;
+- `BUILD_CLOUD_CLIENT=OFF`;
+- examples/tests/benchmark/Python/shared build surfaces OFF;
+- keep upstream C++20 private to the Ruckig adapter target;
+- do not raise the rest of Elite above C++17;
+- do not use Ruckig Pro or cloud waypoint functionality.
 
-The scene no longer routes these repeated planar circles through per-frame CPU `addCircleXZ()` / `addCircleXY()` tessellation.
+License text is stored at `src/assets/licenses/RUCKIG-MIT.txt`; provenance is in `THIRD_PARTY_LICENSES.md`.
 
-`SystemMapGpuCircleBatch` owns lazy resident unit-circle meshes keyed by authored segment count. A mesh is generated once, uploaded with `GL_STATIC_DRAW`, then reused. Per frame, migrated circles submit only center/radius/color plus XY/XZ plane selection. Matching topology/plane runs use `glDrawArraysInstanced(GL_LINE_LOOP, ...)`.
+## Implemented spike boundary
 
-## Latest local acceptance result
+Added:
 
-All three architecture contracts passed locally. Two successive clean MinGW builds then exposed Core-profile tails outside the circle code:
+- `src/game/navigation/RuckigTrajectorySolver.h`;
+- `src/game/navigation/RuckigTrajectorySolver.cpp`;
+- `tests/navigation_ruckig/CMakeLists.txt`;
+- `tests/navigation_ruckig/RuckigTrajectorySolverTests.cpp`;
+- `tests/navigation_ruckig/run_mingw64.sh`;
+- `tests/architecture_contracts/check_ruckig_navigation_spike.py`.
 
-1. `UICameraView.cpp`: compatibility attribute stack (`glPushAttrib/glPopAttrib`, `GL_VIEWPORT_BIT`, `GL_TRANSFORM_BIT`);
-2. `HubBackdropCloudRenderer.cpp`: fixed-function texture environment (`glGetTexEnviv`, `glTexEnvi`, `GL_TEXTURE_ENV`, `GL_MODULATE`);
-3. `DetailMapPlanetPass.cpp`: removed `GL_ALPHA_TEST` state;
-4. `GlRuntimeCapabilities`: stale requirement for Compatibility Profile instead of Core Profile.
+The production `LocalGuidancePlanner` and main `EliteGame` build are intentionally untouched in this wave.
 
-All four are now corrected in source.
+## Solver contract under test
 
-The runtime capability gate now requires `GL_CONTEXT_CORE_PROFILE_BIT`. The GL43 architecture test now explicitly rejects texture-environment/alpha-test/attrib-stack compatibility APIs and mechanically checks all production raw `glXxx()` / `GL_*` symbols against the bundled OpenGL 4.3 Core GLAD header. The one-shot CI migration passed all architecture contracts and `git diff --check`.
+The adapter uses an accelerating co-moving terminal frame rather than feeding orbital-scale world coordinates directly to Ruckig. Elite gravity is sampled at the start and target, a reference gravity acceleration is folded into the frame, and Ruckig solves the remaining relative 3-DOF motion.
 
-## Intentional remaining renderer debt
+After generation the adapter reconstructs world-space states and validates the candidate against Elite's scalar proper-acceleration and proper-jerk limits using fresh `GravityFieldSystem` samples. The result is returned as `TrajectoryPredictionResult` so later planner integration does not need to adopt Ruckig types.
 
-This slice does **not** claim that every circular-looking primitive in `SystemMapRenderer` is migrated.
+Ruckig is only a candidate **leg generator**. It does not replace:
 
-Still CPU-owned for now:
+- `TrajectorySafetyEvaluator`;
+- obstacle/restricted-volume/traffic checks;
+- docking terminal policy;
+- route selection;
+- ship control/authority.
 
-- arbitrary dynamic line geometry and `flushLines()`;
-- `addOrbitCircle3D()` non-planar/oriented orbit helper;
-- billboard/proxy body marker geometry (`addSystemBodyMarker*`, `addBillboardBall`, halos);
-- dynamic solid geometry and `flushSolids()` where still used.
+## Local acceptance now
 
-`addOrbitCircle3D()` should only be migrated if an active call site/material cost is demonstrated. Do not expand the current slice merely to remove dormant helpers. Billboard/proxy markers are a separate optimization candidate and must not delay the navigation performance investigation unless profiling shows material cost.
-
-## Acceptance now
-
-Pull the latest branch and rerun:
+Run:
 
 ```bash
 git fetch origin
 git pull --ff-only
 
-python tests/architecture_contracts/check_gl43_modernization_boundary.py
-python tests/architecture_contracts/check_system_map_static_sphere.py
-python tests/architecture_contracts/check_system_map_gpu_circles.py
-cmake --build build --target EliteGame
-./build/EliteGame.exe
+python tests/architecture_contracts/check_ruckig_navigation_spike.py
+bash tests/navigation_ruckig/run_mingw64.sh
 ```
 
-Visual smoke in System Map:
+The first CMake configure will fetch the pinned Ruckig commit from GitHub.
 
-- planet orbits unchanged;
-- asteroid-belt three-ring appearance unchanged;
-- moon orbits unchanged;
-- player cross + ring unchanged;
-- selected-body halo + two rings unchanged;
-- selected-hub two rings unchanged;
-- no disappearing/flickering or alpha/order regression.
+Expected functional coverage:
 
-Do **not** mark GPU-P0.1 accepted until the rebuild and runtime smoke pass.
+- stationary 100 m transfer reaches exact requested position/velocity;
+- orbital-scale coordinates remain numerically stable through the co-moving frame;
+- Earth-like gravity case preserves endpoint and gravity diagnostics;
+- physically infeasible one-second transfer is rejected;
+- benchmark prints `RUCKIG BENCHMARK: ... avg=... us/solve`;
+- final line: `NAVIGATION RUCKIG SPIKE: PASS`.
 
-## Immediately after GPU-P0.1 acceptance
+Do not impose a hard benchmark threshold yet. Record the actual average solve time on the developer machine first.
 
-Stop renderer work and switch to **NAV-PERF-0 — route/trajectory performance instrumentation**.
+## If the spike passes
 
-First navigation wave is measurement only: identify the exact source of the route/planner freeze before changing algorithms or moving work to GPU. At minimum measure planner wall time, predictor calls, integration steps, gravity evaluations, shooting iterations, safety segment/hazard checks and candidate/detour counts.
+Next wave: NAV-RUCKIG-1 production A/B integration.
 
-The CPU remains the authoritative/reference planner. A later GPU derivative is allowed for large batches of independent candidate trajectories/safety evaluations if profiling justifies it; blindly porting one sequential trajectory integrator to compute is not the target.
+1. Add a private C++20 Ruckig navigation library to the main CMake graph while leaving the application C++17.
+2. Make local state-to-state `predictLeg()` Ruckig-first.
+3. Keep the existing shooting predictor as deterministic fallback/reference.
+4. Keep safety evaluation unchanged.
+5. Add explicit timing/fallback counters.
+6. Build `EliteGame` and reproduce the previously expensive route calculation.
+
+Do not delete the old predictor until runtime A/B evidence shows that Ruckig covers the required cases.
+
+## Deferred renderer acceptance
+
+GPU-P0 static spheres remain accepted. GPU-P0.1 repeated System Map circles still has contracts PASS but lacks the final clean rebuild/runtime visual acceptance after Core-tail cleanup. That status is preserved; starting NAV-RUCKIG-0 does not retroactively accept GPU-P0.1.
+
+Station-adjacent renderer freezes remain out of scope.

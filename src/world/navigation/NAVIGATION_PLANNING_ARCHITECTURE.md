@@ -6,130 +6,142 @@
 
 ## Core rule
 
-Navigation is separated into topology, motion, execution and presentation. No
-presentation component is allowed to grow into another route planner.
+Navigation is separated into topology, motion, execution and presentation.
 
 ```text
 navigation snapshot
     -> GeometricPathPlanner / DockingPathPlanner     coarse collision-free topology
-    -> RuckigRoutePlanner                            time-parameterized motion
+    -> RuckigRoutePlanner                            time-parameterized route motion
+    -> RuckigTrajectorySolver                        state-to-state primitive
     -> optional bounded Ruckig live-pose reconnect   local correction only
     -> GuidanceTunnel                                presentation sampling only
     -> future follower                               per-tick execution/control
 ```
 
-The coarse route decides **where free space is**. Ruckig decides **how the vehicle
-can move through an already selected local/topological route under kinematic
-constraints**. Guidance rendering consumes accepted motion; it does not invent a
-new path.
+The topology layer decides where free space is. Ruckig decides how a vehicle can
+move through that selected topology under kinematic constraints. Guidance
+presentation consumes accepted motion and never owns route authority.
 
 ## Canonical runtime backend
 
 `game::navigation::RuckigRoutePlanner` is the canonical route-to-trajectory API.
 `world::navigation::TrajectoryGenerator` remains temporarily as a compatibility
-facade for older callers and delegates to that API.
+facade for older callers.
 
 `game::navigation::RuckigTrajectorySolver` is the state-to-state primitive used
-by both:
+by both route motion and rolling current-pose reconnects.
 
-- the route trajectory backend;
-- rolling current-pose guidance reconnects.
-
-The old `SmoothPathOptimizer` must not appear in either live path. It may remain
-only as dead/legacy test code until those tests are migrated and the source can
-be deleted completely.
-
-Architecture contract:
+Hard contract:
 
 ```bash
 python tests/architecture_contracts/check_ruckig_live_navigation.py
 ```
 
-It rejects any reintroduction of `SmoothPathOptimizer` into
-`TrajectoryGenerator.cpp` or `GuidanceTunnel.cpp`.
+It rejects any reintroduction of `SmoothPathOptimizer` into live route generation
+or rolling reconnect and verifies the old smoother is fail-closed in production.
 
 ## Layer ownership
 
 | Layer | Responsibility | Update policy |
 | --- | --- | --- |
 | Global topology | Coarse collision-free polyline through free regions/passages | New target or invalidation; cheap validity checks may be staggered around 1 Hz |
-| Ruckig motion | Position/velocity/acceleration trajectory along accepted topology | New accepted route; bounded local correction on material live-state change |
+| Ruckig motion | Position/velocity/acceleration trajectory through accepted topology | New accepted route; bounded local correction on material live-state change |
 | Execution | Follow accepted trajectory, issue control/thruster commands, correct tracking error | Every physics tick |
-| Guidance tunnel | Visible gates and recommended speed sampled from accepted motion | Cheap presentation refresh; no topology search/spline optimization |
+| Guidance tunnel | Visible gates/recommended speed sampled from accepted motion | Cheap presentation refresh; no topology search or spline optimization |
 
-## Ruckig route baseline
+## Collision-gated waypoint blending
 
-The first deliberately conservative implementation solves every consecutive
-coarse-topology segment as a state-to-state Ruckig leg. Intermediate coarse
-vertices currently use zero terminal velocity. This can look stop-and-go, but it
-has two important properties:
+A coarse topology vertex is a routing support, not automatically a mandatory
+stop. The Ruckig route backend may assign a non-zero through-waypoint velocity,
+but only under an explicit local safety contract.
 
-1. a state-to-state polynomial cannot silently shave an obstacle corner;
-2. collision ownership stays explicit and testable.
+For an internal waypoint:
 
-Through-waypoint velocity blending is a later bounded optimization. It is legal
-only when the blended Ruckig transition itself passes swept collision validation.
-A failed blend falls back to the safe stop-at-waypoint behavior; it must never
-fall back to a global spline smoother.
+1. derive incoming and outgoing directions;
+2. reject U-turns and authored zero-speed constraints;
+3. choose a local entry/exit distance from adjacent leg lengths;
+4. test the direct entry->exit corner-cut chord with the complete navigation
+   envelope;
+5. derive a conservative speed from adjacent speed limits, lateral acceleration,
+   available blend distance and turn angle;
+6. solve the actual adjacent state transitions with Ruckig;
+7. swept-check every generated Ruckig chord against canonical obstacles.
+
+If any Ruckig/collision check fails, only the adjacent through velocities are
+relaxed to zero and the route is retried. The fallback is therefore a safe stop
+at the coarse vertex. There is no global spline fallback.
+
+This is deliberately local. Ruckig never receives permission to search for a
+different obstacle topology.
 
 ## Rolling live-pose reconnect
 
-A live manual-guidance correction no longer generates spline/bulge/loop candidate
-families. It uses Ruckig.
+A live manual-guidance correction also uses Ruckig rather than a custom spline.
 
-For a stable terminal, the expensive correction is bounded to a physical horizon:
+For a stable terminal the expensive correction is bounded to a physical horizon:
 
 ```text
 D >= v*T_latency + v^2/(2*a_brake) + turn_distance + safety_margin
 ```
 
 The current ship state is solved to a rejoin state on the accepted trajectory,
-including the accepted rejoin velocity. The unchanged accepted tail is then
-stitched back onto the product. The local rejoin is never exposed as the real
-docking terminal.
+including the accepted rejoin velocity. The unchanged accepted tail is stitched
+back onto the product. The local rejoin is never exposed as the docking terminal.
 
-If the live terminal moved materially, or a bounded Ruckig rejoin is infeasible,
-a full Ruckig reconnect is attempted through sparse accepted-route supports and
-a final docking-axis alignment point. Every generated leg must still pass swept
-collision checks.
+If the terminal moved materially, or a bounded Ruckig rejoin is infeasible, a
+full Ruckig reconnect is attempted through sparse accepted-route supports plus a
+final docking-axis alignment point. Every leg remains collision validated.
+
+## SmoothPath retirement
+
+The old custom B-spline implementation has been removed. The temporary
+`SmoothPathOptimizer` symbol exists only to make migration fail safely:
+
+- production: always invalid, message directs caller to Ruckig;
+- old navigation test target only: `ELITE_LEGACY_SMOOTH_PATH_TEST_COMPAT`
+  enables a minimal non-smoothing polyline shim for one stale regression.
+
+No production CMake target may define that macro. Once the final stale spline
+test is migrated, the compatibility header/source and their build-list entries
+should be deleted completely.
 
 ## Collision invariants
 
-Ruckig is a motion generator, not a collision system. Every live generated
-segment is accepted only after canonical navigation-geometry validation.
+Ruckig is a motion generator, not a collision system. Every generated route or
+reconnect segment is accepted only after canonical navigation-geometry checks.
 
-- Render mesh: visual surface.
-- Collision geometry: physical solid matter.
-- Hit volumes: damage/picking ownership.
-- Navigation geometry: blocked/free regions and authored passages for a vehicle envelope.
+| Geometry | Responsibility |
+| --- | --- |
+| Render mesh | visible surface |
+| Collision geometry | physical solid matter |
+| Hit volumes | damage/picking ownership |
+| Navigation geometry | free/blocked regions and authored passages for a vehicle envelope |
 
-A coarse enclosing box must not fill a real navigable hole. Future authoring work
-must preserve openings/passages in navigation geometry and use the complete
-vehicle envelope, including attached/towed cargo.
+A coarse enclosing box must not fill a real navigable hole. Future authored
+navigation geometry must preserve passages and use the complete moving envelope,
+including attached/towed cargo.
 
-Swept checks remain mandatory. Sampling density is a validation detail; a coarse
-discrete step must never be able to jump through a thin obstacle.
+Swept checks are mandatory. Sampling density is an implementation detail; a
+coarse discrete step must never jump through a thin obstacle.
 
 ## Performance model
 
 Old NAV-LIVE-3 measurements showed the custom spline stack spending hundreds of
 milliseconds in repeated candidate sampling/collision checks and entering a
-rolling replan storm. Those timings are now a **historical baseline**, not the
-intended implementation.
+rolling replan storm. Those measurements are historical baseline only.
 
-Current performance should be measured from:
+Current instrumentation:
 
-- `[DockingPerf]` for snapshot / geometric / trajectory / tunnel stages;
-- `[GuidanceReplan]` for rolling correction cost;
-- `[RuckigRoutePerf]` in `navigation_perf.log` for Ruckig legs, solve time and
-  swept collision segment count.
+- `[DockingPerf]`: snapshot / geometric / trajectory / tunnel stages;
+- `[GuidanceReplan]`: rolling correction cost;
+- `[RuckigRoutePerf]`: Ruckig attempts/successes/solve time, swept collision
+  segment count and surviving blended-waypoint count.
 
-If the initial global topology search becomes dominant, optimize/cull/cache
-`GeometricPathPlanner` rather than pushing topology responsibility into Ruckig.
-If Ruckig/swept validation becomes dominant, improve local candidate sets,
-validation broadphase/spatial indexing and scheduling without reducing safety.
-If a synchronous initial solve is still visible, move immutable planning to a
-worker and publish latest-request-wins generations.
+If topology search dominates, optimize/cull/cache `GeometricPathPlanner`; do not
+push global search into Ruckig. If Ruckig/validation dominates, improve bounded
+candidate policy, broadphase/spatial indexing and scheduling without reducing
+collision fidelity. If synchronous initial planning remains visible, move the
+immutable solve to a worker with generation IDs/latest-request-wins publication.
 
 ## Deterministic test scenes
 
@@ -143,16 +155,18 @@ Keep deterministic scenarios before random stress scenes:
 6. drone/ship without and with attached cargo;
 7. dense seeded obstacle field and many actors with staggered checks.
 
-Tests must distinguish topology failure, motion infeasibility, collision failure,
-terminal-state failure and CPU-budget failure.
+Focused Ruckig route tests additionally cover a clear corner that retains
+through velocity and an obstacle-blocked corner that must relax to a stop.
 
 ## Non-negotiable rules
 
-- No `SmoothPathOptimizer` in live route generation or live tunnel reconnect.
-- No collision-fidelity reduction to hide frame stalls.
+- No custom spline optimizer in live route generation or live reconnect.
+- No collision-fidelity reduction to hide stalls.
 - No local horizon endpoint masquerading as the real terminal.
 - No HUD-owned route solving.
 - No second global path search inside Ruckig.
+- A through-waypoint blend exists only if local eligibility and actual swept
+  Ruckig motion both pass collision validation.
 - Reuse an immutable accepted tail only while its assumptions remain valid.
 - Material environment/target changes invalidate the relevant product; they do
-  not justify visually dragging stale guidance through space.
+  not justify dragging stale guidance through space.

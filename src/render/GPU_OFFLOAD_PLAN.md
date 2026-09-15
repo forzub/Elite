@@ -62,11 +62,11 @@ Migrated `SystemMapSceneRenderer` consumers:
 
 Do not migrate dormant circle helpers, billboard/proxy markers or arbitrary line/solid paths merely for code purity. Those remain profile-gated.
 
-## Navigation freeze — explicit Ruckig experiment before GPU work
+## Navigation freeze — Ruckig before GPU compute
 
-The route/trajectory calculation can produce a user-visible machine stall. The original next step was NAV-PERF-0 instrumentation. The user explicitly chose to try the MIT-licensed Ruckig Community Edition first as a replacement candidate for the expensive repeated state-to-state shooting solve.
+The route/trajectory calculation can produce a user-visible machine stall. The original next step was NAV-PERF instrumentation. The user explicitly chose the MIT-licensed Ruckig Community Edition as the first replacement candidate for the expensive repeated state-to-state shooting solve.
 
-### NAV-RUCKIG-0 — active isolated spike
+### NAV-RUCKIG-0 — ACCEPTED isolated spike
 
 Pinned upstream:
 
@@ -75,19 +75,36 @@ Ruckig v0.19.4
 a8db97a4e9c55e5160a3855f739fa3b270df8e4c
 ```
 
-The spike is deliberately outside the production build. `RuckigTrajectorySolver` hides Ruckig behind an Elite-only public seam; only the adapter implementation is C++20. `tests/navigation_ruckig` fetches/builds the exact commit with cloud client, examples, upstream tests, benchmark, Python module and shared-library build disabled.
+The complete isolated MinGW test now passes locally. The adapter solves in an accelerating co-moving terminal frame, reconstructs world states, resamples `GravityFieldSystem`, and validates Elite scalar proper-acceleration/proper-jerk limits before returning the normal `TrajectoryPredictionResult` form.
 
-The adapter solves in an accelerating co-moving terminal frame rather than feeding orbital-scale world coordinates directly into Ruckig. It then reconstructs world states, resamples `GravityFieldSystem`, and validates Elite scalar proper-acceleration/proper-jerk limits before returning the normal `TrajectoryPredictionResult` form.
+Bring-up exposed two concrete integration issues and both are now guarded:
 
-The spike measures a 500-solve wall-time benchmark but has no hard performance threshold yet. First acceptance requires endpoint/limit tests, orbital-scale numerical stability, Earth-like gravity behavior and infeasible-horizon rejection on the developer MinGW toolchain.
+- strict MinGW C++20 needed target-local `_USE_MATH_DEFINES` for upstream `M_PI` use;
+- Elite scalar Euclidean acceleration/jerk limits had to be mapped conservatively to Ruckig per-axis bounds (`L / sqrt(3)`) before final scalar revalidation.
+
+The user confirmed the complete spike passed. The exact benchmark number was not pasted into chat, so no isolated speed ratio is claimed yet.
+
+### NAV-RUCKIG-1 — ACTIVE production A/B
+
+Ruckig is now wired through `cmake/EliteRuckigNavigation.cmake` as a private C++20 runtime library while `EliteGame` and `EliteServer` remain C++17. Client, server and the navigation-guidance regression suite use the same exact pinned dependency seam. Generic upstream cache options are restored after dependency configuration.
+
+`LocalGuidancePlanner::predictLeg()` is Ruckig-first. If Ruckig rejects a leg or fails numerically, the previous shooting predictor remains the deterministic fallback/reference. `TrajectorySafetyEvaluator`, docking policy, detour/emergency policy and gameplay authority are unchanged.
+
+Per planning call the A/B path records:
+
+- Ruckig leg attempts/successes/fallbacks;
+- actual legacy `TrajectoryPredictor` call count;
+- accumulated Ruckig solve microseconds;
+- accumulated legacy-fallback microseconds;
+- last Ruckig failure message.
+
+**Acceptance gate:** production guidance regression + `EliteGame` build + reproduction of the previously expensive route. The decisive evidence is whether normal legs stay Ruckig-successful and `legacyPredictorCalls` collapses toward zero.
 
 ### Why this still follows the GPU-offload policy
 
-The current single-trajectory integrator is sequential in time, double-precision-heavy and feeds CPU planner decisions. Replacing repeated shooting iterations with an analytic/online trajectory generator is a more appropriate first experiment than blindly moving the same sequential algorithm to a compute shader.
+The current single-trajectory integrator is sequential in time, double-precision-heavy and feeds CPU planner decisions. Replacing repeated shooting iterations with a tested analytic/online trajectory generator is more appropriate than blindly moving the same sequential algorithm to a compute shader.
 
-If Ruckig passes, the next wave is a production A/B path with the old `TrajectoryPredictor` retained as deterministic fallback/reference and `TrajectorySafetyEvaluator` unchanged. Timing and fallback counters then establish whether the route freeze is solved or whether safety/broad-phase work still dominates.
-
-If Ruckig fails or is not materially faster, NAV-PERF instrumentation remains the fallback next step.
+If Ruckig removes the route stall, no GPU port of that leg generator is justified. If safety/broad-phase work still dominates after Ruckig, instrument and optimize that actual bottleneck next.
 
 ### Legitimate future GPU shape
 
@@ -129,7 +146,7 @@ The starfield catalog rebuild is threshold-triggered rather than per-frame. Leav
 - `GalaxyDatabase` parsing/validation;
 - offline/cached load-once asset work.
 
-The existing `TrajectoryPredictor` remains the CPU reference/fallback while Ruckig is evaluated. Batched GPU candidate/safety evaluation is allowed only after measurements justify it and without synchronous fine-grained readback.
+The existing `TrajectoryPredictor` remains the CPU fallback/reference during NAV-RUCKIG-1. Batched GPU candidate/safety evaluation is allowed only after measurements justify it and without synchronous fine-grained readback.
 
 ## Already GPU-driven
 

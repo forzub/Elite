@@ -58,23 +58,23 @@ Ruckig is only a candidate **leg generator**. It does not replace:
 - route selection;
 - ship control/authority.
 
-## Latest local result
+## Local results so far
 
-The architecture contract passed. The first MinGW build then failed inside pinned upstream Ruckig before our solver linked because `ruckig/roots.hpp` uses `M_PI`, while strict MinGW `-std=c++20` hides that non-standard macro.
+The first local MinGW attempt exposed upstream use of `M_PI` under strict C++20. That is fixed target-locally with `_USE_MATH_DEFINES`; the next build completed and linked.
 
-This is now fixed in the isolated spike CMake with a target-local MinGW portability shim:
+The first executable run then passed the stationary local transfer but rejected the orbital-scale multi-axis case with:
 
-```cmake
-if(MINGW)
-    target_compile_definitions(ruckig PUBLIC _USE_MATH_DEFINES)
-endif()
+```text
+Ruckig candidate exceeds Elite proper-jerk envelope
 ```
 
-The guard test now requires that shim so the issue cannot silently return. No solver correctness or performance conclusion should be drawn from the failed build; execution never reached the tests.
+Root cause: Elite defines acceleration/jerk limits as Euclidean vector magnitudes, while Ruckig accepts independent per-axis bounds. Giving every Ruckig axis the full scalar Elite limit creates a cube whose diagonal can exceed the Elite spherical envelope by up to `sqrt(3)`.
 
-## Local acceptance now
+The adapter now maps a scalar limit `L` conservatively to `L / sqrt(3)` per Ruckig axis (plus the existing local gravity-frame allowance), while retaining post-generation scalar validation. Failure messages now report observed max versus limit. The architecture contract guards this mapping.
 
-Pull the fix and rerun:
+## Acceptance now
+
+Pull and rerun:
 
 ```bash
 git fetch origin
@@ -84,12 +84,10 @@ python tests/architecture_contracts/check_ruckig_navigation_spike.py
 bash tests/navigation_ruckig/run_mingw64.sh
 ```
 
-The existing FetchContent checkout/build directory may be reused; no manual deletion should be necessary because CMake will regenerate the target compile definitions.
-
 Expected functional coverage:
 
 - stationary 100 m transfer reaches exact requested position/velocity;
-- orbital-scale coordinates remain numerically stable through the co-moving frame;
+- orbital-scale coordinates remain numerically stable through the co-moving frame and stay inside the scalar Elite envelope;
 - Earth-like gravity case preserves endpoint and gravity diagnostics;
 - physically infeasible one-second transfer is rejected;
 - benchmark prints `RUCKIG BENCHMARK: ... avg=... us/solve`;

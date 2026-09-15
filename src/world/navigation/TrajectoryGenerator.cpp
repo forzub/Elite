@@ -8,6 +8,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <glm/gtc/quaternion.hpp>
@@ -47,6 +48,12 @@ glm::dvec3 normalizedOr(
     if (!finite(n2) || n2 <= Epsilon)
         return fallback;
     return value / std::sqrt(n2);
+}
+
+double smoothStep01(double value) noexcept
+{
+    const double u = std::clamp(value, 0.0, 1.0);
+    return u * u * (3.0 - 2.0 * u);
 }
 
 double elapsedMilliseconds(
@@ -301,9 +308,6 @@ std::vector<glm::dvec3> buildWaypointVelocities(
             1.0
         );
         const double angle = std::acos(cosine);
-
-        // U-turns and near-reversals are explicit stop points. There is no
-        // meaningful local through-velocity that preserves the topology.
         if (angle >= glm::radians(150.0))
             continue;
 
@@ -325,9 +329,6 @@ std::vector<glm::dvec3> buildWaypointVelocities(
             sourceProgress[i + 1]
         );
 
-        // Before allowing a through-waypoint Ruckig state, prove that the
-        // local corner cut is in free space. This is only a cheap eligibility
-        // test; the actual generated trajectories are swept again afterwards.
         const double blendDistance = std::max(
             1.0,
             std::min(incomingLength, outgoingLength) * 0.25
@@ -868,8 +869,6 @@ RouteAttempt buildRouteAttempt(
     out.trajectory.lengthMeters = accumulatedPathMeters;
     out.diagnostics.optimizedPathLengthMeters = accumulatedPathMeters;
 
-    // Canonical cumulative diagnostics include any failed blended attempt that
-    // was safely retried as a stop-point route.
     out.diagnostics.ruckigLegAttempts =
         cumulativeDiagnostics.ruckigLegAttempts;
     out.diagnostics.ruckigLegSuccesses =
@@ -881,8 +880,6 @@ RouteAttempt buildRouteAttempt(
 
     computeCurvatureDiagnostics(out);
 
-    // Transitional field mapping for callers/logs that have not yet renamed
-    // their old spline-era diagnostics. No spline candidate exists here.
     out.diagnostics.smoothCandidatesEvaluated =
         out.diagnostics.ruckigLegAttempts;
     out.diagnostics.smoothSafeCandidates =
@@ -957,8 +954,6 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
 
     std::vector<glm::dvec3> waypointVelocities =
         buildWaypointVelocities(request, sourceProgress);
-    // The route endpoint is a stop unless the request eventually gains an
-    // explicit terminal-velocity contract. Docking currently requires zero.
     waypointVelocities.back() = glm::dvec3(0.0);
 
     world::navigation::TrajectoryGenerationDiagnostics cumulativeDiagnostics;
@@ -987,9 +982,6 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
             return attempt.result;
         }
 
-        // A failed through-waypoint motion is not allowed to trigger a global
-        // smoother. Relax only the adjacent local waypoint velocities to zero
-        // and restart. If both are already stop points, the failure is real.
         bool relaxed = false;
         const std::size_t leg = attempt.failedLeg;
         if (leg > 0 && leg < waypointVelocities.size() - 1 &&

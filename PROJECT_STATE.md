@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-16 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / static route quality  
+**Current focus:** NavigationWorld v2 / static turn-aware search optimization  
 **Canonical development branch:** `main`  
 **Active stage:** `NAV-V2-SPACE-1`
 
@@ -22,11 +22,9 @@ Moving-goal pursuit is specified in `src/world/navigation/PURSUIT_HORIZON.md`; r
 
 ## `NAV-V2-MAP-2` — CLOSED
 
-Accepted 10k results remain recorded in the main navigation benchmark logs.
+Accepted dynamic-map CPU/GPU evidence remains recorded in the navigation benchmark logs.
 
 ## `NAV-V2-SPACE-1` — accepted foundation
-
-Static indexing progression:
 
 ```text
 baseline corridor              ≈1.95-1.99 s at 10k
@@ -40,49 +38,54 @@ Full replace/local patch remain worker/update-path operations at roughly 44-49 m
 
 ## Costed route v1 — ACCEPTED
 
-Target-machine behavior accepts apertures and policy-dependent canyon/overflight routes.
+Behavior accepts traversable apertures and policy-dependent canyon/overflight routing. Dedicated 10k p95 remains <=9.6103 ms, below the pinned 15 ms acceptance threshold.
 
-10k costed p95:
+## Static turn cost v2 — ACCEPTED semantics
 
-```text
-open distance_only      8.1733 ms
-open clearance_aware    8.5020 ms
-hub  distance_only      7.7609 ms
-hub  clearance_aware    9.6103 ms
-```
+Target-machine architecture + behavior tests pass. Positive turn penalty correctly preserves arrival direction in semantic state `(RegionSlot, incoming PortalId)` and `zigzag_vs_smooth` selects the smoother branch when turn burden dominates.
 
-The predeclared `<=15 ms` threshold passed, so the RegionSlot Dijkstra fast path is retained.
+## Turn-aware performance baseline — REJECTED
 
-## Static turn cost v2 — ACCEPTED behavior
-
-Fresh target-machine gate:
+Fresh dedicated benchmark:
 
 ```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
+open_10k zero-turn p95    9.6982 ms
+open_10k turn-aware p95 216.1602 ms
+hub_10k  zero-turn p95    9.8862 ms
+hub_10k  turn-aware p95 232.6520 ms
+
+zero-turn portals examined  57,197
+turn-aware portals examined 329,660
 ```
 
-Policy and state model:
+The predeclared rule was `>120 ms p95 -> optimize before the next layer`, so the original tree-backed expanded-state reference is rejected for performance. Its semantics remain accepted.
+
+Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
+
+## Active optimization
+
+Turn-aware representation now uses stable dense `TurnStateSlot` values created at graph publication time. Each directed adjacency edge points directly to the arrival-state slot. Per-query best-cost, previous and settled state are vectors, and the frontier is a binary priority queue.
 
 ```text
-turnPenaltyMetersPerRadian == 0
-    -> accepted v1 RegionSlot Dijkstra
+directed arrival -> TurnStateSlot
+AdjacencyEdge    -> arrivalTurnStateSlot
 
-turnPenaltyMetersPerRadian > 0
-    -> expanded (RegionSlot, incoming PortalId) search
+query state
+    vector bestCost
+    vector previous
+    vector settled
+    priority_queue frontier
 ```
 
-`zigzag_vs_smooth` is accepted. Static turn cost remains a coarse branch-selection term; ship velocity, dynamic traffic, braking and speed-dependent maneuver feasibility remain outside persistent NavigationSpace cost.
+The zero-turn RegionSlot Dijkstra path remains unchanged. The expanded topology itself is unchanged, so the next benchmark will isolate tree-container overhead from the remaining ~330k turn-state transition checks.
 
-## Active gate — turn-aware performance
+## Next order
 
-Harness:
+1. rerun architecture/behavior after dense turn-state patch;
+2. rerun `navigation_space_turn` benchmark;
+3. if 10k turn-aware p95 <=40 ms, accept static turn search and move to dynamic conflict/local-horizon composition;
+4. if still 40-120 ms, add admissible A* / search reduction;
+5. then implement pursuit/receding-intercept consumer;
+6. live game/server integration follows isolated NavigationWorld stabilization.
 
-```text
-benchmarks/navigation_space_turn/
-```
-
-It compares zero-turn and positive-turn policies on identical open/hub 1k/5k/10k snapshots. Timings and `portalsExamined` determine whether the current expanded `std::map`/`std::multimap` reference remains adequate or needs a private state/queue optimization.
-
-After this measurement, if scaling is acceptable, stop adding static policy terms and move to dynamic conflict/local-horizon composition, then pursuit/receding-intercept consumption, then live game/server integration.
+Do not add more persistent static cost terms before the turn-aware performance gate closes.

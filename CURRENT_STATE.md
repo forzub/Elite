@@ -1,24 +1,32 @@
 # Elite — CURRENT STATE
 
 **Updated:** 2026-09-16  
-**Canonical branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
+**Canonical branch:** `main`  
 **Editor baseline:** v0.10.86 accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted  
 **Navigation:** `NAV-V2-MAP-2` — ship-centered NavigationMap CPU reference accepted; CPU/GPU measurement is the active gate
 
 ## Repository source of truth — mandatory
 
-For current Navigation v2 work, the GitHub branch named above is the canonical code/state baseline. See:
+The only canonical game-development branch is:
+
+```text
+main
+```
+
+Permanent rule:
 
 ```text
 REPOSITORY_SOURCE_OF_TRUTH.md
 ```
 
-Do not infer a newer `LOCAL / UNPUSHED` implementation merely because code is absent from the repository default branch.
+Long-lived parallel game-development branches are prohibited. Temporary rescue refs may be used only to preserve/recover divergent history, must not receive continued feature work, and must be merged into `main` and removed after reconciliation.
 
-A 2026-09-16 inspection initially used `main`, which was materially behind/diverged from the active branch. Because current NavigationMap/library/benchmark files were absent on `main`, they were incorrectly described as code that must exist only on the user's workstation. That was wrong. The correct sequence is: read `CURRENT_STATE.md` / `CURRENT_TASK.md`, resolve their declared branch, inspect that exact branch/ref, then use local console output only as target-machine validation evidence.
+On 2026-09-16 three divergent histories (`main`, `chatgpt/mae-v01075-semantic-workflow-motion-v5`, and the user's local line published as `rescue/local-97500`) were audited and reconciled into `main` with a three-parent merge. Both former development lines are now ancestors of `main`; current code/state must no longer be read from either of them.
 
-The user's workstation is not assumed to contain a different/newer implementation unless the user explicitly states there are unpublished local changes.
+The earlier conclusion that NavigationMap/library/benchmark work was `LOCAL / UNPUSHED` was wrong. The code already existed on GitHub on the divergent development line. The corrective rule is to keep `main` authoritative and inspect its exact HEAD before coding/reporting state.
+
+Local console output supplied by the user is target-machine evidence. It is not proof of a separate unseen code version unless the user explicitly says there are unpublished local changes.
 
 ## Stable baseline outside navigation
 
@@ -29,8 +37,7 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 .elmodel   -> CompiledModelAssetReader -> ModelAssetBinary       -> ModelAsset
 ```
 
-`src/model_asset/ModelAsset.h` remains shared runtime/editor schema authority.
-Renderer feature work remains paused while Navigation v2 is established.
+`src/model_asset/ModelAsset.h` remains shared runtime/editor schema authority. Renderer feature work remains paused while Navigation v2 is established.
 
 ## Navigation architecture reset
 
@@ -51,6 +58,7 @@ Canonical architecture:
 
 ```text
 src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md
+NAVIGATION_WORLD_V2.md
 ```
 
 ## Accepted coordinate/runtime domains
@@ -118,7 +126,7 @@ src/world/navigation/map/
     README.md
 ```
 
-The block is built as its own `EliteNavigationMap` static library for standalone testing/benchmarking. It is intentionally not yet linked into the live `EliteGame` path.
+The block is built as its own `EliteNavigationMap` static library for standalone testing/benchmarking. It is intentionally not yet linked into the live `EliteGame` / `EliteServer` runtime path.
 
 Public ingress is an owned `DynamicWorldUpdate` by value containing working frame, source revision and actor P/V/A/radius/flags/revision data.
 
@@ -134,13 +142,15 @@ stats()
 
 The CPU reference backend implements constant-acceleration endpoint prediction, conservative swept spheres and a sparse 3D cell hash. It is the deterministic behavior oracle for future CPU/GPU/hybrid backends.
 
-Target-machine evidence reported 2026-09-16:
+User target-machine evidence reported 2026-09-16:
 
 ```text
 bash tests/navigation_map/run_mingw64.sh
 navigation_map: 1/1 PASS
 100% tests passed, 0 failed
 ```
+
+This is behavioral evidence for the reference block, not the CPU/GPU performance decision.
 
 ## Benchmark harness status — ready for target-machine run
 
@@ -156,18 +166,18 @@ GPU benchmark:
 benchmarks/navigation_gpu/
 ```
 
-Both use deterministic `cruise` / `hub` scenario classes at 1k / 5k / 10k actors.
+Both use deterministic `cruise` / `hub` scenario classes at 1k / 5k / 10k actors and a 3 s default prediction horizon.
 
-Preparatory corrections made before measurement on 2026-09-16:
+Preparatory corrections already incorporated in `main`:
 
-1. `tests/architecture_contracts/check_navigation_map_boundary.py` was stale and still required `NAV-V2-MAP-1` although project state had advanced to `NAV-V2-MAP-2`; it now validates the active measurement gate.
-2. `benchmarks/navigation_map/run_mingw64.sh` previously built under `ROOT/work/build/...`, which would become `/d/__elite/work/work/build/...` for the canonical checkout; it now uses `tests/helpers/build_layout.sh` and `${ELITE_TEST_BUILD_ROOT}/navigation_map_benchmark`, matching the project build layout.
+1. `tests/architecture_contracts/check_navigation_map_boundary.py` now requires the actual `NAV-V2-MAP-2` measurement gate instead of stale `NAV-V2-MAP-1`.
+2. `benchmarks/navigation_map/run_mingw64.sh` uses `tests/helpers/build_layout.sh` and `${ELITE_TEST_BUILD_ROOT}/navigation_map_benchmark`, matching the canonical project build layout.
 
-No CPU/GPU performance result is recorded yet. The next evidence must come from the user's target machine; do not choose a backend before those numbers exist.
+No CPU/GPU performance result is recorded yet. The backend must not be selected before matched target-machine measurements exist.
 
 ## GPU feasibility state
 
-The strongly GPU-suitable work is:
+Strong GPU candidates are:
 
 ```text
 P/V/A actor prediction
@@ -177,9 +187,7 @@ corridor/local-horizon relevance filtering
 all-agent neighbor/conflict candidate generation
 ```
 
-Dynamic P/V/A stays actor-owned; do not build a dense velocity/acceleration voxel field. `256^3` cells with six float channels for V+A alone are already roughly 384 MiB before occupancy/clearance/IDs/topology; `512^3` is eight times larger.
-
-Single-agent A*/Theta*/SIPP-style graph search is not the first GPU migration target. Precision/global search remains an asynchronous CPU-worker candidate until batched evidence justifies otherwise. A hybrid backend is explicitly valid.
+Dynamic P/V/A stays actor-owned; do not build a dense velocity/acceleration voxel field. Single-agent A*/Theta*/SIPP-style graph search is not the first GPU migration target. Precision/global search remains an asynchronous CPU-worker candidate until batched evidence justifies otherwise. A hybrid backend is explicitly valid.
 
 ## GPU scheduling invariant
 
@@ -249,7 +257,7 @@ These are design targets, not cross-machine assertions. Rendering competes for t
 
 Current stage: `NAV-V2-MAP-2`.
 
-1. sync the canonical branch;
+1. sync local checkout to canonical `main`;
 2. run the NavigationMap architecture + behavioral contract;
 3. run CPU benchmark at matched 1k/5k/10k `cruise`/`hub` scenarios;
 4. run GPU compute benchmark on the same machine/scenarios;

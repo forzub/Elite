@@ -4,7 +4,7 @@
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Editor baseline:** v0.10.86 accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted locally  
-**Navigation:** `NAV-V2-GPU-0` — isolated ship-centered NavigationWorld GPU benchmark implemented; local compile/run measurements pending
+**Navigation:** `NAV-V2-MAP-1` — isolated ship-centered NavigationMap API + CPU reference implemented; MinGW behavioral measurements pending
 
 ## Stable baseline outside navigation
 
@@ -63,21 +63,115 @@ Navigation v2 preserves multiple intentional coordinate domains.
 - Hull-local coordinates remain an execution/flight-control concern.
 - Render/player-relative coordinates remain presentation-only.
 
-This avoids forcing all Hub/private-domain state to rebase around the player and
-also avoids global-coordinate precision/scale contaminating local navigation.
+## NAV-V2-MAP-1: NavigationMap block
+
+A new isolated block now exists under:
+
+```text
+src/world/navigation/map/
+```
+
+Public boundary:
+
+```text
+NavigationMap.h
+```
+
+Implementation/support:
+
+```text
+NavigationMap.cpp
+CMakeLists.txt
+README.md
+```
+
+The block is intentionally not a bag of shared structures. It owns its data and
+its coordinate conversion.
+
+Ingress:
+
+```text
+NavigationMap::DynamicWorldUpdate
+    source revision
+    active WorkingFrame in authoritative system/world coordinates
+    P/V/A/radius/flags for dynamic actors
+```
+
+The update is passed by value. The map transforms the snapshot internally into
+ship-centered coordinates and owns the resulting actor table, prediction cache
+and sparse cell index. No caller receives pointers/references/views into those
+structures.
+
+Egress is only compact derived data by value:
+
+```text
+queryCorridor() -> relevant predicted actor candidates
+querySphere()   -> relevant local predicted actor candidates
+stats()         -> revisions/counts/diagnostics
+```
+
+The public header deliberately has no dependency on GLM, OpenGL, GLFW, game
+state, scene or renderer code. `NavigationMap` uses PImpl so a future GPU backend
+can replace the CPU internals without changing planner call sites.
+
+### Current CPU reference backend
+
+The first backend is deliberately simple and deterministic:
+
+```text
+owned dynamic actor table
+constant-acceleration endpoint prediction
+conservative swept sphere
+sparse 3D cell hash
+corridor broadphase + exact conservative sphere/segment test
+sphere broadphase + exact conservative sphere/sphere test
+```
+
+Conservative first-stage prediction:
+
+```text
+p1 = p0 + v*T + 0.5*a*T^2
+travel_bound = |v|*T + 0.5*|a|*T^2
+swept_sphere = sphere(p0, radius + travel_bound)
+```
+
+There is no fixed actor-per-cell correctness cap in the CPU reference.
+Out-of-bounds and rejected inputs remain explicit statistics.
+
+Behavioral and architecture contracts:
+
+```text
+tests/navigation_map/NavigationMapContractTests.cpp
+tests/navigation_map/CMakeLists.txt
+tests/navigation_map/run_mingw64.sh
+tests/architecture_contracts/check_navigation_map_boundary.py
+```
+
+The behavioral contract covers:
+
+- ownership/revisions;
+- large authoritative coordinates -> ship-centered rebase;
+- stable non-hull basis transform;
+- dynamic corridor filtering;
+- sparse local query behavior;
+- atomic rejection of an invalid/non-orthogonal frame.
+
+The block is still isolated from live docking/navigation runtime. That is
+intentional until the API and backend measurements are accepted.
 
 ## NavigationWorld v2 direction
 
 The shared active NavigationWorld is intended to serve both the player and NPCs:
 
 ```text
-static free-space / clearance representation
-+ dynamic actor table (P/V/A/bounds/flags)
-+ dynamic spatial index
-+ predicted swept bounds
-+ active route corridors
-+ local conflict candidates
+NavigationMap
+    static free-space / clearance representation (next capability)
+    dynamic actor table P/V/A
+    dynamic spatial index
+    predicted swept bounds
         |
+        +-> active route corridors
+        +-> local conflict candidates
         +-> mass NPC steering / avoidance
         +-> precision local planner (dock / repair / special)
         +-> temporary target state
@@ -118,9 +212,9 @@ repair drone may pass where a ship cannot. Topology-changing breaches dirty only
 the affected navigation region and may publish an explicit outside<->inside
 breach portal. Detached fragments become new dynamic actors/obstacles.
 
-## NAV-V2-GPU-0 implementation
+## Existing NAV-V2-GPU-0 evidence
 
-An isolated OpenGL 4.3 compute benchmark now exists:
+The isolated OpenGL 4.3 compute benchmark remains available:
 
 ```text
 benchmarks/navigation_gpu/CMakeLists.txt
@@ -130,52 +224,14 @@ benchmarks/navigation_gpu/README.md
 tests/architecture_contracts/check_navigation_gpu_benchmark.py
 ```
 
-It is intentionally **not linked into EliteGame**.
-
-The benchmark evaluates deterministic `cruise` and denser `hub` actor fields at:
-
-```text
-1,000
-5,000
-10,000 actors
-```
-
-GPU pass A performs P/V/A endpoint prediction, a conservative future swept sphere,
+It evaluates deterministic `cruise` and denser `hub` actor fields at 1k / 5k /
+10k actors. GPU pass A performs P/V/A prediction, conservative swept bounds,
 3D spatial binning and selected-corridor filtering. GPU pass B performs all-agent
 neighbor/conflict candidate queries using only relevant cells.
 
-The prototype uses a ship-centered +/-12 km working cube, 600 m cells and a
-fixed 64-actor cell capacity. Cell overflow is explicit and makes the structural
-result invalid; it is never silently accepted.
-
-The conservative future envelope is intentionally simple:
-
-```text
-p1 = p0 + v*T + 0.5*a*T^2
-travel_bound = |v|*T + 0.5*|a|*T^2
-swept_sphere = sphere(p0, radius + travel_bound)
-```
-
-This is a benchmark representation, not the final production sweep.
-
-Measured output includes:
-
-```text
-gpu_bin_ms
-gpu_neighbor_ms
-gpu_total_ms / gpu_p95_ms
-cpu_submit_ms
-candidate pairs / neighbor checks
-corridor actor count
-occupied cells / overflow / out-of-bounds
-max swept radius
-SSBO memory
-readback bytes
-```
-
-Only a 32-byte aggregate statistics block is read back. The 1,000-actor cases
-also compute an O(N^2) CPU reference for pair/corridor counts; `reference_ok=1`
-is required before performance measurements are trusted.
+That benchmark is no longer intended to define a second public navigation API.
+Its next useful role is to become/compare against a backend behind
+`NavigationMap`.
 
 ## Performance targets
 
@@ -189,8 +245,7 @@ full/precision route solve:     asynchronous; never a synchronous frame blocker
 ```
 
 These GPU numbers are design targets, not a machine-independent test assertion.
-GPU time competes with rendering. If the 10k benchmark is not comfortably within
-budget, compare a CPU spatial-index baseline before deciding on GPU ownership.
+GPU time competes with rendering.
 
 ## Current acceptance gate
 
@@ -201,20 +256,27 @@ git fetch origin
 git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
 git pull --ff-only
 
+python tests/architecture_contracts/check_navigation_map_boundary.py
+bash tests/navigation_map/run_mingw64.sh
+```
+
+Then keep the existing GPU evidence available:
+
+```bash
 python tests/architecture_contracts/check_navigation_gpu_benchmark.py
 bash benchmarks/navigation_gpu/run_mingw64.sh
 ```
 
-The benchmark writes `navigation_gpu_benchmark.csv` and prints its absolute path.
+Acceptance for `NAV-V2-MAP-1`:
 
-Acceptance for this wave is evidence, not an assumed speedup:
+- architecture boundary contract PASS;
+- standalone C++ behavioral contract compiles and PASSes under production MinGW64;
+- no public API dependency leak from NavigationMap;
+- no fixed per-cell actor cap in the CPU reference;
+- corridor/sphere results are deterministic and revision-tagged;
+- invalid frame publication leaves the previously accepted map intact.
 
-- architecture contract PASS;
-- benchmark compiles on the production OpenGL 4.3/GLFW/GLAD stack;
-- both 1k CPU-reference checks report `reference_ok=1`;
-- `overflow=0` and `out_of_bounds=0` for measured default scenarios;
-- collect 1k/5k/10k GPU median/p95, CPU submission, memory and candidate counts;
-- only after those numbers decide GPU vs CPU/hybrid dynamic spatial ownership.
-
-No live NavigationWorld integration should occur before this benchmark is
-measured.
+After that, benchmark CPU NavigationMap with 1k/5k/10k actors against the existing
+GPU prototype, then choose the dynamic backend. The following wave can add static
+free-space/clearance (`NAV-V2-SPACE-1`) without exposing its storage across the
+same API boundary.

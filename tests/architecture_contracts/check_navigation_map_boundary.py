@@ -82,10 +82,10 @@ for marker in (
     require(marker.lower() in README.lower(),
             f"NavigationMap boundary documentation missing: {marker}")
 
-require("NAV-V2-MAP-1" in CURRENT_TASK,
-        "CURRENT_TASK is not advanced to the NavigationMap block wave")
-require("NAV-V2-MAP-1" in CURRENT_STATE,
-        "CURRENT_STATE does not record the NavigationMap block wave")
+require("NAV-V2-MAP-2" in CURRENT_TASK,
+        "CURRENT_TASK is not advanced to the active NavigationMap CPU/GPU measurement gate")
+require("NAV-V2-MAP-2" in CURRENT_STATE,
+        "CURRENT_STATE does not record the active NavigationMap CPU/GPU measurement gate")
 require("NavigationMap" in ARCH and "block boundary" in ARCH.lower(),
         "navigation architecture does not define the NavigationMap block boundary")
 
@@ -95,3 +95,4 @@ print(" - spatial cells/prediction/backend state remain private")
 print(" - callers publish snapshots by value and receive compact query products by value")
 print(" - CPU reference is isolated from game/render/OpenGL dependencies")
 print(" - GPU backend can replace internals without changing planner call sites")
+print(" - project state/task agree on NAV-V2-MAP-2 measurement gate")

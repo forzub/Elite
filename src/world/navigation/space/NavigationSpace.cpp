@@ -52,6 +52,40 @@ bool intersects(const Bounds3d& a, const Bounds3d& b) noexcept
         a.minMapMeters.z <= b.maxMapMeters.z && a.maxMapMeters.z >= b.minMapMeters.z;
 }
 
+Bounds3d mergeBounds(const Bounds3d& a, const Bounds3d& b) noexcept
+{
+    return {
+        {
+            std::min(a.minMapMeters.x, b.minMapMeters.x),
+            std::min(a.minMapMeters.y, b.minMapMeters.y),
+            std::min(a.minMapMeters.z, b.minMapMeters.z)
+        },
+        {
+            std::max(a.maxMapMeters.x, b.maxMapMeters.x),
+            std::max(a.maxMapMeters.y, b.maxMapMeters.y),
+            std::max(a.maxMapMeters.z, b.maxMapMeters.z)
+        }
+    };
+}
+
+Vec3d boundsCenter(const Bounds3d& bounds) noexcept
+{
+    return {
+        0.5 * (bounds.minMapMeters.x + bounds.maxMapMeters.x),
+        0.5 * (bounds.minMapMeters.y + bounds.maxMapMeters.y),
+        0.5 * (bounds.minMapMeters.z + bounds.maxMapMeters.z)
+    };
+}
+
+double axisValue(const Vec3d& value, int axis) noexcept
+{
+    if (axis == 1)
+        return value.y;
+    if (axis == 2)
+        return value.z;
+    return value.x;
+}
+
 double pointClearance(const Bounds3d& bounds, const Vec3d& p) noexcept
 {
     if (!contains(bounds, p))
@@ -126,6 +160,9 @@ public:
     using RegionSlot = std::size_t;
     static constexpr RegionSlot InvalidRegionSlot =
         std::numeric_limits<RegionSlot>::max();
+    static constexpr std::size_t InvalidSpatialNode =
+        std::numeric_limits<std::size_t>::max();
+    static constexpr std::size_t SpatialLeafSize = 8;
 
     struct RegionState
     {
@@ -150,6 +187,27 @@ public:
         std::map<RegionId, RegionSlot> regionSlots;
         std::vector<RegionId> slotRegionIds;
         std::vector<std::vector<AdjacencyEdge>> adjacency;
+        std::vector<std::vector<PortalId>> incidentPortals;
+    };
+
+    struct SpatialNode
+    {
+        Bounds3d bounds {};
+        std::size_t left = InvalidSpatialNode;
+        std::size_t right = InvalidSpatialNode;
+        std::size_t begin = 0;
+        std::size_t end = 0;
+
+        bool leaf() const noexcept
+        {
+            return left == InvalidSpatialNode && right == InvalidSpatialNode;
+        }
+    };
+
+    struct SpatialIndex
+    {
+        std::vector<RegionSlot> slots;
+        std::vector<SpatialNode> nodes;
     };
 
     Revision spaceRevision = 0;
@@ -157,6 +215,7 @@ public:
     std::map<RegionId, RegionState> regions;
     std::map<PortalId, PortalState> portals;
     GraphIndex graph;
+    SpatialIndex spatial;
 
     static void validatePortalReferences(
         const std::map<RegionId, RegionState>& regions,
@@ -184,6 +243,7 @@ public:
         GraphIndex result;
         result.slotRegionIds.reserve(regions.size());
         result.adjacency.resize(regions.size());
+        result.incidentPortals.resize(regions.size());
 
         RegionSlot slot = 0;
         for (const auto& entry : regions)
@@ -192,7 +252,7 @@ public:
             result.slotRegionIds.push_back(entry.first);
         }
 
-        // portals is an ordered map, so each per-region edge vector is built in
+        // portals is an ordered map, so each per-region vector is built in
         // stable PortalId order. Dense RegionSlot endpoints remove ordered-map
         // visited/previous bookkeeping from corridor traversal while preserving
         // deterministic BFS tie-breaking and public RegionId/PortalId results.
@@ -202,11 +262,222 @@ public:
             const auto& portal = entry.second.input;
             const RegionSlot slotA = result.regionSlots.at(portal.regionA);
             const RegionSlot slotB = result.regionSlots.at(portal.regionB);
+
             result.adjacency[slotA].push_back(AdjacencyEdge{portalId, slotB});
             if (portal.bidirectional)
                 result.adjacency[slotB].push_back(AdjacencyEdge{portalId, slotA});
+
+            // Invalidation is endpoint-based, not direction-based: a one-way
+            // portal still becomes invalid if either touching region changes.
+            result.incidentPortals[slotA].push_back(portalId);
+            result.incidentPortals[slotB].push_back(portalId);
         }
         return result;
+    }
+
+    static const Bounds3d& regionBoundsForSlot(
+        const std::map<RegionId, RegionState>& regions,
+        const GraphIndex& graph,
+        RegionSlot slot
+    )
+    {
+        return regions.at(graph.slotRegionIds.at(slot)).input.boundsMapMeters;
+    }
+
+    static std::size_t buildSpatialNode(
+        SpatialIndex& spatial,
+        const std::map<RegionId, RegionState>& regions,
+        const GraphIndex& graph,
+        std::size_t begin,
+        std::size_t end
+    )
+    {
+        SpatialNode node;
+        node.begin = begin;
+        node.end = end;
+        node.bounds = regionBoundsForSlot(regions, graph, spatial.slots.at(begin));
+
+        Vec3d centroidMin = boundsCenter(node.bounds);
+        Vec3d centroidMax = centroidMin;
+        for (std::size_t i = begin + 1; i < end; ++i)
+        {
+            const Bounds3d& bounds = regionBoundsForSlot(
+                regions,
+                graph,
+                spatial.slots[i]
+            );
+            node.bounds = mergeBounds(node.bounds, bounds);
+            const Vec3d center = boundsCenter(bounds);
+            centroidMin.x = std::min(centroidMin.x, center.x);
+            centroidMin.y = std::min(centroidMin.y, center.y);
+            centroidMin.z = std::min(centroidMin.z, center.z);
+            centroidMax.x = std::max(centroidMax.x, center.x);
+            centroidMax.y = std::max(centroidMax.y, center.y);
+            centroidMax.z = std::max(centroidMax.z, center.z);
+        }
+
+        const std::size_t nodeIndex = spatial.nodes.size();
+        spatial.nodes.push_back(node);
+
+        const std::size_t count = end - begin;
+        if (count <= SpatialLeafSize)
+            return nodeIndex;
+
+        const Vec3d span {
+            centroidMax.x - centroidMin.x,
+            centroidMax.y - centroidMin.y,
+            centroidMax.z - centroidMin.z
+        };
+        int axis = 0;
+        if (span.y > span.x && span.y >= span.z)
+            axis = 1;
+        else if (span.z > span.x && span.z > span.y)
+            axis = 2;
+
+        const std::size_t middle = begin + count / 2;
+        std::nth_element(
+            spatial.slots.begin() + static_cast<std::ptrdiff_t>(begin),
+            spatial.slots.begin() + static_cast<std::ptrdiff_t>(middle),
+            spatial.slots.begin() + static_cast<std::ptrdiff_t>(end),
+            [&](RegionSlot a, RegionSlot b)
+            {
+                const double ca = axisValue(
+                    boundsCenter(regionBoundsForSlot(regions, graph, a)),
+                    axis
+                );
+                const double cb = axisValue(
+                    boundsCenter(regionBoundsForSlot(regions, graph, b)),
+                    axis
+                );
+                if (ca != cb)
+                    return ca < cb;
+                return a < b;
+            }
+        );
+
+        const std::size_t left = buildSpatialNode(
+            spatial,
+            regions,
+            graph,
+            begin,
+            middle
+        );
+        const std::size_t right = buildSpatialNode(
+            spatial,
+            regions,
+            graph,
+            middle,
+            end
+        );
+        spatial.nodes[nodeIndex].left = left;
+        spatial.nodes[nodeIndex].right = right;
+        return nodeIndex;
+    }
+
+    static SpatialIndex buildSpatialIndex(
+        const std::map<RegionId, RegionState>& regions,
+        const GraphIndex& graph
+    )
+    {
+        SpatialIndex result;
+        result.slots.reserve(graph.slotRegionIds.size());
+        for (RegionSlot slot = 0; slot < graph.slotRegionIds.size(); ++slot)
+            result.slots.push_back(slot);
+
+        if (!result.slots.empty())
+        {
+            result.nodes.reserve(result.slots.size() * 2);
+            buildSpatialNode(
+                result,
+                regions,
+                graph,
+                0,
+                result.slots.size()
+            );
+        }
+        return result;
+    }
+
+    void collectPointCandidateSlots(
+        const Vec3d& point,
+        std::vector<RegionSlot>& output
+    ) const
+    {
+        output.clear();
+        if (spatial.nodes.empty())
+            return;
+
+        std::vector<std::size_t> stack;
+        stack.reserve(64);
+        stack.push_back(0);
+
+        while (!stack.empty())
+        {
+            const std::size_t nodeIndex = stack.back();
+            stack.pop_back();
+            const SpatialNode& node = spatial.nodes[nodeIndex];
+            if (!contains(node.bounds, point))
+                continue;
+
+            if (node.leaf())
+            {
+                output.insert(
+                    output.end(),
+                    spatial.slots.begin() + static_cast<std::ptrdiff_t>(node.begin),
+                    spatial.slots.begin() + static_cast<std::ptrdiff_t>(node.end)
+                );
+            }
+            else
+            {
+                // Push right first so left is consumed first. Candidate slots
+                // are sorted below anyway to preserve RegionId semantics.
+                stack.push_back(node.right);
+                stack.push_back(node.left);
+            }
+        }
+
+        std::sort(output.begin(), output.end());
+        output.erase(std::unique(output.begin(), output.end()), output.end());
+    }
+
+    void collectBoundsCandidateSlots(
+        const Bounds3d& bounds,
+        std::vector<RegionSlot>& output
+    ) const
+    {
+        output.clear();
+        if (spatial.nodes.empty())
+            return;
+
+        std::vector<std::size_t> stack;
+        stack.reserve(64);
+        stack.push_back(0);
+
+        while (!stack.empty())
+        {
+            const std::size_t nodeIndex = stack.back();
+            stack.pop_back();
+            const SpatialNode& node = spatial.nodes[nodeIndex];
+            if (!intersects(node.bounds, bounds))
+                continue;
+
+            if (node.leaf())
+            {
+                output.insert(
+                    output.end(),
+                    spatial.slots.begin() + static_cast<std::ptrdiff_t>(node.begin),
+                    spatial.slots.begin() + static_cast<std::ptrdiff_t>(node.end)
+                );
+            }
+            else
+            {
+                stack.push_back(node.right);
+                stack.push_back(node.left);
+            }
+        }
+
+        std::sort(output.begin(), output.end());
+        output.erase(std::unique(output.begin(), output.end()), output.end());
     }
 
     const RegionState* findTraversableRegion(
@@ -215,12 +486,16 @@ public:
         std::size_t* examined = nullptr
     ) const
     {
-        for (const auto& entry : regions)
+        std::vector<RegionSlot> candidates;
+        collectPointCandidateSlots(point, candidates);
+
+        for (RegionSlot slot : candidates)
         {
             if (examined)
                 ++(*examined);
 
-            const RegionState& state = entry.second;
+            const RegionId regionId = graph.slotRegionIds.at(slot);
+            const RegionState& state = regions.at(regionId);
             if (state.invalidated || !contains(state.input.boundsMapMeters, point))
                 continue;
 
@@ -265,10 +540,12 @@ void NavigationSpace::replaceStaticWorld(StaticSpaceUpdate update)
 
     Impl::validatePortalReferences(regions, portals);
     auto graph = Impl::buildGraphIndex(regions, portals);
+    auto spatial = Impl::buildSpatialIndex(regions, graph);
 
     impl_->regions = std::move(regions);
     impl_->portals = std::move(portals);
     impl_->graph = std::move(graph);
+    impl_->spatial = std::move(spatial);
     impl_->sourceRevision = update.sourceRevision;
     ++impl_->spaceRevision;
 }
@@ -308,10 +585,12 @@ void NavigationSpace::applyLocalPatch(LocalPatch patch)
 
     Impl::validatePortalReferences(regions, portals);
     auto graph = Impl::buildGraphIndex(regions, portals);
+    auto spatial = Impl::buildSpatialIndex(regions, graph);
 
     impl_->regions = std::move(regions);
     impl_->portals = std::move(portals);
     impl_->graph = std::move(graph);
+    impl_->spatial = std::move(spatial);
     impl_->sourceRevision = patch.sourceRevision;
     ++impl_->spaceRevision;
 }
@@ -325,29 +604,37 @@ NavigationSpace::InvalidationResult NavigationSpace::invalidateBounds(
         throw std::invalid_argument("NavigationSpace invalidation bounds are invalid");
 
     InvalidationResult result;
+    std::vector<Impl::RegionSlot> candidates;
+    impl_->collectBoundsCandidateSlots(boundsMapMeters, candidates);
 
-    for (auto& entry : impl_->regions)
+    std::vector<Impl::RegionSlot> newlyInvalidatedSlots;
+    for (Impl::RegionSlot slot : candidates)
     {
-        auto& state = entry.second;
+        const RegionId regionId = impl_->graph.slotRegionIds.at(slot);
+        auto& state = impl_->regions.at(regionId);
         if (!state.invalidated && intersects(state.input.boundsMapMeters, boundsMapMeters))
         {
             state.invalidated = true;
-            result.invalidatedRegionIds.push_back(entry.first);
+            result.invalidatedRegionIds.push_back(regionId);
+            newlyInvalidatedSlots.push_back(slot);
         }
     }
 
-    for (auto& entry : impl_->portals)
+    for (Impl::RegionSlot slot : newlyInvalidatedSlots)
     {
-        auto& state = entry.second;
-        const bool endpointInvalid =
-            impl_->regions.at(state.input.regionA).invalidated ||
-            impl_->regions.at(state.input.regionB).invalidated;
-        if (!state.invalidated && endpointInvalid)
+        for (PortalId portalId : impl_->graph.incidentPortals.at(slot))
         {
-            state.invalidated = true;
-            result.invalidatedPortalIds.push_back(entry.first);
+            auto& state = impl_->portals.at(portalId);
+            if (!state.invalidated)
+            {
+                state.invalidated = true;
+                result.invalidatedPortalIds.push_back(portalId);
+            }
         }
     }
+
+    std::sort(result.invalidatedRegionIds.begin(), result.invalidatedRegionIds.end());
+    std::sort(result.invalidatedPortalIds.begin(), result.invalidatedPortalIds.end());
 
     if (!result.invalidatedRegionIds.empty() || !result.invalidatedPortalIds.empty())
     {
@@ -373,10 +660,14 @@ NavigationSpace::PointQueryResult NavigationSpace::queryPoint(
     RegionId firstContaining = 0;
     double firstAvailable = 0.0;
 
-    for (const auto& entry : impl_->regions)
+    std::vector<Impl::RegionSlot> candidates;
+    impl_->collectPointCandidateSlots(query.pointMapMeters, candidates);
+
+    for (Impl::RegionSlot slot : candidates)
     {
         ++result.regionsExamined;
-        const auto& state = entry.second;
+        const RegionId regionId = impl_->graph.slotRegionIds.at(slot);
+        const auto& state = impl_->regions.at(regionId);
         if (state.invalidated || !contains(state.input.boundsMapMeters, query.pointMapMeters))
             continue;
 
@@ -387,14 +678,14 @@ NavigationSpace::PointQueryResult NavigationSpace::queryPoint(
 
         if (firstContaining == 0)
         {
-            firstContaining = entry.first;
+            firstContaining = regionId;
             firstAvailable = available;
         }
 
         if (available >= required)
         {
             result.traversable = true;
-            result.regionId = entry.first;
+            result.regionId = regionId;
             result.availableClearanceMeters = available;
             return result;
         }
@@ -471,7 +762,6 @@ NavigationSpace::CorridorResult NavigationSpace::queryCorridor(
     while (frontierHead < frontier.size())
     {
         const Impl::RegionSlot currentSlot = frontier[frontierHead++];
-        const RegionId currentId = impl_->graph.slotRegionIds[currentSlot];
         ++result.diagnostics.regionsVisited;
 
         for (const auto& edge : impl_->graph.adjacency[currentSlot])
@@ -527,8 +817,6 @@ NavigationSpace::CorridorResult NavigationSpace::queryCorridor(
 
             frontier.push_back(neighborSlot);
         }
-
-        (void)currentId;
     }
 
     return result;

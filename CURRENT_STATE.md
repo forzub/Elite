@@ -4,7 +4,7 @@
 **Canonical branch:** `main`  
 **Editor baseline:** v0.10.86 accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted  
-**Navigation:** `NAV-V2-SPACE-1` — static-space boundary/reference accepted; scaling benchmark is active
+**Navigation:** `NAV-V2-SPACE-1` — static-space reference accepted; first measured internal optimization is adjacency indexing
 
 ## Repository source of truth
 
@@ -12,11 +12,9 @@
 
 ## Navigation v2 accepted architecture
 
-The legacy route-wide synchronous chain remains migration code. `RuckigTrajectorySolver` is retained only as a downstream local kinematic primitive after navigation selects a safe temporary target.
+The legacy route-wide synchronous chain remains migration code. `RuckigTrajectorySolver` is retained only as downstream local kinematics after navigation selects a safe temporary target.
 
-Navigation v2 uses one shared ship-centered `NavigationWorld` with stable navigation axes and separate static/dynamic ownership.
-
-Accepted hybrid split from `NAV-V2-MAP-2` measurements:
+Accepted hybrid split from `NAV-V2-MAP-2`:
 
 ```text
 CPU
@@ -36,15 +34,7 @@ GPU work remains asynchronous/double- or triple-buffered; no frame-thread `dispa
 
 ## `NAV-V2-MAP-2` — CLOSED
 
-Fresh target-machine dynamic-map gates passed:
-
-```text
-NAVIGATION MAP BOUNDARY CONTRACT: PASS
-navigation_map: 1/1 PASS
-100% tests passed, 0 failed
-```
-
-Accepted 100-iteration 10k results:
+Accepted 100-iteration 10k evidence:
 
 ```text
 CPU cruise corridor p95=0.1713 ms, sphere p95=0.1329 ms, rebuild p95=3.0958 ms
@@ -53,9 +43,9 @@ GPU cruise total median=0.6840 ms, p95=1.3226 ms
 GPU hub    total median=1.6097 ms, p95=1.6258 ms
 ```
 
-GPU 1k correctness matched the independent CPU pair/corridor reference. All measured GPU scenarios had `overflow=0`, `out_of_bounds=0`, `valid=1`, fixed 32-byte readback.
+GPU 1k correctness matched the independent CPU reference. All measured GPU scenarios had `overflow=0`, `out_of_bounds=0`, `valid=1`, fixed 32-byte readback.
 
-## `NAV-V2-SPACE-1` static-space boundary/reference — ACCEPTED
+## `NAV-V2-SPACE-1` boundary/reference — ACCEPTED
 
 Canonical block:
 
@@ -67,7 +57,7 @@ src/world/navigation/space/
     README.md
 ```
 
-The public backend-neutral API owns persistent static navigation topology and exposes:
+Public concepts:
 
 ```text
 AgentEnvelope
@@ -81,77 +71,83 @@ invalidateBounds
 stats
 ```
 
-The first deterministic CPU reference uses free-space AABB regions + explicit portals internally. Storage/search representation remains replaceable behind PImpl; public API has no GLM/OpenGL/GLFW/game/render dependency.
-
-Fresh target-machine evidence on canonical `main`:
+Fresh target-machine evidence:
 
 ```text
 NAVIGATION SPACE BOUNDARY CONTRACT: PASS
- - one backend-neutral API owns persistent static navigation topology
- - public header is isolated from GLM/OpenGL/game/render state
- - CPU reference uses deterministic free-space regions + portals
- - agent-envelope clearance and narrow-portal admission are explicit
- - local invalidation + transactional patching are owned by the block
- - project state/task agree on NAV-V2-SPACE-1
-
 navigation_space: 1/1 PASS
 100% tests passed, 0 failed
 ```
 
-Accepted reference behavior:
+The first deterministic CPU reference uses free-space AABB regions + explicit portals internally. Public storage/search representation remains replaceable behind PImpl.
 
-- point admission uses agent radius + additional clearance;
-- region bounds and authored clearance cap both constrain admission;
-- portal clearance rejects oversized agents;
-- corridor search returns deterministic region/portal paths;
-- disconnected and invalidated topology fail closed;
-- invalidation is bounded to intersecting regions plus touching portals;
-- local patches are transactional; rejected patches do not partially mutate state.
+## Static-space baseline benchmark — ACCEPTED EVIDENCE
 
-## Active measurement gate — static-space scaling
-
-New benchmark surface:
+Benchmark contract passed. Default target-machine run:
 
 ```text
-benchmarks/navigation_space/
-    main.cpp
-    CMakeLists.txt
-    run_mingw64.sh
-    README.md
-
-tests/architecture_contracts/check_navigation_space_benchmark.py
+warmup=1
+iterations=3
 ```
 
-Deterministic `open_*` and `hub_*` region/portal lattices are generated at approximately 1k / 5k / 10k regions. The benchmark measures full publication, point lookup, corridor search, bounded invalidation and one-region transactional patch separately.
-
-Current reference limitations deliberately left visible for measurement:
+10k results:
 
 ```text
-point lookup       linear region scan
-corridor search    BFS + complete portal-map scan per visited region
-invalidation       complete region + portal scan
-local patch        transactional copy of region + portal maps
+open_10k
+    regions=10000 portals=28600
+    replace med/p95    6.6942 / 7.2406 ms
+    point med/p95      0.2787 / 0.2812 ms
+    corridor med/p95   1991.0357 / 2008.2074 ms
+    invalidate med/p95 2.5731 / 2.9869 ms
+    patch med/p95      7.6135 / 7.8543 ms
+    portals examined   285,913,245
+
+hub_10k
+    regions=10000 portals=28600
+    replace med/p95    7.2397 / 7.5269 ms
+    point med/p95      0.2784 / 0.2845 ms
+    corridor med/p95   1951.6453 / 1956.0686 ms
+    invalidate med/p95 2.8412 / 3.2230 ms
+    patch med/p95      8.6678 / 8.7083 ms
+    portals examined   285,913,245
 ```
 
-No optimization is accepted yet. Target-machine benchmark evidence will determine whether the first internal improvement is adjacency indexing, spatial point-location/invalidation indexing, bounded copy-on-write topology, or a hierarchy.
+From 1k to 10k, corridor median grew roughly `102-105x`; portal examinations grew roughly `106-108x`. The original BFS scanned the complete portal map for every visited region, making corridor traversal effectively pathological at scale.
 
-## Immediate next step
+Raw evidence: `benchmarks/navigation_space/RUN_LOG.md`.
 
-Run:
+## Optimization 1 — private adjacency index
+
+The first measured optimization is implemented on `main` without changing `NavigationSpace.h`:
+
+```text
+regionId -> ordered portalId list
+```
+
+`replaceStaticWorld()` and `applyLocalPatch()` rebuild adjacency transactionally. Stable PortalId ordering preserves deterministic BFS tie-breaking. Invalidation only changes validity flags and does not rebuild topology.
+
+`queryCorridor()` now examines only portals adjacent to the current region. The architecture contract explicitly rejects regression to a full portal-map scan inside BFS.
+
+This optimization intentionally leaves point lookup, invalidation and whole-map transactional patch copying unchanged so the next bottleneck remains visible.
+
+## Active gate
+
+Target-machine rerun is pending after the adjacency change:
 
 ```bash
+python tests/architecture_contracts/check_navigation_space_boundary.py
+bash tests/navigation_space/run_mingw64.sh
 python tests/architecture_contracts/check_navigation_space_benchmark.py
 bash benchmarks/navigation_space/run_mingw64.sh
 ```
 
-Do not rerun the already-passed NavigationSpace boundary/behavior gate solely for benchmark-only files. Do not integrate static space into live runtime until this scaling/reference gate has been measured and the necessary internal indexing pass has been selected.
+Do not add another optimization before this rerun.
 
-## Later order
+## Likely next decisions after measurement
 
-1. measure current static-space reference;
-2. implement only the measured first internal optimization and remeasure;
-3. add costed corridor traversal while keeping the public boundary stable;
-4. integrate bounded asynchronous shared NavigationWorld publication;
-5. add mass-NPC and precision docking/repair consumers;
-6. expose the same completed NavigationWorld truth to guidance/HUD/debug presentation;
-7. retire obsolete route-wide navigation only after v2 owns the live path.
+- corridor cheap, invalidation dominant -> add shared spatial index for point lookup + invalidation;
+- patch dominant -> replace full transactional map copy/rebuild with bounded/chunked topology updates;
+- corridor still material -> compact graph bookkeeping / costed graph representation;
+- add hierarchy/bricks only if measured scale requires them.
+
+Live `EliteGame` / `EliteServer` integration remains later. The raw `Shift+F12` NavigationWorld debug-view contract remains accepted but not yet implemented.

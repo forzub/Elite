@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-16  
 **Status:** Navigation v2 architecture authority  
-**Current implementation wave:** `NAV-V2-GPU-0` isolated dynamic-world benchmark
+**Current implementation wave:** `NAV-V2-MAP-1` isolated NavigationMap API + CPU reference
 
 ## Decision: the previous live planner is not the v2 foundation
 
@@ -66,10 +66,80 @@ The same rule applies to other persistent local domains: station interior,
 carrier, capital ship, settlement, etc. Their private navigation state is not
 rebased around the player every frame.
 
+## NavigationMap block boundary
+
+`NavigationMap` is the first concrete v2 ownership boundary. It is intentionally a
+separate block under:
+
+```text
+src/world/navigation/map/
+```
+
+The only production-facing header is:
+
+```text
+NavigationMap.h
+```
+
+The boundary is designed so storage/backend decisions cannot leak into gameplay,
+planners, Hub code or presentation. Callers publish an authoritative snapshot by
+value and receive only compact derived query products by value:
+
+```text
+authoritative snapshot
+    position / velocity / acceleration
+    active WorkingFrame
+            |
+            v
++---------------------------------------+
+| NavigationMap                         |
+|                                       |
+| owns working-frame conversion         |
+| owns actor storage                    |
+| owns prediction cache                 |
+| owns spatial cells/index              |
+| owns future CPU/GPU backend state     |
++---------------------------------------+
+            |
+            +-> corridor candidate result
+            +-> local sphere candidate result
+            +-> aggregate stats/revisions
+```
+
+No caller receives references, pointers or views into actor tables, cells,
+prediction caches or future GPU buffers. No Store/scene/render/Hub object is
+retained inside the map. This is a strict copy/move-in, compact-result-out API.
+
+The API owns the system/world -> ship-centered transform. Callers supply a
+`WorkingFrame` in authoritative coordinates; the map converts points/vectors to
+its stable local navigation basis internally. This avoids duplicating rebase
+logic in every consumer.
+
+The current `NAV-V2-MAP-1` implementation is a deterministic CPU reference. It is
+not the final backend. Its purpose is to pin behavior and provide a correctness
+oracle for a future GPU implementation without changing planner call sites.
+
+Current internal reference representation:
+
+```text
+owned dynamic actor table
++ constant-acceleration conservative prediction
++ sparse 3D cell hash
++ corridor query
++ sphere query
+```
+
+The CPU reference has no fixed actor-per-cell correctness cap. Out-of-bounds and
+rejected records remain explicit statistics.
+
+The GPU backend must stay behind this exact block boundary. `NavigationMap.h`
+must not include OpenGL/GLFW/render/game-state headers.
+
 ## NavigationWorld v2
 
 The intended runtime authority is one shared data-oriented NavigationWorld for
-the active domain, consumed by the player and NPC navigation systems.
+the active domain, consumed by the player and NPC navigation systems. The
+NavigationMap block is the spatial-data layer inside that authority.
 
 ```text
 AUTHORITATIVE SYSTEM STATE
@@ -77,10 +147,12 @@ AUTHORITATIVE SYSTEM STATE
             v
 ship-centered NavigationWorld
     +------------------------------+
+    | NavigationMap                |
     | static free-space/clearance  |
     | dynamic actor table P/V/A    |
     | dynamic spatial index        |
     | predicted swept bounds       |
+    +------------------------------+
     | active route corridors       |
     | local conflict candidates    |
     +------------------------------+
@@ -125,6 +197,10 @@ cells and a hybrid authored/generated region graph. Required properties are:
 Static station/hub geometry should be baked/cached. It must not be rediscovered
 from hundreds of obstacle primitives for every ship route request.
 
+`NAV-V2-MAP-1` does not pretend this decision is already made. Static
+free-space/clearance is the next NavigationMap capability after the dynamic
+boundary and backend measurements are accepted.
+
 ## Dynamic actor layer
 
 Dynamic actors are kept as compact records such as:
@@ -142,14 +218,24 @@ prediction confidence or route revision
 A shared spatial index determines which actors can interact. No agent may scan
 all actors in the scene as its normal update path.
 
-Prediction is lazy. A detailed trajectory tube is generated only for actors that
-can enter a selected route corridor/local horizon. Actors outside that corridor
-are discarded before expensive space-time planning.
+Prediction is lazy in the final design. A detailed trajectory tube is generated
+only for actors that can enter a selected route corridor/local horizon. Actors
+outside that corridor are discarded before expensive space-time planning.
+
+The current CPU reference uses a deliberately conservative first-stage envelope:
+
+```text
+p1 = p0 + v*T + 0.5*a*T^2
+travel_bound = |v|*T + 0.5*|a|*T^2
+swept_sphere = sphere(p0, radius + travel_bound)
+```
+
+This envelope is broadphase data, not the final trajectory tube.
 
 ## GPU ownership candidate
 
-`NAV-V2-GPU-0` benchmarks the dynamic layer on OpenGL 4.3 compute shaders. The
-first prototype performs, in ship-centered coordinates:
+`NAV-V2-GPU-0` already provides an isolated OpenGL 4.3 compute benchmark for the
+dynamic layer. It performs, in ship-centered coordinates:
 
 ```text
 P/V/A actor table
@@ -164,10 +250,15 @@ The prototype deliberately uses a conservative swept sphere and fixed-capacity
 3D cells so overflow and scaling are measurable. It does not claim this is the
 final representation.
 
+The next GPU experiment should implement the same externally visible
+`NavigationMap` behavior rather than create another public GPU-specific API.
+That gives a direct CPU-reference/GPU comparison and prevents backend details
+from propagating through the game.
+
 GPU work must be asynchronous/double- or triple-buffered in the final runtime.
 A compute dispatch followed by synchronous full readback is not an acceptable
-replacement for a CPU stall. The first benchmark reads back only a 32-byte
-aggregate statistics block.
+replacement for a CPU stall. The benchmark reads back only a tiny aggregate
+statistics block.
 
 ## Performance contract
 
@@ -223,8 +314,8 @@ The normal sequence is:
 
 ```text
 cached/global corridor
-    -> spatial query of actors that can intersect it during relevant T
-    -> predicted swept volumes / safe-time intervals for only those actors
+    -> NavigationMap corridor query
+    -> predicted swept volumes / safe-time intervals for only returned actors
     -> local route/velocity correction
     -> execute first part
     -> repeat on a receding horizon
@@ -247,7 +338,7 @@ collision actually occurred**. Damage answers **what the collision destroyed**.
 They may share spatial broadphase data, but they do not share authority.
 
 ```text
-NavigationWorld
+NavigationWorld / NavigationMap
     conservative navigation envelopes / predicted conflicts
 
 Physics / Collision
@@ -280,12 +371,41 @@ clearance metadata. The whole station map must not be rebuilt for one damaged
 panel.
 
 A detached semantic/structural fragment becomes a new dynamic rigid body and a
-new NavigationWorld actor. It enters the shared spatial index automatically and
+new NavigationMap actor. It enters the shared spatial index automatically and
 can become an avoidance/collision candidate.
 
-## Benchmark gate: NAV-V2-GPU-0
+## Current gates
 
-Implementation and instructions:
+### NAV-V2-MAP-1
+
+Implementation:
+
+```text
+src/world/navigation/map/NavigationMap.h
+src/world/navigation/map/NavigationMap.cpp
+src/world/navigation/map/CMakeLists.txt
+src/world/navigation/map/README.md
+tests/navigation_map/NavigationMapContractTests.cpp
+tests/navigation_map/CMakeLists.txt
+tests/navigation_map/run_mingw64.sh
+tests/architecture_contracts/check_navigation_map_boundary.py
+```
+
+Required evidence:
+
+- public API has no game/render/OpenGL/GLM dependency;
+- PImpl hides cells/prediction/backend state;
+- whole dynamic snapshot is owned after publication;
+- system/world -> ship-centered transform happens inside the block;
+- corridor and sphere queries return only compact candidates;
+- rejected frame update does not mutate accepted state;
+- sparse query path does not intentionally scan the full actor table;
+- CPU reference contract passes in MinGW64.
+
+### NAV-V2-GPU-0
+
+The existing benchmark remains valid evidence for choosing dynamic backend
+ownership:
 
 ```text
 benchmarks/navigation_gpu/main.cpp
@@ -294,16 +414,14 @@ benchmarks/navigation_gpu/run_mingw64.sh
 tests/architecture_contracts/check_navigation_gpu_benchmark.py
 ```
 
-The benchmark evaluates deterministic `cruise` and dense `hub` distributions at
-1k / 5k / 10k actors. It measures GPU prediction/binning, corridor filtering,
-all-agent candidate queries, CPU submission, memory, overflow and readback. The
-1k cases are compared with an O(N^2) CPU reference before timing is trusted.
-
-This benchmark is isolated. It must not be wired into `EliteGame` until its
-correctness and scaling numbers are known.
+It evaluates deterministic `cruise` and dense `hub` distributions at 1k / 5k /
+10k actors and measures GPU prediction/binning, corridor filtering, all-agent
+candidate queries, CPU submission, memory, overflow and readback.
 
 ## Non-negotiable v2 rules
 
+- NavigationMap is a strict block boundary; its internal data never becomes a
+  cross-module shared structure.
 - Ship-centered NavigationWorld is a working domain, not replacement for precise
   authoritative system state.
 - Hub-local/private navigation remains Hub-local and publishes only relevant data

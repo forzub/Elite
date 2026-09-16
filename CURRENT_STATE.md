@@ -1,10 +1,10 @@
 # Elite — CURRENT STATE
 
-**Updated:** 2026-09-15  
+**Updated:** 2026-09-16  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Editor baseline:** v0.10.86 accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted locally  
-**Navigation:** NAV-RUCKIG-1 compile gate accepted; live runtime regression fixed in current branch, local re-acceptance pending
+**Navigation:** `NAV-V2-GPU-0` — isolated ship-centered NavigationWorld GPU benchmark implemented; local compile/run measurements pending
 
 ## Stable baseline outside navigation
 
@@ -15,156 +15,206 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 .elmodel   -> CompiledModelAssetReader -> ModelAssetBinary       -> ModelAsset
 ```
 
-Renderer work remains paused while navigation is stabilized.
+`src/model_asset/ModelAsset.h` remains the shared runtime/editor schema authority.
+Renderer feature work remains paused while Navigation v2 is established.
 
-## Canonical live navigation path
+## Navigation architecture reset
 
-```text
-SpaceState::updateDockingGuidance()
-    -> ClientNavigationPlanningSnapshotFactory
-    -> DockingPathPlanner / GeometricPathPlanner     coarse topology
-    -> TrajectoryGenerator compatibility facade
-    -> game::navigation::RuckigRoutePlanner          runtime motion
-    -> RuckigTrajectorySolver                        state-to-state primitive
-    -> swept NavigationObstacleGeometry validation
-    -> GuidanceTunnel                                presentation
-```
-
-`SmoothPathOptimizer` is not part of either live route generation or rolling
-reconnect. Its old B-spline implementation is retired.
-
-## Accepted local compile gate
-
-The user locally accepted the previous NAV-RUCKIG-1 build at commit `9cae20b`:
-
-- `check_ruckig_navigation_spike.py` PASS;
-- `check_ruckig_navigation_integration.py` PASS;
-- `check_ruckig_live_navigation.py` PASS;
-- `check_live_docking_guidance.py` PASS;
-- focused `ruckig_route_planner` PASS;
-- focused `guidance_tunnel_local_horizon` PASS;
-- `EliteGame` compiled and linked under MinGW.
-
-That compile gate did **not** constitute runtime acceptance.
-
-## Live runtime regression found immediately afterwards
-
-The first real Hub run displayed:
+The previous live chain is no longer accepted as the foundation for scalable
+navigation:
 
 ```text
-НАВИГАЦИЯ НЕДОСТУПНА [Ruckig leg leaves the collision-free coarse corridor]
+GeometricPathPlanner
+    -> route-wide TrajectoryGenerator / RuckigRoutePlanner
+    -> dense route samples
+    -> route-wide obstacle validation
+    -> GuidanceTunnel
 ```
 
-The cause was architectural and deterministic, not the obstacle search itself.
-`RuckigTrajectorySolver` synchronized three independent scalar DoFs directly in
-arbitrary world XYZ. A rest-to-rest diagonal leg can therefore bow away from the
-straight collision-free chord supplied by `GeometricPathPlanner`, because X/Y/Z
-may receive different normalized motion profiles. Swept validation correctly
-rejected that bowed curve.
+The Ruckig cutover proved that the custom spline was only part of the problem. In
+one successful runtime route with six coarse points, the surrounding pipeline
+still produced roughly ten thousand trajectory samples; synchronous docking work
+could still block the client update for hundreds of milliseconds.
 
-### Current fix
+Therefore Navigation v2 does **not** continue by optimizing the old route-wide
+pipeline. `GeometricPathPlanner`, current route-wide sampling and current guidance
+plumbing are legacy/migration code. `SmoothPathOptimizer` remains retired.
 
-`RuckigTrajectorySolver` now builds a deterministic orthonormal `MotionBasis`
-for every state-to-state solve:
+Ruckig remains only a candidate local kinematic primitive after routing/avoidance
+has selected a target state. It is not the free-space/path-search authority.
 
-- local +X follows the relative leg displacement;
-- local Y/Z are transverse DoFs;
-- position/velocity/acceleration/gravity deltas are transformed into that basis;
-- Ruckig solves in the leg basis;
-- sampled results are transformed back to world/planning coordinates;
-- the original proper-acceleration, jerk and terminal-state validation remains;
-- downstream swept obstacle validation remains authoritative.
-
-A new focused regression requires a diagonal stopped leg to remain on its
-coarse collision-free chord to `1e-5 m`.
-
-This does not ask Ruckig to replace obstacle topology. `GeometricPathPlanner`
-still decides where free space is; Ruckig supplies physically bounded state
-motion in a coordinate system aligned with that spatial product.
-
-## Hub navigation stress field
-
-The previous diagnostic layout was rejected: all 16 stress objects had been
-placed in four bands directly across player -> dock, producing an artificial
-barrier rather than a useful Hub field.
-
-Current layout:
-
-- 2 authored docking targets remain on the +/-X service axis;
-- 16 stress objects remain deterministic/reproducible;
-- they are distributed over two staggered shells around the station;
-- shell points have vertical variation;
-- no stress object occupies the exact +/-X docking service axis;
-- several independent passages remain through the field.
-
-`check_navigation_stress_field.py` now forbids the old four-band coordinates.
-
-## Hub Map label rule
-
-Persistent object names on Hub Map are removed.
-
-The single rule is now:
+Canonical architecture:
 
 ```text
-all visible Hub Map overlay objects
-    -> no permanent text
-    -> mouse hover selects one nearest/highest-priority object
-    -> one semi-transparent name is drawn above it
+src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md
 ```
 
-The policy is shared across Hub infrastructure, ships, the Hub reference and
-future overlay objects. It does not depend on the stress-object type.
+## Coordinate decision
 
-## Ruckig route behavior
+Navigation v2 preserves multiple intentional coordinate domains.
 
-Internal coarse waypoints may still request a conservative through velocity when
-local corner-cut eligibility is clear. Every generated Ruckig sample chord is
-validated against canonical navigation obstacles. If a blended corner fails,
-its adjacent waypoint velocities are relaxed to zero and the route is retried;
-there is no spline fallback.
+- Authoritative long-lived state remains in precise system/world coordinates.
+- Ordinary active navigation uses a **ship-centered NavigationWorld** working
+  frame. Its origin may translate/rebase with the active ship/domain, but its
+  axes are stable navigation/travel axes rather than instantaneous hull attitude.
+- A Hub keeps its own **Hub-local** geometry, docking ports and scheduled local
+  bots. Only the relevant subset is transformed/published into the active
+  ship-centered NavigationWorld.
+- Hull-local coordinates remain an execution/flight-control concern.
+- Render/player-relative coordinates remain presentation-only.
 
-Current diagnostics:
+This avoids forcing all Hub/private-domain state to rebase around the player and
+also avoids global-coordinate precision/scale contaminating local navigation.
+
+## NavigationWorld v2 direction
+
+The shared active NavigationWorld is intended to serve both the player and NPCs:
 
 ```text
-[RuckigRoutePerf] total_ms=... legs=... ruckig_ok=...
-                  ruckig_ms=... collision_segments=...
-                  blended_waypoints=... coarse_points=...
-                  obstacles=... samples=... valid=...
+static free-space / clearance representation
++ dynamic actor table (P/V/A/bounds/flags)
++ dynamic spatial index
++ predicted swept bounds
++ active route corridors
++ local conflict candidates
+        |
+        +-> mass NPC steering / avoidance
+        +-> precision local planner (dock / repair / special)
+        +-> temporary target state
+        +-> local motion / controller
 ```
 
-## Historical rejected baseline
+Velocity and acceleration are actor-owned. They are not copied into every spatial
+cell. Detailed future tubes are generated lazily only for actors that can enter a
+selected corridor/local physical horizon.
 
-The retired custom smoother with 19 obstacles produced approximately:
+Static station/Hub free space must ultimately be cached/baked as navigation data
+with clearance/connectivity and local invalidation. The exact representation
+(sparse octree/voxel bricks, convex free-space cells, hybrid region graph) remains
+open until benchmark evidence exists.
+
+## Navigation / collision / damage boundary
+
+These are separate authorities even if they share broadphase/spatial data:
 
 ```text
-total_ms      ~= 470
-trajectory_ms ~= 373
+Navigation
+    conservative envelopes / clearance / predicted conflicts
+
+Physics / Collision
+    candidate pairs -> exact narrow phase / CCD / TOI / contacts
+
+Damage / Structural
+    semantic hit ownership -> detach / breach / destruction
+    -> local navigation invalidation
 ```
 
-and repeated synchronous reconnect stalls. These numbers are historical only;
-do not optimize or restore that stack.
+Render, collision, hit/damage and navigation geometry intentionally need not
+match.
 
-## Current re-acceptance
+A visual hole does not automatically open a navigation route. A breach becomes
+navigable only when its clearance admits the requesting agent envelope. A
+repair drone may pass where a ship cannot. Topology-changing breaches dirty only
+the affected navigation region and may publish an explicit outside<->inside
+breach portal. Detached fragments become new dynamic actors/obstacles.
 
-Run:
+## NAV-V2-GPU-0 implementation
+
+An isolated OpenGL 4.3 compute benchmark now exists:
+
+```text
+benchmarks/navigation_gpu/CMakeLists.txt
+benchmarks/navigation_gpu/main.cpp
+benchmarks/navigation_gpu/run_mingw64.sh
+benchmarks/navigation_gpu/README.md
+tests/architecture_contracts/check_navigation_gpu_benchmark.py
+```
+
+It is intentionally **not linked into EliteGame**.
+
+The benchmark evaluates deterministic `cruise` and denser `hub` actor fields at:
+
+```text
+1,000
+5,000
+10,000 actors
+```
+
+GPU pass A performs P/V/A endpoint prediction, a conservative future swept sphere,
+3D spatial binning and selected-corridor filtering. GPU pass B performs all-agent
+neighbor/conflict candidate queries using only relevant cells.
+
+The prototype uses a ship-centered +/-12 km working cube, 600 m cells and a
+fixed 64-actor cell capacity. Cell overflow is explicit and makes the structural
+result invalid; it is never silently accepted.
+
+The conservative future envelope is intentionally simple:
+
+```text
+p1 = p0 + v*T + 0.5*a*T^2
+travel_bound = |v|*T + 0.5*|a|*T^2
+swept_sphere = sphere(p0, radius + travel_bound)
+```
+
+This is a benchmark representation, not the final production sweep.
+
+Measured output includes:
+
+```text
+gpu_bin_ms
+gpu_neighbor_ms
+gpu_total_ms / gpu_p95_ms
+cpu_submit_ms
+candidate pairs / neighbor checks
+corridor actor count
+occupied cells / overflow / out-of-bounds
+max swept radius
+SSBO memory
+readback bytes
+```
+
+Only a 32-byte aggregate statistics block is read back. The 1,000-actor cases
+also compute an O(N^2) CPU reference for pair/corridor counts; `reference_ok=1`
+is required before performance measurements are trusted.
+
+## Performance targets
+
+Design budget for Navigation v2:
+
+```text
+main-thread navigation CPU:     < 0.5 ms typical, < 1.0 ms normal peak
+GPU dynamic NavigationWorld:    < 1.0 ms preferred
+                                < 2.0 ms heavy-scene target ceiling
+full/precision route solve:     asynchronous; never a synchronous frame blocker
+```
+
+These GPU numbers are design targets, not a machine-independent test assertion.
+GPU time competes with rendering. If the 10k benchmark is not comfortably within
+budget, compare a CPU spatial-index baseline before deciding on GPU ownership.
+
+## Current acceptance gate
+
+Run from MSYS2 MinGW64:
 
 ```bash
 git fetch origin
 git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
 git pull --ff-only
 
-python tests/architecture_contracts/check_ruckig_live_navigation.py
-python tests/architecture_contracts/check_navigation_stress_field.py
-python tests/architecture_contracts/check_live_docking_guidance.py
-bash tests/navigation_guidance/run_ruckig_mingw64.sh
-cmake --build build --target EliteGame
+python tests/architecture_contracts/check_navigation_gpu_benchmark.py
+bash benchmarks/navigation_gpu/run_mingw64.sh
 ```
 
-Then run `EliteGame` and verify all three runtime gates:
+The benchmark writes `navigation_gpu_benchmark.csv` and prints its absolute path.
 
-1. stress objects are distributed around the Hub, not lined up as a wall;
-2. names appear only on hover and are semi-transparent;
-3. CALCULATE ROUTE produces guidance instead of `Ruckig leg leaves the collision-free coarse corridor`.
+Acceptance for this wave is evidence, not an assumed speedup:
 
-If gate 3 still fails, preserve the exact new failure text and `[RuckigRoutePerf]`
-line; do not weaken collision validation.
+- architecture contract PASS;
+- benchmark compiles on the production OpenGL 4.3/GLFW/GLAD stack;
+- both 1k CPU-reference checks report `reference_ok=1`;
+- `overflow=0` and `out_of_bounds=0` for measured default scenarios;
+- collect 1k/5k/10k GPU median/p95, CPU submission, memory and candidate counts;
+- only after those numbers decide GPU vs CPU/hybrid dynamic spatial ownership.
+
+No live NavigationWorld integration should occur before this benchmark is
+measured.

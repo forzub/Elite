@@ -388,14 +388,14 @@ void main()
         return;
     }
 
-    uint flat = flattenCell(cell);
-    uint slot = atomicAdd(cellCounts[flat], 1u);
+    uint flatIndex = flattenCell(cell);
+    uint slot = atomicAdd(cellCounts[flatIndex], 1u);
     if (slot == 0u)
         atomicAdd(stats0.z, 1u); // occupiedCellCount
 
     if (slot < uCellCapacity)
     {
-        cellSlots[flat * uCellCapacity + slot] = id;
+        cellSlots[flatIndex * uCellCapacity + slot] = id;
     }
     else
     {
@@ -475,9 +475,9 @@ void main()
         {
             for (int x = beginCell.x; x <= endCell.x; ++x)
             {
-                uint flat = flattenCell(ivec3(x, y, z));
-                uint count = min(cellCounts[flat], uCellCapacity);
-                uint base = flat * uCellCapacity;
+                uint flatIndex = flattenCell(ivec3(x, y, z));
+                uint count = min(cellCounts[flatIndex], uCellCapacity);
+                uint base = flatIndex * uCellCapacity;
 
                 for (uint slot = 0u; slot < count; ++slot)
                 {

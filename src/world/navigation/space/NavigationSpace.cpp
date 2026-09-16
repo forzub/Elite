@@ -138,6 +138,7 @@ public:
     Revision sourceRevision = 0;
     std::map<RegionId, RegionState> regions;
     std::map<PortalId, PortalState> portals;
+    std::map<RegionId, std::vector<PortalId>> adjacency;
 
     static void validatePortalReferences(
         const std::map<RegionId, RegionState>& regions,
@@ -155,6 +156,28 @@ public:
                 );
             }
         }
+    }
+
+    static std::map<RegionId, std::vector<PortalId>> buildAdjacency(
+        const std::map<RegionId, RegionState>& regions,
+        const std::map<PortalId, PortalState>& portals
+    )
+    {
+        std::map<RegionId, std::vector<PortalId>> result;
+        for (const auto& entry : regions)
+            result.emplace(entry.first, std::vector<PortalId>{});
+
+        // portals is an ordered map, so each per-region vector is built in
+        // stable PortalId order. That preserves deterministic BFS tie-breaking.
+        for (const auto& entry : portals)
+        {
+            const PortalId portalId = entry.first;
+            const auto& portal = entry.second.input;
+            result.at(portal.regionA).push_back(portalId);
+            if (portal.bidirectional)
+                result.at(portal.regionB).push_back(portalId);
+        }
+        return result;
     }
 
     const RegionState* findTraversableRegion(
@@ -212,9 +235,11 @@ void NavigationSpace::replaceStaticWorld(StaticSpaceUpdate update)
     }
 
     Impl::validatePortalReferences(regions, portals);
+    auto adjacency = Impl::buildAdjacency(regions, portals);
 
     impl_->regions = std::move(regions);
     impl_->portals = std::move(portals);
+    impl_->adjacency = std::move(adjacency);
     impl_->sourceRevision = update.sourceRevision;
     ++impl_->spaceRevision;
 }
@@ -253,9 +278,11 @@ void NavigationSpace::applyLocalPatch(LocalPatch patch)
     }
 
     Impl::validatePortalReferences(regions, portals);
+    auto adjacency = Impl::buildAdjacency(regions, portals);
 
     impl_->regions = std::move(regions);
     impl_->portals = std::move(portals);
+    impl_->adjacency = std::move(adjacency);
     impl_->sourceRevision = patch.sourceRevision;
     ++impl_->spaceRevision;
 }
@@ -404,11 +431,18 @@ NavigationSpace::CorridorResult NavigationSpace::queryCorridor(
         frontier.pop();
         ++result.diagnostics.regionsVisited;
 
-        for (const auto& portalEntry : impl_->portals)
+        const auto adjacencyIt = impl_->adjacency.find(current);
+        if (adjacencyIt == impl_->adjacency.end())
+            continue;
+
+        for (PortalId portalId : adjacencyIt->second)
         {
             ++result.diagnostics.portalsExamined;
-            const PortalId portalId = portalEntry.first;
-            const auto& portalState = portalEntry.second;
+            const auto portalIt = impl_->portals.find(portalId);
+            if (portalIt == impl_->portals.end())
+                continue;
+
+            const auto& portalState = portalIt->second;
             const auto& portal = portalState.input;
 
             if (portalState.invalidated || portal.clearanceRadiusMeters < required)

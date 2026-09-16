@@ -4,7 +4,7 @@
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Editor baseline:** v0.10.86 accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted locally  
-**Navigation:** `NAV-V2-MAP-1` — isolated ship-centered NavigationMap API + CPU reference implemented; MinGW behavioral measurements pending
+**Navigation:** `NAV-V2-MAP-2` — isolated ship-centered NavigationMap implemented; CPU benchmark ready for MinGW measurement
 
 ## Stable baseline outside navigation
 
@@ -15,33 +15,22 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 .elmodel   -> CompiledModelAssetReader -> ModelAssetBinary       -> ModelAsset
 ```
 
-`src/model_asset/ModelAsset.h` remains the shared runtime/editor schema authority.
+`src/model_asset/ModelAsset.h` remains shared runtime/editor schema authority.
 Renderer feature work remains paused while Navigation v2 is established.
 
 ## Navigation architecture reset
 
-The previous live chain is no longer accepted as the foundation for scalable
-navigation:
+The legacy route-wide synchronous chain is migration code, not the new foundation:
 
 ```text
 GeometricPathPlanner
-    -> route-wide TrajectoryGenerator / RuckigRoutePlanner
-    -> dense route samples
-    -> route-wide obstacle validation
+    -> route-wide trajectory materialization
+    -> dense obstacle validation
     -> GuidanceTunnel
 ```
 
-The Ruckig cutover proved that the custom spline was only part of the problem. In
-one successful runtime route with six coarse points, the surrounding pipeline
-still produced roughly ten thousand trajectory samples; synchronous docking work
-could still block the client update for hundreds of milliseconds.
-
-Therefore Navigation v2 does **not** continue by optimizing the old route-wide
-pipeline. `GeometricPathPlanner`, current route-wide sampling and current guidance
-plumbing are legacy/migration code. `SmoothPathOptimizer` remains retired.
-
-Ruckig remains only a candidate local kinematic primitive after routing/avoidance
-has selected a target state. It is not the free-space/path-search authority.
+Ruckig remains only a possible local kinematic primitive after routing/avoidance
+chooses a target state. It is not free-space/path-search authority.
 
 Canonical architecture:
 
@@ -49,147 +38,108 @@ Canonical architecture:
 src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md
 ```
 
-## Coordinate decision
+## Coordinate domains
 
-Navigation v2 preserves multiple intentional coordinate domains.
+Navigation v2 intentionally preserves separate coordinate domains:
 
-- Authoritative long-lived state remains in precise system/world coordinates.
-- Ordinary active navigation uses a **ship-centered NavigationWorld** working
-  frame. Its origin may translate/rebase with the active ship/domain, but its
-  axes are stable navigation/travel axes rather than instantaneous hull attitude.
-- A Hub keeps its own **Hub-local** geometry, docking ports and scheduled local
-  bots. Only the relevant subset is transformed/published into the active
-  ship-centered NavigationWorld.
-- Hull-local coordinates remain an execution/flight-control concern.
-- Render/player-relative coordinates remain presentation-only.
+- authoritative long-lived state remains in precise system/world coordinates;
+- the active dynamic navigation working set is ship-centered;
+- its working origin may translate/rebase with the active ship/domain;
+- working axes are stable navigation/travel axes, not instantaneous hull attitude;
+- Hub retains Hub-local authored geometry, docks and scheduled bots;
+- only the Hub subset relevant to the active ship is transformed/published into
+  the active NavigationWorld;
+- hull-local coordinates remain flight/controller detail;
+- render/player-relative coordinates remain presentation-only.
 
-## NAV-V2-MAP-1: NavigationMap block
+## NavigationMap ownership boundary
 
-A new isolated block now exists under:
+New block:
 
 ```text
 src/world/navigation/map/
+    NavigationMap.h
+    NavigationMap.cpp
+    CMakeLists.txt
+    README.md
 ```
 
-Public boundary:
+Public ingress is an owned `DynamicWorldUpdate` by value containing the working
+frame, source revision and actor P/V/A/radius/flags/revision data.
+
+The block transforms and owns all resulting state internally. Actor tables,
+prediction caches, sparse spatial cells and future CPU/GPU backend resources do
+not cross the boundary. `NavigationMap.h` deliberately has no dependency on GLM,
+OpenGL, GLFW, scene, game state or renderer code and uses PImpl.
+
+Public egress is only compact derived data by value:
 
 ```text
-NavigationMap.h
+queryCorridor()
+querySphere()
+stats()
 ```
 
-Implementation/support:
+The CPU reference backend currently implements constant-acceleration endpoint
+prediction, conservative swept spheres and a sparse 3D cell hash. It is the
+behavior oracle for any future GPU backend.
 
-```text
-NavigationMap.cpp
-CMakeLists.txt
-README.md
-```
-
-The block is intentionally not a bag of shared structures. It owns its data and
-its coordinate conversion.
-
-Ingress:
-
-```text
-NavigationMap::DynamicWorldUpdate
-    source revision
-    active WorkingFrame in authoritative system/world coordinates
-    P/V/A/radius/flags for dynamic actors
-```
-
-The update is passed by value. The map transforms the snapshot internally into
-ship-centered coordinates and owns the resulting actor table, prediction cache
-and sparse cell index. No caller receives pointers/references/views into those
-structures.
-
-Egress is only compact derived data by value:
-
-```text
-queryCorridor() -> relevant predicted actor candidates
-querySphere()   -> relevant local predicted actor candidates
-stats()         -> revisions/counts/diagnostics
-```
-
-The public header deliberately has no dependency on GLM, OpenGL, GLFW, game
-state, scene or renderer code. `NavigationMap` uses PImpl so a future GPU backend
-can replace the CPU internals without changing planner call sites.
-
-### Current CPU reference backend
-
-The first backend is deliberately simple and deterministic:
-
-```text
-owned dynamic actor table
-constant-acceleration endpoint prediction
-conservative swept sphere
-sparse 3D cell hash
-corridor broadphase + exact conservative sphere/segment test
-sphere broadphase + exact conservative sphere/sphere test
-```
-
-Conservative first-stage prediction:
-
-```text
-p1 = p0 + v*T + 0.5*a*T^2
-travel_bound = |v|*T + 0.5*|a|*T^2
-swept_sphere = sphere(p0, radius + travel_bound)
-```
-
-There is no fixed actor-per-cell correctness cap in the CPU reference.
-Out-of-bounds and rejected inputs remain explicit statistics.
-
-Behavioral and architecture contracts:
+Acceptance coverage:
 
 ```text
 tests/navigation_map/NavigationMapContractTests.cpp
-tests/navigation_map/CMakeLists.txt
 tests/navigation_map/run_mingw64.sh
 tests/architecture_contracts/check_navigation_map_boundary.py
 ```
 
-The behavioral contract covers:
+The tests cover ownership, large-coordinate rebasing, stable basis conversion,
+dynamic corridor filtering, sparse local query behavior, explicit rejected/out-
+of-bounds inputs and atomic rejection of invalid frame publication.
 
-- ownership/revisions;
-- large authoritative coordinates -> ship-centered rebase;
-- stable non-hull basis transform;
-- dynamic corridor filtering;
-- sparse local query behavior;
-- atomic rejection of an invalid/non-orthogonal frame.
+## CPU benchmark ready
 
-The block is still isolated from live docking/navigation runtime. That is
-intentional until the API and backend measurements are accepted.
-
-## NavigationWorld v2 direction
-
-The shared active NavigationWorld is intended to serve both the player and NPCs:
+New isolated benchmark:
 
 ```text
-NavigationMap
-    static free-space / clearance representation (next capability)
-    dynamic actor table P/V/A
-    dynamic spatial index
-    predicted swept bounds
-        |
-        +-> active route corridors
-        +-> local conflict candidates
-        +-> mass NPC steering / avoidance
-        +-> precision local planner (dock / repair / special)
-        +-> temporary target state
-        +-> local motion / controller
+benchmarks/navigation_map/
+    CMakeLists.txt
+    main.cpp
+    run_mingw64.sh
+    README.md
 ```
 
-Velocity and acceleration are actor-owned. They are not copied into every spatial
-cell. Detailed future tubes are generated lazily only for actors that can enter a
-selected corridor/local physical horizon.
+It consumes only the public NavigationMap API. It mirrors the existing GPU
+prototype scenario classes at 1k/5k/10k actors for `cruise` and `hub` and measures:
 
-Static station/Hub free space must ultimately be cached/baked as navigation data
-with clearance/connectivity and local invalidation. The exact representation
-(sparse octree/voxel bricks, convex free-space cells, hybrid region graph) remains
-open until benchmark evidence exists.
+```text
+snapshot publication/rebuild median + p95
+corridor query median + p95
+sphere/local query median + p95
+candidate counts
+cells visited / occupied cells / actors examined
+indexed / rejected / out-of-bounds counts
+```
+
+Run:
+
+```bash
+bash benchmarks/navigation_map/run_mingw64.sh
+```
+
+The resulting CSV is the next evidence needed before selecting CPU-only or a GPU
+backend.
+
+## Existing GPU evidence
+
+`benchmarks/navigation_gpu/` remains an isolated OpenGL 4.3 compute prototype.
+It measures deterministic P/V/A prediction, spatial binning, corridor filtering
+and all-agent candidate queries for the same broad 1k/5k/10k scenario classes.
+It does not define a separate runtime API. If GPU is selected, it must fit behind
+`NavigationMap`.
 
 ## Navigation / collision / damage boundary
 
-These are separate authorities even if they share broadphase/spatial data:
+These remain separate authorities even where broadphase data is shared:
 
 ```text
 Navigation
@@ -203,80 +153,23 @@ Damage / Structural
     -> local navigation invalidation
 ```
 
-Render, collision, hit/damage and navigation geometry intentionally need not
-match.
-
-A visual hole does not automatically open a navigation route. A breach becomes
-navigable only when its clearance admits the requesting agent envelope. A
-repair drone may pass where a ship cannot. Topology-changing breaches dirty only
-the affected navigation region and may publish an explicit outside<->inside
-breach portal. Detached fragments become new dynamic actors/obstacles.
-
-## Existing NAV-V2-GPU-0 evidence
-
-The isolated OpenGL 4.3 compute benchmark remains available:
-
-```text
-benchmarks/navigation_gpu/CMakeLists.txt
-benchmarks/navigation_gpu/main.cpp
-benchmarks/navigation_gpu/run_mingw64.sh
-benchmarks/navigation_gpu/README.md
-tests/architecture_contracts/check_navigation_gpu_benchmark.py
-```
-
-It evaluates deterministic `cruise` and denser `hub` actor fields at 1k / 5k /
-10k actors. GPU pass A performs P/V/A prediction, conservative swept bounds,
-3D spatial binning and selected-corridor filtering. GPU pass B performs all-agent
-neighbor/conflict candidate queries using only relevant cells.
-
-That benchmark is no longer intended to define a second public navigation API.
-Its next useful role is to become/compare against a backend behind
-`NavigationMap`.
+Render, collision, hit/damage and navigation geometry need not match. A breach is
+navigable only when clearance admits the requesting agent envelope.
 
 ## Performance targets
 
-Design budget for Navigation v2:
-
 ```text
-main-thread navigation CPU:     < 0.5 ms typical, < 1.0 ms normal peak
-GPU dynamic NavigationWorld:    < 1.0 ms preferred
-                                < 2.0 ms heavy-scene target ceiling
-full/precision route solve:     asynchronous; never a synchronous frame blocker
+main-thread navigation CPU       < 0.5 ms typical, < 1.0 ms normal peak
+GPU dynamic NavigationWorld      < 1.0 ms preferred, < 2.0 ms heavy-scene target
+full/precision route solve       asynchronous; never a frame-thread blocker
 ```
 
-These GPU numbers are design targets, not a machine-independent test assertion.
-GPU time competes with rendering.
+These are design targets, not cross-machine test assertions.
 
-## Current acceptance gate
+## Next step
 
-Run from MSYS2 MinGW64:
-
-```bash
-git fetch origin
-git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
-git pull --ff-only
-
-python tests/architecture_contracts/check_navigation_map_boundary.py
-bash tests/navigation_map/run_mingw64.sh
-```
-
-Then keep the existing GPU evidence available:
-
-```bash
-python tests/architecture_contracts/check_navigation_gpu_benchmark.py
-bash benchmarks/navigation_gpu/run_mingw64.sh
-```
-
-Acceptance for `NAV-V2-MAP-1`:
-
-- architecture boundary contract PASS;
-- standalone C++ behavioral contract compiles and PASSes under production MinGW64;
-- no public API dependency leak from NavigationMap;
-- no fixed per-cell actor cap in the CPU reference;
-- corridor/sphere results are deterministic and revision-tagged;
-- invalid frame publication leaves the previously accepted map intact.
-
-After that, benchmark CPU NavigationMap with 1k/5k/10k actors against the existing
-GPU prototype, then choose the dynamic backend. The following wave can add static
-free-space/clearance (`NAV-V2-SPACE-1`) without exposing its storage across the
-same API boundary.
+Measure the CPU benchmark on the user's MinGW64 machine, compare with the existing
+GPU compute benchmark, then choose the dynamic backend without changing the public
+NavigationMap API. After that begin `NAV-V2-SPACE-1` for static free-space,
+clearance, connectivity/portals and local invalidation inside the same ownership
+boundary.

@@ -50,7 +50,7 @@ Those costs are measurement targets, not accepted production behavior.
 bash benchmarks/navigation_space/run_mingw64.sh
 ```
 
-Default run is intentionally short (`warmup=1`, `iterations=5`) because the unindexed 10k corridor case may be expensive. A longer pass can be requested explicitly after the default run:
+Default run is intentionally short (`warmup=1`, `iterations=3`) because the unindexed 10k corridor case may be expensive. A longer pass can be requested explicitly after the default run:
 
 ```bash
 bash benchmarks/navigation_space/run_mingw64.sh --warmup 3 --iterations 20

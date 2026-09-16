@@ -39,6 +39,26 @@ Space::RegionInput region(
     return result;
 }
 
+Space::RegionInput regionBox(
+    Space::RegionId id,
+    double cx,
+    double cy,
+    double cz,
+    double hx,
+    double hy,
+    double hz,
+    double clearance = 10.0
+)
+{
+    Space::RegionInput result;
+    result.regionId = id;
+    result.boundsMapMeters.minMapMeters = {cx - hx, cy - hy, cz - hz};
+    result.boundsMapMeters.maxMapMeters = {cx + hx, cy + hy, cz + hz};
+    result.clearanceRadiusMeters = clearance;
+    result.geometryRevision = 1;
+    return result;
+}
+
 Space::PortalInput portal(
     Space::PortalId id,
     Space::RegionId a,
@@ -52,6 +72,27 @@ Space::PortalInput portal(
     result.regionA = a;
     result.regionB = b;
     result.centerMapMeters = {x, 5.0, 5.0};
+    result.clearanceRadiusMeters = clearance;
+    result.bidirectional = true;
+    result.geometryRevision = 1;
+    return result;
+}
+
+Space::PortalInput portalAt(
+    Space::PortalId id,
+    Space::RegionId a,
+    Space::RegionId b,
+    double x,
+    double y,
+    double z,
+    double clearance
+)
+{
+    Space::PortalInput result;
+    result.portalId = id;
+    result.regionA = a;
+    result.regionB = b;
+    result.centerMapMeters = {x, y, z};
     result.clearanceRadiusMeters = clearance;
     result.bidirectional = true;
     result.geometryRevision = 1;
@@ -156,6 +197,98 @@ void testConnectedDisconnectedAndNarrowPortal()
             "disconnected free-space region must not produce a route");
 }
 
+void testWallApertureAdmission()
+{
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 30;
+    update.regions = {
+        regionBox(1, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0),
+        regionBox(2, 10.0, 0.0, 0.0, 5.0, 5.0, 5.0)
+    };
+    update.portals = {
+        portalAt(501, 1, 2, 5.0, 0.0, 0.0, 2.0)
+    };
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    Space::CorridorQuery query;
+    query.startMapMeters = {0.0, 0.0, 0.0};
+    query.endMapMeters = {10.0, 0.0, 0.0};
+    query.envelope = envelope(1.0);
+
+    const auto small = space.queryCorridor(query);
+    require(small.found && small.portalPath == std::vector<Space::PortalId>({501}),
+            "small agent must be allowed through a traversable wall aperture");
+
+    query.envelope = envelope(2.01);
+    require(!space.queryCorridor(query).found,
+            "oversized agent must not pass through the same wall aperture");
+}
+
+void testCostedCanyonVsOverflight()
+{
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 40;
+    update.regions = {
+        regionBox(1, 0.0, 0.0, 0.0, 5.0, 10.0, 5.0),
+        regionBox(2, 10.0, 0.0, 0.0, 5.0, 5.0, 5.0),
+        regionBox(3, 20.0, 0.0, 0.0, 5.0, 5.0, 5.0),
+        regionBox(4, 10.0, 15.0, 0.0, 5.0, 5.0, 5.0),
+        regionBox(5, 20.0, 15.0, 0.0, 5.0, 5.0, 5.0),
+        regionBox(6, 30.0, 0.0, 0.0, 5.0, 10.0, 5.0)
+    };
+    update.portals = {
+        // Short canyon branch: physically shorter, but only 2 m clearance.
+        portalAt(101, 1, 2, 5.0, 0.0, 0.0, 2.0),
+        portalAt(102, 2, 3, 15.0, 0.0, 0.0, 2.0),
+        portalAt(103, 3, 6, 25.0, 0.0, 0.0, 2.0),
+
+        // Longer overflight branch: generous clearance.
+        portalAt(201, 1, 4, 5.0, 10.0, 0.0, 10.0),
+        portalAt(202, 4, 5, 15.0, 15.0, 0.0, 10.0),
+        portalAt(203, 5, 6, 25.0, 10.0, 0.0, 10.0)
+    };
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    Space::CorridorQuery query;
+    query.startMapMeters = {0.0, 0.0, 0.0};
+    query.endMapMeters = {30.0, 0.0, 0.0};
+    query.envelope = envelope(1.0);
+
+    Space::CorridorCostPolicy shortest;
+    const auto canyon = space.queryCostedCorridor(query, shortest);
+    require(canyon.found,
+            "costed corridor must find the short canyon branch");
+    require(canyon.regionPath == std::vector<Space::RegionId>({1, 2, 3, 6}),
+            "distance-only policy must prefer the shorter canyon route");
+    require(canyon.portalPath == std::vector<Space::PortalId>({101, 102, 103}),
+            "distance-only canyon portal path is wrong");
+
+    Space::CorridorCostPolicy cautious;
+    cautious.preferredClearanceMultiple = 3.0;
+    cautious.clearancePenaltyMeters = 30.0;
+    const auto overflight = space.queryCostedCorridor(query, cautious);
+    require(overflight.found,
+            "cautious costed corridor must still find an alternate route");
+    require(overflight.regionPath == std::vector<Space::RegionId>({1, 4, 5, 6}),
+            "clearance-aware policy must prefer open overflight when canyon is too tight");
+    require(overflight.portalPath == std::vector<Space::PortalId>({201, 202, 203}),
+            "clearance-aware overflight portal path is wrong");
+    require(overflight.totalCostMetersEquivalent <
+            canyon.totalCostMetersEquivalent + 30.0,
+            "costed corridor must expose a finite meter-equivalent route cost");
+
+    query.envelope = envelope(2.01);
+    const auto oversized = space.queryCostedCorridor(query, shortest);
+    require(oversized.found,
+            "oversized canyon agent must still find the open branch");
+    require(oversized.regionPath == std::vector<Space::RegionId>({1, 4, 5, 6}),
+            "agent that cannot fit the canyon must route over it");
+}
+
 void testLocalInvalidationAndPatch()
 {
     Space space;
@@ -248,12 +381,16 @@ int main()
     {
         testPointClearanceAndEnvelope();
         testConnectedDisconnectedAndNarrowPortal();
+        testWallApertureAdmission();
+        testCostedCanyonVsOverflight();
         testLocalInvalidationAndPatch();
         testTransactionalValidation();
 
         std::cout << "NAVIGATION SPACE CONTRACT TESTS: PASS\n";
         std::cout << " - free-space clearance is agent-envelope aware\n";
         std::cout << " - region/portal corridors are deterministic\n";
+        std::cout << " - explicit wall apertures admit only fitting agents\n";
+        std::cout << " - costed routing can choose canyon or overflight by policy\n";
         std::cout << " - narrow portals reject oversized agents\n";
         std::cout << " - disconnected regions fail closed\n";
         std::cout << " - local invalidation and transactional patching work\n";

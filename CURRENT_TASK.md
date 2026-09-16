@@ -3,99 +3,95 @@
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-SPACE-1` — static turn-cost v2 candidate pending target-machine behavior gate
+**Stage:** `NAV-V2-SPACE-1` — static turn-cost behavior accepted; turn-aware performance benchmark active
 
-## Source of truth
+## Accepted foundation
 
-`main` is the only game-development baseline. Read `REPOSITORY_SOURCE_OF_TRUTH.md`. Do not continue feature work on parallel development branches.
+Static indexing, costed corridor v1, and static turn-cost v2 behavior are accepted on the target MinGW64 machine.
 
-## Accepted prior gates
-
-Static indexing and costed corridor v1 are accepted.
-
-Key accepted target-machine evidence:
+Key accepted evidence:
 
 ```text
 10k coarse BFS corridor          ≈7.3-8.2 ms
 10k BVH point p95                <=0.0353 ms
 10k local invalidation p95       <=0.0115 ms
+
+costed v1 10k p95
+    open distance_only           8.1733 ms
+    open clearance_aware         8.5020 ms
+    hub  distance_only           7.7609 ms
+    hub  clearance_aware         9.6103 ms
 ```
 
-Costed corridor v1 behavior:
+Costed v1 therefore remains the accepted RegionSlot Dijkstra fast path.
+
+Fresh static turn-cost target-machine gate:
 
 ```text
-wall aperture: fitting agent passes, oversized agent rejected
-canyon vs overflight: distance/clearance policy selects the expected branch
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
 ```
 
-Dedicated costed-scaling benchmark:
-
-```text
-open_10k distance_only p95       8.1733 ms
-open_10k clearance_aware p95     8.5020 ms
-hub_10k  distance_only p95       7.7609 ms
-hub_10k  clearance_aware p95     9.6103 ms
-```
-
-The predeclared threshold was `<=15 ms p95`, so Dijkstra v1 is accepted as-is. Do not optimize it into A* merely because a more sophisticated algorithm exists.
-
-Raw evidence: `benchmarks/navigation_space_costed/RUN_LOG.md`.
-
-## Active candidate — static turn cost v2
-
-Design contract:
-
-```text
-src/world/navigation/STATIC_TURN_COST.md
-```
-
-Public policy field:
-
-```text
-turnPenaltyMetersPerRadian
-```
-
-Fast-path invariant:
+Accepted turn semantics:
 
 ```text
 turnPenaltyMetersPerRadian == 0
-    -> keep accepted v1 RegionSlot Dijkstra
-```
+    -> accepted v1 RegionSlot Dijkstra
 
-Turn-aware invariant:
-
-```text
 turnPenaltyMetersPerRadian > 0
-    -> search state = (RegionSlot, incoming PortalId)
-```
+    -> state = (RegionSlot, incoming PortalId)
 
-This is mandatory because turn cost depends on arrival direction. Region-only state is incorrect for turn-aware routing.
-
-Turn angle is coarse/static only:
-
-```text
-incoming portal center -> current region center
-current region center  -> outgoing portal center
-```
-
-The special start state has no turn penalty because static `CorridorQuery` does not own current ship heading/velocity. Speed-dependent turn radius, angular acceleration and braking remain local/precision-planner concerns.
-
-Pinned new acceptance fixture:
-
-```text
 zigzag_vs_smooth
-    turnPenalty=0
-        -> slightly shorter zig-zag branch
-
-    positive turnPenalty
-        -> smoother branch once saved turn cost exceeds the distance delta
+    zero penalty     -> shorter zig-zag
+    positive penalty -> smoother branch when turn saving beats distance delta
 ```
 
-Existing aperture and canyon fixtures must remain unchanged.
+Aperture and canyon/overflight fixtures remain green.
+
+## Active gate — turn-aware performance
+
+New isolated harness:
+
+```text
+benchmarks/navigation_space_turn/
+```
+
+It measures the same published topology twice:
+
+```text
+zero_turn
+    turnPenaltyMetersPerRadian = 0
+    accepted v1 fast path
+
+turn_aware
+    turnPenaltyMetersPerRadian > 0
+    expanded (RegionSlot, incoming PortalId) search
+```
+
+Pinned scales:
+
+```text
+open_1k / open_5k / open_10k
+hub_1k  / hub_5k  / hub_10k
+```
+
+Metrics:
+
+```text
+median/p95 ms
+unique regions visited
+portals examined
+region-path length
+coarse accumulated path turn radians
+coarse meter-equivalent cost
+```
+
+`portalsExamined` is the primary expansion-work diagnostic because turn-aware search may settle multiple incoming-portal states for the same region.
 
 ## RUN NOW
 
-`NavigationSpace.cpp`, behavior tests and the architecture contract changed. Run only the static-space architecture + behavior gate:
+Only the new benchmark contract + benchmark are required:
 
 ```bash
 cd /d/__elite/work
@@ -104,21 +100,25 @@ git fetch origin
 git switch main
 git merge --ff-only origin/main
 
-python tests/architecture_contracts/check_navigation_space_boundary.py
-bash tests/navigation_space/run_mingw64.sh
+python tests/architecture_contracts/check_navigation_space_turn_benchmark.py
+bash benchmarks/navigation_space_turn/run_mingw64.sh
+```
+
+Default run is intentionally bounded:
+
+```text
+warmup=1
+iterations=3
 ```
 
 Send the complete output.
 
-Do **not** rerun the accepted CPU/GPU/static/costed scaling benchmarks for this behavior gate. The zero-turn fast path remains separate by construction.
+## Decision after measurement
 
-## After PASS
+At 10k scale:
 
-1. accept static turn-cost semantics;
-2. add a small dedicated turn-aware performance benchmark because expanded `(region,incoming portal)` state can cost materially more than v1;
-3. if turn-aware scaling is acceptable, stop adding static policy terms for now;
-4. next combine accepted static corridor with dynamic conflict/local-horizon selection;
-5. then implement pursuit/receding-intercept consumer;
-6. live game/server integration remains after isolated NavigationWorld contracts are stable.
+- `turn-aware p95 <= 40 ms`: accept the expanded-state reference as worker-side route-quality search and stop adding static policy terms;
+- `40-120 ms`: semantics remain accepted, but optimize private turn-state/queue representation before frequent many-NPC replans;
+- `>120 ms` or clearly pathological expansion growth: optimize turn-aware search immediately before moving to dynamic/local-horizon integration.
 
-Do not put ship velocity, dynamic traffic or pursuit prediction into persistent `NavigationSpace` static cost.
+Do not require turn-aware global search every frame. Dynamic actors, speed-dependent turn radius, braking, pursuit prediction and collision horizon remain outside persistent `NavigationSpace` static cost.

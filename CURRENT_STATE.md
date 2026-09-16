@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
-**Navigation:** `NAV-V2-SPACE-1` — static route semantics accepted; turn-aware search optimization active
+**Navigation:** `NAV-V2-SPACE-1` — static route semantics accepted; turn-aware A* optimization active
 
 ## Accepted Navigation v2 ownership
 
@@ -57,7 +57,7 @@ The predeclared `<=15 ms` gate passed, so zero-turn RegionSlot Dijkstra remains 
 
 ## Static turn cost v2 — ACCEPTED semantics
 
-Target-machine architecture + behavior gate is green. Turn-aware routing correctly uses arrival direction and `zigzag_vs_smooth` passes.
+Target-machine architecture + behavior gate is green. Turn-aware routing correctly preserves arrival direction and `zigzag_vs_smooth` passes.
 
 ```text
 turnPenalty == 0
@@ -67,43 +67,41 @@ turnPenalty > 0
     -> semantic state = (RegionSlot, incoming PortalId)
 ```
 
-## Turn-aware performance baseline — REJECTED
+## Turn-aware performance history
 
-Fresh target-machine benchmark:
+Tree-backed expanded state was rejected:
 
 ```text
-open_10k zero p95       9.6982 ms
-open_10k turn p95     216.1602 ms
-hub_10k  zero p95       9.8862 ms
-hub_10k  turn p95     232.6520 ms
-
-10k portal examinations
-zero-turn              57,197
-turn-aware            329,660
+open_10k turn p95  216.1602 ms
+hub_10k  turn p95  232.6520 ms
 ```
 
-The pinned rule was `>120 ms p95 -> optimize before the next layer`, so the tree-backed expanded-state implementation is rejected for performance. Semantics remain accepted.
+Dense `TurnStateSlot` + vector state + binary heap improved the same 10k search to:
+
+```text
+open_10k zero p95      8.6427 ms
+open_10k turn p95     67.9647 ms
+hub_10k  zero p95      8.5862 ms
+hub_10k  turn p95     72.6054 ms
+```
+
+The improvement is about 3x, but turn-aware work still examines `329,660` transitions at 10k versus `57,197` for zero-turn. This puts the candidate in the pinned `40-120 ms` band: semantics stay accepted, search reduction is still required.
+
+The benchmark-contract failure reported during that run was a stale exact-text documentation assertion; architecture/behavior and the benchmark executable itself passed. The contract now checks the benchmark path + turn-aware task state instead.
 
 Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
 
-## Active optimization candidate
+## Active optimization candidate — admissible A*
 
-The same semantic `(RegionSlot, incoming PortalId)` state is now represented privately by stable dense `TurnStateSlot` values built with the graph:
-
-```text
-directed portal arrival -> TurnStateSlot
-AdjacencyEdge            -> arrivalTurnStateSlot
-```
-
-Per-query turn-aware storage is now vector-backed:
+Dense turn-state storage remains. Positive-turn search now orders the binary heap by:
 
 ```text
-vector<double> bestCost
-vector<TurnStateSlot> previous
-vector<uint8_t> settled
-priority_queue frontier
+f = g + h
+h = distanceWeight * EuclideanDistance(currentRegionCenter, endRegionCenter)
 ```
 
-The accepted zero-turn v1 path is untouched. Turn-aware graph expansion is intentionally unchanged so the next benchmark isolates container/queue overhead from unavoidable expanded-state work.
+The heuristic is admissible/consistent because geometric edge cost is at least straight-line center distance and clearance/turn penalties are non-negative. `distanceWeight == 0` reduces `h` to zero.
 
-Status: **candidate on `main`, pending target-machine architecture/behavior + turn benchmark rerun**. A* is not added unless the rerun shows that the remaining expansion itself is still too expensive.
+The zero-turn v1 path remains unchanged. The next target-machine rerun must preserve behavior while materially reducing turn-aware `portalsExamined` and timing.
+
+Status: **A* candidate on canonical `main`, pending architecture/behavior + identical turn benchmark rerun**.

@@ -16,7 +16,7 @@ add_executable(navigation_gpu_benchmark
 
 target_include_directories(navigation_gpu_benchmark PRIVATE
     "${ELITE_ROOT}"
-    "${ELITE_ROOT}/glad"
+    "${ELITE_ROOT}/glad/include"
 )
 
 target_link_libraries(navigation_gpu_benchmark PRIVATE glfw)

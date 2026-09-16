@@ -31,8 +31,9 @@ future GPU buffers/backend objects
 ```
 
 `NavigationMap` takes ownership of the published snapshot and returns compact
-query results by value. This is deliberate: downstream planners consume only the
-small relevant subset and cannot start depending on the map's storage layout.
+query results by value. The block does not retain references to caller-owned
+state. This is deliberate: downstream planners consume only the small relevant
+subset and cannot start depending on the map's storage layout.
 
 ## Coordinate ownership
 

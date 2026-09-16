@@ -59,8 +59,14 @@ for marker in (
     "regionCapacity",
     "std::queue<RegionId>",
     "invalidated",
+    "std::map<RegionId, std::vector<PortalId>> adjacency",
+    "buildAdjacency",
+    "impl_->adjacency.find(current)",
 ):
     require(marker in IMPL, f"NavigationSpace CPU reference marker missing: {marker}")
+
+require("for (const auto& portalEntry : impl_->portals)" not in IMPL,
+        "corridor BFS regressed to scanning the complete portal map per visited region")
 
 for forbidden in (
     "#include <glad/",
@@ -105,6 +111,7 @@ print("NAVIGATION SPACE BOUNDARY CONTRACT: PASS")
 print(" - one backend-neutral API owns persistent static navigation topology")
 print(" - public header is isolated from GLM/OpenGL/game/render state")
 print(" - CPU reference uses deterministic free-space regions + portals")
+print(" - corridor traversal uses private per-region portal adjacency")
 print(" - agent-envelope clearance and narrow-portal admission are explicit")
 print(" - local invalidation + transactional patching are owned by the block")
 print(" - project state/task agree on NAV-V2-SPACE-1")

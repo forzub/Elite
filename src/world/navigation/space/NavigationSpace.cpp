@@ -86,6 +86,14 @@ double axisValue(const Vec3d& value, int axis) noexcept
     return value.x;
 }
 
+double distance(const Vec3d& a, const Vec3d& b) noexcept
+{
+    const double dx = a.x - b.x;
+    const double dy = a.y - b.y;
+    const double dz = a.z - b.z;
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
 double pointClearance(const Bounds3d& bounds, const Vec3d& p) noexcept
 {
     if (!contains(bounds, p))
@@ -128,6 +136,20 @@ double requiredClearance(const AgentEnvelope& envelope)
     }
 
     return envelope.radiusMeters + envelope.additionalClearanceMeters;
+}
+
+void validateCostPolicy(const NavigationSpace::CorridorCostPolicy& policy)
+{
+    if (!finite(policy.distanceWeight) || policy.distanceWeight < 0.0 ||
+        !finite(policy.preferredClearanceMultiple) ||
+        policy.preferredClearanceMultiple < 1.0 ||
+        !finite(policy.clearancePenaltyMeters) ||
+        policy.clearancePenaltyMeters < 0.0)
+    {
+        throw std::invalid_argument(
+            "NavigationSpace corridor cost policy must be finite and non-negative; preferred clearance multiple must be >= 1"
+        );
+    }
 }
 
 void validateRegion(const NavigationSpace::RegionInput& region)
@@ -819,6 +841,185 @@ NavigationSpace::CorridorResult NavigationSpace::queryCorridor(
         }
     }
 
+    return result;
+}
+
+NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
+    const CorridorQuery& query,
+    const CorridorCostPolicy& policy
+) const
+{
+    const double required = requiredClearance(query.envelope);
+    validateCostPolicy(policy);
+
+    CostedCorridorResult result;
+    result.spaceRevision = impl_->spaceRevision;
+    result.sourceRevision = impl_->sourceRevision;
+
+    std::size_t locateExamined = 0;
+    const Impl::RegionState* startState = impl_->findTraversableRegion(
+        query.startMapMeters,
+        required,
+        &locateExamined
+    );
+    const Impl::RegionState* endState = impl_->findTraversableRegion(
+        query.endMapMeters,
+        required,
+        &locateExamined
+    );
+    result.diagnostics.regionsVisited += locateExamined;
+
+    if (!startState || !endState)
+        return result;
+
+    const RegionId startId = startState->input.regionId;
+    const RegionId endId = endState->input.regionId;
+    if (startId == endId)
+    {
+        result.found = true;
+        result.regionPath.push_back(startId);
+        return result;
+    }
+
+    const auto startSlotIt = impl_->graph.regionSlots.find(startId);
+    const auto endSlotIt = impl_->graph.regionSlots.find(endId);
+    if (startSlotIt == impl_->graph.regionSlots.end() ||
+        endSlotIt == impl_->graph.regionSlots.end())
+    {
+        return result;
+    }
+
+    const Impl::RegionSlot startSlot = startSlotIt->second;
+    const Impl::RegionSlot endSlot = endSlotIt->second;
+    const std::size_t regionCount = impl_->graph.slotRegionIds.size();
+
+    struct Prev
+    {
+        Impl::RegionSlot regionSlot = Impl::InvalidRegionSlot;
+        PortalId portalId = 0;
+    };
+
+    const double infinity = std::numeric_limits<double>::infinity();
+    std::vector<double> bestCost(regionCount, infinity);
+    std::vector<Prev> previous(regionCount);
+    std::vector<std::uint8_t> settled(regionCount, 0);
+
+    using QueueKey = std::pair<double, Impl::RegionSlot>;
+    std::multimap<QueueKey, Impl::RegionSlot> frontier;
+    bestCost[startSlot] = 0.0;
+    frontier.emplace(QueueKey{0.0, startSlot}, startSlot);
+
+    while (!frontier.empty())
+    {
+        const auto currentIt = frontier.begin();
+        const double currentCost = currentIt->first.first;
+        const Impl::RegionSlot currentSlot = currentIt->second;
+        frontier.erase(currentIt);
+
+        if (currentSlot >= regionCount || settled[currentSlot])
+            continue;
+        if (currentCost > bestCost[currentSlot])
+            continue;
+
+        settled[currentSlot] = 1;
+        ++result.diagnostics.regionsVisited;
+        if (currentSlot == endSlot)
+            break;
+
+        const RegionId currentId = impl_->graph.slotRegionIds[currentSlot];
+        const auto currentRegionIt = impl_->regions.find(currentId);
+        if (currentRegionIt == impl_->regions.end() || currentRegionIt->second.invalidated)
+            continue;
+
+        const double currentCapacity = regionCapacity(currentRegionIt->second.input);
+        const Vec3d currentCenter = boundsCenter(
+            currentRegionIt->second.input.boundsMapMeters
+        );
+
+        for (const auto& edge : impl_->graph.adjacency[currentSlot])
+        {
+            ++result.diagnostics.portalsExamined;
+            if (edge.neighborSlot >= regionCount || settled[edge.neighborSlot])
+                continue;
+
+            const auto portalIt = impl_->portals.find(edge.portalId);
+            if (portalIt == impl_->portals.end() || portalIt->second.invalidated)
+                continue;
+
+            const auto& portal = portalIt->second.input;
+            const RegionId neighborId = impl_->graph.slotRegionIds[edge.neighborSlot];
+            const auto neighborRegionIt = impl_->regions.find(neighborId);
+            if (neighborRegionIt == impl_->regions.end() ||
+                neighborRegionIt->second.invalidated)
+            {
+                continue;
+            }
+
+            const double neighborCapacity = regionCapacity(neighborRegionIt->second.input);
+            const double availableClearance = std::min({
+                portal.clearanceRadiusMeters,
+                currentCapacity,
+                neighborCapacity
+            });
+            if (availableClearance < required)
+                continue;
+
+            const Vec3d neighborCenter = boundsCenter(
+                neighborRegionIt->second.input.boundsMapMeters
+            );
+            const double geometricMeters =
+                distance(currentCenter, portal.centerMapMeters) +
+                distance(portal.centerMapMeters, neighborCenter);
+
+            double clearancePenalty = 0.0;
+            const double preferredClearance =
+                required * policy.preferredClearanceMultiple;
+            if (preferredClearance > 0.0 && availableClearance < preferredClearance)
+            {
+                const double shortfallFraction =
+                    (preferredClearance - availableClearance) / preferredClearance;
+                clearancePenalty =
+                    policy.clearancePenaltyMeters * shortfallFraction;
+            }
+
+            const double candidateCost =
+                currentCost +
+                policy.distanceWeight * geometricMeters +
+                clearancePenalty;
+
+            if (candidateCost < bestCost[edge.neighborSlot])
+            {
+                bestCost[edge.neighborSlot] = candidateCost;
+                previous[edge.neighborSlot] = Prev{currentSlot, edge.portalId};
+                frontier.emplace(
+                    QueueKey{candidateCost, edge.neighborSlot},
+                    edge.neighborSlot
+                );
+            }
+        }
+    }
+
+    if (!finite(bestCost[endSlot]))
+        return result;
+
+    std::vector<RegionId> reverseRegions;
+    std::vector<PortalId> reversePortals;
+    Impl::RegionSlot cursor = endSlot;
+    reverseRegions.push_back(impl_->graph.slotRegionIds[cursor]);
+    while (cursor != startSlot)
+    {
+        const Prev prev = previous[cursor];
+        if (prev.regionSlot == Impl::InvalidRegionSlot)
+            return result;
+        reversePortals.push_back(prev.portalId);
+        cursor = prev.regionSlot;
+        reverseRegions.push_back(impl_->graph.slotRegionIds[cursor]);
+    }
+
+    result.regionPath.assign(reverseRegions.rbegin(), reverseRegions.rend());
+    result.portalPath.assign(reversePortals.rbegin(), reversePortals.rend());
+    result.totalCostMetersEquivalent = bestCost[endSlot];
+    result.found = true;
     return result;
 }
 

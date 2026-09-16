@@ -62,10 +62,17 @@ for marker in (
     "struct GraphIndex",
     "std::map<RegionId, RegionSlot> regionSlots",
     "std::vector<std::vector<AdjacencyEdge>> adjacency",
+    "std::vector<std::vector<PortalId>> incidentPortals",
     "buildGraphIndex",
     "std::vector<std::uint8_t> visited",
     "std::vector<Impl::RegionSlot> frontier",
     "impl_->graph.adjacency[currentSlot]",
+    "struct SpatialIndex",
+    "struct SpatialNode",
+    "buildSpatialIndex",
+    "collectPointCandidateSlots",
+    "collectBoundsCandidateSlots",
+    "impl_->graph.incidentPortals.at(slot)",
 ):
     require(marker in IMPL, f"NavigationSpace CPU reference marker missing: {marker}")
 
@@ -105,6 +112,7 @@ for marker in (
     "local invalidation",
     "cpu reference",
     "hub / local-domain rule",
+    "private spatial index",
 ):
     require(marker in README.lower(),
             f"NavigationSpace boundary documentation missing: {marker}")
@@ -122,6 +130,8 @@ print(" - public header is isolated from GLM/OpenGL/game/render state")
 print(" - CPU reference uses deterministic free-space regions + portals")
 print(" - corridor traversal uses private dense region slots + ordered adjacency")
 print(" - BFS visited/previous bookkeeping is vector-backed rather than ordered maps")
+print(" - point lookup + bounds invalidation use a private RegionSlot BVH")
+print(" - endpoint portal invalidation uses private incident-portal adjacency")
 print(" - agent-envelope clearance and narrow-portal admission are explicit")
 print(" - local invalidation + transactional patching are owned by the block")
 print(" - project state/task agree on NAV-V2-SPACE-1")

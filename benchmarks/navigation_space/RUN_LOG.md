@@ -14,14 +14,7 @@ Architecture gate:
 NAVIGATION SPACE BENCHMARK CONTRACT: PASS
 ```
 
-Default benchmark:
-
-```text
-warmup=1
-iterations=3
-```
-
-Measured results:
+Default benchmark: `warmup=1`, `iterations=3`.
 
 ```text
 scenario  regions portals  replace med/p95  point med/p95   corridor med/p95      invalidate med/p95  patch med/p95
@@ -182,17 +175,15 @@ The static ordinary-query side is therefore accepted: point lookup and bounded l
 
 The tradeoff is publication/update cost. Full replace and one-region transactional patch now rebuild graph + BVH and cost roughly `44–49 ms` median at 10k. This is acceptable only because those paths remain worker/update operations. Before frequent live topology mutation, bounded/chunked update ownership will need its own measured stage.
 
-## Next candidate — costed corridor semantics
+## Costed corridor semantics — ACCEPTED
 
-After Optimization 3, the next problem is route quality rather than static query speed.
+After Optimization 3, route quality became the next problem.
 
-`queryCorridor()` remains the fast deterministic topology/BFS oracle.
-
-A separate `queryCostedCorridor()` candidate adds meter-equivalent policy-aware route choice:
+`queryCorridor()` remains the fast deterministic topology/BFS oracle. A separate `queryCostedCorridor()` adds policy-aware route choice:
 
 ```text
-edge cost = distanceWeight * geometric_distance
-          + clearance_penalty
+edge cost = distanceWeight * coarse geometric distance
+          + clearance penalty
 ```
 
 Policy fields:
@@ -203,17 +194,50 @@ preferredClearanceMultiple
 clearancePenaltyMeters
 ```
 
-Pinned behavioral fixtures:
+Target-machine behavior gate:
+
+```text
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
+Total Test time = 0.05 sec
+```
+
+Pinned behavior is therefore accepted:
 
 ```text
 wall_with_aperture
-    fitting agent -> through opening
-    oversized agent -> rejected
+    fitting agent -> route through opening
+    oversized agent -> opening rejected
 
 canyon_vs_overflight
-    distance-only -> short canyon
-    clearance-aware -> longer open route
+    distance-only policy -> short canyon
+    clearance-aware policy -> longer open route
     oversized canyon agent -> open route
 ```
 
-Status: **implementation + tests on `main`, pending target-machine architecture/behavior gate**. Existing static scaling benchmark need not be repeated solely for this semantics-only addition because the accepted BFS/BVH paths were not changed.
+This is the explicit static-space contract that openings, tunnels, breaches and canyons can be valid routes when the requesting agent fits; the enclosing obstacle is not one indivisible keep-out volume.
+
+`totalCostMetersEquivalent` remains a coarse region/portal branch-comparison metric, not exact physical trajectory length. Turn/curvature, dynamic traffic/risk and moving-goal prediction remain later layers.
+
+## Active next gate — costed corridor scaling
+
+Dedicated harness:
+
+```text
+benchmarks/navigation_space_costed/
+```
+
+It measures `distance_only` and `clearance_aware` policies on open/hub 1k/5k/10k topology scales. Reduced-clearance portals are deterministic and remain physically traversable, so the clearance-aware profile performs real alternate-route evaluation.
+
+Metrics:
+
+```text
+median/p95 ms
+regions visited
+portals examined
+region-path length
+coarse reported cost
+```
+
+Status: **benchmark implementation on `main`, pending target-machine contract + measurement**.

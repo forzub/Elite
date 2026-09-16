@@ -3,15 +3,15 @@
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-SPACE-1` — first static-space CPU reference candidate pending target-machine gate
+**Stage:** `NAV-V2-SPACE-1` — static-space CPU reference accepted; scaling benchmark is the active gate
 
 ## Source of truth
 
 `main` is the only game-development baseline. Read `REPOSITORY_SOURCE_OF_TRUTH.md`. Do not continue feature work on parallel development branches.
 
-## Previous stage — CLOSED
+## Previous dynamic-map stage — CLOSED
 
-`NAV-V2-MAP-2` is accepted. Target-machine measurement selected **hybrid** ownership:
+`NAV-V2-MAP-2` selected hybrid ownership from target-machine measurements:
 
 ```text
 CPU
@@ -27,26 +27,11 @@ GPU
     all-agent neighbor/conflict reduction
 ```
 
-Accepted 100-iteration 10k evidence:
+At 10k actors the accepted long-run GPU p95 was `1.3226 ms` cruise and `1.6258 ms` Hub on Quadro RTX 3000; CPU compact dynamic queries remained sub-0.2-ms p95 while full CPU rebuild was the expensive path.
 
-```text
-CPU cruise corridor p95=0.1713 ms, sphere p95=0.1329 ms, rebuild p95=3.0958 ms
-CPU hub    corridor p95=0.1551 ms, sphere p95=0.0471 ms, rebuild p95=2.4924 ms
-GPU cruise total median=0.6840 ms, p95=1.3226 ms
-GPU hub    total median=1.6097 ms, p95=1.6258 ms
-```
+## `NAV-V2-SPACE-1` boundary/reference — ACCEPTED
 
-GPU 1k correctness matched the independent CPU reference; all measured GPU scenarios had `overflow=0`, `out_of_bounds=0`, `valid=1`, fixed 32-byte readback.
-
-## First `NAV-V2-SPACE-1` candidate now on `main`
-
-Current candidate HEAD after the static-space files/tests were added:
-
-```text
-966d7269b824dd51a6bc5c56e535e0cce553a2bd
-```
-
-New isolated block:
+Canonical block:
 
 ```text
 src/world/navigation/space/
@@ -55,21 +40,6 @@ src/world/navigation/space/
     CMakeLists.txt
     README.md
 ```
-
-Standalone test surface:
-
-```text
-tests/navigation_space/
-    NavigationSpaceContractTests.cpp
-    CMakeLists.txt
-    run_mingw64.sh
-
-tests/architecture_contracts/check_navigation_space_boundary.py
-```
-
-### Reference representation
-
-The first CPU reference models navigable **free-space regions + explicit portals**, not a giant dense system voxel field.
 
 Public concepts:
 
@@ -85,35 +55,73 @@ invalidateBounds
 stats
 ```
 
-Public header is intended to remain independent of GLM/OpenGL/GLFW/render/game state and hides storage/search structures behind PImpl.
+Reference representation is free-space AABB regions + explicit portals behind PImpl. Public API does not commit production storage to AABBs, `std::map`, BFS or any specific acceleration structure.
 
-### Reference behavior
-
-- free-space point admission uses agent radius + additional clearance;
-- region bounds and authored clearance cap both constrain admission;
-- portal clearance rejects oversized agents;
-- corridor search is deterministic BFS over stable region/portal IDs;
-- disconnected regions fail closed;
-- `invalidateBounds()` invalidates only intersecting free-space regions plus touching portals;
-- invalidated topology fails closed immediately;
-- `applyLocalPatch()` transactionally replaces/removes affected regions/portals without whole-world replacement;
-- a rejected patch must not partially mutate state.
-
-Current CPU reference limitations are intentional:
+Fresh target-machine evidence on canonical `main`:
 
 ```text
-AABB free-space regions
-linear point-location/invalidation scan
-unweighted BFS corridor search
-no static-space benchmark yet
-no live runtime integration yet
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
 ```
 
-These are internal/reference limitations, not public API commitments.
+Accepted reference behavior:
+
+- point admission is parameterized by agent radius + additional clearance;
+- region and portal clearance reject oversized agents;
+- deterministic region/portal corridor is returned for connected traversable topology;
+- disconnected/invalidated topology fails closed;
+- bounded invalidation affects intersecting regions and touching portals;
+- local patches are transactional and rejected patches do not partially mutate state.
+
+## Active gate — static-space scaling benchmark
+
+New isolated benchmark:
+
+```text
+benchmarks/navigation_space/
+    main.cpp
+    CMakeLists.txt
+    run_mingw64.sh
+    README.md
+
+tests/architecture_contracts/check_navigation_space_benchmark.py
+```
+
+The benchmark generates deterministic `open_*` and `hub_*` 3D region/portal lattices at approximately 1k / 5k / 10k regions and measures independently:
+
+```text
+replaceStaticWorld
+queryPoint
+queryCorridor
+invalidateBounds
+applyLocalPatch
+```
+
+It also records:
+
+```text
+point regions examined
+corridor regions visited
+corridor portals examined
+invalidated region/portal counts
+corridor success
+```
+
+This is intentionally a stress/diagnostic benchmark of the current reference. Known implementation costs being measured are:
+
+```text
+queryPoint       -> linear region scan
+queryCorridor    -> BFS + full portal-map scan per visited region
+invalidateBounds -> full region + portal scan
+applyLocalPatch  -> transactional copy of region + portal maps
+```
+
+Do not optimize before seeing the target-machine numbers.
 
 ## RUN NOW
 
-Sync and run only the new static-space gate:
+The boundary/behavior gate has already passed and does not need to be repeated for this benchmark-only change.
 
 ```bash
 cd /d/__elite/work
@@ -122,39 +130,29 @@ git fetch origin
 git switch main
 git merge --ff-only origin/main
 
-python tests/architecture_contracts/check_navigation_space_boundary.py
-bash tests/navigation_space/run_mingw64.sh
+python tests/architecture_contracts/check_navigation_space_benchmark.py
+bash benchmarks/navigation_space/run_mingw64.sh
 ```
 
-Do not rerun CPU/GPU `NAV-V2-MAP-2` benchmarks; that gate is closed.
+Default benchmark is deliberately short (`warmup=1`, `iterations=3`) because the unindexed 10k corridor case may expose pathological scaling.
 
-## If this gate passes
+Send the complete output. CSV is written to:
 
-Next slice remains inside `NAV-V2-SPACE-1`:
+```text
+D:\__elite\work\navigation_space_cpu_benchmark.csv
+```
 
-1. add a deterministic static-space benchmark for region lookup, corridor query, invalidation and local patch;
-2. test scale with large open-space region sets plus denser Hub/interior region sets;
-3. use measured behavior to decide whether the CPU reference needs a sparse hierarchy/BVH/spatial hash for point-location and invalidation;
-4. add costed corridor search only after the topology/reference boundary is accepted;
-5. keep all of this isolated from `EliteGame` / `EliteServer` until the static-space gate is complete.
+## Decision after measurement
+
+Choose the **first internal optimization** from evidence, while keeping `NavigationSpace.h` stable:
+
+- point/invalidation expensive -> add spatial point-location/invalidation index;
+- corridor dominated by portal scans -> build compact per-region adjacency first;
+- local patch expensive -> replace whole-map copy with bounded/chunked copy-on-write or equivalent;
+- only introduce hierarchical regions/bricks if measured scale actually requires them.
+
+After the reference is indexed and remeasured, add costed corridor search (portal traversal cost / distance / clearance policy) and static-space benchmark acceptance thresholds. Live `EliteGame` / `EliteServer` integration remains later.
 
 ## Not yet
 
-Do not yet:
-
-- wire NavigationSpace into live runtime;
-- repair the old route-wide planner;
-- implement final mass-NPC steering;
-- implement final precision docking/repair search;
-- implement Shift+F12 debug rendering;
-- delete migration navigation code.
-
-## Performance contract
-
-```text
-main-thread navigation CPU       < 0.5 ms typical, < 1.0 ms normal peak
-GPU dynamic NavigationWorld      < 1.0 ms preferred, < 2.0 ms heavy-scene target
-precision/global route solve     asynchronous only
-```
-
-Static-space rebuild/invalidation may be worker-side; ordinary point/clearance/corridor queries must remain bounded and cheap enough for shared NavigationWorld use.
+Do not yet wire NavigationSpace into live runtime, repair the old route-wide planner, implement final NPC steering/precision docking, implement Shift+F12 debug rendering, or delete migration navigation code.

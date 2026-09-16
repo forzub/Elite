@@ -63,6 +63,26 @@ PortalInput
 
 `queryCorridor()` returns only ordered region/portal IDs and diagnostics. It does not return internal graph nodes or materialize a dense trajectory.
 
+## Private connectivity index
+
+The first scaling benchmark showed that scanning the complete portal map for every BFS region is pathological: the 10k reference examined about 286 million portal records and took roughly two seconds per corridor query.
+
+The CPU reference therefore owns a private deterministic adjacency index:
+
+```text
+regionId -> ordered portalId list
+```
+
+It is rebuilt transactionally together with full publication/local patching. Portal IDs are appended in ordered-map order, preserving stable BFS tie-breaking. The public API does not expose or depend on this representation.
+
+Corridor traversal now examines only portals adjacent to the current region. The architecture contract rejects regression to a full portal-map scan inside BFS.
+
+Raw benchmark history is recorded in:
+
+```text
+benchmarks/navigation_space/RUN_LOG.md
+```
+
 ## Local invalidation
 
 `invalidateBounds()` is fail-closed:
@@ -72,11 +92,11 @@ PortalInput
 3. queries stop traversing them immediately;
 4. `applyLocalPatch()` can transactionally replace/remove only the affected regions/portals and restore connectivity.
 
-The first CPU reference scans regions linearly for invalidation. This is behavior/reference code, not the final acceleration strategy. `NAV-V2-SPACE-1` benchmarking will determine where sparse/hierarchical indexing is required.
+The first CPU reference still scans regions linearly for invalidation. This is behavior/reference code, not the final acceleration strategy. `NAV-V2-SPACE-1` benchmarking determines where sparse/hierarchical indexing is required next.
 
 ## Determinism
 
-The CPU reference stores regions/portals in ordered maps and traverses portals in stable ID order. For identical published input and query, the returned coarse corridor is deterministic.
+The CPU reference stores regions/portals in ordered maps and traverses adjacency lists in stable PortalId order. For identical published input and query, the returned coarse corridor is deterministic.
 
 ## Relation to dynamic NavigationMap
 
@@ -107,9 +127,9 @@ Hub, station, carrier and interior geometry remains owned by its local domain. T
 ## Current limitations of the CPU reference
 
 - free-space regions are AABBs, not arbitrary convex cells;
-- point location and invalidation are linear scans;
+- point location and invalidation are still linear scans;
 - corridor search is unweighted BFS rather than costed A*/Dijkstra;
-- no static-space benchmark is accepted yet;
+- local patching still copies full ordered region/portal maps transactionally;
 - no live `EliteGame` / `EliteServer` integration yet.
 
 These are deliberate `NAV-V2-SPACE-1` reference limitations. The public API keeps storage/search replacement possible.

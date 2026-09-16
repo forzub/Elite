@@ -94,6 +94,32 @@ double distance(const Vec3d& a, const Vec3d& b) noexcept
     return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+double turnAngleRadians(
+    const Vec3d& incomingPortalCenter,
+    const Vec3d& currentRegionCenter,
+    const Vec3d& outgoingPortalCenter
+) noexcept
+{
+    const double ax = currentRegionCenter.x - incomingPortalCenter.x;
+    const double ay = currentRegionCenter.y - incomingPortalCenter.y;
+    const double az = currentRegionCenter.z - incomingPortalCenter.z;
+    const double bx = outgoingPortalCenter.x - currentRegionCenter.x;
+    const double by = outgoingPortalCenter.y - currentRegionCenter.y;
+    const double bz = outgoingPortalCenter.z - currentRegionCenter.z;
+
+    const double lengthA = std::sqrt(ax * ax + ay * ay + az * az);
+    const double lengthB = std::sqrt(bx * bx + by * by + bz * bz);
+    if (lengthA <= 1.0e-12 || lengthB <= 1.0e-12)
+        return 0.0;
+
+    const double cosine = std::clamp(
+        (ax * bx + ay * by + az * bz) / (lengthA * lengthB),
+        -1.0,
+        1.0
+    );
+    return std::acos(cosine);
+}
+
 double pointClearance(const Bounds3d& bounds, const Vec3d& p) noexcept
 {
     if (!contains(bounds, p))
@@ -144,7 +170,9 @@ void validateCostPolicy(const NavigationSpace::CorridorCostPolicy& policy)
         !finite(policy.preferredClearanceMultiple) ||
         policy.preferredClearanceMultiple < 1.0 ||
         !finite(policy.clearancePenaltyMeters) ||
-        policy.clearancePenaltyMeters < 0.0)
+        policy.clearancePenaltyMeters < 0.0 ||
+        !finite(policy.turnPenaltyMetersPerRadian) ||
+        policy.turnPenaltyMetersPerRadian < 0.0)
     {
         throw std::invalid_argument(
             "NavigationSpace corridor cost policy must be finite and non-negative; preferred clearance multiple must be >= 1"
@@ -893,6 +921,242 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
     const Impl::RegionSlot endSlot = endSlotIt->second;
     const std::size_t regionCount = impl_->graph.slotRegionIds.size();
 
+    if (policy.turnPenaltyMetersPerRadian > 0.0)
+    {
+        struct TurnState
+        {
+            Impl::RegionSlot regionSlot = Impl::InvalidRegionSlot;
+            PortalId incomingPortalId = 0;
+
+            bool operator<(const TurnState& other) const noexcept
+            {
+                if (regionSlot != other.regionSlot)
+                    return regionSlot < other.regionSlot;
+                return incomingPortalId < other.incomingPortalId;
+            }
+        };
+
+        struct TurnPrev
+        {
+            TurnState state {};
+            bool valid = false;
+        };
+
+        using TurnQueueKey = std::pair<double, std::pair<Impl::RegionSlot, PortalId>>;
+        const double infinity = std::numeric_limits<double>::infinity();
+        const TurnState startTurnState {startSlot, 0};
+
+        std::map<TurnState, double> bestCost;
+        std::map<TurnState, TurnPrev> previous;
+        std::map<TurnState, bool> settled;
+        std::multimap<TurnQueueKey, TurnState> frontier;
+        std::vector<std::uint8_t> countedRegion(regionCount, 0);
+
+        bestCost.emplace(startTurnState, 0.0);
+        frontier.emplace(
+            TurnQueueKey{0.0, {startSlot, 0}},
+            startTurnState
+        );
+
+        TurnState finalState;
+        double finalCost = infinity;
+        bool finalFound = false;
+
+        while (!frontier.empty())
+        {
+            const auto currentIt = frontier.begin();
+            const double currentCost = currentIt->first.first;
+            const TurnState currentState = currentIt->second;
+            frontier.erase(currentIt);
+
+            if (currentState.regionSlot >= regionCount || settled[currentState])
+                continue;
+
+            const auto bestIt = bestCost.find(currentState);
+            if (bestIt == bestCost.end() || currentCost > bestIt->second)
+                continue;
+
+            settled[currentState] = true;
+            if (!countedRegion[currentState.regionSlot])
+            {
+                countedRegion[currentState.regionSlot] = 1;
+                ++result.diagnostics.regionsVisited;
+            }
+
+            if (currentState.regionSlot == endSlot)
+            {
+                finalState = currentState;
+                finalCost = currentCost;
+                finalFound = true;
+                break;
+            }
+
+            const RegionId currentId =
+                impl_->graph.slotRegionIds[currentState.regionSlot];
+            const auto currentRegionIt = impl_->regions.find(currentId);
+            if (currentRegionIt == impl_->regions.end() ||
+                currentRegionIt->second.invalidated)
+            {
+                continue;
+            }
+
+            const double currentCapacity =
+                regionCapacity(currentRegionIt->second.input);
+            const Vec3d currentCenter = boundsCenter(
+                currentRegionIt->second.input.boundsMapMeters
+            );
+
+            Vec3d incomingPortalCenter {};
+            bool hasIncomingPortal = false;
+            if (currentState.incomingPortalId != 0)
+            {
+                const auto incomingIt = impl_->portals.find(
+                    currentState.incomingPortalId
+                );
+                if (incomingIt == impl_->portals.end() ||
+                    incomingIt->second.invalidated)
+                {
+                    continue;
+                }
+                incomingPortalCenter = incomingIt->second.input.centerMapMeters;
+                hasIncomingPortal = true;
+            }
+
+            for (const auto& edge :
+                 impl_->graph.adjacency[currentState.regionSlot])
+            {
+                ++result.diagnostics.portalsExamined;
+                if (edge.neighborSlot >= regionCount)
+                    continue;
+
+                const auto portalIt = impl_->portals.find(edge.portalId);
+                if (portalIt == impl_->portals.end() ||
+                    portalIt->second.invalidated)
+                {
+                    continue;
+                }
+
+                const auto& portal = portalIt->second.input;
+                const RegionId neighborId =
+                    impl_->graph.slotRegionIds[edge.neighborSlot];
+                const auto neighborRegionIt = impl_->regions.find(neighborId);
+                if (neighborRegionIt == impl_->regions.end() ||
+                    neighborRegionIt->second.invalidated)
+                {
+                    continue;
+                }
+
+                const double neighborCapacity =
+                    regionCapacity(neighborRegionIt->second.input);
+                const double availableClearance = std::min({
+                    portal.clearanceRadiusMeters,
+                    currentCapacity,
+                    neighborCapacity
+                });
+                if (availableClearance < required)
+                    continue;
+
+                const Vec3d neighborCenter = boundsCenter(
+                    neighborRegionIt->second.input.boundsMapMeters
+                );
+                const double geometricMeters =
+                    distance(currentCenter, portal.centerMapMeters) +
+                    distance(portal.centerMapMeters, neighborCenter);
+
+                double clearancePenalty = 0.0;
+                const double preferredClearance =
+                    required * policy.preferredClearanceMultiple;
+                if (preferredClearance > 0.0 &&
+                    availableClearance < preferredClearance)
+                {
+                    const double shortfallFraction =
+                        (preferredClearance - availableClearance) /
+                        preferredClearance;
+                    clearancePenalty =
+                        policy.clearancePenaltyMeters * shortfallFraction;
+                }
+
+                double turnPenalty = 0.0;
+                if (hasIncomingPortal)
+                {
+                    turnPenalty =
+                        policy.turnPenaltyMetersPerRadian *
+                        turnAngleRadians(
+                            incomingPortalCenter,
+                            currentCenter,
+                            portal.centerMapMeters
+                        );
+                }
+
+                const double candidateCost =
+                    currentCost +
+                    policy.distanceWeight * geometricMeters +
+                    clearancePenalty +
+                    turnPenalty;
+
+                const TurnState nextState {
+                    edge.neighborSlot,
+                    edge.portalId
+                };
+                const auto nextBestIt = bestCost.find(nextState);
+                if (nextBestIt == bestCost.end() ||
+                    candidateCost < nextBestIt->second)
+                {
+                    bestCost[nextState] = candidateCost;
+                    previous[nextState] = TurnPrev{currentState, true};
+                    frontier.emplace(
+                        TurnQueueKey{
+                            candidateCost,
+                            {nextState.regionSlot, nextState.incomingPortalId}
+                        },
+                        nextState
+                    );
+                }
+            }
+        }
+
+        if (!finalFound || !finite(finalCost))
+            return result;
+
+        std::vector<RegionId> reverseRegions;
+        std::vector<PortalId> reversePortals;
+        TurnState cursor = finalState;
+        reverseRegions.push_back(
+            impl_->graph.slotRegionIds[cursor.regionSlot]
+        );
+
+        while (!(cursor.regionSlot == startSlot &&
+                 cursor.incomingPortalId == 0))
+        {
+            if (cursor.incomingPortalId == 0)
+                return result;
+            reversePortals.push_back(cursor.incomingPortalId);
+
+            const auto prevIt = previous.find(cursor);
+            if (prevIt == previous.end() || !prevIt->second.valid)
+                return result;
+            cursor = prevIt->second.state;
+            reverseRegions.push_back(
+                impl_->graph.slotRegionIds[cursor.regionSlot]
+            );
+        }
+
+        result.regionPath.assign(
+            reverseRegions.rbegin(),
+            reverseRegions.rend()
+        );
+        result.portalPath.assign(
+            reversePortals.rbegin(),
+            reversePortals.rend()
+        );
+        result.totalCostMetersEquivalent = finalCost;
+        result.found = true;
+        return result;
+    }
+
+    // Accepted v1 fast path: region-state Dijkstra for distance/clearance-only
+    // policies. Keep this path isolated so turn-aware state expansion does not
+    // tax the already measured background/reference solve.
     struct Prev
     {
         Impl::RegionSlot regionSlot = Impl::InvalidRegionSlot;

@@ -11,6 +11,7 @@ find_package(glfw3 CONFIG REQUIRED)
 
 add_executable(navigation_gpu_benchmark
     main.cpp
+    GpuPreferenceWin.cpp
     "${ELITE_ROOT}/glad/src/gl.c"
 )
 

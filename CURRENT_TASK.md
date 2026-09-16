@@ -3,7 +3,7 @@
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-SPACE-1` — costed corridor semantics accepted; dedicated scaling benchmark active
+**Stage:** `NAV-V2-SPACE-1` — static turn-cost v2 candidate pending target-machine behavior gate
 
 ## Source of truth
 
@@ -11,88 +11,91 @@
 
 ## Accepted prior gates
 
-`NAV-V2-MAP-2` is closed with measured hybrid ownership.
+Static indexing and costed corridor v1 are accepted.
 
-Static `NavigationSpace` indexing is accepted:
-
-```text
-baseline 10k corridor            ≈1.95-1.99 s
-per-region adjacency             ≈21.8-22.4 ms
-dense RegionSlot BFS             ≈7.9-8.0 ms
-RegionSlot BVH point p95         0.0353 ms open / 0.0099 ms hub
-RegionSlot BVH invalidation p95  0.0112 ms open / 0.0115 ms hub
-```
-
-Full replace/local patch remain ~44-49 ms median at 10k and stay worker/update-side.
-
-## Costed corridor behavior — ACCEPTED
-
-Fresh target-machine gate:
+Key accepted target-machine evidence:
 
 ```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
+10k coarse BFS corridor          ≈7.3-8.2 ms
+10k BVH point p95                <=0.0353 ms
+10k local invalidation p95       <=0.0115 ms
 ```
 
-Accepted static route semantics:
+Costed corridor v1 behavior:
 
 ```text
-wall_with_aperture
-    fitting agent -> through opening
-    oversized agent -> rejected
-
-canyon_vs_overflight
-    distance-only -> short canyon
-    clearance-aware -> longer open route
-    oversized canyon agent -> open route
+wall aperture: fitting agent passes, oversized agent rejected
+canyon vs overflight: distance/clearance policy selects the expected branch
 ```
 
-Fast `queryCorridor()` remains the topology/BFS oracle. `queryCostedCorridor()` is the policy-aware static selector.
-
-`totalCostMetersEquivalent` is currently a coarse region/portal comparison metric; do not treat it as exact physical trajectory length.
-
-## Accepted moving-goal design
-
-`src/world/navigation/PURSUIT_HORIZON.md` defines future receding intercept/pursuit behavior. Pursuit implementation is later than the current static route-quality gate.
-
-## Active gate — dedicated costed scaling benchmark
-
-New isolated harness:
+Dedicated costed-scaling benchmark:
 
 ```text
-benchmarks/navigation_space_costed/
+open_10k distance_only p95       8.1733 ms
+open_10k clearance_aware p95     8.5020 ms
+hub_10k  distance_only p95       7.7609 ms
+hub_10k  clearance_aware p95     9.6103 ms
 ```
 
-Pinned topology scales:
+The predeclared threshold was `<=15 ms p95`, so Dijkstra v1 is accepted as-is. Do not optimize it into A* merely because a more sophisticated algorithm exists.
+
+Raw evidence: `benchmarks/navigation_space_costed/RUN_LOG.md`.
+
+## Active candidate — static turn cost v2
+
+Design contract:
 
 ```text
-open_1k / open_5k / open_10k
-hub_1k  / hub_5k  / hub_10k
+src/world/navigation/STATIC_TURN_COST.md
 ```
 
-Two policy profiles run against the same published topology:
+Public policy field:
 
 ```text
-distance_only
-clearance_aware
+turnPenaltyMetersPerRadian
 ```
 
-The graph includes deterministic reduced-clearance portals so the second policy performs genuine alternate-route evaluation rather than the same route with a different constant.
-
-Measured products:
+Fast-path invariant:
 
 ```text
-median/p95 ms
-regions visited
-portals examined
-region-path length
-coarse meter-equivalent cost
+turnPenaltyMetersPerRadian == 0
+    -> keep accepted v1 RegionSlot Dijkstra
 ```
+
+Turn-aware invariant:
+
+```text
+turnPenaltyMetersPerRadian > 0
+    -> search state = (RegionSlot, incoming PortalId)
+```
+
+This is mandatory because turn cost depends on arrival direction. Region-only state is incorrect for turn-aware routing.
+
+Turn angle is coarse/static only:
+
+```text
+incoming portal center -> current region center
+current region center  -> outgoing portal center
+```
+
+The special start state has no turn penalty because static `CorridorQuery` does not own current ship heading/velocity. Speed-dependent turn radius, angular acceleration and braking remain local/precision-planner concerns.
+
+Pinned new acceptance fixture:
+
+```text
+zigzag_vs_smooth
+    turnPenalty=0
+        -> slightly shorter zig-zag branch
+
+    positive turnPenalty
+        -> smoother branch once saved turn cost exceeds the distance delta
+```
+
+Existing aperture and canyon fixtures must remain unchanged.
 
 ## RUN NOW
 
-Only the new benchmark contract + benchmark are required. `NavigationSpace.cpp` was not changed after the accepted behavior gate, so do not rerun the old boundary/behavior/scaling suite.
+`NavigationSpace.cpp`, behavior tests and the architecture contract changed. Run only the static-space architecture + behavior gate:
 
 ```bash
 cd /d/__elite/work
@@ -101,25 +104,21 @@ git fetch origin
 git switch main
 git merge --ff-only origin/main
 
-python tests/architecture_contracts/check_navigation_space_costed_benchmark.py
-bash benchmarks/navigation_space_costed/run_mingw64.sh
+python tests/architecture_contracts/check_navigation_space_boundary.py
+bash tests/navigation_space/run_mingw64.sh
 ```
 
 Send the complete output.
 
-Default run is intentionally modest:
+Do **not** rerun the accepted CPU/GPU/static/costed scaling benchmarks for this behavior gate. The zero-turn fast path remains separate by construction.
 
-```text
-warmup=1
-iterations=5
-```
+## After PASS
 
-## Decision after measurement
+1. accept static turn-cost semantics;
+2. add a small dedicated turn-aware performance benchmark because expanded `(region,incoming portal)` state can cost materially more than v1;
+3. if turn-aware scaling is acceptable, stop adding static policy terms for now;
+4. next combine accepted static corridor with dynamic conflict/local-horizon selection;
+5. then implement pursuit/receding-intercept consumer;
+6. live game/server integration remains after isolated NavigationWorld contracts are stable.
 
-Use the measured 10k p95 rather than intuition:
-
-- `<=15 ms p95`: accept deterministic Dijkstra reference as-is and proceed to turn/curvature cost;
-- `15-40 ms p95`: acceptable as worker/reference solve, but optimize queue/search core before using it frequently for many active NPC replans;
-- `>40 ms p95` or pathological scaling: optimize costed search first, likely indexed heap and/or admissible A* heuristic, before adding more cost terms.
-
-Do not compare costed timing directly to the BFS oracle as equivalent work. Do not yet wire this into live `EliteGame` / `EliteServer`, implement pursuit runtime, or remove legacy migration navigation.
+Do not put ship velocity, dynamic traffic or pursuit prediction into persistent `NavigationSpace` static cost.

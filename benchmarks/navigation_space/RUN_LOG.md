@@ -4,6 +4,8 @@
 **Date:** 2026-09-16  
 **Machine:** user's Windows 10 / MSYS2 MinGW64 target machine
 
+All runs below used the same deterministic `open_*` and `hub_*` topology generator unless noted otherwise.
+
 ## Baseline — unindexed corridor traversal
 
 Architecture gate:
@@ -19,7 +21,7 @@ warmup=1
 iterations=3
 ```
 
-Measured target-machine results:
+Measured results:
 
 ```text
 scenario  regions portals  replace med/p95  point med/p95   corridor med/p95      invalidate med/p95  patch med/p95
@@ -31,65 +33,25 @@ hub_5k      5000   14050    3.2571/3.4590    0.1360/0.2489   482.6135/482.7897  
 hub_10k    10000   28600    7.2397/7.5269    0.2784/0.2845  1951.6453/1956.0686     2.8412/3.2230        8.6678/8.7083
 ```
 
-Diagnostic counts:
+Diagnostics:
 
 ```text
-1k:  point regions examined=1000
-     corridor portals examined≈2.64-2.69 million
-
-5k:  point regions examined=5000
-     corridor portals examined=70,206,895
-
-10k: point regions examined=10000
-     corridor portals examined=285,913,245
+1k  corridor portal examinations ≈2.64-2.69 million
+5k  corridor portal examinations =70,206,895
+10k corridor portal examinations =285,913,245
 ```
 
-Each invalidation affected one region and six touching portals; every corridor query succeeded.
+Interpretation: corridor BFS scanned the complete portal map for every visited region. From 1k to 10k, corridor time and portal examinations were effectively quadratic/pathological.
 
-### Baseline interpretation
+## Optimization 1 — per-region portal adjacency — ACCEPTED
 
-The first optimization target was unambiguous: corridor BFS scanned the complete portal map for every visited region. From 1k to 10k regions, corridor median increased by roughly 102-105x while portal examinations increased by roughly 106-108x.
-
-Other baseline costs:
-
-- worst-case linear point lookup at 10k was ~0.28 ms;
-- invalidation reached ~2.6-2.8 ms median at 10k;
-- one-region transactional patch reached ~7.6-8.7 ms median;
-- full publication was ~6.7-7.2 ms median at 10k.
-
-## Optimization 1 — private per-region portal adjacency
-
-`NavigationSpace.h` remained unchanged.
-
-Private connectivity became:
+Private connectivity:
 
 ```text
-regionId -> ordered portalId list
+RegionId -> ordered PortalId[]
 ```
 
-The adjacency index is rebuilt transactionally with full publication/local patch and preserves stable PortalId ordering. `queryCorridor()` examines only portals adjacent to the current region.
-
-Architecture contract rejects regression to full portal-map scanning inside corridor BFS.
-
-### Target-machine rerun after Optimization 1
-
-Behavior / architecture:
-
-```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
-NAVIGATION SPACE BENCHMARK CONTRACT: PASS
-```
-
-Default benchmark remained:
-
-```text
-warmup=1
-iterations=3
-```
-
-Measured results:
+Target-machine rerun:
 
 ```text
 scenario  regions portals  replace med/p95   point med/p95   corridor med/p95   invalidate med/p95  patch med/p95
@@ -101,33 +63,19 @@ hub_5k      5000   14050    6.4667/6.7791     0.1418/0.2358    9.5743/10.1848   
 hub_10k    10000   28600   13.7190/15.3277    0.3836/0.4536   22.3689/22.7493     3.3208/3.4248       15.8516/16.7010
 ```
 
-10k diagnostics:
+10k portal examinations fell to `57,189`.
 
 ```text
-point regions examined=10,000
-corridor portals examined=57,189
-corridor found=1
-invalidated regions=1
-invalidated portals=6
+open_10k corridor median 1991.0357 -> 21.7848 ms  (~91.4x faster)
+hub_10k  corridor median 1951.6453 -> 22.3689 ms  (~87.2x faster)
+portal examinations      285,913,245 -> 57,189    (~5000x fewer)
 ```
 
-### Optimization-1 interpretation
-
-The adjacency index solved the pathological full-portal scan:
-
-```text
-open_10k corridor median: 1991.0357 -> 21.7848 ms  (~91.4x faster)
-hub_10k  corridor median: 1951.6453 -> 22.3689 ms  (~87.2x faster)
-portal examinations:      285,913,245 -> 57,189    (~5000x fewer)
-```
-
-The connectivity index moves work into topology publication/patching: 10k full replacement is now ~13-14 ms median and one-region transactional patch ~16 ms median. These are not accepted frame-path operations and remain later optimization targets.
+Publication/patch cost increased because connectivity is constructed transactionally. Those operations are not frame-path work.
 
 ## Optimization 2 — dense RegionSlot graph bookkeeping — ACCEPTED
 
-`NavigationSpace.h` remained unchanged.
-
-The private graph added:
+Private graph:
 
 ```text
 RegionId -> dense RegionSlot
@@ -135,30 +83,15 @@ RegionSlot -> RegionId
 RegionSlot -> ordered adjacency edges { PortalId, neighbor RegionSlot }
 ```
 
-BFS `visited`, `previous`, and frontier storage became vector-backed by dense slots rather than `std::map<RegionId,...>`. Stable public RegionId/PortalId results and deterministic PortalId traversal order were preserved.
+BFS `visited`, `previous` and frontier became vector-backed.
 
-The first architecture-contract rerun reported:
+The first architecture rerun reported:
 
 ```text
 [FAIL] NavigationSpace CPU reference marker missing: std::vector<RegionSlot> frontier
 ```
 
-This was a **contract bug**, not a code failure: the implementation correctly used `std::vector<Impl::RegionSlot> frontier`. The C++ behavior test passed and the benchmark executable built and ran. The architecture marker was subsequently corrected on `main`.
-
-### Target-machine rerun after Optimization 2
-
-```text
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
-NAVIGATION SPACE BENCHMARK CONTRACT: PASS
-```
-
-Default benchmark:
-
-```text
-warmup=1
-iterations=3
-```
+This was an architecture-test string defect. The implementation correctly used `std::vector<Impl::RegionSlot>`. The C++ behavior test passed and the benchmark built/ran. The marker was fixed on `main`.
 
 Measured results:
 
@@ -172,63 +105,115 @@ hub_5k      5000   14050    6.7531/7.5369     0.1450/0.1806   3.5757/3.7458     
 hub_10k    10000   28600   14.1335/14.9556    0.4301/0.7043   7.9981/8.4877      3.2642/3.3515       16.1113/16.1715
 ```
 
-Diagnostics remained topology-equivalent:
+```text
+open_10k corridor median 21.7848 -> 7.9396 ms  (~2.74x faster)
+hub_10k  corridor median 22.3689 -> 7.9981 ms  (~2.80x faster)
+```
+
+At this point coarse unweighted global corridor search is accepted as asynchronous worker/reference work; further BFS micro-optimization is deferred.
+
+## Optimization 3 — private RegionSlot AABB BVH — ACCEPTED
+
+Private static index:
 
 ```text
-10k corridor portals examined=57,189
+RegionSlot[] -> AABB BVH
+```
+
+Used by:
+
+```text
+queryPoint()
+queryCorridor() endpoint localization
+invalidateBounds()
+```
+
+Endpoint portal invalidation uses:
+
+```text
+RegionSlot -> incident PortalId[]
+```
+
+so damage/local invalidation no longer scans every portal.
+
+Fresh target-machine gate:
+
+```text
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
+NAVIGATION SPACE BENCHMARK CONTRACT: PASS
+```
+
+Default benchmark remained `warmup=1`, `iterations=3`.
+
+Measured results:
+
+```text
+scenario  regions portals  replace med/p95   point med/p95   corridor med/p95  invalidate med/p95  patch med/p95
+open_1k     1000    2650    2.7210/2.8374     0.0046/0.0050   0.4817/0.4906      0.0039/0.0053        2.7643/3.0607
+open_5k     5000   14050   19.9254/20.0685    0.0061/0.0062   3.2524/3.2940      0.0080/0.0091       20.5599/20.9438
+open_10k   10000   28600   44.2686/45.9464    0.0065/0.0353   7.3479/7.7085      0.0102/0.0112       46.6777/51.2959
+hub_1k      1000    2700    2.7646/2.8178     0.0043/0.0044   0.4898/0.4934      0.0033/0.0051        2.8668/3.0214
+hub_5k      5000   14050   19.5868/19.7882    0.0058/0.0064   3.1884/3.2706      0.0118/0.0159       19.8892/20.4986
+hub_10k    10000   28600   45.2447/48.0735    0.0064/0.0099   8.0958/8.2105      0.0109/0.0115       48.7458/48.8502
+```
+
+10k diagnostics:
+
+```text
+point regions examined=5
+corridor regions visited≈10,003
+corridor portals examined=57,189
+invalidated regions=1
+invalidated portals=6
 corridor_found=1
-invalidated_regions=1
-invalidated_portals=6
 ```
 
-### Optimization-2 interpretation
+Interpretation:
 
-Dense slots removed another large portion of generic graph bookkeeping:
+- `open_10k` point p95: `0.2814 -> 0.0353 ms`;
+- `hub_10k` point p95: `0.7043 -> 0.0099 ms`;
+- 10k point candidate examination: `10,000 -> 5`;
+- `open_10k` invalidation median: `3.6275 -> 0.0102 ms`;
+- `hub_10k` invalidation median: `3.2642 -> 0.0109 ms`.
+
+The static ordinary-query side is therefore accepted: point lookup and bounded local invalidation are comfortably sub-millisecond.
+
+The tradeoff is publication/update cost. Full replace and one-region transactional patch now rebuild graph + BVH and cost roughly `44–49 ms` median at 10k. This is acceptable only because those paths remain worker/update operations. Before frequent live topology mutation, bounded/chunked update ownership will need its own measured stage.
+
+## Next candidate — costed corridor semantics
+
+After Optimization 3, the next problem is route quality rather than static query speed.
+
+`queryCorridor()` remains the fast deterministic topology/BFS oracle.
+
+A separate `queryCostedCorridor()` candidate adds meter-equivalent policy-aware route choice:
 
 ```text
-open_10k corridor median: 21.7848 -> 7.9396 ms  (~2.74x faster)
-hub_10k  corridor median: 22.3689 -> 7.9981 ms  (~2.80x faster)
+edge cost = distanceWeight * geometric_distance
+          + clearance_penalty
 ```
 
-Combined with Optimization 1, the 10k coarse-corridor reference moved from roughly two seconds to roughly eight milliseconds while preserving deterministic output.
-
-At this point unweighted coarse global corridor search is acceptable as worker-side reference work. It is not the next frame-path optimization target.
-
-Remaining measured costs after Optimization 2:
-
-- point lookup still scans region storage linearly and reached `0.7043 ms p95` in `hub_10k`;
-- invalidation remains a full region+portal scan at roughly `3.3-3.6 ms` median;
-- one-region transactional patch remains ~`16 ms` median and is update/worker-path work;
-- full publication remains ~`14-15 ms` median and is update/worker-path work.
-
-## Optimization 3 candidate — private RegionSlot spatial BVH
-
-`NavigationSpace.h` remains unchanged.
-
-The private implementation now adds an AABB BVH over dense `RegionSlot` identity:
+Policy fields:
 
 ```text
-RegionSlot[] -> private AABB BVH
+distanceWeight
+preferredClearanceMultiple
+clearancePenaltyMeters
 ```
 
-The BVH is used for:
+Pinned behavioral fixtures:
 
 ```text
-queryPoint candidate reduction
-corridor start/end region localization
-invalidateBounds candidate reduction
+wall_with_aperture
+    fitting agent -> through opening
+    oversized agent -> rejected
+
+canyon_vs_overflight
+    distance-only -> short canyon
+    clearance-aware -> longer open route
+    oversized canyon agent -> open route
 ```
 
-Portal invalidation no longer scans the complete portal map. A private endpoint incidence list:
-
-```text
-RegionSlot -> PortalId[] touching the region
-```
-
-invalidates only portals touching newly invalidated regions, including incoming one-way portals.
-
-Exact region containment/intersection and clearance tests remain authoritative after candidate reduction. Candidate slots are sorted before semantic evaluation so stable RegionId behavior is preserved.
-
-Full publication/local patch rebuild graph + BVH transactionally. Their cost may increase; they remain worker/update-path operations.
-
-Status: **pending target-machine architecture + behavior + benchmark rerun**.
+Status: **implementation + tests on `main`, pending target-machine architecture/behavior gate**. Existing static scaling benchmark need not be repeated solely for this semantics-only addition because the accepted BFS/BVH paths were not changed.

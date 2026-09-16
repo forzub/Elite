@@ -2,10 +2,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <map>
-#include <queue>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace world::navigation
 {
@@ -122,6 +123,10 @@ void validatePortal(const NavigationSpace::PortalInput& portal)
 class NavigationSpace::Impl
 {
 public:
+    using RegionSlot = std::size_t;
+    static constexpr RegionSlot InvalidRegionSlot =
+        std::numeric_limits<RegionSlot>::max();
+
     struct RegionState
     {
         RegionInput input;
@@ -134,11 +139,24 @@ public:
         bool invalidated = false;
     };
 
+    struct AdjacencyEdge
+    {
+        PortalId portalId = 0;
+        RegionSlot neighborSlot = InvalidRegionSlot;
+    };
+
+    struct GraphIndex
+    {
+        std::map<RegionId, RegionSlot> regionSlots;
+        std::vector<RegionId> slotRegionIds;
+        std::vector<std::vector<AdjacencyEdge>> adjacency;
+    };
+
     Revision spaceRevision = 0;
     Revision sourceRevision = 0;
     std::map<RegionId, RegionState> regions;
     std::map<PortalId, PortalState> portals;
-    std::map<RegionId, std::vector<PortalId>> adjacency;
+    GraphIndex graph;
 
     static void validatePortalReferences(
         const std::map<RegionId, RegionState>& regions,
@@ -158,24 +176,35 @@ public:
         }
     }
 
-    static std::map<RegionId, std::vector<PortalId>> buildAdjacency(
+    static GraphIndex buildGraphIndex(
         const std::map<RegionId, RegionState>& regions,
         const std::map<PortalId, PortalState>& portals
     )
     {
-        std::map<RegionId, std::vector<PortalId>> result;
-        for (const auto& entry : regions)
-            result.emplace(entry.first, std::vector<PortalId>{});
+        GraphIndex result;
+        result.slotRegionIds.reserve(regions.size());
+        result.adjacency.resize(regions.size());
 
-        // portals is an ordered map, so each per-region vector is built in
-        // stable PortalId order. That preserves deterministic BFS tie-breaking.
+        RegionSlot slot = 0;
+        for (const auto& entry : regions)
+        {
+            result.regionSlots.emplace(entry.first, slot++);
+            result.slotRegionIds.push_back(entry.first);
+        }
+
+        // portals is an ordered map, so each per-region edge vector is built in
+        // stable PortalId order. Dense RegionSlot endpoints remove ordered-map
+        // visited/previous bookkeeping from corridor traversal while preserving
+        // deterministic BFS tie-breaking and public RegionId/PortalId results.
         for (const auto& entry : portals)
         {
             const PortalId portalId = entry.first;
             const auto& portal = entry.second.input;
-            result.at(portal.regionA).push_back(portalId);
+            const RegionSlot slotA = result.regionSlots.at(portal.regionA);
+            const RegionSlot slotB = result.regionSlots.at(portal.regionB);
+            result.adjacency[slotA].push_back(AdjacencyEdge{portalId, slotB});
             if (portal.bidirectional)
-                result.at(portal.regionB).push_back(portalId);
+                result.adjacency[slotB].push_back(AdjacencyEdge{portalId, slotA});
         }
         return result;
     }
@@ -235,11 +264,11 @@ void NavigationSpace::replaceStaticWorld(StaticSpaceUpdate update)
     }
 
     Impl::validatePortalReferences(regions, portals);
-    auto adjacency = Impl::buildAdjacency(regions, portals);
+    auto graph = Impl::buildGraphIndex(regions, portals);
 
     impl_->regions = std::move(regions);
     impl_->portals = std::move(portals);
-    impl_->adjacency = std::move(adjacency);
+    impl_->graph = std::move(graph);
     impl_->sourceRevision = update.sourceRevision;
     ++impl_->spaceRevision;
 }
@@ -278,11 +307,11 @@ void NavigationSpace::applyLocalPatch(LocalPatch patch)
     }
 
     Impl::validatePortalReferences(regions, portals);
-    auto adjacency = Impl::buildAdjacency(regions, portals);
+    auto graph = Impl::buildGraphIndex(regions, portals);
 
     impl_->regions = std::move(regions);
     impl_->portals = std::move(portals);
-    impl_->adjacency = std::move(adjacency);
+    impl_->graph = std::move(graph);
     impl_->sourceRevision = patch.sourceRevision;
     ++impl_->spaceRevision;
 }
@@ -412,74 +441,82 @@ NavigationSpace::CorridorResult NavigationSpace::queryCorridor(
         return result;
     }
 
+    const auto startSlotIt = impl_->graph.regionSlots.find(startId);
+    const auto endSlotIt = impl_->graph.regionSlots.find(endId);
+    if (startSlotIt == impl_->graph.regionSlots.end() ||
+        endSlotIt == impl_->graph.regionSlots.end())
+    {
+        return result;
+    }
+
+    const Impl::RegionSlot startSlot = startSlotIt->second;
+    const Impl::RegionSlot endSlot = endSlotIt->second;
+    const std::size_t regionCount = impl_->graph.slotRegionIds.size();
+
     struct Prev
     {
-        RegionId regionId = 0;
+        Impl::RegionSlot regionSlot = Impl::InvalidRegionSlot;
         PortalId portalId = 0;
     };
 
-    std::queue<RegionId> frontier;
-    std::map<RegionId, bool> visited;
-    std::map<RegionId, Prev> previous;
+    std::vector<std::uint8_t> visited(regionCount, 0);
+    std::vector<Prev> previous(regionCount);
+    std::vector<Impl::RegionSlot> frontier;
+    frontier.reserve(regionCount);
+    std::size_t frontierHead = 0;
 
-    frontier.push(startId);
-    visited[startId] = true;
+    frontier.push_back(startSlot);
+    visited[startSlot] = 1;
 
-    while (!frontier.empty())
+    while (frontierHead < frontier.size())
     {
-        const RegionId current = frontier.front();
-        frontier.pop();
+        const Impl::RegionSlot currentSlot = frontier[frontierHead++];
+        const RegionId currentId = impl_->graph.slotRegionIds[currentSlot];
         ++result.diagnostics.regionsVisited;
 
-        const auto adjacencyIt = impl_->adjacency.find(current);
-        if (adjacencyIt == impl_->adjacency.end())
-            continue;
-
-        for (PortalId portalId : adjacencyIt->second)
+        for (const auto& edge : impl_->graph.adjacency[currentSlot])
         {
             ++result.diagnostics.portalsExamined;
-            const auto portalIt = impl_->portals.find(portalId);
+            const auto portalIt = impl_->portals.find(edge.portalId);
             if (portalIt == impl_->portals.end())
                 continue;
 
             const auto& portalState = portalIt->second;
-            const auto& portal = portalState.input;
+            if (portalState.invalidated ||
+                portalState.input.clearanceRadiusMeters < required)
+            {
+                continue;
+            }
 
-            if (portalState.invalidated || portal.clearanceRadiusMeters < required)
+            const Impl::RegionSlot neighborSlot = edge.neighborSlot;
+            if (neighborSlot >= regionCount || visited[neighborSlot])
                 continue;
 
-            RegionId neighbor = 0;
-            if (portal.regionA == current)
-                neighbor = portal.regionB;
-            else if (portal.bidirectional && portal.regionB == current)
-                neighbor = portal.regionA;
-            else
-                continue;
-
-            const auto regionIt = impl_->regions.find(neighbor);
+            const RegionId neighborId = impl_->graph.slotRegionIds[neighborSlot];
+            const auto regionIt = impl_->regions.find(neighborId);
             if (regionIt == impl_->regions.end() || regionIt->second.invalidated)
                 continue;
             if (regionCapacity(regionIt->second.input) < required)
                 continue;
-            if (visited[neighbor])
-                continue;
 
-            visited[neighbor] = true;
-            previous[neighbor] = Prev{current, portalId};
+            visited[neighborSlot] = 1;
+            previous[neighborSlot] = Prev{currentSlot, edge.portalId};
 
-            if (neighbor == endId)
+            if (neighborSlot == endSlot)
             {
                 std::vector<RegionId> reverseRegions;
                 std::vector<PortalId> reversePortals;
 
-                RegionId cursor = endId;
-                reverseRegions.push_back(cursor);
-                while (cursor != startId)
+                Impl::RegionSlot cursor = endSlot;
+                reverseRegions.push_back(impl_->graph.slotRegionIds[cursor]);
+                while (cursor != startSlot)
                 {
-                    const Prev prev = previous.at(cursor);
+                    const Prev prev = previous[cursor];
+                    if (prev.regionSlot == Impl::InvalidRegionSlot)
+                        return result;
                     reversePortals.push_back(prev.portalId);
-                    cursor = prev.regionId;
-                    reverseRegions.push_back(cursor);
+                    cursor = prev.regionSlot;
+                    reverseRegions.push_back(impl_->graph.slotRegionIds[cursor]);
                 }
 
                 result.regionPath.assign(reverseRegions.rbegin(), reverseRegions.rend());
@@ -488,8 +525,10 @@ NavigationSpace::CorridorResult NavigationSpace::queryCorridor(
                 return result;
             }
 
-            frontier.push(neighbor);
+            frontier.push_back(neighborSlot);
         }
+
+        (void)currentId;
     }
 
     return result;

@@ -120,6 +120,28 @@ public:
         std::vector<PortalId> portalPath;
     };
 
+    // Costed corridor policy. Cost units are meter-equivalent: geometric
+    // distance contributes distanceWeight * meters; clearancePenaltyMeters is
+    // the maximum extra per-edge penalty when traversable clearance is below
+    // preferredClearanceMultiple * required agent clearance.
+    struct CorridorCostPolicy
+    {
+        double distanceWeight = 1.0;
+        double preferredClearanceMultiple = 1.0;
+        double clearancePenaltyMeters = 0.0;
+    };
+
+    struct CostedCorridorResult
+    {
+        Revision spaceRevision = 0;
+        Revision sourceRevision = 0;
+        bool found = false;
+        double totalCostMetersEquivalent = 0.0;
+        CorridorDiagnostics diagnostics {};
+        std::vector<RegionId> regionPath;
+        std::vector<PortalId> portalPath;
+    };
+
     struct InvalidationResult
     {
         Revision spaceRevision = 0;
@@ -159,6 +181,10 @@ public:
 
     [[nodiscard]] PointQueryResult queryPoint(const PointQuery& query) const;
     [[nodiscard]] CorridorResult queryCorridor(const CorridorQuery& query) const;
+    [[nodiscard]] CostedCorridorResult queryCostedCorridor(
+        const CorridorQuery& query,
+        const CorridorCostPolicy& policy
+    ) const;
     [[nodiscard]] Stats stats() const noexcept;
 
 private:

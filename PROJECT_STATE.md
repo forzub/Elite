@@ -44,48 +44,60 @@ Behavior accepts traversable apertures and policy-dependent canyon/overflight ro
 
 Target-machine architecture + behavior tests pass. Positive turn penalty correctly preserves arrival direction in semantic state `(RegionSlot, incoming PortalId)` and `zigzag_vs_smooth` selects the smoother branch when turn burden dominates.
 
-## Turn-aware performance baseline — REJECTED
+## Turn-aware performance progression
 
-Fresh dedicated benchmark:
+### Tree-backed expanded state — REJECTED
 
 ```text
-open_10k zero-turn p95    9.6982 ms
 open_10k turn-aware p95 216.1602 ms
-hub_10k  zero-turn p95    9.8862 ms
 hub_10k  turn-aware p95 232.6520 ms
+turn portals examined   329,660
+```
+
+### Dense arrival-state + binary heap — IMPROVED, STILL ABOVE GATE
+
+```text
+open_10k zero-turn p95    8.6427 ms
+open_10k turn-aware p95  67.9647 ms
+hub_10k  zero-turn p95    8.5862 ms
+hub_10k  turn-aware p95  72.6054 ms
 
 zero-turn portals examined  57,197
 turn-aware portals examined 329,660
 ```
 
-The predeclared rule was `>120 ms p95 -> optimize before the next layer`, so the original tree-backed expanded-state reference is rejected for performance. Its semantics remain accepted.
+Dense `TurnStateSlot` storage and vector-backed query state removed most ordered-tree overhead and cut turn-aware 10k p95 by roughly 3x. Expansion work remained unchanged, placing the candidate in the pinned `40-120 ms` band where search reduction is required before the next NavigationWorld layer.
+
+The benchmark-contract failure in that run was a stale exact-text `CURRENT_TASK` assertion; it did not indicate a runtime/search failure and has been repaired.
 
 Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
 
-## Active optimization
+## Active optimization — admissible A*
 
-Turn-aware representation now uses stable dense `TurnStateSlot` values created at graph publication time. Each directed adjacency edge points directly to the arrival-state slot. Per-query best-cost, previous and settled state are vectors, and the frontier is a binary priority queue.
+Positive-turn search now keeps the accepted dense semantic state but orders the frontier by:
 
 ```text
-directed arrival -> TurnStateSlot
-AdjacencyEdge    -> arrivalTurnStateSlot
-
-query state
-    vector bestCost
-    vector previous
-    vector settled
-    priority_queue frontier
+f(n) = g(n) + h(n)
+h(n) = distanceWeight * EuclideanDistance(currentRegionCenter, endRegionCenter)
 ```
 
-The zero-turn RegionSlot Dijkstra path remains unchanged. The expanded topology itself is unchanged, so the next benchmark will isolate tree-container overhead from the remaining ~330k turn-state transition checks.
+This heuristic is admissible and consistent for the current static cost because:
+
+- geometric edge cost is center -> portal -> neighbor center and cannot be shorter than direct center distance;
+- clearance penalty is non-negative;
+- turn penalty is non-negative;
+- `distanceWeight == 0` yields `h == 0` and therefore dense-state Dijkstra ordering.
+
+The accepted zero-turn RegionSlot Dijkstra path is untouched.
 
 ## Next order
 
-1. rerun architecture/behavior after dense turn-state patch;
-2. rerun `navigation_space_turn` benchmark;
-3. if 10k turn-aware p95 <=40 ms, accept static turn search and move to dynamic conflict/local-horizon composition;
-4. if still 40-120 ms, add admissible A* / search reduction;
-5. then implement pursuit/receding-intercept consumer;
-6. live game/server integration follows isolated NavigationWorld stabilization.
+1. rerun architecture/behavior with A* candidate;
+2. rerun the identical `benchmarks/navigation_space_turn/` harness;
+3. if 10k turn-aware p95 <=40 ms, accept static turn-aware worker/reference search and stop adding persistent static policy terms;
+4. if still 40-120 ms, inspect remaining per-edge ordered-map lookups and/or adopt stronger/hierarchical global corridor reduction;
+5. after static turn search closes, combine static corridor with dynamic conflict/local-horizon selection;
+6. implement pursuit/receding-intercept consumer;
+7. integrate NavigationWorld into live game/server, then retire legacy route-wide migration code only after v2 owns live navigation.
 
-Do not add more persistent static cost terms before the turn-aware performance gate closes.
+Do not add velocity, braking, dynamic traffic or pursuit prediction to persistent `NavigationSpace` static cost.

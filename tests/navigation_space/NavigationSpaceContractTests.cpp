@@ -289,6 +289,72 @@ void testCostedCanyonVsOverflight()
             "agent that cannot fit the canyon must route over it");
 }
 
+void testTurnCostZigzagVsSmooth()
+{
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 50;
+    update.regions = {
+        regionBox(1, 0.0, 0.0, 0.0, 4.0, 12.0, 4.0),
+        regionBox(2, 10.0, 0.0, 0.0, 4.0, 4.0, 4.0),
+        regionBox(3, 20.0, 0.0, 0.0, 4.0, 4.0, 4.0),
+        regionBox(4, 10.0, 8.0, 0.0, 4.0, 4.0, 4.0),
+        regionBox(5, 20.0, 8.0, 0.0, 4.0, 4.0, 4.0),
+        regionBox(6, 30.0, 0.0, 0.0, 4.0, 12.0, 4.0)
+    };
+    update.portals = {
+        // Slightly shorter zig-zag. Portal offsets force two coarse turns.
+        portalAt(301, 1, 2, 5.0, 3.0, 0.0, 8.0),
+        portalAt(302, 2, 3, 15.0, 3.0, 0.0, 8.0),
+        portalAt(303, 3, 6, 25.0, 3.0, 0.0, 8.0),
+
+        // Slightly longer branch, but its interior heading changes are gentler.
+        portalAt(401, 1, 4, 5.0, 4.0, 0.0, 8.0),
+        portalAt(402, 4, 5, 15.0, 8.0, 0.0, 8.0),
+        portalAt(403, 5, 6, 25.0, 4.0, 0.0, 8.0)
+    };
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    Space::CorridorQuery query;
+    query.startMapMeters = {0.0, 0.0, 0.0};
+    query.endMapMeters = {30.0, 0.0, 0.0};
+    query.envelope = envelope(1.0);
+
+    Space::CorridorCostPolicy distanceOnly;
+    const auto zigzag = space.queryCostedCorridor(query, distanceOnly);
+    require(zigzag.found,
+            "distance-only turn fixture must find a route");
+    require(zigzag.regionPath == std::vector<Space::RegionId>({1, 2, 3, 6}),
+            "turnPenalty=0 must preserve the shorter zig-zag v1 choice");
+    require(zigzag.portalPath == std::vector<Space::PortalId>({301, 302, 303}),
+            "distance-only zig-zag portal path is wrong");
+
+    Space::CorridorCostPolicy smooth;
+    smooth.turnPenaltyMetersPerRadian = 5.0;
+    const auto smoothRoute = space.queryCostedCorridor(query, smooth);
+    require(smoothRoute.found,
+            "turn-aware fixture must find a route");
+    require(smoothRoute.regionPath == std::vector<Space::RegionId>({1, 4, 5, 6}),
+            "positive turn penalty must prefer the smoother branch");
+    require(smoothRoute.portalPath == std::vector<Space::PortalId>({401, 402, 403}),
+            "turn-aware smooth portal path is wrong");
+
+    Space::CorridorCostPolicy invalid = smooth;
+    invalid.turnPenaltyMetersPerRadian = -1.0;
+    bool threw = false;
+    try
+    {
+        (void)space.queryCostedCorridor(query, invalid);
+    }
+    catch (const std::invalid_argument&)
+    {
+        threw = true;
+    }
+    require(threw,
+            "negative turn penalty must be rejected by policy validation");
+}
+
 void testLocalInvalidationAndPatch()
 {
     Space space;
@@ -383,6 +449,7 @@ int main()
         testConnectedDisconnectedAndNarrowPortal();
         testWallApertureAdmission();
         testCostedCanyonVsOverflight();
+        testTurnCostZigzagVsSmooth();
         testLocalInvalidationAndPatch();
         testTransactionalValidation();
 
@@ -391,6 +458,7 @@ int main()
         std::cout << " - region/portal corridors are deterministic\n";
         std::cout << " - explicit wall apertures admit only fitting agents\n";
         std::cout << " - costed routing can choose canyon or overflight by policy\n";
+        std::cout << " - turn-aware routing can prefer a smoother static branch\n";
         std::cout << " - narrow portals reject oversized agents\n";
         std::cout << " - disconnected regions fail closed\n";
         std::cout << " - local invalidation and transactional patching work\n";

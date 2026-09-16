@@ -1,10 +1,16 @@
+get_filename_component(
+    ELITE_NAVIGATION_MAP_ROOT
+    "${CMAKE_CURRENT_LIST_DIR}/../../../.."
+    ABSOLUTE
+)
+
 add_library(EliteNavigationMap STATIC
     NavigationMap.cpp
 )
 
 target_include_directories(EliteNavigationMap PUBLIC
-    "${PROJECT_SOURCE_DIR}"
-    "${PROJECT_SOURCE_DIR}/src"
+    "${ELITE_NAVIGATION_MAP_ROOT}"
+    "${ELITE_NAVIGATION_MAP_ROOT}/src"
 )
 
 target_compile_features(EliteNavigationMap PUBLIC cxx_std_17)

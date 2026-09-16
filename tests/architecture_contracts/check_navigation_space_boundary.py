@@ -41,11 +41,14 @@ for marker in (
     "PortalInput",
     "StaticSpaceUpdate",
     "LocalPatch",
+    "CorridorCostPolicy",
+    "CostedCorridorResult",
     "replaceStaticWorld",
     "applyLocalPatch",
     "invalidateBounds",
     "queryPoint",
     "queryCorridor",
+    "queryCostedCorridor",
     "spaceRevision",
     "sourceRevision",
 ):
@@ -73,6 +76,11 @@ for marker in (
     "collectPointCandidateSlots",
     "collectBoundsCandidateSlots",
     "impl_->graph.incidentPortals.at(slot)",
+    "validateCostPolicy",
+    "std::multimap<QueueKey, Impl::RegionSlot> frontier",
+    "totalCostMetersEquivalent",
+    "preferredClearanceMultiple",
+    "clearancePenaltyMeters",
 ):
     require(marker in IMPL, f"NavigationSpace CPU reference marker missing: {marker}")
 
@@ -103,6 +111,10 @@ require("ELITE_TEST_BUILD_ROOT" in RUNNER,
         "NavigationSpace runner does not use canonical test build layout")
 require("NAVIGATION SPACE CONTRACT TESTS: PASS" in TEST_CPP,
         "NavigationSpace behavioral contract executable missing")
+require("testWallApertureAdmission" in TEST_CPP,
+        "wall-aperture navigation acceptance case is missing")
+require("testCostedCanyonVsOverflight" in TEST_CPP,
+        "canyon-vs-overflight costed-routing acceptance case is missing")
 
 for marker in (
     "only production-facing api",
@@ -113,6 +125,7 @@ for marker in (
     "cpu reference",
     "hub / local-domain rule",
     "private spatial index",
+    "costed corridor",
 ):
     require(marker in README.lower(),
             f"NavigationSpace boundary documentation missing: {marker}")
@@ -132,6 +145,8 @@ print(" - corridor traversal uses private dense region slots + ordered adjacency
 print(" - BFS visited/previous bookkeeping is vector-backed rather than ordered maps")
 print(" - point lookup + bounds invalidation use a private RegionSlot BVH")
 print(" - endpoint portal invalidation uses private incident-portal adjacency")
+print(" - costed corridor policy separates geometric distance from clearance preference")
+print(" - aperture and canyon/overflight acceptance fixtures are pinned")
 print(" - agent-envelope clearance and narrow-portal admission are explicit")
 print(" - local invalidation + transactional patching are owned by the block")
 print(" - project state/task agree on NAV-V2-SPACE-1")

@@ -4,7 +4,7 @@
 **Canonical branch:** `main`  
 **Editor baseline:** v0.10.86 accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted  
-**Navigation:** `NAV-V2-SPACE-1` — static-space reference accepted; first measured internal optimization is adjacency indexing
+**Navigation:** `NAV-V2-SPACE-1` — static-space boundary accepted; adjacency optimization measured; dense RegionSlot graph bookkeeping is the active candidate
 
 ## Repository source of truth
 
@@ -43,35 +43,15 @@ GPU cruise total median=0.6840 ms, p95=1.3226 ms
 GPU hub    total median=1.6097 ms, p95=1.6258 ms
 ```
 
-GPU 1k correctness matched the independent CPU reference. All measured GPU scenarios had `overflow=0`, `out_of_bounds=0`, `valid=1`, fixed 32-byte readback.
-
 ## `NAV-V2-SPACE-1` boundary/reference — ACCEPTED
 
 Canonical block:
 
 ```text
 src/world/navigation/space/
-    NavigationSpace.h
-    NavigationSpace.cpp
-    CMakeLists.txt
-    README.md
 ```
 
-Public concepts:
-
-```text
-AgentEnvelope
-RegionInput
-PortalInput
-StaticSpaceUpdate
-LocalPatch
-queryPoint
-queryCorridor
-invalidateBounds
-stats
-```
-
-Fresh target-machine evidence:
+Fresh target-machine behavior:
 
 ```text
 NAVIGATION SPACE BOUNDARY CONTRACT: PASS
@@ -79,60 +59,78 @@ navigation_space: 1/1 PASS
 100% tests passed, 0 failed
 ```
 
-The first deterministic CPU reference uses free-space AABB regions + explicit portals internally. Public storage/search representation remains replaceable behind PImpl.
+The first deterministic CPU reference uses free-space AABB regions + explicit portals behind a backend-neutral PImpl API. Public representation remains replaceable.
 
-## Static-space baseline benchmark — ACCEPTED EVIDENCE
+## Static-space baseline — accepted evidence
 
-Benchmark contract passed. Default target-machine run:
-
-```text
-warmup=1
-iterations=3
-```
-
-10k results:
+Original 10k corridor behavior:
 
 ```text
-open_10k
-    regions=10000 portals=28600
-    replace med/p95    6.6942 / 7.2406 ms
-    point med/p95      0.2787 / 0.2812 ms
-    corridor med/p95   1991.0357 / 2008.2074 ms
-    invalidate med/p95 2.5731 / 2.9869 ms
-    patch med/p95      7.6135 / 7.8543 ms
-    portals examined   285,913,245
-
-hub_10k
-    regions=10000 portals=28600
-    replace med/p95    7.2397 / 7.5269 ms
-    point med/p95      0.2784 / 0.2845 ms
-    corridor med/p95   1951.6453 / 1956.0686 ms
-    invalidate med/p95 2.8412 / 3.2230 ms
-    patch med/p95      8.6678 / 8.7083 ms
-    portals examined   285,913,245
+open corridor median/p95 = 1991.0357 / 2008.2074 ms
+hub  corridor median/p95 = 1951.6453 / 1956.0686 ms
+portal examinations      = 285,913,245
 ```
 
-From 1k to 10k, corridor median grew roughly `102-105x`; portal examinations grew roughly `106-108x`. The original BFS scanned the complete portal map for every visited region, making corridor traversal effectively pathological at scale.
+Root cause: complete portal-map scan for every BFS region.
 
-Raw evidence: `benchmarks/navigation_space/RUN_LOG.md`.
+## Optimization 1 — per-region adjacency — ACCEPTED
 
-## Optimization 1 — private adjacency index
-
-The first measured optimization is implemented on `main` without changing `NavigationSpace.h`:
+Private connectivity:
 
 ```text
 regionId -> ordered portalId list
 ```
 
-`replaceStaticWorld()` and `applyLocalPatch()` rebuild adjacency transactionally. Stable PortalId ordering preserves deterministic BFS tie-breaking. Invalidation only changes validity flags and does not rebuild topology.
+Fresh target-machine rerun after adjacency:
 
-`queryCorridor()` now examines only portals adjacent to the current region. The architecture contract explicitly rejects regression to a full portal-map scan inside BFS.
+```text
+open_10k
+    replace med/p95      13.3648 / 14.0799 ms
+    point med/p95         0.3806 / 0.4356 ms
+    corridor med/p95     21.7848 / 22.1695 ms
+    invalidate med/p95    3.2622 / 3.4739 ms
+    patch med/p95        16.1963 / 17.4121 ms
 
-This optimization intentionally leaves point lookup, invalidation and whole-map transactional patch copying unchanged so the next bottleneck remains visible.
+hub_10k
+    replace med/p95      13.7190 / 15.3277 ms
+    point med/p95         0.3836 / 0.4536 ms
+    corridor med/p95     22.3689 / 22.7493 ms
+    invalidate med/p95    3.3208 / 3.4248 ms
+    patch med/p95        15.8516 / 16.7010 ms
+
+portal examinations     57,189
+```
+
+Adjacency reduced 10k corridor median by roughly `87–91x` and portal examinations by roughly `5000x`. Publication/patch costs increased because connectivity is now built transactionally; those operations are not frame-path work.
+
+`CorridorDiagnostics::regionsVisited` includes start/end point-location scans plus BFS visits; the ~20k diagnostic on a 10k topology does not mean 20k unique graph regions were traversed.
+
+Raw evidence: `benchmarks/navigation_space/RUN_LOG.md`.
+
+## Optimization 2 candidate — dense RegionSlot graph bookkeeping
+
+Implemented on `main` without changing `NavigationSpace.h`:
+
+```text
+RegionId -> dense RegionSlot
+RegionSlot -> RegionId
+RegionSlot -> ordered adjacency edges { PortalId, neighbor RegionSlot }
+```
+
+BFS frontier, visited and predecessor state are vector-backed by RegionSlot rather than ordered maps keyed by RegionId. Stable RegionId/PortalId query output and deterministic PortalId traversal order are preserved.
+
+Architecture contract rejects:
+
+```text
+full portal-map scan inside BFS
+std::map<RegionId,...> visited/previous BFS bookkeeping
+```
+
+Point lookup, invalidation, transactional map copy and graph rebuild remain intentionally unchanged in this slice.
 
 ## Active gate
 
-Target-machine rerun is pending after the adjacency change:
+Rerun behavior + architecture + benchmark on the target machine:
 
 ```bash
 python tests/architecture_contracts/check_navigation_space_boundary.py
@@ -141,13 +139,8 @@ python tests/architecture_contracts/check_navigation_space_benchmark.py
 bash benchmarks/navigation_space/run_mingw64.sh
 ```
 
-Do not add another optimization before this rerun.
+Do not add another optimization before this measurement.
 
-## Likely next decisions after measurement
+## Later order
 
-- corridor cheap, invalidation dominant -> add shared spatial index for point lookup + invalidation;
-- patch dominant -> replace full transactional map copy/rebuild with bounded/chunked topology updates;
-- corridor still material -> compact graph bookkeeping / costed graph representation;
-- add hierarchy/bricks only if measured scale requires them.
-
-Live `EliteGame` / `EliteServer` integration remains later. The raw `Shift+F12` NavigationWorld debug-view contract remains accepted but not yet implemented.
+After dense-slot measurement, choose the next internal improvement from evidence: remaining graph-state lookup, spatial point/invalidation index, or bounded topology patching. Weighted/costed corridor search and live runtime integration remain later. The raw `Shift+F12` NavigationWorld debug-view contract remains accepted but not yet implemented.

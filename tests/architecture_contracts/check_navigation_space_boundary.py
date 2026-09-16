@@ -92,6 +92,9 @@ for marker in (
     "std::vector<double> bestCost(stateCount, infinity)",
     "std::priority_queue<",
     "Impl::TurnStateSlot finalStateSlot",
+    "double priority = 0.0",
+    "auto heuristic =",
+    "candidateCost + heuristic(neighborCenter)",
 ):
     require(marker in IMPL, f"NavigationSpace CPU reference marker missing: {marker}")
 
@@ -172,7 +175,7 @@ print(" - BFS visited/previous bookkeeping is vector-backed rather than ordered 
 print(" - point lookup + bounds invalidation use a private RegionSlot BVH")
 print(" - endpoint portal invalidation uses private incident-portal adjacency")
 print(" - costed corridor separates distance, clearance and optional turn policy")
-print(" - turn-aware search uses dense arrival-state slots + vector state + binary heap")
+print(" - turn-aware search uses dense arrival-state slots + vector state + binary heap + admissible A*")
 print(" - aperture, canyon/overflight and zigzag/smooth fixtures are pinned")
 print(" - agent-envelope clearance and narrow-portal admission are explicit")
 print(" - local invalidation + transactional patching are owned by the block")

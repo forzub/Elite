@@ -1,18 +1,17 @@
 # Game Runtime Decomposition
 
-**Updated:** 2026-09-15  
+**Updated:** 2026-09-16  
 **Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
-**Status:** R0 runtime seams + dual-source model ingress + OpenGL 4.3 Core accepted; active work is canonical Ruckig navigation acceptance
+**Status:** R0 runtime seams + dual-source model ingress + OpenGL 4.3 Core accepted; Navigation work reset to `NAV-V2-GPU-0`
 
 ## Purpose
 
 Keep deterministic gameplay/runtime boundaries explicit while renderer,
-asset-ingress and navigation infrastructure evolve independently. Presentation
-never owns simulation or navigation authority.
+asset-ingress and NavigationWorld infrastructure evolve independently.
+Presentation never owns simulation, collision, damage or navigation authority.
 
 ## Accepted runtime seams
 
-`EliteNavigationGeometry` owns deterministic obstacle/path geometry.
 `EliteAssemblyGeometry` owns shared CPU assembly geometry.
 
 Runtime model ingress remains:
@@ -24,16 +23,23 @@ legacy OBJ -> AssemblyMeshLibrary -> LegacyAssemblyModelAdapter -> ModelAsset
 
 `src/model_asset/ModelAsset.h` remains the single schema/version authority.
 
+The existing `EliteNavigationGeometry` target contains legacy navigation geometry
+utilities. Its existence does not make the old route-wide planner the v2 runtime
+architecture.
+
 ## Renderer boundary
 
 The graphical client targets OpenGL 4.3 Core. The Core cutover, GPU-P0 System Map
-spheres and GPU-P0.1 instanced circles/orbits are accepted locally. Renderer work
-is paused while navigation is stabilized.
+spheres and GPU-P0.1 instanced circles/orbits are accepted locally.
 
-Authoritative simulation, physics, navigation, damage, economy and replication
-remain CPU-owned unless a later explicit architecture decision changes that.
+Navigation v2 may use OpenGL compute for a shared dynamic spatial layer, but GPU
+navigation must remain a separate workload from presentation. No renderer pass
+owns navigation state merely because both use the same GPU/context.
 
-## Navigation decomposition
+`NAV-V2-GPU-0` is therefore an isolated benchmark target under
+`benchmarks/navigation_gpu`, not a source entry in `EliteGame`.
+
+## Navigation v2 boundary
 
 Authoritative design:
 
@@ -41,93 +47,196 @@ Authoritative design:
 src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md
 ```
 
-Current runtime ownership:
+The previous live chain:
 
 ```text
-planning snapshot
-    -> GeometricPathPlanner / DockingPathPlanner   topology
-    -> RuckigRoutePlanner                          constrained route motion
-    -> RuckigTrajectorySolver                      local state-to-state primitive
-    -> swept NavigationObstacleGeometry validation safety
-    -> GuidanceTunnel                              presentation sampling
-    -> future trajectory follower                  execution
+GeometricPathPlanner
+    -> route-wide Ruckig/trajectory materialization
+    -> route-wide obstacle validation
+    -> GuidanceTunnel
 ```
 
-`TrajectoryGenerator` is temporarily the old compatibility facade for
-`RuckigRoutePlanner`.
+is retained only as legacy/migration code while Navigation v2 is developed. It
+is not the ownership template for new work.
 
-Clear internal topology vertices may retain a conservative non-zero through
-velocity when a local corner-cut eligibility chord is free and the actual
-adjacent Ruckig motion passes swept validation. Any failed blended leg relaxes
-only adjacent waypoint velocities to zero and retries; no global smoother is
-invoked.
-
-`GuidanceTunnel` uses `RuckigTrajectorySolver` for rolling live-pose correction,
-preferably over a bounded physical horizon, then stitches the immutable accepted
-tail. Material terminal movement or an infeasible bounded join uses a full Ruckig
-reconnect.
-
-## Retired custom smoother
-
-The old B-spline implementation has been removed from
-`SmoothPathOptimizer.cpp`. Production behavior is now fail-closed. A minimal
-non-smoothing compatibility branch exists only for the old all-in-one navigation
-test target under `ELITE_LEGACY_SMOOTH_PATH_TEST_COMPAT`; root production CMake
-does not enable it.
-
-Hard contract:
-
-```bash
-python tests/architecture_contracts/check_ruckig_live_navigation.py
-```
-
-Focused runtime-motion coverage:
+The v2 runtime boundary is instead:
 
 ```text
-tests/navigation_guidance/RuckigRoutePlannerTests.cpp
-tests/navigation_guidance/GuidanceTunnelLocalHorizonTests.cpp
+Authoritative system/world simulation state
+        |
+        v
+ship-centered NavigationWorld working domain
+    static free-space / clearance representation
+    dynamic actor P/V/A/bounds table
+    spatial index / prediction
+    route-corridor filtering
+    conflict candidates
+        |
+        +-> mass NPC local steering
+        +-> precision local planner
+        +-> temporary target state
+        |
+        v
+local kinematic motion / flight control
 ```
 
-The final obsolete global-B-spline assertion in `NavigationGuidanceTests.cpp`
-still needs migration before the compatibility API/source can be removed from
-the build lists entirely.
+Ruckig can remain a local state-to-state motion primitive at the bottom of this
+chain. It does not own static navigation-space construction, global topology,
+dynamic actor culling or obstacle avoidance.
 
-## Planned order from here
+## Coordinate/runtime-domain decomposition
+
+Do not conflate storage coordinates with working navigation coordinates.
+
+### System/world authority
+
+Long-lived precise simulation/replication state remains system/world based.
+Celestial and persistent-object motion is not rewritten around the player.
+
+### Active ship-centered domain
+
+Ordinary player flight uses a ship-centered NavigationWorld working frame. The
+origin may translate/rebase with the active ship/domain. The navigation axes are
+stable system/travel axes rather than instantaneous hull attitude, so rolling the
+ship does not force spatial-index rebuilds.
+
+### Hub-local domain
+
+Hub geometry, ports and scheduled local bots remain in Hub-local coordinates.
+When interaction becomes relevant, the Hub publishes/transforms only the subset
+needed by the active ship NavigationWorld. The Hub's entire private map is not
+rebased around the player each frame.
+
+### Hull-local / presentation domains
+
+Hull-local coordinates belong to execution/control. Player-relative/render
+coordinates belong to presentation. Neither is an authority for cached
+free-space topology.
+
+## NavigationWorld and NPC ownership
+
+Player and NPC navigation should consume one shared active NavigationWorld rather
+than each agent performing its own full-scene scan.
+
+Dynamic actors expose compact state:
+
+```text
+P / V / A
+bounds
+optional angular/motion metadata
+flags / revisions
+```
+
+The shared spatial layer determines local neighbors and corridor-relevant actors.
+More expensive prediction/planning occurs only for that reduced set.
+
+This enables navigation LOD:
+
+- ordinary/background traffic: cached corridor + cheap local avoidance;
+- precision docking/repair/special actors: more expensive local space-time solve;
+- all agents: shared broadphase/spatial data instead of N independent world scans.
+
+## GPU prototype boundary
+
+`NAV-V2-GPU-0` asks only whether the dynamic shared layer is cheap enough on the
+target GPU.
+
+The compute prototype measures:
+
+```text
+actor P/V/A
+    -> conservative future swept sphere
+    -> fixed 3D bins
+    -> selected-corridor filter
+    -> all-agent candidate/conflict query
+```
+
+It runs deterministic `cruise` and `hub` scenes at 1k / 5k / 10k actors.
+It reports GPU median/p95, CPU submission, candidate counts, memory, overflow and
+readback. A 1k O(N^2) CPU reference verifies the GPU aggregate result.
+
+The prototype reads back only a 32-byte aggregate stats block. Production GPU
+navigation must be asynchronous/double-buffered and should keep detailed conflict
+products GPU-resident or consume them through bounded asynchronous transfer.
+
+No live integration occurs before benchmark evidence is reviewed.
+
+## Collision and damage decomposition
+
+Navigation, collision and damage remain separate authorities:
+
+```text
+NavigationWorld
+    conservative navigation envelope / free-space / predicted conflicts
+
+Physics / Collision
+    shared broadphase candidates where useful
+    exact CCD / TOI / contact geometry
+
+Damage / Structural
+    hit ownership / material response
+    detach / breach / destruction
+    local navigation invalidation
+```
+
+Render, collision, hit/damage and navigation geometry are separate products.
+
+A small visual/projectile hole does not automatically alter navigation. A breach
+changes navigation only when it creates agent-sized clearance/connectivity.
+Topology changes dirty only the affected static navigation region. Detached
+structural fragments register as new dynamic actors and enter shared broadphase.
+
+## Performance/scheduling contract
+
+Navigation is not allowed to own the frame budget.
+
+```text
+main-thread navigation CPU      < 0.5 ms typical, < 1.0 ms normal peak
+GPU dynamic NavigationWorld     < 1.0 ms preferred, < 2.0 ms heavy target
+precision/global route solve    asynchronous; never a frame-thread blocker
+```
+
+These values guide design; GPU thresholds are not portable hard test assertions.
+Rendering and navigation compete for GPU time, so a CPU BVH/spatial-hash baseline
+must be compared if GPU cost is not clearly advantageous.
+
+Different layers may run at different frequencies. Physics/control can update at
+60-120 Hz while global route validity is rare/event-driven. There is no rule that
+rebuilds a global route every second.
+
+## Current planned order
 
 1. R0 shared runtime seams — accepted.
 2. Dual-source runtime model ingress — accepted.
-3. Client CPU -> GPU audit — complete.
-4. OpenGL 4.3 Core + GPU-P0/P0.1 — accepted; renderer wave paused.
-5. NAV-RUCKIG-0 isolated state-to-state solver — accepted earlier.
-6. NAV-RUCKIG-1 live route/reconnect cutover + waypoint blending — implemented,
-   local MinGW acceptance pending.
-7. Migrate stale spline test; remove the compatibility smoother API/source and
-   CMake entries completely.
-8. Measure deterministic/stress docking scenes with `[RuckigRoutePerf]`,
-   `[DockingPerf]` and `[GuidanceReplan]`.
-9. Move immutable heavy planning off the frame thread with generation IDs /
-   latest-request-wins if measured stalls remain.
-10. Resume renderer/runtime-model decomposition work.
+3. OpenGL 4.3 Core + GPU renderer baseline — accepted.
+4. Ruckig isolated/local motion experiment — retained as evidence/component.
+5. Reject old route-wide planner as Navigation v2 foundation.
+6. `NAV-V2-GPU-0`: measure shared dynamic-world GPU prediction/broadphase at
+   1k/5k/10k actors.
+7. Compare CPU spatial-index baseline if GPU numbers are not decisively useful.
+8. `NAV-V2-SPACE-1`: choose/prototype persistent static free-space + clearance
+   representation for ship/Hub interaction domains.
+9. `NAV-V2-DYN-1`: integrate shared dynamic NavigationWorld with bounded async
+   publication.
+10. Add mass-NPC avoidance and precision docking/repair planners as separate
+    consumers of the shared world.
+11. Remove obsolete legacy navigation components once v2 owns the live path.
+12. Resume paused renderer/runtime-model decomposition work.
 
-## Testing policy
+## Current testing commands
 
-Renderer contract:
-
-```bash
-python tests/architecture_contracts/check_gl43_modernization_boundary.py
-```
-
-Navigation acceptance:
+Architecture gate:
 
 ```bash
-python tests/architecture_contracts/check_ruckig_navigation_spike.py
-python tests/architecture_contracts/check_ruckig_navigation_integration.py
-python tests/architecture_contracts/check_ruckig_live_navigation.py
-python tests/architecture_contracts/check_live_docking_guidance.py
-bash tests/navigation_guidance/run_mingw64.sh
-cmake --build build --target EliteGame
+python tests/architecture_contracts/check_navigation_gpu_benchmark.py
 ```
 
-A failure confined to the named stale global-B-spline assertion is a test
-migration issue. Focused Ruckig/local-horizon, collision, terminal-state,
-compile/link or integration failures are blockers.
+GPU benchmark:
+
+```bash
+bash benchmarks/navigation_gpu/run_mingw64.sh
+```
+
+The legacy Ruckig/navigation tests remain useful regression evidence while old
+code still exists, but passing them is no longer acceptance of the overall
+Navigation v2 architecture.

@@ -3,7 +3,7 @@
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-SPACE-1` — costed static corridor semantics pending target-machine behavior gate
+**Stage:** `NAV-V2-SPACE-1` — costed corridor semantics accepted; dedicated scaling benchmark active
 
 ## Source of truth
 
@@ -13,7 +13,7 @@
 
 `NAV-V2-MAP-2` is closed with measured hybrid ownership.
 
-`NAV-V2-SPACE-1` boundary/reference is accepted. Static graph/index performance progression is also accepted:
+Static `NavigationSpace` indexing is accepted:
 
 ```text
 baseline 10k corridor            ≈1.95-1.99 s
@@ -23,61 +23,76 @@ RegionSlot BVH point p95         0.0353 ms open / 0.0099 ms hub
 RegionSlot BVH invalidation p95  0.0112 ms open / 0.0115 ms hub
 ```
 
-The static ordinary-query side is now comfortably below the main-thread budget. Full replace/local patch are ~44-49 ms median at 10k because graph + BVH are rebuilt transactionally; keep them worker/update-side for now.
+Full replace/local patch remain ~44-49 ms median at 10k and stay worker/update-side.
 
-Raw evidence: `benchmarks/navigation_space/RUN_LOG.md`.
+## Costed corridor behavior — ACCEPTED
 
-## Accepted moving-goal design
-
-`src/world/navigation/PURSUIT_HORIZON.md` defines receding moving-goal/intercept pursuit. It is not the active implementation task yet.
-
-## Active candidate — costed corridor v1
-
-Fast `queryCorridor()` remains the deterministic topology/BFS oracle.
-
-New public static-space products:
+Fresh target-machine gate:
 
 ```text
-CorridorCostPolicy
-CostedCorridorResult
-queryCostedCorridor(query, policy)
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
 ```
 
-Policy:
-
-```text
-distanceWeight
-preferredClearanceMultiple
-clearancePenaltyMeters
-```
-
-Static route cost v1:
-
-```text
-edge cost = distanceWeight * geometric_distance
-          + clearance_penalty
-```
-
-Traversal remains fail-closed on physical fit. Clearance penalty only chooses among already traversable alternatives.
-
-Pinned behavior cases:
+Accepted static route semantics:
 
 ```text
 wall_with_aperture
-    small/fitting agent -> portal through opening
-    oversized agent -> no route through opening
+    fitting agent -> through opening
+    oversized agent -> rejected
 
 canyon_vs_overflight
     distance-only -> short canyon
-    clearance-aware -> longer open overflight
-    agent too large for canyon -> overflight regardless of preference
+    clearance-aware -> longer open route
+    oversized canyon agent -> open route
 ```
 
-This is the first explicit contract that NPCs may fly through holes/tunnels/canyons rather than treating the enclosing obstacle as one solid keep-out volume.
+Fast `queryCorridor()` remains the topology/BFS oracle. `queryCostedCorridor()` is the policy-aware static selector.
+
+`totalCostMetersEquivalent` is currently a coarse region/portal comparison metric; do not treat it as exact physical trajectory length.
+
+## Accepted moving-goal design
+
+`src/world/navigation/PURSUIT_HORIZON.md` defines future receding intercept/pursuit behavior. Pursuit implementation is later than the current static route-quality gate.
+
+## Active gate — dedicated costed scaling benchmark
+
+New isolated harness:
+
+```text
+benchmarks/navigation_space_costed/
+```
+
+Pinned topology scales:
+
+```text
+open_1k / open_5k / open_10k
+hub_1k  / hub_5k  / hub_10k
+```
+
+Two policy profiles run against the same published topology:
+
+```text
+distance_only
+clearance_aware
+```
+
+The graph includes deterministic reduced-clearance portals so the second policy performs genuine alternate-route evaluation rather than the same route with a different constant.
+
+Measured products:
+
+```text
+median/p95 ms
+regions visited
+portals examined
+region-path length
+coarse meter-equivalent cost
+```
 
 ## RUN NOW
 
-Only the architecture + behavior gate is required. The accepted scaling benchmark does not need to be repeated because the existing BFS/BVH hot paths were not changed.
+Only the new benchmark contract + benchmark are required. `NavigationSpace.cpp` was not changed after the accepted behavior gate, so do not rerun the old boundary/behavior/scaling suite.
 
 ```bash
 cd /d/__elite/work
@@ -86,18 +101,25 @@ git fetch origin
 git switch main
 git merge --ff-only origin/main
 
-python tests/architecture_contracts/check_navigation_space_boundary.py
-bash tests/navigation_space/run_mingw64.sh
+python tests/architecture_contracts/check_navigation_space_costed_benchmark.py
+bash benchmarks/navigation_space_costed/run_mingw64.sh
 ```
 
 Send the complete output.
 
-## After PASS
+Default run is intentionally modest:
 
-1. accept aperture/canyon static route semantics;
-2. add a small dedicated costed-corridor performance benchmark before using it broadly at 10k topology scale;
-3. then add the next semantic term only from gameplay need: turn/curvature cost first, dynamic traffic/risk later in the combined NavigationWorld/local planner;
-4. pursuit runtime remains after static route quality is accepted;
-5. live `EliteGame` / `EliteServer` integration remains later.
+```text
+warmup=1
+iterations=5
+```
 
-Do not delete legacy migration navigation yet and do not move transactional topology rebuild onto the frame path.
+## Decision after measurement
+
+Use the measured 10k p95 rather than intuition:
+
+- `<=15 ms p95`: accept deterministic Dijkstra reference as-is and proceed to turn/curvature cost;
+- `15-40 ms p95`: acceptable as worker/reference solve, but optimize queue/search core before using it frequently for many active NPC replans;
+- `>40 ms p95` or pathological scaling: optimize costed search first, likely indexed heap and/or admissible A* heuristic, before adding more cost terms.
+
+Do not compare costed timing directly to the BFS oracle as equivalent work. Do not yet wire this into live `EliteGame` / `EliteServer`, implement pursuit runtime, or remove legacy migration navigation.

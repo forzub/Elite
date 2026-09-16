@@ -949,6 +949,7 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
     {
         struct QueueItem
         {
+            double priority = 0.0;
             double cost = 0.0;
             Impl::RegionSlot regionSlot = Impl::InvalidRegionSlot;
             PortalId incomingPortalId = 0;
@@ -959,6 +960,8 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
         {
             bool operator()(const QueueItem& a, const QueueItem& b) const noexcept
             {
+                if (a.priority != b.priority)
+                    return a.priority > b.priority;
                 if (a.cost != b.cost)
                     return a.cost > b.cost;
                 if (a.regionSlot != b.regionSlot)
@@ -985,8 +988,11 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
         > frontier;
 
         const auto startRegionIt = impl_->regions.find(startId);
+        const auto endRegionIt = impl_->regions.find(endId);
         if (startRegionIt == impl_->regions.end() ||
-            startRegionIt->second.invalidated)
+            endRegionIt == impl_->regions.end() ||
+            startRegionIt->second.invalidated ||
+            endRegionIt->second.invalidated)
         {
             return result;
         }
@@ -997,6 +1003,18 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
         const Vec3d startCenter = boundsCenter(
             startRegionIt->second.input.boundsMapMeters
         );
+        const Vec3d endCenter = boundsCenter(
+            endRegionIt->second.input.boundsMapMeters
+        );
+
+        // Admissible/consistent lower bound: the remaining weighted Euclidean
+        // center distance cannot exceed any center->portal->...->end-center
+        // geometric path. Clearance and turn penalties are non-negative, so
+        // omitting them keeps h(n) a lower bound. distanceWeight==0 reduces
+        // this branch to the same dense-state Dijkstra ordering.
+        auto heuristic = [&](const Vec3d& regionCenter) noexcept {
+            return policy.distanceWeight * distance(regionCenter, endCenter);
+        };
 
         // The start state has no incoming portal because CorridorQuery does not
         // own initial heading. Seed the dense arrival states directly without a
@@ -1058,6 +1076,7 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
                 bestCost[nextStateSlot] = candidateCost;
                 const auto& state = impl_->graph.turnStates[nextStateSlot];
                 frontier.push(QueueItem{
+                    candidateCost + heuristic(neighborCenter),
                     candidateCost,
                     state.regionSlot,
                     state.incomingPortalId,
@@ -1198,6 +1217,7 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
                 previous[nextStateSlot] = current.stateSlot;
                 const auto& nextState = impl_->graph.turnStates[nextStateSlot];
                 frontier.push(QueueItem{
+                    candidateCost + heuristic(neighborCenter),
                     candidateCost,
                     nextState.regionSlot,
                     nextState.incomingPortalId,

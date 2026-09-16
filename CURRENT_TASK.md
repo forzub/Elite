@@ -1,7 +1,7 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-16  
-**Canonical branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
+**Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
 **Stage:** `NAV-V2-MAP-2` — isolated CPU/GPU measurement before live integration
 
@@ -13,7 +13,9 @@ Read and obey:
 REPOSITORY_SOURCE_OF_TRUTH.md
 ```
 
-The canonical GitHub branch above is the current project baseline. Do not inspect `main` and then explain missing current code as unpublished local work. That exact error occurred on 2026-09-16: `main` was behind/diverged from the active branch, so existing GitHub NavigationMap/library/benchmark code was incorrectly described as `LOCAL / UNPUSHED`.
+`main` is the only game-development baseline. Do not continue work on `chatgpt/*`, rescue, feature, or other parallel branches. A rescue ref may exist only temporarily to preserve divergent history until it is merged into `main` and removed.
+
+On 2026-09-16 the previously divergent `main`, `chatgpt/mae-v01075-semantic-workflow-motion-v5`, and local history published as `rescue/local-97500` were reconciled into `main`. The NavigationMap implementation, `NAV-V2-MAP-2` boundary-contract correction, CPU benchmark, GPU benchmark, project state/history, and asset-license/provenance material are now all represented in the canonical history.
 
 Local console output supplied by the user is target-machine evidence. It is not proof of a different unseen code version.
 
@@ -45,6 +47,7 @@ Canonical architecture:
 
 ```text
 src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md
+NAVIGATION_WORLD_V2.md
 ```
 
 ## Shared NavigationWorld target
@@ -115,7 +118,7 @@ corridor broadphase + conservative segment test
 sphere/local broadphase + conservative sphere test
 ```
 
-Target-machine behavioral evidence already reported:
+User target-machine behavioral evidence already reported:
 
 ```text
 bash tests/navigation_map/run_mingw64.sh
@@ -123,14 +126,14 @@ navigation_map: 1/1 PASS
 100% tests passed
 ```
 
-`EliteNavigationMap` is not yet linked into the live `EliteGame` path; that is intentional until the isolated backend/space gates are accepted.
+`EliteNavigationMap` is not yet linked into the live `EliteGame` / `EliteServer` path; that is intentional until the isolated backend/space gates are accepted.
 
 ## Active work now: CPU/GPU benchmark
 
-Preparatory harness defects found and corrected before the run:
+Preparatory harness defects already corrected in `main`:
 
-1. `tests/architecture_contracts/check_navigation_map_boundary.py` still required `NAV-V2-MAP-1`; it now requires the actual `NAV-V2-MAP-2` state/task gate.
-2. `benchmarks/navigation_map/run_mingw64.sh` used `ROOT/work/build/...`, which would create `/d/__elite/work/work/build/...`; it now imports `tests/helpers/build_layout.sh` and uses `${ELITE_TEST_BUILD_ROOT}/navigation_map_benchmark`, matching the canonical build layout.
+1. `tests/architecture_contracts/check_navigation_map_boundary.py` requires the actual `NAV-V2-MAP-2` state/task gate, not stale `NAV-V2-MAP-1`.
+2. `benchmarks/navigation_map/run_mingw64.sh` uses the canonical build-layout helper and `${ELITE_TEST_BUILD_ROOT}/navigation_map_benchmark`.
 
 CPU benchmark:
 
@@ -170,14 +173,14 @@ GPU readback bytes
 
 ## Target-machine run sequence
 
-From MSYS2 MinGW64:
+After the branch cleanup/sync step, the canonical checkout sequence is:
 
 ```bash
 cd /d/__elite/work
 
 git fetch origin
-git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
-git pull --ff-only
+git switch main
+git merge --ff-only origin/main
 
 python tests/architecture_contracts/check_navigation_map_boundary.py
 bash tests/navigation_map/run_mingw64.sh
@@ -241,15 +244,16 @@ Mass NPCs use a cheaper steering/avoidance consumer; docking, repair and other p
 
 ## Ordered next work
 
-1. **NOW:** run architecture/behavioral gate after the preparatory fixes.
-2. **NOW:** run default CPU benchmark.
-3. **NOW:** run default GPU benchmark.
-4. Record raw outputs/CSV paths and compare matched 1k/5k/10k scenarios.
-5. Run longer 100-iteration measurements only after both default runs succeed.
-6. Choose CPU/GPU/hybrid dynamic backend from evidence.
-7. Start `NAV-V2-SPACE-1`: persistent static free-space/clearance, connectivity/portals, local invalidation, agent-envelope queries.
-8. Integrate bounded asynchronous shared NavigationWorld into live runtime.
-9. Add mass-NPC avoidance and precision docking/repair planning as separate consumers.
-10. Retire/remove obsolete legacy route-wide navigation components once v2 owns the live path; keep the low-level local kinematic solver as appropriate.
+1. **NOW:** finish local checkout transition to canonical `main` and remove obsolete remote rescue/development refs after verification.
+2. **NOW:** run architecture/behavioral gate on `main`.
+3. **NOW:** run default CPU benchmark.
+4. **NOW:** run default GPU benchmark.
+5. Record raw outputs/CSV paths and compare matched 1k/5k/10k scenarios.
+6. Run longer 100-iteration measurements only after both default runs succeed.
+7. Choose CPU/GPU/hybrid dynamic backend from evidence.
+8. Start `NAV-V2-SPACE-1`: persistent static free-space/clearance, connectivity/portals, local invalidation, agent-envelope queries.
+9. Integrate bounded asynchronous shared NavigationWorld into live runtime.
+10. Add mass-NPC avoidance and precision docking/repair planning as separate consumers.
+11. Retire obsolete legacy route-wide navigation components once v2 owns the live path; keep the low-level local kinematic solver as appropriate.
 
 Do not spend the next iteration repairing the old route-wide planner as the main architecture.

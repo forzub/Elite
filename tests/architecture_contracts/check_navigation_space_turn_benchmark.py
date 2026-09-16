@@ -49,8 +49,11 @@ for marker in (
     require(marker in README.lower(),
             f"turn benchmark documentation missing: {marker}")
 
-require("turn-aware performance benchmark" in CURRENT_TASK.lower(),
-        "CURRENT_TASK does not declare the turn-aware performance gate")
+require(
+    "benchmarks/navigation_space_turn/" in CURRENT_TASK and
+    "turn-aware" in CURRENT_TASK.lower(),
+    "CURRENT_TASK does not declare the turn-aware benchmark/optimization gate"
+)
 
 print("NAVIGATION SPACE TURN BENCHMARK CONTRACT: PASS")
 print(" - open/hub 1k/5k/10k scales are pinned")

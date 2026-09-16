@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -21,7 +22,7 @@ using Clock = std::chrono::steady_clock;
 struct Options
 {
     int warmup = 1;
-    int iterations = 5;
+    int iterations = 3;
     std::filesystem::path output = "navigation_space_cpu_benchmark.csv";
 };
 

@@ -4,7 +4,7 @@
 **Canonical branch:** `main`  
 **Editor baseline:** v0.10.86 accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted  
-**Navigation:** `NAV-V2-MAP-2` — ship-centered NavigationMap CPU reference accepted; CPU/GPU measurement is the active gate
+**Navigation:** `NAV-V2-MAP-2` — ship-centered NavigationMap CPU reference accepted; CPU benchmark measured; GPU measurement pending rerun after harness fix
 
 ## Repository source of truth — mandatory
 
@@ -145,35 +145,80 @@ The CPU reference backend implements constant-acceleration endpoint prediction, 
 User target-machine evidence reported 2026-09-16:
 
 ```text
+python tests/architecture_contracts/check_navigation_map_boundary.py
+NAVIGATION MAP BOUNDARY CONTRACT: PASS
+
 bash tests/navigation_map/run_mingw64.sh
 navigation_map: 1/1 PASS
 100% tests passed, 0 failed
 ```
 
-This is behavioral evidence for the reference block, not the CPU/GPU performance decision.
+This is behavioral evidence for the reference block.
 
-## Benchmark harness status — ready for target-machine run
+## `NAV-V2-MAP-2` CPU measurement — target-machine evidence
 
-CPU benchmark:
-
-```text
-benchmarks/navigation_map/
-```
-
-GPU benchmark:
+Default benchmark run:
 
 ```text
-benchmarks/navigation_gpu/
+horizon_s=3
+warmup=5
+iterations=30
 ```
 
-Both use deterministic `cruise` / `hub` scenario classes at 1k / 5k / 10k actors and a 3 s default prediction horizon.
+Measured results:
 
-Preparatory corrections already incorporated in `main`:
+```text
+scenario actors  rebuild med/p95 ms   corridor med/p95 ms   sphere med/p95 ms
+cruise   1000    0.3090 / 0.3567     0.0169 / 0.0204       0.0102 / 0.0131
+cruise   5000    1.3982 / 1.4902     0.0307 / 0.0499       0.0169 / 0.0307
+cruise  10000    2.7388 / 2.9632     0.1352 / 0.2089       0.0329 / 0.1573
+hub      1000    0.3103 / 0.3209     0.0082 / 0.0098       0.0071 / 0.0089
+hub      5000    1.2864 / 2.0914     0.0231 / 0.0639       0.0262 / 0.0791
+hub     10000    2.1889 / 2.9984     0.1381 / 0.2198       0.0496 / 0.1172
+```
 
-1. `tests/architecture_contracts/check_navigation_map_boundary.py` now requires the actual `NAV-V2-MAP-2` measurement gate instead of stale `NAV-V2-MAP-1`.
-2. `benchmarks/navigation_map/run_mingw64.sh` uses `tests/helpers/build_layout.sh` and `${ELITE_TEST_BUILD_ROOT}/navigation_map_benchmark`, matching the canonical project build layout.
+10k diagnostic counts:
 
-No CPU/GPU performance result is recorded yet. The backend must not be selected before matched target-machine measurements exist.
+```text
+cruise: corridor candidates=63, examined=239; sphere candidates=43, examined=204; occupied cells=8310
+hub:    corridor candidates=150, examined=815; sphere candidates=192, examined=1382; occupied cells=1719
+out_of_bounds=0 and rejected=0 for all measured cases
+```
+
+CPU interpretation at this gate:
+
+- corridor/sphere query cost is comfortably below the current `<0.5 ms typical / <1 ms peak` main-thread design target in the measured 1k/5k/10k scenarios;
+- full snapshot rebuild is the CPU cost center and reaches roughly `2.2–2.7 ms median`, ~`3 ms p95` at 10k;
+- this does **not** reject CPU query ownership: rebuild can be asynchronous/incremental or performed at a lower cadence;
+- backend selection remains open until the GPU measurement exists because the GPU prototype performs additional all-agent neighbor/conflict work not represented by these two CPU query calls.
+
+CSV produced by the user's run:
+
+```text
+D:\__elite\work\navigation_map_cpu_benchmark.csv
+```
+
+## GPU benchmark status — build harness fixed, measurement pending
+
+The first target-machine GPU benchmark attempt did **not** produce performance numbers. CMake configured, but compilation failed because the harness exposed the obsolete include directory:
+
+```text
+-I D:/__elite/work/glad
+fatal error: glad/gl.h: No such file or directory
+```
+
+Current GLAD 2.0.8 layout is:
+
+```text
+glad/include/glad/gl.h
+glad/src/gl.c
+```
+
+`benchmarks/navigation_gpu/CMakeLists.txt` was corrected on `main` to use `${ELITE_ROOT}/glad/include`.
+
+A second stale harness contract was found at the same time: `tests/architecture_contracts/check_navigation_gpu_benchmark.py` still required obsolete project stage `NAV-V2-GPU-0`. It now requires the active `NAV-V2-MAP-2` gate and explicitly rejects the old GLAD include root.
+
+GPU performance remains **UNMEASURED** until the corrected benchmark compiles and runs on the target machine.
 
 ## GPU feasibility state
 
@@ -257,15 +302,16 @@ These are design targets, not cross-machine assertions. Rendering competes for t
 
 Current stage: `NAV-V2-MAP-2`.
 
-1. sync local checkout to canonical `main`;
-2. run the NavigationMap architecture + behavioral contract;
-3. run CPU benchmark at matched 1k/5k/10k `cruise`/`hub` scenarios;
-4. run GPU compute benchmark on the same machine/scenarios;
-5. compare CPU/GPU/hybrid time, scaling, memory, candidate reduction, overflow and transfer cost;
-6. choose internal dynamic backend without changing `NavigationMap` public API;
-7. then start `NAV-V2-SPACE-1`: static free-space, clearance, connectivity/portals, local invalidation and agent-envelope queries;
-8. integrate bounded asynchronous live NavigationWorld;
-9. add mass-NPC avoidance and precision docking/repair consumers;
-10. remove obsolete route-wide legacy navigation once v2 owns the live path.
+1. sync local checkout to current `main` containing the GPU harness corrections;
+2. run `python tests/architecture_contracts/check_navigation_gpu_benchmark.py`;
+3. run `bash benchmarks/navigation_gpu/run_mingw64.sh`;
+4. record GPU timing, scaling, memory, conflict counts, overflow/out-of-bounds, CPU submission and readback data;
+5. compare against the already recorded CPU measurement, while keeping the different CPU/GPU workloads explicit;
+6. run longer 100-iteration measurements only after the corrected GPU default run succeeds;
+7. choose CPU/GPU/hybrid dynamic backend without changing `NavigationMap` public API;
+8. then start `NAV-V2-SPACE-1`: static free-space, clearance, connectivity/portals, local invalidation and agent-envelope queries;
+9. integrate bounded asynchronous live NavigationWorld;
+10. add mass-NPC avoidance and precision docking/repair consumers;
+11. remove obsolete route-wide legacy navigation once v2 owns the live path.
 
-Do not repair the old route-wide planner as the primary solution. Do not reintroduce heavy periodic synchronous route solves on the frame thread.
+Do not rerun the already-passed CPU benchmark merely because the GPU harness was fixed. Do not repair the old route-wide planner as the primary solution. Do not reintroduce heavy periodic synchronous route solves on the frame thread.

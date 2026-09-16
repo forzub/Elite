@@ -64,7 +64,7 @@ for marker in (
     "std::vector<std::vector<AdjacencyEdge>> adjacency",
     "buildGraphIndex",
     "std::vector<std::uint8_t> visited",
-    "std::vector<RegionSlot> frontier",
+    "std::vector<Impl::RegionSlot> frontier",
     "impl_->graph.adjacency[currentSlot]",
 ):
     require(marker in IMPL, f"NavigationSpace CPU reference marker missing: {marker}")

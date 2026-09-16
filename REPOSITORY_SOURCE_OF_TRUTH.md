@@ -2,55 +2,57 @@
 
 **Updated:** 2026-09-16  
 **Canonical repository:** `forzub/Elite`  
-**Canonical working branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`
+**Canonical development branch:** `main`
 
-## Rule
+## Single-branch rule
 
-For the current Navigation v2 work, the GitHub branch named above is the source of truth for code, build files, tests and project-state Markdown.
+`main` is the only canonical game-development branch.
 
-Do **not** assume that a developer workstation contains a newer or unpublished implementation merely because a file or test is not visible on `main`.
+Long-lived parallel game-development branches are prohibited. Do not create or adopt `chatgpt/*`, feature, experiment, or personal branches as an alternative project baseline.
 
-Do **not** use the repository default branch as a proxy for the current project baseline when the current-state documents name another branch.
+A temporary rescue branch is allowed only to preserve divergent/unpublished history long enough to inspect and merge it safely. A rescue branch is not a development branch: do not continue feature work on it, do not name it as canonical in project-state Markdown, and delete it after its history has been incorporated into `main`.
 
-A local working tree may be used as runtime evidence only when the user explicitly supplies its output. It is not a source of unseen code unless the user explicitly says there are local-only changes and provides or publishes them.
+If a tool or workflow temporarily requires a non-`main` branch, merge its result back into `main` in the same work slice and return project state/documentation to `main` before handoff.
 
-## Failure that caused the 2026-09-16 misread
+Before coding or reporting project state, verify the exact GitHub ref being inspected. For a normal development iteration the answer must be `main` / `origin/main` unless the operation is explicitly a short-lived recovery step.
 
-The project was initially inspected through the repository default branch (`main`). That branch was behind the active working branch and therefore did not contain the current Navigation v2 implementation, including the NavigationMap block, runtime-library decomposition and benchmark work.
+## 2026-09-16 branch reconciliation
 
-Because those files were absent on `main`, the missing GitHub code was incorrectly interpreted as newer `LOCAL / UNPUSHED` work on the user's disk. That conclusion was wrong.
+The repository had accidentally accumulated three divergent histories:
 
-The correct procedure would have been:
+- old `main`;
+- `chatgpt/mae-v01075-semantic-workflow-motion-v5`;
+- the user's local line later published temporarily as `rescue/local-97500`.
 
-1. read `CURRENT_STATE.md` / `CURRENT_TASK.md` first;
-2. take their declared branch as the current project baseline;
-3. resolve and inspect that branch directly;
-4. compare it with `main` only as historical/divergence information;
-5. treat local console output as validation evidence, not as proof of a separate code version.
+They were reconciled into `main` with a three-parent merge commit. Content was audited before the merge: the rescue and remote development lines contained the same current NavigationMap implementation; the remote development line additionally contained the later `NAV-V2-MAP-2` architecture-contract fix and CPU NavigationMap benchmark; old `main` contained project-state/history and asset-license/provenance material that had to be retained.
 
-At the time of correction, `chatgpt/mae-v01075-semantic-workflow-motion-v5` was hundreds of commits ahead of and diverged from `main`, so inspecting `main` materially misrepresented the project state.
+After reconciliation, both former development lines are ancestors of `main`. They are historical/recovery refs only and must not be used for further game development.
 
-## Mandatory verification sequence before coding or reporting state
+## Mandatory verification sequence
 
-For every Navigation v2 iteration:
+For every game-development iteration:
 
 ```text
-1. Read CURRENT_STATE.md and CURRENT_TASK.md from the declared branch.
-2. Resolve the branch HEAD on GitHub.
-3. Inspect code/CMake/tests from that exact branch/ref.
-4. Verify any named implementation exists on that branch before calling it local-only or missing.
-5. If branch/default-branch content conflicts, trust the explicitly declared current branch and report the divergence.
-6. If user-provided runtime output conflicts with repository inspection, treat it as evidence to investigate, not as proof that unseen local code exists.
+1. Read CURRENT_STATE.md and CURRENT_TASK.md from main.
+2. Resolve origin/main HEAD on GitHub.
+3. Inspect code/CMake/tests from that exact ref.
+4. Verify any named implementation exists on main before calling it local-only or missing.
+5. Treat user-provided local console output as target-machine evidence, not proof of unseen code.
+6. If local history diverges, preserve it first with a temporary rescue ref, reconcile it into main, then delete the rescue ref.
+7. Do not move the canonical baseline away from main to work around divergence.
 ```
+
+The 2026-09-16 failure mode was inspecting an obsolete `main`, then treating current GitHub code on another branch as hypothetical `LOCAL / UNPUSHED` work. The corrective rule is not to keep a second canonical branch; it is to prevent branch divergence and keep `main` authoritative.
 
 Never invent a `LOCAL / UNPUSHED` state merely to explain a repository mismatch.
 
-## Navigation v2 current source hierarchy
+## Navigation v2 source hierarchy
 
 Architecture authority:
 
 ```text
 src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md
+NAVIGATION_WORLD_V2.md
 ```
 
 Current state/task authority:
@@ -58,6 +60,7 @@ Current state/task authority:
 ```text
 CURRENT_STATE.md
 CURRENT_TASK.md
+PROJECT_STATE.md
 ```
 
 Runtime decomposition authority:
@@ -83,11 +86,11 @@ The old route-wide planner is migration code. It must not be mistaken for Naviga
 
 ## Evidence labels
 
-Use these labels explicitly when recording results:
+Use these labels when recording results:
 
-- **GITHUB / CANONICAL BRANCH** — code inspected on the branch named above;
+- **GITHUB / MAIN** — code inspected on `main`;
 - **USER TARGET-MACHINE EVIDENCE** — console/test/runtime output supplied by the user;
 - **UNVERIFIED** — expected behavior or code not yet inspected/run;
-- **LOCAL-ONLY** — only when the user explicitly confirms unpublished local changes or such changes are directly evidenced.
+- **LOCAL-ONLY** — only when unpublished local changes are explicitly confirmed or directly evidenced.
 
-This procedure is part of the project Definition of Done for future handoffs.
+This single-branch/source-of-truth rule is part of the project Definition of Done for every future handoff.

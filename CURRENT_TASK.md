@@ -1,16 +1,45 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-16  
-**Branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
+**Canonical branch:** `chatgpt/mae-v01075-semantic-workflow-motion-v5`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-MAP-2` — isolated NavigationMap CPU/GPU comparison before live integration
+**Stage:** `NAV-V2-MAP-2` — isolated CPU/GPU measurement before live integration
+
+## Source-of-truth rule
+
+Read and obey:
+
+```text
+REPOSITORY_SOURCE_OF_TRUTH.md
+```
+
+The canonical GitHub branch above is the current project baseline. Do not inspect `main` and then explain missing current code as unpublished local work. That exact error occurred on 2026-09-16: `main` was behind/diverged from the active branch, so existing GitHub NavigationMap/library/benchmark code was incorrectly described as `LOCAL / UNPUSHED`.
+
+Local console output supplied by the user is target-machine evidence. It is not proof of a different unseen code version.
 
 ## Accepted direction
 
-Navigation v2 is no longer built around the legacy route-wide synchronous pipeline.
-The active runtime navigation domain is ship-centered; Hub keeps its own local
-space and publishes only the subset that becomes relevant to the active ship
-NavigationWorld.
+Navigation v2 replaces the legacy route-wide synchronous architecture rather than optimizing it into the permanent design.
+
+Legacy/migration chain:
+
+```text
+GeometricPathPlanner
+    -> route-wide TrajectoryGenerator / RuckigRoutePlanner
+    -> dense route sampling
+    -> route-wide obstacle validation
+    -> GuidanceTunnel
+```
+
+This chain remains only until v2 owns the live path. `SmoothPathOptimizer` is retired. `GeometricPathPlanner`, route-wide trajectory materialization/validation and `RuckigRoutePlanner` as a whole-route wrapper are not v2 authorities.
+
+The reusable kinematic component is:
+
+```text
+RuckigTrajectorySolver
+```
+
+It remains a local state-to-state velocity/acceleration/jerk-limited motion primitive after routing/local avoidance selects a temporary target state.
 
 Canonical architecture:
 
@@ -18,95 +47,46 @@ Canonical architecture:
 src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md
 ```
 
-## Whole-game space decision — accepted
+## Shared NavigationWorld target
 
-The navigation design must follow where gameplay actually happens, not the Hub
-visualization coordinate system.
-
-The accepted domain split is:
+Do not give every NPC an independent complete planner or full-scene scan.
 
 ```text
 AUTHORITATIVE SYSTEM/WORLD STATE
         |
-        | transform only at domain boundary
         v
 SHIP-CENTERED NAVIGATIONWORLD
-    origin follows/rebases with active ship/domain
-    axes remain stable system/travel/navigation axes
-    nearby static navigation geometry
+    static free-space / clearance / portals
     dynamic actors { P, V, A, bounds, flags, revision }
-    predicted swept volumes
-    active route corridors / local horizon
+    shared spatial index
+    prediction / swept bounds
+    active corridors / local physical horizons
+        |
+        v
+compact relevant/conflict candidates
+        |
+        +-> mass NPC cheap local steering
+        +-> precision docking/repair/special planner
+        |
+        v
+temporary target state
+        |
+RuckigTrajectorySolver / local motion
+        |
+flight control
 ```
 
-Important consequences:
+Navigation axes are stable system/travel axes; the working origin may rebase with the active ship/domain but does not roll/pitch/yaw with the hull. Hub remains a private local domain and publishes only the subset relevant to the active NavigationWorld.
 
-- ship-centered is a **working navigation frame**, not replacement for precise
-  system/world authority;
-- the origin may translate/rebase with the ship, but the working axes do not roll,
-  pitch or yaw with hull attitude;
-- hull-local coordinates remain execution/flight-control detail;
-- ordinary deep-space flight does not inherit Hub-local axes or Hub ownership;
-- Hub is a private local domain for station geometry, docking ports and scheduled
-  local bots;
-- when Hub interaction becomes relevant, only the Hub subset that can affect the
-  active ship is transformed/published into the ship NavigationWorld;
-- the same ownership rule applies to other persistent local domains such as a
-  carrier, capital ship, settlement or interior.
+## NavigationMap block — accepted reference
 
-## Shared NavigationWorld — accepted
-
-Do not give every NPC an independent full-world planner/full-scene scan.
-
-The intended runtime product is one shared, data-oriented NavigationWorld for the
-active domain. Player and NPC navigation consume the same spatial/prediction
-layer. The shared world reduces the scene first; individual steering/precision
-planning receives only compact relevant candidates and temporary target states.
-
-Conceptually:
+Implemented under:
 
 ```text
-                    SHIP NAVIGATIONWORLD
-                            |
-               +------------+------------+
-               |                         |
-         STATIC SPACE              DYNAMIC ACTORS
-       free-space/clearance          P/V/A/bounds
-               |                         |
-               +------------+------------+
-                            |
-                  spatial index/prediction
-                            |
-                   compact conflict set
-                            |
-             +--------------+---------------+
-             |                              |
-      mass NPC steering             precision planner
-      cheap local targets            docking/repair
-             |                              |
-             +--------------+---------------+
-                            |
-                     temporary target
-                            |
-                    local kinematics
-                            |
-                      flight control
+src/world/navigation/map/
 ```
 
-## NavigationMap module boundary
-
-The separate block is now under:
-
-```text
-src/world/navigation/map/NavigationMap.h
-src/world/navigation/map/NavigationMap.cpp
-src/world/navigation/map/CMakeLists.txt
-src/world/navigation/map/README.md
-```
-
-The public API is intentionally narrow.
-
-Ingress is one owned snapshot by value:
+Public ingress:
 
 ```text
 DynamicWorldUpdate
@@ -115,11 +95,7 @@ DynamicWorldUpdate
     actors[] { id, P, V, A, radius, flags, motionRevision }
 ```
 
-`NavigationMap` transforms and owns all internal data. Actor tables, prediction
-cache, sparse cells and future GPU backend state never cross the module boundary.
-The public header has no GLM/OpenGL/GLFW/game/scene dependency and uses PImpl.
-
-Egress is only compact derived data by value:
+Public egress:
 
 ```text
 queryCorridor()
@@ -127,182 +103,153 @@ querySphere()
 stats()
 ```
 
-Planners receive only relevant candidates plus revisions/diagnostics; they do not
-receive internal map storage.
+The block owns system/world -> ship-centered conversion, actor storage, prediction and sparse spatial indexing behind PImpl. Internal cells/backend resources never cross the public API.
 
-## Current CPU reference backend
-
-The behavior oracle currently provides:
+Current CPU reference provides:
 
 ```text
 constant-acceleration endpoint prediction
 conservative swept sphere
 sparse 3D cell hash
-corridor broadphase + conservative sphere/segment test
-sphere/local broadphase + conservative sphere/sphere test
+corridor broadphase + conservative segment test
+sphere/local broadphase + conservative sphere test
 ```
 
-No fixed actor-per-cell correctness cap is used.
-
-The standalone acceptance layer is:
+Target-machine behavioral evidence already reported:
 
 ```text
-python tests/architecture_contracts/check_navigation_map_boundary.py
 bash tests/navigation_map/run_mingw64.sh
-```
-
-User MinGW64 evidence on 2026-09-16:
-
-```text
 navigation_map: 1/1 PASS
 100% tests passed
 ```
 
-This confirms the current CPU reference contract compiles/runs on the target
-machine. It is not yet the CPU/GPU performance decision.
+`EliteNavigationMap` is not yet linked into the live `EliteGame` path; that is intentional until the isolated backend/space gates are accepted.
 
-## GPU role — accepted candidate, not production decision yet
+## Active work now: CPU/GPU benchmark
 
-GPU acceleration is appropriate for the massively parallel reduction stages:
+Preparatory harness defects found and corrected before the run:
 
-```text
-nearby navigation geometry -> local occupancy/free-space support data
-actor P/V/A table           -> prediction / conservative swept bounds
-dynamic actors              -> spatial hash/binning
-active corridor/horizon     -> relevant-actor filtering
-all active agents           -> neighbor/conflict candidate pairs
-```
-
-Do **not** store velocity/acceleration densely in every spatial cell. Dynamic
-state remains actor-owned. A dense `256^3` field already contains ~16.8 million
-cells; six floats for V+A alone are roughly 384 MiB before occupancy, clearance,
-IDs and topology. `512^3` multiplies that by eight. The map therefore remains
-sparse/hierarchical and cells only index spatial occupancy/relevance.
-
-Single-agent A*/Theta*/SIPP is not the first GPU target. Those searches are
-branch-heavy and use irregular priority/frontier access. First use GPU compute to
-reduce the candidate set; keep precision/global graph search on an asynchronous
-CPU worker unless batched measurements later prove otherwise.
-
-### No synchronous GPU wait
-
-A GPU backend must never replace a CPU hitch with:
-
-```text
-dispatch -> barrier/fence -> blocking readback -> continue frame
-```
-
-Production scheduling must be double/triple buffered:
-
-```text
-frame N:   submit NavigationWorld update N
-frame N+1: consume last completed result; submit N+1
-```
-
-Detailed products should remain GPU-resident where useful or cross to CPU only as
-bounded asynchronous compact results. Any result latency is covered by the local
-physical safety horizon:
-
-```text
-D >= v*T_latency + v^2/(2*a_brake) + turn_distance + safety_margin
-```
-
-## Current CPU/GPU measurement block
+1. `tests/architecture_contracts/check_navigation_map_boundary.py` still required `NAV-V2-MAP-1`; it now requires the actual `NAV-V2-MAP-2` state/task gate.
+2. `benchmarks/navigation_map/run_mingw64.sh` used `ROOT/work/build/...`, which would create `/d/__elite/work/work/build/...`; it now imports `tests/helpers/build_layout.sh` and uses `${ELITE_TEST_BUILD_ROOT}/navigation_map_benchmark`, matching the canonical build layout.
 
 CPU benchmark:
 
 ```text
-benchmarks/navigation_map/CMakeLists.txt
-benchmarks/navigation_map/main.cpp
-benchmarks/navigation_map/run_mingw64.sh
-benchmarks/navigation_map/README.md
+benchmarks/navigation_map/
 ```
 
-GPU compute prototype:
+GPU benchmark:
 
 ```text
 benchmarks/navigation_gpu/
 ```
 
-Both use deterministic `cruise` / `hub` classes at 1k / 5k / 10k actors. The
-comparison must measure at least:
+Matched deterministic datasets:
+
+```text
+cruise: 1k / 5k / 10k actors, 18 km spawn cube, speed <= 250 m/s, accel <= 8 m/s^2
+hub:    1k / 5k / 10k actors,  7 km spawn cube, speed <= 120 m/s, accel <= 6 m/s^2
+prediction horizon: 3 s
+```
+
+Required measurements:
 
 ```text
 CPU publication/rebuild median + p95
 CPU corridor/local query median + p95
-GPU compute median + p95
-CPU submission cost
+CPU cells visited / actors examined / candidate counts
+GPU bin/prediction/corridor median
+GPU neighbor/conflict median
+GPU total median + p95
+CPU command submission cost
 candidate/conflict counts
-cells visited / actors examined
-GPU/CPU memory
-cell overflow/rejection diagnostics
-readback bytes
+occupied cells / overflow / rejected / out-of-bounds
+CPU/GPU memory footprint
+GPU readback bytes
 ```
 
-The CPU benchmark mirrors the GPU scenario classes:
+## Target-machine run sequence
 
-```text
-cruise: 1k / 5k / 10k actors, 18 km spawn cube, 250 m/s, 8 m/s^2
-hub:    1k / 5k / 10k actors,  7 km spawn cube, 120 m/s, 6 m/s^2
-prediction horizon: 3 s
-```
-
-Run from MSYS2 MinGW64:
+From MSYS2 MinGW64:
 
 ```bash
+cd /d/__elite/work
+
 git fetch origin
 git switch chatgpt/mae-v01075-semantic-workflow-motion-v5
 git pull --ff-only
 
 python tests/architecture_contracts/check_navigation_map_boundary.py
 bash tests/navigation_map/run_mingw64.sh
+
 bash benchmarks/navigation_map/run_mingw64.sh
 bash benchmarks/navigation_gpu/run_mingw64.sh
 ```
 
-Optional longer CPU run:
+For a more stable second pass after the first successful run:
 
 ```bash
-bash benchmarks/navigation_map/run_mingw64.sh --warmup 10 --iterations 100
+bash benchmarks/navigation_map/run_mingw64.sh --warmup 10 --iterations 100 --horizon 3
+bash benchmarks/navigation_gpu/run_mingw64.sh --warmup 10 --iterations 100 --horizon 3
 ```
+
+Do not run the long pass before the short/default pass proves both harnesses work.
 
 ## Backend decision gate
 
-Use measured evidence rather than committing to GPU in advance:
+Do not preselect GPU.
 
-- if CPU corridor/local queries are comfortably below the frame budget and rebuild
-  cadence can be asynchronous/incremental, retain CPU ownership initially;
-- if CPU publication/query work becomes expensive at 5k/10k while the compute
-  prototype stays inside the GPU budget, add a GPU backend behind the same API;
-- a hybrid is allowed: CPU owns topology/precision graph search while GPU owns
-  actor prediction, binning and conflict reduction;
-- never expose GPU buffers/cells/actor tables through the module boundary;
-- never require synchronous bulk GPU readback for normal navigation.
+- If CPU spatial queries/rebuild cadence fit the budget with async/incremental publication, CPU remains viable.
+- If CPU scaling is poor at 5k/10k while GPU prediction/binning/conflict reduction remains within budget, use GPU behind the same API.
+- Hybrid is explicitly valid: CPU owns static topology/precision graph search; GPU owns actor prediction, binning and conflict reduction.
+- No backend may expose internal actor/cell/GPU buffers through `NavigationMap` API.
+- No GPU implementation may synchronously dispatch -> wait -> bulk read back on the frame thread.
 
-## Performance contract
+Performance design targets:
 
 ```text
-main-thread CPU navigation work          < 0.5 ms typical
-                                          < 1.0 ms normal peak
-GPU dynamic NavigationWorld update       < 1.0 ms preferred
-                                          < 2.0 ms heavy-scene target
-full/precision route solve               async only; never frame-thread blocking
+main-thread navigation CPU       < 0.5 ms typical
+                                 < 1.0 ms normal peak
+GPU dynamic NavigationWorld      < 1.0 ms preferred
+                                 < 2.0 ms heavy-scene target
+precision/global route solve     async only
 ```
 
-The GPU budget is a design target, not a portable hard assertion: rendering uses
-the same GPU.
+## Route mechanism after backend selection
+
+The intended route path is:
+
+```text
+cached sparse global corridor through free-space regions/portals
+        |
+NavigationMap corridor/local-horizon query
+        |
+predicted conflicts for returned actors only
+        |
+local route / velocity correction
+        |
+temporary target state
+        |
+RuckigTrajectorySolver
+        |
+execute first part
+        |
+repeat on receding physical horizon
+```
+
+Mass NPCs use a cheaper steering/avoidance consumer; docking, repair and other precision actors may use a more expensive local space-time planner. All consume the same shared NavigationWorld reduction layer.
 
 ## Ordered next work
 
-1. Keep the accepted `NavigationMap` API/CPU reference as correctness oracle.
-2. Measure `benchmarks/navigation_map` on the user's MinGW64 machine.
-3. Measure the existing compute prototype on the same 1k/5k/10k classes.
-4. Compare CPU/GPU/hybrid cost, memory, candidate reduction and transfer cost.
-5. Choose the internal dynamic backend **without changing the public
-   `NavigationMap` API**.
-6. Start `NAV-V2-SPACE-1` inside the same module boundary:
-   static free-space / clearance, connectivity/portals, local invalidation and
-   agent-envelope queries.
-7. Only after these isolated gates integrate NavigationWorld into the live game.
-8. Replace legacy synchronous route-wide work incrementally; no heavy periodic or
-   frame-thread route solve is allowed in the v2 live path.
+1. **NOW:** run architecture/behavioral gate after the preparatory fixes.
+2. **NOW:** run default CPU benchmark.
+3. **NOW:** run default GPU benchmark.
+4. Record raw outputs/CSV paths and compare matched 1k/5k/10k scenarios.
+5. Run longer 100-iteration measurements only after both default runs succeed.
+6. Choose CPU/GPU/hybrid dynamic backend from evidence.
+7. Start `NAV-V2-SPACE-1`: persistent static free-space/clearance, connectivity/portals, local invalidation, agent-envelope queries.
+8. Integrate bounded asynchronous shared NavigationWorld into live runtime.
+9. Add mass-NPC avoidance and precision docking/repair planning as separate consumers.
+10. Retire/remove obsolete legacy route-wide navigation components once v2 owns the live path; keep the low-level local kinematic solver as appropriate.
+
+Do not spend the next iteration repairing the old route-wide planner as the main architecture.

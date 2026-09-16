@@ -4,7 +4,7 @@
 **Canonical branch:** `main`  
 **Editor baseline:** v0.10.86 accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted  
-**Navigation:** `NAV-V2-SPACE-1` — static-space indexing and costed route semantics accepted; costed-corridor scaling benchmark active
+**Navigation:** `NAV-V2-SPACE-1` — static indexing + distance/clearance costed routing accepted; turn-aware static cost candidate pending target-machine gate
 
 ## Repository source of truth
 
@@ -47,65 +47,41 @@ GPU hub    total median=1.6097 ms, p95=1.6258 ms
 
 Canonical block: `src/world/navigation/space/`.
 
-Public `NavigationSpace` remains backend-neutral/PImpl. The deterministic CPU reference uses free-space AABB regions + explicit portals internally; storage/index representation remains replaceable.
-
 Accepted graph/index progression:
 
 ```text
 baseline full portal scan
     10k corridor ≈1.95-1.99 s
-    portal examinations=285,913,245
 
-Optimization 1: per-region adjacency
+per-region adjacency
     10k corridor ≈21.8-22.4 ms
-    portal examinations=57,189
 
-Optimization 2: dense RegionSlot graph
+private dense RegionSlot graph
     open_10k corridor median/p95=7.9396/7.9735 ms
     hub_10k  corridor median/p95=7.9981/8.4877 ms
 
-Optimization 3: RegionSlot AABB BVH + incident portal index
-    open_10k point median/p95=0.0065/0.0353 ms
-    hub_10k  point median/p95=0.0064/0.0099 ms
-    open_10k invalidate median/p95=0.0102/0.0112 ms
-    hub_10k  invalidate median/p95=0.0109/0.0115 ms
+private RegionSlot AABB BVH + incident portal index
+    open_10k point p95=0.0353 ms
+    hub_10k  point p95=0.0099 ms
+    open_10k invalidation p95=0.0112 ms
+    hub_10k  invalidation p95=0.0115 ms
 ```
 
-The BVH reduced 10k point candidate examination to 5 regions. Static point lookup and bounded invalidation are comfortably sub-millisecond.
+Full replace/local patch are roughly 44-49 ms median at 10k because graph + BVH are rebuilt transactionally. Those remain worker/update paths, not frame-path operations.
 
-Full replace/local patch cost roughly 44-49 ms median at 10k because graph + BVH are rebuilt transactionally. Those paths remain worker/update operations; bounded/chunked update ownership is deferred until live mutation frequency requires it.
-
-Raw scaling evidence: `benchmarks/navigation_space/RUN_LOG.md`.
-
-## Costed corridor semantics — ACCEPTED
+## Costed static corridor v1 — ACCEPTED
 
 Fast `queryCorridor()` remains the deterministic topology/BFS oracle.
 
-`queryCostedCorridor()` adds explicit static policy:
+`queryCostedCorridor()` v1 adds:
 
 ```text
-CorridorCostPolicy
-    distanceWeight
-    preferredClearanceMultiple
-    clearancePenaltyMeters
+distanceWeight
+preferredClearanceMultiple
+clearancePenaltyMeters
 ```
 
-Static cost v1:
-
-```text
-edge cost = distanceWeight * coarse geometric distance
-          + static clearance penalty
-```
-
-Target-machine acceptance on MinGW64:
-
-```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
-```
-
-Pinned semantic cases are therefore accepted:
+Behavior is target-machine accepted:
 
 ```text
 wall_with_aperture
@@ -113,30 +89,71 @@ wall_with_aperture
     oversized agent -> rejected
 
 canyon_vs_overflight
-    distance-only policy -> short canyon
-    clearance-aware policy -> longer open route
+    distance-only -> short canyon
+    clearance-aware -> longer open route
     oversized canyon agent -> open route
 ```
 
-This explicitly permits NPC routes through holes, tunnels, station apertures and canyons when free-space topology and agent clearance admit them. The enclosing obstacle is not treated as one indivisible keep-out volume.
-
-`totalCostMetersEquivalent` remains a coarse region/portal comparison metric, not an exact physical trajectory-length claim. Turn/curvature, dynamic traffic/risk and pursuit prediction are later layers.
-
-## Active measurement — costed corridor scaling
-
-A dedicated isolated harness now exists:
+Dedicated costed-scaling benchmark is also accepted. Target-machine 10k p95:
 
 ```text
-benchmarks/navigation_space_costed/
+open_10k distance_only     8.1733 ms
+open_10k clearance_aware   8.5020 ms
+hub_10k  distance_only     7.7609 ms
+hub_10k  clearance_aware   9.6103 ms
 ```
 
-It measures `queryCostedCorridor()` on open/hub 1k/5k/10k topologies under two policies on the same published snapshot:
+The predeclared acceptance threshold was `<=15 ms p95`; therefore deterministic Dijkstra v1 is accepted as an asynchronous worker/reference solve without A*/heap optimization before the next semantic term.
+
+Raw evidence:
 
 ```text
-distance_only
-clearance_aware
+benchmarks/navigation_space/RUN_LOG.md
+benchmarks/navigation_space_costed/RUN_LOG.md
 ```
 
-Metrics include median/p95, regions visited, portals examined, path length and reported coarse cost.
+`totalCostMetersEquivalent` remains a coarse branch-comparison metric, not exact physical trajectory length.
 
-The result decides whether the current deterministic Dijkstra-style reference is retained as-is or whether priority-queue/A* optimization is required before adding turn/curvature cost.
+## Active candidate — static turn cost v2
+
+Design contract:
+
+```text
+src/world/navigation/STATIC_TURN_COST.md
+```
+
+`CorridorCostPolicy` now includes:
+
+```text
+turnPenaltyMetersPerRadian
+```
+
+Critical invariant:
+
+```text
+turnPenalty == 0
+    -> accepted v1 RegionSlot Dijkstra fast path
+
+turnPenalty > 0
+    -> expanded state (RegionSlot, incoming PortalId)
+```
+
+The expanded state is required because the future turn cost depends on arrival direction. Two arrivals at the same region through different portals cannot be collapsed into one state.
+
+Static v2 turn term:
+
+```text
+turn cost = turnPenaltyMetersPerRadian * turn_angle_radians
+```
+
+Turn angle is measured at the current coarse region center between incoming-portal direction and outgoing-portal direction. The special start state has no static turn penalty because `CorridorQuery` does not carry initial heading/velocity.
+
+Pinned new fixture:
+
+```text
+zigzag_vs_smooth
+    turnPenalty=0 -> slightly shorter zig-zag
+    turnPenalty>0 -> smoother branch when saved turn cost exceeds distance delta
+```
+
+Implementation + fixture + architecture markers are on `main`; target-machine MinGW64 behavior gate is pending.

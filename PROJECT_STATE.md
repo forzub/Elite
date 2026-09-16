@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-16 Europe/Kyiv  
-**Current project focus:** NavigationWorld v2 / static route quality  
+**Current project focus:** NavigationWorld v2 / static route quality and scaling  
 **Canonical development branch:** `main`  
 **Active stage:** `NAV-V2-SPACE-1`
 
@@ -86,11 +86,11 @@ Point candidate examination fell from 10,000 to 5 in the 10k benchmark. Ordinary
 
 Raw history: `benchmarks/navigation_space/RUN_LOG.md`.
 
-## Active candidate — policy-aware static corridor
+## Policy-aware static corridor — ACCEPTED behavior
 
-The fast `queryCorridor()` remains the deterministic topology/BFS oracle.
+Fast `queryCorridor()` remains the deterministic topology/BFS oracle.
 
-A separate `queryCostedCorridor()` candidate adds explicit static route policy:
+A separate `queryCostedCorridor()` adds explicit static route policy:
 
 ```text
 CorridorCostPolicy
@@ -99,9 +99,17 @@ CorridorCostPolicy
     clearancePenaltyMeters
 ```
 
-Cost v1 is geometric distance plus a meter-equivalent penalty when traversable clearance is below the requested preferred multiple. Physical fit remains a hard constraint.
+Cost v1 is coarse geometric distance plus a meter-equivalent penalty when traversable clearance is below the requested preferred multiple. Physical fit remains a hard constraint.
 
-Pinned acceptance fixtures:
+Fresh MinGW64 acceptance:
+
+```text
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
+```
+
+Accepted fixtures:
 
 ```text
 wall_with_aperture
@@ -114,17 +122,50 @@ canyon_vs_overflight
     oversized canyon craft -> open branch
 ```
 
-This candidate explicitly supports navigation through holes, tunnels, apertures and canyons instead of treating the surrounding geometry as a single coarse keep-out obstacle.
+This explicitly supports navigation through holes, tunnels, station apertures and canyons instead of treating surrounding geometry as one coarse keep-out obstacle.
 
-Status: implementation + tests are on `main`; target-machine architecture/behavior gate is pending.
+`totalCostMetersEquivalent` remains a coarse branch-comparison metric, not exact physical trajectory length.
+
+## Active measurement — costed corridor scaling
+
+New isolated harness:
+
+```text
+benchmarks/navigation_space_costed/
+```
+
+It measures open/hub 1k/5k/10k with both:
+
+```text
+distance_only
+clearance_aware
+```
+
+on the same published topology. Deterministic reduced-clearance portals force real policy-aware alternate-route evaluation.
+
+Measured outputs:
+
+```text
+median/p95 ms
+regions visited
+portals examined
+path-region count
+coarse reported cost
+```
+
+Decision rule for 10k p95:
+
+- `<=15 ms`: retain Dijkstra-style reference and proceed to turn/curvature cost;
+- `15-40 ms`: acceptable worker/reference solve, but optimize search core before frequent many-NPC replanning;
+- `>40 ms` or pathological scaling: optimize queue/search core first, likely indexed heap and/or admissible A* heuristic.
 
 ## Next order
 
-1. pass the costed-corridor MinGW64 architecture/behavior gate;
-2. benchmark costed search separately before broad 10k use;
-3. add turn/curvature policy only after static distance/clearance semantics are accepted;
+1. run costed-corridor benchmark contract + target-machine measurement;
+2. accept or optimize the costed search core from evidence;
+3. add turn/curvature policy only after search scaling is accepted;
 4. combine static route with dynamic conflicts/local horizon;
-5. implement pursuit consumer on top of that accepted route/local-target machinery;
+5. implement pursuit consumer on top of accepted route/local-target machinery;
 6. integrate NavigationWorld into live game/server;
 7. retire legacy route-wide migration code only after v2 owns live navigation.
 

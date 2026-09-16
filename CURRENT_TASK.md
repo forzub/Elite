@@ -3,95 +3,75 @@
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-SPACE-1` — static turn-cost behavior accepted; turn-aware performance benchmark active
+**Stage:** `NAV-V2-SPACE-1` — optimize turn-aware expanded-state search
 
 ## Accepted foundation
 
-Static indexing, costed corridor v1, and static turn-cost v2 behavior are accepted on the target MinGW64 machine.
+Static indexing, costed corridor v1, and static turn-cost behavior are accepted.
 
-Key accepted evidence:
-
-```text
-10k coarse BFS corridor          ≈7.3-8.2 ms
-10k BVH point p95                <=0.0353 ms
-10k local invalidation p95       <=0.0115 ms
-
-costed v1 10k p95
-    open distance_only           8.1733 ms
-    open clearance_aware         8.5020 ms
-    hub  distance_only           7.7609 ms
-    hub  clearance_aware         9.6103 ms
-```
-
-Costed v1 therefore remains the accepted RegionSlot Dijkstra fast path.
-
-Fresh static turn-cost target-machine gate:
+Accepted 10k reference evidence:
 
 ```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
+coarse BFS corridor              ≈7.3-8.2 ms
+BVH point p95                    <=0.0353 ms
+BVH invalidation p95             <=0.0115 ms
+costed v1 p95                    <=9.6103 ms
 ```
 
-Accepted turn semantics:
+Turn-aware semantics are also accepted:
 
 ```text
-turnPenaltyMetersPerRadian == 0
-    -> accepted v1 RegionSlot Dijkstra
+turnPenalty == 0
+    -> RegionSlot Dijkstra fast path
 
-turnPenaltyMetersPerRadian > 0
-    -> state = (RegionSlot, incoming PortalId)
-
-zigzag_vs_smooth
-    zero penalty     -> shorter zig-zag
-    positive penalty -> smoother branch when turn saving beats distance delta
+turnPenalty > 0
+    -> semantic state = (RegionSlot, incoming PortalId)
 ```
 
-Aperture and canyon/overflight fixtures remain green.
+`zigzag_vs_smooth`, aperture and canyon/overflight behavior all pass on target MinGW64.
 
-## Active gate — turn-aware performance
+## Rejected performance baseline
 
-New isolated harness:
+Dedicated turn benchmark:
 
 ```text
-benchmarks/navigation_space_turn/
+open_10k zero p95       9.6982 ms
+open_10k turn p95     216.1602 ms
+hub_10k  zero p95       9.8862 ms
+hub_10k  turn p95     232.6520 ms
+
+10k portals examined
+zero-turn              57,197
+turn-aware            329,660
 ```
 
-It measures the same published topology twice:
+The pinned decision rule was `>120 ms p95 -> optimize before next NavigationWorld layer`, therefore the original tree-backed expanded-state implementation is rejected for performance.
+
+Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
+
+## Active candidate — dense turn state + heap
+
+The semantic state is unchanged, but private representation is now:
 
 ```text
-zero_turn
-    turnPenaltyMetersPerRadian = 0
-    accepted v1 fast path
+published graph:
+    directed portal arrival -> TurnStateSlot
+    adjacency edge -> arrivalTurnStateSlot
 
-turn_aware
-    turnPenaltyMetersPerRadian > 0
-    expanded (RegionSlot, incoming PortalId) search
+turn-aware query:
+    vector<double> bestCost
+    vector<TurnStateSlot> previous
+    vector<uint8_t> settled
+    binary priority_queue frontier
 ```
 
-Pinned scales:
+The zero-turn v1 Dijkstra path is untouched.
 
-```text
-open_1k / open_5k / open_10k
-hub_1k  / hub_5k  / hub_10k
-```
-
-Metrics:
-
-```text
-median/p95 ms
-unique regions visited
-portals examined
-region-path length
-coarse accumulated path turn radians
-coarse meter-equivalent cost
-```
-
-`portalsExamined` is the primary expansion-work diagnostic because turn-aware search may settle multiple incoming-portal states for the same region.
+This intentionally does **not** reduce `portalsExamined`; it removes ordered-tree bookkeeping so the rerun can separate container cost from the unavoidable ~330k expanded-state edge checks.
 
 ## RUN NOW
 
-Only the new benchmark contract + benchmark are required:
+Because `NavigationSpace.cpp` and its architecture contract changed, run behavior/architecture first and then the same turn benchmark:
 
 ```bash
 cd /d/__elite/work
@@ -100,25 +80,21 @@ git fetch origin
 git switch main
 git merge --ff-only origin/main
 
+python tests/architecture_contracts/check_navigation_space_boundary.py
+bash tests/navigation_space/run_mingw64.sh
+
 python tests/architecture_contracts/check_navigation_space_turn_benchmark.py
 bash benchmarks/navigation_space_turn/run_mingw64.sh
 ```
 
-Default run is intentionally bounded:
-
-```text
-warmup=1
-iterations=3
-```
-
 Send the complete output.
 
-## Decision after measurement
+## Decision after rerun
 
-At 10k scale:
+At 10k turn-aware p95:
 
-- `turn-aware p95 <= 40 ms`: accept the expanded-state reference as worker-side route-quality search and stop adding static policy terms;
-- `40-120 ms`: semantics remain accepted, but optimize private turn-state/queue representation before frequent many-NPC replans;
-- `>120 ms` or clearly pathological expansion growth: optimize turn-aware search immediately before moving to dynamic/local-horizon integration.
+- `<=40 ms`: accept the dense expanded-state worker/reference solve and move to dynamic conflict/local-horizon composition;
+- `40-120 ms`: container optimization helped, but remaining expansion is still expensive; add an admissible A* / stronger search reduction before moving on;
+- `>120 ms`: treat the current expanded search as still pathological and optimize immediately.
 
-Do not require turn-aware global search every frame. Dynamic actors, speed-dependent turn radius, braking, pursuit prediction and collision horizon remain outside persistent `NavigationSpace` static cost.
+Do not add more static policy terms now. Do not put velocity, braking, dynamic traffic or pursuit prediction into persistent `NavigationSpace` cost.

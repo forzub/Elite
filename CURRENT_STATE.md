@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
-**Navigation:** `NAV-V2-SPACE-1` — static indexing + costed route quality accepted; turn-aware scaling active
+**Navigation:** `NAV-V2-SPACE-1` — static route semantics accepted; turn-aware search optimization active
 
 ## Accepted Navigation v2 ownership
 
@@ -22,22 +22,13 @@ GPU
     all-agent neighbor/conflict reduction
 ```
 
-`RuckigTrajectorySolver` remains downstream local kinematics, not path search. Moving-target pursuit remains documented in `src/world/navigation/PURSUIT_HORIZON.md` and is not yet the active runtime task.
+`RuckigTrajectorySolver` remains downstream local kinematics, not path search. Moving-target pursuit remains specified in `src/world/navigation/PURSUIT_HORIZON.md` and is not yet the active runtime task.
 
 ## `NAV-V2-MAP-2` — CLOSED
 
-Accepted 10k evidence includes:
-
-```text
-CPU cruise corridor p95=0.1713 ms, sphere p95=0.1329 ms
-CPU hub    corridor p95=0.1551 ms, sphere p95=0.0471 ms
-GPU cruise total p95=1.3226 ms
-GPU hub    total p95=1.6258 ms
-```
+Accepted 10k evidence includes CPU candidate queries below 0.2 ms p95 and GPU dynamic total below 1.7 ms p95 on the target machine.
 
 ## `NAV-V2-SPACE-1` indexing — ACCEPTED
-
-Accepted progression:
 
 ```text
 baseline 10k full-portal corridor ≈1.95-1.99 s
@@ -47,18 +38,13 @@ BVH point p95                     <=0.0353 ms
 BVH local invalidation p95        <=0.0115 ms
 ```
 
-Full replace/local patch remain roughly 44-49 ms median at 10k and stay worker/update-side.
+Full replace/local patch remain worker/update-side at roughly 44-49 ms median at 10k.
 
 ## Costed static corridor v1 — ACCEPTED
 
-Behavior:
+Behavior accepts traversable apertures and policy-dependent canyon/overflight routing.
 
-```text
-wall aperture: fitting agent passes; oversized agent rejected
-canyon vs overflight: distance/clearance policy chooses the expected branch
-```
-
-Accepted 10k p95:
+10k p95:
 
 ```text
 open distance_only      8.1733 ms
@@ -67,44 +53,57 @@ hub  distance_only      7.7609 ms
 hub  clearance_aware    9.6103 ms
 ```
 
-The predeclared `<=15 ms` gate passed, so RegionSlot Dijkstra v1 remains unchanged.
+The predeclared `<=15 ms` gate passed, so zero-turn RegionSlot Dijkstra remains unchanged.
 
-## Static turn cost v2 — ACCEPTED behavior
+## Static turn cost v2 — ACCEPTED semantics
 
-Fresh target-machine evidence:
-
-```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
-```
-
-Policy:
-
-```text
-turnPenaltyMetersPerRadian
-```
-
-Search invariant:
+Target-machine architecture + behavior gate is green. Turn-aware routing correctly uses arrival direction and `zigzag_vs_smooth` passes.
 
 ```text
 turnPenalty == 0
-    -> accepted v1 RegionSlot Dijkstra fast path
+    -> accepted v1 RegionSlot Dijkstra
 
 turnPenalty > 0
-    -> expanded state (RegionSlot, incoming PortalId)
+    -> semantic state = (RegionSlot, incoming PortalId)
 ```
 
-The expanded state is required because future turn cost depends on arrival direction. `zigzag_vs_smooth` is accepted: zero penalty chooses the shorter zig-zag; positive penalty chooses the smoother branch once saved turn burden exceeds the distance delta.
+## Turn-aware performance baseline — REJECTED
 
-Static turn cost remains coarse route quality only. Initial heading/velocity, angular acceleration, speed-dependent turn radius, braking and dynamic traffic remain local/dynamic planner concerns.
-
-## Active measurement — turn-aware scaling
-
-New harness:
+Fresh target-machine benchmark:
 
 ```text
-benchmarks/navigation_space_turn/
+open_10k zero p95       9.6982 ms
+open_10k turn p95     216.1602 ms
+hub_10k  zero p95       9.8862 ms
+hub_10k  turn p95     232.6520 ms
+
+10k portal examinations
+zero-turn              57,197
+turn-aware            329,660
 ```
 
-It compares `turn=0` vs positive turn penalty on the same open/hub 1k/5k/10k topology and records med/p95 plus expansion diagnostics. The result decides whether the current expanded `std::map`/`std::multimap` reference is retained or privately optimized before dynamic/local-horizon integration.
+The pinned rule was `>120 ms p95 -> optimize before the next layer`, so the tree-backed expanded-state implementation is rejected for performance. Semantics remain accepted.
+
+Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
+
+## Active optimization candidate
+
+The same semantic `(RegionSlot, incoming PortalId)` state is now represented privately by stable dense `TurnStateSlot` values built with the graph:
+
+```text
+directed portal arrival -> TurnStateSlot
+AdjacencyEdge            -> arrivalTurnStateSlot
+```
+
+Per-query turn-aware storage is now vector-backed:
+
+```text
+vector<double> bestCost
+vector<TurnStateSlot> previous
+vector<uint8_t> settled
+priority_queue frontier
+```
+
+The accepted zero-turn v1 path is untouched. Turn-aware graph expansion is intentionally unchanged so the next benchmark isolates container/queue overhead from unavoidable expanded-state work.
+
+Status: **candidate on `main`, pending target-machine architecture/behavior + turn benchmark rerun**. A* is not added unless the rerun shows that the remaining expansion itself is still too expensive.

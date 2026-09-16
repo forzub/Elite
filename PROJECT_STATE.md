@@ -9,11 +9,23 @@
 
 `main` is the only canonical game-development branch.
 
-On 2026-09-16 the accidentally divergent histories of old `main`, `chatgpt/mae-v01075-semantic-workflow-motion-v5`, and the user's local line published temporarily as `rescue/local-97500` were audited and reconciled into `main`. The reconciliation merge is `9352fe7589ec109827e9633403d81bba46bdc926`.
+On 2026-09-16 the primary divergent histories of old `main`, `chatgpt/mae-v01075-semantic-workflow-motion-v5`, and the user's local line published temporarily as `rescue/local-97500` were audited and reconciled into `main`. The primary reconciliation merge is:
 
-The content audit established that the rescue and remote development lines carried the same current NavigationMap implementation. The remote development line additionally contained the later `NAV-V2-MAP-2` contract fix and CPU benchmark. Old `main` supplied current project-state/history and asset-license/provenance material. All of these are now represented in canonical `main` history.
+```text
+9352fe7589ec109827e9633403d81bba46bdc926
+```
 
-Permanent branch governance is defined in `REPOSITORY_SOURCE_OF_TRUTH.md`: long-lived parallel development branches are prohibited; rescue refs are recovery-only and must be merged and removed.
+The content audit established that rescue and the remote development line carried the same current NavigationMap implementation. The remote development line additionally contained the later `NAV-V2-MAP-2` contract fix and CPU benchmark. Old `main` supplied current project-state/history and asset-license/provenance material. All of these are now represented in canonical `main` history.
+
+A subsequent complete branch inventory found older localization/editor staging and anchor refs. All but two unique tips were already ancestors of `main`; the remaining localization-completion line (`62b74e...`) and old v0.10.75 workflow/motion draft (`ea94d7...`) were absorbed historically without replacing the accepted current tree:
+
+```text
+255930012d025a6d9f55c08a84f888e9b8ff8de8
+```
+
+After that merge every non-`main` branch tip found in the repository inventory is an ancestor of `main`. Those refs are cleanup-only and can be deleted without losing commit history.
+
+Permanent branch governance is defined in `REPOSITORY_SOURCE_OF_TRUTH.md`: long-lived parallel development branches are prohibited; rescue/staging refs are recovery-only and must be merged and removed.
 
 ## Current navigation state
 
@@ -29,7 +41,7 @@ The raw `Shift+F12` NavigationWorld diagnostic view remains an accepted contract
 
 ## NavigationMap block
 
-Canonical code now exists on `main` under:
+Canonical code exists on `main` under:
 
 ```text
 src/world/navigation/map/
@@ -51,7 +63,7 @@ That test evidence was produced before the branch reconciliation, but the audite
 
 ## Active gate: `NAV-V2-MAP-2`
 
-Both isolated measurement programs are now present on `main`:
+Both isolated measurement programs are present on `main`:
 
 ```text
 benchmarks/navigation_map/
@@ -114,7 +126,8 @@ Before declaring an iteration complete or beginning the next coding slice:
 2. update affected subsystem contracts when architecture/runtime/performance contracts change;
 3. synchronize `CURRENT_STATE.md`, `CURRENT_TASK.md` and the project context/iteration log as applicable;
 4. keep `main` as the only canonical development branch;
-5. label local-only work only when it actually exists;
-6. verify dates, active task and repository baseline against the real repository state.
+5. remove temporary branch refs after their commits are ancestors of `main`;
+6. label local-only work only when it actually exists;
+7. verify dates, active task and repository baseline against the real repository state.
 
 Stale project-state documentation or branch ambiguity is a project defect and blocks handoff.

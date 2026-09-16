@@ -22,7 +22,7 @@ The first CPU reference uses axis-aligned free-space regions plus explicit porta
 
 ## Free-space rather than giant dense voxels
 
-The static world is represented as traversable regions connected by portals. Large open volumes may use coarse regions; detailed interiors may use smaller regions. A narrow docking corridor/breach is represented by a portal whose clearance limits which agent envelopes may pass.
+The static world is represented as traversable regions connected by portals. Large open volumes may use coarse regions; detailed interiors may use smaller regions. A narrow docking corridor, tunnel, breach, canyon entrance or wall opening is represented by explicit traversable free space and portals whose clearance limits which agent envelopes may pass.
 
 Do not build one dense system-scale velocity/occupancy field. Dynamic P/V/A belongs to `NavigationMap`; this block owns static free-space topology only.
 
@@ -64,6 +64,54 @@ PortalInput
 
 `queryCorridor()` returns only ordered region/portal IDs and diagnostics. It does not return internal graph nodes or materialize a dense trajectory.
 
+## Fast topology corridor vs costed corridor
+
+Two static-space corridor products intentionally coexist.
+
+### `queryCorridor()`
+
+This is the deterministic **topology/BFS oracle**. It answers whether a traversable region/portal chain exists with the requested agent envelope and returns a stable coarse path cheaply. It remains useful for broad validity, mass/background use and reference diagnostics.
+
+### `queryCostedCorridor()`
+
+This is the first policy-aware route selector. It evaluates alternate traversable branches using meter-equivalent cost:
+
+```text
+edge cost = distanceWeight * geometric_distance
+          + clearance_penalty
+```
+
+The current `CorridorCostPolicy` exposes:
+
+```text
+distanceWeight
+preferredClearanceMultiple
+clearancePenaltyMeters
+```
+
+Traversal still fails closed when the agent physically cannot fit. The penalty only chooses between routes that are already traversable.
+
+The geometric term approximates travel through a coarse region graph using region centers and portal centers. Clearance preference uses the narrowest available clearance across current region, portal and neighbor region. A policy may therefore choose a short narrow canyon for an aggressive/small craft and a longer open overflight for a cautious/larger craft.
+
+The costed route is intentionally separate from the fast BFS oracle. Do not make every background NPC pay for policy-aware search when a cached/coarse branch is sufficient.
+
+Current behavioral acceptance fixtures include:
+
+```text
+wall_with_aperture
+    small agent -> route through opening
+    oversized agent -> opening rejected
+
+canyon_vs_overflight
+    distance-only policy -> shorter canyon
+    clearance-aware policy -> longer open route
+    oversized canyon agent -> open route regardless of preference
+```
+
+This is the contract required for tunnels, holes, station apertures, canyons and similar navigable geometry: an opening is not semantically merged into the surrounding obstacle when it has valid free-space topology and enough clearance.
+
+Turn cost, traffic/risk cost and dynamic-conflict cost are intentionally not part of static cost v1. Dynamic risk belongs to the combined NavigationWorld/local planner rather than being baked into persistent static topology.
+
 ## Private connectivity / dense graph index
 
 The first scaling benchmark showed that scanning the complete portal map for every BFS region is pathological: the 10k reference examined about 286 million portal records and took roughly two seconds per corridor query.
@@ -97,11 +145,9 @@ private AABB BVH
 
 The BVH is rebuilt together with full publication/local patching and remains completely private to `NavigationSpace::Impl`.
 
-`queryPoint()` now asks the BVH for candidate region slots and then applies the same exact region/clearance tests in stable RegionSlot/RegionId order.
+`queryPoint()` asks the BVH for candidate region slots and then applies the same exact region/clearance tests in stable RegionSlot/RegionId order. `findTraversableRegion()` used by corridor endpoint localization uses the same candidate reduction.
 
-`findTraversableRegion()` used by corridor endpoint localization uses the same BVH candidate reduction.
-
-`invalidateBounds()` now:
+`invalidateBounds()`:
 
 1. queries the BVH for intersecting candidate regions;
 2. exact-tests only those region AABBs;
@@ -119,6 +165,24 @@ incident portals
 ```
 
 The second list is required because even a one-way portal must fail closed when either endpoint region is invalidated.
+
+### Accepted Optimization-3 target-machine result
+
+At 10k regions / 28,600 portals:
+
+```text
+open_10k
+    point median/p95      0.0065 / 0.0353 ms
+    invalidate median/p95 0.0102 / 0.0112 ms
+    point regions examined=5
+
+hub_10k
+    point median/p95      0.0064 / 0.0099 ms
+    invalidate median/p95 0.0109 / 0.0115 ms
+    point regions examined=5
+```
+
+Compared with the dense-slot pre-BVH run, ordinary point lookup and local invalidation are now comfortably sub-millisecond. Full replacement/local patch increased to roughly 44–49 ms median because graph + BVH are rebuilt transactionally; those operations remain worker/update-path work and are not accepted frame-path operations.
 
 The public API does not expose the BVH, dense slots, or adjacency representation.
 
@@ -143,7 +207,7 @@ The spatial index accelerates candidate discovery; exact AABB intersection remai
 
 The CPU reference stores authoritative regions/portals in ordered maps, assigns RegionSlots in stable RegionId order, builds adjacency in stable PortalId order, and sorts BVH query candidate slots before semantic evaluation.
 
-For identical published input and query, coarse corridor and point-resolution semantics remain deterministic even though internal acceleration changes.
+For identical published input and query, coarse corridor and point-resolution semantics remain deterministic. Costed routing uses deterministic queue ordering by `(cost, RegionSlot)` and stable PortalId adjacency order; equal-cost branches therefore remain reproducible.
 
 ## Relation to dynamic NavigationMap
 
@@ -151,18 +215,18 @@ For identical published input and query, coarse corridor and point-resolution se
 NavigationSpace (CPU)
     static free-space / clearance / regions / portals
              |
-             +---- coarse corridor ----+
-                                       |
-NavigationMap (hybrid dynamic)         |
-    P/V/A prediction / bins / conflicts
-             |                         |
-             +---- local candidates ---+
-                                       v
-                              local/precision planner
-                                       |
-                              temporary target state
-                                       |
-                              RuckigTrajectorySolver
+             +---- coarse/costed corridor ----+
+                                              |
+NavigationMap (hybrid dynamic)                |
+    P/V/A prediction / bins / conflicts       |
+             |                                |
+             +---- local candidates ----------+
+                                              v
+                                     local/precision planner
+                                              |
+                                     temporary target state
+                                              |
+                                     RuckigTrajectorySolver
 ```
 
 `NavigationSpace` and `NavigationMap` share the same conceptual ship-centered working domain but remain separate ownership blocks. Neither block reaches into the other's internals.
@@ -174,7 +238,7 @@ Hub, station, carrier and interior geometry remains owned by its local domain. T
 ## Current limitations of the CPU reference
 
 - free-space regions are AABBs, not arbitrary convex cells;
-- corridor search is unweighted BFS rather than costed A*/Dijkstra;
+- costed corridor v1 has geometric distance + static clearance preference only; turn/risk/traffic terms are later layers;
 - local patching still copies full ordered region/portal maps and rebuilds graph + BVH transactionally;
 - full publication/local patch are worker/update-path operations, not frame-path operations;
 - no live `EliteGame` / `EliteServer` integration yet.

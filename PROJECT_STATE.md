@@ -15,17 +15,13 @@ On 2026-09-16 the primary divergent histories of old `main`, `chatgpt/mae-v01075
 9352fe7589ec109827e9633403d81bba46bdc926
 ```
 
-The content audit established that rescue and the remote development line carried the same current NavigationMap implementation. The remote development line additionally contained the later `NAV-V2-MAP-2` contract fix and CPU benchmark. Old `main` supplied current project-state/history and asset-license/provenance material. All of these are now represented in canonical `main` history.
-
-A subsequent complete branch inventory found older localization/editor staging and anchor refs. All but two unique tips were already ancestors of `main`; the remaining localization-completion line (`62b74e...`) and old v0.10.75 workflow/motion draft (`ea94d7...`) were absorbed historically without replacing the accepted current tree:
+A subsequent inventory found older localization/editor staging and anchor refs. The remaining unique localization-completion and v0.10.75 workflow/motion histories were absorbed without replacing the accepted current tree:
 
 ```text
 255930012d025a6d9f55c08a84f888e9b8ff8de8
 ```
 
-After that merge every non-`main` branch tip found in the repository inventory is an ancestor of `main`. Those refs are cleanup-only and can be deleted without losing commit history.
-
-Permanent branch governance is defined in `REPOSITORY_SOURCE_OF_TRUTH.md`: long-lived parallel development branches are prohibited; rescue/staging refs are recovery-only and must be merged and removed.
+Every branch tip found during that inventory is now an ancestor of `main`. Permanent branch governance is defined in `REPOSITORY_SOURCE_OF_TRUTH.md`: long-lived parallel development branches are prohibited; rescue/staging refs are recovery-only and must be merged and removed.
 
 ## Current navigation state
 
@@ -33,7 +29,7 @@ Navigation v2 is the active game-development focus. The accepted direction is on
 
 Authoritative system/world state remains the physical source of truth. Hub/station navigation remains its own local domain and contributes only the subset relevant to the active ship/navigation horizon.
 
-Dynamic actors are stored as compact position/velocity/acceleration/bounds/flags data rather than dense per-voxel velocity/acceleration fields. GPU work is currently targeted at massively parallel spatial binning, prediction/swept volumes, corridor filtering and shared broadphase; sparse single-query precision graph search remains an asynchronous CPU-worker responsibility unless measurements show otherwise.
+Dynamic actors are stored as compact position/velocity/acceleration/bounds/flags data rather than dense per-voxel velocity/acceleration fields. GPU work is targeted at massively parallel spatial binning, prediction/swept volumes, corridor filtering and shared broadphase; sparse single-query precision graph search remains an asynchronous CPU-worker responsibility unless measurements show otherwise.
 
 Ruckig is downstream local trajectory/kinematics generation, not obstacle pathfinding. All frame-path navigation work must remain asynchronous/non-blocking; the main thread must not synchronously wait for GPU readback or a long planner.
 
@@ -51,28 +47,88 @@ The block owns the ship-centered working-frame transform, dynamic actor P/V/A st
 
 `EliteNavigationMap` is built as a standalone library for tests/benchmarks. It is intentionally not yet wired into the live `EliteGame` / `EliteServer` runtime path.
 
-User target-machine evidence previously reported:
+Fresh post-reconciliation target-machine evidence on 2026-09-16:
 
 ```text
-bash tests/navigation_map/run_mingw64.sh
-1/1 Test #1: navigation_map ... Passed 0.04 sec
+NAVIGATION MAP BOUNDARY CONTRACT: PASS
+navigation_map: 1/1 PASS
 100% tests passed, 0 tests failed out of 1
 ```
 
-That test evidence was produced before the branch reconciliation, but the audited NavigationMap implementation/test tree is represented in `main` after the merge. A fresh post-merge run remains the next local verification step.
-
 ## Active gate: `NAV-V2-MAP-2`
 
-Both isolated measurement programs are present on `main`:
+### CPU measurement completed
+
+Default CPU benchmark parameters:
 
 ```text
-benchmarks/navigation_map/
-benchmarks/navigation_gpu/
+prediction horizon = 3 s
+warmup = 5
+iterations = 30
 ```
 
-The immediate decision gate is matched CPU/GPU measurement at 1k / 5k / 10k actors for deterministic cruise/hub datasets. Do not select CPU, GPU or hybrid production ownership before those measurements exist.
+Results:
 
-Required comparison includes publication/rebuild time, query/broadphase time, p95, candidate/conflict counts, visited cells/actors, memory, overflow/out-of-bounds diagnostics, command submission cost and GPU readback volume.
+```text
+scenario actors  rebuild med/p95 ms   corridor med/p95 ms   sphere med/p95 ms
+cruise   1000    0.3090 / 0.3567     0.0169 / 0.0204       0.0102 / 0.0131
+cruise   5000    1.3982 / 1.4902     0.0307 / 0.0499       0.0169 / 0.0307
+cruise  10000    2.7388 / 2.9632     0.1352 / 0.2089       0.0329 / 0.1573
+hub      1000    0.3103 / 0.3209     0.0082 / 0.0098       0.0071 / 0.0089
+hub      5000    1.2864 / 2.0914     0.0231 / 0.0639       0.0262 / 0.0791
+hub     10000    2.1889 / 2.9984     0.1381 / 0.2198       0.0496 / 0.1172
+```
+
+At 10k actors, query cost remains well under the current main-thread budget while whole-snapshot rebuild is the CPU cost center. This keeps CPU query ownership viable if publication/rebuild becomes asynchronous, incremental or lower cadence. The CPU benchmark CSV is:
+
+```text
+D:\__elite\work\navigation_map_cpu_benchmark.csv
+```
+
+### GPU measurement pending after harness repair
+
+The first GPU benchmark attempt did not execute. Compilation failed with:
+
+```text
+fatal error: glad/gl.h: No such file or directory
+```
+
+Root cause: the benchmark used the obsolete include root `${ELITE_ROOT}/glad`; current GLAD 2.0.8 requires `${ELITE_ROOT}/glad/include`.
+
+The benchmark CMake was corrected on `main`. At the same time, `tests/architecture_contracts/check_navigation_gpu_benchmark.py` was corrected from stale stage `NAV-V2-GPU-0` to the active `NAV-V2-MAP-2` gate and now explicitly validates the GLAD 2 include root.
+
+GPU performance remains **unmeasured** until the corrected benchmark runs on the user's target machine.
+
+The next target-machine commands are only:
+
+```bash
+git fetch origin
+git switch main
+git merge --ff-only origin/main
+python tests/architecture_contracts/check_navigation_gpu_benchmark.py
+bash benchmarks/navigation_gpu/run_mingw64.sh
+```
+
+Do not rerun the already-passed CPU benchmark solely because the GPU harness changed.
+
+## Backend decision rule
+
+Do not compare one CPU “total” directly against one GPU “total” as equivalent workloads. The CPU benchmark measures snapshot publication plus corridor/sphere queries; the GPU prototype also performs all-agent neighbor/conflict reduction.
+
+The backend decision remains evidence-driven:
+
+- CPU remains viable for spatial query ownership from the measured query timings;
+- GPU is a candidate for P/V/A prediction, binning and all-agent conflict reduction;
+- hybrid remains valid: CPU static topology/precision search + GPU dynamic reduction;
+- no GPU backend may synchronously dispatch, wait and bulk-read back on the frame thread.
+
+Performance design targets remain:
+
+```text
+main-thread navigation CPU       < 0.5 ms typical, < 1.0 ms normal peak
+GPU dynamic NavigationWorld      < 1.0 ms preferred, < 2.0 ms heavy-scene target
+full/precision route solve       asynchronous; never a frame-thread blocker
+```
 
 After backend selection, the next planned stage is `NAV-V2-SPACE-1`: persistent static free-space/clearance, connectivity/portals, local invalidation and agent-envelope queries. Live asynchronous integration follows only after the isolated map/space gates are accepted.
 
@@ -96,15 +152,7 @@ A previously reported full `tests/run_all_mingw64.sh` ready gate was **not fully
 2. `SYSTEM MAP BEHAVIOR + ARCHITECTURE` — missing `Keep the first physical sample`;
 3. `FEATURE SURFACE CONTRACTS` — missing debug-UI compatibility token around `m_gameUiHttpPort = m_htmlUi.start(requestedWebUiPort, webUiRoot);`.
 
-Treat those as earlier target-machine evidence, not a statement about the freshly reconciled `main`. Do not report the full ready gate as PASS until it is rerun/classified on the canonical branch.
-
-In the previously supplied live-client frame sample:
-
-```text
-dock_request=0 dock_plan=0 tunnel_builds=0
-```
-
-Therefore that observed frame/session had no docking request, plan or tunnel build. The older docking/guidance machinery still exists; the new NavigationWorld v2 live integration has not yet been demonstrated.
+Treat those as earlier target-machine evidence, not a statement about current `main`. Do not report the full ready gate as PASS until it is rerun/classified on the canonical branch.
 
 ## Historical project state
 

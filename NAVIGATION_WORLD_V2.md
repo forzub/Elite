@@ -2,8 +2,9 @@
 
 **Status:** current architecture contract / benchmark-first implementation plan  
 **Updated:** 2026-09-16 Europe/Kyiv  
-**Repository baseline when written:** `main@9d90d86f45fec1ade5ab899ca327fad00bfe95df`  
-**Active validation note:** `tests/navigation_map` currently exists in the user's local working tree and passed locally, but was **LOCAL / UNPUSHED** when this document was written.
+**Remote HEAD before this update:** `main@47f35a326993665044a38eeb9cdf32bea3586475`  
+**Last code baseline before the NavigationWorld documentation commits:** `9d90d86f45fec1ade5ab899ca327fad00bfe95df`  
+**Active validation note:** `tests/navigation_map` currently exists in the user's local working tree and passed locally, but is still **LOCAL / UNPUSHED** until verified on remote.
 
 This document defines the current Navigation v2 direction. Older navigation/path-planning code remains useful implementation material and regression evidence, but it is **not automatically the architectural foundation of v2** where it conflicts with this contract.
 
@@ -382,7 +383,7 @@ bash tests/navigation_map/run_mingw64.sh
 Total Test time (real) = 0.05 sec
 ```
 
-At the time this architecture document was committed, those `tests/navigation_map` files were not present in the observed remote `main@9d90d86`; therefore this evidence is labelled **LOCAL / UNPUSHED**.
+At the time this architecture document was committed, those `tests/navigation_map` files were not present in the observed remote `main@47f35a326993665044a38eeb9cdf32bea3586475`; therefore this evidence is labelled **LOCAL / UNPUSHED**.
 
 Once the local work is pushed, this section must be updated with the pushed commit SHA and remote-visible test paths.
 
@@ -400,3 +401,33 @@ For every meaningful NavigationWorld iteration:
 6. perform the documentation freshness check **before** declaring an iteration complete or starting the next coding slice.
 
 A stale current-task/state document is a project-state defect and blocks handoff to the next slice.
+
+## 17. Raw NavigationWorld 3D debug-view contract
+
+A dedicated diagnostic presentation mode is required so the developer can inspect the **actual NavigationWorld state used by navigation**, rather than a separately reconstructed or beautified approximation.
+
+Input contract:
+
+- ordinary `F12` keeps its existing Hub/local presentation behavior;
+- `Shift+F12` toggles `Hub render <-> NavigationWorld Debug` while in the Hub/local context;
+- entering the debug view is presentation-only: it must not mutate simulation/navigation state or force a synchronous NavigationWorld rebuild/readback.
+
+Rendering contract:
+
+- while NavigationWorld Debug is active, normal Hub-map rendering is suppressed;
+- the debug renderer consumes the same completed NavigationWorld snapshot that navigation/control consumes;
+- there must be **no second navigation calculation for visualization**;
+- the renderer is backend-neutral so CPU, GPU and hybrid NavigationWorld implementations expose the same diagnostic snapshot interface;
+- the camera must allow useful 3D inspection independently of the normal Hub-map presentation.
+
+The debug view should expose, where available:
+
+- spatial cells/bricks/bins or equivalent static/index structure;
+- static obstacles and clearance/safety representation;
+- dynamic actor bounds plus velocity/acceleration vectors;
+- predicted positions and swept volumes;
+- the player safety horizon / accepted corridor;
+- broadphase candidate and conflict actors/pairs;
+- snapshot/frame/generation identifier and result age/latency.
+
+This view is a correctness instrument: when navigation behaves incorrectly, it must show **the world navigation actually believed existed at that snapshot**, including stale-result age where applicable. Visual convenience must never silently diverge from runtime navigation data.

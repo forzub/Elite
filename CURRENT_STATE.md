@@ -4,7 +4,7 @@
 **Canonical branch:** `main`  
 **Editor baseline:** v0.10.86 accepted  
 **Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted  
-**Navigation:** `NAV-V2-SPACE-1` — static query/index side accepted; costed corridor semantics pending target-machine behavior gate
+**Navigation:** `NAV-V2-SPACE-1` — static-space indexing and costed route semantics accepted; costed-corridor scaling benchmark active
 
 ## Repository source of truth
 
@@ -12,7 +12,7 @@
 
 ## Navigation v2 accepted architecture
 
-Navigation v2 uses one shared ship-centered `NavigationWorld`. The legacy whole-route synchronous chain remains migration code; `RuckigTrajectorySolver` is downstream local kinematics after navigation selects a safe temporary target.
+Navigation v2 uses one shared ship-centered `NavigationWorld`. The legacy whole-route synchronous chain remains migration code. `RuckigTrajectorySolver` is downstream local kinematics after navigation selects a safe temporary target.
 
 Accepted hybrid ownership:
 
@@ -30,7 +30,7 @@ GPU
     all-agent neighbor/conflict reduction
 ```
 
-Moving-target pursuit is documented in `src/world/navigation/PURSUIT_HORIZON.md`: receding predicted intercept state/region, bounded prediction, corridor reuse while the branch remains valid, no full global rebuild every frame.
+Moving-target pursuit is documented in `src/world/navigation/PURSUIT_HORIZON.md`: receding predicted intercept state/region, bounded prediction, corridor reuse while the branch remains valid, no complete global replan every frame.
 
 ## `NAV-V2-MAP-2` — CLOSED
 
@@ -43,7 +43,7 @@ GPU cruise total median=0.6840 ms, p95=1.3226 ms
 GPU hub    total median=1.6097 ms, p95=1.6258 ms
 ```
 
-## `NAV-V2-SPACE-1` boundary/reference — ACCEPTED
+## `NAV-V2-SPACE-1` static boundary/indexing — ACCEPTED
 
 Canonical block: `src/world/navigation/space/`.
 
@@ -71,32 +71,41 @@ Optimization 3: RegionSlot AABB BVH + incident portal index
     hub_10k  invalidate median/p95=0.0109/0.0115 ms
 ```
 
-The BVH reduced worst-case point candidate examination from 10,000 regions to 5 in the 10k benchmark. Static point lookup and bounded invalidation are accepted as comfortably sub-millisecond.
+The BVH reduced 10k point candidate examination to 5 regions. Static point lookup and bounded invalidation are comfortably sub-millisecond.
 
-Full replace/local patch now cost roughly 44-49 ms median at 10k because graph + BVH are rebuilt transactionally. Those paths remain worker/update operations, not frame-path operations. Bounded/chunked update ownership is deferred until live mutation frequency requires it.
+Full replace/local patch cost roughly 44-49 ms median at 10k because graph + BVH are rebuilt transactionally. Those paths remain worker/update operations; bounded/chunked update ownership is deferred until live mutation frequency requires it.
 
-Raw evidence: `benchmarks/navigation_space/RUN_LOG.md`.
+Raw scaling evidence: `benchmarks/navigation_space/RUN_LOG.md`.
 
-## Costed corridor candidate
+## Costed corridor semantics — ACCEPTED
 
 Fast `queryCorridor()` remains the deterministic topology/BFS oracle.
 
-A separate `queryCostedCorridor()` candidate now exists with explicit `CorridorCostPolicy`:
+`queryCostedCorridor()` adds explicit static policy:
 
 ```text
-distanceWeight
-preferredClearanceMultiple
-clearancePenaltyMeters
+CorridorCostPolicy
+    distanceWeight
+    preferredClearanceMultiple
+    clearancePenaltyMeters
 ```
 
-Cost v1:
+Static cost v1:
 
 ```text
-edge cost = distanceWeight * geometric_distance
-          + static_clearance_penalty
+edge cost = distanceWeight * coarse geometric distance
+          + static clearance penalty
 ```
 
-Pinned behavior fixtures:
+Target-machine acceptance on MinGW64:
+
+```text
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
+```
+
+Pinned semantic cases are therefore accepted:
 
 ```text
 wall_with_aperture
@@ -109,10 +118,25 @@ canyon_vs_overflight
     oversized canyon agent -> open route
 ```
 
-Turn cost, dynamic traffic/risk and moving-target prediction remain separate later layers.
+This explicitly permits NPC routes through holes, tunnels, station apertures and canyons when free-space topology and agent clearance admit them. The enclosing obstacle is not treated as one indivisible keep-out volume.
 
-## Active gate
+`totalCostMetersEquivalent` remains a coarse region/portal comparison metric, not an exact physical trajectory-length claim. Turn/curvature, dynamic traffic/risk and pursuit prediction are later layers.
 
-The costed-corridor implementation and tests are on `main` but have not yet been compiled/run on the user's MinGW64 target machine.
+## Active measurement — costed corridor scaling
 
-Run only architecture + behavior; the accepted static scaling benchmark does not need to be repeated for this semantics-only addition.
+A dedicated isolated harness now exists:
+
+```text
+benchmarks/navigation_space_costed/
+```
+
+It measures `queryCostedCorridor()` on open/hub 1k/5k/10k topologies under two policies on the same published snapshot:
+
+```text
+distance_only
+clearance_aware
+```
+
+Metrics include median/p95, regions visited, portals examined, path length and reported coarse cost.
+
+The result decides whether the current deterministic Dijkstra-style reference is retained as-is or whether priority-queue/A* optimization is required before adding turn/curvature cost.

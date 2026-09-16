@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-16  
 **Status:** Navigation v2 architecture authority  
-**Current implementation wave:** `NAV-V2-MAP-1` isolated NavigationMap API + CPU reference
+**Current implementation wave:** `NAV-V2-MAP-2` — ship-centered NavigationMap CPU/GPU measurement gate
 
 ## Decision: the previous live planner is not the v2 foundation
 
@@ -36,7 +36,9 @@ space/path-search engine.
 ## Coordinate authority
 
 Elite has multiple coordinate domains by design. Navigation v2 must not collapse
-them into one universal frame.
+them into one universal frame. The architecture follows the space in which the
+active ship actually plays rather than treating the Hub visualization frame as a
+universal game frame.
 
 ### Authoritative system state
 
@@ -46,25 +48,51 @@ between independently moving domains.
 
 ### Active ship-centered NavigationWorld
 
-The player spends ordinary flight in an active working space centered on the
-ship/navigation domain. Navigation v2 therefore builds its dynamic working set in
-**ship-centered NavigationWorld** coordinates.
+The player spends ordinary/deep-space flight in an active working space centered
+on the ship/navigation domain. Navigation v2 therefore builds its dynamic working
+set in **ship-centered NavigationWorld** coordinates.
 
 The working origin may translate/rebase with the active ship/domain, but the
 navigation axes must remain stable travel/system axes. They must not rotate every
-time the hull rolls, pitches or yaws. Hull-local coordinates belong to flight
-control, not to the shared spatial index.
+time the hull rolls, pitches or yaws. Otherwise ordinary attitude changes would
+invalidate/rebuild the spatial structure. Hull-local coordinates belong to
+flight control, not to the shared spatial index.
+
+The ship-centered frame is a numerical/spatial working frame. It is not a new
+long-lived simulation authority and does not replace precise system/world state.
 
 ### Hub-local space
 
 A Hub owns its own authored/local geometry, docking ports and scheduled local
-traffic. Hub-local data stays **Hub-local**. When the Hub becomes relevant to the
-active ship, only the subset that can affect the active NavigationWorld is
-transformed/published into that working space.
+traffic. Hub-local data stays **Hub-local**. The Hub frame is private to the
+station and its local objects/bots; it is not the coordinate space used by a ship
+that is spending time away from the station.
 
+When the Hub becomes relevant to the active ship, only the subset that can affect
+the active NavigationWorld is transformed/published into that working space.
 The same rule applies to other persistent local domains: station interior,
 carrier, capital ship, settlement, etc. Their private navigation state is not
 rebased around the player every frame.
+
+### Boundary transform rule
+
+The preferred flow is:
+
+```text
+AUTHORITATIVE SYSTEM/WORLD STATE
+        |
+        | transform at domain publication boundary
+        v
+SHIP-CENTERED NAVIGATIONWORLD
+    stable navigation basis
+    nearby static navigation geometry
+    dynamic actors P/V/A/bounds/revisions
+    predicted swept bounds
+    active route corridors / local horizon
+```
+
+Coordinate conversion is therefore a boundary concern, not something every
+planner/agent reimplements independently.
 
 ## NavigationMap block boundary
 
@@ -115,9 +143,8 @@ The API owns the system/world -> ship-centered transform. Callers supply a
 its stable local navigation basis internally. This avoids duplicating rebase
 logic in every consumer.
 
-The current `NAV-V2-MAP-1` implementation is a deterministic CPU reference. It is
-not the final backend. Its purpose is to pin behavior and provide a correctness
-oracle for a future GPU implementation without changing planner call sites.
+The current implementation is a deterministic CPU reference and behavior oracle.
+It is not a declaration that the final dynamic backend must remain CPU-only.
 
 Current internal reference representation:
 
@@ -173,9 +200,38 @@ mass-agent steering       precision local planner
              flight control
 ```
 
+Player and NPC navigation consume this shared world. Ordinary agents must not
+each independently scan the full scene or build their own complete navigation
+map. Per-agent work begins after shared spatial reduction has produced local or
+corridor-relevant candidates.
+
 The dynamic map is **not** a dense voxel field containing velocity and
 acceleration in every cell. P/V/A remain actor-owned. Spatial cells contain only
 indexing/occupancy information needed to find relevant actors.
+
+### Why dynamic P/V/A are not stored in dense cells
+
+A uniform `256^3` field has about 16.8 million cells. Six 32-bit float channels
+for velocity + acceleration alone require roughly 384 MiB before occupancy,
+clearance, object IDs, topology or allocator overhead. `512^3` multiplies that by
+eight. This is the wrong scaling model for a ship-centered universe with sparse
+objects.
+
+Dynamic state therefore stays in compact actor arrays:
+
+```text
+Actor {
+    position
+    velocity
+    acceleration
+    bounds
+    flags
+    revisions
+}
+```
+
+Sparse/hierarchical cells or bins reference actors; they do not duplicate all
+dynamic fields throughout 3D space.
 
 ## Static navigation representation
 
@@ -197,9 +253,9 @@ cells and a hybrid authored/generated region graph. Required properties are:
 Static station/hub geometry should be baked/cached. It must not be rediscovered
 from hundreds of obstacle primitives for every ship route request.
 
-`NAV-V2-MAP-1` does not pretend this decision is already made. Static
+`NAV-V2-MAP-2` still does not pretend this representation is selected. Static
 free-space/clearance is the next NavigationMap capability after the dynamic
-boundary and backend measurements are accepted.
+backend measurements are accepted.
 
 ## Dynamic actor layer
 
@@ -234,31 +290,60 @@ This envelope is broadphase data, not the final trajectory tube.
 
 ## GPU ownership candidate
 
-`NAV-V2-GPU-0` already provides an isolated OpenGL 4.3 compute benchmark for the
-dynamic layer. It performs, in ship-centered coordinates:
+`NAV-V2-GPU-0` provides an isolated OpenGL 4.3 compute benchmark for the dynamic
+layer. It performs, in ship-centered coordinates:
 
 ```text
 P/V/A actor table
     -> conservative future swept bounds
-    -> 3D spatial bins
+    -> 3D spatial bins/hash
     -> corridor relevance filter
     -> all-agent neighbor/conflict candidate query
     -> tiny aggregate result / GPU-resident follow-up
 ```
 
+These massively parallel scene-reduction passes are the first GPU target. The
+goal is to reduce thousands of objects to the small set that can influence an
+agent's corridor/local horizon before expensive route reasoning.
+
 The prototype deliberately uses a conservative swept sphere and fixed-capacity
 3D cells so overflow and scaling are measurable. It does not claim this is the
 final representation.
 
-The next GPU experiment should implement the same externally visible
-`NavigationMap` behavior rather than create another public GPU-specific API.
-That gives a direct CPU-reference/GPU comparison and prevents backend details
-from propagating through the game.
+Single-agent A*/Theta*/SIPP-style graph search is **not** the first compute-shader
+migration target. Priority/frontier processing is branch-heavy and irregular for
+one request. Precision/global graph search remains a CPU-worker candidate until
+batched measurements prove a GPU version is beneficial. A hybrid backend is an
+explicitly valid result: CPU topology/search + GPU prediction/binning/conflict
+reduction.
+
+The GPU experiment must implement the same externally visible `NavigationMap`
+behavior rather than create another public GPU-specific API. That gives a direct
+CPU-reference/GPU comparison and prevents backend details from propagating
+through the game.
+
+### GPU scheduling rule
 
 GPU work must be asynchronous/double- or triple-buffered in the final runtime.
-A compute dispatch followed by synchronous full readback is not an acceptable
-replacement for a CPU stall. The benchmark reads back only a tiny aggregate
-statistics block.
+This is prohibited:
+
+```text
+dispatch compute
+    -> wait/fence/barrier for CPU consumption
+    -> blocking bulk readback
+    -> continue frame
+```
+
+The intended scheduling is:
+
+```text
+frame N:   submit NavigationWorld update N
+frame N+1: consume last completed bounded result; submit N+1
+```
+
+Detailed conflict data should stay GPU-resident where useful or cross the CPU/GPU
+boundary through bounded asynchronous compact buffers. A GPU backend is rejected
+if it merely converts the current CPU hitch into a GPU synchronization hitch.
 
 ## Performance contract
 
@@ -297,6 +382,10 @@ The local planner operates on a receding physical horizon, conceptually:
 ```text
 D >= v*T_latency + v^2/(2*a_brake) + turn_distance + safety_margin
 ```
+
+`T_latency` includes asynchronous publication/compute delay. This allows one or
+more frames of buffered NavigationWorld processing without weakening safety; the
+horizon must be large enough to cover the data age plus braking/turning margin.
 
 Only the next section requires high-resolution dynamic reasoning. Farther route
 regions remain coarse intent. This prevents route length from linearly exploding
@@ -376,7 +465,7 @@ can become an avoidance/collision candidate.
 
 ## Current gates
 
-### NAV-V2-MAP-1
+### NAV-V2-MAP-1 — accepted reference boundary
 
 Implementation:
 
@@ -402,21 +491,58 @@ Required evidence:
 - sparse query path does not intentionally scan the full actor table;
 - CPU reference contract passes in MinGW64.
 
-### NAV-V2-GPU-0
-
-The existing benchmark remains valid evidence for choosing dynamic backend
-ownership:
+Target-machine evidence reported 2026-09-16:
 
 ```text
-benchmarks/navigation_gpu/main.cpp
-benchmarks/navigation_gpu/README.md
-benchmarks/navigation_gpu/run_mingw64.sh
-tests/architecture_contracts/check_navigation_gpu_benchmark.py
+navigation_map: 1/1 PASS
+100% tests passed, 0 failed
 ```
 
-It evaluates deterministic `cruise` and dense `hub` distributions at 1k / 5k /
-10k actors and measures GPU prediction/binning, corridor filtering, all-agent
-candidate queries, CPU submission, memory, overflow and readback.
+### NAV-V2-MAP-2 — active CPU/GPU measurement gate
+
+CPU measurement target:
+
+```text
+benchmarks/navigation_map/
+```
+
+GPU comparison target:
+
+```text
+benchmarks/navigation_gpu/
+```
+
+Both use deterministic `cruise` and `hub` 1k/5k/10k actor classes. The decision
+must compare:
+
+```text
+CPU rebuild/publication median + p95
+CPU corridor/local query median + p95
+GPU compute median + p95
+CPU submission cost
+candidate/conflict counts
+cells visited / actors examined
+overflow/rejected/out-of-bounds diagnostics
+memory footprint
+readback bytes
+```
+
+The result may be CPU, GPU or hybrid. Backend choice must not alter the public
+NavigationMap API.
+
+### NAV-V2-SPACE-1 — next after backend evidence
+
+Add inside the same ownership boundary:
+
+```text
+static free-space / clearance
+connectivity / portals
+local invalidation
+agent-envelope queries
+```
+
+Choose sparse voxel/octree, convex free-space cells, region graph or hybrid from
+measured/runtime requirements rather than preference.
 
 ## Non-negotiable v2 rules
 
@@ -424,12 +550,18 @@ candidate queries, CPU submission, memory, overflow and readback.
   cross-module shared structure.
 - Ship-centered NavigationWorld is a working domain, not replacement for precise
   authoritative system state.
+- Its working origin may translate/rebase, but shared navigation axes do not
+  rotate with instantaneous hull attitude.
 - Hub-local/private navigation remains Hub-local and publishes only relevant data
   into the active working domain.
 - No per-agent full-scene scans.
 - No synchronous route-wide dense sampling/validation on the frame thread.
 - No fixed arbitrary obstacle-count cap as a correctness strategy.
-- GPU acceleration must not introduce synchronous large readbacks.
+- Dynamic P/V/A stays actor-owned; do not duplicate it into a dense 3D field.
+- GPU acceleration must not introduce synchronous waits or large blocking
+  readbacks.
+- CPU/GPU/hybrid backend selection is benchmark-driven and remains behind the
+  same NavigationMap API.
 - Static free space is cached/baked and locally invalidated, not rediscovered on
   every route request.
 - Dynamic prediction is corridor/horizon filtered before expensive planning.

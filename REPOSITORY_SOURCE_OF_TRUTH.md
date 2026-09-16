@@ -8,25 +8,50 @@
 
 `main` is the only canonical game-development branch.
 
-Long-lived parallel game-development branches are prohibited. Do not create or adopt `chatgpt/*`, feature, experiment, or personal branches as an alternative project baseline.
+Long-lived parallel game-development branches are prohibited. Do not create or adopt `chatgpt/*`, feature, experiment, staging, anchor, or personal branches as an alternative project baseline.
 
 A temporary rescue branch is allowed only to preserve divergent/unpublished history long enough to inspect and merge it safely. A rescue branch is not a development branch: do not continue feature work on it, do not name it as canonical in project-state Markdown, and delete it after its history has been incorporated into `main`.
 
-If a tool or workflow temporarily requires a non-`main` branch, merge its result back into `main` in the same work slice and return project state/documentation to `main` before handoff.
+If a tool or workflow temporarily requires a non-`main` ref, merge its result back into `main` in the same work slice and return project state/documentation to `main` before handoff.
 
 Before coding or reporting project state, verify the exact GitHub ref being inspected. For a normal development iteration the answer must be `main` / `origin/main` unless the operation is explicitly a short-lived recovery step.
 
-## 2026-09-16 branch reconciliation
+## 2026-09-16 full branch reconciliation
 
-The repository had accidentally accumulated three divergent histories:
+The repository had accumulated one active divergence plus a set of old staging/anchor refs.
 
-- old `main`;
-- `chatgpt/mae-v01075-semantic-workflow-motion-v5`;
-- the user's local line later published temporarily as `rescue/local-97500`.
+Primary active divergence:
 
-They were reconciled into `main` with a three-parent merge commit. Content was audited before the merge: the rescue and remote development lines contained the same current NavigationMap implementation; the remote development line additionally contained the later `NAV-V2-MAP-2` architecture-contract fix and CPU NavigationMap benchmark; old `main` contained project-state/history and asset-license/provenance material that had to be retained.
+```text
+old main
+chatgpt/mae-v01075-semantic-workflow-motion-v5
+rescue/local-97500
+```
 
-After reconciliation, both former development lines are ancestors of `main`. They are historical/recovery refs only and must not be used for further game development.
+These three histories were content-audited and reconciled by merge commit:
+
+```text
+9352fe7589ec109827e9633403d81bba46bdc926
+```
+
+The audit established that rescue and the remote development line carried the same current NavigationMap implementation; the remote development line additionally contained the later `NAV-V2-MAP-2` architecture-contract correction and CPU NavigationMap benchmark; old `main` contained current project-state/history plus asset-license/provenance material that had to be retained.
+
+A subsequent branch inventory found older localization/editor staging refs. Most already pointed to ancestors of `main`. Two unique historical tips remained:
+
+```text
+62b74e4708b75b0668924c279f36949e27a2e241  localization completion/staging line
+ea94d792b8ab727760eaf7c5f7fed3b3c942d12a  v0.10.75 workflow-master/motion-v5 draft
+```
+
+Their history was absorbed by merge commit:
+
+```text
+255930012d025a6d9f55c08a84f888e9b8ff8de8
+```
+
+The current accepted `main` tree was deliberately retained for that historical merge. The old side branches contained superseded/intermediate editor structures; resurrecting those files would have reverted later accepted architecture. Their commits are preserved in `main` history without replacing current code.
+
+After these merges every non-`main` branch tip present in the repository inventory is an ancestor of `main`. The old refs are therefore cleanup-only and may be deleted without losing commit history.
 
 ## Mandatory verification sequence
 
@@ -40,6 +65,7 @@ For every game-development iteration:
 5. Treat user-provided local console output as target-machine evidence, not proof of unseen code.
 6. If local history diverges, preserve it first with a temporary rescue ref, reconcile it into main, then delete the rescue ref.
 7. Do not move the canonical baseline away from main to work around divergence.
+8. Do not leave temporary branches behind after their commits are ancestors of main.
 ```
 
 The 2026-09-16 failure mode was inspecting an obsolete `main`, then treating current GitHub code on another branch as hypothetical `LOCAL / UNPUSHED` work. The corrective rule is not to keep a second canonical branch; it is to prevent branch divergence and keep `main` authoritative.

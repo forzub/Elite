@@ -3,7 +3,7 @@
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-SPACE-1` — dense graph accepted; private spatial-index candidate pending target-machine rerun
+**Stage:** `NAV-V2-SPACE-1` — costed static corridor semantics pending target-machine behavior gate
 
 ## Source of truth
 
@@ -11,120 +11,73 @@
 
 ## Accepted prior gates
 
-`NAV-V2-MAP-2` is closed with measured hybrid ownership:
+`NAV-V2-MAP-2` is closed with measured hybrid ownership.
+
+`NAV-V2-SPACE-1` boundary/reference is accepted. Static graph/index performance progression is also accepted:
 
 ```text
-CPU
-    static free-space / clearance
-    connectivity / portals
-    sparse cached global corridor search
-    precision local search
-
-GPU
-    dynamic P/V/A prediction
-    conservative swept bounds
-    spatial binning
-    all-agent neighbor/conflict reduction
+baseline 10k corridor            ≈1.95-1.99 s
+per-region adjacency             ≈21.8-22.4 ms
+dense RegionSlot BFS             ≈7.9-8.0 ms
+RegionSlot BVH point p95         0.0353 ms open / 0.0099 ms hub
+RegionSlot BVH invalidation p95  0.0112 ms open / 0.0115 ms hub
 ```
 
-`NAV-V2-SPACE-1` boundary/reference behavior is accepted:
+The static ordinary-query side is now comfortably below the main-thread budget. Full replace/local patch are ~44-49 ms median at 10k because graph + BVH are rebuilt transactionally; keep them worker/update-side for now.
 
-```text
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
-```
-
-Public `NavigationSpace.h` remains backend-neutral/PImpl.
-
-## Static-space scaling decisions already accepted
-
-### Baseline
-
-```text
-10k corridor ~1.95-1.99 s
-portal examinations=285,913,245
-```
-
-### Optimization 1 — per-region adjacency
-
-```text
-10k corridor ~21.8-22.4 ms
-portal examinations=57,189
-```
-
-### Optimization 2 — dense RegionSlot graph
-
-```text
-open_10k corridor median/p95 = 7.9396 / 7.9735 ms
-hub_10k  corridor median/p95 = 7.9981 / 8.4877 ms
-```
-
-The dense-slot implementation passed the C++ behavior test and benchmark. The architecture test's reported failure was a test-string defect (`std::vector<RegionSlot>` vs actual `std::vector<Impl::RegionSlot>`); that marker is fixed on `main`.
-
-A roughly 8 ms 10k coarse unweighted global corridor is acceptable for the asynchronous worker/reference path. Stop micro-optimizing BFS for now.
+Raw evidence: `benchmarks/navigation_space/RUN_LOG.md`.
 
 ## Accepted moving-goal design
 
-The user's pursuit/fleeing case is documented in:
+`src/world/navigation/PURSUIT_HORIZON.md` defines receding moving-goal/intercept pursuit. It is not the active implementation task yet.
+
+## Active candidate — costed corridor v1
+
+Fast `queryCorridor()` remains the deterministic topology/BFS oracle.
+
+New public static-space products:
 
 ```text
-src/world/navigation/PURSUIT_HORIZON.md
+CorridorCostPolicy
+CostedCorridorResult
+queryCostedCorridor(query, policy)
 ```
 
-Pursuit uses a receding moving-goal/intercept horizon:
+Policy:
 
 ```text
-target observed/shared P/V/A
-        |
-short bounded prediction
-        |
-static-space feasibility / dynamic conflicts
-        |
-predicted intercept region/state
-        |
-reuse corridor while branch remains valid
-        |
-local target -> Ruckig -> execute near segment -> repeat
+distanceWeight
+preferredClearanceMultiple
+clearancePenaltyMeters
 ```
 
-Do not rebuild the complete global corridor every frame. Do not give hostile pursuers private target-route intent unless gameplay policy explicitly allows it.
-
-Implementation of pursuit is later than the current static-space gate.
-
-## Optimization 3 candidate — private spatial index
-
-Current measured ordinary/static costs before this candidate:
+Static route cost v1:
 
 ```text
-open_10k point p95=0.2814 ms, invalidate median/p95=3.6275/3.7643 ms
-hub_10k  point p95=0.7043 ms, invalidate median/p95=3.2642/3.3515 ms
+edge cost = distanceWeight * geometric_distance
+          + clearance_penalty
 ```
 
-The private implementation now builds an AABB BVH over dense `RegionSlot` identity.
+Traversal remains fail-closed on physical fit. Clearance penalty only chooses among already traversable alternatives.
 
-It is used by:
+Pinned behavior cases:
 
 ```text
-queryPoint()
-queryCorridor() start/end region localization
-invalidateBounds()
+wall_with_aperture
+    small/fitting agent -> portal through opening
+    oversized agent -> no route through opening
+
+canyon_vs_overflight
+    distance-only -> short canyon
+    clearance-aware -> longer open overflight
+    agent too large for canyon -> overflight regardless of preference
 ```
 
-`invalidateBounds()` also uses endpoint incidence:
-
-```text
-RegionSlot -> PortalId[] touching the region
-```
-
-so local invalidation does not scan the entire portal map.
-
-Exact containment/intersection/clearance checks remain authoritative. Public API is unchanged.
-
-Full replacement and local patch rebuild graph + BVH transactionally; those are update/worker-path operations and are allowed to cost more in exchange for cheaper ordinary queries.
+This is the first explicit contract that NPCs may fly through holes/tunnels/canyons rather than treating the enclosing obstacle as one solid keep-out volume.
 
 ## RUN NOW
 
-Because `NavigationSpace.cpp` and the architecture contract changed, rerun the full static-space gate and benchmark:
+Only the architecture + behavior gate is required. The accepted scaling benchmark does not need to be repeated because the existing BFS/BVH hot paths were not changed.
 
 ```bash
 cd /d/__elite/work
@@ -135,21 +88,16 @@ git merge --ff-only origin/main
 
 python tests/architecture_contracts/check_navigation_space_boundary.py
 bash tests/navigation_space/run_mingw64.sh
-python tests/architecture_contracts/check_navigation_space_benchmark.py
-bash benchmarks/navigation_space/run_mingw64.sh
 ```
 
 Send the complete output.
 
-## Decision after spatial-index measurement
+## After PASS
 
-Do not add another internal optimization before seeing the numbers.
+1. accept aperture/canyon static route semantics;
+2. add a small dedicated costed-corridor performance benchmark before using it broadly at 10k topology scale;
+3. then add the next semantic term only from gameplay need: turn/curvature cost first, dynamic traffic/risk later in the combined NavigationWorld/local planner;
+4. pursuit runtime remains after static route quality is accepted;
+5. live `EliteGame` / `EliteServer` integration remains later.
 
-Expected decision rule:
-
-- point/invalidation collapse to sub-millisecond: accept spatial query side and move next to weighted/costed corridor semantics + aperture/canyon acceptance cases;
-- patch/publication dominate but ordinary queries are cheap: leave them worker-side until bounded update ownership becomes necessary;
-- spatial build/query unexpectedly regresses: fix/reject the BVH before proceeding;
-- only add more hierarchy/bricks if measured evidence requires it.
-
-Do not yet wire NavigationSpace into live runtime, delete migration navigation code, or implement pursuit runtime behavior.
+Do not delete legacy migration navigation yet and do not move transactional topology rebuild onto the frame path.

@@ -2,19 +2,11 @@
 
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
-**Editor baseline:** v0.10.86 accepted  
-**Renderer:** OpenGL 4.3 Core + GPU-P0/P0.1 accepted  
-**Navigation:** `NAV-V2-SPACE-1` — static indexing + distance/clearance costed routing accepted; turn-aware static cost candidate pending target-machine gate
+**Navigation:** `NAV-V2-SPACE-1` — static indexing + costed route quality accepted; turn-aware scaling active
 
-## Repository source of truth
+## Accepted Navigation v2 ownership
 
-`main` is the only canonical game-development branch. `REPOSITORY_SOURCE_OF_TRUTH.md` governs branch/recovery policy.
-
-## Navigation v2 accepted architecture
-
-Navigation v2 uses one shared ship-centered `NavigationWorld`. The legacy whole-route synchronous chain remains migration code. `RuckigTrajectorySolver` is downstream local kinematics after navigation selects a safe temporary target.
-
-Accepted hybrid ownership:
+Navigation v2 uses one shared ship-centered `NavigationWorld`.
 
 ```text
 CPU
@@ -30,105 +22,70 @@ GPU
     all-agent neighbor/conflict reduction
 ```
 
-Moving-target pursuit is documented in `src/world/navigation/PURSUIT_HORIZON.md`: receding predicted intercept state/region, bounded prediction, corridor reuse while the branch remains valid, no complete global replan every frame.
+`RuckigTrajectorySolver` remains downstream local kinematics, not path search. Moving-target pursuit remains documented in `src/world/navigation/PURSUIT_HORIZON.md` and is not yet the active runtime task.
 
 ## `NAV-V2-MAP-2` — CLOSED
 
-Accepted 100-iteration 10k evidence:
+Accepted 10k evidence includes:
 
 ```text
-CPU cruise corridor p95=0.1713 ms, sphere p95=0.1329 ms, rebuild p95=3.0958 ms
-CPU hub    corridor p95=0.1551 ms, sphere p95=0.0471 ms, rebuild p95=2.4924 ms
-GPU cruise total median=0.6840 ms, p95=1.3226 ms
-GPU hub    total median=1.6097 ms, p95=1.6258 ms
+CPU cruise corridor p95=0.1713 ms, sphere p95=0.1329 ms
+CPU hub    corridor p95=0.1551 ms, sphere p95=0.0471 ms
+GPU cruise total p95=1.3226 ms
+GPU hub    total p95=1.6258 ms
 ```
 
-## `NAV-V2-SPACE-1` static boundary/indexing — ACCEPTED
+## `NAV-V2-SPACE-1` indexing — ACCEPTED
 
-Canonical block: `src/world/navigation/space/`.
-
-Accepted graph/index progression:
+Accepted progression:
 
 ```text
-baseline full portal scan
-    10k corridor ≈1.95-1.99 s
-
-per-region adjacency
-    10k corridor ≈21.8-22.4 ms
-
-private dense RegionSlot graph
-    open_10k corridor median/p95=7.9396/7.9735 ms
-    hub_10k  corridor median/p95=7.9981/8.4877 ms
-
-private RegionSlot AABB BVH + incident portal index
-    open_10k point p95=0.0353 ms
-    hub_10k  point p95=0.0099 ms
-    open_10k invalidation p95=0.0112 ms
-    hub_10k  invalidation p95=0.0115 ms
+baseline 10k full-portal corridor ≈1.95-1.99 s
+per-region adjacency              ≈21.8-22.4 ms
+dense RegionSlot BFS              ≈7.9-8.0 ms
+BVH point p95                     <=0.0353 ms
+BVH local invalidation p95        <=0.0115 ms
 ```
 
-Full replace/local patch are roughly 44-49 ms median at 10k because graph + BVH are rebuilt transactionally. Those remain worker/update paths, not frame-path operations.
+Full replace/local patch remain roughly 44-49 ms median at 10k and stay worker/update-side.
 
 ## Costed static corridor v1 — ACCEPTED
 
-Fast `queryCorridor()` remains the deterministic topology/BFS oracle.
-
-`queryCostedCorridor()` v1 adds:
+Behavior:
 
 ```text
-distanceWeight
-preferredClearanceMultiple
-clearancePenaltyMeters
+wall aperture: fitting agent passes; oversized agent rejected
+canyon vs overflight: distance/clearance policy chooses the expected branch
 ```
 
-Behavior is target-machine accepted:
+Accepted 10k p95:
 
 ```text
-wall_with_aperture
-    fitting agent -> through opening
-    oversized agent -> rejected
-
-canyon_vs_overflight
-    distance-only -> short canyon
-    clearance-aware -> longer open route
-    oversized canyon agent -> open route
+open distance_only      8.1733 ms
+open clearance_aware    8.5020 ms
+hub  distance_only      7.7609 ms
+hub  clearance_aware    9.6103 ms
 ```
 
-Dedicated costed-scaling benchmark is also accepted. Target-machine 10k p95:
+The predeclared `<=15 ms` gate passed, so RegionSlot Dijkstra v1 remains unchanged.
+
+## Static turn cost v2 — ACCEPTED behavior
+
+Fresh target-machine evidence:
 
 ```text
-open_10k distance_only     8.1733 ms
-open_10k clearance_aware   8.5020 ms
-hub_10k  distance_only     7.7609 ms
-hub_10k  clearance_aware   9.6103 ms
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
 ```
 
-The predeclared acceptance threshold was `<=15 ms p95`; therefore deterministic Dijkstra v1 is accepted as an asynchronous worker/reference solve without A*/heap optimization before the next semantic term.
-
-Raw evidence:
-
-```text
-benchmarks/navigation_space/RUN_LOG.md
-benchmarks/navigation_space_costed/RUN_LOG.md
-```
-
-`totalCostMetersEquivalent` remains a coarse branch-comparison metric, not exact physical trajectory length.
-
-## Active candidate — static turn cost v2
-
-Design contract:
-
-```text
-src/world/navigation/STATIC_TURN_COST.md
-```
-
-`CorridorCostPolicy` now includes:
+Policy:
 
 ```text
 turnPenaltyMetersPerRadian
 ```
 
-Critical invariant:
+Search invariant:
 
 ```text
 turnPenalty == 0
@@ -138,22 +95,16 @@ turnPenalty > 0
     -> expanded state (RegionSlot, incoming PortalId)
 ```
 
-The expanded state is required because the future turn cost depends on arrival direction. Two arrivals at the same region through different portals cannot be collapsed into one state.
+The expanded state is required because future turn cost depends on arrival direction. `zigzag_vs_smooth` is accepted: zero penalty chooses the shorter zig-zag; positive penalty chooses the smoother branch once saved turn burden exceeds the distance delta.
 
-Static v2 turn term:
+Static turn cost remains coarse route quality only. Initial heading/velocity, angular acceleration, speed-dependent turn radius, braking and dynamic traffic remain local/dynamic planner concerns.
 
-```text
-turn cost = turnPenaltyMetersPerRadian * turn_angle_radians
-```
+## Active measurement — turn-aware scaling
 
-Turn angle is measured at the current coarse region center between incoming-portal direction and outgoing-portal direction. The special start state has no static turn penalty because `CorridorQuery` does not carry initial heading/velocity.
-
-Pinned new fixture:
+New harness:
 
 ```text
-zigzag_vs_smooth
-    turnPenalty=0 -> slightly shorter zig-zag
-    turnPenalty>0 -> smoother branch when saved turn cost exceeds distance delta
+benchmarks/navigation_space_turn/
 ```
 
-Implementation + fixture + architecture markers are on `main`; target-machine MinGW64 behavior gate is pending.
+It compares `turn=0` vs positive turn penalty on the same open/hub 1k/5k/10k topology and records med/p95 plus expansion diagnostics. The result decides whether the current expanded `std::map`/`std::multimap` reference is retained or privately optimized before dynamic/local-horizon integration.

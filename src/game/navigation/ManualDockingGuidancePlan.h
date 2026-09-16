@@ -54,15 +54,24 @@ struct ManualDockingGuidancePlan
     double transitMaxClosureRateMps = 0.0;
     double dockingMaxClosureRateMps = 0.0;
 
-    // Rolling manual guidance: one published generation is immutable, but the
-    // controller checks the actual ship course at a low fixed rate and emits a
-    // new generation before the ship leaves the corridor. Individual gates
-    // never slide with the ship inside one generation.
-    double replanCheckIntervalSeconds = 0.25; // 4 Hz
+    // Rolling manual guidance is still synchronous on the client frame. A
+    // failed/expensive reconnect previously took longer than the old 0.25 s
+    // period, so the next frame was already overdue and immediately launched
+    // another solve. Until this solve is moved to a worker/latest-wins job,
+    // 1 Hz is the hard protection against frame-by-frame replan thrash.
+    double replanCheckIntervalSeconds = 1.0;
     double nextReplanCheckServerTimeSeconds = -1.0e30;
     double predictedLookAheadSeconds = 0.75;
     double preemptiveToleranceScale = 0.65;
-    double hardToleranceScale = 1.05;
+
+    // IMPORTANT: the old hard-envelope path bypassed the cadence timer and
+    // launched a synchronous reconnect immediately. When one reconnect took
+    // ~0.37 s, that became a frame-by-frame replan storm. Manual guidance is
+    // advisory, so while reconnect remains synchronous all rebuild triggers
+    // must go through the 1 Hz policy above. A future worker/latest-wins
+    // implementation can restore an immediate hard-envelope event safely.
+    double hardToleranceScale = 1.0e9;
+
     double courseChangeThresholdRadians = 0.06981317007977318; // 4 deg
     double targetPositionReplanMeters = 8.0;
     double targetAngleReplanRadians = 0.02617993877991494; // 1.5 deg

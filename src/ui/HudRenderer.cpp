@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include <glad/gl.h>
 
 #include "core/log.h"
@@ -68,13 +69,13 @@ void HudRenderer::renderRects(const std::vector<HudLineRect>& rects)
         float rw = r.sizeNorm.x * w;
         float rh = r.sizeNorm.y * h;
 
-        glBegin(GL_LINE_LOOP);
-            glColor3f(r.color.r, r.color.g, r.color.b);
-            glVertex2f(x, y);
-            glVertex2f(x + rw, y);
-            glVertex2f(x + rw, y + rh);
-            glVertex2f(x, y + rh);
-        glEnd();
+        elite::render::core_legacy::begin(GL_LINE_LOOP);
+            elite::render::core_legacy::color3f(r.color.r, r.color.g, r.color.b);
+            elite::render::core_legacy::vertex2f(x, y);
+            elite::render::core_legacy::vertex2f(x + rw, y);
+            elite::render::core_legacy::vertex2f(x + rw, y + rh);
+            elite::render::core_legacy::vertex2f(x, y + rh);
+        elite::render::core_legacy::end();
     }
 
     glEnable(GL_DEPTH_TEST);

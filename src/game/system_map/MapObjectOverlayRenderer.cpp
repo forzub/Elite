@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/MapObjectOverlayRenderer.h"
 
 #include <algorithm>
@@ -27,7 +28,7 @@ constexpr glm::vec4 kPanelMuted(0.69f, 0.75f, 0.82f, 1.0f);
 struct ScreenSpaceState
 {
     GLint program = 0;
-    GLint matrixMode = GL_MODELVIEW;
+    GLint matrixMode = elite::render::core_legacy::ModelViewToken;
     GLint blendSrc = GL_ONE;
     GLint blendDst = GL_ZERO;
     GLboolean depthEnabled = GL_FALSE;
@@ -38,10 +39,10 @@ struct ScreenSpaceState
 ScreenSpaceState beginScreenSpace(const Viewport& viewport)
 {
     ScreenSpaceState previous;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &previous.program);
-    glGetIntegerv(GL_MATRIX_MODE, &previous.matrixMode);
-    glGetIntegerv(GL_BLEND_SRC_RGB, &previous.blendSrc);
-    glGetIntegerv(GL_BLEND_DST_RGB, &previous.blendDst);
+    elite::render::core_legacy::getIntegerv(GL_CURRENT_PROGRAM, &previous.program);
+    elite::render::core_legacy::getIntegerv(elite::render::core_legacy::MatrixModeToken, &previous.matrixMode);
+    elite::render::core_legacy::getIntegerv(GL_BLEND_SRC_RGB, &previous.blendSrc);
+    elite::render::core_legacy::getIntegerv(GL_BLEND_DST_RGB, &previous.blendDst);
     previous.depthEnabled = glIsEnabled(GL_DEPTH_TEST);
     previous.blendEnabled = glIsEnabled(GL_BLEND);
     glGetFloatv(GL_LINE_WIDTH, &previous.lineWidth);
@@ -51,10 +52,10 @@ ScreenSpaceState beginScreenSpace(const Viewport& viewport)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::pushMatrix();
+    elite::render::core_legacy::loadIdentity();
+    elite::render::core_legacy::ortho(
         0.0,
         static_cast<double>(viewport.width),
         static_cast<double>(viewport.height),
@@ -63,25 +64,25 @@ ScreenSpaceState beginScreenSpace(const Viewport& viewport)
         1.0
     );
 
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::pushMatrix();
+    elite::render::core_legacy::loadIdentity();
     return previous;
 }
 
 void endScreenSpace(const ScreenSpaceState& previous)
 {
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::popMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::popMatrix();
 
     glLineWidth(previous.lineWidth);
     glBlendFunc(previous.blendSrc, previous.blendDst);
     if (previous.blendEnabled) glEnable(GL_BLEND); else glDisable(GL_BLEND);
     if (previous.depthEnabled) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
     glUseProgram(static_cast<GLuint>(previous.program));
-    glMatrixMode(previous.matrixMode);
+    elite::render::core_legacy::matrixMode(previous.matrixMode);
 }
 
 void drawLine(
@@ -91,12 +92,12 @@ void drawLine(
     float width = 1.0f
 )
 {
-    glColor4f(color.r, color.g, color.b, color.a);
+    elite::render::core_legacy::color4f(color.r, color.g, color.b, color.a);
     glLineWidth(width);
-    glBegin(GL_LINES);
-    glVertex2d(a.x, a.y);
-    glVertex2d(b.x, b.y);
-    glEnd();
+    elite::render::core_legacy::begin(GL_LINES);
+    elite::render::core_legacy::vertex2d(a.x, a.y);
+    elite::render::core_legacy::vertex2d(b.x, b.y);
+    elite::render::core_legacy::end();
     glLineWidth(1.0f);
 }
 
@@ -140,12 +141,12 @@ void drawProjectedTrajectory(const MapObjectTrajectory& trajectory)
             break;
     }
 
-    glColor4f(color.r, color.g, color.b, color.a);
+    elite::render::core_legacy::color4f(color.r, color.g, color.b, color.a);
     glLineWidth(width);
-    glBegin(GL_LINE_STRIP);
+    elite::render::core_legacy::begin(GL_LINE_STRIP);
     for (const auto& point : points)
-        glVertex2d(point.x, point.y);
-    glEnd();
+        elite::render::core_legacy::vertex2d(point.x, point.y);
+    elite::render::core_legacy::end();
     glLineWidth(1.0f);
 }
 
@@ -156,13 +157,13 @@ void drawRect(
     const glm::vec4& color
 )
 {
-    glColor4f(color.r, color.g, color.b, color.a);
-    glBegin(GL_QUADS);
-    glVertex2d(topLeft.x, topLeft.y);
-    glVertex2d(topLeft.x + width, topLeft.y);
-    glVertex2d(topLeft.x + width, topLeft.y + height);
-    glVertex2d(topLeft.x, topLeft.y + height);
-    glEnd();
+    elite::render::core_legacy::color4f(color.r, color.g, color.b, color.a);
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
+    elite::render::core_legacy::vertex2d(topLeft.x, topLeft.y);
+    elite::render::core_legacy::vertex2d(topLeft.x + width, topLeft.y);
+    elite::render::core_legacy::vertex2d(topLeft.x + width, topLeft.y + height);
+    elite::render::core_legacy::vertex2d(topLeft.x, topLeft.y + height);
+    elite::render::core_legacy::end();
 }
 
 void drawRectOutline(
@@ -173,14 +174,14 @@ void drawRectOutline(
     float lineWidth = 1.0f
 )
 {
-    glColor4f(color.r, color.g, color.b, color.a);
+    elite::render::core_legacy::color4f(color.r, color.g, color.b, color.a);
     glLineWidth(lineWidth);
-    glBegin(GL_LINE_LOOP);
-    glVertex2d(topLeft.x, topLeft.y);
-    glVertex2d(topLeft.x + width, topLeft.y);
-    glVertex2d(topLeft.x + width, topLeft.y + height);
-    glVertex2d(topLeft.x, topLeft.y + height);
-    glEnd();
+    elite::render::core_legacy::begin(GL_LINE_LOOP);
+    elite::render::core_legacy::vertex2d(topLeft.x, topLeft.y);
+    elite::render::core_legacy::vertex2d(topLeft.x + width, topLeft.y);
+    elite::render::core_legacy::vertex2d(topLeft.x + width, topLeft.y + height);
+    elite::render::core_legacy::vertex2d(topLeft.x, topLeft.y + height);
+    elite::render::core_legacy::end();
     glLineWidth(1.0f);
 }
 
@@ -193,21 +194,21 @@ void drawActiveObjectRing(
     glm::vec4 color = item.factionColor;
     color.a = 0.92f;
 
-    glColor4f(color.r, color.g, color.b, color.a);
+    elite::render::core_legacy::color4f(color.r, color.g, color.b, color.a);
     glLineWidth(1.8f);
-    glBegin(GL_LINE_LOOP);
+    elite::render::core_legacy::begin(GL_LINE_LOOP);
     for (int i = 0; i < segments; ++i)
     {
         const double angle =
             6.28318530717958647692 *
             static_cast<double>(i) /
             static_cast<double>(segments);
-        glVertex2d(
+        elite::render::core_legacy::vertex2d(
             item.screenPx.x + std::cos(angle) * radius,
             item.screenPx.y + std::sin(angle) * radius
         );
     }
-    glEnd();
+    elite::render::core_legacy::end();
     glLineWidth(1.0f);
 }
 
@@ -225,24 +226,24 @@ void drawTriangle(
     const glm::dvec2 left = item.screenPx - forward * size * 0.75 - right * size * 0.72;
     const glm::dvec2 rightPoint = item.screenPx - forward * size * 0.75 + right * size * 0.72;
 
-    glColor4f(
+    elite::render::core_legacy::color4f(
         item.factionColor.r,
         item.factionColor.g,
         item.factionColor.b,
         item.factionColor.a
     );
-    glBegin(GL_TRIANGLES);
-    glVertex2d(tip.x, tip.y);
-    glVertex2d(left.x, left.y);
-    glVertex2d(rightPoint.x, rightPoint.y);
-    glEnd();
+    elite::render::core_legacy::begin(GL_TRIANGLES);
+    elite::render::core_legacy::vertex2d(tip.x, tip.y);
+    elite::render::core_legacy::vertex2d(left.x, left.y);
+    elite::render::core_legacy::vertex2d(rightPoint.x, rightPoint.y);
+    elite::render::core_legacy::end();
 
-    glColor4f(1.0f, 1.0f, 1.0f, 0.62f);
-    glBegin(GL_LINE_LOOP);
-    glVertex2d(tip.x, tip.y);
-    glVertex2d(left.x, left.y);
-    glVertex2d(rightPoint.x, rightPoint.y);
-    glEnd();
+    elite::render::core_legacy::color4f(1.0f, 1.0f, 1.0f, 0.62f);
+    elite::render::core_legacy::begin(GL_LINE_LOOP);
+    elite::render::core_legacy::vertex2d(tip.x, tip.y);
+    elite::render::core_legacy::vertex2d(left.x, left.y);
+    elite::render::core_legacy::vertex2d(rightPoint.x, rightPoint.y);
+    elite::render::core_legacy::end();
 }
 
 
@@ -293,11 +294,11 @@ void drawHubCube(
 
     glm::vec4 face = item.factionColor;
     face.a *= 0.24f;
-    glColor4f(face.r, face.g, face.b, face.a);
-    glBegin(GL_QUADS);
+    elite::render::core_legacy::color4f(face.r, face.g, face.b, face.a);
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
     for (const auto& p : front)
-        glVertex2d(p.x, p.y);
-    glEnd();
+        elite::render::core_legacy::vertex2d(p.x, p.y);
+    elite::render::core_legacy::end();
 
     glm::vec4 line = item.factionColor;
     line.a = std::max(line.a, 0.92f);

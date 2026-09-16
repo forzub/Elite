@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/DetailMapPlanetPass.h"
 #include "src/game/system_map/LocalMapAtmosphereRenderer.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
@@ -428,18 +429,18 @@ void DetailMapPlanetPass::drawPlanetSphereGrid(
             const glm::dvec2 sb =
                 activeCamera().project(b);
 
-            glVertex2d(sa.x, sa.y);
-            glVertex2d(sb.x, sb.y);
+            elite::render::core_legacy::vertex2d(sa.x, sa.y);
+            elite::render::core_legacy::vertex2d(sb.x, sb.y);
         };
 
-    glColor4f(
+    elite::render::core_legacy::color4f(
         0.18f,
         0.42f,
         0.85f,
         0.72f
     );
 
-    glBegin(GL_LINES);
+    elite::render::core_legacy::begin(GL_LINES);
 
     // =========================================================
     // Параллели: полные кольца вокруг планеты.
@@ -537,7 +538,7 @@ void DetailMapPlanetPass::drawPlanetSphereGrid(
         }
     }
 
-    glEnd();
+    elite::render::core_legacy::end();
 
     // =========================================================
     // Полюса. Показываем только тот, который на видимой стороне.
@@ -555,7 +556,7 @@ void DetailMapPlanetPass::drawPlanetSphereGrid(
         planet.planetCenterMeters -
         northAxis * r * 1.018;
 
-    glColor4f(
+    elite::render::core_legacy::color4f(
         0.55f,
         0.8f,
         1.0f,
@@ -601,11 +602,11 @@ void DetailMapPlanetPass::drawPlanetFilledDisk(
         centerPx.y + activeCamera().state.pan.y
     };
 
-    glColor4f(0.035f, 0.09f, 0.18f, 0.92f);
+    elite::render::core_legacy::color4f(0.035f, 0.09f, 0.18f, 0.92f);
 
-    glBegin(GL_TRIANGLE_FAN);
+    elite::render::core_legacy::begin(GL_TRIANGLE_FAN);
 
-    glVertex2d(c.x, c.y);
+    elite::render::core_legacy::vertex2d(c.x, c.y);
 
     for (int i = 0; i <= 192; ++i)
     {
@@ -614,13 +615,13 @@ void DetailMapPlanetPass::drawPlanetFilledDisk(
             static_cast<double>(i) /
             192.0;
 
-        glVertex2d(
+        elite::render::core_legacy::vertex2d(
             c.x + std::cos(a) * r,
             c.y + std::sin(a) * r
         );
     }
 
-    glEnd();
+    elite::render::core_legacy::end();
 }
 
 void DetailMapPlanetPass::drawPlanetTexturedGlobe(
@@ -1962,9 +1963,7 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
 
 
     GLboolean textureWasEnabled =
-        glIsEnabled(
-            GL_TEXTURE_2D
-        );
+        elite::render::core_legacy::texture2DEnabled();
 
     GLboolean blendWasEnabled =
         glIsEnabled(
@@ -1976,16 +1975,8 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
             GL_CULL_FACE
         );
 
-    GLboolean alphaTestWasEnabled =
-        glIsEnabled(
-            GL_ALPHA_TEST
-        );
-
-
-
-
-
-
+    // Alpha test was removed from the Core profile. This path is
+    // intentionally opaque, so there is no alpha-test state to preserve.
 
     GLint oldTextureBinding =
         0;
@@ -2000,33 +1991,22 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
     );
 
     // Shape model должен быть opaque.
-    // Blend/alpha-test дают эффект дыр, просвечивания и "внутренней" текстуры.
-    glDisable(
-        GL_BLEND
-    );
-
-    glDisable(
-        GL_ALPHA_TEST
-    );
-
-    // Shape model должен быть opaque.
-    // Blend даёт эффект "текстура видна изнутри".
+    // В Core profile alpha test отсутствует; непрозрачность задаётся самим
+    // draw path, поэтому здесь достаточно отключить blending.
     glDisable(
         GL_BLEND
     );
 
     if (mesh->albedoTexture != 0)
     {
-        glEnable(
-            GL_TEXTURE_2D
-        );
+        elite::render::core_legacy::enableTexture2D(true);
 
         glBindTexture(
             GL_TEXTURE_2D,
             mesh->albedoTexture
         );
 
-        glColor4f(
+        elite::render::core_legacy::color4f(
             1.0f,
             1.0f,
             1.0f,
@@ -2035,11 +2015,9 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
     }
     else
     {
-        glDisable(
-            GL_TEXTURE_2D
-        );
+        elite::render::core_legacy::enableTexture2D(false);
 
-        glColor4f(
+        elite::render::core_legacy::color4f(
             0.62f,
             0.60f,
             0.56f,
@@ -2047,44 +2025,44 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
         );
     }
 
-    glBegin(
+    elite::render::core_legacy::begin(
         GL_TRIANGLES
     );
 
     for (const ProjectedTri& tri : projected)
     {
-        glTexCoord2f(
+        elite::render::core_legacy::texCoord2f(
             tri.aUv.x,
             tri.aUv.y
         );
 
-        glVertex2d(
+        elite::render::core_legacy::vertex2d(
             tri.aScreen.x,
             tri.aScreen.y
         );
 
-        glTexCoord2f(
+        elite::render::core_legacy::texCoord2f(
             tri.bUv.x,
             tri.bUv.y
         );
 
-        glVertex2d(
+        elite::render::core_legacy::vertex2d(
             tri.bScreen.x,
             tri.bScreen.y
         );
 
-        glTexCoord2f(
+        elite::render::core_legacy::texCoord2f(
             tri.cUv.x,
             tri.cUv.y
         );
 
-        glVertex2d(
+        elite::render::core_legacy::vertex2d(
             tri.cScreen.x,
             tri.cScreen.y
         );
     }
 
-    glEnd();
+    elite::render::core_legacy::end();
 
     glBindTexture(
         GL_TEXTURE_2D,
@@ -2094,9 +2072,9 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
     );
 
     if (textureWasEnabled)
-        glEnable(GL_TEXTURE_2D);
+        elite::render::core_legacy::enableTexture2D(true);
     else
-        glDisable(GL_TEXTURE_2D);
+        elite::render::core_legacy::enableTexture2D(false);
 
     if (blendWasEnabled)
         glEnable(GL_BLEND);
@@ -2107,18 +2085,6 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
         glEnable(GL_CULL_FACE);
     else
         glDisable(GL_CULL_FACE);
-
-
-
-    if (alphaTestWasEnabled)
-        glEnable(GL_ALPHA_TEST);
-    else
-        glDisable(GL_ALPHA_TEST);
-
-
-
-
-
 
 
     return true;

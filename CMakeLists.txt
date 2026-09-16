@@ -42,6 +42,11 @@ if(ELITE_BUILD_CLIENT)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glad)
 endif()
 
+if(ELITE_BUILD_CLIENT OR ELITE_BUILD_SERVER)
+    include("${CMAKE_SOURCE_DIR}/cmake/EliteRuckigNavigation.cmake")
+    elite_add_ruckig_navigation(EliteNavigationRuckig "${CMAKE_SOURCE_DIR}")
+endif()
+
 
 # Offline Model Asset Editor geometry processing --------------------------------
 # libigl is an authoring-only dependency of the editor. Embree is enabled only
@@ -83,12 +88,72 @@ endif()
 # offline-asset migration gate.
 add_library(EliteModelAsset STATIC
     src/model_asset/ModelAssetBinary.cpp
+    src/model_asset/binary/ModelAssetBinaryMeshCodec.cpp
+    src/model_asset/binary/chunks/MetadataChunks.cpp
+    src/model_asset/binary/chunks/SemanticsChunks.cpp
+    src/model_asset/binary/chunks/CollisionChunks.cpp
+    src/model_asset/binary/chunks/SocketChunks.cpp
+    src/model_asset/binary/chunks/DamageChunks.cpp
+    src/model_asset/binary/chunks/StructuralChunks.cpp
+    src/model_asset/binary/chunks/LodChunks.cpp
+    src/model_asset/binary/chunks/LegacyChunks.cpp
+    src/model_asset/binary/ModelAssetBinaryChunkRegistry.cpp
+    src/model_asset/binary/ModelAssetBinaryValidation.cpp
+    src/model_asset/binary/ModelAssetBinaryStorage.cpp
+    src/model_asset/binary/ModelAssetBinaryManifestIO.cpp
+    src/model_asset/binary/ModelAssetBinaryLodIO.cpp
+    src/model_asset/binary/ModelAssetBinaryController.cpp
     src/model_asset/ModelAssetMigration.cpp
     src/model_asset/RuntimeMeshNormalizer.cpp
 )
 target_include_directories(EliteModelAsset PUBLIC
     "${CMAKE_SOURCE_DIR}"
     "${CMAKE_SOURCE_DIR}/src"
+)
+
+# Runtime library decomposition ------------------------------------------------
+# Wave R0: lowest-level deterministic navigation geometry. This target is
+# intentionally presentation/server/client agnostic and is linked by both
+# runtime executables instead of compiling the same implementation twice.
+add_library(EliteNavigationGeometry STATIC
+    src/world/navigation/NavigationObstacleGeometry.cpp
+    src/world/navigation/GeometricPathPlanner.cpp
+)
+target_include_directories(EliteNavigationGeometry PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+
+# Shared CPU-side authored/runtime assembly geometry. This is intentionally not
+# a render library: it owns OBJ hydration, authored assembly definitions and the
+# CPU cache consumed by authoritative simulation and client presentation.
+add_library(EliteAssemblyGeometry STATIC
+    src/game/geometry/ObjLoader.cpp
+    src/game/geometry/ObjectAssemblyRegistry.cpp
+    src/game/geometry/AssemblyMeshLibrary.cpp
+)
+target_include_directories(EliteAssemblyGeometry PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+target_link_libraries(EliteAssemblyGeometry PRIVATE
+    EliteModelAsset
+)
+
+# Unified game-runtime model ingress. Legacy OBJ/ObjectAssembly and compiled
+# .elmodel both converge on the shared elite::model_asset::ModelAsset schema.
+add_library(EliteRuntimeModelAssets STATIC
+    src/game/assets/CompiledModelAssetReader.cpp
+    src/game/assets/LegacyAssemblyModelAdapter.cpp
+    src/game/assets/RuntimeModelAssetLibrary.cpp
+)
+target_include_directories(EliteRuntimeModelAssets PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+target_link_libraries(EliteRuntimeModelAssets
+    PUBLIC EliteModelAsset
+    PRIVATE EliteAssemblyGeometry
 )
 
 if(ELITE_BUILD_ASSET_EDITOR)
@@ -276,6 +341,7 @@ add_executable(EliteGame
     src/render/Camera.cpp
     src/render/DebugGrid.cpp
     src/render/Renderer.cpp
+    src/render/gpu/GlRuntimeCapabilities.cpp
     src/render/ScreenUtils.cpp
     src/render/ShaderUtils.cpp
     src/render/Font.cpp
@@ -359,7 +425,6 @@ add_executable(EliteGame
     src/render/ship/ShipMeshRenderer.cpp
     src/render/geometry/AssemblyGpuLibrary.cpp
     
-    src/game/geometry/ObjLoader.cpp
     # src/game/geometry/MeshLibrary.cpp
     
     src/render/ShaderLibrary.cpp
@@ -372,8 +437,6 @@ add_executable(EliteGame
     src/debug/FrustumDebugData.cpp
 
     src/world/descriptors/ObjectDescriptorRegistry.cpp
-    src/game/geometry/ObjectAssemblyRegistry.cpp
-    src/game/geometry/AssemblyMeshLibrary.cpp
 
     src/world/modules/ObjectModuleRuntime.cpp
     src/world/modules/ObjectHitBuilder.cpp
@@ -405,9 +468,7 @@ add_executable(EliteGame
     src/world/modules/ObjectDetachedFragmentRuntime.cpp
     src/world/modules/ObjectRepairJobRuntime.cpp
     src/world/navigation/SmallCraftNavigation.cpp
-    src/world/navigation/NavigationObstacleGeometry.cpp
     src/world/navigation/NavigationObstacleFactory.cpp
-    src/world/navigation/GeometricPathPlanner.cpp
     src/world/navigation/SmoothPathOptimizer.cpp
     src/world/navigation/TrajectoryGenerator.cpp
     src/world/navigation/GuidanceTunnel.cpp
@@ -571,8 +632,6 @@ if(ELITE_BUILD_SERVER)
 
         src/game/damage/DamageSystem.cpp
 
-        src/game/geometry/ObjectAssemblyRegistry.cpp
-
         src/world/descriptors/ObjectDescriptorRegistry.cpp
         src/world/objects/StaticObjectDamage.cpp
         src/world/modules/ObjectModuleRuntime.cpp
@@ -585,9 +644,7 @@ if(ELITE_BUILD_SERVER)
         src/world/modules/ObjectRepairJobRuntime.cpp
 
         src/world/navigation/SmallCraftNavigation.cpp
-        src/world/navigation/NavigationObstacleGeometry.cpp
         src/world/navigation/NavigationObstacleFactory.cpp
-        src/world/navigation/GeometricPathPlanner.cpp
         src/world/navigation/SmoothPathOptimizer.cpp
         src/world/navigation/TrajectoryGenerator.cpp
         src/world/navigation/GuidanceTunnel.cpp
@@ -619,6 +676,10 @@ if(ELITE_BUILD_SERVER)
     )
 
     target_link_libraries(EliteServer PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
         nlohmann_json::nlohmann_json
         Threads::Threads
     )
@@ -934,6 +995,10 @@ target_include_directories(EliteGame PRIVATE
 
 target_link_libraries(EliteGame PRIVATE
     EliteModelAsset
+    EliteNavigationGeometry
+    EliteNavigationRuckig
+    EliteAssemblyGeometry
+    EliteRuntimeModelAssets
     glfw
     opengl32
     Freetype::Freetype

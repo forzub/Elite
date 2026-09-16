@@ -75,8 +75,6 @@ glm::mat4 makeLookOrientation(
     return m;
 }
 
-
-
 namespace SolarTestScene
 {
     constexpr double AU = 149597870700.0;
@@ -147,12 +145,7 @@ namespace SolarTestScene
 
     const glm::dvec3 Npc2PositionM =
         StationPositionM + glm::dvec3(1100.0, 2900.0, -8600.0);
-
-
-    
 }
-
-
 
 bool resolveParentBodyForInitialWorldState(
     const GameSimulation& sim,
@@ -169,9 +162,6 @@ bool resolveParentBodyForInitialWorldState(
         parentRadiusMeters
     );
 }
-
-
-
 
 bool spawnOrbitalHubFromInitialState(
     GameSimulation& sim,
@@ -286,10 +276,6 @@ bool spawnOrbitalHubFromInitialState(
     return true;
 }
 
-
-
-
-
 bool spawnInitialWorldStateObjects(
     GameSimulation& sim,
     const game::world_state::InitialWorldState& state
@@ -313,11 +299,6 @@ bool spawnInitialWorldStateObjects(
 
     return spawnedForActiveSystem;
 }
-
-
-
-
-
 
 bool findHubMapObjectPositionMeters(
     const GameSimulation& sim,
@@ -362,21 +343,6 @@ findInitialHub(
 
     return nullptr;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 EntityId spawnPromoPlayer(GameSimulation& sim)
 {
@@ -492,7 +458,6 @@ void spawnPromoStation(GameSimulation& sim)
     );
 }
 
-
 EntityId spawnHubMotionLabNpc(
     GameSimulation& sim,
     game::diagnostics::HubMotionLabActorKind kind,
@@ -588,11 +553,11 @@ void spawnHubGuidanceTestModules(
         glm::dvec3 localAngularVelocityDegPerSecond;
     };
 
-    // Hub visual-local basis is X=normal, Y=radial, Z=-prograde. Both test
-    // meshes have their through corridor along local Z, so their docking axis
-    // is collinear with orbital prograde as requested. The box is the single
-    // slow rotation probe (2 deg/s); the cylinder is deliberately static. They
-    // are several kilometres apart to create a useful short-range guidance lab.
+    // Two authored docking targets stay on the +/-X service axis. The stress
+    // objects are deliberately NOT a wall on player -> dock. They form two
+    // staggered deterministic shells around the hub, with vertical variation
+    // and clear service sectors near both docking targets. This exercises route
+    // choice in a realistic local field while keeping every run reproducible.
     const Spec specs[] = {
         {
             ObjectType::GuidanceDockCube,
@@ -608,7 +573,141 @@ void spawnHubGuidanceTestModules(
             "GUIDANCE DOCK CYLINDER B",
             glm::dvec3(-3000.0, -250.0, 0.0),
             glm::dvec3(0.0),
-            glm::dvec3(0.0, 0.0, 0.0)
+            glm::dvec3(0.0)
+        },
+
+        // Inner shell: radius ~= 3 km, azimuth shifted by 22.5 degrees so the
+        // +/-X docking corridors are not occupied by a stress object.
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_stress_cube_01",
+            "NAV STRESS CUBE 01",
+            glm::dvec3(2770.0, 900.0, 1150.0),
+            glm::dvec3(0.0, 18.0, 8.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCylinder,
+            "nav_stress_cylinder_01",
+            "NAV STRESS CYLINDER 01",
+            glm::dvec3(1150.0, -1200.0, 2770.0),
+            glm::dvec3(12.0, 0.0, -16.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_stress_cube_02",
+            "NAV STRESS CUBE 02",
+            glm::dvec3(-1150.0, 1500.0, 2770.0),
+            glm::dvec3(-9.0, 28.0, 0.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCylinder,
+            "nav_stress_cylinder_02",
+            "NAV STRESS CYLINDER 02",
+            glm::dvec3(-2770.0, -800.0, 1150.0),
+            glm::dvec3(0.0, 14.0, 22.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_stress_cube_03",
+            "NAV STRESS CUBE 03",
+            glm::dvec3(-2770.0, 1100.0, -1150.0),
+            glm::dvec3(15.0, -20.0, 4.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCylinder,
+            "nav_stress_cylinder_03",
+            "NAV STRESS CYLINDER 03",
+            glm::dvec3(-1150.0, -1400.0, -2770.0),
+            glm::dvec3(-18.0, 10.0, 0.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_stress_cube_04",
+            "NAV STRESS CUBE 04",
+            glm::dvec3(1150.0, 700.0, -2770.0),
+            glm::dvec3(0.0, 35.0, -12.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCylinder,
+            "nav_stress_cylinder_04",
+            "NAV STRESS CYLINDER 04",
+            glm::dvec3(2770.0, -1000.0, -1150.0),
+            glm::dvec3(20.0, -8.0, 14.0),
+            glm::dvec3(0.0)
+        },
+
+        // Outer shell: radius ~= 5 km with a different azimuth phase. It is
+        // sparse enough to leave several independent routes through the field.
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_stress_cube_05",
+            "NAV STRESS CUBE 05",
+            glm::dvec3(4900.0, -1700.0, 975.0),
+            glm::dvec3(-14.0, 12.0, 18.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCylinder,
+            "nav_stress_cylinder_05",
+            "NAV STRESS CYLINDER 05",
+            glm::dvec3(2780.0, 1800.0, 4160.0),
+            glm::dvec3(8.0, 25.0, -10.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_stress_cube_06",
+            "NAV STRESS CUBE 06",
+            glm::dvec3(-975.0, -900.0, 4900.0),
+            glm::dvec3(5.0, -30.0, 12.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCylinder,
+            "nav_stress_cylinder_06",
+            "NAV STRESS CYLINDER 06",
+            glm::dvec3(-4160.0, 1500.0, 2780.0),
+            glm::dvec3(-22.0, 5.0, 16.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_stress_cube_07",
+            "NAV STRESS CUBE 07",
+            glm::dvec3(-4900.0, -1800.0, -975.0),
+            glm::dvec3(10.0, 22.0, -18.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCylinder,
+            "nav_stress_cylinder_07",
+            "NAV STRESS CYLINDER 07",
+            glm::dvec3(-2780.0, 1000.0, -4160.0),
+            glm::dvec3(18.0, -15.0, 6.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_stress_cube_08",
+            "NAV STRESS CUBE 08",
+            glm::dvec3(975.0, -1300.0, -4900.0),
+            glm::dvec3(-8.0, 32.0, 14.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCylinder,
+            "nav_stress_cylinder_08",
+            "NAV STRESS CYLINDER 08",
+            glm::dvec3(4160.0, 1600.0, -2780.0),
+            glm::dvec3(16.0, 8.0, -20.0),
+            glm::dvec3(0.0)
         }
     };
 
@@ -641,7 +740,6 @@ void spawnHubGuidanceTestModules(
         }
     }
 }
-
 
 EntityId spawnInterplanetaryTransferLabNpc(GameSimulation& sim)
 {
@@ -735,7 +833,6 @@ EntityId spawnInterplanetaryTransferLabNpc(GameSimulation& sim)
     return id;
 }
 
-
 EntityId spawnActivationCadenceLabNpc(
     GameSimulation& sim,
     const glm::dvec3& stationPos
@@ -784,8 +881,6 @@ EntityId spawnActivationCadenceLabNpc(
     sim.registerActivationCadenceLabShip(id);
     return id;
 }
-
-
 
 EntityId buildGameScene(
     GameSimulation& sim,
@@ -901,19 +996,6 @@ EntityId buildGameScene(
 
     return playerId;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 EntityId buildPromoScene(
     GameSimulation& sim,

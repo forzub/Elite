@@ -56,6 +56,7 @@
 #include "src/game/system_map/SystemMapSceneFrame.h"
 #include "src/game/system_map/SystemMapSceneFrameBuilder.h"
 #include "src/game/system_map/SystemMapRenderContext.h"
+#include "src/game/system_map/SystemMapGpuCircleBatch.h"
 #include "src/game/system_map/SystemMapSceneRenderer.h"
 #include "src/game/system_map/DetailMapView.h"
 #include "src/game/system_map/HubMapView.h"
@@ -194,17 +195,35 @@ private:
         glm::vec4 color;
     };
 
-    struct TexturedVertex
+    struct TexturedSphereVertex
     {
-        glm::vec3 pos;
+        glm::vec3 unitPosition;
         glm::vec2 uv;
-        glm::vec4 color;
+    };
+
+    struct TexturedSphereGpuMesh
+    {
+        GLuint vao = 0;
+        GLuint vertexBuffer = 0;
+        GLuint indexBuffer = 0;
+        GLsizei indexCount = 0;
+    };
+
+    struct TexturedBodyDraw
+    {
+        glm::vec3 center { 0.0f };
+        float radius = 0.0f;
+        glm::vec3 primeAxis { 1.0f, 0.0f, 0.0f };
+        glm::vec3 northAxis { 0.0f, 1.0f, 0.0f };
+        glm::vec3 eastAxis { 0.0f, 0.0f, -1.0f };
+        glm::vec4 color { 1.0f };
+        bool highResolution = false;
     };
 
     struct TexturedBatch
     {
         GLuint texture = 0;
-        std::vector<TexturedVertex> vertices;
+        std::vector<TexturedBodyDraw> bodies;
     };
 
     using HubMapPickable = game::system_map::HubMapPickable;
@@ -348,6 +367,11 @@ private:
     void ensureShader();
 
     void ensureTexturedGlObjects();
+    void createTexturedSphereMesh(
+        TexturedSphereGpuMesh& mesh,
+        int latitudeSegments,
+        int longitudeSegments
+    );
     void ensureTexturedShader();
 
     void ensureBackground();
@@ -397,6 +421,48 @@ private:
         const glm::vec4& color,
         int segments = 96
     ) override;
+
+    void beginGpuCircles() override
+    {
+        m_gpuCircleBatch.begin();
+    }
+
+    void addGpuCircleXZ(
+        const glm::vec3& center,
+        float radius,
+        const glm::vec4& color,
+        int segments
+    ) override
+    {
+        m_gpuCircleBatch.add(
+            center,
+            radius,
+            color,
+            segments,
+            game::system_map::SystemMapGpuCircleBatch::Plane::XZ
+        );
+    }
+
+    void addGpuCircleXY(
+        const glm::vec3& center,
+        float radius,
+        const glm::vec4& color,
+        int segments
+    ) override
+    {
+        m_gpuCircleBatch.add(
+            center,
+            radius,
+            color,
+            segments,
+            game::system_map::SystemMapGpuCircleBatch::Plane::XY
+        );
+    }
+
+    void flushGpuCircles(const glm::mat4& mvp) override
+    {
+        m_gpuCircleBatch.flush(mvp);
+    }
 
 
     void addOrbitCircle3D(
@@ -635,8 +701,8 @@ private:
     GLuint m_shader = 0;
     GLint  m_mvpLoc = -1;
 
-    GLuint m_texturedVao = 0;
-    GLuint m_texturedVbo = 0;
+    TexturedSphereGpuMesh m_texturedSphereLow;
+    TexturedSphereGpuMesh m_texturedSphereHigh;
     GLuint m_texturedShader = 0;
     GLint  m_texturedMvpLoc = -1;
     GLint  m_texturedSamplerLoc = -1;
@@ -648,6 +714,7 @@ private:
     std::vector<Vertex> m_vertices;
     std::vector<Vertex> m_solidVertices;
     std::vector<TexturedBatch> m_texturedBatches;
+    game::system_map::SystemMapGpuCircleBatch m_gpuCircleBatch;
 
     Mode m_mode = Mode::Galaxy;
     float m_rightPanelRatio = 0.28f;

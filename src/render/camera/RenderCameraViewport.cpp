@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/render/camera/RenderCameraViewport.h"
 
 void RenderCameraViewport::render(
@@ -26,11 +27,11 @@ void RenderCameraViewport::render(
 
     glm::mat4 view = camera.viewMatrix();
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(projection));
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::loadMatrixf(glm::value_ptr(projection));
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(glm::value_ptr(view));
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::loadMatrixf(glm::value_ptr(view));
 
     drawScene(view, projection);
 

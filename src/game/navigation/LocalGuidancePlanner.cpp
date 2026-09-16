@@ -1,7 +1,9 @@
 #include "src/game/navigation/LocalGuidancePlanner.h"
+#include "src/game/navigation/RuckigTrajectorySolver.h"
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <limits>
 
@@ -13,6 +15,15 @@ namespace game::navigation
 namespace
 {
 constexpr double Epsilon = 1.0e-9;
+using PlannerClock = std::chrono::steady_clock;
+
+double elapsedMicroseconds(
+    PlannerClock::time_point start,
+    PlannerClock::time_point stop
+)
+{
+    return std::chrono::duration<double, std::micro>(stop - start).count();
+}
 
 bool finiteVec(const glm::dvec3& v)
 {
@@ -294,7 +305,7 @@ glm::dvec3 dockingIngressVelocityAt(
     Two equal-duration constant-acceleration legs that match position and
     terminal velocity in the no-gravity/no-envelope ideal case. Predictor then
     applies real gravity plus acceleration/jerk envelopes. This remains a
-    deterministic candidate generator, not an autopilot.
+    deterministic fallback candidate generator, not an autopilot.
 */
 void makeTwoLegAccelerationProgram(
     const LocalGuidanceRequest& request,
@@ -305,10 +316,6 @@ void makeTwoLegAccelerationProgram(
 {
     const double total = request.profile.horizonSeconds;
     const double half = total * 0.5;
-    // Solve the endpoint in a co-moving translational frame whose velocity is
-    // the requested terminal velocity. Algebraically this is equivalent to
-    // the old absolute formula, but it never subtracts two ~orbital-scale
-    // world displacements to discover a kilometre-scale local manoeuvre.
     const glm::dvec3 targetLinearStart =
         targetPosition - targetVelocity * total;
     const glm::dvec3 relativePosition0 =
@@ -337,14 +344,15 @@ void makeTwoLegAccelerationProgram(
     };
 }
 
-TrajectoryPredictionResult predictLegOnce(
+TrajectoryPredictionResult predictLegacyLegOnce(
     const LocalGuidanceRequest& request,
     const WorldKinematicState& initialState,
     const glm::dvec3& initialProperAccelerationMps2,
     double startUniverseTimeSeconds,
     double durationSeconds,
     const glm::dvec3& targetPosition,
-    const glm::dvec3& targetVelocity
+    const glm::dvec3& targetVelocity,
+    LocalGuidanceBackendDiagnostics& diagnostics
 )
 {
     LocalGuidanceRequest leg = request;
@@ -373,22 +381,22 @@ TrajectoryPredictionResult predictLegOnce(
         targetVelocity,
         predictionRequest
     );
+
+    ++diagnostics.legacyPredictorCalls;
     return TrajectoryPredictor::predict(predictionRequest);
 }
 
-TrajectoryPredictionResult predictLeg(
+TrajectoryPredictionResult predictLegacyLeg(
     const LocalGuidanceRequest& request,
     const WorldKinematicState& initialState,
     const glm::dvec3& initialProperAccelerationMps2,
     double startUniverseTimeSeconds,
     double durationSeconds,
     const glm::dvec3& targetPosition,
-    const glm::dvec3& targetVelocity
+    const glm::dvec3& targetVelocity,
+    LocalGuidanceBackendDiagnostics& diagnostics
 )
 {
-    // Shooting correction closes the endpoint after real gravity and the
-    // acceleration/jerk envelope have been applied by TrajectoryPredictor.
-    // This is still only a candidate generator: it never moves the ship.
     glm::dvec3 commandPosition = targetPosition;
     glm::dvec3 commandVelocity = targetVelocity;
 
@@ -401,14 +409,15 @@ TrajectoryPredictionResult predictLeg(
 
     for (int iteration = 0; iteration < MaxIterations; ++iteration)
     {
-        auto candidate = predictLegOnce(
+        auto candidate = predictLegacyLegOnce(
             request,
             initialState,
             initialProperAccelerationMps2,
             startUniverseTimeSeconds,
             durationSeconds,
             commandPosition,
-            commandVelocity
+            commandVelocity,
+            diagnostics
         );
         if (!candidate.ok() || candidate.samples.empty())
             return candidate;
@@ -432,16 +441,79 @@ TrajectoryPredictionResult predictLeg(
             return candidate;
         }
 
-        // Endpoint response is close to linear for this short local candidate.
-        // Bias the authored endpoint by the observed miss and let the shared
-        // predictor apply gravity/envelopes again. If the envelope saturates,
-        // the best physically achieved candidate is returned and terminal
-        // validation below rejects it instead of snapping the corridor.
         commandPosition += positionError;
         commandVelocity += velocityError;
     }
 
     return best;
+}
+
+TrajectoryPredictionResult predictLeg(
+    const LocalGuidanceRequest& request,
+    const WorldKinematicState& initialState,
+    const glm::dvec3& initialProperAccelerationMps2,
+    double startUniverseTimeSeconds,
+    double durationSeconds,
+    const glm::dvec3& targetPosition,
+    const glm::dvec3& targetVelocity,
+    LocalGuidanceBackendDiagnostics& diagnostics
+)
+{
+    RuckigTrajectoryRequest ruckigRequest;
+    ruckigRequest.systemId = request.systemId;
+    ruckigRequest.startUniverseTimeSeconds = startUniverseTimeSeconds;
+    ruckigRequest.initialState = initialState;
+    ruckigRequest.initialProperAccelerationMps2 =
+        initialProperAccelerationMps2;
+    ruckigRequest.gravityBodies = request.environment.gravityBodies;
+    ruckigRequest.motionEnvelope = request.profile.motionEnvelope;
+    ruckigRequest.horizonSeconds = durationSeconds;
+    ruckigRequest.sampleIntervalSeconds = std::min(
+        request.profile.frameIntervalSeconds,
+        durationSeconds
+    );
+    ruckigRequest.validationStepSeconds = std::min(
+        request.profile.predictorIntegrationStepSeconds,
+        durationSeconds
+    );
+    ruckigRequest.targetPositionMeters = targetPosition;
+    ruckigRequest.targetVelocityMps = targetVelocity;
+
+    ++diagnostics.ruckigLegAttempts;
+    const auto ruckigStart = PlannerClock::now();
+    auto ruckigResult = RuckigTrajectorySolver::solve(ruckigRequest);
+    const auto ruckigStop = PlannerClock::now();
+    diagnostics.ruckigSolveMicroseconds += elapsedMicroseconds(
+        ruckigStart,
+        ruckigStop
+    );
+
+    if (ruckigResult.ok() && !ruckigResult.prediction.samples.empty())
+    {
+        ++diagnostics.ruckigLegSuccesses;
+        return std::move(ruckigResult.prediction);
+    }
+
+    ++diagnostics.ruckigFallbacks;
+    diagnostics.lastRuckigFailure = ruckigResult.prediction.message;
+
+    const auto legacyStart = PlannerClock::now();
+    auto fallback = predictLegacyLeg(
+        request,
+        initialState,
+        initialProperAccelerationMps2,
+        startUniverseTimeSeconds,
+        durationSeconds,
+        targetPosition,
+        targetVelocity,
+        diagnostics
+    );
+    const auto legacyStop = PlannerClock::now();
+    diagnostics.legacyFallbackMicroseconds += elapsedMicroseconds(
+        legacyStart,
+        legacyStop
+    );
+    return fallback;
 }
 
 TrajectoryPredictionResult concatenatePredictions(
@@ -508,7 +580,8 @@ TrajectoryPredictionResult concatenatePredictions(
 }
 
 TrajectoryPredictionResult predictDockingCandidate(
-    const LocalGuidanceRequest& request
+    const LocalGuidanceRequest& request,
+    LocalGuidanceBackendDiagnostics& diagnostics
 )
 {
     const double total = request.profile.horizonSeconds;
@@ -534,7 +607,8 @@ TrajectoryPredictionResult predictDockingCandidate(
         request.startUniverseTimeSeconds,
         approachDuration,
         dockingApproachPointAt(request, approachTime),
-        dockingIngressVelocityAt(request, approachTime)
+        dockingIngressVelocityAt(request, approachTime),
+        diagnostics
     );
     if (!first.ok() || first.samples.empty())
         return first;
@@ -547,7 +621,8 @@ TrajectoryPredictionResult predictDockingCandidate(
         join.universeTimeSeconds,
         ingressDuration,
         dockingTerminalPointAt(request, endTime),
-        dockingIngressVelocityAt(request, endTime)
+        dockingIngressVelocityAt(request, endTime),
+        diagnostics
     );
     if (!second.ok() || second.samples.empty())
         return second;
@@ -560,6 +635,7 @@ bool trySimpleLateralDetour(
     const TrajectorySafetyReport& directSafety,
     const glm::dvec3& targetEndPosition,
     const glm::dvec3& targetEndVelocity,
+    LocalGuidanceBackendDiagnostics& diagnostics,
     TrajectoryPredictionResult& outPrediction,
     TrajectorySafetyReport& outSafety
 )
@@ -629,7 +705,8 @@ bool trySimpleLateralDetour(
             request.startUniverseTimeSeconds,
             firstDuration,
             detourPoint,
-            detourVelocity
+            detourVelocity,
+            diagnostics
         );
         if (!first.ok() || first.samples.empty())
             continue;
@@ -642,7 +719,8 @@ bool trySimpleLateralDetour(
             join.universeTimeSeconds,
             secondDuration,
             targetEndPosition,
-            targetEndVelocity
+            targetEndVelocity,
+            diagnostics
         );
         if (!second.ok() || second.samples.empty())
             continue;
@@ -670,6 +748,7 @@ bool trySimpleLateralDetour(
 bool tryDockingLateralDetour(
     const LocalGuidanceRequest& request,
     const TrajectorySafetyReport& directSafety,
+    LocalGuidanceBackendDiagnostics& diagnostics,
     TrajectoryPredictionResult& outPrediction,
     TrajectorySafetyReport& outSafety
 )
@@ -732,7 +811,8 @@ bool tryDockingLateralDetour(
             request.startUniverseTimeSeconds,
             detourDuration,
             detourPoint,
-            towardApproach * std::max(5.0, dockingEntrySpeedMps(request))
+            towardApproach * std::max(5.0, dockingEntrySpeedMps(request)),
+            diagnostics
         );
         if (!first.ok() || first.samples.empty())
             continue;
@@ -745,7 +825,8 @@ bool tryDockingLateralDetour(
             firstJoin.universeTimeSeconds,
             approachDuration,
             dockingApproachPointAt(request, approachTime),
-            dockingIngressVelocityAt(request, approachTime)
+            dockingIngressVelocityAt(request, approachTime),
+            diagnostics
         );
         if (!second.ok() || second.samples.empty())
             continue;
@@ -762,7 +843,8 @@ bool tryDockingLateralDetour(
             secondJoin.universeTimeSeconds,
             ingressDuration,
             dockingTerminalPointAt(request, endTime),
-            dockingIngressVelocityAt(request, endTime)
+            dockingIngressVelocityAt(request, endTime),
+            diagnostics
         );
         if (!ingress.ok() || ingress.samples.empty())
             continue;
@@ -999,9 +1081,6 @@ GuidanceCorridor buildCorridor(
         corridor.terminalTargetMeters = terminal.requiredPositionMeters;
         corridor.terminalPositionErrorMeters = terminal.positionErrorMeters;
 
-        // Never move the last frame onto the dock by presentation fiat. The
-        // final frame is the physical predictor sample. A docking corridor is
-        // published only after terminal validation accepts that sample.
         auto& last = corridor.frames.back();
         last.widthMeters = baseWidth;
         last.heightMeters = baseHeight;
@@ -1014,6 +1093,7 @@ GuidanceCorridor buildCorridor(
 bool tryEmergencyEscape(
     const LocalGuidanceRequest& request,
     const TrajectorySafetyReport& primarySafety,
+    LocalGuidanceBackendDiagnostics& diagnostics,
     TrajectoryPredictionResult& outPrediction,
     TrajectorySafetyReport& outSafety
 )
@@ -1091,7 +1171,8 @@ bool tryEmergencyEscape(
             request.startUniverseTimeSeconds,
             duration,
             endPosition,
-            endVelocity
+            endVelocity,
+            diagnostics
         );
         if (!candidate.ok() || candidate.samples.empty())
             continue;
@@ -1139,7 +1220,7 @@ LocalGuidanceResult LocalGuidancePlanner::plan(
         : velocityAt(request, endTime);
 
     out.prediction = docking
-        ? predictDockingCandidate(request)
+        ? predictDockingCandidate(request, out.backendDiagnostics)
         : predictLeg(
             request,
             request.actorState,
@@ -1147,7 +1228,8 @@ LocalGuidanceResult LocalGuidancePlanner::plan(
             request.startUniverseTimeSeconds,
             request.profile.horizonSeconds,
             targetEndPosition,
-            targetEndVelocity
+            targetEndVelocity,
+            out.backendDiagnostics
           );
 
     if (!out.prediction.ok() || out.prediction.samples.empty())
@@ -1173,6 +1255,7 @@ LocalGuidanceResult LocalGuidancePlanner::plan(
             ? tryDockingLateralDetour(
                 request,
                 out.safety,
+                out.backendDiagnostics,
                 detourPrediction,
                 detourSafety
               )
@@ -1181,6 +1264,7 @@ LocalGuidanceResult LocalGuidancePlanner::plan(
                 out.safety,
                 targetEndPosition,
                 targetEndVelocity,
+                out.backendDiagnostics,
                 detourPrediction,
                 detourSafety
               );
@@ -1230,6 +1314,7 @@ LocalGuidanceResult LocalGuidancePlanner::plan(
     if (tryEmergencyEscape(
             request,
             out.safety,
+            out.backendDiagnostics,
             escapePrediction,
             escapeSafety))
     {

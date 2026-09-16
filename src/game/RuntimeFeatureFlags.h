@@ -10,6 +10,11 @@ inline constexpr bool RadarSimulationEnabled = false;
 // The test sensor intentionally has no radar HUD/presentation.
 inline constexpr bool RadarHudEnabled = false;
 
+// General world-signal labels are intentionally disabled while their final
+// presentation contract is unresolved. Hub-map/close-navigation labels and
+// navigation HUD markers remain active through their separate paths.
+inline constexpr bool WorldSignalLabelsEnabled = false;
+
 // Activation diagnostics remain enabled while the staged runtime execution
 // policy is being validated against real scenes.
 inline constexpr bool ActivationShadowDiagnosticsEnabled = true;

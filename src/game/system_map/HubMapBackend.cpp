@@ -1,9 +1,11 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/system_map/HubMapBackend.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 #include <GLFW/glfw3.h>
@@ -343,12 +345,6 @@ void HubMapBackend::endGpuStage()
 }
 
 
-
-
-
-
-
-
 void HubMapBackend::renderHubMapPasses(
     const game::system_map::HubMapPresentation& presentation,
     const Viewport& viewport,
@@ -385,7 +381,6 @@ void HubMapBackend::renderHubMapPasses(
     beginGpuStage(
         GpuStage::Background
     );
-
 
     m_resources.ensureGeneratedCelestialAssets();
 
@@ -435,10 +430,10 @@ void HubMapBackend::renderHubMapPasses(
         GL_ONE_MINUS_SRC_ALPHA
     );
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::loadIdentity();
 
-    glOrtho(
+    elite::render::core_legacy::ortho(
         0.0,
         viewport.width,
         viewport.height,
@@ -447,23 +442,22 @@ void HubMapBackend::renderHubMapPasses(
         1.0
     );
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::loadIdentity();
 
-    glColor4f(
+    elite::render::core_legacy::color4f(
         m_resources.hubVisuals().backgroundColor.r,
         m_resources.hubVisuals().backgroundColor.g,
         m_resources.hubVisuals().backgroundColor.b,
         m_resources.hubVisuals().backgroundColor.a
     );
 
-    glBegin(GL_QUADS);
-    glVertex2f(0.0f, 0.0f);
-    glVertex2f(static_cast<float>(viewport.width), 0.0f);
-    glVertex2f(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
-    glVertex2f(0.0f, static_cast<float>(viewport.height));
-    glEnd();
-
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
+    elite::render::core_legacy::vertex2f(0.0f, 0.0f);
+    elite::render::core_legacy::vertex2f(static_cast<float>(viewport.width), 0.0f);
+    elite::render::core_legacy::vertex2f(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
+    elite::render::core_legacy::vertex2f(0.0f, static_cast<float>(viewport.height));
+    elite::render::core_legacy::end();
 
     if (!hub.valid)
     {
@@ -482,7 +476,6 @@ void HubMapBackend::renderHubMapPasses(
 
         return;
     }
-
 
     if (m_resources.hubVisuals().drawStarfield)
     {
@@ -508,7 +501,6 @@ void HubMapBackend::renderHubMapPasses(
         hubPerfNowMs() -
         cpuBackgroundStartMs;
 
-
     const glm::dvec2& centerPx =
         presentation.centerPx;
     const double scale =
@@ -516,9 +508,7 @@ void HubMapBackend::renderHubMapPasses(
     const double finalScale =
         scale * activeCamera().state.zoom;
 
-
-
-   const double cpuPlanetBackdropStartMs =
+    const double cpuPlanetBackdropStartMs =
         hubPerfNowMs();
 
     m_planetPass.drawHubMapPlanetSurfaceHint(
@@ -527,16 +517,15 @@ void HubMapBackend::renderHubMapPasses(
         centerPx
     );
 
-m_performanceStats.cpuPlanetBackdropMs =
-    hubPerfNowMs() -
-    cpuPlanetBackdropStartMs;
+    m_performanceStats.cpuPlanetBackdropMs =
+        hubPerfNowMs() -
+        cpuPlanetBackdropStartMs;
 
     /*
         The spherical Hub grid remains disabled exactly as before. Its
         renderer and cached planet geometry now belong to HubMapPlanetPass;
         HubMapBackend only coordinates enabled passes.
     */
-
 
     const double cpuGeometryStartMs =
         hubPerfNowMs();
@@ -545,34 +534,19 @@ m_performanceStats.cpuPlanetBackdropMs =
         GpuStage::Geometry
     );
 
-
     m_geometryPass.beginFrame(
         viewport.width,
         viewport.height,
-
-        /*
-            В старом hubMapProject screen origin был:
-                center + camera.pan
-        */
         glm::dvec2(
             centerPx.x +
                 activeCamera().state.pan.x,
-
             centerPx.y +
                 activeCamera().state.pan.y
         ),
-
-        /*
-            Старый finalScale:
-                scale * camera.zoom
-        */
         finalScale,
-
         activeCamera().state.yaw,
         activeCamera().state.pitch
     );
-
-
 
     // Оси хаба.
     m_geometryPass.drawHubMapAxes(
@@ -604,7 +578,7 @@ m_performanceStats.cpuPlanetBackdropMs =
     }
     else
     {
-        glColor4f(
+        elite::render::core_legacy::color4f(
             hubOriginColor.r,
             hubOriginColor.g,
             hubOriginColor.b,
@@ -616,9 +590,6 @@ m_performanceStats.cpuPlanetBackdropMs =
             6.0f
         );
     }
-
-
-
 
     // Модули станции.
     for (const auto& mod : hub.scene.objects)
@@ -703,100 +674,142 @@ m_performanceStats.cpuPlanetBackdropMs =
         }
     }
 
-
-
-
-
     // Ships are rendered by the shared tactical overlay. Hub/module geometry
     // remains unchanged so the Hub map keeps its existing station silhouette.
 
+    m_geometryPass.flush();
+    endGpuStage();
 
-        m_geometryPass.flush();
-        endGpuStage();
+    m_performanceStats.cpuGeometryMs =
+        hubPerfNowMs() -
+        cpuGeometryStartMs;
 
-        m_performanceStats.cpuGeometryMs =
-            hubPerfNowMs() -
-            cpuGeometryStartMs;
+    const double cpuLabelsStartMs =
+        hubPerfNowMs();
 
-        const double cpuLabelsStartMs =
-            hubPerfNowMs();
+    beginGpuStage(
+        GpuStage::Labels
+    );
 
-        beginGpuStage(
-            GpuStage::Labels
-        );
+    /*
+        Hub Map label policy: no persistent names. Every visible object uses
+        the same transient semi-transparent label when the pointer is actually
+        over that object. This applies to hub infrastructure, ships, the hub
+        reference and any later overlay object without adding per-type rules.
+    */
+    {
+        const MapObjectOverlayItem* hovered = nullptr;
+        double bestNormalizedDistance =
+            std::numeric_limits<double>::infinity();
+        int bestPriority = std::numeric_limits<int>::min();
 
-
+        GLFWwindow* window = glfwGetCurrentContext();
+        if (window)
         {
-            auto& text =
-                TextRenderer::instance();
+            double cursorWindowX = 0.0;
+            double cursorWindowY = 0.0;
+            glfwGetCursorPos(
+                window,
+                &cursorWindowX,
+                &cursorWindowY
+            );
 
+            const glm::dvec2 cursorPx(
+                cursorWindowX - static_cast<double>(viewport.x),
+                cursorWindowY - static_cast<double>(viewport.y)
+            );
+
+            for (const auto& item : presentation.frame.objectOverlay.items)
+            {
+                if (!item.visible)
+                    continue;
+
+                const std::string& label =
+                    !item.name.empty() ? item.name : item.typeName;
+                if (label.empty())
+                    continue;
+
+                double hoverRadiusPx = item.hitRadiusPx;
+                if (hoverRadiusPx <= 1.0)
+                {
+                    const double physicalRadiusPx =
+                        item.physicalSizeMeters > 0.0
+                            ? item.physicalSizeMeters * finalScale * 0.55
+                            : 0.0;
+                    hoverRadiusPx = std::clamp(
+                        physicalRadiusPx,
+                        10.0,
+                        55.0
+                    );
+                }
+                else
+                {
+                    hoverRadiusPx = std::clamp(
+                        hoverRadiusPx,
+                        10.0,
+                        55.0
+                    );
+                }
+
+                const glm::dvec2 delta = cursorPx - item.screenPx;
+                const double distance2 = glm::dot(delta, delta);
+                const double radius2 = hoverRadiusPx * hoverRadiusPx;
+                if (distance2 > radius2)
+                    continue;
+
+                const double normalizedDistance =
+                    distance2 / std::max(1.0, radius2);
+                if (!hovered ||
+                    item.pickPriority > bestPriority ||
+                    (item.pickPriority == bestPriority &&
+                     normalizedDistance < bestNormalizedDistance))
+                {
+                    hovered = &item;
+                    bestPriority = item.pickPriority;
+                    bestNormalizedDistance = normalizedDistance;
+                }
+            }
+        }
+
+        if (hovered)
+        {
+            auto& text = TextRenderer::instance();
             text.beginFrameForViewport(
                 viewport.width,
                 viewport.height
             );
 
-            for (const auto& mod : hub.scene.objects)
-            {
-                if (!mod.valid ||
-                    mod.objectClass !=
-                        world::celestial::DetailObjectClass::Hub)
-                {
-                    continue;
-                }
+            const std::string& label =
+                !hovered->name.empty()
+                    ? hovered->name
+                    : hovered->typeName;
+            const float x = static_cast<float>(std::clamp(
+                hovered->screenPx.x + 10.0,
+                4.0,
+                static_cast<double>(viewport.width) - 220.0
+            ));
+            const float y = static_cast<float>(std::clamp(
+                hovered->screenPx.y - 20.0,
+                4.0,
+                static_cast<double>(viewport.height) - 20.0
+            ));
 
-                const glm::dvec2 p =
-                    activeCamera().project(mod.positionMeters);
-
-
-                if (p.x < -160.0 ||
-                    p.y < -80.0 ||
-                    p.x > static_cast<double>(viewport.width) + 160.0 ||
-                    p.y > static_cast<double>(viewport.height) + 80.0)
-                {
-                    continue;
-                }
-
-                text.textDrawPx(
-                    mod.name,
-                    static_cast<float>(p.x + 10.0),
-                    static_cast<float>(p.y - 8.0),
-                    m_resources.hubVisuals().primaryLabelPx,
-                    m_resources.hubVisuals().moduleLabelColor
-                );
-
-                if (!mod.kind.empty())
-                {
-                    text.textDrawPx(
-                        mod.kind,
-                        static_cast<float>(p.x + 10.0),
-                        static_cast<float>(p.y + 8.0),
-                        m_resources.hubVisuals().secondaryLabelPx,
-                        m_resources.hubVisuals().moduleSubtitleColor
-                    );
-                }
-            }
-
-            // Ship identity is carried by stable tactical track numbers and
-            // click-open cards; persistent ship-name labels are intentionally
-            // suppressed to keep the map compact.
-
+            text.textDrawPx(
+                label,
+                x,
+                y,
+                m_resources.hubVisuals().primaryLabelPx,
+                glm::vec4(0.78f, 0.91f, 0.98f, 0.72f)
+            );
             text.endFrame();
         }
+    }
 
+    endGpuStage();
 
-
-        endGpuStage();
-
-        m_performanceStats.cpuLabelsMs =
-            hubPerfNowMs() -
-            cpuLabelsStartMs;
-
-
-
-
-
-
-
+    m_performanceStats.cpuLabelsMs =
+        hubPerfNowMs() -
+        cpuLabelsStartMs;
 
     endGpuFrame();
 
@@ -805,10 +818,6 @@ m_performanceStats.cpuPlanetBackdropMs =
     m_performanceStats.cpuTotalMs =
         hubPerfNowMs() -
         cpuTotalStartMs;
-
 }
 
-
-
-
-}
+} // namespace game::system_map

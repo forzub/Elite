@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "UICameraView.h"
 
 #include <glad/gl.h>
@@ -78,76 +79,76 @@ void UICameraView::render(
 
     auto texturedVertex = [&](float x, float y)
     {
-        glTexCoord2f(texU(x), texV(y));
-        glVertex2f(x, y);
+        elite::render::core_legacy::texCoord2f(texU(x), texV(y));
+        elite::render::core_legacy::vertex2f(x, y);
     };
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    elite::render::core_legacy::color4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-    glEnable(GL_TEXTURE_2D);
+    elite::render::core_legacy::enableTexture2D(true);
     glBindTexture(GL_TEXTURE_2D, colorTex);
 
     // -------------------------------------------------
     // Центральный прямоугольник
     // -------------------------------------------------
-    glBegin(GL_QUADS);
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
 
     texturedVertex(innerLeft,  innerTop);
     texturedVertex(innerRight, innerTop);
     texturedVertex(innerRight, innerBottom);
     texturedVertex(innerLeft,  innerBottom);
 
-    glEnd();
+    elite::render::core_legacy::end();
 
     // -------------------------------------------------
     // Верхняя полоса
     // -------------------------------------------------
-    glBegin(GL_QUADS);
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
 
     texturedVertex(innerLeft,  py);
     texturedVertex(innerRight, py);
     texturedVertex(innerRight, innerTop);
     texturedVertex(innerLeft,  innerTop);
 
-    glEnd();
+    elite::render::core_legacy::end();
 
     // -------------------------------------------------
     // Нижняя полоса
     // -------------------------------------------------
-    glBegin(GL_QUADS);
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
 
     texturedVertex(innerLeft,  innerBottom);
     texturedVertex(innerRight, innerBottom);
     texturedVertex(innerRight, py + ph);
     texturedVertex(innerLeft,  py + ph);
 
-    glEnd();
+    elite::render::core_legacy::end();
 
     // -------------------------------------------------
     // Левая полоса
     // -------------------------------------------------
-    glBegin(GL_QUADS);
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
 
     texturedVertex(px,        innerTop);
     texturedVertex(innerLeft, innerTop);
     texturedVertex(innerLeft, innerBottom);
     texturedVertex(px,        innerBottom);
 
-    glEnd();
+    elite::render::core_legacy::end();
 
     // -------------------------------------------------
     // Правая полоса
     // -------------------------------------------------
-    glBegin(GL_QUADS);
+    elite::render::core_legacy::begin(elite::render::core_legacy::QuadsToken);
 
     texturedVertex(innerRight, innerTop);
     texturedVertex(px + pw,   innerTop);
     texturedVertex(px + pw,   innerBottom);
     texturedVertex(innerRight, innerBottom);
 
-    glEnd();
+    elite::render::core_legacy::end();
 
     // -------------------------------------------------
     // Скруглённые углы
@@ -157,7 +158,7 @@ void UICameraView::render(
     auto drawCorner =
         [&](float cx, float cy, float startAngle)
     {
-        glBegin(GL_TRIANGLE_FAN);
+        elite::render::core_legacy::begin(GL_TRIANGLE_FAN);
 
         texturedVertex(cx, cy);
 
@@ -178,7 +179,7 @@ void UICameraView::render(
             texturedVertex(x, y);
         }
 
-        glEnd();
+        elite::render::core_legacy::end();
     };
 
     drawCorner(innerLeft,  innerTop,    glm::pi<float>());
@@ -187,7 +188,7 @@ void UICameraView::render(
     drawCorner(innerLeft,  innerBottom, glm::half_pi<float>());
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    glDisable(GL_TEXTURE_2D);
+    elite::render::core_legacy::enableTexture2D(false);
 
     // -------------------------------------------------
     // Рамка
@@ -195,7 +196,7 @@ void UICameraView::render(
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glColor3f(
+    elite::render::core_legacy::color3f(
         borderColor.r,
         borderColor.g,
         borderColor.b
@@ -203,7 +204,7 @@ void UICameraView::render(
 
     glLineWidth(borderThickness);
 
-    glBegin(GL_LINE_LOOP);
+    elite::render::core_legacy::begin(GL_LINE_LOOP);
 
     auto drawBorderCorner =
         [&](float cx, float cy, float startAngle)
@@ -222,7 +223,7 @@ void UICameraView::render(
             const float y =
                 cy + std::sin(a) * radius;
 
-            glVertex2f(x, y);
+            elite::render::core_legacy::vertex2f(x, y);
         }
     };
 
@@ -231,7 +232,7 @@ void UICameraView::render(
     drawBorderCorner(innerLeft,  innerBottom,  glm::half_pi<float>());
     drawBorderCorner(innerLeft,  innerTop,     glm::pi<float>());
 
-    glEnd();
+    elite::render::core_legacy::end();
 
     renderChildren(vp, localX, localY, pw, ph);
 }
@@ -281,7 +282,7 @@ void UICameraView::initFBO(int width, int height)
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         printf("UICameraView FBO not complete!\n");
         
-    glColor4f(1,1,1,1);
+    elite::render::core_legacy::color4f(1,1,1,1);
     glBindFramebuffer(
         GL_FRAMEBUFFER,
         static_cast<GLuint>(previousFBO)
@@ -303,25 +304,29 @@ void UICameraView::renderToTexture(
 
     ensureFBO(vp);
 
-    if (fbo == 0) return;
+    if (fbo == 0 || fboHeight <= 0) return;
 
-    // Сохраняем состояние
+    // Сохраняем состояние, которое раньше неявно держал compatibility attrib stack.
+    GLint oldFBO = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFBO);
 
-GLint oldFBO;
-glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFBO);
+    GLboolean oldScissorEnabled = glIsEnabled(GL_SCISSOR_TEST);
+    GLint oldScissorBox[4] = {0, 0, 0, 0};
+    glGetIntegerv(GL_SCISSOR_BOX, oldScissorBox);
 
-GLboolean oldScissorEnabled = glIsEnabled(GL_SCISSOR_TEST);
-GLint oldScissorBox[4] = {0, 0, 0, 0};
-glGetIntegerv(GL_SCISSOR_BOX, oldScissorBox);
+    GLint oldViewport[4] = {0, 0, 0, 0};
+    glGetIntegerv(GL_VIEWPORT, oldViewport);
 
-glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
-   
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    // Сохраняем состояние
+    GLint oldMatrixMode = static_cast<GLint>(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::getIntegerv(
+        elite::render::core_legacy::MatrixModeToken,
+        &oldMatrixMode
+    );
 
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::pushMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::pushMatrix();
 
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -339,18 +344,17 @@ glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
     glClearColor(0.02f, 0.02f, 0.04f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (fboHeight <= 0) return;
     float aspect = (float)fboWidth / (float)fboHeight;
     camera->setAspect(aspect);
 
     glm::mat4 proj = camera->projectionMatrix();
     glm::mat4 view = camera->viewMatrix();
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(proj));
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::loadMatrixf(glm::value_ptr(proj));
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(glm::value_ptr(view));
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::loadMatrixf(glm::value_ptr(view));
 
     drawScene(view, proj);
 
@@ -358,16 +362,21 @@ glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
         GL_FRAMEBUFFER,
         static_cast<GLuint>(oldFBO)
     );
-    glViewport(vp.x, vp.y, vp.width, vp.height);
     glEnable(GL_BLEND);
 
+    // Восстанавливаем software matrix state и Core GL viewport явно.
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ProjectionToken);
+    elite::render::core_legacy::popMatrix();
+    elite::render::core_legacy::matrixMode(elite::render::core_legacy::ModelViewToken);
+    elite::render::core_legacy::popMatrix();
+    elite::render::core_legacy::matrixMode(static_cast<GLenum>(oldMatrixMode));
 
-    // Восстанавливаем состояние
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glPopAttrib();
+    glViewport(
+        oldViewport[0],
+        oldViewport[1],
+        oldViewport[2],
+        oldViewport[3]
+    );
 
     if (oldScissorEnabled)
     {

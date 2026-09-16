@@ -16,6 +16,9 @@ get_filename_component(
     ABSOLUTE
 )
 
+include("${ELITE_SOURCE_ROOT}/cmake/EliteRuckigNavigation.cmake")
+elite_add_ruckig_navigation(EliteNavigationRuckig "${ELITE_SOURCE_ROOT}")
+
 add_executable(
     navigation_guidance_tests
     NavigationGuidanceTests.cpp
@@ -34,27 +37,77 @@ add_executable(
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingPortRuntimeStateCatalog.cpp"
 )
 
-target_include_directories(
+# Only the legacy all-in-one suite sees the retired smoother compatibility
+# symbol. EliteGame, EliteServer and the focused Ruckig suites compile the same
+# source without this definition, where SmoothPathOptimizer fails closed.
+target_compile_definitions(
     navigation_guidance_tests
-    PRIVATE
-        "${ELITE_SOURCE_ROOT}"
-        "${ELITE_SOURCE_ROOT}/src"
+    PRIVATE ELITE_LEGACY_SMOOTH_PATH_TEST_COMPAT=1
 )
+
+add_executable(
+    ruckig_route_planner_tests
+    RuckigRoutePlannerTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/NavigationObstacleGeometry.cpp"
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/TrajectoryGenerator.cpp"
+)
+
+add_executable(
+    guidance_tunnel_local_horizon_tests
+    GuidanceTunnelLocalHorizonTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/NavigationObstacleGeometry.cpp"
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/GuidanceTunnel.cpp"
+)
+
+foreach(target
+        navigation_guidance_tests
+        ruckig_route_planner_tests
+        guidance_tunnel_local_horizon_tests)
+    target_include_directories(
+        ${target}
+        PRIVATE
+            "${ELITE_SOURCE_ROOT}"
+            "${ELITE_SOURCE_ROOT}/src"
+    )
+
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4 /permissive-)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endforeach()
 
 target_link_libraries(
     navigation_guidance_tests
     PRIVATE
+        EliteNavigationRuckig
         nlohmann_json::nlohmann_json
 )
 
-if(MSVC)
-    target_compile_options(navigation_guidance_tests PRIVATE /W4 /permissive-)
-else()
-    target_compile_options(navigation_guidance_tests PRIVATE -Wall -Wextra -Wpedantic)
-endif()
+target_link_libraries(
+    ruckig_route_planner_tests
+    PRIVATE
+        EliteNavigationRuckig
+        nlohmann_json::nlohmann_json
+)
+
+target_link_libraries(
+    guidance_tunnel_local_horizon_tests
+    PRIVATE
+        EliteNavigationRuckig
+        nlohmann_json::nlohmann_json
+)
 
 add_test(NAME navigation_guidance COMMAND navigation_guidance_tests)
+add_test(NAME ruckig_route_planner COMMAND ruckig_route_planner_tests)
+add_test(
+    NAME guidance_tunnel_local_horizon
+    COMMAND guidance_tunnel_local_horizon_tests
+)
+
 set_tests_properties(
     navigation_guidance
+    ruckig_route_planner
+    guidance_tunnel_local_horizon
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )

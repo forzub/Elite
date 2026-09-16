@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
@@ -649,18 +650,18 @@ void Renderer::drawFullscreenTriangle() const
 
 void Renderer::drawGrid(int size, float step)
 {
-    glBegin(GL_LINES);
+    elite::render::core_legacy::begin(GL_LINES);
 
-    glColor3f(0.3f, 0.3f, 0.3f);
+    elite::render::core_legacy::color3f(0.3f, 0.3f, 0.3f);
 
     for (int i = -size; i <= size; ++i)
     {
-        glVertex3f(i * step, 0.0f, -size * step);
-        glVertex3f(i * step, 0.0f,  size * step);
+        elite::render::core_legacy::vertex3f(i * step, 0.0f, -size * step);
+        elite::render::core_legacy::vertex3f(i * step, 0.0f,  size * step);
 
-        glVertex3f(-size * step, 0.0f, i * step);
-        glVertex3f( size * step, 0.0f, i * step);
+        elite::render::core_legacy::vertex3f(-size * step, 0.0f, i * step);
+        elite::render::core_legacy::vertex3f( size * step, 0.0f, i * step);
     }
 
-    glEnd();
+    elite::render::core_legacy::end();
 }

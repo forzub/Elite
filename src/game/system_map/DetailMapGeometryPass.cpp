@@ -7,8 +7,8 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
-#include <GLFW/glfw3.h>
 #include <glm/gtc/constants.hpp>
 
 #include "render/HUD/TextRenderer.h"
@@ -67,6 +67,7 @@ void DetailMapGeometryPass::renderScene(
     const glm::dvec2& centerPx = presentation.centerPx;
     const double maxRadiusMeters = presentation.maxRadiusMeters;
     const double scale = presentation.scale;
+    (void)maxRadiusMeters;
 
     if (presentation.sceneIsSpatialVolume &&
         planet.detailHalfExtentMeters > 0.0)
@@ -99,20 +100,29 @@ void DetailMapGeometryPass::renderScene(
             {{0, 4}}, {{1, 5}}, {{2, 6}}, {{3, 7}}
         }};
 
-        glColor4f(0.30f, 0.66f, 0.92f, 0.42f);
+        const glm::vec4 volumeColor(
+            0.30f,
+            0.66f,
+            0.92f,
+            0.42f
+        );
 
         for (const auto& edge : edges)
         {
             drawPlanetMapLine(
                 projected[edge[0]],
-                projected[edge[1]]
+                projected[edge[1]],
+                volumeColor
             );
         }
     }
 
-
-    // Орбиты хабов.
-    glColor4f(0.45f, 0.78f, 1.0f, 0.75f);
+    const glm::vec4 hubOrbitColor(
+        0.45f,
+        0.78f,
+        1.0f,
+        0.75f
+    );
 
     for (const auto& orbit : planet.hubOrbits)
     {
@@ -124,12 +134,17 @@ void DetailMapGeometryPass::renderScene(
             planet,
             scale,
             centerPx,
-            192
+            192,
+            hubOrbitColor
         );
     }
 
-    // Орбита игрока.
-    glColor4f(1.0f, 0.75f, 0.25f, 0.9f);
+    const glm::vec4 playerOrbitColor(
+        1.0f,
+        0.75f,
+        0.25f,
+        0.9f
+    );
 
     for (const auto& orbit : planet.playerOrbits)
     {
@@ -141,7 +156,8 @@ void DetailMapGeometryPass::renderScene(
             planet,
             scale,
             centerPx,
-            192
+            192,
+            playerOrbitColor
         );
     }
 
@@ -186,6 +202,13 @@ void DetailMapGeometryPass::renderScene(
         }
     }
 
+    const glm::vec4 bodyMarkerColor(
+        0.72f,
+        0.74f,
+        0.78f,
+        0.92f
+    );
+
     // Context celestial bodies, including authored or procedural asteroids.
     for (const auto& body : planet.scene.objects)
     {
@@ -199,8 +222,6 @@ void DetailMapGeometryPass::renderScene(
         const glm::dvec2 p =
             activeCamera().project(body.positionMeters);
 
-        glColor4f(0.72f, 0.74f, 0.78f, 0.92f);
-
         const double radiusPx =
             body.boundingRadiusMeters *
             scale *
@@ -211,13 +232,18 @@ void DetailMapGeometryPass::renderScene(
             drawPlanetMapCircle(
                 p,
                 radiusPx,
-                96
+                96,
+                bodyMarkerColor
             );
         }
 
         if (radiusPx < 12.0)
         {
-            drawPlanetMapCross(p, 3.0f);
+            drawPlanetMapCross(
+                p,
+                3.0f,
+                bodyMarkerColor
+            );
         }
     }
 
@@ -344,33 +370,34 @@ void DetailMapGeometryPass::renderScene(
 
         text.endFrame();
     }
-
-
 }
 
 void DetailMapGeometryPass::drawPlanetMapLine(
     const glm::dvec2& a,
-    const glm::dvec2& b
+    const glm::dvec2& b,
+    const glm::vec4& color
 )
 {
-    drawLocalMapLine(a, b);
+    drawLocalMapLine(a, b, color);
 }
 
 void DetailMapGeometryPass::drawPlanetMapCross(
     const glm::dvec2& point,
-    float size
+    float size,
+    const glm::vec4& color
 )
 {
-    drawLocalMapCross(point, size);
+    drawLocalMapCross(point, size, color);
 }
 
 void DetailMapGeometryPass::drawPlanetMapCircle(
     const glm::dvec2& center,
     double radiusPx,
-    int segments
+    int segments,
+    const glm::vec4& color
 )
 {
-    drawLocalMapCircle(center, radiusPx, segments);
+    drawLocalMapCircle(center, radiusPx, segments, color);
 }
 
 void DetailMapGeometryPass::drawPlanetMapAxes(
@@ -382,6 +409,10 @@ void DetailMapGeometryPass::drawPlanetMapAxes(
     double axisLenMeters
 )
 {
+    (void)planet;
+    (void)scale;
+    (void)centerPx;
+
     const glm::dvec2 o =
         activeCamera().project(originMeters);
 
@@ -394,14 +425,23 @@ void DetailMapGeometryPass::drawPlanetMapAxes(
     const glm::dvec2 z =
         activeCamera().project(originMeters + axes.z * axisLenMeters);
 
-    glColor4f(1.0f, 0.25f, 0.25f, 0.9f);
-    drawPlanetMapLine(o, x);
+    drawPlanetMapLine(
+        o,
+        x,
+        glm::vec4(1.0f, 0.25f, 0.25f, 0.9f)
+    );
 
-    glColor4f(0.25f, 1.0f, 0.25f, 0.9f);
-    drawPlanetMapLine(o, y);
+    drawPlanetMapLine(
+        o,
+        y,
+        glm::vec4(0.25f, 1.0f, 0.25f, 0.9f)
+    );
 
-    glColor4f(0.25f, 0.55f, 1.0f, 0.9f);
-    drawPlanetMapLine(o, z);
+    drawPlanetMapLine(
+        o,
+        z,
+        glm::vec4(0.25f, 0.55f, 1.0f, 0.9f)
+    );
 }
 
 void DetailMapGeometryPass::drawPlanetMapVelocityArrow(
@@ -413,6 +453,10 @@ void DetailMapGeometryPass::drawPlanetMapVelocityArrow(
     double lenMeters
 )
 {
+    (void)planet;
+    (void)scale;
+    (void)centerPx;
+
     const double speed =
         glm::length(velocityMps);
 
@@ -428,13 +472,15 @@ void DetailMapGeometryPass::drawPlanetMapVelocityArrow(
     const glm::dvec2 b =
         activeCamera().project(originMeters + dir * lenMeters);
 
-    glColor4f(1.0f, 0.92f, 0.25f, 0.95f);
-    drawPlanetMapLine(a, b);
-
-    drawPlanetMapCross(
-        b,
-        4.0f
+    const glm::vec4 color(
+        1.0f,
+        0.92f,
+        0.25f,
+        0.95f
     );
+
+    drawPlanetMapLine(a, b, color);
+    drawPlanetMapCross(b, 4.0f, color);
 }
 
 void DetailMapGeometryPass::drawDetailMapOrbit3D(
@@ -442,9 +488,13 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx,
-    int segments
+    int segments,
+    const glm::vec4& color
 )
 {
+    (void)scale;
+    (void)centerPx;
+
     if (!orbit.valid || orbit.radiusMeters <= 1.0)
         return;
 
@@ -471,19 +521,6 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
             prograde -
             radial * glm::dot(prograde, radial)
         );
-
-    GLfloat baseColor[4] =
-    {
-        1.0f,
-        1.0f,
-        1.0f,
-        1.0f
-    };
-
-    glGetFloatv(
-        GL_CURRENT_COLOR,
-        baseColor
-    );
 
     auto orbitPoint =
         [&](int i) -> glm::dvec3
@@ -528,7 +565,10 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
                 insidePlanetDisc;
         };
 
-    glBegin(GL_LINES);
+    std::vector<glm::dvec2> visibleEndpoints;
+    std::vector<glm::dvec2> hiddenEndpoints;
+    visibleEndpoints.reserve(static_cast<std::size_t>(segments) * 2u);
+    hiddenEndpoints.reserve(static_cast<std::size_t>(segments) * 2u);
 
     for (int i = 0; i < segments; ++i)
     {
@@ -538,53 +578,38 @@ void DetailMapGeometryPass::drawDetailMapOrbit3D(
         const glm::dvec3 p1 =
             orbitPoint((i + 1) % segments);
 
+        const glm::dvec3 mid =
+            (p0 + p1) * 0.5;
 
+        /*
+            In Planet Details the far half of the orbit remains visible as a
+            very weak navigation cue. Hub Map does not use this function.
+        */
+        const bool hidden =
+            isHiddenBehindPlanet(mid);
 
-const glm::dvec3 mid =
-    (p0 + p1) * 0.5;
+        auto& endpoints =
+            hidden
+                ? hiddenEndpoints
+                : visibleEndpoints;
 
-/*
-    В Planet Details дальняя половина орбиты остаётся
-    видимой как очень слабая навигационная подсказка.
-
-    Это относится только к карте Details. На карте Hub
-    эта функция не используется.
-*/
-const bool hidden =
-    isHiddenBehindPlanet(mid);
-
-const float alpha =
-    hidden
-        ? baseColor[3] * 0.16f
-        : baseColor[3];
-
-glColor4f(
-    baseColor[0],
-    baseColor[1],
-    baseColor[2],
-    alpha
-);
-
-
-
-
-        const glm::dvec2 s0 =
-            activeCamera().project(p0);
-
-        const glm::dvec2 s1 =
-            activeCamera().project(p1);
-
-        glVertex2d(s0.x, s0.y);
-        glVertex2d(s1.x, s1.y);
+        endpoints.push_back(activeCamera().project(p0));
+        endpoints.push_back(activeCamera().project(p1));
     }
 
-    glEnd();
+    glm::vec4 hiddenColor = color;
+    hiddenColor.a *= 0.16f;
 
-    glColor4f(
-        baseColor[0],
-        baseColor[1],
-        baseColor[2],
-        baseColor[3]
+    drawLocalMapLines(
+        hiddenEndpoints.data(),
+        hiddenEndpoints.size(),
+        hiddenColor
+    );
+
+    drawLocalMapLines(
+        visibleEndpoints.data(),
+        visibleEndpoints.size(),
+        color
     );
 }
 

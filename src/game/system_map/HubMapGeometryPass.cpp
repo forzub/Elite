@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cmath>
 
-#include <GLFW/glfw3.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -67,21 +66,16 @@ void HubMapGeometryPass::drawHubMapBox(
     }
 
     /*
-        Старый путь остаётся fallback-ом,
-        если новые shaders не загрузились.
+        Shader initialization failure still has a fallback path, but that path
+        is now Core-compatible and uses the shared explicit-color primitive
+        renderer instead of fixed-function current color.
     */
-    glColor4f(
-        color.r,
-        color.g,
-        color.b,
-        color.a
-    );
-
     for (const auto& edge : edges)
     {
         drawLocalMapLine(
             m_owner.activeCamera().project(points[edge[0]]),
-            m_owner.activeCamera().project(points[edge[1]])
+            m_owner.activeCamera().project(points[edge[1]]),
+            color
         );
     }
 }
@@ -143,25 +137,22 @@ void HubMapGeometryPass::drawHubMapAxes(
     const glm::dvec2 origin =
         m_owner.activeCamera().project(center);
 
-    glColor4f(xColor.r, xColor.g, xColor.b, xColor.a);
-
     drawLocalMapLine(
         origin,
-        m_owner.activeCamera().project(center + axes.x * axisLenMeters)
+        m_owner.activeCamera().project(center + axes.x * axisLenMeters),
+        xColor
     );
 
-    glColor4f(yColor.r, yColor.g, yColor.b, yColor.a);
-
     drawLocalMapLine(
         origin,
-        m_owner.activeCamera().project(center + axes.y * axisLenMeters)
+        m_owner.activeCamera().project(center + axes.y * axisLenMeters),
+        yColor
     );
 
-    glColor4f(zColor.r, zColor.g, zColor.b, zColor.a);
-
     drawLocalMapLine(
         origin,
-        m_owner.activeCamera().project(center + axes.z * axisLenMeters)
+        m_owner.activeCamera().project(center + axes.z * axisLenMeters),
+        zColor
     );
 }
 
@@ -202,16 +193,10 @@ void HubMapGeometryPass::drawHubMapVelocityArrow(
         return;
     }
 
-    glColor4f(
-        color.r,
-        color.g,
-        color.b,
-        color.a
-    );
-
     drawLocalMapLine(
         m_owner.activeCamera().project(center),
-        m_owner.activeCamera().project(center + direction * lenMeters)
+        m_owner.activeCamera().project(center + direction * lenMeters),
+        color
     );
 }
 
@@ -234,8 +219,6 @@ void HubMapGeometryPass::drawHubMapScreenMarker(
             segments
         );
 
-
-
     if (m_gpuGeometryRenderer.active())
     {
         m_gpuGeometryRenderer.submitScreenCircle(
@@ -257,55 +240,21 @@ void HubMapGeometryPass::drawHubMapScreenMarker(
         return;
     }
 
-
-
-
-
-
-
-
-    glColor4f(
-        color.r,
-        color.g,
-        color.b,
-        color.a
-    );
-
     drawLocalMapCircle(
         screenPx,
         radiusPx,
-        segments
+        segments,
+        color
     );
 
-    if (!drawCross)
-        return;
-
-    const double s =
-        radiusPx * 0.62;
-
-    glBegin(GL_LINES);
-
-    glVertex2d(
-        screenPx.x - s,
-        screenPx.y
-    );
-
-    glVertex2d(
-        screenPx.x + s,
-        screenPx.y
-    );
-
-    glVertex2d(
-        screenPx.x,
-        screenPx.y - s
-    );
-
-    glVertex2d(
-        screenPx.x,
-        screenPx.y + s
-    );
-
-    glEnd();
+    if (drawCross)
+    {
+        drawLocalMapCross(
+            screenPx,
+            static_cast<float>(radiusPx * 0.62),
+            color
+        );
+    }
 }
 
 
@@ -471,13 +420,6 @@ void HubMapGeometryPass::drawHubMapAdaptiveGrid(
             )
         ) + 2;
 
-    glColor4f(
-        m_visuals.localGridColor.r,
-        m_visuals.localGridColor.g,
-        m_visuals.localGridColor.b,
-        m_visuals.localGridColor.a
-    );
-
     for (int i = -gridN; i <= gridN; ++i)
     {
         const double v =
@@ -486,31 +428,28 @@ void HubMapGeometryPass::drawHubMapAdaptiveGrid(
 
         drawLocalMapLine(
             m_owner.activeCamera().project(glm::dvec3(-gridN * gridStep, 0.0, v)),
-            m_owner.activeCamera().project(glm::dvec3( gridN * gridStep, 0.0, v))
+            m_owner.activeCamera().project(glm::dvec3( gridN * gridStep, 0.0, v)),
+            m_visuals.localGridColor
         );
 
         drawLocalMapLine(
             m_owner.activeCamera().project(glm::dvec3(v, 0.0, -gridN * gridStep)),
-            m_owner.activeCamera().project(glm::dvec3(v, 0.0,  gridN * gridStep))
+            m_owner.activeCamera().project(glm::dvec3(v, 0.0,  gridN * gridStep)),
+            m_visuals.localGridColor
         );
     }
 
     // Главные оси плоскости хаба.
-    glColor4f(
-        m_visuals.localGridAxisColor.r,
-        m_visuals.localGridAxisColor.g,
-        m_visuals.localGridAxisColor.b,
-        m_visuals.localGridAxisColor.a
-    );
-
     drawLocalMapLine(
         m_owner.activeCamera().project(glm::dvec3(-gridN * gridStep, 0.0, 0.0)),
-        m_owner.activeCamera().project(glm::dvec3( gridN * gridStep, 0.0, 0.0))
+        m_owner.activeCamera().project(glm::dvec3( gridN * gridStep, 0.0, 0.0)),
+        m_visuals.localGridAxisColor
     );
 
     drawLocalMapLine(
         m_owner.activeCamera().project(glm::dvec3(0.0, 0.0, -gridN * gridStep)),
-        m_owner.activeCamera().project(glm::dvec3(0.0, 0.0,  gridN * gridStep))
+        m_owner.activeCamera().project(glm::dvec3(0.0, 0.0,  gridN * gridStep)),
+        m_visuals.localGridAxisColor
     );
 }
 

@@ -361,6 +361,7 @@ private:
     bool m_perfDockingRequestActive = false;
     bool m_perfManualGuidancePlanActive = false;
     std::uint32_t m_perfDockingTunnelBuilds = 0;
+    double m_perfDockingTunnelBuildMs = 0.0;
     double m_perfPlayerViewMs = 0.0;
     double m_perfUiRootUpdateMs = 0.0;
     double m_perfHudMs = 0.0;

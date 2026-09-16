@@ -38,18 +38,18 @@ struct TrajectoryGenerationRequest
     // clock. Local acceleration and braking always use timeOffsetSeconds.
     double universeTimeScale = 1.0;
 
+    // Coarse topology only. Runtime trajectory generation must not search or
+    // smooth a second global path here. Each consecutive pair is a Ruckig leg.
     std::vector<glm::dvec3> pathPointsMeters;
     std::vector<NavigationObstacle> obstacles;
     NavigationVehicleProfile vehicle;
 
-    // Velocity relative to the planning frame. Stage 5A preserves the
-    // along-path component and reports the cross-track component explicitly;
-    // path-capture control belongs to the future follower.
+    // Velocity relative to the planning frame.
     glm::dvec3 initialVelocityMps {0.0};
 
-    // Stage 5C builds one globally smooth cubic B-spline. Candidate 0 is
-    // intentionally broad; higher support levels pull it closer to the coarse
-    // route only when geometry blocks the smoother candidate.
+    // Deprecated compatibility knobs from the removed spline backend. They are
+    // intentionally ignored by the canonical Ruckig runtime planner and remain
+    // only while older callers/tests are migrated off the old request shape.
     std::size_t maxSmoothSupportLevel = 5;
     double sampleSpacingMeters = 8.0;
     double maxCurveChordErrorMeters = 0.05;
@@ -71,14 +71,24 @@ struct TrajectoryGenerationRequest
 
 struct TrajectoryGenerationDiagnostics
 {
+    // Canonical runtime backend diagnostics.
+    std::size_t ruckigLegAttempts = 0;
+    std::size_t ruckigLegSuccesses = 0;
+    std::size_t collisionSegmentsChecked = 0;
+    double ruckigSolveMilliseconds = 0.0;
+
+    // Deprecated names retained temporarily for old logging/tests. The Ruckig
+    // planner maps attempts/successes into these fields so old diagnostics do
+    // not break while production code migrates to the fields above.
     std::size_t smoothCandidatesEvaluated = 0;
     std::size_t smoothSafeCandidates = 0;
     std::size_t selectedSmoothSupportLevel = 0;
+    bool smoothingFellBackToPolyline = false;
+
     double coarsePathLengthMeters = 0.0;
     double optimizedPathLengthMeters = 0.0;
     double maxCurvaturePerMeter = 0.0;
     double curvatureVariation = 0.0;
-    bool smoothingFellBackToPolyline = false;
 
     double initialAlongPathSpeedMps = 0.0;
     double initialCrossTrackSpeedMps = 0.0;
@@ -100,6 +110,13 @@ struct TrajectoryGenerationResult
     }
 };
 
+/*
+    Compatibility facade for the runtime route-to-trajectory service.
+
+    The canonical implementation is game::navigation::RuckigRoutePlanner.
+    Keeping this facade lets old callers migrate without preserving the removed
+    B-spline/SmoothPathOptimizer runtime implementation.
+*/
 class TrajectoryGenerator
 {
 public:

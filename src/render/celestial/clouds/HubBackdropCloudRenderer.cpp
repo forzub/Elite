@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/render/celestial/clouds/HubBackdropCloudRenderer.h"
 
 #include <algorithm>
@@ -148,9 +149,7 @@ namespace render::celestial
             );
 
         GLboolean textureWasEnabled =
-            glIsEnabled(
-                GL_TEXTURE_2D
-            );
+            elite::render::core_legacy::texture2DEnabled();
 
         GLboolean blendWasEnabled =
             glIsEnabled(
@@ -167,29 +166,16 @@ namespace render::celestial
 
         glUseProgram(0);
 
-        glEnable(
-            GL_TEXTURE_2D
-        );
+        elite::render::core_legacy::enableTexture2D(true);
 
         glBindTexture(
             GL_TEXTURE_2D,
             texture
         );
 
-        GLint oldTextureEnvMode =
-            GL_MODULATE;
-
-        glGetTexEnviv(
-            GL_TEXTURE_ENV,
-            GL_TEXTURE_ENV_MODE,
-            &oldTextureEnvMode
-        );
-
-        glTexEnvi(
-            GL_TEXTURE_ENV,
-            GL_TEXTURE_ENV_MODE,
-            GL_MODULATE
-        );
+        // OpenGL Core has no fixed-function texture environment.
+        // CoreGlLegacyBridge already implements the old GL_MODULATE behavior
+        // explicitly in GLSL as texture(uTexture, vTexCoord) * vColor.
 
         glEnable(
             GL_BLEND
@@ -331,25 +317,25 @@ namespace render::celestial
                         horizonFade
                     );
 
-                glColor4f(
+                elite::render::core_legacy::color4f(
                     1.0f,
                     1.0f,
                     1.0f,
                     alpha
                 );
 
-                glTexCoord2d(
+                elite::render::core_legacy::texCoord2d(
                     u,
                     v
                 );
 
-                glVertex2d(
+                elite::render::core_legacy::vertex2d(
                     sx,
                     sy
                 );
             };
 
-        glBegin(
+        elite::render::core_legacy::begin(
             GL_TRIANGLES
         );
 
@@ -439,13 +425,7 @@ namespace render::celestial
 
         
 
-        glEnd();
-
-        glTexEnvi(
-            GL_TEXTURE_ENV,
-            GL_TEXTURE_ENV_MODE,
-            oldTextureEnvMode
-        );
+        elite::render::core_legacy::end();
 
         glBindTexture(
             GL_TEXTURE_2D,
@@ -454,15 +434,11 @@ namespace render::celestial
 
         if (textureWasEnabled)
         {
-            glEnable(
-                GL_TEXTURE_2D
-            );
+            elite::render::core_legacy::enableTexture2D(true);
         }
         else
         {
-            glDisable(
-                GL_TEXTURE_2D
-            );
+            elite::render::core_legacy::enableTexture2D(false);
         }
 
         if (blendWasEnabled)

@@ -1,3 +1,4 @@
+#include "src/render/legacy/CoreGlLegacyBridge.h"
 #include "src/game/ship/view/PlayerShipView.h"
 #include "src/game/ship/ShipDescriptor.h"
 
@@ -458,19 +459,19 @@ void PlayerShipView::renderHudBoundary()
      const auto& contour = hudEdgeMapper.boundaryPx();
         if (contour.size() >= 2)
         {
-            glDisable(GL_TEXTURE_2D);
+            elite::render::core_legacy::enableTexture2D(false);
             glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            glColor4f(0.2f, 0.8f, 1.0f, 0.25f); // голубой, ~25% прозрачности
+            elite::render::core_legacy::color4f(0.2f, 0.8f, 1.0f, 0.25f); // голубой, ~25% прозрачности
 
-            glBegin(GL_LINE_LOOP);
+            elite::render::core_legacy::begin(GL_LINE_LOOP);
             for (const auto& p : contour)
             {
-                glVertex2f(p.x, p.y);
+                elite::render::core_legacy::vertex2f(p.x, p.y);
             }
-            glEnd();
+            elite::render::core_legacy::end();
         }
 }
 

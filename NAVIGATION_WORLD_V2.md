@@ -1,11 +1,9 @@
 # NavigationWorld v2 — ship-centered runtime navigation architecture
 
-**Status:** current architecture contract / benchmark-first implementation plan  
+**Status:** current architecture contract  
 **Updated:** 2026-09-16 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** `NAV-V2-MAP-2`
-
-This document defines the current Navigation v2 direction. Older route/path-planning code remains useful migration material and regression evidence, but it is not automatically the architectural foundation of v2 where it conflicts with this contract.
+**Current stage:** `NAV-V2-SPACE-1`
 
 Repository/branch authority is defined by `REPOSITORY_SOURCE_OF_TRUTH.md`. `main` is the only canonical game-development branch.
 
@@ -13,102 +11,98 @@ Repository/branch authority is defined by `REPOSITORY_SOURCE_OF_TRUTH.md`. `main
 
 Navigation v2 is built around one shared **NavigationWorld** for the active play area.
 
-It is not an expensive independent full navigation world/planner per NPC. Shared spatial indexing, motion prediction and broadphase/conflict information are computed centrally; individual agents consume compact local candidates, temporary goals or precision-planning requests.
+It is not a complete independent navigation world/planner per NPC. Shared static-space topology, dynamic spatial indexing, motion prediction and broadphase/conflict information are computed centrally; agents consume compact local products, coarse corridors or precision-planning requests.
 
-The active dynamic-map implementation is the backend-neutral `NavigationMap` block under `src/world/navigation/map/`. Its CPU reference implementation is the deterministic behavior oracle. CPU, GPU or hybrid production ownership is selected from measured evidence, not intuition.
+The dynamic `NavigationMap` boundary under `src/world/navigation/map/` is accepted. `NAV-V2-MAP-2` target-machine measurements selected a **hybrid backend**:
 
-`EliteNavigationMap` is intentionally not yet wired into the live `EliteGame` / `EliteServer` runtime path. Isolated backend/space gates come first.
+```text
+CPU
+    static free-space / clearance
+    connectivity / portals
+    sparse global corridor search
+    precision local search
+
+GPU
+    dynamic P/V/A prediction
+    conservative swept bounds
+    spatial binning
+    all-agent neighbor/conflict reduction
+```
+
+The public NavigationWorld/NavigationMap boundaries remain backend-neutral. `EliteNavigationMap` is intentionally not yet wired into the live game/server path; the isolated static-space gate comes first.
 
 ## 2. Coordinate and frame contract
 
-Authoritative physical/system state and the planner's working space are deliberately separate.
+Authoritative physical/system state and navigation working space are separate.
 
 ```text
 AUTHORITATIVE SYSTEM STATE
         |
-        | transform relevant state at boundary
+        | publish relevant transformed state
         v
 SHIP NAVIGATION SPACE
-origin = ship / active play area
+origin = active ship / active play area
 axes   = stable navigation/travel basis
         |
-        +-- static/local geometry
+        +-- static navigation space
         +-- nearby dynamic actors
         +-- P,V,A,bounds
         +-- predicted swept volumes
         +-- active corridors/conflicts
 ```
 
-### 2.1 Authoritative system state
+The NavigationWorld origin may translate/rebase. Its axes do **not** roll/pitch/yaw with the hull. Hull/body-local coordinates are flight-controller detail; render/player-relative coordinates are presentation detail.
 
-Large-scale/system state remains the source of truth for precise positions and transforms between moving frames. Navigation does not redefine world physics merely to obtain numerically convenient local coordinates.
+## 3. Local-domain ownership
 
-### 2.2 Ship-centered working origin
-
-The active NavigationWorld is expressed near the player/active ship so local spatial structures do not need to work directly in huge system coordinates. The origin may translate/rebase with the ship or active area.
-
-### 2.3 Stable navigation axes
-
-Ship-centered does **not** mean ship-body-attitude-centered. NavigationWorld axes remain stable in a system/travel/navigation basis. Player roll, pitch or yaw must not force the whole spatial index to rotate/rebuild. Hull/body-local coordinates are flight-controller detail.
-
-## 3. Hub remains a separate local navigation domain
-
-Hub/station-local navigation retains its own local contract.
+Hub/station/carrier/interior navigation remains a separate local domain.
 
 ```text
-HUB LOCAL SPACE
-    station geometry
-    docking ports
-    scheduled/service actors
-    internal traffic
+LOCAL DOMAIN
+    geometry
+    docking/service ports
+    scheduled/internal traffic
+    local damage/openings
           |
-          | transform relevant subset only
+          | publish relevant subset
           v
 SHIP NAVIGATION SPACE
 ```
 
-The game must not drag/rebuild the entire internal Hub map merely because the ship moves. NavigationWorld imports only station geometry, traffic, corridors and docking/service information that can affect the ship's active safety/planning horizon.
-
-The same ownership model applies to other persistent local domains such as carriers, capital ships, settlements and interiors.
+The game must not rebuild or drag an entire station/interior map merely because the ship moves. Only geometry/topology/traffic relevant to the active NavigationWorld is published across the boundary.
 
 ## 4. Shared NavigationWorld ownership
 
-Conceptual runtime layout:
-
 ```text
-                   SHIP NAVIGATION WORLD
-                           |
-              +------------+------------+
-              |                         |
-       STATIC SPACE              DYNAMIC ACTORS
-  free-space/clearance/          P,V,A,bounds,
-  connectivity/portals           flags,revisions
-              |                         |
-              +------------+------------+
-                           |
-                    shared broadphase
-                 spatial index/prediction
-                    swept-volume queries
-                           |
-                  compact conflict set
-                           |
-             +-------------+-------------+
-             |                           |
-       mass NPC steering          precision planner
-       cheap local targets         docking/repair
-             |                           |
-             +-------------+-------------+
-                           |
-                    temporary target
-                           |
-               RuckigTrajectorySolver
-                           |
-                     flight control
+                 SHIP NAVIGATION WORLD
+                         |
+             +-----------+-----------+
+             |                       |
+       STATIC SPACE             DYNAMIC ACTORS
+ free-space/clearance/          P,V,A,bounds,
+ connectivity/portals           flags,revisions
+             |                       |
+             +-----------+-----------+
+                         |
+                  shared reduction
+             static corridor + dynamic
+             prediction/conflict set
+                         |
+            +------------+------------+
+            |                         |
+     mass NPC steering          precision planner
+      cheap local target        docking/repair/etc.
+            |                         |
+            +------------+------------+
+                         |
+                  temporary target
+                         |
+              RuckigTrajectorySolver
+                         |
+                   flight control
 ```
 
-Shared world data and broadphase are central; expensive precision work is requested only where needed.
-
-## 5. NavigationMap block boundary
+## 5. Dynamic NavigationMap boundary — accepted
 
 Production-facing API:
 
@@ -116,15 +110,7 @@ Production-facing API:
 src/world/navigation/map/NavigationMap.h
 ```
 
-Implementation/build boundary:
-
-```text
-src/world/navigation/map/NavigationMap.cpp
-src/world/navigation/map/CMakeLists.txt
-src/world/navigation/map/README.md
-```
-
-Ingress is an owned snapshot by value:
+Ingress:
 
 ```text
 DynamicWorldUpdate
@@ -133,7 +119,7 @@ DynamicWorldUpdate
     actors[] { id, P, V, A, radius, flags, motionRevision }
 ```
 
-Egress is compact derived data by value:
+Egress:
 
 ```text
 queryCorridor()
@@ -141,59 +127,95 @@ querySphere()
 stats()
 ```
 
-The block owns world/system -> ship-centered conversion, actor storage, prediction, spatial indexing and backend resources. Internal cells, actor tables and future GPU buffers never cross the public API. The public header remains independent of GLM/OpenGL/GLFW/game/render/scene state and uses PImpl.
+The block owns system/world -> ship-centered conversion, actor storage, prediction, dynamic spatial indexing and backend resources. Internal cells, actor tables and GPU buffers never cross the public API. The public header remains independent of GLM/OpenGL/GLFW/render/game state.
 
-The current CPU reference provides constant-acceleration endpoint prediction, conservative swept spheres and a sparse 3D cell hash. It is the correctness oracle against which future backend changes are tested.
+The CPU implementation remains the deterministic behavior oracle even though production dynamic reduction is allowed to use GPU internals.
 
-## 6. Static spatial data vs dynamic actors
+## 6. `NAV-V2-MAP-2` measured evidence — accepted
 
-Do not encode dynamic velocity/acceleration as dense per-voxel vectors.
-
-A `256^3` dense volume already contains about 16.8 million cells. Six 32-bit floats for velocity + acceleration alone cost roughly 384 MiB before occupancy, clearance, IDs, connectivity or alignment; `512^3` multiplies that by eight.
-
-Dynamic motion therefore belongs to actor records / structure-of-arrays storage. Static/spatial structures may contain occupied/free state, clearance/safety information, connectivity/hierarchy, references to static navigation geometry, and compact dynamic-bin references.
-
-The exact static representation is not frozen yet. Sparse bricks, hierarchical cells, BVH-like structures and CPU spatial indexes remain valid until benchmark evidence and `NAV-V2-SPACE-1` select the representation.
-
-## 7. GPU candidate responsibilities
-
-GPU work should first target high independent parallelism:
+### CPU 100-iteration pass
 
 ```text
-P/V/A actor prediction
-conservative future swept bounds
-spatial hash/binning
-corridor/local-horizon relevance filtering
-all-agent neighbour/conflict candidate generation
+horizon_s=3 warmup=10 iterations=100
 ```
 
-Single-agent A*/Theta*/SIPP-style precision graph search is not the first GPU target. These searches are branch-heavy with irregular frontier/memory access. Initially they remain asynchronous CPU-worker candidates after the shared spatial stage has reduced the problem.
-
-A hybrid backend is explicitly valid: CPU may own static topology/precision search while GPU owns dynamic actor prediction, binning and conflict reduction.
-
-## 8. Asynchronous pipeline — never block the frame thread
-
-This architecture forbids frame-critical behavior such as:
+At 10k actors:
 
 ```text
-dispatch compute
-barrier/fence
-blocking bulk readback
-continue frame
+cruise rebuild  med/p95 = 2.7892 / 3.0958 ms
+       corridor med/p95 = 0.0552 / 0.1713 ms
+       sphere   med/p95 = 0.0346 / 0.1329 ms
+
+hub    rebuild  med/p95 = 2.1775 / 2.4924 ms
+       corridor med/p95 = 0.0328 / 0.1551 ms
+       sphere   med/p95 = 0.0324 / 0.0471 ms
 ```
 
-Use double/triple buffering or equivalent asynchronous ownership:
+Compact CPU queries are cheap. Whole-snapshot rebuild is the CPU cost center and must not become a synchronous per-frame 10k path.
+
+### GPU 100-iteration pass
+
+Accepted adapter:
 
 ```text
-frame N:   submit NavigationWorld update N
-frame N+1: consume last completed safe result; submit N+1
+OpenGL 4.3
+NVIDIA Corporation
+Quadro RTX 3000/PCIe/SSE2
 ```
 
-Detailed products should remain backend-resident where useful or cross to CPU only as bounded compact asynchronous results. Navigation result age must be observable and included in safety budgeting.
+At 10k actors:
 
-## 9. Safety horizon includes compute/result latency
+```text
+cruise bin=0.0106 ms neighbor=0.6737 ms total=0.6840 ms p95=1.3226 ms
+hub    bin=0.0105 ms neighbor=1.5991 ms total=1.6097 ms p95=1.6258 ms
+```
 
-Pipeline delay is part of the physical safety calculation.
+All GPU scenarios reported:
+
+```text
+overflow=0
+out_of_bounds=0
+valid=1
+readback_bytes=32
+```
+
+Both 1k scenarios exactly matched the independent CPU pair/corridor reference. 10k memory was about 16.63 MiB.
+
+The prediction/binning pass is approximately 0.01–0.02 ms; neighbor/conflict reduction dominates. Dense Hub traffic is therefore the main dynamic optimization target.
+
+Raw evidence: `benchmarks/navigation_gpu/RUN_LOG.md`.
+
+## 7. Hybrid backend contract
+
+The CPU and GPU harnesses measure complementary workloads, not equivalent totals. Hybrid ownership is selected because the measurements support specialization without changing the public boundary.
+
+### CPU owns
+
+- persistent static free-space / obstacle topology;
+- clearance/agent-envelope logic;
+- explicit region/portal connectivity;
+- sparse cached global corridor search;
+- precision local search after spatial reduction;
+- deterministic reference queries and diagnostics.
+
+### GPU owns
+
+- dynamic actor P/V/A prediction;
+- conservative swept bounds;
+- spatial binning/hash;
+- high-volume all-agent neighbor/conflict candidate generation.
+
+### Shared invariants
+
+- no backend leaks internal data structures through public APIs;
+- no frame-thread `dispatch -> wait -> bulk readback` path;
+- dynamic results are double/triple buffered or otherwise asynchronous;
+- result age/generation is observable;
+- stale-result age is included in physical safety distance.
+
+## 8. Asynchronous safety horizon
+
+Navigation result latency consumes physical safety margin.
 
 Baseline conservative budget:
 
@@ -201,11 +223,9 @@ Baseline conservative budget:
 D >= v*T_latency + v^2/(2*a_brake) + turn_distance + safety_margin
 ```
 
-Higher-fidelity relative-motion models may replace the simple baseline, but stale asynchronous results always consume part of the safety margin.
+Higher-fidelity relative-motion models may replace this baseline, but asynchronous result age is never ignored.
 
-## 10. Performance contract
-
-Current design targets:
+## 9. Performance contract
 
 ```text
 main-thread navigation CPU       < 0.5 ms typical
@@ -215,81 +235,77 @@ GPU dynamic NavigationWorld      < 1.0 ms preferred
 full/precision route solve       asynchronous only
 ```
 
-GPU time is not free: navigation compute competes with rendering. The objective is total frame/system cost and bounded latency, not moving work to GPU for its own sake.
+The 100-iteration Quadro measurements satisfy the current heavy-scene GPU target at 10k actors. This does not remove the need to optimize dense-Hub neighbor reduction because rendering competes for the same GPU.
 
-## 11. Ruckig contract
+## 10. Active static-space stage — `NAV-V2-SPACE-1`
 
-Ruckig is **not** responsible for discovering a path around obstacles.
+The static spatial half of NavigationWorld is now the active implementation task.
 
-NavigationWorld / route planners first determine an accepted safe corridor, local route or temporary target state. `RuckigTrajectorySolver` then produces kinematically feasible local motion under velocity/acceleration/jerk limits.
-
-```text
-world + conflicts
-      |
-coarse/local/precision navigation
-      |
-accepted corridor / temporary target
-      |
-RuckigTrajectorySolver
-      |
-flight control
-```
-
-The old whole-route `RuckigRoutePlanner`/dense materialization path is migration code, not v2 authority.
-
-## 12. Guidance tunnel contract
-
-The manual guidance tunnel is a visual projection of the **accepted trajectory/corridor actually used by navigation/control**.
-
-It must not run an unrelated planner or present a visually attractive path that the controller cannot or will not follow. Manual and autopilot modes consume the same navigation truth; only presentation/control ownership differs.
-
-## 13. Active implementation gate — `NAV-V2-MAP-2`
-
-Canonical isolated programs now present on `main`:
+Required capability:
 
 ```text
-tests/navigation_map/
-benchmarks/navigation_map/
-benchmarks/navigation_gpu/
+persistent sparse static-space representation
+obstacle/free-space semantics
+clearance by agent envelope
+explicit connectivity / portals
+bounded local invalidation/rebuild
+coarse global corridor query
+outside <-> inside transitions
+narrow-passage admission by agent size
 ```
 
-User target-machine behavioral evidence already reported before branch reconciliation:
+Do not begin with a giant dense system voxel field. Large open volumes and detailed interiors have different spatial characteristics; a sparse/hierarchical or region/portal + local-clearance hybrid representation is explicitly allowed.
+
+The first implementation must preserve representation freedom behind a backend-neutral public API.
+
+### Static-space public concepts
+
+Exact names may differ, but the boundary needs equivalents of:
 
 ```text
-bash tests/navigation_map/run_mingw64.sh
-1/1 Test #1: navigation_map ... Passed
-100% tests passed, 0 tests failed
+StaticSpace / NavigationSpace
+revision / generation
+AgentEnvelope
+RegionId
+PortalId
+Region
+Portal
+point/containing-region query
+clearance query
+coarse corridor query
+local invalidation/update
+stats / diagnostics
 ```
 
-The audited implementation/test tree is now represented in `main`; a fresh post-reconciliation run remains the next verification step.
+Public headers must not expose GLM/OpenGL/GLFW/render/game-state dependencies. Internal acceleration structures remain private.
 
-CPU and GPU benchmark harnesses use matched deterministic `cruise` and `hub` scenarios at 1k / 5k / 10k moving actors with a 3 s default prediction horizon.
+### Static-space behavioral requirements
 
-Required measurements include:
+The deterministic CPU reference must demonstrate:
 
-- CPU publication/rebuild median and p95;
-- CPU corridor/local query median and p95;
-- cells visited, actors examined and candidate counts;
-- GPU bin/prediction/corridor time;
-- GPU neighbor/conflict time;
-- GPU total median and p95;
-- CPU submission cost;
-- memory footprint;
-- overflow/rejected/out-of-bounds diagnostics;
-- readback bytes and any wait/stall behavior.
+```text
+open-space traversal
+solid-obstacle clearance rejection
+same geometry with different agent envelope outcomes
+connected region corridor
+disconnected no-route result
+narrow portal oversized-agent rejection
+outside -> interior transition
+bounded local invalidation/revision behavior
+```
 
-The benchmark result is a **decision gate**. Do not commit production dynamic NavigationWorld ownership to CPU, GPU or hybrid by intuition alone.
+A standalone architecture contract, MinGW64 behavioral test and small query/invalidation benchmark are required before live integration.
 
-## 14. Route architecture after backend selection
+## 11. Route architecture
 
 The intended route mechanism is:
 
 ```text
 cached sparse global corridor through free-space regions/portals
         |
-NavigationMap corridor/local-horizon query
+static clearance + dynamic NavigationMap local-horizon query
         |
-predicted conflicts for returned actors only
+predicted conflicts for relevant actors
         |
 local route / velocity correction
         |
@@ -302,31 +318,23 @@ execute first part
 repeat on receding physical horizon
 ```
 
-A global route is not expanded into thousands of dense samples all the way to destination. Global route validity is revision/event driven; local physical avoidance operates on a bounded receding horizon.
+A global route is not expanded into thousands of dense samples to destination. Global topology validity is revision/event driven; local physical avoidance operates on a bounded receding horizon.
 
-## 15. Integration roadmap
+## 12. Ruckig contract
 
-### Stage `NAV-V2-MAP-2` — current
+Ruckig is not responsible for obstacle pathfinding.
 
-Measure CPU vs GPU vs hybrid dynamic-map behavior on the target machine and select internal backend ownership without changing the public `NavigationMap` API.
+NavigationWorld first determines an accepted corridor/local target state. `RuckigTrajectorySolver` then creates kinematically feasible local motion under velocity/acceleration/jerk constraints.
 
-### Stage `NAV-V2-SPACE-1`
+The old whole-route `RuckigRoutePlanner`/dense-materialization path is migration code, not v2 authority.
 
-Add persistent static free-space/clearance, connectivity/portals, local invalidation and agent-envelope queries.
+## 13. Guidance tunnel contract
 
-### Live integration
+Manual guidance visualizes the accepted corridor/trajectory actually used by navigation/control. It must not run an unrelated planner or display a path that the controller will not follow.
 
-Integrate the bounded asynchronous shared NavigationWorld into runtime only after the isolated map/space gates are accepted.
+Manual and autopilot modes consume the same navigation truth; presentation/control ownership differs.
 
-### Consumers
-
-Add cheap mass-NPC steering/avoidance and more expensive precision docking/repair/special planning as separate consumers of the same shared spatial/prediction layer.
-
-### Legacy retirement
-
-Remove obsolete route-wide planner/materialization/guidance dependencies when Navigation v2 owns the live path. Retain the low-level local kinematic solver where appropriate.
-
-## 16. Navigation / collision / damage boundary
+## 14. Navigation / collision / damage boundary
 
 ```text
 Navigation
@@ -337,53 +345,57 @@ Physics / Collision
 
 Damage / Structural
     semantic hit ownership -> detach / breach / destruction
-    -> local navigation invalidation
+    -> local static-space invalidation
 ```
 
-Render, collision, hit/damage and navigation geometry intentionally differ. A breach is navigable only when clearance admits the requesting agent envelope.
+Render, collision, damage and navigation geometry intentionally differ. A breach is navigable only when clearance admits the requesting agent envelope.
 
-## 17. Raw NavigationWorld 3D debug-view contract
+## 15. Raw NavigationWorld 3D debug-view contract
 
-A dedicated diagnostic presentation mode is required so the developer can inspect the **actual NavigationWorld state used by navigation**, not a separately reconstructed or beautified approximation.
+Ordinary `F12` keeps existing Hub/local presentation behavior. `Shift+F12` toggles Hub render <-> NavigationWorld Debug in the local context.
 
-Input contract:
+The debug view must consume the same completed backend-neutral NavigationWorld snapshot used by navigation/control. It must not run a second planner, force synchronous readback or mutate simulation state.
 
-- ordinary `F12` keeps its existing Hub/local presentation behavior;
-- `Shift+F12` toggles `Hub render <-> NavigationWorld Debug` while in the Hub/local context;
-- entering the debug view is presentation-only: it must not mutate simulation/navigation state or force a synchronous NavigationWorld rebuild/readback.
-
-Rendering contract:
-
-- while NavigationWorld Debug is active, normal Hub-map rendering is suppressed;
-- the debug renderer consumes the same completed NavigationWorld snapshot that navigation/control consumes;
-- there is **no second navigation calculation for visualization**;
-- the renderer is backend-neutral so CPU, GPU and hybrid implementations expose the same diagnostic snapshot contract;
-- the camera supports useful free 3D inspection independently of normal Hub-map presentation.
-
-The debug view should expose, where available:
+Useful diagnostics include:
 
 - ship-centered origin/axes;
-- spatial cells/bricks/bins or equivalent static/index structure;
-- static obstacles and clearance/safety representation;
-- dynamic actor bounds plus velocity/acceleration vectors;
-- predicted positions and swept volumes;
-- player safety horizon / accepted corridor;
-- broadphase candidate and conflict actors/pairs;
-- snapshot/frame/generation identifier and result age/latency.
+- static regions/cells/bricks/portals and clearance;
+- dynamic actors with P/V/A;
+- predicted/swept bounds;
+- accepted corridor and physical horizon;
+- conflict candidates/pairs;
+- snapshot generation and result age.
 
-This is a correctness instrument. When navigation behaves incorrectly, it must show **the world navigation actually believed existed at that completed snapshot**, including stale-result age where applicable.
+This remains a documented contract; runtime implementation is not yet present.
 
-## 18. Documentation Definition of Done
+## 16. Integration roadmap
 
-Navigation work is not complete when only code/tests change.
+### `NAV-V2-SPACE-1` — current
 
-For every meaningful NavigationWorld iteration:
+Implement/test/benchmark the static-space boundary and deterministic CPU reference.
 
-1. update this contract when architecture, ownership, performance budgets, frame contracts or roadmap decisions change;
-2. update `CURRENT_STATE.md`, `CURRENT_TASK.md` and `PROJECT_STATE.md`;
-3. record actual test/benchmark evidence in the project iteration log/context as applicable;
-4. keep `main` as the only canonical development branch;
-5. distinguish genuine local-only work from repository state explicitly;
-6. perform documentation freshness checks before declaring the iteration complete or starting the next coding slice.
+### Live shared NavigationWorld
 
-A stale current-task/state document or branch ambiguity is a project-state defect and blocks handoff.
+After static-space acceptance, integrate bounded asynchronous publication/consumption into runtime.
+
+### Consumers
+
+Add cheap mass-NPC local steering and expensive precision docking/repair/special planning as separate consumers of the same shared world.
+
+### Legacy retirement
+
+Remove obsolete route-wide planner/materialization/guidance dependencies only after Navigation v2 owns the live path. Retain the low-level local kinematic solver where useful.
+
+## 17. Documentation Definition of Done
+
+For every meaningful NavigationWorld iteration update, as applicable:
+
+```text
+CURRENT_STATE.md
+CURRENT_TASK.md
+PROJECT_STATE.md
+NAVIGATION_WORLD_V2.md
+project-context CURRENT_STATE/CURRENT_TASK/DECISIONS/ITERATION_LOG/SOURCES
+```
+
+Stale task/state documentation or branch ambiguity blocks handoff.

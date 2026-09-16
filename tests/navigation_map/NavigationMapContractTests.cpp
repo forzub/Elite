@@ -171,7 +171,8 @@ void testRebaseAndStableBasisAreOwnedByMap()
     NavigationMap::SphereQuery basisQuery;
     basisQuery.centerMapMeters = {100.0, 0.0, 0.0};
     basisQuery.radiusMeters = 1.0;
-    const NavigationMap::Candidate& rotated = requireCandidate(map.querySphere(basisQuery), 8);
+    const NavigationMap::QueryResult basisResult = map.querySphere(basisQuery);
+    const NavigationMap::Candidate& rotated = requireCandidate(basisResult, 8);
     require(
         nearlyEqual(rotated.positionMapMeters.x, 100.0) &&
         nearlyEqual(rotated.positionMapMeters.y, 0.0),

@@ -46,29 +46,101 @@ Diagnostic counts:
 
 Each invalidation affected one region and six touching portals; every corridor query succeeded.
 
-## Interpretation
+### Baseline interpretation
 
-The first optimization target is unambiguous: corridor BFS was scanning the complete portal map for every visited region. From 1k to 10k regions, corridor median increased by roughly 102-105x while portal examinations increased by roughly 106-108x.
+The first optimization target was unambiguous: corridor BFS scanned the complete portal map for every visited region. From 1k to 10k regions, corridor median increased by roughly 102-105x while portal examinations increased by roughly 106-108x.
 
-Other costs are secondary at this stage:
+Other baseline costs:
 
-- worst-case linear point lookup at 10k is ~0.28 ms median/p95 and remains inside the current ordinary main-thread budget;
-- invalidation reaches ~2.6-2.8 ms median at 10k and should eventually receive a spatial index / worker-side treatment;
-- one-region transactional patch reaches ~7.6-8.7 ms median because the reference copies the full ordered region/portal maps;
-- full publication is ~6.7-7.2 ms median at 10k and is not intended as a per-frame operation.
+- worst-case linear point lookup at 10k was ~0.28 ms;
+- invalidation reached ~2.6-2.8 ms median at 10k;
+- one-region transactional patch reached ~7.6-8.7 ms median;
+- full publication was ~6.7-7.2 ms median at 10k.
 
 ## Optimization 1 — private per-region portal adjacency
 
-`NavigationSpace.h` remains unchanged.
+`NavigationSpace.h` remained unchanged.
 
-The private implementation now owns:
+Private connectivity became:
 
 ```text
 regionId -> ordered portalId list
 ```
 
-The adjacency index is rebuilt transactionally with full publication/local patch and preserves stable PortalId ordering. `queryCorridor()` now examines only portals adjacent to the current region instead of scanning the complete portal map at each BFS step.
+The adjacency index is rebuilt transactionally with full publication/local patch and preserves stable PortalId ordering. `queryCorridor()` examines only portals adjacent to the current region.
 
-Architecture contract now rejects a regression to full portal-map scanning inside corridor BFS.
+Architecture contract rejects regression to full portal-map scanning inside corridor BFS.
 
-Status: **pending target-machine behavioral + benchmark rerun**.
+### Target-machine rerun after Optimization 1
+
+Behavior / architecture:
+
+```text
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
+NAVIGATION SPACE BENCHMARK CONTRACT: PASS
+```
+
+Default benchmark remained:
+
+```text
+warmup=1
+iterations=3
+```
+
+Measured results:
+
+```text
+scenario  regions portals  replace med/p95   point med/p95   corridor med/p95   invalidate med/p95  patch med/p95
+open_1k     1000    2650    1.2020/1.2097     0.0246/0.0287    1.3816/1.3825      0.2474/0.2895        1.1639/1.1795
+open_5k     5000   14050    6.5815/6.6636     0.1446/0.1460    9.4788/9.5562      1.2609/1.5969        7.2783/7.9176
+open_10k   10000   28600   13.3648/14.0799    0.3806/0.4356   21.7848/22.1695     3.2622/3.4739       16.1963/17.4121
+hub_1k      1000    2700    1.0866/1.0872     0.0113/0.0264    1.3178/1.9948      0.2314/0.2369        1.1989/1.8382
+hub_5k      5000   14050    6.4667/6.7791     0.1418/0.2358    9.5743/10.1848     1.5549/1.9001        7.1233/7.3557
+hub_10k    10000   28600   13.7190/15.3277    0.3836/0.4536   22.3689/22.7493     3.3208/3.4248       15.8516/16.7010
+```
+
+10k diagnostics:
+
+```text
+point regions examined=10,000
+corridor portals examined=57,189
+corridor found=1
+invalidated regions=1
+invalidated portals=6
+```
+
+### Optimization-1 interpretation
+
+The adjacency index solved the pathological full-portal scan:
+
+```text
+open_10k corridor median: 1991.0357 -> 21.7848 ms  (~91.4x faster)
+hub_10k  corridor median: 1951.6453 -> 22.3689 ms  (~87.2x faster)
+portal examinations:      285,913,245 -> 57,189    (~5000x fewer)
+```
+
+This isolates the remaining corridor cost. It is no longer caused by checking irrelevant portals. The current BFS still uses ordered `std::map<RegionId,...>` containers for visited/predecessor bookkeeping and ordered-map lookups for graph state.
+
+The connectivity index moves work into topology publication/patching: 10k full replacement is now ~13-14 ms median and one-region transactional patch ~16 ms median. These are not accepted frame-path operations and remain later optimization targets.
+
+Point lookup remains sub-0.5-ms p95 at 10k, while invalidation is ~3.3 ms median and is also a later spatial-index candidate.
+
+## Optimization 2 candidate — dense RegionSlot graph bookkeeping
+
+`NavigationSpace.h` remains unchanged.
+
+The private graph now adds:
+
+```text
+RegionId -> dense RegionSlot
+RegionSlot -> RegionId
+RegionSlot -> ordered adjacency edges { PortalId, neighbor RegionSlot }
+```
+
+BFS `visited`, `previous`, and frontier storage are vector-backed by dense slots rather than `std::map<RegionId,...>`. Stable public RegionId/PortalId results and deterministic PortalId traversal order are preserved.
+
+Point lookup, invalidation, transactional map copying and graph rebuild costs are intentionally unchanged in this slice.
+
+Status: **pending target-machine behavior + benchmark rerun**.

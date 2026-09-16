@@ -1,13 +1,13 @@
 # Static route turn-cost contract
 
 **Stage:** `NAV-V2-SPACE-1`  
-**Status:** design contract for costed corridor v2
+**Status:** implementation candidate pending target-machine behavior gate
 
 ## Purpose
 
 `queryCostedCorridor()` v1 already chooses among traversable static branches using coarse geometric distance and clearance preference. The next static route-quality term is turn-angle cost.
 
-This term exists to distinguish routes that have similar distance/clearance but very different maneuver burden, for example:
+This term distinguishes routes that have similar distance/clearance but very different maneuver burden, for example:
 
 ```text
 short zig-zag canyon        slightly longer smooth corridor
@@ -46,7 +46,7 @@ Two arrivals at the same region through different portals may have different opt
 turnPenaltyMetersPerRadian
 ```
 
-Default is `0.0`, preserving v1 behavior and performance.
+Default is `0.0`, preserving accepted v1 behavior and performance.
 
 Static v2 edge cost:
 
@@ -63,7 +63,7 @@ incoming portal center -> current region center
 current region center  -> outgoing portal center
 ```
 
-The special start state has no turn penalty because `CorridorQuery` does not yet carry an initial heading. Final local alignment is also left to the local/precision planner.
+The special start state has no turn penalty because `CorridorQuery` does not yet carry an initial heading. Final local alignment is left to the local/precision planner.
 
 ## Fast path
 
@@ -77,6 +77,8 @@ turnPenaltyMetersPerRadian == 0
 
 When turn penalty is positive, use the expanded `(RegionSlot, incoming PortalId)` state-space.
 
+The implementation candidate on `main` follows exactly this split: the measured v1 path is retained intact, and the expanded-state branch is entered only for positive turn penalty.
+
 ## Determinism
 
 For identical topology, query and policy, equal-cost choices remain reproducible.
@@ -88,9 +90,11 @@ Required deterministic ordering:
 3. incoming `PortalId`;
 4. existing stable outgoing `PortalId` adjacency order.
 
+The implementation candidate uses queue keys ordered by `(cost, RegionSlot, incoming PortalId)` and keeps existing stable PortalId adjacency.
+
 ## Acceptance case
 
-Add a deterministic `zigzag_vs_smooth` fixture:
+Pinned deterministic `zigzag_vs_smooth` fixture:
 
 ```text
 A -> short zig-zag branch -> B
@@ -107,7 +111,15 @@ turnPenaltyMetersPerRadian > 0
     -> smoother branch wins once saved turn cost exceeds distance delta
 ```
 
+The current fixture uses equal clearance on both branches so only distance versus turn burden decides the route. It also checks that a negative turn penalty is rejected by policy validation.
+
 Distance/clearance-only aperture and canyon fixtures remain unchanged.
+
+## Performance gate after behavior acceptance
+
+Turn-aware search has more states than v1 because each arrival portal may create a distinct state for the same region. After the behavior gate passes, benchmark this expanded state separately before using it for frequent large-topology replans.
+
+Do not infer turn-aware performance from the accepted v1 10k result (`<=9.6103 ms p95`), because the workloads are not equivalent.
 
 ## Scope boundary
 

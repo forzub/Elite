@@ -2,9 +2,9 @@
 
 Stage: `NAV-V2-SPACE-1`.
 
-This benchmark measures the first isolated CPU reference implementation of persistent static navigation space before any spatial acceleration structure is selected.
+This benchmark measures the isolated CPU reference implementation of persistent static navigation space while internal acceleration structures are selected from evidence.
 
-The reference representation is free-space AABB regions plus explicit portals behind the backend-neutral `NavigationSpace` API. The benchmark is intentionally diagnostic: it exposes the scaling cost of the current linear/map-based implementation so the next internal representation/index can be chosen from evidence.
+The public representation remains free-space regions plus explicit portals behind the backend-neutral `NavigationSpace` API. Benchmark results may change internal indexes; they do not change the public boundary by themselves.
 
 ## Scenarios
 
@@ -15,7 +15,7 @@ Two topology classes are generated at approximately 1k / 5k / 10k regions:
 
 Each topology is a deterministic 3D lattice with explicit bidirectional portals to +X/+Y/+Z neighbours.
 
-The benchmark uses a small agent envelope that is admitted by all generated regions/portals. Point and corridor queries target the highest-id/farthest region so the current linear reference is not accidentally benchmarked only on easy early-exit cases.
+The benchmark uses a small agent envelope admitted by all generated regions/portals. Point and corridor queries target the highest-id/farthest region so easy early-exit cases do not hide scaling costs.
 
 ## Measurements
 
@@ -35,14 +35,23 @@ Diagnostics include:
 - invalidated region/portal counts;
 - corridor success.
 
-The current reference is expected to expose expensive scaling because:
+## Baseline result and first optimization
 
-- point location scans regions linearly;
-- BFS scans the complete portal map for each visited region;
-- invalidation scans all regions and portals;
-- local patching copies the current region/portal maps transactionally.
+The initial target-machine baseline used linear point/invalidation scans, ordered maps, and a corridor BFS that scanned the complete portal map for each visited region.
 
-Those costs are measurement targets, not accepted production behavior.
+At 10k regions it examined about `285.9 million` portal records and corridor median was about `1.95-1.99 seconds`. This dominated every other static-space cost by orders of magnitude.
+
+The first internal optimization is therefore a private deterministic per-region adjacency index:
+
+```text
+regionId -> ordered portalId list
+```
+
+The current rerun measures the same exact benchmark workload after that change. `NavigationSpace.h` is unchanged.
+
+Point lookup, invalidation and local patch remain deliberately unoptimized so the next bottleneck is visible after corridor traversal is repaired.
+
+Raw before/after history is recorded in `RUN_LOG.md`.
 
 ## Run
 
@@ -50,7 +59,14 @@ Those costs are measurement targets, not accepted production behavior.
 bash benchmarks/navigation_space/run_mingw64.sh
 ```
 
-Default run is intentionally short (`warmup=1`, `iterations=3`) because the unindexed 10k corridor case may be expensive. A longer pass can be requested explicitly after the default run:
+Default run remains short:
+
+```text
+warmup=1
+iterations=3
+```
+
+A longer pass can be requested after the optimized default run succeeds:
 
 ```bash
 bash benchmarks/navigation_space/run_mingw64.sh --warmup 3 --iterations 20
@@ -64,11 +80,11 @@ navigation_space_cpu_benchmark.csv
 
 ## Decision rule
 
-Do not change the public `NavigationSpace` API from benchmark results alone. Use the measured diagnostics to choose internal acceleration first:
+After the adjacency rerun, choose the next internal optimization from measured cost while keeping `NavigationSpace.h` stable:
 
-- spatial point-location index if point lookup/invalidation dominates;
-- adjacency lists / compact graph if portal scanning dominates corridor search;
-- bounded copy-on-write / chunked topology if local patch copying dominates;
-- hierarchical regions/bricks only if the measured scenario requires them.
+- point/invalidation expensive -> add spatial point-location/invalidation index;
+- local patch expensive -> replace whole-map transactional copying with bounded/chunked copy-on-write or equivalent;
+- corridor still too expensive -> move from ordered-map BFS bookkeeping to a compact graph / costed search representation;
+- introduce hierarchical regions/bricks only if measured scale requires them.
 
 The static-space backend remains CPU-owned under the accepted hybrid NavigationWorld architecture.

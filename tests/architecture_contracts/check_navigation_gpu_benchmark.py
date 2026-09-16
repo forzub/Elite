@@ -46,6 +46,10 @@ require("navigation_gpu_benchmark" in BENCH_CMAKE,
         "isolated benchmark CMake target missing")
 require("glad/src/gl.c" in BENCH_CMAKE and "find_package(glfw3 CONFIG REQUIRED)" in BENCH_CMAKE,
         "benchmark is not using the repository OpenGL/GLFW stack")
+require("${ELITE_ROOT}/glad/include" in BENCH_CMAKE,
+        "benchmark does not expose the GLAD 2 include root containing glad/gl.h")
+require('"${ELITE_ROOT}/glad"' not in BENCH_CMAKE,
+        "benchmark still uses the obsolete pre-GLAD-2 include root")
 require("ELITE_TEST_BUILD_ROOT" in RUNNER,
         "benchmark runner does not use the canonical test build layout")
 
@@ -60,10 +64,10 @@ for marker in (
     require(marker.lower() in BENCH_README.lower(),
             f"benchmark design documentation missing: {marker}")
 
-require("NAV-V2-GPU-0" in CURRENT_TASK,
-        "CURRENT_TASK is not advanced to the GPU NavigationWorld benchmark")
-require("NAV-V2-GPU-0" in CURRENT_STATE,
-        "CURRENT_STATE does not record the GPU NavigationWorld benchmark")
+require("NAV-V2-MAP-2" in CURRENT_TASK,
+        "CURRENT_TASK is not at the active CPU/GPU NavigationMap measurement gate")
+require("NAV-V2-MAP-2" in CURRENT_STATE,
+        "CURRENT_STATE does not record the active CPU/GPU NavigationMap measurement gate")
 require("ship-centered NavigationWorld" in ARCH,
         "navigation architecture lacks the ship-centered NavigationWorld authority")
 require("Hub-local" in ARCH,
@@ -75,7 +79,8 @@ require("Collision" in ARCH and "Damage" in ARCH,
 
 print("NAVIGATION GPU BENCHMARK CONTRACT: PASS")
 print(" - isolated OpenGL 4.3 compute benchmark exists")
+print(" - GLAD 2 include root is pinned to glad/include")
 print(" - 1k/5k/10k ship-centered actor scales are pinned")
 print(" - P/V/A prediction, spatial bins, corridor filtering and pair queries are measured")
 print(" - overflow/out-of-bounds and 1k CPU-reference correctness are fail-visible")
-print(" - Navigation v2 coordinate/layer ownership is recorded in project state docs")
+print(" - project state/task agree on NAV-V2-MAP-2 measurement gate")

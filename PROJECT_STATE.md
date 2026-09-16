@@ -1,27 +1,72 @@
 # Project State
 
 **Updated:** 2026-09-16 Europe/Kyiv  
-**Current project focus:** NavigationWorld v2 / Navigation Map runtime foundation  
-**Current architecture contract:** `NAVIGATION_WORLD_V2.md`  
-**Remote branch:** `main`
+**Current project focus:** NavigationWorld v2 / NavigationMap runtime foundation  
+**Current architecture contracts:** `src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md`, `NAVIGATION_WORLD_V2.md`  
+**Canonical development branch:** `main`
 
-## Current state
+## Repository state
 
-Navigation v2 is now the active game-development focus. The accepted direction is one central ship-centered `NavigationWorld` with a translating working origin, stable navigation/travel axes, shared spatial indexing, dynamic actor prediction and centralized broadphase/conflict filtering.
+`main` is the only canonical game-development branch.
 
-Authoritative system/world state remains the physical source of truth. Hub/station navigation remains its own local `prograde/radial/normal` domain and contributes only the subset relevant to the active ship/navigation horizon.
+On 2026-09-16 the accidentally divergent histories of old `main`, `chatgpt/mae-v01075-semantic-workflow-motion-v5`, and the user's local line published temporarily as `rescue/local-97500` were audited and reconciled into `main`. The reconciliation merge is `9352fe7589ec109827e9633403d81bba46bdc926`.
 
-Dynamic actors are stored as compact position/velocity/acceleration/bounds/flags data rather than as dense per-voxel velocity/acceleration fields. GPU work is currently targeted at massively parallel spatial binning, prediction/swept volumes, corridor filtering and shared broadphase; sparse single-query precision graph search remains an asynchronous CPU-worker responsibility unless benchmarks show otherwise.
+The content audit established that the rescue and remote development lines carried the same current NavigationMap implementation. The remote development line additionally contained the later `NAV-V2-MAP-2` contract fix and CPU benchmark. Old `main` supplied current project-state/history and asset-license/provenance material. All of these are now represented in canonical `main` history.
 
-Ruckig is downstream trajectory/kinematics generation, not obstacle pathfinding. The manual guidance tunnel must visualize the same accepted trajectory/corridor actually used by navigation/control.
+Permanent branch governance is defined in `REPOSITORY_SOURCE_OF_TRUTH.md`: long-lived parallel development branches are prohibited; rescue refs are recovery-only and must be merged and removed.
 
-All navigation work on the frame path must be asynchronous/non-blocking. The main thread must not synchronously wait for GPU readback or a long planner.
+## Current navigation state
 
-The raw `Shift+F12` NavigationWorld diagnostic view is an accepted contract in `NAVIGATION_WORLD_V2.md`, but its runtime implementation is not yet present on remote `main`. It must consume the same completed backend-neutral NavigationWorld snapshot used by navigation/control and must not build an independent visualization world.
+Navigation v2 is the active game-development focus. The accepted direction is one central ship-centered `NavigationWorld` with a translating working origin, stable navigation/travel axes, shared spatial indexing, dynamic actor prediction and centralized broadphase/conflict filtering.
 
-## Fresh local validation — 2026-09-16
+Authoritative system/world state remains the physical source of truth. Hub/station navigation remains its own local domain and contributes only the subset relevant to the active ship/navigation horizon.
 
-The user's current MinGW64 working tree successfully launches the canonical graphical client and exits normally on window close. The user also reported successful client/server smoke tests:
+Dynamic actors are stored as compact position/velocity/acceleration/bounds/flags data rather than dense per-voxel velocity/acceleration fields. GPU work is currently targeted at massively parallel spatial binning, prediction/swept volumes, corridor filtering and shared broadphase; sparse single-query precision graph search remains an asynchronous CPU-worker responsibility unless measurements show otherwise.
+
+Ruckig is downstream local trajectory/kinematics generation, not obstacle pathfinding. All frame-path navigation work must remain asynchronous/non-blocking; the main thread must not synchronously wait for GPU readback or a long planner.
+
+The raw `Shift+F12` NavigationWorld diagnostic view remains an accepted contract, but its runtime implementation is not yet present. It must consume the same completed backend-neutral NavigationWorld snapshot used by navigation/control and must not build an independent visualization world.
+
+## NavigationMap block
+
+Canonical code now exists on `main` under:
+
+```text
+src/world/navigation/map/
+```
+
+The block owns the ship-centered working-frame transform, dynamic actor P/V/A state, conservative prediction, sparse spatial indexing and compact corridor/sphere query products behind a backend-neutral PImpl API.
+
+`EliteNavigationMap` is built as a standalone library for tests/benchmarks. It is intentionally not yet wired into the live `EliteGame` / `EliteServer` runtime path.
+
+User target-machine evidence previously reported:
+
+```text
+bash tests/navigation_map/run_mingw64.sh
+1/1 Test #1: navigation_map ... Passed 0.04 sec
+100% tests passed, 0 tests failed out of 1
+```
+
+That test evidence was produced before the branch reconciliation, but the audited NavigationMap implementation/test tree is represented in `main` after the merge. A fresh post-merge run remains the next local verification step.
+
+## Active gate: `NAV-V2-MAP-2`
+
+Both isolated measurement programs are now present on `main`:
+
+```text
+benchmarks/navigation_map/
+benchmarks/navigation_gpu/
+```
+
+The immediate decision gate is matched CPU/GPU measurement at 1k / 5k / 10k actors for deterministic cruise/hub datasets. Do not select CPU, GPU or hybrid production ownership before those measurements exist.
+
+Required comparison includes publication/rebuild time, query/broadphase time, p95, candidate/conflict counts, visited cells/actors, memory, overflow/out-of-bounds diagnostics, command submission cost and GPU readback volume.
+
+After backend selection, the next planned stage is `NAV-V2-SPACE-1`: persistent static free-space/clearance, connectivity/portals, local invalidation and agent-envelope queries. Live asynchronous integration follows only after the isolated map/space gates are accepted.
+
+## Earlier runtime/test evidence
+
+Before this reconciliation, the user reported successful canonical graphical launch/close plus:
 
 ```text
 EliteGame.exe --self-test-fast-universe
@@ -31,66 +76,33 @@ EliteServer.exe --self-test
 [PASS] headless-server boot + two-session authoritative routing smoke
 ```
 
-The existing navigation guidance suite passed all three tests, including `ruckig_route_planner` and `guidance_tunnel_local_horizon`.
+The navigation guidance suite also passed all three reported tests, including `ruckig_route_planner` and `guidance_tunnel_local_horizon`.
 
-The full `tests/run_all_mingw64.sh` ready gate is **not fully green**: it completed with three failed contract blocks while the canonical client/server builds, standalone runtime and network-process acceptance still passed. The currently reported failures are:
+A previously reported full `tests/run_all_mingw64.sh` ready gate was **not fully green** and had three contract failures:
 
 1. `CROSS-TIMELINE + DIAGNOSTIC CONTRACTS` — `Hub guidance cylinder is no longer static`;
-2. `SYSTEM MAP BEHAVIOR + ARCHITECTURE` — missing contract token `Keep the first physical sample`;
+2. `SYSTEM MAP BEHAVIOR + ARCHITECTURE` — missing `Keep the first physical sample`;
 3. `FEATURE SURFACE CONTRACTS` — missing debug-UI compatibility token around `m_gameUiHttpPort = m_htmlUi.start(requestedWebUiPort, webUiRoot);`.
 
-Do not report this ready gate as PASS until those three failures are classified and resolved or the corresponding stale contracts are deliberately updated.
+Treat those as earlier target-machine evidence, not a statement about the freshly reconciled `main`. Do not report the full ready gate as PASS until it is rerun/classified on the canonical branch.
 
-In the supplied live-client frame sample:
+In the previously supplied live-client frame sample:
 
 ```text
 dock_request=0 dock_plan=0 tunnel_builds=0
 ```
 
-Therefore no docking route request, docking plan or guidance-tunnel build occurred in that observed frame/session. This does **not** mean the older route/guidance machinery is absent: its dedicated tests pass. It does mean the new NavigationWorld v2 route/debug integration is not yet demonstrated by this live run.
-
-## Immediate task
-
-Build the standalone NavigationWorld backend benchmark before committing production architecture to a GPU, CPU spatial-index or hybrid backend.
-
-Benchmark at least:
-
-- 1,000 / 5,000 / 10,000 moving actors;
-- ship-centered 3D working space;
-- dynamic spatial binning/indexing;
-- P/V/A prediction and swept bounds;
-- player-corridor filtering;
-- shared all-agent neighbour/conflict broadphase;
-- GPU time, CPU setup/query time, memory, candidate counts and readback volume/stalls.
-
-The benchmark result is the decision gate. See `NAVIGATION_WORLD_V2.md` for the full architecture and performance contract.
-
-## Remote / local distinction
-
-The remote repository contains the NavigationWorld v2 architecture documentation and raw diagnostic-view contract.
-
-The user's newer `D:/__elite/work/tests/navigation_map` implementation/test work is still treated as **LOCAL / UNPUSHED** until it appears on remote `main` and is verified there. The user previously reported:
-
-```text
-bash tests/navigation_map/run_mingw64.sh
-1/1 Test #1: navigation_map ... Passed 0.04 sec
-100% tests passed, 0 tests failed out of 1
-Total Test time (real) = 0.05 sec
-```
-
-Do not imply that remote `main` contains those local files until they are pushed and verified.
-
-The current remote CMake baseline does not expose a dedicated NavigationWorld/navigation library target: navigation implementation files are compiled into `EliteGame`, while navigation tests compile their required navigation sources directly. If the local working tree introduces a navigation library target, the associated `CMakeLists.txt` and related build-boundary changes are also local state and must be preserved when that work is pushed.
+Therefore that observed frame/session had no docking request, plan or tunnel build. The older docking/guidance machinery still exists; the new NavigationWorld v2 live integration has not yet been demonstrated.
 
 ## Historical project state
 
-The previous accumulated `PROJECT_STATE.md` content through 2026-09-13 is preserved verbatim as:
+The accumulated project history through 2026-09-13 is preserved separately as:
 
-`PROJECT_STATE_HISTORY_THROUGH_2026-09-13.md`
+```text
+PROJECT_STATE_HISTORY_THROUGH_2026-09-13.md
+```
 
-That file contains historical Model Asset Editor/render/navigation records. It is retained for traceability, but its old `Current ...` headings are historical snapshots and must not be interpreted as the current project task.
-
-Git history also preserves every prior version.
+That file is historical traceability only. Old `Current ...` headings inside it are snapshots, not the active task.
 
 ## Documentation Definition of Done
 
@@ -99,9 +111,10 @@ A meaningful project iteration is not complete while its Markdown state is stale
 Before declaring an iteration complete or beginning the next coding slice:
 
 1. update this file when overall project focus/state changes;
-2. update the affected subsystem contract/specification such as `NAVIGATION_WORLD_V2.md` when architecture/runtime/performance contracts change;
-3. synchronize the private project-context `CURRENT_STATE.md`, `CURRENT_TASK.md`, `ITERATION_LOG.md`, decisions and source baseline as applicable;
-4. mark local-only work explicitly as `LOCAL / UNPUSHED`;
-5. verify that dates, active task and repository baseline do not contradict the actual work.
+2. update affected subsystem contracts when architecture/runtime/performance contracts change;
+3. synchronize `CURRENT_STATE.md`, `CURRENT_TASK.md` and the project context/iteration log as applicable;
+4. keep `main` as the only canonical development branch;
+5. label local-only work only when it actually exists;
+6. verify dates, active task and repository baseline against the real repository state.
 
-Stale project-state documentation is a project defect and blocks handoff to the next slice.
+Stale project-state documentation or branch ambiguity is a project defect and blocks handoff.

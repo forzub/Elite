@@ -57,16 +57,25 @@ for marker in (
     "requiredClearance",
     "pointClearance",
     "regionCapacity",
-    "std::queue<RegionId>",
     "invalidated",
-    "std::map<RegionId, std::vector<PortalId>> adjacency",
-    "buildAdjacency",
-    "impl_->adjacency.find(current)",
+    "using RegionSlot = std::size_t",
+    "struct GraphIndex",
+    "std::map<RegionId, RegionSlot> regionSlots",
+    "std::vector<std::vector<AdjacencyEdge>> adjacency",
+    "buildGraphIndex",
+    "std::vector<std::uint8_t> visited",
+    "std::vector<RegionSlot> frontier",
+    "impl_->graph.adjacency[currentSlot]",
 ):
     require(marker in IMPL, f"NavigationSpace CPU reference marker missing: {marker}")
 
-require("for (const auto& portalEntry : impl_->portals)" not in IMPL,
-        "corridor BFS regressed to scanning the complete portal map per visited region")
+for forbidden in (
+    "for (const auto& portalEntry : impl_->portals)",
+    "std::map<RegionId, bool> visited",
+    "std::map<RegionId, Prev> previous",
+):
+    require(forbidden not in IMPL,
+            f"corridor traversal regressed to expensive map bookkeeping: {forbidden}")
 
 for forbidden in (
     "#include <glad/",
@@ -111,7 +120,8 @@ print("NAVIGATION SPACE BOUNDARY CONTRACT: PASS")
 print(" - one backend-neutral API owns persistent static navigation topology")
 print(" - public header is isolated from GLM/OpenGL/game/render state")
 print(" - CPU reference uses deterministic free-space regions + portals")
-print(" - corridor traversal uses private per-region portal adjacency")
+print(" - corridor traversal uses private dense region slots + ordered adjacency")
+print(" - BFS visited/previous bookkeeping is vector-backed rather than ordered maps")
 print(" - agent-envelope clearance and narrow-portal admission are explicit")
 print(" - local invalidation + transactional patching are owned by the block")
 print(" - project state/task agree on NAV-V2-SPACE-1")

@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-16 Europe/Kyiv  
-**Current project focus:** NavigationWorld v2 / static-space spatial indexing  
+**Current project focus:** NavigationWorld v2 / static route quality  
 **Canonical development branch:** `main`  
 **Active stage:** `NAV-V2-SPACE-1`
 
@@ -31,15 +31,11 @@ GPU
     all-agent neighbor/conflict reduction
 ```
 
-## Accepted moving-goal contract
+## Moving-goal / pursuit contract
 
-Moving target pursuit is documented in:
+`src/world/navigation/PURSUIT_HORIZON.md` defines receding moving-goal pursuit. A pursuer targets a bounded predicted intercept region/state using available target P/V/A and known feasibility, reusing the current corridor while its branch remains valid instead of rebuilding a complete global route every frame.
 
-```text
-src/world/navigation/PURSUIT_HORIZON.md
-```
-
-A pursuer uses a receding predicted intercept state/region rather than repeatedly routing to stale current target position. Prediction uses available target P/V/A plus static/dynamic feasibility and does not require a complete global route rebuild every frame. Private hostile target intent is not automatically shared.
+Runtime pursuit implementation is later than the current static-space gate.
 
 ## `NAV-V2-MAP-2` — CLOSED
 
@@ -52,103 +48,86 @@ GPU cruise total median=0.6840 ms, p95=1.3226 ms
 GPU hub    total median=1.6097 ms, p95=1.6258 ms
 ```
 
-## `NAV-V2-SPACE-1` boundary/reference — ACCEPTED
+## `NAV-V2-SPACE-1` static-space foundation — ACCEPTED
 
-Canonical block:
+Canonical block: `src/world/navigation/space/`.
 
-```text
-src/world/navigation/space/
-```
+The public API is backend-neutral/PImpl. Internal reference representation is free-space AABB regions + explicit portals with private dense graph and BVH acceleration.
 
-Public `NavigationSpace` API remains backend-neutral/PImpl. The CPU reference uses free-space AABB regions + explicit portals internally with agent-envelope clearance, deterministic corridor output, fail-closed invalidation and transactional local patching.
-
-Target-machine behavior test:
+Accepted static scaling progression:
 
 ```text
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
+baseline 10k corridor           ≈1.95-1.99 s
+per-region adjacency            ≈21.8-22.4 ms
+dense RegionSlot BFS            ≈7.9-8.0 ms
+BVH point p95                   <=0.0353 ms at 10k
+BVH local invalidation p95      <=0.0115 ms at 10k
 ```
 
-## Static-space scaling progression
-
-### Baseline
-
-```text
-10k corridor ≈1.95-1.99 s
-portal examinations=285,913,245
-```
-
-### Optimization 1 — per-region adjacency — ACCEPTED
-
-```text
-10k corridor ≈21.8-22.4 ms
-portal examinations=57,189
-```
-
-### Optimization 2 — dense RegionSlot graph — ACCEPTED
-
-Target-machine rerun:
+Optimization 3 target-machine result at 10k:
 
 ```text
 open_10k
-    replace med/p95      14.8300 / 15.1018 ms
-    point med/p95         0.2783 / 0.2814 ms
-    corridor med/p95      7.9396 / 7.9735 ms
-    invalidate med/p95    3.6275 / 3.7643 ms
-    patch med/p95        16.0010 / 16.0111 ms
+    point med/p95      0.0065 / 0.0353 ms
+    corridor med/p95   7.3479 / 7.7085 ms
+    invalidate med/p95 0.0102 / 0.0112 ms
+    replace med        44.2686 ms
+    patch med          46.6777 ms
 
 hub_10k
-    replace med/p95      14.1335 / 14.9556 ms
-    point med/p95         0.4301 / 0.7043 ms
-    corridor med/p95      7.9981 / 8.4877 ms
-    invalidate med/p95    3.2642 / 3.3515 ms
-    patch med/p95        16.1113 / 16.1715 ms
+    point med/p95      0.0064 / 0.0099 ms
+    corridor med/p95   8.0958 / 8.2105 ms
+    invalidate med/p95 0.0109 / 0.0115 ms
+    replace med        45.2447 ms
+    patch med          48.7458 ms
 ```
 
-The first dense-slot architecture check falsely reported a missing `std::vector<RegionSlot> frontier` marker. The implementation correctly used `std::vector<Impl::RegionSlot>`; behavior/benchmark passed and the test marker is corrected on `main`.
-
-Combined graph optimization moved the 10k coarse corridor from about two seconds to about eight milliseconds. That is acceptable as asynchronous worker/reference work; unweighted BFS micro-optimization is no longer the active priority.
+Point candidate examination fell from 10,000 to 5 in the 10k benchmark. Ordinary static queries/invalidation are accepted. Full replace/local patch rebuild graph + BVH and remain worker/update-path operations; they are not suitable for per-frame mutation.
 
 Raw history: `benchmarks/navigation_space/RUN_LOG.md`.
 
-## Optimization 3 candidate — private static-space BVH
+## Active candidate — policy-aware static corridor
 
-The remaining interactive/static measurement showed:
+The fast `queryCorridor()` remains the deterministic topology/BFS oracle.
 
-```text
-open_10k point p95=0.2814 ms, invalidate p95=3.7643 ms
-hub_10k  point p95=0.7043 ms, invalidate p95=3.3515 ms
-```
-
-`NavigationSpace::Impl` now builds a private AABB BVH over dense `RegionSlot` identity.
-
-Uses:
+A separate `queryCostedCorridor()` candidate adds explicit static route policy:
 
 ```text
-queryPoint candidate reduction
-corridor start/end region localization
-invalidateBounds candidate reduction
+CorridorCostPolicy
+    distanceWeight
+    preferredClearanceMultiple
+    clearancePenaltyMeters
 ```
 
-A separate private endpoint-incidence list invalidates only portals touching changed regions, including incoming one-way portals.
+Cost v1 is geometric distance plus a meter-equivalent penalty when traversable clearance is below the requested preferred multiple. Physical fit remains a hard constraint.
 
-Exact region intersection/clearance semantics remain authoritative after candidate reduction. Public `NavigationSpace.h` is unchanged.
+Pinned acceptance fixtures:
 
-Full static publication and local patch rebuild graph + BVH transactionally. They remain update/worker-path operations and may cost more; the current optimization targets ordinary point/invalidation work.
+```text
+wall_with_aperture
+    fitting craft -> through opening
+    oversized craft -> opening rejected
 
-## Active gate
-
-Rerun on the target MinGW64 machine:
-
-```bash
-python tests/architecture_contracts/check_navigation_space_boundary.py
-bash tests/navigation_space/run_mingw64.sh
-python tests/architecture_contracts/check_navigation_space_benchmark.py
-bash benchmarks/navigation_space/run_mingw64.sh
+canyon_vs_overflight
+    distance-only -> short canyon
+    clearance-aware -> longer open branch
+    oversized canyon craft -> open branch
 ```
 
-After the measurement, accept/reject the spatial index from evidence. If ordinary queries become cheap, proceed to weighted/costed corridor semantics plus aperture/canyon route-choice acceptance cases. Live runtime integration remains later.
+This candidate explicitly supports navigation through holes, tunnels, apertures and canyons instead of treating the surrounding geometry as a single coarse keep-out obstacle.
+
+Status: implementation + tests are on `main`; target-machine architecture/behavior gate is pending.
+
+## Next order
+
+1. pass the costed-corridor MinGW64 architecture/behavior gate;
+2. benchmark costed search separately before broad 10k use;
+3. add turn/curvature policy only after static distance/clearance semantics are accepted;
+4. combine static route with dynamic conflicts/local horizon;
+5. implement pursuit consumer on top of that accepted route/local-target machinery;
+6. integrate NavigationWorld into live game/server;
+7. retire legacy route-wide migration code only after v2 owns live navigation.
 
 ## Documentation Definition of Done
 
-Meaningful NavigationWorld iterations synchronize current state/task, project state, affected contracts and project-context evidence before handoff.
+Meaningful NavigationWorld iterations synchronize current state/task, project state, affected contracts and private project-context evidence before handoff.

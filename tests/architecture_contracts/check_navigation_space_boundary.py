@@ -64,10 +64,13 @@ for marker in (
     "regionCapacity",
     "invalidated",
     "using RegionSlot = std::size_t",
+    "using TurnStateSlot = std::size_t",
     "struct GraphIndex",
     "std::map<RegionId, RegionSlot> regionSlots",
     "std::vector<std::vector<AdjacencyEdge>> adjacency",
     "std::vector<std::vector<PortalId>> incidentPortals",
+    "std::vector<TurnStateRecord> turnStates",
+    "arrivalTurnStateSlot",
     "buildGraphIndex",
     "std::vector<std::uint8_t> visited",
     "std::vector<Impl::RegionSlot> frontier",
@@ -85,10 +88,10 @@ for marker in (
     "clearancePenaltyMeters",
     "turnPenaltyMetersPerRadian",
     "turnAngleRadians",
-    "struct TurnState",
-    "PortalId incomingPortalId",
     "policy.turnPenaltyMetersPerRadian > 0.0",
-    "std::map<TurnState, double> bestCost",
+    "std::vector<double> bestCost(stateCount, infinity)",
+    "std::priority_queue<",
+    "Impl::TurnStateSlot finalStateSlot",
 ):
     require(marker in IMPL, f"NavigationSpace CPU reference marker missing: {marker}")
 
@@ -96,6 +99,10 @@ for forbidden in (
     "for (const auto& portalEntry : impl_->portals)",
     "std::map<RegionId, bool> visited",
     "std::map<RegionId, Prev> previous",
+    "std::map<TurnState, double> bestCost",
+    "std::map<TurnState, TurnPrev> previous",
+    "std::map<TurnState, bool> settled",
+    "std::multimap<TurnQueueKey, TurnState> frontier",
 ):
     require(forbidden not in IMPL,
             f"corridor traversal regressed to expensive map bookkeeping: {forbidden}")
@@ -165,7 +172,7 @@ print(" - BFS visited/previous bookkeeping is vector-backed rather than ordered 
 print(" - point lookup + bounds invalidation use a private RegionSlot BVH")
 print(" - endpoint portal invalidation uses private incident-portal adjacency")
 print(" - costed corridor separates distance, clearance and optional turn policy")
-print(" - turn-aware search preserves incoming PortalId in expanded state")
+print(" - turn-aware search uses dense arrival-state slots + vector state + binary heap")
 print(" - aperture, canyon/overflight and zigzag/smooth fixtures are pinned")
 print(" - agent-envelope clearance and narrow-portal admission are explicit")
 print(" - local invalidation + transactional patching are owned by the block")

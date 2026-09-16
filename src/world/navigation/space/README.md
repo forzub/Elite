@@ -15,7 +15,8 @@ The public API deliberately does **not** expose:
 - renderer state;
 - `SpaceState` / client state;
 - internal maps/graphs/queues;
-- future sparse-brick/BVH/navmesh acceleration structures.
+- private BVH / dense-slot acceleration structures;
+- future sparse-brick/navmesh acceleration structures.
 
 The first CPU reference uses axis-aligned free-space regions plus explicit portals. That is a reference representation, not a permanent storage mandate. A later sparse-brick, convex-cell or hybrid implementation may replace internals without changing planner call sites.
 
@@ -67,9 +68,9 @@ PortalInput
 
 The first scaling benchmark showed that scanning the complete portal map for every BFS region is pathological: the 10k reference examined about 286 million portal records and took roughly two seconds per corridor query.
 
-Optimization 1 introduced per-region adjacency and reduced the target-machine 10k corridor to about 22 ms while portal examinations fell to about 57k. That measurement showed the remaining graph-search cost is no longer full portal scanning; it is primarily generic ordered-map bookkeeping during traversal.
+Optimization 1 introduced per-region adjacency and reduced the target-machine 10k corridor to about 22 ms while portal examinations fell to about 57k.
 
-The CPU reference therefore keeps public `RegionId` / `PortalId` identity but builds a private dense graph index:
+Optimization 2 retained public `RegionId` / `PortalId` identity but replaced ordered-map BFS bookkeeping with a private dense graph index:
 
 ```text
 RegionId -> dense RegionSlot
@@ -79,7 +80,47 @@ RegionSlot -> ordered adjacency edges { PortalId, neighbor RegionSlot }
 
 BFS visited/previous/frontier state is vector-backed by `RegionSlot`, not `std::map<RegionId,...>`. Portal order remains deterministic because the graph is built from the ordered portal map. Public query results are converted back to stable RegionId/PortalId values.
 
-The graph index is rebuilt transactionally together with full publication/local patching. It is internal acceleration only; the public API does not expose or depend on dense slots.
+The dense-slot target-machine rerun reduced the 10k corridor again from about 22 ms to about 8 ms. At that point further unweighted-BFS micro-optimization stopped being the active priority because full/global corridor search is worker-side by contract.
+
+## Private spatial index
+
+Optimization 3 adds a private deterministic AABB BVH over the same dense `RegionSlot` identity.
+
+```text
+RegionSlot[]
+    |
+private AABB BVH
+    |
+    +-> point candidate regions
+    +-> invalidation-bounds candidate regions
+```
+
+The BVH is rebuilt together with full publication/local patching and remains completely private to `NavigationSpace::Impl`.
+
+`queryPoint()` now asks the BVH for candidate region slots and then applies the same exact region/clearance tests in stable RegionSlot/RegionId order.
+
+`findTraversableRegion()` used by corridor endpoint localization uses the same BVH candidate reduction.
+
+`invalidateBounds()` now:
+
+1. queries the BVH for intersecting candidate regions;
+2. exact-tests only those region AABBs;
+3. marks affected regions invalid;
+4. invalidates only portals incident to those regions via private endpoint adjacency.
+
+The graph therefore owns two related but distinct private views:
+
+```text
+traversal adjacency
+    RegionSlot -> { PortalId, neighbor RegionSlot }
+
+incident portals
+    RegionSlot -> PortalId[] touching the region
+```
+
+The second list is required because even a one-way portal must fail closed when either endpoint region is invalidated.
+
+The public API does not expose the BVH, dense slots, or adjacency representation.
 
 Raw benchmark history is recorded in:
 
@@ -96,11 +137,13 @@ benchmarks/navigation_space/RUN_LOG.md
 3. queries stop traversing them immediately;
 4. `applyLocalPatch()` can transactionally replace/remove only the affected regions/portals and restore connectivity.
 
-The first CPU reference still scans regions linearly for invalidation. This is behavior/reference code, not the final acceleration strategy. `NAV-V2-SPACE-1` benchmarking determines where sparse/hierarchical indexing is required next.
+The spatial index accelerates candidate discovery; exact AABB intersection remains authoritative for the CPU reference.
 
 ## Determinism
 
-The CPU reference stores regions/portals in ordered maps and builds dense adjacency in stable PortalId order. For identical published input and query, the returned coarse corridor is deterministic.
+The CPU reference stores authoritative regions/portals in ordered maps, assigns RegionSlots in stable RegionId order, builds adjacency in stable PortalId order, and sorts BVH query candidate slots before semantic evaluation.
+
+For identical published input and query, coarse corridor and point-resolution semantics remain deterministic even though internal acceleration changes.
 
 ## Relation to dynamic NavigationMap
 
@@ -131,9 +174,9 @@ Hub, station, carrier and interior geometry remains owned by its local domain. T
 ## Current limitations of the CPU reference
 
 - free-space regions are AABBs, not arbitrary convex cells;
-- point location and invalidation are still linear scans;
 - corridor search is unweighted BFS rather than costed A*/Dijkstra;
-- local patching still copies full ordered region/portal maps and rebuilds the private graph transactionally;
+- local patching still copies full ordered region/portal maps and rebuilds graph + BVH transactionally;
+- full publication/local patch are worker/update-path operations, not frame-path operations;
 - no live `EliteGame` / `EliteServer` integration yet.
 
 These are deliberate `NAV-V2-SPACE-1` reference limitations. The public API keeps storage/search replacement possible.

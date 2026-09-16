@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-16 Europe/Kyiv  
-**Current project focus:** NavigationWorld v2 / static route quality and scaling  
+**Current project focus:** NavigationWorld v2 / static route quality  
 **Canonical development branch:** `main`  
 **Active stage:** `NAV-V2-SPACE-1`
 
@@ -33,9 +33,9 @@ GPU
 
 ## Moving-goal / pursuit contract
 
-`src/world/navigation/PURSUIT_HORIZON.md` defines receding moving-goal pursuit. A pursuer targets a bounded predicted intercept region/state using available target P/V/A and known feasibility, reusing the current corridor while its branch remains valid instead of rebuilding a complete global route every frame.
+`src/world/navigation/PURSUIT_HORIZON.md` defines receding moving-goal pursuit. A pursuer targets a bounded predicted intercept region/state using available target P/V/A and known feasibility, reusing a still-valid corridor branch instead of rebuilding a complete global route every frame.
 
-Runtime pursuit implementation is later than the current static-space gate.
+Runtime pursuit implementation remains later than the current static-space gate.
 
 ## `NAV-V2-MAP-2` — CLOSED
 
@@ -48,11 +48,9 @@ GPU cruise total median=0.6840 ms, p95=1.3226 ms
 GPU hub    total median=1.6097 ms, p95=1.6258 ms
 ```
 
-## `NAV-V2-SPACE-1` static-space foundation — ACCEPTED
+## `NAV-V2-SPACE-1` static foundation — ACCEPTED
 
 Canonical block: `src/world/navigation/space/`.
-
-The public API is backend-neutral/PImpl. Internal reference representation is free-space AABB regions + explicit portals with private dense graph and BVH acceleration.
 
 Accepted static scaling progression:
 
@@ -64,57 +62,16 @@ BVH point p95                   <=0.0353 ms at 10k
 BVH local invalidation p95      <=0.0115 ms at 10k
 ```
 
-Optimization 3 target-machine result at 10k:
+Full replace/local patch are roughly 44-49 ms median at 10k because graph + BVH are rebuilt transactionally. They remain worker/update-path operations.
 
-```text
-open_10k
-    point med/p95      0.0065 / 0.0353 ms
-    corridor med/p95   7.3479 / 7.7085 ms
-    invalidate med/p95 0.0102 / 0.0112 ms
-    replace med        44.2686 ms
-    patch med          46.6777 ms
+## Policy-aware static corridor v1 — ACCEPTED
 
-hub_10k
-    point med/p95      0.0064 / 0.0099 ms
-    corridor med/p95   8.0958 / 8.2105 ms
-    invalidate med/p95 0.0109 / 0.0115 ms
-    replace med        45.2447 ms
-    patch med          48.7458 ms
-```
-
-Point candidate examination fell from 10,000 to 5 in the 10k benchmark. Ordinary static queries/invalidation are accepted. Full replace/local patch rebuild graph + BVH and remain worker/update-path operations; they are not suitable for per-frame mutation.
-
-Raw history: `benchmarks/navigation_space/RUN_LOG.md`.
-
-## Policy-aware static corridor — ACCEPTED behavior
-
-Fast `queryCorridor()` remains the deterministic topology/BFS oracle.
-
-A separate `queryCostedCorridor()` adds explicit static route policy:
-
-```text
-CorridorCostPolicy
-    distanceWeight
-    preferredClearanceMultiple
-    clearancePenaltyMeters
-```
-
-Cost v1 is coarse geometric distance plus a meter-equivalent penalty when traversable clearance is below the requested preferred multiple. Physical fit remains a hard constraint.
-
-Fresh MinGW64 acceptance:
-
-```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
-```
-
-Accepted fixtures:
+Behavioral target-machine acceptance:
 
 ```text
 wall_with_aperture
     fitting craft -> through opening
-    oversized craft -> opening rejected
+    oversized craft -> rejected
 
 canyon_vs_overflight
     distance-only -> short canyon
@@ -122,50 +79,69 @@ canyon_vs_overflight
     oversized canyon craft -> open branch
 ```
 
-This explicitly supports navigation through holes, tunnels, station apertures and canyons instead of treating surrounding geometry as one coarse keep-out obstacle.
-
-`totalCostMetersEquivalent` remains a coarse branch-comparison metric, not exact physical trajectory length.
-
-## Active measurement — costed corridor scaling
-
-New isolated harness:
+Dedicated costed-scaling target-machine p95 at 10k:
 
 ```text
-benchmarks/navigation_space_costed/
+open distance_only      8.1733 ms
+open clearance_aware    8.5020 ms
+hub  distance_only      7.7609 ms
+hub  clearance_aware    9.6103 ms
 ```
 
-It measures open/hub 1k/5k/10k with both:
+The pinned rule was `<=15 ms p95`, therefore deterministic Dijkstra v1 is accepted as an asynchronous worker/reference solve. No A*/heap redesign is required before the next static route-quality term.
+
+Raw evidence:
 
 ```text
-distance_only
-clearance_aware
+benchmarks/navigation_space/RUN_LOG.md
+benchmarks/navigation_space_costed/RUN_LOG.md
 ```
 
-on the same published topology. Deterministic reduced-clearance portals force real policy-aware alternate-route evaluation.
+## Active candidate — static turn cost v2
 
-Measured outputs:
+Design authority:
 
 ```text
-median/p95 ms
-regions visited
-portals examined
-path-region count
-coarse reported cost
+src/world/navigation/STATIC_TURN_COST.md
 ```
 
-Decision rule for 10k p95:
+`CorridorCostPolicy` gains:
 
-- `<=15 ms`: retain Dijkstra-style reference and proceed to turn/curvature cost;
-- `15-40 ms`: acceptable worker/reference solve, but optimize search core before frequent many-NPC replanning;
-- `>40 ms` or pathological scaling: optimize queue/search core first, likely indexed heap and/or admissible A* heuristic.
+```text
+turnPenaltyMetersPerRadian
+```
+
+Search ownership:
+
+```text
+turnPenalty == 0
+    accepted v1 RegionSlot Dijkstra fast path
+
+turnPenalty > 0
+    expanded state (RegionSlot, incoming PortalId)
+```
+
+The expanded state is required because future turn cost depends on arrival direction. Equal region with different incoming portals is not the same turn-aware search state.
+
+Static turn cost is measured at the current region center from incoming portal direction to outgoing portal direction. No initial-heading penalty is invented because `CorridorQuery` does not own current ship velocity/attitude.
+
+Pinned fixture:
+
+```text
+zigzag_vs_smooth
+    zero turn penalty -> shorter zig-zag
+    positive turn penalty -> smoother branch when saved turn burden exceeds distance delta
+```
+
+Implementation, behavior fixture and architecture gate are on `main`; MinGW64 target-machine validation is pending.
 
 ## Next order
 
-1. run costed-corridor benchmark contract + target-machine measurement;
-2. accept or optimize the costed search core from evidence;
-3. add turn/curvature policy only after search scaling is accepted;
-4. combine static route with dynamic conflicts/local horizon;
-5. implement pursuit consumer on top of accepted route/local-target machinery;
+1. pass static turn-cost architecture + behavior gate;
+2. benchmark expanded turn-aware state separately;
+3. stop extending persistent static cost if turn-aware scaling is acceptable;
+4. combine static branch with dynamic conflicts and local horizon;
+5. implement pursuit/receding-intercept consumer;
 6. integrate NavigationWorld into live game/server;
 7. retire legacy route-wide migration code only after v2 owns live navigation.
 

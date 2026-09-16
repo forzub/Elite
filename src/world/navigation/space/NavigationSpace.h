@@ -123,12 +123,16 @@ public:
     // Costed corridor policy. Cost units are meter-equivalent: geometric
     // distance contributes distanceWeight * meters; clearancePenaltyMeters is
     // the maximum extra per-edge penalty when traversable clearance is below
-    // preferredClearanceMultiple * required agent clearance.
+    // preferredClearanceMultiple * required agent clearance. When
+    // turnPenaltyMetersPerRadian is positive, turn-aware search retains the
+    // incoming portal in its state so different arrival headings are not
+    // incorrectly collapsed into one region-only state.
     struct CorridorCostPolicy
     {
         double distanceWeight = 1.0;
         double preferredClearanceMultiple = 1.0;
         double clearancePenaltyMeters = 0.0;
+        double turnPenaltyMetersPerRadian = 0.0;
     };
 
     struct CostedCorridorResult

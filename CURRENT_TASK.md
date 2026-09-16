@@ -3,15 +3,15 @@
 **Updated:** 2026-09-16  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-SPACE-1` — adjacency accepted; dense RegionSlot corridor bookkeeping pending target-machine rerun
+**Stage:** `NAV-V2-SPACE-1` — dense graph accepted; private spatial-index candidate pending target-machine rerun
 
 ## Source of truth
 
 `main` is the only game-development baseline. Read `REPOSITORY_SOURCE_OF_TRUTH.md`. Do not continue feature work on parallel development branches.
 
-## Closed prior dynamic gate
+## Accepted prior gates
 
-`NAV-V2-MAP-2` selected hybrid ownership:
+`NAV-V2-MAP-2` is closed with measured hybrid ownership:
 
 ```text
 CPU
@@ -27,112 +27,104 @@ GPU
     all-agent neighbor/conflict reduction
 ```
 
-## `NAV-V2-SPACE-1` boundary/reference — ACCEPTED
-
-Fresh target-machine behavior remains accepted:
+`NAV-V2-SPACE-1` boundary/reference behavior is accepted:
 
 ```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
 navigation_space: 1/1 PASS
 100% tests passed, 0 failed
 ```
 
-Public `NavigationSpace.h` remains backend-neutral. Free-space AABB regions + portals are still only the deterministic CPU reference representation behind PImpl.
+Public `NavigationSpace.h` remains backend-neutral/PImpl.
 
-## Baseline scaling — accepted evidence
+## Static-space scaling decisions already accepted
 
-The original corridor BFS scanned the full portal map for every visited region.
-
-10k baseline:
+### Baseline
 
 ```text
-open: corridor median/p95 = 1991.0357 / 2008.2074 ms
-hub:  corridor median/p95 = 1951.6453 / 1956.0686 ms
-portal examinations      = 285,913,245
+10k corridor ~1.95-1.99 s
+portal examinations=285,913,245
 ```
 
-This selected per-region adjacency as Optimization 1.
-
-## Optimization 1 — per-region adjacency — ACCEPTED
-
-Private connectivity became:
+### Optimization 1 — per-region adjacency
 
 ```text
-regionId -> ordered portalId list
+10k corridor ~21.8-22.4 ms
+portal examinations=57,189
 ```
 
-Target-machine rerun after adjacency:
+### Optimization 2 — dense RegionSlot graph
 
 ```text
-open_10k
-    replace med/p95      13.3648 / 14.0799 ms
-    point med/p95         0.3806 / 0.4356 ms
-    corridor med/p95     21.7848 / 22.1695 ms
-    invalidate med/p95    3.2622 / 3.4739 ms
-    patch med/p95        16.1963 / 17.4121 ms
-
-hub_10k
-    replace med/p95      13.7190 / 15.3277 ms
-    point med/p95         0.3836 / 0.4536 ms
-    corridor med/p95     22.3689 / 22.7493 ms
-    invalidate med/p95    3.3208 / 3.4248 ms
-    patch med/p95        15.8516 / 16.7010 ms
-
-portal examinations     57,189
-corridor_found           1
+open_10k corridor median/p95 = 7.9396 / 7.9735 ms
+hub_10k  corridor median/p95 = 7.9981 / 8.4877 ms
 ```
 
-Adjacency reduced 10k corridor median by about `87–91x` and portal examinations by about `5000x`.
+The dense-slot implementation passed the C++ behavior test and benchmark. The architecture test's reported failure was a test-string defect (`std::vector<RegionSlot>` vs actual `std::vector<Impl::RegionSlot>`); that marker is fixed on `main`.
 
-The higher replace/patch cost is expected: topology publication now constructs connectivity. Full publication/local patch are not accepted frame-path operations.
+A roughly 8 ms 10k coarse unweighted global corridor is acceptable for the asynchronous worker/reference path. Stop micro-optimizing BFS for now.
 
-## Remaining measured costs after adjacency
+## Accepted moving-goal design
 
-- point lookup is still a linear region scan but remains `<0.5 ms p95` at 10k;
-- invalidation is a full region+portal scan at about `3.3 ms` median at 10k;
-- transactional one-region patch copies full maps and rebuilds connectivity at about `16 ms` median;
-- corridor remains about `22 ms` median because generic ordered-map bookkeeping still surrounds an otherwise compact adjacency traversal.
-
-`CorridorDiagnostics::regionsVisited` currently includes the two start/end point-location scans plus BFS visits; do not misread ~20k diagnostics on a 10k topology as 20k unique graph regions.
-
-Raw history: `benchmarks/navigation_space/RUN_LOG.md`.
-
-## Optimization 2 candidate — dense RegionSlot graph bookkeeping
-
-Implemented on `main` without changing `NavigationSpace.h`.
-
-Private graph:
+The user's pursuit/fleeing case is documented in:
 
 ```text
-RegionId -> dense RegionSlot
-RegionSlot -> RegionId
-RegionSlot -> ordered adjacency edges { PortalId, neighbor RegionSlot }
+src/world/navigation/PURSUIT_HORIZON.md
 ```
 
-Corridor BFS now uses:
+Pursuit uses a receding moving-goal/intercept horizon:
 
 ```text
-vector<uint8_t> visited
-vector<Prev> previous
-vector<RegionSlot> frontier
+target observed/shared P/V/A
+        |
+short bounded prediction
+        |
+static-space feasibility / dynamic conflicts
+        |
+predicted intercept region/state
+        |
+reuse corridor while branch remains valid
+        |
+local target -> Ruckig -> execute near segment -> repeat
 ```
 
-instead of ordered maps keyed by RegionId.
+Do not rebuild the complete global corridor every frame. Do not give hostile pursuers private target-route intent unless gameplay policy explicitly allows it.
 
-Determinism is preserved because RegionSlot assignment follows ordered RegionId iteration and adjacency edges follow ordered PortalId iteration. Query products remain stable RegionId/PortalId values.
+Implementation of pursuit is later than the current static-space gate.
 
-The architecture contract now rejects both:
+## Optimization 3 candidate — private spatial index
+
+Current measured ordinary/static costs before this candidate:
 
 ```text
-full portal-map scan inside BFS
-std::map<RegionId,...> visited/previous BFS bookkeeping
+open_10k point p95=0.2814 ms, invalidate median/p95=3.6275/3.7643 ms
+hub_10k  point p95=0.7043 ms, invalidate median/p95=3.2642/3.3515 ms
 ```
 
-Point lookup, invalidation, transactional map copying and graph rebuild remain intentionally unchanged so the next measurement isolates the BFS bookkeeping improvement.
+The private implementation now builds an AABB BVH over dense `RegionSlot` identity.
+
+It is used by:
+
+```text
+queryPoint()
+queryCorridor() start/end region localization
+invalidateBounds()
+```
+
+`invalidateBounds()` also uses endpoint incidence:
+
+```text
+RegionSlot -> PortalId[] touching the region
+```
+
+so local invalidation does not scan the entire portal map.
+
+Exact containment/intersection/clearance checks remain authoritative. Public API is unchanged.
+
+Full replacement and local patch rebuild graph + BVH transactionally; those are update/worker-path operations and are allowed to cost more in exchange for cheaper ordinary queries.
 
 ## RUN NOW
 
-Because `NavigationSpace.cpp` changed, rerun behavior and both architecture gates before benchmarking:
+Because `NavigationSpace.cpp` and the architecture contract changed, rerun the full static-space gate and benchmark:
 
 ```bash
 cd /d/__elite/work
@@ -147,17 +139,17 @@ python tests/architecture_contracts/check_navigation_space_benchmark.py
 bash benchmarks/navigation_space/run_mingw64.sh
 ```
 
-Send the complete output of all four commands.
+Send the complete output.
 
-## Decision after dense-slot measurement
+## Decision after spatial-index measurement
 
-Do not add a third optimization before seeing the numbers.
+Do not add another internal optimization before seeing the numbers.
 
-Likely next choices:
+Expected decision rule:
 
-- if corridor becomes a few milliseconds or less: stop optimizing unweighted BFS and move to measured point/invalidation/patch costs before weighted A*;
-- if corridor remains materially expensive: remove remaining ordered-map state lookups from edge traversal / build a more compact immutable graph snapshot;
-- if invalidation becomes the dominant interactive cost: add a spatial region index shared by point lookup + invalidation;
-- if patch remains the dominant update cost: replace full transactional map copy/rebuild with bounded/chunked update ownership.
+- point/invalidation collapse to sub-millisecond: accept spatial query side and move next to weighted/costed corridor semantics + aperture/canyon acceptance cases;
+- patch/publication dominate but ordinary queries are cheap: leave them worker-side until bounded update ownership becomes necessary;
+- spatial build/query unexpectedly regresses: fix/reject the BVH before proceeding;
+- only add more hierarchy/bricks if measured evidence requires it.
 
-Live `EliteGame` / `EliteServer` integration remains later. Do not repair the old route-wide planner or delete migration code yet.
+Do not yet wire NavigationSpace into live runtime, delete migration navigation code, or implement pursuit runtime behavior.

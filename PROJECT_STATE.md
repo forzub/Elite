@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-17 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / emergency contact severity + moving-frame continuation  
+**Current focus:** NavigationWorld v2 / emergency contact severity  
 **Canonical development branch:** `main`  
 **Active stage:** `NAV-V2-TRAJECTORY-1`
 
@@ -34,7 +34,7 @@ Local horizon + deterministic 16-probe avoidance behavior/scaling accepted. Deli
 
 ## `NAV-V2-TRAJECTORY-1` — ACTIVE
 
-Accepted chain:
+Accepted chain so far:
 
 ```text
 ConflictHold / explicit aperture / docking corridor
@@ -62,12 +62,7 @@ Stopping is preferred when possible. Otherwise navigation emits an explicit non-
 
 ### Continuous static passage — BEHAVIOR + PERFORMANCE ACCEPTED
 
-Behavior:
-
-```text
-5/5 trajectory CTest PASS
-continuous contract PASS
-```
+Behavior: continuous contract PASS and `5/5` trajectory CTest PASS.
 
 Target-machine performance on `6f85436252d36e4b586ab496efe3aea45fb25e79`:
 
@@ -82,21 +77,52 @@ full_precision_batch8 p95         41.3527 us
 
 The eight-query batch is `0.04135 ms p95`, far inside the `<0.5 ms typical` budget. The static continuous verifier is frozen unless live evidence later contradicts this result.
 
-## Current trajectory gap
+## Active candidate — emergency contact severity
 
-Emergency mitigation still ranks reachable attitudes primarily by passage geometry. It does not yet explicitly rank unavoidable contacts by:
+New component:
 
 ```text
-relative normal contact speed
-impact-energy proxy
-tangential/glancing incidence
+EmergencyContactSeverityScorer
 ```
 
-That is the current isolated task.
+Authority:
+
+```text
+src/world/navigation/EMERGENCY_CONTACT_SEVERITY_MODEL.md
+```
+
+This scorer does not discover collisions. It consumes bounded predicted contact witnesses and ranks no more than eight emergency trajectory candidates with no more than four witnesses each.
+
+Per witness it evaluates rigid-body relative contact-point motion:
+
+```text
+v_ship_contact = v_center + omega x r
+v_rel = v_ship_contact - v_surface
+v_n = max(0, -dot(v_rel, normalTowardFreeSpace))
+```
+
+Selection priority is:
+
+```text
+no-contact
+-> minimum peak normal closing speed
+-> minimum normal impact-energy proxy
+-> minimum normal momentum proxy
+-> more tangential incidence
+-> lower geometry deficit
+-> higher useful progress
+-> deterministic id/index
+```
+
+Impact severity outranks route progress, so a glancing scrape/ricochet can beat a harder normal hit even when the harder hit advances farther.
+
+Exact CCD/TOI/manifold/impulse/material response remain physics authority. The scorer's energy/momentum are navigation ranking proxies only.
+
+Target-machine architecture/build/behavior acceptance is pending.
 
 ## Remaining order
 
-1. static emergency-contact severity scoring;
+1. accept static emergency-contact severity scoring;
 2. moving/time-varying obstacle gaps and relative-motion contact prediction;
 3. moving/rotating terminal docking with explicit mating frames and bottom-to-bottom orientation;
 4. deterministic NPC pilot execution/skill;
@@ -106,6 +132,6 @@ That is the current isolated task.
 
 ## Final system acceptance
 
-Navigation v2 is considered complete only when the live runtime demonstrates, within the established budgets, ordinary travel, static/dynamic avoidance, oriented-gap traversal, truthful Elite/Newton reachability, least-severity unavoidable-contact behavior, recovery from post-impact truth, moving/rotating docking, NPC-scale execution, and guidance/debug driven by the same accepted navigation state.
+Navigation v2 is complete only when the live runtime demonstrates, within the established budgets, ordinary travel, static/dynamic avoidance, oriented-gap traversal, truthful Elite/Newton reachability, least-severity unavoidable-contact behavior, recovery from post-impact truth, moving/rotating docking, NPC-scale execution, and guidance/debug driven by the same accepted navigation state.
 
 No synchronous GPU readback or unbounded all-pairs precision search is allowed on the frame path.

@@ -1,6 +1,6 @@
 # Navigation v2 — trajectory, vehicle control, docking and NPC pilot model
 
-**Status:** planned contract for the trajectory-aware stage; not yet implemented  
+**Status:** architecture contract; first oriented-passage / reachability / emergency-mitigation components prepared in isolation  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Parent architecture:** `NAVIGATION_WORLD_V2.md`
 
@@ -19,10 +19,11 @@ Current local navigation represents the controlled ship by P/V/A plus `radiusMet
 - time required to rotate the hull before strong braking/thrust;
 - assisted `Elite`-style control versus Newtonian free-flight behavior;
 - oriented passage through non-circular apertures;
+- emergency contact/ricochet mitigation when collision-free motion is no longer reachable;
 - moving/rotating docking targets and terminal pose matching;
 - imperfect NPC reaction and control execution.
 
-Those belong to the next trajectory-aware feasibility layer, not to persistent static `NavigationSpace` cost and not to the compact dynamic broadphase itself.
+Those belong to the trajectory-aware feasibility layer, not to persistent static `NavigationSpace` cost and not to the compact dynamic broadphase itself.
 
 ## Layering contract
 
@@ -35,9 +36,13 @@ LocalHorizonPlanner / LocalAvoidancePlanner
     bounded hazard assessment + candidate temporary target
             |
             v
+bounded precision passage / emergency candidate layer
+    oriented apertures + obstacle gaps + docking corridors
+    safe-entry reachability OR explicit best-effort contact mitigation
+            |
+            v
 trajectory-aware maneuver feasibility
     vehicle shape + attitude + thrust/control authority
-    oriented apertures + docking pose constraints
             |
             v
 pilot/controller execution model
@@ -47,7 +52,15 @@ pilot/controller execution model
 flight control / thruster allocation / physics
 ```
 
-The local navigator proposes *where progress could go*. The trajectory-aware layer must prove *whether this particular vehicle, in its current attitude and control mode, can actually get there in time without collision and with any required terminal orientation*.
+The local navigator proposes *where progress could go*. The trajectory-aware layer must determine *what this particular vehicle can actually do in time*.
+
+A crucial contract is:
+
+```text
+no collision-free proof != no navigation command
+```
+
+If no safe trajectory remains physically reachable, navigation may still output an explicit **emergency mitigation maneuver**. Such a result must never be labeled `Clear` or safe. Physics/collision/damage remain authoritative for any actual contact, ricochet or structural consequences.
 
 ## Geometry fidelity
 
@@ -80,7 +93,7 @@ Example:
 flat ship + flat slot
 ```
 
-A conservative sphere may say "does not fit" even when the real hull fits easily after the ship rolls into the correct attitude. Conversely, a centerline may fit while a badly oriented wing, fin or tail clips the aperture.
+A conservative sphere may say "does not fit" even when the real hull fits after the ship rolls into the correct attitude. Conversely, a centerline may fit while a badly oriented wing, fin or tail clips the aperture.
 
 Therefore precision passage through a non-circular aperture must reason about **pose**:
 
@@ -90,7 +103,7 @@ position + orientation + hull proxy
 
 not only center position + radius.
 
-The trajectory-aware layer may receive an oriented aperture/corridor description from the static-space/geometry owner and must be able to prove that the ship's swept oriented body remains inside the permitted volume for the whole passage.
+The trajectory-aware layer may receive an oriented aperture/corridor description from the static-space/geometry owner and must be able to prove that the ship's swept oriented body remains inside the permitted volume for the whole passage when a collision-free maneuver is claimed.
 
 Typical constraints include:
 
@@ -114,6 +127,43 @@ approach slot
 
 This precision proof is intentionally later and more expensive than shared sphere broadphase. Do not replace the mass-NPC broadphase with full oriented-body tests everywhere.
 
+## Emergency contact / ricochet mitigation
+
+When collision-free passage cannot be proven because remaining distance/time is too small, the system must not automatically drop into a planner-dead `Hold` state.
+
+Emergency priority is:
+
+```text
+1. collision-free maneuver, if physically reachable
+2. stop before contact, if physically reachable
+3. otherwise minimize expected impact severity while preserving useful progress
+```
+
+For a narrow gap, best-effort mitigation includes:
+
+```text
+maximum useful braking
+continue rotating toward a lower-risk hull attitude
+aim toward the gap center
+bias velocity along the passage axis
+minimize geometric overlap / clearance deficit
+later: minimize relative normal contact speed
+```
+
+If contact remains unavoidable, a valid emergency result is explicitly marked as **contact expected**. Collision/CCD/TOI, impulse, ricochet, detach/breach and damage are then handled by their authoritative downstream systems. Navigation consumes the resulting actual post-contact P/V/A/attitude/damage state on the next solve.
+
+This means a glancing collision or ricochet may be an intentional least-severity outcome in an extreme case. It is not treated as a successful collision-free route.
+
+Current isolated implementation authority for this policy:
+
+```text
+src/world/navigation/ORIENTED_PASSAGE_MODEL.md
+src/world/navigation/trajectory/EmergencyPassageMitigator.h
+src/world/navigation/trajectory/EmergencyPassageMitigator.cpp
+```
+
+The first emergency evaluator uses a fixed bounded set of physically reachable attitude samples. The later full 6DoF stage must additionally optimize actual relative normal velocity and translational steering authority rather than assuming the requested gap-center / passage-axis intent is instantaneously achievable.
+
 ## Attitude and thrust authority
 
 Trajectory feasibility must consume, directly or through the authoritative flight/physics boundary, at least the information required to model:
@@ -134,7 +184,7 @@ Do not duplicate authoritative ship physics inside navigation. Navigation receiv
 
 ## Flight-control modes
 
-The project requires the trajectory-aware stage to distinguish the two intended control families instead of assuming that every ship can instantaneously redirect its acceleration vector.
+The trajectory-aware stage must distinguish the two intended control families instead of assuming that every ship can instantaneously redirect its acceleration vector.
 
 ### `Elite` / assisted-classic behavior
 
@@ -159,6 +209,8 @@ coast while rotating
 
 Therefore the safe-distance calculation eventually includes rotation time and the translation accumulated during that rotation. A target change alone is not evidence that the ship can avoid a head-on collision.
 
+In an emergency-contact case, Newtonian motion also matters to damage mitigation: hull attitude may improve while the velocity vector still points toward a boundary. The full solver must therefore consider both projected hull geometry and relative normal velocity independently.
+
 The exact game-level control-mode state remains owned by flight control. Navigation must consume it; do not create a second independent `Elite/Newton` mode flag with conflicting authority.
 
 ## Airplane-like pass versus flip-and-burn
@@ -171,11 +223,12 @@ The trajectory-aware layer may compare feasible strategies such as:
 - lateral translation while maintaining attitude;
 - rotate-then-thrust;
 - flip-and-burn;
-- emergency maximum-braking maneuver.
+- emergency maximum-braking maneuver;
+- emergency glancing passage/contact mitigation.
 
 Which strategies are available depends on ship capabilities and active control mode. Selection can also depend on pilot/controller policy, comfort, risk and urgency.
 
-A maneuver is accepted only after its predicted swept vehicle volume is safe against relevant static space and dynamic candidates for the bounded horizon.
+A maneuver may be labeled collision-free only after its predicted swept vehicle volume is safe against relevant static space and dynamic candidates for the bounded horizon. Emergency contact mitigation is a separate non-safe result class.
 
 ## Docking is a terminal 6DoF pose problem
 
@@ -272,7 +325,7 @@ coarse intercept
     -> capture / latch
 ```
 
-A phase may fail closed and back out if pose/velocity tolerances cannot be maintained.
+A normal docking phase should back out/go around if pose/velocity tolerances cannot be maintained. Emergency collision mitigation remains available at the generic vehicle-control level if physical impact truly becomes unavoidable, but ordinary docking logic must not treat destructive contact as successful capture.
 
 The same hull-orientation rules used for flat apertures also apply to a narrow docking tunnel: a craft may need to roll first, remain within an attitude corridor while entering, and only then converge to the final docking-frame orientation.
 
@@ -325,7 +378,7 @@ The architecture should allow three distinct cases:
 
 1. **Ideal autopilot:** minimal reaction delay, well-damped control, trajectory feasibility respected closely.
 2. **Ordinary NPC pilot:** realistic reaction/control limits; usually safe but can make visibly imperfect corrections.
-3. **Poor/stressed/damaged pilot:** delayed or under-damped execution can consume the available safety margin and may leave no recoverable maneuver, producing a genuine collision rather than a scripted random crash.
+3. **Poor/stressed/damaged pilot:** delayed or under-damped execution can consume the available safety margin and may leave no recoverable collision-free maneuver. The emergency layer still attempts least-severity control, but a genuine collision/ricochet may result.
 
 Other ships still observe the NPC's actual published P/V/A and conservative swept bounds. They do not assume that another pilot will execute its intended maneuver perfectly.
 
@@ -338,27 +391,30 @@ Keep these separate:
 ```text
 world truth          geometry / obstacles / actual actor state
 vehicle capability   thrust / rotation / hull / damage
-navigation intent    route / temporary target / avoidance choice
+navigation intent    route / temporary target / avoidance/emergency choice
 docking contract     moving terminal frame / aperture / capture tolerances
 pilot skill          delay / precision / damping / anticipation
 control execution    actual force/torque commands
+physics/contact      CCD / impulse / ricochet / post-impact state
+damage/structural    damage / detach / breach / destruction
 ```
 
 This separation allows one ship type to feel radically different under an expert pilot, an inexperienced NPC, assisted `Elite` control, or raw Newtonian control without duplicating navigation worlds.
 
-## Planned acceptance order
+## Acceptance order
 
-Do not implement this whole document inside the current same-region avoidance slice.
+The already accepted local-navigation performance gate shows that the deterministic 16-probe fan is not a CPU blocker. The bounded gap builder is also performance-accepted.
 
-After current `LocalAvoidancePlanner` behavior and performance gates:
+Current order:
 
-1. introduce a backend-neutral vehicle maneuver/capability input;
-2. pin `Elite`-assisted versus `Newton` reachability fixtures;
-3. add rotation-time-aware braking and head-on/crossing maneuver feasibility;
-4. add oriented/compound swept-body precision checks, including a flat-ship/flat-slot fixture;
-5. add terminal-pose docking fixtures: stationary dock, translating dock, rotating dock and moving+rotating dock;
-6. pin docking orientation semantics, including the required bottom-to-bottom port alignment and rejection of a 180-degree rolled approach;
-7. add deterministic `PilotSkillProfile` execution fixtures, including under-damped free-flight and docking oscillation cases;
-8. then integrate the accepted trajectory/control/docking product into live `EliteGame` / `EliteServer` and guidance visualization.
+1. accept the isolated emergency-passage behavior/architecture gate;
+2. introduce a backend-neutral vehicle maneuver/capability input for translational/body-axis authority;
+3. pin `Elite`-assisted versus `Newton` reachability fixtures;
+4. add continuous rotation+translation swept-body feasibility for head-on/crossing/narrow gaps;
+5. extend emergency scoring from geometric clearance deficit to actual relative normal contact speed / impact-energy proxy;
+6. add terminal-pose docking fixtures: stationary dock, translating dock, rotating dock and moving+rotating dock;
+7. pin docking orientation semantics, including bottom-to-bottom port alignment and rejection of a 180-degree rolled approach;
+8. add deterministic `PilotSkillProfile` execution fixtures, including under-damped free-flight and docking oscillation cases;
+9. then integrate the accepted trajectory/control/docking product into live `EliteGame` / `EliteServer` and guidance visualization.
 
-Until those gates exist, current `radiusMeters` / swept-sphere local navigation remains a conservative reference rather than a claim of final ship-motion or docking fidelity.
+Until those gates exist, current `radiusMeters` / swept-sphere local navigation remains a conservative broadphase reference rather than a claim of final ship-motion or docking fidelity.

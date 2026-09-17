@@ -126,6 +126,15 @@ public:
         double relativeAngularSpeedRadPerSec = 0.0;
     };
 
+    // Shared bounded dock-frame prediction used by terminal capture and the
+    // continuous docking-approach verifier. Invalid inputs return the default
+    // PortWorldState; callers with stricter diagnostics should validate first.
+    [[nodiscard]] static PortWorldState predictDockPortWorldState(
+        const MovingDockState& dock,
+        const LocalPortFrame& port,
+        double timeSeconds
+    ) noexcept;
+
     [[nodiscard]] static Result evaluate(const Query& query) noexcept;
 };
 

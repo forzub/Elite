@@ -3,147 +3,85 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-TRAJECTORY-1` — continuous static-passage performance gate
+**Stage:** `NAV-V2-TRAJECTORY-1` — emergency contact severity ranking
 
-## Accepted preconditions
+## Newly closed gate — continuous verifier performance
 
-### `NAV-V2-LOCAL-1` — CLOSED
-
-The deterministic 16-probe fan is accepted. Deliberate `1024 x 17` stress remains below the `<1.0 ms normal peak` budget.
-
-### Bounded gaps — ACCEPTED
-
-Worst measured stress:
+Target-machine run on `6f85436252d36e4b586ab496efe3aea45fb25e79`:
 
 ```text
-top8_1024 p95 = 24.0699 us
+NAVIGATION TRAJECTORY CONTINUOUS BENCHMARK CONTRACT: PASS
+
+straight_newton p95                4.0458 us
+rolled_newton p95                  6.5235 us
+lateral_newton p95                 4.1593 us
+elite_aligned p95                  4.1820 us
+geometry_blocked_roll p95          6.5133 us
+full_precision_batch8 p95         41.3527 us
 ```
 
-### Emergency passage mitigation — ACCEPTED
-
-Target-machine gate on `b29a03d3d84f4d6575cbbc5166cbd7547b5ce0d8` passed all contracts and `4/4` trajectory CTest.
-
-Accepted invariant:
+Decision rule was:
 
 ```text
-safe trajectory unavailable != navigation disabled
+batch8 p95 < 0.5 ms -> freeze verifier
 ```
 
-### Continuous static passage — BEHAVIOR ACCEPTED
+Measured batch8 is `0.04135 ms`, so the static `ContinuousPassageTrajectoryEvaluator` is **performance accepted and frozen**.
 
-Fresh target-machine gate on `574a2e98fd7a75ebf562bbfa476fba367fb888d1`:
+Do not optimize its math without contrary live-runtime evidence.
+
+## Active task — rank unavoidable contacts by severity
+
+Current `EmergencyPassageMitigator` already guarantees:
 
 ```text
-NAVIGATION TRAJECTORY CONTINUOUS PASSAGE CONTRACT: PASS
-
-navigation_trajectory_passage               PASS
-navigation_trajectory_gap                   PASS
-navigation_trajectory_reachability          PASS
-navigation_trajectory_emergency_passage     PASS
-navigation_trajectory_continuous_passage    PASS
-
-100% tests passed, 0 failed
-Total Test time: 0.24 sec
+safe trajectory if one exists
+    -> otherwise stop before impact if physically possible
+    -> otherwise keep an explicit non-safe control command alive
 ```
 
-Behavior now accepted:
+What is still missing: among several unavoidable-contact commands, choose the one with the least physical consequence rather than only the smallest geometric deficit.
+
+The next isolated scorer must consume predicted contact kinematics and prefer:
 
 ```text
-33 pose samples
-32 continuous interval proofs
-Hermite translation
-shortest-arc smoothstep attitude
-continuous OBB sweep bound
-body-axis linear authority
-analytic angular authority
-Newtonian vs Elite-assisted slip semantics
+small relative normal speed
+small impact-energy proxy
+more tangential / glancing incidence
+useful passage-axis progress
+reachable hull attitude
 ```
 
-Do not alter the continuous verifier until its measured cost is known.
+A glancing scrape/ricochet must rank ahead of a hard perpendicular hit when both are unavoidable.
 
-## Active Gate — continuous verifier microbenchmark
+The result must remain explicit: contact-expected candidates are never `Clear`; exact CCD/TOI/impulse/ricochet stay physics authority.
 
-Harness:
+## Acceptance order after this task
+
+1. pin deterministic static-contact severity fixtures;
+2. benchmark the scorer only if behavior shows nontrivial cost;
+3. generalize passage geometry/contact prediction to moving obstacles and time-varying gaps;
+4. reuse the same relative-motion machinery for moving/rotating docking;
+5. add bottom-to-bottom mating-frame terminal constraints;
+6. add deterministic `PilotSkillProfile` execution;
+7. integrate accepted Navigation v2 into live game/server/guidance;
+8. run end-to-end stress/debug acceptance;
+9. retire legacy route-wide navigation only after the live v2 path is stable.
+
+## Definition of final success
+
+The navigation work is finished when the live runtime, not only isolated tests, proves that ships can:
 
 ```text
-benchmarks/navigation_trajectory_continuous/
+fly normally within CPU/GPU budgets
+avoid static and dynamic hazards
+use narrow/oriented gaps when physically possible
+respect Elite/Newton vehicle authority
+keep controlling through unavoidable collisions and minimize impact severity
+recover/replan from real post-impact state
+rendezvous and dock with stationary/moving/rotating ports in the correct orientation
+show the same accepted trajectory in guidance/debug
+scale to intended NPC traffic without planner stalls or N^2 precision work
 ```
 
-Contract:
-
-```text
-tests/architecture_contracts/check_navigation_trajectory_continuous_benchmark.py
-```
-
-Timed scenarios:
-
-```text
-straight_newton
-rolled_newton
-lateral_newton
-elite_aligned
-geometry_blocked_roll
-full_precision_batch8
-```
-
-Scenario/query construction and one-time expected-status validation occur outside the timed region.
-
-`full_precision_batch8` represents the hard `<=8` surviving gap-candidate ceiling from `BoundedGapCandidateBuilder`.
-
-Reported:
-
-```text
-queries_per_batch
-calls_per_sample
-median_batch_us
-p95_batch_us
-median_per_query_us
-p95_per_query_us
-```
-
-Navigation CPU design budget remains:
-
-```text
-<0.5 ms typical
-<1.0 ms normal peak
-```
-
-Decision rule:
-
-```text
-batch8 p95 < 0.5 ms
-    -> performance-accept and freeze static continuous verifier
-
-0.5 ms <= batch8 p95 < 1.0 ms
-    -> acceptable peak; inspect scheduling/candidate ordering before changing math
-
-batch8 p95 >= 1.0 ms
-    -> optimize or introduce stricter precision-work budget before live integration
-```
-
-## RUN NOW
-
-```bash
-cd /d/__elite/work
-
-git fetch origin
-git switch main
-git merge --ff-only origin/main
-
-git rev-parse HEAD
-
-python tests/architecture_contracts/check_navigation_trajectory_continuous_benchmark.py
-bash benchmarks/navigation_trajectory_continuous/run_mingw64.sh
-```
-
-Send complete output.
-
-## Next after performance gate
-
-1. record exact benchmark evidence in `benchmarks/navigation_trajectory_continuous/RUN_LOG.md`;
-2. if accepted, freeze the static continuous reference;
-3. rank emergency candidates by predicted **relative normal contact speed / impact-energy proxy** so glancing/ricochet contact beats a normal hit;
-4. generalize passage state to moving/time-varying obstacle gaps;
-5. reuse the moving-frame machinery for moving/rotating docking with explicit bottom-to-bottom mating frames;
-6. add deterministic NPC `PilotSkillProfile` execution later;
-7. keep live `EliteGame` / `EliteServer` integration after isolated trajectory gates.
+Until those live-system gates are green, `NAV-V2-TRAJECTORY-1` and Navigation v2 as a whole are not finished.

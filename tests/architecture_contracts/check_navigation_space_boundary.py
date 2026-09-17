@@ -64,13 +64,22 @@ for marker in (
     "regionCapacity",
     "invalidated",
     "using RegionSlot = std::size_t",
+    "using PortalSlot = std::size_t",
     "using TurnStateSlot = std::size_t",
     "struct GraphIndex",
     "std::map<RegionId, RegionSlot> regionSlots",
+    "std::vector<Vec3d> regionCenters",
+    "std::vector<double> regionCapacities",
+    "std::vector<std::uint8_t> regionInvalidated",
+    "std::vector<std::uint8_t> portalInvalidated",
     "std::vector<std::vector<AdjacencyEdge>> adjacency",
-    "std::vector<std::vector<PortalId>> incidentPortals",
+    "std::vector<std::vector<PortalSlot>> incidentPortalSlots",
     "std::vector<TurnStateRecord> turnStates",
+    "std::vector<std::size_t> turnAngleOffsets",
+    "std::vector<double> turnAnglesRadians",
     "arrivalTurnStateSlot",
+    "geometricMeters",
+    "availableClearanceMeters",
     "buildGraphIndex",
     "std::vector<std::uint8_t> visited",
     "std::vector<Impl::RegionSlot> frontier",
@@ -80,7 +89,7 @@ for marker in (
     "buildSpatialIndex",
     "collectPointCandidateSlots",
     "collectBoundsCandidateSlots",
-    "impl_->graph.incidentPortals.at(slot)",
+    "impl_->graph.incidentPortalSlots.at(slot)",
     "validateCostPolicy",
     "std::multimap<QueueKey, Impl::RegionSlot> frontier",
     "totalCostMetersEquivalent",
@@ -92,9 +101,8 @@ for marker in (
     "std::vector<double> bestCost(stateCount, infinity)",
     "std::priority_queue<",
     "Impl::TurnStateSlot finalStateSlot",
-    "double priority = 0.0",
-    "auto heuristic =",
-    "candidateCost + heuristic(neighborCenter)",
+    "clearancePenaltyFor",
+    "impl_->graph.turnAnglesRadians[turnOffset + edgeIndex]",
 ):
     require(marker in IMPL, f"NavigationSpace CPU reference marker missing: {marker}")
 
@@ -106,9 +114,11 @@ for forbidden in (
     "std::map<TurnState, TurnPrev> previous",
     "std::map<TurnState, bool> settled",
     "std::multimap<TurnQueueKey, TurnState> frontier",
+    "auto heuristic =",
+    "candidateCost + heuristic",
 ):
     require(forbidden not in IMPL,
-            f"corridor traversal regressed to expensive map bookkeeping: {forbidden}")
+            f"corridor traversal regressed to rejected bookkeeping/search candidate: {forbidden}")
 
 for forbidden in (
     "#include <glad/",
@@ -173,9 +183,10 @@ print(" - CPU reference uses deterministic free-space regions + portals")
 print(" - corridor traversal uses private dense region slots + ordered adjacency")
 print(" - BFS visited/previous bookkeeping is vector-backed rather than ordered maps")
 print(" - point lookup + bounds invalidation use a private RegionSlot BVH")
-print(" - endpoint portal invalidation uses private incident-portal adjacency")
+print(" - endpoint portal invalidation uses dense incident-portal slots")
 print(" - costed corridor separates distance, clearance and optional turn policy")
-print(" - turn-aware search uses dense arrival-state slots + vector state + binary heap + admissible A*")
+print(" - turn-aware search uses dense arrival-state slots + vector state + binary heap")
+print(" - static edge geometry/clearance/turn angles are published outside the query hot loop")
 print(" - aperture, canyon/overflight and zigzag/smooth fixtures are pinned")
 print(" - agent-envelope clearance and narrow-portal admission are explicit")
 print(" - local invalidation + transactional patching are owned by the block")

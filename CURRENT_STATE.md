@@ -2,7 +2,8 @@
 
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
-**Navigation:** `NAV-V2-SPACE-1` — static route semantics accepted; published hot-geometry turn optimization active
+**Navigation:** `NAV-V2-SPACE-1` — **CLOSED / ACCEPTED**  
+**Active stage:** `NAV-V2-LOCAL-1` — dynamic conflict + local receding horizon
 
 ## Accepted Navigation v2 ownership
 
@@ -22,13 +23,15 @@ GPU
     all-agent neighbor/conflict reduction
 ```
 
-`RuckigTrajectorySolver` remains downstream local kinematics, not path search. Moving-target pursuit remains specified in `src/world/navigation/PURSUIT_HORIZON.md` and is not yet the active runtime task.
+`RuckigTrajectorySolver` remains downstream local kinematics, not path search. Moving-target pursuit remains specified in `src/world/navigation/PURSUIT_HORIZON.md` and is a later consumer of the local-horizon layer.
 
 ## `NAV-V2-MAP-2` — CLOSED
 
 Accepted 10k evidence includes CPU candidate queries below 0.2 ms p95 and GPU dynamic total below 1.7 ms p95 on the target machine.
 
-## `NAV-V2-SPACE-1` indexing — ACCEPTED
+## `NAV-V2-SPACE-1` — CLOSED / ACCEPTED
+
+Static-space indexing and query foundation:
 
 ```text
 baseline 10k full-portal corridor ≈1.95-1.99 s
@@ -38,77 +41,80 @@ BVH point p95                     <=0.0353 ms
 BVH local invalidation p95        <=0.0115 ms
 ```
 
-Full replace/local patch remain worker/update-side at roughly 44-49 ms median at 10k before the current extra turn-angle publication work is remeasured.
+Costed static corridor v1 is accepted at <=9.6103 ms p95 against the pinned <=15 ms gate. Apertures, tunnels/canyons, agent-envelope admission and fail-closed local invalidation are pinned by tests.
 
-## Costed static corridor v1 — ACCEPTED
-
-Behavior accepts traversable apertures and policy-dependent canyon/overflight routing.
-
-10k p95:
-
-```text
-open distance_only      8.1733 ms
-open clearance_aware    8.5020 ms
-hub  distance_only      7.7609 ms
-hub  clearance_aware    9.6103 ms
-```
-
-The predeclared `<=15 ms` gate passed, so zero-turn RegionSlot Dijkstra remains accepted.
-
-## Static turn cost v2 — ACCEPTED semantics
-
-Target-machine architecture + behavior gates are green. Turn-aware routing preserves arrival direction and `zigzag_vs_smooth` passes.
+Static turn semantics are also accepted:
 
 ```text
 turnPenalty == 0
-    -> accepted v1 RegionSlot Dijkstra
+    -> RegionSlot Dijkstra fast path
 
 turnPenalty > 0
-    -> semantic state = (RegionSlot, incoming PortalId)
+    -> state = (RegionSlot, incoming PortalId)
 ```
 
-## Turn-aware performance progression
-
-Tree-backed expanded state was rejected:
+### Turn-aware performance history
 
 ```text
-open_10k turn p95  216.1602 ms
-hub_10k  turn p95  232.6520 ms
+tree-backed expanded state
+    open_10k 216.1602 ms
+    hub_10k  232.6520 ms
+
+Dense TurnStateSlot + vector state + binary heap
+    open_10k  67.9647 ms
+    hub_10k   72.6054 ms
+
+Euclidean A* — REJECTED
+    open_10k  97.0537 ms
+    hub_10k   97.6909 ms
 ```
 
-Dense `TurnStateSlot` + vector state + binary heap improved the same 10k search to:
+Euclidean A* reduced transition work only ~1.75% and increased p95 materially, so it remains rejected.
+
+### Accepted hot-path publication result
+
+Target-machine rerun on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
 
 ```text
-open_10k turn p95   67.9647 ms
-hub_10k  turn p95   72.6054 ms
-turn portals examined 329,660
+NAVIGATION SPACE BOUNDARY CONTRACT: PASS
+navigation_space: 1/1 PASS
+100% tests passed, 0 failed
+NAVIGATION SPACE TURN BENCHMARK CONTRACT: PASS
+
+scenario   zero p95 ms   turn p95 ms   zero portals   turn portals
+open_10k       8.4498       12.0072         57,197       329,660
+hub_10k        8.4125       11.9065         57,197       329,660
 ```
 
-### Euclidean A* — REJECTED
+All routes remained found with identical accepted path length, turn burden and cost. The pinned turn-aware acceptance gate was `<=40 ms p95`; both 10k cases pass with large margin.
 
-Target rerun on commit `5376e7179cfe791df843eb846c2d4c8af41432cd`:
+The decisive optimization was publication of immutable static hot data: dense region/portal state, per-edge geometry/clearance and precomputed turn angles. Expansion work stayed at `329,660`, proving that the practical bottleneck was cost per examined transition rather than the accepted expanded-state semantics.
+
+Do not continue optimizing persistent static turn search without new runtime evidence. Do not add ship velocity, braking, traffic or pursuit prediction to `NavigationSpace` static cost.
+
+Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
+
+## `NAV-V2-LOCAL-1` — ACTIVE
+
+Next composition layer:
 
 ```text
-open_10k turn p95   97.0537 ms
-hub_10k  turn p95   97.6909 ms
-turn portals examined 323,888
+accepted static corridor / nominal local target
+        +
+NavigationMap compact dynamic candidates
+        +
+agent P/V/A + result age / safety budget
+        |
+        v
+bounded local conflict assessment
+        |
+        v
+receding-horizon temporary safe target state
+        |
+        v
+RuckigTrajectorySolver / flight control
 ```
 
-Architecture, behavior and benchmark contracts passed and route costs remained correct. However the heuristic reduced portal work by only about 1.75% while increasing turn-aware p95 by about 42.8% open / 34.6% hub versus dense Dijkstra. The A* candidate is therefore rejected.
+The local layer must consume the accepted `NavigationSpace` and `NavigationMap` boundaries rather than create another spatial world or full-scene planner. It must not depend on GLM/OpenGL/render/game state. The old `TacticalCollisionMonitor`, `SmallCraftNavigation`, route-wide `GeometricPathPlanner` and dense trajectory/guidance chain are migration/reference code, not v2 authority.
 
-## Active optimization — published static hot geometry
-
-Positive-turn search is restored to dense-state Dijkstra ordering. The graph publication step now precomputes static data needed by the expanded-state loop:
-
-- dense region centers/capacities/invalidation flags;
-- dense portal slots/centers/invalidation flags;
-- per-directed-edge geometric distance and available clearance;
-- flattened precomputed turn angles for each `(TurnStateSlot, outgoing edge)` transition.
-
-`invalidateBounds()` synchronizes dense invalidation flags with authoritative region/portal state.
-
-The positive-turn query therefore avoids ordered-map region/portal lookup and avoids repeated `sqrt`/`acos` geometry in the hot loop. Public API, turn semantics and zero-turn v1 remain unchanged.
-
-Design note: `src/world/navigation/space/TURN_HOT_PATH_CANDIDATE.md`.
-
-Status: **candidate on canonical `main`, pending architecture/behavior + identical target-machine turn benchmark rerun**.
+First implementation slice: backend-neutral deterministic CPU reference for local conflict assessment and temporary-target selection, with architecture/behavior tests before live game/server wiring.

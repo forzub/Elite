@@ -3,7 +3,7 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** `NAV-V2-TRAJECTORY-1` — docking terminal 6DoF candidate (stage 9A)
+**Active stage:** `NAV-V2-TRAJECTORY-1` — docking stage 9B continuous approach candidate
 
 ## Progress
 
@@ -19,6 +19,8 @@
 7  moving gap prediction                             ACCEPTED
 8  continuous ship passage through moving gap        ACCEPTED
 9  moving/rotating docking 6DoF                      ACTIVE
+   9A terminal 6DoF capture                          ACCEPTED
+   9B continuous final docking approach              ACTIVE
 10 PilotSkillProfile                                 PENDING
 11 live game/server/guidance + physics hookup         PENDING
 12 end-to-end stress/debug + legacy retirement        PENDING
@@ -54,19 +56,18 @@ ContinuousPassageTrajectoryEvaluator
 EmergencyContactSeverityScorer
 MovingGapPredictor
 MovingPassageTrajectoryEvaluator
+DockingTerminalEvaluator
 ```
 
-### Emergency invariant
+Accepted invariant:
 
 ```text
 no collision-free proof != no navigation command
 ```
 
-Priority remains collision-free maneuver -> stop before contact -> least-severity explicit non-safe mitigation. Exact CCD/TOI/manifold/impulse/ricochet remain physics authority.
+Exact CCD/TOI/manifold/impulse/ricochet remain physics authority.
 
-### Moving gap — ACCEPTED
-
-Target-machine gate:
+## Moving gap — ACCEPTED
 
 ```text
 bc84940ff23209d9731a3d5332b8af3794182790
@@ -74,93 +75,152 @@ NAVIGATION TRAJECTORY MOVING GAP CONTRACT: PASS
 7/7 navigation_trajectory CTest PASS
 ```
 
-### Moving continuous passage — ACCEPTED
-
-Target-machine gate:
+## Moving continuous passage — ACCEPTED
 
 ```text
 18799ab2c026b6d6dce3da11f9225eae3a3c5f35
 NAVIGATION TRAJECTORY MOVING PASSAGE CONTRACT: PASS
 8/8 navigation_trajectory CTest PASS
+```
+
+## Docking stage 9A terminal capture — ACCEPTED
+
+Target-machine gate:
+
+```text
+835271539619b7dd02efc54ff54df51d64b49fce
+NAVIGATION TRAJECTORY DOCKING TERMINAL CONTRACT: PASS
+9/9 navigation_trajectory CTest PASS
 100% tests passed
 ```
 
-This closes the dynamic-gap traversal problem as an isolated navigation primitive: one accepted moving-gap prediction plus one concrete ship P/V/attitude/OBB/capability segment receives 33 synchronized samples and 32 conservative between-sample proofs. Exact collision response remains downstream.
+Accepted terminal semantics:
 
-## Active candidate — docking terminal 6DoF (stage 9A)
+```text
+explicit Bottom(ship) -> Bottom(dock)
+relative port position
+relative port linear velocity
+anti-aligned mating normals
+aligned referenceUp / roll
+relative angular velocity
+v_port = v_origin + omega x r
+```
+
+A 180-degree rolled arrival is rejected even when mating normals are correct. Authoritative latch remains game/docking-state ownership; exact contact remains physics ownership.
+
+The one compiler warning observed during the acceptance build (`normalizeOrZero` unused) has been removed while exposing the same dock-port prediction as a shared bounded helper for stage 9B.
+
+## Active candidate — docking stage 9B continuous approach
 
 New component:
 
 ```text
-DockingTerminalEvaluator
+DockingApproachEvaluator
 ```
 
 Authority:
 
 ```text
-src/world/navigation/DOCKING_TERMINAL_MODEL.md
+src/world/navigation/DOCKING_APPROACH_MODEL.md
 ```
 
-It evaluates one candidate ship terminal state against the predicted future dock-port frame.
+Key architecture decision: the final precision segment is solved in the **moving/rotating dock-local frame**.
 
-Explicit port metadata:
+This gives:
 
 ```text
-surface semantic
-local port position
-mating normal
-referenceUp / rollReference
+static corridor in dock-local coordinates
+relative terminal pose fixed
+relative terminal angular rate -> 0
+therefore omega_ship(capture) = omega_dock
 ```
 
-Current required pairing is explicit:
+### Continuous geometry
+
+The candidate deliberately reuses the already accepted:
 
 ```text
-Bottom(ship) -> Bottom(dock)
+ContinuousPassageTrajectoryEvaluator
 ```
 
-Capture gates:
+as a dock-local continuous geometry oracle:
 
 ```text
-relative port position
-relative port linear velocity
-anti-aligned mating normals
-aligned reference-up / roll
-relative angular velocity
+PassageSource::DockingCorridor
+33 poses
+32 continuous intervals
+point samples alone are insufficient
 ```
 
-Moving/rotating port kinematics include:
+Physical capability is not delegated to rotating-frame coordinates.
+
+### Inertial translation authority
+
+Dock-local relative motion is transformed back to world space. With constant dock angular velocity:
 
 ```text
-v_port = v_origin + omega x r
+v_world = v_port + omega x r + v_relative
+
+a_world = a_port
+        + omega x (omega x r)
+        + 2 * omega x v_relative
+        + a_relative
 ```
 
-A 180-degree rolled arrival is rejected even when the two physical face normals are correctly opposed.
+The Coriolis and centripetal terms therefore consume real ship thrust.
 
-Pinned fixtures include stationary capture, translating carrier, rotating offset port, combined moving+rotating future capture, semantic mismatch, 180-degree roll rejection, relative angular-rate mismatch and position-tolerance failure.
+Between samples, body-axis acceleration receives a conservative world-jerk/projection bound rather than a sample-only test.
 
-## Collision ownership
+### Angular authority
+
+Relative attitude is rest-to-rest in dock-local space. World bounds include dock rotation:
+
+```text
+omega_world_peak <= |omega_dock| + omega_relative_peak
+alpha_world_peak <= alpha_relative_peak
+                  + |omega_dock| * omega_relative_peak
+```
+
+A fast rotating station can therefore be physically undockable for a vehicle whose angular-rate authority is too small.
+
+### Terminal composition
+
+Only after continuous corridor + inertial vehicle authority pass is the final state submitted to accepted `DockingTerminalEvaluator`.
+
+Successful result:
+
+```text
+FeasibleForCapture
+```
+
+requires both complete final-segment feasibility and terminal `Capturable`.
+
+Pinned fixtures include stationary, translating, moving+rotating co-rotating capture, hidden between-sample corridor failure, inertial thrust failure, dock angular-rate failure, wrong 180-degree roll, terminal position mismatch and Elite/Newton distinction.
+
+## Ownership boundary
 
 ```text
 Navigation / docking trajectory
-    prediction / feasibility / capture tolerance evidence
+    continuous feasibility + terminal capture evidence
+
+Flight control / thruster allocation
+    execute accepted intent
 
 Physics / Collision
-    exact broadphase + narrow phase / CCD / TOI / manifold / impulse / ricochet
+    exact broadphase/narrow phase / CCD / TOI / manifold / impulse / ricochet
 
 Docking game state
-    authoritative latch / capture transition
+    authoritative latch/capture transition
 
 Damage / Structural
-    actual impact consequences
+    actual failed-contact consequences
 ```
 
-Navigation does not become the collision solver.
+## Next after stage 9B acceptance
 
-## Next after stage 9A acceptance
-
-1. stage 9B: continuous moving/rotating docking corridor + terminal convergence;
+1. close large docking stage 9;
 2. deterministic `PilotSkillProfile` execution;
-3. live `EliteGame` / `EliteServer` / guidance integration and physics hookup;
+3. live `EliteGame` / `EliteServer` / guidance + physics hookup;
 4. end-to-end stress/debug/performance acceptance;
 5. retire legacy route-wide navigation only after v2 owns the stable live path.
 

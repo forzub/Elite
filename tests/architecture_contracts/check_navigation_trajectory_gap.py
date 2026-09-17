@@ -82,10 +82,12 @@ require("cmake --build \"${BUILD_DIR}\"" in RUNNER,
 require("ctest --test-dir" in RUNNER,
         "trajectory runner must execute CTest")
 
+# Prefer stable architectural invariants over brittle prose copied from an
+# earlier draft. The implementation itself pins the exact hard cap at 8.
 for marker in (
     "no unbounded all-pairs scan",
-    "small candidate budget (initial target <= 4-8)",
-    "primary conflict",
+    "hard candidate cap = 8",
+    "one primary conflict",
     "ObstacleGap",
     "full 6DoF trajectory / swept-body feasibility",
 ):

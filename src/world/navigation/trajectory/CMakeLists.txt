@@ -8,6 +8,7 @@ add_library(EliteNavigationTrajectory STATIC
     OrientedPassageEvaluator.cpp
     BoundedGapCandidateBuilder.cpp
     AttitudeReachabilityEvaluator.cpp
+    EmergencyPassageMitigator.cpp
 )
 
 target_include_directories(EliteNavigationTrajectory PUBLIC

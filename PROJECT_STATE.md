@@ -1,34 +1,32 @@
 # Project State
 
 **Updated:** 2026-09-17 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / trajectory precision + emergency impact mitigation  
+**Current focus:** NavigationWorld v2 / continuous trajectory feasibility  
 **Canonical development branch:** `main`  
 **Active stage:** `NAV-V2-TRAJECTORY-1`
 
 ## Navigation v2 direction
 
-Navigation v2 uses one shared ship-centered `NavigationWorld`. Authoritative system/world state remains physical truth; relevant state is published into a translating working space with stable navigation/travel axes. Hub/station/carrier/interior domains publish only relevant subsets.
+Navigation v2 uses one shared ship-centered `NavigationWorld`. Authoritative system/world state remains physical truth; only the relevant subset is published into a translating working space with stable navigation/travel axes.
 
-Legacy route-wide navigation remains migration code. `RuckigTrajectorySolver` remains downstream local kinematics.
-
-Accepted hybrid ownership:
+Accepted hybrid ownership remains:
 
 ```text
 CPU: static free-space, portals, corridor search, deterministic precision/local work
-GPU: dynamic P/V/A prediction, swept bounds, spatial bins, conflict reduction
+GPU: dynamic P/V/A prediction, swept bounds, spatial bins, shared conflict reduction
 ```
 
-Moving-goal pursuit remains later.
+Legacy route-wide navigation remains migration/reference code. `RuckigTrajectorySolver` remains downstream kinematics, not free-space authority.
 
-## `NAV-V2-MAP-2` — CLOSED
+## Closed stages
 
-`NavigationMap` exposes compact candidate products and hides backend/GPU storage. Accepted target-machine evidence includes CPU compact queries below `0.2 ms p95` and GPU 10k heavy-scene totals below `1.7 ms p95`.
+### `NAV-V2-MAP-2` — CLOSED
 
-Mass/broadphase actor geometry intentionally remains center P/V/A + radius + conservative swept sphere.
+Accepted target-machine evidence includes CPU compact queries below `0.2 ms p95` and GPU 10k heavy-scene totals below `1.7 ms p95`.
 
-## `NAV-V2-SPACE-1` — CLOSED / ACCEPTED
+### `NAV-V2-SPACE-1` — CLOSED / ACCEPTED
 
-Final target-machine turn-aware implementation on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
+Final target-machine turn-aware evidence on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
 
 ```text
 open_10k zero-turn p95    8.4498 ms
@@ -38,11 +36,9 @@ hub_10k  turn-aware p95  11.9065 ms
 turn portals examined    329,660
 ```
 
-Static turn search is closed.
+### `NAV-V2-LOCAL-1` — CLOSED / ACCEPTED
 
-## `NAV-V2-LOCAL-1` — CLOSED / ACCEPTED
-
-Behavior and compact-candidate scaling were already accepted. Fresh multiplied-probe target-machine evidence on `e0817d157ba5d8c9c329576236310507bda13364`:
+Behavior, compact-candidate scaling and multiplied-probe cost are accepted. Fresh target-machine fan evidence on `e0817d157ba5d8c9c329576236310507bda13364`:
 
 ```text
 scenario                     p95_us
@@ -55,147 +51,181 @@ all_dynamic_rejected_256     128.9708
 all_dynamic_rejected_1024    519.9286
 ```
 
-The `1024 x 17` case is deliberate stress and still fits the `<1.0 ms normal peak` local budget. The deterministic 16-probe fan is retained unchanged.
+The `1024 x 17` case is deliberate stress and remains inside the `<1.0 ms normal peak` budget. Keep the deterministic 16-probe fan unchanged.
 
-Authority:
-
-```text
-benchmarks/navigation_local_avoidance/RUN_LOG.md
-```
-
-## `NAV-V2-TRAJECTORY-1` — active isolated precision stage
+## `NAV-V2-TRAJECTORY-1` — ACTIVE
 
 Architecture authorities:
 
 ```text
 src/world/navigation/ORIENTED_PASSAGE_MODEL.md
 src/world/navigation/TRAJECTORY_CONTROL_MODEL.md
+src/world/navigation/CONTINUOUS_PASSAGE_MODEL.md
 NAVIGATION_WORLD_V2.md
 ```
 
-Current chain:
+Accepted chain:
 
 ```text
 ConflictHold / explicit aperture / docking corridor
-        |
-        v
-BoundedGapCandidateBuilder
-    primary conflict x reduced neighbors
-    hard cap 8
-    no all-pairs scan
-        |
-        v
-OrientedPassageEvaluator
-    oriented OBB entry fit
-        |
-        v
-AttitudeReachabilityEvaluator
-    collision-free requested attitude reachable in time?
-        |
-        +-- yes -> later continuous safe 6DoF proof
-        |
-        +-- no
-              v
-EmergencyPassageMitigator
-    brake / center / passage-axis intent
-    best reachable hull attitude
-    stop if possible
-    otherwise explicit mitigated contact/ricochet intent
+        -> BoundedGapCandidateBuilder (<=8)
+        -> OrientedPassageEvaluator
+        -> AttitudeReachabilityEvaluator
+        -> collision-free continuous candidate OR EmergencyPassageMitigator
 ```
 
-### Target-machine trajectory evidence
+### Oriented passage / bounded gap / reachability — ACCEPTED
 
-On `e0817d...`:
+Target-machine C++ behavior on `e0817d...`:
 
 ```text
 navigation_trajectory_passage      PASS
 navigation_trajectory_gap          PASS
 navigation_trajectory_reachability PASS
 100% tests passed, 0 failed
-Total Test time: 0.12 sec
 ```
 
-The one bounded-gap architecture failure was only a stale exact Markdown marker; runtime behavior was green. The checker has been repaired on current `main`.
-
-### Bounded gap performance — ACCEPTED
-
-Target-machine p95:
+Bounded-gap performance is accepted. Worst deliberate stress:
 
 ```text
-reject_16       0.2459 us
-reject_64       0.7550 us
-reject_256      4.6499 us
-reject_1024    11.6730 us
-
-top8_16         0.7883 us
-top8_64         1.8260 us
-top8_256        6.3609 us
-top8_1024      24.0699 us
+top8_1024 p95 = 24.0699 us = 0.0241 ms
 ```
 
-Even the deliberate `top8_1024` stress case is only `0.0241 ms p95`. Gap extraction is performance-accepted.
+Do not micro-optimize this layer without contrary evidence.
 
-Authority:
+### Emergency passage mitigation — ACCEPTED
+
+Fresh target-machine gate on `b29a03d3d84f4d6575cbbc5166cbd7547b5ce0d8`:
 
 ```text
-benchmarks/navigation_trajectory_gap/RUN_LOG.md
+NAVIGATION TRAJECTORY BOUNDED GAP CONTRACT: PASS
+NAVIGATION TRAJECTORY EMERGENCY PASSAGE CONTRACT: PASS
+
+navigation_trajectory_passage              PASS
+navigation_trajectory_gap                  PASS
+navigation_trajectory_reachability         PASS
+navigation_trajectory_emergency_passage    PASS
+
+100% tests passed, 0 failed
+Total Test time: 0.18 sec
 ```
 
-## Emergency collision semantic
-
-Project invariant:
+Accepted project invariant:
 
 ```text
-no collision-free route != no navigation command
+no collision-free proof != no navigation command
 ```
 
-If a collision-free passage cannot be achieved in time:
-
-1. stop before contact when physically possible;
-2. otherwise keep maximum useful braking;
-3. aim at the gap center;
-4. bias travel along the passage axis to reduce side-normal incidence;
-5. rotate to the best physically reachable hull attitude;
-6. allow explicit contact/ricochet as a least-severity emergency outcome.
-
-`EmergencyMitigatedContact` is never equivalent to `Clear`. Physics/collision/damage remain authoritative for the actual impact and post-contact state.
-
-Prepared isolated implementation:
+Priority is:
 
 ```text
-src/world/navigation/trajectory/EmergencyPassageMitigator.h/.cpp
-tests/navigation_trajectory/NavigationTrajectoryEmergencyPassageTests.cpp
-tests/architecture_contracts/check_navigation_trajectory_emergency_passage.py
+safe collision-free maneuver
+    -> stop before contact if physically possible
+    -> otherwise least-severity non-safe contact mitigation
 ```
 
-The first version uses a fixed 17-sample reachable orientation arc and ranks by passage clearance/geometric deficit. Continuous 6DoF must later add translational reachability and relative normal contact-speed / impact-energy scoring.
+`EmergencyMitigatedContact` remains an explicit non-safe control intent: maximum useful braking, gap-center aim, desired travel along the passage axis and best physically reachable hull attitude. Physics/collision owns CCD/TOI/impulse/ricochet; damage owns consequences; navigation resumes from actual post-impact state.
 
-## Planned continuous 6DoF / docking fidelity
+## Continuous static passage verifier — PENDING TARGET-MACHINE GATE
 
-Next precision layer:
+Candidate:
 
 ```text
-authoritative body-axis linear thrust/braking authority
-Elite-assisted versus Newtonian free flight
-position + velocity + attitude + angular-state propagation
-continuous swept oriented-body proof
-safe head-on / crossing / narrow-gap maneuvers
-emergency contact ranking by relative normal speed / impact proxy
-moving/time-varying obstacle gaps
-moving/rotating terminal docking
-explicit bottom-to-bottom mating-frame orientation
-NPC PilotSkillProfile execution
+src/world/navigation/trajectory/ContinuousPassageTrajectoryEvaluator.h/.cpp
 ```
 
-Docking remains relative pose-and-motion matching. A rotating port requires matching predicted port pose, tangential velocity and angular motion at capture. Normal docking should go around rather than intentionally collide when avoidance remains possible.
+Detailed contract:
+
+```text
+src/world/navigation/CONTINUOUS_PASSAGE_MODEL.md
+```
+
+The candidate verifies one complete static/extruded narrow-passage maneuver:
+
+```text
+translation: cubic Hermite, start P/V -> end P/V
+attitude: shortest-arc smooth rest-to-rest rotation
+```
+
+The fixed partition is `33` poses / `32` intervals, but safety is **not** accepted from point samples alone. Each interval receives conservative continuous geometry bounds:
+
+```text
+center curve deviation <= M * dt^2 / 8
+rotation sweep inflation <= 2 * R * sin(deltaTheta / 2)
+```
+
+This catches a ship whose endpoint poses both fit but whose hull hits the wall while rotating between them.
+
+Physical vehicle gates include:
+
+```text
+forward acceleration
+reverse/braking acceleration
+lateral acceleration
+vertical acceleration
+angular speed
+angular acceleration
+```
+
+Hermite acceleration is linear over each interval, so fixed-axis projection extrema are already at the endpoints. Extra continuous body-axis projection margin is added only for rotation of the body frame.
+
+Control semantics are separate:
+
+```text
+Newtonian
+    inertial velocity and hull attitude may diverge
+
+EliteAssisted
+    same truthful physical thrust limits
+    plus a controller-policy velocity-to-forward slip bound
+```
+
+Result classes:
+
+```text
+Feasible
+GeometryBlocked
+LinearAuthorityExceeded
+AngularAuthorityExceeded
+AssistedSlipExceeded
+InvalidInput
+```
+
+Pending target-machine gate:
+
+```bash
+python tests/architecture_contracts/check_navigation_trajectory_continuous_passage.py
+bash tests/navigation_trajectory/run_mingw64.sh
+```
+
+## Docking continuation
+
+Docking remains the same trajectory domain, as terminal relative 6DoF pose/motion matching against a stationary/moving/rotating port:
+
+```text
+relative position
+relative linear velocity
+relative attitude
+relative angular velocity
+explicit mating frame / top-bottom convention
+```
+
+For a rotating port offset `r`:
+
+```text
+v_port = v_origin + omega x r
+```
+
+`bottom of ship -> bottom of dock` remains explicit. Normal docking goes around if capture is still avoidable; emergency contact semantics apply only when physical impact is actually unavoidable.
 
 ## Next order
 
-1. run repaired bounded-gap architecture checker + new emergency-passage architecture/behavior gate;
-2. if green, implement continuous bounded 6DoF static-gap feasibility with explicit `Elite`/`Newton` authority;
-3. add emergency impact ranking by predicted relative normal speed/energy rather than geometry alone;
-4. extend the same time-varying pose/sweep machinery to moving gaps and moving/rotating docking;
-5. add deterministic NPC execution skill;
-6. pursuit and live game/server integration remain later.
+1. run the continuous static-passage architecture/build/behavior gate;
+2. if green, benchmark the fixed 33-sample / 32-interval verifier before optimizing it;
+3. add emergency ranking by relative normal contact speed / impact-energy proxy so glancing contact beats normal impact;
+4. generalize to moving/time-varying obstacle gaps;
+5. reuse the moving-frame machinery for moving/rotating docking;
+6. add deterministic NPC `PilotSkillProfile` execution;
+7. pursuit and live game/server integration remain later.
 
 Do not add vehicle velocity/braking/traffic/pursuit state to persistent `NavigationSpace` static cost.

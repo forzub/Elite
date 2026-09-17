@@ -55,35 +55,43 @@ Architecture/behavior/benchmark contracts all passed, all routes were found and 
 
 The transition count stayed unchanged while p95 fell from `67.9647/72.6054 ms` to `12.0072/11.9065 ms`. Therefore immutable per-transition work, not the semantic expanded-state count, was the practical bottleneck for this reference topology. Static turn search is closed; do not spend more work there without new runtime evidence.
 
-## `NAV-V2-LOCAL-1` — ACTIVE
+## `NAV-V2-LOCAL-1` — BEHAVIOR ACCEPTED / PERFORMANCE PENDING
 
-The next layer composes existing accepted boundaries:
+Fresh target-machine behavior gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
 
 ```text
-static corridor / nominal local target
-        +
-NavigationMap dynamic candidates
-        +
-agent state + bounded result age
-        |
-        v
-local conflict assessment
-        |
-        v
-receding-horizon temporary safe target
-        |
-        v
-local kinematics / flight control
+NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
+navigation_local: 1/1 PASS
+100% tests passed, 0 failed
+Total Test time = 0.05 sec
 ```
 
-The new local boundary must remain backend-neutral and compact. It does not own a second NavigationWorld and does not scan full actor storage. It consumes `NavigationMap::Candidate` products and accepted static intent.
+The backend-neutral `LocalHorizonPlanner` ownership/safety reference is therefore accepted. It consumes an upstream nominal target plus compact `NavigationMap::QueryResult`, computes a latency/braking/turn/margin-bounded horizon, evaluates bounded dynamic conflicts, and returns `Clear`, `ConflictHold` or `StaleHold` with `PassThrough`, `Terminal` or `Hold` target semantics.
 
-Existing `TacticalCollisionMonitor` and `SmallCraftNavigation` are pre-v2 GLM/old-state implementations. Their closest-approach/steering ideas may be used as reference, but they are not architectural dependencies of the new block.
+No second NavigationWorld, full actor-table scan, GLM/OpenGL/render/game dependency or unverified lateral bypass is allowed inside the block.
+
+A dedicated candidate-count benchmark is now prepared at:
+
+```text
+benchmarks/navigation_local/
+```
+
+Pinned scales:
+
+```text
+clear:     0 / 16 / 64 / 256 / 1024 compact candidates
+conflict:     16 / 64 / 256 / 1024 compact candidates
+stale:                           1024 compact candidates
+```
+
+This benchmark measures only downstream `LocalHorizonPlanner::evaluate()` cost. It does not repeat the already accepted full-world NavigationMap broadphase benchmark. `1024` is a stress scale, not an expected normal candidate count.
+
+Current status: **target-machine candidate scaling pending**. No avoidance algorithm beyond fail-closed hold is accepted yet.
 
 ## Next order
 
-1. implement/test the `NAV-V2-LOCAL-1` backend-neutral local-horizon reference boundary;
-2. measure candidate-count scaling on the target machine;
+1. run/record `benchmarks/navigation_local/` candidate-count scaling;
+2. choose and pin the first adjusted-target/lateral-avoidance algorithm from measured cost and game constraints;
 3. add pursuit/receding-intercept as a consumer of the accepted local layer;
 4. implement raw NavigationWorld debug visualization from the same completed snapshot;
 5. integrate accepted NavigationWorld products into live game/server;

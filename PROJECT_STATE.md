@@ -40,7 +40,7 @@ turn portals examined    329,660
 
 Static turn search is closed; do not spend more work there without new runtime evidence.
 
-## `NAV-V2-LOCAL-1` — horizon reference accepted
+## `NAV-V2-LOCAL-1` — horizon reference ACCEPTED
 
 Target-machine behavior gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39` accepted the backend-neutral `LocalHorizonPlanner` boundary.
 
@@ -54,33 +54,74 @@ stale_1024 p95        0.0359 us / 0 candidates examined
 
 The one-pass dynamic reference is not a CPU bottleneck.
 
-## Active local slice — conservative adjusted target
+## `LocalAvoidancePlanner` behavior — ACCEPTED
 
-`LocalAvoidancePlanner` tries at most sixteen deterministic target probes after nominal `ConflictHold`:
-
-```text
-15 degree deflection x 8 azimuths
-30 degree deflection x 8 azimuths
-```
-
-A candidate must be envelope-safe in the same NavigationSpace region, use the same static space/source revision as the start evidence, and pass the accepted dynamic recheck.
-
-The same-region rule is intentionally conservative. Portal-crossing avoidance is not yet claimed. Current-kinematics head-on/crossing remains fail-closed until a trajectory-aware maneuver is separately demonstrated.
-
-### Latest target-machine attempt
-
-Run on `f27006ccbba1a6faaa3d3000dedf8d8dee5f02e8` did not execute the new avoidance behavior binary:
+Fresh target-machine gate on `bdec064d152050b4bc199b2657f14b3f577dcba3`:
 
 ```text
-horizon architecture check -> FAIL on stale exact README phrase
-avoidance architecture     -> PASS
-navigation_local           -> PASS
-navigation_local_avoidance -> NOT RUN, executable absent
+NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
+NAVIGATION LOCAL AVOIDANCE BOUNDARY CONTRACT: PASS
+navigation_local: PASS
+navigation_local_avoidance: PASS
+100% tests passed, 0 failed
+Total Test time: 0.06 sec
 ```
 
-This was test infrastructure, not avoidance behavior evidence. The architecture check has been repaired to pin semantic ownership, and `tests/navigation_local/run_mingw64.sh` now builds the complete CMake project before CTest instead of building only the historical horizon executable.
+Accepted behavior:
 
-Avoidance status remains **pending target-machine behavior rerun**, not failed.
+```text
+nominal Clear
+    -> zero avoidance probes
+
+nominal ConflictHold
+    -> query start point from public NavigationSpace
+    -> deterministic 15 deg x 8 + 30 deg x 8 fan
+    -> same-region + same-publication static proof
+    -> dynamic recheck through accepted LocalHorizonPlanner
+    -> first proven target = AdjustedClear / PassThrough
+    -> otherwise ConflictHold
+```
+
+The same-region rule remains deliberately conservative. Portal-crossing avoidance is not yet claimed. Current-P/V/A head-on/crossing remains fail-closed until a trajectory-aware maneuver is separately demonstrated.
+
+## Active local gate — multiplied avoidance probe cost
+
+Dedicated harness:
+
+```text
+benchmarks/navigation_local_avoidance/
+```
+
+It measures:
+
+```text
+nominal_clear_64
+    0 probes, 1 horizon evaluation
+
+early_adjust_64
+    first probe accepted
+    1 probe, 2 horizon evaluations, 2 static point queries
+
+all_static_rejected_64
+    16 probes rejected statically
+    1 horizon evaluation, 17 static point queries
+
+all_dynamic_rejected_16/64/256/1024
+    16 statically valid probes
+    16 failed dynamic rechecks
+    17 horizon evaluations, 17 static point queries
+```
+
+The `1024` case is a deliberate ceiling/stress measurement. It is not an expected normal local-neighbor count.
+
+The benchmark reports median/p95 timing plus probe counts, static/dynamic rejections, total horizon-evaluation count, estimated compact-candidate visits and static point queries. Scenario/static-space construction is outside the timed region.
+
+Performance is pending target-machine evidence. Existing local CPU design budgets remain:
+
+```text
+<0.5 ms typical
+<1.0 ms normal peak
+```
 
 ## Planned trajectory/control fidelity
 
@@ -90,7 +131,7 @@ Architecture contract:
 src/world/navigation/TRAJECTORY_CONTROL_MODEL.md
 ```
 
-The post-avoidance trajectory-aware layer must consume authoritative vehicle capability rather than assuming an instant acceleration-vector change. Planned fidelity includes:
+The post-benchmark trajectory-aware layer must consume authoritative vehicle capability rather than assuming an instant acceleration-vector change. Planned fidelity includes:
 
 ```text
 oriented hull proxy + attitude / angular state
@@ -106,9 +147,9 @@ Poor NPC skill is modeled through delayed/under-damped control execution, not by
 
 ## Next order
 
-1. rerun local horizon + avoidance architecture/behavior gate with repaired test infrastructure;
-2. benchmark multiplied avoidance probe cost for nominal-clear, early-adjust, static-reject and dynamic-reject paths;
-3. if accepted, begin the trajectory-aware vehicle/control layer from `TRAJECTORY_CONTROL_MODEL.md`;
+1. run `check_navigation_local_avoidance_benchmark.py` and `benchmarks/navigation_local_avoidance/run_mingw64.sh` on the target machine;
+2. if the 16-probe fan fits the accepted local CPU budget, keep it unchanged; otherwise change ordering/budget only from measured evidence;
+3. begin the trajectory-aware vehicle/control layer from `TRAJECTORY_CONTROL_MODEL.md`;
 4. add pursuit/receding-intercept as a later consumer;
 5. implement raw NavigationWorld debug visualization from the same completed snapshot;
 6. integrate accepted NavigationWorld products into live game/server;

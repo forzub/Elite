@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** `NAV-V2-TRAJECTORY-1` — moving/rotating docking 6DoF, stage 9A terminal capture candidate
+**Current stage:** `NAV-V2-TRAJECTORY-1` — moving/rotating docking 6DoF, stage 9B continuous final approach candidate
 
 `main` is the only canonical development branch.
 
@@ -33,7 +33,7 @@ bounded precision trajectory layer
     emergency mitigation / contact severity
     moving-gap prediction
     moving continuous passage
-    docking terminal / approach
+    docking terminal / continuous approach
             |
             v
 flight control / Ruckig / authoritative physics
@@ -146,6 +146,7 @@ ContinuousPassageTrajectoryEvaluator
 EmergencyContactSeverityScorer
 MovingGapPredictor
 MovingPassageTrajectoryEvaluator
+DockingTerminalEvaluator
 ```
 
 ### Oriented passage / bounded gap
@@ -254,12 +255,6 @@ Hard bound:
 
 Peak normal closing speed outranks energy/momentum/glancing/progress tie-breakers.
 
-Accepted target-machine evidence:
-
-```text
-6/6 trajectory CTest PASS
-```
-
 ## 6. Moving gaps — ACCEPTED
 
 `MovingGapPredictor` receives one already-selected obstacle pair and compact motion:
@@ -317,8 +312,6 @@ NAVIGATION TRAJECTORY MOVING PASSAGE CONTRACT: PASS
 8/8 trajectory CTest PASS
 ```
 
-This closes the isolated dynamic-gap traversal primitive.
-
 ## 8. Collision / damage ownership
 
 Navigation performs predictive feasibility and may emit expected-contact evidence. It is **not** the authoritative collision solver.
@@ -342,9 +335,9 @@ After real contact, navigation replans from actual physics state.
 
 ## 9. Moving / rotating docking 6DoF — ACTIVE
 
-Docking is not center-point arrival. It is relative terminal pose/motion matching between two explicit interface frames.
+Docking is relative pose/motion matching between explicit ship and dock interface frames, not center-point arrival.
 
-### Stage 9A — `DockingTerminalEvaluator` candidate
+### Stage 9A — terminal 6DoF capture ACCEPTED
 
 Authority:
 
@@ -352,7 +345,7 @@ Authority:
 src/world/navigation/DOCKING_TERMINAL_MODEL.md
 ```
 
-Both interfaces expose body-local metadata:
+Both interfaces expose:
 
 ```text
 surface semantic
@@ -361,30 +354,21 @@ mating normal
 referenceUp / rollReference
 ```
 
-Current required pairing is explicit:
+Current required pairing:
 
 ```text
 Bottom(ship) -> Bottom(dock)
 ```
 
-No world-up inference is used.
-
-For the dock reference origin:
+For a moving/rotating dock port:
 
 ```text
 p_origin(t) = p0 + v0*t + 0.5*a*t^2
 v_origin(t) = v0 + a*t
+v_port      = v_origin + omega x r
 ```
 
-The first bounded terminal slice assumes constant world-space dock angular velocity over the capture prediction. For port offset `r`:
-
-```text
-v_port = v_origin + omega x r
-```
-
-Ship offset-port velocity similarly includes `omega_ship x r_ship`.
-
-Terminal capture gates:
+Terminal capture requires bounded:
 
 ```text
 relative port position
@@ -394,25 +378,118 @@ referenceUp / roll aligned
 relative angular velocity
 ```
 
-A 180-degree rolled ship is invalid even when the two mating normals are correct.
+A 180-degree rolled ship is invalid even when mating normals oppose correctly.
 
-`Capturable` only means the candidate state satisfies capture tolerances. Actual latch/game-state transfer remains authoritative outside this evaluator.
-
-### Stage 9B — after 9A acceptance
-
-Compose the accepted moving-passage machinery with the docking target frame:
+Target-machine acceptance:
 
 ```text
-coarse intercept / rendezvous
-    -> moving docking corridor acquisition
-    -> continuous oriented-hull corridor proof
-    -> attitude + relative velocity reduction
-    -> terminal frame tracking
-    -> DockingTerminalEvaluator
-    -> capture/latch request
+835271539619b7dd02efc54ff54df51d64b49fce
+NAVIGATION TRAJECTORY DOCKING TERMINAL CONTRACT: PASS
+9/9 trajectory CTest PASS
 ```
 
-Ordinary docking aborts/goes around when tolerances cannot be maintained. Destructive impact is never a successful docking capture.
+The single unused-helper warning seen during that build has been removed. Dock-port prediction is now a shared bounded helper for 9B.
+
+### Stage 9B — continuous final docking approach ACTIVE CANDIDATE
+
+Authority:
+
+```text
+src/world/navigation/DOCKING_APPROACH_MODEL.md
+```
+
+New component:
+
+```text
+DockingApproachEvaluator
+```
+
+#### Dock-local trajectory
+
+The final precision segment is expressed in the moving/rotating dock frame rather than as a world-space rest-to-rest target.
+
+In dock-local coordinates:
+
+```text
+corridor is static
+terminal relative pose is fixed
+relative terminal angular rate -> 0
+```
+
+Therefore:
+
+```text
+omega_ship(capture) = omega_dock
+```
+
+naturally follows from the trajectory representation.
+
+Endpoint relative velocity uses the derivative of a rotating frame:
+
+```text
+v_rel_world = v_ship - v_port - omega x (p_ship - p_port)
+```
+
+#### Continuous corridor proof
+
+The accepted `ContinuousPassageTrajectoryEvaluator` is reused as a dock-local geometry oracle with:
+
+```text
+PassageSource::DockingCorridor
+33 relative poses
+32 conservative continuous intervals
+```
+
+The internal geometry call receives effectively unbounded capabilities and Newtonian policy so rotating-frame coordinates are never mistaken for physical thrust authority.
+
+#### World inertial authority
+
+The accepted relative curve is transformed back to world kinematics:
+
+```text
+v_world = v_port + omega x r + v_rel
+
+a_world = a_port
+        + omega x (omega x r)
+        + 2 * omega x v_rel
+        + a_rel
+```
+
+Centripetal and Coriolis terms are therefore paid by real vehicle authority.
+
+Between samples, body-axis thrust projection receives a conservative world-jerk + body-axis-rotation margin. Physical authority is not sample-only.
+
+#### Angular authority
+
+For relative attitude change `theta` over `T`:
+
+```text
+omega_rel_peak = 1.5 * theta / T
+alpha_rel_peak = 6.0 * theta / T^2
+```
+
+World conservative bounds:
+
+```text
+omega_world_peak <= |omega_dock| + omega_rel_peak
+alpha_world_peak <= alpha_rel_peak + |omega_dock| * omega_rel_peak
+```
+
+A sufficiently fast rotating station may therefore be physically uncapturable by a low-authority vehicle.
+
+#### Terminal composition
+
+After continuous geometry + inertial linear/angular authority pass, the generated final state is submitted to the accepted `DockingTerminalEvaluator`.
+
+Only:
+
+```text
+FeasibleForCapture
+```
+
+claims both final-segment feasibility and terminal 6DoF capture.
+
+Normal docking aborts/goes around when a safe/capturable final segment cannot be proven. Destructive impact is never successful docking.
 
 ## 10. NPC pilot skill — PENDING
 
@@ -450,6 +527,8 @@ Guidance visualizes the accepted navigation/trajectory/control intent; it must n
 7  moving gap prediction                             CLOSED
 8  moving continuous ship passage                    CLOSED
 9  moving/rotating docking 6DoF                      ACTIVE
+   9A terminal capture                               CLOSED
+   9B continuous final approach                      ACTIVE
 10 PilotSkillProfile                                 PENDING
 11 live EliteGame / EliteServer / guidance + physics PENDING
 12 end-to-end stress/debug + legacy retirement       PENDING

@@ -28,8 +28,8 @@ Active:
 
 ```text
 9  moving/rotating docking 6DoF
-   9A terminal capture candidate
-   9B continuous docking approach after 9A acceptance
+   9A terminal 6DoF capture       ACCEPTED
+   9B continuous final approach   ACTIVE
 ```
 
 Remaining after docking:
@@ -71,6 +71,12 @@ EmergencyPassageMitigator
     -> EmergencyContactSeverityScorer
 ```
 
+Docking accepted terminal primitive:
+
+```text
+DockingTerminalEvaluator
+```
+
 Accepted invariant:
 
 ```text
@@ -93,6 +99,11 @@ Moving passage
     18799ab2c026b6d6dce3da11f9225eae3a3c5f35
     NAVIGATION TRAJECTORY MOVING PASSAGE CONTRACT: PASS
     8/8 trajectory CTest PASS
+
+Docking terminal 6DoF
+    835271539619b7dd02efc54ff54df51d64b49fce
+    NAVIGATION TRAJECTORY DOCKING TERMINAL CONTRACT: PASS
+    9/9 trajectory CTest PASS
 ```
 
 Accepted reference performance still includes:
@@ -104,51 +115,103 @@ BoundedGap top8_1024                         24.0699 us p95
 Continuous static full_precision_batch8      41.3527 us p95
 ```
 
-## Active docking terminal candidate — stage 9A
+## Docking stage 9A — ACCEPTED
 
-```text
-DockingTerminalEvaluator
-src/world/navigation/DOCKING_TERMINAL_MODEL.md
-```
+`DockingTerminalEvaluator` makes capture an explicit relative interface-frame problem rather than center-point arrival.
 
-Docking is an explicit terminal relative 6DoF problem. Ship and dock interfaces carry:
+Port metadata:
 
 ```text
 surface semantic
-local port position
+local port offset
 mating normal
 referenceUp / rollReference
 ```
 
-Current required semantic pairing:
+Current required semantics:
 
 ```text
 Bottom(ship) -> Bottom(dock)
 ```
 
-At candidate capture time the evaluator checks:
+Capture requires relative P/V/attitude/angular rate within tolerance. Rotating offset-port velocity includes `v_origin + omega x r`. A 180-degree rolled approach is rejected even with correct mating normals.
+
+## Active docking stage 9B — continuous final approach
 
 ```text
-relative port position
-relative port linear velocity
-anti-aligned mating normals
-aligned roll/reference-up
-relative angular velocity
+DockingApproachEvaluator
+src/world/navigation/DOCKING_APPROACH_MODEL.md
 ```
 
-Moving/rotating port kinematics include:
+The final precision docking segment is solved in the moving/rotating **dock-local frame**.
+
+This is a key physical decision:
 
 ```text
-v_port = v_origin + omega x r
+relative terminal attitude rate -> 0
+therefore world omega_ship(capture) = omega_dock
 ```
 
-A 180-degree rolled arrival is rejected despite correct opposing face normals.
+### Continuous corridor
+
+The accepted `ContinuousPassageTrajectoryEvaluator` is reused as a dock-local geometry oracle:
+
+```text
+PassageSource::DockingCorridor
+33 samples
+32 conservative continuous intervals
+```
+
+### Inertial physical authority
+
+Physical capability is checked after transforming relative motion back to world space:
+
+```text
+v_world = v_port + omega x r + v_relative
+
+a_world = a_port
+        + omega x (omega x r)
+        + 2 * omega x v_relative
+        + a_relative
+```
+
+Thus centripetal and Coriolis acceleration consume real vehicle authority.
+
+Between samples, forward/reverse/lateral/vertical thrust projection receives a conservative jerk + body-axis-rotation margin.
+
+### Angular authority
+
+```text
+world omega peak bound
+    = |omega_dock| + relative omega peak
+
+world alpha peak bound
+    = relative alpha peak
+    + |omega_dock| * relative omega peak
+```
+
+A dock may therefore rotate too quickly for a specific vehicle to capture safely.
+
+### Terminal composition
+
+Only after continuous corridor and physical authority pass does the candidate call the accepted `DockingTerminalEvaluator`.
+
+Successful result:
+
+```text
+FeasibleForCapture
+```
+
+means both final-segment feasibility and terminal 6DoF capture are proven under the declared model.
 
 ## Collision / docking-state boundary
 
 ```text
 Navigation / docking trajectory
-    predicts target frame and proves terminal/corridor feasibility
+    predicts target frame and proves corridor/terminal feasibility
+
+Flight control / thruster allocation
+    executes accepted intent
 
 Physics / Collision
     authoritative broadphase/narrow phase / CCD / TOI / manifold / impulse / ricochet
@@ -164,8 +227,8 @@ Ordinary docking must abort/go around when capture conditions are not met; destr
 
 ## Next order
 
-1. target-machine architecture/build/behavior gate for stage 9A (`9/9` expected);
-2. stage 9B continuous moving/rotating docking corridor and terminal convergence;
+1. target-machine architecture/build/behavior gate for stage 9B (`10/10` expected);
+2. close major docking stage 9;
 3. deterministic NPC `PilotSkillProfile`;
 4. live game/server/guidance + collision-physics integration;
 5. end-to-end stress/debug/performance acceptance;

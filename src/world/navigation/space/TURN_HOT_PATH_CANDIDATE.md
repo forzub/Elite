@@ -1,17 +1,15 @@
-# Turn-aware hot-path optimization candidate
+# Turn-aware hot-path publication — ACCEPTED
 
-Stage: `NAV-V2-SPACE-1`
+Stage: `NAV-V2-SPACE-1` — **CLOSED / ACCEPTED**
 
-The Euclidean A* candidate is rejected by target-machine evidence: it reduced 10k `turn_portals_examined` only from 329,660 to 323,888 while increasing turn-aware p95 from 67.9647/72.6054 ms to 97.0537/97.6909 ms (open/hub).
-
-The next candidate keeps exact dense turn-state Dijkstra semantics:
+The accepted positive-turn reference keeps exact dense Dijkstra semantics:
 
 ```text
 state = (RegionSlot, incoming PortalId)
 frontier = binary heap ordered by g
 ```
 
-The optimization target is per-expanded-edge cost, not another heuristic. Static values that do not depend on the query should be published with the graph instead of recomputed in the query hot loop:
+Immutable static values are published with the graph instead of recomputed in the query hot loop:
 
 - dense region center and capacity;
 - dense invalidation flags synchronized with `invalidateBounds()`;
@@ -20,8 +18,26 @@ The optimization target is per-expanded-edge cost, not another heuristic. Static
 - per-directed-edge available static clearance;
 - precomputed turn angle for `(arrival TurnStateSlot, outgoing adjacency edge)`.
 
-The positive-turn query should then avoid ordered-map lookups and avoid `sqrt`/`acos` in its expanded-state loop. Policy-dependent distance/clearance/turn multipliers remain query-time values.
+The positive-turn query therefore avoids ordered-map region/portal lookups and avoids repeated `sqrt`/`acos` geometry in its expanded-state loop. Policy-dependent distance/clearance/turn multipliers remain query-time values.
 
-This is a private representation optimization. Public API, accepted zero-turn v1 path, aperture/canyon behavior, turn semantics, and deterministic optimal-cost search remain unchanged.
+Target-machine acceptance run on commit `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
 
-Target-machine gate remains `<=40 ms p95` at 10k. If this still misses the gate, the next step is search-work reduction (bidirectional/hierarchical turn-state search), not another weak Euclidean heuristic.
+```text
+open_10k zero p95    8.4498 ms
+open_10k turn p95   12.0072 ms
+hub_10k  zero p95    8.4125 ms
+hub_10k  turn p95   11.9065 ms
+turn portals examined 329,660
+```
+
+Architecture, behavior and benchmark contracts all passed; accepted route length, turn burden and cost stayed unchanged. The pinned turn-aware gate was `<=40 ms p95`, so the implementation passes with large margin.
+
+The unchanged `329,660` transition count is useful evidence: after dense state conversion, per-transition work rather than expanded-state semantics was the practical bottleneck in this reference workload.
+
+Historical Euclidean A* remains rejected: it reduced transition work only ~1.75% while regressing 10k p95 to roughly 97 ms.
+
+This optimization changes private representation only. Public API, zero-turn v1 path, aperture/canyon behavior and static turn semantics remain unchanged.
+
+Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
+
+No further persistent static turn-search optimization is active. The next stage is `NAV-V2-LOCAL-1`: dynamic conflict assessment + local receding-horizon temporary target selection.

@@ -126,7 +126,7 @@ Current local CPU design budgets remain:
 <1.0 ms normal peak
 ```
 
-## Planned next physical-control layer
+## Planned next physical-control / docking layer
 
 `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md` is the accepted post-benchmark architecture contract.
 
@@ -138,9 +138,14 @@ The next trajectory-aware stage must add, through the authoritative flight/physi
 - rotation time before braking/vector change;
 - assisted `Elite` versus Newtonian flight behavior;
 - airplane-like / lateral / rotate-then-thrust / flip-and-burn maneuver feasibility;
-- deterministic NPC `PilotSkillProfile` for reaction delay, control smoothness, damping/overshoot, anticipation and precision.
+- precision oriented-aperture handling: a flat ship may roll into a flat slot when its oriented hull fits even if its broadphase sphere does not;
+- docking as terminal 6DoF pose matching rather than center-point arrival;
+- moving/rotating dock frames with predicted position, orientation, linear velocity and angular velocity at capture time;
+- explicit ship/dock top-bottom orientation through mating frames, including required `bottom of ship -> bottom of dock` alignment and rejection of upside-down approaches;
+- relative position, linear-speed, attitude and angular-rate tolerances for capture/latch;
+- deterministic NPC `PilotSkillProfile` for reaction delay, control smoothness, damping/overshoot, anticipation and precision, including docking corrections/go-around behavior.
 
-A low-skill NPC may genuinely oscillate or collide through delayed/poor control execution; geometry and physical capability remain truthful.
+A low-skill NPC may genuinely oscillate or collide through delayed/poor control execution; geometry, docking tolerances and physical capability remain truthful.
 
 ## Immediate next step
 

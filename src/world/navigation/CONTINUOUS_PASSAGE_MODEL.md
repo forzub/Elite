@@ -1,6 +1,6 @@
 # Navigation v2 — continuous static passage trajectory model
 
-**Status:** behavior/architecture accepted; target-machine performance gate active  
+**Status:** behavior/architecture/performance accepted; static reference frozen  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Stage:** `NAV-V2-TRAJECTORY-1`  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`, `src/world/navigation/ORIENTED_PASSAGE_MODEL.md`
@@ -58,7 +58,41 @@ navigation_trajectory_continuous_passage    PASS
 Total Test time: 0.24 sec
 ```
 
-Behavior is frozen pending the dedicated performance measurement.
+## Target-machine performance acceptance
+
+Dedicated benchmark authority:
+
+```text
+benchmarks/navigation_trajectory_continuous/RUN_LOG.md
+```
+
+Performance run used:
+
+```text
+forzub/Elite@6f85436252d36e4b586ab496efe3aea45fb25e79
+MSYS2 MinGW64 / g++ 15.2.0 / Release / Ninja
+```
+
+Measured p95:
+
+```text
+straight_newton                4.0458 us
+rolled_newton                  6.5235 us
+lateral_newton                 4.1593 us
+elite_aligned                  4.1820 us
+geometry_blocked_roll          6.5133 us
+full_precision_batch8         41.3527 us
+```
+
+Primary integration signal:
+
+```text
+full_precision_batch8 p95 = 41.3527 us = 0.04135 ms
+```
+
+The acceptance rule was `<0.5 ms typical` for the full eight-candidate precision batch. Result: **performance accepted with large margin**.
+
+Decision: freeze the static continuous verifier. Do not micro-optimize it without contrary live-runtime evidence.
 
 ## Analytic segment
 
@@ -113,7 +147,7 @@ rotationInflation <= 2 * R * sin(deltaTheta / 2)
 
 where `R` is a conservative hull rotation radius.
 
-Continuous width/height clearance therefore subtracts:
+Continuous width/height clearance subtracts:
 
 ```text
 worst endpoint center offset
@@ -139,26 +173,26 @@ lateral acceleration
 vertical acceleration
 ```
 
-Cubic-Hermite acceleration is linear inside each interval. Therefore, for a **fixed** body axis, the extrema of acceleration projection are already contained by the interval endpoints. The continuous verifier adds extra projection margin only for rotation of the body axis itself:
+Cubic-Hermite acceleration is linear inside each interval. Therefore, for a **fixed** body axis, the extrema of acceleration projection are already contained by the interval endpoints. Extra continuous projection margin is added only for rotation of the body axis itself:
 
 ```text
 axisRotationProjectionMargin
     <= maxAccelerationMagnitude * 2 * sin(deltaTheta / 2)
 ```
 
-This avoids inventing cross-axis thrust demand when, for example, only lateral acceleration changes while the hull frame is fixed. A geometrically clear trajectory can still fail as `LinearAuthorityExceeded` when the actual required body-axis authority is too large.
+This avoids inventing cross-axis thrust demand when only another acceleration component changes while the hull frame is fixed.
 
 Navigation consumes these limits from the authoritative flight/physics capability boundary; it must not invent stronger thrust.
 
 ## Angular authority
 
-The analytic orientation segment is rejected when either exact peak requirement exceeds the supplied vehicle capability:
+The analytic orientation segment is rejected when either exact peak requirement exceeds supplied vehicle capability:
 
 ```text
 AngularAuthorityExceeded
 ```
 
-The current first slice assumes the selected segment starts and ends on the smooth shortest-arc attitude law. Full arbitrary initial angular-rate trajectory synthesis remains later; the prior reachability/emergency layers already account conservatively for existing angular motion before selecting a passage pose.
+The accepted static slice assumes the selected segment starts and ends on the smooth shortest-arc attitude law. Arbitrary nonzero initial angular-rate synthesis remains later trajectory work.
 
 ## `Elite` versus `Newton`
 
@@ -170,11 +204,9 @@ Newtonian
     no artificial velocity-to-nose coupling is imposed
 
 EliteAssisted
-    the controller may impose a maximum velocity-to-forward slip angle
-    this is an assisted-control policy constraint, not extra thrust
+    controller may impose a maximum velocity-to-forward slip angle
+    this is a policy constraint, not extra thrust
 ```
-
-The accepted evaluator therefore distinguishes control semantics without duplicating the authoritative flight controller.
 
 ## Result classes
 
@@ -187,13 +219,25 @@ AssistedSlipExceeded
 InvalidInput
 ```
 
-`Feasible` means the entire supplied analytic segment has passed the static extruded-passage geometry bound plus declared vehicle-authority gates. It does not yet prove moving-obstacle or moving-dock safety.
+`Feasible` means the entire supplied analytic segment passed the static extruded-passage geometry bound plus declared vehicle-authority gates. It does not yet prove moving-obstacle or moving-dock safety.
 
 ## Relationship to emergency contact
 
 A continuous collision-free candidate is preferred.
 
-If no collision-free continuous segment survives and stopping is impossible, `EmergencyPassageMitigator` remains the fallback command source. The later emergency continuous solver will additionally rank expected contact by relative normal contact speed / impact-energy proxy so a glancing hit or ricochet is preferred over a normal impact.
+If no collision-free continuous segment survives and stopping is impossible, `EmergencyPassageMitigator` remains the command fallback. The next bounded layer is now explicitly separated:
+
+```text
+EmergencyContactSeverityScorer
+```
+
+Authority:
+
+```text
+src/world/navigation/EMERGENCY_CONTACT_SEVERITY_MODEL.md
+```
+
+That scorer ranks already-predicted unavoidable contacts by contact-point relative normal speed and impact proxies. It does **not** change this accepted static collision-free verifier and does not own CCD/TOI/contact response.
 
 `EmergencyMitigatedContact` remains explicitly non-safe; actual contact response and damage stay physics/damage authority.
 
@@ -246,7 +290,7 @@ Architecture checker:
 tests/architecture_contracts/check_navigation_trajectory_continuous_passage.py
 ```
 
-## Performance gate
+## Performance invariant
 
 The verifier is bounded and allocation-free in its hot logic:
 
@@ -258,34 +302,7 @@ no obstacle all-pairs work
 no NavigationMap/NavigationSpace ownership
 ```
 
-Dedicated benchmark:
-
-```text
-benchmarks/navigation_trajectory_continuous/
-```
-
-Primary integration scenario:
-
-```text
-full_precision_batch8
-```
-
-It executes eight complete verifier calls, matching the upstream hard `<=8` surviving precision-candidate ceiling. Scenario construction and one-time contract validation are outside the timed region.
-
-Decision rule:
-
-```text
-batch8 p95 < 0.5 ms
-    -> performance-accept and freeze this static reference
-
-0.5 ms <= batch8 p95 < 1.0 ms
-    -> acceptable normal peak; inspect scheduling/candidate ordering before changing math
-
-batch8 p95 >= 1.0 ms
-    -> optimize or introduce a stricter precision-work budget before live integration
-```
-
-This is a target-machine gate, not a portable CI timing assertion.
+Measured cost already leaves large headroom. Keep the algorithm unchanged until live composition produces contrary evidence.
 
 ## Not yet claimed
 
@@ -294,9 +311,8 @@ This continuous static slice still does not own:
 - time-varying obstacle-gap geometry;
 - arbitrary nonzero initial angular-rate synthesis inside the segment;
 - exact individual-thruster allocation;
-- collision response after an intentional emergency contact;
-- relative normal impact-energy ranking;
+- collision response after intentional emergency contact;
 - moving/rotating docking terminal capture;
 - live `EliteGame` / `EliteServer` integration.
 
-Those remain later `NAV-V2-TRAJECTORY-1` slices.
+Relative normal contact-severity ranking has moved into its own bounded candidate layer rather than remaining a missing responsibility of this verifier.

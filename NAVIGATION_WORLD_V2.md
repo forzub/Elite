@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** `NAV-V2-LOCAL-1` — local reference accepted; conservative lateral avoidance candidate
+**Current stage:** `NAV-V2-LOCAL-1` — local horizon and same-region avoidance behavior accepted; avoidance fan performance gate active
 
 Repository/branch authority is defined by `REPOSITORY_SOURCE_OF_TRUTH.md`. `main` is the only canonical game-development branch.
 
@@ -195,9 +195,9 @@ stale_1024        0.0359          0 candidates examined
 
 This loop is accepted and is not a performance bottleneck. Do not optimize it further without new runtime evidence.
 
-### 5.2 Active adjusted-target reference
+### 5.2 Same-region adjusted-target behavior — ACCEPTED
 
-`LocalAvoidancePlanner` is the first lateral-avoidance candidate. It may only act after the accepted nominal evaluation reports `ConflictHold`.
+`LocalAvoidancePlanner` may act only after the accepted nominal evaluation reports `ConflictHold`.
 
 Candidate fan:
 
@@ -216,19 +216,60 @@ A semantic NavigationSpace region is an axis-aligned free-space volume. After en
 
 This is intentionally conservative. It may reject valid portal-crossing or overlapping-region maneuvers; it must never invent free space.
 
+Fresh target-machine behavior acceptance on `bdec064d152050b4bc199b2657f14b3f577dcba3`:
+
+```text
+NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
+NAVIGATION LOCAL AVOIDANCE BOUNDARY CONTRACT: PASS
+navigation_local: PASS
+navigation_local_avoidance: PASS
+100% tests passed, 0 failed
+Total Test time: 0.06 sec
+```
+
 ### 5.3 Current-kinematics limitation
 
 The accepted closest-approach reference evaluates the ship's current P/V/A. A changed target alone cannot be claimed to erase an already predicted head-on/crossing collision. The first adjusted-target slice may clear a future swept-corridor blocker when current closest approach is still safe, but current-kinematics collision cases remain `ConflictHold` until a later trajectory-aware maneuver is demonstrated.
 
 This is a safety contract, not an algorithmic limitation to be hidden by optimistic prediction.
 
-### 5.4 Fail-closed ownership
+### 5.4 Active performance gate — bounded fan cost
+
+Behavior is accepted; performance of the multiplied probe path is now measured separately in:
+
+```text
+benchmarks/navigation_local_avoidance/
+```
+
+Pinned cases:
+
+```text
+nominal_clear_64
+    0 probes / 1 horizon evaluation
+
+early_adjust_64
+    first probe accepted
+    1 probe / 2 horizon evaluations / 2 static point queries
+
+all_static_rejected_64
+    16 static rejections
+    1 horizon evaluation / 17 static point queries
+
+all_dynamic_rejected_16/64/256/1024
+    16 statically valid probes
+    16 failed dynamic rechecks
+    17 horizon evaluations / 17 static point queries
+```
+
+`1024` is deliberate stress. No fan-performance acceptance is claimed until target-machine median/p95 output is captured.
+
+### 5.5 Fail-closed ownership
 
 If a safe local target cannot be demonstrated, the local layer reports a fail-closed result. It must not invent free space from render geometry or bypass `NavigationSpace`/`NavigationMap` authority.
 
 Pursuit is a later consumer: moving target P/V/A -> bounded intercept prediction -> reuse valid coarse branch -> local horizon. Pursuit-specific prediction is not baked into generic conflict logic.
 
-### 5.5 Planned vehicle/control fidelity
+### 5.6 Planned vehicle/control fidelity
 
 Detailed contract: `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`.
 
@@ -281,7 +322,7 @@ full/precision global solve      asynchronous only
 
 These are design budgets, not portable assertions. Numerical acceptance claims come from the user's target-machine output.
 
-The one-pass LocalHorizonPlanner reference is far below this budget even at 1024 compact candidates. The multiplied cost of the 16-probe avoidance fan is **not yet accepted** and must be measured separately after behavior acceptance.
+The one-pass LocalHorizonPlanner reference is far below this budget even at 1024 compact candidates. The multiplied cost of the 16-probe avoidance fan is the **active measurement gate**.
 
 Different layers may run at different rates. Global corridor validity is revision/event driven; local physical avoidance is receding-horizon; mass-NPC work may be staggered.
 
@@ -313,7 +354,7 @@ Useful debug data includes static regions/portals/clearance, dynamic actors P/V/
 
 1. **`NAV-V2-MAP-2` — CLOSED:** shared dynamic reduction/backend evidence.
 2. **`NAV-V2-SPACE-1` — CLOSED:** static free-space/corridor/turn-aware reference.
-3. **`NAV-V2-LOCAL-1` — ACTIVE:** horizon reference accepted; conservative same-region adjusted-target behavior/performance gate next.
+3. **`NAV-V2-LOCAL-1` — ACTIVE:** horizon reference accepted; same-region adjusted-target behavior accepted; bounded-fan performance measurement active.
 4. trajectory-aware vehicle/control feasibility: oriented hull, attitude/thrust authority, Elite/Newton behavior, head-on/crossing maneuver selection, NPC pilot skill execution.
 5. pursuit/receding-intercept consumer.
 6. raw NavigationWorld debug visualization.

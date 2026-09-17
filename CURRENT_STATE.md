@@ -3,7 +3,7 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** `NAV-V2-TRAJECTORY-1` — continuous static passage feasibility candidate
+**Active stage:** `NAV-V2-TRAJECTORY-1` — continuous static-passage performance gate
 
 ## Closed foundations
 
@@ -25,20 +25,16 @@ turn portals examined 329,660
 
 ### `NAV-V2-LOCAL-1` — CLOSED / ACCEPTED
 
-Fresh multiplied-probe target-machine evidence on `e0817d157ba5d8c9c329576236310507bda13364`:
+Multiplied-probe target-machine reference on `e0817d157ba5d8c9c329576236310507bda13364`:
 
 ```text
-scenario                     p95_us
-nominal_clear_64               1.8333
-early_adjust_64                4.2795
-all_static_rejected_64         4.2655
-all_dynamic_rejected_16       12.9500
-all_dynamic_rejected_64       35.8900
-all_dynamic_rejected_256     128.9708
-all_dynamic_rejected_1024    519.9286
+nominal_clear_64 p95               1.8333 us
+all_dynamic_rejected_64 p95       35.8900 us
+all_dynamic_rejected_256 p95     128.9708 us
+all_dynamic_rejected_1024 p95    519.9286 us
 ```
 
-The `1024 x 17` case is deliberate stress and remains inside the `<1.0 ms normal peak` budget. The deterministic 16-probe fan remains unchanged.
+The `1024 x 17` case is deliberate stress and remains inside the `<1.0 ms normal peak` budget. Keep the deterministic 16-probe fan unchanged.
 
 ## `NAV-V2-TRAJECTORY-1` — active precision/control layer
 
@@ -51,177 +47,109 @@ src/world/navigation/CONTINUOUS_PASSAGE_MODEL.md
 NAVIGATION_WORLD_V2.md
 ```
 
-Accepted isolated chain so far:
+Accepted isolated components:
 
 ```text
-ConflictHold / explicit aperture / docking corridor
-        |
-        v
 BoundedGapCandidateBuilder
-        |
-        v
 OrientedPassageEvaluator
-        |
-        v
 AttitudeReachabilityEvaluator
-        |
-        +-- collision-free entry attitude reachable
-        |      -> continuous passage proof candidate
-        |
-        +-- not reachable
-               v
 EmergencyPassageMitigator
+ContinuousPassageTrajectoryEvaluator
 ```
 
-### Oriented passage / gap / reachability — ACCEPTED
+### Bounded gap — ACCEPTED
 
-Target-machine behavior suite on `e0817d...`:
-
-```text
-navigation_trajectory_passage      PASS
-navigation_trajectory_gap          PASS
-navigation_trajectory_reachability PASS
-100% tests passed, 0 failed
-```
-
-Bounded gap performance is accepted. Worst measured stress:
+Worst deliberate stress:
 
 ```text
 top8_1024 p95 = 24.0699 us = 0.0241 ms
 ```
 
-Do not micro-optimize this builder without contrary runtime evidence.
-
 ### Emergency passage mitigation — ACCEPTED
 
-Fresh target-machine gate on `b29a03d3d84f4d6575cbbc5166cbd7547b5ce0d8`:
+Target-machine acceptance on `b29a03d3d84f4d6575cbbc5166cbd7547b5ce0d8`:
 
 ```text
 NAVIGATION TRAJECTORY BOUNDED GAP CONTRACT: PASS
 NAVIGATION TRAJECTORY EMERGENCY PASSAGE CONTRACT: PASS
+4/4 trajectory CTest PASS
+```
 
-navigation_trajectory_passage              PASS
-navigation_trajectory_gap                  PASS
-navigation_trajectory_reachability         PASS
-navigation_trajectory_emergency_passage    PASS
+Accepted invariant:
+
+```text
+no collision-free proof != no navigation command
+```
+
+If stopping is impossible, `EmergencyMitigatedContact` remains an explicitly non-safe control intent. Physics/collision owns actual contact/ricochet and damage owns consequences.
+
+### Continuous static passage — BEHAVIOR ACCEPTED
+
+Fresh target-machine gate on `574a2e98fd7a75ebf562bbfa476fba367fb888d1`:
+
+```text
+NAVIGATION TRAJECTORY CONTINUOUS PASSAGE CONTRACT: PASS
+
+navigation_trajectory_passage               PASS
+navigation_trajectory_gap                   PASS
+navigation_trajectory_reachability          PASS
+navigation_trajectory_emergency_passage     PASS
+navigation_trajectory_continuous_passage    PASS
 
 100% tests passed, 0 failed
-Total Test time: 0.18 sec
+Total Test time: 0.24 sec
 ```
 
-Accepted emergency semantic:
+The accepted verifier checks one analytic static/extruded passage segment:
 
 ```text
-safe route unavailable
-    != navigation disabled
+center translation: cubic Hermite start P/V -> end P/V
+attitude: shortest-arc smoothstep rotation
+33 pose samples
+32 conservative continuous interval proofs
 ```
 
-Priority remains:
+Continuous safety is not sample-only. Every interval includes:
 
 ```text
-safe collision-free maneuver
-    -> stop before contact if physically possible
-    -> otherwise keep navigation/control active and minimize the unavoidable hit
+center curve deviation <= M * dt^2 / 8
+rotation sweep inflation <= 2 * R * sin(deltaTheta / 2)
 ```
 
-`EmergencyMitigatedContact` is an explicitly non-safe but valid control intent:
+Physical gates include forward/reverse/lateral/vertical acceleration plus angular speed/acceleration. `Newtonian` permits velocity/attitude divergence; `EliteAssisted` keeps the same physical authority plus a supplied slip-angle policy.
+
+## Active performance gate
+
+Dedicated harness:
 
 ```text
-maximum useful braking
-+ aim toward gap center
-+ desired travel along passage axis
-+ best physically reachable hull attitude
-+ contact / ricochet expected
+benchmarks/navigation_trajectory_continuous/
 ```
 
-Actual contact impulse, ricochet, damage, detach and post-impact truth remain physics/damage authority.
-
-## New continuous passage candidate — PENDING TARGET-MACHINE GATE
-
-New code:
+Scenarios:
 
 ```text
-src/world/navigation/trajectory/ContinuousPassageTrajectoryEvaluator.h
-src/world/navigation/trajectory/ContinuousPassageTrajectoryEvaluator.cpp
+straight_newton
+rolled_newton
+lateral_newton
+elite_aligned
+geometry_blocked_roll
+full_precision_batch8
 ```
 
-New contract:
+`full_precision_batch8` mirrors the upstream hard `<=8` surviving precision-candidate ceiling and is the primary integration signal.
+
+Decision rule:
 
 ```text
-src/world/navigation/CONTINUOUS_PASSAGE_MODEL.md
+batch8 p95 < 0.5 ms  -> freeze static continuous verifier
+batch8 p95 < 1.0 ms  -> acceptable normal peak; inspect scheduling/order before math changes
+batch8 p95 >= 1.0 ms -> optimize/budget before live integration
 ```
 
-Purpose: verify one complete bounded static-passage maneuver rather than only entry pose.
+## Docking continuation
 
-Candidate analytic motion:
-
-```text
-center: cubic Hermite
-    start P/V -> end P/V
-
-attitude: shortest-arc smooth rotation
-    s(u) = 3u^2 - 2u^3
-```
-
-Continuous geometry is not accepted from point samples alone. The fixed `33` pose partition is supplemented on every interval with conservative bounds for:
-
-```text
-center-curve deviation <= M * dt^2 / 8
-oriented-hull rotational inflation <= 2 * R * sin(deltaTheta / 2)
-```
-
-Therefore both endpoint poses may fit while an intermediate rotating hull still causes `GeometryBlocked`.
-
-Vehicle capability gates:
-
-```text
-forward acceleration
-reverse / braking acceleration
-lateral acceleration
-vertical acceleration
-angular acceleration
-angular speed
-```
-
-Required map-space acceleration is projected into body axes and conservatively bounded between samples.
-
-Control semantics:
-
-```text
-Newtonian
-    velocity and hull attitude may diverge
-
-EliteAssisted
-    same physical thrust limits
-    plus controller-policy velocity-to-forward slip-angle bound
-```
-
-Result classes:
-
-```text
-Feasible
-GeometryBlocked
-LinearAuthorityExceeded
-AngularAuthorityExceeded
-AssistedSlipExceeded
-InvalidInput
-```
-
-This first continuous slice is static/extruded-passage only. Moving gaps, arbitrary angular-rate synthesis, impact-energy ranking and moving/rotating docking remain later.
-
-## Docking remains part of the same trajectory layer
-
-Docking remains terminal 6DoF pose/motion matching against a possibly moving/rotating port:
-
-```text
-relative position
-relative linear velocity
-relative attitude
-relative angular velocity
-explicit mating frame / top-bottom convention
-```
-
-`bottom of ship -> bottom of dock` remains explicit. A rotating port includes:
+Docking remains terminal relative 6DoF pose/motion matching against a stationary/moving/rotating port with explicit mating frames and `bottom of ship -> bottom of dock` orientation. For a rotating port:
 
 ```text
 v_port = v_origin + omega x r
@@ -229,11 +157,9 @@ v_port = v_origin + omega x r
 
 ## Immediate next step
 
-Target-machine gate for the new continuous candidate:
-
 ```bash
-python tests/architecture_contracts/check_navigation_trajectory_continuous_passage.py
-bash tests/navigation_trajectory/run_mingw64.sh
+python tests/architecture_contracts/check_navigation_trajectory_continuous_benchmark.py
+bash benchmarks/navigation_trajectory_continuous/run_mingw64.sh
 ```
 
-If green: benchmark the continuous verifier, then add emergency ranking by relative normal contact speed / impact-energy proxy and extend the same time-varying pose machinery toward moving gaps/docking.
+After performance acceptance: extend emergency selection with relative normal contact-speed / impact-energy ranking, then move to time-varying gaps and moving/rotating docking.

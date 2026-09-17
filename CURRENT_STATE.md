@@ -3,7 +3,7 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** `NAV-V2-LOCAL-1` — local reference accepted; conservative lateral avoidance candidate pending behavior gate
+**Active stage:** `NAV-V2-LOCAL-1` — local reference accepted; conservative lateral avoidance candidate pending behavior rerun
 
 ## Accepted Navigation v2 ownership
 
@@ -23,11 +23,15 @@ GPU
 
 `RuckigTrajectorySolver` remains downstream local kinematics, not path search.
 
-## `NAV-V2-MAP-2` — CLOSED
+## Closed stages
+
+### `NAV-V2-MAP-2` — CLOSED
 
 Accepted 10k evidence includes CPU compact candidate queries below `0.2 ms p95` and GPU dynamic total below `1.7 ms p95` on the target machine.
 
-## `NAV-V2-SPACE-1` — CLOSED / ACCEPTED
+Current dynamic broadphase actor geometry is radius + conservative swept sphere. This is safe/cheap but not final oriented-hull maneuver fidelity.
+
+### `NAV-V2-SPACE-1` — CLOSED / ACCEPTED
 
 Final accepted turn-aware target-machine evidence on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
 
@@ -39,16 +43,9 @@ hub_10k  turn p95   11.9065 ms
 turn portals examined 329,660
 ```
 
-Pinned gate was `<=40 ms p95`. Static turn-aware search is accepted. Published dense region/portal state, per-edge geometry/clearance and precomputed turn angles are the accepted reference. Do not continue static turn optimization without new runtime evidence.
+Pinned gate was `<=40 ms p95`. Static turn-aware search is accepted. Do not continue static turn optimization without new runtime evidence.
 
-## `NAV-V2-LOCAL-1` — REFERENCE ACCEPTED
-
-Behavior gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
-
-```text
-NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
-navigation_local: PASS
-```
+## `NAV-V2-LOCAL-1` — horizon reference accepted
 
 Accepted local horizon semantics:
 
@@ -62,71 +59,86 @@ agent P/V/A + result age
         v
 bounded dynamic conflict assessment
         |
-        v
-receding-horizon temporary target
-        |
         +-> Clear / PassThrough
         +-> Clear / Terminal
         +-> ConflictHold
         +-> StaleHold
 ```
 
-### Compact-candidate performance — ACCEPTED
-
-Target-machine measurement on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
+Target-machine compact-candidate scaling on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
 
 ```text
-scenario         p95_us     p95_ns/candidate
-clear_16          0.4814          30.0873
-clear_64          1.8327          28.6362
-clear_256         7.9820          31.1798
-clear_1024       36.9641          36.0977
-
-conflict_16       0.5073          31.7062
-conflict_64       1.9333          30.2078
-conflict_256      7.5441          29.4693
-conflict_1024    31.8656          31.1188
-
-stale_1024        0.0359          0 candidates examined
+clear_1024 p95       36.9641 us
+conflict_1024 p95    31.8656 us
+stale_1024 p95        0.0359 us / 0 candidates examined
 ```
 
-Even the artificial 1024-candidate stress case is below `0.037 ms p95`. The one-pass local reference is not a performance problem and should not be optimized further without new evidence.
-
-Raw evidence: `benchmarks/navigation_local/RUN_LOG.md`.
+The one-pass local reference is not a CPU bottleneck.
 
 ## Active candidate — conservative same-region lateral avoidance
 
-`LocalAvoidancePlanner` is now on `main` as the first adjusted-target slice.
-
-It owns no second world or spatial state. It consumes:
-
-- accepted `LocalHorizonPlanner`;
-- compact `NavigationMap::QueryResult`;
-- public `NavigationSpace::queryPoint()` static checks.
-
-For a nominal `ConflictHold` it probes a bounded deterministic 3D fan:
+`LocalAvoidancePlanner` probes at most 16 deterministic directions after nominal `ConflictHold`:
 
 ```text
 15 deg ring x 8 azimuths
 30 deg ring x 8 azimuths
-maximum = 16 target probes
 ```
 
-A lateral target is considered statically proven only when both current agent point and target are envelope-safe and resolve to the same NavigationSpace region. Because one semantic region is a convex AABB, the whole straight segment then remains inside that free-space region.
+Each adjusted target must:
 
-The candidate is intentionally conservative:
+- be traversable for the current envelope;
+- resolve to the same NavigationSpace region as the start point;
+- use the same space/source revision as the start static evidence;
+- pass the accepted compact-dynamic recheck.
 
-- a valid portal-crossing maneuver can be rejected;
-- stale dynamic data remains `StaleHold` before avoidance work;
-- non-traversable static start becomes `StaticHold`;
-- current-kinematics head-on/crossing conflicts remain `ConflictHold`;
-- only a conflict that can be cleared by a statically proven target and the accepted dynamic reference becomes `AdjustedClear / PassThrough`.
+This is deliberately conservative. Portal-crossing avoidance may be rejected. Current-kinematics head-on/crossing remains fail-closed until a trajectory-aware maneuver is actually demonstrated.
 
-Status: **pending target-machine compile + architecture + behavior gate**. No avoidance performance or production acceptance is claimed yet.
+### Latest target-machine run
+
+Run on `f27006ccbba1a6faaa3d3000dedf8d8dee5f02e8` did **not** execute the avoidance behavior binary:
+
+```text
+horizon architecture check
+    FAIL on stale exact README phrase
+
+avoidance architecture check
+    PASS
+
+navigation_local
+    PASS
+
+navigation_local_avoidance
+    NOT RUN: executable absent
+```
+
+Root cause was test infrastructure:
+
+- old horizon checker was coupled to wording that had changed without ownership changing;
+- runner built only the historical `navigation_local_tests` target even though CTest registered the new avoidance executable.
+
+Both infrastructure defects are fixed on current `main`: semantic ownership is pinned and the runner builds all registered local test executables.
+
+Avoidance behavior remains **pending rerun**, not failed.
+
+## Planned next physical-control layer
+
+`src/world/navigation/TRAJECTORY_CONTROL_MODEL.md` now records the post-avoidance trajectory/control contract.
+
+Current local navigation uses center P/V/A + radius/swept sphere. The future trajectory-aware layer must add, through the authoritative flight/physics boundary:
+
+- hull dimensions / oriented collision proxy;
+- attitude and angular state;
+- body-axis/thruster acceleration authority;
+- rotation time before braking or thrust-vector change;
+- assisted `Elite` versus free Newtonian control behavior;
+- airplane-like, lateral, rotate-then-thrust and flip-and-burn maneuver feasibility;
+- deterministic NPC `PilotSkillProfile` parameters such as reaction delay, decision rate, input smoothing, damping/overshoot and precision.
+
+A low-skill NPC may therefore genuinely oscillate or collide because it reacts late or controls poorly; world geometry and vehicle dimensions must never be falsified to simulate incompetence.
 
 ## Immediate next step
 
-Run:
+Rerun:
 
 ```bash
 python tests/architecture_contracts/check_navigation_local_boundary.py
@@ -134,4 +146,4 @@ python tests/architecture_contracts/check_navigation_local_avoidance.py
 bash tests/navigation_local/run_mingw64.sh
 ```
 
-If PASS, benchmark the multiplied avoidance probe cost separately before any live game/server integration.
+If PASS, measure the multiplied avoidance probe cost before implementing the trajectory-aware layer.

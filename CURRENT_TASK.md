@@ -3,88 +3,90 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-LOCAL-1` — behavior accepted; compact-candidate performance measurement pending
+**Stage:** `NAV-V2-LOCAL-1` — compact-candidate scaling accepted; conservative lateral avoidance behavior gate pending
 
-## Closed behavior gate
+## Closed local reference gates
 
-Fresh target-machine result on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
+`LocalHorizonPlanner` behavior is accepted:
 
 ```text
 NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
-navigation_local: 1/1 PASS
-100% tests passed, 0 failed
-Total Test time = 0.05 sec
+navigation_local: PASS
 ```
 
-The initial local ownership/safety boundary is therefore **behavior-accepted**.
-
-Accepted reference semantics:
+Target-machine compact-candidate scaling on `4b94048b15e6e2cd32754b6b8d48daedcb18625f` is also accepted:
 
 ```text
-NavigationSpace / upstream route intent
-        +
-compact NavigationMap::QueryResult
-        +
-agent P/V/A + result age
+scenario         p95_us     p95_ns/candidate
+clear_16          0.4814          30.0873
+clear_64          1.8327          28.6362
+clear_256         7.9820          31.1798
+clear_1024       36.9641          36.0977
+
+conflict_16       0.5073          31.7062
+conflict_64       1.9333          30.2078
+conflict_256      7.5441          29.4693
+conflict_1024    31.8656          31.1188
+
+stale_1024        0.0359          0 candidates examined
+```
+
+Decision: the reference candidate loop is not the bottleneck. Do not optimize it further without new runtime evidence.
+
+## Active candidate now on `main`
+
+New backend-neutral block inside the accepted local layer:
+
+```text
+src/world/navigation/local/
+    LocalAvoidancePlanner.h
+    LocalAvoidancePlanner.cpp
+
+tests/navigation_local/
+    NavigationLocalAvoidanceTests.cpp
+
+tests/architecture_contracts/
+    check_navigation_local_avoidance.py
+```
+
+`LocalAvoidancePlanner` composes, but does not replace, the accepted `LocalHorizonPlanner`.
+
+### Reference algorithm
+
+When the nominal local result is already `Clear`, it is returned unchanged with zero avoidance probes. `StaleHold` also exits before probes.
+
+For `ConflictHold`:
+
+```text
+NavigationSpace::queryPoint(agent)
         |
         v
-bounded LocalHorizonPlanner
+3D deterministic lateral fan
+    15 deg x 8 azimuths
+    30 deg x 8 azimuths
         |
-        +-> Clear / PassThrough
-        +-> Clear / Terminal
-        +-> ConflictHold
-        +-> StaleHold
+        v
+NavigationSpace::queryPoint(candidate target)
+        |
+        +-- different/non-traversable region -> reject
+        |
+        v
+same-region static proof
+        |
+        v
+LocalHorizonPlanner dynamic recheck
+        |
+        +-- first Clear -> AdjustedClear / PassThrough
+        +-- none Clear  -> ConflictHold
 ```
 
-No second NavigationWorld, full actor-table scan, renderer/game dependency or unverified lateral bypass is allowed inside this block.
+The same-region condition is deliberate: a semantic NavigationSpace region is a convex AABB. Two envelope-safe endpoints in the same region prove the straight segment remains inside that static free-space volume.
 
-## Candidate now on `main`
+### Important safety limit
 
-Dedicated downstream scaling harness:
+The accepted closest-approach reference uses the ship's **current** P/V/A. Therefore a lateral target may clear a future swept-corridor blocker, but it may not erase a currently predicted head-on/crossing conflict. Such conflicts remain fail-closed `ConflictHold` until a later trajectory-aware maneuver is separately demonstrated.
 
-```text
-benchmarks/navigation_local/
-    CMakeLists.txt
-    main.cpp
-    README.md
-    RUN_LOG.md
-    run_mingw64.sh
-
-tests/architecture_contracts/check_navigation_local_benchmark.py
-```
-
-It measures only `LocalHorizonPlanner::evaluate()` over already reduced compact candidates. It deliberately does not rerun full-world NavigationMap broadphase.
-
-Pinned candidate counts:
-
-```text
-clear:     0 / 16 / 64 / 256 / 1024
-conflict:     16 / 64 / 256 / 1024
-stale:                           1024
-```
-
-`1024` is a stress scale for the local consumer, not an expected normal candidate count.
-
-Measured per scenario:
-
-```text
-median_us
-p95_us
-p95_ns_per_candidate
-candidates_examined
-conflicts_found
-status
-```
-
-The harness batches calls so microsecond-scale measurements are not dominated by clock overhead. Scenario/vector construction occurs outside the timed region.
-
-Expected semantic checks inside the benchmark:
-
-```text
-clear_*       -> Clear, conflictsFound == 0
-conflict_*    -> ConflictHold, conflictsFound >= 1
-stale_1024    -> StaleHold, candidatesExamined == 0
-```
+No portal-crossing bypass is accepted yet. A valid portal maneuver may be conservatively rejected.
 
 ## RUN NOW
 
@@ -98,23 +100,20 @@ git merge --ff-only origin/main
 git rev-parse HEAD
 
 python tests/architecture_contracts/check_navigation_local_boundary.py
+python tests/architecture_contracts/check_navigation_local_avoidance.py
 bash tests/navigation_local/run_mingw64.sh
-
-python tests/architecture_contracts/check_navigation_local_benchmark.py
-bash benchmarks/navigation_local/run_mingw64.sh
 ```
 
 Send the complete output.
 
-## Decision after benchmark
+## Decision after behavior gate
 
-This first local benchmark is a measurement gate, not a fabricated optimization target.
+If architecture + both local test executables PASS:
 
-Interpretation order:
+1. accept the same-region avoidance behavior slice;
+2. add a dedicated avoidance benchmark that measures multiplied probe work separately from the already accepted one-pass reference;
+3. measure nominal-clear, early-adjust, all-static-rejected and all-dynamic-rejected cases on the target machine;
+4. only then decide whether the 16-probe fan is cheap enough as-is or needs probe ordering/candidate budgeting changes;
+5. after that, design the trajectory-aware path for head-on/crossing conflicts.
 
-1. verify clear/conflict cost slope against supplied compact-candidate count;
-2. verify `stale_1024` remains O(1) and examines zero candidates;
-3. compare measured p95 with the Navigation v2 frame-budget context (`<0.5 ms` typical main-thread work, `<1.0 ms` normal peak);
-4. only then choose the first adjusted-target / lateral-avoidance algorithm and its candidate budget.
-
-Do not optimize the reference loop, wire live `EliteGame` / `EliteServer`, or add pursuit-specific intercept logic before this measurement is recorded.
+Do not wire live `EliteGame` / `EliteServer`, add pursuit-specific intercept logic, or claim head-on avoidance before these gates pass.

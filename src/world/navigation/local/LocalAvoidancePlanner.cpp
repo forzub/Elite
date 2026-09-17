@@ -19,11 +19,6 @@ bool finite(double value) noexcept
     return std::isfinite(value);
 }
 
-bool finite(const Vec3d& value) noexcept
-{
-    return finite(value.x) && finite(value.y) && finite(value.z);
-}
-
 Vec3d add(const Vec3d& a, const Vec3d& b) noexcept
 {
     return {a.x + b.x, a.y + b.y, a.z + b.z};
@@ -213,6 +208,14 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
 
             result.spaceRevision = targetStatic.spaceRevision;
             result.spaceSourceRevision = targetStatic.sourceRevision;
+
+            // Do not combine static evidence from two different publications.
+            if (targetStatic.spaceRevision != start.spaceRevision ||
+                targetStatic.sourceRevision != start.sourceRevision)
+            {
+                result.status = Status::StaticHold;
+                return result;
+            }
 
             // Same-region proof is intentionally conservative. Region free space
             // is an AABB and therefore convex; if both envelope-safe endpoints

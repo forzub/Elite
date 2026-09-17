@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** `NAV-V2-TRAJECTORY-1` — emergency mitigation accepted; continuous static-passage candidate pending gate
+**Current stage:** `NAV-V2-TRAJECTORY-1` — continuous static-passage behavior accepted; performance gate active
 
 Repository/branch authority is defined by `REPOSITORY_SOURCE_OF_TRUTH.md`. `main` is the only canonical game-development branch.
 
@@ -264,41 +264,13 @@ src/world/navigation/trajectory/BoundedGapCandidateBuilder.h/.cpp
 
 Project invariant: two nearby obstacles may create **positive free space between them**.
 
-The builder accepts:
-
-```text
-one already-known primary conflict
-x already-reduced local neighbors
-```
-
-and returns at most:
-
-```text
-8 deterministic ObstacleGap candidates
-```
-
-Explicitly rejected:
-
-```text
-global all-pairs scan
-neighbor-neighbor pair discovery
-mixed snapshot evidence
-overlapping conservative bounds inventing a gap
-front/back pairs masquerading as a transverse slot
-```
+The builder accepts one already-known primary conflict against already-reduced local neighbors and returns at most eight deterministic `ObstacleGap` candidates. Global all-pairs, neighbor-neighbor discovery, mixed snapshot evidence, overlapping bounds inventing a gap, and front/back pairs masquerading as transverse slots are rejected.
 
 Target-machine bounded-gap performance on `e0817d...`:
 
 ```text
 scenario       p95_us
-reject_16       0.2459
-reject_64       0.7550
-reject_256      4.6499
 reject_1024    11.6730
-
-top8_16         0.7883
-top8_64         1.8260
-top8_256        6.3609
 top8_1024      24.0699
 ```
 
@@ -319,8 +291,6 @@ src/world/navigation/trajectory/AttitudeReachabilityEvaluator.h/.cpp
 ```
 
 A passage may fit geometrically but the requested collision-free entry attitude may be too late.
-
-Inputs include current/required attitude, current angular velocity, angular acceleration/rate authority, distance to entry, closing speed and longitudinal braking authority.
 
 Result classes:
 
@@ -349,17 +319,13 @@ closing speed            = 10 m/s
 
 ### 6.4 Initial target-machine behavior evidence
 
-On `e0817d...` the then-registered suite passed:
+On `e0817d...` the first three trajectory fixtures passed:
 
 ```text
 navigation_trajectory_passage      PASS
 navigation_trajectory_gap          PASS
 navigation_trajectory_reachability PASS
-100% tests passed, 0 failed
-Total Test time: 0.12 sec
 ```
-
-The one bounded-gap architecture failure was only a stale exact Markdown marker while C++ behavior passed. The checker now asserts stable invariants instead.
 
 ### 6.5 Emergency passage / contact mitigation — ACCEPTED
 
@@ -383,51 +349,19 @@ Emergency priority:
 3. otherwise minimize impact severity and keep useful progress
 ```
 
-Current bounded intent:
-
-```text
-maximum useful braking
-aim at gap center
-desired travel along passage axis
-choose best physically reachable hull attitude
-explicit expected-contact result when unavoidable
-```
-
-Result classes:
-
-```text
-SafeEntryPose
-EmergencyStopBeforeEntry
-EmergencyMitigatedContact
-InvalidInput
-```
-
-`EmergencyMitigatedContact` is a valid navigation/control command, but **never** a safe/`Clear` result.
-
-The first implementation samples exactly 17 physically reachable attitudes along the shortest arc toward the preferred passage pose and scores them by passage clearance / geometric deficit. Equal-severity poses prefer greater correction toward the passage attitude.
-
-If stopping before the passage is physically possible, intentional contact is rejected in favor of `EmergencyStopBeforeEntry`.
-
-If stopping and collision-free entry are both impossible, contact/ricochet is allowed as a least-severity outcome. Physics/collision owns exact CCD/TOI/contact impulse/ricochet; damage/structural owns consequences. The next navigation solve consumes the actual post-impact state.
+`EmergencyMitigatedContact` is a valid navigation/control command, but **never** a safe/`Clear` result. If stopping and collision-free entry are both impossible, contact/ricochet is allowed as a least-severity outcome. Physics/collision owns exact contact response; damage owns consequences.
 
 Fresh target-machine acceptance on `b29a03d3d84f4d6575cbbc5166cbd7547b5ce0d8`:
 
 ```text
 NAVIGATION TRAJECTORY BOUNDED GAP CONTRACT: PASS
 NAVIGATION TRAJECTORY EMERGENCY PASSAGE CONTRACT: PASS
-
-navigation_trajectory_passage              PASS
-navigation_trajectory_gap                  PASS
-navigation_trajectory_reachability         PASS
-navigation_trajectory_emergency_passage    PASS
-
-100% tests passed, 0 failed
-Total Test time: 0.18 sec
+4/4 trajectory CTest PASS
 ```
 
 Current emergency scoring is geometric. A later continuous emergency scorer must also minimize predicted **relative normal contact speed / impact-energy proxy**.
 
-### 6.6 Continuous static-passage verifier — PENDING TARGET-MACHINE GATE
+### 6.6 Continuous static-passage verifier — BEHAVIOR ACCEPTED
 
 Implementation:
 
@@ -441,7 +375,7 @@ Detailed contract:
 src/world/navigation/CONTINUOUS_PASSAGE_MODEL.md
 ```
 
-The candidate verifies one complete bounded maneuver through a static/extruded passage.
+The verifier checks one complete bounded maneuver through a static/extruded passage.
 
 Analytic translation:
 
@@ -457,13 +391,6 @@ shortest orientation arc
 s(u) = 3u^2 - 2u^3
 ```
 
-Exact peak angular requirements for this candidate law are:
-
-```text
-omega_peak = 1.5 * angle / T
-alpha_peak = 6.0 * angle / T^2
-```
-
 The fixed partition is:
 
 ```text
@@ -471,29 +398,16 @@ The fixed partition is:
 32 continuous interval proofs
 ```
 
-Point samples alone are not accepted as continuous collision proof. Every interval includes conservative bounds for:
+Point samples alone are not accepted as continuous collision proof. Every interval includes conservative bounds for center-curve deviation and oriented-hull rotation:
 
 ```text
 center curve deviation <= M * dt^2 / 8
 oriented hull rotation inflation <= 2 * R * sin(deltaTheta / 2)
 ```
 
-Therefore a trajectory can fail `GeometryBlocked` even when both endpoint poses individually fit.
+Declared physical authority is checked separately for forward/reverse/lateral/vertical acceleration plus angular speed/acceleration. Cubic-Hermite acceleration is linear within each interval, so fixed-axis projection extrema are contained at the endpoints; additional continuous body-axis projection margin comes only from rotation of the body frame.
 
-Declared physical authority is checked separately for:
-
-```text
-forward acceleration
-reverse/braking acceleration
-lateral acceleration
-vertical acceleration
-angular speed
-angular acceleration
-```
-
-Cubic-Hermite acceleration is linear within each interval. Fixed-axis projection extrema are therefore contained at the interval endpoints; the additional continuous body-axis projection margin comes only from rotation of the body frame. This avoids inventing cross-axis thrust demand.
-
-Control-mode semantics:
+Control-mode semantics remain separate:
 
 ```text
 Newtonian
@@ -504,24 +418,42 @@ EliteAssisted
     plus supplied velocity-to-forward slip-angle policy
 ```
 
-Assisted mode does not manufacture additional acceleration authority.
-
-Result classes:
+Fresh target-machine acceptance on `574a2e98fd7a75ebf562bbfa476fba367fb888d1`:
 
 ```text
-Feasible
-GeometryBlocked
-LinearAuthorityExceeded
-AngularAuthorityExceeded
-AssistedSlipExceeded
-InvalidInput
+NAVIGATION TRAJECTORY CONTINUOUS PASSAGE CONTRACT: PASS
+5/5 navigation_trajectory CTest PASS
+100% tests passed, 0 failed
+Total Test time: 0.24 sec
 ```
 
-Current pinned tests include straight feasible passage, endpoint-fit/intermediate-roll collision, sufficient/insufficient lateral authority, angular-rate rejection, Newtonian velocity-attitude divergence versus assisted slip policy, and invalid duration.
+Behavior is frozen pending measured cost.
 
-This slice does not yet claim moving-gap safety, arbitrary initial angular-rate synthesis, exact thruster allocation, moving docking capture or emergency impact-energy ranking.
+### 6.7 Continuous verifier performance gate — ACTIVE
 
-### 6.7 Performance invariant
+Harness:
+
+```text
+benchmarks/navigation_trajectory_continuous/
+```
+
+It measures complete verifier paths plus:
+
+```text
+full_precision_batch8
+```
+
+The eight-query batch mirrors the upstream hard `<=8` surviving precision-candidate ceiling. Query construction and one-time contract validation are outside the timed region.
+
+Decision rule:
+
+```text
+batch8 p95 < 0.5 ms  -> performance-accept and freeze verifier
+batch8 p95 < 1.0 ms  -> acceptable peak; inspect scheduling/order before math changes
+batch8 p95 >= 1.0 ms -> optimize/budget before live integration
+```
+
+### 6.8 Performance invariant
 
 The ordinary fast path must remain unaware of expensive precision work unless it is needed.
 
@@ -650,21 +582,7 @@ Manual guidance visualizes the accepted corridor/trajectory/control intent actua
 
 Ordinary `F12` keeps Hub/local presentation. `Shift+F12` toggles Hub render <-> raw NavigationWorld Debug. Debug consumes the same completed snapshot used by navigation/control and must not force synchronous readback/replanning.
 
-Useful debug data includes:
-
-```text
-static regions / portals / clearance
-dynamic P/V/A / swept bounds
-local horizon / conflict set
-adjusted target
-gap candidates / chosen gap
-selected hull attitude
-attitude reachability margin
-continuous trajectory status / clearance bound / authority requirement
-emergency status / predicted contact expectation
-recommended braking / gap-center aim / passage-axis travel
-snapshot generation / age
-```
+Useful debug data includes static regions/portals/clearance, dynamic P/V/A/swept bounds, local horizon/conflict set, adjusted target, gap candidates, chosen hull attitude, attitude reachability, continuous trajectory status/clearance/authority requirement, emergency status/contact expectation, braking/aim/travel intent, and snapshot generation/age.
 
 Later debug should also expose moving-gap state, relative normal contact speed, moving docking frame and pilot/controller execution state.
 
@@ -673,8 +591,8 @@ Later debug should also expose moving-gap state, relative normal contact speed, 
 1. **`NAV-V2-MAP-2` — CLOSED.**
 2. **`NAV-V2-SPACE-1` — CLOSED.**
 3. **`NAV-V2-LOCAL-1` — CLOSED.** Horizon + same-region avoidance + multiplied fan performance accepted.
-4. **`NAV-V2-TRAJECTORY-1` — ACTIVE.** Oriented passage, bounded gaps, attitude reachability and emergency mitigation accepted; continuous static-passage verifier pending target-machine gate.
-5. benchmark the accepted continuous verifier before optimizing it.
+4. **`NAV-V2-TRAJECTORY-1` — ACTIVE.** Oriented passage, bounded gaps, attitude reachability, emergency mitigation and continuous static-passage behavior accepted.
+5. continuous static-passage performance gate using the eight-candidate precision ceiling.
 6. emergency ranking by relative normal contact speed / impact-energy proxy.
 7. moving/time-varying obstacle gaps.
 8. moving/rotating terminal docking + NPC execution skill.

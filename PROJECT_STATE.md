@@ -1,9 +1,9 @@
 # Project State
 
 **Updated:** 2026-09-17 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / local avoidance performance + trajectory precision fallback  
+**Current focus:** NavigationWorld v2 / trajectory precision + emergency impact mitigation  
 **Canonical development branch:** `main`  
-**Active stage:** `NAV-V2-LOCAL-1`
+**Active stage:** `NAV-V2-TRAJECTORY-1`
 
 ## Navigation v2 direction
 
@@ -18,7 +18,7 @@ CPU: static free-space, portals, corridor search, deterministic precision/local 
 GPU: dynamic P/V/A prediction, swept bounds, spatial bins, conflict reduction
 ```
 
-Moving-goal pursuit is specified in `src/world/navigation/PURSUIT_HORIZON.md`; runtime pursuit remains later.
+Moving-goal pursuit remains later.
 
 ## `NAV-V2-MAP-2` — CLOSED
 
@@ -40,164 +40,162 @@ turn portals examined    329,660
 
 Static turn search is closed.
 
-## `NAV-V2-LOCAL-1` — behavior accepted / timing pending
+## `NAV-V2-LOCAL-1` — CLOSED / ACCEPTED
 
-Accepted compact-candidate scaling on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
-
-```text
-clear_1024 p95       36.9641 us
-conflict_1024 p95    31.8656 us
-stale_1024 p95        0.0359 us / 0 candidates examined
-```
-
-Accepted `LocalAvoidancePlanner` behavior on `bdec064d152050b4bc199b2657f14b3f577dcba3`:
+Behavior and compact-candidate scaling were already accepted. Fresh multiplied-probe target-machine evidence on `e0817d157ba5d8c9c329576236310507bda13364`:
 
 ```text
-NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
-NAVIGATION LOCAL AVOIDANCE BOUNDARY CONTRACT: PASS
-navigation_local: PASS
-navigation_local_avoidance: PASS
+scenario                     p95_us
+nominal_clear_64               1.8333
+early_adjust_64                4.2795
+all_static_rejected_64         4.2655
+all_dynamic_rejected_16       12.9500
+all_dynamic_rejected_64       35.8900
+all_dynamic_rejected_256     128.9708
+all_dynamic_rejected_1024    519.9286
 ```
 
-The active local performance gate remains:
+The `1024 x 17` case is deliberate stress and still fits the `<1.0 ms normal peak` local budget. The deterministic 16-probe fan is retained unchanged.
+
+Authority:
 
 ```text
-benchmarks/navigation_local_avoidance/
+benchmarks/navigation_local_avoidance/RUN_LOG.md
 ```
 
-Local CPU budget:
-
-```text
-<0.5 ms typical
-<1.0 ms normal peak
-```
-
-## Trajectory precision fallback — prepared candidates, not yet accepted
+## `NAV-V2-TRAJECTORY-1` — active isolated precision stage
 
 Architecture authorities:
 
 ```text
-src/world/navigation/TRAJECTORY_CONTROL_MODEL.md
 src/world/navigation/ORIENTED_PASSAGE_MODEL.md
+src/world/navigation/TRAJECTORY_CONTROL_MODEL.md
+NAVIGATION_WORLD_V2.md
 ```
 
-Prepared chain:
+Current chain:
 
 ```text
 ConflictHold / explicit aperture / docking corridor
         |
         v
 BoundedGapCandidateBuilder
-    one primary conflict + reduced neighbors
+    primary conflict x reduced neighbors
     hard cap 8
     no all-pairs scan
         |
         v
 OrientedPassageEvaluator
-    O(1) real oriented hull fit
+    oriented OBB entry fit
         |
         v
 AttitudeReachabilityEvaluator
-    O(1) angular timing + longitudinal room
+    collision-free requested attitude reachable in time?
         |
-        v
-later continuous 6DoF swept-body proof
+        +-- yes -> later continuous safe 6DoF proof
+        |
+        +-- no
+              v
+EmergencyPassageMitigator
+    brake / center / passage-axis intent
+    best reachable hull attitude
+    stop if possible
+    otherwise explicit mitigated contact/ricochet intent
 ```
 
-### Oriented passage
+### Target-machine trajectory evidence
 
-`OrientedPassageEvaluator` performs constant-size OBB projection against an oriented passage cross-section. It recovers valid flat-ship/flat-slot cases that the conservative sphere broadphase intentionally rejects.
-
-Passage sources:
+On `e0817d...`:
 
 ```text
-AuthoredAperture
-ObstacleGap
-DockingCorridor
+navigation_trajectory_passage      PASS
+navigation_trajectory_gap          PASS
+navigation_trajectory_reachability PASS
+100% tests passed, 0 failed
+Total Test time: 0.12 sec
 ```
 
-### Bounded emergent gap extraction
+The one bounded-gap architecture failure was only a stale exact Markdown marker; runtime behavior was green. The checker has been repaired on current `main`.
 
-Project invariant: **two nearby obstacles may form a usable positive passage between them**.
+### Bounded gap performance — ACCEPTED
 
-`BoundedGapCandidateBuilder` examines one already-known primary conflict against already-reduced local neighbors. It does not generate neighbor-neighbor pairs and does not perform global `N x N` discovery.
-
-The builder:
-
-- caps output at 8 deterministic candidates;
-- requires same snapshot revision;
-- rejects overlapping conservative bounds;
-- rejects front/back pairs masquerading as a transverse slot;
-- bounds forward distance and centerline offset;
-- feeds compact `ObstacleGap` products to `OrientedPassageEvaluator`.
-
-Performance harness:
+Target-machine p95:
 
 ```text
-benchmarks/navigation_trajectory_gap/
+reject_16       0.2459 us
+reject_64       0.7550 us
+reject_256      4.6499 us
+reject_1024    11.6730 us
+
+top8_16         0.7883 us
+top8_64         1.8260 us
+top8_256        6.3609 us
+top8_1024      24.0699 us
 ```
 
-It measures rejection and top-8 maintenance at 16/64/256/1024 local neighbors. `1024` is deliberate stress.
+Even the deliberate `top8_1024` stress case is only `0.0241 ms p95`. Gap extraction is performance-accepted.
 
-### Attitude reachability before entry
-
-A geometrically valid gap is not automatically a valid maneuver.
-
-`AttitudeReachabilityEvaluator` checks whether the vehicle can become attitude-ready before reaching the passage entry using declared angular acceleration/rate authority and available longitudinal braking.
-
-Statuses:
+Authority:
 
 ```text
-AlreadyReady
-ReachableCoast
-ReachableWithBraking
-UnreachableBeforeEntry
+benchmarks/navigation_trajectory_gap/RUN_LOG.md
 ```
 
-Pinned reference:
+## Emergency collision semantic
+
+Project invariant:
 
 ```text
-90 deg roll
-max angular acceleration = 90 deg/s^2
-max angular speed        = 90 deg/s
-minimum rest-to-rest time = 2 s
-closing speed             = 10 m/s
-
-30 m -> coast reachable
-15 m -> braking-assisted reachable at 5 m/s^2
- 8 m -> unreachable before entry
+no collision-free route != no navigation command
 ```
 
-Current angular velocity is conservatively settled first and consumes extra time/margin.
+If a collision-free passage cannot be achieved in time:
 
-The evaluator remains a precheck. It does not prove body-axis translation, continuous swept-body clearance, moving-gap persistence or final docking capture.
+1. stop before contact when physically possible;
+2. otherwise keep maximum useful braking;
+3. aim at the gap center;
+4. bias travel along the passage axis to reduce side-normal incidence;
+5. rotate to the best physically reachable hull attitude;
+6. allow explicit contact/ricochet as a least-severity emergency outcome.
+
+`EmergencyMitigatedContact` is never equivalent to `Clear`. Physics/collision/damage remain authoritative for the actual impact and post-contact state.
+
+Prepared isolated implementation:
+
+```text
+src/world/navigation/trajectory/EmergencyPassageMitigator.h/.cpp
+tests/navigation_trajectory/NavigationTrajectoryEmergencyPassageTests.cpp
+tests/architecture_contracts/check_navigation_trajectory_emergency_passage.py
+```
+
+The first version uses a fixed 17-sample reachable orientation arc and ranks by passage clearance/geometric deficit. Continuous 6DoF must later add translational reachability and relative normal contact-speed / impact-energy scoring.
 
 ## Planned continuous 6DoF / docking fidelity
 
-Next precision layer after isolated gates:
+Next precision layer:
 
 ```text
-oriented hull + attitude / angular state
-body-axis or thruster acceleration authority
+authoritative body-axis linear thrust/braking authority
 Elite-assisted versus Newtonian free flight
-translation + rotation continuous swept-body proof
-head-on / crossing maneuver feasibility
+position + velocity + attitude + angular-state propagation
+continuous swept oriented-body proof
+safe head-on / crossing / narrow-gap maneuvers
+emergency contact ranking by relative normal speed / impact proxy
 moving/time-varying obstacle gaps
 moving/rotating terminal docking
 explicit bottom-to-bottom mating-frame orientation
 NPC PilotSkillProfile execution
 ```
 
-Docking remains relative pose-and-motion matching. A rotating port requires matching predicted port pose, tangential velocity and angular motion at capture.
+Docking remains relative pose-and-motion matching. A rotating port requires matching predicted port pose, tangential velocity and angular motion at capture. Normal docking should go around rather than intentionally collide when avoidance remains possible.
 
 ## Next order
 
-1. run local avoidance fan benchmark on the target machine;
-2. run passage/gap/reachability architecture + MinGW64 behavior gates;
-3. run bounded-gap builder benchmark;
-4. accept/fix those candidates from real evidence;
-5. implement continuous 6DoF static-gap maneuver proof with body-axis control authority and Elite/Newton semantics;
-6. extend the same machinery to moving gaps and moving/rotating docking;
-7. pursuit and live game/server integration remain later.
+1. run repaired bounded-gap architecture checker + new emergency-passage architecture/behavior gate;
+2. if green, implement continuous bounded 6DoF static-gap feasibility with explicit `Elite`/`Newton` authority;
+3. add emergency impact ranking by predicted relative normal speed/energy rather than geometry alone;
+4. extend the same time-varying pose/sweep machinery to moving gaps and moving/rotating docking;
+5. add deterministic NPC execution skill;
+6. pursuit and live game/server integration remain later.
 
 Do not add vehicle velocity/braking/traffic/pursuit state to persistent `NavigationSpace` static cost.

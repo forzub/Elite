@@ -20,6 +20,24 @@ GPU: dynamic P/V/A prediction, swept bounds, spatial bins, conflict reduction
 
 Moving-goal pursuit is specified in `src/world/navigation/PURSUIT_HORIZON.md`; runtime pursuit remains later.
 
+## World economy / traffic direction
+
+The formalized game-design direction for trade flows, causal NPC traffic, civilized navigation infrastructure, taxes/fees/services, insurance and the core-vs-frontier scale contrast is now recorded in:
+
+```text
+WORLD_ECONOMY_AND_TRAFFIC_DESIGN.md
+```
+
+Reference observations from `Objects in Space` are kept separately in:
+
+```text
+Notes/OBJECTS_IN_SPACE_ECONOMY_REFERENCE.md
+```
+
+Important provenance: the core trade-flow / corridor / beacon / causal-traffic ideas predate that reference in this project. The reference is used to sharpen and formalize the presentation. The major deliberate divergence is scale: Elite should preserve much larger distances, stronger isolation and a sharper transition from infrastructure-rich civilization to self-navigated frontier/deep space.
+
+This design note does **not** change the active `NAV-V2-LOCAL-1` implementation milestone.
+
 ## `NAV-V2-MAP-2` — CLOSED
 
 Dynamic-map CPU/GPU boundary and hybrid ownership are accepted. `NavigationMap` returns compact dynamic candidates by value and hides backend/cell/GPU state.

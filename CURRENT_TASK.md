@@ -117,5 +117,7 @@ Decision order:
 
 1. if nominal/early paths are comfortably cheap and even the deliberate worst cases fit the budget, keep the deterministic 16-probe fan unchanged;
 2. if only large worst-case candidate counts are expensive, introduce evidence-based probe ordering and/or a bounded dynamic-recheck budget rather than optimizing the already-cheap one-pass horizon loop;
-3. after this performance gate, begin the trajectory-aware vehicle/control layer in `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md` for oriented hulls, Elite/Newton reachability and head-on/crossing maneuver feasibility;
-4. do not wire live `EliteGame` / `EliteServer` or pursuit-specific intercept logic before these gates are closed.
+3. after this performance gate, begin the trajectory-aware vehicle/control/docking layer in `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`;
+4. that next layer must cover oriented hulls, Elite/Newton reachability, head-on/crossing maneuver feasibility, oriented narrow passages such as a flat ship through a flat slot, and terminal 6DoF docking against stationary/moving/rotating docks;
+5. docking must match predicted port pose and motion, including relative linear/angular velocity and explicit ship/dock top-bottom mating orientation (`bottom of ship -> bottom of dock`), rather than accepting an upside-down center-point arrival;
+6. do not wire live `EliteGame` / `EliteServer` or pursuit-specific intercept logic before these gates are closed.

@@ -3,66 +3,127 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-TRAJECTORY-1` — emergency contact severity ranking
+**Stage:** `NAV-V2-TRAJECTORY-1` — emergency contact severity gate
 
-## Newly closed gate — continuous verifier performance
+## Closed gate — continuous verifier performance
 
 Target-machine run on `6f85436252d36e4b586ab496efe3aea45fb25e79`:
 
 ```text
 NAVIGATION TRAJECTORY CONTINUOUS BENCHMARK CONTRACT: PASS
-
-straight_newton p95                4.0458 us
-rolled_newton p95                  6.5235 us
-lateral_newton p95                 4.1593 us
-elite_aligned p95                  4.1820 us
-geometry_blocked_roll p95          6.5133 us
-full_precision_batch8 p95         41.3527 us
+full_precision_batch8 p95 = 41.3527 us = 0.04135 ms
 ```
 
-Decision rule was:
+The static `ContinuousPassageTrajectoryEvaluator` is behavior/performance accepted and frozen. Do not optimize its math without contrary live-runtime evidence.
+
+## Active candidate — `EmergencyContactSeverityScorer`
+
+Public contract:
 
 ```text
-batch8 p95 < 0.5 ms -> freeze verifier
+src/world/navigation/EMERGENCY_CONTACT_SEVERITY_MODEL.md
 ```
 
-Measured batch8 is `0.04135 ms`, so the static `ContinuousPassageTrajectoryEvaluator` is **performance accepted and frozen**.
-
-Do not optimize its math without contrary live-runtime evidence.
-
-## Active task — rank unavoidable contacts by severity
-
-Current `EmergencyPassageMitigator` already guarantees:
+Code:
 
 ```text
-safe trajectory if one exists
-    -> otherwise stop before impact if physically possible
-    -> otherwise keep an explicit non-safe control command alive
+src/world/navigation/trajectory/EmergencyContactSeverityScorer.h
+src/world/navigation/trajectory/EmergencyContactSeverityScorer.cpp
 ```
 
-What is still missing: among several unavoidable-contact commands, choose the one with the least physical consequence rather than only the smallest geometric deficit.
-
-The next isolated scorer must consume predicted contact kinematics and prefer:
+Test/architecture gate:
 
 ```text
-small relative normal speed
-small impact-energy proxy
-more tangential / glancing incidence
-useful passage-axis progress
-reachable hull attitude
+tests/navigation_trajectory/NavigationTrajectoryEmergencyContactSeverityTests.cpp
+tests/architecture_contracts/check_navigation_trajectory_emergency_contact_severity.py
 ```
 
-A glancing scrape/ricochet must rank ahead of a hard perpendicular hit when both are unavoidable.
+### Ownership
 
-The result must remain explicit: contact-expected candidates are never `Clear`; exact CCD/TOI/impulse/ricochet stay physics authority.
+The scorer does not discover collisions. It consumes already-predicted bounded contact witnesses and ranks at most:
 
-## Acceptance order after this task
+```text
+8 emergency candidates
+4 contact witnesses per candidate
+```
 
-1. pin deterministic static-contact severity fixtures;
-2. benchmark the scorer only if behavior shows nontrivial cost;
-3. generalize passage geometry/contact prediction to moving obstacles and time-varying gaps;
-4. reuse the same relative-motion machinery for moving/rotating docking;
-5. add bottom-to-bottom mating-frame terminal constraints;
+Exact narrow phase / CCD / TOI / manifold / impulse / ricochet remain physics authority.
+
+### Physical contact metric
+
+For each predicted witness:
+
+```text
+r = contactPoint - shipCenter
+v_ship_contact = v_center + omega x r
+v_rel = v_ship_contact - v_surface
+v_n = max(0, -dot(v_rel, normalTowardFreeSpace))
+```
+
+Therefore hull rotation and moving surfaces affect emergency severity correctly at the witness level.
+
+### Deterministic ranking
+
+```text
+1. no predicted contact beats contact
+2. lower peak closing normal speed
+3. lower summed normal-impact energy proxy
+4. lower summed normal momentum proxy
+5. more tangential / glancing incidence
+6. lower geometry deficit
+7. higher useful passage-axis progress
+8. stable candidate id / input order
+```
+
+Impact severity outranks route progress. A more normal hit must never win merely because it advances farther through the gap.
+
+### Pinned behavior
+
+```text
+glancing high-total-speed contact beats harder normal contact
+omega x r contributes contact-point velocity
+moving surface uses relative contact velocity
+equal v_n uses effective-mass energy proxy as tie-break
+no-contact candidate always wins
+pure normal impact reports pi/2 incidence
+zero normal / >8 candidates fail closed
+```
+
+## RUN NOW
+
+```bash
+cd /d/__elite/work
+
+git fetch origin
+git switch main
+git merge --ff-only origin/main
+
+git rev-parse HEAD
+
+python tests/architecture_contracts/check_navigation_trajectory_emergency_contact_severity.py
+bash tests/navigation_trajectory/run_mingw64.sh
+```
+
+Expected suite after build:
+
+```text
+navigation_trajectory_passage
+navigation_trajectory_gap
+navigation_trajectory_reachability
+navigation_trajectory_emergency_passage
+navigation_trajectory_continuous_passage
+navigation_trajectory_emergency_contact_severity
+```
+
+Send complete output.
+
+## Next after green gate
+
+1. behavior-accept and freeze the bounded severity scorer if the new contract + `6/6` CTest pass;
+2. do not benchmark it unless composition/runtime evidence says its fixed `<=8 x <=4` work is material;
+3. build time-varying contact/passage witnesses for moving obstacle gaps;
+4. use the same relative-motion machinery for moving/rotating docking;
+5. add explicit bottom-to-bottom terminal mating constraints;
 6. add deterministic `PilotSkillProfile` execution;
 7. integrate accepted Navigation v2 into live game/server/guidance;
 8. run end-to-end stress/debug acceptance;
@@ -70,18 +131,4 @@ The result must remain explicit: contact-expected candidates are never `Clear`; 
 
 ## Definition of final success
 
-The navigation work is finished when the live runtime, not only isolated tests, proves that ships can:
-
-```text
-fly normally within CPU/GPU budgets
-avoid static and dynamic hazards
-use narrow/oriented gaps when physically possible
-respect Elite/Newton vehicle authority
-keep controlling through unavoidable collisions and minimize impact severity
-recover/replan from real post-impact state
-rendezvous and dock with stationary/moving/rotating ports in the correct orientation
-show the same accepted trajectory in guidance/debug
-scale to intended NPC traffic without planner stalls or N^2 precision work
-```
-
-Until those live-system gates are green, `NAV-V2-TRAJECTORY-1` and Navigation v2 as a whole are not finished.
+Navigation v2 is finished only when the live runtime demonstrates normal flight, static/dynamic avoidance, narrow oriented passage, truthful Elite/Newton authority, least-severity unavoidable collision handling, post-impact replanning, moving/rotating docking, shared guidance/debug truth and intended NPC scaling without planner stalls or unbounded precision work.

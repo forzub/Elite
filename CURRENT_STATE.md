@@ -3,9 +3,9 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** `NAV-V2-LOCAL-1` — avoidance behavior accepted; 16-probe performance gate pending. Trajectory precision candidates are prepared in parallel and remain unaccepted until target-machine gates pass.
+**Active stage:** `NAV-V2-TRAJECTORY-1` — oriented passage / emergent gap / emergency mitigation
 
-## Accepted foundations
+## Closed foundations
 
 ### `NAV-V2-MAP-2` — CLOSED
 
@@ -25,164 +25,163 @@ hub_10k turn p95    11.9065 ms
 turn portals examined 329,660
 ```
 
-Do not reopen static turn optimization without new runtime evidence.
+### `NAV-V2-LOCAL-1` — CLOSED / ACCEPTED
 
-## `NAV-V2-LOCAL-1` — behavior ACCEPTED / performance pending
-
-Accepted compact-candidate reference on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
+Behavior was accepted earlier. Fresh target-machine multiplied-probe evidence on `e0817d157ba5d8c9c329576236310507bda13364`:
 
 ```text
-clear_1024 p95       36.9641 us
-conflict_1024 p95    31.8656 us
-stale_1024 p95        0.0359 us / 0 candidates examined
+scenario                     p95_us
+nominal_clear_64               1.8333
+early_adjust_64                4.2795
+all_static_rejected_64         4.2655
+all_dynamic_rejected_16       12.9500
+all_dynamic_rejected_64       35.8900
+all_dynamic_rejected_256     128.9708
+all_dynamic_rejected_1024    519.9286
 ```
 
-Fresh avoidance behavior gate on `bdec064d152050b4bc199b2657f14b3f577dcba3`:
-
-```text
-NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
-NAVIGATION LOCAL AVOIDANCE BOUNDARY CONTRACT: PASS
-navigation_local: PASS
-navigation_local_avoidance: PASS
-100% tests passed, 0 failed
-```
-
-Accepted bounded avoidance:
-
-```text
-ConflictHold
-    -> deterministic 15 deg x 8 + 30 deg x 8 target fan
-    -> same-region / same-publication static proof
-    -> compact dynamic recheck
-    -> AdjustedClear or fail closed
-```
-
-Current-P/V/A head-on/crossing remains fail-closed until a trajectory-aware maneuver is demonstrated.
-
-Active timing harness:
-
-```text
-benchmarks/navigation_local_avoidance/
-```
-
-Local CPU design budget remains:
+Design budget:
 
 ```text
 <0.5 ms typical
 <1.0 ms normal peak
 ```
 
-## Prepared trajectory precision chain — PENDING TARGET-MACHINE GATES
+The `1024 x 17` case is deliberate stress and is not a normal compact-neighbor count. It remains inside the normal-peak budget. Decision: keep the deterministic 16-probe fan unchanged.
+
+Authority:
+
+```text
+benchmarks/navigation_local_avoidance/RUN_LOG.md
+```
+
+## `NAV-V2-TRAJECTORY-1` — current isolated precision layer
 
 Architecture authorities:
 
 ```text
-src/world/navigation/TRAJECTORY_CONTROL_MODEL.md
 src/world/navigation/ORIENTED_PASSAGE_MODEL.md
+src/world/navigation/TRAJECTORY_CONTROL_MODEL.md
+NAVIGATION_WORLD_V2.md
 ```
 
-Prepared layering:
+Current chain:
 
 ```text
-accepted cheap broadphase/local avoidance
+ConflictHold / explicit aperture / docking corridor
         |
-        +-- normal safe result -> done
+        v
+BoundedGapCandidateBuilder
+    one primary conflict + already reduced neighbors
+    hard candidate cap = 8
+    no global/all-pairs scan
         |
-        +-- ConflictHold / explicit aperture / docking corridor
-                |
-                v
-        BoundedGapCandidateBuilder
-        one primary conflict + already reduced neighbors
-        hard cap = 8
-        no all-pairs scan
-                |
-                v
-        OrientedPassageEvaluator
-        O(1) real oriented hull fit
-                |
-                v
-        AttitudeReachabilityEvaluator
-        O(1) angle / angular authority / distance check
-        AlreadyReady / ReachableCoast / ReachableWithBraking /
-        UnreachableBeforeEntry
-                |
-                v
-        later full continuous 6DoF swept-body proof
+        v
+OrientedPassageEvaluator
+    oriented OBB cross-section fit
+        |
+        v
+AttitudeReachabilityEvaluator
+    can the requested collision-free attitude be ready in time?
+        |
+        +-- yes -> later continuous 6DoF safe proof
+        |
+        +-- no
+              v
+EmergencyPassageMitigator
+    keep navigation intent alive
+    brake when useful
+    aim at gap center
+    bias travel along passage axis
+    choose best physically reachable hull attitude
+    explicit contact-expected result when unavoidable
 ```
 
-### Oriented passage geometry
+### Geometry / bounded-gap behavior — target-machine green
 
-Files:
+On `e0817d...` all then-registered trajectory C++ tests passed:
 
 ```text
-src/world/navigation/trajectory/OrientedPassageEvaluator.h/.cpp
+navigation_trajectory_passage      PASS
+navigation_trajectory_gap          PASS
+navigation_trajectory_reachability PASS
+100% tests passed, 0 failed
+Total Test time: 0.12 sec
 ```
 
-A flat/non-spherical ship may fit a narrow aperture or obstacle gap only in the correct attitude even when the conservative broadphase sphere rejects it.
+The passage and reachability architecture contracts passed. The gap architecture checker had only a stale exact-Markdown marker; runtime behavior was green. That checker is repaired on current `main` to assert stable architecture invariants.
 
-Passage sources share one abstraction:
+### Bounded gap performance — ACCEPTED
+
+Target-machine p95:
 
 ```text
-AuthoredAperture
-ObstacleGap
-DockingCorridor
+reject_16       0.2459 us
+reject_64       0.7550 us
+reject_256      4.6499 us
+reject_1024    11.6730 us
+
+top8_16         0.7883 us
+top8_64         1.8260 us
+top8_256        6.3609 us
+top8_1024      24.0699 us
 ```
 
-### Emergent obstacle gaps
+Even `top8_1024` stress is about `0.024 ms p95`. The bounded-gap builder is not a CPU concern and should not be micro-optimized without contrary evidence.
 
-Files:
+Authority:
 
 ```text
-src/world/navigation/trajectory/BoundedGapCandidateBuilder.h/.cpp
+benchmarks/navigation_trajectory_gap/RUN_LOG.md
 ```
 
-Project invariant: **two nearby objects may form positive free space between them**. If ordinary lateral avoidance cannot clear either obstacle because speed is high / distance is short, a bounded fallback may test the free gap between them.
+## New emergency semantic — prepared candidate
 
-Performance protection:
-
-- one already-known primary conflict is compared with already-reduced neighbors;
-- no neighbor-neighbor or global `N x N` pair discovery;
-- mixed snapshot revisions fail closed;
-- conservative overlapping bounds do not invent a gap;
-- front/back obstacle pairs are not misclassified as transverse slots;
-- deterministic candidate cap is `8`.
-
-Dedicated performance harness:
+`UnreachableBeforeEntry` now means only:
 
 ```text
-benchmarks/navigation_trajectory_gap/
+collision-free requested entry attitude is not proven reachable in time
 ```
 
-It measures reject/top-8 paths at 16/64/256/1024 local neighbors. `1024` is deliberate stress.
+It does **not** mean planner shutdown.
 
-### Attitude reachability before entry
-
-Files:
+New isolated files:
 
 ```text
-src/world/navigation/trajectory/AttitudeReachabilityEvaluator.h/.cpp
+src/world/navigation/trajectory/EmergencyPassageMitigator.h
+src/world/navigation/trajectory/EmergencyPassageMitigator.cpp
+tests/navigation_trajectory/NavigationTrajectoryEmergencyPassageTests.cpp
+tests/architecture_contracts/check_navigation_trajectory_emergency_passage.py
 ```
 
-A gap that fits geometrically may still be unusable if the ship cannot rotate into the required pose before reaching it.
-
-The current conservative precheck consumes current/required attitude, current angular velocity, angular acceleration/rate authority, distance to entry, closing speed and available longitudinal braking.
-
-Pinned semantics:
+Result classes:
 
 ```text
-AlreadyReady
-ReachableCoast
-ReachableWithBraking
-UnreachableBeforeEntry
+SafeEntryPose
+EmergencyStopBeforeEntry
+EmergencyMitigatedContact
+InvalidInput
 ```
 
-Example fixture: a 90 degree roll needs 2 s with the pinned angular authority. At 10 m/s it needs 20 m by coasting; with 5 m/s^2 braking it can become ready in 10 m; with only 8 m available it fails closed.
+Emergency policy:
 
-This evaluator is not a duplicate flight controller and does not yet prove a continuous swept-body trajectory.
+```text
+safe maneuver if reachable
+else stop before contact if physically possible
+else maximum useful braking
+     + aim at gap center
+     + desired travel along passage axis
+     + best physically reachable hull attitude
+     + explicit expected contact/ricochet
+```
+
+`EmergencyMitigatedContact` is a valid navigation/control intent but never a safe/`Clear` result. Actual collision impulse, ricochet, damage and post-impact state remain physics/damage authority.
+
+The first candidate samples a fixed 17 reachable attitudes along the shortest orientation arc and selects the pose with best passage clearance / smallest geometric deficit. Full 6DoF work must later add translational authority and relative normal impact speed.
 
 ## Docking remains in the same 6DoF layer
 
-Docking is terminal pose/motion matching against a possibly moving/rotating port, including:
+Docking is terminal pose/motion matching against a possibly moving/rotating port:
 
 ```text
 relative position
@@ -192,29 +191,22 @@ relative angular velocity
 explicit mating frame / top-bottom convention
 ```
 
-`bottom of ship -> bottom of dock` remains explicit; an upside-down center-point arrival is invalid.
-
-A rotating port target includes tangential point velocity:
+`bottom of ship -> bottom of dock` remains explicit. A rotating port includes:
 
 ```text
 v_port = v_origin + omega x r
 ```
 
+Normal docking should abort/go-around if capture is unsafe; generic emergency impact mitigation only applies if physical collision has truly become unavoidable.
+
 ## Immediate next step
 
-Run all pending isolated gates after fast-forwarding local `main`:
+Target-machine gate only for the newly changed trajectory slice:
 
 ```bash
-python tests/architecture_contracts/check_navigation_local_avoidance_benchmark.py
-bash benchmarks/navigation_local_avoidance/run_mingw64.sh
-
-python tests/architecture_contracts/check_navigation_trajectory_passage.py
 python tests/architecture_contracts/check_navigation_trajectory_gap.py
-python tests/architecture_contracts/check_navigation_trajectory_reachability.py
+python tests/architecture_contracts/check_navigation_trajectory_emergency_passage.py
 bash tests/navigation_trajectory/run_mingw64.sh
-
-python tests/architecture_contracts/check_navigation_trajectory_gap_benchmark.py
-bash benchmarks/navigation_trajectory_gap/run_mingw64.sh
 ```
 
-Do not live-wire game/server control or pursuit until the relevant isolated gates are accepted.
+If green, the next implementation is continuous 6DoF translation+rotation through the gap with explicit `Elite`/`Newton` authority and emergency ranking by relative normal contact speed / impact-energy proxy.

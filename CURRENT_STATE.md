@@ -2,19 +2,17 @@
 
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
-**Navigation:** `NAV-V2-SPACE-1` — **CLOSED / ACCEPTED**  
-**Active stage:** `NAV-V2-LOCAL-1` — behavior accepted, candidate-count performance measurement pending
+**Navigation:** Navigation v2 / shared NavigationWorld  
+**Active stage:** `NAV-V2-LOCAL-1` — local reference accepted; conservative lateral avoidance candidate pending behavior gate
 
 ## Accepted Navigation v2 ownership
-
-Navigation v2 uses one shared ship-centered `NavigationWorld`.
 
 ```text
 CPU
     static free-space / clearance
     connectivity / portals
     sparse cached global corridor search
-    precision local search
+    deterministic precision/local reference work
 
 GPU
     dynamic P/V/A prediction
@@ -23,102 +21,49 @@ GPU
     all-agent neighbor/conflict reduction
 ```
 
-`RuckigTrajectorySolver` remains downstream local kinematics, not path search. Moving-target pursuit remains specified in `src/world/navigation/PURSUIT_HORIZON.md` and is a later consumer of the local-horizon layer.
+`RuckigTrajectorySolver` remains downstream local kinematics, not path search.
 
 ## `NAV-V2-MAP-2` — CLOSED
 
-Accepted 10k evidence includes CPU candidate queries below 0.2 ms p95 and GPU dynamic total below 1.7 ms p95 on the target machine.
+Accepted 10k evidence includes CPU compact candidate queries below `0.2 ms p95` and GPU dynamic total below `1.7 ms p95` on the target machine.
 
 ## `NAV-V2-SPACE-1` — CLOSED / ACCEPTED
 
-Static-space indexing and query foundation:
+Final accepted turn-aware target-machine evidence on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
 
 ```text
-baseline 10k full-portal corridor ≈1.95-1.99 s
-per-region adjacency              ≈21.8-22.4 ms
-dense RegionSlot BFS              ≈7.9-8.0 ms
-BVH point p95                     <=0.0353 ms
-BVH local invalidation p95        <=0.0115 ms
+open_10k zero p95    8.4498 ms
+open_10k turn p95   12.0072 ms
+hub_10k  zero p95    8.4125 ms
+hub_10k  turn p95   11.9065 ms
+turn portals examined 329,660
 ```
 
-Costed static corridor v1 is accepted at <=9.6103 ms p95 against the pinned <=15 ms gate. Apertures, tunnels/canyons, agent-envelope admission and fail-closed local invalidation are pinned by tests.
+Pinned gate was `<=40 ms p95`. Static turn-aware search is accepted. Published dense region/portal state, per-edge geometry/clearance and precomputed turn angles are the accepted reference. Do not continue static turn optimization without new runtime evidence.
 
-Static turn semantics are also accepted:
+## `NAV-V2-LOCAL-1` — REFERENCE ACCEPTED
 
-```text
-turnPenalty == 0
-    -> RegionSlot Dijkstra fast path
-
-turnPenalty > 0
-    -> state = (RegionSlot, incoming PortalId)
-```
-
-### Turn-aware performance history
-
-```text
-tree-backed expanded state
-    open_10k 216.1602 ms
-    hub_10k  232.6520 ms
-
-Dense TurnStateSlot + vector state + binary heap
-    open_10k  67.9647 ms
-    hub_10k   72.6054 ms
-
-Euclidean A* — REJECTED
-    open_10k  97.0537 ms
-    hub_10k   97.6909 ms
-```
-
-Euclidean A* reduced transition work only ~1.75% and increased p95 materially, so it remains rejected.
-
-### Accepted hot-path publication result
-
-Target-machine rerun on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
-
-```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
-NAVIGATION SPACE TURN BENCHMARK CONTRACT: PASS
-
-scenario   zero p95 ms   turn p95 ms   zero portals   turn portals
-open_10k       8.4498       12.0072         57,197       329,660
-hub_10k        8.4125       11.9065         57,197       329,660
-```
-
-All routes remained found with identical accepted path length, turn burden and cost. The pinned turn-aware acceptance gate was `<=40 ms p95`; both 10k cases pass with large margin.
-
-The decisive optimization was publication of immutable static hot data: dense region/portal state, per-edge geometry/clearance and precomputed turn angles. Expansion work stayed at `329,660`, proving that the practical bottleneck was cost per examined transition rather than the accepted expanded-state semantics.
-
-Do not continue optimizing persistent static turn search without new runtime evidence. Do not add ship velocity, braking, traffic or pursuit prediction to `NavigationSpace` static cost.
-
-Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
-
-## `NAV-V2-LOCAL-1` — BEHAVIOR ACCEPTED / PERFORMANCE PENDING
-
-Fresh target-machine gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
+Behavior gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
 
 ```text
 NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
-navigation_local: 1/1 PASS
-100% tests passed, 0 failed
-Total Test time = 0.05 sec
+navigation_local: PASS
 ```
 
-Accepted local ownership/safety behavior:
+Accepted local horizon semantics:
 
 ```text
-accepted static corridor / nominal local target
+static corridor / nominal local target
         +
-NavigationMap compact dynamic candidates
+NavigationMap Candidate[]
         +
-agent P/V/A + result age / safety budget
+agent P/V/A + result age
         |
         v
-bounded local conflict assessment
+bounded dynamic conflict assessment
         |
         v
-receding-horizon temporary target state
+receding-horizon temporary target
         |
         +-> Clear / PassThrough
         +-> Clear / Terminal
@@ -126,20 +71,67 @@ receding-horizon temporary target state
         +-> StaleHold
 ```
 
-The local layer consumes the accepted `NavigationSpace` and `NavigationMap` boundaries rather than creating another spatial world or full-scene planner. It remains independent of GLM/OpenGL/render/game state. The old `TacticalCollisionMonitor`, `SmallCraftNavigation`, route-wide `GeometricPathPlanner` and dense trajectory/guidance chain remain migration/reference code, not v2 authority.
+### Compact-candidate performance — ACCEPTED
 
-No lateral bypass is accepted yet. `ConflictHold` and `StaleHold` fail closed until an adjusted-target algorithm is separately measured and pinned.
-
-### Active measurement candidate
-
-`benchmarks/navigation_local/` now measures only `LocalHorizonPlanner::evaluate()` over already reduced compact candidates:
+Target-machine measurement on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
 
 ```text
-clear:     0 / 16 / 64 / 256 / 1024
-conflict:     16 / 64 / 256 / 1024
-stale:                           1024
+scenario         p95_us     p95_ns/candidate
+clear_16          0.4814          30.0873
+clear_64          1.8327          28.6362
+clear_256         7.9820          31.1798
+clear_1024       36.9641          36.0977
+
+conflict_16       0.5073          31.7062
+conflict_64       1.9333          30.2078
+conflict_256      7.5441          29.4693
+conflict_1024    31.8656          31.1188
+
+stale_1024        0.0359          0 candidates examined
 ```
 
-The benchmark records median/p95 microseconds, p95 ns/candidate, examined candidates, conflicts and final status. Scenario construction is outside the timed region. `stale_1024` must examine zero candidates.
+Even the artificial 1024-candidate stress case is below `0.037 ms p95`. The one-pass local reference is not a performance problem and should not be optimized further without new evidence.
 
-Status: **pending target-machine candidate-count scaling run**. No local performance acceptance or avoidance-algorithm choice is claimed yet.
+Raw evidence: `benchmarks/navigation_local/RUN_LOG.md`.
+
+## Active candidate — conservative same-region lateral avoidance
+
+`LocalAvoidancePlanner` is now on `main` as the first adjusted-target slice.
+
+It owns no second world or spatial state. It consumes:
+
+- accepted `LocalHorizonPlanner`;
+- compact `NavigationMap::QueryResult`;
+- public `NavigationSpace::queryPoint()` static checks.
+
+For a nominal `ConflictHold` it probes a bounded deterministic 3D fan:
+
+```text
+15 deg ring x 8 azimuths
+30 deg ring x 8 azimuths
+maximum = 16 target probes
+```
+
+A lateral target is considered statically proven only when both current agent point and target are envelope-safe and resolve to the same NavigationSpace region. Because one semantic region is a convex AABB, the whole straight segment then remains inside that free-space region.
+
+The candidate is intentionally conservative:
+
+- a valid portal-crossing maneuver can be rejected;
+- stale dynamic data remains `StaleHold` before avoidance work;
+- non-traversable static start becomes `StaticHold`;
+- current-kinematics head-on/crossing conflicts remain `ConflictHold`;
+- only a conflict that can be cleared by a statically proven target and the accepted dynamic reference becomes `AdjustedClear / PassThrough`.
+
+Status: **pending target-machine compile + architecture + behavior gate**. No avoidance performance or production acceptance is claimed yet.
+
+## Immediate next step
+
+Run:
+
+```bash
+python tests/architecture_contracts/check_navigation_local_boundary.py
+python tests/architecture_contracts/check_navigation_local_avoidance.py
+bash tests/navigation_local/run_mingw64.sh
+```
+
+If PASS, benchmark the multiplied avoidance probe cost separately before any live game/server integration.

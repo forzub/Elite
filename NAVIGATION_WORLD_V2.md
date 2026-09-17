@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** `NAV-V2-LOCAL-1` — local horizon and same-region avoidance behavior accepted; avoidance fan performance gate active
+**Current stage:** `NAV-V2-LOCAL-1` — local horizon and same-region avoidance behavior accepted; avoidance fan performance gate active; first oriented-passage precision candidate pending behavior gate
 
 Repository/branch authority is defined by `REPOSITORY_SOURCE_OF_TRUTH.md`. `main` is the only canonical game-development branch.
 
@@ -26,6 +26,10 @@ ship-centered NavigationWorld
     + local horizon / avoidance consumer
         bounded conflict assessment
         statically proven temporary target state
+            |
+            v
+    bounded precision-passage candidate path
+        oriented apertures / obstacle gaps / docking corridors
             |
             v
     trajectory-aware maneuver feasibility
@@ -82,7 +86,7 @@ GPU hub    total median 1.6097 ms, p95 1.6258 ms
 
 No synchronous frame-thread dispatch/wait/bulk-readback path is allowed. Dynamic results are asynchronous/double- or triple-buffered; result age contributes to physical safety margin.
 
-Current dynamic actor geometry is intentionally conservative: radius + swept sphere. That is a broadphase/mass-NPC representation, not a claim of final oriented-hull maneuver fidelity. Precision trajectory geometry is specified separately in `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`.
+Current dynamic actor geometry is intentionally conservative: radius + swept sphere. That is a broadphase/mass-NPC representation, not a claim of final oriented-hull maneuver fidelity. Precision trajectory geometry is specified in `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md` and `src/world/navigation/ORIENTED_PASSAGE_MODEL.md`.
 
 ## 4. Accepted static boundary — `NAV-V2-SPACE-1` CLOSED
 
@@ -127,7 +131,7 @@ hub_10k  turn p95   11.9065 ms
 turn portals examined 329,660
 ```
 
-The pinned gate was `<=40 ms p95`, so `NAV-V2-SPACE-1` is closed. Tree-backed expanded state and weak Euclidean A* remain rejected historical experiments. No ship velocity, braking, traffic or pursuit state belongs in persistent static cost.
+The pinned gate was `<=40 ms p95`, so `NAV-V2-SPACE-1` is closed. No ship velocity, braking, traffic or pursuit state belongs in persistent static cost.
 
 ## 5. Current stage — `NAV-V2-LOCAL-1`
 
@@ -154,6 +158,9 @@ LocalHorizonPlanner
                  |
                  +-- statically proven adjusted target
                  +-- fail-closed hold
+        |
+        v
+bounded precision-passage fallback when required
         |
         v
 trajectory-aware maneuver feasibility
@@ -212,10 +219,6 @@ Each target must pass two proofs:
 1. **Static proof:** the current agent point and candidate target are traversable for the same envelope, resolve to the same `NavigationSpace` region, and come from the same static space/source revision.
 2. **Dynamic proof:** the candidate is re-evaluated against the same compact `NavigationMap::QueryResult` through `LocalHorizonPlanner`.
 
-A semantic NavigationSpace region is an axis-aligned free-space volume. After envelope shrinkage it remains convex. Therefore two traversable endpoints in the same region prove that the complete straight segment between them stays inside that static free-space volume.
-
-This is intentionally conservative. It may reject valid portal-crossing or overlapping-region maneuvers; it must never invent free space.
-
 Fresh target-machine behavior acceptance on `bdec064d152050b4bc199b2657f14b3f577dcba3`:
 
 ```text
@@ -227,15 +230,17 @@ navigation_local_avoidance: PASS
 Total Test time: 0.06 sec
 ```
 
+The same-region rule remains deliberately conservative and may reject valid portal-crossing maneuvers.
+
 ### 5.3 Current-kinematics limitation
 
-The accepted closest-approach reference evaluates the ship's current P/V/A. A changed target alone cannot be claimed to erase an already predicted head-on/crossing collision. The first adjusted-target slice may clear a future swept-corridor blocker when current closest approach is still safe, but current-kinematics collision cases remain `ConflictHold` until a later trajectory-aware maneuver is demonstrated.
+The accepted closest-approach reference evaluates the ship's current P/V/A. A changed target alone cannot erase an already predicted head-on/crossing collision. Current-kinematics collision cases remain `ConflictHold` until a trajectory-aware maneuver is demonstrated.
 
-This is a safety contract, not an algorithmic limitation to be hidden by optimistic prediction.
+This is a safety contract, not an algorithmic limitation to hide with optimistic prediction.
 
 ### 5.4 Active performance gate — bounded fan cost
 
-Behavior is accepted; performance of the multiplied probe path is now measured separately in:
+Behavior is accepted; multiplied-probe performance is measured separately in:
 
 ```text
 benchmarks/navigation_local_avoidance/
@@ -249,16 +254,14 @@ nominal_clear_64
 
 early_adjust_64
     first probe accepted
-    1 probe / 2 horizon evaluations / 2 static point queries
 
 all_static_rejected_64
     16 static rejections
-    1 horizon evaluation / 17 static point queries
 
 all_dynamic_rejected_16/64/256/1024
     16 statically valid probes
     16 failed dynamic rechecks
-    17 horizon evaluations / 17 static point queries
+    17 horizon evaluations
 ```
 
 `1024` is deliberate stress. No fan-performance acceptance is claimed until target-machine median/p95 output is captured.
@@ -267,32 +270,99 @@ all_dynamic_rejected_16/64/256/1024
 
 If a safe local target cannot be demonstrated, the local layer reports a fail-closed result. It must not invent free space from render geometry or bypass `NavigationSpace`/`NavigationMap` authority.
 
-Pursuit is a later consumer: moving target P/V/A -> bounded intercept prediction -> reuse valid coarse branch -> local horizon. Pursuit-specific prediction is not baked into generic conflict logic.
+However, `ConflictHold` does not semantically mean that collision is always unavoidable. A later precision layer may prove a different maneuver class, such as passing through an oriented gap between relevant obstacles.
 
-### 5.6 Planned vehicle/control fidelity
+Pursuit remains a later consumer.
+
+### 5.6 Oriented passage / emergent gap candidate — PENDING GATE
+
+Detailed contract:
+
+```text
+src/world/navigation/ORIENTED_PASSAGE_MODEL.md
+```
+
+First isolated candidate:
+
+```text
+src/world/navigation/trajectory/OrientedPassageEvaluator.h
+src/world/navigation/trajectory/OrientedPassageEvaluator.cpp
+```
+
+A passage can originate as:
+
+```text
+AuthoredAperture
+ObstacleGap
+DockingCorridor
+```
+
+The key semantic addition is that two nearby obstacles can form **positive free space between them**. If ordinary lateral avoidance fails because remaining time/distance is insufficient, a bounded precision fallback may evaluate the local gap as an oriented passage instead of treating the obstacles only as two separate repulsive constraints.
+
+The first evaluator owns no scene discovery. Given a body-local OBB proxy, pose and already-selected passage frame, it performs constant-size projection math and reports whether the hull fits the cross-section at that attitude/offset.
+
+This specifically recovers cases such as:
+
+```text
+flat ship + flat slot
+sphere broadphase -> conservative reject
+correctly oriented OBB -> Fits
+```
+
+#### Performance invariant
+
+Precision passage logic must not turn the accepted fast path into an all-pairs geometry system.
+
+Required layering:
+
+```text
+cheap broadphase/local avoidance
+        |
+        +-- normal safe result -> done
+        |
+        +-- ConflictHold / explicit narrow aperture / docking
+                |
+                v
+        bounded gap-candidate builder
+        primary conflict + local adjacency/spatial/static evidence only
+        initial design target <= 4-8 candidates
+                |
+                v
+        O(1) oriented fit per candidate
+                |
+                v
+        full 6DoF swept trajectory only for plausible fits
+```
+
+An unbounded `N x N` obstacle-pair scan on the frame path is rejected.
+
+Initial fixtures cover correct/incorrect roll, a two-obstacle gap, excessive lateral offset and invalid frames. Architecture/build/behavior remain pending target-machine evidence.
+
+This first geometry slice does **not** yet prove that the vehicle can rotate into the required attitude in time or that a moving gap remains open. Those belong to continuous 6DoF feasibility.
+
+### 5.7 Planned vehicle/control/docking fidelity
 
 Detailed contract: `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`.
-
-The current local reference intentionally does **not** yet model hull attitude, exact length/width/height, body-axis thrust authority, rotation time, flight-control mode, or NPC control skill.
 
 The trajectory-aware layer must keep these responsibilities separate:
 
 ```text
 world truth          static/dynamic geometry and actual actor state
 vehicle capability   hull proxy, attitude/angular state, thrust/rotation authority
-navigation intent    corridor / temporary target / avoidance choice
+navigation intent    corridor / temporary target / passage choice
 control mode         assisted Elite-style vs Newtonian free-flight behavior
+docking contract     moving terminal frame / capture tolerances
 pilot skill          reaction / update rate / smoothing / damping / precision
 control execution    actual force/torque commands and physics
 ```
 
-For precision maneuver feasibility, orientation over time matters. A long ship can clear a point with its center and still strike a wall with its tail during rotation. The precision layer may therefore use OBB/capsule/convex-compound swept bounds while the shared broadphase remains sphere-based.
+For precision feasibility, orientation over time matters. A long ship can clear a point with its center and still strike a wall with its tail while rotating.
 
-Assisted `Elite`-style behavior may prefer smooth nose/velocity alignment and airplane-like motion. Newtonian behavior allows velocity and hull attitude to diverge; a strong braking maneuver may require coast-while-rotating followed by rotate-then-thrust or flip-and-burn. Rotation time and distance travelled during rotation must therefore enter feasibility before a head-on maneuver is declared safe.
+Assisted `Elite` behavior may prefer smooth nose/velocity alignment. Newtonian behavior allows velocity and hull attitude to diverge; strong braking may require coast-while-rotating followed by rotate-then-thrust or flip-and-burn.
 
-NPC piloting quality is not encoded by corrupting geometry or by one hidden random multiplier in collision math. A high-level skill level maps to an explicit `PilotSkillProfile`: reaction delay, decision rate, command latency, input slew/smoothing, closed-loop gain/damping, overshoot tendency, anticipation and deterministic precision noise. Poor skill may produce genuine under-damped oscillation or late corrections and can therefore consume safety margin and lead to a real collision.
+Docking is terminal 6DoF pose matching against a possibly moving/rotating frame, including relative position, linear velocity, attitude and angular velocity. `bottom of ship -> bottom of dock` is an explicit mating-frame rule; an upside-down center-point arrival is invalid.
 
-The exact game-level `Elite/Newton` state and physical ship capability remain owned by flight/physics code. Navigation consumes that authority; it must not create conflicting duplicate mode/physics state.
+NPC skill remains an execution model, not corrupted geometry.
 
 ## 6. Legacy navigation status
 
@@ -306,9 +376,9 @@ GeometricPathPlanner
  -> GuidanceTunnel
 ```
 
-Existing `TacticalCollisionMonitor` and `SmallCraftNavigation` are also pre-v2 GLM/old-state implementations. Their algorithms may inform tests/reference math, but the v2 local boundary must remain backend-neutral and must not depend on their old scene/contact ownership.
+Existing `TacticalCollisionMonitor` and `SmallCraftNavigation` are also pre-v2 implementations. Their algorithms may inform tests, but the v2 public boundary stays backend-neutral.
 
-Ruckig remains useful only downstream after the local navigation layer has selected an accepted temporary target state. For Newtonian attitude-coupled maneuvers, Ruckig is not by itself the authority for whether the ship can orient and generate the requested thrust vector; the trajectory/control capability layer must establish that feasibility first.
+Ruckig remains downstream after the navigation layer has selected an accepted target/maneuver. It is not by itself authority that an attitude-coupled ship can orient and generate the requested thrust vector in time.
 
 ## 7. Performance contract
 
@@ -320,17 +390,15 @@ GPU dynamic NavigationWorld      <1.0 ms preferred
 full/precision global solve      asynchronous only
 ```
 
-These are design budgets, not portable assertions. Numerical acceptance claims come from the user's target-machine output.
+These are design budgets, not portable assertions. Numerical acceptance comes from the user's target-machine output.
 
-The one-pass LocalHorizonPlanner reference is far below this budget even at 1024 compact candidates. The multiplied cost of the 16-probe avoidance fan is the **active measurement gate**.
-
-Different layers may run at different rates. Global corridor validity is revision/event driven; local physical avoidance is receding-horizon; mass-NPC work may be staggered.
+Different layers may run at different rates. Global corridor validity is revision/event driven; local physical avoidance is receding-horizon; precision passage work is bounded/conditional; mass-NPC work may be staggered.
 
 ## 8. Navigation / collision / damage boundary
 
 ```text
 Navigation
-    conservative envelopes / free-space / predicted conflicts
+    conservative envelopes / free-space / predicted conflicts / precision passage intent
 
 Physics / Collision
     broadphase candidates -> exact narrow phase / CCD / TOI / contacts
@@ -348,18 +416,21 @@ Manual guidance visualizes the accepted corridor/trajectory actually used by nav
 
 Ordinary `F12` keeps Hub/local presentation. `Shift+F12` toggles Hub render <-> raw NavigationWorld Debug. Debug consumes the same completed NavigationWorld snapshot used by navigation/control and must not run a second planner or force synchronous readback.
 
-Useful debug data includes static regions/portals/clearance, dynamic actors P/V/A, swept bounds, active corridor, local horizon, adjusted target, conflicts, snapshot generation and age. When trajectory-aware control exists, debug should also expose selected maneuver, attitude path, reachable acceleration/braking envelope and pilot/controller execution state.
+Useful debug data includes static regions/portals/clearance, dynamic actors P/V/A, swept bounds, active corridor, local horizon, adjusted target, conflicts, passage candidates, selected passage attitude, snapshot generation and age. When trajectory-aware control exists, debug should also expose selected maneuver, attitude path, reachable acceleration/braking envelope and pilot/controller execution state.
 
 ## 10. Roadmap
 
 1. **`NAV-V2-MAP-2` — CLOSED:** shared dynamic reduction/backend evidence.
 2. **`NAV-V2-SPACE-1` — CLOSED:** static free-space/corridor/turn-aware reference.
-3. **`NAV-V2-LOCAL-1` — ACTIVE:** horizon reference accepted; same-region adjusted-target behavior accepted; bounded-fan performance measurement active.
-4. trajectory-aware vehicle/control feasibility: oriented hull, attitude/thrust authority, Elite/Newton behavior, head-on/crossing maneuver selection, NPC pilot skill execution.
-5. pursuit/receding-intercept consumer.
-6. raw NavigationWorld debug visualization.
-7. live `EliteGame` / `EliteServer` integration.
-8. retire legacy route-wide navigation only after v2 owns the live path.
+3. **`NAV-V2-LOCAL-1` — ACTIVE:** horizon + same-region avoidance behavior accepted; bounded-fan performance measurement active.
+4. **Trajectory precision candidate — PENDING GATE:** oriented OBB passage fit for authored apertures, obstacle gaps and docking corridors.
+5. bounded gap-candidate extraction with no frame-path all-pairs scan.
+6. continuous 6DoF vehicle/control feasibility: attitude/thrust authority, head-on/crossing, narrow gaps and moving gaps.
+7. moving/rotating terminal docking + NPC execution skill.
+8. pursuit/receding-intercept consumer.
+9. raw NavigationWorld debug visualization.
+10. live `EliteGame` / `EliteServer` integration.
+11. retire legacy route-wide navigation only after v2 owns the live path.
 
 ## 11. Documentation Definition of Done
 

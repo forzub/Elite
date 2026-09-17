@@ -6,6 +6,7 @@ get_filename_component(
 
 add_library(EliteNavigationTrajectory STATIC
     OrientedPassageEvaluator.cpp
+    BoundedGapCandidateBuilder.cpp
 )
 
 target_include_directories(EliteNavigationTrajectory PUBLIC

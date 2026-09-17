@@ -13,6 +13,7 @@ add_library(EliteNavigationTrajectory STATIC
     EmergencyContactSeverityScorer.cpp
     MovingGapPredictor.cpp
     MovingPassageTrajectoryEvaluator.cpp
+    DockingTerminalEvaluator.cpp
 )
 
 target_include_directories(EliteNavigationTrajectory PUBLIC

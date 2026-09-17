@@ -28,6 +28,9 @@ ship-centered NavigationWorld
         statically proven temporary target state
             |
             v
+    trajectory-aware maneuver feasibility
+            |
+            v
     RuckigTrajectorySolver / flight control
 ```
 
@@ -78,6 +81,8 @@ GPU hub    total median 1.6097 ms, p95 1.6258 ms
 ```
 
 No synchronous frame-thread dispatch/wait/bulk-readback path is allowed. Dynamic results are asynchronous/double- or triple-buffered; result age contributes to physical safety margin.
+
+Current dynamic actor geometry is intentionally conservative: radius + swept sphere. That is a broadphase/mass-NPC representation, not a claim of final oriented-hull maneuver fidelity. Precision trajectory geometry is specified separately in `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`.
 
 ## 4. Accepted static boundary — `NAV-V2-SPACE-1` CLOSED
 
@@ -151,10 +156,10 @@ LocalHorizonPlanner
                  +-- fail-closed hold
         |
         v
-RuckigTrajectorySolver
+trajectory-aware maneuver feasibility
         |
         v
-flight control
+RuckigTrajectorySolver / flight control
 ```
 
 The local layer does **not** own another NavigationWorld, does not scan the full scene and does not expand the global route into thousands of samples. Per-agent work starts after shared reduction has produced compact candidates.
@@ -204,7 +209,7 @@ maximum 16 probes
 
 Each target must pass two proofs:
 
-1. **Static proof:** the current agent point and candidate target are traversable for the same envelope and resolve to the same `NavigationSpace` region via the public `queryPoint()` boundary.
+1. **Static proof:** the current agent point and candidate target are traversable for the same envelope, resolve to the same `NavigationSpace` region, and come from the same static space/source revision.
 2. **Dynamic proof:** the candidate is re-evaluated against the same compact `NavigationMap::QueryResult` through `LocalHorizonPlanner`.
 
 A semantic NavigationSpace region is an axis-aligned free-space volume. After envelope shrinkage it remains convex. Therefore two traversable endpoints in the same region prove that the complete straight segment between them stays inside that static free-space volume.
@@ -223,6 +228,31 @@ If a safe local target cannot be demonstrated, the local layer reports a fail-cl
 
 Pursuit is a later consumer: moving target P/V/A -> bounded intercept prediction -> reuse valid coarse branch -> local horizon. Pursuit-specific prediction is not baked into generic conflict logic.
 
+### 5.5 Planned vehicle/control fidelity
+
+Detailed contract: `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`.
+
+The current local reference intentionally does **not** yet model hull attitude, exact length/width/height, body-axis thrust authority, rotation time, flight-control mode, or NPC control skill.
+
+The trajectory-aware layer must keep these responsibilities separate:
+
+```text
+world truth          static/dynamic geometry and actual actor state
+vehicle capability   hull proxy, attitude/angular state, thrust/rotation authority
+navigation intent    corridor / temporary target / avoidance choice
+control mode         assisted Elite-style vs Newtonian free-flight behavior
+pilot skill          reaction / update rate / smoothing / damping / precision
+control execution    actual force/torque commands and physics
+```
+
+For precision maneuver feasibility, orientation over time matters. A long ship can clear a point with its center and still strike a wall with its tail during rotation. The precision layer may therefore use OBB/capsule/convex-compound swept bounds while the shared broadphase remains sphere-based.
+
+Assisted `Elite`-style behavior may prefer smooth nose/velocity alignment and airplane-like motion. Newtonian behavior allows velocity and hull attitude to diverge; a strong braking maneuver may require coast-while-rotating followed by rotate-then-thrust or flip-and-burn. Rotation time and distance travelled during rotation must therefore enter feasibility before a head-on maneuver is declared safe.
+
+NPC piloting quality is not encoded by corrupting geometry or by one hidden random multiplier in collision math. A high-level skill level maps to an explicit `PilotSkillProfile`: reaction delay, decision rate, command latency, input slew/smoothing, closed-loop gain/damping, overshoot tendency, anticipation and deterministic precision noise. Poor skill may produce genuine under-damped oscillation or late corrections and can therefore consume safety margin and lead to a real collision.
+
+The exact game-level `Elite/Newton` state and physical ship capability remain owned by flight/physics code. Navigation consumes that authority; it must not create conflicting duplicate mode/physics state.
+
 ## 6. Legacy navigation status
 
 The previous chain is migration code:
@@ -237,7 +267,7 @@ GeometricPathPlanner
 
 Existing `TacticalCollisionMonitor` and `SmallCraftNavigation` are also pre-v2 GLM/old-state implementations. Their algorithms may inform tests/reference math, but the v2 local boundary must remain backend-neutral and must not depend on their old scene/contact ownership.
 
-Ruckig remains useful only downstream after the local navigation layer has selected an accepted temporary target state.
+Ruckig remains useful only downstream after the local navigation layer has selected an accepted temporary target state. For Newtonian attitude-coupled maneuvers, Ruckig is not by itself the authority for whether the ship can orient and generate the requested thrust vector; the trajectory/control capability layer must establish that feasibility first.
 
 ## 7. Performance contract
 
@@ -277,14 +307,14 @@ Manual guidance visualizes the accepted corridor/trajectory actually used by nav
 
 Ordinary `F12` keeps Hub/local presentation. `Shift+F12` toggles Hub render <-> raw NavigationWorld Debug. Debug consumes the same completed NavigationWorld snapshot used by navigation/control and must not run a second planner or force synchronous readback.
 
-Useful debug data includes static regions/portals/clearance, dynamic actors P/V/A, swept bounds, active corridor, local horizon, adjusted target, conflicts, snapshot generation and age.
+Useful debug data includes static regions/portals/clearance, dynamic actors P/V/A, swept bounds, active corridor, local horizon, adjusted target, conflicts, snapshot generation and age. When trajectory-aware control exists, debug should also expose selected maneuver, attitude path, reachable acceleration/braking envelope and pilot/controller execution state.
 
 ## 10. Roadmap
 
 1. **`NAV-V2-MAP-2` — CLOSED:** shared dynamic reduction/backend evidence.
 2. **`NAV-V2-SPACE-1` — CLOSED:** static free-space/corridor/turn-aware reference.
 3. **`NAV-V2-LOCAL-1` — ACTIVE:** horizon reference accepted; conservative same-region adjusted-target behavior/performance gate next.
-4. trajectory-aware head-on/crossing maneuver selection.
+4. trajectory-aware vehicle/control feasibility: oriented hull, attitude/thrust authority, Elite/Newton behavior, head-on/crossing maneuver selection, NPC pilot skill execution.
 5. pursuit/receding-intercept consumer.
 6. raw NavigationWorld debug visualization.
 7. live `EliteGame` / `EliteServer` integration.

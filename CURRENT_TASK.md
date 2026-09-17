@@ -3,99 +3,87 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-LOCAL-1` — local-horizon reference candidate pending target-machine gate
+**Stage:** `NAV-V2-LOCAL-1` — behavior accepted; compact-candidate performance measurement pending
 
-## Closed prior gate
+## Closed behavior gate
 
-`NAV-V2-SPACE-1` is CLOSED / ACCEPTED. Final 10k turn-aware p95 is `12.0072 ms` open / `11.9065 ms` hub against the pinned `<=40 ms` gate. Do not continue static turn-search optimization without new runtime evidence.
+Fresh target-machine result on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
+
+```text
+NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
+navigation_local: 1/1 PASS
+100% tests passed, 0 failed
+Total Test time = 0.05 sec
+```
+
+The initial local ownership/safety boundary is therefore **behavior-accepted**.
+
+Accepted reference semantics:
+
+```text
+NavigationSpace / upstream route intent
+        +
+compact NavigationMap::QueryResult
+        +
+agent P/V/A + result age
+        |
+        v
+bounded LocalHorizonPlanner
+        |
+        +-> Clear / PassThrough
+        +-> Clear / Terminal
+        +-> ConflictHold
+        +-> StaleHold
+```
+
+No second NavigationWorld, full actor-table scan, renderer/game dependency or unverified lateral bypass is allowed inside this block.
 
 ## Candidate now on `main`
 
-New backend-neutral block:
+Dedicated downstream scaling harness:
 
 ```text
-src/world/navigation/local/
-    LocalHorizonPlanner.h
-    LocalHorizonPlanner.cpp
+benchmarks/navigation_local/
     CMakeLists.txt
+    main.cpp
     README.md
-```
-
-Tests/contracts:
-
-```text
-tests/navigation_local/
-    NavigationLocalContractTests.cpp
-    CMakeLists.txt
+    RUN_LOG.md
     run_mingw64.sh
 
-tests/architecture_contracts/check_navigation_local_boundary.py
+tests/architecture_contracts/check_navigation_local_benchmark.py
 ```
 
-The block consumes an upstream nominal target plus `NavigationMap::QueryResult` compact candidates. It owns no actor table, spatial index, GPU state, global route or second NavigationWorld snapshot.
+It measures only `LocalHorizonPlanner::evaluate()` over already reduced compact candidates. It deliberately does not rerun full-world NavigationMap broadphase.
 
-## Reference semantics
-
-Physical horizon:
+Pinned candidate counts:
 
 ```text
-latencyDistance = |v|*resultAge + 0.5*|a|*resultAge^2
-brakingDistance = |v|^2 / (2*maxBrakingAcceleration)
-
-horizonDistance = max(
-    minimumHorizon,
-    latencyDistance + brakingDistance + turnDistance + safetyMargin
-)
+clear:     0 / 16 / 64 / 256 / 1024
+conflict:     16 / 64 / 256 / 1024
+stale:                           1024
 ```
 
-If the nominal target is farther away, the result is a bounded `PassThrough` target. If it lies inside the horizon, the result remains `Terminal` and preserves supplied terminal P/V/A.
+`1024` is a stress scale for the local consumer, not an expected normal candidate count.
 
-Dynamic conflict reference uses only compact candidates:
-
-- age candidate P/V using published acceleration;
-- bounded relative-motion closest approach;
-- accelerated separation at closest time;
-- conservative swept-sphere intersection against the bounded intended segment;
-- self-entity filtering.
-
-Results:
+Measured per scenario:
 
 ```text
-Clear
-    -> PassThrough or Terminal safe progress target
-
-ConflictHold
-    -> no safe progress target demonstrated; fail closed
-
-StaleHold
-    -> completed dynamic result too old; fail closed before candidate work
+median_us
+p95_us
+p95_ns_per_candidate
+candidates_examined
+conflicts_found
+status
 ```
 
-No lateral bypass is invented yet. A stronger avoidance algorithm will be added only after this ownership/safety boundary is behavior-accepted and measured.
+The harness batches calls so microsecond-scale measurements are not dominated by clock overhead. Scenario/vector construction occurs outside the timed region.
 
-## Pinned fixtures
+Expected semantic checks inside the benchmark:
 
 ```text
-clear_far_candidate
-    -> bounded PassThrough
-
-terminal_inside_horizon
-    -> Terminal with terminal P/V/A preserved
-
-crossing_actor
-    -> ConflictHold
-
-head_on_actor
-    -> ConflictHold with bounded closest-approach time
-
-stale_snapshot
-    -> StaleHold before candidate loop
-
-self_candidate
-    -> ignored
-
-invalid_candidate
-    -> contract rejection
+clear_*       -> Clear, conflictsFound == 0
+conflict_*    -> ConflictHold, conflictsFound >= 1
+stale_1024    -> StaleHold, candidatesExamined == 0
 ```
 
 ## RUN NOW
@@ -111,17 +99,22 @@ git rev-parse HEAD
 
 python tests/architecture_contracts/check_navigation_local_boundary.py
 bash tests/navigation_local/run_mingw64.sh
+
+python tests/architecture_contracts/check_navigation_local_benchmark.py
+bash benchmarks/navigation_local/run_mingw64.sh
 ```
 
 Send the complete output.
 
-## Decision after behavior gate
+## Decision after benchmark
 
-If architecture + behavioral tests PASS:
+This first local benchmark is a measurement gate, not a fabricated optimization target.
 
-1. accept the `NAV-V2-LOCAL-1` ownership/safety reference;
-2. add a small candidate-count scaling benchmark (not a full-world benchmark — NavigationMap reduction is already measured);
-3. measure clear/conflict/stale local evaluation cost on the target machine;
-4. then choose the first adjusted-target avoidance algorithm from measured game constraints.
+Interpretation order:
 
-Do not wire live `EliteGame` / `EliteServer` and do not add pursuit-specific intercept logic before this boundary passes.
+1. verify clear/conflict cost slope against supplied compact-candidate count;
+2. verify `stale_1024` remains O(1) and examines zero candidates;
+3. compare measured p95 with the Navigation v2 frame-budget context (`<0.5 ms` typical main-thread work, `<1.0 ms` normal peak);
+4. only then choose the first adjusted-target / lateral-avoidance algorithm and its candidate budget.
+
+Do not optimize the reference loop, wire live `EliteGame` / `EliteServer`, or add pursuit-specific intercept logic before this measurement is recorded.

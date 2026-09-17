@@ -1,9 +1,22 @@
 # Navigation v2 — terminal docking 6DoF model
 
-**Status:** isolated candidate pending target-machine architecture/build/behavior gate  
+**Status:** behavior / architecture ACCEPTED on target machine  
 **Updated:** 2026-09-17 Europe/Kyiv  
-**Stage:** `NAV-V2-TRAJECTORY-1` / docking 9A  
+**Stage:** `NAV-V2-TRAJECTORY-1` / docking 9A CLOSED  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`, `src/world/navigation/MOVING_PASSAGE_TRAJECTORY_MODEL.md`
+
+## Acceptance evidence
+
+Target-machine gate:
+
+```text
+forzub/Elite@835271539619b7dd02efc54ff54df51d64b49fce
+NAVIGATION TRAJECTORY DOCKING TERMINAL CONTRACT: PASS
+9/9 navigation_trajectory CTest PASS
+100% tests passed
+```
+
+The acceptance build emitted one non-functional compiler warning for an unused `normalizeOrZero()` helper. That helper was removed immediately after acceptance; no terminal behavior was changed. Dock-port prediction is now exposed as a shared bounded helper for stage 9B.
 
 ## Purpose
 
@@ -24,7 +37,7 @@ src/world/navigation/trajectory/DockingTerminalEvaluator.h
 src/world/navigation/trajectory/DockingTerminalEvaluator.cpp
 ```
 
-This is docking stage **9A**. It does not yet synthesize the entire approach trajectory; stage 9B will compose the accepted moving-passage machinery with this terminal target.
+This is accepted docking stage **9A**. Stage 9B composes continuous approach geometry and physical authority into this terminal target.
 
 ## Docking is not center-point arrival
 
@@ -125,6 +138,14 @@ The `omega x r` term is mandatory. A rotating station-rim port has tangential ve
 
 A moving + rotating dock therefore has one combined predicted terminal frame rather than separate translation and rotation hacks.
 
+The same prediction is exposed through:
+
+```text
+DockingTerminalEvaluator::predictDockPortWorldState(...)
+```
+
+so continuous docking approach code consumes the same port kinematics instead of maintaining a second model.
+
 ## Terminal error diagnostics
 
 The evaluator publishes:
@@ -141,7 +162,7 @@ rollAlignmentError
 relativeAngularSpeed
 ```
 
-The current first capture policy gates total position error and total relative linear speed. The axial/tangential diagnostics are exposed so stage 9B can use more detailed approach/capture policies without changing frame ownership.
+The current capture policy gates total position error and total relative linear speed. Axial/tangential diagnostics remain exposed for later control/debug policy without changing frame ownership.
 
 ## Capture statuses
 
@@ -181,7 +202,7 @@ Damage / Structural
 
 Ordinary docking must go around / abort when capture cannot be maintained. `Capturable` is not a license to treat a destructive impact as successful docking.
 
-## Pinned behavior fixtures
+## Accepted behavior fixtures
 
 ```text
 stationary bottom-to-bottom ports
@@ -212,17 +233,12 @@ position outside capture tolerance
     -> PositionMismatch
 ```
 
-## Next after acceptance
+## Active continuation — stage 9B
 
-Stage 9B will build a bounded docking approach evaluator using the already accepted moving-passage machinery:
+Stage 9B is documented in:
 
 ```text
-coarse rendezvous / moving intercept
-    -> docking corridor acquisition
-    -> continuous oriented-hull corridor proof
-    -> terminal relative P/V/attitude/omega convergence
-    -> DockingTerminalEvaluator
-    -> capture / latch request
+src/world/navigation/DOCKING_APPROACH_MODEL.md
 ```
 
-The port frame is the target; no second navigation world or separate docking physics model is introduced.
+It verifies the final dock-local continuous corridor, world inertial vehicle authority and then composes into this accepted terminal evaluator. The port frame remains the target; no second navigation world or separate docking physics model is introduced.

@@ -130,7 +130,7 @@ lateral
 vertical
 ```
 
-Between sample endpoints the projection receives a conservative bound from acceleration-vector change plus body-axis rotation.
+Because Hermite acceleration is linear over each interval, endpoint projections contain the fixed-axis extrema. Extra continuous projection margin is added only for body-axis rotation. This avoids inventing cross-axis thrust demand when only another acceleration component changes.
 
 A clear geometric curve may therefore still return:
 
@@ -149,7 +149,7 @@ EliteAssisted
     plus supplied controller-policy max velocity/forward slip angle
 ```
 
-Assisted mode is not allowed to manufacture extra acceleration.
+Assisted mode is not allowed to manufacture extra acceleration authority.
 
 ### Result classes
 
@@ -190,7 +190,7 @@ python tests/architecture_contracts/check_navigation_trajectory_continuous_passa
 bash tests/navigation_trajectory/run_mingw64.sh
 ```
 
-Send complete output.
+Send complete output, including `git rev-parse HEAD`.
 
 ## Next after green gate
 

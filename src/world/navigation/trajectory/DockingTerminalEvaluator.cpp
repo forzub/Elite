@@ -95,14 +95,6 @@ Vec3d transformDirection(const Basis3d& basis, const Vec3d& local) noexcept
     );
 }
 
-Vec3d normalizeOrZero(const Vec3d& value) noexcept
-{
-    const double magnitude = length(value);
-    if (!finite(magnitude) || magnitude <= kEpsilon)
-        return {};
-    return scale(value, 1.0 / magnitude);
-}
-
 bool validPort(const Evaluator::LocalPortFrame& port) noexcept
 {
     if (!finite(port.positionLocalMeters) ||
@@ -228,7 +220,7 @@ Evaluator::PortWorldState shipPortWorld(
     return state;
 }
 
-Evaluator::PortWorldState dockPortWorld(
+Evaluator::PortWorldState dockPortWorldUnchecked(
     const Evaluator::MovingDockState& dock,
     const Evaluator::LocalPortFrame& port,
     double timeSeconds
@@ -285,6 +277,22 @@ double angleBetweenUnit(const Vec3d& a, const Vec3d& b) noexcept
 
 } // namespace
 
+DockingTerminalEvaluator::PortWorldState
+DockingTerminalEvaluator::predictDockPortWorldState(
+    const MovingDockState& dock,
+    const LocalPortFrame& port,
+    double timeSeconds
+) noexcept
+{
+    if (!validDock(dock) || !validPort(port) ||
+        !finite(timeSeconds) || timeSeconds < 0.0)
+    {
+        return {};
+    }
+
+    return dockPortWorldUnchecked(dock, port, timeSeconds);
+}
+
 DockingTerminalEvaluator::Result DockingTerminalEvaluator::evaluate(
     const Query& query
 ) noexcept
@@ -301,7 +309,7 @@ DockingTerminalEvaluator::Result DockingTerminalEvaluator::evaluate(
     }
 
     result.shipPortWorld = shipPortWorld(query.shipAtCapture, query.shipPort);
-    result.dockPortWorld = dockPortWorld(
+    result.dockPortWorld = predictDockPortWorldState(
         query.dock,
         query.dockPort,
         query.captureTimeSeconds

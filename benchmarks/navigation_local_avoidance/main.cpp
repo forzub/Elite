@@ -11,13 +11,13 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace
 {
 
 using Avoidance = world::navigation::LocalAvoidancePlanner;
-using Horizon = world::navigation::LocalHorizonPlanner;
 using Map = world::navigation::NavigationMap;
 using Space = world::navigation::NavigationSpace;
 using Clock = std::chrono::steady_clock;

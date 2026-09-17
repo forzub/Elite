@@ -1,6 +1,6 @@
 # Navigation v2 — continuous static passage trajectory model
 
-**Status:** isolated candidate pending target-machine gate  
+**Status:** behavior/architecture accepted; target-machine performance gate active  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Stage:** `NAV-V2-TRAJECTORY-1`  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`, `src/world/navigation/ORIENTED_PASSAGE_MODEL.md`
@@ -20,7 +20,7 @@ EmergencyPassageMitigator
     if collision-free entry cannot be reached, keep a best-effort command alive
 ```
 
-The next question is continuous:
+The continuous verifier answers:
 
 ```text
 Can one complete bounded translation + rotation segment be executed
@@ -28,12 +28,37 @@ with the declared vehicle authority while the oriented hull stays
 inside a static narrow passage for the whole interval?
 ```
 
-Candidate code:
+Accepted implementation:
 
 ```text
 src/world/navigation/trajectory/ContinuousPassageTrajectoryEvaluator.h
 src/world/navigation/trajectory/ContinuousPassageTrajectoryEvaluator.cpp
 ```
+
+## Target-machine behavior acceptance
+
+Accepted on canonical public commit:
+
+```text
+574a2e98fd7a75ebf562bbfa476fba367fb888d1
+```
+
+Evidence:
+
+```text
+NAVIGATION TRAJECTORY CONTINUOUS PASSAGE CONTRACT: PASS
+
+navigation_trajectory_passage               PASS
+navigation_trajectory_gap                   PASS
+navigation_trajectory_reachability          PASS
+navigation_trajectory_emergency_passage     PASS
+navigation_trajectory_continuous_passage    PASS
+
+100% tests passed, 0 failed
+Total Test time: 0.24 sec
+```
+
+Behavior is frozen pending the dedicated performance measurement.
 
 ## Analytic segment
 
@@ -149,7 +174,7 @@ EliteAssisted
     this is an assisted-control policy constraint, not extra thrust
 ```
 
-The first isolated evaluator therefore distinguishes control semantics without duplicating the authoritative flight controller.
+The accepted evaluator therefore distinguishes control semantics without duplicating the authoritative flight controller.
 
 ## Result classes
 
@@ -180,7 +205,7 @@ Target-machine runner:
 tests/navigation_trajectory/run_mingw64.sh
 ```
 
-New fixture executable:
+Fixture executable:
 
 ```text
 navigation_trajectory_continuous_passage_tests
@@ -221,7 +246,7 @@ Architecture checker:
 tests/architecture_contracts/check_navigation_trajectory_continuous_passage.py
 ```
 
-## Performance rule
+## Performance gate
 
 The verifier is bounded and allocation-free in its hot logic:
 
@@ -233,11 +258,38 @@ no obstacle all-pairs work
 no NavigationMap/NavigationSpace ownership
 ```
 
-Do not benchmark-optimize it before behavior acceptance on the target machine. After the behavior gate is green, add a dedicated microbenchmark before integrating the verifier into live NPC/game control.
+Dedicated benchmark:
+
+```text
+benchmarks/navigation_trajectory_continuous/
+```
+
+Primary integration scenario:
+
+```text
+full_precision_batch8
+```
+
+It executes eight complete verifier calls, matching the upstream hard `<=8` surviving precision-candidate ceiling. Scenario construction and one-time contract validation are outside the timed region.
+
+Decision rule:
+
+```text
+batch8 p95 < 0.5 ms
+    -> performance-accept and freeze this static reference
+
+0.5 ms <= batch8 p95 < 1.0 ms
+    -> acceptable normal peak; inspect scheduling/candidate ordering before changing math
+
+batch8 p95 >= 1.0 ms
+    -> optimize or introduce a stricter precision-work budget before live integration
+```
+
+This is a target-machine gate, not a portable CI timing assertion.
 
 ## Not yet claimed
 
-This first continuous slice still does not own:
+This continuous static slice still does not own:
 
 - time-varying obstacle-gap geometry;
 - arbitrary nonzero initial angular-rate synthesis inside the segment;

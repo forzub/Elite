@@ -120,6 +120,8 @@ nominal LocalHorizonPlanner result
 
 The current `NavigationSpace` semantic free-space region is an axis-aligned box. For an agent envelope, the traversable interior of one region is a shrunken convex AABB. Therefore, when both the current agent point and an adjusted target are traversable and resolve to the same region, the entire straight segment between them is statically contained in that free-space volume.
 
+Both endpoint results must come from the **same static publication**: identical `spaceRevision` and `sourceRevision`. Mixed-revision endpoint evidence fails closed as `StaticHold` instead of composing stale and current free-space facts.
+
 This is intentionally conservative. It may reject a valid maneuver crossing a portal or overlapping region, but it does not invent static free space. Portal-aware local avoidance is a later extension only if runtime evidence requires it.
 
 ### Current-kinematics conflicts remain fail closed

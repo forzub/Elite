@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-17 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / emergency contact severity  
+**Current focus:** NavigationWorld v2 / moving time-varying gaps  
 **Canonical development branch:** `main`  
 **Active stage:** `NAV-V2-TRAJECTORY-1`
 
@@ -43,7 +43,8 @@ ConflictHold / explicit aperture / docking corridor
         -> AttitudeReachabilityEvaluator
         -> ContinuousPassageTrajectoryEvaluator
         -> collision-free command
-           OR EmergencyPassageMitigator when safe motion is too late
+           OR EmergencyPassageMitigator
+                -> EmergencyContactSeverityScorer for unavoidable contacts
 ```
 
 ### Bounded gaps — ACCEPTED
@@ -67,63 +68,66 @@ Behavior: continuous contract PASS and `5/5` trajectory CTest PASS.
 Target-machine performance on `6f85436252d36e4b586ab496efe3aea45fb25e79`:
 
 ```text
-straight_newton p95                4.0458 us
-rolled_newton p95                  6.5235 us
-lateral_newton p95                 4.1593 us
-elite_aligned p95                  4.1820 us
-geometry_blocked_roll p95          6.5133 us
-full_precision_batch8 p95         41.3527 us
+full_precision_batch8 p95 = 41.3527 us = 0.04135 ms
 ```
 
-The eight-query batch is `0.04135 ms p95`, far inside the `<0.5 ms typical` budget. The static continuous verifier is frozen unless live evidence later contradicts this result.
+The static continuous verifier is frozen unless live evidence later contradicts this result.
 
-## Active candidate — emergency contact severity
+### Emergency contact severity — ACCEPTED
 
-New component:
+Target-machine gate on `7f1bccd4e8b91c72e4fc5f9e6d1329260790aa8e`:
 
 ```text
-EmergencyContactSeverityScorer
+NAVIGATION TRAJECTORY EMERGENCY CONTACT SEVERITY CONTRACT: PASS
+6/6 navigation_trajectory CTest PASS
+100% tests passed, 0 failed
+Total Test time: 0.27 sec
 ```
+
+The fixed scorer ranks already predicted unavoidable contacts by rigid-body relative contact-point velocity, peak normal closing speed, coarse normal energy/momentum and incidence angle. Impact severity outranks route progress. Exact CCD/TOI/manifold/impulse/material response stay physics authority.
+
+## Active candidate — `MovingGapPredictor`
 
 Authority:
 
 ```text
-src/world/navigation/EMERGENCY_CONTACT_SEVERITY_MODEL.md
+src/world/navigation/MOVING_GAP_MODEL.md
 ```
 
-This scorer does not discover collisions. It consumes bounded predicted contact witnesses and ranks no more than eight emergency trajectory candidates with no more than four witnesses each.
-
-Per witness it evaluates rigid-body relative contact-point motion:
+The predictor is intentionally downstream of snapshot pair discovery. It receives one already-selected pair and advances compact boundary motion over a short horizon:
 
 ```text
-v_ship_contact = v_center + omega x r
-v_rel = v_ship_contact - v_surface
-v_n = max(0, -dot(v_rel, normalTowardFreeSpace))
+P / V / A
+angular velocity
+conservative radius
+snapshot revision
 ```
 
-Selection priority is:
+Work is fixed:
 
 ```text
-no-contact
--> minimum peak normal closing speed
--> minimum normal impact-energy proxy
--> minimum normal momentum proxy
--> more tangential incidence
--> lower geometry deficit
--> higher useful progress
--> deterministic id/index
+33 time samples
+32 continuous intervals
 ```
 
-Impact severity outranks route progress, so a glancing scrape/ricochet can beat a harder normal hit even when the harder hit advances farther.
+It publishes time-varying gap center/velocity, width, separation axis/rate and both boundary surface normals/material velocities.
 
-Exact CCD/TOI/manifold/impulse/material response remain physics authority. The scorer's energy/momentum are navigation ranking proxies only.
+Continuous width uses exact distance to the endpoint relative-position chord minus the quadratic constant-acceleration deviation bound:
+
+```text
+|a_rel| * dt^2 / 8
+```
+
+so a gap that closes between adjacent samples is rejected. Continuous transverse alignment is also bounded, preventing a pair that rotates into the travel direction from remaining a valid side-by-side passage.
+
+This slice still does **not** prove that the controlled oriented hull can traverse the moving gap. That is the next downstream composition step.
 
 Target-machine architecture/build/behavior acceptance is pending.
 
 ## Remaining order
 
-1. accept static emergency-contact severity scoring;
-2. moving/time-varying obstacle gaps and relative-motion contact prediction;
+1. accept moving-gap P/V/A prediction + continuous pair proof;
+2. moving continuous ship-passage proof against the time-varying gap;
 3. moving/rotating terminal docking with explicit mating frames and bottom-to-bottom orientation;
 4. deterministic NPC pilot execution/skill;
 5. live `EliteGame` / `EliteServer` / guidance integration;
@@ -132,6 +136,6 @@ Target-machine architecture/build/behavior acceptance is pending.
 
 ## Final system acceptance
 
-Navigation v2 is complete only when the live runtime demonstrates, within the established budgets, ordinary travel, static/dynamic avoidance, oriented-gap traversal, truthful Elite/Newton reachability, least-severity unavoidable-contact behavior, recovery from post-impact truth, moving/rotating docking, NPC-scale execution, and guidance/debug driven by the same accepted navigation state.
+Navigation v2 is complete only when the live runtime demonstrates, within the established budgets, ordinary travel, static/dynamic avoidance, static and moving oriented-gap traversal, truthful Elite/Newton reachability, least-severity unavoidable-contact behavior, recovery from post-impact truth, moving/rotating docking, NPC-scale execution, and guidance/debug driven by the same accepted navigation state.
 
 No synchronous GPU readback or unbounded all-pairs precision search is allowed on the frame path.

@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-17 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / dynamic conflict + local receding horizon  
+**Current focus:** NavigationWorld v2 / local dynamic avoidance  
 **Canonical development branch:** `main`  
 **Active stage:** `NAV-V2-LOCAL-1`
 
@@ -51,50 +51,67 @@ zero portals examined     57,197
 turn portals examined    329,660
 ```
 
-Architecture/behavior/benchmark contracts all passed, all routes were found and accepted route costs were unchanged. The predeclared turn gate was `<=40 ms p95`; both 10k scenarios pass with large margin.
+Static turn search is closed; do not spend more work there without new runtime evidence.
 
-The transition count stayed unchanged while p95 fell from `67.9647/72.6054 ms` to `12.0072/11.9065 ms`. Therefore immutable per-transition work, not the semantic expanded-state count, was the practical bottleneck for this reference topology. Static turn search is closed; do not spend more work there without new runtime evidence.
+## `NAV-V2-LOCAL-1` — REFERENCE ACCEPTED
 
-## `NAV-V2-LOCAL-1` — BEHAVIOR ACCEPTED / PERFORMANCE PENDING
+Target-machine behavior gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39` accepted the backend-neutral `LocalHorizonPlanner` boundary.
 
-Fresh target-machine behavior gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
+The planner consumes an upstream nominal target plus compact `NavigationMap::QueryResult`, computes a latency/braking/turn/margin-bounded horizon, evaluates bounded dynamic conflicts, and returns `Clear`, `ConflictHold` or `StaleHold` with `PassThrough`, `Terminal` or `Hold` target semantics.
 
-```text
-NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
-navigation_local: 1/1 PASS
-100% tests passed, 0 failed
-Total Test time = 0.05 sec
-```
+No second NavigationWorld, full actor-table scan, GLM/OpenGL/render/game dependency or unverified free-space assumption is allowed.
 
-The backend-neutral `LocalHorizonPlanner` ownership/safety reference is therefore accepted. It consumes an upstream nominal target plus compact `NavigationMap::QueryResult`, computes a latency/braking/turn/margin-bounded horizon, evaluates bounded dynamic conflicts, and returns `Clear`, `ConflictHold` or `StaleHold` with `PassThrough`, `Terminal` or `Hold` target semantics.
+### Compact-candidate scaling — ACCEPTED
 
-No second NavigationWorld, full actor-table scan, GLM/OpenGL/render/game dependency or unverified lateral bypass is allowed inside the block.
-
-A dedicated candidate-count benchmark is now prepared at:
+Target-machine benchmark on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
 
 ```text
-benchmarks/navigation_local/
+scenario         p95_us     p95_ns/candidate
+clear_16          0.4814          30.0873
+clear_64          1.8327          28.6362
+clear_256         7.9820          31.1798
+clear_1024       36.9641          36.0977
+
+conflict_16       0.5073          31.7062
+conflict_64       1.9333          30.2078
+conflict_256      7.5441          29.4693
+conflict_1024    31.8656          31.1188
+
+stale_1024        0.0359          0 candidates examined
 ```
 
-Pinned scales:
+The one-pass dynamic reference is therefore not a CPU bottleneck. `1024` candidates is already a stress scale and still remains below `0.037 ms p95`.
+
+## Active local slice — conservative adjusted target
+
+`LocalAvoidancePlanner` is the first measured lateral-avoidance candidate. It composes the accepted local horizon reference with the accepted `NavigationSpace` public point-query boundary.
+
+For nominal `ConflictHold`, it tries at most sixteen 3D target probes:
 
 ```text
-clear:     0 / 16 / 64 / 256 / 1024 compact candidates
-conflict:     16 / 64 / 256 / 1024 compact candidates
-stale:                           1024 compact candidates
+15 degree deflection x 8 azimuths
+30 degree deflection x 8 azimuths
 ```
 
-This benchmark measures only downstream `LocalHorizonPlanner::evaluate()` cost. It does not repeat the already accepted full-world NavigationMap broadphase benchmark. `1024` is a stress scale, not an expected normal candidate count.
+Each candidate must pass both:
 
-Current status: **target-machine candidate scaling pending**. No avoidance algorithm beyond fail-closed hold is accepted yet.
+1. **static proof:** current agent point and candidate target are envelope-safe and resolve to the same `NavigationSpace` region;
+2. **dynamic proof:** the candidate is rechecked through `LocalHorizonPlanner` against the same compact dynamic snapshot.
+
+The same-region rule is intentionally conservative. A semantic free-space region is a convex AABB, so the complete straight segment between two envelope-safe points in that same region remains statically contained. Portal-crossing avoidance is not yet claimed.
+
+The accepted closest-approach reference uses current ship P/V/A. Therefore the first lateral slice may clear a future swept-corridor blocker but must not claim that a target change alone erased an already predicted head-on/crossing collision. Those cases remain fail-closed `ConflictHold` until a trajectory-aware maneuver is separately demonstrated.
+
+Current avoidance candidate status: **pending target-machine architecture/compile/behavior gate**. Avoidance probe performance is also pending and will be measured only after behavior passes.
 
 ## Next order
 
-1. run/record `benchmarks/navigation_local/` candidate-count scaling;
-2. choose and pin the first adjusted-target/lateral-avoidance algorithm from measured cost and game constraints;
-3. add pursuit/receding-intercept as a consumer of the accepted local layer;
-4. implement raw NavigationWorld debug visualization from the same completed snapshot;
-5. integrate accepted NavigationWorld products into live game/server;
-6. retire legacy route-wide navigation only after v2 owns the live path.
+1. run the local avoidance architecture + behavior gate;
+2. benchmark multiplied avoidance probe cost for nominal-clear, early-adjust, static-reject and dynamic-reject paths;
+3. if accepted, design the trajectory-aware head-on/crossing maneuver layer;
+4. add pursuit/receding-intercept as a consumer of the accepted local layer;
+5. implement raw NavigationWorld debug visualization from the same completed snapshot;
+6. integrate accepted NavigationWorld products into live game/server;
+7. retire legacy route-wide navigation only after v2 owns the live path.
 
 Do not add velocity, braking, dynamic traffic or pursuit prediction to persistent `NavigationSpace` static cost.

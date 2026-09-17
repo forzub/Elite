@@ -10,6 +10,7 @@ add_library(EliteNavigationTrajectory STATIC
     AttitudeReachabilityEvaluator.cpp
     EmergencyPassageMitigator.cpp
     ContinuousPassageTrajectoryEvaluator.cpp
+    EmergencyContactSeverityScorer.cpp
 )
 
 target_include_directories(EliteNavigationTrajectory PUBLIC

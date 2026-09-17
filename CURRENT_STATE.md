@@ -3,7 +3,7 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** `NAV-V2-TRAJECTORY-1` — emergency contact severity candidate
+**Active stage:** `NAV-V2-TRAJECTORY-1` — moving / time-varying gap prediction candidate
 
 ## Closed foundations
 
@@ -36,9 +36,10 @@ OrientedPassageEvaluator
 AttitudeReachabilityEvaluator
 EmergencyPassageMitigator
 ContinuousPassageTrajectoryEvaluator
+EmergencyContactSeverityScorer
 ```
 
-### Bounded gap — ACCEPTED
+### Bounded gaps — ACCEPTED
 
 ```text
 top8_1024 p95 = 24.0699 us = 0.0241 ms
@@ -66,73 +67,79 @@ full_precision_batch8 p95 = 41.3527 us = 0.04135 ms
 
 This is about 8.3% of the `<0.5 ms typical` navigation CPU budget. Decision: freeze the static continuous verifier; do not micro-optimize it without contrary live evidence.
 
-Accepted continuous verifier:
+### Emergency contact severity — ACCEPTED
+
+Target-machine gate on `7f1bccd4e8b91c72e4fc5f9e6d1329260790aa8e`:
 
 ```text
-cubic Hermite translation
-shortest-arc smoothstep attitude
-33 pose samples
-32 conservative continuous interval proofs
-continuous OBB sweep/curve bounds
-body-axis linear authority
-analytic angular authority
-Newtonian vs Elite-assisted slip semantics
+NAVIGATION TRAJECTORY EMERGENCY CONTACT SEVERITY CONTRACT: PASS
+6/6 navigation_trajectory CTest PASS
+100% tests passed, 0 failed
+Total Test time: 0.27 sec
 ```
 
-## Active candidate — emergency contact severity
+Accepted scorer is hard-bounded to `<=8` emergency candidates and `<=4` predicted contact witnesses per candidate. It ranks by contact-point relative motion including `omega x r`, moving-surface velocity, peak closing normal speed, normal-energy/momentum proxies and glancing incidence. Exact CCD/TOI/manifold/impulse/ricochet remain physics authority.
 
-New bounded component:
+## Active candidate — moving / time-varying gap prediction
+
+New component:
 
 ```text
-EmergencyContactSeverityScorer
+MovingGapPredictor
 ```
 
 Authority:
 
 ```text
-src/world/navigation/EMERGENCY_CONTACT_SEVERITY_MODEL.md
+src/world/navigation/MOVING_GAP_MODEL.md
 ```
 
-It consumes already-predicted contact witnesses; it does not perform collision discovery.
+It receives **one already-selected gap pair** from the accepted bounded snapshot stage. It does not perform pair discovery or scene-wide search.
 
-Hard bounds:
+Per boundary it consumes compact motion:
 
 ```text
-<= 8 emergency trajectory candidates
-<= 4 contact witnesses per candidate
+P / V / A
+angular velocity
+conservative radius
+snapshot revision
 ```
 
-For each witness:
+Fixed work:
 
 ```text
-v_ship_contact = v_center + omega x r
-v_rel = v_ship_contact - v_surface
-v_n = max(0, -dot(v_rel, normalTowardFreeSpace))
+33 time samples
+32 continuous intervals
+one already-selected obstacle pair
 ```
 
-Ranking priority:
+Sample state publishes:
 
 ```text
-no-contact
--> minimum peak normal closing speed
--> minimum normal energy proxy
--> minimum normal momentum proxy
--> more tangential incidence
--> lower geometry deficit
--> higher passage-axis progress
--> deterministic id/index
+gap center + gap-center velocity
+separation axis / separation rate
+clear separation
+both boundary surface points
+normals toward free space
+surface material velocities including omega x r
 ```
 
-This explicitly prefers a glancing/ricochet-friendly contact over a harder normal impact when collision is unavoidable.
+Continuous gap width is not accepted from samples alone. For constant relative acceleration, each interval uses:
 
-The energy/momentum values are coarse navigation ranking proxies only. Exact CCD/TOI/contact manifold/impulse/material response remain physics authority.
+```text
+center curve deviation from endpoint chord <= |a_rel| * dt^2 / 8
+```
 
-Candidate code/tests are on `main`; target-machine architecture/build/behavior gate is pending.
+plus exact origin-to-chord distance to obtain a conservative whole-interval clear-separation lower bound. A gap that closes and reopens between adjacent samples must therefore fail.
+
+The predictor also continuously bounds `abs(separationAxis dot travel)` so a pair that rotates into a longitudinal/non-passage arrangement fails as `AlignmentLost`.
+
+Candidate code/docs/tests/architecture gate are on public `main`; target-machine compile/behavior evidence is pending.
 
 ## Remaining trajectory work before live integration
 
-1. accept emergency contact severity behavior;
-2. generate time-varying passage/contact witnesses for moving obstacle gaps;
+1. accept `MovingGapPredictor` behavior;
+2. combine moving gap states with the ship's continuous P/V/attitude/hull sweep to prove a complete moving passage;
 3. moving/rotating docking in a relative 6DoF frame with explicit `bottom of ship -> bottom of dock` mating semantics;
 4. deterministic `PilotSkillProfile` execution;
 5. integrate into live `EliteGame` / `EliteServer` / guidance;
@@ -141,4 +148,4 @@ Candidate code/tests are on `main`; target-machine architecture/build/behavior g
 
 ## Completion criterion for Navigation v2
 
-Navigation v2 is complete only when the live game repeatedly demonstrates ordinary flight inside CPU/GPU budgets, static/dynamic avoidance, oriented gaps, truthful Elite/Newton authority, active least-severity commands through unavoidable collisions, recovery from actual post-impact state, stationary/moving/rotating docking to the correct mating pose, shared guidance/debug truth and intended NPC traffic scaling without synchronous GPU waits or unbounded precision search.
+Navigation v2 is complete only when the live game repeatedly demonstrates ordinary flight inside CPU/GPU budgets, static/dynamic avoidance, oriented static and moving gaps, truthful Elite/Newton authority, active least-severity commands through unavoidable collisions, recovery from actual post-impact state, stationary/moving/rotating docking to the correct mating pose, shared guidance/debug truth and intended NPC traffic scaling without synchronous GPU waits or unbounded precision search.

@@ -3,7 +3,7 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-TRAJECTORY-1` — docking terminal 6DoF gate (stage 9A)
+**Stage:** `NAV-V2-TRAJECTORY-1` — docking stage 9B continuous approach gate
 
 ## Progress
 
@@ -12,127 +12,159 @@
 
 1–8  CLOSED / ACCEPTED
 9    ACTIVE — moving/rotating docking 6DoF
-10   PilotSkillProfile
-11   live integration + physics hookup
-12   end-to-end stress/debug + legacy retirement
+     9A terminal capture      ACCEPTED
+     9B continuous approach   ACTIVE
+10   PilotSkillProfile        PENDING
+11   live integration         PENDING
+12   stress/debug/retirement  PENDING
 ```
 
-## Newly closed gate — `MovingPassageTrajectoryEvaluator`
+## Newly closed gate — `DockingTerminalEvaluator`
 
 Target-machine run on:
 
 ```text
-18799ab2c026b6d6dce3da11f9225eae3a3c5f35
+835271539619b7dd02efc54ff54df51d64b49fce
 ```
 
 passed:
 
 ```text
-NAVIGATION TRAJECTORY MOVING PASSAGE CONTRACT: PASS
-8/8 navigation_trajectory CTest PASS
+NAVIGATION TRAJECTORY DOCKING TERMINAL CONTRACT: PASS
+9/9 navigation_trajectory CTest PASS
 100% tests passed
 ```
 
-Decision: `MovingPassageTrajectoryEvaluator` is **behavior/architecture accepted**. The isolated navigation stack can now prove one complete oriented ship trajectory through one time-varying moving gap with between-sample geometry and truthful vehicle authority.
+Decision: docking terminal 6DoF math is **behavior/architecture accepted**.
 
-Exact runtime collision remains downstream physics authority.
+Accepted capture gates:
 
-## Active candidate — `DockingTerminalEvaluator`
+```text
+explicit Bottom(ship) -> Bottom(dock)
+relative port P
+relative port V
+mating normals anti-aligned
+roll/reference-up aligned
+relative omega
+```
+
+Rotating port velocity includes `v_origin + omega x r`. A 180-degree rolled ship is rejected even with correct face normals.
+
+The acceptance build reported one harmless unused helper warning (`normalizeOrZero`). It has already been removed; dock-port prediction is now exposed as the shared bounded helper used by 9B.
+
+## Active candidate — `DockingApproachEvaluator`
 
 Public contract:
 
 ```text
-src/world/navigation/DOCKING_TERMINAL_MODEL.md
+src/world/navigation/DOCKING_APPROACH_MODEL.md
 ```
 
 Code/tests:
 
 ```text
-src/world/navigation/trajectory/DockingTerminalEvaluator.h
-src/world/navigation/trajectory/DockingTerminalEvaluator.cpp
-tests/navigation_trajectory/NavigationTrajectoryDockingTerminalTests.cpp
-tests/architecture_contracts/check_navigation_trajectory_docking_terminal.py
+src/world/navigation/trajectory/DockingApproachEvaluator.h
+src/world/navigation/trajectory/DockingApproachEvaluator.cpp
+tests/navigation_trajectory/NavigationTrajectoryDockingApproachTests.cpp
+tests/architecture_contracts/check_navigation_trajectory_docking_approach.py
 ```
 
-### Stage 9A scope
+## Core decision — final docking segment is dock-local
 
-One supplied candidate ship state at a future capture time is compared with one predicted moving/rotating dock-port frame.
+A rotating dock must not be approximated as a static world target plus a rest-to-rest ship attitude.
 
-Ship and dock ports carry explicit local metadata:
+Stage 9B transforms both ship endpoints into the predicted moving/rotating dock frame. In that relative frame:
 
 ```text
-surface semantic
-local port offset
-mating normal
-referenceUp / rollReference
+corridor is static
+relative terminal pose is fixed
+relative terminal angular rate = 0
 ```
 
-Current required pairing:
+Therefore at capture:
 
 ```text
-Bottom(ship) -> Bottom(dock)
+omega_ship = omega_dock
 ```
 
-No world-up inference is used.
+without a terminal-only hack.
 
-### Moving/rotating dock prediction
+## Continuous corridor geometry
 
-Dock origin uses bounded constant-acceleration translation and constant world-space angular velocity for this first terminal slice:
+The accepted `ContinuousPassageTrajectoryEvaluator` is reused as the dock-local geometry oracle:
 
 ```text
-p_origin(t) = p0 + v0*t + 0.5*a*t^2
-v_origin(t) = v0 + a*t
+PassageSource::DockingCorridor
+33 synchronized relative poses
+32 conservative continuous intervals
 ```
 
-Port orientation/offset are rotated to capture time and port velocity includes:
+Point samples alone cannot prove the final approach.
+
+## World physical authority
+
+Relative dock-frame convenience does not create thrust. The candidate transforms the relative trajectory back to world space and evaluates inertial acceleration:
 
 ```text
-v_port = v_origin + omega x r
+v_world = v_port + omega x r + v_relative
+
+a_world = a_port
+        + omega x (omega x r)
+        + 2 * omega x v_relative
+        + a_relative
 ```
 
-Ship offset-port velocity likewise includes:
+Centripetal and Coriolis terms are therefore real ship acceleration requirements.
+
+Body-axis forward/reverse/lateral/vertical authority receives a conservative between-sample projection margin using a world jerk bound plus body-axis angular motion.
+
+## Angular authority
+
+For dock-local relative orientation change `theta` over `T`:
 
 ```text
-v_ship_port = v_ship_center + omega_ship x r_ship
+relative omega peak = 1.5 * theta / T
+relative alpha peak = 6.0 * theta / T^2
 ```
 
-### Terminal 6DoF capture gates
+World bounds include dock rotation:
 
 ```text
-relative position
-relative linear velocity
-mating normals anti-aligned
-referenceUp / roll aligned
-relative angular velocity
+world omega bound = |omega_dock| + relative omega peak
+world alpha bound = relative alpha peak
+                  + |omega_dock| * relative omega peak
 ```
 
-A 180-degree rolled arrival is rejected even when face normals are correct.
+## Terminal composition
+
+After corridor and physical-authority success, the generated final world state is submitted to accepted `DockingTerminalEvaluator`.
 
 Result classes:
 
 ```text
-Capturable
-PortSemanticMismatch
-PositionMismatch
-RelativeLinearVelocityMismatch
-MatingNormalMismatch
-RollAlignmentMismatch
-RelativeAngularVelocityMismatch
+FeasibleForCapture
+CorridorBlocked
+LinearAuthorityExceeded
+AngularAuthorityExceeded
+AssistedSlipExceeded
+TerminalNotCapturable
 InvalidInput
 ```
 
-### Pinned fixtures
+`TerminalNotCapturable` retains the precise 9A reason for diagnostics.
+
+## Pinned behavior
 
 ```text
-stationary bottom-to-bottom -> Capturable
-Top ship port vs required Bottom -> PortSemanticMismatch
-translating carrier + matched P/V -> Capturable
-translating carrier + unmatched V -> RelativeLinearVelocityMismatch
-rotating offset port -> omega x r tangential velocity is required
-combined translating + rotating future frame -> Capturable when P/V/attitude/omega all match
-correct face normal + 180-degree reversed roll -> RollAlignmentMismatch
-correct pose + unmatched omega -> RelativeAngularVelocityMismatch
-position outside tolerance -> PositionMismatch
+stationary final approach -> FeasibleForCapture
+translating dock + co-moving ship -> FeasibleForCapture
+moving+rotating dock + dock-local tracking -> FeasibleForCapture + relative omega 0
+all 33 point samples fit but continuous bound fails -> CorridorBlocked
+insufficient inertial body-axis thrust -> LinearAuthorityExceeded
+dock rotation faster than ship angular-rate authority -> AngularAuthorityExceeded
+wide corridor + wrong 180-degree roll -> TerminalNotCapturable/RollAlignmentMismatch
+wide corridor + terminal position miss -> TerminalNotCapturable/PositionMismatch
+sideways approach: Newtonian feasible / tight EliteAssisted slip rejected
 ```
 
 ## RUN NOW
@@ -146,25 +178,24 @@ git merge --ff-only origin/main
 
 git rev-parse HEAD
 
-python tests/architecture_contracts/check_navigation_trajectory_docking_terminal.py
+python tests/architecture_contracts/check_navigation_trajectory_docking_approach.py
 bash tests/navigation_trajectory/run_mingw64.sh
 ```
 
 Expected suite count:
 
 ```text
-9/9
+10/10
 ```
 
 ## Next after green
 
-1. accept stage 9A terminal capture math;
-2. stage 9B: continuous moving/rotating docking corridor and terminal convergence using the accepted moving-passage machinery;
-3. deterministic `PilotSkillProfile` execution;
-4. live `EliteGame` / `EliteServer` / guidance + physics/collision hookup;
-5. end-to-end stress/debug/performance acceptance;
-6. retire legacy route-wide navigation only after v2 owns the stable live path.
+1. accept/freeze docking stage 9B and close major stage 9;
+2. begin deterministic `PilotSkillProfile` execution fixtures;
+3. live `EliteGame` / `EliteServer` / guidance + physics/collision hookup;
+4. end-to-end stress/debug/performance acceptance;
+5. retire legacy navigation only after stable v2 ownership.
 
 ## Definition of final success
 
-Navigation v2 is finished when the live runtime demonstrates normal flight, static/dynamic avoidance, oriented static/moving passage, truthful Elite/Newton authority, least-severity unavoidable collision behavior, replanning from actual post-impact truth, stationary/moving/rotating docking to the correct explicit mating frame, shared guidance/debug truth and intended NPC scaling without planner stalls or unbounded precision work.
+Navigation v2 is finished when the live runtime demonstrates normal flight, static/dynamic avoidance, oriented static/moving passage, truthful Elite/Newton vehicle authority, least-severity unavoidable collision behavior, replanning from actual post-impact truth, stationary/moving/rotating docking to the correct mating frame, shared guidance/debug truth and intended NPC scaling without planner stalls or unbounded precision work.

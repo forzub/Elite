@@ -1,6 +1,6 @@
 # Navigation v2 — emergency contact severity model
 
-**Status:** isolated candidate pending target-machine gate  
+**Status:** architecture/behavior accepted on target machine  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Stage:** `NAV-V2-TRAJECTORY-1`  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`, `src/world/navigation/CONTINUOUS_PASSAGE_MODEL.md`
@@ -13,19 +13,49 @@ The accepted emergency invariant remains:
 no collision-free proof != no navigation command
 ```
 
-The existing `EmergencyPassageMitigator` keeps a best-effort command alive when collision-free entry is already too late. The next question is narrower:
+The existing `EmergencyPassageMitigator` keeps a best-effort command alive when collision-free entry is already too late. `EmergencyContactSeverityScorer` answers the narrower question:
 
 ```text
 if several bounded emergency trajectories all expect contact,
 which predicted contact is physically less severe?
 ```
 
-Implementation candidate:
+Accepted implementation:
 
 ```text
 src/world/navigation/trajectory/EmergencyContactSeverityScorer.h
 src/world/navigation/trajectory/EmergencyContactSeverityScorer.cpp
 ```
+
+## Target-machine acceptance
+
+Accepted on canonical public commit:
+
+```text
+7f1bccd4e8b91c72e4fc5f9e6d1329260790aa8e
+```
+
+Architecture gate:
+
+```text
+NAVIGATION TRAJECTORY EMERGENCY CONTACT SEVERITY CONTRACT: PASS
+```
+
+Full trajectory suite:
+
+```text
+navigation_trajectory_passage                       PASS
+navigation_trajectory_gap                           PASS
+navigation_trajectory_reachability                  PASS
+navigation_trajectory_emergency_passage             PASS
+navigation_trajectory_continuous_passage            PASS
+navigation_trajectory_emergency_contact_severity    PASS
+
+100% tests passed, 0 failed out of 6
+Total Test time: 0.27 sec
+```
+
+Decision: **behavior/architecture accepted**. No separate microbenchmark is required for this fixed-size scorer unless later live composition shows material cost.
 
 ## Ownership boundary
 
@@ -77,7 +107,7 @@ Relative contact velocity is:
 v_rel = v_ship_contact - v_surface
 ```
 
-`v_surface` is already part of the witness so this same scorer can later rank contacts against moving obstacle gaps and moving/rotating docking geometry.
+`v_surface` is part of the witness, so this same accepted scorer can rank contacts against moving obstacle gaps and moving/rotating geometry once those witnesses are produced.
 
 ## Contact normal convention
 
@@ -153,21 +183,7 @@ Summed energy alone can hide one catastrophic contact among several mild contact
 
 This is intentionally conservative. A later structural damage model may refine effective mass and vulnerable contact regions without changing the navigation/physics ownership boundary.
 
-## Behavior fixtures
-
-Target-machine runner:
-
-```text
-tests/navigation_trajectory/run_mingw64.sh
-```
-
-New fixture:
-
-```text
-navigation_trajectory_emergency_contact_severity
-```
-
-Pinned cases:
+## Accepted behavior fixtures
 
 ```text
 high-total-speed glancing contact
@@ -209,18 +225,29 @@ no heap allocation required by the scorer
 no world scan
 ```
 
-Do not add a dedicated benchmark before behavior acceptance. After the target-machine gate, measure only if live composition indicates this fixed-size scorer is material; current continuous eight-candidate verification already costs only `0.04135 ms p95`.
+The accepted continuous eight-candidate verification already costs only `0.04135 ms p95`; do not introduce a dedicated scorer benchmark unless runtime composition later shows this scorer is material.
 
-## Not yet claimed
+## Next dependency
 
-This isolated scorer does not yet provide:
+The scorer is now waiting on time-varying geometry/witness production rather than more scoring math.
 
-- prediction of exact contact time or contact point;
+The active next slice is:
+
+```text
+MovingGapPredictor
+```
+
+which predicts one already-selected obstacle pair over a short horizon, publishes moving gap center/boundary kinematics, and continuously proves that the gap does not close or rotate into a longitudinal/non-passage configuration between time samples.
+
+## Still not claimed
+
+The accepted scorer itself does not provide:
+
+- prediction of exact ship contact time or ship hull contact point;
 - continuous emergency trajectory synthesis toward the winning witness;
 - reduced-mass calculation from both bodies' mass/inertia;
 - material/restitution/friction response;
 - vulnerable semantic hull-region weighting;
-- moving-gap contact witness generation;
 - moving/rotating docking witness generation.
 
 Those belong to later trajectory/physics integration slices.

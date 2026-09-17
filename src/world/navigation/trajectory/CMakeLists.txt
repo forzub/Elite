@@ -7,6 +7,7 @@ get_filename_component(
 add_library(EliteNavigationTrajectory STATIC
     OrientedPassageEvaluator.cpp
     BoundedGapCandidateBuilder.cpp
+    AttitudeReachabilityEvaluator.cpp
 )
 
 target_include_directories(EliteNavigationTrajectory PUBLIC

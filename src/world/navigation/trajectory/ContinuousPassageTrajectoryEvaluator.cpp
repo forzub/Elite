@@ -70,11 +70,6 @@ Vec3d add(const Vec3d& a, const Vec3d& b) noexcept
     return {a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
-Vec3d subtract(const Vec3d& a, const Vec3d& b) noexcept
-{
-    return {a.x - b.x, a.y - b.y, a.z - b.z};
-}
-
 Vec3d multiply(const Vec3d& value, double scale) noexcept
 {
     return {value.x * scale, value.y * scale, value.z * scale};
@@ -375,20 +370,6 @@ double hullRotationRadius(const Evaluator::HullProxy& hull) noexcept
         std::max(0.0, hull.additionalClearanceMeters);
 }
 
-void recordFirstFailure(
-    Evaluator::Result& result,
-    Evaluator::Status status,
-    std::size_t index
-) noexcept
-{
-    if (result.status == Evaluator::Status::InvalidInput ||
-        result.status == Evaluator::Status::Feasible)
-    {
-        result.status = status;
-        result.firstFailureIndex = index;
-    }
-}
-
 } // namespace
 
 ContinuousPassageTrajectoryEvaluator::Result
@@ -399,8 +380,6 @@ ContinuousPassageTrajectoryEvaluator::evaluate(const Query& query) noexcept
     if (!validQueryScalars(query))
         return result;
 
-    // Reuse the accepted passage boundary as validation authority for both end
-    // poses before constructing any orientation interpolation.
     const PassageResult startPassage = OrientedPassageEvaluator::evaluate(
         query.hull,
         query.start.pose,
@@ -574,10 +553,6 @@ ContinuousPassageTrajectoryEvaluator::evaluate(const Query& query) noexcept
             rotationalSweepInflation
         );
 
-        // Hermite acceleration is linear inside an interval. Therefore the
-        // maximum absolute projection onto a fixed passage axis occurs at one
-        // of the interval endpoints. M*dt^2/8 bounds the deviation of the
-        // continuous center curve from the endpoint chord.
         const double maxRightAcceleration = std::max(
             std::abs(dot(a.acceleration, passageRight)),
             std::abs(dot(b.acceleration, passageRight))
@@ -637,22 +612,17 @@ ContinuousPassageTrajectoryEvaluator::evaluate(const Query& query) noexcept
         }
         ++result.intervalsProven;
 
-        // Continuous body-axis acceleration authority bound. Hermite map-space
-        // acceleration is linear over the interval. Projection error relative
-        // to either endpoint is bounded by acceleration-vector change plus
-        // body-axis rotation of the largest endpoint acceleration magnitude.
-        const double accelerationChange = length(subtract(
-            b.acceleration,
-            a.acceleration
-        ));
+        // Hermite acceleration is a convex linear interpolation of the two
+        // endpoint acceleration vectors inside this interval. With a fixed
+        // body axis, endpoint projections already contain the exact extrema.
+        // Extra projection margin is needed only because the body axis rotates.
         const double maxAccelerationMagnitude = std::max(
             length(a.acceleration),
             length(b.acceleration)
         );
-        const double axisRotationError =
+        const double projectionError =
             maxAccelerationMagnitude *
             2.0 * std::sin(0.5 * std::min(kPi, intervalRotationRad));
-        const double projectionError = accelerationChange + axisRotationError;
 
         const double forwardUpper = std::max(
             a.forwardAcceleration,

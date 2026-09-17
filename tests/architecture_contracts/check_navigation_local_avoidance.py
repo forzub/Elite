@@ -56,6 +56,8 @@ for marker in (
     "azimuthSamples",
     "staticAdditionalClearanceMeters",
     "staticSpace.queryPoint",
+    "targetStatic.spaceRevision != start.spaceRevision",
+    "targetStatic.sourceRevision != start.sourceRevision",
     "targetStatic.regionId != start.regionId",
     "horizonPlanner.evaluate",
     "TargetMode::PassThrough",
@@ -83,6 +85,7 @@ for marker in (
 
 for marker in (
     "same-region",
+    "same static publication",
     "lateral",
     "head-on",
     "fail closed",
@@ -98,6 +101,7 @@ require("NAV-V2-LOCAL-1" in CURRENT_STATE and "avoidance" in CURRENT_STATE.lower
 print("NAVIGATION LOCAL AVOIDANCE BOUNDARY CONTRACT: PASS")
 print(" - adjusted-target search remains backend-neutral and bounded")
 print(" - NavigationSpace is consumed only through its public point-query boundary")
+print(" - static endpoint evidence must come from one space/source revision")
 print(" - lateral targets require same-region static free-space proof")
 print(" - dynamic candidates are rechecked through the accepted LocalHorizonPlanner")
 print(" - swept-corridor blockers may adjust; current-kinematics head-on remains fail closed")

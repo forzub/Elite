@@ -3,100 +3,125 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-LOCAL-1` — dynamic conflict + local receding horizon
+**Stage:** `NAV-V2-LOCAL-1` — local-horizon reference candidate pending target-machine gate
 
-## Closed gate — `NAV-V2-SPACE-1`
+## Closed prior gate
 
-Static indexing, costed corridor v1 and static turn-cost semantics/performance are accepted.
+`NAV-V2-SPACE-1` is CLOSED / ACCEPTED. Final 10k turn-aware p95 is `12.0072 ms` open / `11.9065 ms` hub against the pinned `<=40 ms` gate. Do not continue static turn-search optimization without new runtime evidence.
 
-Final target-machine turn rerun on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
+## Candidate now on `main`
 
-```text
-NAVIGATION SPACE BOUNDARY CONTRACT: PASS
-navigation_space: 1/1 PASS
-100% tests passed, 0 failed
-NAVIGATION SPACE TURN BENCHMARK CONTRACT: PASS
-
-open_10k zero p95    8.4498 ms
-open_10k turn p95   12.0072 ms
-hub_10k  zero p95    8.4125 ms
-hub_10k  turn p95   11.9065 ms
-turn portals examined 329,660
-```
-
-Pinned acceptance gate was `<=40 ms p95`; static turn-aware search therefore passes and `NAV-V2-SPACE-1` is closed.
-
-Historical rejected paths remain recorded in `benchmarks/navigation_space_turn/RUN_LOG.md`. In particular, do not restore the weak Euclidean A* candidate without new evidence.
-
-## Active problem
-
-Compose already accepted shared-world products instead of producing a route-wide dense trajectory:
+New backend-neutral block:
 
 ```text
-accepted static corridor / nominal local target
-        +
-NavigationMap compact candidates
-        +
-agent state + bounded latency/safety horizon
-        |
-        v
-local conflict assessment
-        |
-        v
-temporary safe target state
-        |
-        v
-RuckigTrajectorySolver / flight control
+src/world/navigation/local/
+    LocalHorizonPlanner.h
+    LocalHorizonPlanner.cpp
+    CMakeLists.txt
+    README.md
 ```
 
-The existing `NavigationMap::Candidate` already carries compact map-space dynamic state:
+Tests/contracts:
 
 ```text
-entityId
-positionMapMeters
-velocityMapMetersPerSecond
-accelerationMapMetersPerSecond2
-predictedEndPositionMapMeters
-conservativeSweptCenterMapMeters
-actorRadiusMeters
-conservativeSweptRadiusMeters
-flags / motionRevision
+tests/navigation_local/
+    NavigationLocalContractTests.cpp
+    CMakeLists.txt
+    run_mingw64.sh
+
+tests/architecture_contracts/check_navigation_local_boundary.py
 ```
 
-Do not add a redundant planner API to `NavigationMap` and do not expose its internal cells/GPU state.
+The block consumes an upstream nominal target plus `NavigationMap::QueryResult` compact candidates. It owns no actor table, spatial index, GPU state, global route or second NavigationWorld snapshot.
 
-## Legacy inventory
+## Reference semantics
 
-Existing pre-v2 components include `TacticalCollisionMonitor`, `SmallCraftNavigation`, `GeometricPathPlanner`, `TrajectoryGenerator` and `GuidanceTunnel`.
+Physical horizon:
 
-`TacticalCollisionMonitor` contains useful closest-approach reference math, but its public surface depends on GLM and old `NavigationContact/NavigationScene` state. It is migration/reference code, not the new boundary.
+```text
+latencyDistance = |v|*resultAge + 0.5*|a|*resultAge^2
+brakingDistance = |v|^2 / (2*maxBrakingAcceleration)
 
-`SmallCraftNavigation` is likewise local GLM steering for old waypoint state. Do not wire Navigation v2 through it.
+horizonDistance = max(
+    minimumHorizon,
+    latencyDistance + brakingDistance + turnDistance + safetyMargin
+)
+```
 
-## First `NAV-V2-LOCAL-1` slice
+If the nominal target is farther away, the result is a bounded `PassThrough` target. If it lies inside the horizon, the result remains `Terminal` and preserves supplied terminal P/V/A.
 
-Build one backend-neutral local-horizon consumer under `src/world/navigation/` (separate from `map/` and `space/`) with these constraints:
+Dynamic conflict reference uses only compact candidates:
 
-- consumes compact dynamic candidates, never full actor/cell storage;
-- works in ship-centered map coordinates and does not include GLM/OpenGL/game/render headers;
-- deterministic CPU reference first;
-- bounded horizon only; no route-wide dense sampling;
-- relative-motion closest approach uses current P/V and conservative swept bounds;
-- output is a compact temporary target/safety product, not a trajectory;
-- fail closed when no safe local target is demonstrated;
-- no synchronous GPU readback or second NavigationWorld snapshot;
-- preserve revision/generation information needed to reason about stale results;
-- pursuit remains a later consumer and is not baked into generic conflict logic.
+- age candidate P/V using published acceleration;
+- bounded relative-motion closest approach;
+- accelerated separation at closest time;
+- conservative swept-sphere intersection against the bounded intended segment;
+- self-entity filtering.
 
-Use the accepted static corridor/nominal target as intent. Dynamic traffic must not become a persistent `NavigationSpace` cost term.
+Results:
 
-## Acceptance work for this slice
+```text
+Clear
+    -> PassThrough or Terminal safe progress target
 
-1. define the backend-neutral local-horizon API and ownership contract;
-2. add deterministic fixtures for clear corridor, crossing actor, head-on actor and stale/bounded horizon behavior;
-3. add architecture boundary test forbidding GLM/OpenGL/game/render dependencies and full-scene ownership;
-4. build/run isolated MinGW64 behavioral tests;
-5. only after behavior is pinned, add a small benchmark for candidate-count scaling and target-machine timing;
-6. then decide the next precision/steering algorithm from measurements rather than extending legacy route-wide planning.
+ConflictHold
+    -> no safe progress target demonstrated; fail closed
 
-Do not begin live `EliteGame` / `EliteServer` integration until this local composition boundary is accepted.
+StaleHold
+    -> completed dynamic result too old; fail closed before candidate work
+```
+
+No lateral bypass is invented yet. A stronger avoidance algorithm will be added only after this ownership/safety boundary is behavior-accepted and measured.
+
+## Pinned fixtures
+
+```text
+clear_far_candidate
+    -> bounded PassThrough
+
+terminal_inside_horizon
+    -> Terminal with terminal P/V/A preserved
+
+crossing_actor
+    -> ConflictHold
+
+head_on_actor
+    -> ConflictHold with bounded closest-approach time
+
+stale_snapshot
+    -> StaleHold before candidate loop
+
+self_candidate
+    -> ignored
+
+invalid_candidate
+    -> contract rejection
+```
+
+## RUN NOW
+
+```bash
+cd /d/__elite/work
+
+git fetch origin
+git switch main
+git merge --ff-only origin/main
+
+git rev-parse HEAD
+
+python tests/architecture_contracts/check_navigation_local_boundary.py
+bash tests/navigation_local/run_mingw64.sh
+```
+
+Send the complete output.
+
+## Decision after behavior gate
+
+If architecture + behavioral tests PASS:
+
+1. accept the `NAV-V2-LOCAL-1` ownership/safety reference;
+2. add a small candidate-count scaling benchmark (not a full-world benchmark — NavigationMap reduction is already measured);
+3. measure clear/conflict/stale local evaluation cost on the target machine;
+4. then choose the first adjusted-target avoidance algorithm from measured game constraints.
+
+Do not wire live `EliteGame` / `EliteServer` and do not add pursuit-specific intercept logic before this boundary passes.

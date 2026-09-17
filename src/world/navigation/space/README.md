@@ -2,31 +2,19 @@
 
 `NavigationSpace` is the **only production-facing API** for persistent static navigation topology in the active ship-centered NavigationWorld.
 
-Current stage: `NAV-V2-SPACE-1`.
+Stage `NAV-V2-SPACE-1`: **CLOSED / ACCEPTED**.
 
 ## Ownership
 
-The block owns static free-space topology and its CPU reference implementation. Callers publish free-space regions and portals by value and receive compact point/corridor/invalidation products by value.
+The block owns static free-space topology and its deterministic CPU reference. Callers publish free-space regions and portals by value and receive compact point/corridor/invalidation products by value.
 
-The public API deliberately does **not** expose:
+The public API deliberately does **not** expose GLM, OpenGL/GLFW, renderer/game state, internal maps/graphs/queues, BVH state or dense-slot acceleration structures.
 
-- GLM;
-- OpenGL / GLFW;
-- renderer state;
-- `SpaceState` / client state;
-- internal maps/graphs/queues;
-- private BVH / dense-slot acceleration structures;
-- future sparse-brick/navmesh acceleration structures.
+The first CPU reference uses axis-aligned free-space regions plus explicit portals. That is a reference representation, not a permanent storage mandate; later sparse-brick, convex-cell or hybrid internals may replace it without changing planner call sites.
 
-The first CPU reference uses axis-aligned free-space regions plus explicit portals. That is a reference representation, not a permanent storage mandate. A later sparse-brick, convex-cell or hybrid implementation may replace internals without changing planner call sites.
+## Free-space and clearance
 
-## Free-space rather than giant dense voxels
-
-The static world is represented as traversable regions connected by portals. Large open volumes may use coarse regions; detailed interiors may use smaller regions. A narrow docking corridor, tunnel, breach, canyon entrance or wall opening is represented by explicit traversable free space and portals whose clearance limits which agent envelopes may pass.
-
-Do not build one dense system-scale velocity/occupancy field. Dynamic P/V/A belongs to `NavigationMap`; this block owns static free-space topology only.
-
-## Agent envelope / clearance
+The static world is represented as traversable regions connected by portals. Large open volumes may use coarse regions; interiors may use smaller regions. Tunnels, breaches, canyon entrances, hangars and wall apertures are explicit free-space topology rather than one giant obstacle box.
 
 Every query supplies an `AgentEnvelope`:
 
@@ -34,47 +22,28 @@ Every query supplies an `AgentEnvelope`:
 required clearance = radiusMeters + additionalClearanceMeters
 ```
 
-A point is traversable only when it lies in a valid free-space region with enough distance to the region boundary and enough authored region clearance.
+The same geometry may therefore admit a drone and reject a larger ship.
 
-A portal is traversable only when its clearance admits the same envelope.
-
-This gives the required behavior where the same geometry can admit a drone and reject a larger ship.
-
-## Regions and portals
-
-The CPU reference currently accepts:
+Accepted behavioral fixtures include:
 
 ```text
-RegionInput
-    id
-    AABB in ship-centered map coordinates
-    clearance radius cap
-    flags
-    geometry revision
+wall_with_aperture
+    small agent -> route through opening
+    oversized agent -> opening rejected
 
-PortalInput
-    id
-    region A / B
-    center
-    clearance radius
-    bidirectional flag
-    flags
-    geometry revision
+canyon_vs_overflight
+    distance-only -> shorter canyon
+    clearance-aware -> longer open branch
+    oversized canyon agent -> canyon excluded
+
+zigzag_vs_smooth
+    zero turn penalty -> slightly shorter zig-zag
+    positive turn penalty -> smoother branch when turn burden dominates
 ```
-
-`queryCorridor()` returns only ordered region/portal IDs and diagnostics. It does not return internal graph nodes or materialize a dense trajectory.
 
 ## Fast topology corridor vs costed corridor
 
-Two static-space corridor products intentionally coexist.
-
-### `queryCorridor()`
-
-This is the deterministic **topology/BFS oracle**. It answers whether a traversable region/portal chain exists with the requested agent envelope and returns a stable coarse path cheaply. It remains useful for broad validity, mass/background use and reference diagnostics.
-
-### `queryCostedCorridor()`
-
-This is the policy-aware static route selector.
+`queryCorridor()` is the deterministic topology/BFS oracle. `queryCostedCorridor()` is the policy-aware static route selector.
 
 Accepted v1 cost:
 
@@ -83,73 +52,30 @@ edge cost = distanceWeight * coarse_geometric_distance
           + static_clearance_penalty
 ```
 
-Accepted v1 policy fields:
+Accepted 10k target-machine p95:
 
 ```text
-distanceWeight
-preferredClearanceMultiple
-clearancePenaltyMeters
+open distance_only      8.1733 ms
+open clearance_aware    8.5020 ms
+hub  distance_only      7.7609 ms
+hub  clearance_aware    9.6103 ms
 ```
 
-Traversal still fails closed when the agent physically cannot fit. The penalty only chooses between routes that are already traversable.
+The pinned v1 threshold was `<=15 ms p95`, so zero-turn RegionSlot Dijkstra is accepted.
 
-The geometric term approximates travel through a coarse region graph using region centers and portal centers. `totalCostMetersEquivalent` is therefore a coarse branch-comparison metric, not an exact physical trajectory-length claim.
+## Static turn cost v2 — ACCEPTED
 
-Accepted behavioral fixtures:
+When `turnPenaltyMetersPerRadian == 0`, the accepted v1 region-state path is used.
+
+When turn penalty is positive, search state is:
 
 ```text
-wall_with_aperture
-    small agent -> route through opening
-    oversized agent -> opening rejected
-
-canyon_vs_overflight
-    distance-only policy -> shorter canyon
-    clearance-aware policy -> longer open route
-    oversized canyon agent -> open route regardless of preference
+(RegionSlot, incoming PortalId)
 ```
 
-This is the contract required for tunnels, holes, station apertures, canyons and similar navigable geometry: an opening is not semantically merged into the surrounding obstacle when it has valid free-space topology and enough clearance.
+Arrival direction is part of state because future turn cost depends on how the route entered the region. The special start state has no turn penalty because `CorridorQuery` does not carry current ship heading/velocity; that belongs to local/precision planning.
 
-### Accepted costed-scaling result
-
-Dedicated target-machine benchmark at 10k regions / 28,600 portals:
-
-```text
-open distance_only p95      8.1733 ms
-open clearance_aware p95    8.5020 ms
-hub  distance_only p95      7.7609 ms
-hub  clearance_aware p95    9.6103 ms
-```
-
-The acceptance threshold was `<=15 ms p95`, so deterministic Dijkstra v1 is retained as an asynchronous worker/reference solve. No A* or priority-queue redesign was required for that zero-turn v1 acceptance.
-
-Raw evidence: `benchmarks/navigation_space_costed/RUN_LOG.md`.
-
-## Static turn cost v2 candidate
-
-Design authority:
-
-```text
-src/world/navigation/STATIC_TURN_COST.md
-```
-
-`CorridorCostPolicy` adds:
-
-```text
-turnPenaltyMetersPerRadian
-```
-
-When it is zero, `queryCostedCorridor()` keeps the accepted v1 region-state Dijkstra path. The expanded state-space must not tax distance/clearance-only background queries.
-
-When turn penalty is positive, turn-aware search uses:
-
-```text
-state = (RegionSlot, incoming PortalId)
-```
-
-This is mandatory because the future cost of leaving a region depends on the direction from which the route entered it. Two arrivals at the same region through different portals may have different optimal futures and cannot be collapsed into one region-only state.
-
-Static v2 edge cost is:
+Static v2 cost is:
 
 ```text
 edge cost = distanceWeight * coarse_geometric_distance
@@ -157,149 +83,107 @@ edge cost = distanceWeight * coarse_geometric_distance
           + turnPenaltyMetersPerRadian * turn_angle_radians
 ```
 
-Turn angle is measured at the current coarse region center between:
+Speed-dependent turn radius, angular acceleration, braking, traffic/risk and pursuit prediction are intentionally **not** persistent `NavigationSpace` terms.
+
+### Performance progression
 
 ```text
-incoming portal center -> current region center
-current region center  -> outgoing portal center
+tree-backed expanded state — rejected
+    open_10k 216.1602 ms
+    hub_10k  232.6520 ms
+
+Dense TurnStateSlot + binary heap
+    open_10k  67.9647 ms
+    hub_10k   72.6054 ms
+
+Euclidean A* — rejected
+    open_10k  97.0537 ms
+    hub_10k   97.6909 ms
 ```
 
-The special start state has no turn penalty because `CorridorQuery` does not carry current ship heading/velocity. Final maneuver feasibility still belongs to the local/precision planner and Ruckig.
-
-Pinned candidate fixture:
+The accepted implementation restores exact dense Dijkstra ordering and publishes immutable hot data with the graph:
 
 ```text
-zigzag_vs_smooth
-    turnPenalty=0 -> slightly shorter zig-zag
-    positive turnPenalty -> smoother branch once saved turn burden exceeds distance delta
+RegionSlot -> center / capacity / invalidation
+PortalSlot -> center / invalidation
+AdjacencyEdge -> geometricMeters / availableClearanceMeters
+TurnStateSlot -> precomputed outgoing turn-angle slice
 ```
 
-Speed-dependent turn radius, angular acceleration, braking distance, traffic/risk and pursuit prediction are intentionally not persistent `NavigationSpace` static terms.
+`invalidateBounds()` synchronizes dense invalidation mirrors with authoritative region/portal state. The positive-turn expanded loop therefore avoids ordered-map region/portal lookup and repeated center geometry, `sqrt` and `acos`.
 
-### Turn-aware performance progression
-
-The first expanded-state implementation used ordered maps/multimap and was rejected at roughly `216-233 ms p95` on 10k.
-
-Dense `TurnStateSlot` vectors plus a binary heap improved the same search to:
+Final target-machine acceptance on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
 
 ```text
-open_10k turn p95  67.9647 ms
-hub_10k  turn p95  72.6054 ms
-turn portals examined 329,660
+scenario   zero p95 ms   turn p95 ms   zero portals   turn portals
+open_10k       8.4498       12.0072         57,197       329,660
+hub_10k        8.4125       11.9065         57,197       329,660
 ```
 
-A Euclidean A* ordering was then measured and rejected:
+The pinned turn-aware gate was `<=40 ms p95`; both scenarios pass with large margin. Routes, accumulated coarse turn and costs remained correct. The unchanged transition count shows that per-transition work, not accepted expanded-state semantics, was the practical bottleneck in this reference workload.
+
+Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md` and `TURN_HOT_PATH_CANDIDATE.md`.
+
+## Private connectivity and spatial indices
+
+Historical scaling:
 
 ```text
-open_10k turn p95  97.0537 ms
-hub_10k  turn p95  97.6909 ms
-turn portals examined 323,888
+10k full portal scan      ≈1.95-1.99 s / ~286M portal records
+per-region adjacency      ≈21.8-22.4 ms / ~57k portal records
+dense RegionSlot BFS      ≈7.9-8.0 ms
 ```
 
-The heuristic reduced portal work by only about 1.75% while adding enough query-time geometry/priority overhead to make p95 materially worse.
-
-The active candidate therefore restores exact dense-state Dijkstra ordering and moves immutable static work into graph publication. Private graph data now includes dense `PortalSlot` identity, region/portal invalidation flags, per-directed-edge geometric distance/available clearance, and flattened precomputed turn angles for each `(TurnStateSlot, outgoing adjacency edge)` pair.
-
-`invalidateBounds()` synchronizes the dense invalidation flags with authoritative region/portal state. The positive-turn expanded-state loop avoids ordered-map region/portal lookup and does not recompute center geometry, `sqrt`, or `acos` per examined transition.
-
-This changes private representation only. Public API and turn-cost semantics are unchanged. The target-machine acceptance gate remains `<=40 ms p95` at 10k. Raw history is in `benchmarks/navigation_space_turn/RUN_LOG.md`; the active design note is `TURN_HOT_PATH_CANDIDATE.md`.
-
-## Private connectivity / dense graph index
-
-The first scaling benchmark showed that scanning the complete portal map for every BFS region is pathological: the 10k reference examined about 286 million portal records and took roughly two seconds per corridor query.
-
-Optimization 1 introduced per-region adjacency and reduced the target-machine 10k corridor to about 22 ms while portal examinations fell to about 57k.
-
-Optimization 2 retained public `RegionId` / `PortalId` identity but replaced ordered-map BFS bookkeeping with a private dense graph index:
+A private deterministic AABB BVH handles point lookup and bounded invalidation. Accepted 10k target-machine p95:
 
 ```text
-RegionId -> dense RegionSlot
-RegionSlot -> RegionId
-RegionSlot -> ordered adjacency edges { PortalId, neighbor RegionSlot }
+open point      0.0353 ms
+hub  point      0.0099 ms
+open invalidate 0.0112 ms
+hub  invalidate 0.0115 ms
 ```
 
-BFS visited/previous/frontier state is vector-backed by `RegionSlot`. Public query results are converted back to stable RegionId/PortalId values.
-
-The dense-slot target-machine rerun reduced the 10k corridor again from about 22 ms to about 8 ms. At that point further unweighted-BFS micro-optimization stopped being the active priority because full/global corridor search is worker-side by contract.
-
-## Private spatial index
-
-Optimization 3 adds a private deterministic AABB BVH over the same dense `RegionSlot` identity.
-
-```text
-RegionSlot[]
-    |
-private AABB BVH
-    |
-    +-> point candidate regions
-    +-> invalidation-bounds candidate regions
-```
-
-The BVH is rebuilt together with full publication/local patching and remains private to `NavigationSpace::Impl`.
-
-`queryPoint()` and corridor endpoint localization use BVH candidate reduction. `invalidateBounds()` queries the BVH and invalidates only portals incident to changed regions through a private endpoint-incidence list.
-
-Accepted 10k target-machine result:
-
-```text
-open point p95      0.0353 ms
-hub  point p95      0.0099 ms
-open invalidate p95 0.0112 ms
-hub  invalidate p95 0.0115 ms
-```
-
-Full replacement/local patch increased to roughly 44–49 ms median before the current turn-angle publication work; those operations remain worker/update-path work and must be remeasured after the active candidate is accepted.
+Full publication/local patch is worker/update-path work and may rebuild graph/BVH/precomputed turn data transactionally; it is not a frame-path operation.
 
 ## Local invalidation
 
 `invalidateBounds()` is fail-closed:
 
-1. free-space regions intersecting changed geometry become invalid;
-2. portals touching them become invalid;
+1. intersecting free-space regions become invalid;
+2. incident portals become invalid;
 3. queries stop traversing them immediately;
-4. `applyLocalPatch()` can transactionally restore only the affected topology.
+4. `applyLocalPatch()` can transactionally restore affected topology.
 
-Dense private invalidation flags are acceleration mirrors only; they are synchronized when invalidation is applied and rebuilt from authoritative region/portal state during publication/patching.
-
-## Determinism
-
-Authoritative regions/portals are stored in ordered maps; RegionSlots are assigned in stable RegionId order; adjacency and PortalSlots are built in stable PortalId order; BVH query candidates are sorted before semantic evaluation.
-
-Costed v1 uses deterministic queue ordering by `(cost, RegionSlot)`. Turn-aware v2 orders expanded states by cost, RegionSlot and incoming PortalId, with outgoing adjacency already stable by PortalId.
+Dense invalidation flags are private acceleration mirrors only.
 
 ## Relation to dynamic NavigationMap
 
 ```text
-NavigationSpace (CPU)
-    static free-space / clearance / regions / portals
-             |
-             +---- coarse/costed corridor ----+
-                                              |
-NavigationMap (hybrid dynamic)                |
-    P/V/A prediction / bins / conflicts       |
-             |                                |
-             +---- local candidates ----------+
-                                              v
-                                     local/precision planner
-                                              |
-                                     temporary target state
-                                              |
-                                     RuckigTrajectorySolver
+NavigationSpace
+    static free-space / corridor intent
+              |
+              +--------------------+
+                                   |
+NavigationMap                      |
+    P/V/A prediction / bins        |
+    compact dynamic candidates     |
+              |                    |
+              +---------+----------+
+                        v
+               local horizon consumer
+                        |
+               temporary target state
+                        |
+               Ruckig / flight control
 ```
 
-`NavigationSpace` and `NavigationMap` share the same conceptual ship-centered working domain but remain separate ownership blocks.
+`NavigationSpace` and `NavigationMap` share the conceptual ship-centered working domain but remain separate ownership blocks.
 
-## Hub / local-domain rule
+## Current deliberate limitations
 
-Hub, station, carrier and interior geometry remains owned by its local domain. The relevant static free-space subset is transformed/published into the active NavigationWorld boundary. This block must not force the whole station/interior to rebuild when the active ship moves.
-
-## Current limitations of the CPU reference
-
-- free-space regions are AABBs, not arbitrary convex cells;
-- `totalCostMetersEquivalent` is a coarse region/portal metric, not an exact flight-path length;
-- turn-aware v2 candidate is static/coarse only and does not model vehicle dynamics;
-- local patching still copies full ordered region/portal maps and rebuilds graph + BVH transactionally;
-- full publication/local patch are worker/update-path operations, not frame-path operations;
+- regions are AABBs, not arbitrary convex cells;
+- `totalCostMetersEquivalent` is a coarse region/portal metric, not exact trajectory length;
+- local patching still rebuilds private graph/BVH/precomputed data transactionally;
 - no live `EliteGame` / `EliteServer` integration yet.
 
-These are deliberate `NAV-V2-SPACE-1` reference limitations. The public API keeps storage/search replacement possible.
+No further static-search optimization is active. The current project stage is `NAV-V2-LOCAL-1`: dynamic conflict + bounded receding-horizon target selection.

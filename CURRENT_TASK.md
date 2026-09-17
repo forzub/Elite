@@ -3,139 +3,139 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-TRAJECTORY-1` — moving / time-varying gap prediction gate
+**Stage:** `NAV-V2-TRAJECTORY-1` — moving continuous passage gate
 
-## Newly closed gate — emergency contact severity
+## Newly closed gate — `MovingGapPredictor`
 
-Target-machine run on `7f1bccd4e8b91c72e4fc5f9e6d1329260790aa8e`:
-
-```text
-NAVIGATION TRAJECTORY EMERGENCY CONTACT SEVERITY CONTRACT: PASS
-navigation_trajectory_passage                       PASS
-navigation_trajectory_gap                           PASS
-navigation_trajectory_reachability                  PASS
-navigation_trajectory_emergency_passage             PASS
-navigation_trajectory_continuous_passage            PASS
-navigation_trajectory_emergency_contact_severity    PASS
-100% tests passed, 0 failed out of 6
-Total Test time: 0.27 sec
-```
-
-`EmergencyContactSeverityScorer` is **behavior/architecture accepted**. Keep its hard bound `<=8 candidates x <=4 witnesses`. Do not benchmark it separately unless later live composition shows material cost.
-
-## Active candidate — `MovingGapPredictor`
-
-Public contract:
+Target-machine run on:
 
 ```text
-src/world/navigation/MOVING_GAP_MODEL.md
+bc84940ff23209d9731a3d5332b8af3794182790
 ```
 
-Code:
+passed:
 
 ```text
-src/world/navigation/trajectory/MovingGapPredictor.h
-src/world/navigation/trajectory/MovingGapPredictor.cpp
+NAVIGATION TRAJECTORY MOVING GAP CONTRACT: PASS
+7/7 navigation_trajectory CTest PASS
+100% tests passed
 ```
 
-Test/architecture gate:
+Decision: `MovingGapPredictor` is **behavior/architecture accepted** and frozen unless downstream composition exposes a defect.
 
-```text
-tests/navigation_trajectory/NavigationTrajectoryMovingGapTests.cpp
-tests/architecture_contracts/check_navigation_trajectory_moving_gap.py
-```
-
-### Ownership
-
-The predictor receives **one pair already selected by the accepted bounded gap stage**.
-
-It does not:
-
-```text
-discover pairs
-scan NavigationMap / NavigationSpace
-run all-pairs work
-synthesize the ship trajectory
-claim CCD/TOI/contact response
-```
-
-### Motion model
-
-Each boundary supplies:
-
-```text
-P / V / A
-angular velocity
-conservative radius
-snapshot revision
-```
-
-Center prediction:
-
-```text
-p(t) = p0 + v0*t + 0.5*a*t^2
-v(t) = v0 + a*t
-```
-
-Mixed revisions fail closed before prediction.
-
-### Fixed bounded work
+It remains one-pair bounded work:
 
 ```text
 33 samples
 32 continuous intervals
-one already-selected pair
+no pair discovery
+no world scan
 ```
 
-Per sample the predictor publishes:
+## Active candidate — `MovingPassageTrajectoryEvaluator`
+
+Public contract:
 
 ```text
-gap center
-gap-center velocity
-separation axis
-clear separation / separation rate
-primary + secondary surface point
-normal toward free space
-surface material velocity = v_center + omega x r
+src/world/navigation/MOVING_PASSAGE_TRAJECTORY_MODEL.md
 ```
 
-The boundary surface output is suitable for later composition into the already accepted `EmergencyContactSeverityScorer` witness contract. The predictor itself does not invent a ship contact point.
-
-### Continuous gap proof
-
-Samples alone are not accepted.
-
-For each constant-relative-acceleration interval:
+Code/tests:
 
 ```text
-relative trajectory deviation from endpoint chord
-    <= |a_rel| * dt^2 / 8
+src/world/navigation/trajectory/MovingPassageTrajectoryEvaluator.h
+src/world/navigation/trajectory/MovingPassageTrajectoryEvaluator.cpp
+tests/navigation_trajectory/NavigationTrajectoryMovingPassageTests.cpp
+tests/architecture_contracts/check_navigation_trajectory_moving_passage.py
 ```
 
-The exact minimum distance from origin to that chord segment minus this deviation provides a conservative whole-interval center-separation lower bound. Inflated radii are then subtracted to obtain the continuous free-gap lower bound.
-
-This pins the important failure case:
+### Input composition
 
 ```text
-sample i      gap open
-between       gap closes
-sample i+1    gap open again
-
-=> GapClosesDuringHorizon
+accepted MovingGapPredictor::Result
+    +
+ship cubic-Hermite P/V segment
+    +
+shortest-arc smooth attitude segment
+    +
+OBB hull proxy
+    +
+linear/angular capability
+    +
+Elite/Newton control policy
 ```
 
-Transverse alignment is also bounded continuously from the quadratic `dot(r(t), travel)` numerator and the continuous center-distance lower bound. A pair that rotates into the travel axis returns `AlignmentLost`.
+No pair search or duplicate NavigationWorld prediction is performed.
 
-### Pinned fixtures
+### Continuous proof
+
+The evaluator synchronizes:
 
 ```text
-static transverse pair -> OpenForHorizon
-co-moving pair -> moving gap center with preserved width
-between-sample hidden closure -> GapClosesDuringHorizon
-pair rotates longitudinally -> AlignmentLost
-rotating boundary -> surface velocity includes omega x r
-mixed revisions -> RevisionMismatch
-relative acceleration -> future gap width/rate change
+33 ship poses <-> 33 moving-gap states
+32 ship intervals <-> 32 moving-gap intervals
+```
+
+Sample fit alone is insufficient. Every interval conservatively includes:
+
+```text
+moving gap-width lower bound
+relative transverse ship/gap-center displacement
+passage-axis/frame rotation
+relative OBB orientation sweep
+body-axis acceleration projection bounds
+```
+
+A fixture explicitly requires:
+
+```text
+all 33 sampled ship poses fit
+but interval proof is negative
+    -> GeometryBlocked
+```
+
+### Collision ownership
+
+This layer is predictive navigation, not the runtime collision engine.
+
+```text
+Navigation
+    feasibility / expected-contact evidence / maneuver choice
+
+Physics / Collision
+    exact broadphase + narrow phase
+    CCD / TOI
+    contact manifold
+    impulse / friction / restitution / ricochet
+
+Damage / Structural
+    damage / breach / detach
+```
+
+### Pinned behavior
+
+```text
+static gap + straight centered ship
+    -> Feasible
+
+moving gap + ship tracks gap-center velocity
+    -> Feasible
+
+moving gap + ship fails to follow it
+    -> GeometryBlocked
+
+all point samples fit but continuous bound fails
+    -> GeometryBlocked
+
+upstream gap not continuously open
+    -> GapUnavailable before ship work
+
+insufficient lateral thrust
+    -> LinearAuthorityExceeded
+
+sideways travel
+    Newtonian -> Feasible
+    EliteAssisted tight slip -> AssistedSlipExceeded
 ```
 
 ## RUN NOW
@@ -149,23 +149,27 @@ git merge --ff-only origin/main
 
 git rev-parse HEAD
 
-python tests/architecture_contracts/check_navigation_trajectory_moving_gap.py
+python tests/architecture_contracts/check_navigation_trajectory_moving_passage.py
 bash tests/navigation_trajectory/run_mingw64.sh
 ```
 
-Expected suite after build: `7/7`.
+Expected suite count after build:
 
-## Next after green gate
+```text
+8/8
+```
 
-1. behavior-accept/freeze the bounded `MovingGapPredictor`;
-2. build the moving continuous passage verifier that combines these 33 time-varying gap states with the ship's continuous P/V/attitude/hull sweep and physical authority;
-3. reuse the same moving-frame machinery for translating/rotating docking ports;
-4. add explicit bottom-to-bottom terminal mating constraints and relative velocity/angular-rate capture gates;
+## Next after green
+
+1. accept/freeze moving continuous passage behavior;
+2. build moving/rotating docking-frame prediction using the same relative-motion machinery;
+3. add terminal 6DoF capture: relative position, linear velocity, attitude and angular rate;
+4. enforce explicit bottom-of-ship -> bottom-of-dock mating frame semantics;
 5. add deterministic `PilotSkillProfile` execution;
 6. integrate accepted Navigation v2 into live game/server/guidance;
-7. run end-to-end stress/debug acceptance;
-8. retire legacy route-wide navigation only after the live v2 path is stable.
+7. run end-to-end stress/debug/performance acceptance;
+8. retire legacy navigation only after v2 owns the stable live path.
 
 ## Definition of final success
 
-Navigation v2 is finished only when the live runtime demonstrates normal flight, static/dynamic avoidance, static and moving narrow oriented passage, truthful Elite/Newton authority, least-severity unavoidable collision handling, post-impact replanning, moving/rotating docking, shared guidance/debug truth and intended NPC scaling without planner stalls or unbounded precision work.
+Navigation v2 is finished when the live runtime demonstrates normal flight, static/dynamic avoidance, oriented static/moving passage, truthful Elite/Newton vehicle authority, least-severity unavoidable collision behavior, post-impact replanning, stationary/moving/rotating docking, one shared guidance/debug truth and intended NPC scaling without planner stalls or unbounded precision work.

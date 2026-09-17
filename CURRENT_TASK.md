@@ -3,115 +3,177 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-TRAJECTORY-1` — emergency passage mitigation gate active
+**Stage:** `NAV-V2-TRAJECTORY-1` — continuous static-passage gate active
 
-## Closed evidence
+## Accepted preconditions
 
-### Local avoidance — CLOSED / ACCEPTED
+### `NAV-V2-LOCAL-1` — CLOSED
 
-Target-machine behavior is accepted. Fresh multiplied-probe benchmark on `e0817d157ba5d8c9c329576236310507bda13364`:
-
-```text
-scenario                     p95_us
-nominal_clear_64               1.8333
-early_adjust_64                4.2795
-all_static_rejected_64         4.2655
-all_dynamic_rejected_16       12.9500
-all_dynamic_rejected_64       35.8900
-all_dynamic_rejected_256     128.9708
-all_dynamic_rejected_1024    519.9286
-```
-
-The `1024 x 17` path is deliberate stress. It remains below the `<1.0 ms normal peak` budget. The deterministic 16-probe fan stays unchanged.
-
-Authority:
+Target-machine multiplied-probe benchmark on `e0817d157ba5d8c9c329576236310507bda13364` is accepted. Worst deliberate stress:
 
 ```text
-benchmarks/navigation_local_avoidance/RUN_LOG.md
+all_dynamic_rejected_1024 p95 = 519.9286 us
 ```
 
-### Oriented passage / bounded gap / attitude reachability — behavior green
+This remains below the `<1.0 ms normal peak` budget. Keep the 16-probe fan unchanged.
 
-On the same target-machine commit:
+### Oriented passage / bounded gap / attitude reachability — ACCEPTED
+
+Target-machine C++ suite on `e0817d...` passed:
 
 ```text
 navigation_trajectory_passage      PASS
 navigation_trajectory_gap          PASS
 navigation_trajectory_reachability PASS
+```
+
+Bounded-gap builder performance is accepted:
+
+```text
+top8_1024 p95 = 24.0699 us
+```
+
+### Emergency passage mitigation — ACCEPTED
+
+Fresh target-machine evidence on `b29a03d3d84f4d6575cbbc5166cbd7547b5ce0d8`:
+
+```text
+NAVIGATION TRAJECTORY BOUNDED GAP CONTRACT: PASS
+NAVIGATION TRAJECTORY EMERGENCY PASSAGE CONTRACT: PASS
+
+navigation_trajectory_passage              PASS
+navigation_trajectory_gap                  PASS
+navigation_trajectory_reachability         PASS
+navigation_trajectory_emergency_passage    PASS
+
 100% tests passed, 0 failed
-Total Test time: 0.12 sec
+Total Test time: 0.18 sec
 ```
 
-Passage and reachability architecture contracts passed. The gap architecture checker failed only on an obsolete exact Markdown sentence; the runtime test passed. Current `main` repairs that checker to assert stable markers (`hard candidate cap = 8`, one primary conflict, no all-pairs scan).
-
-### Bounded gap performance — ACCEPTED
-
-Target-machine worst stress result:
+Accepted semantic:
 
 ```text
-top8_1024 p95 = 24.0699 us = 0.0241 ms
+no provably safe maneuver
+    != no navigation command
 ```
 
-Full reference is recorded in:
+If stopping is impossible, navigation may emit `EmergencyMitigatedContact`: brake, aim at the gap, align travel with the passage axis as far as possible, choose the best reachable hull attitude, and hand the expected contact/ricochet to physics/damage.
+
+## Active Gate — continuous static passage feasibility
+
+Architecture authority:
 
 ```text
-benchmarks/navigation_trajectory_gap/RUN_LOG.md
+src/world/navigation/CONTINUOUS_PASSAGE_MODEL.md
 ```
 
-Do not optimize the gap builder further without contrary evidence.
-
-## Active Gate — emergency contact mitigation
-
-User requirement:
+Candidate code:
 
 ```text
-safe route unavailable
-    != navigation disabled
-```
-
-When a gap exists but the ship is too fast/close to reach the requested collision-free orientation, the system must still attempt to minimize consequences. A glancing contact/ricochet is an acceptable emergency outcome if stopping/avoidance is physically impossible.
-
-New candidate:
-
-```text
-src/world/navigation/trajectory/EmergencyPassageMitigator.h
-src/world/navigation/trajectory/EmergencyPassageMitigator.cpp
+src/world/navigation/trajectory/ContinuousPassageTrajectoryEvaluator.h
+src/world/navigation/trajectory/ContinuousPassageTrajectoryEvaluator.cpp
 ```
 
 Tests/contracts:
 
 ```text
-tests/navigation_trajectory/NavigationTrajectoryEmergencyPassageTests.cpp
-tests/architecture_contracts/check_navigation_trajectory_emergency_passage.py
+tests/navigation_trajectory/NavigationTrajectoryContinuousPassageTests.cpp
+tests/architecture_contracts/check_navigation_trajectory_continuous_passage.py
 ```
 
-Semantics:
+### Analytic candidate segment
 
 ```text
-SafeEntryPose
-    a physically reachable sampled attitude fits the entry cross-section
-    continuous swept-body safety is still not claimed
+translation
+    cubic Hermite: start P/V -> end P/V
 
-EmergencyStopBeforeEntry
-    no sampled passage pose fits, but braking can stop before contact
-    -> stop/replan; do not intentionally hit
-
-EmergencyMitigatedContact
-    no collision-free entry pose and no pre-entry stop are possible
-    -> navigation remains active
-    -> maximum useful braking
-    -> aim at gap center
-    -> desired travel along passage axis
-    -> choose best reachable hull attitude
-    -> contact/ricochet explicitly expected
-
-InvalidInput
-    no command may be claimed
+orientation
+    shortest rotation arc
+    smooth rest-to-rest law s(u)=3u^2-2u^3
 ```
 
-The first implementation samples exactly `17` attitudes along the physically reachable portion of the shortest orientation arc. It scores them by passage clearance / geometric deficit. Equal-severity poses prefer greater correction toward the passage attitude.
+Exact candidate peak angular requirements:
 
-This is intentionally a bounded pre-6DoF policy. It does **not** yet claim that requested gap-center translation or passage-axis velocity is instantly reachable.
+```text
+omega_peak = 1.5 * angle / T
+alpha_peak = 6.0 * angle / T^2
+```
+
+### Continuous geometry proof
+
+The fixed partition is:
+
+```text
+33 pose samples
+32 intervals
+```
+
+A segment is **not** accepted merely because those 33 poses fit.
+
+Each interval receives conservative continuous inflation:
+
+```text
+center curve deviation <= M * dt^2 / 8
+rotation sweep inflation <= 2 * R * sin(deltaTheta / 2)
+```
+
+This must reject the fixture where both endpoint orientations fit but the hull clips the passage wall during the intermediate roll.
+
+### Body-axis authority
+
+Required Hermite map-space acceleration is projected into the rotating hull frame and checked against declared capability:
+
+```text
+forward
+reverse / braking
+lateral
+vertical
+```
+
+Between sample endpoints the projection receives a conservative bound from acceleration-vector change plus body-axis rotation.
+
+A clear geometric curve may therefore still return:
+
+```text
+LinearAuthorityExceeded
+```
+
+### `Elite` / `Newton`
+
+```text
+Newtonian
+    velocity and attitude may diverge
+
+EliteAssisted
+    identical truthful physical thrust limits
+    plus supplied controller-policy max velocity/forward slip angle
+```
+
+Assisted mode is not allowed to manufacture extra acceleration.
+
+### Result classes
+
+```text
+Feasible
+GeometryBlocked
+LinearAuthorityExceeded
+AngularAuthorityExceeded
+AssistedSlipExceeded
+InvalidInput
+```
+
+Pinned fixtures include:
+
+```text
+straight centered segment -> Feasible
+endpoint-fit / mid-roll wall clip -> GeometryBlocked
+same roll / wider slot -> Feasible
+insufficient lateral thrust -> LinearAuthorityExceeded
+sufficient lateral thrust -> Feasible
+insufficient angular rate -> AngularAuthorityExceeded
+sideways inertial travel: Newton accepted / Elite slip policy rejected
+zero duration -> InvalidInput
+```
 
 ## RUN NOW
 
@@ -124,8 +186,7 @@ git merge --ff-only origin/main
 
 git rev-parse HEAD
 
-python tests/architecture_contracts/check_navigation_trajectory_gap.py
-python tests/architecture_contracts/check_navigation_trajectory_emergency_passage.py
+python tests/architecture_contracts/check_navigation_trajectory_continuous_passage.py
 bash tests/navigation_trajectory/run_mingw64.sh
 ```
 
@@ -133,14 +194,9 @@ Send complete output.
 
 ## Next after green gate
 
-Implement continuous bounded 6DoF maneuver feasibility:
-
-1. consume authoritative body-axis linear thrust/braking + angular capability;
-2. distinguish assisted `Elite` versus raw `Newton` reachability;
-3. propagate position + velocity + attitude + angular state through the narrow-gap horizon;
-4. prove swept oriented hull safety for collision-free candidates;
-5. for emergency candidates, rank by predicted relative normal contact speed / impact-energy proxy in addition to geometric overlap;
-6. allow real physics contact/ricochet and continue navigation from the actual post-impact state;
-7. reuse the same moving-frame machinery for moving gaps and moving/rotating docking.
-
-No live `EliteGame` / `EliteServer` integration until this isolated trajectory gate is green.
+1. add a dedicated microbenchmark for the 33-sample / 32-interval continuous verifier;
+2. if timing is comfortably bounded, keep the analytic verifier unchanged;
+3. add emergency candidate ranking by predicted **relative normal contact speed / impact-energy proxy**, so a glancing/ricochet contact is preferred over a normal hit;
+4. generalize static passage state to time-varying obstacle gaps;
+5. reuse the same moving-frame trajectory machinery for moving/rotating docking with bottom-to-bottom mating semantics;
+6. then add NPC `PilotSkillProfile` execution and only later live `EliteGame` / `EliteServer` integration.

@@ -1,8 +1,8 @@
 # Elite — CURRENT STATE
 
-**Updated:** 2026-09-16  
+**Updated:** 2026-09-17  
 **Canonical branch:** `main`  
-**Navigation:** `NAV-V2-SPACE-1` — static route semantics accepted; turn-aware A* optimization active
+**Navigation:** `NAV-V2-SPACE-1` — static route semantics accepted; published hot-geometry turn optimization active
 
 ## Accepted Navigation v2 ownership
 
@@ -38,7 +38,7 @@ BVH point p95                     <=0.0353 ms
 BVH local invalidation p95        <=0.0115 ms
 ```
 
-Full replace/local patch remain worker/update-side at roughly 44-49 ms median at 10k.
+Full replace/local patch remain worker/update-side at roughly 44-49 ms median at 10k before the current extra turn-angle publication work is remeasured.
 
 ## Costed static corridor v1 — ACCEPTED
 
@@ -53,11 +53,11 @@ hub  distance_only      7.7609 ms
 hub  clearance_aware    9.6103 ms
 ```
 
-The predeclared `<=15 ms` gate passed, so zero-turn RegionSlot Dijkstra remains unchanged.
+The predeclared `<=15 ms` gate passed, so zero-turn RegionSlot Dijkstra remains accepted.
 
 ## Static turn cost v2 — ACCEPTED semantics
 
-Target-machine architecture + behavior gate is green. Turn-aware routing correctly preserves arrival direction and `zigzag_vs_smooth` passes.
+Target-machine architecture + behavior gates are green. Turn-aware routing preserves arrival direction and `zigzag_vs_smooth` passes.
 
 ```text
 turnPenalty == 0
@@ -67,7 +67,7 @@ turnPenalty > 0
     -> semantic state = (RegionSlot, incoming PortalId)
 ```
 
-## Turn-aware performance history
+## Turn-aware performance progression
 
 Tree-backed expanded state was rejected:
 
@@ -79,29 +79,36 @@ hub_10k  turn p95  232.6520 ms
 Dense `TurnStateSlot` + vector state + binary heap improved the same 10k search to:
 
 ```text
-open_10k zero p95      8.6427 ms
-open_10k turn p95     67.9647 ms
-hub_10k  zero p95      8.5862 ms
-hub_10k  turn p95     72.6054 ms
+open_10k turn p95   67.9647 ms
+hub_10k  turn p95   72.6054 ms
+turn portals examined 329,660
 ```
 
-The improvement is about 3x, but turn-aware work still examines `329,660` transitions at 10k versus `57,197` for zero-turn. This puts the candidate in the pinned `40-120 ms` band: semantics stay accepted, search reduction is still required.
+### Euclidean A* — REJECTED
 
-The benchmark-contract failure reported during that run was a stale exact-text documentation assertion; architecture/behavior and the benchmark executable itself passed. The contract now checks the benchmark path + turn-aware task state instead.
-
-Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
-
-## Active optimization candidate — admissible A*
-
-Dense turn-state storage remains. Positive-turn search now orders the binary heap by:
+Target rerun on commit `5376e7179cfe791df843eb846c2d4c8af41432cd`:
 
 ```text
-f = g + h
-h = distanceWeight * EuclideanDistance(currentRegionCenter, endRegionCenter)
+open_10k turn p95   97.0537 ms
+hub_10k  turn p95   97.6909 ms
+turn portals examined 323,888
 ```
 
-The heuristic is admissible/consistent because geometric edge cost is at least straight-line center distance and clearance/turn penalties are non-negative. `distanceWeight == 0` reduces `h` to zero.
+Architecture, behavior and benchmark contracts passed and route costs remained correct. However the heuristic reduced portal work by only about 1.75% while increasing turn-aware p95 by about 42.8% open / 34.6% hub versus dense Dijkstra. The A* candidate is therefore rejected.
 
-The zero-turn v1 path remains unchanged. The next target-machine rerun must preserve behavior while materially reducing turn-aware `portalsExamined` and timing.
+## Active optimization — published static hot geometry
 
-Status: **A* candidate on canonical `main`, pending architecture/behavior + identical turn benchmark rerun**.
+Positive-turn search is restored to dense-state Dijkstra ordering. The graph publication step now precomputes static data needed by the expanded-state loop:
+
+- dense region centers/capacities/invalidation flags;
+- dense portal slots/centers/invalidation flags;
+- per-directed-edge geometric distance and available clearance;
+- flattened precomputed turn angles for each `(TurnStateSlot, outgoing edge)` transition.
+
+`invalidateBounds()` synchronizes dense invalidation flags with authoritative region/portal state.
+
+The positive-turn query therefore avoids ordered-map region/portal lookup and avoids repeated `sqrt`/`acos` geometry in the hot loop. Public API, turn semantics and zero-turn v1 remain unchanged.
+
+Design note: `src/world/navigation/space/TURN_HOT_PATH_CANDIDATE.md`.
+
+Status: **candidate on canonical `main`, pending architecture/behavior + identical target-machine turn benchmark rerun**.

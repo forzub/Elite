@@ -64,6 +64,11 @@ target_include_directories(navigation_trajectory_docking_terminal_tests PRIVATE 
 target_compile_features(navigation_trajectory_docking_terminal_tests PRIVATE cxx_std_17)
 target_link_libraries(navigation_trajectory_docking_terminal_tests PRIVATE EliteNavigationTrajectory)
 
+add_executable(navigation_trajectory_docking_approach_tests NavigationTrajectoryDockingApproachTests.cpp)
+target_include_directories(navigation_trajectory_docking_approach_tests PRIVATE "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
+target_compile_features(navigation_trajectory_docking_approach_tests PRIVATE cxx_std_17)
+target_link_libraries(navigation_trajectory_docking_approach_tests PRIVATE EliteNavigationTrajectory)
+
 if(MSVC)
     foreach(target
         navigation_trajectory_passage_tests
@@ -74,7 +79,8 @@ if(MSVC)
         navigation_trajectory_emergency_contact_severity_tests
         navigation_trajectory_moving_gap_tests
         navigation_trajectory_moving_passage_tests
-        navigation_trajectory_docking_terminal_tests)
+        navigation_trajectory_docking_terminal_tests
+        navigation_trajectory_docking_approach_tests)
         target_compile_options(${target} PRIVATE /W4 /permissive-)
     endforeach()
 else()
@@ -87,7 +93,8 @@ else()
         navigation_trajectory_emergency_contact_severity_tests
         navigation_trajectory_moving_gap_tests
         navigation_trajectory_moving_passage_tests
-        navigation_trajectory_docking_terminal_tests)
+        navigation_trajectory_docking_terminal_tests
+        navigation_trajectory_docking_approach_tests)
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
     endforeach()
 endif()
@@ -101,6 +108,7 @@ add_test(NAME navigation_trajectory_emergency_contact_severity COMMAND navigatio
 add_test(NAME navigation_trajectory_moving_gap COMMAND navigation_trajectory_moving_gap_tests)
 add_test(NAME navigation_trajectory_moving_passage COMMAND navigation_trajectory_moving_passage_tests)
 add_test(NAME navigation_trajectory_docking_terminal COMMAND navigation_trajectory_docking_terminal_tests)
+add_test(NAME navigation_trajectory_docking_approach COMMAND navigation_trajectory_docking_approach_tests)
 
 set_tests_properties(
     navigation_trajectory_passage
@@ -112,5 +120,6 @@ set_tests_properties(
     navigation_trajectory_moving_gap
     navigation_trajectory_moving_passage
     navigation_trajectory_docking_terminal
+    navigation_trajectory_docking_approach
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )

@@ -209,9 +209,12 @@ class NavigationSpace::Impl
 {
 public:
     using RegionSlot = std::size_t;
+    using PortalSlot = std::size_t;
     using TurnStateSlot = std::size_t;
     static constexpr RegionSlot InvalidRegionSlot =
         std::numeric_limits<RegionSlot>::max();
+    static constexpr PortalSlot InvalidPortalSlot =
+        std::numeric_limits<PortalSlot>::max();
     static constexpr TurnStateSlot InvalidTurnStateSlot =
         std::numeric_limits<TurnStateSlot>::max();
     static constexpr std::size_t InvalidSpatialNode =
@@ -233,23 +236,35 @@ public:
     struct AdjacencyEdge
     {
         PortalId portalId = 0;
+        PortalSlot portalSlot = InvalidPortalSlot;
         RegionSlot neighborSlot = InvalidRegionSlot;
         TurnStateSlot arrivalTurnStateSlot = InvalidTurnStateSlot;
+        double geometricMeters = 0.0;
+        double availableClearanceMeters = 0.0;
     };
 
     struct TurnStateRecord
     {
         RegionSlot regionSlot = InvalidRegionSlot;
         PortalId incomingPortalId = 0;
+        PortalSlot incomingPortalSlot = InvalidPortalSlot;
     };
 
     struct GraphIndex
     {
         std::map<RegionId, RegionSlot> regionSlots;
         std::vector<RegionId> slotRegionIds;
+        std::vector<Vec3d> regionCenters;
+        std::vector<double> regionCapacities;
+        std::vector<std::uint8_t> regionInvalidated;
+        std::vector<PortalId> slotPortalIds;
+        std::vector<Vec3d> portalCenters;
+        std::vector<std::uint8_t> portalInvalidated;
         std::vector<std::vector<AdjacencyEdge>> adjacency;
-        std::vector<std::vector<PortalId>> incidentPortals;
+        std::vector<std::vector<PortalSlot>> incidentPortalSlots;
         std::vector<TurnStateRecord> turnStates;
+        std::vector<std::size_t> turnAngleOffsets;
+        std::vector<double> turnAnglesRadians;
     };
 
     struct SpatialNode
@@ -304,50 +319,120 @@ public:
     {
         GraphIndex result;
         result.slotRegionIds.reserve(regions.size());
+        result.regionCenters.reserve(regions.size());
+        result.regionCapacities.reserve(regions.size());
+        result.regionInvalidated.reserve(regions.size());
         result.adjacency.resize(regions.size());
-        result.incidentPortals.resize(regions.size());
+        result.incidentPortalSlots.resize(regions.size());
         result.turnStates.reserve(portals.size() * 2);
+        result.slotPortalIds.reserve(portals.size());
+        result.portalCenters.reserve(portals.size());
+        result.portalInvalidated.reserve(portals.size());
 
         RegionSlot slot = 0;
         for (const auto& entry : regions)
         {
             result.regionSlots.emplace(entry.first, slot++);
             result.slotRegionIds.push_back(entry.first);
+            result.regionCenters.push_back(boundsCenter(entry.second.input.boundsMapMeters));
+            result.regionCapacities.push_back(regionCapacity(entry.second.input));
+            result.regionInvalidated.push_back(entry.second.invalidated ? 1u : 0u);
         }
 
-        auto addArrivalState = [&](RegionSlot regionSlot, PortalId portalId) {
+        for (const auto& entry : portals)
+        {
+            result.slotPortalIds.push_back(entry.first);
+            result.portalCenters.push_back(entry.second.input.centerMapMeters);
+            result.portalInvalidated.push_back(entry.second.invalidated ? 1u : 0u);
+        }
+
+        auto addArrivalState = [&result](
+            RegionSlot regionSlot,
+            PortalId portalId,
+            PortalSlot portalSlot
+        ) {
             const TurnStateSlot stateSlot = result.turnStates.size();
-            result.turnStates.push_back(TurnStateRecord{regionSlot, portalId});
+            result.turnStates.push_back(
+                TurnStateRecord{regionSlot, portalId, portalSlot}
+            );
             return stateSlot;
         };
 
-        // portals is an ordered map, so each per-region vector is built in
-        // stable PortalId order. Each directed traversal also receives a stable
-        // dense arrival-state slot used only by turn-aware routing.
+        PortalSlot portalSlot = 0;
         for (const auto& entry : portals)
         {
             const PortalId portalId = entry.first;
             const auto& portal = entry.second.input;
             const RegionSlot slotA = result.regionSlots.at(portal.regionA);
             const RegionSlot slotB = result.regionSlots.at(portal.regionB);
+            const double geometricMeters =
+                distance(result.regionCenters[slotA], portal.centerMapMeters) +
+                distance(portal.centerMapMeters, result.regionCenters[slotB]);
+            const double availableClearanceMeters = std::min({
+                portal.clearanceRadiusMeters,
+                result.regionCapacities[slotA],
+                result.regionCapacities[slotB]
+            });
 
-            const TurnStateSlot arrivalAtB = addArrivalState(slotB, portalId);
+            const TurnStateSlot arrivalAtB = addArrivalState(
+                slotB,
+                portalId,
+                portalSlot
+            );
             result.adjacency[slotA].push_back(
-                AdjacencyEdge{portalId, slotB, arrivalAtB}
+                AdjacencyEdge{
+                    portalId,
+                    portalSlot,
+                    slotB,
+                    arrivalAtB,
+                    geometricMeters,
+                    availableClearanceMeters
+                }
             );
             if (portal.bidirectional)
             {
-                const TurnStateSlot arrivalAtA = addArrivalState(slotA, portalId);
+                const TurnStateSlot arrivalAtA = addArrivalState(
+                    slotA,
+                    portalId,
+                    portalSlot
+                );
                 result.adjacency[slotB].push_back(
-                    AdjacencyEdge{portalId, slotA, arrivalAtA}
+                    AdjacencyEdge{
+                        portalId,
+                        portalSlot,
+                        slotA,
+                        arrivalAtA,
+                        geometricMeters,
+                        availableClearanceMeters
+                    }
                 );
             }
 
-            // Invalidation is endpoint-based, not direction-based: a one-way
-            // portal still becomes invalid if either touching region changes.
-            result.incidentPortals[slotA].push_back(portalId);
-            result.incidentPortals[slotB].push_back(portalId);
+            result.incidentPortalSlots[slotA].push_back(portalSlot);
+            result.incidentPortalSlots[slotB].push_back(portalSlot);
+            ++portalSlot;
         }
+
+        result.turnAngleOffsets.reserve(result.turnStates.size() + 1);
+        result.turnAngleOffsets.push_back(0);
+        for (const auto& state : result.turnStates)
+        {
+            const Vec3d& currentCenter = result.regionCenters[state.regionSlot];
+            const Vec3d& incomingPortalCenter =
+                result.portalCenters[state.incomingPortalSlot];
+            for (const auto& edge : result.adjacency[state.regionSlot])
+            {
+                result.turnAnglesRadians.push_back(
+                    turnAngleRadians(
+                        incomingPortalCenter,
+                        currentCenter,
+                        result.portalCenters[edge.portalSlot]
+                    )
+                );
+            }
+            result.turnAngleOffsets.push_back(result.turnAnglesRadians.size());
+        }
+
         return result;
     }
 
@@ -689,6 +774,7 @@ NavigationSpace::InvalidationResult NavigationSpace::invalidateBounds(
         if (!state.invalidated && intersects(state.input.boundsMapMeters, boundsMapMeters))
         {
             state.invalidated = true;
+            impl_->graph.regionInvalidated.at(slot) = 1u;
             result.invalidatedRegionIds.push_back(regionId);
             newlyInvalidatedSlots.push_back(slot);
         }
@@ -696,12 +782,14 @@ NavigationSpace::InvalidationResult NavigationSpace::invalidateBounds(
 
     for (Impl::RegionSlot slot : newlyInvalidatedSlots)
     {
-        for (PortalId portalId : impl_->graph.incidentPortals.at(slot))
+        for (Impl::PortalSlot portalSlot : impl_->graph.incidentPortalSlots.at(slot))
         {
+            const PortalId portalId = impl_->graph.slotPortalIds.at(portalSlot);
             auto& state = impl_->portals.at(portalId);
             if (!state.invalidated)
             {
                 state.invalidated = true;
+                impl_->graph.portalInvalidated.at(portalSlot) = 1u;
                 result.invalidatedPortalIds.push_back(portalId);
             }
         }
@@ -949,7 +1037,6 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
     {
         struct QueueItem
         {
-            double priority = 0.0;
             double cost = 0.0;
             Impl::RegionSlot regionSlot = Impl::InvalidRegionSlot;
             PortalId incomingPortalId = 0;
@@ -960,8 +1047,6 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
         {
             bool operator()(const QueueItem& a, const QueueItem& b) const noexcept
             {
-                if (a.priority != b.priority)
-                    return a.priority > b.priority;
                 if (a.cost != b.cost)
                     return a.cost > b.cost;
                 if (a.regionSlot != b.regionSlot)
@@ -987,96 +1072,54 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
             QueueGreater
         > frontier;
 
-        const auto startRegionIt = impl_->regions.find(startId);
-        const auto endRegionIt = impl_->regions.find(endId);
-        if (startRegionIt == impl_->regions.end() ||
-            endRegionIt == impl_->regions.end() ||
-            startRegionIt->second.invalidated ||
-            endRegionIt->second.invalidated)
+        if (startSlot >= impl_->graph.regionInvalidated.size() ||
+            endSlot >= impl_->graph.regionInvalidated.size() ||
+            impl_->graph.regionInvalidated[startSlot] ||
+            impl_->graph.regionInvalidated[endSlot])
         {
             return result;
         }
 
         countedRegion[startSlot] = 1;
         ++result.diagnostics.regionsVisited;
-        const double startCapacity = regionCapacity(startRegionIt->second.input);
-        const Vec3d startCenter = boundsCenter(
-            startRegionIt->second.input.boundsMapMeters
-        );
-        const Vec3d endCenter = boundsCenter(
-            endRegionIt->second.input.boundsMapMeters
-        );
-
-        // Admissible/consistent lower bound: the remaining weighted Euclidean
-        // center distance cannot exceed any center->portal->...->end-center
-        // geometric path. Clearance and turn penalties are non-negative, so
-        // omitting them keeps h(n) a lower bound. distanceWeight==0 reduces
-        // this branch to the same dense-state Dijkstra ordering.
-        auto heuristic = [&](const Vec3d& regionCenter) noexcept {
-            return policy.distanceWeight * distance(regionCenter, endCenter);
+        const double preferredClearance =
+            required * policy.preferredClearanceMultiple;
+        auto clearancePenaltyFor = [&](double availableClearance) noexcept {
+            if (preferredClearance <= 0.0 ||
+                availableClearance >= preferredClearance)
+            {
+                return 0.0;
+            }
+            const double shortfallFraction =
+                (preferredClearance - availableClearance) / preferredClearance;
+            return policy.clearancePenaltyMeters * shortfallFraction;
         };
 
-        // The start state has no incoming portal because CorridorQuery does not
-        // own initial heading. Seed the dense arrival states directly without a
-        // synthetic tree/map key.
         for (const auto& edge : impl_->graph.adjacency[startSlot])
         {
             ++result.diagnostics.portalsExamined;
             if (edge.neighborSlot >= regionCount ||
+                edge.portalSlot >= impl_->graph.portalInvalidated.size() ||
                 edge.arrivalTurnStateSlot >= stateCount)
             {
                 continue;
             }
-
-            const auto portalIt = impl_->portals.find(edge.portalId);
-            if (portalIt == impl_->portals.end() || portalIt->second.invalidated)
-                continue;
-
-            const auto& portal = portalIt->second.input;
-            const RegionId neighborId = impl_->graph.slotRegionIds[edge.neighborSlot];
-            const auto neighborRegionIt = impl_->regions.find(neighborId);
-            if (neighborRegionIt == impl_->regions.end() ||
-                neighborRegionIt->second.invalidated)
+            if (impl_->graph.portalInvalidated[edge.portalSlot] ||
+                impl_->graph.regionInvalidated[edge.neighborSlot] ||
+                edge.availableClearanceMeters < required)
             {
                 continue;
-            }
-
-            const double neighborCapacity = regionCapacity(neighborRegionIt->second.input);
-            const double availableClearance = std::min({
-                portal.clearanceRadiusMeters,
-                startCapacity,
-                neighborCapacity
-            });
-            if (availableClearance < required)
-                continue;
-
-            const Vec3d neighborCenter = boundsCenter(
-                neighborRegionIt->second.input.boundsMapMeters
-            );
-            const double geometricMeters =
-                distance(startCenter, portal.centerMapMeters) +
-                distance(portal.centerMapMeters, neighborCenter);
-
-            double clearancePenalty = 0.0;
-            const double preferredClearance =
-                required * policy.preferredClearanceMultiple;
-            if (preferredClearance > 0.0 && availableClearance < preferredClearance)
-            {
-                const double shortfallFraction =
-                    (preferredClearance - availableClearance) / preferredClearance;
-                clearancePenalty =
-                    policy.clearancePenaltyMeters * shortfallFraction;
             }
 
             const double candidateCost =
-                policy.distanceWeight * geometricMeters + clearancePenalty;
+                policy.distanceWeight * edge.geometricMeters +
+                clearancePenaltyFor(edge.availableClearanceMeters);
             const Impl::TurnStateSlot nextStateSlot = edge.arrivalTurnStateSlot;
             if (candidateCost < bestCost[nextStateSlot])
             {
                 bestCost[nextStateSlot] = candidateCost;
                 const auto& state = impl_->graph.turnStates[nextStateSlot];
                 frontier.push(QueueItem{
-                    candidateCost + heuristic(neighborCenter),
                     candidateCost,
                     state.regionSlot,
                     state.incomingPortalId,
@@ -1100,7 +1143,14 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
 
             const auto& currentState = impl_->graph.turnStates[current.stateSlot];
             if (currentState.regionSlot != current.regionSlot ||
-                currentState.incomingPortalId != current.incomingPortalId)
+                currentState.incomingPortalId != current.incomingPortalId ||
+                currentState.regionSlot >= impl_->graph.regionInvalidated.size() ||
+                currentState.incomingPortalSlot >= impl_->graph.portalInvalidated.size())
+            {
+                continue;
+            }
+            if (impl_->graph.regionInvalidated[currentState.regionSlot] ||
+                impl_->graph.portalInvalidated[currentState.incomingPortalSlot])
             {
                 continue;
             }
@@ -1119,91 +1169,43 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
                 break;
             }
 
-            const RegionId currentId =
-                impl_->graph.slotRegionIds[currentState.regionSlot];
-            const auto currentRegionIt = impl_->regions.find(currentId);
-            if (currentRegionIt == impl_->regions.end() ||
-                currentRegionIt->second.invalidated)
+            const auto& edges = impl_->graph.adjacency[currentState.regionSlot];
+            if (current.stateSlot + 1 >= impl_->graph.turnAngleOffsets.size())
+                return result;
+            const std::size_t turnOffset =
+                impl_->graph.turnAngleOffsets[current.stateSlot];
+            const std::size_t turnEnd =
+                impl_->graph.turnAngleOffsets[current.stateSlot + 1];
+            if (turnEnd - turnOffset != edges.size() ||
+                turnEnd > impl_->graph.turnAnglesRadians.size())
             {
-                continue;
+                return result;
             }
 
-            const auto incomingIt = impl_->portals.find(
-                currentState.incomingPortalId
-            );
-            if (incomingIt == impl_->portals.end() || incomingIt->second.invalidated)
-                continue;
-
-            const double currentCapacity =
-                regionCapacity(currentRegionIt->second.input);
-            const Vec3d currentCenter = boundsCenter(
-                currentRegionIt->second.input.boundsMapMeters
-            );
-            const Vec3d incomingPortalCenter =
-                incomingIt->second.input.centerMapMeters;
-
-            for (const auto& edge : impl_->graph.adjacency[currentState.regionSlot])
+            for (std::size_t edgeIndex = 0; edgeIndex < edges.size(); ++edgeIndex)
             {
+                const auto& edge = edges[edgeIndex];
                 ++result.diagnostics.portalsExamined;
                 if (edge.neighborSlot >= regionCount ||
+                    edge.portalSlot >= impl_->graph.portalInvalidated.size() ||
                     edge.arrivalTurnStateSlot >= stateCount)
                 {
                     continue;
                 }
-
-                const auto portalIt = impl_->portals.find(edge.portalId);
-                if (portalIt == impl_->portals.end() || portalIt->second.invalidated)
-                    continue;
-
-                const auto& portal = portalIt->second.input;
-                const RegionId neighborId = impl_->graph.slotRegionIds[edge.neighborSlot];
-                const auto neighborRegionIt = impl_->regions.find(neighborId);
-                if (neighborRegionIt == impl_->regions.end() ||
-                    neighborRegionIt->second.invalidated)
+                if (impl_->graph.portalInvalidated[edge.portalSlot] ||
+                    impl_->graph.regionInvalidated[edge.neighborSlot] ||
+                    edge.availableClearanceMeters < required)
                 {
                     continue;
-                }
-
-                const double neighborCapacity =
-                    regionCapacity(neighborRegionIt->second.input);
-                const double availableClearance = std::min({
-                    portal.clearanceRadiusMeters,
-                    currentCapacity,
-                    neighborCapacity
-                });
-                if (availableClearance < required)
-                    continue;
-
-                const Vec3d neighborCenter = boundsCenter(
-                    neighborRegionIt->second.input.boundsMapMeters
-                );
-                const double geometricMeters =
-                    distance(currentCenter, portal.centerMapMeters) +
-                    distance(portal.centerMapMeters, neighborCenter);
-
-                double clearancePenalty = 0.0;
-                const double preferredClearance =
-                    required * policy.preferredClearanceMultiple;
-                if (preferredClearance > 0.0 && availableClearance < preferredClearance)
-                {
-                    const double shortfallFraction =
-                        (preferredClearance - availableClearance) /
-                        preferredClearance;
-                    clearancePenalty =
-                        policy.clearancePenaltyMeters * shortfallFraction;
                 }
 
                 const double turnPenalty =
                     policy.turnPenaltyMetersPerRadian *
-                    turnAngleRadians(
-                        incomingPortalCenter,
-                        currentCenter,
-                        portal.centerMapMeters
-                    );
+                    impl_->graph.turnAnglesRadians[turnOffset + edgeIndex];
                 const double candidateCost =
                     current.cost +
-                    policy.distanceWeight * geometricMeters +
-                    clearancePenalty +
+                    policy.distanceWeight * edge.geometricMeters +
+                    clearancePenaltyFor(edge.availableClearanceMeters) +
                     turnPenalty;
 
                 const Impl::TurnStateSlot nextStateSlot = edge.arrivalTurnStateSlot;
@@ -1217,7 +1219,6 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
                 previous[nextStateSlot] = current.stateSlot;
                 const auto& nextState = impl_->graph.turnStates[nextStateSlot];
                 frontier.push(QueueItem{
-                    candidateCost + heuristic(neighborCenter),
                     candidateCost,
                     nextState.regionSlot,
                     nextState.incomingPortalId,

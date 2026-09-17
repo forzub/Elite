@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** `NAV-V2-LOCAL-1` — dynamic conflict + local receding horizon
+**Current stage:** `NAV-V2-LOCAL-1` — local reference accepted; conservative lateral avoidance candidate
 
 Repository/branch authority is defined by `REPOSITORY_SOURCE_OF_TRUTH.md`. `main` is the only canonical game-development branch.
 
@@ -23,9 +23,9 @@ ship-centered NavigationWorld
     |   P/V/A / prediction / swept bounds / bins
     |   compact relevant/conflict candidates
     |
-    + local horizon consumer
+    + local horizon / avoidance consumer
         bounded conflict assessment
-        temporary target state
+        statically proven temporary target state
             |
             v
     RuckigTrajectorySolver / flight control
@@ -126,7 +126,7 @@ The pinned gate was `<=40 ms p95`, so `NAV-V2-SPACE-1` is closed. Tree-backed ex
 
 ## 5. Current stage — `NAV-V2-LOCAL-1`
 
-The current task is the composition boundary between accepted static intent and accepted dynamic reduction.
+The local layer composes accepted static intent with accepted dynamic reduction.
 
 ```text
 cached static corridor / nominal local target
@@ -138,10 +138,17 @@ agent P/V/A + envelope
 completed-result age / latency budget
         |
         v
-bounded local conflict assessment
+LocalHorizonPlanner
         |
-        v
-receding-horizon temporary safe target state
+        +-- Clear / bounded target
+        +-- StaleHold
+        +-- ConflictHold
+                 |
+                 v
+         LocalAvoidancePlanner
+                 |
+                 +-- statically proven adjusted target
+                 +-- fail-closed hold
         |
         v
 RuckigTrajectorySolver
@@ -152,7 +159,7 @@ flight control
 
 The local layer does **not** own another NavigationWorld, does not scan the full scene and does not expand the global route into thousands of samples. Per-agent work starts after shared reduction has produced compact candidates.
 
-### Local horizon rule
+### 5.1 Accepted local horizon reference
 
 Baseline physical horizon:
 
@@ -160,11 +167,57 @@ Baseline physical horizon:
 D >= v*T_latency + v^2/(2*a_brake) + turn_distance + safety_margin
 ```
 
-`T_latency` includes asynchronous snapshot/result age. Higher-fidelity relative-motion models may replace the baseline later, but stale-result age may never be ignored.
+`T_latency` includes asynchronous snapshot/result age. The accepted deterministic reference uses bounded relative-motion closest approach plus conservative swept-sphere/segment conflict checks.
 
-The first deterministic reference uses bounded relative-motion conflict assessment over compact candidates. It outputs a compact temporary target/safety product, not a trajectory.
+Behavior gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39` passed.
 
-### Fail-closed ownership
+Target-machine compact-candidate scaling on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
+
+```text
+scenario         p95_us     p95_ns/candidate
+clear_16          0.4814          30.0873
+clear_64          1.8327          28.6362
+clear_256         7.9820          31.1798
+clear_1024       36.9641          36.0977
+
+conflict_16       0.5073          31.7062
+conflict_64       1.9333          30.2078
+conflict_256      7.5441          29.4693
+conflict_1024    31.8656          31.1188
+
+stale_1024        0.0359          0 candidates examined
+```
+
+This loop is accepted and is not a performance bottleneck. Do not optimize it further without new runtime evidence.
+
+### 5.2 Active adjusted-target reference
+
+`LocalAvoidancePlanner` is the first lateral-avoidance candidate. It may only act after the accepted nominal evaluation reports `ConflictHold`.
+
+Candidate fan:
+
+```text
+15 degree deflection x 8 azimuth samples
+30 degree deflection x 8 azimuth samples
+maximum 16 probes
+```
+
+Each target must pass two proofs:
+
+1. **Static proof:** the current agent point and candidate target are traversable for the same envelope and resolve to the same `NavigationSpace` region via the public `queryPoint()` boundary.
+2. **Dynamic proof:** the candidate is re-evaluated against the same compact `NavigationMap::QueryResult` through `LocalHorizonPlanner`.
+
+A semantic NavigationSpace region is an axis-aligned free-space volume. After envelope shrinkage it remains convex. Therefore two traversable endpoints in the same region prove that the complete straight segment between them stays inside that static free-space volume.
+
+This is intentionally conservative. It may reject valid portal-crossing or overlapping-region maneuvers; it must never invent free space.
+
+### 5.3 Current-kinematics limitation
+
+The accepted closest-approach reference evaluates the ship's current P/V/A. A changed target alone cannot be claimed to erase an already predicted head-on/crossing collision. The first adjusted-target slice may clear a future swept-corridor blocker when current closest approach is still safe, but current-kinematics collision cases remain `ConflictHold` until a later trajectory-aware maneuver is demonstrated.
+
+This is a safety contract, not an algorithmic limitation to be hidden by optimistic prediction.
+
+### 5.4 Fail-closed ownership
 
 If a safe local target cannot be demonstrated, the local layer reports a fail-closed result. It must not invent free space from render geometry or bypass `NavigationSpace`/`NavigationMap` authority.
 
@@ -198,6 +251,8 @@ full/precision global solve      asynchronous only
 
 These are design budgets, not portable assertions. Numerical acceptance claims come from the user's target-machine output.
 
+The one-pass LocalHorizonPlanner reference is far below this budget even at 1024 compact candidates. The multiplied cost of the 16-probe avoidance fan is **not yet accepted** and must be measured separately after behavior acceptance.
+
 Different layers may run at different rates. Global corridor validity is revision/event driven; local physical avoidance is receding-horizon; mass-NPC work may be staggered.
 
 ## 8. Navigation / collision / damage boundary
@@ -222,17 +277,18 @@ Manual guidance visualizes the accepted corridor/trajectory actually used by nav
 
 Ordinary `F12` keeps Hub/local presentation. `Shift+F12` toggles Hub render <-> raw NavigationWorld Debug. Debug consumes the same completed NavigationWorld snapshot used by navigation/control and must not run a second planner or force synchronous readback.
 
-Useful debug data includes static regions/portals/clearance, dynamic actors P/V/A, swept bounds, active corridor, local horizon, conflicts, snapshot generation and age.
+Useful debug data includes static regions/portals/clearance, dynamic actors P/V/A, swept bounds, active corridor, local horizon, adjusted target, conflicts, snapshot generation and age.
 
 ## 10. Roadmap
 
 1. **`NAV-V2-MAP-2` — CLOSED:** shared dynamic reduction/backend evidence.
 2. **`NAV-V2-SPACE-1` — CLOSED:** static free-space/corridor/turn-aware reference.
-3. **`NAV-V2-LOCAL-1` — ACTIVE:** bounded dynamic conflict + temporary target selection.
-4. pursuit/receding-intercept consumer.
-5. raw NavigationWorld debug visualization.
-6. live `EliteGame` / `EliteServer` integration.
-7. retire legacy route-wide navigation only after v2 owns the live path.
+3. **`NAV-V2-LOCAL-1` — ACTIVE:** horizon reference accepted; conservative same-region adjusted-target behavior/performance gate next.
+4. trajectory-aware head-on/crossing maneuver selection.
+5. pursuit/receding-intercept consumer.
+6. raw NavigationWorld debug visualization.
+7. live `EliteGame` / `EliteServer` integration.
+8. retire legacy route-wide navigation only after v2 owns the live path.
 
 ## 11. Documentation Definition of Done
 

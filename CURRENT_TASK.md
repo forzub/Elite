@@ -3,7 +3,7 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-LOCAL-1` — same-region avoidance behavior accepted; dedicated avoidance performance gate active
+**Stage:** `NAV-V2-LOCAL-1` performance gate active; first trajectory precision-geometry candidate prepared in parallel
 
 ## Accepted preconditions
 
@@ -15,11 +15,7 @@ conflict_1024 p95    31.8656 us
 stale_1024 p95        0.0359 us / 0 candidates examined
 ```
 
-The one-pass compact-candidate loop is not a bottleneck.
-
-## `LocalAvoidancePlanner` behavior — ACCEPTED
-
-Fresh target-machine gate on `bdec064d152050b4bc199b2657f14b3f577dcba3`:
+`LocalAvoidancePlanner` behavior is accepted from target-machine commit `bdec064d152050b4bc199b2657f14b3f577dcba3`:
 
 ```text
 NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
@@ -30,64 +26,158 @@ navigation_local_avoidance: PASS
 Total Test time: 0.06 sec
 ```
 
-Accepted behavior:
+Accepted local behavior remains:
 
 ```text
 nominal Clear
-    -> NominalClear / zero avoidance probes
+    -> zero avoidance probes
 
 nominal ConflictHold
-    -> public NavigationSpace start query
     -> deterministic 15 deg x 8 + 30 deg x 8 fan
-    -> same-region / same static-publication proof
-    -> dynamic recheck through accepted LocalHorizonPlanner
-    -> first proven target = AdjustedClear / PassThrough
-    -> otherwise ConflictHold
+    -> same-region / same-publication static proof
+    -> dynamic recheck through LocalHorizonPlanner
+    -> first proven target = AdjustedClear
+    -> otherwise fail closed
 ```
 
-Current-kinematics head-on/crossing remains fail-closed by design. Portal-crossing adjusted targets are not claimed yet.
-
-## Active gate — multiplied avoidance probe cost
+## Active gate A — multiplied avoidance probe cost
 
 Dedicated harness:
 
 ```text
 benchmarks/navigation_local_avoidance/
-    CMakeLists.txt
-    main.cpp
-    README.md
-    RUN_LOG.md
-    run_mingw64.sh
-
-tests/architecture_contracts/
-    check_navigation_local_avoidance_benchmark.py
 ```
 
-Measured behavior classes:
+Pinned classes:
 
 ```text
 nominal_clear_64
-    0 probes / 1 horizon evaluation / 0 static point queries
+    0 probes / 1 horizon evaluation
 
 early_adjust_64
-    first lateral probe accepted
-    1 probe / 2 horizon evaluations / 2 static point queries
+    first probe accepted
 
 all_static_rejected_64
-    all 16 probes rejected by NavigationSpace
-    1 horizon evaluation / 17 static point queries
+    16 static rejections
 
 all_dynamic_rejected_16/64/256/1024
-    all 16 probes statically valid
-    all 16 dynamic rechecks fail
-    17 horizon evaluations / 17 static point queries
+    16 statically valid probes
+    16 failed dynamic rechecks
+    17 horizon evaluations
 ```
 
-`1024` is deliberate stress, not an expected normal local-neighbor count.
+`1024` is deliberate stress. Current local CPU budgets remain:
 
-The benchmark reports median/p95 plus probes, static/dynamic rejections, horizon-evaluation count, estimated compact-candidate visits and static point-query count. Scenario construction and static-space publication are outside the timed region.
+```text
+<0.5 ms typical
+<1.0 ms normal peak
+```
+
+Do not optimize the fan until target-machine evidence exists.
+
+## Candidate B — oriented passage / emergent obstacle gap
+
+User requirement added: two nearby objects may themselves form a usable **slot**. If ordinary avoidance cannot prove a side-step because speed is high and remaining distance is short, the system must not automatically conclude that collision is unavoidable. It may test the free space between nearby boundaries as a positive passage candidate.
+
+Architecture authority:
+
+```text
+src/world/navigation/ORIENTED_PASSAGE_MODEL.md
+src/world/navigation/TRAJECTORY_CONTROL_MODEL.md
+```
+
+First isolated code candidate:
+
+```text
+src/world/navigation/trajectory/OrientedPassageEvaluator.h
+src/world/navigation/trajectory/OrientedPassageEvaluator.cpp
+```
+
+Ownership/performance rule:
+
+```text
+cheap broadphase / accepted local avoidance
+        |
+        +-- normal safe path -> done
+        |
+        +-- ConflictHold / explicit aperture / docking corridor
+                |
+                v
+        bounded gap candidate builder
+        primary conflict + nearby relevant boundaries only
+        NO unbounded N x N obstacle-pair scan
+        initial design target <= 4-8 passage candidates
+                |
+                v
+        OrientedPassageEvaluator
+        constant-size OBB projection math, O(1) per candidate
+                |
+                v
+        only plausible passages -> later full 6DoF swept trajectory proof
+```
+
+Current geometry candidate deliberately does not own scene discovery, dynamics, NavigationMap, NavigationSpace, GLM, OpenGL or rendering.
+
+Pinned behavior fixtures:
+
+```text
+flat hull + flat slot + correct attitude
+    -> Fits
+    -> conservative sphere rejects
+
+same hull rolled 90 degrees
+    -> rejected
+
+two nearby obstacles -> ObstacleGap
+    wide attitude -> rejected
+    rolled thin attitude -> Fits
+
+correct attitude but excessive lateral offset
+    -> rejected
+
+degenerate passage frame
+    -> InvalidInput / fail closed
+```
+
+Architecture checker:
+
+```text
+tests/architecture_contracts/check_navigation_trajectory_passage.py
+```
+
+Behavior runner:
+
+```text
+tests/navigation_trajectory/run_mingw64.sh
+```
+
+This first candidate proves only oriented cross-section fit. It does **not** yet claim that the ship has enough time/rotation/thrust authority to reach that pose, or that a moving gap remains open for the complete crossing. Those are the next continuous 6DoF feasibility slices.
+
+## Docking remains part of the same precision layer
+
+Docking is terminal 6DoF pose matching against a possibly moving/rotating port. The precision passage model also applies to narrow docking tunnels.
+
+Required terminal contract includes:
+
+```text
+relative position
+relative linear velocity
+relative attitude
+relative angular velocity
+explicit mating frame / top-bottom convention
+```
+
+For rotating ports, target-point velocity includes:
+
+```text
+v_port = v_origin + omega x r
+```
+
+`bottom of ship -> bottom of dock` remains an explicit mating-frame rule; a 180-degree rolled center-point arrival is invalid.
 
 ## RUN NOW
+
+Fast-forward first:
 
 ```bash
 cd /d/__elite/work
@@ -97,27 +187,25 @@ git switch main
 git merge --ff-only origin/main
 
 git rev-parse HEAD
+```
 
+Then run both pending gates:
+
+```bash
 python tests/architecture_contracts/check_navigation_local_avoidance_benchmark.py
 bash benchmarks/navigation_local_avoidance/run_mingw64.sh
+
+python tests/architecture_contracts/check_navigation_trajectory_passage.py
+bash tests/navigation_trajectory/run_mingw64.sh
 ```
 
 Send the complete output.
 
-## Decision after measurement
+## Decision after results
 
-Use target-machine evidence against the existing local CPU budget:
-
-```text
-<0.5 ms typical
-<1.0 ms normal peak
-```
-
-Decision order:
-
-1. if nominal/early paths are comfortably cheap and even the deliberate worst cases fit the budget, keep the deterministic 16-probe fan unchanged;
-2. if only large worst-case candidate counts are expensive, introduce evidence-based probe ordering and/or a bounded dynamic-recheck budget rather than optimizing the already-cheap one-pass horizon loop;
-3. after this performance gate, begin the trajectory-aware vehicle/control/docking layer in `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`;
-4. that next layer must cover oriented hulls, Elite/Newton reachability, head-on/crossing maneuver feasibility, oriented narrow passages such as a flat ship through a flat slot, and terminal 6DoF docking against stationary/moving/rotating docks;
-5. docking must match predicted port pose and motion, including relative linear/angular velocity and explicit ship/dock top-bottom mating orientation (`bottom of ship -> bottom of dock`), rather than accepting an upside-down center-point arrival;
-6. do not wire live `EliteGame` / `EliteServer` or pursuit-specific intercept logic before these gates are closed.
+1. accept or adjust the 16-probe fan only from measured timing;
+2. if oriented-passage architecture + behavior are green, keep its O(1) fit evaluator and build the **bounded gap-candidate extractor** next;
+3. candidate extraction must avoid all-pairs work and should start from the primary conflict plus local adjacency/spatial-bin/static-boundary evidence;
+4. then add rotation-time/thrust-aware continuous 6DoF passage feasibility for head-on/crossing and narrow gaps;
+5. extend the same pose/sweep machinery into moving/rotating docking;
+6. live `EliteGame` / `EliteServer` and pursuit-specific integration remain later.

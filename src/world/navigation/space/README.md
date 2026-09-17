@@ -121,7 +121,7 @@ hub  distance_only p95      7.7609 ms
 hub  clearance_aware p95    9.6103 ms
 ```
 
-The acceptance threshold was `<=15 ms p95`, so deterministic Dijkstra v1 is retained as an asynchronous worker/reference solve. No A* or priority-queue redesign is required before the next static route term.
+The acceptance threshold was `<=15 ms p95`, so deterministic Dijkstra v1 is retained as an asynchronous worker/reference solve. No A* or priority-queue redesign was required for that zero-turn v1 acceptance.
 
 Raw evidence: `benchmarks/navigation_space_costed/RUN_LOG.md`.
 
@@ -176,6 +176,34 @@ zigzag_vs_smooth
 
 Speed-dependent turn radius, angular acceleration, braking distance, traffic/risk and pursuit prediction are intentionally not persistent `NavigationSpace` static terms.
 
+### Turn-aware performance progression
+
+The first expanded-state implementation used ordered maps/multimap and was rejected at roughly `216-233 ms p95` on 10k.
+
+Dense `TurnStateSlot` vectors plus a binary heap improved the same search to:
+
+```text
+open_10k turn p95  67.9647 ms
+hub_10k  turn p95  72.6054 ms
+turn portals examined 329,660
+```
+
+A Euclidean A* ordering was then measured and rejected:
+
+```text
+open_10k turn p95  97.0537 ms
+hub_10k  turn p95  97.6909 ms
+turn portals examined 323,888
+```
+
+The heuristic reduced portal work by only about 1.75% while adding enough query-time geometry/priority overhead to make p95 materially worse.
+
+The active candidate therefore restores exact dense-state Dijkstra ordering and moves immutable static work into graph publication. Private graph data now includes dense `PortalSlot` identity, region/portal invalidation flags, per-directed-edge geometric distance/available clearance, and flattened precomputed turn angles for each `(TurnStateSlot, outgoing adjacency edge)` pair.
+
+`invalidateBounds()` synchronizes the dense invalidation flags with authoritative region/portal state. The positive-turn expanded-state loop avoids ordered-map region/portal lookup and does not recompute center geometry, `sqrt`, or `acos` per examined transition.
+
+This changes private representation only. Public API and turn-cost semantics are unchanged. The target-machine acceptance gate remains `<=40 ms p95` at 10k. Raw history is in `benchmarks/navigation_space_turn/RUN_LOG.md`; the active design note is `TURN_HOT_PATH_CANDIDATE.md`.
+
 ## Private connectivity / dense graph index
 
 The first scaling benchmark showed that scanning the complete portal map for every BFS region is pathological: the 10k reference examined about 286 million portal records and took roughly two seconds per corridor query.
@@ -220,7 +248,7 @@ open invalidate p95 0.0112 ms
 hub  invalidate p95 0.0115 ms
 ```
 
-Full replacement/local patch increased to roughly 44–49 ms median because graph + BVH are rebuilt transactionally; those operations remain worker/update-path work.
+Full replacement/local patch increased to roughly 44–49 ms median before the current turn-angle publication work; those operations remain worker/update-path work and must be remeasured after the active candidate is accepted.
 
 ## Local invalidation
 
@@ -231,11 +259,13 @@ Full replacement/local patch increased to roughly 44–49 ms median because grap
 3. queries stop traversing them immediately;
 4. `applyLocalPatch()` can transactionally restore only the affected topology.
 
+Dense private invalidation flags are acceleration mirrors only; they are synchronized when invalidation is applied and rebuilt from authoritative region/portal state during publication/patching.
+
 ## Determinism
 
-Authoritative regions/portals are stored in ordered maps; RegionSlots are assigned in stable RegionId order; adjacency is built in stable PortalId order; BVH query candidates are sorted before semantic evaluation.
+Authoritative regions/portals are stored in ordered maps; RegionSlots are assigned in stable RegionId order; adjacency and PortalSlots are built in stable PortalId order; BVH query candidates are sorted before semantic evaluation.
 
-Costed v1 uses deterministic queue ordering by `(cost, RegionSlot)`. Turn-aware v2 candidate orders expanded states by cost, RegionSlot and incoming PortalId, with outgoing adjacency already stable by PortalId.
+Costed v1 uses deterministic queue ordering by `(cost, RegionSlot)`. Turn-aware v2 orders expanded states by cost, RegionSlot and incoming PortalId, with outgoing adjacency already stable by PortalId.
 
 ## Relation to dynamic NavigationMap
 

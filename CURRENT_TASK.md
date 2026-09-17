@@ -3,13 +3,11 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-LOCAL-1` — compact-candidate scaling accepted; conservative lateral avoidance behavior gate pending
+**Stage:** `NAV-V2-LOCAL-1` — same-region avoidance behavior accepted; dedicated avoidance performance gate active
 
-## Closed local reference gates
+## Accepted preconditions
 
-`LocalHorizonPlanner` behavior is accepted and its compact-candidate scaling is accepted.
-
-Target-machine reference on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
+`LocalHorizonPlanner` behavior and compact-candidate scaling remain accepted. Target-machine reference on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
 
 ```text
 clear_1024 p95       36.9641 us
@@ -17,81 +15,77 @@ conflict_1024 p95    31.8656 us
 stale_1024 p95        0.0359 us / 0 candidates examined
 ```
 
-The one-pass compact-candidate loop is not a bottleneck. Do not optimize it further without new runtime evidence.
+The one-pass compact-candidate loop is not a bottleneck.
 
-## Active candidate — `LocalAvoidancePlanner`
+## `LocalAvoidancePlanner` behavior — ACCEPTED
 
-The first bounded adjusted-target slice composes:
-
-```text
-LocalHorizonPlanner
-+ compact NavigationMap::QueryResult
-+ public NavigationSpace::queryPoint()
-```
-
-For nominal `ConflictHold` it probes at most 16 deterministic lateral targets:
+Fresh target-machine gate on `bdec064d152050b4bc199b2657f14b3f577dcba3`:
 
 ```text
-15 deg x 8 azimuths
-30 deg x 8 azimuths
+NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
+NAVIGATION LOCAL AVOIDANCE BOUNDARY CONTRACT: PASS
+navigation_local: PASS
+navigation_local_avoidance: PASS
+100% tests passed, 0 failed
+Total Test time: 0.06 sec
 ```
 
-A target must be envelope-safe in the same NavigationSpace region and must use the same static space/source revision as the start-point evidence. It is then rechecked through the accepted dynamic reference. Current-kinematics head-on/crossing conflicts remain fail-closed; a changed target alone cannot erase them.
-
-## Latest target-machine attempt — infrastructure failure, not avoidance failure
-
-Run on `f27006ccbba1a6faaa3d3000dedf8d8dee5f02e8` produced:
+Accepted behavior:
 
 ```text
-check_navigation_local_boundary.py
-    FAIL: local horizon ownership documentation missing: already reduced
+nominal Clear
+    -> NominalClear / zero avoidance probes
 
-check_navigation_local_avoidance.py
-    PASS
-
-navigation_local
-    PASS
-
-navigation_local_avoidance
-    NOT RUN: executable not found
+nominal ConflictHold
+    -> public NavigationSpace start query
+    -> deterministic 15 deg x 8 + 30 deg x 8 fan
+    -> same-region / same static-publication proof
+    -> dynamic recheck through accepted LocalHorizonPlanner
+    -> first proven target = AdjustedClear / PassThrough
+    -> otherwise ConflictHold
 ```
 
-Diagnosis:
+Current-kinematics head-on/crossing remains fail-closed by design. Portal-crossing adjusted targets are not claimed yet.
 
-1. the old horizon architecture check was coupled to the exact README phrase `already reduced`; the README had been consolidated to `compact dynamic products` while the actual ownership contract remained unchanged;
-2. `tests/navigation_local/run_mingw64.sh` configured both CTest executables but explicitly built only the historical `navigation_local_tests` target, so CTest registered `navigation_local_avoidance` without its executable existing.
+## Active gate — multiplied avoidance probe cost
 
-Fix now on `main`:
-
-- horizon contract checks semantic ownership markers rather than the stale exact README phrase;
-- the header still explicitly pins `already reduced NavigationMap products`;
-- local test runner now builds the complete CMake project before CTest, so every registered local executable is produced.
-
-No avoidance behavior acceptance or rejection is inferred from the failed run because the avoidance executable did not execute.
-
-## Trajectory/control requirements recorded for the next stage
-
-New architecture contract:
+Dedicated harness:
 
 ```text
-src/world/navigation/TRAJECTORY_CONTROL_MODEL.md
+benchmarks/navigation_local_avoidance/
+    CMakeLists.txt
+    main.cpp
+    README.md
+    RUN_LOG.md
+    run_mingw64.sh
+
+tests/architecture_contracts/
+    check_navigation_local_avoidance_benchmark.py
 ```
 
-Current local navigation remains intentionally conservative: controlled/dynamic actors are represented by radius + swept sphere and do not yet carry hull attitude/control-mode/pilot-skill semantics.
-
-The planned trajectory-aware stage must separate:
+Measured behavior classes:
 
 ```text
-world geometry/state
-vehicle capability: hull shape, attitude, angular state, thrust authority
-flight-control mode: assisted Elite vs Newtonian free-flight behavior
-pilot skill: reaction delay, decision rate, input smoothing, damping/overshoot, precision
-actual control execution / physics
+nominal_clear_64
+    0 probes / 1 horizon evaluation / 0 static point queries
+
+early_adjust_64
+    first lateral probe accepted
+    1 probe / 2 horizon evaluations / 2 static point queries
+
+all_static_rejected_64
+    all 16 probes rejected by NavigationSpace
+    1 horizon evaluation / 17 static point queries
+
+all_dynamic_rejected_16/64/256/1024
+    all 16 probes statically valid
+    all 16 dynamic rechecks fail
+    17 horizon evaluations / 17 static point queries
 ```
 
-This is where airplane-like steering, free attitude/velocity decoupling, flip-and-burn, rotation time before braking, oriented swept hull checks and deterministic low-skill NPC oscillation belong.
+`1024` is deliberate stress, not an expected normal local-neighbor count.
 
-Do not stuff these into the current static/dynamic broadphase or same-region target fan.
+The benchmark reports median/p95 plus probes, static/dynamic rejections, horizon-evaluation count, estimated compact-candidate visits and static point-query count. Scenario construction and static-space publication are outside the timed region.
 
 ## RUN NOW
 
@@ -104,20 +98,24 @@ git merge --ff-only origin/main
 
 git rev-parse HEAD
 
-python tests/architecture_contracts/check_navigation_local_boundary.py
-python tests/architecture_contracts/check_navigation_local_avoidance.py
-bash tests/navigation_local/run_mingw64.sh
+python tests/architecture_contracts/check_navigation_local_avoidance_benchmark.py
+bash benchmarks/navigation_local_avoidance/run_mingw64.sh
 ```
 
 Send the complete output.
 
-## Decision after behavior gate
+## Decision after measurement
 
-If architecture + both local executables PASS:
+Use target-machine evidence against the existing local CPU budget:
 
-1. accept the same-region avoidance behavior slice;
-2. add a dedicated avoidance benchmark for nominal-clear, early-adjust, all-static-rejected and all-dynamic-rejected cases;
-3. decide whether the 16-probe fan needs any ordering/budget change;
-4. then begin the trajectory-aware vehicle/control layer defined in `TRAJECTORY_CONTROL_MODEL.md`, including head-on/crossing maneuver feasibility.
+```text
+<0.5 ms typical
+<1.0 ms normal peak
+```
 
-Do not wire live `EliteGame` / `EliteServer` or pursuit-specific intercept logic before these gates pass.
+Decision order:
+
+1. if nominal/early paths are comfortably cheap and even the deliberate worst cases fit the budget, keep the deterministic 16-probe fan unchanged;
+2. if only large worst-case candidate counts are expensive, introduce evidence-based probe ordering and/or a bounded dynamic-recheck budget rather than optimizing the already-cheap one-pass horizon loop;
+3. after this performance gate, begin the trajectory-aware vehicle/control layer in `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md` for oriented hulls, Elite/Newton reachability and head-on/crossing maneuver feasibility;
+4. do not wire live `EliteGame` / `EliteServer` or pursuit-specific intercept logic before these gates are closed.

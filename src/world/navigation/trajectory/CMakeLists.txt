@@ -14,6 +14,7 @@ add_library(EliteNavigationTrajectory STATIC
     MovingGapPredictor.cpp
     MovingPassageTrajectoryEvaluator.cpp
     DockingTerminalEvaluator.cpp
+    DockingApproachEvaluator.cpp
 )
 
 target_include_directories(EliteNavigationTrajectory PUBLIC

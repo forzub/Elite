@@ -13,5 +13,8 @@ cmake \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=Release
 
-cmake --build "${BUILD_DIR}" --target navigation_local_tests
+# Build the complete local-navigation test project. CTest may register more than
+# one executable (horizon reference + avoidance behavior); building only the
+# historical navigation_local_tests target leaves newer registered tests absent.
+cmake --build "${BUILD_DIR}"
 ctest --test-dir "${BUILD_DIR}" --output-on-failure

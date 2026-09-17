@@ -4,6 +4,19 @@ Stage: `NAV-V2-LOCAL-1`.
 
 `LocalHorizonPlanner` consumes **already reduced** dynamic products from `NavigationMap` plus an upstream nominal target from accepted static route intent. It does not own another NavigationWorld, actor table, spatial index, global route or GPU resource.
 
+## Current acceptance status
+
+Target-machine behavior gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
+
+```text
+NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
+navigation_local: 1/1 PASS
+100% tests passed, 0 failed
+Total Test time = 0.05 sec
+```
+
+The ownership/safety semantics below are therefore behavior-accepted. Performance scaling over compact candidate count is measured separately by `benchmarks/navigation_local/` and is not yet accepted until the target-machine run is recorded.
+
 ## Input ownership
 
 ```text
@@ -83,6 +96,20 @@ Result
 ```
 
 `ConflictHold` and `StaleHold` are fail-closed products. The planner does not invent an unverified lateral bypass. Downstream control may brake/hold; a later measured local-avoidance algorithm can add adjusted safe targets behind this ownership boundary.
+
+## Candidate-count performance measurement
+
+The dedicated downstream harness consumes only compact query products and measures:
+
+```text
+clear:     0 / 16 / 64 / 256 / 1024 candidates
+conflict:     16 / 64 / 256 / 1024 candidates
+stale:                           1024 candidates
+```
+
+`stale_1024` must return before candidate evaluation. `1024` is a stress scale, not an expected ordinary NavigationMap candidate count.
+
+Raw measurement location: `benchmarks/navigation_local/RUN_LOG.md`.
 
 ## Non-goals
 

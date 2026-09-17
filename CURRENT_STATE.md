@@ -3,7 +3,7 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Navigation:** `NAV-V2-SPACE-1` — **CLOSED / ACCEPTED**  
-**Active stage:** `NAV-V2-LOCAL-1` — dynamic conflict + local receding horizon
+**Active stage:** `NAV-V2-LOCAL-1` — behavior accepted, candidate-count performance measurement pending
 
 ## Accepted Navigation v2 ownership
 
@@ -94,9 +94,18 @@ Do not continue optimizing persistent static turn search without new runtime evi
 
 Raw evidence: `benchmarks/navigation_space_turn/RUN_LOG.md`.
 
-## `NAV-V2-LOCAL-1` — ACTIVE
+## `NAV-V2-LOCAL-1` — BEHAVIOR ACCEPTED / PERFORMANCE PENDING
 
-Next composition layer:
+Fresh target-machine gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
+
+```text
+NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
+navigation_local: 1/1 PASS
+100% tests passed, 0 failed
+Total Test time = 0.05 sec
+```
+
+Accepted local ownership/safety behavior:
 
 ```text
 accepted static corridor / nominal local target
@@ -109,12 +118,28 @@ agent P/V/A + result age / safety budget
 bounded local conflict assessment
         |
         v
-receding-horizon temporary safe target state
+receding-horizon temporary target state
         |
-        v
-RuckigTrajectorySolver / flight control
+        +-> Clear / PassThrough
+        +-> Clear / Terminal
+        +-> ConflictHold
+        +-> StaleHold
 ```
 
-The local layer must consume the accepted `NavigationSpace` and `NavigationMap` boundaries rather than create another spatial world or full-scene planner. It must not depend on GLM/OpenGL/render/game state. The old `TacticalCollisionMonitor`, `SmallCraftNavigation`, route-wide `GeometricPathPlanner` and dense trajectory/guidance chain are migration/reference code, not v2 authority.
+The local layer consumes the accepted `NavigationSpace` and `NavigationMap` boundaries rather than creating another spatial world or full-scene planner. It remains independent of GLM/OpenGL/render/game state. The old `TacticalCollisionMonitor`, `SmallCraftNavigation`, route-wide `GeometricPathPlanner` and dense trajectory/guidance chain remain migration/reference code, not v2 authority.
 
-First implementation slice: backend-neutral deterministic CPU reference for local conflict assessment and temporary-target selection, with architecture/behavior tests before live game/server wiring.
+No lateral bypass is accepted yet. `ConflictHold` and `StaleHold` fail closed until an adjusted-target algorithm is separately measured and pinned.
+
+### Active measurement candidate
+
+`benchmarks/navigation_local/` now measures only `LocalHorizonPlanner::evaluate()` over already reduced compact candidates:
+
+```text
+clear:     0 / 16 / 64 / 256 / 1024
+conflict:     16 / 64 / 256 / 1024
+stale:                           1024
+```
+
+The benchmark records median/p95 microseconds, p95 ns/candidate, examined candidates, conflicts and final status. Scenario construction is outside the timed region. `stale_1024` must examine zero candidates.
+
+Status: **pending target-machine candidate-count scaling run**. No local performance acceptance or avoidance-algorithm choice is claimed yet.

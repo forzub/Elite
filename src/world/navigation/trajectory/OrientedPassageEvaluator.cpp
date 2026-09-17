@@ -1,6 +1,5 @@
 #include "OrientedPassageEvaluator.h"
 
-#include <algorithm>
 #include <cmath>
 
 namespace world::navigation
@@ -74,12 +73,20 @@ bool unitVector(const Vec3d& value) noexcept
 
 bool validBasis(const Basis3d& basis) noexcept
 {
-    return unitVector(basis.right) &&
-        unitVector(basis.up) &&
-        unitVector(basis.forward) &&
-        std::abs(dot(basis.right, basis.up)) <= kBasisTolerance &&
-        std::abs(dot(basis.right, basis.forward)) <= kBasisTolerance &&
-        std::abs(dot(basis.up, basis.forward)) <= kBasisTolerance;
+    if (!unitVector(basis.right) ||
+        !unitVector(basis.up) ||
+        !unitVector(basis.forward) ||
+        std::abs(dot(basis.right, basis.up)) > kBasisTolerance ||
+        std::abs(dot(basis.right, basis.forward)) > kBasisTolerance ||
+        std::abs(dot(basis.up, basis.forward)) > kBasisTolerance)
+    {
+        return false;
+    }
+
+    // Require a proper right-handed attitude frame, not merely three mutually
+    // perpendicular axes. A reflected basis would invert roll semantics.
+    return dot(cross(basis.right, basis.up), basis.forward) >=
+        1.0 - kBasisTolerance;
 }
 
 bool validHull(const Evaluator::HullProxy& hull) noexcept

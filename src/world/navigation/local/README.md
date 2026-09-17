@@ -1,10 +1,10 @@
-# LocalHorizonPlanner — NavigationWorld v2 local composition boundary
+# NavigationWorld v2 local layer
 
 Stage: `NAV-V2-LOCAL-1`.
 
-`LocalHorizonPlanner` consumes **already reduced** dynamic products from `NavigationMap` plus an upstream nominal target from accepted static route intent. It does not own another NavigationWorld, actor table, spatial index, global route or GPU resource.
+This directory owns the backend-neutral composition between accepted static route intent, compact dynamic products from `NavigationMap`, and downstream local kinematics. It does not own another NavigationWorld, actor table, spatial index, global route or GPU resource.
 
-## Current acceptance status
+## Accepted `LocalHorizonPlanner` reference
 
 Target-machine behavior gate on `77d794a97f1bbd753a55871ff1ef7f6c21c2ed39`:
 
@@ -15,9 +15,7 @@ navigation_local: 1/1 PASS
 Total Test time = 0.05 sec
 ```
 
-The ownership/safety semantics below are therefore behavior-accepted. Performance scaling over compact candidate count is measured separately by `benchmarks/navigation_local/` and is not yet accepted until the target-machine run is recorded.
-
-## Input ownership
+Accepted inputs:
 
 ```text
 AgentState
@@ -29,7 +27,6 @@ NominalTargetState
     map-space target P/V/A supplied by upstream route/local intent
 
 NavigationMap::QueryResult
-    map/source revision
     compact Candidate[] only
 
 Policy
@@ -41,11 +38,7 @@ Policy
     minimum physical horizon
 ```
 
-The current planner deliberately accepts `NavigationMap::QueryResult` rather than internal NavigationMap storage. Backend selection therefore stays behind `NavigationMap.h`.
-
-## Physical horizon
-
-The first reference uses:
+Physical horizon:
 
 ```text
 latencyDistance = |v|*resultAge + 0.5*|a|*resultAge^2
@@ -57,59 +50,105 @@ horizonDistance = max(
 )
 ```
 
-A nominal target farther away is clipped to a pass-through target on this bounded horizon. A nominal target already inside the horizon remains terminal and preserves its supplied terminal velocity/acceleration.
+A far nominal target becomes bounded `PassThrough`; a target inside the horizon remains `Terminal`. Dynamic candidates are aged, checked by bounded closest approach and by conservative swept-sphere intersection against the bounded intended segment.
 
-## Dynamic conflict reference
-
-For each compact candidate the CPU reference:
-
-1. advances candidate P/V to the completed-result age using published acceleration;
-2. computes bounded relative-motion closest approach;
-3. evaluates actual accelerated separation at that time;
-4. checks the intended bounded segment against the candidate's published conservative swept sphere, inflated by the agent envelope, safety margin and agent latency travel.
-
-Either test may conservatively classify a conflict.
-
-This is deliberately a first deterministic safety reference, not the final production avoidance algorithm.
-
-## Output
+Outputs:
 
 ```text
-Status
-    Clear
-    ConflictHold
-    StaleHold
-
-TargetMode
-    PassThrough
-    Terminal
-    Hold
-
-Result
-    bounded target state
-    safe-progress flag
-    map/source revision used
-    result age
-    horizon diagnostics
-    primary conflict diagnostics
-    candidate/conflict counts
+Clear
+ConflictHold
+StaleHold
 ```
 
-`ConflictHold` and `StaleHold` are fail-closed products. The planner does not invent an unverified lateral bypass. Downstream control may brake/hold; a later measured local-avoidance algorithm can add adjusted safe targets behind this ownership boundary.
+`ConflictHold` and `StaleHold` fail closed.
 
-## Candidate-count performance measurement
+## Accepted compact-candidate scaling
 
-The dedicated downstream harness consumes only compact query products and measures:
+Target-machine run on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
 
 ```text
-clear:     0 / 16 / 64 / 256 / 1024 candidates
-conflict:     16 / 64 / 256 / 1024 candidates
-stale:                           1024 candidates
+scenario         p95_us     p95_ns/candidate
+clear_16          0.4814          30.0873
+clear_64          1.8327          28.6362
+clear_256         7.9820          31.1798
+clear_1024       36.9641          36.0977
+
+conflict_16       0.5073          31.7062
+conflict_64       1.9333          30.2078
+conflict_256      7.5441          29.4693
+conflict_1024    31.8656          31.1188
+
+stale_1024        0.0359          0 candidates examined
 ```
 
-`stale_1024` must return before candidate evaluation. `1024` is a stress scale, not an expected ordinary NavigationMap candidate count.
+The loop is accepted. Even the artificial 1024-candidate stress case is below `0.037 ms p95`; further optimization is not justified without new runtime evidence. Raw evidence: `benchmarks/navigation_local/RUN_LOG.md`.
 
-Raw measurement location: `benchmarks/navigation_local/RUN_LOG.md`.
+## Active avoidance candidate — same-region lateral fan
+
+`LocalAvoidancePlanner` is the next behavior slice. It does not replace `LocalHorizonPlanner`; it composes it with the public `NavigationSpace` point-query boundary.
+
+Flow:
+
+```text
+nominal LocalHorizonPlanner result
+    |
+    +-- Clear ------> keep nominal target, zero avoidance probes
+    |
+    +-- StaleHold --> fail closed, zero avoidance probes
+    |
+    +-- ConflictHold
+            |
+            v
+      query static start region
+            |
+            v
+      deterministic 3D lateral fan
+      15 deg ring x 8 azimuths
+      30 deg ring x 8 azimuths
+            |
+            v
+      static same-region proof
+            |
+            v
+      recheck dynamic candidates through LocalHorizonPlanner
+            |
+            +-- first proven target -> AdjustedClear / PassThrough
+            +-- none proven --------> ConflictHold
+```
+
+### Why same-region
+
+The current `NavigationSpace` semantic free-space region is an axis-aligned box. For an agent envelope, the traversable interior of one region is a shrunken convex AABB. Therefore, when both the current agent point and an adjusted target are traversable and resolve to the same region, the entire straight segment between them is statically contained in that free-space volume.
+
+This is intentionally conservative. It may reject a valid maneuver crossing a portal or overlapping region, but it does not invent static free space. Portal-aware local avoidance is a later extension only if runtime evidence requires it.
+
+### Current-kinematics conflicts remain fail closed
+
+The accepted `LocalHorizonPlanner` closest-approach test uses the ship's current P/V/A. A lateral target therefore must **not** magically erase an already predicted head-on/crossing conflict. The first avoidance slice can clear a future swept-corridor blocker when current closest approach is still safe, but head-on/current-kinematics conflicts remain `ConflictHold` until a trajectory-aware maneuver is separately demonstrated.
+
+Pinned behavior fixtures:
+
+```text
+nominal_clear
+    -> NominalClear, zero probes
+
+swept_corridor_blocker
+    -> same-region AdjustedClear when a lateral target is proven
+
+head_on
+    -> ConflictHold; lateral target cannot erase current kinematics
+
+narrow_static_region
+    -> all lateral probes rejected statically; ConflictHold
+
+stale_snapshot
+    -> StaleHold before avoidance probes
+
+non_traversable_start
+    -> StaticHold
+```
+
+The avoidance candidate is **pending target-machine compile/behavior gate**. Its multiplied probe cost is not yet accepted and will be benchmarked only after behavior passes.
 
 ## Non-goals
 
@@ -119,6 +158,7 @@ Raw measurement location: `benchmarks/navigation_local/RUN_LOG.md`.
 - no route-wide dense trajectory;
 - no static-cost mutation from dynamic traffic;
 - no pursuit-specific intercept logic;
-- no Ruckig ownership.
+- no Ruckig ownership;
+- no unproved portal-crossing lateral bypass.
 
 The old GLM-based `TacticalCollisionMonitor` and `SmallCraftNavigation` remain migration/reference code only.

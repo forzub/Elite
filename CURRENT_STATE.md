@@ -3,51 +3,33 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** `NAV-V2-LOCAL-1` — same-region lateral avoidance behavior accepted; multiplied-probe performance gate active
+**Active stage:** `NAV-V2-LOCAL-1` — same-region avoidance behavior accepted; multiplied-probe benchmark pending. First oriented-passage precision candidate prepared in parallel.
 
-## Accepted Navigation v2 ownership
-
-```text
-CPU
-    static free-space / clearance
-    connectivity / portals
-    sparse cached global corridor search
-    deterministic precision/local reference work
-
-GPU
-    dynamic P/V/A prediction
-    conservative swept bounds
-    spatial binning
-    all-agent neighbor/conflict reduction
-```
-
-`RuckigTrajectorySolver` remains downstream local kinematics, not path search.
-
-## Closed foundations
+## Accepted foundations
 
 ### `NAV-V2-MAP-2` — CLOSED
 
 Accepted 10k evidence includes CPU compact candidate queries below `0.2 ms p95` and GPU dynamic total below `1.7 ms p95` on the target machine.
 
-Current dynamic broadphase actor geometry is radius + conservative swept sphere. This is safe/cheap but not final oriented-hull maneuver fidelity.
+Current shared dynamic broadphase remains intentionally cheap/conservative: center P/V/A + radius + swept sphere.
 
 ### `NAV-V2-SPACE-1` — CLOSED / ACCEPTED
 
-Final accepted turn-aware target-machine evidence on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
+Final turn-aware target-machine evidence on `1acaddc1771d3b1a9466dfec7b0974379d74fcd1`:
 
 ```text
 open_10k zero p95    8.4498 ms
 open_10k turn p95   12.0072 ms
-hub_10k  zero p95    8.4125 ms
-hub_10k  turn p95   11.9065 ms
+hub_10k zero p95     8.4125 ms
+hub_10k turn p95    11.9065 ms
 turn portals examined 329,660
 ```
 
-Pinned gate was `<=40 ms p95`. Static turn-aware search is accepted and should not be reopened without runtime evidence.
+Do not reopen static turn optimization without new runtime evidence.
 
-## `NAV-V2-LOCAL-1` — horizon reference ACCEPTED
+## `NAV-V2-LOCAL-1` — horizon + avoidance behavior ACCEPTED
 
-Target-machine compact-candidate scaling on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
+Accepted compact-candidate reference on `4b94048b15e6e2cd32754b6b8d48daedcb18625f`:
 
 ```text
 clear_1024 p95       36.9641 us
@@ -55,11 +37,7 @@ conflict_1024 p95    31.8656 us
 stale_1024 p95        0.0359 us / 0 candidates examined
 ```
 
-The one-pass local reference is not a CPU bottleneck.
-
-## `LocalAvoidancePlanner` behavior — ACCEPTED
-
-Fresh target-machine behavior gate on `bdec064d152050b4bc199b2657f14b3f577dcba3`:
+Fresh avoidance behavior gate on `bdec064d152050b4bc199b2657f14b3f577dcba3`:
 
 ```text
 NAVIGATION LOCAL HORIZON BOUNDARY CONTRACT: PASS
@@ -70,90 +48,124 @@ navigation_local_avoidance: PASS
 Total Test time: 0.06 sec
 ```
 
-Accepted bounded behavior:
+Accepted bounded avoidance:
 
 ```text
-nominal Clear
-    -> NominalClear / zero lateral probes
-
 nominal ConflictHold
-    -> NavigationSpace start point
-    -> 15 deg x 8 + 30 deg x 8 deterministic fan
+    -> 15 deg x 8 + 30 deg x 8 deterministic target fan
     -> same-region / same-publication static proof
-    -> accepted LocalHorizonPlanner dynamic recheck
-    -> first proven target = AdjustedClear / PassThrough
-    -> otherwise ConflictHold
+    -> compact dynamic recheck
+    -> first proven target = AdjustedClear
+    -> otherwise fail closed
 ```
 
-Important limits remain intentional:
+Current-P/V/A head-on/crossing remains fail-closed until a trajectory-aware maneuver is demonstrated.
 
-- portal-crossing adjusted targets may be conservatively rejected;
-- stale/static-unsafe input fails closed;
-- current-P/V/A head-on or crossing conflicts remain `ConflictHold` until a trajectory-aware maneuver is demonstrated.
+## Active measurement — 16-probe fan cost
 
-## Active measurement — avoidance fan cost
-
-Dedicated target-machine harness now lives at:
+Dedicated target-machine harness:
 
 ```text
 benchmarks/navigation_local_avoidance/
 ```
 
-It separates four cost classes:
+It measures nominal clear, first-probe success, 16 static rejections, and 16 repeated dynamic rejections at compact candidate counts 16/64/256/1024.
 
-```text
-nominal_clear_64
-    one horizon pass, zero lateral/static work
+`1024` is deliberate stress. Performance is not accepted until fresh target-machine median/p95 is captured.
 
-early_adjust_64
-    first lateral probe succeeds
-
-all_static_rejected_64
-    all 16 probes fail NavigationSpace before dynamic recheck
-
-all_dynamic_rejected_16/64/256/1024
-    all 16 probes are statically valid
-    all 16 dynamic rechecks fail
-    17 total horizon evaluations
-```
-
-The `1024` case is deliberate stress. Performance is **not yet accepted** until fresh target-machine median/p95 output is captured in `benchmarks/navigation_local_avoidance/RUN_LOG.md`.
-
-Current local CPU design budgets remain:
+Current local CPU budgets:
 
 ```text
 <0.5 ms typical
 <1.0 ms normal peak
 ```
 
-## Planned next physical-control / docking layer
+## New precision candidate — oriented passages and emergent gaps
 
-`src/world/navigation/TRAJECTORY_CONTROL_MODEL.md` is the accepted post-benchmark architecture contract.
+Architecture:
 
-The next trajectory-aware stage must add, through the authoritative flight/physics boundary:
+```text
+src/world/navigation/ORIENTED_PASSAGE_MODEL.md
+src/world/navigation/TRAJECTORY_CONTROL_MODEL.md
+```
 
-- oriented hull dimensions/proxy and attitude;
-- angular state and rotation authority;
-- body-axis/thruster acceleration authority;
+First backend-neutral candidate:
+
+```text
+src/world/navigation/trajectory/OrientedPassageEvaluator.h
+src/world/navigation/trajectory/OrientedPassageEvaluator.cpp
+```
+
+It solves one deliberately small problem in O(1): given a body-local OBB proxy, ship pose, and an already-selected oriented passage cross-section, determine whether the real hull fits at that attitude/offset.
+
+This recovers cases that the conservative broadphase sphere intentionally rejects, such as a flat ship rolling through a flat slot.
+
+Passage sources share one representation:
+
+```text
+AuthoredAperture
+ObstacleGap
+DockingCorridor
+```
+
+Important new semantic rule: **two nearby objects may form a positive free-space passage**. If ordinary avoidance cannot clear them because speed is high / distance is short, the free space between them may still be usable when the real hull fits at an appropriate attitude.
+
+Performance protection is explicit:
+
+```text
+cheap broadphase/local avoidance
+        |
+        +-- success -> done
+        |
+        +-- ConflictHold / explicit aperture / docking
+              -> bounded gap candidates only
+              -> initial design target <= 4-8
+              -> O(1) oriented fit per candidate
+              -> full 6DoF proof only for plausible fits
+```
+
+Unbounded `N x N` obstacle-pair search on the frame path is rejected.
+
+Behavior candidate is not accepted yet; target-machine architecture/build/tests are pending.
+
+Pinned first fixtures:
+
+```text
+flat hull + flat slot, correct attitude -> Fits while sphere rejects
+same hull rolled 90 degrees            -> rejected
+two-obstacle narrow gap, wide attitude -> rejected
+same gap, thin rolled attitude          -> Fits
+off-center hull                         -> rejected
+degenerate frame                        -> fail closed
+```
+
+## Planned 6DoF / docking continuation
+
+After the current gates, precision work continues with:
+
+- vehicle attitude/angular state;
+- body-axis thrust and rotation authority;
 - rotation time before braking/vector change;
-- assisted `Elite` versus Newtonian flight behavior;
-- airplane-like / lateral / rotate-then-thrust / flip-and-burn maneuver feasibility;
-- precision oriented-aperture handling: a flat ship may roll into a flat slot when its oriented hull fits even if its broadphase sphere does not;
-- docking as terminal 6DoF pose matching rather than center-point arrival;
-- moving/rotating dock frames with predicted position, orientation, linear velocity and angular velocity at capture time;
-- explicit ship/dock top-bottom orientation through mating frames, including required `bottom of ship -> bottom of dock` alignment and rejection of upside-down approaches;
-- relative position, linear-speed, attitude and angular-rate tolerances for capture/latch;
-- deterministic NPC `PilotSkillProfile` for reaction delay, control smoothness, damping/overshoot, anticipation and precision, including docking corrections/go-around behavior.
+- assisted `Elite` versus Newtonian behavior;
+- continuous swept oriented-body proof through narrow gaps;
+- time-varying gaps between moving objects;
+- moving/rotating docking frames;
+- docking relative pose / linear velocity / angular velocity matching;
+- explicit `bottom of ship -> bottom of dock` mating-frame orientation;
+- deterministic NPC `PilotSkillProfile`, including over-correction/oscillation/go-around behavior.
 
-A low-skill NPC may genuinely oscillate or collide through delayed/poor control execution; geometry, docking tolerances and physical capability remain truthful.
+A low-skill NPC may genuinely crash by consuming its safety margin; geometry and physical capability remain truthful.
 
 ## Immediate next step
 
-Run the dedicated avoidance performance gate:
+Run both currently pending target-machine checks:
 
 ```bash
 python tests/architecture_contracts/check_navigation_local_avoidance_benchmark.py
 bash benchmarks/navigation_local_avoidance/run_mingw64.sh
+
+python tests/architecture_contracts/check_navigation_trajectory_passage.py
+bash tests/navigation_trajectory/run_mingw64.sh
 ```
 
-Do not integrate live game/server control or pursuit until this gate is closed.
+Do not live-wire game/server control or pursuit until the relevant gates are accepted.

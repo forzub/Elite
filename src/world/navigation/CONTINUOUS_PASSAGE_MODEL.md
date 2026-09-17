@@ -114,7 +114,14 @@ lateral acceleration
 vertical acceleration
 ```
 
-Between sample endpoints, acceleration-vector change plus body-axis rotation supplies a conservative continuous projection bound. A geometrically clear trajectory can therefore still fail as `LinearAuthorityExceeded` if the ship does not have enough real thruster authority to execute it.
+Cubic-Hermite acceleration is linear inside each interval. Therefore, for a **fixed** body axis, the extrema of acceleration projection are already contained by the interval endpoints. The continuous verifier adds extra projection margin only for rotation of the body axis itself:
+
+```text
+axisRotationProjectionMargin
+    <= maxAccelerationMagnitude * 2 * sin(deltaTheta / 2)
+```
+
+This avoids inventing cross-axis thrust demand when, for example, only lateral acceleration changes while the hull frame is fixed. A geometrically clear trajectory can still fail as `LinearAuthorityExceeded` when the actual required body-axis authority is too large.
 
 Navigation consumes these limits from the authoritative flight/physics capability boundary; it must not invent stronger thrust.
 

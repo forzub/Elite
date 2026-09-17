@@ -3,7 +3,7 @@
 **Updated:** 2026-09-17  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** `NAV-V2-TRAJECTORY-1` — emergency contact severity ranking
+**Active stage:** `NAV-V2-TRAJECTORY-1` — emergency contact severity candidate
 
 ## Closed foundations
 
@@ -20,7 +20,6 @@ open_10k zero p95    8.4498 ms
 open_10k turn p95   12.0072 ms
 hub_10k zero p95     8.4125 ms
 hub_10k turn p95    11.9065 ms
-turn portals examined 329,660
 ```
 
 ### `NAV-V2-LOCAL-1` — CLOSED / ACCEPTED
@@ -41,8 +40,6 @@ ContinuousPassageTrajectoryEvaluator
 
 ### Bounded gap — ACCEPTED
 
-Worst deliberate stress:
-
 ```text
 top8_1024 p95 = 24.0699 us = 0.0241 ms
 ```
@@ -55,40 +52,21 @@ Accepted invariant:
 no collision-free proof != no navigation command
 ```
 
-If stopping is impossible, `EmergencyMitigatedContact` remains an explicitly non-safe control intent. Physics/collision owns actual contact/ricochet and damage owns consequences.
+If stopping is impossible, `EmergencyMitigatedContact` remains an explicit non-safe control intent. Physics/collision owns actual contact/ricochet and damage owns consequences.
 
 ### Continuous static passage — BEHAVIOR + PERFORMANCE ACCEPTED
 
-Behavior gate on `574a2e98fd7a75ebf562bbfa476fba367fb888d1`:
-
-```text
-NAVIGATION TRAJECTORY CONTINUOUS PASSAGE CONTRACT: PASS
-5/5 navigation_trajectory CTest PASS
-100% tests passed, 0 failed
-Total Test time: 0.24 sec
-```
+Behavior gate on `574a2e98fd7a75ebf562bbfa476fba367fb888d1`: `5/5` trajectory CTest PASS.
 
 Performance gate on `6f85436252d36e4b586ab496efe3aea45fb25e79`:
-
-```text
-scenario                  p95_batch_us
-straight_newton                 4.0458
-rolled_newton                   6.5235
-lateral_newton                  4.1593
-elite_aligned                   4.1820
-geometry_blocked_roll           6.5133
-full_precision_batch8          41.3527
-```
-
-Primary result:
 
 ```text
 full_precision_batch8 p95 = 41.3527 us = 0.04135 ms
 ```
 
-This is far below the `<0.5 ms typical` navigation CPU budget. Decision: **freeze the static continuous verifier**; do not micro-optimize it without contrary live evidence.
+This is about 8.3% of the `<0.5 ms typical` navigation CPU budget. Decision: freeze the static continuous verifier; do not micro-optimize it without contrary live evidence.
 
-The accepted verifier owns one bounded static/extruded passage proof:
+Accepted continuous verifier:
 
 ```text
 cubic Hermite translation
@@ -101,54 +79,66 @@ analytic angular authority
 Newtonian vs Elite-assisted slip semantics
 ```
 
-## Active work — emergency contact severity ranking
+## Active candidate — emergency contact severity
 
-The current emergency fallback can keep a command alive and choose the best reachable entry geometry, but it does not yet distinguish a glancing hit from a hard normal impact using contact kinematics.
-
-Next precision rule:
+New bounded component:
 
 ```text
-safe candidate first
-    -> stop before impact if possible
-    -> otherwise rank unavoidable-contact candidates by predicted severity
+EmergencyContactSeverityScorer
 ```
 
-Severity must include at least:
+Authority:
 
 ```text
-relative normal contact speed
-impact-energy proxy
-contact geometry / hull attitude
-remaining useful forward progress
+src/world/navigation/EMERGENCY_CONTACT_SEVERITY_MODEL.md
 ```
 
-The intended result is that a near-tangential scrape/ricochet is preferred to a perpendicular hit when collision is unavoidable.
+It consumes already-predicted contact witnesses; it does not perform collision discovery.
+
+Hard bounds:
+
+```text
+<= 8 emergency trajectory candidates
+<= 4 contact witnesses per candidate
+```
+
+For each witness:
+
+```text
+v_ship_contact = v_center + omega x r
+v_rel = v_ship_contact - v_surface
+v_n = max(0, -dot(v_rel, normalTowardFreeSpace))
+```
+
+Ranking priority:
+
+```text
+no-contact
+-> minimum peak normal closing speed
+-> minimum normal energy proxy
+-> minimum normal momentum proxy
+-> more tangential incidence
+-> lower geometry deficit
+-> higher passage-axis progress
+-> deterministic id/index
+```
+
+This explicitly prefers a glancing/ricochet-friendly contact over a harder normal impact when collision is unavoidable.
+
+The energy/momentum values are coarse navigation ranking proxies only. Exact CCD/TOI/contact manifold/impulse/material response remain physics authority.
+
+Candidate code/tests are on `main`; target-machine architecture/build/behavior gate is pending.
 
 ## Remaining trajectory work before live integration
 
-1. emergency impact-severity ranking;
-2. moving/time-varying obstacle gaps;
+1. accept emergency contact severity behavior;
+2. generate time-varying passage/contact witnesses for moving obstacle gaps;
 3. moving/rotating docking in a relative 6DoF frame with explicit `bottom of ship -> bottom of dock` mating semantics;
 4. deterministic `PilotSkillProfile` execution;
-5. integration into live `EliteGame` / `EliteServer` / guidance;
-6. end-to-end stress/debug acceptance, then retire the legacy route-wide path only after v2 owns live navigation.
+5. integrate into live `EliteGame` / `EliteServer` / guidance;
+6. end-to-end stress/debug acceptance;
+7. retire the legacy route-wide path only after v2 owns live navigation.
 
 ## Completion criterion for Navigation v2
 
-Navigation v2 is not complete merely because isolated planners pass. It is complete when the live game can repeatedly demonstrate all of the following under one authoritative state pipeline:
-
-```text
-ordinary free flight stays inside CPU/GPU budgets
-static obstacles and apertures are avoided/traversed correctly
-emergent gaps can be used with real hull orientation
-Elite/Newton vehicle authority is respected
-unavoidable collisions produce least-severity active commands, not planner shutdown
-moving actors/gaps are handled without stale-world failure
-stationary/moving/rotating docking converges to the correct mating pose
-NPC skill affects execution without corrupting physical truth
-manual guidance visualizes the same accepted trajectory/control intent
-post-impact/post-detach state replans from actual physics state
-no synchronous GPU readback or unbounded N^2 precision path appears
-```
-
-At that point the legacy route-wide navigation can be removed from the live path.
+Navigation v2 is complete only when the live game repeatedly demonstrates ordinary flight inside CPU/GPU budgets, static/dynamic avoidance, oriented gaps, truthful Elite/Newton authority, active least-severity commands through unavoidable collisions, recovery from actual post-impact state, stationary/moving/rotating docking to the correct mating pose, shared guidance/debug truth and intended NPC traffic scaling without synchronous GPU waits or unbounded precision search.

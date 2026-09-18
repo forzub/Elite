@@ -491,6 +491,13 @@ require(
 )
 
 require(
+    "NavigationRuntimeLabPlacementToleranceMeters" in LAB_H and
+    "NavigationRuntimeLabPlacementToleranceMeters" in SERVER_MAIN and
+    "placementErrorMeters > 1.0e-6" not in SERVER_MAIN,
+    "placement round-trip gate must use named realistic sub-millimetre tolerance",
+)
+
+require(
     "configuredRouteExactObstacleBlockPublished" in SIM_CPP and
     "fixtureProof.blockingObstacleEntityId ==" in SIM_CPP,
     "static publication must prove configured start->goal intersects exact CUBE 08 geometry",
@@ -599,3 +606,4 @@ print(" - live-scale 1300 m exact OBB regression pins first-horizon static adjus
 print(" - first physical exact-static violation reports obstacle identity and maneuver witness")
 print(" - reference-frame placement clears stale local velocity and propulsion state")
 print(" - current hub-frame epoch is synchronized into matched ship world pose before AI/navigation")
+print(" - sub-millimetre orbital-coordinate round-trip residue is treated as numerical zero")

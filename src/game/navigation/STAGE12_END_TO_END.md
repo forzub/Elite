@@ -1619,3 +1619,52 @@ filtering and ordinary-search escalation.
 
 Target-machine validation is pending. Last target-machine accepted Stage-12
 baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+
+
+## Accepted-segment execution / event-driven replanning candidate
+
+Candidate code/architecture baseline before mandatory state-doc commits:
+
+~~~text
+d7b298f9fbc4cacd34eef912a96b324b894b197e
+~~~
+
+New authority:
+`src/game/navigation/TRAJECTORY_EXECUTION_REPLAN_MODEL.md`
+
+New production policy:
+`NavigationExecutionReplanPolicy.{h,cpp}`
+
+Core invariant:
+
+~~~text
+execution tick != planning tick
+monitoring tick != planning tick
+~~~
+
+Automatic navigation is now specified as:
+
+~~~text
+plan -> accept short trajectory/segment -> execute -> monitor
+~~~
+
+A stable automatic segment is not replanned merely because another fixed frame elapsed. Local replanning is event-driven by:
+- accepted segment completion/expiry;
+- tracking error outside the accepted envelope;
+- newly invalidating dynamic hazard evidence;
+- vehicle capability change/damage.
+
+Goal intent or topology/route-branch invalidation escalates to a full-route rebuild.
+
+Manual navigation shares the accepted route but not autopilot authority.
+Manual guidance performs:
+- configurable periodic local suffix refresh (initial policy default 0.25 s);
+- immediate local refresh when the player exits the recommended corridor;
+- immediate local refresh for hazard/capability invalidation.
+
+Manual local deviation preserves the global RoutePlan while its topology branch remains valid. Full route solving is reserved for goal/branch/topology invalidation.
+
+Important current limitation:
+`NavigationRuntimeLab` still calls `NavigationRuntimePlanner::plan()` in its fixed-step path. This is now explicitly transitional. The next integration slice must insert an accepted-segment/follower seam and prove stable automatic flight with many execution ticks per planner invocation (`planCount << executionCount`).
+
+Target-machine validation for this scheduler/policy is pending. The last target-machine accepted Stage-12 baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.

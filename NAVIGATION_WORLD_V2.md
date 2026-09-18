@@ -847,3 +847,37 @@ Virtual region partitions must never behave as collision walls.
 This is a generic vehicle-independent contract. Vehicle hull dimensions and
 linear/angular capability remain runtime inputs; no Cobra-specific acceleration
 constant belongs in the portal planner.
+
+
+## Bounded visibility steering for ordinary local transit
+
+Normal local travel is receding-horizon visibility steering, not precision
+passage solving:
+
+```text
+current vehicle A -> current accepted target B
+    direct hull-sized corridor inside physical horizon?
+        yes -> steer toward B
+        no  -> smallest safe deflection around nearest conflict
+                  -> temporary pass-through target
+next update:
+    test direct B first again
+        -> immediately recover to the direct line when clear
+```
+
+The "line of sight" is a corridor, not an infinitesimal ray. Its envelope is the
+vehicle hull plus safety clearance, and its length is bounded by the physical
+receding horizon derived from current speed, result age, braking distance,
+turn-distance allowance and safety margin.
+
+Dynamic obstacles contribute predicted/swept occupancy only inside that bounded
+window. The default transit layer does not attempt route-wide centimeter-level
+prediction.
+
+Precision MovingPassage remains available but is not the default response to two
+free-space obstacles. It is entered only when an accepted route requires a
+specific constrained passage or terminal geometry, such as an authored portal,
+tunnel, docking mouth, gate or ravine.
+
+This separation keeps ordinary transit reactive and cheap while retaining exact
+continuous proof where geometry genuinely requires it.

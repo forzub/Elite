@@ -604,6 +604,14 @@ require(
 )
 
 require(
+    "lastExecutedLinearDemandMapMps2" in SIM_CPP and
+    "ExecutedSafetySamples = 12" in SIM_CPP and
+    "exactExecutionSegmentBlocked" in SIM_CPP and
+    "staticSafetyExecutedForecastBlocked" in SIM_CPP,
+    "accepted segment exact-static monitor must prove sampled continuation of the actually executed PilotSkill acceleration",
+)
+
+require(
     "staticSafetyInvalidated" in REPLAN_H and
     "Reason::StaticSafetyInvalidated" in REPLAN_CPP and
     "exactExecutionBlocked" in SIM_CPP and

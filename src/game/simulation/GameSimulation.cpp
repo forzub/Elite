@@ -2684,29 +2684,34 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     bool staticSafetyInvalidated = false;
     bool staticSafetyTargetBlocked = false;
     bool staticSafetyForecastBlocked = false;
+    bool staticSafetyExecutedForecastBlocked = false;
     std::uint32_t staticSafetyBlockingEntityId = 0;
     glm::dvec3 staticSafetyForecastEndMap =
         agent.positionMapMeters;
+    glm::dvec3 staticSafetyExecutedForecastEndMap =
+        agent.positionMapMeters;
     glm::dvec3 staticSafetyIdealAccelerationMapMps2(0.0);
+    glm::dvec3 staticSafetyExecutedAccelerationMapMps2(0.0);
     double staticSafetyForecastSeconds = 0.0;
 
     if (m_navigationRuntimeLabAcceptedSegment.valid &&
         followerResult.status != Follower::Status::InvalidInput &&
         m_navigationRuntimeLabStaticGeometryPublished)
     {
-        const auto exactExecutionBlocked =
-            [&](const glm::dvec3& endMap)
+        const auto exactExecutionSegmentBlocked =
+            [&](const glm::dvec3& startMap,
+                const glm::dvec3& endMap)
             {
                 const glm::dvec3 delta =
-                    endMap - agent.positionMapMeters;
+                    endMap - startMap;
                 if (glm::dot(delta, delta) <= 1.0e-12)
                     return false;
 
                 Space::SegmentQuery query;
                 query.startMapMeters = {
-                    agent.positionMapMeters.x,
-                    agent.positionMapMeters.y,
-                    agent.positionMapMeters.z
+                    startMap.x,
+                    startMap.y,
+                    startMap.z
                 };
                 query.endMapMeters = {
                     endMap.x,
@@ -2731,7 +2736,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             };
 
         staticSafetyTargetBlocked =
-            exactExecutionBlocked(
+            exactExecutionSegmentBlocked(
+                agent.positionMapMeters,
                 m_navigationRuntimeLabAcceptedSegment.
                     targetPositionMapMeters
             );
@@ -2781,11 +2787,75 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                     agent.positionMapMeters +
                     forecastDelta;
                 staticSafetyForecastBlocked =
-                    exactExecutionBlocked(
+                    exactExecutionSegmentBlocked(
+                        agent.positionMapMeters,
                         staticSafetyForecastEndMap
                     );
                 staticSafetyInvalidated =
                     staticSafetyForecastBlocked;
+            }
+
+            // The follower demand is not what authoritative physics necessarily
+            // receives on the next fixed step. PilotSkillExecutor can still be
+            // reacting, sampling, latency-queuing or filtering the previous
+            // command. Prove a conservative continuation of the acceleration
+            // that was actually executed on the preceding fixed step. Sample
+            // the parabola into short exact-static chords so curvature is not
+            // collapsed into one endpoint segment.
+            if (!staticSafetyInvalidated &&
+                m_navigationRuntimeLabObservation.executionSeen &&
+                staticSafetyForecastSeconds > 1.0e-6)
+            {
+                staticSafetyExecutedAccelerationMapMps2 =
+                    m_navigationRuntimeLabObservation.
+                        lastExecutedLinearDemandMapMps2;
+
+                constexpr int ExecutedSafetySamples = 12;
+                glm::dvec3 previousSample =
+                    agent.positionMapMeters;
+
+                for (int sampleIndex = 1;
+                     sampleIndex <= ExecutedSafetySamples;
+                     ++sampleIndex)
+                {
+                    const double t =
+                        staticSafetyForecastSeconds *
+                        static_cast<double>(sampleIndex) /
+                        static_cast<double>(ExecutedSafetySamples);
+
+                    glm::dvec3 sampleDelta =
+                        agent.velocityMapMetersPerSecond * t +
+                        0.5 *
+                            staticSafetyExecutedAccelerationMapMps2 *
+                            t * t;
+
+                    const double sampleDistance =
+                        glm::length(sampleDelta);
+                    if (sampleDistance > localHorizonMeters &&
+                        sampleDistance > 1.0e-12)
+                    {
+                        sampleDelta *=
+                            localHorizonMeters / sampleDistance;
+                    }
+
+                    const glm::dvec3 sampleEnd =
+                        agent.positionMapMeters +
+                        sampleDelta;
+
+                    staticSafetyExecutedForecastEndMap =
+                        sampleEnd;
+
+                    if (exactExecutionSegmentBlocked(
+                            previousSample,
+                            sampleEnd))
+                    {
+                        staticSafetyExecutedForecastBlocked = true;
+                        staticSafetyInvalidated = true;
+                        break;
+                    }
+
+                    previousSample = sampleEnd;
+                }
             }
         }
 
@@ -2795,16 +2865,22 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             staticSafetyTargetBlocked;
         safetyObservation.acceptedSegmentLastStaticForecastBlocked =
             staticSafetyForecastBlocked;
+        safetyObservation.acceptedSegmentLastStaticExecutedForecastBlocked =
+            staticSafetyExecutedForecastBlocked;
         safetyObservation.acceptedSegmentLastStaticProbeStartMap =
             agent.positionMapMeters;
         safetyObservation.acceptedSegmentLastStaticTargetMap =
             m_navigationRuntimeLabAcceptedSegment.targetPositionMapMeters;
         safetyObservation.acceptedSegmentLastStaticForecastEndMap =
             staticSafetyForecastEndMap;
+        safetyObservation.acceptedSegmentLastStaticExecutedForecastEndMap =
+            staticSafetyExecutedForecastEndMap;
         safetyObservation.acceptedSegmentLastStaticVelocityMapMps =
             agent.velocityMapMetersPerSecond;
         safetyObservation.acceptedSegmentLastStaticIdealAccelerationMapMps2 =
             staticSafetyIdealAccelerationMapMps2;
+        safetyObservation.acceptedSegmentLastStaticExecutedAccelerationMapMps2 =
+            staticSafetyExecutedAccelerationMapMps2;
         safetyObservation.acceptedSegmentLastStaticForecastSeconds =
             staticSafetyForecastSeconds;
         safetyObservation.acceptedSegmentLastStaticProbeTimeSeconds =

@@ -229,11 +229,14 @@ struct NavigationRuntimeLabObservation
     std::uint32_t acceptedSegmentLastStaticBlockingEntityId = 0;
     bool acceptedSegmentLastStaticTargetBlocked = false;
     bool acceptedSegmentLastStaticForecastBlocked = false;
+    bool acceptedSegmentLastStaticExecutedForecastBlocked = false;
     glm::dvec3 acceptedSegmentLastStaticProbeStartMap {0.0};
     glm::dvec3 acceptedSegmentLastStaticTargetMap {0.0};
     glm::dvec3 acceptedSegmentLastStaticForecastEndMap {0.0};
+    glm::dvec3 acceptedSegmentLastStaticExecutedForecastEndMap {0.0};
     glm::dvec3 acceptedSegmentLastStaticVelocityMapMps {0.0};
     glm::dvec3 acceptedSegmentLastStaticIdealAccelerationMapMps2 {0.0};
+    glm::dvec3 acceptedSegmentLastStaticExecutedAccelerationMapMps2 {0.0};
     double acceptedSegmentLastStaticForecastSeconds = 0.0;
     double acceptedSegmentLastStaticProbeTimeSeconds = 0.0;
     std::uint64_t acceptedSegmentRevision = 0;

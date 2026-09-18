@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / Stage 12A-6a dynamic angular-motion publication
+**Current focus:** NavigationWorld v2 / Stage 12A-6b live moving-gap / moving-passage composition
 **Canonical development branch:** `main`
 
 ## Progress
@@ -172,17 +172,78 @@ CUBE 08 stayed out of NavigationMap, exact OBB avoidance remained authoritative,
 physical motion had zero exact-static violations, and sparse/canonical execution
 replication matched exactly.
 
-### 12A-6a — CANDIDATE
+### 12A-6a — ACCEPTED
 
-Before composing MovingGapPredictor into the live path, NavigationMap must carry
-the complete compact motion state needed by accepted moving-gap prediction.
+Target-machine acceptance on
+`a0efa9190180043b05da3103a5d466d256744935` proved that live rotating
+infrastructure publishes angular velocity through the authoritative frame chain
+into NavigationMap without regressing the already accepted Stage-12 behavior.
 
-Angular velocity is now part of DynamicActorInput/Candidate and is transformed
-through the same NavigationMap working-frame vector boundary as linear velocity.
+Accepted live evidence:
 
-The existing GUIDANCE DOCK CUBE A (2 deg/s self-rotation) is the live fixture.
-The self-test queries that real actor after publication and requires exact
-map-space angular-motion agreement.
+```text
+rotating_actor_seen=1
+rotating_actor_omega_verified=1
+rotating_actor_omega_error=0
 
-Only after this gate is green will Stage 12 compose moving-gap prediction /
-moving-passage feasibility.
+obstacle_candidate=0
+obstacle_conflict=0
+exact_obstacle_block=1
+adjusted=1
+exact_static_violation=0
+
+replication_error_mps2=0
+canonical_replication_error_mps2=0
+```
+
+The deterministic live fixture remains `GUIDANCE DOCK CUBE A` with authored
+hub-local angular velocity `(0,0,2) deg/s`. The run verifies that the
+hub/world/NavigationMap working-frame conversion preserves that motion exactly.
+
+12A-6a closes the live compact motion DTO/frame boundary. It does **not** yet
+prove live moving-gap or moving-passage behavior.
+
+### 12A-6b — ACTIVE
+
+The next slice composes the already accepted precision components into the
+bounded Stage-12 runtime path:
+
+```text
+NavigationMap relevant dynamic candidates
+    -> selected moving obstacle pair / gap
+    -> MovingGapPredictor
+    -> MovingPassageTrajectoryEvaluator
+    -> bounded authoritative maneuver result
+    -> NavigationRuntimePlanner
+    -> mapIntentToWorld(...)
+    -> NavigationRuntimeControlBridge
+    -> PilotSkillExecutor
+    -> authoritative physics / same-tick replication
+```
+
+The live gate must prove actual predictor/evaluator consumption and a real
+maneuver/feasibility consequence. DTO publication alone is no longer sufficient.
+
+Existing ownership remains frozen unless live evidence proves a defect:
+- stationary infrastructure -> NavigationSpace exact HitVolume geometry;
+- moving/rotating infrastructure -> NavigationMap dynamic publication;
+- no global all-pairs moving-gap scan;
+- no presentation-side second planner;
+- navigation never writes authoritative P/V directly.
+
+## State-recording protocol
+
+A project-state transition is not considered recorded until the Markdown context
+is synchronized.
+
+For every candidate activation, failed gate/root-cause finding, acceptance,
+ownership/architecture contract change, or next-task change, update:
+- `CURRENT_STATE.md`;
+- `CURRENT_TASK.md`;
+- `PROJECT_STATE.md`;
+- the authoritative stage document, currently
+  `src/game/navigation/STAGE12_END_TO_END.md`.
+
+Record the **last target-machine verified baseline** rather than a field named
+"current HEAD": committing documentation changes HEAD and would immediately make
+such a value stale.

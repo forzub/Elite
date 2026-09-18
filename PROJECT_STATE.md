@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / Stage 12A-4 exact static HitVolume OBB geometry  
+**Current focus:** NavigationWorld v2 / Stage 12A-5 static-dynamic ownership cleanup
 **Canonical development branch:** `main`
 
 ## Progress
@@ -84,3 +84,30 @@ proof replaces enclosing-sphere clearance as the safety acceptance condition.
 
 Conservative spheres remain useful for broadphase diagnostics until their static
 duplication is removed in the post-12A-4 ownership cleanup.
+
+
+### 12A-4 — ACCEPTED
+
+Accepted target-machine run on
+`8f5801b9e26cfbb8e4e5e3174587a900292e8394` proved:
+- exact static OBB publication and query;
+- correct portal-boundary behavior;
+- exact-static local avoidance;
+- 3431 swept authoritative-motion samples with zero exact-static violations;
+- successful CUBE 08 avoidance and >3.5 km progress;
+- exact sparse/canonical replication equality.
+
+### 12A-5 — CANDIDATE
+
+Static/dynamic ownership is being separated.
+
+Stationary infrastructure is no longer duplicated into NavigationMap as
+conservative spheres. Its navigation authority is NavigationSpace exact
+HitVolume geometry.
+
+Only time-varying infrastructure remains in the dynamic broadphase until the
+moving/rotating exact-geometry stage.
+
+The live gate specifically requires stationary CUBE 08 to be absent as a
+NavigationMap candidate/conflict while still being identified as the exact
+static blocker that causes the adjusted maneuver.

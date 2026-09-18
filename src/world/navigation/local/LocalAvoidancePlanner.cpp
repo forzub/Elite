@@ -155,11 +155,31 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     // Dynamic and static truth are independent layers. Even when the dynamic
     // horizon says Clear, the bounded nominal segment must be proven against
     // exact persistent NavigationSpace geometry before it may pass through.
+    const Vec3d nominalDelta = subtract(
+        query.horizon.nominalTarget.positionMapMeters,
+        query.horizon.agent.positionMapMeters
+    );
+    const double nominalDistance = length(nominalDelta);
+
+    Vec3d boundedNominalTarget =
+        query.horizon.nominalTarget.positionMapMeters;
+    if (nominalDistance > nominal.horizonDistanceMeters &&
+        nominalDistance > kEpsilon)
+    {
+        boundedNominalTarget = add(
+            query.horizon.agent.positionMapMeters,
+            scale(
+                nominalDelta,
+                nominal.horizonDistanceMeters / nominalDistance
+            )
+        );
+    }
+
     NavigationSpace::SegmentQuery nominalStaticQuery;
     nominalStaticQuery.startMapMeters =
         toSpaceVec(query.horizon.agent.positionMapMeters);
     nominalStaticQuery.endMapMeters =
-        toSpaceVec(nominal.targetPositionMapMeters);
+        toSpaceVec(boundedNominalTarget);
     nominalStaticQuery.envelope = startQuery.envelope;
     nominalStaticQuery.requireSameRegion = true;
 
@@ -187,11 +207,6 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         return result;
     }
 
-    const Vec3d nominalDelta = subtract(
-        query.horizon.nominalTarget.positionMapMeters,
-        query.horizon.agent.positionMapMeters
-    );
-    const double nominalDistance = length(nominalDelta);
     const double probeDistance = std::min(
         nominalDistance,
         nominal.horizonDistanceMeters

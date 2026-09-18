@@ -128,6 +128,36 @@ This gate intentionally measures conservative broadphase-sphere clearance.
 Passing it does not accept sphere geometry for narrow apertures. Exact
 HitVolume OBBs must feed the subsequent static/precision topology gate.
 
+### Sparse replication epoch rule
+
+The live proving gate must compare replication products at the same
+authoritative publication epoch.
+
+A per-fixed-step diagnostic observation may be newer than a client's retained
+sparse state because omission means "retain previous value". Therefore this is
+**not** a valid invariant:
+
+```text
+latest retained client execution == newest fixed-step execution
+```
+
+The valid proof is:
+
+```text
+sparse packet publishes lab row at serverTick T
+    ==
+authoritative GameServer published snapshot at serverTick T
+
+then
+
+client canonical state after hydrating packet T
+    ==
+that same authoritative execution product
+```
+
+The test must wait for an actual lab-row publication. It must not weaken
+floating-point tolerance to hide publication-age differences.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

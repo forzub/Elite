@@ -128,6 +128,47 @@ This gate intentionally measures conservative broadphase-sphere clearance.
 Passing it does not accept sphere geometry for narrow apertures. Exact
 HitVolume OBBs must feed the subsequent static/precision topology gate.
 
+### 12A-3 working-frame defect exposed by live run
+
+The second live target-machine attempt produced physically absurd behavior:
+
+```text
+obstacle_candidate=1
+obstacle_conflict=1
+adjusted=1
+lateral_exec=1
+max_lateral_accel_mps2=340.222
+max_route_deviation_m=43699.4
+min_conservative_clearance_m=1758.57
+progress_m=2256.52
+passed_obstacle_plane=1
+reached_goal=0
+```
+
+This is not accepted avoidance. The ship detected and cleared the obstacle but
+left the route by tens of kilometres and made poor goal progress.
+
+Root cause: the live NavigationRuntimePlanner works in the published hub/map
+working frame, but its acceleration intent was handed directly to the accepted
+Stage-11 control seam, which consumes world-space vectors. The missing
+map-to-world basis transform therefore rotated both linear and angular control
+commands incorrectly.
+
+Correction:
+
+```text
+planner map-space intent
+    -> mapIntentToWorld(workingFrame)
+    -> PilotSkillExecutor / ShipControlState world-space demand
+```
+
+The live lateral-demand metric is also corrected to compare world execution
+against the world-space route direction. The old `340.222 m/s²` lateral metric
+cannot be interpreted physically because it mixed world execution with a
+map-space route vector.
+
+A non-identity working-frame regression now pins this boundary.
+
 ### Sparse replication epoch rule
 
 The live proving gate must compare replication products at the same

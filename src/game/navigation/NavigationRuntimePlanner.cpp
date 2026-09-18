@@ -297,10 +297,10 @@ StaticMovingTrajectoryProof proveMovingPassageAgainstStaticSpace(
             trajectory.centerSamplesMapMeters[i];
         const auto& endCenter =
             trajectory.centerSamplesMapMeters[i + 1];
-        staticQuery.startMapMeters = {
+        staticQuery.startMapMeters = Planner::Space::Vec3d {
             startCenter.x, startCenter.y, startCenter.z
         };
-        staticQuery.endMapMeters = {
+        staticQuery.endMapMeters = Planner::Space::Vec3d {
             endCenter.x, endCenter.y, endCenter.z
         };
         staticQuery.envelope.radiusMeters = continuousHullRadius;

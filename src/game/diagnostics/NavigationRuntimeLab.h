@@ -89,6 +89,9 @@ struct NavigationRuntimeLabObservation
 
     bool exactStaticGeometryPublished = false;
     std::size_t exactStaticObstacleCount = 0;
+    bool exactStaticQuerySeen = false;
+    bool nominalStaticBlockSeen = false;
+    std::size_t maximumExactStaticObstaclesExamined = 0;
 
     double initialGoalDistanceMeters = 0.0;
     double minimumGoalDistanceMeters = 0.0;

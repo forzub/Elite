@@ -1509,3 +1509,39 @@ Architecture decision from user review:
 Current task changes from "force live MovingPassage authority through the free
 moving pair" to "prove bounded visibility steering around the free moving pair,
 then use the already-authored oriented portal capture for the mandatory tunnel."
+
+
+## 12A live bounded-visibility steering candidate
+
+Candidate code/contract baseline before documentation commits:
+
+```text
+e2584b4b798baa661d14ab1fb8f68789f76c99b9
+```
+
+Implemented after the `e432363...` live GeometryBlocked result:
+- LocalAvoidance still tests the direct accepted target first on every update;
+- the physical horizon remains bounded by latency + braking distance +
+  turn-distance allowance + safety margin;
+- when direct visibility is blocked, angular search now expands
+  `15 -> 30 -> 45 -> 60 -> 75 deg` and stops at the first corridor that passes
+  both exact-static and dynamic-horizon checks;
+- the selected target is pass-through only; there is no persistent alternate
+  route, so the next update automatically returns to direct A->B as soon as the
+  corridor clears;
+- live free-space MovingPassage authority is disabled. The precision
+  MovingPassage contracts/tests remain intact for explicit mandatory gaps;
+- live diagnostics now retain `visibilityBypassSeen`,
+  `visibilityBypassActive`, `visibilityDirectRecoveredSeen` and maximum
+  selected deflection;
+- same-tick sparse/canonical replication is captured while the visibility
+  bypass is actively executing;
+- the same authoritative run must then pass the moving pair, recover direct
+  visibility, perform oriented tunnel capture/alignment, traverse the exact
+  HitVolume tunnel, and keep `exact_static_violation=0`.
+
+A new local regression proves that a fixture requiring more than the old
+15/30-degree fan finds a wider safe direction and then immediately resumes
+direct A->B when the blocker disappears.
+
+Target-machine acceptance is pending.

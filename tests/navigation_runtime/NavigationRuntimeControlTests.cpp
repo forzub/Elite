@@ -1,4 +1,5 @@
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/NpcNavigationIntentController.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -251,6 +252,111 @@ void testManualAttitudeOverridesNavigationAngularDemand()
     );
 }
 
+void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
+{
+    Ship ship;
+    auto& tr = ship.core().transform();
+
+    tr.motion.travelFrame.valid = true;
+    tr.motion.travelFrame.localToWorldBasis = glm::dmat3(1.0);
+    tr.motion.localVelocityMps = glm::dvec3(0.0);
+    tr.pitchRate = 0.5f;
+    tr.yawRate = -0.25f;
+    tr.rollRate = 0.10f;
+
+    NpcNavigationGoal goal;
+    goal.revision = 42;
+    goal.mode = NpcNavigationGoalMode::MaintainForwardCruise;
+    goal.desiredForwardSpeedMps = 10.0;
+    goal.velocityResponsePerSecond = 0.5;
+    goal.angularDampingPerSecond = 2.0;
+
+    const auto intent =
+        game::navigation::NpcNavigationIntentController::buildIntent(
+            ship,
+            goal
+        );
+
+    require(intent.revision == 42,
+            "NPC navigation goal revision must become the runtime intent revision");
+    requireNear(
+        intent.idealLinearAccelerationDemandMapMps2.x,
+        0.0,
+        1.0e-12,
+        "identity ship forward cruise must not create lateral X acceleration"
+    );
+    requireNear(
+        intent.idealLinearAccelerationDemandMapMps2.y,
+        0.0,
+        1.0e-12,
+        "identity ship forward cruise must not create vertical acceleration"
+    );
+    requireNear(
+        intent.idealLinearAccelerationDemandMapMps2.z,
+        -5.0,
+        1.0e-12,
+        "nominal NPC goal must become a physical forward acceleration demand"
+    );
+
+    requireNear(
+        intent.idealAngularAccelerationDemandMapRadPerSec2.x,
+        -1.0,
+        1.0e-6,
+        "NPC nominal intent must damp pitch through world angular demand"
+    );
+    requireNear(
+        intent.idealAngularAccelerationDemandMapRadPerSec2.y,
+        0.5,
+        1.0e-6,
+        "NPC nominal intent must damp yaw through world angular demand"
+    );
+    requireNear(
+        intent.idealAngularAccelerationDemandMapRadPerSec2.z,
+        -0.2,
+        1.0e-6,
+        "NPC nominal intent must damp roll through world angular demand"
+    );
+}
+
+void testNpcHoldGoalBrakesRelativeVelocity()
+{
+    Ship ship;
+    auto& tr = ship.core().transform();
+    tr.motion.travelFrame.valid = true;
+    tr.motion.travelFrame.localToWorldBasis = glm::dmat3(1.0);
+    tr.motion.localVelocityMps = glm::dvec3(4.0, -2.0, 1.0);
+
+    NpcNavigationGoal goal;
+    goal.revision = 5;
+    goal.mode = NpcNavigationGoalMode::Hold;
+    goal.velocityResponsePerSecond = 0.25;
+
+    const auto intent =
+        game::navigation::NpcNavigationIntentController::buildIntent(
+            ship,
+            goal
+        );
+
+    requireNear(
+        intent.idealLinearAccelerationDemandMapMps2.x,
+        -1.0,
+        1.0e-12,
+        "hold goal must brake actual relative X velocity"
+    );
+    requireNear(
+        intent.idealLinearAccelerationDemandMapMps2.y,
+        0.5,
+        1.0e-12,
+        "hold goal must brake actual relative Y velocity"
+    );
+    requireNear(
+        intent.idealLinearAccelerationDemandMapMps2.z,
+        -0.25,
+        1.0e-12,
+        "hold goal must brake actual relative Z velocity"
+    );
+}
+
 void testBridgeDemandCanReachCapabilityLayerWithoutLegacyKeys()
 {
     Bridge bridge(expertProfile());
@@ -311,6 +417,8 @@ int main()
         testLinearDemandUsesRealMainAndManoeuvreAuthority();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();
+        testNpcGoalBecomesNavigationIntentWithoutLegacyControl();
+        testNpcHoldGoalBrakesRelativeVelocity();
         testBridgeDemandCanReachCapabilityLayerWithoutLegacyKeys();
 
         std::cout << "NAVIGATION RUNTIME CONTROL TESTS: PASS\n";

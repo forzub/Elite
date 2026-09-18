@@ -44,6 +44,9 @@ The live server gate now additionally requires:
 ```text
 exact_static=1
 exact_static_obstacles>0
+exact_static_query=1
+exact_static_block=1
+max_exact_static_examined>0
 ```
 
 before the previously accepted CUBE 08 physical/replication evidence may pass.
@@ -89,7 +92,7 @@ navigation_runtime:
 EliteGame build PASS
 EliteServer build PASS
 
-[NAV-SELFTEST] ... exact_static=1 exact_static_obstacles=>0 ...
+[NAV-SELFTEST] ... exact_static=1 exact_static_obstacles=>0 exact_static_query=1 exact_static_block=1 max_exact_static_examined=>0 ...
                obstacle_candidate=1 obstacle_conflict=1 adjusted=1 ...
                min_conservative_clearance_m=>0 progress_m=>3500 ...
                replication_error_mps2=0 canonical_replication_error_mps2=0

@@ -1777,6 +1777,23 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         }
     }
 
+    bool movingUpperCandidateSeen = false;
+    bool movingLowerCandidateSeen = false;
+    for (const auto& candidate : dynamicCandidates.candidates)
+    {
+        movingUpperCandidateSeen =
+            movingUpperCandidateSeen ||
+            (movingGapUpperEntityId != 0 &&
+             candidate.entityId == movingGapUpperEntityId);
+        movingLowerCandidateSeen =
+            movingLowerCandidateSeen ||
+            (movingGapLowerEntityId != 0 &&
+             candidate.entityId == movingGapLowerEntityId);
+    }
+    m_navigationRuntimeLabObservation.movingGapPairCandidateSeen =
+        m_navigationRuntimeLabObservation.movingGapPairCandidateSeen ||
+        (movingUpperCandidateSeen && movingLowerCandidateSeen);
+
     Planner::AgentState agent;
     agent.entityId = id.value;
     agent.positionMapMeters = agentPositionMap;
@@ -1796,6 +1813,52 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         static_cast<double>(transform.yawRate);
     agent.rollRateRadPerSec =
         static_cast<double>(transform.rollRate);
+
+    const auto& shipDimensions =
+        ship.core().descriptor().logicalDimensions();
+    agent.hullHalfExtentsBodyMeters = {
+        0.5 * static_cast<double>(shipDimensions.width),
+        0.5 * static_cast<double>(shipDimensions.height),
+        0.5 * static_cast<double>(shipDimensions.length)
+    };
+
+    const auto& shipPhysics = ship.core().desc().physics;
+    constexpr double StandardGravityMps2 = 9.80665;
+    const double linearGs =
+        shipPhysics.maxLinearGs > 0.0f
+            ? static_cast<double>(shipPhysics.maxLinearGs)
+            : static_cast<double>(shipPhysics.maxGs);
+    const double mainForwardAuthorityMps2 =
+        std::max(0.0, linearGs * StandardGravityMps2);
+    const double manoeuvreAuthorityMps2 =
+        shipPhysics.manoeuvreThrusterAccel > 0.0f
+            ? static_cast<double>(shipPhysics.manoeuvreThrusterAccel)
+            : std::max(
+                  0.0,
+                  static_cast<double>(shipPhysics.strafeAccel)
+              );
+
+    agent.linearCapability.maxForwardAccelerationMetersPerSec2 =
+        mainForwardAuthorityMps2;
+    agent.linearCapability.maxReverseAccelerationMetersPerSec2 =
+        manoeuvreAuthorityMps2;
+    agent.linearCapability.maxLateralAccelerationMetersPerSec2 =
+        manoeuvreAuthorityMps2;
+    agent.linearCapability.maxVerticalAccelerationMetersPerSec2 =
+        manoeuvreAuthorityMps2;
+    agent.angularCapability.maxAngularAccelerationRadPerSec2 =
+        std::max(0.0, static_cast<double>(shipPhysics.angularAccel));
+    agent.angularCapability.maxAngularSpeedRadPerSec =
+        std::max(
+            0.0,
+            std::min({
+                static_cast<double>(shipPhysics.maxPitchRate),
+                static_cast<double>(shipPhysics.maxYawRate),
+                static_cast<double>(shipPhysics.maxRollRate)
+            })
+        );
+    agent.controlMode =
+        Planner::MovingPassage::ControlMode::Newtonian;
 
     Planner::Goal plannerGoal;
     plannerGoal.revision = 1202001;
@@ -1832,6 +1895,25 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         glm::radians(30.0);
     policy.avoidance.azimuthSamples = 8;
     policy.avoidance.staticAdditionalClearanceMeters = 10.0;
+
+    policy.movingPassage.enabled = true;
+    policy.movingPassage.allowSteeringAuthority = true;
+    policy.movingPassage.durationSeconds =
+        NavigationRuntimeLabMovingPassageDurationSeconds;
+    policy.movingPassage.hullAdditionalClearanceMeters = 2.0;
+    policy.movingPassage.maximumAcceptedGapTravelAlignment = 0.5;
+    policy.movingPassage.maximumInitialAngularRateRadPerSec = 0.05;
+    policy.movingPassage.candidates.boundaryClearanceMeters = 0.0;
+    policy.movingPassage.candidates.minimumClearSeparationMeters = 0.0;
+    policy.movingPassage.candidates.maximumClearSeparationMeters = 2000.0;
+    policy.movingPassage.candidates.secondaryClearanceMeters = 1000.0;
+    policy.movingPassage.candidates.minimumForwardDistanceMeters = 0.0;
+    policy.movingPassage.candidates.maximumForwardDistanceMeters = 1800.0;
+    policy.movingPassage.candidates.maximumCenterlineOffsetMeters = 800.0;
+    policy.movingPassage.candidates.maximumAbsSeparationTravelDot = 0.5;
+    policy.movingPassage.prediction.secondaryClearanceMeters = 1000.0;
+    policy.movingPassage.prediction.minimumContinuousClearSeparationMeters = 0.0;
+    policy.movingPassage.prediction.maximumAbsSeparationTravelDot = 0.5;
 
     if (!m_navigationRuntimeLabObservation.firstLiveNominalProbeCaptured)
     {

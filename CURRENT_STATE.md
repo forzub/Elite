@@ -76,3 +76,29 @@ only the nominal straight corridor.
 
 Exact HitVolume OBB -> static/precision NavigationSpace topology remains the
 next geometry slice after this live-behavior gate.
+
+
+## 12A-3 first live result
+
+The first target-machine live run on
+`d1eb73e5335252be16e56ff2cf54f6cc48f5b2c4` passed architecture,
+`navigation_local 2/2`, `navigation_runtime 3/3`, EliteGame and EliteServer.
+
+The self-test then failed only at its replication comparison:
+
+```text
+[FAIL] navigation-runtime replicated execution differs from authoritative truth
+error_mps2=0.00497292
+```
+
+That comparison was invalid: the self-test compared the latest retained client
+execution snapshot with the newest per-fixed-step diagnostic observation, which
+can legitimately belong to different epochs under sparse publication cadence.
+
+The candidate now waits for a sparse packet that actually publishes the lab
+ship, copies GameServer's authoritative published snapshot in the same
+ServerRuntime step, requires equal `serverTick`, and compares the execution
+product at that exact publication epoch. Canonical sparse hydration is checked
+against the same source as a separate invariant.
+
+No tolerance was weakened.

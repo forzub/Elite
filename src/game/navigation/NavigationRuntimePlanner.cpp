@@ -734,6 +734,7 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         result.status = Status::MovingPassageClear;
         result.movingPassageAuthorityUsed = true;
         result.safeProgressTargetDemonstrated = true;
+        result.adjustedTarget = false;
         result.selectedTargetMapMeters =
             result.movingPassageTargetMapMeters;
 

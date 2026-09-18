@@ -39,6 +39,7 @@
 #include "src/game/navigation/OrbitalCorridorSystem.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/NavigationRuntimePlanner.h"
+#include "src/game/diagnostics/NavigationRuntimeLab.h"
 #include "src/world/navigation/map/NavigationMap.h"
 #include "src/world/navigation/space/NavigationSpace.h"
 
@@ -290,6 +291,11 @@ public:
     bool isNavigationRuntimeLabShip(EntityId shipId) const noexcept;
     const game::navigation::NavigationRuntimePlanner::Result*
     navigationRuntimeLabLastPlan() const noexcept;
+    const game::diagnostics::NavigationRuntimeLabObservation&
+    navigationRuntimeLabObservation() const noexcept
+    {
+        return m_navigationRuntimeLabObservation;
+    }
 
     const std::unordered_map<
         EntityId,
@@ -444,6 +450,8 @@ private:
         m_navigationRuntimeLabSpace;
     game::navigation::NavigationRuntimePlanner::Result
         m_navigationRuntimeLabLastPlan {};
+    game::diagnostics::NavigationRuntimeLabObservation
+        m_navigationRuntimeLabObservation {};
 
     // Stage 4A/4B: the stabilized activation plan controls real materialized
     // work lanes. Motion-control evaluation is decimated for Prewarm/Coarse

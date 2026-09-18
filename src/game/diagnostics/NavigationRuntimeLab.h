@@ -96,6 +96,10 @@ struct NavigationRuntimeLabObservation
     double maximumExecutedLinearDemandMps2 = 0.0;
     double maximumExecutedLateralDemandMps2 = 0.0;
 
+    double maximumAppliedEngineAccelerationMps2 = 0.0;
+    double maximumAppliedLateralAccelerationMps2 = 0.0;
+    double maximumRelativeSpeedMps = 0.0;
+
     glm::dvec3 lastExecutedLinearDemandMapMps2 {0.0};
 };
 

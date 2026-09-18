@@ -798,3 +798,13 @@ private elite-project-context CURRENT_STATE/CURRENT_TASK/ITERATION_LOG/DECISIONS
 ```
 
 Stale state/task documentation or branch ambiguity blocks handoff.
+
+
+## Deferred higher-level planner
+
+Galaxy-scale gravity/fuel/jump routing is not part of Local NavigationWorld v2.
+Its future contract is `src/game/navigation/GALACTIC_ROUTE_PLANNING.md`.
+
+NavigationWorld remains the local dynamic/static safety layer and receives
+handoffs from higher-level strategic/system planning rather than becoming a
+light-year-scale obstacle planner.

@@ -52,6 +52,11 @@ public:
     void submitCommand(EntityId shipId, const ShipControlState& control);
 
     const SimulationSnapshot& snapshot() const;
+    game::diagnostics::NavigationRuntimeLabObservation
+    navigationRuntimeLabObservation() const noexcept
+    {
+        return m_simulation.navigationRuntimeLabObservation();
+    }
     bool copySnapshotForSession(
         game::network::ServerSessionId sessionId,
         SimulationSnapshot& outSnapshot

@@ -79,6 +79,12 @@ public:
         bool nominalVisibilityClear = false;
         double selectedDeflectionRadians = 0.0;
 
+        // True only after the complete ordinary progress-preserving fan
+        // (up to maximumDeflectionRadians) was evaluated without a safe
+        // target. This is an escalation signal for the higher maneuver layer,
+        // not permission to disable control.
+        bool ordinarySearchExhausted = false;
+
         bool nominalStaticBlocked = false;
         std::size_t targetProbesExamined = 0;
         std::size_t staticRejected = 0;

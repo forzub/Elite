@@ -44,6 +44,18 @@ namespace game::network::wire::binary
         static constexpr auto maxValue = MAX_VALUE;                       \
     }
 
+// Empty variant alternative used for sparse replicated payloads. It consumes
+// only the variant tag and carries no fields of its own.
+template<>
+struct WireSchema<std::monostate>
+{
+    template<typename U>
+    static auto fields(U&)
+    {
+        return std::tie();
+    }
+};
+
 // -------------------------------------------------------------------------
 // Enum validation. Every enum crossing this data-plane boundary is explicit.
 // -------------------------------------------------------------------------

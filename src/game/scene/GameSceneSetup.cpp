@@ -788,7 +788,7 @@ EntityId spawnInterplanetaryTransferLabNpc(GameSimulation& sim)
     const EntityId id =
         sim.spawnShip(
             ShipRole::NPC,
-            0,
+            systemId,
             EliteCobraMk1::EliteCobraMk1Descriptor(),
             spawnPosition,
             initData,
@@ -836,6 +836,7 @@ EntityId spawnInterplanetaryTransferLabNpc(GameSimulation& sim)
 
 EntityId spawnNavigationRuntimeLabNpc(
     GameSimulation& sim,
+    int systemId,
     const glm::dvec3& stationPos
 )
 {
@@ -1031,7 +1032,11 @@ EntityId buildGameScene(
     if constexpr (game::diagnostics::NavigationRuntimeLabEnabled)
     {
         if (diagnosticHubAvailable)
-            spawnNavigationRuntimeLabNpc(sim, stationPos);
+            spawnNavigationRuntimeLabNpc(
+                sim,
+                initialSystemId,
+                stationPos
+            );
     }
 
     if constexpr (game::diagnostics::ActivationCadenceLabEnabled)

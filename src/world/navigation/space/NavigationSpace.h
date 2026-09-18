@@ -54,6 +54,29 @@ public:
         Revision geometryRevision = 0;
     };
 
+    struct PortalTraversalInput
+    {
+        // Optional finite-depth traversal contract. normalAToBMap points from
+        // regionA toward regionB and is reversed automatically when a route
+        // traverses the portal in the opposite direction.
+        bool enabled = false;
+        Vec3d normalAToBMap {};
+
+        // Half of the constrained passage depth measured from portal center to
+        // entry/exit planes. approachDistanceMeters is measured outward from
+        // the entry plane along the oriented normal.
+        double halfLengthMeters = 0.0;
+        double approachDistanceMeters = 0.0;
+
+        // Entry capture criteria. They constrain both translational flight path
+        // and, when required, the vehicle longitudinal axis before entry.
+        double maximumVelocityAngleRad = 3.14159265358979323846;
+        double maximumForwardAngleRad = 3.14159265358979323846;
+        double maximumLateralSpeedMps = 1.0e30;
+        double transitSpeedMps = 0.0;
+        bool requireVehicleForwardAlignment = false;
+    };
+
     struct PortalInput
     {
         PortalId portalId = 0;
@@ -64,6 +87,7 @@ public:
         bool bidirectional = true;
         std::uint32_t flags = 0;
         Revision geometryRevision = 0;
+        PortalTraversalInput traversal {};
     };
 
     struct StaticSpaceUpdate
@@ -157,6 +181,21 @@ public:
         std::size_t portalsExamined = 0;
     };
 
+    struct PortalTraversal
+    {
+        PortalId portalId = 0;
+        bool enabled = false;
+        Vec3d centerMapMeters {};
+        Vec3d normalMap {};
+        double halfLengthMeters = 0.0;
+        double approachDistanceMeters = 0.0;
+        double maximumVelocityAngleRad = 3.14159265358979323846;
+        double maximumForwardAngleRad = 3.14159265358979323846;
+        double maximumLateralSpeedMps = 1.0e30;
+        double transitSpeedMps = 0.0;
+        bool requireVehicleForwardAlignment = false;
+    };
+
     struct CorridorResult
     {
         Revision spaceRevision = 0;
@@ -171,6 +210,7 @@ public:
         // next portal without reading NavigationSpace internals or rebuilding
         // a second copy of the region graph.
         std::vector<Vec3d> portalCentersMapMeters;
+        std::vector<PortalTraversal> portalTraversals;
     };
 
     // Costed corridor policy. Cost units are meter-equivalent: geometric
@@ -200,6 +240,7 @@ public:
 
         // Same ordered compact steering seam as CorridorResult.
         std::vector<Vec3d> portalCentersMapMeters;
+        std::vector<PortalTraversal> portalTraversals;
     };
 
     struct InvalidationResult

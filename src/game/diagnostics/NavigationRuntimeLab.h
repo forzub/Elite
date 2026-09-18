@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include <glm/glm.hpp>
@@ -85,6 +86,9 @@ struct NavigationRuntimeLabObservation
     bool lateralExecutedDemandSeen = false;
     bool passedObstaclePlane = false;
     bool reachedGoal = false;
+
+    bool exactStaticGeometryPublished = false;
+    std::size_t exactStaticObstacleCount = 0;
 
     double initialGoalDistanceMeters = 0.0;
     double minimumGoalDistanceMeters = 0.0;

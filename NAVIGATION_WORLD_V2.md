@@ -4,7 +4,7 @@
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
 **Current stage:** stage 12A — deterministic end-to-end runtime proving ground  
-**Current slice:** 12A-6b2 — continuous exact-static proof of the accepted moving Hermite trajectory
+**Current slice:** 12A-6b3a — verified moving-passage steering authority seam
 
 `main` is the only canonical development branch.
 

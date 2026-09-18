@@ -485,6 +485,8 @@ MovingPassageTrajectoryEvaluator::evaluate(const Query& query) noexcept
             query.durationSeconds,
             u
         );
+        result.trajectory.centerSamplesMapMeters[i] =
+            sample.pose.centerMapMeters;
         sample.velocity = hermiteVelocity(
             query.start.pose.centerMapMeters,
             query.start.linearVelocityMapMetersPerSec,
@@ -621,6 +623,18 @@ MovingPassageTrajectoryEvaluator::evaluate(const Query& query) noexcept
     {
         const ShipSample& a = samples[i];
         const ShipSample& b = samples[i + 1];
+
+        // Hermite acceleration is linear over each interval. Its vector norm is
+        // convex, so the maximum endpoint magnitude bounds |p''(t)| throughout
+        // the interval. The standard chord-deviation bound A*dt^2/8 therefore
+        // encloses the exact cubic centerline continuously.
+        const double accelerationMagnitudeBound = std::max(
+            length(a.acceleration),
+            length(b.acceleration)
+        );
+        result.trajectory.intervalCenterlineDeviationBoundsMeters[i] =
+            accelerationMagnitudeBound * dt * dt / 8.0;
+
         const auto& gapA = movingGap.samples[i];
         const auto& gapB = movingGap.samples[i + 1];
 
@@ -830,10 +844,6 @@ MovingPassageTrajectoryEvaluator::evaluate(const Query& query) noexcept
         // Hermite acceleration is linear in time. Fixed-axis projection extrema
         // are at interval endpoints; body rotation adds only this conservative
         // projection margin, matching the accepted static verifier contract.
-        const double accelerationMagnitudeBound = std::max(
-            length(a.acceleration),
-            length(b.acceleration)
-        );
         const double bodyProjectionMargin =
             accelerationMagnitudeBound *
             2.0 * std::sin(0.5 * bodyIntervalAngle);
@@ -895,6 +905,8 @@ MovingPassageTrajectoryEvaluator::evaluate(const Query& query) noexcept
     // curve after accepting this result.
     result.initialLinearAccelerationMapMetersPerSec2 =
         samples.front().acceleration;
+    result.trajectory.conservativeHullRadiusMeters = rotationRadius;
+    result.trajectory.valid = true;
 
     return result;
 }

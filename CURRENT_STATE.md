@@ -102,3 +102,53 @@ product at that exact publication epoch. Canonical sparse hydration is checked
 against the same source as a separate invariant.
 
 No tolerance was weakened.
+
+
+## 12A-3 second live result
+
+Target-machine run on
+`8750d5da727e6d4e0927ddb190e843ad176b6a32` passed the architecture contract,
+both canonical builds and reached the live behavior gate.
+
+Observed:
+
+```text
+obstacle_candidate=1
+obstacle_conflict=1
+adjusted=1
+conflict_hold=0
+lateral_exec=1
+max_lateral_accel_mps2=340.222
+max_route_deviation_m=43699.4
+min_conservative_clearance_m=1758.57
+progress_m=2256.52
+passed_obstacle_plane=1
+reached_goal=0
+```
+
+This behavior is **not accepted**. The ship detected and cleared CUBE 08 but
+left the route by 43.7 km and made poor progress.
+
+Root cause was a missing working-frame conversion: NavigationRuntimePlanner
+produces map-frame linear/angular acceleration, while the accepted Stage-11
+runtime-control seam consumes world-space acceleration. The lab passed map
+vectors directly into physics.
+
+Corrected candidate:
+
+```text
+ab28db1487d80a884ca19302717968329f936567
+```
+
+now explicitly applies:
+
+```text
+planner map intent
+ -> mapIntentToWorld(workingFrame)
+ -> PilotSkillExecutor / ShipControlState world intent
+ -> physics
+```
+
+A non-identity basis regression pins the boundary. Live diagnostics now also
+separate pilot executed demand from actual physically applied acceleration and
+report maximum relative speed.

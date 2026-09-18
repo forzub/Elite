@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <limits>
 
+#include "src/game/navigation/LocalFlightControlLaw.h"
+
 namespace game::ship::controller
 {
 
@@ -40,13 +42,26 @@ public:
         GlobalRoute,
         LocalVisibility,
         PrecisionPassage,
-        EmergencyContact
+        EmergencyContact,
+        ExtendedVisibilityRecovery,
+        Backtrack,
+        NewtonianFlipAndBurn,
+        ReverseEscape
+    };
+
+    enum class ControlLawRequirement : std::uint8_t
+    {
+        Any = 0,
+        AssistedOnly,
+        NewtonianOnly
     };
 
     struct Context
     {
         Doctrine doctrine = Doctrine::Rational;
         ProgressRequirement progress = ProgressRequirement::MayStop;
+        game::navigation::LocalFlightControlLaw controlLaw =
+            game::navigation::LocalFlightControlLaw::Newtonian;
 
         // Contact is an accepted candidate class, never a synonym for safe.
         // MustProgress may still force comparison of contact-expected options
@@ -63,6 +78,8 @@ public:
     {
         std::uint64_t candidateId = 0;
         CandidateFamily family = CandidateFamily::StopOrBrake;
+        ControlLawRequirement controlLawRequirement =
+            ControlLawRequirement::Any;
         bool valid = false;
 
         bool collisionFree = false;

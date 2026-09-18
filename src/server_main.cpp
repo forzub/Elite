@@ -515,7 +515,7 @@ int runNavigationRuntimeSelfTest()
             std::ceil(MaxSimulatedSeconds / step)
         );
 
-    bool behaviorEvidenceComplete = false;
+    bool movingAuthorityEvidenceComplete = false;
     double simulatedSeconds = 0.0;
 
     for (std::uint64_t i = 0; i < maxSteps; ++i)
@@ -718,24 +718,17 @@ int runNavigationRuntimeSelfTest()
             return 52;
         }
 
-        behaviorEvidenceComplete =
+        movingAuthorityEvidenceComplete =
             observation.valid &&
             observation.exactStaticGeometryPublished &&
             observation.exactStaticObstacleCount > 0 &&
             observation.configuredRouteExactObstacleBlockPublished &&
-            observation.exactStaticQuerySeen &&
-            observation.nominalStaticBlockSeen &&
-            observation.maximumExactStaticObstaclesExamined > 0 &&
             observation.exactStaticMotionSamples > 0 &&
             !observation.exactStaticViolationSeen &&
             observation.planCount > 0 &&
             observation.executionCount > 0 &&
-            observation.obstacleEntityId != 0 &&
             observation.dynamicQueryCount > 0 &&
             observation.maximumDynamicCandidateCount >= 2 &&
-            observation.rotatingActorEntityId != 0 &&
-            observation.rotatingActorCandidateSeen &&
-            observation.rotatingActorAngularVelocityVerified &&
             observation.movingGapUpperEntityId != 0 &&
             observation.movingGapLowerEntityId != 0 &&
             observation.movingGapPairCandidateSeen &&
@@ -748,18 +741,10 @@ int runNavigationRuntimeSelfTest()
             observation.movingPassageExecutedSeen &&
             observation.movingPassageExecutionActive &&
             observation.movingPassageAppliedAccelerationSeen &&
-            !observation.obstacleCandidateSeen &&
-            !observation.obstaclePrimaryConflictSeen &&
-            observation.obstacleExactStaticBlockSeen &&
-            observation.adjustedTargetSeen &&
             observation.executionSeen &&
-            observation.nonZeroExecutedDemandSeen &&
-            observation.lateralExecutedDemandSeen &&
-            observation.passedObstaclePlane &&
-            observation.maximumStraightLineDeviationMeters > 1.0 &&
-            progressMeters > 3500.0;
+            observation.nonZeroExecutedDemandSeen;
 
-        if (behaviorEvidenceComplete)
+        if (movingAuthorityEvidenceComplete)
             break;
     }
 
@@ -769,7 +754,7 @@ int runNavigationRuntimeSelfTest()
                 observation.minimumGoalDistanceMeters
             : 0.0;
 
-    if (!behaviorEvidenceComplete)
+    if (!movingAuthorityEvidenceComplete)
     {
         std::cerr
             << "[NAV-SELFTEST]"
@@ -887,7 +872,7 @@ int runNavigationRuntimeSelfTest()
             << observation.reachedGoal
             << "\n";
         std::cerr
-            << "[FAIL] navigation-runtime live behavior evidence incomplete\n";
+            << "[FAIL] navigation-runtime live moving-passage authority evidence incomplete\n";
         return 37;
     }
 
@@ -1096,10 +1081,12 @@ int runNavigationRuntimeSelfTest()
     }
 
     // Replication was captured while MovingPassageClear owned execution.
-    // Continue the same authoritative run until the physical ship passes the
-    // moving aperture plane, or until the original 120 s total bound expires.
-    while (!observation.movingGapPlanePassed &&
-           simulatedSeconds + step <= MaxSimulatedSeconds + 1.0e-9)
+    // Continue the SAME authoritative run. The ordered acceptance is now:
+    // moving authority -> replicated active epoch -> physical gap crossing ->
+    // independent CUBE 08 exact-static avoidance/progress.
+    bool behaviorEvidenceComplete = false;
+
+    while (simulatedSeconds + step <= MaxSimulatedSeconds + 1.0e-9)
     {
         runtime.advance(step);
         simulatedSeconds += step;
@@ -1114,13 +1101,53 @@ int runNavigationRuntimeSelfTest()
                 << "\n";
             return 55;
         }
+
+        const double continuedProgressMeters =
+            observation.initialGoalDistanceMeters > 0.0
+                ? observation.initialGoalDistanceMeters -
+                    observation.minimumGoalDistanceMeters
+                : 0.0;
+
+        behaviorEvidenceComplete =
+            observation.movingGapPlanePassed &&
+            observation.movingPassageAuthoritySeen &&
+            observation.movingPassageExecutedSeen &&
+            observation.movingPassageAppliedAccelerationSeen &&
+            observation.exactStaticGeometryPublished &&
+            observation.exactStaticObstacleCount > 0 &&
+            observation.configuredRouteExactObstacleBlockPublished &&
+            observation.exactStaticQuerySeen &&
+            observation.nominalStaticBlockSeen &&
+            observation.maximumExactStaticObstaclesExamined > 0 &&
+            observation.exactStaticMotionSamples > 0 &&
+            !observation.exactStaticViolationSeen &&
+            observation.rotatingActorEntityId != 0 &&
+            observation.rotatingActorCandidateSeen &&
+            observation.rotatingActorAngularVelocityVerified &&
+            !observation.obstacleCandidateSeen &&
+            !observation.obstaclePrimaryConflictSeen &&
+            observation.obstacleExactStaticBlockSeen &&
+            observation.adjustedTargetSeen &&
+            observation.executionSeen &&
+            observation.nonZeroExecutedDemandSeen &&
+            observation.lateralExecutedDemandSeen &&
+            observation.passedObstaclePlane &&
+            observation.maximumStraightLineDeviationMeters > 1.0 &&
+            continuedProgressMeters > 3500.0;
+
+        if (behaviorEvidenceComplete)
+            break;
     }
 
-    if (!observation.movingGapPlanePassed)
+    if (!behaviorEvidenceComplete)
     {
         std::cerr
-            << "[FAIL] moving-passage authority executed and replicated but "
-            << "the physical ship did not pass the live moving-gap plane"
+            << "[FAIL] moving-passage authority/replication succeeded but "
+            << "the ordered live flight did not complete gap crossing plus "
+            << "CUBE 08 exact-static avoidance inside the 120 s bound"
+            << " moving_gap_passed=" << observation.movingGapPlanePassed
+            << " passed_obstacle_plane=" << observation.passedObstaclePlane
+            << " exact_static_violation=" << observation.exactStaticViolationSeen
             << " simulated_s=" << simulatedSeconds
             << "\n";
         return 56;

@@ -805,3 +805,75 @@ slit_margin_m >= 0
 exact_static_violation=0
 ```
 
+
+
+## 12A-6b3b target-machine gate on e432363 — MOVING PASSAGE REJECTED
+
+Target-machine baseline:
+
+```text
+e432363717d6bff49aaef35d34fac61cfe802903
+```
+
+Green evidence:
+- Stage-12 architecture contract PASS;
+- navigation_space 1/1 PASS;
+- navigation_runtime 3/3 PASS;
+- navigation_trajectory 11/11 PASS;
+- canonical EliteGame and EliteServer build PASS;
+- static slit fixture is now physically valid: `slit_exact_open=1`;
+- physical exact-static sweep stayed clean: `exact_static_violation=0`;
+- both intended moving actors were published and their kinematics verified.
+
+The live run did not progress because the current test required the ordinary
+free-space encounter to become a precision MovingPassage between the two moving
+actors. The evaluator correctly rejected that geometry:
+
+```text
+moving_gap_pair=1
+moving_gap_kinematics=1
+moving_passage_feasible=0
+moving_eval_status=2   # GeometryBlocked
+moving_sample_clearance_m=-110.435
+moving_passage_authority=0
+conflict_hold=1
+progress_m=0.0343542
+simulated_s=120
+```
+
+This is not a tunnel/collision failure. It exposes a routing-policy problem:
+when free space exists around a pair of obstacles, normal transit should not be
+forced to prove a narrow moving passage between them.
+
+Architecture decision from user review:
+- default local transit becomes bounded line-of-sight / visibility steering;
+- always start from the direct A->B direction;
+- look only through the current physical horizon, sized by braking/turning and
+  safety margin;
+- if that corridor is blocked, increase the deflection only until a hull-sized
+  safe corridor is found;
+- on every receding-horizon update, retry direct A->B first and immediately
+  return to it when visibility is restored;
+- dynamic actors use their predicted swept volume inside the same bounded
+  horizon;
+- MovingPassage remains a precision mode only when passage is topologically or
+  semantically mandatory: authored portal/tunnel, docking mouth, ravine, narrow
+  gate, etc.
+
+Current task changes from "force live MovingPassage authority through the free
+moving pair" to "prove bounded visibility steering around the free moving pair,
+then use the already-authored oriented portal capture for the mandatory tunnel."
+
+Implementation target:
+1. extend LocalAvoidance from the fixed 15/30-degree fan to a bounded increasing
+   deflection search, still selecting the smallest safe deviation;
+2. preserve direct A->B as the first query every update, so recovery to the
+   direct line is automatic and stateless;
+3. keep the horizon physical: braking distance + turn allowance + safety margin,
+   never route-wide precision;
+4. disable free-space MovingPassage steering authority in the live lab fixture;
+5. retain MovingPassage unit/precision contracts for explicit mandatory gaps;
+6. require the same authoritative run to bypass the moving pair, recover toward
+   the route, capture the tunnel entrance, align velocity + hull axis, traverse
+   the exact-HitVolume tunnel, and keep `exact_static_violation=0`.
+

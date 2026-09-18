@@ -259,3 +259,17 @@ This baseline intentionally uses static gravity-body centers. Continuous moving
 celestial ephemerides remain a later source/provider extension; they must extend
 the acceleration/environment input without changing the prediction result
 contract.
+
+
+## Deferred galactic route planning
+
+Strategic Galaxy-scale routing is intentionally separated from the local
+trajectory/autopilot implementation and is specified in:
+
+`src/game/navigation/GALACTIC_ROUTE_PLANNING.md`
+
+That future layer owns jump-node search, jump-drive range/capability, fuel and
+reserve cost, gravity-aware long-leg validation, ephemeris/timing effects and
+inter-system replanning. It preserves this document's three-layer product rule:
+RoutePlan -> accepted Navigation/Trajectory Solution -> ManualGuidance or
+Autopilot execution.

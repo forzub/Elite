@@ -193,6 +193,7 @@ public:
         Vec3d positionMapMeters {};
         Vec3d velocityMapMetersPerSecond {};
         Vec3d accelerationMapMetersPerSecond2 {};
+        Vec3d angularVelocityMapRadPerSecond {};
         Vec3d predictedEndPositionMapMeters {};
         Vec3d conservativeSweptCenterMapMeters {};
         double actorRadiusMeters = 0.0;
@@ -240,6 +241,7 @@ public:
             if (!isFinite(input.positionSystemMeters) ||
                 !isFinite(input.velocitySystemMetersPerSecond) ||
                 !isFinite(input.accelerationSystemMetersPerSecond2) ||
+                !isFinite(input.angularVelocitySystemRadPerSecond) ||
                 !isFinite(input.radiusMeters) ||
                 input.radiusMeters < 0.0 ||
                 !seenIds.insert(input.entityId).second)
@@ -258,6 +260,10 @@ public:
             actor.accelerationMapMetersPerSecond2 = vectorToMap(
                 newFrame,
                 input.accelerationSystemMetersPerSecond2
+            );
+            actor.angularVelocityMapRadPerSecond = vectorToMap(
+                newFrame,
+                input.angularVelocitySystemRadPerSecond
             );
             actor.actorRadiusMeters = input.radiusMeters;
             actor.flags = input.flags;
@@ -499,6 +505,7 @@ private:
         result.positionMapMeters = actor.positionMapMeters;
         result.velocityMapMetersPerSecond = actor.velocityMapMetersPerSecond;
         result.accelerationMapMetersPerSecond2 = actor.accelerationMapMetersPerSecond2;
+        result.angularVelocityMapRadPerSecond = actor.angularVelocityMapRadPerSecond;
         result.predictedEndPositionMapMeters = actor.predictedEndPositionMapMeters;
         result.conservativeSweptCenterMapMeters = actor.conservativeSweptCenterMapMeters;
         result.actorRadiusMeters = actor.actorRadiusMeters;

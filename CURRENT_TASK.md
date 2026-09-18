@@ -2193,3 +2193,80 @@ Last actually target-machine accepted Stage-12 baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### 2026-09-19 target-machine late-braking root cause — stopping reserve invalidation was overwritten
+
+The latest live witness raised the key timing question: Navigation must begin
+avoidance/braking while the maneuver is still physically reachable, not only
+after collision geometry is immediately ahead.
+
+Repository inspection confirms the physical horizon itself is already
+speed-dependent:
+
+~~~text
+latencyDistance = v * resultAge + 0.5 * |a| * resultAge^2
+brakingDistance = v^2 / (2 * maxBrakingAcceleration)
+horizonDistance = max(
+    minimumHorizon,
+    latencyDistance + brakingDistance + turnDistance + safetyMargin
+)
+~~~
+
+The late emergency activation is caused by a concrete execution-monitor bug,
+not by absence of a speed-dependent distance horizon.
+
+Current Stage-12 code does:
+
+~~~cpp
+if (staticSafetyStoppingReserveBlocked)
+{
+    staticSafetyInvalidated = true;
+    staticSafetyRecoveryRequired = true;
+}
+
+staticSafetyTargetBlocked = exactExecutionSegmentBlocked(...);
+
+// BUG: destroys the earlier stopping-reserve invalidation whenever the direct
+// current->target chord is still clear.
+staticSafetyInvalidated = staticSafetyTargetBlocked;
+~~~
+
+Therefore Navigation can detect that the complete reaction+braking reserve is
+already unsafe, then discard that evidence and continue executing the accepted
+segment. Replanning/emergency begins later when the direct target chord itself
+finally becomes blocked, at which point the target-machine witness shows:
+
+~~~text
+stopping_reserve_blocked=1
+emergency_recovery_active=1
+violation_entity=28
+~~~
+
+Required correction:
+
+~~~cpp
+staticSafetyInvalidated =
+    staticSafetyInvalidated || staticSafetyTargetBlocked;
+~~~
+
+More generally, the Navigation-v2 acceptance invariant is:
+
+- detection horizon is physical and speed/capability dependent;
+- a candidate executable segment is valid only while a safe reaction/braking
+  or maneuver reserve remains available;
+- stopping-reserve invalidation has equal authority to direct target/forecast
+  blockage and may never be overwritten by a later independent safety check;
+- planner execution remains event-driven: monitor every fixed tick, replan only
+  when the accepted segment loses that invariant.
+
+The fixed 3 s dynamic-conflict look-ahead is a separate policy dimension from
+the physical distance horizon. It must eventually be bounded from below by the
+time represented by the physical maneuver reserve for high-speed moving
+hazards, but it is not the cause of this CUBE 08 exact-static failure.
+
+No Stage-12 baseline promotion. Last actually target-machine accepted baseline:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

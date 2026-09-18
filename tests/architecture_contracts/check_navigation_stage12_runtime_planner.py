@@ -443,6 +443,18 @@ require(
     "live ownership proof must bind CUBE 08 to exact-static blocker identity",
 )
 
+for marker in (
+    "tr.motion.localVelocityMps =",
+    "tr.motion.mainEngineAccelerationMps2 =",
+    "tr.motion.manoeuvreAccelerationMps2 =",
+    "tr.motion.engineAccelerationMps2 =",
+    "VelocityAlignmentMode::None",
+):
+    require(
+        marker in SIM_CPP,
+        f"reference-frame placement must clear stale authoritative motion state: {marker}",
+    )
+
 require(
     "NavigationRuntimeLabInitialObstacleLeadMeters" in LAB_H and
     "NavigationRuntimeLabObstacleVisualLocalMeters.z -" in LAB_H,
@@ -556,3 +568,4 @@ print(" - invalid exact-static proving geometry fails fast before a 120 s behavi
 print(" - first live bounded segment is independently exact-probed before planner composition")
 print(" - live-scale 1300 m exact OBB regression pins first-horizon static adjustment")
 print(" - first physical exact-static violation reports obstacle identity and maneuver witness")
+print(" - reference-frame placement clears stale local velocity and propulsion state")

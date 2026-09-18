@@ -141,6 +141,10 @@ target_include_directories(EliteNavigationWorldRuntime PUBLIC
     "${CMAKE_SOURCE_DIR}/src"
 )
 
+target_link_libraries(EliteNavigationWorldRuntime
+    PUBLIC EliteNavigationGeometry
+)
+
 # Shared CPU-side authored/runtime assembly geometry. This is intentionally not
 # a render library: it owns OBJ hydration, authored assembly definitions and the
 # CPU cache consumed by authoritative simulation and client presentation.

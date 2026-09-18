@@ -550,3 +550,43 @@ bash build_mingw64.sh
 
 If the live evaluator still rejects, the final NAV-SELFTEST line now reports
 `moving_eval_status`, `moving_req_*_mps2`, and moving clearance values.
+
+
+## 12A-6b3b corrected fixture target-machine gate — EXACT-STATIC PHYSICAL VIOLATION
+
+Target-machine baseline:
+
+```text
+69d8098d795c25b24b778b5229644244ae1384cb
+```
+
+Passed before the live failure:
+- Stage-12 architecture contract;
+- navigation_runtime 3/3;
+- navigation_trajectory 11/11;
+- canonical EliteGame / EliteServer build.
+
+The authoritative live run then failed correctly on physical exact-static sweep:
+
+```text
+exact_static_violation=1
+violation_entity=24
+proving_obstacle_entity=24
+planner_status=2
+```
+
+The ship entered the exact HitVolume of the legacy single CUBE 08 proving
+obstacle after the moving-gap fixture was moved earlier in the route. This is
+not accepted and 12A-6b3b remains open.
+
+The next correction changes the static proving geometry, not vehicle capability
+or collision acceptance: replace the single arbitrary block as the terminal
+acceptance obstacle with a deterministic exact-HitVolume slit/tunnel gate. The
+goal remains beyond it, so the planner must guide the real hull through authored
+empty space rather than merely skirt one isolated cube.
+
+The general contract remains vehicle-agnostic: runtime planning consumes the
+current vehicle's physical capability and hull dimensions; no Cobra-specific
+acceleration constants may be introduced into the navigation algorithm.
+
+Current task: author a static exact-HitVolume slit/tunnel proving fixture and make successful hull passage part of the live gate.

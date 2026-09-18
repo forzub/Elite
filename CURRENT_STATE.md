@@ -322,7 +322,7 @@ authority chain accepted end-to-end.
 Candidate implementation baseline before documentation commits:
 
 ```text
-4b117cada10ce416250d917a8bdad2b6b5580ee7
+5e96b59ab99a22d3d1fa94cf16577b5ff71c84bb
 ```
 
 Authority is now deliberately split from precision evaluation:

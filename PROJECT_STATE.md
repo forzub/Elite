@@ -1,83 +1,86 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / live NPC ownership  
+**Current focus:** NavigationWorld v2 / replicated live navigation truth  
 **Canonical development branch:** `main`  
-**Active stage:** 11B-1 corrected roll-fixture rerun
+**Active stage:** 11B-2
 
 ## Progress
 
 ```text
-[████████████████████░░░] 10 / 12 major stages closed
+[█████████████████████░░] 10 / 12 major stages closed
 ```
 
-Closed: NavigationMap, NavigationSpace, LocalAvoidance, precision passage, emergency/contact severity, moving gaps/passages, moving/rotating docking, deterministic PilotSkillProfile.
+Closed:
+1. NavigationMap
+2. NavigationSpace
+3. LocalHorizon / LocalAvoidance
+4. oriented passage / bounded gaps / attitude
+5. continuous static passage
+6. emergency mitigation / contact severity
+7. moving-gap prediction
+8. moving continuous passage
+9. moving/rotating docking
+10. deterministic PilotSkillProfile
 
-Stage 11:
+Live integration:
 
 ```text
-11A runtime control seam                  ACCEPTED
-11B-1 authoritative NPC runtime ownership ACTIVE
-11B-2 replicated guidance/debug truth     PENDING
+11A  runtime control seam                  ACCEPTED
+11B-1 authoritative NPC runtime ownership ACCEPTED
+11B-2 replicated guidance/debug truth     ACTIVE
 ```
 
-Stage 12: end-to-end scenarios, stress/performance, debug truth, post-impact replan and legacy retirement.
+Stage 12 remains end-to-end stress/debug/performance and legacy retirement.
 
-## Latest accepted live evidence
+## Latest accepted evidence
 
 ```text
-d7c77d5868b3178be3c392f0a8fecad5b57e3b69
-NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
-runtime 1/1 PASS
-trajectory/pilot 11/11 PASS
-EliteGame + EliteServer build PASS
+fb83b8d80f29c6c5e4e12b8af3794182790
 ```
 
-## 11B-1 architecture
-
-The server no longer accepts steering commands from `NpcAiSystem`.
+Correction: the accepted 11B-1 commit is:
 
 ```text
-NpcAiSystem
-    goal + pilot profile only
-        |
-        v
-NpcNavigationIntentController
-    nominal Navigation v2 acceleration intent
-        |
-        v
-per-NPC NavigationRuntimeControlBridge
-        |
-        v
-accepted live capability/physics seam
+fb83b8d80f29c6c5e4e12b8a2fca731ffea7b8e8
 ```
 
-The initial `MaintainForwardCruise` / `Hold` goals are only ownership fixtures. Higher mission/traffic/repair/combat systems can later choose goals without becoming steering solvers.
+It passed both live architecture contracts, runtime 1/1, trajectory/pilot 11/11, and canonical client/server builds.
 
-`GameSimulation` retains the exact latest execution snapshot/revision used for each NPC. 11B-2 will replicate this product to guidance/debug.
+## 11B-2 architecture
 
-## Safety/runtime invariants
+The same server execution product now crosses replication:
 
-- no fallback to old `sin(position)` steering;
-- no direct P/V/angular-rate mutation by navigation;
-- no lost elapsed time under activation decimation;
-- capability and physics remain downstream authorities;
-- stale bridge state is discarded on failure/player takeover.
+```text
+GameSimulation execution snapshot
+ -> ShipSnapshot.navigationExecution
+ -> binary wire schema v8
+ -> ClientWorldState
+ -> ReplicatedNavigationExecutionState
+ -> ClientNavigationWorkspace
+ -> GuidanceHudPresentation
+```
+
+Stable route-executor identity uses `ShipInstanceId`, while current runtime binding retains `EntityId`.
+
+The client mirror is read-only to planning code.
+
+Manual/advisory client planners continue to exist for player guidance but cannot consume or mutate server-executed NPC truth.
+
+## Compatibility
+
+Because `ShipSnapshot` wire layout changed, the simulation snapshot data-plane schema version is bumped from 7 to 8. Client/server mismatch is rejected explicitly rather than decoded ambiguously.
+
+## Acceptance
+
+11B-2 must pass:
+- new replication/guidance architecture contract;
+- canonical wire schema architecture contract;
+- runtime control + replication truth tests;
+- trajectory regression;
+- canonical wire data-plane round-trip;
+- EliteGame + EliteServer production build.
 
 ## Next
 
-Pass 11B-1 target-machine full build/regression gate, then immediately implement replicated guidance/debug truth.
-
-
-## First 11B-1 target-machine attempt
-
-Architecture and the accepted trajectory regression remained green. Runtime-test compilation and headless-server linking exposed missing build-target wiring. Both are repaired; 11B-1 remains pending the fresh full gate.
-
-
-## Second 11B-1 attempt
-
-Headless server wiring was green, but the isolated unit target still depended on full `Ship` construction. The intent boundary was reduced to a compact kinematic snapshot; GameSimulation is now the live Ship adapter.
-
-## Third 11B-1 attempt
-
-All production builds and architecture/regression gates were green. One unit assertion encoded the wrong world-Z sign for roll damping. The fixture now verifies damping in ship-axis projections. Production behavior is unchanged.
+If 11B-2 is green, stage 11 closes and stage 12 begins immediately.

@@ -1,27 +1,25 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-18
-**Stage:** 12A-5 — verify current-epoch reference-frame sync
+**Stage:** 12A-5 — resume exact-static live avoidance after placement fix
 
 ## Candidate HEAD
 
 ```text
-29aa06c6d96f2a32a540f5623eb53edc433ef6ca
+546a8868b0a25c655310263252877c5f5b48d4c5
 ```
 
-## What changed
+## Previous result
 
-The last ~641 m first-plan offset matched one fixed step of orbital/world frame
-motion.
-
-Reference-frame synchronization now occurs before AI/navigation:
+Placement is correct:
 
 ```text
-HubNavigationFrame current epoch
-    -> refresh matched travel frame
-    -> rematerialize ship world pose from localPositionMeters
-    -> navigation planner
+placement_map=(975,-1300,-6200)
+expected=(975,-1300,-6200)
+error=17.7 micrometres
 ```
+
+The previous FAIL was only the old 1 micrometre diagnostic threshold.
 
 ## RUN
 
@@ -43,16 +41,11 @@ bash build_mingw64.sh
 ./build/headless_server/EliteServer.exe --self-test-navigation
 ```
 
-## Expected picture
+## Expected next evidence
 
-First navigation state should now stay on the authored start:
+Placement gate should now pass.
 
-```text
-placement_map ~= (975,-1300,-6200)
-first_live_agent_map ~= (975,-1300,-6200)
-```
-
-Then CUBE 08 should be detected:
+Then look for:
 
 ```text
 first_live_probe_blocked=1
@@ -61,5 +54,21 @@ exact_static_block=1
 adjusted=1
 ```
 
-If execution then intersects any exact HitVolume, self-test already fails fast
-with the exact entity and swept-segment witness.
+and ultimately:
+
+```text
+exact_static_violation=0
+replication_error_mps2=0
+canonical_replication_error_mps2=0
+```
+
+If a physical exact-static violation occurs, self-test will fail fast with:
+
+```text
+violation_entity=...
+proving_obstacle_entity=...
+violation_start_map=(...)
+violation_end_map=(...)
+selected_target_map=(...)
+planner_status=...
+```

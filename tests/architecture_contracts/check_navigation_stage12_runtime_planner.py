@@ -125,6 +125,10 @@ for marker in (
     "movingPassageStaticSafe",
     "movingPassageStaticIntervalsProven",
     "movingPassageStaticBlockingObstacleId",
+    "allowSteeringAuthority",
+    "MovingPassageClear",
+    "movingPassageAuthorityUsed",
+    "movingPassageTargetMapMeters",
 ):
     require(marker in PLANNER_H, f"runtime planner interface missing: {marker}")
 
@@ -149,9 +153,32 @@ for marker in (
     require(marker in PLANNER_CPP, f"runtime planner composition missing: {marker}")
 
 require(
-    "result.movingPassageInitialAccelerationMapMps2 =" in PLANNER_CPP and
-    "idealLinearAccelerationDemandMapMps2 =\n            toBridgeVec(result.movingPassageInitialAccelerationMapMps2)" not in PLANNER_CPP,
-    "12A-6b2 moving precision must remain observe-only until the exact-static trajectory gate is accepted",
+    "bool allowSteeringAuthority = false;" in PLANNER_H,
+    "moving-passage steering authority must remain an explicit opt-in policy",
+)
+
+require(
+    "policy.movingPassage.allowSteeringAuthority &&" in PLANNER_CPP and
+    "result.movingPassageFeasible &&" in PLANNER_CPP and
+    "result.movingPassageStaticSafe" in PLANNER_CPP and
+    "local.status != Avoidance::Status::StaleHold" in PLANNER_CPP,
+    "moving-passage authority must require explicit opt-in, fresh dynamic state, dynamic feasibility and exact-static safety",
+)
+
+require(
+    "result.status = Status::MovingPassageClear;" in PLANNER_CPP and
+    "result.movingPassageAuthorityUsed = true;" in PLANNER_CPP and
+    "result.intent.idealLinearAccelerationDemandMapMps2 =\n            toBridgeVec(result.movingPassageInitialAccelerationMapMps2);" in PLANNER_CPP,
+    "12A-6b3a authority must execute the exact first sample of the doubly-proven Hermite trajectory",
+)
+
+require(
+    "result.desiredVelocityMapMetersPerSecond" not in
+        PLANNER_CPP[
+            PLANNER_CPP.find("if (policy.movingPassage.allowSteeringAuthority &&"):
+            PLANNER_CPP.find("switch (local.status)")
+        ],
+    "moving-passage authority must not solve a second desired-velocity trajectory after proof",
 )
 
 for marker in (
@@ -181,6 +208,15 @@ require(
     "movingPassageStaticSafe" in RUNTIME_TEST and
     "moving_passage_static_beam" in RUNTIME_TEST,
     "runtime regression must prove a dynamic-valid moving passage can still fail exact-static same-trajectory safety",
+)
+
+require(
+    "testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge" in RUNTIME_TEST and
+    "Planner::Status::MovingPassageClear" in RUNTIME_TEST and
+    "movingPassageAuthorityUsed" in RUNTIME_TEST and
+    "Planner::mapIntentToWorld(planned.intent, frame)" in RUNTIME_TEST and
+    "bridge.step(" in RUNTIME_TEST,
+    "runtime regression must pin doubly-proven moving passage authority through map/world transform and PilotSkillExecutor",
 )
 
 require(
@@ -722,4 +758,5 @@ print(" - live GUIDANCE DOCK CUBE A verifies the published map-space angular mot
 print(" - bounded runtime conflicts feed MovingGapPredictor + MovingPassageTrajectoryEvaluator")
 print(" - accepted moving Hermite curve is continuously bounded between its 33 samples")
 print(" - same moving trajectory is re-proven against exact static NavigationSpace geometry")
-print(" - moving precision remains observe-only until the 12A-6b2 target-machine gate is accepted")
+print(" - moving-passage steering authority is explicit opt-in and requires both dynamic + exact-static proof")
+print(" - authoritative moving passage uses the exact proved first acceleration sample through map/world + PilotSkillExecutor")

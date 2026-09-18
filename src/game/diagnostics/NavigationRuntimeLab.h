@@ -112,6 +112,11 @@ struct NavigationRuntimeLabObservation
     // First live-plan geometry probe. This uses the exact same current
     // agent position, bounded horizon target and ship envelope that the
     // runtime planner should prove statically.
+    bool placementProbeCaptured = false;
+    glm::dvec3 placementPositionMap {0.0};
+    glm::dvec3 placementMotionLocalTactical {0.0};
+    double placementServerTimeSeconds = 0.0;
+
     bool firstLiveNominalProbeCaptured = false;
     bool firstLiveNominalExactBlocked = false;
     std::uint32_t firstLiveNominalBlockingEntityId = 0;
@@ -119,6 +124,7 @@ struct NavigationRuntimeLabObservation
     glm::dvec3 firstLiveAgentPositionMap {0.0};
     glm::dvec3 firstLiveGoalPositionMap {0.0};
     glm::dvec3 firstLiveBoundedTargetMap {0.0};
+    double firstLiveServerTimeSeconds = 0.0;
 
     bool exactStaticQuerySeen = false;
     bool nominalStaticBlockSeen = false;

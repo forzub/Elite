@@ -522,6 +522,7 @@ add_executable(EliteGame
     src/game/system_map/GalaxyMapRenderer.cpp
     src/game/navigation/DynamicMotionSystem.cpp
     src/game/navigation/NavigationRuntimeControlBridge.cpp
+    src/game/navigation/NpcNavigationIntentController.cpp
     src/world/navigation/control/PilotSkillExecutor.cpp
     src/game/navigation/TrajectoryPredictor.cpp
     src/game/navigation/TrajectorySafetyEvaluator.cpp

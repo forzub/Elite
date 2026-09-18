@@ -42,6 +42,19 @@ struct GuidanceCorridorHudPresentation
     bool advisoryOnly = true;
     bool spatialManualTunnel = false;
     bool noSafePrimarySolution = false;
+
+    // Read-only server execution truth for the selected route executor.
+    // This is diagnostic/presentation metadata only; it is never a client
+    // planning input.
+    bool hasAuthoritativeExecution = false;
+    EntityId authoritativeExecutionEntityId {};
+    std::uint64_t authoritativeIntentRevision = 0;
+    std::uint64_t authoritativeActiveTargetRevision = 0;
+    glm::dvec3 authoritativeExecutedLinearAccelerationMapMps2 {0.0};
+    glm::dvec3 authoritativeExecutedAngularAccelerationMapRadPerSec2 {0.0};
+    bool authoritativeEmergency = false;
+    bool authoritativeReactionBlocked = false;
+
     std::vector<GuidanceHudFramePresentation> frames;
 };
 
@@ -54,6 +67,30 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
 )
 {
     GuidanceCorridorHudPresentation out;
+
+    if (navigation.routePlan().hasStart())
+    {
+        const auto* execution =
+            navigation.replicatedNavigationExecution().find(
+                navigation.routePlan().start().executor
+            );
+        if (execution && execution->execution.valid)
+        {
+            const auto& server = execution->execution;
+            out.hasAuthoritativeExecution = true;
+            out.authoritativeExecutionEntityId = execution->entityId;
+            out.authoritativeIntentRevision = server.intentRevision;
+            out.authoritativeActiveTargetRevision =
+                server.activeTargetRevision;
+            out.authoritativeExecutedLinearAccelerationMapMps2 =
+                server.executedLinearAccelerationDemandMapMps2;
+            out.authoritativeExecutedAngularAccelerationMapRadPerSec2 =
+                server.executedAngularAccelerationDemandMapRadPerSec2;
+            out.authoritativeEmergency = server.emergency;
+            out.authoritativeReactionBlocked = server.reactionBlocked;
+        }
+    }
+
     if (!navigation.modules().enabled(
             game::navigation::NavigationModuleId::HudGuidanceCorridor))
     {

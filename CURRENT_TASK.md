@@ -1,22 +1,39 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-18
-**Stage:** 12A-5 — identify first physical exact-static violation
+**Stage:** 12A-5 — verify authoritative reference-frame placement reset
 
-## Why this is not another full rerun
+## Candidate HEAD
 
-The last run already proved:
-- stationary CUBE 08 stays out of NavigationMap;
-- exact CUBE 08 is detected;
-- the first live bounded segment hits it;
-- planner selects adjusted avoidance;
-- runtime unit composition passes.
+```text
+e83a0a2bd5d54efb7737607c40ff789cafee5cf5
+```
 
-Only the physical execution still violates exact geometry.
+## Previous failure
+
+The first live planner probe started at:
+
+```text
+(1014.47,-1767.96,-5679.82)
+```
+
+instead of configured:
+
+```text
+(975,-1300,-6200)
+```
+
+Root cause: `placeShipInReferenceFrame()` retained stale
+`motion.localVelocityMps` and propulsion state.
+
+## Correction
+
+Reference-frame placement now clears all authoritative local motion/control
+residue before the ship enters the new frame.
 
 ## RUN
 
-Only diagnostics/build/self-test are needed:
+Only the affected architecture/build/live gate is needed:
 
 ```bash
 cd /d/__elite/work
@@ -34,28 +51,23 @@ bash build_mingw64.sh
 ./build/headless_server/EliteServer.exe --self-test-navigation
 ```
 
-The self-test now stops on the first exact-static physical intersection.
+## Expected interpretation
 
-Read the line:
-
-```text
-violation_entity=...
-proving_obstacle_entity=...
-violation_start_map=(...)
-violation_end_map=(...)
-selected_target_map=(...)
-planner_status=...
-```
-
-Interpretation:
+If the placement bug is closed, the first live probe should begin near:
 
 ```text
-violation_entity == proving_obstacle_entity
-    physical execution cuts through CUBE 08
-
-violation_entity != proving_obstacle_entity
-    chosen CUBE 08 bypass enters another exact HitVolume
+first_live_agent_map ~= (975,-1300,-6200)
 ```
 
-That distinction determines the next code change. Do not reintroduce stationary
-spheres or weaken exact-static acceptance.
+and then:
+
+```text
+first_live_probe_blocked=1
+first_live_blocker_entity=<CUBE 08 entity>
+exact_obstacle_block=1
+exact_static_block=1
+adjusted=1
+```
+
+If physical execution later violates exact geometry, the self-test will stop
+immediately and print the exact violation entity and swept motion witness.

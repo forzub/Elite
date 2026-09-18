@@ -111,3 +111,33 @@ moving/rotating exact-geometry stage.
 The live gate specifically requires stationary CUBE 08 to be absent as a
 NavigationMap candidate/conflict while still being identified as the exact
 static blocker that causes the adjusted maneuver.
+
+
+#### 12A-5 first live ownership run
+
+The first ownership-cleanup live run correctly removed stationary CUBE 08 from
+NavigationMap:
+
+```text
+obstacle_candidate=0
+obstacle_conflict=0
+dynamic_queries=6000
+max_dynamic_candidates=1
+```
+
+Exact static geometry remained healthy and actual swept motion had zero
+HitVolume violations.
+
+The run did not produce an exact-static block because the proving actor traveled
+about 3.1 km before reaching CUBE 08 and accumulated about 500 m of natural
+lateral drift. The real OBB therefore lay off the bounded nominal segment by the
+time it mattered.
+
+The proving fixture is corrected rather than weakening ownership:
+- initial obstacle lead reduced to 1300 m, inside the first local horizon;
+- start coordinates are derived from the obstacle coordinates;
+- publication-time query proves the configured centerline intersects the exact
+  CUBE 08 HitVolume;
+- self-test fails fast if that proof is absent.
+
+Stationary-sphere duplication remains forbidden.

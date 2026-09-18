@@ -27,61 +27,38 @@ One isolated Active diagnostic NPC is therefore accepted as authoritative
 `GameSimulation` ownership using the existing NAV STRESS physical scene and
 HitVolume-derived navigation geometry.
 
-### 12A-3 — CANDIDATE
+### 12A-3 — ACCEPTED
 
-`EliteServer --self-test-navigation` now supplies deterministic live evidence
-from the real server runtime.
+Target-machine acceptance on
+`9246530e5eb539e227a1af69461113f2b30ec93a` proved the complete live CUBE 08
+chain through authoritative physics and exact sparse/canonical replication.
 
-Important repair made before the live gate: candidate broadphase covers the
-complete bounded local avoidance fan with `NavigationMap::querySphere()`,
-instead of only the nominal straight corridor. Successful adjusted probes also
-retain the identity of the obstacle that rejected the nominal target.
+The working-frame defect is closed: planner map-frame acceleration is
+transformed into the Stage-11 world-space control seam. The accepted run stayed
+under the configured ~60 m/s target, produced ~5.51 m/s² physically applied
+lateral acceleration, retained 129.59 m conservative clearance, progressed
+3.50 km in 58.9 s and replicated execution with zero same-tick error.
 
-The self-test measures:
-- nominal CUBE 08 conflict;
-- adjusted target;
-- exact executed lateral acceleration;
-- straight-route deviation;
-- minimum conservative clearance;
-- obstacle-plane passage;
-- goal progress;
-- exact authoritative-to-replicated execution-vector equality.
+### 12A-4 — CANDIDATE
 
-After this passes, proceed to exact transformed HitVolume OBB publication into
-static/precision NavigationSpace topology. Conservative spheres are broadphase
-only and must not become the accepted narrow-gap geometry.
+The next geometry slice moves persistent static precision into
+`NavigationSpace` using the authoritative HitVolume-derived
+`NavigationObstacle` OBBs.
 
+`NavigationSpace` now owns exact static point/segment tests alongside its
+coarse region/portal topology. `LocalAvoidance` must prove both the nominal
+bounded segment and every adjusted probe against that geometry, including when
+the dynamic `NavigationMap` reports no conflict.
 
-### 12A-3 first target-machine result
+A deterministic regression proves the intended narrow-passage rule: overlapping
+conservative bounding spheres may not erase a genuine OBB aperture. A fitting
+agent crosses; an oversized envelope fails.
 
-Architecture, local/runtime tests and both production builds passed. The live
-self-test exposed a diagnostic epoch mismatch at the final replication check
-(`0.00497292 m/s²` difference).
+The live NAV STRESS fixture publishes the same HitVolume OBBs in the
+NavigationMap working frame after authoritative transforms/HitVolume rebuild,
+and the server self-test requires positive exact-static publication evidence.
 
-Sparse replication is allowed to retain an older lab execution between entity
-publications, while the diagnostic observation advances every fixed step.
-Therefore latest-retained-client vs newest-live-observation equality was an
-invalid invariant.
-
-The corrected candidate compares:
-1. the sparse lab row only when that row is actually published;
-2. GameServer's authoritative published snapshot at the same `serverTick`;
-3. the retained canonical client state after hydrating that same packet.
-
-Exact vector equality remains required; the tolerance was not loosened.
-
-
-### 12A-3 working-frame correction
-
-The second live run proved that broadphase, nominal-conflict identity and
-adjusted-target selection were active, but physical behavior was unacceptable:
-43.7 km maximum route deviation with only 2.26 km goal progress in 120 s.
-
-Stage-11 contracts define the direct acceleration seam as world-space.
-Stage-12 NavigationRuntimePlanner operates in NavigationMap working-frame
-coordinates. The missing map->world transform at that boundary was therefore a
-real integration defect hidden by earlier identity-frame tests.
-
-The corrected candidate adds an explicit non-identity-frame regression and
-separates requested/executed command demand from actual clamped physical
-acceleration in live diagnostics.
+For this intermediate gate, static objects remain in the existing
+NavigationMap sphere candidate set as well. Removing those static spheres is a
+separate post-acceptance cleanup so broadphase ownership and precision geometry
+are not changed in the same acceptance step.

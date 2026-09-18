@@ -447,3 +447,25 @@ proved Hermite maneuver. No second desired-velocity solve is performed.
 Runtime regressions cover both veto paths and the positive
 map->world->PilotSkillExecutor control path. Live production authority remains
 disabled pending deterministic target-machine acceptance.
+
+
+#### 12A-6b3a — ACCEPTED
+
+Target-machine acceptance baseline:
+
+```text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+```
+
+The explicit moving-passage steering-authority seam is accepted. Precision
+evaluation by itself remains observe-only; authority requires explicit opt-in,
+fresh dynamic state, moving-passage feasibility and same-trajectory exact-static
+safety. The executed linear intent is the exact first acceleration sample from
+the proved Hermite trajectory.
+
+#### 12A-6b3b — ACTIVE
+
+Current work is the live end-to-end authority fixture: demonstrate that
+`MovingPassageClear` drives real physics through PilotSkillExecutor and is
+replicated as same-tick server truth while exact-static collision safety remains
+green.

@@ -812,8 +812,14 @@ int runNavigationRuntimeSelfTest()
         << observation.conflictHoldSeen
         << " lateral_exec="
         << observation.lateralExecutedDemandSeen
-        << " max_lateral_accel_mps2="
+        << " max_lateral_demand_mps2="
         << observation.maximumExecutedLateralDemandMps2
+        << " max_applied_accel_mps2="
+        << observation.maximumAppliedEngineAccelerationMps2
+        << " max_applied_lateral_accel_mps2="
+        << observation.maximumAppliedLateralAccelerationMps2
+        << " max_relative_speed_mps="
+        << observation.maximumRelativeSpeedMps
         << " max_route_deviation_m="
         << observation.maximumStraightLineDeviationMeters
         << " min_center_distance_m="

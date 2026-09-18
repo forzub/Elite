@@ -249,6 +249,7 @@ NavigationSpace::PortalTraversal orientedPortalTraversal(
     NavigationSpace::PortalTraversal result;
     result.portalId = portal.portalId;
     result.centerMapMeters = portal.centerMapMeters;
+    result.clearanceRadiusMeters = portal.clearanceRadiusMeters;
     result.enabled = portal.traversal.enabled;
     result.halfLengthMeters = portal.traversal.halfLengthMeters;
     result.approachDistanceMeters = portal.traversal.approachDistanceMeters;

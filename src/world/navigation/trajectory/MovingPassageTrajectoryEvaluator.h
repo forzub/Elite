@@ -3,6 +3,7 @@
 #include "ContinuousPassageTrajectoryEvaluator.h"
 #include "MovingGapPredictor.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -63,6 +64,24 @@ public:
         AngularAuthorityExceeded,
         AssistedSlipExceeded,
         InvalidInput
+    };
+
+    // Compact witness of the exact centerline Hermite trajectory that this
+    // evaluator proved. The interval deviation bound contains the complete
+    // cubic centerline between adjacent samples inside a capsule around the
+    // sample chord:
+    //
+    //   curve(t) subset chord[i] (+) sphere(deviation[i])
+    //
+    // A downstream static verifier can therefore prove this same trajectory
+    // continuously without solving or sampling a second curve.
+    struct TrajectoryWitness
+    {
+        bool valid = false;
+        double conservativeHullRadiusMeters = 0.0;
+        std::array<Vec3d, kPoseSamples> centerSamplesMapMeters {};
+        std::array<double, kIntervals>
+            intervalCenterlineDeviationBoundsMeters {};
     };
 
     struct Result

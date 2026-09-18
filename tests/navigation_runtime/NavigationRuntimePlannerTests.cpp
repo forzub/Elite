@@ -83,6 +83,32 @@ Space forcedDetourSpace()
     return space;
 }
 
+Space orientedPortalCaptureSpace()
+{
+    Space space;
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 150;
+    update.regions = {
+        region(1, 5.0, 0.0, 5.0, 15.0, 10.0),
+        region(2, 15.0, 0.0, 5.0, 15.0, 10.0)
+    };
+
+    Space::PortalInput gate =
+        portal(151, 1, 2, 10.0, 0.0, 4.0);
+    gate.traversal.enabled = true;
+    gate.traversal.normalAToBMap = {1.0, 0.0, 0.0};
+    gate.traversal.approachDistanceMeters = 3.0;
+    gate.traversal.maximumVelocityAngleRad = 0.08726646259971647;
+    gate.traversal.maximumForwardAngleRad = 0.08726646259971647;
+    gate.traversal.maximumLateralSpeedMps = 0.5;
+    gate.traversal.transitSpeedMps = 3.0;
+    gate.traversal.requireVehicleForwardAlignment = true;
+    update.portals = {gate};
+
+    space.replaceStaticWorld(std::move(update));
+    return space;
+}
+
 Space singleRegionSpace()
 {
     Space space;
@@ -259,6 +285,97 @@ void testStaticCorridorBecomesLivePortalWaypoint()
             "clear bounded local target must be explicitly demonstrated");
     require(result.intent.idealLinearAccelerationDemandMapMps2.y > 0.0,
             "forced detour must create a real lateral acceleration demand");
+}
+
+void testPortalCaptureAlignsVelocityAndHullBeforeTransit()
+{
+    Space space = orientedPortalCaptureSpace();
+    Planner::Policy policy = basePolicy();
+    Planner::Goal goal = goalAt(18.0);
+
+    Planner::AgentState approaching = baseAgent();
+    approaching.positionMapMeters = {2.0, 0.0, 0.0};
+    approaching.forwardMap = {0.0, 0.0, -1.0};
+
+    const Planner::Result approach = Planner::plan(
+        approaching,
+        goal,
+        emptyDynamic(),
+        0.0,
+        space,
+        policy
+    );
+
+    require(approach.portalTraversalActive &&
+            approach.activePortalId == 151,
+            "oriented portal must activate the generic traversal contract");
+    require(approach.status == Planner::Status::PortalCapture,
+            "misaligned hull must remain in portal capture phase");
+    require(!approach.portalForwardAligned &&
+            !approach.portalCaptureReady,
+            "misaligned hull must not be released through the portal");
+    require(!approach.usedPortalWaypoint &&
+            near(approach.coarseWaypointMapMeters.x, 7.0),
+            "capture phase must first stage at the authored approach point");
+
+    const auto angular =
+        approach.intent.idealAngularAccelerationDemandMapRadPerSec2;
+    require(
+        std::sqrt(
+            angular.x * angular.x +
+            angular.y * angular.y +
+            angular.z * angular.z
+        ) > 1.0e-6,
+        "portal capture must command hull-axis alignment, not angular damping only"
+    );
+
+    Planner::AgentState aligned = approaching;
+    aligned.positionMapMeters = {7.0, 0.0, 0.0};
+    aligned.forwardMap = {1.0, 0.0, 0.0};
+    aligned.rightMap = {0.0, 0.0, 1.0};
+    aligned.upMap = {0.0, 1.0, 0.0};
+    aligned.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+
+    const Planner::Result transit = Planner::plan(
+        aligned,
+        goal,
+        emptyDynamic(),
+        0.0,
+        space,
+        policy
+    );
+
+    require(transit.portalVelocityAligned &&
+            transit.portalForwardAligned &&
+            transit.portalCaptureReady,
+            "aligned stationary staging state must satisfy entry capture");
+    require(transit.usedPortalWaypoint &&
+            transit.status == Planner::Status::PortalTransit,
+            "capture-ready vehicle must be released toward the portal boundary");
+    require(transit.desiredVelocityMapMetersPerSecond.x > 2.9 &&
+            std::abs(transit.desiredVelocityMapMetersPerSecond.y) < 1.0e-9,
+            "portal transit velocity must follow the oriented portal normal");
+
+    Planner::AgentState sliding = aligned;
+    sliding.velocityMapMetersPerSecond = {0.0, 1.0, 0.0};
+
+    const Planner::Result rejected = Planner::plan(
+        sliding,
+        goal,
+        emptyDynamic(),
+        0.0,
+        space,
+        policy
+    );
+
+    require(rejected.status == Planner::Status::PortalCapture &&
+            !rejected.portalVelocityAligned &&
+            !rejected.portalCaptureReady,
+            "excess cross-track velocity must keep the vehicle out of transit");
+    require(
+        rejected.intent.idealLinearAccelerationDemandMapMps2.y < 0.0,
+        "capture controller must brake cross-track velocity at the staging point"
+    );
 }
 
 void testSamePortalRejectsOversizedHull()
@@ -1137,6 +1254,7 @@ int main()
     {
         testHitVolumeAdapterUsesAuthoritativeLocalObb();
         testStaticCorridorBecomesLivePortalWaypoint();
+        testPortalCaptureAlignsVelocityAndHullBeforeTransit();
         testSamePortalRejectsOversizedHull();
         testExactStaticObstacleParticipatesInRuntimeComposition();
         testLiveScaleStaticObstacleInsideFirstBoundedHorizon();
@@ -1152,6 +1270,7 @@ int main()
         std::cout << "NAVIGATION RUNTIME PLANNER TESTS: PASS\n";
         std::cout << " - authoritative HitVolume -> navigation OBB adapter\n";
         std::cout << " - static corridor portal -> bounded live target\n";
+        std::cout << " - oriented portal capture aligns flight path + hull axis before transit\n";
         std::cout << " - portal clearance rejects oversized hull\n";
         std::cout << " - exact static OBB participates in runtime composition\n";
         std::cout << " - live-scale 1300 m OBB triggers first-horizon adjustment\n";

@@ -550,82 +550,247 @@ int runNavigationRuntimeSelfTest()
             break;
     }
 
-    if (behaviorEvidenceComplete)
+    const double progressMeters =
+        observation.initialGoalDistanceMeters > 0.0
+            ? observation.initialGoalDistanceMeters -
+                observation.minimumGoalDistanceMeters
+            : 0.0;
+
+    if (!behaviorEvidenceComplete)
     {
-        // Cross the normal sparse-replication cadence after the behavioral
-        // proof so the retained client-side canonical snapshot must contain
-        // the same latest authoritative execution product.
-        for (int i = 0; i < 6; ++i)
-        {
-            runtime.advance(step);
-            simulatedSeconds += step;
-        }
+        std::cerr
+            << "[NAV-SELFTEST]"
+            << " simulated_s=" << simulatedSeconds
+            << " plans=" << observation.planCount
+            << " executions=" << observation.executionCount
+            << " obstacle_candidate="
+            << observation.obstacleCandidateSeen
+            << " obstacle_conflict="
+            << observation.obstaclePrimaryConflictSeen
+            << " adjusted="
+            << observation.adjustedTargetSeen
+            << " conflict_hold="
+            << observation.conflictHoldSeen
+            << " lateral_exec="
+            << observation.lateralExecutedDemandSeen
+            << " max_lateral_accel_mps2="
+            << observation.maximumExecutedLateralDemandMps2
+            << " max_route_deviation_m="
+            << observation.maximumStraightLineDeviationMeters
+            << " min_center_distance_m="
+            << observation.minimumObstacleCenterDistanceMeters
+            << " min_conservative_clearance_m="
+            << observation.minimumConservativeClearanceMeters
+            << " progress_m=" << progressMeters
+            << " remaining_goal_m="
+            << observation.minimumGoalDistanceMeters
+            << " passed_obstacle_plane="
+            << observation.passedObstaclePlane
+            << " reached_goal="
+            << observation.reachedGoal
+            << "\n";
+        std::cerr
+            << "[FAIL] navigation-runtime live behavior evidence incomplete\n";
+        return 37;
+    }
+
+    // Sparse replication is intentionally cadence-limited. Do not compare the
+    // client's retained execution with the newest per-fixed-step diagnostic
+    // observation: they can legitimately represent different epochs. Wait for
+    // a sparse packet that actually publishes the lab row, then compare that
+    // packet with GameServer's authoritative published snapshot at the exact
+    // same server tick.
+    constexpr int MaxReplicationProbeSteps = 60;
+    std::size_t publicationCount =
+        transport.snapshotPublicationCount();
+
+    bool replicationEvidenceComplete = false;
+    double replicationErrorMps2 =
+        std::numeric_limits<double>::infinity();
+    double canonicalReplicationErrorMps2 =
+        std::numeric_limits<double>::infinity();
+    double replicatedDemandMagnitude = 0.0;
+    std::uint64_t replicationServerTick = 0;
+
+    for (int i = 0; i < MaxReplicationProbeSteps; ++i)
+    {
+        runtime.advance(step);
+        simulatedSeconds += step;
         observation =
             runtime.navigationRuntimeLabObservation();
-    }
 
-    const auto& finalSnapshot =
-        transport.latestCanonicalSnapshot();
-    const auto* labShip =
-        findShipSnapshotByInstanceId(
-            finalSnapshot,
-            NavigationRuntimeLabInstanceId
-        );
+        const std::size_t nextPublicationCount =
+            transport.snapshotPublicationCount();
+        if (nextPublicationCount == publicationCount)
+            continue;
 
-    if (!labShip)
-    {
-        std::cerr
-            << "[FAIL] navigation-runtime lab ship disappeared from replicated world\n";
-        return 34;
-    }
+        publicationCount = nextPublicationCount;
 
-    const auto* replicatedExecution =
-        std::get_if<game::simulation::NavigationExecutionSnapshot>(
-            &labShip->navigationExecution
-        );
+        const auto& sparsePacket =
+            transport.latestSnapshot();
+        const auto* sparseLab =
+            findShipSnapshotByInstanceId(
+                sparsePacket,
+                NavigationRuntimeLabInstanceId
+            );
+        if (!sparseLab)
+            continue;
 
-    if (!replicatedExecution ||
-        !replicatedExecution->valid ||
-        replicatedExecution->intentRevision != 1202001)
-    {
-        std::cerr
-            << "[FAIL] navigation-runtime authoritative execution was not replicated"
-            << " has_execution=" << (replicatedExecution != nullptr)
-            << "\n";
-        return 35;
-    }
+        const auto* replicatedExecution =
+            std::get_if<game::simulation::NavigationExecutionSnapshot>(
+                &sparseLab->navigationExecution
+            );
+        if (!replicatedExecution ||
+            !replicatedExecution->valid ||
+            replicatedExecution->intentRevision != 1202001)
+        {
+            continue;
+        }
 
-    const double replicatedDemandMagnitude =
-        glm::length(
+        SimulationSnapshot authoritativePublished;
+        if (!runtime.copyAuthoritativePublishedSnapshot(
+                authoritativePublished))
+        {
+            std::cerr
+                << "[FAIL] navigation-runtime could not copy authoritative publication\n";
+            return 38;
+        }
+
+        if (authoritativePublished.metadata.serverTick !=
+            sparsePacket.metadata.serverTick)
+        {
+            std::cerr
+                << "[FAIL] navigation-runtime sparse packet/source tick mismatch"
+                << " sparse_tick="
+                << sparsePacket.metadata.serverTick
+                << " source_tick="
+                << authoritativePublished.metadata.serverTick
+                << "\n";
+            return 39;
+        }
+
+        const auto* authoritativeLab =
+            findShipSnapshotByInstanceId(
+                authoritativePublished,
+                NavigationRuntimeLabInstanceId
+            );
+        if (!authoritativeLab)
+        {
+            std::cerr
+                << "[FAIL] navigation-runtime lab missing from authoritative publication"
+                << " tick=" << authoritativePublished.metadata.serverTick
+                << "\n";
+            return 40;
+        }
+
+        const auto* authoritativeExecution =
+            std::get_if<game::simulation::NavigationExecutionSnapshot>(
+                &authoritativeLab->navigationExecution
+            );
+        if (!authoritativeExecution ||
+            !authoritativeExecution->valid)
+        {
+            std::cerr
+                << "[FAIL] navigation-runtime authoritative publication lacks execution"
+                << " tick=" << authoritativePublished.metadata.serverTick
+                << "\n";
+            return 41;
+        }
+
+        const glm::dvec3 replicatedDemand(
             replicatedExecution->
                 executedLinearAccelerationDemandMapMps2
         );
+        const glm::dvec3 authoritativeDemand(
+            authoritativeExecution->
+                executedLinearAccelerationDemandMapMps2
+        );
 
-    if (!std::isfinite(replicatedDemandMagnitude))
-    {
-        std::cerr
-            << "[FAIL] navigation-runtime replicated execution is non-finite\n";
-        return 36;
+        replicatedDemandMagnitude =
+            glm::length(replicatedDemand);
+        replicationErrorMps2 =
+            glm::length(
+                replicatedDemand -
+                authoritativeDemand
+            );
+
+        const auto& canonicalSnapshot =
+            transport.latestCanonicalSnapshot();
+        const auto* canonicalLab =
+            findShipSnapshotByInstanceId(
+                canonicalSnapshot,
+                NavigationRuntimeLabInstanceId
+            );
+        const auto* canonicalExecution =
+            canonicalLab
+                ? std::get_if<
+                      game::simulation::NavigationExecutionSnapshot
+                  >(&canonicalLab->navigationExecution)
+                : nullptr;
+
+        if (!canonicalExecution ||
+            !canonicalExecution->valid)
+        {
+            std::cerr
+                << "[FAIL] navigation-runtime canonical hydration lost published execution"
+                << " tick=" << sparsePacket.metadata.serverTick
+                << "\n";
+            return 42;
+        }
+
+        const glm::dvec3 canonicalDemand(
+            canonicalExecution->
+                executedLinearAccelerationDemandMapMps2
+        );
+        canonicalReplicationErrorMps2 =
+            glm::length(
+                canonicalDemand -
+                authoritativeDemand
+            );
+
+        const bool metadataMatches =
+            replicatedExecution->intentRevision ==
+                authoritativeExecution->intentRevision &&
+            replicatedExecution->activeTargetRevision ==
+                authoritativeExecution->activeTargetRevision &&
+            replicatedExecution->emergency ==
+                authoritativeExecution->emergency &&
+            replicatedExecution->reactionBlocked ==
+                authoritativeExecution->reactionBlocked &&
+            replicatedExecution->decisionSampled ==
+                authoritativeExecution->decisionSampled &&
+            replicatedExecution->queuedCommandApplied ==
+                authoritativeExecution->queuedCommandApplied &&
+            replicatedExecution->pendingCommandCount ==
+                authoritativeExecution->pendingCommandCount;
+
+        replicationEvidenceComplete =
+            std::isfinite(replicationErrorMps2) &&
+            std::isfinite(canonicalReplicationErrorMps2) &&
+            replicationErrorMps2 <= 1.0e-12 &&
+            canonicalReplicationErrorMps2 <= 1.0e-12 &&
+            metadataMatches;
+
+        if (replicationEvidenceComplete)
+        {
+            replicationServerTick =
+                sparsePacket.metadata.serverTick;
+            break;
+        }
     }
 
-    const glm::dvec3 replicationErrorVector =
-        replicatedExecution->
-            executedLinearAccelerationDemandMapMps2 -
-        observation.lastExecutedLinearDemandMapMps2;
-    const double replicationErrorMps2 =
-        glm::length(replicationErrorVector);
-
-    if (!std::isfinite(replicationErrorMps2) ||
-        replicationErrorMps2 > 1.0e-9)
+    if (!replicationEvidenceComplete)
     {
         std::cerr
-            << "[FAIL] navigation-runtime replicated execution differs from authoritative truth"
+            << "[FAIL] navigation-runtime same-tick sparse replication proof incomplete"
             << " error_mps2=" << replicationErrorMps2
+            << " canonical_error_mps2="
+            << canonicalReplicationErrorMps2
             << "\n";
-        return 38;
+        return 43;
     }
 
-    const double progressMeters =
+    const double finalProgressMeters =
         observation.initialGoalDistanceMeters > 0.0
             ? observation.initialGoalDistanceMeters -
                 observation.minimumGoalDistanceMeters
@@ -654,7 +819,7 @@ int runNavigationRuntimeSelfTest()
         << observation.minimumObstacleCenterDistanceMeters
         << " min_conservative_clearance_m="
         << observation.minimumConservativeClearanceMeters
-        << " progress_m=" << progressMeters
+        << " progress_m=" << finalProgressMeters
         << " remaining_goal_m="
         << observation.minimumGoalDistanceMeters
         << " passed_obstacle_plane="
@@ -663,16 +828,13 @@ int runNavigationRuntimeSelfTest()
         << observation.reachedGoal
         << " replicated_exec_mps2="
         << replicatedDemandMagnitude
+        << " replication_tick="
+        << replicationServerTick
         << " replication_error_mps2="
         << replicationErrorMps2
+        << " canonical_replication_error_mps2="
+        << canonicalReplicationErrorMps2
         << "\n";
-
-    if (!behaviorEvidenceComplete)
-    {
-        std::cerr
-            << "[FAIL] navigation-runtime live behavior evidence incomplete\n";
-        return 37;
-    }
 
     // Reaching the final goal is not required for this first live-obstacle
     // gate. The proof closes once the real actor has passed the deliberately

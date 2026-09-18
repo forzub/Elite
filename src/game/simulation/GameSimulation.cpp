@@ -973,17 +973,29 @@ bool GameSimulation::updateNpcNavigationControl(
 
         const auto& executed =
             latest.snapshot.executedLinearAccelerationDemandMapMps2;
+        const glm::dvec3 executedVector(
+            executed.x,
+            executed.y,
+            executed.z
+        );
         const double executedMagnitude =
-            std::sqrt(
-                executed.x * executed.x +
-                executed.y * executed.y +
-                executed.z * executed.z
-            );
-        const double lateralMagnitude =
-            std::sqrt(
-                executed.x * executed.x +
-                executed.y * executed.y
-            );
+            glm::length(executedVector);
+
+        const glm::dvec3 routeVector =
+            game::diagnostics::NavigationRuntimeLabGoalVisualLocalMeters -
+            game::diagnostics::NavigationRuntimeLabStartVisualLocalMeters;
+        const double routeLength = glm::length(routeVector);
+        double lateralMagnitude = 0.0;
+        if (routeLength > 1.0e-12)
+        {
+            const glm::dvec3 routeDirection =
+                routeVector / routeLength;
+            const glm::dvec3 lateral =
+                executedVector -
+                routeDirection *
+                    glm::dot(executedVector, routeDirection);
+            lateralMagnitude = glm::length(lateral);
+        }
 
         observation.maximumExecutedLinearDemandMps2 =
             std::max(
@@ -1414,7 +1426,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             shipRadius -
             observedObstacleRadiusMeters;
 
-        if (firstPlanSample)
+        if (firstPlanSample ||
+            observation.minimumObstacleCenterDistanceMeters <= 0.0)
         {
             observation.minimumObstacleCenterDistanceMeters =
                 centerDistanceMeters;

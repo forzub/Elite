@@ -3,7 +3,7 @@
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Current focus:** NavigationWorld v2 / live NPC ownership  
 **Canonical development branch:** `main`  
-**Active stage:** 11B-1 repaired rerun
+**Active stage:** 11B-1 corrected roll-fixture rerun
 
 ## Progress
 
@@ -72,3 +72,12 @@ Pass 11B-1 target-machine full build/regression gate, then immediately implement
 ## First 11B-1 target-machine attempt
 
 Architecture and the accepted trajectory regression remained green. Runtime-test compilation and headless-server linking exposed missing build-target wiring. Both are repaired; 11B-1 remains pending the fresh full gate.
+
+
+## Second 11B-1 attempt
+
+Headless server wiring was green, but the isolated unit target still depended on full `Ship` construction. The intent boundary was reduced to a compact kinematic snapshot; GameSimulation is now the live Ship adapter.
+
+## Third 11B-1 attempt
+
+All production builds and architecture/regression gates were green. One unit assertion encoded the wrong world-Z sign for roll damping. The fixture now verifies damping in ship-axis projections. Production behavior is unchanged.

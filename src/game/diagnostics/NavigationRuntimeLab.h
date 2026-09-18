@@ -129,6 +129,13 @@ struct NavigationRuntimeLabObservation
     bool exactStaticViolationSeen = false;
     std::uint64_t exactStaticMotionSamples = 0;
 
+    bool firstExactStaticViolationCaptured = false;
+    std::uint32_t firstExactStaticViolationEntityId = 0;
+    glm::dvec3 firstExactStaticViolationStartMap {0.0};
+    glm::dvec3 firstExactStaticViolationEndMap {0.0};
+    glm::dvec3 firstExactStaticViolationSelectedTargetMap {0.0};
+    std::uint8_t firstExactStaticViolationPlannerStatus = 0;
+
     double initialGoalDistanceMeters = 0.0;
     double minimumGoalDistanceMeters = 0.0;
     double maximumStraightLineDeviationMeters = 0.0;

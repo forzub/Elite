@@ -116,8 +116,19 @@ the line formatting but not the actual link graph. The successful build/link of
 `navigation_runtime_planner_tests.exe` confirms this was not a linker/runtime
 defect.
 
-The CMake formatting is restored and the checker is now whitespace-stable.
-12A-6b1 remains CANDIDATE until the corrected architecture gate is rerun.
+The CMake formatting was restored and the checker made whitespace-stable.
+The corrected target-machine rerun on the updated `main` passed:
+
+```text
+NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS
+```
+
+Together with the already green runtime suite, 12A-6b1 now has:
+- architecture contract PASS;
+- navigation_runtime 3/3 PASS.
+
+Remaining before acceptance: trajectory regression, navigation_map regression,
+full game/server build, and unchanged live server self-test.
 
 ## Project-state recording rule
 

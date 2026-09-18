@@ -660,6 +660,9 @@ void testMovingGapPrecisionProbeUsesRuntimeCandidates()
     require(result.movingPassageStaticBlockingObstacleId.empty() &&
             result.movingPassageStaticBlockingObstacleEntityId == 0,
             "clear exact-static moving proof must not fabricate a blocker");
+    require(!result.movingPassageAuthorityUsed &&
+            result.status != Planner::Status::MovingPassageClear,
+            "precision evaluation alone must remain observe-only without explicit authority opt-in");
 }
 
 void testClosingMovingGapFailsClosedBeforePassageEvaluation()
@@ -717,6 +720,7 @@ void testClosingMovingGapFailsClosedBeforePassageEvaluation()
     policy.horizon.minimumHorizonMeters = 30.0;
     policy.horizon.safetyMarginMeters = 0.0;
     policy.movingPassage.enabled = true;
+    policy.movingPassage.allowSteeringAuthority = true;
     policy.movingPassage.durationSeconds = 3.0;
     policy.movingPassage.candidates.maximumForwardDistanceMeters = 100.0;
     policy.movingPassage.candidates.maximumCenterlineOffsetMeters = 10.0;
@@ -744,6 +748,9 @@ void testClosingMovingGapFailsClosedBeforePassageEvaluation()
             "closed-in-horizon gap must never reach ship passage acceptance");
     require(!result.movingPassageFeasible,
             "closing gap must fail closed");
+    require(!result.movingPassageAuthorityUsed &&
+            result.status != Planner::Status::MovingPassageClear,
+            "closing gap must never gain moving-passage steering authority");
 }
 
 
@@ -823,6 +830,7 @@ void testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory()
     policy.horizon.turnDistanceMeters = 0.0;
     policy.horizon.safetyMarginMeters = 0.0;
     policy.movingPassage.enabled = true;
+    policy.movingPassage.allowSteeringAuthority = true;
     policy.movingPassage.durationSeconds = 3.0;
     policy.movingPassage.candidates.minimumForwardDistanceMeters = 0.0;
     policy.movingPassage.candidates.maximumForwardDistanceMeters = 100.0;
@@ -856,6 +864,159 @@ void testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory()
             "static blocker must stop proof before all intervals are accepted");
     require(result.movingPassageStaticObstaclesExamined > 0,
             "static moving-trajectory proof must expose exact obstacle query work");
+    require(!result.movingPassageAuthorityUsed &&
+            result.status != Planner::Status::MovingPassageClear,
+            "exact-static rejection must veto moving-passage steering authority");
+}
+
+
+void testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge()
+{
+    Map::Config config;
+    config.halfExtentMeters = 1000.0;
+    config.cellSizeMeters = 50.0;
+    config.predictionHorizonSeconds = 3.0;
+    config.interactionMarginMeters = 0.0;
+
+    Map map(config);
+    Map::DynamicWorldUpdate update;
+    update.sourceRevision = 123;
+
+    Map::DynamicActorInput upper;
+    upper.entityId = 331;
+    upper.positionSystemMeters = {20.0, 2.5, 0.0};
+    upper.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
+    upper.angularVelocitySystemRadPerSecond = {0.0, 0.0, 1.0};
+    upper.radiusMeters = 2.0;
+    upper.motionRevision = 41;
+    update.actors.push_back(upper);
+
+    Map::DynamicActorInput lower;
+    lower.entityId = 332;
+    lower.positionSystemMeters = {20.0, -2.5, 0.0};
+    lower.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
+    lower.angularVelocitySystemRadPerSecond = {0.0, 0.0, -1.0};
+    lower.radiusMeters = 2.0;
+    lower.motionRevision = 42;
+    update.actors.push_back(lower);
+
+    map.replaceDynamicWorld(std::move(update));
+
+    Map::CorridorQuery query;
+    query.startMapMeters = {0.0, 0.0, 0.0};
+    query.endMapMeters = {50.0, 0.0, 0.0};
+    query.radiusMeters = 20.0;
+    const Map::QueryResult dynamic = map.queryCorridor(query);
+
+    Space space = singleRegionSpace();
+
+    Planner::AgentState agent = baseAgent();
+    agent.radiusMeters = 1.0;
+    agent.forwardMap = {1.0, 0.0, 0.0};
+    agent.upMap = {0.0, 0.0, 1.0};
+    agent.rightMap = {0.0, 1.0, 0.0};
+    agent.hullHalfExtentsBodyMeters = {0.4, 0.4, 0.4};
+    agent.linearCapability.maxForwardAccelerationMetersPerSec2 = 30.0;
+    agent.linearCapability.maxReverseAccelerationMetersPerSec2 = 30.0;
+    agent.linearCapability.maxLateralAccelerationMetersPerSec2 = 30.0;
+    agent.linearCapability.maxVerticalAccelerationMetersPerSec2 = 30.0;
+    agent.angularCapability.maxAngularAccelerationRadPerSec2 = 10.0;
+    agent.angularCapability.maxAngularSpeedRadPerSec = 10.0;
+
+    Planner::Goal goal = goalAt(50.0);
+    goal.maximumTargetSpeedMps = 10.0;
+
+    Planner::Policy policy = basePolicy();
+    policy.horizon.minimumHorizonMeters = 30.0;
+    policy.horizon.turnDistanceMeters = 0.0;
+    policy.horizon.safetyMarginMeters = 0.0;
+    policy.movingPassage.enabled = true;
+    policy.movingPassage.allowSteeringAuthority = true;
+    policy.movingPassage.durationSeconds = 3.0;
+    policy.movingPassage.candidates.minimumForwardDistanceMeters = 0.0;
+    policy.movingPassage.candidates.maximumForwardDistanceMeters = 100.0;
+    policy.movingPassage.candidates.maximumCenterlineOffsetMeters = 10.0;
+    policy.movingPassage.candidates.secondaryClearanceMeters = 4.0;
+    policy.movingPassage.prediction.secondaryClearanceMeters = 4.0;
+
+    const Planner::Result planned = Planner::plan(
+        agent,
+        goal,
+        dynamic,
+        0.0,
+        space,
+        policy
+    );
+
+    require(planned.movingPassageFeasible &&
+            planned.movingPassageStaticSafe,
+            "authority fixture requires both moving and exact-static proofs");
+    require(planned.status == Planner::Status::MovingPassageClear &&
+            planned.movingPassageAuthorityUsed,
+            "doubly-proven moving passage must take explicit planner authority");
+    require(planned.safeProgressTargetDemonstrated,
+            "authoritative moving passage must publish proven safe progress");
+    require(near(planned.selectedTargetMapMeters.x,
+                 planned.movingPassageTargetMapMeters.x) &&
+            near(planned.selectedTargetMapMeters.y,
+                 planned.movingPassageTargetMapMeters.y) &&
+            near(planned.selectedTargetMapMeters.z,
+                 planned.movingPassageTargetMapMeters.z),
+            "moving-passage authority must retain its proved trajectory endpoint");
+
+    const auto& exactSample =
+        planned.movingPassageInitialAccelerationMapMps2;
+    const auto& mapDemand =
+        planned.intent.idealLinearAccelerationDemandMapMps2;
+    require(near(mapDemand.x, exactSample.x) &&
+            near(mapDemand.y, exactSample.y) &&
+            near(mapDemand.z, exactSample.z),
+            "moving-passage authority must execute the exact first proved Hermite acceleration sample");
+    require(glm::length(planned.desiredVelocityMapMetersPerSecond) <= 1.0e-12,
+            "moving-passage authority must not solve a second desired-velocity trajectory");
+
+    Map::WorkingFrame frame;
+    frame.xAxisSystem = {0.0, 1.0, 0.0};
+    frame.yAxisSystem = {0.0, 0.0, 1.0};
+    frame.zAxisSystem = {1.0, 0.0, 0.0};
+
+    const Bridge::Intent worldIntent =
+        Planner::mapIntentToWorld(planned.intent, frame);
+    require(near(worldIntent.idealLinearAccelerationDemandMapMps2.x,
+                 exactSample.z) &&
+            near(worldIntent.idealLinearAccelerationDemandMapMps2.y,
+                 exactSample.x) &&
+            near(worldIntent.idealLinearAccelerationDemandMapMps2.z,
+                 exactSample.y),
+            "proved moving-passage sample must cross the non-identity map->world boundary exactly");
+
+    Bridge bridge(expertProfile());
+    Bridge::Intent neutral;
+    require(bridge.reset(0.0, neutral),
+            "moving-passage authority bridge reset must succeed");
+
+    Bridge::StepResult executed;
+    for (int i = 1; i <= 20; ++i)
+    {
+        executed = bridge.step(
+            0.01 * static_cast<double>(i),
+            0.01,
+            worldIntent
+        );
+    }
+
+    require(executed.snapshot.valid &&
+            executed.control.navigationAccelerationDemandValid,
+            "proved moving-passage authority must cross PilotSkillExecutor into ShipControlState");
+    require(executed.snapshot.intentRevision == goal.revision,
+            "moving-passage authority must preserve planner revision through pilot execution");
+    require(near(executed.snapshot.idealLinearAccelerationDemandMapMps2.x,
+                 worldIntent.idealLinearAccelerationDemandMapMps2.x) &&
+            near(executed.snapshot.idealLinearAccelerationDemandMapMps2.y,
+                 worldIntent.idealLinearAccelerationDemandMapMps2.y) &&
+            near(executed.snapshot.idealLinearAccelerationDemandMapMps2.z,
+                 worldIntent.idealLinearAccelerationDemandMapMps2.z),
+            "PilotSkillExecutor must receive the transformed proved acceleration without re-planning");
 }
 
 void testMapIntentTransformsIntoWorldControlFrame()
@@ -975,6 +1136,7 @@ int main()
         testMovingGapPrecisionProbeUsesRuntimeCandidates();
         testClosingMovingGapFailsClosedBeforePassageEvaluation();
         testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory();
+        testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge();
         testMapIntentTransformsIntoWorldControlFrame();
         testPlannerIntentCrossesAcceptedPilotBridge();
 
@@ -989,6 +1151,7 @@ int main()
         std::cout << " - bounded runtime candidates -> moving-gap/passage precision probe\n";
         std::cout << " - closing moving gap fails closed before passage evaluation\n";
         std::cout << " - exact-static blocker rejects the same accepted moving Hermite trajectory\n";
+        std::cout << " - doubly-proven moving passage -> exact sample -> map/world -> PilotSkillExecutor authority\n";
         std::cout << " - non-identity map intent -> world control frame\n";
         std::cout << " - planner intent -> PilotSkillExecutor runtime bridge\n";
         return 0;

@@ -107,6 +107,17 @@ ServerRuntime::navigationRuntimeLabObservation() const noexcept
     return m_server->navigationRuntimeLabObservation();
 }
 
+bool ServerRuntime::copyAuthoritativePublishedSnapshot(
+    SimulationSnapshot& outSnapshot
+) const
+{
+    if (!m_server)
+        return false;
+
+    outSnapshot = m_server->snapshot();
+    return true;
+}
+
 bool ServerRuntime::publishSessionBootstrap(
     IServerTransport& transport,
     game::network::ServerSessionId sessionId

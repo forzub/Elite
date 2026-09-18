@@ -164,6 +164,12 @@ public:
         bool adjustedTarget = false;
         double selectedVisibilityDeflectionRadians = 0.0;
 
+        // LocalAvoidance tested the complete ordinary progress-preserving fan
+        // and found no safe target. Higher game/control logic must now consider
+        // recovery/backtrack/flip-and-burn/emergency candidates rather than
+        // interpreting the provisional hold intent as a permanent decision.
+        bool ordinaryVisibilitySearchExhausted = false;
+
         glm::dvec3 coarseWaypointMapMeters {0.0};
         glm::dvec3 selectedTargetMapMeters {0.0};
         glm::dvec3 desiredVelocityMapMetersPerSecond {0.0};

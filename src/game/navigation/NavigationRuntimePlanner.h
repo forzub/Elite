@@ -105,8 +105,10 @@ public:
         std::vector<Space::Vec3d> staticPortalCentersMapMeters;
 
         Map::EntityId primaryConflictEntityId = 0;
+        Map::EntityId nominalPrimaryConflictEntityId = 0;
         std::size_t dynamicCandidatesExamined = 0;
         std::size_t dynamicConflictsFound = 0;
+        std::size_t nominalDynamicConflictsFound = 0;
         std::size_t avoidanceProbesExamined = 0;
     };
 

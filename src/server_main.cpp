@@ -765,6 +765,14 @@ int runNavigationRuntimeSelfTest()
             << observation.movingPassageExecutionActive
             << " moving_passage_applied="
             << observation.movingPassageAppliedAccelerationSeen
+            << " visibility_bypass="
+            << observation.visibilityBypassSeen
+            << " visibility_bypass_active="
+            << observation.visibilityBypassActive
+            << " visibility_direct_recovered="
+            << observation.visibilityDirectRecoveredSeen
+            << " visibility_max_deflection_rad="
+            << observation.maximumVisibilityDeflectionRad
             << " moving_gap_passed="
             << observation.movingGapPlanePassed
             << " slit_exact_open="
@@ -1213,6 +1221,14 @@ int runNavigationRuntimeSelfTest()
         << observation.movingPassageExecutedSeen
         << " moving_passage_applied="
         << observation.movingPassageAppliedAccelerationSeen
+        << " visibility_bypass="
+        << observation.visibilityBypassSeen
+        << " visibility_bypass_active="
+        << observation.visibilityBypassActive
+        << " visibility_direct_recovered="
+        << observation.visibilityDirectRecoveredSeen
+        << " visibility_max_deflection_rad="
+        << observation.maximumVisibilityDeflectionRad
         << " moving_gap_passed="
         << observation.movingGapPlanePassed
         << " slit_exact_open="

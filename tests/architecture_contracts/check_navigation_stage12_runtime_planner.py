@@ -129,6 +129,11 @@ for marker in (
     "MovingPassageClear",
     "movingPassageAuthorityUsed",
     "movingPassageTargetMapMeters",
+    "movingPassageLastEvaluatorStatus",
+    "movingPassageRequiredPeakForwardAccelerationMps2",
+    "movingPassageRequiredPeakReverseAccelerationMps2",
+    "movingPassageRequiredPeakLateralAccelerationMps2",
+    "movingPassageRequiredPeakVerticalAccelerationMps2",
 ):
     require(marker in PLANNER_H, f"runtime planner interface missing: {marker}")
 
@@ -595,8 +600,15 @@ for marker in (
     "movingPassageExecutionActive",
     "movingPassageAppliedAccelerationSeen",
     "movingGapPlanePassed",
+    "movingPassageLastEvaluatorStatus",
+    "movingPassageRequiredPeakReverseAccelerationMps2",
 ):
     require(marker in LAB_H, f"live moving-passage fixture/evidence missing: {marker}")
+
+require(
+    "-5700.0" in LAB_H,
+    "live moving aperture must remain before CUBE 08 so moving authority is proven before the independent static obstacle",
+)
 
 require(
     "nav_moving_gap_upper" in SCENE_CPP and
@@ -622,6 +634,8 @@ for marker in (
     "Planner::Status::MovingPassageClear",
     "movingPassageExecutionActive",
     "movingPassageAppliedAccelerationSeen",
+    "movingPassageLastEvaluatorStatus",
+    "movingPassageRequiredPeakReverseAccelerationMps2",
 ):
     require(marker in SIM_CPP, f"live moving-passage production integration missing: {marker}")
 
@@ -648,6 +662,13 @@ for marker in (
     "moving_passage_executed=",
     "moving_passage_applied=",
     "moving_gap_passed=",
+    "moving_eval_status=",
+    "moving_req_fwd_mps2=",
+    "moving_req_rev_mps2=",
+    "moving_req_lat_mps2=",
+    "moving_req_vert_mps2=",
+    "moving_sample_clearance_m=",
+    "moving_continuous_clearance_m=",
 ):
     require(marker in SERVER_MAIN, f"server live moving-passage acceptance gate missing: {marker}")
 
@@ -660,9 +681,12 @@ require(
 )
 
 require(
-    "while (!observation.movingGapPlanePassed" in SERVER_MAIN and
+    "bool movingAuthorityEvidenceComplete = false;" in SERVER_MAIN and
+    "bool behaviorEvidenceComplete = false;" in SERVER_MAIN and
+    "observation.movingGapPlanePassed &&" in SERVER_MAIN and
+    "observation.passedObstaclePlane &&" in SERVER_MAIN and
     "return 56;" in SERVER_MAIN,
-    "live gate must continue authoritative physics until the ship crosses the moving aperture plane",
+    "live gate must order active moving authority/replication before gap crossing and independent CUBE 08 avoidance",
 )
 
 require(

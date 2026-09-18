@@ -13,6 +13,7 @@ CLIENT_CPP = (ROOT / "src/game/client/ClientWorldState.cpp").read_text(encoding=
 REPLICATED = (ROOT / "src/game/navigation/ReplicatedNavigationExecutionState.h").read_text(encoding="utf-8")
 WORKSPACE = (ROOT / "src/game/navigation/ClientNavigationWorkspace.h").read_text(encoding="utf-8")
 SPACE = (ROOT / "src/game/SpaceState.cpp").read_text(encoding="utf-8")
+GUIDANCE = (ROOT / "src/game/presentation/GuidanceHudPresentation.h").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -75,9 +76,13 @@ require(
 )
 
 for marker in (
+    "struct ReplicatedNavigationExecution",
+    "ShipInstanceId shipInstanceId",
     "class ReplicatedNavigationExecutionState final",
     "void replace(",
-    "const game::simulation::NavigationExecutionSnapshot* find(",
+    "const ReplicatedNavigationExecution* find(",
+    "const NavigationAssetRef& asset",
+    "m_entityByShipInstance",
     "const std::unordered_map<",
 ):
     require(marker in REPLICATED, f"read-only replicated navigation state missing: {marker}")
@@ -112,10 +117,34 @@ require(
 for marker in (
     "std::vector<game::navigation::ReplicatedNavigationExecution>",
     "shipState.navigationExecution.valid",
+    "entry.shipInstanceId = shipState.instanceId",
     "entry.execution = shipState.navigationExecution",
     "syncReplicatedNavigationExecution(",
 ):
     require(marker in SPACE, f"SpaceState replicated navigation sync missing: {marker}")
+
+for marker in (
+    "hasAuthoritativeExecution",
+    "authoritativeExecutionEntityId",
+    "authoritativeIntentRevision",
+    "authoritativeActiveTargetRevision",
+    "authoritativeExecutedLinearAccelerationMapMps2",
+    "authoritativeExecutedAngularAccelerationMapRadPerSec2",
+    "navigation.routePlan().start().executor",
+    "navigation.replicatedNavigationExecution().find(",
+):
+    require(marker in GUIDANCE, f"guidance presentation missing replicated execution truth: {marker}")
+
+for forbidden in (
+    "LocalGuidancePlanner",
+    "DockingPathPlanner",
+    "TrajectoryGenerator",
+    "GeometricPathPlanner",
+):
+    require(
+        forbidden not in GUIDANCE,
+        f"guidance presentation must not replan replicated execution truth: {forbidden}",
+    )
 
 for forbidden in (
     "LocalGuidancePlanner::",
@@ -141,5 +170,7 @@ print(" - exact server-executed navigation revisions/demands are embedded in Shi
 print(" - wire schema v8 serializes that execution truth end to end")
 print(" - ClientWorldState retains the replicated product for each ship")
 print(" - ClientNavigationWorkspace exposes server execution as read-only state")
+print(" - stable ShipInstanceId binds route executors to the current replicated runtime entity")
+print(" - GuidanceHudPresentation exposes exact server execution metadata without replanning")
 print(" - SpaceState syncs that state without invoking a client navigation planner")
 print(" - existing manual/player guidance remains separate from server-executed NPC truth")

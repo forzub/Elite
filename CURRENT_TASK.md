@@ -1905,3 +1905,74 @@ No Stage-12 baseline promotion. Last target-machine accepted baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Directional stopping reserve + emergency recovery candidate
+
+Superseding target-machine candidate:
+
+~~~text
+f25a9c2378c45950155db00caf48e71b5a07e3ac
+~~~
+
+The last live witness proved that WORLD -> MAP correction is working: follower
+ideal and actually executed acceleration now agree closely in the same local
+NavigationMap frame. The remaining entity-28 failure is therefore dynamic
+viability, not coordinate conversion.
+
+The accepted-segment monitor previously detected exact-static risk and requested
+`StaticSafetyInvalidated`, but planner output remained an ordinary
+`AdjustedClear` progress target. That cannot instantaneously remove existing
+momentum.
+
+This candidate adds a directional local-frame stopping reserve:
+
+~~~text
+current local velocity
+  -> conservative control-response coast distance
+     (decision period + command latency + one response-frequency interval)
+  -> guaranteed braking distance at manoeuvre-thruster authority
+  -> exact-static swept query along that stopping direction
+~~~
+
+If this stopping reserve intersects exact-static geometry, AUTO selects a short
+active recovery product rather than only another progress replan:
+
+~~~text
+AcceptedShortSegment
+  linearMode = FixedAcceleration
+  acceleration = opposite current local velocity
+  magnitude = guaranteed manoeuvre braking authority
+  emergency = true
+  hazardUrgency01 = 1
+  validity = 0.25 s
+~~~
+
+The recovery segment is still normal navigation execution. It does not disable
+the navigation module and does not discard the global route. While that recovery
+segment is active, the same static warning does not wake the planner every fixed
+tick; expiry returns control to the local planner, which either continues
+recovery if the stopping reserve is still blocked or resumes progress.
+
+The stopping-reserve proof is independent of the ordinary target/ideal/executed
+forecast checks. This was corrected after static review so recovery still
+activates when an ordinary forecast has already found the blocker.
+
+Architecture-gate fixes in the same candidate:
+- stale `exactExecutionBlocked` marker replaced with
+  `exactExecutionSegmentBlocked`;
+- recovery diagnostics are checked in `LAB_H`, not `GameSimulation.h`;
+- the single LOCAL INERTIAL / TACTICAL translational-frame contract is pinned.
+
+If live failure remains, the server witness now includes:
+- emergency recovery count / active state;
+- stopping-reserve blocked flag;
+- response reserve seconds;
+- stopping reserve distance.
+
+Target-machine validation is pending. Last actually accepted Stage-12 baseline
+remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

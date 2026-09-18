@@ -61,6 +61,13 @@ public:
         std::size_t staticRejected = 0;
         std::size_t dynamicRejected = 0;
 
+        // Preserve the conflict that rejected the unmodified nominal target.
+        // Once an adjusted probe is Clear, target.primaryConflictEntityId is
+        // correctly zero; diagnostics still need to know what caused the
+        // deviation without re-running a second planner.
+        EntityId nominalPrimaryConflictEntityId = 0;
+        std::size_t nominalConflictsFound = 0;
+
         NavigationSpace::Revision spaceRevision = 0;
         NavigationSpace::Revision spaceSourceRevision = 0;
         NavigationSpace::RegionId startRegionId = 0;

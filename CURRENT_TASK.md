@@ -18,6 +18,12 @@ progress, and exact same-tick sparse/canonical replication truth.
 
 ## Candidate under test
 
+Candidate HEAD:
+
+```text
+4e8b0f6fcc35e7ecdce3d4e37762156b357b59e9
+```
+
 Current code adds:
 
 ```text

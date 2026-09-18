@@ -26,6 +26,18 @@ public:
         const glm::vec3& shipUp
     );
 
+    // Navigation/autopilot direct world-acceleration demand. This maps the
+    // requested vector onto the real forward main-engine authority plus the
+    // remaining six-direction manoeuvre-thruster authority. Final controlled
+    // speed and manoeuvre-gas limits are still enforced by
+    // updateLocalFrameMotion().
+    static void applyWorldAccelerationDemand(
+        DynamicMotionState& motion,
+        const ShipParams& params,
+        const glm::dvec3& linearAccelerationDemandMapMps2,
+        const glm::vec3& shipForward
+    );
+
     static void updateLocalFrameMotion(
         DynamicMotionState& motion,
         world::coordinates::WorldPosition& worldPosition,

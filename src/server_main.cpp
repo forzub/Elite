@@ -532,6 +532,45 @@ int runNavigationRuntimeSelfTest()
                     observation.minimumGoalDistanceMeters
                 : 0.0;
 
+        if (observation.placementProbeCaptured)
+        {
+            const glm::dvec3 expectedPlacement =
+                game::diagnostics::NavigationRuntimeLabStartVisualLocalMeters;
+            const double placementErrorMeters =
+                glm::length(
+                    observation.placementPositionMap -
+                    expectedPlacement
+                );
+
+            if (!std::isfinite(placementErrorMeters) ||
+                placementErrorMeters > 1.0e-6)
+            {
+                std::cerr
+                    << "[NAV-SELFTEST]"
+                    << " placement_error_m="
+                    << placementErrorMeters
+                    << " placement_map=("
+                    << observation.placementPositionMap.x << ","
+                    << observation.placementPositionMap.y << ","
+                    << observation.placementPositionMap.z << ")"
+                    << " expected_placement_map=("
+                    << expectedPlacement.x << ","
+                    << expectedPlacement.y << ","
+                    << expectedPlacement.z << ")"
+                    << " placement_motion_local_tactical=("
+                    << observation.placementMotionLocalTactical.x << ","
+                    << observation.placementMotionLocalTactical.y << ","
+                    << observation.placementMotionLocalTactical.z << ")"
+                    << " placement_time_s="
+                    << observation.placementServerTimeSeconds
+                    << "\n";
+                std::cerr
+                    << "[FAIL] reference-frame placement does not round-trip "
+                    << "to the configured NavigationRuntimeLab start\n";
+                return 53;
+            }
+        }
+
         if (observation.exactStaticGeometryPublished &&
             !observation.configuredRouteExactObstacleBlockPublished)
         {
@@ -567,6 +606,14 @@ int runNavigationRuntimeSelfTest()
                 << observation.obstacleEntityId
                 << " first_live_horizon_m="
                 << observation.firstLiveHorizonMeters
+                << " placement_time_s="
+                << observation.placementServerTimeSeconds
+                << " first_live_time_s="
+                << observation.firstLiveServerTimeSeconds
+                << " placement_map=("
+                << observation.placementPositionMap.x << ","
+                << observation.placementPositionMap.y << ","
+                << observation.placementPositionMap.z << ")"
                 << " first_live_agent_map=("
                 << observation.firstLiveAgentPositionMap.x << ","
                 << observation.firstLiveAgentPositionMap.y << ","

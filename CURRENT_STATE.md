@@ -98,16 +98,20 @@ pendingCommandCount
 
 ### Server publication
 
-`GameSimulation::buildReplicationSnapshot()` fills `ShipSnapshot.navigationExecution` directly from the same per-NPC execution snapshot that produced live control.
+`GameSimulation::buildReplicationSnapshot()` fills the present alternative of `ShipSnapshot.navigationExecution` directly from the same per-NPC execution snapshot that produced live control.
 
 No presentation-side reconstruction is involved.
 
 ### Wire contract
 
-Canonical snapshot schema now includes:
+Canonical snapshot schema now includes a sparse field:
 
 ```text
-ShipSnapshot.navigationExecution
+ShipSnapshot.navigationExecution =
+    variant<monostate, NavigationExecutionSnapshot>
+
+absent execution -> one variant-tag byte
+present execution -> tag + full execution payload
 ```
 
 and the binary version is intentionally bumped:
@@ -120,7 +124,7 @@ Cross-version decoding therefore fails closed.
 
 ### Client hydration
 
-`ClientShipState.navigationExecution` receives the replicated state for both newly hydrated and already-known ships.
+`ClientShipState.navigationExecution` resolves the sparse variant for both newly hydrated and already-known ships. `monostate` clears the local execution observation.
 
 Sparse replication semantics remain unchanged:
 - omitted ship -> retain;
@@ -145,7 +149,7 @@ syncReplicatedNavigationExecution(...)
 const replicatedNavigationExecution()
 ```
 
-There is no mutable getter for planners.
+There is no mutable getter for planners. The mirror is rebuilt only when `lastSimulationMetadata().serverTick` advances, not every render frame.
 
 ### Guidance/debug presentation
 
@@ -160,7 +164,7 @@ emergency
 reaction blocked
 ```
 
-This metadata is read-only. `LocalGuidancePlanner` and `DockingPathPlanner` do not consume or rewrite it.
+This metadata is read-only. `LocalGuidancePlanner`, `DockingPathPlanner`, `ClientNavigationPlanningSnapshotFactory`, `TrajectoryPredictor`, and `TrajectorySafetyEvaluator` do not consume or rewrite it.
 
 ## 11B-2 gate
 
@@ -176,7 +180,7 @@ which proves:
 - guidance presentation exposes exact server execution metadata;
 - no corridor is fabricated when only execution truth exists.
 
-The existing wire data-plane contract was also extended.
+The existing wire data-plane contract was also extended and pins the absent sparse execution payload to exactly one variant-tag byte.
 
 ## Next after 11B-2 acceptance
 

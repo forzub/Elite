@@ -1280,22 +1280,47 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     const glm::dvec3 goalPositionMap =
         pointToMap(goalWorldPosition);
 
-    Map::CorridorQuery dynamicQuery;
-    dynamicQuery.startMapMeters = {
+    const double labBrakingAccelerationMps2 =
+        std::max(
+            0.5,
+            static_cast<double>(
+                ship.core().desc().physics.manoeuvreThrusterAccel
+            )
+        );
+    constexpr double LabTurnDistanceMeters = 1400.0;
+    constexpr double LabSafetyMarginMeters = 20.0;
+    constexpr double LabMinimumHorizonMeters = 100.0;
+
+    const double relativeSpeedMps =
+        glm::length(shipRelativeWorldVelocity);
+    const double brakingDistanceMeters =
+        (relativeSpeedMps * relativeSpeedMps) /
+        (2.0 * labBrakingAccelerationMps2);
+    const double localHorizonMeters =
+        std::max(
+            LabMinimumHorizonMeters,
+            brakingDistanceMeters +
+                LabTurnDistanceMeters +
+                LabSafetyMarginMeters
+        );
+
+    // The adjusted-target fan can leave the nominal route by hundreds of
+    // metres. Query a bounded sphere covering the whole physical local
+    // horizon, not only the original straight corridor; otherwise an adjusted
+    // probe could miss an obstacle that was outside the nominal corridor.
+    Map::SphereQuery dynamicQuery;
+    dynamicQuery.centerMapMeters = {
         agentPositionMap.x,
         agentPositionMap.y,
         agentPositionMap.z
     };
-    dynamicQuery.endMapMeters = {
-        goalPositionMap.x,
-        goalPositionMap.y,
-        goalPositionMap.z
-    };
     dynamicQuery.radiusMeters =
-        std::max(10.0, shipRadius + 10.0);
+        localHorizonMeters +
+        shipRadius +
+        LabSafetyMarginMeters;
 
     const Map::QueryResult dynamicCandidates =
-        m_navigationRuntimeLabMap->queryCorridor(dynamicQuery);
+        m_navigationRuntimeLabMap->querySphere(dynamicQuery);
 
     if (m_navigationRuntimeLabObservation.obstacleEntityId != 0)
     {
@@ -1351,15 +1376,13 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     policy.horizon.lookAheadSeconds = 3.0;
     policy.horizon.maxResultAgeSeconds = 0.25;
     policy.horizon.maxBrakingAccelerationMetersPerSecond2 =
-        std::max(
-            0.5,
-            static_cast<double>(
-                ship.core().desc().physics.manoeuvreThrusterAccel
-            )
-        );
-    policy.horizon.turnDistanceMeters = 1400.0;
-    policy.horizon.safetyMarginMeters = 20.0;
-    policy.horizon.minimumHorizonMeters = 100.0;
+        labBrakingAccelerationMps2;
+    policy.horizon.turnDistanceMeters =
+        LabTurnDistanceMeters;
+    policy.horizon.safetyMarginMeters =
+        LabSafetyMarginMeters;
+    policy.horizon.minimumHorizonMeters =
+        LabMinimumHorizonMeters;
 
     policy.avoidance.primaryDeflectionRadians =
         glm::radians(15.0);

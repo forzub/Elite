@@ -413,3 +413,57 @@ This is **not** the current implementation target.
 Create the deterministic live moving-gap fixture and prove that accepted
 `MovingPassageClear` authority reaches real physics and same-tick replication
 without exact-static violation.
+
+
+## 12A-6b3b candidate implementation
+
+Candidate code/contract baseline before documentation commits:
+
+```text
+d5e1f990aed38ded7a517d719e935b6b6e763d4d
+```
+
+The live lab now contains a real two-boundary translating aperture. The planner
+receives real Cobra hull dimensions and real forward/RCS/angular capability,
+then explicitly enables the already accepted moving-passage authority seam.
+
+The server self-test is now two-phase:
+1. capture `MovingPassageClear` while its command is actively executed and
+   produces physical acceleration;
+2. require sparse/canonical same-tick replication from that active authority
+   epoch, then continue the authoritative run until the ship physically crosses
+   the moving-gap plane.
+
+### Target-machine gate to run now
+
+```bash
+git pull --ff-only
+git rev-parse HEAD
+
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+bash tests/navigation_runtime/run_mingw64.sh
+bash tests/navigation_trajectory/run_mingw64.sh
+
+bash build_mingw64.sh
+./build/headless_server/EliteServer.exe --self-test-navigation
+```
+
+Expected final self-test diagnostics now include:
+
+```text
+moving_gap_pair=1
+moving_gap_kinematics=1
+moving_precision=1
+moving_passage_feasible=1
+moving_passage_static_safe=1
+moving_passage_authority=1
+moving_passage_executed=1
+moving_passage_applied=1
+moving_gap_passed=1
+exact_static_violation=0
+replication_error_mps2=0
+canonical_replication_error_mps2=0
+```
+
+Any missing flag is a failed 12A-6b3b gate and must be diagnosed before manual
+guidance work begins.

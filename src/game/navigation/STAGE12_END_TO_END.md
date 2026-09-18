@@ -52,6 +52,50 @@ The isolated Stage-12 runtime gate pins:
 
 This is intentionally **not yet the full Stage-12 acceptance**. After the target-machine gate is green, the next slice wires this shared planner into authoritative `GameSimulation` ownership and feeds it the deterministic proving-ground geometry through the real hit-volume/static-space publication adapter.
 
+## 12A-2 — authoritative GameSimulation proving actor
+
+12A-1 was accepted on target-machine evidence from
+`af58b46cdb01ad254097383e5e4274c733c4e28e`: the architecture contract passed,
+`navigation_runtime` passed 3/3, and both canonical production executables
+built.
+
+The next candidate wires that accepted planner into one real authoritative NPC
+without changing ordinary NPC behavior.
+
+```text
+NAVIGATION V2 RUNTIME LAB
+    -> GameSimulation
+    -> NavigationRuntimePlanner
+    -> NavigationRuntimeControlBridge
+    -> PilotSkillExecutor
+    -> ShipControlState
+    -> authoritative physics
+```
+
+The proving actor is pinned Active so activation cadence cannot become a second
+experimental variable.
+
+The physical proving field is not duplicated. `GameSceneSetup` already creates
+deterministic `NAV STRESS CUBE/CYLINDER` StaticObjects. The initial lab route
+is chosen so the unmodified straight line passes through `NAV STRESS CUBE 08`.
+
+### Authoritative geometry adapter
+
+`NavigationHitVolumeAdapter` consumes `HitComponent/HitVolume`, not render
+meshes. Active non-support HitVolume OBBs are transformed by the owning object
+pose into `NavigationObstacle::Box` records. The same source also yields a
+conservative entity radius for NavigationMap broadphase.
+
+The first live candidate uses those hit-volume-derived conservative radii for
+bounded local avoidance. Exact per-volume OBB output is already available and
+tested, but the temporary lab `NavigationSpace` is still one open region.
+Therefore 12A-2 must not be treated as proof of exact static topology, narrow
+apertures or precision-passage geometry yet.
+
+A green compile/contract gate is followed by deterministic runtime evidence:
+the blocked straight route must produce a real changed plan/control demand,
+authoritative motion must follow it, and contact clearance must be measured.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

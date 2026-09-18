@@ -85,8 +85,8 @@ void testBridgePublishesOneDirectDemandSample()
     Bridge::Intent intent;
     intent.revision = 2;
     intent.targetRevision = 22;
-    intent.idealLinearAccelerationDemandMapMps2 = {3.0, 0.0, -6.0};
-    intent.idealAngularAccelerationDemandMapRadPerSec2 = {1.0, 0.5, 0.25};
+    intent.idealLinearAccelerationDemandSystemMps2 = {3.0, 0.0, -6.0};
+    intent.idealAngularAccelerationDemandSystemRadPerSec2 = {1.0, 0.5, 0.25};
 
     const auto result = bridge.step(0.01, 0.01, intent);
     require(
@@ -106,14 +106,14 @@ void testBridgePublishesOneDirectDemandSample()
             "execution snapshot lost concrete target revision");
 
     requireNear(
-        result.control.navigationLinearAccelerationDemandMapMps2.x,
-        result.snapshot.executedLinearAccelerationDemandMapMps2.x,
+        result.control.navigationLinearAccelerationDemandSystemMps2.x,
+        result.snapshot.executedLinearAccelerationDemandSystemMps2.x,
         0.0,
         "control and debug/guidance snapshot must publish the same executed linear demand"
     );
     requireNear(
-        result.control.navigationAngularAccelerationDemandMapRadPerSec2.x,
-        result.snapshot.executedAngularAccelerationDemandMapRadPerSec2.x,
+        result.control.navigationAngularAccelerationDemandSystemRadPerSec2.x,
+        result.snapshot.executedAngularAccelerationDemandSystemRadPerSec2.x,
         0.0,
         "control and debug/guidance snapshot must publish the same executed angular demand"
     );
@@ -138,7 +138,7 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
     const glm::vec3 forward(0.0f, 0.0f, -1.0f);
     const glm::dvec3 demand(10.0, 0.0, -20.0);
 
-    game::navigation::DynamicMotionSystem::applyWorldAccelerationDemand(
+    game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
         motion,
         params,
         demand,
@@ -167,7 +167,7 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
     );
 
     const glm::dvec3 reverseDemand(0.0, 0.0, 20.0);
-    game::navigation::DynamicMotionSystem::applyWorldAccelerationDemand(
+    game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
         motion,
         params,
         reverseDemand,
@@ -196,7 +196,7 @@ void testAngularDemandUsesExistingCapabilityClamp()
 
     ShipControlState control {};
     control.navigationAccelerationDemandValid = true;
-    control.navigationAngularAccelerationDemandMapRadPerSec2 =
+    control.navigationAngularAccelerationDemandSystemRadPerSec2 =
         glm::dvec3(100.0, 0.0, 0.0);
 
     SharedShipPhysics::evaluateControl(
@@ -235,7 +235,7 @@ void testManualAttitudeOverridesNavigationAngularDemand()
 
     ShipControlState control {};
     control.navigationAccelerationDemandValid = true;
-    control.navigationAngularAccelerationDemandMapRadPerSec2 =
+    control.navigationAngularAccelerationDemandSystemRadPerSec2 =
         glm::dvec3(-100.0, 0.0, 0.0);
     control.pitchInput = 1.0f;
 
@@ -286,28 +286,28 @@ void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
     require(intent.revision == 42,
             "NPC navigation goal revision must become the runtime intent revision");
     requireNear(
-        intent.idealLinearAccelerationDemandMapMps2.x,
+        intent.idealLinearAccelerationDemandSystemMps2.x,
         0.0,
         1.0e-12,
         "identity ship forward cruise must not create lateral X acceleration"
     );
     requireNear(
-        intent.idealLinearAccelerationDemandMapMps2.y,
+        intent.idealLinearAccelerationDemandSystemMps2.y,
         0.0,
         1.0e-12,
         "identity ship forward cruise must not create vertical acceleration"
     );
     requireNear(
-        intent.idealLinearAccelerationDemandMapMps2.z,
+        intent.idealLinearAccelerationDemandSystemMps2.z,
         -5.0,
         1.0e-12,
         "nominal NPC goal must become a physical forward acceleration demand"
     );
 
     const glm::dvec3 angularDemand(
-        intent.idealAngularAccelerationDemandMapRadPerSec2.x,
-        intent.idealAngularAccelerationDemandMapRadPerSec2.y,
-        intent.idealAngularAccelerationDemandMapRadPerSec2.z
+        intent.idealAngularAccelerationDemandSystemRadPerSec2.x,
+        intent.idealAngularAccelerationDemandSystemRadPerSec2.y,
+        intent.idealAngularAccelerationDemandSystemRadPerSec2.z
     );
 
     requireNear(
@@ -347,19 +347,19 @@ void testNpcHoldGoalBrakesRelativeVelocity()
         );
 
     requireNear(
-        intent.idealLinearAccelerationDemandMapMps2.x,
+        intent.idealLinearAccelerationDemandSystemMps2.x,
         -1.0,
         1.0e-12,
         "hold goal must brake actual relative X velocity"
     );
     requireNear(
-        intent.idealLinearAccelerationDemandMapMps2.y,
+        intent.idealLinearAccelerationDemandSystemMps2.y,
         0.5,
         1.0e-12,
         "hold goal must brake actual relative Y velocity"
     );
     requireNear(
-        intent.idealLinearAccelerationDemandMapMps2.z,
+        intent.idealLinearAccelerationDemandSystemMps2.z,
         -0.25,
         1.0e-12,
         "hold goal must brake actual relative Z velocity"
@@ -380,7 +380,7 @@ void testReplicatedNavigationExecutionStateIsReadOnlyTruth()
     accepted.execution.valid = true;
     accepted.execution.intentRevision = 100u;
     accepted.execution.activeTargetRevision = 99u;
-    accepted.execution.executedLinearAccelerationDemandMapMps2 =
+    accepted.execution.executedLinearAccelerationDemandSystemMps2 =
         glm::dvec3(1.0, 2.0, 3.0);
 
     state.replace({ignored, accepted});
@@ -393,7 +393,7 @@ void testReplicatedNavigationExecutionStateIsReadOnlyTruth()
     require(found->execution.intentRevision == 100u,
             "replicated navigation state must preserve intent revision exactly");
     requireNear(
-        found->execution.executedLinearAccelerationDemandMapMps2.y,
+        found->execution.executedLinearAccelerationDemandSystemMps2.y,
         2.0,
         0.0,
         "replicated navigation state must preserve executed demand exactly"
@@ -426,7 +426,7 @@ void testBridgeDemandCanReachCapabilityLayerWithoutLegacyKeys()
 
     Bridge::Intent intent;
     intent.revision = 8;
-    intent.idealAngularAccelerationDemandMapRadPerSec2 =
+    intent.idealAngularAccelerationDemandSystemRadPerSec2 =
         {100.0, 0.0, 0.0};
 
     // Let the expert executor ramp toward the request.

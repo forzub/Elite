@@ -72,7 +72,7 @@ void testReactionDelayAndCommandLatency()
 
     Executor::Command desired;
     desired.revision = 2;
-    desired.linearAccelerationDemandMapMetersPerSec2 = {10.0, 0.0, 0.0};
+    desired.linearAccelerationDemandMetersPerSec2 = {10.0, 0.0, 0.0};
 
     auto result = executor.step(0.01, 0.01, desired);
     require(result.reactionBlocked,
@@ -134,7 +134,7 @@ void testTargetRevisionCanAdvanceInsideSameIntent()
 
     Executor::Command desired = established;
     desired.targetRevision = 71;
-    desired.linearAccelerationDemandMapMetersPerSec2 = {2.0, 0.0, 0.0};
+    desired.linearAccelerationDemandMetersPerSec2 = {2.0, 0.0, 0.0};
 
     const auto result = executor.step(0.51, 0.01, desired);
 
@@ -160,13 +160,13 @@ void testDecisionCadenceIsSampleAndHold()
 
     Executor::Command desired;
     desired.revision = 2;
-    desired.linearAccelerationDemandMapMetersPerSec2 = {1.0, 0.0, 0.0};
+    desired.linearAccelerationDemandMetersPerSec2 = {1.0, 0.0, 0.0};
 
     auto result = executor.step(0.01, 0.01, desired);
     require(result.decisionSampled && result.queuedCommandApplied,
             "first eligible command must be sampled and applied");
 
-    desired.linearAccelerationDemandMapMetersPerSec2 = {5.0, 0.0, 0.0};
+    desired.linearAccelerationDemandMetersPerSec2 = {5.0, 0.0, 0.0};
     result = executor.step(0.05, 0.04, desired);
     require(!result.decisionSampled,
             "command changes inside one intent must wait for decision cadence");
@@ -193,7 +193,7 @@ void testEmergencyCanShortenReactionDelay()
     emergency.revision = 2;
     emergency.emergency = true;
     emergency.hazardUrgency01 = 0.90;
-    emergency.linearAccelerationDemandMapMetersPerSec2 = {10.0, 0.0, 0.0};
+    emergency.linearAccelerationDemandMetersPerSec2 = {10.0, 0.0, 0.0};
 
     auto result = executor.step(0.01, 0.01, emergency);
     require(result.reactionBlocked,
@@ -225,8 +225,8 @@ void testDeterministicNoiseIsReplayStable()
 
     Executor::Command desired;
     desired.revision = 2;
-    desired.linearAccelerationDemandMapMetersPerSec2 = {2.0, -1.0, 0.5};
-    desired.angularAccelerationDemandMapRadPerSec2 = {0.2, 0.1, -0.3};
+    desired.linearAccelerationDemandMetersPerSec2 = {2.0, -1.0, 0.5};
+    desired.angularAccelerationDemandRadPerSec2 = {0.2, 0.1, -0.3};
 
     for (int i = 1; i <= 200; ++i)
     {
@@ -237,14 +237,14 @@ void testDeterministicNoiseIsReplayStable()
                     rb.status == Executor::Status::Ok,
                 "deterministic replay steps must stay valid");
         requireNear(
-            ra.executedLinearAccelerationDemandMapMetersPerSec2.x,
-            rb.executedLinearAccelerationDemandMapMetersPerSec2.x,
+            ra.executedLinearAccelerationDemandMetersPerSec2.x,
+            rb.executedLinearAccelerationDemandMetersPerSec2.x,
             0.0,
             "same seed/input must reproduce identical linear command"
         );
         requireNear(
-            ra.executedAngularAccelerationDemandMapRadPerSec2.z,
-            rb.executedAngularAccelerationDemandMapRadPerSec2.z,
+            ra.executedAngularAccelerationDemandSystemRadPerSec2.z,
+            rb.executedAngularAccelerationDemandSystemRadPerSec2.z,
             0.0,
             "same seed/input must reproduce identical angular command"
         );
@@ -267,8 +267,8 @@ void testDeterministicNoiseIsReplayStable()
         const auto same = sameSeed.step(t, 0.01, desired);
         const auto different = differentSeed.step(t, 0.01, desired);
         if (std::abs(
-                same.executedLinearAccelerationDemandMapMetersPerSec2.x -
-                different.executedLinearAccelerationDemandMapMetersPerSec2.x) >
+                same.executedLinearAccelerationDemandMetersPerSec2.x -
+                different.executedLinearAccelerationDemandMetersPerSec2.x) >
             1.0e-9)
         {
             diverged = true;
@@ -290,7 +290,7 @@ double runCommandStep(
 
     Executor::Command desired;
     desired.revision = 2;
-    desired.linearAccelerationDemandMapMetersPerSec2 = {1.0, 0.0, 0.0};
+    desired.linearAccelerationDemandMetersPerSec2 = {1.0, 0.0, 0.0};
 
     double maximum = -1.0e9;
     minimumAfterPeak = 1.0e9;
@@ -302,7 +302,7 @@ double runCommandStep(
         require(result.status == Executor::Status::Ok,
                 "step-response execution must remain valid");
         const double value =
-            result.executedLinearAccelerationDemandMapMetersPerSec2.x;
+            result.executedLinearAccelerationDemandMetersPerSec2.x;
         if (value > maximum)
         {
             maximum = value;
@@ -368,7 +368,7 @@ TrackingOutcome simulateDockingLikeTracking(
     {
         Executor::Command desired;
         desired.revision = 2;
-        desired.linearAccelerationDemandMapMetersPerSec2.x =
+        desired.linearAccelerationDemandMetersPerSec2.x =
             kp * (-position) + kd * (-velocity);
 
         const double time = dt * static_cast<double>(i);
@@ -377,7 +377,7 @@ TrackingOutcome simulateDockingLikeTracking(
                 "closed-loop tracking execution must remain valid");
 
         const double acceleration =
-            result.executedLinearAccelerationDemandMapMetersPerSec2.x;
+            result.executedLinearAccelerationDemandMetersPerSec2.x;
         velocity += acceleration * dt;
         position += velocity * dt;
 
@@ -436,7 +436,7 @@ void testPolicyPreferencesDoNotCorruptExecution()
 
     Executor::Command desired;
     desired.revision = 2;
-    desired.linearAccelerationDemandMapMetersPerSec2 = {3.0, 2.0, 1.0};
+    desired.linearAccelerationDemandMetersPerSec2 = {3.0, 2.0, 1.0};
 
     for (int i = 1; i <= 100; ++i)
     {
@@ -444,8 +444,8 @@ void testPolicyPreferencesDoNotCorruptExecution()
         const auto ra = a.step(t, 0.01, desired);
         const auto rb = b.step(t, 0.01, desired);
         requireNear(
-            ra.executedLinearAccelerationDemandMapMetersPerSec2.x,
-            rb.executedLinearAccelerationDemandMapMetersPerSec2.x,
+            ra.executedLinearAccelerationDemandMetersPerSec2.x,
+            rb.executedLinearAccelerationDemandMetersPerSec2.x,
             0.0,
             "risk/comfort/anticipation policy must not alter execution physics"
         );

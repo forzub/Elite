@@ -35,13 +35,13 @@ game::simulation::NavigationExecutionSnapshot executionFixture()
     execution.valid = true;
     execution.intentRevision = 101u;
     execution.activeTargetRevision = 99u;
-    execution.idealLinearAccelerationDemandMapMps2 =
+    execution.idealLinearAccelerationDemandSystemMps2 =
         glm::dvec3(1.0, 2.0, 3.0);
-    execution.idealAngularAccelerationDemandMapRadPerSec2 =
+    execution.idealAngularAccelerationDemandSystemRadPerSec2 =
         glm::dvec3(0.1, 0.2, 0.3);
-    execution.executedLinearAccelerationDemandMapMps2 =
+    execution.executedLinearAccelerationDemandSystemMps2 =
         glm::dvec3(0.8, 1.6, 2.4);
-    execution.executedAngularAccelerationDemandMapRadPerSec2 =
+    execution.executedAngularAccelerationDemandSystemRadPerSec2 =
         glm::dvec3(0.08, 0.16, 0.24);
     execution.emergency = true;
     execution.hazardUrgency01 = 0.85;
@@ -90,13 +90,13 @@ void testNavigationExecutionWireRoundTrip()
     require(execution->activeTargetRevision == 99u,
             "wire round-trip must preserve active target revision");
     requireNear(
-        execution->executedLinearAccelerationDemandMapMps2.y,
+        execution->executedLinearAccelerationDemandSystemMps2.y,
         1.6,
         1.0e-12,
         "wire round-trip must preserve executed linear demand"
     );
     requireNear(
-        execution->executedAngularAccelerationDemandMapRadPerSec2.z,
+        execution->executedAngularAccelerationDemandSystemRadPerSec2.z,
         0.24,
         1.0e-12,
         "wire round-trip must preserve executed angular demand"

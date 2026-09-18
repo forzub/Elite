@@ -151,6 +151,7 @@ for marker in (
     "movingPassageRequiredPeakReverseAccelerationMps2",
     "movingPassageRequiredPeakLateralAccelerationMps2",
     "movingPassageRequiredPeakVerticalAccelerationMps2",
+    "selectedVisibilityDeflectionRadians",
     "PortalTraversalPolicy",
     "PortalCapture",
     "PortalTransit",
@@ -483,6 +484,24 @@ require(
     "corridor-proven portal endpoint must pass its boundary proof into exact static nominal checking",
 )
 
+for marker in (
+    "maximumDeflectionRadians",
+    "selectedDeflectionRadians",
+    "nominalVisibilityClear",
+):
+    require(marker in LOCAL_H, f"bounded visibility steering contract missing: {marker}")
+
+require(
+    "deflection += deflectionStep" in LOCAL_CPP and
+    "query.avoidance.maximumDeflectionRadians" in LOCAL_CPP,
+    "ordinary local avoidance must widen deflection only inside the bounded visibility search",
+)
+
+require(
+    "testVisibilitySteeringWidensThenReturnsToDirectLine" in LOCAL_TEST,
+    "local regression must prove widening beyond the legacy 15/30 fan and stateless return to direct A->B visibility",
+)
+
 require(
     "localQuery.avoidance.nominalTargetIsProvenPortalBoundary =" in PLANNER_CPP and
     "result.usedPortalWaypoint" in PLANNER_CPP,
@@ -723,19 +742,16 @@ for marker in (
     "expectedMovingGapVelocityWorldMps",
     "movingGapMaximumVelocityErrorMps",
     "movingGapPairCandidateSeen",
-    "agent.hullHalfExtentsBodyMeters",
-    "shipPhysics.manoeuvreThrusterAccel",
-    "policy.movingPassage.enabled = true",
-    "policy.movingPassage.allowSteeringAuthority = true",
-    "NavigationRuntimeLabMovingPassageDurationSeconds",
-    "expectedMovingGapPairSelected",
-    "Planner::Status::MovingPassageClear",
-    "movingPassageExecutionActive",
-    "movingPassageAppliedAccelerationSeen",
-    "movingPassageLastEvaluatorStatus",
-    "movingPassageRequiredPeakReverseAccelerationMps2",
+    "policy.avoidance.maximumDeflectionRadians",
+    "policy.movingPassage.enabled = false",
+    "policy.movingPassage.allowSteeringAuthority = false",
+    "movingPairIsNominalConflict",
+    "visibilityBypassActive",
+    "visibilityBypassSeen",
+    "visibilityDirectRecoveredSeen",
+    "selectedVisibilityDeflectionRadians",
 ):
-    require(marker in SIM_CPP, f"live moving-passage production integration missing: {marker}")
+    require(marker in SIM_CPP, f"live bounded-visibility production integration missing: {marker}")
 
 require(
     "isNavigationRuntimeLabMovingGapBoundary(" in SIM_CPP and
@@ -746,27 +762,17 @@ require(
 for marker in (
     "observation.movingGapPairCandidateSeen",
     "observation.movingGapKinematicsVerified",
-    "observation.movingPrecisionAttemptedSeen",
-    "observation.movingPassageFeasibleSeen",
-    "observation.movingPassageStaticSafeSeen",
-    "observation.movingPassageAuthoritySeen",
-    "observation.movingPassageAuthorityActive",
-    "observation.movingPassageExecutedSeen",
-    "observation.movingPassageExecutionActive",
-    "observation.movingPassageAppliedAccelerationSeen",
+    "observation.visibilityBypassSeen",
+    "observation.visibilityBypassActive",
+    "observation.visibilityDirectRecoveredSeen",
+    "observation.maximumVisibilityDeflectionRad",
     "observation.movingGapPlanePassed",
     "moving_gap_pair=",
-    "moving_passage_authority=",
-    "moving_passage_executed=",
-    "moving_passage_applied=",
+    "visibility_bypass=",
+    "visibility_bypass_active=",
+    "visibility_direct_recovered=",
+    "visibility_max_deflection_rad=",
     "moving_gap_passed=",
-    "moving_eval_status=",
-    "moving_req_fwd_mps2=",
-    "moving_req_rev_mps2=",
-    "moving_req_lat_mps2=",
-    "moving_req_vert_mps2=",
-    "moving_sample_clearance_m=",
-    "moving_continuous_clearance_m=",
     "observation.slitPortalExactOpenPublished",
     "observation.slitPortalWaypointSeen",
     "observation.slitEntryCaptureSeen",
@@ -788,19 +794,22 @@ for marker in (
     "slit_margin_m=",
     "slit_crossing_map=(",
 ):
-    require(marker in SERVER_MAIN, f"server live moving-passage acceptance gate missing: {marker}")
+    require(marker in SERVER_MAIN, f"server live visibility/tunnel acceptance gate missing: {marker}")
 
 require(
-    "if (!observation.movingPassageAuthorityActive ||" in SERVER_MAIN and
-    "!observation.movingPassageExecutionActive" in SERVER_MAIN and
+    "if (!observation.visibilityBypassActive ||" in SERVER_MAIN and
+    "!observation.executionSeen" in SERVER_MAIN and
+    "replicatedDemandMagnitude > 1.0e-6" in SERVER_MAIN and
     "sparsePacket.metadata.serverTick" in SERVER_MAIN and
     "authoritativePublished.metadata.serverTick" in SERVER_MAIN,
-    "same-tick replication proof must be captured while moving-passage authority is actively executing",
+    "same-tick replication proof must be captured while bounded visibility steering is actively executing",
 )
 
 require(
-    "bool movingAuthorityEvidenceComplete = false;" in SERVER_MAIN and
+    "bool visibilityEvidenceComplete = false;" in SERVER_MAIN and
     "bool behaviorEvidenceComplete = false;" in SERVER_MAIN and
+    "observation.visibilityBypassSeen &&" in SERVER_MAIN and
+    "observation.visibilityDirectRecoveredSeen &&" in SERVER_MAIN and
     "observation.movingGapPlanePassed &&" in SERVER_MAIN and
     "observation.slitPortalExactOpenPublished &&" in SERVER_MAIN and
     "observation.slitPortalWaypointSeen &&" in SERVER_MAIN and
@@ -810,7 +819,7 @@ require(
     "observation.slitEntryPlaneCrossedAligned &&" in SERVER_MAIN and
     "observation.slitTunnelPassed &&" in SERVER_MAIN and
     "return 56;" in SERVER_MAIN,
-    "live gate must order moving authority/replication before aligned portal capture and exact-static tunnel transit",
+    "live gate must order visibility bypass/replication/direct recovery before aligned portal capture and exact-static tunnel transit",
 )
 
 require(
@@ -959,7 +968,7 @@ print(" - planner cannot mutate authoritative physics state")
 print(" - client/server share the same NavigationWorld runtime-planning target")
 print(" - deterministic fixtures pin detour, envelope rejection, moving conflict and pilot bridge")
 print(" - authoritative GameSimulation isolates one Active stage-12 lab actor on real NAV STRESS hit volumes")
-print(" - live self-test pins moving authority -> portal approach/capture -> aligned physical tunnel entry/exit")
+print(" - live self-test pins bounded visibility bypass -> direct recovery -> portal capture -> aligned tunnel entry/exit")
 print(" - bounded NavigationMap sphere covers the complete local avoidance fan")
 print(" - sparse packet is compared with authoritative publication at the exact same server tick")
 print(" - canonical sparse hydration must match the same authoritative execution truth")
@@ -994,4 +1003,4 @@ print(" - accepted moving Hermite curve is continuously bounded between its 33 s
 print(" - same moving trajectory is re-proven against exact static NavigationSpace geometry")
 print(" - moving-passage steering authority is explicit opt-in and requires both dynamic + exact-static proof")
 print(" - authoritative moving passage uses the exact proved first acceleration sample through map/world + PilotSkillExecutor")
-print(" - live moving-gap pair drives MovingPassageClear through real physics and same-tick replication")
+print(" - live moving obstacle pair drives bounded visibility steering through real physics and same-tick replication")

@@ -330,44 +330,6 @@ void validateObstacle(const NavigationObstacle& obstacle)
 
 } // namespace
 
-void populatePortalTraversals(
-    const std::map<PortalId, NavigationSpace::PortalInput>& portalInputs,
-    const std::vector<RegionId>& regionPath,
-    const std::vector<PortalId>& portalPath,
-    std::vector<NavigationSpace::Vec3d>& centers,
-    std::vector<NavigationSpace::PortalTraversal>& traversals
-)
-{
-    centers.clear();
-    traversals.clear();
-
-    if (regionPath.size() != portalPath.size() + 1)
-        throw std::invalid_argument(
-            "NavigationSpace reconstructed corridor has inconsistent region/portal counts"
-        );
-
-    centers.reserve(portalPath.size());
-    traversals.reserve(portalPath.size());
-
-    for (std::size_t i = 0; i < portalPath.size(); ++i)
-    {
-        const auto portalIt = portalInputs.find(portalPath[i]);
-        if (portalIt == portalInputs.end())
-            throw std::invalid_argument(
-                "NavigationSpace reconstructed corridor references missing portal"
-            );
-
-        centers.push_back(portalIt->second.centerMapMeters);
-        traversals.push_back(
-            orientedPortalTraversal(
-                portalIt->second,
-                regionPath[i],
-                regionPath[i + 1]
-            )
-        );
-    }
-}
-
 class NavigationSpace::Impl
 {
 public:

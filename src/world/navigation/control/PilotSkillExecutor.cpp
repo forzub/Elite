@@ -147,6 +147,11 @@ void advanceSecondOrder(
 
 } // namespace
 
+PilotSkillExecutor::PilotSkillExecutor() noexcept
+    : PilotSkillExecutor(PilotSkillProfile {})
+{
+}
+
 PilotSkillExecutor::PilotSkillExecutor(
     const PilotSkillProfile& profile
 ) noexcept
@@ -166,10 +171,15 @@ bool PilotSkillExecutor::validProfile(
         execution.reactionDelaySeconds >= 0.0 &&
         finite(execution.perceptionDecisionRateHz) &&
         execution.perceptionDecisionRateHz > 0.0 &&
+        execution.perceptionDecisionRateHz <= 1000.0 &&
         finite(execution.commandLatencySeconds) &&
         execution.commandLatencySeconds >= 0.0 &&
+        execution.commandLatencySeconds <= 10.0 &&
+        execution.commandLatencySeconds * execution.perceptionDecisionRateHz <
+            static_cast<double>(kMaxPendingCommands - 1) &&
         finite(execution.responseFrequencyHz) &&
         execution.responseFrequencyHz > 0.0 &&
+        execution.responseFrequencyHz <= 100.0 &&
         finite(execution.dampingRatio) &&
         execution.dampingRatio >= 0.0 &&
         finite(execution.commandGain) &&
@@ -251,6 +261,9 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
         deltaSeconds <= 0.0 ||
         deltaSeconds > kMaximumStepSeconds ||
         timeSeconds + kTolerance < lastTimeSeconds_ ||
+        std::abs(
+            (timeSeconds - lastTimeSeconds_) - deltaSeconds
+        ) > std::max(1.0e-9, deltaSeconds * 1.0e-6) ||
         !validCommand(desiredCommand))
     {
         result.status = Status::InvalidInput;

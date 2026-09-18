@@ -1396,6 +1396,11 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     double observedObstacleRadiusMeters = 0.0;
     bool haveObservedObstacle = false;
 
+    std::uint32_t rotatingActorEntityId = 0;
+    glm::dvec3 rotatingActorMapPosition(0.0);
+    glm::dvec3 expectedRotatingActorAngularVelocityMapRadPerSecond(0.0);
+    bool haveRotatingActor = false;
+
     // Stage 12 lab deliberately consumes the already-spawned physical
     // NAV STRESS / GUIDANCE objects. Their damage HitComponent is the geometry
     // source; no render-mesh or presentation-only obstacle list is consulted.
@@ -1481,6 +1486,21 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             angularVelocityWorldRadPerSecond.z
         };
 
+        if (object.displayName == NavigationRuntimeLabRotatingActorLabel)
+        {
+            rotatingActorEntityId = objectId.value;
+            rotatingActorMapPosition = pointToMap(positionMeters);
+            expectedRotatingActorAngularVelocityMapRadPerSecond =
+                vectorToMap(angularVelocityWorldRadPerSecond);
+            haveRotatingActor = true;
+
+            m_navigationRuntimeLabObservation.rotatingActorEntityId =
+                objectId.value;
+            m_navigationRuntimeLabObservation.
+                expectedRotatingActorAngularVelocityMapRadPerSecond =
+                expectedRotatingActorAngularVelocityMapRadPerSecond;
+        }
+
         actor.radiusMeters = radius;
         actor.flags = 1u;
         actor.motionRevision = dynamicWorld.sourceRevision;
@@ -1490,6 +1510,51 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     m_navigationRuntimeLabMap->replaceDynamicWorld(
         std::move(dynamicWorld)
     );
+
+    if (haveRotatingActor)
+    {
+        Map::SphereQuery rotatingActorQuery;
+        rotatingActorQuery.centerMapMeters = {
+            rotatingActorMapPosition.x,
+            rotatingActorMapPosition.y,
+            rotatingActorMapPosition.z
+        };
+        rotatingActorQuery.radiusMeters = 1.0;
+
+        const Map::QueryResult rotatingActorResult =
+            m_navigationRuntimeLabMap->querySphere(rotatingActorQuery);
+
+        for (const auto& candidate : rotatingActorResult.candidates)
+        {
+            if (candidate.entityId != rotatingActorEntityId)
+                continue;
+
+            auto& observation = m_navigationRuntimeLabObservation;
+            observation.rotatingActorCandidateSeen = true;
+            observation.observedRotatingActorAngularVelocityMapRadPerSecond = {
+                candidate.angularVelocityMapRadPerSecond.x,
+                candidate.angularVelocityMapRadPerSecond.y,
+                candidate.angularVelocityMapRadPerSecond.z
+            };
+
+            observation.rotatingActorAngularVelocityErrorRadPerSecond =
+                glm::length(
+                    observation.
+                        observedRotatingActorAngularVelocityMapRadPerSecond -
+                    observation.
+                        expectedRotatingActorAngularVelocityMapRadPerSecond
+                );
+
+            observation.rotatingActorAngularVelocityVerified =
+                std::isfinite(
+                    observation.
+                        rotatingActorAngularVelocityErrorRadPerSecond
+                ) &&
+                observation.rotatingActorAngularVelocityErrorRadPerSecond <=
+                    NavigationRuntimeLabAngularVelocityToleranceRadPerSecond;
+            break;
+        }
+    }
 
     const auto& transform = ship.core().transform();
     const glm::dvec3 shipWorldPosition =

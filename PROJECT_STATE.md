@@ -231,7 +231,7 @@ Existing ownership remains frozen unless live evidence proves a defect:
 - no presentation-side second planner;
 - navigation never writes authoritative P/V directly.
 
-#### 12A-6b1 — CANDIDATE / target-machine pending
+#### 12A-6b1 — ACCEPTED
 
 Candidate code through `616f5b868795439fb42308d2c2d13ffc87218cba`
 composes the accepted moving precision components into the shared runtime planner
@@ -318,3 +318,35 @@ ownership/architecture contract change, or next-task change, update:
 Record the **last target-machine verified baseline** rather than a field named
 "current HEAD": committing documentation changes HEAD and would immediately make
 such a value stale.
+
+
+#### 12A-6b1 acceptance
+
+Full target-machine acceptance baseline:
+
+```text
+a587dcd96bdf0b05edbf4fcfe9a32f5f7be1058d
+```
+
+The complete gate passed:
+- Stage-12 architecture contract;
+- navigation_runtime 3/3;
+- navigation_trajectory 11/11;
+- navigation_map 1/1;
+- canonical client/server builds;
+- headless live navigation self-test.
+
+The live run retained:
+`exact_static_violation=0`,
+`replication_error_mps2=0`, and
+`canonical_replication_error_mps2=0`.
+
+This accepts the bounded real-runtime chain from dynamic conflict candidates
+through MovingGapPredictor and MovingPassageTrajectoryEvaluator as an
+observe/prove seam.
+
+#### 12A-6b2 — ACTIVE
+
+Current task is continuous exact-static proof of that same accepted moving
+Hermite trajectory. Steering authority remains unchanged until this composition
+is proven on the target machine.

@@ -1,8 +1,8 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Stage:** 12A-6b2 — exact-static proof of the accepted moving Hermite trajectory  
-**Last target-machine verified baseline:** `a587dcd96bdf0b05edbf4fcfe9a32f5f7be1058d`  
+**Stage:** 12A-6b3a — verified moving-passage steering authority seam  
+**Last target-machine verified baseline:** `25dc4369b95b4872d9a70a2d236db5e482cf45e2`  
 **Candidate implementation baseline before documentation commits:** `616f5b868795439fb42308d2c2d13ffc87218cba`
 
 ## What changed
@@ -281,3 +281,33 @@ bash build_mingw64.sh
 `navigation_map` need not be rerun for this correction: it already passed and
 none of the corrective files touch NavigationMap. If the compile/runtime gate is
 green, 12A-6b2 can be accepted.
+
+
+## 12A-6b2 gate result — ACCEPTED
+
+Corrected target-machine rerun on `25dc4369b95b4872d9a70a2d236db5e482cf45e2` passed architecture,
+trajectory 11/11, runtime 3/3, canonical client/server builds and the rebuilt
+headless navigation self-test. The self-test retained zero exact-static
+violations and zero sparse/canonical replication error.
+
+## Current implementation task: 12A-6b3a
+
+Promote the already verified first moving-passage acceleration sample to planner
+authority only when both proofs are green:
+
+```text
+movingPassageFeasible && movingPassageStaticSafe
+```
+
+Required contracts:
+- use the exact `movingPassageInitialAccelerationMapMps2` sample already
+  emitted by the accepted Hermite evaluator;
+- do not reconstruct a second path or desired velocity;
+- expose a distinct authoritative planner status/diagnostic;
+- preserve map->world conversion and PilotSkillExecutor ownership;
+- statically blocked or closing passages must never receive moving-passage
+  authority;
+- default behavior remains unchanged when moving precision is disabled.
+
+This first authority slice is deterministic planner/control evidence. It does
+not yet claim live moving-gap execution through authoritative physics/replication.

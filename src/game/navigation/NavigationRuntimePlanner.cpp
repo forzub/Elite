@@ -707,10 +707,10 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         local.nominalStaticObstacleEntityId;
     result.selectedTargetMapMeters = toGlm(local.target.targetPositionMapMeters);
 
-    // Stage 12A-6b2: the bounded moving-gap / moving-passage chain now also
-    // proves the exact accepted Hermite trajectory against NavigationSpace
-    // exact-static geometry. This remains observe-only in 12A-6b2; it cannot
-    // steal steering authority from the accepted local/static planner yet.
+    // The bounded moving-gap / moving-passage chain also proves the exact
+    // accepted Hermite trajectory against NavigationSpace exact-static
+    // geometry. Merely running this precision path is still observe-only;
+    // steering changes only through the explicit 12A-6b3a authority gate below.
     probeMovingPassage(
         agent,
         goal,

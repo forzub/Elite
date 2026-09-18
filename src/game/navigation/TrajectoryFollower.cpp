@@ -261,8 +261,9 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         toBridge(rotationDemand);
 
     result.status =
+        segment.completionTriggersReplan &&
         result.remainingDistanceMeters <=
-                segment.completionRadiusMeters
+            segment.completionRadiusMeters
             ? Status::Complete
             : Status::Following;
 

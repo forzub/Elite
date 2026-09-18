@@ -1,6 +1,9 @@
-#include "game/navigation/NavigationExecutionReplanPolicy.h"\n#include "game/navigation/AcceptedShortSegment.h"\n#include "game/navigation/TrajectoryFollower.h"
+#include "game/navigation/NavigationExecutionReplanPolicy.h"
+#include "game/navigation/AcceptedShortSegment.h"
+#include "game/navigation/TrajectoryFollower.h"
 
-#include <cmath>\n#include <iostream>
+#include <cmath>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -213,6 +216,31 @@ void testAcceptedSegmentFollowerExecutesWithoutPlannerSearch()
             "follower did not publish accepted-envelope escape");
 }
 
+void testAcceptedHoldWaitsForExpiryInsteadOfCompletingEveryTick()
+{
+    using Segment = game::navigation::AcceptedShortSegment;
+    using Follower = game::navigation::TrajectoryFollower;
+
+    Segment segment;
+    segment.valid = true;
+    segment.revision = 88;
+    segment.acceptedAtUniverseTimeSeconds = 100.0;
+    segment.validUntilUniverseTimeSeconds = 100.25;
+    segment.startPositionMapMeters = {0.0, 0.0, 0.0};
+    segment.targetPositionMapMeters = {0.0, 0.0, 0.0};
+    segment.targetVelocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    segment.velocityResponsePerSecond = 1.0;
+    segment.angularDampingPerSecond = 2.0;
+    segment.completionTriggersReplan = false;
+    segment.completionRadiusMeters = 20.0;
+    segment.trackingEnvelopeRadiusMeters = 20.0;
+
+    Follower::AgentState agent;
+    const auto followed = Follower::follow(segment, agent);
+    require(followed.status == Follower::Status::Following,
+            "time-bounded hold completed immediately and would replan every tick");
+}
+
 void testPlanCountRemainsFarBelowExecutionCount()
 {
     using Segment = game::navigation::AcceptedShortSegment;
@@ -279,6 +307,7 @@ int main()
         testVehicleDamageKeepsGlobalRouteButRebuildsTrajectory();
         testSegmentExpiryAdvancesLocally();
         testAcceptedSegmentFollowerExecutesWithoutPlannerSearch();
+        testAcceptedHoldWaitsForExpiryInsteadOfCompletingEveryTick();
         testPlanCountRemainsFarBelowExecutionCount();
 
         std::cout << "NAVIGATION EXECUTION REPLAN POLICY TESTS: PASS\n";

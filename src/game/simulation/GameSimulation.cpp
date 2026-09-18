@@ -2768,6 +2768,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             agent.angularCapability.
                 maxAngularAccelerationRadPerSec2;
 
+        accepted.completionTriggersReplan =
+            !provisionalHold;
         accepted.completionRadiusMeters =
             std::max(1.0, plannerGoal.arrivalRadiusMeters);
         accepted.trackingEnvelopeRadiusMeters =

@@ -57,6 +57,7 @@ struct AcceptedShortSegment
     double orientationResponsePerSecond2 = 0.0;
     double maximumAngularAccelerationRadPerSec2 = 0.0;
 
+    bool completionTriggersReplan = true;
     double completionRadiusMeters = 0.0;
     double trackingEnvelopeRadiusMeters = 0.0;
 

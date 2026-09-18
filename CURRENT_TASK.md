@@ -3,132 +3,85 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 live integration  
-**Stage:** 11B-1 — corrected roll-axis fixture rerun
+**Stage:** 11B-2 — replicated guidance/debug truth gate
 
 ## Progress
 
 ```text
-[████████████████████░░░] 10 / 12 major stages closed
+[█████████████████████░░] 10 / 12 major stages closed
 
 1–10 ACCEPTED
 11A  ACCEPTED
-11B-1 ACTIVE
-11B-2 PENDING
+11B-1 ACCEPTED
+11B-2 ACTIVE
 12    PENDING
 ```
 
-## 11A accepted
+## Newly accepted — 11B-1
+
+Target-machine gate on:
 
 ```text
-d7c77d5868b3178be3c392f0a8fecad5b57e3b69
-architecture PASS
-runtime 1/1 PASS
-trajectory/pilot 11/11 PASS
-EliteGame + EliteServer canonical build PASS
+fb83b8d80f29c6c5e4e12b8a2fca731ffea7b8e8
 ```
 
-## Active candidate
+passed:
+- live runtime architecture;
+- live NPC ownership architecture;
+- runtime-control 1/1;
+- trajectory/pilot 11/11;
+- EliteGame;
+- EliteServer.
+
+## Active 11B-2 candidate
 
 Production:
 
 ```text
-src/game/simulation/NpcAiSystem.h/.cpp
-src/game/navigation/NpcNavigationIntentController.h/.cpp
-src/game/simulation/GameSimulation.h/.cpp
-src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md
+src/game/simulation/NavigationExecutionSnapshot.h
+src/game/simulation/ShipSnapshot.h
+src/game/simulation/GameSimulation.cpp
+src/game/network/WireDataSchema.h
+src/game/network/WireDataCodec.h
+src/game/client/ClientWorldState.h/.cpp
+src/game/navigation/ReplicatedNavigationExecutionState.h
+src/game/navigation/ClientNavigationWorkspace.h
+src/game/presentation/GuidanceHudPresentation.h
+src/game/SpaceState.cpp
 ```
 
-Tests/contracts:
+Contracts/tests:
 
 ```text
-tests/navigation_runtime/NavigationRuntimeControlTests.cpp
-tests/architecture_contracts/check_navigation_live_npc_ownership.py
+tests/architecture_contracts/check_navigation_live_replication_guidance.py
+tests/architecture_contracts/check_wire_data_schema.py
+tests/architecture_contracts/WireDataPlaneContractTests.cpp
+tests/navigation_runtime/NavigationReplicationTruthTests.cpp
 ```
 
-### Ownership invariant
+### Required replication chain
 
 ```text
-NPC AI          -> goal/policy only
-Navigation v2   -> acceleration intent
-Pilot skill     -> execution timing/error
-Ship control    -> capability-constrained demand
-Physics         -> authoritative motion
+same server ExecutionSnapshot used for control
+    -> ShipSnapshot.navigationExecution
+    -> ordered binary wire schema v8
+    -> ClientShipState.navigationExecution
+    -> read-only ClientNavigationWorkspace mirror
+    -> GuidanceHudPresentation diagnostics
 ```
 
-`NpcAiSystem` must not emit `ShipControlState`, yaw/pitch/roll keys or throttle/RCS keys.
+### Required ownership separation
 
-### Initial nominal goal controller
-
-`MaintainForwardCruise` computes a desired relative velocity along actual ship forward and a bounded velocity-error acceleration demand.
-
-`Hold` drives desired relative velocity to zero.
-
-Angular demand damps actual pitch/yaw/roll rates but is expressed back in world axes and still passes through the accepted capability seam.
-
-### Activation correctness
-
-If activation wakes an NPC after more than the pilot executor's 0.25 s maximum step, the exact elapsed time is processed as multiple deterministic bounded substeps. Time is never discarded.
-
-### Fail closed
-
-Any bridge failure:
+Client planners must not consume replicated execution truth:
 
 ```text
-zero ShipControlState
-erase per-NPC bridge
-erase latest execution snapshot
-erase last execution time
+LocalGuidancePlanner
+DockingPathPlanner
 ```
 
-No direct-steering fallback.
+remain independent manual/advisory planning components.
 
-## First target-machine attempt — NOT ACCEPTED
-
-Green evidence:
-
-```text
-check_navigation_live_runtime_control.py PASS
-check_navigation_live_npc_ownership.py   PASS
-navigation_trajectory                    11/11 PASS
-EliteGame                                build PASS
-```
-
-Failures:
-
-```text
-navigation_runtime compile:
-  missing GLM_ENABLE_EXPERIMENTAL in standalone harness
-
-EliteServer link:
-  missing NavigationRuntimeControlBridge.cpp
-  missing NpcNavigationIntentController.cpp
-  missing PilotSkillExecutor.cpp
-```
-
-Repairs are committed and the architecture checker now pins both wiring requirements.
-
-## Second target-machine attempt — NOT ACCEPTED
-
-The lightweight runtime boundary was necessary because the isolated test must not link all ShipCore/equipment/damage systems merely to exercise NPC intent conversion. `NpcNavigationIntentController` now accepts `NpcNavigationKinematicState` rather than full `Ship`.
-
-## Third target-machine attempt — NOT ACCEPTED
-
-Everything except one runtime assertion passed:
-
-```text
-live runtime architecture PASS
-live NPC ownership architecture PASS
-navigation trajectory/pilot 11/11 PASS
-EliteGame build PASS
-EliteServer build PASS
-
-navigation_runtime 0/1
-  NPC nominal intent must damp roll through world angular demand
-```
-
-Diagnosis: fixture error. With identity orientation, ship forward is `-Z`; positive roll damping is a `+Z` world vector whose projection onto forward is negative. Production controller already did this correctly.
-
-The fixture now checks ship-axis projections, not raw world components.
+The client may display the server-executed NPC command, but may not reinterpret it as a locally accepted maneuver.
 
 ## RUN NOW
 
@@ -143,25 +96,47 @@ git rev-parse HEAD
 
 python tests/architecture_contracts/check_navigation_live_runtime_control.py
 python tests/architecture_contracts/check_navigation_live_npc_ownership.py
+python tests/architecture_contracts/check_navigation_live_replication_guidance.py
+python tests/architecture_contracts/check_wire_data_schema.py
+
 bash tests/navigation_runtime/run_mingw64.sh
 bash tests/navigation_trajectory/run_mingw64.sh
+
+cmake -S tests/architecture_contracts \
+      -B build/tests/architecture_contracts \
+      -G Ninja
+cmake --build build/tests/architecture_contracts \
+      --target wire_data_plane_contract_tests
+ctest --test-dir build/tests/architecture_contracts \
+      -R '^wire_data_plane_contracts$' \
+      --output-on-failure
+
 bash build_mingw64.sh
 ```
 
 Expected:
 
 ```text
-11A architecture PASS
-11B-1 ownership architecture PASS
-navigation_runtime_control 1/1 PASS
-trajectory/pilot 11/11 PASS
-canonical EliteGame + EliteServer build PASS
+live runtime architecture PASS
+live NPC ownership architecture PASS
+live replication/guidance architecture PASS
+wire schema architecture PASS
+
+navigation_runtime:
+    2/2 PASS
+      navigation_runtime_control
+      navigation_replication_truth
+
+navigation_trajectory:
+    11/11 PASS
+
+wire_data_plane_contracts:
+    1/1 PASS
+
+EliteGame build PASS
+EliteServer build PASS
 ```
 
 ## Next after green
 
-11B-2:
-- replicate accepted intent/execution revision;
-- feed client guidance/debug from the same server truth;
-- no client-side NPC replan;
-- then close stage 11 and move to end-to-end stage 12.
+Close stage 11 completely, progress -> 11/12, then immediately start stage 12 end-to-end runtime scenarios and stress/debug/legacy retirement.

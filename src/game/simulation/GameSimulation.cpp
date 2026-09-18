@@ -1578,7 +1578,7 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
         m_navigationRuntimeLabObservation.slitPortalExactObstaclesExamined =
             geometryProof.obstaclesExamined;
         m_navigationRuntimeLabObservation.slitPortalExactOpenPublished =
-            geometryProof.traversable
+            geometryProof.traversable;
     }
 
     const auto stats = m_navigationRuntimeLabSpace->stats();

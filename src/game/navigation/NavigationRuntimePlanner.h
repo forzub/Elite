@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -115,7 +116,7 @@ public:
         const Map::QueryResult& dynamicCandidates,
         double dynamicResultAgeSeconds,
         const Space& staticSpace,
-        const Policy& policy = {}
+        const Policy& policy
     );
 };
 

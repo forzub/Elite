@@ -565,3 +565,62 @@ empty space rather than merely skirt one isolated cube.
 The general contract remains vehicle-agnostic: runtime planning consumes the
 current vehicle's physical capability and hull dimensions; no Cobra-specific
 acceleration constants may be introduced into the navigation algorithm.
+
+
+## 12A-6b3b slit-tunnel candidate
+
+Candidate code/contract baseline before documentation commits:
+
+```text
+d05c97905f3df8e42980a88fbc216e03c7f8dbab
+```
+
+The single isolated CUBE 08 terminal obstacle is no longer the acceptance
+geometry. The live static proving fixture is now a real exact-HitVolume tunnel:
+
+```text
+six GuidanceDockCube physical blocks
+two rows x three blocks
+tunnel depth: 900 m
+horizontal slit height: 140 m
+slit half-width: 540 m
+slit center: {975, -1180, -4500} map/visual
+straight authored route y: -1300
+```
+
+The slit is intentionally offset by 120 m from the original straight route.
+The lower-middle wall block retains the `NAV STRESS CUBE 08` identity so the
+existing direct-route exact-block witness still has a stable physical blocker.
+
+NavigationSpace now publishes two coarse free-space regions connected only by
+`NavigationRuntimeLabSlitPortalId` at the slit center. The route planner must
+therefore publish that real portal as its static steering waypoint.
+
+Fixture validation proves both facts independently:
+- direct start->goal line is exact-static blocked by the representative wall;
+- start->portal->tunnel-exit is exact-static traversable for the current ship's
+  conservative physical envelope plus the existing 10 m static clearance.
+
+Live physical acceptance no longer means merely "passed the obstacle plane".
+The fixed-step exact sweep interpolates the actual ship crossing at the tunnel
+center plane and requires the full conservative hull + static clearance to fit
+inside the authored slit. The resulting crossing position and remaining margin
+are retained in diagnostics.
+
+The moving-gap authority gate remains first in the same run. Final ordered proof:
+
+```text
+live moving gap
+ -> MovingPassageClear
+ -> PilotSkillExecutor / real physics
+ -> same-tick replication
+ -> moving-gap plane crossed
+ -> NavigationSpace slit portal selected
+ -> exact-static tunnel crossing with positive margin
+ -> continued route progress
+ -> zero exact-static violation
+```
+
+Vehicle capability remains generic. The navigation algorithm reads the
+descriptor/runtime capability of the current vehicle; no Cobra-specific
+acceleration value is embedded in planner logic.

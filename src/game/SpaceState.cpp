@@ -3350,6 +3350,28 @@ void SpaceState::update(float dt)
         );
     }
 
+    {
+        std::vector<game::navigation::ReplicatedNavigationExecution>
+            replicatedExecution;
+        replicatedExecution.reserve(m_client->world().ships().size());
+
+        for (const auto& [entityValue, shipState] :
+             m_client->world().ships())
+        {
+            if (!shipState.navigationExecution.valid)
+                continue;
+
+            game::navigation::ReplicatedNavigationExecution entry;
+            entry.entityId = EntityId{entityValue};
+            entry.execution = shipState.navigationExecution;
+            replicatedExecution.push_back(std::move(entry));
+        }
+
+        m_navigationWorkspace
+            .replicatedNavigationExecution()
+            .replace(std::move(replicatedExecution));
+    }
+
 
     m_perfDockingTunnelBuilds = 0;
     m_perfDockingTunnelBuildMs = 0.0;

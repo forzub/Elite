@@ -41,6 +41,10 @@ REPLAN_TEST = (ROOT / "tests/navigation_runtime/NavigationExecutionReplanPolicyT
 REPLAN_DOC = (ROOT / "src/game/navigation/TRAJECTORY_EXECUTION_REPLAN_MODEL.md").read_text(encoding="utf-8")
 HIT_BUILDER = (ROOT / "src/world/modules/ObjectRuntimeHitBuilder.cpp").read_text(encoding="utf-8")
 GUIDANCE_DESCRIPTOR = (ROOT / "src/game/station/descriptors/GuidanceTestDockDescriptor.h").read_text(encoding="utf-8")
+BOUNDARY_H = (ROOT / "src/game/navigation/NavigationFrameBoundary.h").read_text(encoding="utf-8")
+CONTROL_INTENT_H = (ROOT / "src/game/navigation/NavigationControlIntent.h").read_text(encoding="utf-8")
+PHYSICAL_HORIZON_H = (ROOT / "src/world/navigation/local/PhysicalManeuverHorizon.h").read_text(encoding="utf-8")
+PHYSICAL_HORIZON_TEST = (ROOT / "tests/navigation_runtime/PhysicalManeuverHorizonTests.cpp").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -49,22 +53,66 @@ def require(condition: bool, message: str) -> None:
 
 
 for marker in (
-    "angularVelocitySystemRadPerSecond",
+    "positionMapMeters",
+    "velocityMapMetersPerSecond",
+    "accelerationMapMetersPerSecond2",
     "angularVelocityMapRadPerSecond",
 ):
-    require(marker in MAP_H, f"NavigationMap moving-motion API missing: {marker}")
+    require(marker in MAP_H, f"NavigationMap NavLocal moving-motion API missing: {marker}")
 
-for marker in (
-    "input.angularVelocitySystemRadPerSecond",
-    "actor.angularVelocityMapRadPerSecond = vectorToMap",
-    "result.angularVelocityMapRadPerSecond",
+for forbidden in (
+    "WorkingFrame",
+    "positionSystemMeters",
+    "velocitySystemMetersPerSecond",
+    "accelerationSystemMetersPerSecond2",
+    "angularVelocitySystemRadPerSecond",
+    "pointToMap",
+    "vectorToMap",
 ):
-    require(marker in MAP_CPP, f"NavigationMap angular-motion transform missing: {marker}")
+    require(
+        forbidden not in MAP_H and forbidden not in MAP_CPP,
+        f"NavigationMap must not own system/frame conversion: {forbidden}",
+    )
 
 require(
-    "rotatingActor.angularVelocitySystemRadPerSecond" in MAP_TEST and
-    "rotated.angularVelocityMapRadPerSecond" in MAP_TEST,
-    "NavigationMap contract test must pin angular velocity through a rotated working frame",
+    "testMapOwnsOnlyNavLocalCoordinates" in MAP_TEST and
+    "angularVelocityMapRadPerSecond" in MAP_TEST,
+    "NavigationMap contract test must pin NavLocal publication without hidden frame conversion",
+)
+
+for marker in (
+    "class NavigationFrameBoundary final",
+    "SystemPosition",
+    "SystemVelocity",
+    "NavPosition",
+    "NavVelocity",
+    "toNavigation(",
+    "toNavigationVector(",
+    "toSystemControlIntent(",
+):
+    require(marker in BOUNDARY_H, f"typed Navigation frame boundary missing: {marker}")
+
+for marker in (
+    "struct NavigationLocalControlIntent",
+    "idealLinearAccelerationLocalMps2",
+    "struct NavigationSystemControlIntent",
+    "idealLinearAccelerationSystemMps2",
+):
+    require(marker in CONTROL_INTENT_H, f"typed navigation control intent missing: {marker}")
+
+for marker in (
+    "class PhysicalManeuverHorizon final",
+    "controlResponseReserveSeconds",
+    "brakingDistanceMeters",
+    "lookAheadSeconds",
+):
+    require(marker in PHYSICAL_HORIZON_H, f"physical maneuver horizon contract missing: {marker}")
+
+require(
+    "testDistanceAndTimeGrowWithPhysicalStoppingNeed" in PHYSICAL_HORIZON_TEST and
+    "fast.distanceMeters > 2.0 * slow.distanceMeters" in PHYSICAL_HORIZON_TEST and
+    "fast.lookAheadSeconds > slow.lookAheadSeconds" in PHYSICAL_HORIZON_TEST,
+    "physical horizon regression must grow distance/time with speed",
 )
 
 for marker in (
@@ -132,7 +180,7 @@ for marker in (
 
 for marker in (
     "class NavigationRuntimePlanner final",
-    "NavigationRuntimeControlBridge",
+    "NavigationLocalControlIntent",
     "LocalAvoidancePlanner",
     "NavigationMap",
     "NavigationSpace",
@@ -178,10 +226,9 @@ for marker in (
     "portalCentersMapMeters.front",
     "Avoidance{}.evaluate",
     "holdIntent",
-    "idealLinearAccelerationDemandMapMps2",
-    "idealAngularAccelerationDemandMapRadPerSec2",
-    "mapIntentToWorld",
-    "local.nominalStaticBlocked",
+    "idealLinearAccelerationLocalMps2",
+    "idealAngularAccelerationLocalRadPerSec2",
+        "local.nominalStaticBlocked",
     "local.staticObstaclesExamined",
     "GapBuilder::build",
     "GapPredictor::predict",
@@ -217,7 +264,7 @@ require(
 require(
     "result.status = Status::MovingPassageClear;" in PLANNER_CPP and
     "result.movingPassageAuthorityUsed = true;" in PLANNER_CPP and
-    "result.intent.idealLinearAccelerationDemandMapMps2 =\n            toBridgeVec(result.movingPassageInitialAccelerationMapMps2);" in PLANNER_CPP,
+    "result.intent.idealLinearAccelerationLocalMps2 =\n            result.movingPassageInitialAccelerationMapMps2;" in PLANNER_CPP,
     "12A-6b3a authority must execute the exact first sample of the doubly-proven Hermite trajectory",
 )
 
@@ -263,7 +310,7 @@ require(
     "testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge" in RUNTIME_TEST and
     "Planner::Status::MovingPassageClear" in RUNTIME_TEST and
     "movingPassageAuthorityUsed" in RUNTIME_TEST and
-    "Planner::mapIntentToWorld(planned.intent, frame)" in RUNTIME_TEST and
+    "boundary.toSystemControlIntent(planned.intent)" in RUNTIME_TEST and
     "bridge.step(" in RUNTIME_TEST,
     "runtime regression must pin doubly-proven moving passage authority through map/world transform and PilotSkillExecutor",
 )
@@ -304,6 +351,12 @@ require(
     "shared NavigationWorld runtime target must be defined and linked by both production executables",
 )
 
+require(
+    "physical_maneuver_horizon_tests" in RUNTIME_CMAKE and
+    "PhysicalManeuverHorizonTests.cpp" in RUNTIME_CMAKE,
+    "runtime gate must compile and run physical speed-dependent horizon regressions",
+)
+
 for marker in (
     "NavigationRuntimePlanner.cpp",
     "NavigationRuntimePlannerTests.cpp",
@@ -321,7 +374,7 @@ for marker in (
     "testSamePortalRejectsOversizedHull",
     "testAdjustedTargetPreservesNominalConflictIdentity",
     "testNavigationMapCrossingConflictProducesBrakingHold",
-    "testMapIntentTransformsIntoWorldControlFrame",
+    "testTypedNavigationBoundaryTransformsLocalControlIntoSystemControl",
     "testExactStaticObstacleParticipatesInRuntimeComposition",
     "testLiveScaleStaticObstacleInsideFirstBoundedHorizon",
     "testPlannerIntentCrossesAcceptedPilotBridge",
@@ -370,8 +423,8 @@ for marker in (
     "m_navigationRuntimeLabMap->replaceDynamicWorld",
     "m_navigationRuntimeLabMap->querySphere",
     "Planner::plan(",
-    "Planner::mapIntentToWorld(",
-    "navigationWorkingFrame",
+    "navigationBoundary.toSystemControlIntent(",
+    "makeNavigationRuntimeLabBoundary",
     "publishNavigationRuntimeLabStaticGeometry",
     "staticWorld.obstacles.push_back",
 ):
@@ -697,6 +750,24 @@ require(
 )
 
 require(
+    "staticSafetyInvalidated =\n            staticSafetyInvalidated ||\n            staticSafetyTargetBlocked;" in SIM_CPP,
+    "stopping-reserve invalidation must be monotonic and survive later target checks",
+)
+
+require(
+    "staticSafetyInvalidated =\n            staticSafetyTargetBlocked;" not in SIM_CPP,
+    "direct target check must never erase an earlier stopping-reserve invalidation",
+)
+
+require(
+    "navigationControlResponseReserveSeconds" in SIM_CPP and
+    "reactionDelaySeconds" in SIM_CPP and
+    "PhysicalManeuverHorizon::evaluate" in SIM_CPP and
+    "policy.horizon.controlResponseReserveSeconds" in SIM_CPP,
+    "live navigation must use one physical response/braking horizon for planning and execution safety",
+)
+
+require(
     "querySphere(dynamicQuery)" in SIM_CPP and
     "localHorizonMeters" in SIM_CPP and
     "LabTurnDistanceMeters" in SIM_CPP,
@@ -711,10 +782,11 @@ require(
 )
 
 require(
-    "actor.angularVelocitySystemRadPerSecond" in SIM_CPP and
-    "hubVisualLocalToWorldVector(" in SIM_CPP and
+    "SystemAngularVelocity" in SIM_CPP and
+    "navigationBoundary.toNavigation(" in SIM_CPP and
+    "actor.angularVelocityMapRadPerSecond" in SIM_CPP and
     "NavigationRuntimeLabRotatingActorLabel" in SIM_CPP,
-    "live rotating infrastructure must publish authoritative angular velocity through the common hub basis",
+    "live rotating infrastructure must cross the typed frame boundary before NavLocal publication",
 )
 
 require(
@@ -1200,7 +1272,7 @@ print(" - live self-test pins bounded visibility bypass -> direct recovery -> po
 print(" - bounded NavigationMap sphere covers the complete local avoidance fan")
 print(" - sparse packet is compared with authoritative publication at the exact same server tick")
 print(" - canonical sparse hydration must match the same authoritative execution truth")
-print(" - non-identity working-frame regression pins map intent -> world control transform")
+print(" - non-identity typed boundary regression pins NavLocal intent -> system control transform")
 print(" - live lateral-demand diagnostics compare vectors in world space")
 print(" - self-test reports pilot demand separately from physically applied acceleration")
 print(" - NavigationSpace exact static OBB layer preserves real apertures beyond sphere broadphase")
@@ -1224,11 +1296,11 @@ print(" - first physical exact-static violation reports obstacle identity and ma
 print(" - reference-frame placement clears stale local velocity and propulsion state")
 print(" - current hub-frame epoch is synchronized into matched ship world pose before AI/navigation")
 print(" - sub-millimetre orbital-coordinate round-trip residue is treated as numerical zero")
-print(" - rotating infrastructure carries angular velocity through NavigationMap working-frame conversion")
+print(" - rotating infrastructure crosses the typed system -> NavLocal frame boundary before NavigationMap")
 print(" - live GUIDANCE DOCK CUBE A verifies the published map-space angular motion")
 print(" - bounded runtime conflicts feed MovingGapPredictor + MovingPassageTrajectoryEvaluator")
 print(" - accepted moving Hermite curve is continuously bounded between its 33 samples")
 print(" - same moving trajectory is re-proven against exact static NavigationSpace geometry")
 print(" - moving-passage steering authority is explicit opt-in and requires both dynamic + exact-static proof")
-print(" - authoritative moving passage uses the exact proved first acceleration sample through map/world + PilotSkillExecutor")
+print(" - authoritative moving passage uses the exact proved local sample through typed boundary + PilotSkillExecutor")
 print(" - live moving obstacle pair drives bounded visibility steering through real physics and same-tick replication")

@@ -8,6 +8,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Production root CMake enables GLM experimental extensions globally because
+# Ship/geometry headers legitimately include glm/gtx/*. The isolated runtime
+# harness must mirror that compile contract instead of depending on incidental
+# parent-project definitions.
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
+
 get_filename_component(
     ELITE_SOURCE_ROOT
     "${CMAKE_CURRENT_LIST_DIR}/../.."

@@ -345,3 +345,42 @@ Phase G -- remove compatibility mirrors:
 - rebase oldFrame->newFrame preserves materialized System P/V/A.
 - gravity in local domain agrees with system-space reference integration.
 - server and client local fixed-step use the same LocalSimulation library.
+
+
+## Decision after audit: free-fall local domains
+
+The audit has now been promoted into a project-direction decision documented in:
+
+~~~text
+src/game/navigation/SPATIAL_ARCHITECTURE_DECISION.md
+~~~
+
+The selected model is a moving local interaction domain whose carrier is
+advanced by GlobalDynamics. For the preferred non-rotating free-fall case, the
+common gravitational acceleration of the domain origin is cancelled from local
+physics. LocalSimulation may therefore ignore external gravity over a bounded
+domain/horizon when the omitted tidal residual is below an explicit error
+budget.
+
+The important distinction is:
+
+~~~text
+uniform/common external acceleration -> carrier/global problem
+differential/tidal acceleration       -> optional local environment problem
+~~~
+
+This lets the local navigation/collision sandbox remain mathematically simple
+without pretending that gravity ceases to exist globally.
+
+The local domain may be anchored near/follow an individual ship, but all bodies
+that can physically interact must share one LocalDomainId. Body orientation is
+not the local-domain basis.
+
+For galactic/system addressing, the project will not use the Solar System as
+the universal origin and will not expose an arbitrary hierarchy of nested
+star-relative frames. Each star system has one shallow System frame identified
+by SystemId; the galaxy stores the position of that system origin. Planet/moon/
+hub motion remains dynamics inside that System frame.
+
+Further Navigation v2 implementation is paused after the already-running
+target-machine result is recorded. Spatial Phase A becomes the next code task.

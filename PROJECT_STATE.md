@@ -1867,3 +1867,50 @@ KinematicFrame transforms/rebasing and the only Global<->Local API.
 This is an AUDIT/PROPOSAL, not yet an accepted migration contract. No current
 navigation behavior or target-machine acceptance status is changed by this
 documentation pass.
+
+
+## 2026-09-19 spatial-foundation decision / Navigation freeze
+
+The coordinate audit is now preserved in:
+
+~~~text
+src/game/navigation/COORDINATE_ARCHITECTURE_AUDIT.md
+src/game/navigation/SPATIAL_ARCHITECTURE_DECISION.md
+~~~
+
+Project direction is now fixed as follows:
+
+- complete and record the already-running target-machine gate for current
+  recovery candidate `f25a9c2378c45950155db00caf48e71b5a07e3ac`;
+- do not add another Navigation v2 algorithm/recovery patch after that gate;
+- pause Stage-12 implementation at the current boundary;
+- make Spatial Phase A the next implementation task;
+- resume Navigation v2 only after the canonical Global/System <-> Local API,
+  strong coordinate types and LocalDomainFrame authority are green.
+
+Last actually target-machine accepted Stage-12 baseline is unchanged:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~
+
+Current candidate remains unaccepted until the target-machine output is
+reported.
+
+The selected local-simulation model is a moving free-fall interaction domain:
+GlobalDynamics advances the domain carrier under large-scale gravity; short
+range LocalSimulation may cancel/ignore the common-mode field and integrate only
+local forces. Differential/tidal gravity is an explicit optional residual and
+may be omitted only under a bounded error criterion.
+
+A local domain may follow an anchor ship, but interacting bodies must share one
+LocalDomainId; the domain basis is not the ship body frame. Preferred basis is
+non-rotating/inertial over the local horizon.
+
+Star-system coordinates use one shallow System frame per SystemId. The Sun is
+not a universal master origin, and planet/moon/hub relationships do not create
+new public coordinate domains.
+
+This changes project sequencing/architecture only. It does not promote or
+reject the pending Stage-12 candidate and does not alter the last verified
+baseline.

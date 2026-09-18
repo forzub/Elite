@@ -3363,6 +3363,7 @@ void SpaceState::update(float dt)
 
             game::navigation::ReplicatedNavigationExecution entry;
             entry.entityId = EntityId{entityValue};
+            entry.shipInstanceId = shipState.instanceId;
             entry.execution = shipState.navigationExecution;
             replicatedExecution.push_back(std::move(entry));
         }

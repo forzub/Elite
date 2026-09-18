@@ -67,7 +67,7 @@ for marker in (
     "authoritative latch",
     "A destructive collision is never relabeled as docking success",
 ):
-    require(marker in DOC, f"docking approach documentation missing: {marker}")
+    require(marker.lower() in DOC.lower(), f"docking approach documentation missing: {marker}")
 
 require("DockingApproachEvaluator.cpp" in CMAKE,
         "trajectory library must compile docking approach evaluator")

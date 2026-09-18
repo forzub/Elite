@@ -105,7 +105,8 @@ else()
         navigation_trajectory_moving_gap_tests
         navigation_trajectory_moving_passage_tests
         navigation_trajectory_docking_terminal_tests
-        navigation_trajectory_docking_approach_tests)
+        navigation_trajectory_docking_approach_tests
+        navigation_pilot_skill_tests)
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
     endforeach()
 endif()

@@ -64,3 +64,23 @@ For this intermediate gate, static objects remain in the existing
 NavigationMap sphere candidate set as well. Removing those static spheres is a
 separate post-acceptance cleanup so broadphase ownership and precision geometry
 are not changed in the same acceptance step.
+
+
+#### 12A-4 corrected gate after first target run
+
+First target-machine run proved exact static publication and live consumption,
+but exposed three independent issues:
+
+1. one new local test fixture violated the existing dynamic-candidate invariant;
+2. valid corridor portal centres were rejected by generic region-boundary
+   envelope clearance;
+3. conservative sphere clearance was still incorrectly treated as exact-static
+   acceptance truth.
+
+The fixture is fixed. Corridor-selected portal endpoints carry an explicit
+boundary-proof exception into the nominal precision query. Actual authoritative
+fixed-step motion is now swept through exact HitVolume geometry, and that swept
+proof replaces enclosing-sphere clearance as the safety acceptance condition.
+
+Conservative spheres remain useful for broadphase diagnostics until their static
+duplication is removed in the post-12A-4 ownership cleanup.

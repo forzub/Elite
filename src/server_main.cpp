@@ -18,6 +18,7 @@
 #include "src/game/server/HeadlessServerEndpoints.h"
 #include "src/game/server/ServerRuntime.h"
 #include "src/game/server/NetworkServerHost.h"
+#include "src/game/diagnostics/NavigationRuntimeLab.h"
 #include "src/game/network/NetworkEndpoint.h"
 #include "src/world/WorldParams.h"
 #include "src/world/coordinates/WorldPosition.h"
@@ -40,6 +41,7 @@ void printUsage()
         << "  EliteServer.exe --listen HOST:PORT      Accept remote TCP game sessions\n"
         << "  EliteServer.exe --reset-auth-state      Clear server account registrations before start (development/test)\n"
         << "  EliteServer.exe --self-test             Boot and advance the real server, then exit\n"
+        << "  EliteServer.exe --self-test-navigation  Run Stage-12 live navigation proving actor\n"
         << "  EliteServer.exe --help                  Show this help\n";
 }
 
@@ -54,6 +56,23 @@ const ShipSnapshot* findShipSnapshot(
         [id](const ShipSnapshot& ship)
         {
             return ship.id == id;
+        }
+    );
+
+    return it == snapshot.ships.end() ? nullptr : &*it;
+}
+
+const ShipSnapshot* findShipSnapshotByInstanceId(
+    const SimulationSnapshot& snapshot,
+    ShipInstanceId instanceId
+)
+{
+    const auto it = std::find_if(
+        snapshot.ships.begin(),
+        snapshot.ships.end(),
+        [instanceId](const ShipSnapshot& ship)
+        {
+            return ship.instanceId == instanceId;
         }
     );
 
@@ -422,6 +441,223 @@ int runHeadlessSelfTest()
 }
 
 
+int runNavigationRuntimeSelfTest()
+{
+    using game::diagnostics::NavigationRuntimeLabArrivalRadiusMeters;
+    using game::diagnostics::NavigationRuntimeLabInstanceId;
+
+    core::disableRuntimeStdoutNoise();
+
+    game::server::HeadlessServerTransport transport;
+    game::server::HeadlessDebugChannel debugChannel;
+    WorldParams worldParams;
+
+    std::cerr
+        << "[NAV-SELFTEST] stage=construct-authoritative-runtime\n";
+
+    game::server::ServerRuntime runtime(
+        worldParams,
+        debugChannel
+    );
+
+    const auto session = runtime.attachPlayerSessionTransport(
+        transport,
+        makeSelfTestIdentity(1202u, 12u)
+    );
+
+    if (!session ||
+        !transport.hasBootstrapSnapshot())
+    {
+        std::cerr
+            << "[FAIL] navigation-runtime self-test bootstrap failed\n";
+        return 30;
+    }
+
+    const double step = runtime.fixedStepSeconds();
+    if (!std::isfinite(step) || step <= 0.0)
+    {
+        std::cerr
+            << "[FAIL] navigation-runtime self-test invalid fixed step\n";
+        return 31;
+    }
+
+    auto observation = runtime.navigationRuntimeLabObservation();
+    if (!observation.valid ||
+        observation.shipEntityId == 0)
+    {
+        std::cerr
+            << "[FAIL] navigation-runtime lab did not initialize\n";
+        return 32;
+    }
+
+    const auto& bootstrap =
+        transport.latestCanonicalSnapshot();
+    const auto* bootstrapLab =
+        findShipSnapshotByInstanceId(
+            bootstrap,
+            NavigationRuntimeLabInstanceId
+        );
+
+    if (!bootstrapLab ||
+        bootstrapLab->id.value != observation.shipEntityId)
+    {
+        std::cerr
+            << "[FAIL] navigation-runtime lab ship is missing from authoritative bootstrap"
+            << " observation_entity=" << observation.shipEntityId
+            << "\n";
+        return 33;
+    }
+
+    constexpr double MaxSimulatedSeconds = 120.0;
+    const std::uint64_t maxSteps =
+        static_cast<std::uint64_t>(
+            std::ceil(MaxSimulatedSeconds / step)
+        );
+
+    bool behaviorEvidenceComplete = false;
+    double simulatedSeconds = 0.0;
+
+    for (std::uint64_t i = 0; i < maxSteps; ++i)
+    {
+        runtime.advance(step);
+        simulatedSeconds += step;
+
+        observation =
+            runtime.navigationRuntimeLabObservation();
+
+        const double progressMeters =
+            observation.initialGoalDistanceMeters > 0.0
+                ? observation.initialGoalDistanceMeters -
+                    observation.minimumGoalDistanceMeters
+                : 0.0;
+
+        behaviorEvidenceComplete =
+            observation.valid &&
+            observation.planCount > 0 &&
+            observation.executionCount > 0 &&
+            observation.obstacleCandidateSeen &&
+            observation.obstaclePrimaryConflictSeen &&
+            observation.adjustedTargetSeen &&
+            observation.executionSeen &&
+            observation.nonZeroExecutedDemandSeen &&
+            observation.lateralExecutedDemandSeen &&
+            observation.passedObstaclePlane &&
+            observation.minimumConservativeClearanceMeters > 0.0 &&
+            observation.maximumStraightLineDeviationMeters > 1.0 &&
+            progressMeters > 3500.0;
+
+        if (behaviorEvidenceComplete)
+            break;
+    }
+
+    const auto& finalSnapshot =
+        transport.latestCanonicalSnapshot();
+    const auto* labShip =
+        findShipSnapshotByInstanceId(
+            finalSnapshot,
+            NavigationRuntimeLabInstanceId
+        );
+
+    if (!labShip)
+    {
+        std::cerr
+            << "[FAIL] navigation-runtime lab ship disappeared from replicated world\n";
+        return 34;
+    }
+
+    const auto* replicatedExecution =
+        std::get_if<game::simulation::NavigationExecutionSnapshot>(
+            &labShip->navigationExecution
+        );
+
+    if (!replicatedExecution ||
+        !replicatedExecution->valid ||
+        replicatedExecution->intentRevision != 1202001)
+    {
+        std::cerr
+            << "[FAIL] navigation-runtime authoritative execution was not replicated"
+            << " has_execution=" << (replicatedExecution != nullptr)
+            << "\n";
+        return 35;
+    }
+
+    const double replicatedDemandMagnitude =
+        glm::length(
+            replicatedExecution->
+                executedLinearAccelerationDemandMapMps2
+        );
+
+    if (!std::isfinite(replicatedDemandMagnitude))
+    {
+        std::cerr
+            << "[FAIL] navigation-runtime replicated execution is non-finite\n";
+        return 36;
+    }
+
+    const double progressMeters =
+        observation.initialGoalDistanceMeters > 0.0
+            ? observation.initialGoalDistanceMeters -
+                observation.minimumGoalDistanceMeters
+            : 0.0;
+
+    std::cerr
+        << "[NAV-SELFTEST]"
+        << " simulated_s=" << simulatedSeconds
+        << " plans=" << observation.planCount
+        << " executions=" << observation.executionCount
+        << " obstacle_candidate="
+        << observation.obstacleCandidateSeen
+        << " obstacle_conflict="
+        << observation.obstaclePrimaryConflictSeen
+        << " adjusted="
+        << observation.adjustedTargetSeen
+        << " conflict_hold="
+        << observation.conflictHoldSeen
+        << " lateral_exec="
+        << observation.lateralExecutedDemandSeen
+        << " max_lateral_accel_mps2="
+        << observation.maximumExecutedLateralDemandMps2
+        << " max_route_deviation_m="
+        << observation.maximumStraightLineDeviationMeters
+        << " min_center_distance_m="
+        << observation.minimumObstacleCenterDistanceMeters
+        << " min_conservative_clearance_m="
+        << observation.minimumConservativeClearanceMeters
+        << " progress_m=" << progressMeters
+        << " remaining_goal_m="
+        << observation.minimumGoalDistanceMeters
+        << " passed_obstacle_plane="
+        << observation.passedObstaclePlane
+        << " reached_goal="
+        << observation.reachedGoal
+        << " replicated_exec_mps2="
+        << replicatedDemandMagnitude
+        << "\n";
+
+    if (!behaviorEvidenceComplete)
+    {
+        std::cerr
+            << "[FAIL] navigation-runtime live behavior evidence incomplete\n";
+        return 37;
+    }
+
+    // Reaching the final goal is not required for this first live-obstacle
+    // gate. The proof closes once the real actor has passed the deliberately
+    // blocked obstacle and continues making progress toward that goal.
+    if (observation.minimumGoalDistanceMeters <=
+        NavigationRuntimeLabArrivalRadiusMeters)
+    {
+        std::cerr
+            << "[NAV-SELFTEST] final goal also reached inside proving window\n";
+    }
+
+    std::cerr
+        << "[PASS] navigation-runtime CUBE 08 caused authoritative avoidance"
+        << " with positive conservative clearance and replicated execution\n";
+    return 0;
+}
+
+
 int runNetworkServer(
     const game::network::NetworkEndpoint& endpoint,
     bool oneClientSelfTest,
@@ -574,6 +810,7 @@ int main(int argc, char** argv)
     }
 
     bool headlessSelfTest = false;
+    bool navigationSelfTest = false;
     bool oneClientSelfTest = false;
     bool resetAuthState = false;
     bool haveListenEndpoint = false;
@@ -586,6 +823,12 @@ int main(int argc, char** argv)
         if (arg == "--self-test")
         {
             headlessSelfTest = true;
+            continue;
+        }
+
+        if (arg == "--self-test-navigation")
+        {
+            navigationSelfTest = true;
             continue;
         }
 
@@ -663,6 +906,9 @@ int main(int argc, char** argv)
 
     if (headlessSelfTest)
         return runHeadlessSelfTest();
+
+    if (navigationSelfTest)
+        return runNavigationRuntimeSelfTest();
 
     if (haveListenEndpoint)
         return runNetworkServer(listenEndpoint, oneClientSelfTest, resetAuthState);

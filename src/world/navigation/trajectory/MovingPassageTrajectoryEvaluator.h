@@ -92,6 +92,12 @@ public:
         double maximumRelativeCenterMotionBoundMeters = 0.0;
         double maximumPassageAxisInflationRad = 0.0;
         double maximumRelativeOrientationSweepInflationMeters = 0.0;
+
+        // First acceleration sample of the exact Hermite segment that was
+        // continuously verified above. Valid only when feasible == true.
+        // Runtime receding-horizon control may execute this sample instead of
+        // re-deriving a different trajectory after the proof.
+        Vec3d initialLinearAccelerationMapMetersPerSec2 {};
     };
 
     [[nodiscard]] static Result evaluate(const Query& query) noexcept;

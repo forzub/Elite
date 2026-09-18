@@ -466,3 +466,44 @@ Current order after this docking-guidance slice:
 5. build long-range `RouteSolver` and server planning-query/ATC corridor transport.
 
 `TrajectoryFollower` / autopilot is explicitly **not** part of this stage.
+
+
+## Accepted execution vs manual guidance refresh — Stage 12 refinement
+
+Authority:
+`src/game/navigation/TRAJECTORY_EXECUTION_REPLAN_MODEL.md`
+
+The older "future TrajectoryFollower" wording is superseded by the Stage-11/12
+runtime ownership model. Automatic and manual consumers share one accepted
+navigation solution but have different refresh semantics.
+
+Automatic:
+
+```text
+accepted short trajectory
+ -> closed-loop follower / PilotSkillExecutor
+ -> physics
+ -> per-tick validity monitor
+
+planner sleeps until:
+    segment complete/expired
+    tracking envelope exceeded
+    new hazard invalidates proof
+    vehicle capability changes
+    goal/topology changes
+```
+
+Manual:
+
+```text
+accepted route remains
+ -> spatial/advisory corridor shown to player
+ -> periodic local suffix refresh
+ -> immediate local refresh when player exits corridor
+```
+
+A manual local deviation does not rebuild the complete RoutePlan unless the
+current topology/portal branch itself is invalidated.
+
+The fixed-step monitor may run every simulation tick. Planner cadence is not
+fixed-step cadence.

@@ -549,6 +549,23 @@ ELITE_WIRE_SCHEMA(
 // Top-level replicated world entities.
 // -------------------------------------------------------------------------
 ELITE_WIRE_SCHEMA(
+    game::simulation::NavigationExecutionSnapshot,
+    v.valid,
+    v.intentRevision,
+    v.activeTargetRevision,
+    v.idealLinearAccelerationDemandMapMps2,
+    v.idealAngularAccelerationDemandMapRadPerSec2,
+    v.executedLinearAccelerationDemandMapMps2,
+    v.executedAngularAccelerationDemandMapRadPerSec2,
+    v.emergency,
+    v.hazardUrgency01,
+    v.reactionBlocked,
+    v.decisionSampled,
+    v.queuedCommandApplied,
+    v.pendingCommandCount
+);
+
+ELITE_WIRE_SCHEMA(
     ShipSnapshot,
     v.id,
     v.instanceId,
@@ -558,6 +575,7 @@ ELITE_WIRE_SCHEMA(
     v.motionLabKind,
     v.transform,
     v.referenceFrame,
+    v.navigationExecution,
     v.receptions,
     v.radarContacts,
     v.damageEvents,

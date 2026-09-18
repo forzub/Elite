@@ -47,7 +47,7 @@ The same server execution product now crosses replication:
 
 ```text
 GameSimulation execution snapshot
- -> ShipSnapshot.navigationExecution
+ -> ShipSnapshot.navigationExecution sparse variant
  -> binary wire schema v8
  -> ClientWorldState
  -> ReplicatedNavigationExecutionState
@@ -57,7 +57,7 @@ GameSimulation execution snapshot
 
 Stable route-executor identity uses `ShipInstanceId`, while current runtime binding retains `EntityId`.
 
-The client mirror is read-only to planning code.
+The client mirror is read-only to planning code and is rebuilt only on a new accepted server snapshot tick. An absent execution costs only the variant tag on the wire.
 
 Manual/advisory client planners continue to exist for player guidance but cannot consume or mutate server-executed NPC truth.
 

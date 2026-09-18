@@ -15,6 +15,8 @@ inline constexpr const char* NavigationRuntimeLabLabel =
     "NAVIGATION V2 RUNTIME LAB";
 inline constexpr const char* NavigationRuntimeLabHubId =
     "earth_orbital_hub";
+inline constexpr const char* NavigationRuntimeLabObstacleLabel =
+    "NAV STRESS CUBE 08";
 
 // Hub ReferenceFrame uses tactical local axes:
 //   X = prograde, Y = radial, Z = normal.
@@ -28,20 +30,55 @@ inline constexpr const char* NavigationRuntimeLabHubId =
 //
 // The straight line crosses NAV STRESS CUBE 08 at
 // visual { 975, -1300, -4900 }, forcing the live local planner to react.
-inline const glm::dvec3 NavigationRuntimeLabStartTacticalLocalMeters {
-    8000.0,
+inline const glm::dvec3 NavigationRuntimeLabStartVisualLocalMeters {
+    975.0,
     -1300.0,
-    975.0
+    -8000.0
+};
+
+inline const glm::dvec3 NavigationRuntimeLabGoalVisualLocalMeters {
+    975.0,
+    -1300.0,
+    1000.0
+};
+
+inline const glm::dvec3 NavigationRuntimeLabObstacleVisualLocalMeters {
+    975.0,
+    -1300.0,
+    -4900.0
+};
+
+inline const glm::dvec3 NavigationRuntimeLabStartTacticalLocalMeters {
+    -NavigationRuntimeLabStartVisualLocalMeters.z,
+    NavigationRuntimeLabStartVisualLocalMeters.y,
+    NavigationRuntimeLabStartVisualLocalMeters.x
 };
 
 inline const glm::dvec3 NavigationRuntimeLabGoalTacticalLocalMeters {
-    -1000.0,
-    -1300.0,
-    975.0
+    -NavigationRuntimeLabGoalVisualLocalMeters.z,
+    NavigationRuntimeLabGoalVisualLocalMeters.y,
+    NavigationRuntimeLabGoalVisualLocalMeters.x
 };
 
 inline constexpr double NavigationRuntimeLabMaximumSpeedMps = 60.0;
 inline constexpr double NavigationRuntimeLabArrivalRadiusMeters = 20.0;
 inline constexpr double NavigationRuntimeLabWorkspaceHalfExtentMeters = 12000.0;
+
+struct NavigationRuntimeLabObservation
+{
+    bool valid = false;
+
+    std::uint32_t shipEntityId = 0;
+    std::uint32_t obstacleEntityId = 0;
+
+    std::uint64_t planCount = 0;
+    std::uint64_t lastIntentRevision = 0;
+    std::uint8_t lastPlannerStatus = 0xffu;
+
+    bool obstacleCandidateSeen = false;
+    bool obstaclePrimaryConflictSeen = false;
+    bool adjustedTargetSeen = false;
+    bool conflictHoldSeen = false;
+};
 
 } // namespace game::diagnostics

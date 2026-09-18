@@ -3,192 +3,142 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** `NAV-V2-TRAJECTORY-1` — docking stage 9B continuous approach gate
+**Stage:** 10 — deterministic `PilotSkillProfile` execution gate
 
 ## Progress
 
 ```text
-[████████████████░░░░░░░░] 8 / 12 major stages closed
+[██████████████████░░░░░] 9 / 12 major stages closed
 
-1–8  CLOSED / ACCEPTED
-9    ACTIVE — moving/rotating docking 6DoF
-     9A terminal capture      ACCEPTED
-     9B continuous approach   ACTIVE
-10   PilotSkillProfile        PENDING
-11   live integration         PENDING
-12   stress/debug/retirement  PENDING
+1–9  CLOSED / ACCEPTED
+10   ACTIVE — PilotSkillProfile execution
+11   PENDING — live integration + physics hookup
+12   PENDING — stress/debug + legacy retirement
 ```
 
-## Newly closed gate — `DockingTerminalEvaluator`
+## Newly closed — moving/rotating docking stage 9
 
-Target-machine run on:
-
-```text
-835271539619b7dd02efc54ff54df51d64b49fce
-```
-
-passed:
+Final target-machine evidence:
 
 ```text
-NAVIGATION TRAJECTORY DOCKING TERMINAL CONTRACT: PASS
-9/9 navigation_trajectory CTest PASS
+c90a66d6c64bdf3acc037208a000b1955d40e6c3
+NAVIGATION TRAJECTORY DOCKING APPROACH CONTRACT: PASS
+10/10 navigation_trajectory CTest PASS
 100% tests passed
 ```
 
-Decision: docking terminal 6DoF math is **behavior/architecture accepted**.
+Decision: `DockingApproachEvaluator` is behavior/architecture accepted. Stage 9A + 9B are frozen unless live integration exposes a defect.
 
-Accepted capture gates:
+## Active candidate — `PilotSkillExecutor`
 
-```text
-explicit Bottom(ship) -> Bottom(dock)
-relative port P
-relative port V
-mating normals anti-aligned
-roll/reference-up aligned
-relative omega
-```
-
-Rotating port velocity includes `v_origin + omega x r`. A 180-degree rolled ship is rejected even with correct face normals.
-
-The acceptance build reported one harmless unused helper warning (`normalizeOrZero`). It has already been removed; dock-port prediction is now exposed as the shared bounded helper used by 9B.
-
-## Active candidate — `DockingApproachEvaluator`
-
-Public contract:
+Code:
 
 ```text
-src/world/navigation/DOCKING_APPROACH_MODEL.md
+src/world/navigation/control/PilotSkillExecutor.h
+src/world/navigation/control/PilotSkillExecutor.cpp
+src/world/navigation/control/CMakeLists.txt
 ```
 
-Code/tests:
+Contract:
 
 ```text
-src/world/navigation/trajectory/DockingApproachEvaluator.h
-src/world/navigation/trajectory/DockingApproachEvaluator.cpp
-tests/navigation_trajectory/NavigationTrajectoryDockingApproachTests.cpp
-tests/architecture_contracts/check_navigation_trajectory_docking_approach.py
+src/world/navigation/PILOT_SKILL_MODEL.md
 ```
 
-## Core decision — final docking segment is dock-local
-
-A rotating dock must not be approximated as a static world target plus a rest-to-rest ship attitude.
-
-Stage 9B transforms both ship endpoints into the predicted moving/rotating dock frame. In that relative frame:
+Tests:
 
 ```text
-corridor is static
-relative terminal pose is fixed
-relative terminal angular rate = 0
+tests/navigation_trajectory/NavigationPilotSkillTests.cpp
+tests/architecture_contracts/check_navigation_pilot_skill.py
 ```
 
-Therefore at capture:
+### Required separation
 
 ```text
-omega_ship = omega_dock
+world truth          != pilot skill
+vehicle capability   != pilot skill
+navigation intent    != pilot skill
+pilot execution      = delay/cadence/latency/damping/precision
+physics truth        remains downstream authority
 ```
 
-without a terminal-only hack.
+No skill scalar is allowed to shrink obstacles, enlarge gaps, change capture tolerance or grant thrust.
 
-## Continuous corridor geometry
+### Command timing
 
-The accepted `ContinuousPassageTrajectoryEvaluator` is reused as the dock-local geometry oracle:
+A new maneuver revision:
 
 ```text
-PassageSource::DockingCorridor
-33 synchronized relative poses
-32 conservative continuous intervals
+observed
+ -> reaction delay
+ -> perception/decision tick
+ -> fixed command-latency queue
+ -> active target
+ -> second-order execution response
 ```
 
-Point samples alone cannot prove the final approach.
+Commands evolving inside the same maneuver revision are sample-and-hold at `perceptionDecisionRateHz`.
 
-## World physical authority
-
-Relative dock-frame convenience does not create thrust. The candidate transforms the relative trajectory back to world space and evaluates inertial acceleration:
+High-urgency emergency commands may shorten reaction delay using:
 
 ```text
-v_world = v_port + omega x r + v_relative
-
-a_world = a_port
-        + omega x (omega x r)
-        + 2 * omega x v_relative
-        + a_relative
+emergencyResponseThreshold01
+emergencyReactionDelayScale
 ```
 
-Centripetal and Coriolis terms are therefore real ship acceleration requirements.
+### Dynamics
 
-Body-axis forward/reverse/lateral/vertical authority receives a conservative between-sample projection margin using a world jerk bound plus body-axis angular motion.
-
-## Angular authority
-
-For dock-local relative orientation change `theta` over `T`:
+Command response is deterministic second order:
 
 ```text
-relative omega peak = 1.5 * theta / T
-relative alpha peak = 6.0 * theta / T^2
+y'' = wn^2(target-y) - 2*zeta*wn*y'
+wn = 2*pi*responseFrequencyHz
 ```
 
-World bounds include dock rotation:
+with explicit gain and linear/angular command slew limits.
+
+Low damping can therefore produce real command overshoot/ringing. The ship only moves when downstream physics integrates the resulting demand.
+
+### Deterministic precision error
+
+Noise source:
 
 ```text
-world omega bound = |omega_dock| + relative omega peak
-world alpha bound = relative alpha peak
-                  + |omega_dock| * relative omega peak
+seed + intent revision + decision sequence + axis
 ```
 
-## Terminal composition
+No wall clock or `std::random`.
 
-After corridor and physical-authority success, the generated final world state is submitted to accepted `DockingTerminalEvaluator`.
+### Closed-loop fixture
 
-Result classes:
+A small 1D docking-like plant receives the same ideal PD intent.
+
+Expert:
 
 ```text
-FeasibleForCapture
-CorridorBlocked
-LinearAuthorityExceeded
-AngularAuthorityExceeded
-AssistedSlipExceeded
-TerminalNotCapturable
-InvalidInput
+0 reaction
+60 Hz decisions
+0 latency
+4 Hz response
+damping 1.0
+gain 1.0
 ```
 
-`TerminalNotCapturable` retains the precise 9A reason for diagnostics.
+must settle close to the target.
 
-## Pinned behavior
+Poor:
 
 ```text
-stationary final approach -> FeasibleForCapture
-translating dock + co-moving ship -> FeasibleForCapture
-moving+rotating dock + dock-local tracking -> FeasibleForCapture + relative omega 0
-all 33 point samples fit but continuous bound fails -> CorridorBlocked
-insufficient inertial body-axis thrust -> LinearAuthorityExceeded
-dock rotation faster than ship angular-rate authority -> AngularAuthorityExceeded
-wide corridor + wrong 180-degree roll -> TerminalNotCapturable/RollAlignmentMismatch
-wide corridor + terminal position miss -> TerminalNotCapturable/PositionMismatch
-sideways approach: Newtonian feasible / tight EliteAssisted slip rejected
+0.20 s reaction
+8 Hz decisions
+0.15 s latency
+1 Hz response
+damping 0.20
+gain 1.40
+limited slew
 ```
 
-## First target-machine attempt — diagnosed and repaired
-
-The first 9B run on `3f29c5062967676c8ae77f8385307473732d1ff5` is explicitly **not accepted**:
-
-```text
-[FAIL] docking approach documentation missing: continuous body-axis thrust proof
-9/10 trajectory CTest PASS
-navigation_trajectory_docking_approach FAIL
-```
-
-The architecture failure was only case-sensitive Markdown matching and is repaired without weakening the contract.
-
-The behavior failure exposed an invalid regression fixture. For its cubic Hermite curve:
-
-```text
-largest sampled excursion = 0.9613037109 m
-exact excursion maximum   = 0.9622504486 m
-old available travel      = 0.9750000000 m   # never actually blocked
-new available travel      = 0.9618000000 m   # samples fit, continuous curve exits
-```
-
-Therefore the regression now genuinely pins sample-pass / continuous-fail behavior. The production continuous algorithm was not relaxed.
+must repeatedly cross the target and remain less settled by the same deadline.
 
 ## RUN NOW
 
@@ -201,24 +151,20 @@ git merge --ff-only origin/main
 
 git rev-parse HEAD
 
-python tests/architecture_contracts/check_navigation_trajectory_docking_approach.py
+python tests/architecture_contracts/check_navigation_pilot_skill.py
 bash tests/navigation_trajectory/run_mingw64.sh
 ```
 
 Expected suite count:
 
 ```text
-10/10
+11/11
 ```
 
 ## Next after green
 
-1. accept/freeze docking stage 9B and close major stage 9;
-2. begin deterministic `PilotSkillProfile` execution fixtures;
-3. live `EliteGame` / `EliteServer` / guidance + physics/collision hookup;
-4. end-to-end stress/debug/performance acceptance;
-5. retire legacy navigation only after stable v2 ownership.
-
-## Definition of final success
-
-Navigation v2 is finished when the live runtime demonstrates normal flight, static/dynamic avoidance, oriented static/moving passage, truthful Elite/Newton vehicle authority, least-severity unavoidable collision behavior, replanning from actual post-impact truth, stationary/moving/rotating docking to the correct mating frame, shared guidance/debug truth and intended NPC scaling without planner stalls or unbounded precision work.
+1. accept/freeze stage 10;
+2. progress becomes 10/12;
+3. begin live `EliteGame` / `EliteServer` / guidance + flight/physics integration;
+4. end-to-end stress/debug/performance;
+5. retire legacy navigation after stable v2 ownership.

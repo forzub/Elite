@@ -2,8 +2,9 @@
 
 **Updated:** 2026-09-18
 **Canonical branch:** `main`
+**Current public HEAD:** `e83a0a2bd5d54efb7737607c40ff789cafee5cf5`
 
-## Stage 12
+## Stage 12 status
 
 - 12A-1 — ACCEPTED
 - 12A-2 — ACCEPTED
@@ -11,54 +12,57 @@
 - 12A-4 exact static HitVolume OBB — ACCEPTED
 - 12A-5 static/dynamic ownership cleanup — CANDIDATE
 
-## Latest target-machine evidence
+## Latest target-machine result
 
-Run on `35802cec694b1c68fa07736596a38bb44d708375`:
+Run on `5aac072dbb13dbed755a4a9fe6dd1b91f24db717`:
 
 ```text
 architecture PASS
-navigation_runtime 3/3 PASS
 EliteGame PASS
 EliteServer PASS
 
-obstacle_candidate=0
-obstacle_conflict=0
+first_live_probe_blocked=0
+first_live_blocker_entity=0
+obstacle_entity=22
 
-configured_route_exact_block=1
-first_live_probe_blocked=1
-exact_obstacle_block=1
-exact_static_block=1
-adjusted=1
-
-exact_static_motion_samples=6000
-exact_static_violation=1
+first_live_horizon_m=1420.11
+first_live_agent_map=(1014.47,-1767.96,-5679.82)
+first_live_goal_map=(975,-1300,1000)
+first_live_bounded_target_map=(1006.1,-1668.71,-4263.2)
 ```
 
-This is progress, not a repeat.
-
-The previous failure was "live planner does not see CUBE 08".
-That is now closed: the first live bounded segment, runtime planner and exact
-static blocker identity all agree and the planner chooses an adjusted target.
-
-The remaining failure is downstream:
-the authoritative physical ship intersects some exact static HitVolume while
-executing the accepted adjusted maneuver.
-
-Therefore current debugging focus is no longer NavigationSpace ownership or
-static detection. It is the boundary:
+Expected configured start was:
 
 ```text
-geometrically safe adjusted target
-    -> PilotSkillExecutor / control
-    -> physically executed trajectory
+(975,-1300,-6200)
 ```
 
-A first-collision witness is now captured and the self-test fails immediately
-at the first physical exact-static violation, reporting:
-- blocking entity id;
-- proving CUBE 08 entity id;
-- swept start/end positions;
-- selected target;
-- planner status.
+So the first live ship state was already displaced by hundreds of metres before
+planner composition.
 
-No stationary conservative sphere has been reintroduced.
+## Root cause found
+
+`placeShipInReferenceFrame()` reset legacy
+`tr.localVelocity` but did not reset authoritative
+`tr.motion.localVelocityMps`.
+
+That allowed stale pre-placement local velocity to survive the frame transition.
+On the next local-frame kinematic step, the ship moved away from the configured
+start before its first navigation solve.
+
+The same placement function also retained stale propulsion/alignment state.
+The corrected contract now clears:
+- localVelocityMps;
+- mainEngineAccelerationMps2;
+- manoeuvreAccelerationMps2;
+- engineAccelerationMps2;
+- desiredTacticalVelocityMps;
+- velocityAlignmentMode;
+- assisted target-speed hold state.
+
+This is a production reference-frame placement bug, not a navigation-fixture
+workaround.
+
+Next gate must show first live agent position remaining on the configured start
+line and CUBE 08 becoming the first exact blocker without reintroducing static
+NavigationMap spheres.

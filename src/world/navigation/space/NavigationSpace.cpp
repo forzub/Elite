@@ -1034,6 +1034,29 @@ NavigationSpace::SegmentQueryResult NavigationSpace::querySegment(
     result.spaceRevision = impl_->spaceRevision;
     result.sourceRevision = impl_->sourceRevision;
 
+    if (query.exactObstaclesOnly)
+    {
+        for (const auto& obstacleEntry : impl_->obstacles)
+        {
+            ++result.obstaclesExamined;
+            const auto& obstacle = obstacleEntry.second;
+            if (segmentIntersectsNavigationObstacle(
+                    toGlm(query.startMapMeters),
+                    toGlm(query.endMapMeters),
+                    obstacle,
+                    query.envelope.radiusMeters,
+                    query.envelope.additionalClearanceMeters))
+            {
+                result.blockingObstacleId = obstacle.id;
+                result.blockingObstacleEntityId = obstacle.entityId;
+                return result;
+            }
+        }
+
+        result.traversable = true;
+        return result;
+    }
+
     PointQuery startQuery;
     startQuery.pointMapMeters = query.startMapMeters;
     startQuery.envelope = query.envelope;

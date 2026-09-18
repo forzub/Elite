@@ -35,6 +35,11 @@ add_subdirectory(
     "${CMAKE_BINARY_DIR}/elite_navigation_local"
 )
 
+add_subdirectory(
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/trajectory"
+    "${CMAKE_BINARY_DIR}/elite_navigation_trajectory"
+)
+
 add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimeControlBridge.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NpcNavigationIntentController.cpp"
@@ -57,6 +62,7 @@ target_link_libraries(
         EliteNavigationControl
         EliteNavigationMap
         EliteNavigationLocal
+        EliteNavigationTrajectory
 )
 
 add_executable(

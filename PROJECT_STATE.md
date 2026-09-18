@@ -289,8 +289,18 @@ changed that formatting.
 The CMake layout has been restored and the architecture checker made
 whitespace-stable. No navigation behavior or safety contract was weakened.
 
-12A-6b1 remains pending the corrected architecture rerun plus the remaining
-trajectory/map/build/live regression gate.
+The corrected architecture rerun on the updated `main` is now green:
+
+```text
+NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS
+```
+
+Combined target-machine evidence for 12A-6b1 is therefore:
+- architecture contract PASS;
+- navigation_runtime 3/3 PASS.
+
+12A-6b1 remains a candidate until trajectory/map regressions, the full build,
+and the unchanged live server self-test are also green.
 
 ## State-recording protocol
 

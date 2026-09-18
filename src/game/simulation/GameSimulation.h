@@ -347,6 +347,7 @@ private:
     void updateInterplanetaryTransferLabActor();
     void updateActivationCadenceLabClaim(double serverTimeSeconds);
     void initializeNavigationRuntimeLab();
+    void publishNavigationRuntimeLabStaticGeometry();
     bool buildNavigationRuntimeLabIntent(
         EntityId id,
         Ship& ship,
@@ -443,6 +444,7 @@ private:
     EntityId m_navigationRuntimeLabShipId {0};
     std::string m_navigationRuntimeLabHubId;
     bool m_navigationRuntimeLabInitialized = false;
+    bool m_navigationRuntimeLabStaticGeometryPublished = false;
     std::uint64_t m_navigationRuntimeLabSourceRevision = 0;
     std::unique_ptr<world::navigation::NavigationMap>
         m_navigationRuntimeLabMap;

@@ -714,12 +714,58 @@ void spawnHubGuidanceTestModules(
             glm::dvec3(18.0, -15.0, 6.0),
             glm::dvec3(0.0)
         },
+        // Stage 12A-6b3b exact-static slit tunnel.
+        //
+        // Two three-cube rows form a 900 m-deep wall with a 120 m-high
+        // horizontal slit. The representative lower-middle cube deliberately
+        // retains the NAV STRESS CUBE 08 identity used by earlier exact-static
+        // diagnostics, but it is no longer an isolated obstacle.
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_slit_upper_left",
+            "NAV SLIT UPPER LEFT",
+            glm::dvec3(615.0, -940.0, -4500.0),
+            glm::dvec3(0.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_slit_upper_mid",
+            "NAV SLIT UPPER MID",
+            glm::dvec3(975.0, -940.0, -4500.0),
+            glm::dvec3(0.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_slit_upper_right",
+            "NAV SLIT UPPER RIGHT",
+            glm::dvec3(1335.0, -940.0, -4500.0),
+            glm::dvec3(0.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_slit_lower_left",
+            "NAV SLIT LOWER LEFT",
+            glm::dvec3(615.0, -1420.0, -4500.0),
+            glm::dvec3(0.0),
+            glm::dvec3(0.0)
+        },
         {
             ObjectType::GuidanceDockCube,
             "nav_stress_cube_08",
             "NAV STRESS CUBE 08",
-            glm::dvec3(975.0, -1300.0, -4900.0),
-            glm::dvec3(-8.0, 32.0, 14.0),
+            game::diagnostics::NavigationRuntimeLabObstacleVisualLocalMeters,
+            glm::dvec3(0.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_slit_lower_right",
+            "NAV SLIT LOWER RIGHT",
+            glm::dvec3(1335.0, -1420.0, -4500.0),
+            glm::dvec3(0.0),
             glm::dvec3(0.0)
         },
         {

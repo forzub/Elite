@@ -1407,6 +1407,20 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     glm::dvec3 expectedRotatingActorAngularVelocityMapRadPerSecond(0.0);
     bool haveRotatingActor = false;
 
+    std::uint32_t movingGapUpperEntityId = 0;
+    std::uint32_t movingGapLowerEntityId = 0;
+    glm::dvec3 movingGapUpperMapPosition(0.0);
+    glm::dvec3 movingGapLowerMapPosition(0.0);
+    const glm::dvec3 expectedMovingGapVelocityWorldMps =
+        game::navigation::hubVisualLocalToWorldVector(
+            hubFrame->progradeAxis,
+            hubFrame->radialAxis,
+            hubFrame->normalAxis,
+            NavigationRuntimeLabMovingGapVelocityVisualMps
+        );
+    const glm::dvec3 expectedMovingGapVelocityMapMps =
+        vectorToMap(expectedMovingGapVelocityWorldMps);
+
     // Stage 12 lab deliberately consumes the already-spawned physical
     // NAV STRESS / GUIDANCE objects. Their damage HitComponent is the geometry
     // source; no render-mesh or presentation-only obstacle list is consulted.
@@ -1459,7 +1473,12 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         //
         // CUBE 08 is stationary in the hub/map frame and MUST NOT be duplicated
         // here as a conservative sphere.
+        const bool movingGapBoundary =
+            isNavigationRuntimeLabMovingGapBoundary(
+                object.displayName
+            );
         const bool timeVaryingNavigationActor =
+            movingGapBoundary ||
             glm::length(
                 object.hubLocalAngularVelocityDegPerSecond
             ) > 1.0e-9;
@@ -1474,8 +1493,32 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             positionMeters.y,
             positionMeters.z
         };
-        actor.velocitySystemMetersPerSecond = {0.0, 0.0, 0.0};
+        const glm::dvec3 relativeLinearVelocityWorldMps =
+            movingGapBoundary
+                ? expectedMovingGapVelocityWorldMps
+                : glm::dvec3(0.0);
+        actor.velocitySystemMetersPerSecond = {
+            relativeLinearVelocityWorldMps.x,
+            relativeLinearVelocityWorldMps.y,
+            relativeLinearVelocityWorldMps.z
+        };
         actor.accelerationSystemMetersPerSecond2 = {0.0, 0.0, 0.0};
+
+        if (object.displayName == NavigationRuntimeLabMovingGapUpperLabel)
+        {
+            movingGapUpperEntityId = objectId.value;
+            movingGapUpperMapPosition = pointToMap(positionMeters);
+            m_navigationRuntimeLabObservation.movingGapUpperEntityId =
+                objectId.value;
+        }
+        else if (object.displayName ==
+                 NavigationRuntimeLabMovingGapLowerLabel)
+        {
+            movingGapLowerEntityId = objectId.value;
+            movingGapLowerMapPosition = pointToMap(positionMeters);
+            m_navigationRuntimeLabObservation.movingGapLowerEntityId =
+                objectId.value;
+        }
 
         const glm::dvec3 localAngularVelocityRadPerSecond =
             glm::radians(object.hubLocalAngularVelocityDegPerSecond);
@@ -1516,6 +1559,77 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     m_navigationRuntimeLabMap->replaceDynamicWorld(
         std::move(dynamicWorld)
     );
+
+    if (movingGapUpperEntityId != 0 &&
+        movingGapLowerEntityId != 0)
+    {
+        auto& observation = m_navigationRuntimeLabObservation;
+        observation.movingGapCurrentCenterMap =
+            0.5 * (movingGapUpperMapPosition + movingGapLowerMapPosition);
+
+        double maximumVelocityError = 0.0;
+        bool upperVerified = false;
+        bool lowerVerified = false;
+
+        const auto verifyBoundary =
+            [&](std::uint32_t entityId,
+                const glm::dvec3& centerMap,
+                bool& verified)
+            {
+                Map::SphereQuery query;
+                query.centerMapMeters = {
+                    centerMap.x,
+                    centerMap.y,
+                    centerMap.z
+                };
+                query.radiusMeters = 1.0;
+
+                const Map::QueryResult result =
+                    m_navigationRuntimeLabMap->querySphere(query);
+
+                for (const auto& candidate : result.candidates)
+                {
+                    if (candidate.entityId != entityId)
+                        continue;
+
+                    const glm::dvec3 observedVelocity(
+                        candidate.velocityMapMetersPerSecond.x,
+                        candidate.velocityMapMetersPerSecond.y,
+                        candidate.velocityMapMetersPerSecond.z
+                    );
+                    const double error =
+                        glm::length(
+                            observedVelocity -
+                            expectedMovingGapVelocityMapMps
+                        );
+                    maximumVelocityError =
+                        std::max(maximumVelocityError, error);
+                    verified = std::isfinite(error) &&
+                        error <= 1.0e-12;
+                    break;
+                }
+            };
+
+        verifyBoundary(
+            movingGapUpperEntityId,
+            movingGapUpperMapPosition,
+            upperVerified
+        );
+        verifyBoundary(
+            movingGapLowerEntityId,
+            movingGapLowerMapPosition,
+            lowerVerified
+        );
+
+        observation.movingGapMaximumVelocityErrorMps =
+            std::max(
+                observation.movingGapMaximumVelocityErrorMps,
+                maximumVelocityError
+            );
+        observation.movingGapKinematicsVerified =
+            observation.movingGapKinematicsVerified ||
+            (upperVerified && lowerVerified);
+    }
 
     if (haveRotatingActor)
     {

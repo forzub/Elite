@@ -111,12 +111,27 @@ public:
         double maximumInitialAngularRateRadPerSec = 0.05;
     };
 
+    struct PortalTraversalPolicy
+    {
+        bool enabled = true;
+
+        // Translational capture pulls the vehicle onto the portal centerline
+        // before entry. Angular capture rotates the hull longitudinal axis onto
+        // the oriented portal normal. Vehicle capability remains downstream
+        // authority; these are controller response gains, not hard-coded craft
+        // acceleration limits.
+        double capturePositionResponsePerSecond = 0.25;
+        double orientationResponsePerSecond2 = 4.0;
+        double minimumSpeedForDirectionMps = 0.25;
+    };
+
     struct Policy
     {
         Space::CorridorCostPolicy corridor {};
         Horizon::Policy horizon {};
         Avoidance::Policy avoidance {};
         MovingPassagePolicy movingPassage {};
+        PortalTraversalPolicy portalTraversal {};
     };
 
     enum class Status : std::uint8_t
@@ -129,7 +144,9 @@ public:
         StaleHold = 3,
         StaticHold = 4,
         InvalidInput = 5,
-        MovingPassageClear = 6
+        MovingPassageClear = 6,
+        PortalCapture = 7,
+        PortalTransit = 8
     };
 
     struct Result
@@ -158,6 +175,22 @@ public:
         std::vector<Space::RegionId> staticRegionPath;
         std::vector<Space::PortalId> staticPortalPath;
         std::vector<Space::Vec3d> staticPortalCentersMapMeters;
+        std::vector<Space::PortalTraversal> staticPortalTraversals;
+
+        // First finite-depth/oriented portal traversal, when present.
+        bool portalTraversalActive = false;
+        Space::PortalId activePortalId = 0;
+        glm::dvec3 portalNormalMap {0.0};
+        glm::dvec3 portalApproachPointMapMeters {0.0};
+        glm::dvec3 portalCenterMapMeters {0.0};
+        double portalCrossTrackMeters = 0.0;
+        double portalLateralSpeedMps = 0.0;
+        double portalVelocityAngleRad = 0.0;
+        double portalForwardAngleRad = 0.0;
+        bool portalVelocityAligned = false;
+        bool portalForwardAligned = false;
+        bool portalCaptureReady = false;
+        bool portalApproachHolding = false;
 
         Map::EntityId primaryConflictEntityId = 0;
         Map::EntityId nominalPrimaryConflictEntityId = 0;

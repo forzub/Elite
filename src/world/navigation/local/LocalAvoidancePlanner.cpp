@@ -127,15 +127,11 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         return result;
     }
 
-    if (nominal.status == LocalHorizonPlanner::Status::Clear)
-    {
-        result.status = Status::NominalClear;
-        return result;
-    }
-
     NavigationSpace::PointQuery startQuery;
-    startQuery.pointMapMeters = toSpaceVec(query.horizon.agent.positionMapMeters);
-    startQuery.envelope.radiusMeters = query.horizon.agent.radiusMeters;
+    startQuery.pointMapMeters =
+        toSpaceVec(query.horizon.agent.positionMapMeters);
+    startQuery.envelope.radiusMeters =
+        query.horizon.agent.radiusMeters;
     startQuery.envelope.additionalClearanceMeters =
         query.avoidance.staticAdditionalClearanceMeters;
 
@@ -144,10 +140,50 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     result.spaceRevision = start.spaceRevision;
     result.spaceSourceRevision = start.sourceRevision;
     result.startRegionId = start.regionId;
+    result.staticObstaclesExamined += start.obstaclesExamined;
 
     if (!start.traversable || start.regionId == 0)
     {
         result.status = Status::StaticHold;
+        result.nominalStaticBlocked = !start.blockingObstacleId.empty();
+        result.nominalStaticObstacleId = start.blockingObstacleId;
+        result.nominalStaticObstacleEntityId =
+            start.blockingObstacleEntityId;
+        return result;
+    }
+
+    // Dynamic and static truth are independent layers. Even when the dynamic
+    // horizon says Clear, the bounded nominal segment must be proven against
+    // exact persistent NavigationSpace geometry before it may pass through.
+    NavigationSpace::SegmentQuery nominalStaticQuery;
+    nominalStaticQuery.startMapMeters =
+        toSpaceVec(query.horizon.agent.positionMapMeters);
+    nominalStaticQuery.endMapMeters =
+        toSpaceVec(nominal.targetPositionMapMeters);
+    nominalStaticQuery.envelope = startQuery.envelope;
+    nominalStaticQuery.requireSameRegion = true;
+
+    const NavigationSpace::SegmentQueryResult nominalStatic =
+        staticSpace.querySegment(nominalStaticQuery);
+    result.staticObstaclesExamined += nominalStatic.obstaclesExamined;
+
+    if (nominalStatic.spaceRevision != start.spaceRevision ||
+        nominalStatic.sourceRevision != start.sourceRevision)
+    {
+        result.status = Status::StaticHold;
+        return result;
+    }
+
+    result.nominalStaticBlocked = !nominalStatic.traversable;
+    result.nominalStaticObstacleId =
+        nominalStatic.blockingObstacleId;
+    result.nominalStaticObstacleEntityId =
+        nominalStatic.blockingObstacleEntityId;
+
+    if (nominal.status == LocalHorizonPlanner::Status::Clear &&
+        nominalStatic.traversable)
+    {
+        result.status = Status::NominalClear;
         return result;
     }
 
@@ -163,7 +199,10 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
 
     if (probeDistance <= kEpsilon)
     {
-        result.status = Status::ConflictHold;
+        result.status =
+            nominal.status == LocalHorizonPlanner::Status::Clear
+                ? Status::StaticHold
+                : Status::ConflictHold;
         return result;
     }
 
@@ -204,29 +243,32 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                 scale(direction, probeDistance)
             );
 
-            NavigationSpace::PointQuery targetQuery;
-            targetQuery.pointMapMeters = toSpaceVec(candidateTarget);
-            targetQuery.envelope = startQuery.envelope;
-            const NavigationSpace::PointQueryResult targetStatic =
-                staticSpace.queryPoint(targetQuery);
+            NavigationSpace::SegmentQuery staticProbe;
+            staticProbe.startMapMeters =
+                toSpaceVec(query.horizon.agent.positionMapMeters);
+            staticProbe.endMapMeters =
+                toSpaceVec(candidateTarget);
+            staticProbe.envelope = startQuery.envelope;
+            staticProbe.requireSameRegion = true;
 
-            result.spaceRevision = targetStatic.spaceRevision;
-            result.spaceSourceRevision = targetStatic.sourceRevision;
+            const NavigationSpace::SegmentQueryResult staticResult =
+                staticSpace.querySegment(staticProbe);
 
-            // Do not combine static evidence from two different publications.
-            if (targetStatic.spaceRevision != start.spaceRevision ||
-                targetStatic.sourceRevision != start.sourceRevision)
+            result.spaceRevision = staticResult.spaceRevision;
+            result.spaceSourceRevision = staticResult.sourceRevision;
+            result.staticObstaclesExamined +=
+                staticResult.obstaclesExamined;
+
+            // Do not combine exact static evidence from two publications.
+            if (staticResult.spaceRevision != start.spaceRevision ||
+                staticResult.sourceRevision != start.sourceRevision)
             {
                 result.status = Status::StaticHold;
                 return result;
             }
 
-            // Same-region proof is intentionally conservative. Region free space
-            // is an AABB and therefore convex; if both envelope-safe endpoints
-            // resolve to the same region, the complete straight segment remains
-            // inside that shrunken free-space volume.
-            if (!targetStatic.traversable ||
-                targetStatic.regionId != start.regionId)
+            if (!staticResult.traversable ||
+                staticResult.startRegionId != start.regionId)
             {
                 ++result.staticRejected;
                 continue;
@@ -234,8 +276,10 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
 
             LocalHorizonPlanner::Query probe = query.horizon;
             probe.nominalTarget.positionMapMeters = candidateTarget;
-            probe.nominalTarget.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
-            probe.nominalTarget.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
+            probe.nominalTarget.velocityMapMetersPerSecond =
+                {0.0, 0.0, 0.0};
+            probe.nominalTarget.accelerationMapMetersPerSecond2 =
+                {0.0, 0.0, 0.0};
 
             LocalHorizonPlanner::Result adjusted =
                 horizonPlanner.evaluate(probe, dynamicCandidates);
@@ -245,11 +289,14 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                 continue;
             }
 
-            // An avoidance target is always temporary/pass-through even when its
-            // probe distance lies numerically inside the current horizon.
-            adjusted.targetMode = LocalHorizonPlanner::TargetMode::PassThrough;
-            adjusted.targetVelocityMapMetersPerSecond = {0.0, 0.0, 0.0};
-            adjusted.targetAccelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
+            // An avoidance target is always temporary/pass-through even when
+            // its probe distance lies numerically inside the current horizon.
+            adjusted.targetMode =
+                LocalHorizonPlanner::TargetMode::PassThrough;
+            adjusted.targetVelocityMapMetersPerSecond =
+                {0.0, 0.0, 0.0};
+            adjusted.targetAccelerationMapMetersPerSecond2 =
+                {0.0, 0.0, 0.0};
 
             result.status = Status::AdjustedClear;
             result.target = adjusted;
@@ -258,7 +305,10 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         }
     }
 
-    result.status = Status::ConflictHold;
+    result.status =
+        nominal.status == LocalHorizonPlanner::Status::Clear
+            ? Status::StaticHold
+            : Status::ConflictHold;
     return result;
 }
 

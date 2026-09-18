@@ -1063,7 +1063,7 @@ replication before 12A-6b is closed end-to-end.
 Candidate baseline before documentation commits:
 
 ```text
-4b117cada10ce416250d917a8bdad2b6b5580ee7
+5e96b59ab99a22d3d1fa94cf16577b5ff71c84bb
 ```
 
 The moving precision policy now has two independent switches:

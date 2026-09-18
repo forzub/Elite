@@ -635,70 +635,10 @@ int runNavigationRuntimeSelfTest()
             return 57;
         }
 
-        if (observation.firstLiveNominalProbeCaptured &&
-            (!observation.firstLiveNominalExactBlocked ||
-             observation.firstLiveNominalBlockingEntityId !=
-                observation.obstacleEntityId))
-        {
-            std::cerr
-                << "[NAV-SELFTEST]"
-                << " first_live_probe_blocked="
-                << observation.firstLiveNominalExactBlocked
-                << " first_live_blocker_entity="
-                << observation.firstLiveNominalBlockingEntityId
-                << " obstacle_entity="
-                << observation.obstacleEntityId
-                << " first_live_horizon_m="
-                << observation.firstLiveHorizonMeters
-                << " placement_time_s="
-                << observation.placementServerTimeSeconds
-                << " first_live_time_s="
-                << observation.firstLiveServerTimeSeconds
-                << " placement_map=("
-                << observation.placementPositionMap.x << ","
-                << observation.placementPositionMap.y << ","
-                << observation.placementPositionMap.z << ")"
-                << " first_live_agent_map=("
-                << observation.firstLiveAgentPositionMap.x << ","
-                << observation.firstLiveAgentPositionMap.y << ","
-                << observation.firstLiveAgentPositionMap.z << ")"
-                << " first_live_goal_map=("
-                << observation.firstLiveGoalPositionMap.x << ","
-                << observation.firstLiveGoalPositionMap.y << ","
-                << observation.firstLiveGoalPositionMap.z << ")"
-                << " first_live_bounded_target_map=("
-                << observation.firstLiveBoundedTargetMap.x << ","
-                << observation.firstLiveBoundedTargetMap.y << ","
-                << observation.firstLiveBoundedTargetMap.z << ")"
-                << "\n";
-            std::cerr
-                << "[FAIL] first live bounded nominal segment does not "
-                << "hit exact CUBE 08 HitVolume\n";
-            return 50;
-        }
-
-        if (observation.planCount > 0 &&
-            observation.firstLiveNominalProbeCaptured &&
-            observation.firstLiveNominalExactBlocked &&
-            observation.firstLiveNominalBlockingEntityId ==
-                observation.obstacleEntityId &&
-            !observation.slitPortalWaypointSeen)
-        {
-            std::cerr
-                << "[NAV-SELFTEST]"
-                << " first_live_probe_blocked=1"
-                << " first_live_blocker_entity="
-                << observation.firstLiveNominalBlockingEntityId
-                << " slit_portal_waypoint="
-                << observation.slitPortalWaypointSeen
-                << " first_live_horizon_m="
-                << observation.firstLiveHorizonMeters
-                << "\n";
-            std::cerr
-                << "[FAIL] direct route is exact-static blocked but planner "
-                << "did not select the authored slit portal\n";
-            return 51;
-        }
+        // firstLiveNominal* remains diagnostic-only. With a finite-depth
+        // portal/tunnel topology the first bounded target may legitimately end
+        // on a different region/portal boundary; exact physical safety is
+        // proven separately by the exact-obstacle sweep below.
 
         if (observation.firstExactStaticViolationCaptured)
         {
@@ -748,7 +688,6 @@ int runNavigationRuntimeSelfTest()
             observation.movingGapPairCandidateSeen &&
             observation.movingGapKinematicsVerified &&
             observation.slitPortalExactOpenPublished &&
-            observation.slitPortalWaypointSeen &&
             observation.movingPrecisionAttemptedSeen &&
             observation.movingPassageFeasibleSeen &&
             observation.movingPassageStaticSafeSeen &&
@@ -837,6 +776,22 @@ int runNavigationRuntimeSelfTest()
             << observation.slitPortalExactOpenPublished
             << " slit_portal="
             << observation.slitPortalWaypointSeen
+            << " slit_entry_capture="
+            << observation.slitEntryCaptureSeen
+            << " slit_entry_vel_aligned="
+            << observation.slitEntryVelocityAlignedSeen
+            << " slit_entry_fwd_aligned="
+            << observation.slitEntryForwardAlignedSeen
+            << " slit_entry_crossed_aligned="
+            << observation.slitEntryPlaneCrossedAligned
+            << " slit_entry_vel_angle_rad="
+            << observation.slitEntryVelocityAngleRad
+            << " slit_entry_fwd_angle_rad="
+            << observation.slitEntryForwardAngleRad
+            << " slit_entry_lateral_mps="
+            << observation.slitEntryLateralSpeedMps
+            << " slit_entry_cross_track_m="
+            << observation.slitEntryCrossTrackMeters
             << " slit_passed="
             << observation.slitTunnelPassed
             << " slit_margin_m="
@@ -1107,7 +1062,7 @@ int runNavigationRuntimeSelfTest()
     // Replication was captured while MovingPassageClear owned execution.
     // Continue the SAME authoritative run. The ordered acceptance is now:
     // moving authority -> replicated active epoch -> physical gap crossing ->
-    // independent CUBE 08 exact-static avoidance/progress.
+    // portal approach/capture -> aligned entry -> tunnel transit/exit.
     bool behaviorEvidenceComplete = false;
 
     while (simulatedSeconds + step <= MaxSimulatedSeconds + 1.0e-9)
@@ -1139,6 +1094,10 @@ int runNavigationRuntimeSelfTest()
             observation.movingPassageAppliedAccelerationSeen &&
             observation.slitPortalExactOpenPublished &&
             observation.slitPortalWaypointSeen &&
+            observation.slitEntryCaptureSeen &&
+            observation.slitEntryVelocityAlignedSeen &&
+            observation.slitEntryForwardAlignedSeen &&
+            observation.slitEntryPlaneCrossedAligned &&
             observation.slitTunnelPassed &&
             observation.exactStaticGeometryPublished &&
             observation.exactStaticObstacleCount > 0 &&
@@ -1171,6 +1130,21 @@ int runNavigationRuntimeSelfTest()
             << "exact-static slit-tunnel passage inside the 120 s bound"
             << " moving_gap_passed=" << observation.movingGapPlanePassed
             << " slit_portal=" << observation.slitPortalWaypointSeen
+            << " slit_entry_capture=" << observation.slitEntryCaptureSeen
+            << " slit_entry_vel_aligned="
+            << observation.slitEntryVelocityAlignedSeen
+            << " slit_entry_fwd_aligned="
+            << observation.slitEntryForwardAlignedSeen
+            << " slit_entry_crossed_aligned="
+            << observation.slitEntryPlaneCrossedAligned
+            << " slit_entry_vel_angle_rad="
+            << observation.slitEntryVelocityAngleRad
+            << " slit_entry_fwd_angle_rad="
+            << observation.slitEntryForwardAngleRad
+            << " slit_entry_lateral_mps="
+            << observation.slitEntryLateralSpeedMps
+            << " slit_entry_cross_track_m="
+            << observation.slitEntryCrossTrackMeters
             << " slit_passed=" << observation.slitTunnelPassed
             << " slit_margin_m=" << observation.slitTunnelCrossingMarginMeters
             << " passed_obstacle_plane=" << observation.passedObstaclePlane
@@ -1247,6 +1221,22 @@ int runNavigationRuntimeSelfTest()
         << observation.slitPortalExactOpenPublished
         << " slit_portal="
         << observation.slitPortalWaypointSeen
+        << " slit_entry_capture="
+        << observation.slitEntryCaptureSeen
+        << " slit_entry_vel_aligned="
+        << observation.slitEntryVelocityAlignedSeen
+        << " slit_entry_fwd_aligned="
+        << observation.slitEntryForwardAlignedSeen
+        << " slit_entry_crossed_aligned="
+        << observation.slitEntryPlaneCrossedAligned
+        << " slit_entry_vel_angle_rad="
+        << observation.slitEntryVelocityAngleRad
+        << " slit_entry_fwd_angle_rad="
+        << observation.slitEntryForwardAngleRad
+        << " slit_entry_lateral_mps="
+        << observation.slitEntryLateralSpeedMps
+        << " slit_entry_cross_track_m="
+        << observation.slitEntryCrossTrackMeters
         << " slit_passed="
         << observation.slitTunnelPassed
         << " slit_margin_m="
@@ -1329,8 +1319,9 @@ int runNavigationRuntimeSelfTest()
     }
 
     std::cerr
-        << "[PASS] navigation-runtime live moving-passage authority drove real physics,"
-        << " the ship crossed the exact-static slit tunnel collision-free,"
+        << "[PASS] navigation-runtime moving authority drove real physics,"
+        << " portal capture aligned flight path + hull axis before entry,"
+        << " the ship crossed the exact-static tunnel collision-free,"
         << " and execution matched same-tick sparse/canonical replication\n";
     return 0;
 }

@@ -3,7 +3,8 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** stage 12A — deterministic end-to-end runtime proving ground
+**Current stage:** stage 12A — deterministic end-to-end runtime proving ground  
+**Current slice:** 12A-6b — live moving-gap / moving-passage composition
 
 `main` is the only canonical development branch.
 
@@ -20,7 +21,7 @@ shared ship-centered NavigationWorld
     |   free space / clearance / portals / cached corridors
     |
     + dynamic NavigationMap
-    |   mass P/V/A prediction / swept bounds / bins
+    |   mass P/V/A + angular-motion publication / swept bounds / bins
     |   compact relevant/conflict candidates
     |
     + LocalHorizon / LocalAvoidance

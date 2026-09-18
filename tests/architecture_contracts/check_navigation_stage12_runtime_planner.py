@@ -149,6 +149,12 @@ require(
     "ordinary NPC fallback path must remain present while the lab is isolated",
 )
 
+require(
+    "isNavigationRuntimeLabShip(shipId)" in SIM_CPP and
+    "return SimulationMode::Active;" in SIM_CPP,
+    "stage-12 proving actor must stay Active so activation cadence cannot contaminate the navigation result",
+)
+
 for marker in (
     "NavigationRuntimeLabEnabled",
     "NavigationRuntimeLabStartTacticalLocalMeters",
@@ -192,3 +198,4 @@ print(" - blocked/stale/conflict states keep producing fail-closed pilot intent"
 print(" - planner cannot mutate authoritative physics state")
 print(" - client/server share the same NavigationWorld runtime-planning target")
 print(" - deterministic fixtures pin detour, envelope rejection, moving conflict and pilot bridge")
+print(" - authoritative GameSimulation isolates one Active stage-12 lab actor on real NAV STRESS hit volumes")

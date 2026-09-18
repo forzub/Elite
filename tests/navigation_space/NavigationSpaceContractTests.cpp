@@ -24,6 +24,11 @@ void require(bool condition, const std::string& message)
         fail(message);
 }
 
+bool near(double a, double b, double tolerance = 1.0e-9)
+{
+    return std::abs(a - b) <= tolerance;
+}
+
 Space::RegionInput region(
     Space::RegionId id,
     double minX,

@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** stage 11A — live runtime control seam
+**Current stage:** stage 11B-1 — authoritative NPC runtime ownership
 
 `main` is the only canonical development branch.
 
@@ -561,7 +561,7 @@ Authority:
 src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md
 ```
 
-Stage 11A introduces one explicit runtime control seam:
+Stage 11A introduced one explicit runtime control seam:
 
 ```text
 Navigation intent
@@ -577,7 +577,21 @@ Material manual controls override the corresponding navigation demand.
 
 `ExecutionSnapshot` mirrors the exact executed demand/revision sent to control. Stage 11B must use this same truth for guidance/debug instead of re-solving a presentation path.
 
-Stage 11B will replace the current placeholder NPC steering authority with Navigation v2 runtime ownership while keeping NPC AI as goal/policy input.
+Stage 11A target-machine acceptance:
+
+```text
+d7c77d5868b3178be3c392f0a8fecad5b57e3b69
+NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+navigation_runtime_control 1/1 PASS
+navigation_trajectory/pilot 11/11 PASS
+EliteGame + EliteServer canonical build PASS
+```
+
+Stage 11B-1 now replaces the placeholder NPC steering authority. `NpcAiSystem` publishes only `NpcNavigationGoal` plus `PilotSkillProfile`; it no longer emits `ShipControlState` or control-surface inputs.
+
+`NpcNavigationIntentController` owns the nominal acceleration-intent conversion, and `GameSimulation` owns persistent per-NPC `NavigationRuntimeControlBridge` state. Activation-decimated elapsed time is advanced in exact bounded `<=0.25 s` pieces.
+
+The exact latest `ExecutionSnapshot` used for control is retained per NPC as the server truth seam for stage 11B-2 replication/guidance. No direct-steering fallback is allowed.
 
 ## 12. Performance contract
 
@@ -615,8 +629,9 @@ Guidance visualizes the accepted navigation/trajectory/control intent; it must n
    9B continuous final approach                      CLOSED
 10 PilotSkillProfile                                 CLOSED
 11 live EliteGame / EliteServer / guidance + physics ACTIVE
-   11A runtime control seam                           ACTIVE
-   11B NPC/guidance authoritative ownership           PENDING
+   11A runtime control seam                           CLOSED
+   11B-1 authoritative NPC runtime ownership           ACTIVE
+   11B-2 replicated guidance/debug truth               PENDING
 12 end-to-end stress/debug + legacy retirement       PENDING
 ```
 

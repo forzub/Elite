@@ -895,9 +895,28 @@ bool GameSimulation::updateNpcNavigationControl(
         m_npcNavigationLastExecutionTimeSeconds[id] = initialTime;
     }
 
+    const auto& tr = ship.core().transform();
+
+    game::navigation::NpcNavigationKinematicState navigationState;
+    navigationState.relativeWorldVelocityMps =
+        tr.motion.travelFrame.valid
+            ? tr.motion.travelFrame.localToWorldVector(
+                  tr.motion.localVelocityMps
+              )
+            : tr.motion.worldVelocityMps;
+    navigationState.forwardMap = glm::dvec3(tr.forward());
+    navigationState.rightMap = glm::dvec3(tr.right());
+    navigationState.upMap = glm::dvec3(tr.up());
+    navigationState.pitchRateRadPerSec =
+        static_cast<double>(tr.pitchRate);
+    navigationState.yawRateRadPerSec =
+        static_cast<double>(tr.yawRate);
+    navigationState.rollRateRadPerSec =
+        static_cast<double>(tr.rollRate);
+
     const Bridge::Intent intent =
         game::navigation::NpcNavigationIntentController::buildIntent(
-            ship,
+            navigationState,
             goal
         );
 

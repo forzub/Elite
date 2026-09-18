@@ -11,6 +11,12 @@ ROOT_CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 RUNTIME_CMAKE = (ROOT / "tests/navigation_runtime/CMakeLists.txt").read_text(encoding="utf-8")
 RUNTIME_TEST = (ROOT / "tests/navigation_runtime/NavigationRuntimePlannerTests.cpp").read_text(encoding="utf-8")
 DOC = (ROOT / "src/game/navigation/STAGE12_END_TO_END.md").read_text(encoding="utf-8")
+ADAPTER_H = (ROOT / "src/game/navigation/NavigationHitVolumeAdapter.h").read_text(encoding="utf-8")
+ADAPTER_CPP = (ROOT / "src/game/navigation/NavigationHitVolumeAdapter.cpp").read_text(encoding="utf-8")
+SIM_H = (ROOT / "src/game/simulation/GameSimulation.h").read_text(encoding="utf-8")
+SIM_CPP = (ROOT / "src/game/simulation/GameSimulation.cpp").read_text(encoding="utf-8")
+SCENE_CPP = (ROOT / "src/game/scene/GameSceneSetup.cpp").read_text(encoding="utf-8")
+LAB_H = (ROOT / "src/game/diagnostics/NavigationRuntimeLab.h").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -94,6 +100,77 @@ for marker in (
     "testPlannerIntentCrossesAcceptedPilotBridge",
 ):
     require(marker in RUNTIME_TEST, f"runtime planner fixture missing: {marker}")
+
+
+for marker in (
+    "class NavigationHitVolumeAdapter final",
+    "buildObstacles",
+    "conservativeRadiusFromOrigin",
+):
+    require(marker in ADAPTER_H, f"hit-volume navigation adapter missing: {marker}")
+
+for marker in (
+    "NavigationObstacleShape::Box",
+    "objectWorldPositionMeters",
+    "objectLocalToWorld",
+    "supportLinkVolume",
+):
+    require(marker in ADAPTER_CPP, f"hit-volume adapter implementation missing: {marker}")
+
+require(
+    "NavigationHitVolumeAdapter.cpp" in ROOT_CMAKE and
+    "NavigationHitVolumeAdapter.cpp" in RUNTIME_CMAKE,
+    "hit-volume adapter must compile in production and isolated runtime gate",
+)
+
+for marker in (
+    "registerNavigationRuntimeLabShip",
+    "isNavigationRuntimeLabShip",
+    "navigationRuntimeLabLastPlan",
+    "buildNavigationRuntimeLabIntent",
+    "m_navigationRuntimeLabMap",
+    "m_navigationRuntimeLabSpace",
+):
+    require(marker in SIM_H, f"authoritative navigation runtime lab seam missing: {marker}")
+
+for marker in (
+    "initializeNavigationRuntimeLab();",
+    "buildNavigationRuntimeLabIntent(id, ship, intent)",
+    "NavigationHitVolumeAdapter::",
+    "conservativeRadiusFromOrigin(object.hitComponent)",
+    "m_navigationRuntimeLabMap->replaceDynamicWorld",
+    "m_navigationRuntimeLabMap->queryCorridor",
+    "Planner::plan(",
+):
+    require(marker in SIM_CPP, f"GameSimulation runtime planner integration missing: {marker}")
+
+require(
+    "NpcNavigationIntentController::buildIntent" in SIM_CPP,
+    "ordinary NPC fallback path must remain present while the lab is isolated",
+)
+
+for marker in (
+    "NavigationRuntimeLabEnabled",
+    "NavigationRuntimeLabStartTacticalLocalMeters",
+    "NavigationRuntimeLabGoalTacticalLocalMeters",
+    "NAVIGATION V2 RUNTIME LAB",
+):
+    require(
+        marker in LAB_H or marker in SCENE_CPP,
+        f"navigation runtime lab definition/spawn missing: {marker}",
+    )
+
+require(
+    "spawnHubGuidanceTestModules" in SCENE_CPP and
+    "spawnNavigationRuntimeLabNpc" in SCENE_CPP and
+    "registerNavigationRuntimeLabShip" in SCENE_CPP,
+    "existing NAV STRESS scene must feed the live runtime lab",
+)
+
+require(
+    "testHitVolumeAdapterUsesAuthoritativeLocalObb" in RUNTIME_TEST,
+    "runtime gate must pin authoritative HitVolume -> navigation OBB conversion",
+)
 
 for marker in (
     "deterministic proving ground",

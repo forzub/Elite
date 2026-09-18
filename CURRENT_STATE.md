@@ -3,7 +3,7 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** 11B-1 — authoritative NPC runtime ownership
+**Active stage:** 11B-1 — authoritative NPC runtime ownership / repaired candidate rerun
 
 ## Progress
 
@@ -111,3 +111,29 @@ bash build_mingw64.sh
 ```
 
 After green: continue directly into 11B-2 replication/guidance.
+
+
+## 11B-1 first target-machine attempt — NOT ACCEPTED
+
+The ownership architecture passed and the prior trajectory/pilot suite remained green, but the full gate did not close.
+
+Observed:
+
+```text
+live runtime control architecture     PASS
+live NPC ownership architecture       PASS
+navigation trajectory/pilot           11/11 PASS
+EliteGame                             build PASS
+
+navigation_runtime                    compile FAIL
+EliteServer                           link FAIL
+```
+
+Root causes:
+
+```text
+isolated runtime test omitted GLM_ENABLE_EXPERIMENTAL
+headless EliteServer omitted the three new live-navigation implementation .cpp files
+```
+
+Repairs are now committed. The ownership/runtime behavior itself was not relaxed.

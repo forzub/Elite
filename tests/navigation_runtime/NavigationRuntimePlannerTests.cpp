@@ -302,6 +302,51 @@ void testSamePortalRejectsOversizedHull()
             "stationary static hold must not invent translation demand");
 }
 
+void testExactStaticObstacleParticipatesInRuntimeComposition()
+{
+    Space space;
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 205;
+    update.regions = {
+        region(1, 10.0, 0.0, 20.0, 20.0, 20.0)
+    };
+
+    world::navigation::NavigationObstacle wall;
+    wall.id = "runtime_static_wall";
+    wall.entityId = 333;
+    wall.shape =
+        world::navigation::NavigationObstacleShape::Box;
+    wall.centerMeters = {8.0, 0.0, 0.0};
+    wall.localToWorldBasis = glm::dmat3(1.0);
+    wall.halfExtentsMeters = {1.0, 0.25, 2.0};
+    update.obstacles.push_back(wall);
+
+    space.replaceStaticWorld(std::move(update));
+
+    const Planner::Result result = Planner::plan(
+        baseAgent(),
+        goalAt(20.0),
+        emptyDynamic(),
+        0.0,
+        space,
+        basePolicy()
+    );
+
+    require(result.status == Planner::Status::AdjustedClear,
+            "static-only OBB blocker must participate in runtime composition");
+    require(result.adjustedTarget,
+            "runtime composition must own the exact-static adjusted target");
+    require(result.nominalStaticBlocked,
+            "runtime planner must surface nominal exact-static rejection");
+    require(result.nominalStaticObstacleId == "runtime_static_wall" &&
+            result.nominalStaticObstacleEntityId == 333,
+            "runtime planner lost exact static blocker identity");
+    require(result.staticObstaclesExamined > 0,
+            "runtime planner must expose exact static query work");
+    require(result.nominalDynamicConflictsFound == 0,
+            "static-only fixture must not fabricate a dynamic conflict");
+}
+
 void testAdjustedTargetPreservesNominalConflictIdentity()
 {
     Map::Config config;
@@ -536,6 +581,7 @@ int main()
         testHitVolumeAdapterUsesAuthoritativeLocalObb();
         testStaticCorridorBecomesLivePortalWaypoint();
         testSamePortalRejectsOversizedHull();
+        testExactStaticObstacleParticipatesInRuntimeComposition();
         testAdjustedTargetPreservesNominalConflictIdentity();
         testNavigationMapCrossingConflictProducesBrakingHold();
         testMapIntentTransformsIntoWorldControlFrame();
@@ -545,6 +591,7 @@ int main()
         std::cout << " - authoritative HitVolume -> navigation OBB adapter\n";
         std::cout << " - static corridor portal -> bounded live target\n";
         std::cout << " - portal clearance rejects oversized hull\n";
+        std::cout << " - exact static OBB participates in runtime composition\n";
         std::cout << " - adjusted target retains nominal conflict identity\n";
         std::cout << " - NavigationMap crossing conflict -> braking hold\n";
         std::cout << " - non-identity map intent -> world control frame\n";

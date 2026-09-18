@@ -231,6 +231,42 @@ Existing ownership remains frozen unless live evidence proves a defect:
 - no presentation-side second planner;
 - navigation never writes authoritative P/V directly.
 
+#### 12A-6b1 — CANDIDATE / target-machine pending
+
+Candidate code through `616f5b868795439fb42308d2c2d13ffc87218cba`
+composes the accepted moving precision components into the shared runtime planner
+without granting them steering authority yet.
+
+The bounded chain is now:
+
+```text
+NavigationMap::QueryResult
+    -> nominal dynamic conflict identity
+    -> BoundedGapCandidateBuilder (hard <= 8)
+    -> MovingGapPredictor
+    -> MovingPassageTrajectoryEvaluator
+    -> runtime feasibility diagnostics
+```
+
+The runtime regression set includes:
+- an open translating gap that must become continuously feasible for the test
+  hull;
+- a gap that closes inside the horizon and must fail before moving-passage
+  acceptance.
+
+`MovingPassageTrajectoryEvaluator::Result` now publishes the first linear
+acceleration sample from the exact Hermite segment that it verified. This avoids
+a future authority step accepting one curve and then executing a separately
+re-derived approximation.
+
+12A-6b1 deliberately remains observe/prove only. The current missing safety
+composition is exact-static proof of the **same moving trajectory** against
+NavigationSpace HitVolume geometry. Until that exists, LocalAvoidance/exact
+static remains the only steering authority.
+
+Target-machine architecture, trajectory, runtime, build and unchanged live
+self-test evidence are pending.
+
 ## State-recording protocol
 
 A project-state transition is not considered recorded until the Markdown context

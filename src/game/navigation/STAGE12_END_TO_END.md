@@ -273,6 +273,40 @@ sphere candidates remain in `NavigationMap`. Removing static objects from the
 dynamic layer is deliberately deferred until the OBB publication/proof gate is
 green, so ownership cleanup cannot hide a precision-geometry regression.
 
+### 12A-4 first target-machine run: interpretation
+
+The first target-machine 12A-4 run proved that exact static HitVolume geometry
+was published and queried live, but exposed three independent contract edges.
+
+1. A newly-authored local test fixture violated the pre-existing dynamic
+   candidate invariant by setting conservative swept radius below actor radius.
+   The fail-closed validator was correct; the fixture is fixed.
+
+2. A corridor-selected portal centre lies on the shared boundary between free
+   regions. Generic exact-static endpoint envelope clearance therefore rejected
+   a valid portal target. The runtime now carries the already-proven corridor
+   portal clearance into the nominal exact segment query. This exception applies
+   only to the selected nominal portal endpoint; adjusted local probes remain
+   strict.
+
+3. The old live criterion
+   `minimumConservativeClearanceMeters > 0` is no longer valid once exact OBB
+   geometry owns static precision. An enclosing broadphase sphere may overlap
+   genuinely free space around an OBB. Negative sphere clearance is diagnostic,
+   not collision truth.
+
+The corrected live safety proof sweeps every actual authoritative fixed-step
+motion segment through NavigationSpace exact HitVolume geometry using the ship
+envelope plus local static clearance. Acceptance requires:
+
+```text
+exact_static_motion_samples > 0
+exact_static_violation = 0
+```
+
+alongside the existing publication/query/block, physical progress and exact
+replication evidence.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

@@ -965,24 +965,42 @@ NavigationSpace::SegmentQueryResult NavigationSpace::querySegment(
         return result;
     }
 
-    PointQuery endQuery;
-    endQuery.pointMapMeters = query.endMapMeters;
-    endQuery.envelope = query.envelope;
-    const PointQueryResult end = queryPoint(endQuery);
-    result.regionsExamined += end.regionsExamined;
-    result.obstaclesExamined += end.obstaclesExamined;
-    result.endRegionId = end.regionId;
-    if (!end.traversable)
+    if (query.allowEndOnStartRegionBoundary)
     {
-        result.blockingObstacleId = end.blockingObstacleId;
-        result.blockingObstacleEntityId = end.blockingObstacleEntityId;
-        return result;
-    }
+        const auto startRegionIt =
+            impl_->regions.find(result.startRegionId);
+        if (startRegionIt == impl_->regions.end() ||
+            startRegionIt->second.invalidated ||
+            !contains(
+                startRegionIt->second.input.boundsMapMeters,
+                query.endMapMeters))
+        {
+            return result;
+        }
 
-    if (query.requireSameRegion &&
-        result.startRegionId != result.endRegionId)
+        result.endRegionId = result.startRegionId;
+    }
+    else
     {
-        return result;
+        PointQuery endQuery;
+        endQuery.pointMapMeters = query.endMapMeters;
+        endQuery.envelope = query.envelope;
+        const PointQueryResult end = queryPoint(endQuery);
+        result.regionsExamined += end.regionsExamined;
+        result.obstaclesExamined += end.obstaclesExamined;
+        result.endRegionId = end.regionId;
+        if (!end.traversable)
+        {
+            result.blockingObstacleId = end.blockingObstacleId;
+            result.blockingObstacleEntityId = end.blockingObstacleEntityId;
+            return result;
+        }
+
+        if (query.requireSameRegion &&
+            result.startRegionId != result.endRegionId)
+        {
+            return result;
+        }
     }
 
     for (const auto& obstacleEntry : impl_->obstacles)

@@ -17,7 +17,7 @@
 - 12A-6b live moving-gap / moving-passage composition — ACTIVE
 - 12A-6b1 runtime moving-precision observe/prove seam — ACCEPTED
 - 12A-6b2 exact-static proof of accepted moving trajectory — ACCEPTED
-- 12A-6b3a verified moving-passage steering authority seam — ACTIVE
+- 12A-6b3a verified moving-passage steering authority seam — CANDIDATE / target-machine pending
 
 ## 12A-6a acceptance
 
@@ -315,3 +315,47 @@ LocalAvoidance/fail-closed path.
 12A-6b3a will first pin the planner/control seam deterministically. A separate
 live execution gate is still required before claiming the whole moving-gap
 authority chain accepted end-to-end.
+
+
+## 12A-6b3a candidate now on main
+
+Candidate implementation baseline before documentation commits:
+
+```text
+4b117cada10ce416250d917a8bdad2b6b5580ee7
+```
+
+Authority is now deliberately split from precision evaluation:
+
+```text
+movingPassage.enabled
+    -> may evaluate/prove only
+
+movingPassage.allowSteeringAuthority
+    && fresh dynamic result
+    && movingPassageFeasible
+    && movingPassageStaticSafe
+    -> MovingPassageClear
+    -> exact first proved Hermite acceleration sample becomes planner intent
+```
+
+`allowSteeringAuthority` defaults to false, so existing callers that enable
+precision for diagnostics cannot silently change steering.
+
+The authority path returns before the ordinary desired-velocity solve. It uses
+`movingPassageInitialAccelerationMapMps2` directly, keeps the proved Hermite
+endpoint for diagnostics, and reuses only the existing angular stabilization
+semantics.
+
+Deterministic regressions now pin:
+- precision enabled but authority disabled -> still observe-only;
+- open dynamically + statically proven passage with authority enabled ->
+  `MovingPassageClear` and exact sample ownership;
+- closing moving gap -> never gains authority;
+- dynamically feasible passage blocked by exact-static beam -> never gains
+  authority;
+- accepted sample survives a non-identity map->world transform and crosses the
+  PilotSkillExecutor bridge into ShipControlState without re-planning.
+
+This is not yet the live physics/replication acceptance of moving-passage
+authority. 12A-6b3a must first pass the target-machine deterministic/build gate.

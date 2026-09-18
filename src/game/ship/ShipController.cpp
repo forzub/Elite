@@ -339,6 +339,66 @@ bool applyVelocityAlignmentAttitude(
     ship.rollInput = 0.0f;
     return true;
 }
+
+void applyRequestedAngularAcceleration(
+    ShipTransform& ship,
+    const ShipParams& params,
+    float dt,
+    glm::vec3 requestedAngularAcceleration
+)
+{
+    const float safeAngularAccel = angularAccelerationEnvelope(params);
+    const float safeAngularRate = angularRateEnvelope(params);
+    const float maxPitchRate = std::min(
+        std::max(0.0f, params.maxPitchRate),
+        safeAngularRate
+    );
+    const float maxYawRate = std::min(
+        std::max(0.0f, params.maxYawRate),
+        safeAngularRate
+    );
+    const float maxRollRate = std::min(
+        std::max(0.0f, params.maxRollRate),
+        safeAngularRate
+    );
+
+    const float requestedAccelLength =
+        glm::length(requestedAngularAcceleration);
+    if (requestedAccelLength > safeAngularAccel &&
+        requestedAccelLength > 1.0e-6f)
+    {
+        requestedAngularAcceleration *=
+            safeAngularAccel / requestedAccelLength;
+    }
+
+    requestedAngularAcceleration.x = limitAxisControlAcceleration(
+        ship.pitchRate, requestedAngularAcceleration.x, maxPitchRate, dt
+    );
+    requestedAngularAcceleration.y = limitAxisControlAcceleration(
+        ship.yawRate, requestedAngularAcceleration.y, maxYawRate, dt
+    );
+    requestedAngularAcceleration.z = limitAxisControlAcceleration(
+        ship.rollRate, requestedAngularAcceleration.z, maxRollRate, dt
+    );
+
+    const glm::vec3 currentRate(
+        ship.pitchRate,
+        ship.yawRate,
+        ship.rollRate
+    );
+
+    requestedAngularAcceleration =
+        limitAngularDeltaToControlledMagnitude(
+            currentRate,
+            requestedAngularAcceleration,
+            safeAngularRate,
+            dt
+        );
+
+    ship.pitchRate += requestedAngularAcceleration.x * dt;
+    ship.yawRate   += requestedAngularAcceleration.y * dt;
+    ship.rollRate  += requestedAngularAcceleration.z * dt;
+}
 }
 
 void ShipController::update(
@@ -361,10 +421,8 @@ void ShipController::updateControlRates(
 {
     (void)world;
 
-    // ---------------- attitude / rotation only ----------------
-    // Resolve the common descriptor-driven envelope before either manual or
-    // automatic attitude control. The predictive HOME/INSERT/END controller
-    // uses these exact same limits to calculate its braking point.
+    // Manual/legacy attitude path, including persistent HOME/INSERT/END
+    // velocity-alignment behavior.
     const float safeAngularAccel = angularAccelerationEnvelope(params);
     const float safeAngularRate = angularRateEnvelope(params);
     const float maxPitchRate = std::min(
@@ -373,10 +431,6 @@ void ShipController::updateControlRates(
     );
     const float maxYawRate = std::min(
         std::max(0.0f, params.maxYawRate),
-        safeAngularRate
-    );
-    const float maxRollRate = std::min(
-        std::max(0.0f, params.maxRollRate),
         safeAngularRate
     );
 
@@ -389,10 +443,6 @@ void ShipController::updateControlRates(
         safeAngularRate
     );
 
-    // The same envelope is used for player ships, NPCs and any future drones
-    // that use ShipController. The limits describe CONTROL AUTHORITY, not a
-    // hard clamp on physical spin: an off-centre collision may produce rates
-    // above them, and the RCS then needs real time/torque to recover.
     glm::vec3 angularInput(
         ship.pitchInput,
         ship.yawInput,
@@ -402,17 +452,11 @@ void ShipController::updateControlRates(
     if (angularInputLength > 1.0f)
         angularInput /= angularInputLength;
 
-    glm::vec3 currentRate(
-        ship.pitchRate,
-        ship.yawRate,
-        ship.rollRate
-    );
-
     glm::vec3 requestedAngularAcceleration =
         angularInput * safeAngularAccel;
 
-    // Stability damping is also RCS torque. It must obey the same available
-    // angular acceleration instead of exponentially deleting collision spin.
+    // Manual neutral-axis stabilization remains RCS torque and therefore goes
+    // through the same physical acceleration/rate envelope below.
     const float dampingGain = std::max(0.0f, params.angularDamping);
     if (std::abs(ship.pitchInput) < 0.001f)
         requestedAngularAcceleration.x += -ship.pitchRate * dampingGain;
@@ -421,36 +465,58 @@ void ShipController::updateControlRates(
     if (std::abs(ship.rollInput) < 0.001f)
         requestedAngularAcceleration.z += -ship.rollRate * dampingGain;
 
-    const float requestedAccelLength =
-        glm::length(requestedAngularAcceleration);
-    if (requestedAccelLength > safeAngularAccel &&
-        requestedAccelLength > 1.0e-6f)
+    applyRequestedAngularAcceleration(
+        ship,
+        params,
+        dt,
+        requestedAngularAcceleration
+    );
+}
+
+void ShipController::updateControlRates(
+    float dt,
+    const ShipParams& params,
+    ShipTransform& ship,
+    const WorldParams& world,
+    const glm::dvec3& angularAccelerationDemandMapRadPerSec2
+)
+{
+    (void)world;
+
+    // Navigation supplies a world-space angular-acceleration demand. Project
+    // it onto the ship's principal control axes, then use the same capability
+    // clamps as manual control. No hidden damping or velocity alignment is
+    // added here because the accepted navigation/controller intent already
+    // owns the requested angular acceleration.
+    const glm::dvec3 right = glm::dvec3(ship.right());
+    const glm::dvec3 up = glm::dvec3(ship.up());
+    const glm::dvec3 forward = glm::dvec3(ship.forward());
+
+    glm::vec3 requestedAngularAcceleration(
+        static_cast<float>(
+            glm::dot(angularAccelerationDemandMapRadPerSec2, right)
+        ),
+        static_cast<float>(
+            glm::dot(angularAccelerationDemandMapRadPerSec2, up)
+        ),
+        static_cast<float>(
+            glm::dot(angularAccelerationDemandMapRadPerSec2, forward)
+        )
+    );
+
+    if (!std::isfinite(requestedAngularAcceleration.x) ||
+        !std::isfinite(requestedAngularAcceleration.y) ||
+        !std::isfinite(requestedAngularAcceleration.z))
     {
-        requestedAngularAcceleration *=
-            safeAngularAccel / requestedAccelLength;
+        requestedAngularAcceleration = glm::vec3(0.0f);
     }
 
-    requestedAngularAcceleration.x = limitAxisControlAcceleration(
-        ship.pitchRate, requestedAngularAcceleration.x, maxPitchRate, dt
+    applyRequestedAngularAcceleration(
+        ship,
+        params,
+        dt,
+        requestedAngularAcceleration
     );
-    requestedAngularAcceleration.y = limitAxisControlAcceleration(
-        ship.yawRate, requestedAngularAcceleration.y, maxYawRate, dt
-    );
-    requestedAngularAcceleration.z = limitAxisControlAcceleration(
-        ship.rollRate, requestedAngularAcceleration.z, maxRollRate, dt
-    );
-
-    requestedAngularAcceleration =
-        limitAngularDeltaToControlledMagnitude(
-            currentRate,
-            requestedAngularAcceleration,
-            safeAngularRate,
-            dt
-        );
-
-    ship.pitchRate += requestedAngularAcceleration.x * dt;
-    ship.yawRate   += requestedAngularAcceleration.y * dt;
-    ship.rollRate  += requestedAngularAcceleration.z * dt;
 }
 
 void ShipController::propagateOrientation(

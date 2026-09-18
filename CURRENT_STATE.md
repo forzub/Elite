@@ -108,9 +108,14 @@ current for the fixed step. The server self-test requires:
 ```text
 exact_static=1
 exact_static_obstacles>0
+exact_static_query=1
+exact_static_block=1
+max_exact_static_examined>0
 ```
 
-before the existing CUBE 08 physical/replication evidence can PASS.
+So PASS now proves not only publication but actual live planner consumption of
+the exact static layer and a nominal OBB rejection before the existing CUBE 08
+physical/replication evidence can PASS.
 
 Conservative static spheres remain in NavigationMap for this intermediate gate
 so 12A-3 behavior is not changed simultaneously with the precision-geometry

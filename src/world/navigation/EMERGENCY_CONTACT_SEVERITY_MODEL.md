@@ -251,3 +251,49 @@ The accepted scorer itself does not provide:
 - moving/rotating docking witness generation.
 
 Those belong to later trajectory/physics integration slices.
+
+
+## Maneuver-decision ownership refinement — 2026-09-18
+
+The accepted emergency invariant is now promoted into the game-level maneuver
+decision tree:
+
+```text
+no collision-free proof != no navigation command
+no global route != automatic hold
+```
+
+Authority document:
+
+```text
+src/game/MANEUVER_DECISION_TREE.md
+```
+
+`EmergencyContactSeverityScorer` remains deliberately physical. It ranks
+contact severity (normal closing speed, energy/momentum proxies, incidence,
+geometry deficit and progress), but it must not assign semantic value to the
+contacted ship component.
+
+A higher `ManeuverDecisionController` consumes additional annotations from
+damage/structural and threat systems:
+
+```text
+criticalDamageRisk
+missionDamageCost
+expendableDamageCost
+threatExposure / projected silhouette
+escape reserve / returnability
+time and exit speed
+```
+
+This separation is required for decisions such as:
+- sacrifice radar/antenna rather than cockpit/reactor;
+- preserve speed in Extreme doctrine;
+- brake to create margin in Rational doctrine;
+- minimize projected silhouette toward a pursuer in CombatEscape;
+- enter wreckage slowly in Precision/Retrieval even though the same aperture
+  might be taken violently during an escape.
+
+The navigation/trajectory layer supplies candidates and witnesses. The
+game/control decision layer selects doctrine and candidate. Physics/damage remain
+final authority after actual contact.

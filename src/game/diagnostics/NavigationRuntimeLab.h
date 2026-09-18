@@ -109,6 +109,16 @@ struct NavigationRuntimeLabObservation
     // intersect the exact HitVolume of CUBE 08 before any flight begins.
     bool configuredRouteExactObstacleBlockPublished = false;
 
+    // First live-plan geometry probe. This uses the exact same current
+    // agent position, bounded horizon target and ship envelope that the
+    // runtime planner should prove statically.
+    bool firstLiveNominalProbeCaptured = false;
+    bool firstLiveNominalExactBlocked = false;
+    std::uint32_t firstLiveNominalBlockingEntityId = 0;
+    double firstLiveHorizonMeters = 0.0;
+    glm::dvec3 firstLiveAgentPositionMap {0.0};
+    glm::dvec3 firstLiveBoundedTargetMap {0.0};
+
     bool exactStaticQuerySeen = false;
     bool nominalStaticBlockSeen = false;
     std::size_t maximumExactStaticObstaclesExamined = 0;

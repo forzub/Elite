@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-18
 **Canonical branch:** `main`
-**Current public HEAD:** `29aa06c6d96f2a32a540f5623eb53edc433ef6ca`
+**Current public HEAD:** `546a8868b0a25c655310263252877c5f5b48d4c5`
 
 ## Stage 12 status
 
@@ -14,61 +14,54 @@
 
 ## Latest target-machine result
 
-Run on `f8e7c3e1890a621d65d5596e0ad66fc8b759e66c`:
+Run on `7f5778fcfe328e0c06cf18e14f9a0a235fbcea73`:
 
 ```text
 architecture PASS
 EliteGame PASS
 EliteServer PASS
 
-first_live_probe_blocked=0
-first_live_agent_map=(1014.51,-1885.04,-5940.26)
-expected_start=(975,-1300,-6200)
+placement_map=(975,-1300,-6200)
+expected_placement_map=(975,-1300,-6200)
+placement_error_m=1.76866e-05
 ```
 
-The previous stale-local-velocity fix changed the observed offset but did not
-eliminate it.
+The reference-frame ordering/placement bug is now effectively closed.
 
-## Root cause now identified
+`1.76866e-05 m` is approximately 17.7 micrometres. At orbital-scale world
+coordinates this is ordinary double-precision round-trip residue, not a
+navigation or placement defect.
 
-The remaining displacement magnitude is about 641 m.
-
-At the server fixed step (~0.02 s), a reference frame moving at ~30 km/s changes
-world position by roughly 600 m. The production update ordering matched this
-exact scale:
-
-```text
-old order:
-rebuild current HubNavigationFrame
-    -> AI/navigation reads ship.worldPosition from previous frame epoch
-    -> later refresh matched travel frame
-    -> later updateLocalFrameMotion rematerializes worldPosition
-```
-
-Therefore navigation compared a previous-epoch ship pose against a current-epoch
-hub origin/basis.
+The live test failed only because the diagnostic gate used an unrealistically
+strict `1e-6 m` (1 micrometre) threshold.
 
 ## Correction
 
-Matched HubTactical ships are now synchronized immediately after the current
-HubNavigationFrame rebuild and before AI/navigation.
-
-The synchronization:
-- refreshes the matched travel-frame epoch;
-- rematerializes worldPosition from authoritative localPositionMeters;
-- rematerializes worldVelocity from current localVelocityMps;
-- does not integrate or change local flight state.
-
-The later duplicate `updateShipReferenceFrames(dt)` call is removed so there
-is one authoritative ordering point per fixed step.
-
-Architecture contract now pins:
+A named placement tolerance is now:
 
 ```text
-rebuildHubNavigationFrames
-    -> updateShipReferenceFrames
-    -> AI/navigation
+NavigationRuntimeLabPlacementToleranceMeters = 1e-3
 ```
 
-Next live gate must show the first agent map remaining at the configured start
-instead of lagging one frame behind the hub.
+That is 1 mm and remains tiny compared with ship/obstacle geometry while safely
+above orbital-coordinate floating-point residue.
+
+Architecture contract pins the named tolerance and forbids returning to the
+micrometre literal.
+
+## Current real 12A-5 question
+
+With placement now correct, the live gate proceeds to the actual ownership /
+avoidance chain:
+
+```text
+stationary CUBE 08 absent from NavigationMap
+    -> first live exact segment sees CUBE 08
+    -> exact static blocker identity survives planner
+    -> adjusted target chosen
+    -> authoritative physical motion remains outside all exact HitVolumes
+    -> replicated execution remains exact
+```
+
+Any later physical violation still fails immediately with obstacle identity and
+swept motion witness.

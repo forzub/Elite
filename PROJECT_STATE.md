@@ -378,3 +378,24 @@ trajectory.
 
 No authoritative intent changes in this slice. Target-machine verification is
 pending.
+
+
+#### 12A-6b2 first target-machine gate — compile failure
+
+Run on `8c30ebc1c7a724c06113b5b1e4704a7a172b6d93` confirmed the architecture
+contract and `navigation_map 1/1 PASS`, then failed compiling the new
+same-trajectory witness path.
+
+The defects were interface/wiring errors, not a failed geometric proof:
+- `TrajectoryWitness` existed as a type but was not a member of evaluator
+  `Result`;
+- the MinGW compiler required explicit `NavigationSpace::Vec3d` construction
+  for query endpoint assignment.
+
+The later headless self-test from that shell sequence used the previously built
+server because the new build had failed. It is therefore excluded from 12A-6b2
+evidence.
+
+Corrective baseline `52a5fa9e239d8ea00923cbb65a293cca5863567b` adds the missing result member, makes the
+Vec3d conversion explicit, and strengthens the architecture contract to pin the
+member. Target-machine rerun is pending.

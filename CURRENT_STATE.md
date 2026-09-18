@@ -396,3 +396,22 @@ Next step is live production evidence, not another planner algorithm:
 enable the accepted moving-passage authority for a deterministic live moving-gap
 fixture and prove `MovingPassageClear` reaches authoritative physics and
 same-tick sparse/canonical replication without static violations.
+
+
+## Deferred strategic navigation task
+
+Galactic gravity/fuel/jump routing is now explicitly tracked in:
+
+`src/game/navigation/GALACTIC_ROUTE_PLANNING.md`
+
+It is a separate future layer above the current System / Local / Precision stack.
+The strategic planner must account for jump-drive range/capability, fuel and
+reserve policy, gravity-aware long-leg trajectory validation, timing/ephemerides,
+hazards and replanning.
+
+Manual and automatic execution must consume the same accepted route solution:
+manual mode presents guidance; autopilot executes it. No second planner is
+allowed for presentation.
+
+This deferred task does not change the active Stage-12 priority. Current work
+remains 12A-6b3b live moving-passage physics/replication authority.

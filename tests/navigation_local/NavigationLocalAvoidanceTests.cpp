@@ -235,6 +235,8 @@ void testVisibilitySteeringWidensThenReturnsToDirectLine()
     require(bypass.selectedDeflectionRadians <=
                 query.avoidance.maximumDeflectionRadians + kTolerance,
             "visibility bypass must remain inside the bounded angular search");
+    require(!bypass.ordinarySearchExhausted,
+            "successful ordinary bypass must not request recovery escalation");
 
     // Receding-horizon recovery is intentionally stateless: on the next update
     // the direct A->B corridor is always tested first.
@@ -373,6 +375,8 @@ void testHeadOnConflictRemainsFailClosed()
             "lateral target must not magically erase current head-on kinematics");
     require(result.dynamicRejected > 0,
             "head-on fixture must reject dynamically unsafe lateral probes");
+    require(result.ordinarySearchExhausted,
+            "exhausting the ordinary fan must request recovery escalation");
 }
 
 void testNarrowStaticRegionRejectsLateralBypass()

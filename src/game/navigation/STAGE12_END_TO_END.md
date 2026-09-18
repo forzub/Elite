@@ -307,6 +307,64 @@ exact_static_violation = 0
 alongside the existing publication/query/block, physical progress and exact
 replication evidence.
 
+## 12A-4 — acceptance
+
+Accepted target-machine run on:
+
+```text
+8f5801b9e26cfbb8e4e5e3174587a900292e8394
+```
+
+proved the exact-static contract end to end:
+
+```text
+NavigationSpace exact OBB layer
+ -> LocalAvoidance exact nominal/adjusted proof
+ -> authoritative PilotSkillExecutor/physics
+ -> 3431 swept fixed-step exact-static safety samples
+ -> exact_static_violation = 0
+ -> same-tick sparse/canonical replication error = 0
+```
+
+The accepted run also preserved a real OBB aperture, valid corridor portal
+boundary semantics and successful physical progress around CUBE 08.
+
+## 12A-5 — static/dynamic ownership cleanup
+
+12A-4 deliberately kept stationary static objects duplicated as conservative
+NavigationMap spheres during the transition. That duplicate ownership is now
+removed.
+
+Canonical ownership becomes:
+
+```text
+stationary infrastructure
+    -> HitVolume-derived NavigationObstacle
+    -> NavigationSpace exact static layer
+
+time-varying / self-rotating infrastructure
+    -> NavigationMap broadphase/prediction
+    -> later moving/rotating exact-geometry stage
+```
+
+The deterministic CUBE 08 proving object is stationary in the hub/map frame.
+Therefore the live 12A-5 gate requires:
+
+```text
+obstacle_candidate = 0
+obstacle_conflict = 0
+exact_obstacle_block = 1
+adjusted = 1
+exact_static_violation = 0
+```
+
+This is stronger than the old duplicated proof: the maneuver must still happen
+after the dynamic sphere is removed, proving that exact static geometry alone
+owns the stationary obstacle.
+
+Diagnostic centre/radius measurements may remain for logging, but they do not
+publish NavigationMap ownership.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

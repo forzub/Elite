@@ -24,7 +24,7 @@ struct NpcNavigationKinematicState
 // Converts a goal-only NPC policy product plus a compact authoritative
 // kinematic snapshot into one nominal Navigation v2 acceleration intent.
 //
-// The controller deliberately does not depend on Ship/ShipCore, world search,
+// The controller deliberately does not depend on the full live ship runtime, world search,
 // collision response, rendering or vehicle capability. GameSimulation adapts
 // the live Ship into NpcNavigationKinematicState at the ownership boundary.
 class NpcNavigationIntentController final

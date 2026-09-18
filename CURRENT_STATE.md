@@ -1429,3 +1429,57 @@ Last actually target-machine accepted Stage-12 baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Accepted-segment exact-static impact instrumentation candidate
+
+Code candidate:
+
+~~~text
+61d89d59a87c7034c948d85417c71c6ab4ae7f47
+~~~
+
+This pass is diagnostic-only. It does not alter navigation authority or
+replanning behavior.
+
+The authoritative live self-test still fails by physically sweeping the lab
+Cobra through exact-static entity 28 (`NAV STRESS CUBE 08`, the lower-middle
+slit-tunnel block). The previous exact-static monitor did not prevent that
+impact, so the next required evidence is the execution state immediately before
+the failing fixed step.
+
+The runtime now preserves the last pre-physics accepted-segment safety probe:
+- target blocked / forecast blocked flags;
+- blocking entity;
+- probe start;
+- accepted target;
+- short forecast endpoint;
+- current map-space velocity;
+- follower ideal acceleration;
+- forecast duration and probe time.
+
+At the first exact-static physical violation it additionally snapshots:
+- accepted segment revision;
+- last replan reason;
+- planner status;
+- accepted target + accepted target velocity;
+- current velocity;
+- last actually executed PilotSkill demand;
+- the complete previous exact-static monitor witness.
+
+`EliteServer --self-test-navigation` now prints that witness directly on
+return-55 failure.
+
+The purpose of this pass is to distinguish among:
+1. the monitor never seeing entity 28;
+2. monitor seeing it and replanning too late;
+3. planner replacing the segment with another unsafe segment;
+4. ideal follower forecast being optimistic relative to PilotSkill/physics
+   inertia.
+
+Target-machine validation/output is pending. No Stage-12 baseline changes.
+Last actually target-machine accepted baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

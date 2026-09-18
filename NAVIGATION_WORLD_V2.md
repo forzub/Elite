@@ -808,3 +808,42 @@ Its future contract is `src/game/navigation/GALACTIC_ROUTE_PLANNING.md`.
 NavigationWorld remains the local dynamic/static safety layer and receives
 handoffs from higher-level strategic/system planning rather than becoming a
 light-year-scale obstacle planner.
+
+
+## Oriented finite-depth portal traversal
+
+A navigation portal may represent more than a zero-thickness topological
+boundary. Narrow doors, hangar mouths, ravines and tunnels may require a
+capture condition before the vehicle is allowed to enter.
+
+`NavigationSpace::PortalTraversalInput` is the static contract for such a
+passage. It can publish an oriented route-direction normal, an approach
+distance, transit speed and entry constraints for velocity direction,
+cross-track velocity and vehicle-forward alignment.
+
+The runtime execution sequence is:
+
+```text
+coarse corridor selects oriented portal
+    -> approach/staging point before entry
+    -> reduce cross-track position/velocity
+    -> align flight-path vector with portal normal
+    -> align vehicle forward axis when required
+    -> PortalTransit
+    -> maintain passage axis/corridor to exit portal
+```
+
+For reverse traversal the same authored A->B normal is automatically reversed
+by NavigationSpace.
+
+Topology and physical collision truth are separate:
+- region/portal queries decide where traversal is legal;
+- `SegmentQuery::exactObstaclesOnly` tests only persistent exact HitVolume
+  geometry for already topology-authorized trajectories and actual physical
+  sweeps.
+
+Virtual region partitions must never behave as collision walls.
+
+This is a generic vehicle-independent contract. Vehicle hull dimensions and
+linear/angular capability remain runtime inputs; no Cobra-specific acceleration
+constant belongs in the portal planner.

@@ -1230,10 +1230,16 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
         }
 
         // The static precision layer is intentionally static in the published
-        // map frame. Self-rotating infrastructure remains in the dynamic/
-        // moving-passage domain until that dedicated Stage-12 scenario is wired.
-        if (glm::length(object.hubLocalAngularVelocityDegPerSecond) > 1.0e-9)
+        // map frame. Self-rotating infrastructure and the deterministic
+        // translating 12A-6b3b gap boundaries remain exclusively in the
+        // dynamic/moving-passage domain.
+        if (glm::length(object.hubLocalAngularVelocityDegPerSecond) > 1.0e-9 ||
+            game::diagnostics::isNavigationRuntimeLabMovingGapBoundary(
+                object.displayName
+            ))
+        {
             continue;
+        }
 
         glm::dmat3 objectBasis(1.0);
         for (int axis = 0; axis < 3; ++axis)

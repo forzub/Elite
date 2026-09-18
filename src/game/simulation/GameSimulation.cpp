@@ -2173,6 +2173,64 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             }
         }
 
+        // Prove actual physical passage through the slit plane, not merely
+        // "past the wall". Interpolate the fixed-step swept segment at the
+        // tunnel center plane and require the complete conservative ship
+        // envelope + static clearance to remain inside the authored opening.
+        if (m_navigationRuntimeLabHasPreviousExactSafetyPosition &&
+            !m_navigationRuntimeLabObservation.slitTunnelPassed)
+        {
+            const glm::dvec3 previous =
+                m_navigationRuntimeLabPreviousExactSafetyPositionMap;
+            const double portalZ =
+                NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z;
+            const double dz =
+                agentPositionMap.z - previous.z;
+
+            if (dz > 1.0e-12 &&
+                previous.z <= portalZ &&
+                agentPositionMap.z >= portalZ)
+            {
+                const double t = std::clamp(
+                    (portalZ - previous.z) / dz,
+                    0.0,
+                    1.0
+                );
+                const glm::dvec3 crossing =
+                    previous +
+                    (agentPositionMap - previous) * t;
+
+                const double xMargin =
+                    NavigationRuntimeLabSlitHalfWidthMeters -
+                    std::abs(
+                        crossing.x -
+                        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x
+                    ) -
+                    shipRadius -
+                    policy.avoidance.staticAdditionalClearanceMeters;
+                const double yMargin =
+                    NavigationRuntimeLabSlitHalfHeightMeters -
+                    std::abs(
+                        crossing.y -
+                        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y
+                    ) -
+                    shipRadius -
+                    policy.avoidance.staticAdditionalClearanceMeters;
+
+                const double margin =
+                    std::min(xMargin, yMargin);
+
+                if (actualSafety.traversable && margin >= 0.0)
+                {
+                    auto& observation =
+                        m_navigationRuntimeLabObservation;
+                    observation.slitTunnelPassed = true;
+                    observation.slitTunnelCrossingMap = crossing;
+                    observation.slitTunnelCrossingMarginMeters = margin;
+                }
+            }
+        }
+
         m_navigationRuntimeLabPreviousExactSafetyPositionMap =
             agentPositionMap;
         m_navigationRuntimeLabHasPreviousExactSafetyPosition = true;
@@ -2300,6 +2358,22 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         static_cast<std::uint8_t>(
             m_navigationRuntimeLabLastPlan.status
         );
+
+    if (m_navigationRuntimeLabLastPlan.usedPortalWaypoint &&
+        !m_navigationRuntimeLabLastPlan.staticPortalPath.empty() &&
+        m_navigationRuntimeLabLastPlan.staticPortalPath.front() ==
+            NavigationRuntimeLabSlitPortalId)
+    {
+        const glm::dvec3 portalCenter =
+            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters;
+        if (glm::length(
+                m_navigationRuntimeLabLastPlan.coarseWaypointMapMeters -
+                portalCenter
+            ) <= 1.0e-6)
+        {
+            m_navigationRuntimeLabObservation.slitPortalWaypointSeen = true;
+        }
+    }
 
     const bool expectedMovingGapPairSelected =
         movingGapUpperEntityId != 0 &&

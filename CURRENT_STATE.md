@@ -89,6 +89,29 @@ src/game/navigation/STAGE12_END_TO_END.md
 
 Stage 12 now proves the accepted pieces as one live system using deterministic station-adjacent clutter, actual hit-volume/navigation geometry, moving conflicts, narrow passages, docking, post-impact replan, replicated execution truth, manual guidance and raw NavigationWorld debug.
 
+## Active candidate — 12A-1 live composition seam
+
+The first code candidate now exists:
+
+```text
+NavigationSpace selected corridor
+ -> ordered portalCentersMapMeters
+ -> NavigationRuntimePlanner
+ -> LocalHorizon / LocalAvoidance
+ -> NavigationRuntimeControlBridge::Intent
+ -> PilotSkillExecutor
+```
+
+Shared production target:
+
+```text
+EliteNavigationWorldRuntime
+```
+
+is linked by both `EliteGame` and `EliteServer`.
+
+The candidate is not yet wired into `GameSimulation`; that is deliberately the next step after the target-machine gate proves this composition in isolation.
+
 ## First Stage 12 slice
 
 Build one reusable deterministic proving-ground scenario and one headless end-to-end fixture:

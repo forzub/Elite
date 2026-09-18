@@ -1103,3 +1103,37 @@ This sub-slice does not yet satisfy the complete 12A-6b live requirement.
 After target-machine acceptance, a live deterministic moving-gap fixture must
 exercise `MovingPassageClear` through authoritative physics and same-tick
 replication.
+
+
+#### 12A-6b3a — acceptance
+
+Target-machine baseline:
+
+```text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+```
+
+The deterministic authority gate passed architecture, runtime 3/3, trajectory
+11/11, canonical builds and the rebuilt server self-test. This accepts the
+planner/control ownership rule:
+
+```text
+allowSteeringAuthority
+&& fresh dynamic result
+&& movingPassageFeasible
+&& movingPassageStaticSafe
+    -> MovingPassageClear
+    -> exact first proved Hermite acceleration sample
+    -> mapIntentToWorld
+    -> PilotSkillExecutor
+```
+
+#### 12A-6b3b — live physics/replication authority gate
+
+The remaining 12A-6b authority evidence must come from one deterministic live
+moving-gap fixture. The server self-test must observe `MovingPassageClear`,
+non-zero executed moving-passage demand, authoritative physical response,
+zero exact-static violation, and exact same-tick sparse/canonical replication.
+
+The same accepted navigation/trajectory product is also the future source for
+manual guidance visualization. Manual mode must never run a separate planner.

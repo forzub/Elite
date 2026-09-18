@@ -3,7 +3,7 @@
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Current focus:** NavigationWorld v2 / live NPC ownership  
 **Canonical development branch:** `main`  
-**Active stage:** 11B-1
+**Active stage:** 11B-1 repaired rerun
 
 ## Progress
 
@@ -67,3 +67,8 @@ The initial `MaintainForwardCruise` / `Hold` goals are only ownership fixtures. 
 ## Next
 
 Pass 11B-1 target-machine full build/regression gate, then immediately implement replicated guidance/debug truth.
+
+
+## First 11B-1 target-machine attempt
+
+Architecture and the accepted trajectory regression remained green. Runtime-test compilation and headless-server linking exposed missing build-target wiring. Both are repaired; 11B-1 remains pending the fresh full gate.

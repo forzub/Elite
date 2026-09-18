@@ -96,6 +96,38 @@ A green compile/contract gate is followed by deterministic runtime evidence:
 the blocked straight route must produce a real changed plan/control demand,
 authoritative motion must follow it, and contact clearance must be measured.
 
+## 12A-3 — authoritative live obstacle behavior proof
+
+12A-2 is accepted on target-machine evidence from
+`7b4db95788d80c95afb3b57c109c671cb7a41366`.
+
+The next gate is executable behavior, not another architecture-only seam.
+`EliteServer --self-test-navigation` boots the real `ServerRuntime` and
+advances fixed-step authoritative simulation until the following chain is
+observed or 120 simulated seconds expires:
+
+```text
+CUBE 08 published from authoritative HitVolume geometry
+ -> enters bounded local NavigationMap candidate set
+ -> rejects nominal straight target
+ -> nominal conflict identity survives adjusted-target search
+ -> adjusted safe target selected
+ -> PilotSkillExecutor executes lateral acceleration
+ -> authoritative ship leaves the original straight line
+ -> positive conservative clearance while passing obstacle
+ -> continued progress toward final goal
+ -> replicated execution vector equals authoritative execution vector
+```
+
+The dynamic candidate query covers the complete local avoidance fan with one
+bounded `NavigationMap::querySphere()` around the current physical horizon.
+A nominal-corridor-only candidate query is forbidden because a lateral probe
+could otherwise encounter an obstacle absent from the immutable candidate set.
+
+This gate intentionally measures conservative broadphase-sphere clearance.
+Passing it does not accept sphere geometry for narrow apertures. Exact
+HitVolume OBBs must feed the subsequent static/precision topology gate.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

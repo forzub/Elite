@@ -25,6 +25,8 @@ LOCAL_CPP = (ROOT / "src/world/navigation/local/LocalAvoidancePlanner.cpp").read
 SERVER_RUNTIME_H = (ROOT / "src/game/server/ServerRuntime.h").read_text(encoding="utf-8")
 SERVER_RUNTIME_CPP = (ROOT / "src/game/server/ServerRuntime.cpp").read_text(encoding="utf-8")
 SERVER_MAIN = (ROOT / "src/server_main.cpp").read_text(encoding="utf-8")
+HIT_BUILDER = (ROOT / "src/world/modules/ObjectRuntimeHitBuilder.cpp").read_text(encoding="utf-8")
+GUIDANCE_DESCRIPTOR = (ROOT / "src/game/station/descriptors/GuidanceTestDockDescriptor.h").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -213,6 +215,25 @@ require(
 )
 
 for marker in (
+    "appendWholeObjectLogicalHitVolume",
+    "descriptor.logicalDimensions()",
+    "__whole_object_logical_bounds__",
+):
+    require(marker in HIT_BUILDER, f"monolithic logical HitVolume fallback missing: {marker}")
+
+require(
+    HIT_BUILDER.count("appendWholeObjectLogicalHitVolume(") >= 3,
+    "monolithic logical HitVolume fallback must cover meshless and empty-module rebuild paths",
+)
+
+for marker in (
+    "class GuidanceDockCubeDescriptor",
+    "class GuidanceDockCylinderDescriptor",
+    ".enabled = true",
+):
+    require(marker in GUIDANCE_DESCRIPTOR, f"NAV STRESS logical-dimension authority missing: {marker}")
+
+for marker in (
     "NavigationRuntimeLabEnabled",
     "NavigationRuntimeLabStartTacticalLocalMeters",
     "NavigationRuntimeLabGoalTacticalLocalMeters",
@@ -268,6 +289,23 @@ require(
 require(
     "testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate" in LOCAL_TEST,
     "local avoidance must prove an exact static blocker can trigger adjustment without a dynamic candidate",
+)
+
+require(
+    "testDynamicConflictStillPreservesExactStaticNominalProof" in LOCAL_TEST,
+    "simultaneous dynamic conflict must not collapse exact-static nominal proof",
+)
+
+require(
+    "boundedNominalTarget" in LOCAL_CPP and
+    "nominal.horizonDistanceMeters" in LOCAL_CPP and
+    "toSpaceVec(boundedNominalTarget)" in LOCAL_CPP,
+    "exact static nominal proof must use the same bounded nominal segment analyzed by the dynamic horizon",
+)
+
+require(
+    "toSpaceVec(nominal.targetPositionMapMeters)" not in LOCAL_CPP,
+    "ConflictHold result position must not be reused as the exact-static nominal segment endpoint",
 )
 
 for marker in (
@@ -386,3 +424,5 @@ print(" - NavigationSpace exact static OBB layer preserves real apertures beyond
 print(" - LocalAvoidance proves nominal and adjusted segments against exact static geometry")
 print(" - live lab publishes exact HitVolume OBBs after authoritative hub/object transforms")
 print(" - live self-test requires exact-static query work and nominal OBB blocking evidence")
+print(" - dynamic ConflictHold cannot collapse exact-static nominal proof to a zero-length segment")
+print(" - monolithic NAV STRESS objects receive authoritative logical HitVolumes")

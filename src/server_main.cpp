@@ -534,6 +534,8 @@ int runNavigationRuntimeSelfTest()
 
         behaviorEvidenceComplete =
             observation.valid &&
+            observation.exactStaticGeometryPublished &&
+            observation.exactStaticObstacleCount > 0 &&
             observation.planCount > 0 &&
             observation.executionCount > 0 &&
             observation.obstacleCandidateSeen &&
@@ -574,8 +576,18 @@ int runNavigationRuntimeSelfTest()
             << observation.conflictHoldSeen
             << " lateral_exec="
             << observation.lateralExecutedDemandSeen
-            << " max_lateral_accel_mps2="
+            << " exact_static="
+            << observation.exactStaticGeometryPublished
+            << " exact_static_obstacles="
+            << observation.exactStaticObstacleCount
+            << " max_lateral_demand_mps2="
             << observation.maximumExecutedLateralDemandMps2
+            << " max_applied_accel_mps2="
+            << observation.maximumAppliedEngineAccelerationMps2
+            << " max_applied_lateral_accel_mps2="
+            << observation.maximumAppliedLateralAccelerationMps2
+            << " max_relative_speed_mps="
+            << observation.maximumRelativeSpeedMps
             << " max_route_deviation_m="
             << observation.maximumStraightLineDeviationMeters
             << " min_center_distance_m="
@@ -812,6 +824,10 @@ int runNavigationRuntimeSelfTest()
         << observation.conflictHoldSeen
         << " lateral_exec="
         << observation.lateralExecutedDemandSeen
+        << " exact_static="
+        << observation.exactStaticGeometryPublished
+        << " exact_static_obstacles="
+        << observation.exactStaticObstacleCount
         << " max_lateral_demand_mps2="
         << observation.maximumExecutedLateralDemandMps2
         << " max_applied_accel_mps2="
@@ -855,7 +871,8 @@ int runNavigationRuntimeSelfTest()
 
     std::cerr
         << "[PASS] navigation-runtime CUBE 08 caused authoritative avoidance"
-        << " with positive conservative clearance and replicated execution\n";
+        << " with exact static HitVolume geometry, positive clearance"
+        << " and replicated execution\n";
     return 0;
 }
 

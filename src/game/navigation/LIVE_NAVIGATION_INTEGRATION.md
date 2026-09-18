@@ -255,7 +255,7 @@ NpcNavigationGoal
 PilotSkillProfile selection
 ```
 
-It does **not** emit control-surface input or acceleration demand.
+It does not emit control-surface input or acceleration demand.
 
 The initial goal product is deliberately minimal:
 

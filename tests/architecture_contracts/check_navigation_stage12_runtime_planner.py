@@ -13,6 +13,8 @@ SPACE_TEST = (ROOT / "tests/navigation_space/NavigationSpaceContractTests.cpp").
 LOCAL_TEST = (ROOT / "tests/navigation_local/NavigationLocalAvoidanceTests.cpp").read_text(encoding="utf-8")
 PLANNER_H = (ROOT / "src/game/navigation/NavigationRuntimePlanner.h").read_text(encoding="utf-8")
 PLANNER_CPP = (ROOT / "src/game/navigation/NavigationRuntimePlanner.cpp").read_text(encoding="utf-8")
+MOVING_PASSAGE_H = (ROOT / "src/world/navigation/trajectory/MovingPassageTrajectoryEvaluator.h").read_text(encoding="utf-8")
+MOVING_PASSAGE_CPP = (ROOT / "src/world/navigation/trajectory/MovingPassageTrajectoryEvaluator.cpp").read_text(encoding="utf-8")
 ROOT_CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 RUNTIME_CMAKE = (ROOT / "tests/navigation_runtime/CMakeLists.txt").read_text(encoding="utf-8")
 RUNTIME_TEST = (ROOT / "tests/navigation_runtime/NavigationRuntimePlannerTests.cpp").read_text(encoding="utf-8")
@@ -111,6 +113,12 @@ for marker in (
     "nominalStaticBlocked",
     "staticObstaclesExamined",
     "nominalStaticObstacleId",
+    "BoundedGapCandidateBuilder",
+    "MovingGapPredictor",
+    "MovingPassageTrajectoryEvaluator",
+    "MovingPassagePolicy",
+    "movingPrecisionAttempted",
+    "movingPassageFeasible",
 ):
     require(marker in PLANNER_H, f"runtime planner interface missing: {marker}")
 
@@ -124,8 +132,24 @@ for marker in (
     "mapIntentToWorld",
     "local.nominalStaticBlocked",
     "local.staticObstaclesExamined",
+    "GapBuilder::build",
+    "GapPredictor::predict",
+    "MovingPassage::evaluate",
+    "probeMovingPassage",
 ):
     require(marker in PLANNER_CPP, f"runtime planner composition missing: {marker}")
+
+require(
+    "result.movingPassageInitialAccelerationMapMps2 =" in PLANNER_CPP and
+    "idealLinearAccelerationDemandMapMps2 =\n            toBridgeVec(result.movingPassageInitialAccelerationMapMps2)" not in PLANNER_CPP,
+    "12A-6b1 moving precision must remain observe-only until exact-static trajectory composition is proven",
+)
+
+require(
+    "initialLinearAccelerationMapMetersPerSec2" in MOVING_PASSAGE_H and
+    "samples.front().acceleration" in MOVING_PASSAGE_CPP,
+    "moving-passage evaluator must publish the first sample of the exact verified trajectory",
+)
 
 for forbidden in (
     "setWorldPosition",
@@ -147,6 +171,8 @@ for marker in (
     "src/world/navigation/local/LocalHorizonPlanner.cpp",
     "src/world/navigation/local/LocalAvoidancePlanner.cpp",
     "src/game/navigation/NavigationRuntimePlanner.cpp",
+    "add_subdirectory(src/world/navigation/trajectory)",
+    "EliteNavigationTrajectory",
 ):
     require(marker in ROOT_CMAKE, f"shared runtime navigation target missing: {marker}")
 
@@ -161,6 +187,8 @@ for marker in (
     "navigation_runtime_planner",
     "EliteNavigationMap",
     "EliteNavigationLocal",
+    "EliteNavigationTrajectory",
+    "elite_navigation_trajectory",
 ):
     require(marker in RUNTIME_CMAKE, f"runtime planner test wiring missing: {marker}")
 
@@ -173,6 +201,8 @@ for marker in (
     "testExactStaticObstacleParticipatesInRuntimeComposition",
     "testLiveScaleStaticObstacleInsideFirstBoundedHorizon",
     "testPlannerIntentCrossesAcceptedPilotBridge",
+    "testMovingGapPrecisionProbeUsesRuntimeCandidates",
+    "testClosingMovingGapFailsClosedBeforePassageEvaluation",
 ):
     require(marker in RUNTIME_TEST, f"runtime planner fixture missing: {marker}")
 
@@ -651,3 +681,5 @@ print(" - current hub-frame epoch is synchronized into matched ship world pose b
 print(" - sub-millimetre orbital-coordinate round-trip residue is treated as numerical zero")
 print(" - rotating infrastructure carries angular velocity through NavigationMap working-frame conversion")
 print(" - live GUIDANCE DOCK CUBE A verifies the published map-space angular motion")
+print(" - bounded runtime conflicts feed MovingGapPredictor + MovingPassageTrajectoryEvaluator")
+print(" - moving precision remains observe-only until exact-static trajectory composition is proven")

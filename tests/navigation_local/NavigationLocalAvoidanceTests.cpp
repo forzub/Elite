@@ -100,6 +100,24 @@ Map::Candidate movingCandidate(
     return candidate;
 }
 
+world::navigation::NavigationObstacle staticBox(
+    const std::string& id,
+    std::uint32_t entityId,
+    const glm::dvec3& center,
+    const glm::dvec3& halfExtents
+)
+{
+    world::navigation::NavigationObstacle obstacle;
+    obstacle.id = id;
+    obstacle.entityId = entityId;
+    obstacle.shape =
+        world::navigation::NavigationObstacleShape::Box;
+    obstacle.centerMeters = center;
+    obstacle.localToWorldBasis = glm::dmat3(1.0);
+    obstacle.halfExtentsMeters = halfExtents;
+    return obstacle;
+}
+
 Space makeSingleRegionSpace(double lateralHalfExtent)
 {
     Space space;
@@ -173,6 +191,58 @@ void testSweptCorridorBlockerFindsSameRegionLateralTarget()
     require(!near(result.target.targetPositionMapMeters.y, 0.0) ||
             !near(result.target.targetPositionMapMeters.z, 0.0),
             "adjusted target must actually deflect laterally");
+}
+
+void testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate()
+{
+    Avoidance planner;
+    Avoidance::Query query = baseQuery();
+
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 32;
+
+    Space::RegionInput region;
+    region.regionId = 1;
+    region.boundsMapMeters.minMapMeters = {-20.0, -100.0, -100.0};
+    region.boundsMapMeters.maxMapMeters = {200.0, 100.0, 100.0};
+    region.clearanceRadiusMeters = 1000.0;
+    region.geometryRevision = 1;
+    update.regions.push_back(region);
+    update.obstacles.push_back(
+        staticBox(
+            "static_nominal_wall",
+            900,
+            glm::dvec3(8.0, 0.0, 0.0),
+            glm::dvec3(1.0, 0.25, 0.25)
+        )
+    );
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    const Avoidance::Result result = planner.evaluate(
+        query,
+        dynamicResult(),
+        space
+    );
+
+    require(result.status == Avoidance::Status::AdjustedClear,
+            "exact static blocker must trigger bounded avoidance even when NavigationMap is clear");
+    require(result.adjustedTarget,
+            "static-only avoidance must publish adjusted target ownership");
+    require(result.nominalStaticBlocked,
+            "static-only avoidance must record that the nominal segment was blocked");
+    require(result.nominalStaticObstacleId == "static_nominal_wall" &&
+            result.nominalStaticObstacleEntityId == 900,
+            "static-only avoidance must retain exact blocker identity");
+    require(result.nominalConflictsFound == 0 &&
+            result.nominalPrimaryConflictEntityId == 0,
+            "static-only blocker must not fabricate a dynamic conflict");
+    require(result.targetProbesExamined > 0 &&
+            result.staticRejected > 0,
+            "static-only blocker must spend bounded probes and reject intersecting ones");
+    require(result.staticObstaclesExamined > 0,
+            "static-only avoidance must expose exact obstacle work");
 }
 
 void testHeadOnConflictRemainsFailClosed()
@@ -275,6 +345,7 @@ int main()
     {
         testNominalClearPassesThroughWithoutProbes();
         testSweptCorridorBlockerFindsSameRegionLateralTarget();
+        testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate();
         testHeadOnConflictRemainsFailClosed();
         testNarrowStaticRegionRejectsLateralBypass();
         testStaleDynamicResultSkipsAvoidanceProbes();

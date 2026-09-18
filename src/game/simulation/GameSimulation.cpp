@@ -1546,43 +1546,55 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
             labShipRadius = glm::length(half);
         }
 
-        const Space::Vec3d portalCenter {
-            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
-            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
-            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+        const Space::Vec3d entryCenter {
+            NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.x,
+            NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.y,
+            NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.z
         };
-        const Space::Vec3d tunnelExit {
-            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
-            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
-            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z + 600.0
+        const Space::Vec3d exitCenter {
+            NavigationRuntimeLabSlitExitCenterVisualLocalMeters.x,
+            NavigationRuntimeLabSlitExitCenterVisualLocalMeters.y,
+            NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z
         };
 
+        // A selected portal endpoint is allowed to lie on its region boundary.
+        // Prove the approach from region 1 to the entry portal, then prove the
+        // tunnel in reverse from the exit portal back to the entry portal so
+        // both endpoint boundary exceptions remain owned by an interior region.
         Space::SegmentQuery slitApproach;
         slitApproach.startMapMeters = {
             NavigationRuntimeLabStartVisualLocalMeters.x,
             NavigationRuntimeLabStartVisualLocalMeters.y,
             NavigationRuntimeLabStartVisualLocalMeters.z
         };
-        slitApproach.endMapMeters = portalCenter;
+        slitApproach.endMapMeters = entryCenter;
         slitApproach.envelope.radiusMeters = labShipRadius;
         slitApproach.envelope.additionalClearanceMeters = 10.0;
-        slitApproach.requireSameRegion = false;
+        slitApproach.requireSameRegion = true;
+        slitApproach.allowEndOnStartRegionBoundary = true;
 
-        Space::SegmentQuery slitExit = slitApproach;
-        slitExit.startMapMeters = portalCenter;
-        slitExit.endMapMeters = tunnelExit;
+        Space::SegmentQuery slitTunnelReverse;
+        slitTunnelReverse.startMapMeters = {
+            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
+            NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z - 1.0
+        };
+        slitTunnelReverse.endMapMeters = entryCenter;
+        slitTunnelReverse.envelope = slitApproach.envelope;
+        slitTunnelReverse.requireSameRegion = true;
+        slitTunnelReverse.allowEndOnStartRegionBoundary = true;
 
         const Space::SegmentQueryResult approachProof =
             m_navigationRuntimeLabSpace->querySegment(slitApproach);
-        const Space::SegmentQueryResult exitProof =
-            m_navigationRuntimeLabSpace->querySegment(slitExit);
+        const Space::SegmentQueryResult tunnelProof =
+            m_navigationRuntimeLabSpace->querySegment(slitTunnelReverse);
 
         m_navigationRuntimeLabObservation.slitPortalExactObstaclesExamined =
             approachProof.obstaclesExamined +
-            exitProof.obstaclesExamined;
+            tunnelProof.obstaclesExamined;
         m_navigationRuntimeLabObservation.slitPortalExactOpenPublished =
             approachProof.traversable &&
-            exitProof.traversable;
+            tunnelProof.traversable;
     }
 
     const auto stats = m_navigationRuntimeLabSpace->stats();

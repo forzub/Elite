@@ -802,6 +802,22 @@ int runNavigationRuntimeSelfTest()
             << observation.movingPrecisionAttemptedSeen
             << " moving_passage_feasible="
             << observation.movingPassageFeasibleSeen
+            << " moving_eval_status="
+            << static_cast<int>(
+                observation.movingPassageLastEvaluatorStatus
+            )
+            << " moving_req_fwd_mps2="
+            << observation.movingPassageRequiredPeakForwardAccelerationMps2
+            << " moving_req_rev_mps2="
+            << observation.movingPassageRequiredPeakReverseAccelerationMps2
+            << " moving_req_lat_mps2="
+            << observation.movingPassageRequiredPeakLateralAccelerationMps2
+            << " moving_req_vert_mps2="
+            << observation.movingPassageRequiredPeakVerticalAccelerationMps2
+            << " moving_sample_clearance_m="
+            << observation.movingPassageMinimumSampleClearanceMeters
+            << " moving_continuous_clearance_m="
+            << observation.movingPassageMinimumContinuousClearanceMeters
             << " moving_passage_static_safe="
             << observation.movingPassageStaticSafeSeen
             << " moving_passage_authority="
@@ -1147,6 +1163,22 @@ int runNavigationRuntimeSelfTest()
         << observation.movingPrecisionAttemptedSeen
         << " moving_passage_feasible="
         << observation.movingPassageFeasibleSeen
+        << " moving_eval_status="
+        << static_cast<int>(
+            observation.movingPassageLastEvaluatorStatus
+        )
+        << " moving_req_fwd_mps2="
+        << observation.movingPassageRequiredPeakForwardAccelerationMps2
+        << " moving_req_rev_mps2="
+        << observation.movingPassageRequiredPeakReverseAccelerationMps2
+        << " moving_req_lat_mps2="
+        << observation.movingPassageRequiredPeakLateralAccelerationMps2
+        << " moving_req_vert_mps2="
+        << observation.movingPassageRequiredPeakVerticalAccelerationMps2
+        << " moving_sample_clearance_m="
+        << observation.movingPassageMinimumSampleClearanceMeters
+        << " moving_continuous_clearance_m="
+        << observation.movingPassageMinimumContinuousClearanceMeters
         << " moving_passage_static_safe="
         << observation.movingPassageStaticSafeSeen
         << " moving_passage_authority="

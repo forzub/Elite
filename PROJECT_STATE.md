@@ -546,3 +546,34 @@ CUBE 08, preserving the real Cobra capability and the existing CUBE 08 static
 gate. The intended order becomes:
 moving passage live authority -> physical gap crossing -> CUBE 08 exact-static
 avoidance -> same-tick replication, with no weakening of either proof.
+
+
+## 12A-6b3b corrected live candidate
+
+Corrective code/contract baseline before documentation commits:
+
+```text
+89ead2a4a256052817023f2fbf01ce9a9ca683e0
+```
+
+Corrections after the failed `4df5a442...` target run:
+- relocate the translating moving aperture from visual z=-2500 to z=-5700,
+  about 500 m ahead of the lab spawn and before CUBE 08;
+- keep the real 30 s Hermite horizon and the Cobra's real vehicle authority;
+- preserve CUBE 08 as the later independent exact-static obstacle;
+- split acceptance ordering into:
+  1. active MovingPassageClear + real physical acceleration,
+  2. same-tick sparse/canonical replication of that active epoch,
+  3. physical moving-gap plane crossing,
+  4. subsequent CUBE 08 exact-static avoidance/progress;
+- expose the last moving-passage evaluator status and required forward/reverse/
+  lateral/vertical peak accelerations plus sample/continuous clearance in the
+  server diagnostic line.
+
+The corrected fixture no longer asks the Cobra to cover ~3.7 km in 30 s and
+then brake at ~16-17 m/s^2 with 2 m/s^2 reverse authority. At the authored
+~500 m initial range, the expected Hermite endpoint demands are inside the
+physical manoeuvre envelope, while the same trajectory ends before CUBE 08 so
+exact-static proof can succeed independently.
+
+Target-machine acceptance is still pending.

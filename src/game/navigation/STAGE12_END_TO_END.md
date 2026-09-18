@@ -651,7 +651,36 @@ trajectory before the verified first control sample may flow into
 `mapIntentToWorld()`, `PilotSkillExecutor`, authoritative physics and
 replication.
 
-Target-machine verification for 12A-6b1 is pending.
+#### 12A-6b1 first target-machine run
+
+Run from `6badb5f74ea65900a38a48854d66f16f34127a89`:
+
+```text
+navigation_runtime_control    PASS
+navigation_runtime_planner    PASS
+navigation_replication_truth  PASS
+3/3 runtime tests PASS
+```
+
+The architecture script failed before acceptance with:
+
+```text
+[FAIL] exact obstacle geometry must link in isolated and production NavigationSpace targets
+```
+
+The failure was not a missing link. The runtime target configured, built and
+linked successfully. The checker depended on a literal
+`PUBLIC EliteNavigationGeometry` CMake substring; adding the trajectory target
+changed whitespace/layout and triggered a false negative.
+
+Correction:
+- preserve the existing CMake link-contract layout;
+- normalize whitespace in the architecture checker before validating the
+  relationship.
+
+No production navigation behavior changed in this correction. 12A-6b1 remains
+a candidate until the corrected architecture gate and the remaining regression
+set are green.
 
 ## Project-state recording protocol
 

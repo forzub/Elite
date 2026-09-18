@@ -987,13 +987,9 @@ bool GameSimulation::updateNpcNavigationControl(
         ++observation.executionCount;
         observation.executionSeen = true;
 
-        // buildNavigationRuntimeLabIntent() maps the follower command into
-        // WORLD axes before it enters NavigationRuntimeControlBridge. Despite
-        // the legacy *MapMps2 field name on ExecutionSnapshot, the executed
-        // vector below is therefore WORLD-space and is the vector applied by
-        // DynamicMotionSystem. Keep world diagnostics in that frame, but
-        // explicitly transform it back to the NavigationMap basis before any
-        // map-space safety prediction.
+        // The control bridge is explicitly System-space. Navigation-v2 safety
+        // prediction is NavLocal-only, so executed system acceleration may
+        // re-enter Navigation v2 only through NavigationFrameBoundary.
         const auto& executed =
             latest.snapshot.executedLinearAccelerationDemandSystemMps2;
         const glm::dvec3 executedWorldVector(
@@ -4741,25 +4737,25 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             replicated.activeTargetRevision =
                 execution.activeTargetRevision;
 
-            replicated.idealLinearAccelerationDemandMapMps2 = {
-                execution.idealLinearAccelerationDemandMapMps2.x,
-                execution.idealLinearAccelerationDemandMapMps2.y,
-                execution.idealLinearAccelerationDemandMapMps2.z
+            replicated.idealLinearAccelerationDemandSystemMps2 = {
+                execution.idealLinearAccelerationDemandSystemMps2.x,
+                execution.idealLinearAccelerationDemandSystemMps2.y,
+                execution.idealLinearAccelerationDemandSystemMps2.z
             };
-            replicated.idealAngularAccelerationDemandMapRadPerSec2 = {
-                execution.idealAngularAccelerationDemandMapRadPerSec2.x,
-                execution.idealAngularAccelerationDemandMapRadPerSec2.y,
-                execution.idealAngularAccelerationDemandMapRadPerSec2.z
+            replicated.idealAngularAccelerationDemandSystemRadPerSec2 = {
+                execution.idealAngularAccelerationDemandSystemRadPerSec2.x,
+                execution.idealAngularAccelerationDemandSystemRadPerSec2.y,
+                execution.idealAngularAccelerationDemandSystemRadPerSec2.z
             };
-            replicated.executedLinearAccelerationDemandMapMps2 = {
-                execution.executedLinearAccelerationDemandMapMps2.x,
-                execution.executedLinearAccelerationDemandMapMps2.y,
-                execution.executedLinearAccelerationDemandMapMps2.z
+            replicated.executedLinearAccelerationDemandSystemMps2 = {
+                execution.executedLinearAccelerationDemandSystemMps2.x,
+                execution.executedLinearAccelerationDemandSystemMps2.y,
+                execution.executedLinearAccelerationDemandSystemMps2.z
             };
-            replicated.executedAngularAccelerationDemandMapRadPerSec2 = {
-                execution.executedAngularAccelerationDemandMapRadPerSec2.x,
-                execution.executedAngularAccelerationDemandMapRadPerSec2.y,
-                execution.executedAngularAccelerationDemandMapRadPerSec2.z
+            replicated.executedAngularAccelerationDemandSystemRadPerSec2 = {
+                execution.executedAngularAccelerationDemandSystemRadPerSec2.x,
+                execution.executedAngularAccelerationDemandSystemRadPerSec2.y,
+                execution.executedAngularAccelerationDemandSystemRadPerSec2.z
             };
 
             replicated.emergency = execution.emergency;

@@ -37,6 +37,7 @@
 
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
+#include "src/game/navigation/NavigationRuntimeControlBridge.h"
 
 
 class StateContext;
@@ -155,6 +156,14 @@ public:
     const std::unordered_set<EntityId>& playerControlledShipIds() const noexcept
     {
         return m_playerControlledShipIds;
+    }
+
+    const std::unordered_map<
+        EntityId,
+        game::navigation::NavigationRuntimeControlBridge::ExecutionSnapshot
+    >& npcNavigationExecutionSnapshots() const noexcept
+    {
+        return m_npcNavigationExecutionSnapshots;
     }
     double serverTime() const { return m_serverTimelineClock.timeSeconds(); }
     std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();
@@ -321,6 +330,13 @@ private:
     void updateInterplanetaryTransferLabActor();
     void updateActivationCadenceLabClaim(double serverTimeSeconds);
     void updateActivationShadow();
+    bool updateNpcNavigationControl(
+        EntityId id,
+        Ship& ship,
+        const NpcNavigationGoal& goal,
+        double executionTimeSeconds,
+        double executionDeltaSeconds
+    );
     game::simulation::SimulationMode activationExecutionMode(
         EntityId shipId
     ) const noexcept;
@@ -355,6 +371,16 @@ private:
     std::vector<InterferenceSource>     m_interferenceSources;
     ShipControlState                    m_playerControlState;
     NpcAiSystem                         m_npcAiSystem;
+
+    std::unordered_map<
+        EntityId,
+        std::unique_ptr<game::navigation::NavigationRuntimeControlBridge>
+    > m_npcNavigationControlBridges;
+
+    std::unordered_map<
+        EntityId,
+        game::navigation::NavigationRuntimeControlBridge::ExecutionSnapshot
+    > m_npcNavigationExecutionSnapshots;
 
     // Snapshot graph payload control.
     // Heavy structural data is sent only on first sight / explicit dirty events.

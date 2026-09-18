@@ -290,6 +290,7 @@ private:
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;
     game::navigation::ClientNavigationWorkspace m_navigationWorkspace;
+    std::uint64_t m_lastNavigationExecutionSnapshotTick = 0;
     game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;
     game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;
     game::navigation::DockingPortRuntimeStateCatalog m_dockingPortRuntimeStateCatalog;

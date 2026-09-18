@@ -239,3 +239,45 @@ Expected runtime-planner output now also includes:
 
 Expected live self-test behavior remains unchanged because 12A-6b2 still has no
 steering authority.
+
+
+## 12A-6b2 first gate result — compile failure corrected
+
+First run on `8c30ebc1c7a724c06113b5b1e4704a7a172b6d93`:
+- architecture contract: PASS;
+- navigation_map: 1/1 PASS;
+- navigation_trajectory: COMPILE FAIL;
+- navigation_runtime: COMPILE FAIL;
+- full build: COMPILE FAIL;
+- final server self-test output was from a stale pre-existing binary and is not
+  evidence for this candidate.
+
+Root cause and correction:
+- missing `TrajectoryWitness trajectory {}` member in evaluator `Result`;
+- explicit `NavigationSpace::Vec3d` construction required by the MinGW build;
+- architecture contract tightened so the missing result member cannot pass
+  structural validation again.
+
+Corrective code/contract baseline:
+
+```text
+52a5fa9e239d8ea00923cbb65a293cca5863567b
+```
+
+### Rerun now
+
+```bash
+git pull --ff-only
+git rev-parse HEAD
+
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+bash tests/navigation_trajectory/run_mingw64.sh
+bash tests/navigation_runtime/run_mingw64.sh
+
+bash build_mingw64.sh
+./build/headless_server/EliteServer.exe --self-test-navigation
+```
+
+`navigation_map` need not be rerun for this correction: it already passed and
+none of the corrective files touch NavigationMap. If the compile/runtime gate is
+green, 12A-6b2 can be accepted.

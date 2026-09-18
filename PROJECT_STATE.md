@@ -1159,3 +1159,41 @@ baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Intent revision / accepted target revision ownership fix
+
+Code candidate:
+
+~~~text
+88bf3f05f405bc3c9b93a6ecf3619fcdcd0879cb
+~~~
+
+The target-machine replication failure exposed an overloaded revision field.
+This code slice separates the two identities already represented by replication
+output:
+
+~~~text
+intentRevision       = high-level maneuver/goal identity
+activeTargetRevision = concrete accepted execution target/segment identity
+~~~
+
+Changes:
+- `NavigationRuntimeControlBridge::Intent` now carries `targetRevision`
+  separately from `revision`;
+- `PilotSkillExecutor::Command` now carries the same optional target revision;
+- zero `targetRevision` falls back to `revision`, preserving all legacy
+  callers;
+- reaction-delay ownership still follows high-level `revision`;
+- the queued/applied target revision follows `targetRevision`;
+- `TrajectoryFollower` publishes
+  `intent.revision = AcceptedShortSegment::goalRevision` and
+  `intent.targetRevision = AcceptedShortSegment::revision`.
+
+This preserves the Stage-12 self-test requirement
+`intentRevision == 1202001` while retaining explicit segment identity in
+`activeTargetRevision`.
+
+Target-machine validation of this correction is pending. Last actually accepted
+Stage-12 baseline remains
+`daaf038021cdf8b9561db60fdd35e7cefce0b2df`.

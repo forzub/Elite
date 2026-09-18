@@ -18,6 +18,15 @@ inline constexpr const char* NavigationRuntimeLabHubId =
     "earth_orbital_hub";
 inline constexpr const char* NavigationRuntimeLabObstacleLabel =
     "NAV STRESS CUBE 08";
+inline constexpr const char* NavigationRuntimeLabRotatingActorLabel =
+    "GUIDANCE DOCK CUBE A";
+inline const glm::dvec3 NavigationRuntimeLabRotatingActorAngularVelocityDegPerSecond {
+    0.0,
+    0.0,
+    2.0
+};
+inline constexpr double NavigationRuntimeLabAngularVelocityToleranceRadPerSecond =
+    1.0e-12;
 
 // Hub ReferenceFrame uses tactical local axes:
 //   X = prograde, Y = radial, Z = normal.
@@ -84,6 +93,13 @@ struct NavigationRuntimeLabObservation
 
     std::uint32_t shipEntityId = 0;
     std::uint32_t obstacleEntityId = 0;
+
+    std::uint32_t rotatingActorEntityId = 0;
+    bool rotatingActorCandidateSeen = false;
+    bool rotatingActorAngularVelocityVerified = false;
+    glm::dvec3 expectedRotatingActorAngularVelocityMapRadPerSecond {0.0};
+    glm::dvec3 observedRotatingActorAngularVelocityMapRadPerSecond {0.0};
+    double rotatingActorAngularVelocityErrorRadPerSecond = 0.0;
 
     std::uint64_t planCount = 0;
     std::uint64_t executionCount = 0;

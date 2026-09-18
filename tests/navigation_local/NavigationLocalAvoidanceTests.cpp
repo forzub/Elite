@@ -245,6 +245,57 @@ void testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate()
             "static-only avoidance must expose exact obstacle work");
 }
 
+void testDynamicConflictStillPreservesExactStaticNominalProof()
+{
+    Avoidance planner;
+    Avoidance::Query query = baseQuery();
+
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 33;
+
+    Space::RegionInput region;
+    region.regionId = 1;
+    region.boundsMapMeters.minMapMeters = {-20.0, -100.0, -100.0};
+    region.boundsMapMeters.maxMapMeters = {200.0, 100.0, 100.0};
+    region.clearanceRadiusMeters = 1000.0;
+    region.geometryRevision = 1;
+    update.regions.push_back(region);
+    update.obstacles.push_back(
+        staticBox(
+            "shared_static_dynamic_blocker",
+            901,
+            glm::dvec3(8.0, 0.0, 0.0),
+            glm::dvec3(1.0, 0.25, 0.25)
+        )
+    );
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    Map::QueryResult dynamic = dynamicResult();
+    dynamic.candidates.push_back(stationaryCandidate(
+        901,
+        {8.0, 0.0, 0.0},
+        1.5,
+        0.0
+    ));
+
+    const Avoidance::Result result =
+        planner.evaluate(query, dynamic, space);
+
+    require(result.nominalConflictsFound > 0 &&
+            result.nominalPrimaryConflictEntityId == 901,
+            "fixture must retain the dynamic conflict identity");
+    require(result.nominalStaticBlocked,
+            "dynamic ConflictHold must not collapse exact-static nominal proof to a zero segment");
+    require(result.nominalStaticObstacleId ==
+                "shared_static_dynamic_blocker" &&
+            result.nominalStaticObstacleEntityId == 901,
+            "same physical blocker must remain identifiable in exact static proof");
+    require(result.staticObstaclesExamined > 0,
+            "dynamic conflict must not bypass exact static query work");
+}
+
 void testHeadOnConflictRemainsFailClosed()
 {
     Avoidance planner;
@@ -346,6 +397,7 @@ int main()
         testNominalClearPassesThroughWithoutProbes();
         testSweptCorridorBlockerFindsSameRegionLateralTarget();
         testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate();
+        testDynamicConflictStillPreservesExactStaticNominalProof();
         testHeadOnConflictRemainsFailClosed();
         testNarrowStaticRegionRejectsLateralBypass();
         testStaleDynamicResultSkipsAvoidanceProbes();

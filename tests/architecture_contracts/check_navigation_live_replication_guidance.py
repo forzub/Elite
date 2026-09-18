@@ -17,6 +17,7 @@ GUIDANCE = (ROOT / "src/game/presentation/GuidanceHudPresentation.h").read_text(
 LOCAL_PLANNER = (ROOT / "src/game/navigation/LocalGuidancePlanner.cpp").read_text(encoding="utf-8")
 DOCK_PLANNER = (ROOT / "src/game/navigation/DockingPathPlanner.cpp").read_text(encoding="utf-8")
 RUNTIME_CMAKE = (ROOT / "tests/navigation_runtime/CMakeLists.txt").read_text(encoding="utf-8")
+WIRE_TEST = (ROOT / "tests/architecture_contracts/WireDataPlaneContractTests.cpp").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -155,6 +156,11 @@ for planner, label in (
 require(
     "navigation_replication_truth" in RUNTIME_CMAKE,
     "runtime suite does not register navigation replication truth test",
+)
+require(
+    "absent navigation execution must cost only one variant tag byte" in WIRE_TEST and
+    "absentWriter.bytes().size() == 1u" in WIRE_TEST,
+    "wire data-plane test does not pin one-byte absent navigation execution",
 )
 
 print("NAVIGATION LIVE REPLICATION/GUIDANCE CONTRACT: PASS")

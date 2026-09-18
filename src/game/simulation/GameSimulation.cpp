@@ -2297,6 +2297,39 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                     static_cast<std::uint8_t>(
                         m_navigationRuntimeLabLastPlan.status
                     );
+                observation.firstExactStaticViolationAcceptedSegmentRevision =
+                    m_navigationRuntimeLabAcceptedSegment.revision;
+                observation.firstExactStaticViolationLastReplanReason =
+                    observation.lastReplanReason;
+                observation.firstExactStaticViolationAcceptedTargetMap =
+                    m_navigationRuntimeLabAcceptedSegment.targetPositionMapMeters;
+                observation.firstExactStaticViolationAcceptedTargetVelocityMapMps =
+                    m_navigationRuntimeLabAcceptedSegment.
+                        targetVelocityMapMetersPerSecond;
+                observation.firstExactStaticViolationCurrentVelocityMapMps =
+                    agent.velocityMapMetersPerSecond;
+                observation.firstExactStaticViolationLastExecutedDemandMapMps2 =
+                    observation.lastExecutedLinearDemandMapMps2;
+                observation.firstExactStaticViolationPreviousTargetBlocked =
+                    observation.acceptedSegmentLastStaticTargetBlocked;
+                observation.firstExactStaticViolationPreviousForecastBlocked =
+                    observation.acceptedSegmentLastStaticForecastBlocked;
+                observation.firstExactStaticViolationPreviousBlockingEntityId =
+                    observation.acceptedSegmentLastStaticBlockingEntityId;
+                observation.firstExactStaticViolationPreviousProbeStartMap =
+                    observation.acceptedSegmentLastStaticProbeStartMap;
+                observation.firstExactStaticViolationPreviousTargetMap =
+                    observation.acceptedSegmentLastStaticTargetMap;
+                observation.firstExactStaticViolationPreviousForecastEndMap =
+                    observation.acceptedSegmentLastStaticForecastEndMap;
+                observation.firstExactStaticViolationPreviousVelocityMapMps =
+                    observation.acceptedSegmentLastStaticVelocityMapMps;
+                observation.firstExactStaticViolationPreviousIdealAccelerationMapMps2 =
+                    observation.acceptedSegmentLastStaticIdealAccelerationMapMps2;
+                observation.firstExactStaticViolationPreviousForecastSeconds =
+                    observation.acceptedSegmentLastStaticForecastSeconds;
+                observation.firstExactStaticViolationPreviousProbeTimeSeconds =
+                    observation.acceptedSegmentLastStaticProbeTimeSeconds;
             }
         }
 
@@ -2649,7 +2682,13 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     // catches inertia/tracking drift before the already-accepted command can
     // carry the hull into static geometry.
     bool staticSafetyInvalidated = false;
+    bool staticSafetyTargetBlocked = false;
+    bool staticSafetyForecastBlocked = false;
     std::uint32_t staticSafetyBlockingEntityId = 0;
+    glm::dvec3 staticSafetyForecastEndMap =
+        agent.positionMapMeters;
+    glm::dvec3 staticSafetyIdealAccelerationMapMps2(0.0);
+    double staticSafetyForecastSeconds = 0.0;
 
     if (m_navigationRuntimeLabAcceptedSegment.valid &&
         followerResult.status != Follower::Status::InvalidInput &&
@@ -2691,11 +2730,13 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 return true;
             };
 
-        staticSafetyInvalidated =
+        staticSafetyTargetBlocked =
             exactExecutionBlocked(
                 m_navigationRuntimeLabAcceptedSegment.
                     targetPositionMapMeters
             );
+        staticSafetyInvalidated =
+            staticSafetyTargetBlocked;
 
         if (!staticSafetyInvalidated)
         {
@@ -2706,12 +2747,12 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                         validUntilUniverseTimeSeconds -
                     navigationTimeSeconds
                 );
-            const double forecastSeconds =
+            staticSafetyForecastSeconds =
                 std::min(2.0, remainingAcceptedSeconds);
 
-            if (forecastSeconds > 1.0e-6)
+            if (staticSafetyForecastSeconds > 1.0e-6)
             {
-                const glm::dvec3 idealAcceleration(
+                staticSafetyIdealAccelerationMapMps2 = glm::dvec3(
                     followerResult.intent.
                         idealLinearAccelerationDemandMapMps2.x,
                     followerResult.intent.
@@ -2722,10 +2763,10 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
 
                 glm::dvec3 forecastDelta =
                     agent.velocityMapMetersPerSecond *
-                        forecastSeconds +
-                    0.5 * idealAcceleration *
-                        forecastSeconds *
-                        forecastSeconds;
+                        staticSafetyForecastSeconds +
+                    0.5 * staticSafetyIdealAccelerationMapMps2 *
+                        staticSafetyForecastSeconds *
+                        staticSafetyForecastSeconds;
 
                 const double forecastDistance =
                     glm::length(forecastDelta);
@@ -2736,21 +2777,50 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                         localHorizonMeters / forecastDistance;
                 }
 
-                staticSafetyInvalidated =
+                staticSafetyForecastEndMap =
+                    agent.positionMapMeters +
+                    forecastDelta;
+                staticSafetyForecastBlocked =
                     exactExecutionBlocked(
-                        agent.positionMapMeters +
-                        forecastDelta
+                        staticSafetyForecastEndMap
                     );
+                staticSafetyInvalidated =
+                    staticSafetyForecastBlocked;
             }
         }
 
+        auto& safetyObservation =
+            m_navigationRuntimeLabObservation;
+        safetyObservation.acceptedSegmentLastStaticTargetBlocked =
+            staticSafetyTargetBlocked;
+        safetyObservation.acceptedSegmentLastStaticForecastBlocked =
+            staticSafetyForecastBlocked;
+        safetyObservation.acceptedSegmentLastStaticProbeStartMap =
+            agent.positionMapMeters;
+        safetyObservation.acceptedSegmentLastStaticTargetMap =
+            m_navigationRuntimeLabAcceptedSegment.targetPositionMapMeters;
+        safetyObservation.acceptedSegmentLastStaticForecastEndMap =
+            staticSafetyForecastEndMap;
+        safetyObservation.acceptedSegmentLastStaticVelocityMapMps =
+            agent.velocityMapMetersPerSecond;
+        safetyObservation.acceptedSegmentLastStaticIdealAccelerationMapMps2 =
+            staticSafetyIdealAccelerationMapMps2;
+        safetyObservation.acceptedSegmentLastStaticForecastSeconds =
+            staticSafetyForecastSeconds;
+        safetyObservation.acceptedSegmentLastStaticProbeTimeSeconds =
+            navigationTimeSeconds;
+
         if (staticSafetyInvalidated)
         {
-            ++m_navigationRuntimeLabObservation.
+            ++safetyObservation.
                 acceptedSegmentStaticSafetyInvalidationCount;
-            m_navigationRuntimeLabObservation.
+            safetyObservation.
                 acceptedSegmentLastStaticBlockingEntityId =
                     staticSafetyBlockingEntityId;
+        }
+        else
+        {
+            safetyObservation.acceptedSegmentLastStaticBlockingEntityId = 0;
         }
     }
 

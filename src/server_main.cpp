@@ -1084,6 +1084,72 @@ int runNavigationRuntimeSelfTest()
                 << "[FAIL] moving-passage continuation crossed exact static geometry"
                 << " violation_entity="
                 << observation.firstExactStaticViolationEntityId
+                << " segment_revision="
+                << observation.firstExactStaticViolationAcceptedSegmentRevision
+                << " planner_status="
+                << static_cast<int>(
+                    observation.firstExactStaticViolationPlannerStatus
+                )
+                << " last_replan_reason="
+                << static_cast<int>(
+                    observation.firstExactStaticViolationLastReplanReason
+                )
+                << " static_invalidations="
+                << observation.acceptedSegmentStaticSafetyInvalidationCount
+                << " previous_monitor_blocker="
+                << observation.firstExactStaticViolationPreviousBlockingEntityId
+                << " previous_target_blocked="
+                << observation.firstExactStaticViolationPreviousTargetBlocked
+                << " previous_forecast_blocked="
+                << observation.firstExactStaticViolationPreviousForecastBlocked
+                << " previous_probe_time_s="
+                << observation.firstExactStaticViolationPreviousProbeTimeSeconds
+                << " previous_forecast_s="
+                << observation.firstExactStaticViolationPreviousForecastSeconds
+                << " violation_start=("
+                << observation.firstExactStaticViolationStartMap.x << ","
+                << observation.firstExactStaticViolationStartMap.y << ","
+                << observation.firstExactStaticViolationStartMap.z << ")"
+                << " violation_end=("
+                << observation.firstExactStaticViolationEndMap.x << ","
+                << observation.firstExactStaticViolationEndMap.y << ","
+                << observation.firstExactStaticViolationEndMap.z << ")"
+                << " current_velocity=("
+                << observation.firstExactStaticViolationCurrentVelocityMapMps.x << ","
+                << observation.firstExactStaticViolationCurrentVelocityMapMps.y << ","
+                << observation.firstExactStaticViolationCurrentVelocityMapMps.z << ")"
+                << " accepted_target=("
+                << observation.firstExactStaticViolationAcceptedTargetMap.x << ","
+                << observation.firstExactStaticViolationAcceptedTargetMap.y << ","
+                << observation.firstExactStaticViolationAcceptedTargetMap.z << ")"
+                << " accepted_target_velocity=("
+                << observation.firstExactStaticViolationAcceptedTargetVelocityMapMps.x << ","
+                << observation.firstExactStaticViolationAcceptedTargetVelocityMapMps.y << ","
+                << observation.firstExactStaticViolationAcceptedTargetVelocityMapMps.z << ")"
+                << " last_executed_demand=("
+                << observation.firstExactStaticViolationLastExecutedDemandMapMps2.x << ","
+                << observation.firstExactStaticViolationLastExecutedDemandMapMps2.y << ","
+                << observation.firstExactStaticViolationLastExecutedDemandMapMps2.z << ")"
+                << " previous_probe_start=("
+                << observation.firstExactStaticViolationPreviousProbeStartMap.x << ","
+                << observation.firstExactStaticViolationPreviousProbeStartMap.y << ","
+                << observation.firstExactStaticViolationPreviousProbeStartMap.z << ")"
+                << " previous_target=("
+                << observation.firstExactStaticViolationPreviousTargetMap.x << ","
+                << observation.firstExactStaticViolationPreviousTargetMap.y << ","
+                << observation.firstExactStaticViolationPreviousTargetMap.z << ")"
+                << " previous_forecast_end=("
+                << observation.firstExactStaticViolationPreviousForecastEndMap.x << ","
+                << observation.firstExactStaticViolationPreviousForecastEndMap.y << ","
+                << observation.firstExactStaticViolationPreviousForecastEndMap.z << ")"
+                << " previous_velocity=("
+                << observation.firstExactStaticViolationPreviousVelocityMapMps.x << ","
+                << observation.firstExactStaticViolationPreviousVelocityMapMps.y << ","
+                << observation.firstExactStaticViolationPreviousVelocityMapMps.z << ")"
+                << " previous_ideal_accel=("
+                << observation.firstExactStaticViolationPreviousIdealAccelerationMapMps2.x << ","
+                << observation.firstExactStaticViolationPreviousIdealAccelerationMapMps2.y << ","
+                << observation.firstExactStaticViolationPreviousIdealAccelerationMapMps2.z << ")"
                 << "\n";
             return 55;
         }

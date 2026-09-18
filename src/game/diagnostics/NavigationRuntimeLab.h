@@ -227,6 +227,15 @@ struct NavigationRuntimeLabObservation
     std::uint64_t acceptedSegmentReplanCount = 0;
     std::uint64_t acceptedSegmentStaticSafetyInvalidationCount = 0;
     std::uint32_t acceptedSegmentLastStaticBlockingEntityId = 0;
+    bool acceptedSegmentLastStaticTargetBlocked = false;
+    bool acceptedSegmentLastStaticForecastBlocked = false;
+    glm::dvec3 acceptedSegmentLastStaticProbeStartMap {0.0};
+    glm::dvec3 acceptedSegmentLastStaticTargetMap {0.0};
+    glm::dvec3 acceptedSegmentLastStaticForecastEndMap {0.0};
+    glm::dvec3 acceptedSegmentLastStaticVelocityMapMps {0.0};
+    glm::dvec3 acceptedSegmentLastStaticIdealAccelerationMapMps2 {0.0};
+    double acceptedSegmentLastStaticForecastSeconds = 0.0;
+    double acceptedSegmentLastStaticProbeTimeSeconds = 0.0;
     std::uint64_t acceptedSegmentRevision = 0;
     std::uint8_t lastReplanReason = 0xffu;
     bool acceptedSegmentActive = false;
@@ -289,6 +298,22 @@ struct NavigationRuntimeLabObservation
     glm::dvec3 firstExactStaticViolationEndMap {0.0};
     glm::dvec3 firstExactStaticViolationSelectedTargetMap {0.0};
     std::uint8_t firstExactStaticViolationPlannerStatus = 0;
+    std::uint64_t firstExactStaticViolationAcceptedSegmentRevision = 0;
+    std::uint8_t firstExactStaticViolationLastReplanReason = 0xffu;
+    glm::dvec3 firstExactStaticViolationAcceptedTargetMap {0.0};
+    glm::dvec3 firstExactStaticViolationAcceptedTargetVelocityMapMps {0.0};
+    glm::dvec3 firstExactStaticViolationCurrentVelocityMapMps {0.0};
+    glm::dvec3 firstExactStaticViolationLastExecutedDemandMapMps2 {0.0};
+    bool firstExactStaticViolationPreviousTargetBlocked = false;
+    bool firstExactStaticViolationPreviousForecastBlocked = false;
+    std::uint32_t firstExactStaticViolationPreviousBlockingEntityId = 0;
+    glm::dvec3 firstExactStaticViolationPreviousProbeStartMap {0.0};
+    glm::dvec3 firstExactStaticViolationPreviousTargetMap {0.0};
+    glm::dvec3 firstExactStaticViolationPreviousForecastEndMap {0.0};
+    glm::dvec3 firstExactStaticViolationPreviousVelocityMapMps {0.0};
+    glm::dvec3 firstExactStaticViolationPreviousIdealAccelerationMapMps2 {0.0};
+    double firstExactStaticViolationPreviousForecastSeconds = 0.0;
+    double firstExactStaticViolationPreviousProbeTimeSeconds = 0.0;
 
     double initialGoalDistanceMeters = 0.0;
     double minimumGoalDistanceMeters = 0.0;

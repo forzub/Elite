@@ -168,6 +168,41 @@ manoeuvre-gas depletion/recharge
 actual local/world velocity integration
 ```
 
+### Working-frame boundary discovered by Stage 12
+
+Stage 11 accepts a **world-space** acceleration-demand seam at
+`NavigationRuntimeControlBridge -> ShipControlState -> physics`.
+
+Stage 12 exposed a missing adapter when NavigationWorld began planning in a
+non-identity local working frame. The planner's internal products are expressed
+in NavigationMap map coordinates, while `DynamicMotionSystem::applyWorldAccelerationDemand()`
+and the direct angular-control overload consume world/system vectors.
+
+Therefore the required boundary is:
+
+```text
+NavigationRuntimePlanner::Result.intent
+    map-space linear/angular acceleration
+        |
+        v
+NavigationRuntimePlanner::mapIntentToWorld(workingFrame)
+        |
+        v
+NavigationRuntimeControlBridge
+    world-space linear/angular acceleration
+        |
+        v
+ShipControlState / authoritative physics
+```
+
+Identity-frame tests are insufficient for this contract. The isolated runtime
+suite includes a non-identity basis regression that rotates both linear and
+angular demand and rejects a non-orthogonal frame.
+
+The existing field names ending in `MapMps2` are retained for wire/source
+compatibility, but once an intent crosses the runtime-control boundary its
+vector semantics are world-space as defined by Stage 11.
+
 ## Manual override
 
 11A deliberately preserves player/control-surface authority.

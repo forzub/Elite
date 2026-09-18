@@ -37,6 +37,11 @@ public:
 
         // Extra static clearance required in addition to the agent radius.
         double staticAdditionalClearanceMeters = 0.0;
+
+        // Set only when the nominal target is a corridor-selected portal center
+        // whose envelope clearance was already proved by NavigationSpace.
+        // Adjusted probes never inherit this exception.
+        bool nominalTargetIsProvenPortalBoundary = false;
     };
 
     struct Query

@@ -335,6 +335,7 @@ for marker in (
     "passedObstaclePlane",
     "exactStaticGeometryPublished",
     "exactStaticObstacleCount",
+    "configuredRouteExactObstacleBlockPublished",
     "exactStaticQuerySeen",
     "nominalStaticBlockSeen",
     "maximumExactStaticObstaclesExamined",
@@ -390,10 +391,12 @@ for marker in (
     "authoritativePublished.metadata.serverTick",
     "observation.exactStaticGeometryPublished",
     "observation.exactStaticObstacleCount > 0",
+    "observation.configuredRouteExactObstacleBlockPublished",
     "observation.exactStaticQuerySeen",
     "observation.nominalStaticBlockSeen",
     "observation.maximumExactStaticObstaclesExamined > 0",
     "exact_static_obstacles=",
+    "configured_route_exact_block=",
     "exact_static_query=",
     "exact_static_block=",
     "exact_static_motion_samples=",
@@ -424,6 +427,24 @@ require(
     "m_navigationRuntimeLabLastPlan.nominalStaticObstacleEntityId ==" in SIM_CPP and
     "obstacleExactStaticBlockSeen = true" in SIM_CPP,
     "live ownership proof must bind CUBE 08 to exact-static blocker identity",
+)
+
+require(
+    "NavigationRuntimeLabInitialObstacleLeadMeters" in LAB_H and
+    "NavigationRuntimeLabObstacleVisualLocalMeters.z -" in LAB_H,
+    "live proving start must remain explicitly tied to CUBE 08 with a bounded initial lead",
+)
+
+require(
+    "configuredRouteExactObstacleBlockPublished" in SIM_CPP and
+    "fixtureProof.blockingObstacleEntityId ==" in SIM_CPP,
+    "static publication must prove configured start->goal intersects exact CUBE 08 geometry",
+)
+
+require(
+    "configured NavigationRuntimeLab route does not " in SERVER_MAIN and
+    "return 38;" in SERVER_MAIN,
+    "server self-test must fail fast when the exact-static proving fixture is invalid",
 )
 
 require(
@@ -483,3 +504,5 @@ print(" - live physical motion is swept against exact HitVolume geometry every f
 print(" - conservative sphere clearance is diagnostic only, not exact-static acceptance truth")
 print(" - stationary NAV STRESS obstacles are excluded from NavigationMap dynamic ownership")
 print(" - live CUBE 08 must be exact-static blocker, never a dynamic candidate/conflict")
+print(" - configured start->goal line is publication-proven against exact CUBE 08 HitVolume")
+print(" - invalid exact-static proving geometry fails fast before a 120 s behavior run")

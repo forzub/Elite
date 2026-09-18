@@ -17,17 +17,6 @@ bool hasManualAttitudeInput(const ShipControlState& control)
         std::abs(control.rollInput) > 0.001f;
 }
 
-bool hasManualTranslationInput(const ShipControlState& control)
-{
-    return
-        std::abs(control.targetSpeedRate) > 0.001f ||
-        std::abs(control.forwardInput) > 0.001f ||
-        std::abs(control.strafeInput) > 0.001f ||
-        std::abs(control.liftInput) > 0.001f ||
-        control.assistedMaxSpeedCommand ||
-        control.velocityAlignmentCommand !=
-            game::navigation::VelocityAlignmentMode::None;
-}
 }
 
 void integrate(

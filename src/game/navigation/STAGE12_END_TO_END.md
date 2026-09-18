@@ -1355,3 +1355,51 @@ live moving gap
 Vehicle capability remains generic. The navigation algorithm reads the
 descriptor/runtime capability of the current vehicle; no Cobra-specific
 acceleration value is embedded in planner logic.
+
+
+## 12A-6b3b slit candidate target-machine gate — FIXTURE VALIDATION FAILURE
+
+Target-machine baseline:
+
+```text
+777716f52cdde3222dd875d93e91fe00df9859f1
+```
+
+Green before the live fail:
+- Stage-12 architecture contract;
+- navigation_runtime 3/3;
+- navigation_trajectory 11/11;
+- EliteGame / EliteServer build.
+
+Fail-fast evidence:
+
+```text
+slit_exact_open=0
+slit_exact_obstacles_examined=22
+[FAIL] authored exact-static slit tunnel does not admit the current ship envelope
+```
+
+Root cause is the fixture proof's region-boundary semantics. The slit portal
+center lies exactly on the shared NavigationSpace region boundary. Ordinary
+`querySegment` validates its endpoint through `queryPoint`, where geometric
+clearance to the region boundary is zero, so it rejects the legal portal point
+before exact OBB aperture geometry can be accepted.
+
+The runtime planner already has the correct selected-portal exception:
+`allowEndOnStartRegionBoundary`. The fixture proof must use the same contract
+for approach and reverse-exit segments rather than treating the portal center
+as an ordinary interior point.
+
+Architecture refinement from user review: a portal/tunnel is not accepted merely
+because the hull center intersects the opening. A traversable finite-depth
+passage needs an entry/capture frame. Before crossing the entry plane, automatic
+execution must align:
+- velocity direction with the oriented portal/tunnel normal;
+- vehicle forward axis with that normal when the passage requires pose
+  alignment;
+- lateral/vertical position and cross-track velocity inside the capture
+  envelope.
+
+For a straight tunnel, transit keeps that entry axis through the exit. This must
+be a generic portal traversal contract, not a NavigationRuntimeLab/Cobra special
+case.

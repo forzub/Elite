@@ -350,3 +350,31 @@ observe/prove seam.
 Current task is continuous exact-static proof of that same accepted moving
 Hermite trajectory. Steering authority remains unchanged until this composition
 is proven on the target machine.
+
+
+#### 12A-6b2 — CANDIDATE / target-machine pending
+
+Candidate baseline:
+
+```text
+61f62e9d096542ae52680cf47d6da1c03b0bb8c0
+```
+
+The moving-passage evaluator now exports a bounded witness of the exact Hermite
+centerline that it accepted. Every one of the 32 intervals carries a continuous
+curve-to-chord deviation bound `A*dt^2/8`.
+
+The shared runtime planner combines:
+- the same accepted Hermite centerline;
+- a conservative radius containing the complete precision hull;
+- each interval's curve deviation;
+- existing NavigationSpace exact HitVolume segment proof.
+
+Thus a static object between the 33 discrete samples cannot be missed.
+
+A new deterministic runtime fixture requires a dynamically feasible moving
+aperture to be rejected by a static HitVolume beam intersecting that same
+trajectory.
+
+No authoritative intent changes in this slice. Target-machine verification is
+pending.

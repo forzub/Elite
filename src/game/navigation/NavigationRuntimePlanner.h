@@ -162,6 +162,7 @@ public:
         bool safeProgressTargetDemonstrated = false;
         bool usedPortalWaypoint = false;
         bool adjustedTarget = false;
+        double selectedVisibilityDeflectionRadians = 0.0;
 
         glm::dvec3 coarseWaypointMapMeters {0.0};
         glm::dvec3 selectedTargetMapMeters {0.0};

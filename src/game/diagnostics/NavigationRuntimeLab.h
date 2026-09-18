@@ -72,6 +72,7 @@ struct NavigationRuntimeLabObservation
     std::uint32_t obstacleEntityId = 0;
 
     std::uint64_t planCount = 0;
+    std::uint64_t executionCount = 0;
     std::uint64_t lastIntentRevision = 0;
     std::uint8_t lastPlannerStatus = 0xffu;
 
@@ -79,6 +80,21 @@ struct NavigationRuntimeLabObservation
     bool obstaclePrimaryConflictSeen = false;
     bool adjustedTargetSeen = false;
     bool conflictHoldSeen = false;
+    bool executionSeen = false;
+    bool nonZeroExecutedDemandSeen = false;
+    bool lateralExecutedDemandSeen = false;
+    bool passedObstaclePlane = false;
+    bool reachedGoal = false;
+
+    double initialGoalDistanceMeters = 0.0;
+    double minimumGoalDistanceMeters = 0.0;
+    double maximumStraightLineDeviationMeters = 0.0;
+
+    double minimumObstacleCenterDistanceMeters = 0.0;
+    double minimumConservativeClearanceMeters = 0.0;
+
+    double maximumExecutedLinearDemandMps2 = 0.0;
+    double maximumExecutedLateralDemandMps2 = 0.0;
 };
 
 } // namespace game::diagnostics

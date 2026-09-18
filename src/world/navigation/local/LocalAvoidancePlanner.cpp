@@ -78,6 +78,9 @@ void validatePolicy(const LocalAvoidancePlanner::Policy& policy)
         policy.primaryDeflectionRadians <= 0.0 ||
         policy.secondaryDeflectionRadians <= policy.primaryDeflectionRadians ||
         policy.secondaryDeflectionRadians >= 1.5707963267948966 ||
+        !finite(policy.maximumDeflectionRadians) ||
+        policy.maximumDeflectionRadians < policy.secondaryDeflectionRadians ||
+        policy.maximumDeflectionRadians >= 1.5707963267948966 ||
         policy.azimuthSamples < 4 ||
         policy.azimuthSamples > 32 ||
         !finite(policy.staticAdditionalClearanceMeters) ||
@@ -206,6 +209,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         nominalStatic.traversable)
     {
         result.status = Status::NominalClear;
+        result.nominalVisibilityClear = true;
         return result;
     }
 
@@ -228,12 +232,15 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     const Vec3d lateralA = normalize(cross(forward, reference));
     const Vec3d lateralB = normalize(cross(lateralA, forward));
 
-    const double rings[2] = {
-        query.avoidance.primaryDeflectionRadians,
-        query.avoidance.secondaryDeflectionRadians
-    };
+    const double deflectionStep =
+        query.avoidance.secondaryDeflectionRadians -
+        query.avoidance.primaryDeflectionRadians;
 
-    for (double deflection : rings)
+    for (double deflection =
+             query.avoidance.primaryDeflectionRadians;
+         deflection <=
+             query.avoidance.maximumDeflectionRadians + kEpsilon;
+         deflection += deflectionStep)
     {
         const double forwardScale = std::cos(deflection);
         const double lateralScale = std::sin(deflection);
@@ -318,6 +325,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
             result.status = Status::AdjustedClear;
             result.target = adjusted;
             result.adjustedTarget = true;
+            result.selectedDeflectionRadians = deflection;
             return result;
         }
     }

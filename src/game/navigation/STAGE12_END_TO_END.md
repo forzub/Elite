@@ -1056,3 +1056,50 @@ When false, the accepted LocalAvoidance/fail-closed behavior remains in control.
 map-intent -> world transform -> PilotSkillExecutor seam. A later live gate must
 still demonstrate moving-passage authority through actual physics and
 replication before 12A-6b is closed end-to-end.
+
+
+#### 12A-6b3a candidate — deterministic authority seam
+
+Candidate baseline before documentation commits:
+
+```text
+4b117cada10ce416250d917a8bdad2b6b5580ee7
+```
+
+The moving precision policy now has two independent switches:
+
+```text
+enabled = run bounded precision proof
+allowSteeringAuthority = permit a doubly-proven result to steer
+```
+
+Both default to false.
+
+Authoritative promotion is legal only when:
+
+```text
+allowSteeringAuthority
+&& local result is not stale
+&& movingPassageFeasible
+&& movingPassageStaticSafe
+```
+
+The resulting planner state is `MovingPassageClear`. Its linear intent is
+assigned directly from the already-verified
+`movingPassageInitialAccelerationMapMps2`. The authority block returns before
+the ordinary selected-target / desired-velocity solve, preventing a
+prove-one-trajectory / execute-another defect.
+
+Pinned deterministic evidence:
+- observe-only precision cannot steal steering;
+- closing gap cannot gain authority;
+- exact-static blocker vetoes authority even when moving passage geometry is
+  dynamically feasible;
+- a doubly-proven open passage takes authority;
+- its exact acceleration sample crosses a deliberately non-identity
+  map->world transform and the accepted PilotSkillExecutor bridge.
+
+This sub-slice does not yet satisfy the complete 12A-6b live requirement.
+After target-machine acceptance, a live deterministic moving-gap fixture must
+exercise `MovingPassageClear` through authoritative physics and same-tick
+replication.

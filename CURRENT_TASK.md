@@ -1244,3 +1244,62 @@ daaf038021cdf8b9561db60fdd35e7cefce0b2df
 
 Use `1e1b5ff2e72d743688833a403e94aefc0a832c87` as the code candidate for
 the next MinGW/runtime gate.
+
+
+### Target-machine gate failure: accepted-segment intent revision contract
+
+Target-machine run against repository HEAD
+`9a8b618f08f80b9945a49709640d1fc52e54be24` produced:
+
+~~~text
+architecture Stage-12 contract: PASS
+navigation_local: PASS
+navigation_space: PASS
+navigation_runtime: PASS (5/5)
+navigation_trajectory: PASS (11/11)
+full MinGW client/server build: PASS
+EliteServer --self-test-navigation: FAIL (return 43)
+~~~
+
+Failure:
+
+~~~text
+[FAIL] navigation-runtime same-tick sparse replication proof incomplete
+error_mps2=inf canonical_error_mps2=inf
+~~~
+
+Root cause identified before changing code:
+
+The pre-follower runtime planner used `NavigationRuntimePlanner::Result::intent`
+whose `Intent::revision` is the goal/mission revision
+(`plannerGoal.revision == 1202001` in the Stage-12 lab).
+
+The first `TrajectoryFollower` implementation incorrectly replaced that
+semantic identity with `AcceptedShortSegment::revision`, which is an execution
+segment epoch (1, 2, 3, ...).
+
+The live self-test intentionally filters sparse execution publications with:
+
+~~~text
+replicatedExecution->intentRevision == 1202001
+~~~
+
+Therefore every otherwise eligible sparse publication from the new follower was
+discarded before same-tick/canonical comparison. Both replication error values
+remained at their initialized infinity values. This failure does not demonstrate
+a sparse/canonical acceleration mismatch; it demonstrates that the follower
+violated the existing intent-revision contract before the comparison could run.
+
+Required correction:
+- preserve `goalRevision` as `Bridge::Intent::revision`;
+- retain `AcceptedShortSegment::revision` separately as execution-segment
+  identity/diagnostics;
+- pin this distinction in the isolated follower test;
+- rerun the same target-machine gate.
+
+No new Stage-12 baseline is accepted. Last actually target-machine accepted
+baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

@@ -54,10 +54,13 @@ public:
         return m_modules;
     }
 
-    ReplicatedNavigationExecutionState& replicatedNavigationExecution() noexcept
+    void syncReplicatedNavigationExecution(
+        std::vector<ReplicatedNavigationExecution> entries
+    )
     {
-        return m_replicatedNavigationExecution;
+        m_replicatedNavigationExecution.replace(std::move(entries));
     }
+
     const ReplicatedNavigationExecutionState&
     replicatedNavigationExecution() const noexcept
     {

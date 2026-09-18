@@ -1588,20 +1588,45 @@ m_hubVelocityMetersPerSecond[hubId] =
                 decisionIt->second.executionDeltaSeconds
             );
 
-            game::navigation::DynamicMotionSystem::applyLocalFrameInput(
-                tr.motion,
-                tr.motion.travelFrame,
-                shipPtr->core().desc().physics,
-                motionControlDt,
-                control.targetSpeedRate,
-                control.cruiseActive,
-                control.forwardInput,
-                control.liftInput,
-                control.strafeInput,
-                tr.forward(),
-                tr.right(),
-                tr.up()
-            );
+            const bool manualTranslationOverride =
+                control.cruiseActive ||
+                control.jumpActive ||
+                control.assistedMaxSpeedCommand ||
+                control.velocityAlignmentCommand !=
+                    game::navigation::VelocityAlignmentMode::None ||
+                std::abs(control.targetSpeedRate) > 0.001f ||
+                std::abs(control.forwardInput) > 0.001f ||
+                std::abs(control.liftInput) > 0.001f ||
+                std::abs(control.strafeInput) > 0.001f;
+
+            if (control.navigationAccelerationDemandValid &&
+                !manualTranslationOverride)
+            {
+                game::navigation::DynamicMotionSystem::
+                    applyWorldAccelerationDemand(
+                        tr.motion,
+                        shipPtr->core().desc().physics,
+                        control.navigationLinearAccelerationDemandMapMps2,
+                        tr.forward()
+                    );
+            }
+            else
+            {
+                game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+                    tr.motion,
+                    tr.motion.travelFrame,
+                    shipPtr->core().desc().physics,
+                    motionControlDt,
+                    control.targetSpeedRate,
+                    control.cruiseActive,
+                    control.forwardInput,
+                    control.liftInput,
+                    control.strafeInput,
+                    tr.forward(),
+                    tr.right(),
+                    tr.up()
+                );
+            }
         }
     }
 

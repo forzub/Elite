@@ -1677,6 +1677,18 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         m_navigationRuntimeLabObservation.conflictHoldSeen ||
         m_navigationRuntimeLabLastPlan.status ==
             Planner::Status::ConflictHold;
+    m_navigationRuntimeLabObservation.exactStaticQuerySeen =
+        m_navigationRuntimeLabObservation.exactStaticQuerySeen ||
+        m_navigationRuntimeLabLastPlan.staticObstaclesExamined > 0;
+    m_navigationRuntimeLabObservation.nominalStaticBlockSeen =
+        m_navigationRuntimeLabObservation.nominalStaticBlockSeen ||
+        m_navigationRuntimeLabLastPlan.nominalStaticBlocked;
+    m_navigationRuntimeLabObservation.maximumExactStaticObstaclesExamined =
+        std::max(
+            m_navigationRuntimeLabObservation.
+                maximumExactStaticObstaclesExamined,
+            m_navigationRuntimeLabLastPlan.staticObstaclesExamined
+        );
 
     if (m_navigationRuntimeLabObservation.obstacleEntityId != 0 &&
         (m_navigationRuntimeLabLastPlan.primaryConflictEntityId ==
@@ -3447,6 +3459,7 @@ void GameSimulation::registerNavigationRuntimeLabShip(
     m_navigationRuntimeLabShipId = shipId;
     m_navigationRuntimeLabHubId = hubId;
     m_navigationRuntimeLabInitialized = false;
+    m_navigationRuntimeLabStaticGeometryPublished = false;
     m_navigationRuntimeLabMap.reset();
     m_navigationRuntimeLabSpace.reset();
     m_navigationRuntimeLabSourceRevision = 0;

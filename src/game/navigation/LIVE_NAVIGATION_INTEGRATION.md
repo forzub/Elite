@@ -476,9 +476,11 @@ This closes authoritative NPC runtime ownership. `NpcAiSystem` remains goal/poli
 
 ### Replicated DTO
 
-`ShipSnapshot` now carries:
+`ShipSnapshot` now carries a sparse variant:
 
 ```text
+variant<monostate, NavigationExecutionSnapshot>
+
 NavigationExecutionSnapshot
     valid
     intentRevision
@@ -494,7 +496,7 @@ NavigationExecutionSnapshot
     pendingCommandCount
 ```
 
-The server fills this DTO directly from the same `GameSimulation::npcNavigationExecutionSnapshots()` row used to create live NPC control. No presentation-side reconstruction is involved.
+The server fills the present variant directly from the same `GameSimulation::npcNavigationExecutionSnapshots()` row used to create live NPC control. Ships without a valid execution publish `monostate`, which costs only the one-byte variant tag. No presentation-side reconstruction is involved.
 
 ### Wire contract
 
@@ -510,7 +512,7 @@ This intentionally rejects accidental cross-version decoding rather than silentl
 
 ### Client hydration
 
-`ClientWorldState::ClientShipState` retains the replicated `navigationExecution` for both newly hydrated and already-known ships.
+`ClientWorldState::ClientShipState` resolves the sparse replicated variant for both newly hydrated and already-known ships. `monostate` clears the observation.
 
 Sparse replication semantics remain unchanged:
 - omitted ship row -> retain previous state;
@@ -535,7 +537,7 @@ syncReplicatedNavigationExecution(...)
 const replicatedNavigationExecution()
 ```
 
-There is deliberately no mutable `replicatedNavigationExecution()` getter. Client planners may inspect server truth but may not rewrite it.
+There is deliberately no mutable `replicatedNavigationExecution()` getter. Client planners may inspect server truth but may not rewrite it. `SpaceState` rebuilds the mirror only when the accepted server snapshot tick changes, never once per render frame.
 
 ### Guidance presentation
 
@@ -578,7 +580,7 @@ selected route executor -> GuidanceHudPresentation authoritative metadata
 no corridor published -> no fake corridor becomes visible
 ```
 
-The existing canonical wire-data-plane contract is also extended with navigation execution fields.
+The existing canonical wire-data-plane contract is also extended with navigation execution fields and proves that an absent execution variant encodes to exactly one tag byte.
 
 ## 11B after acceptance
 

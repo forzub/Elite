@@ -124,6 +124,11 @@ target_include_directories(EliteNavigationGeometry PUBLIC
     "${CMAKE_SOURCE_DIR}/src"
 )
 
+# Precision trajectory components are a shared deterministic navigation layer.
+# Stage 12 runtime composition links them through the same client/server target;
+# no executable owns a private moving-gap planner.
+add_subdirectory(src/world/navigation/trajectory)
+
 # Navigation v2 live composition. This target owns the accepted dynamic map,
 # static free-space topology, bounded local avoidance and the runtime planner
 # that converts those products into PilotSkillExecutor intent. It is shared by
@@ -142,7 +147,9 @@ target_include_directories(EliteNavigationWorldRuntime PUBLIC
 )
 
 target_link_libraries(EliteNavigationWorldRuntime
-    PUBLIC EliteNavigationGeometry
+    PUBLIC
+        EliteNavigationGeometry
+        EliteNavigationTrajectory
 )
 
 # Shared CPU-side authored/runtime assembly geometry. This is intentionally not

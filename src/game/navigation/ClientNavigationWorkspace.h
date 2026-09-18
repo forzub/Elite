@@ -8,6 +8,7 @@
 #include "src/game/navigation/NavigationModuleState.h"
 #include "src/game/navigation/RoutePlan.h"
 #include "src/game/navigation/TargetTrackingState.h"
+#include "src/game/navigation/ReplicatedNavigationExecutionState.h"
 
 namespace game::navigation
 {
@@ -51,6 +52,16 @@ public:
     const NavigationModuleState& modules() const noexcept
     {
         return m_modules;
+    }
+
+    ReplicatedNavigationExecutionState& replicatedNavigationExecution() noexcept
+    {
+        return m_replicatedNavigationExecution;
+    }
+    const ReplicatedNavigationExecutionState&
+    replicatedNavigationExecution() const noexcept
+    {
+        return m_replicatedNavigationExecution;
     }
 
     const NavigationAssetRef& localControlledAsset() const noexcept
@@ -108,6 +119,7 @@ private:
     NavigationGuidanceState m_guidance;
     DockingRouteRequestState m_dockingRouteRequests;
     NavigationModuleState m_modules;
+    ReplicatedNavigationExecutionState m_replicatedNavigationExecution;
     NavigationAssetRef m_localControlledAsset;
 };
 

@@ -3,7 +3,7 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 live integration  
-**Stage:** 11B-1 — authoritative NPC runtime ownership gate
+**Stage:** 11B-1 — repaired authoritative NPC runtime ownership rerun
 
 ## Progress
 
@@ -81,6 +81,31 @@ erase last execution time
 ```
 
 No direct-steering fallback.
+
+## First target-machine attempt — NOT ACCEPTED
+
+Green evidence:
+
+```text
+check_navigation_live_runtime_control.py PASS
+check_navigation_live_npc_ownership.py   PASS
+navigation_trajectory                    11/11 PASS
+EliteGame                                build PASS
+```
+
+Failures:
+
+```text
+navigation_runtime compile:
+  missing GLM_ENABLE_EXPERIMENTAL in standalone harness
+
+EliteServer link:
+  missing NavigationRuntimeControlBridge.cpp
+  missing NpcNavigationIntentController.cpp
+  missing PilotSkillExecutor.cpp
+```
+
+Repairs are committed and the architecture checker now pins both wiring requirements.
 
 ## RUN NOW
 

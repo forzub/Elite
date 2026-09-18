@@ -49,6 +49,12 @@ for token in (
     "game::navigation::NavigationSolution,",
     "game::simulation::ClientNavigationSensorSnapshot,",
     "v.navigationSensors",
+    "game::simulation::NavigationExecutionSnapshot,",
+    "v.navigationExecution",
+    "v.intentRevision",
+    "v.activeTargetRevision",
+    "v.executedLinearAccelerationDemandMapMps2",
+    "v.executedAngularAccelerationDemandMapRadPerSec2",
     "v.mainEngineAccelerationMps2",
     "v.manoeuvreAccelerationMps2",
     "v.manoeuvreGasPressure01",
@@ -66,6 +72,7 @@ for token in (
         fail(f"obsolete client-composed map response remains in wire schema: {token}")
 
 for token in (
+    "SimulationSnapshotWireSchemaVersion = 8u",
     "SimulationSnapshotWireSchemaVersion",
     "MapResponseWireSchemaVersion",
     "encodeSimulationSnapshot(",

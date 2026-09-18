@@ -254,14 +254,19 @@ traverse that aperture; an oversized envelope must fail.
 
 The live NAV STRESS fixture publishes non-self-rotating HitVolume OBBs only
 after authoritative hub/object transforms and HitVolume rebuild are current for
-the fixed step. The live self-test must observe both:
+the fixed step. The live self-test must observe:
 
 ```text
 exact_static=1
 exact_static_obstacles>0
+exact_static_query=1
+exact_static_block=1
+max_exact_static_examined>0
 ```
 
-before accepting the existing CUBE 08 physical/replication chain.
+This proves both publication and real live-planner consumption of the exact
+static layer. A stored-but-unused OBB snapshot is not acceptance evidence.
+Only then may the existing CUBE 08 physical/replication chain pass.
 
 For this first exact-static gate, the previously accepted static conservative
 sphere candidates remain in `NavigationMap`. Removing static objects from the

@@ -182,6 +182,8 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         toSpaceVec(boundedNominalTarget);
     nominalStaticQuery.envelope = startQuery.envelope;
     nominalStaticQuery.requireSameRegion = true;
+    nominalStaticQuery.allowEndOnStartRegionBoundary =
+        query.avoidance.nominalTargetIsProvenPortalBoundary;
 
     const NavigationSpace::SegmentQueryResult nominalStatic =
         staticSpace.querySegment(nominalStaticQuery);

@@ -1525,3 +1525,56 @@ remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Executed-demand exact-static safety candidate
+
+Superseding code candidate:
+
+~~~text
+6fc035f23b079a33bde99bc564108a0494c9fca9
+~~~
+
+The target-machine impact witness proved that the first exact-static monitor
+used the wrong acceleration source near the slit wall:
+
+~~~text
+follower ideal Z acceleration   = -42.1707 m/s^2
+actually executed Z demand      = +13.1693 m/s^2
+~~~
+
+The planner/follower were already commanding motion away from entity 28 while
+PilotSkillExecutor/physics were still carrying the previous command toward it.
+The ideal-only monitor therefore proved a hypothetical safe path rather than
+the authoritative near-term motion.
+
+This candidate adds a second exact-static execution branch:
+- start from current authoritative map position and velocity;
+- use the latest actually executed PilotSkill linear demand;
+- predict constant-current-command motion across the remaining accepted
+  segment horizon;
+- sample that parabolic path into 12 subsegments;
+- exact-query every subsegment against physical HitVolumes;
+- any blocked subsegment raises
+  `NavigationExecutionReplanPolicy::StaticSafetyInvalidated` immediately.
+
+The previous ideal follower forecast remains as a separate branch. Safety now
+requires both:
+1. the intended new command path is clear;
+2. continued execution of the command that physics is actually receiving is
+   also clear.
+
+This preserves event-driven planning: the exact-static monitor may run every
+fixed tick, but `Planner::plan` is still woken only by invalidating evidence.
+
+Additional diagnostics now preserve and print:
+- whether the executed-demand forecast was blocked;
+- its last forecast endpoint;
+- the executed acceleration used for the proof.
+
+Target-machine validation is pending. No Stage-12 baseline promotion is claimed.
+Last actually target-machine accepted baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

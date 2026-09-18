@@ -31,6 +31,12 @@ public:
         double primaryDeflectionRadians = 0.2617993877991494;   // 15 deg
         double secondaryDeflectionRadians = 0.5235987755982988; // 30 deg
 
+        // Ordinary free-space transit widens the visibility search only as far
+        // as needed. primary/secondary define the first step and increment;
+        // the default sequence is 15, 30, 45, 60, 75 degrees. This remains a
+        // bounded local search, never a route-wide path solve.
+        double maximumDeflectionRadians = 1.3089969389957472; // 75 deg
+
         // Number of azimuth samples around each ring. The first reference pins
         // this to a small bounded fan so per-agent work remains predictable.
         std::size_t azimuthSamples = 8;
@@ -65,6 +71,14 @@ public:
         LocalHorizonPlanner::Result target {};
 
         bool adjustedTarget = false;
+
+        // Visibility-steering diagnostics. Nominal visibility means the direct
+        // bounded corridor to the accepted target was clear. When false, the
+        // selected deflection is the smallest tested angular deviation that
+        // passed both exact-static and dynamic horizon proofs.
+        bool nominalVisibilityClear = false;
+        double selectedDeflectionRadians = 0.0;
+
         bool nominalStaticBlocked = false;
         std::size_t targetProbesExamined = 0;
         std::size_t staticRejected = 0;

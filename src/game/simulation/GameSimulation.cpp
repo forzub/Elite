@@ -2085,6 +2085,54 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.role = ship.core().role();
         s.motionLabKind = hubMotionLabActorKind(id);
 
+        const auto navigationExecutionIt =
+            m_npcNavigationExecutionSnapshots.find(id);
+        if (navigationExecutionIt !=
+            m_npcNavigationExecutionSnapshots.end())
+        {
+            const auto& execution = navigationExecutionIt->second;
+            auto& replicated = s.navigationExecution;
+
+            replicated.valid = execution.valid;
+            replicated.intentRevision = execution.intentRevision;
+            replicated.activeTargetRevision =
+                execution.activeTargetRevision;
+
+            replicated.idealLinearAccelerationDemandMapMps2 = {
+                execution.idealLinearAccelerationDemandMapMps2.x,
+                execution.idealLinearAccelerationDemandMapMps2.y,
+                execution.idealLinearAccelerationDemandMapMps2.z
+            };
+            replicated.idealAngularAccelerationDemandMapRadPerSec2 = {
+                execution.idealAngularAccelerationDemandMapRadPerSec2.x,
+                execution.idealAngularAccelerationDemandMapRadPerSec2.y,
+                execution.idealAngularAccelerationDemandMapRadPerSec2.z
+            };
+            replicated.executedLinearAccelerationDemandMapMps2 = {
+                execution.executedLinearAccelerationDemandMapMps2.x,
+                execution.executedLinearAccelerationDemandMapMps2.y,
+                execution.executedLinearAccelerationDemandMapMps2.z
+            };
+            replicated.executedAngularAccelerationDemandMapRadPerSec2 = {
+                execution.executedAngularAccelerationDemandMapRadPerSec2.x,
+                execution.executedAngularAccelerationDemandMapRadPerSec2.y,
+                execution.executedAngularAccelerationDemandMapRadPerSec2.z
+            };
+
+            replicated.emergency = execution.emergency;
+            replicated.hazardUrgency01 = execution.hazardUrgency01;
+            replicated.reactionBlocked = execution.reactionBlocked;
+            replicated.decisionSampled = execution.decisionSampled;
+            replicated.queuedCommandApplied =
+                execution.queuedCommandApplied;
+            replicated.pendingCommandCount = static_cast<std::uint32_t>(
+                std::min<std::size_t>(
+                    execution.pendingCommandCount,
+                    std::numeric_limits<std::uint32_t>::max()
+                )
+            );
+        }
+
         s.transform = tr;
 
         s.referenceFrame.systemId = tr.motion.systemId;

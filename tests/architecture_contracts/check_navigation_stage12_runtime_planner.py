@@ -583,6 +583,88 @@ require(
     "live lab must verify the rotating actor after NavigationMap publication",
 )
 
+for marker in (
+    "NavigationRuntimeLabMovingGapUpperLabel",
+    "NavigationRuntimeLabMovingGapLowerLabel",
+    "NavigationRuntimeLabMovingGapUpperVisualLocalMeters",
+    "NavigationRuntimeLabMovingGapLowerVisualLocalMeters",
+    "NavigationRuntimeLabMovingGapVelocityVisualMps",
+    "movingGapPairCandidateSeen",
+    "movingGapKinematicsVerified",
+    "movingPassageAuthoritySeen",
+    "movingPassageExecutionActive",
+    "movingPassageAppliedAccelerationSeen",
+    "movingGapPlanePassed",
+):
+    require(marker in LAB_H, f"live moving-passage fixture/evidence missing: {marker}")
+
+require(
+    "nav_moving_gap_upper" in SCENE_CPP and
+    "nav_moving_gap_lower" in SCENE_CPP and
+    "NavigationRuntimeLabMovingGapUpperLabel" in SCENE_CPP and
+    "NavigationRuntimeLabMovingGapLowerLabel" in SCENE_CPP,
+    "scene must spawn both physical live moving-gap boundaries",
+)
+
+for marker in (
+    "isNavigationRuntimeLabMovingGapBoundary",
+    "effectiveLocalOffsetMeters",
+    "NavigationRuntimeLabMovingGapVelocityVisualMps",
+    "expectedMovingGapVelocityWorldMps",
+    "movingGapMaximumVelocityErrorMps",
+    "movingGapPairCandidateSeen",
+    "agent.hullHalfExtentsBodyMeters",
+    "shipPhysics.manoeuvreThrusterAccel",
+    "policy.movingPassage.enabled = true",
+    "policy.movingPassage.allowSteeringAuthority = true",
+    "NavigationRuntimeLabMovingPassageDurationSeconds",
+    "expectedMovingGapPairSelected",
+    "Planner::Status::MovingPassageClear",
+    "movingPassageExecutionActive",
+    "movingPassageAppliedAccelerationSeen",
+):
+    require(marker in SIM_CPP, f"live moving-passage production integration missing: {marker}")
+
+require(
+    "isNavigationRuntimeLabMovingGapBoundary(" in SIM_CPP and
+    "staticWorld.obstacles.push_back" in SIM_CPP,
+    "moving-gap boundaries must be excluded from persistent static ownership and published through dynamic ownership",
+)
+
+for marker in (
+    "observation.movingGapPairCandidateSeen",
+    "observation.movingGapKinematicsVerified",
+    "observation.movingPrecisionAttemptedSeen",
+    "observation.movingPassageFeasibleSeen",
+    "observation.movingPassageStaticSafeSeen",
+    "observation.movingPassageAuthoritySeen",
+    "observation.movingPassageAuthorityActive",
+    "observation.movingPassageExecutedSeen",
+    "observation.movingPassageExecutionActive",
+    "observation.movingPassageAppliedAccelerationSeen",
+    "observation.movingGapPlanePassed",
+    "moving_gap_pair=",
+    "moving_passage_authority=",
+    "moving_passage_executed=",
+    "moving_passage_applied=",
+    "moving_gap_passed=",
+):
+    require(marker in SERVER_MAIN, f"server live moving-passage acceptance gate missing: {marker}")
+
+require(
+    "if (!observation.movingPassageAuthorityActive ||" in SERVER_MAIN and
+    "!observation.movingPassageExecutionActive" in SERVER_MAIN and
+    "sparsePacket.metadata.serverTick" in SERVER_MAIN and
+    "authoritativePublished.metadata.serverTick" in SERVER_MAIN,
+    "same-tick replication proof must be captured while moving-passage authority is actively executing",
+)
+
+require(
+    "while (!observation.movingGapPlanePassed" in SERVER_MAIN and
+    "return 56;" in SERVER_MAIN,
+    "live gate must continue authoritative physics until the ship crosses the moving aperture plane",
+)
+
 require(
     "m_navigationRuntimeLabLastPlan.nominalStaticObstacleEntityId ==" in SIM_CPP and
     "obstacleExactStaticBlockSeen = true" in SIM_CPP,
@@ -760,3 +842,4 @@ print(" - accepted moving Hermite curve is continuously bounded between its 33 s
 print(" - same moving trajectory is re-proven against exact static NavigationSpace geometry")
 print(" - moving-passage steering authority is explicit opt-in and requires both dynamic + exact-static proof")
 print(" - authoritative moving passage uses the exact proved first acceleration sample through map/world + PilotSkillExecutor")
+print(" - live moving-gap pair drives MovingPassageClear through real physics and same-tick replication")

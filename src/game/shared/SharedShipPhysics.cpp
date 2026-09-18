@@ -16,6 +16,18 @@ bool hasManualAttitudeInput(const ShipControlState& control)
         std::abs(control.yawInput) > 0.001f ||
         std::abs(control.rollInput) > 0.001f;
 }
+
+bool hasManualTranslationInput(const ShipControlState& control)
+{
+    return
+        std::abs(control.targetSpeedRate) > 0.001f ||
+        std::abs(control.forwardInput) > 0.001f ||
+        std::abs(control.strafeInput) > 0.001f ||
+        std::abs(control.liftInput) > 0.001f ||
+        control.assistedMaxSpeedCommand ||
+        control.velocityAlignmentCommand !=
+            game::navigation::VelocityAlignmentMode::None;
+}
 }
 
 void integrate(
@@ -98,7 +110,11 @@ void evaluateControl(
     }
 
     // Direct pilot attitude input always wins over an alignment autopilot.
-    if (hasManualAttitudeInput(control))
+    // A valid navigation acceleration demand also owns attitude for this
+    // control sample unless the player supplies material manual attitude input.
+    if (hasManualAttitudeInput(control) ||
+        (control.navigationAccelerationDemandValid &&
+         !hasManualAttitudeInput(control)))
     {
         motion.velocityAlignmentMode =
             game::navigation::VelocityAlignmentMode::None;
@@ -135,7 +151,24 @@ void evaluateControl(
     transform.jumpActive      = control.jumpActive;
 
     ShipController controller;
-    controller.updateControlRates(dt, params, transform, world);
+    const bool useNavigationAngularDemand =
+        control.navigationAccelerationDemandValid &&
+        !hasManualAttitudeInput(control);
+
+    if (useNavigationAngularDemand)
+    {
+        controller.updateControlRates(
+            dt,
+            params,
+            transform,
+            world,
+            control.navigationAngularAccelerationDemandMapRadPerSec2
+        );
+    }
+    else
+    {
+        controller.updateControlRates(dt, params, transform, world);
+    }
 
     // input state is one-control-evaluation transient. Kinematic orientation
     // propagation below does not need to retain these commands.

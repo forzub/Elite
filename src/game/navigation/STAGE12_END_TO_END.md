@@ -516,6 +516,92 @@ No moving-gap or moving-passage behavior is changed in this slice. The purpose
 is to prove the live dynamic DTO/frame boundary before composing accepted
 prediction math on top of it.
 
+### 12A-6a — acceptance
+
+Target-machine acceptance was completed from:
+
+```text
+a0efa9190180043b05da3103a5d466d256744935
+```
+
+The live run proved the required angular-motion path:
+
+```text
+rotating_actor_seen=1
+rotating_actor_omega_verified=1
+rotating_actor_omega_error=0
+```
+
+and preserved the previously accepted Stage-12 safety/ownership/replication
+invariants:
+
+```text
+obstacle_candidate=0
+obstacle_conflict=0
+exact_obstacle_block=1
+adjusted=1
+exact_static_violation=0
+replication_error_mps2=0
+canonical_replication_error_mps2=0
+```
+
+Therefore 12A-6a is accepted. Live dynamic candidates now have proven compact
+linear and angular motion state through the real working-frame publication path.
+
+### 12A-6b — live moving-gap / moving-passage composition
+
+The next slice must consume that proven motion state rather than add more DTO
+plumbing.
+
+Target production chain:
+
+```text
+NavigationMap bounded dynamic query
+    -> relevant moving/rotating candidate pair
+    -> MovingGapPredictor
+    -> MovingPassageTrajectoryEvaluator
+    -> bounded feasibility / maneuver consequence
+    -> NavigationRuntimePlanner intent
+    -> mapIntentToWorld(...)
+    -> NavigationRuntimeControlBridge
+    -> PilotSkillExecutor
+    -> authoritative physics
+    -> same-tick replicated execution truth
+```
+
+The predictor and moving-passage evaluator are already accepted isolated
+Navigation v2 components. 12A-6b is their live composition gate.
+
+Required live evidence must show:
+- relevant real dynamic actors are selected from the bounded NavigationMap
+  result;
+- P/V/A/angular velocity reaches the predictor unchanged by frame confusion;
+- the predictor result is actually consumed by MovingPassageTrajectoryEvaluator;
+- moving passage feasibility changes or constrains the authoritative maneuver
+  when the deterministic fixture requires it;
+- no global all-pairs moving-gap scan is introduced;
+- stationary infrastructure remains owned by NavigationSpace exact HitVolumes;
+- exact-static swept motion remains violation-free;
+- sparse/canonical execution replication remains exact at the same server tick.
+
+DTO presence alone cannot satisfy 12A-6b.
+
+## Project-state recording protocol
+
+Every state-affecting Stage-12 event must be recorded before beginning the next
+implementation slice: candidate activation, failed gate/root cause, acceptance,
+ownership/architecture change, or next-task change.
+
+Synchronize:
+- `CURRENT_STATE.md`;
+- `CURRENT_TASK.md`;
+- `PROJECT_STATE.md`;
+- this document.
+
+Use the last actually target-machine-verified code baseline as evidence. Do not
+label a hash "current HEAD" in state documentation because the documentation
+commit itself changes HEAD.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

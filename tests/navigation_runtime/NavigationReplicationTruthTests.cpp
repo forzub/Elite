@@ -77,28 +77,33 @@ void testNavigationExecutionWireRoundTrip()
     require(decoded.ships.size() == 1u,
             "wire round-trip must preserve ship row");
 
-    const auto& execution = decoded.ships.front().navigationExecution;
-    require(execution.valid,
+    const auto* execution =
+        std::get_if<game::simulation::NavigationExecutionSnapshot>(
+            &decoded.ships.front().navigationExecution
+        );
+    require(execution != nullptr,
+            "wire round-trip must preserve navigation execution payload");
+    require(execution->valid,
             "wire round-trip must preserve execution validity");
-    require(execution.intentRevision == 101u,
+    require(execution->intentRevision == 101u,
             "wire round-trip must preserve intent revision");
-    require(execution.activeTargetRevision == 99u,
+    require(execution->activeTargetRevision == 99u,
             "wire round-trip must preserve active target revision");
     requireNear(
-        execution.executedLinearAccelerationDemandMapMps2.y,
+        execution->executedLinearAccelerationDemandMapMps2.y,
         1.6,
         1.0e-12,
         "wire round-trip must preserve executed linear demand"
     );
     requireNear(
-        execution.executedAngularAccelerationDemandMapRadPerSec2.z,
+        execution->executedAngularAccelerationDemandMapRadPerSec2.z,
         0.24,
         1.0e-12,
         "wire round-trip must preserve executed angular demand"
     );
-    require(execution.emergency && execution.reactionBlocked,
+    require(execution->emergency && execution->reactionBlocked,
             "wire round-trip must preserve execution diagnostics");
-    require(execution.pendingCommandCount == 2u,
+    require(execution->pendingCommandCount == 2u,
             "wire round-trip must preserve pending command count");
 }
 

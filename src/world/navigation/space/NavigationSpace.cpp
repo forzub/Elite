@@ -973,6 +973,16 @@ NavigationSpace::CorridorResult NavigationSpace::queryCorridor(
 
                 result.regionPath.assign(reverseRegions.rbegin(), reverseRegions.rend());
                 result.portalPath.assign(reversePortals.rbegin(), reversePortals.rend());
+                result.portalCentersMapMeters.reserve(result.portalPath.size());
+                for (const PortalId portalId : result.portalPath)
+                {
+                    const auto portalIt = impl_->portals.find(portalId);
+                    if (portalIt == impl_->portals.end())
+                        return CorridorResult{};
+                    result.portalCentersMapMeters.push_back(
+                        portalIt->second.input.centerMapMeters
+                    );
+                }
                 result.found = true;
                 return result;
             }
@@ -1260,6 +1270,16 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
 
         result.regionPath.assign(reverseRegions.rbegin(), reverseRegions.rend());
         result.portalPath.assign(reversePortals.rbegin(), reversePortals.rend());
+        result.portalCentersMapMeters.reserve(result.portalPath.size());
+        for (const PortalId portalId : result.portalPath)
+        {
+            const auto portalIt = impl_->portals.find(portalId);
+            if (portalIt == impl_->portals.end())
+                return CostedCorridorResult{};
+            result.portalCentersMapMeters.push_back(
+                portalIt->second.input.centerMapMeters
+            );
+        }
         result.totalCostMetersEquivalent = finalCost;
         result.found = true;
         return result;
@@ -1390,6 +1410,16 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
 
     result.regionPath.assign(reverseRegions.rbegin(), reverseRegions.rend());
     result.portalPath.assign(reversePortals.rbegin(), reversePortals.rend());
+    result.portalCentersMapMeters.reserve(result.portalPath.size());
+    for (const PortalId portalId : result.portalPath)
+    {
+        const auto portalIt = impl_->portals.find(portalId);
+        if (portalIt == impl_->portals.end())
+            return CostedCorridorResult{};
+        result.portalCentersMapMeters.push_back(
+            portalIt->second.input.centerMapMeters
+        );
+    }
     result.totalCostMetersEquivalent = bestCost[endSlot];
     result.found = true;
     return result;

@@ -1123,22 +1123,55 @@ void GameSimulation::initializeNavigationRuntimeLab()
     Space::StaticSpaceUpdate staticWorld;
     staticWorld.sourceRevision = 1;
 
-    Space::RegionInput region;
-    region.regionId = 1;
-    region.boundsMapMeters.minMapMeters = {
+    Space::RegionInput approachRegion;
+    approachRegion.regionId = 1;
+    approachRegion.boundsMapMeters.minMapMeters = {
         -NavigationRuntimeLabWorkspaceHalfExtentMeters,
         -NavigationRuntimeLabWorkspaceHalfExtentMeters,
         -NavigationRuntimeLabWorkspaceHalfExtentMeters
     };
-    region.boundsMapMeters.maxMapMeters = {
+    approachRegion.boundsMapMeters.maxMapMeters = {
+        NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+    };
+    approachRegion.clearanceRadiusMeters =
+        NavigationRuntimeLabWorkspaceHalfExtentMeters;
+    approachRegion.geometryRevision = 1;
+
+    Space::RegionInput departureRegion;
+    departureRegion.regionId = 2;
+    departureRegion.boundsMapMeters.minMapMeters = {
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+    };
+    departureRegion.boundsMapMeters.maxMapMeters = {
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
         NavigationRuntimeLabWorkspaceHalfExtentMeters
     };
-    region.clearanceRadiusMeters =
+    departureRegion.clearanceRadiusMeters =
         NavigationRuntimeLabWorkspaceHalfExtentMeters;
-    region.geometryRevision = 1;
-    staticWorld.regions.push_back(region);
+    departureRegion.geometryRevision = 1;
+
+    staticWorld.regions.push_back(approachRegion);
+    staticWorld.regions.push_back(departureRegion);
+
+    Space::PortalInput slitPortal;
+    slitPortal.portalId = NavigationRuntimeLabSlitPortalId;
+    slitPortal.regionA = 1;
+    slitPortal.regionB = 2;
+    slitPortal.centerMapMeters = {
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+    };
+    slitPortal.clearanceRadiusMeters =
+        NavigationRuntimeLabSlitPortalClearanceMeters;
+    slitPortal.bidirectional = true;
+    slitPortal.geometryRevision = 1;
+    staticWorld.portals.push_back(slitPortal);
 
     m_navigationRuntimeLabSpace->replaceStaticWorld(
         std::move(staticWorld)
@@ -1209,22 +1242,55 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
     Space::StaticSpaceUpdate staticWorld;
     staticWorld.sourceRevision = 2;
 
-    Space::RegionInput region;
-    region.regionId = 1;
-    region.boundsMapMeters.minMapMeters = {
+    Space::RegionInput approachRegion;
+    approachRegion.regionId = 1;
+    approachRegion.boundsMapMeters.minMapMeters = {
         -NavigationRuntimeLabWorkspaceHalfExtentMeters,
         -NavigationRuntimeLabWorkspaceHalfExtentMeters,
         -NavigationRuntimeLabWorkspaceHalfExtentMeters
     };
-    region.boundsMapMeters.maxMapMeters = {
+    approachRegion.boundsMapMeters.maxMapMeters = {
+        NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+    };
+    approachRegion.clearanceRadiusMeters =
+        NavigationRuntimeLabWorkspaceHalfExtentMeters;
+    approachRegion.geometryRevision = 2;
+
+    Space::RegionInput departureRegion;
+    departureRegion.regionId = 2;
+    departureRegion.boundsMapMeters.minMapMeters = {
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+    };
+    departureRegion.boundsMapMeters.maxMapMeters = {
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
         NavigationRuntimeLabWorkspaceHalfExtentMeters
     };
-    region.clearanceRadiusMeters =
+    departureRegion.clearanceRadiusMeters =
         NavigationRuntimeLabWorkspaceHalfExtentMeters;
-    region.geometryRevision = 2;
-    staticWorld.regions.push_back(region);
+    departureRegion.geometryRevision = 2;
+
+    staticWorld.regions.push_back(approachRegion);
+    staticWorld.regions.push_back(departureRegion);
+
+    Space::PortalInput slitPortal;
+    slitPortal.portalId = NavigationRuntimeLabSlitPortalId;
+    slitPortal.regionA = 1;
+    slitPortal.regionB = 2;
+    slitPortal.centerMapMeters = {
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+    };
+    slitPortal.clearanceRadiusMeters =
+        NavigationRuntimeLabSlitPortalClearanceMeters;
+    slitPortal.bidirectional = true;
+    slitPortal.geometryRevision = 2;
+    staticWorld.portals.push_back(slitPortal);
 
     std::uint32_t provingObstacleEntityId = 0;
 

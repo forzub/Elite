@@ -445,6 +445,8 @@ private:
     std::string m_navigationRuntimeLabHubId;
     bool m_navigationRuntimeLabInitialized = false;
     bool m_navigationRuntimeLabStaticGeometryPublished = false;
+    bool m_navigationRuntimeLabHasPreviousExactSafetyPosition = false;
+    glm::dvec3 m_navigationRuntimeLabPreviousExactSafetyPositionMap {0.0};
     std::uint64_t m_navigationRuntimeLabSourceRevision = 0;
     std::unique_ptr<world::navigation::NavigationMap>
         m_navigationRuntimeLabMap;

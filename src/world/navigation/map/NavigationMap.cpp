@@ -57,6 +57,54 @@ double length(const Vec3d& value) noexcept
     return std::sqrt(lengthSquared(value));
 }
 
+double distanceSquared(const Vec3d& a, const Vec3d& b) noexcept
+{
+    return lengthSquared(a - b);
+}
+
+double distanceToSegmentSquared(
+    const Vec3d& point,
+    const Vec3d& segmentStart,
+    const Vec3d& segmentEnd
+) noexcept
+{
+    const Vec3d segment = segmentEnd - segmentStart;
+    const double denominator = lengthSquared(segment);
+    if (denominator <= kLengthEpsilon)
+        return distanceSquared(point, segmentStart);
+
+    const double t = std::clamp(
+        dot(point - segmentStart, segment) / denominator,
+        0.0,
+        1.0
+    );
+    const Vec3d closest = segmentStart + segment * t;
+    return distanceSquared(point, closest);
+}
+
+struct CellCoord
+{
+    int x = 0;
+    int y = 0;
+    int z = 0;
+
+    bool operator==(const CellCoord& other) const noexcept
+    {
+        return x == other.x && y == other.y && z == other.z;
+    }
+};
+
+struct CellCoordHash
+{
+    std::size_t operator()(const CellCoord& value) const noexcept
+    {
+        std::size_t seed = static_cast<std::size_t>(value.x) * 73856093u;
+        seed ^= static_cast<std::size_t>(value.y) * 19349663u;
+        seed ^= static_cast<std::size_t>(value.z) * 83492791u;
+        return seed;
+    }
+};
+
 } // namespace
 
 class NavigationMap::Impl

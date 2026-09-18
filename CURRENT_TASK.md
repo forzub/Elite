@@ -2,100 +2,85 @@
 
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
-**Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** 11A — live runtime control seam gate
+**Track:** Navigation v2 live integration  
+**Stage:** 11B-1 — authoritative NPC runtime ownership gate
 
 ## Progress
 
 ```text
 [████████████████████░░░] 10 / 12 major stages closed
 
-1–10 CLOSED / ACCEPTED
-11   ACTIVE
-     11A runtime control seam                 ACTIVE
-     11B NPC/guidance authoritative ownership PENDING
-12   stress/debug + legacy retirement         PENDING
+1–10 ACCEPTED
+11A  ACCEPTED
+11B-1 ACTIVE
+11B-2 PENDING
+12    PENDING
 ```
 
-## Newly closed — `PilotSkillExecutor`
-
-Accepted on:
+## 11A accepted
 
 ```text
-b042321b65084950aa91784a5e02344430e5c2bc
-NAVIGATION PILOT SKILL CONTRACT: PASS
-11/11 navigation_trajectory CTest PASS
-100% tests passed
+d7c77d5868b3178be3c392f0a8fecad5b57e3b69
+architecture PASS
+runtime 1/1 PASS
+trajectory/pilot 11/11 PASS
+EliteGame + EliteServer canonical build PASS
 ```
 
-## Active candidate — 11A
+## Active candidate
 
-New/changed production files:
-
-```text
-src/game/navigation/NavigationRuntimeControlBridge.h/.cpp
-src/game/navigation/DynamicMotionSystem.h/.cpp
-src/game/shared/SharedShipPhysics.cpp
-src/game/ship/ShipController.h/.cpp
-src/game/ship/core/ShipControlState.h
-src/game/simulation/GameSimulation.cpp
-CMakeLists.txt
-```
-
-Contract/tests:
+Production:
 
 ```text
+src/game/simulation/NpcAiSystem.h/.cpp
+src/game/navigation/NpcNavigationIntentController.h/.cpp
+src/game/simulation/GameSimulation.h/.cpp
 src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md
+```
+
+Tests/contracts:
+
+```text
 tests/navigation_runtime/NavigationRuntimeControlTests.cpp
-tests/navigation_runtime/CMakeLists.txt
-tests/navigation_runtime/run_mingw64.sh
-tests/architecture_contracts/check_navigation_live_runtime_control.py
+tests/architecture_contracts/check_navigation_live_npc_ownership.py
 ```
 
-### Required runtime chain
+### Ownership invariant
 
 ```text
-ideal accepted acceleration intent
-    -> NavigationRuntimeControlBridge
-    -> PilotSkillExecutor
-    -> direct ShipControlState navigation demand
-    -> real capability clamps
-    -> authoritative fixed-step motion
+NPC AI          -> goal/policy only
+Navigation v2   -> acceleration intent
+Pilot skill     -> execution timing/error
+Ship control    -> capability-constrained demand
+Physics         -> authoritative motion
 ```
 
-No fake keyboard conversion is allowed.
+`NpcAiSystem` must not emit `ShipControlState`, yaw/pitch/roll keys or throttle/RCS keys.
 
-### Capability truth
+### Initial nominal goal controller
 
-Angular demand:
+`MaintainForwardCruise` computes a desired relative velocity along actual ship forward and a bounded velocity-error acceleration demand.
+
+`Hold` drives desired relative velocity to zero.
+
+Angular demand damps actual pitch/yaw/roll rates but is expressed back in world axes and still passes through the accepted capability seam.
+
+### Activation correctness
+
+If activation wakes an NPC after more than the pilot executor's 0.25 s maximum step, the exact elapsed time is processed as multiple deterministic bounded substeps. Time is never discarded.
+
+### Fail closed
+
+Any bridge failure:
 
 ```text
-map-space vector
-    -> ship pitch/yaw/roll axes
-    -> existing angular acceleration/rate/load envelope
+zero ShipControlState
+erase per-NPC bridge
+erase latest execution snapshot
+erase last execution time
 ```
 
-Linear demand:
-
-```text
-positive forward
-    -> real main engine
-
-remaining/reverse/lateral/vertical
-    -> real manoeuvre thrusters
-```
-
-Reverse demand may not invent a reverse main engine.
-
-### Manual ownership
-
-Material manual attitude input overrides navigation angular demand.
-
-Any material manual translation/cruise/jump/alignment command keeps the established input path and suppresses direct navigation linear demand for that sample.
-
-### Runtime snapshot
-
-`NavigationRuntimeControlBridge::ExecutionSnapshot` carries both ideal and executed demand plus the intent/active-target revisions and skill timing diagnostics. It is the future guidance/debug source for stage 11B.
+No direct-steering fallback.
 
 ## RUN NOW
 
@@ -109,6 +94,7 @@ git merge --ff-only origin/main
 git rev-parse HEAD
 
 python tests/architecture_contracts/check_navigation_live_runtime_control.py
+python tests/architecture_contracts/check_navigation_live_npc_ownership.py
 bash tests/navigation_runtime/run_mingw64.sh
 bash tests/navigation_trajectory/run_mingw64.sh
 bash build_mingw64.sh
@@ -117,18 +103,17 @@ bash build_mingw64.sh
 Expected:
 
 ```text
-NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+11A architecture PASS
+11B-1 ownership architecture PASS
 navigation_runtime_control 1/1 PASS
-navigation trajectory/pilot 11/11 PASS
+trajectory/pilot 11/11 PASS
 canonical EliteGame + EliteServer build PASS
 ```
 
 ## Next after green
 
-Immediately start 11B:
-
-1. retire current `NpcAiSystem::sin(position)` steering as authority;
-2. make NPC AI produce goals/policy while Navigation v2 owns maneuver intent;
-3. maintain per-NPC `NavigationRuntimeControlBridge` state in authoritative simulation;
-4. publish the same accepted intent/execution revision to guidance/debug;
-5. prove no second guidance planner and no direct physics mutation.
+11B-2:
+- replicate accepted intent/execution revision;
+- feed client guidance/debug from the same server truth;
+- no client-side NPC replan;
+- then close stage 11 and move to end-to-end stage 12.

@@ -536,6 +536,9 @@ int runNavigationRuntimeSelfTest()
             observation.valid &&
             observation.exactStaticGeometryPublished &&
             observation.exactStaticObstacleCount > 0 &&
+            observation.exactStaticQuerySeen &&
+            observation.nominalStaticBlockSeen &&
+            observation.maximumExactStaticObstaclesExamined > 0 &&
             observation.planCount > 0 &&
             observation.executionCount > 0 &&
             observation.obstacleCandidateSeen &&
@@ -580,6 +583,12 @@ int runNavigationRuntimeSelfTest()
             << observation.exactStaticGeometryPublished
             << " exact_static_obstacles="
             << observation.exactStaticObstacleCount
+            << " exact_static_query="
+            << observation.exactStaticQuerySeen
+            << " exact_static_block="
+            << observation.nominalStaticBlockSeen
+            << " max_exact_static_examined="
+            << observation.maximumExactStaticObstaclesExamined
             << " max_lateral_demand_mps2="
             << observation.maximumExecutedLateralDemandMps2
             << " max_applied_accel_mps2="
@@ -828,6 +837,12 @@ int runNavigationRuntimeSelfTest()
         << observation.exactStaticGeometryPublished
         << " exact_static_obstacles="
         << observation.exactStaticObstacleCount
+        << " exact_static_query="
+        << observation.exactStaticQuerySeen
+        << " exact_static_block="
+        << observation.nominalStaticBlockSeen
+        << " max_exact_static_examined="
+        << observation.maximumExactStaticObstaclesExamined
         << " max_lateral_demand_mps2="
         << observation.maximumExecutedLateralDemandMps2
         << " max_applied_accel_mps2="

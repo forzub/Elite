@@ -611,6 +611,38 @@ int runNavigationRuntimeSelfTest()
             return 51;
         }
 
+        if (observation.firstExactStaticViolationCaptured)
+        {
+            std::cerr
+                << "[NAV-SELFTEST]"
+                << " exact_static_violation=1"
+                << " violation_entity="
+                << observation.firstExactStaticViolationEntityId
+                << " proving_obstacle_entity="
+                << observation.obstacleEntityId
+                << " violation_start_map=("
+                << observation.firstExactStaticViolationStartMap.x << ","
+                << observation.firstExactStaticViolationStartMap.y << ","
+                << observation.firstExactStaticViolationStartMap.z << ")"
+                << " violation_end_map=("
+                << observation.firstExactStaticViolationEndMap.x << ","
+                << observation.firstExactStaticViolationEndMap.y << ","
+                << observation.firstExactStaticViolationEndMap.z << ")"
+                << " selected_target_map=("
+                << observation.firstExactStaticViolationSelectedTargetMap.x << ","
+                << observation.firstExactStaticViolationSelectedTargetMap.y << ","
+                << observation.firstExactStaticViolationSelectedTargetMap.z << ")"
+                << " planner_status="
+                << static_cast<int>(
+                    observation.firstExactStaticViolationPlannerStatus
+                )
+                << "\n";
+            std::cerr
+                << "[FAIL] authoritative ship swept through exact static "
+                << "HitVolume while executing accepted navigation\n";
+            return 52;
+        }
+
         behaviorEvidenceComplete =
             observation.valid &&
             observation.exactStaticGeometryPublished &&

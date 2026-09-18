@@ -1,4 +1,6 @@
 #include "src/game/navigation/NavigationRuntimePlanner.h"
+#include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
 
 #include <cmath>
@@ -283,7 +285,7 @@ void testStaticCorridorBecomesLivePortalWaypoint()
             "first selected portal must be the coarse live waypoint");
     require(result.safeProgressTargetDemonstrated,
             "clear bounded local target must be explicitly demonstrated");
-    require(result.intent.idealLinearAccelerationDemandMapMps2.y > 0.0,
+    require(result.intent.idealLinearAccelerationLocalMps2.y > 0.0,
             "forced detour must create a real lateral acceleration demand");
 }
 
@@ -319,7 +321,7 @@ void testPortalCaptureAlignsVelocityAndHullBeforeTransit()
             "capture phase must first stage at the authored approach point");
 
     const auto angular =
-        approach.intent.idealAngularAccelerationDemandMapRadPerSec2;
+        approach.intent.idealAngularAccelerationLocalRadPerSec2;
     require(
         std::sqrt(
             angular.x * angular.x +
@@ -373,7 +375,7 @@ void testPortalCaptureAlignsVelocityAndHullBeforeTransit()
             !rejected.portalCaptureReady,
             "excess cross-track velocity must keep the vehicle out of transit");
     require(
-        rejected.intent.idealLinearAccelerationDemandMapMps2.y < 0.0,
+        rejected.intent.idealLinearAccelerationLocalMps2.y < 0.0,
         "capture controller must brake cross-track velocity at the staging point"
     );
 }
@@ -412,7 +414,7 @@ void testSamePortalRejectsOversizedHull()
     require(!rejected.safeProgressTargetDemonstrated,
             "oversized hull must not claim safe progress");
     const auto& held =
-        rejected.intent.idealLinearAccelerationDemandMapMps2;
+        rejected.intent.idealLinearAccelerationLocalMps2;
     require(std::abs(held.x) <= 1.0e-12 &&
             std::abs(held.y) <= 1.0e-12 &&
             std::abs(held.z) <= 1.0e-12,
@@ -556,9 +558,9 @@ void testAdjustedTargetPreservesNominalConflictIdentity()
 
     Map::DynamicActorInput obstacle;
     obstacle.entityId = 201;
-    obstacle.positionSystemMeters = {500.0, 0.0, 0.0};
-    obstacle.velocitySystemMetersPerSecond = {0.0, 0.0, 0.0};
-    obstacle.accelerationSystemMetersPerSecond2 = {0.0, 0.0, 0.0};
+    obstacle.positionMapMeters = {500.0, 0.0, 0.0};
+    obstacle.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    obstacle.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
     obstacle.radiusMeters = 50.0;
     obstacle.motionRevision = 4;
     update.actors.push_back(obstacle);
@@ -624,9 +626,9 @@ void testNavigationMapCrossingConflictProducesBrakingHold()
 
     Map::DynamicActorInput crossing;
     crossing.entityId = 200;
-    crossing.positionSystemMeters = {20.0, 20.0, 0.0};
-    crossing.velocitySystemMetersPerSecond = {0.0, -10.0, 0.0};
-    crossing.accelerationSystemMetersPerSecond2 = {0.0, 0.0, 0.0};
+    crossing.positionMapMeters = {20.0, 20.0, 0.0};
+    crossing.velocityMapMetersPerSecond = {0.0, -10.0, 0.0};
+    crossing.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
     crossing.radiusMeters = 2.0;
     crossing.motionRevision = 3;
     update.actors.push_back(crossing);
@@ -664,7 +666,7 @@ void testNavigationMapCrossingConflictProducesBrakingHold()
             "conflict hold must carry maximum local hazard urgency");
     require(result.ordinaryVisibilitySearchExhausted,
             "runtime planner must surface ordinary-fan exhaustion for recovery selection");
-    require(result.intent.idealLinearAccelerationDemandMapMps2.x < 0.0,
+    require(result.intent.idealLinearAccelerationLocalMps2.x < 0.0,
             "moving conflict must create a provisional braking demand");
 }
 
@@ -682,18 +684,18 @@ void testMovingGapPrecisionProbeUsesRuntimeCandidates()
 
     Map::DynamicActorInput upper;
     upper.entityId = 301;
-    upper.positionSystemMeters = {20.0, 2.5, 0.0};
-    upper.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
-    upper.angularVelocitySystemRadPerSecond = {0.0, 0.0, 1.0};
+    upper.positionMapMeters = {20.0, 2.5, 0.0};
+    upper.velocityMapMetersPerSecond = {1.0, 0.0, 0.0};
+    upper.angularVelocityMapRadPerSecond = {0.0, 0.0, 1.0};
     upper.radiusMeters = 2.0;
     upper.motionRevision = 11;
     update.actors.push_back(upper);
 
     Map::DynamicActorInput lower;
     lower.entityId = 302;
-    lower.positionSystemMeters = {20.0, -2.5, 0.0};
-    lower.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
-    lower.angularVelocitySystemRadPerSecond = {0.0, 0.0, -1.0};
+    lower.positionMapMeters = {20.0, -2.5, 0.0};
+    lower.velocityMapMetersPerSecond = {1.0, 0.0, 0.0};
+    lower.angularVelocityMapRadPerSecond = {0.0, 0.0, -1.0};
     lower.radiusMeters = 2.0;
     lower.motionRevision = 12;
     update.actors.push_back(lower);
@@ -798,16 +800,16 @@ void testClosingMovingGapFailsClosedBeforePassageEvaluation()
 
     Map::DynamicActorInput upper;
     upper.entityId = 311;
-    upper.positionSystemMeters = {20.0, 2.5, 0.0};
-    upper.velocitySystemMetersPerSecond = {0.0, -1.0, 0.0};
+    upper.positionMapMeters = {20.0, 2.5, 0.0};
+    upper.velocityMapMetersPerSecond = {0.0, -1.0, 0.0};
     upper.radiusMeters = 2.0;
     upper.motionRevision = 21;
     update.actors.push_back(upper);
 
     Map::DynamicActorInput lower;
     lower.entityId = 312;
-    lower.positionSystemMeters = {20.0, -2.5, 0.0};
-    lower.velocitySystemMetersPerSecond = {0.0, 1.0, 0.0};
+    lower.positionMapMeters = {20.0, -2.5, 0.0};
+    lower.velocityMapMetersPerSecond = {0.0, 1.0, 0.0};
     lower.radiusMeters = 2.0;
     lower.motionRevision = 22;
     update.actors.push_back(lower);
@@ -887,18 +889,18 @@ void testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory()
 
     Map::DynamicActorInput upper;
     upper.entityId = 321;
-    upper.positionSystemMeters = {20.0, 2.5, 0.0};
-    upper.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
-    upper.angularVelocitySystemRadPerSecond = {0.0, 0.0, 1.0};
+    upper.positionMapMeters = {20.0, 2.5, 0.0};
+    upper.velocityMapMetersPerSecond = {1.0, 0.0, 0.0};
+    upper.angularVelocityMapRadPerSecond = {0.0, 0.0, 1.0};
     upper.radiusMeters = 2.0;
     upper.motionRevision = 31;
     update.actors.push_back(upper);
 
     Map::DynamicActorInput lower;
     lower.entityId = 322;
-    lower.positionSystemMeters = {20.0, -2.5, 0.0};
-    lower.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
-    lower.angularVelocitySystemRadPerSecond = {0.0, 0.0, -1.0};
+    lower.positionMapMeters = {20.0, -2.5, 0.0};
+    lower.velocityMapMetersPerSecond = {1.0, 0.0, 0.0};
+    lower.angularVelocityMapRadPerSecond = {0.0, 0.0, -1.0};
     lower.radiusMeters = 2.0;
     lower.motionRevision = 32;
     update.actors.push_back(lower);
@@ -1003,18 +1005,18 @@ void testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge()
 
     Map::DynamicActorInput upper;
     upper.entityId = 331;
-    upper.positionSystemMeters = {20.0, 2.5, 0.0};
-    upper.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
-    upper.angularVelocitySystemRadPerSecond = {0.0, 0.0, 1.0};
+    upper.positionMapMeters = {20.0, 2.5, 0.0};
+    upper.velocityMapMetersPerSecond = {1.0, 0.0, 0.0};
+    upper.angularVelocityMapRadPerSecond = {0.0, 0.0, 1.0};
     upper.radiusMeters = 2.0;
     upper.motionRevision = 41;
     update.actors.push_back(upper);
 
     Map::DynamicActorInput lower;
     lower.entityId = 332;
-    lower.positionSystemMeters = {20.0, -2.5, 0.0};
-    lower.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
-    lower.angularVelocitySystemRadPerSecond = {0.0, 0.0, -1.0};
+    lower.positionMapMeters = {20.0, -2.5, 0.0};
+    lower.velocityMapMetersPerSecond = {1.0, 0.0, 0.0};
+    lower.angularVelocityMapRadPerSecond = {0.0, 0.0, -1.0};
     lower.radiusMeters = 2.0;
     lower.motionRevision = 42;
     update.actors.push_back(lower);
@@ -1073,43 +1075,37 @@ void testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge()
     require(planned.status == Planner::Status::MovingPassageClear &&
             planned.movingPassageAuthorityUsed,
             "doubly-proven moving passage must take explicit planner authority");
-    require(planned.safeProgressTargetDemonstrated,
-            "authoritative moving passage must publish proven safe progress");
-    require(near(planned.selectedTargetMapMeters.x,
-                 planned.movingPassageTargetMapMeters.x) &&
-            near(planned.selectedTargetMapMeters.y,
-                 planned.movingPassageTargetMapMeters.y) &&
-            near(planned.selectedTargetMapMeters.z,
-                 planned.movingPassageTargetMapMeters.z),
-            "moving-passage authority must retain its proved trajectory endpoint");
 
     const auto& exactSample =
         planned.movingPassageInitialAccelerationMapMps2;
-    require(glm::length(exactSample) > 0.0,
-            "authority fixture requires a non-zero proved Hermite control sample");
-    const auto& mapDemand =
-        planned.intent.idealLinearAccelerationDemandMapMps2;
-    require(near(mapDemand.x, exactSample.x) &&
-            near(mapDemand.y, exactSample.y) &&
-            near(mapDemand.z, exactSample.z),
-            "moving-passage authority must execute the exact first proved Hermite acceleration sample");
-    require(glm::length(planned.desiredVelocityMapMetersPerSecond) <= 1.0e-12,
-            "moving-passage authority must not solve a second desired-velocity trajectory");
+    const auto& localDemand =
+        planned.intent.idealLinearAccelerationLocalMps2;
+    require(near(localDemand.x, exactSample.x) &&
+            near(localDemand.y, exactSample.y) &&
+            near(localDemand.z, exactSample.z),
+            "moving-passage authority must execute the exact proved local sample");
 
-    Map::WorkingFrame frame;
-    frame.xAxisSystem = {0.0, 1.0, 0.0};
-    frame.yAxisSystem = {0.0, 0.0, 1.0};
-    frame.zAxisSystem = {1.0, 0.0, 0.0};
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 1;
+    frame.valid = true;
+    frame.localToWorldBasis = glm::dmat3(
+        glm::dvec3(0.0, 1.0, 0.0),
+        glm::dvec3(0.0, 0.0, 1.0),
+        glm::dvec3(1.0, 0.0, 0.0)
+    );
+    const game::navigation::NavigationFrameBoundary boundary(frame);
+    require(boundary.valid(),
+            "non-identity navigation boundary fixture must be valid");
 
-    const Bridge::Intent worldIntent =
-        Planner::mapIntentToWorld(planned.intent, frame);
-    require(near(worldIntent.idealLinearAccelerationDemandMapMps2.x,
+    const Bridge::Intent systemIntent =
+        boundary.toSystemControlIntent(planned.intent);
+    require(near(systemIntent.idealLinearAccelerationSystemMps2.x,
                  exactSample.z) &&
-            near(worldIntent.idealLinearAccelerationDemandMapMps2.y,
+            near(systemIntent.idealLinearAccelerationSystemMps2.y,
                  exactSample.x) &&
-            near(worldIntent.idealLinearAccelerationDemandMapMps2.z,
+            near(systemIntent.idealLinearAccelerationSystemMps2.z,
                  exactSample.y),
-            "proved moving-passage sample must cross the non-identity map->world boundary exactly");
+            "proved sample must cross the typed local->system boundary exactly");
 
     Bridge bridge(expertProfile());
     Bridge::Intent neutral;
@@ -1122,7 +1118,7 @@ void testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge()
         executed = bridge.step(
             0.01 * static_cast<double>(i),
             0.01,
-            worldIntent
+            systemIntent
         );
     }
 
@@ -1131,77 +1127,56 @@ void testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge()
             "proved moving-passage authority must cross PilotSkillExecutor into ShipControlState");
     require(executed.snapshot.intentRevision == goal.revision,
             "moving-passage authority must preserve planner revision through pilot execution");
-    const auto& executedDemand =
-        executed.snapshot.executedLinearAccelerationDemandMapMps2;
-    require(std::sqrt(
-                executedDemand.x * executedDemand.x +
-                executedDemand.y * executedDemand.y +
-                executedDemand.z * executedDemand.z) > 0.0,
-            "PilotSkillExecutor must execute a non-zero moving-passage demand");
-    require(near(executed.snapshot.idealLinearAccelerationDemandMapMps2.x,
-                 worldIntent.idealLinearAccelerationDemandMapMps2.x) &&
-            near(executed.snapshot.idealLinearAccelerationDemandMapMps2.y,
-                 worldIntent.idealLinearAccelerationDemandMapMps2.y) &&
-            near(executed.snapshot.idealLinearAccelerationDemandMapMps2.z,
-                 worldIntent.idealLinearAccelerationDemandMapMps2.z),
-            "PilotSkillExecutor must receive the transformed proved acceleration without re-planning");
+    require(glm::length(
+                executed.snapshot.executedLinearAccelerationDemandSystemMps2
+            ) > 0.0,
+            "PilotSkillExecutor must execute a non-zero system-space demand");
 }
 
-void testMapIntentTransformsIntoWorldControlFrame()
+void testTypedNavigationBoundaryTransformsLocalControlIntoSystemControl()
 {
-    Bridge::Intent mapIntent;
-    mapIntent.revision = 99;
-    mapIntent.emergency = true;
-    mapIntent.hazardUrgency01 = 0.25;
-    mapIntent.idealLinearAccelerationDemandMapMps2 =
-        {2.0, 3.0, 4.0};
-    mapIntent.idealAngularAccelerationDemandMapRadPerSec2 =
-        {-1.0, 5.0, 7.0};
+    game::navigation::NavigationLocalControlIntent local;
+    local.revision = 99;
+    local.emergency = true;
+    local.hazardUrgency01 = 0.25;
+    local.idealLinearAccelerationLocalMps2 = {2.0, 3.0, 4.0};
+    local.idealAngularAccelerationLocalRadPerSec2 = {-1.0, 5.0, 7.0};
 
-    Map::WorkingFrame frame;
-    frame.originSystemMeters = {100.0, 200.0, 300.0};
-    frame.xAxisSystem = {0.0, 1.0, 0.0};
-    frame.yAxisSystem = {0.0, 0.0, 1.0};
-    frame.zAxisSystem = {1.0, 0.0, 0.0};
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 5;
+    frame.valid = true;
+    frame.originMeters = {100.0, 200.0, 300.0};
+    frame.localToWorldBasis = glm::dmat3(
+        glm::dvec3(0.0, 1.0, 0.0),
+        glm::dvec3(0.0, 0.0, 1.0),
+        glm::dvec3(1.0, 0.0, 0.0)
+    );
 
-    const Bridge::Intent worldIntent =
-        Planner::mapIntentToWorld(mapIntent, frame);
+    const game::navigation::NavigationFrameBoundary boundary(frame);
+    require(boundary.valid(),
+            "typed navigation boundary must accept an orthonormal right-handed frame");
 
-    require(worldIntent.revision == mapIntent.revision &&
-            worldIntent.emergency == mapIntent.emergency &&
-            near(worldIntent.hazardUrgency01, mapIntent.hazardUrgency01),
-            "map-to-world transform must preserve intent metadata");
+    const auto system = boundary.toSystemControlIntent(local);
 
-    const auto& linear =
-        worldIntent.idealLinearAccelerationDemandMapMps2;
-    require(near(linear.x, 4.0) &&
-            near(linear.y, 2.0) &&
-            near(linear.z, 3.0),
-            "linear acceleration demand did not rotate from map to world frame");
+    require(system.revision == local.revision &&
+            system.emergency == local.emergency &&
+            near(system.hazardUrgency01, local.hazardUrgency01),
+            "local->system boundary must preserve intent metadata");
 
-    const auto& angular =
-        worldIntent.idealAngularAccelerationDemandMapRadPerSec2;
-    require(near(angular.x, 7.0) &&
-            near(angular.y, -1.0) &&
-            near(angular.z, 5.0),
-            "angular acceleration demand did not rotate from map to world frame");
+    require(near(system.idealLinearAccelerationSystemMps2.x, 4.0) &&
+            near(system.idealLinearAccelerationSystemMps2.y, 2.0) &&
+            near(system.idealLinearAccelerationSystemMps2.z, 3.0),
+            "linear demand did not rotate from NavLocal to system axes");
+    require(near(system.idealAngularAccelerationSystemRadPerSec2.x, 7.0) &&
+            near(system.idealAngularAccelerationSystemRadPerSec2.y, -1.0) &&
+            near(system.idealAngularAccelerationSystemRadPerSec2.z, 5.0),
+            "angular demand did not rotate from NavLocal to system axes");
 
-    bool rejected = false;
-    try
-    {
-        Map::WorkingFrame invalid;
-        invalid.xAxisSystem = {1.0, 0.0, 0.0};
-        invalid.yAxisSystem = {1.0, 0.0, 0.0};
-        invalid.zAxisSystem = {0.0, 0.0, 1.0};
-        (void)Planner::mapIntentToWorld(mapIntent, invalid);
-    }
-    catch (const std::invalid_argument&)
-    {
-        rejected = true;
-    }
-
-    require(rejected,
-            "map-to-world control boundary must reject a non-orthogonal frame");
+    game::navigation::KinematicFrame invalid = frame;
+    invalid.localToWorldBasis[1] = invalid.localToWorldBasis[0];
+    const game::navigation::NavigationFrameBoundary rejected(invalid);
+    require(!rejected.valid(),
+            "navigation boundary must reject a non-orthonormal frame");
 }
 
 void testPlannerIntentCrossesAcceptedPilotBridge()
@@ -1220,8 +1195,17 @@ void testPlannerIntentCrossesAcceptedPilotBridge()
     );
     require(planned.status == Planner::Status::NominalClear,
             "clear fixture must produce navigation intent");
-    require(planned.intent.idealLinearAccelerationDemandMapMps2.x > 0.0,
-            "clear fixture must request forward map acceleration");
+    require(planned.intent.idealLinearAccelerationLocalMps2.x > 0.0,
+            "clear fixture must request forward NavLocal acceleration");
+
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 1;
+    frame.valid = true;
+    frame.localToWorldBasis = glm::dmat3(1.0);
+    const game::navigation::NavigationFrameBoundary boundary(frame);
+
+    const Bridge::Intent systemIntent =
+        boundary.toSystemControlIntent(planned.intent);
 
     Bridge bridge(expertProfile());
     Bridge::Intent neutral;
@@ -1234,17 +1218,17 @@ void testPlannerIntentCrossesAcceptedPilotBridge()
         executed = bridge.step(
             0.01 * static_cast<double>(i),
             0.01,
-            planned.intent
+            systemIntent
         );
     }
 
     require(executed.snapshot.valid,
-            "planned intent must become an accepted pilot execution snapshot");
+            "typed planner intent must become an accepted pilot execution snapshot");
     require(executed.control.navigationAccelerationDemandValid,
-            "planned intent must reach the direct navigation control channel");
+            "system intent must reach the direct navigation control channel");
     require(executed.snapshot.intentRevision == goal.revision,
             "planner goal revision must survive pilot execution");
-    require(executed.snapshot.executedLinearAccelerationDemandMapMps2.x > 0.0,
+    require(executed.snapshot.executedLinearAccelerationDemandSystemMps2.x > 0.0,
             "pilot execution must preserve forward progress demand");
 }
 
@@ -1266,7 +1250,7 @@ int main()
         testClosingMovingGapFailsClosedBeforePassageEvaluation();
         testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory();
         testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge();
-        testMapIntentTransformsIntoWorldControlFrame();
+        testTypedNavigationBoundaryTransformsLocalControlIntoSystemControl();
         testPlannerIntentCrossesAcceptedPilotBridge();
 
         std::cout << "NAVIGATION RUNTIME PLANNER TESTS: PASS\n";

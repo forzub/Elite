@@ -243,15 +243,95 @@ bool validInput(
         dynamicResultAgeSeconds >= 0.0;
 }
 
+struct StaticMovingTrajectoryProof
+{
+    bool attempted = false;
+    bool safe = false;
+    std::size_t intervalsProven = 0;
+    std::size_t obstaclesExamined = 0;
+    double maximumCurveDeviationMeters = 0.0;
+    std::string blockingObstacleId;
+    std::uint32_t blockingObstacleEntityId = 0;
+};
+
+StaticMovingTrajectoryProof proveMovingPassageAgainstStaticSpace(
+    const Planner::MovingPassage::Result& passage,
+    const Planner::Space& staticSpace,
+    const Planner::Policy& policy
+)
+{
+    StaticMovingTrajectoryProof proof;
+    proof.attempted = true;
+
+    const auto& trajectory = passage.trajectory;
+    if (!passage.feasible || !trajectory.valid ||
+        !finite(trajectory.conservativeHullRadiusMeters) ||
+        trajectory.conservativeHullRadiusMeters < 0.0 ||
+        !finite(policy.avoidance.staticAdditionalClearanceMeters) ||
+        policy.avoidance.staticAdditionalClearanceMeters < 0.0)
+    {
+        return proof;
+    }
+
+    for (std::size_t i = 0;
+         i < Planner::MovingPassage::kIntervals;
+         ++i)
+    {
+        const double curveDeviation =
+            trajectory.intervalCenterlineDeviationBoundsMeters[i];
+        if (!finite(curveDeviation) || curveDeviation < 0.0)
+            return proof;
+
+        proof.maximumCurveDeviationMeters = std::max(
+            proof.maximumCurveDeviationMeters,
+            curveDeviation
+        );
+
+        const double continuousHullRadius =
+            trajectory.conservativeHullRadiusMeters + curveDeviation;
+        if (!finite(continuousHullRadius) || continuousHullRadius < 0.0)
+            return proof;
+
+        Planner::Space::SegmentQuery staticQuery;
+        staticQuery.startMapMeters =
+            toSpaceVec(trajectory.centerSamplesMapMeters[i]);
+        staticQuery.endMapMeters =
+            toSpaceVec(trajectory.centerSamplesMapMeters[i + 1]);
+        staticQuery.envelope.radiusMeters = continuousHullRadius;
+        staticQuery.envelope.additionalClearanceMeters =
+            policy.avoidance.staticAdditionalClearanceMeters;
+        staticQuery.requireSameRegion = true;
+
+        const Planner::Space::SegmentQueryResult staticResult =
+            staticSpace.querySegment(staticQuery);
+        proof.obstaclesExamined += staticResult.obstaclesExamined;
+
+        if (!staticResult.traversable)
+        {
+            proof.blockingObstacleId = staticResult.blockingObstacleId;
+            proof.blockingObstacleEntityId =
+                staticResult.blockingObstacleEntityId;
+            return proof;
+        }
+
+        ++proof.intervalsProven;
+    }
+
+    proof.safe =
+        proof.intervalsProven == Planner::MovingPassage::kIntervals;
+    return proof;
+}
+
 void probeMovingPassage(
     const Planner::AgentState& agent,
     const Planner::Goal& goal,
     const Planner::Map::QueryResult& dynamicCandidates,
+    const Planner::Space& staticSpace,
     const glm::dvec3& coarseTarget,
     const Planner::Policy& policy,
     const Planner::Avoidance::Result& local,
     Planner::Result& result
-) noexcept
+)
 {
     const Planner::MovingPassagePolicy& precision = policy.movingPassage;
     if (!precision.enabled || local.nominalConflictsFound == 0)
@@ -435,7 +515,32 @@ void probeMovingPassage(
         result.movingSecondaryObstacleEntityId = secondary->entityId;
         result.movingPassageInitialAccelerationMapMps2 =
             toGlm(passage.initialLinearAccelerationMapMetersPerSec2);
-        return;
+
+        const StaticMovingTrajectoryProof staticProof =
+            proveMovingPassageAgainstStaticSpace(
+                passage,
+                staticSpace,
+                policy
+            );
+        result.movingPassageStaticProofAttempted = staticProof.attempted;
+        result.movingPassageStaticSafe = staticProof.safe;
+        result.movingPassageStaticIntervalsProven =
+            staticProof.intervalsProven;
+        result.movingPassageStaticObstaclesExamined =
+            staticProof.obstaclesExamined;
+        result.movingPassageStaticMaximumCurveDeviationMeters =
+            staticProof.maximumCurveDeviationMeters;
+        result.movingPassageStaticBlockingObstacleId =
+            staticProof.blockingObstacleId;
+        result.movingPassageStaticBlockingObstacleEntityId =
+            staticProof.blockingObstacleEntityId;
+
+        if (staticProof.safe)
+            return;
+
+        // Another already-bounded gap candidate may still be dynamically and
+        // statically valid. Keep the accepted <=8 candidate bound and continue
+        // rather than turning one static blocker into a global hold.
     }
 }
 
@@ -594,15 +699,15 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         local.nominalStaticObstacleEntityId;
     result.selectedTargetMapMeters = toGlm(local.target.targetPositionMapMeters);
 
-    // Stage 12A-6b1: compose the already-accepted bounded moving-gap and
-    // moving-passage precision chain against the real runtime candidate product.
-    // This probe is deliberately observe-only until its moving trajectory is
-    // also proven against exact static geometry; it cannot steal steering
-    // authority from the accepted local/static planner yet.
+    // Stage 12A-6b2: the bounded moving-gap / moving-passage chain now also
+    // proves the exact accepted Hermite trajectory against NavigationSpace
+    // exact-static geometry. This remains observe-only in 12A-6b2; it cannot
+    // steal steering authority from the accepted local/static planner yet.
     probeMovingPassage(
         agent,
         goal,
         dynamicCandidates,
+        staticSpace,
         coarseTarget,
         policy,
         local,

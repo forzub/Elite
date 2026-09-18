@@ -1,6 +1,6 @@
 # Navigation v2 — trajectory, vehicle control, docking and NPC pilot model
 
-**Status:** architecture contract; first oriented-passage / reachability / emergency-mitigation components prepared in isolation  
+**Status:** trajectory/passage/docking mathematics accepted through stage 9; deterministic PilotSkillProfile execution is active stage 10  
 **Updated:** 2026-09-17 Europe/Kyiv  
 **Parent architecture:** `NAVIGATION_WORLD_V2.md`
 
@@ -403,18 +403,23 @@ This separation allows one ship type to feel radically different under an expert
 
 ## Acceptance order
 
-The already accepted local-navigation performance gate shows that the deterministic 16-probe fan is not a CPU blocker. The bounded gap builder is also performance-accepted.
+Stages through moving/rotating docking are now accepted on the target machine:
 
-Current order:
+```text
+oriented passage / bounded gaps / attitude
+continuous static passage
+emergency mitigation + contact severity
+moving gap prediction
+moving continuous passage
+terminal docking 6DoF
+continuous moving/rotating docking approach
+```
 
-1. accept the isolated emergency-passage behavior/architecture gate;
-2. introduce a backend-neutral vehicle maneuver/capability input for translational/body-axis authority;
-3. pin `Elite`-assisted versus `Newton` reachability fixtures;
-4. add continuous rotation+translation swept-body feasibility for head-on/crossing/narrow gaps;
-5. extend emergency scoring from geometric clearance deficit to actual relative normal contact speed / impact-energy proxy;
-6. add terminal-pose docking fixtures: stationary dock, translating dock, rotating dock and moving+rotating dock;
-7. pin docking orientation semantics, including bottom-to-bottom port alignment and rejection of a 180-degree rolled approach;
-8. add deterministic `PilotSkillProfile` execution fixtures, including under-damped free-flight and docking oscillation cases;
-9. then integrate the accepted trajectory/control/docking product into live `EliteGame` / `EliteServer` and guidance visualization.
+Active order:
 
-Until those gates exist, current `radiusMeters` / swept-sphere local navigation remains a conservative broadphase reference rather than a claim of final ship-motion or docking fidelity.
+1. accept deterministic `PilotSkillProfile` execution fixtures, including reaction/latency, deterministic command error, under-damped response and docking-like oscillation;
+2. integrate accepted navigation intent + pilot execution + flight control + authoritative physics into live `EliteGame` / `EliteServer` and guidance;
+3. run end-to-end stress/debug/performance acceptance;
+4. retire legacy route-wide navigation only after v2 owns the stable live path.
+
+The cheap radius/swept-sphere representation remains correct for shared broadphase; oriented precision truth is supplied only when the bounded precision layers require it.

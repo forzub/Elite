@@ -1,35 +1,27 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-18
-**Stage:** 12A-5 — verify authoritative reference-frame placement reset
+**Stage:** 12A-5 — verify current-epoch reference-frame sync
 
 ## Candidate HEAD
 
 ```text
-e83a0a2bd5d54efb7737607c40ff789cafee5cf5
+29aa06c6d96f2a32a540f5623eb53edc433ef6ca
 ```
 
-## Previous failure
+## What changed
 
-The first live planner probe started at:
+The last ~641 m first-plan offset matched one fixed step of orbital/world frame
+motion.
+
+Reference-frame synchronization now occurs before AI/navigation:
 
 ```text
-(1014.47,-1767.96,-5679.82)
+HubNavigationFrame current epoch
+    -> refresh matched travel frame
+    -> rematerialize ship world pose from localPositionMeters
+    -> navigation planner
 ```
-
-instead of configured:
-
-```text
-(975,-1300,-6200)
-```
-
-Root cause: `placeShipInReferenceFrame()` retained stale
-`motion.localVelocityMps` and propulsion state.
-
-## Correction
-
-Reference-frame placement now clears all authoritative local motion/control
-residue before the ship enters the new frame.
 
 ## RUN
 
@@ -51,23 +43,23 @@ bash build_mingw64.sh
 ./build/headless_server/EliteServer.exe --self-test-navigation
 ```
 
-## Expected interpretation
+## Expected picture
 
-If the placement bug is closed, the first live probe should begin near:
+First navigation state should now stay on the authored start:
 
 ```text
+placement_map ~= (975,-1300,-6200)
 first_live_agent_map ~= (975,-1300,-6200)
 ```
 
-and then:
+Then CUBE 08 should be detected:
 
 ```text
 first_live_probe_blocked=1
-first_live_blocker_entity=<CUBE 08 entity>
 exact_obstacle_block=1
 exact_static_block=1
 adjusted=1
 ```
 
-If physical execution later violates exact geometry, the self-test will stop
-immediately and print the exact violation entity and swept motion witness.
+If execution then intersects any exact HitVolume, self-test already fails fast
+with the exact entity and swept-segment witness.

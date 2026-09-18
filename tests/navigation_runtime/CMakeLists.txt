@@ -74,3 +74,37 @@ set_tests_properties(
     navigation_runtime_control
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+add_executable(
+    navigation_replication_truth_tests
+    NavigationReplicationTruthTests.cpp
+)
+
+target_include_directories(navigation_replication_truth_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(navigation_replication_truth_tests PRIVATE cxx_std_17)
+
+if(MSVC)
+    target_compile_options(
+        navigation_replication_truth_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        navigation_replication_truth_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME navigation_replication_truth
+    COMMAND navigation_replication_truth_tests
+)
+
+set_tests_properties(
+    navigation_replication_truth
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

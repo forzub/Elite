@@ -44,6 +44,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimeControlBridge.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NpcNavigationIntentController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimePlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationExecutionReplanPolicy.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationHitVolumeAdapter.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/controller/ManeuverDecisionController.cpp"
@@ -173,6 +174,47 @@ add_test(
 
 set_tests_properties(
     maneuver_decision_controller
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    navigation_execution_replan_policy_tests
+    NavigationExecutionReplanPolicyTests.cpp
+)
+
+target_include_directories(navigation_execution_replan_policy_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    navigation_execution_replan_policy_tests
+    PRIVATE cxx_std_17
+)
+target_link_libraries(
+    navigation_execution_replan_policy_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        navigation_execution_replan_policy_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        navigation_execution_replan_policy_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME navigation_execution_replan_policy
+    COMMAND navigation_execution_replan_policy_tests
+)
+
+set_tests_properties(
+    navigation_execution_replan_policy
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 

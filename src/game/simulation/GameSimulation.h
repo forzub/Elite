@@ -38,6 +38,9 @@
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/NavigationRuntimePlanner.h"
+#include "src/world/navigation/map/NavigationMap.h"
+#include "src/world/navigation/space/NavigationSpace.h"
 
 
 class StateContext;
@@ -280,6 +283,14 @@ public:
     void registerActivationCadenceLabShip(EntityId shipId);
     bool isActivationCadenceLabShip(EntityId shipId) const noexcept;
 
+    void registerNavigationRuntimeLabShip(
+        EntityId shipId,
+        const std::string& hubId
+    );
+    bool isNavigationRuntimeLabShip(EntityId shipId) const noexcept;
+    const game::navigation::NavigationRuntimePlanner::Result*
+    navigationRuntimeLabLastPlan() const noexcept;
+
     const std::unordered_map<
         EntityId,
         game::simulation::activation::ActivationPlannerDecision
@@ -329,6 +340,12 @@ private:
     void updateHubMotionLabActors();
     void updateInterplanetaryTransferLabActor();
     void updateActivationCadenceLabClaim(double serverTimeSeconds);
+    void initializeNavigationRuntimeLab();
+    bool buildNavigationRuntimeLabIntent(
+        EntityId id,
+        Ship& ship,
+        game::navigation::NavigationRuntimeControlBridge::Intent& outIntent
+    );
     void updateActivationShadow();
     bool updateNpcNavigationControl(
         EntityId id,
@@ -416,6 +433,17 @@ private:
     double m_interplanetaryTransferLabDeparturePhaseRad = 0.0;
     bool m_interplanetaryTransferLabDeparturePhaseInitialized = false;
     EntityId m_activationCadenceLabShipId {0};
+
+    EntityId m_navigationRuntimeLabShipId {0};
+    std::string m_navigationRuntimeLabHubId;
+    bool m_navigationRuntimeLabInitialized = false;
+    std::uint64_t m_navigationRuntimeLabSourceRevision = 0;
+    std::unique_ptr<world::navigation::NavigationMap>
+        m_navigationRuntimeLabMap;
+    std::unique_ptr<world::navigation::NavigationSpace>
+        m_navigationRuntimeLabSpace;
+    game::navigation::NavigationRuntimePlanner::Result
+        m_navigationRuntimeLabLastPlan {};
 
     // Stage 4A/4B: the stabilized activation plan controls real materialized
     // work lanes. Motion-control evaluation is decimated for Prewarm/Coarse

@@ -18,7 +18,7 @@
 - 12A-6b1 runtime moving-precision observe/prove seam — ACCEPTED
 - 12A-6b2 exact-static proof of accepted moving trajectory — ACCEPTED
 - 12A-6b3a verified moving-passage steering authority seam — ACCEPTED
-- 12A-6b3b live moving-passage physics/replication authority gate — ACTIVE
+- 12A-6b3b live moving-passage physics/replication authority gate — CANDIDATE / target-machine pending
 
 ## 12A-6a acceptance
 
@@ -415,3 +415,49 @@ allowed for presentation.
 
 This deferred task does not change the active Stage-12 priority. Current work
 remains 12A-6b3b live moving-passage physics/replication authority.
+
+
+## 12A-6b3b candidate now on main
+
+Candidate code/contract baseline before documentation commits:
+
+```text
+d5e1f990aed38ded7a517d719e935b6b6e763d4d
+```
+
+The previous live lab had only one dynamic candidate, so it could never form a
+two-boundary moving aperture. The 12A-6b3b candidate adds two real hub-attached
+physical boundaries:
+
+```text
+NAV MOVING GAP UPPER
+NAV MOVING GAP LOWER
+```
+
+They translate deterministically in the live Hub Motion Lab, remain excluded
+from persistent exact-static NavigationSpace ownership, and are published into
+NavigationMap as the dynamic pair used by the real planner.
+
+The live NavigationRuntimeLab now supplies the Cobra's real logical hull and
+physical body-axis authority to moving-passage evaluation instead of unit-test
+capabilities.
+
+The production policy explicitly enables both moving precision and steering
+authority for this diagnostic actor. Acceptance now requires live evidence of:
+
+```text
+both moving boundaries in the ship's bounded candidate set
+    -> verified map-frame moving kinematics
+    -> moving precision attempted
+    -> expected boundary pair feasible
+    -> same Hermite trajectory exact-static safe
+    -> MovingPassageClear authority
+    -> non-zero PilotSkillExecutor execution
+    -> non-zero authoritative physical acceleration
+    -> same-tick sparse/canonical execution replication
+    -> physical ship passes the moving aperture plane
+    -> zero exact-static physical violation
+```
+
+CUBE 08 remains the independent stationary exact-HitVolume proving obstacle;
+the new moving pair does not replace or weaken that accepted gate.

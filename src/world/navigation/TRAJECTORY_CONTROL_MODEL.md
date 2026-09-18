@@ -423,3 +423,35 @@ Active order:
 4. retire legacy route-wide navigation only after v2 owns the stable live path.
 
 The cheap radius/swept-sphere representation remains correct for shared broadphase; oriented precision truth is supplied only when the bounded precision layers require it.
+
+
+## Control-law geometry proxy clarification
+
+Detailed authority: `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`.
+
+`EliteAssisted` and `Newtonian` share exact oriented hull truth but may use
+different conservative planning proxies.
+
+```text
+EliteAssisted
+    cheap aperture fit: oriented OBB / brick
+    continuous proof: swept oriented hull
+    velocity-to-forward slip remains policy constrained
+
+Newtonian
+    coarse arbitrary-rotation / flip free-volume proof:
+        conservative rotation sphere
+    exact constrained passage:
+        time-varying oriented hull / swept OBB
+```
+
+The Newtonian sphere is therefore not a collision shape replacement. It only
+answers whether enough free volume exists for arbitrary hull rotation,
+including 180-degree flip-and-burn. Side-on/drift/rolled passage candidates must
+retain the oriented hull through time.
+
+After the ordinary 0..75-degree visibility fan is exhausted, recovery is a
+different maneuver-selection stage. Newtonian recovery may use coast+rotate,
+RCS trim, drift passage, turn+burn or flip-and-burn; Assisted recovery may use
+brake+turn, wider forward turn, go-around or controller-supported reverse.
+All candidates still consume the same real vehicle capability.

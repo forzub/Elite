@@ -732,10 +732,22 @@ int runNavigationRuntimeSelfTest()
             observation.executionCount > 0 &&
             observation.obstacleEntityId != 0 &&
             observation.dynamicQueryCount > 0 &&
-            observation.maximumDynamicCandidateCount > 0 &&
+            observation.maximumDynamicCandidateCount >= 2 &&
             observation.rotatingActorEntityId != 0 &&
             observation.rotatingActorCandidateSeen &&
             observation.rotatingActorAngularVelocityVerified &&
+            observation.movingGapUpperEntityId != 0 &&
+            observation.movingGapLowerEntityId != 0 &&
+            observation.movingGapPairCandidateSeen &&
+            observation.movingGapKinematicsVerified &&
+            observation.movingPrecisionAttemptedSeen &&
+            observation.movingPassageFeasibleSeen &&
+            observation.movingPassageStaticSafeSeen &&
+            observation.movingPassageAuthoritySeen &&
+            observation.movingPassageAuthorityActive &&
+            observation.movingPassageExecutedSeen &&
+            observation.movingPassageExecutionActive &&
+            observation.movingPassageAppliedAccelerationSeen &&
             !observation.obstacleCandidateSeen &&
             !observation.obstaclePrimaryConflictSeen &&
             observation.obstacleExactStaticBlockSeen &&
@@ -780,6 +792,34 @@ int runNavigationRuntimeSelfTest()
             << observation.rotatingActorAngularVelocityVerified
             << " rotating_actor_omega_error="
             << observation.rotatingActorAngularVelocityErrorRadPerSecond
+            << " moving_gap_pair="
+            << observation.movingGapPairCandidateSeen
+            << " moving_gap_kinematics="
+            << observation.movingGapKinematicsVerified
+            << " moving_gap_velocity_error="
+            << observation.movingGapMaximumVelocityErrorMps
+            << " moving_precision="
+            << observation.movingPrecisionAttemptedSeen
+            << " moving_passage_feasible="
+            << observation.movingPassageFeasibleSeen
+            << " moving_passage_static_safe="
+            << observation.movingPassageStaticSafeSeen
+            << " moving_passage_authority="
+            << observation.movingPassageAuthoritySeen
+            << " moving_passage_authority_active="
+            << observation.movingPassageAuthorityActive
+            << " moving_passage_executed="
+            << observation.movingPassageExecutedSeen
+            << " moving_passage_execution_active="
+            << observation.movingPassageExecutionActive
+            << " moving_passage_applied="
+            << observation.movingPassageAppliedAccelerationSeen
+            << " moving_gap_passed="
+            << observation.movingGapPlanePassed
+            << " max_moving_exec_mps2="
+            << observation.maximumMovingPassageExecutedDemandMps2
+            << " max_moving_applied_mps2="
+            << observation.maximumMovingPassageAppliedAccelerationMps2
             << " adjusted="
             << observation.adjustedTargetSeen
             << " conflict_hold="
@@ -866,6 +906,14 @@ int runNavigationRuntimeSelfTest()
             continue;
 
         publicationCount = nextPublicationCount;
+
+        // 12A-6b3b requires replication evidence from an epoch in which the
+        // doubly-proven moving passage actually owns and executes control.
+        if (!observation.movingPassageAuthorityActive ||
+            !observation.movingPassageExecutionActive)
+        {
+            continue;
+        }
 
         const auto& sparsePacket =
             transport.latestSnapshot();
@@ -1031,6 +1079,37 @@ int runNavigationRuntimeSelfTest()
         return 43;
     }
 
+    // Replication was captured while MovingPassageClear owned execution.
+    // Continue the same authoritative run until the physical ship passes the
+    // moving aperture plane, or until the original 120 s total bound expires.
+    while (!observation.movingGapPlanePassed &&
+           simulatedSeconds + step <= MaxSimulatedSeconds + 1.0e-9)
+    {
+        runtime.advance(step);
+        simulatedSeconds += step;
+        observation = runtime.navigationRuntimeLabObservation();
+
+        if (observation.firstExactStaticViolationCaptured)
+        {
+            std::cerr
+                << "[FAIL] moving-passage continuation crossed exact static geometry"
+                << " violation_entity="
+                << observation.firstExactStaticViolationEntityId
+                << "\n";
+            return 55;
+        }
+    }
+
+    if (!observation.movingGapPlanePassed)
+    {
+        std::cerr
+            << "[FAIL] moving-passage authority executed and replicated but "
+            << "the physical ship did not pass the live moving-gap plane"
+            << " simulated_s=" << simulatedSeconds
+            << "\n";
+        return 56;
+    }
+
     const double finalProgressMeters =
         observation.initialGoalDistanceMeters > 0.0
             ? observation.initialGoalDistanceMeters -
@@ -1058,6 +1137,30 @@ int runNavigationRuntimeSelfTest()
         << observation.rotatingActorAngularVelocityVerified
         << " rotating_actor_omega_error="
         << observation.rotatingActorAngularVelocityErrorRadPerSecond
+        << " moving_gap_pair="
+        << observation.movingGapPairCandidateSeen
+        << " moving_gap_kinematics="
+        << observation.movingGapKinematicsVerified
+        << " moving_gap_velocity_error="
+        << observation.movingGapMaximumVelocityErrorMps
+        << " moving_precision="
+        << observation.movingPrecisionAttemptedSeen
+        << " moving_passage_feasible="
+        << observation.movingPassageFeasibleSeen
+        << " moving_passage_static_safe="
+        << observation.movingPassageStaticSafeSeen
+        << " moving_passage_authority="
+        << observation.movingPassageAuthoritySeen
+        << " moving_passage_executed="
+        << observation.movingPassageExecutedSeen
+        << " moving_passage_applied="
+        << observation.movingPassageAppliedAccelerationSeen
+        << " moving_gap_passed="
+        << observation.movingGapPlanePassed
+        << " max_moving_exec_mps2="
+        << observation.maximumMovingPassageExecutedDemandMps2
+        << " max_moving_applied_mps2="
+        << observation.maximumMovingPassageAppliedAccelerationMps2
         << " adjusted="
         << observation.adjustedTargetSeen
         << " conflict_hold="
@@ -1128,9 +1231,9 @@ int runNavigationRuntimeSelfTest()
     }
 
     std::cerr
-        << "[PASS] navigation-runtime exact-static avoidance remained collision-free"
-        << " and live rotating infrastructure preserved angular motion"
-        << " through NavigationMap with exact replicated execution\n";
+        << "[PASS] navigation-runtime exact-static avoidance remained collision-free,"
+        << " live moving-passage authority drove real physics through the aperture,"
+        << " and the executed demand matched same-tick sparse/canonical replication\n";
     return 0;
 }
 

@@ -1133,18 +1133,38 @@ void GameSimulation::initializeNavigationRuntimeLab()
     approachRegion.boundsMapMeters.maxMapMeters = {
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.z
     };
     approachRegion.clearanceRadiusMeters =
         NavigationRuntimeLabWorkspaceHalfExtentMeters;
     approachRegion.geometryRevision = 1;
 
+    Space::RegionInput tunnelRegion;
+    tunnelRegion.regionId = 2;
+    tunnelRegion.boundsMapMeters.minMapMeters = {
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x -
+            NavigationRuntimeLabSlitHalfWidthMeters,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y -
+            NavigationRuntimeLabSlitHalfHeightMeters,
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.z
+    };
+    tunnelRegion.boundsMapMeters.maxMapMeters = {
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x +
+            NavigationRuntimeLabSlitHalfWidthMeters,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y +
+            NavigationRuntimeLabSlitHalfHeightMeters,
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z
+    };
+    tunnelRegion.clearanceRadiusMeters =
+        NavigationRuntimeLabSlitPortalClearanceMeters;
+    tunnelRegion.geometryRevision = 1;
+
     Space::RegionInput departureRegion;
-    departureRegion.regionId = 2;
+    departureRegion.regionId = 3;
     departureRegion.boundsMapMeters.minMapMeters = {
         -NavigationRuntimeLabWorkspaceHalfExtentMeters,
         -NavigationRuntimeLabWorkspaceHalfExtentMeters,
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z
     };
     departureRegion.boundsMapMeters.maxMapMeters = {
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
@@ -1156,22 +1176,63 @@ void GameSimulation::initializeNavigationRuntimeLab()
     departureRegion.geometryRevision = 1;
 
     staticWorld.regions.push_back(approachRegion);
+    staticWorld.regions.push_back(tunnelRegion);
     staticWorld.regions.push_back(departureRegion);
 
-    Space::PortalInput slitPortal;
-    slitPortal.portalId = NavigationRuntimeLabSlitPortalId;
-    slitPortal.regionA = 1;
-    slitPortal.regionB = 2;
-    slitPortal.centerMapMeters = {
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+    Space::PortalInput slitEntryPortal;
+    slitEntryPortal.portalId = NavigationRuntimeLabSlitEntryPortalId;
+    slitEntryPortal.regionA = 1;
+    slitEntryPortal.regionB = 2;
+    slitEntryPortal.centerMapMeters = {
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.x,
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.y,
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.z
     };
-    slitPortal.clearanceRadiusMeters =
+    slitEntryPortal.clearanceRadiusMeters =
         NavigationRuntimeLabSlitPortalClearanceMeters;
-    slitPortal.bidirectional = true;
-    slitPortal.geometryRevision = 1;
-    staticWorld.portals.push_back(slitPortal);
+    slitEntryPortal.bidirectional = true;
+    slitEntryPortal.geometryRevision = 1;
+    slitEntryPortal.traversal.enabled = true;
+    slitEntryPortal.traversal.normalAToBMap = {0.0, 0.0, 1.0};
+    slitEntryPortal.traversal.approachDistanceMeters =
+        NavigationRuntimeLabSlitApproachDistanceMeters;
+    slitEntryPortal.traversal.maximumVelocityAngleRad =
+        NavigationRuntimeLabSlitMaximumEntryVelocityAngleRad;
+    slitEntryPortal.traversal.maximumForwardAngleRad =
+        NavigationRuntimeLabSlitMaximumEntryForwardAngleRad;
+    slitEntryPortal.traversal.maximumLateralSpeedMps =
+        NavigationRuntimeLabSlitMaximumLateralSpeedMps;
+    slitEntryPortal.traversal.transitSpeedMps =
+        NavigationRuntimeLabSlitTransitSpeedMps;
+    slitEntryPortal.traversal.requireVehicleForwardAlignment = true;
+    staticWorld.portals.push_back(slitEntryPortal);
+
+    Space::PortalInput slitExitPortal;
+    slitExitPortal.portalId = NavigationRuntimeLabSlitExitPortalId;
+    slitExitPortal.regionA = 2;
+    slitExitPortal.regionB = 3;
+    slitExitPortal.centerMapMeters = {
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.x,
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.y,
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z
+    };
+    slitExitPortal.clearanceRadiusMeters =
+        NavigationRuntimeLabSlitPortalClearanceMeters;
+    slitExitPortal.bidirectional = true;
+    slitExitPortal.geometryRevision = 1;
+    slitExitPortal.traversal.enabled = true;
+    slitExitPortal.traversal.normalAToBMap = {0.0, 0.0, 1.0};
+    slitExitPortal.traversal.approachDistanceMeters = 0.0;
+    slitExitPortal.traversal.maximumVelocityAngleRad =
+        NavigationRuntimeLabSlitMaximumEntryVelocityAngleRad;
+    slitExitPortal.traversal.maximumForwardAngleRad =
+        NavigationRuntimeLabSlitMaximumEntryForwardAngleRad;
+    slitExitPortal.traversal.maximumLateralSpeedMps =
+        NavigationRuntimeLabSlitMaximumLateralSpeedMps;
+    slitExitPortal.traversal.transitSpeedMps =
+        NavigationRuntimeLabSlitTransitSpeedMps;
+    slitExitPortal.traversal.requireVehicleForwardAlignment = true;
+    staticWorld.portals.push_back(slitExitPortal);
 
     m_navigationRuntimeLabSpace->replaceStaticWorld(
         std::move(staticWorld)
@@ -1252,18 +1313,38 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
     approachRegion.boundsMapMeters.maxMapMeters = {
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.z
     };
     approachRegion.clearanceRadiusMeters =
         NavigationRuntimeLabWorkspaceHalfExtentMeters;
     approachRegion.geometryRevision = 2;
 
+    Space::RegionInput tunnelRegion;
+    tunnelRegion.regionId = 2;
+    tunnelRegion.boundsMapMeters.minMapMeters = {
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x -
+            NavigationRuntimeLabSlitHalfWidthMeters,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y -
+            NavigationRuntimeLabSlitHalfHeightMeters,
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.z
+    };
+    tunnelRegion.boundsMapMeters.maxMapMeters = {
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x +
+            NavigationRuntimeLabSlitHalfWidthMeters,
+        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y +
+            NavigationRuntimeLabSlitHalfHeightMeters,
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z
+    };
+    tunnelRegion.clearanceRadiusMeters =
+        NavigationRuntimeLabSlitPortalClearanceMeters;
+    tunnelRegion.geometryRevision = 2;
+
     Space::RegionInput departureRegion;
-    departureRegion.regionId = 2;
+    departureRegion.regionId = 3;
     departureRegion.boundsMapMeters.minMapMeters = {
         -NavigationRuntimeLabWorkspaceHalfExtentMeters,
         -NavigationRuntimeLabWorkspaceHalfExtentMeters,
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z
     };
     departureRegion.boundsMapMeters.maxMapMeters = {
         NavigationRuntimeLabWorkspaceHalfExtentMeters,
@@ -1275,22 +1356,63 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
     departureRegion.geometryRevision = 2;
 
     staticWorld.regions.push_back(approachRegion);
+    staticWorld.regions.push_back(tunnelRegion);
     staticWorld.regions.push_back(departureRegion);
 
-    Space::PortalInput slitPortal;
-    slitPortal.portalId = NavigationRuntimeLabSlitPortalId;
-    slitPortal.regionA = 1;
-    slitPortal.regionB = 2;
-    slitPortal.centerMapMeters = {
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
-        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+    Space::PortalInput slitEntryPortal;
+    slitEntryPortal.portalId = NavigationRuntimeLabSlitEntryPortalId;
+    slitEntryPortal.regionA = 1;
+    slitEntryPortal.regionB = 2;
+    slitEntryPortal.centerMapMeters = {
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.x,
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.y,
+        NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.z
     };
-    slitPortal.clearanceRadiusMeters =
+    slitEntryPortal.clearanceRadiusMeters =
         NavigationRuntimeLabSlitPortalClearanceMeters;
-    slitPortal.bidirectional = true;
-    slitPortal.geometryRevision = 2;
-    staticWorld.portals.push_back(slitPortal);
+    slitEntryPortal.bidirectional = true;
+    slitEntryPortal.geometryRevision = 2;
+    slitEntryPortal.traversal.enabled = true;
+    slitEntryPortal.traversal.normalAToBMap = {0.0, 0.0, 1.0};
+    slitEntryPortal.traversal.approachDistanceMeters =
+        NavigationRuntimeLabSlitApproachDistanceMeters;
+    slitEntryPortal.traversal.maximumVelocityAngleRad =
+        NavigationRuntimeLabSlitMaximumEntryVelocityAngleRad;
+    slitEntryPortal.traversal.maximumForwardAngleRad =
+        NavigationRuntimeLabSlitMaximumEntryForwardAngleRad;
+    slitEntryPortal.traversal.maximumLateralSpeedMps =
+        NavigationRuntimeLabSlitMaximumLateralSpeedMps;
+    slitEntryPortal.traversal.transitSpeedMps =
+        NavigationRuntimeLabSlitTransitSpeedMps;
+    slitEntryPortal.traversal.requireVehicleForwardAlignment = true;
+    staticWorld.portals.push_back(slitEntryPortal);
+
+    Space::PortalInput slitExitPortal;
+    slitExitPortal.portalId = NavigationRuntimeLabSlitExitPortalId;
+    slitExitPortal.regionA = 2;
+    slitExitPortal.regionB = 3;
+    slitExitPortal.centerMapMeters = {
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.x,
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.y,
+        NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z
+    };
+    slitExitPortal.clearanceRadiusMeters =
+        NavigationRuntimeLabSlitPortalClearanceMeters;
+    slitExitPortal.bidirectional = true;
+    slitExitPortal.geometryRevision = 2;
+    slitExitPortal.traversal.enabled = true;
+    slitExitPortal.traversal.normalAToBMap = {0.0, 0.0, 1.0};
+    slitExitPortal.traversal.approachDistanceMeters = 0.0;
+    slitExitPortal.traversal.maximumVelocityAngleRad =
+        NavigationRuntimeLabSlitMaximumEntryVelocityAngleRad;
+    slitExitPortal.traversal.maximumForwardAngleRad =
+        NavigationRuntimeLabSlitMaximumEntryForwardAngleRad;
+    slitExitPortal.traversal.maximumLateralSpeedMps =
+        NavigationRuntimeLabSlitMaximumLateralSpeedMps;
+    slitExitPortal.traversal.transitSpeedMps =
+        NavigationRuntimeLabSlitTransitSpeedMps;
+    slitExitPortal.traversal.requireVehicleForwardAlignment = true;
+    staticWorld.portals.push_back(slitExitPortal);
 
     std::uint32_t provingObstacleEntityId = 0;
 

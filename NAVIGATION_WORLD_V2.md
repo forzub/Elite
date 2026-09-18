@@ -680,7 +680,7 @@ EliteServer build PASS
 
 11B-1 is frozen unless 11B-2/stage-12 integration reveals a real defect.
 
-### Stage 11B-2 — replicated guidance/debug truth ACTIVE
+### Stage 11B-2 — replicated guidance/debug truth ACCEPTED
 
 The exact server execution product now follows the existing replication boundary:
 

@@ -151,6 +151,17 @@ target_link_libraries(EliteNavigationWorldRuntime
            EliteNavigationTrajectory
 )
 
+# Game-level maneuver selection sits deliberately above NavigationWorld.
+# It consumes already-produced candidate annotations and active control-law
+# context; it owns no world geometry, trajectory proof or physics.
+add_library(EliteManeuverDecision STATIC
+    src/game/ship/controller/ManeuverDecisionController.cpp
+)
+target_include_directories(EliteManeuverDecision PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+
 # Shared CPU-side authored/runtime assembly geometry. This is intentionally not
 # a render library: it owns OBJ hydration, authored assembly definitions and the
 # CPU cache consumed by authoritative simulation and client presentation.
@@ -711,6 +722,7 @@ if(ELITE_BUILD_SERVER)
     target_link_libraries(EliteServer PRIVATE
         EliteNavigationGeometry
         EliteNavigationWorldRuntime
+        EliteManeuverDecision
         EliteNavigationRuckig
         EliteAssemblyGeometry
         EliteRuntimeModelAssets
@@ -1031,6 +1043,7 @@ target_link_libraries(EliteGame PRIVATE
     EliteModelAsset
     EliteNavigationGeometry
     EliteNavigationWorldRuntime
+    EliteManeuverDecision
     EliteNavigationRuckig
     EliteAssemblyGeometry
     EliteRuntimeModelAssets

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <string>
 
 #include "world/navigation/local/LocalHorizonPlanner.h"
 #include "world/navigation/space/NavigationSpace.h"
@@ -58,9 +60,16 @@ public:
         LocalHorizonPlanner::Result target {};
 
         bool adjustedTarget = false;
+        bool nominalStaticBlocked = false;
         std::size_t targetProbesExamined = 0;
         std::size_t staticRejected = 0;
         std::size_t dynamicRejected = 0;
+        std::size_t staticObstaclesExamined = 0;
+
+        // Exact static blocker that rejected the nominal bounded segment.
+        // This is independent from NavigationMap dynamic conflict identity.
+        std::string nominalStaticObstacleId;
+        std::uint32_t nominalStaticObstacleEntityId = 0;
 
         // Preserve the conflict that rejected the unmodified nominal target.
         // Once an adjusted probe is Clear, target.primaryConflictEntityId is

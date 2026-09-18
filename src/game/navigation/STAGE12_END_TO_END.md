@@ -408,6 +408,48 @@ Correction:
 
 This preserves the 12A-5 rule: stationary spheres are not reintroduced.
 
+### 12A-5 second live result: configured route blocks, live nominal segment does not
+
+Target-machine run on
+`54bd19ef647f0eca8dcc738be4342052ee164683` confirmed the ownership split and
+the exact proving geometry:
+
+```text
+obstacle_candidate=0
+obstacle_conflict=0
+configured_route_exact_block=1
+exact_static=1
+exact_static_obstacles=17
+exact_static_query=1
+exact_static_violation=0
+reached_goal=1
+```
+
+But runtime local planning never observed the same blocker:
+
+```text
+exact_obstacle_block=0
+exact_static_block=0
+adjusted=0
+```
+
+The hub visual/tactical axis contract was re-audited and is correct. The next
+diagnostic split therefore compares two independent products before changing
+any ownership or tolerance:
+
+1. a standalone runtime regression using the live scale
+   (OBB 1300 m ahead, ~1420 m first horizon, distant goal, unrelated dynamic
+   actor), which must produce exact-static adjusted avoidance;
+2. a first-live bounded-segment probe inside GameSimulation that records the
+   actual agent map position, actual goal, bounded target, horizon and exact
+   blocking entity immediately before `NavigationRuntimePlanner::plan()`.
+
+The server self-test fails fast if the first live segment does not hit CUBE 08.
+It separately fails if that exact segment does hit CUBE 08 but planner loses the
+static block during composition.
+
+Stationary conservative spheres remain forbidden.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

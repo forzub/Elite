@@ -515,7 +515,7 @@ int runNavigationRuntimeSelfTest()
             std::ceil(MaxSimulatedSeconds / step)
         );
 
-    bool movingAuthorityEvidenceComplete = false;
+    bool visibilityEvidenceComplete = false;
     double simulatedSeconds = 0.0;
 
     for (std::uint64_t i = 0; i < maxSteps; ++i)
@@ -672,7 +672,7 @@ int runNavigationRuntimeSelfTest()
             return 52;
         }
 
-        movingAuthorityEvidenceComplete =
+        visibilityEvidenceComplete =
             observation.valid &&
             observation.exactStaticGeometryPublished &&
             observation.exactStaticObstacleCount > 0 &&
@@ -688,18 +688,13 @@ int runNavigationRuntimeSelfTest()
             observation.movingGapPairCandidateSeen &&
             observation.movingGapKinematicsVerified &&
             observation.slitPortalExactOpenPublished &&
-            observation.movingPrecisionAttemptedSeen &&
-            observation.movingPassageFeasibleSeen &&
-            observation.movingPassageStaticSafeSeen &&
-            observation.movingPassageAuthoritySeen &&
-            observation.movingPassageAuthorityActive &&
-            observation.movingPassageExecutedSeen &&
-            observation.movingPassageExecutionActive &&
-            observation.movingPassageAppliedAccelerationSeen &&
+            observation.visibilityBypassSeen &&
+            observation.visibilityBypassActive &&
             observation.executionSeen &&
-            observation.nonZeroExecutedDemandSeen;
+            observation.nonZeroExecutedDemandSeen &&
+            observation.lateralExecutedDemandSeen;
 
-        if (movingAuthorityEvidenceComplete)
+        if (visibilityEvidenceComplete)
             break;
     }
 
@@ -709,7 +704,7 @@ int runNavigationRuntimeSelfTest()
                 observation.minimumGoalDistanceMeters
             : 0.0;
 
-    if (!movingAuthorityEvidenceComplete)
+    if (!visibilityEvidenceComplete)
     {
         std::cerr
             << "[NAV-SELFTEST]"
@@ -851,7 +846,7 @@ int runNavigationRuntimeSelfTest()
             << observation.reachedGoal
             << "\n";
         std::cerr
-            << "[FAIL] navigation-runtime live moving-passage authority evidence incomplete\n";
+            << "[FAIL] navigation-runtime bounded visibility steering evidence incomplete\n";
         return 37;
     }
 
@@ -887,10 +882,12 @@ int runNavigationRuntimeSelfTest()
 
         publicationCount = nextPublicationCount;
 
-        // 12A-6b3b requires replication evidence from an epoch in which the
-        // doubly-proven moving passage actually owns and executes control.
-        if (!observation.movingPassageAuthorityActive ||
-            !observation.movingPassageExecutionActive)
+        // Capture replication from an epoch in which the moving obstacle pair
+        // is actively causing a bounded visibility bypass. This proves the
+        // selected local steering intent reaches the same authoritative
+        // PilotSkillExecutor / ShipControlState publication seam.
+        if (!observation.visibilityBypassActive ||
+            !observation.executionSeen)
         {
             continue;
         }
@@ -1036,6 +1033,7 @@ int runNavigationRuntimeSelfTest()
         replicationEvidenceComplete =
             std::isfinite(replicationErrorMps2) &&
             std::isfinite(canonicalReplicationErrorMps2) &&
+            replicatedDemandMagnitude > 1.0e-6 &&
             replicationErrorMps2 <= 1.0e-12 &&
             canonicalReplicationErrorMps2 <= 1.0e-12 &&
             metadataMatches;
@@ -1059,10 +1057,11 @@ int runNavigationRuntimeSelfTest()
         return 43;
     }
 
-    // Replication was captured while MovingPassageClear owned execution.
-    // Continue the SAME authoritative run. The ordered acceptance is now:
-    // moving authority -> replicated active epoch -> physical gap crossing ->
-    // portal approach/capture -> aligned entry -> tunnel transit/exit.
+    // Replication was captured while bounded visibility steering owned the
+    // moving-pair bypass. Continue the SAME authoritative run. The ordered
+    // acceptance is:
+    // visibility bypass -> replicated active epoch -> obstacle-plane crossing
+    // -> direct-line recovery -> portal capture -> tunnel transit/exit.
     bool behaviorEvidenceComplete = false;
 
     while (simulatedSeconds + step <= MaxSimulatedSeconds + 1.0e-9)
@@ -1089,9 +1088,8 @@ int runNavigationRuntimeSelfTest()
 
         behaviorEvidenceComplete =
             observation.movingGapPlanePassed &&
-            observation.movingPassageAuthoritySeen &&
-            observation.movingPassageExecutedSeen &&
-            observation.movingPassageAppliedAccelerationSeen &&
+            observation.visibilityBypassSeen &&
+            observation.visibilityDirectRecoveredSeen &&
             observation.slitPortalExactOpenPublished &&
             observation.slitPortalWaypointSeen &&
             observation.slitEntryCaptureSeen &&
@@ -1125,9 +1123,9 @@ int runNavigationRuntimeSelfTest()
     if (!behaviorEvidenceComplete)
     {
         std::cerr
-            << "[FAIL] moving-passage authority/replication succeeded but "
-            << "the ordered live flight did not complete moving-gap plus "
-            << "exact-static slit-tunnel passage inside the 120 s bound"
+            << "[FAIL] visibility-bypass replication succeeded but "
+            << "the ordered live flight did not complete moving-pair bypass, "
+            << "direct recovery and exact-static tunnel passage inside the 120 s bound"
             << " moving_gap_passed=" << observation.movingGapPlanePassed
             << " slit_portal=" << observation.slitPortalWaypointSeen
             << " slit_entry_capture=" << observation.slitEntryCaptureSeen
@@ -1319,7 +1317,8 @@ int runNavigationRuntimeSelfTest()
     }
 
     std::cerr
-        << "[PASS] navigation-runtime moving authority drove real physics,"
+        << "[PASS] navigation-runtime bounded visibility steering drove real physics,"
+        << " recovered the direct route after the moving obstacle pair,"
         << " portal capture aligned flight path + hull axis before entry,"
         << " the ship crossed the exact-static tunnel collision-free,"
         << " and execution matched same-tick sparse/canonical replication\n";

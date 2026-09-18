@@ -58,6 +58,7 @@ for marker in (
     "holdIntent",
     "idealLinearAccelerationDemandMapMps2",
     "idealAngularAccelerationDemandMapRadPerSec2",
+    "mapIntentToWorld",
 ):
     require(marker in PLANNER_CPP, f"runtime planner composition missing: {marker}")
 
@@ -103,6 +104,7 @@ for marker in (
     "testSamePortalRejectsOversizedHull",
     "testAdjustedTargetPreservesNominalConflictIdentity",
     "testNavigationMapCrossingConflictProducesBrakingHold",
+    "testMapIntentTransformsIntoWorldControlFrame",
     "testPlannerIntentCrossesAcceptedPilotBridge",
 ):
     require(marker in RUNTIME_TEST, f"runtime planner fixture missing: {marker}")
@@ -147,12 +149,19 @@ for marker in (
     "m_navigationRuntimeLabMap->replaceDynamicWorld",
     "m_navigationRuntimeLabMap->querySphere",
     "Planner::plan(",
+    "Planner::mapIntentToWorld(",
+    "navigationWorkingFrame",
 ):
     require(marker in SIM_CPP, f"GameSimulation runtime planner integration missing: {marker}")
 
 require(
     "NpcNavigationIntentController::buildIntent" in SIM_CPP,
     "ordinary NPC fallback path must remain present while the lab is isolated",
+)
+
+require(
+    "outIntent = m_navigationRuntimeLabLastPlan.intent" not in SIM_CPP,
+    "map-space planner intent must not cross directly into the Stage-11 world-space control seam",
 )
 
 require(
@@ -255,6 +264,12 @@ require(
     "live broadphase must cover the complete bounded avoidance fan rather than only the nominal corridor",
 )
 
+require(
+    "routeVectorWorld" in SIM_CPP and
+    "routeDirectionWorld" in SIM_CPP,
+    "executed lateral-demand diagnostics must compare world-space vectors in one frame",
+)
+
 for marker in (
     "deterministic proving ground",
     "production ownership chain",
@@ -280,3 +295,5 @@ print(" - live self-test pins CUBE 08 -> adjusted target -> executed lateral dem
 print(" - bounded NavigationMap sphere covers the complete local avoidance fan")
 print(" - sparse packet is compared with authoritative publication at the exact same server tick")
 print(" - canonical sparse hydration must match the same authoritative execution truth")
+print(" - non-identity working-frame regression pins map intent -> world control transform")
+print(" - live lateral-demand diagnostics compare vectors in world space")

@@ -229,7 +229,8 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         result.crossTrackErrorMeters >
             segment.trackingEnvelopeRadiusMeters;
 
-    result.intent.revision = segment.revision;
+    result.intent.revision = segment.goalRevision;
+    result.intent.targetRevision = segment.revision;
     result.intent.emergency = segment.emergency;
     result.intent.hazardUrgency01 =
         std::clamp(segment.hazardUrgency01, 0.0, 1.0);

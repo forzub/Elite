@@ -71,6 +71,10 @@ public:
         // inside the same intent at the decision cadence.
         std::uint64_t revision = 0;
 
+        // Concrete sampled target revision inside the same maneuver.
+        // Zero means "same as revision" for backwards-compatible callers.
+        std::uint64_t targetRevision = 0;
+
         Vec3d linearAccelerationDemandMapMetersPerSec2 {};
         Vec3d angularAccelerationDemandMapRadPerSec2 {};
 

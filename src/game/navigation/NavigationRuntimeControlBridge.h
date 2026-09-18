@@ -31,7 +31,13 @@ public:
 
     struct Intent
     {
+        // High-level maneuver/mission intent revision. Pilot reaction delay
+        // restarts only when this identity changes.
         std::uint64_t revision = 0;
+
+        // Concrete accepted execution target/segment revision. Zero preserves
+        // legacy behavior by falling back to revision.
+        std::uint64_t targetRevision = 0;
 
         Vec3d idealLinearAccelerationDemandMapMps2 {};
         Vec3d idealAngularAccelerationDemandMapRadPerSec2 {};

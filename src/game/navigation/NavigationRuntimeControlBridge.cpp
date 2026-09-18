@@ -128,6 +128,7 @@ NavigationRuntimeControlBridge::toPilotCommand(
 {
     PilotExecutor::Command command;
     command.revision = intent.revision;
+    command.targetRevision = intent.targetRevision;
     command.linearAccelerationDemandMapMetersPerSec2 = {
         intent.idealLinearAccelerationDemandMapMps2.x,
         intent.idealLinearAccelerationDemandMapMps2.y,

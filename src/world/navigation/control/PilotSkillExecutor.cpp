@@ -25,6 +25,15 @@ bool finite(const Vec3d& value) noexcept
     return finite(value.x) && finite(value.y) && finite(value.z);
 }
 
+std::uint64_t effectiveTargetRevision(
+    const Executor::Command& command
+) noexcept
+{
+    return command.targetRevision != 0
+        ? command.targetRevision
+        : command.revision;
+}
+
 bool validCommand(const Executor::Command& command) noexcept
 {
     return finite(command.linearAccelerationDemandMapMetersPerSec2) &&
@@ -221,7 +230,8 @@ bool PilotSkillExecutor::reset(
     nextDecisionTimeSeconds_ = timeSeconds;
     revisionFirstSeenTimeSeconds_ = timeSeconds;
     observedRevision_ = initialCommand.revision;
-    activeTargetRevision_ = initialCommand.revision;
+    activeTargetRevision_ =
+        effectiveTargetRevision(initialCommand);
     decisionSequence_ = 0;
 
     activeLinearTarget_ = scale(
@@ -305,7 +315,8 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
             QueuedCommand queued;
             queued.applyTimeSeconds =
                 timeSeconds + execution.commandLatencySeconds;
-            queued.revision = desiredCommand.revision;
+            queued.revision =
+                effectiveTargetRevision(desiredCommand);
 
             const Vec3d linearNoise = deterministicNoise(
                 execution.deterministicSeed,

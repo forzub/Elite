@@ -34,7 +34,16 @@ public:
         const glm::dvec3& objectWorldPositionMeters,
         const glm::dmat3& objectLocalToWorld,
         const std::string& idPrefix,
-        const Options& options = {}
+        const Options& options
+    );
+
+    [[nodiscard]] static std::vector<world::navigation::NavigationObstacle>
+    buildObstacles(
+        const game::damage::HitComponent& hitComponent,
+        std::uint32_t entityId,
+        const glm::dvec3& objectWorldPositionMeters,
+        const glm::dmat3& objectLocalToWorld,
+        const std::string& idPrefix
     );
 
     // Conservative sphere around the entity origin containing all included
@@ -42,7 +51,11 @@ public:
     // exact per-volume OBBs stay available for precision/static geometry.
     [[nodiscard]] static double conservativeRadiusFromOrigin(
         const game::damage::HitComponent& hitComponent,
-        const Options& options = {}
+        const Options& options
+    ) noexcept;
+
+    [[nodiscard]] static double conservativeRadiusFromOrigin(
+        const game::damage::HitComponent& hitComponent
     ) noexcept;
 };
 

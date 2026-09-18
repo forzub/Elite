@@ -113,7 +113,8 @@ void DynamicMotionSystem::applyWorldAccelerationDemand(
         std::isfinite(linearAccelerationDemandMapMps2.y) &&
         std::isfinite(linearAccelerationDemandMapMps2.z);
 
-    if (!finiteDemand || glm::length2(glm::dvec3(shipForward)) <= 1.0e-18)
+    const glm::dvec3 shipForwardD(shipForward);
+    if (!finiteDemand || glm::dot(shipForwardD, shipForwardD) <= 1.0e-18)
     {
         motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
         motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
@@ -151,8 +152,6 @@ void DynamicMotionSystem::applyWorldAccelerationDemand(
         motion.mainEngineAccelerationMps2 +
         motion.manoeuvreAccelerationMps2;
 
-    motion.desiredTacticalVelocityMps =
-        motion.worldVelocityMps;
 }
 
 void DynamicMotionSystem::updateLocalFrameMotion(

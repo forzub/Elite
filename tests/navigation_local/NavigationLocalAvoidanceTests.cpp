@@ -193,6 +193,54 @@ void testSweptCorridorBlockerFindsSameRegionLateralTarget()
             "adjusted target must actually deflect laterally");
 }
 
+void testVisibilitySteeringWidensThenReturnsToDirectLine()
+{
+    Avoidance planner;
+    Avoidance::Query query = baseQuery();
+    query.avoidance.maximumDeflectionRadians =
+        1.3089969389957472; // 75 deg.
+    Space space = makeSingleRegionSpace(100.0);
+
+    Map::QueryResult blocked = dynamicResult();
+
+    // The direct corridor and the first small deflections remain inside the
+    // candidate's conservative swept occupancy, while a wider local steering
+    // direction is clear. Current closest-approach kinematics are deliberately
+    // non-conflicting so this fixture isolates bounded visibility steering.
+    blocked.candidates.push_back(stationaryCandidate(
+        205,
+        {8.0, 4.0, 0.0},
+        0.25,
+        2.0
+    ));
+
+    const Avoidance::Result bypass =
+        planner.evaluate(query, blocked, space);
+
+    require(bypass.status == Avoidance::Status::AdjustedClear,
+            "bounded visibility steering must widen until a safe corridor exists");
+    require(bypass.adjustedTarget &&
+            !bypass.nominalVisibilityClear,
+            "blocked direct line must publish a temporary visibility bypass");
+    require(bypass.selectedDeflectionRadians >
+                query.avoidance.secondaryDeflectionRadians,
+            "fixture must require more than the legacy 15/30 degree fan");
+    require(bypass.selectedDeflectionRadians <=
+                query.avoidance.maximumDeflectionRadians + kTolerance,
+            "visibility bypass must remain inside the bounded angular search");
+
+    // Receding-horizon recovery is intentionally stateless: on the next update
+    // the direct A->B corridor is always tested first.
+    const Avoidance::Result recovered =
+        planner.evaluate(query, dynamicResult(), space);
+
+    require(recovered.status == Avoidance::Status::NominalClear &&
+            recovered.nominalVisibilityClear &&
+            !recovered.adjustedTarget &&
+            near(recovered.selectedDeflectionRadians, 0.0),
+            "once direct visibility returns the planner must immediately resume A->B");
+}
+
 void testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate()
 {
     Avoidance planner;
@@ -396,6 +444,7 @@ int main()
     {
         testNominalClearPassesThroughWithoutProbes();
         testSweptCorridorBlockerFindsSameRegionLateralTarget();
+        testVisibilitySteeringWidensThenReturnsToDirectLine();
         testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate();
         testDynamicConflictStillPreservesExactStaticNominalProof();
         testHeadOnConflictRemainsFailClosed();

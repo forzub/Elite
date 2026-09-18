@@ -187,6 +187,7 @@ public:
         bool enabled = false;
         Vec3d centerMapMeters {};
         Vec3d normalMap {};
+        double clearanceRadiusMeters = 0.0;
         double halfLengthMeters = 0.0;
         double approachDistanceMeters = 0.0;
         double maximumVelocityAngleRad = 3.14159265358979323846;

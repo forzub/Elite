@@ -4,6 +4,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 SPACE_H = (ROOT / "src/world/navigation/space/NavigationSpace.h").read_text(encoding="utf-8")
+MAP_H = (ROOT / "src/world/navigation/map/NavigationMap.h").read_text(encoding="utf-8")
+MAP_CPP = (ROOT / "src/world/navigation/map/NavigationMap.cpp").read_text(encoding="utf-8")
+MAP_TEST = (ROOT / "tests/navigation_map/NavigationMapContractTests.cpp").read_text(encoding="utf-8")
 SPACE_CPP = (ROOT / "src/world/navigation/space/NavigationSpace.cpp").read_text(encoding="utf-8")
 SPACE_CMAKE = (ROOT / "src/world/navigation/space/CMakeLists.txt").read_text(encoding="utf-8")
 SPACE_TEST = (ROOT / "tests/navigation_space/NavigationSpaceContractTests.cpp").read_text(encoding="utf-8")
@@ -33,6 +36,25 @@ def require(condition: bool, message: str) -> None:
     if not condition:
         raise SystemExit(f"[FAIL] {message}")
 
+
+for marker in (
+    "angularVelocitySystemRadPerSecond",
+    "angularVelocityMapRadPerSecond",
+):
+    require(marker in MAP_H, f"NavigationMap moving-motion API missing: {marker}")
+
+for marker in (
+    "input.angularVelocitySystemRadPerSecond",
+    "actor.angularVelocityMapRadPerSecond = vectorToMap",
+    "result.angularVelocityMapRadPerSecond",
+):
+    require(marker in MAP_CPP, f"NavigationMap angular-motion transform missing: {marker}")
+
+require(
+    "rotatingActor.angularVelocitySystemRadPerSecond" in MAP_TEST and
+    "rotated.angularVelocityMapRadPerSecond" in MAP_TEST,
+    "NavigationMap contract test must pin angular velocity through a rotated working frame",
+)
 
 for marker in (
     "portalCentersMapMeters",
@@ -358,6 +380,11 @@ for marker in (
     "obstacleExactStaticBlockSeen",
     "dynamicQueryCount",
     "maximumDynamicCandidateCount",
+    "rotatingActorEntityId",
+    "rotatingActorCandidateSeen",
+    "rotatingActorAngularVelocityVerified",
+    "expectedRotatingActorAngularVelocityMapRadPerSecond",
+    "observedRotatingActorAngularVelocityMapRadPerSecond",
 ):
     require(marker in LAB_H, f"live navigation physical observation missing: {marker}")
 
@@ -396,6 +423,8 @@ for marker in (
     "!observation.obstaclePrimaryConflictSeen",
     "observation.obstacleExactStaticBlockSeen",
     "observation.dynamicQueryCount > 0",
+    "observation.rotatingActorCandidateSeen",
+    "observation.rotatingActorAngularVelocityVerified",
     "findShipSnapshotByInstanceId",
     "NavigationExecutionSnapshot",
     "replicationErrorMps2",
@@ -435,6 +464,19 @@ require(
     "if (!timeVaryingNavigationActor)" in SIM_CPP and
     "dynamicWorld.actors.push_back(actor)" in SIM_CPP,
     "NavigationMap must publish only time-varying infrastructure from the NAV STRESS object set",
+)
+
+require(
+    "actor.angularVelocitySystemRadPerSecond" in SIM_CPP and
+    "hubVisualLocalToWorldVector(" in SIM_CPP and
+    "NavigationRuntimeLabRotatingActorLabel" in SIM_CPP,
+    "live rotating infrastructure must publish authoritative angular velocity through the common hub basis",
+)
+
+require(
+    "rotatingActorAngularVelocityVerified" in SIM_CPP and
+    "candidate.angularVelocityMapRadPerSecond" in SIM_CPP,
+    "live lab must verify the rotating actor after NavigationMap publication",
 )
 
 require(
@@ -607,3 +649,5 @@ print(" - first physical exact-static violation reports obstacle identity and ma
 print(" - reference-frame placement clears stale local velocity and propulsion state")
 print(" - current hub-frame epoch is synchronized into matched ship world pose before AI/navigation")
 print(" - sub-millimetre orbital-coordinate round-trip residue is treated as numerical zero")
+print(" - rotating infrastructure carries angular velocity through NavigationMap working-frame conversion")
+print(" - live GUIDANCE DOCK CUBE A verifies the published map-space angular motion")

@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <glm/glm.hpp>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
 
@@ -42,6 +43,20 @@ struct ShipControlState
     // max-speed command above instead.
     game::navigation::VelocityAlignmentMode velocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
+
+    // Navigation v2 / autopilot direct control seam.
+    //
+    // This is an acceleration DEMAND, not an applied force and not a physics
+    // override. SharedShipPhysics / ShipController / DynamicMotionSystem still
+    // enforce the authoritative vehicle capability and speed/resource limits.
+    //
+    // Manual input fields above take precedence when they are materially
+    // non-zero; the live bridge emits a clean control state when autopilot owns
+    // the ship.
+    bool navigationAccelerationDemandValid = false;
+    glm::dvec3 navigationLinearAccelerationDemandMapMps2 {0.0};
+    glm::dvec3 navigationAngularAccelerationDemandMapRadPerSec2 {0.0};
+    std::uint64_t navigationIntentRevision = 0;
 
     std::uint64_t controlTick = 0;
 };

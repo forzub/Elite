@@ -2307,59 +2307,153 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             }
         }
 
-        // Prove actual physical passage through the slit plane, not merely
-        // "past the wall". Interpolate the fixed-step swept segment at the
-        // tunnel center plane and require the complete conservative ship
-        // envelope + static clearance to remain inside the authored opening.
-        if (m_navigationRuntimeLabHasPreviousExactSafetyPosition &&
-            !m_navigationRuntimeLabObservation.slitTunnelPassed)
+        // A tunnel is not accepted by merely putting the hull center through
+        // a hole. The actual fixed-step sweep must cross the entry plane with
+        // flight-path vector + hull forward axis captured onto the tunnel
+        // normal, then remain inside exact geometry until the exit plane.
+        if (m_navigationRuntimeLabHasPreviousExactSafetyPosition)
         {
             const glm::dvec3 previous =
                 m_navigationRuntimeLabPreviousExactSafetyPositionMap;
-            const double portalZ =
-                NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z;
             const double dz =
                 agentPositionMap.z - previous.z;
 
-            if (dz > 1.0e-12 &&
-                previous.z <= portalZ &&
-                agentPositionMap.z >= portalZ)
+            const auto crossingAtZ =
+                [&](double planeZ, glm::dvec3& crossing)
+                {
+                    if (dz <= 1.0e-12 ||
+                        previous.z > planeZ ||
+                        agentPositionMap.z < planeZ)
+                    {
+                        return false;
+                    }
+
+                    const double t = std::clamp(
+                        (planeZ - previous.z) / dz,
+                        0.0,
+                        1.0
+                    );
+                    crossing =
+                        previous +
+                        (agentPositionMap - previous) * t;
+                    return true;
+                };
+
+            const auto slitMargin =
+                [&](const glm::dvec3& crossing)
+                {
+                    const double xMargin =
+                        NavigationRuntimeLabSlitHalfWidthMeters -
+                        std::abs(
+                            crossing.x -
+                            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x
+                        ) -
+                        shipRadius -
+                        policy.avoidance.staticAdditionalClearanceMeters;
+                    const double yMargin =
+                        NavigationRuntimeLabSlitHalfHeightMeters -
+                        std::abs(
+                            crossing.y -
+                            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y
+                        ) -
+                        shipRadius -
+                        policy.avoidance.staticAdditionalClearanceMeters;
+                    return std::min(xMargin, yMargin);
+                };
+
+            glm::dvec3 entryCrossing(0.0);
+            if (!m_navigationRuntimeLabObservation.
+                    slitEntryPlaneCrossedAligned &&
+                crossingAtZ(
+                    NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.z,
+                    entryCrossing
+                ))
             {
-                const double t = std::clamp(
-                    (portalZ - previous.z) / dz,
-                    0.0,
-                    1.0
-                );
-                const glm::dvec3 crossing =
-                    previous +
-                    (agentPositionMap - previous) * t;
+                const glm::dvec3 tunnelNormal(0.0, 0.0, 1.0);
+                const double speed =
+                    glm::length(agent.velocityMapMetersPerSecond);
+                const glm::dvec3 lateralVelocity =
+                    agent.velocityMapMetersPerSecond -
+                    tunnelNormal *
+                        glm::dot(
+                            agent.velocityMapMetersPerSecond,
+                            tunnelNormal
+                        );
+                const double lateralSpeed =
+                    glm::length(lateralVelocity);
+                const double velocityAngle =
+                    speed <= 0.25
+                        ? 0.0
+                        : std::acos(
+                              std::clamp(
+                                  glm::dot(
+                                      glm::normalize(
+                                          agent.velocityMapMetersPerSecond
+                                      ),
+                                      tunnelNormal
+                                  ),
+                                  -1.0,
+                                  1.0
+                              )
+                          );
+                const glm::dvec3 forward =
+                    glm::normalize(agent.forwardMap);
+                const double forwardAngle =
+                    std::acos(
+                        std::clamp(
+                            glm::dot(forward, tunnelNormal),
+                            -1.0,
+                            1.0
+                        )
+                    );
+                const double crossTrack =
+                    glm::length(
+                        glm::dvec3(
+                            entryCrossing.x -
+                                NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.x,
+                            entryCrossing.y -
+                                NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.y,
+                            0.0
+                        )
+                    );
+                const double margin = slitMargin(entryCrossing);
 
-                const double xMargin =
-                    NavigationRuntimeLabSlitHalfWidthMeters -
-                    std::abs(
-                        crossing.x -
-                        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x
-                    ) -
-                    shipRadius -
-                    policy.avoidance.staticAdditionalClearanceMeters;
-                const double yMargin =
-                    NavigationRuntimeLabSlitHalfHeightMeters -
-                    std::abs(
-                        crossing.y -
-                        NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y
-                    ) -
-                    shipRadius -
-                    policy.avoidance.staticAdditionalClearanceMeters;
+                auto& observation =
+                    m_navigationRuntimeLabObservation;
+                observation.slitEntryVelocityAngleRad = velocityAngle;
+                observation.slitEntryForwardAngleRad = forwardAngle;
+                observation.slitEntryLateralSpeedMps = lateralSpeed;
+                observation.slitEntryCrossTrackMeters = crossTrack;
 
-                const double margin =
-                    std::min(xMargin, yMargin);
+                const bool aligned =
+                    actualSafety.traversable &&
+                    margin >= 0.0 &&
+                    velocityAngle <=
+                        NavigationRuntimeLabSlitMaximumEntryVelocityAngleRad &&
+                    forwardAngle <=
+                        NavigationRuntimeLabSlitMaximumEntryForwardAngleRad &&
+                    lateralSpeed <=
+                        NavigationRuntimeLabSlitMaximumLateralSpeedMps;
 
+                observation.slitEntryPlaneCrossedAligned = aligned;
+            }
+
+            glm::dvec3 exitCrossing(0.0);
+            if (!m_navigationRuntimeLabObservation.slitTunnelPassed &&
+                m_navigationRuntimeLabObservation.
+                    slitEntryPlaneCrossedAligned &&
+                crossingAtZ(
+                    NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z,
+                    exitCrossing
+                ))
+            {
+                const double margin = slitMargin(exitCrossing);
                 if (actualSafety.traversable && margin >= 0.0)
                 {
                     auto& observation =
                         m_navigationRuntimeLabObservation;
                     observation.slitTunnelPassed = true;
-                    observation.slitTunnelCrossingMap = crossing;
+                    observation.slitTunnelCrossingMap = exitCrossing;
                     observation.slitTunnelCrossingMarginMeters = margin;
                 }
             }

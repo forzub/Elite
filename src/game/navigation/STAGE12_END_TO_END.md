@@ -450,6 +450,72 @@ static block during composition.
 
 Stationary conservative spheres remain forbidden.
 
+## 12A-5 — acceptance
+
+The static/dynamic ownership cleanup is accepted by target-machine live evidence:
+
+```text
+obstacle_candidate=0
+obstacle_conflict=0
+exact_obstacle_block=1
+adjusted=1
+exact_static_violation=0
+replication_error_mps2=0
+canonical_replication_error_mps2=0
+```
+
+This proves stationary CUBE 08 is no longer represented by a duplicated
+NavigationMap sphere, while exact HitVolume geometry alone still causes the
+authoritative avoidance maneuver and physical clearance.
+
+Reference-frame placement/order defects exposed during this gate were also
+closed:
+- stale local velocity/propulsion state is reset on frame placement;
+- matched ship world pose is synchronized to the current hub-frame epoch before
+  AI/navigation;
+- sub-millimetre orbital-coordinate round-trip residue is treated as numerical
+  noise through a named 1 mm diagnostic tolerance.
+
+## 12A-6a — live angular-motion publication
+
+Time-varying navigation requires more than P/V/A. The accepted MovingGapPredictor
+also consumes angular velocity to publish material surface velocity:
+
+```text
+v_surface = v_center + omega x r
+```
+
+Therefore NavigationMap now carries:
+
+```text
+DynamicActorInput.angularVelocitySystemRadPerSecond
+    -> vectorToMap(workingFrame)
+    -> Candidate.angularVelocityMapRadPerSecond
+```
+
+The deterministic live fixture is the already-authored:
+
+```text
+GUIDANCE DOCK CUBE A
+hub-local angular velocity = (0,0,2) deg/s
+```
+
+GameSimulation transforms this authored hub-visual vector through
+`hubVisualLocalToWorldVector()`, publishes it into NavigationMap, then performs
+an independent diagnostic query at the actor location.
+
+12A-6a acceptance requires:
+
+```text
+rotating_actor_seen=1
+rotating_actor_omega_verified=1
+rotating_actor_omega_error<=1e-12
+```
+
+No moving-gap or moving-passage behavior is changed in this slice. The purpose
+is to prove the live dynamic DTO/frame boundary before composing accepted
+prediction math on top of it.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

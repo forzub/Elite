@@ -83,15 +83,15 @@ Fixes now on `main`:
 - normalize whitespace in the architecture checker before matching the link
   relationship, so formatting changes do not create false failures.
 
-### Rerun now
+### Corrected architecture rerun
 
-```bash
-git pull --ff-only
-python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+Target machine now reports:
+
+```text
+NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS
 ```
 
-If that passes, the already green 3/3 runtime result is retained as evidence.
-Then continue with:
+The already green runtime 3/3 result is retained. Run only the remaining gate:
 
 ```bash
 bash tests/navigation_trajectory/run_mingw64.sh

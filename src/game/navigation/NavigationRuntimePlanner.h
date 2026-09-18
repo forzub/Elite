@@ -170,6 +170,17 @@ public:
         Map::EntityId movingPrimaryObstacleEntityId = 0;
         Map::EntityId movingSecondaryObstacleEntityId = 0;
         glm::dvec3 movingPassageInitialAccelerationMapMps2 {0.0};
+
+        // Stage 12A-6b2: exact-static proof of the same Hermite trajectory
+        // already accepted by MovingPassageTrajectoryEvaluator. This remains
+        // diagnostic-only until the authority gate is accepted.
+        bool movingPassageStaticProofAttempted = false;
+        bool movingPassageStaticSafe = false;
+        std::size_t movingPassageStaticIntervalsProven = 0;
+        std::size_t movingPassageStaticObstaclesExamined = 0;
+        double movingPassageStaticMaximumCurveDeviationMeters = 0.0;
+        std::string movingPassageStaticBlockingObstacleId;
+        std::uint32_t movingPassageStaticBlockingObstacleEntityId = 0;
     };
 
     [[nodiscard]] static Result plan(

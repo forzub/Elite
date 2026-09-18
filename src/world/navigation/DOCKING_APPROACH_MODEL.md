@@ -1,7 +1,7 @@
 # Navigation v2 — continuous moving/rotating docking approach
 
-**Status:** stage 9B isolated candidate pending target-machine gate  
-**Updated:** 2026-09-17 Europe/Kyiv  
+**Status:** stage 9B repaired candidate pending fresh target-machine gate  
+**Updated:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`, `src/world/navigation/DOCKING_TERMINAL_MODEL.md`
 
 ## Purpose
@@ -302,6 +302,25 @@ sideways bottom docking
     Newtonian -> feasible
     tight EliteAssisted slip policy -> AssistedSlipExceeded
 ```
+
+## Regression correction after first target-machine gate
+
+The first 9B behavior run correctly refused to satisfy the intended `CorridorBlocked` assertion because the original fixture was not actually blocked. With zero endpoint displacement and equal 10 m/s lateral endpoint velocities over 1 second, the cubic-Hermite center excursion is:
+
+```text
+largest 33-sample offset = 0.9613037109 m
+exact continuous maximum = 0.9622504486 m
+```
+
+The original corridor/hull combination allowed `0.975 m` of center travel, so the full curve genuinely fit. The regression now allows `0.9618 m` instead:
+
+```text
+sample clearance            = +0.0004962891 m
+exact continuous clearance  = -0.0004504486 m
+interval conservative bound approximately -0.00408135 m
+```
+
+This preserves the required test semantics: every discrete pose fits, while the existing between-sample proof must fail closed. No production geometry tolerance was relaxed.
 
 ## Scope boundary
 

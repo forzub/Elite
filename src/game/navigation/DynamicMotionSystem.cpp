@@ -101,6 +101,60 @@ inline glm::dvec3 limitPropulsionAccelerationToControlledSpeed(
 }
 }
 
+void DynamicMotionSystem::applyWorldAccelerationDemand(
+    DynamicMotionState& motion,
+    const ShipParams& params,
+    const glm::dvec3& linearAccelerationDemandMapMps2,
+    const glm::vec3& shipForward
+)
+{
+    const bool finiteDemand =
+        std::isfinite(linearAccelerationDemandMapMps2.x) &&
+        std::isfinite(linearAccelerationDemandMapMps2.y) &&
+        std::isfinite(linearAccelerationDemandMapMps2.z);
+
+    if (!finiteDemand || glm::length2(glm::dvec3(shipForward)) <= 1.0e-18)
+    {
+        motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+        motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+        motion.engineAccelerationMps2 = glm::dvec3(0.0);
+        return;
+    }
+
+    const glm::dvec3 forward =
+        glm::normalize(glm::dvec3(shipForward));
+
+    const double mainAuthority = linearAccelerationLimit(params);
+    const double manoeuvreAuthority = manoeuvreAccelerationLimit(params);
+
+    // Main engine is physically forward-only. Use it first for the positive
+    // forward component, then let the six-direction manoeuvre system cover the
+    // remaining vector up to its own real authority. This also permits bounded
+    // reverse/lateral/vertical navigation demand without inventing a reverse
+    // main engine.
+    const double requestedForward =
+        glm::dot(linearAccelerationDemandMapMps2, forward);
+    const double mainForward =
+        std::clamp(requestedForward, 0.0, mainAuthority);
+
+    motion.mainEngineAccelerationMps2 =
+        forward * mainForward;
+
+    const glm::dvec3 remainder =
+        linearAccelerationDemandMapMps2 -
+        motion.mainEngineAccelerationMps2;
+
+    motion.manoeuvreAccelerationMps2 =
+        clampMagnitude(remainder, manoeuvreAuthority);
+
+    motion.engineAccelerationMps2 =
+        motion.mainEngineAccelerationMps2 +
+        motion.manoeuvreAccelerationMps2;
+
+    motion.desiredTacticalVelocityMps =
+        motion.worldVelocityMps;
+}
+
 void DynamicMotionSystem::updateLocalFrameMotion(
     DynamicMotionState& motion,
     world::coordinates::WorldPosition& worldPosition,

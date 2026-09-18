@@ -2238,6 +2238,15 @@ m_hubVelocityMetersPerSecond[hubId] =
     rebuildHubNavigationFrames(trajectoryDeltaSeconds);
     initializeNavigationRuntimeLab();
 
+    // HubNavigationFrame above now belongs to the current fixed-step epoch.
+    // Refresh every matched ship before AI/navigation consumes worldPosition.
+    // Otherwise a ship keeps the previous epoch's world pose while the planner
+    // measures it against the current hub origin/basis, producing an apparent
+    // offset of roughly frameVelocity * dt (hundreds of metres at orbital
+    // world speeds).
+    if (!trajectoryDebugMode)
+        updateShipReferenceFrames(dt);
+
     if (!trajectoryDebugMode)
         endUniverseTrajectoryDiagnostic();
 
@@ -2741,7 +2750,6 @@ m_hubVelocityMetersPerSecond[hubId] =
     }
     else
     {
-        updateShipReferenceFrames(dt);
         rebuildNavigationGravityContext();
         updateDynamicNavigationContext(dt);
 
@@ -6373,6 +6381,27 @@ void GameSimulation::updateShipReferenceFrames(double dt)
 
         tr.motion.referenceVelocityMps =
             referenceVelocityMetersPerSecond;
+
+        // localPositionMeters is authoritative inside a matched travel frame.
+        // Re-materialize the world pose at the current frame epoch before any
+        // AI/navigation/world-space consumer runs. This follows frame motion
+        // without changing the ship's local position or integrating flight.
+        if (tr.motion.mode ==
+                game::navigation::MotionMode::HubTactical &&
+            tr.motion.travelFrame.valid)
+        {
+            tr.setWorldPositionMeters(
+                tr.motion.travelFrame.localToWorldPosition(
+                    tr.motion.localPositionMeters
+                )
+            );
+
+            tr.motion.worldVelocityMps =
+                tr.motion.travelFrame.localToWorldVelocity(
+                    tr.motion.localPositionMeters,
+                    tr.motion.localVelocityMps
+                );
+        }
 
 if (tr.motion.pendingReferenceVelocityMatch)
 {

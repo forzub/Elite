@@ -56,10 +56,13 @@ NavigationExecutionReplanPolicy::evaluate(
         !std::isfinite(policy.manualLocalRefreshSeconds) ||
         policy.manualLocalRefreshSeconds < 0.0)
     {
-        return full(
-            Reason::GoalIntentChanged,
-            query.mode == ExecutionMode::Manual
-        );
+        Result invalid;
+        invalid.scope = Scope::FullRoute;
+        invalid.reason = Reason::InvalidInput;
+        invalid.guidanceOnly =
+            query.mode == ExecutionMode::Manual;
+        invalid.immediate = true;
+        return invalid;
     }
 
     const bool manual =

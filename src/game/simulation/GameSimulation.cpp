@@ -1546,55 +1546,39 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
             labShipRadius = glm::length(half);
         }
 
-        const Space::Vec3d entryCenter {
-            NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.x,
-            NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.y,
-            NavigationRuntimeLabSlitEntryCenterVisualLocalMeters.z
-        };
-        const Space::Vec3d exitCenter {
-            NavigationRuntimeLabSlitExitCenterVisualLocalMeters.x,
-            NavigationRuntimeLabSlitExitCenterVisualLocalMeters.y,
-            NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z
-        };
+        const glm::dvec3 slitNormal(0.0, 0.0, 1.0);
+        const glm::dvec3 approachPoint =
+            NavigationRuntimeLabSlitEntryCenterVisualLocalMeters -
+            slitNormal *
+                NavigationRuntimeLabSlitApproachDistanceMeters;
+        const glm::dvec3 beyondExit =
+            NavigationRuntimeLabSlitExitCenterVisualLocalMeters +
+            slitNormal * 50.0;
 
-        // A selected portal endpoint is allowed to lie on its region boundary.
-        // Prove the approach from region 1 to the entry portal, then prove the
-        // tunnel in reverse from the exit portal back to the entry portal so
-        // both endpoint boundary exceptions remain owned by an interior region.
-        Space::SegmentQuery slitApproach;
-        slitApproach.startMapMeters = {
-            NavigationRuntimeLabStartVisualLocalMeters.x,
-            NavigationRuntimeLabStartVisualLocalMeters.y,
-            NavigationRuntimeLabStartVisualLocalMeters.z
+        Space::SegmentQuery slitGeometryProof;
+        slitGeometryProof.startMapMeters = {
+            approachPoint.x,
+            approachPoint.y,
+            approachPoint.z
         };
-        slitApproach.endMapMeters = entryCenter;
-        slitApproach.envelope.radiusMeters = labShipRadius;
-        slitApproach.envelope.additionalClearanceMeters = 10.0;
-        slitApproach.requireSameRegion = true;
-        slitApproach.allowEndOnStartRegionBoundary = true;
-
-        Space::SegmentQuery slitTunnelReverse;
-        slitTunnelReverse.startMapMeters = {
-            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
-            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
-            NavigationRuntimeLabSlitExitCenterVisualLocalMeters.z - 1.0
+        slitGeometryProof.endMapMeters = {
+            beyondExit.x,
+            beyondExit.y,
+            beyondExit.z
         };
-        slitTunnelReverse.endMapMeters = entryCenter;
-        slitTunnelReverse.envelope = slitApproach.envelope;
-        slitTunnelReverse.requireSameRegion = true;
-        slitTunnelReverse.allowEndOnStartRegionBoundary = true;
+        slitGeometryProof.envelope.radiusMeters = labShipRadius;
+        slitGeometryProof.envelope.additionalClearanceMeters = 10.0;
+        slitGeometryProof.exactObstaclesOnly = true;
 
-        const Space::SegmentQueryResult approachProof =
-            m_navigationRuntimeLabSpace->querySegment(slitApproach);
-        const Space::SegmentQueryResult tunnelProof =
-            m_navigationRuntimeLabSpace->querySegment(slitTunnelReverse);
+        const Space::SegmentQueryResult geometryProof =
+            m_navigationRuntimeLabSpace->querySegment(
+                slitGeometryProof
+            );
 
         m_navigationRuntimeLabObservation.slitPortalExactObstaclesExamined =
-            approachProof.obstaclesExamined +
-            tunnelProof.obstaclesExamined;
+            geometryProof.obstaclesExamined;
         m_navigationRuntimeLabObservation.slitPortalExactOpenPublished =
-            approachProof.traversable &&
-            tunnelProof.traversable;
+            geometryProof.traversable
     }
 
     const auto stats = m_navigationRuntimeLabSpace->stats();
@@ -2277,6 +2261,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         actualMotion.envelope.additionalClearanceMeters =
             policy.avoidance.staticAdditionalClearanceMeters;
         actualMotion.requireSameRegion = false;
+        actualMotion.exactObstaclesOnly = true;
 
         const Space::SegmentQueryResult actualSafety =
             m_navigationRuntimeLabSpace->querySegment(actualMotion);

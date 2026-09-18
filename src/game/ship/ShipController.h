@@ -27,6 +27,17 @@ public:
         const WorldParams& world
     );
 
+    // Navigation/autopilot acceleration-demand path. The world-space angular
+    // demand is projected onto ship pitch/yaw/roll axes, then constrained by
+    // the exact same angular-acceleration/rate envelope as manual input.
+    void updateControlRates(
+        float dt,
+        const ShipParams& params,
+        ShipTransform& ship,
+        const WorldParams& world,
+        const glm::dvec3& angularAccelerationDemandMapRadPerSec2
+    );
+
     void propagateOrientation(
         float dt,
         ShipTransform& ship

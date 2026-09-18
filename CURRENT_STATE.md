@@ -814,3 +814,70 @@ A new local regression proves that a fixture requiring more than the old
 direct A->B when the blocker disappears.
 
 Target-machine acceptance is pending.
+
+
+## 12A target evidence + maneuver-decision ownership
+
+Latest target-machine run:
+
+```text
+f8012a3c903902c7fc3050e8f82ee2f4b674c76d
+```
+
+Evidence:
+- Stage-12 architecture contract PASS;
+- navigation_space 1/1 PASS;
+- navigation_runtime 3/3 PASS;
+- navigation_trajectory 11/11 PASS;
+- canonical EliteGame / EliteServer build PASS;
+- bounded-visibility live bypass executed and replicated;
+- `moving_gap_passed=1`;
+- `exact_static_violation=0`;
+- terminal tunnel capture did not complete inside 120 s:
+  `slit_portal=0`, `slit_entry_capture=0`,
+  forward error `0.169452 rad`, cross-track `96.8553 m`.
+
+The only isolated unit failure was the new widened-visibility fixture: its
+geometry accidentally admitted a safe <=30-degree direction while the assertion
+required >30 degrees. Fixture corrected at
+`fab1a0b1b87f7210988780c30d2b0e7add9cd064`; rerun pending.
+
+Architecture has now been refined above Navigation. Candidate code/contract
+baseline before these documentation commits:
+
+```text
+7ee5dd320163fae40a1178535730efca494eb96c
+```
+
+New authority:
+`src/game/MANEUVER_DECISION_TREE.md`
+
+New production selector:
+`src/game/ship/controller/ManeuverDecisionController.{h,cpp}`
+
+Decision ownership:
+- Navigation/trajectory generate safe and contact-expected maneuver products;
+- damage/structural annotates semantic loss (radar/fairing vs drive/reactor/
+  cockpit, mission payload, detachable/expendable parts);
+- threat/combat annotates projected silhouette/exposure;
+- ManeuverDecisionController selects doctrine-dependent action;
+- PilotSkillExecutor executes the selected intent;
+- physics/contact/damage remain final truth.
+
+Pinned doctrines:
+`Rational`, `PrecisionRetrieval`, `Extreme`, `CombatEscape`.
+
+Critical invariant:
+
+```text
+no collision-free proof != no navigation command
+no global route != automatic hold
+```
+
+`StaticHold` / `ConflictHold` remain valid safe-planner outcomes, but they
+must not become the permanent final command before the maneuver decision layer
+has considered stop/backtrack/local progress/precision/emergency alternatives.
+
+Last target-machine accepted Stage-12 baseline remains
+`daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+None of the current selector/capture changes are target-machine accepted yet.

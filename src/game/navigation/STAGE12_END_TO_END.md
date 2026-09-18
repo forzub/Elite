@@ -1137,3 +1137,17 @@ zero exact-static violation, and exact same-tick sparse/canonical replication.
 
 The same accepted navigation/trajectory product is also the future source for
 manual guidance visualization. Manual mode must never run a separate planner.
+
+
+### Deferred galactic route planning — explicit Stage-12 non-goal
+
+Strategic interstellar routing is specified separately in
+`src/game/navigation/GALACTIC_ROUTE_PLANNING.md`.
+
+Stage 12 must not stretch LocalAvoidance / NavigationMap / exact HitVolume work
+to galactic scales. Galactic routing will be a higher-level planner with gravity,
+fuel/delta-v, jump-drive capability and timing constraints. It will hand off to
+System / Local / Precision navigation as the active leg becomes more local.
+
+Manual guidance and automatic execution must still consume one accepted
+navigation product; presentation may not run a second planner.

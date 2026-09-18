@@ -148,6 +148,59 @@ bool validInput(
 
 } // namespace
 
+NavigationRuntimePlanner::Bridge::Intent
+NavigationRuntimePlanner::mapIntentToWorld(
+    const Bridge::Intent& mapIntent,
+    const Map::WorkingFrame& workingFrame
+)
+{
+    const auto toGlmAxis =
+        [](const Map::Vec3d& axis)
+        {
+            return glm::dvec3(axis.x, axis.y, axis.z);
+        };
+
+    const glm::dvec3 xAxis =
+        normalizedOr(toGlmAxis(workingFrame.xAxisSystem), glm::dvec3(0.0));
+    const glm::dvec3 yAxis =
+        normalizedOr(toGlmAxis(workingFrame.yAxisSystem), glm::dvec3(0.0));
+    const glm::dvec3 zAxis =
+        normalizedOr(toGlmAxis(workingFrame.zAxisSystem), glm::dvec3(0.0));
+
+    if (glm::dot(xAxis, xAxis) <= kEpsilon ||
+        glm::dot(yAxis, yAxis) <= kEpsilon ||
+        glm::dot(zAxis, zAxis) <= kEpsilon ||
+        std::abs(glm::dot(xAxis, yAxis)) > 1.0e-6 ||
+        std::abs(glm::dot(xAxis, zAxis)) > 1.0e-6 ||
+        std::abs(glm::dot(yAxis, zAxis)) > 1.0e-6)
+    {
+        throw std::invalid_argument(
+            "NavigationRuntimePlanner working frame is invalid"
+        );
+    }
+
+    const auto mapVectorToWorld =
+        [&](const Bridge::Vec3d& value)
+        {
+            const glm::dvec3 world =
+                xAxis * value.x +
+                yAxis * value.y +
+                zAxis * value.z;
+            return Bridge::Vec3d {world.x, world.y, world.z};
+        };
+
+    Bridge::Intent worldIntent = mapIntent;
+    worldIntent.idealLinearAccelerationDemandMapMps2 =
+        mapVectorToWorld(
+            mapIntent.idealLinearAccelerationDemandMapMps2
+        );
+    worldIntent.idealAngularAccelerationDemandMapRadPerSec2 =
+        mapVectorToWorld(
+            mapIntent.idealAngularAccelerationDemandMapRadPerSec2
+        );
+    return worldIntent;
+}
+
 NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     const AgentState& agent,
     const Goal& goal,

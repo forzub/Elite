@@ -48,6 +48,7 @@
 #include "src/world/orbits/OrbitalMotion.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/TravelFrameSystem.h"
+#include "src/game/navigation/NpcNavigationIntentController.h"
 
 namespace
 {
@@ -854,6 +855,87 @@ ShipTransform GameSimulation::presentationShipTransform(
 }
 
 
+bool GameSimulation::updateNpcNavigationControl(
+    EntityId id,
+    Ship& ship,
+    const NpcNavigationGoal& goal,
+    double executionTimeSeconds,
+    double executionDeltaSeconds
+)
+{
+    using Bridge = game::navigation::NavigationRuntimeControlBridge;
+
+    if (!std::isfinite(executionTimeSeconds) ||
+        !std::isfinite(executionDeltaSeconds) ||
+        executionDeltaSeconds <= 0.0)
+    {
+        return false;
+    }
+
+    auto bridgeIt = m_npcNavigationControlBridges.find(id);
+    if (bridgeIt == m_npcNavigationControlBridges.end())
+    {
+        auto bridge = std::make_unique<Bridge>(
+            m_npcAiSystem.pilotSkillProfile(ship)
+        );
+
+        Bridge::Intent neutral;
+        neutral.revision = 0;
+
+        const double initialTime =
+            executionTimeSeconds - executionDeltaSeconds;
+
+        if (!bridge->reset(initialTime, neutral))
+            return false;
+
+        bridgeIt = m_npcNavigationControlBridges
+            .emplace(id, std::move(bridge))
+            .first;
+
+        m_npcNavigationLastExecutionTimeSeconds[id] = initialTime;
+    }
+
+    const Bridge::Intent intent =
+        game::navigation::NpcNavigationIntentController::buildIntent(
+            ship,
+            goal
+        );
+
+    double& lastTime =
+        m_npcNavigationLastExecutionTimeSeconds[id];
+
+    if (executionTimeSeconds + 1.0e-9 < lastTime)
+        return false;
+
+    Bridge::StepResult latest;
+    bool stepped = false;
+
+    // Activation may sleep a distant NPC longer than PilotSkillExecutor's
+    // maximum single step. Advance the exact elapsed interval in bounded
+    // deterministic pieces instead of clamping or lying about dt.
+    while (lastTime < executionTimeSeconds - 1.0e-9)
+    {
+        const double dt = std::min(
+            Bridge::PilotExecutor::kMaximumStepSeconds,
+            executionTimeSeconds - lastTime
+        );
+        lastTime += dt;
+        latest = bridgeIt->second->step(lastTime, dt, intent);
+        stepped = true;
+
+        if (latest.status != Bridge::PilotExecutor::Status::Ok)
+            return false;
+    }
+
+    if (!stepped)
+        return false;
+
+    ship.setControlState(latest.control);
+    m_npcNavigationExecutionSnapshots[id] = latest.snapshot;
+    return latest.snapshot.valid;
+}
+
+
 game::simulation::SimulationMode
 GameSimulation::activationExecutionMode(EntityId shipId) const noexcept
 {
@@ -1411,12 +1493,24 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (!cadence.execute)
                 continue;
 
-            ShipControlState aiControl =
-                m_npcAiSystem.computeControl(
+            const NpcNavigationGoal goal =
+                m_npcAiSystem.computeGoal(
                     ship,
                     static_cast<float>(cadence.thinkDeltaSeconds)
                 );
-            ship.setControlState(aiControl);
+
+            if (!updateNpcNavigationControl(
+                    id,
+                    ship,
+                    goal,
+                    m_serverTimelineClock.timeSeconds(),
+                    cadence.thinkDeltaSeconds))
+            {
+                // Fail closed at the ownership seam. Never fall back to the
+                // retired direct steering path, or a runtime error would
+                // silently reintroduce two motion authorities.
+                ship.setControlState(ShipControlState {});
+            }
         }
 
         for (auto& [id, shipPtr] : m_ships)

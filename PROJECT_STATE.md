@@ -50,3 +50,22 @@ The self-test measures:
 After this passes, proceed to exact transformed HitVolume OBB publication into
 static/precision NavigationSpace topology. Conservative spheres are broadphase
 only and must not become the accepted narrow-gap geometry.
+
+
+### 12A-3 first target-machine result
+
+Architecture, local/runtime tests and both production builds passed. The live
+self-test exposed a diagnostic epoch mismatch at the final replication check
+(`0.00497292 m/s²` difference).
+
+Sparse replication is allowed to retain an older lab execution between entity
+publications, while the diagnostic observation advances every fixed step.
+Therefore latest-retained-client vs newest-live-observation equality was an
+invalid invariant.
+
+The corrected candidate compares:
+1. the sparse lab row only when that row is actually published;
+2. GameServer's authoritative published snapshot at the same `serverTick`;
+3. the retained canonical client state after hydrating that same packet.
+
+Exact vector equality remains required; the tolerance was not loosened.

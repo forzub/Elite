@@ -1914,3 +1914,72 @@ new public coordinate domains.
 This changes project sequencing/architecture only. It does not promote or
 reject the pending Stage-12 candidate and does not alter the last verified
 baseline.
+
+
+### Target-machine recovery gate — emergency brake still enters exact-static entity 28
+
+Latest target-machine run of the Stage-12 recovery code path completed full
+MinGW client/server build but the live navigation self-test still failed:
+
+~~~text
+[FAIL] moving-passage continuation crossed exact static geometry
+violation_entity=28
+segment_revision=136
+planner_status=1
+last_replan_reason=2
+static_invalidations=191
+emergency_recoveries=15
+emergency_recovery_active=1
+stopping_reserve_blocked=1
+stopping_reserve_s=0.643333
+stopping_reserve_m=27.7918
+previous_monitor_blocker=28
+previous_target_blocked=1
+previous_forecast_s=0
+~~~
+
+Physical state at first violation:
+
+~~~text
+current_velocity=(-6.26585,-1.23874,+6.80803)
+accepted_target=(1049.98,-1271.4,-4957.4)
+accepted_target_velocity=(0,0,0)
+last_executed_demand=(+1.35067,+0.272356,-1.46091)
+previous_ideal_accel=(0,0,0)
+previous_executed_accel=(0,0,0)
+~~~
+
+The emergency segment is physically braking opposite the current velocity:
+the executed demand direction is consistent with active deceleration. Therefore
+the remaining defect is not "emergency command failed to reach physics".
+
+The decisive evidence is:
+
+~~~text
+stopping_reserve_blocked=1
+previous_target_blocked=1
+~~~
+
+The recovery begins only after the state has already reached a configuration
+whose complete conservative stopping envelope intersects exact-static geometry.
+A replan/emergency command at that instant cannot make the collision avoidable.
+
+Root cause / required Navigation-v2 correction:
+
+- stopping viability must be an ACCEPTANCE invariant of every executable short
+  segment, not only a late invalidation response;
+- a segment may be accepted only if the swept trajectory plus the physically
+  reachable stopping/reaction envelope at its future execution states remains
+  exact-static safe;
+- when that invariant first fails, the planner must select an earlier escape or
+  braking maneuver while free space still exists;
+- do not weaken the exact-static collision gate and do not hide the failure by
+  increasing cube clearance ad hoc.
+
+The last actually target-machine accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~
+
+The current recovery candidate remains unaccepted.

@@ -2849,7 +2849,11 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 m_navigationRuntimeLabAcceptedSegment.
                     targetPositionMapMeters
             );
+        // Safety invalidation is monotonic inside one monitor pass. A later
+        // independent check may add evidence but must never erase an already
+        // proven unsafe stopping reserve.
         staticSafetyInvalidated =
+            staticSafetyInvalidated ||
             staticSafetyTargetBlocked;
 
         if (!staticSafetyInvalidated)
@@ -2868,11 +2872,11 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             {
                 staticSafetyIdealAccelerationMapMps2 = glm::dvec3(
                     followerResult.intent.
-                        idealLinearAccelerationDemandMapMps2.x,
+                        idealLinearAccelerationLocalMps2.x,
                     followerResult.intent.
-                        idealLinearAccelerationDemandMapMps2.y,
+                        idealLinearAccelerationLocalMps2.y,
                     followerResult.intent.
-                        idealLinearAccelerationDemandMapMps2.z
+                        idealLinearAccelerationLocalMps2.z
                 );
 
                 glm::dvec3 forecastDelta =
@@ -2900,6 +2904,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                         staticSafetyForecastEndMap
                     );
                 staticSafetyInvalidated =
+                    staticSafetyInvalidated ||
                     staticSafetyForecastBlocked;
             }
 

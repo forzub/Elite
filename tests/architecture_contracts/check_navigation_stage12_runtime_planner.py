@@ -34,6 +34,7 @@ MANEUVER_DECISION_H = (ROOT / "src/game/ship/controller/ManeuverDecisionControll
 MANEUVER_DECISION_CPP = (ROOT / "src/game/ship/controller/ManeuverDecisionController.cpp").read_text(encoding="utf-8")
 MANEUVER_DECISION_TEST = (ROOT / "tests/navigation_runtime/ManeuverDecisionControllerTests.cpp").read_text(encoding="utf-8")
 MANEUVER_DECISION_DOC = (ROOT / "src/game/MANEUVER_DECISION_TREE.md").read_text(encoding="utf-8")
+CONTROL_LAW_DOC = (ROOT / "src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md").read_text(encoding="utf-8")
 HIT_BUILDER = (ROOT / "src/world/modules/ObjectRuntimeHitBuilder.cpp").read_text(encoding="utf-8")
 GUIDANCE_DESCRIPTOR = (ROOT / "src/game/station/descriptors/GuidanceTestDockDescriptor.h").read_text(encoding="utf-8")
 
@@ -156,6 +157,7 @@ for marker in (
     "movingPassageRequiredPeakLateralAccelerationMps2",
     "movingPassageRequiredPeakVerticalAccelerationMps2",
     "selectedVisibilityDeflectionRadians",
+    "ordinaryVisibilitySearchExhausted",
     "PortalTraversalPolicy",
     "PortalCapture",
     "PortalTransit",
@@ -492,6 +494,7 @@ for marker in (
     "maximumDeflectionRadians",
     "selectedDeflectionRadians",
     "nominalVisibilityClear",
+    "ordinarySearchExhausted",
 ):
     require(marker in LOCAL_H, f"bounded visibility steering contract missing: {marker}")
 
@@ -504,6 +507,11 @@ require(
 require(
     "testVisibilitySteeringWidensThenReturnsToDirectLine" in LOCAL_TEST,
     "local regression must prove widening beyond the legacy 15/30 fan and stateless return to direct A->B visibility",
+)
+require(
+    "ordinarySearchExhausted" in LOCAL_TEST and
+    "ordinaryVisibilitySearchExhausted" in RUNTIME_TEST,
+    "ordinary fan exhaustion must be pinned as a recovery escalation signal",
 )
 
 require(
@@ -966,6 +974,13 @@ for marker in (
     "expendableDamageCost01",
     "threatExposure",
     "escapeReserve01",
+    "ControlLawRequirement",
+    "AssistedOnly",
+    "NewtonianOnly",
+    "NewtonianFlipAndBurn",
+    "ExtendedVisibilityRecovery",
+    "Backtrack",
+    "ReverseEscape",
 ):
     require(marker in MANEUVER_DECISION_H, f"maneuver decision contract missing: {marker}")
 
@@ -977,6 +992,7 @@ for marker in (
     "combatEscapeBetter",
     "MustProgress",
     "haveNonContactProgress",
+    "controlLawCompatible",
 ):
     require(marker in MANEUVER_DECISION_CPP, f"maneuver decision implementation missing: {marker}")
 
@@ -988,6 +1004,7 @@ for marker in (
     "testCombatEscapePrefersLowerThreatExposure",
     "testPrecisionRetrievalPrefersClearanceAndLowEntrySpeed",
     "testSacrificialDamageNeedsExplicitPermission",
+    "testControlLawFiltersIncompatibleRecoveryManeuvers",
 ):
     require(marker in MANEUVER_DECISION_TEST, f"maneuver decision regression missing: {marker}")
 
@@ -1004,10 +1021,29 @@ for marker in (
 ):
     require(marker in MANEUVER_DECISION_DOC, f"maneuver decision architecture missing: {marker}")
 
+
+for marker in (
+    "LocalFlightControlLaw::Assisted",
+    "LocalFlightControlLaw::Newtonian",
+    "vehicle OBB (brick)",
+    "conservative rotation sphere",
+    "continuous swept OBB",
+    "FlipAndBurn",
+    "75-degree limit is not a vehicle capability limit",
+    "NoSafeProgressInOrdinaryFan",
+    "motion-primitive generation",
+):
+    require(marker in CONTROL_LAW_DOC, f"control-law maneuver architecture missing: {marker}")
+
 require(
     "src/game/ship/controller/ManeuverDecisionController.cpp" in RUNTIME_CMAKE and
     "maneuver_decision_controller_tests" in RUNTIME_CMAKE,
     "runtime gate must compile and execute the maneuver decision controller",
+)
+require(
+    "add_library(EliteManeuverDecision STATIC" in ROOT_CMAKE and
+    ROOT_CMAKE.count("EliteManeuverDecision") >= 3,
+    "client/server production build must compile the shared maneuver decision layer above NavigationWorld",
 )
 
 for marker in (
@@ -1027,6 +1063,8 @@ print("NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS")
 print(" - maneuver decision ownership sits above navigation geometry/reachability")
 print(" - Rational/Precision/Extreme/CombatEscape doctrines are deterministic and tested")
 print(" - MustProgress retains contact-expected progress instead of collapsing to stop")
+print(" - Assisted and Newtonian maneuver families are separated before doctrine ranking")
+print(" - ordinary 0..75 degree exhaustion escalates to recovery instead of defining vehicle capability")
 print(" - NavigationSpace publishes ordered selected-portal steering centers")
 print(" - one shared runtime planner composes static corridor + bounded local avoidance")
 print(" - blocked/stale/conflict states keep producing fail-closed pilot intent")

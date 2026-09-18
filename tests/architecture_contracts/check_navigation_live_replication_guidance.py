@@ -37,7 +37,8 @@ for marker in (
     require(marker in SNAPSHOT, f"replicated execution DTO missing: {marker}")
 
 require(
-    "game::simulation::NavigationExecutionSnapshot        navigationExecution" in SHIP_SNAPSHOT,
+    "game::simulation::NavigationExecutionSnapshot" in SHIP_SNAPSHOT and
+    "navigationExecution" in SHIP_SNAPSHOT,
     "ShipSnapshot does not carry navigation execution truth",
 )
 
@@ -62,7 +63,8 @@ require(
 )
 
 require(
-    "game::simulation::NavigationExecutionSnapshot   navigationExecution" in CLIENT_H,
+    "game::simulation::NavigationExecutionSnapshot" in CLIENT_H and
+    "navigationExecution" in CLIENT_H,
     "ClientShipState does not retain replicated navigation execution",
 )
 require(

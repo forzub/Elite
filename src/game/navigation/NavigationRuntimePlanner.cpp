@@ -9,6 +9,8 @@ namespace game::navigation
 namespace
 {
 
+using Planner = NavigationRuntimePlanner;
+
 constexpr double kEpsilon = 1.0e-12;
 
 bool finite(double value) noexcept
@@ -65,6 +67,101 @@ NavigationRuntimePlanner::Bridge::Vec3d toBridgeVec(
 ) noexcept
 {
     return {value.x, value.y, value.z};
+}
+
+Planner::MovingPassage::Vec3d toTrajectoryVec(
+    const glm::dvec3& value
+) noexcept
+{
+    return {value.x, value.y, value.z};
+}
+
+Planner::MovingPassage::Vec3d toTrajectoryVec(
+    const Planner::Map::Vec3d& value
+) noexcept
+{
+    return {value.x, value.y, value.z};
+}
+
+glm::dvec3 toGlm(
+    const Planner::MovingPassage::Vec3d& value
+) noexcept
+{
+    return {value.x, value.y, value.z};
+}
+
+const Planner::Map::Candidate* findCandidate(
+    const Planner::Map::QueryResult& dynamicCandidates,
+    Planner::Map::EntityId entityId
+) noexcept
+{
+    for (const Planner::Map::Candidate& candidate : dynamicCandidates.candidates)
+    {
+        if (candidate.entityId == entityId)
+            return &candidate;
+    }
+    return nullptr;
+}
+
+Planner::GapPredictor::BoundaryMotion boundaryMotion(
+    const Planner::Map::Candidate& candidate,
+    Planner::Map::Revision snapshotRevision
+) noexcept
+{
+    Planner::GapPredictor::BoundaryMotion motion;
+    motion.obstacleId = candidate.entityId;
+    motion.snapshotRevision = snapshotRevision;
+    motion.centerMapMeters = toTrajectoryVec(candidate.positionMapMeters);
+    motion.linearVelocityMapMetersPerSec =
+        toTrajectoryVec(candidate.velocityMapMetersPerSecond);
+    motion.linearAccelerationMapMetersPerSec2 =
+        toTrajectoryVec(candidate.accelerationMapMetersPerSecond2);
+    motion.angularVelocityMapRadPerSec =
+        toTrajectoryVec(candidate.angularVelocityMapRadPerSecond);
+    motion.conservativeRadiusMeters = candidate.actorRadiusMeters;
+    return motion;
+}
+
+bool movingPassageBodyBasis(
+    const Planner::AgentState& agent,
+    Planner::MovingPassage::Basis3d& out
+) noexcept
+{
+    const glm::dvec3 forward = normalizedOr(
+        agent.forwardMap,
+        glm::dvec3(0.0)
+    );
+    if (glm::dot(forward, forward) <= kEpsilon)
+        return false;
+
+    glm::dvec3 up = agent.upMap - forward * glm::dot(agent.upMap, forward);
+    up = normalizedOr(up, glm::dvec3(0.0));
+    if (glm::dot(up, up) <= kEpsilon)
+        return false;
+
+    const glm::dvec3 right = normalizedOr(
+        glm::cross(up, forward),
+        glm::dvec3(0.0)
+    );
+    if (glm::dot(right, right) <= kEpsilon)
+        return false;
+
+    out.right = toTrajectoryVec(right);
+    out.up = toTrajectoryVec(up);
+    out.forward = toTrajectoryVec(forward);
+    return true;
+}
+
+Planner::MovingPassage::Vec3d precisionHullHalfExtents(
+    const Planner::AgentState& agent
+) noexcept
+{
+    const glm::dvec3& h = agent.hullHalfExtentsBodyMeters;
+    if (finite(h) && h.x > 0.0 && h.y > 0.0 && h.z > 0.0)
+        return toTrajectoryVec(h);
+
+    const double fallback = std::max(0.0, agent.radiusMeters);
+    return {fallback, fallback, fallback};
 }
 
 NavigationRuntimePlanner::Bridge::Intent holdIntent(
@@ -144,6 +241,202 @@ bool validInput(
         finite(goal.hazardUrgency01) &&
         finite(dynamicResultAgeSeconds) &&
         dynamicResultAgeSeconds >= 0.0;
+}
+
+void probeMovingPassage(
+    const Planner::AgentState& agent,
+    const Planner::Goal& goal,
+    const Planner::Map::QueryResult& dynamicCandidates,
+    const glm::dvec3& coarseTarget,
+    const Planner::Policy& policy,
+    const Planner::Avoidance::Result& local,
+    Planner::Result& result
+) noexcept
+{
+    const Planner::MovingPassagePolicy& precision = policy.movingPassage;
+    if (!precision.enabled || local.nominalConflictsFound == 0)
+        return;
+
+    result.movingPrecisionAttempted = true;
+
+    if (!finite(precision.durationSeconds) ||
+        precision.durationSeconds <= 0.0 ||
+        !finite(precision.hullAdditionalClearanceMeters) ||
+        precision.hullAdditionalClearanceMeters < 0.0 ||
+        !finite(precision.maximumAcceptedGapTravelAlignment) ||
+        precision.maximumAcceptedGapTravelAlignment < 0.0 ||
+        precision.maximumAcceptedGapTravelAlignment > 1.0 ||
+        !finite(precision.maximumInitialAngularRateRadPerSec) ||
+        precision.maximumInitialAngularRateRadPerSec < 0.0)
+    {
+        return;
+    }
+
+    const double maximumInitialAngularRate = std::max({
+        std::abs(agent.pitchRateRadPerSec),
+        std::abs(agent.yawRateRadPerSec),
+        std::abs(agent.rollRateRadPerSec)
+    });
+    if (maximumInitialAngularRate >
+        precision.maximumInitialAngularRateRadPerSec)
+    {
+        return;
+    }
+
+    const Planner::Map::EntityId primaryId =
+        local.nominalPrimaryConflictEntityId != 0
+            ? local.nominalPrimaryConflictEntityId
+            : local.target.primaryConflictEntityId;
+    if (primaryId == 0)
+        return;
+
+    const Planner::Map::Candidate* primary =
+        findCandidate(dynamicCandidates, primaryId);
+    if (primary == nullptr)
+        return;
+
+    const glm::dvec3 travelDelta =
+        coarseTarget - agent.positionMapMeters;
+    const glm::dvec3 travelDirection =
+        normalizedOr(travelDelta, glm::dvec3(0.0));
+    if (glm::dot(travelDirection, travelDirection) <= kEpsilon)
+        return;
+
+    Planner::GapBuilder::Query gapQuery;
+    gapQuery.referencePointMapMeters =
+        toTrajectoryVec(agent.positionMapMeters);
+    gapQuery.travelDirectionMap = toTrajectoryVec(travelDirection);
+    gapQuery.primary.obstacleId = primary->entityId;
+    gapQuery.primary.snapshotRevision = dynamicCandidates.mapRevision;
+    gapQuery.primary.centerMapMeters =
+        toTrajectoryVec(primary->positionMapMeters);
+    gapQuery.primary.conservativeRadiusMeters = primary->actorRadiusMeters;
+    gapQuery.policy = precision.candidates;
+
+    gapQuery.neighbors.reserve(dynamicCandidates.candidates.size());
+    for (const Planner::Map::Candidate& candidate : dynamicCandidates.candidates)
+    {
+        if (candidate.entityId == agent.entityId ||
+            candidate.entityId == primary->entityId)
+        {
+            continue;
+        }
+
+        Planner::GapBuilder::ObstacleWitness witness;
+        witness.obstacleId = candidate.entityId;
+        witness.snapshotRevision = dynamicCandidates.mapRevision;
+        witness.centerMapMeters = toTrajectoryVec(candidate.positionMapMeters);
+        witness.conservativeRadiusMeters = candidate.actorRadiusMeters;
+        gapQuery.neighbors.push_back(witness);
+    }
+
+    const Planner::GapBuilder::Result gapCandidates =
+        Planner::GapBuilder::build(gapQuery);
+    result.movingGapCandidatesBuilt = gapCandidates.candidates.size();
+    if (!gapCandidates.validInput || gapCandidates.candidates.empty())
+        return;
+
+    Planner::MovingPassage::Basis3d bodyBasis;
+    if (!movingPassageBodyBasis(agent, bodyBasis))
+        return;
+
+    for (const Planner::GapBuilder::Candidate& gapCandidate :
+         gapCandidates.candidates)
+    {
+        const Planner::Map::Candidate* secondary =
+            findCandidate(
+                dynamicCandidates,
+                gapCandidate.neighborObstacleId
+            );
+        if (secondary == nullptr)
+            continue;
+
+        Planner::GapPredictor::Query predictionQuery;
+        predictionQuery.travelDirectionMap =
+            toTrajectoryVec(travelDirection);
+        predictionQuery.primary =
+            boundaryMotion(*primary, dynamicCandidates.mapRevision);
+        predictionQuery.secondary =
+            boundaryMotion(*secondary, dynamicCandidates.mapRevision);
+        predictionQuery.horizonSeconds = precision.durationSeconds;
+        predictionQuery.policy = precision.prediction;
+
+        // Candidate discovery and prediction must describe the same aperture.
+        predictionQuery.policy.boundaryClearanceMeters =
+            precision.candidates.boundaryClearanceMeters;
+        predictionQuery.policy.secondaryClearanceMeters =
+            precision.candidates.secondaryClearanceMeters;
+        predictionQuery.policy.maximumAbsSeparationTravelDot =
+            std::min(
+                predictionQuery.policy.maximumAbsSeparationTravelDot,
+                precision.candidates.maximumAbsSeparationTravelDot
+            );
+
+        const Planner::GapPredictor::Result movingGap =
+            Planner::GapPredictor::predict(predictionQuery);
+        ++result.movingGapPredictionsEvaluated;
+
+        if (movingGap.status !=
+            Planner::GapPredictor::Status::OpenForHorizon)
+        {
+            continue;
+        }
+
+        Planner::MovingPassage::Query passageQuery;
+        passageQuery.hull.halfExtentsBodyMeters =
+            precisionHullHalfExtents(agent);
+        passageQuery.hull.additionalClearanceMeters =
+            precision.hullAdditionalClearanceMeters;
+        passageQuery.movingGap = &movingGap;
+
+        passageQuery.start.pose.centerMapMeters =
+            toTrajectoryVec(agent.positionMapMeters);
+        passageQuery.start.pose.bodyToMap = bodyBasis;
+        passageQuery.start.linearVelocityMapMetersPerSec =
+            toTrajectoryVec(agent.velocityMapMetersPerSecond);
+
+        const auto& finalGap = movingGap.samples.back();
+        passageQuery.end.pose.centerMapMeters =
+            finalGap.gap.centerMapMeters;
+        passageQuery.end.pose.bodyToMap = bodyBasis;
+
+        const glm::dvec3 finalGapCenter =
+            toGlm(finalGap.gap.centerMapMeters);
+        const double distanceToGap =
+            glm::length(finalGapCenter - agent.positionMapMeters);
+        const double crossingSpeed = std::min(
+            goal.maximumTargetSpeedMps,
+            distanceToGap / precision.durationSeconds
+        );
+        const glm::dvec3 finalGapVelocity =
+            toGlm(finalGap.gapCenterVelocityMapMetersPerSec) +
+            travelDirection * std::max(0.0, crossingSpeed);
+        passageQuery.end.linearVelocityMapMetersPerSec =
+            toTrajectoryVec(finalGapVelocity);
+
+        passageQuery.durationSeconds = precision.durationSeconds;
+        passageQuery.linearCapability = agent.linearCapability;
+        passageQuery.angularCapability = agent.angularCapability;
+        passageQuery.controlMode = agent.controlMode;
+        passageQuery.assistedMaxVelocityToForwardAngleRad =
+            agent.assistedMaxVelocityToForwardAngleRad;
+        passageQuery.maximumAcceptedGapTravelAlignment =
+            precision.maximumAcceptedGapTravelAlignment;
+
+        const Planner::MovingPassage::Result passage =
+            Planner::MovingPassage::evaluate(passageQuery);
+        ++result.movingPassagesEvaluated;
+
+        if (!passage.feasible)
+            continue;
+
+        result.movingPassageFeasible = true;
+        result.movingPrimaryObstacleEntityId = primary->entityId;
+        result.movingSecondaryObstacleEntityId = secondary->entityId;
+        result.movingPassageInitialAccelerationMapMps2 =
+            toGlm(passage.initialLinearAccelerationMapMetersPerSec2);
+        return;
+    }
 }
 
 } // namespace
@@ -300,6 +593,21 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     result.nominalStaticObstacleEntityId =
         local.nominalStaticObstacleEntityId;
     result.selectedTargetMapMeters = toGlm(local.target.targetPositionMapMeters);
+
+    // Stage 12A-6b1: compose the already-accepted bounded moving-gap and
+    // moving-passage precision chain against the real runtime candidate product.
+    // This probe is deliberately observe-only until its moving trajectory is
+    // also proven against exact static geometry; it cannot steal steering
+    // authority from the accepted local/static planner yet.
+    probeMovingPassage(
+        agent,
+        goal,
+        dynamicCandidates,
+        coarseTarget,
+        policy,
+        local,
+        result
+    );
 
     switch (local.status)
     {

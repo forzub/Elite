@@ -69,8 +69,32 @@ inline const glm::dvec3 NavigationRuntimeLabSlitPortalCenterVisualLocalMeters {
 };
 inline constexpr double NavigationRuntimeLabSlitHalfWidthMeters = 540.0;
 inline constexpr double NavigationRuntimeLabSlitHalfHeightMeters = 70.0;
+inline constexpr double NavigationRuntimeLabSlitHalfDepthMeters = 450.0;
 inline constexpr double NavigationRuntimeLabSlitPortalClearanceMeters = 55.0;
-inline constexpr std::uint64_t NavigationRuntimeLabSlitPortalId = 1202301;
+inline constexpr std::uint64_t NavigationRuntimeLabSlitEntryPortalId = 1202301;
+inline constexpr std::uint64_t NavigationRuntimeLabSlitExitPortalId = 1202302;
+
+inline const glm::dvec3 NavigationRuntimeLabSlitEntryCenterVisualLocalMeters {
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z -
+        NavigationRuntimeLabSlitHalfDepthMeters
+};
+inline const glm::dvec3 NavigationRuntimeLabSlitExitCenterVisualLocalMeters {
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z +
+        NavigationRuntimeLabSlitHalfDepthMeters
+};
+
+// Generic authored passage-capture requirements for this test tunnel.
+inline constexpr double NavigationRuntimeLabSlitApproachDistanceMeters = 500.0;
+inline constexpr double NavigationRuntimeLabSlitTransitSpeedMps = 20.0;
+inline constexpr double NavigationRuntimeLabSlitMaximumEntryVelocityAngleRad =
+    0.08726646259971647; // 5 degrees.
+inline constexpr double NavigationRuntimeLabSlitMaximumEntryForwardAngleRad =
+    0.08726646259971647; // 5 degrees.
+inline constexpr double NavigationRuntimeLabSlitMaximumLateralSpeedMps = 1.0;
 
 // CUBE 08 remains the representative exact-static blocker identity, but is now
 // the centre cube in the lower tunnel row rather than an isolated obstacle.
@@ -163,6 +187,14 @@ struct NavigationRuntimeLabObservation
     bool slitPortalExactOpenPublished = false;
     std::size_t slitPortalExactObstaclesExamined = 0;
     bool slitPortalWaypointSeen = false;
+    bool slitEntryCaptureSeen = false;
+    bool slitEntryVelocityAlignedSeen = false;
+    bool slitEntryForwardAlignedSeen = false;
+    bool slitEntryPlaneCrossedAligned = false;
+    double slitEntryVelocityAngleRad = 0.0;
+    double slitEntryForwardAngleRad = 0.0;
+    double slitEntryLateralSpeedMps = 0.0;
+    double slitEntryCrossTrackMeters = 0.0;
     bool slitTunnelPassed = false;
     glm::dvec3 slitTunnelCrossingMap {0.0};
     double slitTunnelCrossingMarginMeters = 0.0;

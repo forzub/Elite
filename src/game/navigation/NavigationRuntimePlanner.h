@@ -11,6 +11,9 @@
 #include "src/world/navigation/local/LocalAvoidancePlanner.h"
 #include "src/world/navigation/map/NavigationMap.h"
 #include "src/world/navigation/space/NavigationSpace.h"
+#include "src/world/navigation/trajectory/BoundedGapCandidateBuilder.h"
+#include "src/world/navigation/trajectory/MovingGapPredictor.h"
+#include "src/world/navigation/trajectory/MovingPassageTrajectoryEvaluator.h"
 
 namespace game::navigation
 {
@@ -29,6 +32,9 @@ public:
     using Space = world::navigation::NavigationSpace;
     using Horizon = world::navigation::LocalHorizonPlanner;
     using Avoidance = world::navigation::LocalAvoidancePlanner;
+    using GapBuilder = world::navigation::BoundedGapCandidateBuilder;
+    using GapPredictor = world::navigation::MovingGapPredictor;
+    using MovingPassage = world::navigation::MovingPassageTrajectoryEvaluator;
     using Bridge = NavigationRuntimeControlBridge;
 
     struct AgentState
@@ -47,6 +53,17 @@ public:
         double pitchRateRadPerSec = 0.0;
         double yawRateRadPerSec = 0.0;
         double rollRateRadPerSec = 0.0;
+
+        // Precision moving-passage proxy and real vehicle authority. The
+        // broadphase radius remains conservative; this OBB-like proxy is used
+        // only by the bounded precision evaluator.
+        glm::dvec3 hullHalfExtentsBodyMeters {0.0};
+        MovingPassage::LinearCapability linearCapability {};
+        MovingPassage::AngularCapability angularCapability {};
+        MovingPassage::ControlMode controlMode =
+            MovingPassage::ControlMode::Newtonian;
+        double assistedMaxVelocityToForwardAngleRad =
+            3.141592653589793238462643383279502884;
     };
 
     struct Goal
@@ -66,17 +83,36 @@ public:
         double hazardUrgency01 = 0.0;
     };
 
+    struct MovingPassagePolicy
+    {
+        // Disabled by default so the accepted Stage-12 static/local behavior
+        // cannot change until the caller explicitly enables the precision seam.
+        bool enabled = false;
+
+        // The gap-builder remains bounded to <=8 candidates by its own hard
+        // contract. These policies define the small local search window and the
+        // time-varying continuous proof.
+        GapBuilder::Policy candidates {};
+        GapPredictor::Policy prediction {};
+
+        double durationSeconds = 3.0;
+        double hullAdditionalClearanceMeters = 0.0;
+        double maximumAcceptedGapTravelAlignment = 0.5;
+    };
+
     struct Policy
     {
         Space::CorridorCostPolicy corridor {};
         Horizon::Policy horizon {};
         Avoidance::Policy avoidance {};
+        MovingPassagePolicy movingPassage {};
     };
 
     enum class Status : std::uint8_t
     {
         NominalClear = 0,
         AdjustedClear,
+        MovingPassageClear,
         ConflictHold,
         StaleHold,
         StaticHold,
@@ -121,6 +157,15 @@ public:
         std::size_t staticObstaclesExamined = 0;
         std::string nominalStaticObstacleId;
         std::uint32_t nominalStaticObstacleEntityId = 0;
+
+        bool movingPrecisionAttempted = false;
+        bool movingPassageAccepted = false;
+        std::size_t movingGapCandidatesBuilt = 0;
+        std::size_t movingGapPredictionsEvaluated = 0;
+        std::size_t movingPassagesEvaluated = 0;
+        Map::EntityId movingPrimaryObstacleEntityId = 0;
+        Map::EntityId movingSecondaryObstacleEntityId = 0;
+        glm::dvec3 movingPassageInitialAccelerationMapMps2 {0.0};
     };
 
     [[nodiscard]] static Result plan(

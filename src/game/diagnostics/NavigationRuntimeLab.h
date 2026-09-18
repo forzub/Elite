@@ -182,6 +182,16 @@ struct NavigationRuntimeLabObservation
     bool movingPassageExecutedSeen = false;
     bool movingPassageExecutionActive = false;
     bool movingPassageAppliedAccelerationSeen = false;
+
+    // Default free-space transit evidence. The moving pair is an obstacle
+    // encounter, not a mandatory gap: bounded visibility steering must choose
+    // the smallest safe deflection, physically execute it, then return to the
+    // direct accepted target as soon as that corridor becomes clear.
+    bool visibilityBypassSeen = false;
+    bool visibilityBypassActive = false;
+    bool visibilityDirectRecoveredSeen = false;
+    double maximumVisibilityDeflectionRad = 0.0;
+
     bool movingGapPlanePassed = false;
 
     bool slitPortalExactOpenPublished = false;

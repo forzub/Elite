@@ -413,6 +413,46 @@ The isolated runtime fixtures now construct only the compact state, so the unit 
 
 The ownership checker now pins this decoupling.
 
+## Stage 11B-1 third target-machine attempt — NOT ACCEPTED
+
+The third rerun proved the production integration path is now green:
+
+```text
+live runtime architecture PASS
+live NPC ownership architecture PASS
+navigation trajectory/pilot 11/11 PASS
+EliteGame build PASS
+EliteServer build PASS
+```
+
+The only failing item was one isolated runtime assertion:
+
+```text
+NPC nominal intent must damp roll through world angular demand
+```
+
+The controller implementation was correct. The fixture incorrectly asserted a raw world-Z sign for roll damping.
+
+Elite's identity-frame convention is:
+
+```text
+right   = +X
+up      = +Y
+forward = -Z
+```
+
+A positive roll rate is therefore angular velocity along `-Z`. Correct damping points along `+Z`, and `ShipController` projects that world vector back onto `forward=-Z` to obtain a negative local roll acceleration.
+
+The repaired fixture is frame-invariant and checks local-axis projections instead:
+
+```text
+dot(angularDemand, right)   = -pitchRate * damping
+dot(angularDemand, up)      = -yawRate   * damping
+dot(angularDemand, forward) = -rollRate  * damping
+```
+
+Production runtime behavior was not changed.
+
 ## 11B after acceptance
 
 11B will wire the seam into authoritative runtime ownership:

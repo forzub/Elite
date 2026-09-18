@@ -85,9 +85,15 @@ public:
 
     struct MovingPassagePolicy
     {
-        // Disabled by default so the accepted Stage-12 static/local behavior
-        // cannot change until the caller explicitly enables the precision seam.
+        // Enables bounded moving-gap / moving-passage precision evaluation.
+        // This may be used for diagnostics without changing steering authority.
         bool enabled = false;
+
+        // Separate opt-in authority gate. Even when precision evaluation is
+        // enabled, steering changes only when this flag is true AND both the
+        // dynamic moving-passage proof and the same-trajectory exact-static
+        // proof are green.
+        bool allowSteeringAuthority = false;
 
         // The gap-builder remains bounded to <=8 candidates by its own hard
         // contract. These policies define the small local search window and the
@@ -117,6 +123,7 @@ public:
     {
         NominalClear = 0,
         AdjustedClear,
+        MovingPassageClear,
         ConflictHold,
         StaleHold,
         StaticHold,
@@ -170,6 +177,8 @@ public:
         Map::EntityId movingPrimaryObstacleEntityId = 0;
         Map::EntityId movingSecondaryObstacleEntityId = 0;
         glm::dvec3 movingPassageInitialAccelerationMapMps2 {0.0};
+        glm::dvec3 movingPassageTargetMapMeters {0.0};
+        bool movingPassageAuthorityUsed = false;
 
         // Stage 12A-6b2: exact-static proof of the same Hermite trajectory
         // already accepted by MovingPassageTrajectoryEvaluator. This remains

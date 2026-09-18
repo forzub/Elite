@@ -179,11 +179,12 @@ low damping / delayed low-rate decisions / aggressive gain
 The executor uses bounded internal integration substeps:
 
 ```text
+responseFrequencyHz <= 16
 <= 64 substeps per simulation call
 step duration <= 0.25 s
 ```
 
-so work remains bounded.
+The frequency cap keeps the worst legal step at no worse than 16 integration substeps per response period while preserving fixed work.
 
 ## Deterministic precision error
 

@@ -179,7 +179,7 @@ bool PilotSkillExecutor::validProfile(
             static_cast<double>(kMaxPendingCommands - 1) &&
         finite(execution.responseFrequencyHz) &&
         execution.responseFrequencyHz > 0.0 &&
-        execution.responseFrequencyHz <= 100.0 &&
+        execution.responseFrequencyHz <= 16.0 &&
         finite(execution.dampingRatio) &&
         execution.dampingRatio >= 0.0 &&
         finite(execution.commandGain) &&

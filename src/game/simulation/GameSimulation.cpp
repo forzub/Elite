@@ -1465,6 +1465,22 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         };
         actor.velocitySystemMetersPerSecond = {0.0, 0.0, 0.0};
         actor.accelerationSystemMetersPerSecond2 = {0.0, 0.0, 0.0};
+
+        const glm::dvec3 localAngularVelocityRadPerSecond =
+            glm::radians(object.hubLocalAngularVelocityDegPerSecond);
+        const glm::dvec3 angularVelocityWorldRadPerSecond =
+            game::navigation::hubVisualLocalToWorldVector(
+                hubFrame->progradeAxis,
+                hubFrame->radialAxis,
+                hubFrame->normalAxis,
+                localAngularVelocityRadPerSecond
+            );
+        actor.angularVelocitySystemRadPerSecond = {
+            angularVelocityWorldRadPerSecond.x,
+            angularVelocityWorldRadPerSecond.y,
+            angularVelocityWorldRadPerSecond.z
+        };
+
         actor.radiusMeters = radius;
         actor.flags = 1u;
         actor.motionRevision = dynamicWorld.sourceRevision;

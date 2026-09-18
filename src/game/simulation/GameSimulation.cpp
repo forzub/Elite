@@ -964,6 +964,45 @@ bool GameSimulation::updateNpcNavigationControl(
 
     ship.setControlState(latest.control);
     m_npcNavigationExecutionSnapshots[id] = latest.snapshot;
+
+    if (isNavigationRuntimeLabShip(id) && latest.snapshot.valid)
+    {
+        auto& observation = m_navigationRuntimeLabObservation;
+        ++observation.executionCount;
+        observation.executionSeen = true;
+
+        const auto& executed =
+            latest.snapshot.executedLinearAccelerationDemandMapMps2;
+        const double executedMagnitude =
+            std::sqrt(
+                executed.x * executed.x +
+                executed.y * executed.y +
+                executed.z * executed.z
+            );
+        const double lateralMagnitude =
+            std::sqrt(
+                executed.x * executed.x +
+                executed.y * executed.y
+            );
+
+        observation.maximumExecutedLinearDemandMps2 =
+            std::max(
+                observation.maximumExecutedLinearDemandMps2,
+                executedMagnitude
+            );
+        observation.maximumExecutedLateralDemandMps2 =
+            std::max(
+                observation.maximumExecutedLateralDemandMps2,
+                lateralMagnitude
+            );
+        observation.nonZeroExecutedDemandSeen =
+            observation.nonZeroExecutedDemandSeen ||
+            executedMagnitude > 1.0e-6;
+        observation.lateralExecutedDemandSeen =
+            observation.lateralExecutedDemandSeen ||
+            lateralMagnitude > 1.0e-4;
+    }
+
     return latest.snapshot.valid;
 }
 
@@ -1041,6 +1080,7 @@ void GameSimulation::initializeNavigationRuntimeLab()
 
     m_navigationRuntimeLabSourceRevision = 0;
     m_navigationRuntimeLabLastPlan = {};
+    m_navigationRuntimeLabObservation = {};
     m_navigationRuntimeLabObservation.valid = true;
     m_navigationRuntimeLabObservation.shipEntityId =
         m_navigationRuntimeLabShipId.value;
@@ -1116,6 +1156,10 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         mapZAxis.x, mapZAxis.y, mapZAxis.z
     };
 
+    glm::dvec3 observedObstacleWorldPosition(0.0);
+    double observedObstacleRadiusMeters = 0.0;
+    bool haveObservedObstacle = false;
+
     // Stage 12 lab deliberately consumes the already-spawned physical
     // NAV STRESS / GUIDANCE objects. Their damage HitComponent is the geometry
     // source; no render-mesh or presentation-only obstacle list is consulted.
@@ -1149,14 +1193,17 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         if (!(radius > 0.0) || !std::isfinite(radius))
             continue;
 
+        const glm::dvec3 positionMeters =
+            world::coordinates::fullMeters(object.worldPosition);
+
         if (object.displayName == NavigationRuntimeLabObstacleLabel)
         {
             m_navigationRuntimeLabObservation.obstacleEntityId =
                 objectId.value;
+            observedObstacleWorldPosition = positionMeters;
+            observedObstacleRadiusMeters = radius;
+            haveObservedObstacle = true;
         }
-
-        const glm::dvec3 positionMeters =
-            world::coordinates::fullMeters(object.worldPosition);
 
         Map::DynamicActorInput actor;
         actor.entityId = objectId.value;
@@ -1296,7 +1343,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 ship.core().desc().physics.manoeuvreThrusterAccel
             )
         );
-    policy.horizon.turnDistanceMeters = 80.0;
+    policy.horizon.turnDistanceMeters = 1400.0;
     policy.horizon.safetyMarginMeters = 20.0;
     policy.horizon.minimumHorizonMeters = 100.0;
 
@@ -1306,6 +1353,110 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         glm::radians(30.0);
     policy.avoidance.azimuthSamples = 8;
     policy.avoidance.staticAdditionalClearanceMeters = 10.0;
+
+    const glm::dvec3 routeStartMap =
+        NavigationRuntimeLabStartVisualLocalMeters;
+    const glm::dvec3 routeVectorMap =
+        goalPositionMap - routeStartMap;
+    const double routeLengthSquared =
+        glm::dot(routeVectorMap, routeVectorMap);
+    const double goalDistanceMeters =
+        glm::length(goalPositionMap - agentPositionMap);
+
+    auto& observation = m_navigationRuntimeLabObservation;
+    const bool firstPlanSample = observation.planCount == 0;
+
+    if (firstPlanSample)
+    {
+        observation.initialGoalDistanceMeters =
+            glm::length(goalPositionMap - routeStartMap);
+        observation.minimumGoalDistanceMeters =
+            goalDistanceMeters;
+    }
+    else
+    {
+        observation.minimumGoalDistanceMeters =
+            std::min(
+                observation.minimumGoalDistanceMeters,
+                goalDistanceMeters
+            );
+    }
+
+    if (routeLengthSquared > 1.0e-12)
+    {
+        const double routeT = std::clamp(
+            glm::dot(
+                agentPositionMap - routeStartMap,
+                routeVectorMap
+            ) / routeLengthSquared,
+            0.0,
+            1.0
+        );
+        const glm::dvec3 closestOnStraightRoute =
+            routeStartMap + routeVectorMap * routeT;
+        observation.maximumStraightLineDeviationMeters =
+            std::max(
+                observation.maximumStraightLineDeviationMeters,
+                glm::length(
+                    agentPositionMap - closestOnStraightRoute
+                )
+            );
+    }
+
+    if (haveObservedObstacle)
+    {
+        const glm::dvec3 obstaclePositionMap =
+            pointToMap(observedObstacleWorldPosition);
+        const double centerDistanceMeters =
+            glm::length(agentPositionMap - obstaclePositionMap);
+        const double conservativeClearanceMeters =
+            centerDistanceMeters -
+            shipRadius -
+            observedObstacleRadiusMeters;
+
+        if (firstPlanSample)
+        {
+            observation.minimumObstacleCenterDistanceMeters =
+                centerDistanceMeters;
+            observation.minimumConservativeClearanceMeters =
+                conservativeClearanceMeters;
+        }
+        else
+        {
+            observation.minimumObstacleCenterDistanceMeters =
+                std::min(
+                    observation.minimumObstacleCenterDistanceMeters,
+                    centerDistanceMeters
+                );
+            observation.minimumConservativeClearanceMeters =
+                std::min(
+                    observation.minimumConservativeClearanceMeters,
+                    conservativeClearanceMeters
+                );
+        }
+
+        if (routeLengthSquared > 1.0e-12)
+        {
+            const glm::dvec3 routeDirection =
+                routeVectorMap /
+                std::sqrt(routeLengthSquared);
+            const double shipProgress =
+                glm::dot(
+                    agentPositionMap - routeStartMap,
+                    routeDirection
+                );
+            const double obstacleProgress =
+                glm::dot(
+                    obstaclePositionMap - routeStartMap,
+                    routeDirection
+                );
+            if (shipProgress > obstacleProgress)
+                observation.passedObstaclePlane = true;
+        }
+    }
+
+    if (goalDistanceMeters <= NavigationRuntimeLabArrivalRadiusMeters)
+        observation.reachedGoal = true;
 
     m_navigationRuntimeLabLastPlan =
         Planner::plan(
@@ -1333,8 +1484,10 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             Planner::Status::ConflictHold;
 
     if (m_navigationRuntimeLabObservation.obstacleEntityId != 0 &&
-        m_navigationRuntimeLabLastPlan.primaryConflictEntityId ==
-            m_navigationRuntimeLabObservation.obstacleEntityId)
+        (m_navigationRuntimeLabLastPlan.primaryConflictEntityId ==
+             m_navigationRuntimeLabObservation.obstacleEntityId ||
+         m_navigationRuntimeLabLastPlan.nominalPrimaryConflictEntityId ==
+             m_navigationRuntimeLabObservation.obstacleEntityId))
     {
         m_navigationRuntimeLabObservation.obstaclePrimaryConflictSeen = true;
     }

@@ -749,6 +749,7 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     result.staticRegionPath = corridor.regionPath;
     result.staticPortalPath = corridor.portalPath;
     result.staticPortalCentersMapMeters = corridor.portalCentersMapMeters;
+    result.staticPortalTraversals = corridor.portalTraversals;
 
     if (!corridor.found)
     {
@@ -763,7 +764,130 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     glm::dvec3 coarseVelocity = goal.targetVelocityMapMetersPerSecond;
     glm::dvec3 coarseAcceleration = goal.targetAccelerationMapMetersPerSecond2;
 
-    if (!corridor.portalCentersMapMeters.empty())
+    const bool portalPolicyValid =
+        finite(policy.portalTraversal.capturePositionResponsePerSecond) &&
+        policy.portalTraversal.capturePositionResponsePerSecond >= 0.0 &&
+        finite(policy.portalTraversal.orientationResponsePerSecond2) &&
+        policy.portalTraversal.orientationResponsePerSecond2 >= 0.0 &&
+        finite(policy.portalTraversal.minimumSpeedForDirectionMps) &&
+        policy.portalTraversal.minimumSpeedForDirectionMps >= 0.0;
+    if (!portalPolicyValid)
+        return result;
+
+    Space::PortalTraversal activePortalTraversal;
+    double portalAllowedCrossTrackMeters = 0.0;
+
+    if (policy.portalTraversal.enabled &&
+        !corridor.portalTraversals.empty() &&
+        corridor.portalTraversals.front().enabled)
+    {
+        activePortalTraversal = corridor.portalTraversals.front();
+        const glm::dvec3 portalNormal = normalizedOr(
+            toGlm(activePortalTraversal.normalMap),
+            glm::dvec3(0.0)
+        );
+        const glm::dvec3 portalCenter =
+            toGlm(activePortalTraversal.centerMapMeters);
+
+        if (glm::dot(portalNormal, portalNormal) <= kEpsilon)
+            return result;
+
+        result.portalTraversalActive = true;
+        result.activePortalId = activePortalTraversal.portalId;
+        result.portalNormalMap = portalNormal;
+        result.portalCenterMapMeters = portalCenter;
+        result.portalApproachPointMapMeters =
+            portalCenter -
+            portalNormal * activePortalTraversal.approachDistanceMeters;
+
+        const double requiredClearance =
+            agent.radiusMeters +
+            policy.avoidance.staticAdditionalClearanceMeters;
+        portalAllowedCrossTrackMeters =
+            std::max(
+                0.0,
+                activePortalTraversal.clearanceRadiusMeters -
+                    requiredClearance
+            );
+
+        const glm::dvec3 portalRelative =
+            agent.positionMapMeters - portalCenter;
+        const glm::dvec3 crossTrack =
+            portalRelative -
+            portalNormal * glm::dot(portalRelative, portalNormal);
+        result.portalCrossTrackMeters = glm::length(crossTrack);
+
+        const double speed =
+            glm::length(agent.velocityMapMetersPerSecond);
+        const glm::dvec3 lateralVelocity =
+            agent.velocityMapMetersPerSecond -
+            portalNormal *
+                glm::dot(
+                    agent.velocityMapMetersPerSecond,
+                    portalNormal
+                );
+        result.portalLateralSpeedMps = glm::length(lateralVelocity);
+
+        result.portalVelocityAngleRad =
+            speed <= policy.portalTraversal.minimumSpeedForDirectionMps
+                ? 0.0
+                : angleBetweenUnitSafe(
+                      agent.velocityMapMetersPerSecond,
+                      portalNormal
+                  );
+        result.portalForwardAngleRad =
+            angleBetweenUnitSafe(agent.forwardMap, portalNormal);
+
+        result.portalVelocityAligned =
+            result.portalVelocityAngleRad <=
+                activePortalTraversal.maximumVelocityAngleRad &&
+            result.portalLateralSpeedMps <=
+                activePortalTraversal.maximumLateralSpeedMps;
+        result.portalForwardAligned =
+            !activePortalTraversal.requireVehicleForwardAlignment ||
+            result.portalForwardAngleRad <=
+                activePortalTraversal.maximumForwardAngleRad;
+
+        const bool positionAligned =
+            result.portalCrossTrackMeters <=
+                portalAllowedCrossTrackMeters;
+        result.portalCaptureReady =
+            positionAligned &&
+            result.portalVelocityAligned &&
+            result.portalForwardAligned;
+
+        if (activePortalTraversal.approachDistanceMeters > 0.0 &&
+            !result.portalCaptureReady)
+        {
+            coarseTarget = result.portalApproachPointMapMeters;
+            coarseVelocity = glm::dvec3(0.0);
+            coarseAcceleration = glm::dvec3(0.0);
+            result.usedPortalWaypoint = false;
+
+            const double approachDistance =
+                glm::length(
+                    coarseTarget - agent.positionMapMeters
+                );
+            result.portalApproachHolding =
+                approachDistance <=
+                    std::max(2.0, portalAllowedCrossTrackMeters);
+        }
+        else
+        {
+            coarseTarget = portalCenter;
+            coarseVelocity =
+                portalNormal *
+                std::min(
+                    goal.maximumTargetSpeedMps,
+                    activePortalTraversal.transitSpeedMps > 0.0
+                        ? activePortalTraversal.transitSpeedMps
+                        : goal.maximumTargetSpeedMps
+                );
+            coarseAcceleration = glm::dvec3(0.0);
+            result.usedPortalWaypoint = true;
+        }
+    }
+    else if (!corridor.portalCentersMapMeters.empty())
     {
         coarseTarget = toGlm(corridor.portalCentersMapMeters.front());
         coarseVelocity = glm::dvec3(0.0);

@@ -399,3 +399,25 @@ evidence.
 Corrective baseline `52a5fa9e239d8ea00923cbb65a293cca5863567b` adds the missing result member, makes the
 Vec3d conversion explicit, and strengthens the architecture contract to pin the
 member. Target-machine rerun is pending.
+
+
+#### 12A-6b2 — ACCEPTED
+
+Corrected target-machine acceptance baseline:
+
+```text
+25dc4369b95b4872d9a70a2d236db5e482cf45e2
+```
+
+The full corrected gate passed. The same Hermite centerline that is accepted
+against the moving aperture is now continuously enclosed between all 33 samples
+and checked against exact static HitVolume geometry, with static blocker
+identity retained.
+
+#### 12A-6b3a — ACTIVE
+
+The next bounded slice promotes only a doubly-proven moving passage to planner
+steering authority. The authoritative linear acceleration must be the first
+sample of the exact accepted Hermite trajectory; no post-proof re-planning is
+allowed. This slice first proves the planner/control seam deterministically;
+live moving-gap physics/replication evidence remains a subsequent gate.

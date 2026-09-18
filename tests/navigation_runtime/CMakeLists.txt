@@ -39,6 +39,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimeControlBridge.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NpcNavigationIntentController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimePlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationHitVolumeAdapter.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"

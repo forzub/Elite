@@ -1004,3 +1004,83 @@ Important current limitation:
 `NavigationRuntimeLab` still calls `NavigationRuntimePlanner::plan()` in its fixed-step path. This is now explicitly transitional. The next integration slice must insert an accepted-segment/follower seam and prove stable automatic flight with many execution ticks per planner invocation (`planCount << executionCount`).
 
 Target-machine validation for this scheduler/policy is pending. The last target-machine accepted Stage-12 baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+
+
+## AcceptedShortSegment + TrajectoryFollower integration candidate
+
+Code candidate:
+
+~~~text
+0fc8d9b9d929cb19ad0338191433b635bb723f31
+~~~
+
+This slice replaces the live Stage-12 lab's unconditional fixed-tick
+`NavigationRuntimePlanner::plan()` call with the first real accepted-execution
+seam:
+
+~~~text
+planner epoch
+    -> AcceptedShortSegment
+    -> TrajectoryFollower every execution tick
+    -> PilotSkillExecutor
+    -> physics
+    -> NavigationExecutionReplanPolicy
+~~~
+
+New production files:
+- `src/game/navigation/AcceptedShortSegment.h`
+- `src/game/navigation/TrajectoryFollower.{h,cpp}`
+
+The accepted segment retains planner/world revisions, accepted/valid times,
+local start/target/velocity, portal-axis capture data, control response data,
+tracking envelope, emergency metadata and a vehicle-capability snapshot.
+
+The follower deliberately has no NavigationMap/NavigationSpace dependency. It
+tracks the already accepted local velocity/acceleration product and recomputes
+fixed-step angular/linear control from current kinematics without running
+obstacle or route search.
+
+`GameSimulation::buildNavigationRuntimeLabIntent()` now asks
+`NavigationExecutionReplanPolicy` before waking the planner. The current live
+automatic triggers wired by this slice are:
+- no accepted segment;
+- segment completion;
+- segment expiry;
+- tracking-envelope escape;
+- vehicle-capability change;
+- goal revision change.
+
+Stable execution keeps the accepted segment authoritative between those
+events. Nominal lab segment validity is 0.75 s. Provisional
+`ConflictHold/StaticHold/StaleHold` products are accepted only for 0.25 s, so
+a safe hold cannot silently become a permanent navigation shutdown.
+
+Diagnostics now distinguish:
+- `planCount`;
+- `executionCount`;
+- `acceptedSegmentFollowCount`;
+- `acceptedSegmentReplanCount`;
+- accepted segment revision / last replan reason.
+
+The isolated navigation-runtime target now also compiles
+`TrajectoryFollower.cpp` and pins:
+- follower execution without world search;
+- tracking-envelope invalidation;
+- stable `planCount << executionCount`.
+
+Important limitations of this candidate:
+- target-machine MinGW/runtime validation is still pending;
+- the existing `DynamicHazardInvalidated` policy hook is not yet fed by a
+  dedicated live accepted-segment hazard monitor in this slice;
+- manual `GuidanceCorridor` publication from the same segment is still the
+  next manual-mode integration step;
+- the live slit/tunnel capture must be re-run after this cadence change.
+
+Last actually target-machine accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~
+
+Do not promote `0fc8d9b9d929cb19ad0338191433b635bb723f31` to accepted
+baseline until the target-machine gate is green.

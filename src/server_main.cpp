@@ -552,6 +552,61 @@ int runNavigationRuntimeSelfTest()
             return 38;
         }
 
+        if (observation.firstLiveNominalProbeCaptured &&
+            (!observation.firstLiveNominalExactBlocked ||
+             observation.firstLiveNominalBlockingEntityId !=
+                observation.obstacleEntityId))
+        {
+            std::cerr
+                << "[NAV-SELFTEST]"
+                << " first_live_probe_blocked="
+                << observation.firstLiveNominalExactBlocked
+                << " first_live_blocker_entity="
+                << observation.firstLiveNominalBlockingEntityId
+                << " obstacle_entity="
+                << observation.obstacleEntityId
+                << " first_live_horizon_m="
+                << observation.firstLiveHorizonMeters
+                << " first_live_agent_map=("
+                << observation.firstLiveAgentPositionMap.x << ","
+                << observation.firstLiveAgentPositionMap.y << ","
+                << observation.firstLiveAgentPositionMap.z << ")"
+                << " first_live_bounded_target_map=("
+                << observation.firstLiveBoundedTargetMap.x << ","
+                << observation.firstLiveBoundedTargetMap.y << ","
+                << observation.firstLiveBoundedTargetMap.z << ")"
+                << "\n";
+            std::cerr
+                << "[FAIL] first live bounded nominal segment does not "
+                << "hit exact CUBE 08 HitVolume\n";
+            return 50;
+        }
+
+        if (observation.planCount > 0 &&
+            observation.firstLiveNominalProbeCaptured &&
+            observation.firstLiveNominalExactBlocked &&
+            observation.firstLiveNominalBlockingEntityId ==
+                observation.obstacleEntityId &&
+            !observation.nominalStaticBlockSeen)
+        {
+            std::cerr
+                << "[NAV-SELFTEST]"
+                << " first_live_probe_blocked=1"
+                << " first_live_blocker_entity="
+                << observation.firstLiveNominalBlockingEntityId
+                << " planner_exact_static_block="
+                << observation.nominalStaticBlockSeen
+                << " exact_obstacle_block="
+                << observation.obstacleExactStaticBlockSeen
+                << " first_live_horizon_m="
+                << observation.firstLiveHorizonMeters
+                << "\n";
+            std::cerr
+                << "[FAIL] planner lost an exact-static block proven by "
+                << "the identical first live bounded segment\n";
+            return 51;
+        }
+
         behaviorEvidenceComplete =
             observation.valid &&
             observation.exactStaticGeometryPublished &&
@@ -617,6 +672,12 @@ int runNavigationRuntimeSelfTest()
             << observation.exactStaticObstacleCount
             << " configured_route_exact_block="
             << observation.configuredRouteExactObstacleBlockPublished
+            << " first_live_probe_blocked="
+            << observation.firstLiveNominalExactBlocked
+            << " first_live_blocker_entity="
+            << observation.firstLiveNominalBlockingEntityId
+            << " first_live_horizon_m="
+            << observation.firstLiveHorizonMeters
             << " exact_static_query="
             << observation.exactStaticQuerySeen
             << " exact_static_block="
@@ -882,8 +943,14 @@ int runNavigationRuntimeSelfTest()
         << " exact_static_obstacles="
         << observation.exactStaticObstacleCount
         << " configured_route_exact_block="
-            << observation.configuredRouteExactObstacleBlockPublished
-            << " exact_static_query="
+        << observation.configuredRouteExactObstacleBlockPublished
+        << " first_live_probe_blocked="
+        << observation.firstLiveNominalExactBlocked
+        << " first_live_blocker_entity="
+        << observation.firstLiveNominalBlockingEntityId
+        << " first_live_horizon_m="
+        << observation.firstLiveHorizonMeters
+        << " exact_static_query="
         << observation.exactStaticQuerySeen
         << " exact_static_block="
         << observation.nominalStaticBlockSeen

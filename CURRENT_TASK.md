@@ -20,7 +20,7 @@ EliteServer PASS.
 Current code baseline:
 
 ```text
-27282d1d0d5e38072906139afbd743f712a1a68a
+99833c243992f5af2ce7bacc75efb3eb65ef3a84
 ```
 
 New live mode:
@@ -39,8 +39,9 @@ The self-test requires all of the following before PASS:
 - the ship passes the CUBE 08 center plane;
 - minimum conservative sphere clearance remains positive;
 - the ship continues at least 3500 m toward the final goal;
-- replicated `NavigationExecutionSnapshot` matches the exact latest
-  authoritative executed acceleration vector.
+- a sparse packet that actually publishes the lab row matches the authoritative
+  published execution at the exact same `serverTick`;
+- retained canonical hydration matches that same execution.
 
 The test is bounded to 120 s of simulated time and stops early when all evidence
 is complete.
@@ -88,7 +89,7 @@ EliteServer build PASS
 
 [NAV-SELFTEST] ... obstacle_candidate=1 obstacle_conflict=1 adjusted=1 ...
                lateral_exec=1 ... min_conservative_clearance_m=>0 ...
-               progress_m=>3500 ... replication_error_mps2=0
+               progress_m=>3500 ... replication_error_mps2=0 canonical_replication_error_mps2=0
 
 [PASS] navigation-runtime CUBE 08 caused authoritative avoidance
        with positive conservative clearance and replicated execution
@@ -97,3 +98,20 @@ EliteServer build PASS
 Do not tune thresholds merely to obtain PASS. If the live self-test fails, use
 the printed metrics to identify whether the defect is candidate publication,
 avoidance geometry, pilot execution, physical authority, or replication.
+
+
+### Correction after first live run
+
+The first live run reached the replication check and reported:
+
+```text
+error_mps2=0.00497292
+```
+
+This was a test-epoch bug, not grounds for changing numerical tolerance.
+Per-fixed-step diagnostic state was being compared with a cadence-limited
+retained client snapshot. The corrected gate waits for a sparse packet
+containing the lab row and compares it against a copied authoritative
+`GameServer::snapshot()` with the exact same `serverTick`.
+
+Run the same gate again after pulling current `main`.

@@ -38,7 +38,7 @@
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
-#include "src/game/navigation/NavigationRuntimePlanner.h"
+#include "src/game/navigation/NavigationRuntimePlanner.h"\n#include "src/game/navigation/AcceptedShortSegment.h"\n#include "src/game/navigation/TrajectoryFollower.h"\n#include "src/game/navigation/NavigationExecutionReplanPolicy.h"
 #include "src/game/diagnostics/NavigationRuntimeLab.h"
 #include "src/world/navigation/map/NavigationMap.h"
 #include "src/world/navigation/space/NavigationSpace.h"
@@ -454,6 +454,9 @@ private:
         m_navigationRuntimeLabSpace;
     game::navigation::NavigationRuntimePlanner::Result
         m_navigationRuntimeLabLastPlan {};
+    game::navigation::AcceptedShortSegment
+        m_navigationRuntimeLabAcceptedSegment {};
+    std::uint64_t m_navigationRuntimeLabNextSegmentRevision = 1;
     game::diagnostics::NavigationRuntimeLabObservation
         m_navigationRuntimeLabObservation {};
 

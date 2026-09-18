@@ -1240,6 +1240,8 @@ void GameSimulation::initializeNavigationRuntimeLab()
 
     m_navigationRuntimeLabSourceRevision = 0;
     m_navigationRuntimeLabLastPlan = {};
+    m_navigationRuntimeLabAcceptedSegment = {};
+    m_navigationRuntimeLabNextSegmentRevision = 1;
     m_navigationRuntimeLabObservation = {};
     m_navigationRuntimeLabObservation.valid = true;
     m_navigationRuntimeLabObservation.shipEntityId =
@@ -2560,19 +2562,271 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     if (goalDistanceMeters <= NavigationRuntimeLabArrivalRadiusMeters)
         observation.reachedGoal = true;
 
-    m_navigationRuntimeLabLastPlan =
-        Planner::plan(
-            agent,
-            plannerGoal,
-            dynamicCandidates,
-            0.0,
-            *m_navigationRuntimeLabSpace,
-            policy
-        );
+    using Replan =
+        game::navigation::NavigationExecutionReplanPolicy;
+    using Follower =
+        game::navigation::TrajectoryFollower;
+    using AcceptedSegment =
+        game::navigation::AcceptedShortSegment;
 
-    ++m_navigationRuntimeLabObservation.planCount;
+    constexpr double AcceptedSegmentValiditySeconds = 0.75;
+    constexpr double HoldSegmentValiditySeconds = 0.25;
+
+    const double navigationTimeSeconds =
+        m_serverTimelineClock.timeSeconds();
+
+    Follower::AgentState followerAgent;
+    followerAgent.positionMapMeters = agent.positionMapMeters;
+    followerAgent.velocityMapMetersPerSecond =
+        agent.velocityMapMetersPerSecond;
+    followerAgent.forwardMap = agent.forwardMap;
+    followerAgent.rightMap = agent.rightMap;
+    followerAgent.upMap = agent.upMap;
+    followerAgent.pitchRateRadPerSec = agent.pitchRateRadPerSec;
+    followerAgent.yawRateRadPerSec = agent.yawRateRadPerSec;
+    followerAgent.rollRateRadPerSec = agent.rollRateRadPerSec;
+
+    const auto capabilityChanged =
+        [&](const AcceptedSegment& accepted)
+        {
+            const auto& capability = accepted.capability;
+            constexpr double tolerance = 1.0e-9;
+            const auto changed =
+                [&](double a, double b)
+                {
+                    return
+                        !std::isfinite(a) ||
+                        !std::isfinite(b) ||
+                        std::abs(a - b) > tolerance;
+                };
+
+            return
+                changed(
+                    capability.maxForwardAccelerationMetersPerSec2,
+                    agent.linearCapability.
+                        maxForwardAccelerationMetersPerSec2
+                ) ||
+                changed(
+                    capability.maxReverseAccelerationMetersPerSec2,
+                    agent.linearCapability.
+                        maxReverseAccelerationMetersPerSec2
+                ) ||
+                changed(
+                    capability.maxLateralAccelerationMetersPerSec2,
+                    agent.linearCapability.
+                        maxLateralAccelerationMetersPerSec2
+                ) ||
+                changed(
+                    capability.maxVerticalAccelerationMetersPerSec2,
+                    agent.linearCapability.
+                        maxVerticalAccelerationMetersPerSec2
+                ) ||
+                changed(
+                    capability.maxAngularAccelerationRadPerSec2,
+                    agent.angularCapability.
+                        maxAngularAccelerationRadPerSec2
+                ) ||
+                changed(
+                    capability.maxAngularSpeedRadPerSec,
+                    agent.angularCapability.
+                        maxAngularSpeedRadPerSec
+                );
+        };
+
+    Follower::Result followerResult;
+    if (m_navigationRuntimeLabAcceptedSegment.valid)
+    {
+        followerResult =
+            Follower::follow(
+                m_navigationRuntimeLabAcceptedSegment,
+                followerAgent
+            );
+    }
+
+    Replan::Query replanQuery;
+    replanQuery.mode = Replan::ExecutionMode::Automatic;
+    replanQuery.universeTimeSeconds = navigationTimeSeconds;
+    replanQuery.acceptedSegmentValid =
+        m_navigationRuntimeLabAcceptedSegment.valid &&
+        followerResult.status != Follower::Status::InvalidInput;
+    replanQuery.acceptedSegmentValidUntilUniverseTimeSeconds =
+        m_navigationRuntimeLabAcceptedSegment.
+            validUntilUniverseTimeSeconds;
+    replanQuery.acceptedSegmentComplete =
+        followerResult.status == Follower::Status::Complete;
+    replanQuery.trackingErrorExceeded =
+        followerResult.trackingErrorExceeded;
+    replanQuery.vehicleCapabilityChanged =
+        m_navigationRuntimeLabAcceptedSegment.valid &&
+        capabilityChanged(m_navigationRuntimeLabAcceptedSegment);
+    replanQuery.goalIntentChanged =
+        m_navigationRuntimeLabAcceptedSegment.valid &&
+        m_navigationRuntimeLabAcceptedSegment.goalRevision !=
+            plannerGoal.revision;
+    replanQuery.globalRouteValid = true;
+    replanQuery.currentTopologyBranchValid = true;
+
+    const Replan::Policy replanPolicy;
+    const Replan::Result replan =
+        Replan::evaluate(replanPolicy, replanQuery);
+
+    bool plannedThisTick = false;
+
+    if (replan.scope != Replan::Scope::None)
+    {
+        m_navigationRuntimeLabLastPlan =
+            Planner::plan(
+                agent,
+                plannerGoal,
+                dynamicCandidates,
+                0.0,
+                *m_navigationRuntimeLabSpace,
+                policy
+            );
+
+        ++m_navigationRuntimeLabObservation.planCount;
+        ++m_navigationRuntimeLabObservation.acceptedSegmentReplanCount;
+        m_navigationRuntimeLabObservation.lastReplanReason =
+            static_cast<std::uint8_t>(replan.reason);
+        plannedThisTick = true;
+
+        if (m_navigationRuntimeLabLastPlan.status ==
+            Planner::Status::InvalidInput)
+        {
+            return false;
+        }
+
+        AcceptedSegment accepted;
+        accepted.valid = true;
+        accepted.revision =
+            m_navigationRuntimeLabNextSegmentRevision++;
+        accepted.goalRevision = plannerGoal.revision;
+        accepted.acceptedAtUniverseTimeSeconds =
+            navigationTimeSeconds;
+
+        const bool provisionalHold =
+            m_navigationRuntimeLabLastPlan.status ==
+                Planner::Status::ConflictHold ||
+            m_navigationRuntimeLabLastPlan.status ==
+                Planner::Status::StaticHold ||
+            m_navigationRuntimeLabLastPlan.status ==
+                Planner::Status::StaleHold;
+
+        accepted.validUntilUniverseTimeSeconds =
+            navigationTimeSeconds +
+            (provisionalHold
+                ? HoldSegmentValiditySeconds
+                : AcceptedSegmentValiditySeconds);
+
+        accepted.mapRevision =
+            m_navigationRuntimeLabLastPlan.mapRevision;
+        accepted.mapSourceRevision =
+            m_navigationRuntimeLabLastPlan.mapSourceRevision;
+        accepted.spaceRevision =
+            m_navigationRuntimeLabLastPlan.spaceRevision;
+        accepted.spaceSourceRevision =
+            m_navigationRuntimeLabLastPlan.spaceSourceRevision;
+
+        accepted.startPositionMapMeters =
+            agent.positionMapMeters;
+        accepted.targetPositionMapMeters =
+            provisionalHold
+                ? agent.positionMapMeters
+                : m_navigationRuntimeLabLastPlan.
+                    selectedTargetMapMeters;
+        accepted.targetVelocityMapMetersPerSecond =
+            provisionalHold
+                ? glm::dvec3(0.0)
+                : m_navigationRuntimeLabLastPlan.
+                    desiredVelocityMapMetersPerSecond;
+
+        accepted.linearMode =
+            m_navigationRuntimeLabLastPlan.
+                movingPassageAuthorityUsed
+                ? AcceptedSegment::LinearMode::FixedAcceleration
+                : AcceptedSegment::LinearMode::VelocityTracking;
+        accepted.fixedLinearAccelerationMapMps2 =
+            m_navigationRuntimeLabLastPlan.
+                movingPassageAuthorityUsed
+                ? m_navigationRuntimeLabLastPlan.
+                    movingPassageInitialAccelerationMapMps2
+                : glm::dvec3(0.0);
+        accepted.velocityResponsePerSecond =
+            plannerGoal.velocityResponsePerSecond;
+
+        accepted.alignForward =
+            m_navigationRuntimeLabLastPlan.portalTraversalActive;
+        accepted.desiredForwardMap =
+            accepted.alignForward
+                ? m_navigationRuntimeLabLastPlan.portalNormalMap
+                : agent.forwardMap;
+        accepted.angularDampingPerSecond =
+            plannerGoal.angularDampingPerSecond;
+        accepted.orientationResponsePerSecond2 =
+            policy.portalTraversal.orientationResponsePerSecond2;
+        accepted.maximumAngularAccelerationRadPerSec2 =
+            agent.angularCapability.
+                maxAngularAccelerationRadPerSec2;
+
+        accepted.completionRadiusMeters =
+            std::max(1.0, plannerGoal.arrivalRadiusMeters);
+        accepted.trackingEnvelopeRadiusMeters =
+            std::max(
+                accepted.completionRadiusMeters,
+                shipRadius +
+                    policy.horizon.safetyMarginMeters
+            );
+
+        accepted.emergency =
+            m_navigationRuntimeLabLastPlan.intent.emergency;
+        accepted.hazardUrgency01 =
+            m_navigationRuntimeLabLastPlan.intent.hazardUrgency01;
+
+        accepted.capability.maxForwardAccelerationMetersPerSec2 =
+            agent.linearCapability.
+                maxForwardAccelerationMetersPerSec2;
+        accepted.capability.maxReverseAccelerationMetersPerSec2 =
+            agent.linearCapability.
+                maxReverseAccelerationMetersPerSec2;
+        accepted.capability.maxLateralAccelerationMetersPerSec2 =
+            agent.linearCapability.
+                maxLateralAccelerationMetersPerSec2;
+        accepted.capability.maxVerticalAccelerationMetersPerSec2 =
+            agent.linearCapability.
+                maxVerticalAccelerationMetersPerSec2;
+        accepted.capability.maxAngularAccelerationRadPerSec2 =
+            agent.angularCapability.
+                maxAngularAccelerationRadPerSec2;
+        accepted.capability.maxAngularSpeedRadPerSec =
+            agent.angularCapability.maxAngularSpeedRadPerSec;
+
+        m_navigationRuntimeLabAcceptedSegment = accepted;
+
+        followerResult =
+            Follower::follow(
+                m_navigationRuntimeLabAcceptedSegment,
+                followerAgent
+            );
+    }
+
+    if (!m_navigationRuntimeLabAcceptedSegment.valid ||
+        followerResult.status == Follower::Status::InvalidInput)
+    {
+        return false;
+    }
+
+    if (!plannedThisTick &&
+        !replan.continueAcceptedAutomaticExecution)
+    {
+        return false;
+    }
+
+    ++m_navigationRuntimeLabObservation.acceptedSegmentFollowCount;
+    m_navigationRuntimeLabObservation.acceptedSegmentActive = true;
+    m_navigationRuntimeLabObservation.acceptedSegmentRevision =
+        m_navigationRuntimeLabAcceptedSegment.revision;
     m_navigationRuntimeLabObservation.lastIntentRevision =
-        m_navigationRuntimeLabLastPlan.intent.revision;
+        followerResult.intent.revision;
     m_navigationRuntimeLabObservation.lastPlannerStatus =
         static_cast<std::uint8_t>(
             m_navigationRuntimeLabLastPlan.status
@@ -2789,15 +3043,9 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         m_navigationRuntimeLabObservation.obstaclePrimaryConflictSeen = true;
     }
 
-    if (m_navigationRuntimeLabLastPlan.status ==
-        Planner::Status::InvalidInput)
-    {
-        return false;
-    }
-
     outIntent =
         Planner::mapIntentToWorld(
-            m_navigationRuntimeLabLastPlan.intent,
+            followerResult.intent,
             navigationWorkingFrame
         );
     return true;
@@ -4610,6 +4858,8 @@ void GameSimulation::registerNavigationRuntimeLabShip(
     m_navigationRuntimeLabSpace.reset();
     m_navigationRuntimeLabSourceRevision = 0;
     m_navigationRuntimeLabLastPlan = {};
+    m_navigationRuntimeLabAcceptedSegment = {};
+    m_navigationRuntimeLabNextSegmentRevision = 1;
     m_navigationRuntimeLabObservation = {};
     m_navigationRuntimeLabObservation.shipEntityId = shipId.value;
 }

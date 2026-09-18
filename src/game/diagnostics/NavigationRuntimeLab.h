@@ -223,6 +223,11 @@ struct NavigationRuntimeLabObservation
 
     std::uint64_t planCount = 0;
     std::uint64_t executionCount = 0;
+    std::uint64_t acceptedSegmentFollowCount = 0;
+    std::uint64_t acceptedSegmentReplanCount = 0;
+    std::uint64_t acceptedSegmentRevision = 0;
+    std::uint8_t lastReplanReason = 0xffu;
+    bool acceptedSegmentActive = false;
     std::uint64_t lastIntentRevision = 0;
     std::uint8_t lastPlannerStatus = 0xffu;
 

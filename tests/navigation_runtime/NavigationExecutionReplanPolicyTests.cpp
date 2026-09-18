@@ -1,6 +1,6 @@
-#include "game/navigation/NavigationExecutionReplanPolicy.h"
+#include "game/navigation/NavigationExecutionReplanPolicy.h"\n#include "game/navigation/AcceptedShortSegment.h"\n#include "game/navigation/TrajectoryFollower.h"
 
-#include <iostream>
+#include <cmath>\n#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -173,6 +173,96 @@ void testSegmentExpiryAdvancesLocally()
             "accepted short segment expiry must request the next local suffix");
 }
 
+void testAcceptedSegmentFollowerExecutesWithoutPlannerSearch()
+{
+    using Segment = game::navigation::AcceptedShortSegment;
+    using Follower = game::navigation::TrajectoryFollower;
+
+    Segment segment;
+    segment.valid = true;
+    segment.revision = 77;
+    segment.goalRevision = 5;
+    segment.acceptedAtUniverseTimeSeconds = 100.0;
+    segment.validUntilUniverseTimeSeconds = 102.0;
+    segment.startPositionMapMeters = {0.0, 0.0, 0.0};
+    segment.targetPositionMapMeters = {100.0, 0.0, 0.0};
+    segment.targetVelocityMapMetersPerSecond = {10.0, 0.0, 0.0};
+    segment.velocityResponsePerSecond = 0.5;
+    segment.angularDampingPerSecond = 2.0;
+    segment.completionRadiusMeters = 1.0;
+    segment.trackingEnvelopeRadiusMeters = 20.0;
+
+    Follower::AgentState agent;
+    agent.positionMapMeters = {10.0, 0.0, 0.0};
+    agent.velocityMapMetersPerSecond = {4.0, 0.0, 0.0};
+
+    const auto first = Follower::follow(segment, agent);
+    require(first.status == Follower::Status::Following,
+            "accepted segment follower did not remain active");
+    require(first.intent.revision == 77,
+            "follower changed accepted segment revision");
+    require(std::abs(
+                first.intent.
+                    idealLinearAccelerationDemandMapMps2.x -
+                3.0) <= 1.0e-12,
+            "follower did not track accepted target velocity");
+
+    agent.positionMapMeters = {20.0, 25.0, 0.0};
+    const auto escaped = Follower::follow(segment, agent);
+    require(escaped.trackingErrorExceeded,
+            "follower did not publish accepted-envelope escape");
+}
+
+void testPlanCountRemainsFarBelowExecutionCount()
+{
+    using Segment = game::navigation::AcceptedShortSegment;
+    using Follower = game::navigation::TrajectoryFollower;
+
+    Segment segment;
+    segment.valid = true;
+    segment.revision = 91;
+    segment.goalRevision = 7;
+    segment.acceptedAtUniverseTimeSeconds = 100.0;
+    segment.validUntilUniverseTimeSeconds = 103.0;
+    segment.startPositionMapMeters = {0.0, 0.0, 0.0};
+    segment.targetPositionMapMeters = {1000.0, 0.0, 0.0};
+    segment.targetVelocityMapMetersPerSecond = {20.0, 0.0, 0.0};
+    segment.velocityResponsePerSecond = 0.5;
+    segment.angularDampingPerSecond = 2.0;
+    segment.completionRadiusMeters = 1.0;
+    segment.trackingEnvelopeRadiusMeters = 50.0;
+
+    Follower::AgentState agent;
+
+    std::uint64_t planCount = 1;
+    std::uint64_t executionCount = 0;
+
+    Replan::Policy policy;
+    Replan::Query query = stableAutomatic();
+    query.acceptedSegmentValid = true;
+    query.acceptedSegmentValidUntilUniverseTimeSeconds =
+        segment.validUntilUniverseTimeSeconds;
+
+    for (int i = 0; i < 120; ++i)
+    {
+        query.universeTimeSeconds =
+            100.0 + static_cast<double>(i) / 60.0;
+
+        const auto scheduling = Replan::evaluate(policy, query);
+        require(scheduling.scope == Replan::Scope::None &&
+                scheduling.continueAcceptedAutomaticExecution,
+                "stable accepted segment unexpectedly woke the planner");
+
+        const auto followed = Follower::follow(segment, agent);
+        require(followed.status == Follower::Status::Following,
+                "stable accepted segment stopped following");
+        ++executionCount;
+    }
+
+    require(planCount * 20 < executionCount,
+            "accepted-segment seam did not separate planning from execution cadence");
+}
+
 } // namespace
 
 int main()
@@ -188,6 +278,8 @@ int main()
         testTopologyInvalidationForcesFullRoute();
         testVehicleDamageKeepsGlobalRouteButRebuildsTrajectory();
         testSegmentExpiryAdvancesLocally();
+        testAcceptedSegmentFollowerExecutesWithoutPlannerSearch();
+        testPlanCountRemainsFarBelowExecutionCount();
 
         std::cout << "NAVIGATION EXECUTION REPLAN POLICY TESTS: PASS\n";
         std::cout << " - stable autopilot executes accepted segment without per-frame replanning\n";
@@ -195,6 +287,8 @@ int main()
         std::cout << " - manual guidance refreshes periodically and immediately on corridor exit\n";
         std::cout << " - manual local deviation preserves the global route branch\n";
         std::cout << " - topology invalidation alone escalates to full-route rebuild\n";
+        std::cout << " - accepted segment follower runs fixed-step without world search\n";
+        std::cout << " - stable execution keeps planCount far below executionCount\n";
         return 0;
     }
     catch (const std::exception& error)

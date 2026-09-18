@@ -532,10 +532,31 @@ int runNavigationRuntimeSelfTest()
                     observation.minimumGoalDistanceMeters
                 : 0.0;
 
+        if (observation.exactStaticGeometryPublished &&
+            !observation.configuredRouteExactObstacleBlockPublished)
+        {
+            std::cerr
+                << "[NAV-SELFTEST]"
+                << " exact_static="
+                << observation.exactStaticGeometryPublished
+                << " exact_static_obstacles="
+                << observation.exactStaticObstacleCount
+                << " configured_route_exact_block="
+                << observation.configuredRouteExactObstacleBlockPublished
+                << " obstacle_entity="
+                << observation.obstacleEntityId
+                << "\n";
+            std::cerr
+                << "[FAIL] configured NavigationRuntimeLab route does not "
+                << "intersect exact CUBE 08 HitVolume\n";
+            return 38;
+        }
+
         behaviorEvidenceComplete =
             observation.valid &&
             observation.exactStaticGeometryPublished &&
             observation.exactStaticObstacleCount > 0 &&
+            observation.configuredRouteExactObstacleBlockPublished &&
             observation.exactStaticQuerySeen &&
             observation.nominalStaticBlockSeen &&
             observation.maximumExactStaticObstaclesExamined > 0 &&
@@ -545,6 +566,7 @@ int runNavigationRuntimeSelfTest()
             observation.executionCount > 0 &&
             observation.obstacleEntityId != 0 &&
             observation.dynamicQueryCount > 0 &&
+            observation.maximumDynamicCandidateCount > 0 &&
             !observation.obstacleCandidateSeen &&
             !observation.obstaclePrimaryConflictSeen &&
             observation.obstacleExactStaticBlockSeen &&
@@ -593,6 +615,8 @@ int runNavigationRuntimeSelfTest()
             << observation.exactStaticGeometryPublished
             << " exact_static_obstacles="
             << observation.exactStaticObstacleCount
+            << " configured_route_exact_block="
+            << observation.configuredRouteExactObstacleBlockPublished
             << " exact_static_query="
             << observation.exactStaticQuerySeen
             << " exact_static_block="
@@ -857,7 +881,9 @@ int runNavigationRuntimeSelfTest()
         << observation.exactStaticGeometryPublished
         << " exact_static_obstacles="
         << observation.exactStaticObstacleCount
-        << " exact_static_query="
+        << " configured_route_exact_block="
+            << observation.configuredRouteExactObstacleBlockPublished
+            << " exact_static_query="
         << observation.exactStaticQuerySeen
         << " exact_static_block="
         << observation.nominalStaticBlockSeen

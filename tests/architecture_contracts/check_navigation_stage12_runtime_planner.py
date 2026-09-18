@@ -220,6 +220,12 @@ require(
     "read-only Stage-12 observation must cross the ServerRuntime boundary",
 )
 
+require(
+    "copyAuthoritativePublishedSnapshot" in SERVER_RUNTIME_H and
+    "outSnapshot = m_server->snapshot()" in SERVER_RUNTIME_CPP,
+    "live self-test must compare against a copied authoritative published snapshot, not mutable per-step state",
+)
+
 for marker in (
     "--self-test-navigation",
     "runNavigationRuntimeSelfTest",
@@ -230,7 +236,10 @@ for marker in (
     "findShipSnapshotByInstanceId",
     "NavigationExecutionSnapshot",
     "replicationErrorMps2",
-    "lastExecutedLinearDemandMapMps2",
+    "canonicalReplicationErrorMps2",
+    "copyAuthoritativePublishedSnapshot",
+    "sparsePacket.metadata.serverTick",
+    "authoritativePublished.metadata.serverTick",
 ):
     require(marker in SERVER_MAIN, f"authoritative navigation self-test missing: {marker}")
 
@@ -269,4 +278,5 @@ print(" - deterministic fixtures pin detour, envelope rejection, moving conflict
 print(" - authoritative GameSimulation isolates one Active stage-12 lab actor on real NAV STRESS hit volumes")
 print(" - live self-test pins CUBE 08 -> adjusted target -> executed lateral demand -> positive clearance")
 print(" - bounded NavigationMap sphere covers the complete local avoidance fan")
-print(" - replicated executed acceleration must exactly match authoritative execution truth")
+print(" - sparse packet is compared with authoritative publication at the exact same server tick")
+print(" - canonical sparse hydration must match the same authoritative execution truth")

@@ -14,7 +14,8 @@
 - 12A-4 exact static HitVolume OBB — ACCEPTED
 - 12A-5 static/dynamic ownership cleanup — ACCEPTED
 - 12A-6a dynamic angular-motion publication — ACCEPTED
-- 12A-6b live moving-gap / moving-passage composition — ACTIVE\n- 12A-6b1 runtime moving-precision observe/prove seam — CANDIDATE / target-machine pending
+- 12A-6b live moving-gap / moving-passage composition — ACTIVE
+- 12A-6b1 runtime moving-precision observe/prove seam — CANDIDATE / partial target-machine evidence
 
 ## 12A-6a acceptance
 
@@ -94,7 +95,29 @@ The moving-passage evaluator now also publishes the first acceleration sample fr
 
 **Important:** 12A-6b1 is intentionally non-authoritative. A feasible moving passage does not yet replace the accepted LocalAvoidance command. Before steering authority is enabled, that moving trajectory must also be composed with exact-static HitVolume safety. This prevents a dynamically valid gap trajectory from cutting through stationary geometry.
 
-Target-machine verification is pending.
+Target-machine partial verification on `6badb5f74ea65900a38a48854d66f16f34127a89`:
+
+```text
+navigation_runtime_control    PASS
+navigation_runtime_planner    PASS
+navigation_replication_truth  PASS
+3/3 runtime tests PASS
+```
+
+The architecture script failed before runtime execution with:
+
+```text
+[FAIL] exact obstacle geometry must link in isolated and production NavigationSpace targets
+```
+
+Root cause: the checker matched the literal CMake text
+`PUBLIC EliteNavigationGeometry`; adding `EliteNavigationTrajectory` changed
+the line formatting but not the actual link graph. The successful build/link of
+`navigation_runtime_planner_tests.exe` confirms this was not a linker/runtime
+defect.
+
+The CMake formatting is restored and the checker is now whitespace-stable.
+12A-6b1 remains CANDIDATE until the corrected architecture gate is rerun.
 
 ## Project-state recording rule
 

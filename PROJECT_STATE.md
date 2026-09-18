@@ -1,6 +1,6 @@
 # Project State
 
-**Updated:** 2026-09-17 Europe/Kyiv  
+**Updated:** 2026-09-18 Europe/Kyiv  
 **Current focus:** NavigationWorld v2 / moving & rotating docking 6DoF  
 **Canonical development branch:** `main`  
 **Active stage:** `NAV-V2-TRAJECTORY-1`
@@ -203,6 +203,12 @@ FeasibleForCapture
 ```
 
 means both final-segment feasibility and terminal 6DoF capture are proven under the declared model.
+
+## Stage 9B first gate status
+
+The first target-machine run is **not accepted**. Build succeeded and the existing 1–9 tests stayed green, but the new 10th behavior test failed because its supposed between-sample collision fixture did not actually leave the corridor. Exact analysis showed the true Hermite peak was `0.9622504486 m` while the fixture allowed `0.975 m` of center travel.
+
+The fixture now allows `0.9618 m`: all 33 samples still fit (`+0.0004962891 m` minimum sampled clearance), while the true curve is outside (`-0.0004504486 m`) and the existing conservative interval proof is expected to reject it. The documentation gate was also hardened against capitalization-only Markdown differences. A fresh 10/10 target-machine rerun is required before closing stage 9.
 
 ## Collision / docking-state boundary
 

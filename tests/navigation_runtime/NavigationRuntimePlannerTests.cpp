@@ -650,6 +650,16 @@ void testMovingGapPrecisionProbeUsesRuntimeCandidates()
     );
     require(glm::length(result.movingPassageInitialAccelerationMapMps2) > 0.0,
             "feasible moving passage must publish the verified first control sample");
+    require(result.movingPassageStaticProofAttempted,
+            "feasible moving passage must enter exact-static same-trajectory proof");
+    require(result.movingPassageStaticSafe,
+            "empty static fixture must accept the exact moving Hermite trajectory");
+    require(result.movingPassageStaticIntervalsProven ==
+                Planner::MovingPassage::kIntervals,
+            "exact-static moving proof must cover all 32 Hermite intervals");
+    require(result.movingPassageStaticBlockingObstacleId.empty() &&
+            result.movingPassageStaticBlockingObstacleEntityId == 0,
+            "clear exact-static moving proof must not fabricate a blocker");
 }
 
 void testClosingMovingGapFailsClosedBeforePassageEvaluation()
@@ -734,6 +744,118 @@ void testClosingMovingGapFailsClosedBeforePassageEvaluation()
             "closed-in-horizon gap must never reach ship passage acceptance");
     require(!result.movingPassageFeasible,
             "closing gap must fail closed");
+}
+
+
+void testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory()
+{
+    Map::Config config;
+    config.halfExtentMeters = 1000.0;
+    config.cellSizeMeters = 50.0;
+    config.predictionHorizonSeconds = 3.0;
+    config.interactionMarginMeters = 0.0;
+
+    Map map(config);
+    Map::DynamicWorldUpdate update;
+    update.sourceRevision = 122;
+
+    Map::DynamicActorInput upper;
+    upper.entityId = 321;
+    upper.positionSystemMeters = {20.0, 2.5, 0.0};
+    upper.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
+    upper.angularVelocitySystemRadPerSecond = {0.0, 0.0, 1.0};
+    upper.radiusMeters = 2.0;
+    upper.motionRevision = 31;
+    update.actors.push_back(upper);
+
+    Map::DynamicActorInput lower;
+    lower.entityId = 322;
+    lower.positionSystemMeters = {20.0, -2.5, 0.0};
+    lower.velocitySystemMetersPerSecond = {1.0, 0.0, 0.0};
+    lower.angularVelocitySystemRadPerSecond = {0.0, 0.0, -1.0};
+    lower.radiusMeters = 2.0;
+    lower.motionRevision = 32;
+    update.actors.push_back(lower);
+
+    map.replaceDynamicWorld(std::move(update));
+
+    Map::CorridorQuery query;
+    query.startMapMeters = {0.0, 0.0, 0.0};
+    query.endMapMeters = {50.0, 0.0, 0.0};
+    query.radiusMeters = 20.0;
+    const Map::QueryResult dynamic = map.queryCorridor(query);
+
+    Space space;
+    Space::StaticSpaceUpdate staticWorld;
+    staticWorld.sourceRevision = 202;
+    staticWorld.regions = {
+        region(1, 25.0, 0.0, 35.0, 50.0, 30.0)
+    };
+
+    world::navigation::NavigationObstacle beam;
+    beam.id = "moving_passage_static_beam";
+    beam.entityId = 909;
+    beam.shape = world::navigation::NavigationObstacleShape::Box;
+    beam.centerMeters = {10.0, 0.0, 0.0};
+    beam.localToWorldBasis = glm::dmat3(1.0);
+    beam.halfExtentsMeters = {0.10, 0.10, 1.0};
+    staticWorld.obstacles.push_back(beam);
+    space.replaceStaticWorld(std::move(staticWorld));
+
+    Planner::AgentState agent = baseAgent();
+    agent.radiusMeters = 1.0;
+    agent.forwardMap = {1.0, 0.0, 0.0};
+    agent.upMap = {0.0, 0.0, 1.0};
+    agent.rightMap = {0.0, 1.0, 0.0};
+    agent.hullHalfExtentsBodyMeters = {0.4, 0.4, 0.4};
+    agent.linearCapability.maxForwardAccelerationMetersPerSec2 = 30.0;
+    agent.linearCapability.maxReverseAccelerationMetersPerSec2 = 30.0;
+    agent.linearCapability.maxLateralAccelerationMetersPerSec2 = 30.0;
+    agent.linearCapability.maxVerticalAccelerationMetersPerSec2 = 30.0;
+    agent.angularCapability.maxAngularAccelerationRadPerSec2 = 10.0;
+    agent.angularCapability.maxAngularSpeedRadPerSec = 10.0;
+
+    Planner::Goal goal = goalAt(50.0);
+    goal.maximumTargetSpeedMps = 10.0;
+
+    Planner::Policy policy = basePolicy();
+    policy.horizon.minimumHorizonMeters = 30.0;
+    policy.horizon.turnDistanceMeters = 0.0;
+    policy.horizon.safetyMarginMeters = 0.0;
+    policy.movingPassage.enabled = true;
+    policy.movingPassage.durationSeconds = 3.0;
+    policy.movingPassage.candidates.minimumForwardDistanceMeters = 0.0;
+    policy.movingPassage.candidates.maximumForwardDistanceMeters = 100.0;
+    policy.movingPassage.candidates.maximumCenterlineOffsetMeters = 10.0;
+    policy.movingPassage.candidates.secondaryClearanceMeters = 4.0;
+    policy.movingPassage.prediction.secondaryClearanceMeters = 4.0;
+
+    const Planner::Result result = Planner::plan(
+        agent,
+        goal,
+        dynamic,
+        0.0,
+        space,
+        policy
+    );
+
+    require(result.nominalDynamicConflictsFound > 0,
+            "static-blocker fixture still requires the real moving conflict");
+    require(result.movingPassageFeasible,
+            "dynamic moving aperture must remain feasible before static composition");
+    require(result.movingPassageStaticProofAttempted,
+            "accepted moving Hermite curve must be submitted to exact-static proof");
+    require(!result.movingPassageStaticSafe,
+            "static beam crossing the accepted moving curve must fail closed");
+    require(result.movingPassageStaticBlockingObstacleId ==
+                "moving_passage_static_beam" &&
+            result.movingPassageStaticBlockingObstacleEntityId == 909,
+            "exact-static moving proof lost blocking HitVolume identity");
+    require(result.movingPassageStaticIntervalsProven <
+                Planner::MovingPassage::kIntervals,
+            "static blocker must stop proof before all intervals are accepted");
+    require(result.movingPassageStaticObstaclesExamined > 0,
+            "static moving-trajectory proof must expose exact obstacle query work");
 }
 
 void testMapIntentTransformsIntoWorldControlFrame()
@@ -852,6 +974,7 @@ int main()
         testNavigationMapCrossingConflictProducesBrakingHold();
         testMovingGapPrecisionProbeUsesRuntimeCandidates();
         testClosingMovingGapFailsClosedBeforePassageEvaluation();
+        testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory();
         testMapIntentTransformsIntoWorldControlFrame();
         testPlannerIntentCrossesAcceptedPilotBridge();
 
@@ -865,6 +988,7 @@ int main()
         std::cout << " - NavigationMap crossing conflict -> braking hold\n";
         std::cout << " - bounded runtime candidates -> moving-gap/passage precision probe\n";
         std::cout << " - closing moving gap fails closed before passage evaluation\n";
+        std::cout << " - exact-static blocker rejects the same accepted moving Hermite trajectory\n";
         std::cout << " - non-identity map intent -> world control frame\n";
         std::cout << " - planner intent -> PilotSkillExecutor runtime bridge\n";
         return 0;

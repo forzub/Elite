@@ -85,6 +85,11 @@ public:
     struct Result
     {
         Status status = Status::InvalidInput;
+
+        // Planner-space product. All vectors here are expressed in the
+        // NavigationMap working frame. Before this intent enters the accepted
+        // Stage-11 PilotSkillExecutor / ShipControlState seam it MUST pass
+        // through mapIntentToWorld().
         Bridge::Intent intent {};
 
         bool safeProgressTargetDemonstrated = false;

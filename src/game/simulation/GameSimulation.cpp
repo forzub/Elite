@@ -1377,6 +1377,21 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             haveObservedObstacle = true;
         }
 
+        // Stage 12A-5 ownership split:
+        // - stationary infrastructure is exact NavigationSpace truth only;
+        // - time-varying infrastructure remains in NavigationMap broadphase
+        //   until the dedicated moving/rotating exact-geometry slice lands.
+        //
+        // CUBE 08 is stationary in the hub/map frame and MUST NOT be duplicated
+        // here as a conservative sphere.
+        const bool timeVaryingNavigationActor =
+            glm::length(
+                object.hubLocalAngularVelocityDegPerSecond
+            ) > 1.0e-9;
+
+        if (!timeVaryingNavigationActor)
+            continue;
+
         Map::DynamicActorInput actor;
         actor.entityId = objectId.value;
         actor.positionSystemMeters = {
@@ -1384,9 +1399,6 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             positionMeters.y,
             positionMeters.z
         };
-
-        // Attached stress-object centres are stationary in the rotating hub
-        // map. Self-rotation affects exact OBB orientation, not centre motion.
         actor.velocitySystemMetersPerSecond = {0.0, 0.0, 0.0};
         actor.accelerationSystemMetersPerSecond2 = {0.0, 0.0, 0.0};
         actor.radiusMeters = radius;
@@ -1479,6 +1491,13 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
 
     const Map::QueryResult dynamicCandidates =
         m_navigationRuntimeLabMap->querySphere(dynamicQuery);
+
+    ++m_navigationRuntimeLabObservation.dynamicQueryCount;
+    m_navigationRuntimeLabObservation.maximumDynamicCandidateCount =
+        std::max(
+            m_navigationRuntimeLabObservation.maximumDynamicCandidateCount,
+            dynamicCandidates.candidates.size()
+        );
 
     if (m_navigationRuntimeLabObservation.obstacleEntityId != 0)
     {
@@ -1732,6 +1751,13 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 maximumExactStaticObstaclesExamined,
             m_navigationRuntimeLabLastPlan.staticObstaclesExamined
         );
+
+    if (m_navigationRuntimeLabObservation.obstacleEntityId != 0 &&
+        m_navigationRuntimeLabLastPlan.nominalStaticObstacleEntityId ==
+            m_navigationRuntimeLabObservation.obstacleEntityId)
+    {
+        m_navigationRuntimeLabObservation.obstacleExactStaticBlockSeen = true;
+    }
 
     if (m_navigationRuntimeLabObservation.obstacleEntityId != 0 &&
         (m_navigationRuntimeLabLastPlan.primaryConflictEntityId ==

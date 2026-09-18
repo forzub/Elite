@@ -2,147 +2,77 @@
 
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
-**Track:** Navigation v2 live integration  
-**Stage:** 11B-2 — replicated guidance/debug truth gate
+**Track:** Navigation v2 end-to-end integration  
+**Stage:** 12A — deterministic runtime proving ground
 
-## Progress
+## Accepted baseline
 
-```text
-[█████████████████████░░] 10 / 12 major stages closed
-
-1–10 ACCEPTED
-11A  ACCEPTED
-11B-1 ACCEPTED
-11B-2 ACTIVE
-12    PENDING
-```
-
-## Newly accepted — 11B-1
-
-Target-machine gate on:
+Stage 11 is accepted on target-machine evidence from:
 
 ```text
-fb83b8d80f29c6c5e4e12b8a2fca731ffea7b8e8
+9650c44cca23741dae3f4acf2c9a96a4ab4c5713
 ```
 
-passed:
-- live runtime architecture;
-- live NPC ownership architecture;
-- runtime-control 1/1;
-- trajectory/pilot 11/11;
-- EliteGame;
-- EliteServer.
+with all architecture contracts green, runtime 2/2, trajectory/pilot 11/11, wire-data-plane 1/1 and both canonical production builds passing.
 
-## Active 11B-2 candidate
-
-Production:
+Stage 12 contract:
 
 ```text
-src/game/simulation/NavigationExecutionSnapshot.h
-src/game/simulation/ShipSnapshot.h
-src/game/simulation/GameSimulation.cpp
-src/game/network/WireDataSchema.h
-src/game/network/WireDataCodec.h
-src/game/client/ClientWorldState.h/.cpp
-src/game/navigation/ReplicatedNavigationExecutionState.h
-src/game/navigation/ClientNavigationWorkspace.h
-src/game/presentation/GuidanceHudPresentation.h
-src/game/SpaceState.cpp
+src/game/navigation/STAGE12_END_TO_END.md
 ```
 
-Contracts/tests:
+## Implement now
+
+Create a reusable deterministic station-adjacent proving-ground scenario consumed by a headless end-to-end runtime fixture.
+
+Minimum field:
 
 ```text
-tests/architecture_contracts/check_navigation_live_replication_guidance.py
-tests/architecture_contracts/check_wire_data_schema.py
-tests/architecture_contracts/WireDataPlaneContractTests.cpp
-tests/navigation_runtime/NavigationReplicationTruthTests.cpp
+boxes / slabs
+cylinders / pylons
+offset walls
+one forced detour
+one narrow traversable gap
+one gap too small for the configured hull
+one moving crossing obstacle
 ```
 
-### Required replication chain
+Do not create a presentation-only obstacle list. The scenario must publish the same geometry/hit-volume truth used by the live NavigationWorld adapter.
+
+## Required production chain
 
 ```text
-same server ExecutionSnapshot used for control
-    -> ShipSnapshot.navigationExecution sparse variant
-       absent = monostate / one tag byte
-       present = NavigationExecutionSnapshot
-    -> ordered binary wire schema v8
-    -> ClientShipState.navigationExecution
-    -> read-only ClientNavigationWorkspace mirror
-    -> GuidanceHudPresentation diagnostics
+scenario / goal
+ -> NavigationWorld
+ -> global/local/precision accepted navigation
+ -> NavigationRuntimeControlBridge
+ -> PilotSkillExecutor
+ -> ShipControlState navigation demand
+ -> SharedShipPhysics / ShipController / DynamicMotionSystem
+ -> authoritative motion
+ -> replication
+ -> read-only guidance/debug truth
 ```
 
-### Required ownership separation
+A test that stops at `LocalGuidancePlanner` or a trajectory evaluator does not satisfy this task.
 
-Client planners must not consume replicated execution truth:
+## First acceptance gate
 
-```text
-LocalGuidancePlanner
-DockingPathPlanner
-ClientNavigationPlanningSnapshotFactory
-TrajectoryPredictor
-TrajectorySafetyEvaluator
-```
+The deterministic fixture must prove:
 
-remain independent manual/advisory planning components.
+- a normal configured ship reaches B without collision;
+- at least one route revision/detour is caused by actual obstacle geometry;
+- a genuinely traversable narrow opening is accepted;
+- the same opening is rejected for an oversized hull;
+- the moving obstacle causes a real avoidance/replan response;
+- server execution truth remains the replicated presentation truth;
+- no retired direct-steering fallback takes authority;
+- work remains bounded and no synchronous full-world rescan is introduced.
 
-The client may display the server-executed NPC command, but may not reinterpret it as a locally accepted maneuver. The read-only mirror refreshes only when an accepted server snapshot tick changes.
+## After green
 
-## RUN NOW
-
-```bash
-cd /d/__elite/work
-
-git fetch origin
-git switch main
-git merge --ff-only origin/main
-
-git rev-parse HEAD
-
-python tests/architecture_contracts/check_navigation_live_runtime_control.py
-python tests/architecture_contracts/check_navigation_live_npc_ownership.py
-python tests/architecture_contracts/check_navigation_live_replication_guidance.py
-python tests/architecture_contracts/check_wire_data_schema.py
-
-bash tests/navigation_runtime/run_mingw64.sh
-bash tests/navigation_trajectory/run_mingw64.sh
-
-cmake -S tests/architecture_contracts \
-      -B build/tests/architecture_contracts \
-      -G Ninja
-cmake --build build/tests/architecture_contracts \
-      --target wire_data_plane_contract_tests
-ctest --test-dir build/tests/architecture_contracts \
-      -R '^wire_data_plane_contracts$' \
-      --output-on-failure
-
-bash build_mingw64.sh
-```
-
-Expected:
-
-```text
-live runtime architecture PASS
-live NPC ownership architecture PASS
-live replication/guidance architecture PASS
-wire schema architecture PASS
-
-navigation_runtime:
-    2/2 PASS
-      navigation_runtime_control
-      navigation_replication_truth
-
-navigation_trajectory:
-    11/11 PASS
-
-wire_data_plane_contracts:
-    1/1 PASS
-    absent navigation execution = one variant-tag byte
-
-EliteGame build PASS
-EliteServer build PASS
-```
-
-## Next after green
-
-Close stage 11 completely, progress -> 11/12, then immediately start stage 12 end-to-end runtime scenarios and stress/debug/legacy retirement.
+1. expose the same proving ground in the interactive game;
+2. implement/complete `Shift+F12` raw NavigationWorld visualization from the same completed snapshot;
+3. extend fixtures to moving gap, docking, unavoidable-contact mitigation and post-impact replan;
+4. collect live CPU/GPU/cadence measurements;
+5. retire remaining legacy route-wide navigation only after v2 proves all required live scenarios.

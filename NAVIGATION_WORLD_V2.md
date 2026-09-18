@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** stage 11B-1 — authoritative NPC runtime ownership / corrected roll fixture rerun
+**Current stage:** stage 11B-2 — replicated guidance/debug truth
 
 `main` is the only canonical development branch.
 
@@ -650,6 +650,55 @@ dot(a_ang,forward) = -rollRate*damping
 
 No production logic was changed.
 
+### Stage 11B-1 target-machine acceptance
+
+Accepted on:
+
+```text
+fb83b8d80f29c6c5e4e12b8a2fca731ffea7b8e8
+
+NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+NAVIGATION LIVE NPC OWNERSHIP CONTRACT: PASS
+navigation_runtime_control 1/1 PASS
+navigation_trajectory/pilot 11/11 PASS
+EliteGame build PASS
+EliteServer build PASS
+```
+
+11B-1 is frozen unless 11B-2/stage-12 integration reveals a real defect.
+
+### Stage 11B-2 — replicated guidance/debug truth ACTIVE
+
+The exact server execution product now follows the existing replication boundary:
+
+```text
+GameSimulation per-NPC ExecutionSnapshot
+    -> ShipSnapshot.navigationExecution
+    -> ordered binary wire schema
+    -> ClientShipState.navigationExecution
+    -> ReplicatedNavigationExecutionState
+    -> ClientNavigationWorkspace
+    -> GuidanceHudPresentation
+```
+
+Replicated fields include intent/active-target revisions, ideal and executed linear/angular acceleration demand, emergency/urgency and pilot timing diagnostics.
+
+The simulation snapshot wire schema is intentionally bumped to version 8.
+
+The client mirror is indexed by both transient `EntityId` and stable `ShipInstanceId`. Route START executors therefore resolve server execution through stable `NavigationAssetRef::Ship` identity.
+
+The workspace exposes one explicit sync ingress and only a const replicated-state view to presentation/planning consumers.
+
+`GuidanceCorridorHudPresentation` exposes the authoritative execution metadata for the selected route executor, but `LocalGuidancePlanner` and `DockingPathPlanner` are forbidden from consuming or rewriting this replicated execution product.
+
+New runtime acceptance test:
+
+```text
+navigation_replication_truth
+```
+
+pins binary round-trip, stable-identity lookup and guidance presentation without fabricating a corridor.
+
 ## 12. Performance contract
 
 ```text
@@ -687,8 +736,8 @@ Guidance visualizes the accepted navigation/trajectory/control intent; it must n
 10 PilotSkillProfile                                 CLOSED
 11 live EliteGame / EliteServer / guidance + physics ACTIVE
    11A runtime control seam                           CLOSED
-   11B-1 authoritative NPC runtime ownership           ACTIVE
-   11B-2 replicated guidance/debug truth               PENDING
+   11B-1 authoritative NPC runtime ownership           CLOSED
+   11B-2 replicated guidance/debug truth               ACTIVE
 12 end-to-end stress/debug + legacy retirement       PENDING
 ```
 

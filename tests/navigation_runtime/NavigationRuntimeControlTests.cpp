@@ -297,23 +297,29 @@ void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
         "nominal NPC goal must become a physical forward acceleration demand"
     );
 
-    requireNear(
+    const glm::dvec3 angularDemand(
         intent.idealAngularAccelerationDemandMapRadPerSec2.x,
+        intent.idealAngularAccelerationDemandMapRadPerSec2.y,
+        intent.idealAngularAccelerationDemandMapRadPerSec2.z
+    );
+
+    requireNear(
+        glm::dot(angularDemand, state.rightMap),
         -1.0,
         1.0e-6,
-        "NPC nominal intent must damp pitch through world angular demand"
+        "NPC nominal intent must oppose positive pitch rate on the ship-right axis"
     );
     requireNear(
-        intent.idealAngularAccelerationDemandMapRadPerSec2.y,
+        glm::dot(angularDemand, state.upMap),
         0.5,
         1.0e-6,
-        "NPC nominal intent must damp yaw through world angular demand"
+        "NPC nominal intent must oppose negative yaw rate on the ship-up axis"
     );
     requireNear(
-        intent.idealAngularAccelerationDemandMapRadPerSec2.z,
+        glm::dot(angularDemand, state.forwardMap),
         -0.2,
         1.0e-6,
-        "NPC nominal intent must damp roll through world angular demand"
+        "NPC nominal intent must oppose positive roll rate on the ship-forward axis"
     );
 }
 

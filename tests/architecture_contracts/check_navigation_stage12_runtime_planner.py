@@ -88,9 +88,11 @@ for marker in (
 ):
     require(marker in SPACE_CPP, f"exact static NavigationSpace implementation missing: {marker}")
 
+root_cmake_tokens = " ".join(ROOT_CMAKE.split())
+
 require(
     "../NavigationObstacleGeometry.cpp" in SPACE_CMAKE and
-    "PUBLIC EliteNavigationGeometry" in ROOT_CMAKE,
+    "target_link_libraries(EliteNavigationWorldRuntime PUBLIC EliteNavigationGeometry" in root_cmake_tokens,
     "exact obstacle geometry must link in isolated and production NavigationSpace targets",
 )
 

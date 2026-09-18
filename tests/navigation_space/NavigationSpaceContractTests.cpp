@@ -479,6 +479,50 @@ void testOrientedFiniteDepthPortalTraversalMetadata()
             "reverse traversal must flip the authored A->B normal");
 }
 
+void testExactObstacleOnlySweepIgnoresRegionPartition()
+{
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 595;
+    update.regions = {
+        regionBox(1, -5.0, 0.0, 0.0, 5.0, 10.0, 10.0, 10.0),
+        regionBox(2, 5.0, 0.0, 0.0, 5.0, 10.0, 10.0, 10.0)
+    };
+    update.portals = {
+        portalAt(5951, 1, 2, 0.0, 0.0, 0.0, 4.0)
+    };
+
+    const auto blocker = boxObstacle(
+        "physical_blocker",
+        5952,
+        glm::dvec3(3.0, 5.0, 0.0),
+        glm::dvec3(0.5, 0.5, 0.5)
+    );
+    update.obstacles = {blocker};
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    Space::SegmentQuery freeSweep;
+    freeSweep.startMapMeters = {-2.0, 0.0, 0.0};
+    freeSweep.endMapMeters = {2.0, 0.0, 0.0};
+    freeSweep.envelope = envelope(0.5);
+    freeSweep.exactObstaclesOnly = true;
+
+    const auto freeResult = space.querySegment(freeSweep);
+    require(freeResult.traversable,
+            "exact-obstacle-only sweep must not treat region partition as a wall");
+    require(freeResult.startRegionId == 0 &&
+            freeResult.endRegionId == 0,
+            "exact-obstacle-only sweep must not fabricate topology ownership");
+
+    Space::SegmentQuery blockedSweep = freeSweep;
+    blockedSweep.endMapMeters = {4.0, 5.0, 0.0};
+    const auto blockedResult = space.querySegment(blockedSweep);
+    require(!blockedResult.traversable &&
+            blockedResult.blockingObstacleEntityId == 5952,
+            "exact-obstacle-only sweep must still reject real exact geometry");
+}
+
 void testExactStaticObbBlocksPointAndSegment()
 {
     Space::StaticSpaceUpdate update;
@@ -675,6 +719,7 @@ int main()
         testTurnCostZigzagVsSmooth();
         testProvenPortalEndpointMayTouchRegionBoundary();
         testOrientedFiniteDepthPortalTraversalMetadata();
+        testExactObstacleOnlySweepIgnoresRegionPartition();
         testExactStaticObbBlocksPointAndSegment();
         testExactObbGapAdmitsOnlyFittingEnvelope();
         testLocalInvalidationAndPatch();
@@ -689,6 +734,7 @@ int main()
         std::cout << " - turn-aware routing can prefer a smoother static branch\n";
         std::cout << " - corridor-proven portal endpoints may touch region boundaries\n";
         std::cout << " - oriented finite-depth portal traversal metadata follows route direction\n";
+        std::cout << " - exact-obstacle physical sweeps ignore virtual region partitions\n";
         std::cout << " - exact static OBBs reject occupied points/segments\n";
         std::cout << " - exact OBB gap survives overlapping conservative spheres\n";
         std::cout << " - narrow portals reject oversized agents\n";

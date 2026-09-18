@@ -788,7 +788,7 @@ EntityId spawnInterplanetaryTransferLabNpc(GameSimulation& sim)
     const EntityId id =
         sim.spawnShip(
             ShipRole::NPC,
-            systemId,
+            0,
             EliteCobraMk1::EliteCobraMk1Descriptor(),
             spawnPosition,
             initData,
@@ -865,7 +865,7 @@ EntityId spawnNavigationRuntimeLabNpc(
     const EntityId id =
         sim.spawnShip(
             ShipRole::NPC,
-            0,
+            systemId,
             EliteCobraMk1::EliteCobraMk1Descriptor(),
             stationPos,
             initData,

@@ -149,6 +149,7 @@ for marker in (
     "testNavigationMapCrossingConflictProducesBrakingHold",
     "testMapIntentTransformsIntoWorldControlFrame",
     "testExactStaticObstacleParticipatesInRuntimeComposition",
+    "testLiveScaleStaticObstacleInsideFirstBoundedHorizon",
     "testPlannerIntentCrossesAcceptedPilotBridge",
 ):
     require(marker in RUNTIME_TEST, f"runtime planner fixture missing: {marker}")
@@ -336,6 +337,12 @@ for marker in (
     "exactStaticGeometryPublished",
     "exactStaticObstacleCount",
     "configuredRouteExactObstacleBlockPublished",
+    "firstLiveNominalProbeCaptured",
+    "firstLiveNominalExactBlocked",
+    "firstLiveNominalBlockingEntityId",
+    "firstLiveHorizonMeters",
+    "firstLiveAgentPositionMap",
+    "firstLiveBoundedTargetMap",
     "exactStaticQuerySeen",
     "nominalStaticBlockSeen",
     "maximumExactStaticObstaclesExamined",
@@ -442,9 +449,28 @@ require(
 )
 
 require(
+    "firstLiveNominalProbeCaptured" in SIM_CPP and
+    "Space::SegmentQuery firstLiveProbe" in SIM_CPP and
+    "firstLiveBoundedTargetMap" in SIM_CPP,
+    "live lab must capture the exact first bounded nominal segment before planner composition",
+)
+
+require(
     "configured NavigationRuntimeLab route does not " in SERVER_MAIN and
     "return 38;" in SERVER_MAIN,
     "server self-test must fail fast when the exact-static proving fixture is invalid",
+)
+
+require(
+    "first live bounded nominal segment does not " in SERVER_MAIN and
+    "return 50;" in SERVER_MAIN,
+    "server self-test must fail fast when first live exact segment misses CUBE 08",
+)
+
+require(
+    "planner lost an exact-static block proven by " in SERVER_MAIN and
+    "return 51;" in SERVER_MAIN,
+    "server self-test must distinguish live segment geometry from planner-composition loss",
 )
 
 require(
@@ -506,3 +532,5 @@ print(" - stationary NAV STRESS obstacles are excluded from NavigationMap dynami
 print(" - live CUBE 08 must be exact-static blocker, never a dynamic candidate/conflict")
 print(" - configured start->goal line is publication-proven against exact CUBE 08 HitVolume")
 print(" - invalid exact-static proving geometry fails fast before a 120 s behavior run")
+print(" - first live bounded segment is independently exact-probed before planner composition")
+print(" - live-scale 1300 m exact OBB regression pins first-horizon static adjustment")

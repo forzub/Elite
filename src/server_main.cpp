@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <csignal>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <thread>
 #include <variant>

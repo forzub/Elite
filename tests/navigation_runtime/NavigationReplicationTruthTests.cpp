@@ -58,6 +58,8 @@ void testNavigationExecutionWireRoundTrip()
     ShipSnapshot ship;
     ship.id = EntityId{77u};
     ship.instanceId = 4242u;
+    ship.role = ShipRole::NPC;
+    ship.typeId = ObjectType::CobraMk1;
     ship.navigationExecution = executionFixture();
     source.ships.push_back(ship);
 

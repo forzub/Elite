@@ -543,8 +543,11 @@ int runNavigationRuntimeSelfTest()
             !observation.exactStaticViolationSeen &&
             observation.planCount > 0 &&
             observation.executionCount > 0 &&
-            observation.obstacleCandidateSeen &&
-            observation.obstaclePrimaryConflictSeen &&
+            observation.obstacleEntityId != 0 &&
+            observation.dynamicQueryCount > 0 &&
+            !observation.obstacleCandidateSeen &&
+            !observation.obstaclePrimaryConflictSeen &&
+            observation.obstacleExactStaticBlockSeen &&
             observation.adjustedTargetSeen &&
             observation.executionSeen &&
             observation.nonZeroExecutedDemandSeen &&
@@ -574,6 +577,12 @@ int runNavigationRuntimeSelfTest()
             << observation.obstacleCandidateSeen
             << " obstacle_conflict="
             << observation.obstaclePrimaryConflictSeen
+            << " exact_obstacle_block="
+            << observation.obstacleExactStaticBlockSeen
+            << " dynamic_queries="
+            << observation.dynamicQueryCount
+            << " max_dynamic_candidates="
+            << observation.maximumDynamicCandidateCount
             << " adjusted="
             << observation.adjustedTargetSeen
             << " conflict_hold="
@@ -832,6 +841,12 @@ int runNavigationRuntimeSelfTest()
         << observation.obstacleCandidateSeen
         << " obstacle_conflict="
         << observation.obstaclePrimaryConflictSeen
+        << " exact_obstacle_block="
+        << observation.obstacleExactStaticBlockSeen
+        << " dynamic_queries="
+        << observation.dynamicQueryCount
+        << " max_dynamic_candidates="
+        << observation.maximumDynamicCandidateCount
         << " adjusted="
         << observation.adjustedTargetSeen
         << " conflict_hold="
@@ -894,9 +909,9 @@ int runNavigationRuntimeSelfTest()
     }
 
     std::cerr
-        << "[PASS] navigation-runtime CUBE 08 caused authoritative avoidance"
-        << " with collision-free exact static HitVolume motion"
-        << " and replicated execution\n";
+        << "[PASS] navigation-runtime CUBE 08 stayed out of NavigationMap"
+        << " and caused authoritative exact-static avoidance"
+        << " with collision-free HitVolume motion and replicated execution\n";
     return 0;
 }
 

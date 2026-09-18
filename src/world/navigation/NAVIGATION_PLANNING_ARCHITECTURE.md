@@ -262,3 +262,30 @@ NAV-V2-LOCAL-1 ACTIVE — dynamic conflict + local receding horizon
 - guidance/HUD consumes accepted products and never owns planning;
 - navigation, exact collision and damage remain separate authorities;
 - safety fidelity is not reduced to meet a timing budget; representation/algorithm/scheduling changes instead.
+
+
+## Game-level maneuver decision tree
+
+The navigation architecture now has an explicit owner above route/trajectory
+geometry:
+
+```text
+global route
+    -> local bounded visibility
+    -> precision passage
+    -> emergency/contact candidate generation
+                    |
+                    v
+          ManeuverDecisionController
+                    |
+                    v
+          selected control intent
+```
+
+Full contract: `src/game/MANEUVER_DECISION_TREE.md`.
+
+Important ownership rule: `StaticHold`, `ConflictHold`, or a missing global
+corridor describe failure to prove one class of safe progress. They are not
+sufficient by themselves to choose the final maneuver. Future Stage-12
+composition must expose fallback candidates to the game-level selector instead
+of translating those planner states directly into a permanent braking command.

@@ -117,6 +117,7 @@ struct NavigationRuntimeLabObservation
     std::uint32_t firstLiveNominalBlockingEntityId = 0;
     double firstLiveHorizonMeters = 0.0;
     glm::dvec3 firstLiveAgentPositionMap {0.0};
+    glm::dvec3 firstLiveGoalPositionMap {0.0};
     glm::dvec3 firstLiveBoundedTargetMap {0.0};
 
     bool exactStaticQuerySeen = false;

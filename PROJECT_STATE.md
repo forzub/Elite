@@ -264,8 +264,33 @@ composition is exact-static proof of the **same moving trajectory** against
 NavigationSpace HitVolume geometry. Until that exists, LocalAvoidance/exact
 static remains the only steering authority.
 
-Target-machine architecture, trajectory, runtime, build and unchanged live
-self-test evidence are pending.
+#### 12A-6b1 first target-machine run — PARTIAL PASS
+
+Run from `6badb5f74ea65900a38a48854d66f16f34127a89` produced:
+
+```text
+navigation_runtime_control    PASS
+navigation_runtime_planner    PASS
+navigation_replication_truth  PASS
+3/3 runtime tests PASS
+```
+
+The only reported failure in the submitted gate was the architecture script:
+
+```text
+[FAIL] exact obstacle geometry must link in isolated and production NavigationSpace targets
+```
+
+This was a checker-format defect. The CMake dependency still linked and the
+runtime executable was built successfully; the checker searched for the exact
+text `PUBLIC EliteNavigationGeometry`, while the newly added trajectory link
+changed that formatting.
+
+The CMake layout has been restored and the architecture checker made
+whitespace-stable. No navigation behavior or safety contract was weakened.
+
+12A-6b1 remains pending the corrected architecture rerun plus the remaining
+trajectory/map/build/live regression gate.
 
 ## State-recording protocol
 

@@ -2088,12 +2088,13 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         const auto navigationExecutionIt =
             m_npcNavigationExecutionSnapshots.find(id);
         if (navigationExecutionIt !=
-            m_npcNavigationExecutionSnapshots.end())
+            m_npcNavigationExecutionSnapshots.end() &&
+            navigationExecutionIt->second.valid)
         {
             const auto& execution = navigationExecutionIt->second;
-            auto& replicated = s.navigationExecution;
+            game::simulation::NavigationExecutionSnapshot replicated;
 
-            replicated.valid = execution.valid;
+            replicated.valid = true;
             replicated.intentRevision = execution.intentRevision;
             replicated.activeTargetRevision =
                 execution.activeTargetRevision;
@@ -2131,6 +2132,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                     std::numeric_limits<std::uint32_t>::max()
                 )
             );
+
+            s.navigationExecution = std::move(replicated);
         }
 
         s.transform = tr;

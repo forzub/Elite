@@ -176,6 +176,19 @@ public:
         std::size_t movingGapCandidatesBuilt = 0;
         std::size_t movingGapPredictionsEvaluated = 0;
         std::size_t movingPassagesEvaluated = 0;
+
+        // Last moving-passage evaluator result observed in the bounded
+        // candidate loop. These are diagnostics only; steering authority still
+        // depends solely on movingPassageFeasible + movingPassageStaticSafe.
+        MovingPassage::Status movingPassageLastEvaluatorStatus =
+            MovingPassage::Status::InvalidInput;
+        double movingPassageRequiredPeakForwardAccelerationMps2 = 0.0;
+        double movingPassageRequiredPeakReverseAccelerationMps2 = 0.0;
+        double movingPassageRequiredPeakLateralAccelerationMps2 = 0.0;
+        double movingPassageRequiredPeakVerticalAccelerationMps2 = 0.0;
+        double movingPassageMinimumSampleClearanceMeters = 0.0;
+        double movingPassageMinimumContinuousClearanceMeters = 0.0;
+
         Map::EntityId movingPrimaryObstacleEntityId = 0;
         Map::EntityId movingSecondaryObstacleEntityId = 0;
         glm::dvec3 movingPassageInitialAccelerationMapMps2 {0.0};

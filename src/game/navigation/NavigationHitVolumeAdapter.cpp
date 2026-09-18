@@ -84,6 +84,25 @@ NavigationHitVolumeAdapter::buildObstacles(
     return out;
 }
 
+std::vector<world::navigation::NavigationObstacle>
+NavigationHitVolumeAdapter::buildObstacles(
+    const game::damage::HitComponent& hitComponent,
+    std::uint32_t entityId,
+    const glm::dvec3& objectWorldPositionMeters,
+    const glm::dmat3& objectLocalToWorld,
+    const std::string& idPrefix
+)
+{
+    return buildObstacles(
+        hitComponent,
+        entityId,
+        objectWorldPositionMeters,
+        objectLocalToWorld,
+        idPrefix,
+        Options{}
+    );
+}
+
 double NavigationHitVolumeAdapter::conservativeRadiusFromOrigin(
     const game::damage::HitComponent& hitComponent,
     const Options& options
@@ -107,6 +126,13 @@ double NavigationHitVolumeAdapter::conservativeRadiusFromOrigin(
     }
 
     return radius;
+}
+
+double NavigationHitVolumeAdapter::conservativeRadiusFromOrigin(
+    const game::damage::HitComponent& hitComponent
+) noexcept
+{
+    return conservativeRadiusFromOrigin(hitComponent, Options{});
 }
 
 } // namespace game::navigation

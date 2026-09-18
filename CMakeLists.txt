@@ -147,9 +147,8 @@ target_include_directories(EliteNavigationWorldRuntime PUBLIC
 )
 
 target_link_libraries(EliteNavigationWorldRuntime
-    PUBLIC
-        EliteNavigationGeometry
-        EliteNavigationTrajectory
+    PUBLIC EliteNavigationGeometry
+           EliteNavigationTrajectory
 )
 
 # Shared CPU-side authored/runtime assembly geometry. This is intentionally not

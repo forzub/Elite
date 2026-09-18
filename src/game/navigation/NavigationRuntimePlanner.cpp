@@ -923,6 +923,8 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     );
 
     result.adjustedTarget = local.adjustedTarget;
+    result.selectedVisibilityDeflectionRadians =
+        local.selectedDeflectionRadians;
     result.avoidanceProbesExamined = local.targetProbesExamined;
     result.primaryConflictEntityId = local.target.primaryConflictEntityId;
     result.nominalPrimaryConflictEntityId =

@@ -494,6 +494,12 @@ for marker in (
     "rotatingActorAngularVelocityVerified",
     "expectedRotatingActorAngularVelocityMapRadPerSecond",
     "observedRotatingActorAngularVelocityMapRadPerSecond",
+    "slitPortalExactOpenPublished",
+    "slitPortalExactObstaclesExamined",
+    "slitPortalWaypointSeen",
+    "slitTunnelPassed",
+    "slitTunnelCrossingMap",
+    "slitTunnelCrossingMarginMeters",
 ):
     require(marker in LAB_H, f"live navigation physical observation missing: {marker}")
 
@@ -524,13 +530,11 @@ for marker in (
     "--self-test-navigation",
     "runNavigationRuntimeSelfTest",
     "obstaclePrimaryConflictSeen",
-    "adjustedTargetSeen",
     "lateralExecutedDemandSeen",
     "observation.exactStaticMotionSamples > 0",
     "!observation.exactStaticViolationSeen",
     "!observation.obstacleCandidateSeen",
     "!observation.obstaclePrimaryConflictSeen",
-    "observation.obstacleExactStaticBlockSeen",
     "observation.dynamicQueryCount > 0",
     "observation.rotatingActorCandidateSeen",
     "observation.rotatingActorAngularVelocityVerified",
@@ -545,7 +549,6 @@ for marker in (
     "observation.exactStaticObstacleCount > 0",
     "observation.configuredRouteExactObstacleBlockPublished",
     "observation.exactStaticQuerySeen",
-    "observation.nominalStaticBlockSeen",
     "observation.maximumExactStaticObstaclesExamined > 0",
     "exact_static_obstacles=",
     "configured_route_exact_block=",
@@ -619,6 +622,44 @@ require(
 )
 
 for marker in (
+    "NavigationRuntimeLabSlitPortalCenterVisualLocalMeters",
+    "NavigationRuntimeLabSlitHalfWidthMeters",
+    "NavigationRuntimeLabSlitHalfHeightMeters",
+    "NavigationRuntimeLabSlitPortalClearanceMeters",
+    "NavigationRuntimeLabSlitPortalId",
+    "slitPortalExactOpenPublished",
+    "slitPortalWaypointSeen",
+    "slitTunnelPassed",
+):
+    require(marker in LAB_H, f"live exact-static slit tunnel contract missing: {marker}")
+
+for marker in (
+    "nav_slit_upper_left",
+    "nav_slit_upper_mid",
+    "nav_slit_upper_right",
+    "nav_slit_lower_left",
+    "nav_stress_cube_08",
+    "nav_slit_lower_right",
+):
+    require(marker in SCENE_CPP, f"physical slit tunnel wall missing: {marker}")
+
+for marker in (
+    "Space::PortalInput slitPortal",
+    "slitPortal.portalId = NavigationRuntimeLabSlitPortalId",
+    "slitPortal.regionA = 1",
+    "slitPortal.regionB = 2",
+    "staticWorld.portals.push_back(slitPortal)",
+    "slitPortalExactOpenPublished",
+    "slitPortalExactObstaclesExamined",
+    "NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z + 600.0",
+    "m_navigationRuntimeLabLastPlan.usedPortalWaypoint",
+    "m_navigationRuntimeLabLastPlan.staticPortalPath.front() ==",
+    "NavigationRuntimeLabSlitPortalId",
+    "slitTunnelCrossingMarginMeters",
+):
+    require(marker in SIM_CPP, f"slit tunnel topology/physical proof missing: {marker}")
+
+for marker in (
     "isNavigationRuntimeLabMovingGapBoundary",
     "effectiveLocalOffsetMeters",
     "NavigationRuntimeLabMovingGapVelocityVisualMps",
@@ -669,6 +710,14 @@ for marker in (
     "moving_req_vert_mps2=",
     "moving_sample_clearance_m=",
     "moving_continuous_clearance_m=",
+    "observation.slitPortalExactOpenPublished",
+    "observation.slitPortalWaypointSeen",
+    "observation.slitTunnelPassed",
+    "slit_exact_open=",
+    "slit_portal=",
+    "slit_passed=",
+    "slit_margin_m=",
+    "slit_crossing_map=(",
 ):
     require(marker in SERVER_MAIN, f"server live moving-passage acceptance gate missing: {marker}")
 
@@ -684,9 +733,11 @@ require(
     "bool movingAuthorityEvidenceComplete = false;" in SERVER_MAIN and
     "bool behaviorEvidenceComplete = false;" in SERVER_MAIN and
     "observation.movingGapPlanePassed &&" in SERVER_MAIN and
-    "observation.passedObstaclePlane &&" in SERVER_MAIN and
+    "observation.slitPortalExactOpenPublished &&" in SERVER_MAIN and
+    "observation.slitPortalWaypointSeen &&" in SERVER_MAIN and
+    "observation.slitTunnelPassed &&" in SERVER_MAIN and
     "return 56;" in SERVER_MAIN,
-    "live gate must order active moving authority/replication before gap crossing and independent CUBE 08 avoidance",
+    "live gate must order active moving authority/replication before exact-static slit-tunnel passage",
 )
 
 require(
@@ -775,9 +826,15 @@ require(
 )
 
 require(
-    "planner lost an exact-static block proven by " in SERVER_MAIN and
+    "did not select the authored slit portal" in SERVER_MAIN and
     "return 51;" in SERVER_MAIN,
-    "server self-test must distinguish live segment geometry from planner-composition loss",
+    "server self-test must fail when direct exact-static blockage does not hand off to the authored slit portal",
+)
+
+require(
+    "authored exact-static slit tunnel does not admit " in SERVER_MAIN and
+    "return 57;" in SERVER_MAIN,
+    "server self-test must fail fast when the slit fixture cannot admit the current ship envelope",
 )
 
 require(
@@ -833,7 +890,7 @@ print(" - planner cannot mutate authoritative physics state")
 print(" - client/server share the same NavigationWorld runtime-planning target")
 print(" - deterministic fixtures pin detour, envelope rejection, moving conflict and pilot bridge")
 print(" - authoritative GameSimulation isolates one Active stage-12 lab actor on real NAV STRESS hit volumes")
-print(" - live self-test pins CUBE 08 -> adjusted target -> executed lateral demand -> positive clearance")
+print(" - live self-test pins blocked direct route -> authored slit portal -> physical tunnel crossing")
 print(" - bounded NavigationMap sphere covers the complete local avoidance fan")
 print(" - sparse packet is compared with authoritative publication at the exact same server tick")
 print(" - canonical sparse hydration must match the same authoritative execution truth")
@@ -850,8 +907,8 @@ print(" - corridor-proven portal endpoints remain legal exact-static targets")
 print(" - live physical motion is swept against exact HitVolume geometry every fixed step")
 print(" - conservative sphere clearance is diagnostic only, not exact-static acceptance truth")
 print(" - stationary NAV STRESS obstacles are excluded from NavigationMap dynamic ownership")
-print(" - live CUBE 08 must be exact-static blocker, never a dynamic candidate/conflict")
-print(" - configured start->goal line is publication-proven against exact CUBE 08 HitVolume")
+print(" - representative CUBE 08 wall block remains exact-static only, never a dynamic candidate/conflict")
+print(" - configured direct line is blocked while the offset slit is independently exact-proven open")
 print(" - invalid exact-static proving geometry fails fast before a 120 s behavior run")
 print(" - first live bounded segment is independently exact-probed before planner composition")
 print(" - live-scale 1300 m exact OBB regression pins first-horizon static adjustment")

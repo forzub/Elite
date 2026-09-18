@@ -2587,17 +2587,42 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             m_navigationRuntimeLabLastPlan.status
         );
 
-    if (m_navigationRuntimeLabLastPlan.usedPortalWaypoint &&
-        !m_navigationRuntimeLabLastPlan.staticPortalPath.empty() &&
-        m_navigationRuntimeLabLastPlan.staticPortalPath.front() ==
-            NavigationRuntimeLabSlitPortalId)
+    if (m_navigationRuntimeLabLastPlan.portalTraversalActive)
     {
-        const glm::dvec3 portalCenter =
-            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters;
-        if (glm::length(
-                m_navigationRuntimeLabLastPlan.coarseWaypointMapMeters -
-                portalCenter
-            ) <= 1.0e-6)
+        auto& portalObservation =
+            m_navigationRuntimeLabObservation;
+
+        if (m_navigationRuntimeLabLastPlan.activePortalId ==
+            NavigationRuntimeLabSlitEntryPortalId)
+        {
+            portalObservation.slitEntryVelocityAngleRad =
+                m_navigationRuntimeLabLastPlan.portalVelocityAngleRad;
+            portalObservation.slitEntryForwardAngleRad =
+                m_navigationRuntimeLabLastPlan.portalForwardAngleRad;
+            portalObservation.slitEntryLateralSpeedMps =
+                m_navigationRuntimeLabLastPlan.portalLateralSpeedMps;
+            portalObservation.slitEntryCrossTrackMeters =
+                m_navigationRuntimeLabLastPlan.portalCrossTrackMeters;
+
+            portalObservation.slitEntryVelocityAlignedSeen =
+                portalObservation.slitEntryVelocityAlignedSeen ||
+                m_navigationRuntimeLabLastPlan.portalVelocityAligned;
+            portalObservation.slitEntryForwardAlignedSeen =
+                portalObservation.slitEntryForwardAlignedSeen ||
+                m_navigationRuntimeLabLastPlan.portalForwardAligned;
+            portalObservation.slitEntryCaptureSeen =
+                portalObservation.slitEntryCaptureSeen ||
+                m_navigationRuntimeLabLastPlan.portalCaptureReady;
+        }
+    }
+
+    if (m_navigationRuntimeLabLastPlan.usedPortalWaypoint &&
+        !m_navigationRuntimeLabLastPlan.staticPortalPath.empty())
+    {
+        const auto frontPortal =
+            m_navigationRuntimeLabLastPlan.staticPortalPath.front();
+        if (frontPortal == NavigationRuntimeLabSlitEntryPortalId ||
+            frontPortal == NavigationRuntimeLabSlitExitPortalId)
         {
             m_navigationRuntimeLabObservation.slitPortalWaypointSeen = true;
         }

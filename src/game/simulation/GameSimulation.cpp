@@ -1041,6 +1041,9 @@ void GameSimulation::initializeNavigationRuntimeLab()
 
     m_navigationRuntimeLabSourceRevision = 0;
     m_navigationRuntimeLabLastPlan = {};
+    m_navigationRuntimeLabObservation.valid = true;
+    m_navigationRuntimeLabObservation.shipEntityId =
+        m_navigationRuntimeLabShipId.value;
     m_navigationRuntimeLabInitialized = true;
 }
 
@@ -1146,6 +1149,12 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         if (!(radius > 0.0) || !std::isfinite(radius))
             continue;
 
+        if (object.displayName == NavigationRuntimeLabObstacleLabel)
+        {
+            m_navigationRuntimeLabObservation.obstacleEntityId =
+                objectId.value;
+        }
+
         const glm::dvec3 positionMeters =
             world::coordinates::fullMeters(object.worldPosition);
 
@@ -1227,6 +1236,19 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     const Map::QueryResult dynamicCandidates =
         m_navigationRuntimeLabMap->queryCorridor(dynamicQuery);
 
+    if (m_navigationRuntimeLabObservation.obstacleEntityId != 0)
+    {
+        for (const auto& candidate : dynamicCandidates.candidates)
+        {
+            if (candidate.entityId ==
+                m_navigationRuntimeLabObservation.obstacleEntityId)
+            {
+                m_navigationRuntimeLabObservation.obstacleCandidateSeen = true;
+                break;
+            }
+        }
+    }
+
     Planner::AgentState agent;
     agent.entityId = id.value;
     agent.positionMapMeters = agentPositionMap;
@@ -1294,6 +1316,28 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             *m_navigationRuntimeLabSpace,
             policy
         );
+
+    ++m_navigationRuntimeLabObservation.planCount;
+    m_navigationRuntimeLabObservation.lastIntentRevision =
+        m_navigationRuntimeLabLastPlan.intent.revision;
+    m_navigationRuntimeLabObservation.lastPlannerStatus =
+        static_cast<std::uint8_t>(
+            m_navigationRuntimeLabLastPlan.status
+        );
+    m_navigationRuntimeLabObservation.adjustedTargetSeen =
+        m_navigationRuntimeLabObservation.adjustedTargetSeen ||
+        m_navigationRuntimeLabLastPlan.adjustedTarget;
+    m_navigationRuntimeLabObservation.conflictHoldSeen =
+        m_navigationRuntimeLabObservation.conflictHoldSeen ||
+        m_navigationRuntimeLabLastPlan.status ==
+            Planner::Status::ConflictHold;
+
+    if (m_navigationRuntimeLabObservation.obstacleEntityId != 0 &&
+        m_navigationRuntimeLabLastPlan.primaryConflictEntityId ==
+            m_navigationRuntimeLabObservation.obstacleEntityId)
+    {
+        m_navigationRuntimeLabObservation.obstaclePrimaryConflictSeen = true;
+    }
 
     if (m_navigationRuntimeLabLastPlan.status ==
         Planner::Status::InvalidInput)
@@ -2990,6 +3034,8 @@ void GameSimulation::registerNavigationRuntimeLabShip(
     m_navigationRuntimeLabSpace.reset();
     m_navigationRuntimeLabSourceRevision = 0;
     m_navigationRuntimeLabLastPlan = {};
+    m_navigationRuntimeLabObservation = {};
+    m_navigationRuntimeLabObservation.shipEntityId = shipId.value;
 }
 
 bool GameSimulation::isNavigationRuntimeLabShip(

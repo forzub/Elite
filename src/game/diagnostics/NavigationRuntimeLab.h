@@ -309,12 +309,15 @@ struct NavigationRuntimeLabObservation
     glm::dvec3 firstExactStaticViolationLastExecutedDemandMapMps2 {0.0};
     bool firstExactStaticViolationPreviousTargetBlocked = false;
     bool firstExactStaticViolationPreviousForecastBlocked = false;
+    bool firstExactStaticViolationPreviousExecutedForecastBlocked = false;
     std::uint32_t firstExactStaticViolationPreviousBlockingEntityId = 0;
     glm::dvec3 firstExactStaticViolationPreviousProbeStartMap {0.0};
     glm::dvec3 firstExactStaticViolationPreviousTargetMap {0.0};
     glm::dvec3 firstExactStaticViolationPreviousForecastEndMap {0.0};
+    glm::dvec3 firstExactStaticViolationPreviousExecutedForecastEndMap {0.0};
     glm::dvec3 firstExactStaticViolationPreviousVelocityMapMps {0.0};
     glm::dvec3 firstExactStaticViolationPreviousIdealAccelerationMapMps2 {0.0};
+    glm::dvec3 firstExactStaticViolationPreviousExecutedAccelerationMapMps2 {0.0};
     double firstExactStaticViolationPreviousForecastSeconds = 0.0;
     double firstExactStaticViolationPreviousProbeTimeSeconds = 0.0;
 

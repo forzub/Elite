@@ -1102,6 +1102,8 @@ int runNavigationRuntimeSelfTest()
                 << observation.firstExactStaticViolationPreviousTargetBlocked
                 << " previous_forecast_blocked="
                 << observation.firstExactStaticViolationPreviousForecastBlocked
+                << " previous_executed_forecast_blocked="
+                << observation.firstExactStaticViolationPreviousExecutedForecastBlocked
                 << " previous_probe_time_s="
                 << observation.firstExactStaticViolationPreviousProbeTimeSeconds
                 << " previous_forecast_s="
@@ -1142,6 +1144,10 @@ int runNavigationRuntimeSelfTest()
                 << observation.firstExactStaticViolationPreviousForecastEndMap.x << ","
                 << observation.firstExactStaticViolationPreviousForecastEndMap.y << ","
                 << observation.firstExactStaticViolationPreviousForecastEndMap.z << ")"
+                << " previous_executed_forecast_end=("
+                << observation.firstExactStaticViolationPreviousExecutedForecastEndMap.x << ","
+                << observation.firstExactStaticViolationPreviousExecutedForecastEndMap.y << ","
+                << observation.firstExactStaticViolationPreviousExecutedForecastEndMap.z << ")"
                 << " previous_velocity=("
                 << observation.firstExactStaticViolationPreviousVelocityMapMps.x << ","
                 << observation.firstExactStaticViolationPreviousVelocityMapMps.y << ","
@@ -1150,6 +1156,10 @@ int runNavigationRuntimeSelfTest()
                 << observation.firstExactStaticViolationPreviousIdealAccelerationMapMps2.x << ","
                 << observation.firstExactStaticViolationPreviousIdealAccelerationMapMps2.y << ","
                 << observation.firstExactStaticViolationPreviousIdealAccelerationMapMps2.z << ")"
+                << " previous_executed_accel=("
+                << observation.firstExactStaticViolationPreviousExecutedAccelerationMapMps2.x << ","
+                << observation.firstExactStaticViolationPreviousExecutedAccelerationMapMps2.y << ","
+                << observation.firstExactStaticViolationPreviousExecutedAccelerationMapMps2.z << ")"
                 << "\n";
             return 55;
         }

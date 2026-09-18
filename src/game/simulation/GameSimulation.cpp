@@ -2314,6 +2314,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                     observation.acceptedSegmentLastStaticTargetBlocked;
                 observation.firstExactStaticViolationPreviousForecastBlocked =
                     observation.acceptedSegmentLastStaticForecastBlocked;
+                observation.firstExactStaticViolationPreviousExecutedForecastBlocked =
+                    observation.acceptedSegmentLastStaticExecutedForecastBlocked;
                 observation.firstExactStaticViolationPreviousBlockingEntityId =
                     observation.acceptedSegmentLastStaticBlockingEntityId;
                 observation.firstExactStaticViolationPreviousProbeStartMap =
@@ -2322,10 +2324,14 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                     observation.acceptedSegmentLastStaticTargetMap;
                 observation.firstExactStaticViolationPreviousForecastEndMap =
                     observation.acceptedSegmentLastStaticForecastEndMap;
+                observation.firstExactStaticViolationPreviousExecutedForecastEndMap =
+                    observation.acceptedSegmentLastStaticExecutedForecastEndMap;
                 observation.firstExactStaticViolationPreviousVelocityMapMps =
                     observation.acceptedSegmentLastStaticVelocityMapMps;
                 observation.firstExactStaticViolationPreviousIdealAccelerationMapMps2 =
                     observation.acceptedSegmentLastStaticIdealAccelerationMapMps2;
+                observation.firstExactStaticViolationPreviousExecutedAccelerationMapMps2 =
+                    observation.acceptedSegmentLastStaticExecutedAccelerationMapMps2;
                 observation.firstExactStaticViolationPreviousForecastSeconds =
                     observation.acceptedSegmentLastStaticForecastSeconds;
                 observation.firstExactStaticViolationPreviousProbeTimeSeconds =

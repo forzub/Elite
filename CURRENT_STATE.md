@@ -16,7 +16,7 @@
 - 12A-6a dynamic angular-motion publication — ACCEPTED
 - 12A-6b live moving-gap / moving-passage composition — ACTIVE
 - 12A-6b1 runtime moving-precision observe/prove seam — ACCEPTED
-- 12A-6b2 exact-static proof of accepted moving trajectory — ACTIVE
+- 12A-6b2 exact-static proof of accepted moving trajectory — CANDIDATE / target-machine pending
 
 ## 12A-6a acceptance
 
@@ -191,3 +191,48 @@ Requirements:
 - fail closed on static collision;
 - keep moving precision observe-only until this static proof is target-machine green.
 
+
+
+## 12A-6b2 candidate now on main
+
+Candidate implementation baseline before documentation commits:
+
+```text
+61f62e9d096542ae52680cf47d6da1c03b0bb8c0
+```
+
+The accepted moving-passage evaluator now publishes a compact witness of the
+**same Hermite trajectory it proved**:
+- 33 exact center samples;
+- 32 continuous centerline-to-chord deviation bounds;
+- the conservative radius containing the complete precision hull at any
+  orientation.
+
+For each interval, the deviation bound is:
+
+```text
+max(|a_i|, |a_i+1|) * dt^2 / 8
+```
+
+because Hermite acceleration is linear over the interval and its endpoint
+magnitudes bound the acceleration norm continuously.
+
+The runtime then proves each of those 32 chord capsules against
+`NavigationSpace::querySegment()`. Exact static HitVolume geometry remains the
+obstacle truth; the ship is conservatively contained by its full hull radius
+plus the interval curve-deviation bound and the existing static clearance.
+
+New runtime diagnostics distinguish:
+- dynamically feasible moving passage;
+- static proof attempted;
+- number of Hermite intervals proven;
+- static obstacle work;
+- exact blocking obstacle identity;
+- complete static-safe result.
+
+A deterministic regression places a static beam across a dynamically valid
+moving passage. The moving-gap/moving-passage proof must stay feasible while the
+same-trajectory exact-static proof rejects it.
+
+12A-6b2 remains observe-only. Steering authority is unchanged until this
+candidate is accepted on the target machine.

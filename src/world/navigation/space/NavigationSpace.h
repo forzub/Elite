@@ -3,7 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
+
+#include "src/world/navigation/NavigationObstacle.h"
 
 namespace world::navigation
 {
@@ -68,6 +71,12 @@ public:
         Revision sourceRevision = 0;
         std::vector<RegionInput> regions;
         std::vector<PortalInput> portals;
+
+        // Exact persistent static collision geometry expressed in this
+        // NavigationSpace's map frame. Regions/portals remain coarse free-space
+        // topology; obstacles are the precision layer used to prove local
+        // segments and apertures without replacing OBBs by enclosing spheres.
+        std::vector<NavigationObstacle> obstacles;
     };
 
     // Transactional local patch. Upserts clear invalidation for the supplied
@@ -79,6 +88,9 @@ public:
         std::vector<PortalId> removePortalIds;
         std::vector<RegionInput> upsertRegions;
         std::vector<PortalInput> upsertPortals;
+
+        std::vector<std::string> removeObstacleIds;
+        std::vector<NavigationObstacle> upsertObstacles;
     };
 
     struct PointQuery
@@ -95,6 +107,34 @@ public:
         RegionId regionId = 0;
         double availableClearanceMeters = 0.0;
         std::size_t regionsExamined = 0;
+        std::size_t obstaclesExamined = 0;
+        std::string blockingObstacleId;
+        std::uint32_t blockingObstacleEntityId = 0;
+    };
+
+    struct SegmentQuery
+    {
+        Vec3d startMapMeters {};
+        Vec3d endMapMeters {};
+        AgentEnvelope envelope {};
+
+        // LocalAvoidance uses same-region convex proof plus exact obstacle
+        // rejection. Route-wide traversal across regions remains the corridor
+        // graph's job.
+        bool requireSameRegion = true;
+    };
+
+    struct SegmentQueryResult
+    {
+        Revision spaceRevision = 0;
+        Revision sourceRevision = 0;
+        bool traversable = false;
+        RegionId startRegionId = 0;
+        RegionId endRegionId = 0;
+        std::size_t regionsExamined = 0;
+        std::size_t obstaclesExamined = 0;
+        std::string blockingObstacleId;
+        std::uint32_t blockingObstacleEntityId = 0;
     };
 
     struct CorridorQuery
@@ -169,6 +209,7 @@ public:
         Revision sourceRevision = 0;
         std::size_t regionCount = 0;
         std::size_t portalCount = 0;
+        std::size_t obstacleCount = 0;
         std::size_t invalidatedRegionCount = 0;
         std::size_t invalidatedPortalCount = 0;
     };
@@ -193,6 +234,7 @@ public:
     );
 
     [[nodiscard]] PointQueryResult queryPoint(const PointQuery& query) const;
+    [[nodiscard]] SegmentQueryResult querySegment(const SegmentQuery& query) const;
     [[nodiscard]] CorridorResult queryCorridor(const CorridorQuery& query) const;
     [[nodiscard]] CostedCorridorResult queryCostedCorridor(
         const CorridorQuery& query,

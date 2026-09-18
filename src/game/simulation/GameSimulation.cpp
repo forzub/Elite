@@ -919,12 +919,14 @@ bool GameSimulation::updateNpcNavigationControl(
             Bridge::PilotExecutor::kMaximumStepSeconds,
             executionTimeSeconds - lastTime
         );
-        lastTime += dt;
-        latest = bridgeIt->second->step(lastTime, dt, intent);
+        const double nextTime = lastTime + dt;
+        latest = bridgeIt->second->step(nextTime, dt, intent);
         stepped = true;
 
         if (latest.status != Bridge::PilotExecutor::Status::Ok)
             return false;
+
+        lastTime = nextTime;
     }
 
     if (!stepped)
@@ -1513,7 +1515,9 @@ m_hubVelocityMetersPerSecond[hubId] =
                 // retired direct steering path, or a runtime error would
                 // silently reintroduce two motion authorities.
                 ship.setControlState(ShipControlState {});
+                m_npcNavigationControlBridges.erase(id);
                 m_npcNavigationExecutionSnapshots.erase(id);
+                m_npcNavigationLastExecutionTimeSeconds.erase(id);
             }
         }
 

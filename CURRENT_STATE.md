@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Last target-machine verified baseline:** `a0efa9190180043b05da3103a5d466d256744935`
+**Last target-machine verified baseline:** `a587dcd96bdf0b05edbf4fcfe9a32f5f7be1058d`
 
 > The verified-baseline hash is intentionally not called "current HEAD": a documentation commit changes HEAD by definition. Record the commit that was actually built/tested.
 
@@ -15,7 +15,8 @@
 - 12A-5 static/dynamic ownership cleanup — ACCEPTED
 - 12A-6a dynamic angular-motion publication — ACCEPTED
 - 12A-6b live moving-gap / moving-passage composition — ACTIVE
-- 12A-6b1 runtime moving-precision observe/prove seam — CANDIDATE / partial target-machine evidence
+- 12A-6b1 runtime moving-precision observe/prove seam — ACCEPTED
+- 12A-6b2 exact-static proof of accepted moving trajectory — ACTIVE
 
 ## 12A-6a acceptance
 
@@ -146,3 +147,47 @@ At minimum keep these synchronized:
 - the authoritative stage document (currently `src/game/navigation/STAGE12_END_TO_END.md`).
 
 Record the **last actually verified code baseline**, not a self-invalidating "current HEAD" value.
+
+
+## 12A-6b1 acceptance
+
+Full target-machine gate completed from:
+
+```text
+a587dcd96bdf0b05edbf4fcfe9a32f5f7be1058d
+```
+
+Accepted evidence:
+
+```text
+architecture contract              PASS
+navigation_runtime                 3/3 PASS
+navigation_trajectory             11/11 PASS
+navigation_map                     1/1 PASS
+EliteGame                          BUILD PASS
+EliteServer                        BUILD PASS
+headless navigation self-test      PASS
+exact_static_violation             0
+replication_error_mps2             0
+canonical_replication_error_mps2   0
+```
+
+The live self-test preserved exact-static ownership, rotating dynamic publication,
+physical execution and same-tick replication while the new moving precision seam
+remained non-authoritative.
+
+Therefore 12A-6b1 is accepted.
+
+## Active 12A-6b2 boundary
+
+The next candidate must prove the **same Hermite trajectory** accepted by
+`MovingPassageTrajectoryEvaluator` against persistent exact-static
+`NavigationSpace` / HitVolume geometry.
+
+Requirements:
+- bounded work only;
+- continuous-between-samples proof, not point sampling;
+- no second independently re-derived trajectory;
+- fail closed on static collision;
+- keep moving precision observe-only until this static proof is target-machine green.
+

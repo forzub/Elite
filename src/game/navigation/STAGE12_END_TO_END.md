@@ -199,6 +199,75 @@ that same authoritative execution product
 The test must wait for an actual lab-row publication. It must not weaken
 floating-point tolerance to hide publication-age differences.
 
+## 12A-3 — live obstacle behavior acceptance
+
+Target-machine acceptance on
+`9246530e5eb539e227a1af69461113f2b30ec93a` closes the first real
+authoritative obstacle-behavior gate.
+
+The accepted chain is:
+
+```text
+CUBE 08 broadphase candidate
+ -> nominal conflict identity
+ -> bounded adjusted target
+ -> map intent -> world control transform
+ -> PilotSkillExecutor
+ -> authoritative physics
+ -> positive clearance and route progress
+ -> same-tick sparse replication
+ -> canonical hydration
+```
+
+The accepted live run demonstrated bounded physical response rather than merely
+planner output: maximum relative speed remained approximately 59.88 m/s,
+physically applied lateral acceleration approximately 5.51 m/s², conservative
+clearance 129.59 m, goal progress 3.50 km in 58.9 s, and exact replication
+errors of zero.
+
+## 12A-4 — exact static HitVolume geometry
+
+Persistent static obstacles now have a precision layer in `NavigationSpace`.
+The source is the authoritative collision/damage HitVolume product:
+
+```text
+HitComponent volumes
+ -> NavigationHitVolumeAdapter
+ -> exact map-frame NavigationObstacle OBBs
+ -> NavigationSpace::queryPoint/querySegment
+ -> LocalAvoidance static proof
+```
+
+Coarse region/portal topology remains responsible for global connectivity.
+Exact obstacles do not replace that topology; they refine bounded local
+feasibility.
+
+`LocalAvoidance` must prove the bounded nominal segment against static
+geometry even when `NavigationMap` is dynamically clear. Every adjusted probe
+must also pass exact static segment proof before dynamic evaluation can accept
+it.
+
+The canonical narrow-gap regression is intentionally hostile to sphere-only
+geometry: two boxes have enclosing conservative spheres that overlap the
+centreline while their real OBBs leave a 4 m aperture. A fitting agent must
+traverse that aperture; an oversized envelope must fail.
+
+The live NAV STRESS fixture publishes non-self-rotating HitVolume OBBs only
+after authoritative hub/object transforms and HitVolume rebuild are current for
+the fixed step. The live self-test must observe both:
+
+```text
+exact_static=1
+exact_static_obstacles>0
+```
+
+before accepting the existing CUBE 08 physical/replication chain.
+
+For this first exact-static gate, the previously accepted static conservative
+sphere candidates remain in `NavigationMap`. Removing static objects from the
+dynamic layer is deliberately deferred until the OBB publication/proof gate is
+green, so ownership cleanup cannot hide a precision-geometry regression.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

@@ -30,6 +30,26 @@ bool validContext(const Context& context) noexcept
     return unitInterval(context.maximumPreferredCriticalDamageRisk01);
 }
 
+bool controlLawCompatible(
+    const Context& context,
+    const Candidate& candidate
+) noexcept
+{
+    using Law = game::navigation::LocalFlightControlLaw;
+    using Requirement = Controller::ControlLawRequirement;
+
+    switch (candidate.controlLawRequirement)
+    {
+        case Requirement::AssistedOnly:
+            return context.controlLaw == Law::Assisted;
+        case Requirement::NewtonianOnly:
+            return context.controlLaw == Law::Newtonian;
+        case Requirement::Any:
+        default:
+            return true;
+    }
+}
+
 bool validCandidate(const Candidate& candidate) noexcept
 {
     return candidate.valid &&
@@ -80,8 +100,11 @@ PopulationFacts inspectPopulation(
     for (std::size_t i = 0; i < candidateCount; ++i)
     {
         const Candidate& candidate = candidates[i];
-        if (!validCandidate(candidate))
+        if (!validCandidate(candidate) ||
+            !controlLawCompatible(context, candidate))
+        {
             continue;
+        }
 
         facts.haveProgress =
             facts.haveProgress || candidate.progressesObjective;
@@ -397,8 +420,11 @@ ManeuverDecisionController::Selection ManeuverDecisionController::select(
     for (std::size_t i = 0; i < candidateCount; ++i)
     {
         const Candidate& candidate = candidates[i];
-        if (!validCandidate(candidate))
+        if (!validCandidate(candidate) ||
+            !controlLawCompatible(context, candidate))
+        {
             continue;
+        }
 
         ++result.candidatesEvaluated;
 

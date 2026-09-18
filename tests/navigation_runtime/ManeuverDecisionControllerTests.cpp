@@ -255,6 +255,50 @@ void testPrecisionRetrievalPrefersClearanceAndLowEntrySpeed()
             "Precision retrieval must prefer control margin over raw transit time");
 }
 
+void testControlLawFiltersIncompatibleRecoveryManeuvers()
+{
+    Candidate candidates[2];
+
+    candidates[0] = candidate(
+        70,
+        Controller::CandidateFamily::NewtonianFlipAndBurn,
+        true,
+        false,
+        true
+    );
+    candidates[0].controlLawRequirement =
+        Controller::ControlLawRequirement::NewtonianOnly;
+    candidates[0].timeToObjectiveSeconds = 2.0;
+
+    candidates[1] = candidate(
+        71,
+        Controller::CandidateFamily::ExtendedVisibilityRecovery,
+        true,
+        false,
+        true
+    );
+    candidates[1].controlLawRequirement =
+        Controller::ControlLawRequirement::Any;
+    candidates[1].timeToObjectiveSeconds = 6.0;
+
+    Context context;
+    context.doctrine = Controller::Doctrine::Extreme;
+    context.progress = Controller::ProgressRequirement::MustProgress;
+    context.controlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+
+    const auto assisted = Controller::select(context, candidates, 2);
+    require(assisted.valid && assisted.selectedCandidateId == 71,
+            "Assisted must reject Newtonian-only flip-and-burn candidates");
+
+    context.controlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
+
+    const auto newtonian = Controller::select(context, candidates, 2);
+    require(newtonian.valid && newtonian.selectedCandidateId == 70,
+            "Newtonian may select the faster flip-and-burn recovery candidate");
+}
+
 void testSacrificialDamageNeedsExplicitPermission()
 {
     Candidate candidates[2];
@@ -305,6 +349,7 @@ int main()
         testExtremeStillRejectsCatastrophicShortcut();
         testCombatEscapePrefersLowerThreatExposure();
         testPrecisionRetrievalPrefersClearanceAndLowEntrySpeed();
+        testControlLawFiltersIncompatibleRecoveryManeuvers();
         testSacrificialDamageNeedsExplicitPermission();
 
         std::cout << "MANEUVER DECISION CONTROLLER TESTS: PASS\n";
@@ -314,6 +359,7 @@ int main()
         std::cout << " - catastrophic-risk envelope remains above doctrine/style\n";
         std::cout << " - CombatEscape consumes threat/silhouette exposure\n";
         std::cout << " - PrecisionRetrieval favors clearance and low entry speed\n";
+        std::cout << " - control-law-specific recovery candidates are filtered before doctrine ranking\n";
         return 0;
     }
     catch (const std::exception& error)

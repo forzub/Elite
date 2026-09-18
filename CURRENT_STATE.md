@@ -86,24 +86,47 @@ clearance and exact same-tick sparse/canonical replication truth.
 
 ## 12A-4 candidate
 
-Current candidate adds an exact persistent static geometry layer to
-`NavigationSpace`:
+Target-machine run on
+`80b90a6abc43982f3c6da9f76e20a05b2cd25d46` produced mixed but useful
+evidence.
+
+### Passed
+
+- architecture contract PASS;
+- NavigationSpace 1/1 PASS;
+- production EliteGame and EliteServer builds PASS;
+- live server published 17 exact static obstacles;
+- live planner queried them and observed nominal static blocking;
+- ship passed the obstacle plane and made 6382.44 m of goal progress.
+
+### Failures and interpretation
+
+`navigation_local_avoidance` failed because a newly-authored dynamic fixture
+used an invalid conservative swept radius smaller than the actor radius. The
+production fail-closed validator behaved correctly; the fixture is corrected.
+
+`navigation_runtime_planner` failed because exact same-region endpoint
+clearance rejected the centre of a valid corridor portal. Portal centres lie on
+the shared boundary by definition. The runtime now carries the already-proven
+corridor portal clearance into the precision segment query; only that nominal
+portal endpoint may touch the boundary. Adjusted probes remain strict.
+
+The live self-test failed only because the old
+`minimumConservativeClearanceMeters > 0` condition was still treated as
+acceptance truth. It reported `-128.338 m`, meaning the ship entered the
+conservative enclosing sphere. Under 12A-4 that sphere is broadphase only and
+may overlap free space outside the real OBB.
+
+### Corrected acceptance
+
+Current candidate:
 
 ```text
-HitVolume OBBs
- -> NavigationHitVolumeAdapter
- -> map-frame NavigationObstacle boxes
- -> NavigationSpace exact point/segment queries
- -> LocalAvoidance nominal + adjusted static segment proof
+a40d41bcfff4aecee94b495c0c5dd64223c7fe2b
 ```
 
-The key regression deliberately creates a narrow OBB aperture whose
-conservative enclosing spheres overlap the centreline. A fitting envelope must
-pass the exact OBB gap; an oversized envelope must fail.
-
-The live NAV STRESS lab now publishes real non-self-rotating HitVolume OBBs
-only after authoritative hub/object transforms and HitVolume rebuilds are
-current for the fixed step. The server self-test requires:
+The server now sweeps every actual fixed-step motion segment against the exact
+HitVolume static layer. Live acceptance requires:
 
 ```text
 exact_static=1
@@ -111,14 +134,11 @@ exact_static_obstacles>0
 exact_static_query=1
 exact_static_block=1
 max_exact_static_examined>0
+exact_static_motion_samples>0
+exact_static_violation=0
 ```
 
-So PASS now proves not only publication but actual live planner consumption of
-the exact static layer and a nominal OBB rejection before the existing CUBE 08
-physical/replication evidence can PASS.
+`min_conservative_clearance_m` remains printed as a broadphase diagnostic and
+is no longer an exact-static safety verdict.
 
-Conservative static spheres remain in NavigationMap for this intermediate gate
-so 12A-3 behavior is not changed simultaneously with the precision-geometry
-publication. After 12A-4 is accepted, the next slice can remove static objects
-from the dynamic candidate layer and reserve NavigationMap for genuinely
-dynamic/moving actors.
+Stage remains **12A-4 CANDIDATE** pending the corrected target-machine gate.

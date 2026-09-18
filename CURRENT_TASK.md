@@ -20,7 +20,7 @@ EliteServer PASS.
 Current code baseline:
 
 ```text
-99833c243992f5af2ce7bacc75efb3eb65ef3a84
+ab28db1487d80a884ca19302717968329f936567
 ```
 
 New live mode:
@@ -115,3 +115,35 @@ containing the lab row and compares it against a copied authoritative
 `GameServer::snapshot()` with the exact same `serverTick`.
 
 Run the same gate again after pulling current `main`.
+
+
+### Correction after second live run
+
+The previous run proved obstacle detection/adjustment but exposed physically
+invalid motion:
+
+```text
+max_route_deviation_m=43699.4
+progress_m=2256.52
+```
+
+The live planner was producing map-frame acceleration and the Stage-11 control
+seam interpreted it as world-space. Both linear and angular demands are now
+rotated through the published NavigationMap working frame before entering
+PilotSkillExecutor/ShipControlState.
+
+The old `max_lateral_accel_mps2=340.222` diagnostic also mixed a world-space
+executed demand with a map-space route vector. It was not a valid physical
+lateral-acceleration measurement.
+
+The next self-test reports:
+
+```text
+max_lateral_demand_mps2
+max_applied_accel_mps2
+max_applied_lateral_accel_mps2
+max_relative_speed_mps
+```
+
+Do not add a deadband or weaken behavior thresholds until this frame correction
+is measured on the target machine.

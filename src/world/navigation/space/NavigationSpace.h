@@ -147,6 +147,12 @@ public:
         // graph's job.
         bool requireSameRegion = true;
 
+        // Physical sweep / already topology-authorized trajectory mode.
+        // When true, region containment/clearance is not treated as collision
+        // geometry; only persistent exact NavigationObstacle shapes are tested.
+        // This must not be used to discover a route around topology.
+        bool exactObstaclesOnly = false;
+
         // A selected portal center lies on the shared boundary of two coarse
         // free-space regions. Corridor routing has already proved the portal's
         // envelope clearance, so the precision layer may allow that one

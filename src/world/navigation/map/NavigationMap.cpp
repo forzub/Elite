@@ -15,7 +15,6 @@ namespace
 
 using Vec3d = NavigationMap::Vec3d;
 
-constexpr double kAxisOrthogonalityTolerance = 1.0e-3;
 constexpr double kLengthEpsilon = 1.0e-12;
 
 bool isFinite(double value) noexcept
@@ -58,115 +57,6 @@ double length(const Vec3d& value) noexcept
     return std::sqrt(lengthSquared(value));
 }
 
-Vec3d normalized(const Vec3d& value)
-{
-    const double valueLength = length(value);
-    if (!isFinite(valueLength) || valueLength <= kLengthEpsilon)
-        throw std::invalid_argument("NavigationMap working-frame axis is degenerate");
-    return value * (1.0 / valueLength);
-}
-
-double distanceSquared(const Vec3d& a, const Vec3d& b) noexcept
-{
-    return lengthSquared(a - b);
-}
-
-double distanceToSegmentSquared(
-    const Vec3d& point,
-    const Vec3d& segmentStart,
-    const Vec3d& segmentEnd
-) noexcept
-{
-    const Vec3d segment = segmentEnd - segmentStart;
-    const double denominator = lengthSquared(segment);
-    if (denominator <= kLengthEpsilon)
-        return distanceSquared(point, segmentStart);
-
-    const double t = std::clamp(
-        dot(point - segmentStart, segment) / denominator,
-        0.0,
-        1.0
-    );
-    const Vec3d closest = segmentStart + segment * t;
-    return distanceSquared(point, closest);
-}
-
-struct CellCoord
-{
-    int x = 0;
-    int y = 0;
-    int z = 0;
-
-    bool operator==(const CellCoord& other) const noexcept
-    {
-        return x == other.x && y == other.y && z == other.z;
-    }
-};
-
-struct CellCoordHash
-{
-    std::size_t operator()(const CellCoord& value) const noexcept
-    {
-        std::size_t seed = static_cast<std::size_t>(value.x) * 73856093u;
-        seed ^= static_cast<std::size_t>(value.y) * 19349663u;
-        seed ^= static_cast<std::size_t>(value.z) * 83492791u;
-        return seed;
-    }
-};
-
-struct PreparedFrame
-{
-    Vec3d originSystemMeters {};
-    Vec3d xAxisSystem {};
-    Vec3d yAxisSystem {};
-    Vec3d zAxisSystem {};
-};
-
-PreparedFrame prepareFrame(const NavigationMap::WorkingFrame& frame)
-{
-    if (!isFinite(frame.originSystemMeters) ||
-        !isFinite(frame.xAxisSystem) ||
-        !isFinite(frame.yAxisSystem) ||
-        !isFinite(frame.zAxisSystem))
-    {
-        throw std::invalid_argument("NavigationMap working frame contains non-finite values");
-    }
-
-    PreparedFrame prepared;
-    prepared.originSystemMeters = frame.originSystemMeters;
-    prepared.xAxisSystem = normalized(frame.xAxisSystem);
-    prepared.yAxisSystem = normalized(frame.yAxisSystem);
-    prepared.zAxisSystem = normalized(frame.zAxisSystem);
-
-    if (std::abs(dot(prepared.xAxisSystem, prepared.yAxisSystem)) > kAxisOrthogonalityTolerance ||
-        std::abs(dot(prepared.xAxisSystem, prepared.zAxisSystem)) > kAxisOrthogonalityTolerance ||
-        std::abs(dot(prepared.yAxisSystem, prepared.zAxisSystem)) > kAxisOrthogonalityTolerance)
-    {
-        throw std::invalid_argument("NavigationMap working-frame axes must be orthogonal");
-    }
-
-    return prepared;
-}
-
-Vec3d pointToMap(const PreparedFrame& frame, const Vec3d& pointSystemMeters) noexcept
-{
-    const Vec3d relative = pointSystemMeters - frame.originSystemMeters;
-    return {
-        dot(relative, frame.xAxisSystem),
-        dot(relative, frame.yAxisSystem),
-        dot(relative, frame.zAxisSystem)
-    };
-}
-
-Vec3d vectorToMap(const PreparedFrame& frame, const Vec3d& vectorSystem) noexcept
-{
-    return {
-        dot(vectorSystem, frame.xAxisSystem),
-        dot(vectorSystem, frame.yAxisSystem),
-        dot(vectorSystem, frame.zAxisSystem)
-    };
-}
-
 } // namespace
 
 class NavigationMap::Impl
@@ -207,7 +97,6 @@ public:
     int gridDimension = 0;
     Revision mapRevision = 0;
     Revision sourceRevision = 0;
-    PreparedFrame frame {};
     std::vector<InternalActor> actors;
     std::unordered_map<CellCoord, std::vector<std::size_t>, CellCoordHash> cells;
     std::size_t indexedActorCount = 0;
@@ -217,8 +106,6 @@ public:
 
     void replaceDynamicWorld(DynamicWorldUpdate update)
     {
-        const PreparedFrame newFrame = prepareFrame(update.workingFrame);
-
         std::vector<InternalActor> newActors;
         newActors.reserve(update.actors.size());
 
@@ -238,10 +125,10 @@ public:
 
         for (const DynamicActorInput& input : update.actors)
         {
-            if (!isFinite(input.positionSystemMeters) ||
-                !isFinite(input.velocitySystemMetersPerSecond) ||
-                !isFinite(input.accelerationSystemMetersPerSecond2) ||
-                !isFinite(input.angularVelocitySystemRadPerSecond) ||
+            if (!isFinite(input.positionMapMeters) ||
+                !isFinite(input.velocityMapMetersPerSecond) ||
+                !isFinite(input.accelerationMapMetersPerSecond2) ||
+                !isFinite(input.angularVelocityMapRadPerSecond) ||
                 !isFinite(input.radiusMeters) ||
                 input.radiusMeters < 0.0 ||
                 !seenIds.insert(input.entityId).second)
@@ -252,19 +139,13 @@ public:
 
             InternalActor actor;
             actor.entityId = input.entityId;
-            actor.positionMapMeters = pointToMap(newFrame, input.positionSystemMeters);
-            actor.velocityMapMetersPerSecond = vectorToMap(
-                newFrame,
-                input.velocitySystemMetersPerSecond
-            );
-            actor.accelerationMapMetersPerSecond2 = vectorToMap(
-                newFrame,
-                input.accelerationSystemMetersPerSecond2
-            );
-            actor.angularVelocityMapRadPerSecond = vectorToMap(
-                newFrame,
-                input.angularVelocitySystemRadPerSecond
-            );
+            actor.positionMapMeters = input.positionMapMeters;
+            actor.velocityMapMetersPerSecond =
+                input.velocityMapMetersPerSecond;
+            actor.accelerationMapMetersPerSecond2 =
+                input.accelerationMapMetersPerSecond2;
+            actor.angularVelocityMapRadPerSecond =
+                input.angularVelocityMapRadPerSecond;
             actor.actorRadiusMeters = input.radiusMeters;
             actor.flags = input.flags;
             actor.motionRevision = input.motionRevision;
@@ -301,7 +182,6 @@ public:
             newActors.push_back(actor);
         }
 
-        frame = newFrame;
         sourceRevision = update.sourceRevision;
         actors = std::move(newActors);
         cells = std::move(newCells);

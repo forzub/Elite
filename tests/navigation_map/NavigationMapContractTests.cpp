@@ -25,24 +25,19 @@ bool nearlyEqual(double a, double b, double epsilon = 1.0e-9)
     return std::abs(a - b) <= epsilon;
 }
 
-Vec3d add(const Vec3d& a, const Vec3d& b)
-{
-    return {a.x + b.x, a.y + b.y, a.z + b.z};
-}
-
 NavigationMap::DynamicActorInput actorAt(
     NavigationMap::EntityId id,
-    const Vec3d& systemPosition,
-    const Vec3d& systemVelocity = {},
-    const Vec3d& systemAcceleration = {},
+    const Vec3d& mapPosition,
+    const Vec3d& mapVelocity = {},
+    const Vec3d& mapAcceleration = {},
     double radiusMeters = 10.0
 )
 {
     NavigationMap::DynamicActorInput actor;
     actor.entityId = id;
-    actor.positionSystemMeters = systemPosition;
-    actor.velocitySystemMetersPerSecond = systemVelocity;
-    actor.accelerationSystemMetersPerSecond2 = systemAcceleration;
+    actor.positionMapMeters = mapPosition;
+    actor.velocityMapMetersPerSecond = mapVelocity;
+    actor.accelerationMapMetersPerSecond2 = mapAcceleration;
     actor.radiusMeters = radiusMeters;
     actor.motionRevision = id * 10;
     return actor;
@@ -71,22 +66,15 @@ void testOwnedShipCenteredSnapshotAndQueries()
 
     NavigationMap map(config);
 
-    const Vec3d origin {1.0e9, -2.0e9, 3.0e9};
-
     NavigationMap::DynamicWorldUpdate update;
     update.sourceRevision = 41;
-    update.workingFrame.originSystemMeters = origin;
     update.actors = {
-        actorAt(1, add(origin, {100.0, 0.0, 0.0})),
-        actorAt(
-            2,
-            add(origin, {0.0, 350.0, 0.0}),
-            {0.0, -175.0, 0.0}
-        ),
-        actorAt(3, add(origin, {0.0, 700.0, 0.0})),
-        actorAt(4, add(origin, {1500.0, 0.0, 0.0})),
-        actorAt(5, add(origin, {0.0, 0.0, 0.0}), {}, {}, -1.0),
-        actorAt(1, add(origin, {-100.0, 0.0, 0.0}))
+        actorAt(1, {100.0, 0.0, 0.0}),
+        actorAt(2, {0.0, 350.0, 0.0}, {0.0, -175.0, 0.0}),
+        actorAt(3, {0.0, 700.0, 0.0}),
+        actorAt(4, {1500.0, 0.0, 0.0}),
+        actorAt(5, {0.0, 0.0, 0.0}, {}, {}, -1.0),
+        actorAt(1, {-100.0, 0.0, 0.0})
     };
 
     map.replaceDynamicWorld(std::move(update));
@@ -134,95 +122,61 @@ void testOwnedShipCenteredSnapshotAndQueries()
     require(sphereResult.candidates.front().entityId == 1, "local sphere result id mismatch");
 }
 
-void testRebaseAndStableBasisAreOwnedByMap()
-{
-    NavigationMap::Config config;
-    config.halfExtentMeters = 1000.0;
-    config.cellSizeMeters = 100.0;
-    config.predictionHorizonSeconds = 0.0;
-    config.interactionMarginMeters = 0.0;
-
-    NavigationMap map(config);
-
-    NavigationMap::DynamicWorldUpdate rebaseUpdate;
-    rebaseUpdate.sourceRevision = 100;
-    rebaseUpdate.workingFrame.originSystemMeters = {1050.0, 2000.0, 3000.0};
-    rebaseUpdate.actors.push_back(actorAt(7, {1100.0, 2000.0, 3000.0}));
-    map.replaceDynamicWorld(std::move(rebaseUpdate));
-
-    NavigationMap::SphereQuery rebaseQuery;
-    rebaseQuery.centerMapMeters = {50.0, 0.0, 0.0};
-    rebaseQuery.radiusMeters = 1.0;
-    const NavigationMap::QueryResult rebaseResult = map.querySphere(rebaseQuery);
-    const NavigationMap::Candidate& rebased = requireCandidate(rebaseResult, 7);
-    require(
-        nearlyEqual(rebased.positionMapMeters.x, 50.0),
-        "NavigationMap must own system-to-working-origin rebasing"
-    );
-
-    NavigationMap::DynamicWorldUpdate rotatedUpdate;
-    rotatedUpdate.sourceRevision = 101;
-    rotatedUpdate.workingFrame.originSystemMeters = {0.0, 0.0, 0.0};
-    rotatedUpdate.workingFrame.xAxisSystem = {0.0, 1.0, 0.0};
-    rotatedUpdate.workingFrame.yAxisSystem = {-1.0, 0.0, 0.0};
-    rotatedUpdate.workingFrame.zAxisSystem = {0.0, 0.0, 1.0};
-
-    auto rotatingActor = actorAt(8, {0.0, 100.0, 0.0});
-    rotatingActor.angularVelocitySystemRadPerSecond = {0.0, 2.0, 0.0};
-    rotatedUpdate.actors.push_back(rotatingActor);
-
-    map.replaceDynamicWorld(std::move(rotatedUpdate));
-
-    NavigationMap::SphereQuery basisQuery;
-    basisQuery.centerMapMeters = {100.0, 0.0, 0.0};
-    basisQuery.radiusMeters = 1.0;
-    const NavigationMap::QueryResult basisResult = map.querySphere(basisQuery);
-    const NavigationMap::Candidate& rotated = requireCandidate(basisResult, 8);
-    require(
-        nearlyEqual(rotated.positionMapMeters.x, 100.0) &&
-        nearlyEqual(rotated.positionMapMeters.y, 0.0),
-        "NavigationMap must own stable-basis transformation"
-    );
-    require(
-        nearlyEqual(rotated.angularVelocityMapRadPerSecond.x, 2.0) &&
-        nearlyEqual(rotated.angularVelocityMapRadPerSecond.y, 0.0) &&
-        nearlyEqual(rotated.angularVelocityMapRadPerSecond.z, 0.0),
-        "NavigationMap must rotate angular velocity into the working frame"
-    );
-}
-
-void testRejectedFrameDoesNotReplaceAcceptedMap()
+void testMapOwnsOnlyNavLocalCoordinates()
 {
     NavigationMap map;
 
-    NavigationMap::DynamicWorldUpdate accepted;
-    accepted.sourceRevision = 7;
-    accepted.actors.push_back(actorAt(1, {10.0, 0.0, 0.0}));
-    map.replaceDynamicWorld(std::move(accepted));
+    NavigationMap::DynamicWorldUpdate update;
+    update.sourceRevision = 100;
 
-    const NavigationMap::Stats before = map.stats();
+    auto actor = actorAt(
+        7,
+        {50.0, -20.0, 10.0},
+        {3.0, 4.0, 5.0},
+        {0.25, 0.5, 0.75}
+    );
+    actor.angularVelocityMapRadPerSecond = {0.1, 0.2, 0.3};
+    update.actors.push_back(actor);
 
-    NavigationMap::DynamicWorldUpdate invalid;
-    invalid.sourceRevision = 8;
-    invalid.workingFrame.xAxisSystem = {1.0, 0.0, 0.0};
-    invalid.workingFrame.yAxisSystem = {1.0, 0.0, 0.0};
-    invalid.workingFrame.zAxisSystem = {0.0, 0.0, 1.0};
+    map.replaceDynamicWorld(std::move(update));
 
-    bool threw = false;
-    try
-    {
-        map.replaceDynamicWorld(std::move(invalid));
-    }
-    catch (const std::invalid_argument&)
-    {
-        threw = true;
-    }
+    NavigationMap::SphereQuery query;
+    query.centerMapMeters = {50.0, -20.0, 10.0};
+    query.radiusMeters = 1.0;
+    const auto result = map.querySphere(query);
+    const auto& local = requireCandidate(result, 7);
 
-    require(threw, "non-orthogonal NavigationMap frame must be rejected");
-    const NavigationMap::Stats after = map.stats();
-    require(after.mapRevision == before.mapRevision, "rejected update changed map revision");
-    require(after.sourceRevision == before.sourceRevision, "rejected update changed source revision");
-    require(after.actorCount == before.actorCount, "rejected update changed owned actor data");
+    require(nearlyEqual(local.positionMapMeters.x, 50.0) &&
+            nearlyEqual(local.positionMapMeters.y, -20.0) &&
+            nearlyEqual(local.positionMapMeters.z, 10.0),
+            "NavigationMap must preserve already-converted NavLocal position");
+    require(nearlyEqual(local.velocityMapMetersPerSecond.x, 3.0) &&
+            nearlyEqual(local.velocityMapMetersPerSecond.y, 4.0) &&
+            nearlyEqual(local.velocityMapMetersPerSecond.z, 5.0),
+            "NavigationMap must not reinterpret NavLocal velocity");
+    require(nearlyEqual(local.angularVelocityMapRadPerSecond.x, 0.1) &&
+            nearlyEqual(local.angularVelocityMapRadPerSecond.y, 0.2) &&
+            nearlyEqual(local.angularVelocityMapRadPerSecond.z, 0.3),
+            "NavigationMap must not own system/frame angular conversion");
+}
+
+void testInvalidActorsAreRejectedWithoutChangingCoordinateSemantics()
+{
+    NavigationMap map;
+
+    NavigationMap::DynamicWorldUpdate update;
+    update.sourceRevision = 7;
+    update.actors.push_back(actorAt(1, {10.0, 0.0, 0.0}));
+
+    auto invalid = actorAt(2, {20.0, 0.0, 0.0});
+    invalid.radiusMeters = -1.0;
+    update.actors.push_back(invalid);
+
+    map.replaceDynamicWorld(std::move(update));
+
+    const NavigationMap::Stats stats = map.stats();
+    require(stats.actorCount == 1, "valid NavLocal actor was lost");
+    require(stats.rejectedActorCount == 1, "invalid NavLocal actor was not rejected");
 }
 
 } // namespace
@@ -232,12 +186,12 @@ int main()
     try
     {
         testOwnedShipCenteredSnapshotAndQueries();
-        testRebaseAndStableBasisAreOwnedByMap();
-        testRejectedFrameDoesNotReplaceAcceptedMap();
+        testMapOwnsOnlyNavLocalCoordinates();
+        testInvalidActorsAreRejectedWithoutChangingCoordinateSemantics();
         std::cout << "NAVIGATION MAP CONTRACT TESTS: PASS\n";
         std::cout << " - snapshot ownership / sparse queries\n";
-        std::cout << " - ship-centered rebase / stable basis / angular motion\n";
-        std::cout << " - atomic rejection of invalid frame\n";
+        std::cout << " - NavLocal-only publication / no hidden frame transform\n";
+        std::cout << " - invalid actor rejection without coordinate reinterpretation\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& error)

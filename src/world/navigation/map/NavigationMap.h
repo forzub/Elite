@@ -25,16 +25,8 @@ public:
         double z = 0.0;
     };
 
-    // Describes the ship-centered working frame in authoritative system/world
-    // coordinates. Axes are stable navigation/travel axes, not hull attitude.
-    struct WorkingFrame
-    {
-        Vec3d originSystemMeters {};
-        Vec3d xAxisSystem {1.0, 0.0, 0.0};
-        Vec3d yAxisSystem {0.0, 1.0, 0.0};
-        Vec3d zAxisSystem {0.0, 0.0, 1.0};
-    };
-
+    // NavigationMap is deliberately NavLocal-only. Coordinate conversion is
+    // owned by the game/navigation boundary adapter before publication.
     struct Config
     {
         double halfExtentMeters = 12000.0;
@@ -48,14 +40,10 @@ public:
     struct DynamicActorInput
     {
         EntityId entityId = 0;
-        Vec3d positionSystemMeters {};
-        Vec3d velocitySystemMetersPerSecond {};
-        Vec3d accelerationSystemMetersPerSecond2 {};
-
-        // Angular velocity is a vector and therefore crosses the working-frame
-        // boundary exactly like linear velocity. MovingGapPredictor consumes
-        // it for material surface velocity (omega x r).
-        Vec3d angularVelocitySystemRadPerSecond {};
+        Vec3d positionMapMeters {};
+        Vec3d velocityMapMetersPerSecond {};
+        Vec3d accelerationMapMetersPerSecond2 {};
+        Vec3d angularVelocityMapRadPerSecond {};
 
         double radiusMeters = 1.0;
         std::uint32_t flags = 0;
@@ -67,7 +55,6 @@ public:
     struct DynamicWorldUpdate
     {
         Revision sourceRevision = 0;
-        WorkingFrame workingFrame {};
         std::vector<DynamicActorInput> actors;
     };
 
@@ -138,8 +125,8 @@ public:
     NavigationMap(const NavigationMap&) = delete;
     NavigationMap& operator=(const NavigationMap&) = delete;
 
-    // Atomically replaces the block-owned dynamic working set after validating
-    // and transforming the supplied authoritative snapshot into map coordinates.
+    // Atomically replaces the block-owned NavLocal dynamic working set.
+    // System/world/model/render coordinates are not accepted by this API.
     void replaceDynamicWorld(DynamicWorldUpdate update);
 
     [[nodiscard]] QueryResult queryCorridor(const CorridorQuery& query) const;

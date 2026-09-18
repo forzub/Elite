@@ -1,98 +1,69 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Stage:** 12A-6b — live moving-gap / moving-passage composition  
-**Last target-machine verified baseline:** `a0efa9190180043b05da3103a5d466d256744935`
+**Stage:** 12A-6b1 — runtime moving-gap / moving-passage observe-prove seam  
+**Last target-machine verified baseline:** `a0efa9190180043b05da3103a5d466d256744935`  
+**Candidate implementation baseline before documentation commits:** `616f5b868795439fb42308d2c2d13ffc87218cba`
 
-## Accepted prerequisites
+## What changed
 
-12A-5 and 12A-6a are closed.
-
-Live runtime already proves:
-
-```text
-stationary infrastructure
-    -> NavigationSpace exact HitVolume OBB authority
-
-time-varying infrastructure
-    -> NavigationMap compact dynamic candidate
-    -> linear + angular motion publication
-```
-
-12A-6a target-machine evidence:
+The real shared `NavigationRuntimePlanner` can now consume its already-bounded
+`NavigationMap::QueryResult` after a nominal dynamic conflict and run:
 
 ```text
-rotating_actor_seen=1
-rotating_actor_omega_verified=1
-rotating_actor_omega_error=0
-
-obstacle_candidate=0
-exact_obstacle_block=1
-adjusted=1
-exact_static_violation=0
-replication_error_mps2=0
-canonical_replication_error_mps2=0
-```
-
-## Current implementation target
-
-Compose the already accepted moving-geometry precision chain into the real Stage-12 runtime path:
-
-```text
-bounded NavigationMap dynamic candidates
-    -> selected obstacle pair / moving gap
+primary conflict
+    + compact local neighbors
+    -> BoundedGapCandidateBuilder (<= 8)
     -> MovingGapPredictor
     -> MovingPassageTrajectoryEvaluator
-    -> accepted bounded maneuver result
-    -> NavigationRuntimePlanner intent
-    -> mapIntentToWorld(...)
-    -> NavigationRuntimeControlBridge
-    -> PilotSkillExecutor
-    -> authoritative physics
-    -> same-tick replication truth
 ```
 
-This is integration work, not a new global planner.
+This is **observe/prove only** in 12A-6b1. It records whether a continuous moving
+passage is feasible but does not replace the accepted LocalAvoidance steering
+command yet.
 
-## Required ownership rules
+The moving-passage result now exposes the first linear-acceleration sample from
+the exact Hermite trajectory that was continuously verified. That will be the
+control sample used when authority is enabled; no second trajectory may be
+re-derived after acceptance.
 
-Keep the already accepted separation:
+## Why authority is intentionally still disabled
+
+A moving passage can be dynamically valid and still intersect stationary
+HitVolume geometry.
+
+Before a feasible moving passage may steer the ship, the same accepted moving
+trajectory must receive exact-static proof. Until that composition exists:
 
 ```text
-stationary HitVolume geometry
-    -> NavigationSpace exact static layer
+moving precision says feasible
+    -> diagnostic only
 
-moving / rotating infrastructure
-    -> NavigationMap dynamic publication
-    -> bounded moving-gap / moving-passage precision only when relevant
+existing LocalAvoidance / exact-static result
+    -> remains steering authority
 ```
 
-Forbidden:
-- global all-pairs moving-gap scans;
-- a second client/presentation planner;
-- treating conservative spheres as exact static collision truth;
-- direct navigation writes to authoritative position/velocity;
-- weakening fail-closed behavior merely to make the fixture pass;
-- reintroducing stationary infrastructure into NavigationMap dynamic ownership.
+This prevents Stage 12A-6b from regressing the already accepted 12A-4/12A-5
+static collision contract.
 
-## First live 12A-6b gate
+## Candidate fixtures
 
-Use a deterministic real scene fixture in which time-varying geometry materially changes passage feasibility.
+The runtime-planner test now pins both sides:
 
-The gate must prove, from one bounded runtime snapshot:
-- the relevant moving/rotating actors are selected from NavigationMap;
-- their P/V/A/angular-velocity state reaches `MovingGapPredictor`;
-- a moving-gap prediction is actually consumed by `MovingPassageTrajectoryEvaluator`;
-- the moving passage result changes or constrains the authoritative maneuver when required;
-- the result still crosses the existing map->world control seam;
-- exact-static safety remains collision-free;
-- sparse/canonical execution replication remains exact at the same authoritative tick.
+```text
+open translating gap
+    -> candidate pair found
+    -> moving prediction open
+    -> continuous ship passage evaluated
+    -> feasible
 
-Do not declare 12A-6b accepted from DTO plumbing alone. 12A-6a already proved the DTO.
+closing gap
+    -> candidate pair found
+    -> prediction detects closure inside horizon
+    -> moving passage is never accepted
+```
 
-## Baseline verification commands
-
-Until the 12A-6b-specific contract/test is added, keep the accepted Stage-12 regression set green:
+## Target-machine gate to run now
 
 ```bash
 cd /d/__elite/work
@@ -105,6 +76,8 @@ git rev-parse HEAD
 
 python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
+bash tests/navigation_trajectory/run_mingw64.sh
+bash tests/navigation_runtime/run_mingw64.sh
 bash tests/navigation_map/run_mingw64.sh
 
 bash build_mingw64.sh
@@ -112,7 +85,23 @@ bash build_mingw64.sh
 ./build/headless_server/EliteServer.exe --self-test-navigation
 ```
 
-When 12A-6b introduces a new deterministic gate, add its exact command and acceptance evidence here immediately.
+Expected new runtime-planner output includes:
+
+```text
+NAVIGATION RUNTIME PLANNER TESTS: PASS
+ - bounded runtime candidates -> moving-gap/passage precision probe
+ - closing moving gap fails closed before passage evaluation
+```
+
+The existing Stage-12 live self-test must remain green unchanged because 12A-6b1
+has no live steering authority yet.
+
+## Next step after a green gate
+
+Compose the **same** verified moving Hermite trajectory with exact-static
+NavigationSpace/HitVolume proof. Only after that gate is green may a feasible
+moving passage become an authoritative `NavigationRuntimePlanner` maneuver and
+flow through map->world control, PilotSkillExecutor, physics and replication.
 
 ## Documentation invariant
 
@@ -122,4 +111,5 @@ After every state-affecting result or scope change, update together:
 - `PROJECT_STATE.md`;
 - `src/game/navigation/STAGE12_END_TO_END.md`.
 
-Use a **verified baseline hash**, not "current HEAD", because a documentation commit necessarily changes HEAD.
+Use a verified baseline hash for accepted evidence; do not store a self-invalidating
+"current HEAD" field.

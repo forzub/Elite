@@ -1182,6 +1182,8 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
     region.geometryRevision = 2;
     staticWorld.regions.push_back(region);
 
+    std::uint32_t provingObstacleEntityId = 0;
+
     for (const auto& [objectId, object] : m_staticObjects)
     {
         if (object.systemId != m_activeCelestialSystemId ||
@@ -1190,6 +1192,13 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
             object.ownerName != "Hub Motion Lab")
         {
             continue;
+        }
+
+        if (object.displayName == NavigationRuntimeLabObstacleLabel)
+        {
+            provingObstacleEntityId = objectId.value;
+            m_navigationRuntimeLabObservation.obstacleEntityId =
+                objectId.value;
         }
 
         // The static precision layer is intentionally static in the published
@@ -1247,6 +1256,33 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
     m_navigationRuntimeLabSpace->replaceStaticWorld(
         std::move(staticWorld)
     );
+
+    if (provingObstacleEntityId != 0)
+    {
+        Space::SegmentQuery configuredRoute;
+        configuredRoute.startMapMeters = {
+            NavigationRuntimeLabStartVisualLocalMeters.x,
+            NavigationRuntimeLabStartVisualLocalMeters.y,
+            NavigationRuntimeLabStartVisualLocalMeters.z
+        };
+        configuredRoute.endMapMeters = {
+            NavigationRuntimeLabGoalVisualLocalMeters.x,
+            NavigationRuntimeLabGoalVisualLocalMeters.y,
+            NavigationRuntimeLabGoalVisualLocalMeters.z
+        };
+        configuredRoute.envelope.radiusMeters = 0.0;
+        configuredRoute.envelope.additionalClearanceMeters = 0.0;
+        configuredRoute.requireSameRegion = false;
+
+        const Space::SegmentQueryResult fixtureProof =
+            m_navigationRuntimeLabSpace->querySegment(configuredRoute);
+
+        m_navigationRuntimeLabObservation.
+            configuredRouteExactObstacleBlockPublished =
+            !fixtureProof.traversable &&
+            fixtureProof.blockingObstacleEntityId ==
+                provingObstacleEntityId;
+    }
 
     const auto stats = m_navigationRuntimeLabSpace->stats();
     m_navigationRuntimeLabObservation.exactStaticGeometryPublished = true;

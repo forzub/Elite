@@ -1692,7 +1692,27 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         ++m_navigationRuntimeLabObservation.exactStaticMotionSamples;
         if (!actualSafety.traversable)
         {
-            m_navigationRuntimeLabObservation.exactStaticViolationSeen = true;
+            auto& observation = m_navigationRuntimeLabObservation;
+            observation.exactStaticViolationSeen = true;
+
+            if (!observation.firstExactStaticViolationCaptured)
+            {
+                observation.firstExactStaticViolationCaptured = true;
+                observation.firstExactStaticViolationEntityId =
+                    actualSafety.blockingObstacleEntityId;
+                observation.firstExactStaticViolationStartMap =
+                    m_navigationRuntimeLabHasPreviousExactSafetyPosition
+                        ? m_navigationRuntimeLabPreviousExactSafetyPositionMap
+                        : agentPositionMap;
+                observation.firstExactStaticViolationEndMap =
+                    agentPositionMap;
+                observation.firstExactStaticViolationSelectedTargetMap =
+                    m_navigationRuntimeLabLastPlan.selectedTargetMapMeters;
+                observation.firstExactStaticViolationPlannerStatus =
+                    static_cast<std::uint8_t>(
+                        m_navigationRuntimeLabLastPlan.status
+                    );
+            }
         }
 
         m_navigationRuntimeLabPreviousExactSafetyPositionMap =

@@ -916,15 +916,15 @@ bool GameSimulation::updateNpcNavigationControl(
     const auto& tr = ship.core().transform();
 
     game::navigation::NpcNavigationKinematicState navigationState;
-    navigationState.relativeWorldVelocityMps =
+    navigationState.relativeSystemVelocityMps =
         tr.motion.travelFrame.valid
             ? tr.motion.travelFrame.localToWorldVector(
                   tr.motion.localVelocityMps
               )
             : tr.motion.worldVelocityMps;
-    navigationState.forwardMap = glm::dvec3(tr.forward());
-    navigationState.rightMap = glm::dvec3(tr.right());
-    navigationState.upMap = glm::dvec3(tr.up());
+    navigationState.forwardSystem = glm::dvec3(tr.forward());
+    navigationState.rightSystem = glm::dvec3(tr.right());
+    navigationState.upSystem = glm::dvec3(tr.up());
     navigationState.pitchRateRadPerSec =
         static_cast<double>(tr.pitchRate);
     navigationState.yawRateRadPerSec =
@@ -995,7 +995,7 @@ bool GameSimulation::updateNpcNavigationControl(
         // explicitly transform it back to the NavigationMap basis before any
         // map-space safety prediction.
         const auto& executed =
-            latest.snapshot.executedLinearAccelerationDemandMapMps2;
+            latest.snapshot.executedLinearAccelerationDemandSystemMps2;
         const glm::dvec3 executedWorldVector(
             executed.x,
             executed.y,
@@ -1011,12 +1011,18 @@ bool GameSimulation::updateNpcNavigationControl(
                 hubNavigationFrame(m_navigationRuntimeLabHubId);
             hubFrame && hubFrame->valid)
         {
-            executedMapVector = glm::dvec3(
-                glm::dot(executedWorldVector, hubFrame->normalAxis),
-                glm::dot(executedWorldVector, hubFrame->radialAxis),
-                glm::dot(executedWorldVector, -hubFrame->progradeAxis)
-            );
-            executedMapVectorValid = true;
+            const auto executionBoundary =
+                makeNavigationRuntimeLabBoundary(*hubFrame);
+            if (executionBoundary.valid())
+            {
+                executedMapVector =
+                    executionBoundary.toNavigationVector(
+                        game::navigation::NavigationFrameBoundary::SystemVector {
+                            executedWorldVector
+                        }
+                    ).value;
+                executedMapVectorValid = true;
+            }
 
             const glm::dvec3 routeVectorMap =
                 game::diagnostics::NavigationRuntimeLabGoalVisualLocalMeters -
@@ -3461,9 +3467,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     }
 
     outIntent =
-        Planner::mapIntentToSystem(
-            followerResult.intent,
-            navigationBoundary
+        navigationBoundary.toSystemControlIntent(
+            followerResult.intent
         );
     return true;
 }

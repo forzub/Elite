@@ -33,42 +33,42 @@ glm::dvec3 normalizedOr(
 
 } // namespace
 
-NavigationRuntimeControlBridge::Intent
+NavigationSystemControlIntent
 NpcNavigationIntentController::buildIntent(
     const NpcNavigationKinematicState& state,
     const NpcNavigationGoal& goal
 ) noexcept
 {
-    NavigationRuntimeControlBridge::Intent intent;
+    NavigationSystemControlIntent intent;
     intent.revision = goal.revision;
     intent.emergency = goal.emergency;
     intent.hazardUrgency01 = std::clamp(goal.hazardUrgency01, 0.0, 1.0);
 
-    const glm::dvec3 relativeWorldVelocity =
-        finiteOrZero(state.relativeWorldVelocityMps);
+    const glm::dvec3 relativeSystemVelocity =
+        finiteOrZero(state.relativeSystemVelocityMps);
 
     const glm::dvec3 forward = normalizedOr(
-        state.forwardMap,
+        state.forwardSystem,
         glm::dvec3(0.0, 0.0, -1.0)
     );
     const glm::dvec3 right = normalizedOr(
-        state.rightMap,
+        state.rightSystem,
         glm::dvec3(1.0, 0.0, 0.0)
     );
     const glm::dvec3 up = normalizedOr(
-        state.upMap,
+        state.upSystem,
         glm::dvec3(0.0, 1.0, 0.0)
     );
 
-    glm::dvec3 desiredRelativeWorldVelocity(0.0);
+    glm::dvec3 desiredRelativeSystemVelocity(0.0);
     if (goal.mode == NpcNavigationGoalMode::MaintainForwardCruise)
     {
-        desiredRelativeWorldVelocity =
+        desiredRelativeSystemVelocity =
             forward * std::max(0.0, goal.desiredForwardSpeedMps);
     }
 
     const glm::dvec3 linearDemand =
-        (desiredRelativeWorldVelocity - relativeWorldVelocity) *
+        (desiredRelativeSystemVelocity - relativeSystemVelocity) *
         std::max(0.0, goal.velocityResponsePerSecond);
 
     const double angularDamping =
@@ -79,12 +79,12 @@ NpcNavigationIntentController::buildIntent(
         up * (-state.yawRateRadPerSec * angularDamping) +
         forward * (-state.rollRateRadPerSec * angularDamping);
 
-    intent.idealLinearAccelerationDemandMapMps2 = {
+    intent.idealLinearAccelerationSystemMps2 = {
         linearDemand.x,
         linearDemand.y,
         linearDemand.z
     };
-    intent.idealAngularAccelerationDemandMapRadPerSec2 = {
+    intent.idealAngularAccelerationSystemRadPerSec2 = {
         angularDemand.x,
         angularDemand.y,
         angularDemand.z

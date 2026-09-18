@@ -7,8 +7,7 @@
 
 #include <glm/glm.hpp>
 
-#include "src/game/navigation/NavigationRuntimeControlBridge.h"
-#include "src/game/navigation/NavigationFrameBoundary.h"
+#include "src/game/navigation/NavigationControlIntent.h"
 #include "src/world/navigation/local/LocalAvoidancePlanner.h"
 #include "src/world/navigation/map/NavigationMap.h"
 #include "src/world/navigation/space/NavigationSpace.h"
@@ -36,7 +35,6 @@ public:
     using GapBuilder = world::navigation::BoundedGapCandidateBuilder;
     using GapPredictor = world::navigation::MovingGapPredictor;
     using MovingPassage = world::navigation::MovingPassageTrajectoryEvaluator;
-    using Bridge = NavigationRuntimeControlBridge;
 
     struct AgentState
     {
@@ -154,11 +152,9 @@ public:
     {
         Status status = Status::InvalidInput;
 
-        // Planner-space product. All vectors here are expressed in the
-        // NavigationMap working frame. Before this intent enters the accepted
-        // Stage-11 PilotSkillExecutor / ShipControlState seam it MUST pass
-        // through mapIntentToWorld().
-        Bridge::Intent intent {};
+        // Planner-space product. This is a distinct NavLocal-only type and
+        // cannot enter PilotSkillExecutor without NavigationFrameBoundary.
+        NavigationLocalControlIntent intent {};
 
         bool safeProgressTargetDemonstrated = false;
         bool usedPortalWaypoint = false;
@@ -257,13 +253,6 @@ public:
         const Policy& policy
     );
 
-    // Temporary compatibility return type: conversion itself is now owned by
-    // NavigationFrameBoundary. A following cleanup splits NavLocal and System
-    // control intents into distinct compile-time types.
-    [[nodiscard]] static Bridge::Intent mapIntentToSystem(
-        const Bridge::Intent& mapIntent,
-        const NavigationFrameBoundary& boundary
-    );
 };
 
 } // namespace game::navigation

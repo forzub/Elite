@@ -158,13 +158,6 @@ glm::dvec3 toGlm(
     return {value.x, value.y, value.z};
 }
 
-NavigationRuntimePlanner::Bridge::Vec3d toBridgeVec(
-    const glm::dvec3& value
-) noexcept
-{
-    return {value.x, value.y, value.z};
-}
-
 Planner::MovingPassage::Vec3d toTrajectoryVec(
     const glm::dvec3& value
 ) noexcept
@@ -260,13 +253,13 @@ Planner::MovingPassage::Vec3d precisionHullHalfExtents(
     return {fallback, fallback, fallback};
 }
 
-NavigationRuntimePlanner::Bridge::Intent holdIntent(
+NavigationLocalControlIntent holdIntent(
     const NavigationRuntimePlanner::AgentState& agent,
     const NavigationRuntimePlanner::Goal& goal,
     double urgency
 ) noexcept
 {
-    NavigationRuntimePlanner::Bridge::Intent intent;
+    NavigationLocalControlIntent intent;
     intent.revision = goal.revision;
     intent.emergency = goal.emergency || urgency >= 0.75;
     intent.hazardUrgency01 = std::clamp(
@@ -298,10 +291,10 @@ NavigationRuntimePlanner::Bridge::Intent holdIntent(
         up * (-agent.yawRateRadPerSec * angularDamping) +
         forward * (-agent.rollRateRadPerSec * angularDamping);
 
-    intent.idealLinearAccelerationDemandMapMps2 =
-        toBridgeVec(linearDemand);
-    intent.idealAngularAccelerationDemandMapRadPerSec2 =
-        toBridgeVec(angularDemand);
+    intent.idealLinearAccelerationLocalMps2 =
+        linearDemand;
+    intent.idealAngularAccelerationLocalRadPerSec2 =
+        angularDemand;
     return intent;
 }
 
@@ -664,46 +657,6 @@ void probeMovingPassage(
 
 } // namespace
 
-NavigationRuntimePlanner::Bridge::Intent
-NavigationRuntimePlanner::mapIntentToSystem(
-    const Bridge::Intent& mapIntent,
-    const NavigationFrameBoundary& boundary
-)
-{
-    if (!boundary.valid())
-    {
-        throw std::invalid_argument(
-            "NavigationRuntimePlanner navigation frame boundary is invalid"
-        );
-    }
-
-    const auto toSystemVector =
-        [&](const Bridge::Vec3d& value)
-        {
-            const auto system = boundary.toSystemVector(
-                NavigationFrameBoundary::NavVector {
-                    glm::dvec3(value.x, value.y, value.z)
-                }
-            ).value;
-            return Bridge::Vec3d {
-                system.x,
-                system.y,
-                system.z
-            };
-        };
-
-    Bridge::Intent systemIntent = mapIntent;
-    systemIntent.idealLinearAccelerationDemandMapMps2 =
-        toSystemVector(
-            mapIntent.idealLinearAccelerationDemandMapMps2
-        );
-    systemIntent.idealAngularAccelerationDemandMapRadPerSec2 =
-        toSystemVector(
-            mapIntent.idealAngularAccelerationDemandMapRadPerSec2
-        );
-    return systemIntent;
-}
-
 NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     const AgentState& agent,
     const Goal& goal,
@@ -967,8 +920,8 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         // only linear demand with the already-proven Hermite control sample.
         // No second desired-velocity or trajectory solve occurs here.
         result.intent = holdIntent(agent, goal, 0.0);
-        result.intent.idealLinearAccelerationDemandMapMps2 =
-            toBridgeVec(result.movingPassageInitialAccelerationMapMps2);
+        result.intent.idealLinearAccelerationLocalMps2 =
+            result.movingPassageInitialAccelerationMapMps2;
         return result;
     }
 
@@ -1179,10 +1132,10 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
             );
     }
 
-    result.intent.idealLinearAccelerationDemandMapMps2 =
-        toBridgeVec(linearDemand);
-    result.intent.idealAngularAccelerationDemandMapRadPerSec2 =
-        toBridgeVec(angularDemand);
+    result.intent.idealLinearAccelerationLocalMps2 =
+        linearDemand;
+    result.intent.idealAngularAccelerationLocalRadPerSec2 =
+        angularDemand;
     return result;
 }
 

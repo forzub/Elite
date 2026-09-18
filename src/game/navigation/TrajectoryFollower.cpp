@@ -32,13 +32,6 @@ glm::dvec3 normalizedOr(
     return value / std::sqrt(lengthSquared);
 }
 
-NavigationRuntimeControlBridge::Vec3d toBridge(
-    const glm::dvec3& value
-) noexcept
-{
-    return {value.x, value.y, value.z};
-}
-
 bool validSegment(const AcceptedShortSegment& segment) noexcept
 {
     return
@@ -256,10 +249,10 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     if (!finite(linearDemand) || !finite(rotationDemand))
         return Result {};
 
-    result.intent.idealLinearAccelerationDemandMapMps2 =
-        toBridge(linearDemand);
-    result.intent.idealAngularAccelerationDemandMapRadPerSec2 =
-        toBridge(rotationDemand);
+    result.intent.idealLinearAccelerationLocalMps2 =
+        linearDemand;
+    result.intent.idealAngularAccelerationLocalRadPerSec2 =
+        rotationDemand;
 
     result.status =
         segment.completionTriggersReplan &&

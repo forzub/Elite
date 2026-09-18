@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/AcceptedShortSegment.h"
-#include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/NavigationControlIntent.h"
 
 namespace game::navigation
 {
@@ -18,8 +18,6 @@ namespace game::navigation
 class TrajectoryFollower final
 {
 public:
-    using Bridge = NavigationRuntimeControlBridge;
-
     struct AgentState
     {
         glm::dvec3 positionMapMeters {0.0};
@@ -44,7 +42,7 @@ public:
     struct Result
     {
         Status status = Status::InvalidInput;
-        Bridge::Intent intent {};
+        NavigationLocalControlIntent intent {};
 
         double remainingDistanceMeters = 0.0;
         double crossTrackErrorMeters = 0.0;

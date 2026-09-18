@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/NavigationControlIntent.h"
 #include "src/game/navigation/NpcNavigationGoal.h"
 
 namespace game::navigation
@@ -10,11 +10,11 @@ namespace game::navigation
 
 struct NpcNavigationKinematicState
 {
-    glm::dvec3 relativeWorldVelocityMps {0.0};
+    glm::dvec3 relativeSystemVelocityMps {0.0};
 
-    glm::dvec3 forwardMap {0.0, 0.0, -1.0};
-    glm::dvec3 rightMap {1.0, 0.0, 0.0};
-    glm::dvec3 upMap {0.0, 1.0, 0.0};
+    glm::dvec3 forwardSystem {0.0, 0.0, -1.0};
+    glm::dvec3 rightSystem {1.0, 0.0, 0.0};
+    glm::dvec3 upSystem {0.0, 1.0, 0.0};
 
     double pitchRateRadPerSec = 0.0;
     double yawRateRadPerSec = 0.0;
@@ -22,7 +22,7 @@ struct NpcNavigationKinematicState
 };
 
 // Converts a goal-only NPC policy product plus a compact authoritative
-// kinematic snapshot into one nominal Navigation v2 acceleration intent.
+// kinematic snapshot into one nominal system-space acceleration intent for the runtime control bridge.
 //
 // The controller deliberately does not depend on the full live ship runtime, world search,
 // collision response, rendering or vehicle capability. GameSimulation adapts
@@ -30,7 +30,7 @@ struct NpcNavigationKinematicState
 class NpcNavigationIntentController final
 {
 public:
-    [[nodiscard]] static NavigationRuntimeControlBridge::Intent buildIntent(
+    [[nodiscard]] static NavigationSystemControlIntent buildIntent(
         const NpcNavigationKinematicState& state,
         const NpcNavigationGoal& goal
     ) noexcept;

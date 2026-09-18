@@ -3367,9 +3367,9 @@ void SpaceState::update(float dt)
             replicatedExecution.push_back(std::move(entry));
         }
 
-        m_navigationWorkspace
-            .replicatedNavigationExecution()
-            .replace(std::move(replicatedExecution));
+        m_navigationWorkspace.syncReplicatedNavigationExecution(
+            std::move(replicatedExecution)
+        );
     }
 
 

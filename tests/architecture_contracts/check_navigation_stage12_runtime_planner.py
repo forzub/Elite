@@ -61,12 +61,23 @@ require(
 for marker in (
     "portalCentersMapMeters",
     "std::vector<Vec3d>",
+    "struct PortalTraversalInput",
+    "normalAToBMap",
+    "approachDistanceMeters",
+    "maximumVelocityAngleRad",
+    "maximumForwardAngleRad",
+    "maximumLateralSpeedMps",
+    "requireVehicleForwardAlignment",
+    "struct PortalTraversal",
+    "portalTraversals",
 ):
-    require(marker in SPACE_H, f"NavigationSpace compact steering seam missing: {marker}")
+    require(marker in SPACE_H, f"NavigationSpace compact steering/traversal seam missing: {marker}")
 
 require(
-    SPACE_CPP.count("portalCentersMapMeters.push_back") >= 3,
-    "all corridor reconstruction paths must publish ordered portal centers",
+    SPACE_CPP.count("portalCentersMapMeters.push_back") >= 3 and
+    SPACE_CPP.count("portalTraversals.push_back") >= 3 and
+    "orientedPortalTraversal" in SPACE_CPP,
+    "all corridor reconstruction paths must publish ordered oriented portal traversal products",
 )
 
 for marker in (
@@ -75,6 +86,7 @@ for marker in (
     "struct SegmentQueryResult",
     "querySegment",
     "allowEndOnStartRegionBoundary",
+    "exactObstaclesOnly",
     "blockingObstacleId",
     "obstacleCount",
 ):
@@ -85,6 +97,9 @@ for marker in (
     "pointInsideNavigationObstacle",
     "segmentIntersectsNavigationObstacle",
     "impl_->obstacles",
+    "if (query.exactObstaclesOnly)",
+    "validatePortal",
+    "orientedPortalTraversal",
 ):
     require(marker in SPACE_CPP, f"exact static NavigationSpace implementation missing: {marker}")
 
@@ -98,6 +113,8 @@ require(
 
 for marker in (
     "testProvenPortalEndpointMayTouchRegionBoundary",
+    "testOrientedFiniteDepthPortalTraversalMetadata",
+    "testExactObstacleOnlySweepIgnoresRegionPartition",
     "testExactStaticObbBlocksPointAndSegment",
     "testExactObbGapAdmitsOnlyFittingEnvelope",
     "conservativeRadiusMeters() > 5.0",
@@ -134,6 +151,14 @@ for marker in (
     "movingPassageRequiredPeakReverseAccelerationMps2",
     "movingPassageRequiredPeakLateralAccelerationMps2",
     "movingPassageRequiredPeakVerticalAccelerationMps2",
+    "PortalTraversalPolicy",
+    "PortalCapture",
+    "PortalTransit",
+    "staticPortalTraversals",
+    "portalTraversalActive",
+    "portalVelocityAligned",
+    "portalForwardAligned",
+    "portalCaptureReady",
 ):
     require(marker in PLANNER_H, f"runtime planner interface missing: {marker}")
 
@@ -154,6 +179,14 @@ for marker in (
     "proveMovingPassageAgainstStaticSpace",
     "staticSpace.querySegment",
     "intervalCenterlineDeviationBoundsMeters",
+    "corridor.portalTraversals",
+    "portalAlignmentAngularDemand",
+    "portalApproachPointMapMeters",
+    "portalVelocityAngleRad",
+    "portalForwardAngleRad",
+    "portalCaptureReady",
+    "Status::PortalCapture",
+    "Status::PortalTransit",
 ):
     require(marker in PLANNER_CPP, f"runtime planner composition missing: {marker}")
 
@@ -273,6 +306,7 @@ for marker in (
 
 for marker in (
     "testStaticCorridorBecomesLivePortalWaypoint",
+    "testPortalCaptureAlignsVelocityAndHullBeforeTransit",
     "testSamePortalRejectsOversizedHull",
     "testAdjustedTargetPreservesNominalConflictIdentity",
     "testNavigationMapCrossingConflictProducesBrakingHold",
@@ -497,6 +531,14 @@ for marker in (
     "slitPortalExactOpenPublished",
     "slitPortalExactObstaclesExamined",
     "slitPortalWaypointSeen",
+    "slitEntryCaptureSeen",
+    "slitEntryVelocityAlignedSeen",
+    "slitEntryForwardAlignedSeen",
+    "slitEntryPlaneCrossedAligned",
+    "slitEntryVelocityAngleRad",
+    "slitEntryForwardAngleRad",
+    "slitEntryLateralSpeedMps",
+    "slitEntryCrossTrackMeters",
     "slitTunnelPassed",
     "slitTunnelCrossingMap",
     "slitTunnelCrossingMarginMeters",
@@ -623,15 +665,25 @@ require(
 
 for marker in (
     "NavigationRuntimeLabSlitPortalCenterVisualLocalMeters",
+    "NavigationRuntimeLabSlitEntryCenterVisualLocalMeters",
+    "NavigationRuntimeLabSlitExitCenterVisualLocalMeters",
     "NavigationRuntimeLabSlitHalfWidthMeters",
     "NavigationRuntimeLabSlitHalfHeightMeters",
+    "NavigationRuntimeLabSlitHalfDepthMeters",
     "NavigationRuntimeLabSlitPortalClearanceMeters",
-    "NavigationRuntimeLabSlitPortalId",
+    "NavigationRuntimeLabSlitEntryPortalId",
+    "NavigationRuntimeLabSlitExitPortalId",
+    "NavigationRuntimeLabSlitApproachDistanceMeters",
+    "NavigationRuntimeLabSlitTransitSpeedMps",
+    "NavigationRuntimeLabSlitMaximumEntryVelocityAngleRad",
+    "NavigationRuntimeLabSlitMaximumEntryForwardAngleRad",
+    "NavigationRuntimeLabSlitMaximumLateralSpeedMps",
     "slitPortalExactOpenPublished",
     "slitPortalWaypointSeen",
+    "slitEntryPlaneCrossedAligned",
     "slitTunnelPassed",
 ):
-    require(marker in LAB_H, f"live exact-static slit tunnel contract missing: {marker}")
+    require(marker in LAB_H, f"live exact-static slit tunnel/capture contract missing: {marker}")
 
 for marker in (
     "nav_slit_upper_left",
@@ -644,20 +696,25 @@ for marker in (
     require(marker in SCENE_CPP, f"physical slit tunnel wall missing: {marker}")
 
 for marker in (
-    "Space::PortalInput slitPortal",
-    "slitPortal.portalId = NavigationRuntimeLabSlitPortalId",
-    "slitPortal.regionA = 1",
-    "slitPortal.regionB = 2",
-    "staticWorld.portals.push_back(slitPortal)",
-    "slitPortalExactOpenPublished",
-    "slitPortalExactObstaclesExamined",
-    "NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z + 600.0",
-    "m_navigationRuntimeLabLastPlan.usedPortalWaypoint",
-    "m_navigationRuntimeLabLastPlan.staticPortalPath.front() ==",
-    "NavigationRuntimeLabSlitPortalId",
-    "slitTunnelCrossingMarginMeters",
+    "Space::RegionInput approachRegion",
+    "Space::RegionInput tunnelRegion",
+    "Space::RegionInput departureRegion",
+    "Space::PortalInput slitEntryPortal",
+    "slitEntryPortal.portalId = NavigationRuntimeLabSlitEntryPortalId",
+    "slitEntryPortal.traversal.normalAToBMap = {0.0, 0.0, 1.0}",
+    "slitEntryPortal.traversal.requireVehicleForwardAlignment = true",
+    "Space::PortalInput slitExitPortal",
+    "slitExitPortal.portalId = NavigationRuntimeLabSlitExitPortalId",
+    "staticWorld.portals.push_back(slitEntryPortal)",
+    "staticWorld.portals.push_back(slitExitPortal)",
+    "slitGeometryProof.exactObstaclesOnly = true",
+    "actualMotion.exactObstaclesOnly = true",
+    "slitEntryPlaneCrossedAligned",
+    "NavigationRuntimeLabSlitMaximumEntryVelocityAngleRad",
+    "NavigationRuntimeLabSlitMaximumEntryForwardAngleRad",
+    "NavigationRuntimeLabSlitMaximumLateralSpeedMps",
 ):
-    require(marker in SIM_CPP, f"slit tunnel topology/physical proof missing: {marker}")
+    require(marker in SIM_CPP, f"slit tunnel topology/capture/physical proof missing: {marker}")
 
 for marker in (
     "isNavigationRuntimeLabMovingGapBoundary",
@@ -712,9 +769,21 @@ for marker in (
     "moving_continuous_clearance_m=",
     "observation.slitPortalExactOpenPublished",
     "observation.slitPortalWaypointSeen",
+    "observation.slitEntryCaptureSeen",
+    "observation.slitEntryVelocityAlignedSeen",
+    "observation.slitEntryForwardAlignedSeen",
+    "observation.slitEntryPlaneCrossedAligned",
     "observation.slitTunnelPassed",
     "slit_exact_open=",
     "slit_portal=",
+    "slit_entry_capture=",
+    "slit_entry_vel_aligned=",
+    "slit_entry_fwd_aligned=",
+    "slit_entry_crossed_aligned=",
+    "slit_entry_vel_angle_rad=",
+    "slit_entry_fwd_angle_rad=",
+    "slit_entry_lateral_mps=",
+    "slit_entry_cross_track_m=",
     "slit_passed=",
     "slit_margin_m=",
     "slit_crossing_map=(",
@@ -735,9 +804,13 @@ require(
     "observation.movingGapPlanePassed &&" in SERVER_MAIN and
     "observation.slitPortalExactOpenPublished &&" in SERVER_MAIN and
     "observation.slitPortalWaypointSeen &&" in SERVER_MAIN and
+    "observation.slitEntryCaptureSeen &&" in SERVER_MAIN and
+    "observation.slitEntryVelocityAlignedSeen &&" in SERVER_MAIN and
+    "observation.slitEntryForwardAlignedSeen &&" in SERVER_MAIN and
+    "observation.slitEntryPlaneCrossedAligned &&" in SERVER_MAIN and
     "observation.slitTunnelPassed &&" in SERVER_MAIN and
     "return 56;" in SERVER_MAIN,
-    "live gate must order active moving authority/replication before exact-static slit-tunnel passage",
+    "live gate must order moving authority/replication before aligned portal capture and exact-static tunnel transit",
 )
 
 require(
@@ -820,15 +893,10 @@ require(
 )
 
 require(
-    "first live bounded nominal segment does not " in SERVER_MAIN and
-    "return 50;" in SERVER_MAIN,
-    "server self-test must fail fast when first live exact segment misses CUBE 08",
-)
-
-require(
-    "did not select the authored slit portal" in SERVER_MAIN and
-    "return 51;" in SERVER_MAIN,
-    "server self-test must fail when direct exact-static blockage does not hand off to the authored slit portal",
+    "firstLiveNominal* remains diagnostic-only" in SERVER_MAIN and
+    "return 50;" not in SERVER_MAIN and
+    "return 51;" not in SERVER_MAIN,
+    "multi-region tunnel acceptance must not treat the legacy first bounded probe as a hard physical/topology gate",
 )
 
 require(
@@ -845,9 +913,10 @@ require(
 
 require(
     "Space::SegmentQuery actualMotion" in SIM_CPP and
+    "actualMotion.exactObstaclesOnly = true" in SIM_CPP and
     "m_navigationRuntimeLabPreviousExactSafetyPositionMap" in SIM_CPP and
     "exactStaticViolationSeen = true" in SIM_CPP,
-    "live acceptance must sweep actual fixed-step motion through exact static geometry",
+    "live physical acceptance must sweep actual motion against exact HitVolumes without treating navigation region partitions as walls",
 )
 
 require(
@@ -890,7 +959,7 @@ print(" - planner cannot mutate authoritative physics state")
 print(" - client/server share the same NavigationWorld runtime-planning target")
 print(" - deterministic fixtures pin detour, envelope rejection, moving conflict and pilot bridge")
 print(" - authoritative GameSimulation isolates one Active stage-12 lab actor on real NAV STRESS hit volumes")
-print(" - live self-test pins blocked direct route -> authored slit portal -> physical tunnel crossing")
+print(" - live self-test pins moving authority -> portal approach/capture -> aligned physical tunnel entry/exit")
 print(" - bounded NavigationMap sphere covers the complete local avoidance fan")
 print(" - sparse packet is compared with authoritative publication at the exact same server tick")
 print(" - canonical sparse hydration must match the same authoritative execution truth")
@@ -904,11 +973,13 @@ print(" - live self-test requires exact-static query work and nominal OBB blocki
 print(" - dynamic ConflictHold cannot collapse exact-static nominal proof to a zero-length segment")
 print(" - monolithic NAV STRESS objects receive authoritative logical HitVolumes")
 print(" - corridor-proven portal endpoints remain legal exact-static targets")
+print(" - oriented portal traversal publishes route-direction normal and entry capture constraints")
+print(" - physical exact sweeps ignore virtual region partitions and test only exact HitVolumes")
 print(" - live physical motion is swept against exact HitVolume geometry every fixed step")
 print(" - conservative sphere clearance is diagnostic only, not exact-static acceptance truth")
 print(" - stationary NAV STRESS obstacles are excluded from NavigationMap dynamic ownership")
 print(" - representative CUBE 08 wall block remains exact-static only, never a dynamic candidate/conflict")
-print(" - configured direct line is blocked while the offset slit is independently exact-proven open")
+print(" - configured direct line is blocked while the offset tunnel centerline is exact-HitVolume proven open")
 print(" - invalid exact-static proving geometry fails fast before a 120 s behavior run")
 print(" - first live bounded segment is independently exact-probed before planner composition")
 print(" - live-scale 1300 m exact OBB regression pins first-horizon static adjustment")

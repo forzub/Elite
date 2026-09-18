@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace
 {
@@ -73,8 +75,8 @@ Space forcedDetourSpace()
         region(3, 20.0, 0.0, 5.0, 15.0)
     };
     update.portals = {
-        portal(11, 1, 2, 5.0, 10.0, 5.0),
-        portal(12, 2, 3, 15.0, 10.0, 5.0)
+        portal(11, 1, 2, 5.0, 10.0, 4.0),
+        portal(12, 2, 3, 15.0, 10.0, 4.0)
     };
     space.replaceStaticWorld(std::move(update));
     return space;
@@ -212,7 +214,7 @@ void testSamePortalRejectsOversizedHull()
             "small hull must fit the authored portal route");
 
     Planner::AgentState oversized = small;
-    oversized.radiusMeters = 5.01;
+    oversized.radiusMeters = 4.01;
 
     const Planner::Result rejected = Planner::plan(
         oversized,

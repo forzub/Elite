@@ -293,10 +293,16 @@ StaticMovingTrajectoryProof proveMovingPassageAgainstStaticSpace(
             return proof;
 
         Planner::Space::SegmentQuery staticQuery;
-        staticQuery.startMapMeters =
-            toSpaceVec(trajectory.centerSamplesMapMeters[i]);
-        staticQuery.endMapMeters =
-            toSpaceVec(trajectory.centerSamplesMapMeters[i + 1]);
+        const auto& startCenter =
+            trajectory.centerSamplesMapMeters[i];
+        const auto& endCenter =
+            trajectory.centerSamplesMapMeters[i + 1];
+        staticQuery.startMapMeters = {
+            startCenter.x, startCenter.y, startCenter.z
+        };
+        staticQuery.endMapMeters = {
+            endCenter.x, endCenter.y, endCenter.z
+        };
         staticQuery.envelope.radiusMeters = continuousHullRadius;
         staticQuery.envelope.additionalClearanceMeters =
             policy.avoidance.staticAdditionalClearanceMeters;

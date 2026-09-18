@@ -1,7 +1,7 @@
 # NavigationWorld v2 — ship-centered runtime navigation architecture
 
 **Status:** current architecture contract  
-**Updated:** 2026-09-17 Europe/Kyiv  
+**Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
 **Current stage:** `NAV-V2-TRAJECTORY-1` — moving/rotating docking 6DoF, stage 9B continuous final approach candidate
 
@@ -490,6 +490,20 @@ FeasibleForCapture
 claims both final-segment feasibility and terminal 6DoF capture.
 
 Normal docking aborts/goes around when a safe/capturable final segment cannot be proven. Destructive impact is never successful docking.
+
+### Stage 9B first target-machine attempt — NOT ACCEPTED
+
+The first run built successfully and retained 9/9 prior behavior, but the new docking-approach test failed. Investigation proved the pinned fixture itself was invalid: the true Hermite excursion (`0.9622504486 m`) was smaller than the old available center travel (`0.975 m`), so a correct verifier could not reject it.
+
+The repaired regression uses `0.9618 m` available center travel. It preserves the intended hard condition:
+
+```text
+all 33 sampled poses fit
+but the analytic curve exits between samples
+=> CorridorBlocked
+```
+
+The implementation's continuous proof is not weakened. Stage 9B remains pending a fresh target-machine 10/10 gate.
 
 ## 10. NPC pilot skill — PENDING
 

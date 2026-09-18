@@ -877,3 +877,77 @@ Implementation target:
    the route, capture the tunnel entrance, align velocity + hull axis, traverse
    the exact-HitVolume tunnel, and keep `exact_static_violation=0`.
 
+
+
+## 12A live bounded-visibility steering candidate
+
+Candidate code/contract baseline before documentation commits:
+
+```text
+e2584b4b798baa661d14ab1fb8f68789f76c99b9
+```
+
+Implemented after the `e432363...` live GeometryBlocked result:
+- LocalAvoidance still tests the direct accepted target first on every update;
+- the physical horizon remains bounded by latency + braking distance +
+  turn-distance allowance + safety margin;
+- when direct visibility is blocked, angular search now expands
+  `15 -> 30 -> 45 -> 60 -> 75 deg` and stops at the first corridor that passes
+  both exact-static and dynamic-horizon checks;
+- the selected target is pass-through only; there is no persistent alternate
+  route, so the next update automatically returns to direct A->B as soon as the
+  corridor clears;
+- live free-space MovingPassage authority is disabled. The precision
+  MovingPassage contracts/tests remain intact for explicit mandatory gaps;
+- live diagnostics now retain `visibilityBypassSeen`,
+  `visibilityBypassActive`, `visibilityDirectRecoveredSeen` and maximum
+  selected deflection;
+- same-tick sparse/canonical replication is captured while the visibility
+  bypass is actively executing;
+- the same authoritative run must then pass the moving pair, recover direct
+  visibility, perform oriented tunnel capture/alignment, traverse the exact
+  HitVolume tunnel, and keep `exact_static_violation=0`.
+
+A new local regression proves that a fixture requiring more than the old
+15/30-degree fan finds a wider safe direction and then immediately resumes
+direct A->B when the blocker disappears.
+
+Target-machine acceptance is pending.
+
+### Target-machine gate
+
+```bash
+git pull --ff-only
+git rev-parse HEAD
+
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+bash tests/navigation_local/run_mingw64.sh
+bash tests/navigation_space/run_mingw64.sh
+bash tests/navigation_runtime/run_mingw64.sh
+bash tests/navigation_trajectory/run_mingw64.sh
+
+bash build_mingw64.sh
+./build/headless_server/EliteServer.exe --self-test-navigation
+```
+
+Expected live evidence now centers on:
+
+```text
+moving_gap_pair=1
+moving_gap_kinematics=1
+visibility_bypass=1
+visibility_max_deflection_rad > 0
+moving_gap_passed=1
+visibility_direct_recovered=1
+slit_exact_open=1
+slit_portal=1
+slit_entry_capture=1
+slit_entry_vel_aligned=1
+slit_entry_fwd_aligned=1
+slit_entry_crossed_aligned=1
+slit_passed=1
+exact_static_violation=0
+replication_error_mps2=0
+canonical_replication_error_mps2=0
+```
+

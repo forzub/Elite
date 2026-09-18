@@ -36,8 +36,8 @@ std::uint64_t effectiveTargetRevision(
 
 bool validCommand(const Executor::Command& command) noexcept
 {
-    return finite(command.linearAccelerationDemandMapMetersPerSec2) &&
-        finite(command.angularAccelerationDemandMapRadPerSec2) &&
+    return finite(command.linearAccelerationDemandMetersPerSec2) &&
+        finite(command.angularAccelerationDemandRadPerSec2) &&
         finite(command.hazardUrgency01) &&
         command.hazardUrgency01 >= 0.0 &&
         command.hazardUrgency01 <= 1.0;
@@ -235,11 +235,11 @@ bool PilotSkillExecutor::reset(
     decisionSequence_ = 0;
 
     activeLinearTarget_ = scale(
-        initialCommand.linearAccelerationDemandMapMetersPerSec2,
+        initialCommand.linearAccelerationDemandMetersPerSec2,
         profile_.execution.commandGain
     );
     activeAngularTarget_ = scale(
-        initialCommand.angularAccelerationDemandMapRadPerSec2,
+        initialCommand.angularAccelerationDemandRadPerSec2,
         profile_.execution.commandGain
     );
 
@@ -335,14 +335,14 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
 
             queued.linearTarget = add(
                 scale(
-                    desiredCommand.linearAccelerationDemandMapMetersPerSec2,
+                    desiredCommand.linearAccelerationDemandMetersPerSec2,
                     execution.commandGain
                 ),
                 linearNoise
             );
             queued.angularTarget = add(
                 scale(
-                    desiredCommand.angularAccelerationDemandMapRadPerSec2,
+                    desiredCommand.angularAccelerationDemandRadPerSec2,
                     execution.commandGain
                 ),
                 angularNoise
@@ -415,9 +415,9 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
 
     lastTimeSeconds_ = timeSeconds;
 
-    result.executedLinearAccelerationDemandMapMetersPerSec2 =
+    result.executedLinearAccelerationDemandMetersPerSec2 =
         linearFilter_.value;
-    result.executedAngularAccelerationDemandMapRadPerSec2 =
+    result.executedAngularAccelerationDemandRadPerSec2 =
         angularFilter_.value;
     result.observedIntentRevision = observedRevision_;
     result.activeTargetRevision = activeTargetRevision_;

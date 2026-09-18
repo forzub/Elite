@@ -150,7 +150,7 @@ void evaluateControl(
             params,
             transform,
             world,
-            control.navigationAngularAccelerationDemandMapRadPerSec2
+            control.navigationAngularAccelerationDemandSystemRadPerSec2
         );
     }
     else

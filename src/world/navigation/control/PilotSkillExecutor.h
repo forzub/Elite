@@ -75,8 +75,8 @@ public:
         // Zero means "same as revision" for backwards-compatible callers.
         std::uint64_t targetRevision = 0;
 
-        Vec3d linearAccelerationDemandMapMetersPerSec2 {};
-        Vec3d angularAccelerationDemandMapRadPerSec2 {};
+        Vec3d linearAccelerationDemandMetersPerSec2 {};
+        Vec3d angularAccelerationDemandRadPerSec2 {};
 
         bool emergency = false;
         double hazardUrgency01 = 0.0;
@@ -94,8 +94,8 @@ public:
     {
         Status status = Status::NotInitialized;
 
-        Vec3d executedLinearAccelerationDemandMapMetersPerSec2 {};
-        Vec3d executedAngularAccelerationDemandMapRadPerSec2 {};
+        Vec3d executedLinearAccelerationDemandMetersPerSec2 {};
+        Vec3d executedAngularAccelerationDemandRadPerSec2 {};
 
         std::uint64_t observedIntentRevision = 0;
         std::uint64_t activeTargetRevision = 0;

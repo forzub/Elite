@@ -44,9 +44,9 @@ struct ShipControlState
     game::navigation::VelocityAlignmentMode velocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
 
-    // Navigation v2 / autopilot direct control seam.
+    // Navigation v2 / autopilot direct SYSTEM-frame control seam.
     //
-    // This is an acceleration DEMAND, not an applied force and not a physics
+    // Vectors below are in authoritative system/world axes after the explicit\n    // NavigationFrameBoundary. This is an acceleration DEMAND, not an applied force and not a physics
     // override. SharedShipPhysics / ShipController / DynamicMotionSystem still
     // enforce the authoritative vehicle capability and speed/resource limits.
     //
@@ -54,8 +54,8 @@ struct ShipControlState
     // non-zero; the live bridge emits a clean control state when autopilot owns
     // the ship.
     bool navigationAccelerationDemandValid = false;
-    glm::dvec3 navigationLinearAccelerationDemandMapMps2 {0.0};
-    glm::dvec3 navigationAngularAccelerationDemandMapRadPerSec2 {0.0};
+    glm::dvec3 navigationLinearAccelerationDemandSystemMps2 {0.0};
+    glm::dvec3 navigationAngularAccelerationDemandSystemRadPerSec2 {0.0};
     std::uint64_t navigationIntentRevision = 0;
 
     std::uint64_t controlTick = 0;

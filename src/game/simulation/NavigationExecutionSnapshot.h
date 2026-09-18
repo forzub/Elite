@@ -9,7 +9,7 @@ namespace game::simulation
 {
 
 // Replicated read-only truth for the exact Navigation v2 command product that
-// authoritative GameSimulation used for this ship.
+// authoritative GameSimulation used for this ship. Acceleration vectors are\n// expressed in the authoritative system/world axes consumed by physics.
 //
 // This is diagnostic/guidance state only. Clients may display it but must not
 // feed it back into planning or physics.
@@ -20,11 +20,11 @@ struct NavigationExecutionSnapshot
     std::uint64_t intentRevision = 0;
     std::uint64_t activeTargetRevision = 0;
 
-    glm::dvec3 idealLinearAccelerationDemandMapMps2 {0.0};
-    glm::dvec3 idealAngularAccelerationDemandMapRadPerSec2 {0.0};
+    glm::dvec3 idealLinearAccelerationDemandSystemMps2 {0.0};
+    glm::dvec3 idealAngularAccelerationDemandSystemRadPerSec2 {0.0};
 
-    glm::dvec3 executedLinearAccelerationDemandMapMps2 {0.0};
-    glm::dvec3 executedAngularAccelerationDemandMapRadPerSec2 {0.0};
+    glm::dvec3 executedLinearAccelerationDemandSystemMps2 {0.0};
+    glm::dvec3 executedAngularAccelerationDemandSystemRadPerSec2 {0.0};
 
     bool emergency = false;
     double hazardUrgency01 = 0.0;

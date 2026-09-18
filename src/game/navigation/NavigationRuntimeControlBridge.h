@@ -3,7 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <glm/glm.hpp>
+
 #include "src/game/ship/core/ShipControlState.h"
+#include "src/game/navigation/NavigationControlIntent.h"
 #include "src/world/navigation/control/PilotSkillExecutor.h"
 
 namespace game::navigation
@@ -22,29 +25,7 @@ public:
     using PilotExecutor = world::navigation::PilotSkillExecutor;
     using PilotSkillProfile = PilotExecutor::PilotSkillProfile;
 
-    struct Vec3d
-    {
-        double x = 0.0;
-        double y = 0.0;
-        double z = 0.0;
-    };
-
-    struct Intent
-    {
-        // High-level maneuver/mission intent revision. Pilot reaction delay
-        // restarts only when this identity changes.
-        std::uint64_t revision = 0;
-
-        // Concrete accepted execution target/segment revision. Zero preserves
-        // legacy behavior by falling back to revision.
-        std::uint64_t targetRevision = 0;
-
-        Vec3d idealLinearAccelerationDemandMapMps2 {};
-        Vec3d idealAngularAccelerationDemandMapRadPerSec2 {};
-
-        bool emergency = false;
-        double hazardUrgency01 = 0.0;
-    };
+    using Intent = NavigationSystemControlIntent;
 
     struct ExecutionSnapshot
     {
@@ -53,10 +34,10 @@ public:
         std::uint64_t intentRevision = 0;
         std::uint64_t activeTargetRevision = 0;
 
-        Vec3d idealLinearAccelerationDemandMapMps2 {};
-        Vec3d idealAngularAccelerationDemandMapRadPerSec2 {};
-        Vec3d executedLinearAccelerationDemandMapMps2 {};
-        Vec3d executedAngularAccelerationDemandMapRadPerSec2 {};
+        glm::dvec3 idealLinearAccelerationDemandSystemMps2 {0.0};
+        glm::dvec3 idealAngularAccelerationDemandSystemRadPerSec2 {0.0};
+        glm::dvec3 executedLinearAccelerationDemandSystemMps2 {0.0};
+        glm::dvec3 executedAngularAccelerationDemandSystemRadPerSec2 {0.0};
 
         bool emergency = false;
         double hazardUrgency01 = 0.0;
@@ -96,7 +77,7 @@ private:
         const Intent& intent
     ) noexcept;
 
-    static Vec3d fromPilotVec(
+    static glm::dvec3 fromPilotVec(
         const PilotExecutor::Vec3d& value
     ) noexcept;
 

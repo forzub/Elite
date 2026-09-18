@@ -101,17 +101,17 @@ inline glm::dvec3 limitPropulsionAccelerationToControlledSpeed(
 }
 }
 
-void DynamicMotionSystem::applyWorldAccelerationDemand(
+void DynamicMotionSystem::applySystemAccelerationDemand(
     DynamicMotionState& motion,
     const ShipParams& params,
-    const glm::dvec3& linearAccelerationDemandMapMps2,
+    const glm::dvec3& linearAccelerationDemandSystemMps2,
     const glm::vec3& shipForward
 )
 {
     const bool finiteDemand =
-        std::isfinite(linearAccelerationDemandMapMps2.x) &&
-        std::isfinite(linearAccelerationDemandMapMps2.y) &&
-        std::isfinite(linearAccelerationDemandMapMps2.z);
+        std::isfinite(linearAccelerationDemandSystemMps2.x) &&
+        std::isfinite(linearAccelerationDemandSystemMps2.y) &&
+        std::isfinite(linearAccelerationDemandSystemMps2.z);
 
     const glm::dvec3 shipForwardD(shipForward);
     if (!finiteDemand || glm::dot(shipForwardD, shipForwardD) <= 1.0e-18)
@@ -134,7 +134,7 @@ void DynamicMotionSystem::applyWorldAccelerationDemand(
     // reverse/lateral/vertical navigation demand without inventing a reverse
     // main engine.
     const double requestedForward =
-        glm::dot(linearAccelerationDemandMapMps2, forward);
+        glm::dot(linearAccelerationDemandSystemMps2, forward);
     const double mainForward =
         std::clamp(requestedForward, 0.0, mainAuthority);
 
@@ -142,7 +142,7 @@ void DynamicMotionSystem::applyWorldAccelerationDemand(
         forward * mainForward;
 
     const glm::dvec3 remainder =
-        linearAccelerationDemandMapMps2 -
+        linearAccelerationDemandSystemMps2 -
         motion.mainEngineAccelerationMps2;
 
     motion.manoeuvreAccelerationMps2 =

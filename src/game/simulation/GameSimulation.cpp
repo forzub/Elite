@@ -1652,7 +1652,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     const auto navigationBoundary =
         makeNavigationRuntimeLabBoundary(*hubFrame);
     if (!navigationBoundary.valid())
-        return;
+        return false;
 
     Map::DynamicWorldUpdate dynamicWorld;
     dynamicWorld.sourceRevision =
@@ -4287,10 +4287,10 @@ m_hubVelocityMetersPerSecond[hubId] =
                 !manualTranslationOverride)
             {
                 game::navigation::DynamicMotionSystem::
-                    applyWorldAccelerationDemand(
+                    applySystemAccelerationDemand(
                         tr.motion,
                         shipPtr->core().desc().physics,
-                        control.navigationLinearAccelerationDemandMapMps2,
+                        control.navigationLinearAccelerationDemandSystemMps2,
                         tr.forward()
                     );
             }

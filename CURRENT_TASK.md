@@ -1,8 +1,8 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Stage:** 12A-6b3a — verified moving-passage steering authority seam  
-**Last target-machine verified baseline:** `25dc4369b95b4872d9a70a2d236db5e482cf45e2`  
+**Stage:** 12A-6b3b — live moving-passage physics/replication authority gate  
+**Last target-machine verified baseline:** `daaf038021cdf8b9561db60fdd35e7cefce0b2df`  
 **Candidate implementation baseline before documentation commits:** `616f5b868795439fb42308d2c2d13ffc87218cba`
 
 ## What changed
@@ -360,3 +360,33 @@ live lab. The key new deterministic runtime output is:
 
 If this gate is green, accept 12A-6b3a and activate the live moving-gap
 authority/physics/replication fixture.
+
+
+## 12A-6b3a gate result — ACCEPTED
+
+Target-machine run on `daaf038021cdf8b9561db60fdd35e7cefce0b2df` passed:
+- Stage-12 architecture contract;
+- navigation_runtime 3/3;
+- navigation_trajectory 11/11;
+- canonical client/server build;
+- rebuilt server navigation self-test;
+- zero exact-static violations;
+- zero sparse/canonical replication error.
+
+## Current implementation task: 12A-6b3b
+
+Build one deterministic **live moving-gap authority fixture** using the accepted
+planner path and explicitly enable `allowSteeringAuthority` for that fixture.
+
+Required live evidence:
+- moving precision sees the intended dynamic boundary pair;
+- moving passage becomes dynamically feasible and exact-static safe;
+- planner publishes `Status::MovingPassageClear`;
+- the exact proved acceleration sample is transformed to world control;
+- PilotSkillExecutor emits the executed demand;
+- authoritative ship physics responds;
+- same-tick sparse and canonical replication match the executed demand;
+- exact-static physical sweep remains violation-free.
+
+Do not add a second presentation/debug planner. Manual guidance remains a
+consumer of the same accepted navigation product.

@@ -2187,6 +2187,36 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     m_navigationRuntimeLabObservation.movingPrecisionAttemptedSeen =
         m_navigationRuntimeLabObservation.movingPrecisionAttemptedSeen ||
         m_navigationRuntimeLabLastPlan.movingPrecisionAttempted;
+
+    if (m_navigationRuntimeLabLastPlan.movingPassagesEvaluated > 0)
+    {
+        auto& movingObservation =
+            m_navigationRuntimeLabObservation;
+        movingObservation.movingPassageLastEvaluatorStatus =
+            static_cast<std::uint8_t>(
+                m_navigationRuntimeLabLastPlan.
+                    movingPassageLastEvaluatorStatus
+            );
+        movingObservation.movingPassageRequiredPeakForwardAccelerationMps2 =
+            m_navigationRuntimeLabLastPlan.
+                movingPassageRequiredPeakForwardAccelerationMps2;
+        movingObservation.movingPassageRequiredPeakReverseAccelerationMps2 =
+            m_navigationRuntimeLabLastPlan.
+                movingPassageRequiredPeakReverseAccelerationMps2;
+        movingObservation.movingPassageRequiredPeakLateralAccelerationMps2 =
+            m_navigationRuntimeLabLastPlan.
+                movingPassageRequiredPeakLateralAccelerationMps2;
+        movingObservation.movingPassageRequiredPeakVerticalAccelerationMps2 =
+            m_navigationRuntimeLabLastPlan.
+                movingPassageRequiredPeakVerticalAccelerationMps2;
+        movingObservation.movingPassageMinimumSampleClearanceMeters =
+            m_navigationRuntimeLabLastPlan.
+                movingPassageMinimumSampleClearanceMeters;
+        movingObservation.movingPassageMinimumContinuousClearanceMeters =
+            m_navigationRuntimeLabLastPlan.
+                movingPassageMinimumContinuousClearanceMeters;
+    }
+
     m_navigationRuntimeLabObservation.movingPassageFeasibleSeen =
         m_navigationRuntimeLabObservation.movingPassageFeasibleSeen ||
         (expectedMovingGapPairSelected &&

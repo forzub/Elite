@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
-**Current public HEAD:** `adc3603b8572d8aad0d35d57ec94ad33038ba890`
+**Current public HEAD:** `cee6bbc0b376580dbea98e6f62079edc10038cbb`
 
 ## Major progress
 
@@ -30,58 +30,71 @@ Accepted on:
 ```
 
 Target-machine evidence:
+- architecture PASS;
+- navigation_space 1/1 PASS;
+- navigation_local 2/2 PASS;
+- navigation_runtime 3/3 PASS;
+- EliteGame/EliteServer PASS;
+- 17 exact static HitVolume obstacles;
+- 3431 swept physical-motion samples;
+- exact_static_violation=0;
+- >3.5 km progress;
+- exact sparse/canonical replication equality.
 
-```text
-architecture PASS
-navigation_space 1/1 PASS
-navigation_local 2/2 PASS
-navigation_runtime 3/3 PASS
-EliteGame PASS
-EliteServer PASS
-
-exact_static=1
-exact_static_obstacles=17
-exact_static_query=1
-exact_static_block=1
-max_exact_static_examined=119
-exact_static_motion_samples=3431
-exact_static_violation=0
-progress_m=3504.23
-replication_error_mps2=0
-canonical_replication_error_mps2=0
-```
-
-This closes the exact static HitVolume OBB layer, including real narrow
-apertures, portal-boundary handling and swept proof of actual authoritative
-motion.
-
-## 12A-5 — CANDIDATE
+### 12A-5 — CANDIDATE
 
 Static/dynamic ownership cleanup.
 
-New ownership:
-
-```text
-stationary infrastructure
-    -> NavigationSpace exact HitVolume geometry only
-
-time-varying / self-rotating infrastructure
-    -> NavigationMap broadphase/prediction
-```
-
-The live proving obstacle CUBE 08 is stationary in the hub/map frame and must
-now satisfy all of these simultaneously:
+First target-machine run on
+`f7e86a70fe590ab02cb72f02967f3679840c1e24` proved the ownership split:
 
 ```text
 obstacle_candidate=0
 obstacle_conflict=0
+dynamic_queries=6000
+max_dynamic_candidates=1
+exact_static=1
+exact_static_obstacles=17
+exact_static_query=1
+exact_static_violation=0
+```
+
+So stationary CUBE 08 really stayed out of NavigationMap while exact static
+geometry remained active.
+
+The run still failed because the live proving actor naturally drifted ~500 m
+from the mathematical start->goal centerline before reaching CUBE 08, so the
+real OBB was no longer on the ship's bounded nominal segment:
+
+```text
+exact_obstacle_block=0
+exact_static_block=0
+adjusted=0
+max_route_deviation_m=500.232
+progress_m=6821.79
+```
+
+This is a proving-fixture defect, not a reason to reintroduce stationary
+conservative spheres.
+
+Corrected candidate:
+- CUBE 08 is now 1300 m ahead of the starting ship, inside the first bounded
+  local horizon before rotating-frame drift can bypass it;
+- start X/Y are derived directly from CUBE 08 coordinates;
+- at static publication time NavigationSpace proves that the configured
+  start->goal centerline intersects the exact HitVolume of the actual CUBE 08
+  entity;
+- the server self-test fails immediately if that fixture proof is false.
+
+Required ownership result remains:
+
+```text
+obstacle_candidate=0
+obstacle_conflict=0
+configured_route_exact_block=1
 exact_obstacle_block=1
 adjusted=1
 exact_static_violation=0
 ```
 
-Its center/radius remain available only for diagnostics such as broadphase
-distance reporting; they are no longer navigation ownership.
-
-Rotating infrastructure remains temporarily represented in NavigationMap until
-the dedicated moving/rotating exact-geometry slice.
+Stage remains **12A-5 CANDIDATE** pending the corrected live rerun.

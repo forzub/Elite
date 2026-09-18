@@ -10,6 +10,48 @@ Stage 12 proves that the accepted Navigation v2 components work as one live syst
 
 It is not a new planner stage. The purpose is to compose and stress the already accepted planner/trajectory/control chain and retire legacy route-wide navigation only after equivalent or better live behavior is demonstrated.
 
+## 12A-1 — live composition seam candidate
+
+Before the physical proving-ground scene is attached to `GameSimulation`, Stage 12 first closes the missing runtime composition seam.
+
+Current candidate:
+
+```text
+NavigationSpace costed corridor
+    -> ordered selected portal centers
+    -> NavigationRuntimePlanner coarse waypoint
+    -> LocalHorizon / LocalAvoidance
+    -> NavigationRuntimeControlBridge::Intent
+    -> PilotSkillExecutor
+```
+
+`NavigationSpace` now publishes `portalCentersMapMeters` in corridor results. These centers correspond one-to-one with the selected `portalPath`; callers no longer need to inspect or reconstruct the internal region graph merely to obtain the next steering waypoint.
+
+`NavigationRuntimePlanner` is a shared client/server production component. It consumes:
+- one agent kinematic/envelope state;
+- one target state;
+- one completed `NavigationMap::QueryResult`;
+- one `NavigationSpace` snapshot;
+- bounded corridor/local-avoidance policy.
+
+It outputs only ideal navigation acceleration intent plus diagnostics. It never writes authoritative position, velocity or angular rates.
+
+Fail-closed behavior remains command-producing:
+
+```text
+static route unavailable -> braking/hold intent
+stale dynamic result      -> braking/hold intent
+unresolved local conflict -> emergency braking/hold intent
+```
+
+The isolated Stage-12 runtime gate pins:
+- selected static portal -> live bounded target;
+- the same portal rejects an oversized hull;
+- a `NavigationMap` moving crossing conflict changes the command to braking hold;
+- the resulting intent crosses the accepted `PilotSkillExecutor` runtime bridge.
+
+This is intentionally **not yet the full Stage-12 acceptance**. After the target-machine gate is green, the next slice wires this shared planner into authoritative `GameSimulation` ownership and feeds it the deterministic proving-ground geometry through the real hit-volume/static-space publication adapter.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

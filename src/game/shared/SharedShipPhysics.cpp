@@ -113,8 +113,7 @@ void evaluateControl(
     // A valid navigation acceleration demand also owns attitude for this
     // control sample unless the player supplies material manual attitude input.
     if (hasManualAttitudeInput(control) ||
-        (control.navigationAccelerationDemandValid &&
-         !hasManualAttitudeInput(control)))
+        control.navigationAccelerationDemandValid)
     {
         motion.velocityAlignmentMode =
             game::navigation::VelocityAlignmentMode::None;

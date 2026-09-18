@@ -722,3 +722,51 @@ execution must align:
 For a straight tunnel, transit keeps that entry axis through the exit. This must
 be a generic portal traversal contract, not a NavigationRuntimeLab/Cobra special
 case.
+
+
+## 12A-6b3b oriented tunnel-capture candidate
+
+Candidate code/contract baseline before documentation commits:
+
+```text
+b73cc129ce32cae1147165bf79b29f20b83ef04c
+```
+
+The target-machine failure on `777716f...` was a fixture-validation failure,
+not a failed flight: `slit_exact_open=0` came from treating a legal portal
+boundary as an ordinary region-interior point.
+
+The correction now separates topology from collision truth and implements the
+entry behavior required for finite-depth passages:
+
+```text
+APPROACH REGION
+    -> staging/capture point
+    -> ENTRY PORTAL (oriented normal + capture limits)
+    -> TUNNEL REGION
+    -> EXIT PORTAL
+    -> DEPARTURE REGION
+```
+
+Before the entry plane can be accepted, the live actor must satisfy:
+- hull position inside the passage capture envelope;
+- velocity vector within 5 degrees of the entry normal;
+- lateral speed <= 1 m/s;
+- hull forward axis within 5 degrees of the entry normal.
+
+The planner actively commands angular alignment using the current vehicle's
+angular capability. It stages/brakes before the entrance, then releases
+longitudinal transit only after capture is ready.
+
+The live physical sweep now uses exact HitVolumes only; NavigationSpace region
+boundaries remain topology and cannot produce a fake physical collision.
+
+New regressions pin:
+- route-direction portal normals, including reverse traversal;
+- exact-obstacle-only sweep across a virtual region boundary;
+- portal capture holding a misaligned hull;
+- release to PortalTransit only after velocity + hull-axis alignment.
+
+Target-machine acceptance is pending. The last accepted Stage-12 baseline
+remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`; the later
+`777716f...` run is retained as failed evidence, not acceptance.

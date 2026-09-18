@@ -160,6 +160,8 @@ struct NavigationRuntimeLabObservation
     bool movingPassageAppliedAccelerationSeen = false;
     bool movingGapPlanePassed = false;
 
+    bool slitPortalExactOpenPublished = false;
+    std::size_t slitPortalExactObstaclesExamined = 0;
     bool slitPortalWaypointSeen = false;
     bool slitTunnelPassed = false;
     glm::dvec3 slitTunnelCrossingMap {0.0};

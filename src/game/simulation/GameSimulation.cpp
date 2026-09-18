@@ -2773,6 +2773,76 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 return true;
             };
 
+        // Geometric replanning is not enough once inertia is relevant.
+        // Build a directional "response coast + guaranteed braking" reserve
+        // independently of the ordinary target/forecast checks. Even when the
+        // normal monitor has already found a collision, this reserve must still
+        // decide whether active emergency recovery is required.
+        const double speedForStoppingReserve =
+            glm::length(agent.velocityMapMetersPerSecond);
+        if (speedForStoppingReserve > 1.0e-6)
+        {
+            const auto pilotProfile =
+                m_npcAiSystem.pilotSkillProfile(ship);
+            const auto& executionProfile =
+                pilotProfile.execution;
+
+            const double decisionPeriodSeconds =
+                executionProfile.perceptionDecisionRateHz > 1.0e-9
+                    ? 1.0 /
+                        executionProfile.perceptionDecisionRateHz
+                    : 0.0;
+            const double filterResponseReserveSeconds =
+                executionProfile.responseFrequencyHz > 1.0e-9
+                    ? 1.0 /
+                        executionProfile.responseFrequencyHz
+                    : 0.0;
+
+            staticSafetyStoppingReserveSeconds =
+                decisionPeriodSeconds +
+                executionProfile.commandLatencySeconds +
+                filterResponseReserveSeconds;
+
+            const double brakingAcceleration =
+                std::max(
+                    0.5,
+                    policy.horizon.
+                        maxBrakingAccelerationMetersPerSecond2
+                );
+            const double brakingDistance =
+                (speedForStoppingReserve *
+                 speedForStoppingReserve) /
+                (2.0 * brakingAcceleration);
+            const double responseCoastDistance =
+                speedForStoppingReserve *
+                staticSafetyStoppingReserveSeconds;
+
+            staticSafetyStoppingReserveDistanceMeters =
+                responseCoastDistance +
+                brakingDistance;
+
+            const glm::dvec3 velocityDirection =
+                agent.velocityMapMetersPerSecond /
+                speedForStoppingReserve;
+
+            staticSafetyStoppingReserveEndMap =
+                agent.positionMapMeters +
+                velocityDirection *
+                    staticSafetyStoppingReserveDistanceMeters;
+
+            staticSafetyStoppingReserveBlocked =
+                exactExecutionSegmentBlocked(
+                    agent.positionMapMeters,
+                    staticSafetyStoppingReserveEndMap
+                );
+
+            if (staticSafetyStoppingReserveBlocked)
+            {
+                staticSafetyInvalidated = true;
+                staticSafetyRecoveryRequired = true;
+            }
+        }
+
         staticSafetyTargetBlocked =
             exactExecutionSegmentBlocked(
                 agent.positionMapMeters,
@@ -2896,84 +2966,6 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 }
             }
 
-            // Geometric replanning is not enough once inertia is relevant.
-            // Build a directional "response coast + guaranteed braking" reserve
-            // entirely in the local NavigationMap frame. This is intentionally
-            // conservative: during the executor response budget we assume no
-            // helpful acceleration at all, then brake with manoeuvre-thruster
-            // authority opposite current velocity. If this swept stopping path
-            // touches exact-static geometry, ordinary progress must yield to a
-            // short active recovery segment before the collision becomes
-            // physically unavoidable.
-            const double speedForStoppingReserve =
-                glm::length(agent.velocityMapMetersPerSecond);
-            if (speedForStoppingReserve > 1.0e-6)
-            {
-                const auto pilotProfile =
-                    m_npcAiSystem.pilotSkillProfile(ship);
-                const auto& executionProfile =
-                    pilotProfile.execution;
-
-                const double decisionPeriodSeconds =
-                    executionProfile.perceptionDecisionRateHz > 1.0e-9
-                        ? 1.0 /
-                            executionProfile.perceptionDecisionRateHz
-                        : 0.0;
-                const double filterResponseReserveSeconds =
-                    executionProfile.responseFrequencyHz > 1.0e-9
-                        ? 1.0 /
-                            executionProfile.responseFrequencyHz
-                        : 0.0;
-
-                staticSafetyStoppingReserveSeconds =
-                    decisionPeriodSeconds +
-                    executionProfile.commandLatencySeconds +
-                    filterResponseReserveSeconds;
-
-                const double brakingAcceleration =
-                    std::max(
-                        0.5,
-                        policy.horizon.
-                            maxBrakingAccelerationMetersPerSecond2
-                    );
-                const double brakingSeconds =
-                    speedForStoppingReserve /
-                    brakingAcceleration;
-                const double brakingDistance =
-                    (speedForStoppingReserve *
-                     speedForStoppingReserve) /
-                    (2.0 * brakingAcceleration);
-                const double responseCoastDistance =
-                    speedForStoppingReserve *
-                    staticSafetyStoppingReserveSeconds;
-
-                staticSafetyStoppingReserveDistanceMeters =
-                    responseCoastDistance +
-                    brakingDistance;
-
-                const glm::dvec3 velocityDirection =
-                    agent.velocityMapMetersPerSecond /
-                    speedForStoppingReserve;
-
-                staticSafetyStoppingReserveEndMap =
-                    agent.positionMapMeters +
-                    velocityDirection *
-                        staticSafetyStoppingReserveDistanceMeters;
-
-                staticSafetyStoppingReserveBlocked =
-                    exactExecutionSegmentBlocked(
-                        agent.positionMapMeters,
-                        staticSafetyStoppingReserveEndMap
-                    );
-
-                if (staticSafetyStoppingReserveBlocked)
-                {
-                    staticSafetyInvalidated = true;
-                    staticSafetyRecoveryRequired = true;
-                }
-
-                (void)brakingSeconds;
-            }
         }
 
         auto& safetyObservation =

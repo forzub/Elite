@@ -1071,6 +1071,27 @@ void GameSimulation::initializeNavigationRuntimeLab()
         return;
     }
 
+    const Ship* placedLabShip =
+        getShip(m_navigationRuntimeLabShipId);
+    if (!placedLabShip)
+        return;
+
+    const glm::dvec3 placedWorldMeters =
+        world::coordinates::fullMeters(
+            placedLabShip->core().transform().worldPosition
+        );
+    const glm::dvec3 placedRelative =
+        placedWorldMeters - hubFrame->originMeters;
+    const glm::dvec3 placementPositionMap(
+        glm::dot(placedRelative, hubFrame->normalAxis),
+        glm::dot(placedRelative, hubFrame->radialAxis),
+        glm::dot(placedRelative, -hubFrame->progradeAxis)
+    );
+    const glm::dvec3 placementMotionLocal =
+        placedLabShip->core().transform().motion.localPositionMeters;
+    const double placementServerTimeSeconds =
+        m_serverTimelineClock.timeSeconds();
+
     Map::Config mapConfig;
     mapConfig.halfExtentMeters =
         NavigationRuntimeLabWorkspaceHalfExtentMeters;
@@ -1113,6 +1134,13 @@ void GameSimulation::initializeNavigationRuntimeLab()
     m_navigationRuntimeLabObservation.valid = true;
     m_navigationRuntimeLabObservation.shipEntityId =
         m_navigationRuntimeLabShipId.value;
+    m_navigationRuntimeLabObservation.placementProbeCaptured = true;
+    m_navigationRuntimeLabObservation.placementPositionMap =
+        placementPositionMap;
+    m_navigationRuntimeLabObservation.placementMotionLocalTactical =
+        placementMotionLocal;
+    m_navigationRuntimeLabObservation.placementServerTimeSeconds =
+        placementServerTimeSeconds;
     m_navigationRuntimeLabStaticGeometryPublished = false;
     m_navigationRuntimeLabInitialized = true;
 }
@@ -1656,6 +1684,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             goalPositionMap;
         observation.firstLiveBoundedTargetMap =
             boundedTarget;
+        observation.firstLiveServerTimeSeconds =
+            m_serverTimelineClock.timeSeconds();
     }
 
     // Prove the path the authoritative physics actually took, not the

@@ -273,6 +273,8 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     localQuery.horizon.dynamicResultAgeSeconds = dynamicResultAgeSeconds;
     localQuery.horizon.policy = policy.horizon;
     localQuery.avoidance = policy.avoidance;
+    localQuery.avoidance.nominalTargetIsProvenPortalBoundary =
+        result.usedPortalWaypoint;
 
     const Avoidance::Result local = Avoidance{}.evaluate(
         localQuery,

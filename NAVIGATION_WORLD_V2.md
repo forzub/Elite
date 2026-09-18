@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** stage 11B-1 — authoritative NPC runtime ownership
+**Current stage:** stage 11B-1 — authoritative NPC runtime ownership / repaired rerun
 
 `main` is the only canonical development branch.
 
@@ -592,6 +592,32 @@ Stage 11B-1 now replaces the placeholder NPC steering authority. `NpcAiSystem` p
 `NpcNavigationIntentController` owns the nominal acceleration-intent conversion, and `GameSimulation` owns persistent per-NPC `NavigationRuntimeControlBridge` state. Activation-decimated elapsed time is advanced in exact bounded `<=0.25 s` pieces.
 
 The exact latest `ExecutionSnapshot` used for control is retained per NPC as the server truth seam for stage 11B-2 replication/guidance. No direct-steering fallback is allowed.
+
+### Stage 11B-1 first target-machine attempt — NOT ACCEPTED
+
+The architecture contracts passed and trajectory/pilot remained 11/11, but the full integration gate exposed two build-target wiring defects:
+
+```text
+isolated navigation_runtime
+    missing GLM_ENABLE_EXPERIMENTAL
+
+headless EliteServer
+    missing live-navigation implementation sources
+```
+
+Repaired source wiring:
+
+```text
+tests/navigation_runtime/CMakeLists.txt
+    GLM_ENABLE_EXPERIMENTAL
+
+EliteServer
+    NavigationRuntimeControlBridge.cpp
+    NpcNavigationIntentController.cpp
+    PilotSkillExecutor.cpp
+```
+
+The ownership checker now pins both requirements. No behavior or safety contract was weakened.
 
 ## 12. Performance contract
 

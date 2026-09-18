@@ -311,3 +311,52 @@ Required contracts:
 
 This first authority slice is deterministic planner/control evidence. It does
 not yet claim live moving-gap execution through authoritative physics/replication.
+
+
+## 12A-6b3a candidate implementation
+
+Candidate baseline before documentation commits:
+
+```text
+4b117cada10ce416250d917a8bdad2b6b5580ee7
+```
+
+Implemented authority rule:
+
+```text
+allowSteeringAuthority
+    && !StaleHold
+    && movingPassageFeasible
+    && movingPassageStaticSafe
+    -> Status::MovingPassageClear
+    -> intent.linear = movingPassageInitialAccelerationMapMps2
+```
+
+No desired-velocity or second trajectory solve occurs after proof.
+Existing planner status ordinals 0..5 are preserved; `MovingPassageClear` is
+appended as value 6.
+
+### Target-machine gate to run now
+
+```bash
+git pull --ff-only
+git rev-parse HEAD
+
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+bash tests/navigation_runtime/run_mingw64.sh
+bash tests/navigation_trajectory/run_mingw64.sh
+
+bash build_mingw64.sh
+./build/headless_server/EliteServer.exe --self-test-navigation
+```
+
+The live self-test is expected to remain behaviorally unchanged in this slice
+because production moving-passage authority has not yet been enabled in the
+live lab. The key new deterministic runtime output is:
+
+```text
+ - doubly-proven moving passage -> exact sample -> map/world -> PilotSkillExecutor authority
+```
+
+If this gate is green, accept 12A-6b3a and activate the live moving-gap
+authority/physics/replication fixture.

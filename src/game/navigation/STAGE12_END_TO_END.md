@@ -1151,3 +1151,44 @@ System / Local / Precision navigation as the active leg becomes more local.
 
 Manual guidance and automatic execution must still consume one accepted
 navigation product; presentation may not run a second planner.
+
+
+#### 12A-6b3b candidate — live moving-passage authority
+
+Candidate baseline before documentation commits:
+
+```text
+d5e1f990aed38ded7a517d719e935b6b6e763d4d
+```
+
+The old live test could not prove moving-passage authority because its bounded
+NavigationMap query never contained a two-obstacle aperture
+(`max_dynamic_candidates=1` in the accepted 12A-6b3a run).
+
+The candidate adds two physical hub-attached moving boundaries:
+`NAV MOVING GAP UPPER` and `NAV MOVING GAP LOWER`. Their world transforms
+are advanced from deterministic hub-local linear motion. NavigationMap receives
+their map-relative linear velocity; NavigationSpace explicitly excludes them
+from static ownership.
+
+The Cobra enters the moving evaluator with its authored logical half-extents and
+the same physical acceleration limits used by DynamicMotionSystem:
+- forward main-engine authority from the linear-G envelope;
+- reverse/lateral/vertical authority from manoeuvre thrusters;
+- authored angular acceleration/rate limits.
+
+The diagnostic planner explicitly enables:
+```text
+movingPassage.enabled = true
+movingPassage.allowSteeringAuthority = true
+```
+
+The live server gate is intentionally stronger than a sticky planner flag. It
+must first stop on an epoch where `MovingPassageClear` is actively executing
+and producing physical acceleration. Sparse replication is accepted only from a
+publication while that authority remains active and must match the authoritative
+and canonical execution at the exact same server tick. The simulation then
+continues until the actual ship passes the moving aperture plane.
+
+Existing CUBE 08 exact-static ownership and physical sweep assertions remain
+active throughout the run.

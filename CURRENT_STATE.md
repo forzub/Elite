@@ -3,37 +3,26 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** 12A-2 — authoritative GameSimulation proving actor
+**Active stage:** 12A-3 — authoritative live obstacle behavior proof
 
 ## Progress
 
 ```text
 [██████████████████████░] 11 / 12 major stages closed
 
-1–10 ACCEPTED
-11   ACCEPTED — live game/server/guidance + physics
-12   ACTIVE
-     12A-1 live NavigationWorld composition seam       ACCEPTED
-     12A-2 authoritative GameSimulation proving actor  CANDIDATE
+1–11 ACCEPTED
+12 ACTIVE
+   12A-1 live NavigationWorld composition seam       ACCEPTED
+   12A-2 authoritative GameSimulation proving actor  ACCEPTED
+   12A-3 live CUBE 08 behavior proof                 CANDIDATE
 ```
 
-## Accepted Stage 11 baseline
-
-Stage 11 remains accepted on target-machine evidence from:
-
-```text
-9650c44cca23741dae3f4acf2c9a96a4ab4c5713
-```
-
-with the live architecture contracts, runtime 2/2, trajectory/pilot 11/11,
-wire-data-plane 1/1, EliteGame and EliteServer all passing.
-
-## Stage 12A-1 acceptance
+## 12A-2 acceptance
 
 Target-machine evidence on:
 
 ```text
-af58b46cdb01ad254097383e5e4274c733c4e28e
+7b4db95788d80c95afb3b57c109c671cb7a41366
 ```
 
 passed:
@@ -41,80 +30,49 @@ passed:
 ```text
 NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS
 navigation_runtime 3/3 PASS
-  navigation_runtime_control
-  navigation_runtime_planner
-  navigation_replication_truth
 EliteGame build PASS
 EliteServer build PASS
 ```
 
-Accepted composition:
+This accepts the authoritative `GameSimulation` wiring, isolated Active lab
+actor, real NAV STRESS hit-volume source, and shared client/server production
+build.
+
+## 12A-3 candidate
+
+Code baseline:
 
 ```text
-NavigationSpace costed corridor
- -> ordered portalCentersMapMeters
- -> NavigationRuntimePlanner
- -> LocalHorizon / LocalAvoidance
- -> NavigationRuntimeControlBridge::Intent
- -> PilotSkillExecutor
+27282d1d0d5e38072906139afbd743f712a1a68a
 ```
 
-## Stage 12A-2 candidate
-
-The planner is now wired into authoritative `GameSimulation` for one isolated
-diagnostic NPC only:
+A dedicated real-server mode now exists:
 
 ```text
-NAVIGATION V2 RUNTIME LAB
- -> real GameSimulation NPC cadence/ownership
- -> NavigationRuntimePlanner
+EliteServer --self-test-navigation
+```
+
+It runs the actual `ServerRuntime`, fixed-step authoritative physics,
+replication and the existing `NAVIGATION V2 RUNTIME LAB` actor.
+
+The evidence chain is:
+
+```text
+NAV STRESS CUBE 08
+ -> HitVolume-derived NavigationMap candidate
+ -> nominal conflict identity retained
+ -> adjusted local target
  -> NavigationRuntimeControlBridge
- -> PilotSkillExecutor
- -> ShipControlState
- -> authoritative ship physics
+ -> PilotSkillExecutor executed lateral acceleration
+ -> authoritative ship motion
+ -> positive conservative obstacle clearance
+ -> continued goal progress
+ -> replicated execution vector == authoritative execution vector
 ```
 
-Ordinary NPCs still use the accepted baseline `NpcNavigationIntentController`
-path. The Stage-12 proving actor is pinned `Active` so activation decimation
-cannot contaminate navigation evidence.
+The local dynamic broadphase now uses a bounded `NavigationMap::querySphere()`
+covering the complete physical local horizon/probe fan. It no longer samples
+only the nominal straight corridor.
 
-### Existing physical proving field
-
-No duplicate test field was added. The scene already contains deterministic
-physical `NAV STRESS CUBE/CYLINDER` objects created by
-`spawnHubGuidanceTestModules()`.
-
-The lab route is deliberately aligned through the existing
-`NAV STRESS CUBE 08`:
-
-```text
-visual hub start = { 975, -1300, -8000 }
-CUBE 08          = { 975, -1300, -4900 }
-visual hub goal  = { 975, -1300,  1000 }
-```
-
-so a straight-line controller cannot pass the fixture unnoticed.
-
-### Geometry truth candidate
-
-`NavigationHitVolumeAdapter` converts authoritative local
-`HitComponent/HitVolume` OBBs into world navigation OBBs and also supplies the
-conservative entity radius used by the current NavigationMap broadphase.
-
-Current 12A-2 runtime uses the **hit-volume-derived conservative radius** for the
-stress objects in `NavigationMap`. Exact per-volume OBB conversion is already
-implemented and contract-tested, but has **not yet** been wired into a generated
-`NavigationSpace`/precision static topology. Do not claim exact narrow-gap
-proof from this slice yet.
-
-## Stage 12 authority
-
-```text
-src/game/navigation/STAGE12_END_TO_END.md
-```
-
-After 12A-2 compiles and passes its target-machine gate, the next evidence is
-live behavior: prove the authoritative lab ship actually detects CUBE 08,
-changes plan/command, avoids collision, and continues toward the goal. Then wire
-exact hit-volume OBBs into static/precision topology rather than a second
-presentation-only geometry path.
+Exact HitVolume OBB -> static/precision NavigationSpace topology remains the
+next geometry slice after this live-behavior gate.

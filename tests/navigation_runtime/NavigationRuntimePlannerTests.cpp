@@ -426,6 +426,63 @@ void testNavigationMapCrossingConflictProducesBrakingHold()
             "moving conflict must create a real braking demand");
 }
 
+void testMapIntentTransformsIntoWorldControlFrame()
+{
+    Bridge::Intent mapIntent;
+    mapIntent.revision = 99;
+    mapIntent.emergency = true;
+    mapIntent.hazardUrgency01 = 0.25;
+    mapIntent.idealLinearAccelerationDemandMapMps2 =
+        {2.0, 3.0, 4.0};
+    mapIntent.idealAngularAccelerationDemandMapRadPerSec2 =
+        {-1.0, 5.0, 7.0};
+
+    Map::WorkingFrame frame;
+    frame.originSystemMeters = {100.0, 200.0, 300.0};
+    frame.xAxisSystem = {0.0, 1.0, 0.0};
+    frame.yAxisSystem = {0.0, 0.0, 1.0};
+    frame.zAxisSystem = {1.0, 0.0, 0.0};
+
+    const Bridge::Intent worldIntent =
+        Planner::mapIntentToWorld(mapIntent, frame);
+
+    require(worldIntent.revision == mapIntent.revision &&
+            worldIntent.emergency == mapIntent.emergency &&
+            near(worldIntent.hazardUrgency01, mapIntent.hazardUrgency01),
+            "map-to-world transform must preserve intent metadata");
+
+    const auto& linear =
+        worldIntent.idealLinearAccelerationDemandMapMps2;
+    require(near(linear.x, 4.0) &&
+            near(linear.y, 2.0) &&
+            near(linear.z, 3.0),
+            "linear acceleration demand did not rotate from map to world frame");
+
+    const auto& angular =
+        worldIntent.idealAngularAccelerationDemandMapRadPerSec2;
+    require(near(angular.x, 7.0) &&
+            near(angular.y, -1.0) &&
+            near(angular.z, 5.0),
+            "angular acceleration demand did not rotate from map to world frame");
+
+    bool rejected = false;
+    try
+    {
+        Map::WorkingFrame invalid;
+        invalid.xAxisSystem = {1.0, 0.0, 0.0};
+        invalid.yAxisSystem = {1.0, 0.0, 0.0};
+        invalid.zAxisSystem = {0.0, 0.0, 1.0};
+        (void)Planner::mapIntentToWorld(mapIntent, invalid);
+    }
+    catch (const std::invalid_argument&)
+    {
+        rejected = true;
+    }
+
+    require(rejected,
+            "map-to-world control boundary must reject a non-orthogonal frame");
+}
+
 void testPlannerIntentCrossesAcceptedPilotBridge()
 {
     Space space = singleRegionSpace();
@@ -481,6 +538,7 @@ int main()
         testSamePortalRejectsOversizedHull();
         testAdjustedTargetPreservesNominalConflictIdentity();
         testNavigationMapCrossingConflictProducesBrakingHold();
+        testMapIntentTransformsIntoWorldControlFrame();
         testPlannerIntentCrossesAcceptedPilotBridge();
 
         std::cout << "NAVIGATION RUNTIME PLANNER TESTS: PASS\n";
@@ -489,6 +547,7 @@ int main()
         std::cout << " - portal clearance rejects oversized hull\n";
         std::cout << " - adjusted target retains nominal conflict identity\n";
         std::cout << " - NavigationMap crossing conflict -> braking hold\n";
+        std::cout << " - non-identity map intent -> world control frame\n";
         std::cout << " - planner intent -> PilotSkillExecutor runtime bridge\n";
         return 0;
     }

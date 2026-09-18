@@ -1704,3 +1704,60 @@ remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Target-machine result after WORLD -> MAP correction
+
+Target-machine run against
+`60da8fc21a458b481894f3edebb266c02ed8d2be` produced:
+
+~~~text
+architecture contract: FALSE NEGATIVE
+full MinGW client/server build: PASS
+EliteServer --self-test-navigation: FAIL on exact-static entity 28
+~~~
+
+Architecture-check failure:
+
+~~~text
+[FAIL] accepted automatic segment must be monitored against exact-static geometry without restoring per-frame planning
+~~~
+
+Root cause of that check is textual/stale only: the architecture script still
+requires the retired helper name `exactExecutionBlocked`, while production
+code now intentionally uses `exactExecutionSegmentBlocked`. The build and
+live runtime both compile/use the new helper. The gate must be updated rather
+than reverting production code.
+
+Live witness:
+
+~~~text
+segment_revision=129
+planner_status=AdjustedClear
+last_replan_reason=StaticSafetyInvalidated
+static_invalidations=3
+previous_monitor_blocker=28
+previous_executed_forecast_blocked=1
+
+velocity=(-9.77789,-2.20347,+6.24257)
+ideal_accel=(-16.0268,-6.93006,-42.1738)
+executed_accel=(-16.7456,-7.03306,-41.9582)
+~~~
+
+The WORLD -> MAP correction is validated by the witness: ideal follower and
+actually executed acceleration now agree closely in the same NavigationMap
+frame. Coordinate-frame mismatch is no longer the cause of the entity-28
+impact.
+
+The remaining failure is dynamic viability. The monitor detects the obstacle
+and wakes the local planner, but `AdjustedClear` continues to optimize route
+progress while the ship still has finite momentum toward the wall. Replanning
+alone cannot instantaneously remove velocity. Static-safety invalidation must
+therefore be able to select a short active recovery maneuver (brake/escape)
+before returning to ordinary progress.
+
+No Stage-12 baseline promotion. Last target-machine accepted baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

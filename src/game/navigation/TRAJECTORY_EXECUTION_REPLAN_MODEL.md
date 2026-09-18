@@ -206,3 +206,110 @@ known predicted motion != automatic replan
 new invalidating evidence -> replan
 automatic accepted trajectory remains authoritative until invalidated
 ~~~
+
+
+### Target-machine result after WORLD -> MAP correction
+
+Target-machine run against
+`60da8fc21a458b481894f3edebb266c02ed8d2be` produced:
+
+~~~text
+architecture contract: FALSE NEGATIVE
+full MinGW client/server build: PASS
+EliteServer --self-test-navigation: FAIL on exact-static entity 28
+~~~
+
+Architecture-check failure:
+
+~~~text
+[FAIL] accepted automatic segment must be monitored against exact-static geometry without restoring per-frame planning
+~~~
+
+Root cause of that check is textual/stale only: the architecture script still
+requires the retired helper name `exactExecutionBlocked`, while production
+code now intentionally uses `exactExecutionSegmentBlocked`. The build and
+live runtime both compile/use the new helper. The gate must be updated rather
+than reverting production code.
+
+Live witness:
+
+~~~text
+segment_revision=129
+planner_status=AdjustedClear
+last_replan_reason=StaticSafetyInvalidated
+static_invalidations=3
+previous_monitor_blocker=28
+previous_executed_forecast_blocked=1
+
+velocity=(-9.77789,-2.20347,+6.24257)
+ideal_accel=(-16.0268,-6.93006,-42.1738)
+executed_accel=(-16.7456,-7.03306,-41.9582)
+~~~
+
+The WORLD -> MAP correction is validated by the witness: ideal follower and
+actually executed acceleration now agree closely in the same NavigationMap
+frame. Coordinate-frame mismatch is no longer the cause of the entity-28
+impact.
+
+The remaining failure is dynamic viability. The monitor detects the obstacle
+and wakes the local planner, but `AdjustedClear` continues to optimize route
+progress while the ship still has finite momentum toward the wall. Replanning
+alone cannot instantaneously remove velocity. Static-safety invalidation must
+therefore be able to select a short active recovery maneuver (brake/escape)
+before returning to ordinary progress.
+
+No Stage-12 baseline promotion. Last target-machine accepted baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~
+
+
+## Canonical coordinate-frame contract
+
+Stage-12 local navigation has only one translational calculation frame.
+
+~~~text
+GLOBAL / SYSTEM
+    large-scale world/orbit storage and inter-system composition
+            |
+            | one explicit boundary transform
+            v
+LOCAL INERTIAL / TACTICAL
+    NavigationMap
+    NavigationSpace
+    planner
+    AcceptedShortSegment
+    TrajectoryFollower
+    execution safety monitor
+    local collision prediction
+~~~
+
+Hull/body axes are not a third translational navigation frame. They exist for
+attitude and thruster/capability resolution only.
+
+In the current hub fixture the NavigationMap working basis is the tactical
+local basis:
+
+~~~text
+local X = hub normal
+local Y = hub radial
+local Z = -hub prograde
+~~~
+
+The words `map`, `tactical local` and local navigation coordinates must not
+be treated as separate physical systems of reference. `NavigationMap::WorkingFrame`
+is a representation/boundary descriptor for that one local frame.
+
+Rules:
+- planner/monitor state `P/V/A` must all be in the same local frame;
+- no WORLD-space acceleration may be combined with local position/velocity;
+- GLOBAL/WORLD conversion is allowed only at explicit simulation boundaries;
+- body-local vectors are allowed only inside attitude/thruster allocation;
+- field names that historically contain `Map` after a world conversion are
+  legacy naming debt and must not be trusted as frame proof;
+- new navigation code should prefer a single local-frame transform helper over
+  ad-hoc dot-product conversions scattered through runtime code.
+
+This contract exists specifically to prevent representation names from
+multiplying into accidental extra coordinate systems.

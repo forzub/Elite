@@ -34,6 +34,102 @@ glm::dvec3 normalizedOr(
     return value / std::sqrt(lengthSquared);
 }
 
+double angleBetweenUnitSafe(
+    const glm::dvec3& a,
+    const glm::dvec3& b
+) noexcept
+{
+    const glm::dvec3 na = normalizedOr(a, glm::dvec3(0.0));
+    const glm::dvec3 nb = normalizedOr(b, glm::dvec3(0.0));
+    if (glm::dot(na, na) <= kEpsilon ||
+        glm::dot(nb, nb) <= kEpsilon)
+    {
+        return 0.0;
+    }
+
+    return std::acos(
+        std::clamp(glm::dot(na, nb), -1.0, 1.0)
+    );
+}
+
+glm::dvec3 agentAngularVelocityMap(
+    const Planner::AgentState& agent
+) noexcept
+{
+    const glm::dvec3 forward = normalizedOr(
+        agent.forwardMap,
+        glm::dvec3(0.0, 0.0, -1.0)
+    );
+    const glm::dvec3 right = normalizedOr(
+        agent.rightMap,
+        glm::dvec3(1.0, 0.0, 0.0)
+    );
+    const glm::dvec3 up = normalizedOr(
+        agent.upMap,
+        glm::dvec3(0.0, 1.0, 0.0)
+    );
+
+    return
+        right * agent.pitchRateRadPerSec +
+        up * agent.yawRateRadPerSec +
+        forward * agent.rollRateRadPerSec;
+}
+
+glm::dvec3 portalAlignmentAngularDemand(
+    const Planner::AgentState& agent,
+    const glm::dvec3& desiredForwardMap,
+    const Planner::Goal& goal,
+    const Planner::PortalTraversalPolicy& policy
+) noexcept
+{
+    const glm::dvec3 forward = normalizedOr(
+        agent.forwardMap,
+        glm::dvec3(0.0, 0.0, -1.0)
+    );
+    const glm::dvec3 desired = normalizedOr(
+        desiredForwardMap,
+        forward
+    );
+
+    const glm::dvec3 cross = glm::cross(forward, desired);
+    const double sinAngle = glm::length(cross);
+    const double cosAngle = std::clamp(
+        glm::dot(forward, desired),
+        -1.0,
+        1.0
+    );
+    const double angle = std::atan2(sinAngle, cosAngle);
+
+    glm::dvec3 axis(0.0);
+    if (sinAngle > kEpsilon)
+        axis = cross / sinAngle;
+    else if (cosAngle < 0.0)
+        axis = normalizedOr(agent.upMap, glm::dvec3(0.0, 1.0, 0.0));
+
+    glm::dvec3 demand =
+        axis * (
+            std::max(0.0, policy.orientationResponsePerSecond2) *
+            angle
+        ) -
+        agentAngularVelocityMap(agent) *
+            std::max(0.0, goal.angularDampingPerSecond);
+
+    const double maxAngular =
+        std::max(
+            0.0,
+            agent.angularCapability.maxAngularAccelerationRadPerSec2
+        );
+    const double magnitude = glm::length(demand);
+    if (maxAngular > 0.0 &&
+        magnitude > maxAngular &&
+        magnitude > kEpsilon)
+    {
+        demand *= maxAngular / magnitude;
+    }
+
+    return demand;
+}
+
 world::navigation::NavigationMap::Vec3d toMapVec(
     const glm::dvec3& value
 ) noexcept

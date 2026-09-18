@@ -330,6 +330,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         }
     }
 
+    result.ordinarySearchExhausted = true;
     result.status =
         nominal.status == LocalHorizonPlanner::Status::Clear
             ? Status::StaticHold

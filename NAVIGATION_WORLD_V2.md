@@ -881,3 +881,30 @@ tunnel, docking mouth, gate or ravine.
 
 This separation keeps ordinary transit reactive and cheap while retaining exact
 continuous proof where geometry genuinely requires it.
+
+
+## Game-level maneuver decision tree
+
+The navigation architecture now has an explicit owner above route/trajectory
+geometry:
+
+```text
+global route
+    -> local bounded visibility
+    -> precision passage
+    -> emergency/contact candidate generation
+                    |
+                    v
+          ManeuverDecisionController
+                    |
+                    v
+          selected control intent
+```
+
+Full contract: `src/game/MANEUVER_DECISION_TREE.md`.
+
+Important ownership rule: `StaticHold`, `ConflictHold`, or a missing global
+corridor describe failure to prove one class of safe progress. They are not
+sufficient by themselves to choose the final maneuver. Future Stage-12
+composition must expose fallback candidates to the game-level selector instead
+of translating those planner states directly into a permanent braking command.

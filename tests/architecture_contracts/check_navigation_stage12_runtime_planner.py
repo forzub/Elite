@@ -604,6 +604,16 @@ require(
 )
 
 require(
+    "executedWorldVector" in SIM_CPP and
+    "executedMapVector" in SIM_CPP and
+    "glm::dot(executedWorldVector, hubFrame->normalAxis)" in SIM_CPP and
+    "glm::dot(executedWorldVector, hubFrame->radialAxis)" in SIM_CPP and
+    "glm::dot(executedWorldVector, -hubFrame->progradeAxis)" in SIM_CPP and
+    "observation.lastExecutedLinearDemandMapMps2 =\n                executedMapVector;" in SIM_CPP,
+    "executed PilotSkill demand must cross WORLD -> NavigationMap basis before exact-static prediction",
+)
+
+require(
     "lastExecutedLinearDemandMapMps2" in SIM_CPP and
     "ExecutedSafetySamples = 12" in SIM_CPP and
     "exactExecutionSegmentBlocked" in SIM_CPP and

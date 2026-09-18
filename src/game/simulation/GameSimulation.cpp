@@ -971,21 +971,37 @@ bool GameSimulation::updateNpcNavigationControl(
         ++observation.executionCount;
         observation.executionSeen = true;
 
+        // buildNavigationRuntimeLabIntent() maps the follower command into
+        // WORLD axes before it enters NavigationRuntimeControlBridge. Despite
+        // the legacy *MapMps2 field name on ExecutionSnapshot, the executed
+        // vector below is therefore WORLD-space and is the vector applied by
+        // DynamicMotionSystem. Keep world diagnostics in that frame, but
+        // explicitly transform it back to the NavigationMap basis before any
+        // map-space safety prediction.
         const auto& executed =
             latest.snapshot.executedLinearAccelerationDemandMapMps2;
-        const glm::dvec3 executedVector(
+        const glm::dvec3 executedWorldVector(
             executed.x,
             executed.y,
             executed.z
         );
         const double executedMagnitude =
-            glm::length(executedVector);
+            glm::length(executedWorldVector);
 
+        glm::dvec3 executedMapVector(0.0);
+        bool executedMapVectorValid = false;
         double lateralMagnitude = 0.0;
         if (const auto* hubFrame =
                 hubNavigationFrame(m_navigationRuntimeLabHubId);
             hubFrame && hubFrame->valid)
         {
+            executedMapVector = glm::dvec3(
+                glm::dot(executedWorldVector, hubFrame->normalAxis),
+                glm::dot(executedWorldVector, hubFrame->radialAxis),
+                glm::dot(executedWorldVector, -hubFrame->progradeAxis)
+            );
+            executedMapVectorValid = true;
+
             const glm::dvec3 routeVectorMap =
                 game::diagnostics::NavigationRuntimeLabGoalVisualLocalMeters -
                 game::diagnostics::NavigationRuntimeLabStartVisualLocalMeters;
@@ -1002,18 +1018,28 @@ bool GameSimulation::updateNpcNavigationControl(
                 const glm::dvec3 routeDirectionWorld =
                     routeVectorWorld / routeLength;
                 const glm::dvec3 lateral =
-                    executedVector -
+                    executedWorldVector -
                     routeDirectionWorld *
                         glm::dot(
-                            executedVector,
+                            executedWorldVector,
                             routeDirectionWorld
                         );
                 lateralMagnitude = glm::length(lateral);
             }
         }
 
-        observation.lastExecutedLinearDemandMapMps2 =
-            executedVector;
+        if (executedMapVectorValid)
+        {
+            observation.lastExecutedLinearDemandMapMps2 =
+                executedMapVector;
+        }
+        else
+        {
+            // Do not let a stale map-space command survive a broken reference
+            // frame and contaminate the next exact-static prediction.
+            observation.lastExecutedLinearDemandMapMps2 =
+                glm::dvec3(0.0);
+        }
         observation.maximumExecutedLinearDemandMps2 =
             std::max(
                 observation.maximumExecutedLinearDemandMps2,
@@ -1044,7 +1070,7 @@ bool GameSimulation::updateNpcNavigationControl(
                     executedMagnitude
                 );
             observation.lastMovingPassageExecutedWorldMps2 =
-                executedVector;
+                executedWorldVector;
         }
     }
 

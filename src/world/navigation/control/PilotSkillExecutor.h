@@ -106,8 +106,10 @@ public:
     static constexpr std::size_t kMaxIntegrationSubsteps = 64;
     static constexpr double kMaximumStepSeconds = 0.25;
 
+    PilotSkillExecutor() noexcept;
+
     explicit PilotSkillExecutor(
-        const PilotSkillProfile& profile = PilotSkillProfile {}
+        const PilotSkillProfile& profile
     ) noexcept;
 
     [[nodiscard]] static bool validProfile(

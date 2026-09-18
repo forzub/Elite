@@ -145,7 +145,7 @@ for marker in (
     "NavigationHitVolumeAdapter::",
     "conservativeRadiusFromOrigin(object.hitComponent)",
     "m_navigationRuntimeLabMap->replaceDynamicWorld",
-    "m_navigationRuntimeLabMap->queryCorridor",
+    "m_navigationRuntimeLabMap->querySphere",
     "Planner::plan(",
 ):
     require(marker in SIM_CPP, f"GameSimulation runtime planner integration missing: {marker}")
@@ -201,6 +201,7 @@ for marker in (
     "minimumConservativeClearanceMeters",
     "maximumStraightLineDeviationMeters",
     "maximumExecutedLateralDemandMps2",
+    "lastExecutedLinearDemandMapMps2",
     "passedObstaclePlane",
 ):
     require(marker in LAB_H, f"live navigation physical observation missing: {marker}")
@@ -228,12 +229,21 @@ for marker in (
     "minimumConservativeClearanceMeters > 0.0",
     "findShipSnapshotByInstanceId",
     "NavigationExecutionSnapshot",
+    "replicationErrorMps2",
+    "lastExecutedLinearDemandMapMps2",
 ):
     require(marker in SERVER_MAIN, f"authoritative navigation self-test missing: {marker}")
 
 require(
     "MaxSimulatedSeconds = 120.0" in SERVER_MAIN,
     "navigation self-test must remain bounded in simulated time",
+)
+
+require(
+    "querySphere(dynamicQuery)" in SIM_CPP and
+    "localHorizonMeters" in SIM_CPP and
+    "LabTurnDistanceMeters" in SIM_CPP,
+    "live broadphase must cover the complete bounded avoidance fan rather than only the nominal corridor",
 )
 
 for marker in (
@@ -258,3 +268,5 @@ print(" - client/server share the same NavigationWorld runtime-planning target")
 print(" - deterministic fixtures pin detour, envelope rejection, moving conflict and pilot bridge")
 print(" - authoritative GameSimulation isolates one Active stage-12 lab actor on real NAV STRESS hit volumes")
 print(" - live self-test pins CUBE 08 -> adjusted target -> executed lateral demand -> positive clearance")
+print(" - bounded NavigationMap sphere covers the complete local avoidance fan")
+print(" - replicated executed acceleration must exactly match authoritative execution truth")

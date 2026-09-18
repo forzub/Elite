@@ -1604,6 +1604,58 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     policy.avoidance.azimuthSamples = 8;
     policy.avoidance.staticAdditionalClearanceMeters = 10.0;
 
+    if (!m_navigationRuntimeLabObservation.firstLiveNominalProbeCaptured)
+    {
+        const glm::dvec3 nominalDelta =
+            goalPositionMap - agentPositionMap;
+        const double nominalDistance =
+            glm::length(nominalDelta);
+
+        glm::dvec3 boundedTarget =
+            goalPositionMap;
+        if (nominalDistance > localHorizonMeters &&
+            nominalDistance > 1.0e-12)
+        {
+            boundedTarget =
+                agentPositionMap +
+                nominalDelta *
+                    (localHorizonMeters / nominalDistance);
+        }
+
+        Space::SegmentQuery firstLiveProbe;
+        firstLiveProbe.startMapMeters = {
+            agentPositionMap.x,
+            agentPositionMap.y,
+            agentPositionMap.z
+        };
+        firstLiveProbe.endMapMeters = {
+            boundedTarget.x,
+            boundedTarget.y,
+            boundedTarget.z
+        };
+        firstLiveProbe.envelope.radiusMeters = shipRadius;
+        firstLiveProbe.envelope.additionalClearanceMeters =
+            policy.avoidance.staticAdditionalClearanceMeters;
+        firstLiveProbe.requireSameRegion = true;
+
+        const Space::SegmentQueryResult firstLiveResult =
+            m_navigationRuntimeLabSpace->querySegment(firstLiveProbe);
+
+        auto& observation =
+            m_navigationRuntimeLabObservation;
+        observation.firstLiveNominalProbeCaptured = true;
+        observation.firstLiveNominalExactBlocked =
+            !firstLiveResult.traversable;
+        observation.firstLiveNominalBlockingEntityId =
+            firstLiveResult.blockingObstacleEntityId;
+        observation.firstLiveHorizonMeters =
+            localHorizonMeters;
+        observation.firstLiveAgentPositionMap =
+            agentPositionMap;
+        observation.firstLiveBoundedTargetMap =
+            boundedTarget;
+    }
+
     // Prove the path the authoritative physics actually took, not the
     // conservative sphere that merely broadphases the static object. Sampling
     // a swept segment from the previous fixed-step position prevents a thin

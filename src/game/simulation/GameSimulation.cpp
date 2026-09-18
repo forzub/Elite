@@ -2156,11 +2156,17 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         glm::radians(15.0);
     policy.avoidance.secondaryDeflectionRadians =
         glm::radians(30.0);
+    policy.avoidance.maximumDeflectionRadians =
+        glm::radians(75.0);
     policy.avoidance.azimuthSamples = 8;
     policy.avoidance.staticAdditionalClearanceMeters = 10.0;
 
-    policy.movingPassage.enabled = true;
-    policy.movingPassage.allowSteeringAuthority = true;
+    // Ordinary free-space encounter: do not force the ship through a gap just
+    // because two dynamic actors happen to form a pair. The default authority
+    // is bounded visibility steering. Precision MovingPassage remains enabled
+    // by explicit callers/fixtures that require a specific constrained gap.
+    policy.movingPassage.enabled = false;
+    policy.movingPassage.allowSteeringAuthority = false;
     policy.movingPassage.durationSeconds =
         NavigationRuntimeLabMovingPassageDurationSeconds;
     policy.movingPassage.hullAdditionalClearanceMeters = 2.0;
@@ -2625,6 +2631,51 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
           m_navigationRuntimeLabLastPlan.movingSecondaryObstacleEntityId ==
               movingGapUpperEntityId));
 
+    const bool movingPairIsNominalConflict =
+        (movingGapUpperEntityId != 0 &&
+         (m_navigationRuntimeLabLastPlan.nominalPrimaryConflictEntityId ==
+              movingGapUpperEntityId ||
+          m_navigationRuntimeLabLastPlan.primaryConflictEntityId ==
+              movingGapUpperEntityId)) ||
+        (movingGapLowerEntityId != 0 &&
+         (m_navigationRuntimeLabLastPlan.nominalPrimaryConflictEntityId ==
+              movingGapLowerEntityId ||
+          m_navigationRuntimeLabLastPlan.primaryConflictEntityId ==
+              movingGapLowerEntityId));
+
+    const bool visibilityBypassActive =
+        movingPairIsNominalConflict &&
+        m_navigationRuntimeLabLastPlan.status ==
+            Planner::Status::AdjustedClear &&
+        m_navigationRuntimeLabLastPlan.adjustedTarget;
+
+    auto& visibilityObservation =
+        m_navigationRuntimeLabObservation;
+    visibilityObservation.visibilityBypassActive =
+        visibilityBypassActive;
+    visibilityObservation.visibilityBypassSeen =
+        visibilityObservation.visibilityBypassSeen ||
+        visibilityBypassActive;
+    visibilityObservation.maximumVisibilityDeflectionRad =
+        std::max(
+            visibilityObservation.maximumVisibilityDeflectionRad,
+            m_navigationRuntimeLabLastPlan.
+                selectedVisibilityDeflectionRadians
+        );
+
+    if (visibilityObservation.visibilityBypassSeen &&
+        !m_navigationRuntimeLabLastPlan.adjustedTarget &&
+        m_navigationRuntimeLabLastPlan.safeProgressTargetDemonstrated &&
+        m_navigationRuntimeLabLastPlan.status !=
+            Planner::Status::ConflictHold &&
+        m_navigationRuntimeLabLastPlan.status !=
+            Planner::Status::StaticHold &&
+        m_navigationRuntimeLabLastPlan.status !=
+            Planner::Status::StaleHold)
+    {
+        visibilityObservation.visibilityDirectRecoveredSeen = true;
+    }
+
     m_navigationRuntimeLabObservation.movingPrecisionAttemptedSeen =
         m_navigationRuntimeLabObservation.movingPrecisionAttemptedSeen ||
         m_navigationRuntimeLabLastPlan.movingPrecisionAttempted;
@@ -2679,7 +2730,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         m_navigationRuntimeLabObservation.movingPassageAuthoritySeen ||
         movingPassageAuthorityActive;
 
-    if (m_navigationRuntimeLabObservation.movingPassageAuthoritySeen &&
+    if ((m_navigationRuntimeLabObservation.visibilityBypassSeen ||
+         m_navigationRuntimeLabObservation.movingPassageAuthoritySeen) &&
         routeLengthSquared > 1.0e-12)
     {
         const glm::dvec3 routeDirection =

@@ -893,3 +893,48 @@ no legacy steering fallback fires
 ```
 
 After this gate is green, expose the same scenario in the interactive game and add the `Shift+F12` visualization rather than inventing a separate visual-only test world.
+
+
+### 12A-6b1 — acceptance
+
+Target-machine acceptance baseline:
+
+```text
+a587dcd96bdf0b05edbf4fcfe9a32f5f7be1058d
+```
+
+Full accepted gate:
+
+```text
+Stage-12 runtime planner contract   PASS
+navigation_runtime                  3/3 PASS
+navigation_trajectory              11/11 PASS
+navigation_map                      1/1 PASS
+EliteGame / EliteServer             BUILD PASS
+server navigation self-test         PASS
+exact_static_violation              0
+replication_error_mps2              0
+canonical_replication_error_mps2    0
+```
+
+12A-6b1 is therefore closed. The real runtime can identify a bounded moving
+aperture, predict whether it remains open, and prove a concrete ship trajectory
+through it without changing authoritative steering.
+
+### 12A-6b2 — exact-static proof of the same moving trajectory
+
+The new safety composition is:
+
+```text
+MovingPassageTrajectoryEvaluator accepted Hermite trajectory
+    -> bounded continuous static-geometry proof
+    -> NavigationSpace exact HitVolume obstacle layer
+    -> statically safe / blocked diagnostic
+```
+
+The proof must cover the curve between samples conservatively. Sampling only the
+33 trajectory states is insufficient because a static obstacle could exist
+between sample points.
+
+12A-6b2 remains non-authoritative. Only after target-machine acceptance may the
+already published first verified acceleration sample become steering authority.

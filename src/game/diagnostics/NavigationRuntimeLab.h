@@ -31,18 +31,20 @@ inline constexpr double NavigationRuntimeLabAngularVelocityToleranceRadPerSecond
 
 // Stage 12A-6b3b deterministic live moving aperture. These are real
 // hub-attached physical objects whose centres translate together in hub-visual
-// coordinates. The offset is deliberately asymmetric around the nominal route:
-// one conservative sphere conflicts with the nominal line while the pair still
-// leaves a real bounded aperture for the Cobra precision hull.
+// coordinates. The aperture sits about 500 m ahead of the lab spawn and before
+// CUBE 08: the run must first exercise moving-passage authority, then continue
+// into the independent exact-static avoidance gate. The transverse offset is
+// deliberately asymmetric around the nominal route so one conservative sphere
+// conflicts while the pair still leaves a real bounded aperture for the Cobra.
 inline constexpr const char* NavigationRuntimeLabMovingGapUpperLabel =
     "NAV MOVING GAP UPPER";
 inline constexpr const char* NavigationRuntimeLabMovingGapLowerLabel =
     "NAV MOVING GAP LOWER";
 inline const glm::dvec3 NavigationRuntimeLabMovingGapUpperVisualLocalMeters {
-    975.0, -790.0, -2500.0
+    975.0, -790.0, -5700.0
 };
 inline const glm::dvec3 NavigationRuntimeLabMovingGapLowerVisualLocalMeters {
-    975.0, -1890.0, -2500.0
+    975.0, -1890.0, -5700.0
 };
 inline const glm::dvec3 NavigationRuntimeLabMovingGapVelocityVisualMps {
     0.0, 0.0, 1.0

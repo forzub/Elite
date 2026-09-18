@@ -1419,3 +1419,66 @@ baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Exact-static accepted-segment monitoring candidate
+
+Code candidate:
+
+~~~text
+fe6ca95a17b9edda45de08c4ee624b3cc43a87c2
+~~~
+
+This pass addresses the target-machine failure where the live Stage-12 actor
+physically crossed exact-static entity 28. Deterministic scene spawn order maps
+entity 28 to `NAV STRESS CUBE 08`, the lower-middle block of the slit tunnel.
+
+Root cause:
+the first accepted-segment integration monitored expiry, completion, tracking
+error, capability change and goal revision, but did not revalidate the
+currently executing kinematics against authoritative exact-static HitVolumes
+every fixed step. A still-unexpired segment could therefore remain
+authoritative while inertia/tracking drift made its physical continuation
+unsafe near the tunnel wall.
+
+New monitor behavior:
+
+~~~text
+fixed tick
+  -> follow accepted segment
+  -> exact-static execution monitor
+       * current position -> accepted target
+       * short current-kinematics forecast
+  -> if still clear: continue same segment, no planner call
+  -> if blocked: StaticSafetyInvalidated -> immediate LocalHorizon replan
+~~~
+
+The monitor uses `NavigationSpace::querySegment` with
+`exactObstaclesOnly=true`, the live ship envelope and the planner's static
+additional-clearance policy. This is observation/validation work, not route or
+avoidance search, so the core invariant remains:
+
+~~~text
+monitoring tick != planning tick
+execution tick != planning tick
+~~~
+
+New policy reason:
+`NavigationExecutionReplanPolicy::Reason::StaticSafetyInvalidated`.
+
+New live diagnostics:
+- `acceptedSegmentStaticSafetyInvalidationCount`;
+- `acceptedSegmentLastStaticBlockingEntityId`.
+
+The same pass corrects the newly added PilotSkillExecutor regression. Its
+previous form changed targetRevision at t=0.01 while the initial reaction delay
+from reset was still active, so it did not actually test whether a target
+change restarted reaction delay. The corrected test first lets the existing
+intent finish its initial reaction window, then changes only targetRevision.
+
+Target-machine validation is pending. Last actually accepted Stage-12 baseline
+remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-18
 **Canonical branch:** `main`
-**Current public HEAD:** `546a8868b0a25c655310263252877c5f5b48d4c5`
+**Current public HEAD:** `f556c36a47c4ecb6ebeb713b41f6443527a16f76`
 
 ## Stage 12 status
 
@@ -10,58 +10,71 @@
 - 12A-2 — ACCEPTED
 - 12A-3 — ACCEPTED
 - 12A-4 exact static HitVolume OBB — ACCEPTED
-- 12A-5 static/dynamic ownership cleanup — CANDIDATE
+- 12A-5 static/dynamic ownership cleanup — ACCEPTED
+- 12A-6a dynamic angular-motion publication — CANDIDATE
 
-## Latest target-machine result
+## 12A-5 acceptance
 
-Run on `7f5778fcfe328e0c06cf18e14f9a0a235fbcea73`:
-
-```text
-architecture PASS
-EliteGame PASS
-EliteServer PASS
-
-placement_map=(975,-1300,-6200)
-expected_placement_map=(975,-1300,-6200)
-placement_error_m=1.76866e-05
-```
-
-The reference-frame ordering/placement bug is now effectively closed.
-
-`1.76866e-05 m` is approximately 17.7 micrometres. At orbital-scale world
-coordinates this is ordinary double-precision round-trip residue, not a
-navigation or placement defect.
-
-The live test failed only because the diagnostic gate used an unrealistically
-strict `1e-6 m` (1 micrometre) threshold.
-
-## Correction
-
-A named placement tolerance is now:
+Target-machine acceptance run proved:
 
 ```text
-NavigationRuntimeLabPlacementToleranceMeters = 1e-3
+obstacle_candidate=0
+obstacle_conflict=0
+exact_obstacle_block=1
+adjusted=1
+
+exact_static=1
+exact_static_obstacles=17
+configured_route_exact_block=1
+first_live_probe_blocked=1
+exact_static_query=1
+exact_static_block=1
+exact_static_motion_samples=4109
+exact_static_violation=0
+
+progress_m=4790.67
+replication_error_mps2=0
+canonical_replication_error_mps2=0
 ```
 
-That is 1 mm and remains tiny compared with ship/obstacle geometry while safely
-above orbital-coordinate floating-point residue.
+Therefore stationary CUBE 08:
+- is absent from NavigationMap dynamic ownership;
+- is owned by exact HitVolume geometry in NavigationSpace;
+- causes real adjusted avoidance;
+- is physically cleared without exact collision;
+- preserves exact authoritative replication truth.
 
-Architecture contract pins the named tolerance and forbids returning to the
-micrometre literal.
+12A-5 is closed.
 
-## Current real 12A-5 question
+## 12A-6a candidate
 
-With placement now correct, the live gate proceeds to the actual ownership /
-avoidance chain:
+Next requirement is honest motion state for time-varying infrastructure.
 
+Current real fixture:
 ```text
-stationary CUBE 08 absent from NavigationMap
-    -> first live exact segment sees CUBE 08
-    -> exact static blocker identity survives planner
-    -> adjusted target chosen
-    -> authoritative physical motion remains outside all exact HitVolumes
-    -> replicated execution remains exact
+GUIDANCE DOCK CUBE A
+hub-local angular velocity = (0,0,2) deg/s
 ```
 
-Any later physical violation still fails immediately with obstacle identity and
-swept motion witness.
+NavigationMap now carries:
+```text
+DynamicActorInput.angularVelocitySystemRadPerSecond
+    -> working-frame vector transform
+    -> Candidate.angularVelocityMapRadPerSecond
+```
+
+GameSimulation converts the authored hub-visual angular vector through the
+shared HubFrameBasis before publication.
+
+The live diagnostic performs an independent NavigationMap query at the rotating
+actor and compares expected versus returned map-space angular velocity.
+
+Acceptance requires:
+```text
+rotating_actor_seen=1
+rotating_actor_omega_verified=1
+rotating_actor_omega_error<=1e-12
+```
+
+This is input plumbing only. MovingGapPredictor / MovingPassageTrajectoryEvaluator
+remain unchanged until the live motion DTO is proven correct.

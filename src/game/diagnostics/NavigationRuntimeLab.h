@@ -154,6 +154,15 @@ struct NavigationRuntimeLabObservation
     bool movingPassageExecutionActive = false;
     bool movingPassageAppliedAccelerationSeen = false;
     bool movingGapPlanePassed = false;
+
+    std::uint8_t movingPassageLastEvaluatorStatus = 0xffu;
+    double movingPassageRequiredPeakForwardAccelerationMps2 = 0.0;
+    double movingPassageRequiredPeakReverseAccelerationMps2 = 0.0;
+    double movingPassageRequiredPeakLateralAccelerationMps2 = 0.0;
+    double movingPassageRequiredPeakVerticalAccelerationMps2 = 0.0;
+    double movingPassageMinimumSampleClearanceMeters = 0.0;
+    double movingPassageMinimumContinuousClearanceMeters = 0.0;
+
     double maximumMovingPassageExecutedDemandMps2 = 0.0;
     double maximumMovingPassageAppliedAccelerationMps2 = 0.0;
     glm::dvec3 lastMovingPassageExecutedWorldMps2 {0.0};

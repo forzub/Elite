@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Last target-machine verified baseline:** `25dc4369b95b4872d9a70a2d236db5e482cf45e2`
+**Last target-machine verified baseline:** `daaf038021cdf8b9561db60fdd35e7cefce0b2df`
 
 > The verified-baseline hash is intentionally not called "current HEAD": a documentation commit changes HEAD by definition. Record the commit that was actually built/tested.
 
@@ -17,7 +17,8 @@
 - 12A-6b live moving-gap / moving-passage composition — ACTIVE
 - 12A-6b1 runtime moving-precision observe/prove seam — ACCEPTED
 - 12A-6b2 exact-static proof of accepted moving trajectory — ACCEPTED
-- 12A-6b3a verified moving-passage steering authority seam — CANDIDATE / target-machine pending
+- 12A-6b3a verified moving-passage steering authority seam — ACCEPTED
+- 12A-6b3b live moving-passage physics/replication authority gate — ACTIVE
 
 ## 12A-6a acceptance
 
@@ -359,3 +360,39 @@ Deterministic regressions now pin:
 
 This is not yet the live physics/replication acceptance of moving-passage
 authority. 12A-6b3a must first pass the target-machine deterministic/build gate.
+
+
+## 12A-6b3a acceptance
+
+Target-machine gate completed from:
+
+```text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+```
+
+Accepted evidence:
+
+```text
+Stage-12 architecture contract   PASS
+navigation_runtime               3/3 PASS
+navigation_trajectory            11/11 PASS
+EliteGame                        BUILD PASS
+EliteServer                      BUILD PASS
+rebuilt server self-test         PASS
+exact_static_violation           0
+replication_error_mps2           0
+canonical_replication_error_mps2 0
+```
+
+This accepts the deterministic steering-authority seam:
+a moving passage may take planner authority only under explicit opt-in after
+both dynamic feasibility and same-trajectory exact-static safety are proven,
+and the exact first Hermite acceleration sample crosses map->world and
+PilotSkillExecutor without re-planning.
+
+## Active 12A-6b3b boundary
+
+Next step is live production evidence, not another planner algorithm:
+enable the accepted moving-passage authority for a deterministic live moving-gap
+fixture and prove `MovingPassageClear` reaches authoritative physics and
+same-tick sparse/canonical replication without static violations.

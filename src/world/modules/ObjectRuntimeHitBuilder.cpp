@@ -139,6 +139,51 @@ static int makeHitTemplateCacheKey(ObjectType typeId)
 }
 
 
+static bool appendWholeObjectLogicalHitVolume(
+    HitComponent& hitComponent,
+    const IObjectDescriptor& descriptor
+)
+{
+    const auto& dimensions = descriptor.logicalDimensions();
+
+    if (!dimensions.enabled ||
+        !std::isfinite(dimensions.width) ||
+        !std::isfinite(dimensions.height) ||
+        !std::isfinite(dimensions.length) ||
+        dimensions.width <= 0.0f ||
+        dimensions.height <= 0.0f ||
+        dimensions.length <= 0.0f)
+    {
+        return false;
+    }
+
+    HitVolume volume;
+    volume.zone = HitZoneType::Generic;
+    volume.priority = 0;
+    volume.layerIndex = 0;
+    volume.center = glm::vec3(0.0f);
+    volume.halfSize = glm::vec3(
+        dimensions.width * 0.5f,
+        dimensions.height * 0.5f,
+        dimensions.length * 0.5f
+    );
+    volume.orientation = glm::mat3(1.0f);
+    volume.m_label = "__whole_object_logical_bounds__";
+    volume.moduleId = "__whole_object__";
+    volume.subsystemId.clear();
+    volume.destructible = false;
+    volume.health = 1.0f;
+    volume.maxHealth = 1.0f;
+    volume.armor = 0.0f;
+    volume.penetrationResistance = 0.0f;
+    volume.destroyed = false;
+    volume.supportLinkVolume = false;
+
+    hitComponent.volumes.push_back(std::move(volume));
+    return true;
+}
+
+
 
 
 static void appendObbCorners(
@@ -2251,7 +2296,11 @@ void ObjectRuntimeHitBuilder::rebuild(
 )
 {
     if (!AssemblyMeshLibrary::has(typeId))
+    {
+        if (hitComponent.volumes.empty())
+            appendWholeObjectLogicalHitVolume(hitComponent, descriptor);
         return;
+    }
 
     static int rebuildCounter = 0;
     ++rebuildCounter;
@@ -2346,6 +2395,20 @@ void ObjectRuntimeHitBuilder::rebuild(
         structuralLinkRuntime,
         oldByKey
     );
+
+    // Monolithic objects intentionally have no ModuleDescriptor damage graph.
+    // They still need one authoritative collision/hit-volume product so
+    // damage/collision/navigation do not each invent a different fallback
+    // shape. LogicalDimensions are already expressed in the canonical gameplay
+    // basis (+X right, +Y up, -Z forward).
+    if (hitComponent.volumes.empty() &&
+        descriptor.moduleDescriptors().empty())
+    {
+        appendWholeObjectLogicalHitVolume(
+            hitComponent,
+            descriptor
+        );
+    }
 }
 
 

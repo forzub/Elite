@@ -2127,3 +2127,69 @@ daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
 
 The current recovery candidate remains unaccepted.
+
+
+### 2026-09-19 task sequencing correction — finish Navigation v2 behind a sealed spatial API
+
+The previous spatial-foundation note proposed freezing Navigation v2 before
+Spatial Phase A. Project sequencing is now intentionally changed after review
+of the ACTUAL repository coordinate types and live failure evidence.
+
+Current task:
+
+~~~text
+FINISH NAVIGATION V2 FIRST
+    -> seal its coordinate boundary
+    -> remove ambiguous MAP/WORLD control semantics
+    -> move stopping viability into segment/candidate acceptance
+    -> pass the Stage-12 live exact-static tunnel gate
+
+THEN
+    -> resume the wider repository spatial/global refactor
+~~~
+
+This is not a rollback of the coordinate audit. The audit remains valid and is
+now used to define a strict Navigation-v2 containment boundary.
+
+Verified existing coordinate facts that Navigation v2 must respect:
+- runtime WorldPosition is system-local while systemId >= 0; the same type is
+  used as galactic-absolute by PlayerSpatialDomainResolver outside a system;
+- KinematicFrame is the existing canonical moving-frame P/V/A transform and
+  already owns frame velocity, acceleration, omega/alpha and rebase math;
+- HubNavigationFrame duplicates part of KinematicFrame and is not allowed to
+  become an additional Navigation-v2 coordinate API;
+- authored hub visual axes differ from tactical KinematicFrame axes;
+- NavigationMap::DynamicActorInput currently claims system velocity but live
+  Stage-12 supplies a pre-relative velocity because WorkingFrame lacks frame
+  velocity/omega;
+- NavigationRuntimePlanner::mapIntentToWorld currently returns the SAME
+  Bridge::Intent type after changing the physical meaning of its vectors;
+- ShipControlState / NavigationExecutionSnapshot still use *Map* field names
+  for vectors that authoritative physics interprets in system/world axes.
+
+Therefore the immediate Navigation-v2 cleanup target is:
+
+~~~text
+existing system/runtime state
+        |
+        | ONE explicit typed NavigationFrameBoundary
+        v
+NavLocal-only NavigationMap / NavigationSpace / planner / follower / monitor
+        |
+        | ONE explicit typed control egress
+        v
+System-space PilotSkill / ShipControlState / physics
+~~~
+
+No raw visual/model coordinates or semantically ambiguous "Map" control vector
+may cross that boundary.
+
+The wider question of galactic/system/global authority remains deferred until
+Navigation v2 is closed and accepted; no new global coordinate model is assumed
+by this task.
+
+Last actually target-machine accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

@@ -35,6 +35,10 @@ MANEUVER_DECISION_CPP = (ROOT / "src/game/ship/controller/ManeuverDecisionContro
 MANEUVER_DECISION_TEST = (ROOT / "tests/navigation_runtime/ManeuverDecisionControllerTests.cpp").read_text(encoding="utf-8")
 MANEUVER_DECISION_DOC = (ROOT / "src/game/MANEUVER_DECISION_TREE.md").read_text(encoding="utf-8")
 CONTROL_LAW_DOC = (ROOT / "src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md").read_text(encoding="utf-8")
+REPLAN_H = (ROOT / "src/game/navigation/NavigationExecutionReplanPolicy.h").read_text(encoding="utf-8")
+REPLAN_CPP = (ROOT / "src/game/navigation/NavigationExecutionReplanPolicy.cpp").read_text(encoding="utf-8")
+REPLAN_TEST = (ROOT / "tests/navigation_runtime/NavigationExecutionReplanPolicyTests.cpp").read_text(encoding="utf-8")
+REPLAN_DOC = (ROOT / "src/game/navigation/TRAJECTORY_EXECUTION_REPLAN_MODEL.md").read_text(encoding="utf-8")
 HIT_BUILDER = (ROOT / "src/world/modules/ObjectRuntimeHitBuilder.cpp").read_text(encoding="utf-8")
 GUIDANCE_DESCRIPTOR = (ROOT / "src/game/station/descriptors/GuidanceTestDockDescriptor.h").read_text(encoding="utf-8")
 
@@ -1023,6 +1027,69 @@ for marker in (
 
 
 for marker in (
+    "ExecutionMode",
+    "Automatic",
+    "Manual",
+    "Scope",
+    "LocalHorizon",
+    "FullRoute",
+    "continueAcceptedAutomaticExecution",
+    "guidanceOnly",
+    "ManualCorridorExit",
+    "DynamicHazardInvalidated",
+    "VehicleCapabilityChanged",
+    "TopologyBranchInvalidated",
+    "ManualPeriodicRefresh",
+):
+    require(marker in REPLAN_H, f"execution replan policy contract missing: {marker}")
+
+for marker in (
+    "query.goalIntentChanged",
+    "query.currentTopologyBranchValid",
+    "query.dynamicHazardInvalidated",
+    "query.vehicleCapabilityChanged",
+    "query.trackingErrorExceeded",
+    "query.manualCorridorExited",
+    "Reason::ManualPeriodicRefresh",
+    "continueAcceptedAutomaticExecution = true",
+):
+    require(marker in REPLAN_CPP, f"execution replan policy implementation missing: {marker}")
+
+for marker in (
+    "testAutomaticDoesNotReplanEveryFrame",
+    "testAutomaticReplansOnlyLocalSuffixOnHazard",
+    "testTrackingErrorInvalidatesAutomaticSegment",
+    "testManualRefreshIsPeriodicAndGuidanceOnly",
+    "testManualCorridorExitReplansImmediately",
+    "testManualDeviationDoesNotForceGlobalRoute",
+    "testTopologyInvalidationForcesFullRoute",
+    "testVehicleDamageKeepsGlobalRouteButRebuildsTrajectory",
+    "testSegmentExpiryAdvancesLocally",
+):
+    require(marker in REPLAN_TEST, f"execution replan regression missing: {marker}")
+
+for marker in (
+    "Automatic execution is not",
+    "plan",
+    "execute accepted segment",
+    "monitor validity",
+    "Manual mode",
+    "periodic local refresh",
+    "immediate local refresh on corridor exit",
+    "LocalHorizon",
+    "FullRoute",
+    "plan count << execution tick count",
+):
+    require(marker in REPLAN_DOC, f"trajectory execution/replan architecture missing: {marker}")
+
+require(
+    "src/game/navigation/NavigationExecutionReplanPolicy.cpp" in ROOT_CMAKE and
+    "src/game/navigation/NavigationExecutionReplanPolicy.cpp" in RUNTIME_CMAKE and
+    "navigation_execution_replan_policy_tests" in RUNTIME_CMAKE,
+    "production/runtime gates must compile execution replanning policy and its tests",
+)
+
+for marker in (
     "LocalFlightControlLaw::Assisted",
     "LocalFlightControlLaw::Newtonian",
     "vehicle OBB (brick)",
@@ -1065,6 +1132,8 @@ print(" - Rational/Precision/Extreme/CombatEscape doctrines are deterministic an
 print(" - MustProgress retains contact-expected progress instead of collapsing to stop")
 print(" - Assisted and Newtonian maneuver families are separated before doctrine ranking")
 print(" - ordinary 0..75 degree exhaustion escalates to recovery instead of defining vehicle capability")
+print(" - stable automatic execution keeps accepted short trajectory instead of replanning per frame")
+print(" - manual guidance refreshes local suffix periodically and immediately on corridor exit")
 print(" - NavigationSpace publishes ordered selected-portal steering centers")
 print(" - one shared runtime planner composes static corridor + bounded local avoidance")
 print(" - blocked/stale/conflict states keep producing fail-closed pilot intent")

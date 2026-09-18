@@ -1,4 +1,5 @@
 #include "src/game/navigation/NavigationRuntimePlanner.h"
+#include "src/game/navigation/NavigationHitVolumeAdapter.h"
 
 #include <cmath>
 #include <iostream>
@@ -154,6 +155,71 @@ Bridge::PilotSkillProfile expertProfile()
     profile.execution.maxLinearCommandSlewMetersPerSec3 = 1000.0;
     profile.execution.maxAngularCommandSlewRadPerSec3 = 1000.0;
     return profile;
+}
+
+void testHitVolumeAdapterUsesAuthoritativeLocalObb()
+{
+    game::damage::HitComponent hitComponent;
+
+    game::damage::HitVolume primary;
+    primary.center = glm::vec3(2.0f, 0.0f, 0.0f);
+    primary.halfSize = glm::vec3(1.0f, 2.0f, 3.0f);
+    primary.orientation = glm::mat3(1.0f);
+    hitComponent.volumes.push_back(primary);
+
+    game::damage::HitVolume support = primary;
+    support.center = glm::vec3(100.0f, 0.0f, 0.0f);
+    support.supportLinkVolume = true;
+    hitComponent.volumes.push_back(support);
+
+    game::damage::HitVolume destroyed = primary;
+    destroyed.center = glm::vec3(200.0f, 0.0f, 0.0f);
+    destroyed.destroyed = true;
+    hitComponent.volumes.push_back(destroyed);
+
+    glm::dmat3 ownerBasis(1.0);
+    ownerBasis[0] = glm::dvec3(0.0, 1.0, 0.0);
+    ownerBasis[1] = glm::dvec3(-1.0, 0.0, 0.0);
+    ownerBasis[2] = glm::dvec3(0.0, 0.0, 1.0);
+
+    const auto obstacles =
+        game::navigation::NavigationHitVolumeAdapter::buildObstacles(
+            hitComponent,
+            77,
+            glm::dvec3(10.0, 20.0, 30.0),
+            ownerBasis,
+            "fixture"
+        );
+
+    require(obstacles.size() == 1,
+            "destroyed/support hit volumes must not become navigation solids");
+
+    const auto& obstacle = obstacles.front();
+    require(obstacle.entityId == 77,
+            "hit-volume navigation obstacle lost entity identity");
+    require(obstacle.shape ==
+                world::navigation::NavigationObstacleShape::Box,
+            "HitVolume OBB must remain a box navigation obstacle");
+    require(near(obstacle.centerMeters.x, 10.0) &&
+            near(obstacle.centerMeters.y, 22.0) &&
+            near(obstacle.centerMeters.z, 30.0),
+            "local HitVolume center was not transformed by object pose");
+    require(near(obstacle.halfExtentsMeters.x, 1.0) &&
+            near(obstacle.halfExtentsMeters.y, 2.0) &&
+            near(obstacle.halfExtentsMeters.z, 3.0),
+            "HitVolume half extents changed at navigation boundary");
+    require(near(obstacle.localToWorldBasis[0].x, 0.0) &&
+            near(obstacle.localToWorldBasis[0].y, 1.0),
+            "HitVolume OBB orientation was not composed with object basis");
+
+    const double expectedRadius =
+        2.0 + std::sqrt(14.0);
+    const double radius =
+        game::navigation::NavigationHitVolumeAdapter::
+            conservativeRadiusFromOrigin(hitComponent);
+
+    require(near(radius, expectedRadius),
+            "broadphase radius must contain the authoritative local HitVolume");
 }
 
 void testStaticCorridorBecomesLivePortalWaypoint()
@@ -342,12 +408,14 @@ int main()
 {
     try
     {
+        testHitVolumeAdapterUsesAuthoritativeLocalObb();
         testStaticCorridorBecomesLivePortalWaypoint();
         testSamePortalRejectsOversizedHull();
         testNavigationMapCrossingConflictProducesBrakingHold();
         testPlannerIntentCrossesAcceptedPilotBridge();
 
         std::cout << "NAVIGATION RUNTIME PLANNER TESTS: PASS\n";
+        std::cout << " - authoritative HitVolume -> navigation OBB adapter\n";
         std::cout << " - static corridor portal -> bounded live target\n";
         std::cout << " - portal clearance rejects oversized hull\n";
         std::cout << " - NavigationMap crossing conflict -> braking hold\n";

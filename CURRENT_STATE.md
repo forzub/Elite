@@ -14,7 +14,7 @@
 - 12A-4 exact static HitVolume OBB — ACCEPTED
 - 12A-5 static/dynamic ownership cleanup — ACCEPTED
 - 12A-6a dynamic angular-motion publication — ACCEPTED
-- 12A-6b live moving-gap / moving-passage composition — ACTIVE NEXT SLICE
+- 12A-6b live moving-gap / moving-passage composition — ACTIVE\n- 12A-6b1 runtime moving-precision observe/prove seam — CANDIDATE / target-machine pending
 
 ## 12A-6a acceptance
 
@@ -71,6 +71,30 @@ dynamic candidate pair
 ```
 
 The predictor/evaluator algorithms are already accepted as isolated Navigation v2 components. 12A-6b must compose them into the Stage-12 live bounded path without adding a second planner, a global all-pairs scan, or any physics-authority bypass.
+
+## 12A-6b1 candidate now on main
+
+Implementation candidate through code/contract commit
+`616f5b868795439fb42308d2c2d13ffc87218cba` adds an **observe/prove** precision seam:
+
+```text
+real NavigationMap bounded candidate result
+    -> nominal dynamic conflict identity
+    -> BoundedGapCandidateBuilder (hard cap <= 8)
+    -> MovingGapPredictor
+    -> MovingPassageTrajectoryEvaluator
+    -> feasible/not-feasible diagnostics
+```
+
+Two deterministic runtime fixtures are pinned:
+- an open translating gap must reach continuous moving-passage feasibility;
+- a gap that closes inside the horizon must fail in prediction and never reach passage acceptance.
+
+The moving-passage evaluator now also publishes the first acceleration sample from the exact Hermite trajectory it proved, so the next authority step can execute the same trajectory rather than solve a second similar curve.
+
+**Important:** 12A-6b1 is intentionally non-authoritative. A feasible moving passage does not yet replace the accepted LocalAvoidance command. Before steering authority is enabled, that moving trajectory must also be composed with exact-static HitVolume safety. This prevents a dynamically valid gap trajectory from cutting through stationary geometry.
+
+Target-machine verification is pending.
 
 ## Project-state recording rule
 

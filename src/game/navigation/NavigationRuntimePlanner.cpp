@@ -984,7 +984,17 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     switch (local.status)
     {
         case Avoidance::Status::NominalClear:
-            result.status = Status::NominalClear;
+            if (result.portalTraversalActive)
+            {
+                result.status =
+                    result.portalCaptureReady
+                        ? Status::PortalTransit
+                        : Status::PortalCapture;
+            }
+            else
+            {
+                result.status = Status::NominalClear;
+            }
             break;
         case Avoidance::Status::AdjustedClear:
             result.status = Status::AdjustedClear;
@@ -1015,9 +1025,104 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     glm::dvec3 desiredVelocity(0.0);
     const bool trueTerminal =
         !result.usedPortalWaypoint &&
+        !result.portalTraversalActive &&
         local.target.targetMode == Horizon::TargetMode::Terminal;
 
-    if (trueTerminal && distance <= goal.arrivalRadiusMeters)
+    if (result.portalTraversalActive &&
+        local.status == Avoidance::Status::NominalClear)
+    {
+        const glm::dvec3 portalNormal =
+            normalizedOr(
+                result.portalNormalMap,
+                glm::dvec3(0.0, 0.0, 1.0)
+            );
+        const double transitSpeed =
+            std::min(
+                goal.maximumTargetSpeedMps,
+                activePortalTraversal.transitSpeedMps > 0.0
+                    ? activePortalTraversal.transitSpeedMps
+                    : goal.maximumTargetSpeedMps
+            );
+
+        if (!result.usedPortalWaypoint)
+        {
+            // Approach the staging point as a temporary terminal: braking to a
+            // near-stop is allowed so hull attitude and cross-track velocity
+            // can settle before the entry plane is released.
+            if (distance > kEpsilon)
+            {
+                const double brakingAcceleration =
+                    std::max(
+                        kEpsilon,
+                        policy.horizon.
+                            maxBrakingAccelerationMetersPerSecond2
+                    );
+                const double brakingLimitedSpeed =
+                    std::sqrt(
+                        2.0 * brakingAcceleration * distance
+                    );
+                const double approachSpeed =
+                    std::min(transitSpeed, brakingLimitedSpeed);
+                desiredVelocity =
+                    glm::normalize(delta) * approachSpeed;
+            }
+        }
+        else if (result.portalCaptureReady)
+        {
+            // Once captured, longitudinal motion follows the portal normal.
+            // Only a bounded lateral correction is allowed, so the requested
+            // velocity itself cannot point steeply into a tunnel wall.
+            const glm::dvec3 relative =
+                agent.positionMapMeters -
+                result.portalCenterMapMeters;
+            const glm::dvec3 lateralError =
+                relative -
+                portalNormal * glm::dot(relative, portalNormal);
+
+            glm::dvec3 lateralCorrection =
+                -lateralError *
+                std::max(
+                    0.0,
+                    policy.portalTraversal.
+                        capturePositionResponsePerSecond
+                );
+
+            const double angularVelocityLimit =
+                transitSpeed *
+                std::tan(
+                    std::min(
+                        activePortalTraversal.maximumVelocityAngleRad,
+                        1.5533430342749532 // 89 degrees.
+                    )
+                );
+            const double correctionLimit =
+                std::min(
+                    activePortalTraversal.maximumLateralSpeedMps,
+                    std::max(0.0, angularVelocityLimit)
+                );
+            const double correctionMagnitude =
+                glm::length(lateralCorrection);
+            if (correctionLimit >= 0.0 &&
+                correctionMagnitude > correctionLimit &&
+                correctionMagnitude > kEpsilon)
+            {
+                lateralCorrection *=
+                    correctionLimit / correctionMagnitude;
+            }
+
+            desiredVelocity =
+                portalNormal * transitSpeed +
+                lateralCorrection;
+        }
+        else
+        {
+            // A zero-distance capture portal (for example a tunnel exit) can
+            // hold translation while the vehicle re-establishes its required
+            // pose/velocity alignment. It is not allowed to "cut the corner".
+            desiredVelocity = glm::dvec3(0.0);
+        }
+    }
+    else if (trueTerminal && distance <= goal.arrivalRadiusMeters)
     {
         desiredVelocity = goal.targetVelocityMapMetersPerSecond;
     }
@@ -1066,10 +1171,22 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         agent.upMap,
         glm::dvec3(0.0, 1.0, 0.0)
     );
-    const glm::dvec3 angularDemand =
+    glm::dvec3 angularDemand =
         right * (-agent.pitchRateRadPerSec * goal.angularDampingPerSecond) +
         up * (-agent.yawRateRadPerSec * goal.angularDampingPerSecond) +
         forward * (-agent.rollRateRadPerSec * goal.angularDampingPerSecond);
+
+    if (result.portalTraversalActive &&
+        local.status == Avoidance::Status::NominalClear)
+    {
+        angularDemand =
+            portalAlignmentAngularDemand(
+                agent,
+                result.portalNormalMap,
+                goal,
+                policy.portalTraversal
+            );
+    }
 
     result.intent.idealLinearAccelerationDemandMapMps2 =
         toBridgeVec(linearDemand);

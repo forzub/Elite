@@ -98,10 +98,15 @@ for marker in (
 for marker in (
     "deterministic proving ground",
     "production ownership chain",
-    "no second planner",
     "legacy",
 ):
     require(marker.lower() in DOC.lower(), f"stage-12 contract missing: {marker}")
+
+require(
+    "second presentation-only planner" in DOC.lower() or
+    "run a second planner" in DOC.lower(),
+    "stage-12 contract must forbid a second presentation/debug planner",
+)
 
 print("NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS")
 print(" - NavigationSpace publishes ordered selected-portal steering centers")

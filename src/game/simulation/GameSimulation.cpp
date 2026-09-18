@@ -1400,6 +1400,69 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
                 provingObstacleEntityId;
     }
 
+    // Independently prove that the authored slit itself is real exact-static
+    // free space for the current lab ship envelope. This is a fixture validity
+    // check, not planner authority: the route planner still has to select the
+    // portal and the physical ship still has to cross it.
+    if (const Ship* labShip = getShip(m_navigationRuntimeLabShipId))
+    {
+        double labShipRadius =
+            game::navigation::NavigationHitVolumeAdapter::
+                conservativeRadiusFromOrigin(
+                    labShip->core().hitComponent()
+                );
+
+        if (!(labShipRadius > 0.0) || !std::isfinite(labShipRadius))
+        {
+            const auto& dimensions =
+                labShip->core().descriptor().logicalDimensions();
+            const glm::dvec3 half(
+                0.5 * static_cast<double>(dimensions.width),
+                0.5 * static_cast<double>(dimensions.height),
+                0.5 * static_cast<double>(dimensions.length)
+            );
+            labShipRadius = glm::length(half);
+        }
+
+        const Space::Vec3d portalCenter {
+            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
+            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+        };
+        const Space::Vec3d tunnelExit {
+            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y,
+            NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z + 600.0
+        };
+
+        Space::SegmentQuery slitApproach;
+        slitApproach.startMapMeters = {
+            NavigationRuntimeLabStartVisualLocalMeters.x,
+            NavigationRuntimeLabStartVisualLocalMeters.y,
+            NavigationRuntimeLabStartVisualLocalMeters.z
+        };
+        slitApproach.endMapMeters = portalCenter;
+        slitApproach.envelope.radiusMeters = labShipRadius;
+        slitApproach.envelope.additionalClearanceMeters = 10.0;
+        slitApproach.requireSameRegion = false;
+
+        Space::SegmentQuery slitExit = slitApproach;
+        slitExit.startMapMeters = portalCenter;
+        slitExit.endMapMeters = tunnelExit;
+
+        const Space::SegmentQueryResult approachProof =
+            m_navigationRuntimeLabSpace->querySegment(slitApproach);
+        const Space::SegmentQueryResult exitProof =
+            m_navigationRuntimeLabSpace->querySegment(slitExit);
+
+        m_navigationRuntimeLabObservation.slitPortalExactObstaclesExamined =
+            approachProof.obstaclesExamined +
+            exitProof.obstaclesExamined;
+        m_navigationRuntimeLabObservation.slitPortalExactOpenPublished =
+            approachProof.traversable &&
+            exitProof.traversable;
+    }
+
     const auto stats = m_navigationRuntimeLabSpace->stats();
     m_navigationRuntimeLabObservation.exactStaticGeometryPublished = true;
     m_navigationRuntimeLabObservation.exactStaticObstacleCount =

@@ -82,6 +82,9 @@ for marker in (
     "NavigationSpace",
     "safeProgressTargetDemonstrated",
     "usedPortalWaypoint",
+    "nominalStaticBlocked",
+    "staticObstaclesExamined",
+    "nominalStaticObstacleId",
 ):
     require(marker in PLANNER_H, f"runtime planner interface missing: {marker}")
 
@@ -93,6 +96,8 @@ for marker in (
     "idealLinearAccelerationDemandMapMps2",
     "idealAngularAccelerationDemandMapRadPerSec2",
     "mapIntentToWorld",
+    "local.nominalStaticBlocked",
+    "local.staticObstaclesExamined",
 ):
     require(marker in PLANNER_CPP, f"runtime planner composition missing: {marker}")
 
@@ -139,6 +144,7 @@ for marker in (
     "testAdjustedTargetPreservesNominalConflictIdentity",
     "testNavigationMapCrossingConflictProducesBrakingHold",
     "testMapIntentTransformsIntoWorldControlFrame",
+    "testExactStaticObstacleParticipatesInRuntimeComposition",
     "testPlannerIntentCrossesAcceptedPilotBridge",
 ):
     require(marker in RUNTIME_TEST, f"runtime planner fixture missing: {marker}")
@@ -276,6 +282,9 @@ for marker in (
     "passedObstaclePlane",
     "exactStaticGeometryPublished",
     "exactStaticObstacleCount",
+    "exactStaticQuerySeen",
+    "nominalStaticBlockSeen",
+    "maximumExactStaticObstaclesExamined",
 ):
     require(marker in LAB_H, f"live navigation physical observation missing: {marker}")
 
@@ -318,7 +327,12 @@ for marker in (
     "authoritativePublished.metadata.serverTick",
     "observation.exactStaticGeometryPublished",
     "observation.exactStaticObstacleCount > 0",
+    "observation.exactStaticQuerySeen",
+    "observation.nominalStaticBlockSeen",
+    "observation.maximumExactStaticObstaclesExamined > 0",
     "exact_static_obstacles=",
+    "exact_static_query=",
+    "exact_static_block=",
 ):
     require(marker in SERVER_MAIN, f"authoritative navigation self-test missing: {marker}")
 
@@ -371,3 +385,4 @@ print(" - self-test reports pilot demand separately from physically applied acce
 print(" - NavigationSpace exact static OBB layer preserves real apertures beyond sphere broadphase")
 print(" - LocalAvoidance proves nominal and adjusted segments against exact static geometry")
 print(" - live lab publishes exact HitVolume OBBs after authoritative hub/object transforms")
+print(" - live self-test requires exact-static query work and nominal OBB blocking evidence")

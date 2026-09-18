@@ -3179,11 +3179,26 @@ m_hubVelocityMetersPerSecond[hubId] =
 
                 const glm::dvec3 appliedAcceleration =
                     tr.motion.engineAccelerationMps2;
+                const double appliedAccelerationMagnitude =
+                    glm::length(appliedAcceleration);
+
                 observation.maximumAppliedEngineAccelerationMps2 =
                     std::max(
                         observation.maximumAppliedEngineAccelerationMps2,
-                        glm::length(appliedAcceleration)
+                        appliedAccelerationMagnitude
                     );
+
+                if (observation.movingPassageExecutionActive &&
+                    appliedAccelerationMagnitude > 1.0e-6)
+                {
+                    observation.movingPassageAppliedAccelerationSeen = true;
+                    observation.maximumMovingPassageAppliedAccelerationMps2 =
+                        std::max(
+                            observation.maximumMovingPassageAppliedAccelerationMps2,
+                            appliedAccelerationMagnitude
+                        );
+                }
+
                 observation.maximumRelativeSpeedMps =
                     std::max(
                         observation.maximumRelativeSpeedMps,

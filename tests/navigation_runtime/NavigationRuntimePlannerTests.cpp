@@ -228,9 +228,11 @@ void testSamePortalRejectsOversizedHull()
             "oversized hull must fail closed at the same static corridor");
     require(!rejected.safeProgressTargetDemonstrated,
             "oversized hull must not claim safe progress");
-    require(glm::length(
-                rejected.intent.idealLinearAccelerationDemandMapMps2
-            ) <= 1.0e-12,
+    const auto& held =
+        rejected.intent.idealLinearAccelerationDemandMapMps2;
+    require(std::abs(held.x) <= 1.0e-12 &&
+            std::abs(held.y) <= 1.0e-12 &&
+            std::abs(held.z) <= 1.0e-12,
             "stationary static hold must not invent translation demand");
 }
 

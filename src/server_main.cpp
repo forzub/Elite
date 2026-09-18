@@ -573,6 +573,32 @@ int runNavigationRuntimeSelfTest()
             }
         }
 
+        if (observation.rotatingActorCandidateSeen &&
+            !observation.rotatingActorAngularVelocityVerified)
+        {
+            std::cerr
+                << "[NAV-SELFTEST]"
+                << " rotating_actor_seen="
+                << observation.rotatingActorCandidateSeen
+                << " rotating_actor_entity="
+                << observation.rotatingActorEntityId
+                << " rotating_actor_omega_expected=("
+                << observation.expectedRotatingActorAngularVelocityMapRadPerSecond.x << ","
+                << observation.expectedRotatingActorAngularVelocityMapRadPerSecond.y << ","
+                << observation.expectedRotatingActorAngularVelocityMapRadPerSecond.z << ")"
+                << " rotating_actor_omega_observed=("
+                << observation.observedRotatingActorAngularVelocityMapRadPerSecond.x << ","
+                << observation.observedRotatingActorAngularVelocityMapRadPerSecond.y << ","
+                << observation.observedRotatingActorAngularVelocityMapRadPerSecond.z << ")"
+                << " rotating_actor_omega_error="
+                << observation.rotatingActorAngularVelocityErrorRadPerSecond
+                << "\n";
+            std::cerr
+                << "[FAIL] NavigationMap did not preserve rotating infrastructure "
+                << "angular velocity through the live working-frame boundary\n";
+            return 54;
+        }
+
         if (observation.exactStaticGeometryPublished &&
             !observation.configuredRouteExactObstacleBlockPublished)
         {
@@ -707,6 +733,9 @@ int runNavigationRuntimeSelfTest()
             observation.obstacleEntityId != 0 &&
             observation.dynamicQueryCount > 0 &&
             observation.maximumDynamicCandidateCount > 0 &&
+            observation.rotatingActorEntityId != 0 &&
+            observation.rotatingActorCandidateSeen &&
+            observation.rotatingActorAngularVelocityVerified &&
             !observation.obstacleCandidateSeen &&
             !observation.obstaclePrimaryConflictSeen &&
             observation.obstacleExactStaticBlockSeen &&
@@ -745,6 +774,12 @@ int runNavigationRuntimeSelfTest()
             << observation.dynamicQueryCount
             << " max_dynamic_candidates="
             << observation.maximumDynamicCandidateCount
+            << " rotating_actor_seen="
+            << observation.rotatingActorCandidateSeen
+            << " rotating_actor_omega_verified="
+            << observation.rotatingActorAngularVelocityVerified
+            << " rotating_actor_omega_error="
+            << observation.rotatingActorAngularVelocityErrorRadPerSecond
             << " adjusted="
             << observation.adjustedTargetSeen
             << " conflict_hold="
@@ -1017,6 +1052,12 @@ int runNavigationRuntimeSelfTest()
         << observation.dynamicQueryCount
         << " max_dynamic_candidates="
         << observation.maximumDynamicCandidateCount
+        << " rotating_actor_seen="
+        << observation.rotatingActorCandidateSeen
+        << " rotating_actor_omega_verified="
+        << observation.rotatingActorAngularVelocityVerified
+        << " rotating_actor_omega_error="
+        << observation.rotatingActorAngularVelocityErrorRadPerSecond
         << " adjusted="
         << observation.adjustedTargetSeen
         << " conflict_hold="
@@ -1087,9 +1128,9 @@ int runNavigationRuntimeSelfTest()
     }
 
     std::cerr
-        << "[PASS] navigation-runtime CUBE 08 stayed out of NavigationMap"
-        << " and caused authoritative exact-static avoidance"
-        << " with collision-free HitVolume motion and replicated execution\n";
+        << "[PASS] navigation-runtime exact-static avoidance remained collision-free"
+        << " and live rotating infrastructure preserved angular motion"
+        << " through NavigationMap with exact replicated execution\n";
     return 0;
 }
 

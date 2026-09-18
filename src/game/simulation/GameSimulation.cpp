@@ -51,6 +51,7 @@
 #include "src/game/navigation/NpcNavigationIntentController.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
 #include "src/game/navigation/NavigationFrameBoundary.h"
+#include "src/world/navigation/local/PhysicalManeuverHorizon.h"
 #include "src/game/diagnostics/NavigationRuntimeLab.h"
 
 namespace
@@ -2006,18 +2007,58 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     constexpr double LabSafetyMarginMeters = 20.0;
     constexpr double LabMinimumHorizonMeters = 100.0;
 
+    const auto navigationPilotProfile =
+        m_npcAiSystem.pilotSkillProfile(ship);
+    const auto& navigationExecutionProfile =
+        navigationPilotProfile.execution;
+
+    const double navigationDecisionPeriodSeconds =
+        navigationExecutionProfile.perceptionDecisionRateHz > 1.0e-9
+            ? 1.0 /
+                navigationExecutionProfile.perceptionDecisionRateHz
+            : 0.0;
+    const double navigationFilterResponseReserveSeconds =
+        navigationExecutionProfile.responseFrequencyHz > 1.0e-9
+            ? 1.0 /
+                navigationExecutionProfile.responseFrequencyHz
+            : 0.0;
+    const double navigationControlResponseReserveSeconds =
+        navigationExecutionProfile.reactionDelaySeconds +
+        navigationDecisionPeriodSeconds +
+        navigationExecutionProfile.commandLatencySeconds +
+        navigationFilterResponseReserveSeconds;
+
     const double relativeSpeedMps =
         glm::length(agentVelocityMap);
-    const double brakingDistanceMeters =
-        (relativeSpeedMps * relativeSpeedMps) /
-        (2.0 * labBrakingAccelerationMps2);
-    const double localHorizonMeters =
-        std::max(
-            LabMinimumHorizonMeters,
-            brakingDistanceMeters +
-                LabTurnDistanceMeters +
-                LabSafetyMarginMeters
+
+    world::navigation::PhysicalManeuverHorizon::Query
+        physicalHorizonQuery;
+    physicalHorizonQuery.speedMetersPerSecond =
+        relativeSpeedMps;
+    physicalHorizonQuery.accelerationMagnitudeMetersPerSecond2 =
+        0.0;
+    physicalHorizonQuery.snapshotAgeSeconds = 0.0;
+    physicalHorizonQuery.controlResponseReserveSeconds =
+        navigationControlResponseReserveSeconds;
+    physicalHorizonQuery.brakingAccelerationMetersPerSecond2 =
+        labBrakingAccelerationMps2;
+    physicalHorizonQuery.turnDistanceMeters =
+        LabTurnDistanceMeters;
+    physicalHorizonQuery.safetyMarginMeters =
+        LabSafetyMarginMeters;
+    physicalHorizonQuery.minimumDistanceMeters =
+        LabMinimumHorizonMeters;
+    physicalHorizonQuery.minimumLookAheadSeconds = 3.0;
+
+    const auto physicalHorizon =
+        world::navigation::PhysicalManeuverHorizon::evaluate(
+            physicalHorizonQuery
         );
+    if (!physicalHorizon.valid)
+        return false;
+
+    const double localHorizonMeters =
+        physicalHorizon.distanceMeters;
 
     // The adjusted-target fan can leave the nominal route by hundreds of
     // metres. Query a bounded sphere covering the whole physical local
@@ -2170,6 +2211,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     policy.corridor.turnPenaltyMetersPerRadian = 20.0;
 
     policy.horizon.lookAheadSeconds = 3.0;
+    policy.horizon.controlResponseReserveSeconds =
+        navigationControlResponseReserveSeconds;
     policy.horizon.maxResultAgeSeconds = 0.25;
     policy.horizon.maxBrakingAccelerationMetersPerSecond2 =
         labBrakingAccelerationMps2;
@@ -2782,44 +2825,35 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             glm::length(agent.velocityMapMetersPerSecond);
         if (speedForStoppingReserve > 1.0e-6)
         {
-            const auto pilotProfile =
-                m_npcAiSystem.pilotSkillProfile(ship);
-            const auto& executionProfile =
-                pilotProfile.execution;
+            world::navigation::PhysicalManeuverHorizon::Query
+                stoppingQuery;
+            stoppingQuery.speedMetersPerSecond =
+                speedForStoppingReserve;
+            stoppingQuery.accelerationMagnitudeMetersPerSecond2 =
+                0.0;
+            stoppingQuery.snapshotAgeSeconds = 0.0;
+            stoppingQuery.controlResponseReserveSeconds =
+                navigationControlResponseReserveSeconds;
+            stoppingQuery.brakingAccelerationMetersPerSecond2 =
+                policy.horizon.
+                    maxBrakingAccelerationMetersPerSecond2;
+            stoppingQuery.turnDistanceMeters = 0.0;
+            stoppingQuery.safetyMarginMeters = 0.0;
+            stoppingQuery.minimumDistanceMeters = 0.0;
+            stoppingQuery.minimumLookAheadSeconds = 0.0;
 
-            const double decisionPeriodSeconds =
-                executionProfile.perceptionDecisionRateHz > 1.0e-9
-                    ? 1.0 /
-                        executionProfile.perceptionDecisionRateHz
-                    : 0.0;
-            const double filterResponseReserveSeconds =
-                executionProfile.responseFrequencyHz > 1.0e-9
-                    ? 1.0 /
-                        executionProfile.responseFrequencyHz
-                    : 0.0;
+            const auto stoppingHorizon =
+                world::navigation::PhysicalManeuverHorizon::evaluate(
+                    stoppingQuery
+                );
+            if (!stoppingHorizon.valid)
+                return false;
 
             staticSafetyStoppingReserveSeconds =
-                decisionPeriodSeconds +
-                executionProfile.commandLatencySeconds +
-                filterResponseReserveSeconds;
-
-            const double brakingAcceleration =
-                std::max(
-                    0.5,
-                    policy.horizon.
-                        maxBrakingAccelerationMetersPerSecond2
-                );
-            const double brakingDistance =
-                (speedForStoppingReserve *
-                 speedForStoppingReserve) /
-                (2.0 * brakingAcceleration);
-            const double responseCoastDistance =
-                speedForStoppingReserve *
-                staticSafetyStoppingReserveSeconds;
-
+                stoppingHorizon.responseSeconds;
             staticSafetyStoppingReserveDistanceMeters =
-                responseCoastDistance +
-                brakingDistance;
+                stoppingHorizon.responseDistanceMeters +
+                stoppingHorizon.brakingDistanceMeters;
 
             const glm::dvec3 velocityDirection =
                 agent.velocityMapMetersPerSecond /

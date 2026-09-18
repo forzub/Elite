@@ -44,7 +44,12 @@ public:
         // Completed NavigationMap results older than this fail closed.
         double maxResultAgeSeconds = 0.25;
 
-        // Used only to size the physical receding horizon.
+        // Physical command-response delay supplied by the execution layer.
+        // This is not a planner cadence; it is the reserve before a newly
+        // selected maneuver can materially change propulsion.
+        double controlResponseReserveSeconds = 0.0;
+
+        // Used to size the physical receding horizon.
         double maxBrakingAccelerationMetersPerSecond2 = 10.0;
         double turnDistanceMeters = 0.0;
         double safetyMarginMeters = 10.0;
@@ -100,6 +105,9 @@ public:
         double dynamicResultAgeSeconds = 0.0;
 
         double horizonDistanceMeters = 0.0;
+        double effectiveLookAheadSeconds = 0.0;
+        double responseReserveDistanceMeters = 0.0;
+        double brakingDistanceMeters = 0.0;
         double nominalDistanceMeters = 0.0;
 
         EntityId primaryConflictEntityId = 0;

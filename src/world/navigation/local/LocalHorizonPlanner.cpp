@@ -1,4 +1,5 @@
 #include "LocalHorizonPlanner.h"
+#include "PhysicalManeuverHorizon.h"
 
 #include <algorithm>
 #include <cmath>
@@ -140,6 +141,8 @@ void validateQuery(const LocalHorizonPlanner::Query& query)
         policy.lookAheadSeconds <= 0.0 ||
         !finite(policy.maxResultAgeSeconds) ||
         policy.maxResultAgeSeconds < 0.0 ||
+        !finite(policy.controlResponseReserveSeconds) ||
+        policy.controlResponseReserveSeconds < 0.0 ||
         !finite(policy.maxBrakingAccelerationMetersPerSecond2) ||
         policy.maxBrakingAccelerationMetersPerSecond2 <= 0.0 ||
         !finite(policy.turnDistanceMeters) ||
@@ -173,19 +176,41 @@ LocalHorizonPlanner::Result LocalHorizonPlanner::evaluate(
         length(query.agent.accelerationMapMetersPerSecond2);
     const double age = query.dynamicResultAgeSeconds;
 
-    const double latencyDistance =
-        speed * age + 0.5 * accelerationMagnitude * age * age;
-    const double brakingDistance =
-        (speed * speed) /
-        (2.0 * query.policy.maxBrakingAccelerationMetersPerSecond2);
+    PhysicalManeuverHorizon::Query physicalQuery;
+    physicalQuery.speedMetersPerSecond = speed;
+    physicalQuery.accelerationMagnitudeMetersPerSecond2 =
+        accelerationMagnitude;
+    physicalQuery.snapshotAgeSeconds = age;
+    physicalQuery.controlResponseReserveSeconds =
+        query.policy.controlResponseReserveSeconds;
+    physicalQuery.brakingAccelerationMetersPerSecond2 =
+        query.policy.maxBrakingAccelerationMetersPerSecond2;
+    physicalQuery.turnDistanceMeters =
+        query.policy.turnDistanceMeters;
+    physicalQuery.safetyMarginMeters =
+        query.policy.safetyMarginMeters;
+    physicalQuery.minimumDistanceMeters =
+        query.policy.minimumHorizonMeters;
+    physicalQuery.minimumLookAheadSeconds =
+        query.policy.lookAheadSeconds;
 
-    result.horizonDistanceMeters = std::max(
-        query.policy.minimumHorizonMeters,
-        latencyDistance +
-            brakingDistance +
-            query.policy.turnDistanceMeters +
-            query.policy.safetyMarginMeters
-    );
+    const PhysicalManeuverHorizon::Result physical =
+        PhysicalManeuverHorizon::evaluate(physicalQuery);
+    if (!physical.valid)
+    {
+        throw std::invalid_argument(
+            "LocalHorizonPlanner physical horizon is invalid"
+        );
+    }
+
+    result.horizonDistanceMeters =
+        physical.distanceMeters;
+    result.effectiveLookAheadSeconds =
+        physical.lookAheadSeconds;
+    result.responseReserveDistanceMeters =
+        physical.responseDistanceMeters;
+    result.brakingDistanceMeters =
+        physical.brakingDistanceMeters;
 
     const Vec3d nominalDelta = subtract(
         query.nominalTarget.positionMapMeters,
@@ -216,8 +241,10 @@ LocalHorizonPlanner::Result LocalHorizonPlanner::evaluate(
         return result;
     }
 
-    const double agentAgeTravel = latencyDistance;
-    const double lookAhead = query.policy.lookAheadSeconds;
+    const double agentAgeTravel =
+        physical.responseDistanceMeters;
+    const double lookAhead =
+        physical.lookAheadSeconds;
 
     double bestConflictTime = std::numeric_limits<double>::infinity();
     double bestConflictGap = std::numeric_limits<double>::infinity();

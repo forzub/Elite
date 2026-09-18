@@ -908,3 +908,29 @@ corridor describe failure to prove one class of safe progress. They are not
 sufficient by themselves to choose the final maneuver. Future Stage-12
 composition must expose fallback candidates to the game-level selector instead
 of translating those planner states directly into a permanent braking command.
+
+
+## Accepted short-segment execution and replanning ownership
+
+Authority:
+`src/game/navigation/TRAJECTORY_EXECUTION_REPLAN_MODEL.md`
+
+NavigationWorld planning is no longer specified as a per-frame steering solve.
+
+```text
+RoutePlan / topology
+    -> accepted short local/precision segment
+    -> execution follower
+    -> physics
+    -> validity monitor
+              |
+              +-- green: keep executing
+              +-- local invalidation: rebuild local suffix
+              +-- route/topology invalidation: rebuild full route
+```
+
+Automatic control is event-driven for replanning. Manual guidance adds
+periodic local refresh because the player can leave the recommended corridor.
+
+Known predicted motion that remains inside the accepted uncertainty model does
+not force a replan merely because the dynamic map published another tick.

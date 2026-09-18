@@ -63,6 +63,10 @@ require(
     "SimulationSnapshotWireSchemaVersion = 8u" in WIRE_CODEC,
     "snapshot wire schema version was not bumped for navigation execution",
 )
+require(
+    "struct WireSchema<std::monostate>" in WIRE_SCHEMA,
+    "wire schema does not support sparse monostate execution payloads",
+)
 
 require(
     "game::simulation::NavigationExecutionSnapshot" in CLIENT_H and
@@ -70,8 +74,11 @@ require(
     "ClientShipState does not retain replicated navigation execution",
 )
 require(
-    CLIENT_CPP.count("state.navigationExecution = s.navigationExecution") >= 2,
-    "new/existing client ship hydration does not copy navigation execution",
+    CLIENT_CPP.count("std::get_if<") >= 2 and
+    CLIENT_CPP.count("game::simulation::NavigationExecutionSnapshot") >= 2 and
+    CLIENT_CPP.count("state.navigationExecution = *execution;") >= 2 and
+    CLIENT_CPP.count("state.navigationExecution = {};") >= 2,
+    "new/existing client ship hydration does not resolve sparse navigation execution",
 )
 
 for marker in (

@@ -51,6 +51,12 @@ public:
         Vec3d positionSystemMeters {};
         Vec3d velocitySystemMetersPerSecond {};
         Vec3d accelerationSystemMetersPerSecond2 {};
+
+        // Angular velocity is a vector and therefore crosses the working-frame
+        // boundary exactly like linear velocity. MovingGapPredictor consumes
+        // it for material surface velocity (omega x r).
+        Vec3d angularVelocitySystemRadPerSecond {};
+
         double radiusMeters = 1.0;
         std::uint32_t flags = 0;
         Revision motionRevision = 0;
@@ -86,6 +92,7 @@ public:
         Vec3d positionMapMeters {};
         Vec3d velocityMapMetersPerSecond {};
         Vec3d accelerationMapMetersPerSecond2 {};
+        Vec3d angularVelocityMapRadPerSecond {};
         Vec3d predictedEndPositionMapMeters {};
         Vec3d conservativeSweptCenterMapMeters {};
         double actorRadiusMeters = 0.0;

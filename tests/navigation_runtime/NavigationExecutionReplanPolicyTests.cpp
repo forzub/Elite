@@ -202,8 +202,10 @@ void testAcceptedSegmentFollowerExecutesWithoutPlannerSearch()
     const auto first = Follower::follow(segment, agent);
     require(first.status == Follower::Status::Following,
             "accepted segment follower did not remain active");
-    require(first.intent.revision == 77,
-            "follower changed accepted segment revision");
+    require(first.intent.revision == 5,
+            "follower did not preserve high-level goal intent revision");
+    require(first.intent.targetRevision == 77,
+            "follower did not publish accepted segment target revision");
     require(std::abs(
                 first.intent.
                     idealLinearAccelerationDemandMapMps2.x -

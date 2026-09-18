@@ -78,11 +78,13 @@ void testBridgePublishesOneDirectDemandSample()
 
     Bridge::Intent initial;
     initial.revision = 1;
+    initial.targetRevision = 11;
     require(bridge.reset(0.0, initial),
             "runtime bridge reset must succeed");
 
     Bridge::Intent intent;
     intent.revision = 2;
+    intent.targetRevision = 22;
     intent.idealLinearAccelerationDemandMapMps2 = {3.0, 0.0, -6.0};
     intent.idealAngularAccelerationDemandMapRadPerSec2 = {1.0, 0.5, 0.25};
 
@@ -98,6 +100,10 @@ void testBridgePublishesOneDirectDemandSample()
             "bridge must use the explicit navigation acceleration channel");
     require(result.control.navigationIntentRevision == intent.revision,
             "control sample must preserve navigation intent revision");
+    require(result.snapshot.intentRevision == 2,
+            "execution snapshot lost high-level intent revision");
+    require(result.snapshot.activeTargetRevision == 22,
+            "execution snapshot lost concrete target revision");
 
     requireNear(
         result.control.navigationLinearAccelerationDemandMapMps2.x,

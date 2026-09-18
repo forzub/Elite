@@ -101,6 +101,38 @@ void testReactionDelayAndCommandLatency()
             "active target revision must advance after latency");
 }
 
+void testTargetRevisionCanAdvanceInsideSameIntent()
+{
+    Executor::PilotSkillProfile profile = expertProfile();
+    profile.execution.reactionDelaySeconds = 0.50;
+    profile.execution.perceptionDecisionRateHz = 100.0;
+    profile.execution.commandLatencySeconds = 0.0;
+
+    Executor executor(profile);
+
+    Executor::Command initial;
+    initial.revision = 7;
+    initial.targetRevision = 70;
+    require(executor.reset(0.0, initial),
+            "target-revision reset must succeed");
+
+    Executor::Command desired;
+    desired.revision = 7;
+    desired.targetRevision = 71;
+    desired.linearAccelerationDemandMapMetersPerSec2 = {2.0, 0.0, 0.0};
+
+    const auto result = executor.step(0.01, 0.01, desired);
+
+    require(!result.reactionBlocked,
+            "new target inside same intent must not restart reaction delay");
+    require(result.decisionSampled && result.queuedCommandApplied,
+            "new target inside same intent must reach decision pipeline");
+    require(result.observedIntentRevision == 7,
+            "pilot changed high-level intent identity for local target update");
+    require(result.activeTargetRevision == 71,
+            "pilot did not publish concrete target revision");
+}
+
 void testDecisionCadenceIsSampleAndHold()
 {
     Executor::PilotSkillProfile profile = expertProfile();
@@ -413,6 +445,7 @@ int main()
     {
         testProfileValidation();
         testReactionDelayAndCommandLatency();
+        testTargetRevisionCanAdvanceInsideSameIntent();
         testDecisionCadenceIsSampleAndHold();
         testEmergencyCanShortenReactionDelay();
         testDeterministicNoiseIsReplayStable();

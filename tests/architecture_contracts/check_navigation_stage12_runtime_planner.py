@@ -603,6 +603,18 @@ require(
     "live self-test must compare against a copied authoritative published snapshot, not mutable per-step state",
 )
 
+require(
+    "std::uint64_t targetRevision = 0;" in
+        (ROOT / "src/game/navigation/NavigationRuntimeControlBridge.h").read_text(encoding="utf-8") and
+    "std::uint64_t targetRevision = 0;" in
+        (ROOT / "src/world/navigation/control/PilotSkillExecutor.h").read_text(encoding="utf-8") and
+    "result.intent.revision = segment.goalRevision;" in
+        (ROOT / "src/game/navigation/TrajectoryFollower.cpp").read_text(encoding="utf-8") and
+    "result.intent.targetRevision = segment.revision;" in
+        (ROOT / "src/game/navigation/TrajectoryFollower.cpp").read_text(encoding="utf-8"),
+    "accepted segment target revision must remain distinct from high-level intent revision",
+)
+
 for marker in (
     "--self-test-navigation",
     "runNavigationRuntimeSelfTest",

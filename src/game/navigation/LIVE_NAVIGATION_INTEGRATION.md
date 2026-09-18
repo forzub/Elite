@@ -333,6 +333,50 @@ It does not clamp away elapsed time. Pilot reaction/latency dynamics therefore d
 
 This is the server-side truth seam for 11B-2 replication/guidance. The client must receive this revision/product rather than recomputing an independent NPC maneuver.
 
+## Stage 11B-1 first target-machine attempt — NOT ACCEPTED
+
+The first 11B-1 target-machine run proved the ownership contracts but exposed two build-integration defects:
+
+```text
+NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+NAVIGATION LIVE NPC OWNERSHIP CONTRACT: PASS
+navigation_trajectory/pilot 11/11 PASS
+```
+
+but:
+
+```text
+navigation_runtime compile FAIL
+    isolated test harness did not mirror production
+    GLM_ENABLE_EXPERIMENTAL compile contract
+
+EliteServer link FAIL
+    headless source list omitted:
+      NavigationRuntimeControlBridge.cpp
+      NpcNavigationIntentController.cpp
+      PilotSkillExecutor.cpp
+```
+
+These failures are integration wiring defects, not accepted-behavior failures.
+
+Repairs:
+
+```text
+tests/navigation_runtime/CMakeLists.txt
+    add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
+
+EliteServer source set
+    + NavigationRuntimeControlBridge.cpp
+    + NpcNavigationIntentController.cpp
+    + PilotSkillExecutor.cpp
+
+check_navigation_live_npc_ownership.py
+    now pins both headless-server source completeness
+    and the isolated GLM compile contract
+```
+
+Stage 11B-1 remains pending a fresh full target-machine rerun.
+
 ## 11B after acceptance
 
 11B will wire the seam into authoritative runtime ownership:

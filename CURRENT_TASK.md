@@ -63,7 +63,9 @@ tests/navigation_runtime/NavigationReplicationTruthTests.cpp
 
 ```text
 same server ExecutionSnapshot used for control
-    -> ShipSnapshot.navigationExecution
+    -> ShipSnapshot.navigationExecution sparse variant
+       absent = monostate / one tag byte
+       present = NavigationExecutionSnapshot
     -> ordered binary wire schema v8
     -> ClientShipState.navigationExecution
     -> read-only ClientNavigationWorkspace mirror
@@ -77,11 +79,14 @@ Client planners must not consume replicated execution truth:
 ```text
 LocalGuidancePlanner
 DockingPathPlanner
+ClientNavigationPlanningSnapshotFactory
+TrajectoryPredictor
+TrajectorySafetyEvaluator
 ```
 
 remain independent manual/advisory planning components.
 
-The client may display the server-executed NPC command, but may not reinterpret it as a locally accepted maneuver.
+The client may display the server-executed NPC command, but may not reinterpret it as a locally accepted maneuver. The read-only mirror refreshes only when an accepted server snapshot tick changes.
 
 ## RUN NOW
 
@@ -132,6 +137,7 @@ navigation_trajectory:
 
 wire_data_plane_contracts:
     1/1 PASS
+    absent navigation execution = one variant-tag byte
 
 EliteGame build PASS
 EliteServer build PASS

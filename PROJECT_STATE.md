@@ -1,14 +1,14 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / replicated live navigation truth  
+**Current focus:** NavigationWorld v2 / end-to-end runtime proving ground  
 **Canonical development branch:** `main`  
-**Active stage:** 11B-2
+**Active stage:** 12A
 
 ## Progress
 
 ```text
-[█████████████████████░░] 10 / 12 major stages closed
+[██████████████████████░] 11 / 12 major stages closed
 ```
 
 Closed:
@@ -22,28 +22,34 @@ Closed:
 8. moving continuous passage
 9. moving/rotating docking
 10. deterministic PilotSkillProfile
+11. live runtime ownership + replicated guidance/debug truth
 
-Live integration:
-
-```text
-11A  runtime control seam                  ACCEPTED
-11B-1 authoritative NPC runtime ownership ACCEPTED
-11B-2 replicated guidance/debug truth     ACTIVE
-```
-
-Stage 12 remains end-to-end stress/debug/performance and legacy retirement.
+Active:
+12. end-to-end runtime/stress/debug + legacy retirement
 
 ## Latest accepted evidence
 
 ```text
-fb83b8d80f29c6c5e4e12b8a2fca731ffea7b8e8
+9650c44cca23741dae3f4acf2c9a96a4ab4c5713
 ```
 
-It passed both live architecture contracts, runtime 1/1, trajectory/pilot 11/11, and canonical client/server builds.
+Target-machine acceptance passed:
 
-## 11B-2 architecture
+```text
+live runtime architecture PASS
+live NPC ownership architecture PASS
+live replication/guidance architecture PASS
+wire schema architecture PASS
+navigation_runtime 2/2 PASS
+navigation_trajectory/pilot 11/11 PASS
+wire_data_plane_contracts 1/1 PASS
+EliteGame build PASS
+EliteServer build PASS
+```
 
-The same server execution product now crosses replication:
+This closes all of stage 11.
+
+## Accepted replicated execution architecture
 
 ```text
 GameSimulation execution snapshot
@@ -55,26 +61,18 @@ GameSimulation execution snapshot
  -> GuidanceHudPresentation
 ```
 
-Stable route-executor identity uses `ShipInstanceId`, while current runtime binding retains `EntityId`.
+Stable route-executor identity uses `ShipInstanceId`, while current runtime binding retains `EntityId`. The client mirror is read-only to planning code and updates only on accepted server snapshot ticks. An absent execution costs exactly one variant-tag byte.
 
-The client mirror is read-only to planning code and is rebuilt only on a new accepted server snapshot tick. An absent execution costs only the variant tag on the wire.
+## Stage 12
 
-Manual/advisory client planners continue to exist for player guidance but cannot consume or mutate server-executed NPC truth.
+Authority:
 
-## Compatibility
+```text
+src/game/navigation/STAGE12_END_TO_END.md
+```
 
-Because `ShipSnapshot` wire layout changed, the simulation snapshot data-plane schema version is bumped from 7 to 8. Client/server mismatch is rejected explicitly rather than decoded ambiguously.
+The first target is a deterministic station-adjacent obstacle proving ground exercised through the production runtime chain. It must use actual navigation/collision geometry, not a visual-only obstacle list, and must include a forced detour, a narrow passable opening, an opening that fails for a larger hull, and a moving crossing obstacle.
 
-## Acceptance
+After the headless end-to-end gate, the exact same scenario becomes the interactive proving ground and `Shift+F12` debug source.
 
-11B-2 must pass:
-- new replication/guidance architecture contract;
-- canonical wire schema architecture contract;
-- runtime control + replication truth tests;
-- trajectory regression;
-- canonical wire data-plane round-trip;
-- EliteGame + EliteServer production build.
-
-## Next
-
-If 11B-2 is green, stage 11 closes and stage 12 begins immediately.
+Legacy route-wide navigation remains quarantined until the v2 runtime proves ordinary travel, obstacle avoidance, narrow passages, moving conflicts, docking, post-contact replan and guidance presentation.

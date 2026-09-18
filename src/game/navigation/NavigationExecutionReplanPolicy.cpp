@@ -98,6 +98,13 @@ NavigationExecutionReplanPolicy::evaluate(
             true
         );
 
+    if (query.staticSafetyInvalidated)
+        return local(
+            Reason::StaticSafetyInvalidated,
+            manual,
+            true
+        );
+
     if (query.dynamicHazardInvalidated)
         return local(
             Reason::DynamicHazardInvalidated,

@@ -60,6 +60,19 @@ void testAutomaticReplansOnlyLocalSuffixOnHazard()
             "new hazard must invalidate only the short accepted suffix");
 }
 
+void testExactStaticSafetyInvalidationReplansLocally()
+{
+    Replan::Policy policy;
+    auto query = stableAutomatic();
+    query.staticSafetyInvalidated = true;
+
+    const auto result = Replan::evaluate(policy, query);
+    require(result.scope == Replan::Scope::LocalHorizon &&
+            result.reason == Replan::Reason::StaticSafetyInvalidated &&
+            result.immediate,
+            "exact-static execution invalidation must immediately rebuild only local suffix");
+}
+
 void testTrackingErrorInvalidatesAutomaticSegment()
 {
     Replan::Policy policy;
@@ -301,6 +314,7 @@ int main()
     {
         testAutomaticDoesNotReplanEveryFrame();
         testAutomaticReplansOnlyLocalSuffixOnHazard();
+        testExactStaticSafetyInvalidationReplansLocally();
         testTrackingErrorInvalidatesAutomaticSegment();
         testManualRefreshIsPeriodicAndGuidanceOnly();
         testManualCorridorExitReplansImmediately();

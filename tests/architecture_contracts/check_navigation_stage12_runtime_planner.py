@@ -604,6 +604,15 @@ require(
 )
 
 require(
+    "staticSafetyInvalidated" in REPLAN_H and
+    "Reason::StaticSafetyInvalidated" in REPLAN_CPP and
+    "exactExecutionBlocked" in SIM_CPP and
+    "query.exactObstaclesOnly = true;" in SIM_CPP and
+    "replanQuery.staticSafetyInvalidated" in SIM_CPP,
+    "accepted automatic segment must be monitored against exact-static geometry without restoring per-frame planning",
+)
+
+require(
     "std::uint64_t targetRevision = 0;" in
         (ROOT / "src/game/navigation/NavigationRuntimeControlBridge.h").read_text(encoding="utf-8") and
     "std::uint64_t targetRevision = 0;" in

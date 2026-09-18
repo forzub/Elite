@@ -35,6 +35,7 @@ public:
         SegmentCompleted,
         TrackingErrorExceeded,
         ManualCorridorExit,
+        StaticSafetyInvalidated,
         DynamicHazardInvalidated,
         VehicleCapabilityChanged,
         GoalIntentChanged,
@@ -65,8 +66,12 @@ public:
         bool trackingErrorExceeded = false;
         bool manualCorridorExited = false;
 
-        // The accepted prediction was invalidated by a newly observed hazard,
-        // not merely by the passage of one fixed simulation frame.
+        // The current accepted execution is no longer physically safe against
+        // authoritative exact-static HitVolumes under current kinematics.
+        bool staticSafetyInvalidated = false;
+
+        // The accepted prediction was invalidated by a newly observed dynamic
+        // hazard, not merely by the passage of one fixed simulation frame.
         bool dynamicHazardInvalidated = false;
 
         // A damaged/changed vehicle can invalidate the previously proven

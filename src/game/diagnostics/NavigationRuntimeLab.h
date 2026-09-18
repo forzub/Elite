@@ -225,6 +225,8 @@ struct NavigationRuntimeLabObservation
     std::uint64_t executionCount = 0;
     std::uint64_t acceptedSegmentFollowCount = 0;
     std::uint64_t acceptedSegmentReplanCount = 0;
+    std::uint64_t acceptedSegmentStaticSafetyInvalidationCount = 0;
+    std::uint32_t acceptedSegmentLastStaticBlockingEntityId = 0;
     std::uint64_t acceptedSegmentRevision = 0;
     std::uint8_t lastReplanReason = 0xffu;
     bool acceptedSegmentActive = false;

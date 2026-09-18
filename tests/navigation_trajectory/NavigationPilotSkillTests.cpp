@@ -116,15 +116,23 @@ void testTargetRevisionCanAdvanceInsideSameIntent()
     require(executor.reset(0.0, initial),
             "target-revision reset must succeed");
 
-    Executor::Command desired;
-    desired.revision = 7;
+    Executor::Command established;
+    established.revision = 7;
+    established.targetRevision = 70;
+
+    const auto establishedResult =
+        executor.step(0.50, 0.25, established);
+    require(!establishedResult.reactionBlocked,
+            "initial intent did not finish its configured reaction delay");
+
+    Executor::Command desired = established;
     desired.targetRevision = 71;
     desired.linearAccelerationDemandMapMetersPerSec2 = {2.0, 0.0, 0.0};
 
-    const auto result = executor.step(0.01, 0.01, desired);
+    const auto result = executor.step(0.51, 0.01, desired);
 
     require(!result.reactionBlocked,
-            "new target inside same intent must not restart reaction delay");
+            "new target inside established intent restarted reaction delay");
     require(result.decisionSampled && result.queuedCommandApplied,
             "new target inside same intent must reach decision pipeline");
     require(result.observedIntentRevision == 7,

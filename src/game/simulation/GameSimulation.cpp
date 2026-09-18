@@ -2643,6 +2643,117 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             );
     }
 
+    // Monitoring is allowed every fixed step; planning is not. Re-prove the
+    // currently accepted execution against exact physical HitVolumes using
+    // both its current geometric target and a short kinematic forecast. This
+    // catches inertia/tracking drift before the already-accepted command can
+    // carry the hull into static geometry.
+    bool staticSafetyInvalidated = false;
+    std::uint32_t staticSafetyBlockingEntityId = 0;
+
+    if (m_navigationRuntimeLabAcceptedSegment.valid &&
+        followerResult.status != Follower::Status::InvalidInput &&
+        m_navigationRuntimeLabStaticGeometryPublished)
+    {
+        const auto exactExecutionBlocked =
+            [&](const glm::dvec3& endMap)
+            {
+                const glm::dvec3 delta =
+                    endMap - agent.positionMapMeters;
+                if (glm::dot(delta, delta) <= 1.0e-12)
+                    return false;
+
+                Space::SegmentQuery query;
+                query.startMapMeters = {
+                    agent.positionMapMeters.x,
+                    agent.positionMapMeters.y,
+                    agent.positionMapMeters.z
+                };
+                query.endMapMeters = {
+                    endMap.x,
+                    endMap.y,
+                    endMap.z
+                };
+                query.envelope.radiusMeters = shipRadius;
+                query.envelope.additionalClearanceMeters =
+                    policy.avoidance.staticAdditionalClearanceMeters;
+                query.requireSameRegion = false;
+                query.exactObstaclesOnly = true;
+
+                const Space::SegmentQueryResult safety =
+                    m_navigationRuntimeLabSpace->querySegment(query);
+
+                if (safety.traversable)
+                    return false;
+
+                staticSafetyBlockingEntityId =
+                    safety.blockingObstacleEntityId;
+                return true;
+            };
+
+        staticSafetyInvalidated =
+            exactExecutionBlocked(
+                m_navigationRuntimeLabAcceptedSegment.
+                    targetPositionMapMeters
+            );
+
+        if (!staticSafetyInvalidated)
+        {
+            const double remainingAcceptedSeconds =
+                std::max(
+                    0.0,
+                    m_navigationRuntimeLabAcceptedSegment.
+                        validUntilUniverseTimeSeconds -
+                    navigationTimeSeconds
+                );
+            const double forecastSeconds =
+                std::min(2.0, remainingAcceptedSeconds);
+
+            if (forecastSeconds > 1.0e-6)
+            {
+                const glm::dvec3 idealAcceleration(
+                    followerResult.intent.
+                        idealLinearAccelerationDemandMapMps2.x,
+                    followerResult.intent.
+                        idealLinearAccelerationDemandMapMps2.y,
+                    followerResult.intent.
+                        idealLinearAccelerationDemandMapMps2.z
+                );
+
+                glm::dvec3 forecastDelta =
+                    agent.velocityMapMetersPerSecond *
+                        forecastSeconds +
+                    0.5 * idealAcceleration *
+                        forecastSeconds *
+                        forecastSeconds;
+
+                const double forecastDistance =
+                    glm::length(forecastDelta);
+                if (forecastDistance > localHorizonMeters &&
+                    forecastDistance > 1.0e-12)
+                {
+                    forecastDelta *=
+                        localHorizonMeters / forecastDistance;
+                }
+
+                staticSafetyInvalidated =
+                    exactExecutionBlocked(
+                        agent.positionMapMeters +
+                        forecastDelta
+                    );
+            }
+        }
+
+        if (staticSafetyInvalidated)
+        {
+            ++m_navigationRuntimeLabObservation.
+                acceptedSegmentStaticSafetyInvalidationCount;
+            m_navigationRuntimeLabObservation.
+                acceptedSegmentLastStaticBlockingEntityId =
+                    staticSafetyBlockingEntityId;
+        }
+    }
+
     Replan::Query replanQuery;
     replanQuery.mode = Replan::ExecutionMode::Automatic;
     replanQuery.universeTimeSeconds = navigationTimeSeconds;
@@ -2656,6 +2767,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         followerResult.status == Follower::Status::Complete;
     replanQuery.trackingErrorExceeded =
         followerResult.trackingErrorExceeded;
+    replanQuery.staticSafetyInvalidated =
+        staticSafetyInvalidated;
     replanQuery.vehicleCapabilityChanged =
         m_navigationRuntimeLabAcceptedSegment.valid &&
         capabilityChanged(m_navigationRuntimeLabAcceptedSegment);

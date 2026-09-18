@@ -93,6 +93,11 @@ struct NavigationRuntimeLabObservation
     bool nominalStaticBlockSeen = false;
     std::size_t maximumExactStaticObstaclesExamined = 0;
 
+    // Actual authoritative motion is sampled as swept segments against the
+    // exact static layer. Conservative sphere clearance remains diagnostic only.
+    bool exactStaticViolationSeen = false;
+    std::uint64_t exactStaticMotionSamples = 0;
+
     double initialGoalDistanceMeters = 0.0;
     double minimumGoalDistanceMeters = 0.0;
     double maximumStraightLineDeviationMeters = 0.0;

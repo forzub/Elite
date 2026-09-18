@@ -1011,3 +1011,48 @@ The architecture script now also requires `TrajectoryWitness trajectory` in
 the public result contract, preventing this exact structural omission from
 passing again. The safety model and observe-only authority boundary are
 unchanged.
+
+
+#### 12A-6b2 — acceptance
+
+Corrected target-machine baseline:
+
+```text
+25dc4369b95b4872d9a70a2d236db5e482cf45e2
+```
+
+Accepted gate:
+
+```text
+architecture                     PASS
+navigation_trajectory            11/11 PASS
+navigation_runtime               3/3 PASS
+navigation_map                   1/1 PASS (first 6b2 gate; untouched by correction)
+EliteGame / EliteServer          BUILD PASS
+rebuilt server self-test         PASS
+exact_static_violation           0
+replication errors               0
+```
+
+The exact moving Hermite trajectory is now proven continuously against both the
+time-varying aperture and persistent exact-static NavigationSpace geometry.
+
+#### 12A-6b3a — verified moving-passage authority seam
+
+Authority condition:
+
+```text
+movingPassageFeasible
+    && movingPassageStaticSafe
+```
+
+When true, the planner may use only the exact
+`movingPassageInitialAccelerationMapMps2` emitted by that accepted trajectory.
+It must not derive a new desired velocity/trajectory after proof.
+
+When false, the accepted LocalAvoidance/fail-closed behavior remains in control.
+
+12A-6b3a acceptance requires deterministic proof through the existing
+map-intent -> world transform -> PilotSkillExecutor seam. A later live gate must
+still demonstrate moving-passage authority through actual physics and
+replication before 12A-6b is closed end-to-end.

@@ -121,13 +121,15 @@ public:
 
     enum class Status : std::uint8_t
     {
+        // Preserve the previously accepted numeric values; diagnostics may
+        // persist these statuses outside the planner.
         NominalClear = 0,
-        AdjustedClear,
-        MovingPassageClear,
-        ConflictHold,
-        StaleHold,
-        StaticHold,
-        InvalidInput
+        AdjustedClear = 1,
+        ConflictHold = 2,
+        StaleHold = 3,
+        StaticHold = 4,
+        InvalidInput = 5,
+        MovingPassageClear = 6
     };
 
     struct Result

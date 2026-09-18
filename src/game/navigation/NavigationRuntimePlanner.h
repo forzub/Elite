@@ -120,6 +120,15 @@ public:
         const Space& staticSpace,
         const Policy& policy
     );
+
+    // NavigationWorld planning products are expressed in the published map
+    // working frame. Stage-11 control/physics consumes world/system-space
+    // acceleration demand. This explicit boundary prevents identity-frame
+    // tests from hiding a missing basis transform.
+    [[nodiscard]] static Bridge::Intent mapIntentToWorld(
+        const Bridge::Intent& mapIntent,
+        const Map::WorkingFrame& workingFrame
+    );
 };
 
 } // namespace game::navigation

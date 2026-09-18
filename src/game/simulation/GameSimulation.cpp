@@ -997,6 +997,8 @@ bool GameSimulation::updateNpcNavigationControl(
             lateralMagnitude = glm::length(lateral);
         }
 
+        observation.lastExecutedLinearDemandMapMps2 =
+            executedVector;
         observation.maximumExecutedLinearDemandMps2 =
             std::max(
                 observation.maximumExecutedLinearDemandMps2,

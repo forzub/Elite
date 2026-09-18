@@ -550,6 +550,20 @@ int runNavigationRuntimeSelfTest()
             break;
     }
 
+    if (behaviorEvidenceComplete)
+    {
+        // Cross the normal sparse-replication cadence after the behavioral
+        // proof so the retained client-side canonical snapshot must contain
+        // the same latest authoritative execution product.
+        for (int i = 0; i < 6; ++i)
+        {
+            runtime.advance(step);
+            simulatedSeconds += step;
+        }
+        observation =
+            runtime.navigationRuntimeLabObservation();
+    }
+
     const auto& finalSnapshot =
         transport.latestCanonicalSnapshot();
     const auto* labShip =
@@ -594,6 +608,23 @@ int runNavigationRuntimeSelfTest()
         return 36;
     }
 
+    const glm::dvec3 replicationErrorVector =
+        replicatedExecution->
+            executedLinearAccelerationDemandMapMps2 -
+        observation.lastExecutedLinearDemandMapMps2;
+    const double replicationErrorMps2 =
+        glm::length(replicationErrorVector);
+
+    if (!std::isfinite(replicationErrorMps2) ||
+        replicationErrorMps2 > 1.0e-9)
+    {
+        std::cerr
+            << "[FAIL] navigation-runtime replicated execution differs from authoritative truth"
+            << " error_mps2=" << replicationErrorMps2
+            << "\n";
+        return 38;
+    }
+
     const double progressMeters =
         observation.initialGoalDistanceMeters > 0.0
             ? observation.initialGoalDistanceMeters -
@@ -632,6 +663,8 @@ int runNavigationRuntimeSelfTest()
         << observation.reachedGoal
         << " replicated_exec_mps2="
         << replicatedDemandMagnitude
+        << " replication_error_mps2="
+        << replicationErrorMps2
         << "\n";
 
     if (!behaviorEvidenceComplete)

@@ -210,6 +210,9 @@ for marker in (
     "minimumConservativeClearanceMeters",
     "maximumStraightLineDeviationMeters",
     "maximumExecutedLateralDemandMps2",
+    "maximumAppliedEngineAccelerationMps2",
+    "maximumAppliedLateralAccelerationMps2",
+    "maximumRelativeSpeedMps",
     "lastExecutedLinearDemandMapMps2",
     "passedObstaclePlane",
 ):
@@ -219,6 +222,9 @@ for marker in (
     "minimumConservativeClearanceMeters",
     "maximumStraightLineDeviationMeters",
     "maximumExecutedLateralDemandMps2",
+    "maximumAppliedEngineAccelerationMps2",
+    "maximumAppliedLateralAccelerationMps2",
+    "maximumRelativeSpeedMps",
     "nominalPrimaryConflictEntityId",
 ):
     require(marker in SIM_CPP, f"GameSimulation live navigation evidence missing: {marker}")
@@ -297,3 +303,4 @@ print(" - sparse packet is compared with authoritative publication at the exact 
 print(" - canonical sparse hydration must match the same authoritative execution truth")
 print(" - non-identity working-frame regression pins map intent -> world control transform")
 print(" - live lateral-demand diagnostics compare vectors in world space")
+print(" - self-test reports pilot demand separately from physically applied acceleration")

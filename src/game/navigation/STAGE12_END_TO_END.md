@@ -586,6 +586,73 @@ Required live evidence must show:
 
 DTO presence alone cannot satisfy 12A-6b.
 
+### 12A-6b1 — runtime precision observe/prove candidate
+
+The first 12A-6b slice is intentionally non-authoritative. It connects the
+accepted precision stack to the real shared runtime product while preserving the
+accepted 12A-4/12A-5 steering/safety authority.
+
+Candidate implementation through:
+
+```text
+616f5b868795439fb42308d2c2d13ffc87218cba
+```
+
+Runtime composition:
+
+```text
+NavigationRuntimePlanner
+    -> real bounded NavigationMap::QueryResult
+    -> nominal dynamic conflict identity
+    -> BoundedGapCandidateBuilder
+         hard candidate cap <= 8
+    -> MovingGapPredictor
+         P / V / A / angular velocity
+         continuous gap closure/alignment proof
+    -> MovingPassageTrajectoryEvaluator
+         continuous ship/gap geometry + authority proof
+    -> diagnostics only
+```
+
+Pinned deterministic fixtures:
+- open translating two-boundary gap -> prediction remains open -> moving ship
+  passage must be feasible;
+- closing two-boundary gap -> predictor detects closure inside the horizon ->
+  moving passage must not be evaluated/accepted.
+
+The moving-passage evaluator additionally publishes
+`initialLinearAccelerationMapMetersPerSec2` from the exact verified Hermite
+segment. This value is reserved for the authority step so runtime control can
+execute the same trajectory that was proved rather than solve another curve.
+
+#### Why this slice does not steer yet
+
+The moving evaluator proves the ship against the moving aperture, but Stage 12
+also has an accepted independent safety authority for stationary exact HitVolume
+geometry.
+
+A dynamically feasible moving curve is therefore **not yet enough**:
+
+```text
+moving passage feasible
+    +
+same moving curve exact-static safe
+    =
+eligible authoritative maneuver
+```
+
+12A-6b1 does not yet provide the second term for the complete moving Hermite
+curve. Granting steering authority now could regress static collision safety.
+Therefore `LocalAvoidance` / exact-static behavior remains authoritative and
+moving precision is observe/prove only.
+
+The next slice must compose exact-static proof over the same accepted moving
+trajectory before the verified first control sample may flow into
+`mapIntentToWorld()`, `PilotSkillExecutor`, authoritative physics and
+replication.
+
+Target-machine verification for 12A-6b1 is pending.
+
 ## Project-state recording protocol
 
 Every state-affecting Stage-12 event must be recorded before beginning the next

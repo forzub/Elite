@@ -2356,15 +2356,30 @@ m_hubVelocityMetersPerSecond[hubId] =
                 const auto* hubFrame =
                     hubNavigationFrame(obj.hubId);
 
+                const bool movingGapBoundary =
+                    game::diagnostics::
+                        isNavigationRuntimeLabMovingGapBoundary(
+                            obj.displayName
+                        );
+                const glm::dvec3 localLinearVelocityVisualMps =
+                    movingGapBoundary
+                        ? game::diagnostics::
+                            NavigationRuntimeLabMovingGapVelocityVisualMps
+                        : glm::dvec3(0.0);
+                const glm::dvec3 effectiveLocalOffsetMeters =
+                    obj.hubLocalOffsetMeters +
+                    localLinearVelocityVisualMps *
+                        m_serverTimelineClock.timeSeconds();
+
                 const glm::dvec3 rotatedOffset =
                     obj.inheritHubOrientation && hubFrame && hubFrame->valid
                         ? game::navigation::hubVisualLocalToWorldVector(
                             hubFrame->progradeAxis,
                             hubFrame->radialAxis,
                             hubFrame->normalAxis,
-                            obj.hubLocalOffsetMeters
+                            effectiveLocalOffsetMeters
                         )
-                        : obj.hubLocalOffsetMeters;
+                        : effectiveLocalOffsetMeters;
 
                 obj.setWorldPositionMeters(
                     hubMeters + rotatedOffset
@@ -2395,6 +2410,22 @@ m_hubVelocityMetersPerSecond[hubId] =
                             hubFrame->angularVelocityWorldRadPerSecond,
                             rotatedOffset
                         );
+
+                    if (movingGapBoundary)
+                    {
+                        objectVelocityMetersPerSecond +=
+                            game::navigation::hubVisualLocalToWorldVector(
+                                hubFrame->progradeAxis,
+                                hubFrame->radialAxis,
+                                hubFrame->normalAxis,
+                                localLinearVelocityVisualMps
+                            );
+                    }
+                }
+                else if (movingGapBoundary)
+                {
+                    objectVelocityMetersPerSecond +=
+                        localLinearVelocityVisualMps;
                 }
 
                 obj.linearVelocity =
@@ -5099,19 +5130,65 @@ void GameSimulation::prepareReferenceFramesForSpawn()
         const auto* hubFrame =
             hubNavigationFrame(obj.hubId);
 
+        const bool movingGapBoundary =
+            game::diagnostics::
+                isNavigationRuntimeLabMovingGapBoundary(
+                    obj.displayName
+                );
+        const glm::dvec3 localLinearVelocityVisualMps =
+            movingGapBoundary
+                ? game::diagnostics::
+                    NavigationRuntimeLabMovingGapVelocityVisualMps
+                : glm::dvec3(0.0);
+        const glm::dvec3 effectiveLocalOffsetMeters =
+            obj.hubLocalOffsetMeters +
+            localLinearVelocityVisualMps *
+                m_serverTimelineClock.timeSeconds();
+
         const glm::dvec3 rotatedOffset =
             obj.inheritHubOrientation && hubFrame && hubFrame->valid
                 ? game::navigation::hubVisualLocalToWorldVector(
                     hubFrame->progradeAxis,
                     hubFrame->radialAxis,
                     hubFrame->normalAxis,
-                    obj.hubLocalOffsetMeters
+                    effectiveLocalOffsetMeters
                 )
-                : obj.hubLocalOffsetMeters;
+                : effectiveLocalOffsetMeters;
 
         obj.setWorldPositionMeters(
             hubMeters + rotatedOffset
         );
+
+        glm::dvec3 objectVelocityMetersPerSecond {0.0};
+        const auto hubVelocityIt =
+            m_hubVelocityMetersPerSecond.find(obj.hubId);
+        if (hubVelocityIt != m_hubVelocityMetersPerSecond.end())
+            objectVelocityMetersPerSecond = hubVelocityIt->second;
+
+        if (hubFrame && hubFrame->valid)
+        {
+            objectVelocityMetersPerSecond +=
+                glm::cross(
+                    hubFrame->angularVelocityWorldRadPerSecond,
+                    rotatedOffset
+                );
+            if (movingGapBoundary)
+            {
+                objectVelocityMetersPerSecond +=
+                    game::navigation::hubVisualLocalToWorldVector(
+                        hubFrame->progradeAxis,
+                        hubFrame->radialAxis,
+                        hubFrame->normalAxis,
+                        localLinearVelocityVisualMps
+                    );
+            }
+        }
+        else if (movingGapBoundary)
+        {
+            objectVelocityMetersPerSecond +=
+                localLinearVelocityVisualMps;
+        }
+        obj.linearVelocity = glm::vec3(objectVelocityMetersPerSecond);
 
         if (hubFrame && hubFrame->valid)
         {

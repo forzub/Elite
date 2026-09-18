@@ -187,3 +187,55 @@ moving passage feasible
 
 After a green target-machine gate, the next slice may route the already verified
 first acceleration sample into authoritative planner intent.
+
+
+## 12A-6b2 candidate implementation
+
+Candidate baseline before documentation commits:
+
+```text
+61f62e9d096542ae52680cf47d6da1c03b0bb8c0
+```
+
+Implemented proof chain:
+
+```text
+accepted MovingPassage Hermite curve
+    -> 33 exact center witnesses
+    -> 32 A*dt^2/8 continuous deviation bounds
+    -> hull containment radius + curve deviation
+    -> NavigationSpace::querySegment for each interval
+    -> exact-static safe / exact blocker identity
+```
+
+This is deliberately conservative for the ship envelope but still uses the
+authored HitVolume shape as static obstacle truth. It cannot miss a collision
+between samples.
+
+### Target-machine gate to run now
+
+```bash
+cd /d/__elite/work
+
+git pull --ff-only
+git rev-parse HEAD
+
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
+bash tests/navigation_trajectory/run_mingw64.sh
+bash tests/navigation_runtime/run_mingw64.sh
+bash tests/navigation_map/run_mingw64.sh
+
+bash build_mingw64.sh
+
+./build/headless_server/EliteServer.exe --self-test-navigation
+```
+
+Expected runtime-planner output now also includes:
+
+```text
+ - exact-static blocker rejects the same accepted moving Hermite trajectory
+```
+
+Expected live self-test behavior remains unchanged because 12A-6b2 still has no
+steering authority.

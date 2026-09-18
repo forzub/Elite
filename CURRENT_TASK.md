@@ -1,39 +1,43 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-18  
-**Canonical branch:** `main`  
-**Stage:** 12A-4 — corrected exact static HitVolume OBB gate
+**Stage:** 12A-5 — static/dynamic NavigationWorld ownership cleanup
 
 ## Candidate HEAD
 
 ```text
-a40d41bcfff4aecee94b495c0c5dd64223c7fe2b
+adc3603b8572d8aad0d35d57ec94ad33038ba890
 ```
 
-## What the previous run proved
+## What changed
 
-On `80b90a6abc43982f3c6da9f76e20a05b2cd25d46`:
-- architecture PASS;
-- NavigationSpace PASS;
-- both production builds PASS;
-- exact static publication/query/block evidence was live;
-- physical progress reached 6382.44 m.
+CUBE 08 and other stationary NAV STRESS infrastructure are no longer inserted
+into `NavigationMap::DynamicWorldUpdate::actors`.
 
-The local test failure was an invalid test fixture.
-The runtime-planner failure exposed a real portal-boundary contract edge.
-The live failure exposed an obsolete sphere-clearance acceptance criterion.
+Stationary collision truth is now exclusively:
 
-All three are corrected in this candidate.
+```text
+HitVolume
+ -> NavigationObstacle OBB
+ -> NavigationSpace
+ -> LocalAvoidance exact segment proof
+```
 
-## RUN NOW
+NavigationMap remains active for time-varying infrastructure and future moving
+actors.
 
-Only affected gates need rerun:
+The live gate requires CUBE 08 to be absent from dynamic ownership while still
+causing the same successful maneuver through exact static identity.
+
+## RUN
 
 ```bash
 cd /d/__elite/work
+
 git fetch origin
 git switch main
 git merge --ff-only origin/main
+
 git rev-parse HEAD
 
 python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
@@ -47,9 +51,14 @@ bash build_mingw64.sh
 ./build/headless_server/EliteServer.exe --self-test-navigation
 ```
 
-## Expected live evidence
+## Required live evidence
 
 ```text
+obstacle_candidate=0
+obstacle_conflict=0
+exact_obstacle_block=1
+dynamic_queries>0
+
 exact_static=1
 exact_static_obstacles>0
 exact_static_query=1
@@ -58,8 +67,6 @@ max_exact_static_examined>0
 exact_static_motion_samples>0
 exact_static_violation=0
 
-obstacle_candidate=1
-obstacle_conflict=1
 adjusted=1
 lateral_exec=1
 progress_m>3500
@@ -68,6 +75,4 @@ replication_error_mps2=0
 canonical_replication_error_mps2=0
 ```
 
-`min_conservative_clearance_m` may be negative. That now means only that the
-route entered an enclosing broadphase sphere; it is not a collision if the
-exact swept HitVolume proof stays clean.
+Do not reintroduce stationary spheres to make the test pass.

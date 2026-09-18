@@ -168,7 +168,11 @@ void testContinuousCorridorRejectsBetweenSampleExcursion()
     Evaluator::Query query = baseQuery();
     query.durationSeconds = 1.0;
     query.hull.halfExtentsBodyMeters = {1.0, 0.5, 1.0};
-    query.corridor.halfWidthMeters = 1.975;
+    // With p0=p1=0 and v0=v1=10 m/s, the exact cubic-Hermite lateral
+    // excursion peaks at 0.9622504486 m, while the largest of the 33 sampled
+    // offsets is only 0.9613037109 m. With a 1.0 m projected hull half-width,
+    // 1.9618 m keeps every point sample barely inside but the true curve exits.
+    query.corridor.halfWidthMeters = 1.9618;
     query.corridor.halfHeightMeters = 10.0;
     query.start.pose.centerMapMeters = {};
     query.end.pose.centerMapMeters = {};

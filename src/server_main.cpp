@@ -539,6 +539,8 @@ int runNavigationRuntimeSelfTest()
             observation.exactStaticQuerySeen &&
             observation.nominalStaticBlockSeen &&
             observation.maximumExactStaticObstaclesExamined > 0 &&
+            observation.exactStaticMotionSamples > 0 &&
+            !observation.exactStaticViolationSeen &&
             observation.planCount > 0 &&
             observation.executionCount > 0 &&
             observation.obstacleCandidateSeen &&
@@ -548,7 +550,6 @@ int runNavigationRuntimeSelfTest()
             observation.nonZeroExecutedDemandSeen &&
             observation.lateralExecutedDemandSeen &&
             observation.passedObstaclePlane &&
-            observation.minimumConservativeClearanceMeters > 0.0 &&
             observation.maximumStraightLineDeviationMeters > 1.0 &&
             progressMeters > 3500.0;
 
@@ -589,6 +590,10 @@ int runNavigationRuntimeSelfTest()
             << observation.nominalStaticBlockSeen
             << " max_exact_static_examined="
             << observation.maximumExactStaticObstaclesExamined
+            << " exact_static_motion_samples="
+            << observation.exactStaticMotionSamples
+            << " exact_static_violation="
+            << observation.exactStaticViolationSeen
             << " max_lateral_demand_mps2="
             << observation.maximumExecutedLateralDemandMps2
             << " max_applied_accel_mps2="
@@ -843,6 +848,10 @@ int runNavigationRuntimeSelfTest()
         << observation.nominalStaticBlockSeen
         << " max_exact_static_examined="
         << observation.maximumExactStaticObstaclesExamined
+        << " exact_static_motion_samples="
+        << observation.exactStaticMotionSamples
+        << " exact_static_violation="
+        << observation.exactStaticViolationSeen
         << " max_lateral_demand_mps2="
         << observation.maximumExecutedLateralDemandMps2
         << " max_applied_accel_mps2="
@@ -886,7 +895,7 @@ int runNavigationRuntimeSelfTest()
 
     std::cerr
         << "[PASS] navigation-runtime CUBE 08 caused authoritative avoidance"
-        << " with exact static HitVolume geometry, positive clearance"
+        << " with collision-free exact static HitVolume motion"
         << " and replicated execution\n";
     return 0;
 }

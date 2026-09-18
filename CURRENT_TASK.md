@@ -1,6 +1,6 @@
 # Elite — CURRENT TASK
 
-**Updated:** 2026-09-17  
+**Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
 **Stage:** `NAV-V2-TRAJECTORY-1` — docking stage 9B continuous approach gate
@@ -166,6 +166,29 @@ wide corridor + wrong 180-degree roll -> TerminalNotCapturable/RollAlignmentMism
 wide corridor + terminal position miss -> TerminalNotCapturable/PositionMismatch
 sideways approach: Newtonian feasible / tight EliteAssisted slip rejected
 ```
+
+## First target-machine attempt — diagnosed and repaired
+
+The first 9B run on `3f29c5062967676c8ae77f8385307473732d1ff5` is explicitly **not accepted**:
+
+```text
+[FAIL] docking approach documentation missing: continuous body-axis thrust proof
+9/10 trajectory CTest PASS
+navigation_trajectory_docking_approach FAIL
+```
+
+The architecture failure was only case-sensitive Markdown matching and is repaired without weakening the contract.
+
+The behavior failure exposed an invalid regression fixture. For its cubic Hermite curve:
+
+```text
+largest sampled excursion = 0.9613037109 m
+exact excursion maximum   = 0.9622504486 m
+old available travel      = 0.9750000000 m   # never actually blocked
+new available travel      = 0.9618000000 m   # samples fit, continuous curve exits
+```
+
+Therefore the regression now genuinely pins sample-pass / continuous-fail behavior. The production continuous algorithm was not relaxed.
 
 ## RUN NOW
 

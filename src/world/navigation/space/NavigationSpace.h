@@ -118,6 +118,12 @@ public:
         CorridorDiagnostics diagnostics {};
         std::vector<RegionId> regionPath;
         std::vector<PortalId> portalPath;
+
+        // Ordered compact steering seam for the selected corridor. Entries
+        // correspond one-to-one with portalPath. Callers may steer toward the
+        // next portal without reading NavigationSpace internals or rebuilding
+        // a second copy of the region graph.
+        std::vector<Vec3d> portalCentersMapMeters;
     };
 
     // Costed corridor policy. Cost units are meter-equivalent: geometric
@@ -144,6 +150,9 @@ public:
         CorridorDiagnostics diagnostics {};
         std::vector<RegionId> regionPath;
         std::vector<PortalId> portalPath;
+
+        // Same ordered compact steering seam as CorridorResult.
+        std::vector<Vec3d> portalCentersMapMeters;
     };
 
     struct InvalidationResult

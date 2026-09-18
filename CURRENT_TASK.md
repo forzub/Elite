@@ -1786,3 +1786,65 @@ remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### WORLD -> MAP executed-demand correction candidate
+
+Code candidate:
+
+~~~text
+6659354c5b2c8e280cdae28cf9ea021b2ca4da5e
+~~~
+
+The sampled executed-demand safety monitor exposed a coordinate-frame ownership
+bug rather than an established emergency-response failure.
+
+In the live lab production path:
+
+~~~text
+TrajectoryFollower                   -> MAP-frame demand
+NavigationRuntimePlanner::mapIntentToWorld
+                                     -> WORLD-frame demand
+PilotSkillExecutor / control bridge  -> WORLD-frame executed demand
+DynamicMotionSystem                  -> applies WORLD-frame acceleration
+~~~
+
+The legacy ExecutionSnapshot member name still says
+`executedLinearAccelerationDemandMapMps2`, but for this runtime path its
+contents are already WORLD-space because the conversion happens before the
+bridge.
+
+The exact-static monitor was incorrectly combining that WORLD-space executed
+acceleration with MAP-space position and velocity.
+
+This candidate makes the boundary explicit in
+`GameSimulation::updateNpcNavigationControl`:
+
+~~~text
+executedWorldVector
+  -> dot(world, hub.normalAxis)     = map X
+  -> dot(world, hub.radialAxis)     = map Y
+  -> dot(world, -hub.progradeAxis)  = map Z
+  -> executedMapVector
+~~~
+
+Only `executedMapVector` is stored in
+`lastExecutedLinearDemandMapMps2` and consumed by the sampled exact-static
+forecast. Existing world-space lateral/applied diagnostics continue using
+`executedWorldVector`.
+
+If the hub frame is invalid the stored map-space command is explicitly cleared
+instead of reusing stale data.
+
+The Stage-12 architecture gate now pins the complete inverse-basis transform so
+the safety monitor cannot silently regress to mixed coordinate frames.
+
+Target-machine validation is pending. The emergency-response hypothesis remains
+unproven until this candidate is exercised.
+
+No Stage-12 baseline promotion. Last actually target-machine accepted baseline
+remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

@@ -66,6 +66,7 @@ struct ClientShipState
     ShipTransform                                   renderTransform;
     game::simulation::ShipReferenceFrameSnapshot    referenceFrame;
     game::simulation::ShipReferenceFrameSnapshot    renderReferenceFrame;
+    game::simulation::NavigationExecutionSnapshot   navigationExecution;
     const ShipDescriptor*                           descriptor = nullptr;
 
     ShipSignalPresentation                          signalPresentation;

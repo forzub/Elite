@@ -1610,3 +1610,62 @@ Last actually target-machine accepted baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Target-machine witness: ideal follower forecast diverges from executed PilotSkill command
+
+Target-machine live self-test against the impact-instrumented candidate produced:
+
+~~~text
+[FAIL] moving-passage continuation crossed exact static geometry
+violation_entity=28
+segment_revision=127
+planner_status=1
+last_replan_reason=2
+static_invalidations=1
+previous_monitor_blocker=0
+previous_target_blocked=0
+previous_forecast_blocked=0
+previous_probe_time_s=54.8
+previous_forecast_s=0.73
+violation_start=(1065.16,-1268.64,-4977.71)
+violation_end=(1064.97,-1268.68,-4977.59)
+current_velocity=(-9.77741,-2.20251,6.24856)
+accepted_target=(811.472,-1361.83,-5385.02)
+accepted_target_velocity=(-31.1628,-11.4446,-49.979)
+last_executed_demand=(-3.88461,-43.6151,13.1693)
+previous_forecast_end=(1053.75,-1272.09,-4984.39)
+previous_velocity=(-9.77741,-2.20251,6.24856)
+previous_ideal_accel=(-16.039,-6.93155,-42.1707)
+~~~
+
+Root cause is now concrete:
+
+- accepted target and target velocity were already away from CUBE 08 in -Z;
+- follower ideal acceleration also demanded strong -Z correction
+  (`-42.1707 m/s^2`);
+- the actually executed PilotSkill demand was still +Z
+  (`+13.1693 m/s^2`);
+- the exact-static monitor forecast used the follower's ideal acceleration, not
+  the actual delayed/filtered PilotSkill command that authoritative physics was
+  applying;
+- therefore the monitor proved a hypothetical trajectory that the ship was not
+  actually following and missed the imminent impact.
+
+The prior monitor implementation is not accepted.
+
+Required correction:
+- execution safety prediction must start from current velocity and the latest
+  actually executed PilotSkill acceleration;
+- it must include a conservative braking/command-transition envelope before it
+  may assume the new ideal follower demand;
+- exact-static validation must cover that physically reachable swept envelope,
+  not just one ideal endpoint chord;
+- planner cadence remains event-driven; monitoring may remain per fixed tick.
+
+No Stage-12 baseline promotion. Last actually target-machine accepted baseline
+remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

@@ -2155,6 +2155,65 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         static_cast<std::uint8_t>(
             m_navigationRuntimeLabLastPlan.status
         );
+
+    const bool expectedMovingGapPairSelected =
+        movingGapUpperEntityId != 0 &&
+        movingGapLowerEntityId != 0 &&
+        ((m_navigationRuntimeLabLastPlan.movingPrimaryObstacleEntityId ==
+              movingGapUpperEntityId &&
+          m_navigationRuntimeLabLastPlan.movingSecondaryObstacleEntityId ==
+              movingGapLowerEntityId) ||
+         (m_navigationRuntimeLabLastPlan.movingPrimaryObstacleEntityId ==
+              movingGapLowerEntityId &&
+          m_navigationRuntimeLabLastPlan.movingSecondaryObstacleEntityId ==
+              movingGapUpperEntityId));
+
+    m_navigationRuntimeLabObservation.movingPrecisionAttemptedSeen =
+        m_navigationRuntimeLabObservation.movingPrecisionAttemptedSeen ||
+        m_navigationRuntimeLabLastPlan.movingPrecisionAttempted;
+    m_navigationRuntimeLabObservation.movingPassageFeasibleSeen =
+        m_navigationRuntimeLabObservation.movingPassageFeasibleSeen ||
+        (expectedMovingGapPairSelected &&
+         m_navigationRuntimeLabLastPlan.movingPassageFeasible);
+    m_navigationRuntimeLabObservation.movingPassageStaticSafeSeen =
+        m_navigationRuntimeLabObservation.movingPassageStaticSafeSeen ||
+        (expectedMovingGapPairSelected &&
+         m_navigationRuntimeLabLastPlan.movingPassageStaticSafe);
+
+    const bool movingPassageAuthorityActive =
+        expectedMovingGapPairSelected &&
+        m_navigationRuntimeLabLastPlan.movingPassageAuthorityUsed &&
+        m_navigationRuntimeLabLastPlan.status ==
+            Planner::Status::MovingPassageClear;
+
+    m_navigationRuntimeLabObservation.movingPassageAuthorityActive =
+        movingPassageAuthorityActive;
+    m_navigationRuntimeLabObservation.movingPassageAuthoritySeen =
+        m_navigationRuntimeLabObservation.movingPassageAuthoritySeen ||
+        movingPassageAuthorityActive;
+
+    if (m_navigationRuntimeLabObservation.movingPassageAuthoritySeen &&
+        routeLengthSquared > 1.0e-12)
+    {
+        const glm::dvec3 routeDirection =
+            routeVectorMap / std::sqrt(routeLengthSquared);
+        const double shipProgress =
+            glm::dot(
+                agentPositionMap - routeStartMap,
+                routeDirection
+            );
+        const double movingGapProgress =
+            glm::dot(
+                m_navigationRuntimeLabObservation.movingGapCurrentCenterMap -
+                    routeStartMap,
+                routeDirection
+            );
+        if (shipProgress > movingGapProgress)
+        {
+            m_navigationRuntimeLabObservation.movingGapPlanePassed = true;
+        }
+    }
+
     m_navigationRuntimeLabObservation.adjustedTargetSeen =
         m_navigationRuntimeLabObservation.adjustedTargetSeen ||
         m_navigationRuntimeLabLastPlan.adjustedTarget;

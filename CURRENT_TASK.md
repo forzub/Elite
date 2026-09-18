@@ -951,3 +951,102 @@ replication_error_mps2=0
 canonical_replication_error_mps2=0
 ```
 
+
+
+## Control-law-specific maneuver contract — candidate
+
+Candidate code/architecture baseline before mandatory state-doc commits:
+
+```text
+8e707f8376099ce522cc300b293a33cf1d8f484c
+```
+
+New authority:
+`src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
+
+Two local flight laws are now explicit in maneuver selection:
+
+```text
+Assisted / Elite-classic
+    cheap passage proxy: oriented OBB ("brick")
+    continuous truth: swept oriented hull
+    velocity/forward coupling remains controller policy
+
+Newtonian
+    coarse arbitrary-rotation / flip free-volume proxy:
+        conservative rotation sphere
+    constrained passage truth:
+        time-varying oriented hull / swept OBB
+    strong braking:
+        rotate tail toward velocity -> main-engine burn
+```
+
+The Newtonian sphere is not physical collision geometry and must never replace
+exact oriented HitVolume truth. It exists only as a conservative test for free
+rotation/flip space.
+
+`ManeuverDecisionController` candidates now carry a control-law requirement:
+`Any`, `AssistedOnly`, or `NewtonianOnly`. The selector filters
+incompatible candidates before doctrine ranking. Candidate families now include
+extended visibility recovery, backtrack, Newtonian flip-and-burn and reverse
+escape.
+
+The ordinary local visibility fan remains:
+
+```text
+direct -> 15 -> 30 -> 45 -> 60 -> 75 deg
+```
+
+75 degrees is an ordinary progress-preserving search boundary, not a vehicle
+capability limit.
+
+When all ordinary probes fail, `LocalAvoidancePlanner` publishes
+`ordinarySearchExhausted=true`; `NavigationRuntimePlanner` publishes
+`ordinaryVisibilitySearchExhausted=true`. This is a recovery-escalation
+signal:
+
+```text
+>75 deg escape turn
+backtrack / previous viable portal
+safe stop/brake
+Assisted brake-turn / controller-supported reverse
+Newtonian coast-turn / drift / side-on pass / flip-and-burn / reverse escape
+mandatory precision passage
+contact-expected emergency
+```
+
+A provisional braking hold may protect the current control cycle while higher
+selection occurs, but fan exhaustion is no longer architecturally equivalent to
+"stay stopped forever".
+
+The shared production library `EliteManeuverDecision` is linked by both
+EliteGame and EliteServer. Architecture/runtime tests now pin control-law
+filtering and ordinary-search escalation.
+
+Target-machine validation is pending. Last target-machine accepted Stage-12
+baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+
+### Current target-machine gate
+
+```bash
+git pull --ff-only
+git rev-parse HEAD
+
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
+bash tests/navigation_local/run_mingw64.sh
+bash tests/navigation_space/run_mingw64.sh
+bash tests/navigation_runtime/run_mingw64.sh
+bash tests/navigation_trajectory/run_mingw64.sh
+
+bash build_mingw64.sh
+./build/headless_server/EliteServer.exe --self-test-navigation
+```
+
+Next implementation slices after this gate:
+1. build bounded recovery candidates when ordinaryVisibilitySearchExhausted;
+2. keep candidate generation control-law-specific;
+3. route those candidates through ManeuverDecisionController;
+4. connect EmergencyPassageMitigator / EmergencyContactSeverityScorer for
+   contact-expected recovery;
+5. continue the separate live portal-capture correction.

@@ -49,6 +49,8 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
+#include "src/game/navigation/NavigationHitVolumeAdapter.h"
+#include "src/game/diagnostics/NavigationRuntimeLab.h"
 
 namespace
 {
@@ -914,11 +916,20 @@ bool GameSimulation::updateNpcNavigationControl(
     navigationState.rollRateRadPerSec =
         static_cast<double>(tr.rollRate);
 
-    const Bridge::Intent intent =
-        game::navigation::NpcNavigationIntentController::buildIntent(
-            navigationState,
-            goal
-        );
+    Bridge::Intent intent;
+    if (isNavigationRuntimeLabShip(id))
+    {
+        if (!buildNavigationRuntimeLabIntent(id, ship, intent))
+            return false;
+    }
+    else
+    {
+        intent =
+            game::navigation::NpcNavigationIntentController::buildIntent(
+                navigationState,
+                goal
+            );
+    }
 
     double& lastTime =
         m_npcNavigationLastExecutionTimeSeconds[id];
@@ -954,6 +965,344 @@ bool GameSimulation::updateNpcNavigationControl(
     ship.setControlState(latest.control);
     m_npcNavigationExecutionSnapshots[id] = latest.snapshot;
     return latest.snapshot.valid;
+}
+
+
+
+void GameSimulation::initializeNavigationRuntimeLab()
+{
+    using namespace game::diagnostics;
+    using Map = world::navigation::NavigationMap;
+    using Space = world::navigation::NavigationSpace;
+
+    if (!NavigationRuntimeLabEnabled ||
+        m_navigationRuntimeLabInitialized ||
+        m_navigationRuntimeLabShipId.value == 0 ||
+        m_navigationRuntimeLabHubId.empty())
+    {
+        return;
+    }
+
+    const auto* hubFrame =
+        hubNavigationFrame(m_navigationRuntimeLabHubId);
+    if (!hubFrame || !hubFrame->valid)
+        return;
+
+    game::navigation::ReferenceFrame startFrame;
+    startFrame.type =
+        game::navigation::ReferenceFrameType::OrbitalHub;
+    startFrame.systemId = hubFrame->systemId;
+    startFrame.hubId = m_navigationRuntimeLabHubId;
+    startFrame.localOffsetMeters =
+        NavigationRuntimeLabStartTacticalLocalMeters;
+
+    if (!placeShipInReferenceFrame(
+            m_navigationRuntimeLabShipId,
+            startFrame))
+    {
+        return;
+    }
+
+    Map::Config mapConfig;
+    mapConfig.halfExtentMeters =
+        NavigationRuntimeLabWorkspaceHalfExtentMeters;
+    mapConfig.cellSizeMeters = 400.0;
+    mapConfig.predictionHorizonSeconds = 3.0;
+    mapConfig.interactionMarginMeters = 30.0;
+
+    m_navigationRuntimeLabMap =
+        std::make_unique<Map>(mapConfig);
+    m_navigationRuntimeLabSpace =
+        std::make_unique<Space>();
+
+    Space::StaticSpaceUpdate staticWorld;
+    staticWorld.sourceRevision = 1;
+
+    Space::RegionInput region;
+    region.regionId = 1;
+    region.boundsMapMeters.minMapMeters = {
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters
+    };
+    region.boundsMapMeters.maxMapMeters = {
+        NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabWorkspaceHalfExtentMeters
+    };
+    region.clearanceRadiusMeters =
+        NavigationRuntimeLabWorkspaceHalfExtentMeters;
+    region.geometryRevision = 1;
+    staticWorld.regions.push_back(region);
+
+    m_navigationRuntimeLabSpace->replaceStaticWorld(
+        std::move(staticWorld)
+    );
+
+    m_navigationRuntimeLabSourceRevision = 0;
+    m_navigationRuntimeLabLastPlan = {};
+    m_navigationRuntimeLabInitialized = true;
+}
+
+
+bool GameSimulation::buildNavigationRuntimeLabIntent(
+    EntityId id,
+    Ship& ship,
+    game::navigation::NavigationRuntimeControlBridge::Intent& outIntent
+)
+{
+    using namespace game::diagnostics;
+    using Planner = game::navigation::NavigationRuntimePlanner;
+    using Map = world::navigation::NavigationMap;
+
+    if (!NavigationRuntimeLabEnabled ||
+        !m_navigationRuntimeLabInitialized ||
+        id != m_navigationRuntimeLabShipId ||
+        !m_navigationRuntimeLabMap ||
+        !m_navigationRuntimeLabSpace)
+    {
+        return false;
+    }
+
+    const auto* hubFrame =
+        hubNavigationFrame(m_navigationRuntimeLabHubId);
+    if (!hubFrame || !hubFrame->valid)
+        return false;
+
+    const glm::dvec3 mapXAxis = hubFrame->normalAxis;
+    const glm::dvec3 mapYAxis = hubFrame->radialAxis;
+    const glm::dvec3 mapZAxis = -hubFrame->progradeAxis;
+
+    const auto pointToMap =
+        [&](const glm::dvec3& worldPoint)
+        {
+            const glm::dvec3 relative =
+                worldPoint - hubFrame->originMeters;
+            return glm::dvec3(
+                glm::dot(relative, mapXAxis),
+                glm::dot(relative, mapYAxis),
+                glm::dot(relative, mapZAxis)
+            );
+        };
+
+    const auto vectorToMap =
+        [&](const glm::dvec3& worldVector)
+        {
+            return glm::dvec3(
+                glm::dot(worldVector, mapXAxis),
+                glm::dot(worldVector, mapYAxis),
+                glm::dot(worldVector, mapZAxis)
+            );
+        };
+
+    Map::DynamicWorldUpdate dynamicWorld;
+    dynamicWorld.sourceRevision =
+        ++m_navigationRuntimeLabSourceRevision;
+    dynamicWorld.workingFrame.originSystemMeters = {
+        hubFrame->originMeters.x,
+        hubFrame->originMeters.y,
+        hubFrame->originMeters.z
+    };
+    dynamicWorld.workingFrame.xAxisSystem = {
+        mapXAxis.x, mapXAxis.y, mapXAxis.z
+    };
+    dynamicWorld.workingFrame.yAxisSystem = {
+        mapYAxis.x, mapYAxis.y, mapYAxis.z
+    };
+    dynamicWorld.workingFrame.zAxisSystem = {
+        mapZAxis.x, mapZAxis.y, mapZAxis.z
+    };
+
+    // Stage 12 lab deliberately consumes the already-spawned physical
+    // NAV STRESS / GUIDANCE objects. Their damage HitComponent is the geometry
+    // source; no render-mesh or presentation-only obstacle list is consulted.
+    for (const auto& [objectId, object] : m_staticObjects)
+    {
+        if (object.systemId != hubFrame->systemId ||
+            !object.attachedToHub ||
+            object.hubId != m_navigationRuntimeLabHubId ||
+            object.ownerName != "Hub Motion Lab")
+        {
+            continue;
+        }
+
+        double radius =
+            game::navigation::NavigationHitVolumeAdapter::
+                conservativeRadiusFromOrigin(object.hitComponent);
+
+        if (!(radius > 0.0) || !std::isfinite(radius))
+        {
+            const auto& dimensions =
+                ObjectDescriptorRegistry::get(object.type).
+                    logicalDimensions();
+            const glm::dvec3 half(
+                0.5 * static_cast<double>(dimensions.width),
+                0.5 * static_cast<double>(dimensions.height),
+                0.5 * static_cast<double>(dimensions.length)
+            );
+            radius = glm::length(half);
+        }
+
+        if (!(radius > 0.0) || !std::isfinite(radius))
+            continue;
+
+        const glm::dvec3 positionMeters =
+            world::coordinates::fullMeters(object.worldPosition);
+
+        Map::DynamicActorInput actor;
+        actor.entityId = objectId.value;
+        actor.positionSystemMeters = {
+            positionMeters.x,
+            positionMeters.y,
+            positionMeters.z
+        };
+
+        // Attached stress-object centres are stationary in the rotating hub
+        // map. Self-rotation affects exact OBB orientation, not centre motion.
+        actor.velocitySystemMetersPerSecond = {0.0, 0.0, 0.0};
+        actor.accelerationSystemMetersPerSecond2 = {0.0, 0.0, 0.0};
+        actor.radiusMeters = radius;
+        actor.flags = 1u;
+        actor.motionRevision = dynamicWorld.sourceRevision;
+        dynamicWorld.actors.push_back(actor);
+    }
+
+    m_navigationRuntimeLabMap->replaceDynamicWorld(
+        std::move(dynamicWorld)
+    );
+
+    const auto& transform = ship.core().transform();
+    const glm::dvec3 shipWorldPosition =
+        world::coordinates::fullMeters(transform.worldPosition);
+    const glm::dvec3 shipReferenceVelocity =
+        hubFrame->localToWorldVelocity(
+            hubFrame->worldToLocalPosition(shipWorldPosition),
+            glm::dvec3(0.0)
+        );
+    const glm::dvec3 shipRelativeWorldVelocity =
+        transform.motion.worldVelocityMps -
+        shipReferenceVelocity;
+
+    double shipRadius =
+        game::navigation::NavigationHitVolumeAdapter::
+            conservativeRadiusFromOrigin(
+                ship.core().hitComponent()
+            );
+
+    if (!(shipRadius > 0.0) || !std::isfinite(shipRadius))
+    {
+        const auto& dimensions =
+            ship.core().descriptor().logicalDimensions();
+        const glm::dvec3 half(
+            0.5 * static_cast<double>(dimensions.width),
+            0.5 * static_cast<double>(dimensions.height),
+            0.5 * static_cast<double>(dimensions.length)
+        );
+        shipRadius = glm::length(half);
+    }
+
+    const glm::dvec3 agentPositionMap =
+        pointToMap(shipWorldPosition);
+    const glm::dvec3 goalWorldPosition =
+        hubFrame->localToWorldPosition(
+            NavigationRuntimeLabGoalTacticalLocalMeters
+        );
+    const glm::dvec3 goalPositionMap =
+        pointToMap(goalWorldPosition);
+
+    Map::CorridorQuery dynamicQuery;
+    dynamicQuery.startMapMeters = {
+        agentPositionMap.x,
+        agentPositionMap.y,
+        agentPositionMap.z
+    };
+    dynamicQuery.endMapMeters = {
+        goalPositionMap.x,
+        goalPositionMap.y,
+        goalPositionMap.z
+    };
+    dynamicQuery.radiusMeters =
+        std::max(10.0, shipRadius + 10.0);
+
+    const Map::QueryResult dynamicCandidates =
+        m_navigationRuntimeLabMap->queryCorridor(dynamicQuery);
+
+    Planner::AgentState agent;
+    agent.entityId = id.value;
+    agent.positionMapMeters = agentPositionMap;
+    agent.velocityMapMetersPerSecond =
+        vectorToMap(shipRelativeWorldVelocity);
+    agent.accelerationMapMetersPerSecond2 = glm::dvec3(0.0);
+    agent.radiusMeters = shipRadius;
+    agent.forwardMap =
+        vectorToMap(glm::dvec3(transform.forward()));
+    agent.rightMap =
+        vectorToMap(glm::dvec3(transform.right()));
+    agent.upMap =
+        vectorToMap(glm::dvec3(transform.up()));
+    agent.pitchRateRadPerSec =
+        static_cast<double>(transform.pitchRate);
+    agent.yawRateRadPerSec =
+        static_cast<double>(transform.yawRate);
+    agent.rollRateRadPerSec =
+        static_cast<double>(transform.rollRate);
+
+    Planner::Goal plannerGoal;
+    plannerGoal.revision = 1202001;
+    plannerGoal.targetPositionMapMeters = goalPositionMap;
+    plannerGoal.targetVelocityMapMetersPerSecond = glm::dvec3(0.0);
+    plannerGoal.targetAccelerationMapMetersPerSecond2 = glm::dvec3(0.0);
+    plannerGoal.maximumTargetSpeedMps =
+        NavigationRuntimeLabMaximumSpeedMps;
+    plannerGoal.velocityResponsePerSecond = 0.75;
+    plannerGoal.angularDampingPerSecond = 2.0;
+    plannerGoal.arrivalRadiusMeters =
+        NavigationRuntimeLabArrivalRadiusMeters;
+
+    Planner::Policy policy;
+    policy.corridor.distanceWeight = 1.0;
+    policy.corridor.preferredClearanceMultiple = 2.0;
+    policy.corridor.clearancePenaltyMeters = 50.0;
+    policy.corridor.turnPenaltyMetersPerRadian = 20.0;
+
+    policy.horizon.lookAheadSeconds = 3.0;
+    policy.horizon.maxResultAgeSeconds = 0.25;
+    policy.horizon.maxBrakingAccelerationMetersPerSecond2 =
+        std::max(
+            0.5,
+            static_cast<double>(
+                ship.core().desc().physics.manoeuvreThrusterAccel
+            )
+        );
+    policy.horizon.turnDistanceMeters = 80.0;
+    policy.horizon.safetyMarginMeters = 20.0;
+    policy.horizon.minimumHorizonMeters = 100.0;
+
+    policy.avoidance.primaryDeflectionRadians =
+        glm::radians(15.0);
+    policy.avoidance.secondaryDeflectionRadians =
+        glm::radians(30.0);
+    policy.avoidance.azimuthSamples = 8;
+    policy.avoidance.staticAdditionalClearanceMeters = 10.0;
+
+    m_navigationRuntimeLabLastPlan =
+        Planner::plan(
+            agent,
+            plannerGoal,
+            dynamicCandidates,
+            0.0,
+            *m_navigationRuntimeLabSpace,
+            policy
+        );
+
+    if (m_navigationRuntimeLabLastPlan.status ==
+        Planner::Status::InvalidInput)
+    {
+        return false;
+    }
+
+    outIntent = m_navigationRuntimeLabLastPlan.intent;
+    return true;
 }
 
 
@@ -1265,6 +1614,7 @@ m_hubVelocityMetersPerSecond[hubId] =
 
 
     rebuildHubNavigationFrames(trajectoryDeltaSeconds);
+    initializeNavigationRuntimeLab();
 
     if (!trajectoryDebugMode)
         endUniverseTrajectoryDiagnostic();
@@ -2617,6 +2967,45 @@ bool GameSimulation::isInterplanetaryTransferLabShip(
     return
         m_interplanetaryTransferLabShipId.value != 0 &&
         shipId == m_interplanetaryTransferLabShipId;
+}
+
+
+void GameSimulation::registerNavigationRuntimeLabShip(
+    EntityId shipId,
+    const std::string& hubId
+)
+{
+    if (shipId.value == 0 || hubId.empty())
+        return;
+
+    m_navigationRuntimeLabShipId = shipId;
+    m_navigationRuntimeLabHubId = hubId;
+    m_navigationRuntimeLabInitialized = false;
+    m_navigationRuntimeLabMap.reset();
+    m_navigationRuntimeLabSpace.reset();
+    m_navigationRuntimeLabSourceRevision = 0;
+    m_navigationRuntimeLabLastPlan = {};
+}
+
+bool GameSimulation::isNavigationRuntimeLabShip(
+    EntityId shipId
+) const noexcept
+{
+    return
+        m_navigationRuntimeLabShipId.value != 0 &&
+        shipId == m_navigationRuntimeLabShipId;
+}
+
+const game::navigation::NavigationRuntimePlanner::Result*
+GameSimulation::navigationRuntimeLabLastPlan() const noexcept
+{
+    if (!m_navigationRuntimeLabInitialized ||
+        m_navigationRuntimeLabShipId.value == 0)
+    {
+        return nullptr;
+    }
+
+    return &m_navigationRuntimeLabLastPlan;
 }
 
 

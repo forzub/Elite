@@ -3,7 +3,7 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 live integration  
-**Stage:** 11B-1 — repaired authoritative NPC runtime ownership rerun
+**Stage:** 11B-1 — corrected roll-axis fixture rerun
 
 ## Progress
 
@@ -106,6 +106,29 @@ EliteServer link:
 ```
 
 Repairs are committed and the architecture checker now pins both wiring requirements.
+
+## Second target-machine attempt — NOT ACCEPTED
+
+The lightweight runtime boundary was necessary because the isolated test must not link all ShipCore/equipment/damage systems merely to exercise NPC intent conversion. `NpcNavigationIntentController` now accepts `NpcNavigationKinematicState` rather than full `Ship`.
+
+## Third target-machine attempt — NOT ACCEPTED
+
+Everything except one runtime assertion passed:
+
+```text
+live runtime architecture PASS
+live NPC ownership architecture PASS
+navigation trajectory/pilot 11/11 PASS
+EliteGame build PASS
+EliteServer build PASS
+
+navigation_runtime 0/1
+  NPC nominal intent must damp roll through world angular demand
+```
+
+Diagnosis: fixture error. With identity orientation, ship forward is `-Z`; positive roll damping is a `+Z` world vector whose projection onto forward is negative. Production controller already did this correctly.
+
+The fixture now checks ship-axis projections, not raw world components.
 
 ## RUN NOW
 

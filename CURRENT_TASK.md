@@ -1050,3 +1050,61 @@ Next implementation slices after this gate:
 4. connect EmergencyPassageMitigator / EmergencyContactSeverityScorer for
    contact-expected recovery;
 5. continue the separate live portal-capture correction.
+
+
+## Accepted-segment execution / event-driven replanning candidate
+
+Candidate code/architecture baseline before mandatory state-doc commits:
+
+~~~text
+d7b298f9fbc4cacd34eef912a96b324b894b197e
+~~~
+
+New authority:
+`src/game/navigation/TRAJECTORY_EXECUTION_REPLAN_MODEL.md`
+
+New production policy:
+`NavigationExecutionReplanPolicy.{h,cpp}`
+
+Core invariant:
+
+~~~text
+execution tick != planning tick
+monitoring tick != planning tick
+~~~
+
+Automatic navigation is now specified as:
+
+~~~text
+plan -> accept short trajectory/segment -> execute -> monitor
+~~~
+
+A stable automatic segment is not replanned merely because another fixed frame elapsed. Local replanning is event-driven by:
+- accepted segment completion/expiry;
+- tracking error outside the accepted envelope;
+- newly invalidating dynamic hazard evidence;
+- vehicle capability change/damage.
+
+Goal intent or topology/route-branch invalidation escalates to a full-route rebuild.
+
+Manual navigation shares the accepted route but not autopilot authority.
+Manual guidance performs:
+- configurable periodic local suffix refresh (initial policy default 0.25 s);
+- immediate local refresh when the player exits the recommended corridor;
+- immediate local refresh for hazard/capability invalidation.
+
+Manual local deviation preserves the global RoutePlan while its topology branch remains valid. Full route solving is reserved for goal/branch/topology invalidation.
+
+Important current limitation:
+`NavigationRuntimeLab` still calls `NavigationRuntimePlanner::plan()` in its fixed-step path. This is now explicitly transitional. The next integration slice must insert an accepted-segment/follower seam and prove stable automatic flight with many execution ticks per planner invocation (`planCount << executionCount`).
+
+Target-machine validation for this scheduler/policy is pending. The last target-machine accepted Stage-12 baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+
+### Active next slice
+
+1. define the accepted short-segment execution product;
+2. move per-tick target/acceleration tracking into a follower that consumes the accepted segment without running obstacle/route search;
+3. use NavigationExecutionReplanPolicy to wake the planner only on local/full invalidation events;
+4. prove automatic `planCount << executionCount`;
+5. use the same accepted segment to publish manual GuidanceCorridor frames while manual mode only refreshes the local suffix periodically/on corridor exit;
+6. then return to the outstanding live tunnel-capture convergence blocker.

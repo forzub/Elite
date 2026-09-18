@@ -6210,6 +6210,18 @@ bool GameSimulation::placeShipInReferenceFrame(
     // double-count stale pre-placement motion on the next fixed step.
     tr.motion.localVelocityMps =
         glm::dvec3(0.0);
+    tr.motion.mainEngineAccelerationMps2 =
+        glm::dvec3(0.0);
+    tr.motion.manoeuvreAccelerationMps2 =
+        glm::dvec3(0.0);
+    tr.motion.engineAccelerationMps2 =
+        glm::dvec3(0.0);
+    tr.motion.desiredTacticalVelocityMps =
+        glm::dvec3(0.0);
+    tr.motion.velocityAlignmentMode =
+        game::navigation::VelocityAlignmentMode::None;
+    tr.motion.assistedTargetSpeedHold = false;
+    tr.motion.assistedThrottleTrimWasActive = false;
 
     tr.motion.localPositionMeters =
         frame.localOffsetMeters;

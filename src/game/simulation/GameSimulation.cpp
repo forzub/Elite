@@ -1113,7 +1113,146 @@ void GameSimulation::initializeNavigationRuntimeLab()
     m_navigationRuntimeLabObservation.valid = true;
     m_navigationRuntimeLabObservation.shipEntityId =
         m_navigationRuntimeLabShipId.value;
+    m_navigationRuntimeLabStaticGeometryPublished = false;
     m_navigationRuntimeLabInitialized = true;
+}
+
+
+void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
+{
+    using namespace game::diagnostics;
+    using Space = world::navigation::NavigationSpace;
+
+    if (!NavigationRuntimeLabEnabled ||
+        !m_navigationRuntimeLabInitialized ||
+        m_navigationRuntimeLabStaticGeometryPublished ||
+        !m_navigationRuntimeLabSpace)
+    {
+        return;
+    }
+
+    const auto* hubFrame =
+        hubNavigationFrame(m_navigationRuntimeLabHubId);
+    if (!hubFrame || !hubFrame->valid)
+        return;
+
+    const glm::dvec3 mapXAxis = hubFrame->normalAxis;
+    const glm::dvec3 mapYAxis = hubFrame->radialAxis;
+    const glm::dvec3 mapZAxis = -hubFrame->progradeAxis;
+
+    const auto pointToMap =
+        [&](const glm::dvec3& worldPoint)
+        {
+            const glm::dvec3 relative =
+                worldPoint - hubFrame->originMeters;
+            return glm::dvec3(
+                glm::dot(relative, mapXAxis),
+                glm::dot(relative, mapYAxis),
+                glm::dot(relative, mapZAxis)
+            );
+        };
+
+    const auto vectorToMap =
+        [&](const glm::dvec3& worldVector)
+        {
+            return glm::dvec3(
+                glm::dot(worldVector, mapXAxis),
+                glm::dot(worldVector, mapYAxis),
+                glm::dot(worldVector, mapZAxis)
+            );
+        };
+
+    Space::StaticSpaceUpdate staticWorld;
+    staticWorld.sourceRevision = 2;
+
+    Space::RegionInput region;
+    region.regionId = 1;
+    region.boundsMapMeters.minMapMeters = {
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        -NavigationRuntimeLabWorkspaceHalfExtentMeters
+    };
+    region.boundsMapMeters.maxMapMeters = {
+        NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabWorkspaceHalfExtentMeters,
+        NavigationRuntimeLabWorkspaceHalfExtentMeters
+    };
+    region.clearanceRadiusMeters =
+        NavigationRuntimeLabWorkspaceHalfExtentMeters;
+    region.geometryRevision = 2;
+    staticWorld.regions.push_back(region);
+
+    for (const auto& [objectId, object] : m_staticObjects)
+    {
+        if (object.systemId != m_activeCelestialSystemId ||
+            !object.attachedToHub ||
+            object.hubId != m_navigationRuntimeLabHubId ||
+            object.ownerName != "Hub Motion Lab")
+        {
+            continue;
+        }
+
+        // The static precision layer is intentionally static in the published
+        // map frame. Self-rotating infrastructure remains in the dynamic/
+        // moving-passage domain until that dedicated Stage-12 scenario is wired.
+        if (glm::length(object.hubLocalAngularVelocityDegPerSecond) > 1.0e-9)
+            continue;
+
+        glm::dmat3 objectBasis(1.0);
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            const glm::vec4 column = object.orientation[axis];
+            objectBasis[axis] = glm::dvec3(
+                static_cast<double>(column.x),
+                static_cast<double>(column.y),
+                static_cast<double>(column.z)
+            );
+        }
+
+        const glm::dvec3 objectWorldPosition =
+            world::coordinates::fullMeters(object.worldPosition);
+
+        auto exactObstacles =
+            game::navigation::NavigationHitVolumeAdapter::buildObstacles(
+                object.hitComponent,
+                objectId.value,
+                objectWorldPosition,
+                objectBasis,
+                object.displayName
+            );
+
+        for (auto& obstacle : exactObstacles)
+        {
+            obstacle.centerMeters =
+                pointToMap(obstacle.centerMeters);
+
+            glm::dmat3 mapBasis(1.0);
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                mapBasis[axis] =
+                    vectorToMap(obstacle.localToWorldBasis[axis]);
+            }
+            obstacle.localToWorldBasis = mapBasis;
+
+            staticWorld.obstacles.push_back(std::move(obstacle));
+        }
+    }
+
+    // Do not mark publication complete before real physical geometry exists.
+    // This permits first-tick HitVolume rebuild to finish before the immutable
+    // map-frame static snapshot is frozen.
+    if (staticWorld.obstacles.empty())
+        return;
+
+    m_navigationRuntimeLabSpace->replaceStaticWorld(
+        std::move(staticWorld)
+    );
+
+    const auto stats = m_navigationRuntimeLabSpace->stats();
+    m_navigationRuntimeLabObservation.exactStaticGeometryPublished = true;
+    m_navigationRuntimeLabObservation.exactStaticObstacleCount =
+        stats.obstacleCount;
+    m_navigationRuntimeLabStaticGeometryPublished = true;
 }
 
 
@@ -2071,6 +2210,11 @@ m_hubVelocityMetersPerSecond[hubId] =
         }
 
 
+
+    // HitVolumes and hub-attached transforms above are now authoritative for
+    // this fixed step. Publish the exact static NavigationSpace geometry only
+    // after both have been updated, never from stale first-frame poses.
+    publishNavigationRuntimeLabStaticGeometry();
 
     // === 1. AI / controls / attitude ===
     if (!trajectoryDebugMode)

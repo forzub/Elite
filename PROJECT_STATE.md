@@ -469,3 +469,22 @@ Current work is the live end-to-end authority fixture: demonstrate that
 `MovingPassageClear` drives real physics through PilotSkillExecutor and is
 replicated as same-tick server truth while exact-static collision safety remains
 green.
+
+
+## Future roadmap — galactic strategic navigation
+
+A dedicated future contract now exists:
+
+`src/game/navigation/GALACTIC_ROUTE_PLANNING.md`
+
+It separates interstellar strategic routing from station/local obstacle planning.
+The future GalacticRoutePlanner will combine jump topology with vehicle/drive
+capability, fuel and reserve constraints, gravity-aware trajectory validation,
+timing/ephemerides, hazards and replanning.
+
+Execution stays shared:
+- manual mode visualizes the accepted route/leg;
+- automatic mode executes the same accepted product.
+
+Current Stage-12 work is unchanged and remains focused on live local
+NavigationWorld authority, physics, replication and later common manual guidance.

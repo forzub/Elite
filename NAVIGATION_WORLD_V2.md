@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** stage 11B-2 — replicated guidance/debug truth
+**Current stage:** stage 12A — deterministic end-to-end runtime proving ground
 
 `main` is the only canonical development branch.
 
@@ -553,7 +553,7 @@ NAVIGATION PILOT SKILL CONTRACT: PASS
 11/11 trajectory/pilot CTest PASS
 ```
 
-## 11. Live integration — ACTIVE
+## 11. Live integration — ACCEPTED
 
 Authority:
 
@@ -711,6 +711,34 @@ navigation_replication_truth
 
 pins binary round-trip, stable-identity lookup and guidance presentation without fabricating a corridor.
 
+### Stage 11 target-machine acceptance
+
+Stage 11B-2 and therefore all of stage 11 are accepted on target-machine evidence from:
+
+```text
+9650c44cca23741dae3f4acf2c9a96a4ab4c5713
+
+NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+NAVIGATION LIVE NPC OWNERSHIP CONTRACT: PASS
+NAVIGATION LIVE REPLICATION/GUIDANCE CONTRACT: PASS
+wire schema architecture PASS
+navigation_runtime 2/2 PASS
+navigation_trajectory/pilot 11/11 PASS
+wire_data_plane_contracts 1/1 PASS
+EliteGame build PASS
+EliteServer build PASS
+```
+
+The sparse absent execution representation is pinned to exactly one variant-tag byte. Stage 11 is frozen unless stage-12 end-to-end evidence exposes a real integration defect.
+
+Stage 12 authority:
+
+```text
+src/game/navigation/STAGE12_END_TO_END.md
+```
+
+The first stage-12 slice is a deterministic station-adjacent proving ground driven through the production runtime chain, followed by interactive Shift+F12 visualization of the same completed navigation truth.
+
 ## 12. Performance contract
 
 ```text
@@ -732,7 +760,7 @@ Guidance visualizes the accepted navigation/trajectory/control intent; it must n
 ## 13. Progress / roadmap
 
 ```text
-[████████████████████░░░] 10 / 12 major stages closed
+[██████████████████████░] 11 / 12 major stages closed
 
 1  NavigationMap / mass dynamic P/V/A               CLOSED
 2  NavigationSpace / global corridors               CLOSED
@@ -746,11 +774,11 @@ Guidance visualizes the accepted navigation/trajectory/control intent; it must n
    9A terminal capture                               CLOSED
    9B continuous final approach                      CLOSED
 10 PilotSkillProfile                                 CLOSED
-11 live EliteGame / EliteServer / guidance + physics ACTIVE
+11 live EliteGame / EliteServer / guidance + physics CLOSED
    11A runtime control seam                           CLOSED
    11B-1 authoritative NPC runtime ownership           CLOSED
-   11B-2 replicated guidance/debug truth               ACTIVE
-12 end-to-end stress/debug + legacy retirement       PENDING
+   11B-2 replicated guidance/debug truth               CLOSED
+12 end-to-end stress/debug + legacy retirement       ACTIVE
 ```
 
 Legacy route-wide navigation is retired only after v2 owns the stable live path.

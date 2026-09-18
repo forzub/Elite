@@ -3350,6 +3350,11 @@ void SpaceState::update(float dt)
         );
     }
 
+    const std::uint64_t navigationExecutionSnapshotTick =
+        m_client->lastSimulationMetadata().serverTick;
+    if (navigationExecutionSnapshotTick != 0 &&
+        navigationExecutionSnapshotTick !=
+            m_lastNavigationExecutionSnapshotTick)
     {
         std::vector<game::navigation::ReplicatedNavigationExecution>
             replicatedExecution;
@@ -3371,6 +3376,8 @@ void SpaceState::update(float dt)
         m_navigationWorkspace.syncReplicatedNavigationExecution(
             std::move(replicatedExecution)
         );
+        m_lastNavigationExecutionSnapshotTick =
+            navigationExecutionSnapshotTick;
     }
 
 

@@ -1,9 +1,9 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / live runtime integration  
+**Current focus:** NavigationWorld v2 / live NPC ownership  
 **Canonical development branch:** `main`  
-**Active stage:** 11A
+**Active stage:** 11B-1
 
 ## Progress
 
@@ -11,74 +11,59 @@
 [████████████████████░░░] 10 / 12 major stages closed
 ```
 
-Closed:
+Closed: NavigationMap, NavigationSpace, LocalAvoidance, precision passage, emergency/contact severity, moving gaps/passages, moving/rotating docking, deterministic PilotSkillProfile.
+
+Stage 11:
 
 ```text
-1  NavigationMap / mass dynamic state
-2  NavigationSpace / global corridors
-3  LocalHorizon / LocalAvoidance
-4  oriented passages / gaps / attitude
-5  continuous static passage
-6  emergency mitigation / contact severity
-7  moving gap prediction
-8  moving continuous passage
-9  moving/rotating docking 6DoF
-10 deterministic PilotSkillProfile execution
+11A runtime control seam                  ACCEPTED
+11B-1 authoritative NPC runtime ownership ACTIVE
+11B-2 replicated guidance/debug truth     PENDING
 ```
 
-Active:
+Stage 12: end-to-end scenarios, stress/performance, debug truth, post-impact replan and legacy retirement.
+
+## Latest accepted live evidence
 
 ```text
-11 live game/server/guidance + physics hookup
-   11A runtime control seam
-   11B authoritative NPC/guidance ownership
+d7c77d5868b3178be3c392f0a8fecad5b57e3b69
+NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+runtime 1/1 PASS
+trajectory/pilot 11/11 PASS
+EliteGame + EliteServer build PASS
 ```
 
-Remaining:
+## 11B-1 architecture
+
+The server no longer accepts steering commands from `NpcAiSystem`.
 
 ```text
-12 end-to-end stress/debug/performance + legacy retirement
+NpcAiSystem
+    goal + pilot profile only
+        |
+        v
+NpcNavigationIntentController
+    nominal Navigation v2 acceleration intent
+        |
+        v
+per-NPC NavigationRuntimeControlBridge
+        |
+        v
+accepted live capability/physics seam
 ```
 
-## Stage 10 acceptance
+The initial `MaintainForwardCruise` / `Hold` goals are only ownership fixtures. Higher mission/traffic/repair/combat systems can later choose goals without becoming steering solvers.
 
-```text
-b042321b65084950aa91784a5e02344430e5c2bc
-NAVIGATION PILOT SKILL CONTRACT: PASS
-11/11 PASS
-```
+`GameSimulation` retains the exact latest execution snapshot/revision used for each NPC. 11B-2 will replicate this product to guidance/debug.
 
-## Stage 11A design
+## Safety/runtime invariants
 
-The live seam keeps responsibilities explicit:
+- no fallback to old `sin(position)` steering;
+- no direct P/V/angular-rate mutation by navigation;
+- no lost elapsed time under activation decimation;
+- capability and physics remain downstream authorities;
+- stale bridge state is discarded on failure/player takeover.
 
-```text
-Navigation v2 intent
-    -> PilotSkillExecutor
-    -> ShipControlState direct acceleration demand
-    -> existing ship capability layer
-    -> authoritative motion
-```
+## Next
 
-A new `NavigationRuntimeControlBridge` publishes one execution snapshot matching the exact demand sent downstream.
-
-The old keyboard-oriented `ShipControlState` remains compatible, but gains explicit navigation acceleration-demand fields. Existing ships without that flag continue through the established path.
-
-`ShipController` owns angular capability truth. `DynamicMotionSystem` owns linear propulsion split and final speed/resource semantics. `GameSimulation` selects direct navigation demand only when no material manual translation override exists.
-
-## Stage 11B direction
-
-The current `NpcAiSystem` is still a placeholder steering authority. After 11A acceptance it must become goal/policy input rather than a second motion solver. Per-NPC live intent and execution revisions will be the single truth consumed by both control and guidance/debug.
-
-## Final remaining work
-
-After live ownership is stable:
-
-```text
-end-to-end scenarios
-performance/stress
-Shift+F12/debug truth
-guidance same accepted intent
-collision/post-impact replan
-legacy navigation retirement
-```
+Pass 11B-1 target-machine full build/regression gate, then immediately implement replicated guidance/debug truth.

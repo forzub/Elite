@@ -77,8 +77,15 @@ struct NavigationRuntimeLabObservation
     std::uint64_t lastIntentRevision = 0;
     std::uint8_t lastPlannerStatus = 0xffu;
 
+    // Legacy names retained as diagnostics. Under Stage 12A-5 the
+    // static proving obstacle must remain false in both dynamic fields.
     bool obstacleCandidateSeen = false;
     bool obstaclePrimaryConflictSeen = false;
+    bool obstacleExactStaticBlockSeen = false;
+
+    std::uint64_t dynamicQueryCount = 0;
+    std::size_t maximumDynamicCandidateCount = 0;
+
     bool adjustedTargetSeen = false;
     bool conflictHoldSeen = false;
     bool executionSeen = false;

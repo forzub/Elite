@@ -543,7 +543,9 @@ int runNavigationRuntimeSelfTest()
                 );
 
             if (!std::isfinite(placementErrorMeters) ||
-                placementErrorMeters > 1.0e-6)
+                placementErrorMeters >
+                    game::diagnostics::
+                        NavigationRuntimeLabPlacementToleranceMeters)
             {
                 std::cerr
                     << "[NAV-SELFTEST]"

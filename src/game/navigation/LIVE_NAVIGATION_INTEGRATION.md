@@ -377,6 +377,42 @@ check_navigation_live_npc_ownership.py
 
 Stage 11B-1 remains pending a fresh full target-machine rerun.
 
+## Stage 11B-1 second target-machine attempt — NOT ACCEPTED
+
+The second rerun proved that server build wiring was repaired:
+
+```text
+live runtime architecture PASS
+live NPC ownership architecture PASS
+navigation trajectory/pilot 11/11 PASS
+EliteGame build PASS
+EliteServer build PASS
+```
+
+The only remaining failure was the isolated `navigation_runtime` link. The test fixture instantiated a full `Ship`, which pulled `ShipCore`, equipment, reactor/cooling, damage and other unrelated vtables into what should be a narrow navigation-runtime unit boundary.
+
+This is repaired architecturally rather than by linking unrelated ship subsystems into the test.
+
+New lightweight contract:
+
+```text
+NpcNavigationGoal
+        +
+NpcNavigationKinematicState
+    relative world velocity
+    forward/right/up
+    pitch/yaw/roll rates
+        |
+        v
+NpcNavigationIntentController
+```
+
+`NpcNavigationIntentController` no longer includes or accepts the full live ship runtime. `GameSimulation` is the adapter from authoritative `Ship` state to `NpcNavigationKinematicState`.
+
+The isolated runtime fixtures now construct only the compact state, so the unit target does not require reactor/equipment/damage/Ship vtables.
+
+The ownership checker now pins this decoupling.
+
 ## 11B after acceptance
 
 11B will wire the seam into authoritative runtime ownership:

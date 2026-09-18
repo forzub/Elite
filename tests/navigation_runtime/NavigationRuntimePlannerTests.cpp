@@ -302,6 +302,74 @@ void testSamePortalRejectsOversizedHull()
             "stationary static hold must not invent translation demand");
 }
 
+void testAdjustedTargetPreservesNominalConflictIdentity()
+{
+    Map::Config config;
+    config.halfExtentMeters = 2000.0;
+    config.cellSizeMeters = 100.0;
+    config.predictionHorizonSeconds = 3.0;
+    config.interactionMarginMeters = 0.0;
+
+    Map map(config);
+    Map::DynamicWorldUpdate update;
+    update.sourceRevision = 92;
+
+    Map::DynamicActorInput obstacle;
+    obstacle.entityId = 201;
+    obstacle.positionSystemMeters = {500.0, 0.0, 0.0};
+    obstacle.velocitySystemMetersPerSecond = {0.0, 0.0, 0.0};
+    obstacle.accelerationSystemMetersPerSecond2 = {0.0, 0.0, 0.0};
+    obstacle.radiusMeters = 50.0;
+    obstacle.motionRevision = 4;
+    update.actors.push_back(obstacle);
+    map.replaceDynamicWorld(std::move(update));
+
+    Map::CorridorQuery query;
+    query.startMapMeters = {0.0, 0.0, 0.0};
+    query.endMapMeters = {1000.0, 0.0, 0.0};
+    query.radiusMeters = 10.0;
+    const Map::QueryResult dynamic = map.queryCorridor(query);
+
+    Space space;
+    Space::StaticSpaceUpdate staticWorld;
+    staticWorld.sourceRevision = 201;
+    staticWorld.regions = {
+        region(1, 500.0, 0.0, 1000.0, 1000.0, 1000.0)
+    };
+    space.replaceStaticWorld(std::move(staticWorld));
+
+    Planner::AgentState agent = baseAgent();
+    agent.radiusMeters = 5.0;
+
+    Planner::Goal goal = goalAt(1000.0);
+    goal.maximumTargetSpeedMps = 20.0;
+
+    Planner::Policy policy = basePolicy();
+    policy.horizon.turnDistanceMeters = 600.0;
+    policy.horizon.minimumHorizonMeters = 600.0;
+    policy.horizon.safetyMarginMeters = 5.0;
+
+    const Planner::Result result = Planner::plan(
+        agent,
+        goal,
+        dynamic,
+        0.0,
+        space,
+        policy
+    );
+
+    require(result.status == Planner::Status::AdjustedClear,
+            "fixture must produce a safe adjusted target");
+    require(result.adjustedTarget,
+            "adjusted target flag must survive runtime composition");
+    require(result.nominalPrimaryConflictEntityId == 201,
+            "adjusted target must retain the obstacle that rejected the nominal route");
+    require(result.nominalDynamicConflictsFound > 0,
+            "adjusted target must retain nominal conflict count");
+    require(result.primaryConflictEntityId == 0,
+            "final safe adjusted probe must not pretend it is still in conflict");
+}
+
 void testNavigationMapCrossingConflictProducesBrakingHold()
 {
     Map::Config config;
@@ -411,6 +479,7 @@ int main()
         testHitVolumeAdapterUsesAuthoritativeLocalObb();
         testStaticCorridorBecomesLivePortalWaypoint();
         testSamePortalRejectsOversizedHull();
+        testAdjustedTargetPreservesNominalConflictIdentity();
         testNavigationMapCrossingConflictProducesBrakingHold();
         testPlannerIntentCrossesAcceptedPilotBridge();
 
@@ -418,6 +487,7 @@ int main()
         std::cout << " - authoritative HitVolume -> navigation OBB adapter\n";
         std::cout << " - static corridor portal -> bounded live target\n";
         std::cout << " - portal clearance rejects oversized hull\n";
+        std::cout << " - adjusted target retains nominal conflict identity\n";
         std::cout << " - NavigationMap crossing conflict -> braking hold\n";
         std::cout << " - planner intent -> PilotSkillExecutor runtime bridge\n";
         return 0;

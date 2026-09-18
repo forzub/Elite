@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 
 #include <glm/glm.hpp>
 
@@ -27,6 +28,36 @@ inline const glm::dvec3 NavigationRuntimeLabRotatingActorAngularVelocityDegPerSe
 };
 inline constexpr double NavigationRuntimeLabAngularVelocityToleranceRadPerSecond =
     1.0e-12;
+
+// Stage 12A-6b3b deterministic live moving aperture. These are real
+// hub-attached physical objects whose centres translate together in hub-visual
+// coordinates. The offset is deliberately asymmetric around the nominal route:
+// one conservative sphere conflicts with the nominal line while the pair still
+// leaves a real bounded aperture for the Cobra precision hull.
+inline constexpr const char* NavigationRuntimeLabMovingGapUpperLabel =
+    "NAV MOVING GAP UPPER";
+inline constexpr const char* NavigationRuntimeLabMovingGapLowerLabel =
+    "NAV MOVING GAP LOWER";
+inline const glm::dvec3 NavigationRuntimeLabMovingGapUpperVisualLocalMeters {
+    975.0, -790.0, -2500.0
+};
+inline const glm::dvec3 NavigationRuntimeLabMovingGapLowerVisualLocalMeters {
+    975.0, -1890.0, -2500.0
+};
+inline const glm::dvec3 NavigationRuntimeLabMovingGapVelocityVisualMps {
+    0.0, 0.0, 1.0
+};
+inline constexpr double NavigationRuntimeLabMovingPassageDurationSeconds =
+    30.0;
+
+inline bool isNavigationRuntimeLabMovingGapBoundary(
+    std::string_view label
+) noexcept
+{
+    return
+        label == NavigationRuntimeLabMovingGapUpperLabel ||
+        label == NavigationRuntimeLabMovingGapLowerLabel;
+}
 
 // Hub ReferenceFrame uses tactical local axes:
 //   X = prograde, Y = radial, Z = normal.
@@ -100,6 +131,30 @@ struct NavigationRuntimeLabObservation
     glm::dvec3 expectedRotatingActorAngularVelocityMapRadPerSecond {0.0};
     glm::dvec3 observedRotatingActorAngularVelocityMapRadPerSecond {0.0};
     double rotatingActorAngularVelocityErrorRadPerSecond = 0.0;
+
+    // Live moving-gap fixture identity/publication.
+    std::uint32_t movingGapUpperEntityId = 0;
+    std::uint32_t movingGapLowerEntityId = 0;
+    bool movingGapPairCandidateSeen = false;
+    bool movingGapKinematicsVerified = false;
+    double movingGapMaximumVelocityErrorMps = 0.0;
+    glm::dvec3 movingGapCurrentCenterMap {0.0};
+
+    // Sticky proof flags plus current authority/execution state. The current
+    // flags let the server replication gate require a sparse publication from
+    // an epoch in which MovingPassageClear actually owned the ship.
+    bool movingPrecisionAttemptedSeen = false;
+    bool movingPassageFeasibleSeen = false;
+    bool movingPassageStaticSafeSeen = false;
+    bool movingPassageAuthoritySeen = false;
+    bool movingPassageAuthorityActive = false;
+    bool movingPassageExecutedSeen = false;
+    bool movingPassageExecutionActive = false;
+    bool movingPassageAppliedAccelerationSeen = false;
+    bool movingGapPlanePassed = false;
+    double maximumMovingPassageExecutedDemandMps2 = 0.0;
+    double maximumMovingPassageAppliedAccelerationMps2 = 0.0;
+    glm::dvec3 lastMovingPassageExecutedWorldMps2 {0.0};
 
     std::uint64_t planCount = 0;
     std::uint64_t executionCount = 0;

@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+GOAL_H = (ROOT / "src/game/navigation/NpcNavigationGoal.h").read_text(encoding="utf-8")
 AI_H = (ROOT / "src/game/simulation/NpcAiSystem.h").read_text(encoding="utf-8")
 AI_CPP = (ROOT / "src/game/simulation/NpcAiSystem.cpp").read_text(encoding="utf-8")
 INTENT_H = (ROOT / "src/game/navigation/NpcNavigationIntentController.h").read_text(encoding="utf-8")
@@ -30,6 +31,10 @@ SERVER_CMAKE = ROOT_CMAKE[server_block_start:server_block_end]
 for marker in (
     "struct NpcNavigationGoal",
     "NpcNavigationGoalMode",
+):
+    require(marker in GOAL_H, f"lightweight NPC goal contract missing: {marker}")
+
+for marker in (
     "computeGoal",
     "pilotSkillProfile",
 ):
@@ -50,11 +55,26 @@ for forbidden in (
     )
 
 for marker in (
+    "struct NpcNavigationKinematicState",
+    "relativeWorldVelocityMps",
+    "forwardMap",
+    "rightMap",
+    "upMap",
     "class NpcNavigationIntentController final",
     "NavigationRuntimeControlBridge::Intent",
     "buildIntent",
 ):
     require(marker in INTENT_H, f"NPC navigation intent interface missing: {marker}")
+
+for forbidden in (
+    "Ship.h",
+    "ShipCore",
+    "const Ship&",
+):
+    require(
+        forbidden not in INTENT_H and forbidden not in INTENT_CPP,
+        f"NPC intent controller must stay decoupled from full Ship runtime: {forbidden}",
+    )
 
 for marker in (
     "desiredRelativeWorldVelocity",
@@ -77,6 +97,7 @@ for marker in (
 
 for marker in (
     "m_npcAiSystem.computeGoal",
+    "NpcNavigationKinematicState navigationState",
     "NpcNavigationIntentController::buildIntent",
     "bridgeIt->second->step",
     "ship.setControlState(latest.control)",
@@ -147,7 +168,7 @@ require(
 
 print("NAVIGATION LIVE NPC OWNERSHIP CONTRACT: PASS")
 print(" - NpcAiSystem publishes goal/policy only and no longer emits steering controls")
-print(" - Navigation v2 converts NPC goals into nominal acceleration intent")
+print(" - Navigation v2 converts NPC goals plus a lightweight kinematic snapshot into nominal acceleration intent")
 print(" - GameSimulation owns persistent per-NPC pilot/runtime bridge state")
 print(" - activation-decimated elapsed time is advanced in bounded exact-time pieces")
 print(" - no failure path falls back to the retired direct steering authority")

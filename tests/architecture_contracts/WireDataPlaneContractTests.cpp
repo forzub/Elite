@@ -74,23 +74,25 @@ SimulationSnapshot makeSnapshot()
     ship.acknowledgedControlTick = 77u;
     ship.motionLabKind = game::diagnostics::HubMotionLabActorKind::FastOrbit;
 
-    ship.navigationExecution.valid = true;
-    ship.navigationExecution.intentRevision = 9001u;
-    ship.navigationExecution.activeTargetRevision = 8999u;
-    ship.navigationExecution.idealLinearAccelerationDemandMapMps2 =
+    game::simulation::NavigationExecutionSnapshot navigationExecution;
+    navigationExecution.valid = true;
+    navigationExecution.intentRevision = 9001u;
+    navigationExecution.activeTargetRevision = 8999u;
+    navigationExecution.idealLinearAccelerationDemandMapMps2 =
         glm::dvec3(1.0, 2.0, 3.0);
-    ship.navigationExecution.idealAngularAccelerationDemandMapRadPerSec2 =
+    navigationExecution.idealAngularAccelerationDemandMapRadPerSec2 =
         glm::dvec3(0.1, 0.2, 0.3);
-    ship.navigationExecution.executedLinearAccelerationDemandMapMps2 =
+    navigationExecution.executedLinearAccelerationDemandMapMps2 =
         glm::dvec3(0.9, 1.8, 2.7);
-    ship.navigationExecution.executedAngularAccelerationDemandMapRadPerSec2 =
+    navigationExecution.executedAngularAccelerationDemandMapRadPerSec2 =
         glm::dvec3(0.09, 0.18, 0.27);
-    ship.navigationExecution.emergency = true;
-    ship.navigationExecution.hazardUrgency01 = 0.8;
-    ship.navigationExecution.reactionBlocked = false;
-    ship.navigationExecution.decisionSampled = true;
-    ship.navigationExecution.queuedCommandApplied = true;
-    ship.navigationExecution.pendingCommandCount = 3u;
+    navigationExecution.emergency = true;
+    navigationExecution.hazardUrgency01 = 0.8;
+    navigationExecution.reactionBlocked = false;
+    navigationExecution.decisionSampled = true;
+    navigationExecution.queuedCommandApplied = true;
+    navigationExecution.pendingCommandCount = 3u;
+    ship.navigationExecution = navigationExecution;
     ship.transform.worldPosition = position(2, -3, 4, 10.0, 20.0, -30.0);
     ship.transform.position = glm::vec3(10.0f, 20.0f, -30.0f);
     ship.transform.orientation[0][1] = 0.25f;
@@ -489,25 +491,33 @@ void testSnapshotRoundTrip()
         "removed hub lifecycle mismatch");
     require(decoded.ships.size() == 1u, "ship count mismatch");
     require(decoded.ships[0].id == EntityId{42u}, "ship identity mismatch");
-    require(decoded.ships[0].navigationExecution.valid,
+    const auto* decodedNavigationExecution =
+        std::get_if<game::simulation::NavigationExecutionSnapshot>(
+            &decoded.ships[0].navigationExecution
+        );
+    require(decodedNavigationExecution != nullptr,
+        "navigation execution payload did not round-trip");
+    require(decodedNavigationExecution->valid,
         "navigation execution validity did not round-trip");
-    require(decoded.ships[0].navigationExecution.intentRevision == 9001u,
+    require(decodedNavigationExecution->intentRevision == 9001u,
         "navigation execution intent revision did not round-trip");
-    require(decoded.ships[0].navigationExecution.activeTargetRevision == 8999u,
+    require(decodedNavigationExecution->activeTargetRevision == 8999u,
         "navigation execution active-target revision did not round-trip");
     require(near(
-            decoded.ships[0].navigationExecution.executedLinearAccelerationDemandMapMps2.y,
+            decodedNavigationExecution->
+                executedLinearAccelerationDemandMapMps2.y,
             1.8),
         "navigation executed linear demand did not round-trip");
     require(near(
-            decoded.ships[0].navigationExecution.executedAngularAccelerationDemandMapRadPerSec2.z,
+            decodedNavigationExecution->
+                executedAngularAccelerationDemandMapRadPerSec2.z,
             0.27),
         "navigation executed angular demand did not round-trip");
-    require(decoded.ships[0].navigationExecution.emergency &&
-            decoded.ships[0].navigationExecution.decisionSampled &&
-            decoded.ships[0].navigationExecution.queuedCommandApplied,
+    require(decodedNavigationExecution->emergency &&
+            decodedNavigationExecution->decisionSampled &&
+            decodedNavigationExecution->queuedCommandApplied,
         "navigation execution diagnostics did not round-trip");
-    require(decoded.ships[0].navigationExecution.pendingCommandCount == 3u,
+    require(decodedNavigationExecution->pendingCommandCount == 3u,
         "navigation execution pending-command count did not round-trip");
     require(near(decoded.ships[0].transform.motion.travelFrame.localToWorldBasis[1][2], 0.125),
         "double matrix state mismatch");
@@ -616,6 +626,42 @@ void testMapResponsesRoundTrip()
         "GalaxyMapResponse jurisdiction overlay mismatch");
 }
 
+
+void testSparseNavigationExecutionVariant()
+{
+    using game::network::wire::WireWriter;
+    using game::network::wire::binary::encodeValue;
+
+    std::variant<
+        std::monostate,
+        game::simulation::NavigationExecutionSnapshot
+    > absent = std::monostate {};
+
+    WireWriter absentWriter;
+    require(
+        encodeValue(absentWriter, absent),
+        "sparse navigation execution monostate encode failed"
+    );
+    require(
+        absentWriter.bytes().size() == 1u,
+        "absent navigation execution must cost only one variant tag byte"
+    );
+
+    auto presentExecution = game::simulation::NavigationExecutionSnapshot {};
+    presentExecution.valid = true;
+    presentExecution.intentRevision = 1u;
+
+    decltype(absent) present = presentExecution;
+    WireWriter presentWriter;
+    require(
+        encodeValue(presentWriter, present),
+        "present navigation execution encode failed"
+    );
+    require(
+        presentWriter.bytes().size() > absentWriter.bytes().size(),
+        "present navigation execution must carry payload beyond the variant tag"
+    );
+}
 
 void testContainerAndEnumValidation()
 {
@@ -739,6 +785,7 @@ int main()
 {
     testSnapshotRoundTrip();
     testMapResponsesRoundTrip();
+    testSparseNavigationExecutionVariant();
     testContainerAndEnumValidation();
     testCompressionBoundaryIsOpaqueBytes();
     testFullDataPlaneBytePipeline();

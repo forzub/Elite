@@ -116,6 +116,10 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
 
     Result result;
     result.target = nominal;
+    result.nominalPrimaryConflictEntityId =
+        nominal.primaryConflictEntityId;
+    result.nominalConflictsFound =
+        nominal.conflictsFound;
 
     if (nominal.status == LocalHorizonPlanner::Status::StaleHold)
     {

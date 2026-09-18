@@ -1,6 +1,6 @@
 # Navigation v2 — continuous moving/rotating docking approach
 
-**Status:** stage 9B repaired candidate pending fresh target-machine gate  
+**Status:** stage 9B behavior/architecture ACCEPTED; docking stage 9 CLOSED  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`, `src/world/navigation/DOCKING_TERMINAL_MODEL.md`
 
@@ -362,6 +362,19 @@ Damage / Structural
 
 Normal docking aborts or goes around when a safe/capturable final segment cannot be proven. A destructive collision is never relabeled as docking success.
 
+## Target-machine acceptance
+
+Accepted on:
+
+```text
+c90a66d6c64bdf3acc037208a000b1955d40e6c3
+NAVIGATION TRAJECTORY DOCKING APPROACH CONTRACT: PASS
+10/10 navigation_trajectory CTest PASS
+100% tests passed
+```
+
+The repaired hidden-between-sample regression passed without changing the production continuous geometry evaluator. Stage 9A terminal capture and stage 9B continuous approach are therefore both accepted, and the large moving/rotating docking mathematics stage is closed.
+
 ## Next after acceptance
 
-Once stage 9B passes the target-machine architecture/build/behavior gate, the large docking mathematics stage is closed. The next Navigation v2 block is deterministic `PilotSkillProfile` execution, followed by live game/server/guidance + physics hookup and end-to-end stress/debug acceptance.
+Stage 9B passed its target-machine gate. The large docking mathematics stage is closed. The active Navigation v2 block is deterministic `PilotSkillProfile` execution, followed by live game/server/guidance + physics hookup and end-to-end stress/debug acceptance.

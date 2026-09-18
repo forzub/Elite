@@ -1,6 +1,6 @@
 # Navigation v2 — live runtime integration
 
-**Status:** stage 11A + 11B-1 ACCEPTED; stage 11B-2 replicated guidance/debug truth candidate pending target-machine gate  
+**Status:** stage 11 ACCEPTED; stage 11B-2 replicated guidance/debug truth accepted on target machine  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/PILOT_SKILL_MODEL.md`
 
@@ -581,6 +581,28 @@ no corridor published -> no fake corridor becomes visible
 ```
 
 The existing canonical wire-data-plane contract is also extended with navigation execution fields and proves that an absent execution variant encodes to exactly one tag byte.
+
+## Stage 11B-2 target-machine acceptance
+
+Accepted on:
+
+```text
+9650c44cca23741dae3f4acf2c9a96a4ab4c5713
+
+NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+NAVIGATION LIVE NPC OWNERSHIP CONTRACT: PASS
+NAVIGATION LIVE REPLICATION/GUIDANCE CONTRACT: PASS
+wire schema architecture PASS
+navigation_runtime 2/2 PASS
+navigation_trajectory/pilot 11/11 PASS
+wire_data_plane_contracts 1/1 PASS
+EliteGame build PASS
+EliteServer build PASS
+```
+
+This closes stage 11. The exact server execution product is now accepted as the replicated read-only guidance/debug truth, including the one-byte absent sparse variant invariant.
+
+Stage 12 now owns end-to-end runtime/stress/debug and legacy-retirement evidence under src/game/navigation/STAGE12_END_TO_END.md.
 
 ## 11B after acceptance
 

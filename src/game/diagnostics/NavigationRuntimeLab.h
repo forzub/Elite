@@ -60,7 +60,7 @@ inline bool isNavigationRuntimeLabMovingGapBoundary(
 // Stage 12A-6b3b static slit/tunnel gate.
 //
 // Six 360 x 360 x 900 m exact-HitVolume cubes form two three-cube rows.
-// The 120 m vertical gap between the rows is a real 900 m-deep tunnel.
+// The 140 m vertical gap between the rows is a real 900 m-deep tunnel.
 // The portal center is intentionally 120 m above the authored straight route,
 // so successful navigation must steer into the slit instead of merely flying
 // straight through a pre-aligned hole.
@@ -68,15 +68,15 @@ inline const glm::dvec3 NavigationRuntimeLabSlitPortalCenterVisualLocalMeters {
     975.0, -1180.0, -4500.0
 };
 inline constexpr double NavigationRuntimeLabSlitHalfWidthMeters = 540.0;
-inline constexpr double NavigationRuntimeLabSlitHalfHeightMeters = 60.0;
-inline constexpr double NavigationRuntimeLabSlitPortalClearanceMeters = 45.0;
+inline constexpr double NavigationRuntimeLabSlitHalfHeightMeters = 70.0;
+inline constexpr double NavigationRuntimeLabSlitPortalClearanceMeters = 55.0;
 inline constexpr std::uint64_t NavigationRuntimeLabSlitPortalId = 1202301;
 
 // CUBE 08 remains the representative exact-static blocker identity, but is now
 // the centre cube in the lower tunnel row rather than an isolated obstacle.
 inline const glm::dvec3 NavigationRuntimeLabObstacleVisualLocalMeters {
     NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
-    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y - 240.0,
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y - 250.0,
     NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
 };
 

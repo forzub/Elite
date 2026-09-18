@@ -20,6 +20,7 @@
 #include "src/game/player/ActorIdProvider.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/diagnostics/ActivationCadenceLab.h"
+#include "src/game/diagnostics/NavigationRuntimeLab.h"
 #include "src/game/diagnostics/InterplanetaryTransferLab.h"
 
 #include "src/world/types/ObjectType.h"
@@ -833,6 +834,51 @@ EntityId spawnInterplanetaryTransferLabNpc(GameSimulation& sim)
     return id;
 }
 
+EntityId spawnNavigationRuntimeLabNpc(
+    GameSimulation& sim,
+    const glm::dvec3& stationPos
+)
+{
+    using namespace game::diagnostics;
+
+    ShipVisualIdentity visual {
+        .shipType = "Cobra MK1",
+        .shipName = NavigationRuntimeLabLabel
+    };
+
+    ShipRegistry registry {
+        .instanceId = NavigationRuntimeLabInstanceId,
+        .ownerName = "Navigation Diagnostics",
+        .ownerActor = ActorIds::Unknown(),
+        .registrationId = "NAV-V2-9030",
+        .homePort = "Earth High Orbital",
+        .shipRole = ShipRoleType::Civilian
+    };
+
+    ShipInitData initData;
+    initData.visual = visual;
+    initData.registry = registry;
+
+    // Deferred placement: GameSimulation moves the actor into the exact hub
+    // reference frame after the authoritative HubNavigationFrame is valid.
+    const EntityId id =
+        sim.spawnShip(
+            ShipRole::NPC,
+            0,
+            EliteCobraMk1::EliteCobraMk1Descriptor(),
+            stationPos,
+            initData,
+            glm::mat4(1.0f)
+        );
+
+    sim.registerNavigationRuntimeLabShip(
+        id,
+        NavigationRuntimeLabHubId
+    );
+
+    return id;
+}
+
 EntityId spawnActivationCadenceLabNpc(
     GameSimulation& sim,
     const glm::dvec3& stationPos
@@ -980,6 +1026,12 @@ EntityId buildGameScene(
                 stationPos
             );
         }
+    }
+
+    if constexpr (game::diagnostics::NavigationRuntimeLabEnabled)
+    {
+        if (diagnosticHubAvailable)
+            spawnNavigationRuntimeLabNpc(sim, stationPos);
     }
 
     if constexpr (game::diagnostics::ActivationCadenceLabEnabled)

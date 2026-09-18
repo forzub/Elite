@@ -1,14 +1,14 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / deterministic NPC pilot execution  
+**Current focus:** NavigationWorld v2 / live runtime integration  
 **Canonical development branch:** `main`  
-**Active stage:** 10 — `PilotSkillProfile`
+**Active stage:** 11A
 
 ## Progress
 
 ```text
-[██████████████████░░░░░] 9 / 12 major stages closed
+[████████████████████░░░] 10 / 12 major stages closed
 ```
 
 Closed:
@@ -17,101 +17,68 @@ Closed:
 1  NavigationMap / mass dynamic state
 2  NavigationSpace / global corridors
 3  LocalHorizon / LocalAvoidance
-4  oriented passages / bounded gaps / attitude reachability
+4  oriented passages / gaps / attitude
 5  continuous static passage
 6  emergency mitigation / contact severity
 7  moving gap prediction
-8  moving continuous oriented-hull passage
+8  moving continuous passage
 9  moving/rotating docking 6DoF
+10 deterministic PilotSkillProfile execution
 ```
 
-Active / remaining:
+Active:
 
 ```text
-10 deterministic PilotSkillProfile execution   ACTIVE
-11 live game/server/guidance + physics hookup  PENDING
-12 end-to-end stress/debug + legacy retirement PENDING
+11 live game/server/guidance + physics hookup
+   11A runtime control seam
+   11B authoritative NPC/guidance ownership
 ```
 
-## Accepted docking evidence
+Remaining:
 
 ```text
-terminal 9A
-835271539619b7dd02efc54ff54df51d64b49fce
-9/9 PASS
-
-continuous approach 9B
-c90a66d6c64bdf3acc037208a000b1955d40e6c3
-NAVIGATION TRAJECTORY DOCKING APPROACH CONTRACT: PASS
-10/10 PASS
+12 end-to-end stress/debug/performance + legacy retirement
 ```
 
-Stage 9 is closed.
-
-## Active stage 10 architecture
-
-`PilotSkillExecutor` sits between accepted navigation/control intent and real flight control:
+## Stage 10 acceptance
 
 ```text
-accepted ideal acceleration intent
-        |
-        v
-PilotSkillExecutor
-  reaction delay
-  decision cadence
-  command latency
-  gain / damping / slew
-  deterministic command-space precision error
-        |
-        v
-flight-control/thruster authority
-        |
-        v
-physics
+b042321b65084950aa91784a5e02344430e5c2bc
+NAVIGATION PILOT SKILL CONTRACT: PASS
+11/11 PASS
 ```
 
-It is stateful per pilot but fixed-size and backend-neutral.
+## Stage 11A design
 
-The game-facing `PilotSkillProfile` separates:
+The live seam keeps responsibilities explicit:
 
 ```text
-ExecutionProfile
-    timing / response / precision
-
-PolicyProfile
-    anticipation / risk / comfort
+Navigation v2 intent
+    -> PilotSkillExecutor
+    -> ShipControlState direct acceleration demand
+    -> existing ship capability layer
+    -> authoritative motion
 ```
 
-The execution layer does not consume policy preferences. This prevents preference knobs from becoming hidden physics modifiers.
+A new `NavigationRuntimeControlBridge` publishes one execution snapshot matching the exact demand sent downstream.
 
-## Pinned stage-10 behaviors
+The old keyboard-oriented `ShipControlState` remains compatible, but gains explicit navigation acceleration-demand fields. Existing ships without that flag continue through the established path.
+
+`ShipController` owns angular capability truth. `DynamicMotionSystem` owns linear propulsion split and final speed/resource semantics. `GameSimulation` selects direct navigation demand only when no material manual translation override exists.
+
+## Stage 11B direction
+
+The current `NpcAiSystem` is still a placeholder steering authority. After 11A acceptance it must become goal/policy input rather than a second motion solver. Per-NPC live intent and execution revisions will be the single truth consumed by both control and guidance/debug.
+
+## Final remaining work
+
+After live ownership is stable:
 
 ```text
-reaction/latency delay
-sample-and-hold decision cadence
-urgent emergency reaction shortening
-seeded replay-stable command error
-damping-controlled overshoot
-poor-pilot closed-loop oscillation
-policy/execution ownership separation
+end-to-end scenarios
+performance/stress
+Shift+F12/debug truth
+guidance same accepted intent
+collision/post-impact replan
+legacy navigation retirement
 ```
-
-## Performance/scaling direction
-
-The isolated executor has bounded per-call work:
-
-```text
-queue <= 256
-integration substeps <= 64
-no world queries
-no allocations in steady state
-```
-
-Mass-NPC scheduling/performance is intentionally validated in stage 11/12 live composition rather than inventing a synthetic world benchmark here.
-
-## Next order
-
-1. target-machine stage-10 architecture + 11/11 behavior gate;
-2. live `EliteGame` / `EliteServer` / guidance + flight/physics integration;
-3. end-to-end stress/debug/performance;
-4. retire legacy route-wide navigation when v2 is live-stable.

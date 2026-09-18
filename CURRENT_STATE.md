@@ -1,10 +1,9 @@
 # Elite — CURRENT STATE
 
-**Updated:** 2026-09-18  
-**Canonical branch:** `main`  
-**Current public HEAD:** `32bb51739ee3512d25dbaa940f94fd3743152eb6`
+**Updated:** 2026-09-18
+**Canonical branch:** `main`
 
-## Stage 12 status
+## Stage 12
 
 - 12A-1 — ACCEPTED
 - 12A-2 — ACCEPTED
@@ -12,65 +11,54 @@
 - 12A-4 exact static HitVolume OBB — ACCEPTED
 - 12A-5 static/dynamic ownership cleanup — CANDIDATE
 
-## Latest target-machine result
+## Latest target-machine evidence
 
-Run on
-`54bd19ef647f0eca8dcc738be4342052ee164683`:
+Run on `35802cec694b1c68fa07736596a38bb44d708375`:
 
 ```text
 architecture PASS
+navigation_runtime 3/3 PASS
 EliteGame PASS
 EliteServer PASS
 
 obstacle_candidate=0
 obstacle_conflict=0
+
 configured_route_exact_block=1
-exact_obstacle_block=0
-exact_static_block=0
-adjusted=0
+first_live_probe_blocked=1
+exact_obstacle_block=1
+exact_static_block=1
+adjusted=1
 
-exact_static=1
-exact_static_obstacles=17
-exact_static_query=1
 exact_static_motion_samples=6000
-exact_static_violation=0
-
-reached_goal=1
-remaining_goal_m=0.17053
+exact_static_violation=1
 ```
 
-Interpretation:
-- ownership cleanup itself works;
-- CUBE 08 stays out of NavigationMap;
-- authored start->goal centerline intersects exact CUBE 08;
-- real ship reaches goal safely;
-- but runtime bounded nominal segment never records CUBE 08 as a static blocker.
+This is progress, not a repeat.
 
-The frame-axis contract was re-audited and is correct:
-visual = X normal, Y radial, Z -prograde;
-tactical = X prograde, Y radial, Z normal;
-visual->tactical conversion {-z,y,x} is correct.
+The previous failure was "live planner does not see CUBE 08".
+That is now closed: the first live bounded segment, runtime planner and exact
+static blocker identity all agree and the planner chooses an adjusted target.
 
-## Diagnostic candidate
+The remaining failure is downstream:
+the authoritative physical ship intersects some exact static HitVolume while
+executing the accepted adjusted maneuver.
 
-Current candidate adds two independent proofs:
+Therefore current debugging focus is no longer NavigationSpace ownership or
+static detection. It is the boundary:
 
-1. a navigation_runtime regression with live-scale numbers:
-   - static OBB 1300 m ahead;
-   - first physical horizon ~1420 m;
-   - distant goal;
-   - unrelated dynamic actor;
-   - expected AdjustedClear from exact static geometry.
+```text
+geometrically safe adjusted target
+    -> PilotSkillExecutor / control
+    -> physically executed trajectory
+```
 
-2. a first-live-plan exact probe before Planner::plan:
-   - captures actual agent map position;
-   - actual goal map position;
-   - computed bounded target;
-   - horizon distance;
-   - exact blocking entity.
-
-Server self-test now fails immediately if:
-- the first live bounded segment does not hit exact CUBE 08; or
-- the identical exact segment hits CUBE 08 but planner loses that static block.
+A first-collision witness is now captured and the self-test fails immediately
+at the first physical exact-static violation, reporting:
+- blocking entity id;
+- proving CUBE 08 entity id;
+- swept start/end positions;
+- selected target;
+- planner status.
 
 No stationary conservative sphere has been reintroduced.

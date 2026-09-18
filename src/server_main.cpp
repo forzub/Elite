@@ -1096,6 +1096,16 @@ int runNavigationRuntimeSelfTest()
                 )
                 << " static_invalidations="
                 << observation.acceptedSegmentStaticSafetyInvalidationCount
+                << " emergency_recoveries="
+                << observation.acceptedSegmentEmergencyRecoveryCount
+                << " emergency_recovery_active="
+                << observation.acceptedSegmentEmergencyRecoveryActive
+                << " stopping_reserve_blocked="
+                << observation.acceptedSegmentLastStoppingReserveBlocked
+                << " stopping_reserve_s="
+                << observation.acceptedSegmentLastStoppingReserveSeconds
+                << " stopping_reserve_m="
+                << observation.acceptedSegmentLastStoppingReserveDistanceMeters
                 << " previous_monitor_blocker="
                 << observation.firstExactStaticViolationPreviousBlockingEntityId
                 << " previous_target_blocked="

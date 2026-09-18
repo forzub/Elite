@@ -604,6 +604,13 @@ require(
 )
 
 require(
+    "LOCAL INERTIAL / TACTICAL" in REPLAN_DOC and
+    "planner/monitor state `P/V/A` must all be in the same local frame" in REPLAN_DOC and
+    "GLOBAL/WORLD conversion is allowed only at explicit simulation boundaries" in REPLAN_DOC,
+    "Stage-12 documentation must pin one canonical local translational navigation frame",
+)
+
+require(
     "executedWorldVector" in SIM_CPP and
     "executedMapVector" in SIM_CPP and
     "glm::dot(executedWorldVector, hubFrame->normalAxis)" in SIM_CPP and
@@ -615,7 +622,7 @@ require(
 
 require(
     "staticSafetyStoppingReserveBlocked" in SIM_CPP and
-    "acceptedSegmentEmergencyRecoveryCount" in SIM_H and
+    "acceptedSegmentEmergencyRecoveryCount" in LAB_H and
     "AcceptedSegment::LinearMode::FixedAcceleration" in SIM_CPP and
     "accepted.hazardUrgency01 = 1.0;" in SIM_CPP and
     "accepted.validUntilUniverseTimeSeconds =\n                    navigationTimeSeconds + 0.25;" in SIM_CPP,

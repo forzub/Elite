@@ -2,52 +2,53 @@
 
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
-**Track:** Navigation v2 end-to-end integration  
-**Stage:** 12A-2 — authoritative GameSimulation proving actor gate
+**Stage:** 12A-3 — live CUBE 08 behavior proof
 
 ## Accepted baseline
 
-12A-1 is accepted on:
+12A-2 is accepted on:
 
 ```text
-af58b46cdb01ad254097383e5e4274c733c4e28e
+7b4db95788d80c95afb3b57c109c671cb7a41366
 ```
 
-with:
-
-```text
-NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS
-navigation_runtime 3/3 PASS
-EliteGame build PASS
-EliteServer build PASS
-```
+with architecture PASS, `navigation_runtime 3/3`, EliteGame PASS and
+EliteServer PASS.
 
 ## Candidate under test
 
-One isolated authoritative NPC now uses the new production planner:
+Current code baseline:
 
 ```text
-existing NAV STRESS physical objects
- -> StaticObject::hitComponent
- -> NavigationHitVolumeAdapter
- -> hit-volume-derived NavigationMap broadphase
- -> NavigationRuntimePlanner
- -> NavigationRuntimeControlBridge
- -> PilotSkillExecutor
- -> ShipControlState
- -> authoritative physics
+27282d1d0d5e38072906139afbd743f712a1a68a
 ```
 
-The actor is `NAVIGATION V2 RUNTIME LAB` (instance 9030), pinned Active, while
-ordinary NPCs keep their previous baseline path.
+New live mode:
 
-The current physical route deliberately crosses `NAV STRESS CUBE 08` if no
-avoidance occurs.
+```text
+EliteServer --self-test-navigation
+```
+
+The self-test requires all of the following before PASS:
+
+- CUBE 08 enters the bounded NavigationMap candidate set;
+- CUBE 08 is retained as the nominal conflict that rejected the straight route;
+- LocalAvoidance produces an adjusted safe target;
+- PilotSkillExecutor executes non-zero lateral acceleration;
+- authoritative motion departs from the original straight line;
+- the ship passes the CUBE 08 center plane;
+- minimum conservative sphere clearance remains positive;
+- the ship continues at least 3500 m toward the final goal;
+- replicated `NavigationExecutionSnapshot` matches the exact latest
+  authoritative executed acceleration vector.
+
+The test is bounded to 120 s of simulated time and stops early when all evidence
+is complete.
 
 ## RUN NOW
 
-The already accepted `navigation_space` and `navigation_local` suites were not
-changed after their green run, so do not rerun them for this gate.
+Because `LocalAvoidancePlanner` changed to preserve nominal conflict identity,
+rerun its isolated suite as well:
 
 ```bash
 cd /d/__elite/work
@@ -60,47 +61,39 @@ git rev-parse HEAD
 
 python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
+bash tests/navigation_local/run_mingw64.sh
 bash tests/navigation_runtime/run_mingw64.sh
 
 bash build_mingw64.sh
+
+./build/headless_server/EliteServer.exe --self-test-navigation
 ```
 
-Expected:
+If another EliteServer process is running, stop it first: the executable uses
+the normal single-instance guard.
+
+## Expected
 
 ```text
 NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS
- - authoritative GameSimulation isolates one Active stage-12 lab actor
-   on real NAV STRESS hit volumes
+
+navigation_local:
+    2/2 PASS
 
 navigation_runtime:
     3/3 PASS
-      navigation_runtime_control
-      navigation_runtime_planner
-      navigation_replication_truth
 
 EliteGame build PASS
 EliteServer build PASS
+
+[NAV-SELFTEST] ... obstacle_candidate=1 obstacle_conflict=1 adjusted=1 ...
+               lateral_exec=1 ... min_conservative_clearance_m=>0 ...
+               progress_m=>3500 ... replication_error_mps2=0
+
+[PASS] navigation-runtime CUBE 08 caused authoritative avoidance
+       with positive conservative clearance and replicated execution
 ```
 
-The `navigation_runtime_planner` executable now additionally pins
-authoritative `HitVolume -> NavigationObstacle OBB` conversion.
-
-## What this gate does NOT prove yet
-
-A green build/test proves the authoritative ownership/wiring and geometry
-adapter contract. It does **not** yet prove that the live simulated ship reaches
-the destination without contact.
-
-After this gate is green, add live deterministic evidence for:
-
-```text
-CUBE 08 appears in the accepted local candidate/conflict set
-the plan/intent deviates from the blocked straight line
-authoritative ship motion follows the changed command
-minimum separation stays positive
-the ship continues toward / reaches the target
-replicated execution truth matches that same command
-```
-
-Then replace the temporary single open `NavigationSpace` lab region with
-static/precision topology generated from the exact hit-volume OBB product.
+Do not tune thresholds merely to obtain PASS. If the live self-test fails, use
+the printed metrics to identify whether the defect is candidate publication,
+avoidance geometry, pilot execution, physical authority, or replication.

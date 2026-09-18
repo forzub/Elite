@@ -1,5 +1,6 @@
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
+#include "src/game/navigation/ReplicatedNavigationExecutionState.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -359,6 +360,41 @@ void testNpcHoldGoalBrakesRelativeVelocity()
     );
 }
 
+void testReplicatedNavigationExecutionStateIsReadOnlyTruth()
+{
+    game::navigation::ReplicatedNavigationExecutionState state;
+
+    game::navigation::ReplicatedNavigationExecution ignored;
+    ignored.entityId = EntityId{7u};
+    ignored.execution.valid = false;
+
+    game::navigation::ReplicatedNavigationExecution accepted;
+    accepted.entityId = EntityId{42u};
+    accepted.execution.valid = true;
+    accepted.execution.intentRevision = 100u;
+    accepted.execution.activeTargetRevision = 99u;
+    accepted.execution.executedLinearAccelerationDemandMapMps2 =
+        glm::dvec3(1.0, 2.0, 3.0);
+
+    state.replace({ignored, accepted});
+
+    require(state.all().size() == 1u,
+            "replicated navigation state must retain only valid server truth");
+    const auto* found = state.find(EntityId{42u});
+    require(found != nullptr,
+            "replicated navigation state must resolve the authoritative entity");
+    require(found->intentRevision == 100u,
+            "replicated navigation state must preserve intent revision exactly");
+    requireNear(
+        found->executedLinearAccelerationDemandMapMps2.y,
+        2.0,
+        0.0,
+        "replicated navigation state must preserve executed demand exactly"
+    );
+    require(state.find(EntityId{7u}) == nullptr,
+            "invalid replicated navigation rows must not become visible truth");
+}
+
 void testBridgeDemandCanReachCapabilityLayerWithoutLegacyKeys()
 {
     Bridge bridge(expertProfile());
@@ -421,6 +457,7 @@ int main()
         testManualAttitudeOverridesNavigationAngularDemand();
         testNpcGoalBecomesNavigationIntentWithoutLegacyControl();
         testNpcHoldGoalBrakesRelativeVelocity();
+        testReplicatedNavigationExecutionStateIsReadOnlyTruth();
         testBridgeDemandCanReachCapabilityLayerWithoutLegacyKeys();
 
         std::cout << "NAVIGATION RUNTIME CONTROL TESTS: PASS\n";

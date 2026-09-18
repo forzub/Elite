@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/world/navigation/local/LocalAvoidancePlanner.h"
 #include "src/world/navigation/map/NavigationMap.h"
 #include "src/world/navigation/space/NavigationSpace.h"
@@ -256,13 +257,12 @@ public:
         const Policy& policy
     );
 
-    // NavigationWorld planning products are expressed in the published map
-    // working frame. Stage-11 control/physics consumes world/system-space
-    // acceleration demand. This explicit boundary prevents identity-frame
-    // tests from hiding a missing basis transform.
-    [[nodiscard]] static Bridge::Intent mapIntentToWorld(
+    // Temporary compatibility return type: conversion itself is now owned by
+    // NavigationFrameBoundary. A following cleanup splits NavLocal and System
+    // control intents into distinct compile-time types.
+    [[nodiscard]] static Bridge::Intent mapIntentToSystem(
         const Bridge::Intent& mapIntent,
-        const Map::WorkingFrame& workingFrame
+        const NavigationFrameBoundary& boundary
     );
 };
 

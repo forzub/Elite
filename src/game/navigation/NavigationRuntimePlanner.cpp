@@ -665,56 +665,43 @@ void probeMovingPassage(
 } // namespace
 
 NavigationRuntimePlanner::Bridge::Intent
-NavigationRuntimePlanner::mapIntentToWorld(
+NavigationRuntimePlanner::mapIntentToSystem(
     const Bridge::Intent& mapIntent,
-    const Map::WorkingFrame& workingFrame
+    const NavigationFrameBoundary& boundary
 )
 {
-    const auto toGlmAxis =
-        [](const Map::Vec3d& axis)
-        {
-            return glm::dvec3(axis.x, axis.y, axis.z);
-        };
-
-    const glm::dvec3 xAxis =
-        normalizedOr(toGlmAxis(workingFrame.xAxisSystem), glm::dvec3(0.0));
-    const glm::dvec3 yAxis =
-        normalizedOr(toGlmAxis(workingFrame.yAxisSystem), glm::dvec3(0.0));
-    const glm::dvec3 zAxis =
-        normalizedOr(toGlmAxis(workingFrame.zAxisSystem), glm::dvec3(0.0));
-
-    if (glm::dot(xAxis, xAxis) <= kEpsilon ||
-        glm::dot(yAxis, yAxis) <= kEpsilon ||
-        glm::dot(zAxis, zAxis) <= kEpsilon ||
-        std::abs(glm::dot(xAxis, yAxis)) > 1.0e-6 ||
-        std::abs(glm::dot(xAxis, zAxis)) > 1.0e-6 ||
-        std::abs(glm::dot(yAxis, zAxis)) > 1.0e-6)
+    if (!boundary.valid())
     {
         throw std::invalid_argument(
-            "NavigationRuntimePlanner working frame is invalid"
+            "NavigationRuntimePlanner navigation frame boundary is invalid"
         );
     }
 
-    const auto mapVectorToWorld =
+    const auto toSystemVector =
         [&](const Bridge::Vec3d& value)
         {
-            const glm::dvec3 world =
-                xAxis * value.x +
-                yAxis * value.y +
-                zAxis * value.z;
-            return Bridge::Vec3d {world.x, world.y, world.z};
+            const auto system = boundary.toSystemVector(
+                NavigationFrameBoundary::NavVector {
+                    glm::dvec3(value.x, value.y, value.z)
+                }
+            ).value;
+            return Bridge::Vec3d {
+                system.x,
+                system.y,
+                system.z
+            };
         };
 
-    Bridge::Intent worldIntent = mapIntent;
-    worldIntent.idealLinearAccelerationDemandMapMps2 =
-        mapVectorToWorld(
+    Bridge::Intent systemIntent = mapIntent;
+    systemIntent.idealLinearAccelerationDemandMapMps2 =
+        toSystemVector(
             mapIntent.idealLinearAccelerationDemandMapMps2
         );
-    worldIntent.idealAngularAccelerationDemandMapRadPerSec2 =
-        mapVectorToWorld(
+    systemIntent.idealAngularAccelerationDemandMapRadPerSec2 =
+        toSystemVector(
             mapIntent.idealAngularAccelerationDemandMapRadPerSec2
         );
-    return worldIntent;
+    return systemIntent;
 }
 
 NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(

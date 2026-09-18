@@ -50,6 +50,7 @@
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
+#include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/game/diagnostics/NavigationRuntimeLab.h"
 
 namespace
@@ -133,6 +134,21 @@ namespace
 
 
 
+
+    game::navigation::NavigationFrameBoundary
+    makeNavigationRuntimeLabBoundary(
+        const game::navigation::HubNavigationFrame& hub
+    )
+    {
+        game::navigation::KinematicFrame frame = hub.kinematicFrame();
+        frame.frameId = hub.hubId + ":navigation_v2";
+        frame.localToWorldBasis = glm::dmat3(
+            hub.normalAxis,
+            hub.radialAxis,
+            -hub.progradeAxis
+        );
+        return game::navigation::NavigationFrameBoundary(frame);
+    }
 
     glm::dvec3 matAxisX(const glm::mat4& m)
     {
@@ -1122,13 +1138,17 @@ void GameSimulation::initializeNavigationRuntimeLab()
         world::coordinates::fullMeters(
             placedLabShip->core().transform().worldPosition
         );
-    const glm::dvec3 placedRelative =
-        placedWorldMeters - hubFrame->originMeters;
-    const glm::dvec3 placementPositionMap(
-        glm::dot(placedRelative, hubFrame->normalAxis),
-        glm::dot(placedRelative, hubFrame->radialAxis),
-        glm::dot(placedRelative, -hubFrame->progradeAxis)
-    );
+    const auto navigationBoundary =
+        makeNavigationRuntimeLabBoundary(*hubFrame);
+    if (!navigationBoundary.valid())
+        return;
+
+    const glm::dvec3 placementPositionMap =
+        navigationBoundary.toNavigation(
+            game::navigation::NavigationFrameBoundary::SystemPosition {
+                placedWorldMeters
+            }
+        ).meters;
     const glm::dvec3 placementMotionLocal =
         placedLabShip->core().transform().motion.localPositionMeters;
     const double placementServerTimeSeconds =
@@ -1302,31 +1322,10 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
     if (!hubFrame || !hubFrame->valid)
         return;
 
-    const glm::dvec3 mapXAxis = hubFrame->normalAxis;
-    const glm::dvec3 mapYAxis = hubFrame->radialAxis;
-    const glm::dvec3 mapZAxis = -hubFrame->progradeAxis;
-
-    const auto pointToMap =
-        [&](const glm::dvec3& worldPoint)
-        {
-            const glm::dvec3 relative =
-                worldPoint - hubFrame->originMeters;
-            return glm::dvec3(
-                glm::dot(relative, mapXAxis),
-                glm::dot(relative, mapYAxis),
-                glm::dot(relative, mapZAxis)
-            );
-        };
-
-    const auto vectorToMap =
-        [&](const glm::dvec3& worldVector)
-        {
-            return glm::dvec3(
-                glm::dot(worldVector, mapXAxis),
-                glm::dot(worldVector, mapYAxis),
-                glm::dot(worldVector, mapZAxis)
-            );
-        };
+    const auto navigationBoundary =
+        makeNavigationRuntimeLabBoundary(*hubFrame);
+    if (!navigationBoundary.valid())
+        return;
 
     Space::StaticSpaceUpdate staticWorld;
     staticWorld.sourceRevision = 2;
@@ -1499,13 +1498,21 @@ void GameSimulation::publishNavigationRuntimeLabStaticGeometry()
         for (auto& obstacle : exactObstacles)
         {
             obstacle.centerMeters =
-                pointToMap(obstacle.centerMeters);
+                navigationBoundary.toNavigation(
+                    game::navigation::NavigationFrameBoundary::SystemPosition {
+                        obstacle.centerMeters
+                    }
+                ).meters;
 
             glm::dmat3 mapBasis(1.0);
             for (int axis = 0; axis < 3; ++axis)
             {
                 mapBasis[axis] =
-                    vectorToMap(obstacle.localToWorldBasis[axis]);
+                    navigationBoundary.toNavigationVector(
+                        game::navigation::NavigationFrameBoundary::SystemVector {
+                            obstacle.localToWorldBasis[axis]
+                        }
+                    ).value;
             }
             obstacle.localToWorldBasis = mapBasis;
 
@@ -1642,52 +1649,14 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     if (!hubFrame || !hubFrame->valid)
         return false;
 
-    const glm::dvec3 mapXAxis = hubFrame->normalAxis;
-    const glm::dvec3 mapYAxis = hubFrame->radialAxis;
-    const glm::dvec3 mapZAxis = -hubFrame->progradeAxis;
-
-    const auto pointToMap =
-        [&](const glm::dvec3& worldPoint)
-        {
-            const glm::dvec3 relative =
-                worldPoint - hubFrame->originMeters;
-            return glm::dvec3(
-                glm::dot(relative, mapXAxis),
-                glm::dot(relative, mapYAxis),
-                glm::dot(relative, mapZAxis)
-            );
-        };
-
-    const auto vectorToMap =
-        [&](const glm::dvec3& worldVector)
-        {
-            return glm::dvec3(
-                glm::dot(worldVector, mapXAxis),
-                glm::dot(worldVector, mapYAxis),
-                glm::dot(worldVector, mapZAxis)
-            );
-        };
-
-    Map::WorkingFrame navigationWorkingFrame;
-    navigationWorkingFrame.originSystemMeters = {
-        hubFrame->originMeters.x,
-        hubFrame->originMeters.y,
-        hubFrame->originMeters.z
-    };
-    navigationWorkingFrame.xAxisSystem = {
-        mapXAxis.x, mapXAxis.y, mapXAxis.z
-    };
-    navigationWorkingFrame.yAxisSystem = {
-        mapYAxis.x, mapYAxis.y, mapYAxis.z
-    };
-    navigationWorkingFrame.zAxisSystem = {
-        mapZAxis.x, mapZAxis.y, mapZAxis.z
-    };
+    const auto navigationBoundary =
+        makeNavigationRuntimeLabBoundary(*hubFrame);
+    if (!navigationBoundary.valid())
+        return;
 
     Map::DynamicWorldUpdate dynamicWorld;
     dynamicWorld.sourceRevision =
         ++m_navigationRuntimeLabSourceRevision;
-    dynamicWorld.workingFrame = navigationWorkingFrame;
 
     glm::dvec3 observedObstacleWorldPosition(0.0);
     double observedObstacleRadiusMeters = 0.0;
@@ -1702,15 +1671,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     std::uint32_t movingGapLowerEntityId = 0;
     glm::dvec3 movingGapUpperMapPosition(0.0);
     glm::dvec3 movingGapLowerMapPosition(0.0);
-    const glm::dvec3 expectedMovingGapVelocityWorldMps =
-        game::navigation::hubVisualLocalToWorldVector(
-            hubFrame->progradeAxis,
-            hubFrame->radialAxis,
-            hubFrame->normalAxis,
-            NavigationRuntimeLabMovingGapVelocityVisualMps
-        );
     const glm::dvec3 expectedMovingGapVelocityMapMps =
-        vectorToMap(expectedMovingGapVelocityWorldMps);
+        NavigationRuntimeLabMovingGapVelocityVisualMps;
 
     // Stage 12 lab deliberately consumes the already-spawned physical
     // NAV STRESS / GUIDANCE objects. Their damage HitComponent is the geometry
@@ -1779,26 +1741,43 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
 
         Map::DynamicActorInput actor;
         actor.entityId = objectId.value;
-        actor.positionSystemMeters = {
-            positionMeters.x,
-            positionMeters.y,
-            positionMeters.z
+
+        const game::navigation::NavigationFrameBoundary::SystemPosition
+            objectSystemPosition {positionMeters};
+        const game::navigation::NavigationFrameBoundary::SystemVelocity
+            objectSystemVelocity {glm::dvec3(object.linearVelocity)};
+
+        const glm::dvec3 objectPositionMap =
+            navigationBoundary.toNavigation(
+                objectSystemPosition
+            ).meters;
+        actor.positionMapMeters = {
+            objectPositionMap.x,
+            objectPositionMap.y,
+            objectPositionMap.z
         };
-        const glm::dvec3 relativeLinearVelocityWorldMps =
-            movingGapBoundary
-                ? expectedMovingGapVelocityWorldMps
-                : glm::dvec3(0.0);
-        actor.velocitySystemMetersPerSecond = {
-            relativeLinearVelocityWorldMps.x,
-            relativeLinearVelocityWorldMps.y,
-            relativeLinearVelocityWorldMps.z
+
+        const glm::dvec3 objectVelocityMap =
+            navigationBoundary.toNavigation(
+                objectSystemPosition,
+                objectSystemVelocity
+            ).metersPerSecond;
+        actor.velocityMapMetersPerSecond = {
+            objectVelocityMap.x,
+            objectVelocityMap.y,
+            objectVelocityMap.z
         };
-        actor.accelerationSystemMetersPerSecond2 = {0.0, 0.0, 0.0};
+
+        // These lab boundaries have constant NavLocal linear velocity. Their
+        // system-space acceleration is not separately published by StaticObject,
+        // so publish the known local acceleration truth instead of fabricating
+        // a "system acceleration" DTO.
+        actor.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
 
         if (object.displayName == NavigationRuntimeLabMovingGapUpperLabel)
         {
             movingGapUpperEntityId = objectId.value;
-            movingGapUpperMapPosition = pointToMap(positionMeters);
+            movingGapUpperMapPosition = objectPositionMap;
             m_navigationRuntimeLabObservation.movingGapUpperEntityId =
                 objectId.value;
         }
@@ -1806,32 +1785,29 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                  NavigationRuntimeLabMovingGapLowerLabel)
         {
             movingGapLowerEntityId = objectId.value;
-            movingGapLowerMapPosition = pointToMap(positionMeters);
+            movingGapLowerMapPosition = objectPositionMap;
             m_navigationRuntimeLabObservation.movingGapLowerEntityId =
                 objectId.value;
         }
 
-        const glm::dvec3 localAngularVelocityRadPerSecond =
-            glm::radians(object.hubLocalAngularVelocityDegPerSecond);
-        const glm::dvec3 angularVelocityWorldRadPerSecond =
-            game::navigation::hubVisualLocalToWorldVector(
-                hubFrame->progradeAxis,
-                hubFrame->radialAxis,
-                hubFrame->normalAxis,
-                localAngularVelocityRadPerSecond
-            );
-        actor.angularVelocitySystemRadPerSecond = {
-            angularVelocityWorldRadPerSecond.x,
-            angularVelocityWorldRadPerSecond.y,
-            angularVelocityWorldRadPerSecond.z
+        const glm::dvec3 angularVelocityMapRadPerSecond =
+            navigationBoundary.toNavigation(
+                game::navigation::NavigationFrameBoundary::SystemAngularVelocity {
+                    glm::dvec3(object.angularVelocity)
+                }
+            ).radiansPerSecond;
+        actor.angularVelocityMapRadPerSecond = {
+            angularVelocityMapRadPerSecond.x,
+            angularVelocityMapRadPerSecond.y,
+            angularVelocityMapRadPerSecond.z
         };
 
         if (object.displayName == NavigationRuntimeLabRotatingActorLabel)
         {
             rotatingActorEntityId = objectId.value;
-            rotatingActorMapPosition = pointToMap(positionMeters);
+            rotatingActorMapPosition = objectPositionMap;
             expectedRotatingActorAngularVelocityMapRadPerSecond =
-                vectorToMap(angularVelocityWorldRadPerSecond);
+                glm::radians(object.hubLocalAngularVelocityDegPerSecond);
             haveRotatingActor = true;
 
             m_navigationRuntimeLabObservation.rotatingActorEntityId =
@@ -1970,15 +1946,6 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     const auto& transform = ship.core().transform();
     const glm::dvec3 shipWorldPosition =
         world::coordinates::fullMeters(transform.worldPosition);
-    const glm::dvec3 shipReferenceVelocity =
-        hubFrame->localToWorldVelocity(
-            hubFrame->worldToLocalPosition(shipWorldPosition),
-            glm::dvec3(0.0)
-        );
-    const glm::dvec3 shipRelativeWorldVelocity =
-        transform.motion.worldVelocityMps -
-        shipReferenceVelocity;
-
     double shipRadius =
         game::navigation::NavigationHitVolumeAdapter::
             conservativeRadiusFromOrigin(
@@ -1997,14 +1964,34 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         shipRadius = glm::length(half);
     }
 
+    const auto shipSystemPosition =
+        game::navigation::NavigationFrameBoundary::SystemPosition {
+            shipWorldPosition
+        };
+    const auto shipSystemVelocity =
+        game::navigation::NavigationFrameBoundary::SystemVelocity {
+            transform.motion.worldVelocityMps
+        };
     const glm::dvec3 agentPositionMap =
-        pointToMap(shipWorldPosition);
+        navigationBoundary.toNavigation(
+            shipSystemPosition
+        ).meters;
+    const glm::dvec3 agentVelocityMap =
+        navigationBoundary.toNavigation(
+            shipSystemPosition,
+            shipSystemVelocity
+        ).metersPerSecond;
+
     const glm::dvec3 goalWorldPosition =
         hubFrame->localToWorldPosition(
             NavigationRuntimeLabGoalTacticalLocalMeters
         );
     const glm::dvec3 goalPositionMap =
-        pointToMap(goalWorldPosition);
+        navigationBoundary.toNavigation(
+            game::navigation::NavigationFrameBoundary::SystemPosition {
+                goalWorldPosition
+            }
+        ).meters;
 
     const double labBrakingAccelerationMps2 =
         std::max(
@@ -2018,7 +2005,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     constexpr double LabMinimumHorizonMeters = 100.0;
 
     const double relativeSpeedMps =
-        glm::length(shipRelativeWorldVelocity);
+        glm::length(agentVelocityMap);
     const double brakingDistanceMeters =
         (relativeSpeedMps * relativeSpeedMps) /
         (2.0 * labBrakingAccelerationMps2);
@@ -2088,16 +2075,27 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     Planner::AgentState agent;
     agent.entityId = id.value;
     agent.positionMapMeters = agentPositionMap;
-    agent.velocityMapMetersPerSecond =
-        vectorToMap(shipRelativeWorldVelocity);
+    agent.velocityMapMetersPerSecond = agentVelocityMap;
     agent.accelerationMapMetersPerSecond2 = glm::dvec3(0.0);
     agent.radiusMeters = shipRadius;
     agent.forwardMap =
-        vectorToMap(glm::dvec3(transform.forward()));
+        navigationBoundary.toNavigationVector(
+            game::navigation::NavigationFrameBoundary::SystemVector {
+                glm::dvec3(transform.forward())
+            }
+        ).value;
     agent.rightMap =
-        vectorToMap(glm::dvec3(transform.right()));
+        navigationBoundary.toNavigationVector(
+            game::navigation::NavigationFrameBoundary::SystemVector {
+                glm::dvec3(transform.right())
+            }
+        ).value;
     agent.upMap =
-        vectorToMap(glm::dvec3(transform.up()));
+        navigationBoundary.toNavigationVector(
+            game::navigation::NavigationFrameBoundary::SystemVector {
+                glm::dvec3(transform.up())
+            }
+        ).value;
     agent.pitchRateRadPerSec =
         static_cast<double>(transform.pitchRate);
     agent.yawRateRadPerSec =
@@ -3463,9 +3461,9 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     }
 
     outIntent =
-        Planner::mapIntentToWorld(
+        Planner::mapIntentToSystem(
             followerResult.intent,
-            navigationWorkingFrame
+            navigationBoundary
         );
     return true;
 }

@@ -63,7 +63,44 @@ closing gap
     -> moving passage is never accepted
 ```
 
-## Target-machine gate to run now
+## Latest target-machine result
+
+On `6badb5f74ea65900a38a48854d66f16f34127a89` the new runtime suite passed:
+
+```text
+navigation_runtime_control    PASS
+navigation_runtime_planner    PASS
+navigation_replication_truth  PASS
+3/3 PASS
+```
+
+The architecture checker failed only because it expected the literal CMake
+substring `PUBLIC EliteNavigationGeometry`; the new trajectory dependency had
+changed whitespace/layout. Production/test linking itself succeeded.
+
+Fixes now on `main`:
+- restore the existing CMake contract-friendly layout;
+- normalize whitespace in the architecture checker before matching the link
+  relationship, so formatting changes do not create false failures.
+
+### Rerun now
+
+```bash
+git pull --ff-only
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+```
+
+If that passes, the already green 3/3 runtime result is retained as evidence.
+Then continue with:
+
+```bash
+bash tests/navigation_trajectory/run_mingw64.sh
+bash tests/navigation_map/run_mingw64.sh
+bash build_mingw64.sh
+./build/headless_server/EliteServer.exe --self-test-navigation
+```
+
+## Target-machine gate
 
 ```bash
 cd /d/__elite/work

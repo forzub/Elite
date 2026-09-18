@@ -2,54 +2,53 @@
 
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
-**Stage:** 12A-3 — live CUBE 08 behavior proof
+**Stage:** 12A-4 — exact static HitVolume OBB / narrow-passage geometry
 
 ## Accepted baseline
 
-12A-2 is accepted on:
+12A-3 is accepted on:
 
 ```text
-7b4db95788d80c95afb3b57c109c671cb7a41366
+9246530e5eb539e227a1af69461113f2b30ec93a
 ```
 
-with architecture PASS, `navigation_runtime 3/3`, EliteGame PASS and
-EliteServer PASS.
+The live server proved CUBE 08 detection, adjusted target selection, pilot
+execution, physically bounded motion, positive clearance, >3.5 km goal
+progress, and exact same-tick sparse/canonical replication truth.
 
 ## Candidate under test
 
-Current code baseline:
+Current code adds:
 
 ```text
-ab28db1487d80a884ca19302717968329f936567
+NavigationSpace::StaticSpaceUpdate::obstacles
+NavigationSpace::queryPoint() exact obstacle rejection
+NavigationSpace::querySegment() exact inflated OBB/capsule/sphere proof
+LocalAvoidance exact nominal-segment proof
+LocalAvoidance exact adjusted-probe proof
+live NAV STRESS HitVolume OBB publication in map frame
 ```
 
-New live mode:
+The static layer is sourced from the same authoritative `HitComponent`
+volumes used by collision/damage. No render-mesh substitute is introduced.
+
+Two critical regressions are pinned:
+
+1. a rotated exact OBB blocks a point/segment with blocker identity;
+2. a 4 m aperture remains traversable for a fitting envelope even though the
+   two obstacles' conservative enclosing spheres overlap the centreline; the
+   oversized envelope must fail.
+
+The live server gate now additionally requires:
 
 ```text
-EliteServer --self-test-navigation
+exact_static=1
+exact_static_obstacles>0
 ```
 
-The self-test requires all of the following before PASS:
-
-- CUBE 08 enters the bounded NavigationMap candidate set;
-- CUBE 08 is retained as the nominal conflict that rejected the straight route;
-- LocalAvoidance produces an adjusted safe target;
-- PilotSkillExecutor executes non-zero lateral acceleration;
-- authoritative motion departs from the original straight line;
-- the ship passes the CUBE 08 center plane;
-- minimum conservative sphere clearance remains positive;
-- the ship continues at least 3500 m toward the final goal;
-- a sparse packet that actually publishes the lab row matches the authoritative
-  published execution at the exact same `serverTick`;
-- retained canonical hydration matches that same execution.
-
-The test is bounded to 120 s of simulated time and stops early when all evidence
-is complete.
+before the previously accepted CUBE 08 physical/replication evidence may pass.
 
 ## RUN NOW
-
-Because `LocalAvoidancePlanner` changed to preserve nominal conflict identity,
-rerun its isolated suite as well:
 
 ```bash
 cd /d/__elite/work
@@ -62,6 +61,7 @@ git rev-parse HEAD
 
 python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
+bash tests/navigation_space/run_mingw64.sh
 bash tests/navigation_local/run_mingw64.sh
 bash tests/navigation_runtime/run_mingw64.sh
 
@@ -70,13 +70,15 @@ bash build_mingw64.sh
 ./build/headless_server/EliteServer.exe --self-test-navigation
 ```
 
-If another EliteServer process is running, stop it first: the executable uses
-the normal single-instance guard.
-
 ## Expected
 
 ```text
 NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS
+
+navigation_space:
+    PASS
+    exact static OBBs reject occupied points/segments
+    exact OBB gap survives overlapping conservative spheres
 
 navigation_local:
     2/2 PASS
@@ -87,63 +89,17 @@ navigation_runtime:
 EliteGame build PASS
 EliteServer build PASS
 
-[NAV-SELFTEST] ... obstacle_candidate=1 obstacle_conflict=1 adjusted=1 ...
-               lateral_exec=1 ... min_conservative_clearance_m=>0 ...
-               progress_m=>3500 ... replication_error_mps2=0 canonical_replication_error_mps2=0
+[NAV-SELFTEST] ... exact_static=1 exact_static_obstacles=>0 ...
+               obstacle_candidate=1 obstacle_conflict=1 adjusted=1 ...
+               min_conservative_clearance_m=>0 progress_m=>3500 ...
+               replication_error_mps2=0 canonical_replication_error_mps2=0
 
 [PASS] navigation-runtime CUBE 08 caused authoritative avoidance
-       with positive conservative clearance and replicated execution
+       with exact static HitVolume geometry, positive clearance
+       and replicated execution
 ```
 
-Do not tune thresholds merely to obtain PASS. If the live self-test fails, use
-the printed metrics to identify whether the defect is candidate publication,
-avoidance geometry, pilot execution, physical authority, or replication.
-
-
-### Correction after first live run
-
-The first live run reached the replication check and reported:
-
-```text
-error_mps2=0.00497292
-```
-
-This was a test-epoch bug, not grounds for changing numerical tolerance.
-Per-fixed-step diagnostic state was being compared with a cadence-limited
-retained client snapshot. The corrected gate waits for a sparse packet
-containing the lab row and compares it against a copied authoritative
-`GameServer::snapshot()` with the exact same `serverTick`.
-
-Run the same gate again after pulling current `main`.
-
-
-### Correction after second live run
-
-The previous run proved obstacle detection/adjustment but exposed physically
-invalid motion:
-
-```text
-max_route_deviation_m=43699.4
-progress_m=2256.52
-```
-
-The live planner was producing map-frame acceleration and the Stage-11 control
-seam interpreted it as world-space. Both linear and angular demands are now
-rotated through the published NavigationMap working frame before entering
-PilotSkillExecutor/ShipControlState.
-
-The old `max_lateral_accel_mps2=340.222` diagnostic also mixed a world-space
-executed demand with a map-space route vector. It was not a valid physical
-lateral-acceleration measurement.
-
-The next self-test reports:
-
-```text
-max_lateral_demand_mps2
-max_applied_accel_mps2
-max_applied_lateral_accel_mps2
-max_relative_speed_mps
-```
-
-Do not add a deadband or weaken behavior thresholds until this frame correction
-is measured on the target machine.
+Do not weaken OBB inflation, aperture size, behavior thresholds or replication
+equality to obtain PASS. A failure should identify either exact geometry
+publication, static segment proof, local avoidance composition, physical
+execution or replication.

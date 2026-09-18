@@ -6,6 +6,7 @@ get_filename_component(
 
 add_library(EliteNavigationSpace STATIC
     NavigationSpace.cpp
+    ../NavigationObstacleGeometry.cpp
 )
 
 target_include_directories(EliteNavigationSpace PUBLIC

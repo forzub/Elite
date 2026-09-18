@@ -139,6 +139,7 @@ add_library(EliteNavigationWorldRuntime STATIC
     src/world/navigation/local/LocalHorizonPlanner.cpp
     src/world/navigation/local/LocalAvoidancePlanner.cpp
     src/game/navigation/NavigationRuntimePlanner.cpp
+    src/game/navigation/NavigationExecutionReplanPolicy.cpp
     src/game/navigation/NavigationHitVolumeAdapter.cpp
 )
 target_include_directories(EliteNavigationWorldRuntime PUBLIC

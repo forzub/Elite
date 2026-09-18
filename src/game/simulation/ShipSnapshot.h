@@ -2,6 +2,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <memory>
+#include <variant>
 
 #include "src/scene/EntityID.h"
 #include "src/game/ship/core/ShipRole.h"
@@ -30,7 +31,10 @@ struct ShipSnapshot
     
     ShipTransform                                       transform;
     game::simulation::ShipReferenceFrameSnapshot         referenceFrame;
-    game::simulation::NavigationExecutionSnapshot        navigationExecution;
+    std::variant<
+        std::monostate,
+        game::simulation::NavigationExecutionSnapshot
+    >                                                    navigationExecution;
     std::vector<SignalReceptionResult>                  receptions;
     std::vector<game::RadarContact>                     radarContacts;
     std::vector<game::damage::DamageEvent>              damageEvents;

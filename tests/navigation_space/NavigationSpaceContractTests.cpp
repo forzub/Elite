@@ -388,6 +388,36 @@ void testTurnCostZigzagVsSmooth()
             "negative turn penalty must be rejected by policy validation");
 }
 
+void testProvenPortalEndpointMayTouchRegionBoundary()
+{
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 59;
+    update.regions = {
+        regionBox(1, 5.0, 0.0, 0.0, 5.0, 10.0, 10.0, 10.0)
+    };
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    Space::SegmentQuery segment;
+    segment.startMapMeters = {5.0, 0.0, 0.0};
+    segment.endMapMeters = {10.0, 0.0, 0.0};
+    segment.envelope = envelope(1.0);
+    segment.requireSameRegion = true;
+
+    const auto ordinary = space.querySegment(segment);
+    require(!ordinary.traversable,
+            "ordinary local segment must keep envelope clearance from region boundary");
+
+    segment.allowEndOnStartRegionBoundary = true;
+    const auto provenPortal = space.querySegment(segment);
+    require(provenPortal.traversable,
+            "corridor-proven portal center must be allowed to terminate on region boundary");
+    require(provenPortal.startRegionId == 1 &&
+            provenPortal.endRegionId == 1,
+            "portal-boundary proof must remain owned by the start region");
+}
+
 void testExactStaticObbBlocksPointAndSegment()
 {
     Space::StaticSpaceUpdate update;
@@ -582,6 +612,7 @@ int main()
         testWallApertureAdmission();
         testCostedCanyonVsOverflight();
         testTurnCostZigzagVsSmooth();
+        testProvenPortalEndpointMayTouchRegionBoundary();
         testExactStaticObbBlocksPointAndSegment();
         testExactObbGapAdmitsOnlyFittingEnvelope();
         testLocalInvalidationAndPatch();
@@ -594,6 +625,7 @@ int main()
         std::cout << " - explicit wall apertures admit only fitting agents\n";
         std::cout << " - costed routing can choose canyon or overflight by policy\n";
         std::cout << " - turn-aware routing can prefer a smoother static branch\n";
+        std::cout << " - corridor-proven portal endpoints may touch region boundaries\n";
         std::cout << " - exact static OBBs reject occupied points/segments\n";
         std::cout << " - exact OBB gap survives overlapping conservative spheres\n";
         std::cout << " - narrow portals reject oversized agents\n";

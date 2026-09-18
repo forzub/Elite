@@ -382,6 +382,9 @@ private:
         game::navigation::NavigationRuntimeControlBridge::ExecutionSnapshot
     > m_npcNavigationExecutionSnapshots;
 
+    std::unordered_map<EntityId, double>
+        m_npcNavigationLastExecutionTimeSeconds;
+
     // Snapshot graph payload control.
     // Heavy structural data is sent only on first sight / explicit dirty events.
     std::unordered_set<EntityId>        m_initializedShipGraphIds;

@@ -1,6 +1,6 @@
 # Navigation v2 — live runtime integration
 
-**Status:** stage 11A ACCEPTED; stage 11B-1 NPC runtime ownership candidate pending target-machine gate  
+**Status:** stage 11A + 11B-1 ACCEPTED; stage 11B-2 replicated guidance/debug truth candidate pending target-machine gate  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/PILOT_SKILL_MODEL.md`
 
@@ -452,6 +452,133 @@ dot(angularDemand, forward) = -rollRate  * damping
 ```
 
 Production runtime behavior was not changed.
+
+## Stage 11B-1 target-machine acceptance
+
+Accepted on:
+
+```text
+fb83b8d80f29c6c5e4e12b8a2fca731ffea7b8e8
+
+NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+NAVIGATION LIVE NPC OWNERSHIP CONTRACT: PASS
+navigation_runtime_control 1/1 PASS
+navigation_trajectory/pilot 11/11 PASS
+EliteGame build PASS
+EliteServer build PASS
+```
+
+This closes authoritative NPC runtime ownership. `NpcAiSystem` remains goal/policy only, `GameSimulation` owns persistent per-NPC pilot/runtime state, and there is no fallback to the retired direct steering path.
+
+## 11B-2 — replicated guidance/debug truth candidate
+
+11B-2 carries the exact server execution product through the existing replication pipeline.
+
+### Replicated DTO
+
+`ShipSnapshot` now carries:
+
+```text
+NavigationExecutionSnapshot
+    valid
+    intentRevision
+    activeTargetRevision
+
+    ideal linear/angular acceleration demand
+    executed linear/angular acceleration demand
+
+    emergency / urgency
+    reactionBlocked
+    decisionSampled
+    queuedCommandApplied
+    pendingCommandCount
+```
+
+The server fills this DTO directly from the same `GameSimulation::npcNavigationExecutionSnapshots()` row used to create live NPC control. No presentation-side reconstruction is involved.
+
+### Wire contract
+
+`NavigationExecutionSnapshot` participates in the canonical ordered binary schema through `ShipSnapshot.navigationExecution`.
+
+The simulation snapshot wire version is now:
+
+```text
+SimulationSnapshotWireSchemaVersion = 8
+```
+
+This intentionally rejects accidental cross-version decoding rather than silently interpreting a changed ship payload layout.
+
+### Client hydration
+
+`ClientWorldState::ClientShipState` retains the replicated `navigationExecution` for both newly hydrated and already-known ships.
+
+Sparse replication semantics remain unchanged:
+- omitted ship row -> retain previous state;
+- updated ship row -> replace with newest execution truth;
+- explicit ship removal -> remove the client ship and its presentation source.
+
+### Stable route-executor binding
+
+`ReplicatedNavigationExecutionState` mirrors valid replicated entries using both:
+
+```text
+EntityId
+ShipInstanceId
+```
+
+`ShipInstanceId` is the stable lookup used by a `NavigationAssetRef::Ship`. This lets the navigation HUD/debug resolve the current runtime entity for the route START executor without storing transient `EntityId` in the authored route.
+
+The workspace exposes:
+
+```text
+syncReplicatedNavigationExecution(...)
+const replicatedNavigationExecution()
+```
+
+There is deliberately no mutable `replicatedNavigationExecution()` getter. Client planners may inspect server truth but may not rewrite it.
+
+### Guidance presentation
+
+`GuidanceCorridorHudPresentation` now carries optional authoritative execution metadata for the selected route executor:
+
+```text
+hasAuthoritativeExecution
+authoritativeExecutionEntityId
+authoritativeIntentRevision
+authoritativeActiveTargetRevision
+authoritativeExecutedLinearAcceleration
+authoritativeExecutedAngularAcceleration
+authoritativeEmergency
+authoritativeReactionBlocked
+```
+
+This metadata is populated from the read-only replicated execution state before corridor presentation is resolved.
+
+Important separation:
+
+```text
+client LocalGuidancePlanner / DockingPathPlanner
+    may build manual/advisory player guidance
+
+replicated NPC execution truth
+    is server-produced read-only observation
+    is not fed back into either planner
+```
+
+Therefore an NPC debug/HUD view can show the exact command that the server is executing without running a second NPC planner on the client.
+
+### 11B-2 pinned behavior
+
+The runtime suite adds `navigation_replication_truth`, which pins:
+
+```text
+ShipSnapshot execution -> wire encode/decode round-trip
+stable ShipInstanceId -> current replicated execution lookup
+selected route executor -> GuidanceHudPresentation authoritative metadata
+no corridor published -> no fake corridor becomes visible
+```
+
+The existing canonical wire-data-plane contract is also extended with navigation execution fields.
 
 ## 11B after acceptance
 

@@ -1,6 +1,6 @@
 # Elite — CURRENT STATE
 
-**Updated:** 2026-09-17  
+**Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
 **Active stage:** `NAV-V2-TRAJECTORY-1` — docking stage 9B continuous approach candidate
@@ -196,6 +196,35 @@ FeasibleForCapture
 requires both complete final-segment feasibility and terminal `Capturable`.
 
 Pinned fixtures include stationary, translating, moving+rotating co-rotating capture, hidden between-sample corridor failure, inertial thrust failure, dock angular-rate failure, wrong 180-degree roll, terminal position mismatch and Elite/Newton distinction.
+
+## First stage 9B target-machine gate — NOT ACCEPTED
+
+Run on public `3f29c5062967676c8ae77f8385307473732d1ff5` produced:
+
+```text
+architecture: FAIL on a brittle Markdown capitalization marker
+trajectory suite: 9/10 PASS
+navigation_trajectory_docking_approach: FAIL
+```
+
+The behavioral failure was traced to the regression fixture, not to a bypass of the continuous verifier. The fixture declared a hidden excursion but its exact cubic-Hermite maximum was still inside the corridor:
+
+```text
+old allowed center travel       0.9750000000 m
+exact Hermite maximum           0.9622504486 m
+largest of 33 samples           0.9613037109 m
+```
+
+The fixture is repaired so that all 33 samples remain inside while the true curve is outside:
+
+```text
+new allowed center travel       0.9618000000 m
+sample clearance               +0.0004962891 m
+exact continuous clearance     -0.0004504486 m
+conservative interval bound    approximately -0.00408135 m
+```
+
+The architecture documentation check is now case-insensitive for semantic prose markers, avoiding failure on Markdown capitalization only. Stage 9B remains a candidate pending a fresh target-machine rerun; no acceptance is claimed from the failed gate.
 
 ## Ownership boundary
 

@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Last target-machine verified baseline:** `a587dcd96bdf0b05edbf4fcfe9a32f5f7be1058d`
+**Last target-machine verified baseline:** `25dc4369b95b4872d9a70a2d236db5e482cf45e2`
 
 > The verified-baseline hash is intentionally not called "current HEAD": a documentation commit changes HEAD by definition. Record the commit that was actually built/tested.
 
@@ -16,7 +16,8 @@
 - 12A-6a dynamic angular-motion publication — ACCEPTED
 - 12A-6b live moving-gap / moving-passage composition — ACTIVE
 - 12A-6b1 runtime moving-precision observe/prove seam — ACCEPTED
-- 12A-6b2 exact-static proof of accepted moving trajectory — CORRECTED CANDIDATE / target-machine rerun pending
+- 12A-6b2 exact-static proof of accepted moving trajectory — ACCEPTED
+- 12A-6b3a verified moving-passage steering authority seam — ACTIVE
 
 ## 12A-6a acceptance
 
@@ -266,3 +267,51 @@ Corrections through code/contract baseline:
   merely the witness type/field names.
 
 12A-6b2 remains non-authoritative and unaccepted pending target-machine rerun.
+
+
+## 12A-6b2 acceptance
+
+Corrected target-machine rerun was executed from:
+
+```text
+25dc4369b95b4872d9a70a2d236db5e482cf45e2
+```
+
+Accepted evidence:
+
+```text
+Stage-12 architecture contract   PASS
+navigation_trajectory            11/11 PASS
+navigation_runtime               3/3 PASS
+navigation_map                   retained 1/1 PASS from first 6b2 gate
+EliteGame                        BUILD PASS
+EliteServer                      BUILD PASS
+server --self-test-navigation    PASS
+exact_static_violation           0
+replication_error_mps2           0
+canonical_replication_error_mps2 0
+```
+
+This accepts the continuous same-trajectory static proof:
+the exact Hermite maneuver accepted against the moving aperture is also bounded
+between samples and checked against NavigationSpace exact HitVolume geometry.
+
+## Active 12A-6b3a boundary
+
+The next slice may finally grant steering authority, but only under the exact
+gate already proved:
+
+```text
+movingPassageFeasible
+    && movingPassageStaticSafe
+    -> execute movingPassageInitialAccelerationMapMps2
+```
+
+No second trajectory or velocity target may be solved after that decision.
+Closing gaps, statically blocked moving passages, stale results, unsupported
+initial spin, or failed proof continue to fall back to the existing accepted
+LocalAvoidance/fail-closed path.
+
+12A-6b3a will first pin the planner/control seam deterministically. A separate
+live execution gate is still required before claiming the whole moving-gap
+authority chain accepted end-to-end.

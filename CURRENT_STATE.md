@@ -1,8 +1,10 @@
 # Elite — CURRENT STATE
 
-**Updated:** 2026-09-18
-**Canonical branch:** `main`
-**Current public HEAD:** `f556c36a47c4ecb6ebeb713b41f6443527a16f76`
+**Updated:** 2026-09-18 Europe/Kyiv  
+**Canonical branch:** `main`  
+**Last target-machine verified baseline:** `a0efa9190180043b05da3103a5d466d256744935`
+
+> The verified-baseline hash is intentionally not called "current HEAD": a documentation commit changes HEAD by definition. Record the commit that was actually built/tested.
 
 ## Stage 12 status
 
@@ -11,11 +13,26 @@
 - 12A-3 — ACCEPTED
 - 12A-4 exact static HitVolume OBB — ACCEPTED
 - 12A-5 static/dynamic ownership cleanup — ACCEPTED
-- 12A-6a dynamic angular-motion publication — CANDIDATE
+- 12A-6a dynamic angular-motion publication — ACCEPTED
+- 12A-6b live moving-gap / moving-passage composition — ACTIVE NEXT SLICE
 
-## 12A-5 acceptance
+## 12A-6a acceptance
 
-Target-machine acceptance run proved:
+Target-machine acceptance was run from:
+
+```text
+a0efa9190180043b05da3103a5d466d256744935
+```
+
+The full architecture/runtime gate remained green and the live self-test proved the rotating infrastructure DTO/frame path:
+
+```text
+rotating_actor_seen=1
+rotating_actor_omega_verified=1
+rotating_actor_omega_error=0
+```
+
+The previously accepted static-ownership / exact-geometry / replication invariants also stayed green:
 
 ```text
 obstacle_candidate=0
@@ -32,49 +49,42 @@ exact_static_block=1
 exact_static_motion_samples=4109
 exact_static_violation=0
 
-progress_m=4790.67
 replication_error_mps2=0
 canonical_replication_error_mps2=0
 ```
 
-Therefore stationary CUBE 08:
-- is absent from NavigationMap dynamic ownership;
-- is owned by exact HitVolume geometry in NavigationSpace;
-- causes real adjusted avoidance;
-- is physically cleared without exact collision;
-- preserves exact authoritative replication truth.
+The live run also verified that `GUIDANCE DOCK CUBE A` carries its authored rotation through the hub/world/NavigationMap working-frame conversion without corrupting the authoritative execution path.
 
-12A-5 is closed.
+Therefore 12A-6a is closed.
 
-## 12A-6a candidate
+## Current boundary
 
-Next requirement is honest motion state for time-varying infrastructure.
+The runtime now has proven live compact motion state for time-varying infrastructure, including angular velocity.
 
-Current real fixture:
+What is **not** yet accepted live:
+
 ```text
-GUIDANCE DOCK CUBE A
-hub-local angular velocity = (0,0,2) deg/s
+dynamic candidate pair
+    -> MovingGapPredictor
+    -> MovingPassageTrajectoryEvaluator
+    -> authoritative maneuver selection/execution
 ```
 
-NavigationMap now carries:
-```text
-DynamicActorInput.angularVelocitySystemRadPerSecond
-    -> working-frame vector transform
-    -> Candidate.angularVelocityMapRadPerSecond
-```
+The predictor/evaluator algorithms are already accepted as isolated Navigation v2 components. 12A-6b must compose them into the Stage-12 live bounded path without adding a second planner, a global all-pairs scan, or any physics-authority bypass.
 
-GameSimulation converts the authored hub-visual angular vector through the
-shared HubFrameBasis before publication.
+## Project-state recording rule
 
-The live diagnostic performs an independent NavigationMap query at the rotating
-actor and compares expected versus returned map-space angular velocity.
+Every state-affecting event must be recorded in Markdown before work proceeds to the next slice. This includes:
+- new candidate/slice activation;
+- target-machine gate result, including failed gates and root cause;
+- acceptance/closure;
+- architecture or ownership-contract change;
+- change of current task or next step.
 
-Acceptance requires:
-```text
-rotating_actor_seen=1
-rotating_actor_omega_verified=1
-rotating_actor_omega_error<=1e-12
-```
+At minimum keep these synchronized:
+- `CURRENT_STATE.md`;
+- `CURRENT_TASK.md`;
+- `PROJECT_STATE.md`;
+- the authoritative stage document (currently `src/game/navigation/STAGE12_END_TO_END.md`).
 
-This is input plumbing only. MovingGapPredictor / MovingPassageTrajectoryEvaluator
-remain unchanged until the live motion DTO is proven correct.
+Record the **last actually verified code baseline**, not a self-invalidating "current HEAD" value.

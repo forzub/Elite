@@ -11,6 +11,7 @@
 #include "src/world/WorldParams.h"
 #include "src/scene/EntityID.h"
 #include "src/game/diagnostics/NavigationRuntimeLab.h"
+#include "src/game/simulation/SimulationSnapshot.h"
 
 class GameServer;
 class IServerTransport;
@@ -58,6 +59,9 @@ public:
     double fixedStepSeconds() const;
     game::diagnostics::NavigationRuntimeLabObservation
     navigationRuntimeLabObservation() const noexcept;
+    bool copyAuthoritativePublishedSnapshot(
+        SimulationSnapshot& outSnapshot
+    ) const;
 
     // Admission uses stable AccountHandle + opaque bearer token + explicit
     // SignIn/Register intent. SignIn never creates identity implicitly; all AccountId /

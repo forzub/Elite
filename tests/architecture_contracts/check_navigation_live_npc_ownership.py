@@ -20,6 +20,13 @@ def require(condition: bool, message: str) -> None:
         raise SystemExit(f"[FAIL] {message}")
 
 
+server_block_start = ROOT_CMAKE.find("if(ELITE_BUILD_SERVER)")
+require(server_block_start >= 0, "headless server CMake block missing")
+server_block_end = ROOT_CMAKE.find("endif()", server_block_start)
+require(server_block_end >= 0, "headless server CMake block is not terminated")
+SERVER_CMAKE = ROOT_CMAKE[server_block_start:server_block_end]
+
+
 for marker in (
     "struct NpcNavigationGoal",
     "NpcNavigationGoalMode",
@@ -118,9 +125,24 @@ require(
     "src/game/navigation/NpcNavigationIntentController.cpp" in ROOT_CMAKE,
     "main target must compile NPC navigation intent controller",
 )
+
+for marker in (
+    "src/game/navigation/NavigationRuntimeControlBridge.cpp",
+    "src/game/navigation/NpcNavigationIntentController.cpp",
+    "src/world/navigation/control/PilotSkillExecutor.cpp",
+):
+    require(
+        marker in SERVER_CMAKE,
+        f"headless server must compile live navigation runtime source: {marker}",
+    )
+
 require(
     "NpcNavigationIntentController.cpp" in TEST_CMAKE,
     "runtime tests must compile NPC navigation intent controller",
+)
+require(
+    "GLM_ENABLE_EXPERIMENTAL" in TEST_CMAKE,
+    "isolated runtime test target must mirror production GLM extension contract",
 )
 
 print("NAVIGATION LIVE NPC OWNERSHIP CONTRACT: PASS")
@@ -131,3 +153,4 @@ print(" - activation-decimated elapsed time is advanced in bounded exact-time pi
 print(" - no failure path falls back to the retired direct steering authority")
 print(" - the exact executed demand/revision is retained for future replication/guidance")
 print(" - navigation intent code never mutates authoritative motion directly")
+print(" - headless server and isolated runtime harness compile the complete live-navigation source set")

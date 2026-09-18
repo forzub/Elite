@@ -166,7 +166,11 @@ void testRebaseAndStableBasisAreOwnedByMap()
     rotatedUpdate.workingFrame.xAxisSystem = {0.0, 1.0, 0.0};
     rotatedUpdate.workingFrame.yAxisSystem = {-1.0, 0.0, 0.0};
     rotatedUpdate.workingFrame.zAxisSystem = {0.0, 0.0, 1.0};
-    rotatedUpdate.actors.push_back(actorAt(8, {0.0, 100.0, 0.0}));
+
+    auto rotatingActor = actorAt(8, {0.0, 100.0, 0.0});
+    rotatingActor.angularVelocitySystemRadPerSecond = {0.0, 2.0, 0.0};
+    rotatedUpdate.actors.push_back(rotatingActor);
+
     map.replaceDynamicWorld(std::move(rotatedUpdate));
 
     NavigationMap::SphereQuery basisQuery;
@@ -178,6 +182,12 @@ void testRebaseAndStableBasisAreOwnedByMap()
         nearlyEqual(rotated.positionMapMeters.x, 100.0) &&
         nearlyEqual(rotated.positionMapMeters.y, 0.0),
         "NavigationMap must own stable-basis transformation"
+    );
+    require(
+        nearlyEqual(rotated.angularVelocityMapRadPerSecond.x, 2.0) &&
+        nearlyEqual(rotated.angularVelocityMapRadPerSecond.y, 0.0) &&
+        nearlyEqual(rotated.angularVelocityMapRadPerSecond.z, 0.0),
+        "NavigationMap must rotate angular velocity into the working frame"
     );
 }
 
@@ -226,7 +236,7 @@ int main()
         testRejectedFrameDoesNotReplaceAcceptedMap();
         std::cout << "NAVIGATION MAP CONTRACT TESTS: PASS\n";
         std::cout << " - snapshot ownership / sparse queries\n";
-        std::cout << " - ship-centered rebase / stable basis\n";
+        std::cout << " - ship-centered rebase / stable basis / angular motion\n";
         std::cout << " - atomic rejection of invalid frame\n";
         return EXIT_SUCCESS;
     }

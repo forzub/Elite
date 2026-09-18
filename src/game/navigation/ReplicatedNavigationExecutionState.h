@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "src/game/simulation/NavigationExecutionSnapshot.h"
+#include "src/game/identity/ShipInstanceId.h"
+#include "src/game/navigation/NavigationAssetRef.h"
 #include "src/scene/EntityID.h"
 
 namespace game::navigation
@@ -13,6 +15,7 @@ namespace game::navigation
 struct ReplicatedNavigationExecution
 {
     EntityId entityId {};
+    ShipInstanceId shipInstanceId = 0;
     game::simulation::NavigationExecutionSnapshot execution {};
 };
 
@@ -26,18 +29,23 @@ public:
     void replace(std::vector<ReplicatedNavigationExecution> entries)
     {
         m_byEntity.clear();
+        m_entityByShipInstance.clear();
         m_byEntity.reserve(entries.size());
+        m_entityByShipInstance.reserve(entries.size());
 
         for (auto& entry : entries)
         {
             if (!entry.execution.valid || entry.entityId.value == 0)
                 continue;
 
-            m_byEntity[entry.entityId.value] = entry.execution;
+            m_byEntity[entry.entityId.value] = entry;
+            if (entry.shipInstanceId != 0)
+                m_entityByShipInstance[entry.shipInstanceId] =
+                    entry.entityId.value;
         }
     }
 
-    const game::simulation::NavigationExecutionSnapshot* find(
+    const ReplicatedNavigationExecution* find(
         EntityId entityId
     ) const noexcept
     {
@@ -45,9 +53,28 @@ public:
         return it == m_byEntity.end() ? nullptr : &it->second;
     }
 
+    const ReplicatedNavigationExecution* find(
+        const NavigationAssetRef& asset
+    ) const noexcept
+    {
+        if (asset.kind != NavigationAssetKind::Ship ||
+            asset.shipInstanceId == 0)
+        {
+            return nullptr;
+        }
+
+        const auto entityIt =
+            m_entityByShipInstance.find(asset.shipInstanceId);
+        if (entityIt == m_entityByShipInstance.end())
+            return nullptr;
+
+        const auto it = m_byEntity.find(entityIt->second);
+        return it == m_byEntity.end() ? nullptr : &it->second;
+    }
+
     const std::unordered_map<
         std::uint32_t,
-        game::simulation::NavigationExecutionSnapshot
+        ReplicatedNavigationExecution
     >& all() const noexcept
     {
         return m_byEntity;
@@ -56,13 +83,17 @@ public:
     void clear() noexcept
     {
         m_byEntity.clear();
+        m_entityByShipInstance.clear();
     }
 
 private:
     std::unordered_map<
         std::uint32_t,
-        game::simulation::NavigationExecutionSnapshot
+        ReplicatedNavigationExecution
     > m_byEntity;
+
+    std::unordered_map<ShipInstanceId, std::uint32_t>
+        m_entityByShipInstance;
 };
 
 } // namespace game::navigation

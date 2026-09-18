@@ -17,6 +17,11 @@ SIM_H = (ROOT / "src/game/simulation/GameSimulation.h").read_text(encoding="utf-
 SIM_CPP = (ROOT / "src/game/simulation/GameSimulation.cpp").read_text(encoding="utf-8")
 SCENE_CPP = (ROOT / "src/game/scene/GameSceneSetup.cpp").read_text(encoding="utf-8")
 LAB_H = (ROOT / "src/game/diagnostics/NavigationRuntimeLab.h").read_text(encoding="utf-8")
+LOCAL_H = (ROOT / "src/world/navigation/local/LocalAvoidancePlanner.h").read_text(encoding="utf-8")
+LOCAL_CPP = (ROOT / "src/world/navigation/local/LocalAvoidancePlanner.cpp").read_text(encoding="utf-8")
+SERVER_RUNTIME_H = (ROOT / "src/game/server/ServerRuntime.h").read_text(encoding="utf-8")
+SERVER_RUNTIME_CPP = (ROOT / "src/game/server/ServerRuntime.cpp").read_text(encoding="utf-8")
+SERVER_MAIN = (ROOT / "src/server_main.cpp").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -96,6 +101,7 @@ for marker in (
 for marker in (
     "testStaticCorridorBecomesLivePortalWaypoint",
     "testSamePortalRejectsOversizedHull",
+    "testAdjustedTargetPreservesNominalConflictIdentity",
     "testNavigationMapCrossingConflictProducesBrakingHold",
     "testPlannerIntentCrossesAcceptedPilotBridge",
 ):
@@ -179,6 +185,58 @@ require(
 )
 
 for marker in (
+    "nominalPrimaryConflictEntityId",
+    "nominalConflictsFound",
+):
+    require(marker in LOCAL_H, f"local avoidance nominal conflict diagnostic missing: {marker}")
+
+require(
+    "nominal.primaryConflictEntityId" in LOCAL_CPP and
+    "nominal.conflictsFound" in LOCAL_CPP,
+    "local avoidance must preserve the nominal conflict before adjusted-target probing",
+)
+
+for marker in (
+    "executionCount",
+    "minimumConservativeClearanceMeters",
+    "maximumStraightLineDeviationMeters",
+    "maximumExecutedLateralDemandMps2",
+    "passedObstaclePlane",
+):
+    require(marker in LAB_H, f"live navigation physical observation missing: {marker}")
+
+for marker in (
+    "minimumConservativeClearanceMeters",
+    "maximumStraightLineDeviationMeters",
+    "maximumExecutedLateralDemandMps2",
+    "nominalPrimaryConflictEntityId",
+):
+    require(marker in SIM_CPP, f"GameSimulation live navigation evidence missing: {marker}")
+
+require(
+    "navigationRuntimeLabObservation() const noexcept" in SERVER_RUNTIME_H and
+    "m_server->navigationRuntimeLabObservation()" in SERVER_RUNTIME_CPP,
+    "read-only Stage-12 observation must cross the ServerRuntime boundary",
+)
+
+for marker in (
+    "--self-test-navigation",
+    "runNavigationRuntimeSelfTest",
+    "obstaclePrimaryConflictSeen",
+    "adjustedTargetSeen",
+    "lateralExecutedDemandSeen",
+    "minimumConservativeClearanceMeters > 0.0",
+    "findShipSnapshotByInstanceId",
+    "NavigationExecutionSnapshot",
+):
+    require(marker in SERVER_MAIN, f"authoritative navigation self-test missing: {marker}")
+
+require(
+    "MaxSimulatedSeconds = 120.0" in SERVER_MAIN,
+    "navigation self-test must remain bounded in simulated time",
+)
+
+for marker in (
     "deterministic proving ground",
     "production ownership chain",
     "legacy",
@@ -199,3 +257,4 @@ print(" - planner cannot mutate authoritative physics state")
 print(" - client/server share the same NavigationWorld runtime-planning target")
 print(" - deterministic fixtures pin detour, envelope rejection, moving conflict and pilot bridge")
 print(" - authoritative GameSimulation isolates one Active stage-12 lab actor on real NAV STRESS hit volumes")
+print(" - live self-test pins CUBE 08 -> adjusted target -> executed lateral demand -> positive clearance")

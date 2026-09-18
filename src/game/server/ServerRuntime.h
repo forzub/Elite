@@ -10,6 +10,7 @@
 #include "src/game/identity/PlayerId.h"
 #include "src/world/WorldParams.h"
 #include "src/scene/EntityID.h"
+#include "src/game/diagnostics/NavigationRuntimeLab.h"
 
 class GameServer;
 class IServerTransport;
@@ -55,6 +56,8 @@ public:
 
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
+    game::diagnostics::NavigationRuntimeLabObservation
+    navigationRuntimeLabObservation() const noexcept;
 
     // Admission uses stable AccountHandle + opaque bearer token + explicit
     // SignIn/Register intent. SignIn never creates identity implicitly; all AccountId /

@@ -1,6 +1,7 @@
 #include "world/navigation/trajectory/MovingGapPredictor.h"
 #include "world/navigation/trajectory/MovingPassageTrajectoryEvaluator.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -98,6 +99,41 @@ void testShipCanTrackTranslatingGapCenter()
             "ship matching a translating gap center must remain feasible");
     requireNear(result.maximumRelativeCenterMotionBoundMeters, 0.0, 1.0e-9,
                 "co-moving centered fixture must have zero transverse relative motion");
+}
+
+void testFeasibleCurvedTrajectoryPublishesContinuousWitness()
+{
+    const GapPredictor::Result gap = GapPredictor::predict(baseGapQuery());
+
+    Evaluator::Query query = baseTrajectoryQuery(gap);
+    query.hull.halfExtentsBodyMeters = {0.25, 0.25, 0.5};
+    query.end.pose.centerMapMeters = {1.0, 0.0, 5.0};
+
+    const Evaluator::Result result = Evaluator::evaluate(query);
+    require(result.status == Evaluator::Status::Feasible,
+            "curved Hermite fixture must remain feasible in the wide gap");
+    require(result.trajectory.valid,
+            "feasible moving passage must publish its exact trajectory witness");
+    requireNear(result.trajectory.centerSamplesMapMeters.front().x,
+                query.start.pose.centerMapMeters.x, 1.0e-12,
+                "trajectory witness must start on the proved Hermite curve");
+    requireNear(result.trajectory.centerSamplesMapMeters.back().x,
+                query.end.pose.centerMapMeters.x, 1.0e-12,
+                "trajectory witness must end on the proved Hermite curve");
+
+    double maximumDeviation = 0.0;
+    for (double deviation :
+         result.trajectory.intervalCenterlineDeviationBoundsMeters)
+    {
+        require(deviation >= 0.0,
+                "continuous Hermite chord deviation must be non-negative");
+        maximumDeviation = std::max(maximumDeviation, deviation);
+    }
+
+    require(maximumDeviation > 0.0,
+            "curved Hermite fixture must publish non-zero between-sample deviation");
+    require(result.trajectory.conservativeHullRadiusMeters > 0.0,
+            "trajectory witness must carry the proved hull containment radius");
 }
 
 void testShipThatDoesNotFollowMovingGapIsBlocked()
@@ -206,6 +242,7 @@ int main()
     {
         testStaticGapAndStraightShipSegmentAreFeasible();
         testShipCanTrackTranslatingGapCenter();
+        testFeasibleCurvedTrajectoryPublishesContinuousWitness();
         testShipThatDoesNotFollowMovingGapIsBlocked();
         testBetweenSampleProofCanRejectWhileEverySampleStillFits();
         testUnavailableMovingGapFailsBeforeShipProof();

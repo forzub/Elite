@@ -11,8 +11,6 @@ namespace
 {
 
 using Executor = world::navigation::PilotSkillExecutor;
-using Vec3d = Executor::Vec3d;
-
 void require(bool condition, const std::string& message)
 {
     if (!condition)
@@ -207,18 +205,23 @@ void testDeterministicNoiseIsReplayStable()
 
     Executor::PilotSkillProfile changed = profile;
     changed.execution.deterministicSeed = 0x87654321ULL;
-    Executor c(changed);
-    require(c.reset(0.0, initial), "different-seed executor must reset");
+    Executor sameSeed(profile);
+    Executor differentSeed(changed);
+    require(
+        sameSeed.reset(0.0, initial) &&
+            differentSeed.reset(0.0, initial),
+        "seed comparison executors must reset"
+    );
 
     bool diverged = false;
     for (int i = 1; i <= 100; ++i)
     {
         const double t = 0.01 * static_cast<double>(i);
-        const auto ra = a.step(2.0 + t, 0.01, desired);
-        const auto rc = c.step(t, 0.01, desired);
+        const auto same = sameSeed.step(t, 0.01, desired);
+        const auto different = differentSeed.step(t, 0.01, desired);
         if (std::abs(
-                ra.executedLinearAccelerationDemandMapMetersPerSec2.x -
-                rc.executedLinearAccelerationDemandMapMetersPerSec2.x) >
+                same.executedLinearAccelerationDemandMapMetersPerSec2.x -
+                different.executedLinearAccelerationDemandMapMetersPerSec2.x) >
             1.0e-9)
         {
             diverged = true;

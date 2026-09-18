@@ -182,9 +182,9 @@ public:
         glm::dvec3 movingPassageTargetMapMeters {0.0};
         bool movingPassageAuthorityUsed = false;
 
-        // Stage 12A-6b2: exact-static proof of the same Hermite trajectory
-        // already accepted by MovingPassageTrajectoryEvaluator. This remains
-        // diagnostic-only until the authority gate is accepted.
+        // Exact-static proof of the same Hermite trajectory already accepted
+        // by MovingPassageTrajectoryEvaluator. 12A-6b3a may consume this proof
+        // only through the explicit allowSteeringAuthority gate above.
         bool movingPassageStaticProofAttempted = false;
         bool movingPassageStaticSafe = false;
         std::size_t movingPassageStaticIntervalsProven = 0;

@@ -207,12 +207,19 @@ void testVisibilitySteeringWidensThenReturnsToDirectLine()
     // candidate's conservative swept occupancy, while a wider local steering
     // direction is clear. Current closest-approach kinematics are deliberately
     // non-conflicting so this fixture isolates bounded visibility steering.
-    blocked.candidates.push_back(stationaryCandidate(
+    Map::Candidate wideFanBlocker = stationaryCandidate(
         205,
         {8.0, 4.0, 0.0},
         0.25,
-        2.0
-    ));
+        3.0
+    );
+
+    // Keep current closest-approach kinematics clear by leaving the actual
+    // actor off the +X line, but center the conservative swept occupancy on
+    // the nominal corridor. That makes every 15/30-degree azimuth remain
+    // blocked while a wider ring becomes available.
+    wideFanBlocker.conservativeSweptCenterMapMeters = {8.0, 0.0, 0.0};
+    blocked.candidates.push_back(wideFanBlocker);
 
     const Avoidance::Result bypass =
         planner.evaluate(query, blocked, space);

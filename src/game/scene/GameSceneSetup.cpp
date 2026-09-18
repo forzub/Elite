@@ -577,6 +577,26 @@ void spawnHubGuidanceTestModules(
             glm::dvec3(0.0)
         },
 
+        // Stage 12A-6b3b: a real translating two-boundary aperture on the
+        // NavigationRuntimeLab route. GameSimulation advances these authored
+        // base offsets with NavigationRuntimeLabMovingGapVelocityVisualMps.
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_moving_gap_upper",
+            game::diagnostics::NavigationRuntimeLabMovingGapUpperLabel,
+            game::diagnostics::NavigationRuntimeLabMovingGapUpperVisualLocalMeters,
+            glm::dvec3(0.0),
+            glm::dvec3(0.0)
+        },
+        {
+            ObjectType::GuidanceDockCube,
+            "nav_moving_gap_lower",
+            game::diagnostics::NavigationRuntimeLabMovingGapLowerLabel,
+            game::diagnostics::NavigationRuntimeLabMovingGapLowerVisualLocalMeters,
+            glm::dvec3(0.0),
+            glm::dvec3(0.0)
+        },
+
         // Inner shell: radius ~= 3 km, azimuth shifted by 22.5 degrees so the
         // +/-X docking corridors are not occupied by a stress object.
         {

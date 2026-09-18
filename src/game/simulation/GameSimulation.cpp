@@ -1468,6 +1468,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (isPlayerControlled(id) ||
                 ship.core().role() == ShipRole::Player)
             {
+                m_npcNavigationControlBridges.erase(id);
+                m_npcNavigationExecutionSnapshots.erase(id);
+                m_npcNavigationLastExecutionTimeSeconds.erase(id);
                 continue;
             }
 
@@ -1510,6 +1513,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 // retired direct steering path, or a runtime error would
                 // silently reintroduce two motion authorities.
                 ship.setControlState(ShipControlState {});
+                m_npcNavigationExecutionSnapshots.erase(id);
             }
         }
 

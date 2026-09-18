@@ -513,6 +513,20 @@ void probeMovingPassage(
             Planner::MovingPassage::evaluate(passageQuery);
         ++result.movingPassagesEvaluated;
 
+        result.movingPassageLastEvaluatorStatus = passage.status;
+        result.movingPassageRequiredPeakForwardAccelerationMps2 =
+            passage.requiredPeakForwardAccelerationMetersPerSec2;
+        result.movingPassageRequiredPeakReverseAccelerationMps2 =
+            passage.requiredPeakReverseAccelerationMetersPerSec2;
+        result.movingPassageRequiredPeakLateralAccelerationMps2 =
+            passage.requiredPeakLateralAccelerationMetersPerSec2;
+        result.movingPassageRequiredPeakVerticalAccelerationMps2 =
+            passage.requiredPeakVerticalAccelerationMetersPerSec2;
+        result.movingPassageMinimumSampleClearanceMeters =
+            passage.minimumSampleClearanceMeters;
+        result.movingPassageMinimumContinuousClearanceMeters =
+            passage.minimumContinuousClearanceBoundMeters;
+
         if (!passage.feasible)
             continue;
 

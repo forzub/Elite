@@ -60,6 +60,13 @@ glm::dvec3 toGlm(
     return {value.x, value.y, value.z};
 }
 
+NavigationRuntimePlanner::Bridge::Vec3d toBridgeVec(
+    const glm::dvec3& value
+) noexcept
+{
+    return {value.x, value.y, value.z};
+}
+
 NavigationRuntimePlanner::Bridge::Intent holdIntent(
     const NavigationRuntimePlanner::AgentState& agent,
     const NavigationRuntimePlanner::Goal& goal,
@@ -68,7 +75,7 @@ NavigationRuntimePlanner::Bridge::Intent holdIntent(
 {
     NavigationRuntimePlanner::Bridge::Intent intent;
     intent.revision = goal.revision;
-    intent.emergency = goal.emergency || urgency > 0.0;
+    intent.emergency = goal.emergency || urgency >= 0.75;
     intent.hazardUrgency01 = std::clamp(
         std::max(goal.hazardUrgency01, urgency),
         0.0,
@@ -98,8 +105,10 @@ NavigationRuntimePlanner::Bridge::Intent holdIntent(
         up * (-agent.yawRateRadPerSec * angularDamping) +
         forward * (-agent.rollRateRadPerSec * angularDamping);
 
-    intent.idealLinearAccelerationDemandMapMps2 = linearDemand;
-    intent.idealAngularAccelerationDemandMapRadPerSec2 = angularDemand;
+    intent.idealLinearAccelerationDemandMapMps2 =
+        toBridgeVec(linearDemand);
+    intent.idealAngularAccelerationDemandMapRadPerSec2 =
+        toBridgeVec(angularDemand);
     return intent;
 }
 
@@ -315,8 +324,10 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         up * (-agent.yawRateRadPerSec * goal.angularDampingPerSecond) +
         forward * (-agent.rollRateRadPerSec * goal.angularDampingPerSecond);
 
-    result.intent.idealLinearAccelerationDemandMapMps2 = linearDemand;
-    result.intent.idealAngularAccelerationDemandMapRadPerSec2 = angularDemand;
+    result.intent.idealLinearAccelerationDemandMapMps2 =
+        toBridgeVec(linearDemand);
+    result.intent.idealAngularAccelerationDemandMapRadPerSec2 =
+        toBridgeVec(angularDemand);
     return result;
 }
 

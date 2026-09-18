@@ -342,6 +342,7 @@ for marker in (
     "firstLiveNominalBlockingEntityId",
     "firstLiveHorizonMeters",
     "firstLiveAgentPositionMap",
+    "firstLiveGoalPositionMap",
     "firstLiveBoundedTargetMap",
     "exactStaticQuerySeen",
     "nominalStaticBlockSeen",

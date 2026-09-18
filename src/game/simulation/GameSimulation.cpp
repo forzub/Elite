@@ -6204,6 +6204,12 @@ bool GameSimulation::placeShipInReferenceFrame(
     tr.motion.desiredRelativeVelocityMps =
         glm::dvec3(0.0);
 
+    // Entering a reference frame is an authoritative kinematic reset.
+    // World velocity above already includes the resolved frame velocity at
+    // this local offset, therefore retaining an old local velocity here would
+    // double-count stale pre-placement motion on the next fixed step.
+    tr.motion.localVelocityMps =
+        glm::dvec3(0.0);
 
     tr.motion.localPositionMeters =
         frame.localOffsetMeters;

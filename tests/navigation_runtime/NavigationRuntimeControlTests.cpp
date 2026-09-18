@@ -254,15 +254,14 @@ void testManualAttitudeOverridesNavigationAngularDemand()
 
 void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
 {
-    Ship ship;
-    auto& tr = ship.core().transform();
-
-    tr.motion.travelFrame.valid = true;
-    tr.motion.travelFrame.localToWorldBasis = glm::dmat3(1.0);
-    tr.motion.localVelocityMps = glm::dvec3(0.0);
-    tr.pitchRate = 0.5f;
-    tr.yawRate = -0.25f;
-    tr.rollRate = 0.10f;
+    game::navigation::NpcNavigationKinematicState state;
+    state.relativeWorldVelocityMps = glm::dvec3(0.0);
+    state.forwardMap = glm::dvec3(0.0, 0.0, -1.0);
+    state.rightMap = glm::dvec3(1.0, 0.0, 0.0);
+    state.upMap = glm::dvec3(0.0, 1.0, 0.0);
+    state.pitchRateRadPerSec = 0.5;
+    state.yawRateRadPerSec = -0.25;
+    state.rollRateRadPerSec = 0.10;
 
     NpcNavigationGoal goal;
     goal.revision = 42;
@@ -273,7 +272,7 @@ void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
 
     const auto intent =
         game::navigation::NpcNavigationIntentController::buildIntent(
-            ship,
+            state,
             goal
         );
 
@@ -320,11 +319,8 @@ void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
 
 void testNpcHoldGoalBrakesRelativeVelocity()
 {
-    Ship ship;
-    auto& tr = ship.core().transform();
-    tr.motion.travelFrame.valid = true;
-    tr.motion.travelFrame.localToWorldBasis = glm::dmat3(1.0);
-    tr.motion.localVelocityMps = glm::dvec3(4.0, -2.0, 1.0);
+    game::navigation::NpcNavigationKinematicState state;
+    state.relativeWorldVelocityMps = glm::dvec3(4.0, -2.0, 1.0);
 
     NpcNavigationGoal goal;
     goal.revision = 5;
@@ -333,7 +329,7 @@ void testNpcHoldGoalBrakesRelativeVelocity()
 
     const auto intent =
         game::navigation::NpcNavigationIntentController::buildIntent(
-            ship,
+            state,
             goal
         );
 

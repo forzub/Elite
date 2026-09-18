@@ -1355,3 +1355,29 @@ remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Pilot regression timing correction
+
+Superseding target-machine candidate:
+
+~~~text
+5665d4bc27edf138d744dacadc73329980df925b
+~~~
+
+Post-commit static review found one defect only in the new regression test:
+`PilotSkillExecutor::step` requires `deltaSeconds` to equal elapsed time since
+the previous step. The test attempted `step(0.50, 0.25)` immediately after
+`reset(0.0)`, which would correctly return InvalidInput.
+
+The regression now advances through two valid 0.25 s steps:
+- t=0.25: initial reaction window is still active;
+- t=0.50: the original intent becomes eligible;
+- t=0.51: only targetRevision changes, proving that no new reaction window is
+  started.
+
+Production exact-static accepted-segment monitoring remains the code from
+`fe6ca95a17b9edda45de08c4ee624b3cc43a87c2`.
+
+Target-machine validation is pending. Last actually accepted Stage-12 baseline
+remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.

@@ -1,5 +1,6 @@
 #include "src/world/navigation/space/NavigationSpace.h"
 
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>

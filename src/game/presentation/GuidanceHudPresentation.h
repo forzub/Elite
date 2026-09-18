@@ -59,29 +59,30 @@ buildReplicatedNavigationExecutionHudPresentation(
 )
 {
     ReplicatedNavigationExecutionHudPresentation out;
-    const auto* execution =
+    const auto* entry =
         navigation.replicatedNavigationExecution().find(entityId);
-    if (!execution || !execution->valid)
+    if (!entry || !entry->execution.valid)
         return out;
 
+    const auto& execution = entry->execution;
     out.visible = true;
     out.entityId = entityId;
-    out.intentRevision = execution->intentRevision;
-    out.activeTargetRevision = execution->activeTargetRevision;
+    out.intentRevision = execution.intentRevision;
+    out.activeTargetRevision = execution.activeTargetRevision;
     out.idealLinearAccelerationDemandMapMps2 =
-        execution->idealLinearAccelerationDemandMapMps2;
+        execution.idealLinearAccelerationDemandMapMps2;
     out.idealAngularAccelerationDemandMapRadPerSec2 =
-        execution->idealAngularAccelerationDemandMapRadPerSec2;
+        execution.idealAngularAccelerationDemandMapRadPerSec2;
     out.executedLinearAccelerationDemandMapMps2 =
-        execution->executedLinearAccelerationDemandMapMps2;
+        execution.executedLinearAccelerationDemandMapMps2;
     out.executedAngularAccelerationDemandMapRadPerSec2 =
-        execution->executedAngularAccelerationDemandMapRadPerSec2;
-    out.emergency = execution->emergency;
-    out.hazardUrgency01 = execution->hazardUrgency01;
-    out.reactionBlocked = execution->reactionBlocked;
-    out.decisionSampled = execution->decisionSampled;
-    out.queuedCommandApplied = execution->queuedCommandApplied;
-    out.pendingCommandCount = execution->pendingCommandCount;
+        execution.executedAngularAccelerationDemandMapRadPerSec2;
+    out.emergency = execution.emergency;
+    out.hazardUrgency01 = execution.hazardUrgency01;
+    out.reactionBlocked = execution.reactionBlocked;
+    out.decisionSampled = execution.decisionSampled;
+    out.queuedCommandApplied = execution.queuedCommandApplied;
+    out.pendingCommandCount = execution.pendingCommandCount;
     return out;
 }
 

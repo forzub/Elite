@@ -159,6 +159,7 @@ for marker in (
     "centerSamplesMapMeters",
     "intervalCenterlineDeviationBoundsMeters",
     "conservativeHullRadiusMeters",
+    "TrajectoryWitness trajectory",
 ):
     require(
         marker in MOVING_PASSAGE_H,

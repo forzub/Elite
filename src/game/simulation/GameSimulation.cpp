@@ -1030,6 +1030,22 @@ bool GameSimulation::updateNpcNavigationControl(
         observation.lateralExecutedDemandSeen =
             observation.lateralExecutedDemandSeen ||
             lateralMagnitude > 1.0e-4;
+
+        observation.movingPassageExecutionActive =
+            observation.movingPassageAuthorityActive;
+
+        if (observation.movingPassageExecutionActive &&
+            executedMagnitude > 1.0e-6)
+        {
+            observation.movingPassageExecutedSeen = true;
+            observation.maximumMovingPassageExecutedDemandMps2 =
+                std::max(
+                    observation.maximumMovingPassageExecutedDemandMps2,
+                    executedMagnitude
+                );
+            observation.lastMovingPassageExecutedWorldMps2 =
+                executedVector;
+        }
     }
 
     return latest.snapshot.valid;

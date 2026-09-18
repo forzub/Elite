@@ -370,6 +370,7 @@ void testReplicatedNavigationExecutionStateIsReadOnlyTruth()
 
     game::navigation::ReplicatedNavigationExecution accepted;
     accepted.entityId = EntityId{42u};
+    accepted.shipInstanceId = 4242u;
     accepted.execution.valid = true;
     accepted.execution.intentRevision = 100u;
     accepted.execution.activeTargetRevision = 99u;
@@ -393,6 +394,19 @@ void testReplicatedNavigationExecutionStateIsReadOnlyTruth()
     );
     require(state.find(EntityId{7u}) == nullptr,
             "invalid replicated navigation rows must not become visible truth");
+
+    const auto* byStableAsset = state.find(
+        game::navigation::NavigationAssetRef::ship(4242u)
+    );
+    require(byStableAsset != nullptr,
+            "replicated navigation truth must resolve a stable ship instance");
+    require(byStableAsset->entityId == EntityId{42u},
+            "stable ship-instance lookup must resolve the authoritative entity");
+
+    require(
+        state.find(game::navigation::NavigationAssetRef::ship(9999u)) == nullptr,
+        "unknown stable ship instance must not fabricate execution truth"
+    );
 }
 
 void testBridgeDemandCanReachCapabilityLayerWithoutLegacyKeys()

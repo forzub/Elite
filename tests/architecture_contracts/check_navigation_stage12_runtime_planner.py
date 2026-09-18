@@ -5,6 +5,9 @@ ROOT = Path(__file__).resolve().parents[2]
 
 SPACE_H = (ROOT / "src/world/navigation/space/NavigationSpace.h").read_text(encoding="utf-8")
 SPACE_CPP = (ROOT / "src/world/navigation/space/NavigationSpace.cpp").read_text(encoding="utf-8")
+SPACE_CMAKE = (ROOT / "src/world/navigation/space/CMakeLists.txt").read_text(encoding="utf-8")
+SPACE_TEST = (ROOT / "tests/navigation_space/NavigationSpaceContractTests.cpp").read_text(encoding="utf-8")
+LOCAL_TEST = (ROOT / "tests/navigation_local/NavigationLocalAvoidanceTests.cpp").read_text(encoding="utf-8")
 PLANNER_H = (ROOT / "src/game/navigation/NavigationRuntimePlanner.h").read_text(encoding="utf-8")
 PLANNER_CPP = (ROOT / "src/game/navigation/NavigationRuntimePlanner.cpp").read_text(encoding="utf-8")
 ROOT_CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
@@ -39,6 +42,37 @@ require(
     SPACE_CPP.count("portalCentersMapMeters.push_back") >= 3,
     "all corridor reconstruction paths must publish ordered portal centers",
 )
+
+for marker in (
+    "std::vector<NavigationObstacle> obstacles",
+    "struct SegmentQuery",
+    "struct SegmentQueryResult",
+    "querySegment",
+    "blockingObstacleId",
+    "obstacleCount",
+):
+    require(marker in SPACE_H, f"exact static NavigationSpace seam missing: {marker}")
+
+for marker in (
+    "validateObstacle",
+    "pointInsideNavigationObstacle",
+    "segmentIntersectsNavigationObstacle",
+    "impl_->obstacles",
+):
+    require(marker in SPACE_CPP, f"exact static NavigationSpace implementation missing: {marker}")
+
+require(
+    "../NavigationObstacleGeometry.cpp" in SPACE_CMAKE and
+    "PUBLIC EliteNavigationGeometry" in ROOT_CMAKE,
+    "exact obstacle geometry must link in isolated and production NavigationSpace targets",
+)
+
+for marker in (
+    "testExactStaticObbBlocksPointAndSegment",
+    "testExactObbGapAdmitsOnlyFittingEnvelope",
+    "conservativeRadiusMeters() > 5.0",
+):
+    require(marker in SPACE_TEST, f"exact OBB NavigationSpace regression missing: {marker}")
 
 for marker in (
     "class NavigationRuntimePlanner final",
@@ -151,6 +185,8 @@ for marker in (
     "Planner::plan(",
     "Planner::mapIntentToWorld(",
     "navigationWorkingFrame",
+    "publishNavigationRuntimeLabStaticGeometry",
+    "staticWorld.obstacles.push_back",
 ):
     require(marker in SIM_CPP, f"GameSimulation runtime planner integration missing: {marker}")
 
@@ -206,6 +242,29 @@ require(
 )
 
 for marker in (
+    "nominalStaticBlocked",
+    "nominalStaticObstacleId",
+    "staticObstaclesExamined",
+):
+    require(marker in LOCAL_H, f"local exact-static diagnostics missing: {marker}")
+
+require(
+    LOCAL_CPP.count("staticSpace.querySegment") >= 2,
+    "LocalAvoidance must prove both nominal and adjusted segments through exact static NavigationSpace",
+)
+
+require(
+    "nominal.status == LocalHorizonPlanner::Status::Clear &&" in LOCAL_CPP and
+    "nominalStatic.traversable" in LOCAL_CPP,
+    "dynamic Clear must not bypass exact static segment proof",
+)
+
+require(
+    "testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate" in LOCAL_TEST,
+    "local avoidance must prove an exact static blocker can trigger adjustment without a dynamic candidate",
+)
+
+for marker in (
     "executionCount",
     "minimumConservativeClearanceMeters",
     "maximumStraightLineDeviationMeters",
@@ -215,6 +274,8 @@ for marker in (
     "maximumRelativeSpeedMps",
     "lastExecutedLinearDemandMapMps2",
     "passedObstaclePlane",
+    "exactStaticGeometryPublished",
+    "exactStaticObstacleCount",
 ):
     require(marker in LAB_H, f"live navigation physical observation missing: {marker}")
 
@@ -255,6 +316,9 @@ for marker in (
     "copyAuthoritativePublishedSnapshot",
     "sparsePacket.metadata.serverTick",
     "authoritativePublished.metadata.serverTick",
+    "observation.exactStaticGeometryPublished",
+    "observation.exactStaticObstacleCount > 0",
+    "exact_static_obstacles=",
 ):
     require(marker in SERVER_MAIN, f"authoritative navigation self-test missing: {marker}")
 
@@ -304,3 +368,6 @@ print(" - canonical sparse hydration must match the same authoritative execution
 print(" - non-identity working-frame regression pins map intent -> world control transform")
 print(" - live lateral-demand diagnostics compare vectors in world space")
 print(" - self-test reports pilot demand separately from physically applied acceleration")
+print(" - NavigationSpace exact static OBB layer preserves real apertures beyond sphere broadphase")
+print(" - LocalAvoidance proves nominal and adjusted segments against exact static geometry")
+print(" - live lab publishes exact HitVolume OBBs after authoritative hub/object transforms")

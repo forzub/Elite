@@ -339,3 +339,32 @@ decision controller never invents vehicle authority
 pilot skill changes execution quality, not geometry truth
 physics remains final contact/damage authority
 ~~~
+
+
+## Control-law-specific recovery
+
+Detailed authority: `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`.
+
+The maneuver selector now filters candidates against the active
+`LocalFlightControlLaw` before doctrine ranking:
+
+```text
+Any
+AssistedOnly
+NewtonianOnly
+```
+
+Examples:
+- `NewtonianFlipAndBurn` cannot be selected in Assisted;
+- wider visibility recovery/backtrack may be valid for either law;
+- a control-law-specific generator is responsible for producing only physically
+  meaningful candidates.
+
+The ordinary visibility fan ending at 75 degrees is not a terminal condition.
+LocalAvoidance now publishes `ordinarySearchExhausted`; runtime composition
+publishes `ordinaryVisibilitySearchExhausted`. That signal means:
+"ordinary progress-preserving local steering is exhausted; request recovery
+candidate generation."
+
+It does not mean "disable control" and does not mean "the vehicle cannot turn
+farther."

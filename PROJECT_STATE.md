@@ -488,3 +488,26 @@ Execution stays shared:
 
 Current Stage-12 work is unchanged and remains focused on live local
 NavigationWorld authority, physics, replication and later common manual guidance.
+
+
+#### 12A-6b3b — CANDIDATE / target-machine pending
+
+Candidate baseline before documentation commits:
+
+```text
+d5e1f990aed38ded7a517d719e935b6b6e763d4d
+```
+
+The deterministic Stage-12 live scene now contains a genuine two-boundary
+moving aperture in addition to the existing exact-static CUBE 08 and rotating
+infrastructure probes.
+
+The moving boundaries are physical hub-attached scene objects with deterministic
+map-frame translation. They are dynamically owned by NavigationMap and excluded
+from the frozen exact-static NavigationSpace snapshot.
+
+The live planner consumes real Cobra hull geometry and real propulsion/angular
+authority. The server gate requires the expected pair to produce
+`MovingPassageClear`, cross PilotSkillExecutor, drive real authoritative
+acceleration, replicate at the same server tick, and physically pass the gap
+without exact-static violation.

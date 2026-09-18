@@ -31,11 +31,7 @@ inline constexpr double NavigationRuntimeLabAngularVelocityToleranceRadPerSecond
 
 // Stage 12A-6b3b deterministic live moving aperture. These are real
 // hub-attached physical objects whose centres translate together in hub-visual
-// coordinates. The aperture sits about 500 m ahead of the lab spawn and before
-// CUBE 08: the run must first exercise moving-passage authority, then continue
-// into the independent exact-static avoidance gate. The transverse offset is
-// deliberately asymmetric around the nominal route so one conservative sphere
-// conflicts while the pair still leaves a real bounded aperture for the Cobra.
+// coordinates. The moving gap is the first authority event in the route.
 inline constexpr const char* NavigationRuntimeLabMovingGapUpperLabel =
     "NAV MOVING GAP UPPER";
 inline constexpr const char* NavigationRuntimeLabMovingGapLowerLabel =
@@ -61,41 +57,50 @@ inline bool isNavigationRuntimeLabMovingGapBoundary(
         label == NavigationRuntimeLabMovingGapLowerLabel;
 }
 
+// Stage 12A-6b3b static slit/tunnel gate.
+//
+// Six 360 x 360 x 900 m exact-HitVolume cubes form two three-cube rows.
+// The 120 m vertical gap between the rows is a real 900 m-deep tunnel.
+// The portal center is intentionally 120 m above the authored straight route,
+// so successful navigation must steer into the slit instead of merely flying
+// straight through a pre-aligned hole.
+inline const glm::dvec3 NavigationRuntimeLabSlitPortalCenterVisualLocalMeters {
+    975.0, -1180.0, -4500.0
+};
+inline constexpr double NavigationRuntimeLabSlitHalfWidthMeters = 540.0;
+inline constexpr double NavigationRuntimeLabSlitHalfHeightMeters = 60.0;
+inline constexpr double NavigationRuntimeLabSlitPortalClearanceMeters = 45.0;
+inline constexpr std::uint64_t NavigationRuntimeLabSlitPortalId = 1202301;
+
+// CUBE 08 remains the representative exact-static blocker identity, but is now
+// the centre cube in the lower tunnel row rather than an isolated obstacle.
+inline const glm::dvec3 NavigationRuntimeLabObstacleVisualLocalMeters {
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.y - 240.0,
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.z
+};
+
 // Hub ReferenceFrame uses tactical local axes:
 //   X = prograde, Y = radial, Z = normal.
 //
-// The stress objects are authored in visual hub axes:
+// Stress/tunnel objects are authored in visual hub axes:
 //   X = normal, Y = radial, Z = -prograde.
 //
-// The proving obstacle is authored first so the start line cannot silently
-// drift away from it when the NAV STRESS layout is edited.
-inline const glm::dvec3 NavigationRuntimeLabObstacleVisualLocalMeters {
-    975.0,
-    -1300.0,
-    -4900.0
-};
-
-// Keep the obstacle inside the very first bounded local horizon. At zero
-// relative speed the live policy starts at roughly turnDistance(1400 m) plus
-// safety margin, so 1300 m forces exact-static participation before natural
-// rotating-frame drift can carry the ship around the OBB.
+// Keep the same deterministic start. Moving gap is ~500 m ahead; the static
+// slit portal is ~1700 m ahead.
 inline constexpr double NavigationRuntimeLabInitialObstacleLeadMeters =
-    1300.0;
+    1700.0;
 
-// This start/goal pair therefore corresponds to visual:
-//   start = { 975, -1300, -6200 }
-//   obstacle = { 975, -1300, -4900 }
-//   goal  = { 975, -1300,  1000 }
 inline const glm::dvec3 NavigationRuntimeLabStartVisualLocalMeters {
-    NavigationRuntimeLabObstacleVisualLocalMeters.x,
-    NavigationRuntimeLabObstacleVisualLocalMeters.y,
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+    -1300.0,
     NavigationRuntimeLabObstacleVisualLocalMeters.z -
         NavigationRuntimeLabInitialObstacleLeadMeters
 };
 
 inline const glm::dvec3 NavigationRuntimeLabGoalVisualLocalMeters {
-    NavigationRuntimeLabObstacleVisualLocalMeters.x,
-    NavigationRuntimeLabObstacleVisualLocalMeters.y,
+    NavigationRuntimeLabSlitPortalCenterVisualLocalMeters.x,
+    -1300.0,
     1000.0
 };
 
@@ -154,6 +159,11 @@ struct NavigationRuntimeLabObservation
     bool movingPassageExecutionActive = false;
     bool movingPassageAppliedAccelerationSeen = false;
     bool movingGapPlanePassed = false;
+
+    bool slitPortalWaypointSeen = false;
+    bool slitTunnelPassed = false;
+    glm::dvec3 slitTunnelCrossingMap {0.0};
+    double slitTunnelCrossingMarginMeters = 0.0;
 
     std::uint8_t movingPassageLastEvaluatorStatus = 0xffu;
     double movingPassageRequiredPeakForwardAccelerationMps2 = 0.0;

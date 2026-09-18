@@ -226,6 +226,12 @@ struct NavigationRuntimeLabObservation
     std::uint64_t acceptedSegmentFollowCount = 0;
     std::uint64_t acceptedSegmentReplanCount = 0;
     std::uint64_t acceptedSegmentStaticSafetyInvalidationCount = 0;
+    std::uint64_t acceptedSegmentEmergencyRecoveryCount = 0;
+    bool acceptedSegmentEmergencyRecoveryActive = false;
+    bool acceptedSegmentLastStoppingReserveBlocked = false;
+    glm::dvec3 acceptedSegmentLastStoppingReserveEndMap {0.0};
+    double acceptedSegmentLastStoppingReserveSeconds = 0.0;
+    double acceptedSegmentLastStoppingReserveDistanceMeters = 0.0;
     std::uint32_t acceptedSegmentLastStaticBlockingEntityId = 0;
     bool acceptedSegmentLastStaticTargetBlocked = false;
     bool acceptedSegmentLastStaticForecastBlocked = false;

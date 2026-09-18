@@ -231,6 +231,44 @@ void testAcceptedSegmentFollowerExecutesWithoutPlannerSearch()
             "follower did not publish accepted-envelope escape");
 }
 
+void testEmergencyRecoverySegmentExecutesFixedBrakeDemand()
+{
+    using Segment = game::navigation::AcceptedShortSegment;
+    using Follower = game::navigation::TrajectoryFollower;
+
+    Segment segment;
+    segment.valid = true;
+    segment.revision = 89;
+    segment.goalRevision = 7;
+    segment.acceptedAtUniverseTimeSeconds = 10.0;
+    segment.validUntilUniverseTimeSeconds = 10.25;
+    segment.startPositionMapMeters = {0.0, 0.0, 0.0};
+    segment.targetPositionMapMeters = {20.0, 0.0, 0.0};
+    segment.linearMode = Segment::LinearMode::FixedAcceleration;
+    segment.fixedLinearAccelerationMapMps2 = {-2.0, 0.0, 0.0};
+    segment.angularDampingPerSecond = 2.0;
+    segment.completionTriggersReplan = false;
+    segment.completionRadiusMeters = 1.0;
+    segment.trackingEnvelopeRadiusMeters = 50.0;
+    segment.emergency = true;
+    segment.hazardUrgency01 = 1.0;
+
+    Follower::AgentState agent;
+    agent.velocityMapMetersPerSecond = {8.0, 0.0, 0.0};
+
+    const auto followed = Follower::follow(segment, agent);
+    require(followed.status == Follower::Status::Following,
+            "emergency recovery segment stopped before its validity window");
+    require(followed.intent.emergency &&
+            std::abs(followed.intent.hazardUrgency01 - 1.0) <= 1.0e-12,
+            "emergency recovery metadata did not reach control intent");
+    require(std::abs(
+                followed.intent.
+                    idealLinearAccelerationDemandMapMps2.x +
+                2.0) <= 1.0e-12,
+            "emergency recovery did not preserve fixed braking demand");
+}
+
 void testAcceptedHoldWaitsForExpiryInsteadOfCompletingEveryTick()
 {
     using Segment = game::navigation::AcceptedShortSegment;
@@ -323,6 +361,7 @@ int main()
         testVehicleDamageKeepsGlobalRouteButRebuildsTrajectory();
         testSegmentExpiryAdvancesLocally();
         testAcceptedSegmentFollowerExecutesWithoutPlannerSearch();
+        testEmergencyRecoverySegmentExecutesFixedBrakeDemand();
         testAcceptedHoldWaitsForExpiryInsteadOfCompletingEveryTick();
         testPlanCountRemainsFarBelowExecutionCount();
 

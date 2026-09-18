@@ -614,6 +614,15 @@ require(
 )
 
 require(
+    "staticSafetyStoppingReserveBlocked" in SIM_CPP and
+    "acceptedSegmentEmergencyRecoveryCount" in SIM_H and
+    "AcceptedSegment::LinearMode::FixedAcceleration" in SIM_CPP and
+    "accepted.hazardUrgency01 = 1.0;" in SIM_CPP and
+    "accepted.validUntilUniverseTimeSeconds =\n                    navigationTimeSeconds + 0.25;" in SIM_CPP,
+    "static-safety invalidation must have a bounded active recovery maneuver, not replan-only behavior",
+)
+
+require(
     "lastExecutedLinearDemandMapMps2" in SIM_CPP and
     "ExecutedSafetySamples = 12" in SIM_CPP and
     "exactExecutionSegmentBlocked" in SIM_CPP and
@@ -624,7 +633,7 @@ require(
 require(
     "staticSafetyInvalidated" in REPLAN_H and
     "Reason::StaticSafetyInvalidated" in REPLAN_CPP and
-    "exactExecutionBlocked" in SIM_CPP and
+    "exactExecutionSegmentBlocked" in SIM_CPP and
     "query.exactObstaclesOnly = true;" in SIM_CPP and
     "replanQuery.staticSafetyInvalidated" in SIM_CPP,
     "accepted automatic segment must be monitored against exact-static geometry without restoring per-frame planning",

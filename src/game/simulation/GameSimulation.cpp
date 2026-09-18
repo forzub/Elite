@@ -2717,6 +2717,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     bool staticSafetyTargetBlocked = false;
     bool staticSafetyForecastBlocked = false;
     bool staticSafetyExecutedForecastBlocked = false;
+    bool staticSafetyStoppingReserveBlocked = false;
+    bool staticSafetyRecoveryRequired = false;
     std::uint32_t staticSafetyBlockingEntityId = 0;
     glm::dvec3 staticSafetyForecastEndMap =
         agent.positionMapMeters;
@@ -2724,7 +2726,11 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         agent.positionMapMeters;
     glm::dvec3 staticSafetyIdealAccelerationMapMps2(0.0);
     glm::dvec3 staticSafetyExecutedAccelerationMapMps2(0.0);
+    glm::dvec3 staticSafetyStoppingReserveEndMap =
+        agent.positionMapMeters;
     double staticSafetyForecastSeconds = 0.0;
+    double staticSafetyStoppingReserveSeconds = 0.0;
+    double staticSafetyStoppingReserveDistanceMeters = 0.0;
 
     if (m_navigationRuntimeLabAcceptedSegment.valid &&
         followerResult.status != Follower::Status::InvalidInput &&
@@ -2889,6 +2895,85 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                     previousSample = sampleEnd;
                 }
             }
+
+            // Geometric replanning is not enough once inertia is relevant.
+            // Build a directional "response coast + guaranteed braking" reserve
+            // entirely in the local NavigationMap frame. This is intentionally
+            // conservative: during the executor response budget we assume no
+            // helpful acceleration at all, then brake with manoeuvre-thruster
+            // authority opposite current velocity. If this swept stopping path
+            // touches exact-static geometry, ordinary progress must yield to a
+            // short active recovery segment before the collision becomes
+            // physically unavoidable.
+            const double speedForStoppingReserve =
+                glm::length(agent.velocityMapMetersPerSecond);
+            if (speedForStoppingReserve > 1.0e-6)
+            {
+                const auto pilotProfile =
+                    m_npcAiSystem.pilotSkillProfile(ship);
+                const auto& executionProfile =
+                    pilotProfile.execution;
+
+                const double decisionPeriodSeconds =
+                    executionProfile.perceptionDecisionRateHz > 1.0e-9
+                        ? 1.0 /
+                            executionProfile.perceptionDecisionRateHz
+                        : 0.0;
+                const double filterResponseReserveSeconds =
+                    executionProfile.responseFrequencyHz > 1.0e-9
+                        ? 1.0 /
+                            executionProfile.responseFrequencyHz
+                        : 0.0;
+
+                staticSafetyStoppingReserveSeconds =
+                    decisionPeriodSeconds +
+                    executionProfile.commandLatencySeconds +
+                    filterResponseReserveSeconds;
+
+                const double brakingAcceleration =
+                    std::max(
+                        0.5,
+                        policy.horizon.
+                            maxBrakingAccelerationMetersPerSecond2
+                    );
+                const double brakingSeconds =
+                    speedForStoppingReserve /
+                    brakingAcceleration;
+                const double brakingDistance =
+                    (speedForStoppingReserve *
+                     speedForStoppingReserve) /
+                    (2.0 * brakingAcceleration);
+                const double responseCoastDistance =
+                    speedForStoppingReserve *
+                    staticSafetyStoppingReserveSeconds;
+
+                staticSafetyStoppingReserveDistanceMeters =
+                    responseCoastDistance +
+                    brakingDistance;
+
+                const glm::dvec3 velocityDirection =
+                    agent.velocityMapMetersPerSecond /
+                    speedForStoppingReserve;
+
+                staticSafetyStoppingReserveEndMap =
+                    agent.positionMapMeters +
+                    velocityDirection *
+                        staticSafetyStoppingReserveDistanceMeters;
+
+                staticSafetyStoppingReserveBlocked =
+                    exactExecutionSegmentBlocked(
+                        agent.positionMapMeters,
+                        staticSafetyStoppingReserveEndMap
+                    );
+
+                if (staticSafetyStoppingReserveBlocked)
+                {
+                    staticSafetyInvalidated = true;
+                    staticSafetyRecoveryRequired = true;
+                }
+
+                (void)brakingSeconds;
+            }
         }
 
         auto& safetyObservation =
@@ -2899,6 +2984,14 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             staticSafetyForecastBlocked;
         safetyObservation.acceptedSegmentLastStaticExecutedForecastBlocked =
             staticSafetyExecutedForecastBlocked;
+        safetyObservation.acceptedSegmentLastStoppingReserveBlocked =
+            staticSafetyStoppingReserveBlocked;
+        safetyObservation.acceptedSegmentLastStoppingReserveEndMap =
+            staticSafetyStoppingReserveEndMap;
+        safetyObservation.acceptedSegmentLastStoppingReserveSeconds =
+            staticSafetyStoppingReserveSeconds;
+        safetyObservation.acceptedSegmentLastStoppingReserveDistanceMeters =
+            staticSafetyStoppingReserveDistanceMeters;
         safetyObservation.acceptedSegmentLastStaticProbeStartMap =
             agent.positionMapMeters;
         safetyObservation.acceptedSegmentLastStaticTargetMap =
@@ -2946,7 +3039,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     replanQuery.trackingErrorExceeded =
         followerResult.trackingErrorExceeded;
     replanQuery.staticSafetyInvalidated =
-        staticSafetyInvalidated;
+        staticSafetyInvalidated &&
+        !m_navigationRuntimeLabAcceptedSegment.emergency;
     replanQuery.vehicleCapabilityChanged =
         m_navigationRuntimeLabAcceptedSegment.valid &&
         capabilityChanged(m_navigationRuntimeLabAcceptedSegment);
@@ -3093,7 +3187,45 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         accepted.capability.maxAngularSpeedRadPerSec =
             agent.angularCapability.maxAngularSpeedRadPerSec;
 
+        if (staticSafetyRecoveryRequired)
+        {
+            const double speed =
+                glm::length(agent.velocityMapMetersPerSecond);
+            if (speed > 1.0e-6)
+            {
+                const double brakingAcceleration =
+                    std::max(
+                        0.5,
+                        policy.horizon.
+                            maxBrakingAccelerationMetersPerSecond2
+                    );
+
+                accepted.linearMode =
+                    AcceptedSegment::LinearMode::FixedAcceleration;
+                accepted.fixedLinearAccelerationMapMps2 =
+                    -agent.velocityMapMetersPerSecond /
+                    speed *
+                    brakingAcceleration;
+                accepted.targetVelocityMapMetersPerSecond =
+                    glm::dvec3(0.0);
+                accepted.targetPositionMapMeters =
+                    staticSafetyStoppingReserveEndMap;
+                accepted.completionTriggersReplan = false;
+                accepted.validUntilUniverseTimeSeconds =
+                    navigationTimeSeconds + 0.25;
+                accepted.alignForward = false;
+                accepted.emergency = true;
+                accepted.hazardUrgency01 = 1.0;
+
+                ++m_navigationRuntimeLabObservation.
+                    acceptedSegmentEmergencyRecoveryCount;
+            }
+        }
+
         m_navigationRuntimeLabAcceptedSegment = accepted;
+        m_navigationRuntimeLabObservation.
+            acceptedSegmentEmergencyRecoveryActive =
+                accepted.emergency;
 
         followerResult =
             Follower::follow(
@@ -3116,6 +3248,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
 
     ++m_navigationRuntimeLabObservation.acceptedSegmentFollowCount;
     m_navigationRuntimeLabObservation.acceptedSegmentActive = true;
+    m_navigationRuntimeLabObservation.acceptedSegmentEmergencyRecoveryActive =
+        m_navigationRuntimeLabAcceptedSegment.emergency;
     m_navigationRuntimeLabObservation.acceptedSegmentRevision =
         m_navigationRuntimeLabAcceptedSegment.revision;
     m_navigationRuntimeLabObservation.lastIntentRevision =

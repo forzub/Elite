@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <limits>
 
 namespace world::navigation
 {
@@ -335,11 +334,14 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
 
         const double decisionPeriod =
             1.0 / execution.perceptionDecisionRateHz;
-        do
-        {
-            nextDecisionTimeSeconds_ += decisionPeriod;
-        }
-        while (nextDecisionTimeSeconds_ <= timeSeconds + kTolerance);
+        const double periodsToAdvance = std::max(
+            1.0,
+            std::floor(
+                (timeSeconds + kTolerance - nextDecisionTimeSeconds_) /
+                decisionPeriod
+            ) + 1.0
+        );
+        nextDecisionTimeSeconds_ += periodsToAdvance * decisionPeriod;
     }
 
     while (queueSize_ > 0)

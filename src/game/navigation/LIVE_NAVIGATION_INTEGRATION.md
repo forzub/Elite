@@ -1,6 +1,6 @@
 # Navigation v2 — live runtime integration
 
-**Status:** stage 11A runtime-control seam candidate pending target-machine gate  
+**Status:** stage 11A ACCEPTED; stage 11B-1 NPC runtime ownership candidate pending target-machine gate  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/PILOT_SKILL_MODEL.md`
 
@@ -221,6 +221,117 @@ direct angular demand respects existing angular envelope
 manual attitude input overrides navigation angular demand
 PilotSkillExecutor output reaches real ShipController capability clamps
 ```
+
+## Stage 11A target-machine acceptance
+
+Accepted on:
+
+```text
+d7c77d5868b3178be3c392f0a8fecad5b57e3b69
+NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+navigation_runtime_control 1/1 PASS
+navigation_trajectory/pilot 11/11 PASS
+canonical EliteGame build PASS
+canonical EliteServer build PASS
+```
+
+The only compiler warning introduced by the first candidate was an unused helper in `SharedShipPhysics.cpp`; it is removed in the stage-11B branch.
+
+## 11B-1 — authoritative NPC motion ownership
+
+The previous NPC runtime returned a `ShipControlState` directly and synthesized steering with:
+
+```text
+yawInput = sin(position.x * ...)
+forwardInput / targetSpeedRate
+```
+
+That path is retired.
+
+`NpcAiSystem` now owns only:
+
+```text
+NpcNavigationGoal
+PilotSkillProfile selection
+```
+
+It does **not** emit control-surface input or acceleration demand.
+
+The initial goal product is deliberately minimal:
+
+```text
+Hold
+MaintainForwardCruise
+```
+
+This is an ownership fixture, not the final NPC behavior catalog. Mission, traffic, repair, chase and attack systems may later choose richer goals without becoming steering solvers.
+
+### Nominal Navigation v2 intent
+
+`NpcNavigationIntentController` converts one goal plus actual ship state into a nominal acceleration intent.
+
+For `MaintainForwardCruise`:
+
+```text
+desired relative velocity = current ship forward * desiredForwardSpeed
+linear demand =
+    (desired relative velocity - actual relative velocity)
+    * velocityResponsePerSecond
+```
+
+For `Hold`, desired relative velocity is zero.
+
+Angular demand damps actual body angular rates and is published back in world axes:
+
+```text
+-right   * pitchRate * angularDamping
+-up      * yawRate   * angularDamping
+-forward * rollRate  * angularDamping
+```
+
+This controller is a nominal local-control product. It owns no world search and no collision response. NavigationMap/LocalHorizon/precision layers may override the nominal intent in the end-to-end composition; NPC AI itself may not.
+
+### Per-NPC runtime bridge
+
+`GameSimulation` now owns persistent per-entity:
+
+```text
+NavigationRuntimeControlBridge
+last navigation execution time
+latest ExecutionSnapshot
+```
+
+At each activation-authorized NPC decision:
+
+```text
+NpcAiSystem::computeGoal
+ -> NpcNavigationIntentController::buildIntent
+ -> per-NPC NavigationRuntimeControlBridge
+ -> PilotSkillExecutor
+ -> ShipControlState navigation demand
+```
+
+No fallback to the retired direct steering path is allowed. A bridge failure clears control and fails closed.
+
+### Activation cadence correctness
+
+`PilotSkillExecutor` limits one step to 0.25 seconds. A distant/coarse NPC may wake after a larger accumulated activation interval.
+
+The server therefore advances the exact elapsed interval as deterministic bounded pieces:
+
+```text
+while lastTime < authoritative executionTime:
+    dt = min(0.25 s, remaining elapsed time)
+    bridge.step(lastTime + dt, dt, same intent)
+```
+
+It does not clamp away elapsed time. Pilot reaction/latency dynamics therefore do not change merely because activation decimated the NPC.
+
+### Same execution truth for diagnostics/guidance
+
+`GameSimulation::npcNavigationExecutionSnapshots()` exposes the exact latest `ExecutionSnapshot` used to create the NPC's live `ShipControlState`.
+
+This is the server-side truth seam for 11B-2 replication/guidance. The client must receive this revision/product rather than recomputing an independent NPC maneuver.
 
 ## 11B after acceptance
 

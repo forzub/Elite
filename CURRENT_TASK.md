@@ -1,8 +1,8 @@
 # Elite — CURRENT TASK
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Stage:** 12A-6b1 — runtime moving-gap / moving-passage observe-prove seam  
-**Last target-machine verified baseline:** `a0efa9190180043b05da3103a5d466d256744935`  
+**Stage:** 12A-6b2 — exact-static proof of the accepted moving Hermite trajectory  
+**Last target-machine verified baseline:** `a587dcd96bdf0b05edbf4fcfe9a32f5f7be1058d`  
 **Candidate implementation baseline before documentation commits:** `616f5b868795439fb42308d2c2d13ffc87218cba`
 
 ## What changed
@@ -150,3 +150,40 @@ After every state-affecting result or scope change, update together:
 
 Use a verified baseline hash for accepted evidence; do not store a self-invalidating
 "current HEAD" field.
+
+
+## 12A-6b1 gate result — ACCEPTED
+
+Target-machine evidence on `a587dcd96bdf0b05edbf4fcfe9a32f5f7be1058d`:
+
+```text
+architecture                    PASS
+navigation_runtime              3/3 PASS
+navigation_trajectory           11/11 PASS
+navigation_map                  1/1 PASS
+client/server build             PASS
+server --self-test-navigation   PASS
+exact_static_violation          0
+replication errors              0
+```
+
+## Current implementation task: 12A-6b2
+
+Add a bounded exact-static verifier for the exact moving Hermite trajectory
+already accepted by `MovingPassageTrajectoryEvaluator`.
+
+The verifier must conservatively cover the curve between discrete trajectory
+samples and use NavigationSpace exact obstacle geometry. A dynamically feasible
+moving passage is only marked statically safe when every bounded curve interval
+passes that proof.
+
+Do **not** grant steering authority in this slice. First prove and expose:
+
+```text
+moving passage feasible
+    + exact-static same-trajectory safe
+    -> eligible-for-authority diagnostic
+```
+
+After a green target-machine gate, the next slice may route the already verified
+first acceleration sample into authoritative planner intent.

@@ -120,9 +120,16 @@ void testTargetRevisionCanAdvanceInsideSameIntent()
     established.revision = 7;
     established.targetRevision = 70;
 
+    const auto midwayResult =
+        executor.step(0.25, 0.25, established);
+    require(midwayResult.status == Executor::Status::Ok &&
+            midwayResult.reactionBlocked,
+            "initial intent reaction window was not exercised");
+
     const auto establishedResult =
         executor.step(0.50, 0.25, established);
-    require(!establishedResult.reactionBlocked,
+    require(establishedResult.status == Executor::Status::Ok &&
+            !establishedResult.reactionBlocked,
             "initial intent did not finish its configured reaction delay");
 
     Executor::Command desired = established;

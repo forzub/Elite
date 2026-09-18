@@ -39,7 +39,8 @@ public:
         VehicleCapabilityChanged,
         GoalIntentChanged,
         TopologyBranchInvalidated,
-        ManualPeriodicRefresh
+        ManualPeriodicRefresh,
+        InvalidInput
     };
 
     struct Policy

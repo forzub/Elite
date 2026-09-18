@@ -50,6 +50,7 @@ for marker in (
     "struct SegmentQuery",
     "struct SegmentQueryResult",
     "querySegment",
+    "allowEndOnStartRegionBoundary",
     "blockingObstacleId",
     "obstacleCount",
 ):
@@ -70,6 +71,7 @@ require(
 )
 
 for marker in (
+    "testProvenPortalEndpointMayTouchRegionBoundary",
     "testExactStaticObbBlocksPointAndSegment",
     "testExactObbGapAdmitsOnlyFittingEnvelope",
     "conservativeRadiusMeters() > 5.0",
@@ -272,6 +274,7 @@ for marker in (
     "nominalStaticBlocked",
     "nominalStaticObstacleId",
     "staticObstaclesExamined",
+    "nominalTargetIsProvenPortalBoundary",
 ):
     require(marker in LOCAL_H, f"local exact-static diagnostics missing: {marker}")
 
@@ -308,6 +311,18 @@ require(
     "ConflictHold result position must not be reused as the exact-static nominal segment endpoint",
 )
 
+require(
+    "query.avoidance.nominalTargetIsProvenPortalBoundary" in LOCAL_CPP and
+    "allowEndOnStartRegionBoundary" in LOCAL_CPP,
+    "corridor-proven portal endpoint must pass its boundary proof into exact static nominal checking",
+)
+
+require(
+    "localQuery.avoidance.nominalTargetIsProvenPortalBoundary =" in PLANNER_CPP and
+    "result.usedPortalWaypoint" in PLANNER_CPP,
+    "runtime planner must grant boundary exception only to a selected corridor portal",
+)
+
 for marker in (
     "executionCount",
     "minimumConservativeClearanceMeters",
@@ -323,6 +338,8 @@ for marker in (
     "exactStaticQuerySeen",
     "nominalStaticBlockSeen",
     "maximumExactStaticObstaclesExamined",
+    "exactStaticViolationSeen",
+    "exactStaticMotionSamples",
 ):
     require(marker in LAB_H, f"live navigation physical observation missing: {marker}")
 
@@ -355,7 +372,8 @@ for marker in (
     "obstaclePrimaryConflictSeen",
     "adjustedTargetSeen",
     "lateralExecutedDemandSeen",
-    "minimumConservativeClearanceMeters > 0.0",
+    "observation.exactStaticMotionSamples > 0",
+    "!observation.exactStaticViolationSeen",
     "findShipSnapshotByInstanceId",
     "NavigationExecutionSnapshot",
     "replicationErrorMps2",
@@ -371,6 +389,8 @@ for marker in (
     "exact_static_obstacles=",
     "exact_static_query=",
     "exact_static_block=",
+    "exact_static_motion_samples=",
+    "exact_static_violation=",
 ):
     require(marker in SERVER_MAIN, f"authoritative navigation self-test missing: {marker}")
 
@@ -390,6 +410,18 @@ require(
     "routeVectorWorld" in SIM_CPP and
     "routeDirectionWorld" in SIM_CPP,
     "executed lateral-demand diagnostics must compare world-space vectors in one frame",
+)
+
+require(
+    "Space::SegmentQuery actualMotion" in SIM_CPP and
+    "m_navigationRuntimeLabPreviousExactSafetyPositionMap" in SIM_CPP and
+    "exactStaticViolationSeen = true" in SIM_CPP,
+    "live acceptance must sweep actual fixed-step motion through exact static geometry",
+)
+
+require(
+    "observation.minimumConservativeClearanceMeters > 0.0" not in SERVER_MAIN,
+    "conservative sphere clearance must remain diagnostic only after exact-static authority is active",
 )
 
 for marker in (
@@ -426,3 +458,6 @@ print(" - live lab publishes exact HitVolume OBBs after authoritative hub/object
 print(" - live self-test requires exact-static query work and nominal OBB blocking evidence")
 print(" - dynamic ConflictHold cannot collapse exact-static nominal proof to a zero-length segment")
 print(" - monolithic NAV STRESS objects receive authoritative logical HitVolumes")
+print(" - corridor-proven portal endpoints remain legal exact-static targets")
+print(" - live physical motion is swept against exact HitVolume geometry every fixed step")
+print(" - conservative sphere clearance is diagnostic only, not exact-static acceptance truth")

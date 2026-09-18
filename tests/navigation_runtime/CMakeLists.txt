@@ -25,9 +25,20 @@ add_subdirectory(
     "${CMAKE_BINARY_DIR}/elite_navigation_control"
 )
 
+add_subdirectory(
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/map"
+    "${CMAKE_BINARY_DIR}/elite_navigation_map"
+)
+
+add_subdirectory(
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/local"
+    "${CMAKE_BINARY_DIR}/elite_navigation_local"
+)
+
 add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimeControlBridge.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NpcNavigationIntentController.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimePlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"
@@ -39,7 +50,13 @@ target_include_directories(EliteNavigationRuntimeControl PUBLIC
 )
 
 target_compile_features(EliteNavigationRuntimeControl PUBLIC cxx_std_17)
-target_link_libraries(EliteNavigationRuntimeControl PUBLIC EliteNavigationControl)
+target_link_libraries(
+    EliteNavigationRuntimeControl
+    PUBLIC
+        EliteNavigationControl
+        EliteNavigationMap
+        EliteNavigationLocal
+)
 
 add_executable(
     navigation_runtime_control_tests
@@ -72,6 +89,44 @@ add_test(
 
 set_tests_properties(
     navigation_runtime_control
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    navigation_runtime_planner_tests
+    NavigationRuntimePlannerTests.cpp
+)
+
+target_include_directories(navigation_runtime_planner_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(navigation_runtime_planner_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    navigation_runtime_planner_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        navigation_runtime_planner_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        navigation_runtime_planner_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME navigation_runtime_planner
+    COMMAND navigation_runtime_planner_tests
+)
+
+set_tests_properties(
+    navigation_runtime_planner
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 

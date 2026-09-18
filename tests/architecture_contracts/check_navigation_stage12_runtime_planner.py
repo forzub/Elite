@@ -340,6 +340,9 @@ for marker in (
     "maximumExactStaticObstaclesExamined",
     "exactStaticViolationSeen",
     "exactStaticMotionSamples",
+    "obstacleExactStaticBlockSeen",
+    "dynamicQueryCount",
+    "maximumDynamicCandidateCount",
 ):
     require(marker in LAB_H, f"live navigation physical observation missing: {marker}")
 
@@ -374,6 +377,10 @@ for marker in (
     "lateralExecutedDemandSeen",
     "observation.exactStaticMotionSamples > 0",
     "!observation.exactStaticViolationSeen",
+    "!observation.obstacleCandidateSeen",
+    "!observation.obstaclePrimaryConflictSeen",
+    "observation.obstacleExactStaticBlockSeen",
+    "observation.dynamicQueryCount > 0",
     "findShipSnapshotByInstanceId",
     "NavigationExecutionSnapshot",
     "replicationErrorMps2",
@@ -404,6 +411,19 @@ require(
     "localHorizonMeters" in SIM_CPP and
     "LabTurnDistanceMeters" in SIM_CPP,
     "live broadphase must cover the complete bounded avoidance fan rather than only the nominal corridor",
+)
+
+require(
+    "const bool timeVaryingNavigationActor" in SIM_CPP and
+    "if (!timeVaryingNavigationActor)" in SIM_CPP and
+    "dynamicWorld.actors.push_back(actor)" in SIM_CPP,
+    "NavigationMap must publish only time-varying infrastructure from the NAV STRESS object set",
+)
+
+require(
+    "m_navigationRuntimeLabLastPlan.nominalStaticObstacleEntityId ==" in SIM_CPP and
+    "obstacleExactStaticBlockSeen = true" in SIM_CPP,
+    "live ownership proof must bind CUBE 08 to exact-static blocker identity",
 )
 
 require(
@@ -461,3 +481,5 @@ print(" - monolithic NAV STRESS objects receive authoritative logical HitVolumes
 print(" - corridor-proven portal endpoints remain legal exact-static targets")
 print(" - live physical motion is swept against exact HitVolume geometry every fixed step")
 print(" - conservative sphere clearance is diagnostic only, not exact-static acceptance truth")
+print(" - stationary NAV STRESS obstacles are excluded from NavigationMap dynamic ownership")
+print(" - live CUBE 08 must be exact-static blocker, never a dynamic candidate/conflict")

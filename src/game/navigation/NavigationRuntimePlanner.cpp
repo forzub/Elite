@@ -521,6 +521,8 @@ void probeMovingPassage(
         result.movingSecondaryObstacleEntityId = secondary->entityId;
         result.movingPassageInitialAccelerationMapMps2 =
             toGlm(passage.initialLinearAccelerationMapMetersPerSec2);
+        result.movingPassageTargetMapMeters =
+            toGlm(passage.trajectory.centerSamplesMapMeters.back());
 
         const StaticMovingTrajectoryProof staticProof =
             proveMovingPassageAgainstStaticSpace(
@@ -719,6 +721,30 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         local,
         result
     );
+
+    // Stage 12A-6b3a: steering authority is opt-in and may only use the exact
+    // first control sample of the same Hermite trajectory that passed both the
+    // moving-aperture proof and the continuous exact-static proof. A stale
+    // dynamic result can never gain this authority.
+    if (policy.movingPassage.allowSteeringAuthority &&
+        local.status != Avoidance::Status::StaleHold &&
+        result.movingPassageFeasible &&
+        result.movingPassageStaticSafe)
+    {
+        result.status = Status::MovingPassageClear;
+        result.movingPassageAuthorityUsed = true;
+        result.safeProgressTargetDemonstrated = true;
+        result.selectedTargetMapMeters =
+            result.movingPassageTargetMapMeters;
+
+        // Reuse the existing stabilized angular-control semantics, but replace
+        // only linear demand with the already-proven Hermite control sample.
+        // No second desired-velocity or trajectory solve occurs here.
+        result.intent = holdIntent(agent, goal, 0.0);
+        result.intent.idealLinearAccelerationDemandMapMps2 =
+            toBridgeVec(result.movingPassageInitialAccelerationMapMps2);
+        return result;
+    }
 
     switch (local.status)
     {

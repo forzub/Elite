@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -115,6 +116,11 @@ public:
         std::size_t dynamicConflictsFound = 0;
         std::size_t nominalDynamicConflictsFound = 0;
         std::size_t avoidanceProbesExamined = 0;
+
+        bool nominalStaticBlocked = false;
+        std::size_t staticObstaclesExamined = 0;
+        std::string nominalStaticObstacleId;
+        std::uint32_t nominalStaticObstacleEntityId = 0;
     };
 
     [[nodiscard]] static Result plan(

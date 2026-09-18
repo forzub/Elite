@@ -115,7 +115,8 @@ Vec3d deterministicNoise(
 }
 
 void advanceSecondOrder(
-    PilotSkillExecutor::FilterState& state,
+    Vec3d& value,
+    Vec3d& rate,
     const Vec3d& target,
     double naturalFrequencyRadPerSec,
     double dampingRatio,
@@ -136,12 +137,12 @@ void advanceSecondOrder(
     for (std::size_t i = 0; i < substeps; ++i)
     {
         const Vec3d acceleration = subtract(
-            scale(subtract(target, state.value), omega2),
-            scale(state.rate, damping)
+            scale(subtract(target, value), omega2),
+            scale(rate, damping)
         );
-        state.rate = add(state.rate, scale(acceleration, h));
-        state.rate = clampMagnitude(state.rate, maximumSlew);
-        state.value = add(state.value, scale(state.rate, h));
+        rate = add(rate, scale(acceleration, h));
+        rate = clampMagnitude(rate, maximumSlew);
+        value = add(value, scale(rate, h));
     }
 }
 
@@ -366,7 +367,8 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
     );
 
     advanceSecondOrder(
-        linearFilter_,
+        linearFilter_.value,
+        linearFilter_.rate,
         activeLinearTarget_,
         naturalFrequency,
         execution.dampingRatio,
@@ -375,7 +377,8 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
         substeps
     );
     advanceSecondOrder(
-        angularFilter_,
+        angularFilter_.value,
+        angularFilter_.rate,
         activeAngularTarget_,
         naturalFrequency,
         execution.dampingRatio,

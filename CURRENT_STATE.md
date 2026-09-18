@@ -3,176 +3,187 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** 11B-1 — authoritative NPC runtime ownership / corrected roll fixture rerun
+**Active stage:** 11B-2 — replicated guidance/debug truth
 
 ## Progress
 
 ```text
-[████████████████████░░░] 10 / 12 major stages closed
+[█████████████████████░░] 10 / 12 major stages closed
 
 1–10 ACCEPTED
 11   ACTIVE — live game/server/guidance + physics
      11A runtime control seam                  ACCEPTED
-     11B-1 authoritative NPC runtime ownership ACTIVE
-     11B-2 replicated guidance/debug truth     PENDING
+     11B-1 authoritative NPC runtime ownership ACCEPTED
+     11B-2 replicated guidance/debug truth     ACTIVE
 12   end-to-end stress/debug + legacy retire   PENDING
 ```
 
-## Latest accepted gate — 11A
+## Latest accepted live gate — 11B-1
 
-Target-machine evidence on `d7c77d5868b3178be3c392f0a8fecad5b57e3b69`:
+Target-machine evidence on:
+
+```text
+fb83b8d80f29c6c5e4e12b8a2fca731ffea7b8e8
+```
+
+passed:
 
 ```text
 NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+NAVIGATION LIVE NPC OWNERSHIP CONTRACT: PASS
 navigation_runtime_control 1/1 PASS
 navigation_trajectory/pilot 11/11 PASS
-canonical EliteGame build PASS
-canonical EliteServer build PASS
+EliteGame build PASS
+EliteServer build PASS
 ```
 
-The candidate warning from unused `hasManualTranslationInput()` is removed in the active 11B branch.
+11B-1 is accepted. The old direct NPC steering authority remains retired.
 
-## Accepted live control chain
+## Accepted live ownership chain
 
 ```text
-Navigation v2 acceleration intent
-    -> NavigationRuntimeControlBridge
-    -> PilotSkillExecutor
-    -> ShipControlState direct navigation demand
-    -> SharedShipPhysics / ShipController / DynamicMotionSystem
-    -> authoritative fixed-step motion
+NpcAiSystem
+    goal + policy only
+        |
+        v
+NpcNavigationIntentController
+    nominal Navigation v2 acceleration intent
+        |
+        v
+per-NPC NavigationRuntimeControlBridge
+        |
+        v
+PilotSkillExecutor
+        |
+        v
+ShipControlState direct navigation demand
+        |
+        v
+SharedShipPhysics / ShipController / DynamicMotionSystem
+        |
+        v
+authoritative motion
 ```
 
-Navigation never writes authoritative position, velocity or angular rate directly.
+No fallback to `sin(position)` steering exists.
 
-## Active 11B-1
+## Active 11B-2 candidate
 
-The old NPC steering authority is retired:
+Authority:
 
 ```text
-REMOVED:
-NpcAiSystem::computeControl()
-yawInput = sin(position ...)
-direct forwardInput / targetSpeedRate steering
+src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md
 ```
 
-`NpcAiSystem` now publishes only:
+New replicated DTO:
 
 ```text
-NpcNavigationGoal
-PilotSkillProfile
+game::simulation::NavigationExecutionSnapshot
 ```
 
-`NpcNavigationIntentController` converts one goal plus actual ship state into a nominal Navigation v2 acceleration intent. Initial goal modes are deliberately minimal:
+Per ship it carries:
 
 ```text
-Hold
-MaintainForwardCruise
+valid
+intentRevision
+activeTargetRevision
+ideal linear/angular acceleration demand
+executed linear/angular acceleration demand
+emergency / urgency
+reactionBlocked
+decisionSampled
+queuedCommandApplied
+pendingCommandCount
 ```
 
-These are ownership fixtures, not the final NPC behavior catalog.
+### Server publication
 
-## Per-NPC authoritative state
+`GameSimulation::buildReplicationSnapshot()` fills `ShipSnapshot.navigationExecution` directly from the same per-NPC execution snapshot that produced live control.
 
-`GameSimulation` owns persistent per NPC:
+No presentation-side reconstruction is involved.
+
+### Wire contract
+
+Canonical snapshot schema now includes:
 
 ```text
-NavigationRuntimeControlBridge
-last navigation execution time
-latest NavigationRuntimeControlBridge::ExecutionSnapshot
+ShipSnapshot.navigationExecution
 ```
 
-Runtime:
+and the binary version is intentionally bumped:
 
 ```text
-NpcAiSystem::computeGoal
- -> NpcNavigationIntentController::buildIntent
- -> per-NPC NavigationRuntimeControlBridge
- -> PilotSkillExecutor
- -> ShipControlState
+SimulationSnapshotWireSchemaVersion = 8
 ```
 
-If the bridge fails, control fails closed and that NPC's bridge state is discarded. There is no fallback to the retired direct steering path.
+Cross-version decoding therefore fails closed.
 
-Activation-decimated elapsed time is preserved exactly by advancing the bridge in bounded `<=0.25 s` pieces.
+### Client hydration
 
-## Guidance/debug truth seam
+`ClientShipState.navigationExecution` receives the replicated state for both newly hydrated and already-known ships.
 
-`GameSimulation::npcNavigationExecutionSnapshots()` exposes the exact executed demand/revision used for control. 11B-2 will replicate this same truth for client guidance/debug rather than running a second planner.
+Sparse replication semantics remain unchanged:
+- omitted ship -> retain;
+- updated ship -> replace;
+- explicit removal -> erase.
 
-## Next gate
+### Read-only navigation workspace
 
-```bash
-python tests/architecture_contracts/check_navigation_live_runtime_control.py
-python tests/architecture_contracts/check_navigation_live_npc_ownership.py
-bash tests/navigation_runtime/run_mingw64.sh
-bash tests/navigation_trajectory/run_mingw64.sh
-bash build_mingw64.sh
-```
-
-After green: continue directly into 11B-2 replication/guidance.
-
-
-## 11B-1 first target-machine attempt — NOT ACCEPTED
-
-The ownership architecture passed and the prior trajectory/pilot suite remained green, but the full gate did not close.
-
-Observed:
+`ReplicatedNavigationExecutionState` indexes the truth by both:
 
 ```text
-live runtime control architecture     PASS
-live NPC ownership architecture       PASS
-navigation trajectory/pilot           11/11 PASS
-EliteGame                             build PASS
-
-navigation_runtime                    compile FAIL
-EliteServer                           link FAIL
+EntityId
+ShipInstanceId
 ```
 
-Root causes:
+The stable `ShipInstanceId` lets a `NavigationAssetRef::Ship` resolve the current runtime entity.
+
+`ClientNavigationWorkspace` exposes only:
 
 ```text
-isolated runtime test omitted GLM_ENABLE_EXPERIMENTAL
-headless EliteServer omitted the three new live-navigation implementation .cpp files
+syncReplicatedNavigationExecution(...)
+const replicatedNavigationExecution()
 ```
 
-Repairs are now committed. The ownership/runtime behavior itself was not relaxed.
+There is no mutable getter for planners.
 
+### Guidance/debug presentation
 
-## 11B-1 second target-machine attempt — NOT ACCEPTED
-
-The server/build wiring repair succeeded: both architecture checks passed, trajectory/pilot stayed 11/11, and canonical EliteGame + EliteServer both built. The only failure was the isolated runtime link because the test instantiated a full `Ship` and pulled unrelated ship-system vtables.
-
-This was repaired by introducing lightweight:
+`GuidanceCorridorHudPresentation` now exposes optional authoritative metadata for the selected route executor:
 
 ```text
-NpcNavigationGoal
-NpcNavigationKinematicState
-NpcNavigationIntentController(state, goal)
+authoritative entity id
+intent revision
+active pilot target revision
+executed linear/angular demand
+emergency
+reaction blocked
 ```
 
-`GameSimulation` now adapts the authoritative live `Ship` into the compact state.
+This metadata is read-only. `LocalGuidancePlanner` and `DockingPathPlanner` do not consume or rewrite it.
 
-## 11B-1 third target-machine attempt — NOT ACCEPTED
+## 11B-2 gate
 
-The lightweight boundary compiled and linked. Both architecture checks passed, trajectory/pilot remained 11/11, and EliteGame + EliteServer built.
-
-The only failure was one unit assertion for roll damping. Production code was correct; the fixture assumed raw world-Z sign instead of the ship forward axis.
-
-Elite identity axes are:
+The new runtime suite contains:
 
 ```text
-right=+X
-up=+Y
-forward=-Z
+navigation_replication_truth
 ```
 
-The repaired fixture now checks axis projections:
+which proves:
+- execution payload survives binary snapshot encode/decode;
+- stable ship identity resolves current execution truth;
+- guidance presentation exposes exact server execution metadata;
+- no corridor is fabricated when only execution truth exists.
 
-```text
-dot(angularDemand,right)   = -pitchRate*damping
-dot(angularDemand,up)      = -yawRate*damping
-dot(angularDemand,forward) = -rollRate*damping
-```
+The existing wire data-plane contract was also extended.
 
-No production behavior was changed.
+## Next after 11B-2 acceptance
+
+1. close all of stage 11;
+2. progress becomes 11/12;
+3. start stage 12 end-to-end scenarios;
+4. prove real obstacle/conflict/docking/post-impact behavior;
+5. stress CPU/GPU/runtime cadence;
+6. make Shift+F12/debug visualize the accepted live truth;
+7. retire legacy route-wide navigation only after stable v2 ownership.

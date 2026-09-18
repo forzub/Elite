@@ -1265,6 +1265,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     using namespace game::diagnostics;
     using Planner = game::navigation::NavigationRuntimePlanner;
     using Map = world::navigation::NavigationMap;
+    using Space = world::navigation::NavigationSpace;
 
     if (!NavigationRuntimeLabEnabled ||
         !m_navigationRuntimeLabInitialized ||
@@ -1547,6 +1548,48 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         glm::radians(30.0);
     policy.avoidance.azimuthSamples = 8;
     policy.avoidance.staticAdditionalClearanceMeters = 10.0;
+
+    // Prove the path the authoritative physics actually took, not the
+    // conservative sphere that merely broadphases the static object. Sampling
+    // a swept segment from the previous fixed-step position prevents a thin
+    // obstacle from being skipped between point samples.
+    if (m_navigationRuntimeLabStaticGeometryPublished)
+    {
+        Space::SegmentQuery actualMotion;
+        actualMotion.startMapMeters = {
+            m_navigationRuntimeLabHasPreviousExactSafetyPosition
+                ? m_navigationRuntimeLabPreviousExactSafetyPositionMap.x
+                : agentPositionMap.x,
+            m_navigationRuntimeLabHasPreviousExactSafetyPosition
+                ? m_navigationRuntimeLabPreviousExactSafetyPositionMap.y
+                : agentPositionMap.y,
+            m_navigationRuntimeLabHasPreviousExactSafetyPosition
+                ? m_navigationRuntimeLabPreviousExactSafetyPositionMap.z
+                : agentPositionMap.z
+        };
+        actualMotion.endMapMeters = {
+            agentPositionMap.x,
+            agentPositionMap.y,
+            agentPositionMap.z
+        };
+        actualMotion.envelope.radiusMeters = shipRadius;
+        actualMotion.envelope.additionalClearanceMeters =
+            policy.avoidance.staticAdditionalClearanceMeters;
+        actualMotion.requireSameRegion = false;
+
+        const Space::SegmentQueryResult actualSafety =
+            m_navigationRuntimeLabSpace->querySegment(actualMotion);
+
+        ++m_navigationRuntimeLabObservation.exactStaticMotionSamples;
+        if (!actualSafety.traversable)
+        {
+            m_navigationRuntimeLabObservation.exactStaticViolationSeen = true;
+        }
+
+        m_navigationRuntimeLabPreviousExactSafetyPositionMap =
+            agentPositionMap;
+        m_navigationRuntimeLabHasPreviousExactSafetyPosition = true;
+    }
 
     const glm::dvec3 routeStartMap =
         NavigationRuntimeLabStartVisualLocalMeters;
@@ -3460,6 +3503,8 @@ void GameSimulation::registerNavigationRuntimeLabShip(
     m_navigationRuntimeLabHubId = hubId;
     m_navigationRuntimeLabInitialized = false;
     m_navigationRuntimeLabStaticGeometryPublished = false;
+    m_navigationRuntimeLabHasPreviousExactSafetyPosition = false;
+    m_navigationRuntimeLabPreviousExactSafetyPositionMap = glm::dvec3(0.0);
     m_navigationRuntimeLabMap.reset();
     m_navigationRuntimeLabSpace.reset();
     m_navigationRuntimeLabSourceRevision = 0;

@@ -3,142 +3,99 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Track:** Navigation v2 / shared NavigationWorld  
-**Stage:** 10 — deterministic `PilotSkillProfile` execution gate
+**Stage:** 11A — live runtime control seam gate
 
 ## Progress
 
 ```text
-[██████████████████░░░░░] 9 / 12 major stages closed
+[████████████████████░░░] 10 / 12 major stages closed
 
-1–9  CLOSED / ACCEPTED
-10   ACTIVE — PilotSkillProfile execution
-11   PENDING — live integration + physics hookup
-12   PENDING — stress/debug + legacy retirement
+1–10 CLOSED / ACCEPTED
+11   ACTIVE
+     11A runtime control seam                 ACTIVE
+     11B NPC/guidance authoritative ownership PENDING
+12   stress/debug + legacy retirement         PENDING
 ```
 
-## Newly closed — moving/rotating docking stage 9
+## Newly closed — `PilotSkillExecutor`
 
-Final target-machine evidence:
+Accepted on:
 
 ```text
-c90a66d6c64bdf3acc037208a000b1955d40e6c3
-NAVIGATION TRAJECTORY DOCKING APPROACH CONTRACT: PASS
-10/10 navigation_trajectory CTest PASS
+b042321b65084950aa91784a5e02344430e5c2bc
+NAVIGATION PILOT SKILL CONTRACT: PASS
+11/11 navigation_trajectory CTest PASS
 100% tests passed
 ```
 
-Decision: `DockingApproachEvaluator` is behavior/architecture accepted. Stage 9A + 9B are frozen unless live integration exposes a defect.
+## Active candidate — 11A
 
-## Active candidate — `PilotSkillExecutor`
-
-Code:
+New/changed production files:
 
 ```text
-src/world/navigation/control/PilotSkillExecutor.h
-src/world/navigation/control/PilotSkillExecutor.cpp
-src/world/navigation/control/CMakeLists.txt
+src/game/navigation/NavigationRuntimeControlBridge.h/.cpp
+src/game/navigation/DynamicMotionSystem.h/.cpp
+src/game/shared/SharedShipPhysics.cpp
+src/game/ship/ShipController.h/.cpp
+src/game/ship/core/ShipControlState.h
+src/game/simulation/GameSimulation.cpp
+CMakeLists.txt
 ```
 
-Contract:
+Contract/tests:
 
 ```text
-src/world/navigation/PILOT_SKILL_MODEL.md
+src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md
+tests/navigation_runtime/NavigationRuntimeControlTests.cpp
+tests/navigation_runtime/CMakeLists.txt
+tests/navigation_runtime/run_mingw64.sh
+tests/architecture_contracts/check_navigation_live_runtime_control.py
 ```
 
-Tests:
+### Required runtime chain
 
 ```text
-tests/navigation_trajectory/NavigationPilotSkillTests.cpp
-tests/architecture_contracts/check_navigation_pilot_skill.py
+ideal accepted acceleration intent
+    -> NavigationRuntimeControlBridge
+    -> PilotSkillExecutor
+    -> direct ShipControlState navigation demand
+    -> real capability clamps
+    -> authoritative fixed-step motion
 ```
 
-### Required separation
+No fake keyboard conversion is allowed.
+
+### Capability truth
+
+Angular demand:
 
 ```text
-world truth          != pilot skill
-vehicle capability   != pilot skill
-navigation intent    != pilot skill
-pilot execution      = delay/cadence/latency/damping/precision
-physics truth        remains downstream authority
+map-space vector
+    -> ship pitch/yaw/roll axes
+    -> existing angular acceleration/rate/load envelope
 ```
 
-No skill scalar is allowed to shrink obstacles, enlarge gaps, change capture tolerance or grant thrust.
-
-### Command timing
-
-A new maneuver revision:
+Linear demand:
 
 ```text
-observed
- -> reaction delay
- -> perception/decision tick
- -> fixed command-latency queue
- -> active target
- -> second-order execution response
+positive forward
+    -> real main engine
+
+remaining/reverse/lateral/vertical
+    -> real manoeuvre thrusters
 ```
 
-Commands evolving inside the same maneuver revision are sample-and-hold at `perceptionDecisionRateHz`.
+Reverse demand may not invent a reverse main engine.
 
-High-urgency emergency commands may shorten reaction delay using:
+### Manual ownership
 
-```text
-emergencyResponseThreshold01
-emergencyReactionDelayScale
-```
+Material manual attitude input overrides navigation angular demand.
 
-### Dynamics
+Any material manual translation/cruise/jump/alignment command keeps the established input path and suppresses direct navigation linear demand for that sample.
 
-Command response is deterministic second order:
+### Runtime snapshot
 
-```text
-y'' = wn^2(target-y) - 2*zeta*wn*y'
-wn = 2*pi*responseFrequencyHz
-```
-
-with explicit gain and linear/angular command slew limits.
-
-Low damping can therefore produce real command overshoot/ringing. The ship only moves when downstream physics integrates the resulting demand.
-
-### Deterministic precision error
-
-Noise source:
-
-```text
-seed + intent revision + decision sequence + axis
-```
-
-No wall clock or `std::random`.
-
-### Closed-loop fixture
-
-A small 1D docking-like plant receives the same ideal PD intent.
-
-Expert:
-
-```text
-0 reaction
-60 Hz decisions
-0 latency
-4 Hz response
-damping 1.0
-gain 1.0
-```
-
-must settle close to the target.
-
-Poor:
-
-```text
-0.20 s reaction
-8 Hz decisions
-0.15 s latency
-1 Hz response
-damping 0.20
-gain 1.40
-limited slew
-```
-
-must repeatedly cross the target and remain less settled by the same deadline.
+`NavigationRuntimeControlBridge::ExecutionSnapshot` carries both ideal and executed demand plus the intent/active-target revisions and skill timing diagnostics. It is the future guidance/debug source for stage 11B.
 
 ## RUN NOW
 
@@ -151,20 +108,27 @@ git merge --ff-only origin/main
 
 git rev-parse HEAD
 
-python tests/architecture_contracts/check_navigation_pilot_skill.py
+python tests/architecture_contracts/check_navigation_live_runtime_control.py
+bash tests/navigation_runtime/run_mingw64.sh
 bash tests/navigation_trajectory/run_mingw64.sh
+bash build_mingw64.sh
 ```
 
-Expected suite count:
+Expected:
 
 ```text
-11/11
+NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS
+navigation_runtime_control 1/1 PASS
+navigation trajectory/pilot 11/11 PASS
+canonical EliteGame + EliteServer build PASS
 ```
 
 ## Next after green
 
-1. accept/freeze stage 10;
-2. progress becomes 10/12;
-3. begin live `EliteGame` / `EliteServer` / guidance + flight/physics integration;
-4. end-to-end stress/debug/performance;
-5. retire legacy navigation after stable v2 ownership.
+Immediately start 11B:
+
+1. retire current `NpcAiSystem::sin(position)` steering as authority;
+2. make NPC AI produce goals/policy while Navigation v2 owns maneuver intent;
+3. maintain per-NPC `NavigationRuntimeControlBridge` state in authoritative simulation;
+4. publish the same accepted intent/execution revision to guidance/debug;
+5. prove no second guidance planner and no direct physics mutation.

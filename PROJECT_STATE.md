@@ -1832,3 +1832,38 @@ remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Coordinate/spatial architecture audit
+
+A repository-wide spatial-ownership audit was completed while the current
+Stage-12 target-machine candidate remains under validation.
+
+Audit document:
+
+~~~text
+src/game/navigation/COORDINATE_ARCHITECTURE_AUDIT.md
+~~~
+
+The audit finds that recurring MAP/WORLD defects are architectural debt rather
+than unrelated local mistakes. Important confirmed issues include:
+- tactical KinematicFrame basis and visual/model hub basis both entering
+  navigation paths;
+- DynamicMotionState mixing authoritative local and derived world quantities;
+- propulsion acceleration bouncing Local -> WORLD -> Local;
+- global gravity being sampled/stored but not consumed by HubTactical local
+  fixed-step integration;
+- HubNavigationFrame duplicating KinematicFrame transforms;
+- duplicate spatial truth in ShipTransform + ShipReferenceFrameSnapshot;
+- WorldPosition changing meaning between system-local and galactic-absolute
+  based on side-channel systemId;
+- transitional pendingReferenceVelocityMatch speed heuristic.
+
+Recommended direction is two physical simulation domains with a shared frame
+kernel: server-authoritative GlobalDynamics, deterministic shared
+LocalSimulation, and a small shared SpatialCore owning strong types,
+KinematicFrame transforms/rebasing and the only Global<->Local API.
+
+This is an AUDIT/PROPOSAL, not yet an accepted migration contract. No current
+navigation behavior or target-machine acceptance status is changed by this
+documentation pass.

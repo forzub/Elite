@@ -347,6 +347,84 @@ void testExactStaticObstacleParticipatesInRuntimeComposition()
             "static-only fixture must not fabricate a dynamic conflict");
 }
 
+void testLiveScaleStaticObstacleInsideFirstBoundedHorizon()
+{
+    Space space;
+    Space::StaticSpaceUpdate staticWorld;
+    staticWorld.sourceRevision = 206;
+
+    Space::RegionInput regionInput;
+    regionInput.regionId = 1;
+    regionInput.boundsMapMeters.minMapMeters = {
+        -1000.0, -4000.0, -4000.0
+    };
+    regionInput.boundsMapMeters.maxMapMeters = {
+        8000.0, 4000.0, 4000.0
+    };
+    regionInput.clearanceRadiusMeters = 12000.0;
+    regionInput.geometryRevision = 1;
+    staticWorld.regions.push_back(regionInput);
+
+    world::navigation::NavigationObstacle cube;
+    cube.id = "live_scale_cube_08";
+    cube.entityId = 808;
+    cube.shape =
+        world::navigation::NavigationObstacleShape::Box;
+    cube.centerMeters = {1300.0, 0.0, 0.0};
+    cube.localToWorldBasis = glm::dmat3(1.0);
+    cube.halfExtentsMeters = {180.0, 180.0, 450.0};
+    staticWorld.obstacles.push_back(cube);
+
+    space.replaceStaticWorld(std::move(staticWorld));
+
+    Planner::AgentState agent = baseAgent();
+    agent.radiusMeters = 20.0;
+
+    Planner::Goal goal = goalAt(7200.0);
+    goal.maximumTargetSpeedMps = 60.0;
+
+    Planner::Policy policy = basePolicy();
+    policy.horizon.maxBrakingAccelerationMetersPerSecond2 = 8.0;
+    policy.horizon.turnDistanceMeters = 1400.0;
+    policy.horizon.safetyMarginMeters = 20.0;
+    policy.horizon.minimumHorizonMeters = 100.0;
+    policy.avoidance.staticAdditionalClearanceMeters = 10.0;
+
+    Map::QueryResult dynamic = emptyDynamic();
+
+    Map::Candidate unrelated;
+    unrelated.entityId = 909;
+    unrelated.positionMapMeters = {0.0, 3000.0, 0.0};
+    unrelated.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    unrelated.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
+    unrelated.predictedEndPositionMapMeters = unrelated.positionMapMeters;
+    unrelated.conservativeSweptCenterMapMeters = unrelated.positionMapMeters;
+    unrelated.actorRadiusMeters = 50.0;
+    unrelated.conservativeSweptRadiusMeters = 50.0;
+    unrelated.motionRevision = 1;
+    dynamic.candidates.push_back(unrelated);
+
+    const Planner::Result result = Planner::plan(
+        agent,
+        goal,
+        dynamic,
+        0.0,
+        space,
+        policy
+    );
+
+    require(result.nominalStaticBlocked,
+            "live-scale exact OBB inside first bounded horizon must reject nominal segment");
+    require(result.nominalStaticObstacleEntityId == 808,
+            "live-scale exact OBB blocker identity must survive composition");
+    require(result.status == Planner::Status::AdjustedClear,
+            "live-scale exact OBB must produce a safe adjusted target");
+    require(result.adjustedTarget,
+            "live-scale exact OBB must exercise adjusted local avoidance");
+    require(result.nominalDynamicConflictsFound == 0,
+            "unrelated dynamic actor must not become the cause of avoidance");
+}
+
 void testAdjustedTargetPreservesNominalConflictIdentity()
 {
     Map::Config config;
@@ -582,6 +660,7 @@ int main()
         testStaticCorridorBecomesLivePortalWaypoint();
         testSamePortalRejectsOversizedHull();
         testExactStaticObstacleParticipatesInRuntimeComposition();
+        testLiveScaleStaticObstacleInsideFirstBoundedHorizon();
         testAdjustedTargetPreservesNominalConflictIdentity();
         testNavigationMapCrossingConflictProducesBrakingHold();
         testMapIntentTransformsIntoWorldControlFrame();
@@ -592,6 +671,7 @@ int main()
         std::cout << " - static corridor portal -> bounded live target\n";
         std::cout << " - portal clearance rejects oversized hull\n";
         std::cout << " - exact static OBB participates in runtime composition\n";
+        std::cout << " - live-scale 1300 m OBB triggers first-horizon adjustment\n";
         std::cout << " - adjusted target retains nominal conflict identity\n";
         std::cout << " - NavigationMap crossing conflict -> braking hold\n";
         std::cout << " - non-identity map intent -> world control frame\n";

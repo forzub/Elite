@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / Stage 12A-5 static-dynamic ownership cleanup
+**Current focus:** NavigationWorld v2 / Stage 12A-6a dynamic angular-motion publication
 **Canonical development branch:** `main`
 
 ## Progress
@@ -163,3 +163,26 @@ The next candidate therefore adds:
   actual goal, current physical horizon and the same envelope as planner;
 - fail-fast diagnostics distinguishing live-geometry mismatch from
   planner-composition loss.
+
+
+### 12A-5 — ACCEPTED
+
+Accepted live run proved stationary/dynamic ownership separation end to end:
+CUBE 08 stayed out of NavigationMap, exact OBB avoidance remained authoritative,
+physical motion had zero exact-static violations, and sparse/canonical execution
+replication matched exactly.
+
+### 12A-6a — CANDIDATE
+
+Before composing MovingGapPredictor into the live path, NavigationMap must carry
+the complete compact motion state needed by accepted moving-gap prediction.
+
+Angular velocity is now part of DynamicActorInput/Candidate and is transformed
+through the same NavigationMap working-frame vector boundary as linear velocity.
+
+The existing GUIDANCE DOCK CUBE A (2 deg/s self-rotation) is the live fixture.
+The self-test queries that real actor after publication and requires exact
+map-space angular-motion agreement.
+
+Only after this gate is green will Stage 12 compose moving-gap prediction /
+moving-passage feasibility.

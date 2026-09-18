@@ -31,6 +31,60 @@ struct GuidanceHudFramePresentation
     bool requiredVehiclePose = false;
 };
 
+struct ReplicatedNavigationExecutionHudPresentation
+{
+    bool visible = false;
+    EntityId entityId {};
+
+    std::uint64_t intentRevision = 0;
+    std::uint64_t activeTargetRevision = 0;
+
+    glm::dvec3 idealLinearAccelerationDemandMapMps2 {0.0};
+    glm::dvec3 idealAngularAccelerationDemandMapRadPerSec2 {0.0};
+    glm::dvec3 executedLinearAccelerationDemandMapMps2 {0.0};
+    glm::dvec3 executedAngularAccelerationDemandMapRadPerSec2 {0.0};
+
+    bool emergency = false;
+    double hazardUrgency01 = 0.0;
+    bool reactionBlocked = false;
+    bool decisionSampled = false;
+    bool queuedCommandApplied = false;
+    std::uint32_t pendingCommandCount = 0;
+};
+
+inline ReplicatedNavigationExecutionHudPresentation
+buildReplicatedNavigationExecutionHudPresentation(
+    const game::navigation::ClientNavigationWorkspace& navigation,
+    EntityId entityId
+)
+{
+    ReplicatedNavigationExecutionHudPresentation out;
+    const auto* execution =
+        navigation.replicatedNavigationExecution().find(entityId);
+    if (!execution || !execution->valid)
+        return out;
+
+    out.visible = true;
+    out.entityId = entityId;
+    out.intentRevision = execution->intentRevision;
+    out.activeTargetRevision = execution->activeTargetRevision;
+    out.idealLinearAccelerationDemandMapMps2 =
+        execution->idealLinearAccelerationDemandMapMps2;
+    out.idealAngularAccelerationDemandMapRadPerSec2 =
+        execution->idealAngularAccelerationDemandMapRadPerSec2;
+    out.executedLinearAccelerationDemandMapMps2 =
+        execution->executedLinearAccelerationDemandMapMps2;
+    out.executedAngularAccelerationDemandMapRadPerSec2 =
+        execution->executedAngularAccelerationDemandMapRadPerSec2;
+    out.emergency = execution->emergency;
+    out.hazardUrgency01 = execution->hazardUrgency01;
+    out.reactionBlocked = execution->reactionBlocked;
+    out.decisionSampled = execution->decisionSampled;
+    out.queuedCommandApplied = execution->queuedCommandApplied;
+    out.pendingCommandCount = execution->pendingCommandCount;
+    return out;
+}
+
 struct GuidanceCorridorHudPresentation
 {
     bool visible = false;

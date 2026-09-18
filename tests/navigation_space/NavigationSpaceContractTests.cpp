@@ -418,6 +418,67 @@ void testProvenPortalEndpointMayTouchRegionBoundary()
             "portal-boundary proof must remain owned by the start region");
 }
 
+void testOrientedFiniteDepthPortalTraversalMetadata()
+{
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 59;
+
+    update.regions = {
+        regionBox(1, 5.0, 0.0, 0.0, 5.0, 10.0, 10.0, 10.0),
+        regionBox(2, 15.0, 0.0, 0.0, 5.0, 10.0, 10.0, 10.0)
+    };
+
+    Space::PortalInput gate =
+        portalAt(5901, 1, 2, 10.0, 0.0, 0.0, 4.0);
+    gate.traversal.enabled = true;
+    gate.traversal.normalAToBMap = {1.0, 0.0, 0.0};
+    gate.traversal.halfLengthMeters = 2.0;
+    gate.traversal.approachDistanceMeters = 6.0;
+    gate.traversal.maximumVelocityAngleRad = 0.1;
+    gate.traversal.maximumForwardAngleRad = 0.2;
+    gate.traversal.maximumLateralSpeedMps = 0.5;
+    gate.traversal.transitSpeedMps = 3.0;
+    gate.traversal.requireVehicleForwardAlignment = true;
+    update.portals = {gate};
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    Space::CorridorQuery forward;
+    forward.startMapMeters = {5.0, 0.0, 0.0};
+    forward.endMapMeters = {15.0, 0.0, 0.0};
+    forward.envelope = envelope(1.0);
+
+    const auto forwardRoute = space.queryCorridor(forward);
+    require(forwardRoute.found &&
+            forwardRoute.portalTraversals.size() == 1,
+            "forward finite-depth portal must publish traversal metadata");
+
+    const auto& forwardTraversal =
+        forwardRoute.portalTraversals.front();
+    require(forwardTraversal.enabled &&
+            forwardTraversal.portalId == 5901 &&
+            near(forwardTraversal.normalMap.x, 1.0) &&
+            near(forwardTraversal.normalMap.y, 0.0) &&
+            near(forwardTraversal.normalMap.z, 0.0),
+            "forward portal traversal normal must point regionA -> regionB");
+    require(near(forwardTraversal.approachDistanceMeters, 6.0) &&
+            near(forwardTraversal.halfLengthMeters, 2.0) &&
+            near(forwardTraversal.transitSpeedMps, 3.0) &&
+            forwardTraversal.requireVehicleForwardAlignment,
+            "portal traversal profile fields were not preserved");
+
+    Space::CorridorQuery reverse = forward;
+    reverse.startMapMeters = {15.0, 0.0, 0.0};
+    reverse.endMapMeters = {5.0, 0.0, 0.0};
+
+    const auto reverseRoute = space.queryCorridor(reverse);
+    require(reverseRoute.found &&
+            reverseRoute.portalTraversals.size() == 1 &&
+            near(reverseRoute.portalTraversals.front().normalMap.x, -1.0),
+            "reverse traversal must flip the authored A->B normal");
+}
+
 void testExactStaticObbBlocksPointAndSegment()
 {
     Space::StaticSpaceUpdate update;
@@ -613,6 +674,7 @@ int main()
         testCostedCanyonVsOverflight();
         testTurnCostZigzagVsSmooth();
         testProvenPortalEndpointMayTouchRegionBoundary();
+        testOrientedFiniteDepthPortalTraversalMetadata();
         testExactStaticObbBlocksPointAndSegment();
         testExactObbGapAdmitsOnlyFittingEnvelope();
         testLocalInvalidationAndPatch();
@@ -626,6 +688,7 @@ int main()
         std::cout << " - costed routing can choose canyon or overflight by policy\n";
         std::cout << " - turn-aware routing can prefer a smoother static branch\n";
         std::cout << " - corridor-proven portal endpoints may touch region boundaries\n";
+        std::cout << " - oriented finite-depth portal traversal metadata follows route direction\n";
         std::cout << " - exact static OBBs reject occupied points/segments\n";
         std::cout << " - exact OBB gap survives overlapping conservative spheres\n";
         std::cout << " - narrow portals reject oversized agents\n";

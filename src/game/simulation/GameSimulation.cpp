@@ -981,20 +981,35 @@ bool GameSimulation::updateNpcNavigationControl(
         const double executedMagnitude =
             glm::length(executedVector);
 
-        const glm::dvec3 routeVector =
-            game::diagnostics::NavigationRuntimeLabGoalVisualLocalMeters -
-            game::diagnostics::NavigationRuntimeLabStartVisualLocalMeters;
-        const double routeLength = glm::length(routeVector);
         double lateralMagnitude = 0.0;
-        if (routeLength > 1.0e-12)
+        if (const auto* hubFrame =
+                hubNavigationFrame(m_navigationRuntimeLabHubId);
+            hubFrame && hubFrame->valid)
         {
-            const glm::dvec3 routeDirection =
-                routeVector / routeLength;
-            const glm::dvec3 lateral =
-                executedVector -
-                routeDirection *
-                    glm::dot(executedVector, routeDirection);
-            lateralMagnitude = glm::length(lateral);
+            const glm::dvec3 routeVectorMap =
+                game::diagnostics::NavigationRuntimeLabGoalVisualLocalMeters -
+                game::diagnostics::NavigationRuntimeLabStartVisualLocalMeters;
+
+            const glm::dvec3 routeVectorWorld =
+                hubFrame->normalAxis * routeVectorMap.x +
+                hubFrame->radialAxis * routeVectorMap.y -
+                hubFrame->progradeAxis * routeVectorMap.z;
+
+            const double routeLength =
+                glm::length(routeVectorWorld);
+            if (routeLength > 1.0e-12)
+            {
+                const glm::dvec3 routeDirectionWorld =
+                    routeVectorWorld / routeLength;
+                const glm::dvec3 lateral =
+                    executedVector -
+                    routeDirectionWorld *
+                        glm::dot(
+                            executedVector,
+                            routeDirectionWorld
+                        );
+                lateralMagnitude = glm::length(lateral);
+            }
         }
 
         observation.lastExecutedLinearDemandMapMps2 =
@@ -1152,23 +1167,26 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             );
         };
 
-    Map::DynamicWorldUpdate dynamicWorld;
-    dynamicWorld.sourceRevision =
-        ++m_navigationRuntimeLabSourceRevision;
-    dynamicWorld.workingFrame.originSystemMeters = {
+    Map::WorkingFrame navigationWorkingFrame;
+    navigationWorkingFrame.originSystemMeters = {
         hubFrame->originMeters.x,
         hubFrame->originMeters.y,
         hubFrame->originMeters.z
     };
-    dynamicWorld.workingFrame.xAxisSystem = {
+    navigationWorkingFrame.xAxisSystem = {
         mapXAxis.x, mapXAxis.y, mapXAxis.z
     };
-    dynamicWorld.workingFrame.yAxisSystem = {
+    navigationWorkingFrame.yAxisSystem = {
         mapYAxis.x, mapYAxis.y, mapYAxis.z
     };
-    dynamicWorld.workingFrame.zAxisSystem = {
+    navigationWorkingFrame.zAxisSystem = {
         mapZAxis.x, mapZAxis.y, mapZAxis.z
     };
+
+    Map::DynamicWorldUpdate dynamicWorld;
+    dynamicWorld.sourceRevision =
+        ++m_navigationRuntimeLabSourceRevision;
+    dynamicWorld.workingFrame = navigationWorkingFrame;
 
     glm::dvec3 observedObstacleWorldPosition(0.0);
     double observedObstacleRadiusMeters = 0.0;
@@ -1536,7 +1554,11 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         return false;
     }
 
-    outIntent = m_navigationRuntimeLabLastPlan.intent;
+    outIntent =
+        Planner::mapIntentToWorld(
+            m_navigationRuntimeLabLastPlan.intent,
+            navigationWorkingFrame
+        );
     return true;
 }
 

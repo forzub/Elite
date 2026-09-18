@@ -1905,3 +1905,54 @@ until the MinGW tests/build and `EliteServer --self-test-navigation` are green.
 
 Last actually accepted Stage-12 baseline remains
 `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+
+
+### Target-machine gate failure after revision split
+
+Target-machine run against
+`91ac7f66e02f1a9aa76df82d09557e94e601310c` produced:
+
+~~~text
+architecture Stage-12 contract: PASS
+navigation_runtime: PASS (5/5)
+navigation_trajectory: 10/11 PASS
+full MinGW client/server build: PASS
+EliteServer --self-test-navigation: FAIL after the earlier replication gate
+~~~
+
+Isolated regression failure:
+
+~~~text
+navigation_pilot_skill:
+NAVIGATION PILOT SKILL TESTS: FAIL:
+new target inside same intent must not restart reaction delay
+~~~
+
+This regression was constructed incorrectly: it changed the target at t=0.01
+after `reset(t=0)` while the configured initial reaction delay was still
+active. It therefore measured the initial command delay, not a delay restart
+caused by targetRevision. The test must first establish an already-reacted
+intent, then change only targetRevision and verify that no new reaction window
+starts.
+
+More importantly, the live self-test now advances beyond the previous
+same-tick replication filter and fails later on physical exact geometry:
+
+~~~text
+[FAIL] moving-passage continuation crossed exact static geometry
+violation_entity=28
+~~~
+
+This is a real Stage-12 execution failure. The accepted-segment cadence is now
+allowing a command to remain authoritative long enough that the physical exact
+sweep catches a static HitVolume crossing. The next code pass must identify
+entity 28, capture the accepted segment/planner status/target at the violation,
+and correct segment invalidation/follower semantics rather than weakening the
+exact-static gate.
+
+No new Stage-12 baseline is accepted. Last actually target-machine accepted
+baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

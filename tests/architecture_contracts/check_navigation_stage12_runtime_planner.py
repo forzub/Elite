@@ -30,6 +30,10 @@ LOCAL_CPP = (ROOT / "src/world/navigation/local/LocalAvoidancePlanner.cpp").read
 SERVER_RUNTIME_H = (ROOT / "src/game/server/ServerRuntime.h").read_text(encoding="utf-8")
 SERVER_RUNTIME_CPP = (ROOT / "src/game/server/ServerRuntime.cpp").read_text(encoding="utf-8")
 SERVER_MAIN = (ROOT / "src/server_main.cpp").read_text(encoding="utf-8")
+MANEUVER_DECISION_H = (ROOT / "src/game/ship/controller/ManeuverDecisionController.h").read_text(encoding="utf-8")
+MANEUVER_DECISION_CPP = (ROOT / "src/game/ship/controller/ManeuverDecisionController.cpp").read_text(encoding="utf-8")
+MANEUVER_DECISION_TEST = (ROOT / "tests/navigation_runtime/ManeuverDecisionControllerTests.cpp").read_text(encoding="utf-8")
+MANEUVER_DECISION_DOC = (ROOT / "src/game/MANEUVER_DECISION_TREE.md").read_text(encoding="utf-8")
 HIT_BUILDER = (ROOT / "src/world/modules/ObjectRuntimeHitBuilder.cpp").read_text(encoding="utf-8")
 GUIDANCE_DESCRIPTOR = (ROOT / "src/game/station/descriptors/GuidanceTestDockDescriptor.h").read_text(encoding="utf-8")
 
@@ -948,6 +952,65 @@ require(
 )
 
 for marker in (
+    "Doctrine",
+    "Rational",
+    "PrecisionRetrieval",
+    "Extreme",
+    "CombatEscape",
+    "ProgressRequirement",
+    "MustProgress",
+    "allowExpectedContact",
+    "allowSacrificialComponentLoss",
+    "criticalDamageRisk01",
+    "missionDamageCost01",
+    "expendableDamageCost01",
+    "threatExposure",
+    "escapeReserve01",
+):
+    require(marker in MANEUVER_DECISION_H, f"maneuver decision contract missing: {marker}")
+
+for marker in (
+    "commonPreferred",
+    "rationalBetter",
+    "precisionBetter",
+    "extremeBetter",
+    "combatEscapeBetter",
+    "MustProgress",
+    "haveNonContactProgress",
+):
+    require(marker in MANEUVER_DECISION_CPP, f"maneuver decision implementation missing: {marker}")
+
+for marker in (
+    "testRationalMayStopRatherThanAcceptContact",
+    "testMustProgressDoesNotCollapseToStop",
+    "testExtremeMayTradeExpendableDamageForSpeed",
+    "testExtremeStillRejectsCatastrophicShortcut",
+    "testCombatEscapePrefersLowerThreatExposure",
+    "testPrecisionRetrievalPrefersClearanceAndLowEntrySpeed",
+    "testSacrificialDamageNeedsExplicitPermission",
+):
+    require(marker in MANEUVER_DECISION_TEST, f"maneuver decision regression missing: {marker}")
+
+for marker in (
+    "no collision-free proof != no navigation command",
+    "no global route != stop by default",
+    "ManeuverDecisionController",
+    "Local bounded visibility",
+    "Precision passage",
+    "Emergency / contact-expected passage",
+    "Projected silhouette under fire",
+    "Escape reserve / viability",
+    "Cinematic navigation principle",
+):
+    require(marker in MANEUVER_DECISION_DOC, f"maneuver decision architecture missing: {marker}")
+
+require(
+    "src/game/ship/controller/ManeuverDecisionController.cpp" in RUNTIME_CMAKE and
+    "maneuver_decision_controller_tests" in RUNTIME_CMAKE,
+    "runtime gate must compile and execute the maneuver decision controller",
+)
+
+for marker in (
     "deterministic proving ground",
     "production ownership chain",
     "legacy",
@@ -961,6 +1024,9 @@ require(
 )
 
 print("NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS")
+print(" - maneuver decision ownership sits above navigation geometry/reachability")
+print(" - Rational/Precision/Extreme/CombatEscape doctrines are deterministic and tested")
+print(" - MustProgress retains contact-expected progress instead of collapsing to stop")
 print(" - NavigationSpace publishes ordered selected-portal steering centers")
 print(" - one shared runtime planner composes static corridor + bounded local avoidance")
 print(" - blocked/stale/conflict states keep producing fail-closed pilot intent")

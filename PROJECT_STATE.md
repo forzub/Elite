@@ -1364,3 +1364,51 @@ Production exact-static accepted-segment monitoring remains the code from
 
 Target-machine validation is pending. Last actually accepted Stage-12 baseline
 remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+
+
+### Target-machine result: exact-static monitor candidate still fails live tunnel
+
+Target-machine run against repository HEAD
+`a29f3e01708663afb003dfe14ddbce0e4f330316` produced:
+
+~~~text
+architecture Stage-12 contract: PASS
+navigation_runtime: PASS (5/5)
+navigation_trajectory: PASS (11/11)
+full MinGW client/server build: PASS
+EliteServer --self-test-navigation: FAIL
+~~~
+
+The live failure is unchanged in physical terms:
+
+~~~text
+[FAIL] moving-passage continuation crossed exact static geometry
+violation_entity=28
+~~~
+
+Entity 28 is the deterministic `NAV STRESS CUBE 08` lower-middle block of
+the authored slit tunnel.
+
+Therefore candidate
+`5665d4bc27edf138d744dacadc73329980df925b` is NOT accepted as the new
+Stage-12 baseline. The newly added exact-static accepted-segment monitor did not
+prevent the collision in the authoritative runtime.
+
+Important evidence from this run:
+- the corrected target-revision/reaction regression now passes;
+- all isolated runtime and trajectory tests pass;
+- the failure is now exclusively in the live authoritative behavioral run;
+- the current defect is specifically in execution/monitor/planner interaction
+  near the slit tunnel, not compilation, replication, or the isolated policy
+  contracts.
+
+Next work must instrument the accepted segment immediately before entity-28
+impact: segment revision, replan reason, exact-static monitor result, accepted
+target, velocity, forecast endpoint and planner status. Do not weaken the
+physical exact-static gate.
+
+Last actually target-machine accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

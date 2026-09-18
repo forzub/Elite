@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / Stage 12A-2 authoritative proving actor  
+**Current focus:** NavigationWorld v2 / Stage 12A-3 live behavior proof  
 **Canonical development branch:** `main`
 
 ## Progress
@@ -12,45 +12,41 @@
 
 Stages 1–11 are accepted. Stage 12 is active.
 
-## Accepted Stage 12A-1
+### 12A-1 — ACCEPTED
+
+Shared `NavigationRuntimePlanner` composition from NavigationSpace/NavigationMap
+through LocalHorizon/LocalAvoidance into PilotSkillExecutor.
+
+### 12A-2 — ACCEPTED
 
 Target-machine gate on
-`af58b46cdb01ad254097383e5e4274c733c4e28e` passed:
+`7b4db95788d80c95afb3b57c109c671cb7a41366` passed architecture,
+`navigation_runtime 3/3`, EliteGame and EliteServer.
 
-```text
-stage-12 runtime planner architecture PASS
-navigation_runtime 3/3 PASS
-EliteGame build PASS
-EliteServer build PASS
-```
+One isolated Active diagnostic NPC is therefore accepted as authoritative
+`GameSimulation` ownership using the existing NAV STRESS physical scene and
+HitVolume-derived navigation geometry.
 
-This accepts the shared runtime composition from NavigationSpace/NavigationMap
-through LocalHorizon/LocalAvoidance into the existing PilotSkillExecutor control
-bridge.
+### 12A-3 — CANDIDATE
 
-## Stage 12A-2 candidate
+`EliteServer --self-test-navigation` now supplies deterministic live evidence
+from the real server runtime.
 
-The accepted planner is now connected to authoritative `GameSimulation` for a
-single isolated `NAVIGATION V2 RUNTIME LAB` NPC. The actor is pinned Active;
-ordinary NPC behavior remains unchanged.
+Important repair made before the live gate: candidate broadphase covers the
+complete bounded local avoidance fan with `NavigationMap::querySphere()`,
+instead of only the nominal straight corridor. Successful adjusted probes also
+retain the identity of the obstacle that rejected the nominal target.
 
-The existing diagnostic scene already provides the physical proving field:
-`NAV STRESS CUBE/CYLINDER` objects. The lab route deliberately crosses
-`NAV STRESS CUBE 08` on the unmodified straight line.
+The self-test measures:
+- nominal CUBE 08 conflict;
+- adjusted target;
+- exact executed lateral acceleration;
+- straight-route deviation;
+- minimum conservative clearance;
+- obstacle-plane passage;
+- goal progress;
+- exact authoritative-to-replicated execution-vector equality.
 
-A new `NavigationHitVolumeAdapter` makes authoritative damage/collision
-`HitVolume` geometry the navigation source. The current lab consumes
-hit-volume-derived conservative radii in `NavigationMap`; exact world OBB
-conversion is implemented and tested for the subsequent static/precision
-topology slice.
-
-## Next evidence
-
-1. target-machine architecture/runtime/build gate for 12A-2;
-2. deterministic live simulation evidence that CUBE 08 changes the accepted
-   command and the authoritative ship avoids contact;
-3. exact hit-volume OBB -> static/precision NavigationSpace publication;
-4. extend the same proving field to moving conflict, narrow gap, docking and
-   post-impact replan;
-5. expose the same accepted truth through Shift+F12 rather than a second
-   visualization planner.
+After this passes, proceed to exact transformed HitVolume OBB publication into
+static/precision NavigationSpace topology. Conservative spheres are broadphase
+only and must not become the accepted narrow-gap geometry.

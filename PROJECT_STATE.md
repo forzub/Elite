@@ -1,9 +1,8 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / end-to-end runtime proving ground  
-**Canonical development branch:** `main`  
-**Active stage:** 12A
+**Current focus:** NavigationWorld v2 / Stage 12A-2 authoritative proving actor  
+**Canonical development branch:** `main`
 
 ## Progress
 
@@ -11,81 +10,47 @@
 [██████████████████████░] 11 / 12 major stages closed
 ```
 
-Closed:
-1. NavigationMap
-2. NavigationSpace
-3. LocalHorizon / LocalAvoidance
-4. oriented passage / bounded gaps / attitude
-5. continuous static passage
-6. emergency mitigation / contact severity
-7. moving-gap prediction
-8. moving continuous passage
-9. moving/rotating docking
-10. deterministic PilotSkillProfile
-11. live runtime ownership + replicated guidance/debug truth
+Stages 1–11 are accepted. Stage 12 is active.
 
-Active:
-12. end-to-end runtime/stress/debug + legacy retirement
+## Accepted Stage 12A-1
 
-## Latest accepted evidence
+Target-machine gate on
+`af58b46cdb01ad254097383e5e4274c733c4e28e` passed:
 
 ```text
-9650c44cca23741dae3f4acf2c9a96a4ab4c5713
-```
-
-Target-machine acceptance passed:
-
-```text
-live runtime architecture PASS
-live NPC ownership architecture PASS
-live replication/guidance architecture PASS
-wire schema architecture PASS
-navigation_runtime 2/2 PASS
-navigation_trajectory/pilot 11/11 PASS
-wire_data_plane_contracts 1/1 PASS
+stage-12 runtime planner architecture PASS
+navigation_runtime 3/3 PASS
 EliteGame build PASS
 EliteServer build PASS
 ```
 
-This closes all of stage 11.
+This accepts the shared runtime composition from NavigationSpace/NavigationMap
+through LocalHorizon/LocalAvoidance into the existing PilotSkillExecutor control
+bridge.
 
-## Accepted replicated execution architecture
+## Stage 12A-2 candidate
 
-```text
-GameSimulation execution snapshot
- -> ShipSnapshot.navigationExecution sparse variant
- -> binary wire schema v8
- -> ClientWorldState
- -> ReplicatedNavigationExecutionState
- -> ClientNavigationWorkspace
- -> GuidanceHudPresentation
-```
+The accepted planner is now connected to authoritative `GameSimulation` for a
+single isolated `NAVIGATION V2 RUNTIME LAB` NPC. The actor is pinned Active;
+ordinary NPC behavior remains unchanged.
 
-Stable route-executor identity uses `ShipInstanceId`, while current runtime binding retains `EntityId`. The client mirror is read-only to planning code and updates only on accepted server snapshot ticks. An absent execution costs exactly one variant-tag byte.
+The existing diagnostic scene already provides the physical proving field:
+`NAV STRESS CUBE/CYLINDER` objects. The lab route deliberately crosses
+`NAV STRESS CUBE 08` on the unmodified straight line.
 
-## Stage 12A-1 candidate
+A new `NavigationHitVolumeAdapter` makes authoritative damage/collision
+`HitVolume` geometry the navigation source. The current lab consumes
+hit-volume-derived conservative radii in `NavigationMap`; exact world OBB
+conversion is implemented and tested for the subsequent static/precision
+topology slice.
 
-A shared `NavigationRuntimePlanner` now composes:
-- `NavigationSpace::queryCostedCorridor()`;
-- ordered selected portal steering centers;
-- `LocalHorizonPlanner`;
-- `LocalAvoidancePlanner`;
-- accepted `NavigationRuntimeControlBridge::Intent`.
+## Next evidence
 
-`EliteNavigationWorldRuntime` is linked into both canonical production executables. Runtime tests pin static detour waypoint selection, hull-envelope rejection, moving-conflict braking and passage through the accepted pilot bridge.
-
-This candidate still requires a target-machine gate before it is connected to authoritative `GameSimulation` and the real proving-ground geometry publisher.
-
-## Stage 12
-
-Authority:
-
-```text
-src/game/navigation/STAGE12_END_TO_END.md
-```
-
-The first target is a deterministic station-adjacent obstacle proving ground exercised through the production runtime chain. It must use actual navigation/collision geometry, not a visual-only obstacle list, and must include a forced detour, a narrow passable opening, an opening that fails for a larger hull, and a moving crossing obstacle.
-
-After the headless end-to-end gate, the exact same scenario becomes the interactive proving ground and `Shift+F12` debug source.
-
-Legacy route-wide navigation remains quarantined until the v2 runtime proves ordinary travel, obstacle avoidance, narrow passages, moving conflicts, docking, post-contact replan and guidance presentation.
+1. target-machine architecture/runtime/build gate for 12A-2;
+2. deterministic live simulation evidence that CUBE 08 changes the accepted
+   command and the authoritative ship avoids contact;
+3. exact hit-volume OBB -> static/precision NavigationSpace publication;
+4. extend the same proving field to moving conflict, narrow gap, docking and
+   post-impact replan;
+5. expose the same accepted truth through Shift+F12 rather than a second
+   visualization planner.

@@ -37,6 +37,8 @@ for token in (
     "ELITE_WIRE_SCHEMA(",
     "SimulationSnapshot,",
     "ShipSnapshot,",
+    "game::simulation::NavigationExecutionSnapshot,",
+    "v.navigationExecution",
     "ObjectSnapshot,",
     "game::simulation::OrbitalHubSnapshot,",
     "game::network::GalaxyMapResponse,",

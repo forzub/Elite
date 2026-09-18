@@ -678,9 +678,17 @@ Correction:
 - normalize whitespace in the architecture checker before validating the
   relationship.
 
-No production navigation behavior changed in this correction. 12A-6b1 remains
-a candidate until the corrected architecture gate and the remaining regression
-set are green.
+No production navigation behavior changed in this correction.
+
+The corrected target-machine rerun on updated `main` now reports:
+
+```text
+NAVIGATION STAGE 12 RUNTIME PLANNER CONTRACT: PASS
+```
+
+Together with the prior `navigation_runtime` 3/3 PASS, this closes the false
+architecture-checker failure. 12A-6b1 remains a candidate pending only the
+trajectory/map regressions, full build, and unchanged live server self-test.
 
 ## Project-state recording protocol
 

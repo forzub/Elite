@@ -71,6 +71,11 @@ inline const glm::dvec3 NavigationRuntimeLabGoalTacticalLocalMeters {
 
 inline constexpr double NavigationRuntimeLabMaximumSpeedMps = 60.0;
 inline constexpr double NavigationRuntimeLabArrivalRadiusMeters = 20.0;
+
+// World-position round trips around orbital-scale coordinates are performed
+// with double precision. Sub-millimetre residue is numerical noise, not a
+// navigation placement defect.
+inline constexpr double NavigationRuntimeLabPlacementToleranceMeters = 1.0e-3;
 inline constexpr double NavigationRuntimeLabWorkspaceHalfExtentMeters = 12000.0;
 
 struct NavigationRuntimeLabObservation

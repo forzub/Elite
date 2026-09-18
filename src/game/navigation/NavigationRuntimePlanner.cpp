@@ -230,8 +230,12 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     result.adjustedTarget = local.adjustedTarget;
     result.avoidanceProbesExamined = local.targetProbesExamined;
     result.primaryConflictEntityId = local.target.primaryConflictEntityId;
+    result.nominalPrimaryConflictEntityId =
+        local.nominalPrimaryConflictEntityId;
     result.dynamicCandidatesExamined = local.target.candidatesExamined;
     result.dynamicConflictsFound = local.target.conflictsFound;
+    result.nominalDynamicConflictsFound =
+        local.nominalConflictsFound;
     result.selectedTargetMapMeters = toGlm(local.target.targetPositionMapMeters);
 
     switch (local.status)

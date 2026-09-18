@@ -383,10 +383,10 @@ void testReplicatedNavigationExecutionStateIsReadOnlyTruth()
     const auto* found = state.find(EntityId{42u});
     require(found != nullptr,
             "replicated navigation state must resolve the authoritative entity");
-    require(found->intentRevision == 100u,
+    require(found->execution.intentRevision == 100u,
             "replicated navigation state must preserve intent revision exactly");
     requireNear(
-        found->executedLinearAccelerationDemandMapMps2.y,
+        found->execution.executedLinearAccelerationDemandMapMps2.y,
         2.0,
         0.0,
         "replicated navigation state must preserve executed demand exactly"

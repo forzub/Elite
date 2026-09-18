@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** `NAV-V2-TRAJECTORY-1` — moving/rotating docking 6DoF, stage 9B continuous final approach candidate
+**Current stage:** stage 10 — deterministic `PilotSkillProfile` execution
 
 `main` is the only canonical development branch.
 
@@ -333,7 +333,7 @@ Damage / Structural
 
 After real contact, navigation replans from actual physics state.
 
-## 9. Moving / rotating docking 6DoF — ACTIVE
+## 9. Moving / rotating docking 6DoF — ACCEPTED
 
 Docking is relative pose/motion matching between explicit ship and dock interface frames, not center-point arrival.
 
@@ -390,7 +390,7 @@ NAVIGATION TRAJECTORY DOCKING TERMINAL CONTRACT: PASS
 
 The single unused-helper warning seen during that build has been removed. Dock-port prediction is now a shared bounded helper for 9B.
 
-### Stage 9B — continuous final docking approach ACTIVE CANDIDATE
+### Stage 9B — continuous final docking approach ACCEPTED
 
 Authority:
 
@@ -503,11 +503,47 @@ but the analytic curve exits between samples
 => CorridorBlocked
 ```
 
-The implementation's continuous proof is not weakened. Stage 9B remains pending a fresh target-machine 10/10 gate.
+The implementation's continuous proof was not weakened. The repaired rerun on `c90a66d6c64bdf3acc037208a000b1955d40e6c3` passed the architecture contract and all 10/10 trajectory tests. Stage 9B and the complete docking stage are accepted.
 
-## 10. NPC pilot skill — PENDING
+## 10. NPC pilot skill — ACTIVE
 
-Vehicle capability and pilot skill remain separate. `PilotSkillProfile` may control reaction delay, decision rate, latency, smoothing, damping/overshoot, anticipation and deterministic execution error without corrupting geometry or physics truth.
+Authority:
+
+```text
+src/world/navigation/PILOT_SKILL_MODEL.md
+src/world/navigation/control/PilotSkillExecutor.h/.cpp
+```
+
+Vehicle capability and pilot skill remain separate. The executor consumes ideal linear/angular acceleration demand and changes only command execution:
+
+```text
+reaction delay
+decision/sample cadence
+command latency
+second-order response frequency
+damping / gain
+linear/angular command slew
+deterministic seeded command-space error
+urgent-emergency reaction scaling
+```
+
+A maneuver revision restarts reaction delay. Changes inside one revision are sample-and-hold at the configured decision rate.
+
+`PolicyProfile` publishes anticipation/risk/comfort but the executor deliberately does not consume those fields. They belong to upstream maneuver selection.
+
+The execution response is a deterministic second-order system. Low damping and delayed low-rate decisions may therefore create genuine overshoot/oscillation. The executor never directly perturbs P/V, hull geometry or collision truth; authoritative physics must integrate the resulting command.
+
+Bounded work:
+
+```text
+fixed queue <= 256
+integration substeps <= 64
+step <= 0.25 s
+no world scan
+no std::random
+```
+
+Pinned stage-10 fixtures include replay identity, decision/latency timing, emergency reaction, damping overshoot, a poor-pilot docking-like oscillation, and proof that policy-only preference changes do not alter execution.
 
 ## 11. Performance contract
 
@@ -530,7 +566,7 @@ Guidance visualizes the accepted navigation/trajectory/control intent; it must n
 ## 13. Progress / roadmap
 
 ```text
-[████████████████░░░░░░░░] 8 / 12 major stages closed
+[██████████████████░░░░░] 9 / 12 major stages closed
 
 1  NavigationMap / mass dynamic P/V/A               CLOSED
 2  NavigationSpace / global corridors               CLOSED
@@ -540,10 +576,10 @@ Guidance visualizes the accepted navigation/trajectory/control intent; it must n
 6  emergency mitigation + severity                   CLOSED
 7  moving gap prediction                             CLOSED
 8  moving continuous ship passage                    CLOSED
-9  moving/rotating docking 6DoF                      ACTIVE
+9  moving/rotating docking 6DoF                      CLOSED
    9A terminal capture                               CLOSED
-   9B continuous final approach                      ACTIVE
-10 PilotSkillProfile                                 PENDING
+   9B continuous final approach                      CLOSED
+10 PilotSkillProfile                                 ACTIVE
 11 live EliteGame / EliteServer / guidance + physics PENDING
 12 end-to-end stress/debug + legacy retirement       PENDING
 ```

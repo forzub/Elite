@@ -19,6 +19,11 @@ add_subdirectory(
     "${CMAKE_BINARY_DIR}/elite_navigation_trajectory"
 )
 
+add_subdirectory(
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/control"
+    "${CMAKE_BINARY_DIR}/elite_navigation_control"
+)
+
 add_executable(navigation_trajectory_passage_tests NavigationTrajectoryPassageTests.cpp)
 target_include_directories(navigation_trajectory_passage_tests PRIVATE "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
 target_compile_features(navigation_trajectory_passage_tests PRIVATE cxx_std_17)
@@ -69,6 +74,11 @@ target_include_directories(navigation_trajectory_docking_approach_tests PRIVATE 
 target_compile_features(navigation_trajectory_docking_approach_tests PRIVATE cxx_std_17)
 target_link_libraries(navigation_trajectory_docking_approach_tests PRIVATE EliteNavigationTrajectory)
 
+add_executable(navigation_pilot_skill_tests NavigationPilotSkillTests.cpp)
+target_include_directories(navigation_pilot_skill_tests PRIVATE "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
+target_compile_features(navigation_pilot_skill_tests PRIVATE cxx_std_17)
+target_link_libraries(navigation_pilot_skill_tests PRIVATE EliteNavigationControl)
+
 if(MSVC)
     foreach(target
         navigation_trajectory_passage_tests
@@ -80,7 +90,8 @@ if(MSVC)
         navigation_trajectory_moving_gap_tests
         navigation_trajectory_moving_passage_tests
         navigation_trajectory_docking_terminal_tests
-        navigation_trajectory_docking_approach_tests)
+        navigation_trajectory_docking_approach_tests
+        navigation_pilot_skill_tests)
         target_compile_options(${target} PRIVATE /W4 /permissive-)
     endforeach()
 else()
@@ -109,6 +120,7 @@ add_test(NAME navigation_trajectory_moving_gap COMMAND navigation_trajectory_mov
 add_test(NAME navigation_trajectory_moving_passage COMMAND navigation_trajectory_moving_passage_tests)
 add_test(NAME navigation_trajectory_docking_terminal COMMAND navigation_trajectory_docking_terminal_tests)
 add_test(NAME navigation_trajectory_docking_approach COMMAND navigation_trajectory_docking_approach_tests)
+add_test(NAME navigation_pilot_skill COMMAND navigation_pilot_skill_tests)
 
 set_tests_properties(
     navigation_trajectory_passage
@@ -121,5 +133,6 @@ set_tests_properties(
     navigation_trajectory_moving_passage
     navigation_trajectory_docking_terminal
     navigation_trajectory_docking_approach
+    navigation_pilot_skill
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )

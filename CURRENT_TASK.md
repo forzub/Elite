@@ -390,3 +390,26 @@ Required live evidence:
 
 Do not add a second presentation/debug planner. Manual guidance remains a
 consumer of the same accepted navigation product.
+
+
+## Deferred task recorded — galactic route planning
+
+Future strategic work is specified in:
+
+`src/game/navigation/GALACTIC_ROUTE_PLANNING.md`
+
+Key requirements are frozen there:
+- hierarchical Galaxy -> System -> Local -> Precision planning;
+- gravity-aware long physical legs;
+- fuel / delta-v / reserve coupling;
+- drive-specific jump range, charge and cooldown constraints;
+- one accepted route product for both ManualGuidance and Autopilot;
+- replanning after fuel/capability/hazard/arrival-state changes.
+
+This is **not** the current implementation target.
+
+### Current next step remains 12A-6b3b
+
+Create the deterministic live moving-gap fixture and prove that accepted
+`MovingPassageClear` authority reaches real physics and same-tick replication
+without exact-static violation.

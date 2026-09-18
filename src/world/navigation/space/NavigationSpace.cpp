@@ -1222,13 +1222,26 @@ NavigationSpace::CorridorResult NavigationSpace::queryCorridor(
                 result.regionPath.assign(reverseRegions.rbegin(), reverseRegions.rend());
                 result.portalPath.assign(reversePortals.rbegin(), reversePortals.rend());
                 result.portalCentersMapMeters.reserve(result.portalPath.size());
-                for (const PortalId portalId : result.portalPath)
+                result.portalTraversals.reserve(result.portalPath.size());
+                for (std::size_t i = 0; i < result.portalPath.size(); ++i)
                 {
+                    const PortalId portalId = result.portalPath[i];
                     const auto portalIt = impl_->portals.find(portalId);
-                    if (portalIt == impl_->portals.end())
+                    if (portalIt == impl_->portals.end() ||
+                        i + 1 >= result.regionPath.size())
+                    {
                         return CorridorResult{};
+                    }
+                
                     result.portalCentersMapMeters.push_back(
                         portalIt->second.input.centerMapMeters
+                    );
+                    result.portalTraversals.push_back(
+                        orientedPortalTraversal(
+                            portalIt->second.input,
+                            result.regionPath[i],
+                            result.regionPath[i + 1]
+                        )
                     );
                 }
                 result.found = true;
@@ -1519,13 +1532,26 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
         result.regionPath.assign(reverseRegions.rbegin(), reverseRegions.rend());
         result.portalPath.assign(reversePortals.rbegin(), reversePortals.rend());
         result.portalCentersMapMeters.reserve(result.portalPath.size());
-        for (const PortalId portalId : result.portalPath)
+        result.portalTraversals.reserve(result.portalPath.size());
+        for (std::size_t i = 0; i < result.portalPath.size(); ++i)
         {
+            const PortalId portalId = result.portalPath[i];
             const auto portalIt = impl_->portals.find(portalId);
-            if (portalIt == impl_->portals.end())
+            if (portalIt == impl_->portals.end() ||
+                i + 1 >= result.regionPath.size())
+            {
                 return CostedCorridorResult{};
+            }
+        
             result.portalCentersMapMeters.push_back(
                 portalIt->second.input.centerMapMeters
+            );
+            result.portalTraversals.push_back(
+                orientedPortalTraversal(
+                    portalIt->second.input,
+                    result.regionPath[i],
+                    result.regionPath[i + 1]
+                )
             );
         }
         result.totalCostMetersEquivalent = finalCost;
@@ -1659,13 +1685,26 @@ NavigationSpace::CostedCorridorResult NavigationSpace::queryCostedCorridor(
     result.regionPath.assign(reverseRegions.rbegin(), reverseRegions.rend());
     result.portalPath.assign(reversePortals.rbegin(), reversePortals.rend());
     result.portalCentersMapMeters.reserve(result.portalPath.size());
-    for (const PortalId portalId : result.portalPath)
+    result.portalTraversals.reserve(result.portalPath.size());
+    for (std::size_t i = 0; i < result.portalPath.size(); ++i)
     {
+        const PortalId portalId = result.portalPath[i];
         const auto portalIt = impl_->portals.find(portalId);
-        if (portalIt == impl_->portals.end())
+        if (portalIt == impl_->portals.end() ||
+            i + 1 >= result.regionPath.size())
+        {
             return CostedCorridorResult{};
+        }
+    
         result.portalCentersMapMeters.push_back(
             portalIt->second.input.centerMapMeters
+        );
+        result.portalTraversals.push_back(
+            orientedPortalTraversal(
+                portalIt->second.input,
+                result.regionPath[i],
+                result.regionPath[i + 1]
+            )
         );
     }
     result.totalCostMetersEquivalent = bestCost[endSlot];

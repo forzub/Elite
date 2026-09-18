@@ -890,6 +890,12 @@ MovingPassageTrajectoryEvaluator::evaluate(const Query& query) noexcept
         ++result.intervalsProven;
     }
 
+    // Publish the control sample from the very trajectory we just proved.
+    // Downstream runtime composition must not solve a second, merely similar
+    // curve after accepting this result.
+    result.initialLinearAccelerationMapMetersPerSec2 =
+        samples.front().acceleration;
+
     return result;
 }
 

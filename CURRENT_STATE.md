@@ -1595,3 +1595,67 @@ Last actually target-machine accepted baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### Root-cause correction: executed-demand monitor mixed WORLD and MAP frames
+
+The latest target-machine run with sampled executed-demand monitoring still
+failed on exact-static entity 28, but its telemetry exposed a more fundamental
+frame error:
+
+~~~text
+last_replan_reason=6
+static_invalidations=40
+previous_monitor_blocker=28
+previous_executed_forecast_blocked=1
+~~~
+
+So the monitor was now detecting danger and requesting
+`StaticSafetyInvalidated` replans, but inspection of the production ownership
+chain found that the acceleration fed into the executed-motion forecast was in
+the wrong coordinate frame.
+
+Production flow is:
+
+~~~text
+TrajectoryFollower intent      : NavigationMap working frame
+Planner::mapIntentToWorld(...) : converts command to WORLD frame
+PilotSkillExecutor             : executes that WORLD-frame command
+ExecutionSnapshot              : carries the executed WORLD-frame vector
+~~~
+
+However `GameSimulation::updateNpcNavigationControl` copied
+`ExecutionSnapshot::executedLinearAccelerationDemandMapMps2` directly into
+`NavigationRuntimeLabObservation::lastExecutedLinearDemandMapMps2` and the
+exact-static monitor then combined it with
+`agent.velocityMapMetersPerSecond`.
+
+Therefore the monitor mixed:
+
+~~~text
+position / velocity : MAP frame
+executed acceleration: WORLD frame
+~~~
+
+The previous numerical comparison between follower ideal Z and executed Z is
+not a valid same-axis comparison until the executed vector is transformed back
+into the NavigationMap frame.
+
+Required correction:
+- retain WORLD executed demand for world-space application/diagnostics;
+- explicitly transform authoritative executed WORLD acceleration back to the
+  lab NavigationMap axes before storing
+  `lastExecutedLinearDemandMapMps2`;
+- exact-static motion forecast must consume only MAP-frame position, velocity
+  and acceleration;
+- pin this transform in the Stage-12 architecture contract/regression evidence.
+
+The emergency-response hypothesis remains unproven and must not be acted on
+until this frame error is removed.
+
+No Stage-12 baseline promotion. Last actually target-machine accepted baseline
+remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

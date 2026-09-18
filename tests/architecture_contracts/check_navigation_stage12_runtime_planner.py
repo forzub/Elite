@@ -349,6 +349,12 @@ for marker in (
     "maximumExactStaticObstaclesExamined",
     "exactStaticViolationSeen",
     "exactStaticMotionSamples",
+    "firstExactStaticViolationCaptured",
+    "firstExactStaticViolationEntityId",
+    "firstExactStaticViolationStartMap",
+    "firstExactStaticViolationEndMap",
+    "firstExactStaticViolationSelectedTargetMap",
+    "firstExactStaticViolationPlannerStatus",
     "obstacleExactStaticBlockSeen",
     "dynamicQueryCount",
     "maximumDynamicCandidateCount",
@@ -488,6 +494,20 @@ require(
 )
 
 require(
+    "actualSafety.blockingObstacleEntityId" in SIM_CPP and
+    "firstExactStaticViolationCaptured" in SIM_CPP and
+    "firstExactStaticViolationSelectedTargetMap" in SIM_CPP,
+    "first exact-static physical violation must retain obstacle identity and maneuver witness",
+)
+
+require(
+    "authoritative ship swept through exact static " in SERVER_MAIN and
+    "violation_entity=" in SERVER_MAIN and
+    "return 52;" in SERVER_MAIN,
+    "server self-test must fail fast with the first exact-static collision witness",
+)
+
+require(
     "observation.minimumConservativeClearanceMeters > 0.0" not in SERVER_MAIN,
     "conservative sphere clearance must remain diagnostic only after exact-static authority is active",
 )
@@ -535,3 +555,4 @@ print(" - configured start->goal line is publication-proven against exact CUBE 0
 print(" - invalid exact-static proving geometry fails fast before a 120 s behavior run")
 print(" - first live bounded segment is independently exact-probed before planner composition")
 print(" - live-scale 1300 m exact OBB regression pins first-horizon static adjustment")
+print(" - first physical exact-static violation reports obstacle identity and maneuver witness")

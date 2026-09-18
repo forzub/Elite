@@ -619,6 +619,22 @@ int runNavigationRuntimeSelfTest()
             return 38;
         }
 
+        if (observation.exactStaticGeometryPublished &&
+            !observation.slitPortalExactOpenPublished)
+        {
+            std::cerr
+                << "[NAV-SELFTEST]"
+                << " slit_exact_open="
+                << observation.slitPortalExactOpenPublished
+                << " slit_exact_obstacles_examined="
+                << observation.slitPortalExactObstaclesExamined
+                << "\n";
+            std::cerr
+                << "[FAIL] authored exact-static slit tunnel does not admit "
+                << "the current ship envelope\n";
+            return 57;
+        }
+
         if (observation.firstLiveNominalProbeCaptured &&
             (!observation.firstLiveNominalExactBlocked ||
              observation.firstLiveNominalBlockingEntityId !=
@@ -666,23 +682,21 @@ int runNavigationRuntimeSelfTest()
             observation.firstLiveNominalExactBlocked &&
             observation.firstLiveNominalBlockingEntityId ==
                 observation.obstacleEntityId &&
-            !observation.nominalStaticBlockSeen)
+            !observation.slitPortalWaypointSeen)
         {
             std::cerr
                 << "[NAV-SELFTEST]"
                 << " first_live_probe_blocked=1"
                 << " first_live_blocker_entity="
                 << observation.firstLiveNominalBlockingEntityId
-                << " planner_exact_static_block="
-                << observation.nominalStaticBlockSeen
-                << " exact_obstacle_block="
-                << observation.obstacleExactStaticBlockSeen
+                << " slit_portal_waypoint="
+                << observation.slitPortalWaypointSeen
                 << " first_live_horizon_m="
                 << observation.firstLiveHorizonMeters
                 << "\n";
             std::cerr
-                << "[FAIL] planner lost an exact-static block proven by "
-                << "the identical first live bounded segment\n";
+                << "[FAIL] direct route is exact-static blocked but planner "
+                << "did not select the authored slit portal\n";
             return 51;
         }
 
@@ -733,6 +747,8 @@ int runNavigationRuntimeSelfTest()
             observation.movingGapLowerEntityId != 0 &&
             observation.movingGapPairCandidateSeen &&
             observation.movingGapKinematicsVerified &&
+            observation.slitPortalExactOpenPublished &&
+            observation.slitPortalWaypointSeen &&
             observation.movingPrecisionAttemptedSeen &&
             observation.movingPassageFeasibleSeen &&
             observation.movingPassageStaticSafeSeen &&
@@ -817,6 +833,14 @@ int runNavigationRuntimeSelfTest()
             << observation.movingPassageAppliedAccelerationSeen
             << " moving_gap_passed="
             << observation.movingGapPlanePassed
+            << " slit_exact_open="
+            << observation.slitPortalExactOpenPublished
+            << " slit_portal="
+            << observation.slitPortalWaypointSeen
+            << " slit_passed="
+            << observation.slitTunnelPassed
+            << " slit_margin_m="
+            << observation.slitTunnelCrossingMarginMeters
             << " max_moving_exec_mps2="
             << observation.maximumMovingPassageExecutedDemandMps2
             << " max_moving_applied_mps2="
@@ -1113,11 +1137,13 @@ int runNavigationRuntimeSelfTest()
             observation.movingPassageAuthoritySeen &&
             observation.movingPassageExecutedSeen &&
             observation.movingPassageAppliedAccelerationSeen &&
+            observation.slitPortalExactOpenPublished &&
+            observation.slitPortalWaypointSeen &&
+            observation.slitTunnelPassed &&
             observation.exactStaticGeometryPublished &&
             observation.exactStaticObstacleCount > 0 &&
             observation.configuredRouteExactObstacleBlockPublished &&
             observation.exactStaticQuerySeen &&
-            observation.nominalStaticBlockSeen &&
             observation.maximumExactStaticObstaclesExamined > 0 &&
             observation.exactStaticMotionSamples > 0 &&
             !observation.exactStaticViolationSeen &&
@@ -1126,8 +1152,6 @@ int runNavigationRuntimeSelfTest()
             observation.rotatingActorAngularVelocityVerified &&
             !observation.obstacleCandidateSeen &&
             !observation.obstaclePrimaryConflictSeen &&
-            observation.obstacleExactStaticBlockSeen &&
-            observation.adjustedTargetSeen &&
             observation.executionSeen &&
             observation.nonZeroExecutedDemandSeen &&
             observation.lateralExecutedDemandSeen &&
@@ -1143,9 +1167,12 @@ int runNavigationRuntimeSelfTest()
     {
         std::cerr
             << "[FAIL] moving-passage authority/replication succeeded but "
-            << "the ordered live flight did not complete gap crossing plus "
-            << "CUBE 08 exact-static avoidance inside the 120 s bound"
+            << "the ordered live flight did not complete moving-gap plus "
+            << "exact-static slit-tunnel passage inside the 120 s bound"
             << " moving_gap_passed=" << observation.movingGapPlanePassed
+            << " slit_portal=" << observation.slitPortalWaypointSeen
+            << " slit_passed=" << observation.slitTunnelPassed
+            << " slit_margin_m=" << observation.slitTunnelCrossingMarginMeters
             << " passed_obstacle_plane=" << observation.passedObstaclePlane
             << " exact_static_violation=" << observation.exactStaticViolationSeen
             << " simulated_s=" << simulatedSeconds
@@ -1216,6 +1243,18 @@ int runNavigationRuntimeSelfTest()
         << observation.movingPassageAppliedAccelerationSeen
         << " moving_gap_passed="
         << observation.movingGapPlanePassed
+        << " slit_exact_open="
+        << observation.slitPortalExactOpenPublished
+        << " slit_portal="
+        << observation.slitPortalWaypointSeen
+        << " slit_passed="
+        << observation.slitTunnelPassed
+        << " slit_margin_m="
+        << observation.slitTunnelCrossingMarginMeters
+        << " slit_crossing_map=("
+        << observation.slitTunnelCrossingMap.x << ","
+        << observation.slitTunnelCrossingMap.y << ","
+        << observation.slitTunnelCrossingMap.z << ")"
         << " max_moving_exec_mps2="
         << observation.maximumMovingPassageExecutedDemandMps2
         << " max_moving_applied_mps2="
@@ -1290,9 +1329,9 @@ int runNavigationRuntimeSelfTest()
     }
 
     std::cerr
-        << "[PASS] navigation-runtime exact-static avoidance remained collision-free,"
-        << " live moving-passage authority drove real physics through the aperture,"
-        << " and the executed demand matched same-tick sparse/canonical replication\n";
+        << "[PASS] navigation-runtime live moving-passage authority drove real physics,"
+        << " the ship crossed the exact-static slit tunnel collision-free,"
+        << " and execution matched same-tick sparse/canonical replication\n";
     return 0;
 }
 

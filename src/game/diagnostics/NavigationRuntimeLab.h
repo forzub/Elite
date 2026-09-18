@@ -25,28 +25,36 @@ inline constexpr const char* NavigationRuntimeLabObstacleLabel =
 // The stress objects are authored in visual hub axes:
 //   X = normal, Y = radial, Z = -prograde.
 //
-// This start/goal pair therefore corresponds to visual:
-//   start = { 975, -1300, -8000 }
-//   goal  = { 975, -1300,  1000 }
-//
-// The straight line crosses NAV STRESS CUBE 08 at
-// visual { 975, -1300, -4900 }, forcing the live local planner to react.
-inline const glm::dvec3 NavigationRuntimeLabStartVisualLocalMeters {
-    975.0,
-    -1300.0,
-    -8000.0
-};
-
-inline const glm::dvec3 NavigationRuntimeLabGoalVisualLocalMeters {
-    975.0,
-    -1300.0,
-    1000.0
-};
-
+// The proving obstacle is authored first so the start line cannot silently
+// drift away from it when the NAV STRESS layout is edited.
 inline const glm::dvec3 NavigationRuntimeLabObstacleVisualLocalMeters {
     975.0,
     -1300.0,
     -4900.0
+};
+
+// Keep the obstacle inside the very first bounded local horizon. At zero
+// relative speed the live policy starts at roughly turnDistance(1400 m) plus
+// safety margin, so 1300 m forces exact-static participation before natural
+// rotating-frame drift can carry the ship around the OBB.
+inline constexpr double NavigationRuntimeLabInitialObstacleLeadMeters =
+    1300.0;
+
+// This start/goal pair therefore corresponds to visual:
+//   start = { 975, -1300, -6200 }
+//   obstacle = { 975, -1300, -4900 }
+//   goal  = { 975, -1300,  1000 }
+inline const glm::dvec3 NavigationRuntimeLabStartVisualLocalMeters {
+    NavigationRuntimeLabObstacleVisualLocalMeters.x,
+    NavigationRuntimeLabObstacleVisualLocalMeters.y,
+    NavigationRuntimeLabObstacleVisualLocalMeters.z -
+        NavigationRuntimeLabInitialObstacleLeadMeters
+};
+
+inline const glm::dvec3 NavigationRuntimeLabGoalVisualLocalMeters {
+    NavigationRuntimeLabObstacleVisualLocalMeters.x,
+    NavigationRuntimeLabObstacleVisualLocalMeters.y,
+    1000.0
 };
 
 inline const glm::dvec3 NavigationRuntimeLabStartTacticalLocalMeters {
@@ -96,6 +104,11 @@ struct NavigationRuntimeLabObservation
 
     bool exactStaticGeometryPublished = false;
     std::size_t exactStaticObstacleCount = 0;
+
+    // Publication-time fixture proof: the configured centerline itself must
+    // intersect the exact HitVolume of CUBE 08 before any flight begins.
+    bool configuredRouteExactObstacleBlockPublished = false;
+
     bool exactStaticQuerySeen = false;
     bool nominalStaticBlockSeen = false;
     std::size_t maximumExactStaticObstaclesExamined = 0;

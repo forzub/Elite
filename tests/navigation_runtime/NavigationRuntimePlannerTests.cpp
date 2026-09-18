@@ -966,6 +966,8 @@ void testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge()
 
     const auto& exactSample =
         planned.movingPassageInitialAccelerationMapMps2;
+    require(glm::length(exactSample) > 0.0,
+            "authority fixture requires a non-zero proved Hermite control sample");
     const auto& mapDemand =
         planned.intent.idealLinearAccelerationDemandMapMps2;
     require(near(mapDemand.x, exactSample.x) &&
@@ -1010,6 +1012,13 @@ void testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge()
             "proved moving-passage authority must cross PilotSkillExecutor into ShipControlState");
     require(executed.snapshot.intentRevision == goal.revision,
             "moving-passage authority must preserve planner revision through pilot execution");
+    const auto& executedDemand =
+        executed.snapshot.executedLinearAccelerationDemandMapMps2;
+    require(std::sqrt(
+                executedDemand.x * executedDemand.x +
+                executedDemand.y * executedDemand.y +
+                executedDemand.z * executedDemand.z) > 0.0,
+            "PilotSkillExecutor must execute a non-zero moving-passage demand");
     require(near(executed.snapshot.idealLinearAccelerationDemandMapMps2.x,
                  worldIntent.idealLinearAccelerationDemandMapMps2.x) &&
             near(executed.snapshot.idealLinearAccelerationDemandMapMps2.y,

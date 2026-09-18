@@ -1,7 +1,7 @@
 # Project State
 
 **Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / Stage 12A-3 live behavior proof  
+**Current focus:** NavigationWorld v2 / Stage 12A-4 exact static HitVolume OBB geometry  
 **Canonical development branch:** `main`
 
 ## Progress

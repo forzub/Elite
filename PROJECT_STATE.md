@@ -421,3 +421,29 @@ steering authority. The authoritative linear acceleration must be the first
 sample of the exact accepted Hermite trajectory; no post-proof re-planning is
 allowed. This slice first proves the planner/control seam deterministically;
 live moving-gap physics/replication evidence remains a subsequent gate.
+
+
+#### 12A-6b3a — CANDIDATE / target-machine pending
+
+Candidate baseline:
+
+```text
+4b117cada10ce416250d917a8bdad2b6b5580ee7
+```
+
+The planner now has an explicit opt-in moving-passage authority seam. Precision
+evaluation and steering authority are separate policy choices.
+
+A moving passage may supersede the ordinary local hold/avoidance result only
+when:
+- the dynamic result is not stale;
+- the moving Hermite trajectory is feasible through the time-varying aperture;
+- the exact same trajectory is continuously safe against static HitVolumes;
+- steering authority was explicitly enabled.
+
+The authoritative linear demand is exactly the first acceleration sample of the
+proved Hermite maneuver. No second desired-velocity solve is performed.
+
+Runtime regressions cover both veto paths and the positive
+map->world->PilotSkillExecutor control path. Live production authority remains
+disabled pending deterministic target-machine acceptance.

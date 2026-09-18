@@ -121,6 +121,10 @@ for marker in (
     "MovingPassagePolicy",
     "movingPrecisionAttempted",
     "movingPassageFeasible",
+    "movingPassageStaticProofAttempted",
+    "movingPassageStaticSafe",
+    "movingPassageStaticIntervalsProven",
+    "movingPassageStaticBlockingObstacleId",
 ):
     require(marker in PLANNER_H, f"runtime planner interface missing: {marker}")
 
@@ -138,13 +142,44 @@ for marker in (
     "GapPredictor::predict",
     "MovingPassage::evaluate",
     "probeMovingPassage",
+    "proveMovingPassageAgainstStaticSpace",
+    "staticSpace.querySegment",
+    "intervalCenterlineDeviationBoundsMeters",
 ):
     require(marker in PLANNER_CPP, f"runtime planner composition missing: {marker}")
 
 require(
     "result.movingPassageInitialAccelerationMapMps2 =" in PLANNER_CPP and
     "idealLinearAccelerationDemandMapMps2 =\n            toBridgeVec(result.movingPassageInitialAccelerationMapMps2)" not in PLANNER_CPP,
-    "12A-6b1 moving precision must remain observe-only until exact-static trajectory composition is proven",
+    "12A-6b2 moving precision must remain observe-only until the exact-static trajectory gate is accepted",
+)
+
+for marker in (
+    "TrajectoryWitness",
+    "centerSamplesMapMeters",
+    "intervalCenterlineDeviationBoundsMeters",
+    "conservativeHullRadiusMeters",
+):
+    require(
+        marker in MOVING_PASSAGE_H,
+        f"moving-passage exact Hermite witness missing: {marker}",
+    )
+
+for marker in (
+    "result.trajectory.centerSamplesMapMeters[i]",
+    "accelerationMagnitudeBound * dt * dt / 8.0",
+    "result.trajectory.valid = true",
+):
+    require(
+        marker in MOVING_PASSAGE_CPP,
+        f"moving-passage continuous centerline witness implementation missing: {marker}",
+    )
+
+require(
+    "testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory" in RUNTIME_TEST and
+    "movingPassageStaticSafe" in RUNTIME_TEST and
+    "moving_passage_static_beam" in RUNTIME_TEST,
+    "runtime regression must prove a dynamic-valid moving passage can still fail exact-static same-trajectory safety",
 )
 
 require(
@@ -684,4 +719,6 @@ print(" - sub-millimetre orbital-coordinate round-trip residue is treated as num
 print(" - rotating infrastructure carries angular velocity through NavigationMap working-frame conversion")
 print(" - live GUIDANCE DOCK CUBE A verifies the published map-space angular motion")
 print(" - bounded runtime conflicts feed MovingGapPredictor + MovingPassageTrajectoryEvaluator")
-print(" - moving precision remains observe-only until exact-static trajectory composition is proven")
+print(" - accepted moving Hermite curve is continuously bounded between its 33 samples")
+print(" - same moving trajectory is re-proven against exact static NavigationSpace geometry")
+print(" - moving precision remains observe-only until the 12A-6b2 target-machine gate is accepted")

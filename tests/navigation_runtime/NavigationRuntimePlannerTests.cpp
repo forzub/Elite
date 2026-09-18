@@ -662,8 +662,10 @@ void testNavigationMapCrossingConflictProducesBrakingHold()
             "conflict hold must be marked as urgent pilot execution");
     require(result.intent.hazardUrgency01 >= 0.99,
             "conflict hold must carry maximum local hazard urgency");
+    require(result.ordinaryVisibilitySearchExhausted,
+            "runtime planner must surface ordinary-fan exhaustion for recovery selection");
     require(result.intent.idealLinearAccelerationDemandMapMps2.x < 0.0,
-            "moving conflict must create a real braking demand");
+            "moving conflict must create a provisional braking demand");
 }
 
 void testMovingGapPrecisionProbeUsesRuntimeCandidates()

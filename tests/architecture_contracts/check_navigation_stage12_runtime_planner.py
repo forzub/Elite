@@ -443,6 +443,35 @@ require(
     "live ownership proof must bind CUBE 08 to exact-static blocker identity",
 )
 
+
+require(
+    "tr.motion.travelFrame.localToWorldPosition(" in SIM_CPP and
+    "tr.motion.travelFrame.localToWorldVelocity(" in SIM_CPP,
+    "matched HubTactical ships must re-materialize world pose/velocity from current travel-frame epoch",
+)
+
+hub_rebuild_index = SIM_CPP.find("rebuildHubNavigationFrames(trajectoryDeltaSeconds);")
+early_refresh_index = SIM_CPP.find(
+    "updateShipReferenceFrames(dt);",
+    hub_rebuild_index,
+)
+ai_section_index = SIM_CPP.find("// === 1. AI / controls / attitude ===")
+
+require(
+    hub_rebuild_index >= 0 and
+    early_refresh_index > hub_rebuild_index and
+    ai_section_index > early_refresh_index,
+    "reference-frame refresh must occur after current hub-frame rebuild and before AI/navigation",
+)
+
+require(
+    SIM_CPP.find(
+        "updateShipReferenceFrames(dt);",
+        early_refresh_index + 1,
+    ) == -1,
+    "reference-frame refresh must have one authoritative fixed-step ordering point",
+)
+
 for marker in (
     "tr.motion.localVelocityMps =",
     "tr.motion.mainEngineAccelerationMps2 =",
@@ -569,3 +598,4 @@ print(" - first live bounded segment is independently exact-probed before planne
 print(" - live-scale 1300 m exact OBB regression pins first-horizon static adjustment")
 print(" - first physical exact-static violation reports obstacle identity and maneuver witness")
 print(" - reference-frame placement clears stale local velocity and propulsion state")
+print(" - current hub-frame epoch is synchronized into matched ship world pose before AI/navigation")

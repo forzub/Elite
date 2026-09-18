@@ -36,12 +36,6 @@ Stage 12 remains end-to-end stress/debug/performance and legacy retirement.
 ## Latest accepted evidence
 
 ```text
-fb83b8d80f29c6c5e4e12b8af3794182790
-```
-
-Correction: the accepted 11B-1 commit is:
-
-```text
 fb83b8d80f29c6c5e4e12b8a2fca731ffea7b8e8
 ```
 

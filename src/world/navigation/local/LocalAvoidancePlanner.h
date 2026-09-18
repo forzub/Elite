@@ -19,6 +19,7 @@ class LocalAvoidancePlanner final
 {
 public:
     using Vec3d = LocalHorizonPlanner::Vec3d;
+    using EntityId = LocalHorizonPlanner::EntityId;
 
     struct Policy
     {

@@ -98,6 +98,11 @@ public:
         double durationSeconds = 3.0;
         double hullAdditionalClearanceMeters = 0.0;
         double maximumAcceptedGapTravelAlignment = 0.5;
+
+        // MovingPassageTrajectoryEvaluator currently proves attitude endpoints,
+        // not arbitrary initial body angular momentum. Until that contract is
+        // extended, only near-stabilized actors may enter this precision path.
+        double maximumInitialAngularRateRadPerSec = 0.05;
     };
 
     struct Policy

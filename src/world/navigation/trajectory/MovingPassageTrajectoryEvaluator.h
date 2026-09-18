@@ -112,6 +112,9 @@ public:
         double maximumPassageAxisInflationRad = 0.0;
         double maximumRelativeOrientationSweepInflationMeters = 0.0;
 
+        // Exact centerline witness for downstream same-trajectory proof.
+        TrajectoryWitness trajectory {};
+
         // First acceleration sample of the exact Hermite segment that was
         // continuously verified above. Valid only when feasible == true.
         // Runtime receding-horizon control may execute this sample instead of

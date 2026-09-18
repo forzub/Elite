@@ -716,7 +716,7 @@ void spawnHubGuidanceTestModules(
         },
         // Stage 12A-6b3b exact-static slit tunnel.
         //
-        // Two three-cube rows form a 900 m-deep wall with a 120 m-high
+        // Two three-cube rows form a 900 m-deep wall with a 140 m-high
         // horizontal slit. The representative lower-middle cube deliberately
         // retains the NAV STRESS CUBE 08 identity used by earlier exact-static
         // diagnostics, but it is no longer an isolated obstacle.
@@ -724,7 +724,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_slit_upper_left",
             "NAV SLIT UPPER LEFT",
-            glm::dvec3(615.0, -940.0, -4500.0),
+            glm::dvec3(615.0, -930.0, -4500.0),
             glm::dvec3(0.0),
             glm::dvec3(0.0)
         },
@@ -732,7 +732,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_slit_upper_mid",
             "NAV SLIT UPPER MID",
-            glm::dvec3(975.0, -940.0, -4500.0),
+            glm::dvec3(975.0, -930.0, -4500.0),
             glm::dvec3(0.0),
             glm::dvec3(0.0)
         },
@@ -740,7 +740,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_slit_upper_right",
             "NAV SLIT UPPER RIGHT",
-            glm::dvec3(1335.0, -940.0, -4500.0),
+            glm::dvec3(1335.0, -930.0, -4500.0),
             glm::dvec3(0.0),
             glm::dvec3(0.0)
         },
@@ -748,7 +748,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_slit_lower_left",
             "NAV SLIT LOWER LEFT",
-            glm::dvec3(615.0, -1420.0, -4500.0),
+            glm::dvec3(615.0, -1430.0, -4500.0),
             glm::dvec3(0.0),
             glm::dvec3(0.0)
         },
@@ -764,7 +764,7 @@ void spawnHubGuidanceTestModules(
             ObjectType::GuidanceDockCube,
             "nav_slit_lower_right",
             "NAV SLIT LOWER RIGHT",
-            glm::dvec3(1335.0, -1420.0, -4500.0),
+            glm::dvec3(1335.0, -1430.0, -4500.0),
             glm::dvec3(0.0),
             glm::dvec3(0.0)
         },

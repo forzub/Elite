@@ -289,6 +289,14 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     result.dynamicConflictsFound = local.target.conflictsFound;
     result.nominalDynamicConflictsFound =
         local.nominalConflictsFound;
+    result.nominalStaticBlocked =
+        local.nominalStaticBlocked;
+    result.staticObstaclesExamined =
+        local.staticObstaclesExamined;
+    result.nominalStaticObstacleId =
+        local.nominalStaticObstacleId;
+    result.nominalStaticObstacleEntityId =
+        local.nominalStaticObstacleEntityId;
     result.selectedTargetMapMeters = toGlm(local.target.targetPositionMapMeters);
 
     switch (local.status)

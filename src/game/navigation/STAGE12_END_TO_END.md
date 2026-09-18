@@ -938,3 +938,40 @@ between sample points.
 
 12A-6b2 remains non-authoritative. Only after target-machine acceptance may the
 already published first verified acceleration sample become steering authority.
+
+
+#### 12A-6b2 candidate implementation
+
+Candidate baseline before documentation commits:
+
+```text
+61f62e9d096542ae52680cf47d6da1c03b0bb8c0
+```
+
+The moving evaluator now emits a trajectory witness rather than forcing runtime
+composition to reconstruct its curve:
+
+```text
+center[0..32] = exact accepted Hermite center samples
+deviation[0..31] = max endpoint |acceleration| * dt^2 / 8
+hull_radius = radius containing the complete precision hull
+```
+
+For interval `i`, the exact Hermite centerline is contained by the capsule
+around `center[i] -> center[i+1]` with radius `deviation[i]`. Adding the
+published hull containment radius gives a continuous conservative volume for
+the complete ship.
+
+The runtime submits every such interval to
+`NavigationSpace::querySegment()`, which retains exact authored static
+HitVolume geometry and blocker identity.
+
+Pinned runtime cases now include:
+- open moving gap + no static blocker -> all 32 intervals statically safe;
+- same class of dynamically feasible moving gap + static beam on the accepted
+  trajectory -> dynamic proof remains feasible, exact-static same-trajectory
+  proof fails closed and returns the beam identity.
+
+This slice remains diagnostic-only. The verified first acceleration sample is
+still forbidden from replacing LocalAvoidance steering until 12A-6b2 receives a
+green target-machine gate.

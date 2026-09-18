@@ -203,6 +203,88 @@ void validatePortal(const NavigationSpace::PortalInput& portal)
         throw std::invalid_argument("NavigationSpace portal center must be finite");
     if (!finite(portal.clearanceRadiusMeters) || portal.clearanceRadiusMeters < 0.0)
         throw std::invalid_argument("NavigationSpace portal clearance must be finite and non-negative");
+
+    const auto& traversal = portal.traversal;
+    if (!traversal.enabled)
+        return;
+
+    const double normalLength = std::sqrt(
+        traversal.normalAToBMap.x * traversal.normalAToBMap.x +
+        traversal.normalAToBMap.y * traversal.normalAToBMap.y +
+        traversal.normalAToBMap.z * traversal.normalAToBMap.z
+    );
+
+    if (!finite(traversal.normalAToBMap) ||
+        !finite(normalLength) ||
+        std::abs(normalLength - 1.0) > 1.0e-6 ||
+        !finite(traversal.halfLengthMeters) ||
+        traversal.halfLengthMeters < 0.0 ||
+        !finite(traversal.approachDistanceMeters) ||
+        traversal.approachDistanceMeters < 0.0 ||
+        !finite(traversal.maximumVelocityAngleRad) ||
+        traversal.maximumVelocityAngleRad < 0.0 ||
+        traversal.maximumVelocityAngleRad >
+            3.14159265358979323846 ||
+        !finite(traversal.maximumForwardAngleRad) ||
+        traversal.maximumForwardAngleRad < 0.0 ||
+        traversal.maximumForwardAngleRad >
+            3.14159265358979323846 ||
+        !finite(traversal.maximumLateralSpeedMps) ||
+        traversal.maximumLateralSpeedMps < 0.0 ||
+        !finite(traversal.transitSpeedMps) ||
+        traversal.transitSpeedMps < 0.0)
+    {
+        throw std::invalid_argument(
+            "NavigationSpace portal traversal profile is invalid"
+        );
+    }
+}
+
+NavigationSpace::PortalTraversal orientedPortalTraversal(
+    const NavigationSpace::PortalInput& portal,
+    RegionId fromRegion,
+    RegionId toRegion
+)
+{
+    NavigationSpace::PortalTraversal result;
+    result.portalId = portal.portalId;
+    result.centerMapMeters = portal.centerMapMeters;
+    result.enabled = portal.traversal.enabled;
+    result.halfLengthMeters = portal.traversal.halfLengthMeters;
+    result.approachDistanceMeters = portal.traversal.approachDistanceMeters;
+    result.maximumVelocityAngleRad =
+        portal.traversal.maximumVelocityAngleRad;
+    result.maximumForwardAngleRad =
+        portal.traversal.maximumForwardAngleRad;
+    result.maximumLateralSpeedMps =
+        portal.traversal.maximumLateralSpeedMps;
+    result.transitSpeedMps = portal.traversal.transitSpeedMps;
+    result.requireVehicleForwardAlignment =
+        portal.traversal.requireVehicleForwardAlignment;
+
+    if (!portal.traversal.enabled)
+        return result;
+
+    if (fromRegion == portal.regionA && toRegion == portal.regionB)
+    {
+        result.normalMap = portal.traversal.normalAToBMap;
+        return result;
+    }
+
+    if (fromRegion == portal.regionB && toRegion == portal.regionA &&
+        portal.bidirectional)
+    {
+        result.normalMap = {
+            -portal.traversal.normalAToBMap.x,
+            -portal.traversal.normalAToBMap.y,
+            -portal.traversal.normalAToBMap.z
+        };
+        return result;
+    }
+
+    throw std::invalid_argument(
+        "NavigationSpace corridor portal traversal direction is invalid"
+    );
 }
 
 glm::dvec3 toGlm(const Vec3d& value) noexcept
@@ -247,6 +329,44 @@ void validateObstacle(const NavigationObstacle& obstacle)
 }
 
 } // namespace
+
+void populatePortalTraversals(
+    const std::map<PortalId, NavigationSpace::PortalInput>& portalInputs,
+    const std::vector<RegionId>& regionPath,
+    const std::vector<PortalId>& portalPath,
+    std::vector<NavigationSpace::Vec3d>& centers,
+    std::vector<NavigationSpace::PortalTraversal>& traversals
+)
+{
+    centers.clear();
+    traversals.clear();
+
+    if (regionPath.size() != portalPath.size() + 1)
+        throw std::invalid_argument(
+            "NavigationSpace reconstructed corridor has inconsistent region/portal counts"
+        );
+
+    centers.reserve(portalPath.size());
+    traversals.reserve(portalPath.size());
+
+    for (std::size_t i = 0; i < portalPath.size(); ++i)
+    {
+        const auto portalIt = portalInputs.find(portalPath[i]);
+        if (portalIt == portalInputs.end())
+            throw std::invalid_argument(
+                "NavigationSpace reconstructed corridor references missing portal"
+            );
+
+        centers.push_back(portalIt->second.centerMapMeters);
+        traversals.push_back(
+            orientedPortalTraversal(
+                portalIt->second,
+                regionPath[i],
+                regionPath[i + 1]
+            )
+        );
+    }
+}
 
 class NavigationSpace::Impl
 {

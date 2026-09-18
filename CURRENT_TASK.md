@@ -467,3 +467,40 @@ canonical_replication_error_mps2=0
 
 Any missing flag is a failed 12A-6b3b gate and must be diagnosed before manual
 guidance work begins.
+
+
+## 12A-6b3b first live gate result — CORRECT FIXTURE
+
+Target-machine failed candidate: 4df5a4420f4712b0794e6df3940d45e99e6ad363
+
+Observed live evidence:
+- architecture contract PASS;
+- navigation_runtime 3/3 PASS;
+- navigation_trajectory 11/11 PASS;
+- EliteGame / EliteServer BUILD PASS;
+- moving_gap_pair=1;
+- moving_gap_kinematics=1;
+- moving_precision=1;
+- moving_passage_feasible=0;
+- moving_passage_static_safe=0;
+- moving_passage_authority=0;
+- exact_static_violation=0.
+
+Root cause is fixture design, not the accepted moving-passage algorithm.
+The live aperture was authored near z=-2500 while the ship starts near z=-6200.
+With duration=30 s the exact Hermite segment must cover about 3.7 km while
+ending near the 60 m/s local speed cap. Its terminal acceleration is therefore
+about -16.7 m/s^2 along travel, far beyond the Cobra's real ~2 m/s^2 reverse
+manoeuvre authority. The evaluator correctly rejects it before static proof.
+
+The same old fixture is also behind CUBE 08 on the nominal route. Therefore,
+even if its propulsion envelope were loosened, the same-trajectory exact-static
+proof should subsequently reject the Hermite path through CUBE 08.
+
+Correction: move the deterministic moving aperture ahead of the ship but before
+CUBE 08, preserving the real Cobra capability and the existing CUBE 08 static
+gate. The intended order becomes:
+moving passage live authority -> physical gap crossing -> CUBE 08 exact-static
+avoidance -> same-tick replication, with no weakening of either proof.
+
+Current task: relocate only the moving-gap fixture so the live test exercises moving-passage authority before the independent static obstacle.

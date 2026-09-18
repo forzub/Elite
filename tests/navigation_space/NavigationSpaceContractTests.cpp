@@ -176,6 +176,10 @@ void testConnectedDisconnectedAndNarrowPortal()
             "direct corridor region order is wrong");
     require(direct.portalPath == std::vector<Space::PortalId>({101}),
             "direct corridor portal order is wrong");
+    require(direct.portalCentersMapMeters.size() == 1 &&
+            direct.portalCentersMapMeters[0].x == 10.0 &&
+            direct.portalCentersMapMeters[0].y == 5.0,
+            "direct corridor must publish the selected portal center");
 
     Space::CorridorQuery outsideToInterior = connected;
     outsideToInterior.endMapMeters = {25.0, 5.0, 5.0};
@@ -185,6 +189,10 @@ void testConnectedDisconnectedAndNarrowPortal()
             "outside-to-interior region path is not deterministic");
     require(interior.portalPath == std::vector<Space::PortalId>({101, 102}),
             "outside-to-interior portal path is not deterministic");
+    require(interior.portalCentersMapMeters.size() == 2 &&
+            interior.portalCentersMapMeters[0].x == 10.0 &&
+            interior.portalCentersMapMeters[1].x == 20.0,
+            "corridor portal centers must preserve selected path order");
 
     Space::CorridorQuery oversized = outsideToInterior;
     oversized.envelope = envelope(1.5);
@@ -277,6 +285,11 @@ void testCostedCanyonVsOverflight()
             "clearance-aware policy must prefer open overflight when canyon is too tight");
     require(overflight.portalPath == std::vector<Space::PortalId>({201, 202, 203}),
             "clearance-aware overflight portal path is wrong");
+    require(overflight.portalCentersMapMeters.size() == 3 &&
+            overflight.portalCentersMapMeters[0].y == 10.0 &&
+            overflight.portalCentersMapMeters[1].y == 15.0 &&
+            overflight.portalCentersMapMeters[2].y == 10.0,
+            "costed corridor must publish steering centers for the selected overflight");
     require(overflight.totalCostMetersEquivalent <
             canyon.totalCostMetersEquivalent + 30.0,
             "costed corridor must expose a finite meter-equivalent route cost");
@@ -456,6 +469,7 @@ int main()
         std::cout << "NAVIGATION SPACE CONTRACT TESTS: PASS\n";
         std::cout << " - free-space clearance is agent-envelope aware\n";
         std::cout << " - region/portal corridors are deterministic\n";
+        std::cout << " - selected corridors publish ordered portal steering centers\n";
         std::cout << " - explicit wall apertures admit only fitting agents\n";
         std::cout << " - costed routing can choose canyon or overflight by policy\n";
         std::cout << " - turn-aware routing can prefer a smoother static branch\n";

@@ -1311,11 +1311,16 @@ GameSimulation::activationExecutionMode(EntityId shipId) const noexcept
 {
     using game::simulation::SimulationMode;
 
-    // The locally controlled player and Hub Motion Lab reference actors remain
-    // fully materialized. The latter are measurement probes and must not have
-    // their baseline altered by the production activation planner.
-    if (isPlayerControlled(shipId) || isHubMotionLabShip(shipId))
+    // The locally controlled player and diagnostic reference/proving actors
+    // remain fully materialized. Their purpose is to measure one subsystem
+    // deterministically; activation decimation would mix a second variable
+    // into the result.
+    if (isPlayerControlled(shipId) ||
+        isHubMotionLabShip(shipId) ||
+        isNavigationRuntimeLabShip(shipId))
+    {
         return SimulationMode::Active;
+    }
 
     const auto stateIt = m_activationPlanStates.find(shipId);
     if (stateIt != m_activationPlanStates.end())

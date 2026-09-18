@@ -37,9 +37,11 @@ for marker in (
     require(marker in SNAPSHOT, f"replicated execution DTO missing: {marker}")
 
 require(
+    "std::variant<" in SHIP_SNAPSHOT and
+    "std::monostate" in SHIP_SNAPSHOT and
     "game::simulation::NavigationExecutionSnapshot" in SHIP_SNAPSHOT and
     "navigationExecution" in SHIP_SNAPSHOT,
-    "ShipSnapshot does not carry navigation execution truth",
+    "ShipSnapshot does not carry sparse navigation execution truth",
 )
 
 for marker in (
@@ -96,11 +98,19 @@ require(
 )
 
 for marker in (
+    "navigationExecutionSnapshotTick",
+    "m_lastNavigationExecutionSnapshotTick",
     "shipState.navigationExecution.valid",
     "entry.shipInstanceId = shipState.instanceId",
     "syncReplicatedNavigationExecution",
 ):
     require(marker in SPACE, f"SpaceState replicated execution sync missing: {marker}")
+
+require(
+    "navigationExecutionSnapshotTick !=" in SPACE and
+    "m_lastNavigationExecutionSnapshotTick" in SPACE,
+    "client replicated execution mirror is not gated by accepted server snapshot tick",
+)
 
 for marker in (
     "hasAuthoritativeExecution",
@@ -112,12 +122,21 @@ for marker in (
 ):
     require(marker in GUIDANCE, f"guidance presentation does not expose server truth: {marker}")
 
+PLANNING_FACTORY = (ROOT / "src/game/client/ClientNavigationPlanningSnapshotFactory.cpp").read_text(encoding="utf-8")
+TRAJECTORY_PREDICTOR = (ROOT / "src/game/navigation/TrajectoryPredictor.cpp").read_text(encoding="utf-8")
+TRAJECTORY_SAFETY = (ROOT / "src/game/navigation/TrajectorySafetyEvaluator.cpp").read_text(encoding="utf-8")
+
 for planner, label in (
     (LOCAL_PLANNER, "LocalGuidancePlanner"),
     (DOCK_PLANNER, "DockingPathPlanner"),
+    (PLANNING_FACTORY, "ClientNavigationPlanningSnapshotFactory"),
+    (TRAJECTORY_PREDICTOR, "TrajectoryPredictor"),
+    (TRAJECTORY_SAFETY, "TrajectorySafetyEvaluator"),
 ):
     for forbidden in (
         "NavigationExecutionSnapshot",
+        "ReplicatedNavigationExecution",
+        "navigationExecution",
         "replicatedNavigationExecution",
         "authoritativeIntentRevision",
     ):
@@ -133,7 +152,7 @@ require(
 
 print("NAVIGATION LIVE REPLICATION/GUIDANCE CONTRACT: PASS")
 print(" - exact server-executed navigation revision/demand is replicated per ShipSnapshot")
-print(" - binary wire schema is explicitly versioned for the new payload")
+print(" - binary wire schema is explicitly versioned and absent execution costs one sparse variant tag")
 print(" - ClientWorldState retains the payload and workspace mirrors it read-only")
 print(" - stable ShipInstanceId resolves the current runtime entity execution truth")
 print(" - GuidanceHudPresentation exposes the selected executor's authoritative execution")

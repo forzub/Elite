@@ -593,6 +593,18 @@ Stage 11B-1 now replaces the placeholder NPC steering authority. `NpcAiSystem` p
 
 The exact latest `ExecutionSnapshot` used for control is retained per NPC as the server truth seam for stage 11B-2 replication/guidance. No direct-steering fallback is allowed.
 
+Stage 11B-2 replicates this truth sparsely:
+
+```text
+ShipSnapshot.navigationExecution =
+    variant<monostate, NavigationExecutionSnapshot>
+
+absent execution -> one wire tag byte
+present execution -> tag + execution payload
+```
+
+The client mirror refreshes only when the accepted server snapshot tick changes. It is read-only to all client planning/trajectory components.
+
 ### Stage 11B-1 first target-machine attempt — NOT ACCEPTED
 
 The architecture contracts passed and trajectory/pilot remained 11/11, but the full integration gate exposed two build-target wiring defects:

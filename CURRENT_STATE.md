@@ -3,7 +3,7 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** 11B-1 — authoritative NPC runtime ownership / repaired candidate rerun
+**Active stage:** 11B-1 — authoritative NPC runtime ownership / corrected roll fixture rerun
 
 ## Progress
 
@@ -137,3 +137,42 @@ headless EliteServer omitted the three new live-navigation implementation .cpp f
 ```
 
 Repairs are now committed. The ownership/runtime behavior itself was not relaxed.
+
+
+## 11B-1 second target-machine attempt — NOT ACCEPTED
+
+The server/build wiring repair succeeded: both architecture checks passed, trajectory/pilot stayed 11/11, and canonical EliteGame + EliteServer both built. The only failure was the isolated runtime link because the test instantiated a full `Ship` and pulled unrelated ship-system vtables.
+
+This was repaired by introducing lightweight:
+
+```text
+NpcNavigationGoal
+NpcNavigationKinematicState
+NpcNavigationIntentController(state, goal)
+```
+
+`GameSimulation` now adapts the authoritative live `Ship` into the compact state.
+
+## 11B-1 third target-machine attempt — NOT ACCEPTED
+
+The lightweight boundary compiled and linked. Both architecture checks passed, trajectory/pilot remained 11/11, and EliteGame + EliteServer built.
+
+The only failure was one unit assertion for roll damping. Production code was correct; the fixture assumed raw world-Z sign instead of the ship forward axis.
+
+Elite identity axes are:
+
+```text
+right=+X
+up=+Y
+forward=-Z
+```
+
+The repaired fixture now checks axis projections:
+
+```text
+dot(angularDemand,right)   = -pitchRate*damping
+dot(angularDemand,up)      = -yawRate*damping
+dot(angularDemand,forward) = -rollRate*damping
+```
+
+No production behavior was changed.

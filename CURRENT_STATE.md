@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-18
 **Canonical branch:** `main`
-**Current public HEAD:** `e83a0a2bd5d54efb7737607c40ff789cafee5cf5`
+**Current public HEAD:** `29aa06c6d96f2a32a540f5623eb53edc433ef6ca`
 
 ## Stage 12 status
 
@@ -14,7 +14,7 @@
 
 ## Latest target-machine result
 
-Run on `5aac072dbb13dbed755a4a9fe6dd1b91f24db717`:
+Run on `f8e7c3e1890a621d65d5596e0ad66fc8b759e66c`:
 
 ```text
 architecture PASS
@@ -22,47 +22,53 @@ EliteGame PASS
 EliteServer PASS
 
 first_live_probe_blocked=0
-first_live_blocker_entity=0
-obstacle_entity=22
-
-first_live_horizon_m=1420.11
-first_live_agent_map=(1014.47,-1767.96,-5679.82)
-first_live_goal_map=(975,-1300,1000)
-first_live_bounded_target_map=(1006.1,-1668.71,-4263.2)
+first_live_agent_map=(1014.51,-1885.04,-5940.26)
+expected_start=(975,-1300,-6200)
 ```
 
-Expected configured start was:
+The previous stale-local-velocity fix changed the observed offset but did not
+eliminate it.
+
+## Root cause now identified
+
+The remaining displacement magnitude is about 641 m.
+
+At the server fixed step (~0.02 s), a reference frame moving at ~30 km/s changes
+world position by roughly 600 m. The production update ordering matched this
+exact scale:
 
 ```text
-(975,-1300,-6200)
+old order:
+rebuild current HubNavigationFrame
+    -> AI/navigation reads ship.worldPosition from previous frame epoch
+    -> later refresh matched travel frame
+    -> later updateLocalFrameMotion rematerializes worldPosition
 ```
 
-So the first live ship state was already displaced by hundreds of metres before
-planner composition.
+Therefore navigation compared a previous-epoch ship pose against a current-epoch
+hub origin/basis.
 
-## Root cause found
+## Correction
 
-`placeShipInReferenceFrame()` reset legacy
-`tr.localVelocity` but did not reset authoritative
-`tr.motion.localVelocityMps`.
+Matched HubTactical ships are now synchronized immediately after the current
+HubNavigationFrame rebuild and before AI/navigation.
 
-That allowed stale pre-placement local velocity to survive the frame transition.
-On the next local-frame kinematic step, the ship moved away from the configured
-start before its first navigation solve.
+The synchronization:
+- refreshes the matched travel-frame epoch;
+- rematerializes worldPosition from authoritative localPositionMeters;
+- rematerializes worldVelocity from current localVelocityMps;
+- does not integrate or change local flight state.
 
-The same placement function also retained stale propulsion/alignment state.
-The corrected contract now clears:
-- localVelocityMps;
-- mainEngineAccelerationMps2;
-- manoeuvreAccelerationMps2;
-- engineAccelerationMps2;
-- desiredTacticalVelocityMps;
-- velocityAlignmentMode;
-- assisted target-speed hold state.
+The later duplicate `updateShipReferenceFrames(dt)` call is removed so there
+is one authoritative ordering point per fixed step.
 
-This is a production reference-frame placement bug, not a navigation-fixture
-workaround.
+Architecture contract now pins:
 
-Next gate must show first live agent position remaining on the configured start
-line and CUBE 08 becoming the first exact blocker without reintroducing static
-NavigationMap spheres.
+```text
+rebuildHubNavigationFrames
+    -> updateShipReferenceFrames
+    -> AI/navigation
+```
+
+Next live gate must show the first agent map remaining at the configured start
+instead of lagging one frame behind the hub.

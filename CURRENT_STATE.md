@@ -16,7 +16,7 @@
 - 12A-6a dynamic angular-motion publication — ACCEPTED
 - 12A-6b live moving-gap / moving-passage composition — ACTIVE
 - 12A-6b1 runtime moving-precision observe/prove seam — ACCEPTED
-- 12A-6b2 exact-static proof of accepted moving trajectory — CANDIDATE / target-machine pending
+- 12A-6b2 exact-static proof of accepted moving trajectory — CORRECTED CANDIDATE / target-machine rerun pending
 
 ## 12A-6a acceptance
 
@@ -236,3 +236,33 @@ same-trajectory exact-static proof rejects it.
 
 12A-6b2 remains observe-only. Steering authority is unchanged until this
 candidate is accepted on the target machine.
+
+
+## 12A-6b2 first target-machine gate — COMPILE FAIL
+
+The first target-machine run on `8c30ebc1c7a724c06113b5b1e4704a7a172b6d93`
+passed the Stage-12 architecture script and retained `navigation_map 1/1 PASS`,
+but both trajectory and runtime builds stopped at compile time.
+
+Root causes were mechanical interface mistakes:
+1. `TrajectoryWitness` was declared, but `Result` did not actually contain
+   `TrajectoryWitness trajectory {}`, while implementation/tests referenced
+   `result.trajectory`;
+2. MinGW rejected assignment of a naked braced initializer list to the existing
+   `NavigationSpace::Vec3d` object in the static-proof query setup.
+
+Because the full build failed, the subsequent headless-server PASS came from the
+previously built executable and is **not** acceptance evidence for 12A-6b2.
+
+Corrections through code/contract baseline:
+
+```text
+52a5fa9e239d8ea00923cbb65a293cca5863567b
+```
+
+- attach `trajectory` to `MovingPassageTrajectoryEvaluator::Result`;
+- use explicit `NavigationSpace::Vec3d { ... }` assignments;
+- strengthen the architecture checker to require the result member itself, not
+  merely the witness type/field names.
+
+12A-6b2 remains non-authoritative and unaccepted pending target-machine rerun.

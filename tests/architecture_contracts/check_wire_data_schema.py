@@ -38,6 +38,7 @@ for token in (
     "SimulationSnapshot,",
     "ShipSnapshot,",
     "game::simulation::NavigationExecutionSnapshot,",
+    "struct WireSchema<std::monostate>",
     "v.navigationExecution",
     "ObjectSnapshot,",
     "game::simulation::OrbitalHubSnapshot,",

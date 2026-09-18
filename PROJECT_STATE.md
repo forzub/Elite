@@ -69,3 +69,19 @@ The corrected candidate compares:
 3. the retained canonical client state after hydrating that same packet.
 
 Exact vector equality remains required; the tolerance was not loosened.
+
+
+### 12A-3 working-frame correction
+
+The second live run proved that broadphase, nominal-conflict identity and
+adjusted-target selection were active, but physical behavior was unacceptable:
+43.7 km maximum route deviation with only 2.26 km goal progress in 120 s.
+
+Stage-11 contracts define the direct acceleration seam as world-space.
+Stage-12 NavigationRuntimePlanner operates in NavigationMap working-frame
+coordinates. The missing map->world transform at that boundary was therefore a
+real integration defect hidden by earlier identity-frame tests.
+
+The corrected candidate adds an explicit non-identity-frame regression and
+separates requested/executed command demand from actual clamped physical
+acceleration in live diagnostics.

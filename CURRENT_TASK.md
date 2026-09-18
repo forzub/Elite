@@ -1104,7 +1104,7 @@ Target-machine validation for this scheduler/policy is pending. The last target-
 
 The accepted-segment/follower code slice now exists. The immediate task is the
 target-machine gate for candidate
-`0fc8d9b9d929cb19ad0338191433b635bb723f31`.
+`1e1b5ff2e72d743688833a403e94aefc0a832c87`.
 
 ~~~bash
 git pull --ff-only
@@ -1138,7 +1138,7 @@ publication without restoring per-frame planning.
 Code candidate:
 
 ~~~text
-0fc8d9b9d929cb19ad0338191433b635bb723f31
+1e1b5ff2e72d743688833a403e94aefc0a832c87
 ~~~
 
 This slice replaces the live Stage-12 lab's unconditional fixed-tick
@@ -1209,5 +1209,38 @@ Last actually target-machine accepted Stage-12 baseline remains:
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
 
-Do not promote `0fc8d9b9d929cb19ad0338191433b635bb723f31` to accepted
+Do not promote `1e1b5ff2e72d743688833a403e94aefc0a832c87` to accepted
 baseline until the target-machine gate is green.
+
+
+### Accepted-segment integration correction
+
+Superseding code candidate:
+
+~~~text
+1e1b5ff2e72d743688833a403e94aefc0a832c87
+~~~
+
+This correction fixes two defects found during post-commit diff review of
+`0fc8d9b9d929cb19ad0338191433b635bb723f31` before target-machine testing:
+
+1. generated include edits contained literal `\n` text in
+   `GameSimulation.h` and
+   `NavigationExecutionReplanPolicyTests.cpp`; these are now real line breaks;
+2. provisional hold segments no longer report immediate geometric completion.
+   `AcceptedShortSegment::completionTriggersReplan` lets a safe hold remain
+   accepted until its short validity expiry instead of waking the planner every
+   fixed tick.
+
+A regression now pins that a time-bounded hold stays in follower execution until
+expiry.
+
+Target-machine validation remains pending. The last actually accepted Stage-12
+baseline is still:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~
+
+Use `1e1b5ff2e72d743688833a403e94aefc0a832c87` as the code candidate for
+the next MinGW/runtime gate.

@@ -723,3 +723,85 @@ Current implementation task:
    hull forward axis with the portal normal, then transit the tunnel;
 4. require live evidence of aligned entry and collision-free exit.
 
+
+
+## 12A-6b3b oriented tunnel-capture candidate
+
+Candidate code/contract baseline before documentation commits:
+
+```text
+b73cc129ce32cae1147165bf79b29f20b83ef04c
+```
+
+The target-machine failure on `777716f...` was a fixture-validation failure,
+not a failed flight: `slit_exact_open=0` came from treating a legal portal
+boundary as an ordinary region-interior point.
+
+The correction now separates topology from collision truth and implements the
+entry behavior required for finite-depth passages:
+
+```text
+APPROACH REGION
+    -> staging/capture point
+    -> ENTRY PORTAL (oriented normal + capture limits)
+    -> TUNNEL REGION
+    -> EXIT PORTAL
+    -> DEPARTURE REGION
+```
+
+Before the entry plane can be accepted, the live actor must satisfy:
+- hull position inside the passage capture envelope;
+- velocity vector within 5 degrees of the entry normal;
+- lateral speed <= 1 m/s;
+- hull forward axis within 5 degrees of the entry normal.
+
+The planner actively commands angular alignment using the current vehicle's
+angular capability. It stages/brakes before the entrance, then releases
+longitudinal transit only after capture is ready.
+
+The live physical sweep now uses exact HitVolumes only; NavigationSpace region
+boundaries remain topology and cannot produce a fake physical collision.
+
+New regressions pin:
+- route-direction portal normals, including reverse traversal;
+- exact-obstacle-only sweep across a virtual region boundary;
+- portal capture holding a misaligned hull;
+- release to PortalTransit only after velocity + hull-axis alignment.
+
+Target-machine acceptance is pending. The last accepted Stage-12 baseline
+remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`; the later
+`777716f...` run is retained as failed evidence, not acceptance.
+
+### Current target-machine gate
+
+```bash
+git pull --ff-only
+git rev-parse HEAD
+
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+bash tests/navigation_space/run_mingw64.sh
+bash tests/navigation_runtime/run_mingw64.sh
+bash tests/navigation_trajectory/run_mingw64.sh
+
+bash build_mingw64.sh
+./build/headless_server/EliteServer.exe --self-test-navigation
+```
+
+Acceptance requires the final live run to show, in addition to the previous
+moving-passage/replication evidence:
+
+```text
+slit_exact_open=1
+slit_portal=1
+slit_entry_capture=1
+slit_entry_vel_aligned=1
+slit_entry_fwd_aligned=1
+slit_entry_crossed_aligned=1
+slit_entry_vel_angle_rad <= 0.0872665
+slit_entry_fwd_angle_rad <= 0.0872665
+slit_entry_lateral_mps <= 1
+slit_passed=1
+slit_margin_m >= 0
+exact_static_violation=0
+```
+

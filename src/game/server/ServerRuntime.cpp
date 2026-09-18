@@ -101,6 +101,12 @@ double ServerRuntime::fixedStepSeconds() const
     return m_runner->fixedStepSeconds();
 }
 
+game::diagnostics::NavigationRuntimeLabObservation
+ServerRuntime::navigationRuntimeLabObservation() const noexcept
+{
+    return m_server->navigationRuntimeLabObservation();
+}
+
 bool ServerRuntime::publishSessionBootstrap(
     IServerTransport& transport,
     game::network::ServerSessionId sessionId

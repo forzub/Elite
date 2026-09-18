@@ -141,3 +141,25 @@ The proving fixture is corrected rather than weakening ownership:
 - self-test fails fast if that proof is absent.
 
 Stationary-sphere duplication remains forbidden.
+
+
+#### 12A-5 second live run
+
+Run on `54bd19ef647f0eca8dcc738be4342052ee164683` confirmed:
+- stationary CUBE 08 is absent from NavigationMap;
+- configured exact start->goal route intersects CUBE 08;
+- exact static layer remains active and collision-free;
+- ship reaches the final goal.
+
+However the runtime planner never reports a nominal exact-static block.
+
+The visual/tactical frame conversion was re-audited against
+`HubFrameBasis.h` and `HubNavigationFrame.h`; the axis permutation is
+correct.
+
+The next candidate therefore adds:
+- a live-scale runtime regression independent of GameSimulation;
+- an exact first-live bounded-segment probe using current ship position,
+  actual goal, current physical horizon and the same envelope as planner;
+- fail-fast diagnostics distinguishing live-geometry mismatch from
+  planner-composition loss.

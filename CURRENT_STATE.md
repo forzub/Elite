@@ -1214,3 +1214,30 @@ This preserves the Stage-12 self-test requirement
 Target-machine validation of this correction is pending. Last actually accepted
 Stage-12 baseline remains
 `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+
+
+### Revision-split regression coverage
+
+Test candidate:
+
+~~~text
+25c8f2ad1df21de937c5db0ce24394b2e0b93fab
+~~~
+
+Regression coverage now pins the correction exposed by the failed target-machine
+replication gate:
+
+- runtime bridge preserves high-level `intentRevision` while publishing a
+  distinct `activeTargetRevision`;
+- `TrajectoryFollower` maps
+  `goalRevision -> intent.revision` and
+  `AcceptedShortSegment::revision -> intent.targetRevision`;
+- `PilotSkillExecutor` may advance the concrete target revision inside the
+  same intent without restarting reaction delay;
+- the Stage-12 architecture contract now rejects re-merging these identities.
+
+The next required action is a target-machine rerun. No acceptance is claimed
+until the MinGW tests/build and `EliteServer --self-test-navigation` are green.
+
+Last actually accepted Stage-12 baseline remains
+`daaf038021cdf8b9561db60fdd35e7cefce0b2df`.

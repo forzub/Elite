@@ -182,6 +182,14 @@ bool commonBetter(
     if (greater(a.criticalDamageRisk01, b.criticalDamageRisk01))
         return false;
 
+    if (!context.allowSacrificialComponentLoss)
+    {
+        if (less(a.expendableDamageCost01, b.expendableDamageCost01))
+            return true;
+        if (greater(a.expendableDamageCost01, b.expendableDamageCost01))
+            return false;
+    }
+
     if (context.progress == Controller::ProgressRequirement::PreferProgress &&
         a.progressesObjective != b.progressesObjective)
     {

@@ -2410,6 +2410,66 @@ m_hubVelocityMetersPerSecond[hubId] =
                 dt
             );
 
+            if (isNavigationRuntimeLabShip(id))
+            {
+                auto& observation =
+                    m_navigationRuntimeLabObservation;
+
+                const glm::dvec3 appliedAcceleration =
+                    tr.motion.engineAccelerationMps2;
+                observation.maximumAppliedEngineAccelerationMps2 =
+                    std::max(
+                        observation.maximumAppliedEngineAccelerationMps2,
+                        glm::length(appliedAcceleration)
+                    );
+                observation.maximumRelativeSpeedMps =
+                    std::max(
+                        observation.maximumRelativeSpeedMps,
+                        glm::length(tr.motion.localVelocityMps)
+                    );
+
+                if (const auto* hubFrame =
+                        hubNavigationFrame(
+                            m_navigationRuntimeLabHubId
+                        );
+                    hubFrame && hubFrame->valid)
+                {
+                    const glm::dvec3 routeVectorMap =
+                        game::diagnostics::
+                            NavigationRuntimeLabGoalVisualLocalMeters -
+                        game::diagnostics::
+                            NavigationRuntimeLabStartVisualLocalMeters;
+
+                    const glm::dvec3 routeVectorWorld =
+                        hubFrame->normalAxis * routeVectorMap.x +
+                        hubFrame->radialAxis * routeVectorMap.y -
+                        hubFrame->progradeAxis * routeVectorMap.z;
+
+                    const double routeLength =
+                        glm::length(routeVectorWorld);
+                    if (routeLength > 1.0e-12)
+                    {
+                        const glm::dvec3 routeDirectionWorld =
+                            routeVectorWorld / routeLength;
+                        const glm::dvec3 lateralApplied =
+                            appliedAcceleration -
+                            routeDirectionWorld *
+                                glm::dot(
+                                    appliedAcceleration,
+                                    routeDirectionWorld
+                                );
+
+                        observation.
+                            maximumAppliedLateralAccelerationMps2 =
+                            std::max(
+                                observation.
+                                    maximumAppliedLateralAccelerationMps2,
+                                glm::length(lateralApplied)
+                            );
+                    }
+                }
+            }
+
             tr.referenceVelocityMetersPerSecond =
                 tr.motion.referenceVelocityMps;
         }

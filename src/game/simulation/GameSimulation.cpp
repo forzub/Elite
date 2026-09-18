@@ -1652,6 +1652,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             localHorizonMeters;
         observation.firstLiveAgentPositionMap =
             agentPositionMap;
+        observation.firstLiveGoalPositionMap =
+            goalPositionMap;
         observation.firstLiveBoundedTargetMap =
             boundedTarget;
     }

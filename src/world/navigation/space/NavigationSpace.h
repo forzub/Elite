@@ -122,6 +122,13 @@ public:
         // rejection. Route-wide traversal across regions remains the corridor
         // graph's job.
         bool requireSameRegion = true;
+
+        // A selected portal center lies on the shared boundary of two coarse
+        // free-space regions. Corridor routing has already proved the portal's
+        // envelope clearance, so the precision layer may allow that one
+        // endpoint to touch the start region boundary while still proving the
+        // complete segment against exact obstacles.
+        bool allowEndOnStartRegionBoundary = false;
     };
 
     struct SegmentQueryResult

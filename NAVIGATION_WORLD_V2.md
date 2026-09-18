@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** stage 11B-1 — authoritative NPC runtime ownership / repaired rerun
+**Current stage:** stage 11B-1 — authoritative NPC runtime ownership / corrected roll fixture rerun
 
 `main` is the only canonical development branch.
 
@@ -618,6 +618,37 @@ EliteServer
 ```
 
 The ownership checker now pins both requirements. No behavior or safety contract was weakened.
+
+### Stage 11B-1 second target-machine attempt — NOT ACCEPTED
+
+The build-target wiring was repaired and both canonical targets built. The isolated runtime unit still linked full `Ship` construction, pulling unrelated equipment/reactor/damage vtables.
+
+The boundary was corrected:
+
+```text
+GameSimulation
+    authoritative Ship
+    -> NpcNavigationKinematicState
+    -> NpcNavigationIntentController
+```
+
+The controller no longer depends on the full live ship runtime.
+
+### Stage 11B-1 third target-machine attempt — NOT ACCEPTED
+
+Architecture PASS, trajectory/pilot 11/11 PASS, EliteGame build PASS and EliteServer build PASS. The sole failure was a roll-damping assertion that checked a raw world-Z component.
+
+With identity orientation `forward=-Z`, correct positive-roll damping is a world `+Z` vector. `ShipController` projects that vector onto `forward` and obtains negative local roll acceleration.
+
+The regression now checks:
+
+```text
+dot(a_ang,right)   = -pitchRate*damping
+dot(a_ang,up)      = -yawRate*damping
+dot(a_ang,forward) = -rollRate*damping
+```
+
+No production logic was changed.
 
 ## 12. Performance contract
 

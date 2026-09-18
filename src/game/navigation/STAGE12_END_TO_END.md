@@ -365,6 +365,49 @@ owns the stationary obstacle.
 Diagnostic centre/radius measurements may remain for logging, but they do not
 publish NavigationMap ownership.
 
+### 12A-5 first live result: ownership passed, encounter fixture failed
+
+Target-machine run on
+`f7e86a70fe590ab02cb72f02967f3679840c1e24` proved the static/dynamic
+ownership split itself:
+
+```text
+obstacle_candidate=0
+obstacle_conflict=0
+dynamic_queries=6000
+max_dynamic_candidates=1
+exact_static=1
+exact_static_obstacles=17
+exact_static_query=1
+exact_static_violation=0
+```
+
+So stationary CUBE 08 was no longer duplicated into NavigationMap and the
+exact-static layer remained active and collision-free.
+
+The missing evidence was:
+
+```text
+exact_obstacle_block=0
+exact_static_block=0
+adjusted=0
+```
+
+The cause was the deterministic fixture, not ownership. The ship had roughly
+3.1 km to travel before the cube and accumulated about 500 m of natural
+rotating-frame lateral drift, enough for the bounded nominal segment to miss the
+real 360 m-class OBB.
+
+Correction:
+- the start point is now 1300 m before CUBE 08, inside the first local horizon;
+- start X/Y are derived from the obstacle coordinates;
+- static publication itself queries the configured start->goal centerline and
+  requires the blocker identity to be the actual CUBE 08 entity;
+- the server self-test fails fast if
+  `configured_route_exact_block=0`.
+
+This preserves the 12A-5 rule: stationary spheres are not reintroduced.
+
 ## 12A — deterministic runtime proving ground
 
 The first slice is a deterministic proving ground around the station / hub domain.

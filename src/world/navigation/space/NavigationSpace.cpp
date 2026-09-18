@@ -1,5 +1,7 @@
 #include "NavigationSpace.h"
 
+#include "src/world/navigation/NavigationObstacleGeometry.h"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -203,6 +205,47 @@ void validatePortal(const NavigationSpace::PortalInput& portal)
         throw std::invalid_argument("NavigationSpace portal clearance must be finite and non-negative");
 }
 
+glm::dvec3 toGlm(const Vec3d& value) noexcept
+{
+    return {value.x, value.y, value.z};
+}
+
+void validateObstacle(const NavigationObstacle& obstacle)
+{
+    if (obstacle.id.empty())
+        throw std::invalid_argument("NavigationSpace obstacle id must not be empty");
+    if (!obstacle.finite() ||
+        obstacle.requiredClearanceMeters < 0.0 ||
+        obstacle.radiusMeters < 0.0 ||
+        obstacle.capsuleHalfLengthMeters < 0.0 ||
+        obstacle.halfExtentsMeters.x < 0.0 ||
+        obstacle.halfExtentsMeters.y < 0.0 ||
+        obstacle.halfExtentsMeters.z < 0.0)
+    {
+        throw std::invalid_argument(
+            "NavigationSpace obstacle geometry must be finite and non-negative"
+        );
+    }
+
+    constexpr double kAxisLengthTolerance = 1.0e-6;
+    constexpr double kAxisOrthogonalityTolerance = 1.0e-6;
+    const glm::dvec3 x = obstacle.localToWorldBasis[0];
+    const glm::dvec3 y = obstacle.localToWorldBasis[1];
+    const glm::dvec3 z = obstacle.localToWorldBasis[2];
+
+    if (std::abs(glm::length(x) - 1.0) > kAxisLengthTolerance ||
+        std::abs(glm::length(y) - 1.0) > kAxisLengthTolerance ||
+        std::abs(glm::length(z) - 1.0) > kAxisLengthTolerance ||
+        std::abs(glm::dot(x, y)) > kAxisOrthogonalityTolerance ||
+        std::abs(glm::dot(x, z)) > kAxisOrthogonalityTolerance ||
+        std::abs(glm::dot(y, z)) > kAxisOrthogonalityTolerance)
+    {
+        throw std::invalid_argument(
+            "NavigationSpace obstacle basis must be orthonormal"
+        );
+    }
+}
+
 } // namespace
 
 class NavigationSpace::Impl
@@ -291,6 +334,7 @@ public:
     Revision sourceRevision = 0;
     std::map<RegionId, RegionState> regions;
     std::map<PortalId, PortalState> portals;
+    std::map<std::string, NavigationObstacle> obstacles;
     GraphIndex graph;
     SpatialIndex spatial;
 
@@ -682,6 +726,7 @@ void NavigationSpace::replaceStaticWorld(StaticSpaceUpdate update)
 {
     std::map<RegionId, Impl::RegionState> regions;
     std::map<PortalId, Impl::PortalState> portals;
+    std::map<std::string, NavigationObstacle> obstacles;
 
     for (const auto& region : update.regions)
     {
@@ -697,12 +742,20 @@ void NavigationSpace::replaceStaticWorld(StaticSpaceUpdate update)
             throw std::invalid_argument("NavigationSpace duplicate portal id");
     }
 
+    for (const auto& obstacle : update.obstacles)
+    {
+        validateObstacle(obstacle);
+        if (!obstacles.emplace(obstacle.id, obstacle).second)
+            throw std::invalid_argument("NavigationSpace duplicate obstacle id");
+    }
+
     Impl::validatePortalReferences(regions, portals);
     auto graph = Impl::buildGraphIndex(regions, portals);
     auto spatial = Impl::buildSpatialIndex(regions, graph);
 
     impl_->regions = std::move(regions);
     impl_->portals = std::move(portals);
+    impl_->obstacles = std::move(obstacles);
     impl_->graph = std::move(graph);
     impl_->spatial = std::move(spatial);
     impl_->sourceRevision = update.sourceRevision;
@@ -713,6 +766,10 @@ void NavigationSpace::applyLocalPatch(LocalPatch patch)
 {
     auto regions = impl_->regions;
     auto portals = impl_->portals;
+    auto obstacles = impl_->obstacles;
+
+    for (const auto& obstacleId : patch.removeObstacleIds)
+        obstacles.erase(obstacleId);
 
     for (PortalId portalId : patch.removePortalIds)
         portals.erase(portalId);
@@ -742,12 +799,19 @@ void NavigationSpace::applyLocalPatch(LocalPatch patch)
         portals[portal.portalId] = Impl::PortalState{portal, false};
     }
 
+    for (const auto& obstacle : patch.upsertObstacles)
+    {
+        validateObstacle(obstacle);
+        obstacles[obstacle.id] = obstacle;
+    }
+
     Impl::validatePortalReferences(regions, portals);
     auto graph = Impl::buildGraphIndex(regions, portals);
     auto spatial = Impl::buildSpatialIndex(regions, graph);
 
     impl_->regions = std::move(regions);
     impl_->portals = std::move(portals);
+    impl_->obstacles = std::move(obstacles);
     impl_->graph = std::move(graph);
     impl_->spatial = std::move(spatial);
     impl_->sourceRevision = patch.sourceRevision;
@@ -844,17 +908,101 @@ NavigationSpace::PointQueryResult NavigationSpace::queryPoint(
             firstAvailable = available;
         }
 
-        if (available >= required)
+        if (available < required)
+            continue;
+
+        for (const auto& obstacleEntry : impl_->obstacles)
         {
-            result.traversable = true;
-            result.regionId = regionId;
-            result.availableClearanceMeters = available;
-            return result;
+            ++result.obstaclesExamined;
+            const auto& obstacle = obstacleEntry.second;
+            if (pointInsideNavigationObstacle(
+                    toGlm(query.pointMapMeters),
+                    obstacle,
+                    query.envelope.radiusMeters,
+                    query.envelope.additionalClearanceMeters))
+            {
+                result.regionId = regionId;
+                result.availableClearanceMeters = available;
+                result.blockingObstacleId = obstacle.id;
+                result.blockingObstacleEntityId = obstacle.entityId;
+                return result;
+            }
         }
+
+        result.traversable = true;
+        result.regionId = regionId;
+        result.availableClearanceMeters = available;
+        return result;
     }
 
     result.regionId = firstContaining;
     result.availableClearanceMeters = firstAvailable;
+    return result;
+}
+
+NavigationSpace::SegmentQueryResult NavigationSpace::querySegment(
+    const SegmentQuery& query
+) const
+{
+    // Validate the envelope even when no region/obstacle happens to be present.
+    (void)requiredClearance(query.envelope);
+
+    SegmentQueryResult result;
+    result.spaceRevision = impl_->spaceRevision;
+    result.sourceRevision = impl_->sourceRevision;
+
+    PointQuery startQuery;
+    startQuery.pointMapMeters = query.startMapMeters;
+    startQuery.envelope = query.envelope;
+    const PointQueryResult start = queryPoint(startQuery);
+    result.regionsExamined += start.regionsExamined;
+    result.obstaclesExamined += start.obstaclesExamined;
+    result.startRegionId = start.regionId;
+    if (!start.traversable)
+    {
+        result.blockingObstacleId = start.blockingObstacleId;
+        result.blockingObstacleEntityId = start.blockingObstacleEntityId;
+        return result;
+    }
+
+    PointQuery endQuery;
+    endQuery.pointMapMeters = query.endMapMeters;
+    endQuery.envelope = query.envelope;
+    const PointQueryResult end = queryPoint(endQuery);
+    result.regionsExamined += end.regionsExamined;
+    result.obstaclesExamined += end.obstaclesExamined;
+    result.endRegionId = end.regionId;
+    if (!end.traversable)
+    {
+        result.blockingObstacleId = end.blockingObstacleId;
+        result.blockingObstacleEntityId = end.blockingObstacleEntityId;
+        return result;
+    }
+
+    if (query.requireSameRegion &&
+        result.startRegionId != result.endRegionId)
+    {
+        return result;
+    }
+
+    for (const auto& obstacleEntry : impl_->obstacles)
+    {
+        ++result.obstaclesExamined;
+        const auto& obstacle = obstacleEntry.second;
+        if (segmentIntersectsNavigationObstacle(
+                toGlm(query.startMapMeters),
+                toGlm(query.endMapMeters),
+                obstacle,
+                query.envelope.radiusMeters,
+                query.envelope.additionalClearanceMeters))
+        {
+            result.blockingObstacleId = obstacle.id;
+            result.blockingObstacleEntityId = obstacle.entityId;
+            return result;
+        }
+    }
+
+    result.traversable = true;
     return result;
 }
 
@@ -1432,6 +1580,7 @@ NavigationSpace::Stats NavigationSpace::stats() const noexcept
     result.sourceRevision = impl_->sourceRevision;
     result.regionCount = impl_->regions.size();
     result.portalCount = impl_->portals.size();
+    result.obstacleCount = impl_->obstacles.size();
 
     for (const auto& entry : impl_->regions)
     {

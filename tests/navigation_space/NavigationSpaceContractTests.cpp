@@ -126,6 +126,25 @@ Space::AgentEnvelope envelope(double radius, double extra = 0.0)
     return {radius, extra};
 }
 
+world::navigation::NavigationObstacle boxObstacle(
+    const std::string& id,
+    std::uint32_t entityId,
+    const glm::dvec3& center,
+    const glm::dvec3& halfExtents,
+    const glm::dmat3& basis = glm::dmat3(1.0)
+)
+{
+    world::navigation::NavigationObstacle obstacle;
+    obstacle.id = id;
+    obstacle.entityId = entityId;
+    obstacle.shape =
+        world::navigation::NavigationObstacleShape::Box;
+    obstacle.centerMeters = center;
+    obstacle.localToWorldBasis = basis;
+    obstacle.halfExtentsMeters = halfExtents;
+    return obstacle;
+}
+
 void testPointClearanceAndEnvelope()
 {
     Space space;
@@ -368,6 +387,105 @@ void testTurnCostZigzagVsSmooth()
             "negative turn penalty must be rejected by policy validation");
 }
 
+void testExactStaticObbBlocksPointAndSegment()
+{
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 60;
+    update.regions = {
+        regionBox(1, 50.0, 0.0, 0.0, 60.0, 30.0, 30.0, 30.0)
+    };
+
+    glm::dmat3 basis(1.0);
+    const double c = std::sqrt(0.5);
+    basis[0] = glm::dvec3(c, c, 0.0);
+    basis[1] = glm::dvec3(-c, c, 0.0);
+    basis[2] = glm::dvec3(0.0, 0.0, 1.0);
+
+    update.obstacles.push_back(
+        boxObstacle(
+            "rotated_wall",
+            700,
+            glm::dvec3(50.0, 0.0, 0.0),
+            glm::dvec3(4.0, 12.0, 8.0),
+            basis
+        )
+    );
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    const auto stats = space.stats();
+    require(stats.obstacleCount == 1,
+            "NavigationSpace must retain exact static obstacle count");
+
+    Space::PointQuery point;
+    point.pointMapMeters = {50.0, 0.0, 0.0};
+    point.envelope = envelope(1.0);
+    const auto pointResult = space.queryPoint(point);
+    require(!pointResult.traversable &&
+            pointResult.blockingObstacleId == "rotated_wall" &&
+            pointResult.blockingObstacleEntityId == 700,
+            "inflated exact OBB must reject an occupied point with blocker identity");
+
+    Space::SegmentQuery segment;
+    segment.startMapMeters = {0.0, 0.0, 0.0};
+    segment.endMapMeters = {100.0, 0.0, 0.0};
+    segment.envelope = envelope(1.0);
+    const auto segmentResult = space.querySegment(segment);
+    require(!segmentResult.traversable &&
+            segmentResult.blockingObstacleId == "rotated_wall",
+            "segment through rotated exact OBB must fail static proof");
+}
+
+void testExactObbGapAdmitsOnlyFittingEnvelope()
+{
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 61;
+    update.regions = {
+        regionBox(1, 50.0, 0.0, 0.0, 60.0, 20.0, 20.0, 20.0)
+    };
+
+    const auto lower = boxObstacle(
+        "gap_lower",
+        701,
+        glm::dvec3(50.0, -5.0, 0.0),
+        glm::dvec3(10.0, 3.0, 10.0)
+    );
+    const auto upper = boxObstacle(
+        "gap_upper",
+        702,
+        glm::dvec3(50.0, 5.0, 0.0),
+        glm::dvec3(10.0, 3.0, 10.0)
+    );
+
+    // Each enclosing sphere covers the centreline. A sphere-only static model
+    // would therefore erase this real 4 m aperture.
+    require(lower.conservativeRadiusMeters() > 5.0 &&
+            upper.conservativeRadiusMeters() > 5.0,
+            "gap fixture must be impossible to represent by conservative spheres");
+
+    update.obstacles = {lower, upper};
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    Space::SegmentQuery throughGap;
+    throughGap.startMapMeters = {0.0, 0.0, 0.0};
+    throughGap.endMapMeters = {100.0, 0.0, 0.0};
+    throughGap.envelope = envelope(0.9);
+
+    const auto fitting = space.querySegment(throughGap);
+    require(fitting.traversable,
+            "exact OBB layer must preserve a gap that a fitting agent can traverse");
+
+    throughGap.envelope = envelope(2.01);
+    const auto oversized = space.querySegment(throughGap);
+    require(!oversized.traversable,
+            "same exact OBB gap must reject an oversized agent envelope");
+    require(!oversized.blockingObstacleId.empty(),
+            "oversized gap rejection must retain exact blocker identity");
+}
+
 void testLocalInvalidationAndPatch()
 {
     Space space;
@@ -463,6 +581,8 @@ int main()
         testWallApertureAdmission();
         testCostedCanyonVsOverflight();
         testTurnCostZigzagVsSmooth();
+        testExactStaticObbBlocksPointAndSegment();
+        testExactObbGapAdmitsOnlyFittingEnvelope();
         testLocalInvalidationAndPatch();
         testTransactionalValidation();
 
@@ -473,6 +593,8 @@ int main()
         std::cout << " - explicit wall apertures admit only fitting agents\n";
         std::cout << " - costed routing can choose canyon or overflight by policy\n";
         std::cout << " - turn-aware routing can prefer a smoother static branch\n";
+        std::cout << " - exact static OBBs reject occupied points/segments\n";
+        std::cout << " - exact OBB gap survives overlapping conservative spheres\n";
         std::cout << " - narrow portals reject oversized agents\n";
         std::cout << " - disconnected regions fail closed\n";
         std::cout << " - local invalidation and transactional patching work\n";

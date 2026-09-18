@@ -3,12 +3,12 @@
 **Updated:** 2026-09-18  
 **Canonical branch:** `main`  
 **Navigation:** Navigation v2 / shared NavigationWorld  
-**Active stage:** stage 10 — deterministic `PilotSkillProfile` execution
+**Active stage:** 11A — live runtime control seam
 
 ## Progress
 
 ```text
-[██████████████████░░░░░] 9 / 12 major stages closed
+[████████████████████░░░] 10 / 12 major stages closed
 
 1  NavigationMap / mass dynamic P/V/A               ACCEPTED
 2  NavigationSpace / global corridors               ACCEPTED
@@ -19,174 +19,134 @@
 7  moving gap prediction                             ACCEPTED
 8  continuous ship passage through moving gap        ACCEPTED
 9  moving/rotating docking 6DoF                      ACCEPTED
-   9A terminal 6DoF capture                          ACCEPTED
-   9B continuous final docking approach              ACCEPTED
-10 PilotSkillProfile                                 ACTIVE
-11 live game/server/guidance + physics hookup         PENDING
+10 deterministic PilotSkillProfile execution         ACCEPTED
+11 live game/server/guidance + physics hookup         ACTIVE
+   11A runtime control seam                           ACTIVE
+   11B authoritative NPC/guidance ownership           PENDING
 12 end-to-end stress/debug + legacy retirement        PENDING
 ```
 
-## Closed foundation performance
+## Latest accepted gate — stage 10
+
+Target-machine evidence:
 
 ```text
-NavigationMap CPU compact queries            <0.2 ms p95
-NavigationMap GPU 10k heavy scene            <1.7 ms p95
-NavigationSpace 10k turn-aware corridor      ~12 ms p95 (<40 ms worker gate)
-LocalAvoidance deliberate 1024 x 17 stress   519.9286 us p95
-BoundedGap top8_1024                          24.0699 us p95
-Continuous static full_precision_batch8       41.3527 us p95
-```
-
-## Accepted precision/control primitives
-
-```text
-BoundedGapCandidateBuilder
-OrientedPassageEvaluator
-AttitudeReachabilityEvaluator
-EmergencyPassageMitigator
-ContinuousPassageTrajectoryEvaluator
-EmergencyContactSeverityScorer
-MovingGapPredictor
-MovingPassageTrajectoryEvaluator
-DockingTerminalEvaluator
-DockingApproachEvaluator
-```
-
-Accepted invariant:
-
-```text
-no collision-free proof != no navigation command
-```
-
-Exact CCD/TOI/manifold/impulse/ricochet remain physics authority.
-
-## Latest accepted gate — docking stage 9
-
-Stage 9A:
-
-```text
-835271539619b7dd02efc54ff54df51d64b49fce
-NAVIGATION TRAJECTORY DOCKING TERMINAL CONTRACT: PASS
-9/9 CTest PASS
-```
-
-Stage 9B final rerun:
-
-```text
-c90a66d6c64bdf3acc037208a000b1955d40e6c3
-NAVIGATION TRAJECTORY DOCKING APPROACH CONTRACT: PASS
-10/10 CTest PASS
+b042321b65084950aa91784a5e02344430e5c2bc
+NAVIGATION PILOT SKILL CONTRACT: PASS
+11/11 navigation_trajectory CTest PASS
 100% tests passed
 ```
 
-The first 9B failure remains documented as a repaired regression-fixture error. The production continuous verifier was not weakened. Moving/rotating docking mathematics is now closed.
+`PilotSkillExecutor` is accepted/frozen unless live composition exposes a defect.
 
-## Active candidate — `PilotSkillExecutor`
+Accepted execution semantics:
+
+```text
+reaction delay
+decision cadence / sample-and-hold
+command latency
+second-order gain/damping response
+linear/angular command slew
+seeded deterministic command-space error
+urgent-emergency reaction shortening
+```
+
+Pilot skill does not alter geometry, vehicle capability, capture tolerances, collision equations or physics truth.
+
+## Accepted trajectory/control chain
+
+```text
+NavigationWorld / NavigationSpace / NavigationMap
+    -> LocalHorizon / LocalAvoidance
+    -> oriented passage / bounded gap
+    -> attitude reachability
+    -> continuous passage
+    -> emergency mitigation / contact severity
+    -> moving gap / moving passage
+    -> terminal + continuous moving/rotating docking
+    -> PilotSkillExecutor
+```
+
+## Active stage 11A — live runtime control seam
 
 Authority:
 
 ```text
-src/world/navigation/PILOT_SKILL_MODEL.md
-src/world/navigation/control/PilotSkillExecutor.h
-src/world/navigation/control/PilotSkillExecutor.cpp
+src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md
 ```
 
-Purpose:
+New runtime seam:
 
 ```text
-ideal accepted control intent
-    -> reaction delay
-    -> decision/sample cadence
-    -> command latency
-    -> deterministic precision error
-    -> gain / damping / slew response
-    -> executed acceleration demand
+NavigationRuntimeControlBridge
+    ideal Navigation v2 acceleration intent
+    -> accepted PilotSkillExecutor
+    -> ShipControlState direct navigation demand
+    -> SharedShipPhysics / ShipController / DynamicMotionSystem
+    -> authoritative fixed-step motion
 ```
 
-Pilot skill never changes:
+### Explicit ShipControlState channel
 
 ```text
-world geometry
-hull dimensions
-vehicle capability
-capture tolerances
-collision equations
-physics truth
+navigationAccelerationDemandValid
+navigationLinearAccelerationDemandMapMps2
+navigationAngularAccelerationDemandMapRadPerSec2
+navigationIntentRevision
 ```
 
-### Execution profile
+These are demands, not applied motion.
+
+### Angular path
+
+World angular acceleration demand is projected onto current ship right/up/forward axes and then constrained by the existing:
 
 ```text
-reactionDelaySeconds
-perceptionDecisionRateHz
-commandLatencySeconds
-responseFrequencyHz
-dampingRatio
-commandGain
-linear/angular command slew
-deterministic command-space error + seed
-emergency response threshold / delay scale
+angularAccel
+maxPitchRate / maxYawRate / maxRollRate
+maxGs / turnRadius envelope
+existing overspeed recovery rules
 ```
 
-### Policy profile
+Material manual attitude input wins.
+
+### Linear path
+
+In HubTactical live motion, direct world acceleration demand is split into:
 
 ```text
-anticipationSeconds
-riskPreference01
-comfortPreference01
+positive forward component
+    -> forward-only main engine
+    -> maxLinearGs/maxGs limit
+
+remaining vector
+    -> six-direction manoeuvre/RCS
+    -> manoeuvreThrusterAccel limit
 ```
 
-Policy fields are intentionally not consumed by the executor. They belong to upstream maneuver selection/live integration.
+Then existing `updateLocalFrameMotion()` still owns speed envelope, Newtonian/Assisted semantics, manoeuvre gas and actual integration.
 
-### Bounded/replay-safe design
+Material manual translation/cruise/jump/alignment input wins.
+
+### One execution snapshot
+
+The runtime bridge publishes the same executed demand used for control into `ExecutionSnapshot` with the same intent revision. Stage 11B will feed this same snapshot/revision to guidance/debug; presentation must not solve a second maneuver.
+
+## Physics boundary
 
 ```text
-fixed latency queue <= 256
-integration substeps <= 64
-step <= 0.25 s
-explicit time + dt consistency
-integer-hash deterministic noise
-no std::random
-no world scan
-no steady-state dynamic allocation
+Navigation       -> intent / prediction
+Pilot execution  -> delayed/imperfect command demand
+Flight control   -> real vehicle authority
+Physics          -> authoritative integration + CCD/TOI/manifold/impulse
+Damage           -> structural consequences
 ```
 
-### Pinned behavior
+Navigation never writes authoritative position, velocity or angular rate directly.
 
-```text
-reaction delay + latency
-decision cadence / sample-and-hold
-emergency shortened reaction
-same seed -> identical replay
-different seed -> deterministic variation
-critical damping -> little/no overshoot
-low damping -> overshoot/ringing
-poor profile -> repeated docking-like target crossings
-policy-only changes -> identical execution output
-```
+## Next
 
-## Ownership boundary
-
-```text
-Navigation / trajectory
-    truthful intent and feasibility
-
-PilotSkillExecutor
-    delayed/imperfect deterministic execution
-
-Flight control / thruster allocation
-    enforce real vehicle authority
-
-Physics / Collision
-    integrate real motion; CCD/TOI/manifold/impulse
-
-Damage / Structural
-    actual consequences
-```
-
-## Next after stage 10 acceptance
-
-1. close/freeze deterministic pilot execution;
-2. connect accepted navigation + pilot execution to live `EliteGame` / `EliteServer` / guidance and authoritative physics;
-3. run end-to-end stress/debug/performance;
-4. retire legacy route-wide navigation only after v2 owns the stable live path.
+1. target-machine 11A architecture + runtime-control + full canonical build gate;
+2. 11B replace placeholder NPC steering with Navigation v2 ownership and publish same intent/execution truth to guidance/debug;
+3. stage 12 end-to-end stress/debug/performance;
+4. retire legacy navigation only after stable live ownership.

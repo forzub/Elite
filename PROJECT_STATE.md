@@ -55,8 +55,10 @@ conservative bounding spheres may not erase a genuine OBB aperture. A fitting
 agent crosses; an oversized envelope fails.
 
 The live NAV STRESS fixture publishes the same HitVolume OBBs in the
-NavigationMap working frame after authoritative transforms/HitVolume rebuild,
-and the server self-test requires positive exact-static publication evidence.
+NavigationMap working frame after authoritative transforms/HitVolume rebuild.
+The server self-test requires publication, non-zero exact-static query work and
+an observed nominal static block, so live PASS cannot be satisfied by merely
+storing unused OBB data.
 
 For this intermediate gate, static objects remain in the existing
 NavigationMap sphere candidate set as well. Removing those static spheres is a

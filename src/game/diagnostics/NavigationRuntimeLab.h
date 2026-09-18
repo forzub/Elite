@@ -95,6 +95,8 @@ struct NavigationRuntimeLabObservation
 
     double maximumExecutedLinearDemandMps2 = 0.0;
     double maximumExecutedLateralDemandMps2 = 0.0;
+
+    glm::dvec3 lastExecutedLinearDemandMapMps2 {0.0};
 };
 
 } // namespace game::diagnostics

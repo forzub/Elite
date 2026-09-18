@@ -3,7 +3,7 @@
 **Status:** current architecture contract  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Current stage:** stage 10 — deterministic `PilotSkillProfile` execution
+**Current stage:** stage 11A — live runtime control seam
 
 `main` is the only canonical development branch.
 
@@ -505,7 +505,7 @@ but the analytic curve exits between samples
 
 The implementation's continuous proof was not weakened. The repaired rerun on `c90a66d6c64bdf3acc037208a000b1955d40e6c3` passed the architecture contract and all 10/10 trajectory tests. Stage 9B and the complete docking stage are accepted.
 
-## 10. NPC pilot skill — ACTIVE
+## 10. NPC pilot skill — ACCEPTED
 
 Authority:
 
@@ -545,7 +545,41 @@ no std::random
 
 Pinned stage-10 fixtures include replay identity, decision/latency timing, emergency reaction, damping overshoot, a poor-pilot docking-like oscillation, and proof that policy-only preference changes do not alter execution.
 
-## 11. Performance contract
+Target-machine stage-10 acceptance:
+
+```text
+b042321b65084950aa91784a5e02344430e5c2bc
+NAVIGATION PILOT SKILL CONTRACT: PASS
+11/11 trajectory/pilot CTest PASS
+```
+
+## 11. Live integration — ACTIVE
+
+Authority:
+
+```text
+src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md
+```
+
+Stage 11A introduces one explicit runtime control seam:
+
+```text
+Navigation intent
+    -> NavigationRuntimeControlBridge
+    -> PilotSkillExecutor
+    -> ShipControlState navigation acceleration demand
+    -> SharedShipPhysics / ShipController / DynamicMotionSystem
+```
+
+The direct demand is not a physics override. Angular demand is clamped by the existing ship angular authority. Linear demand maps onto the real forward-only main engine plus bounded manoeuvre thrusters, then passes through existing speed/resource integration.
+
+Material manual controls override the corresponding navigation demand.
+
+`ExecutionSnapshot` mirrors the exact executed demand/revision sent to control. Stage 11B must use this same truth for guidance/debug instead of re-solving a presentation path.
+
+Stage 11B will replace the current placeholder NPC steering authority with Navigation v2 runtime ownership while keeping NPC AI as goal/policy input.
+
+## 12. Performance contract
 
 ```text
 main-thread navigation CPU       <0.5 ms typical
@@ -566,7 +600,7 @@ Guidance visualizes the accepted navigation/trajectory/control intent; it must n
 ## 13. Progress / roadmap
 
 ```text
-[██████████████████░░░░░] 9 / 12 major stages closed
+[████████████████████░░░] 10 / 12 major stages closed
 
 1  NavigationMap / mass dynamic P/V/A               CLOSED
 2  NavigationSpace / global corridors               CLOSED
@@ -579,8 +613,10 @@ Guidance visualizes the accepted navigation/trajectory/control intent; it must n
 9  moving/rotating docking 6DoF                      CLOSED
    9A terminal capture                               CLOSED
    9B continuous final approach                      CLOSED
-10 PilotSkillProfile                                 ACTIVE
-11 live EliteGame / EliteServer / guidance + physics PENDING
+10 PilotSkillProfile                                 CLOSED
+11 live EliteGame / EliteServer / guidance + physics ACTIVE
+   11A runtime control seam                           ACTIVE
+   11B NPC/guidance authoritative ownership           PENDING
 12 end-to-end stress/debug + legacy retirement       PENDING
 ```
 

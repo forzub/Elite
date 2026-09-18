@@ -63,6 +63,19 @@ GameSimulation execution snapshot
 
 Stable route-executor identity uses `ShipInstanceId`, while current runtime binding retains `EntityId`. The client mirror is read-only to planning code and updates only on accepted server snapshot ticks. An absent execution costs exactly one variant-tag byte.
 
+## Stage 12A-1 candidate
+
+A shared `NavigationRuntimePlanner` now composes:
+- `NavigationSpace::queryCostedCorridor()`;
+- ordered selected portal steering centers;
+- `LocalHorizonPlanner`;
+- `LocalAvoidancePlanner`;
+- accepted `NavigationRuntimeControlBridge::Intent`.
+
+`EliteNavigationWorldRuntime` is linked into both canonical production executables. Runtime tests pin static detour waypoint selection, hull-envelope rejection, moving-conflict braking and passage through the accepted pilot bridge.
+
+This candidate still requires a target-machine gate before it is connected to authoritative `GameSimulation` and the real proving-ground geometry publisher.
+
 ## Stage 12
 
 Authority:

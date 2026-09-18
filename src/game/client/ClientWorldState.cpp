@@ -535,6 +535,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
             state.transform       = s.transform;
             state.referenceFrame  = s.referenceFrame;
+            state.navigationExecution = s.navigationExecution;
             applyReferenceFrameState(state.transform, state.referenceFrame);
             state.renderTransform = state.transform;
             state.renderReferenceFrame = state.referenceFrame;
@@ -603,6 +604,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.motionLabKind = s.motionLabKind;
             state.transform = s.transform;
             state.referenceFrame = s.referenceFrame;
+            state.navigationExecution = s.navigationExecution;
             applyReferenceFrameState(state.transform, state.referenceFrame);
             state.receptions = s.receptions;
             state.radarContacts = s.radarContacts;

@@ -117,7 +117,6 @@ public:
     {
         NominalClear = 0,
         AdjustedClear,
-        MovingPassageClear,
         ConflictHold,
         StaleHold,
         StaticHold,
@@ -164,7 +163,7 @@ public:
         std::uint32_t nominalStaticObstacleEntityId = 0;
 
         bool movingPrecisionAttempted = false;
-        bool movingPassageAccepted = false;
+        bool movingPassageFeasible = false;
         std::size_t movingGapCandidatesBuilt = 0;
         std::size_t movingGapPredictionsEvaluated = 0;
         std::size_t movingPassagesEvaluated = 0;

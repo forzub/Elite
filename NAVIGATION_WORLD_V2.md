@@ -4,7 +4,7 @@
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Canonical branch:** `main`  
 **Current stage:** stage 12A — deterministic end-to-end runtime proving ground  
-**Current slice:** 12A-6b1 — runtime moving-gap / moving-passage observe-prove composition
+**Current slice:** 12A-6b2 — continuous exact-static proof of the accepted moving Hermite trajectory
 
 `main` is the only canonical development branch.
 

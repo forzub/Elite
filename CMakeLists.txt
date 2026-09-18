@@ -124,6 +124,22 @@ target_include_directories(EliteNavigationGeometry PUBLIC
     "${CMAKE_SOURCE_DIR}/src"
 )
 
+# Navigation v2 live composition. This target owns the accepted dynamic map,
+# static free-space topology, bounded local avoidance and the runtime planner
+# that converts those products into PilotSkillExecutor intent. It is shared by
+# client and headless server so Stage 12 cannot drift into two planners.
+add_library(EliteNavigationWorldRuntime STATIC
+    src/world/navigation/map/NavigationMap.cpp
+    src/world/navigation/space/NavigationSpace.cpp
+    src/world/navigation/local/LocalHorizonPlanner.cpp
+    src/world/navigation/local/LocalAvoidancePlanner.cpp
+    src/game/navigation/NavigationRuntimePlanner.cpp
+)
+target_include_directories(EliteNavigationWorldRuntime PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+
 # Shared CPU-side authored/runtime assembly geometry. This is intentionally not
 # a render library: it owns OBJ hydration, authored assembly definitions and the
 # CPU cache consumed by authoritative simulation and client presentation.
@@ -683,6 +699,7 @@ if(ELITE_BUILD_SERVER)
 
     target_link_libraries(EliteServer PRIVATE
         EliteNavigationGeometry
+        EliteNavigationWorldRuntime
         EliteNavigationRuckig
         EliteAssemblyGeometry
         EliteRuntimeModelAssets
@@ -1002,6 +1019,7 @@ target_include_directories(EliteGame PRIVATE
 target_link_libraries(EliteGame PRIVATE
     EliteModelAsset
     EliteNavigationGeometry
+    EliteNavigationWorldRuntime
     EliteNavigationRuckig
     EliteAssemblyGeometry
     EliteRuntimeModelAssets

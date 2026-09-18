@@ -975,3 +975,39 @@ Pinned runtime cases now include:
 This slice remains diagnostic-only. The verified first acceleration sample is
 still forbidden from replacing LocalAvoidance steering until 12A-6b2 receives a
 green target-machine gate.
+
+
+#### 12A-6b2 first target-machine gate — failed before behavioral tests
+
+Candidate `8c30ebc1c7a724c06113b5b1e4704a7a172b6d93` produced:
+
+```text
+Stage-12 architecture contract   PASS
+navigation_trajectory            COMPILE FAIL
+navigation_runtime               COMPILE FAIL
+navigation_map                   1/1 PASS
+full production build            COMPILE FAIL
+```
+
+The failure occurred before the new behavioral fixtures could execute.
+
+Root cause:
+- the header declared `TrajectoryWitness` but omitted
+  `TrajectoryWitness trajectory {}` from `MovingPassageTrajectoryEvaluator::Result`;
+- runtime static-proof query endpoints used braced assignment rejected by the
+  target MinGW compiler.
+
+The shell continued after build failure, so the later
+`EliteServer --self-test-navigation` PASS was a stale previously built binary
+and is explicitly not counted as 12A-6b2 evidence.
+
+Corrective code/contract baseline:
+
+```text
+52a5fa9e239d8ea00923cbb65a293cca5863567b
+```
+
+The architecture script now also requires `TrajectoryWitness trajectory` in
+the public result contract, preventing this exact structural omission from
+passing again. The safety model and observe-only authority boundary are
+unchanged.

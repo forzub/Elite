@@ -720,3 +720,61 @@ New regressions pin:
 Target-machine acceptance is pending. The last accepted Stage-12 baseline
 remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`; the later
 `777716f...` run is retained as failed evidence, not acceptance.
+
+
+## 12A-6b3b target-machine gate on e432363 — MOVING PASSAGE REJECTED
+
+Target-machine baseline:
+
+```text
+e432363717d6bff49aaef35d34fac61cfe802903
+```
+
+Green evidence:
+- Stage-12 architecture contract PASS;
+- navigation_space 1/1 PASS;
+- navigation_runtime 3/3 PASS;
+- navigation_trajectory 11/11 PASS;
+- canonical EliteGame and EliteServer build PASS;
+- static slit fixture is now physically valid: `slit_exact_open=1`;
+- physical exact-static sweep stayed clean: `exact_static_violation=0`;
+- both intended moving actors were published and their kinematics verified.
+
+The live run did not progress because the current test required the ordinary
+free-space encounter to become a precision MovingPassage between the two moving
+actors. The evaluator correctly rejected that geometry:
+
+```text
+moving_gap_pair=1
+moving_gap_kinematics=1
+moving_passage_feasible=0
+moving_eval_status=2   # GeometryBlocked
+moving_sample_clearance_m=-110.435
+moving_passage_authority=0
+conflict_hold=1
+progress_m=0.0343542
+simulated_s=120
+```
+
+This is not a tunnel/collision failure. It exposes a routing-policy problem:
+when free space exists around a pair of obstacles, normal transit should not be
+forced to prove a narrow moving passage between them.
+
+Architecture decision from user review:
+- default local transit becomes bounded line-of-sight / visibility steering;
+- always start from the direct A->B direction;
+- look only through the current physical horizon, sized by braking/turning and
+  safety margin;
+- if that corridor is blocked, increase the deflection only until a hull-sized
+  safe corridor is found;
+- on every receding-horizon update, retry direct A->B first and immediately
+  return to it when visibility is restored;
+- dynamic actors use their predicted swept volume inside the same bounded
+  horizon;
+- MovingPassage remains a precision mode only when passage is topologically or
+  semantically mandatory: authored portal/tunnel, docking mouth, ravine, narrow
+  gate, etc.
+
+Current task changes from "force live MovingPassage authority through the free
+moving pair" to "prove bounded visibility steering around the free moving pair,
+then use the already-authored oriented portal capture for the mandatory tunnel."

@@ -17,7 +17,7 @@ The migration goal is **not** a rewrite. Preserve accepted world/geometry/contro
 | B2 Navigation Objective | NavigationRuntimePlanner::Goal, NpcNavigationGoal, task-specific target structs | FRAGMENTED | unify after execution seam is clean |
 | B3 Topology Route | NavigationSpace corridor/portals | KEEP / INCOMPLETE | add coarse vehicle-feasibility metadata later |
 | B4 Local Corridor | LocalHorizonPlanner + LocalAvoidancePlanner visibility fan | TRANSITIONAL | introduce RouteAlignedCorridorPlanner beside it; A/B before removal |
-| B5 Maneuver Compiler | ordinary path missing; precision MovingPassage evaluator partly fills role | MISSING | create general bounded physical maneuver generation |
+| B5 Maneuver Compiler | OrdinaryPhysicalManeuverCompiler (Newtonian first slice) + precision MovingPassage precursor | ISOLATED GREEN / REVISED CANDIDATE | rerun after main-engine-option ownership correction, then feed exact candidate to B6 |
 | B6 Continuous Prover | MovingPassageTrajectoryEvaluator + exact-static same-Hermite proof inside NavigationRuntimePlanner | GOOD PARTS / MIXED OWNER | extract general proof API |
 | B7 Maneuver Decision | ManeuverDecisionController | EXISTS / BYPASSED | feed ordinary proved candidates through it |
 | B8 Program Acceptance | AcceptedShortSegment + packing in GameSimulation | DEFECT / TRANSITIONAL | first migration target: AcceptedManeuverProgram |
@@ -480,3 +480,43 @@ Code/contract baseline before documentation commits:
 B5 isolated target-machine gate is pending. No live integration is performed in
 this B5 slice; B6 continuous proof remains mandatory before B5 candidates may
 cross B8 ACCEPT.
+
+
+## B5 first target-machine gate green; main-engine option ownership correction
+
+Fresh target-machine evidence supplied:
+- architecture contract PASS: 0.191 s;
+- navigation_runtime: 10/10 PASS;
+- ordinary_physical_maneuver_compiler: PASS;
+- 10,000 B5 compiles: 30,495 us total = 3,049.5 ns/compile;
+- navigation_work_scheduler 5000 actors: 2,801 us total;
+- EliteGame / EliteServer BUILD PASS;
+- production build: 23.544 s.
+
+No exact `git rev-parse HEAD` line was included in this supplied excerpt, so
+the tested B5 gate is recorded by evidence without inventing a hash.
+
+Architecture correction after the green gate:
+the first compiler only emitted LeadRotateMainBurn when direct body-axis/RCS
+feed-forward was already infeasible. That is safe but too narrow for the
+accepted Newtonian control model.
+
+Correct ownership is:
+- B5 generates both RCS Trim and main-engine LeadRotateMainBurn when both are
+  physically possible;
+- B6 proves both;
+- B7 planner-side decision chooses the maneuver according to doctrine/objective;
+- B9/B10 follower never substitutes engines or invents a hull reorientation.
+
+For a main-engine-dominant Newtonian craft, main engine remains the normal
+translation authority for material delta-v; RCS is precision/trim authority.
+
+Revised unverified candidate adds:
+- `mainEngineCandidateAvailable`;
+- main-engine candidate generation even when Trim is feasible;
+- regression
+  `testRcsFeasibleLateralChangeStillExposesMainEngineOption`;
+- architecture lock that B5 exposes alternatives while B7 retains selection
+  ownership.
+
+This correction must receive a short isolated rerun before B6 work begins.

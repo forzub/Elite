@@ -5382,3 +5382,25 @@ All Newtonian/Assisted FLY3D rows are numerically identical, including Competent
 Conclusion: continuous 3D fly-through is accepted as an execution/corridor capability. It is not a discriminator between Newtonian and Assisted laws.
 
 Next active stage is speed/doctrine coverage with physically distinct candidate maneuvers and real selected-program execution.
+
+
+## 2026-09-20 — B7 speed/doctrine execution matrix candidate
+
+The original block audit identifies B7 Maneuver Decision as a remaining execution-chain gap: `ManeuverDecisionController` exists, but ordinary live navigation does not yet prove a full doctrine-select -> accepted-program -> real-execution path.
+
+A new runtime regression now constructs six physical candidate programs for the same 180 m objective and feeds their measured/annotated tradeoffs into B7.
+
+Expected choices:
+- Rational -> balanced;
+- PrecisionRetrieval -> precision;
+- Extreme/Newtonian -> Newtonian-only high-slip drift dash;
+- Extreme/Assisted -> common fast path after law filtering;
+- CombatEscape -> low-threat escape;
+- a faster `criticalRisk=0.90` reckless shortcut remains rejected above doctrine while preferred-risk choices exist.
+
+Every selected `AcceptedManeuverProgram` is then executed through TrajectoryFollower/B10, PilotSkill and authoritative physics with full-hull obstacle clearance and terminal-state checks.
+
+CTest target: `maneuver_speed_doctrine_matrix`.
+Expected runtime suite size: 17.
+
+This is an unverified candidate until exact target-machine evidence is recorded.

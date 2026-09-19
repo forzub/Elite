@@ -680,6 +680,15 @@ int runNavigationRuntimeSelfTest()
             observation.exactStaticMotionSamples > 0 &&
             !observation.exactStaticViolationSeen &&
             observation.planCount > 0 &&
+            observation.schedulerEnqueueAcceptedCount > 0 &&
+            observation.schedulerDispatchCount > 0 &&
+            observation.schedulerCompletedCurrentCount ==
+                observation.schedulerDispatchCount &&
+            observation.schedulerCompletedStaleCount == 0 &&
+            observation.schedulerDispatchCount == observation.planCount &&
+            observation.schedulerMaximumPendingJobs == 1 &&
+            observation.schedulerMaximumInFlightJobs == 1 &&
+            observation.schedulerPlannerMaximumMicroseconds > 0.0 &&
             observation.executionCount > 0 &&
             observation.dynamicQueryCount > 0 &&
             observation.maximumDynamicCandidateCount >= 2 &&
@@ -710,6 +719,32 @@ int runNavigationRuntimeSelfTest()
             << "[NAV-SELFTEST]"
             << " simulated_s=" << simulatedSeconds
             << " plans=" << observation.planCount
+            << " scheduler_enqueued="
+            << observation.schedulerEnqueueAcceptedCount
+            << " scheduler_replaced="
+            << observation.schedulerEnqueueReplacedCount
+            << " scheduler_duplicates="
+            << observation.schedulerEnqueueDuplicateCount
+            << " scheduler_stale_enqueue="
+            << observation.schedulerEnqueueStaleCount
+            << " scheduler_dispatched="
+            << observation.schedulerDispatchCount
+            << " scheduler_completed_current="
+            << observation.schedulerCompletedCurrentCount
+            << " scheduler_completed_stale="
+            << observation.schedulerCompletedStaleCount
+            << " scheduler_max_pending="
+            << observation.schedulerMaximumPendingJobs
+            << " scheduler_max_inflight="
+            << observation.schedulerMaximumInFlightJobs
+            << " scheduler_dispatch_total_us="
+            << observation.schedulerDispatchTotalMicroseconds
+            << " scheduler_dispatch_max_us="
+            << observation.schedulerDispatchMaximumMicroseconds
+            << " scheduler_planner_total_us="
+            << observation.schedulerPlannerTotalMicroseconds
+            << " scheduler_planner_max_us="
+            << observation.schedulerPlannerMaximumMicroseconds
             << " executions=" << observation.executionCount
             << " obstacle_candidate="
             << observation.obstacleCandidateSeen
@@ -1314,6 +1349,32 @@ int runNavigationRuntimeSelfTest()
         << "[NAV-SELFTEST]"
         << " simulated_s=" << simulatedSeconds
         << " plans=" << observation.planCount
+        << " scheduler_enqueued="
+        << observation.schedulerEnqueueAcceptedCount
+        << " scheduler_replaced="
+        << observation.schedulerEnqueueReplacedCount
+        << " scheduler_duplicates="
+        << observation.schedulerEnqueueDuplicateCount
+        << " scheduler_stale_enqueue="
+        << observation.schedulerEnqueueStaleCount
+        << " scheduler_dispatched="
+        << observation.schedulerDispatchCount
+        << " scheduler_completed_current="
+        << observation.schedulerCompletedCurrentCount
+        << " scheduler_completed_stale="
+        << observation.schedulerCompletedStaleCount
+        << " scheduler_max_pending="
+        << observation.schedulerMaximumPendingJobs
+        << " scheduler_max_inflight="
+        << observation.schedulerMaximumInFlightJobs
+        << " scheduler_dispatch_total_us="
+        << observation.schedulerDispatchTotalMicroseconds
+        << " scheduler_dispatch_max_us="
+        << observation.schedulerDispatchMaximumMicroseconds
+        << " scheduler_planner_total_us="
+        << observation.schedulerPlannerTotalMicroseconds
+        << " scheduler_planner_max_us="
+        << observation.schedulerPlannerMaximumMicroseconds
         << " executions=" << observation.executionCount
         << " obstacle_candidate="
         << observation.obstacleCandidateSeen
@@ -1481,7 +1542,8 @@ int runNavigationRuntimeSelfTest()
         << " recovered the direct route after the moving obstacle pair,"
         << " portal capture aligned flight path + hull axis before entry,"
         << " the ship crossed the exact-static tunnel collision-free,"
-        << " and execution matched same-tick sparse/canonical replication\n";
+        << " execution matched same-tick sparse/canonical replication,"
+        << " and every live planner call crossed B14 dispatch/commit authority\n";
     return 0;
 }
 

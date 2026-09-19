@@ -140,6 +140,15 @@ public:
         std::size_t candidateCount = 0;
 
         bool directBodyAxisFeasible = false;
+
+        // Candidate availability is separate from selection. For a
+        // main-engine-dominant Newtonian craft B5 exposes a main-engine option
+        // whenever a non-zero delta-v can be compiled, even when RCS/trim is
+        // also physically possible. B7 owns the final choice.
+        bool mainEngineCandidateAvailable = false;
+
+        // True only when the requested immediate acceleration cannot be
+        // produced inside the current body-axis feed-forward authority.
         bool leadRotateRequired = false;
     };
 

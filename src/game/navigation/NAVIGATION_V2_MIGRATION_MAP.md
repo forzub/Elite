@@ -900,3 +900,78 @@ Next task: compare three explicit corner-passage families on the same corridor:
 StopTurnGo, RadiusTurn and DriftTurn, under Newtonian and Assisted with identical
 pilot profiles. Total corridor time must be measured from a common entry gate to
 the same final terminal gate.
+
+
+## 2026-09-20 corner-family timing matrix candidate
+
+New code/architecture candidate before state-document commits:
+
+```text
+8f1397a919009d4ed5fdc84412506ba681b3059c
+```
+
+New target:
+`maneuver_corner_family_matrix`.
+
+Purpose: determine how the same rigid Cobra and same PilotSkill traverse the same
+90-degree L-shaped corridor under three distinct corner families and both local
+control laws.
+
+Common setup:
+- incoming gate: 60 m before mathematical vertex;
+- outgoing gate: 60 m after vertex;
+- corner-zone timing gates: 35 m before/after vertex;
+- initial speed: 10 m/s;
+- common rigid-hull corridor half-width: 32 m;
+- identical Cobra OBB and actuator model.
+
+Families:
+- StopTurnGo:
+  waypoint capture / near-stop / outgoing attitude / depart;
+- RadiusTurn:
+  coordinated continuous radius, material speed retained, small slip angle;
+- DriftTurn:
+  deliberate large body/velocity slip, material speed retained, physical
+  thrust bends velocity through the corner.
+
+Passage semantics:
+- touching the route vertex is not completion;
+- internal fixture phases hand off by accepted-program schedule;
+- corner passage is common entry-gate -> common exit-gate crossing;
+- final P/V/attitude error is measured at the common outgoing terminal gate.
+
+Matrix:
+- expert / production-competent / rookie;
+- Newtonian / Assisted;
+- StopTurnGo / RadiusTurn / DriftTurn;
+- total 18 rows.
+
+Per row:
+- validity/completion;
+- phase count;
+- total corridor time;
+- corner-zone time;
+- final P/V/forward error;
+- minimum speed in corner zone;
+- maximum body/velocity drift angle;
+- center cross-track;
+- rigid-hull required half-width and 32 m violation;
+- peak aft main / fore main / RCS;
+- tracking-envelope exceed ticks.
+
+Nine `[CORNER-COMPARE]` rows directly compare Newtonian vs Assisted time and
+required width for the same pilot/family.
+
+First target-machine pass does not pin a timing winner. It checks expert
+semantic quality:
+- StopTurnGo must actually approach zero speed in the corner zone;
+- RadiusTurn must retain >=5 m/s and stay <=20 deg slip;
+- DriftTurn must retain >=7 m/s and produce >=60 deg material slip;
+- all expert rows must cross the common exit gate, fit the common 32 m rigid
+  corridor, and meet final P/V/attitude error bounds.
+
+Expected navigation_runtime CTest count: 14.
+
+After this isolated 90-degree primitive is measured, the accepted families will
+be composed into the requested 3-4 segment 3D corridor so total route time can
+be compared over mixed turn angles rather than only a symmetric 90-degree case.

@@ -66,7 +66,7 @@ Vec3d normalize(const Vec3d& value)
     return scale(value, 1.0 / magnitude);
 }
 
-NavigationSpace::Vec3d toSpaceVec(const Vec3d& value) noexcept
+LocalAvoidancePlanner::StaticQueries::Vec3d toSpaceVec(const Vec3d& value) noexcept
 {
     return {value.x, value.y, value.z};
 }
@@ -108,7 +108,7 @@ Vec3d leastAlignedAxis(const Vec3d& forward) noexcept
 LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     const Query& query,
     const NavigationMap::QueryResult& dynamicCandidates,
-    const NavigationSpace& staticSpace
+    const LocalAvoidancePlanner::StaticQueries& staticQueries
 ) const
 {
     validatePolicy(query.avoidance);
@@ -130,7 +130,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         return result;
     }
 
-    NavigationSpace::PointQuery startQuery;
+    LocalAvoidancePlanner::StaticQueries::PointQuery startQuery;
     startQuery.pointMapMeters =
         toSpaceVec(query.horizon.agent.positionMapMeters);
     startQuery.envelope.radiusMeters =
@@ -138,8 +138,8 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     startQuery.envelope.additionalClearanceMeters =
         query.avoidance.staticAdditionalClearanceMeters;
 
-    const NavigationSpace::PointQueryResult start =
-        staticSpace.queryPoint(startQuery);
+    const LocalAvoidancePlanner::StaticQueries::PointQueryResult start =
+        staticQueries.queryPoint(startQuery);
     result.spaceRevision = start.spaceRevision;
     result.spaceSourceRevision = start.sourceRevision;
     result.startRegionId = start.regionId;
@@ -157,7 +157,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
 
     // Dynamic and static truth are independent layers. Even when the dynamic
     // horizon says Clear, the bounded nominal segment must be proven against
-    // exact persistent NavigationSpace geometry before it may pass through.
+    // exact persistent static geometry through the read API before it may pass through.
     const Vec3d nominalDelta = subtract(
         query.horizon.nominalTarget.positionMapMeters,
         query.horizon.agent.positionMapMeters
@@ -178,7 +178,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         );
     }
 
-    NavigationSpace::SegmentQuery nominalStaticQuery;
+    LocalAvoidancePlanner::StaticQueries::SegmentQuery nominalStaticQuery;
     nominalStaticQuery.startMapMeters =
         toSpaceVec(query.horizon.agent.positionMapMeters);
     nominalStaticQuery.endMapMeters =
@@ -188,8 +188,8 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     nominalStaticQuery.allowEndOnStartRegionBoundary =
         query.avoidance.nominalTargetIsProvenPortalBoundary;
 
-    const NavigationSpace::SegmentQueryResult nominalStatic =
-        staticSpace.querySegment(nominalStaticQuery);
+    const LocalAvoidancePlanner::StaticQueries::SegmentQueryResult nominalStatic =
+        staticQueries.querySegment(nominalStaticQuery);
     result.staticObstaclesExamined += nominalStatic.obstaclesExamined;
 
     if (nominalStatic.spaceRevision != start.spaceRevision ||
@@ -267,7 +267,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                 scale(direction, probeDistance)
             );
 
-            NavigationSpace::SegmentQuery staticProbe;
+            LocalAvoidancePlanner::StaticQueries::SegmentQuery staticProbe;
             staticProbe.startMapMeters =
                 toSpaceVec(query.horizon.agent.positionMapMeters);
             staticProbe.endMapMeters =
@@ -275,8 +275,8 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
             staticProbe.envelope = startQuery.envelope;
             staticProbe.requireSameRegion = true;
 
-            const NavigationSpace::SegmentQueryResult staticResult =
-                staticSpace.querySegment(staticProbe);
+            const LocalAvoidancePlanner::StaticQueries::SegmentQueryResult staticResult =
+                staticQueries.querySegment(staticProbe);
 
             result.spaceRevision = staticResult.spaceRevision;
             result.spaceSourceRevision = staticResult.sourceRevision;

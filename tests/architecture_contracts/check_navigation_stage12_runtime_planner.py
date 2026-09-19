@@ -67,6 +67,7 @@ B5_TEST = (ROOT / "tests/navigation_runtime/OrdinaryPhysicalManeuverCompilerTest
 EXECUTION_LAB_TEST = (ROOT / "tests/navigation_runtime/ManeuverProgramExecutionLabTests.cpp").read_text(encoding="utf-8")
 CORRIDOR_MATRIX_TEST = (ROOT / "tests/navigation_runtime/ManeuverCorridorMatrixTests.cpp").read_text(encoding="utf-8")
 RIGID_BODY_CORRIDOR_TEST = (ROOT / "tests/navigation_runtime/ManeuverRigidBodyCorridorTests.cpp").read_text(encoding="utf-8")
+DYNAMIC_MOTION_CPP = (ROOT / "src/game/navigation/DynamicMotionSystem.cpp").read_text(encoding="utf-8")
 GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
 GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
 PURITY_DOC = (ROOT / "src/game/navigation/NAVIGATION_PURITY_CONTRACT.md").read_text(encoding="utf-8")

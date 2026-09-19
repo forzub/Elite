@@ -52,6 +52,7 @@
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
 #include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/world/navigation/local/PhysicalManeuverHorizon.h"
+#include "src/game/navigation/NavigationExecutionSafetyProbeBuilder.h"
 #include "src/game/diagnostics/NavigationRuntimeLab.h"
 
 namespace
@@ -2818,58 +2819,39 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 return true;
             };
 
-        // Geometric replanning is not enough once inertia is relevant.
-        // Build a directional "response coast + guaranteed braking" reserve
-        // independently of the ordinary target/forecast checks. Even when the
-        // normal monitor has already found a collision, this reserve must still
-        // decide whether active emergency recovery is required.
-        const double speedForStoppingReserve =
-            glm::length(agent.velocityMapMetersPerSecond);
-        if (speedForStoppingReserve > 1.0e-6)
+        // The kinematic shape of the reserve is pure value-in/value-out.
+        // GameSimulation owns only the authoritative geometry query and state
+        // transitions around that probe.
+        game::navigation::NavigationExecutionSafetyProbeBuilder::
+            StoppingReserveQuery stoppingQuery;
+        stoppingQuery.positionMapMeters =
+            agent.positionMapMeters;
+        stoppingQuery.velocityMapMetersPerSecond =
+            agent.velocityMapMetersPerSecond;
+        stoppingQuery.controlResponseReserveSeconds =
+            navigationControlResponseReserveSeconds;
+        stoppingQuery.brakingAccelerationMetersPerSecond2 =
+            policy.horizon.maxBrakingAccelerationMetersPerSecond2;
+
+        const auto stoppingProbe =
+            game::navigation::NavigationExecutionSafetyProbeBuilder::
+                buildStoppingReserve(stoppingQuery);
+        if (!stoppingProbe.valid)
+            return false;
+
+        staticSafetyStoppingReserveSeconds =
+            stoppingProbe.responseSeconds;
+        staticSafetyStoppingReserveDistanceMeters =
+            stoppingProbe.distanceMeters;
+        staticSafetyStoppingReserveEndMap =
+            stoppingProbe.endMapMeters;
+
+        if (stoppingProbe.active)
         {
-            world::navigation::PhysicalManeuverHorizon::Query
-                stoppingQuery;
-            stoppingQuery.speedMetersPerSecond =
-                speedForStoppingReserve;
-            stoppingQuery.accelerationMagnitudeMetersPerSecond2 =
-                0.0;
-            stoppingQuery.snapshotAgeSeconds = 0.0;
-            stoppingQuery.controlResponseReserveSeconds =
-                navigationControlResponseReserveSeconds;
-            stoppingQuery.brakingAccelerationMetersPerSecond2 =
-                policy.horizon.
-                    maxBrakingAccelerationMetersPerSecond2;
-            stoppingQuery.turnDistanceMeters = 0.0;
-            stoppingQuery.safetyMarginMeters = 0.0;
-            stoppingQuery.minimumDistanceMeters = 0.0;
-            stoppingQuery.minimumLookAheadSeconds = 0.0;
-
-            const auto stoppingHorizon =
-                world::navigation::PhysicalManeuverHorizon::evaluate(
-                    stoppingQuery
-                );
-            if (!stoppingHorizon.valid)
-                return false;
-
-            staticSafetyStoppingReserveSeconds =
-                stoppingHorizon.responseSeconds;
-            staticSafetyStoppingReserveDistanceMeters =
-                stoppingHorizon.responseDistanceMeters +
-                stoppingHorizon.brakingDistanceMeters;
-
-            const glm::dvec3 velocityDirection =
-                agent.velocityMapMetersPerSecond /
-                speedForStoppingReserve;
-
-            staticSafetyStoppingReserveEndMap =
-                agent.positionMapMeters +
-                velocityDirection *
-                    staticSafetyStoppingReserveDistanceMeters;
-
             staticSafetyStoppingReserveBlocked =
                 exactExecutionSegmentBlocked(
-                    agent.positionMapMeters,
-                    staticSafetyStoppingReserveEndMap
+                    stoppingProbe.startMapMeters,
+                    stoppingProbe.endMapMeters
                 );
 
             if (staticSafetyStoppingReserveBlocked)
@@ -2915,33 +2897,42 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                         idealLinearAccelerationLocalMps2.z
                 );
 
-                glm::dvec3 forecastDelta =
-                    agent.velocityMapMetersPerSecond *
-                        staticSafetyForecastSeconds +
-                    0.5 * staticSafetyIdealAccelerationMapMps2 *
-                        staticSafetyForecastSeconds *
-                        staticSafetyForecastSeconds;
+                game::navigation::
+                    NavigationExecutionSafetyProbeBuilder::
+                    ConstantAccelerationQuery idealForecastQuery;
+                idealForecastQuery.positionMapMeters =
+                    agent.positionMapMeters;
+                idealForecastQuery.velocityMapMetersPerSecond =
+                    agent.velocityMapMetersPerSecond;
+                idealForecastQuery.accelerationMapMetersPerSecond2 =
+                    staticSafetyIdealAccelerationMapMps2;
+                idealForecastQuery.durationSeconds =
+                    staticSafetyForecastSeconds;
+                idealForecastQuery.maximumDistanceMeters =
+                    localHorizonMeters;
 
-                const double forecastDistance =
-                    glm::length(forecastDelta);
-                if (forecastDistance > localHorizonMeters &&
-                    forecastDistance > 1.0e-12)
-                {
-                    forecastDelta *=
-                        localHorizonMeters / forecastDistance;
-                }
+                const auto idealForecastProbe =
+                    game::navigation::
+                        NavigationExecutionSafetyProbeBuilder::
+                        buildConstantAccelerationProbe(
+                            idealForecastQuery
+                        );
+                if (!idealForecastProbe.valid)
+                    return false;
 
                 staticSafetyForecastEndMap =
-                    agent.positionMapMeters +
-                    forecastDelta;
-                staticSafetyForecastBlocked =
-                    exactExecutionSegmentBlocked(
-                        agent.positionMapMeters,
-                        staticSafetyForecastEndMap
-                    );
-                staticSafetyInvalidated =
-                    staticSafetyInvalidated ||
-                    staticSafetyForecastBlocked;
+                    idealForecastProbe.endMapMeters;
+                if (idealForecastProbe.active)
+                {
+                    staticSafetyForecastBlocked =
+                        exactExecutionSegmentBlocked(
+                            idealForecastProbe.startMapMeters,
+                            idealForecastProbe.endMapMeters
+                        );
+                    staticSafetyInvalidated =
+                        staticSafetyInvalidated ||
+                        staticSafetyForecastBlocked;
+                }
             }
 
             // The follower demand is not what authoritative physics necessarily
@@ -2959,51 +2950,53 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                     m_navigationRuntimeLabObservation.
                         lastExecutedLinearDemandMapMps2;
 
-                constexpr int ExecutedSafetySamples = 12;
-                glm::dvec3 previousSample =
+                game::navigation::
+                    NavigationExecutionSafetyProbeBuilder::
+                    ConstantAccelerationQuery executedForecastQuery;
+                executedForecastQuery.positionMapMeters =
                     agent.positionMapMeters;
+                executedForecastQuery.velocityMapMetersPerSecond =
+                    agent.velocityMapMetersPerSecond;
+                executedForecastQuery.accelerationMapMetersPerSecond2 =
+                    staticSafetyExecutedAccelerationMapMps2;
+                executedForecastQuery.durationSeconds =
+                    staticSafetyForecastSeconds;
+                executedForecastQuery.maximumDistanceMeters =
+                    localHorizonMeters;
 
-                for (int sampleIndex = 1;
-                     sampleIndex <= ExecutedSafetySamples;
-                     ++sampleIndex)
+                const auto executedForecast =
+                    game::navigation::
+                        NavigationExecutionSafetyProbeBuilder::
+                        buildSampledConstantAccelerationForecast(
+                            executedForecastQuery
+                        );
+                if (!executedForecast.valid)
+                    return false;
+
+                if (executedForecast.active)
                 {
-                    const double t =
-                        staticSafetyForecastSeconds *
-                        static_cast<double>(sampleIndex) /
-                        static_cast<double>(ExecutedSafetySamples);
-
-                    glm::dvec3 sampleDelta =
-                        agent.velocityMapMetersPerSecond * t +
-                        0.5 *
-                            staticSafetyExecutedAccelerationMapMps2 *
-                            t * t;
-
-                    const double sampleDistance =
-                        glm::length(sampleDelta);
-                    if (sampleDistance > localHorizonMeters &&
-                        sampleDistance > 1.0e-12)
-                    {
-                        sampleDelta *=
-                            localHorizonMeters / sampleDistance;
-                    }
-
-                    const glm::dvec3 sampleEnd =
-                        agent.positionMapMeters +
-                        sampleDelta;
-
                     staticSafetyExecutedForecastEndMap =
-                        sampleEnd;
+                        executedForecast.pointsMapMeters[
+                            executedForecast.pointCount - 1
+                        ];
 
-                    if (exactExecutionSegmentBlocked(
-                            previousSample,
-                            sampleEnd))
+                    for (std::size_t sampleIndex = 1;
+                         sampleIndex < executedForecast.pointCount;
+                         ++sampleIndex)
                     {
-                        staticSafetyExecutedForecastBlocked = true;
-                        staticSafetyInvalidated = true;
-                        break;
+                        if (exactExecutionSegmentBlocked(
+                                executedForecast.pointsMapMeters[
+                                    sampleIndex - 1
+                                ],
+                                executedForecast.pointsMapMeters[
+                                    sampleIndex
+                                ]))
+                        {
+                            staticSafetyExecutedForecastBlocked = true;
+                            staticSafetyInvalidated = true;
+                            break;
+                        }
                     }
-
-                    previousSample = sampleEnd;
                 }
             }
 

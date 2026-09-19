@@ -1,4 +1,5 @@
 #include "src/world/navigation/local/PhysicalManeuverHorizon.h"
+#include "src/game/navigation/NavigationExecutionSafetyProbeBuilder.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -9,6 +10,7 @@
 namespace
 {
 using Horizon = world::navigation::PhysicalManeuverHorizon;
+using SafetyProbes = game::navigation::NavigationExecutionSafetyProbeBuilder;
 
 void require(bool condition, const std::string& message)
 {
@@ -96,6 +98,58 @@ void testResponseAccelerationIsConservative()
     requireNear(result.lookAheadSeconds, 7.0, 1.0e-12,
                 "accelerating temporal horizon mismatch");
 }
+
+void testExecutionSafetyProbeMathIsPureAndBounded()
+{
+    SafetyProbes::StoppingReserveQuery stopping;
+    stopping.positionMapMeters = {10.0, 20.0, 30.0};
+    stopping.velocityMapMetersPerSecond = {10.0, 0.0, 0.0};
+    stopping.controlResponseReserveSeconds = 0.5;
+    stopping.brakingAccelerationMetersPerSecond2 = 2.0;
+
+    const auto a = SafetyProbes::buildStoppingReserve(stopping);
+    const auto b = SafetyProbes::buildStoppingReserve(stopping);
+
+    require(a.valid && a.active && b.valid && b.active,
+            "stopping reserve probe must be valid and active");
+    requireNear(a.distanceMeters, 30.0, 1.0e-12,
+                "stopping reserve distance mismatch");
+    requireNear(a.endMapMeters.x, 40.0, 1.0e-12,
+                "stopping reserve endpoint mismatch");
+    requireNear(a.endMapMeters.x, b.endMapMeters.x, 0.0,
+                "same immutable input must produce identical probe output");
+
+    SafetyProbes::ConstantAccelerationQuery forecast;
+    forecast.positionMapMeters = {0.0, 0.0, 0.0};
+    forecast.velocityMapMetersPerSecond = {10.0, 0.0, 0.0};
+    forecast.accelerationMapMetersPerSecond2 = {2.0, 0.0, 0.0};
+    forecast.durationSeconds = 2.0;
+    forecast.maximumDistanceMeters = 15.0;
+
+    const auto direct =
+        SafetyProbes::buildConstantAccelerationProbe(forecast);
+    require(direct.valid && direct.active,
+            "constant acceleration probe must be active");
+    requireNear(glm::length(direct.endMapMeters), 15.0, 1.0e-12,
+                "constant acceleration probe must respect local horizon bound");
+
+    const auto sampled =
+        SafetyProbes::buildSampledConstantAccelerationForecast(forecast);
+    require(sampled.valid && sampled.active,
+            "sampled execution forecast must be active");
+    require(sampled.pointCount ==
+                SafetyProbes::kExecutedForecastSamples + 1,
+            "sampled forecast point count changed");
+    requireNear(
+        glm::length(
+            sampled.pointsMapMeters[sampled.pointCount - 1]
+        ),
+        15.0,
+        1.0e-12,
+        "sampled forecast endpoint must share the same bounded kinematics"
+    );
+}
+
 }
 
 int main()
@@ -104,9 +158,11 @@ int main()
     {
         testDistanceAndTimeGrowWithPhysicalStoppingNeed();
         testResponseAccelerationIsConservative();
+        testExecutionSafetyProbeMathIsPureAndBounded();
         std::cout << "PHYSICAL MANEUVER HORIZON TESTS: PASS\n";
         std::cout << " - distance horizon grows with response + v^2/(2a)\n";
         std::cout << " - dynamic look-ahead grows with response + braking time\n";
+        std::cout << " - execution safety probes are pure bounded kinematics\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& error)

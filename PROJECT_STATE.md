@@ -17,9 +17,9 @@ Navigation geometry / local corridor
  -> authoritative propulsion + physics
 ```
 
-Planner owns route/corridor, maneuver family, physical reference and proof. Follower tracks the accepted result and applies bounded feedback/safety response but may not replace maneuver strategy.
+Planner owns route/corridor, maneuver family, physical reference and proof. Follower tracks the accepted result with bounded feedback/safety response and may not replace maneuver strategy.
 
-## Current verified maneuver-quality state
+## Current verified state
 
 Latest exact target-machine checkout:
 
@@ -27,30 +27,35 @@ Latest exact target-machine checkout:
 a5e44cdc2fb8eaa312ca788ae4b53a9985df3cae
 ```
 
-Result:
 - architecture PASS;
 - runtime 14/15;
 - StopTurnGo expert healthy;
 - RadiusTurn healthy;
-- long 180 deg continuous-curve tracking healthy for all pilot profiles/laws;
-- only strict expert failure remains DriftTurn terminal attitude.
+- long 180 deg continuous angular tracking healthy;
+- remaining failure localized to DriftTurn test-flow termination semantics.
 
-Latest attempted fix (2.5 s rotate + 1.5 s moving settle) worsened expert DriftTurn attitude from ~10.325 deg to ~16.889 deg while preserving good P/V/corridor. It is rejected.
+The rejected timed-settle experiment showed that forcing a faster angular schedule to meet the old x=60 deadline worsens the residual instead of solving it.
 
-## Current diagnosis
+## Current candidate
 
-General B9/B10 angular tracking is not the problem. The failure is local to the transient DriftTurn recovery. The next step is to capture terminal angular-rate/attitude residuals and design the planner-authored recovery from that evidence.
+```
+24fce76b30d2448a4b94c93ad78dd8d37e5102df
+```
 
-A likely required primitive is moving terminal capture: continue advancing the reference position at terminal velocity while holding final attitude and damping angular velocity. Existing frozen-position StateCapture is unsuitable for a moving exit.
+The corner-family fixture no longer treats x=60 as the DriftTurn control terminus. Drift exits the arc into a moving straight reference at 10 m/s with the final corridor heading and zero target angular rate. Tracking continues beyond the old checkpoint until the finite extended test corridor ends at x=120.
+
+The test records the first moving attitude capture (<=5 deg forward error and <=0.08 rad/s angular speed) and preserves the existing P/V/corridor/speed/slip quality gates.
+
+No production tracking authority or tolerance was relaxed.
 
 ## Roadmap
 
-1. Instrument/fix DriftTurn terminal angular transient.
-2. Re-run corner-family + long-arc gates.
-3. Only after 15/15, add mixed-angle/multi-segment 3D corridor tests.
+1. Validate candidate and close current corner-family defect.
+2. If 15/15, document exactly what was closed.
+3. Design/add mixed-angle, multi-segment 3D corridor quality test.
 4. Extend speed/doctrine coverage.
-5. Move proven behavior into visible game evaluation.
+5. Proceed toward visible in-game evaluation.
 
 ## State protocol
 
-After every state-affecting event, synchronize `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, active Stage-12 documentation, and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state-affecting event, synchronize `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, the active Stage-12 document, and recreate `CONTINUE_PROMPT.md` from scratch.

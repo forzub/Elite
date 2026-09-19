@@ -5220,3 +5220,22 @@ The finite test corridor now continues to x=120. The fixture records the first p
 StopTurnGo and RadiusTurn are also extended through the same outgoing route terminus for a common finite comparison endpoint.
 
 No production tracking authority, capability or quality threshold is weakened. This candidate is unverified until target-machine gates are rerun.
+
+
+## 2026-09-20 — constant-heading outgoing tracking experiment rejected
+
+The candidate that decoupled x=60 from DriftTurn phase termination was target-tested.
+
+Architecture remained PASS and runtime remained 14/15. StopTurnGo, RadiusTurn and the long 180 deg arc stayed healthy.
+
+DriftTurn did not converge under a constant final-heading outgoing reference:
+- expert final attitude ~48.287 deg;
+- 439 tracking-envelope exceeded ticks;
+- no outgoing attitude capture;
+- final position/velocity and corridor remained excellent.
+
+Competent and rookie DriftTurn also failed strongly (~108 deg and ~107 deg final attitude).
+
+This establishes that removing the route-time deadline is not sufficient. The experiment inadvertently asked B10 to perform the full 90 deg attitude maneuver using only its bounded tracking reserve. That is outside B10 ownership.
+
+The next mechanism must restore planner ownership of the large-angle transition without restoring an arbitrary fixed deadline: a moving attitude-capture reference computed from actual/planned angular state, target attitude, target zero angular velocity, and vehicle angular acceleration/rate capability while translation continues.

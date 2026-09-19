@@ -32,7 +32,10 @@ Current Navigation-v2 strict-pure calculation core:
 | BoundedGapCandidateBuilder | reduced obstacle witnesses -> bounded gap candidates |
 | MovingGapPredictor | selected moving pair + time horizon -> predicted moving passage |
 | MovingPassageTrajectoryEvaluator | vehicle/capability + predicted passage -> feasible trajectory witness |
-| TrajectoryFollower | accepted short segment + current NavLocal state -> local control intent |
+| AcceptedManeuverProgram | fixed-capacity immutable planner -> follower value product |
+| ManeuverProgramSampler | accepted program + explicit time -> reference/feed-forward sample |
+| ManeuverTrackingController | reference + actual kinematics + explicit policy -> bounded feedback command |
+| TrajectoryFollower | accepted execution product + current NavLocal state -> local control intent |
 | NavigationExecutionReplanPolicy | explicit validity facts + time value -> replan decision |
 | ManeuverDecisionController | explicit candidate set + doctrine -> selected candidate |
 
@@ -70,6 +73,7 @@ These components are allowed to mutate because their purpose is temporal executi
 | PilotSkillExecutor / runtime control bridge | reaction delay, sampled decisions, command latency, slew/filter history and queued commands are sequential state |
 | authoritative physics / ShipControlState | integrates physical state across fixed steps |
 | GameSimulation | owns authoritative world state, publishes NavigationMap/NavigationSpace snapshots, stores accepted segment/revisions and diagnostics |
+| NavigationWorkScheduler | owns bounded planner-job queues, actor revision slots, age/fairness state and in-flight tickets; it performs no planning itself |
 | replication/network layer | owns publication history, transport state and client hydration |
 
 Stateful code must not absorb navigation math merely because it already has the data. It should:

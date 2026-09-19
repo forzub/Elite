@@ -699,9 +699,43 @@ CompletedStale
 A stale worker result therefore cannot become authoritative merely because its
 planner calculation finished.
 
-The initial scheduler is not yet wired into GameSimulation. This slice exists
-to freeze/test B14 ownership and scale behavior before live planner scheduling
-is migrated.
+The isolated scheduler API has now passed its target-machine gate.
+
+### Live B14 integration candidate
+
+The first live integration is intentionally limited to the deterministic
+Stage-12 lab actor.
+
+Ownership:
+
+```text
+ReplanPolicy
+  -> NavigationPlannerJob
+  -> B14 enqueue
+  -> bounded dispatch
+  -> existing NavigationRuntimePlanner
+  -> B14 complete(ticket)
+  -> commit planner result only if CompletedCurrent
+  -> existing AcceptedShortSegment compatibility seam
+```
+
+This slice does not alter B3/B4/B5/B6 planner geometry or the live execution
+product.
+
+The live orchestrator publishes:
+- current dynamic-world revision;
+- objective revision;
+- monotonic capability revision from actual vehicle authority;
+- monotonic per-actor planner job revision.
+
+GameSimulation may measure dispatch/planner wall time for diagnostics. B14 itself
+remains clock-free.
+
+The live headless acceptance gate must prove:
+- every planner call was scheduler-dispatched;
+- every authoritative planner commit followed `CompletedCurrent`;
+- no stale completion committed;
+- the prior Stage-12 physical flight/replication behavior remains green.
 
 ---
 

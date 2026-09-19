@@ -21,9 +21,11 @@ TOTAL_START_MS="$(now_ms)"
 CONFIGURE_MS="skipped"
 BUILD_MS="skipped"
 TESTS_MS="skipped"
+SCHEDULER_DIAGNOSTIC_MS="skipped"
 CONFIGURE_RC=0
 BUILD_RC=0
 TESTS_RC=0
+SCHEDULER_DIAGNOSTIC_RC=0
 
 CONFIGURE_START_MS="$(now_ms)"
 cmake \
@@ -47,6 +49,50 @@ if [[ "${CONFIGURE_RC}" -eq 0 && "${BUILD_RC}" -eq 0 ]]; then
     TEST_START_MS="$(now_ms)"
     ctest --test-dir "${BUILD_DIR}" --output-on-failure
     TESTS_RC=$?
+
+    if [[ "${TESTS_RC}" -eq 0 ]]; then
+        SCHEDULER_DIAGNOSTIC_START_MS="$(now_ms)"
+        ctest \
+            --test-dir "${BUILD_DIR}" \
+            -R '^navigation_work_scheduler
+TOTAL_END_MS="$(now_ms)"
+TOTAL_MS="$(elapsed_ms "${TOTAL_START_MS}" "${TOTAL_END_MS}")"
+
+echo "[TIMING] navigation_runtime configure_ms=${CONFIGURE_MS}"
+echo "[TIMING] navigation_runtime build_ms=${BUILD_MS}"
+echo "[TIMING] navigation_runtime tests_ms=${TESTS_MS}"
+echo "[TIMING] navigation_runtime scheduler_scale_diagnostic_ms=${SCHEDULER_DIAGNOSTIC_MS}"
+echo "[TIMING] navigation_runtime total_ms=${TOTAL_MS}"
+
+if [[ "${CONFIGURE_RC}" -ne 0 ]]; then
+    echo "[RESULT] navigation_runtime FAIL phase=configure rc=${CONFIGURE_RC}"
+    exit "${CONFIGURE_RC}"
+fi
+
+if [[ "${BUILD_RC}" -ne 0 ]]; then
+    echo "[RESULT] navigation_runtime FAIL phase=build rc=${BUILD_RC}"
+    exit "${BUILD_RC}"
+fi
+
+if [[ "${TESTS_RC}" -ne 0 ]]; then
+    echo "[RESULT] navigation_runtime FAIL phase=tests rc=${TESTS_RC}"
+    exit "${TESTS_RC}"
+fi
+
+echo "[RESULT] navigation_runtime PASS"
+ \
+            -V
+        SCHEDULER_DIAGNOSTIC_RC=$?
+        SCHEDULER_DIAGNOSTIC_END_MS="$(now_ms)"
+        SCHEDULER_DIAGNOSTIC_MS="$(
+            elapsed_ms                 "${SCHEDULER_DIAGNOSTIC_START_MS}"                 "${SCHEDULER_DIAGNOSTIC_END_MS}"
+        )"
+
+        if [[ "${SCHEDULER_DIAGNOSTIC_RC}" -ne 0 ]]; then
+            TESTS_RC="${SCHEDULER_DIAGNOSTIC_RC}"
+        fi
+    fi
+
     TEST_END_MS="$(now_ms)"
     TESTS_MS="$(elapsed_ms "${TEST_START_MS}" "${TEST_END_MS}")"
 fi

@@ -2,101 +2,92 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Accepted baseline
+## Accepted target baseline
 
-Exact target-tested checkout:
+Exact tested checkout:
 
 ```
-9435725206b88f0ae953f058a294b1d6a7608e78
+a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
-Architecture PASS; navigation runtime 16/16.
+Results:
+- architecture PASS;
+- navigation runtime **17/17 PASS**;
+- B7 speed/doctrine matrix PASS.
+
+## Closed block
+
+The B7 lab/runtime selection gate is accepted.
+
+Measured doctrine behavior:
+- Rational -> balanced;
+- PrecisionRetrieval -> precision;
+- Extreme/Newtonian -> high-slip Newtonian drift dash;
+- Extreme/Assisted -> common-law fast path;
+- CombatEscape -> low-threat path;
+- critical-risk=0.90 reckless shortcut rejected above doctrine.
+
+Every selected AcceptedManeuverProgram executed through follower/PilotSkill/real physics with zero tracking-envelope exceed ticks and positive full-hull clearance.
 
 ## Current task
 
-Target-test the new **B7 speed/doctrine execution matrix**.
+Build the next laboratory gate:
 
-Expected runtime suite size: **17 tests**.
+**chained transitions + negative / physical-limit matrix**.
 
-New test:
+### Part A — chained physical transitions
+
+At least one continuous compound run must exercise:
+1. normal moving transit;
+2. hard moving turn;
+3. materially different maneuver family;
+4. braking/capture or precision terminal state.
+
+The handoff must preserve actual P/V/q/omega state rather than resetting the vehicle between programs.
+
+Candidate chain:
+
 ```
-maneuver_speed_doctrine_matrix
-```
-
-## What it tests
-
-Six physically generated candidate programs solve the same 180 m objective around one obstacle.
-
-Expected B7 selections:
-
-| Law | Rational | PrecisionRetrieval | Extreme | CombatEscape |
-|---|---|---|---|---|
-| Newtonian | balanced | precision | newtonian_drift_dash | low_threat_escape |
-| Assisted | balanced | precision | fast | low_threat_escape |
-
-Additional hard rule:
-- `reckless_shortcut` is faster but has criticalRisk=0.90;
-- preferred risk ceiling is 0.20;
-- it must not be selected while safer valid candidates exist.
-
-## Execution checks
-
-Every selected program runs through the real accepted execution path:
-`AcceptedManeuverProgram -> sampler/follower -> B10 -> PilotSkill -> SharedShipPhysics/DynamicMotionSystem`.
-
-Strict expert checks:
-- zero tracking-envelope exceeded ticks;
-- positive actual full-hull obstacle clearance >0.25 m;
-- final P <=1.5 m;
-- final velocity error <=0.75 m/s;
-- final forward error <=5 deg;
-- Newtonian drift dash produces >=20 deg actual slip.
-
-## Target commands
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
-
-{
-    echo "===== TESTED HEAD ====="
-    git rev-parse HEAD
-
-    echo
-    echo "===== ARCHITECTURE CONTRACT ====="
-    TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
-    time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
-
-    echo
-    echo "===== NAVIGATION RUNTIME ====="
-    bash tests/navigation_runtime/run_mingw64.sh
-} 2>&1 | tee "$OUT"
-
-echo
-echo "===== SPEED/DOCTRINE SUMMARY ====="
-grep -E '\[DOCTRINE\]|MANEUVER SPEED/DOCTRINE|tests passed|tests failed|TESTED HEAD' "$OUT" || true
-
-echo
-echo "===== LOG FILE ====="
-echo "$PWD/$OUT"
+fast transit
+ -> moving radius/fly-through turn
+ -> Newtonian drift OR Assisted aligned turn
+ -> precision braking/capture
 ```
 
-Upload the complete log.
+Strict checks:
+- no state reset at phase seams;
+- no hidden stop unless the selected family requires it;
+- no tracking-envelope exceed;
+- full rigid-hull corridor/obstacle safety;
+- terminal P/V/attitude capture.
 
-## Interpretation
+### Part B — negative/limit cases
 
-If 17/17:
-- B7 has its first real select->accept->execute proof;
-- compare planned/actual clearance, time, peak speed and slip;
-- move to chained transition + negative/physical-limit testing.
+Required cases:
+- insufficient turn room;
+- insufficient braking distance;
+- too-narrow rigid-body corridor;
+- no law-compatible maneuver candidate;
+- newly invalidated accepted program / obstacle change.
 
-If failed:
-- diagnose selection error separately from execution error;
-- no tolerance weakening.
+Expected behavior must be explicit:
+- pre-ACCEPT rejection;
+- alternative maneuver selection;
+- fail-closed recovery/braking;
+- or program invalidation + replan.
+
+A negative case passes when the system refuses the impossible unsafe maneuver correctly. It does not need to reach the original target.
+
+## Exit criterion for this block
+
+The block closes when:
+- compound state handoffs remain physically continuous;
+- impossible maneuvers are rejected before execution;
+- invalidated programs do not continue blindly;
+- no test relies on widening tolerances after failure.
+
+After this block, the remaining laboratory gate is one final composite end-to-end proving ground before primary evaluation moves into the game.
 
 ## Iteration rule
 
-After every state/evidence change, update all project MD files and recreate `CONTINUE_PROMPT.md` from scratch.
+After every code/evidence change, synchronize all project MD files and recreate `CONTINUE_PROMPT.md` from scratch.

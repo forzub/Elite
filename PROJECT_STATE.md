@@ -2844,3 +2844,35 @@ A full audit of every architecture condition after the failing check found one a
 All other remaining post-failure contract markers were checked against current source: authoritative self-test evidence, slit/tunnel topology and capture, exact-static physical sweep, bounded visibility recovery, ManeuverDecision doctrines, automatic/manual replan policy, Assisted/Newtonian control-law contract, and client/server CMake ownership. No additional stale marker was found in that remaining portion of the gate.
 
 No Navigation-v2 planner/control/safety behavior changed in this pass. Full target-machine acceptance still requires the refreshed Stage-12 gate, canonical build, and freshly built server self-test.
+
+
+### 2026-09-19 live self-test reached rotating-infrastructure precision gate
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+a611aaec5d01368dcd6c13a1b40a30f3197a7f6b
+~~~
+
+Target-machine evidence at checkout `8c32e5a72084646933e959d8308037bd6fbe9f3b`:
+
+- foundation architecture gate: PASS;
+- Stage-12 runtime-planner architecture gate: PASS;
+- navigation runtime tests: PASS 6/6;
+- canonical client build: PASS;
+- canonical headless server build: PASS;
+- freshly built `EliteServer --self-test-navigation` entered the real live proving run and failed only at rotating-infrastructure angular-velocity verification.
+
+Observed witness:
+
+~~~text
+expected=(0,0,0.0349066)
+observed=(1.33529e-10,6.92304e-10,0.0349066)
+error=7.11278e-10 rad/s
+~~~
+
+Root cause: diagnostic precision contract was stricter than the authoritative source representation. `StaticObject::angularVelocity` is currently a `glm::vec3` float field. The hub/local angular velocity is computed in double, quantized once into that float field, then promoted back to double and crossed through `NavigationFrameBoundary::SystemAngularVelocity -> NavAngularVelocity`. The previous `1e-12 rad/s` acceptance threshold therefore demanded precision the authoritative source does not contain; the measured error is consistent with one float quantization at ~0.035 rad/s and does not indicate a frame-transform defect.
+
+Correction: `NavigationRuntimeLabAngularVelocityToleranceRadPerSecond` is now `1e-8`, with the source-precision rationale pinned next to the constant. This remains far below any physically meaningful angular-velocity error for the lab while admitting the actual authoritative storage precision.
+
+No planner, follower, collision, replan or control-law behavior changed in this pass. Next target-machine step is a canonical rebuild followed by the live navigation self-test so execution can proceed to the next physical acceptance gate.

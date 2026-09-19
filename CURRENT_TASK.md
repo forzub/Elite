@@ -2,92 +2,125 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Accepted target baseline
+## Accepted baseline
 
-Exact tested checkout:
+Exact target-tested checkout:
 
 ```
 a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
-Results:
-- architecture PASS;
-- navigation runtime **17/17 PASS**;
-- B7 speed/doctrine matrix PASS.
-
-## Closed block
-
-The B7 lab/runtime selection gate is accepted.
-
-Measured doctrine behavior:
-- Rational -> balanced;
-- PrecisionRetrieval -> precision;
-- Extreme/Newtonian -> high-slip Newtonian drift dash;
-- Extreme/Assisted -> common-law fast path;
-- CombatEscape -> low-threat path;
-- critical-risk=0.90 reckless shortcut rejected above doctrine.
-
-Every selected AcceptedManeuverProgram executed through follower/PilotSkill/real physics with zero tracking-envelope exceed ticks and positive full-hull clearance.
+Architecture PASS; navigation runtime 17/17; B7 doctrine select->execute accepted.
 
 ## Current task
 
-Build the next laboratory gate:
-
-**chained transitions + negative / physical-limit matrix**.
-
-### Part A — chained physical transitions
-
-At least one continuous compound run must exercise:
-1. normal moving transit;
-2. hard moving turn;
-3. materially different maneuver family;
-4. braking/capture or precision terminal state.
-
-The handoff must preserve actual P/V/q/omega state rather than resetting the vehicle between programs.
-
-Candidate chain:
+Target-test:
 
 ```
-fast transit
- -> moving radius/fly-through turn
- -> Newtonian drift OR Assisted aligned turn
- -> precision braking/capture
+maneuver_chained_limit_matrix
 ```
+
+Expected runtime total: **18 tests**.
+
+## Part A — chained execution
+
+Both flight laws run four consecutive programs without state reset:
+
+```
+moving transit
+ -> hard 90-degree continuous turn
+ -> law-specific maneuver
+ -> precision StateCapture
+```
+
+Newtonian:
+- phase 3 = high-slip DriftPass.
+
+Assisted:
+- phase 3 = velocity-aligned PrecisionTransit.
 
 Strict checks:
-- no state reset at phase seams;
-- no hidden stop unless the selected family requires it;
-- no tracking-envelope exceed;
-- full rigid-hull corridor/obstacle safety;
-- terminal P/V/attitude capture.
+- 4/4 phases;
+- zero tracking-envelope exceed ticks;
+- no P/V/attitude/omega reset at seams;
+- full Cobra hull <=25 m reference half-width;
+- Newtonian phase-3 slip >=20 deg;
+- Assisted phase-3 slip <=8 deg;
+- terminal P <=1.0 m;
+- terminal speed <=0.60 m/s;
+- terminal attitude <=4 deg.
 
-### Part B — negative/limit cases
+## Part B — negative/limit cases
 
-Required cases:
-- insufficient turn room;
-- insufficient braking distance;
-- too-narrow rigid-body corridor;
-- no law-compatible maneuver candidate;
-- newly invalidated accepted program / obstacle change.
+1. B5 turn horizon too short:
+   - expect NoPhysicalCandidate.
 
-Expected behavior must be explicit:
-- pre-ACCEPT rejection;
-- alternative maneuver selection;
-- fail-closed recovery/braking;
-- or program invalidation + replan.
+2. braking reserve > available distance:
+   - expect pre-ACCEPT rejection.
 
-A negative case passes when the system refuses the impossible unsafe maneuver correctly. It does not need to reach the original target.
+3. Cobra rigid hull > corridor:
+   - expect geometry rejection.
 
-## Exit criterion for this block
+4. Assisted + only NewtonianOnly B7 candidates:
+   - expect no valid selection.
 
-The block closes when:
-- compound state handoffs remain physically continuous;
-- impossible maneuvers are rejected before execution;
-- invalidated programs do not continue blindly;
-- no test relies on widening tolerances after failure.
+5. new dynamic hazard invalidates accepted execution:
+   - immediate LocalHorizon replan;
+   - old program must not continue.
 
-After this block, the remaining laboratory gate is one final composite end-to-end proving ground before primary evaluation moves into the game.
+## Target commands
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+
+OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
+
+{
+    echo "===== TESTED HEAD ====="
+    git rev-parse HEAD
+
+    echo
+    echo "===== ARCHITECTURE CONTRACT ====="
+    TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
+    time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
+    echo
+    echo "===== NAVIGATION RUNTIME ====="
+    bash tests/navigation_runtime/run_mingw64.sh
+} 2>&1 | tee "$OUT"
+
+echo
+echo "===== CHAIN/LIMIT SUMMARY ====="
+grep -E '\[CHAIN\]|\[LIMIT\]|MANEUVER CHAINED/LIMIT|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+
+echo
+echo "===== LOG FILE ====="
+echo "$PWD/$OUT"
+```
+
+Upload the complete log.
+
+## Interpretation
+
+If 18/18:
+- accept chained transition continuity;
+- accept the five fail-closed limit contracts;
+- record actual Newtonian/Assisted chain metrics;
+- move to the final composite laboratory proving ground.
+
+If failed:
+- identify whether failure is:
+  - phase seam/reference construction;
+  - tracking/physics execution;
+  - rigid-body corridor;
+  - B5 physical rejection;
+  - braking reserve;
+  - B7 law filter;
+  - execution invalidation.
+- do not weaken the acceptance criteria.
 
 ## Iteration rule
 
-After every code/evidence change, synchronize all project MD files and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state/evidence change, update all project MD files and recreate `CONTINUE_PROMPT.md` from scratch.

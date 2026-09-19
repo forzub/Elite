@@ -137,7 +137,7 @@ world::navigation::NavigationMap::Vec3d toMapVec(
     return {value.x, value.y, value.z};
 }
 
-world::navigation::NavigationSpace::Vec3d toSpaceVec(
+Planner::StaticQueries::Vec3d toSpaceVec(
     const glm::dvec3& value
 ) noexcept
 {
@@ -152,7 +152,7 @@ glm::dvec3 toGlm(
 }
 
 glm::dvec3 toGlm(
-    const world::navigation::NavigationSpace::Vec3d& value
+    const Planner::StaticQueries::Vec3d& value
 ) noexcept
 {
     return {value.x, value.y, value.z};
@@ -345,7 +345,7 @@ struct StaticMovingTrajectoryProof
 
 StaticMovingTrajectoryProof proveMovingPassageAgainstStaticSpace(
     const Planner::MovingPassage::Result& passage,
-    const Planner::Space& staticSpace,
+    const Planner::StaticQueries& staticQueries,
     const Planner::Policy& policy
 )
 {
@@ -381,15 +381,15 @@ StaticMovingTrajectoryProof proveMovingPassageAgainstStaticSpace(
         if (!finite(continuousHullRadius) || continuousHullRadius < 0.0)
             return proof;
 
-        Planner::Space::SegmentQuery staticQuery;
+        Planner::StaticQueries::SegmentQuery staticQuery;
         const auto& startCenter =
             trajectory.centerSamplesMapMeters[i];
         const auto& endCenter =
             trajectory.centerSamplesMapMeters[i + 1];
-        staticQuery.startMapMeters = Planner::Space::Vec3d {
+        staticQuery.startMapMeters = Planner::StaticQueries::Vec3d {
             startCenter.x, startCenter.y, startCenter.z
         };
-        staticQuery.endMapMeters = Planner::Space::Vec3d {
+        staticQuery.endMapMeters = Planner::StaticQueries::Vec3d {
             endCenter.x, endCenter.y, endCenter.z
         };
         staticQuery.envelope.radiusMeters = continuousHullRadius;
@@ -397,8 +397,8 @@ StaticMovingTrajectoryProof proveMovingPassageAgainstStaticSpace(
             policy.avoidance.staticAdditionalClearanceMeters;
         staticQuery.requireSameRegion = true;
 
-        const Planner::Space::SegmentQueryResult staticResult =
-            staticSpace.querySegment(staticQuery);
+        const Planner::StaticQueries::SegmentQueryResult staticResult =
+            staticQueries.querySegment(staticQuery);
         proof.obstaclesExamined += staticResult.obstaclesExamined;
 
         if (!staticResult.traversable)
@@ -421,7 +421,7 @@ void probeMovingPassage(
     const Planner::AgentState& agent,
     const Planner::Goal& goal,
     const Planner::Map::QueryResult& dynamicCandidates,
-    const Planner::Space& staticSpace,
+    const Planner::StaticQueries& staticQueries,
     const glm::dvec3& coarseTarget,
     const Planner::Policy& policy,
     const Planner::Avoidance::Result& local,
@@ -630,7 +630,7 @@ void probeMovingPassage(
         const StaticMovingTrajectoryProof staticProof =
             proveMovingPassageAgainstStaticSpace(
                 passage,
-                staticSpace,
+                staticQueries,
                 policy
             );
         result.movingPassageStaticProofAttempted = staticProof.attempted;
@@ -662,7 +662,7 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     const Goal& goal,
     const Map::QueryResult& dynamicCandidates,
     double dynamicResultAgeSeconds,
-    const Space& staticSpace,
+    const StaticQueries& staticQueries,
     const Policy& policy
 )
 {
@@ -674,15 +674,15 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     if (!validInput(agent, goal, dynamicResultAgeSeconds))
         return result;
 
-    Space::CorridorQuery corridorQuery;
+    StaticQueries::CorridorQuery corridorQuery;
     corridorQuery.startMapMeters = toSpaceVec(agent.positionMapMeters);
     corridorQuery.endMapMeters = toSpaceVec(goal.targetPositionMapMeters);
     corridorQuery.envelope.radiusMeters = agent.radiusMeters;
     corridorQuery.envelope.additionalClearanceMeters =
         policy.avoidance.staticAdditionalClearanceMeters;
 
-    const Space::CostedCorridorResult corridor =
-        staticSpace.queryCostedCorridor(corridorQuery, policy.corridor);
+    const StaticQueries::CostedCorridorResult corridor =
+        staticQueries.queryCostedCorridor(corridorQuery, policy.corridor);
 
     result.spaceRevision = corridor.spaceRevision;
     result.spaceSourceRevision = corridor.sourceRevision;
@@ -714,7 +714,7 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     if (!portalPolicyValid)
         return result;
 
-    Space::PortalTraversal activePortalTraversal;
+    StaticQueries::PortalTraversal activePortalTraversal;
     double portalAllowedCrossTrackMeters = 0.0;
 
     if (policy.portalTraversal.enabled &&
@@ -859,7 +859,7 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     const Avoidance::Result local = Avoidance{}.evaluate(
         localQuery,
         dynamicCandidates,
-        staticSpace
+        staticQueries
     );
 
     result.adjustedTarget = local.adjustedTarget;
@@ -886,14 +886,14 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     result.selectedTargetMapMeters = toGlm(local.target.targetPositionMapMeters);
 
     // The bounded moving-gap / moving-passage chain also proves the exact
-    // accepted Hermite trajectory against NavigationSpace exact-static
+    // accepted Hermite trajectory through the static query API
     // geometry. Merely running this precision path is still observe-only;
     // steering changes only through the explicit 12A-6b3a authority gate below.
     probeMovingPassage(
         agent,
         goal,
         dynamicCandidates,
-        staticSpace,
+        staticQueries,
         coarseTarget,
         policy,
         local,

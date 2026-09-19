@@ -34,6 +34,7 @@ Current Navigation-v2 strict-pure calculation core:
 | MovingPassageTrajectoryEvaluator | vehicle/capability + predicted passage -> feasible trajectory witness |
 | AcceptedManeuverProgram | fixed-capacity immutable planner -> follower value product |
 | ManeuverProgramSampler | accepted program + explicit time -> reference/feed-forward sample |
+| OrdinaryPhysicalManeuverCompiler | geometric handoff + current kinematics/capability/control law -> bounded physical maneuver candidates requiring B6 proof |
 | ManeuverTrackingController | reference + actual kinematics + explicit policy -> bounded feedback command |
 | TrajectoryFollower | accepted execution product + current NavLocal state -> local control intent |
 | NavigationExecutionReplanPolicy | explicit validity facts + time value -> replan decision |

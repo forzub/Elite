@@ -3,7 +3,7 @@
 **Updated:** 2026-09-19 Europe/Kyiv  
 **Stage:** Stage 12 architecture hardening — Navigation-v2 state/API isolation  
 **Last target-machine verified baseline:** `daaf038021cdf8b9561db60fdd35e7cefce0b2df`  
-**Candidate implementation baseline before documentation commits:** `dac32c59ed5c6c9031d3783ae707f603e7cb7e4e`
+**Candidate implementation baseline before documentation commits:** `5dbc8ba11bf0e2317fc8e9cc3b4f35b74042a86d`
 
 ## What changed
 

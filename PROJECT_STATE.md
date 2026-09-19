@@ -2595,3 +2595,76 @@ Broader follow-up remains recorded separately: legacy/client workspace mutable
 sub-state references and the unused NavigationFrameBoundary frame-reference
 escape hatch should be hardened after this active Stage-12 API gate is green,
 rather than mixing unrelated legacy churn into the same acceptance slice.
+
+
+### 2026-09-19 legacy route isolation + typed-boundary cleanup
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+9ee0fdea3b366cb89633c3abddade270a308c9a9
+~~~
+
+Repository audit confirmed that the pre-Stage-12 client docking route pipeline
+still exists in `SpaceState`:
+
+~~~text
+DockingPathPlanner
+  -> GeometricPathPlanner
+  -> TrajectoryGenerator
+  -> GuidanceTunnel
+~~~
+
+It is not part of authoritative `GameSimulation`/Navigation-v2 control, but it
+was still runtime-enabled through the old RoutePlanning/LocalGuidance module
+switches.
+
+This legacy path is now isolated and disabled in two independent ways:
+
+- `NavigationModuleState` defaults both `RoutePlanning` and `LocalGuidance` to
+  OFF;
+- `SpaceState::updateDockingGuidance` additionally contains a hard
+  `LegacyClientRoutePipelineEnabled = false` gate, so toggling those old module
+  switches cannot re-activate the route pipeline accidentally.
+
+Architecture protection now requires the legacy route/tunnel stack to stay out
+of `GameSimulation` and `NavigationRuntimePlanner`. The old implementation is
+retained only as reference/regression/presentation code for now; no Stage-12
+authoritative command may originate from it.
+
+The target-machine log also exposed migration leftovers from the typed
+NavLocal/System split. Fixed in this candidate:
+
+- stale `...DemandMap...` follower test names -> NavLocal names;
+- stale `...DemandSystem...` control-test names -> current System intent names;
+- NPC test kinematics `relativeWorldVelocity/forwardMap/rightMap/upMap` ->
+  explicit System-space names;
+- replicated HUD execution truth now remains explicitly System-space instead of
+  relabelling server acceleration as map-space;
+- the last untyped `pointToMap(...)` call in `GameSimulation` now crosses
+  `NavigationFrameBoundary` explicitly.
+
+The Stage-12 architecture gate now rejects those stale identifiers and rejects
+re-introduction of the removed `pointToMap` helper.
+
+Observed target-machine evidence before these fixes:
+
+- navigation_local: PASS 2/2;
+- navigation_space: PASS 1/1;
+- navigation_runtime: compile failed on stale renamed identifiers;
+- full build: compile failed on the same HUD rename leftovers plus the final
+  `pointToMap` call;
+- the subsequent navigation self-test result is not acceptance evidence because
+  the build had already failed, so that command executed a previously built
+  EliteServer binary.
+
+No target-machine validation has been run for this fixed candidate yet. Last
+actually accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~
+
+Next gate is to rerun architecture + runtime + full build. Only after a fresh
+successful build should `EliteServer --self-test-navigation` be interpreted as
+current behavior evidence.

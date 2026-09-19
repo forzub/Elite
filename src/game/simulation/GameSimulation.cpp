@@ -3173,33 +3173,241 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
 
     bool plannedThisTick = false;
 
+    // B14 live seam: world/objective/capability revisions are published before
+    // any expensive planner job can be dispatched. The scheduler itself owns
+    // no planner callback or geometry.
+    if (!m_navigationRuntimeLabWorkScheduler.setCurrentWorldRevision(
+            m_navigationRuntimeLabSourceRevision))
+    {
+        return false;
+    }
+
+    Scheduler::ActorRevisionStamp schedulerActorRevision;
+    schedulerActorRevision.actorId = id.value;
+    schedulerActorRevision.objectiveRevision = plannerGoal.revision;
+    schedulerActorRevision.capabilityRevision =
+        m_navigationRuntimeLabCapabilityRevision;
+    schedulerActorRevision.routeRevision = 0;
+
+    if (!m_navigationRuntimeLabWorkScheduler.publishActorRevision(
+            schedulerActorRevision))
+    {
+        return false;
+    }
+
     if (replan.scope != Replan::Scope::None)
     {
-        const Planner::StaticQueries staticQueries(
-            *m_navigationRuntimeLabSpace
-        );
+        const auto schedulerPriority =
+            [](Replan::Reason reason)
+            {
+                switch (reason)
+                {
+                case Replan::Reason::TrackingErrorExceeded:
+                case Replan::Reason::StaticSafetyInvalidated:
+                case Replan::Reason::DynamicHazardInvalidated:
+                case Replan::Reason::VehicleCapabilityChanged:
+                    return PlannerJob::Priority::Urgent;
 
-        m_navigationRuntimeLabLastPlan =
-            Planner::plan(
-                agent,
-                plannerGoal,
-                dynamicCandidates,
-                0.0,
-                staticQueries,
-                policy
+                case Replan::Reason::ManualPeriodicRefresh:
+                    return PlannerJob::Priority::Background;
+
+                default:
+                    return PlannerJob::Priority::Normal;
+                }
+            };
+
+        const auto schedulerTrigger =
+            [](Replan::Reason reason)
+            {
+                switch (reason)
+                {
+                case Replan::Reason::NoAcceptedSegment:
+                    return PlannerJob::Trigger::MissingProgram;
+                case Replan::Reason::SegmentExpired:
+                    return PlannerJob::Trigger::ProgramExpired;
+                case Replan::Reason::SegmentCompleted:
+                    return PlannerJob::Trigger::ProgramCompleted;
+                case Replan::Reason::TrackingErrorExceeded:
+                    return PlannerJob::Trigger::TrackingErrorExceeded;
+                case Replan::Reason::StaticSafetyInvalidated:
+                    return PlannerJob::Trigger::StaticSafetyInvalidated;
+                case Replan::Reason::DynamicHazardInvalidated:
+                    return PlannerJob::Trigger::DynamicHazardInvalidated;
+                case Replan::Reason::VehicleCapabilityChanged:
+                    return PlannerJob::Trigger::CapabilityChanged;
+                case Replan::Reason::GoalIntentChanged:
+                    return PlannerJob::Trigger::ObjectiveChanged;
+                case Replan::Reason::TopologyBranchInvalidated:
+                    return PlannerJob::Trigger::TopologyInvalidated;
+                case Replan::Reason::ManualPeriodicRefresh:
+                case Replan::Reason::ManualCorridorExit:
+                    return PlannerJob::Trigger::ManualRefresh;
+                default:
+                    return PlannerJob::Trigger::AdvisoryPrewarm;
+                }
+            };
+
+        PlannerJob schedulerJob;
+        schedulerJob.actorId = id.value;
+        schedulerJob.jobRevision =
+            m_navigationRuntimeLabNextPlannerJobRevision++;
+        schedulerJob.objectiveRevision = plannerGoal.revision;
+        schedulerJob.worldRevision =
+            m_navigationRuntimeLabSourceRevision;
+        schedulerJob.capabilityRevision =
+            m_navigationRuntimeLabCapabilityRevision;
+        schedulerJob.routeRevision = 0;
+        schedulerJob.priority = schedulerPriority(replan.reason);
+        schedulerJob.scope =
+            replan.scope == Replan::Scope::FullRoute
+                ? PlannerJob::Scope::FullRoute
+                : PlannerJob::Scope::LocalHorizon;
+        schedulerJob.trigger = schedulerTrigger(replan.reason);
+        schedulerJob.guidanceOnly = replan.guidanceOnly;
+        schedulerJob.estimatedCostUnits =
+            schedulerJob.scope == PlannerJob::Scope::FullRoute
+                ? 4u
+                : 1u;
+
+        const auto enqueueResult =
+            m_navigationRuntimeLabWorkScheduler.enqueue(
+                schedulerJob,
+                m_navigationRuntimeLabSourceRevision
             );
 
-        ++m_navigationRuntimeLabObservation.planCount;
-        ++m_navigationRuntimeLabObservation.acceptedSegmentReplanCount;
-        m_navigationRuntimeLabObservation.lastReplanReason =
-            static_cast<std::uint8_t>(replan.reason);
-        plannedThisTick = true;
+        auto& schedulerObservation =
+            m_navigationRuntimeLabObservation;
 
-        if (m_navigationRuntimeLabLastPlan.status ==
-            Planner::Status::InvalidInput)
+        switch (enqueueResult.status)
         {
+        case Scheduler::EnqueueStatus::Accepted:
+            ++schedulerObservation.schedulerEnqueueAcceptedCount;
+            break;
+        case Scheduler::EnqueueStatus::Replaced:
+            ++schedulerObservation.schedulerEnqueueReplacedCount;
+            break;
+        case Scheduler::EnqueueStatus::Duplicate:
+            ++schedulerObservation.schedulerEnqueueDuplicateCount;
+            break;
+        case Scheduler::EnqueueStatus::Stale:
+            ++schedulerObservation.schedulerEnqueueStaleCount;
+            break;
+        case Scheduler::EnqueueStatus::InvalidInput:
+        case Scheduler::EnqueueStatus::CapacityExceeded:
             return false;
         }
+
+        Scheduler::DispatchBudget schedulerBudget;
+        schedulerBudget.maxJobs = 1;
+        schedulerBudget.maxCostUnits = 4;
+
+        const auto dispatchStart =
+            std::chrono::steady_clock::now();
+        const auto dispatched =
+            m_navigationRuntimeLabWorkScheduler.dispatchSlice(
+                m_navigationRuntimeLabSourceRevision,
+                schedulerBudget
+            );
+        const auto dispatchEnd =
+            std::chrono::steady_clock::now();
+
+        const double dispatchMicroseconds =
+            std::chrono::duration<double, std::micro>(
+                dispatchEnd - dispatchStart
+            ).count();
+        schedulerObservation.schedulerDispatchTotalMicroseconds +=
+            dispatchMicroseconds;
+        schedulerObservation.schedulerDispatchMaximumMicroseconds =
+            std::max(
+                schedulerObservation.schedulerDispatchMaximumMicroseconds,
+                dispatchMicroseconds
+            );
+
+        const auto schedulerStats =
+            m_navigationRuntimeLabWorkScheduler.stats();
+        schedulerObservation.schedulerMaximumPendingJobs =
+            std::max(
+                schedulerObservation.schedulerMaximumPendingJobs,
+                schedulerStats.pending
+            );
+        schedulerObservation.schedulerMaximumInFlightJobs =
+            std::max(
+                schedulerObservation.schedulerMaximumInFlightJobs,
+                schedulerStats.inFlight
+            );
+
+        if (dispatched.invalidInput)
+            return false;
+
+        if (dispatched.count == 1)
+        {
+            const auto& dispatchedItem = dispatched.items[0];
+            if (dispatchedItem.job.actorId != id.value)
+                return false;
+
+            ++schedulerObservation.schedulerDispatchCount;
+
+            const Planner::StaticQueries staticQueries(
+                *m_navigationRuntimeLabSpace
+            );
+
+            const auto plannerStart =
+                std::chrono::steady_clock::now();
+            const Planner::Result planned =
+                Planner::plan(
+                    agent,
+                    plannerGoal,
+                    dynamicCandidates,
+                    0.0,
+                    staticQueries,
+                    policy
+                );
+            const auto plannerEnd =
+                std::chrono::steady_clock::now();
+
+            const double plannerMicroseconds =
+                std::chrono::duration<double, std::micro>(
+                    plannerEnd - plannerStart
+                ).count();
+            schedulerObservation.schedulerPlannerTotalMicroseconds +=
+                plannerMicroseconds;
+            schedulerObservation.schedulerPlannerMaximumMicroseconds =
+                std::max(
+                    schedulerObservation.schedulerPlannerMaximumMicroseconds,
+                    plannerMicroseconds
+                );
+
+            ++schedulerObservation.planCount;
+
+            const Scheduler::CompletionStatus completion =
+                m_navigationRuntimeLabWorkScheduler.complete(
+                    dispatchedItem.ticket
+                );
+
+            if (completion ==
+                Scheduler::CompletionStatus::CompletedStale)
+            {
+                ++schedulerObservation.schedulerCompletedStaleCount;
+            }
+            else if (completion ==
+                     Scheduler::CompletionStatus::CompletedCurrent)
+            {
+                ++schedulerObservation.schedulerCompletedCurrentCount;
+
+                // Commit only after B14 confirms that the completed planner
+                // result still matches current world/objective/capability
+                // revisions.
+                m_navigationRuntimeLabLastPlan = planned;
+                ++schedulerObservation.acceptedSegmentReplanCount;
+                schedulerObservation.lastReplanReason =
+                    static_cast<std::uint8_t>(replan.reason);
+                plannedThisTick = true;
+
+                if (m_navigationRuntimeLabLastPlan.status ==
+                    Planner::Status::InvalidInput)
+                {
+                    return false;
+                }
 
         AcceptedSegment accepted;
         accepted.valid = true;
@@ -3356,6 +3564,13 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 m_navigationRuntimeLabAcceptedSegment,
                 followerAgent
             );
+
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     if (!m_navigationRuntimeLabAcceptedSegment.valid ||

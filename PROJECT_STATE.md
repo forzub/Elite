@@ -2463,3 +2463,61 @@ No target-machine validation yet. Last actually accepted Stage-12 baseline remai
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### 2026-09-19 API boundary audit — remaining static-state capability leak
+
+Audit of the current Navigation-v2 purity candidate found one remaining runtime
+boundary weakness after the strict-pure math extraction.
+
+The dynamic side is already sealed correctly:
+
+~~~text
+NavigationMap state owner
+    -> querySphere/queryCorridor API
+    -> NavigationMap::QueryResult value DTO
+    -> planner
+~~~
+
+The static side is not yet equivalently sealed. Both production planners still
+receive the state owner itself:
+
+~~~text
+NavigationRuntimePlanner::plan(..., const NavigationSpace&, ...)
+LocalAvoidancePlanner::evaluate(..., const NavigationSpace&)
+~~~
+
+They use only public const query methods, so there is no direct field access,
+but the calculation boundary still carries a capability to the stateful
+NavigationSpace object. Under the strengthened isolation rule this is considered
+a boundary leak.
+
+New rule for Navigation v2:
+
+~~~text
+NO state-owner object crosses a calculation boundary.
+State stays behind its owner.
+Across the boundary pass only:
+- immutable/value DTOs; or
+- a deliberately narrow read-only query API capability with no publication,
+  mutation, storage access or owner escape hatch.
+~~~
+
+Current implementation task is therefore to introduce a narrow static-navigation
+read API, bind it at the GameSimulation/orchestration edge, and make
+NavigationRuntimePlanner/LocalAvoidancePlanner depend on that API rather than on
+NavigationSpace itself. Architecture gates must reject a future reintroduction
+of `const NavigationSpace&` into those calculation seams.
+
+Broader non-Stage-12 surfaces also deserve the same treatment: the legacy/client
+workspace exposes mutable sub-state references, and NavigationFrameBoundary
+currently exposes its captured frame by const reference. They are not part of
+the active live planner path, but they are recorded for follow-up boundary
+hardening rather than being treated as acceptable precedent.
+
+No target-machine validation has been run for this new boundary slice. The last
+actually accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

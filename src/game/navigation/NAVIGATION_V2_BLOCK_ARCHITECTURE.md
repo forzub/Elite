@@ -407,6 +407,25 @@ Comparison rule:
 
 Touching the mathematical route vertex is never, by itself, "corner passed".
 
+#### Compound-phase handoff rule
+
+Internal phase handoff semantics are family-specific:
+
+- `StopTurnGo` capture phases are **state-gated**, not time-only. Brake/capture
+  may advance only after the actual rigid body satisfies the required waypoint,
+  velocity and attitude envelope. A scheduled duration is a reference horizon,
+  not permission to skip capture.
+- `RadiusTurn` and `DriftTurn` may use scheduled/program-driven internal
+  reference handoff while the maneuver remains continuous, but externally they
+  complete only after the common outgoing gate and exit-state envelope are
+  satisfied.
+
+This distinction is architectural, not test-fixture convenience. A follower or
+fixture that advances StopTurnGo solely because reference time expired can turn
+tracking error into a false next-phase command and create artificial cross-track
+and hull-clearance failure.
+
+
 ## B5 — Physical Maneuver Compiler
 
 **Owner:** control-law-aware planner.

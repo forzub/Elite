@@ -2,81 +2,110 @@
 
 Continue work directly in GitHub repository `forzub/Elite`, branch `main`.
 
-**Workflow rule:** after every state-affecting iteration, update `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, the active Stage-12 document, and recreate this entire `CONTINUE_PROMPT.md` **from scratch** from the new current truth. Do not incrementally patch stale prompt prose. The newly recreated prompt must contain this same rule again.
+**Workflow rule:** after every state-affecting iteration, update `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, the active Stage-12 document, and recreate this entire `CONTINUE_PROMPT.md` **from scratch** from the new current truth. Do not incrementally patch stale prompt prose. The recreated prompt must contain this rule again.
 
-## Latest target-machine evidence
+## Latest verified evidence
 
-The latest run exercised the continuous outgoing-tracking candidate. The pasted log did not include a printed checkout hash, so do not claim a new exact full tested HEAD. The candidate code commit was:
+Latest target-machine run:
+- architecture contract PASS;
+- navigation_runtime 14/15;
+- StopTurnGo expert healthy;
+- RadiusTurn healthy;
+- long 180 deg arc healthy;
+- only strict expert failure remains DriftTurn exit attitude.
+
+The raw constant-heading experiment failed badly because it asked B10 to execute the entire 90 deg turn from bounded tracking reserve.
+
+## Current unverified code candidate
 
 ```
-24fce76b30d2448a4b94c93ad78dd8d37e5102df
+31a66a3eb462df6b5a60b2da2aca9f018d8aa332
 ```
 
-Results:
-- Stage-12 architecture contract PASS.
-- `navigation_runtime` 14/15.
-- StopTurnGo expert healthy.
-- RadiusTurn healthy.
-- Long 180 deg arc healthy.
-- Only strict expert failure remains DriftTurn exit attitude.
+## New DriftTurn exit mechanism
 
-Latest DriftTurn experiment:
-- old x=60 checkpoint no longer ends control;
-- outgoing reference extends to x=120 at 10 m/s;
-- desired outgoing heading is held continuously;
-- target angular velocity is zero.
+A planner-authored **moving attitude capture** replaces the failed raw heading step.
 
-Result:
-- expert final P ~0.463 m;
-- expert final V ~0.0014 m/s;
-- zero corridor violation;
-- expert final attitude **48.287 deg**;
-- 439 tracking-envelope exceeded ticks;
-- no outgoing attitude capture.
-Competent/rookie also fail strongly (~108 deg / ~107 deg).
+At the end of the drift arc it reads the actual physical state:
+- actual yaw;
+- actual yaw rate;
+- current position;
+- continued 10 m/s outgoing velocity.
 
-## Correct interpretation
+It solves a quintic angular boundary-value trajectory:
+- theta(0) = actual yaw;
+- omega(0) = actual yaw rate;
+- alpha(0) = 0;
+- theta(T) = outgoing corridor yaw;
+- omega(T) = 0;
+- alpha(T) = 0.
 
-The checkpoint/deadline hypothesis was incomplete.
+T is not a fixed 4 s deadline. It is the shortest duration that fits the effective physical angular envelopes.
 
-B10 is a bounded residual tracking controller. In this fixture its angular feedback reserve is only 0.35 rad/s². Replacing the planner-authored 90 deg attitude trajectory with an instantaneous target-heading step asks B10 to execute the whole maneuver from tracking reserve. That violates the planner/follower contract.
+Effective limits mirror ShipController:
+- angular accel <= min(configured angularAccel, maxGs*g/turnRadius);
+- yaw rate <= min(configured maxYawRate, sqrt(maxGs*g/turnRadius)).
 
-The long arc proves the intended architecture works: planner supplies a continuous angular reference + feed-forward; B9/B10 track it accurately.
+The profile reserves B10 correction authority:
+- feed-forward acceleration stays below effective acceleration minus the 0.35 rad/s2 tracking reserve;
+- an extra 5% execution margin is used.
 
-## Current task
+Position reference continues moving during the entire capture.
 
-Implement a planner-authored **moving attitude-capture** for DriftTurn exit.
+## New diagnostics
 
-Requirements:
-- translation continues along the outgoing straight at 10 m/s;
-- angular transition starts from actual/planned current attitude and angular velocity;
-- target is outgoing attitude with terminal angular velocity 0;
-- angular acceleration/rate stay inside capability;
-- maneuver horizon is computed from state/capability and braking requirement, not a fixed arbitrary 4 s;
-- accepted program contains the angular reference/feed-forward;
-- B10 only performs bounded residual correction.
+Inspect:
+- attitude_capture_program_s
+- attitude_capture_start_yaw_rate_radps
+- attitude_capture_peak_ff_yaw_rate_radps
+- attitude_capture_peak_ff_yaw_accel_radps2
+- outgoing_attitude_captured
+- outgoing_attitude_capture_x_m
+- tracking_envelope_exceeded_ticks
+- final_forward_error_deg
 
-Do not:
-- use a raw 90 deg heading step and expect tracking reserve to execute it;
-- inflate generic tracking reserve;
-- weaken 5 deg terminal attitude;
-- reintroduce x=60 as an angular deadline.
+## Validation commands
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+
+OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
+
+{
+    echo "===== TESTED HEAD ====="
+    git rev-parse HEAD
+
+    echo
+    echo "===== ARCHITECTURE CONTRACT ====="
+    TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
+    time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
+    echo
+    echo "===== NAVIGATION RUNTIME ====="
+    bash tests/navigation_runtime/run_mingw64.sh
+} 2>&1 | tee "$OUT"
+
+echo
+echo "===== LOG FILE ====="
+echo "$PWD/$OUT"
+```
 
 ## Acceptance
 
-Need:
+Require:
 - architecture PASS;
 - runtime 15/15;
-- expert DriftTurn P <=1.5 m;
+- expert DriftTurn final attitude <=5 deg;
+- P <=1.5 m;
 - V <=1.0 m/s;
-- final attitude <=5 deg;
-- terminal angular rate within tolerance;
 - zero corridor violation;
-- sustained-speed/material-slip behavior preserved;
+- moving attitude capture observed;
 - long arc remains green.
 
-## After green
+## If green
 
-Record exact tested HEAD and evidence, explain that the closed defect was missing planner-authored exit attitude capture, then move to mixed-angle multi-segment 3D corridor testing.
+Record exact tested HEAD and acceptance evidence, close the DriftTurn exit-authoring defect, analyze the next mixed-angle multi-segment 3D corridor stage, identify implementation/test risks, and proceed directly.
 
-**Again:** recreate this entire prompt from scratch after every state-affecting iteration.
+**Again:** recreate this prompt from scratch after every state-affecting iteration.

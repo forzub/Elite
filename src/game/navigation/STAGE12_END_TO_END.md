@@ -5173,3 +5173,22 @@ changes only DriftTurn recovery authoring.
 The final 4 s / 40 m recovery remains one planner-authored accepted moving reference. The smooth 90 deg yaw recovery now completes in 2.5 s, leaving 1.5 s of continued 10 m/s translation with final yaw held. This gives the physical ship an explicit in-motion settle interval before the common exit without adding a follower-side maneuver or changing acceptance tolerances.
 
 Target-machine validation must keep the long-arc diagnostic green and bring expert DriftTurn final attitude to <=5 deg while preserving existing P/V/corridor and sustained-speed/slip semantics.
+
+
+## 2026-09-20 — moving-settle experiment rejected
+
+Exact target-machine checkout:
+
+```
+a5e44cdc2fb8eaa312ca788ae4b53a9985df3cae
+```
+
+kept the architecture contract green and produced 14/15 runtime passes.
+
+The 2.5 s rotate + 1.5 s moving-settle DriftTurn experiment did **not** solve terminal attitude. Expert final forward error worsened from ~10.325 deg to ~16.889 deg under both Newtonian and Assisted laws. Position (~0.473 m), velocity (~0.032 m/s) and corridor quality remained good.
+
+The long 180 deg arc remained unchanged and clean (expert final attitude ~0.052 deg, maximum in-flight forward/tangent error ~3.221 deg), so general continuous angular tracking remains proven healthy.
+
+Interpretation: compressing the same 90 deg recovery into a faster angular transient creates a larger terminal attitude residual; the subsequent passive 1.5 s settle is insufficient. The next iteration must measure actual/reference angular velocity and attitude residuals at the recovery boundary before changing timing again.
+
+If evidence shows residual angular motion, the correct planner-side primitive is a moving terminal capture/reference continuation: advance position at terminal velocity while holding target attitude and damping angular velocity. Frozen-position StateCapture is not valid for a moving exit.

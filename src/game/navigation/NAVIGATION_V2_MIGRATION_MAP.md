@@ -1168,3 +1168,19 @@ Current architecture/doc candidate before state-document commits:
 ```text
 3ca267ad9ae5188f6f11826298344dbba9df8791
 ```
+
+
+## ManeuverPhaseGate
+
+Compound maneuver handoff now has an explicit production seam:
+`ManeuverPhaseGate`.
+
+It distinguishes:
+- scheduled moving reference progression;
+- real terminal-state capture;
+- bounded capture timeout.
+
+This prevents StopTurnGo from treating nominal reference expiry as successful
+waypoint/velocity/attitude capture. The component is currently an unverified
+candidate and must pass isolated + corner-matrix target-machine gates before
+acceptance.

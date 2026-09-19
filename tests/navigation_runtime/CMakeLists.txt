@@ -300,6 +300,47 @@ set_tests_properties(
 )
 
 add_executable(
+    maneuver_corner_family_matrix_tests
+    ManeuverCornerFamilyMatrixTests.cpp
+)
+
+target_include_directories(maneuver_corner_family_matrix_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    maneuver_corner_family_matrix_tests
+    PRIVATE cxx_std_17
+)
+target_link_libraries(
+    maneuver_corner_family_matrix_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        maneuver_corner_family_matrix_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        maneuver_corner_family_matrix_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME maneuver_corner_family_matrix
+    COMMAND maneuver_corner_family_matrix_tests
+)
+
+set_tests_properties(
+    maneuver_corner_family_matrix
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     maneuver_rigid_body_corridor_tests
     ManeuverRigidBodyCorridorTests.cpp
 )

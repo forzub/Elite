@@ -451,7 +451,7 @@ for marker in (
     "stop-turn-go never achieved a real near-stop in corner zone",
     "radius turn collapsed toward a stop-turn maneuver",
     "drift turn never produced a material body/velocity slip angle",
-    "corner passage is measured entry-gate -> exit-gate",
+    "internal phase handoff is scheduled; moving corner passage is entry-gate -> exit-gate",
 ):
     require(
         marker in CORNER_FAMILY_TEST,

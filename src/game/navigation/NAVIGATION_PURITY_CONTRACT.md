@@ -46,10 +46,14 @@ Snapshot-pure components own an immutable-at-query-time published snapshot or in
 | --- | --- | --- |
 | NavigationMap | replaceDynamicWorld() publishes/rebuilds the dynamic index | querySphere() / queryCorridor() |
 | NavigationSpace | replaceStaticWorld() publishes/rebuilds topology + exact static geometry | query*() corridor/segment/topology queries |
-| NavigationRuntimePlanner / LocalAvoidancePlanner | none | deterministic composition over explicit values plus a const NavigationSpace snapshot |
+| NavigationRuntimePlanner / LocalAvoidancePlanner | none | deterministic composition over explicit values plus `NavigationStaticQueryApi`; the state owner itself never crosses the calculation boundary |
 
-Rules for snapshot-pure services:
+Rules for snapshot-pure services and their consumers:
 
+- state-owner objects stay at orchestration/publication ownership boundaries;
+- adaptive static reads cross calculation seams only through `NavigationStaticQueryApi`;
+- the static read API exposes query methods/results only: no publication, patching, invalidation, stats, storage views, or owner accessor;
+- dynamic planner inputs continue to cross by value as `NavigationMap::QueryResult`;
 - publication and query phases are separate;
 - queries may not mutate semantic navigation state;
 - query products leave by value, never as views/references to index internals;
@@ -72,16 +76,18 @@ Stateful code must not absorb navigation math merely because it already has the 
 
 1. read authoritative state;
 2. construct explicit value DTOs;
-3. call pure or snapshot-pure navigation components;
+3. bind any state owner to its narrow read-only API and call pure/query-capability navigation components;
 4. apply/query authoritative state;
 5. record the resulting transition.
 
 The Stage-12 execution-safety seam follows this rule now: NavigationExecutionSafetyProbeBuilder constructs stopping and forecast probes without any NavigationSpace/HitVolume dependency; GameSimulation only submits those probe segments to authoritative exact-static queries and records the resulting invalidation.
 
+The Stage-12 runtime-planning seam follows the same boundary rule. GameSimulation owns `NavigationSpace`, binds a short-lived `NavigationStaticQueryApi`, and passes only that read capability into NavigationRuntimePlanner. LocalAvoidancePlanner receives the same capability. Neither calculation surface receives `NavigationSpace&` or can publish, patch, invalidate, inspect stats, or obtain the owner.
+
 ## Isolation invariant
 
 A navigation calculation is considered isolated only if it can be unit-tested from explicit values without constructing GameSimulation.
 
-Exceptions are deliberate snapshot-query tests for NavigationMap and NavigationSpace, and sequential execution tests for PilotSkillExecutor.
+Exceptions are deliberate owner-level snapshot-query tests for NavigationMap and NavigationSpace, explicit read-capability composition tests for NavigationStaticQueryApi consumers, and sequential execution tests for PilotSkillExecutor.
 
-If a future calculation needs world time, random input, geometry, pilot state or vehicle damage, the dependency must cross the API as an explicit value or published snapshot. It must not be fetched from global/runtime state from inside the calculation.
+If a future calculation needs world time, random input, geometry, pilot state or vehicle damage, the dependency must cross the boundary as an explicit value DTO or a deliberately narrow read-only API capability. A state-owner object must not cross a calculation boundary, and calculation code must not fetch global/runtime state internally.

@@ -26,10 +26,17 @@ public:
         const glm::vec3& shipUp
     );
 
-    // Navigation/autopilot direct system-frame acceleration demand. This maps the
-    // requested vector onto the real forward main-engine authority plus the
-    // remaining six-direction manoeuvre-thruster authority. Final controlled
-    // speed and manoeuvre-gas limits are still enforced by
+    // Navigation/autopilot direct system-frame acceleration demand.
+    //
+    // Newtonian maps longitudinal main thrust to the aft/forward source only;
+    // reverse demand must use bounded RCS unless the accepted maneuver has
+    // physically flipped the hull.
+    //
+    // Assisted/aircraft-like maps longitudinal demand to symmetric aft/fore
+    // controlled thrust. Lateral/vertical remainder always uses the bounded
+    // six-direction manoeuvre/RCS authority.
+    //
+    // Final controlled-speed and manoeuvre-gas limits are still enforced by
     // updateLocalFrameMotion().
     static void applySystemAccelerationDemand(
         DynamicMotionState& motion,

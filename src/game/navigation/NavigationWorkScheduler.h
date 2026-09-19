@@ -159,13 +159,15 @@ public:
         std::uint64_t dispatched = 0;
         std::uint64_t completedCurrent = 0;
         std::uint64_t completedStale = 0;
+        std::uint64_t queueCompactions = 0;
 
         std::size_t pending = 0;
         std::size_t inFlight = 0;
+        std::size_t queuedRecords = 0;
     };
 
-    NavigationWorkScheduler() noexcept;
-    explicit NavigationWorkScheduler(const Policy& policy) noexcept;
+    NavigationWorkScheduler();
+    explicit NavigationWorkScheduler(const Policy& policy);
 
     [[nodiscard]] bool setCurrentWorldRevision(
         std::uint64_t worldRevision
@@ -173,7 +175,7 @@ public:
 
     [[nodiscard]] bool publishActorRevision(
         const ActorRevisionStamp& stamp
-    ) noexcept;
+    );
 
     [[nodiscard]] EnqueueResult enqueue(
         const NavigationPlannerJob& job,
@@ -242,6 +244,9 @@ private:
         DispatchResult& result
     );
 
+    void compactSupersededRecords();
+    void compactIfNeeded();
+
     [[nodiscard]] Candidate selectCandidate(
         std::uint64_t schedulingTick,
         std::uint32_t remainingCostUnits,
@@ -258,6 +263,7 @@ private:
 
     std::size_t pendingCount_ = 0;
     std::size_t inFlightCount_ = 0;
+    std::size_t queuedRecordCount_ = 0;
 
     Stats totals_ {};
 };

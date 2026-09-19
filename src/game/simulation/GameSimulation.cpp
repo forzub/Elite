@@ -1052,6 +1052,16 @@ bool GameSimulation::updateNpcNavigationControl(
         {
             observation.lastExecutedLinearDemandMapMps2 =
                 executedMapVector;
+
+            if (observation.firstVisibilityBypassCaptured &&
+                !observation.firstVisibilityBypassExecutedCaptured &&
+                observation.firstVisibilityBypassSegmentRevision ==
+                    m_navigationRuntimeLabAcceptedSegment.revision)
+            {
+                observation.firstVisibilityBypassExecutedCaptured = true;
+                observation.firstVisibilityBypassExecutedAccelerationMapMps2 =
+                    executedMapVector;
+            }
         }
         else
         {

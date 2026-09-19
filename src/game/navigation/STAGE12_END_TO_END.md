@@ -4968,3 +4968,133 @@ Relevant implementation commits:
 - `3d06caecc09429336a4b57765d7d99d529ceb467` corner migration;
 - `dc5fd711503c6d7863cea751c82bdbc1666e510d` fixture summary sync;
 - `1f2228f35df29109df1999998a7b1c0d2bfc7778` architecture lock.
+
+
+## 2026-09-20 corner-family rerun: phase gate works, maneuver authoring exposed
+
+Latest exact target-machine checkout:
+
+```text
+ca0c5506a9912bf016e4c52c7545ddd35c66e1fb
+```
+
+Fresh evidence:
+- Stage-12 runtime-planner architecture contract: PASS;
+- navigation_runtime: 14/15 PASS;
+- ManeuverPhaseGate isolated regression: PASS;
+- only maneuver_corner_family_matrix failed.
+
+The gate correction therefore did its job: capture phases no longer advance by
+clock time when terminal state has not actually been captured.
+
+### Observed matrix
+
+Expert RadiusTurn remains strong in both laws:
+- completed;
+- final P ~= 0.45 m;
+- final V ~= 0.027 m/s;
+- final forward ~= 1.86 deg;
+- minimum corner speed ~= 7.99 m/s;
+- hull half-width ~= 17.88 m;
+- zero 32 m corridor violation;
+- zero tracking-envelope exceed ticks.
+
+Expert DriftTurn remains physically strong:
+- completed;
+- final P ~= 0.68 m;
+- final V ~= 0.009 m/s;
+- 10 m/s retained;
+- ~=108 deg body/velocity slip;
+- hull half-width ~=17.37 m;
+- zero corridor violation.
+
+Its remaining strict defect is final attitude ~=9.67 deg versus <=5 deg.
+
+Expert Newtonian StopTurnGo now fails explicitly at capture instead of silently
+handing off:
+
+```text
+completed=0
+phases=2
+capture_timeout_phases=1
+max_capture_overrun_s=6.01
+final_pos_error_m=77.903552
+final_velocity_error_mps=11.314457
+final_forward_error_deg=95.378736
+max_hull_required_half_width_m=42.605322
+max_corridor_violation_m=10.605322
+tracking_envelope_exceeded_ticks=227
+```
+
+Newtonian StopTurnGo times out for expert, competent and rookie. Rookie Assisted
+StopTurnGo also times out; Assisted expert succeeds.
+
+### Root cause
+
+The failure is not a ManeuverPhaseGate defect.
+
+Newtonian StopTurnGo authored a 2.6 s scheduled 180-degree moving flip and then
+immediately started a dependent aft-main braking burn. With the real rigid-body
+angular execution this is too aggressive. The brake reaches its nominal endpoint
+with material P/V/attitude error.
+
+The post-horizon terminal sample correctly has zero brake feed-forward and B10
+has only 0.55 m/s2 reserved linear feedback. That reserve exists to track a
+proved program; it must not be enlarged to repair a badly authored planner
+maneuver.
+
+The already-green rigid-body Newtonian fixture used about 5 s for the same
+180-degree flip. Capture timeout is therefore useful evidence: it exposed the
+under-timed planner reference that the old clock-only handoff concealed.
+
+Do not widen the corridor, extend timeout blindly, weaken expert thresholds or
+turn B10 into a maneuver planner.
+
+## 2026-09-20 corrective corner-authoring candidate
+
+Code candidate:
+
+```text
+f7e17a1a631157bc4cc8763c226ea73b57adeb23
+```
+
+Newtonian StopTurnGo now preserves the exact previous pre-brake travel time and
+braking point while reallocating that time to physical attitude acquisition:
+
+```text
+old: 2.775 s approach + 2.600 s flip = 5.375 s
+new: 0.375 s approach + 5.000 s flip = 5.375 s
+```
+
+The brake remains 1.25 s and StateCapture remains strict. This changes no
+corridor geometry and no terminal tolerance; it simply ensures the planner
+allows sufficient lead rotation before a burn that physically depends on hull
+orientation.
+
+DriftTurn recovery is also changed from:
+
+```text
+3 s moving rotate + 1 s aligned coast
+```
+
+to one continuous 4 s moving attitude recovery over the same 40 m outgoing
+travel. Expert P/V/corridor behavior was already good; the change removes an
+artificial reference boundary and slows the attitude recovery history without
+altering route time or distance.
+
+Target-machine validation is pending.
+
+Required rerun:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+
+TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
+time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
+bash tests/navigation_runtime/run_mingw64.sh
+```
+
+The existing strict expert quality thresholds remain unchanged.

@@ -287,6 +287,87 @@ void testInFlightResultIsRejectedAfterRevisionChange()
     );
 }
 
+void testCompletedRevisionCannotBeReplayed()
+{
+    Scheduler scheduler;
+    require(scheduler.setCurrentWorldRevision(54), "world setup failed");
+    publish(scheduler, 88, 1, 1);
+
+    Job job = makeJob(88, 1, 1, 54, 1);
+    require(
+        scheduler.enqueue(job, 0).status ==
+            Scheduler::EnqueueStatus::Accepted,
+        "replay test initial enqueue failed"
+    );
+
+    Scheduler::DispatchBudget one;
+    one.maxJobs = 1;
+    one.maxCostUnits = 1;
+
+    const auto dispatched = scheduler.dispatchSlice(0, one);
+    require(dispatched.count == 1, "replay test did not dispatch");
+    require(
+        scheduler.complete(dispatched.items[0].ticket) ==
+            Scheduler::CompletionStatus::CompletedCurrent,
+        "replay test initial completion failed"
+    );
+
+    require(
+        scheduler.enqueue(job, 1).status ==
+            Scheduler::EnqueueStatus::Stale,
+        "completed planner revision was replayed without a new scheduling event"
+    );
+
+    job.jobRevision = 2;
+    require(
+        scheduler.enqueue(job, 1).status ==
+            Scheduler::EnqueueStatus::Accepted,
+        "new planner revision was rejected after completed prior revision"
+    );
+}
+
+void testCapacityPressureReclaimsStaleWorldJobs()
+{
+    Scheduler::Policy policy;
+    policy.maxPendingJobs = 2;
+
+    Scheduler scheduler(policy);
+    require(scheduler.setCurrentWorldRevision(56), "world setup failed");
+
+    publish(scheduler, 1, 1, 1);
+    publish(scheduler, 2, 1, 1);
+    publish(scheduler, 3, 1, 1);
+
+    require(
+        scheduler.enqueue(makeJob(1, 1, 1, 56, 1), 0).status ==
+            Scheduler::EnqueueStatus::Accepted,
+        "stale-capacity job 1 failed"
+    );
+    require(
+        scheduler.enqueue(makeJob(2, 1, 1, 56, 1), 0).status ==
+            Scheduler::EnqueueStatus::Accepted,
+        "stale-capacity job 2 failed"
+    );
+
+    require(
+        scheduler.setCurrentWorldRevision(57),
+        "stale-capacity world advance failed"
+    );
+
+    Job current = makeJob(3, 1, 1, 57, 1);
+    require(
+        scheduler.enqueue(current, 1).status ==
+            Scheduler::EnqueueStatus::Accepted,
+        "stale jobs occupied capacity after world revision advanced"
+    );
+
+    const auto stats = scheduler.stats();
+    require(
+        stats.pending == 1 && stats.staleDiscarded >= 2,
+        "capacity-pressure compaction did not reclaim stale pending work"
+    );
+}
+
 void testReplacementStormKeepsPhysicalQueueBounded()
 {
     Scheduler scheduler;
@@ -492,6 +573,8 @@ int main()
         testUrgencyAndAgePromotionAreDeterministic();
         testStaleJobsAreRejectedBeforePlannerWork();
         testInFlightResultIsRejectedAfterRevisionChange();
+        testCompletedRevisionCannotBeReplayed();
+        testCapacityPressureReclaimsStaleWorldJobs();
         testReplacementStormKeepsPhysicalQueueBounded();
         testCapacityIsBounded();
         testFiveThousandActorQueueAndMeasure();
@@ -500,6 +583,7 @@ int main()
         std::cout << " - duplicate/superseded work is bounded by actor slot\n";
         std::cout << " - urgent work preempts and aged work cannot starve\n";
         std::cout << " - stale revisions are rejected before dispatch and before commit\n";
+        std::cout << " - completed revisions cannot replay and stale capacity is reclaimed\n";
         std::cout << " - dispatch respects fixed job/cost slice budgets\n";
         std::cout << " - replacement storms keep physical queue storage bounded\n";
         std::cout << " - 5000-actor queue drains deterministically without loss\n";

@@ -22,10 +22,12 @@ CONFIGURE_MS="skipped"
 BUILD_MS="skipped"
 TESTS_MS="skipped"
 SCHEDULER_DIAGNOSTIC_MS="skipped"
+B5_DIAGNOSTIC_MS="skipped"
 CONFIGURE_RC=0
 BUILD_RC=0
 TESTS_RC=0
 SCHEDULER_DIAGNOSTIC_RC=0
+B5_DIAGNOSTIC_RC=0
 
 CONFIGURE_START_MS="$(now_ms)"
 cmake \
@@ -63,6 +65,19 @@ if [[ "${CONFIGURE_RC}" -eq 0 && "${BUILD_RC}" -eq 0 ]]; then
         if [[ "${SCHEDULER_DIAGNOSTIC_RC}" -ne 0 ]]; then
             TESTS_RC="${SCHEDULER_DIAGNOSTIC_RC}"
         fi
+
+        B5_DIAGNOSTIC_START_MS="$(now_ms)"
+        ctest \
+            --test-dir "${BUILD_DIR}" \
+            -R ordinary_physical_maneuver_compiler \
+            -V
+        B5_DIAGNOSTIC_RC=$?
+        B5_DIAGNOSTIC_END_MS="$(now_ms)"
+        B5_DIAGNOSTIC_MS="$(elapsed_ms "${B5_DIAGNOSTIC_START_MS}" "${B5_DIAGNOSTIC_END_MS}")"
+
+        if [[ "${B5_DIAGNOSTIC_RC}" -ne 0 ]]; then
+            TESTS_RC="${B5_DIAGNOSTIC_RC}"
+        fi
     fi
 
     TEST_END_MS="$(now_ms)"
@@ -76,6 +91,7 @@ echo "[TIMING] navigation_runtime configure_ms=${CONFIGURE_MS}"
 echo "[TIMING] navigation_runtime build_ms=${BUILD_MS}"
 echo "[TIMING] navigation_runtime tests_ms=${TESTS_MS}"
 echo "[TIMING] navigation_runtime scheduler_scale_diagnostic_ms=${SCHEDULER_DIAGNOSTIC_MS}"
+echo "[TIMING] navigation_runtime b5_scale_diagnostic_ms=${B5_DIAGNOSTIC_MS}"
 echo "[TIMING] navigation_runtime total_ms=${TOTAL_MS}"
 
 if [[ "${CONFIGURE_RC}" -ne 0 ]]; then

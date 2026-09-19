@@ -3,23 +3,23 @@
 **Project:** Elite Navigation v2
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Canonical architecture
+## Canonical execution architecture
 
 ```
-Navigation geometry / local corridor
+Navigation geometry / corridor
  -> physical maneuver compiler
  -> continuous proof
  -> maneuver decision
  -> AcceptedManeuverProgram
  -> sampler
- -> trajectory follower / tracking
+ -> trajectory follower / bounded tracking
  -> PilotSkill
- -> authoritative propulsion + physics
+ -> authoritative propulsion / physics
 ```
 
-Planner owns route/corridor, maneuver family, physical reference and proof. Follower samples/tracks the accepted result using bounded residual authority.
+Planner owns the physical reference and maneuver. Follower owns bounded residual tracking, not maneuver invention.
 
-## Accepted maneuver-quality baseline
+## Accepted baseline
 
 Exact target-machine checkout:
 
@@ -27,32 +27,55 @@ Exact target-machine checkout:
 b687b9d3189cdfbbca91123b578637f991cbc645
 ```
 
-Results:
-- architecture contract PASS;
-- navigation_runtime 15/15 PASS;
-- StopTurnGo strict expert healthy;
-- RadiusTurn strict expert healthy;
-- DriftTurn strict expert healthy;
-- long 180 deg continuous angular tracking healthy.
+Evidence:
+- architecture PASS;
+- navigation runtime 15/15;
+- strict expert StopTurnGo, RadiusTurn, DriftTurn healthy;
+- long-arc angular tracking healthy.
 
-### Closed DriftTurn defect
+The accepted DriftTurn fix established that large attitude transitions must be planner-authored from real angular state and capability.
 
-The accepted moving-attitude-capture solution uses actual arc-exit yaw/yaw-rate and solves a capability-derived quintic transition to outgoing yaw/zero yaw-rate while translation continues.
+## Current unverified stage
 
-This confirms the architecture:
-- large-angle maneuver dynamics belong to the planner-authored program;
-- B10 is residual tracking only.
+Continuous multi-corner 3D fly-through.
 
-## Next roadmap item
+Candidate:
+- new `ManeuverFlyThrough3dTests.cpp`;
+- registered `maneuver_fly_through_3d` CTest;
+- expected runtime suite size 16.
 
-Mixed-angle multi-segment 3D corridor quality.
+### Geometry
 
-This stage should extend beyond the existing axis-aligned stop-to-stop corridor and prove chained 3D maneuver composition under rigid-body occupancy and both local flight laws.
+One 5-segment 3D route with ~35/60/90/120 degree turns.
 
-After that:
-1. speed/doctrine matrix;
-2. visible in-game evaluation.
+### Motion
+
+- nominal speed 8 m/s;
+- no stop at corner;
+- C2 quintic moving corner references;
+- body attitude follows route tangent;
+- angular feed-forward derived from orientation evolution.
+
+### Rigid-body proof
+
+Cobra OBB hull corners are measured against a 32 m route corridor.
+
+The test reports per-corner observed physical radius, speed loss, slip and hull envelope so Newtonian/Assisted behavior can be compared from evidence.
+
+## Current question
+
+Can the accepted planner/follower/physics stack execute chained 3D turns without collapsing to stop-turn-go and without leaving the rigid-body corridor?
+
+No assumption is made that Newtonian or Assisted must perform better. The first run establishes the measured difference.
+
+## Roadmap after this gate
+
+If fly-through is healthy:
+1. characterize Newtonian vs Assisted continuous-turn envelopes;
+2. add speed/doctrine matrix;
+3. reconcile doctrine terminology (Rational / Precision / Extreme / CombatEscape vs older Freestyle references);
+4. proceed toward visible in-game evaluation.
 
 ## State protocol
 
-After every state-affecting event, synchronize `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, active Stage-12 documentation, and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state-affecting event, update project MD context and recreate `CONTINUE_PROMPT.md` from scratch.

@@ -429,6 +429,11 @@ require(
 )
 
 for marker in (
+    "testNewtonianAndAssistedPhysicsAreActuallyDifferent",
+    "runLawStress",
+    "[LAW-STRESS]",
+    "Newtonian RCS did not accumulate delta-v beyond 10 m/s envelope",
+    "Assisted law failed to enforce 10 m/s controlled-speed envelope",
     "testFourLeg3dCorridorAcrossLawsAndPilots",
     "kCorridorHalfWidthMeters = 5.0",
     '{"expert", expertProfile(), true}',

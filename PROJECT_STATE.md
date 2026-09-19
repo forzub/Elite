@@ -21,16 +21,12 @@ Planner owns route, corridor, maneuver family, physical reference and proof. Fol
 
 Newtonian and Assisted laws are separate physical families. Manual guidance will expose the same accepted trajectory/corridor.
 
-## Established Stage-12 state
-
-The live Navigation v2 path, exact HitVolume static geometry, moving-passage composition, typed frame transforms, replication truth and planner/follower seams are already covered by accepted architecture/runtime gates. Legacy route stacks are non-authoritative.
-
-## Current maneuver-quality milestone
+## Current verified maneuver-quality milestone
 
 Latest exact target-machine checkout:
 
 ```
-be4686f4dcba419f451813b1ddc246088c145e48
+d659416b9b1ddb2356c37eff315f9d13b70bafaa
 ```
 
 Result:
@@ -38,25 +34,29 @@ Result:
 - navigation runtime 14/15;
 - StopTurnGo expert defect fixed;
 - RadiusTurn healthy;
-- remaining strict expert failure: DriftTurn final attitude ~10.325 deg vs <=5 deg requirement.
+- long 180 deg arc healthy across expert/competent/rookie and both laws;
+- only strict expert failure: DriftTurn final attitude ~10.325 deg vs <=5 deg.
 
-Current unverified code candidate:
+The long arc materially narrows the diagnosis: B9/B10 continuous angular tracking is healthy. Expert tracks ~251 m / 25.1 s of curved flight with only 3.221 deg maximum in-flight angular error and 0.052 deg final error.
 
-```
-5c16bedc25c422f2c79ae5def14396839ef4ee7c
-```
+Therefore the remaining defect is local DriftTurn recovery/reference authoring.
 
-It adds a 180 deg, R=80 m, 10 m/s long-arc diagnostic (~251 m) to determine whether the attitude miss is general B9/B10 angular tracking or local DriftTurn recovery authoring.
+## Current next mechanism
 
-No production tolerance, corridor width or physical capability was weakened.
+Author DriftTurn recovery so the final attitude is reached before the terminal endpoint and held during a short moving settle interval, while preserving translation, exit velocity, corridor and planner/follower ownership.
 
-## Roadmap after this split
+Do not:
+- widen the 5 deg requirement;
+- widen corridor;
+- increase generic feedback reserve merely to force green;
+- add follower-side strategy selection.
 
-1. Fix the identified angular mechanism without hiding it behind tolerance.
-2. Re-run corner-family + long-arc gates.
-3. Add mixed-angle / multi-segment 3D corridor quality tests.
-4. Extend speed-doctrine coverage (Rational / Precision / Extreme / CombatEscape/Freestyle-equivalent behavior as the contract requires).
-5. Move the proven planner/follower behavior into visible game evaluation.
+## Roadmap after DriftTurn is green
+
+1. Re-run corner-family + long-arc gates.
+2. Add mixed-angle / multi-segment 3D corridor quality tests.
+3. Extend speed/doctrine coverage.
+4. Move the proven planner/follower behavior into visible game evaluation.
 
 ## State protocol
 

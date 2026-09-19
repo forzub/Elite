@@ -12,49 +12,50 @@ Read first:
 6. src/game/navigation/STAGE12_END_TO_END.md
 7. src/game/navigation/PLANNER_FOLLOWER_ARCHITECTURE.md
 
-## Accepted evidence
+## Accepted state
 
 Revised B5 is green by supplied target-machine evidence:
 - navigation_runtime 10/10;
-- RCS-feasible request still exposes main-engine B7 option;
-- B5 10000 compiles = 30,824 us;
-- scheduler 5000 = 2,670 us;
+- main-engine alternative exists even when RCS trim is feasible;
+- B5 10,000 compiles = 30,824 us;
+- scheduler 5000 jobs = 2,670 us;
 - production build = 23.861 s.
 
-No rev-parse line was supplied; do not invent tested hash.
+No rev-parse line was supplied; do not invent the tested hash.
 
 ## Current experiment
 
-Before B6, test actual execution of pre-authored accepted movement programs.
+Current execution-lab candidate before docs:
+`78fd1e356138f94f6e6b8990053d80fdc419eb4d`.
 
-New target:
-`maneuver_program_execution_lab`.
+The experiment bypasses planner/world search and tests:
 
-Execution is real:
-AcceptedManeuverProgram -> B9/B10 -> PilotSkill -> SharedShipPhysics ->
-DynamicMotionSystem.
+```text
+AcceptedManeuverProgram
+ -> B9/B10
+ -> PilotSkill
+ -> SharedShipPhysics
+ -> DynamicMotionSystem propulsion + translation
+```
 
 Scenarios:
-1. 100 m straight stop-to-stop;
-2. 100 m -> stop -> 90-degree yaw -> 100 m;
-3. same route inside 5 m half-width corridor.
+1. 100 m straight, stop-to-stop;
+2. 100 m -> stop -> yaw 90 deg -> 100 m;
+3. same path within 5 m half-width corridor.
 
-Print:
+Metrics:
+- arrival class;
 - final position error;
 - final speed;
 - cross-track;
 - overshoot;
 - corner error;
 - corridor violation;
-- simulated completion time;
-- arrival classification.
+- simulated completion time.
 
-First profile has zero PilotSkill reaction delay/latency to isolate autopilot and
-physics.
+First profile is expert/zero-latency to isolate autopilot and physics.
 
-Do not weaken the first thresholds before seeing target-machine metrics.
-
-## Run
+## Run now
 
 ```bash
 cd /d/__elite/work
@@ -67,16 +68,19 @@ time python tests/architecture_contracts/check_navigation_stage12_runtime_planne
 bash tests/navigation_runtime/run_mingw64.sh
 ```
 
-Expected runtime count: 11 tests.
+Expected CTest count: 11, including
+`maneuver_program_execution_lab`.
 
-Do not run the long 120 s obstacle live gate in this experiment.
+The lab may fail. Do not change thresholds before reading the movement metrics.
 
-## Interpretation
+Do not run the long 120 s obstacle live gate yet.
 
-- straight failure -> fix follower/PilotSkill/physics terminal execution first;
-- straight PASS + 90-degree failure -> fix program transition/attitude handling;
-- both PASS -> repeat under realistic pilot latency, then proceed to B6;
-- later add a non-stop rounded/physical 90-degree corner fixture.
+## After results
+
+- straight fail -> fix execution stack first;
+- straight pass / corner fail -> fix program transition or attitude tracking;
+- both pass -> repeat with realistic pilot latency, then B6;
+- later add a continuous/non-stop 90-degree path.
 
 Every state-affecting iteration must synchronize CURRENT_TASK,
 CONTINUE_PROMPT, CURRENT_STATE, PROJECT_STATE and STAGE12_END_TO_END.

@@ -5404,3 +5404,38 @@ CTest target: `maneuver_speed_doctrine_matrix`.
 Expected runtime suite size: 17.
 
 This is an unverified candidate until exact target-machine evidence is recorded.
+
+
+## 2026-09-20 — B7 speed/doctrine select->execute acceptance
+
+Exact target-machine checkout:
+
+```
+a0f0991791665e30059be15efc47dedcdfafe090
+```
+
+passed:
+- Stage-12 architecture contract;
+- all 17 navigation runtime tests;
+- `maneuver_speed_doctrine_matrix`.
+
+The matrix proved deterministic doctrine choice over physically different candidate programs and then executed the selected `AcceptedManeuverProgram` through the accepted follower/PilotSkill/physics chain.
+
+Observed selection:
+- Rational -> balanced;
+- PrecisionRetrieval -> precision;
+- Extreme/Newtonian -> Newtonian-only drift dash;
+- Extreme/Assisted -> common fast path after law filtering;
+- CombatEscape -> low-threat escape.
+
+The faster criticalRisk=0.90 reckless shortcut was rejected above doctrine.
+
+The strongest law-specific evidence is Extreme:
+- Newtonian drift dash: 18 s, ~14.11 m/s peak, ~34.08 deg actual slip, ~2.62 m actual clearance;
+- Assisted fast path: 20 s, ~12.28 m/s peak, ~2.08 deg actual slip, ~7.59 m actual clearance.
+
+All selected programs had zero tracking-envelope exceed ticks and terminal errors far inside the strict gate.
+
+This accepts B7 behavior at lab/runtime level. It does not yet claim that every ordinary production navigation path has completed migration through B7; final live compatibility-seam retirement remains integration work.
+
+The next laboratory gate is chained cross-family transitions plus negative/physical-limit rejection and invalidation cases.

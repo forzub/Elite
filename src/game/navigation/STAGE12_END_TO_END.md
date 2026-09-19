@@ -5288,3 +5288,39 @@ The computed capture lasted ~3.12469 s and started from the real residual yaw ra
 Architecture conclusion: large-angle physical transition belongs in the planner-authored accepted program; B10 remains bounded residual tracking.
 
 Next active stage: mixed-angle multi-segment 3D corridor quality.
+
+
+## 2026-09-20 — continuous 3D fly-through candidate
+
+A new navigation-runtime regression has been added:
+
+```
+tests/navigation_runtime/ManeuverFlyThrough3dTests.cpp
+```
+
+CTest:
+
+```
+maneuver_fly_through_3d
+```
+
+The previous 3D corridor matrix already used non-axis-aligned waypoints, but its execution model was stop-to-stop with in-place attitude transitions. This new stage tests the missing behavior: continuous chained 3D fly-through.
+
+The route has five moving segments and four corners (~35/60/90/120 deg). Nominal speed is 8 m/s. Each corner uses 45 m incoming/outgoing cut distance and a C2 quintic position reference with continuous endpoint velocity and zero endpoint acceleration.
+
+The Cobra Mk1 full OBB is checked against a 32 m half-width polyline corridor every physics tick. Per-corner diagnostics report speed loss, slip, observed turn radius and hull envelope.
+
+Expert Newtonian and Assisted are strict:
+- no stop-turn-go substitution (speed >=3 m/s);
+- zero corridor violation;
+- zero tracking-envelope exceed ticks;
+- all 9 phases complete;
+- final P/V/attitude inside strict bounds.
+
+Competent/Rookie are diagnostic for the first target-machine pass.
+
+Candidate code commits:
+- `5c10c19d7fd2eb4b1fb6aa26b903fd55713b6dcf`;
+- `c48a92010350cf12f417aa19f23f75487dfb1459`.
+
+This candidate is not accepted until exact target-machine evidence is recorded.

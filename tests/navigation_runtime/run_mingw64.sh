@@ -25,6 +25,7 @@ SCHEDULER_DIAGNOSTIC_MS="skipped"
 B5_DIAGNOSTIC_MS="skipped"
 EXECUTION_LAB_DIAGNOSTIC_MS="skipped"
 CORRIDOR_MATRIX_DIAGNOSTIC_MS="skipped"
+RIGID_BODY_CORRIDOR_DIAGNOSTIC_MS="skipped"
 CONFIGURE_RC=0
 BUILD_RC=0
 TESTS_RC=0
@@ -32,6 +33,7 @@ SCHEDULER_DIAGNOSTIC_RC=0
 B5_DIAGNOSTIC_RC=0
 EXECUTION_LAB_DIAGNOSTIC_RC=0
 CORRIDOR_MATRIX_DIAGNOSTIC_RC=0
+RIGID_BODY_CORRIDOR_DIAGNOSTIC_RC=0
 
 CONFIGURE_START_MS="$(now_ms)"
 cmake \
@@ -108,6 +110,19 @@ if [[ "${CONFIGURE_RC}" -eq 0 && "${BUILD_RC}" -eq 0 ]]; then
         if [[ "${CORRIDOR_MATRIX_DIAGNOSTIC_RC}" -ne 0 ]]; then
             TESTS_RC="${CORRIDOR_MATRIX_DIAGNOSTIC_RC}"
         fi
+
+        RIGID_BODY_CORRIDOR_DIAGNOSTIC_START_MS="$(now_ms)"
+        ctest \
+            --test-dir "${BUILD_DIR}" \
+            -R maneuver_rigid_body_corridor \
+            -V
+        RIGID_BODY_CORRIDOR_DIAGNOSTIC_RC=$?
+        RIGID_BODY_CORRIDOR_DIAGNOSTIC_END_MS="$(now_ms)"
+        RIGID_BODY_CORRIDOR_DIAGNOSTIC_MS="$(elapsed_ms "${RIGID_BODY_CORRIDOR_DIAGNOSTIC_START_MS}" "${RIGID_BODY_CORRIDOR_DIAGNOSTIC_END_MS}")"
+
+        if [[ "${RIGID_BODY_CORRIDOR_DIAGNOSTIC_RC}" -ne 0 ]]; then
+            TESTS_RC="${RIGID_BODY_CORRIDOR_DIAGNOSTIC_RC}"
+        fi
     fi
 
     TEST_END_MS="$(now_ms)"
@@ -124,6 +139,7 @@ echo "[TIMING] navigation_runtime scheduler_scale_diagnostic_ms=${SCHEDULER_DIAG
 echo "[TIMING] navigation_runtime b5_scale_diagnostic_ms=${B5_DIAGNOSTIC_MS}"
 echo "[TIMING] navigation_runtime maneuver_execution_lab_ms=${EXECUTION_LAB_DIAGNOSTIC_MS}"
 echo "[TIMING] navigation_runtime corridor_matrix_ms=${CORRIDOR_MATRIX_DIAGNOSTIC_MS}"
+echo "[TIMING] navigation_runtime rigid_body_corridor_ms=${RIGID_BODY_CORRIDOR_DIAGNOSTIC_MS}"
 echo "[TIMING] navigation_runtime total_ms=${TOTAL_MS}"
 
 if [[ "${CONFIGURE_RC}" -ne 0 ]]; then

@@ -5192,3 +5192,31 @@ The long 180 deg arc remained unchanged and clean (expert final attitude ~0.052 
 Interpretation: compressing the same 90 deg recovery into a faster angular transient creates a larger terminal attitude residual; the subsequent passive 1.5 s settle is insufficient. The next iteration must measure actual/reference angular velocity and attitude residuals at the recovery boundary before changing timing again.
 
 If evidence shows residual angular motion, the correct planner-side primitive is a moving terminal capture/reference continuation: advance position at terminal velocity while holding target attitude and damping angular velocity. Frozen-position StateCapture is not valid for a moving exit.
+
+
+## 2026-09-20 — decouple outgoing tracking from old x=60 phase end
+
+After reviewing the failed timed-settle experiment, the corner-family fixture was corrected at the semantic boundary rather than tuned again.
+
+The old DriftTurn flow treated the 40 m post-arc distance to x=60 as a 4 s attitude schedule and ended the `ScheduledMoving` phase at that same checkpoint. This conflated route geometry with physical tracking convergence.
+
+Candidate:
+
+```
+24fce76b30d2448a4b94c93ad78dd8d37e5102df
+```
+
+removes that coupling.
+
+After the drift arc:
+- the accepted position reference continues moving along the outgoing straight at 10 m/s;
+- the accepted attitude is the final outgoing corridor heading;
+- target angular velocity is zero;
+- B10 continuously reduces attitude/angular-rate error while translation continues;
+- x=60 is crossed without ending control.
+
+The finite test corridor now continues to x=120. The fixture records the first point after x=60 where forward error is <=5 deg and angular speed <=0.08 rad/s, exposing the actual moving convergence distance instead of forcing an arbitrary angular deadline.
+
+StopTurnGo and RadiusTurn are also extended through the same outgoing route terminus for a common finite comparison endpoint.
+
+No production tracking authority, capability or quality threshold is weakened. This candidate is unverified until target-machine gates are rerun.

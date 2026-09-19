@@ -39,10 +39,10 @@ struct ReplicatedNavigationExecutionHudPresentation
     std::uint64_t intentRevision = 0;
     std::uint64_t activeTargetRevision = 0;
 
-    glm::dvec3 idealLinearAccelerationDemandMapMps2 {0.0};
-    glm::dvec3 idealAngularAccelerationDemandMapRadPerSec2 {0.0};
-    glm::dvec3 executedLinearAccelerationDemandMapMps2 {0.0};
-    glm::dvec3 executedAngularAccelerationDemandMapRadPerSec2 {0.0};
+    glm::dvec3 idealLinearAccelerationDemandSystemMps2 {0.0};
+    glm::dvec3 idealAngularAccelerationDemandSystemRadPerSec2 {0.0};
+    glm::dvec3 executedLinearAccelerationDemandSystemMps2 {0.0};
+    glm::dvec3 executedAngularAccelerationDemandSystemRadPerSec2 {0.0};
 
     bool emergency = false;
     double hazardUrgency01 = 0.0;
@@ -69,14 +69,14 @@ buildReplicatedNavigationExecutionHudPresentation(
     out.entityId = entityId;
     out.intentRevision = execution.intentRevision;
     out.activeTargetRevision = execution.activeTargetRevision;
-    out.idealLinearAccelerationDemandMapMps2 =
-        execution.idealLinearAccelerationDemandMapMps2;
-    out.idealAngularAccelerationDemandMapRadPerSec2 =
-        execution.idealAngularAccelerationDemandMapRadPerSec2;
-    out.executedLinearAccelerationDemandMapMps2 =
-        execution.executedLinearAccelerationDemandMapMps2;
-    out.executedAngularAccelerationDemandMapRadPerSec2 =
-        execution.executedAngularAccelerationDemandMapRadPerSec2;
+    out.idealLinearAccelerationDemandSystemMps2 =
+        execution.idealLinearAccelerationDemandSystemMps2;
+    out.idealAngularAccelerationDemandSystemRadPerSec2 =
+        execution.idealAngularAccelerationDemandSystemRadPerSec2;
+    out.executedLinearAccelerationDemandSystemMps2 =
+        execution.executedLinearAccelerationDemandSystemMps2;
+    out.executedAngularAccelerationDemandSystemRadPerSec2 =
+        execution.executedAngularAccelerationDemandSystemRadPerSec2;
     out.emergency = execution.emergency;
     out.hazardUrgency01 = execution.hazardUrgency01;
     out.reactionBlocked = execution.reactionBlocked;
@@ -106,8 +106,8 @@ struct GuidanceCorridorHudPresentation
     EntityId authoritativeExecutionEntityId {};
     std::uint64_t authoritativeIntentRevision = 0;
     std::uint64_t authoritativeActiveTargetRevision = 0;
-    glm::dvec3 authoritativeExecutedLinearAccelerationMapMps2 {0.0};
-    glm::dvec3 authoritativeExecutedAngularAccelerationMapRadPerSec2 {0.0};
+    glm::dvec3 authoritativeExecutedLinearAccelerationSystemMps2 {0.0};
+    glm::dvec3 authoritativeExecutedAngularAccelerationSystemRadPerSec2 {0.0};
     bool authoritativeEmergency = false;
     bool authoritativeReactionBlocked = false;
 
@@ -138,10 +138,10 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
             out.authoritativeIntentRevision = server.intentRevision;
             out.authoritativeActiveTargetRevision =
                 server.activeTargetRevision;
-            out.authoritativeExecutedLinearAccelerationMapMps2 =
-                server.executedLinearAccelerationDemandMapMps2;
-            out.authoritativeExecutedAngularAccelerationMapRadPerSec2 =
-                server.executedAngularAccelerationDemandMapRadPerSec2;
+            out.authoritativeExecutedLinearAccelerationSystemMps2 =
+                server.executedLinearAccelerationDemandSystemMps2;
+            out.authoritativeExecutedAngularAccelerationSystemRadPerSec2 =
+                server.executedAngularAccelerationDemandSystemRadPerSec2;
             out.authoritativeEmergency = server.emergency;
             out.authoritativeReactionBlocked = server.reactionBlocked;
         }

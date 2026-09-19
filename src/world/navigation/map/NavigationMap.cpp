@@ -136,6 +136,7 @@ public:
         Vec3d conservativeSweptCenterMapMeters {};
         double actorRadiusMeters = 0.0;
         double conservativeSweptRadiusMeters = 0.0;
+        std::vector<NavigationObstacle> exactObstacles;
         std::uint32_t flags = 0;
         Revision motionRevision = 0;
         bool indexed = false;
@@ -179,12 +180,23 @@ public:
 
         for (const DynamicActorInput& input : update.actors)
         {
+            const bool exactGeometryValid =
+                std::all_of(
+                    input.exactObstacles.begin(),
+                    input.exactObstacles.end(),
+                    [](const NavigationObstacle& obstacle)
+                    {
+                        return obstacle.finite();
+                    }
+                );
+
             if (!isFinite(input.positionMapMeters) ||
                 !isFinite(input.velocityMapMetersPerSecond) ||
                 !isFinite(input.accelerationMapMetersPerSecond2) ||
                 !isFinite(input.angularVelocityMapRadPerSecond) ||
                 !isFinite(input.radiusMeters) ||
                 input.radiusMeters < 0.0 ||
+                !exactGeometryValid ||
                 !seenIds.insert(input.entityId).second)
             {
                 ++newRejectedActorCount;
@@ -201,6 +213,7 @@ public:
             actor.angularVelocityMapRadPerSecond =
                 input.angularVelocityMapRadPerSecond;
             actor.actorRadiusMeters = input.radiusMeters;
+            actor.exactObstacles = input.exactObstacles;
             actor.flags = input.flags;
             actor.motionRevision = input.motionRevision;
 
@@ -519,6 +532,7 @@ private:
         result.actorRadiusMeters = actor.actorRadiusMeters;
         result.conservativeSweptRadiusMeters =
             sweptRadius(actor, lookAheadSeconds);
+        result.exactObstacles = actor.exactObstacles;
         result.flags = actor.flags;
         result.motionRevision = actor.motionRevision;
         return result;

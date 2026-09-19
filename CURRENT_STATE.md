@@ -7,97 +7,74 @@
 Tested checkout:
 
 ```
-d659416b9b1ddb2356c37eff315f9d13b70bafaa
+a5e44cdc2fb8eaa312ca788ae4b53a9985df3cae
 ```
 
 - Stage-12 architecture contract: **PASS**.
 - `navigation_runtime`: **14/15 PASS**.
 - Only failing target: `maneuver_corner_family_matrix`.
-- Expert Newtonian StopTurnGo remains fixed and healthy.
+- StopTurnGo expert remains healthy.
 - RadiusTurn remains healthy.
-- Strict expert failure remains DriftTurn common-exit attitude:
-  - Newtonian: 10.324757 deg;
-  - Assisted: 10.324757 deg;
-  - required <=5 deg.
-- DriftTurn final P/V and corridor are otherwise good:
-  - final P error 0.473 m;
-  - final V error 0.032 m/s;
-  - no corridor violation;
-  - no tracking-envelope exceed ticks for expert.
+- Long 180 deg arc remains healthy for all PilotSkill profiles and both laws.
+- Remaining strict failure is still expert DriftTurn exit attitude.
 
-## Long-arc diagnostic result
+## Latest DriftTurn experiment
 
-The new 180 deg, R=80 m, v=10 m/s long arc ran successfully for every PilotSkill and both control laws.
+Candidate tested in this checkout:
+- one coherent 4 s / 40 m recovery;
+- smooth 90 deg yaw commanded over 2.5 s;
+- final 1.5 s continues at 10 m/s while holding exit yaw.
 
-Expert:
-- final P error 0.332 m;
-- final V error 0.036 m/s;
-- final attitude error 0.052 deg;
-- maximum in-flight forward/tangent error 3.221 deg;
-- maximum centerline error 0.330 m;
-- no tracking-envelope exceed ticks.
+Result: **worse**, not accepted.
 
-Competent:
-- final attitude error 0.048 deg;
-- maximum in-flight forward/tangent error 4.422 deg;
-- no tracking-envelope exceed ticks.
+Expert DriftTurn:
+- previous final attitude error: ~10.325 deg;
+- new final attitude error: **16.889 deg**;
+- final P error remains ~0.473 m;
+- final V error remains ~0.032 m/s;
+- corridor violation remains 0;
+- tracking envelope remains unexceeded for expert.
 
-Rookie:
-- final attitude error 0.859 deg;
-- maximum in-flight forward/tangent error 6.149 deg;
-- no tracking-envelope exceed ticks.
+Competent DriftTurn also worsened to ~52.744 deg and 193 envelope-exceeded ticks. Rookie DriftTurn ends ~21.643 deg with 127 exceeded ticks.
 
-Therefore the general angular sampling/tracking chain is healthy. The remaining DriftTurn miss is **not** a general B9/B10 inability to rotate while translating.
+## Interpretation
 
-## Root cause direction
+The long arc still proves the follower can rotate accurately while translating:
+- expert final attitude error 0.052 deg;
+- max in-flight forward/tangent error 3.221 deg;
+- zero tracking-envelope exceed ticks.
 
-The ship can correct attitude while moving. The <=5 deg rule is only the common terminal-exit requirement.
+Therefore the failure is not a general inability to rotate in motion.
 
-The current DriftTurn reference commands its recovery during the final 4 s / 40 m, but the reference ends while the physical ship is still about 10.3 deg short. Since the long arc proves continuous angular tracking works, the remaining defect is local maneuver authoring / recovery construction.
+The 2.5 s recovery compresses the same 90 deg yaw change into a more aggressive angular profile. Although the nominal profile remains inside the published angular capability, the closed-loop execution leaves a larger terminal attitude residual. A 1.5 s zero-feed-forward settle with the current bounded angular feedback is not sufficient to remove that residual.
 
-The clean correction is to keep the translational motion and provide an explicit in-motion attitude-settle portion **inside the same accepted maneuver program**. This is not replanning and does not require the follower to invent a maneuver.
+Do **not** tune durations blindly or weaken the 5 deg gate.
 
-Do not relax the 5 deg gate, widen the corridor, or increase generic tracking reserve to hide this.
+## Next diagnostic/mechanism step
 
-## Current unverified candidate
+Instrument the DriftTurn recovery boundary with:
+- terminal attitude error;
+- terminal angular-velocity error / actual yaw rate;
+- reference yaw rate;
+- peak angular tracking residual during recovery.
 
-Code candidate:
+Then choose the correction from evidence.
 
-```
-76346121516e5b00d14a4e6304621b55791093ab
-```
+Likely mechanism if the terminal state shows residual angular motion:
+- planner-authored moving terminal capture / recovery continuation that keeps the translational reference advancing at 10 m/s while holding final yaw and damping angular rate;
+- not the existing frozen-position StateCapture;
+- no follower-side maneuver selection.
 
-DriftTurn recovery now remains one coherent 4 s / 40 m accepted moving reference, but:
-- smooth 90 deg recovery completes in 2.5 s;
-- final 1.5 s continues translating at 10 m/s while holding the exit yaw;
-- no separate follower maneuver is introduced;
-- no tolerance, corridor or generic tracking reserve was changed.
-
-This candidate is not accepted until target-machine evidence is supplied.
-
-## Next target-machine commands
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
-time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
-
-bash tests/navigation_runtime/run_mingw64.sh
-```
-
-Acceptance requires the existing expert DriftTurn <=5 deg exit attitude plus unchanged P/V/corridor quality and a still-green long-arc diagnostic.
+This gate must be fixed before moving to the next major 3D/speed-doctrine stage.
 
 ## Architecture invariants
 
 - Planner owns maneuver choice, trajectory/corridor and proof.
 - Follower owns sampling/tracking, bounded feedback and safety monitoring; it must not silently choose a different maneuver family.
 - AcceptedManeuverProgram remains the planner/follower contract.
-- Manual guidance must visualize the same accepted route/trajectory, not run a second planner.
+- Manual guidance must visualize the same accepted route/trajectory.
 - Newtonian and Assisted physical laws remain distinct.
-- Navigation v2 typed frame boundaries remain sealed; planner cannot mutate authoritative physics state.
+- Planner cannot mutate authoritative physics state.
 
 ## Documentation protocol
 
@@ -107,4 +84,4 @@ After every state-affecting iteration, synchronize:
 - `PROJECT_STATE.md`
 - active Stage-12 document
 
-And recreate `CONTINUE_PROMPT.md` **from scratch** from current truth. Never incrementally preserve stale prompt prose.
+And recreate `CONTINUE_PROMPT.md` **from scratch** from current truth.

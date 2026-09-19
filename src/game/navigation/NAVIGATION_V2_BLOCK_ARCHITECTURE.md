@@ -370,6 +370,43 @@ RCS. It samples/tracks the already accepted B8 program and adds only bounded
 feedback. A material deviation or new hazard invalidates the program and
 requests planner work through B14/B11.
 
+### Corner-passage maneuver families
+
+A geometric route vertex does not have one universal "passed" condition.
+Planner-side B5/B7 may choose different physical corner families, each with its
+own terminal/passage semantics.
+
+`StopTurnGo`:
+- capture the waypoint;
+- reduce translational speed to the maneuver's stop tolerance;
+- acquire the outgoing attitude;
+- only then depart on the next leg.
+
+`RadiusTurn`:
+- replace the sharp vertex with a proved continuous-radius transition;
+- no zero-speed requirement;
+- pass when the rigid hull crosses the common outgoing gate with P/V/attitude
+  inside the exit envelope;
+- body/velocity slip angle remains small enough to classify the maneuver as a
+  coordinated/radius turn.
+
+`DriftTurn`:
+- preserve material translational speed through the corner;
+- allow deliberate body/velocity misalignment;
+- use a proved combination of attitude rotation and physical thrust to bend the
+  velocity vector;
+- pass when the rigid hull crosses the same outgoing gate with exit P/V/attitude
+  inside the envelope.
+
+Comparison rule:
+- all families use the same entry gate, outgoing gate, rigid hull and corridor;
+- corner time is entry-gate crossing -> exit-gate crossing;
+- total corridor time is measured separately;
+- planner may compare time, clearance, actuator use, tracking reserve and
+  doctrine/risk only after B6 proves each candidate.
+
+Touching the mathematical route vertex is never, by itself, "corner passed".
+
 ## B5 — Physical Maneuver Compiler
 
 **Owner:** control-law-aware planner.

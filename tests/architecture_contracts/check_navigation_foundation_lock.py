@@ -131,6 +131,36 @@ try:
             "RuckigTrajectorySolver",
         )
 
+    # Repair drones still contain an older GeometricPathPlanner +
+    # SmallCraftNavigation implementation. It is retained only as migration
+    # reference and must remain fail-closed/off until it is rebuilt on
+    # Navigation v2.
+    require(
+        "src/world/modules/ObjectRepairJobRuntime.cpp",
+        "constexpr bool LegacyRepairDroneRoutePipelineEnabled = false",
+        "GeometricPathPlanner::plan",
+        "if (!LegacyRepairDroneRoutePipelineEnabled)",
+        "Fail closed: never interpret \"no path\" as \"arrived\"",
+    )
+    repair_start = function_body(
+        "src/world/modules/ObjectRepairJobRuntime.cpp",
+        "bool ObjectRepairJobRuntime::startJob(",
+    )
+    repair_update = function_body(
+        "src/world/modules/ObjectRepairJobRuntime.cpp",
+        "std::vector<std::string> ObjectRepairJobRuntime::update(",
+    )
+    if "if (!LegacyRepairDroneRoutePipelineEnabled)" not in repair_start:
+        raise AssertionError(
+            "legacy repair-drone route pipeline can still start new jobs"
+        )
+    if ("if (!LegacyRepairDroneRoutePipelineEnabled)" not in repair_update or
+            "job.droneVelocity = glm::vec3(0.0f)" not in repair_update or
+            "job.droneNav.clear()" not in repair_update):
+        raise AssertionError(
+            "legacy repair-drone route pipeline is not fail-closed in update"
+        )
+
     # Route calculation is allowed to mutate only navigation workspace/output.
     # It must not write simulation, cloud, map-resource or replicated transforms.
     guidance = function_body(

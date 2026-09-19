@@ -4,17 +4,24 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/AcceptedShortSegment.h"
+#include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/NavigationControlIntent.h"
 
 namespace game::navigation
 {
 
-// Fixed-step executor for one AcceptedShortSegment.
+// Fixed-step execution seam.
 //
-// This class deliberately has no NavigationMap/NavigationSpace dependency and
-// cannot perform obstacle search. It converts the already accepted local
-// execution product plus current kinematics into control intent.
+// Navigation-v2 path:
+//   AcceptedManeuverProgram
+//     -> ManeuverProgramSampler (B9)
+//     -> ManeuverTrackingController (B10)
+//     -> NavigationLocalControlIntent
+//
+// The old AcceptedShortSegment overload remains temporarily for live
+// compatibility while GameSimulation ACCEPT packing is migrated.
 class TrajectoryFollower final
 {
 public:
@@ -46,9 +53,22 @@ public:
 
         double remainingDistanceMeters = 0.0;
         double crossTrackErrorMeters = 0.0;
+        double linearVelocityErrorMps = 0.0;
+        double forwardAngleErrorRad = 0.0;
+        double angularVelocityErrorRadPerSec = 0.0;
         bool trackingErrorExceeded = false;
     };
 
+    [[nodiscard]] static Result follow(
+        const AcceptedManeuverProgram& program,
+        double universeTimeSeconds,
+        const AgentState& agent,
+        const ManeuverTrackingController::Policy& trackingPolicy = {}
+    ) noexcept;
+
+    // Transitional compatibility overload. This path is intentionally kept
+    // separate so the new B8/B9/B10 contract can be tested without silently
+    // changing the current live Stage-12 fixture.
     [[nodiscard]] static Result follow(
         const AcceptedShortSegment& segment,
         const AgentState& agent

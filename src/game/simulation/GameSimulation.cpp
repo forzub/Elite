@@ -3208,11 +3208,15 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         accepted.velocityResponsePerSecond =
             plannerGoal.velocityResponsePerSecond;
 
+        // Preserve the selected maneuver exactly. Route context is not
+        // allowed to invent an attitude requirement at the ACCEPT boundary.
         accepted.alignForward =
-            m_navigationRuntimeLabLastPlan.portalTraversalActive;
+            m_navigationRuntimeLabLastPlan.
+                selectedManeuverRequiresForwardAlignment;
         accepted.desiredForwardMap =
             accepted.alignForward
-                ? m_navigationRuntimeLabLastPlan.portalNormalMap
+                ? m_navigationRuntimeLabLastPlan.
+                    selectedManeuverForwardMap
                 : agent.forwardMap;
         accepted.angularDampingPerSecond =
             plannerGoal.angularDampingPerSecond;

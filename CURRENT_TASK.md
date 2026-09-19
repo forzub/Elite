@@ -1,195 +1,274 @@
 # Elite — CURRENT TASK
 
-**Updated:** 2026-09-19 Europe/Kyiv
+**Updated:** 2026-09-20 Europe/Kyiv
 **Branch:** `main`
 
-## Correction of the previous corridor test
+## Accepted rigid-body baseline
 
-The previous `maneuver_corridor_matrix` is NOT a hull-clearance proof.
+Fresh supplied target-machine evidence:
+- architecture contract PASS;
+- navigation_runtime 13/13 PASS;
+- maneuver_rigid_body_corridor PASS;
+- production build PASS, 84.197 s.
 
-It measured corridor distance from the ship center only, so it effectively
-treated the vehicle as a material point. Its P/V/PilotSkill measurements remain
-useful, but statements such as "zero 5 m corridor violation" apply only to the
-center path.
+Accepted physical observations:
+- expert Newtonian:
+  - final error 0.346002 m;
+  - final speed 0.399834 m/s;
+  - final forward 179.996705 deg from route;
+  - max hull half-width 17.275892 m;
+  - max flip 179.999972 deg;
+  - aft-main brake 8.325947 m/s2;
+  - fore-main brake 0;
+- expert Assisted:
+  - final error 0.346002 m;
+  - final speed 0.399834 m/s;
+  - final forward 0 deg;
+  - max hull half-width 13.238202 m;
+  - no flip;
+  - fore-main brake 8.326298 m/s2.
 
-For Cobra Mk1 this is physically impossible as a hull corridor:
-- width = 26.0 m;
-- height = 5.0 m;
-- length = 22.2 m;
-- body half-extents = right 13.0 m, up 2.5 m, forward 11.1 m.
+This confirms the rigid-body/actuator model and the wider Newtonian flip
+envelope.
 
-## Physical control-law model
+The supplied log contains no `git rev-parse HEAD` line, so do not invent an
+exact tested checkout hash.
 
-### Newtonian
+## Current task — corner maneuver families and timing
 
-Physical translation/attitude model:
-- aft main thrust only for longitudinal main acceleration;
-- no fore/nose main braking source;
-- six-direction manoeuvre/RCS = 2.0 m/s2;
-- bounded angular authority from main-nozzle vectoring / attitude actuators;
-- material main-engine braking requires reorienting the hull so aft thrust
-  opposes velocity.
-
-For the stop test this means:
-
-```text
-accelerate with aft main
- -> coast while flipping ~180 deg
- -> aft-main braking burn
-```
-
-### Assisted / aircraft-like
-
-Physical translation/attitude model:
-- aft longitudinal main thrust;
-- fore/nose longitudinal reverse main thrust;
-- manoeuvre/RCS for lateral/vertical translation and stabilization;
-- same bounded angular authority;
-- no omnidirectional main engine.
-
-For the same center trajectory:
-
-```text
-accelerate with aft main
- -> remain nose-forward
- -> brake with fore/reverse main thrust
-```
-
-Production `DynamicMotionSystem` has been changed to enforce this split.
-
-Runtime-control regressions now pin:
-- Newtonian reverse demand cannot use fore main;
-- Assisted reverse demand can use fore longitudinal main;
-- Assisted lateral demand must stay on RCS, not main thrust.
-
-## Current candidate
-
-Code/contract candidate before documentation commits:
-
-```text
-753eae5dcf1d7aae8eb05893ba75e16896a52b91
-```
+A mathematical route vertex does not have one universal "passed" condition.
 
 New target:
 
 ```text
-maneuver_rigid_body_corridor
+maneuver_corner_family_matrix
 ```
 
-Expected navigation_runtime test count:
+Current code/architecture candidate before state-document commits:
 
 ```text
-13
+8f1397a919009d4ed5fdc84412506ba681b3059c
 ```
 
-## Rigid-body test vehicle
-
-The test uses Cobra Mk1 physical/logical data:
+Expected navigation_runtime CTest count:
 
 ```text
-width  = 26.0 m
-height = 5.0 m
-length = 22.2 m
-
-half extents:
-right   = 13.0 m
-up      =  2.5 m
-forward = 11.1 m
-
-aft main authority            = 7.5 g
-Assisted fore main authority  = 7.5 g
-RCS                            = 2.0 m/s2
-angular/vectoring authority   = 3.0 rad/s2
-pitch/yaw rate limit          = 2.5 rad/s
-roll rate limit               = 3.0 rad/s
+14
 ```
 
-The test prints one `[VEHICLE-MODEL]` row.
+## Common corridor
 
-## Stop trajectory
+First isolate one canonical 90-degree corner.
 
-Both laws use the same 200 m center-of-mass trajectory:
-- accelerate;
-- 5 s centerline coast interval;
-- brake to zero.
+```text
+incoming gate
+(0,0,60)
+   |
+   | 60 m
+   v
+vertex (0,0,0)
+   +----------------> outgoing gate (60,0,0)
+                  60 m
+```
 
-The difference is attitude and actuator source.
+Common conditions:
+- initial velocity = 10 m/s toward the vertex;
+- final target velocity = 10 m/s along outgoing leg;
+- initial body forward = incoming direction;
+- final body forward = outgoing direction;
+- rigid Cobra Mk1 hull 26 x 5 x 22.2 m;
+- common corridor half-width = 32 m;
+- corner timing entry gate = 35 m before vertex;
+- corner timing exit gate = 35 m after vertex.
 
-Newtonian:
-- during coast the hull performs a smooth ~180 deg yaw flip;
-- braking acceleration must align with the new backward-facing hull;
-- aft main performs the brake.
+All families therefore have the same physical start, exit gate and hull
+clearance test.
 
-Assisted:
-- hull stays nose-forward;
-- fore/reverse longitudinal main performs the brake.
+## Family 1 — StopTurnGo
 
-## What is measured
+Meaning:
 
-Per physics tick:
-- center position and velocity;
-- full body orientation;
-- angular velocity;
-- maximum flip angle;
+```text
+approach
+ -> capture vertex
+ -> speed approximately zero
+ -> acquire outgoing attitude
+ -> accelerate out
+```
+
+"Corner passed" is NOT touching the vertex.
+
+For this family the semantic requirement is:
+- near-zero speed is actually achieved inside the corner zone;
+- outgoing gate is later crossed;
+- final P/V/attitude is inside the common exit envelope.
+
+Newtonian is allowed/expected to use its physical flip/aft-main strategy where
+needed.
+Assisted may use fore/reverse longitudinal thrust.
+
+## Family 2 — RadiusTurn
+
+Meaning:
+
+```text
+approach
+ -> reduce only as much speed as physical lateral authority requires
+ -> continuous proved arc
+ -> exit without stopping
+```
+
+Current isolated fixture:
+- radius = 35 m;
+- nominal arc speed = 8 m/s;
+- body stays approximately tangent to velocity;
+- centripetal acceleration is within the 2 m/s2 RCS envelope.
+
+Semantic quality:
+- minimum corner-zone speed >= 5 m/s;
+- maximum body/velocity slip <= 20 deg;
+- common exit gate crossed.
+
+## Family 3 — DriftTurn
+
+Meaning:
+
+```text
+approach at speed
+ -> rotate hull away from velocity
+ -> use physical thrust to bend V
+ -> retain material translation through corner
+ -> recover outgoing attitude
+```
+
+Current isolated fixture:
+- radius = 20 m;
+- nominal speed = 10 m/s;
+- hull is deliberately near 90 deg to velocity during the powered arc;
+- aft-main thrust supplies most centripetal acceleration.
+
+Semantic quality:
+- minimum corner-zone speed >= 7 m/s;
+- body/velocity slip reaches >=60 deg;
+- common exit gate crossed.
+
+This answers the concrete question: can the current follower/PilotSkill/physics
+actually execute a drift corner without cheating on thrust direction or hull
+geometry?
+
+## Passage semantics
+
+Internal test phases are pieces of one conceptual accepted maneuver.
+
+They hand off by scheduled program time. We explicitly do NOT use
+`Follower::Complete` for a moving internal waypoint because that is terminal
+capture semantics.
+
+Externally meaningful corner passage:
+
+```text
+entry-gate crossing
+        ->
+rigid-body maneuver inside common corridor
+        ->
+exit-gate crossing with valid exit state
+```
+
+Touching the mathematical vertex alone never counts.
+
+## Matrix
+
+Pilots:
+
+```text
+expert
+competent  (current production NPC baseline)
+rookie
+```
+
+Laws:
+
+```text
+Newtonian
+Assisted / aircraft-like
+```
+
+Families:
+
+```text
+StopTurnGo
+RadiusTurn
+DriftTurn
+```
+
+Total:
+
+```text
+3 pilots x 2 laws x 3 families = 18 rows
+```
+
+## Metrics
+
+Every `[CORNER-MATRIX]` row prints:
+- valid/completed;
+- phase count;
+- total corridor time;
+- corner-zone time;
+- final position error;
+- final velocity error;
+- final forward/attitude error;
+- minimum corner speed;
+- maximum drift/slip angle;
 - center cross-track;
-- all eight OBB hull corners against the corridor;
-- required corridor half-width;
-- tight 14 m corridor violation;
-- 18.5 m flip-safe corridor violation;
-- aft-main braking peak;
-- fore-main braking peak;
-- RCS braking peak;
-- follower tracking-envelope exceed count.
+- rigid-hull required half-width;
+- common 32 m corridor violation;
+- aft-main peak;
+- fore-main peak;
+- RCS peak;
+- tracking-envelope exceeded ticks.
 
-Output rows:
+Additionally nine `[CORNER-COMPARE]` rows print, for the same pilot and family:
+- Newtonian total time;
+- Assisted total time;
+- Assisted - Newtonian time delta;
+- Newtonian corner-zone time;
+- Assisted corner-zone time;
+- Newtonian required half-width;
+- Assisted required half-width.
 
-```text
-[RIGID-CORRIDOR] pilot=expert law=newtonian ...
-[RIGID-CORRIDOR] pilot=expert law=assisted ...
-[RIGID-CORRIDOR] pilot=competent law=newtonian ...
-[RIGID-CORRIDOR] pilot=competent law=assisted ...
-[RIGID-CORRIDOR] pilot=rookie law=newtonian ...
-[RIGID-CORRIDOR] pilot=rookie law=assisted ...
-```
+No winner/ranking is hard-coded. First target-machine run establishes the actual
+timing/clearance result.
 
-The corridor centerline is extended beyond start/finish so the measurement is
-transverse hull width, not an artificial endpoint-cap distance.
+## First-pass strict expert checks
 
-## Strict expert expectations
+All six expert law/family rows must:
+- remain valid;
+- cross the common exit gate;
+- stay inside common 32 m rigid-hull corridor;
+- finish within 1.5 m position error;
+- finish within 1.0 m/s velocity error;
+- finish within 5 deg outgoing attitude error.
 
-Newtonian:
-- completes;
-- max flip >= 170 deg;
-- final forward direction remains >=170 deg from route-forward;
-- aft-main braking >=5 m/s2;
-- fore-main braking = 0;
-- 14 m half-width corridor is too narrow by at least 2 m;
-- 18.5 m half-width contains the flip envelope.
+Family semantics:
+- StopTurnGo: corner-zone speed <=0.75 m/s at some point;
+- RadiusTurn: min corner speed >=5 m/s, slip <=20 deg;
+- DriftTurn: min corner speed >=7 m/s, slip >=60 deg.
 
-Assisted:
-- completes;
-- max flip <=5 deg;
-- final forward direction remains <=5 deg from route-forward;
-- fore-main braking >=5 m/s2;
-- 14 m half-width contains the aligned hull.
+Competent/rookie remain diagnostic on the first run.
 
-Both:
-- final center error <=1 m;
-- final speed <=0.5 m/s.
+## Why timing may or may not differ at one 90-degree corner
 
-Competent and rookie rows are diagnostic on the first run.
+Do not force a difference.
 
-## Last supplied target-machine evidence
+At a symmetric 90-degree corner some Newtonian and Assisted maneuvers can have
+similar passage time even though attitude/thrust histories and required corridor
+width differ.
 
-The most recent supplied run was:
-- architecture PASS;
-- navigation_runtime 12/12 PASS;
-- low-level law stress:
-  - Newtonian 15.960220 m/s;
-  - Assisted 10.000000 m/s.
-
-That proves the low-level laws are distinct, but the supplied paste did not
-contain `git rev-parse HEAD`, so no exact checkout hash is invented for it.
+After this primitive is measured, compose the same accepted families into the
+requested 3-4 segment 3D corridor with mixed turn angles. Mixed angles are where
+Newtonian reorientation history can create a larger timing difference:
+a Newtonian ship may arrive at a vertex tail-forward after braking, while an
+Assisted ship may remain nose-forward.
 
 ## Run now
 
@@ -202,31 +281,29 @@ TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
 time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
 bash tests/navigation_runtime/run_mingw64.sh
-
-TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
-time bash build_mingw64.sh
 ```
 
+Do not run the old 120 s obstacle live gate yet.
+
 Capture:
-- exact `git rev-parse HEAD`;
-- `[VEHICLE-MODEL]`;
-- all six `[RIGID-CORRIDOR]` rows;
-- any compile warning/error;
-- full test count;
-- build timing.
+- exact HEAD;
+- all 18 `[CORNER-MATRIX]` rows;
+- all 9 `[CORNER-COMPARE]` rows;
+- any FAIL/warning;
+- timing summary.
 
-Do NOT run the old 120 s obstacle-navigation live gate yet.
+## Next after target-machine evidence
 
-## After this gate
+If expert drift executes:
+- accept drift as an executable physical corner primitive;
+- compare actual stop/radius/drift time and hull width;
+- compose all three families into a 3-4 segment 3D corridor;
+- then feed those physically distinct candidates toward B6 proof/B7 selection.
 
-If rigid-body expert rows pass:
-- accept physical hull/actuator execution baseline;
-- use measured hull envelope as input to B6 corridor proof;
-- then extend the same physical model from one straight stop to the multi-leg
-  3D corridor.
-
-If Newtonian flip/hull width fails:
-- fix attitude/thrust timing or hull-envelope computation before B6.
+If drift fails:
+- do not loosen criteria;
+- use P/V/attitude/actuator/clearance output to identify whether the failure is
+  angular timing, main-thrust direction, tracking reserve or corridor geometry.
 
 ## Documentation invariant
 

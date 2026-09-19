@@ -515,8 +515,11 @@ double hullRequiredHalfWidthMeters(
     const glm::dvec3 up(v.transform.up());
     const glm::dvec3 forward(v.transform.forward());
 
-    const glm::dvec3 start(0.0, 0.0, 0.0);
-    const glm::dvec3 finish(0.0, 0.0, -200.0);
+    // Extend the corridor centerline beyond maneuver endpoints so hull
+    // clearance measures transverse envelope rather than artificial spherical
+    // end-cap distance at start/finish.
+    const glm::dvec3 start(0.0, 0.0, 50.0);
+    const glm::dvec3 finish(0.0, 0.0, -250.0);
 
     double maximum = 0.0;
     for (int sx : {-1, 1})

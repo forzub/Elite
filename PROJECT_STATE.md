@@ -4052,3 +4052,135 @@ Next correction:
 - total-route timing must be measured from actual common entry gate to actual
   common terminal/exit capture;
 - do not widen corridor or weaken tolerances.
+
+
+## 2026-09-20 quality assessment after first corner-family gate
+
+Exact tested checkout:
+
+```text
+519313ba430b73b557622436ed7df9a5a9a832cf
+```
+
+Architecture contract PASS.
+navigation_runtime 13/14 PASS.
+Only `maneuver_corner_family_matrix` failed.
+
+### What the gate says about system quality
+
+The failure does **not** indicate a general physics/follower collapse.
+
+Strong evidence:
+- the established rigid-body baseline remains green;
+- RadiusTurn expert rows are excellent in both laws:
+  - final P error ~0.115 m;
+  - final V error ~0.013 m/s;
+  - final attitude error ~1.82 deg;
+  - minimum corner speed ~7.99 m/s;
+  - slip ~5.85 deg;
+  - rigid-hull half-width ~17.88 m;
+  - zero 32 m corridor violation;
+  - zero tracking-envelope exceed ticks;
+- DriftTurn expert rows already execute a real high-slip maneuver:
+  - 10 m/s retained through the corner;
+  - ~101 deg body/velocity slip;
+  - final P error ~0.298 m;
+  - final V error ~0.0025 m/s;
+  - rigid-hull half-width ~17.38 m;
+  - zero 32 m corridor violation;
+  - zero tracking-envelope exceed ticks.
+
+This is strong evidence that B9/B10/B12/B13-style execution is already capable
+of accurately tracking non-trivial continuous rigid-body maneuvers, including a
+powered drift, when the accepted reference is coherent.
+
+### Primary deficiency exposed
+
+Expert Newtonian StopTurnGo failed because the fixture/orchestration treated
+every compound phase as time-scheduled:
+- minimum corner speed remained 2.933115 m/s, so the intended stop was never
+  captured;
+- final position error grew to 27.257718 m;
+- center cross-track reached 21.026823 m;
+- required hull half-width reached 34.330940 m;
+- common 32 m corridor was violated by 2.330940 m;
+- 40 tracking-envelope exceeded ticks occurred.
+
+The root issue is phase-completion semantics, not lack of raw vehicle authority.
+Newtonian has an extra flip/brake/capture sequence, so time-only handoff is much
+more damaging there than in Assisted.
+
+Architecture is now corrected:
+- StopTurnGo capture phases are state-gated;
+- RadiusTurn/DriftTurn moving internals may remain scheduled/program-driven;
+- time expiry cannot stand in for successful waypoint/velocity/attitude capture.
+
+### Secondary deficiency exposed
+
+DriftTurn tracking through the corner is physically successful, but expert exit
+attitude is still ~14.38 deg outside the desired outgoing orientation.
+
+Therefore drift currently has:
+- good P/V tracking;
+- good corridor occupancy;
+- correct high-slip character;
+- incomplete post-drift attitude recovery/capture.
+
+This is the next maneuver-quality issue after StopTurnGo handoff.
+
+### Pilot-skill evidence
+
+The matrix remains useful even though its aggregate test failed.
+
+RadiusTurn:
+- competent remains good, with ~0.19 m P error and ~4.18 deg final attitude;
+- rookie still completes physically, with ~0.41-0.47 m P error,
+  ~0.64 m/s V error and ~8.93 deg attitude error.
+
+DriftTurn:
+- competent preserves ~9.97 m/s but exits with ~47.3 deg attitude error and
+  188 envelope-exceeded ticks;
+- rookie preserves ~9.88 m/s, P error ~4.39 m, attitude error ~8.30 deg and
+  135 envelope-exceeded ticks.
+
+Thus PilotSkill already produces meaningfully different execution envelopes.
+This supports keeping skill uncertainty as an explicit B6 clearance/tracking
+reserve input rather than treating all pilots as equally precise.
+
+### Timing result is not yet accepted
+
+Printed authored totals:
+- StopTurnGo 15.18 s;
+- RadiusTurn 12.88 s;
+- DriftTurn 11.16 s.
+
+These are not yet real performance comparisons because the current fixture
+advances phases by predefined durations. Newtonian/Assisted total-time equality
+is therefore partly constructed.
+
+Valid timing requires:
+- common entry-gate timestamp;
+- real state-gated capture where the family requires it;
+- common exit/terminal-state capture timestamp.
+
+### Engineering quality verdict
+
+Current quality by subsystem:
+- rigid-body physics / actuator truth: **strong baseline**;
+- follower continuous P/V tracking: **strong**;
+- RadiusTurn execution: **already high quality**;
+- DriftTurn physical execution: **promising/functional**, exit attitude recovery
+  still needs work;
+- PilotSkill differentiation: **working and useful**;
+- StopTurnGo compound orchestration: **not yet correct**;
+- maneuver-family completion semantics: **architecture corrected, implementation
+  pending**;
+- Newtonian vs Assisted performance timing: **not yet measured honestly**;
+- B6/B7 production integration: **still pending**, so the overall navigation
+  system is not yet ready to claim general production-grade maneuver planning.
+
+Current architecture/doc candidate before state-document commits:
+
+```text
+3ca267ad9ae5188f6f11826298344dbba9df8791
+```

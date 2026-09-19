@@ -822,11 +822,10 @@ require(
 require(
     "executedWorldVector" in SIM_CPP and
     "executedMapVector" in SIM_CPP and
-    "glm::dot(executedWorldVector, hubFrame->normalAxis)" in SIM_CPP and
-    "glm::dot(executedWorldVector, hubFrame->radialAxis)" in SIM_CPP and
-    "glm::dot(executedWorldVector, -hubFrame->progradeAxis)" in SIM_CPP and
+    "executionBoundary.toNavigationVector(" in SIM_CPP and
+    "game::navigation::NavigationFrameBoundary::SystemVector {" in SIM_CPP and
     "observation.lastExecutedLinearDemandMapMps2 =\n                executedMapVector;" in SIM_CPP,
-    "executed PilotSkill demand must cross WORLD -> NavigationMap basis before exact-static prediction",
+    "executed PilotSkill demand must cross System -> NavigationLocal through NavigationFrameBoundary before exact-static prediction",
 )
 
 require(

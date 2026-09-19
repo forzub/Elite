@@ -5324,3 +5324,27 @@ Candidate code commits:
 - `c48a92010350cf12f417aa19f23f75487dfb1459`.
 
 This candidate is not accepted until exact target-machine evidence is recorded.
+
+
+## 2026-09-20 — continuous 3D fly-through accepted
+
+Exact target-machine checkout:
+
+```
+213bbfb62ff7dcb8e553c06bdca09d99d2d1fd56
+```
+
+passed:
+- Stage-12 architecture contract;
+- all 16 navigation runtime tests;
+- the new `maneuver_fly_through_3d` strict gate.
+
+Therefore strict Expert Newtonian and Assisted both completed the five-segment ~35/60/90/120 degree continuous 3D route without:
+- stopping below the 3 m/s anti-StopTurnGo floor;
+- leaving the full-hull 32 m half-width corridor;
+- exceeding the tracking envelope;
+- missing the final strict P/V/attitude bounds.
+
+This accepts continuous chained 3D fly-through as a demonstrated capability.
+
+The acceptance log did not include detailed FLY3D rows because the runner omitted the new test from its verbose diagnostic reruns. A diagnostics-only runner patch (`4cd9c4a14c8f2e4ce033082633766a21fece9331`) now adds that output. A follow-up run is needed only to characterize Newtonian/Assisted radius, slip, speed loss and hull envelope numerically; the core 16/16 acceptance is already established.

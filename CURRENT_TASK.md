@@ -3,102 +3,193 @@
 **Updated:** 2026-09-19 Europe/Kyiv
 **Branch:** `main`
 
-## Fresh accepted execution evidence
+## Correction of the previous corridor test
 
-Supplied target-machine run:
-- architecture contract PASS;
-- navigation_runtime 12/12 PASS;
-- maneuver_corridor_matrix PASS;
-- maneuver_program_execution_lab PASS;
-- ordinary_physical_maneuver_compiler PASS;
-- navigation_work_scheduler PASS.
+The previous `maneuver_corridor_matrix` is NOT a hull-clearance proof.
 
-### 4-leg 3D matrix observations
+It measured corridor distance from the ship center only, so it effectively
+treated the vehicle as a material point. Its P/V/PilotSkill measurements remain
+useful, but statements such as "zero 5 m corridor violation" apply only to the
+center path.
 
-Expert:
-- Newtonian: 4/4 legs, 3/3 rotations, final error 0.014967 m,
-  final speed 0.096233 m/s, zero 5 m corridor violation;
-- Assisted/aircraft-like: same measured calm-route result.
+For Cobra Mk1 this is physically impossible as a hull corridor:
+- width = 26.0 m;
+- height = 5.0 m;
+- length = 22.2 m;
+- body half-extents = right 13.0 m, up 2.5 m, forward 11.1 m.
 
-Production-competent:
-- both laws: 4/4 legs, 3/3 rotations;
-- final error 0.111386 m;
-- final speed 0.078158 m/s;
-- zero 5 m corridor violation.
+## Physical control-law model
 
-Rookie:
-- both laws: only first leg completes;
-- no attitude transition completes;
-- zero corridor violation before failure;
-- maximum forward-angle error 19.115652 degrees.
+### Newtonian
 
-The calm corridor route does not reach a state where Newtonian and Assisted
-propulsion semantics diverge, so identical metrics are expected and are not by
-themselves sufficient evidence that both laws are materially exercised.
+Physical translation/attitude model:
+- aft main thrust only for longitudinal main acceleration;
+- no fore/nose main braking source;
+- six-direction manoeuvre/RCS = 2.0 m/s2;
+- bounded angular authority from main-nozzle vectoring / attitude actuators;
+- material main-engine braking requires reorienting the hull so aft thrust
+  opposes velocity.
 
-## Control-law naming
-
-Two local flight laws:
+For the stop test this means:
 
 ```text
-Newtonian
-Assisted  == aircraft-like / "самолётный"
+accelerate with aft main
+ -> coast while flipping ~180 deg
+ -> aft-main braking burn
 ```
 
-For navigation acceleration execution:
-- Newtonian: ordinary main propulsion remains in controlled-speed envelope,
-  while physical RCS can keep accumulating inertial delta-v;
-- Assisted: combined controlled propulsion is limited by the controlled-speed
-  envelope.
+### Assisted / aircraft-like
 
-Planner-side ordinary B5 is still Newtonian-only. Full Assisted physical
-maneuver compilation is not yet implemented.
+Physical translation/attitude model:
+- aft longitudinal main thrust;
+- fore/nose longitudinal reverse main thrust;
+- manoeuvre/RCS for lateral/vertical translation and stabilization;
+- same bounded angular authority;
+- no omnidirectional main engine.
 
-## Current candidate — explicit law stress
+For the same center trajectory:
+
+```text
+accelerate with aft main
+ -> remain nose-forward
+ -> brake with fore/reverse main thrust
+```
+
+Production `DynamicMotionSystem` has been changed to enforce this split.
+
+Runtime-control regressions now pin:
+- Newtonian reverse demand cannot use fore main;
+- Assisted reverse demand can use fore longitudinal main;
+- Assisted lateral demand must stay on RCS, not main thrust.
+
+## Current candidate
 
 Code/contract candidate before documentation commits:
 
 ```text
-88ad3a8921239cf2865c32c0c8711b7514094aa1
+753eae5dcf1d7aae8eb05893ba75e16896a52b91
 ```
 
-The existing `maneuver_corridor_matrix` target now also runs a dedicated
-control-law seam before the 6-row corridor matrix.
-
-Law-stress setup:
-- expert PilotSkill;
-- hull remains fixed;
-- lateral RCS demand = 2.0 m/s2;
-- controlled-speed envelope = 10 m/s;
-- duration = 8 s;
-- same acceleration command in both laws.
-
-Expected physical result:
+New target:
 
 ```text
-Newtonian
-  -> RCS continues accumulating delta-v
-  -> final speed > 12 m/s
-
-Assisted / aircraft-like
-  -> combined controlled motion clips at envelope
-  -> final speed <= 10.05 m/s
-
-difference > 2 m/s
+maneuver_rigid_body_corridor
 ```
 
-The test fails if Newtonian and Assisted remain physically indistinguishable.
-
-Expected diagnostic rows:
+Expected navigation_runtime test count:
 
 ```text
-[LAW-STRESS] law=newtonian final_speed_mps=... max_speed_mps=... final_x_m=...
-[LAW-STRESS] law=assisted final_speed_mps=... max_speed_mps=... final_x_m=...
+13
 ```
 
-The six existing `[CORRIDOR-MATRIX]` rows still run afterward.
+## Rigid-body test vehicle
 
-The obsolete unused `finite(vec3)` warning in the matrix test was removed.
+The test uses Cobra Mk1 physical/logical data:
+
+```text
+width  = 26.0 m
+height = 5.0 m
+length = 22.2 m
+
+half extents:
+right   = 13.0 m
+up      =  2.5 m
+forward = 11.1 m
+
+aft main authority            = 7.5 g
+Assisted fore main authority  = 7.5 g
+RCS                            = 2.0 m/s2
+angular/vectoring authority   = 3.0 rad/s2
+pitch/yaw rate limit          = 2.5 rad/s
+roll rate limit               = 3.0 rad/s
+```
+
+The test prints one `[VEHICLE-MODEL]` row.
+
+## Stop trajectory
+
+Both laws use the same 200 m center-of-mass trajectory:
+- accelerate;
+- 5 s centerline coast interval;
+- brake to zero.
+
+The difference is attitude and actuator source.
+
+Newtonian:
+- during coast the hull performs a smooth ~180 deg yaw flip;
+- braking acceleration must align with the new backward-facing hull;
+- aft main performs the brake.
+
+Assisted:
+- hull stays nose-forward;
+- fore/reverse longitudinal main performs the brake.
+
+## What is measured
+
+Per physics tick:
+- center position and velocity;
+- full body orientation;
+- angular velocity;
+- maximum flip angle;
+- center cross-track;
+- all eight OBB hull corners against the corridor;
+- required corridor half-width;
+- tight 14 m corridor violation;
+- 18.5 m flip-safe corridor violation;
+- aft-main braking peak;
+- fore-main braking peak;
+- RCS braking peak;
+- follower tracking-envelope exceed count.
+
+Output rows:
+
+```text
+[RIGID-CORRIDOR] pilot=expert law=newtonian ...
+[RIGID-CORRIDOR] pilot=expert law=assisted ...
+[RIGID-CORRIDOR] pilot=competent law=newtonian ...
+[RIGID-CORRIDOR] pilot=competent law=assisted ...
+[RIGID-CORRIDOR] pilot=rookie law=newtonian ...
+[RIGID-CORRIDOR] pilot=rookie law=assisted ...
+```
+
+The corridor centerline is extended beyond start/finish so the measurement is
+transverse hull width, not an artificial endpoint-cap distance.
+
+## Strict expert expectations
+
+Newtonian:
+- completes;
+- max flip >= 170 deg;
+- final forward direction remains >=170 deg from route-forward;
+- aft-main braking >=5 m/s2;
+- fore-main braking = 0;
+- 14 m half-width corridor is too narrow by at least 2 m;
+- 18.5 m half-width contains the flip envelope.
+
+Assisted:
+- completes;
+- max flip <=5 deg;
+- final forward direction remains <=5 deg from route-forward;
+- fore-main braking >=5 m/s2;
+- 14 m half-width contains the aligned hull.
+
+Both:
+- final center error <=1 m;
+- final speed <=0.5 m/s.
+
+Competent and rookie rows are diagnostic on the first run.
+
+## Last supplied target-machine evidence
+
+The most recent supplied run was:
+- architecture PASS;
+- navigation_runtime 12/12 PASS;
+- low-level law stress:
+  - Newtonian 15.960220 m/s;
+  - Assisted 10.000000 m/s.
+
+That proves the low-level laws are distinct, but the supplied paste did not
+contain `git rev-parse HEAD`, so no exact checkout hash is invented for it.
 
 ## Run now
 
@@ -111,32 +202,31 @@ TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
 time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
 bash tests/navigation_runtime/run_mingw64.sh
+
+TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
+time bash build_mingw64.sh
 ```
 
-Expected CTest count remains **12** because law-stress is inside
-`maneuver_corridor_matrix`.
-
 Capture:
-- both `[LAW-STRESS]` lines;
-- all six `[CORRIDOR-MATRIX]` lines.
+- exact `git rev-parse HEAD`;
+- `[VEHICLE-MODEL]`;
+- all six `[RIGID-CORRIDOR]` rows;
+- any compile warning/error;
+- full test count;
+- build timing.
 
-## Interpretation
+Do NOT run the old 120 s obstacle-navigation live gate yet.
 
-If law-stress passes:
-- the same accepted-program execution stack genuinely exercises two distinct
-  flight laws;
-- calm-corridor equality is simply because both are far inside their common
-  physical envelope.
+## After this gate
 
-If law-stress fails:
-- investigate DynamicMotionSystem/control-law selection before using this
-  matrix as two-mode evidence.
+If rigid-body expert rows pass:
+- accept physical hull/actuator execution baseline;
+- use measured hull envelope as input to B6 corridor proof;
+- then extend the same physical model from one straight stop to the multi-leg
+  3D corridor.
 
-After execution-law seam is accepted:
-- quantify rookie attitude timing;
-- then proceed toward B6;
-- separately implement Assisted/aircraft-like planner-side B5 before claiming
-  full planner parity between modes.
+If Newtonian flip/hull width fails:
+- fix attitude/thrust timing or hull-envelope computation before B6.
 
 ## Documentation invariant
 
@@ -146,4 +236,5 @@ After every state-affecting event:
 - update CURRENT_STATE.md;
 - update PROJECT_STATE.md;
 - update src/game/navigation/STAGE12_END_TO_END.md;
-- update canonical architecture/migration/purity docs when ownership changes.
+- update canonical architecture/migration/purity docs when ownership/contracts
+  change.

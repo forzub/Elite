@@ -649,6 +649,60 @@ The architecture must therefore remain viable with hundreds or thousands of regi
 
 A future worker-pool implementation may process PlannerJobs in parallel because the inputs are immutable snapshots and outputs are value-owned programs. Deterministic commit order must be by job identity/revision rather than thread completion order.
 
+### Implemented B14 API slice
+
+The first concrete scheduler seam is `NavigationWorkScheduler` plus the
+value-owned `NavigationPlannerJob`.
+
+One job carries:
+- actor id;
+- monotonically increasing per-actor job revision;
+- objective revision;
+- world revision;
+- capability revision;
+- optional route revision;
+- local/full-route scope;
+- urgent/normal/background priority;
+- trigger;
+- deterministic estimated cost units.
+
+The scheduler owns only scheduling state:
+- three priority queues;
+- one actor slot for the current pending job;
+- revision stamps;
+- in-flight tickets;
+- deterministic age-promotion state.
+
+It does **not** own NavigationMap, NavigationSpace, NavigationRuntimePlanner or
+any planner callback.
+
+Dispatch is bounded by:
+```text
+maxJobs <= 128
+maxCostUnits
+```
+
+Wall-clock time is intentionally external to this deterministic core. Runtime
+orchestration may stop requesting/processing further slices when its measured
+time budget is exhausted; the scheduler itself never reads a clock.
+
+Replacement is O(1)-like at the actor slot. Old queue records become tombstones.
+Physical queue storage is kept bounded by amortized tombstone compaction, so
+repeated superseding jobs for one actor cannot grow memory without limit.
+
+A dispatched job becomes **in-flight**. `complete(ticket)` rechecks world,
+objective, capability, route and latest job revision and reports either:
+```text
+CompletedCurrent
+CompletedStale
+```
+A stale worker result therefore cannot become authoritative merely because its
+planner calculation finished.
+
+The initial scheduler is not yet wired into GameSimulation. This slice exists
+to freeze/test B14 ownership and scale behavior before live planner scheduling
+is migrated.
+
 ---
 
 # Canonical APIs between blocks

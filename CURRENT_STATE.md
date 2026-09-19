@@ -2,107 +2,82 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Latest exact target-machine evidence
+## Latest target-machine evidence
 
-Tested checkout:
-
-```
-a5e44cdc2fb8eaa312ca788ae4b53a9985df3cae
-```
-
-- Stage-12 architecture contract: **PASS**.
-- `navigation_runtime`: **14/15 PASS**.
-- Only failing target: `maneuver_corner_family_matrix`.
-- StopTurnGo expert healthy.
-- RadiusTurn healthy.
-- Long 180 deg arc healthy for all PilotSkill profiles and both laws.
-- Remaining strict failure: DriftTurn terminal attitude.
-- The rejected timed recovery experiment (2.5 s rotate + 1.5 s settle) worsened expert DriftTurn to ~16.889 deg while P/V/corridor stayed good.
-
-## Diagnosis
-
-The long arc proves that the follower can continuously reduce angular error while translating. The remaining defect is in the corner-family fixture semantics:
-
-- the old common checkpoint `x=60` was also treated as the end of the DriftTurn control phase;
-- `ScheduledMoving` advances at the nominal program end regardless of residual tracking error;
-- therefore an arbitrary route checkpoint became an artificial attitude deadline.
-
-The `4 s` value came from geometry (`40 m / 10 m/s`), not from a physical attitude-settling requirement. Using it as an angular completion deadline was the mistake.
-
-## Current unverified candidate
+The latest target run exercised the continuous outgoing-tracking candidate introduced by code commit:
 
 ```
 24fce76b30d2448a4b94c93ad78dd8d37e5102df
 ```
 
-Changes:
-- removes the timed DriftTurn rotate+settle helper;
-- after the drift arc, the accepted reference immediately adopts the outgoing corridor heading and continues translating at 10 m/s;
-- B10 continuously reduces attitude/angular-rate error while the position reference continues moving;
-- the old `x=60` point is now only a passed checkpoint, not the end of control;
-- common outgoing route is extended to `x=120`;
-- test records where the moving ship first satisfies:
-  - forward error <=5 deg;
-  - angular speed <=0.08 rad/s;
-- new diagnostics report:
-  - `outgoing_attitude_captured`;
-  - `outgoing_attitude_capture_x_m`;
-  - distance after old x=60 checkpoint at which capture occurs.
+The pasted log did not include `git rev-parse HEAD`, so the exact full tested checkout hash is not independently recorded in this evidence. The changed diagnostics prove the candidate code was present.
 
-StopTurnGo and RadiusTurn also receive the same continued outgoing straight so all expert families finish at the same extended route endpoint.
+Results:
+- Stage-12 architecture contract: **PASS**.
+- `navigation_runtime`: **14/15 PASS**.
+- Only failing target: `maneuver_corner_family_matrix`.
+- StopTurnGo expert remains healthy.
+- RadiusTurn remains healthy.
+- Long 180 deg arc remains healthy for all PilotSkill profiles and both laws.
+- DriftTurn still fails badly under the constant-heading outgoing reference.
 
-No production follower gains, capability, corridor width or acceptance thresholds were weakened.
+## Continuous outgoing-tracking experiment
 
-## Acceptance target
+The old x=60 checkpoint was successfully decoupled from phase termination and the outgoing reference was extended to x=120.
 
-On target machine:
-- architecture contract PASS;
-- runtime 15/15;
-- expert DriftTurn remains inside 32 m hull corridor;
-- expert DriftTurn retains sustained-speed/material-slip semantics;
-- final P <=1.5 m;
-- final V <=1.0 m/s;
-- final attitude <=5 deg;
-- `outgoing_attitude_captured=1`;
-- long-arc diagnostic remains green.
+This did **not** solve DriftTurn.
 
-## Next commands
+Expert DriftTurn:
+- final P error ~0.463 m;
+- final V error ~0.0014 m/s;
+- corridor violation 0;
+- final attitude error **48.287 deg**;
+- tracking-envelope exceeded ticks **439**;
+- `outgoing_attitude_captured=0`.
 
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
+Competent DriftTurn:
+- final attitude error ~108.471 deg;
+- 494 tracking-envelope exceeded ticks;
+- no outgoing attitude capture.
 
-OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
+Rookie DriftTurn:
+- final attitude error ~107.493 deg;
+- 518 tracking-envelope exceeded ticks;
+- no outgoing attitude capture.
 
-{
-    echo "===== TESTED HEAD ====="
-    git rev-parse HEAD
+By contrast, expert StopTurnGo and RadiusTurn capture the outgoing attitude essentially at the old x=60 checkpoint (within ~0.05-0.15 m).
 
-    echo
-    echo "===== ARCHITECTURE CONTRACT ====="
-    TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
-    time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+## Interpretation
 
-    echo
-    echo "===== NAVIGATION RUNTIME ====="
-    bash tests/navigation_runtime/run_mingw64.sh
-} 2>&1 | tee "$OUT"
+The previous checkpoint/deadline hypothesis was incomplete.
 
-echo
-echo "===== LOG FILE ====="
-echo "$PWD/$OUT"
-```
+B10 is a **bounded tracking controller**, not a maneuver generator. Its angular feedback is intentionally clamped by the planner-reserved tracking authority (`0.35 rad/s²` in this fixture). Replacing the planner-authored 90 deg angular trajectory with an instantaneous constant final heading asks B10 to perform the entire 90 deg turn using only tracking reserve.
 
-## Architecture invariants
+That violates the intended planner/follower ownership:
+- planner must author the large attitude maneuver/reference and feed-forward;
+- follower may only reduce residual error around that accepted reference.
 
-- Planner owns maneuver choice, trajectory/corridor and proof.
-- Follower owns sampling/tracking, bounded feedback and safety monitoring.
-- AcceptedManeuverProgram remains the planner/follower contract.
-- Follower must not invent an alternate maneuver family.
-- Manual guidance must visualize the same accepted route/trajectory.
-- Newtonian and Assisted laws remain physically distinct.
-- Planner cannot mutate authoritative physics state.
+The long arc remains the proof: when the planner supplies a continuous angular reference + feed-forward, B9/B10 track it accurately. The direct 90 deg heading step fails because it removes the maneuver program and leaves only bounded correction authority.
+
+## Current problem statement
+
+The remaining issue is not x=60 itself and not a general follower defect. It is the **DriftTurn exit attitude-transition authoring**.
+
+The correct next mechanism is a planner-authored moving attitude-capture segment whose angular profile is derived from:
+- current attitude error;
+- current angular velocity;
+- vehicle angular acceleration/rate capability;
+- target outgoing attitude/angular velocity;
+while position reference continues along the outgoing straight.
+
+Its duration/horizon must come from physics/capture conditions, not an arbitrary 4 s deadline.
+
+## Do not
+
+- ask B10 tracking reserve to execute the full 90 deg maneuver;
+- weaken the 5 deg requirement;
+- inflate generic tracking reserve merely to make the fixture pass;
+- reintroduce an arbitrary fixed-time attitude deadline.
 
 ## Documentation protocol
 
@@ -112,4 +87,4 @@ After every state-affecting iteration, synchronize:
 - `PROJECT_STATE.md`
 - active Stage-12 document
 
-And recreate `CONTINUE_PROMPT.md` **from scratch** from current truth.
+And recreate `CONTINUE_PROMPT.md` **from scratch**.

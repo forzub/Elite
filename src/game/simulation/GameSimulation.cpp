@@ -2753,51 +2753,81 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     followerAgent.yawRateRadPerSec = agent.yawRateRadPerSec;
     followerAgent.rollRateRadPerSec = agent.rollRateRadPerSec;
 
-    const auto capabilityChanged =
-        [&](const AcceptedSegment& accepted)
+    AcceptedSegment::CapabilitySnapshot currentCapability;
+    currentCapability.maxForwardAccelerationMetersPerSec2 =
+        agent.linearCapability.maxForwardAccelerationMetersPerSec2;
+    currentCapability.maxReverseAccelerationMetersPerSec2 =
+        agent.linearCapability.maxReverseAccelerationMetersPerSec2;
+    currentCapability.maxLateralAccelerationMetersPerSec2 =
+        agent.linearCapability.maxLateralAccelerationMetersPerSec2;
+    currentCapability.maxVerticalAccelerationMetersPerSec2 =
+        agent.linearCapability.maxVerticalAccelerationMetersPerSec2;
+    currentCapability.maxAngularAccelerationRadPerSec2 =
+        agent.angularCapability.maxAngularAccelerationRadPerSec2;
+    currentCapability.maxAngularSpeedRadPerSec =
+        agent.angularCapability.maxAngularSpeedRadPerSec;
+
+    const auto capabilitySnapshotsDiffer =
+        [](const AcceptedSegment::CapabilitySnapshot& lhs,
+           const AcceptedSegment::CapabilitySnapshot& rhs)
         {
-            const auto& capability = accepted.capability;
             constexpr double tolerance = 1.0e-9;
             const auto changed =
-                [&](double a, double b)
+                [&](double aValue, double bValue)
                 {
                     return
-                        !std::isfinite(a) ||
-                        !std::isfinite(b) ||
-                        std::abs(a - b) > tolerance;
+                        !std::isfinite(aValue) ||
+                        !std::isfinite(bValue) ||
+                        std::abs(aValue - bValue) > tolerance;
                 };
 
             return
                 changed(
-                    capability.maxForwardAccelerationMetersPerSec2,
-                    agent.linearCapability.
-                        maxForwardAccelerationMetersPerSec2
+                    lhs.maxForwardAccelerationMetersPerSec2,
+                    rhs.maxForwardAccelerationMetersPerSec2
                 ) ||
                 changed(
-                    capability.maxReverseAccelerationMetersPerSec2,
-                    agent.linearCapability.
-                        maxReverseAccelerationMetersPerSec2
+                    lhs.maxReverseAccelerationMetersPerSec2,
+                    rhs.maxReverseAccelerationMetersPerSec2
                 ) ||
                 changed(
-                    capability.maxLateralAccelerationMetersPerSec2,
-                    agent.linearCapability.
-                        maxLateralAccelerationMetersPerSec2
+                    lhs.maxLateralAccelerationMetersPerSec2,
+                    rhs.maxLateralAccelerationMetersPerSec2
                 ) ||
                 changed(
-                    capability.maxVerticalAccelerationMetersPerSec2,
-                    agent.linearCapability.
-                        maxVerticalAccelerationMetersPerSec2
+                    lhs.maxVerticalAccelerationMetersPerSec2,
+                    rhs.maxVerticalAccelerationMetersPerSec2
                 ) ||
                 changed(
-                    capability.maxAngularAccelerationRadPerSec2,
-                    agent.angularCapability.
-                        maxAngularAccelerationRadPerSec2
+                    lhs.maxAngularAccelerationRadPerSec2,
+                    rhs.maxAngularAccelerationRadPerSec2
                 ) ||
                 changed(
-                    capability.maxAngularSpeedRadPerSec,
-                    agent.angularCapability.
-                        maxAngularSpeedRadPerSec
+                    lhs.maxAngularSpeedRadPerSec,
+                    rhs.maxAngularSpeedRadPerSec
                 );
+        };
+
+    if (!m_navigationRuntimeLabSchedulerCapabilityInitialized)
+    {
+        m_navigationRuntimeLabSchedulerCapability = currentCapability;
+        m_navigationRuntimeLabSchedulerCapabilityInitialized = true;
+    }
+    else if (capabilitySnapshotsDiffer(
+                 m_navigationRuntimeLabSchedulerCapability,
+                 currentCapability))
+    {
+        ++m_navigationRuntimeLabCapabilityRevision;
+        m_navigationRuntimeLabSchedulerCapability = currentCapability;
+    }
+
+    const auto capabilityChanged =
+        [&](const AcceptedSegment& accepted)
+        {
+            return capabilitySnapshotsDiffer(
+                accepted.capability,
+                currentCapability
+            );
         };
 
     Follower::Result followerResult;

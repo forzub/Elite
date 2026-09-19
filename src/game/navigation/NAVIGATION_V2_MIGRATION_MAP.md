@@ -284,3 +284,72 @@ Do not equate that with the tested checkout unless the target-machine
 `git rev-parse HEAD` output is supplied.
 
 No persistent log was required for this successful build.
+
+
+## B10 accepted; B14 scheduler candidate — 2026-09-19
+
+### B10 target-machine acceptance
+
+Verified checkout:
+
+```text
+2abd79a6181a322fe15425994ab771942e47bc26
+```
+
+Target-machine evidence:
+- Stage-12 architecture contract: PASS;
+- `navigation_runtime`: 8/8 PASS;
+- `maneuver_tracking_controller`: PASS;
+- canonical `EliteGame`: BUILD PASS;
+- canonical `EliteServer`: BUILD PASS;
+- production `build_mingw64.sh`: 44.989 s real;
+- architecture contract: 0.186 s real.
+
+B10 is accepted as a clean execution block:
+`AcceptedManeuverProgram -> ManeuverProgramSampler -> ManeuverTrackingController -> TrajectoryFollower`.
+
+### B14 scheduler candidate
+
+Candidate code/contract baseline before documentation commits:
+
+```text
+1ba23241d760b3a57c917189e333e4fbc0365ea4
+```
+
+New production block:
+- `NavigationWorkScheduler.h/.cpp`;
+- value-owned `NavigationPlannerJob`.
+
+Scheduler responsibilities:
+- urgent / normal / background queues;
+- bounded dispatch slices (`maxJobs <= 128` + deterministic cost units);
+- deterministic age promotion / starvation prevention;
+- one pending actor job slot with duplicate suppression;
+- monotonically increasing per-actor job revision;
+- stale rejection before planner dispatch;
+- in-flight ticket ownership and stale-result rejection before commit;
+- O(1)-like actor-slot replacement with lazy queue tombstones;
+- amortized compaction so physical queue storage cannot grow without bound;
+- capacity-pressure cleanup of jobs invalidated by newer world/actor revisions.
+
+The scheduler deliberately owns no NavigationMap, NavigationSpace,
+NavigationRuntimePlanner, planner callback or wall clock.
+
+New regression:
+- `navigation_work_scheduler`.
+
+Scale fixture:
+- 5000 synthetic actors;
+- fixed 128-job dispatch slices;
+- deterministic FIFO inside equal effective priority;
+- no lost/duplicated jobs;
+- queue/in-flight/physical records drain to zero;
+- enqueue and dispatch/complete timing printed diagnostically;
+- no wall-clock threshold is used for correctness.
+
+`tests/navigation_runtime/run_mingw64.sh` now also re-runs only the successful
+scheduler test in verbose diagnostic mode so its internal timing line is visible
+even though ordinary CTest hides stdout for passing tests.
+
+This slice is not wired into GameSimulation yet. Live scheduling migration is a
+later separately gated step.

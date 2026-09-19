@@ -16,6 +16,7 @@ namespace
 using Planner = game::navigation::NavigationRuntimePlanner;
 using Map = world::navigation::NavigationMap;
 using Space = world::navigation::NavigationSpace;
+using StaticQueries = Planner::StaticQueries;
 using Bridge = game::navigation::NavigationRuntimeControlBridge;
 
 void require(bool condition, const std::string& message)
@@ -262,7 +263,7 @@ void testStaticCorridorBecomesLivePortalWaypoint()
         goal,
         emptyDynamic(),
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -304,7 +305,7 @@ void testPortalCaptureAlignsVelocityAndHullBeforeTransit()
         goal,
         emptyDynamic(),
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -343,7 +344,7 @@ void testPortalCaptureAlignsVelocityAndHullBeforeTransit()
         goal,
         emptyDynamic(),
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -366,7 +367,7 @@ void testPortalCaptureAlignsVelocityAndHullBeforeTransit()
         goal,
         emptyDynamic(),
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -392,7 +393,7 @@ void testSamePortalRejectsOversizedHull()
         goal,
         emptyDynamic(),
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
     require(accepted.status == Planner::Status::NominalClear,
@@ -406,7 +407,7 @@ void testSamePortalRejectsOversizedHull()
         goal,
         emptyDynamic(),
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
     require(rejected.status == Planner::Status::StaticHold,
@@ -447,7 +448,7 @@ void testExactStaticObstacleParticipatesInRuntimeComposition()
         goalAt(20.0),
         emptyDynamic(),
         0.0,
-        space,
+        StaticQueries(space),
         basePolicy()
     );
 
@@ -528,7 +529,7 @@ void testLiveScaleStaticObstacleInsideFirstBoundedHorizon()
         goal,
         dynamic,
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -596,7 +597,7 @@ void testAdjustedTargetPreservesNominalConflictIdentity()
         goal,
         dynamic,
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -652,7 +653,7 @@ void testNavigationMapCrossingConflictProducesBrakingHold()
         goal,
         dynamic,
         0.0,
-        space,
+        StaticQueries(space),
         basePolicy()
     );
 
@@ -746,7 +747,7 @@ void testMovingGapPrecisionProbeUsesRuntimeCandidates()
         goal,
         dynamic,
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -853,7 +854,7 @@ void testClosingMovingGapFailsClosedBeforePassageEvaluation()
         goalAt(50.0),
         dynamic,
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -964,7 +965,7 @@ void testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory()
         goal,
         dynamic,
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -1065,7 +1066,7 @@ void testDoublyProvenMovingPassageTakesAuthorityThroughPilotBridge()
         goal,
         dynamic,
         0.0,
-        space,
+        StaticQueries(space),
         policy
     );
 
@@ -1190,7 +1191,7 @@ void testPlannerIntentCrossesAcceptedPilotBridge()
         goal,
         emptyDynamic(),
         0.0,
-        space,
+        StaticQueries(space),
         basePolicy()
     );
     require(planned.status == Planner::Status::NominalClear,

@@ -358,6 +358,7 @@ for marker in (
     "angularFeedbackReserveRadPerSec2",
     "controlResponseReserveSeconds",
     "maximumProgramSeconds",
+    "mainEngineCandidateAvailable",
 ):
     require(
         marker in B5_H,
@@ -406,6 +407,7 @@ for source_name, source in (
 for marker in (
     "testForwardRequestCompilesAsDirectTrim",
     "testLargeLateralDeltaVRequiresLeadRotateMainBurn",
+    "testRcsFeasibleLateralChangeStillExposesMainEngineOption",
     "testNoAngularAuthorityDoesNotFallBackToImpossibleLateralDemand",
     "testFeedbackReserveCanMakeMarginalDirectDemandInfeasible",
     "testAssistedIsExplicitlyUnsupportedInFirstB5Slice",
@@ -417,6 +419,12 @@ for marker in (
         marker in B5_TEST,
         f"B5 compiler regression/scale fixture missing: {marker}",
     )
+
+require(
+    "B7 selects among proved candidates" in B5_CPP and
+    "mainEngineCandidateAvailable" in B5_H,
+    "B5 must expose main-engine option without stealing B7 maneuver selection ownership",
+)
 
 require(
     "OrdinaryPhysicalManeuverCompiler.cpp" in ROOT_CMAKE and

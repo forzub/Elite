@@ -54,6 +54,14 @@ inline const glm::dvec3 NavigationRuntimeLabMovingGapVelocityVisualMps {
 inline constexpr double NavigationRuntimeLabMovingPassageDurationSeconds =
     30.0;
 
+// StaticObject::linearVelocity is currently glm::vec3. Orbital hub velocity is
+// thousands of m/s, so converting the authoritative world velocity through
+// that float field can leave millimetres-per-second of NavLocal residue.
+// Keep the live kinematic proof tighter than gameplay significance but honest
+// about the source representation.
+inline constexpr double NavigationRuntimeLabLinearVelocityToleranceMps =
+    1.0e-2;
+
 inline bool isNavigationRuntimeLabMovingGapBoundary(
     std::string_view label
 ) noexcept

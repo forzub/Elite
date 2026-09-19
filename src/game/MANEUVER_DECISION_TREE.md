@@ -9,7 +9,12 @@
 ~~~text
 no collision-free proof != no navigation command
 no global route != stop by default
+
+geometric path != executable route
+executable route/segment must be feasible for this vehicle
 ~~~
+
+A free-space candidate may seed maneuver generation, but it may not cross the ACCEPT boundary until propulsion, attitude, current kinematics, control law and bounded pilot-execution uncertainty have been included in the proof.
 
 A missing safe route is a decision state, not permission for Navigation to turn control off.
 
@@ -185,6 +190,37 @@ exposure ~= integral(
 ~~~
 
 A smaller silhouette can justify a different roll/yaw attitude even when both trajectories are geometrically safe. Passage fit and threat silhouette remain separate facts; the decision owner trades them according to doctrine.
+
+## Behavior character ownership
+
+Behavior character is the product of two independent sources:
+
+~~~text
+Situation / Doctrine
+    ordinary / rational
+    extreme / attack / escape
+    precision ingress / retrieval / docking / squeeze
+    future explicit mission-specific profiles
+
+Pilot
+    reaction / latency
+    decision cadence
+    anticipation
+    damping / overshoot
+    control precision
+    hull/clearance judgement uncertainty
+    control-law familiarity
+    transient stress / impact / injury modifiers
+~~~
+
+Situation decides what is desirable and what risk is acceptable. Pilot decides how accurately and how late the selected maneuver is likely to be executed. Vehicle capability remains separate physical truth.
+
+The planner must account for both before accepting a segment:
+- doctrine affects search bounds, clearance preference, time/progress weight, overload/contact allowance, threat/silhouette/cover preference and willingness to stop;
+- pilot profile expands or contracts the execution uncertainty envelope and contributes expected reaction/control error;
+- neither doctrine nor pilot may invent thrust, shrink the hull, change obstacle geometry or bypass hard feasibility.
+
+See `src/game/navigation/NAVIGATION_BEHAVIOR_CHARACTER_MODEL.md`.
 
 ## Movement doctrines
 

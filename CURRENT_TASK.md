@@ -4,84 +4,38 @@
 
 ## Accepted baseline
 
-Exact tested checkout:
+Exact target-tested checkout:
 
 ```
-b687b9d3189cdfbbca91123b578637f991cbc645
+213bbfb62ff7dcb8e553c06bdca09d99d2d1fd56
 ```
 
-Architecture PASS; navigation runtime 15/15.
+Results:
+- architecture PASS;
+- navigation runtime **16/16**;
+- continuous 3D fly-through strict Expert gate PASS.
 
-## Current task
+## Immediate task
 
-Target-test the new **continuous 3D fly-through** regression.
+Capture the detailed target-machine `FLY3D` diagnostics.
 
-Code candidate:
-- `5c10c19d7fd2eb4b1fb6aa26b903fd55713b6dcf`
-- `c48a92010350cf12f417aa19f23f75487dfb1459`
+The accepted run did not include verbose output for the new test, so exact Newtonian/Assisted radius/slip/speed/hull comparisons are still missing.
 
-Expected suite size: **16 tests**.
+Diagnostics-only runner patch:
 
-## Test matrix
+```
+4cd9c4a14c8f2e4ce033082633766a21fece9331
+```
 
-PilotSkill:
-- Expert — strict;
-- Competent — diagnostic;
-- Rookie — diagnostic.
+This does not change navigation behavior or acceptance criteria. It only adds verbose execution of:
 
-Flight laws:
-- Newtonian;
-- Assisted.
+```
+maneuver_fly_through_3d
+```
 
-One identical 5-segment 3D route:
-- ~35 deg;
-- ~60 deg;
-- ~90 deg;
-- ~120 deg turns.
+after the normal suite.
 
-Nominal fly-through speed: 8 m/s.
-
-No corner may be replaced by a full stop.
-
-## What to inspect
-
-Global `[FLY3D]` rows:
-- completed;
-- phases;
-- final_pos_error_m;
-- final_speed_error_mps;
-- final_forward_error_deg;
-- min_route_speed_mps;
-- max_center_cross_track_m;
-- max_hull_required_half_width_m;
-- max_corridor_violation_m;
-- max_forward_tracking_error_deg;
-- tracking_envelope_exceeded_ticks.
-
-Per-corner `[FLY3D-CORNER]` rows:
-- route_angle_deg;
-- planned_peak_accel_mps2;
-- planned_min_speed_mps;
-- actual_min_speed_mps;
-- max_slip_deg;
-- min_observed_turn_radius_m;
-- max_center_cross_track_m;
-- max_hull_required_half_width_m.
-
-## Strict Expert acceptance
-
-Both laws:
-- 9/9 phases;
-- corridor violation 0;
-- tracking-envelope exceeded ticks 0;
-- minimum moving speed >=3 m/s;
-- final P <=1.5 m;
-- final speed error <=0.75 m/s;
-- final attitude <=5 deg;
-- finite turn radius for every corner;
-- planned corner acceleration <=2 m/s2.
-
-## Test commands
+## Run
 
 ```bash
 cd /d/__elite/work
@@ -113,8 +67,25 @@ echo "===== LOG FILE ====="
 echo "$PWD/$OUT"
 ```
 
-Upload the complete log after the run.
+## Metrics to compare
+
+For Expert Newtonian vs Assisted:
+- `min_route_speed_mps`;
+- `max_center_cross_track_m`;
+- `max_hull_required_half_width_m`;
+- `max_forward_tracking_error_deg`;
+- per-corner:
+  - `actual_min_speed_mps`;
+  - `max_slip_deg`;
+  - `min_observed_turn_radius_m`;
+  - `max_hull_required_half_width_m`.
+
+Competent/Rookie remain diagnostic.
+
+## After metrics capture
+
+Record evidence and proceed to speed/doctrine matrix. Do not alter the already accepted fly-through mechanism unless new diagnostics reveal a real defect.
 
 ## Iteration rule
 
-After target evidence arrives, synchronize all state MD files and recreate `CONTINUE_PROMPT.md` from scratch before proceeding.
+After every state/evidence change, update all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

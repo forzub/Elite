@@ -3417,6 +3417,36 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 selectedVisibilityDeflectionRadians
         );
 
+    if (visibilityBypassActive &&
+        !visibilityObservation.firstVisibilityBypassCaptured)
+    {
+        visibilityObservation.firstVisibilityBypassCaptured = true;
+        visibilityObservation.firstVisibilityBypassTimeSeconds =
+            navigationTimeSeconds;
+        visibilityObservation.firstVisibilityBypassSegmentRevision =
+            m_navigationRuntimeLabAcceptedSegment.revision;
+        visibilityObservation.firstVisibilityBypassReplanReason =
+            static_cast<std::uint8_t>(replan.reason);
+        visibilityObservation.firstVisibilityBypassDeflectionRad =
+            m_navigationRuntimeLabLastPlan.
+                selectedVisibilityDeflectionRadians;
+        visibilityObservation.firstVisibilityBypassAgentPositionMap =
+            agent.positionMapMeters;
+        visibilityObservation.firstVisibilityBypassAgentVelocityMapMps =
+            agent.velocityMapMetersPerSecond;
+        visibilityObservation.firstVisibilityBypassSelectedTargetMap =
+            m_navigationRuntimeLabLastPlan.selectedTargetMapMeters;
+        visibilityObservation.firstVisibilityBypassDesiredVelocityMapMps =
+            m_navigationRuntimeLabLastPlan.
+                desiredVelocityMapMetersPerSecond;
+        visibilityObservation.firstVisibilityBypassAcceptedAlignForward =
+            m_navigationRuntimeLabAcceptedSegment.alignForward;
+        visibilityObservation.firstVisibilityBypassAcceptedForwardMap =
+            m_navigationRuntimeLabAcceptedSegment.desiredForwardMap;
+        visibilityObservation.firstVisibilityBypassIdealAccelerationMapMps2 =
+            followerResult.intent.idealLinearAccelerationLocalMps2;
+    }
+
     if (visibilityObservation.visibilityBypassSeen &&
         !m_navigationRuntimeLabLastPlan.adjustedTarget &&
         m_navigationRuntimeLabLastPlan.safeProgressTargetDemonstrated &&

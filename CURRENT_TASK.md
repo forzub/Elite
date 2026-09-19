@@ -3,7 +3,7 @@
 **Updated:** 2026-09-19 Europe/Kyiv  
 **Stage:** Stage 12 architecture hardening — Navigation-v2 state/API isolation  
 **Last target-machine verified baseline:** `daaf038021cdf8b9561db60fdd35e7cefce0b2df`  
-**Candidate implementation baseline before documentation commits:** `cf224145d758d09d35d70c63324c97d02f619e60`
+**Candidate implementation baseline before documentation commits:** `12a759f725a903b047d198e9daf7aaf6939640b9`
 
 ## What changed
 
@@ -3056,3 +3056,24 @@ The ~0.001967 m/s moving-gap velocity residual has the same representation cause
 No static exact-HitVolume authority was weakened. The actual authoritative ship sweep remains checked every fixed step against NavigationSpace exact static geometry. This change only prevents a dynamic broadphase sphere from overriding more precise dynamic HitVolume truth when that truth is available.
 
 Next target-machine gate: architecture contract + navigation map/local/runtime tests + canonical build + fresh live self-test. The expected behavioral change is that the ship no longer stalls inside the moving box's enclosing sphere and can proceed through visibility bypass, direct recovery, portal capture and tunnel transit.
+
+
+### 2026-09-19 dynamic OBB gate ownership correction
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+12a759f725a903b047d198e9daf7aaf6939640b9
+~~~
+
+Target-machine architecture failure:
+
+~~~text
+[FAIL] dynamic conservative spheres must narrow against exact translation-only OBB geometry instead of sealing real free space
+~~~
+
+Root cause: the architecture gate searched for the new dynamic narrow-phase implementation in `LocalAvoidancePlanner.cpp`, but the implementation deliberately belongs to `LocalHorizonPlanner.cpp`, where dynamic candidate collision truth is evaluated. Production ownership is therefore correct; the contract pointed at the wrong owner file.
+
+Correction: the gate now loads `LocalHorizonPlanner.cpp` explicitly and verifies `exactTranslationNarrowPhaseAvailable`, `exactTranslationConflict`, `segmentIntersectsNavigationObstacle`, exact candidate geometry consumption, and the regression `testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute` against the correct owner.
+
+The remainder of the new slice was rechecked against source: NavigationMap exact-geometry value ownership, live HitVolume OBB publication, and named moving-infrastructure velocity tolerance markers are all present. No navigation behavior changed in this follow-up; the dynamic exact-OBB candidate remains the implementation baseline awaiting target-machine compilation/runtime validation.

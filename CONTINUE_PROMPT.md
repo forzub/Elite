@@ -12,52 +12,47 @@ Read first:
 6. src/game/navigation/STAGE12_END_TO_END.md
 7. src/game/navigation/PLANNER_FOLLOWER_ARCHITECTURE.md
 
-## Accepted baseline
+## Fresh accepted evidence
 
-Exact target-machine checkout:
-`b5f558b18c8ef8e1b5d9562df36b34cb621c648f`.
+Target-machine:
+- navigation_runtime 12/12 PASS;
+- 4-leg 3D corridor matrix PASS;
+- expert + competent complete in both Newtonian and Assisted;
+- rookie stops after first leg because first 3D attitude transition never
+  satisfies terminal timing;
+- no tested pilot exits 5 m corridor before completion/failure.
 
-Simple execution lab:
-- navigation_runtime 11/11 PASS;
-- straight 100 m: 0.0285925 m final error, 0.102262 m/s residual,
-  zero cross-track/overshoot;
-- right-angle 100+100 m: 0.0285925 m final error,
-  0.0470123 m max route cross-track, zero 5 m corridor violation.
+Assisted is the project's aircraft-like/"самолётный" local control law.
+
+The calm 3D route produced identical Newtonian/Assisted metrics because it
+never reaches the controlled-speed boundary where the execution laws differ.
 
 ## Current candidate
 
 Code candidate before docs:
-`d0f8b07787339074e225cd02cfe96c93bad0446a`.
+`88ad3a8921239cf2865c32c0c8711b7514094aa1`.
 
-New test:
-`maneuver_corridor_matrix`.
+The existing maneuver_corridor_matrix target now runs explicit law stress:
+- 2 m/s2 lateral RCS;
+- 10 m/s controlled-speed envelope;
+- 8 s;
+- expert PilotSkill.
 
-Route:
-P0(0,0,0)
--> P1(0,0,-120)
--> P2(85,35,-190)
--> P3(25,100,-265)
--> P4(120,55,-340).
+Expected:
+- Newtonian >12 m/s;
+- Assisted <=10.05 m/s;
+- difference >2 m/s.
 
-There are four stop-to-stop translation legs and three bounded 3D attitude
-transitions.
+It prints:
+`[LAW-STRESS] law=newtonian ...`
+and
+`[LAW-STRESS] law=assisted ...`.
 
-Corridor half-width: 5 m.
+Then the existing 2 laws x 3 pilots 3D corridor matrix runs unchanged.
 
-Matrix:
-- Newtonian + expert/competent/rookie;
-- Assisted + expert/competent/rookie.
-
-Competent is the exact current NpcAiSystem execution baseline.
-Rookie is deterministic and deliberately degraded.
-
-Every row prints completion, final P/V error, route/active-leg cross-track,
-corridor violation, waypoint error, overshoot, forward-angle error,
-tracking-envelope exceeded ticks and simulated time.
-
-Expert rows are strict.
-Competent/rookie are first-pass diagnostic rows so measured envelopes are known
-before gameplay limits are pinned.
+This validates execution-law divergence only.
+Ordinary planner-side B5 is still Newtonian-only; do not claim full Assisted
+planner support yet.
 
 ## Run now
 
@@ -74,18 +69,13 @@ bash tests/navigation_runtime/run_mingw64.sh
 
 Expected CTest count: 12.
 
-Capture all six `[CORRIDOR-MATRIX]` lines.
+Capture both LAW-STRESS lines and all six CORRIDOR-MATRIX lines.
 
-Do not run the old 120 s obstacle live gate yet.
-
-## Next
-
-Use the matrix to decide B6 execution reserve:
-- if expert fails, fix execution first;
-- if lower-skill rows deviate, make proof clearance/tempo skill-aware rather
-  than weakening the geometry test;
-- if both laws diverge, isolate law-specific execution;
-- after measured envelopes are pinned, proceed to B6.
+After green:
+- accept execution-law seam;
+- analyze rookie attitude timeout;
+- proceed toward B6;
+- later add planner-side Assisted B5 family.
 
 Every state-affecting iteration must synchronize CURRENT_TASK,
 CONTINUE_PROMPT, CURRENT_STATE, PROJECT_STATE and STAGE12_END_TO_END.

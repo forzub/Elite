@@ -3,81 +3,73 @@
 **Project:** Elite Navigation v2
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Last accepted target-machine checkout
+## Last accepted target baseline
 
 ```
 a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
-Evidence:
-- Stage-12 architecture contract PASS;
-- navigation_runtime 17/17 PASS;
-- B7 speed/doctrine select->execute gate PASS.
+Accepted:
+- Stage-12 architecture PASS;
+- navigation runtime 17/17;
+- B7 speed/doctrine selection + real selected-program execution;
+- previous maneuver, rigid-body corridor and 3D fly-through quality gates.
 
-## Accepted maneuver stack
-
-Now demonstrated:
-- StopTurnGo;
-- RadiusTurn;
-- DriftTurn;
-- long continuous angular correction;
-- rigid-body Newtonian vs Assisted braking;
-- non-orthogonal 3D route execution;
-- continuous 3D fly-through;
-- doctrine-dependent candidate selection;
-- law filtering before ranking;
-- selected AcceptedManeuverProgram execution through real follower/PilotSkill/physics.
-
-## B7 acceptance
-
-For one common 180 m problem:
-- Rational selected balanced;
-- PrecisionRetrieval selected highest-clearance precision;
-- Extreme selected fastest **law-compatible** program;
-- CombatEscape selected lowest-threat program;
-- hard critical-risk filtering rejected an even faster reckless shortcut.
-
-The key law divergence is now physically visible:
-- Newtonian Extreme -> ~18 s drift dash, ~14.11 m/s peak, ~34.08 deg slip, ~2.62 m actual clearance;
-- Assisted Extreme -> ~20 s fast aligned path, ~12.28 m/s peak, ~2.08 deg slip, ~7.59 m clearance.
-
-This closes B7 behavior at lab/runtime level.
-
-Final ordinary-live migration still must route normal production planning through the selected program rather than transitional bypasses.
-
-## B0-B14 status
+## Original B0-B14 status
 
 Strong/accepted behavior:
-- B0, B7, B8, B9, B10, B12, B13, B14.
+- B0 world truth;
+- B7 decision semantics/select->execute;
+- B8 AcceptedManeuverProgram;
+- B9 sampler;
+- B10 bounded tracking;
+- B12 PilotSkill;
+- B13 real propulsion/physics;
+- B14 scheduler.
 
-Strong components but still requiring production generalization:
-- B5, B6;
-- final B7-B10 ordinary-live integration.
+Strong components but production generalization/integration remains:
+- B5 full Assisted/general-family compiler coverage;
+- B6 generalized ordinary proof ownership;
+- final ordinary-live B7-B10 migration.
 
 Open/transitional architecture:
-- B1 shared influence batching;
-- B2 unified objective;
-- B3 vehicle-aware global topology feasibility;
-- B4 route-aligned corridor replacing ray-fan;
-- B11 explicit bounded reflex.
+- B1 scene-wide sparse influence batching;
+- B2 unified NavigationObjective;
+- B3 vehicle/control-law-aware global edge feasibility;
+- B4 route-aligned corridor replacing visibility ray-fan;
+- B11 explicit bounded safety-reflex API.
 
-## Current laboratory stage
+## Current test candidate
 
-**Chained transitions + negative/physical-limit cases.**
+`maneuver_chained_limit_matrix`
 
-Target evidence must cover:
-- physical continuity across different maneuver families;
-- no artificial state reset between accepted programs;
-- insufficient turn room;
-- insufficient braking room;
-- rigid hull cannot fit corridor;
-- no compatible candidate for current control law;
-- program invalidation when new world evidence breaks its proof.
+Purpose:
+1. prove physical continuity across different maneuver families without resetting actual state;
+2. prove impossible/invalid execution fails closed before or during execution.
 
-After this matrix:
-- run one final composite end-to-end proving ground;
-- then move the primary quality loop into the real game scene.
+Chained route:
+- accelerate moving transit;
+- hard continuous turn;
+- Newtonian drift or Assisted aligned transit;
+- precision braking/capture.
+
+Negative contracts:
+- insufficient turn horizon -> B5 NoPhysicalCandidate;
+- insufficient braking distance -> stopping reserve exceeds room;
+- too-narrow rigid hull corridor -> reject;
+- no law-compatible B7 candidate -> no selection;
+- newly invalidated dynamic safety -> immediate local replan, old program stops being authoritative.
+
+Expected suite size: 18.
+
+## Remaining laboratory roadmap
+
+If this matrix passes:
+1. one final composite end-to-end proving ground combining clutter, moving hazards, narrow/wide passages, speed changes, law/doctrine choice, invalidation and exact terminal capture;
+2. then stop expanding synthetic behavior tests and move primary quality evaluation into the game.
+
+Architecture cleanup B1-B4/B11 and final production migration remain implementation work, but are no longer reasons to endlessly extend the maneuver laboratory.
 
 ## State protocol
 
-After every state-affecting event, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After each state-affecting event, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

@@ -122,9 +122,13 @@ try:
             "GeometricPathPlanner",
             "TrajectoryGenerator",
             "GuidanceTunnelBuilder",
+            "LocalGuidancePlanner",
+            "TrajectoryPredictor",
+            "TrajectorySafetyEvaluator",
             "SmallCraftNavigation",
             "TacticalCollisionMonitor",
             "RuckigRoutePlanner",
+            "RuckigTrajectorySolver",
         )
 
     # Route calculation is allowed to mutate only navigation workspace/output.

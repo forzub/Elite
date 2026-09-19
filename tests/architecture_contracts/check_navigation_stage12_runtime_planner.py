@@ -981,6 +981,14 @@ require(
     "live dynamic infrastructure must publish exact HitVolume OBBs and use source-precision-aware kinematic verification",
 )
 
+require(
+    "NavigationRuntimeLabMovingGapApertureCenterVisualY" in LAB_H and
+    "NavigationRuntimeLabMovingGapBoundarySeparationMeters" in LAB_H and
+    "NavigationRuntimeLabMovingGapApertureCenterVisualY +" in LAB_H and
+    "NavigationRuntimeLabMovingGapApertureCenterVisualY -" in LAB_H,
+    "live moving-gap fixture must keep a real offset aperture that requires exact-OBB visibility steering",
+)
+
 for marker in (
     "NavigationRuntimeLabMovingGapUpperLabel",
     "NavigationRuntimeLabMovingGapLowerLabel",

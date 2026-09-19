@@ -422,70 +422,6 @@ Program makeCoastRotateProgram(
     return p;
 }
 
-Program makeCoastRotateSettleProgram(
-    std::uint64_t revision,
-    double acceptedAt,
-    const glm::dvec3& startPosition,
-    const glm::dvec3& velocity,
-    double startYaw,
-    double endYaw,
-    double rotateDuration,
-    double settleDuration,
-    Program::ManeuverFamily family
-)
-{
-    const double totalDuration = rotateDuration + settleDuration;
-    Program p;
-    fillCommon(p, revision, acceptedAt, totalDuration, family);
-    p.sampleCount = static_cast<std::uint8_t>(Program::kMaxSamples);
-
-    const double deltaYaw = endYaw - startYaw;
-    const double denom =
-        static_cast<double>(Program::kMaxSamples - 1);
-
-    for (std::size_t i = 0; i < Program::kMaxSamples; ++i)
-    {
-        const double t =
-            totalDuration * static_cast<double>(i) / denom;
-
-        double yaw = endYaw;
-        double yawRate = 0.0;
-        double yawAccel = 0.0;
-
-        if (t < rotateDuration)
-        {
-            const double u =
-                rotateDuration > 1.0e-12
-                    ? t / rotateDuration
-                    : 1.0;
-            yaw = startYaw + deltaYaw * smooth5(u);
-            yawRate =
-                deltaYaw * smooth5d1(u) / rotateDuration;
-            yawAccel =
-                deltaYaw * smooth5d2(u) /
-                (rotateDuration * rotateDuration);
-        }
-
-        const Basis basis = yawBasis(yaw);
-        auto& s = p.samples[i];
-        s.timeOffsetSeconds = t;
-        s.positionMapMeters =
-            startPosition + velocity * t;
-        s.velocityMapMetersPerSecond = velocity;
-        s.linearAccelerationFeedForwardMapMps2 =
-            {0.0, 0.0, 0.0};
-        s.forwardMap = basis.forward;
-        s.rightMap = basis.right;
-        s.upMap = basis.up;
-        s.angularVelocityMapRadPerSecond =
-            {0.0, yawRate, 0.0};
-        s.angularAccelerationFeedForwardMapRadPerSec2 =
-            {0.0, yawAccel, 0.0};
-    }
-
-    return p;
-}
-
 Program makeRotateInPlaceProgram(
     std::uint64_t revision,
     double acceptedAt,
@@ -705,7 +641,7 @@ double pointToCornerPolylineDistance(const glm::dvec3& p)
 {
     const glm::dvec3 incomingStart(0.0, 0.0, 80.0);
     const glm::dvec3 corner(0.0, 0.0, 0.0);
-    const glm::dvec3 outgoingEnd(80.0, 0.0, 0.0);
+    const glm::dvec3 outgoingEnd(140.0, 0.0, 0.0);
 
     return std::min(
         pointToSegmentDistance(p, incomingStart, corner),
@@ -782,6 +718,11 @@ struct Metrics
     double finalPositionErrorMeters = 0.0;
     double finalVelocityErrorMps = 0.0;
     double finalForwardErrorDeg = 0.0;
+
+    bool outgoingAttitudeCaptured = false;
+    double outgoingAttitudeCaptureTimeSeconds = -1.0;
+    double outgoingAttitudeCaptureXMeters = -1.0;
+    double outgoingAttitudeCaptureDistanceAfterOldExitMeters = -1.0;
 };
 
 struct LongArcMetrics
@@ -937,6 +878,35 @@ void updateGeometryMetrics(
         m.cornerZoneTimeSeconds =
             m.exitGateTimeSeconds -
             m.entryGateTimeSeconds;
+    }
+
+    if (!m.outgoingAttitudeCaptured &&
+        center.x >= 60.0)
+    {
+        const double forwardErrorDeg =
+            angleRad(
+                glm::dvec3(v.transform.forward()),
+                glm::dvec3(1.0, 0.0, 0.0)
+            ) * 180.0 / kPi;
+        const double angularSpeedRadPerSec =
+            std::sqrt(
+                static_cast<double>(v.transform.pitchRate) *
+                    static_cast<double>(v.transform.pitchRate) +
+                static_cast<double>(v.transform.yawRate) *
+                    static_cast<double>(v.transform.yawRate) +
+                static_cast<double>(v.transform.rollRate) *
+                    static_cast<double>(v.transform.rollRate)
+            );
+
+        if (forwardErrorDeg <= 5.0 &&
+            angularSpeedRadPerSec <= 0.08)
+        {
+            m.outgoingAttitudeCaptured = true;
+            m.outgoingAttitudeCaptureTimeSeconds = v.timeSeconds;
+            m.outgoingAttitudeCaptureXMeters = center.x;
+            m.outgoingAttitudeCaptureDistanceAfterOldExitMeters =
+                std::max(0.0, center.x - 60.0);
+        }
     }
 }
 
@@ -1278,14 +1248,30 @@ Metrics runStopTurnGo(
     const glm::dvec3 afterAccel =
         v.transform.motion.localPositionMeters;
 
+    if (!executePhase(
+            v, model,
+            makeCoastProgram(
+                revision++, v.timeSeconds,
+                afterAccel,
+                {10.0, 0.0, 0.0},
+                -0.5 * kPi,
+                5.375,
+                Program::ManeuverFamily::FreeTransit
+            ),
+            m))
+        return m;
+
+    const glm::dvec3 oldExit =
+        v.transform.motion.localPositionMeters;
+
     executePhase(
         v, model,
         makeCoastProgram(
             revision++, v.timeSeconds,
-            afterAccel,
+            oldExit,
             {10.0, 0.0, 0.0},
             -0.5 * kPi,
-            5.375,
+            6.0,
             Program::ManeuverFamily::FreeTransit
         ),
         m
@@ -1365,16 +1351,32 @@ Metrics runRadiusTurn(
     const glm::dvec3 p2 =
         v.transform.motion.localPositionMeters;
 
+    if (!executePhase(
+            v, model,
+            makeConstantAccelerationProgram(
+                revision++, v.timeSeconds,
+                p2,
+                {8.0, 0.0, 0.0},
+                {2.0, 0.0, 0.0},
+                -0.5 * kPi,
+                1.0,
+                Program::ManeuverFamily::Trim
+            ),
+            m))
+        return m;
+
+    const glm::dvec3 oldExit =
+        v.transform.motion.localPositionMeters;
+
     executePhase(
         v, model,
-        makeConstantAccelerationProgram(
+        makeCoastProgram(
             revision++, v.timeSeconds,
-            p2,
-            {8.0, 0.0, 0.0},
-            {2.0, 0.0, 0.0},
+            oldExit,
+            {10.0, 0.0, 0.0},
             -0.5 * kPi,
-            1.0,
-            Program::ManeuverFamily::Trim
+            6.0,
+            Program::ManeuverFamily::FreeTransit
         ),
         m
     );
@@ -1437,21 +1439,19 @@ Metrics runDriftTurn(
     const glm::dvec3 p1 =
         v.transform.motion.localPositionMeters;
 
-    // Keep one coherent moving reference, but finish the 90 deg recovery
-    // before the translational endpoint and hold the exit yaw while still
-    // moving. The 2.5 s smooth5 rotation stays inside the Cobra angular
-    // capability; the remaining 1.5 s is an in-motion attitude settle, not a
-    // follower-side replanning step.
+    // The outgoing straight is a moving tracking problem, not a timed
+    // attitude deadline. From the end of the drift arc onward the accepted
+    // reference keeps advancing at 10 m/s with the final corridor heading.
+    // B10 continuously reduces attitude/angular-rate error while translation
+    // continues. The old x=60 checkpoint is crossed without ending control.
     executePhase(
         v, model,
-        makeCoastRotateSettleProgram(
+        makeCoastProgram(
             revision++, v.timeSeconds,
             p1,
             {10.0, 0.0, 0.0},
-            -kPi,
             -0.5 * kPi,
-            2.5,
-            1.5,
+            10.0,
             Program::ManeuverFamily::DriftPass
         ),
         m
@@ -1466,7 +1466,7 @@ void finalizeMetrics(
     Metrics& m
 )
 {
-    const glm::dvec3 finalPosition(60.0, 0.0, 0.0);
+    const glm::dvec3 finalPosition(120.0, 0.0, 0.0);
     const glm::dvec3 finalVelocity(10.0, 0.0, 0.0);
     const glm::dvec3 finalForward(1.0, 0.0, 0.0);
 
@@ -1663,6 +1663,12 @@ void printCase(const CaseRecord& r)
         << m.captureTimedOutPhases
         << " max_capture_overrun_s="
         << m.maximumCaptureOverrunSeconds
+        << " outgoing_attitude_captured="
+        << (m.outgoingAttitudeCaptured ? 1 : 0)
+        << " outgoing_attitude_capture_x_m="
+        << m.outgoingAttitudeCaptureXMeters
+        << " outgoing_attitude_capture_after_old_exit_m="
+        << m.outgoingAttitudeCaptureDistanceAfterOldExitMeters
         << "\n";
 }
 
@@ -1883,7 +1889,12 @@ void testCornerFamilyMatrix()
         );
         require(
             r.metrics.finalForwardErrorDeg <= 5.0,
-            std::string("expert missed common exit attitude: ") +
+            std::string("expert missed extended exit attitude: ") +
+                lawName(r.law) + "/" + modeName(r.mode)
+        );
+        require(
+            r.metrics.outgoingAttitudeCaptured,
+            std::string("expert never converged to outgoing attitude while moving: ") +
                 lawName(r.law) + "/" + modeName(r.mode)
         );
 
@@ -1933,6 +1944,7 @@ int main()
         std::cout << " - family-specific phase handoff uses ScheduledMoving and StateCapture\n";
         std::cout << " - total corridor time and corner-zone time are reported separately\n";
         std::cout << " - drift is defined by sustained speed plus material body/velocity slip angle\n";
+        std::cout << " - outgoing attitude convergence is tracked while the reference keeps moving beyond the old x=60 checkpoint\n";
         std::cout << " - long 180 deg arc probes continuous angle correction during ~251 m of curved flight\n";
         return 0;
     }

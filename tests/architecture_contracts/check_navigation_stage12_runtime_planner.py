@@ -252,12 +252,26 @@ for source_name, source in (
     ("ManeuverTrackingController.h", TRACKER_H),
     ("ManeuverTrackingController.cpp", TRACKER_CPP),
 ):
+    # Check actual dependency syntax rather than prose comments. The B8/B9/B10
+    # headers intentionally document that they do NOT own NavigationMap /
+    # NavigationSpace; a bare word grep would reject the contract statement
+    # itself.
     for forbidden in (
-        "NavigationMap",
-        "NavigationSpace",
-        "GameSimulation",
-        "NavigationRuntimePlanner",
-        "LocalAvoidancePlanner",
+        '#include "src/world/navigation/map/',
+        '#include "src/world/navigation/space/',
+        '#include "src/game/simulation/',
+        '#include "src/game/navigation/NavigationRuntimePlanner',
+        '#include "src/world/navigation/local/LocalAvoidancePlanner',
+        "NavigationMap::",
+        "NavigationMap*",
+        "NavigationMap&",
+        "NavigationSpace::",
+        "NavigationSpace*",
+        "NavigationSpace&",
+        "NavigationRuntimePlanner::",
+        "NavigationRuntimePlanner*",
+        "NavigationRuntimePlanner&",
+        "LocalAvoidancePlanner::",
         "querySphere(",
         "queryCorridor(",
         "querySegment(",

@@ -3504,3 +3504,46 @@ authority. This is invalid for main-engine-dominant Newtonian craft.
 
 Do not weaken the live gate. Next implementation task is clean B5 ordinary
 physical maneuver compilation, followed by proof/integration.
+
+
+## 2026-09-19 isolated B5 Newtonian ordinary maneuver compiler candidate
+
+Current code/contract baseline before documentation commits:
+
+```text
+233d4023e81d5d466043a08c67acd8d49846c4b5
+```
+
+New strict-pure B5 block:
+- `OrdinaryPhysicalManeuverCompiler.h/.cpp`;
+- fixed-capacity `OrdinaryPhysicalManeuverCandidate`;
+- no NavigationMap/NavigationSpace/planner/world query ownership;
+- no wall clock, file I/O or unbounded vector.
+
+The first slice supports Newtonian only:
+- Coast;
+- body-axis-feasible Trim;
+- LeadRotateMainBurn for material delta-v outside direct RCS/body-axis authority.
+
+LeadRotateMainBurn uses a quintic lead-rotation bounded by angular acceleration
+and angular speed plus control-response reserve, followed by a forward-aligned
+main-engine feed-forward burn. B10 feedback reserve is subtracted before B5
+consumes feed-forward authority.
+
+Every candidate keeps `requiresContinuousProof=true`; no B5 result can be
+accepted without B6.
+
+Assisted deliberately reports UnsupportedControlLaw in this first slice.
+
+New isolated regression `ordinary_physical_maneuver_compiler` pins:
+- direct trim authority;
+- lateral delta-v escalation to lead-rotate/main-burn;
+- fail-closed behavior without angular authority;
+- tracking reserve preservation;
+- explicit Assisted unsupported status;
+- the live ~75-degree / ~41 m/s^2 lateral-demand failure class with ~2 m/s^2
+  RCS;
+- diagnostic batch timing for 10,000 dirty-actor compiles.
+
+The long live navigation self-test should not be rerun until B6 proof and live
+B5 integration are present.

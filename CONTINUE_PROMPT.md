@@ -4,41 +4,67 @@ Continue work directly in GitHub repository `forzub/Elite`, branch `main`.
 
 **Workflow rule:** after every state-affecting iteration, update `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, the active Stage-12 document, and recreate this entire `CONTINUE_PROMPT.md` **from scratch** from the new current truth. Do not incrementally patch stale prompt prose. The newly recreated prompt must contain this same rule again.
 
-## Latest exact verified target-machine evidence
+## Latest exact verified evidence
 
-Tested checkout:
+Target-machine tested checkout:
 
 ```
-d659416b9b1ddb2356c37eff315f9d13b70bafaa
+a5e44cdc2fb8eaa312ca788ae4b53a9985df3cae
 ```
 
-Results:
 - Stage-12 architecture contract PASS.
 - `navigation_runtime` 14/15.
-- Expert StopTurnGo is healthy.
-- RadiusTurn is healthy.
-- Long 180 deg angular-tracking diagnostic is healthy across expert/competent/rookie and both laws.
-- Only strict expert failure is DriftTurn terminal attitude: ~10.325 deg vs <=5 deg.
-- Drift final P/V/corridor are already good.
+- StopTurnGo expert healthy.
+- RadiusTurn healthy.
+- Long 180 deg arc healthy across expert/competent/rookie and Newtonian/Assisted.
+- Only strict expert failure: DriftTurn terminal attitude.
 
-The long arc proves the ship can continuously rotate accurately while translating. Therefore the remaining defect is DriftTurn recovery/reference authoring, not general follower angular tracking.
+Latest experiment:
+- 4 s / 40 m coherent moving recovery;
+- 90 deg yaw completed in 2.5 s;
+- 1.5 s continued translation at target yaw.
 
-## Current unverified candidate
+It failed:
+- expert final attitude worsened from ~10.325 deg to **16.889 deg**;
+- final P ~0.473 m, V ~0.032 m/s;
+- no expert corridor violation;
+- expert tracking envelope did not trip.
+- competent DriftTurn ~52.744 deg and 193 exceeded ticks;
+- rookie DriftTurn ~21.643 deg and 127 exceeded ticks.
 
-```
-76346121516e5b00d14a4e6304621b55791093ab
-```
+The long arc remains clean (expert final attitude 0.052 deg, max in-flight angular error 3.221 deg), so there is no evidence of a general follower angular-tracking defect.
 
-Change in `tests/navigation_runtime/ManeuverCornerFamilyMatrixTests.cpp`:
-- keep the final DriftTurn recovery as one coherent 4 s / 40 m accepted moving reference;
-- complete the smooth 90 deg yaw recovery in 2.5 s;
-- continue translating at 10 m/s for the remaining 1.5 s while holding final exit yaw;
-- no follower-side strategy change;
-- no tolerance/corridor/feedback widening.
+## Current task
 
-Purpose: provide a physical in-motion attitude-settle window before the common exit.
+Do not tune recovery duration blindly.
 
-## Target-machine validation
+Instrument DriftTurn recovery to expose:
+- final actual yaw/angular velocity;
+- final reference yaw/angular velocity;
+- final attitude error;
+- peak attitude error;
+- peak angular-velocity error during recovery.
+
+Then determine whether the terminal miss is residual angular momentum / damping or a reference/controller transient mismatch.
+
+If residual motion is confirmed, implement a planner-authored **moving terminal capture**:
+- continue position reference at terminal velocity (10 m/s);
+- hold final attitude;
+- command zero terminal angular velocity;
+- allow bounded capture time;
+- never freeze position while asking for nonzero translational velocity;
+- do not let follower choose a new maneuver family.
+
+## Do not weaken
+
+- expert DriftTurn terminal attitude <=5 deg;
+- P/V requirements;
+- 32 m hull corridor;
+- tracking ownership boundaries.
+
+Do not inflate generic feedback reserve merely to pass.
+
+## Validation
 
 ```bash
 cd /d/__elite/work
@@ -51,30 +77,8 @@ time python tests/architecture_contracts/check_navigation_stage12_runtime_planne
 bash tests/navigation_runtime/run_mingw64.sh
 ```
 
-Acceptance:
-- expert DriftTurn final attitude <=5 deg;
-- existing expert final P <=1.5 m;
-- final V <=1.0 m/s;
-- 32 m hull corridor remains clean;
-- Drift retains sustained-speed/material-slip semantics;
-- long arc remains green.
+## Next major stage
 
-## Current known follower status
-
-No general follower angular-tracking defect is currently known: the long arc is clean. The remaining known failure is planner-authored DriftTurn recovery timing/reference. Passing this gate will close the last **currently known strict expert corner-family execution defect**, but it will not prove the entire follower bug-free for all future 3D/speed/doctrine cases.
-
-## Architecture ownership
-
-- Planner owns route/corridor, maneuver family, physical reference, continuous proof and accepted trajectory.
-- Follower samples/tracks the accepted trajectory, applies bounded feedback and safety monitoring.
-- Follower must not invent an alternate maneuver strategy.
-- AcceptedManeuverProgram is the planner/follower boundary.
-- Newtonian/Assisted physical distinctions remain real.
-- Manual guidance later visualizes the same accepted route/trajectory.
-- Planner never mutates authoritative physics state.
-
-## After this gate
-
-Once DriftTurn and long arc are green, proceed to mixed-angle multi-segment 3D corridor quality, then speed/doctrine coverage.
+Do **not** move to the mixed-angle 3D corridor yet. First close this last currently known strict corner-family execution failure. After a verified 15/15 result, analyze what was closed and proceed to the 3D corridor/speed-doctrine stage.
 
 **Again:** recreate this entire prompt from scratch after every state-affecting iteration.

@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -442,17 +443,18 @@ Program makeRotateInPlaceProgram(
     );
 }
 
-Program makeQuarterArcProgram(
+Program makeArcProgram(
     std::uint64_t revision,
     double acceptedAt,
     double radiusMeters,
     double speedMps,
-    bool driftBody
+    bool driftBody,
+    double sweepRadians
 )
 {
     const double angularRate = speedMps / radiusMeters;
     const double duration =
-        (0.5 * kPi) / angularRate;
+        sweepRadians / angularRate;
 
     Program p;
     fillCommon(
@@ -523,6 +525,24 @@ Program makeQuarterArcProgram(
     }
 
     return p;
+}
+
+Program makeQuarterArcProgram(
+    std::uint64_t revision,
+    double acceptedAt,
+    double radiusMeters,
+    double speedMps,
+    bool driftBody
+)
+{
+    return makeArcProgram(
+        revision,
+        acceptedAt,
+        radiusMeters,
+        speedMps,
+        driftBody,
+        0.5 * kPi
+    );
 }
 
 struct Vehicle
@@ -700,6 +720,96 @@ struct Metrics
     double finalForwardErrorDeg = 0.0;
 };
 
+struct LongArcMetrics
+{
+    bool valid = true;
+    bool completed = false;
+    double maximumCenterlineErrorMeters = 0.0;
+    double maximumHullRequiredHalfWidthMeters = 0.0;
+    double maximumForwardErrorDeg = 0.0;
+    double finalPositionErrorMeters = 0.0;
+    double finalVelocityErrorMps = 0.0;
+    double finalForwardErrorDeg = 0.0;
+    std::size_t trackingEnvelopeExceededTicks = 0;
+};
+
+void updateLongArcMetrics(
+    const Vehicle& v,
+    const RigidVehicleModel& model,
+    const glm::dvec3& center,
+    double radiusMeters,
+    LongArcMetrics& m
+)
+{
+    const glm::dvec3 position =
+        v.transform.motion.localPositionMeters;
+    glm::dvec3 radial(
+        position.x - center.x,
+        0.0,
+        position.z - center.z
+    );
+    const double radialLength = glm::length(radial);
+    if (radialLength > 1.0e-9)
+    {
+        m.maximumCenterlineErrorMeters =
+            std::max(
+                m.maximumCenterlineErrorMeters,
+                std::abs(radialLength - radiusMeters)
+            );
+
+        const glm::dvec3 tangent =
+            glm::normalize(
+                glm::dvec3(-radial.z, 0.0, radial.x)
+            );
+        m.maximumForwardErrorDeg =
+            std::max(
+                m.maximumForwardErrorDeg,
+                angleRad(
+                    glm::dvec3(v.transform.forward()),
+                    tangent
+                ) * 180.0 / kPi
+            );
+    }
+
+    const glm::dvec3 right(v.transform.right());
+    const glm::dvec3 up(v.transform.up());
+    const glm::dvec3 forward(v.transform.forward());
+    for (int sx : {-1, 1})
+    {
+        for (int sy : {-1, 1})
+        {
+            for (int sz : {-1, 1})
+            {
+                const glm::dvec3 corner =
+                    position +
+                    right *
+                        (static_cast<double>(sx) *
+                         model.halfExtentsBodyMeters.x) +
+                    up *
+                        (static_cast<double>(sy) *
+                         model.halfExtentsBodyMeters.y) +
+                    forward *
+                        (static_cast<double>(sz) *
+                         model.halfExtentsBodyMeters.z);
+
+                const glm::dvec3 cornerRadial(
+                    corner.x - center.x,
+                    0.0,
+                    corner.z - center.z
+                );
+                m.maximumHullRequiredHalfWidthMeters =
+                    std::max(
+                        m.maximumHullRequiredHalfWidthMeters,
+                        std::abs(
+                            glm::length(cornerRadial) -
+                            radiusMeters
+                        )
+                    );
+            }
+        }
+    }
+}
+
 void updateGeometryMetrics(
     const Vehicle& v,
     const RigidVehicleModel& model,
@@ -786,7 +896,8 @@ RunResult runProgram(
     const Program& program,
     Metrics& m,
     Gate::Mode mode,
-    double maximumCaptureOverrunSeconds = 6.0
+    double maximumCaptureOverrunSeconds = 6.0,
+    std::function<void(const Vehicle&)> observer = {}
 )
 {
     Gate::Policy gatePolicy;
@@ -905,6 +1016,8 @@ RunResult runProgram(
         v.timeSeconds += kDt;
 
         updateGeometryMetrics(v, model, m);
+        if (observer)
+            observer(v);
     }
 }
 
@@ -1318,6 +1431,104 @@ void finalizeMetrics(
         m.minimumCornerZoneSpeedMps = 0.0;
 }
 
+LongArcMetrics runLongArc(
+    const RigidVehicleModel& model,
+    const PilotCase& pilot,
+    Law law
+)
+{
+    constexpr double kRadiusMeters = 80.0;
+    constexpr double kSpeedMps = 10.0;
+    constexpr double kSweepRadians = kPi;
+
+    Vehicle v(model, pilot, law);
+    v.transform.motion.localPositionMeters =
+        {0.0, 0.0, kRadiusMeters};
+    v.transform.motion.localVelocityMps =
+        {0.0, 0.0, -kSpeedMps};
+    v.transform.setWorldPositionMeters(
+        {0.0, 0.0, kRadiusMeters}
+    );
+    setTransformBasis(v.transform, Basis {});
+
+    Metrics executionMetrics;
+    LongArcMetrics arcMetrics;
+    const glm::dvec3 center(
+        kRadiusMeters,
+        0.0,
+        kRadiusMeters
+    );
+
+    const Program program =
+        makeArcProgram(
+            7400u,
+            v.timeSeconds,
+            kRadiusMeters,
+            kSpeedMps,
+            false,
+            kSweepRadians
+        );
+
+    const RunResult run =
+        runProgram(
+            v,
+            model,
+            program,
+            executionMetrics,
+            Gate::Mode::ScheduledMoving,
+            6.0,
+            [&](const Vehicle& current)
+            {
+                updateLongArcMetrics(
+                    current,
+                    model,
+                    center,
+                    kRadiusMeters,
+                    arcMetrics
+                );
+            }
+        );
+
+    arcMetrics.valid = run.valid;
+    arcMetrics.completed = run.completed;
+    arcMetrics.trackingEnvelopeExceededTicks =
+        executionMetrics.trackingEnvelopeExceededTicks;
+
+    const glm::dvec3 finalPosition(
+        2.0 * kRadiusMeters,
+        0.0,
+        kRadiusMeters
+    );
+    const glm::dvec3 finalVelocity(
+        0.0,
+        0.0,
+        kSpeedMps
+    );
+    const glm::dvec3 finalForward(
+        0.0,
+        0.0,
+        1.0
+    );
+
+    arcMetrics.finalPositionErrorMeters =
+        glm::length(
+            v.transform.motion.localPositionMeters -
+            finalPosition
+        );
+    arcMetrics.finalVelocityErrorMps =
+        glm::length(
+            v.transform.motion.localVelocityMps -
+            finalVelocity
+        );
+    arcMetrics.finalForwardErrorDeg =
+        angleRad(
+            glm::dvec3(v.transform.forward()),
+            finalForward
+        ) * 180.0 / kPi;
+
+    return arcMetrics;
+}
+
 Metrics runCase(
     const RigidVehicleModel& model,
     const PilotCase& pilot,
@@ -1494,6 +1705,83 @@ void testCornerFamilyMatrix()
         }
     }
 
+    // Long-arc diagnostic: 180 degrees at R=80 m and 10 m/s is ~251.3 m
+    // / 25.1 s of continuous curved flight. It separates a general angular
+    // tracking defect from a DriftTurn-specific recovery/handoff defect.
+    for (const auto& pilot : pilots)
+    {
+        for (const Law law : laws)
+        {
+            const LongArcMetrics arc =
+                runLongArc(model, pilot, law);
+
+            std::cout
+                << std::fixed << std::setprecision(6)
+                << "[LONG-ARC]"
+                << " pilot=" << pilot.name
+                << " law=" << lawName(law)
+                << " radius_m=80"
+                << " sweep_deg=180"
+                << " arc_length_m=" << 80.0 * kPi
+                << " nominal_duration_s=" << 8.0 * kPi
+                << " valid=" << (arc.valid ? 1 : 0)
+                << " completed=" << (arc.completed ? 1 : 0)
+                << " final_pos_error_m="
+                << arc.finalPositionErrorMeters
+                << " final_velocity_error_mps="
+                << arc.finalVelocityErrorMps
+                << " final_forward_error_deg="
+                << arc.finalForwardErrorDeg
+                << " max_centerline_error_m="
+                << arc.maximumCenterlineErrorMeters
+                << " max_hull_required_half_width_m="
+                << arc.maximumHullRequiredHalfWidthMeters
+                << " corridor_half_width_m="
+                << kCorridorHalfWidthMeters
+                << " max_forward_error_deg="
+                << arc.maximumForwardErrorDeg
+                << " tracking_envelope_exceeded_ticks="
+                << arc.trackingEnvelopeExceededTicks
+                << "\n";
+
+            require(
+                arc.valid && arc.completed,
+                std::string("long arc did not complete: ") +
+                    pilot.name + "/" + lawName(law)
+            );
+
+            if (pilot.strict)
+            {
+                require(
+                    arc.maximumHullRequiredHalfWidthMeters <=
+                        kCorridorHalfWidthMeters,
+                    std::string("expert left long-arc hull corridor: ") +
+                        lawName(law)
+                );
+                require(
+                    arc.finalPositionErrorMeters <= 1.5,
+                    std::string("expert missed long-arc exit gate: ") +
+                        lawName(law)
+                );
+                require(
+                    arc.finalVelocityErrorMps <= 1.0,
+                    std::string("expert missed long-arc exit velocity: ") +
+                        lawName(law)
+                );
+                require(
+                    arc.finalForwardErrorDeg <= 5.0,
+                    std::string("expert missed long-arc exit attitude: ") +
+                        lawName(law)
+                );
+                require(
+                    arc.maximumForwardErrorDeg <= 10.0,
+                    std::string("expert angular tracking lagged on long arc: ") +
+                        lawName(law)
+                );
+            }
+        }
+    }
+
     // First target-machine pass is diagnostic for timing ranking. The strict
     // quality assertions below only encode the semantic difference between
     // the three families for expert execution.
@@ -1579,6 +1867,7 @@ int main()
         std::cout << " - family-specific phase handoff uses ScheduledMoving and StateCapture\n";
         std::cout << " - total corridor time and corner-zone time are reported separately\n";
         std::cout << " - drift is defined by sustained speed plus material body/velocity slip angle\n";
+        std::cout << " - long 180 deg arc probes continuous angle correction during ~251 m of curved flight\n";
         return 0;
     }
     catch (const std::exception& error)

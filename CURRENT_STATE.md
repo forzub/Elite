@@ -3412,3 +3412,45 @@ only the clean scheduler block/API and scale gate. Live scheduler integration is
 the next separately gated slice after acceptance.
 
 No persistent diagnostic log is required for the current gate.
+
+
+## 2026-09-19 B14 isolated gate green; live scheduler integration candidate
+
+Fresh target-machine B14 isolated evidence:
+- architecture contract PASS (0.204 s);
+- navigation_runtime 9/9 PASS;
+- navigation_work_scheduler PASS;
+- 5000 actors: enqueue 1518 us, dispatch+complete 1258 us, total 2776 us;
+- EliteGame / EliteServer BUILD PASS;
+- production build 23.001 s.
+
+The exact rev-parse line was not included in the supplied B14 excerpt, so no
+tested B14 hash is invented. The last explicitly named target-machine hash
+remains the B10 baseline
+`2abd79a6181a322fe15425994ab771942e47bc26`.
+
+Live B14 candidate before documentation commits:
+`382c9d6f8ae347630ccd1a6ae6ec18bd077d086d`.
+
+GameSimulation's deterministic Stage-12 lab now routes every dirty replan through
+NavigationWorkScheduler enqueue -> bounded dispatch -> existing Planner::plan ->
+complete(ticket), and commits the planner result only on CompletedCurrent.
+
+Planner geometry and AcceptedShortSegment packing are unchanged in this slice.
+
+Live orchestration publishes current world, objective, capability and job
+revisions. Capability revision is monotonic and advances from actual current
+linear/angular authority changes.
+
+NavigationRuntimeLabObservation records scheduler enqueue/dispatch/completion
+counts, queue depths and dispatch/planner timing. The headless navigation
+self-test now requires dispatchCount == planCount,
+completedCurrent == dispatchCount and zero stale completion in the synchronous
+lab.
+
+A logged gate script was added:
+`tests/navigation_runtime/run_live_scheduler_gate_mingw64.sh`.
+It stores the complete self-test output under `build/logs`, prints total time,
+and prints the exact log path as its final line on both PASS and FAIL.
+
+Live B14 target-machine acceptance is pending.

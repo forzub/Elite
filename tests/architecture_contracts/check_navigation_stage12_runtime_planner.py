@@ -857,14 +857,17 @@ require(
 )
 
 require(
-    "std::uint64_t targetRevision = 0;" in
-        (ROOT / "src/game/navigation/NavigationRuntimeControlBridge.h").read_text(encoding="utf-8") and
+    "std::uint64_t targetRevision = 0;" in CONTROL_INTENT_H and
     "std::uint64_t targetRevision = 0;" in
         (ROOT / "src/world/navigation/control/PilotSkillExecutor.h").read_text(encoding="utf-8") and
-    "result.intent.revision = segment.goalRevision;" in
-        (ROOT / "src/game/navigation/TrajectoryFollower.cpp").read_text(encoding="utf-8") and
-    "result.intent.targetRevision = segment.revision;" in
-        (ROOT / "src/game/navigation/TrajectoryFollower.cpp").read_text(encoding="utf-8"),
+    "result.intent.revision = segment.goalRevision;" in FOLLOWER_CPP and
+    "result.intent.targetRevision = segment.revision;" in FOLLOWER_CPP and
+    "command.revision = intent.revision;" in
+        (ROOT / "src/game/navigation/NavigationRuntimeControlBridge.cpp").read_text(encoding="utf-8") and
+    "command.targetRevision = intent.targetRevision;" in
+        (ROOT / "src/game/navigation/NavigationRuntimeControlBridge.cpp").read_text(encoding="utf-8") and
+    "result.snapshot.activeTargetRevision = pilot.activeTargetRevision;" in
+        (ROOT / "src/game/navigation/NavigationRuntimeControlBridge.cpp").read_text(encoding="utf-8"),
     "accepted segment target revision must remain distinct from high-level intent revision",
 )
 
@@ -1039,7 +1042,7 @@ for marker in (
     "isNavigationRuntimeLabMovingGapBoundary",
     "effectiveLocalOffsetMeters",
     "NavigationRuntimeLabMovingGapVelocityVisualMps",
-    "expectedMovingGapVelocityWorldMps",
+    "expectedMovingGapVelocityMapMps",
     "movingGapMaximumVelocityErrorMps",
     "movingGapPairCandidateSeen",
     "policy.avoidance.maximumDeflectionRadians",

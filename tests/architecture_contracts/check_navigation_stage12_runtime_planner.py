@@ -398,6 +398,22 @@ require(
 )
 
 for marker in (
+    "firstVisibilityBypassCaptured",
+    "firstVisibilityBypassDeflectionRad",
+    "firstVisibilityBypassSelectedTargetMap",
+    "firstVisibilityBypassAcceptedAlignForward",
+    "firstVisibilityBypassIdealAccelerationMapMps2",
+    "firstVisibilityBypassExecutedAccelerationMapMps2",
+    "firstVisibilityBypassAppliedMainAccelerationMapMps2",
+    "firstVisibilityBypassAppliedRcsAccelerationMapMps2",
+    "firstVisibilityBypassAppliedTotalAccelerationMapMps2",
+):
+    require(
+        marker in LAB_H and marker in SIM_CPP and marker in SERVER_MAIN,
+        f"first visibility P5/P9/P13 handoff witness missing: {marker}",
+    )
+
+for marker in (
     "class NavigationStaticQueryApi final",
     "explicit NavigationStaticQueryApi(",
     "queryPoint(",

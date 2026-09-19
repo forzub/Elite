@@ -2605,7 +2605,14 @@ void SpaceState::updateDockingGuidance(float dt)
 
     auto& guidanceState = m_navigationWorkspace.guidance();
     auto& modules = m_navigationWorkspace.modules();
+
+    // Legacy/manual client route stack:
+    // DockingPathPlanner -> GeometricPathPlanner -> TrajectoryGenerator ->
+    // GuidanceTunnel. Retained for regression/reference only. It must not run
+    // while Navigation v2 Stage 12 owns live navigation.
+    constexpr bool LegacyClientRoutePipelineEnabled = false;
     const bool computationEnabled =
+        LegacyClientRoutePipelineEnabled &&
         modules.enabled(game::navigation::NavigationModuleId::RoutePlanning) &&
         modules.enabled(game::navigation::NavigationModuleId::LocalGuidance);
 

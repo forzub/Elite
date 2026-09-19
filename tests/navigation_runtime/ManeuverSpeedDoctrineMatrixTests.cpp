@@ -33,8 +33,8 @@ constexpr double kDt = 0.02;
 constexpr double kDistanceMeters = 180.0;
 constexpr double kInitialSpeedMps = 6.0;
 constexpr double kObstacleRadiusMeters = 16.0;
-constexpr glm::dvec3 kObstacleCenter {90.0, 0.0, 0.0};
-constexpr glm::dvec3 kBodyHalfExtents {13.0, 2.5, 11.1};
+const glm::dvec3 kObstacleCenter {90.0, 0.0, 0.0};
+const glm::dvec3 kBodyHalfExtents {13.0, 2.5, 11.1};
 
 void require(bool condition, const std::string& message)
 {

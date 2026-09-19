@@ -332,6 +332,8 @@ for marker in (
     "movingPassageRequiredPeakVerticalAccelerationMps2",
     "selectedVisibilityDeflectionRadians",
     "ordinaryVisibilitySearchExhausted",
+    "selectedManeuverRequiresForwardAlignment",
+    "selectedManeuverForwardMap",
     "PortalTraversalPolicy",
     "PortalCapture",
     "PortalTransit",
@@ -365,6 +367,8 @@ for marker in (
     "portalVelocityAngleRad",
     "portalForwardAngleRad",
     "portalCaptureReady",
+    "selectedManeuverRequiresForwardAlignment",
+    "selectedManeuverForwardMap",
     "Status::PortalCapture",
     "Status::PortalTransit",
 ):
@@ -373,6 +377,24 @@ for marker in (
 require(
     "bool allowSteeringAuthority = false;" in PLANNER_H,
     "moving-passage steering authority must remain an explicit opt-in policy",
+)
+
+require(
+    "accepted.alignForward =" in SIM_CPP and
+    "selectedManeuverRequiresForwardAlignment" in SIM_CPP and
+    "selectedManeuverForwardMap" in SIM_CPP,
+    "AcceptedShortSegment must copy selected-maneuver attitude semantics explicitly",
+)
+
+require(
+    "accepted.alignForward =\n            m_navigationRuntimeLabLastPlan.portalTraversalActive" not in SIM_CPP,
+    "ACCEPT boundary must not re-derive current attitude from future portal route context",
+)
+
+require(
+    "testAdjustedVisibilityDoesNotInheritFuturePortalAlignment" in RUNTIME_TEST and
+    "AdjustedClear bypass must not inherit future portal forward alignment" in RUNTIME_TEST,
+    "runtime regression must pin route-context versus current-maneuver attitude ownership",
 )
 
 for marker in (

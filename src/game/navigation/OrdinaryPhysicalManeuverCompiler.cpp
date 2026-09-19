@@ -645,21 +645,25 @@ OrdinaryPhysicalManeuverCompiler::compile(
             rawRequired
         );
 
-    if (!rawDirectFeasible)
+    // Main engine is the primary translation authority for the default
+    // Newtonian ship model. Do not hide that option merely because RCS could
+    // eventually produce the same small body-axis acceleration. B5 generates
+    // the bounded physical alternatives; B7 selects among proved candidates.
+    Candidate rotateBurn;
+    if (result.candidateCount < Result::kMaxCandidates &&
+        compileLeadRotateMainBurn(
+            query,
+            forward,
+            right,
+            up,
+            rotateBurn))
     {
-        Candidate rotateBurn;
-        if (compileLeadRotateMainBurn(
-                query,
-                forward,
-                right,
-                up,
-                rotateBurn))
-        {
-            result.candidates[result.candidateCount++] =
-                rotateBurn;
-            result.leadRotateRequired = true;
-        }
+        result.candidates[result.candidateCount++] =
+            rotateBurn;
+        result.mainEngineCandidateAvailable = true;
     }
+
+    result.leadRotateRequired = !rawDirectFeasible;
 
     result.status =
         result.candidateCount > 0

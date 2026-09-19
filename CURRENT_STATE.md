@@ -59,11 +59,36 @@ The clean correction is to keep the translational motion and provide an explicit
 
 Do not relax the 5 deg gate, widen the corridor, or increase generic tracking reserve to hide this.
 
-## Current next task
+## Current unverified candidate
 
-Change DriftTurn recovery so its accepted reference reaches the target attitude early enough and holds/settles that attitude while the ship continues moving at the intended exit velocity. Prefer one coherent program over a separate follower-side corrective maneuver.
+Code candidate:
 
-After the code change, rerun the same corner-family and long-arc gate.
+```
+76346121516e5b00d14a4e6304621b55791093ab
+```
+
+DriftTurn recovery now remains one coherent 4 s / 40 m accepted moving reference, but:
+- smooth 90 deg recovery completes in 2.5 s;
+- final 1.5 s continues translating at 10 m/s while holding the exit yaw;
+- no separate follower maneuver is introduced;
+- no tolerance, corridor or generic tracking reserve was changed.
+
+This candidate is not accepted until target-machine evidence is supplied.
+
+## Next target-machine commands
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+
+TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
+time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
+bash tests/navigation_runtime/run_mingw64.sh
+```
+
+Acceptance requires the existing expert DriftTurn <=5 deg exit attitude plus unchanged P/V/corridor quality and a still-green long-arc diagnostic.
 
 ## Architecture invariants
 

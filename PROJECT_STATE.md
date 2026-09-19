@@ -3,7 +3,7 @@
 **Project:** Elite Navigation v2
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Canonical execution architecture
+## Canonical architecture
 
 ```
 Navigation geometry / corridor
@@ -17,65 +17,62 @@ Navigation geometry / corridor
  -> authoritative propulsion / physics
 ```
 
-Planner owns the physical reference and maneuver. Follower owns bounded residual tracking, not maneuver invention.
+Planner owns physical maneuver/reference generation. Follower owns bounded residual tracking.
 
-## Accepted baseline
+## Accepted quality baseline
 
 Exact target-machine checkout:
 
 ```
-b687b9d3189cdfbbca91123b578637f991cbc645
+213bbfb62ff7dcb8e553c06bdca09d99d2d1fd56
 ```
 
-Evidence:
-- architecture PASS;
-- navigation runtime 15/15;
-- strict expert StopTurnGo, RadiusTurn, DriftTurn healthy;
-- long-arc angular tracking healthy.
+Accepted:
+- Stage-12 architecture PASS;
+- navigation runtime 16/16;
+- StopTurnGo / RadiusTurn / DriftTurn strict expert gates;
+- long continuous angular tracking;
+- rigid-body braking/corridor behavior;
+- non-orthogonal stop-to-stop 3D corridor;
+- continuous multi-corner 3D fly-through.
 
-The accepted DriftTurn fix established that large attitude transitions must be planner-authored from real angular state and capability.
+## Newly closed capability
 
-## Current unverified stage
+The planner/follower/physics stack can execute one continuous 5-segment 3D route through ~35/60/90/120 degree turns while:
+- retaining nonzero fly-through speed;
+- preserving strict expert tracking;
+- keeping full Cobra OBB inside a 32 m half-width corridor;
+- completing with bounded P/V/attitude error.
 
-Continuous multi-corner 3D fly-through.
+This is stronger than the earlier 3D corridor matrix because the vehicle does not stop and rotate at every waypoint.
 
-Candidate:
-- new `ManeuverFlyThrough3dTests.cpp`;
-- registered `maneuver_fly_through_3d` CTest;
-- expected runtime suite size 16.
+## Remaining diagnostic work
 
-### Geometry
+The accepted target log did not contain verbose `FLY3D` rows because the runner did not yet include the new test in its diagnostic reruns.
 
-One 5-segment 3D route with ~35/60/90/120 degree turns.
+Runner-only patch:
 
-### Motion
+```
+4cd9c4a14c8f2e4ce033082633766a21fece9331
+```
 
-- nominal speed 8 m/s;
-- no stop at corner;
-- C2 quintic moving corner references;
-- body attitude follows route tangent;
-- angular feed-forward derived from orientation evolution.
+adds verbose FLY3D output without altering navigation behavior.
 
-### Rigid-body proof
+Need one target diagnostic run to quantify whether Assisted actually requires more radius/speed loss than Newtonian on the same accepted geometry.
 
-Cobra OBB hull corners are measured against a 32 m route corridor.
+## Roadmap
 
-The test reports per-corner observed physical radius, speed loss, slip and hull envelope so Newtonian/Assisted behavior can be compared from evidence.
-
-## Current question
-
-Can the accepted planner/follower/physics stack execute chained 3D turns without collapsing to stop-turn-go and without leaving the rigid-body corridor?
-
-No assumption is made that Newtonian or Assisted must perform better. The first run establishes the measured difference.
-
-## Roadmap after this gate
-
-If fly-through is healthy:
-1. characterize Newtonian vs Assisted continuous-turn envelopes;
-2. add speed/doctrine matrix;
-3. reconcile doctrine terminology (Rational / Precision / Extreme / CombatEscape vs older Freestyle references);
-4. proceed toward visible in-game evaluation.
+1. Capture detailed Newtonian/Assisted FLY3D metrics.
+2. Record measured turn-envelope comparison.
+3. Add speed/doctrine matrix.
+4. Reconcile doctrine terminology:
+   - Rational;
+   - Precision;
+   - Extreme;
+   - CombatEscape;
+   - compare with older “Freestyle” wording.
+5. Proceed toward visible in-game evaluation.
 
 ## State protocol
 
-After every state-affecting event, update project MD context and recreate `CONTINUE_PROMPT.md` from scratch.
+After each state-affecting event, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

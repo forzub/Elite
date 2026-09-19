@@ -4,43 +4,54 @@
 
 ## Task
 
-Replace the failed constant-heading DriftTurn exit with a planner-authored **moving attitude capture**.
+Validate the new capability-derived moving attitude capture for DriftTurn exit.
 
-## Latest evidence
+## Current candidate
 
-The continuous outgoing reference experiment removed x=60 as a control terminus, but DriftTurn still failed:
-- expert final attitude ~48.287 deg;
-- expert 439 tracking-envelope exceeded ticks;
-- no outgoing attitude capture;
-- P/V/corridor remained excellent;
-- long arc remained clean.
+```
+31a66a3eb462df6b5a60b2da2aca9f018d8aa332
+```
 
-This proves B10 cannot be used as the primary 90 deg maneuver generator. Its bounded angular feedback reserve is only for tracking correction.
+## Mechanism
 
-## Required mechanism
+The capture:
+- starts from actual yaw and actual yaw rate after the drift arc;
+- keeps translation at 10 m/s;
+- targets the outgoing corridor yaw and zero terminal yaw rate;
+- uses a quintic boundary-value profile;
+- computes the shortest feasible duration from real effective angular acceleration/rate limits;
+- reserves B10 angular tracking authority instead of consuming the whole physical envelope.
 
-Author the outgoing attitude transition in B8/B9 as a physical reference derived from state and capability:
-- current body attitude;
-- current angular velocity;
-- desired outgoing attitude;
-- desired terminal angular velocity 0;
-- angular acceleration and rate capability;
-- moving translational reference at 10 m/s.
+This directly addresses the two defects exposed by prior experiments:
+- fixed-time authoring ignored actual angular state;
+- raw target-heading step incorrectly delegated the whole maneuver to B10.
 
-The profile should accelerate/rotate/brake as required by capability and stop conditions. The horizon should be **computed from the maneuver**, not chosen as a fixed 4 s route-time deadline.
+## Diagnostics to inspect
 
-B10 then remains responsible only for residual bounded tracking error.
+For expert newtonian and assisted DriftTurn:
+- attitude_capture_program_s
+- attitude_capture_start_yaw_rate_radps
+- attitude_capture_peak_ff_yaw_rate_radps
+- attitude_capture_peak_ff_yaw_accel_radps2
+- tracking_envelope_exceeded_ticks
+- outgoing_attitude_captured
+- final_forward_error_deg
+- final_pos_error_m
+- final_velocity_error_mps
 
-## Validation goals
+## Acceptance
 
+Need:
+- 15/15 runtime;
 - expert DriftTurn final attitude <=5 deg;
-- final angular rate within terminal tolerance;
-- P <=1.5 m;
-- V <=1.0 m/s;
-- no corridor violation;
-- sustained-speed/material-slip semantics retained;
+- terminal angular convergence;
+- final P <=1.5 m;
+- final V <=1.0 m/s;
+- zero corridor violation;
 - long arc remains green.
+
+If this passes, close the corner-family execution defect and move to the next mixed-angle multi-segment 3D corridor stage.
 
 ## Iteration rule
 
-After every code/evidence change, synchronize all state MD files and recreate `CONTINUE_PROMPT.md` from scratch.
+After each code/evidence change, update all state MD files and recreate CONTINUE_PROMPT.md from scratch.

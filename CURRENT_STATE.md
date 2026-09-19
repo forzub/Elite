@@ -2268,3 +2268,67 @@ Last actually target-machine accepted Stage-12 baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+### 2026-09-19 physical dynamic broadphase horizon aligned
+
+Current unaccepted Navigation-v2 candidate code HEAD:
+
+~~~text
+57ae48cc4cc7d376279582e1da722961e5c9fb5a
+~~~
+
+The previously recorded final timing mismatch is now closed:
+NavigationMap no longer forces every dynamic broadphase query to use only its
+configured fallback prediction horizon.
+
+Both CorridorQuery and SphereQuery now expose an optional lookAheadSeconds.
+When supplied, all of the following are evaluated over that exact requested
+time horizon:
+
+- broadphase AABB expansion;
+- per-actor conservative swept radius;
+- candidate predicted endpoint;
+- candidate conservative swept product;
+- QueryResult/Candidate diagnostics identifying the horizon used.
+
+The sparse index remains indexed by current NavLocal actor position. To avoid a
+full actor scan merely to size the query AABB, NavigationMap retains bounded
+publication maxima for indexed actor radius, speed and acceleration and uses
+them to compute a conservative maximum swept-radius upper bound for the query
+horizon. Per-actor acceptance then uses each actor's own velocity/acceleration
+travel bound.
+
+The authoritative Stage-12 dynamic query now explicitly supplies:
+
+~~~cpp
+dynamicQuery.lookAheadSeconds = physicalHorizon.lookAheadSeconds;
+~~~
+
+Therefore dynamic candidate discovery and LocalHorizonPlanner conflict
+evaluation consume the same speed/capability-dependent physical time horizon.
+The Config prediction horizon remains only a fallback for callers that do not
+provide a physical query horizon.
+
+A new NavigationMap regression proves the distinction: with a 1 s configured
+fallback an incoming actor remains outside the local query, while the same
+query with 5 s physical look-ahead includes that actor and predicts its crossing
+at the correct endpoint.
+
+Combined timing invariant for Navigation v2 is now:
+
+~~~text
+physical response/braking need
+        -> distance horizon for static/current geometry
+        -> time horizon for dynamic prediction
+        -> same time horizon for NavigationMap candidate broadphase
+        -> accepted short segment may execute only while stopping reserve remains safe
+~~~
+
+No target-machine validation has been run for this candidate yet.
+No Stage-12 baseline promotion.
+
+Last actually target-machine accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

@@ -5098,3 +5098,38 @@ bash tests/navigation_runtime/run_mingw64.sh
 ```
 
 The existing strict expert quality thresholds remain unchanged.
+
+
+## 2026-09-20 — long-arc angular-tracking diagnostic
+
+Target-machine rerun on exact checkout:
+
+```
+be4686f4dcba419f451813b1ddc246088c145e48
+```
+
+proved that the previous Newtonian StopTurnGo authoring correction worked. Expert Newtonian StopTurnGo now completes with a real near-stop, no corridor violation, no capture timeout, and small final P/V/attitude errors. RadiusTurn remains healthy.
+
+The remaining strict expert failure is DriftTurn terminal attitude: both control laws finish near 10.325 degrees from the common exit heading while P/V and corridor quality remain good. The <=5 degree rule is a terminal common-exit criterion; it does not prohibit attitude correction during translational motion.
+
+The existing DriftTurn recovery already commands a 90 degree attitude change during 4 s / 40 m of motion. Therefore the next diagnostic must determine whether the residual angle is caused by general B9/B10 continuous angular tracking or by DriftTurn-specific reference/recovery construction.
+
+Candidate `5c16bedc25c422f2c79ae5def14396839ef4ee7c` adds a separate long curved-flight probe without weakening any existing gate:
+
+```
+180 deg arc
+R = 80 m
+v = 10 m/s
+length ~= 251.33 m
+duration ~= 25.13 s
+PilotSkill = expert / competent / rookie
+law = Newtonian / Assisted
+```
+
+The probe continuously reports centerline error, rigid-hull annular corridor demand, forward-vs-tangent error and tracking-envelope exceed ticks, plus final P/V/attitude error. Expert quality keeps the same 32 m hull half-width corridor, <=1.5 m final P, <=1.0 m/s final V and <=5 deg final attitude; maximum in-flight forward/tangent error is bounded at 10 deg.
+
+Interpretation:
+- long arc clean + Drift exit bad => local DriftTurn recovery/reference defect;
+- long arc also angularly bad => general B9/B10 angular tracking defect.
+
+This candidate remains unverified until the target-machine architecture and navigation-runtime gates are rerun.

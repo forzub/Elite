@@ -102,6 +102,19 @@ small RCS handles limited lateral/reverse correction
 large braking requires hull rotation then main-engine burn
 ~~~
 
+For a main-engine-dominant craft this is also the default ordinary course-change model. A material lateral delta-v is not requested as if the ship had an omnidirectional main engine.
+
+~~~text
+substantial course change:
+    preserve/coast existing velocity when useful
+    -> rotate hull toward required burn vector
+    -> main-engine burn
+    -> coast / RCS trim
+    -> rotate / flip-and-burn when later braking is required
+~~~
+
+RCS is normally precision authority: trim, close formation, docking, parking, portal capture, low-speed centering and small residual velocity cleanup. A craft or drone whose actual propulsion profile makes omnidirectional thrusters primary is allowed to use them as primary translation; the maneuver generator follows the real vehicle profile rather than a hard-coded ship assumption.
+
 A strong stop is therefore:
 
 ~~~text
@@ -284,6 +297,10 @@ CombatEscape + Newtonian
 ## Acceptance invariants
 
 ~~~text
+geometric free-space ray != executable maneuver
+route/segment feasibility always includes the current vehicle capability
+a propulsion allocator is not allowed to rescue an impossible planner request
+
 physical hull != planning sphere
 
 Assisted:

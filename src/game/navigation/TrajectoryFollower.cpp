@@ -198,6 +198,21 @@ glm::dvec3 angularDemand(
 TrajectoryFollower::Result TrajectoryFollower::follow(
     const AcceptedManeuverProgram& program,
     double universeTimeSeconds,
+    const AgentState& agent
+) noexcept
+{
+    const ManeuverTrackingController::Policy trackingPolicy {};
+    return follow(
+        program,
+        universeTimeSeconds,
+        agent,
+        trackingPolicy
+    );
+}
+
+TrajectoryFollower::Result TrajectoryFollower::follow(
+    const AcceptedManeuverProgram& program,
+    double universeTimeSeconds,
     const AgentState& agent,
     const ManeuverTrackingController::Policy& trackingPolicy
 ) noexcept

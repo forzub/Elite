@@ -169,10 +169,19 @@ No current Stage-12 failure is caused by N² work.
 - vehicle feasibility metadata at the abstraction required by an edge/portal.
 
 **Responsibility**
-- choose a coarse reachable region/portal sequence.
+- choose a coarse reachable region/portal sequence;
+- expose portal/aperture geometry and traversal constraints without deciding that a portal automatically implies centerline capture or hull-normal alignment.
 
 **Required rule**
 A global edge/portal is valid only if this vehicle class/current capability can plausibly traverse it. Global planning need not integrate each burn, but it may not choose a portal whose fit/orientation/braking/control-law requirements are impossible.
+
+A portal is an opportunity/constraint surface. The later maneuver layer decides whether the current behavior model permits:
+- FreeTransit through a large safe opening;
+- adjusted transit;
+- PrecisionCapture/Transit;
+- Extreme/contact-expected transit.
+
+The correct question is not "does a portal exist?" but "which passage maneuver is safe/acceptable for this geometry, vehicle, pilot envelope and doctrine?"
 
 **Current implementation**
 - exact envelope/hull clearance participates;
@@ -320,7 +329,14 @@ For main-engine-dominant Newtonian craft, ordinary substantial course changes sh
 RCS is not a hidden omnidirectional main engine.
 
 **Output**
-- time-parameterized maneuver candidate(s) with required attitude and propulsion semantics.
+- time-parameterized maneuver candidate(s) with reference state **and** feed-forward control semantics:
+
+~~~text
+P(t), V(t), A_ff(t)
+q/body-basis(t), omega(t), alpha_ff(t)
+~~~
+
+The candidate may be represented analytically or by a small bounded set of knots/control keys. A point/velocity target alone is not sufficient.
 
 **Current implementation**
 - precision moving passage has capability-aware continuous evaluation;
@@ -397,11 +413,15 @@ Only physically valid candidates plus annotations:
 **Required output**
 - trajectory/segment revision;
 - validity horizon;
-- target state or time-parameterized program;
-- required attitude semantics;
+- the **same time-parameterized maneuver program that was proved**;
+- reference state P/V/q/omega;
+- feed-forward A/alpha;
+- terminal state/tolerances;
 - capability snapshot;
 - tracking envelope;
 - proof/source revisions.
+
+Target API authority is defined in `NAVIGATION_COMMAND_OWNERSHIP.md`.
 
 **Concrete current defect**
 GameSimulation currently derives:
@@ -422,22 +442,35 @@ Planner must explicitly publish whether **the selected maneuver** requires forwa
 ### P10 — TrajectoryFollower
 
 **Input**
-- AcceptedShortSegment;
+- accepted maneuver program;
 - current agent state.
 
 **Responsibility**
-- sample/follow accepted execution product;
+- sample the already-proved reference state/control program;
+- apply bounded closed-loop correction around that program;
 - report completion/tracking error;
-- no obstacle search, no route choice.
+- no obstacle search, route choice or trajectory re-solve.
+
+Target semantics:
+
+~~~text
+sample:
+    P_ref, V_ref, A_ff
+    q_ref, omega_ref, alpha_ff
+
+feedback:
+    A_cmd = A_ff + bounded A_feedback
+    alpha_cmd = alpha_ff + bounded alpha_feedback
+~~~
+
+Large tracking divergence invalidates the program and requests replan.
 
 **Current behavior**
-- velocity tracking or fixed acceleration;
-- optional explicit forward alignment;
-- angular damping;
-- tracking/completion reporting.
+- current `AcceptedShortSegment` is transitional;
+- follower still derives acceleration from target velocity or consumes one fixed acceleration sample.
 
-**Current verdict:** **OK relative to its input.**
-Current bad behavior is caused by a semantically wrong accepted input, not by the follower inventing portal alignment.
+**Current verdict:** **TRANSITIONAL / API MIGRATION REQUIRED.**
+The follower code is coherent for the old segment type, but the old segment type is insufficient for the target physical-maneuver architecture.
 
 ---
 

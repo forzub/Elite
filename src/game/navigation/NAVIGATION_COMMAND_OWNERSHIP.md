@@ -402,3 +402,30 @@ main-engine-dominant Newtonian course changes may rotate early
 while preserving non-zero inertial velocity
 
 proof and execution must consume the same maneuver program
+
+
+## Execution safety reflex boundary — 2026-09-19
+
+The two-world architecture keeps only two top-level owners: Planner and Autopilot/Follower. The execution world may contain a bounded safety supervisor/reflex, but this does not grant the follower ordinary route-planning ownership.
+
+Allowed:
+- track the accepted `P/V/A/q/omega/alpha` program;
+- use reserved feedback authority to reduce bounded tracking error;
+- continue useful program progress while cross-track/state error decays;
+- make a bounded imminent-hazard reflex when waiting for a new plan would be unsafe.
+
+Required after a material reflex:
+- mark the accepted program invalid;
+- request immediate local replan;
+- do not silently invent a new long-lived target/route and call it tracking.
+
+This preserves the command ownership rule:
+
+```text
+Planner chooses/proves the maneuver.
+Follower tracks it.
+Safety reflex may prevent immediate loss.
+Material deviation returns authority to Planner.
+```
+
+The world is authoritative and already known to navigation. Ray/segment/sweep tests inside planning or monitoring are geometric intersection/proof tools, not obstacle-perception sensors.

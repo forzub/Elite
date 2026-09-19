@@ -3618,3 +3618,31 @@ cross-track, corner miss, corridor violation and simulated completion time.
 The first profile is deliberately expert/zero-latency to isolate pure autopilot
 tracking/physics behavior. This target-machine run may fail; that is useful
 diagnostic evidence rather than a reason to relax the route or tolerances.
+
+
+## 2026-09-19 maneuver execution lab candidate ready for target-machine measurement
+
+Current execution-lab code candidate before documentation commits:
+
+```text
+78fd1e356138f94f6e6b8990053d80fdc419eb4d
+```
+
+The fixture is wired through the actual execution stack:
+- AcceptedManeuverProgram;
+- TrajectoryFollower B9/B10;
+- NavigationRuntimeControlBridge / PilotSkillExecutor;
+- SharedShipPhysics angular execution;
+- DynamicMotionSystem main/RCS propulsion allocation;
+- DynamicMotionSystem translation integration.
+
+Scenarios:
+- 100 m straight stop-to-stop;
+- 100 m first leg, stop, 90-degree yaw, 100 m second leg;
+- same two-leg path monitored inside a 5 m half-width corridor.
+
+Output includes arrival classification, final position/speed, geometric
+cross-track, overshoot, corner error, corridor violation and simulated time.
+
+This is intentionally a measurement gate. Do not relax thresholds before the
+first target-machine result is observed.

@@ -2950,3 +2950,39 @@ Root cause: the architecture gate searched for the new dynamic narrow-phase impl
 Correction: the gate now loads `LocalHorizonPlanner.cpp` explicitly and verifies `exactTranslationNarrowPhaseAvailable`, `exactTranslationConflict`, `segmentIntersectsNavigationObstacle`, exact candidate geometry consumption, and the regression `testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute` against the correct owner.
 
 The remainder of the new slice was rechecked against source: NavigationMap exact-geometry value ownership, live HitVolume OBB publication, and named moving-infrastructure velocity tolerance markers are all present. No navigation behavior changed in this follow-up; the dynamic exact-OBB candidate remains the implementation baseline awaiting target-machine compilation/runtime validation.
+
+
+### 2026-09-19 exact-OBB broadphase fix exposed a non-blocking moving fixture
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+18076a9851647fcf9eb1b237105d0de4bdfd3440
+~~~
+
+Fresh target-machine live evidence after the dynamic exact-OBB narrow-phase candidate:
+
+- canonical build: PASS;
+- moving-gap kinematics: PASS (`moving_gap_kinematics=1`);
+- no dynamic `ConflictHold` and no exact-static violation;
+- progress increased from ~351 m to ~1903 m inside the same 120 s run;
+- slit portal selection/capture/alignment/entry-plane crossing all became visible;
+- however `visibility_bypass=0` and `moving_gap_passed=0`, so the self-test still failed its ordered visibility-bypass evidence gate.
+
+This is not a regression in avoidance. The exact geometry revealed that the authored moving pair did not actually block the route. The original centres were Y=-790 and Y=-1890 with 360 m-high GuidanceDockCube HitVolumes, leaving about 740 m of real vertical free space. The lab route is Y=-1300, almost through the middle of that gap. The old sphere-only broadphase falsely made this look blocked; once the real OBB narrow-phase became authoritative, the correct result was direct flight with no visibility bypass.
+
+The proving fixture is corrected rather than weakening the self-test. The moving pair now has:
+
+~~~text
+aperture center Y = -900 m
+boundary centre separation = 500 m
+GuidanceDockCube height = 360 m
+physical aperture = 140 m
+route Y = -1300 m
+~~~
+
+The direct route therefore intersects the lower real OBB, while a bounded upward visibility deflection can enter the actual 140 m aperture. This preserves the intended test: NavigationMap sphere performs broadphase candidate collection, exact dynamic HitVolume OBBs decide collision truth, and bounded visibility steering must find real free space rather than react to an enclosing-sphere artefact.
+
+The Stage-12 architecture gate now pins the explicit offset-aperture constants/derivation so this fixture cannot silently drift back into a geometry that requires no avoidance.
+
+No planner/control-law behavior changed in this follow-up. Next target-machine run should prove that the corrected real geometry now produces `visibility_bypass=1` without restoring the previous false `ConflictHold` deadlock.

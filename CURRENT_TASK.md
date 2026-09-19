@@ -10,64 +10,93 @@ Exact target-tested checkout:
 9435725206b88f0ae953f058a294b1d6a7608e78
 ```
 
-Results:
-- architecture PASS;
-- navigation runtime 16/16;
-- continuous 3D fly-through accepted with verbose target diagnostics.
+Architecture PASS; navigation runtime 16/16.
 
-## Closed stage: continuous 3D fly-through
+## Current task
 
-Expert Newtonian and Assisted both complete the 5-segment ~35/60/90/120 deg route with:
-- 9/9 phases;
-- zero corridor violation;
-- zero tracking-envelope exceed ticks;
-- min route speed ~3.999 m/s;
-- max hull half-width ~17.474 m inside 32 m;
-- final P ~0.120 m;
-- final speed error ~0.00007 m/s;
-- final attitude error ~0.00032 deg.
+Target-test the new **B7 speed/doctrine execution matrix**.
 
-Measured Expert turn radii:
-- 35 deg -> ~90.25 m;
-- 60 deg -> ~44.78 m;
-- 90 deg -> ~21.09 m;
-- 120 deg -> ~8.62 m.
+Expected runtime suite size: **17 tests**.
 
-The Newtonian/Assisted rows are numerically identical because this trajectory is tangent-aligned and remains inside the same manoeuvre/RCS authority. This test proves continuous 3D execution, not law divergence.
+New test:
+```
+maneuver_speed_doctrine_matrix
+```
 
-## Current task: speed/doctrine matrix
+## What it tests
 
-Canonical code doctrines:
-- `Rational`;
-- `PrecisionRetrieval`;
-- `Extreme`;
-- `CombatEscape`.
+Six physically generated candidate programs solve the same 180 m objective around one obstacle.
 
-Need a test that gives the decision layer physically meaningful alternatives instead of one identical trajectory.
+Expected B7 selections:
 
-At minimum provide candidate alternatives that differ in:
-- transit time;
-- entry/exit speed;
-- minimum clearance;
-- slip/drift or body-alignment cost;
-- maneuver family;
-- law compatibility;
-- threat exposure where relevant;
-- expected contact / damage only where explicitly allowed.
+| Law | Rational | PrecisionRetrieval | Extreme | CombatEscape |
+|---|---|---|---|---|
+| Newtonian | balanced | precision | newtonian_drift_dash | low_threat_escape |
+| Assisted | balanced | precision | fast | low_threat_escape |
 
-The execution side must then run the selected accepted program through:
-`B9/B10 -> PilotSkill -> real physics`.
+Additional hard rule:
+- `reckless_shortcut` is faster but has criticalRisk=0.90;
+- preferred risk ceiling is 0.20;
+- it must not be selected while safer valid candidates exist.
 
-The goal is to prove:
-1. doctrine selects different physically truthful candidates when the trade changes;
-2. Newtonian/Assisted filter incompatible maneuver families before ranking;
-3. selected programs remain executable and corridor-safe;
-4. Extreme/CombatEscape do not bypass hard survival constraints;
-5. PrecisionRetrieval genuinely trades time/speed for clearance/control margin;
-6. Rational behaves as the balanced baseline.
+## Execution checks
 
-Do not use “Freestyle” as a canonical doctrine name until historical project evidence explicitly maps it.
+Every selected program runs through the real accepted execution path:
+`AcceptedManeuverProgram -> sampler/follower -> B10 -> PilotSkill -> SharedShipPhysics/DynamicMotionSystem`.
+
+Strict expert checks:
+- zero tracking-envelope exceeded ticks;
+- positive actual full-hull obstacle clearance >0.25 m;
+- final P <=1.5 m;
+- final velocity error <=0.75 m/s;
+- final forward error <=5 deg;
+- Newtonian drift dash produces >=20 deg actual slip.
+
+## Target commands
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+
+OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
+
+{
+    echo "===== TESTED HEAD ====="
+    git rev-parse HEAD
+
+    echo
+    echo "===== ARCHITECTURE CONTRACT ====="
+    TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
+    time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
+    echo
+    echo "===== NAVIGATION RUNTIME ====="
+    bash tests/navigation_runtime/run_mingw64.sh
+} 2>&1 | tee "$OUT"
+
+echo
+echo "===== SPEED/DOCTRINE SUMMARY ====="
+grep -E '\[DOCTRINE\]|MANEUVER SPEED/DOCTRINE|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+
+echo
+echo "===== LOG FILE ====="
+echo "$PWD/$OUT"
+```
+
+Upload the complete log.
+
+## Interpretation
+
+If 17/17:
+- B7 has its first real select->accept->execute proof;
+- compare planned/actual clearance, time, peak speed and slip;
+- move to chained transition + negative/physical-limit testing.
+
+If failed:
+- diagnose selection error separately from execution error;
+- no tolerance weakening.
 
 ## Iteration rule
 
-After every code/evidence change, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state/evidence change, update all project MD files and recreate `CONTINUE_PROMPT.md` from scratch.

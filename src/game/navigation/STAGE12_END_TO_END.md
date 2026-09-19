@@ -3417,3 +3417,48 @@ exclusion.
 
 This leaves the old code compiled/reference-only, with both confirmed live route
 paths separately hard-disabled.
+
+
+### 2026-09-19 target-machine pass: runtime green, wrapper/gate cleanup
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+92b860fc07377e0fbdb64e78ab833d62bbb05586
+~~~
+
+Latest target-machine evidence at checkout `f02d8e67a974714af4fa24b84c57a8110f08d3b4`:
+
+- `navigation_runtime`: PASS 6/6;
+- `navigation_local` and `navigation_space` had already passed in the prior run;
+- architecture gate 1 failed only because it required the old spelling
+  `glm::dvec3(0.0, 0.0, 0.0)` for the static Hub cylinder while the scene now
+  uses the equivalent canonical `glm::dvec3(0.0)`;
+- architecture gate 2 failed because it still required manual
+  normal/radial/prograde dot-product conversion for executed PilotSkill demand,
+  while production now correctly crosses through
+  `NavigationFrameBoundary::toNavigationVector(SystemVector{...})`;
+- full client build failed because `SpaceState` still contained an unused
+  diagnostic trace function typed against the removed legacy
+  `LocalGuidancePlanner` include.
+
+Corrections in this candidate:
+
+- the dead LocalGuidance docking trace block was removed from `SpaceState`
+  instead of reintroducing the legacy planner dependency;
+- the static-cylinder architecture gate accepts both equivalent zero-vector
+  spellings while still pinning the fixture as non-rotating;
+- the executed-demand architecture gate now requires the typed
+  `NavigationFrameBoundary` System -> NavigationLocal conversion instead of the
+  superseded manual basis projection.
+
+No Navigation-v2 planner/control algorithm changed in this pass. The fresh
+runtime 6/6 result is retained as positive evidence, but full target-machine
+acceptance still waits for architecture gates + complete build + a newly built
+`EliteServer --self-test-navigation`.
+
+Last fully accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

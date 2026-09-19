@@ -65,6 +65,7 @@ B5_H = (ROOT / "src/game/navigation/OrdinaryPhysicalManeuverCompiler.h").read_te
 B5_CPP = (ROOT / "src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp").read_text(encoding="utf-8")
 B5_TEST = (ROOT / "tests/navigation_runtime/OrdinaryPhysicalManeuverCompilerTests.cpp").read_text(encoding="utf-8")
 EXECUTION_LAB_TEST = (ROOT / "tests/navigation_runtime/ManeuverProgramExecutionLabTests.cpp").read_text(encoding="utf-8")
+CORRIDOR_MATRIX_TEST = (ROOT / "tests/navigation_runtime/ManeuverCorridorMatrixTests.cpp").read_text(encoding="utf-8")
 GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
 GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
 PURITY_DOC = (ROOT / "src/game/navigation/NAVIGATION_PURITY_CONTRACT.md").read_text(encoding="utf-8")
@@ -426,6 +427,46 @@ require(
     "mainEngineCandidateAvailable" in B5_H,
     "B5 must expose main-engine option without stealing B7 maneuver selection ownership",
 )
+
+for marker in (
+    "testFourLeg3dCorridorAcrossLawsAndPilots",
+    "kCorridorHalfWidthMeters = 5.0",
+    "pilot=expert",
+    "competentProfile",
+    "rookieProfile",
+    "Law::Newtonian",
+    "Law::Assisted",
+    "completedTranslationLegs",
+    "completedRotations",
+    "trackingEnvelopeExceededTicks",
+    "max_route_cross_track_m=",
+    "max_active_leg_cross_track_m=",
+    "max_corridor_violation_m=",
+    "max_waypoint_error_m=",
+    "max_forward_angle_error_deg=",
+    "DynamicMotionSystem::applySystemAccelerationDemand",
+    "DynamicMotionSystem::updateLocalFrameMotion",
+    "SharedShipPhysics::integrate",
+    "Follower::follow",
+    "bridge.step",
+):
+    require(
+        marker in CORRIDOR_MATRIX_TEST,
+        f"3D maneuver corridor matrix contract missing: {marker}",
+    )
+
+require(
+    "maneuver_corridor_matrix_tests" in RUNTIME_CMAKE and
+    "NAME maneuver_corridor_matrix" in RUNTIME_CMAKE,
+    "3D maneuver corridor matrix must remain wired into navigation_runtime",
+)
+
+require(
+    "-R maneuver_corridor_matrix" in RUNTIME_RUN_SH and
+    "corridor_matrix_ms" in RUNTIME_RUN_SH,
+    "navigation runtime gate must expose 3D corridor matrix diagnostics",
+)
+
 
 for marker in (
     "runStraightScenario",

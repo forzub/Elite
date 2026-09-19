@@ -223,6 +223,30 @@ struct NavigationRuntimeLabObservation
     bool visibilityDirectRecoveredSeen = false;
     double maximumVisibilityDeflectionRad = 0.0;
 
+    // One-shot P5 -> P9 -> P13 witness. Capture only the first real moving-pair
+    // AdjustedClear epoch so diagnostics show whether a geometrically selected
+    // bypass preserved its semantics through ACCEPT, PilotSkill and propulsion.
+    bool firstVisibilityBypassCaptured = false;
+    double firstVisibilityBypassTimeSeconds = 0.0;
+    std::uint64_t firstVisibilityBypassSegmentRevision = 0;
+    std::uint8_t firstVisibilityBypassReplanReason = 0xffu;
+    double firstVisibilityBypassDeflectionRad = 0.0;
+    glm::dvec3 firstVisibilityBypassAgentPositionMap {0.0};
+    glm::dvec3 firstVisibilityBypassAgentVelocityMapMps {0.0};
+    glm::dvec3 firstVisibilityBypassSelectedTargetMap {0.0};
+    glm::dvec3 firstVisibilityBypassDesiredVelocityMapMps {0.0};
+    bool firstVisibilityBypassAcceptedAlignForward = false;
+    glm::dvec3 firstVisibilityBypassAcceptedForwardMap {0.0};
+    glm::dvec3 firstVisibilityBypassIdealAccelerationMapMps2 {0.0};
+
+    bool firstVisibilityBypassExecutedCaptured = false;
+    glm::dvec3 firstVisibilityBypassExecutedAccelerationMapMps2 {0.0};
+
+    bool firstVisibilityBypassAppliedCaptured = false;
+    glm::dvec3 firstVisibilityBypassAppliedMainAccelerationMapMps2 {0.0};
+    glm::dvec3 firstVisibilityBypassAppliedRcsAccelerationMapMps2 {0.0};
+    glm::dvec3 firstVisibilityBypassAppliedTotalAccelerationMapMps2 {0.0};
+
     bool movingGapPlanePassed = false;
 
     bool slitPortalExactOpenPublished = false;

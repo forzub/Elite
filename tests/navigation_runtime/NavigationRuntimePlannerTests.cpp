@@ -320,6 +320,11 @@ void testPortalCaptureAlignsVelocityAndHullBeforeTransit()
     require(!approach.usedPortalWaypoint &&
             near(approach.coarseWaypointMapMeters.x, 7.0),
             "capture phase must first stage at the authored approach point");
+    require(
+        approach.selectedManeuverRequiresForwardAlignment &&
+        near(approach.selectedManeuverForwardMap.x, 1.0),
+        "portal capture must publish its CURRENT maneuver forward-alignment requirement"
+    );
 
     const auto angular =
         approach.intent.idealAngularAccelerationLocalRadPerSec2;
@@ -378,6 +383,77 @@ void testPortalCaptureAlignsVelocityAndHullBeforeTransit()
     require(
         rejected.intent.idealLinearAccelerationLocalMps2.y < 0.0,
         "capture controller must brake cross-track velocity at the staging point"
+    );
+}
+
+void testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()
+{
+    Space space = orientedPortalCaptureSpace();
+
+    Map::Config config;
+    config.halfExtentMeters = 100.0;
+    config.cellSizeMeters = 10.0;
+    config.predictionHorizonSeconds = 3.0;
+    config.interactionMarginMeters = 0.0;
+
+    Map map(config);
+    Map::DynamicWorldUpdate update;
+    update.sourceRevision = 151;
+
+    Map::DynamicActorInput blocker;
+    blocker.entityId = 9151;
+    blocker.positionMapMeters = {4.5, 0.0, 0.0};
+    blocker.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    blocker.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
+    blocker.radiusMeters = 0.75;
+    blocker.motionRevision = 1;
+    update.actors.push_back(blocker);
+    map.replaceDynamicWorld(std::move(update));
+
+    Map::CorridorQuery query;
+    query.startMapMeters = {2.0, 0.0, 0.0};
+    query.endMapMeters = {7.0, 0.0, 0.0};
+    query.radiusMeters = 5.0;
+    const Map::QueryResult dynamic = map.queryCorridor(query);
+    require(!dynamic.candidates.empty(),
+            "future-portal bypass fixture must publish its dynamic blocker");
+
+    Planner::AgentState agent = baseAgent();
+    agent.positionMapMeters = {2.0, 0.0, 0.0};
+    agent.forwardMap = {0.0, 0.0, -1.0};
+
+    Planner::Goal goal = goalAt(18.0);
+    Planner::Policy policy = basePolicy();
+    policy.horizon.minimumHorizonMeters = 10.0;
+    policy.horizon.turnDistanceMeters = 0.0;
+    policy.horizon.safetyMarginMeters = 0.0;
+
+    const Planner::Result result = Planner::plan(
+        agent,
+        goal,
+        dynamic,
+        0.0,
+        StaticQueries(space),
+        policy
+    );
+
+    require(result.portalTraversalActive,
+            "fixture must retain the future oriented portal as route context");
+    require(result.status == Planner::Status::AdjustedClear &&
+            result.adjustedTarget,
+            "dynamic blocker must produce a local visibility bypass");
+    require(!result.selectedManeuverRequiresForwardAlignment,
+            "AdjustedClear bypass must not inherit future portal forward alignment");
+
+    const auto angular =
+        result.intent.idealAngularAccelerationLocalRadPerSec2;
+    require(
+        std::sqrt(
+            angular.x * angular.x +
+            angular.y * angular.y +
+            angular.z * angular.z
+        ) <= 1.0e-9,
+        "stationary AdjustedClear bypass must retain angular damping semantics instead of portal alignment"
     );
 }
 
@@ -1242,6 +1318,7 @@ int main()
         testHitVolumeAdapterUsesAuthoritativeLocalObb();
         testStaticCorridorBecomesLivePortalWaypoint();
         testPortalCaptureAlignsVelocityAndHullBeforeTransit();
+        testAdjustedVisibilityDoesNotInheritFuturePortalAlignment();
         testSamePortalRejectsOversizedHull();
         testExactStaticObstacleParticipatesInRuntimeComposition();
         testLiveScaleStaticObstacleInsideFirstBoundedHorizon();
@@ -1258,6 +1335,7 @@ int main()
         std::cout << " - authoritative HitVolume -> navigation OBB adapter\n";
         std::cout << " - static corridor portal -> bounded live target\n";
         std::cout << " - oriented portal capture aligns flight path + hull axis before transit\n";
+        std::cout << " - adjusted visibility does not inherit future portal attitude\n";
         std::cout << " - portal clearance rejects oversized hull\n";
         std::cout << " - exact static OBB participates in runtime composition\n";
         std::cout << " - live-scale 1300 m OBB triggers first-horizon adjustment\n";

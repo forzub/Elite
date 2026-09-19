@@ -2143,3 +2143,128 @@ No Stage-12 baseline promotion. Last actually target-machine accepted baseline:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+### 2026-09-19 Navigation-v2 sealed spatial API + timely physical horizon candidate
+
+Current unaccepted candidate code HEAD before the next broadphase-alignment slice:
+
+~~~text
+cfecf1014a6f109acef65d46707f15e7acfa4242
+~~~
+
+The target-machine failure at entity 28 established that emergency braking was
+already physically commanded correctly but began after the safe stopping
+envelope had been lost. Repository tracing found the immediate code defect:
+
+~~~cpp
+if (staticSafetyStoppingReserveBlocked)
+    staticSafetyInvalidated = true;
+
+// old bug: erased the earlier stopping-reserve result
+staticSafetyInvalidated = staticSafetyTargetBlocked;
+~~~
+
+The monitor is now monotonic:
+
+~~~cpp
+staticSafetyInvalidated =
+    staticSafetyInvalidated || staticSafetyTargetBlocked;
+~~~
+
+A later independent safety check can add an invalidation reason but cannot erase
+an already proven unsafe stopping reserve.
+
+Navigation timing is now based on one shared physical maneuver horizon rather
+than unrelated planner/execution formulae. PhysicalManeuverHorizon derives:
+
+~~~text
+response time =
+    snapshot age
+  + pilot reaction delay
+  + decision period
+  + command latency
+  + command/filter response reserve
+
+response distance = v*t + 0.5*a*t^2
+speed at brake    = v + a*t
+braking distance  = v_brake^2 / (2*a_brake)
+
+distance horizon =
+    max(minimum,
+        response distance
+      + braking distance
+      + maneuver/turn distance
+      + safety margin)
+
+dynamic time horizon =
+    max(policy minimum,
+        response time + braking time)
+~~~
+
+Therefore the horizon is deliberately NOT merely linear in speed: reaction
+distance is approximately linear in speed, while braking distance is quadratic
+in speed. Dynamic look-ahead also grows with the time physically required to
+respond and brake.
+
+The live pilot profile's reactionDelaySeconds is now included in the reserve;
+the previous live stopping monitor omitted it.
+
+Navigation-v2 coordinate ownership has also been sealed around the ACTUAL
+repository coordinate contracts:
+
+~~~text
+system/runtime state
+        |
+        | NavigationFrameBoundary (KinematicFrame-backed)
+        v
+NavLocal-only NavigationMap / NavigationSpace / planner / follower / monitor
+        |
+        | NavigationLocalControlIntent
+        | explicit NavigationFrameBoundary conversion
+        v
+NavigationSystemControlIntent
+        |
+        v
+PilotSkillExecutor -> ShipControlState -> authoritative physics
+~~~
+
+Key API invariants now encoded in C++ types:
+
+- NavigationMap accepts NavLocal actor position/velocity/acceleration/angular
+  velocity only; it no longer owns a WorkingFrame or system->map conversion.
+- NavigationLocalControlIntent and NavigationSystemControlIntent are distinct
+  incompatible types.
+- NavigationRuntimePlanner and TrajectoryFollower cannot emit a system-space
+  execution command.
+- NavigationRuntimeControlBridge, ShipControlState, replicated execution truth
+  and authoritative physics use explicit System-space field names.
+- the only local/system conversion admitted by Navigation v2 is
+  NavigationFrameBoundary, backed by the existing KinematicFrame.
+- the existing project basis was verified rather than replaced: hub tactical
+  axes are X=prograde, Y=radial, Z=normal with
+  normal=cross(prograde,radial); the Stage-12 navigation/visual permutation
+  X=normal, Y=radial, Z=-prograde is likewise right-handed.
+
+Network serialization retains the same byte ordering and scalar layout; only the
+C++ execution field semantics/names changed from misleading Map to System.
+
+New deterministic regression:
+PhysicalManeuverHorizonTests.cpp proves that doubling speed from 10 to 20 m/s
+with the same braking authority grows the required distance from 45 m to 125 m
+and the dynamic time horizon from 5.5 s to 10.5 s in its fixture.
+
+One remaining architecture alignment is intentionally NOT hidden:
+NavigationMap broadphase still uses its configured fixed prediction sweep
+(default/live lab 3 s) while LocalHorizonPlanner can now require a longer
+physical dynamic look-ahead. Before Navigation-v2 acceptance, broadphase
+candidate publication must consume the same effective physical horizon so a
+fast incoming actor cannot be omitted before local conflict evaluation.
+
+No target-machine validation has been run for this candidate yet.
+No Stage-12 baseline promotion.
+
+Last actually target-machine accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

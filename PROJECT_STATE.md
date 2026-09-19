@@ -4236,3 +4236,54 @@ Relevant candidate commits:
 Expected runtime CTest count is now 15 once the target machine rebuilds.
 
 Not target-machine accepted yet.
+
+
+## 2026-09-20 state-gated corner execution candidate ready for target-machine gate
+
+The compound-maneuver mechanism is now implemented through production
+`ManeuverPhaseGate` and the corner fixture consumes that production seam.
+
+Mechanism:
+- `ScheduledMoving` advances at nominal reference horizon;
+- `StateCapture` continues following the terminal sample until
+  `TrajectoryFollower::Complete`;
+- bounded capture overrun;
+- explicit `CaptureTimedOut` failure.
+
+Corner migration:
+- StopTurnGo braking capture => StateCapture;
+- StopTurnGo in-place outgoing-attitude capture => StateCapture;
+- RadiusTurn/DriftTurn moving phases => ScheduledMoving;
+- braking capture terminal feed-forward is zeroed so post-horizon tracking
+  converges rather than continuing to command braking acceleration.
+
+Drift recovery profile was also changed from:
+- 2 s moving rotate + 2 s aligned coast
+to:
+- 3 s moving rotate + 1 s aligned coast.
+
+Total post-arc time and 40 m travel remain unchanged; only the physical attitude
+recovery profile is less aggressive.
+
+New diagnostics:
+- `capture_timeout_phases`;
+- `max_capture_overrun_s`.
+
+Static source/contract audit:
+- ManeuverPhaseGate API: PASS;
+- implementation semantics: PASS;
+- isolated regression markers: PASS;
+- root shared-runtime CMake: PASS;
+- isolated runtime CMake: PASS;
+- corner fixture StateCapture wiring: PASS;
+- architecture-contract wiring: PASS;
+- expected navigation_runtime CTest count: 15.
+
+Important: this is still unverified on the user's target machine. The last
+accepted/tested checkout remains
+`519313ba430b73b557622436ed7df9a5a9a832cf`.
+
+Relevant implementation commits:
+- `3d06caecc09429336a4b57765d7d99d529ceb467` corner migration;
+- `dc5fd711503c6d7863cea751c82bdbc1666e510d` fixture summary sync;
+- `1f2228f35df29109df1999998a7b1c0d2bfc7778` architecture lock.

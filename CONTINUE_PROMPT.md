@@ -12,60 +12,67 @@ Read first:
 5. `src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md`
 6. `src/game/navigation/STAGE12_END_TO_END.md`
 
-Canonical structure:
-Planner B0..B8 -> AcceptedManeuverProgram.
-Follower B9 sampler -> B10 bounded tracker -> B11 safety -> B12 PilotSkill -> B13 physics.
-B14 schedules planner jobs.
+Canonical flow:
+B0..B8 planner -> AcceptedManeuverProgram.
+B9 sampler -> B10 bounded tracking -> B11 safety/reflex -> B12 PilotSkill -> B13 physics.
+B14 schedules planner work.
 
-Scaling remains mandatory:
-- shared world/influence work;
+Scale target remains hundreds/thousands of registered units:
 - no dense N x N;
+- shared world/influence work;
 - only dirty actors enter planner;
-- cheap follower execution for active controlled actors;
-- queued/budgeted planning for hundreds/thousands of registered units.
+- active controlled actors run cheap B9/B10/B12/B13;
+- planner work is queued, budgeted and revision-checked.
 
-Verified target-machine baseline:
+Last fully verified migration baseline:
 `701881ddae861cd5593e425de91600e048bd417c`.
 B8/B9 accepted.
 
-Current B10 corrective candidate before docs:
+B10 first gate failed because:
+- architecture checker matched comment prose;
+- MinGW rejected braced default reference.
+
+Corrective code/contract baseline before docs:
 `4a3d196c1574e91b747f05d194db7a35ad5c5517`.
 
-The first B10 gate failed:
-- architecture lock falsely matched the word NavigationMap in a comment;
-- MinGW/g++ 15.2 rejected `const Policy& policy = {}`;
-- production build failed on same header after 17.209 s;
-- no B10 tests reached execution.
-
-Fixes:
-- explicit overloads instead of braced default reference;
+Corrections:
+- explicit overloads;
 - precise dependency contract;
-- contract pins MinGW-safe overloads;
-- navigation_runtime timing prints even on failed phase.
+- MinGW-safe overload lock;
+- timing script prints even on failed phase.
 
-Run now:
+Fresh target-machine evidence now shows:
+- EliteGame BUILD PASS;
+- EliteServer BUILD PASS;
+- build_mingw64 real_s=44.989.
+
+So production compile/link is green.
+
+Still missing from supplied evidence:
+- architecture contract PASS;
+- navigation_runtime 8/8 PASS;
+- target-machine git rev-parse HEAD.
+
+Run only:
 
 ```bash
 cd /d/__elite/work
-git pull --ff-only
+
 git rev-parse HEAD
 
 TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
 time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
 bash tests/navigation_runtime/run_mingw64.sh
-
-TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
-time bash build_mingw64.sh
 ```
 
-Expected navigation_runtime: 8/8, including maneuver_tracking_controller.
+Do not rebuild production again unless these reveal a new change.
 
-No log file is required for this rerun. If a later diagnostic creates one, print its exact path at the end.
+Do not accept B10 until both missing gates are green.
 
-Do not accept B10 without fresh target-machine evidence.
-
-After B10 PASS, implement B14 clean scheduler API before live AcceptedManeuverProgram migration.
+After B10 acceptance:
+implement B14 Navigation Work Scheduler with urgent/normal/background queues,
+stale-job rejection, bounded per-slice work, fairness and synthetic 100s/1000s actor tests.
 
 Every state-affecting iteration:
 - rewrite this file;

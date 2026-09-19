@@ -2,10 +2,8 @@
 
 Repository: `forzub/Elite`, branch `main`.
 Local checkout: `D:/__elite/work`.
-Target: Windows 10 / MSYS2 MinGW64 / g++ 15.2 / CMake + Ninja.
 
-## Read first
-
+Read first:
 1. `CURRENT_TASK.md`
 2. `CURRENT_STATE.md`
 3. `PROJECT_STATE.md`
@@ -14,65 +12,45 @@ Target: Windows 10 / MSYS2 MinGW64 / g++ 15.2 / CMake + Ninja.
 6. `src/game/navigation/STAGE12_END_TO_END.md`
 7. `src/game/navigation/NAVIGATION_PURITY_CONTRACT.md`
 
-## Architecture
+## Current evidence
 
-Planner:
-B0 world -> B1 influence -> B2 objective -> B3 topology -> B4 local corridor ->
-B5 physical compiler -> B6 proof -> B7 decision -> B8 accepted program.
+Exact target-machine checkout:
+`a69771e3efb5b54834b002a5000b79d75a8f5e80`.
 
-Execution:
-B9 sample -> B10 bounded tracking -> B11 safety/reflex ->
-B12 PilotSkill -> B13 physics.
+On it:
+- architecture PASS 0.211 s;
+- navigation_runtime 9/9 PASS;
+- B14 scheduler 5000 jobs total 3314 us;
+- client/server build PASS 45.371 s;
+- live ordered navigation FAIL rc=56, log:
+  `D:\__elite\work\build\logs\navigation_live_scheduler_20260919-221240.log`.
 
-B14 owns only planner scheduling.
+The live failure is the old pre-B14 ordinary-maneuver defect:
+geometric AdjustedClear is found and replicated but is not converted into a
+physically executable ordinary maneuver for anisotropic Newtonian propulsion.
 
-## Accepted evidence
+Do not blame/rollback B14 and do not weaken the live self-test.
 
-B8/B9/B10 exact-hash target-machine baseline:
-`2abd79a6181a322fe15425994ab771942e47bc26`.
+## Current implementation
 
-B14 isolated gate is also green:
-- architecture PASS 0.204 s;
-- navigation_runtime 9/9;
-- 5000 actors: enqueue 1518 us, dispatch+complete 1258 us, total 2776 us;
-- client/server build PASS, production build 23.001 s.
+First isolated B5 candidate before docs:
+`233d4023e81d5d466043a08c67acd8d49846c4b5`.
 
-The B14 user output omitted the rev-parse line, so do not fabricate an exact B14
-tested hash.
+New `OrdinaryPhysicalManeuverCompiler`:
+- strict pure;
+- fixed-capacity;
+- Newtonian first;
+- Coast / Trim / LeadRotateMainBurn;
+- directional linear authority;
+- angular acceleration/speed authority;
+- B10 feedback reserve;
+- control response reserve;
+- every result requires B6 proof;
+- no world query / planner call / clock / vector.
 
-## Current candidate
+Assisted returns UnsupportedControlLaw intentionally.
 
-Live B14 integration candidate before docs:
-
-`382c9d6f8ae347630ccd1a6ae6ec18bd077d086d`.
-
-Stage-12 lab ownership is now:
-
-```text
-ReplanPolicy
- -> NavigationPlannerJob
- -> B14 enqueue
- -> bounded dispatch
- -> existing Planner::plan
- -> B14 complete(ticket)
- -> commit only CompletedCurrent
- -> existing AcceptedShortSegment
-```
-
-Rules:
-- no direct Planner::plan -> authoritative commit;
-- world/objective/capability/job revisions cross scheduler boundary;
-- capability revision is monotonic and based on real current vehicle authority;
-- planner geometry is unchanged;
-- AcceptedShortSegment remains live for this slice;
-- GameSimulation may measure scheduler/planner wall time; B14 core remains clock-free.
-
-Live diagnostics include enqueue/dispatch/current/stale counts, pending/in-flight
-depth and scheduler/planner microseconds.
-
-Headless navigation self-test requires dispatch count == plan count and
-CompletedCurrent count == dispatch count, with zero stale completion in this
-synchronous fixture.
+Regression includes live 75-degree failure class and 10,000 compile timing.
 
 ## Run now
 
@@ -88,23 +66,17 @@ bash tests/navigation_runtime/run_mingw64.sh
 
 TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
 time bash build_mingw64.sh
-
-bash tests/navigation_runtime/run_live_scheduler_gate_mingw64.sh
 ```
 
-The last command writes a persistent log under `build/logs` and MUST print the
-exact Windows log path as its final `[LOG] ...` line.
+Expected navigation_runtime: 10/10 including
+`ordinary_physical_maneuver_compiler`.
 
-Do not accept live B14 until all four gates are green.
+Do not rerun long live self-test in this slice; B5 is isolated only.
 
-## After green live B14
+## Next after green
 
-Migrate the live ACCEPT seam from AcceptedShortSegment to
-AcceptedManeuverProgram as a separate target-machine-gated slice. Do not mix
-that migration with scheduler changes.
+Implement B6 proof around the exact B5 candidate, then integrate
+B4 -> B5 -> B6 -> B7/B8 and rerun the logged live ordered-flight gate.
 
-## Every state-affecting iteration
-
-Rewrite this file and CURRENT_TASK; update CURRENT_STATE, PROJECT_STATE and
-STAGE12_END_TO_END; update architecture/migration/purity docs when ownership
-changes.
+Every state-affecting iteration must rewrite this file and CURRENT_TASK and
+update CURRENT_STATE / PROJECT_STATE / STAGE12_END_TO_END.

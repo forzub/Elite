@@ -1910,7 +1910,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                     maximumVelocityError =
                         std::max(maximumVelocityError, error);
                     verified = std::isfinite(error) &&
-                        error <= 1.0e-12;
+                        error <=
+                            NavigationRuntimeLabLinearVelocityToleranceMps;
                     break;
                 }
             };

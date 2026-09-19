@@ -283,6 +283,48 @@ LocalGeometricPath
 
 ---
 
+### Rigid-body corridor and actuator model
+
+Navigation execution/proof must operate on a **rigid vehicle**, not a material
+point.
+
+Required state:
+- center position and linear velocity;
+- complete body basis / attitude;
+- angular velocity;
+- oriented hull half-extents or exact HitVolume geometry;
+- actuator source model.
+
+Current Cobra Mk1 logical hull:
+- width 26.0 m;
+- height 5.0 m;
+- length 22.2 m;
+- OBB half-extents: right 13.0 m, up 2.5 m, forward 11.1 m.
+
+Current local actuator semantics:
+- Newtonian:
+  - aft longitudinal main thrust only;
+  - bounded six-direction manoeuvre/RCS translation;
+  - bounded angular actuation (current Cobra abstraction represents main-nozzle
+    vectoring plus attitude-control authority);
+  - material braking with main thrust requires hull reorientation, normally a
+    near-180 deg flip.
+- Assisted / aircraft-like:
+  - aft and fore longitudinal controlled main thrust;
+  - bounded manoeuvre/RCS for lateral/vertical translation and stabilization;
+  - same bounded angular authority;
+  - ordinary braking may remain nose-forward and use fore/reverse main thrust.
+
+Main propulsion is never an omnidirectional translation source.
+
+A corridor is valid only if the **oriented hull envelope** fits through it over
+the maneuver's complete time history. Centerline/cross-track alone is
+diagnostic and is not collision/clearance proof.
+
+For asymmetric/non-spherical hulls, Newtonian flip-and-burn may require a
+larger corridor than an Assisted nose-forward braking maneuver even when both
+share the same center-of-mass trajectory.
+
 ### Control-law terminology
 
 The two local flight-control laws are:

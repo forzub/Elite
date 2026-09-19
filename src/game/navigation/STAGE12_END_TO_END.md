@@ -5158,3 +5158,18 @@ Competent and rookie also completed cleanly; rookie final forward error remained
 This closes the diagnostic split: the general sampler/follower angular tracking chain is capable of accurate continuous attitude correction during translational motion. The remaining DriftTurn miss is local recovery/reference authoring.
 
 The next mechanism change must therefore remain planner-authored: make the DriftTurn recovery reach target yaw before the terminal endpoint and keep commanding target yaw during a short continuing-translation settle interval. Do not widen the 5 deg exit requirement or move maneuver choice into the follower.
+
+
+## 2026-09-20 — DriftTurn in-motion settle candidate
+
+Following the long-arc proof that general continuous angular tracking is healthy, candidate:
+
+```
+76346121516e5b00d14a4e6304621b55791093ab
+```
+
+changes only DriftTurn recovery authoring.
+
+The final 4 s / 40 m recovery remains one planner-authored accepted moving reference. The smooth 90 deg yaw recovery now completes in 2.5 s, leaving 1.5 s of continued 10 m/s translation with final yaw held. This gives the physical ship an explicit in-motion settle interval before the common exit without adding a follower-side maneuver or changing acceptance tolerances.
+
+Target-machine validation must keep the long-arc diagnostic green and bring expert DriftTurn final attitude to <=5 deg while preserving existing P/V/corridor and sustained-speed/slip semantics.

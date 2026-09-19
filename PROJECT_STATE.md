@@ -17,44 +17,42 @@ Navigation geometry / local corridor
  -> authoritative propulsion + physics
 ```
 
-Planner owns large-scale maneuver geometry and physical reference. Follower owns bounded residual tracking, not maneuver invention.
+Planner owns route/corridor, maneuver family, physical reference and proof. Follower samples/tracks the accepted result using bounded residual authority.
 
-## Current maneuver-quality state
+## Accepted maneuver-quality baseline
 
-Latest verified target run remains 14/15:
-- StopTurnGo expert healthy;
-- RadiusTurn healthy;
-- long 180 deg angular tracking healthy;
-- only strict expert failure remains DriftTurn exit attitude.
-
-The constant-heading experiment proved that B10 cannot execute the entire 90 deg exit turn from tracking reserve.
-
-## Current unverified candidate
+Exact target-machine checkout:
 
 ```
-31a66a3eb462df6b5a60b2da2aca9f018d8aa332
+b687b9d3189cdfbbca91123b578637f991cbc645
 ```
 
-The DriftTurn exit now uses a planner-authored moving attitude capture whose boundary conditions are the actual arc-exit yaw/yaw-rate and desired outgoing yaw/zero yaw-rate.
+Results:
+- architecture contract PASS;
+- navigation_runtime 15/15 PASS;
+- StopTurnGo strict expert healthy;
+- RadiusTurn strict expert healthy;
+- DriftTurn strict expert healthy;
+- long 180 deg continuous angular tracking healthy.
 
-The profile horizon is solved from the same effective angular acceleration/rate envelopes enforced by ShipController, with tracking authority reserved for B10.
+### Closed DriftTurn defect
 
-This is the first candidate that simultaneously:
-- respects actual initial angular state;
-- keeps translation continuous;
-- avoids arbitrary route-time deadlines;
-- preserves planner/follower ownership;
-- accounts for the real physical envelope rather than only configured maxima.
+The accepted moving-attitude-capture solution uses actual arc-exit yaw/yaw-rate and solves a capability-derived quintic transition to outgoing yaw/zero yaw-rate while translation continues.
 
-## Roadmap
+This confirms the architecture:
+- large-angle maneuver dynamics belong to the planner-authored program;
+- B10 is residual tracking only.
 
-1. Validate moving attitude capture.
-2. Reach 15/15.
-3. Record accepted baseline and closed defect.
-4. Add mixed-angle/multi-segment 3D corridor tests.
-5. Extend speed/doctrine coverage.
-6. Move toward visible in-game evaluation.
+## Next roadmap item
+
+Mixed-angle multi-segment 3D corridor quality.
+
+This stage should extend beyond the existing axis-aligned stop-to-stop corridor and prove chained 3D maneuver composition under rigid-body occupancy and both local flight laws.
+
+After that:
+1. speed/doctrine matrix;
+2. visible in-game evaluation.
 
 ## State protocol
 
-After every state-affecting event, synchronize CURRENT_STATE.md, CURRENT_TASK.md, PROJECT_STATE.md, active Stage-12 documentation, and recreate CONTINUE_PROMPT.md from scratch.
+After every state-affecting event, synchronize `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, active Stage-12 documentation, and recreate `CONTINUE_PROMPT.md` from scratch.

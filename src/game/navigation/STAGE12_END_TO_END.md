@@ -5262,3 +5262,29 @@ Feed-forward acceleration is constrained below that physical envelope with B10 t
 Translation continues at 10 m/s throughout the capture. New diagnostics expose chosen capture duration, initial yaw-rate and peak feed-forward yaw rate/acceleration.
 
 This candidate is unverified until target-machine gates are rerun.
+
+
+## 2026-09-20 — DriftTurn moving attitude capture accepted
+
+Exact target-machine checkout:
+
+```
+b687b9d3189cdfbbca91123b578637f991cbc645
+```
+
+passed the Stage-12 architecture contract and all 15 navigation runtime tests.
+
+The capability-derived moving attitude capture closes the strict expert DriftTurn exit failure.
+
+Expert Newtonian and Assisted DriftTurn both finished with approximately:
+- 0.111 m position error;
+- 0.00075 m/s velocity error;
+- 0.03884 deg forward error;
+- zero tracking-envelope exceed ticks;
+- zero corridor violation.
+
+The computed capture lasted ~3.12469 s and started from the real residual yaw rate ~-0.73158 rad/s. Peak feed-forward remained physically bounded (~1.29608 rad/s yaw rate and ~1.85469 rad/s2 yaw acceleration).
+
+Architecture conclusion: large-angle physical transition belongs in the planner-authored accepted program; B10 remains bounded residual tracking.
+
+Next active stage: mixed-angle multi-segment 3D corridor quality.

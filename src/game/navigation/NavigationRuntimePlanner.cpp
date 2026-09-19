@@ -1123,10 +1123,18 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     if (result.portalTraversalActive &&
         local.status == Avoidance::Status::NominalClear)
     {
+        // The selected CURRENT maneuver is portal capture/transit, so the
+        // planner explicitly owns and publishes its attitude requirement.
+        // AdjustedClear bypasses deliberately do not inherit this future-route
+        // portal orientation.
+        result.selectedManeuverRequiresForwardAlignment = true;
+        result.selectedManeuverForwardMap =
+            result.portalNormalMap;
+
         angularDemand =
             portalAlignmentAngularDemand(
                 agent,
-                result.portalNormalMap,
+                result.selectedManeuverForwardMap,
                 goal,
                 policy.portalTraversal
             );

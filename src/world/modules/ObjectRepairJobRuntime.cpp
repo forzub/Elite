@@ -21,6 +21,13 @@
 
 namespace world::modules
 {
+namespace
+{
+// Legacy repair-drone navigation still depends on GeometricPathPlanner +
+// SmallCraftNavigation. Keep the implementation for regression/reference, but
+// do not allow it to execute while Navigation v2 is the only live route owner.
+constexpr bool LegacyRepairDroneRoutePipelineEnabled = false;
+}
 
 void ObjectRepairJobRuntime::clear()
 {
@@ -1125,6 +1132,9 @@ bool ObjectRepairJobRuntime::startJob(
     const ObjectDetachedFragmentRuntime& detachedRuntime
 )
 {
+    if (!LegacyRepairDroneRoutePipelineEnabled)
+        return false;
+
     if (hasJob(moduleId))
     {
         (void)0;
@@ -1197,6 +1207,24 @@ std::vector<std::string> ObjectRepairJobRuntime::update(
 )
 {
     std::vector<std::string> completed;
+
+    if (!LegacyRepairDroneRoutePipelineEnabled)
+    {
+        // Fail closed: never interpret "no path" as "arrived". Existing jobs,
+        // if any, remain in their current state until the Navigation-v2 repair
+        // drone integration replaces this legacy route pipeline.
+        for (auto& job : m_jobs)
+        {
+            if (job.state == ObjectRepairJobState::Done ||
+                job.state == ObjectRepairJobState::Failed)
+            {
+                continue;
+            }
+            job.droneVelocity = glm::vec3(0.0f);
+            job.droneNav.clear();
+        }
+        return completed;
+    }
 
     if (dt <= 0.0f)
         return completed;

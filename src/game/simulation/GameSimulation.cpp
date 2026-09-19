@@ -2731,6 +2731,10 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
 
     using Replan =
         game::navigation::NavigationExecutionReplanPolicy;
+    using Scheduler =
+        game::navigation::NavigationWorkScheduler;
+    using PlannerJob =
+        game::navigation::NavigationPlannerJob;
     using Follower =
         game::navigation::TrajectoryFollower;
     using AcceptedSegment =

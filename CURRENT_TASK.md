@@ -1,62 +1,49 @@
-# Elite — CURRENT TASK
+# CURRENT TASK
 
-**Updated:** 2026-09-20 Europe/Kyiv  
-**Branch:** `main`
+**Updated:** 2026-09-20 Europe/Kyiv
 
 ## Task
 
-Validate the corrected physical authoring of the 90-degree corner-family matrix.
+Determine whether the remaining DriftTurn exit-attitude miss is a **general continuous angular-tracking problem** or a **DriftTurn-specific recovery/reference problem**.
 
-Latest tested checkout:
-```text
-ca0c5506a9912bf016e4c52c7545ddd35c66e1fb
+## Latest verified target state
+
+Exact tested checkout:
+
+```
+be4686f4dcba419f451813b1ddc246088c145e48
 ```
 
-Result:
-- architecture PASS;
-- navigation_runtime 14/15 PASS;
-- ManeuverPhaseGate PASS;
-- only maneuver_corner_family_matrix FAIL.
+Stage-12 architecture PASS; runtime 14/15.
 
-Current unverified code candidate:
-```text
-f7e17a1a631157bc4cc8763c226ea73b57adeb23
+Important result:
+- expert Newtonian StopTurnGo is now healthy;
+- RadiusTurn is healthy;
+- expert DriftTurn reaches the correct P/V corridor exit but finishes about 10.325 deg off the required attitude;
+- requirement remains <=5 deg at the common exit.
+
+## Candidate under test
+
+```
+5c16bedc25c422f2c79ae5def14396839ef4ee7c
 ```
 
-## What was wrong
+Adds a separate long-arc probe:
+- 180 deg;
+- R=80 m;
+- v=10 m/s;
+- ~251 m / ~25.1 s of continuous curved flight;
+- expert/competent/rookie;
+- Newtonian/Assisted.
 
-The gate itself is correct. It exposed a planner/reference defect.
+The probe measures attitude correction **while moving**, not only at the endpoint.
 
-Newtonian StopTurnGo scheduled only 2.6 s for a 180-degree flip and then began
-aft-main braking. The actual rigid body had not completed the attitude state
-needed by that dependent burn. StateCapture then correctly refused to pretend
-the brake waypoint/stop was captured.
+### Diagnostic decision
 
-Zero terminal brake feed-forward plus only 0.55 m/s2 reserved B10 feedback
-cannot repair a multi-m/s maneuver-authoring miss. Increasing timeout would only
-let the bad reference drift farther.
+- If expert long-arc angular tracking is clean while DriftTurn still exits around 10 deg wrong, fix the DriftTurn recovery/reference construction.
+- If expert long-arc tracking also accumulates material angular lag, inspect B9/B10 angular sampling/tracking before touching maneuver authoring.
 
-Secondary defect: expert DriftTurn completes P/V/corridor correctly but exits at
-~9.67 deg instead of <=5 deg.
-
-## Fix now in main
-
-### StopTurnGo Newtonian
-- pre-brake total remains 5.375 s;
-- approach: 2.775 -> 0.375 s;
-- flip: 2.6 -> 5.0 s;
-- brake location remains unchanged;
-- brake duration remains 1.25 s;
-- StateCapture remains strict.
-
-This follows the already-green rigid-body flip timing instead of asking the
-follower to compensate for an under-timed planner maneuver.
-
-### DriftTurn
-- old recovery: 3 s rotate + 1 s coast;
-- new recovery: one continuous 4 s moving rotate;
-- same 40 m outgoing travel;
-- same total recovery time.
+Do not relax the existing DriftTurn 5 deg terminal gate.
 
 ## Run
 
@@ -64,63 +51,11 @@ follower to compensate for an under-timed planner maneuver.
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
-
 TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
 time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
-
 bash tests/navigation_runtime/run_mingw64.sh
 ```
 
-Return the complete CORNER-MATRIX and CORNER-COMPARE output if anything fails.
+## After evidence
 
-## Acceptance
-
-Expert rows must satisfy the existing thresholds without relaxation:
-- all modes complete;
-- no 32 m corridor violation;
-- final P <=1.5 m;
-- final V <=1.0 m/s;
-- final attitude <=5 deg;
-- StopTurnGo minimum corner speed <=0.75 m/s;
-- RadiusTurn minimum speed >=5 m/s and slip <=20 deg;
-- DriftTurn minimum speed >=7 m/s and slip >=60 deg.
-
-Additional StopTurnGo check:
-```text
-capture_timeout_phases=0
-```
-
-RadiusTurn must not regress.
-
-Competent/rookie remain diagnostic in this pass; their metrics are used to
-characterize PilotSkill execution reserve, not to weaken expert quality.
-
-## If the gate still fails
-
-StopTurnGo timeout:
-- do not extend timeout;
-- print/inspect terminal P/V/forward/omega at the timed-out phase;
-- identify whether the remaining miss is brake reference, flip capture, or
-  PilotSkill command dynamics.
-
-Drift attitude >5 deg:
-- isolate angular recovery reference/control;
-- keep speed, travel distance and corridor unchanged.
-
-## Next only after green
-
-1. mixed-angle 3-4 segment 3D corridor;
-2. real route-time comparison;
-3. Rational / Freestyle / Extreme speed-doctrine matrix;
-4. B6 proof and B7 selection integration.
-
-## Iteration rule
-
-Every state-affecting iteration:
-- update CURRENT_STATE.md;
-- update CURRENT_TASK.md;
-- update PROJECT_STATE.md;
-- update STAGE12_END_TO_END.md;
-- recreate CONTINUE_PROMPT.md from scratch.
-
-Do not promote an untested code candidate to accepted.
+Record the exact tested HEAD and update all state MD files before the next mechanism change. Recreate `CONTINUE_PROMPT.md` from scratch every iteration.

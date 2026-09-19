@@ -12,67 +12,79 @@ Read first:
 6. src/game/navigation/STAGE12_END_TO_END.md
 7. src/game/navigation/PLANNER_FOLLOWER_ARCHITECTURE.md
 
-## Critical correction
+## Accepted baseline
 
-Do not treat the old maneuver_corridor_matrix as hull-clearance proof.
-It measures center-of-mass tracking only.
+Fresh supplied target-machine evidence:
+- architecture PASS;
+- navigation_runtime 13/13 PASS;
+- rigid-body Cobra corridor PASS;
+- production build PASS 84.197 s.
 
-Cobra Mk1 is a rigid body:
-26.0 m wide x 5.0 m high x 22.2 m long.
+Rigid model is accepted:
+- Cobra 26 x 5 x 22.2 m;
+- Newtonian braking performs ~180 deg flip and aft-main burn;
+- Assisted stays nose-forward and uses fore/reverse main;
+- expert Newtonian required 17.275892 m half-width;
+- expert Assisted required 13.238202 m.
 
-Navigation corridor validity must include orientation and hull occupancy.
+No rev-parse line was supplied, so no exact tested hash is invented.
 
-## Physical actuator semantics
-
-Newtonian:
-- aft main only;
-- bounded RCS;
-- bounded angular/vectoring authority;
-- main-engine braking requires physical flip.
-
-Assisted/aircraft-like:
-- aft + fore longitudinal main;
-- bounded RCS for lateral/vertical translation/stabilization;
-- bounded angular authority;
-- no omnidirectional main engine.
-
-DynamicMotionSystem and runtime-control tests now enforce this.
-
-## Current candidate
-
-Code/contract candidate before docs:
-`753eae5dcf1d7aae8eb05893ba75e16896a52b91`.
+## Current experiment
 
 New target:
-`maneuver_rigid_body_corridor`.
+`maneuver_corner_family_matrix`.
 
-Expected navigation_runtime count: 13.
+Code/architecture candidate before state docs:
+`8f1397a919009d4ed5fdc84412506ba681b3059c`.
 
-The target runs the same 200 m center trajectory in both laws.
+Expected navigation_runtime count: 14.
 
-Newtonian:
-accelerate -> coast+~180 deg flip -> aft-main brake.
+One common 90-degree rigid-hull corridor:
+- start/incoming gate (0,0,60);
+- mathematical vertex (0,0,0);
+- exit gate (60,0,0);
+- initial speed 10 m/s;
+- final target speed 10 m/s;
+- corridor half-width 32 m;
+- corner-zone timing gates at +/-35 m.
 
-Assisted:
-accelerate -> nose-forward coast -> fore-main reverse brake.
+Three families:
+1. StopTurnGo
+   - true near-stop;
+   - outgoing attitude capture;
+   - depart.
+2. RadiusTurn
+   - R=35 m;
+   - nominal 8 m/s;
+   - coordinated/tangent body;
+   - RCS centripetal acceleration.
+3. DriftTurn
+   - R=20 m;
+   - nominal 10 m/s;
+   - deliberate large body/velocity slip;
+   - main thrust bends velocity.
 
-The test measures:
-- P/V;
-- complete attitude;
-- angular rate;
-- actuator use;
-- all 8 oriented Cobra OBB corners;
-- required corridor half-width.
+Matrix:
+3 pilots x 2 laws x 3 families = 18 rows.
 
-Strict expert expectation:
-- Assisted fits 14 m half-width;
-- Newtonian flip does not fit 14 m;
-- Newtonian fits 18.5 m;
-- Newtonian reaches ~180 deg flip and uses aft main;
-- Assisted stays nose-forward and uses fore main.
+Passage rule:
+internal phases hand off by program schedule;
+corner passage is common entry gate -> common exit gate;
+touching the route vertex alone is not completion.
 
-Three deterministic PilotSkill profiles still run:
-expert, production-competent, rookie.
+Output:
+- 18 CORNER-MATRIX rows;
+- 9 CORNER-COMPARE rows comparing Newtonian vs Assisted total/corner time and
+  hull half-width for identical pilot/family.
+
+First pass does not hard-code a fastest family.
+
+Strict expert semantic checks:
+- all rows cross exit and fit 32 m rigid corridor;
+- final P <=1.5 m, V <=1 m/s, forward <=5 deg;
+- stop-turn reaches <=0.75 m/s;
+- radius keeps >=5 m/s and <=20 deg slip;
+- drift keeps >=7 m/s and reaches >=60 deg slip.
 
 ## Run
 
@@ -85,20 +97,18 @@ TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
 time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
 bash tests/navigation_runtime/run_mingw64.sh
-
-TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
-time bash build_mingw64.sh
 ```
 
-Capture exact HEAD, VEHICLE-MODEL, all RIGID-CORRIDOR rows, warnings/errors and
-build timing.
+Capture exact HEAD, all CORNER-MATRIX and CORNER-COMPARE rows, plus failures and
+timings.
 
-Do not run the old 120 s obstacle live gate yet.
+Do not run the 120 s obstacle live gate yet.
 
-After green:
-- accept rigid-body/actuator baseline;
-- feed hull envelope into B6 proof;
-- then rebuild the multi-leg 3D corridor on the same physical model.
+After evidence:
+- if drift works, accept the primitive and build the requested 3-4 segment 3D
+  mixed-angle corridor from these same families;
+- compare total route time and hull clearance by law/pilot/family;
+- then integrate proved families toward B6/B7.
 
 Every state-affecting iteration must synchronize CURRENT_TASK,
 CONTINUE_PROMPT, CURRENT_STATE, PROJECT_STATE and STAGE12_END_TO_END.

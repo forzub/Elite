@@ -189,6 +189,35 @@ For Newtonian control there is no single fixed "turn radius". Feasibility comes 
 
 Strict terminal tasks therefore need a boundary-value maneuver solve or a small set of physically meaningful maneuver primitives, not just a geometric radius.
 
+## Maneuver authority: planner decides, follower tracks
+
+For automatic flight the planner side owns the **physical maneuver family**,
+not merely a geometric waypoint.
+
+Examples of planner-side decisions:
+- keep current attitude and use RCS trim;
+- lead-rotate the hull and then use the main engine;
+- coast while rotating;
+- brake / flip-and-burn;
+- acquire a precision passage attitude.
+
+For the default main-engine-dominant Newtonian craft, main propulsion is the
+preferred translation mechanism for material delta-v. RCS is primarily
+precision/trim authority. The physical compiler therefore exposes a main-engine
+candidate even when a slow RCS solution is also physically possible.
+
+Ownership remains split:
+- B5 generates physical alternatives;
+- B6 proves the exact alternatives;
+- B7 chooses among proved alternatives according to doctrine/objective;
+- B8 freezes the chosen program;
+- B9/B10 follower executes that program and adds only bounded feedback.
+
+The follower must **not** decide "RCS is weak, rotate and use main engine".
+Doing so would make it a hidden second planner and would invalidate the
+planner's geometry/capability proof. If execution cannot remain inside the
+accepted envelope, the follower invalidates/wakes planner work instead.
+
 ## Autopilot / follower world
 
 Top-level execution may still be called one "follower" world, but internally it must separate three responsibilities.

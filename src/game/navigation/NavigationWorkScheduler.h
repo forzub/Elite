@@ -206,6 +206,7 @@ private:
 
         std::uint64_t latestJobRevision = 0;
         std::uint64_t pendingTicket = 0;
+        NavigationPlannerJob pendingJob {};
 
         std::uint64_t inFlightTicket = 0;
         NavigationPlannerJob inFlightJob {};

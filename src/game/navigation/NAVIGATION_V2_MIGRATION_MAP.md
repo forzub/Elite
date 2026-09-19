@@ -211,3 +211,49 @@ Candidate baseline before documentation commits:
 ```
 
 Target-machine gate is pending.
+
+
+## B10 first target-machine gate — failed; corrective candidate
+
+The first B10 target-machine gate failed before tests.
+
+Observed evidence:
+- architecture contract: FAIL in 0.173 s;
+- failure was a contract-check false positive: the checker rejected the words
+  `NavigationMap / NavigationSpace` inside the documentation comment stating
+  that AcceptedManeuverProgram does **not** own them;
+- isolated navigation_runtime configure completed in about 0.2 s, then MinGW
+  compile failed;
+- production `build_mingw64.sh` failed on the same header error after
+  17.209 s;
+- no runtime tests executed.
+
+Compile root cause:
+
+```text
+const Policy& policy = {}
+```
+
+inside the nested B10 API is not accepted by the target MinGW/g++ 15.2 build.
+The same declaration contaminated every translation unit including
+TrajectoryFollower/GameSimulation.
+
+Correction:
+- replace braced default-reference arguments with explicit 3-argument and
+  4-argument overloads in ManeuverTrackingController;
+- apply the same explicit-overload pattern to TrajectoryFollower;
+- architecture contract now checks actual dependency syntax (includes,
+  owner/type access and query calls) rather than bare words in comments;
+- contract pins the MinGW-safe overload form;
+- navigation_runtime timing script no longer exits before printing timings on
+  failure. Configure/build/tests/total timing lines and the failing phase are
+  now printed even when configure/build/test fails.
+
+Corrective code/contract baseline before documentation commits:
+
+```text
+4a3d196c1574e91b747f05d194db7a35ad5c5517
+```
+
+B10 remains target-machine pending. B8/B9 acceptance remains at
+`701881ddae861cd5593e425de91600e048bd417c`.

@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-19 Europe/Kyiv  
 **Canonical branch:** `main`  
-**Last target-machine verified baseline:** `daaf038021cdf8b9561db60fdd35e7cefce0b2df`
+**Last target-machine fully verified migration baseline:** `701881ddae861cd5593e425de91600e048bd417c`
 
 > The verified-baseline hash is intentionally not called "current HEAD": a documentation commit changes HEAD by definition. Record the commit that was actually built/tested.
 
@@ -3323,3 +3323,30 @@ No persistent log file was needed for this diagnosis.
 B10 remains target-machine pending.
 The last verified B8/B9 baseline remains
 `701881ddae861cd5593e425de91600e048bd417c`.
+
+
+## B10 corrective rerun — production build green, isolated gate evidence pending
+
+Fresh target-machine evidence from the corrective rerun:
+- canonical `EliteGame`: BUILD PASS;
+- canonical `EliteServer`: BUILD PASS;
+- full `build_mingw64.sh` wall time: **44.989 s**.
+
+The previously failing MinGW header/API defect is therefore closed in the
+production compile/link path.
+
+The supplied excerpt does not include:
+- the architecture-contract result;
+- the `navigation_runtime` 8/8 result;
+- the local `git rev-parse HEAD` line.
+
+Therefore B10 is still **not accepted** yet. Production build evidence is green,
+but the isolated B9/B10 behavioral gate and architecture lock still require
+fresh target-machine output.
+
+Current repository documentation HEAD at the time of this evidence:
+`2abd79a6181a322fe15425994ab771942e47bc26`.
+Do not equate that with the tested checkout unless the target-machine
+`git rev-parse HEAD` output is supplied.
+
+No persistent log was required for this successful build.

@@ -2,142 +2,147 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Accepted exact target-machine baseline
-
-Exact tested checkout:
+## Last accepted exact target-machine baseline
 
 ```
 a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
-Target evidence:
-- Stage-12 architecture contract: **PASS**.
-- `navigation_runtime`: **17/17 PASS**.
-- `maneuver_speed_doctrine_matrix`: PASS.
-- previous maneuver/corridor/fly-through regressions remain green.
+Accepted evidence:
+- Stage-12 architecture contract PASS;
+- navigation_runtime 17/17 PASS;
+- B7 speed/doctrine select->execute matrix PASS;
+- all prior maneuver/corridor/fly-through regressions remain green.
 
-## Newly accepted: B7 speed/doctrine select -> execute gate
+## Accepted B7 result
 
-The same 180 m objective exposed six physical candidate programs:
-- precision;
-- balanced;
-- fast;
-- newtonian_drift_dash;
-- low_threat_escape;
-- reckless_shortcut.
+Doctrine selection is now physically demonstrated, not only unit-tested:
+- Rational -> balanced;
+- PrecisionRetrieval -> precision;
+- Extreme/Newtonian -> Newtonian-only drift dash;
+- Extreme/Assisted -> common-law fast path;
+- CombatEscape -> low-threat path;
+- faster reckless shortcut with criticalRisk=0.90 rejected above doctrine.
 
-Measured deterministic doctrine choices:
+Every selected AcceptedManeuverProgram executed through follower/B10/PilotSkill/real physics with zero tracking-envelope violations.
 
-| Law | Rational | PrecisionRetrieval | Extreme | CombatEscape |
-|---|---|---|---|---|
-| Newtonian | balanced | precision | newtonian_drift_dash | low_threat_escape |
-| Assisted | balanced | precision | fast | low_threat_escape |
+## Current unverified candidate: chained transitions + physical limits
 
-The intentionally faster `reckless_shortcut` had criticalRisk=0.90 with preferred ceiling 0.20 and was rejected above doctrine.
+New test:
 
-## B7 measured execution results
+```
+tests/navigation_runtime/ManeuverChainedLimitMatrixTests.cpp
+```
 
-All selected programs executed through:
-`AcceptedManeuverProgram -> sampler/follower -> B10 -> PilotSkill -> SharedShipPhysics/DynamicMotionSystem`.
+CTest:
 
-No selected row exceeded the tracking envelope.
+```
+maneuver_chained_limit_matrix
+```
 
-Representative actual Expert results:
+Expected runtime suite size: **18 tests**.
 
-- **Rational / balanced**
-  - time 24.0 s;
-  - actual min clearance ~13.31 m;
-  - peak speed ~9.75 m/s;
-  - max slip ~1.77 deg.
+Candidate commits:
+- `35e81f34605d63ec05876375f7511141730751a3` — chained/limit test source;
+- `f8877e39d1d0a07c89440d2fe3b68708e3f72422` — CMake registration;
+- `aff7ba6dc0185e794a5e64ce0051aa16b53c89d5` — verbose runner diagnostic.
 
-- **PrecisionRetrieval / precision**
-  - time 30.0 s;
-  - actual min clearance ~22.30 m;
-  - peak speed ~7.37 m/s;
-  - max slip ~1.98 deg.
+## Chained execution design
 
-- **Extreme / Newtonian / newtonian_drift_dash**
-  - time 18.0 s;
-  - actual min clearance ~2.62 m;
-  - peak speed ~14.11 m/s;
-  - max slip ~34.08 deg;
-  - final P error ~0.016 m;
-  - final V error ~0.160 m/s.
+Both Newtonian and Assisted execute four consecutive accepted phases **without resetting vehicle state**:
 
-- **Extreme / Assisted / fast**
-  - time 20.0 s;
-  - actual min clearance ~7.59 m;
-  - peak speed ~12.28 m/s;
-  - max slip ~2.08 deg.
+1. moving transit:
+   - 6 -> 10 m/s;
+   - straight progress.
 
-- **CombatEscape / low_threat_escape**
-  - time 22.5 s;
-  - actual min clearance ~13.45 m;
-  - peak speed ~10.81 m/s;
-  - max slip ~1.93 deg.
+2. hard continuous turn:
+   - approximately 90 degree velocity-direction change;
+   - moving throughout.
 
-This is the first direct proof that doctrine and control law can select physically different accepted programs and that the selected program remains executable.
+3. law-specific family:
+   - Newtonian: fixed-body high-slip DriftPass;
+   - Assisted: velocity-aligned PrecisionTransit.
 
-## B7 status nuance
+4. precision braking/capture:
+   - terminal velocity -> 0;
+   - StateCapture semantics;
+   - time expiry may not fake success.
 
-B7 **selection semantics + selected-program execution are accepted at lab/runtime level**.
+Every next program is authored from the actual previous P/V/body basis/angular velocity. The test measures phase-seam discontinuity and fails if a reset/jump is injected.
 
-The original production architecture note remains partly true:
-ordinary live navigation still needs final wiring so its normal production chain consumes the B7-selected program instead of bypassing B7 through transitional compatibility seams.
+Strict chain checks:
+- 4/4 phases complete;
+- zero tracking-envelope exceed ticks;
+- seam P jump <= 1e-9 m;
+- seam V jump <= 1e-9 m/s;
+- seam attitude jump <= 1e-6 deg;
+- seam angular-velocity jump <= 1e-9 rad/s;
+- full Cobra hull remains inside a 25 m reference corridor;
+- Newtonian law-specific phase must produce >=20 deg slip;
+- Assisted law-specific phase must stay <=8 deg slip;
+- final capture P <=1.0 m, speed <=0.60 m/s, attitude <=4 deg.
 
-Therefore:
-- B7 algorithm/behavior gate: **closed**;
-- B7 final ordinary-live production migration: **still integration work**.
+## Negative / physical-limit cases
 
-## Canonical B0-B14 status after this acceptance
+The same test also verifies fail-closed behavior with existing production components.
 
-### Strong / accepted behavior
-- B0 world snapshot/publication;
-- B7 decision semantics and select->execute behavior;
-- B8 AcceptedManeuverProgram;
-- B9 sampler;
-- B10 bounded tracking;
-- B12 PilotSkill;
-- B13 propulsion/physics;
-- B14 scheduler.
+### Insufficient turn horizon
+Uses `OrdinaryPhysicalManeuverCompiler`:
+- 18 m/s state;
+- ~90+ degree required delta-v;
+- only 0.5 s / ~9 m local maneuver horizon.
 
-### Strong mechanics, production generalization/integration still incomplete
-- B5 physical compiler: Newtonian ordinary slice strong; full Assisted/general-family production coverage remains;
-- B6 continuous proof: strong exact-static/moving proof, not yet one generalized ordinary block;
-- B7/B8/B9/B10 ordinary-live wiring: final compatibility-seam retirement remains.
+Expected:
+- `NoPhysicalCandidate`;
+- candidateCount=0;
+- impossible turn never reaches ACCEPT.
 
-### Open/transitional
-- B1 scene-wide sparse influence batching;
-- B2 unified NavigationObjective;
-- B3 vehicle/control-law-aware global edge feasibility;
-- B4 route-aligned local corridor replacing ray-fan search;
-- B11 explicit bounded safety-reflex API.
+### Insufficient braking distance
+Uses `NavigationExecutionSafetyProbeBuilder::buildStoppingReserve`:
+- 20 m/s;
+- 0.5 s control-response reserve;
+- 2 m/s2 braking;
+- only 60 m available.
 
-## Current testing stage
+Expected:
+- required stopping reserve exceeds available distance;
+- maneuver rejected before unsafe commitment.
 
-B7 speed/doctrine block is complete.
+### Rigid hull too large
+Full Cobra perpendicular support radius is compared to a 12 m half-width corridor.
 
-Next laboratory block:
-**chained transitions + negative / physical-limit cases**.
+Expected:
+- corridor rejected;
+- centerline fit cannot override rigid-body occupancy.
 
-It must prove the system behaves correctly when a feasible program changes family or when the requested maneuver is physically impossible.
+### No law-compatible candidate
+Uses B7 `ManeuverDecisionController`:
+- Assisted context;
+- candidate population is NewtonianOnly.
 
-Required scenarios:
-1. moving fly-through -> hard turn -> braking/capture;
-2. drift/high-slip -> aligned precision segment;
-3. insufficient turn room;
-4. insufficient braking distance;
-5. corridor narrower than rigid hull;
-6. incompatible control-law candidate set;
-7. accepted program invalidated by newly introduced obstacle/change.
+Expected:
+- invalid/no selection;
+- incompatible family cannot leak through doctrine ranking.
 
-Correct negative result is not necessarily completion. It is:
-- reject before ACCEPT;
-- select another proved maneuver;
-- reduce speed / brake / recover;
-- or invalidate + replan fail-closed.
+### New dynamic hazard
+Uses `NavigationExecutionReplanPolicy`.
 
-Never accept an unproved/impossible program merely to preserve progress.
+Expected:
+- immediate LocalHorizon replan;
+- reason DynamicHazardInvalidated;
+- obsolete accepted program is not allowed to continue.
+
+## Current status
+
+This candidate is **not accepted** until exact target-machine evidence is returned.
+
+If green:
+- chained state handoff + fail-closed physical-limit block closes;
+- only one final composite laboratory proving ground remains before primary visual/game evaluation.
+
+If red:
+- separate chain continuity/tracking failure from negative-case contract failure;
+- fix the mechanism, not the criteria.
 
 ## Documentation protocol
 
@@ -145,5 +150,5 @@ After every state-affecting iteration:
 - update `CURRENT_STATE.md`;
 - update `CURRENT_TASK.md`;
 - update `PROJECT_STATE.md`;
-- update active Stage-12 documentation;
+- update active Stage-12 document;
 - recreate `CONTINUE_PROMPT.md` **from scratch**.

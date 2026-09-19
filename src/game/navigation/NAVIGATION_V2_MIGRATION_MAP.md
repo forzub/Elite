@@ -152,3 +152,62 @@ each scheduler slice:
 
 This queue is preferable to trying to plan all 1000 actors simultaneously.
 
+
+
+## B8/B9 target-machine acceptance and B10 candidate — 2026-09-19
+
+Target-machine verified baseline:
+
+```text
+701881ddae861cd5593e425de91600e048bd417c
+```
+
+Verified on Windows 10 / MSYS2 MinGW64:
+- `navigation_runtime`: 7/7 PASS;
+- new `maneuver_program_sampler`: PASS;
+- canonical `EliteGame` build: PASS;
+- canonical `EliteServer` build: PASS.
+
+The B8/B9 API is therefore accepted as a compiled/tested migration seam.
+
+### B10 extracted
+
+New block:
+- `ManeuverTrackingController.h/.cpp`
+
+Responsibility:
+```text
+ManeuverReferenceSample
++ actual vehicle state
++ tracking envelope / feedback reserve
+    -> A_ff + bounded A_feedback
+    -> alpha_ff + bounded alpha_feedback
+```
+
+Hard invariants:
+- zero tracking error => feedback exactly zero;
+- therefore executed ideal command equals accepted `A_ff/alpha_ff` exactly;
+- feedback magnitude is clamped to the authority reserve carried by the accepted program;
+- envelope violation is reported, not repaired by hidden path planning;
+- no NavigationMap/NavigationSpace/GameSimulation/NavigationRuntimePlanner dependency;
+- no world query, planner call or unbounded vector in B8/B9/B10 hot-path code.
+
+`TrajectoryFollower` now has a second overload for the Navigation-v2 path:
+```text
+AcceptedManeuverProgram
+ -> B9 ManeuverProgramSampler
+ -> B10 ManeuverTrackingController
+ -> NavigationLocalControlIntent
+```
+
+The old `AcceptedShortSegment` overload remains active for the live Stage-12 fixture until the next live migration slice.
+
+New isolated regression:
+- `maneuver_tracking_controller`.
+
+Candidate baseline before documentation commits:
+```text
+66d89b93e3edf0817bb8d88b78e405180887cecc
+```
+
+Target-machine gate is pending.

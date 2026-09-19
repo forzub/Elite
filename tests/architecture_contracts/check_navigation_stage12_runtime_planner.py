@@ -839,8 +839,10 @@ require(
 
 require(
     "lastExecutedLinearDemandMapMps2" in SIM_CPP and
-    "ExecutedSafetySamples = 12" in SIM_CPP and
-    "exactExecutionSegmentBlocked" in SIM_CPP and
+    "kExecutedForecastSamples = 12" in EXECUTION_SAFETY_PROBE_H and
+    "buildSampledConstantAccelerationForecast(" in SIM_CPP and
+    "sampleIndex < executedForecast.pointCount" in SIM_CPP and
+    "exactExecutionSegmentBlocked(" in SIM_CPP and
     "staticSafetyExecutedForecastBlocked" in SIM_CPP,
     "accepted segment exact-static monitor must prove sampled continuation of the actually executed PilotSkill acceleration",
 )

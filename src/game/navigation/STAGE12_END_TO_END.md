@@ -4474,3 +4474,83 @@ evidence:
 - Assisted final speed 10.000000 m/s;
 so the execution laws themselves are distinct. The invalid part is the
 point-center corridor interpretation, not that low-level law distinction.
+
+
+## 2026-09-19 rigid-body corridor / physical actuator candidate
+
+The earlier center-point corridor interpretation is superseded. The old
+`maneuver_corridor_matrix` remains useful only as a center-of-mass tracking /
+PilotSkill diagnostic.
+
+New code/contract candidate before documentation commits:
+
+```text
+753eae5dcf1d7aae8eb05893ba75e16896a52b91
+```
+
+Production control allocation changed:
+- Newtonian navigation demand:
+  - aft/forward main thrust only;
+  - reverse demand cannot invent fore/nose main thrust;
+  - reverse/lateral/vertical residual is bounded by manoeuvre/RCS authority;
+- Assisted/aircraft-like navigation demand:
+  - symmetric longitudinal aft/fore main thrust;
+  - lateral/vertical residual remains bounded manoeuvre/RCS;
+  - no omnidirectional main engine.
+
+Assisted manual/stabilized local control was aligned to the same actuator model:
+longitudinal error -> aft/fore main, lateral/vertical stabilization -> RCS.
+
+New runtime control assertions pin:
+- Newtonian reverse cannot use fore main;
+- Assisted reverse can use fore longitudinal main;
+- Assisted lateral demand cannot use main propulsion.
+
+New target:
+`maneuver_rigid_body_corridor`.
+
+Rigid vehicle model uses canonical Cobra Mk1 logical dimensions:
+- width 26.0 m;
+- height 5.0 m;
+- length 22.2 m;
+- OBB half-extents (13.0, 2.5, 11.1) m.
+
+Explicit actuator model:
+- aft main: 7.5 g longitudinal authority;
+- Assisted fore main: 7.5 g longitudinal reverse authority;
+- RCS: 2.0 m/s2;
+- angular/vectoring authority: 3.0 rad/s2 with Cobra rate limits.
+
+The same 200 m center-of-mass stop trajectory is authored differently:
+- Newtonian: main acceleration -> coast while yaw-flipping ~180 deg ->
+  aft-main braking burn;
+- Assisted: main acceleration -> nose-forward coast -> fore-main reverse
+  braking with no hull flip.
+
+The test measures every tick:
+- center P/V;
+- full body attitude;
+- angular speed;
+- maximum flip angle;
+- aft-main / fore-main / RCS use during braking;
+- oriented hull-corner corridor envelope.
+
+The corridor centerline is extended past maneuver endpoints so width measures
+transverse hull occupancy rather than finite-segment end-cap artifacts.
+
+Strict expert invariants:
+- Newtonian must complete a near-180 deg flip;
+- Assisted must stay nose-forward;
+- Newtonian brake must use aft main and zero fore main;
+- Assisted brake must use fore main;
+- aligned Assisted Cobra must fit a 14 m half-width corridor;
+- Newtonian flip must require materially more than 14 m;
+- 18.5 m half-width must contain the expert Newtonian flip envelope;
+- both expert runs must stop within 1 m and <=0.5 m/s.
+
+Competent and rookie rows are diagnostic on the first run.
+
+Navigation-runtime expected test count is now 13.
+
+The latest supplied 12/12 target-machine run did not include a
+`git rev-parse HEAD` line, so no exact hash is assigned to that run.

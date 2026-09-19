@@ -2,132 +2,83 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Latest verified evidence
+## Accepted target-machine baseline
 
-Latest target-machine run:
-- Stage-12 architecture contract: PASS;
-- navigation_runtime: 14/15 PASS;
-- only failing target: maneuver_corner_family_matrix;
-- StopTurnGo expert healthy;
-- RadiusTurn healthy;
-- long 180 deg arc healthy;
-- DriftTurn outgoing attitude still failed under the raw constant-heading experiment.
-
-That experiment proved B10 tracking reserve cannot be used as the primary 90 deg maneuver generator.
-
-## Current unverified candidate
-
-Code candidate:
+Exact tested checkout:
 
 ```
-31a66a3eb462df6b5a60b2da2aca9f018d8aa332
+b687b9d3189cdfbbca91123b578637f991cbc645
 ```
 
-The DriftTurn exit is now authored as a planner-side moving attitude capture.
+Target-machine result:
+- Stage-12 architecture contract: **PASS**.
+- `navigation_runtime`: **15/15 PASS**.
+- Total runtime test time: ~0.38 s.
 
-### What changed
+This closes the previously failing strict expert DriftTurn corner-family gate.
 
-At the end of the drift arc the capture starts from the **actual** vehicle state:
-- actual body yaw;
-- actual yaw rate left by the arc;
-- actual outgoing translational state.
+## Closed defect: DriftTurn exit attitude capture
 
-The target is:
-- outgoing corridor yaw;
-- terminal yaw rate = 0;
-- continued translation at 10 m/s.
+The root cause was not a generic follower inability to rotate while moving.
 
-A quintic yaw profile is built with:
-- initial yaw = actual yaw;
-- initial yaw rate = actual yaw rate;
-- initial angular acceleration = 0;
-- final yaw = outgoing corridor yaw;
-- final yaw rate = 0;
-- final angular acceleration = 0.
+The failure came from incorrect exit-authoring semantics:
+1. early attempts treated a route checkpoint/time horizon as an attitude deadline;
+2. the constant-heading experiment then removed planner-authored large-angle dynamics and incorrectly asked B10's small tracking reserve to execute the whole 90 deg turn;
+3. the accepted solution restores planner ownership of the large-angle transition.
 
-The profile duration is not fixed. It is solved from physical angular limits.
+Accepted mechanism:
+- start from actual yaw after the drift arc;
+- start from actual yaw rate after the drift arc;
+- target outgoing corridor yaw;
+- target terminal yaw rate = 0;
+- continue translating at 10 m/s;
+- construct a quintic yaw boundary-value profile;
+- derive duration from effective physical angular acceleration/rate envelopes;
+- reserve B10 authority for residual tracking only.
 
-### Physical limits used
+Expert DriftTurn, Newtonian and Assisted:
+- final position error: ~0.111 m;
+- final velocity error: ~0.00075 m/s;
+- final forward error: ~0.03884 deg;
+- tracking-envelope exceeded ticks: 0;
+- corridor violation: 0;
+- outgoing attitude capture: yes;
+- moving capture duration: ~3.12469 s;
+- actual starting yaw rate: ~-0.73158 rad/s;
+- peak feed-forward yaw rate: ~1.29608 rad/s;
+- peak feed-forward yaw accel: ~1.85469 rad/s2.
 
-The candidate mirrors the real ShipController envelopes:
-- effective angular acceleration =
-  min(configured angularAccel, maxGs * g / turnRadius);
-- effective yaw-rate limit =
-  min(configured maxYawRate, sqrt(maxGs * g / turnRadius)).
+The long 180 deg angular-tracking diagnostic remains green.
 
-For Cobra this is stricter than the raw 3 rad/s2 / 2.5 rad/s configured values.
+## Architecture conclusion
 
-B10 reserve is explicitly left unused by feed-forward:
-- feed-forward angular acceleration limit =
-  effective physical angular acceleration - 0.35 rad/s2 tracking reserve;
-- an additional 5% execution/proof margin is applied.
+The planner/follower ownership split is now supported by the corner-family evidence:
+- planner authors physically meaningful maneuver/reference dynamics;
+- follower tracks with bounded residual authority;
+- follower is not used as an implicit maneuver planner.
 
-### Why this is different from rejected attempts
+## Next stage
 
-Rejected attempts either:
-1. forced a fixed-time yaw schedule unrelated to actual arc exit state, or
-2. removed the maneuver reference entirely and asked B10 to execute a 90 deg step.
+Proceed to **mixed-angle multi-segment 3D corridor quality**.
 
-The new candidate preserves planner ownership:
-- planner authors the large angular transition;
-- B10 only corrects residual error.
+The next test must go beyond the existing stop-to-stop orthogonal 3D corridor:
+- non-orthogonal segment angles;
+- simultaneous X/Y/Z direction changes;
+- consecutive turns without full stop where appropriate;
+- full rigid-body corridor occupancy;
+- Newtonian and Assisted laws;
+- expert strict acceptance;
+- lower PilotSkill rows diagnostic;
+- preserve planner/follower ownership and exact physical envelopes.
 
-### New diagnostics
-
-Corner rows now also report:
-- attitude_capture_program_s;
-- attitude_capture_start_yaw_rate_radps;
-- attitude_capture_peak_ff_yaw_rate_radps;
-- attitude_capture_peak_ff_yaw_accel_radps2;
-- outgoing_attitude_captured;
-- outgoing_attitude_capture_x_m.
-
-## Acceptance target
-
-Need:
-- architecture PASS;
-- runtime 15/15;
-- expert DriftTurn final attitude <=5 deg;
-- final P <=1.5 m;
-- final V <=1.0 m/s;
-- zero corridor violation;
-- outgoing attitude capture;
-- long arc remains green.
-
-## Run
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
-
-{
-    echo "===== TESTED HEAD ====="
-    git rev-parse HEAD
-
-    echo
-    echo "===== ARCHITECTURE CONTRACT ====="
-    TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
-    time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
-
-    echo
-    echo "===== NAVIGATION RUNTIME ====="
-    bash tests/navigation_runtime/run_mingw64.sh
-} 2>&1 | tee "$OUT"
-
-echo
-echo "===== LOG FILE ====="
-echo "$PWD/$OUT"
-```
+Before coding, inspect the existing `ManeuverCorridorMatrixTests.cpp` and choose the smallest extension that exercises real chained 3D maneuver composition rather than another isolated primitive.
 
 ## Documentation protocol
 
 After every state-affecting iteration, synchronize:
-- CURRENT_STATE.md
-- CURRENT_TASK.md
-- PROJECT_STATE.md
+- `CURRENT_STATE.md`
+- `CURRENT_TASK.md`
+- `PROJECT_STATE.md`
 - active Stage-12 document
 
-And recreate CONTINUE_PROMPT.md from scratch.
+And recreate `CONTINUE_PROMPT.md` **from scratch** from current truth.

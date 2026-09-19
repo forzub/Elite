@@ -864,6 +864,42 @@ for marker in (
     require(marker in SIM_CPP, f"GameSimulation runtime planner integration missing: {marker}")
 
 require(
+    "m_navigationRuntimeLabWorkScheduler.enqueue(" in SIM_CPP and
+    "m_navigationRuntimeLabWorkScheduler.dispatchSlice(" in SIM_CPP and
+    "m_navigationRuntimeLabWorkScheduler.complete(" in SIM_CPP and
+    "const Planner::Result planned =" in SIM_CPP and
+    "Scheduler::CompletionStatus::CompletedCurrent" in SIM_CPP and
+    "m_navigationRuntimeLabLastPlan = planned;" in SIM_CPP,
+    "live Stage-12 lab replans must cross B14 enqueue -> dispatch -> complete -> commit",
+)
+
+require(
+    "m_navigationRuntimeLabLastPlan =\n            Planner::plan(" not in SIM_CPP,
+    "GameSimulation must not retain the old direct Planner::plan -> authoritative commit seam",
+)
+
+for marker in (
+    "schedulerEnqueueAcceptedCount",
+    "schedulerDispatchCount",
+    "schedulerCompletedCurrentCount",
+    "schedulerCompletedStaleCount",
+    "schedulerDispatchTotalMicroseconds",
+    "schedulerPlannerTotalMicroseconds",
+):
+    require(
+        marker in LAB_H and marker in SIM_CPP and marker in SERVER_MAIN,
+        f"live B14 scheduler evidence missing: {marker}",
+    )
+
+require(
+    "observation.schedulerDispatchCount == observation.planCount" in SERVER_MAIN and
+    "observation.schedulerCompletedCurrentCount ==" in SERVER_MAIN and
+    "observation.schedulerCompletedStaleCount == 0" in SERVER_MAIN and
+    "every live planner call crossed B14 dispatch/commit authority" in SERVER_MAIN,
+    "headless navigation self-test must prove B14 owns every live lab planner call",
+)
+
+require(
     "NpcNavigationIntentController::buildIntent" in SIM_CPP,
     "ordinary NPC fallback path must remain present while the lab is isolated",
 )

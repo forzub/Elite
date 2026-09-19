@@ -6,6 +6,8 @@
 #include <optional>
 #include <vector>
 
+#include "src/world/navigation/NavigationObstacle.h"
+
 namespace world::navigation
 {
 
@@ -49,6 +51,14 @@ public:
         Vec3d angularVelocityMapRadPerSecond {};
 
         double radiusMeters = 1.0;
+
+        // Optional exact current-pose NavLocal geometry for dynamic
+        // narrow-phase. The enclosing radius remains broadphase only when
+        // this geometry is present. Shapes move rigidly with the actor's
+        // translational state; rotating actors conservatively fall back to
+        // the swept sphere in LocalHorizonPlanner.
+        std::vector<NavigationObstacle> exactObstacles;
+
         std::uint32_t flags = 0;
         Revision motionRevision = 0;
     };
@@ -95,6 +105,12 @@ public:
         double predictionHorizonSeconds = 0.0;
         double actorRadiusMeters = 0.0;
         double conservativeSweptRadiusMeters = 0.0;
+
+        // Value-owned exact geometry copied from the publication. Consumers
+        // may use it only as narrow-phase after this candidate has already
+        // passed NavigationMap's swept-sphere broadphase.
+        std::vector<NavigationObstacle> exactObstacles;
+
         std::uint32_t flags = 0;
         Revision motionRevision = 0;
     };

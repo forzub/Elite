@@ -67,6 +67,7 @@ B5_TEST = (ROOT / "tests/navigation_runtime/OrdinaryPhysicalManeuverCompilerTest
 EXECUTION_LAB_TEST = (ROOT / "tests/navigation_runtime/ManeuverProgramExecutionLabTests.cpp").read_text(encoding="utf-8")
 CORRIDOR_MATRIX_TEST = (ROOT / "tests/navigation_runtime/ManeuverCorridorMatrixTests.cpp").read_text(encoding="utf-8")
 RIGID_BODY_CORRIDOR_TEST = (ROOT / "tests/navigation_runtime/ManeuverRigidBodyCorridorTests.cpp").read_text(encoding="utf-8")
+CORNER_FAMILY_TEST = (ROOT / "tests/navigation_runtime/ManeuverCornerFamilyMatrixTests.cpp").read_text(encoding="utf-8")
 DYNAMIC_MOTION_CPP = (ROOT / "src/game/navigation/DynamicMotionSystem.cpp").read_text(encoding="utf-8")
 GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
 GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
@@ -429,6 +430,46 @@ require(
     "mainEngineCandidateAvailable" in B5_H,
     "B5 must expose main-engine option without stealing B7 maneuver selection ownership",
 )
+
+for marker in (
+    "CornerMode::StopTurnGo",
+    "CornerMode::RadiusTurn",
+    "CornerMode::DriftTurn",
+    "kCorridorHalfWidthMeters = 32.0",
+    "kCornerZoneGateMeters = 35.0",
+    "makeQuarterArcProgram",
+    "makeCoastRotateProgram",
+    "maximumDriftAngleDeg",
+    "minimumCornerZoneSpeedMps",
+    "cornerZoneTimeSeconds",
+    "totalTimeSeconds",
+    "finalPositionErrorMeters",
+    "finalVelocityErrorMps",
+    "finalForwardErrorDeg",
+    "[CORNER-MATRIX]",
+    "[CORNER-COMPARE]",
+    "stop-turn-go never achieved a real near-stop in corner zone",
+    "radius turn collapsed toward a stop-turn maneuver",
+    "drift turn never produced a material body/velocity slip angle",
+    "corner passage is measured entry-gate -> exit-gate",
+):
+    require(
+        marker in CORNER_FAMILY_TEST,
+        f"corner-family matrix contract missing: {marker}",
+    )
+
+require(
+    "maneuver_corner_family_matrix_tests" in RUNTIME_CMAKE and
+    "NAME maneuver_corner_family_matrix" in RUNTIME_CMAKE,
+    "corner-family matrix must remain wired into navigation_runtime",
+)
+
+require(
+    "-R maneuver_corner_family_matrix" in RUNTIME_RUN_SH and
+    "corner_family_matrix_ms" in RUNTIME_RUN_SH,
+    "navigation runtime gate must expose corner-family matrix diagnostics",
+)
+
 
 for marker in (
     "RigidVehicleModel",

@@ -638,7 +638,7 @@ double hullRequiredHalfWidthMeters(
 struct Metrics
 {
     bool valid = true;
-    bool completed = true;
+    bool completed = false;
     std::size_t phasesCompleted = 0;
 
     double entryGateTimeSeconds = -1.0;
@@ -740,16 +740,17 @@ RunResult runProgram(
     Vehicle& v,
     const RigidVehicleModel& model,
     const Program& program,
-    Metrics& m,
-    double extraSeconds = 8.0
+    Metrics& m
 )
 {
     const double endTime =
         program.acceptedAtUniverseTimeSeconds +
         program.samples[program.sampleCount - 1].timeOffsetSeconds;
-    const double hardStop = endTime + extraSeconds;
 
-    while (v.timeSeconds < hardStop - 1.0e-9)
+    // Compound fixture phases are pieces of one conceptual maneuver. Internal
+    // handoff is schedule-based, not Follower::Complete-based: a moving gate
+    // crossing is not a terminal capture.
+    while (v.timeSeconds < endTime - 1.0e-9)
     {
         const auto follower =
             Follower::follow(
@@ -830,18 +831,9 @@ RunResult runProgram(
 
         updateGeometryMetrics(v, model, m);
 
-        const auto after =
-            Follower::follow(
-                program,
-                v.timeSeconds,
-                agentState(v)
-            );
-
-        if (after.status == Follower::Status::Complete)
-            return {true, true};
     }
 
-    return {true, false};
+    return {true, true};
 }
 
 bool executePhase(
@@ -859,10 +851,7 @@ bool executePhase(
         return false;
     }
     if (!r.completed)
-    {
-        m.completed = false;
         return false;
-    }
 
     ++m.phasesCompleted;
     return true;
@@ -1198,6 +1187,11 @@ void finalizeMetrics(
     const glm::dvec3 finalForward(1.0, 0.0, 0.0);
 
     m.totalTimeSeconds = v.timeSeconds;
+    m.completed =
+        m.valid &&
+        m.entryGateTimeSeconds >= 0.0 &&
+        m.exitGateTimeSeconds >= 0.0;
+
     m.finalPositionErrorMeters =
         glm::length(
             v.transform.motion.localPositionMeters -
@@ -1472,7 +1466,7 @@ int main()
         std::cout << "MANEUVER CORNER FAMILY MATRIX TESTS: PASS\n";
         std::cout << " - stop-turn-go, radius and drift use the same L-shaped rigid-hull corridor\n";
         std::cout << " - Newtonian and Assisted run every family with the same three PilotSkill profiles\n";
-        std::cout << " - corner passage is measured entry-gate -> exit-gate, not by touching the vertex\n";
+        std::cout << " - internal phase handoff is scheduled; moving corner passage is entry-gate -> exit-gate\n";
         std::cout << " - total corridor time and corner-zone time are reported separately\n";
         std::cout << " - drift is defined by sustained speed plus material body/velocity slip angle\n";
         return 0;

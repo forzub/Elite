@@ -44,8 +44,14 @@ public:
     {
         m_enabled.fill(true);
 
-        // Guidance remains fully calculated but its experimental corridor HUD
-        // is opt-in until the cockpit presentation is tuned.
+        // Legacy client-side route/tunnel calculation is retained only as an
+        // isolated reference/presentation path. Navigation v2 authoritative
+        // planning does not use these switches, and the legacy path is OFF by
+        // default so it cannot silently compete with the Stage-12 planner.
+        setEnabled(NavigationModuleId::RoutePlanning, false);
+        setEnabled(NavigationModuleId::LocalGuidance, false);
+
+        // The legacy corridor HUD remains opt-in as well.
         setEnabled(NavigationModuleId::HudGuidanceCorridor, false);
     }
 

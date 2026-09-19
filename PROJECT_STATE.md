@@ -41,9 +41,13 @@ The long arc materially narrows the diagnosis: B9/B10 continuous angular trackin
 
 Therefore the remaining defect is local DriftTurn recovery/reference authoring.
 
-## Current next mechanism
+## Current unverified candidate
 
-Author DriftTurn recovery so the final attitude is reached before the terminal endpoint and held during a short moving settle interval, while preserving translation, exit velocity, corridor and planner/follower ownership.
+```
+76346121516e5b00d14a4e6304621b55791093ab
+```
+
+DriftTurn now uses one coherent 4 s / 40 m recovery reference with 2.5 s smooth rotation followed by 1.5 s of continued 10 m/s translation at the final yaw. This adds the needed in-motion attitude settle without moving maneuver strategy into the follower.
 
 Do not:
 - widen the 5 deg requirement;

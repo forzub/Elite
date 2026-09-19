@@ -171,6 +171,13 @@ public:
         glm::dvec3 selectedTargetMapMeters {0.0};
         glm::dvec3 desiredVelocityMapMetersPerSecond {0.0};
 
+        // Attitude semantics belong to the selected CURRENT maneuver, not to
+        // route context. A future oriented portal may exist on the route while
+        // a local visibility bypass is active; that must not silently force
+        // the accepted segment to face the future portal.
+        bool selectedManeuverRequiresForwardAlignment = false;
+        glm::dvec3 selectedManeuverForwardMap {0.0, 0.0, -1.0};
+
         StaticQueries::Revision spaceRevision = 0;
         StaticQueries::Revision spaceSourceRevision = 0;
         Map::Revision mapRevision = 0;

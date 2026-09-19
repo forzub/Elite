@@ -1008,7 +1008,7 @@ Metrics runStopTurnGo(
         m
     );
 
-    m.totalTimeSeconds = v.timeSeconds;
+    finalizeMetrics(v, m);
     return m;
 }
 
@@ -1096,7 +1096,7 @@ Metrics runRadiusTurn(
         m
     );
 
-    m.totalTimeSeconds = v.timeSeconds;
+    finalizeMetrics(v, m);
     return m;
 }
 
@@ -1184,8 +1184,38 @@ Metrics runDriftTurn(
         m
     );
 
-    m.totalTimeSeconds = v.timeSeconds;
+    finalizeMetrics(v, m);
     return m;
+}
+
+void finalizeMetrics(
+    const Vehicle& v,
+    Metrics& m
+)
+{
+    const glm::dvec3 finalPosition(60.0, 0.0, 0.0);
+    const glm::dvec3 finalVelocity(10.0, 0.0, 0.0);
+    const glm::dvec3 finalForward(1.0, 0.0, 0.0);
+
+    m.totalTimeSeconds = v.timeSeconds;
+    m.finalPositionErrorMeters =
+        glm::length(
+            v.transform.motion.localPositionMeters -
+            finalPosition
+        );
+    m.finalVelocityErrorMps =
+        glm::length(
+            v.transform.motion.localVelocityMps -
+            finalVelocity
+        );
+    m.finalForwardErrorDeg =
+        angleRad(
+            glm::dvec3(v.transform.forward()),
+            finalForward
+        ) * 180.0 / kPi;
+
+    if (!std::isfinite(m.minimumCornerZoneSpeedMps))
+        m.minimumCornerZoneSpeedMps = 0.0;
 }
 
 Metrics runCase(
@@ -1208,23 +1238,6 @@ Metrics runCase(
         m = runDriftTurn(model, pilot, law);
         break;
     }
-
-    const glm::dvec3 finalPosition(60.0, 0.0, 0.0);
-    const glm::dvec3 finalVelocity(10.0, 0.0, 0.0);
-    const glm::dvec3 finalForward(1.0, 0.0, 0.0);
-
-    // Metrics above are already updated during the execution. Final kinematic
-    // error is captured from the last program's terminal reference indirectly
-    // by the final gate conditions printed below.
-    if (!std::isfinite(m.minimumCornerZoneSpeedMps))
-        m.minimumCornerZoneSpeedMps = 0.0;
-
-    // The final-state errors are reconstructed from the intended common exit
-    // gate by the last phase in each mode. Exact actual-state values are
-    // captured in the run-specific print below through a final replay holder.
-    (void)finalPosition;
-    (void)finalVelocity;
-    (void)finalForward;
 
     return m;
 }
@@ -1251,6 +1264,9 @@ void printCase(const CaseRecord& r)
         << " phases=" << m.phasesCompleted
         << " total_time_s=" << m.totalTimeSeconds
         << " corner_zone_time_s=" << m.cornerZoneTimeSeconds
+        << " final_pos_error_m=" << m.finalPositionErrorMeters
+        << " final_velocity_error_mps=" << m.finalVelocityErrorMps
+        << " final_forward_error_deg=" << m.finalForwardErrorDeg
         << " min_corner_speed_mps=" << m.minimumCornerZoneSpeedMps
         << " max_drift_angle_deg=" << m.maximumDriftAngleDeg
         << " max_center_cross_track_m="
@@ -1324,6 +1340,56 @@ void testCornerFamilyMatrix()
     require(records.size() == 18u,
             "corner matrix did not execute 3x2x3 rows");
 
+    for (const auto& pilot : pilots)
+    {
+        for (const CornerMode mode : modes)
+        {
+            const CaseRecord* newtonian = nullptr;
+            const CaseRecord* assisted = nullptr;
+
+            for (const auto& r : records)
+            {
+                if (std::string(r.pilot) != pilot.name ||
+                    r.mode != mode)
+                {
+                    continue;
+                }
+
+                if (r.law == Law::Newtonian)
+                    newtonian = &r;
+                else
+                    assisted = &r;
+            }
+
+            require(
+                newtonian != nullptr && assisted != nullptr,
+                "corner timing comparison lost a law row"
+            );
+
+            std::cout
+                << std::fixed << std::setprecision(6)
+                << "[CORNER-COMPARE]"
+                << " pilot=" << pilot.name
+                << " mode=" << modeName(mode)
+                << " newtonian_total_s="
+                << newtonian->metrics.totalTimeSeconds
+                << " assisted_total_s="
+                << assisted->metrics.totalTimeSeconds
+                << " assisted_minus_newtonian_s="
+                << assisted->metrics.totalTimeSeconds -
+                   newtonian->metrics.totalTimeSeconds
+                << " newtonian_corner_s="
+                << newtonian->metrics.cornerZoneTimeSeconds
+                << " assisted_corner_s="
+                << assisted->metrics.cornerZoneTimeSeconds
+                << " newtonian_half_width_m="
+                << newtonian->metrics.maximumHullRequiredHalfWidthMeters
+                << " assisted_half_width_m="
+                << assisted->metrics.maximumHullRequiredHalfWidthMeters
+                << "\n";
+        }
+    }
+
     // First target-machine pass is diagnostic for timing ranking. The strict
     // quality assertions below only encode the semantic difference between
     // the three families for expert execution.
@@ -1345,6 +1411,21 @@ void testCornerFamilyMatrix()
         require(
             r.metrics.maximumCorridorViolationMeters <= 1.0e-6,
             std::string("expert left common 32 m hull corridor: ") +
+                lawName(r.law) + "/" + modeName(r.mode)
+        );
+        require(
+            r.metrics.finalPositionErrorMeters <= 1.5,
+            std::string("expert missed common exit gate: ") +
+                lawName(r.law) + "/" + modeName(r.mode)
+        );
+        require(
+            r.metrics.finalVelocityErrorMps <= 1.0,
+            std::string("expert missed common exit velocity: ") +
+                lawName(r.law) + "/" + modeName(r.mode)
+        );
+        require(
+            r.metrics.finalForwardErrorDeg <= 5.0,
+            std::string("expert missed common exit attitude: ") +
                 lawName(r.law) + "/" + modeName(r.mode)
         );
 

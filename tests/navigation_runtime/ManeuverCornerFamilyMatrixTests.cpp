@@ -422,6 +422,70 @@ Program makeCoastRotateProgram(
     return p;
 }
 
+Program makeCoastRotateSettleProgram(
+    std::uint64_t revision,
+    double acceptedAt,
+    const glm::dvec3& startPosition,
+    const glm::dvec3& velocity,
+    double startYaw,
+    double endYaw,
+    double rotateDuration,
+    double settleDuration,
+    Program::ManeuverFamily family
+)
+{
+    const double totalDuration = rotateDuration + settleDuration;
+    Program p;
+    fillCommon(p, revision, acceptedAt, totalDuration, family);
+    p.sampleCount = static_cast<std::uint8_t>(Program::kMaxSamples);
+
+    const double deltaYaw = endYaw - startYaw;
+    const double denom =
+        static_cast<double>(Program::kMaxSamples - 1);
+
+    for (std::size_t i = 0; i < Program::kMaxSamples; ++i)
+    {
+        const double t =
+            totalDuration * static_cast<double>(i) / denom;
+
+        double yaw = endYaw;
+        double yawRate = 0.0;
+        double yawAccel = 0.0;
+
+        if (t < rotateDuration)
+        {
+            const double u =
+                rotateDuration > 1.0e-12
+                    ? t / rotateDuration
+                    : 1.0;
+            yaw = startYaw + deltaYaw * smooth5(u);
+            yawRate =
+                deltaYaw * smooth5d1(u) / rotateDuration;
+            yawAccel =
+                deltaYaw * smooth5d2(u) /
+                (rotateDuration * rotateDuration);
+        }
+
+        const Basis basis = yawBasis(yaw);
+        auto& s = p.samples[i];
+        s.timeOffsetSeconds = t;
+        s.positionMapMeters =
+            startPosition + velocity * t;
+        s.velocityMapMetersPerSecond = velocity;
+        s.linearAccelerationFeedForwardMapMps2 =
+            {0.0, 0.0, 0.0};
+        s.forwardMap = basis.forward;
+        s.rightMap = basis.right;
+        s.upMap = basis.up;
+        s.angularVelocityMapRadPerSecond =
+            {0.0, yawRate, 0.0};
+        s.angularAccelerationFeedForwardMapRadPerSec2 =
+            {0.0, yawAccel, 0.0};
+    }
+
+    return p;
+}
+
 Program makeRotateInPlaceProgram(
     std::uint64_t revision,
     double acceptedAt,
@@ -1373,19 +1437,21 @@ Metrics runDriftTurn(
     const glm::dvec3 p1 =
         v.transform.motion.localPositionMeters;
 
-    // Recover attitude continuously over the same 4 s / 40 m post-arc travel.
-    // Splitting this into a 3 s rotate plus a 1 s coast introduced an
-    // artificial reference boundary while expert P/V tracking was already
-    // good. A single slower reference gives B10 one coherent attitude history.
+    // Keep one coherent moving reference, but finish the 90 deg recovery
+    // before the translational endpoint and hold the exit yaw while still
+    // moving. The 2.5 s smooth5 rotation stays inside the Cobra angular
+    // capability; the remaining 1.5 s is an in-motion attitude settle, not a
+    // follower-side replanning step.
     executePhase(
         v, model,
-        makeCoastRotateProgram(
+        makeCoastRotateSettleProgram(
             revision++, v.timeSeconds,
             p1,
             {10.0, 0.0, 0.0},
             -kPi,
             -0.5 * kPi,
-            4.0,
+            2.5,
+            1.5,
             Program::ManeuverFamily::DriftPass
         ),
         m

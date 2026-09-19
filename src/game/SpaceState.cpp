@@ -69,7 +69,6 @@
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
-#include "src/game/navigation/LocalGuidancePlanner.h"
 #include "src/game/navigation/DockingPathPlanner.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/HubFrameBasis.h"

@@ -1,0 +1,277 @@
+#include "ManeuverTrackingController.h"
+
+#include <algorithm>
+#include <cmath>
+
+namespace game::navigation
+{
+namespace
+{
+
+constexpr double kEpsilon = 1.0e-12;
+
+bool finite(double value) noexcept
+{
+    return std::isfinite(value);
+}
+
+bool finite(const glm::dvec3& value) noexcept
+{
+    return finite(value.x) && finite(value.y) && finite(value.z);
+}
+
+bool nonNegativeFinite(double value) noexcept
+{
+    return finite(value) && value >= 0.0;
+}
+
+glm::dvec3 normalizedOr(
+    const glm::dvec3& value,
+    const glm::dvec3& fallback
+) noexcept
+{
+    const double lengthSquared = glm::dot(value, value);
+    if (!finite(lengthSquared) || lengthSquared <= kEpsilon)
+        return fallback;
+    return value / std::sqrt(lengthSquared);
+}
+
+glm::dvec3 clampMagnitude(
+    const glm::dvec3& value,
+    double maximumMagnitude
+) noexcept
+{
+    if (!(maximumMagnitude > 0.0))
+        return glm::dvec3(0.0);
+
+    const double magnitudeSquared = glm::dot(value, value);
+    if (!finite(magnitudeSquared) || magnitudeSquared <= kEpsilon)
+        return glm::dvec3(0.0);
+
+    const double magnitude = std::sqrt(magnitudeSquared);
+    if (magnitude <= maximumMagnitude)
+        return value;
+
+    return value * (maximumMagnitude / magnitude);
+}
+
+glm::dvec3 angularVelocityMap(
+    const ManeuverTrackingController::AgentState& agent
+) noexcept
+{
+    const glm::dvec3 forward = normalizedOr(
+        agent.forwardMap,
+        glm::dvec3(0.0, 0.0, -1.0)
+    );
+    const glm::dvec3 right = normalizedOr(
+        agent.rightMap,
+        glm::dvec3(1.0, 0.0, 0.0)
+    );
+    const glm::dvec3 up = normalizedOr(
+        agent.upMap,
+        glm::dvec3(0.0, 1.0, 0.0)
+    );
+
+    return
+        right * agent.pitchRateRadPerSec +
+        up * agent.yawRateRadPerSec +
+        forward * agent.rollRateRadPerSec;
+}
+
+double angleBetween(
+    const glm::dvec3& a,
+    const glm::dvec3& b
+) noexcept
+{
+    const glm::dvec3 na = normalizedOr(a, glm::dvec3(0.0, 0.0, -1.0));
+    const glm::dvec3 nb = normalizedOr(b, na);
+    return std::acos(std::clamp(glm::dot(na, nb), -1.0, 1.0));
+}
+
+// Small-angle SO(3) error using all three body axes. Unlike a forward-only
+// controller this retains roll as part of the accepted attitude program.
+glm::dvec3 attitudeErrorVector(
+    const AcceptedManeuverProgram::ReferenceSample& reference,
+    const ManeuverTrackingController::AgentState& agent
+) noexcept
+{
+    const glm::dvec3 currentForward = normalizedOr(
+        agent.forwardMap,
+        glm::dvec3(0.0, 0.0, -1.0)
+    );
+    const glm::dvec3 currentRight = normalizedOr(
+        agent.rightMap,
+        glm::dvec3(1.0, 0.0, 0.0)
+    );
+    const glm::dvec3 currentUp = normalizedOr(
+        agent.upMap,
+        glm::dvec3(0.0, 1.0, 0.0)
+    );
+
+    const glm::dvec3 targetForward =
+        normalizedOr(reference.forwardMap, currentForward);
+    const glm::dvec3 targetRight =
+        normalizedOr(reference.rightMap, currentRight);
+    const glm::dvec3 targetUp =
+        normalizedOr(reference.upMap, currentUp);
+
+    return 0.5 * (
+        glm::cross(currentForward, targetForward) +
+        glm::cross(currentRight, targetRight) +
+        glm::cross(currentUp, targetUp)
+    );
+}
+
+bool validPolicy(const ManeuverTrackingController::Policy& policy) noexcept
+{
+    return
+        nonNegativeFinite(policy.positionGainPerSecond2) &&
+        nonNegativeFinite(policy.velocityGainPerSecond) &&
+        nonNegativeFinite(policy.attitudeGainPerSecond2) &&
+        nonNegativeFinite(policy.angularVelocityGainPerSecond);
+}
+
+bool validInput(
+    const AcceptedManeuverProgram& program,
+    const AcceptedManeuverProgram::ReferenceSample& reference,
+    const ManeuverTrackingController::AgentState& agent,
+    const ManeuverTrackingController::Policy& policy
+) noexcept
+{
+    return
+        program.valid &&
+        program.revision != 0 &&
+        finite(reference.positionMapMeters) &&
+        finite(reference.velocityMapMetersPerSecond) &&
+        finite(reference.linearAccelerationFeedForwardMapMps2) &&
+        finite(reference.forwardMap) &&
+        finite(reference.rightMap) &&
+        finite(reference.upMap) &&
+        finite(reference.angularVelocityMapRadPerSecond) &&
+        finite(reference.angularAccelerationFeedForwardMapRadPerSec2) &&
+        finite(agent.positionMapMeters) &&
+        finite(agent.velocityMapMetersPerSecond) &&
+        finite(agent.forwardMap) &&
+        finite(agent.rightMap) &&
+        finite(agent.upMap) &&
+        finite(agent.pitchRateRadPerSec) &&
+        finite(agent.yawRateRadPerSec) &&
+        finite(agent.rollRateRadPerSec) &&
+        nonNegativeFinite(program.tracking.positionErrorMeters) &&
+        nonNegativeFinite(program.tracking.linearVelocityErrorMps) &&
+        nonNegativeFinite(program.tracking.forwardAngleErrorRad) &&
+        nonNegativeFinite(program.tracking.angularVelocityErrorRadPerSec) &&
+        nonNegativeFinite(program.tracking.linearFeedbackReserveMps2) &&
+        nonNegativeFinite(program.tracking.angularFeedbackReserveRadPerSec2) &&
+        validPolicy(policy);
+}
+
+bool exceeded(double value, double maximum) noexcept
+{
+    return maximum > 0.0 && value > maximum;
+}
+
+} // namespace
+
+ManeuverTrackingController::Result ManeuverTrackingController::track(
+    const AcceptedManeuverProgram& program,
+    const AcceptedManeuverProgram::ReferenceSample& reference,
+    const AgentState& agent,
+    const Policy& policy
+) noexcept
+{
+    Result result;
+    if (!validInput(program, reference, agent, policy))
+        return result;
+
+    const glm::dvec3 positionError =
+        reference.positionMapMeters - agent.positionMapMeters;
+    const glm::dvec3 velocityError =
+        reference.velocityMapMetersPerSecond -
+        agent.velocityMapMetersPerSecond;
+
+    const glm::dvec3 actualAngularVelocity =
+        angularVelocityMap(agent);
+    const glm::dvec3 angularVelocityError =
+        reference.angularVelocityMapRadPerSecond -
+        actualAngularVelocity;
+
+    result.positionErrorMeters = glm::length(positionError);
+    result.linearVelocityErrorMps = glm::length(velocityError);
+    result.forwardAngleErrorRad =
+        angleBetween(agent.forwardMap, reference.forwardMap);
+    result.angularVelocityErrorRadPerSec =
+        glm::length(angularVelocityError);
+
+    if (!finite(result.positionErrorMeters) ||
+        !finite(result.linearVelocityErrorMps) ||
+        !finite(result.forwardAngleErrorRad) ||
+        !finite(result.angularVelocityErrorRadPerSec))
+    {
+        return Result {};
+    }
+
+    const glm::dvec3 requestedLinearFeedback =
+        positionError * policy.positionGainPerSecond2 +
+        velocityError * policy.velocityGainPerSecond;
+
+    const glm::dvec3 requestedAngularFeedback =
+        attitudeErrorVector(reference, agent) *
+            policy.attitudeGainPerSecond2 +
+        angularVelocityError *
+            policy.angularVelocityGainPerSecond;
+
+    result.linearFeedbackMapMps2 = clampMagnitude(
+        requestedLinearFeedback,
+        program.tracking.linearFeedbackReserveMps2
+    );
+    result.angularFeedbackMapRadPerSec2 = clampMagnitude(
+        requestedAngularFeedback,
+        program.tracking.angularFeedbackReserveRadPerSec2
+    );
+
+    result.intent.revision = program.objectiveRevision;
+    result.intent.targetRevision = program.revision;
+    result.intent.emergency = program.emergency;
+    result.intent.hazardUrgency01 =
+        std::clamp(program.hazardUrgency01, 0.0, 1.0);
+
+    result.intent.idealLinearAccelerationLocalMps2 =
+        reference.linearAccelerationFeedForwardMapMps2 +
+        result.linearFeedbackMapMps2;
+    result.intent.idealAngularAccelerationLocalRadPerSec2 =
+        reference.angularAccelerationFeedForwardMapRadPerSec2 +
+        result.angularFeedbackMapRadPerSec2;
+
+    if (!finite(result.intent.idealLinearAccelerationLocalMps2) ||
+        !finite(result.intent.idealAngularAccelerationLocalRadPerSec2))
+    {
+        return Result {};
+    }
+
+    const bool outsideEnvelope =
+        exceeded(
+            result.positionErrorMeters,
+            program.tracking.positionErrorMeters
+        ) ||
+        exceeded(
+            result.linearVelocityErrorMps,
+            program.tracking.linearVelocityErrorMps
+        ) ||
+        exceeded(
+            result.forwardAngleErrorRad,
+            program.tracking.forwardAngleErrorRad
+        ) ||
+        exceeded(
+            result.angularVelocityErrorRadPerSec,
+            program.tracking.angularVelocityErrorRadPerSec
+        );
+
+    result.status =
+        outsideEnvelope
+            ? Status::EnvelopeExceeded
+            : Status::Tracking;
+    return result;
+}
+
+} // namespace game::navigation

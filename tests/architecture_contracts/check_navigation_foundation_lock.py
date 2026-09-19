@@ -131,6 +131,23 @@ try:
             "RuckigTrajectorySolver",
         )
 
+    # The abandoned LocalGuidance/Ruckig route stack may remain compiled for
+    # regression tests, but it has no live runtime owner. Pin the known runtime
+    # entry points so a future include/call cannot silently reactivate it.
+    for path in (
+        "src/game/SpaceState.cpp",
+        "src/game/server/GameServer.cpp",
+        "src/game/server/ServerRuntime.cpp",
+        "src/game/simulation/NpcAiSystem.cpp",
+        "src/world/modules/ObjectRepairJobRuntime.cpp",
+    ):
+        forbid(
+            path,
+            "LocalGuidancePlanner",
+            "RuckigRoutePlanner",
+            "RuckigTrajectorySolver",
+        )
+
     # Repair drones still contain an older GeometricPathPlanner +
     # SmallCraftNavigation implementation. It is retained only as migration
     # reference and must remain fail-closed/off until it is rebuilt on

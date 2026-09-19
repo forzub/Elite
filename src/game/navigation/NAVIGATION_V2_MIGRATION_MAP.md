@@ -683,3 +683,48 @@ First target-machine pass is deliberately asymmetric:
 This data is intended to feed B6 execution-reserve/clearance policy: a lower
 skill pilot may require more physical corridor clearance even when the accepted
 centerline program is identical.
+
+
+## First 3D corridor matrix evidence; explicit law-stress added — 2026-09-19
+
+Fresh target-machine evidence supplied:
+- architecture contract PASS;
+- navigation_runtime 12/12 PASS;
+- maneuver_corridor_matrix PASS;
+- maneuver_program_execution_lab PASS;
+- B5 compiler PASS;
+- scheduler PASS.
+
+First 4-leg 3D corridor matrix:
+- expert/Newtonian and expert/Assisted both complete 4/4 legs + 3/3 rotations,
+  final position error 0.014967 m, residual speed 0.096233 m/s, zero 5 m
+  corridor violation;
+- competent/Newtonian and competent/Assisted both complete 4/4 + 3/3,
+  final position error 0.111386 m, residual speed 0.078158 m/s, zero corridor
+  violation;
+- rookie/Newtonian and rookie/Assisted both complete only leg 1/4 and no
+  rotation, with zero corridor violation but maximum forward-angle error
+  19.115652 degrees.
+
+The first calm matrix produced identical Newtonian/Assisted metrics because the
+trajectory stays far below the controlled-speed boundary where their propulsion
+integration differs. Therefore equality here is expected but is not sufficient
+evidence that both laws were materially exercised.
+
+A dedicated law-stress regression is now added to the same target:
+- lateral RCS acceleration runs against a deliberately reachable 10 m/s
+  controlled-speed envelope;
+- Newtonian must accumulate RCS delta-v materially beyond the envelope;
+- Assisted/aircraft-like must remain at the envelope;
+- the test fails if the two modes remain physically indistinguishable.
+
+Current code/contract candidate before documentation commits:
+
+```text
+88ad3a8921239cf2865c32c0c8711b7514094aa1
+```
+
+The matrix's obsolete unused finite(vec3) warning was removed.
+
+Full planner-side Assisted B5 compilation is still not implemented; this
+law-stress validates execution physics/control-law selection only.

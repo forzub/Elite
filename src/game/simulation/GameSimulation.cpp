@@ -3085,13 +3085,17 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
 
     if (replan.scope != Replan::Scope::None)
     {
+        const Planner::StaticQueries staticQueries(
+            *m_navigationRuntimeLabSpace
+        );
+
         m_navigationRuntimeLabLastPlan =
             Planner::plan(
                 agent,
                 plannerGoal,
                 dynamicCandidates,
                 0.0,
-                *m_navigationRuntimeLabSpace,
+                staticQueries,
                 policy
             );
 

@@ -5348,3 +5348,37 @@ Therefore strict Expert Newtonian and Assisted both completed the five-segment ~
 This accepts continuous chained 3D fly-through as a demonstrated capability.
 
 The acceptance log did not include detailed FLY3D rows because the runner omitted the new test from its verbose diagnostic reruns. A diagnostics-only runner patch (`4cd9c4a14c8f2e4ce033082633766a21fece9331`) now adds that output. A follow-up run is needed only to characterize Newtonian/Assisted radius, slip, speed loss and hull envelope numerically; the core 16/16 acceptance is already established.
+
+
+## 2026-09-20 — continuous 3D fly-through verbose acceptance
+
+Exact target-machine checkout:
+
+```
+9435725206b88f0ae953f058a294b1d6a7608e78
+```
+
+passed the Stage-12 architecture contract and all 16 navigation runtime tests. The verbose fly-through diagnostic confirms the strict gate quantitatively.
+
+Expert Newtonian and Assisted both report:
+- 9/9 phases;
+- final position error ~0.120 m;
+- final speed error ~0.00007 m/s;
+- final forward error ~0.00032 deg;
+- minimum route speed ~3.999 m/s;
+- maximum center cross-track ~8.478 m;
+- maximum full-hull required half-width ~17.474 m;
+- zero corridor violation;
+- zero tracking-envelope exceed ticks.
+
+Measured Expert corner envelope:
+- 35 deg: radius ~90.25 m, min speed ~7.629 m/s, slip ~0.033 deg;
+- 60 deg: radius ~44.78 m, min speed ~6.928 m/s, slip ~0.081 deg;
+- 90 deg: radius ~21.09 m, min speed ~5.657 m/s, slip ~1.088 deg;
+- 120 deg: radius ~8.62 m, min speed ~3.999 m/s, slip ~1.369 deg.
+
+All Newtonian/Assisted FLY3D rows are numerically identical, including Competent and Rookie. This is expected for this particular tangent-aligned reference: its transverse demand stays inside the common manoeuvre/RCS authority and it does not exercise law-specific reverse/main-thrust behavior.
+
+Conclusion: continuous 3D fly-through is accepted as an execution/corridor capability. It is not a discriminator between Newtonian and Assisted laws.
+
+Next active stage is speed/doctrine coverage with physically distinct candidate maneuvers and real selected-program execution.

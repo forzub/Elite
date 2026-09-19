@@ -4,53 +4,61 @@ Repository: `forzub/Elite`, branch `main`.
 Local checkout: `D:/__elite/work`.
 
 Read first:
-1. `CURRENT_TASK.md`
-2. `CURRENT_STATE.md`
-3. `PROJECT_STATE.md`
-4. `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`
-5. `src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md`
-6. `src/game/navigation/STAGE12_END_TO_END.md`
-7. `src/game/navigation/NAVIGATION_PURITY_CONTRACT.md`
+1. CURRENT_TASK.md
+2. CURRENT_STATE.md
+3. PROJECT_STATE.md
+4. src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md
+5. src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md
+6. src/game/navigation/STAGE12_END_TO_END.md
+7. src/game/navigation/NAVIGATION_PURITY_CONTRACT.md
+8. src/game/navigation/PLANNER_FOLLOWER_ARCHITECTURE.md
 
-## Current evidence
+## Fresh evidence
 
-Exact target-machine checkout:
-`a69771e3efb5b54834b002a5000b79d75a8f5e80`.
+Target-machine:
+- architecture PASS 0.191 s;
+- navigation_runtime 10/10 PASS;
+- B5 ordinary compiler PASS;
+- 10,000 B5 compiles = 30,495 us = 3,049.5 ns/compile;
+- B14 scheduler 5000 actors = 2,801 us;
+- client/server BUILD PASS;
+- production build 23.544 s.
 
-On it:
-- architecture PASS 0.211 s;
-- navigation_runtime 9/9 PASS;
-- B14 scheduler 5000 jobs total 3314 us;
-- client/server build PASS 45.371 s;
-- live ordered navigation FAIL rc=56, log:
-  `D:\__elite\work\build\logs\navigation_live_scheduler_20260919-221240.log`.
+No rev-parse line was supplied in that excerpt; do not invent exact tested hash.
 
-The live failure is the old pre-B14 ordinary-maneuver defect:
-geometric AdjustedClear is found and replicated but is not converted into a
-physically executable ordinary maneuver for anisotropic Newtonian propulsion.
+## Critical ownership rule
 
-Do not blame/rollback B14 and do not weaken the live self-test.
+Planner side chooses physical maneuver strategy.
 
-## Current implementation
+B5 may generate:
+- RCS Trim;
+- LeadRotateMainBurn;
+- later CoastAndRotate / FlipAndBurn / etc.
 
-First isolated B5 candidate before docs:
-`233d4023e81d5d466043a08c67acd8d49846c4b5`.
+B6 proves exact candidates.
+B7 selects among proved candidates.
+B8 freezes exact program.
 
-New `OrdinaryPhysicalManeuverCompiler`:
-- strict pure;
-- fixed-capacity;
-- Newtonian first;
-- Coast / Trim / LeadRotateMainBurn;
-- directional linear authority;
-- angular acceleration/speed authority;
-- B10 feedback reserve;
-- control response reserve;
-- every result requires B6 proof;
-- no world query / planner call / clock / vector.
+Follower/autopilot B9/B10:
+- samples accepted program;
+- adds bounded tracking feedback;
+- may not decide to rotate hull/use main engine instead of RCS;
+- if accepted program cannot be followed, invalidate/replan.
 
-Assisted returns UnsupportedControlLaw intentionally.
+For main-engine-dominant Newtonian craft:
+main engine is primary translation authority for material delta-v;
+RCS is precision/trim authority.
 
-Regression includes live 75-degree failure class and 10,000 compile timing.
+## Current candidate
+
+After the green B5 gate, compiler semantics were corrected:
+a main-engine LeadRotateMainBurn option is now exposed even when Trim is also
+physically feasible. B7 still owns final choice.
+
+New regression:
+`testRcsFeasibleLateralChangeStillExposesMainEngineOption`.
+
+This correction is unverified on target machine.
 
 ## Run now
 
@@ -68,15 +76,12 @@ TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
 time bash build_mingw64.sh
 ```
 
-Expected navigation_runtime: 10/10 including
-`ordinary_physical_maneuver_compiler`.
+Do not rerun the long live self-test yet.
 
-Do not rerun long live self-test in this slice; B5 is isolated only.
+## Next after green rerun
 
-## Next after green
-
-Implement B6 proof around the exact B5 candidate, then integrate
-B4 -> B5 -> B6 -> B7/B8 and rerun the logged live ordered-flight gate.
+Build B6 continuous proof for the exact B5 candidate, then integrate
+B4 -> B5 -> B6 -> B7 -> B8 and rerun the logged live gate.
 
 Every state-affecting iteration must rewrite this file and CURRENT_TASK and
 update CURRENT_STATE / PROJECT_STATE / STAGE12_END_TO_END.

@@ -64,6 +64,7 @@ SCHEDULER_TEST = (ROOT / "tests/navigation_runtime/NavigationWorkSchedulerTests.
 B5_H = (ROOT / "src/game/navigation/OrdinaryPhysicalManeuverCompiler.h").read_text(encoding="utf-8")
 B5_CPP = (ROOT / "src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp").read_text(encoding="utf-8")
 B5_TEST = (ROOT / "tests/navigation_runtime/OrdinaryPhysicalManeuverCompilerTests.cpp").read_text(encoding="utf-8")
+EXECUTION_LAB_TEST = (ROOT / "tests/navigation_runtime/ManeuverProgramExecutionLabTests.cpp").read_text(encoding="utf-8")
 GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
 GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
 PURITY_DOC = (ROOT / "src/game/navigation/NAVIGATION_PURITY_CONTRACT.md").read_text(encoding="utf-8")
@@ -425,6 +426,41 @@ require(
     "mainEngineCandidateAvailable" in B5_H,
     "B5 must expose main-engine option without stealing B7 maneuver selection ownership",
 )
+
+for marker in (
+    "runStraightScenario",
+    "runRightAngleScenario",
+    "straight_100m",
+    "right_angle_100m_100m",
+    "corridorHalfWidth = 5.0",
+    "final_pos_error_m=",
+    "final_speed_mps=",
+    "max_cross_track_m=",
+    "max_overshoot_m=",
+    "corner_error_m=",
+    "max_corridor_violation_m=",
+    "SharedShipPhysics::integrate",
+    "DynamicMotionSystem::applySystemAccelerationDemand",
+    "Follower::follow",
+    "bridge.step",
+):
+    require(
+        marker in EXECUTION_LAB_TEST,
+        f"maneuver execution lab contract missing: {marker}",
+    )
+
+require(
+    "maneuver_program_execution_lab_tests" in RUNTIME_CMAKE and
+    "NAME maneuver_program_execution_lab" in RUNTIME_CMAKE,
+    "maneuver execution lab must remain wired into navigation_runtime",
+)
+
+require(
+    "-R maneuver_program_execution_lab" in RUNTIME_RUN_SH and
+    "maneuver_execution_lab_ms" in RUNTIME_RUN_SH,
+    "navigation runtime gate must expose maneuver execution lab metrics",
+)
+
 
 require(
     "OrdinaryPhysicalManeuverCompiler.cpp" in ROOT_CMAKE and

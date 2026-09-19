@@ -241,7 +241,7 @@ try:
         re.S,
     )
     cylinder_pattern = re.compile(
-        r'ObjectType::GuidanceDockCylinder.*?glm::dvec3\(0\.0, 0\.0, 0\.0\)',
+        r'ObjectType::GuidanceDockCylinder.*?glm::dvec3\(0\.0(?:, 0\.0, 0\.0)?\)',
         re.S,
     )
     if not box_pattern.search(setup):

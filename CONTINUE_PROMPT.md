@@ -52,6 +52,8 @@ Last target-machine checkout actually exercised:
 
 Architecture-analysis doc commit:
 `92432c842d5ad632b320f90c2ca258b82f17d26b`.
+Canonical pipeline/ownership contracts synchronized through:
+`86f4bea4b9819b7cd56f6ccaa06c07783b9ca6a9`.
 
 Do not claim acceptance without a fresh target-machine gate.
 Do not weaken tests/geometry to make a fixture pass.

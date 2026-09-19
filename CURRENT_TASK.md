@@ -2459,3 +2459,124 @@ Last actually target-machine accepted Stage-12 baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### 2026-09-19 Navigation-v2 purity/isolation audit and safety-math extraction
+
+Current unaccepted candidate code HEAD:
+
+~~~text
+c549d3afb740df6cb6a56494c22a2c63c0ad409d
+~~~
+
+Navigation-v2 now has an explicit three-level purity contract in:
+
+~~~text
+src/game/navigation/NAVIGATION_PURITY_CONTRACT.md
+~~~
+
+The architectural rule is:
+
+~~~text
+calculation = value-in -> value-out
+~~~
+
+unless the component explicitly owns an immutable-at-query-time published
+snapshot/index or is inherently sequential authoritative execution.
+
+#### Strict-pure calculation core
+
+The following components are intended to be deterministic value-in/value-out
+calculations with no wall-clock/random/I/O/runtime-state dependency:
+
+- PhysicalManeuverHorizon;
+- NavigationExecutionSafetyProbeBuilder;
+- LocalHorizonPlanner;
+- BoundedGapCandidateBuilder;
+- MovingGapPredictor;
+- MovingPassageTrajectoryEvaluator;
+- TrajectoryFollower;
+- NavigationExecutionReplanPolicy;
+- ManeuverDecisionController.
+
+NavigationFrameBoundary is an immutable value-object transform: its result is
+pure for the explicitly captured KinematicFrame and it performs no frame lookup.
+
+#### Snapshot-pure query services
+
+NavigationMap and NavigationSpace intentionally own published/indexed state.
+Publication mutates their snapshot:
+
+~~~text
+NavigationMap::replaceDynamicWorld(...)
+NavigationSpace::replaceStaticWorld(...)
+~~~
+
+Their query methods are deterministic/read-only over the current published
+snapshot and return products by value. LocalAvoidancePlanner and
+NavigationRuntimePlanner are therefore classified as snapshot-pure composition:
+they do not mutate runtime state but consume a const NavigationSpace snapshot.
+
+#### Intentionally stateful seam
+
+State is legitimate only in:
+
+- PilotSkillExecutor/runtime bridge: reaction delay, command queue/filter/slew;
+- authoritative physics/ShipControlState;
+- GameSimulation orchestration, accepted-segment/revision ownership and
+  diagnostics;
+- replication/network publication/hydration state.
+
+The audit found one real isolation leak: execution-safety kinematics were still
+embedded directly inside GameSimulation together with exact-static queries and
+diagnostics.
+
+That math has now been extracted into:
+
+~~~text
+src/game/navigation/NavigationExecutionSafetyProbeBuilder.h
+~~~
+
+It is a stateless pure builder which receives explicit NavLocal kinematics and
+returns:
+
+- stopping-reserve segment;
+- ideal constant-acceleration forecast segment;
+- 12-sample executed-acceleration forecast polyline.
+
+It has no NavigationSpace, NavigationMap, HitVolume, GameSimulation, diagnostics,
+clock, random source or I/O dependency.
+
+GameSimulation now only:
+
+1. reads authoritative state;
+2. calls the pure probe builder;
+3. submits returned segments to authoritative exact-static NavigationSpace
+   queries;
+4. records invalidation/recovery/diagnostic state.
+
+The existing physical-horizon runtime test now also proves deterministic
+same-input/same-output execution-safety probe construction and bounded forecast
+geometry.
+
+The Stage-12 architecture contract now checks:
+
+- the pure safety-probe builder exists and remains free of stateful
+  dependencies/I/O/time/random sources;
+- the principal pure calculation components do not acquire ambient time/random
+  or file I/O;
+- GameSimulation delegates probe construction to the pure builder;
+- the written purity categories remain part of the Navigation-v2 architecture.
+
+No target-machine validation has been run for this candidate yet.
+No Stage-12 baseline promotion.
+
+Last actually target-machine accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~
+
+Current next step: target-machine architecture/runtime/build gates, then the
+authoritative headless Navigation self-test. If those pass, evaluate live
+behavior before promoting the Stage-12 baseline.

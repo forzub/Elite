@@ -287,6 +287,70 @@ void testInFlightResultIsRejectedAfterRevisionChange()
     );
 }
 
+void testReplacementStormKeepsPhysicalQueueBounded()
+{
+    Scheduler scheduler;
+    require(scheduler.setCurrentWorldRevision(55), "world setup failed");
+    publish(scheduler, 99, 1, 1);
+
+    Job job = makeJob(
+        99,
+        1,
+        1,
+        55,
+        1,
+        Job::Priority::Background
+    );
+
+    require(
+        scheduler.enqueue(job, 0).status ==
+            Scheduler::EnqueueStatus::Accepted,
+        "replacement-storm initial enqueue failed"
+    );
+
+    for (std::uint64_t revision = 2; revision <= 10000; ++revision)
+    {
+        job.jobRevision = revision;
+        job.trigger =
+            (revision % 2 == 0)
+                ? Job::Trigger::ManualRefresh
+                : Job::Trigger::ProgramCompleted;
+
+        require(
+            scheduler.enqueue(job, revision).status ==
+                Scheduler::EnqueueStatus::Replaced,
+            "replacement storm failed to supersede pending actor job"
+        );
+    }
+
+    const auto stats = scheduler.stats();
+    require(stats.pending == 1, "replacement storm created multiple active jobs");
+    require(
+        stats.queuedRecords <= 2048,
+        "lazy scheduler tombstones grew without bounded compaction"
+    );
+    require(
+        stats.queueCompactions > 0,
+        "replacement storm never triggered amortized tombstone compaction"
+    );
+
+    Scheduler::DispatchBudget one;
+    one.maxJobs = 1;
+    one.maxCostUnits = 1;
+
+    const auto dispatched = scheduler.dispatchSlice(10001, one);
+    require(
+        dispatched.count == 1 &&
+        dispatched.items[0].job.jobRevision == 10000,
+        "replacement storm dispatched anything except newest actor job"
+    );
+    require(
+        scheduler.complete(dispatched.items[0].ticket) ==
+            Scheduler::CompletionStatus::CompletedCurrent,
+        "newest replacement-storm job did not complete current"
+    );
+}
+
 void testCapacityIsBounded()
 {
     Scheduler::Policy policy;
@@ -428,6 +492,7 @@ int main()
         testUrgencyAndAgePromotionAreDeterministic();
         testStaleJobsAreRejectedBeforePlannerWork();
         testInFlightResultIsRejectedAfterRevisionChange();
+        testReplacementStormKeepsPhysicalQueueBounded();
         testCapacityIsBounded();
         testFiveThousandActorQueueAndMeasure();
 
@@ -436,6 +501,7 @@ int main()
         std::cout << " - urgent work preempts and aged work cannot starve\n";
         std::cout << " - stale revisions are rejected before dispatch and before commit\n";
         std::cout << " - dispatch respects fixed job/cost slice budgets\n";
+        std::cout << " - replacement storms keep physical queue storage bounded\n";
         std::cout << " - 5000-actor queue drains deterministically without loss\n";
         return 0;
     }

@@ -3,10 +3,9 @@
 **Updated:** 2026-09-19 Europe/Kyiv
 **Branch:** `main`
 
-## Accepted state
+## Accepted evidence
 
-Revised B5 Newtonian compiler semantics are target-machine green by supplied
-evidence:
+Revised B5 semantics are target-machine green by supplied evidence:
 - architecture contract PASS;
 - navigation_runtime 10/10 PASS;
 - ordinary_physical_maneuver_compiler PASS;
@@ -16,60 +15,63 @@ evidence:
 - EliteGame / EliteServer BUILD PASS;
 - production build 23.861 s.
 
-The supplied paste did not contain `git rev-parse HEAD`; do not fabricate an
-exact tested hash.
+The supplied paste did not contain `git rev-parse HEAD`; do not invent an exact
+tested B5 hash.
 
 ## Current task — maneuver execution laboratory
 
-Before implementing B6 proof, measure whether the existing accepted-program
-execution chain can follow very simple prescribed motion accurately.
+Before B6, measure whether an already-authored AcceptedManeuverProgram is
+actually executed accurately by the current autopilot/physics stack.
 
-This is NOT a planner/search test.
+Current code candidate before documentation commits:
+
+```text
+78fd1e356138f94f6e6b8990053d80fdc419eb4d
+```
 
 Execution chain:
 
 ```text
-pre-authored AcceptedManeuverProgram
-    -> B9 ManeuverProgramSampler
-    -> B10 ManeuverTrackingController
-    -> NavigationRuntimeControlBridge
-    -> PilotSkillExecutor
-    -> ShipControlState
-    -> SharedShipPhysics
-    -> DynamicMotionSystem
-    -> physical trajectory metrics
+AcceptedManeuverProgram
+ -> B9 ManeuverProgramSampler
+ -> B10 ManeuverTrackingController
+ -> NavigationRuntimeControlBridge
+ -> PilotSkillExecutor
+ -> SharedShipPhysics
+ -> DynamicMotionSystem propulsion
+ -> DynamicMotionSystem translation
+ -> measured trajectory
 ```
 
-New fixture:
-`tests/navigation_runtime/ManeuverProgramExecutionLabTests.cpp`.
+This deliberately bypasses route search and obstacle planning.
 
-### Scenario A — straight
+### Scenario A — straight stop-to-stop
 
 ```text
-(0,0,0) -> (0,0,-100 m)
-start V = 0
-finish V = 0
+START  (0,0,0)
+FINISH (0,0,-100 m)
+Vstart = 0
+Vend   = 0
 duration = 20 s
 ```
 
-Smooth quintic stop-to-stop reference. Peak reverse demand stays below the
-physical ~2 m/s2 maneuver authority so no hidden impossible braking command is
-required.
+Smooth quintic reference with braking demand kept inside the real ~2 m/s2
+maneuver-thruster authority.
 
 Measure:
 - final position error;
-- final speed;
+- final residual speed;
 - maximum geometric cross-track;
-- endpoint overshoot;
+- maximum overshoot;
 - completion time.
 
-Initial gate:
+Initial limits:
 - final error <= 3 m;
 - final speed <= 1 m/s;
 - cross-track <= 1 m;
 - overshoot <= 3 m.
 
-### Scenario B — 90-degree two-leg route
+### Scenario B — two 100 m legs at 90 degrees
 
 ```text
 START (0,0,0)
@@ -79,46 +81,47 @@ START (0,0,0)
 CORNER (0,0,-100)
     -> stop
     -> yaw -90 deg
-    -> second leg 100 m
+    -> 100 m
 FINISH (100,0,-100)
 ```
 
-The baseline deliberately stops at the corner before turning. This isolates
-segment handoff/orientation tracking from continuous-corner trajectory design.
+The baseline stops at the corner before yawing. A later fixture may test a
+continuous curved/non-stop corner.
 
 Measure:
-- corner stop error;
-- final error;
+- corner capture error;
+- final position error;
 - final speed;
 - overshoot;
 - total simulated time.
 
-Initial gate:
+Initial limits:
 - corner error <= 3 m;
 - final error <= 5 m;
 - final speed <= 1.5 m/s.
 
 ### Scenario C — corridor
 
-The same two-leg route is monitored against a **5 m half-width** polyline
+The complete two-leg route is monitored against a 5 m half-width polyline
 corridor.
 
 Measure:
-- maximum distance from route polyline;
+- maximum cross-track from the polyline;
 - maximum corridor violation.
 
-Initial gate:
+Initial requirement:
 - no corridor exit.
 
 ### Pilot profile
 
-First run uses expert PilotSkill:
-- zero reaction delay;
-- zero command latency;
-- high decision rate/slew.
+First pass uses expert execution:
+- reaction delay = 0;
+- command latency = 0;
+- high decision rate;
+- high command slew.
 
-Purpose: isolate B9/B10 + propulsion/physics before adding pilot-skill latency.
-After baseline is known, rerun the same route under realistic pilot profiles.
+Purpose: isolate B9/B10 + physics. After baseline behavior is known, repeat the
+same route under realistic pilot-skill delays.
 
 ## Run now
 
@@ -133,41 +136,38 @@ time python tests/architecture_contracts/check_navigation_stage12_runtime_planne
 bash tests/navigation_runtime/run_mingw64.sh
 ```
 
-Expected CTest count is now **11**. The new test is:
+Expected navigation_runtime count: **11**.
+
+New target:
 `maneuver_program_execution_lab`.
 
-The verbose diagnostic prints lines like:
+Verbose output will contain:
 
 ```text
-[MOVEMENT] scenario=straight_100m arrival=... completed=...
- final_pos_error_m=... final_speed_mps=...
- max_cross_track_m=... max_overshoot_m=... simulated_s=...
+[MOVEMENT] scenario=straight_100m arrival=...
+ completed=...
+ final_pos_error_m=...
+ final_speed_mps=...
+ max_cross_track_m=...
+ max_overshoot_m=...
+ simulated_s=...
 
 [MOVEMENT] scenario=right_angle_100m_100m arrival=...
- corner_error_m=... max_corridor_violation_m=...
+ corner_error_m=...
+ max_corridor_violation_m=...
 ```
 
-The lab is allowed to fail. Do NOT relax the thresholds before reading the
-metrics. The result tells us whether the problem is:
-- terminal braking/settling on a straight line;
-- program handoff at the corner;
-- attitude tracking;
-- corridor tracking;
-- or none of the above.
+The lab is intentionally allowed to fail. Do not relax thresholds before
+inspecting the metrics.
 
-No long 120 s obstacle-navigation live gate is needed for this diagnostic.
+## Interpretation
 
-## After results
+- straight FAIL -> debug terminal execution/follower/PilotSkill/physics before B6;
+- straight PASS + 90-degree FAIL -> debug segment transition/attitude/corner capture;
+- both PASS -> repeat with realistic pilot latency, then proceed to B6;
+- corridor-only FAIL -> inspect tracking envelope/corner geometry.
 
-If straight fails:
-- debug B9/B10/PilotSkill/physics before B6 integration.
-
-If straight passes but 90-degree route fails:
-- debug program transition/attitude/terminal state.
-
-If both pass:
-- add realistic pilot latency profile;
-- then proceed with B6 proof and later continuous non-stop corner fixture.
+Do not run the long 120 s obstacle-navigation live gate for this experiment.
 
 ## Documentation invariant
 

@@ -2986,3 +2986,39 @@ The direct route therefore intersects the lower real OBB, while a bounded upward
 The Stage-12 architecture gate now pins the explicit offset-aperture constants/derivation so this fixture cannot silently drift back into a geometry that requires no avoidance.
 
 No planner/control-law behavior changed in this follow-up. Next target-machine run should prove that the corrected real geometry now produces `visibility_bypass=1` without restoring the previous false `ConflictHold` deadlock.
+
+
+### 2026-09-19 corrected moving aperture: bypass+replication proven, forward progress still incomplete
+
+Target-machine checkout actually exercised:
+
+~~~text
+46f6a37da6775a1d044391f773476df1bb07bc6a
+~~~
+
+Latest live result:
+
+~~~text
+[FAIL] visibility-bypass replication succeeded but the ordered live flight did not complete moving-pair bypass, direct recovery and exact-static tunnel passage inside the 120 s bound
+moving_gap_passed=0
+slit_portal=0
+slit_entry_capture=0
+slit_entry_crossed_aligned=0
+passed_obstacle_plane=0
+exact_static_violation=0
+simulated_s=120
+slit_entry_cross_track_m=148.3
+~~~
+
+Interpretation:
+
+- the corrected offset moving aperture now does produce the required visibility bypass strongly enough that the self-test reaches and completes the same-tick replication proof;
+- the dynamic exact-OBB broadphase/narrow-phase slice is therefore active in the real authoritative chain rather than only in isolated tests;
+- no exact-static physical collision occurred;
+- however the actor does not complete the moving-pair bypass/plane crossing and does not recover to the direct route inside the 120 s acceptance window;
+- the static slit/tunnel phase is not reached in this run (slit_portal=0), so the current failure is upstream of tunnel capture;
+- slit_entry_cross_track_m=148.3 is diagnostic state only here; no slit waypoint/capture was active.
+
+This is now a behavior/execution problem after a valid visibility bypass, not a stale architecture gate and not the old false-sphere deadlock. The next task is to trace the accepted adjusted segment after bypass: selected target, segment expiry/completion, replanning reason, executed demand, actual ship progress relative to the moving-pair plane, and the condition that should switch back to the direct nominal target. Do not weaken the ordered self-test or reintroduce sphere collision authority to make it pass.
+
+The last fully accepted Stage-12 target-machine baseline remains the previously recorded accepted baseline; checkout 46f6a37da6775a1d044391f773476df1bb07bc6a is a tested candidate, not accepted, because the live ordered-flight gate still fails.

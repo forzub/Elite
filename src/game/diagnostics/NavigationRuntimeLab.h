@@ -277,6 +277,23 @@ struct NavigationRuntimeLabObservation
     glm::dvec3 lastMovingPassageExecutedWorldMps2 {0.0};
 
     std::uint64_t planCount = 0;
+
+    // B14 live scheduling evidence. These counters are orchestration
+    // diagnostics; the scheduler core itself remains clock-free.
+    std::uint64_t schedulerEnqueueAcceptedCount = 0;
+    std::uint64_t schedulerEnqueueReplacedCount = 0;
+    std::uint64_t schedulerEnqueueDuplicateCount = 0;
+    std::uint64_t schedulerEnqueueStaleCount = 0;
+    std::uint64_t schedulerDispatchCount = 0;
+    std::uint64_t schedulerCompletedCurrentCount = 0;
+    std::uint64_t schedulerCompletedStaleCount = 0;
+    std::size_t schedulerMaximumPendingJobs = 0;
+    std::size_t schedulerMaximumInFlightJobs = 0;
+    double schedulerDispatchTotalMicroseconds = 0.0;
+    double schedulerDispatchMaximumMicroseconds = 0.0;
+    double schedulerPlannerTotalMicroseconds = 0.0;
+    double schedulerPlannerMaximumMicroseconds = 0.0;
+
     std::uint64_t executionCount = 0;
     std::uint64_t acceptedSegmentFollowCount = 0;
     std::uint64_t acceptedSegmentReplanCount = 0;

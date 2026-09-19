@@ -221,7 +221,7 @@ void testAcceptedSegmentFollowerExecutesWithoutPlannerSearch()
             "follower did not publish accepted segment target revision");
     require(std::abs(
                 first.intent.
-                    idealLinearAccelerationDemandMapMps2.x -
+                    idealLinearAccelerationLocalMps2.x -
                 3.0) <= 1.0e-12,
             "follower did not track accepted target velocity");
 
@@ -264,7 +264,7 @@ void testEmergencyRecoverySegmentExecutesFixedBrakeDemand()
             "emergency recovery metadata did not reach control intent");
     require(std::abs(
                 followed.intent.
-                    idealLinearAccelerationDemandMapMps2.x +
+                    idealLinearAccelerationLocalMps2.x +
                 2.0) <= 1.0e-12,
             "emergency recovery did not preserve fixed braking demand");
 }

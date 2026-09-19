@@ -3223,3 +3223,30 @@ One-shot live diagnostics were also added for the first real moving-pair visibil
 No Stage-12 acceptance is claimed. Last actually exercised live checkout remains `46f6a37da6775a1d044391f773476df1bb07bc6a`; last fully accepted baseline remains the previously recorded accepted baseline. Candidate `db79542ad0547f34dfadcb933bd1135067c145c7` requires target-machine architecture/runtime/build/self-test verification.
 
 Next repair stage after verification is P6/P7: ordinary visibility must cease being executable geometry. Its free-space target must feed control-law/propulsion-compatible maneuver generation (for the current Newtonian main-engine-dominant Cobra: rotate/main-burn/coast/trim/brake/flip-and-burn primitives as appropriate), followed by capability/time/pilot-aware continuous proof before ACCEPT.
+
+
+### 2026-09-19 command ownership and accepted maneuver API corrected
+
+Architecture/code candidate before documentation commits: `3aa0639e72d094ae95ecea041c8926f0dfecf59a`.
+
+Portal semantics were corrected conceptually: portal existence must not imply mandatory centerline capture or hull alignment. The correct question is which passage maneuver is safe/acceptable for the current opening geometry/motion, vehicle capability, pilot execution uncertainty and Situation/Doctrine. A wide, slow, high-margin portal in Ordinary/Rational behavior may be crossed as FreeTransit without stopping or forced alignment; tight/fast/precision cases may require PrecisionCapture/Transit; Extreme behavior may accept smaller margin/higher load/contact according to explicit policy.
+
+New canonical document: `src/game/navigation/NAVIGATION_COMMAND_OWNERSHIP.md`.
+
+Ownership is now fixed as:
+- objective/mission owner selects semantic goal/terminal contract;
+- global route selects topology/corridor/portal opportunities, not control;
+- maneuver planner compiles the next physically valid bounded maneuver;
+- accepted product must contain the same time-parameterized reference state and feed-forward control that were proved: P(t), V(t), A_ff(t), q/body-basis(t), omega(t), alpha_ff(t);
+- follower samples that program and adds only bounded tracking feedback; it does not invent a new trajectory/target velocity;
+- PilotSkill models reaction/latency/precision around the ideal program;
+- propulsion allocator maps vehicle-level acceleration/attitude demand to real main-engine/RCS/torque actuators;
+- physics remains final authority.
+
+This means the current `AcceptedShortSegment` + `TrajectoryFollower` API is transitional. Today it carries target position/velocity or one fixed acceleration and the follower re-derives acceleration. That can diverge from the trajectory that was actually proved. `NavigationRuntimePlanner.h` and `AcceptedShortSegment.h` are now explicitly marked transitional toward `AcceptedManeuverProgram`.
+
+Newtonian turn semantics were also tightened: turn does not imply stop-turn-go. A main-engine-dominant craft should preserve useful inertial velocity, rotate the hull ahead of the required future delta-v, begin main-engine burn while V remains non-zero, bend the velocity vector continuously, then coast/trim and rotate early for the next burn or flip-and-burn if braking is needed. Angular authority and pilot reaction/latency determine lead-rotation time.
+
+`NAVIGATION_PIPELINE_AUDIT.md`, `CONTROL_LAW_MANEUVER_MODEL.md`, and `TRAJECTORY_EXECUTION_REPLAN_MODEL.md` were updated to this ownership/API contract.
+
+No live acceptance promotion. The next implementation slice should introduce the bounded AcceptedManeuverProgram representation and migrate the runtime-lab execution seam so proof and execution consume the same program before building the full ordinary Newtonian maneuver generator.

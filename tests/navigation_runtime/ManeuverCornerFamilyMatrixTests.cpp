@@ -80,6 +80,194 @@ double angleRad(const glm::dvec3& a, const glm::dvec3& b)
     return std::acos(clampDot(glm::dot(a / la, b / lb)));
 }
 
+double yawFromForward(const glm::dvec3& forward)
+{
+    return std::atan2(-forward.x, -forward.z);
+}
+
+double shortestAngleDelta(double from, double to)
+{
+    double delta = std::fmod(to - from + kPi, 2.0 * kPi);
+    if (delta < 0.0)
+        delta += 2.0 * kPi;
+    return delta - kPi;
+}
+
+struct QuinticYawProfile
+{
+    double a0 = 0.0;
+    double a1 = 0.0;
+    double a2 = 0.0;
+    double a3 = 0.0;
+    double a4 = 0.0;
+    double a5 = 0.0;
+    double durationSeconds = 0.0;
+};
+
+QuinticYawProfile quinticYawProfile(
+    double startYaw,
+    double startYawRate,
+    double targetYaw,
+    double durationSeconds
+)
+{
+    const double targetUnwrapped =
+        startYaw + shortestAngleDelta(startYaw, targetYaw);
+    const double wT = startYawRate * durationSeconds;
+    const double remaining =
+        targetUnwrapped - startYaw - wT;
+
+    QuinticYawProfile q;
+    q.a0 = startYaw;
+    q.a1 = wT;
+    q.a2 = 0.0;
+    q.a3 = 10.0 * remaining + 4.0 * wT;
+    q.a4 = -15.0 * remaining - 7.0 * wT;
+    q.a5 = 6.0 * remaining + 3.0 * wT;
+    q.durationSeconds = durationSeconds;
+    return q;
+}
+
+void sampleQuinticYaw(
+    const QuinticYawProfile& q,
+    double t,
+    double& yaw,
+    double& yawRate,
+    double& yawAccel
+)
+{
+    const double T = q.durationSeconds;
+    const double u =
+        T > 1.0e-12
+            ? std::clamp(t / T, 0.0, 1.0)
+            : 1.0;
+    const double u2 = u * u;
+    const double u3 = u2 * u;
+    const double u4 = u3 * u;
+    const double u5 = u4 * u;
+
+    yaw =
+        q.a0 +
+        q.a1 * u +
+        q.a2 * u2 +
+        q.a3 * u3 +
+        q.a4 * u4 +
+        q.a5 * u5;
+
+    yawRate =
+        T > 1.0e-12
+            ? (q.a1 +
+               2.0 * q.a2 * u +
+               3.0 * q.a3 * u2 +
+               4.0 * q.a4 * u3 +
+               5.0 * q.a5 * u4) / T
+            : 0.0;
+
+    yawAccel =
+        T > 1.0e-12
+            ? (2.0 * q.a2 +
+               6.0 * q.a3 * u +
+               12.0 * q.a4 * u2 +
+               20.0 * q.a5 * u3) / (T * T)
+            : 0.0;
+}
+
+bool quinticFitsAngularLimits(
+    const QuinticYawProfile& q,
+    double maxAbsYawRate,
+    double maxAbsYawAccel,
+    double* peakYawRate = nullptr,
+    double* peakYawAccel = nullptr
+)
+{
+    double peakRate = 0.0;
+    double peakAccel = 0.0;
+    constexpr int kProbeCount = 512;
+
+    for (int i = 0; i <= kProbeCount; ++i)
+    {
+        const double t =
+            q.durationSeconds *
+            static_cast<double>(i) /
+            static_cast<double>(kProbeCount);
+        double yaw = 0.0;
+        double rate = 0.0;
+        double accel = 0.0;
+        sampleQuinticYaw(q, t, yaw, rate, accel);
+        (void)yaw;
+        peakRate = std::max(peakRate, std::abs(rate));
+        peakAccel = std::max(peakAccel, std::abs(accel));
+    }
+
+    if (peakYawRate)
+        *peakYawRate = peakRate;
+    if (peakYawAccel)
+        *peakYawAccel = peakAccel;
+
+    return
+        peakRate <= maxAbsYawRate &&
+        peakAccel <= maxAbsYawAccel;
+}
+
+double chooseQuinticYawDuration(
+    double startYaw,
+    double startYawRate,
+    double targetYaw,
+    double maxAbsYawRate,
+    double maxAbsYawAccel
+)
+{
+    double high = 0.25;
+    while (high < 20.0)
+    {
+        const auto q =
+            quinticYawProfile(
+                startYaw,
+                startYawRate,
+                targetYaw,
+                high
+            );
+        if (quinticFitsAngularLimits(
+                q,
+                maxAbsYawRate,
+                maxAbsYawAccel))
+        {
+            break;
+        }
+        high *= 1.5;
+    }
+
+    require(high < 20.0,
+            "could not bound moving attitude capture horizon");
+
+    double low = 0.0;
+    for (int i = 0; i < 60; ++i)
+    {
+        const double mid = 0.5 * (low + high);
+        const auto q =
+            quinticYawProfile(
+                startYaw,
+                startYawRate,
+                targetYaw,
+                mid
+            );
+        if (quinticFitsAngularLimits(
+                q,
+                maxAbsYawRate,
+                maxAbsYawAccel))
+        {
+            high = mid;
+        }
+        else
+        {
+            low = mid;
+        }
+    }
+
+    // Small proof margin for sample interpolation and fixed-step execution.
+    return high * 1.05;
+}
+
 double smooth5(double u)
 {
     const double u2 = u * u;
@@ -116,6 +304,41 @@ struct RigidVehicleModel
     double maxYawRateRadPerSec = 2.5;
     double maxRollRateRadPerSec = 3.0;
 };
+
+double effectiveAngularAccelerationLimit(const ShipParams& p)
+{
+    double limit = std::max(0.0, static_cast<double>(p.angularAccel));
+    if (p.maxGs > 0.0f && p.turnRadius > 0.0f)
+    {
+        limit = std::min(
+            limit,
+            static_cast<double>(p.maxGs) *
+                kStandardGravityMps2 /
+                static_cast<double>(p.turnRadius)
+        );
+    }
+    return limit;
+}
+
+double effectiveAngularRateLimit(
+    const ShipParams& p,
+    double configuredAxisRate
+)
+{
+    double limit = configuredAxisRate;
+    if (p.maxGs > 0.0f && p.turnRadius > 0.0f)
+    {
+        limit = std::min(
+            limit,
+            std::sqrt(
+                static_cast<double>(p.maxGs) *
+                kStandardGravityMps2 /
+                static_cast<double>(p.turnRadius)
+            )
+        );
+    }
+    return limit;
+}
 
 ShipParams cobraParams(const RigidVehicleModel& model)
 {
@@ -422,6 +645,94 @@ Program makeCoastRotateProgram(
     return p;
 }
 
+Program makeMovingAttitudeCaptureProgram(
+    std::uint64_t revision,
+    double acceptedAt,
+    const glm::dvec3& startPosition,
+    const glm::dvec3& velocity,
+    double startYaw,
+    double startYawRate,
+    double endYaw,
+    double maxAbsYawRate,
+    double maxAbsYawAccel,
+    double& chosenDurationSeconds,
+    double& peakFeedForwardYawRate,
+    double& peakFeedForwardYawAccel
+)
+{
+    chosenDurationSeconds =
+        chooseQuinticYawDuration(
+            startYaw,
+            startYawRate,
+            endYaw,
+            maxAbsYawRate,
+            maxAbsYawAccel
+        );
+
+    const auto q =
+        quinticYawProfile(
+            startYaw,
+            startYawRate,
+            endYaw,
+            chosenDurationSeconds
+        );
+
+    require(
+        quinticFitsAngularLimits(
+            q,
+            maxAbsYawRate,
+            maxAbsYawAccel,
+            &peakFeedForwardYawRate,
+            &peakFeedForwardYawAccel
+        ),
+        "chosen moving attitude capture violates angular limits"
+    );
+
+    Program p;
+    fillCommon(
+        p,
+        revision,
+        acceptedAt,
+        chosenDurationSeconds,
+        Program::ManeuverFamily::PrecisionCapture
+    );
+    p.sampleCount =
+        static_cast<std::uint8_t>(Program::kMaxSamples);
+
+    const double denom =
+        static_cast<double>(Program::kMaxSamples - 1);
+
+    for (std::size_t i = 0; i < Program::kMaxSamples; ++i)
+    {
+        const double t =
+            chosenDurationSeconds *
+            static_cast<double>(i) / denom;
+
+        double yaw = 0.0;
+        double yawRate = 0.0;
+        double yawAccel = 0.0;
+        sampleQuinticYaw(q, t, yaw, yawRate, yawAccel);
+
+        const Basis basis = yawBasis(yaw);
+        auto& s = p.samples[i];
+        s.timeOffsetSeconds = t;
+        s.positionMapMeters =
+            startPosition + velocity * t;
+        s.velocityMapMetersPerSecond = velocity;
+        s.linearAccelerationFeedForwardMapMps2 =
+            {0.0, 0.0, 0.0};
+        s.forwardMap = basis.forward;
+        s.rightMap = basis.right;
+        s.upMap = basis.up;
+        s.angularVelocityMapRadPerSecond =
+            {0.0, yawRate, 0.0};
+        s.angularAccelerationFeedForwardMapRadPerSec2 =
+            {0.0, yawAccel, 0.0};
+    }
+
+    return p;
+}
+
 Program makeRotateInPlaceProgram(
     std::uint64_t revision,
     double acceptedAt,
@@ -723,6 +1034,11 @@ struct Metrics
     double outgoingAttitudeCaptureTimeSeconds = -1.0;
     double outgoingAttitudeCaptureXMeters = -1.0;
     double outgoingAttitudeCaptureDistanceAfterOldExitMeters = -1.0;
+
+    double attitudeCaptureProgramDurationSeconds = 0.0;
+    double attitudeCaptureStartYawRateRadPerSec = 0.0;
+    double attitudeCapturePeakFeedForwardYawRateRadPerSec = 0.0;
+    double attitudeCapturePeakFeedForwardYawAccelRadPerSec2 = 0.0;
 };
 
 struct LongArcMetrics
@@ -1439,23 +1755,74 @@ Metrics runDriftTurn(
     const glm::dvec3 p1 =
         v.transform.motion.localPositionMeters;
 
-    // The outgoing straight is a moving tracking problem, not a timed
-    // attitude deadline. From the end of the drift arc onward the accepted
-    // reference keeps advancing at 10 m/s with the final corridor heading.
-    // B10 continuously reduces attitude/angular-rate error while translation
-    // continues. The old x=60 checkpoint is crossed without ending control.
-    executePhase(
-        v, model,
-        makeCoastProgram(
-            revision++, v.timeSeconds,
-            p1,
-            {10.0, 0.0, 0.0},
-            -0.5 * kPi,
-            10.0,
-            Program::ManeuverFamily::DriftPass
-        ),
-        m
-    );
+    // Planner-authored moving attitude capture. Start from the ACTUAL
+    // attitude/angular rate left by the drift arc, then solve a quintic
+    // transition to the outgoing heading with terminal yaw-rate zero.
+    // Duration is chosen from the real ShipController angular envelopes,
+    // reserving B10 authority for tracking rather than using B10 as the
+    // primary 90-degree maneuver generator.
+    const double startYaw =
+        yawFromForward(glm::dvec3(v.transform.forward()));
+    const double startYawRate =
+        static_cast<double>(v.transform.yawRate);
+    const double physicalAngularAccel =
+        effectiveAngularAccelerationLimit(v.params);
+    const double physicalYawRate =
+        effectiveAngularRateLimit(
+            v.params,
+            static_cast<double>(v.params.maxYawRate)
+        );
+    const double feedForwardAccelLimit =
+        std::max(
+            0.05,
+            physicalAngularAccel - 0.35
+        );
+
+    m.attitudeCaptureStartYawRateRadPerSec = startYawRate;
+
+    if (!executePhase(
+            v, model,
+            makeMovingAttitudeCaptureProgram(
+                revision++, v.timeSeconds,
+                p1,
+                {10.0, 0.0, 0.0},
+                startYaw,
+                startYawRate,
+                -0.5 * kPi,
+                physicalYawRate * 0.95,
+                feedForwardAccelLimit * 0.95,
+                m.attitudeCaptureProgramDurationSeconds,
+                m.attitudeCapturePeakFeedForwardYawRateRadPerSec,
+                m.attitudeCapturePeakFeedForwardYawAccelRadPerSec2
+            ),
+            m))
+        return m;
+
+    // Continue the same outgoing route after the computed capture horizon.
+    // x=60 remains only a checkpoint; the common finite comparison endpoint
+    // is x=120.
+    const glm::dvec3 afterCapture =
+        v.transform.motion.localPositionMeters;
+    const double remainingMeters =
+        std::max(0.0, 120.0 - afterCapture.x);
+    const double remainingSeconds =
+        remainingMeters / 10.0;
+
+    if (remainingSeconds > 1.0e-9)
+    {
+        executePhase(
+            v, model,
+            makeCoastProgram(
+                revision++, v.timeSeconds,
+                afterCapture,
+                {10.0, 0.0, 0.0},
+                -0.5 * kPi,
+                remainingSeconds,
+                Program::ManeuverFamily::FreeTransit
+            ),
+            m
+        );
+    }
 
     finalizeMetrics(v, m);
     return m;
@@ -1669,6 +2036,14 @@ void printCase(const CaseRecord& r)
         << m.outgoingAttitudeCaptureXMeters
         << " outgoing_attitude_capture_after_old_exit_m="
         << m.outgoingAttitudeCaptureDistanceAfterOldExitMeters
+        << " attitude_capture_program_s="
+        << m.attitudeCaptureProgramDurationSeconds
+        << " attitude_capture_start_yaw_rate_radps="
+        << m.attitudeCaptureStartYawRateRadPerSec
+        << " attitude_capture_peak_ff_yaw_rate_radps="
+        << m.attitudeCapturePeakFeedForwardYawRateRadPerSec
+        << " attitude_capture_peak_ff_yaw_accel_radps2="
+        << m.attitudeCapturePeakFeedForwardYawAccelRadPerSec2
         << "\n";
 }
 

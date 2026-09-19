@@ -3516,3 +3516,42 @@ New isolated regression `ordinary_physical_maneuver_compiler` pins:
 
 The long live navigation self-test should not be rerun until B6 proof and live
 B5 integration are present.
+
+
+## 2026-09-19 B5 green gate; planner owns maneuver family, follower only tracks
+
+Fresh target-machine evidence:
+- architecture contract PASS: 0.191 s;
+- navigation_runtime 10/10 PASS;
+- ordinary_physical_maneuver_compiler PASS;
+- 10,000 B5 compiles: 30,495 us total, 3,049.5 ns/compile;
+- navigation_work_scheduler 5000 actors: 2,801 us total;
+- EliteGame / EliteServer BUILD PASS;
+- production build: 23.544 s.
+
+The supplied excerpt did not include a rev-parse line, so no exact tested B5
+hash is invented.
+
+Control ownership is now explicit:
+- B4 chooses geometric local path/corridor;
+- B5 generates physically executable maneuver families, including hull
+  reorientation and use of the main engine;
+- B6 proves those exact maneuvers;
+- B7 chooses among proved alternatives;
+- B8 freezes the chosen program;
+- B9/B10 autopilot/follower samples and tracks the frozen program with bounded
+  feedback only.
+
+Therefore the follower must not independently decide that RCS is insufficient,
+rotate the hull and substitute main-engine thrust. That is a planner-side
+maneuver change and requires proof.
+
+For main-engine-dominant Newtonian craft, main propulsion is the normal
+translation authority for material delta-v; RCS is trim/precision authority.
+
+After the green B5 gate the compiler was corrected so a main-engine
+LeadRotateMainBurn candidate is exposed even when a slow RCS Trim candidate is
+also physically feasible. B7 retains final selection ownership.
+
+This revised B5 candidate is not yet target-machine accepted and must receive a
+short isolated rerun before B6 work starts.

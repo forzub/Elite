@@ -366,8 +366,7 @@ ProgramRun runProgram(
             static_cast<float>(kDt)
         );
 
-        game::navigation::DynamicMotionSystem::
-            applySystemAccelerationDemand(
+        game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
                 v.transform.motion,
                 v.params,
                 bridgeResult.control.
@@ -514,8 +513,7 @@ ScenarioMetrics runStraightScenario()
             v.world,
             static_cast<float>(kDt)
         );
-        game::navigation::DynamicMotionSystem::
-            applySystemAccelerationDemand(
+        game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
                 v.transform.motion,
                 v.params,
                 bridgeResult.control.navigationLinearAccelerationDemandSystemMps2,
@@ -615,8 +613,7 @@ ScenarioMetrics runRightAngleScenario(double corridorHalfWidth)
                     v.world,
                     static_cast<float>(kDt)
                 );
-                game::navigation::DynamicMotionSystem::
-                    applySystemAccelerationDemand(
+                game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
                         v.transform.motion,
                         v.params,
                         bridgeResult.control.

@@ -143,6 +143,7 @@ add_library(EliteNavigationWorldRuntime STATIC
     src/game/navigation/ManeuverProgramSampler.cpp
     src/game/navigation/ManeuverTrackingController.cpp
     src/game/navigation/NavigationExecutionReplanPolicy.cpp
+    src/game/navigation/NavigationWorkScheduler.cpp
     src/game/navigation/NavigationHitVolumeAdapter.cpp
 )
 target_include_directories(EliteNavigationWorldRuntime PUBLIC

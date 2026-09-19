@@ -49,6 +49,12 @@ PHYSICAL_HORIZON_H = (ROOT / "src/world/navigation/local/PhysicalManeuverHorizon
 PHYSICAL_HORIZON_TEST = (ROOT / "tests/navigation_runtime/PhysicalManeuverHorizonTests.cpp").read_text(encoding="utf-8")
 EXECUTION_SAFETY_PROBE_H = (ROOT / "src/game/navigation/NavigationExecutionSafetyProbeBuilder.h").read_text(encoding="utf-8")
 FOLLOWER_CPP = (ROOT / "src/game/navigation/TrajectoryFollower.cpp").read_text(encoding="utf-8")
+PROGRAM_H = (ROOT / "src/game/navigation/AcceptedManeuverProgram.h").read_text(encoding="utf-8")
+SAMPLER_H = (ROOT / "src/game/navigation/ManeuverProgramSampler.h").read_text(encoding="utf-8")
+SAMPLER_CPP = (ROOT / "src/game/navigation/ManeuverProgramSampler.cpp").read_text(encoding="utf-8")
+TRACKER_H = (ROOT / "src/game/navigation/ManeuverTrackingController.h").read_text(encoding="utf-8")
+TRACKER_CPP = (ROOT / "src/game/navigation/ManeuverTrackingController.cpp").read_text(encoding="utf-8")
+TRACKER_TEST = (ROOT / "tests/navigation_runtime/ManeuverTrackingControllerTests.cpp").read_text(encoding="utf-8")
 GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
 GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
 PURITY_DOC = (ROOT / "src/game/navigation/NAVIGATION_PURITY_CONTRACT.md").read_text(encoding="utf-8")
@@ -205,6 +211,8 @@ for pure_source_name, pure_source in (
     ("PhysicalManeuverHorizon", PHYSICAL_HORIZON_H),
     ("ExecutionSafetyProbeBuilder", EXECUTION_SAFETY_PROBE_H),
     ("TrajectoryFollower", FOLLOWER_CPP),
+    ("ManeuverProgramSampler", SAMPLER_CPP),
+    ("ManeuverTrackingController", TRACKER_CPP),
     ("BoundedGapCandidateBuilder", GAP_BUILDER_CPP),
     ("MovingGapPredictor", GAP_PREDICTOR_CPP),
     ("NavigationExecutionReplanPolicy", REPLAN_CPP),
@@ -223,6 +231,91 @@ for pure_source_name, pure_source in (
             forbidden not in pure_source,
             f"{pure_source_name} pure core leaked ambient state/I/O: {forbidden}",
         )
+
+for marker in (
+    "struct AcceptedManeuverProgram",
+    "kMaxSamples = 16",
+    "std::array<ReferenceSample, kMaxSamples>",
+    "linearAccelerationFeedForwardMapMps2",
+    "angularAccelerationFeedForwardMapRadPerSec2",
+    "linearFeedbackReserveMps2",
+    "angularFeedbackReserveRadPerSec2",
+    "ProofWitness",
+):
+    require(marker in PROGRAM_H,
+            f"AcceptedManeuverProgram contract missing: {marker}")
+
+for source_name, source in (
+    ("AcceptedManeuverProgram", PROGRAM_H),
+    ("ManeuverProgramSampler.h", SAMPLER_H),
+    ("ManeuverProgramSampler.cpp", SAMPLER_CPP),
+    ("ManeuverTrackingController.h", TRACKER_H),
+    ("ManeuverTrackingController.cpp", TRACKER_CPP),
+):
+    for forbidden in (
+        "NavigationMap",
+        "NavigationSpace",
+        "GameSimulation",
+        "NavigationRuntimePlanner",
+        "LocalAvoidancePlanner",
+        "querySphere(",
+        "queryCorridor(",
+        "querySegment(",
+        "Planner::plan(",
+        "std::vector<",
+    ):
+        require(
+            forbidden not in source,
+            f"{source_name} leaked planner/world/unbounded dependency: {forbidden}",
+        )
+
+for marker in (
+    "class ManeuverProgramSampler final",
+    "AcceptedManeuverProgram + universe time",
+    "ReferenceSample",
+    "ManeuverProgramSampler::sample",
+):
+    require(
+        marker in SAMPLER_H or marker in SAMPLER_CPP,
+        f"B9 maneuver sampler contract missing: {marker}",
+    )
+
+for marker in (
+    "class ManeuverTrackingController final",
+    "linearFeedbackReserveMps2",
+    "angularFeedbackReserveRadPerSec2",
+    "clampMagnitude",
+    "reference.linearAccelerationFeedForwardMapMps2 +",
+    "reference.angularAccelerationFeedForwardMapRadPerSec2 +",
+):
+    require(
+        marker in TRACKER_H or marker in TRACKER_CPP,
+        f"B10 bounded tracking contract missing: {marker}",
+    )
+
+require(
+    "ManeuverProgramSampler::sample(program, universeTimeSeconds)" in FOLLOWER_CPP and
+    "ManeuverTrackingController::track(" in FOLLOWER_CPP,
+    "TrajectoryFollower must compose B9 sampler -> B10 tracker for AcceptedManeuverProgram",
+)
+
+for marker in (
+    "testZeroErrorPreservesAcceptedFeedForwardExactly",
+    "testFeedbackCannotExceedReservedAuthority",
+    "testFollowerUsesB9ThenB10WithoutResolvingControl",
+    "zero error preserves A_ff/alpha_ff exactly",
+):
+    require(marker in TRACKER_TEST,
+            f"B10 execution regression missing: {marker}")
+
+require(
+    "ManeuverProgramSampler.cpp" in ROOT_CMAKE and
+    "ManeuverTrackingController.cpp" in ROOT_CMAKE and
+    "maneuver_program_sampler_tests" in RUNTIME_CMAKE and
+    "maneuver_tracking_controller_tests" in RUNTIME_CMAKE,
+    "B8/B9/B10 production and isolated test wiring must remain present",
+)
+
 
 for marker in (
     "strict pure",

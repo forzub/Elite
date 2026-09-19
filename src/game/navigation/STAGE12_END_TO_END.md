@@ -3727,3 +3727,22 @@ New canonical document: `src/game/navigation/NAVIGATION_BEHAVIOR_CHARACTER_MODEL
 `CONTROL_LAW_MANEUVER_MODEL.md` now explicitly requires main-engine-oriented Newtonian course changes and forbids relying on the propulsion allocator to rescue an impossible arbitrary acceleration request. `MANEUVER_DECISION_TREE.md` now states `geometric path != executable route` and separates doctrine from pilot ownership.
 
 Current live failure remains localized at the ordinary visibility handoff. The next implementation must not merely patch alignment; it must establish the missing sequence `free-space candidate -> control-law-compatible maneuver generation -> capability/pilot-aware continuous proof -> decision -> accepted segment`. The existing premature future-portal alignment bug is still a concrete defect inside that seam and must be removed as part of the correction.
+
+
+### 2026-09-19 pipeline audit activated; first P9 handoff defect corrected
+
+Code/contract candidate before documentation commits: `db79542ad0547f34dfadcb933bd1135067c145c7`.
+
+Canonical audit: `src/game/navigation/NAVIGATION_PIPELINE_AUDIT.md`. Navigation is now reviewed left-to-right as INPUT / RESPONSIBILITY / OUTPUT / HANDOFF / PERFORMANCE contracts; isolated green tests are not sufficient if the handoff changes semantics or omits required truth.
+
+Scaling contract: avoid dense N^2 work. Current NavigationMap already uses a spatial hash and bounded local queries. Target architecture is scene-wide sparse broadphase -> unordered potentially-interacting pairs -> batch/SIMD kinematic filtering -> per-agent influence lists -> exact narrow phase only for survivors. Per-agent duplicate discovery is an optimization follow-up, not the current live failure.
+
+Current audit localization: P5 LocalAvoidance produces geometric free-space candidates but ordinary AdjustedClear is not yet vehicle-feasible; P6 physical maneuver generation is missing for ordinary visibility; P7 continuous capability/geometry proof exists in precision components but is not applied there; P8 ManeuverDecisionController is bypassed by the ordinary live chain. P9 had a concrete semantic handoff defect and is corrected in this candidate.
+
+P9 correction: NavigationRuntimePlanner now publishes `selectedManeuverRequiresForwardAlignment` plus `selectedManeuverForwardMap`. Only the selected current nominal portal capture/transit maneuver sets them. GameSimulation copies these fields into AcceptedShortSegment and no longer derives alignment from future route context (`portalTraversalActive`). A regression and architecture gate pin that AdjustedClear with a future portal must not inherit portal-forward alignment.
+
+One-shot first-bypass diagnostics now capture P5->P9->P13 evidence: selected deflection/target, agent P/V, accepted attitude requirement, follower ideal acceleration, PilotSkill executed acceleration, and physically applied main/RCS/total acceleration. The next target-machine run will therefore expose the exact divergence without per-frame logging.
+
+No acceptance promotion. Last actually exercised live checkout remains `46f6a37da6775a1d044391f773476df1bb07bc6a`; last fully accepted baseline remains the recorded accepted baseline. Candidate `db79542ad0547f34dfadcb933bd1135067c145c7` still needs target-machine verification.
+
+Next repair stage is P6/P7: free-space rays become candidates only; for main-engine-dominant Newtonian craft they must be converted into real rotate/main-burn/coast/trim/brake or flip-and-burn primitives and continuously proven against capability/geometry/pilot uncertainty before ACCEPT.

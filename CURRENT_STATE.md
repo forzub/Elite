@@ -2,120 +2,142 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Last accepted target-machine baseline
+## Accepted exact target-machine baseline
 
 Exact tested checkout:
 
 ```
-9435725206b88f0ae953f058a294b1d6a7608e78
+a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
-Accepted evidence:
-- Stage-12 architecture contract PASS;
-- navigation_runtime 16/16 PASS;
-- continuous 3D fly-through accepted with verbose Newtonian/Assisted/PilotSkill metrics.
+Target evidence:
+- Stage-12 architecture contract: **PASS**.
+- `navigation_runtime`: **17/17 PASS**.
+- `maneuver_speed_doctrine_matrix`: PASS.
+- previous maneuver/corridor/fly-through regressions remain green.
 
-## Canonical block status from the original B0-B14 architecture
+## Newly accepted: B7 speed/doctrine select -> execute gate
 
-### Accepted / strong evidence
+The same 180 m objective exposed six physical candidate programs:
+- precision;
+- balanced;
+- fast;
+- newtonian_drift_dash;
+- low_threat_escape;
+- reckless_shortcut.
 
-- **B0 Navigation World Snapshot** — authoritative static/dynamic publication and exact HitVolume usage are proven in Stage 12.
-- **B8 Maneuver Acceptance / Program Store** — `AcceptedManeuverProgram` exists and is exercised by runtime maneuver tests.
-- **B9 Maneuver Program Sampler** — explicit sampler exists and is tested.
-- **B10 Bounded Tracking Controller** — explicit tracking controller exists and is tested through real physics.
-- **B12 Pilot Skill Executor** — accepted component and exercised in all runtime maneuver tests.
-- **B13 Propulsion Allocator + Physics** — authoritative `DynamicMotionSystem / SharedShipPhysics` accepted.
-- **B14 Navigation Work Scheduler** — isolated deterministic scheduler gate is accepted and scale diagnostics remain green.
+Measured deterministic doctrine choices:
 
-### Mechanically proven but production block still incomplete/generalization needed
+| Law | Rational | PrecisionRetrieval | Extreme | CombatEscape |
+|---|---|---|---|---|
+| Newtonian | balanced | precision | newtonian_drift_dash | low_threat_escape |
+| Assisted | balanced | precision | fast | low_threat_escape |
 
-- **B5 Physical Maneuver Compiler** — maneuver mechanics are strongly tested, but the ordinary production compiler still has incomplete Assisted/general-family coverage.
-- **B6 Continuous Maneuver Prover** — exact-static / moving-passage proof components are strong, but proof ownership is not yet one fully generalized ordinary B6 block.
-- **B8-B10 live replacement** — lab/runtime execution path is accepted, but final retirement of every transitional ordinary-live compatibility seam still belongs to final integration.
+The intentionally faster `reckless_shortcut` had criticalRisk=0.90 with preferred ceiling 0.20 and was rejected above doctrine.
 
-### Still open / transitional
+## B7 measured execution results
 
-- **B1 Shared Dynamic Broadphase / Influence Builder** — NavigationMap spatial hash works, but scene-wide sparse influence batching still needs completion.
-- **B2 Navigation Objective** — semantic objective remains fragmented across goal/task types.
-- **B3 Global / Topology Route Planner** — NavigationSpace base is accepted; vehicle/control-law-aware edge feasibility is incomplete.
-- **B4 Local Route-Aligned Corridor Planner** — current LocalAvoidance ray-fan search is transitional; route-aligned corridor replacement/A-B proof remains.
-- **B7 Maneuver Decision** — controller exists and unit tests pass, but the original architecture explicitly notes that ordinary live execution bypasses it. This is the current active gap.
-- **B11 Execution Safety Monitor / Bounded Reflex** — replan/monitoring exists, explicit bounded-reflex API remains missing.
+All selected programs executed through:
+`AcceptedManeuverProgram -> sampler/follower -> B10 -> PilotSkill -> SharedShipPhysics/DynamicMotionSystem`.
 
-## Current unverified candidate: B7 speed/doctrine execution matrix
+No selected row exceeded the tracking envelope.
 
-New test:
+Representative actual Expert results:
 
-```
-tests/navigation_runtime/ManeuverSpeedDoctrineMatrixTests.cpp
-```
+- **Rational / balanced**
+  - time 24.0 s;
+  - actual min clearance ~13.31 m;
+  - peak speed ~9.75 m/s;
+  - max slip ~1.77 deg.
 
-CTest:
+- **PrecisionRetrieval / precision**
+  - time 30.0 s;
+  - actual min clearance ~22.30 m;
+  - peak speed ~7.37 m/s;
+  - max slip ~1.98 deg.
 
-```
-maneuver_speed_doctrine_matrix
-```
+- **Extreme / Newtonian / newtonian_drift_dash**
+  - time 18.0 s;
+  - actual min clearance ~2.62 m;
+  - peak speed ~14.11 m/s;
+  - max slip ~34.08 deg;
+  - final P error ~0.016 m;
+  - final V error ~0.160 m/s.
 
-Expected navigation runtime suite size: **17 tests**.
+- **Extreme / Assisted / fast**
+  - time 20.0 s;
+  - actual min clearance ~7.59 m;
+  - peak speed ~12.28 m/s;
+  - max slip ~2.08 deg.
 
-Candidate code commits:
-- `5294be208f6c48d29d2d1e00cb45b8d7c99045d8` — initial matrix;
-- `3a51f6726196889b09a3782d8279971630536192` — fixture hardening;
-- `ed3228fd3d8f30b6954a99b14b59076e9bcda2b7` — CMake registration;
-- `83d41454c0cec924f8839356028579d3fe1a0ff6` — verbose runner diagnostics.
+- **CombatEscape / low_threat_escape**
+  - time 22.5 s;
+  - actual min clearance ~13.45 m;
+  - peak speed ~10.81 m/s;
+  - max slip ~1.93 deg.
 
-## B7 test design
+This is the first direct proof that doctrine and control law can select physically different accepted programs and that the selected program remains executable.
 
-All candidates solve the same 180 m local objective around one spherical obstacle.
+## B7 status nuance
 
-Common initial state:
-- position (0,0,0);
-- velocity +X at 6 m/s;
-- Cobra rigid hull;
-- expert PilotSkill;
-- real follower -> PilotSkill -> propulsion/physics execution.
+B7 **selection semantics + selected-program execution are accepted at lab/runtime level**.
 
-Candidate set:
-1. `precision` — largest offset/clearance, slow final speed;
-2. `balanced` — balanced clearance/time/reserve;
-3. `fast` — faster, tighter common-law path;
-4. `newtonian_drift_dash` — fastest preferred Newtonian-only high-slip path;
-5. `low_threat_escape` — lower threat exposure;
-6. `reckless_shortcut` — fastest raw shortcut but criticalRisk=0.90.
+The original production architecture note remains partly true:
+ordinary live navigation still needs final wiring so its normal production chain consumes the B7-selected program instead of bypassing B7 through transitional compatibility seams.
 
-The reckless shortcut is intentionally physically describable but outside the preferred critical-risk envelope. It must never win while a preferred-risk candidate exists.
+Therefore:
+- B7 algorithm/behavior gate: **closed**;
+- B7 final ordinary-live production migration: **still integration work**.
 
-Expected deterministic B7 choices:
-- Rational -> balanced;
-- PrecisionRetrieval -> precision;
-- Extreme Newtonian -> newtonian_drift_dash;
-- Extreme Assisted -> fast (Newtonian-only candidate filtered before ranking);
-- CombatEscape -> low_threat_escape;
-- reckless_shortcut -> rejected above doctrine by critical-risk policy.
+## Canonical B0-B14 status after this acceptance
 
-Each selected `AcceptedManeuverProgram` is then executed through:
-`TrajectoryFollower -> B10 -> PilotSkill -> SharedShipPhysics/DynamicMotionSystem`.
+### Strong / accepted behavior
+- B0 world snapshot/publication;
+- B7 decision semantics and select->execute behavior;
+- B8 AcceptedManeuverProgram;
+- B9 sampler;
+- B10 bounded tracking;
+- B12 PilotSkill;
+- B13 propulsion/physics;
+- B14 scheduler.
 
-Strict execution checks:
-- tracking-envelope exceeded ticks = 0;
-- actual full-hull obstacle clearance > 0.25 m;
-- final P <= 1.5 m;
-- final V error <= 0.75 m/s;
-- final forward error <= 5 deg;
-- Newtonian drift dash must produce material slip >=20 deg.
+### Strong mechanics, production generalization/integration still incomplete
+- B5 physical compiler: Newtonian ordinary slice strong; full Assisted/general-family production coverage remains;
+- B6 continuous proof: strong exact-static/moving proof, not yet one generalized ordinary block;
+- B7/B8/B9/B10 ordinary-live wiring: final compatibility-seam retirement remains.
 
-## Next action
+### Open/transitional
+- B1 scene-wide sparse influence batching;
+- B2 unified NavigationObjective;
+- B3 vehicle/control-law-aware global edge feasibility;
+- B4 route-aligned local corridor replacing ray-fan search;
+- B11 explicit bounded safety-reflex API.
 
-Run exact target-machine architecture + navigation runtime gate.
+## Current testing stage
 
-If green:
-- accept B7 doctrine selection + selected-program execution at lab/runtime level;
-- record actual time/clearance/speed/slip differences;
-- next testing block becomes chained transitions + negative/limit cases, then final end-to-end proving ground.
+B7 speed/doctrine block is complete.
 
-If red:
-- fix the first physical/selection defect;
-- do not weaken doctrine, risk, clearance or tracking requirements merely to obtain green.
+Next laboratory block:
+**chained transitions + negative / physical-limit cases**.
+
+It must prove the system behaves correctly when a feasible program changes family or when the requested maneuver is physically impossible.
+
+Required scenarios:
+1. moving fly-through -> hard turn -> braking/capture;
+2. drift/high-slip -> aligned precision segment;
+3. insufficient turn room;
+4. insufficient braking distance;
+5. corridor narrower than rigid hull;
+6. incompatible control-law candidate set;
+7. accepted program invalidated by newly introduced obstacle/change.
+
+Correct negative result is not necessarily completion. It is:
+- reject before ACCEPT;
+- select another proved maneuver;
+- reduce speed / brake / recover;
+- or invalidate + replan fail-closed.
+
+Never accept an unproved/impossible program merely to preserve progress.
 
 ## Documentation protocol
 

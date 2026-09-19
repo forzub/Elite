@@ -22,9 +22,15 @@ namespace game::navigation
 // accepted pilot/runtime-control bridge.
 //
 // This class does not own world geometry, spatial indexes, vehicle physics or
-// replication. It consumes one already-published dynamic query plus one
-// read-only static query capability, selects the next bounded target, and converts that
-// target into the ideal acceleration intent consumed by PilotSkillExecutor.
+// replication.
+//
+// TRANSITIONAL Stage-12 API:
+// today this class still converts a selected bounded target into an immediate
+// control intent. The target architecture is stricter: free-space/topology
+// products feed a physical maneuver generator, which publishes one proved
+// time-parameterized AcceptedManeuverProgram (P/V/A/q/omega/alpha). The
+// follower samples that same program and adds bounded tracking feedback.
+// See NAVIGATION_COMMAND_OWNERSHIP.md.
 class NavigationRuntimePlanner final
 {
 public:

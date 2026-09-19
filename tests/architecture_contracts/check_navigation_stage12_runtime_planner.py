@@ -51,6 +51,9 @@ FOLLOWER_CPP = (ROOT / "src/game/navigation/TrajectoryFollower.cpp").read_text(e
 GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
 GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
 PURITY_DOC = (ROOT / "src/game/navigation/NAVIGATION_PURITY_CONTRACT.md").read_text(encoding="utf-8")
+GUIDANCE_HUD_H = (ROOT / "src/game/presentation/GuidanceHudPresentation.h").read_text(encoding="utf-8")
+RUNTIME_CONTROL_TEST = (ROOT / "tests/navigation_runtime/NavigationRuntimeControlTests.cpp").read_text(encoding="utf-8")
+REPLICATION_TEST = (ROOT / "tests/navigation_runtime/NavigationReplicationTruthTests.cpp").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -105,6 +108,26 @@ for marker in (
     "idealLinearAccelerationSystemMps2",
 ):
     require(marker in CONTROL_INTENT_H, f"typed navigation control intent missing: {marker}")
+
+for stale in (
+    "idealLinearAccelerationDemandMapMps2",
+    "idealAngularAccelerationDemandMapRadPerSec2",
+    "idealLinearAccelerationDemandSystemMps2",
+    "idealAngularAccelerationDemandSystemRadPerSec2",
+    "relativeWorldVelocityMps",
+):
+    require(
+        stale not in RUNTIME_CONTROL_TEST and
+        stale not in REPLAN_TEST and
+        stale not in GUIDANCE_HUD_H and
+        stale not in REPLICATION_TEST,
+        f"typed navigation rename left stale runtime/presentation identifier: {stale}",
+    )
+
+require(
+    "pointToMap(" not in SIM_CPP,
+    "GameSimulation must not retain the removed untyped pointToMap conversion helper",
+)
 
 for marker in (
     "class PhysicalManeuverHorizon final",

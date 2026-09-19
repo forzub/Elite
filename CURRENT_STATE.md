@@ -3123,3 +3123,37 @@ Newtonian turn semantics were also tightened: turn does not imply stop-turn-go. 
 `NAVIGATION_PIPELINE_AUDIT.md`, `CONTROL_LAW_MANEUVER_MODEL.md`, and `TRAJECTORY_EXECUTION_REPLAN_MODEL.md` were updated to this ownership/API contract.
 
 No live acceptance promotion. The next implementation slice should introduce the bounded AcceptedManeuverProgram representation and migrate the runtime-lab execution seam so proof and execution consume the same program before building the full ordinary Newtonian maneuver generator.
+
+
+## 2026-09-19 planner/follower two-world architecture analysis
+
+Architecture analysis is now canonical in:
+
+`src/game/navigation/PLANNER_FOLLOWER_ARCHITECTURE.md`
+
+Decision:
+- expose two top-level runtime worlds: Planner and Autopilot/Follower;
+- Planner consumes authoritative world truth directly; obstacle rays are not perception;
+- retain segment/sweep/ray intersection only as geometry/proof primitives;
+- replace the LocalAvoidance angular ray-fan as the target ordinary search strategy with a route-aligned configuration-space corridor solver;
+- keep NavigationSpace/global topology above that local solver because one A->B longitudinal frame cannot represent arbitrary backtracking/topology changes;
+- Planner must compile/prove and publish the exact bounded `AcceptedManeuverProgram` that execution consumes;
+- Follower tracks/recoveries only inside the accepted envelope and does not become a hidden normal planner;
+- bounded imminent-hazard reflex is permitted inside the autopilot world, but material deviation invalidates the accepted program and immediately requests local replan;
+- shared dynamic broadphase/pair isolation should become scene-wide/batched, while planner work remains event-driven for only agents needing a new program.
+
+Current repository comparison:
+- NavigationMap authoritative snapshot + spatial hash already match the world-truth model;
+- NavigationExecutionReplanPolicy already matches plan -> accept -> execute -> monitor;
+- TrajectoryFollower is already obstacle-search-free but still consumes transitional `AcceptedShortSegment`;
+- ordinary `AdjustedClear` is still only geometrically clear and the visibility fan remains the primary local search method;
+- scene-wide sparse pair/influence computation is still a target, not the current per-agent query implementation.
+
+Implementation order remains conservative:
+1. introduce `AcceptedManeuverProgram`;
+2. migrate `TrajectoryFollower` to sample the same proved program + bounded feedback;
+3. then prototype `RouteAlignedCorridorPlanner` beside LocalAvoidance and A/B test it;
+4. add physical Newtonian/Assisted maneuver compilation;
+5. retire the ray-fan search only after target-machine evidence.
+
+This iteration changes architecture documentation only. It does **not** promote a new target-machine accepted Stage-12 baseline. Last fully accepted target-machine baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`; last actually exercised target checkout remains `46f6a37da6775a1d044391f773476df1bb07bc6a`.

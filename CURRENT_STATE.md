@@ -10,75 +10,147 @@ Exact tested checkout:
 b687b9d3189cdfbbca91123b578637f991cbc645
 ```
 
-Target-machine result:
+Accepted evidence:
 - Stage-12 architecture contract: **PASS**.
 - `navigation_runtime`: **15/15 PASS**.
-- Total runtime test time: ~0.38 s.
+- Strict expert StopTurnGo / RadiusTurn / DriftTurn are healthy.
+- Long 180 deg angular tracking remains healthy.
+- DriftTurn moving-attitude capture is accepted.
 
-This closes the previously failing strict expert DriftTurn corner-family gate.
+## New unverified stage: continuous 3D fly-through
 
-## Closed defect: DriftTurn exit attitude capture
+Code candidate commits:
+- `5c10c19d7fd2eb4b1fb6aa26b903fd55713b6dcf` — new fly-through test.
+- `c48a92010350cf12f417aa19f23f75487dfb1459` — CMake registration.
 
-The root cause was not a generic follower inability to rotate while moving.
+New test:
 
-The failure came from incorrect exit-authoring semantics:
-1. early attempts treated a route checkpoint/time horizon as an attitude deadline;
-2. the constant-heading experiment then removed planner-authored large-angle dynamics and incorrectly asked B10's small tracking reserve to execute the whole 90 deg turn;
-3. the accepted solution restores planner ownership of the large-angle transition.
+```
+tests/navigation_runtime/ManeuverFlyThrough3dTests.cpp
+```
 
-Accepted mechanism:
-- start from actual yaw after the drift arc;
-- start from actual yaw rate after the drift arc;
-- target outgoing corridor yaw;
-- target terminal yaw rate = 0;
-- continue translating at 10 m/s;
-- construct a quintic yaw boundary-value profile;
-- derive duration from effective physical angular acceleration/rate envelopes;
-- reserve B10 authority for residual tracking only.
+CTest target:
 
-Expert DriftTurn, Newtonian and Assisted:
-- final position error: ~0.111 m;
-- final velocity error: ~0.00075 m/s;
-- final forward error: ~0.03884 deg;
-- tracking-envelope exceeded ticks: 0;
-- corridor violation: 0;
-- outgoing attitude capture: yes;
-- moving capture duration: ~3.12469 s;
-- actual starting yaw rate: ~-0.73158 rad/s;
-- peak feed-forward yaw rate: ~1.29608 rad/s;
-- peak feed-forward yaw accel: ~1.85469 rad/s2.
+```
+maneuver_fly_through_3d
+```
 
-The long 180 deg angular-tracking diagnostic remains green.
+The runtime suite is expected to grow from 15 to **16 tests**.
 
-## Architecture conclusion
+## Test purpose
 
-The planner/follower ownership split is now supported by the corner-family evidence:
-- planner authors physically meaningful maneuver/reference dynamics;
-- follower tracks with bounded residual authority;
-- follower is not used as an implicit maneuver planner.
+Prove continuous chained 3D maneuver execution instead of:
+`stop -> rotate in place -> next leg`.
 
-## Next stage
+The same accepted geometric fly-through is executed by:
+- Newtonian;
+- Assisted;
 
-Proceed to **mixed-angle multi-segment 3D corridor quality**.
+for:
+- Expert — strict acceptance;
+- Competent — diagnostic;
+- Rookie — diagnostic.
 
-The next test must go beyond the existing stop-to-stop orthogonal 3D corridor:
-- non-orthogonal segment angles;
-- simultaneous X/Y/Z direction changes;
-- consecutive turns without full stop where appropriate;
-- full rigid-body corridor occupancy;
-- Newtonian and Assisted laws;
-- expert strict acceptance;
-- lower PilotSkill rows diagnostic;
-- preserve planner/follower ownership and exact physical envelopes.
+## Route
 
-Before coding, inspect the existing `ManeuverCorridorMatrixTests.cpp` and choose the smallest extension that exercises real chained 3D maneuver composition rather than another isolated primitive.
+Five connected segments with four intended turn angles:
+- ~35 deg;
+- ~60 deg;
+- ~90 deg;
+- ~120 deg.
+
+Entry fly-through speed:
+
+```
+8 m/s
+```
+
+Each corner receives:
+
+```
+45 m
+```
+
+of cut distance on both incoming/outgoing legs.
+
+The route includes simultaneous X/Y/Z direction changes.
+
+## Corner reference
+
+Each corner is a C2 quintic 3D transition.
+
+Boundary conditions:
+- position continuous;
+- velocity continuous;
+- endpoint velocity magnitude = 8 m/s;
+- endpoint acceleration = 0;
+- body forward follows the local velocity tangent;
+- angular velocity/feed-forward are derived from sampled orientation evolution.
+
+The hard corner is allowed to reduce speed naturally but must not become StopTurnGo.
+
+## Physical/corridor conditions
+
+Vehicle:
+- Cobra Mk1 logical hull;
+- half extents {13.0, 2.5, 11.1} m.
+
+Corridor:
+- 32 m half-width;
+- acceptance is based on all eight OBB hull corners, not center only.
+
+Corner linear reference is constrained so sampled planned acceleration stays <= 2 m/s2, matching the manoeuvre/RCS authority used for transverse demand.
+
+## Metrics
+
+Per route:
+- completed phases;
+- minimum route speed;
+- max center cross-track;
+- max hull required half-width;
+- max corridor violation;
+- max forward tracking error;
+- tracking-envelope exceeded ticks;
+- final P/V/attitude;
+- simulated time.
+
+Per corner:
+- route angle;
+- planned peak acceleration;
+- planned minimum speed;
+- actual minimum speed;
+- max slip angle;
+- minimum observed physical turn radius;
+- max center cross-track;
+- max hull required half-width.
+
+## Strict Expert acceptance
+
+For both Newtonian and Assisted:
+- all 9 phases complete;
+- full Cobra hull remains within 32 m half-width corridor;
+- zero tracking-envelope exceeded ticks;
+- route speed never drops below 3 m/s;
+- no corner drops below 3 m/s;
+- final position error <= 1.5 m;
+- final speed error <= 0.75 m/s relative to 8 m/s;
+- final forward error <= 5 deg;
+- every corner produces a finite measurable turn radius;
+- sampled planned corner acceleration <= 2 m/s2.
+
+Competent/Rookie are diagnostic on the first target-machine pass.
+
+## Next validation
+
+Run exact target-machine gates. If the new test passes, compare Newtonian vs Assisted radii, slip, speed loss and hull envelope rather than assuming either law is superior.
+
+If it fails, fix the physical/reference mechanism; do not weaken corridor/speed/tracking criteria just to obtain green.
 
 ## Documentation protocol
 
-After every state-affecting iteration, synchronize:
-- `CURRENT_STATE.md`
-- `CURRENT_TASK.md`
-- `PROJECT_STATE.md`
-- active Stage-12 document
-
-And recreate `CONTINUE_PROMPT.md` **from scratch** from current truth.
+After every state-affecting iteration:
+- update `CURRENT_STATE.md`;
+- update `CURRENT_TASK.md`;
+- update `PROJECT_STATE.md`;
+- update active Stage-12 documentation;
+- recreate `CONTINUE_PROMPT.md` **from scratch**.

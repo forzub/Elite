@@ -973,11 +973,11 @@ int runNavigationRuntimeSelfTest()
 
         const glm::dvec3 replicatedDemand(
             replicatedExecution->
-                executedLinearAccelerationDemandMapMps2
+                executedLinearAccelerationDemandSystemMps2
         );
         const glm::dvec3 authoritativeDemand(
             authoritativeExecution->
-                executedLinearAccelerationDemandMapMps2
+                executedLinearAccelerationDemandSystemMps2
         );
 
         replicatedDemandMagnitude =
@@ -1014,7 +1014,7 @@ int runNavigationRuntimeSelfTest()
 
         const glm::dvec3 canonicalDemand(
             canonicalExecution->
-                executedLinearAccelerationDemandMapMps2
+                executedLinearAccelerationDemandSystemMps2
         );
         canonicalReplicationErrorMps2 =
             glm::length(

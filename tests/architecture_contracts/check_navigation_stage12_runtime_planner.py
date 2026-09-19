@@ -431,7 +431,7 @@ require(
 for marker in (
     "testFourLeg3dCorridorAcrossLawsAndPilots",
     "kCorridorHalfWidthMeters = 5.0",
-    "pilot=expert",
+    '{"expert", expertProfile(), true}',
     "competentProfile",
     "rookieProfile",
     "Law::Newtonian",

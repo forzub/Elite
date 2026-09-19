@@ -46,6 +46,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimePlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverTrackingController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationExecutionReplanPolicy.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationHitVolumeAdapter.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
@@ -255,6 +256,44 @@ add_test(
 
 set_tests_properties(
     maneuver_program_sampler
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    maneuver_tracking_controller_tests
+    ManeuverTrackingControllerTests.cpp
+)
+
+target_include_directories(maneuver_tracking_controller_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(maneuver_tracking_controller_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    maneuver_tracking_controller_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        maneuver_tracking_controller_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        maneuver_tracking_controller_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME maneuver_tracking_controller
+    COMMAND maneuver_tracking_controller_tests
+)
+
+set_tests_properties(
+    maneuver_tracking_controller
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 

@@ -26,7 +26,7 @@ The migration goal is **not** a rewrite. Preserve accepted world/geometry/contro
 | B11 Safety Monitor/Reflex | GameSimulation exact execution checks + NavigationExecutionReplanPolicy; TacticalCollisionMonitor elsewhere | MIXED / PARTIAL | extract explicit short-horizon safety status/reflex contract |
 | B12 Pilot Skill | PilotSkillExecutor / NavigationRuntimeControlBridge | KEEP | no route ownership |
 | B13 Propulsion/Physics | DynamicMotionSystem / SharedShipPhysics | KEEP | remains final capability authority |
-| B14 Work Scheduler | NavigationExecutionReplanPolicy decides scope, but planner invocation/queue is embedded in runtime | PARTIAL | add explicit dirty-agent planner job scheduler/queues |
+| B14 Work Scheduler | NavigationWorkScheduler + NavigationExecutionReplanPolicy; live lab integration candidate in GameSimulation | ISOLATED ACCEPTED / LIVE CANDIDATE | prove live enqueue -> dispatch -> complete -> commit, then generalize beyond lab |
 
 ## Primary structural defect
 
@@ -353,3 +353,72 @@ even though ordinary CTest hides stdout for passing tests.
 
 This slice is not wired into GameSimulation yet. Live scheduling migration is a
 later separately gated step.
+
+
+## B14 isolated acceptance evidence; live scheduler integration candidate — 2026-09-19
+
+### Isolated B14 gate
+
+Target-machine evidence supplied:
+- Stage-12 architecture contract: PASS;
+- `navigation_runtime`: 9/9 PASS;
+- `navigation_work_scheduler`: PASS;
+- 5000 actors:
+  - enqueue: 1518 us;
+  - dispatch + complete: 1258 us;
+  - total: 2776 us;
+- canonical EliteGame: BUILD PASS;
+- canonical EliteServer: BUILD PASS;
+- production build: 23.001 s real;
+- architecture contract: 0.204 s real.
+
+The exact `git rev-parse HEAD` line was not included in the supplied B14 gate
+excerpt, so no exact tested hash is invented here. The previously named exact
+B10 baseline remains `2abd79a6181a322fe15425994ab771942e47bc26`;
+the B14 gate is accepted by its observed code/test evidence.
+
+### Live B14 integration candidate
+
+GameSimulation's isolated Stage-12 lab actor now routes dirty replans through:
+
+```text
+NavigationExecutionReplanPolicy
+    -> NavigationPlannerJob
+    -> NavigationWorkScheduler::enqueue
+    -> bounded dispatchSlice
+    -> existing NavigationRuntimePlanner::plan
+    -> NavigationWorkScheduler::complete
+    -> commit only on CompletedCurrent
+    -> existing AcceptedShortSegment packing
+```
+
+No planner geometry, local-avoidance policy or ACCEPT representation changes in
+this slice.
+
+Live scheduler revision inputs:
+- dynamic navigation source/world revision;
+- objective revision;
+- a monotonic capability revision generated from actual current linear/angular
+  authority;
+- per-actor planner job revision.
+
+Runtime diagnostics now record:
+- accepted/replaced/duplicate/stale enqueues;
+- dispatch count;
+- current/stale completions;
+- maximum pending/in-flight depth;
+- dispatch total/max microseconds;
+- planner total/max microseconds.
+
+The headless navigation self-test now requires:
+- scheduler dispatch count > 0;
+- `schedulerDispatchCount == planCount`;
+- every dispatched planner result completes current in the synchronous lab;
+- no stale completion;
+- max pending == 1 and max in-flight == 1 for the single lab actor;
+- every authoritative planner commit occurs only after B14 completion.
+
+Current live-integration code/contract candidate before documentation commits:
+`c7479ef471e572ceca8e839d0360cd56137ec3c1`.
+
+Target-machine live gate is pending.

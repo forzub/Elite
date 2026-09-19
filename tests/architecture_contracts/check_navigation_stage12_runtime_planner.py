@@ -372,9 +372,12 @@ for marker in (
     "backgroundToUrgentAfterTicks",
     "compactSupersededRecords",
     "pendingTicket",
+    "pendingJob",
     "inFlightTicket",
     "fresh(completed",
     "completed.jobRevision == actor.latestJobRevision",
+    "job.jobRevision == actor.latestJobRevision",
+    "compactSupersededRecords();",
 ):
     require(
         marker in SCHEDULER_CPP or marker in SCHEDULER_H,
@@ -411,9 +414,12 @@ for marker in (
     "testUrgencyAndAgePromotionAreDeterministic",
     "testStaleJobsAreRejectedBeforePlannerWork",
     "testInFlightResultIsRejectedAfterRevisionChange",
+    "testCompletedRevisionCannotBeReplayed",
+    "testCapacityPressureReclaimsStaleWorldJobs",
     "testReplacementStormKeepsPhysicalQueueBounded",
     "testFiveThousandActorQueueAndMeasure",
     "kActors = 5000",
+    "finalStats.queuedRecords == 0",
     "[TIMING] navigation_work_scheduler",
 ):
     require(

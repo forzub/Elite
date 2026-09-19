@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 SPACE_H = (ROOT / "src/world/navigation/space/NavigationSpace.h").read_text(encoding="utf-8")
+STATIC_QUERY_API_H = (ROOT / "src/world/navigation/space/NavigationStaticQueryApi.h").read_text(encoding="utf-8")
 MAP_H = (ROOT / "src/world/navigation/map/NavigationMap.h").read_text(encoding="utf-8")
 MAP_CPP = (ROOT / "src/world/navigation/map/NavigationMap.cpp").read_text(encoding="utf-8")
 MAP_TEST = (ROOT / "tests/navigation_map/NavigationMapContractTests.cpp").read_text(encoding="utf-8")
@@ -259,7 +260,7 @@ for marker in (
     "NavigationLocalControlIntent",
     "LocalAvoidancePlanner",
     "NavigationMap",
-    "NavigationSpace",
+    "NavigationStaticQueryApi",
     "safeProgressTargetDemonstrated",
     "usedPortalWaypoint",
     "nominalStaticBlocked",
@@ -311,7 +312,7 @@ for marker in (
     "MovingPassage::evaluate",
     "probeMovingPassage",
     "proveMovingPassageAgainstStaticSpace",
-    "staticSpace.querySegment",
+    "staticQueries.querySegment",
     "intervalCenterlineDeviationBoundsMeters",
     "corridor.portalTraversals",
     "portalAlignmentAngularDemand",
@@ -327,6 +328,49 @@ for marker in (
 require(
     "bool allowSteeringAuthority = false;" in PLANNER_H,
     "moving-passage steering authority must remain an explicit opt-in policy",
+)
+
+for marker in (
+    "class NavigationStaticQueryApi final",
+    "explicit NavigationStaticQueryApi(",
+    "queryPoint(",
+    "querySegment(",
+    "queryCorridor(",
+    "queryCostedCorridor(",
+):
+    require(marker in STATIC_QUERY_API_H,
+            f"static navigation read API missing: {marker}")
+
+for forbidden in (
+    "replaceStaticWorld",
+    "applyLocalPatch",
+    "invalidateBounds",
+    "stats()",
+    "owner()",
+    "space()",
+):
+    require(
+        forbidden not in STATIC_QUERY_API_H,
+        f"static navigation read API leaks owner mutation/escape surface: {forbidden}",
+    )
+
+for source_name, source in (
+    ("NavigationRuntimePlanner.h", PLANNER_H),
+    ("NavigationRuntimePlanner.cpp", PLANNER_CPP),
+    ("LocalAvoidancePlanner.h", LOCAL_H),
+    ("LocalAvoidancePlanner.cpp", LOCAL_CPP),
+):
+    require(
+        "const NavigationSpace&" not in source and
+        "NavigationSpace::" not in source,
+        f"{source_name} must not receive or name the NavigationSpace state owner",
+    )
+
+require(
+    "const StaticQueries& staticQueries" in PLANNER_H and
+    "const StaticQueries& staticQueries" in LOCAL_H and
+    "Planner::StaticQueries staticQueries(" in SIM_CPP,
+    "static state must be bound to a narrow read API at the orchestration edge",
 )
 
 require(
@@ -585,8 +629,8 @@ for marker in (
     require(marker in LOCAL_H, f"local exact-static diagnostics missing: {marker}")
 
 require(
-    LOCAL_CPP.count("staticSpace.querySegment") >= 2,
-    "LocalAvoidance must prove both nominal and adjusted segments through exact static NavigationSpace",
+    LOCAL_CPP.count("staticQueries.querySegment") >= 2,
+    "LocalAvoidance must prove both nominal and adjusted segments through the static read API",
 )
 
 require(

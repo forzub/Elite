@@ -3744,3 +3744,52 @@ Current code/contract candidate before documentation commits:
 This validates execution-law divergence only. Planner-side ordinary B5 still
 supports Newtonian only; Assisted/aircraft-like maneuver compilation remains
 future work.
+
+
+## 2026-09-19 correction: point-center corridor is not hull-clearance proof
+
+The previous `maneuver_corridor_matrix` is now classified as a **center-of-mass
+tracking diagnostic only**. It is NOT accepted as proof that a real ship fits
+inside the reported corridor.
+
+Root cause:
+- corridor distance was measured from `localPositionMeters` only;
+- Cobra hull dimensions were not applied to corridor occupancy;
+- the same stop-to-stop Trim translation reference was used for Newtonian and
+  Assisted rows;
+- therefore Newtonian braking did not require the physically expected 180 deg
+  flip before aft-main-engine braking.
+
+This made the calm Newtonian/Assisted corridor rows numerically identical even
+though the separate law-stress correctly proved that the low-level laws differ.
+
+Canonical Cobra Mk1 logical hull from `EliteCobraMk1Descriptor`:
+- width = 26.0 m;
+- height = 5.0 m;
+- length = 22.2 m;
+- body half-extents = (right 13.0, up 2.5, forward 11.1) m.
+
+A 5 m half-width corridor can therefore never contain this hull even when the
+centerline is perfect. Any previous "zero 5 m corridor violation" statement
+refers only to center-of-mass tracking and must not be used as hull-clearance
+evidence.
+
+Required corrected physical test:
+- explicit rigid-body hull envelope;
+- explicit aft main / fore(reverse) main / RCS / angular-vectoring authority;
+- Newtonian: aft main only for longitudinal main thrust, RCS for small
+  translation, angular authority for attitude; braking requires flip and
+  aft-main burn;
+- Assisted/aircraft-like: forward and reverse longitudinal main authority,
+  RCS for small translation/stabilization, angular authority for attitude;
+- record P, V, complete body attitude, angular velocity, flip angle, actuator
+  usage and hull corridor occupancy;
+- corridor occupancy must be measured on the oriented hull, not only its
+  center.
+
+The previously supplied target-machine law-stress remains useful low-level
+evidence:
+- Newtonian final speed 15.960220 m/s;
+- Assisted final speed 10.000000 m/s;
+so the execution laws themselves are distinct. The invalid part is the
+point-center corridor interpretation, not that low-level law distinction.

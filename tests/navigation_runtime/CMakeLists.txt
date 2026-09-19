@@ -503,6 +503,47 @@ set_tests_properties(
 )
 
 add_executable(
+    maneuver_speed_doctrine_matrix_tests
+    ManeuverSpeedDoctrineMatrixTests.cpp
+)
+
+target_include_directories(maneuver_speed_doctrine_matrix_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    maneuver_speed_doctrine_matrix_tests
+    PRIVATE cxx_std_17
+)
+target_link_libraries(
+    maneuver_speed_doctrine_matrix_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        maneuver_speed_doctrine_matrix_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        maneuver_speed_doctrine_matrix_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME maneuver_speed_doctrine_matrix
+    COMMAND maneuver_speed_doctrine_matrix_tests
+)
+
+set_tests_properties(
+    maneuver_speed_doctrine_matrix
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     maneuver_program_execution_lab_tests
     ManeuverProgramExecutionLabTests.cpp
 )

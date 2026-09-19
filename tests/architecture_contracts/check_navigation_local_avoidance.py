@@ -37,7 +37,8 @@ for marker in (
     "class LocalAvoidancePlanner final",
     "LocalHorizonPlanner::Query",
     "NavigationMap::QueryResult",
-    "const NavigationSpace&",
+    "NavigationStaticQueryApi",
+    "const StaticQueries& staticQueries",
     "NominalClear",
     "AdjustedClear",
     "ConflictHold",
@@ -55,7 +56,8 @@ for marker in (
     "secondaryDeflectionRadians",
     "azimuthSamples",
     "staticAdditionalClearanceMeters",
-    "staticSpace.queryPoint",
+    "staticQueries.queryPoint",
+    "staticQueries.querySegment",
     "targetStatic.spaceRevision != start.spaceRevision",
     "targetStatic.sourceRevision != start.sourceRevision",
     "targetStatic.regionId != start.regionId",
@@ -68,7 +70,15 @@ for marker in (
 require("LocalAvoidancePlanner.cpp" in CMAKE,
         "EliteNavigationLocal does not compile LocalAvoidancePlanner")
 require("EliteNavigationSpace" in CMAKE,
-        "local avoidance must consume NavigationSpace through its public boundary")
+        "local avoidance static query API must link the NavigationSpace owner backend")
+
+require(
+    "const NavigationSpace&" not in HEADER and
+    "const NavigationSpace&" not in IMPL and
+    "NavigationSpace::" not in HEADER and
+    "NavigationSpace::" not in IMPL,
+    "local avoidance calculation boundary must not receive or name the NavigationSpace state owner",
+)
 require("navigation_local_avoidance_tests" in TEST_CMAKE,
         "local avoidance behavioral test target missing")
 
@@ -100,7 +110,7 @@ require("NAV-V2-LOCAL-1" in CURRENT_STATE and "avoidance" in CURRENT_STATE.lower
 
 print("NAVIGATION LOCAL AVOIDANCE BOUNDARY CONTRACT: PASS")
 print(" - adjusted-target search remains backend-neutral and bounded")
-print(" - NavigationSpace is consumed only through its public point-query boundary")
+print(" - static state crosses the calculation boundary only through NavigationStaticQueryApi")
 print(" - static endpoint evidence must come from one space/source revision")
 print(" - lateral targets require same-region static free-space proof")
 print(" - dynamic candidates are rechecked through the accepted LocalHorizonPlanner")

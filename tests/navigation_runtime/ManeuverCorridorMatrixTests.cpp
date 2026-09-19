@@ -844,6 +844,129 @@ MatrixMetrics runMatrixCase(
     return metrics;
 }
 
+
+struct LawStressMetrics
+{
+    double finalSpeedMps = 0.0;
+    double finalPositionXMeters = 0.0;
+    double maximumSpeedMps = 0.0;
+};
+
+LawStressMetrics runLawStress(Law law)
+{
+    const Basis basis {};
+    Vehicle v(expertProfile(), law, basis);
+
+    // Make the controlled-speed boundary reachable quickly while preserving
+    // the exact production law semantics. The purpose is not to model a
+    // specific ship here; it is to prove that the law selector reaches
+    // different propulsion integration branches.
+    v.params.maxCombatSpeed = 10.0f;
+    v.params.maxCruiseSpeed = 10.0f;
+    v.params.manoeuvreThrusterAccel = 2.0f;
+    v.params.strafeAccel = 2.0f;
+
+    LawStressMetrics metrics;
+
+    constexpr double duration = 8.0;
+    const std::uint64_t revision = 9001u;
+
+    while (v.timeSeconds < duration - 1.0e-9)
+    {
+        game::navigation::NavigationSystemControlIntent intent;
+        intent.revision = kObjectiveRevision + 1u;
+        intent.targetRevision = revision;
+        intent.idealLinearAccelerationSystemMps2 = {2.0, 0.0, 0.0};
+        intent.idealAngularAccelerationSystemRadPerSec2 = {0.0, 0.0, 0.0};
+
+        const auto bridgeResult =
+            v.bridge.step(
+                v.timeSeconds + kDt,
+                kDt,
+                intent
+            );
+
+        require(
+            bridgeResult.status == Bridge::PilotExecutor::Status::Ok,
+            "law-stress PilotSkill execution failed"
+        );
+
+        SharedShipPhysics::integrate(
+            v.transform,
+            v.params,
+            bridgeResult.control,
+            v.world,
+            static_cast<float>(kDt)
+        );
+
+        game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
+            v.transform.motion,
+            v.params,
+            bridgeResult.control.
+                navigationLinearAccelerationDemandSystemMps2,
+            v.transform.forward()
+        );
+
+        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+            v.transform.motion,
+            v.transform.worldPosition,
+            v.frame,
+            v.params,
+            kDt
+        );
+
+        v.transform.syncLegacyPositionFromWorld();
+        v.timeSeconds += kDt;
+
+        metrics.maximumSpeedMps =
+            std::max(
+                metrics.maximumSpeedMps,
+                glm::length(v.transform.motion.localVelocityMps)
+            );
+    }
+
+    metrics.finalSpeedMps =
+        glm::length(v.transform.motion.localVelocityMps);
+    metrics.finalPositionXMeters =
+        v.transform.motion.localPositionMeters.x;
+
+    std::cout
+        << std::fixed << std::setprecision(6)
+        << "[LAW-STRESS]"
+        << " law=" << lawName(law)
+        << " final_speed_mps=" << metrics.finalSpeedMps
+        << " max_speed_mps=" << metrics.maximumSpeedMps
+        << " final_x_m=" << metrics.finalPositionXMeters
+        << "\n";
+
+    return metrics;
+}
+
+void testNewtonianAndAssistedPhysicsAreActuallyDifferent()
+{
+    const LawStressMetrics newtonian =
+        runLawStress(Law::Newtonian);
+    const LawStressMetrics assisted =
+        runLawStress(Law::Assisted);
+
+    // Newtonian RCS is a real force and may accumulate delta-v beyond the
+    // ordinary controlled-speed envelope. Assisted applies that envelope to
+    // combined controlled motion.
+    require(
+        newtonian.finalSpeedMps > 12.0,
+        "Newtonian RCS did not accumulate delta-v beyond 10 m/s envelope"
+    );
+    require(
+        assisted.finalSpeedMps <= 10.05,
+        "Assisted law failed to enforce 10 m/s controlled-speed envelope"
+    );
+    require(
+        newtonian.finalSpeedMps >
+            assisted.finalSpeedMps + 2.0,
+        "Newtonian and Assisted remained physically indistinguishable"
+    );
+}
+
 void testFourLeg3dCorridorAcrossLawsAndPilots()
 {
     const std::array<PilotCase, 3> pilots {{
@@ -919,6 +1042,7 @@ int main()
 {
     try
     {
+        testNewtonianAndAssistedPhysicsAreActuallyDifferent();
         testFourLeg3dCorridorAcrossLawsAndPilots();
 
         std::cout << "MANEUVER CORRIDOR MATRIX TESTS: PASS\n";
@@ -926,6 +1050,7 @@ int main()
         std::cout << " - 3 bounded attitude transitions connect the 3D legs\n";
         std::cout << " - 5 m corridor is measured for every physics tick\n";
         std::cout << " - Newtonian and Assisted run the identical accepted route\n";
+        std::cout << " - dedicated law-stress proves the two physics laws diverge at the speed envelope\n";
         std::cout << " - expert, production-baseline and rookie PilotSkill profiles are compared\n";
         std::cout << " - expert rows are strict; lower-skill rows establish first measured envelopes\n";
         return 0;

@@ -3703,3 +3703,44 @@ First target-machine pass is deliberately asymmetric:
 This data is intended to feed B6 execution-reserve/clearance policy: a lower
 skill pilot may require more physical corridor clearance even when the accepted
 centerline program is identical.
+
+
+## 2026-09-19 first 3D matrix green; explicit Newtonian-vs-Assisted law stress candidate
+
+Fresh supplied target-machine evidence:
+- architecture contract PASS;
+- navigation_runtime 12/12 PASS;
+- maneuver_corridor_matrix PASS;
+- maneuver_program_execution_lab PASS;
+- ordinary_physical_maneuver_compiler PASS;
+- navigation_work_scheduler PASS.
+
+3D corridor matrix observations:
+- expert: Newtonian and Assisted both complete 4/4 translation legs + 3/3
+  rotations, final position error 0.014967 m, final speed 0.096233 m/s,
+  zero 5 m corridor violation;
+- production-competent: both laws complete 4/4 + 3/3, final position error
+  0.111386 m, final speed 0.078158 m/s, zero corridor violation;
+- rookie: both laws complete only first translation leg, no rotation, zero
+  corridor violation, maximum forward-angle error 19.115652 deg.
+
+Identical calm-route metrics are not considered sufficient proof that the laws
+are materially different. Their current navigation-acceleration execution
+differs mainly at the controlled-speed envelope:
+- Newtonian physical RCS may accumulate inertial delta-v beyond that envelope;
+- Assisted ("aircraft-like") applies the controlled-speed envelope to combined
+  controlled propulsion.
+
+A dedicated `[LAW-STRESS]` regression is now added:
+- reachable speed envelope = 10 m/s;
+- lateral RCS demand = 2 m/s2 for 8 s;
+- Newtonian must exceed 12 m/s;
+- Assisted must remain <=10.05 m/s;
+- modes must differ by >2 m/s.
+
+Current code/contract candidate before documentation commits:
+`88ad3a8921239cf2865c32c0c8711b7514094aa1`.
+
+This validates execution-law divergence only. Planner-side ordinary B5 still
+supports Newtonian only; Assisted/aircraft-like maneuver compilation remains
+future work.

@@ -18,6 +18,7 @@ MOVING_PASSAGE_H = (ROOT / "src/world/navigation/trajectory/MovingPassageTraject
 MOVING_PASSAGE_CPP = (ROOT / "src/world/navigation/trajectory/MovingPassageTrajectoryEvaluator.cpp").read_text(encoding="utf-8")
 ROOT_CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 RUNTIME_CMAKE = (ROOT / "tests/navigation_runtime/CMakeLists.txt").read_text(encoding="utf-8")
+RUNTIME_RUN_SH = (ROOT / "tests/navigation_runtime/run_mingw64.sh").read_text(encoding="utf-8")
 RUNTIME_TEST = (ROOT / "tests/navigation_runtime/NavigationRuntimePlannerTests.cpp").read_text(encoding="utf-8")
 DOC = (ROOT / "src/game/navigation/STAGE12_END_TO_END.md").read_text(encoding="utf-8")
 ADAPTER_H = (ROOT / "src/game/navigation/NavigationHitVolumeAdapter.h").read_text(encoding="utf-8")
@@ -434,6 +435,17 @@ require(
     "navigation_work_scheduler" in RUNTIME_CMAKE,
     "B14 scheduler production/test wiring must remain present",
 )
+
+for marker in (
+    "scheduler_scale_diagnostic_ms",
+    "-R navigation_work_scheduler",
+    "[RESULT] navigation_runtime PASS",
+    "[RESULT] navigation_runtime FAIL phase=",
+):
+    require(
+        marker in RUNTIME_RUN_SH,
+        f"navigation runtime gate timing/diagnostic output missing: {marker}",
+    )
 
 require(
     "NavigationWorkScheduler" in PURITY_DOC and

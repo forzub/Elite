@@ -1577,7 +1577,7 @@ int main()
         std::cout << "MANEUVER CORNER FAMILY MATRIX TESTS: PASS\n";
         std::cout << " - stop-turn-go, radius and drift use the same L-shaped rigid-hull corridor\n";
         std::cout << " - Newtonian and Assisted run every family with the same three PilotSkill profiles\n";
-        std::cout << " - internal phase handoff is scheduled; moving corner passage is entry-gate -> exit-gate\n";
+        std::cout << " - family-specific phase handoff uses ScheduledMoving and StateCapture\n";
         std::cout << " - total corridor time and corner-zone time are reported separately\n";
         std::cout << " - drift is defined by sustained speed plus material body/velocity slip angle\n";
         return 0;

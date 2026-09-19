@@ -1,7 +1,7 @@
 # Project State
 
-**Updated:** 2026-09-18 Europe/Kyiv  
-**Current focus:** NavigationWorld v2 / Stage 12A-6b live moving-gap / moving-passage composition
+**Updated:** 2026-09-19 Europe/Kyiv  
+**Current focus:** NavigationWorld v2 / Stage 12 architecture hardening — state/API isolation
 **Canonical development branch:** `main`
 
 ## Progress
@@ -2521,3 +2521,77 @@ actually accepted Stage-12 baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### 2026-09-19 static-state read API boundary — implementation candidate
+
+Candidate code/contract baseline before this state-document sync:
+
+~~~text
+dac32c59ed5c6c9031d3783ae707f603e7cb7e4e
+~~~
+
+The Stage-12 calculation boundary has now been tightened to the stronger rule
+recorded in the preceding audit: **state-owner objects do not cross calculation
+seams**.
+
+Implemented:
+
+- added `NavigationStaticQueryApi`, a narrow read-only capability bound to an
+  owned `NavigationSpace`;
+- the capability exposes only point/segment/corridor/costed-corridor queries and
+  value results;
+- it exposes no publication, patch, invalidation, stats/storage view or owner
+  accessor;
+- `NavigationRuntimePlanner::plan` now receives
+  `const NavigationStaticQueryApi&`, not `const NavigationSpace&`;
+- `LocalAvoidancePlanner::evaluate` now receives the same narrow API;
+- planner/local-avoidance public and implementation surfaces no longer name
+  `NavigationSpace::...` DTOs directly; they use aliases exported by the read
+  API;
+- `GameSimulation` remains the stateful orchestration owner and binds the
+  short-lived read capability at the call edge;
+- runtime/local behavioral fixtures now pass the explicit read capability;
+- architecture gates now fail if either calculation surface regains a direct
+  `NavigationSpace&` or `NavigationSpace::...` dependency, or if the read API
+  grows owner mutation/escape methods;
+- `NAVIGATION_PURITY_CONTRACT.md` and the local-layer contract now state the
+  owner/API distinction explicitly.
+
+The dynamic side was already compliant and remains unchanged:
+
+~~~text
+NavigationMap owner -> query API -> NavigationMap::QueryResult value -> planner
+~~~
+
+Authoritative exact-static safety checks performed directly by `GameSimulation`
+remain legitimate because GameSimulation is the orchestration/state owner; they
+are not calculation-layer backdoors.
+
+Static inspection of the modified production calculation surfaces shows no
+remaining direct `NavigationSpace&`, `NavigationSpace::...` or `staticSpace`
+seam in NavigationRuntimePlanner or LocalAvoidancePlanner.
+
+Target-machine compile/runtime validation is still pending. Do not promote the
+accepted Stage-12 baseline yet. The last actually accepted baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~
+
+Required target-machine gate:
+
+~~~bash
+python tests/architecture_contracts/check_navigation_local_avoidance.py
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+bash tests/navigation_local/run_mingw64.sh
+bash tests/navigation_runtime/run_mingw64.sh
+bash tests/navigation_space/run_mingw64.sh
+bash build_mingw64.sh
+./build/headless_server/EliteServer.exe --self-test-navigation
+~~~
+
+Broader follow-up remains recorded separately: legacy/client workspace mutable
+sub-state references and the unused NavigationFrameBoundary frame-reference
+escape hatch should be hardened after this active Stage-12 API gate is green,
+rather than mixing unrelated legacy churn into the same acceptance slice.

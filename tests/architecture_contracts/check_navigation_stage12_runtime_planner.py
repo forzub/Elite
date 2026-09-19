@@ -477,6 +477,13 @@ require(
     "DynamicMotionSystem must preserve Newtonian aft-only and Assisted fore/aft longitudinal allocation",
 )
 
+require(
+    "Assisted lateral demand must not invent omnidirectional main thrust" in RUNTIME_CONTROL_TEST and
+    "Newtonian reverse demand must not invent fore/nose main thrust" in RUNTIME_CONTROL_TEST and
+    "Assisted reverse demand must use bounded fore/nose longitudinal main authority" in RUNTIME_CONTROL_TEST,
+    "runtime control tests must pin physical longitudinal/RCS source allocation",
+)
+
 
 for marker in (
     "testNewtonianAndAssistedPhysicsAreActuallyDifferent",

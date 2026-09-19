@@ -3710,3 +3710,20 @@ End-to-end source audit localized the integration defect to the ordinary local-v
 Primary defect boundary: `LocalAvoidance geometric AdjustedClear -> NavigationRuntimePlanner desired velocity -> GameSimulation AcceptedShortSegment`. Two corrections are required by contract, not test weakening: (a) do not inherit later portal forward-alignment while executing an AdjustedClear bypass unless that specific maneuver requires it; (b) ordinary visibility candidates must become capability/time-aware or escalate to a control-law-compatible trajectory primitive before acceptance. Moving the fixture farther away could mask the issue but would not repair this contract.
 
 The exact selected deflection/replan sequence in the latest target-machine run is not printed by the second-phase failure, so the next implementation/debug pass should add bounded event diagnostics (only on plan/replan/bypass transitions) for selected target/deflection, accepted alignment, ideal/executed/applied acceleration, replan reason and route/moving-plane progress. This will target-machine-confirm the predicted divergence without producing per-frame log spam.
+
+
+### 2026-09-19 behavior-character and vehicle-feasibility contract tightened
+
+Architecture baseline for this decision: `e2d4238968a1b3f360eb342ced2ca0d4d782b5e7`.
+
+Three current defects are now explicit architecture blockers:
+
+1. A geometric path/ray must never become an executable route or AcceptedShortSegment unless it is feasible for the actual vehicle from the current state. Global/topological routing may stay coarse, but every edge/portal must be vehicle-feasible at its abstraction level; local accepted segments must be time-parameterized and dynamically feasible from current P/V/A/attitude/angular state under real propulsion and damage-degraded capability.
+2. For a main-engine-dominant Newtonian craft, substantial delta-v should normally come from rotating the hull to a burn vector and using the main engine, with coast/rotate/brake/flip-and-burn as required. The small manoeuvre/RCS system is primarily trim/precision/parking/docking/capture authority, not a hidden omnidirectional main engine. A craft whose real propulsion profile differs may legitimately use omnidirectional thrusters as primary translation.
+3. Behavior character is not one scalar. It has two independent inputs: (a) situation/doctrine, such as ordinary/rational, extreme attack/escape, or precision ingress/retrieval; and (b) pilot model/transient pilot state. Doctrine changes candidate generation/ranking preferences and accepted risk bands. Pilot skill changes reaction/latency, anticipation, control precision, overshoot/damping, hull/clearance judgement uncertainty and execution envelope. Neither may modify world geometry or vehicle capability.
+
+New canonical document: `src/game/navigation/NAVIGATION_BEHAVIOR_CHARACTER_MODEL.md`.
+
+`CONTROL_LAW_MANEUVER_MODEL.md` now explicitly requires main-engine-oriented Newtonian course changes and forbids relying on the propulsion allocator to rescue an impossible arbitrary acceleration request. `MANEUVER_DECISION_TREE.md` now states `geometric path != executable route` and separates doctrine from pilot ownership.
+
+Current live failure remains localized at the ordinary visibility handoff. The next implementation must not merely patch alignment; it must establish the missing sequence `free-space candidate -> control-law-compatible maneuver generation -> capability/pilot-aware continuous proof -> decision -> accepted segment`. The existing premature future-portal alignment bug is still a concrete defect inside that seam and must be removed as part of the correction.

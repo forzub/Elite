@@ -8,6 +8,9 @@ struct ShipParams
     float maxYawRate;
     float maxRollRate;
     
+    // Aggregate rigid-body angular actuator authority. For the current
+    // Cobra/navigation model this represents bounded main-nozzle vectoring plus
+    // attitude-control authority; it is not free instantaneous reorientation.
     float angularAccel;     // насколько быстро РАЗГОНЯЕМСЯ
     float angularDamping;   // насколько быстро ГАСИМСЯ
    

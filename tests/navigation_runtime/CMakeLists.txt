@@ -263,6 +263,44 @@ set_tests_properties(
 )
 
 add_executable(
+    maneuver_phase_gate_tests
+    ManeuverPhaseGateTests.cpp
+)
+
+target_include_directories(maneuver_phase_gate_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(maneuver_phase_gate_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    maneuver_phase_gate_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        maneuver_phase_gate_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        maneuver_phase_gate_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME maneuver_phase_gate
+    COMMAND maneuver_phase_gate_tests
+)
+
+set_tests_properties(
+    maneuver_phase_gate
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     maneuver_tracking_controller_tests
     ManeuverTrackingControllerTests.cpp
 )

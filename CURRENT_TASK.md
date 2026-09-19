@@ -4,7 +4,8 @@
 **Branch:** `main`
 **Last target-machine fully accepted Stage-12 baseline:** `daaf038021cdf8b9561db60fdd35e7cefce0b2df`
 **Last target-machine checkout actually exercised:** `46f6a37da6775a1d044391f773476df1bb07bc6a`
-**Architecture analysis commit:** `92432c842d5ad632b320f90c2ca258b82f17d26b`
+**Architecture analysis commit:** `92432c842d5ad632b320f90c2ca258b82f17d26b`  
+**Canonical contract sync through:** `86f4bea4b9819b7cd56f6ccaa06c07783b9ca6a9`
 
 ## Current decision
 

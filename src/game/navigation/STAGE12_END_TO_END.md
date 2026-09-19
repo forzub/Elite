@@ -4104,3 +4104,53 @@ It stores the complete self-test output under `build/logs`, prints total time,
 and prints the exact log path as its final line on both PASS and FAIL.
 
 Live B14 target-machine acceptance is pending.
+
+
+## 2026-09-19 live B14 gate blocked by pre-existing ordinary-maneuver defect
+
+Target-machine checkout:
+
+```text
+a69771e3efb5b54834b002a5000b79d75a8f5e80
+```
+
+Fresh evidence:
+- architecture contract PASS: 0.211 s;
+- navigation_runtime 9/9 PASS;
+- isolated navigation_work_scheduler PASS;
+- 5000 actors: enqueue 2053 us, dispatch+complete 1261 us, total 3314 us;
+- EliteGame / EliteServer BUILD PASS;
+- production build 45.371 s;
+- live headless navigation gate FAILED rc=56 after 15.144 s;
+- log: D:\__elite\work\build\logs\navigation_live_scheduler_20260919-221240.log.
+
+The live failure is not new B14 behavior. It reproduces the already documented
+pre-B14 ordered-flight blocker from checkout 46f6a37...:
+visibility bypass and same-tick replication succeed, but the actor does not pass
+the moving obstacle plane or reach the static slit/tunnel within 120 simulated
+seconds.
+
+Current evidence:
+- first visibility bypass is captured;
+- selected deflection is 1.309 rad (~75 degrees);
+- ideal linear demand at first bypass is approximately
+  (0.00087, -41.08, +18.37) m/s^2;
+- first executed/applied demand is still near zero while PilotSkill/latency
+  catches up;
+- alignForward is now false, so the former premature future-portal alignment
+  defect is already fixed;
+- exact-static violation remains false.
+
+Revision audit also proves PilotSkill reaction delay is not restarted by every
+AcceptedShortSegment: TrajectoryFollower uses constant goalRevision as
+intent.revision and segment revision only as targetRevision. PilotSkill restarts
+reaction delay only when intent revision changes.
+
+Remaining primary defect is the already-known B4 -> B5 gap:
+ordinary LocalAvoidance AdjustedClear is a geometric visibility ray. Runtime
+Planner converts it directly to an arbitrary desired velocity/acceleration
+without compiling it through current directional propulsion + finite attitude
+authority. This is invalid for main-engine-dominant Newtonian craft.
+
+Do not weaken the live gate. Next implementation task is clean B5 ordinary
+physical maneuver compilation, followed by proof/integration.

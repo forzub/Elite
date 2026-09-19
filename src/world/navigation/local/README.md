@@ -85,7 +85,7 @@ The loop is accepted. Even the artificial 1024-candidate stress case is below `0
 
 ## Active avoidance candidate — same-region lateral fan
 
-`LocalAvoidancePlanner` is the next behavior slice. It does not replace `LocalHorizonPlanner`; it composes it with the public `NavigationSpace` point-query boundary.
+`LocalAvoidancePlanner` does not replace `LocalHorizonPlanner`; it composes it with `NavigationStaticQueryApi`, the narrow read-only capability bound by the orchestration layer. The `NavigationSpace` state owner itself does not cross into the calculation.
 
 Flow:
 
@@ -156,6 +156,7 @@ The avoidance candidate is **pending target-machine compile/behavior gate**. Its
 
 - no full-scene actor scan;
 - no second NavigationWorld snapshot;
+- no `NavigationSpace&` state-owner capability inside local-avoidance calculation;
 - no GLM/OpenGL/render/game dependency;
 - no route-wide dense trajectory;
 - no static-cost mutation from dynamic traffic;

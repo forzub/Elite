@@ -152,10 +152,10 @@ public:
         result.endMapMeters =
             query.positionMapMeters +
             boundedDisplacement(query, query.durationSeconds);
+        const glm::dvec3 delta =
+            result.endMapMeters - result.startMapMeters;
         result.active =
-            glm::length2(
-                result.endMapMeters - result.startMapMeters
-            ) > kEpsilon * kEpsilon;
+            glm::dot(delta, delta) > kEpsilon * kEpsilon;
         return result;
     }
 

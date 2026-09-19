@@ -283,6 +283,31 @@ LocalGeometricPath
 
 ---
 
+### Control authority boundary: planner chooses maneuver, follower executes
+
+For automatic flight, the planner side owns **maneuver strategy**. That includes:
+- whether a material delta-v is produced by RCS trim, lead-rotate + main-engine
+  burn, coast, brake, flip-and-burn or another physical family;
+- the required hull attitude/time history;
+- when the main engine is expected to produce translation;
+- the feed-forward P/V/A/q/omega/alpha history that will later be proved.
+
+For a main-engine-dominant Newtonian craft, the main engine is the normal
+translation authority for material course/velocity changes. RCS remains a
+precision/trim authority. B5 therefore exposes a bounded main-engine maneuver
+candidate whenever a non-zero delta-v can physically be compiled, even if an
+RCS Trim candidate also exists.
+
+B5 **generates alternatives**. B6 proves them. B7 chooses among the proved
+alternatives according to doctrine/objective. Therefore B5 does not silently
+declare "main engine wins"; B7 owns the final planner-side maneuver selection.
+
+The follower/autopilot side (B9/B10) does **not** choose maneuver family,
+reorient the hull to invent a new burn, or decide to substitute main engine for
+RCS. It samples/tracks the already accepted B8 program and adds only bounded
+feedback. A material deviation or new hazard invalidates the program and
+requests planner work through B14/B11.
+
 ## B5 — Physical Maneuver Compiler
 
 **Owner:** control-law-aware planner.

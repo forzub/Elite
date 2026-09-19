@@ -5439,3 +5439,32 @@ All selected programs had zero tracking-envelope exceed ticks and terminal error
 This accepts B7 behavior at lab/runtime level. It does not yet claim that every ordinary production navigation path has completed migration through B7; final live compatibility-seam retirement remains integration work.
 
 The next laboratory gate is chained cross-family transitions plus negative/physical-limit rejection and invalidation cases.
+
+
+## 2026-09-20 — chained transition + physical-limit matrix candidate
+
+After B7 doctrine selection was accepted on target checkout `a0f0991791665e30059be15efc47dedcdfafe090`, the next laboratory candidate tests continuity and fail-closed limits.
+
+New CTest:
+```
+maneuver_chained_limit_matrix
+```
+
+The chain executes four programs on the same live vehicle state with no reset:
+```
+FreeTransit
+ -> hard moving PrecisionTransit
+ -> Newtonian DriftPass / Assisted aligned PrecisionTransit
+ -> PrecisionCapture with StateCapture
+```
+
+The next program is built from the actual previous P/V/body basis/angular velocity. The test fails on any synthetic seam jump and checks full Cobra hull occupancy against a 25 m reference corridor.
+
+The same regression also pins five negative contracts with existing production components:
+- B5 rejects a major turn when only 0.5 s of physical horizon is available;
+- stopping-reserve math rejects 20 m/s braking when only 60 m is available;
+- the full Cobra hull rejects a 12 m half-width corridor;
+- Assisted B7 rejects an all-NewtonianOnly candidate population;
+- a new dynamic hazard invalidates accepted execution and requests immediate local replanning.
+
+Expected runtime suite size is 18. This candidate remains unaccepted until exact target-machine evidence is recorded.

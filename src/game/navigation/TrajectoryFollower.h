@@ -62,8 +62,14 @@ public:
     [[nodiscard]] static Result follow(
         const AcceptedManeuverProgram& program,
         double universeTimeSeconds,
+        const AgentState& agent
+    ) noexcept;
+
+    [[nodiscard]] static Result follow(
+        const AcceptedManeuverProgram& program,
+        double universeTimeSeconds,
         const AgentState& agent,
-        const ManeuverTrackingController::Policy& trackingPolicy = {}
+        const ManeuverTrackingController::Policy& trackingPolicy
     ) noexcept;
 
     // Transitional compatibility overload. This path is intentionally kept

@@ -28,6 +28,7 @@ SCENE_CPP = (ROOT / "src/game/scene/GameSceneSetup.cpp").read_text(encoding="utf
 LAB_H = (ROOT / "src/game/diagnostics/NavigationRuntimeLab.h").read_text(encoding="utf-8")
 LOCAL_H = (ROOT / "src/world/navigation/local/LocalAvoidancePlanner.h").read_text(encoding="utf-8")
 LOCAL_CPP = (ROOT / "src/world/navigation/local/LocalAvoidancePlanner.cpp").read_text(encoding="utf-8")
+HORIZON_CPP = (ROOT / "src/world/navigation/local/LocalHorizonPlanner.cpp").read_text(encoding="utf-8")
 SERVER_RUNTIME_H = (ROOT / "src/game/server/ServerRuntime.h").read_text(encoding="utf-8")
 SERVER_RUNTIME_CPP = (ROOT / "src/game/server/ServerRuntime.cpp").read_text(encoding="utf-8")
 SERVER_MAIN = (ROOT / "src/server_main.cpp").read_text(encoding="utf-8")
@@ -731,9 +732,10 @@ require(
 )
 
 require(
-    "exactTranslationNarrowPhaseAvailable" in LOCAL_CPP and
-    "segmentIntersectsNavigationObstacle" in LOCAL_CPP and
-    "candidate.exactObstacles" in LOCAL_CPP and
+    "exactTranslationNarrowPhaseAvailable" in HORIZON_CPP and
+    "exactTranslationConflict" in HORIZON_CPP and
+    "segmentIntersectsNavigationObstacle" in HORIZON_CPP and
+    "candidate.exactObstacles" in HORIZON_CPP and
     "testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute" in LOCAL_TEST,
     "dynamic conservative spheres must narrow against exact translation-only OBB geometry instead of sealing real free space",
 )

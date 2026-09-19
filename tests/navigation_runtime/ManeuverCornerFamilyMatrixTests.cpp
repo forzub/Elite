@@ -1,6 +1,7 @@
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/ManeuverPhaseGate.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -23,6 +24,7 @@ namespace
 using Program = game::navigation::AcceptedManeuverProgram;
 using Follower = game::navigation::TrajectoryFollower;
 using Bridge = game::navigation::NavigationRuntimeControlBridge;
+using Gate = game::navigation::ManeuverPhaseGate;
 using Law = game::navigation::LocalFlightControlLaw;
 
 constexpr double kPi = 3.14159265358979323846;
@@ -313,6 +315,38 @@ Program makeConstantAccelerationProgram(
             {0.0, 0.0, 0.0};
     }
 
+    return p;
+}
+
+Program makeAccelerationCaptureProgram(
+    std::uint64_t revision,
+    double acceptedAt,
+    const glm::dvec3& startPosition,
+    const glm::dvec3& startVelocity,
+    const glm::dvec3& acceleration,
+    double yaw,
+    double duration,
+    Program::ManeuverFamily family
+)
+{
+    Program p =
+        makeConstantAccelerationProgram(
+            revision,
+            acceptedAt,
+            startPosition,
+            startVelocity,
+            acceleration,
+            yaw,
+            duration,
+            family
+        );
+
+    auto& terminal =
+        p.samples[
+            static_cast<std::size_t>(p.sampleCount - 1)
+        ];
+    terminal.linearAccelerationFeedForwardMapMps2 =
+        {0.0, 0.0, 0.0};
     return p;
 }
 
@@ -658,6 +692,8 @@ struct Metrics
     double peakRcsMps2 = 0.0;
 
     std::size_t trackingEnvelopeExceededTicks = 0;
+    std::size_t captureTimedOutPhases = 0;
+    double maximumCaptureOverrunSeconds = 0.0;
 
     double finalPositionErrorMeters = 0.0;
     double finalVelocityErrorMps = 0.0;
@@ -734,6 +770,8 @@ struct RunResult
 {
     bool valid = true;
     bool completed = false;
+    bool captureTimedOut = false;
+    double captureOverrunSeconds = 0.0;
 };
 
 void finalizeMetrics(
@@ -746,17 +784,17 @@ RunResult runProgram(
     Vehicle& v,
     const RigidVehicleModel& model,
     const Program& program,
-    Metrics& m
+    Metrics& m,
+    Gate::Mode mode,
+    double maximumCaptureOverrunSeconds = 6.0
 )
 {
-    const double endTime =
-        program.acceptedAtUniverseTimeSeconds +
-        program.samples[program.sampleCount - 1].timeOffsetSeconds;
+    Gate::Policy gatePolicy;
+    gatePolicy.mode = mode;
+    gatePolicy.maximumCaptureOverrunSeconds =
+        maximumCaptureOverrunSeconds;
 
-    // Compound fixture phases are pieces of one conceptual maneuver. Internal
-    // handoff is schedule-based, not Follower::Complete-based: a moving gate
-    // crossing is not a terminal capture.
-    while (v.timeSeconds < endTime - 1.0e-9)
+    while (true)
     {
         const auto follower =
             Follower::follow(
@@ -766,10 +804,41 @@ RunResult runProgram(
             );
 
         if (follower.status == Follower::Status::InvalidInput)
-            return {false, false};
+            return {false, false, false, 0.0};
 
         if (follower.trackingErrorExceeded)
             ++m.trackingEnvelopeExceededTicks;
+
+        const auto gateBefore =
+            Gate::evaluate(
+                program,
+                v.timeSeconds,
+                follower.status,
+                gatePolicy
+            );
+
+        if (gateBefore.status == Gate::Status::InvalidInput)
+            return {false, false, false, 0.0};
+
+        if (gateBefore.status == Gate::Status::Advance)
+        {
+            return {
+                true,
+                true,
+                false,
+                gateBefore.captureOverrunSeconds
+            };
+        }
+
+        if (gateBefore.status == Gate::Status::CaptureTimedOut)
+        {
+            return {
+                true,
+                false,
+                true,
+                gateBefore.captureOverrunSeconds
+            };
+        }
 
         const auto bridgeResult =
             v.bridge.step(
@@ -781,7 +850,7 @@ RunResult runProgram(
         if (bridgeResult.status !=
             Bridge::PilotExecutor::Status::Ok)
         {
-            return {false, false};
+            return {false, false, false, 0.0};
         }
 
         SharedShipPhysics::integrate(
@@ -836,28 +905,56 @@ RunResult runProgram(
         v.timeSeconds += kDt;
 
         updateGeometryMetrics(v, model, m);
-
     }
-
-    return {true, true};
 }
 
 bool executePhase(
     Vehicle& v,
     const RigidVehicleModel& model,
     const Program& p,
-    Metrics& m
+    Metrics& m,
+    Gate::Mode mode = Gate::Mode::ScheduledMoving,
+    double maximumCaptureOverrunSeconds = 6.0
 )
 {
-    const auto r = runProgram(v, model, p, m);
+    const auto r =
+        runProgram(
+            v,
+            model,
+            p,
+            m,
+            mode,
+            maximumCaptureOverrunSeconds
+        );
+
+    m.maximumCaptureOverrunSeconds =
+        std::max(
+            m.maximumCaptureOverrunSeconds,
+            r.captureOverrunSeconds
+        );
+
     if (!r.valid)
     {
         m.valid = false;
         m.completed = false;
+        finalizeMetrics(v, m);
         return false;
     }
-    if (!r.completed)
+
+    if (r.captureTimedOut)
+    {
+        ++m.captureTimedOutPhases;
+        m.completed = false;
+        finalizeMetrics(v, m);
         return false;
+    }
+
+    if (!r.completed)
+    {
+        m.completed = false;
+        finalizeMetrics(v, m);
+        return false;
+    }
 
     ++m.phasesCompleted;
     return true;
@@ -907,7 +1004,7 @@ Metrics runStopTurnGo(
             v.transform.motion.localPositionMeters;
         if (!executePhase(
                 v, model,
-                makeConstantAccelerationProgram(
+                makeAccelerationCaptureProgram(
                     revision++, v.timeSeconds,
                     p1,
                     {0.0, 0.0, -10.0},
@@ -916,7 +1013,8 @@ Metrics runStopTurnGo(
                     1.25,
                     Program::ManeuverFamily::Brake
                 ),
-                m))
+                m,
+                Gate::Mode::StateCapture))
             return m;
     }
     else
@@ -937,7 +1035,7 @@ Metrics runStopTurnGo(
             v.transform.motion.localPositionMeters;
         if (!executePhase(
                 v, model,
-                makeConstantAccelerationProgram(
+                makeAccelerationCaptureProgram(
                     revision++, v.timeSeconds,
                     p0,
                     {0.0, 0.0, -10.0},
@@ -946,7 +1044,8 @@ Metrics runStopTurnGo(
                     1.25,
                     Program::ManeuverFamily::Brake
                 ),
-                m))
+                m,
+                Gate::Mode::StateCapture))
             return m;
     }
 
@@ -967,7 +1066,8 @@ Metrics runStopTurnGo(
                 endYaw,
                 1.9
             ),
-            m))
+            m,
+            Gate::Mode::StateCapture))
         return m;
 
     const glm::dvec3 afterRotate =
@@ -1157,7 +1257,7 @@ Metrics runDriftTurn(
                 {10.0, 0.0, 0.0},
                 -kPi,
                 -0.5 * kPi,
-                2.0,
+                3.0,
                 Program::ManeuverFamily::DriftPass
             ),
             m))
@@ -1173,7 +1273,7 @@ Metrics runDriftTurn(
             p2,
             {10.0, 0.0, 0.0},
             -0.5 * kPi,
-            2.0,
+            1.0,
             Program::ManeuverFamily::FreeTransit
         ),
         m
@@ -1195,6 +1295,7 @@ void finalizeMetrics(
     m.totalTimeSeconds = v.timeSeconds;
     m.completed =
         m.valid &&
+        m.captureTimedOutPhases == 0 &&
         m.entryGateTimeSeconds >= 0.0 &&
         m.exitGateTimeSeconds >= 0.0;
 
@@ -1282,6 +1383,10 @@ void printCase(const CaseRecord& r)
         << " peak_rcs_mps2=" << m.peakRcsMps2
         << " tracking_envelope_exceeded_ticks="
         << m.trackingEnvelopeExceededTicks
+        << " capture_timeout_phases="
+        << m.captureTimedOutPhases
+        << " max_capture_overrun_s="
+        << m.maximumCaptureOverrunSeconds
         << "\n";
 }
 

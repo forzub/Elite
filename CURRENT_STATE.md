@@ -2,149 +2,75 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Accepted target-machine baseline
+## Accepted exact target-machine baseline
 
 Exact tested checkout:
 
 ```
-b687b9d3189cdfbbca91123b578637f991cbc645
+213bbfb62ff7dcb8e553c06bdca09d99d2d1fd56
 ```
 
-Accepted evidence:
+Evidence:
 - Stage-12 architecture contract: **PASS**.
-- `navigation_runtime`: **15/15 PASS**.
-- Strict expert StopTurnGo / RadiusTurn / DriftTurn are healthy.
-- Long 180 deg angular tracking remains healthy.
-- DriftTurn moving-attitude capture is accepted.
+- `navigation_runtime`: **16/16 PASS**.
+- total runtime test time: ~0.43 s.
+- new `maneuver_fly_through_3d`: PASS.
 
-## New unverified stage: continuous 3D fly-through
+This accepts the continuous 3D fly-through strict expert gate.
 
-Code candidate commits:
-- `5c10c19d7fd2eb4b1fb6aa26b903fd55713b6dcf` — new fly-through test.
-- `c48a92010350cf12f417aa19f23f75487dfb1459` — CMake registration.
+## What the accepted fly-through gate proves
 
-New test:
+The same accepted 5-segment 3D route is executed by Newtonian and Assisted through:
+- ~35 deg turn;
+- ~60 deg turn;
+- ~90 deg turn;
+- ~120 deg turn.
 
-```
-tests/navigation_runtime/ManeuverFlyThrough3dTests.cpp
-```
+The test enforces for strict Expert rows:
+- all 9 moving phases complete;
+- no hidden StopTurnGo substitution;
+- minimum route/corner speed >=3 m/s;
+- complete Cobra OBB remains inside 32 m half-width;
+- zero tracking-envelope exceed ticks;
+- final P/V/attitude remain inside strict bounds;
+- each corner yields a finite measured turn radius;
+- sampled planned corner acceleration remains <=2 m/s2.
 
-CTest target:
+Because the test passed, all of those strict conditions were satisfied for both Newtonian and Assisted.
 
-```
-maneuver_fly_through_3d
-```
+## Diagnostic limitation in the accepted log
 
-The runtime suite is expected to grow from 15 to **16 tests**.
+The acceptance run proved the strict gate, but the old `run_mingw64.sh` did not execute `maneuver_fly_through_3d` in verbose mode after the main CTest pass. Therefore the uploaded log contains the 16/16 result but not the detailed `[FLY3D]` and `[FLY3D-CORNER]` rows.
 
-## Test purpose
+As a result, exact Newtonian-vs-Assisted comparisons for:
+- minimum speed;
+- slip angle;
+- observed radius;
+- hull required half-width;
+- forward tracking error
 
-Prove continuous chained 3D maneuver execution instead of:
-`stop -> rotate in place -> next leg`.
+cannot yet be quoted from target-machine evidence.
 
-The same accepted geometric fly-through is executed by:
-- Newtonian;
-- Assisted;
+## Current unverified diagnostics-only HEAD
 
-for:
-- Expert — strict acceptance;
-- Competent — diagnostic;
-- Rookie — diagnostic.
-
-## Route
-
-Five connected segments with four intended turn angles:
-- ~35 deg;
-- ~60 deg;
-- ~90 deg;
-- ~120 deg.
-
-Entry fly-through speed:
+Runner patch:
 
 ```
-8 m/s
+4cd9c4a14c8f2e4ce033082633766a21fece9331
 ```
 
-Each corner receives:
+It adds a verbose `ctest -R maneuver_fly_through_3d -V` diagnostic pass to `tests/navigation_runtime/run_mingw64.sh` and records its timing.
 
-```
-45 m
-```
+No navigation algorithm, acceptance rule, planner, follower, physics or test logic changed in this patch.
 
-of cut distance on both incoming/outgoing legs.
+## Current task
 
-The route includes simultaneous X/Y/Z direction changes.
+Rerun target diagnostics so the accepted fly-through can be characterized quantitatively.
 
-## Corner reference
-
-Each corner is a C2 quintic 3D transition.
-
-Boundary conditions:
-- position continuous;
-- velocity continuous;
-- endpoint velocity magnitude = 8 m/s;
-- endpoint acceleration = 0;
-- body forward follows the local velocity tangent;
-- angular velocity/feed-forward are derived from sampled orientation evolution.
-
-The hard corner is allowed to reduce speed naturally but must not become StopTurnGo.
-
-## Physical/corridor conditions
-
-Vehicle:
-- Cobra Mk1 logical hull;
-- half extents {13.0, 2.5, 11.1} m.
-
-Corridor:
-- 32 m half-width;
-- acceptance is based on all eight OBB hull corners, not center only.
-
-Corner linear reference is constrained so sampled planned acceleration stays <= 2 m/s2, matching the manoeuvre/RCS authority used for transverse demand.
-
-## Metrics
-
-Per route:
-- completed phases;
-- minimum route speed;
-- max center cross-track;
-- max hull required half-width;
-- max corridor violation;
-- max forward tracking error;
-- tracking-envelope exceeded ticks;
-- final P/V/attitude;
-- simulated time.
-
-Per corner:
-- route angle;
-- planned peak acceleration;
-- planned minimum speed;
-- actual minimum speed;
-- max slip angle;
-- minimum observed physical turn radius;
-- max center cross-track;
-- max hull required half-width.
-
-## Strict Expert acceptance
-
-For both Newtonian and Assisted:
-- all 9 phases complete;
-- full Cobra hull remains within 32 m half-width corridor;
-- zero tracking-envelope exceeded ticks;
-- route speed never drops below 3 m/s;
-- no corner drops below 3 m/s;
-- final position error <= 1.5 m;
-- final speed error <= 0.75 m/s relative to 8 m/s;
-- final forward error <= 5 deg;
-- every corner produces a finite measurable turn radius;
-- sampled planned corner acceleration <= 2 m/s2.
-
-Competent/Rookie are diagnostic on the first target-machine pass.
-
-## Next validation
-
-Run exact target-machine gates. If the new test passes, compare Newtonian vs Assisted radii, slip, speed loss and hull envelope rather than assuming either law is superior.
-
-If it fails, fix the physical/reference mechanism; do not weaken corridor/speed/tracking criteria just to obtain green.
+After the FLY3D metrics are captured:
+1. compare Newtonian vs Assisted radius/speed/slip/hull envelopes;
+2. record the measured conclusion in all MDs;
+3. proceed to speed/doctrine coverage.
 
 ## Documentation protocol
 

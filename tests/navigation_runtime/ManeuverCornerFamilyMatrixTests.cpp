@@ -970,6 +970,17 @@ Metrics runStopTurnGo(
     Metrics m;
     std::uint64_t revision = 7100u;
 
+    // Keep the braking point identical for both control laws. The accepted
+    // rigid-body Newtonian baseline needs about 5 s for a clean 180 deg
+    // lead-rotation with this Cobra/pilot model; asking a 2.6 s scheduled flip
+    // to hand immediately into aft-main braking leaves B10 tracking reserve to
+    // repair a maneuver-authoring error.
+    constexpr double kPreBrakeTravelSeconds = 5.375;
+    constexpr double kNewtonianFlipSeconds = 5.0;
+    constexpr double kNewtonianApproachSeconds =
+        kPreBrakeTravelSeconds - kNewtonianFlipSeconds;
+    constexpr double kBrakeSeconds = 1.25;
+
     if (law == Law::Newtonian)
     {
         if (!executePhase(
@@ -979,7 +990,7 @@ Metrics runStopTurnGo(
                     {0.0, 0.0, 60.0},
                     {0.0, 0.0, -10.0},
                     0.0,
-                    2.775
+                    kNewtonianApproachSeconds
                 ),
                 m))
             return m;
@@ -994,7 +1005,7 @@ Metrics runStopTurnGo(
                     {0.0, 0.0, -10.0},
                     0.0,
                     kPi,
-                    2.6,
+                    kNewtonianFlipSeconds,
                     Program::ManeuverFamily::FlipAndBurn
                 ),
                 m))
@@ -1010,7 +1021,7 @@ Metrics runStopTurnGo(
                     {0.0, 0.0, -10.0},
                     {0.0, 0.0, 8.0},
                     kPi,
-                    1.25,
+                    kBrakeSeconds,
                     Program::ManeuverFamily::Brake
                 ),
                 m,
@@ -1026,7 +1037,7 @@ Metrics runStopTurnGo(
                     {0.0, 0.0, 60.0},
                     {0.0, 0.0, -10.0},
                     0.0,
-                    5.375
+                    kPreBrakeTravelSeconds
                 ),
                 m))
             return m;
@@ -1041,7 +1052,7 @@ Metrics runStopTurnGo(
                     {0.0, 0.0, -10.0},
                     {0.0, 0.0, 8.0},
                     0.0,
-                    1.25,
+                    kBrakeSeconds,
                     Program::ManeuverFamily::Brake
                 ),
                 m,
@@ -1249,32 +1260,20 @@ Metrics runDriftTurn(
     const glm::dvec3 p1 =
         v.transform.motion.localPositionMeters;
 
-    if (!executePhase(
-            v, model,
-            makeCoastRotateProgram(
-                revision++, v.timeSeconds,
-                p1,
-                {10.0, 0.0, 0.0},
-                -kPi,
-                -0.5 * kPi,
-                3.0,
-                Program::ManeuverFamily::DriftPass
-            ),
-            m))
-        return m;
-
-    const glm::dvec3 p2 =
-        v.transform.motion.localPositionMeters;
-
+    // Recover attitude continuously over the same 4 s / 40 m post-arc travel.
+    // Splitting this into a 3 s rotate plus a 1 s coast introduced an
+    // artificial reference boundary while expert P/V tracking was already
+    // good. A single slower reference gives B10 one coherent attitude history.
     executePhase(
         v, model,
-        makeCoastProgram(
+        makeCoastRotateProgram(
             revision++, v.timeSeconds,
-            p2,
+            p1,
             {10.0, 0.0, 0.0},
+            -kPi,
             -0.5 * kPi,
-            1.0,
-            Program::ManeuverFamily::FreeTransit
+            4.0,
+            Program::ManeuverFamily::DriftPass
         ),
         m
     );

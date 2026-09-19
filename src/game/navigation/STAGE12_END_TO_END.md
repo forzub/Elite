@@ -4000,3 +4000,65 @@ Do not equate that with the tested checkout unless the target-machine
 `git rev-parse HEAD` output is supplied.
 
 No persistent log was required for this successful build.
+
+
+## 2026-09-19 B10 accepted; B14 scheduler candidate
+
+Verified target-machine baseline:
+
+```text
+2abd79a6181a322fe15425994ab771942e47bc26
+```
+
+Accepted evidence:
+- Stage-12 architecture contract PASS;
+- navigation_runtime 8/8 PASS;
+- maneuver_tracking_controller PASS;
+- EliteGame BUILD PASS;
+- EliteServer BUILD PASS;
+- production build real time 44.989 s;
+- architecture-contract real time 0.186 s.
+
+B8/B9/B10 are therefore accepted.
+
+Current B14 candidate code/contract baseline before documentation commits:
+
+```text
+1ba23241d760b3a57c917189e333e4fbc0365ea4
+```
+
+B14 now exists as `NavigationWorkScheduler` + value-owned
+`NavigationPlannerJob`.
+
+The scheduler is intentionally stateful only for scheduling:
+- urgent / normal / background queues;
+- actor revision state;
+- one pending actor job slot;
+- in-flight tickets;
+- deterministic age promotion;
+- bounded dispatch slices.
+
+It performs no geometry/world query and owns no planner callback.
+
+Correctness/scale rules pinned in tests:
+- monotonic per-actor job revision;
+- duplicate suppression and priority upgrade;
+- completed job revision cannot be replayed;
+- stale work is rejected before dispatch;
+- stale in-flight result is rejected before commit;
+- capacity pressure reclaims stale jobs;
+- ordinary replacement does not scan queues;
+- lazy tombstones are amortized/compacted so physical queue storage remains bounded;
+- dispatch is bounded by fixed job count and deterministic cost units;
+- 5000 synthetic actors drain with no loss or duplication and all queue/in-flight
+  storage returns to zero.
+
+Timing is diagnostic only. The scheduler scale test prints enqueue,
+dispatch/complete and total microseconds. The navigation_runtime gate repeats
+only that successful test in verbose mode so the timing line is visible.
+
+The B14 scheduler is not wired into live GameSimulation yet. This candidate is
+only the clean scheduler block/API and scale gate. Live scheduler integration is
+the next separately gated slice after acceptance.
+
+No persistent diagnostic log is required for the current gate.

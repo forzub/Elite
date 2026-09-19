@@ -61,6 +61,9 @@ TRACKER_TEST = (ROOT / "tests/navigation_runtime/ManeuverTrackingControllerTests
 SCHEDULER_H = (ROOT / "src/game/navigation/NavigationWorkScheduler.h").read_text(encoding="utf-8")
 SCHEDULER_CPP = (ROOT / "src/game/navigation/NavigationWorkScheduler.cpp").read_text(encoding="utf-8")
 SCHEDULER_TEST = (ROOT / "tests/navigation_runtime/NavigationWorkSchedulerTests.cpp").read_text(encoding="utf-8")
+B5_H = (ROOT / "src/game/navigation/OrdinaryPhysicalManeuverCompiler.h").read_text(encoding="utf-8")
+B5_CPP = (ROOT / "src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp").read_text(encoding="utf-8")
+B5_TEST = (ROOT / "tests/navigation_runtime/OrdinaryPhysicalManeuverCompilerTests.cpp").read_text(encoding="utf-8")
 GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
 GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
 PURITY_DOC = (ROOT / "src/game/navigation/NAVIGATION_PURITY_CONTRACT.md").read_text(encoding="utf-8")
@@ -342,6 +345,91 @@ require(
     "maneuver_program_sampler_tests" in RUNTIME_CMAKE and
     "maneuver_tracking_controller_tests" in RUNTIME_CMAKE,
     "B8/B9/B10 production and isolated test wiring must remain present",
+)
+
+
+for marker in (
+    "struct OrdinaryPhysicalManeuverCandidate",
+    "requiresContinuousProof = true",
+    "class OrdinaryPhysicalManeuverCompiler final",
+    "enum class Status",
+    "UnsupportedControlLaw",
+    "linearFeedbackReserveMps2",
+    "angularFeedbackReserveRadPerSec2",
+    "controlResponseReserveSeconds",
+    "maximumProgramSeconds",
+):
+    require(
+        marker in B5_H,
+        f"B5 ordinary physical maneuver API missing: {marker}",
+    )
+
+for marker in (
+    "bodyAxisFeasible",
+    "compileDirect",
+    "compileLeadRotateMainBurn",
+    "smoothQuintic",
+    "maxForwardAccelerationMps2",
+    "maxLateralAccelerationMps2",
+    "maxAngularAccelerationRadPerSec2",
+    "LocalFlightControlLaw::Newtonian",
+):
+    require(
+        marker in B5_CPP,
+        f"B5 Newtonian compiler invariant missing: {marker}",
+    )
+
+for source_name, source in (
+    ("OrdinaryPhysicalManeuverCompiler.h", B5_H),
+    ("OrdinaryPhysicalManeuverCompiler.cpp", B5_CPP),
+):
+    for forbidden in (
+        '#include "src/world/navigation/map/',
+        '#include "src/world/navigation/space/',
+        '#include "src/game/simulation/',
+        '#include "src/game/navigation/NavigationRuntimePlanner',
+        "NavigationMap::",
+        "NavigationSpace::",
+        "Planner::plan(",
+        "std::vector<",
+        "std::chrono",
+        "system_clock",
+        "steady_clock",
+        "std::ofstream",
+        "std::ifstream",
+    ):
+        require(
+            forbidden not in source,
+            f"B5 compiler leaked world/planner/ambient/unbounded dependency: {forbidden}",
+        )
+
+for marker in (
+    "testForwardRequestCompilesAsDirectTrim",
+    "testLargeLateralDeltaVRequiresLeadRotateMainBurn",
+    "testNoAngularAuthorityDoesNotFallBackToImpossibleLateralDemand",
+    "testFeedbackReserveCanMakeMarginalDirectDemandInfeasible",
+    "testAssistedIsExplicitlyUnsupportedInFirstB5Slice",
+    "testFixtureLikeSeventyFiveDegreeDemandIsNotAcceptedAsOmnidirectional",
+    "testTenThousandDirtyActorCompilesAndMeasure",
+    "[TIMING] ordinary_physical_maneuver_compiler",
+):
+    require(
+        marker in B5_TEST,
+        f"B5 compiler regression/scale fixture missing: {marker}",
+    )
+
+require(
+    "OrdinaryPhysicalManeuverCompiler.cpp" in ROOT_CMAKE and
+    "OrdinaryPhysicalManeuverCompiler.cpp" in RUNTIME_CMAKE and
+    "ordinary_physical_maneuver_compiler_tests" in RUNTIME_CMAKE and
+    "ordinary_physical_maneuver_compiler" in RUNTIME_CMAKE,
+    "B5 compiler production/test wiring must remain present",
+)
+
+require(
+    "b5_scale_diagnostic_ms" in RUNTIME_RUN_SH and
+    "-R ordinary_physical_maneuver_compiler" in RUNTIME_RUN_SH,
+    "navigation runtime gate must expose B5 dirty-actor timing",
 )
 
 

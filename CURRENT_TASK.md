@@ -5,13 +5,13 @@
 **Canonical architecture:** `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`
 **Migration audit:** `src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md`
 
-## Last verified baseline
+## Last fully verified migration baseline
 
 ```text
 701881ddae861cd5593e425de91600e048bd417c
 ```
 
-Verified on target machine:
+Target-machine evidence:
 - navigation_runtime 7/7 PASS;
 - maneuver_program_sampler PASS;
 - EliteGame BUILD PASS;
@@ -19,55 +19,62 @@ Verified on target machine:
 
 B8/B9 is accepted.
 
-## B10 status
+## B10 corrective rerun status
 
-First B10 target-machine gate FAILED before tests.
+The first B10 gate failed on:
+- a false-positive architecture grep;
+- MinGW/g++ 15.2 rejecting `const Policy& policy = {}`.
 
-Observed:
-- architecture contract false-positive in 0.173 s;
-- MinGW/g++ 15.2 rejected `const Policy& policy = {}`;
-- production build failed on the same header after 17.209 s;
-- therefore B10 is NOT accepted.
-
-Corrective code/contract candidate before documentation commits:
+Corrective code/contract baseline before docs:
 
 ```text
 4a3d196c1574e91b747f05d194db7a35ad5c5517
 ```
 
-Corrections:
-- explicit 3-argument + 4-argument B10 overloads;
-- same explicit-overload pattern in TrajectoryFollower;
-- dependency contract checks actual include/type/query syntax rather than words in comments;
-- contract pins the MinGW-safe overload form;
-- navigation_runtime timing output now survives configure/build/test failure and prints the failing phase.
+Fixes are on main:
+- explicit overloads instead of braced default-reference arguments;
+- precise dependency contract;
+- MinGW-safe overload form pinned by architecture contract;
+- runtime gate timing prints on both PASS and FAIL.
 
-No diagnostic log file is required for this rerun.
+Fresh target-machine evidence now confirms:
+- EliteGame BUILD PASS;
+- EliteServer BUILD PASS;
+- `build_mingw64.sh` real time: **44.989 s**.
 
-## Rerun target-machine gate
+This closes the production compile/link defect.
+
+## What is still missing before B10 acceptance
+
+The supplied output did not include:
+- architecture-contract PASS;
+- navigation_runtime 8/8 PASS;
+- exact `git rev-parse HEAD` from the target machine.
+
+Therefore B10 remains target-machine pending.
+
+Run only the missing gate pieces now:
 
 ```bash
 cd /d/__elite/work
-git pull --ff-only
+
 git rev-parse HEAD
 
 TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
 time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
 bash tests/navigation_runtime/run_mingw64.sh
-
-TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
-time bash build_mingw64.sh
 ```
 
 Expected:
 - architecture contract PASS;
 - navigation_runtime 8/8 PASS;
 - `maneuver_tracking_controller` PASS;
-- runtime script prints configure/build/tests/total timings even if a phase fails;
-- EliteGame + EliteServer build PASS.
+- timing lines for configure/build/tests/total.
 
-## After green B10 gate
+No production rebuild is required again unless one of those two gates exposes a new code change.
+
+## After full B10 green
 
 Next block is B14 Navigation Work Scheduler API:
 - NavigationPlannerJob value type;
@@ -76,8 +83,8 @@ Next block is B14 Navigation Work Scheduler API:
 - bounded jobs per slice;
 - fairness/age promotion;
 - duplicate suppression;
-- deterministic synthetic tests for hundreds/thousands of actors;
-- timing diagnostics, no brittle wall-clock correctness threshold.
+- deterministic tests for hundreds/thousands of synthetic actors;
+- timing diagnostics, without brittle wall-clock pass/fail thresholds.
 
 Only after B14 acceptance migrate live GameSimulation from AcceptedShortSegment to AcceptedManeuverProgram.
 

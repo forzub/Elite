@@ -4022,3 +4022,64 @@ Expected navigation_runtime CTest count: 14.
 After this isolated 90-degree primitive is measured, the accepted families will
 be composed into the requested 3-4 segment 3D corridor so total route time can
 be compared over mixed turn angles rather than only a symmetric 90-degree case.
+
+
+## 2026-09-20 corner-family gate failed at Newtonian StopTurnGo
+
+Target-machine checkout:
+
+```text
+519313ba430b73b557622436ed7df9a5a9a832cf
+```
+
+Fresh evidence:
+- architecture contract PASS;
+- navigation_runtime 13/14 PASS;
+- only `maneuver_corner_family_matrix` failed.
+
+Primary failing row:
+- pilot=expert;
+- law=Newtonian;
+- mode=StopTurnGo;
+- final position error = 27.257718 m;
+- final speed error = 0.409381 m/s;
+- minimum corner-zone speed = 2.933115 m/s;
+- max center cross-track = 21.026823 m;
+- required hull half-width = 34.330940 m;
+- common half-width = 32 m;
+- corridor violation = 2.330940 m;
+- tracking envelope exceeded = 40 ticks.
+
+Immediate diagnosis:
+1. The current fixture changed all compound internal phases to schedule/time-based
+   handoff so RadiusTurn/DriftTurn can remain moving. That is correct for moving
+   corner families but wrong for StopTurnGo capture phases.
+2. Newtonian StopTurnGo therefore advances from flip -> brake -> rotate -> exit
+   even when the actual rigid body has not yet captured the required
+   waypoint/zero-speed/attitude state. Errors accumulate and the later phases
+   start from the wrong physical state.
+3. The failed 32 m corridor assertion is real evidence of the bad executed
+   maneuver, not a reason to widen the corridor.
+4. Assisted StopTurnGo succeeds much better because fore/reverse main allows
+   braking without the extra Newtonian flip/capture sequence.
+5. RadiusTurn is already healthy for expert in both laws:
+   ~0.115 m final position error, ~0.013 m/s velocity error, ~1.82 deg attitude
+   error, ~7.99 m/s minimum corner speed, zero corridor violation.
+6. DriftTurn physically works as a high-slip pass (10 m/s retained,
+   ~101 deg slip, zero corridor violation, ~0.30 m P error) but expert final
+   attitude error is still ~14.38 deg. The gate stops on the earlier
+   Newtonian StopTurnGo failure, so this is a second expected issue to address
+   after the primary fix.
+7. The printed total times (15.18 / 12.88 / 11.16 s) are currently authored
+   schedule durations. They are not yet valid comparative performance results.
+   Real timing comparison must use completion/exit-state capture, not fixed
+   authored duration.
+
+Next correction:
+- StopTurnGo internal brake/waypoint/attitude phases must use terminal capture
+  semantics before advancing;
+- RadiusTurn and DriftTurn may keep scheduled moving phase handoff, with common
+  exit-gate completion;
+- total-route timing must be measured from actual common entry gate to actual
+  common terminal/exit capture;
+- do not widen corridor or weaken tolerances.

@@ -196,25 +196,51 @@ NavigationWorkScheduler::EnqueueResult NavigationWorkScheduler::enqueue(
         return result;
     }
 
-    if (actor.pendingTicket != 0)
+    if (job.jobRevision == actor.latestJobRevision &&
+        actor.latestJobRevision != 0)
     {
-        if (sameIdentity(job, actor.pendingJob) &&
-            queueIndex(job.priority) >=
-                queueIndex(actor.pendingJob.priority))
+        if (actor.pendingTicket != 0 &&
+            sameIdentity(job, actor.pendingJob))
         {
-            result.status = EnqueueStatus::Duplicate;
-            result.ticket = actor.pendingTicket;
-            ++totals_.duplicates;
+            if (queueIndex(job.priority) >=
+                queueIndex(actor.pendingJob.priority))
+            {
+                result.status = EnqueueStatus::Duplicate;
+                result.ticket = actor.pendingTicket;
+                ++totals_.duplicates;
+                return result;
+            }
+
+            // Same semantic job, higher urgency: replace its queue ticket
+            // without inventing a new planner revision.
+            result.status = EnqueueStatus::Replaced;
+            ++totals_.replaced;
+        }
+        else
+        {
+            // A completed/in-flight/different job may not be replayed under the
+            // same revision. New planner work requires a new jobRevision.
+            result.status = EnqueueStatus::Stale;
+            ++totals_.staleRejected;
             return result;
         }
-
-        // Replacement is O(1)-like at the actor slot. The old queue record is
-        // left as a lazy tombstone and never searched/relinked here.
+    }
+    else if (actor.pendingTicket != 0)
+    {
+        // Newer revision supersedes the pending job in O(1)-like actor state.
+        // The old queue record becomes a lazy tombstone.
         result.status = EnqueueStatus::Replaced;
         ++totals_.replaced;
     }
     else
     {
+        if (pendingCount_ >= policy_.maxPendingJobs)
+        {
+            // Capacity may be occupied by jobs that became stale after a world
+            // or actor revision change. Reclaim them only under pressure.
+            compactSupersededRecords();
+        }
+
         if (pendingCount_ >= policy_.maxPendingJobs)
         {
             result.status = EnqueueStatus::CapacityExceeded;
@@ -250,30 +276,41 @@ NavigationWorkScheduler::EnqueueResult NavigationWorkScheduler::enqueue(
 void NavigationWorkScheduler::compactSupersededRecords()
 {
     std::size_t retained = 0;
-    std::size_t discarded = 0;
+    std::size_t superseded = 0;
+    std::size_t stale = 0;
 
     for (auto& queue : queues_)
     {
         std::deque<PendingRecord> compacted;
         for (const PendingRecord& record : queue)
         {
-            const auto actorIt = actors_.find(record.job.actorId);
-            if (actorIt != actors_.end() &&
-                actorIt->second.pendingTicket == record.ticket)
+            auto actorIt = actors_.find(record.job.actorId);
+            if (actorIt == actors_.end() ||
+                actorIt->second.pendingTicket != record.ticket)
             {
-                compacted.push_back(record);
-                ++retained;
+                ++superseded;
+                continue;
             }
-            else
+
+            if (!fresh(record.job, &actorIt->second))
             {
-                ++discarded;
+                actorIt->second.pendingTicket = 0;
+                actorIt->second.pendingJob = NavigationPlannerJob {};
+                if (pendingCount_ > 0)
+                    --pendingCount_;
+                ++stale;
+                continue;
             }
+
+            compacted.push_back(record);
+            ++retained;
         }
         queue.swap(compacted);
     }
 
     queuedRecordCount_ = retained;
-    totals_.supersededDiscarded += discarded;
+    totals_.supersededDiscarded += superseded;
+    totals_.staleDiscarded += stale;
     ++totals_.queueCompactions;
 }
 

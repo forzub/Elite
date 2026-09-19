@@ -2734,3 +2734,22 @@ baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### 2026-09-19 dormant LocalGuidance/Ruckig runtime exclusion
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+5a144f7552848abe8b61c2978e3c02b35dc3f755
+~~~
+
+The older `LocalGuidancePlanner` / `RuckigRoutePlanner` stack remains in the
+repository for regression/reference builds, but no live owner is allowed to
+reactivate it. Architecture checks now forbid LocalGuidance/Ruckig dependencies
+from `SpaceState`, `GameServer`, `ServerRuntime`, `NpcAiSystem`, and the repair
+runtime, in addition to the existing `GameSimulation` / `NavigationRuntimePlanner`
+exclusion.
+
+This leaves the old code compiled/reference-only, with both confirmed live route
+paths separately hard-disabled.

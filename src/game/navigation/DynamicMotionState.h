@@ -85,10 +85,14 @@ struct DynamicMotionState
     double strafeSpeedMps = 0.0;
     double liftSpeedMps = 0.0;
 
-    // Main/local-control-law acceleration request and the independent
-    // body-axis manoeuvre-thruster request. They stay separate until the fixed
-    // kinematic step so Newtonian RCS can bypass the ordinary controlled-speed
-    // envelope without granting that exemption to the main engine.
+    // Longitudinal main-thrust request and the independent body-axis
+    // manoeuvre/RCS request. They stay separate until the fixed kinematic step.
+    //
+    // Newtonian: mainEngineAccelerationMps2 may point only along ship forward
+    // (aft source); reverse braking requires a physical hull flip.
+    // Assisted: the same longitudinal channel may point along +/- ship forward
+    // (aft/fore controlled sources). It is never a lateral/vertical main
+    // engine; those components belong to manoeuvre/RCS authority.
     glm::dvec3 mainEngineAccelerationMps2 {0.0};
     glm::dvec3 manoeuvreAccelerationMps2 {0.0};
 

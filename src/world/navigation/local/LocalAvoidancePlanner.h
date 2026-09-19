@@ -5,7 +5,7 @@
 #include <string>
 
 #include "world/navigation/local/LocalHorizonPlanner.h"
-#include "world/navigation/space/NavigationSpace.h"
+#include "world/navigation/space/NavigationStaticQueryApi.h"
 
 namespace world::navigation
 {
@@ -14,12 +14,13 @@ namespace world::navigation
 //
 // Ownership rules:
 // - consumes accepted LocalHorizonPlanner dynamic products;
-// - consumes NavigationSpace only through its public point-query boundary;
+// - consumes static state only through NavigationStaticQueryApi;
 // - owns no actor table, spatial index, static topology or global route;
 // - never accepts a lateral target unless static free-space safety is proven.
 class LocalAvoidancePlanner final
 {
 public:
+    using StaticQueries = NavigationStaticQueryApi;
     using Vec3d = LocalHorizonPlanner::Vec3d;
     using EntityId = LocalHorizonPlanner::EntityId;
 
@@ -45,7 +46,7 @@ public:
         double staticAdditionalClearanceMeters = 0.0;
 
         // Set only when the nominal target is a corridor-selected portal center
-        // whose envelope clearance was already proved by NavigationSpace.
+        // whose envelope clearance was already proved by the static query API.
         // Adjusted probes never inherit this exception.
         bool nominalTargetIsProvenPortalBoundary = false;
     };
@@ -103,15 +104,15 @@ public:
         EntityId nominalPrimaryConflictEntityId = 0;
         std::size_t nominalConflictsFound = 0;
 
-        NavigationSpace::Revision spaceRevision = 0;
-        NavigationSpace::Revision spaceSourceRevision = 0;
-        NavigationSpace::RegionId startRegionId = 0;
+        StaticQueries::Revision spaceRevision = 0;
+        StaticQueries::Revision spaceSourceRevision = 0;
+        StaticQueries::RegionId startRegionId = 0;
     };
 
     [[nodiscard]] Result evaluate(
         const Query& query,
         const NavigationMap::QueryResult& dynamicCandidates,
-        const NavigationSpace& staticSpace
+        const StaticQueries& staticQueries
     ) const;
 };
 

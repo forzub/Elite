@@ -104,15 +104,22 @@ large braking requires hull rotation then main-engine burn
 
 For a main-engine-dominant craft this is also the default ordinary course-change model. A material lateral delta-v is not requested as if the ship had an omnidirectional main engine.
 
+A Newtonian turn does **not** imply stopping before the turn. The ship normally preserves useful inertial velocity while attitude changes ahead of the required delta-v.
+
 ~~~text
 substantial course change:
-    preserve/coast existing velocity when useful
-    -> rotate hull toward required burn vector
-    -> main-engine burn
+    keep useful current V
+    -> lead-rotate hull toward the future acceleration / delta-v vector
+    -> begin main-engine burn while V remains non-zero
+    -> bend V continuously toward the desired route
     -> coast / RCS trim
-    -> rotate / flip-and-burn when later braking is required
+    -> lead-rotate toward the next burn or flip-and-burn when braking is required
 ~~~
 
+Stopping is only one maneuver candidate when geometry/doctrine makes it advantageous.
+
+The planner must account for the finite time required to acquire thrust attitude:
+angular acceleration/speed + pilot reaction/latency determine how early hull rotation must begin.
 RCS is normally precision authority: trim, close formation, docking, parking, portal capture, low-speed centering and small residual velocity cleanup. A craft or drone whose actual propulsion profile makes omnidirectional thrusters primary is allowed to use them as primary translation; the maneuver generator follows the real vehicle profile rather than a hard-coded ship assumption.
 
 A strong stop is therefore:

@@ -3263,3 +3263,32 @@ creates one, the invoking script/command must print the exact path at completion
 
 B10 target-machine gate is pending; do not promote the candidate until that
 evidence is supplied.
+
+
+## 2026-09-19 B10 first target-machine gate failed; corrective candidate
+
+The first B10 gate failed before runtime tests.
+
+Evidence:
+- architecture contract failed in 0.173 s because a bare-word dependency grep
+  matched the documentation comment saying AcceptedManeuverProgram has no
+  NavigationMap/NavigationSpace ownership;
+- navigation_runtime configured, then MinGW/g++ 15.2 rejected the nested API
+  default-reference argument `const Policy& policy = {}`;
+- production build failed on the same header path after 17.209 s;
+- no B10 runtime test result is acceptance evidence from that run.
+
+Corrections are now in the code/contract candidate
+`4a3d196c1574e91b747f05d194db7a35ad5c5517` before documentation commits:
+- explicit 3/4-argument overloads replace braced default-reference arguments;
+- the architecture lock checks real include/type/query dependency syntax, not
+  prose comments;
+- the lock pins the MinGW-safe overload form;
+- `tests/navigation_runtime/run_mingw64.sh` prints configure/build/tests/total
+  timing and failing phase even on failure.
+
+No persistent log file was needed for this diagnosis.
+
+B10 remains target-machine pending.
+The last verified B8/B9 baseline remains
+`701881ddae861cd5593e425de91600e048bd417c`.

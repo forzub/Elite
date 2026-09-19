@@ -218,6 +218,27 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
         1.0e-9,
         "Assisted main reverse thrust must still leave excess demand to bounded RCS"
     );
+
+    const glm::dvec3 lateralDemand(5.0, 0.0, 0.0);
+    game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
+        motion,
+        params,
+        lateralDemand,
+        forward
+    );
+
+    requireNear(
+        glm::length(motion.mainEngineAccelerationMps2),
+        0.0,
+        1.0e-12,
+        "Assisted lateral demand must not invent omnidirectional main thrust"
+    );
+    requireNear(
+        glm::length(motion.manoeuvreAccelerationMps2),
+        2.0,
+        1.0e-9,
+        "Assisted lateral demand must remain bounded by physical RCS authority"
+    );
 }
 
 void testAngularDemandUsesExistingCapabilityClamp()

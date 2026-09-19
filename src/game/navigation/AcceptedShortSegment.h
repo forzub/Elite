@@ -9,9 +9,21 @@ namespace game::navigation
 
 // Immutable execution product accepted from one local planning epoch.
 //
-// The planner owns obstacle/topology search. Once this product is accepted,
-// fixed-step execution consumes it without invoking those searches again.
-// Validity/monitoring decides when a later planning epoch is required.
+// TRANSITIONAL Stage-12 shape:
+// this type currently carries a target position/velocity or one fixed
+// acceleration plus optional attitude alignment. That is insufficient for the
+// final Navigation-v2 contract because the follower can re-derive a different
+// control history from the trajectory that was proved.
+//
+// Migration target: AcceptedManeuverProgram containing the same bounded
+// time-parameterized reference state and feed-forward control that passed
+// capability + geometry proof:
+//     P(t), V(t), A_ff(t), q(t), omega(t), alpha_ff(t)
+// Fixed-step execution then samples that program and adds only bounded tracking
+// feedback. See NAVIGATION_COMMAND_OWNERSHIP.md.
+//
+// Until migration completes, validity/monitoring still decides when a later
+// planning epoch is required.
 struct AcceptedShortSegment
 {
     enum class LinearMode : std::uint8_t

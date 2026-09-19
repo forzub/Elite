@@ -558,3 +558,47 @@ Would deleting this code make the architecture clearer without losing required t
 ~~~
 
 If the last answer is yes, the code is probably doing unnecessary work.
+
+
+## Planner/follower two-world refinement — 2026-09-19
+
+Canonical detailed analysis: `PLANNER_FOLLOWER_ARCHITECTURE.md`.
+
+The P0..P14 audit remains useful internally, but the external runtime architecture is now grouped into two worlds:
+
+```text
+Planner World:
+    P0/P1 world query inputs
+    + P2 topology
+    + P3/P4 policy envelopes
+    + P5 free-space candidates
+    + P6 physical maneuver generation
+    + P7 proof
+    + P8 decision
+    + P9 AcceptedManeuverProgram publication
+
+Autopilot/Follower World:
+    P10 program tracking
+    + execution safety monitoring / bounded reflex
+    + P11 frame boundary
+    + P12 PilotSkill
+    + P13 propulsion/physics
+    + P14 completion/invalidation scheduling
+```
+
+P5 target correction:
+- the current angular visibility fan remains a temporary bounded implementation;
+- target ordinary local planning is a route-aligned configuration-space corridor built from already-known world geometry;
+- ray/segment/sweep operations remain legal as proof/intersection primitives, but not as pseudo-perception;
+- NavigationSpace topology remains above the local corridor solver.
+
+P10/P14 refinement:
+- nominal follower tracking must stay within the proved tracking envelope;
+- small disturbances may be recovered while preserving route progress and reducing cross-track/state error;
+- an imminent-hazard bounded reflex may temporarily override nominal tracking;
+- a material reflex/deviation invalidates the accepted program and wakes local replanning rather than turning the follower into a second route planner.
+
+Performance refinement:
+- dynamic broadphase/pair isolation should be shared scene-wide and may be SIMD/batch processed;
+- only agents requiring new programs enter planner batches;
+- follower/program sampling remains fixed-step and may be batched for all active controlled actors.

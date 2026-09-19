@@ -56,6 +56,9 @@ SAMPLER_CPP = (ROOT / "src/game/navigation/ManeuverProgramSampler.cpp").read_tex
 TRACKER_H = (ROOT / "src/game/navigation/ManeuverTrackingController.h").read_text(encoding="utf-8")
 TRACKER_CPP = (ROOT / "src/game/navigation/ManeuverTrackingController.cpp").read_text(encoding="utf-8")
 TRACKER_TEST = (ROOT / "tests/navigation_runtime/ManeuverTrackingControllerTests.cpp").read_text(encoding="utf-8")
+SCHEDULER_H = (ROOT / "src/game/navigation/NavigationWorkScheduler.h").read_text(encoding="utf-8")
+SCHEDULER_CPP = (ROOT / "src/game/navigation/NavigationWorkScheduler.cpp").read_text(encoding="utf-8")
+SCHEDULER_TEST = (ROOT / "tests/navigation_runtime/NavigationWorkSchedulerTests.cpp").read_text(encoding="utf-8")
 GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
 GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
 PURITY_DOC = (ROOT / "src/game/navigation/NAVIGATION_PURITY_CONTRACT.md").read_text(encoding="utf-8")
@@ -337,6 +340,99 @@ require(
     "maneuver_program_sampler_tests" in RUNTIME_CMAKE and
     "maneuver_tracking_controller_tests" in RUNTIME_CMAKE,
     "B8/B9/B10 production and isolated test wiring must remain present",
+)
+
+
+for marker in (
+    "struct NavigationPlannerJob",
+    "enum class Priority",
+    "Urgent",
+    "Normal",
+    "Background",
+    "class NavigationWorkScheduler final",
+    "kMaxJobsPerSlice = 128",
+    "struct DispatchBudget",
+    "maxJobs",
+    "maxCostUnits",
+    "CompletedCurrent",
+    "CompletedStale",
+    "publishActorRevision",
+    "dispatchSlice",
+    "complete(",
+):
+    require(
+        marker in SCHEDULER_H,
+        f"B14 scheduler API contract missing: {marker}",
+    )
+
+for marker in (
+    "effectivePriority",
+    "normalToUrgentAfterTicks",
+    "backgroundToNormalAfterTicks",
+    "backgroundToUrgentAfterTicks",
+    "compactSupersededRecords",
+    "pendingTicket",
+    "inFlightTicket",
+    "fresh(completed",
+    "completed.jobRevision == actor.latestJobRevision",
+):
+    require(
+        marker in SCHEDULER_CPP or marker in SCHEDULER_H,
+        f"B14 scheduler implementation invariant missing: {marker}",
+    )
+
+for source_name, source in (
+    ("NavigationWorkScheduler.h", SCHEDULER_H),
+    ("NavigationWorkScheduler.cpp", SCHEDULER_CPP),
+):
+    for forbidden in (
+        '#include "src/world/navigation/map/',
+        '#include "src/world/navigation/space/',
+        '#include "src/game/simulation/',
+        '#include "src/game/navigation/NavigationRuntimePlanner',
+        "NavigationMap::",
+        "NavigationSpace::",
+        "NavigationRuntimePlanner::",
+        "Planner::plan(",
+        "std::chrono",
+        "system_clock",
+        "steady_clock",
+        "random_device",
+        "std::ofstream",
+        "std::ifstream",
+    ):
+        require(
+            forbidden not in source,
+            f"B14 scheduler leaked planner/world/ambient dependency: {forbidden}",
+        )
+
+for marker in (
+    "testDuplicateSuppressionAndPriorityUpgrade",
+    "testUrgencyAndAgePromotionAreDeterministic",
+    "testStaleJobsAreRejectedBeforePlannerWork",
+    "testInFlightResultIsRejectedAfterRevisionChange",
+    "testReplacementStormKeepsPhysicalQueueBounded",
+    "testFiveThousandActorQueueAndMeasure",
+    "kActors = 5000",
+    "[TIMING] navigation_work_scheduler",
+):
+    require(
+        marker in SCHEDULER_TEST,
+        f"B14 scheduler regression/scale fixture missing: {marker}",
+    )
+
+require(
+    "NavigationWorkScheduler.cpp" in ROOT_CMAKE and
+    "NavigationWorkScheduler.cpp" in RUNTIME_CMAKE and
+    "navigation_work_scheduler_tests" in RUNTIME_CMAKE and
+    "navigation_work_scheduler" in RUNTIME_CMAKE,
+    "B14 scheduler production/test wiring must remain present",
+)
+
+require(
+    "NavigationWorkScheduler" in PURITY_DOC and
+    "age/fairness state" in PURITY_DOC,
+    "navigation purity contract must classify B14 as intentionally stateful scheduling",
 )
 
 

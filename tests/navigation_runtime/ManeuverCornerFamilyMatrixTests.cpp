@@ -736,6 +736,12 @@ struct RunResult
     bool completed = false;
 };
 
+void finalizeMetrics(
+    const Vehicle& v,
+    Metrics& m
+);
+
+
 RunResult runProgram(
     Vehicle& v,
     const RigidVehicleModel& model,

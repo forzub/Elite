@@ -3,86 +3,124 @@
 **Updated:** 2026-09-19 Europe/Kyiv
 **Branch:** `main`
 
-## Fresh target-machine evidence
+## Accepted state
 
-Supplied target-machine results:
-- architecture contract: PASS, 0.191 s;
-- navigation_runtime: 10/10 PASS;
-- ordinary_physical_maneuver_compiler: PASS;
-- B5 diagnostic: 10,000 compiles = 30,495 us total = 3,049.5 ns/compile;
-- navigation_work_scheduler: 5000 actors = 2,801 us total;
-- EliteGame / EliteServer: BUILD PASS;
-- production build: 23.544 s.
+Revised B5 Newtonian compiler semantics are target-machine green by supplied
+evidence:
+- architecture contract PASS;
+- navigation_runtime 10/10 PASS;
+- ordinary_physical_maneuver_compiler PASS;
+- RCS-feasible delta-v still exposes a main-engine alternative for B7: PASS;
+- 10,000 B5 compiles: 30,824 us total = 3,082.4 ns/compile;
+- scheduler 5000 actors: 2,670 us total;
+- EliteGame / EliteServer BUILD PASS;
+- production build 23.861 s.
 
-The supplied excerpt did not contain `git rev-parse HEAD`, so do not fabricate
-an exact tested B5 hash.
+The supplied paste did not contain `git rev-parse HEAD`; do not fabricate an
+exact tested hash.
 
-## Control-ownership decision
+## Current task — maneuver execution laboratory
 
-Automatic navigation is split deliberately:
+Before implementing B6 proof, measure whether the existing accepted-program
+execution chain can follow very simple prescribed motion accurately.
+
+This is NOT a planner/search test.
+
+Execution chain:
 
 ```text
-B4 local geometry
-    -> where a path/corridor can go
-
-B5 physical maneuver compiler
-    -> HOW this vehicle will move:
-       RCS trim?
-       lead-rotate?
-       main-engine burn?
-       coast?
-       brake / flip-and-burn?
-
-B6 continuous proof
-    -> can this exact maneuver be executed safely?
-
-B7 maneuver decision
-    -> which proved maneuver is selected for doctrine/objective?
-
-B8 ACCEPT
-    -> freeze exact maneuver program
-
-B9/B10 follower/autopilot
-    -> sample + bounded tracking only
+pre-authored AcceptedManeuverProgram
+    -> B9 ManeuverProgramSampler
+    -> B10 ManeuverTrackingController
+    -> NavigationRuntimeControlBridge
+    -> PilotSkillExecutor
+    -> ShipControlState
+    -> SharedShipPhysics
+    -> DynamicMotionSystem
+    -> physical trajectory metrics
 ```
 
-The follower/autopilot must NOT decide:
-"RCS is insufficient, rotate hull and use main engine."
-That changes maneuver family and attitude/thrust history, so it belongs on the
-planner side and must be proved before ACCEPT.
+New fixture:
+`tests/navigation_runtime/ManeuverProgramExecutionLabTests.cpp`.
 
-For main-engine-dominant Newtonian craft:
-- main engine is normal translation authority for material delta-v;
-- RCS is trim/precision/docking/residual-correction authority.
+### Scenario A — straight
 
-## B5 correction after green gate
+```text
+(0,0,0) -> (0,0,-100 m)
+start V = 0
+finish V = 0
+duration = 20 s
+```
 
-The first green compiler emitted LeadRotateMainBurn only if direct body-axis
-feed-forward was already infeasible. That is safe but too narrow.
+Smooth quintic stop-to-stop reference. Peak reverse demand stays below the
+physical ~2 m/s2 maneuver authority so no hidden impossible braking command is
+required.
 
-Revised B5 now:
-- keeps Trim when RCS/body-axis authority can perform it;
-- ALSO exposes a LeadRotateMainBurn candidate whenever a non-zero Newtonian
-  delta-v can be physically compiled;
-- publishes `mainEngineCandidateAvailable`;
-- keeps `leadRotateRequired` only for cases where direct feed-forward is
-  actually infeasible;
-- leaves final selection to B7.
+Measure:
+- final position error;
+- final speed;
+- maximum geometric cross-track;
+- endpoint overshoot;
+- completion time.
 
-New regression:
-`testRcsFeasibleLateralChangeStillExposesMainEngineOption`.
+Initial gate:
+- final error <= 3 m;
+- final speed <= 1 m/s;
+- cross-track <= 1 m;
+- overshoot <= 3 m.
 
-Thus B5 generates alternatives; B7 selects. Follower never substitutes engine
-strategy.
+### Scenario B — 90-degree two-leg route
 
-## Current unverified candidate
+```text
+START (0,0,0)
+    |
+    | 100 m
+    v
+CORNER (0,0,-100)
+    -> stop
+    -> yaw -90 deg
+    -> second leg 100 m
+FINISH (100,0,-100)
+```
 
-The main-engine-option ownership correction was made after the supplied green
-gate. It therefore needs one short isolated rerun before B6 begins.
+The baseline deliberately stops at the corner before turning. This isolates
+segment handoff/orientation tracking from continuous-corner trajectory design.
 
-Do NOT run the long 120 s live gate yet.
+Measure:
+- corner stop error;
+- final error;
+- final speed;
+- overshoot;
+- total simulated time.
 
-Run:
+Initial gate:
+- corner error <= 3 m;
+- final error <= 5 m;
+- final speed <= 1.5 m/s.
+
+### Scenario C — corridor
+
+The same two-leg route is monitored against a **5 m half-width** polyline
+corridor.
+
+Measure:
+- maximum distance from route polyline;
+- maximum corridor violation.
+
+Initial gate:
+- no corridor exit.
+
+### Pilot profile
+
+First run uses expert PilotSkill:
+- zero reaction delay;
+- zero command latency;
+- high decision rate/slew.
+
+Purpose: isolate B9/B10 + propulsion/physics before adding pilot-skill latency.
+After baseline is known, rerun the same route under realistic pilot profiles.
+
+## Run now
 
 ```bash
 cd /d/__elite/work
@@ -93,38 +131,50 @@ TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
 time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
 bash tests/navigation_runtime/run_mingw64.sh
-
-TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
-time bash build_mingw64.sh
 ```
 
-Expected:
-- architecture PASS;
-- navigation_runtime 10/10 PASS;
-- ordinary_physical_maneuver_compiler PASS;
-- new RCS-feasible + main-engine-option regression PASS;
-- B5 10k timing visible;
-- scheduler PASS;
-- EliteGame / EliteServer BUILD PASS.
+Expected CTest count is now **11**. The new test is:
+`maneuver_program_execution_lab`.
 
-## Next after rerun
+The verbose diagnostic prints lines like:
 
-Implement B6 proof around the SAME B5 candidate:
-1. capability consistency over all candidate samples/intervals;
-2. static exact-HitVolume sweep;
-3. bounded dynamic influence proof;
-4. proof witness + reserves/revisions;
-5. no trajectory mutation inside proof.
+```text
+[MOVEMENT] scenario=straight_100m arrival=... completed=...
+ final_pos_error_m=... final_speed_mps=...
+ max_cross_track_m=... max_overshoot_m=... simulated_s=...
 
-Only then integrate B4 -> B5 -> B6 -> B7 -> B8 and rerun the logged live ordered
-flight gate.
+[MOVEMENT] scenario=right_angle_100m_100m arrival=...
+ corner_error_m=... max_corridor_violation_m=...
+```
+
+The lab is allowed to fail. Do NOT relax the thresholds before reading the
+metrics. The result tells us whether the problem is:
+- terminal braking/settling on a straight line;
+- program handoff at the corner;
+- attitude tracking;
+- corridor tracking;
+- or none of the above.
+
+No long 120 s obstacle-navigation live gate is needed for this diagnostic.
+
+## After results
+
+If straight fails:
+- debug B9/B10/PilotSkill/physics before B6 integration.
+
+If straight passes but 90-degree route fails:
+- debug program transition/attitude/terminal state.
+
+If both pass:
+- add realistic pilot latency profile;
+- then proceed with B6 proof and later continuous non-stop corner fixture.
 
 ## Documentation invariant
 
-After every state-affecting iteration:
+After every state-affecting event:
 - rewrite CURRENT_TASK.md;
 - rewrite CONTINUE_PROMPT.md;
 - update CURRENT_STATE.md;
 - update PROJECT_STATE.md;
 - update src/game/navigation/STAGE12_END_TO_END.md;
-- update canonical architecture/migration/purity docs when ownership changes.
+- update architecture/migration/purity docs when ownership changes.

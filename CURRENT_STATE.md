@@ -13,67 +13,95 @@ a5e44cdc2fb8eaa312ca788ae4b53a9985df3cae
 - Stage-12 architecture contract: **PASS**.
 - `navigation_runtime`: **14/15 PASS**.
 - Only failing target: `maneuver_corner_family_matrix`.
-- StopTurnGo expert remains healthy.
-- RadiusTurn remains healthy.
-- Long 180 deg arc remains healthy for all PilotSkill profiles and both laws.
-- Remaining strict failure is still expert DriftTurn exit attitude.
+- StopTurnGo expert healthy.
+- RadiusTurn healthy.
+- Long 180 deg arc healthy for all PilotSkill profiles and both laws.
+- Remaining strict failure: DriftTurn terminal attitude.
+- The rejected timed recovery experiment (2.5 s rotate + 1.5 s settle) worsened expert DriftTurn to ~16.889 deg while P/V/corridor stayed good.
 
-## Latest DriftTurn experiment
+## Diagnosis
 
-Candidate tested in this checkout:
-- one coherent 4 s / 40 m recovery;
-- smooth 90 deg yaw commanded over 2.5 s;
-- final 1.5 s continues at 10 m/s while holding exit yaw.
+The long arc proves that the follower can continuously reduce angular error while translating. The remaining defect is in the corner-family fixture semantics:
 
-Result: **worse**, not accepted.
+- the old common checkpoint `x=60` was also treated as the end of the DriftTurn control phase;
+- `ScheduledMoving` advances at the nominal program end regardless of residual tracking error;
+- therefore an arbitrary route checkpoint became an artificial attitude deadline.
 
-Expert DriftTurn:
-- previous final attitude error: ~10.325 deg;
-- new final attitude error: **16.889 deg**;
-- final P error remains ~0.473 m;
-- final V error remains ~0.032 m/s;
-- corridor violation remains 0;
-- tracking envelope remains unexceeded for expert.
+The `4 s` value came from geometry (`40 m / 10 m/s`), not from a physical attitude-settling requirement. Using it as an angular completion deadline was the mistake.
 
-Competent DriftTurn also worsened to ~52.744 deg and 193 envelope-exceeded ticks. Rookie DriftTurn ends ~21.643 deg with 127 exceeded ticks.
+## Current unverified candidate
 
-## Interpretation
+```
+24fce76b30d2448a4b94c93ad78dd8d37e5102df
+```
 
-The long arc still proves the follower can rotate accurately while translating:
-- expert final attitude error 0.052 deg;
-- max in-flight forward/tangent error 3.221 deg;
-- zero tracking-envelope exceed ticks.
+Changes:
+- removes the timed DriftTurn rotate+settle helper;
+- after the drift arc, the accepted reference immediately adopts the outgoing corridor heading and continues translating at 10 m/s;
+- B10 continuously reduces attitude/angular-rate error while the position reference continues moving;
+- the old `x=60` point is now only a passed checkpoint, not the end of control;
+- common outgoing route is extended to `x=120`;
+- test records where the moving ship first satisfies:
+  - forward error <=5 deg;
+  - angular speed <=0.08 rad/s;
+- new diagnostics report:
+  - `outgoing_attitude_captured`;
+  - `outgoing_attitude_capture_x_m`;
+  - distance after old x=60 checkpoint at which capture occurs.
 
-Therefore the failure is not a general inability to rotate in motion.
+StopTurnGo and RadiusTurn also receive the same continued outgoing straight so all expert families finish at the same extended route endpoint.
 
-The 2.5 s recovery compresses the same 90 deg yaw change into a more aggressive angular profile. Although the nominal profile remains inside the published angular capability, the closed-loop execution leaves a larger terminal attitude residual. A 1.5 s zero-feed-forward settle with the current bounded angular feedback is not sufficient to remove that residual.
+No production follower gains, capability, corridor width or acceptance thresholds were weakened.
 
-Do **not** tune durations blindly or weaken the 5 deg gate.
+## Acceptance target
 
-## Next diagnostic/mechanism step
+On target machine:
+- architecture contract PASS;
+- runtime 15/15;
+- expert DriftTurn remains inside 32 m hull corridor;
+- expert DriftTurn retains sustained-speed/material-slip semantics;
+- final P <=1.5 m;
+- final V <=1.0 m/s;
+- final attitude <=5 deg;
+- `outgoing_attitude_captured=1`;
+- long-arc diagnostic remains green.
 
-Instrument the DriftTurn recovery boundary with:
-- terminal attitude error;
-- terminal angular-velocity error / actual yaw rate;
-- reference yaw rate;
-- peak angular tracking residual during recovery.
+## Next commands
 
-Then choose the correction from evidence.
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
 
-Likely mechanism if the terminal state shows residual angular motion:
-- planner-authored moving terminal capture / recovery continuation that keeps the translational reference advancing at 10 m/s while holding final yaw and damping angular rate;
-- not the existing frozen-position StateCapture;
-- no follower-side maneuver selection.
+OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
-This gate must be fixed before moving to the next major 3D/speed-doctrine stage.
+{
+    echo "===== TESTED HEAD ====="
+    git rev-parse HEAD
+
+    echo
+    echo "===== ARCHITECTURE CONTRACT ====="
+    TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
+    time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
+    echo
+    echo "===== NAVIGATION RUNTIME ====="
+    bash tests/navigation_runtime/run_mingw64.sh
+} 2>&1 | tee "$OUT"
+
+echo
+echo "===== LOG FILE ====="
+echo "$PWD/$OUT"
+```
 
 ## Architecture invariants
 
 - Planner owns maneuver choice, trajectory/corridor and proof.
-- Follower owns sampling/tracking, bounded feedback and safety monitoring; it must not silently choose a different maneuver family.
+- Follower owns sampling/tracking, bounded feedback and safety monitoring.
 - AcceptedManeuverProgram remains the planner/follower contract.
+- Follower must not invent an alternate maneuver family.
 - Manual guidance must visualize the same accepted route/trajectory.
-- Newtonian and Assisted physical laws remain distinct.
+- Newtonian and Assisted laws remain physically distinct.
 - Planner cannot mutate authoritative physics state.
 
 ## Documentation protocol

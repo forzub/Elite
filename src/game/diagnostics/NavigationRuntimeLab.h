@@ -26,8 +26,14 @@ inline const glm::dvec3 NavigationRuntimeLabRotatingActorAngularVelocityDegPerSe
     0.0,
     2.0
 };
+// StaticObject currently stores authoritative infrastructure angular velocity
+// in glm::vec3. The authored diagnostic rate is computed in double, then
+// quantized once through that float storage before crossing the typed
+// System -> NavLocal boundary. The live acceptance tolerance therefore has to
+// cover one float quantization at this magnitude; 1e-12 incorrectly tests
+// double precision that the source state does not possess.
 inline constexpr double NavigationRuntimeLabAngularVelocityToleranceRadPerSecond =
-    1.0e-12;
+    1.0e-8;
 
 // Stage 12A-6b3b deterministic live moving aperture. These are real
 // hub-attached physical objects whose centres translate together in hub-visual

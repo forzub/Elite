@@ -175,13 +175,13 @@ void testGuidancePresentationReadsServerExecutionTruth()
     require(presentation.authoritativeActiveTargetRevision == 99u,
             "guidance presentation must preserve active pilot target revision");
     requireNear(
-        presentation.authoritativeExecutedLinearAccelerationMapMps2.x,
+        presentation.authoritativeExecutedLinearAccelerationSystemMps2.x,
         0.8,
         1.0e-12,
         "guidance presentation must expose exact executed linear demand"
     );
     requireNear(
-        presentation.authoritativeExecutedAngularAccelerationMapRadPerSec2.z,
+        presentation.authoritativeExecutedAngularAccelerationSystemRadPerSec2.z,
         0.24,
         1.0e-12,
         "guidance presentation must expose exact executed angular demand"

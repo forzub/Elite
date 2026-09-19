@@ -89,6 +89,14 @@ require(
     "NavigationMap contract test must pin NavLocal publication without hidden frame conversion",
 )
 
+require(
+    "std::vector<NavigationObstacle> exactObstacles" in MAP_H and
+    "actor.exactObstacles = input.exactObstacles;" in MAP_CPP and
+    "result.exactObstacles = actor.exactObstacles;" in MAP_CPP and
+    "dynamic_exact_box" in MAP_TEST,
+    "NavigationMap swept sphere must remain broadphase while exact dynamic geometry crosses the value boundary",
+)
+
 for marker in (
     "class NavigationFrameBoundary final",
     "SystemPosition",
@@ -721,6 +729,14 @@ require(
     "testVisibilitySteeringWidensThenReturnsToDirectLine" in LOCAL_TEST,
     "local regression must prove widening beyond the legacy 15/30 fan and stateless return to direct A->B visibility",
 )
+
+require(
+    "exactTranslationNarrowPhaseAvailable" in LOCAL_CPP and
+    "segmentIntersectsNavigationObstacle" in LOCAL_CPP and
+    "candidate.exactObstacles" in LOCAL_CPP and
+    "testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute" in LOCAL_TEST,
+    "dynamic conservative spheres must narrow against exact translation-only OBB geometry instead of sealing real free space",
+)
 require(
     "ordinarySearchExhausted" in LOCAL_TEST and
     "ordinaryVisibilitySearchExhausted" in RUNTIME_TEST,
@@ -953,6 +969,14 @@ require(
     "rotatingActorAngularVelocityVerified" in SIM_CPP and
     "candidate.angularVelocityMapRadPerSecond" in SIM_CPP,
     "live lab must verify the rotating actor after NavigationMap publication",
+)
+
+require(
+    "NavigationHitVolumeAdapter::buildObstacles" in SIM_CPP and
+    "actor.exactObstacles.push_back" in SIM_CPP and
+    "NavigationRuntimeLabLinearVelocityToleranceMps" in LAB_H and
+    "NavigationRuntimeLabLinearVelocityToleranceMps" in SIM_CPP,
+    "live dynamic infrastructure must publish exact HitVolume OBBs and use source-precision-aware kinematic verification",
 )
 
 for marker in (

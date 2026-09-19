@@ -48,6 +48,7 @@ CONTROL_INTENT_H = (ROOT / "src/game/navigation/NavigationControlIntent.h").read
 PHYSICAL_HORIZON_H = (ROOT / "src/world/navigation/local/PhysicalManeuverHorizon.h").read_text(encoding="utf-8")
 PHYSICAL_HORIZON_TEST = (ROOT / "tests/navigation_runtime/PhysicalManeuverHorizonTests.cpp").read_text(encoding="utf-8")
 EXECUTION_SAFETY_PROBE_H = (ROOT / "src/game/navigation/NavigationExecutionSafetyProbeBuilder.h").read_text(encoding="utf-8")
+FOLLOWER_H = (ROOT / "src/game/navigation/TrajectoryFollower.h").read_text(encoding="utf-8")
 FOLLOWER_CPP = (ROOT / "src/game/navigation/TrajectoryFollower.cpp").read_text(encoding="utf-8")
 PROGRAM_H = (ROOT / "src/game/navigation/AcceptedManeuverProgram.h").read_text(encoding="utf-8")
 SAMPLER_H = (ROOT / "src/game/navigation/ManeuverProgramSampler.h").read_text(encoding="utf-8")
@@ -311,6 +312,14 @@ require(
     "ManeuverProgramSampler::sample(program, universeTimeSeconds)" in FOLLOWER_CPP and
     "ManeuverTrackingController::track(" in FOLLOWER_CPP,
     "TrajectoryFollower must compose B9 sampler -> B10 tracker for AcceptedManeuverProgram",
+)
+
+require(
+    "const Policy& policy = {}" not in TRACKER_H and
+    "trackingPolicy = {}" not in FOLLOWER_H and
+    "const Policy policy {};" in TRACKER_CPP and
+    "const ManeuverTrackingController::Policy trackingPolicy {};" in FOLLOWER_CPP,
+    "MinGW-safe default tracking policy must use explicit overloads, not braced default reference arguments",
 )
 
 for marker in (

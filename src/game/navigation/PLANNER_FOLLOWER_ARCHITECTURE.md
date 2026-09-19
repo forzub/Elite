@@ -360,3 +360,22 @@ Newtonian braking is not equivalent to Assisted braking:
 The follower executes that proved attitude/thrust history. It may not hide a
 missing Newtonian flip by applying an impossible reverse main engine or an
 omnidirectional acceleration vector.
+
+
+## Corner passage is maneuver-family specific
+
+A follower does not decide that a route vertex was passed merely because the
+center crossed a coordinate.
+
+The accepted maneuver family defines the passage condition:
+- StopTurnGo: waypoint capture + near-stop + outgoing attitude capture;
+- RadiusTurn: continuous proved turn and outgoing-gate crossing;
+- DriftTurn: continuous proved high-slip turn and outgoing-gate crossing.
+
+For moving corner families, internal reference-phase handoff is time/program
+driven. The externally meaningful completion event is the proved outgoing gate
+and exit-state envelope.
+
+The same PilotSkill profile and rigid hull may therefore produce different
+corner times, corridor-width requirements and tracking reserves for different
+families and control laws.

@@ -4,48 +4,49 @@
 
 ## Task
 
-Fix the remaining DriftTurn exit-attitude error by correcting the maneuver reference, not by weakening acceptance or follower limits.
+Resolve the remaining DriftTurn terminal-attitude defect from measured angular state, not by timing guesswork.
 
 ## Latest verified target state
 
 Exact tested checkout:
 
 ```
-d659416b9b1ddb2356c37eff315f9d13b70bafaa
+a5e44cdc2fb8eaa312ca788ae4b53a9985df3cae
 ```
 
-Stage-12 architecture PASS; runtime 14/15.
+Architecture PASS; runtime 14/15.
 
-### What the diagnostic proved
+The 2.5 s rotate + 1.5 s moving-settle experiment failed:
+- expert DriftTurn final attitude error worsened from ~10.325 deg to **16.889 deg**;
+- P/V/corridor remain good;
+- long arc remains clean.
 
-The 180 deg long arc proves the ship can continuously correct attitude while translating:
-- expert final attitude error: 0.052 deg;
-- expert max in-flight forward/tangent error: 3.221 deg;
-- competent final attitude error: 0.048 deg;
-- rookie final attitude error: 0.859 deg;
-- all long-arc rows completed with zero tracking-envelope exceed ticks.
+This proves:
+- general angular tracking is healthy;
+- simply making the Drift recovery faster and adding a passive settle window is not sufficient.
 
-So the remaining ~10.325 deg expert DriftTurn exit error is **DriftTurn-specific reference/recovery authoring**, not a general B9/B10 angular-tracking defect.
+## Next step
 
-## Current candidate
+Add DriftTurn recovery diagnostics for:
+- actual final angular velocity / yaw rate;
+- reference final angular velocity;
+- final attitude error;
+- peak attitude/angular-velocity tracking error during the recovery.
 
-```
-76346121516e5b00d14a4e6304621b55791093ab
-```
+Use the result to distinguish:
+1. residual angular momentum / insufficient terminal damping;
+2. reference/controller mismatch during the aggressive recovery profile.
 
-Implementation:
-- one coherent 4 s / 40 m moving recovery;
-- smooth 90 deg rotation completes in 2.5 s;
-- remaining 1.5 s continues at 10 m/s with final yaw held;
-- no follower-side hidden replanning;
-- no tolerance widening;
-- no generic tracking-reserve inflation.
+If residual motion is the issue, implement a planner-authored **moving terminal capture**: after nominal recovery, continue an advancing position reference at the terminal velocity while holding final attitude and damping angular rate. Do not use frozen-position StateCapture for a moving exit.
 
-This is the intended mechanism change: give the physical ship a real in-motion settle window before the common exit.
+Do not:
+- relax the 5 deg exit requirement;
+- inflate generic feedback reserve;
+- widen corridor;
+- move strategy selection into follower.
 
-## Validation
+## Validation commands
 
-Rerun:
 ```bash
 cd /d/__elite/work
 git pull --ff-only
@@ -55,8 +56,6 @@ time python tests/architecture_contracts/check_navigation_stage12_runtime_planne
 bash tests/navigation_runtime/run_mingw64.sh
 ```
 
-Success criterion remains expert DriftTurn final attitude <=5 deg with existing P/V/corridor requirements, while long-arc behavior must stay green.
-
 ## Iteration rule
 
-After the code/result changes state, synchronize all project MD files and recreate `CONTINUE_PROMPT.md` from scratch.
+After each code/evidence change, synchronize all state MD files and recreate `CONTINUE_PROMPT.md` from scratch.

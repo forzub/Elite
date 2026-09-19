@@ -167,6 +167,9 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
     );
 
     const glm::dvec3 reverseDemand(0.0, 0.0, 20.0);
+
+    motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
     game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
         motion,
         params,
@@ -178,13 +181,42 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
         glm::length(motion.mainEngineAccelerationMps2),
         0.0,
         1.0e-12,
-        "reverse demand must not invent a reverse main engine"
+        "Newtonian reverse demand must not invent fore/nose main thrust"
     );
     requireNear(
         glm::length(motion.manoeuvreAccelerationMps2),
         2.0,
         1.0e-9,
-        "reverse demand may use only real manoeuvre-thruster authority"
+        "Newtonian reverse demand may use only real manoeuvre-thruster authority before a hull flip"
+    );
+
+    motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
+        motion,
+        params,
+        reverseDemand,
+        forward
+    );
+
+    requireNear(
+        glm::length(motion.mainEngineAccelerationMps2),
+        standardGravity,
+        1.0e-6,
+        "Assisted reverse demand must use bounded fore/nose longitudinal main authority"
+    );
+    require(
+        glm::dot(
+            motion.mainEngineAccelerationMps2,
+            glm::dvec3(forward)
+        ) < 0.0,
+        "Assisted reverse main thrust must point opposite ship forward"
+    );
+    requireNear(
+        glm::length(motion.manoeuvreAccelerationMps2),
+        2.0,
+        1.0e-9,
+        "Assisted main reverse thrust must still leave excess demand to bounded RCS"
     );
 }
 

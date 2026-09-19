@@ -58,6 +58,9 @@ SAMPLER_CPP = (ROOT / "src/game/navigation/ManeuverProgramSampler.cpp").read_tex
 TRACKER_H = (ROOT / "src/game/navigation/ManeuverTrackingController.h").read_text(encoding="utf-8")
 TRACKER_CPP = (ROOT / "src/game/navigation/ManeuverTrackingController.cpp").read_text(encoding="utf-8")
 TRACKER_TEST = (ROOT / "tests/navigation_runtime/ManeuverTrackingControllerTests.cpp").read_text(encoding="utf-8")
+PHASE_GATE_H = (ROOT / "src/game/navigation/ManeuverPhaseGate.h").read_text(encoding="utf-8")
+PHASE_GATE_CPP = (ROOT / "src/game/navigation/ManeuverPhaseGate.cpp").read_text(encoding="utf-8")
+PHASE_GATE_TEST = (ROOT / "tests/navigation_runtime/ManeuverPhaseGateTests.cpp").read_text(encoding="utf-8")
 SCHEDULER_H = (ROOT / "src/game/navigation/NavigationWorkScheduler.h").read_text(encoding="utf-8")
 SCHEDULER_CPP = (ROOT / "src/game/navigation/NavigationWorkScheduler.cpp").read_text(encoding="utf-8")
 SCHEDULER_TEST = (ROOT / "tests/navigation_runtime/NavigationWorkSchedulerTests.cpp").read_text(encoding="utf-8")
@@ -432,6 +435,53 @@ require(
 )
 
 for marker in (
+    "class ManeuverPhaseGate final",
+    "ScheduledMoving",
+    "StateCapture",
+    "CaptureTimedOut",
+    "maximumCaptureOverrunSeconds",
+):
+    require(
+        marker in PHASE_GATE_H,
+        f"ManeuverPhaseGate API contract missing: {marker}",
+    )
+
+for marker in (
+    "TrajectoryFollower::Status::Complete",
+    "policy.mode == Mode::ScheduledMoving",
+    "captureOverrunSeconds",
+    "Status::CaptureTimedOut",
+):
+    require(
+        marker in PHASE_GATE_CPP,
+        f"ManeuverPhaseGate implementation contract missing: {marker}",
+    )
+
+for marker in (
+    "testScheduledMovingAdvancesAtNominalEnd",
+    "testStateCaptureHoldsPastNominalEnd",
+    "testStateCaptureAdvancesOnlyOnFollowerComplete",
+    "testStateCaptureTimesOutInsteadOfSilentlyAdvancing",
+    "MANEUVER PHASE GATE TESTS: PASS",
+):
+    require(
+        marker in PHASE_GATE_TEST,
+        f"ManeuverPhaseGate regression missing: {marker}",
+    )
+
+require(
+    "src/game/navigation/ManeuverPhaseGate.cpp" in ROOT_CMAKE,
+    "shared EliteNavigationWorldRuntime must compile ManeuverPhaseGate",
+)
+
+require(
+    "ManeuverPhaseGate.cpp" in RUNTIME_CMAKE and
+    "NAME maneuver_phase_gate" in RUNTIME_CMAKE,
+    "runtime test target must compile and execute ManeuverPhaseGate",
+)
+
+
+for marker in (
     "CornerMode::StopTurnGo",
     "CornerMode::RadiusTurn",
     "CornerMode::DriftTurn",
@@ -451,7 +501,10 @@ for marker in (
     "stop-turn-go never achieved a real near-stop in corner zone",
     "radius turn collapsed toward a stop-turn maneuver",
     "drift turn never produced a material body/velocity slip angle",
-    "internal phase handoff is scheduled; moving corner passage is entry-gate -> exit-gate",
+    "Gate::Mode::StateCapture",
+    "captureTimedOutPhases",
+    "max_capture_overrun_s=",
+    "family-specific phase handoff uses ScheduledMoving and StateCapture",
 ):
     require(
         marker in CORNER_FAMILY_TEST,

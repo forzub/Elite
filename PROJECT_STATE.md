@@ -17,51 +17,40 @@ Navigation geometry / local corridor
  -> authoritative propulsion + physics
 ```
 
-Planner owns route, corridor, maneuver family, physical reference and proof. Follower tracks the accepted result and may apply bounded feedback/safety response but may not replace the maneuver strategy.
+Planner owns route/corridor, maneuver family, physical reference and proof. Follower tracks the accepted result and applies bounded feedback/safety response but may not replace maneuver strategy.
 
-Newtonian and Assisted laws are separate physical families. Manual guidance will expose the same accepted trajectory/corridor.
-
-## Current verified maneuver-quality milestone
+## Current verified maneuver-quality state
 
 Latest exact target-machine checkout:
 
 ```
-d659416b9b1ddb2356c37eff315f9d13b70bafaa
+a5e44cdc2fb8eaa312ca788ae4b53a9985df3cae
 ```
 
 Result:
 - architecture PASS;
-- navigation runtime 14/15;
-- StopTurnGo expert defect fixed;
+- runtime 14/15;
+- StopTurnGo expert healthy;
 - RadiusTurn healthy;
-- long 180 deg arc healthy across expert/competent/rookie and both laws;
-- only strict expert failure: DriftTurn final attitude ~10.325 deg vs <=5 deg.
+- long 180 deg continuous-curve tracking healthy for all pilot profiles/laws;
+- only strict expert failure remains DriftTurn terminal attitude.
 
-The long arc materially narrows the diagnosis: B9/B10 continuous angular tracking is healthy. Expert tracks ~251 m / 25.1 s of curved flight with only 3.221 deg maximum in-flight angular error and 0.052 deg final error.
+Latest attempted fix (2.5 s rotate + 1.5 s moving settle) worsened expert DriftTurn attitude from ~10.325 deg to ~16.889 deg while preserving good P/V/corridor. It is rejected.
 
-Therefore the remaining defect is local DriftTurn recovery/reference authoring.
+## Current diagnosis
 
-## Current unverified candidate
+General B9/B10 angular tracking is not the problem. The failure is local to the transient DriftTurn recovery. The next step is to capture terminal angular-rate/attitude residuals and design the planner-authored recovery from that evidence.
 
-```
-76346121516e5b00d14a4e6304621b55791093ab
-```
+A likely required primitive is moving terminal capture: continue advancing the reference position at terminal velocity while holding final attitude and damping angular velocity. Existing frozen-position StateCapture is unsuitable for a moving exit.
 
-DriftTurn now uses one coherent 4 s / 40 m recovery reference with 2.5 s smooth rotation followed by 1.5 s of continued 10 m/s translation at the final yaw. This adds the needed in-motion attitude settle without moving maneuver strategy into the follower.
+## Roadmap
 
-Do not:
-- widen the 5 deg requirement;
-- widen corridor;
-- increase generic feedback reserve merely to force green;
-- add follower-side strategy selection.
-
-## Roadmap after DriftTurn is green
-
-1. Re-run corner-family + long-arc gates.
-2. Add mixed-angle / multi-segment 3D corridor quality tests.
-3. Extend speed/doctrine coverage.
-4. Move the proven planner/follower behavior into visible game evaluation.
+1. Instrument/fix DriftTurn terminal angular transient.
+2. Re-run corner-family + long-arc gates.
+3. Only after 15/15, add mixed-angle/multi-segment 3D corridor tests.
+4. Extend speed/doctrine coverage.
+5. Move proven behavior into visible game evaluation.
 
 ## State protocol
 
-After every state-affecting event, synchronize `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, the active Stage-12 document, and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state-affecting event, synchronize `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, active Stage-12 documentation, and recreate `CONTINUE_PROMPT.md` from scratch.

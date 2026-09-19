@@ -42,6 +42,7 @@
 #include "src/game/navigation/AcceptedShortSegment.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/NavigationExecutionReplanPolicy.h"
+#include "src/game/navigation/NavigationWorkScheduler.h"
 #include "src/game/diagnostics/NavigationRuntimeLab.h"
 #include "src/world/navigation/map/NavigationMap.h"
 #include "src/world/navigation/space/NavigationSpace.h"
@@ -459,6 +460,18 @@ private:
         m_navigationRuntimeLabLastPlan {};
     game::navigation::AcceptedShortSegment
         m_navigationRuntimeLabAcceptedSegment {};
+
+    // B14 live integration remains lab-scoped until its target-machine gate is
+    // accepted. Planner geometry/behavior stays unchanged; this service owns
+    // only when a dirty planning request is allowed to run.
+    game::navigation::NavigationWorkScheduler
+        m_navigationRuntimeLabWorkScheduler {};
+    std::uint64_t m_navigationRuntimeLabNextPlannerJobRevision = 1;
+    std::uint64_t m_navigationRuntimeLabCapabilityRevision = 1;
+    bool m_navigationRuntimeLabSchedulerCapabilityInitialized = false;
+    game::navigation::AcceptedShortSegment::CapabilitySnapshot
+        m_navigationRuntimeLabSchedulerCapability {};
+
     std::uint64_t m_navigationRuntimeLabNextSegmentRevision = 1;
     game::diagnostics::NavigationRuntimeLabObservation
         m_navigationRuntimeLabObservation {};

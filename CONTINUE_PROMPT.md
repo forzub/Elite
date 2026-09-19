@@ -2,55 +2,59 @@
 
 Continue work directly in GitHub repository `forzub/Elite`, branch `main`.
 
-**Workflow rule:** after every state-affecting iteration, update `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, the active Stage-12 document, and recreate this entire `CONTINUE_PROMPT.md` **from scratch** from the new current truth. Do not incrementally patch stale prompt prose. The newly recreated prompt must contain this rule again.
+**Workflow rule:** after every state-affecting iteration, update `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, the active Stage-12 document, and recreate this entire `CONTINUE_PROMPT.md` **from scratch** from the new current truth. Do not incrementally patch stale prompt prose. The newly recreated prompt must contain this same rule again.
 
-## Current exact verified evidence
+## Latest exact verified target-machine evidence
 
-Latest target-machine tested checkout:
+Tested checkout:
 
 ```
-be4686f4dcba419f451813b1ddc246088c145e48
+d659416b9b1ddb2356c37eff315f9d13b70bafaa
 ```
 
 Results:
 - Stage-12 architecture contract PASS.
 - `navigation_runtime` 14/15.
-- Only failing test: `maneuver_corner_family_matrix`.
-- Expert Newtonian StopTurnGo is now fixed and completes cleanly.
-- RadiusTurn remains healthy.
-- Remaining strict expert failure is DriftTurn common-exit attitude: about 10.325 deg instead of <=5 deg.
-- Drift P/V and corridor are otherwise good.
-- Rookie StopTurnGo timeouts remain diagnostic and are not the current strict failure.
+- Expert StopTurnGo is healthy.
+- RadiusTurn is healthy.
+- Only strict expert failure is DriftTurn terminal attitude:
+  - Newtonian 10.324757 deg;
+  - Assisted 10.324757 deg;
+  - required <=5 deg.
+- Drift final P/V and corridor are already good.
 
-The 5 deg rule is a **terminal exit-attitude requirement**. The ship is allowed and expected to correct attitude while translating.
+## Long-arc diagnostic conclusion
 
-## Current unverified candidate
+The added 180 deg arc (R=80 m, v=10 m/s, ~251.33 m, ~25.13 s) completed cleanly for every PilotSkill and both laws.
 
-```
-5c16bedc25c422f2c79ae5def14396839ef4ee7c
-```
+Expert:
+- final P error 0.332 m;
+- final V error 0.036 m/s;
+- final attitude error 0.052 deg;
+- max in-flight forward/tangent error 3.221 deg;
+- zero tracking-envelope exceed ticks.
 
-Change:
-- add a long 180 deg curved-flight probe to `tests/navigation_runtime/ManeuverCornerFamilyMatrixTests.cpp`;
-- R=80 m, v=10 m/s, arc length ~251.33 m, duration ~25.13 s;
-- run expert/competent/rookie under Newtonian and Assisted;
-- report maximum centerline error, rigid-hull corridor demand, maximum in-flight forward/tangent error, tracking-envelope exceed ticks, and final P/V/attitude errors;
-- keep existing corner/Drift behavior and thresholds unchanged.
+Competent final attitude error is 0.048 deg; rookie 0.859 deg. All complete.
 
-Expert long-arc gates:
-- same 32 m hull half-width corridor;
-- final P <=1.5 m;
-- final V <=1.0 m/s;
-- final attitude <=5 deg;
-- max in-flight forward/tangent error <=10 deg.
+This proves the ship **can rotate accurately while translating** and the general B9/B10 angular-tracking chain is not the source of the DriftTurn miss.
 
-Purpose:
-- clean long arc + bad Drift exit => DriftTurn recovery/reference defect;
-- bad long arc too => general sampler/follower angular-tracking defect.
+## Current task
 
-Do not widen tolerances or tracking reserve to make the test green before this split is understood.
+Fix the DriftTurn recovery/reference authoring.
 
-## Target-machine commands
+The current recovery asks for a moving 90 deg attitude change over its last 4 s / 40 m, but the accepted reference ends while the physical ship is still ~10.3 deg short.
+
+Implement a coherent moving recovery that:
+- preserves the intended 10 m/s translational exit;
+- reaches the target yaw before the final endpoint;
+- holds target yaw for a short in-motion settle interval;
+- remains one planner-authored AcceptedManeuverProgram/recovery reference;
+- does not ask the follower to invent a new maneuver;
+- does not widen the 5 deg terminal gate, corridor or generic tracking reserve.
+
+A suitable first implementation is a coast+rotate+settle trajectory: use part of the final 4 s to complete the smooth yaw change, then continue the same translational motion at target yaw for the remaining fraction.
+
+## Validation commands
 
 ```bash
 cd /d/__elite/work
@@ -63,27 +67,24 @@ time python tests/architecture_contracts/check_navigation_stage12_runtime_planne
 bash tests/navigation_runtime/run_mingw64.sh
 ```
 
-When the result arrives:
-1. record the exact tested HEAD;
-2. inspect all `[LONG-ARC]` rows and expert corner rows;
-3. decide whether angular error is general or Drift-specific;
-4. fix the mechanism, not the threshold;
-5. update state MDs;
-6. recreate this prompt from scratch again.
+Acceptance:
+- expert DriftTurn final attitude <=5 deg;
+- existing expert P <=1.5 m, V <=1.0 m/s and 32 m hull corridor remain;
+- Drift retains sustained speed/slip semantics;
+- long arc remains green.
 
-## Architecture ownership that must not regress
+## Architecture ownership
 
-- Planner: route/corridor, maneuver family, physical reference, continuous proof, accepted trajectory.
-- Follower: sample/track accepted trajectory, bounded feedback, monitoring/reflex.
+- Planner owns route/corridor, maneuver family, physical reference, continuous proof and accepted trajectory.
+- Follower samples/tracks the accepted trajectory, applies bounded feedback and safety monitoring.
 - Follower must not invent an alternate maneuver strategy.
 - AcceptedManeuverProgram is the planner/follower boundary.
-- Newtonian/Assisted distinctions remain physical, not cosmetic.
+- Newtonian/Assisted physical distinctions remain real.
 - Manual guidance later visualizes the same accepted route/trajectory.
-- Navigation typed working-frame boundaries remain sealed.
 - Planner never mutates authoritative physics state.
 
-## Next after this gate
+## After this gate
 
-After angular behavior is understood and corner + long-arc quality are green, proceed to a mixed-angle multi-segment 3D corridor, then speed/doctrine quality coverage.
+Once DriftTurn and long arc are green, proceed to mixed-angle multi-segment 3D corridor quality, then speed/doctrine coverage.
 
 **Again:** recreate this entire prompt from scratch after every state-affecting iteration.

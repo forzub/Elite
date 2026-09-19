@@ -131,10 +131,10 @@ for marker in (
             f"pure execution-safety probe builder missing: {marker}")
 
 for forbidden in (
-    "NavigationSpace",
-    "NavigationMap",
-    "HitVolume",
-    "GameSimulation",
+    '#include "src/world/navigation/space/',
+    '#include "src/world/navigation/map/',
+    '#include "src/game/simulation/',
+    '#include "src/game/diagnostics/',
     "m_navigation",
     "std::chrono",
     "std::random",

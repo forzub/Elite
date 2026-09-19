@@ -137,7 +137,9 @@ For extremely fast-changing encounters, accepted segment duration naturally beco
 
 ## Execution versus planning products
 
-A mature automatic trajectory product should retain:
+A mature automatic trajectory product is an **accepted maneuver program**, not just a target point/velocity.
+
+It should retain:
 
 ~~~text
 trajectoryRevision
@@ -146,14 +148,36 @@ acceptedAt
 validUntil
 source topology/space revision
 vehicle capability revision
-time-parameterized position/velocity/attitude
-proper acceleration / angular demand program
-tracking envelope
+
+time-parameterized reference state:
+    P(t)
+    V(t)
+    q(t) / body basis(t)
+    omega(t)
+
+feed-forward control proved with that same trajectory:
+    A_ff(t)
+    alpha_ff(t)
+
+tracking envelope / reserved feedback authority
 collision/clearance witness
 terminal state / next handoff
 ~~~
 
-The follower samples this product. It does not call the planner.
+The program may be analytic or a small fixed-capacity set of control knots. It must remain bounded.
+
+The follower samples **this same proved program** and adds only bounded feedback correction around it. It must not regenerate a new velocity trajectory from a target point.
+
+~~~text
+A_command = A_ff + bounded tracking correction
+alpha_command = alpha_ff + bounded tracking correction
+~~~
+
+Large deviation invalidates the accepted maneuver and wakes replanning.
+
+The objective owner chooses the mission destination. The route layer chooses topology/corridor. The maneuver planner compiles the next physical program. The follower tracks it. The propulsion allocator chooses actual actuators. Physics remains final authority.
+
+See `NAVIGATION_COMMAND_OWNERSHIP.md`.
 
 ## Current implementation seam
 

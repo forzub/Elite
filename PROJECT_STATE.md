@@ -17,62 +17,73 @@ Navigation geometry / corridor
  -> authoritative propulsion / physics
 ```
 
-Planner owns physical maneuver/reference generation. Follower owns bounded residual tracking.
+Planner authors physically truthful maneuver candidates. ManeuverDecisionController chooses among them by doctrine. Follower tracks the selected accepted program with bounded residual authority.
 
-## Accepted quality baseline
+## Accepted target baseline
 
-Exact target-machine checkout:
+Exact tested checkout:
 
 ```
-213bbfb62ff7dcb8e553c06bdca09d99d2d1fd56
+9435725206b88f0ae953f058a294b1d6a7608e78
 ```
 
 Accepted:
 - Stage-12 architecture PASS;
 - navigation runtime 16/16;
-- StopTurnGo / RadiusTurn / DriftTurn strict expert gates;
+- strict StopTurnGo / RadiusTurn / DriftTurn;
 - long continuous angular tracking;
-- rigid-body braking/corridor behavior;
-- non-orthogonal stop-to-stop 3D corridor;
-- continuous multi-corner 3D fly-through.
+- rigid-body law-specific braking;
+- non-orthogonal 3D stop-to-stop corridor;
+- continuous multi-corner 3D fly-through with full-hull proof.
 
-## Newly closed capability
+## Continuous 3D fly-through result
 
-The planner/follower/physics stack can execute one continuous 5-segment 3D route through ~35/60/90/120 degree turns while:
-- retaining nonzero fly-through speed;
-- preserving strict expert tracking;
-- keeping full Cobra OBB inside a 32 m half-width corridor;
-- completing with bounded P/V/attitude error.
+Expert route metrics:
+- min speed ~3.999 m/s;
+- max center cross-track ~8.478 m;
+- max hull half-width ~17.474 m;
+- zero 32 m corridor violation;
+- zero tracking-envelope violations;
+- final P ~0.120 m;
+- final attitude ~0.00032 deg.
 
-This is stronger than the earlier 3D corridor matrix because the vehicle does not stop and rotate at every waypoint.
+Observed Expert turn radii:
+- 35 deg: ~90.25 m;
+- 60 deg: ~44.78 m;
+- 90 deg: ~21.09 m;
+- 120 deg: ~8.62 m.
 
-## Remaining diagnostic work
+Newtonian and Assisted produced numerically identical rows for all three PilotSkill profiles.
 
-The accepted target log did not contain verbose `FLY3D` rows because the runner did not yet include the new test in its diagnostic reruns.
+Interpretation: this accepted path stays nearly tangent-aligned and within shared manoeuvre/RCS authority, so it does not expose law-specific propulsion differences. Law divergence remains proven by separate rigid-body/law-stress gates.
 
-Runner-only patch:
+## Current roadmap item
 
-```
-4cd9c4a14c8f2e4ce033082633766a21fece9331
-```
+Build a **speed/doctrine matrix** that makes maneuver choice matter.
 
-adds verbose FLY3D output without altering navigation behavior.
+Canonical doctrine enum:
+- Rational;
+- PrecisionRetrieval;
+- Extreme;
+- CombatEscape.
 
-Need one target diagnostic run to quantify whether Assisted actually requires more radius/speed loss than Newtonian on the same accepted geometry.
+Candidate generation must expose meaningful tradeoffs before ranking:
+- safe slow/high-clearance;
+- balanced;
+- fast/tight;
+- Newtonian-only drift/flip where physically appropriate;
+- Assisted-compatible alternatives;
+- threat-optimized escape;
+- explicit contact/damage candidates only when allowed.
 
-## Roadmap
+The test must verify both selection and real execution of the selected accepted program.
 
-1. Capture detailed Newtonian/Assisted FLY3D metrics.
-2. Record measured turn-envelope comparison.
-3. Add speed/doctrine matrix.
-4. Reconcile doctrine terminology:
-   - Rational;
-   - Precision;
-   - Extreme;
-   - CombatEscape;
-   - compare with older “Freestyle” wording.
-5. Proceed toward visible in-game evaluation.
+## Roadmap after doctrine gate
+
+1. Accept speed/doctrine execution matrix.
+2. Locate/reconcile any older “Freestyle” terminology from project history without inventing a mapping.
+3. Move toward visible in-game evaluation of the accepted maneuver behaviors.
 
 ## State protocol
 
-After each state-affecting event, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state-affecting event, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

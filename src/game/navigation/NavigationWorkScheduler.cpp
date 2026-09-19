@@ -82,7 +82,14 @@ bool NavigationWorkScheduler::publishActorRevision(
     if (actor.hasRevisionStamp)
     {
         if (stamp.objectiveRevision < actor.revision.objectiveRevision ||
-            stamp.capabilityRevision < actor.revision.capabilityRevision ||
+            stamp.capabilityRevision < actor.revision.capabilityRevision)
+        {
+            return false;
+        }
+
+        // Route revision belongs to one objective and may restart when the
+        // objective revision advances.
+        if (stamp.objectiveRevision == actor.revision.objectiveRevision &&
             stamp.routeRevision < actor.revision.routeRevision)
         {
             return false;
@@ -189,36 +196,18 @@ NavigationWorkScheduler::EnqueueResult NavigationWorkScheduler::enqueue(
 
     if (actor.pendingTicket != 0)
     {
-        const PendingRecord* existing = nullptr;
-        for (const auto& queue : queues_)
+        if (sameIdentity(job, actor.pendingJob) &&
+            queueIndex(job.priority) >=
+                queueIndex(actor.pendingJob.priority))
         {
-            for (const PendingRecord& record : queue)
-            {
-                if (record.ticket == actor.pendingTicket)
-                {
-                    existing = &record;
-                    break;
-                }
-            }
-            if (existing != nullptr)
-                break;
+            result.status = EnqueueStatus::Duplicate;
+            result.ticket = actor.pendingTicket;
+            ++totals_.duplicates;
+            return result;
         }
 
-        if (existing != nullptr &&
-            sameIdentity(job, existing->job))
-        {
-            if (queueIndex(job.priority) >=
-                queueIndex(existing->job.priority))
-            {
-                result.status = EnqueueStatus::Duplicate;
-                result.ticket = actor.pendingTicket;
-                ++totals_.duplicates;
-                return result;
-            }
-        }
-
-        // Replacement is lazy: the old queue record becomes a tombstone when
-        // actor.pendingTicket is moved to the new record.
+        // Replacement is O(1)-like at the actor slot. The old queue record is
+        // left as a lazy tombstone and never searched/relinked here.
         result.status = EnqueueStatus::Replaced;
         ++totals_.replaced;
     }
@@ -249,6 +238,7 @@ NavigationWorkScheduler::EnqueueResult NavigationWorkScheduler::enqueue(
     actor.latestJobRevision =
         std::max(actor.latestJobRevision, job.jobRevision);
     actor.pendingTicket = record.ticket;
+    actor.pendingJob = job;
 
     result.ticket = record.ticket;
     return result;
@@ -310,6 +300,7 @@ void NavigationWorkScheduler::pruneQueueFront(
         if (!fresh(record.job, &actorIt->second))
         {
             actorIt->second.pendingTicket = 0;
+            actorIt->second.pendingJob = NavigationPlannerJob {};
             if (pendingCount_ > 0)
                 --pendingCount_;
 
@@ -420,6 +411,7 @@ NavigationWorkScheduler::dispatchSlice(
 
         ActorState& actor = actorIt->second;
         actor.pendingTicket = 0;
+        actor.pendingJob = NavigationPlannerJob {};
         actor.inFlightTicket = record.ticket;
         actor.inFlightJob = record.job;
 

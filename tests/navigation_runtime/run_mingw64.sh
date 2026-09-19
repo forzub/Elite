@@ -29,6 +29,7 @@ RIGID_BODY_CORRIDOR_DIAGNOSTIC_MS="skipped"
 CORNER_FAMILY_DIAGNOSTIC_MS="skipped"
 FLY_THROUGH_3D_DIAGNOSTIC_MS="skipped"
 SPEED_DOCTRINE_DIAGNOSTIC_MS="skipped"
+CHAINED_LIMIT_DIAGNOSTIC_MS="skipped"
 CONFIGURE_RC=0
 BUILD_RC=0
 TESTS_RC=0
@@ -40,6 +41,7 @@ RIGID_BODY_CORRIDOR_DIAGNOSTIC_RC=0
 CORNER_FAMILY_DIAGNOSTIC_RC=0
 FLY_THROUGH_3D_DIAGNOSTIC_RC=0
 SPEED_DOCTRINE_DIAGNOSTIC_RC=0
+CHAINED_LIMIT_DIAGNOSTIC_RC=0
 
 CONFIGURE_START_MS="$(now_ms)"
 cmake \
@@ -168,6 +170,19 @@ if [[ "${CONFIGURE_RC}" -eq 0 && "${BUILD_RC}" -eq 0 ]]; then
         if [[ "${SPEED_DOCTRINE_DIAGNOSTIC_RC}" -ne 0 ]]; then
             TESTS_RC="${SPEED_DOCTRINE_DIAGNOSTIC_RC}"
         fi
+
+        CHAINED_LIMIT_DIAGNOSTIC_START_MS="$(now_ms)"
+        ctest \
+            --test-dir "${BUILD_DIR}" \
+            -R maneuver_chained_limit_matrix \
+            -V
+        CHAINED_LIMIT_DIAGNOSTIC_RC=$?
+        CHAINED_LIMIT_DIAGNOSTIC_END_MS="$(now_ms)"
+        CHAINED_LIMIT_DIAGNOSTIC_MS="$(elapsed_ms "${CHAINED_LIMIT_DIAGNOSTIC_START_MS}" "${CHAINED_LIMIT_DIAGNOSTIC_END_MS}")"
+
+        if [[ "${CHAINED_LIMIT_DIAGNOSTIC_RC}" -ne 0 ]]; then
+            TESTS_RC="${CHAINED_LIMIT_DIAGNOSTIC_RC}"
+        fi
     fi
 
     TEST_END_MS="$(now_ms)"
@@ -188,6 +203,7 @@ echo "[TIMING] navigation_runtime rigid_body_corridor_ms=${RIGID_BODY_CORRIDOR_D
 echo "[TIMING] navigation_runtime corner_family_matrix_ms=${CORNER_FAMILY_DIAGNOSTIC_MS}"
 echo "[TIMING] navigation_runtime fly_through_3d_ms=${FLY_THROUGH_3D_DIAGNOSTIC_MS}"
 echo "[TIMING] navigation_runtime speed_doctrine_matrix_ms=${SPEED_DOCTRINE_DIAGNOSTIC_MS}"
+echo "[TIMING] navigation_runtime chained_limit_matrix_ms=${CHAINED_LIMIT_DIAGNOSTIC_MS}"
 echo "[TIMING] navigation_runtime total_ms=${TOTAL_MS}"
 
 if [[ "${CONFIGURE_RC}" -ne 0 ]]; then

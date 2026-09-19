@@ -3297,6 +3297,19 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             return false;
         }
 
+        const auto queuedSchedulerStats =
+            m_navigationRuntimeLabWorkScheduler.stats();
+        schedulerObservation.schedulerMaximumPendingJobs =
+            std::max(
+                schedulerObservation.schedulerMaximumPendingJobs,
+                queuedSchedulerStats.pending
+            );
+        schedulerObservation.schedulerMaximumInFlightJobs =
+            std::max(
+                schedulerObservation.schedulerMaximumInFlightJobs,
+                queuedSchedulerStats.inFlight
+            );
+
         Scheduler::DispatchBudget schedulerBudget;
         schedulerBudget.maxJobs = 1;
         schedulerBudget.maxCostUnits = 4;

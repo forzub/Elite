@@ -5,59 +5,46 @@
 **Canonical architecture:** `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`
 **Migration audit:** `src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md`
 
-## Verified baseline
-
-Target-machine verified checkout:
+## Last verified baseline
 
 ```text
 701881ddae861cd5593e425de91600e048bd417c
 ```
 
-Evidence supplied from Windows 10 / MSYS2 MinGW64:
-- `navigation_runtime`: 7/7 PASS;
-- `maneuver_program_sampler`: PASS;
-- `EliteGame`: BUILD PASS;
-- `EliteServer`: BUILD PASS.
+Verified on target machine:
+- navigation_runtime 7/7 PASS;
+- maneuver_program_sampler PASS;
+- EliteGame BUILD PASS;
+- EliteServer BUILD PASS.
 
-This promotes the B8/B9 API slice to accepted target-machine evidence.
+B8/B9 is accepted.
 
-## Current candidate — B10 clean tracking block
+## B10 status
 
-Candidate baseline before documentation commits:
+First B10 target-machine gate FAILED before tests.
 
-```text
-66d89b93e3edf0817bb8d88b78e405180887cecc
-```
+Observed:
+- architecture contract false-positive in 0.173 s;
+- MinGW/g++ 15.2 rejected `const Policy& policy = {}`;
+- production build failed on the same header after 17.209 s;
+- therefore B10 is NOT accepted.
 
-Added:
-- `ManeuverTrackingController.h/.cpp`;
-- Navigation-v2 overload of `TrajectoryFollower::follow(AcceptedManeuverProgram,...)`;
-- `ManeuverTrackingControllerTests.cpp`;
-- production/test CMake wiring;
-- architecture contract locks for B8/B9/B10;
-- configure/build/test phase timing output in `tests/navigation_runtime/run_mingw64.sh`.
-
-Canonical B9/B10 execution path:
+Corrective code/contract candidate before documentation commits:
 
 ```text
-AcceptedManeuverProgram
- -> B9 ManeuverProgramSampler
- -> ManeuverReferenceSample
- -> B10 ManeuverTrackingController
- -> A_ff + bounded tracking feedback
- -> alpha_ff + bounded tracking feedback
- -> NavigationLocalControlIntent
+4a3d196c1574e91b747f05d194db7a35ad5c5517
 ```
 
-Hard invariants:
-- zero tracking error => feedback exactly zero;
-- therefore command equals accepted `A_ff/alpha_ff` exactly;
-- feedback clamps to `linearFeedbackReserveMps2` / `angularFeedbackReserveRadPerSec2`;
-- tracking envelope violation is reported for replanning;
-- B8/B9/B10 have no world/planner query dependency;
-- old `AcceptedShortSegment` overload remains for current live compatibility.
+Corrections:
+- explicit 3-argument + 4-argument B10 overloads;
+- same explicit-overload pattern in TrajectoryFollower;
+- dependency contract checks actual include/type/query syntax rather than words in comments;
+- contract pins the MinGW-safe overload form;
+- navigation_runtime timing output now survives configure/build/test failure and prints the failing phase.
 
-## Run target-machine gate
+No diagnostic log file is required for this rerun.
+
+## Rerun target-machine gate
 
 ```bash
 cd /d/__elite/work
@@ -73,45 +60,26 @@ TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
 time bash build_mingw64.sh
 ```
 
-The runtime script now prints:
+Expected:
+- architecture contract PASS;
+- navigation_runtime 8/8 PASS;
+- `maneuver_tracking_controller` PASS;
+- runtime script prints configure/build/tests/total timings even if a phase fails;
+- EliteGame + EliteServer build PASS.
 
-```text
-[TIMING] navigation_runtime configure_ms=...
-[TIMING] navigation_runtime build_ms=...
-[TIMING] navigation_runtime tests_ms=...
-[TIMING] navigation_runtime total_ms=...
-```
+## After green B10 gate
 
-No log file is required for this gate. If a later failing gate needs a persistent log, the test command/script must print the exact log path at the end.
+Next block is B14 Navigation Work Scheduler API:
+- NavigationPlannerJob value type;
+- urgent / normal / background queues;
+- stale revision rejection;
+- bounded jobs per slice;
+- fairness/age promotion;
+- duplicate suppression;
+- deterministic synthetic tests for hundreds/thousands of actors;
+- timing diagnostics, no brittle wall-clock correctness threshold.
 
-Expected ctest count is now 8, including:
-- `maneuver_program_sampler`;
-- `maneuver_tracking_controller`.
-
-Expected new test output includes:
-
-```text
-MANEUVER TRACKING CONTROLLER TESTS: PASS
- - zero error preserves A_ff/alpha_ff exactly
- - tracking feedback is bounded by proved reserve
- - follower composes B9 sampler -> B10 tracker
- - terminal completion uses accepted tolerances
-```
-
-## Next slice after green gate
-
-Do **not** jump to B4 yet.
-
-Next clean separation is B14 scheduler API before broad multi-agent rollout:
-1. define value-owned `NavigationPlannerJob` + revision identity;
-2. urgent / normal / background queues;
-3. stale-job rejection before planner work;
-4. per-slice job budget;
-5. fairness/age promotion;
-6. deterministic queue tests with hundreds/thousands of synthetic actors;
-7. measure enqueue/dispatch timing but avoid brittle wall-clock pass/fail thresholds.
-
-Then migrate the live GameSimulation ACCEPT boundary from `AcceptedShortSegment` to `AcceptedManeuverProgram` in a separately gated slice.
+Only after B14 acceptance migrate live GameSimulation from AcceptedShortSegment to AcceptedManeuverProgram.
 
 ## Documentation invariant
 
@@ -121,5 +89,5 @@ After every state-affecting iteration:
 - update `CURRENT_STATE.md`;
 - update `PROJECT_STATE.md`;
 - update `src/game/navigation/STAGE12_END_TO_END.md`;
-- update canonical block/migration docs when ownership changes;
-- keep verified target-machine baseline distinct from current documentation HEAD.
+- update canonical architecture/migration docs when ownership changes;
+- keep verified target-machine baseline separate from current HEAD.

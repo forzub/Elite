@@ -595,3 +595,91 @@ Initial acceptance limits:
 The lab is wired into navigation_runtime and is intentionally allowed to fail:
 the first target-machine run is meant to measure the actual execution behavior,
 not to hide it.
+
+
+## 4-leg 3D corridor pilot/control-law matrix candidate — 2026-09-19
+
+Previous simple execution lab is target-machine accepted on exact checkout:
+
+```text
+b5f558b18c8ef8e1b5d9562df36b34cb621c648f
+```
+
+Observed:
+- architecture contract PASS;
+- navigation_runtime 11/11 PASS;
+- straight 100 m:
+  - final position error 0.0285925 m;
+  - final speed 0.102262 m/s;
+  - zero cross-track / zero overshoot;
+- right-angle 100 m + 100 m:
+  - final position error 0.0285925 m;
+  - final speed 0.102262 m/s;
+  - maximum route cross-track 0.0470123 m;
+  - corner error 0.0285925 m;
+  - zero 5 m corridor violation;
+- maneuver execution lab PASS;
+- B5 compiler PASS;
+- scheduler PASS.
+
+New code/contract candidate before documentation commits:
+
+```text
+b21d7951177802c373cfb18c7aafe0419ea086bb
+```
+
+New target:
+`maneuver_corridor_matrix`.
+
+Route has four stop-to-stop 3D translation legs through five points:
+
+```text
+P0 (0,   0,   0)
+P1 (0,   0, -120)
+P2 (85, 35, -190)
+P3 (25,100, -265)
+P4 (120,55, -340)
+```
+
+Three bounded quaternion/axis-angle attitude transitions connect the legs.
+The same route is executed in:
+- Newtonian;
+- Assisted.
+
+PilotSkill matrix:
+- expert: zero reaction/latency, high command bandwidth, no noise;
+- competent: exact current production NpcAiSystem baseline
+  (0.12 s reaction, 12 Hz decision, 0.06 s latency, 2 Hz response,
+  current deterministic command noise/slew);
+- rookie: deterministic degraded profile with 0.30 s reaction, 6 Hz decision,
+  0.12 s latency, slower response/slew and larger deterministic command noise.
+
+Total rows: 2 laws x 3 pilots = 6.
+
+The corridor is a 5 m half-width tube around the 3D route polyline.
+
+Every row reports:
+- valid/completed;
+- translation legs completed /4;
+- rotations completed /3;
+- final position error;
+- final residual speed;
+- maximum route cross-track;
+- maximum active-leg cross-track;
+- maximum corridor violation;
+- maximum waypoint error;
+- maximum overshoot;
+- maximum forward-angle tracking error;
+- tracking-envelope-exceeded tick count;
+- total simulated seconds.
+
+First target-machine pass is deliberately asymmetric:
+- expert rows are strict and must complete inside the 5 m corridor with
+  <=1 m final error and <=0.6 m/s residual speed;
+- competent/rookie rows are diagnostic on the first pass so their actual
+  deterministic envelopes are measured before gameplay acceptance limits are
+  invented.
+
+This data is intended to feed B6 execution-reserve/clearance policy: a lower
+skill pilot may require more physical corridor clearance even when the accepted
+centerline program is identical.

@@ -30,14 +30,14 @@ bool validScope(NavigationPlannerJob::Scope scope) noexcept
 
 } // namespace
 
-NavigationWorkScheduler::NavigationWorkScheduler() noexcept
+NavigationWorkScheduler::NavigationWorkScheduler()
     : NavigationWorkScheduler(Policy {})
 {
 }
 
 NavigationWorkScheduler::NavigationWorkScheduler(
     const Policy& policy
-) noexcept
+)
     : policy_(policy)
 {
     actors_.reserve(2048);
@@ -69,7 +69,7 @@ bool NavigationWorkScheduler::setCurrentWorldRevision(
 
 bool NavigationWorkScheduler::publishActorRevision(
     const ActorRevisionStamp& stamp
-) noexcept
+)
 {
     if (stamp.actorId == 0 ||
         stamp.objectiveRevision == 0 ||
@@ -169,6 +169,8 @@ NavigationWorkScheduler::EnqueueResult NavigationWorkScheduler::enqueue(
     if (!validJob(job))
         return result;
 
+    compactIfNeeded();
+
     ActorState& actor = actors_[job.actorId];
 
     if (!fresh(job, &actor))
@@ -234,6 +236,7 @@ NavigationWorkScheduler::EnqueueResult NavigationWorkScheduler::enqueue(
     record.enqueuedTick = schedulingTick;
 
     queues_[queueIndex(job.priority)].push_back(record);
+    ++queuedRecordCount_;
 
     actor.latestJobRevision =
         std::max(actor.latestJobRevision, job.jobRevision);
@@ -242,6 +245,52 @@ NavigationWorkScheduler::EnqueueResult NavigationWorkScheduler::enqueue(
 
     result.ticket = record.ticket;
     return result;
+}
+
+void NavigationWorkScheduler::compactSupersededRecords()
+{
+    std::size_t retained = 0;
+    std::size_t discarded = 0;
+
+    for (auto& queue : queues_)
+    {
+        std::deque<PendingRecord> compacted;
+        for (const PendingRecord& record : queue)
+        {
+            const auto actorIt = actors_.find(record.job.actorId);
+            if (actorIt != actors_.end() &&
+                actorIt->second.pendingTicket == record.ticket)
+            {
+                compacted.push_back(record);
+                ++retained;
+            }
+            else
+            {
+                ++discarded;
+            }
+        }
+        queue.swap(compacted);
+    }
+
+    queuedRecordCount_ = retained;
+    totals_.supersededDiscarded += discarded;
+    ++totals_.queueCompactions;
+}
+
+void NavigationWorkScheduler::compactIfNeeded()
+{
+    constexpr std::size_t kTombstoneSlack = 1024;
+
+    const bool excessiveAbsoluteSlack =
+        queuedRecordCount_ >
+            pendingCount_ + kTombstoneSlack;
+    const bool excessiveRelativeSlack =
+        pendingCount_ == 0
+            ? queuedRecordCount_ > kTombstoneSlack
+            : queuedRecordCount_ > pendingCount_ * 2;
+
+    if (excessiveAbsoluteSlack && excessiveRelativeSlack)
+        compactSupersededRecords();
 }
 
 std::uint8_t NavigationWorkScheduler::effectivePriority(
@@ -292,6 +341,8 @@ void NavigationWorkScheduler::pruneQueueFront(
             actorIt->second.pendingTicket != record.ticket)
         {
             queue.pop_front();
+            if (queuedRecordCount_ > 0)
+                --queuedRecordCount_;
             ++result.supersededDiscarded;
             ++totals_.supersededDiscarded;
             continue;
@@ -305,6 +356,8 @@ void NavigationWorkScheduler::pruneQueueFront(
                 --pendingCount_;
 
             queue.pop_front();
+            if (queuedRecordCount_ > 0)
+                --queuedRecordCount_;
             ++result.staleDiscarded;
             ++totals_.staleDiscarded;
             continue;
@@ -399,6 +452,8 @@ NavigationWorkScheduler::dispatchSlice(
         auto& queue = queues_[candidate.queueIndex];
         PendingRecord record = queue.front();
         queue.pop_front();
+        if (queuedRecordCount_ > 0)
+            --queuedRecordCount_;
 
         auto actorIt = actors_.find(record.job.actorId);
         if (actorIt == actors_.end() ||
@@ -487,6 +542,7 @@ NavigationWorkScheduler::stats() const noexcept
     Stats out = totals_;
     out.pending = pendingCount_;
     out.inFlight = inFlightCount_;
+    out.queuedRecords = queuedRecordCount_;
     return out;
 }
 

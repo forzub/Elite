@@ -5133,3 +5133,28 @@ Interpretation:
 - long arc also angularly bad => general B9/B10 angular tracking defect.
 
 This candidate remains unverified until the target-machine architecture and navigation-runtime gates are rerun.
+
+
+## 2026-09-20 — long-arc result closes the general angular-tracking question
+
+Target-machine evidence from exact checkout:
+
+```
+d659416b9b1ddb2356c37eff315f9d13b70bafaa
+```
+
+kept the Stage-12 architecture contract green and produced 14/15 runtime passes. The only failure remained the strict expert DriftTurn common-exit attitude (~10.325 deg vs <=5 deg).
+
+The new 180 deg, R=80 m, 10 m/s long-arc diagnostic completed successfully for every PilotSkill under both Newtonian and Assisted laws. Expert execution covered ~251 m / 25.1 s of continuous curved flight with:
+- final position error ~0.332 m;
+- final velocity error ~0.036 m/s;
+- final forward error ~0.052 deg;
+- maximum in-flight forward/tangent error ~3.221 deg;
+- maximum centerline error ~0.330 m;
+- zero tracking-envelope exceed ticks.
+
+Competent and rookie also completed cleanly; rookie final forward error remained below 1 deg.
+
+This closes the diagnostic split: the general sampler/follower angular tracking chain is capable of accurate continuous attitude correction during translational motion. The remaining DriftTurn miss is local recovery/reference authoring.
+
+The next mechanism change must therefore remain planner-authored: make the DriftTurn recovery reach target yaw before the terminal endpoint and keep commanding target yaw during a short continuing-translation settle interval. Do not widen the 5 deg exit requirement or move maneuver choice into the follower.

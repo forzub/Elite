@@ -1806,6 +1806,40 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             angularVelocityMapRadPerSecond.z
         };
 
+        // NavigationMap's radius is candidate broadphase only. Preserve the
+        // authoritative current HitVolume OBBs by value so translation-only
+        // moving infrastructure can receive an exact dynamic narrow phase.
+        const auto dynamicWorldObstacles =
+            game::navigation::NavigationHitVolumeAdapter::buildObstacles(
+                object.hitComponent,
+                objectId.value,
+                positionMeters,
+                glm::dmat3(object.orientation),
+                "dynamic_nav_" + std::to_string(objectId.value)
+            );
+        actor.exactObstacles.reserve(dynamicWorldObstacles.size());
+        for (auto obstacle : dynamicWorldObstacles)
+        {
+            obstacle.centerMeters =
+                navigationBoundary.toNavigation(
+                    game::navigation::NavigationFrameBoundary::SystemPosition {
+                        obstacle.centerMeters
+                    }
+                ).meters;
+
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                obstacle.localToWorldBasis[axis] =
+                    navigationBoundary.toNavigationVector(
+                        game::navigation::NavigationFrameBoundary::SystemVector {
+                            obstacle.localToWorldBasis[axis]
+                        }
+                    ).value;
+            }
+
+            actor.exactObstacles.push_back(std::move(obstacle));
+        }
+
         if (object.displayName == NavigationRuntimeLabRotatingActorLabel)
         {
             rotatingActorEntityId = objectId.value;

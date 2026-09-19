@@ -4554,3 +4554,46 @@ Navigation-runtime expected test count is now 13.
 
 The latest supplied 12/12 target-machine run did not include a
 `git rev-parse HEAD` line, so no exact hash is assigned to that run.
+
+
+## 2026-09-20 rigid-body baseline accepted; corner-family matrix next
+
+Fresh target-machine evidence:
+- architecture contract PASS;
+- navigation_runtime 13/13 PASS;
+- maneuver_rigid_body_corridor PASS;
+- production build PASS, 84.197 s.
+
+Rigid Cobra model:
+- width 26.0 m, height 5.0 m, length 22.2 m;
+- aft main 73.549875 m/s2;
+- Assisted fore main 73.549875 m/s2;
+- RCS 2.0 m/s2;
+- angular/vectoring authority 3.0 rad/s2.
+
+Expert:
+- Newtonian: completed, final error 0.346002 m, final speed 0.399834 m/s,
+  final forward 179.996705 deg from route, max hull half-width 17.275892 m,
+  max flip 179.999972 deg, aft-main brake 8.325947 m/s2, fore main 0;
+- Assisted: completed, same final P/V error, final forward 0 deg, max hull
+  half-width 13.238202 m, no flip, fore-main brake 8.326298 m/s2.
+
+Competent:
+- both laws completed;
+- Newtonian hull half-width 17.299164 m, final forward 179.465370 deg;
+- Assisted hull half-width 13.297102 m, final forward 0.019004 deg.
+
+Rookie:
+- neither law completed inside the current fixed program horizon;
+- Newtonian drifted to 33.553144 m center error and required 21.559101 m hull
+  half-width;
+- Assisted ended 18.896949 m from terminal target and required 13.467892 m
+  hull half-width.
+
+This accepts the rigid-body/actuator baseline and confirms the expected wider
+Newtonian flip envelope.
+
+Next task: compare three explicit corner-passage families on the same corridor:
+StopTurnGo, RadiusTurn and DriftTurn, under Newtonian and Assisted with identical
+pilot profiles. Total corridor time must be measured from a common entry gate to
+the same final terminal gate.

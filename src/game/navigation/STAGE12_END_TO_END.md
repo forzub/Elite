@@ -5239,3 +5239,26 @@ Competent and rookie DriftTurn also failed strongly (~108 deg and ~107 deg final
 This establishes that removing the route-time deadline is not sufficient. The experiment inadvertently asked B10 to perform the full 90 deg attitude maneuver using only its bounded tracking reserve. That is outside B10 ownership.
 
 The next mechanism must restore planner ownership of the large-angle transition without restoring an arbitrary fixed deadline: a moving attitude-capture reference computed from actual/planned angular state, target attitude, target zero angular velocity, and vehicle angular acceleration/rate capability while translation continues.
+
+
+## 2026-09-20 — capability-derived moving attitude capture candidate
+
+Candidate:
+
+```
+31a66a3eb462df6b5a60b2da2aca9f018d8aa332
+```
+
+replaces the failed constant-heading DriftTurn exit.
+
+The outgoing angular transition is now planner-authored from the actual arc-exit state. A quintic yaw profile uses actual yaw and yaw-rate as initial boundary conditions and the outgoing yaw with zero terminal yaw-rate as final conditions.
+
+The profile duration is solved from the effective physical angular limits used by ShipController rather than a fixed route-time deadline. The test mirrors the crew/load envelope:
+- effective angular acceleration = min(configured angularAccel, maxGs*g/turnRadius);
+- effective yaw rate = min(configured maxYawRate, sqrt(maxGs*g/turnRadius)).
+
+Feed-forward acceleration is constrained below that physical envelope with B10 tracking reserve and an additional execution margin left intact.
+
+Translation continues at 10 m/s throughout the capture. New diagnostics expose chosen capture duration, initial yaw-rate and peak feed-forward yaw rate/acceleration.
+
+This candidate is unverified until target-machine gates are rerun.

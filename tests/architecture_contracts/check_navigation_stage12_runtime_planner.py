@@ -19,6 +19,7 @@ MOVING_PASSAGE_CPP = (ROOT / "src/world/navigation/trajectory/MovingPassageTraje
 ROOT_CMAKE = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 RUNTIME_CMAKE = (ROOT / "tests/navigation_runtime/CMakeLists.txt").read_text(encoding="utf-8")
 RUNTIME_RUN_SH = (ROOT / "tests/navigation_runtime/run_mingw64.sh").read_text(encoding="utf-8")
+LIVE_SCHEDULER_RUN_SH = (ROOT / "tests/navigation_runtime/run_live_scheduler_gate_mingw64.sh").read_text(encoding="utf-8")
 RUNTIME_TEST = (ROOT / "tests/navigation_runtime/NavigationRuntimePlannerTests.cpp").read_text(encoding="utf-8")
 DOC = (ROOT / "src/game/navigation/STAGE12_END_TO_END.md").read_text(encoding="utf-8")
 ADAPTER_H = (ROOT / "src/game/navigation/NavigationHitVolumeAdapter.h").read_text(encoding="utf-8")
@@ -445,6 +446,18 @@ for marker in (
     require(
         marker in RUNTIME_RUN_SH,
         f"navigation runtime gate timing/diagnostic output missing: {marker}",
+    )
+
+for marker in (
+    "--self-test-navigation",
+    "navigation_live_scheduler_",
+    "tee",
+    "[TIMING] navigation_live_scheduler",
+    "[LOG]",
+):
+    require(
+        marker in LIVE_SCHEDULER_RUN_SH,
+        f"live B14 scheduler gate logging contract missing: {marker}",
     )
 
 require(

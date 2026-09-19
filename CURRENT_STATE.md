@@ -4215,3 +4215,28 @@ Current architecture/doc candidate before state-document commits:
 ```text
 3ca267ad9ae5188f6f11826298344dbba9df8791
 ```
+
+
+## 2026-09-20 ManeuverPhaseGate production candidate created
+
+New production component:
+- `src/game/navigation/ManeuverPhaseGate.h/.cpp`.
+
+Purpose:
+- separate compound phase handoff semantics from the test fixture;
+- `ScheduledMoving`: advance at nominal program horizon;
+- `StateCapture`: keep following the terminal sample until
+  `TrajectoryFollower::Complete`;
+- bounded `maximumCaptureOverrunSeconds`;
+- explicit `CaptureTimedOut` instead of silently advancing a failed capture.
+
+The gate does not plan, sample, track or mutate the accepted program. It only
+decides whether the current physical phase may hand off.
+
+Current implementation commits:
+- API: `5f97b8e52992f537de650e071dab5615fce9fc1f`;
+- implementation: `c19a260333083f1d6acd472d9d3977b2864193cf`.
+
+This candidate is not target-machine accepted yet. Next: wire it into shared
+runtime/test CMake, add an isolated deterministic test, then migrate the corner
+fixture to use the gate.

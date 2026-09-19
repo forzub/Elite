@@ -520,3 +520,78 @@ Revised unverified candidate adds:
   ownership.
 
 This correction must receive a short isolated rerun before B6 work begins.
+
+
+## Revised B5 accepted; maneuver program execution lab candidate — 2026-09-19
+
+### Revised B5 target-machine acceptance
+
+Fresh supplied evidence after the main-engine-option correction:
+- architecture contract PASS: 0.222 s in the full pasted gate;
+- navigation_runtime: 10/10 PASS;
+- ordinary_physical_maneuver_compiler PASS;
+- explicit regression
+  `RCS-feasible delta-v still exposes a main-engine alternative for B7`: PASS;
+- 10,000 B5 compiles: 30,824 us total = 3,082.4 ns/compile;
+- navigation_work_scheduler 5000 actors: 2,670 us total;
+- EliteGame / EliteServer BUILD PASS;
+- production build: 23.861 s.
+
+The supplied paste contains no `git rev-parse HEAD` line, so no exact tested
+hash is invented. Revised B5 semantics are accepted by observed gate evidence.
+
+### New execution laboratory
+
+Before B6 integration, add an execution-only diagnostic that removes route
+search/world geometry from the equation.
+
+New fixture:
+`tests/navigation_runtime/ManeuverProgramExecutionLabTests.cpp`.
+
+Execution chain under test:
+
+```text
+pre-authored AcceptedManeuverProgram
+ -> B9 sampler
+ -> B10 bounded tracker
+ -> PilotSkillExecutor
+ -> ShipControlState
+ -> SharedShipPhysics attitude
+ -> DynamicMotionSystem propulsion/translation
+ -> measured physical trajectory
+```
+
+Scenarios:
+1. 100 m straight stop-to-stop;
+2. 100 m first leg -> stop -> 90-degree yaw -> 100 m second leg;
+3. same two-leg route monitored against a 5 m half-width polyline corridor.
+
+The straight reference uses a smooth quintic stop-to-stop trajectory sized so
+peak reverse/braking demand remains inside the real ~2 m/s2 maneuver authority.
+The 90-degree route deliberately stops at the corner before rotating; a later
+fixture may test a continuous non-stop corner after baseline execution is known.
+
+Metrics printed per scenario:
+- final position error;
+- final residual speed;
+- maximum geometric cross-track;
+- maximum endpoint overshoot;
+- corner capture error;
+- maximum corridor violation;
+- simulated completion time;
+- arrival classification ON_TARGET / OVERSHOOT / UNDERSHOOT_OR_UNSETTLED.
+
+The first laboratory profile uses expert PilotSkill with zero reaction delay and
+zero command latency. This isolates program-following/physics accuracy from
+human-skill latency. A later pass can repeat the same geometry under realistic
+pilot profiles.
+
+Initial acceptance limits:
+- straight: <=3 m final position, <=1 m/s final speed, <=1 m cross-track,
+  <=3 m overshoot;
+- right-angle: <=3 m corner miss, <=5 m final miss, <=1.5 m/s final speed,
+  remain inside 5 m corridor.
+
+The lab is wired into navigation_runtime and is intentionally allowed to fail:
+the first target-machine run is meant to measure the actual execution behavior,
+not to hide it.

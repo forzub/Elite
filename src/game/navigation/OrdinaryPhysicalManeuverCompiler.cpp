@@ -49,38 +49,37 @@ bool orthonormalBasis(
     if (glm::dot(forward, forward) <= kEpsilon)
         return false;
 
-    right =
-        rightIn - forward * glm::dot(rightIn, forward);
-    right = normalizedOr(right, glm::dvec3(0.0));
+    glm::dvec3 upSeed =
+        upIn - forward * glm::dot(upIn, forward);
+    up = normalizedOr(upSeed, glm::dvec3(0.0));
 
-    if (glm::dot(right, right) <= kEpsilon)
+    if (glm::dot(up, up) <= kEpsilon)
     {
-        const glm::dvec3 upSeed =
-            upIn - forward * glm::dot(upIn, forward);
-        const glm::dvec3 normalizedUp =
-            normalizedOr(upSeed, glm::dvec3(0.0));
-        if (glm::dot(normalizedUp, normalizedUp) <= kEpsilon)
+        right =
+            rightIn - forward * glm::dot(rightIn, forward);
+        right = normalizedOr(right, glm::dvec3(0.0));
+        if (glm::dot(right, right) <= kEpsilon)
             return false;
 
-        right = normalizedOr(
-            glm::cross(normalizedUp, forward),
+        up = normalizedOr(
+            glm::cross(right, forward),
             glm::dvec3(0.0)
         );
     }
 
-    if (glm::dot(right, right) <= kEpsilon)
-        return false;
-
-    up = normalizedOr(
-        glm::cross(forward, right),
-        glm::dvec3(0.0)
-    );
     if (glm::dot(up, up) <= kEpsilon)
         return false;
 
     right = normalizedOr(
-        glm::cross(up, forward),
-        right
+        glm::cross(forward, up),
+        glm::dvec3(0.0)
+    );
+    if (glm::dot(right, right) <= kEpsilon)
+        return false;
+
+    up = normalizedOr(
+        glm::cross(right, forward),
+        up
     );
     return true;
 }

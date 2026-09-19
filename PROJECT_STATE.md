@@ -2436,3 +2436,30 @@ daaf038021cdf8b9561db60fdd35e7cefce0b2df
 Current next step: target-machine architecture/runtime/build gates, then the
 authoritative headless Navigation self-test. If those pass, evaluate live
 behavior before promoting the Stage-12 baseline.
+
+
+### 2026-09-19 purity gate comment/dependency distinction
+
+Current unaccepted Navigation-v2 code candidate before this documentation sync:
+
+~~~text
+e21c81a9acf360b01863729a7c98fed5990273a9
+~~~
+
+The new purity architecture gate was corrected so it rejects actual stateful
+dependencies/includes in NavigationExecutionSafetyProbeBuilder rather than
+matching architecture names that appear only in explanatory comments.
+
+The purity/isolation behavior and code contract are unchanged:
+
+- execution-safety kinematics remain strict value-in/value-out;
+- GameSimulation remains the authoritative stateful shell;
+- NavigationMap/NavigationSpace remain snapshot owners with deterministic
+  read-only query phases;
+- PilotSkillExecutor remains intentionally sequential/stateful.
+
+No target-machine validation yet. Last actually accepted Stage-12 baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

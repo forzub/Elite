@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
+#include <chrono>
 
 #include "game/ship/ShipInitData.h"
 #include "game/ship/ShipRoleType.h"
@@ -1301,6 +1302,12 @@ void GameSimulation::initializeNavigationRuntimeLab()
     m_navigationRuntimeLabSourceRevision = 0;
     m_navigationRuntimeLabLastPlan = {};
     m_navigationRuntimeLabAcceptedSegment = {};
+    m_navigationRuntimeLabWorkScheduler =
+        game::navigation::NavigationWorkScheduler {};
+    m_navigationRuntimeLabNextPlannerJobRevision = 1;
+    m_navigationRuntimeLabCapabilityRevision = 1;
+    m_navigationRuntimeLabSchedulerCapabilityInitialized = false;
+    m_navigationRuntimeLabSchedulerCapability = {};
     m_navigationRuntimeLabNextSegmentRevision = 1;
     m_navigationRuntimeLabObservation = {};
     m_navigationRuntimeLabObservation.valid = true;
@@ -5436,6 +5443,12 @@ void GameSimulation::registerNavigationRuntimeLabShip(
     m_navigationRuntimeLabSourceRevision = 0;
     m_navigationRuntimeLabLastPlan = {};
     m_navigationRuntimeLabAcceptedSegment = {};
+    m_navigationRuntimeLabWorkScheduler =
+        game::navigation::NavigationWorkScheduler {};
+    m_navigationRuntimeLabNextPlannerJobRevision = 1;
+    m_navigationRuntimeLabCapabilityRevision = 1;
+    m_navigationRuntimeLabSchedulerCapabilityInitialized = false;
+    m_navigationRuntimeLabSchedulerCapability = {};
     m_navigationRuntimeLabNextSegmentRevision = 1;
     m_navigationRuntimeLabObservation = {};
     m_navigationRuntimeLabObservation.shipEntityId = shipId.value;

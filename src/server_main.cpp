@@ -1242,6 +1242,64 @@ int runNavigationRuntimeSelfTest()
             << " passed_obstacle_plane=" << observation.passedObstaclePlane
             << " exact_static_violation=" << observation.exactStaticViolationSeen
             << " simulated_s=" << simulatedSeconds
+            << " first_bypass_captured="
+            << observation.firstVisibilityBypassCaptured
+            << " first_bypass_t_s="
+            << observation.firstVisibilityBypassTimeSeconds
+            << " first_bypass_segment="
+            << observation.firstVisibilityBypassSegmentRevision
+            << " first_bypass_replan_reason="
+            << static_cast<int>(
+                observation.firstVisibilityBypassReplanReason
+            )
+            << " first_bypass_deflection_rad="
+            << observation.firstVisibilityBypassDeflectionRad
+            << " first_bypass_agent_pos=("
+            << observation.firstVisibilityBypassAgentPositionMap.x << ","
+            << observation.firstVisibilityBypassAgentPositionMap.y << ","
+            << observation.firstVisibilityBypassAgentPositionMap.z << ")"
+            << " first_bypass_agent_vel=("
+            << observation.firstVisibilityBypassAgentVelocityMapMps.x << ","
+            << observation.firstVisibilityBypassAgentVelocityMapMps.y << ","
+            << observation.firstVisibilityBypassAgentVelocityMapMps.z << ")"
+            << " first_bypass_target=("
+            << observation.firstVisibilityBypassSelectedTargetMap.x << ","
+            << observation.firstVisibilityBypassSelectedTargetMap.y << ","
+            << observation.firstVisibilityBypassSelectedTargetMap.z << ")"
+            << " first_bypass_desired_vel=("
+            << observation.firstVisibilityBypassDesiredVelocityMapMps.x << ","
+            << observation.firstVisibilityBypassDesiredVelocityMapMps.y << ","
+            << observation.firstVisibilityBypassDesiredVelocityMapMps.z << ")"
+            << " first_bypass_align_forward="
+            << observation.firstVisibilityBypassAcceptedAlignForward
+            << " first_bypass_forward=("
+            << observation.firstVisibilityBypassAcceptedForwardMap.x << ","
+            << observation.firstVisibilityBypassAcceptedForwardMap.y << ","
+            << observation.firstVisibilityBypassAcceptedForwardMap.z << ")"
+            << " first_bypass_ideal_accel=("
+            << observation.firstVisibilityBypassIdealAccelerationMapMps2.x << ","
+            << observation.firstVisibilityBypassIdealAccelerationMapMps2.y << ","
+            << observation.firstVisibilityBypassIdealAccelerationMapMps2.z << ")"
+            << " first_bypass_exec_captured="
+            << observation.firstVisibilityBypassExecutedCaptured
+            << " first_bypass_exec_accel=("
+            << observation.firstVisibilityBypassExecutedAccelerationMapMps2.x << ","
+            << observation.firstVisibilityBypassExecutedAccelerationMapMps2.y << ","
+            << observation.firstVisibilityBypassExecutedAccelerationMapMps2.z << ")"
+            << " first_bypass_applied_captured="
+            << observation.firstVisibilityBypassAppliedCaptured
+            << " first_bypass_main_accel=("
+            << observation.firstVisibilityBypassAppliedMainAccelerationMapMps2.x << ","
+            << observation.firstVisibilityBypassAppliedMainAccelerationMapMps2.y << ","
+            << observation.firstVisibilityBypassAppliedMainAccelerationMapMps2.z << ")"
+            << " first_bypass_rcs_accel=("
+            << observation.firstVisibilityBypassAppliedRcsAccelerationMapMps2.x << ","
+            << observation.firstVisibilityBypassAppliedRcsAccelerationMapMps2.y << ","
+            << observation.firstVisibilityBypassAppliedRcsAccelerationMapMps2.z << ")"
+            << " first_bypass_total_accel=("
+            << observation.firstVisibilityBypassAppliedTotalAccelerationMapMps2.x << ","
+            << observation.firstVisibilityBypassAppliedTotalAccelerationMapMps2.y << ","
+            << observation.firstVisibilityBypassAppliedTotalAccelerationMapMps2.z << ")"
             << "\n";
         return 56;
     }

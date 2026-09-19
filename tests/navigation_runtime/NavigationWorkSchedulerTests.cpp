@@ -536,6 +536,7 @@ void testFiveThousandActorQueueAndMeasure()
     const auto finalStats = scheduler.stats();
     require(finalStats.pending == 0, "scale queue retained pending work");
     require(finalStats.inFlight == 0, "scale queue retained in-flight work");
+    require(finalStats.queuedRecords == 0, "scale queue retained physical records");
     require(
         finalStats.dispatched == kActors &&
         finalStats.completedCurrent == kActors,

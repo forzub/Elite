@@ -3157,3 +3157,83 @@ Implementation order remains conservative:
 5. retire the ray-fan search only after target-machine evidence.
 
 This iteration changes architecture documentation only. It does **not** promote a new target-machine accepted Stage-12 baseline. Last fully accepted target-machine baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`; last actually exercised target checkout remains `46f6a37da6775a1d044391f773476df1bb07bc6a`.
+
+
+## 2026-09-19 canonical B0-B14 architecture and B8/B9 migration slice
+
+Canonical Navigation v2 architecture is now fixed in:
+
+- `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`
+- `src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md`
+
+Top-level ownership is two worlds:
+
+```text
+Planner World:
+    B0 World Snapshot
+    B1 Shared Influence Builder
+    B2 Navigation Objective
+    B3 Topology Route
+    B4 Route-Aligned Local Corridor
+    B5 Physical Maneuver Compiler
+    B6 Continuous Maneuver Prover
+    B7 Maneuver Decision
+    B8 Maneuver Acceptance / Program Store
+
+Autopilot / Follower World:
+    B9 Maneuver Program Sampler
+    B10 Bounded Tracking Controller
+    B11 Safety Monitor / Bounded Reflex
+    B12 PilotSkill
+    B13 Propulsion / Physics
+
+Scheduling service:
+    B14 Navigation Work Scheduler
+```
+
+Each canonical block now has an explicit owner, question, invocation cadence, input, output, forbidden responsibilities and scaling contract.
+
+The current repository was audited against those blocks. The important preservation/migration result is:
+
+- KEEP: NavigationSpace static topology/exact geometry foundation;
+- KEEP: NavigationMap spatial hash/broadphase foundation;
+- KEEP: PilotSkill and propulsion/physics authority;
+- KEEP: NavigationExecutionReplanPolicy rule that another frame alone does not wake planning;
+- MIGRATE: per-agent dynamic discovery toward shared scene-wide sparse InfluenceFrame;
+- REPLACE AS TARGET SEARCH: LocalAvoidance angular ray-fan with a route-aligned configuration-space corridor planner, while retaining segment/sweep/ray intersection as proof primitives;
+- ADD: ordinary physical maneuver compiler and generalized continuous proof;
+- USE: existing ManeuverDecisionController only after candidates are physically proved;
+- REPLACE BOUNDARY: AcceptedShortSegment with AcceptedManeuverProgram;
+- SPLIT: program sampling from bounded feedback tracking;
+- ADD: explicit bounded safety-reflex API;
+- ADD: dirty-agent planning scheduler with urgent/normal/background queues.
+
+Scaling canon is explicit: shared B0/B1 work for the scene; cheap fixed-step execution for active controlled actors; expensive B3..B8 work only for dirty agents. No dense N x N and no plan-every-frame. B14 will budget queued planner jobs, reject stale revisions, prioritize urgent invalidations and provide starvation prevention.
+
+### Iteration 1 implementation candidate — B8/B9
+
+Code/contract baseline before documentation commits:
+
+```text
+516f63eb7a3b2bbf09bad553aff975d52d7c3e8c
+```
+
+New production API:
+- `AcceptedManeuverProgram.h` — fixed-capacity 16-sample value-owned program carrying P/V/A_ff, body basis, omega/alpha_ff, validity/revisions, terminal tolerances, tracking reserve, capability and proof witnesses;
+- `ManeuverProgramSampler.h/.cpp` — pure time sampler with no world query, no obstacle search, no feedback controller and no replanning.
+
+New isolated runtime test:
+- `ManeuverProgramSamplerTests.cpp`;
+- wired into `tests/navigation_runtime` as `maneuver_program_sampler`;
+- sampler implementation also linked into the production `EliteNavigationWorldRuntime` target.
+
+The live GameSimulation chain intentionally still uses AcceptedShortSegment. This slice introduces and tests the clean B8/B9 API before live migration.
+
+Target-machine gate is pending:
+
+```bash
+bash tests/navigation_runtime/run_mingw64.sh
+bash build_mingw64.sh
+```
+
+No Stage-12 acceptance promotion is claimed from this documentation/code pass. Last fully accepted target-machine baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.

@@ -251,6 +251,45 @@ void testVisibilitySteeringWidensThenReturnsToDirectLine()
             "once direct visibility returns the planner must immediately resume A->B");
 }
 
+void testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute()
+{
+    Avoidance planner;
+    Avoidance::Query query = baseQuery();
+    Space space = makeSingleRegionSpace(100.0);
+    Map::QueryResult dynamic = dynamicResult();
+
+    // The conservative radius overlaps the +X route, but the real narrow OBB
+    // sits far enough off-axis for the ship envelope + safety margin to pass.
+    // This reproduces the live 360x360x900 moving-infrastructure failure mode:
+    // an enclosing sphere may collect a candidate, but it is not collision
+    // truth when exact HitVolume geometry is available.
+    Map::Candidate candidate = stationaryCandidate(
+        206,
+        {8.0, 4.0, 0.0},
+        6.0,
+        6.0
+    );
+    candidate.exactObstacles.push_back(
+        staticBox(
+            "dynamic_exact_clear_box",
+            206,
+            glm::dvec3(8.0, 4.0, 0.0),
+            glm::dvec3(1.0, 0.25, 0.25)
+        )
+    );
+    dynamic.candidates.push_back(candidate);
+
+    const Avoidance::Result result =
+        planner.evaluate(query, dynamic, StaticQueries(space));
+
+    require(result.status == Avoidance::Status::NominalClear,
+            "exact dynamic OBB must reject a sphere-only false positive");
+    require(result.nominalConflictsFound == 0,
+            "broadphase overlap must not survive exact dynamic narrow-phase");
+    require(!result.adjustedTarget,
+            "clear exact dynamic geometry must preserve the direct route");
+}
+
 void testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate()
 {
     Avoidance planner;
@@ -457,6 +496,7 @@ int main()
         testNominalClearPassesThroughWithoutProbes();
         testSweptCorridorBlockerFindsSameRegionLateralTarget();
         testVisibilitySteeringWidensThenReturnsToDirectLine();
+        testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute();
         testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate();
         testDynamicConflictStillPreservesExactStaticNominalProof();
         testHeadOnConflictRemainsFailClosed();

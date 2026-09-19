@@ -283,6 +283,26 @@ LocalGeometricPath
 
 ---
 
+### Control-law terminology
+
+The two local flight-control laws are:
+- `Newtonian`;
+- `Assisted` — the project's Elite/aircraft-like ("самолётный") control law.
+
+Execution tests must name and exercise both laws explicitly. A matrix that merely
+sets the enum is insufficient: at least one law-stress regression must reach a
+state where their physical integration semantics diverge.
+
+Current propulsion distinction:
+- Newtonian: main propulsion remains inside the ordinary controlled-speed
+  envelope, while physical RCS can continue accumulating inertial delta-v;
+- Assisted: the controlled-speed envelope applies to the combined controlled
+  propulsion result.
+
+Planner-side maneuver compilation is still asymmetric: the current ordinary B5
+compiler supports Newtonian only; a full Assisted/aircraft-like B5 family
+remains future work.
+
 ### Control authority boundary: planner chooses maneuver, follower executes
 
 For automatic flight, the planner side owns **maneuver strategy**. That includes:

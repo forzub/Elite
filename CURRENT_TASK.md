@@ -4,151 +4,122 @@
 **Branch:** `main`
 **Canonical architecture:** `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`
 **Migration audit:** `src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md`
-**Last fully accepted Stage-12 target-machine baseline:** `daaf038021cdf8b9561db60fdd35e7cefce0b2df`
-**Last target-machine checkout actually exercised:** `46f6a37da6775a1d044391f773476df1bb07bc6a`
-**Current unverified B8/B9 code candidate before documentation commits:** `516f63eb7a3b2bbf09bad553aff975d52d7c3e8c`
 
-## Current canonical architecture
+## Verified baseline
 
-Navigation v2 is now fixed into two top-level worlds and explicit blocks B0..B14.
+Target-machine verified checkout:
 
 ```text
-PLANNER WORLD
-B0 world truth
- -> B1 shared dynamic influence
- -> B2 objective
- -> B3 topology route
- -> B4 local route-aligned corridor
- -> B5 physical maneuver compiler
- -> B6 continuous proof
- -> B7 maneuver decision
- -> B8 AcceptedManeuverProgram
-
-AUTOPILOT / FOLLOWER WORLD
-B9 program sampler
- -> B10 bounded tracking
- -> B11 safety monitor / bounded reflex
- -> B12 PilotSkill
- -> B13 propulsion / physics
- -> completion/invalidation -> B14 planning scheduler
+701881ddae861cd5593e425de91600e048bd417c
 ```
 
-Read the canonical block document for each block's owner, question, cadence, inputs, outputs and scaling contract.
+Evidence supplied from Windows 10 / MSYS2 MinGW64:
+- `navigation_runtime`: 7/7 PASS;
+- `maneuver_program_sampler`: PASS;
+- `EliteGame`: BUILD PASS;
+- `EliteServer`: BUILD PASS.
 
-## Scale contract
+This promotes the B8/B9 API slice to accepted target-machine evidence.
 
-The architecture must support hundreds/thousands of registered units.
+## Current candidate — B10 clean tracking block
 
-Hard rules:
-- no dense N x N dynamic work;
-- B0/B1 shared scene-wide world work;
-- only dirty agents enter planner blocks B3..B8;
-- all active controlled actors may run cheap B9/B10/B12/B13 each required control tick;
-- planning is queued/budgeted through B14;
-- fixed-capacity accepted programs, bounded local candidates and exact proof only for broadphase survivors;
-- stale queued jobs are rejected by revision;
-- urgent invalidations outrank ordinary/background planning;
-- no planner call merely because another physics frame elapsed.
+Candidate baseline before documentation commits:
 
-The current runtime lab already uses NavigationExecutionReplanPolicy and only calls NavigationRuntimePlanner when scope != None. The missing production-scale piece is an explicit multi-agent planning queue/scheduler, to be implemented after the execution API boundary is clean.
-
-## Iteration 1 — B8/B9 separation
+```text
+66d89b93e3edf0817bb8d88b78e405180887cecc
+```
 
 Added:
-- `AcceptedManeuverProgram.h`
-- `ManeuverProgramSampler.h/.cpp`
-- isolated `ManeuverProgramSamplerTests.cpp`
-- production/test CMake wiring.
+- `ManeuverTrackingController.h/.cpp`;
+- Navigation-v2 overload of `TrajectoryFollower::follow(AcceptedManeuverProgram,...)`;
+- `ManeuverTrackingControllerTests.cpp`;
+- production/test CMake wiring;
+- architecture contract locks for B8/B9/B10;
+- configure/build/test phase timing output in `tests/navigation_runtime/run_mingw64.sh`.
 
-### B8 AcceptedManeuverProgram
-
-Fixed-capacity value-owned program:
-- max 16 control/reference samples;
-- P/V/A_ff;
-- full body basis;
-- omega/alpha_ff;
-- validity/revisions;
-- terminal tolerances;
-- tracking envelope + reserved feedback authority;
-- capability/proof witness;
-- maneuver family/provenance metadata.
-
-No NavigationMap/NavigationSpace dependency and no per-tick allocation.
-
-### B9 ManeuverProgramSampler
-
-Pure API:
+Canonical B9/B10 execution path:
 
 ```text
-AcceptedManeuverProgram + universeTime
-    -> sampled reference/feed-forward state
+AcceptedManeuverProgram
+ -> B9 ManeuverProgramSampler
+ -> ManeuverReferenceSample
+ -> B10 ManeuverTrackingController
+ -> A_ff + bounded tracking feedback
+ -> alpha_ff + bounded tracking feedback
+ -> NavigationLocalControlIntent
 ```
 
-It performs:
-- fail-closed validation;
-- bounded control-key lookup;
-- interpolation of the accepted reference/feed-forward program;
-- body-basis re-orthonormalization.
+Hard invariants:
+- zero tracking error => feedback exactly zero;
+- therefore command equals accepted `A_ff/alpha_ff` exactly;
+- feedback clamps to `linearFeedbackReserveMps2` / `angularFeedbackReserveRadPerSec2`;
+- tracking envelope violation is reported for replanning;
+- B8/B9/B10 have no world/planner query dependency;
+- old `AcceptedShortSegment` overload remains for current live compatibility.
 
-It does NOT:
-- inspect obstacles;
-- generate a target velocity;
-- apply feedback;
-- replan.
-
-## Target-machine gate to run now
+## Run target-machine gate
 
 ```bash
 cd /d/__elite/work
-
 git pull --ff-only
 git rev-parse HEAD
 
+TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
+time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
 bash tests/navigation_runtime/run_mingw64.sh
+
+TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
+time bash build_mingw64.sh
 ```
 
-Expected new ctest includes:
+The runtime script now prints:
 
 ```text
-maneuver_program_sampler
+[TIMING] navigation_runtime configure_ms=...
+[TIMING] navigation_runtime build_ms=...
+[TIMING] navigation_runtime tests_ms=...
+[TIMING] navigation_runtime total_ms=...
 ```
 
-Expected output:
+No log file is required for this gate. If a later failing gate needs a persistent log, the test command/script must print the exact log path at the end.
+
+Expected ctest count is now 8, including:
+- `maneuver_program_sampler`;
+- `maneuver_tracking_controller`.
+
+Expected new test output includes:
 
 ```text
-MANEUVER PROGRAM SAMPLER TESTS: PASS
- - fixed-capacity AcceptedManeuverProgram
- - exact proved feed-forward survives sampling
- - sampler performs no target-velocity control solve
- - invalid time domains fail closed
+MANEUVER TRACKING CONTROLLER TESTS: PASS
+ - zero error preserves A_ff/alpha_ff exactly
+ - tracking feedback is bounded by proved reserve
+ - follower composes B9 sampler -> B10 tracker
+ - terminal completion uses accepted tolerances
 ```
 
-If the isolated runtime suite is green, also run the production compile gate:
+## Next slice after green gate
 
-```bash
-bash build_mingw64.sh
-```
+Do **not** jump to B4 yet.
 
-No live behavior is intentionally changed in iteration 1, so the old AcceptedShortSegment runtime seam remains active.
+Next clean separation is B14 scheduler API before broad multi-agent rollout:
+1. define value-owned `NavigationPlannerJob` + revision identity;
+2. urgent / normal / background queues;
+3. stale-job rejection before planner work;
+4. per-slice job budget;
+5. fairness/age promotion;
+6. deterministic queue tests with hundreds/thousands of synthetic actors;
+7. measure enqueue/dispatch timing but avoid brittle wall-clock pass/fail thresholds.
 
-## Next iteration after green gate
-
-B10 migration:
-1. add a clean sampled-reference tracking API;
-2. make TrajectoryFollower consume AcceptedManeuverProgram/ManeuverProgramSampler;
-3. feedback may only use the reserved tracking authority;
-4. prove exact A_ff/alpha_ff identity reaches follower output when tracking error is zero;
-5. retain old AcceptedShortSegment overload temporarily;
-6. only after isolated + live target-machine acceptance migrate GameSimulation packing.
+Then migrate the live GameSimulation ACCEPT boundary from `AcceptedShortSegment` to `AcceptedManeuverProgram` in a separately gated slice.
 
 ## Documentation invariant
 
 After every state-affecting iteration:
-- rewrite `CONTINUE_PROMPT.md` completely;
+- rewrite `CONTINUE_PROMPT.md`;
 - rewrite `CURRENT_TASK.md`;
 - update `CURRENT_STATE.md`;
 - update `PROJECT_STATE.md`;
 - update `src/game/navigation/STAGE12_END_TO_END.md`;
-- update canonical block/migration docs when ownership changes.
-
-Do not call documentation HEAD an accepted target-machine baseline.
+- update canonical block/migration docs when ownership changes;
+- keep verified target-machine baseline distinct from current documentation HEAD.

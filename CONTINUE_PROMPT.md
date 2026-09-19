@@ -14,97 +14,121 @@ Target: Windows 10 / MSYS2 MinGW64 / g++ 15.2 / CMake + Ninja.
 6. `src/game/navigation/STAGE12_END_TO_END.md`
 7. `src/game/navigation/NAVIGATION_COMMAND_OWNERSHIP.md`
 
-## Current canon
+## Canon
 
-Navigation is split into two top-level worlds.
+Planner World:
+B0 world snapshot -> B1 shared influence -> B2 objective -> B3 topology route ->
+B4 route-aligned local corridor -> B5 physical maneuver compiler ->
+B6 continuous proof -> B7 decision -> B8 AcceptedManeuverProgram.
+
+Autopilot/Follower World:
+B9 program sampler -> B10 bounded tracking -> B11 safety/reflex ->
+B12 PilotSkill -> B13 propulsion/physics.
+
+B14 schedules planner work. Another physics frame alone must never wake the planner.
+
+Scale target:
+- hundreds/thousands registered units;
+- no dense N x N;
+- shared B0/B1;
+- only dirty agents enter B3..B8;
+- B9/B10/B12/B13 are cheap fixed-step work for active controlled actors;
+- planner work is queued/budgeted and stale revisions are dropped.
+
+## Verified baseline
+
+User supplied target-machine evidence for:
 
 ```text
-PLANNER WORLD
-B0 world snapshot
-B1 shared sparse influence
-B2 objective
-B3 topology route
-B4 route-aligned local corridor
-B5 physical maneuver compiler
-B6 continuous proof
-B7 maneuver decision
-B8 AcceptedManeuverProgram
-
-AUTOPILOT / FOLLOWER WORLD
-B9 ManeuverProgramSampler
-B10 bounded tracking
-B11 safety monitor / bounded reflex
-B12 PilotSkill
-B13 propulsion / physics
-B14 planning scheduler receives completion/invalidation work
+701881ddae861cd5593e425de91600e048bd417c
 ```
 
-Planner uses authoritative known world truth. Segment/ray/sweep queries are proof tools, not perception.
+Results:
+- navigation_runtime 7/7 PASS;
+- maneuver_program_sampler PASS;
+- EliteGame BUILD PASS;
+- EliteServer BUILD PASS.
 
-Local ordinary planning target is a route-aligned configuration-space corridor, not the 15/30/45/60/75 LocalAvoidance fan. Keep NavigationSpace topology above it.
+B8/B9 is accepted.
 
-Follower executes the same program that was proved. It may apply bounded feedback; a material emergency deviation invalidates the program and requests replan.
+## Current candidate — B10
 
-## Scaling canon
+Code candidate before docs:
 
-Must support hundreds/thousands of registered units:
-- no dense N x N;
-- shared scene-wide B0/B1;
-- only dirty agents enter B3..B8;
-- active controlled actors run cheap fixed-step B9/B10/B12/B13;
-- explicit B14 urgent/normal/background planning queue with budget/fairness;
-- stale jobs rejected by revisions;
-- fixed-capacity hot-path products;
-- no plan-every-frame.
+```text
+66d89b93e3edf0817bb8d88b78e405180887cecc
+```
 
-## Current iteration
+New:
+- `ManeuverTrackingController.h/.cpp`;
+- new TrajectoryFollower overload consuming `AcceptedManeuverProgram`;
+- `ManeuverTrackingControllerTests.cpp`;
+- architecture contract lock for B8/B9/B10;
+- navigation_runtime phase timing output.
 
-Iteration 1 separates B8/B9 API.
+Canonical execution path:
 
-New files:
-- `src/game/navigation/AcceptedManeuverProgram.h`
-- `src/game/navigation/ManeuverProgramSampler.h`
-- `src/game/navigation/ManeuverProgramSampler.cpp`
-- `tests/navigation_runtime/ManeuverProgramSamplerTests.cpp`
+```text
+AcceptedManeuverProgram
+ -> ManeuverProgramSampler
+ -> ManeuverTrackingController
+ -> NavigationLocalControlIntent
+```
 
-Current unverified code candidate before docs:
-`516f63eb7a3b2bbf09bad553aff975d52d7c3e8c`.
+Rules:
+- zero tracking error => exact A_ff / alpha_ff;
+- feedback magnitude <= accepted reserve;
+- envelope breach is reported, not replanned inside follower;
+- B8/B9/B10 must not depend on NavigationMap, NavigationSpace, GameSimulation,
+  NavigationRuntimePlanner, queries or unbounded vectors;
+- old AcceptedShortSegment overload remains for live compatibility.
 
-The old `AcceptedShortSegment` live seam intentionally remains active for compatibility.
-
-Run now:
+## Run now
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
+
+TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
+time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
 bash tests/navigation_runtime/run_mingw64.sh
-bash build_mingw64.sh
+
+TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
+time bash build_mingw64.sh
 ```
 
-Do not claim target-machine acceptance until user supplies the gate result.
+Expected navigation_runtime count: 8 tests.
 
-Expected new isolated test: `maneuver_program_sampler`.
+The runtime script must print configure/build/tests/total milliseconds.
 
-After green gate, next iteration is B10:
-- TrajectoryFollower consumes AcceptedManeuverProgram through ManeuverProgramSampler;
-- zero tracking error => output feed-forward must equal accepted A_ff/alpha_ff exactly;
-- bounded feedback only inside reserved authority;
-- old segment overload remains temporarily;
-- then migrate GameSimulation ACCEPT packing in a later live-gated iteration.
+No log is required unless the gate fails. If a persistent log is created in a later diagnostic pass, print its exact path at the end of the command/script.
 
-Last fully accepted Stage-12 target-machine baseline remains:
-`daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+Do not claim B10 acceptance until the user supplies this target-machine evidence.
 
-Last target-machine checkout actually exercised before this migration remains:
-`46f6a37da6775a1d044391f773476df1bb07bc6a`.
+## After B10 green
+
+Next implementation slice: B14 Navigation Work Scheduler.
+Define clean queue/scheduler API first, then implementation:
+- `NavigationPlannerJob` with actor/objective/world/capability revisions;
+- urgent / normal / background priority;
+- stale-job rejection;
+- bounded per-slice job budget;
+- fairness/age promotion;
+- no duplicate active job for same actor+objective revision;
+- deterministic tests with hundreds/thousands of synthetic actors;
+- print timing diagnostics, but do not use brittle wall-clock thresholds as correctness criteria.
+
+After B14 is accepted, migrate the live GameSimulation ACCEPT seam from
+AcceptedShortSegment to AcceptedManeuverProgram in its own target-machine-gated slice.
 
 ## Every state-affecting iteration
 
-- rewrite this file from scratch;
+- rewrite this file completely;
 - rewrite `CURRENT_TASK.md`;
 - update `CURRENT_STATE.md`;
 - update `PROJECT_STATE.md`;
 - update `src/game/navigation/STAGE12_END_TO_END.md`;
 - update canonical architecture/migration docs if ownership changes;
-- record actual verified target-machine baselines separately from repo HEAD.
+- keep verified target-machine baselines separate from unverified HEAD.

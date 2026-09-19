@@ -3555,3 +3555,35 @@ also physically feasible. B7 retains final selection ownership.
 
 This revised B5 candidate is not yet target-machine accepted and must receive a
 short isolated rerun before B6 work starts.
+
+
+## 2026-09-19 revised B5 accepted; execution lab candidate
+
+Fresh target-machine evidence after the main-engine-option correction:
+- architecture contract PASS;
+- navigation_runtime 10/10 PASS;
+- ordinary_physical_maneuver_compiler PASS;
+- RCS-feasible delta-v still exposes a main-engine alternative for B7: PASS;
+- 10,000 B5 compiles: 30,824 us total = 3,082.4 ns/compile;
+- navigation_work_scheduler 5000 actors: 2,670 us total;
+- EliteGame / EliteServer BUILD PASS;
+- production build 23.861 s.
+
+The supplied paste did not include a rev-parse line, so no exact tested hash is
+invented.
+
+Before B6 integration, a new maneuver execution lab now tests the existing
+AcceptedManeuverProgram execution chain without route search or obstacles.
+
+Scenarios:
+- 100 m straight stop-to-stop;
+- 100 m + 90-degree stop/rotate + 100 m;
+- the same two-leg route inside a 5 m half-width polyline corridor.
+
+The lab executes through B9/B10 -> PilotSkill -> SharedShipPhysics ->
+DynamicMotionSystem and measures final position error, final speed, overshoot,
+cross-track, corner miss, corridor violation and simulated completion time.
+
+The first profile is deliberately expert/zero-latency to isolate pure autopilot
+tracking/physics behavior. This target-machine run may fail; that is useful
+diagnostic evidence rather than a reason to relax the route or tolerances.

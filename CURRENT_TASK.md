@@ -27,20 +27,21 @@ The 180 deg long arc proves the ship can continuously correct attitude while tra
 
 So the remaining ~10.325 deg expert DriftTurn exit error is **DriftTurn-specific reference/recovery authoring**, not a general B9/B10 angular-tracking defect.
 
-## Required mechanism change
+## Current candidate
 
-Keep DriftTurn translational behavior and common exit contract intact, but author the accepted recovery so the ship has time to finish the turn before the terminal gate.
+```
+76346121516e5b00d14a4e6304621b55791093ab
+```
 
-Preferred shape:
-- one coherent moving recovery program;
-- reach target exit yaw before the end of translational travel;
-- keep final yaw commanded for a short moving settle interval;
-- preserve 10 m/s exit motion and corridor;
+Implementation:
+- one coherent 4 s / 40 m moving recovery;
+- smooth 90 deg rotation completes in 2.5 s;
+- remaining 1.5 s continues at 10 m/s with final yaw held;
 - no follower-side hidden replanning;
 - no tolerance widening;
 - no generic tracking-reserve inflation.
 
-A natural first implementation is a coast+rotate+settle reference that reaches the final yaw before the program endpoint and continues the same translation while holding target yaw.
+This is the intended mechanism change: give the physical ship a real in-motion settle window before the common exit.
 
 ## Validation
 

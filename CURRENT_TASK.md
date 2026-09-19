@@ -7,85 +7,67 @@
 Exact target-tested checkout:
 
 ```
-213bbfb62ff7dcb8e553c06bdca09d99d2d1fd56
+9435725206b88f0ae953f058a294b1d6a7608e78
 ```
 
 Results:
 - architecture PASS;
-- navigation runtime **16/16**;
-- continuous 3D fly-through strict Expert gate PASS.
+- navigation runtime 16/16;
+- continuous 3D fly-through accepted with verbose target diagnostics.
 
-## Immediate task
+## Closed stage: continuous 3D fly-through
 
-Capture the detailed target-machine `FLY3D` diagnostics.
+Expert Newtonian and Assisted both complete the 5-segment ~35/60/90/120 deg route with:
+- 9/9 phases;
+- zero corridor violation;
+- zero tracking-envelope exceed ticks;
+- min route speed ~3.999 m/s;
+- max hull half-width ~17.474 m inside 32 m;
+- final P ~0.120 m;
+- final speed error ~0.00007 m/s;
+- final attitude error ~0.00032 deg.
 
-The accepted run did not include verbose output for the new test, so exact Newtonian/Assisted radius/slip/speed/hull comparisons are still missing.
+Measured Expert turn radii:
+- 35 deg -> ~90.25 m;
+- 60 deg -> ~44.78 m;
+- 90 deg -> ~21.09 m;
+- 120 deg -> ~8.62 m.
 
-Diagnostics-only runner patch:
+The Newtonian/Assisted rows are numerically identical because this trajectory is tangent-aligned and remains inside the same manoeuvre/RCS authority. This test proves continuous 3D execution, not law divergence.
 
-```
-4cd9c4a14c8f2e4ce033082633766a21fece9331
-```
+## Current task: speed/doctrine matrix
 
-This does not change navigation behavior or acceptance criteria. It only adds verbose execution of:
+Canonical code doctrines:
+- `Rational`;
+- `PrecisionRetrieval`;
+- `Extreme`;
+- `CombatEscape`.
 
-```
-maneuver_fly_through_3d
-```
+Need a test that gives the decision layer physically meaningful alternatives instead of one identical trajectory.
 
-after the normal suite.
+At minimum provide candidate alternatives that differ in:
+- transit time;
+- entry/exit speed;
+- minimum clearance;
+- slip/drift or body-alignment cost;
+- maneuver family;
+- law compatibility;
+- threat exposure where relevant;
+- expected contact / damage only where explicitly allowed.
 
-## Run
+The execution side must then run the selected accepted program through:
+`B9/B10 -> PilotSkill -> real physics`.
 
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
+The goal is to prove:
+1. doctrine selects different physically truthful candidates when the trade changes;
+2. Newtonian/Assisted filter incompatible maneuver families before ranking;
+3. selected programs remain executable and corridor-safe;
+4. Extreme/CombatEscape do not bypass hard survival constraints;
+5. PrecisionRetrieval genuinely trades time/speed for clearance/control margin;
+6. Rational behaves as the balanced baseline.
 
-OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
-
-{
-    echo "===== TESTED HEAD ====="
-    git rev-parse HEAD
-
-    echo
-    echo "===== ARCHITECTURE CONTRACT ====="
-    TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
-    time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
-
-    echo
-    echo "===== NAVIGATION RUNTIME ====="
-    bash tests/navigation_runtime/run_mingw64.sh
-} 2>&1 | tee "$OUT"
-
-echo
-echo "===== FLY3D SUMMARY ====="
-grep -E '\[FLY3D\]|\[FLY3D-CORNER\]|MANEUVER 3D FLY-THROUGH|tests passed|tests failed|TESTED HEAD' "$OUT" || true
-
-echo
-echo "===== LOG FILE ====="
-echo "$PWD/$OUT"
-```
-
-## Metrics to compare
-
-For Expert Newtonian vs Assisted:
-- `min_route_speed_mps`;
-- `max_center_cross_track_m`;
-- `max_hull_required_half_width_m`;
-- `max_forward_tracking_error_deg`;
-- per-corner:
-  - `actual_min_speed_mps`;
-  - `max_slip_deg`;
-  - `min_observed_turn_radius_m`;
-  - `max_hull_required_half_width_m`.
-
-Competent/Rookie remain diagnostic.
-
-## After metrics capture
-
-Record evidence and proceed to speed/doctrine matrix. Do not alter the already accepted fly-through mechanism unless new diagnostics reveal a real defect.
+Do not use “Freestyle” as a canonical doctrine name until historical project evidence explicitly maps it.
 
 ## Iteration rule
 
-After every state/evidence change, update all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After every code/evidence change, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

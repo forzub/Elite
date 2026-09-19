@@ -85,8 +85,8 @@ void testBridgePublishesOneDirectDemandSample()
     Bridge::Intent intent;
     intent.revision = 2;
     intent.targetRevision = 22;
-    intent.idealLinearAccelerationDemandSystemMps2 = {3.0, 0.0, -6.0};
-    intent.idealAngularAccelerationDemandSystemRadPerSec2 = {1.0, 0.5, 0.25};
+    intent.idealLinearAccelerationSystemMps2 = {3.0, 0.0, -6.0};
+    intent.idealAngularAccelerationSystemRadPerSec2 = {1.0, 0.5, 0.25};
 
     const auto result = bridge.step(0.01, 0.01, intent);
     require(
@@ -262,10 +262,10 @@ void testManualAttitudeOverridesNavigationAngularDemand()
 void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
 {
     game::navigation::NpcNavigationKinematicState state;
-    state.relativeWorldVelocityMps = glm::dvec3(0.0);
-    state.forwardMap = glm::dvec3(0.0, 0.0, -1.0);
-    state.rightMap = glm::dvec3(1.0, 0.0, 0.0);
-    state.upMap = glm::dvec3(0.0, 1.0, 0.0);
+    state.relativeSystemVelocityMps = glm::dvec3(0.0);
+    state.forwardSystem = glm::dvec3(0.0, 0.0, -1.0);
+    state.rightSystem = glm::dvec3(1.0, 0.0, 0.0);
+    state.upSystem = glm::dvec3(0.0, 1.0, 0.0);
     state.pitchRateRadPerSec = 0.5;
     state.yawRateRadPerSec = -0.25;
     state.rollRateRadPerSec = 0.10;
@@ -286,44 +286,44 @@ void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
     require(intent.revision == 42,
             "NPC navigation goal revision must become the runtime intent revision");
     requireNear(
-        intent.idealLinearAccelerationDemandSystemMps2.x,
+        intent.idealLinearAccelerationSystemMps2.x,
         0.0,
         1.0e-12,
         "identity ship forward cruise must not create lateral X acceleration"
     );
     requireNear(
-        intent.idealLinearAccelerationDemandSystemMps2.y,
+        intent.idealLinearAccelerationSystemMps2.y,
         0.0,
         1.0e-12,
         "identity ship forward cruise must not create vertical acceleration"
     );
     requireNear(
-        intent.idealLinearAccelerationDemandSystemMps2.z,
+        intent.idealLinearAccelerationSystemMps2.z,
         -5.0,
         1.0e-12,
         "nominal NPC goal must become a physical forward acceleration demand"
     );
 
     const glm::dvec3 angularDemand(
-        intent.idealAngularAccelerationDemandSystemRadPerSec2.x,
-        intent.idealAngularAccelerationDemandSystemRadPerSec2.y,
-        intent.idealAngularAccelerationDemandSystemRadPerSec2.z
+        intent.idealAngularAccelerationSystemRadPerSec2.x,
+        intent.idealAngularAccelerationSystemRadPerSec2.y,
+        intent.idealAngularAccelerationSystemRadPerSec2.z
     );
 
     requireNear(
-        glm::dot(angularDemand, state.rightMap),
+        glm::dot(angularDemand, state.rightSystem),
         -1.0,
         1.0e-6,
         "NPC nominal intent must oppose positive pitch rate on the ship-right axis"
     );
     requireNear(
-        glm::dot(angularDemand, state.upMap),
+        glm::dot(angularDemand, state.upSystem),
         0.5,
         1.0e-6,
         "NPC nominal intent must oppose negative yaw rate on the ship-up axis"
     );
     requireNear(
-        glm::dot(angularDemand, state.forwardMap),
+        glm::dot(angularDemand, state.forwardSystem),
         -0.2,
         1.0e-6,
         "NPC nominal intent must oppose positive roll rate on the ship-forward axis"
@@ -333,7 +333,7 @@ void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
 void testNpcHoldGoalBrakesRelativeVelocity()
 {
     game::navigation::NpcNavigationKinematicState state;
-    state.relativeWorldVelocityMps = glm::dvec3(4.0, -2.0, 1.0);
+    state.relativeSystemVelocityMps = glm::dvec3(4.0, -2.0, 1.0);
 
     NpcNavigationGoal goal;
     goal.revision = 5;
@@ -347,19 +347,19 @@ void testNpcHoldGoalBrakesRelativeVelocity()
         );
 
     requireNear(
-        intent.idealLinearAccelerationDemandSystemMps2.x,
+        intent.idealLinearAccelerationSystemMps2.x,
         -1.0,
         1.0e-12,
         "hold goal must brake actual relative X velocity"
     );
     requireNear(
-        intent.idealLinearAccelerationDemandSystemMps2.y,
+        intent.idealLinearAccelerationSystemMps2.y,
         0.5,
         1.0e-12,
         "hold goal must brake actual relative Y velocity"
     );
     requireNear(
-        intent.idealLinearAccelerationDemandSystemMps2.z,
+        intent.idealLinearAccelerationSystemMps2.z,
         -0.25,
         1.0e-12,
         "hold goal must brake actual relative Z velocity"
@@ -426,7 +426,7 @@ void testBridgeDemandCanReachCapabilityLayerWithoutLegacyKeys()
 
     Bridge::Intent intent;
     intent.revision = 8;
-    intent.idealAngularAccelerationDemandSystemRadPerSec2 =
+    intent.idealAngularAccelerationSystemRadPerSec2 =
         {100.0, 0.0, 0.0};
 
     // Let the expert executor ramp toward the request.

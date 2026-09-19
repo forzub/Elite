@@ -1,82 +1,166 @@
 # Elite Navigation v2 — continuation prompt
 
-Repository: `forzub/Elite`, branch `main`.
-Local checkout: `D:/__elite/work`.
+Repository: `forzub/Elite`  
+Branch: `main`  
+Local checkout: `D:/__elite/work`
 
-## Read first
+## Mandatory first action
 
-1. CURRENT_TASK.md
-2. CURRENT_STATE.md
-3. PROJECT_STATE.md
-4. src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md
-5. src/game/navigation/PLANNER_FOLLOWER_ARCHITECTURE.md
-6. src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md
-7. src/game/navigation/STAGE12_END_TO_END.md
+Read the current repository truth before changing code:
 
-## Last exact target-machine baseline
+1. `CURRENT_TASK.md`
+2. `CURRENT_STATE.md`
+3. `PROJECT_STATE.md`
+4. `src/game/navigation/PLANNER_FOLLOWER_ARCHITECTURE.md`
+5. `src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md`
+6. `src/game/navigation/STAGE12_END_TO_END.md`
 
-`519313ba430b73b557622436ed7df9a5a9a832cf`.
+**Important workflow rule:** after every state-affecting iteration, recreate
+this entire `CONTINUE_PROMPT.md` **from scratch** from the new current truth.
+Do not incrementally patch stale prose. The newly recreated prompt must itself
+again contain this same instruction, so a new dialog cannot lose the rule.
 
-At that checkout:
-- architecture PASS;
-- navigation_runtime 13/14 PASS;
-- only maneuver_corner_family_matrix failed.
+Also update `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md` and
+the active Stage-12 document every iteration. Remove obsolete detail when it no
+longer helps continuation.
 
-Failure:
-expert/Newtonian/StopTurnGo advanced internal phases by authored time instead of
-real state capture:
-- P error 27.257718 m;
-- min corner speed 2.933115 m/s;
-- center cross-track 21.026823 m;
-- hull half-width 34.330940 m;
-- 32 m corridor violation 2.330940 m;
-- 40 tracking-envelope exceed ticks.
+## Current task
 
-RadiusTurn was already strong.
-Drift physically worked but expert exit attitude remained ~14.38 deg.
+We are validating physical corner-maneuver families for Navigation v2 before
+building the mixed-angle 3D route and doctrine/speed matrix.
 
-## New unverified mechanism
+Matrix:
+- StopTurnGo / RadiusTurn / DriftTurn;
+- Newtonian / Assisted;
+- expert / competent / rookie;
+- same rigid Cobra;
+- same 90-degree L-corridor;
+- same 32 m half-width.
 
-Production:
-- src/game/navigation/ManeuverPhaseGate.h
-- src/game/navigation/ManeuverPhaseGate.cpp
+The goal is to validate planner-authored physical maneuver references, not to
+make the follower hide bad planning.
 
-Semantics:
-- ScheduledMoving -> advance at nominal reference horizon;
-- StateCapture -> continue following terminal sample until
-  TrajectoryFollower::Complete;
-- bounded capture overrun;
-- CaptureTimedOut instead of silent phase advance.
+## Latest exact target-machine result
 
-New isolated test:
-- tests/navigation_runtime/ManeuverPhaseGateTests.cpp
+Tested checkout:
 
-Expected runtime CTest count: 15.
+```text
+ca0c5506a9912bf016e4c52c7545ddd35c66e1fb
+```
 
-## Corner fixture now uses production gate
+Result:
+```text
+architecture contract       PASS
+navigation_runtime          14/15 PASS
+maneuver_phase_gate         PASS
+maneuver_corner_family_matrix FAIL
+```
 
-StopTurnGo:
-- brake/waypoint capture = StateCapture;
-- outgoing in-place attitude capture = StateCapture;
-- moving approach/flip/outgoing phases = ScheduledMoving.
+### Primary failure
 
-Brake terminal acceleration feed-forward is zeroed for capture convergence.
+Expert / Newtonian / StopTurnGo:
+```text
+completed=0
+phases=2
+capture_timeout_phases=1
+max_capture_overrun_s=6.01
+final_pos_error_m=77.903552
+final_velocity_error_mps=11.314457
+final_forward_error_deg=95.378736
+min_corner_speed_mps=2.012058
+max_hull_required_half_width_m=42.605322
+max_corridor_violation_m=10.605322
+tracking_envelope_exceeded_ticks=227
+```
 
-RadiusTurn:
-- moving phases ScheduledMoving.
+Newtonian StopTurnGo times out for expert, competent and rookie.
+Rookie Assisted StopTurnGo also times out.
 
-DriftTurn:
-- moving phases ScheduledMoving;
-- recovery changed from 2 s rotate + 2 s coast to 3 s rotate + 1 s coast;
-- same total 4 s and same 40 m post-arc travel.
+### Healthy evidence
 
-New row diagnostics:
-- capture_timeout_phases;
-- max_capture_overrun_s.
+Expert RadiusTurn is strong in both laws:
+- P ~0.45 m;
+- V ~0.027 m/s;
+- forward ~1.86 deg;
+- speed ~7.99 m/s through corner;
+- zero corridor violation;
+- zero tracking-envelope exceed ticks.
 
-Static audit passed, but NO target-machine evidence exists for this new HEAD.
+Expert DriftTurn physically succeeds:
+- P ~0.68 m;
+- V ~0.009 m/s;
+- speed 10 m/s;
+- ~108 deg slip;
+- zero corridor violation.
 
-## Run
+But Drift expert exit attitude remains:
+```text
+~9.67 deg
+required <=5 deg
+```
+
+## Root cause
+
+`ManeuverPhaseGate` is working as designed. Its isolated regression is green.
+
+The failure is planner/reference authoring:
+- Newtonian StopTurnGo scheduled a 2.6 s 180-degree flip;
+- aft-main braking started immediately after that scheduled horizon;
+- the real rigid body had not cleanly captured the required attitude;
+- brake terminal capture then inherited a large physical error;
+- terminal brake feed-forward is correctly zero after the nominal endpoint;
+- B10 has only 0.55 m/s2 reserved linear feedback, which is intentionally too
+  small to repair a wrongly authored multi-m/s maneuver;
+- StateCapture correctly times out instead of lying about completion.
+
+Do not solve this by increasing timeout, widening the corridor, weakening expert
+thresholds, or letting B10 choose a new maneuver.
+
+The previously green rigid-body Newtonian baseline used about 5 s for the same
+180-degree flip.
+
+## Current unverified code candidate
+
+```text
+f7e17a1a631157bc4cc8763c226ea73b57adeb23
+```
+
+### StopTurnGo correction
+
+Pre-brake timing:
+
+```text
+old: approach 2.775 + flip 2.600 = 5.375 s
+new: approach 0.375 + flip 5.000 = 5.375 s
+```
+
+So the braking point and pre-brake travel are unchanged. Only the Newtonian
+lead-rotation is made physically executable before the dependent aft-main burn.
+
+Brake remains:
+- 1.25 s nominal;
+- StateCapture;
+- strict terminal P/V/attitude/omega;
+- no timeout relaxation.
+
+### Drift correction
+
+Old:
+```text
+3 s moving attitude recovery + 1 s coast
+```
+
+New:
+```text
+4 s continuous moving attitude recovery
+```
+
+Same 4 s and same 40 m post-arc travel. This removes an artificial phase
+boundary while preserving path/time geometry.
+
+This candidate has NOT been target-machine accepted.
+
+## Run next
 
 ```bash
 cd /d/__elite/work
@@ -89,41 +173,82 @@ time python tests/architecture_contracts/check_navigation_stage12_runtime_planne
 bash tests/navigation_runtime/run_mingw64.sh
 ```
 
-Expected:
-- architecture PASS;
-- 15 tests;
-- maneuver_phase_gate PASS.
+If anything fails, preserve the complete 18 CORNER-MATRIX rows and 9
+CORNER-COMPARE rows.
 
-Inspect all CORNER-MATRIX/CORNER-COMPARE rows.
+## Existing strict expert acceptance
 
-Desired expert outcomes:
-- StopTurnGo capture_timeout_phases=0 and genuine near-stop;
-- no 32 m hull-corridor violation;
-- RadiusTurn remains green;
-- Drift retains high-slip/high-speed character and final attitude <=5 deg.
+Do not relax:
+- completed=true;
+- corridor violation = 0;
+- final P <=1.5 m;
+- final V <=1.0 m/s;
+- final forward <=5 deg;
+- StopTurnGo min corner speed <=0.75 m/s;
+- RadiusTurn min speed >=5 m/s and drift <=20 deg;
+- DriftTurn min speed >=7 m/s and drift >=60 deg.
 
-If StopTurnGo times out, do not increase timeout blindly. Inspect which terminal
-component P/V/attitude/omega prevents capture.
+Additional expected result:
+```text
+StopTurnGo capture_timeout_phases=0
+```
 
-If Drift still misses attitude, fix recovery reference/control timing without
-widening corridor or weakening threshold.
+## If the next test still fails
 
-Only after this gate:
-- construct 3-4 segment mixed-angle 3D corridor;
-- compare actual Newtonian vs Assisted route time;
-- compare PilotSkill;
-- add Rational/Freestyle/Extreme doctrine-speed requirements;
-- proceed toward B6/B7.
+If Newtonian StopTurnGo still times out:
+- inspect phase-specific terminal position, velocity, forward and angular
+  velocity error at timeout;
+- determine whether the remaining defect is the flip reference, brake reference
+  or PilotSkill command response;
+- do NOT extend the timeout blindly.
 
-## Workflow invariant
+If Drift remains >5 deg:
+- isolate angular recovery reference/tracking;
+- preserve speed, 40 m recovery travel and corridor geometry.
 
-Work directly in repo.
-After every state-affecting event:
-- rewrite CURRENT_TASK.md;
-- recreate CONTINUE_PROMPT.md from the true current state;
-- update CURRENT_STATE.md;
-- update PROJECT_STATE.md;
-- update STAGE12_END_TO_END.md;
-- update canonical architecture/migration docs when contracts change.
+If RadiusTurn regresses:
+- treat that as a regression; do not trade its current quality for another
+  family's pass.
 
-Never call a newer candidate accepted without target-machine evidence.
+## Architectural ownership
+
+```text
+B4 local corridor
+ -> B5 physical maneuver alternatives
+ -> B6 prove exact alternatives
+ -> B7 choose doctrine-appropriate proved maneuver
+ -> B8 freeze AcceptedManeuverProgram
+ -> B9 sample
+ -> B10 track with bounded feedback
+ -> PilotSkill
+ -> propulsion / physics
+```
+
+Planner owns rotate/burn family and timing. Follower does not.
+
+`ManeuverPhaseGate` only decides whether a compound physical phase may hand
+off:
+- ScheduledMoving -> nominal horizon;
+- StateCapture -> actual terminal capture;
+- CaptureTimedOut -> explicit maneuver failure.
+
+## After this gate is green
+
+1. compose 3-4 mixed-angle 3D corridor;
+2. measure actual common-gate route time;
+3. add Rational / Freestyle / Extreme doctrine-speed matrix;
+4. pass candidate maneuvers through B6 continuous geometry/capability proof;
+5. let B7 select among proved candidates;
+6. later show the same accepted route as manual guidance.
+
+Never create a second presentation-only planner.
+
+## State discipline
+
+Always distinguish:
+- exact target-machine tested checkout;
+- accepted baseline;
+- newer unverified code/doc HEAD.
+
+Again: **recreate this prompt from scratch after every iteration, and make the
+new prompt repeat this recreation instruction.**

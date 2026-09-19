@@ -1,5 +1,6 @@
 #include "src/game/navigation/OrdinaryPhysicalManeuverCompiler.h"
 
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -284,6 +285,68 @@ void testAssistedIsExplicitlyUnsupportedInFirstB5Slice()
     );
 }
 
+void testTenThousandDirtyActorCompilesAndMeasure()
+{
+    constexpr int kCompiles = 10000;
+
+    auto q = baseQuery();
+    q.state.forwardMap = {-0.151819, 0.18446, 0.971044};
+    q.state.upMap = {0.0, 1.0, 0.0};
+    q.state.rightMap =
+        glm::normalize(
+            glm::cross(q.state.forwardMap, q.state.upMap)
+        );
+    q.state.upMap =
+        glm::normalize(
+            glm::cross(q.state.rightMap, q.state.forwardMap)
+        );
+    q.desiredVelocityMapMetersPerSecond =
+        {-3.10856e-05, -54.7735, 24.4921};
+    q.geometricTargetPositionMapMeters =
+        {0.0, -693.34, 310.03};
+
+    const auto start = std::chrono::steady_clock::now();
+
+    std::size_t compiled = 0;
+    for (int i = 0; i < kCompiles; ++i)
+    {
+        // Vary position only; the physical authority problem remains the same.
+        q.state.positionMapMeters.x =
+            static_cast<double>(i % 17);
+
+        const auto result = Compiler::compile(q);
+        if (result.status == Compiler::Status::Compiled &&
+            findFamily(
+                result,
+                Candidate::Family::LeadRotateMainBurn
+            ) != nullptr)
+        {
+            ++compiled;
+        }
+    }
+
+    const auto end = std::chrono::steady_clock::now();
+    require(
+        compiled == static_cast<std::size_t>(kCompiles),
+        "dirty-actor B5 batch lost physical candidates"
+    );
+
+    const auto totalUs =
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            end - start
+        ).count();
+    const double perCompileNs =
+        static_cast<double>(totalUs) * 1000.0 /
+        static_cast<double>(kCompiles);
+
+    std::cout
+        << "[TIMING] ordinary_physical_maneuver_compiler"
+        << " compiles=" << kCompiles
+        << " total_us=" << totalUs
+        << " per_compile_ns=" << perCompileNs
+        << "\n";
+}
+
 void testFixtureLikeSeventyFiveDegreeDemandIsNotAcceptedAsOmnidirectional()
 {
     auto q = baseQuery();
@@ -356,6 +419,7 @@ int main()
         testFeedbackReserveCanMakeMarginalDirectDemandInfeasible();
         testAssistedIsExplicitlyUnsupportedInFirstB5Slice();
         testFixtureLikeSeventyFiveDegreeDemandIsNotAcceptedAsOmnidirectional();
+        testTenThousandDirtyActorCompilesAndMeasure();
 
         std::cout << "ORDINARY PHYSICAL MANEUVER COMPILER TESTS: PASS\n";
         std::cout << " - direct body-axis demand stays direct only when authority permits\n";
@@ -364,6 +428,7 @@ int main()
         std::cout << " - missing angular authority fails closed instead of inventing lateral thrust\n";
         std::cout << " - Assisted remains explicit unsupported work, not fake Newtonian behavior\n";
         std::cout << " - live 75-degree failure class compiles without omnidirectional main thrust\n";
+        std::cout << " - 10000 dirty-actor compiles are measured diagnostically\n";
         return 0;
     }
     catch (const std::exception& error)

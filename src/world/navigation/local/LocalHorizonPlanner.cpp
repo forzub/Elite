@@ -1,5 +1,6 @@
 #include "LocalHorizonPlanner.h"
 #include "PhysicalManeuverHorizon.h"
+#include "src/world/navigation/NavigationObstacleGeometry.h"
 
 #include <algorithm>
 #include <cmath>
@@ -101,6 +102,106 @@ double distanceToSegmentSquared(
     );
     const Vec3d closest = add(segmentStart, scale(segment, t));
     return lengthSquared(subtract(point, closest));
+}
+
+glm::dvec3 toGlm(const Vec3d& value) noexcept
+{
+    return {value.x, value.y, value.z};
+}
+
+bool exactTranslationNarrowPhaseAvailable(
+    const LocalHorizonPlanner::Query& query,
+    const Candidate& candidate
+) noexcept
+{
+    // Exact dynamic geometry is currently a translation-only narrow phase.
+    // Rotating/accelerating shapes keep the conservative swept-sphere result
+    // until a continuous swept-OBB solver owns those motion classes.
+    constexpr double AngularRateToleranceRadPerSec = 1.0e-6;
+    constexpr double AccelerationToleranceMps2 = 1.0e-9;
+
+    return
+        !candidate.exactObstacles.empty() &&
+        length(candidate.angularVelocityMapRadPerSecond) <=
+            AngularRateToleranceRadPerSec &&
+        length(candidate.accelerationMapMetersPerSecond2) <=
+            AccelerationToleranceMps2 &&
+        length(query.agent.accelerationMapMetersPerSecond2) <=
+            AccelerationToleranceMps2;
+}
+
+bool exactTranslationConflict(
+    const LocalHorizonPlanner::Query& query,
+    const Candidate& candidate,
+    const Vec3d& actorNow,
+    const Vec3d& actorVelocityNow,
+    const Vec3d& boundedTarget,
+    double lookAheadSeconds
+) noexcept
+{
+    if (!exactTranslationNarrowPhaseAvailable(query, candidate))
+        return true;
+
+    const Vec3d actorAgeDisplacement =
+        subtract(actorNow, candidate.positionMapMeters);
+    const Vec3d actorFutureDisplacement =
+        scale(actorVelocityNow, lookAheadSeconds);
+
+    const Vec3d currentKinematicEnd =
+        positionAt(
+            query.agent.positionMapMeters,
+            query.agent.velocityMapMetersPerSecond,
+            query.agent.accelerationMapMetersPerSecond2,
+            lookAheadSeconds
+        );
+
+    const glm::dvec3 start =
+        toGlm(query.agent.positionMapMeters);
+    const glm::dvec3 currentEndRelative =
+        toGlm(
+            subtract(
+                currentKinematicEnd,
+                actorFutureDisplacement
+            )
+        );
+    const glm::dvec3 corridorEndRelative =
+        toGlm(
+            subtract(
+                boundedTarget,
+                actorFutureDisplacement
+            )
+        );
+
+    for (const NavigationObstacle& published : candidate.exactObstacles)
+    {
+        NavigationObstacle obstacle = published;
+        obstacle.centerMeters += toGlm(actorAgeDisplacement);
+
+        // Two independent conservative questions:
+        // 1) does unchanged current kinematics hit the real moving shape?
+        // 2) does the bounded requested corridor hit it?
+        //
+        // In the obstacle's translating frame both become ordinary static
+        // segment-vs-OBB tests. The enclosing NavigationMap sphere has already
+        // done candidate collection and must not become final collision truth.
+        if (segmentIntersectsNavigationObstacle(
+                start,
+                currentEndRelative,
+                obstacle,
+                query.agent.radiusMeters,
+                query.policy.safetyMarginMeters) ||
+            segmentIntersectsNavigationObstacle(
+                start,
+                corridorEndRelative,
+                obstacle,
+                query.agent.radiusMeters,
+                query.policy.safetyMarginMeters))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void validateCandidate(const Candidate& candidate)
@@ -334,6 +435,24 @@ LocalHorizonPlanner::Result LocalHorizonPlanner::evaluate(
 
         if (!closestApproachConflict && !sweptCorridorConflict)
             continue;
+
+        // NavigationMap's swept sphere is broadphase only when authoritative
+        // exact geometry is available. For translation-only dynamic shapes,
+        // re-test both current kinematics and the bounded requested corridor
+        // against the real HitVolume-derived OBBs. Without this narrow phase,
+        // a long box can trap the ship inside its enclosing sphere even while
+        // the physical route beside the box is clear.
+        if (exactTranslationNarrowPhaseAvailable(query, candidate) &&
+            !exactTranslationConflict(
+                query,
+                candidate,
+                actorNow,
+                actorVelocityNow,
+                boundedTarget,
+                lookAhead))
+        {
+            continue;
+        }
 
         ++result.conflictsFound;
         const double gap = closestDistance - requiredSeparation;

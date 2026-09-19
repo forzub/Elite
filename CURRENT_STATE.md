@@ -7,87 +7,63 @@
 Tested checkout:
 
 ```
-be4686f4dcba419f451813b1ddc246088c145e48
+d659416b9b1ddb2356c37eff315f9d13b70bafaa
 ```
 
 - Stage-12 architecture contract: **PASS**.
 - `navigation_runtime`: **14/15 PASS**.
 - Only failing target: `maneuver_corner_family_matrix`.
-- The previous Newtonian StopTurnGo authoring defect is fixed for expert execution:
-  - completed=1;
-  - final P error 0.369 m;
-  - final V error 0.018 m/s;
-  - final attitude error 0.030 deg;
-  - real near-stop 0.000324 m/s;
-  - no corridor violation;
-  - no capture timeout.
+- Expert Newtonian StopTurnGo remains fixed and healthy.
 - RadiusTurn remains healthy.
-- Remaining strict expert failure is DriftTurn exit attitude:
-  - Newtonian/Assisted final forward error about 10.325 deg;
-  - final P/V and corridor remain good;
-  - strict common exit requirement remains <=5 deg.
-- Rookie StopTurnGo still times out in both laws; this is diagnostic, not the current strict expert failure.
+- Strict expert failure remains DriftTurn common-exit attitude:
+  - Newtonian: 10.324757 deg;
+  - Assisted: 10.324757 deg;
+  - required <=5 deg.
+- DriftTurn final P/V and corridor are otherwise good:
+  - final P error 0.473 m;
+  - final V error 0.032 m/s;
+  - no corridor violation;
+  - no tracking-envelope exceed ticks for expert.
 
-## Interpretation
+## Long-arc diagnostic result
 
-The ship is allowed to correct attitude while translating. The <=5 deg criterion is a **terminal common-exit requirement**, not a rule that attitude must remain fixed during motion.
+The new 180 deg, R=80 m, v=10 m/s long arc ran successfully for every PilotSkill and both control laws.
 
-The current DriftTurn already requests a moving attitude recovery over 4 s / 40 m. Its remaining ~10 deg terminal error therefore needs to be separated into:
+Expert:
+- final P error 0.332 m;
+- final V error 0.036 m/s;
+- final attitude error 0.052 deg;
+- maximum in-flight forward/tangent error 3.221 deg;
+- maximum centerline error 0.330 m;
+- no tracking-envelope exceed ticks.
 
-1. a general continuous angular-tracking defect in B9/B10, or
-2. a DriftTurn-specific reference/handoff/recovery defect.
+Competent:
+- final attitude error 0.048 deg;
+- maximum in-flight forward/tangent error 4.422 deg;
+- no tracking-envelope exceed ticks.
 
-Do not weaken the 5 deg gate, widen the corridor, or hide the issue with larger tracking reserve before that split is measured.
+Rookie:
+- final attitude error 0.859 deg;
+- maximum in-flight forward/tangent error 6.149 deg;
+- no tracking-envelope exceed ticks.
 
-## Current unverified candidate
+Therefore the general angular sampling/tracking chain is healthy. The remaining DriftTurn miss is **not** a general B9/B10 inability to rotate while translating.
 
-Code candidate:
+## Root cause direction
 
-```
-5c16bedc25c422f2c79ae5def14396839ef4ee7c
-```
+The ship can correct attitude while moving. The <=5 deg rule is only the common terminal-exit requirement.
 
-Adds a long-arc diagnostic to `maneuver_corner_family_matrix` without changing the existing corner tolerances or DriftTurn behavior.
+The current DriftTurn reference commands its recovery during the final 4 s / 40 m, but the reference ends while the physical ship is still about 10.3 deg short. Since the long arc proves continuous angular tracking works, the remaining defect is local maneuver authoring / recovery construction.
 
-Long arc:
-- 180 deg sweep;
-- radius 80 m;
-- speed 10 m/s;
-- arc length ~=251.33 m;
-- nominal duration ~=25.13 s;
-- all 3 PilotSkill profiles;
-- Newtonian + Assisted.
+The clean correction is to keep the translational motion and provide an explicit in-motion attitude-settle portion **inside the same accepted maneuver program**. This is not replanning and does not require the follower to invent a maneuver.
 
-Reported continuously over the arc:
-- max centerline error;
-- max rigid-hull required half-width;
-- max forward/tangent angular error;
-- tracking-envelope exceed ticks;
-- final P/V/attitude errors.
+Do not relax the 5 deg gate, widen the corridor, or increase generic tracking reserve to hide this.
 
-Expert arc gates:
-- hull remains inside the same 32 m half-width corridor;
-- final P <=1.5 m;
-- final V <=1.0 m/s;
-- final attitude <=5 deg;
-- maximum in-flight forward/tangent error <=10 deg.
+## Current next task
 
-This candidate is **not accepted** until target-machine evidence is supplied.
+Change DriftTurn recovery so its accepted reference reaches the target attitude early enough and holds/settles that attitude while the ship continues moving at the intended exit velocity. Prefer one coherent program over a separate follower-side corrective maneuver.
 
-## Next target-machine commands
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
-time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
-
-bash tests/navigation_runtime/run_mingw64.sh
-```
-
-The next result must be interpreted using both `[CORNER-MATRIX]` and `[LONG-ARC]` rows.
+After the code change, rerun the same corner-family and long-arc gate.
 
 ## Architecture invariants
 

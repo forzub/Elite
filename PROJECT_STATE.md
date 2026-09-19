@@ -3206,3 +3206,60 @@ bash build_mingw64.sh
 ```
 
 No Stage-12 acceptance promotion is claimed from this documentation/code pass. Last fully accepted target-machine baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+
+
+## 2026-09-19 B8/B9 accepted; B10 bounded tracking candidate
+
+Target-machine verified checkout:
+
+```text
+701881ddae861cd5593e425de91600e048bd417c
+```
+
+Evidence supplied by user:
+- `navigation_runtime`: 7/7 PASS;
+- `maneuver_program_sampler`: PASS;
+- canonical `EliteGame`: BUILD PASS;
+- canonical `EliteServer`: BUILD PASS.
+
+This accepts the first clean execution-boundary slice B8/B9:
+`AcceptedManeuverProgram` + `ManeuverProgramSampler`.
+
+Current B10 candidate baseline before documentation commits:
+
+```text
+66d89b93e3edf0817bb8d88b78e405180887cecc
+```
+
+B10 is now an explicit `ManeuverTrackingController` block. It consumes one
+B9 reference sample plus actual vehicle kinematics and may add only bounded
+feedback inside the reserve carried by `AcceptedManeuverProgram`.
+
+The new Navigation-v2 TrajectoryFollower path is:
+
+```text
+AcceptedManeuverProgram
+ -> ManeuverProgramSampler
+ -> ManeuverTrackingController
+ -> NavigationLocalControlIntent
+```
+
+The old `AcceptedShortSegment` overload remains live for compatibility.
+
+Architecture contracts now forbid B8/B9/B10 from depending on
+NavigationMap, NavigationSpace, GameSimulation, NavigationRuntimePlanner,
+planner/world query entry points or unbounded `std::vector` hot-path storage.
+
+New regression `maneuver_tracking_controller` pins:
+- zero tracking error => exact `A_ff/alpha_ff`;
+- tracking feedback is clamped to the accepted reserve;
+- B9 -> B10 composition inside TrajectoryFollower;
+- terminal completion uses accepted tolerances;
+- execution before acceptance time fails closed.
+
+`tests/navigation_runtime/run_mingw64.sh` now prints configure/build/test/total
+phase timings. No persistent log is currently required. If later diagnosis
+creates one, the invoking script/command must print the exact path at completion.
+
+B10 target-machine gate is pending; do not promote the candidate until that
+evidence is supplied.

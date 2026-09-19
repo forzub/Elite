@@ -14,71 +14,65 @@ Target: Windows 10 / MSYS2 MinGW64 / g++ 15.2 / CMake + Ninja.
 6. `src/game/navigation/STAGE12_END_TO_END.md`
 7. `src/game/navigation/NAVIGATION_PURITY_CONTRACT.md`
 
-## Canon
+## Architecture
 
-Planner world:
-B0 world snapshot -> B1 shared influence -> B2 objective -> B3 topology ->
-B4 local route-aligned corridor -> B5 physical maneuver compiler ->
-B6 continuous proof -> B7 decision -> B8 AcceptedManeuverProgram.
+Planner:
+B0 world -> B1 influence -> B2 objective -> B3 topology -> B4 local corridor ->
+B5 physical compiler -> B6 proof -> B7 decision -> B8 accepted program.
 
-Execution world:
-B9 sampler -> B10 bounded tracking -> B11 safety/reflex ->
-B12 PilotSkill -> B13 propulsion/physics.
+Execution:
+B9 sample -> B10 bounded tracking -> B11 safety/reflex ->
+B12 PilotSkill -> B13 physics.
 
-B14 decides **when** planner blocks get CPU. It is not a planner.
+B14 owns only planner scheduling.
 
-## Verified baseline
+## Accepted evidence
 
-Target-machine verified:
+B8/B9/B10 exact-hash target-machine baseline:
+`2abd79a6181a322fe15425994ab771942e47bc26`.
+
+B14 isolated gate is also green:
+- architecture PASS 0.204 s;
+- navigation_runtime 9/9;
+- 5000 actors: enqueue 1518 us, dispatch+complete 1258 us, total 2776 us;
+- client/server build PASS, production build 23.001 s.
+
+The B14 user output omitted the rev-parse line, so do not fabricate an exact B14
+tested hash.
+
+## Current candidate
+
+Live B14 integration candidate before docs:
+
+`382c9d6f8ae347630ccd1a6ae6ec18bd077d086d`.
+
+Stage-12 lab ownership is now:
 
 ```text
-2abd79a6181a322fe15425994ab771942e47bc26
+ReplanPolicy
+ -> NavigationPlannerJob
+ -> B14 enqueue
+ -> bounded dispatch
+ -> existing Planner::plan
+ -> B14 complete(ticket)
+ -> commit only CompletedCurrent
+ -> existing AcceptedShortSegment
 ```
 
-Evidence:
-- architecture contract PASS;
-- navigation_runtime 8/8 PASS;
-- maneuver_tracking_controller PASS;
-- EliteGame / EliteServer BUILD PASS;
-- build_mingw64 real 44.989 s;
-- architecture contract real 0.186 s.
+Rules:
+- no direct Planner::plan -> authoritative commit;
+- world/objective/capability/job revisions cross scheduler boundary;
+- capability revision is monotonic and based on real current vehicle authority;
+- planner geometry is unchanged;
+- AcceptedShortSegment remains live for this slice;
+- GameSimulation may measure scheduler/planner wall time; B14 core remains clock-free.
 
-B8/B9/B10 accepted.
+Live diagnostics include enqueue/dispatch/current/stale counts, pending/in-flight
+depth and scheduler/planner microseconds.
 
-## Current B14 candidate
-
-Code/contract baseline before documentation commits:
-
-```text
-1ba23241d760b3a57c917189e333e4fbc0365ea4
-```
-
-New:
-- `NavigationPlannerJob`;
-- `NavigationWorkScheduler`;
-- `NavigationWorkSchedulerTests.cpp`.
-
-B14 rules:
-- urgent / normal / background queues;
-- deterministic age promotion;
-- bounded dispatch <= 128 jobs and cost-unit budget;
-- one pending actor slot;
-- monotonic per-actor job revision;
-- duplicate suppression;
-- stale rejection before dispatch;
-- in-flight ticket retained until `complete(ticket)`;
-- stale worker result rejected before commit;
-- ordinary replacement does not scan queue;
-- lazy tombstones are compacted amortized;
-- capacity pressure reclaims already-stale records;
-- scheduler owns no planner/world owner/wall clock.
-
-Scale gate:
-- 5000 synthetic actors;
-- deterministic drain;
-- no loss/duplication;
-- pending/in-flight/queuedRecords all return to zero;
-- timing is printed but not used as a correctness threshold.
+Headless navigation self-test requires dispatch count == plan count and
+CompletedCurrent count == dispatch count, with zero stale completion in this
+synchronous fixture.
 
 ## Run now
 
@@ -94,42 +88,23 @@ bash tests/navigation_runtime/run_mingw64.sh
 
 TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
 time bash build_mingw64.sh
+
+bash tests/navigation_runtime/run_live_scheduler_gate_mingw64.sh
 ```
 
-Expected:
-- architecture PASS;
-- navigation_runtime 9/9 PASS;
-- navigation_work_scheduler PASS;
-- verbose diagnostic prints
-  `[TIMING] navigation_work_scheduler actors=5000 ...`;
-- runtime script prints configure/build/tests/scheduler diagnostic/total;
-- client + server build PASS.
+The last command writes a persistent log under `build/logs` and MUST print the
+exact Windows log path as its final `[LOG] ...` line.
 
-No persistent log is required unless a failure needs diagnosis. If a log is
-created, print its exact path as the last line of the command/script.
+Do not accept live B14 until all four gates are green.
 
-Do not accept B14 without target-machine evidence.
+## After green live B14
 
-## After B14 PASS
-
-Next slice is **live scheduler integration**, not B4/B5 yet:
-- map current NavigationExecutionReplanPolicy result into scheduler jobs;
-- GameSimulation submits dirty work instead of directly planning;
-- dispatch bounded jobs;
-- execute existing planner unchanged for dispatched jobs;
-- complete ticket and commit only if current;
-- add live queue/stale/dispatch timing counters;
-- preserve AcceptedShortSegment until this seam is independently green.
-
-After live B14 integration acceptance, migrate live ACCEPT to
-AcceptedManeuverProgram in a separate slice.
+Migrate the live ACCEPT seam from AcceptedShortSegment to
+AcceptedManeuverProgram as a separate target-machine-gated slice. Do not mix
+that migration with scheduler changes.
 
 ## Every state-affecting iteration
 
-- rewrite this file completely;
-- rewrite `CURRENT_TASK.md`;
-- update `CURRENT_STATE.md`;
-- update `PROJECT_STATE.md`;
-- update `src/game/navigation/STAGE12_END_TO_END.md`;
-- update canonical architecture/migration/purity docs when ownership changes;
-- keep verified target-machine baseline distinct from unverified HEAD.
+Rewrite this file and CURRENT_TASK; update CURRENT_STATE, PROJECT_STATE and
+STAGE12_END_TO_END; update architecture/migration/purity docs when ownership
+changes.

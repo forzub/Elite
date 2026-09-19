@@ -128,18 +128,31 @@ void DynamicMotionSystem::applySystemAccelerationDemand(
     const double mainAuthority = linearAccelerationLimit(params);
     const double manoeuvreAuthority = manoeuvreAccelerationLimit(params);
 
-    // Main engine is physically forward-only. Use it first for the positive
-    // forward component, then let the six-direction manoeuvre system cover the
-    // remaining vector up to its own real authority. This also permits bounded
-    // reverse/lateral/vertical navigation demand without inventing a reverse
-    // main engine.
+    // Longitudinal main-thrust model is control-law specific:
+    //
+    // Newtonian:
+    //   aft main engine only. A reverse demand cannot invent nose thrust and
+    //   must be handled by bounded RCS or by a planner-authored 180 deg flip.
+    //
+    // Assisted / aircraft-like:
+    //   symmetric longitudinal controlled thrust is available from aft and
+    //   fore sources. The main channel may therefore accelerate either along
+    //   +forward or -forward, while lateral/vertical remainder still belongs
+    //   to the real manoeuvre/RCS authority.
     const double requestedForward =
         glm::dot(linearAccelerationDemandSystemMps2, forward);
-    const double mainForward =
-        std::clamp(requestedForward, 0.0, mainAuthority);
+
+    const double mainLongitudinal =
+        motion.localControlLaw == LocalFlightControlLaw::Newtonian
+            ? std::clamp(requestedForward, 0.0, mainAuthority)
+            : std::clamp(
+                  requestedForward,
+                  -mainAuthority,
+                  mainAuthority
+              );
 
     motion.mainEngineAccelerationMps2 =
-        forward * mainForward;
+        forward * mainLongitudinal;
 
     const glm::dvec3 remainder =
         linearAccelerationDemandSystemMps2 -
@@ -470,8 +483,35 @@ void DynamicMotionSystem::applyLocalFrameInput(
     const double response =
         positiveOr(static_cast<double>(params.throttleAccel), 1.0);
 
+    // Assisted does not gain an omnidirectional "main engine". Longitudinal
+    // velocity error is handled by the symmetric aft/fore main-thrust pair.
+    // Lateral/vertical stabilization uses the same bounded manoeuvre/RCS
+    // authority as manual keypad translation.
+    const double longitudinalVelocityError =
+        glm::dot(velocityError, f);
+    const glm::dvec3 longitudinalMainAcceleration =
+        f * std::clamp(
+            longitudinalVelocityError * response,
+            -maxAccel,
+            maxAccel
+        );
+
+    const glm::dvec3 lateralVelocityError =
+        velocityError - f * longitudinalVelocityError;
+    const glm::dvec3 assistedRcsStabilization =
+        clampMagnitude(
+            lateralVelocityError * response,
+            manoeuvreAccel
+        );
+
     motion.mainEngineAccelerationMps2 =
-        clampMagnitude(velocityError * response, maxAccel);
+        longitudinalMainAcceleration;
+    motion.manoeuvreAccelerationMps2 =
+        clampMagnitude(
+            motion.manoeuvreAccelerationMps2 +
+                assistedRcsStabilization,
+            manoeuvreAccel
+        );
     motion.engineAccelerationMps2 =
         motion.mainEngineAccelerationMps2 +
         motion.manoeuvreAccelerationMps2;

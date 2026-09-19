@@ -2808,3 +2808,39 @@ Correction: the Stage-12 architecture gate now verifies the sample-count owner i
 `NavigationExecutionSafetyProbeBuilder.h` plus the sampled builder call, sampled-loop traversal, exact-static segment check, and executed-forecast blocking state in `GameSimulation.cpp`.
 
 No Navigation-v2 planner, follower, control law or safety algorithm changed in this pass. Full target-machine acceptance still requires the corrected architecture gates, canonical build, and freshly built server self-test.
+
+
+### 2026-09-19 full post-failure Stage-12 gate trace
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+a8a40a00985c9664e310c7b90c2ac6d4cec2e23f
+~~~
+
+Target-machine evidence at checkout `9d2f9120d8b66b7d8b553d5eb92b555552bdd4bf`:
+
+- `check_navigation_foundation_lock.py`: PASS;
+- Stage-12 runtime-planner gate advanced through all earlier checks and failed at
+  `accepted segment target revision must remain distinct from high-level intent revision`.
+
+Root cause of the reported failure: stale architecture-test ownership. Revision separation is intact in production:
+
+- `AcceptedShortSegment::goalRevision` is the high-level maneuver/goal revision;
+- `AcceptedShortSegment::revision` is the concrete accepted short-segment revision;
+- `TrajectoryFollower` publishes them as `intent.revision` and `intent.targetRevision` respectively;
+- `NavigationFrameBoundary` preserves both fields across NavLocal -> System conversion;
+- `NavigationRuntimeControlBridge::toPilotCommand` forwards both revisions to `PilotSkillExecutor`;
+- `PilotSkillExecutor` exposes the active concrete target revision through `activeTargetRevision`.
+
+The obsolete gate incorrectly required a duplicate `targetRevision` field to be declared in
+`NavigationRuntimeControlBridge.h`, although the bridge now aliases the typed
+`NavigationSystemControlIntent` DTO and should not duplicate that state.
+
+A full audit of every architecture condition after the failing check found one additional stale marker before rerunning the target machine: the live moving-gap kinematic proof now correctly owns
+`expectedMovingGapVelocityMapMps` in NavLocal, while the gate still searched for the superseded
+`expectedMovingGapVelocityWorldMps` name. That marker was corrected in the same candidate.
+
+All other remaining post-failure contract markers were checked against current source: authoritative self-test evidence, slit/tunnel topology and capture, exact-static physical sweep, bounded visibility recovery, ManeuverDecision doctrines, automatic/manual replan policy, Assisted/Newtonian control-law contract, and client/server CMake ownership. No additional stale marker was found in that remaining portion of the gate.
+
+No Navigation-v2 planner/control/safety behavior changed in this pass. Full target-machine acceptance still requires the refreshed Stage-12 gate, canonical build, and freshly built server self-test.

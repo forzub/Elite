@@ -5,88 +5,143 @@
 **Canonical architecture:** `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`
 **Migration audit:** `src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md`
 
-## Last fully verified migration baseline
+## Last verified baseline
 
 ```text
-701881ddae861cd5593e425de91600e048bd417c
+2abd79a6181a322fe15425994ab771942e47bc26
 ```
 
 Target-machine evidence:
-- navigation_runtime 7/7 PASS;
-- maneuver_program_sampler PASS;
-- EliteGame BUILD PASS;
-- EliteServer BUILD PASS.
+- Stage-12 architecture contract: PASS;
+- `navigation_runtime`: 8/8 PASS;
+- `maneuver_tracking_controller`: PASS;
+- `EliteGame`: BUILD PASS;
+- `EliteServer`: BUILD PASS;
+- `build_mingw64.sh`: 44.989 s real;
+- architecture contract: 0.186 s real.
 
-B8/B9 is accepted.
+B8/B9/B10 are accepted.
 
-## B10 corrective rerun status
+## Current candidate — B14 Navigation Work Scheduler
 
-The first B10 gate failed on:
-- a false-positive architecture grep;
-- MinGW/g++ 15.2 rejecting `const Policy& policy = {}`.
-
-Corrective code/contract baseline before docs:
+Code/contract baseline before documentation commits:
 
 ```text
-4a3d196c1574e91b747f05d194db7a35ad5c5517
+1ba23241d760b3a57c917189e333e4fbc0365ea4
 ```
 
-Fixes are on main:
-- explicit overloads instead of braced default-reference arguments;
-- precise dependency contract;
-- MinGW-safe overload form pinned by architecture contract;
-- runtime gate timing prints on both PASS and FAIL.
+New:
+- `src/game/navigation/NavigationWorkScheduler.h`
+- `src/game/navigation/NavigationWorkScheduler.cpp`
+- `tests/navigation_runtime/NavigationWorkSchedulerTests.cpp`
 
-Fresh target-machine evidence now confirms:
-- EliteGame BUILD PASS;
-- EliteServer BUILD PASS;
-- `build_mingw64.sh` real time: **44.989 s**.
+B14 is a scheduling service, not a planner.
 
-This closes the production compile/link defect.
+It owns:
+- urgent / normal / background work queues;
+- actor revision slots;
+- pending and in-flight tickets;
+- deterministic age promotion;
+- bounded planner dispatch slices.
 
-## What is still missing before B10 acceptance
+It does not own:
+- NavigationMap;
+- NavigationSpace;
+- NavigationRuntimePlanner;
+- any planner callback;
+- wall clock / random / file I/O.
 
-The supplied output did not include:
-- architecture-contract PASS;
-- navigation_runtime 8/8 PASS;
-- exact `git rev-parse HEAD` from the target machine.
+### Queue scale contract
 
-Therefore B10 remains target-machine pending.
+```text
+enqueue / replace
+    -> actor slot
+    -> no queue scan in ordinary replacement path
 
-Run only the missing gate pieces now:
+old queue record
+    -> lazy tombstone
+
+excess tombstones
+    -> amortized compaction
+    -> bounded physical queue storage
+
+dispatch
+    -> <= 128 jobs
+    -> <= deterministic cost-unit budget
+
+planner finishes
+    -> complete(ticket)
+    -> CompletedCurrent | CompletedStale
+```
+
+Important:
+- per-actor `jobRevision` is monotonic;
+- completed revisions cannot be replayed;
+- stale world/objective/capability/route jobs are rejected before expensive work;
+- stale in-flight results are rejected before commit;
+- capacity pressure reclaims already-stale queue records before rejecting fresh work;
+- only one planner job for an actor can be in flight at once.
+
+### Scale fixture
+
+The isolated test queues **5000 synthetic actors** and proves:
+- deterministic dispatch;
+- no job loss or duplication;
+- fixed job/cost slice limits;
+- queue, in-flight state and physical records return to zero.
+
+The test prints:
+
+```text
+[TIMING] navigation_work_scheduler actors=5000 enqueue_us=... dispatch_complete_us=... total_us=...
+```
+
+Timing is diagnostic only; no brittle wall-clock PASS threshold exists.
+
+## Run target-machine gate
 
 ```bash
 cd /d/__elite/work
-
+git pull --ff-only
 git rev-parse HEAD
 
 TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
 time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
 bash tests/navigation_runtime/run_mingw64.sh
+
+TIMEFORMAT='[TIMING] build_mingw64 real_s=%R user_s=%U sys_s=%S'
+time bash build_mingw64.sh
 ```
 
 Expected:
 - architecture contract PASS;
-- navigation_runtime 8/8 PASS;
-- `maneuver_tracking_controller` PASS;
-- timing lines for configure/build/tests/total.
+- navigation_runtime **9/9 PASS**;
+- new `navigation_work_scheduler` PASS;
+- verbose scheduler diagnostic exposes the 5000-actor timing line;
+- runtime script prints configure/build/tests/scheduler diagnostic/total timings;
+- `EliteGame` and `EliteServer` BUILD PASS.
 
-No production rebuild is required again unless one of those two gates exposes a new code change.
+No persistent log is required for this gate. If a failure needs a log, create it
+only for diagnosis and print the exact path as the final line of the test command.
 
-## After full B10 green
+## Next slice after green B14 gate
 
-Next block is B14 Navigation Work Scheduler API:
-- NavigationPlannerJob value type;
-- urgent / normal / background queues;
-- stale revision rejection;
-- bounded jobs per slice;
-- fairness/age promotion;
-- duplicate suppression;
-- deterministic tests for hundreds/thousands of synthetic actors;
-- timing diagnostics, without brittle wall-clock pass/fail thresholds.
+Do not immediately merge planner implementation changes into B14.
 
-Only after B14 acceptance migrate live GameSimulation from AcceptedShortSegment to AcceptedManeuverProgram.
+Next step is a separately gated **live scheduler integration slice**:
+1. translate current `NavigationExecutionReplanPolicy::Result` into B14 jobs;
+2. keep existing planner behavior/geometry unchanged;
+3. GameSimulation submits dirty events instead of invoking the planner directly;
+4. dispatch a bounded scheduler slice;
+5. execute planner only for dispatched jobs;
+6. complete ticket and commit result only if still current;
+7. add counters/timing for queued, dispatched, stale and completed work;
+8. keep `AcceptedShortSegment` live compatibility until this scheduler seam is green.
+
+After the live scheduler seam is accepted, migrate the GameSimulation ACCEPT
+product from `AcceptedShortSegment` to `AcceptedManeuverProgram` in its own
+target-machine-gated slice.
 
 ## Documentation invariant
 
@@ -97,4 +152,4 @@ After every state-affecting iteration:
 - update `PROJECT_STATE.md`;
 - update `src/game/navigation/STAGE12_END_TO_END.md`;
 - update canonical architecture/migration docs when ownership changes;
-- keep verified target-machine baseline separate from current HEAD.
+- keep verified target-machine baseline separate from unverified HEAD.

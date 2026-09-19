@@ -42,11 +42,6 @@ bool finite(double value)
     return std::isfinite(value);
 }
 
-bool finite(const glm::dvec3& value)
-{
-    return finite(value.x) && finite(value.y) && finite(value.z);
-}
-
 double smooth5(double u)
 {
     const double u2 = u * u;

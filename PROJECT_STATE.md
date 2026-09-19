@@ -2668,3 +2668,52 @@ daaf038021cdf8b9561db60fdd35e7cefce0b2df
 Next gate is to rerun architecture + runtime + full build. Only after a fresh
 successful build should `EliteServer --self-test-navigation` be interpreted as
 current behavior evidence.
+
+
+### 2026-09-19 second legacy route path — repair drones hard-off
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+5dbc8ba11bf0e2317fc8e9cc3b4f35b74042a86d
+~~~
+
+A second live pre-Navigation-v2 route path was found in
+`ObjectRepairJobRuntime`:
+
+~~~text
+repair job
+  -> GeometricPathPlanner::plan
+  -> SmallCraftNavigation waypoint follower
+  -> TacticalCollisionMonitor diagnostics
+~~~
+
+This is separate from the already-disabled client docking route/tunnel path.
+Because `SmallCraftNavigation` treats an empty waypoint list as completed,
+simply returning an empty legacy path would be unsafe: the repair state machine
+could advance without physical travel.
+
+The repair-drone legacy route pipeline is therefore hard-disabled fail-closed:
+
+- `LegacyRepairDroneRoutePipelineEnabled = false`;
+- `startJob(...)` rejects new legacy-navigation repair jobs;
+- `update(...)` freezes any pre-existing active job, clears its legacy waypoint
+  path and returns no completion event;
+- the old implementation remains in place only as migration/reference code;
+- architecture tests pin both the OFF gate and the fail-closed update behavior.
+
+This intentionally means automatic repair-drone travel is unavailable until the
+repair task is connected to Navigation v2. It is preferable to silently running
+a second route planner or falsely completing repair phases.
+
+`SmallCraftNavigation` and `TacticalCollisionMonitor` are therefore not being
+mistaken for the new Navigation-v2 runtime: their only confirmed live ownership
+was the now-disabled repair-drone legacy path, and they remain forbidden from
+`GameSimulation`/`NavigationRuntimePlanner` by the architecture gate.
+
+No target-machine validation yet for this candidate. Last accepted Stage-12
+baseline remains:
+
+~~~text
+daaf038021cdf8b9561db60fdd35e7cefce0b2df
+~~~

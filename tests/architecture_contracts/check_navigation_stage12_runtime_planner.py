@@ -66,6 +66,7 @@ B5_CPP = (ROOT / "src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp").rea
 B5_TEST = (ROOT / "tests/navigation_runtime/OrdinaryPhysicalManeuverCompilerTests.cpp").read_text(encoding="utf-8")
 EXECUTION_LAB_TEST = (ROOT / "tests/navigation_runtime/ManeuverProgramExecutionLabTests.cpp").read_text(encoding="utf-8")
 CORRIDOR_MATRIX_TEST = (ROOT / "tests/navigation_runtime/ManeuverCorridorMatrixTests.cpp").read_text(encoding="utf-8")
+RIGID_BODY_CORRIDOR_TEST = (ROOT / "tests/navigation_runtime/ManeuverRigidBodyCorridorTests.cpp").read_text(encoding="utf-8")
 GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
 GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
 PURITY_DOC = (ROOT / "src/game/navigation/NAVIGATION_PURITY_CONTRACT.md").read_text(encoding="utf-8")
@@ -427,6 +428,54 @@ require(
     "mainEngineCandidateAvailable" in B5_H,
     "B5 must expose main-engine option without stealing B7 maneuver selection ownership",
 )
+
+for marker in (
+    "RigidVehicleModel",
+    "halfExtentsBodyMeters {13.0, 2.5, 11.1}",
+    "aftMainAccelerationMps2",
+    "assistedForeMainAccelerationMps2",
+    "manoeuvreRcsAccelerationMps2",
+    "vectoringAngularAccelerationRadPerSec2",
+    "Program::ManeuverFamily::FlipAndBurn",
+    "Program::ManeuverFamily::Brake",
+    "maximumHullRequiredHalfWidthMeters",
+    "maximumFlipAngleDeg",
+    "peakBrakeAftMainMps2",
+    "peakBrakeForeMainMps2",
+    "tight14_violation_m=",
+    "flip_safe18_5_violation_m=",
+    "[VEHICLE-MODEL]",
+    "[RIGID-CORRIDOR]",
+    "Newtonian braking never performed the required near-180-degree flip",
+    "Assisted braking unexpectedly flipped the hull",
+    "Newtonian braking invented fore/nose main thrust",
+    "Assisted braking did not use fore/nose longitudinal main thrust",
+    "Newtonian Cobra flip should require materially more than 14 m half-width",
+):
+    require(
+        marker in RIGID_BODY_CORRIDOR_TEST,
+        f"rigid-body corridor contract missing: {marker}",
+    )
+
+require(
+    "maneuver_rigid_body_corridor_tests" in RUNTIME_CMAKE and
+    "NAME maneuver_rigid_body_corridor" in RUNTIME_CMAKE,
+    "rigid-body corridor test must remain wired into navigation_runtime",
+)
+
+require(
+    "-R maneuver_rigid_body_corridor" in RUNTIME_RUN_SH and
+    "rigid_body_corridor_ms" in RUNTIME_RUN_SH,
+    "navigation runtime gate must expose rigid-body corridor diagnostics",
+)
+
+require(
+    "LocalFlightControlLaw::Newtonian" in DYNAMIC_MOTION_CPP and
+    "-mainAuthority" in DYNAMIC_MOTION_CPP and
+    "symmetric longitudinal controlled thrust" in DYNAMIC_MOTION_CPP,
+    "DynamicMotionSystem must preserve Newtonian aft-only and Assisted fore/aft longitudinal allocation",
+)
+
 
 for marker in (
     "testNewtonianAndAssistedPhysicsAreActuallyDifferent",

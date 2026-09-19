@@ -4,49 +4,47 @@
 
 ## Task
 
-Determine whether the remaining DriftTurn exit-attitude miss is a **general continuous angular-tracking problem** or a **DriftTurn-specific recovery/reference problem**.
+Fix the remaining DriftTurn exit-attitude error by correcting the maneuver reference, not by weakening acceptance or follower limits.
 
 ## Latest verified target state
 
 Exact tested checkout:
 
 ```
-be4686f4dcba419f451813b1ddc246088c145e48
+d659416b9b1ddb2356c37eff315f9d13b70bafaa
 ```
 
 Stage-12 architecture PASS; runtime 14/15.
 
-Important result:
-- expert Newtonian StopTurnGo is now healthy;
-- RadiusTurn is healthy;
-- expert DriftTurn reaches the correct P/V corridor exit but finishes about 10.325 deg off the required attitude;
-- requirement remains <=5 deg at the common exit.
+### What the diagnostic proved
 
-## Candidate under test
+The 180 deg long arc proves the ship can continuously correct attitude while translating:
+- expert final attitude error: 0.052 deg;
+- expert max in-flight forward/tangent error: 3.221 deg;
+- competent final attitude error: 0.048 deg;
+- rookie final attitude error: 0.859 deg;
+- all long-arc rows completed with zero tracking-envelope exceed ticks.
 
-```
-5c16bedc25c422f2c79ae5def14396839ef4ee7c
-```
+So the remaining ~10.325 deg expert DriftTurn exit error is **DriftTurn-specific reference/recovery authoring**, not a general B9/B10 angular-tracking defect.
 
-Adds a separate long-arc probe:
-- 180 deg;
-- R=80 m;
-- v=10 m/s;
-- ~251 m / ~25.1 s of continuous curved flight;
-- expert/competent/rookie;
-- Newtonian/Assisted.
+## Required mechanism change
 
-The probe measures attitude correction **while moving**, not only at the endpoint.
+Keep DriftTurn translational behavior and common exit contract intact, but author the accepted recovery so the ship has time to finish the turn before the terminal gate.
 
-### Diagnostic decision
+Preferred shape:
+- one coherent moving recovery program;
+- reach target exit yaw before the end of translational travel;
+- keep final yaw commanded for a short moving settle interval;
+- preserve 10 m/s exit motion and corridor;
+- no follower-side hidden replanning;
+- no tolerance widening;
+- no generic tracking-reserve inflation.
 
-- If expert long-arc angular tracking is clean while DriftTurn still exits around 10 deg wrong, fix the DriftTurn recovery/reference construction.
-- If expert long-arc tracking also accumulates material angular lag, inspect B9/B10 angular sampling/tracking before touching maneuver authoring.
+A natural first implementation is a coast+rotate+settle reference that reaches the final yaw before the program endpoint and continues the same translation while holding target yaw.
 
-Do not relax the existing DriftTurn 5 deg terminal gate.
+## Validation
 
-## Run
-
+Rerun:
 ```bash
 cd /d/__elite/work
 git pull --ff-only
@@ -56,6 +54,8 @@ time python tests/architecture_contracts/check_navigation_stage12_runtime_planne
 bash tests/navigation_runtime/run_mingw64.sh
 ```
 
-## After evidence
+Success criterion remains expert DriftTurn final attitude <=5 deg with existing P/V/corridor requirements, while long-arc behavior must stay green.
 
-Record the exact tested HEAD and update all state MD files before the next mechanism change. Recreate `CONTINUE_PROMPT.md` from scratch every iteration.
+## Iteration rule
+
+After the code/result changes state, synchronize all project MD files and recreate `CONTINUE_PROMPT.md` from scratch.

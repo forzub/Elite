@@ -224,6 +224,46 @@ void testLargeLateralDeltaVRequiresLeadRotateMainBurn()
     );
 }
 
+void testRcsFeasibleLateralChangeStillExposesMainEngineOption()
+{
+    auto q = baseQuery();
+
+    // Small lateral acceleration is within raw RCS authority, so Trim remains
+    // a legitimate physical candidate. Main-engine-dominant Newtonian flight
+    // must still expose the rotate+main-burn alternative for B7.
+    q.desiredVelocityMapMetersPerSecond = {2.0, 0.0, 0.0};
+    q.geometricTargetPositionMapMeters = {100.0, 0.0, 0.0};
+    q.velocityResponsePerSecond = 0.5;
+    q.linearFeedbackReserveMps2 = 0.25;
+
+    const auto result = Compiler::compile(q);
+    require(
+        result.status == Compiler::Status::Compiled,
+        "RCS-feasible lateral delta-v must compile"
+    );
+    require(
+        result.directBodyAxisFeasible,
+        "small lateral delta-v should preserve the Trim option"
+    );
+    require(
+        result.mainEngineCandidateAvailable,
+        "main-engine-dominant Newtonian compile must also expose main-engine option"
+    );
+    require(
+        !result.leadRotateRequired,
+        "lead rotation should not be marked mandatory when Trim is feasible"
+    );
+
+    require(
+        findFamily(result, Candidate::Family::Trim) != nullptr,
+        "RCS Trim candidate missing"
+    );
+    require(
+        findFamily(result, Candidate::Family::LeadRotateMainBurn) != nullptr,
+        "main-engine alternative missing for RCS-feasible lateral change"
+    );
+}
+
 void testNoAngularAuthorityDoesNotFallBackToImpossibleLateralDemand()
 {
     auto q = baseQuery();
@@ -415,6 +455,7 @@ int main()
     {
         testForwardRequestCompilesAsDirectTrim();
         testLargeLateralDeltaVRequiresLeadRotateMainBurn();
+        testRcsFeasibleLateralChangeStillExposesMainEngineOption();
         testNoAngularAuthorityDoesNotFallBackToImpossibleLateralDemand();
         testFeedbackReserveCanMakeMarginalDirectDemandInfeasible();
         testAssistedIsExplicitlyUnsupportedInFirstB5Slice();
@@ -424,6 +465,7 @@ int main()
         std::cout << "ORDINARY PHYSICAL MANEUVER COMPILER TESTS: PASS\n";
         std::cout << " - direct body-axis demand stays direct only when authority permits\n";
         std::cout << " - material Newtonian lateral delta-v becomes lead-rotate + main burn\n";
+        std::cout << " - RCS-feasible delta-v still exposes a main-engine alternative for B7\n";
         std::cout << " - B10 reserve is removed before B5 feed-forward authority\n";
         std::cout << " - missing angular authority fails closed instead of inventing lateral thrust\n";
         std::cout << " - Assisted remains explicit unsupported work, not fake Newtonian behavior\n";

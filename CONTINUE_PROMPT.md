@@ -10,73 +10,97 @@ Use this as the complete handoff prompt for a new chat. **Replace this entire fi
 - Work directly in repo, then give exact local verification commands.
 - After every state-affecting pass: update the four historical MDs and fully rewrite this file.
 - Last target-machine checkout actually exercised: `46f6a37da6775a1d044391f773476df1bb07bc6a`.
-- Last fully accepted Stage-12 target-machine baseline remains `daaf038021cdf8b9561db60fdd35e7cefce0b2df`.
+- Last fully accepted Stage-12 baseline remains the accepted baseline already recorded in the state files.
+- Current unverified code/contract candidate before documentation commits: `db79542ad0547f34dfadcb933bd1135067c145c7`.
 
-## Non-negotiable Navigation v2 contracts
+## Audit method now mandatory
 
-Automatic loop:
-```text
-PLAN -> prove short segment -> ACCEPT -> EXECUTE + MONITOR -> REPLAN only on invalidation
-```
+Canonical document: `src/game/navigation/NAVIGATION_PIPELINE_AUDIT.md`.
 
-Never restore per-frame replanning, never silently stop navigation authority, and never re-enable legacy route planners.
-
-### New hard feasibility invariant
+Audit every stage left-to-right using:
 
 ```text
-GEOMETRIC PATH != EXECUTABLE ROUTE
+INPUT
+RESPONSIBILITY
+OUTPUT
+HANDOFF
+PERFORMANCE
+VERDICT
 ```
 
-A geometric free-space ray may seed search, but it may not cross `ACCEPT` until the actual current vehicle can execute it from its current P/V/A/attitude/angular state with its real propulsion, control law, damage-degraded capability and bounded pilot execution error.
+A green isolated test is insufficient if the stage omits necessary truth, passes unnecessary owner state, re-derives neighbor semantics, or produces an output that cannot contribute to the final navigation task.
 
-Global route may be coarse, but every edge/portal must be vehicle-feasible at its abstraction level. Local accepted segments must be time-parameterized and dynamically feasible.
+Ask for every code block:
+- Which pipeline stage owns it?
+- What authoritative input does it need?
+- What exact question does it answer?
+- What minimal/sufficient output does the next stage need?
+- Does it preserve semantics without re-deriving them?
+- Is it bounded at the cadence where it runs?
+- Would deleting it make the system clearer without losing required truth?
 
-Canonical document: `src/game/navigation/NAVIGATION_BEHAVIOR_CHARACTER_MODEL.md`.
-
-## Propulsion contract
-
-For a main-engine-dominant Newtonian craft, substantial course-change delta-v normally uses:
+## Hard feasibility rules
 
 ```text
-coast / preserve useful inertia
--> rotate hull toward burn vector
--> main-engine burn
--> coast / RCS trim
--> rotate / flip-and-burn for later braking as required
+GEOMETRIC FREE SPACE != EXECUTABLE ROUTE
 ```
 
-The manoeuvre/RCS system is normally trim/precision/parking/docking/portal-capture authority, not a hidden omnidirectional main engine. Different craft may use omnidirectional thrusters as primary translation only when their actual propulsion profile says so.
+A geometric ray may only be a candidate. It must not cross `ACCEPT` until the actual current vehicle can execute it from current P/V/A/q/omega with its real propulsion, control law, damage-degraded capability and bounded pilot execution uncertainty.
 
-## Behavior character model
+Global/topological routing may remain coarse but every edge/portal must be vehicle-feasible at that abstraction level. Local accepted segments must be time-parameterized and dynamically feasible.
 
-Behavior character has two independent inputs.
+For a main-engine-dominant Newtonian craft, substantial delta-v normally uses hull rotation + main-engine burn, with coast / trim / later rotate or flip-and-burn as required. The small RCS/manoeuvre system is precision/trim/parking/docking/capture authority, not a hidden omnidirectional main engine.
 
-### Situation / doctrine
-Initial families:
-- Ordinary / Rational: wide clearance, smooth motion, low urgency, stopping/almost stopping is acceptable.
-- Extreme / Attack / Escape: preserve useful speed/progress, minimize threat exposure and projected silhouette, use cover/masking geometry, tolerate narrower clearances/high loads and possibly survivable glancing contact or loss of expendable external equipment.
-- Precision ingress / squeeze / retrieval / docking: slow early, exact aperture acquisition, alignment, high clearance/control margin, staging/near-stop allowed, fine RCS appropriate.
+## Behavior character
 
-Doctrine changes search bounds, ranking weights, allowed risk/load/contact bands and willingness to stop. It never changes physics.
+Behavior character = **Situation/Doctrine + Pilot model/transient pilot state**. Vehicle capability is separate physical truth.
 
-### Pilot model / transient pilot state
-Pilot parameters include:
-- reaction delay;
-- perception/decision rate;
-- command latency;
-- anticipation quality;
-- response bandwidth/damping/overshoot;
-- command slew/aggressiveness;
-- deterministic precision/noise;
-- hull-size/clearance judgement uncertainty;
-- spatial judgement/control-law familiarity;
-- risk/confidence bias.
+Situation families:
+- Ordinary/Rational: large reserve, wide deviations, smooth movement, stopping/almost stopping allowed.
+- Extreme/Attack/Escape: speed/progress, threat exposure, projected silhouette, cover/masking; narrower clearance, higher load, survivable glancing contact/expendable equipment loss may be acceptable.
+- Precision ingress/retrieval/docking/squeeze: slow early, exact aperture acquisition/alignment, staging/near-stop, fine RCS.
 
-Impact, blast/shock wave, injury, G exposure, fatigue, panic/stress, sensor disruption, etc. may temporarily degrade these values. This expands execution uncertainty or worsens control response; it never changes hull geometry or propulsion capability.
+Pilot model includes reaction, decision cadence, latency, anticipation, damping/overshoot, slew/aggressiveness, deterministic precision error, hull/clearance judgement uncertainty, spatial/control-law skill, confidence/risk bias. Collision/blast/G/fatigue/panic/injury/sensor disruption may temporarily degrade these values. Pilot never changes hull geometry or propulsion capability.
 
-## Current live failure
+## Performance / hundreds of ships
 
-Fresh self-test reached:
+Do not use dense N x N as the architecture.
+
+Current NavigationMap already uses a spatial hash and bounded local queries; current Stage-12 failure is not an N^2 failure.
+
+Scalable target:
+
+```text
+WORLD DYNAMIC SNAPSHOT
+    -> one scene-wide spatial broadphase
+    -> sparse unordered potentially-interacting pairs
+    -> batch/SIMD kinematic filtering
+    -> per-agent influence lists
+    -> exact HitVolume/trajectory proof only for survivors
+```
+
+Matrix/SIMD computation is useful after sparse pair isolation. Desired pair work is approximately O(N*k), with k = local physically relevant neighbors. Per-agent duplicate pair discovery in the current prototype is a profiling/optimization follow-up.
+
+## Current pipeline audit status
+
+- P0 world/scene publication: OK for current fixture.
+- P1 dynamic broadphase: OK prototype / optimization follow-up.
+- P2 static/global topology: incomplete vehicle-feasibility filtering beyond current geometry/traversal constraints, not immediate failure.
+- P3 doctrine: architecture defined, live integration missing.
+- P4 pilot: execution core exists; planning uncertainty/transient degradation partial.
+- P5 local free-space: geometry works, but AdjustedClear output is only geometric.
+- P6 physical maneuver generation: missing for ordinary visibility; PRIMARY architecture gap.
+- P7 continuous proof: good precision components exist but ordinary visibility does not use them.
+- P8 ManeuverDecisionController: exists; ordinary live chain bypasses it.
+- P9 accepted product: one concrete semantics bug corrected in current candidate.
+- P10 follower: coherent relative to accepted input.
+- P11 typed NavLocal/System boundary: coherent.
+- P12 PilotSkill core: coherent.
+- P13 propulsion/physics: coherent and correctly exposes impossible upstream requests.
+- P14 monitor/replan scheduling: architecturally correct but depends on truthful accepted maneuvers.
+
+## Current live failure from last target-machine run
+
 ```text
 [FAIL] visibility-bypass replication succeeded but the ordered live flight did not complete moving-pair bypass, direct recovery and exact-static tunnel passage inside the 120 s bound
 
@@ -92,63 +116,57 @@ slit_entry_lateral_mps=0.00298481
 slit_entry_cross_track_m=148.3
 ```
 
-This proves route discovery/motion are not globally dead. A real visibility bypass is found and replicated, but it is not completed.
+This proves route discovery/motion are not dead. A real geometric visibility bypass is found and replicated, but it does not complete.
 
-## Localized defect
+## First P9 correction now in main
 
-Working:
-- scene + HitVolume publication;
-- global/static corridor;
-- dynamic OBB collision truth;
-- geometric LocalAvoidance;
-- frame conversion;
-- PilotSkill DTO/reaction/latency/filter;
-- authoritative propulsion physics.
-
-Broken seam:
-```text
-LocalAvoidance geometric AdjustedClear
-  -> NavigationRuntimePlanner desired velocity
-  -> GameSimulation AcceptedShortSegment
+Previous defect:
+```cpp
+accepted.alignForward = lastPlan.portalTraversalActive;
 ```
 
-Two defects:
-1. ordinary visibility is geometry-only and can select a ray the actual craft cannot acquire in time;
-2. GameSimulation currently sets `accepted.alignForward = lastPlan.portalTraversalActive`, so an AdjustedClear bypass can be forced to point the hull at a future slit portal even though the planner itself did not request portal alignment during AdjustedClear.
+This re-derived current maneuver attitude from future route context.
 
-For current Cobra:
-- maxLinearGs = 7.5 => forward main authority ~73.55 m/s^2;
-- manoeuvreThrusterAccel = 2 m/s^2;
-- main engine forward-only;
-- lab uses Newtonian.
-So tens of m/s^2 of lateral desired acceleration while holding the nose at +Z is not a physically executable maneuver.
+Now:
+- `NavigationRuntimePlanner::Result` publishes `selectedManeuverRequiresForwardAlignment` and `selectedManeuverForwardMap`.
+- only the selected CURRENT nominal portal capture/transit maneuver sets them;
+- AdjustedClear leaves them false;
+- GameSimulation copies them into AcceptedShortSegment;
+- runtime regression pins future-portal + AdjustedClear => no inherited portal alignment;
+- architecture gate forbids restoring the old inference.
 
-## Required next architecture/code path
+## One-shot P5 -> P9 -> P13 witness added
 
-Do not fix by moving the fixture farther away, weakening self-test, restoring sphere authority, or using RCS as a sideways main engine.
+The first real moving-pair visibility bypass now records:
+- time, replan reason, segment revision;
+- selected deflection/target;
+- agent P/V;
+- desired velocity;
+- accepted alignForward + desired forward;
+- follower ideal acceleration;
+- PilotSkill executed acceleration;
+- applied main-engine acceleration;
+- applied RCS acceleration;
+- applied total acceleration.
 
-Implement toward:
-```text
-free-space candidate
-  -> control-law + propulsion compatible maneuver primitives
-  -> time/capability/pilot-aware continuous proof
-  -> maneuver decision under doctrine
-  -> accepted time-parameterized segment
-  -> PilotSkill execution
-  -> physics
-```
+The second-phase self-test failure prints this witness. It is one-shot, not per-frame spam.
 
-Concrete immediate corrections:
-1. AdjustedClear must not inherit future-portal forward alignment unless its selected maneuver explicitly requires that attitude.
-2. Ordinary visibility rays are candidates only; before ACCEPT they must become physically realizable maneuvers.
-3. Newtonian main-engine-dominant avoidance must be able to rotate + main-burn + coast + brake/flip-burn rather than demanding impossible lateral RCS.
-4. Situation/doctrine and pilot profile must both be explicit inputs to candidate generation/proof/ranking.
+## Next task
 
-Before declaring the algorithmic fix accepted, add bounded event diagnostics on plan/replan/segment transitions (not per-frame spam): selected deflection/target, P/V, accepted alignment, ideal/executed/applied acceleration split, replan reason, route and moving-plane progress.
+1. Target-machine verify current candidate.
+2. Use the printed first-bypass witness to confirm exact P5/P9/P13 data continuity.
+3. Then repair P6/P7, not the test fixture:
+   - LocalAvoidance ray remains a free-space candidate only.
+   - Generate control-law/propulsion-compatible maneuvers.
+   - For current Newtonian Cobra prefer physically valid coast/rotate/main-burn/trim/brake/flip-and-burn primitives instead of arbitrary lateral acceleration.
+   - Include real angular/linear authority, time-to-hazard and pilot execution uncertainty.
+   - Continuously prove hull/geometry/dynamic safety before ACCEPT.
+   - Feed only physically valid candidates to ManeuverDecisionController/doctrine ranking.
 
-## Verification
+Do not weaken the ordered self-test, move the blocker away merely to pass, restore conservative sphere as collision authority, re-enable legacy planners, or use RCS as a fake sideways main engine.
 
-After the next candidate:
+## Verification command
+
 ```bash
 git pull --ff-only
 git rev-parse HEAD
@@ -160,4 +178,4 @@ bash build_mingw64.sh &&
 ./build/headless_server/EliteServer.exe --self-test-navigation
 ```
 
-Run NavigationMap/LocalHorizon/LocalAvoidance isolated MinGW suites too if those layers change.
+If NavigationMap/LocalHorizon/LocalAvoidance changes in the next slice, also run their isolated MinGW suites.

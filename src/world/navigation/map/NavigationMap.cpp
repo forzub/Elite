@@ -151,6 +151,9 @@ public:
     std::size_t outOfBoundsActorCount = 0;
     std::size_t rejectedActorCount = 0;
     double maxConservativeSweptRadiusMeters = 0.0;
+    double maxIndexedActorRadiusMeters = 0.0;
+    double maxIndexedActorSpeedMetersPerSecond = 0.0;
+    double maxIndexedActorAccelerationMetersPerSecond2 = 0.0;
 
     void replaceDynamicWorld(DynamicWorldUpdate update)
     {
@@ -167,6 +170,9 @@ public:
         std::size_t newOutOfBoundsActorCount = 0;
         std::size_t newRejectedActorCount = 0;
         double newMaxConservativeSweptRadiusMeters = 0.0;
+        double newMaxIndexedActorRadiusMeters = 0.0;
+        double newMaxIndexedActorSpeedMetersPerSecond = 0.0;
+        double newMaxIndexedActorAccelerationMetersPerSecond2 = 0.0;
 
         const double horizon = config.predictionHorizonSeconds;
         const double halfHorizonSquared = 0.5 * horizon * horizon;
@@ -221,6 +227,18 @@ public:
                     newMaxConservativeSweptRadiusMeters,
                     actor.conservativeSweptRadiusMeters
                 );
+                newMaxIndexedActorRadiusMeters = std::max(
+                    newMaxIndexedActorRadiusMeters,
+                    actor.actorRadiusMeters
+                );
+                newMaxIndexedActorSpeedMetersPerSecond = std::max(
+                    newMaxIndexedActorSpeedMetersPerSecond,
+                    length(actor.velocityMapMetersPerSecond)
+                );
+                newMaxIndexedActorAccelerationMetersPerSecond2 = std::max(
+                    newMaxIndexedActorAccelerationMetersPerSecond2,
+                    length(actor.accelerationMapMetersPerSecond2)
+                );
             }
             else
             {
@@ -237,6 +255,11 @@ public:
         outOfBoundsActorCount = newOutOfBoundsActorCount;
         rejectedActorCount = newRejectedActorCount;
         maxConservativeSweptRadiusMeters = newMaxConservativeSweptRadiusMeters;
+        maxIndexedActorRadiusMeters = newMaxIndexedActorRadiusMeters;
+        maxIndexedActorSpeedMetersPerSecond =
+            newMaxIndexedActorSpeedMetersPerSecond;
+        maxIndexedActorAccelerationMetersPerSecond2 =
+            newMaxIndexedActorAccelerationMetersPerSecond2;
         ++mapRevision;
     }
 
@@ -245,16 +268,23 @@ public:
         if (!isFinite(query.startMapMeters) ||
             !isFinite(query.endMapMeters) ||
             !isFinite(query.radiusMeters) ||
-            query.radiusMeters < 0.0)
+            query.radiusMeters < 0.0 ||
+            (query.lookAheadSeconds.has_value() &&
+             (!isFinite(*query.lookAheadSeconds) ||
+              *query.lookAheadSeconds < 0.0)))
         {
             throw std::invalid_argument("NavigationMap corridor query is invalid");
         }
 
-        QueryResult result = makeQueryResult();
+        const double lookAheadSeconds =
+            query.lookAheadSeconds.value_or(
+                config.predictionHorizonSeconds
+            );
+        QueryResult result = makeQueryResult(lookAheadSeconds);
         const double broadphaseRadius =
             query.radiusMeters +
             config.interactionMarginMeters +
-            maxConservativeSweptRadiusMeters;
+            maximumSweptRadiusUpperBound(lookAheadSeconds);
 
         const Vec3d minimum {
             std::min(query.startMapMeters.x, query.endMapMeters.x) - broadphaseRadius,
@@ -281,13 +311,14 @@ public:
                 const double radius =
                     query.radiusMeters +
                     config.interactionMarginMeters +
-                    actor.conservativeSweptRadiusMeters;
+                    sweptRadius(actor, lookAheadSeconds);
                 return distanceToSegmentSquared(
-                    actor.conservativeSweptCenterMapMeters,
+                    actor.positionMapMeters,
                     query.startMapMeters,
                     query.endMapMeters
                 ) <= radius * radius;
-            }
+            },
+            lookAheadSeconds
         );
 
         sortCandidates(result);
@@ -298,16 +329,23 @@ public:
     {
         if (!isFinite(query.centerMapMeters) ||
             !isFinite(query.radiusMeters) ||
-            query.radiusMeters < 0.0)
+            query.radiusMeters < 0.0 ||
+            (query.lookAheadSeconds.has_value() &&
+             (!isFinite(*query.lookAheadSeconds) ||
+              *query.lookAheadSeconds < 0.0)))
         {
             throw std::invalid_argument("NavigationMap sphere query is invalid");
         }
 
-        QueryResult result = makeQueryResult();
+        const double lookAheadSeconds =
+            query.lookAheadSeconds.value_or(
+                config.predictionHorizonSeconds
+            );
+        QueryResult result = makeQueryResult(lookAheadSeconds);
         const double broadphaseRadius =
             query.radiusMeters +
             config.interactionMarginMeters +
-            maxConservativeSweptRadiusMeters;
+            maximumSweptRadiusUpperBound(lookAheadSeconds);
 
         const Vec3d extent {broadphaseRadius, broadphaseRadius, broadphaseRadius};
         const Vec3d minimum = query.centerMapMeters - extent;
@@ -327,12 +365,13 @@ public:
                 const double radius =
                     query.radiusMeters +
                     config.interactionMarginMeters +
-                    actor.conservativeSweptRadiusMeters;
+                    sweptRadius(actor, lookAheadSeconds);
                 return distanceSquared(
                     query.centerMapMeters,
-                    actor.conservativeSweptCenterMapMeters
+                    actor.positionMapMeters
                 ) <= radius * radius;
-            }
+            },
+            lookAheadSeconds
         );
 
         sortCandidates(result);
@@ -418,26 +457,68 @@ private:
         return true;
     }
 
-    QueryResult makeQueryResult() const
+    double sweptRadius(
+        const InternalActor& actor,
+        double lookAheadSeconds
+    ) const noexcept
+    {
+        const double travelBound =
+            length(actor.velocityMapMetersPerSecond) *
+                lookAheadSeconds +
+            0.5 *
+                length(actor.accelerationMapMetersPerSecond2) *
+                lookAheadSeconds *
+                lookAheadSeconds;
+        return actor.actorRadiusMeters + travelBound;
+    }
+
+    double maximumSweptRadiusUpperBound(
+        double lookAheadSeconds
+    ) const noexcept
+    {
+        return
+            maxIndexedActorRadiusMeters +
+            maxIndexedActorSpeedMetersPerSecond *
+                lookAheadSeconds +
+            0.5 *
+                maxIndexedActorAccelerationMetersPerSecond2 *
+                lookAheadSeconds *
+                lookAheadSeconds;
+    }
+
+    QueryResult makeQueryResult(double lookAheadSeconds) const
     {
         QueryResult result;
         result.mapRevision = mapRevision;
         result.sourceRevision = sourceRevision;
+        result.lookAheadSeconds = lookAheadSeconds;
         return result;
     }
 
-    Candidate toCandidate(const InternalActor& actor) const
+    Candidate toCandidate(
+        const InternalActor& actor,
+        double lookAheadSeconds
+    ) const
     {
         Candidate result;
         result.entityId = actor.entityId;
         result.positionMapMeters = actor.positionMapMeters;
         result.velocityMapMetersPerSecond = actor.velocityMapMetersPerSecond;
         result.accelerationMapMetersPerSecond2 = actor.accelerationMapMetersPerSecond2;
-        result.angularVelocityMapRadPerSecond = actor.angularVelocityMapRadPerSecond;
-        result.predictedEndPositionMapMeters = actor.predictedEndPositionMapMeters;
-        result.conservativeSweptCenterMapMeters = actor.conservativeSweptCenterMapMeters;
+        result.angularVelocityMapRadPerSecond =
+            actor.angularVelocityMapRadPerSecond;
+        result.predictionHorizonSeconds = lookAheadSeconds;
+        result.predictedEndPositionMapMeters =
+            actor.positionMapMeters +
+            actor.velocityMapMetersPerSecond *
+                lookAheadSeconds +
+            actor.accelerationMapMetersPerSecond2 *
+                (0.5 * lookAheadSeconds * lookAheadSeconds);
+        result.conservativeSweptCenterMapMeters =
+            actor.positionMapMeters;
         result.actorRadiusMeters = actor.actorRadiusMeters;
-        result.conservativeSweptRadiusMeters = actor.conservativeSweptRadiusMeters;
+        result.conservativeSweptRadiusMeters =
+            sweptRadius(actor, lookAheadSeconds);
         result.flags = actor.flags;
         result.motionRevision = actor.motionRevision;
         return result;
@@ -448,7 +529,8 @@ private:
         const CellCoord& minimumCell,
         const CellCoord& maximumCell,
         QueryResult& result,
-        Predicate&& predicate
+        Predicate&& predicate,
+        double lookAheadSeconds
     ) const
     {
         for (int z = minimumCell.z; z <= maximumCell.z; ++z)
@@ -468,7 +550,11 @@ private:
                         ++result.diagnostics.actorsExamined;
                         const InternalActor& actor = actors[actorIndex];
                         if (predicate(actor))
-                            result.candidates.push_back(toCandidate(actor));
+                        {
+                            result.candidates.push_back(
+                                toCandidate(actor, lookAheadSeconds)
+                            );
+                        }
                     }
                 }
             }

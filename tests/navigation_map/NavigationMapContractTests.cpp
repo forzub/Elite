@@ -179,6 +179,53 @@ void testInvalidActorsAreRejectedWithoutChangingCoordinateSemantics()
     require(stats.rejectedActorCount == 1, "invalid NavLocal actor was not rejected");
 }
 
+void testQueryLookAheadOverridesMapDefault()
+{
+    NavigationMap::Config config;
+    config.halfExtentMeters = 1000.0;
+    config.cellSizeMeters = 50.0;
+    config.predictionHorizonSeconds = 1.0;
+    config.interactionMarginMeters = 0.0;
+
+    NavigationMap map(config);
+
+    NavigationMap::DynamicWorldUpdate update;
+    update.sourceRevision = 200;
+    update.actors.push_back(
+        actorAt(
+            90,
+            {0.0, 500.0, 0.0},
+            {0.0, -100.0, 0.0}
+        )
+    );
+    map.replaceDynamicWorld(std::move(update));
+
+    NavigationMap::SphereQuery shortQuery;
+    shortQuery.centerMapMeters = {0.0, 0.0, 0.0};
+    shortQuery.radiusMeters = 1.0;
+
+    const auto shortResult = map.querySphere(shortQuery);
+    require(shortResult.candidates.empty(),
+            "default 1 s broadphase must not invent a distant crossing");
+    require(nearlyEqual(shortResult.lookAheadSeconds, 1.0),
+            "query result must publish the effective default look-ahead");
+
+    NavigationMap::SphereQuery physicalQuery = shortQuery;
+    physicalQuery.lookAheadSeconds = 5.0;
+
+    const auto physicalResult = map.querySphere(physicalQuery);
+    const auto& crossing = requireCandidate(physicalResult, 90);
+
+    require(nearlyEqual(physicalResult.lookAheadSeconds, 5.0),
+            "query-time physical look-ahead override was lost");
+    require(nearlyEqual(crossing.predictionHorizonSeconds, 5.0),
+            "candidate must identify the horizon used for its prediction");
+    require(nearlyEqual(crossing.predictedEndPositionMapMeters.y, 0.0),
+            "extended physical horizon must predict the incoming crossing");
+    require(nearlyEqual(crossing.conservativeSweptRadiusMeters, 510.0),
+            "extended broadphase sweep must cover the full requested horizon");
+}
+
 } // namespace
 
 int main()
@@ -188,10 +235,12 @@ int main()
         testOwnedShipCenteredSnapshotAndQueries();
         testMapOwnsOnlyNavLocalCoordinates();
         testInvalidActorsAreRejectedWithoutChangingCoordinateSemantics();
+        testQueryLookAheadOverridesMapDefault();
         std::cout << "NAVIGATION MAP CONTRACT TESTS: PASS\n";
         std::cout << " - snapshot ownership / sparse queries\n";
         std::cout << " - NavLocal-only publication / no hidden frame transform\n";
         std::cout << " - invalid actor rejection without coordinate reinterpretation\n";
+        std::cout << " - query-time physical look-ahead expands dynamic broadphase\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& error)

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace world::navigation
@@ -31,6 +32,8 @@ public:
     {
         double halfExtentMeters = 12000.0;
         double cellSizeMeters = 600.0;
+        // Fallback only. Runtime queries may override this with their current
+        // physical maneuver look-ahead.
         double predictionHorizonSeconds = 3.0;
         double interactionMarginMeters = 60.0;
     };
@@ -63,12 +66,19 @@ public:
         Vec3d startMapMeters {};
         Vec3d endMapMeters {};
         double radiusMeters = 0.0;
+
+        // When present, broadphase sweep/prediction uses this exact horizon.
+        // When absent, Config::predictionHorizonSeconds is the fallback.
+        std::optional<double> lookAheadSeconds;
     };
 
     struct SphereQuery
     {
         Vec3d centerMapMeters {};
         double radiusMeters = 0.0;
+
+        // Same physical time horizon contract as CorridorQuery.
+        std::optional<double> lookAheadSeconds;
     };
 
     // Compact derived query product. This is intentionally not a reference or
@@ -82,6 +92,7 @@ public:
         Vec3d angularVelocityMapRadPerSecond {};
         Vec3d predictedEndPositionMapMeters {};
         Vec3d conservativeSweptCenterMapMeters {};
+        double predictionHorizonSeconds = 0.0;
         double actorRadiusMeters = 0.0;
         double conservativeSweptRadiusMeters = 0.0;
         std::uint32_t flags = 0;
@@ -99,6 +110,7 @@ public:
     {
         Revision mapRevision = 0;
         Revision sourceRevision = 0;
+        double lookAheadSeconds = 0.0;
         QueryDiagnostics diagnostics {};
         std::vector<Candidate> candidates;
     };

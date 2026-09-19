@@ -2074,6 +2074,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         localHorizonMeters +
         shipRadius +
         LabSafetyMarginMeters;
+    dynamicQuery.lookAheadSeconds =
+        physicalHorizon.lookAheadSeconds;
 
     const Map::QueryResult dynamicCandidates =
         m_navigationRuntimeLabMap->querySphere(dynamicQuery);

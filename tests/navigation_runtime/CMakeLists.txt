@@ -47,6 +47,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverTrackingController.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverPhaseGate.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationExecutionReplanPolicy.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationWorkScheduler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp"

@@ -2,56 +2,51 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Task
+## Status
 
-Validate the new capability-derived moving attitude capture for DriftTurn exit.
+The DriftTurn corner-family defect is **closed and accepted**.
 
-## Current candidate
+Exact tested checkout:
 
 ```
-31a66a3eb462df6b5a60b2da2aca9f018d8aa332
+b687b9d3189cdfbbca91123b578637f991cbc645
 ```
 
-## Mechanism
-
-The capture:
-- starts from actual yaw and actual yaw rate after the drift arc;
-- keeps translation at 10 m/s;
-- targets the outgoing corridor yaw and zero terminal yaw rate;
-- uses a quintic boundary-value profile;
-- computes the shortest feasible duration from real effective angular acceleration/rate limits;
-- reserves B10 angular tracking authority instead of consuming the whole physical envelope.
-
-This directly addresses the two defects exposed by prior experiments:
-- fixed-time authoring ignored actual angular state;
-- raw target-heading step incorrectly delegated the whole maneuver to B10.
-
-## Diagnostics to inspect
-
-For expert newtonian and assisted DriftTurn:
-- attitude_capture_program_s
-- attitude_capture_start_yaw_rate_radps
-- attitude_capture_peak_ff_yaw_rate_radps
-- attitude_capture_peak_ff_yaw_accel_radps2
-- tracking_envelope_exceeded_ticks
-- outgoing_attitude_captured
-- final_forward_error_deg
-- final_pos_error_m
-- final_velocity_error_mps
-
-## Acceptance
-
-Need:
-- 15/15 runtime;
-- expert DriftTurn final attitude <=5 deg;
-- terminal angular convergence;
-- final P <=1.5 m;
-- final V <=1.0 m/s;
+Target result:
+- architecture PASS;
+- runtime 15/15;
+- expert DriftTurn final attitude ~0.03884 deg;
+- zero expert tracking-envelope violations;
 - zero corridor violation;
-- long arc remains green.
+- moving attitude capture succeeded.
 
-If this passes, close the corner-family execution defect and move to the next mixed-angle multi-segment 3D corridor stage.
+## Current task
+
+Design and implement the next **mixed-angle multi-segment 3D corridor** quality gate.
+
+### Purpose
+
+Move from isolated/orthogonal maneuver validation to chained 3D route execution where:
+- segment directions are not axis-aligned;
+- successive direction changes exercise yaw + pitch composition;
+- route progress continues through multiple maneuver transitions;
+- rigid-body corridor occupancy is measured continuously.
+
+### Required coverage
+
+At minimum:
+- 3-4 connected 3D segments;
+- mixed turn angles, not only 90 deg;
+- at least one segment with all X/Y/Z components;
+- full hull corridor-width measurement;
+- final P/V/attitude metrics;
+- tracking-envelope exceed count;
+- Newtonian + Assisted;
+- expert strict gate;
+- competent/rookie diagnostic rows.
+
+Prefer to reuse the existing accepted maneuver/follower execution path rather than introducing test-only control shortcuts.
 
 ## Iteration rule
 
-After each code/evidence change, update all state MD files and recreate CONTINUE_PROMPT.md from scratch.
+After every state/evidence change, update all state MD files and recreate `CONTINUE_PROMPT.md` from scratch.

@@ -10,7 +10,7 @@
 #include "src/game/navigation/NavigationControlIntent.h"
 #include "src/world/navigation/local/LocalAvoidancePlanner.h"
 #include "src/world/navigation/map/NavigationMap.h"
-#include "src/world/navigation/space/NavigationSpace.h"
+#include "src/world/navigation/space/NavigationStaticQueryApi.h"
 #include "src/world/navigation/trajectory/BoundedGapCandidateBuilder.h"
 #include "src/world/navigation/trajectory/MovingGapPredictor.h"
 #include "src/world/navigation/trajectory/MovingPassageTrajectoryEvaluator.h"
@@ -23,13 +23,13 @@ namespace game::navigation
 //
 // This class does not own world geometry, spatial indexes, vehicle physics or
 // replication. It consumes one already-published dynamic query plus one
-// NavigationSpace snapshot, selects the next bounded target, and converts that
+// read-only static query capability, selects the next bounded target, and converts that
 // target into the ideal acceleration intent consumed by PilotSkillExecutor.
 class NavigationRuntimePlanner final
 {
 public:
     using Map = world::navigation::NavigationMap;
-    using Space = world::navigation::NavigationSpace;
+    using StaticQueries = world::navigation::NavigationStaticQueryApi;
     using Horizon = world::navigation::LocalHorizonPlanner;
     using Avoidance = world::navigation::LocalAvoidancePlanner;
     using GapBuilder = world::navigation::BoundedGapCandidateBuilder;
@@ -126,7 +126,7 @@ public:
 
     struct Policy
     {
-        Space::CorridorCostPolicy corridor {};
+        StaticQueries::CorridorCostPolicy corridor {};
         Horizon::Policy horizon {};
         Avoidance::Policy avoidance {};
         MovingPassagePolicy movingPassage {};
@@ -171,19 +171,19 @@ public:
         glm::dvec3 selectedTargetMapMeters {0.0};
         glm::dvec3 desiredVelocityMapMetersPerSecond {0.0};
 
-        Space::Revision spaceRevision = 0;
-        Space::Revision spaceSourceRevision = 0;
+        StaticQueries::Revision spaceRevision = 0;
+        StaticQueries::Revision spaceSourceRevision = 0;
         Map::Revision mapRevision = 0;
         Map::Revision mapSourceRevision = 0;
 
-        std::vector<Space::RegionId> staticRegionPath;
-        std::vector<Space::PortalId> staticPortalPath;
-        std::vector<Space::Vec3d> staticPortalCentersMapMeters;
-        std::vector<Space::PortalTraversal> staticPortalTraversals;
+        std::vector<StaticQueries::RegionId> staticRegionPath;
+        std::vector<StaticQueries::PortalId> staticPortalPath;
+        std::vector<StaticQueries::Vec3d> staticPortalCentersMapMeters;
+        std::vector<StaticQueries::PortalTraversal> staticPortalTraversals;
 
         // First finite-depth/oriented portal traversal, when present.
         bool portalTraversalActive = false;
-        Space::PortalId activePortalId = 0;
+        StaticQueries::PortalId activePortalId = 0;
         glm::dvec3 portalNormalMap {0.0};
         glm::dvec3 portalApproachPointMapMeters {0.0};
         glm::dvec3 portalCenterMapMeters {0.0};
@@ -249,7 +249,7 @@ public:
         const Goal& goal,
         const Map::QueryResult& dynamicCandidates,
         double dynamicResultAgeSeconds,
-        const Space& staticSpace,
+        const StaticQueries& staticQueries,
         const Policy& policy
     );
 

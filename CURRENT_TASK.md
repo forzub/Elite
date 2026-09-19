@@ -2,133 +2,153 @@
 
 **Updated:** 2026-09-19 Europe/Kyiv
 **Branch:** `main`
-**Last target-machine fully accepted Stage-12 baseline:** `daaf038021cdf8b9561db60fdd35e7cefce0b2df`
+**Canonical architecture:** `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`
+**Migration audit:** `src/game/navigation/NAVIGATION_V2_MIGRATION_MAP.md`
+**Last fully accepted Stage-12 target-machine baseline:** `daaf038021cdf8b9561db60fdd35e7cefce0b2df`
 **Last target-machine checkout actually exercised:** `46f6a37da6775a1d044391f773476df1bb07bc6a`
-**Architecture analysis commit:** `92432c842d5ad632b320f90c2ca258b82f17d26b`  
-**Canonical contract sync through:** `86f4bea4b9819b7cd56f6ccaa06c07783b9ca6a9`
+**Current unverified B8/B9 code candidate before documentation commits:** `516f63eb7a3b2bbf09bad553aff975d52d7c3e8c`
 
-## Current decision
+## Current canonical architecture
 
-The active architecture is being sharpened into two top-level runtime worlds:
+Navigation v2 is now fixed into two top-level worlds and explicit blocks B0..B14.
 
 ```text
 PLANNER WORLD
-    authoritative world truth + objective + vehicle/pilot/doctrine
-        -> topology/corridor
-        -> local free-space path
-        -> physical maneuver compilation/proof
-        -> AcceptedManeuverProgram
+B0 world truth
+ -> B1 shared dynamic influence
+ -> B2 objective
+ -> B3 topology route
+ -> B4 local route-aligned corridor
+ -> B5 physical maneuver compiler
+ -> B6 continuous proof
+ -> B7 maneuver decision
+ -> B8 AcceptedManeuverProgram
 
 AUTOPILOT / FOLLOWER WORLD
-    AcceptedManeuverProgram + current state
-        -> tracking + bounded recovery
-        -> safety monitor / emergency reflex
-        -> PilotSkill -> propulsion -> physics
-        -> completion/invalidation -> planner wake-up
+B9 program sampler
+ -> B10 bounded tracking
+ -> B11 safety monitor / bounded reflex
+ -> B12 PilotSkill
+ -> B13 propulsion / physics
+ -> completion/invalidation -> B14 planning scheduler
 ```
 
-Canonical analysis:
-`src/game/navigation/PLANNER_FOLLOWER_ARCHITECTURE.md`.
+Read the canonical block document for each block's owner, question, cadence, inputs, outputs and scaling contract.
 
-## What the analysis changed
+## Scale contract
 
-The current 15/30/45/60/75-degree LocalAvoidance fan should no longer be treated as the target local-planning architecture.
+The architecture must support hundreds/thousands of registered units.
 
-Important distinction:
+Hard rules:
+- no dense N x N dynamic work;
+- B0/B1 shared scene-wide world work;
+- only dirty agents enter planner blocks B3..B8;
+- all active controlled actors may run cheap B9/B10/B12/B13 each required control tick;
+- planning is queued/budgeted through B14;
+- fixed-capacity accepted programs, bounded local candidates and exact proof only for broadphase survivors;
+- stale queued jobs are rejected by revision;
+- urgent invalidations outrank ordinary/background planning;
+- no planner call merely because another physics frame elapsed.
+
+The current runtime lab already uses NavigationExecutionReplanPolicy and only calls NavigationRuntimePlanner when scope != None. The missing production-scale piece is an explicit multi-agent planning queue/scheduler, to be implemented after the execution API boundary is clean.
+
+## Iteration 1 — B8/B9 separation
+
+Added:
+- `AcceptedManeuverProgram.h`
+- `ManeuverProgramSampler.h/.cpp`
+- isolated `ManeuverProgramSamplerTests.cpp`
+- production/test CMake wiring.
+
+### B8 AcceptedManeuverProgram
+
+Fixed-capacity value-owned program:
+- max 16 control/reference samples;
+- P/V/A_ff;
+- full body basis;
+- omega/alpha_ff;
+- validity/revisions;
+- terminal tolerances;
+- tracking envelope + reserved feedback authority;
+- capability/proof witness;
+- maneuver family/provenance metadata.
+
+No NavigationMap/NavigationSpace dependency and no per-tick allocation.
+
+### B9 ManeuverProgramSampler
+
+Pure API:
 
 ```text
-ray/segment tests may remain as geometric proof primitives
-but
-ray-fan search should be replaced by direct planning over known world geometry
+AcceptedManeuverProgram + universeTime
+    -> sampled reference/feed-forward state
 ```
 
-The preferred local solver is a route-aligned configuration-space corridor:
-- choose local longitudinal axis along the current route/corridor leg;
-- project exact/relevant obstacle occupancy into longitudinal slabs;
-- inflate obstacles by hull + clearance + pilot/tracking uncertainty;
-- connect free-space components across slabs;
-- choose a smooth progress-preserving path;
-- then compile that path into a physically feasible, time-parameterized maneuver.
+It performs:
+- fail-closed validation;
+- bounded control-key lookup;
+- interpolation of the accepted reference/feed-forward program;
+- body-basis re-orthonormalization.
 
-This is a LOCAL/CORRIDOR solver. NavigationSpace topology remains above it for cases requiring branches, backtracking, non-monotonic detours or complex station geometry.
+It does NOT:
+- inspect obstacles;
+- generate a target velocity;
+- apply feedback;
+- replan.
 
-## Current implementation priority
-
-Do **not** immediately delete LocalAvoidance or rewrite the topology layer.
-
-Next code slice remains the execution API boundary because it is required by both the old and new planner:
-
-1. add bounded `AcceptedManeuverProgram`;
-2. migrate `TrajectoryFollower` from target-velocity re-solving to sampling the same proved program plus bounded tracking feedback;
-3. keep `AcceptedShortSegment` only as transitional compatibility if needed;
-4. add deterministic tests that prove planner program == follower feed-forward program.
-
-After that:
-
-5. prototype `RouteAlignedCorridorPlanner` beside the existing ray-fan LocalAvoidance;
-6. A/B them on deterministic obstacle fields, slit/tunnel and moving-obstacle fixtures;
-7. add physical maneuver compilation for Newtonian/Assisted control;
-8. only retire the ray-fan search path after target-machine evidence.
-
-## Follower boundary
-
-Follower may:
-- reduce cross-track/velocity/attitude error while preserving forward/program progress;
-- recover from small disturbances inside the accepted tracking envelope;
-- participate in a bounded imminent-hazard reflex.
-
-Follower must not:
-- invent a new ordinary route;
-- choose new portals;
-- run a hidden LocalAvoidance replacement;
-- silently continue an obsolete program after a material emergency deviation.
-
-A material reflex/deviation invalidates the program and wakes the planner.
-
-## Batch/world scaling target
-
-Shared work should be scene-wide:
-
-```text
-dynamic snapshot
- -> spatial broadphase
- -> sparse relevant pairs
- -> batch/SIMD kinematic filter
- -> per-agent influence lists
-```
-
-Only agents needing a new program enter the planner batch.
-
-Every control tick, all active accepted programs may be sampled in an AutopilotWorld batch.
-
-## Immediate next verification/code work
-
-No target-machine acceptance claim was made by this documentation-only architecture pass.
-
-Next implementation must begin from current `main`, introduce `AcceptedManeuverProgram`, then run:
+## Target-machine gate to run now
 
 ```bash
 cd /d/__elite/work
+
 git pull --ff-only
 git rev-parse HEAD
 
-python tests/architecture_contracts/check_navigation_foundation_lock.py
-python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 bash tests/navigation_runtime/run_mingw64.sh
-bash build_mingw64.sh
-./build/headless_server/EliteServer.exe --self-test-navigation
 ```
 
-If NavigationMap/LocalHorizon/LocalAvoidance changes in the later corridor-planner slice, also run their isolated MinGW suites.
+Expected new ctest includes:
+
+```text
+maneuver_program_sampler
+```
+
+Expected output:
+
+```text
+MANEUVER PROGRAM SAMPLER TESTS: PASS
+ - fixed-capacity AcceptedManeuverProgram
+ - exact proved feed-forward survives sampling
+ - sampler performs no target-velocity control solve
+ - invalid time domains fail closed
+```
+
+If the isolated runtime suite is green, also run the production compile gate:
+
+```bash
+bash build_mingw64.sh
+```
+
+No live behavior is intentionally changed in iteration 1, so the old AcceptedShortSegment runtime seam remains active.
+
+## Next iteration after green gate
+
+B10 migration:
+1. add a clean sampled-reference tracking API;
+2. make TrajectoryFollower consume AcceptedManeuverProgram/ManeuverProgramSampler;
+3. feedback may only use the reserved tracking authority;
+4. prove exact A_ff/alpha_ff identity reaches follower output when tracking error is zero;
+5. retain old AcceptedShortSegment overload temporarily;
+6. only after isolated + live target-machine acceptance migrate GameSimulation packing.
 
 ## Documentation invariant
 
 After every state-affecting iteration:
-- rewrite `CONTINUE_PROMPT.md` from scratch;
-- rewrite `CURRENT_TASK.md` to the actual immediate task;
+- rewrite `CONTINUE_PROMPT.md` completely;
+- rewrite `CURRENT_TASK.md`;
 - update `CURRENT_STATE.md`;
 - update `PROJECT_STATE.md`;
 - update `src/game/navigation/STAGE12_END_TO_END.md`;
-- update the active canonical architecture document when its contract changes.
+- update canonical block/migration docs when ownership changes.
 
-Record actual target-machine evidence separately from documentation/code HEAD.
+Do not call documentation HEAD an accepted target-machine baseline.

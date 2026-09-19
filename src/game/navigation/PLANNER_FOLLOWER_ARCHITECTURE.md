@@ -379,3 +379,21 @@ and exit-state envelope.
 The same PilotSkill profile and rigid hull may therefore produce different
 corner times, corridor-width requirements and tracking reserves for different
 families and control laws.
+
+
+### Compound phase handoff invariant
+
+A compound accepted maneuver may contain multiple physical phases, but their
+handoff condition must preserve family semantics.
+
+`StopTurnGo` is state-capture driven:
+- brake/capture waypoint;
+- satisfy near-stop velocity envelope;
+- satisfy required attitude/angular-velocity envelope;
+- only then release the next phase.
+
+`RadiusTurn` and `DriftTurn` are continuous moving maneuvers. Their internal
+sample/phase progression may remain time/program driven, but route completion is
+still an outgoing-gate + exit-state event.
+
+Time expiry may never be used to pretend that a failed capture succeeded.

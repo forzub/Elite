@@ -326,7 +326,7 @@ Examples:
 
 **Scaling:** bounded primitive library; generate a small candidate set, not an unbounded optimizer for every actor every tick.
 
-**Current repository:** missing for ordinary visibility; MovingPassageTrajectoryEvaluator is an accepted special-case precursor.
+**Current repository:** first isolated ordinary B5 slice now exists as `OrdinaryPhysicalManeuverCompiler`. It currently supports Newtonian only and emits fixed-capacity `Coast`, `Trim` or `LeadRotateMainBurn` candidates. It consumes body-axis linear authority, angular authority, B10 feedback reserve and control-response reserve. It performs no geometry/world query and every result remains explicitly `requiresContinuousProof=true`; B6 integration is still required before live ACCEPT. Assisted intentionally returns `UnsupportedControlLaw` in this first slice rather than reusing Newtonian semantics incorrectly. `MovingPassageTrajectoryEvaluator` remains the accepted precision special-case precursor.
 
 ---
 

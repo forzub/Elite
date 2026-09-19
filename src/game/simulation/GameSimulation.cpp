@@ -2620,7 +2620,11 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     if (haveObservedObstacle)
     {
         const glm::dvec3 obstaclePositionMap =
-            pointToMap(observedObstacleWorldPosition);
+            navigationBoundary.toNavigation(
+                game::navigation::NavigationFrameBoundary::SystemPosition {
+                    observedObstacleWorldPosition
+                }
+            ).meters;
         const double centerDistanceMeters =
             glm::length(agentPositionMap - obstaclePositionMap);
         const double conservativeClearanceMeters =

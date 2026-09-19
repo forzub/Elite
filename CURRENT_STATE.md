@@ -3063,3 +3063,36 @@ New canonical document: `src/game/navigation/NAVIGATION_BEHAVIOR_CHARACTER_MODEL
 `CONTROL_LAW_MANEUVER_MODEL.md` now explicitly requires main-engine-oriented Newtonian course changes and forbids relying on the propulsion allocator to rescue an impossible arbitrary acceleration request. `MANEUVER_DECISION_TREE.md` now states `geometric path != executable route` and separates doctrine from pilot ownership.
 
 Current live failure remains localized at the ordinary visibility handoff. The next implementation must not merely patch alignment; it must establish the missing sequence `free-space candidate -> control-law-compatible maneuver generation -> capability/pilot-aware continuous proof -> decision -> accepted segment`. The existing premature future-portal alignment bug is still a concrete defect inside that seam and must be removed as part of the correction.
+
+
+### 2026-09-19 pipeline audit activated; first P9 handoff defect corrected
+
+Code/contract candidate before documentation commits: `db79542ad0547f34dfadcb933bd1135067c145c7`.
+
+A new canonical audit document now governs Navigation-v2 work: `src/game/navigation/NAVIGATION_PIPELINE_AUDIT.md`. The pipeline is reviewed left-to-right as explicit INPUT / RESPONSIBILITY / OUTPUT / HANDOFF / PERFORMANCE contracts. A stage is not accepted merely because its isolated test is green; its output must be necessary and sufficient for the next stage and must preserve maneuver semantics.
+
+Performance/scaling contract is now explicit. Navigation must not rely on dense N^2 pair work. Current NavigationMap already uses a spatial hash and bounded corridor/sphere queries, so the present prototype does not perform a mandatory all-pairs scan. The scalable target is one scene-wide spatial broadphase -> sparse unordered potentially-interacting pairs -> batch/SIMD kinematic filter -> per-agent influence lists -> exact narrow phase only for survivors. Dense matrix arithmetic is useful only after sparse pair isolation. Current per-agent query duplication is an optimization follow-up, not the source of the live Stage-12 failure.
+
+Pipeline verdicts currently pinned by the audit:
+- P0 world/scene publication: OK for current fixture;
+- P1 dynamic broadphase: OK prototype / optimization follow-up;
+- P2 global topology: incomplete vehicle-feasibility filtering beyond geometric/traversal constraints, but not immediate failure;
+- P3 doctrine: architecture defined, live integration missing;
+- P4 pilot: execution core exists, planning uncertainty/transient degradation partial;
+- P5 local free-space: geometry works, output semantics defective because AdjustedClear is not yet vehicle-feasible;
+- P6 physical maneuver generation: missing for ordinary visibility and remains the primary architecture gap;
+- P7 continuous proof: capable components exist, not applied to ordinary visibility;
+- P8 ManeuverDecisionController: exists but ordinary live chain bypasses it;
+- P9 accepted product: concrete attitude-semantics defect corrected in this candidate;
+- P10 follower, P11 frame boundary, P12 PilotSkill core, P13 physics: coherent relative to their input;
+- P14 replan scheduler: correct architecture, dependent on a truthful accepted maneuver.
+
+First code correction (P9): `NavigationRuntimePlanner::Result` now explicitly publishes `selectedManeuverRequiresForwardAlignment` and `selectedManeuverForwardMap`. Only the current nominal portal capture/transit maneuver sets these fields. `GameSimulation` no longer derives `AcceptedShortSegment.alignForward` from `portalTraversalActive`; it copies the selected maneuver's explicit attitude contract. Therefore a future portal may remain in route context while an AdjustedClear bypass keeps its own current attitude semantics.
+
+A deterministic runtime-planner regression now requires that oriented PortalCapture publishes forward alignment, while `AdjustedClear` in the presence of the same future portal does not inherit that alignment. The Stage-12 architecture checker forbids restoring `accepted.alignForward = ...portalTraversalActive`.
+
+One-shot live diagnostics were also added for the first real moving-pair visibility bypass. On the next target-machine run the second-phase failure line will print the exact P5->P9->P13 witness: selected deflection/target, agent P/V, accepted alignment, follower ideal acceleration, PilotSkill executed acceleration, and the physically applied main-engine/RCS/total acceleration in NavLocal. This is transition evidence only, not per-frame spam.
+
+No Stage-12 acceptance is claimed. Last actually exercised live checkout remains `46f6a37da6775a1d044391f773476df1bb07bc6a`; last fully accepted baseline remains the previously recorded accepted baseline. Candidate `db79542ad0547f34dfadcb933bd1135067c145c7` requires target-machine architecture/runtime/build/self-test verification.
+
+Next repair stage after verification is P6/P7: ordinary visibility must cease being executable geometry. Its free-space target must feed control-law/propulsion-compatible maneuver generation (for the current Newtonian main-engine-dominant Cobra: rotate/main-burn/coast/trim/brake/flip-and-burn primitives as appropriate), followed by capability/time/pilot-aware continuous proof before ACCEPT.

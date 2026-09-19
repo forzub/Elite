@@ -176,6 +176,16 @@ bool exceeded(double value, double maximum) noexcept
 ManeuverTrackingController::Result ManeuverTrackingController::track(
     const AcceptedManeuverProgram& program,
     const AcceptedManeuverProgram::ReferenceSample& reference,
+    const AgentState& agent
+) noexcept
+{
+    const Policy policy {};
+    return track(program, reference, agent, policy);
+}
+
+ManeuverTrackingController::Result ManeuverTrackingController::track(
+    const AcceptedManeuverProgram& program,
+    const AcceptedManeuverProgram::ReferenceSample& reference,
     const AgentState& agent,
     const Policy& policy
 ) noexcept

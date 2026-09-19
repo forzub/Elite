@@ -136,6 +136,16 @@ void testMapOwnsOnlyNavLocalCoordinates()
         {0.25, 0.5, 0.75}
     );
     actor.angularVelocityMapRadPerSecond = {0.1, 0.2, 0.3};
+
+    world::navigation::NavigationObstacle exactBox;
+    exactBox.id = "dynamic_exact_box";
+    exactBox.entityId = 7;
+    exactBox.shape = world::navigation::NavigationObstacleShape::Box;
+    exactBox.centerMeters = {50.0, -20.0, 10.0};
+    exactBox.localToWorldBasis = glm::dmat3(1.0);
+    exactBox.halfExtentsMeters = {4.0, 2.0, 1.0};
+    actor.exactObstacles.push_back(exactBox);
+
     update.actors.push_back(actor);
 
     map.replaceDynamicWorld(std::move(update));
@@ -158,6 +168,10 @@ void testMapOwnsOnlyNavLocalCoordinates()
             nearlyEqual(local.angularVelocityMapRadPerSecond.y, 0.2) &&
             nearlyEqual(local.angularVelocityMapRadPerSecond.z, 0.3),
             "NavigationMap must not own system/frame angular conversion");
+    require(local.exactObstacles.size() == 1 &&
+            local.exactObstacles.front().id == "dynamic_exact_box" &&
+            nearlyEqual(local.exactObstacles.front().halfExtentsMeters.x, 4.0),
+            "NavigationMap must preserve value-owned exact NavLocal geometry");
 }
 
 void testInvalidActorsAreRejectedWithoutChangingCoordinateSemantics()

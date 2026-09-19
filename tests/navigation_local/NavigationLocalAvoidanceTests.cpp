@@ -12,6 +12,7 @@ using Avoidance = world::navigation::LocalAvoidancePlanner;
 using Horizon = world::navigation::LocalHorizonPlanner;
 using Map = world::navigation::NavigationMap;
 using Space = world::navigation::NavigationSpace;
+using StaticQueries = world::navigation::NavigationStaticQueryApi;
 
 constexpr double kTolerance = 1.0e-6;
 
@@ -145,7 +146,7 @@ void testNominalClearPassesThroughWithoutProbes()
     const Avoidance::Result result = planner.evaluate(
         query,
         dynamicResult(),
-        space
+        StaticQueries(space)
     );
 
     require(result.status == Avoidance::Status::NominalClear,
@@ -174,7 +175,7 @@ void testSweptCorridorBlockerFindsSameRegionLateralTarget()
         5.0
     ));
 
-    const Avoidance::Result result = planner.evaluate(query, dynamic, space);
+    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
 
     require(result.status == Avoidance::Status::AdjustedClear,
             "swept corridor blocker should admit a statically proven lateral target");
@@ -222,7 +223,7 @@ void testVisibilitySteeringWidensThenReturnsToDirectLine()
     blocked.candidates.push_back(wideFanBlocker);
 
     const Avoidance::Result bypass =
-        planner.evaluate(query, blocked, space);
+        planner.evaluate(query, blocked, StaticQueries(space));
 
     require(bypass.status == Avoidance::Status::AdjustedClear,
             "bounded visibility steering must widen until a safe corridor exists");
@@ -241,7 +242,7 @@ void testVisibilitySteeringWidensThenReturnsToDirectLine()
     // Receding-horizon recovery is intentionally stateless: on the next update
     // the direct A->B corridor is always tested first.
     const Avoidance::Result recovered =
-        planner.evaluate(query, dynamicResult(), space);
+        planner.evaluate(query, dynamicResult(), StaticQueries(space));
 
     require(recovered.status == Avoidance::Status::NominalClear &&
             recovered.nominalVisibilityClear &&
@@ -280,7 +281,7 @@ void testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate()
     const Avoidance::Result result = planner.evaluate(
         query,
         dynamicResult(),
-        space
+        StaticQueries(space)
     );
 
     require(result.status == Avoidance::Status::AdjustedClear,
@@ -338,7 +339,7 @@ void testDynamicConflictStillPreservesExactStaticNominalProof()
     ));
 
     const Avoidance::Result result =
-        planner.evaluate(query, dynamic, space);
+        planner.evaluate(query, dynamic, StaticQueries(space));
 
     require(result.nominalConflictsFound > 0 &&
             result.nominalPrimaryConflictEntityId == 901,
@@ -367,7 +368,7 @@ void testHeadOnConflictRemainsFailClosed()
         35.0
     ));
 
-    const Avoidance::Result result = planner.evaluate(query, dynamic, space);
+    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
 
     require(result.status == Avoidance::Status::ConflictHold,
             "current-kinematics head-on conflict must remain fail closed");
@@ -392,7 +393,7 @@ void testNarrowStaticRegionRejectsLateralBypass()
         5.0
     ));
 
-    const Avoidance::Result result = planner.evaluate(query, dynamic, space);
+    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
 
     require(result.status == Avoidance::Status::ConflictHold,
             "lateral bypass without static same-region proof must remain hold");
@@ -418,7 +419,7 @@ void testStaleDynamicResultSkipsAvoidanceProbes()
         5.0
     ));
 
-    const Avoidance::Result result = planner.evaluate(query, dynamic, space);
+    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
 
     require(result.status == Avoidance::Status::StaleHold,
             "stale dynamic result must fail closed before avoidance");
@@ -439,7 +440,7 @@ void testNonTraversableStartFailsStaticHold()
         5.0
     ));
 
-    const Avoidance::Result result = planner.evaluate(query, dynamic, space);
+    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
 
     require(result.status == Avoidance::Status::StaticHold,
             "agent outside envelope-safe static free space must fail static hold");

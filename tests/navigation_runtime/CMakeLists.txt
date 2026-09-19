@@ -462,6 +462,47 @@ set_tests_properties(
 )
 
 add_executable(
+    maneuver_fly_through_3d_tests
+    ManeuverFlyThrough3dTests.cpp
+)
+
+target_include_directories(maneuver_fly_through_3d_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    maneuver_fly_through_3d_tests
+    PRIVATE cxx_std_17
+)
+target_link_libraries(
+    maneuver_fly_through_3d_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        maneuver_fly_through_3d_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        maneuver_fly_through_3d_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME maneuver_fly_through_3d
+    COMMAND maneuver_fly_through_3d_tests
+)
+
+set_tests_properties(
+    maneuver_fly_through_3d
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     maneuver_program_execution_lab_tests
     ManeuverProgramExecutionLabTests.cpp
 )

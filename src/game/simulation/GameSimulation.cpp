@@ -4521,6 +4521,44 @@ m_hubVelocityMetersPerSecond[hubId] =
                         );
                     hubFrame && hubFrame->valid)
                 {
+                    if (observation.firstVisibilityBypassCaptured &&
+                        !observation.firstVisibilityBypassAppliedCaptured &&
+                        observation.firstVisibilityBypassSegmentRevision ==
+                            m_navigationRuntimeLabAcceptedSegment.revision)
+                    {
+                        const auto boundary =
+                            makeNavigationRuntimeLabBoundary(*hubFrame);
+                        if (boundary.valid())
+                        {
+                            observation.firstVisibilityBypassAppliedCaptured =
+                                true;
+                            observation.
+                                firstVisibilityBypassAppliedMainAccelerationMapMps2 =
+                                boundary.toNavigationVector(
+                                    game::navigation::NavigationFrameBoundary::
+                                        SystemVector {
+                                            tr.motion.mainEngineAccelerationMps2
+                                        }
+                                ).value;
+                            observation.
+                                firstVisibilityBypassAppliedRcsAccelerationMapMps2 =
+                                boundary.toNavigationVector(
+                                    game::navigation::NavigationFrameBoundary::
+                                        SystemVector {
+                                            tr.motion.manoeuvreAccelerationMps2
+                                        }
+                                ).value;
+                            observation.
+                                firstVisibilityBypassAppliedTotalAccelerationMapMps2 =
+                                boundary.toNavigationVector(
+                                    game::navigation::NavigationFrameBoundary::
+                                        SystemVector {
+                                            tr.motion.engineAccelerationMps2
+                                        }
+                                ).value;
+                        }
+                    }
+
                     const glm::dvec3 routeVectorMap =
                         game::diagnostics::
                             NavigationRuntimeLabGoalVisualLocalMeters -

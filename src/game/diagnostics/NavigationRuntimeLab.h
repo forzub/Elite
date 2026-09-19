@@ -42,11 +42,28 @@ inline constexpr const char* NavigationRuntimeLabMovingGapUpperLabel =
     "NAV MOVING GAP UPPER";
 inline constexpr const char* NavigationRuntimeLabMovingGapLowerLabel =
     "NAV MOVING GAP LOWER";
+// GuidanceDockCube is 360 m high. Keep the two centres 500 m apart so
+// the real HitVolume OBBs leave a 140 m physical aperture. The aperture is
+// deliberately centred at Y=-900 while the authored route starts at Y=-1300:
+// the direct route intersects the lower OBB, but a bounded upward visibility
+// deflection can enter the real gap. This fixture therefore requires exact
+// dynamic geometry; a conservative enclosing sphere is broadphase only.
+inline constexpr double NavigationRuntimeLabMovingGapApertureCenterVisualY =
+    -900.0;
+inline constexpr double NavigationRuntimeLabMovingGapBoundarySeparationMeters =
+    500.0;
+
 inline const glm::dvec3 NavigationRuntimeLabMovingGapUpperVisualLocalMeters {
-    975.0, -790.0, -5700.0
+    975.0,
+    NavigationRuntimeLabMovingGapApertureCenterVisualY +
+        0.5 * NavigationRuntimeLabMovingGapBoundarySeparationMeters,
+    -5700.0
 };
 inline const glm::dvec3 NavigationRuntimeLabMovingGapLowerVisualLocalMeters {
-    975.0, -1890.0, -5700.0
+    975.0,
+    NavigationRuntimeLabMovingGapApertureCenterVisualY -
+        0.5 * NavigationRuntimeLabMovingGapBoundarySeparationMeters,
+    -5700.0
 };
 inline const glm::dvec3 NavigationRuntimeLabMovingGapVelocityVisualMps {
     0.0, 0.0, 1.0

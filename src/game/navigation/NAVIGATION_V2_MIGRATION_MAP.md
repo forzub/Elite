@@ -1184,3 +1184,30 @@ This prevents StopTurnGo from treating nominal reference expiry as successful
 waypoint/velocity/attitude capture. The component is currently an unverified
 candidate and must pass isolated + corner-matrix target-machine gates before
 acceptance.
+
+
+## 2026-09-20 ManeuverPhaseGate wired with isolated regression
+
+Production/shared-runtime wiring is now present:
+- root `EliteNavigationWorldRuntime` compiles `ManeuverPhaseGate.cpp`;
+- isolated `EliteNavigationRuntimeControl` test library compiles the same source.
+
+New deterministic test:
+`tests/navigation_runtime/ManeuverPhaseGateTests.cpp`.
+
+It pins:
+- ScheduledMoving holds before nominal end and advances at nominal end;
+- StateCapture holds after nominal end while follower is still Following;
+- StateCapture advances only on real `TrajectoryFollower::Complete`;
+- bounded overrun produces `CaptureTimedOut`;
+- invalid follower state fails closed.
+
+Relevant candidate commits:
+- root wiring `42494115dce06cf9945f2aab972c00d97b82f033`;
+- test-library wiring `e8e5b6e0eb430d64e2cc41e7011cbe18c4c0a984`;
+- isolated test `80fd3ea0c39042f2c9c446e5ad41bbdc43ce4125`;
+- test target `9f410855d3784bede14ac1ddb1d7614df7d0814b`.
+
+Expected runtime CTest count is now 15 once the target machine rebuilds.
+
+Not target-machine accepted yet.

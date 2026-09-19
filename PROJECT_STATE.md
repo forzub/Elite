@@ -2781,3 +2781,30 @@ Last fully accepted Stage-12 baseline remains:
 ~~~text
 daaf038021cdf8b9561db60fdd35e7cefce0b2df
 ~~~
+
+
+### 2026-09-19 exact-static gate follow-up
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+67065a0cd0f888273da0390891fc718569851e3c
+~~~
+
+Target-machine gate failure:
+
+~~~text
+[FAIL] accepted segment exact-static monitor must prove sampled continuation of the actually executed PilotSkill acceleration
+~~~
+
+Root cause: stale architecture-test ownership assumption, not a missing execution-safety mechanism. Production already builds the continuation with
+`NavigationExecutionSafetyProbeBuilder::buildSampledConstantAccelerationForecast`, uses
+`NavigationExecutionSafetyProbeBuilder::kExecutedForecastSamples = 12`, and checks every adjacent sampled chord through
+`exactExecutionSegmentBlocked` while raising
+`staticSafetyExecutedForecastBlocked` on collision. The gate still searched for the removed local implementation detail
+`ExecutedSafetySamples = 12` inside `GameSimulation.cpp`.
+
+Correction: the Stage-12 architecture gate now verifies the sample-count owner in
+`NavigationExecutionSafetyProbeBuilder.h` plus the sampled builder call, sampled-loop traversal, exact-static segment check, and executed-forecast blocking state in `GameSimulation.cpp`.
+
+No Navigation-v2 planner, follower, control law or safety algorithm changed in this pass. Full target-machine acceptance still requires the corrected architecture gates, canonical build, and freshly built server self-test.

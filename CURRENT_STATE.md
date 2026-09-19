@@ -2,89 +2,132 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Latest target-machine evidence
+## Latest verified evidence
 
-The latest target run exercised the continuous outgoing-tracking candidate introduced by code commit:
+Latest target-machine run:
+- Stage-12 architecture contract: PASS;
+- navigation_runtime: 14/15 PASS;
+- only failing target: maneuver_corner_family_matrix;
+- StopTurnGo expert healthy;
+- RadiusTurn healthy;
+- long 180 deg arc healthy;
+- DriftTurn outgoing attitude still failed under the raw constant-heading experiment.
+
+That experiment proved B10 tracking reserve cannot be used as the primary 90 deg maneuver generator.
+
+## Current unverified candidate
+
+Code candidate:
 
 ```
-24fce76b30d2448a4b94c93ad78dd8d37e5102df
+31a66a3eb462df6b5a60b2da2aca9f018d8aa332
 ```
 
-The pasted log did not include `git rev-parse HEAD`, so the exact full tested checkout hash is not independently recorded in this evidence. The changed diagnostics prove the candidate code was present.
+The DriftTurn exit is now authored as a planner-side moving attitude capture.
 
-Results:
-- Stage-12 architecture contract: **PASS**.
-- `navigation_runtime`: **14/15 PASS**.
-- Only failing target: `maneuver_corner_family_matrix`.
-- StopTurnGo expert remains healthy.
-- RadiusTurn remains healthy.
-- Long 180 deg arc remains healthy for all PilotSkill profiles and both laws.
-- DriftTurn still fails badly under the constant-heading outgoing reference.
+### What changed
 
-## Continuous outgoing-tracking experiment
+At the end of the drift arc the capture starts from the **actual** vehicle state:
+- actual body yaw;
+- actual yaw rate left by the arc;
+- actual outgoing translational state.
 
-The old x=60 checkpoint was successfully decoupled from phase termination and the outgoing reference was extended to x=120.
+The target is:
+- outgoing corridor yaw;
+- terminal yaw rate = 0;
+- continued translation at 10 m/s.
 
-This did **not** solve DriftTurn.
+A quintic yaw profile is built with:
+- initial yaw = actual yaw;
+- initial yaw rate = actual yaw rate;
+- initial angular acceleration = 0;
+- final yaw = outgoing corridor yaw;
+- final yaw rate = 0;
+- final angular acceleration = 0.
 
-Expert DriftTurn:
-- final P error ~0.463 m;
-- final V error ~0.0014 m/s;
-- corridor violation 0;
-- final attitude error **48.287 deg**;
-- tracking-envelope exceeded ticks **439**;
-- `outgoing_attitude_captured=0`.
+The profile duration is not fixed. It is solved from physical angular limits.
 
-Competent DriftTurn:
-- final attitude error ~108.471 deg;
-- 494 tracking-envelope exceeded ticks;
-- no outgoing attitude capture.
+### Physical limits used
 
-Rookie DriftTurn:
-- final attitude error ~107.493 deg;
-- 518 tracking-envelope exceeded ticks;
-- no outgoing attitude capture.
+The candidate mirrors the real ShipController envelopes:
+- effective angular acceleration =
+  min(configured angularAccel, maxGs * g / turnRadius);
+- effective yaw-rate limit =
+  min(configured maxYawRate, sqrt(maxGs * g / turnRadius)).
 
-By contrast, expert StopTurnGo and RadiusTurn capture the outgoing attitude essentially at the old x=60 checkpoint (within ~0.05-0.15 m).
+For Cobra this is stricter than the raw 3 rad/s2 / 2.5 rad/s configured values.
 
-## Interpretation
+B10 reserve is explicitly left unused by feed-forward:
+- feed-forward angular acceleration limit =
+  effective physical angular acceleration - 0.35 rad/s2 tracking reserve;
+- an additional 5% execution/proof margin is applied.
 
-The previous checkpoint/deadline hypothesis was incomplete.
+### Why this is different from rejected attempts
 
-B10 is a **bounded tracking controller**, not a maneuver generator. Its angular feedback is intentionally clamped by the planner-reserved tracking authority (`0.35 rad/s²` in this fixture). Replacing the planner-authored 90 deg angular trajectory with an instantaneous constant final heading asks B10 to perform the entire 90 deg turn using only tracking reserve.
+Rejected attempts either:
+1. forced a fixed-time yaw schedule unrelated to actual arc exit state, or
+2. removed the maneuver reference entirely and asked B10 to execute a 90 deg step.
 
-That violates the intended planner/follower ownership:
-- planner must author the large attitude maneuver/reference and feed-forward;
-- follower may only reduce residual error around that accepted reference.
+The new candidate preserves planner ownership:
+- planner authors the large angular transition;
+- B10 only corrects residual error.
 
-The long arc remains the proof: when the planner supplies a continuous angular reference + feed-forward, B9/B10 track it accurately. The direct 90 deg heading step fails because it removes the maneuver program and leaves only bounded correction authority.
+### New diagnostics
 
-## Current problem statement
+Corner rows now also report:
+- attitude_capture_program_s;
+- attitude_capture_start_yaw_rate_radps;
+- attitude_capture_peak_ff_yaw_rate_radps;
+- attitude_capture_peak_ff_yaw_accel_radps2;
+- outgoing_attitude_captured;
+- outgoing_attitude_capture_x_m.
 
-The remaining issue is not x=60 itself and not a general follower defect. It is the **DriftTurn exit attitude-transition authoring**.
+## Acceptance target
 
-The correct next mechanism is a planner-authored moving attitude-capture segment whose angular profile is derived from:
-- current attitude error;
-- current angular velocity;
-- vehicle angular acceleration/rate capability;
-- target outgoing attitude/angular velocity;
-while position reference continues along the outgoing straight.
+Need:
+- architecture PASS;
+- runtime 15/15;
+- expert DriftTurn final attitude <=5 deg;
+- final P <=1.5 m;
+- final V <=1.0 m/s;
+- zero corridor violation;
+- outgoing attitude capture;
+- long arc remains green.
 
-Its duration/horizon must come from physics/capture conditions, not an arbitrary 4 s deadline.
+## Run
 
-## Do not
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
 
-- ask B10 tracking reserve to execute the full 90 deg maneuver;
-- weaken the 5 deg requirement;
-- inflate generic tracking reserve merely to make the fixture pass;
-- reintroduce an arbitrary fixed-time attitude deadline.
+OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
+
+{
+    echo "===== TESTED HEAD ====="
+    git rev-parse HEAD
+
+    echo
+    echo "===== ARCHITECTURE CONTRACT ====="
+    TIMEFORMAT='[TIMING] architecture_contract real_s=%R user_s=%U sys_s=%S'
+    time python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+
+    echo
+    echo "===== NAVIGATION RUNTIME ====="
+    bash tests/navigation_runtime/run_mingw64.sh
+} 2>&1 | tee "$OUT"
+
+echo
+echo "===== LOG FILE ====="
+echo "$PWD/$OUT"
+```
 
 ## Documentation protocol
 
 After every state-affecting iteration, synchronize:
-- `CURRENT_STATE.md`
-- `CURRENT_TASK.md`
-- `PROJECT_STATE.md`
+- CURRENT_STATE.md
+- CURRENT_TASK.md
+- PROJECT_STATE.md
 - active Stage-12 document
 
-And recreate `CONTINUE_PROMPT.md` **from scratch**.
+And recreate CONTINUE_PROMPT.md from scratch.

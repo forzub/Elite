@@ -422,3 +422,61 @@ Current live-integration code/contract candidate before documentation commits:
 `c7479ef471e572ceca8e839d0360cd56137ec3c1`.
 
 Target-machine live gate is pending.
+
+
+## B5 ordinary physical compiler candidate — 2026-09-19
+
+The failed live B14 gate is blocked by the pre-existing ordinary visibility
+handoff, not by scheduler ownership. The former premature portal-alignment bug
+is already closed (`first_bypass_align_forward=0`), and PilotSkill revision
+audit shows segment target revisions do not restart reaction delay.
+
+New clean B5 block:
+- `OrdinaryPhysicalManeuverCompiler.h/.cpp`;
+- fixed-capacity `OrdinaryPhysicalManeuverCandidate`;
+- every candidate carries `requiresContinuousProof=true`.
+
+First slice supports Newtonian only:
+- `Coast`;
+- body-axis-feasible `Trim`;
+- `LeadRotateMainBurn` for material delta-v outside RCS/body-axis feed-forward
+  authority.
+
+The compiler consumes:
+- current P/V/body basis/angular velocity;
+- forward/reverse/lateral/vertical acceleration authority;
+- angular acceleration/speed authority;
+- B10 linear/angular feedback reserve;
+- pilot control-response reserve;
+- bounded program horizon.
+
+It does not query NavigationMap/NavigationSpace, call a planner, read a clock or
+allocate an unbounded vector.
+
+`LeadRotateMainBurn` uses a bounded quintic attitude profile. Rotation duration
+is chosen conservatively from angular speed and angular acceleration limits plus
+control-response reserve. Main-engine feed-forward begins only after the lead
+rotation and remains aligned with the resulting forward axis. The primitive is
+a short receding-horizon candidate, not a whole-route solve.
+
+Assisted deliberately returns `UnsupportedControlLaw` in this first slice.
+
+New isolated regression:
+- `ordinary_physical_maneuver_compiler`.
+
+It includes the live ~75-degree failure class and proves that a ~41 m/s^2
+lateral desired acceleration cannot be labeled direct-feasible when RCS is only
+~2 m/s^2. It must compile to lead-rotate/main-burn or fail closed.
+
+A diagnostic batch compiles 10,000 dirty-actor cases and prints total/per-call
+timing without using wall-clock time as a correctness threshold.
+
+Code/contract baseline before documentation commits:
+
+```text
+233d4023e81d5d466043a08c67acd8d49846c4b5
+```
+
+B5 isolated target-machine gate is pending. No live integration is performed in
+this B5 slice; B6 continuous proof remains mandatory before B5 candidates may
+cross B8 ACCEPT.

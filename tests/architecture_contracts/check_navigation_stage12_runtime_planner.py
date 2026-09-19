@@ -112,8 +112,6 @@ for marker in (
 for stale in (
     "idealLinearAccelerationDemandMapMps2",
     "idealAngularAccelerationDemandMapRadPerSec2",
-    "idealLinearAccelerationDemandSystemMps2",
-    "idealAngularAccelerationDemandSystemRadPerSec2",
     "relativeWorldVelocityMps",
 ):
     require(
@@ -123,6 +121,21 @@ for stale in (
         stale not in REPLICATION_TEST,
         f"typed navigation rename left stale runtime/presentation identifier: {stale}",
     )
+
+for stale_intent_use in (
+    "intent.idealLinearAccelerationDemandSystemMps2",
+    "intent.idealAngularAccelerationDemandSystemRadPerSec2",
+):
+    require(
+        stale_intent_use not in RUNTIME_CONTROL_TEST,
+        f"NavigationSystemControlIntent test still uses removed field: {stale_intent_use}",
+    )
+
+require(
+    "intent.idealLinearAccelerationSystemMps2" in RUNTIME_CONTROL_TEST and
+    "intent.idealAngularAccelerationSystemRadPerSec2" in RUNTIME_CONTROL_TEST,
+    "runtime control tests must use current typed System intent fields",
+)
 
 require(
     "pointToMap(" not in SIM_CPP,

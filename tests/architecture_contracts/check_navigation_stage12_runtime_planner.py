@@ -45,6 +45,11 @@ BOUNDARY_H = (ROOT / "src/game/navigation/NavigationFrameBoundary.h").read_text(
 CONTROL_INTENT_H = (ROOT / "src/game/navigation/NavigationControlIntent.h").read_text(encoding="utf-8")
 PHYSICAL_HORIZON_H = (ROOT / "src/world/navigation/local/PhysicalManeuverHorizon.h").read_text(encoding="utf-8")
 PHYSICAL_HORIZON_TEST = (ROOT / "tests/navigation_runtime/PhysicalManeuverHorizonTests.cpp").read_text(encoding="utf-8")
+EXECUTION_SAFETY_PROBE_H = (ROOT / "src/game/navigation/NavigationExecutionSafetyProbeBuilder.h").read_text(encoding="utf-8")
+FOLLOWER_CPP = (ROOT / "src/game/navigation/TrajectoryFollower.cpp").read_text(encoding="utf-8")
+GAP_BUILDER_CPP = (ROOT / "src/world/navigation/trajectory/BoundedGapCandidateBuilder.cpp").read_text(encoding="utf-8")
+GAP_PREDICTOR_CPP = (ROOT / "src/world/navigation/trajectory/MovingGapPredictor.cpp").read_text(encoding="utf-8")
+PURITY_DOC = (ROOT / "src/game/navigation/NAVIGATION_PURITY_CONTRACT.md").read_text(encoding="utf-8")
 
 
 def require(condition: bool, message: str) -> None:
@@ -114,6 +119,77 @@ require(
     "fast.lookAheadSeconds > slow.lookAheadSeconds" in PHYSICAL_HORIZON_TEST,
     "physical horizon regression must grow distance/time with speed",
 )
+
+for marker in (
+    "class NavigationExecutionSafetyProbeBuilder final",
+    "buildStoppingReserve",
+    "buildConstantAccelerationProbe",
+    "buildSampledConstantAccelerationForecast",
+    "kExecutedForecastSamples = 12",
+):
+    require(marker in EXECUTION_SAFETY_PROBE_H,
+            f"pure execution-safety probe builder missing: {marker}")
+
+for forbidden in (
+    "NavigationSpace",
+    "NavigationMap",
+    "HitVolume",
+    "GameSimulation",
+    "m_navigation",
+    "std::chrono",
+    "std::random",
+    "random_device",
+    "std::ofstream",
+    "std::ifstream",
+):
+    require(
+        forbidden not in EXECUTION_SAFETY_PROBE_H,
+        f"pure execution-safety kinematics leaked stateful dependency: {forbidden}",
+    )
+
+require(
+    "NavigationExecutionSafetyProbeBuilder::" in SIM_CPP and
+    "buildStoppingReserve(stoppingQuery)" in SIM_CPP and
+    "buildConstantAccelerationProbe(" in SIM_CPP and
+    "buildSampledConstantAccelerationForecast(" in SIM_CPP,
+    "GameSimulation must orchestrate authoritative queries around pure safety probes",
+)
+
+for pure_source_name, pure_source in (
+    ("PhysicalManeuverHorizon", PHYSICAL_HORIZON_H),
+    ("ExecutionSafetyProbeBuilder", EXECUTION_SAFETY_PROBE_H),
+    ("TrajectoryFollower", FOLLOWER_CPP),
+    ("BoundedGapCandidateBuilder", GAP_BUILDER_CPP),
+    ("MovingGapPredictor", GAP_PREDICTOR_CPP),
+    ("NavigationExecutionReplanPolicy", REPLAN_CPP),
+    ("ManeuverDecisionController", MANEUVER_DECISION_CPP),
+):
+    for forbidden in (
+        "std::chrono",
+        "system_clock",
+        "steady_clock",
+        "random_device",
+        "std::rand",
+        "std::ofstream",
+        "std::ifstream",
+    ):
+        require(
+            forbidden not in pure_source,
+            f"{pure_source_name} pure core leaked ambient state/I/O: {forbidden}",
+        )
+
+for marker in (
+    "strict pure",
+    "snapshot-pure",
+    "intentionally stateful",
+    "value-in -> value-out",
+    "NavigationMap",
+    "NavigationSpace",
+    "PilotSkillExecutor",
+    "GameSimulation",
+):
+    require(marker.lower() in PURITY_DOC.lower(),
+            f"navigation purity contract missing: {marker}")
 
 for marker in (
     "portalCentersMapMeters",

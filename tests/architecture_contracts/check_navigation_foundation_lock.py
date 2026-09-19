@@ -95,6 +95,38 @@ try:
         "TrajectoryGenerator",
     )
 
+    # The pre-Stage-12 client docking route/tunnel stack is retained only as
+    # isolated reference/presentation code. It must be hard-disabled and may
+    # never enter authoritative GameSimulation or NavigationRuntimePlanner.
+    require(
+        "src/game/navigation/NavigationModuleState.h",
+        "setEnabled(NavigationModuleId::RoutePlanning, false)",
+        "setEnabled(NavigationModuleId::LocalGuidance, false)",
+    )
+    require(
+        "src/game/SpaceState.cpp",
+        "constexpr bool LegacyClientRoutePipelineEnabled = false",
+        "LegacyClientRoutePipelineEnabled &&",
+        "DockingPathPlanner::plan",
+        "TrajectoryGenerator::generate",
+        "GuidanceTunnelBuilder::build",
+    )
+    for path in (
+        "src/game/simulation/GameSimulation.cpp",
+        "src/game/navigation/NavigationRuntimePlanner.h",
+        "src/game/navigation/NavigationRuntimePlanner.cpp",
+    ):
+        forbid(
+            path,
+            "DockingPathPlanner",
+            "GeometricPathPlanner",
+            "TrajectoryGenerator",
+            "GuidanceTunnelBuilder",
+            "SmallCraftNavigation",
+            "TacticalCollisionMonitor",
+            "RuckigRoutePlanner",
+        )
+
     # Route calculation is allowed to mutate only navigation workspace/output.
     # It must not write simulation, cloud, map-resource or replicated transforms.
     guidance = function_body(

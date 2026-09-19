@@ -337,3 +337,26 @@ The two-world hypothesis is **accepted as the preferred direction**, with these 
 6. Add explicit bounded safety-reflex contract to the autopilot world.
 7. Move dynamic influence isolation from repeated per-agent discovery toward a shared scene-wide sparse pair/influence frame.
 8. Only after target-machine evidence, retire the old ray-fan search path.
+
+
+## Rigid-body maneuver proof
+
+Planner-side maneuver generation/proof must account for the complete rigid body,
+not only the center path.
+
+A proved automatic maneuver therefore includes:
+- P(t), V(t);
+- body attitude/basis(t);
+- angular velocity/acceleration;
+- physical actuator family/source;
+- hull occupancy through the corridor over time.
+
+Newtonian braking is not equivalent to Assisted braking:
+- Newtonian main braking requires the hull to turn so aft thrust opposes
+  velocity;
+- Assisted may remain nose-forward and use fore/reverse longitudinal main
+  thrust.
+
+The follower executes that proved attitude/thrust history. It may not hide a
+missing Newtonian flip by applying an impossible reverse main engine or an
+omnidirectional acceleration vector.

@@ -3557,3 +3557,39 @@ Root cause: diagnostic precision contract was stricter than the authoritative so
 Correction: `NavigationRuntimeLabAngularVelocityToleranceRadPerSecond` is now `1e-8`, with the source-precision rationale pinned next to the constant. This remains far below any physically meaningful angular-velocity error for the lab while admitting the actual authoritative storage precision.
 
 No planner, follower, collision, replan or control-law behavior changed in this pass. Next target-machine step is a canonical rebuild followed by the live navigation self-test so execution can proceed to the next physical acceptance gate.
+
+
+### 2026-09-19 live visibility deadlock — dynamic sphere broadphase replaced by exact OBB narrow-phase
+
+Candidate code/contract baseline before this documentation sync:
+
+~~~text
+cf224145d758d09d35d70c63324c97d02f619e60
+~~~
+
+Fresh target-machine live self-test evidence from checkout `93fa488b8a5b226134309b3486e96e00c93f9afb`:
+
+- both architecture gates: PASS;
+- navigation runtime tests: PASS 6/6;
+- canonical client/server build: PASS;
+- rotating infrastructure proof: PASS after source-precision correction;
+- live flight remained collision-free for 120 s but stalled after ~351 m of progress;
+- `visibilityBypassSeen=1`, later `ConflictHold` occurred, `movingGapPlanePassed=0`, `visibilityDirectRecoveredSeen=0`;
+- moving-gap kinematic verification reported ~0.001967 m/s residual.
+
+Root cause of the flight deadlock: `NavigationMap` published each moving 360 x 360 x 900 m guidance box only as a conservative enclosing sphere. Its radius is about 517 m before agent/safety inflation. At roughly the observed 350 m route progress the ship enters that conservative sphere while still outside the real HitVolume OBB. `LocalHorizonPlanner` then treated the broadphase sphere as final collision truth at t=0, so every visibility probe became dynamically conflicting and the actor fell into repeated `ConflictHold` instead of continuing around the real box.
+
+Architecture correction in this candidate:
+
+- `NavigationMap::DynamicActorInput` and query `Candidate` now carry optional value-owned exact NavLocal `NavigationObstacle` geometry in addition to the swept-sphere broadphase radius;
+- authoritative dynamic infrastructure publishes its current HitVolume-derived OBBs through `NavigationHitVolumeAdapter`, explicitly transformed System -> NavLocal at the existing typed boundary;
+- `LocalHorizonPlanner` keeps the swept sphere for candidate collection but, for translation-only dynamic shapes with negligible angular/acceleration terms, re-tests both current kinematics and the bounded requested corridor against the real moving OBBs in the obstacle translating frame;
+- rotating/accelerating dynamic geometry remains conservative sphere fallback until a dedicated continuous swept-OBB solver owns those motion classes;
+- regression `testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute` pins the failure mode: sphere overlaps the route while exact OBB + ship envelope remains clear;
+- NavigationMap contract now pins exact geometry as value-owned NavLocal state rather than an owner reference.
+
+The ~0.001967 m/s moving-gap velocity residual has the same representation cause as the earlier angular-velocity residual: `StaticObject::linearVelocity` is currently `glm::vec3` while hub world velocity is orbital-scale. The live diagnostic tolerance is now a named `NavigationRuntimeLabLinearVelocityToleranceMps = 1e-2`, tight enough for the lab but consistent with the authoritative source precision.
+
+No static exact-HitVolume authority was weakened. The actual authoritative ship sweep remains checked every fixed step against NavigationSpace exact static geometry. This change only prevents a dynamic broadphase sphere from overriding more precise dynamic HitVolume truth when that truth is available.
+
+Next target-machine gate: architecture contract + navigation map/local/runtime tests + canonical build + fresh live self-test. The expected behavioral change is that the ship no longer stalls inside the moving box's enclosing sphere and can proceed through visibility bypass, direct recovery, portal capture and tunnel transit.

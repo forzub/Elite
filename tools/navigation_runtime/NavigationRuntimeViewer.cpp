@@ -1914,14 +1914,34 @@ void mouseButtonCallback(
         {
             state->pendingUiAction = UiAction::Calculate;
         }
-        else if (playButtonRect().contains(x, y))
+        else if (
+            playButtonRect().contains(x, y) &&
+            state->traceData &&
+            state->traceData->frames.size() > 1)
+        {
             state->pendingUiAction = UiAction::TogglePlay;
-        else if (prevButtonRect().contains(x, y))
+        }
+        else if (
+            prevButtonRect().contains(x, y) &&
+            state->traceData &&
+            state->traceData->frames.size() > 1)
+        {
             state->pendingUiAction = UiAction::PreviousFrame;
-        else if (nextButtonRect().contains(x, y))
+        }
+        else if (
+            nextButtonRect().contains(x, y) &&
+            state->traceData &&
+            state->traceData->frames.size() > 1)
+        {
             state->pendingUiAction = UiAction::NextFrame;
-        else if (replanButtonRect().contains(x, y))
+        }
+        else if (
+            replanButtonRect().contains(x, y) &&
+            state->traceData &&
+            state->traceData->frames.size() > 1)
+        {
             state->pendingUiAction = UiAction::NextReplan;
+        }
         else if (fitButtonRect().contains(x, y))
             state->pendingUiAction = UiAction::Fit;
         else if (state->traceData)
@@ -2036,8 +2056,13 @@ void keyCallback(
 
     if (key == GLFW_KEY_ESCAPE)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    else if (key == GLFW_KEY_SPACE)
+    else if (
+        key == GLFW_KEY_SPACE &&
+        state->traceData &&
+        state->traceData->frames.size() > 1)
+    {
         state->playing = !state->playing;
+    }
     else if (key == GLFW_KEY_F)
         state->requestFit = true;
 }
@@ -2442,6 +2467,7 @@ void processUiAction(
                 result.success
                     ? result.message
                     : "ОШИБКА: " + result.message;
+            state.diagnosticLines = result.diagnostics;
 
             if (!data.frames.empty())
             {
@@ -2466,7 +2492,7 @@ void processUiAction(
             break;
         }
         case UiAction::TogglePlay:
-            if (state.calculationPerformed)
+            if (data.frames.size() > 1)
                 state.playing = !state.playing;
             break;
         case UiAction::PreviousFrame:
@@ -2566,6 +2592,7 @@ int main(int argc, char** argv)
         state.calculationPerformed = false;
         state.calculationSucceeded = false;
         state.calculationMessage = preview.message;
+        state.diagnosticLines = preview.diagnostics;
         state.playing = false;
         state.requestFit = true;
         state.lastRealTime = glfwGetTime();

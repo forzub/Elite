@@ -1941,6 +1941,31 @@ void setFrameFromSlider(
         data.frames.front().timeSeconds;
 }
 
+void restoreRetainedRouteForNewExecutionSettings(
+    AppState& state
+)
+{
+    if (
+        !state.executionPerformed ||
+        !state.hasRetainedRoute ||
+        !state.traceData)
+    {
+        return;
+    }
+
+    *state.traceData = state.retainedRoute;
+    state.frameIndex = 0;
+    state.playbackTime = 0.0;
+    state.playing = false;
+    state.executionPerformed = false;
+    state.executionSucceeded = false;
+    state.calculationPerformed = true;
+    state.calculationSucceeded = true;
+    state.calculationMessage = state.retainedRouteMessage;
+    state.diagnosticLines = state.retainedRouteDiagnostics;
+    state.requestFit = true;
+}
+
 void mouseButtonCallback(
     GLFWwindow* window,
     int button,
@@ -1969,40 +1994,48 @@ void mouseButtonCallback(
         {
             state->controlMode =
                 elite::tools::navigation_runtime::ControlMode::Assisted;
+            restoreRetainedRouteForNewExecutionSettings(*state);
         }
         else if (newtonianRect().contains(x, y))
         {
             state->controlMode =
                 elite::tools::navigation_runtime::ControlMode::Newtonian;
+            restoreRetainedRouteForNewExecutionSettings(*state);
         }
         else if (expertRect().contains(x, y))
         {
             state->pilot =
                 elite::tools::navigation_runtime::PilotLevel::Expert;
+            restoreRetainedRouteForNewExecutionSettings(*state);
         }
         else if (averageRect().contains(x, y))
         {
             state->pilot =
                 elite::tools::navigation_runtime::PilotLevel::Average;
+            restoreRetainedRouteForNewExecutionSettings(*state);
         }
         else if (loserRect().contains(x, y))
         {
             state->pilot =
                 elite::tools::navigation_runtime::PilotLevel::Loser;
+            restoreRetainedRouteForNewExecutionSettings(*state);
         }
         else if (standardRect().contains(x, y))
         {
             state->flightStyle =
                 elite::tools::navigation_runtime::FlightStyle::Standard;
+            restoreRetainedRouteForNewExecutionSettings(*state);
         }
         else if (extremeRect().contains(x, y))
         {
             state->flightStyle =
                 elite::tools::navigation_runtime::FlightStyle::Extreme;
+            restoreRetainedRouteForNewExecutionSettings(*state);
         }
         else if (suddenObstacleRect().contains(x, y))
         {
             state->useSuddenObstacle = !state->useSuddenObstacle;
+            restoreRetainedRouteForNewExecutionSettings(*state);
         }
         else if (calculateButtonRect().contains(x, y))
         {

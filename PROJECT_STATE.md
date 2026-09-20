@@ -9,68 +9,70 @@
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-Accepted target evidence:
+Accepted:
 - Stage-12 architecture contract PASS;
-- navigation runtime 18/18 PASS;
-- chained transition + physical-limit matrix PASS.
+- navigation runtime 18/18;
+- chained transitions + physical-limit block.
 
-## Accepted maneuver/execution evidence
+## Current final laboratory candidate
 
-Now demonstrated:
-- StopTurnGo / RadiusTurn / DriftTurn;
-- continuous moving attitude correction;
-- Newtonian vs Assisted law-specific propulsion behavior;
-- full Cobra rigid-body corridor occupancy;
-- non-orthogonal 3D route execution;
-- continuous 3D fly-through;
-- doctrine-dependent candidate selection;
-- law filtering before ranking;
-- real selected-program execution;
-- cross-family chained execution without P/V/q/omega reset;
-- StateCapture terminal semantics;
-- fail-closed turn/braking/hull/law/invalidation limits.
+`navigation_composite_proving_ground`
 
-## Important frame-authoring conclusion
+Expected suite size: 19.
 
-Ordinary velocity-aligned attitude must use a continuous transported body frame.
+The scenario composes already accepted pieces in one uninterrupted run:
+- exact static geometry blocks direct route;
+- production static topology selects portal detour;
+- B7 selects law-specific physical family;
+- B8-B10/PilotSkill/physics execute it;
+- dynamic hazard appears while program is active;
+- production replan policy invalidates it;
+- NavigationMap + NavigationRuntimePlanner produce a local bypass;
+- replacement starts from actual current P/V/q/omega;
+- ship then crosses a constrained portal and performs exact terminal capture.
 
-A fixed world-up reconstruction can create roll singularities near vertical tangents. Since B10 tracks full SO(3), such representational discontinuities become physical control defects.
+## Final composite acceptance target
 
-Exact terminal roll/top orientation remains an explicit semantic requirement for docking/attachment/placement.
+Newtonian:
+- DriftPass selected under Extreme;
+- >=15 deg material drift.
 
-## Architecture status
+Assisted:
+- aligned PrecisionTransit selected;
+- <=8 deg max slip.
 
-Strong/accepted behavior:
-- B0, B7, B8, B9, B10, B12, B13, B14.
+Both:
+- one immediate DynamicHazardInvalidated replan;
+- positive static/dynamic full-hull conservative clearance;
+- <=19 m hull half-width through narrow passage;
+- zero tracking-envelope exceed;
+- strict terminal P/V/attitude.
 
-Strong components but final production generalization/integration remains:
-- B5 full Assisted/general-family compiler coverage;
-- B6 generalized proof ownership;
-- final ordinary-live B7-B10 migration.
+## What a green result means
 
-Open/transitional:
-- B1 scene-wide influence batching;
+A green result ends synthetic maneuver **behavior** testing.
+
+It demonstrates the composed navigation behavior is coherent enough to move the main quality loop into the game.
+
+It does **not** close remaining architecture/migration work:
+- B1 shared influence batching;
 - B2 unified objective;
-- B3 vehicle-aware global topology feasibility;
-- B4 route-aligned corridor replacing ray-fan;
-- B11 explicit bounded safety-reflex API.
+- B3 vehicle-aware topology feasibility;
+- B4 route-aligned corridor replacement;
+- full B5 Assisted/general physical compiler;
+- generalized B6 proof ownership;
+- explicit B11 bounded reflex;
+- final ordinary-live B7-B10 seam retirement.
 
-## Final laboratory stage
+## Next after green
 
-One composite end-to-end proving ground remains.
+Actual NAV STRESS/game:
+- accepted route/corridor visualization;
+- accepted time-trajectory/tunnel visualization;
+- NPC/autopilot execution;
+- visual and gameplay evaluation.
 
-It must combine static topology, dynamic invalidation, corridor pressure, speed, law/doctrine choice, real accepted-program execution and precision terminal capture in one uninterrupted scenario.
-
-Passing it ends synthetic maneuver behavior testing.
-
-## After final lab
-
-Primary quality work moves into the actual game:
-- NAV STRESS / real scene;
-- visible corridor/tunnel;
-- accepted physical trajectory visualization;
-- NPC/autopilot behavior inspection;
-- targeted regressions only for defects observed there.
+Synthetic tests become regression tools, not the primary development loop.
 
 ## State protocol
 

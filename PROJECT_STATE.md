@@ -3,59 +3,60 @@
 **Project:** Elite Navigation v2
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Accepted target baseline
+## Accepted baseline
 
 ```
 a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
-Accepted:
-- Stage-12 architecture contract;
-- navigation runtime 17/17;
-- B7 doctrine select->execute;
-- prior maneuver, rigid-body corridor and continuous 3D fly-through gates.
+## Current chained/limit evidence
 
-## Current chained/limit stage
+Target checkout `8729abbbf3e74df0969f83bbc03773ebd827d3af`:
+- architecture PASS;
+- build PASS;
+- 17/18 runtime tests;
+- only Assisted phase-3 slip assertion failed.
 
-Latest tested checkout:
+Newtonian chained execution itself is strongly healthy:
+- four consecutive phases complete;
+- no artificial state reset at seams;
+- real 34.49 deg drift;
+- full hull bounded;
+- precision final capture;
+- zero tracking-envelope violations.
+
+## Assisted ambiguity exposed
+
+The old test treated all phase-3 slip identically, including residual slip inherited from a ScheduledMoving hard-turn phase.
+
+This is not a valid discriminator between:
+- bad handoff state;
+- normal physical handoff transient;
+- Assisted phase failing to align.
+
+Current diagnostic commit:
 ```
-4753451be23f913d3e20d2ca11c112f113980434
+6fda55f8a2a954ae1656d5eebf4538f585125f2e
 ```
 
-did not reach runtime execution because the new test harness failed to compile.
+separates:
+- entry slip;
+- max slip;
+- max slip after 1 s;
+- terminal slip.
 
-Root cause:
-- `glm::dvec3` basis multiplied by `float` ShipTransform angular rates.
+Aligned Assisted acceptance remains strict:
+- <=8 deg after 1 s;
+- <=4 deg terminal.
 
-Fix:
-```
-1e0d555a504e6913ee417b4b628e7d062081a0c0
-```
+## Active roadmap
 
-explicitly converts those rates to double.
+1. finish chained/limit acceptance;
+2. final composite end-to-end proving ground;
+3. move primary quality evaluation into the game.
 
-This failure does not invalidate any accepted navigation evidence and does not yet say anything about chained-transition quality.
-
-## Active acceptance target
-
-Expected runtime suite: 18.
-
-Need to prove:
-- continuous state handoff across four maneuver families;
-- no P/V/attitude/omega reset at phase boundaries;
-- Newtonian high-slip law-specific phase;
-- Assisted aligned law-specific phase;
-- precision terminal capture;
-- fail-closed turn/braking/hull/law/invalidation limits.
-
-## Remaining laboratory roadmap
-
-If this block passes:
-1. final composite end-to-end proving ground;
-2. then primary quality evaluation moves into the game.
-
-Open architecture migration/generalization work remains in B1-B6/B11 and ordinary-live final wiring, but synthetic maneuver testing should not expand indefinitely once the final proving ground is green.
+Open production architecture cleanup remains separately tracked in B1-B6/B11 and final ordinary-live migration.
 
 ## State protocol
 
-After every state-affecting event, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state-affecting event, synchronize project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

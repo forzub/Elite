@@ -145,3 +145,13 @@ With the default wall scenario:
   change the Stage-1 static route.
 
 Do not begin Stage 2 until this Stage-1 target gate is verified.
+
+
+## Architecture-gate compatibility fix
+
+During pre-handoff audit, the existing `check_geometric_path_planner.py` was found to
+encode an obsolete ownership assumption: it required the same geometric planner .cpp
+to appear twice in root CMake. Current runtime architecture already compiles it once in
+shared `EliteNavigationGeometry`, which both client/server navigation runtime reuse.
+The checker now pins that shared-library ownership instead of duplicate compilation.
+This is an architecture-test correction only; route behavior is unchanged.

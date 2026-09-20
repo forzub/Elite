@@ -4,69 +4,41 @@
 
 ## Accepted baseline
 
-Exact target-tested checkout:
-
 ```
 a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
-Architecture PASS; navigation runtime 17/17; B7 doctrine select->execute accepted.
+Architecture PASS; navigation runtime 17/17; B7 select->execute accepted.
+
+## Latest failed gate
+
+Tested checkout:
+```
+4753451be23f913d3e20d2ca11c112f113980434
+```
+
+Outcome:
+- architecture PASS;
+- build failed before tests.
+
+Root cause:
+`ManeuverChainedLimitMatrixTests.cpp::captureState()` multiplied `glm::dvec3` by `float` pitch/yaw/roll rates.
+
+Fix candidate:
+```
+1e0d555a504e6913ee417b4b628e7d062081a0c0
+```
+
+Only the test harness changed; navigation behavior is untouched.
 
 ## Current task
 
-Target-test:
-
+Rerun:
 ```
 maneuver_chained_limit_matrix
 ```
 
-Expected runtime total: **18 tests**.
-
-## Part A — chained execution
-
-Both flight laws run four consecutive programs without state reset:
-
-```
-moving transit
- -> hard 90-degree continuous turn
- -> law-specific maneuver
- -> precision StateCapture
-```
-
-Newtonian:
-- phase 3 = high-slip DriftPass.
-
-Assisted:
-- phase 3 = velocity-aligned PrecisionTransit.
-
-Strict checks:
-- 4/4 phases;
-- zero tracking-envelope exceed ticks;
-- no P/V/attitude/omega reset at seams;
-- full Cobra hull <=25 m reference half-width;
-- Newtonian phase-3 slip >=20 deg;
-- Assisted phase-3 slip <=8 deg;
-- terminal P <=1.0 m;
-- terminal speed <=0.60 m/s;
-- terminal attitude <=4 deg.
-
-## Part B — negative/limit cases
-
-1. B5 turn horizon too short:
-   - expect NoPhysicalCandidate.
-
-2. braking reserve > available distance:
-   - expect pre-ACCEPT rejection.
-
-3. Cobra rigid hull > corridor:
-   - expect geometry rejection.
-
-4. Assisted + only NewtonianOnly B7 candidates:
-   - expect no valid selection.
-
-5. new dynamic hazard invalidates accepted execution:
-   - immediate LocalHorizon replan;
-   - old program must not continue.
+Expected total: **18 tests**.
 
 ## Target commands
 
@@ -104,22 +76,15 @@ Upload the complete log.
 
 ## Interpretation
 
-If 18/18:
-- accept chained transition continuity;
-- accept the five fail-closed limit contracts;
-- record actual Newtonian/Assisted chain metrics;
-- move to the final composite laboratory proving ground.
+If build succeeds but a runtime gate fails:
+- separate chain/reference defect from real physics/follower defect;
+- separate negative-contract defect from execution defect;
+- fix the mechanism or fixture truthfully;
+- do not widen tolerances merely to obtain green.
 
-If failed:
-- identify whether failure is:
-  - phase seam/reference construction;
-  - tracking/physics execution;
-  - rigid-body corridor;
-  - B5 physical rejection;
-  - braking reserve;
-  - B7 law filter;
-  - execution invalidation.
-- do not weaken the acceptance criteria.
+If 18/18:
+- accept chained transitions + fail-closed physical-limit block;
+- move to the final composite laboratory proving ground.
 
 ## Iteration rule
 

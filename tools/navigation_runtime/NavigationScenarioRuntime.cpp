@@ -552,6 +552,816 @@ void setSceneEndpoints(
     trace.sceneFinishMapMeters = scenario.finish.position;
 }
 
+// -----------------------------------------------------------------------------
+// Stage 2 — execute the retained Stage-1 route.
+// The global/static route is an input here and is never rebuilt.
+// -----------------------------------------------------------------------------
+
+using Program = game::navigation::AcceptedManeuverProgram;
+using Follower = game::navigation::TrajectoryFollower;
+using Bridge = game::navigation::NavigationRuntimeControlBridge;
+using Law = game::navigation::LocalFlightControlLaw;
+
+constexpr double kExecutionDt = 1.0 / 120.0;
+constexpr double kTraceSampleSeconds = 1.0 / 30.0;
+constexpr double kStandardGravity = 9.80665;
+
+ShipParams cobraParams()
+{
+    ShipParams p {};
+    p.maxPitchRate = 2.5f;
+    p.maxYawRate = 2.5f;
+    p.maxRollRate = 3.0f;
+    p.angularAccel = 3.0f;
+    p.angularDamping = 2.5f;
+
+    p.maxCombatSpeed = 500.0f;
+    p.maxCruiseSpeed = 29979245.0f;
+    p.throttleAccel = 5.0f;
+
+    p.autoLevelStrength = 0.0f;
+    p.strafeAccel = 20.0f;
+    p.strafeDamping = 6.0f;
+    p.maxStrafeSpeed = 80.0f;
+    p.manoeuvreThrusterAccel = 2.0f;
+    p.manoeuvreGasUsePerSecond = 0.20f;
+    p.manoeuvreGasRechargePerSecond = 0.08f;
+    p.manoeuvreGasRestartFraction = 0.20f;
+
+    p.maxGs = 5.0f;
+    p.maxLinearGs = 7.5f;
+    p.turnRadius = 20.0f;
+
+    p.massKg = 260000.0;
+    p.pitchInertiaKgM2 = 11219866.6666667;
+    p.yawInertiaKgM2 = 25324866.6666667;
+    p.rollInertiaKgM2 = 15188333.3333333;
+    return p;
+}
+
+Bridge::PilotSkillProfile pilotProfile(PilotLevel level)
+{
+    Bridge::PilotSkillProfile profile;
+    profile.execution.deterministicSeed = 0xC0A1B17Eull;
+
+    switch (level)
+    {
+        case PilotLevel::Average:
+            profile.execution.reactionDelaySeconds = 0.15;
+            profile.execution.perceptionDecisionRateHz = 20.0;
+            profile.execution.commandLatencySeconds = 0.08;
+            profile.execution.responseFrequencyHz = 5.0;
+            profile.execution.dampingRatio = 1.0;
+            profile.execution.commandGain = 0.96;
+            profile.execution.maxLinearCommandSlewMetersPerSec3 = 180.0;
+            profile.execution.maxAngularCommandSlewRadPerSec3 = 18.0;
+            profile.execution.deterministicLinearNoiseAmplitudeMetersPerSec2 =
+                0.08;
+            profile.execution.deterministicAngularNoiseAmplitudeRadPerSec2 =
+                0.015;
+            break;
+
+        case PilotLevel::Loser:
+            profile.execution.reactionDelaySeconds = 0.40;
+            profile.execution.perceptionDecisionRateHz = 8.0;
+            profile.execution.commandLatencySeconds = 0.18;
+            profile.execution.responseFrequencyHz = 2.5;
+            profile.execution.dampingRatio = 0.85;
+            profile.execution.commandGain = 0.88;
+            profile.execution.maxLinearCommandSlewMetersPerSec3 = 70.0;
+            profile.execution.maxAngularCommandSlewRadPerSec3 = 7.0;
+            profile.execution.deterministicLinearNoiseAmplitudeMetersPerSec2 =
+                0.22;
+            profile.execution.deterministicAngularNoiseAmplitudeRadPerSec2 =
+                0.045;
+            break;
+
+        case PilotLevel::Expert:
+        default:
+            profile.execution.reactionDelaySeconds = 0.0;
+            profile.execution.perceptionDecisionRateHz = 100.0;
+            profile.execution.commandLatencySeconds = 0.0;
+            profile.execution.responseFrequencyHz = 10.0;
+            profile.execution.dampingRatio = 1.0;
+            profile.execution.commandGain = 1.0;
+            profile.execution.maxLinearCommandSlewMetersPerSec3 = 1000.0;
+            profile.execution.maxAngularCommandSlewRadPerSec3 = 1000.0;
+            break;
+    }
+
+    return profile;
+}
+
+const char* pilotName(PilotLevel level)
+{
+    switch (level)
+    {
+        case PilotLevel::Average: return "AVERAGE";
+        case PilotLevel::Loser: return "LOSER";
+        case PilotLevel::Expert:
+        default: return "EXPERT";
+    }
+}
+
+const char* flightStyleName(FlightStyle style)
+{
+    return style == FlightStyle::Extreme
+        ? "EXTREME"
+        : "STANDARD";
+}
+
+Law controlLaw(ControlMode mode)
+{
+    return mode == ControlMode::Newtonian
+        ? Law::Newtonian
+        : Law::Assisted;
+}
+
+void setTransformBasis(
+    ShipTransform& transform,
+    const Basis& basis
+)
+{
+    transform.orientation = glm::mat4(1.0f);
+    transform.orientation[0] =
+        glm::vec4(glm::vec3(basis.right), 0.0f);
+    transform.orientation[1] =
+        glm::vec4(glm::vec3(basis.up), 0.0f);
+    transform.orientation[2] =
+        glm::vec4(glm::vec3(-basis.forward), 0.0f);
+}
+
+Basis transportedBasisForForward(
+    const glm::dvec3& requestedForward,
+    const Basis& previous
+)
+{
+    if (glm::length(requestedForward) <= 1.0e-9)
+        return previous;
+
+    const glm::dvec3 forward = glm::normalize(requestedForward);
+
+    glm::dvec3 right =
+        previous.right -
+        forward * glm::dot(previous.right, forward);
+
+    if (glm::length(right) <= 1.0e-9)
+    {
+        glm::dvec3 upSeed = previous.up;
+        upSeed -= forward * glm::dot(upSeed, forward);
+
+        if (glm::length(upSeed) <= 1.0e-9)
+        {
+            upSeed =
+                std::abs(forward.y) < 0.92
+                    ? glm::dvec3(0.0, 1.0, 0.0)
+                    : glm::dvec3(0.0, 0.0, 1.0);
+            upSeed -= forward * glm::dot(upSeed, forward);
+        }
+
+        upSeed = glm::normalize(upSeed);
+        right = glm::cross(forward, upSeed);
+    }
+
+    right = glm::normalize(right);
+    glm::dvec3 up =
+        glm::normalize(glm::cross(right, forward));
+
+    if (glm::dot(up, previous.up) < 0.0)
+    {
+        right = -right;
+        up = -up;
+    }
+
+    return {forward, right, up};
+}
+
+glm::dquat quaternionForBasis(const Basis& basis)
+{
+    glm::dmat3 m(1.0);
+    m[0] = basis.right;
+    m[1] = basis.up;
+    m[2] = -basis.forward;
+    return glm::normalize(glm::quat_cast(m));
+}
+
+Basis basisFromQuaternion(const glm::dquat& q)
+{
+    const glm::dmat3 m = glm::mat3_cast(glm::normalize(q));
+    Basis basis;
+    basis.right = glm::normalize(glm::dvec3(m[0]));
+    basis.up = glm::normalize(glm::dvec3(m[1]));
+    basis.forward = glm::normalize(-glm::dvec3(m[2]));
+    return basis;
+}
+
+double quaternionAngle(glm::dquat a, glm::dquat b)
+{
+    if (glm::dot(a, b) < 0.0)
+        b = -b;
+    const glm::dquat delta =
+        glm::normalize(b * glm::inverse(a));
+    return 2.0 * std::acos(
+        std::clamp(std::abs(delta.w), 0.0, 1.0)
+    );
+}
+
+glm::dvec3 angularVelocityBetween(
+    glm::dquat a,
+    glm::dquat b,
+    double dt
+)
+{
+    if (dt <= 1.0e-12)
+        return glm::dvec3(0.0);
+
+    if (glm::dot(a, b) < 0.0)
+        b = -b;
+
+    glm::dquat delta =
+        glm::normalize(b * glm::inverse(a));
+    if (delta.w < 0.0)
+        delta = -delta;
+
+    const double w = std::clamp(delta.w, -1.0, 1.0);
+    const double angle = 2.0 * std::acos(w);
+    const double sinHalf =
+        std::sqrt(std::max(0.0, 1.0 - w * w));
+
+    if (angle <= 1.0e-12 || sinHalf <= 1.0e-12)
+        return glm::dvec3(0.0);
+
+    const glm::dvec3 axis =
+        glm::normalize(
+            glm::dvec3(delta.x, delta.y, delta.z) / sinHalf
+        );
+    return axis * (angle / dt);
+}
+
+struct ReferenceAttitude
+{
+    Basis basis {};
+    glm::dvec3 angularVelocity {0.0};
+    glm::dvec3 angularAcceleration {0.0};
+};
+
+std::vector<ReferenceAttitude> buildReferenceAttitudes(
+    const world::navigation::Trajectory& trajectory,
+    const Scenario& scenario,
+    Law law,
+    const ShipParams& params
+)
+{
+    std::vector<ReferenceAttitude> out(
+        trajectory.samples.size()
+    );
+    if (trajectory.samples.empty())
+        return out;
+
+    Basis previous = scenario.startBasis;
+    glm::dquat previousQ = quaternionForBasis(previous);
+    glm::dvec3 previousOmega(0.0);
+
+    for (std::size_t i = 0; i < trajectory.samples.size(); ++i)
+    {
+        const auto& sample = trajectory.samples[i];
+
+        glm::dvec3 requestedForward = previous.forward;
+        const double speed = glm::length(sample.velocityMps);
+        const double acceleration = glm::length(sample.accelerationMps2);
+
+        if (law == Law::Newtonian && acceleration > 0.35)
+        {
+            // Newtonian autopilot points the main thrust axis along the
+            // requested acceleration. This is intentionally different from
+            // Assisted velocity alignment.
+            requestedForward =
+                glm::normalize(sample.accelerationMps2);
+        }
+        else if (speed > 0.25)
+        {
+            requestedForward =
+                glm::normalize(sample.velocityMps);
+        }
+
+        if (i + 1 == trajectory.samples.size() &&
+            scenario.finish.requireForward)
+        {
+            requestedForward = scenario.finish.forward;
+        }
+
+        const Basis desired =
+            transportedBasisForForward(
+                requestedForward,
+                previous
+            );
+
+        glm::dquat desiredQ = quaternionForBasis(desired);
+        if (glm::dot(previousQ, desiredQ) < 0.0)
+            desiredQ = -desiredQ;
+
+        double dt = 0.0;
+        if (i > 0)
+        {
+            dt =
+                sample.timeOffsetSeconds -
+                trajectory.samples[i - 1].timeOffsetSeconds;
+        }
+
+        glm::dquat currentQ = desiredQ;
+        if (i == 0)
+        {
+            currentQ = previousQ;
+        }
+        else if (dt > 1.0e-9)
+        {
+            const double maxRate = std::max({
+                0.1,
+                static_cast<double>(params.maxPitchRate),
+                static_cast<double>(params.maxYawRate),
+                static_cast<double>(params.maxRollRate)
+            });
+            const double angle =
+                quaternionAngle(previousQ, desiredQ);
+            const double maxAngle = maxRate * dt;
+            const double alpha =
+                angle <= 1.0e-9
+                    ? 1.0
+                    : std::clamp(maxAngle / angle, 0.0, 1.0);
+            currentQ =
+                glm::normalize(
+                    glm::slerp(previousQ, desiredQ, alpha)
+                );
+        }
+
+        ReferenceAttitude reference;
+        reference.basis = basisFromQuaternion(currentQ);
+        reference.angularVelocity =
+            i == 0
+                ? glm::dvec3(0.0)
+                : angularVelocityBetween(previousQ, currentQ, dt);
+        reference.angularAcceleration =
+            i == 0 || dt <= 1.0e-9
+                ? glm::dvec3(0.0)
+                : (
+                    reference.angularVelocity - previousOmega
+                  ) / dt;
+
+        out[i] = reference;
+        previous = reference.basis;
+        previousQ = currentQ;
+        previousOmega = reference.angularVelocity;
+    }
+
+    return out;
+}
+
+world::navigation::NavigationVehicleProfile executionVehicleProfile(
+    const Scenario& scenario,
+    const ScenarioRunSettings& settings,
+    const ShipParams& params
+)
+{
+    world::navigation::NavigationVehicleProfile profile;
+    profile.collisionRadiusMeters =
+        std::max(0.0, scenario.routeEnvelopeRadiusMeters);
+    profile.preferredClearanceMeters =
+        std::max(0.0, scenario.routeClearanceMeters);
+    profile.maxSpeedMps =
+        settings.flightStyle == FlightStyle::Extreme
+            ? scenario.extremeSpeedMps
+            : scenario.standardSpeedMps;
+
+    const double mainAcceleration =
+        std::max(
+            0.1,
+            static_cast<double>(params.maxLinearGs) *
+                kStandardGravity
+        );
+
+    profile.maxForwardAccelerationMps2 =
+        mainAcceleration;
+    profile.maxBrakingAccelerationMps2 =
+        mainAcceleration;
+
+    // Translation sideways relative to the hull is physically limited by the
+    // real manoeuvre thrusters, not the old 20 m/s2 planning placeholder.
+    profile.maxLateralAccelerationMps2 =
+        std::max(
+            0.1,
+            static_cast<double>(params.manoeuvreThrusterAccel)
+        );
+
+    profile.maxAngularVelocityRadPerSecond =
+        std::max({
+            static_cast<double>(params.maxPitchRate),
+            static_cast<double>(params.maxYawRate),
+            static_cast<double>(params.maxRollRate)
+        });
+    profile.maxAngularAccelerationRadPerSecond2 =
+        std::max(0.1, static_cast<double>(params.angularAccel));
+    return profile;
+}
+
+world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
+    const Scenario& scenario,
+    const ScenarioRunSettings& settings,
+    const TraceDocument& calculatedRoute,
+    const ShipParams& params
+)
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 1;
+    request.frameId = "navigation-runtime-stage2";
+    request.startUniverseTimeSeconds = 0.0;
+    request.universeTimeScale = 1.0;
+    request.pathPointsMeters = calculatedRoute.routePoints;
+    request.obstacles = scenario.staticObstacles;
+    request.vehicle =
+        executionVehicleProfile(
+            scenario,
+            settings,
+            params
+        );
+    request.initialVelocityMps = scenario.startVelocity;
+
+    if (!request.pathPointsMeters.empty())
+    {
+        double progress = 0.0;
+        for (std::size_t i = 1;
+             i < request.pathPointsMeters.size();
+             ++i)
+        {
+            progress += glm::length(
+                request.pathPointsMeters[i] -
+                request.pathPointsMeters[i - 1]
+            );
+        }
+
+        world::navigation::TrajectoryPointSpeedConstraint finish;
+        finish.sourcePathProgressMeters = progress;
+        finish.maxSpeedMps =
+            std::max(0.0, scenario.finish.speedMps);
+        request.pointSpeedConstraints.push_back(finish);
+    }
+
+    request.hasTerminalOrientation =
+        scenario.finish.requireForward ||
+        scenario.finish.requireUp;
+    request.terminalForward = scenario.finish.forward;
+    request.terminalUp = scenario.finish.up;
+    request.terminalOrientationBlendDistanceMeters = 35.0;
+
+    return world::navigation::TrajectoryGenerator::generate(request);
+}
+
+Program makeProgramChunk(
+    const world::navigation::Trajectory& trajectory,
+    const std::vector<ReferenceAttitude>& attitudes,
+    std::size_t first,
+    std::size_t last,
+    std::uint64_t revision,
+    const Scenario& scenario,
+    const ShipParams& params
+)
+{
+    Program program;
+    program.valid = true;
+    program.revision = revision;
+    program.objectiveRevision = scenario.goalRevision;
+    program.family = Program::ManeuverFamily::FreeTransit;
+
+    const double acceptedAt =
+        trajectory.samples[first].timeOffsetSeconds;
+    program.acceptedAtUniverseTimeSeconds = acceptedAt;
+
+    const std::size_t count = last - first + 1;
+    program.sampleCount =
+        static_cast<std::uint8_t>(count);
+
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        const std::size_t sourceIndex = first + i;
+        const auto& source = trajectory.samples[sourceIndex];
+        const auto& attitude = attitudes[sourceIndex];
+        auto& target = program.samples[i];
+
+        target.timeOffsetSeconds =
+            source.timeOffsetSeconds - acceptedAt;
+        target.positionMapMeters = source.positionMeters;
+        target.velocityMapMetersPerSecond = source.velocityMps;
+        target.linearAccelerationFeedForwardMapMps2 =
+            source.accelerationMps2;
+        target.forwardMap = attitude.basis.forward;
+        target.rightMap = attitude.basis.right;
+        target.upMap = attitude.basis.up;
+        target.angularVelocityMapRadPerSecond =
+            attitude.angularVelocity;
+        target.angularAccelerationFeedForwardMapRadPerSec2 =
+            attitude.angularAcceleration;
+    }
+
+    const double duration =
+        program.samples[count - 1].timeOffsetSeconds;
+    program.validUntilUniverseTimeSeconds =
+        acceptedAt + duration + 5.0;
+
+    program.terminalTolerance.positionMeters = 4.0;
+    program.terminalTolerance.linearVelocityMps = 2.0;
+    program.terminalTolerance.forwardAngleRad = 0.20;
+    program.terminalTolerance.angularVelocityRadPerSec = 0.50;
+
+    program.tracking.positionErrorMeters = 18.0;
+    program.tracking.linearVelocityErrorMps = 8.0;
+    program.tracking.forwardAngleErrorRad = 0.75;
+    program.tracking.angularVelocityErrorRadPerSec = 1.2;
+    program.tracking.linearFeedbackReserveMps2 = 1.5;
+    program.tracking.angularFeedbackReserveRadPerSec2 = 0.8;
+
+    const double mainAcceleration =
+        static_cast<double>(params.maxLinearGs) *
+        kStandardGravity;
+
+    program.capability.revision = scenario.staticWorldRevision;
+    program.capability.maxForwardAccelerationMetersPerSec2 =
+        mainAcceleration;
+    program.capability.maxReverseAccelerationMetersPerSec2 =
+        mainAcceleration;
+    program.capability.maxLateralAccelerationMetersPerSec2 =
+        static_cast<double>(params.manoeuvreThrusterAccel);
+    program.capability.maxVerticalAccelerationMetersPerSec2 =
+        static_cast<double>(params.manoeuvreThrusterAccel);
+    program.capability.maxAngularAccelerationRadPerSec2 =
+        static_cast<double>(params.angularAccel);
+    program.capability.maxAngularSpeedRadPerSec =
+        std::max({
+            static_cast<double>(params.maxPitchRate),
+            static_cast<double>(params.maxYawRate),
+            static_cast<double>(params.maxRollRate)
+        });
+
+    program.proof.mapRevision = scenario.staticWorldRevision;
+    program.proof.mapSourceRevision = scenario.staticWorldRevision;
+    program.proof.minimumClearanceMeters =
+        std::max(0.0, scenario.routeClearanceMeters);
+
+    program.completionTriggersReplan = false;
+    return program;
+}
+
+std::vector<Program> buildProgramChunks(
+    const world::navigation::Trajectory& trajectory,
+    const std::vector<ReferenceAttitude>& attitudes,
+    const Scenario& scenario,
+    const ShipParams& params
+)
+{
+    std::vector<Program> programs;
+    if (trajectory.samples.size() < 2)
+        return programs;
+
+    std::size_t first = 0;
+    std::uint64_t revision = 1000;
+
+    while (first + 1 < trajectory.samples.size())
+    {
+        const std::size_t last =
+            std::min(
+                trajectory.samples.size() - 1,
+                first + Program::kMaxSamples - 1
+            );
+
+        programs.push_back(
+            makeProgramChunk(
+                trajectory,
+                attitudes,
+                first,
+                last,
+                revision++,
+                scenario,
+                params
+            )
+        );
+
+        if (last + 1 >= trajectory.samples.size())
+            break;
+
+        first = last;
+    }
+
+    if (!programs.empty())
+        programs.back().completionTriggersReplan = true;
+
+    return programs;
+}
+
+struct ExecutionVehicle
+{
+    ShipTransform transform {};
+    ShipParams params {};
+    WorldParams world {};
+    game::navigation::KinematicFrame frame {};
+    Bridge bridge;
+    double timeSeconds = 0.0;
+
+    ExecutionVehicle(
+        const Scenario& scenario,
+        const ScenarioRunSettings& settings
+    )
+        : params(cobraParams()),
+          bridge(pilotProfile(settings.pilot))
+    {
+        frame.systemId = 1;
+        frame.frameId = "navigation-runtime-stage2";
+        frame.originMeters = {0.0, 0.0, 0.0};
+        frame.localToWorldBasis = glm::dmat3(1.0);
+        frame.valid = true;
+
+        transform.motion.mode =
+            game::navigation::MotionMode::HubTactical;
+        transform.motion.systemId = 1;
+        transform.motion.travelFrame = frame;
+        transform.motion.localControlLaw =
+            controlLaw(settings.controlMode);
+        transform.motion.localPositionMeters =
+            scenario.startPosition;
+        transform.motion.localVelocityMps =
+            scenario.startVelocity;
+        transform.setWorldPositionMeters(
+            scenario.startPosition
+        );
+        setTransformBasis(
+            transform,
+            scenario.startBasis
+        );
+
+        Bridge::Intent initial;
+        initial.revision = 1;
+        initial.targetRevision = 0;
+        if (!bridge.reset(0.0, initial))
+            throw std::runtime_error(
+                "Stage 2 pilot bridge reset failed"
+            );
+    }
+};
+
+Follower::AgentState followerAgent(
+    const ExecutionVehicle& vehicle
+)
+{
+    Follower::AgentState agent;
+    agent.positionMapMeters =
+        vehicle.transform.motion.localPositionMeters;
+    agent.velocityMapMetersPerSecond =
+        vehicle.transform.motion.localVelocityMps;
+    agent.forwardMap =
+        glm::dvec3(vehicle.transform.forward());
+    agent.rightMap =
+        glm::dvec3(vehicle.transform.right());
+    agent.upMap =
+        glm::dvec3(vehicle.transform.up());
+    agent.pitchRateRadPerSec =
+        vehicle.transform.pitchRate;
+    agent.yawRateRadPerSec =
+        vehicle.transform.yawRate;
+    agent.rollRateRadPerSec =
+        vehicle.transform.rollRate;
+    return agent;
+}
+
+game::navigation::NavigationSystemControlIntent toSystemIntent(
+    const game::navigation::NavigationLocalControlIntent& local
+)
+{
+    game::navigation::NavigationSystemControlIntent system;
+    system.revision = local.revision;
+    system.targetRevision = local.targetRevision;
+    system.idealLinearAccelerationSystemMps2 =
+        local.idealLinearAccelerationLocalMps2;
+    system.idealAngularAccelerationSystemRadPerSec2 =
+        local.idealAngularAccelerationLocalRadPerSec2;
+    system.emergency = local.emergency;
+    system.hazardUrgency01 = local.hazardUrgency01;
+    return system;
+}
+
+double distancePointToSegment(
+    const glm::dvec3& point,
+    const glm::dvec3& a,
+    const glm::dvec3& b
+)
+{
+    const glm::dvec3 ab = b - a;
+    const double lengthSquared = glm::dot(ab, ab);
+    if (lengthSquared <= 1.0e-12)
+        return glm::length(point - a);
+
+    const double t =
+        std::clamp(
+            glm::dot(point - a, ab) / lengthSquared,
+            0.0,
+            1.0
+        );
+    return glm::length(point - (a + ab * t));
+}
+
+double distancePointToPolyline(
+    const glm::dvec3& point,
+    const std::vector<glm::dvec3>& route
+)
+{
+    if (route.empty())
+        return 0.0;
+    if (route.size() == 1)
+        return glm::length(point - route.front());
+
+    double best = std::numeric_limits<double>::infinity();
+    for (std::size_t i = 1; i < route.size(); ++i)
+    {
+        best = std::min(
+            best,
+            distancePointToSegment(
+                point,
+                route[i - 1],
+                route[i]
+            )
+        );
+    }
+    return std::isfinite(best) ? best : 0.0;
+}
+
+TraceFrame executionTraceFrame(
+    const ExecutionVehicle& vehicle,
+    const Program& program,
+    const Scenario& scenario,
+    const std::string& status
+)
+{
+    TraceFrame frame;
+    frame.timeSeconds = vehicle.timeSeconds;
+    frame.shipPosition =
+        vehicle.transform.motion.localPositionMeters;
+    frame.shipVelocity =
+        vehicle.transform.motion.localVelocityMps;
+    frame.shipForward =
+        glm::dvec3(vehicle.transform.forward());
+    frame.shipRight =
+        glm::dvec3(vehicle.transform.right());
+    frame.shipUp =
+        glm::dvec3(vehicle.transform.up());
+    frame.phase = "route_execution";
+    frame.plannerStatus = status;
+    frame.hasSelectedTarget = true;
+    frame.selectedTarget = scenario.finish.position;
+
+    const auto sampled =
+        game::navigation::ManeuverProgramSampler::sample(
+            program,
+            vehicle.timeSeconds
+        );
+
+    if (sampled.status !=
+        game::navigation::ManeuverProgramSampler::Status::InvalidInput)
+    {
+        frame.hasProgramReference = true;
+        frame.programReferencePosition =
+            sampled.reference.positionMapMeters;
+        frame.programReferenceForward =
+            sampled.reference.forwardMap;
+        frame.programReferenceRight =
+            sampled.reference.rightMap;
+        frame.programReferenceUp =
+            sampled.reference.upMap;
+        frame.programTrackingCorridorRadiusMeters =
+            program.tracking.positionErrorMeters;
+    }
+
+    return frame;
+}
+
+void writeExecutionDiagnostics(
+    const std::string& scenarioJsonPath,
+    const std::vector<std::string>& diagnostics
+)
+{
+    const std::filesystem::path scenarioPath(scenarioJsonPath);
+    const std::filesystem::path output =
+        scenarioPath.parent_path() / "last_execution.log";
+
+    std::ofstream stream(output);
+    if (!stream)
+        throw std::runtime_error(
+            "cannot write execution diagnostics: " +
+            output.string()
+        );
+
+    for (const auto& line : diagnostics)
+    {
+        stream << line << "\n";
+        std::cout << "[NAV-STAGE2] " << line << "\n";
+    }
+}
+
 } // namespace
 
 ScenarioRunResult loadScenarioPreview(

@@ -9,70 +9,53 @@
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-Accepted:
-- Stage-12 architecture contract PASS;
-- navigation runtime 18/18;
-- chained transitions + physical-limit block.
+## Final composite status
 
-## Current final laboratory candidate
+First target attempt:
+```
+d57a22f69c3af1a8c967ce974b895295c77dd21a
+```
 
-`navigation_composite_proving_ground`
+Result:
+- architecture PASS;
+- previous 18 runtime gates remain PASS;
+- final composite alone failed at production dynamic bypass.
 
-Expected suite size: 19.
+## Failure interpretation
 
-The scenario composes already accepted pieces in one uninterrupted run:
-- exact static geometry blocks direct route;
-- production static topology selects portal detour;
-- B7 selects law-specific physical family;
-- B8-B10/PilotSkill/physics execute it;
-- dynamic hazard appears while program is active;
-- production replan policy invalidates it;
-- NavigationMap + NavigationRuntimePlanner produce a local bypass;
-- replacement starts from actual current P/V/q/omega;
-- ship then crosses a constrained portal and performs exact terminal capture.
+The old fixture inserted the hazard 35 m ahead after the ship had already executed 4 seconds of its selected physical program.
 
-## Final composite acceptance target
+That can put the current unchanged-kinematics closest approach inside the required safety envelope.
 
-Newtonian:
-- DriftPass selected under Extreme;
-- >=15 deg material drift.
+Production local avoidance intentionally refuses to "steer around" a condition already judged unrecoverable under its bounded current-state safety contract. This is fail-closed behavior, not a planner regression.
 
-Assisted:
-- aligned PrecisionTransit selected;
-- <=8 deg max slip.
+## Current final-composite correction
 
-Both:
-- one immediate DynamicHazardInvalidated replan;
-- positive static/dynamic full-hull conservative clearance;
-- <=19 m hull half-width through narrow passage;
-- zero tracking-envelope exceed;
-- strict terminal P/V/attitude.
+```
+b57d81e42035f9771ae4feecee56899c4fa4f3f7
+```
 
-## What a green result means
+The hazard is now introduced with enough physical response room:
+- 48 m ahead;
+- radius 6 m;
+- slower cross motion.
 
-A green result ends synthetic maneuver **behavior** testing.
+The test still explicitly requires the nominal bounded route to conflict before accepting an adjusted target.
 
-It demonstrates the composed navigation behavior is coherent enough to move the main quality loop into the game.
+## Laboratory exit criterion unchanged
 
-It does **not** close remaining architecture/migration work:
-- B1 shared influence batching;
-- B2 unified objective;
-- B3 vehicle-aware topology feasibility;
-- B4 route-aligned corridor replacement;
-- full B5 Assisted/general physical compiler;
-- generalized B6 proof ownership;
-- explicit B11 bounded reflex;
-- final ordinary-live B7-B10 seam retirement.
+Final composite must prove:
+- static topology detour;
+- B7 law-specific selection;
+- actual accepted-program execution;
+- mid-run hazard invalidation;
+- production nominal dynamic conflict;
+- production AdjustedClear;
+- no-reset replacement execution;
+- constrained portal;
+- terminal StateCapture.
 
-## Next after green
-
-Actual NAV STRESS/game:
-- accepted route/corridor visualization;
-- accepted time-trajectory/tunnel visualization;
-- NPC/autopilot execution;
-- visual and gameplay evaluation.
-
-Synthetic tests become regression tools, not the primary development loop.
+A green result closes synthetic maneuver behavior testing.
 
 ## State protocol
 

@@ -4,110 +4,69 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 ## Mandatory workflow
 
-Read current `main` versions of `CURRENT_STATE.md`, `CURRENT_TASK.md`,
-`PROJECT_STATE.md`, `src/game/navigation/STAGE12_END_TO_END.md`, and the
-production/tests involved in the active gate.
-
+Read current `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`,
+`src/game/navigation/STAGE12_END_TO_END.md`, and relevant production/tests.
 After every state-affecting event synchronize those files and recreate this
 `CONTINUE_PROMPT.md` from scratch.
 
-## Evidence boundary
+## Latest evidence
 
-Last accepted target baseline:
-```
-3fe9b54eda0135b0cdebb7dc835d8a4b17580808
-```
+Latest uploaded target log: `navigation_test_20260920-182430.txt`.
+The log itself does not contain a tested HEAD line; do not invent one.
 
-Latest actually target-tested checkout:
-```
-81d0c23ae42bba0352026d6c2306cc6976c04bda
-```
+Result:
+- Stage-12 architecture PASS;
+- build/link PASS;
+- 17/19 runtime PASS;
+- planner fixture FAIL: future oriented portal route context not retained;
+- composite FAIL: dynamic clearance lost for Newtonian.
 
-Current unverified production/test code baseline before documentation sync:
-```
-abfd7a6a26168f177968f0dd4299f3c712105fc0
-```
+## B4 interpretation
 
-## Correct B4 behavior
+B4 is now clearly producing useful behavior in the composite:
+- first `AdjustedClear`: lateral offset 29.381694 m, forward station 22.5 m;
+- first physical replacement actual dynamic clearance 4.747075 m;
+- zero tracking exceeded ticks;
+- next `AdjustedClear` continuation actual dynamic clearance 22.820979 m;
+- zero tracking exceeded ticks;
+- next solve becomes `NominalClear`.
 
-Ordinary local avoidance is receding-horizon.
+The failure is after this sequence. The test then exits the local replan loop and
+runs a fixed long narrow-portal phase while the hazard is still active. That violates
+the required command-continuous/receding-horizon navigation model.
 
+Correct rule:
 ```text
-safe short segment available
-    -> prove it
-    -> execute it
-    -> keep forward progress
-    -> no mandatory same-horizon return to nominal line
-
-no safe geometric short segment
-    -> ConflictHold
-    -> active braking intent
-    -> navigation remains active
-
-geometric segment exists but physical authoring cannot execute it in time
-    -> active braking through real control/physics
-    -> keep world truth authoritative
-    -> replan again
-
-after obstacle clears / enough room exists
-    -> progressively reacquire nominal line
+safe short segment -> execute
+next world update -> monitor/replan
+safe short segment -> execute
+...
+nominal short segment becomes clear -> continue monitoring/replanning while reacquiring
+no safe executable segment -> brake, navigation stays active
 ```
 
-There is no fixed 30 m merge distance.
+`NominalClear` for one bounded segment is NOT authority to execute an unmonitored
+10-second/topology-wide segment.
 
-`mergeTargetMapMeters` is only an on-route reacquisition reference, not a
-mandatory endpoint of the current local segment.
+## Planner fixture
 
-## Current implementation
+The previous repair put the agent at X=0, on the region-1 minimum X boundary.
+The failure now occurs on route-context retention before the bypass assertion.
+Repair the fixture with an interior start and valid dynamic separation; candidate:
+- start X=1;
+- blocker X=4;
+- staging X=7;
+- required dynamic separation = 2.75 m;
+- both endpoint distances = 3.0 m.
 
-- B4 proves only the short segment executed now.
-- Mandatory bypass->merge static and dynamic proof was removed.
-- Equal lateral offsets prefer farther forward stations.
-- `ConflictHold` remains command-producing braking, not planner shutdown.
-- Composite now brakes if `fitAuthorityBoundedReplacement()` cannot author the
-  geometric bypass within current ship authority.
-- The brake path uses the real `NavigationRuntimeControlBridge`,
-  `SharedShipPhysics`, and `DynamicMotionSystem`.
-- After braking the same live hazard is republished and navigation replans.
+Do not weaken radius/padding/safety rules.
 
-## Tests
+## Next engineering work
 
-- Invalid portal blocker fixture repaired: start X=0, blocker X=3.5, staging X=7.
-- `testBypassDoesNotRequireImmediateReturnToTrajectory()` proves a safe short
-  bypass is accepted even when immediate route return is deliberately blocked.
-- No-space regression requires explicit exhaustion plus active braking.
-- Composite accepts either a physically valid bypass or the braking fallback;
-  it must not fail merely because the geometric target is not authorable.
+1. Fix the oriented-portal fixture geometry only.
+2. Keep planner/monitor/replan active through resumed topology travel.
+3. Add a visual trace/export: ship path, hazard path, inflated hazard envelope,
+   bypass targets, reacquisition references, portal center, and replan points.
+4. Rerun architecture + full runtime gate.
 
-## Must stay removed
-
-Do not restore angular fans, azimuth branches, branch continuity state,
-same-branch ranking, branch-switch API, or mandatory brake-before-side-change.
-
-## Next task
-
-Run the target-machine architecture + navigation runtime gate on the exact
-pulled HEAD and inspect the first real behavioral failure, if any.
-
-Command:
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
-{
-    echo "===== TESTED HEAD ====="
-    git rev-parse HEAD
-    echo
-    echo "===== ARCHITECTURE CONTRACT ====="
-    python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
-    echo
-    echo "===== NAVIGATION RUNTIME ====="
-    bash tests/navigation_runtime/run_mingw64.sh
-} 2>&1 | tee "$OUT"
-echo "$PWD/$OUT"
-```
-
-Do not weaken safety radii, padding, acceleration limits, or tracking
-tolerances simply to make the gate green.
+Legacy angular fan/branch mechanisms remain forbidden.

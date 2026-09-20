@@ -11,51 +11,47 @@ a0f0991791665e30059be15efc47dedcdfafe090
 
 ## Current chained/limit evidence
 
-Target checkout `8729abbbf3e74df0969f83bbc03773ebd827d3af`:
+Target checkout `350f7d593e22b8b89cb3ae4dbfbfbb7fbb53ea03`:
 - architecture PASS;
 - build PASS;
 - 17/18 runtime tests;
-- only Assisted phase-3 slip assertion failed.
+- Newtonian chain healthy;
+- Assisted phase 3 exposed an attitude-reference defect.
 
-Newtonian chained execution itself is strongly healthy:
-- four consecutive phases complete;
-- no artificial state reset at seams;
-- real 34.49 deg drift;
-- full hull bounded;
-- precision final capture;
-- zero tracking-envelope violations.
+Assisted phase-3 evidence:
+- only 1.58 deg slip at entry;
+- grows to 25.79 deg and stays there;
+- forward reference error reaches 25.96 deg;
+- 171 tracking-envelope exceeded ticks.
 
-## Assisted ambiguity exposed
+So this is not a seam transient.
 
-The old test treated all phase-3 slip identically, including residual slip inherited from a ScheduledMoving hard-turn phase.
+## Reference-frame defect
 
-This is not a valid discriminator between:
-- bad handoff state;
-- normal physical handoff transient;
-- Assisted phase failing to align.
+The chained fixture used a fixed world-up basis reconstruction with a seed switch near vertical forward.
 
-Current diagnostic commit:
+That representation is discontinuous in roll even for a smooth velocity tangent.
+
+Because B10 owns full-axis attitude tracking, the representation discontinuity is physically significant.
+
+Fix candidate:
 ```
-6fda55f8a2a954ae1656d5eebf4538f585125f2e
+b8eb4641b013692c773d087d6cad96756c672b3c
 ```
 
-separates:
-- entry slip;
-- max slip;
-- max slip after 1 s;
-- terminal slip.
+The moving aligned frame is now parallel-transported/minimal-twist.
 
-Aligned Assisted acceptance remains strict:
-- <=8 deg after 1 s;
-- <=4 deg terminal.
+General design conclusion:
+- ordinary path following should not invent roll from global up at singular headings;
+- roll should remain continuous unless maneuver semantics explicitly command roll;
+- exact final top/up orientation belongs to an explicit terminal-attitude requirement.
 
 ## Active roadmap
 
-1. finish chained/limit acceptance;
-2. final composite end-to-end proving ground;
-3. move primary quality evaluation into the game.
-
-Open production architecture cleanup remains separately tracked in B1-B6/B11 and final ordinary-live migration.
+1. re-run chained/limit matrix with transported frame;
+2. if green, accept chained + negative/limit block;
+3. build final composite end-to-end proving ground;
+4. then move primary quality evaluation into the game.
 
 ## State protocol
 

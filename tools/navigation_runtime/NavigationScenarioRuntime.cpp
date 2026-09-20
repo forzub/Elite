@@ -1722,9 +1722,13 @@ ScenarioRunResult executeCalculatedRoute(
 
         while (vehicle.timeSeconds < maximumEnd - 1.0e-9)
         {
+            // Never switch to a future program early. The sampler treats
+            // any negative elapsed time as BeforeStart, so an epsilon on the
+            // >= side can turn a perfectly valid chunk boundary into
+            // Follower::InvalidInput.
             while (
                 activeProgram + 1 < programs.size() &&
-                vehicle.timeSeconds + 1.0e-9 >=
+                vehicle.timeSeconds >=
                     programs[activeProgram + 1].
                         acceptedAtUniverseTimeSeconds)
             {
@@ -1732,6 +1736,23 @@ ScenarioRunResult executeCalculatedRoute(
             }
 
             const Program& program = programs[activeProgram];
+
+            const auto preSample =
+                game::navigation::ManeuverProgramSampler::sample(
+                    program,
+                    vehicle.timeSeconds
+                );
+
+            if (
+                preSample.status ==
+                    game::navigation::ManeuverProgramSampler::Status::InvalidInput ||
+                preSample.status ==
+                    game::navigation::ManeuverProgramSampler::Status::BeforeStart)
+            {
+                followerInvalid = true;
+                break;
+            }
+
             const auto follower =
                 Follower::follow(
                     program,

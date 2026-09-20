@@ -4,6 +4,8 @@ project(NavigationRuntimeControlTests LANGUAGES CXX)
 
 include(CTest)
 
+find_package(nlohmann_json CONFIG REQUIRED)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -587,6 +589,7 @@ set_tests_properties(
 add_executable(
     navigation_composite_proving_ground_tests
     NavigationCompositeProvingGroundTests.cpp
+    "${ELITE_SOURCE_ROOT}/tools/navigation_runtime/NavigationTrace.cpp"
 )
 
 target_include_directories(
@@ -603,7 +606,9 @@ target_compile_features(
 
 target_link_libraries(
     navigation_composite_proving_ground_tests
-    PRIVATE EliteNavigationRuntimeControl
+    PRIVATE
+        EliteNavigationRuntimeControl
+        nlohmann_json::nlohmann_json
 )
 
 if(MSVC)

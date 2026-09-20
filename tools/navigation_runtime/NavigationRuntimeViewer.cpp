@@ -31,6 +31,7 @@ struct Vertex
 {
     glm::vec3 position;
     glm::vec3 color;
+    float alpha = 1.0f;
 };
 
 glm::vec3 toVec3(const glm::dvec3& v)
@@ -122,11 +123,14 @@ GLuint makeProgram()
 #version 330 core
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
+layout(location = 2) in float inAlpha;
 uniform mat4 uViewProjection;
 out vec3 vertexColor;
+out float vertexAlpha;
 void main()
 {
     vertexColor = inColor;
+    vertexAlpha = inAlpha;
     gl_Position = uViewProjection * vec4(inPosition, 1.0);
 }
 )";
@@ -134,10 +138,11 @@ void main()
     static constexpr const char* FragmentShader = R"(
 #version 330 core
 in vec3 vertexColor;
+in float vertexAlpha;
 out vec4 outColor;
 void main()
 {
-    outColor = vec4(vertexColor, 1.0);
+    outColor = vec4(vertexColor, vertexAlpha);
 }
 )";
 
@@ -197,6 +202,16 @@ public:
             GL_FALSE,
             sizeof(Vertex),
             reinterpret_cast<void*>(offsetof(Vertex, color))
+        );
+
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(
+            2,
+            1,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(Vertex),
+            reinterpret_cast<void*>(offsetof(Vertex, alpha))
         );
 
         glBindVertexArray(0);
@@ -1299,6 +1314,9 @@ int main(int argc, char** argv)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_SAMPLES, 4);
+        // Ordinary decorated Windows window, maximized to the desktop work area.
+        // This is intentionally NOT an exclusive/borderless fullscreen mode.
+        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
         GLFWwindow* window =
             glfwCreateWindow(
@@ -1327,6 +1345,8 @@ int main(int argc, char** argv)
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_MULTISAMPLE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         AppState state;
         state.lastRealTime = glfwGetTime();

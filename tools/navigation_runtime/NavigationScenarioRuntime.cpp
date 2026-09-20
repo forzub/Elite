@@ -88,6 +88,10 @@ struct Scenario
 
     glm::dvec3 startPosition {0.0};
     glm::dvec3 startVelocity {6.0, 0.0, 0.0};
+    glm::dvec3 startAcceleration {0.0};
+    double startPitchRateRadPerSec = 0.0;
+    double startYawRateRadPerSec = 0.0;
+    double startRollRateRadPerSec = 0.0;
     Basis startBasis {};
 
     std::vector<glm::dvec3> shipRoutePoints;
@@ -255,6 +259,14 @@ Scenario loadScenario(const std::string& path)
             readVec3(start, "position", scenario.startPosition);
         scenario.startVelocity =
             readVec3(start, "velocity", scenario.startVelocity);
+        scenario.startAcceleration =
+            readVec3(start, "acceleration", scenario.startAcceleration);
+        scenario.startPitchRateRadPerSec =
+            start.value("pitch_rate_rad_s", 0.0);
+        scenario.startYawRateRadPerSec =
+            start.value("yaw_rate_rad_s", 0.0);
+        scenario.startRollRateRadPerSec =
+            start.value("roll_rate_rad_s", 0.0);
 
         const glm::dvec3 forward =
             readVec3(start, "forward", scenario.startBasis.forward);
@@ -473,6 +485,12 @@ std::vector<std::string> previewDiagnostics(
         "PLANNER: NOT RUN",
         "FOLLOWER: NOT RUN (STAGE 1)",
         "START: " + formatVec3(scenario.startPosition),
+        "START VELOCITY: " + formatVec3(scenario.startVelocity) + " M/S",
+        "START ACCELERATION: " + formatVec3(scenario.startAcceleration) + " M/S2",
+        "START ANGULAR RATE P/Y/R: (" +
+            std::to_string(scenario.startPitchRateRadPerSec) + ", " +
+            std::to_string(scenario.startYawRateRadPerSec) + ", " +
+            std::to_string(scenario.startRollRateRadPerSec) + ") RAD/S",
         "FINISH: " + formatVec3(scenario.finish.position),
         "STATIC OBSTACLES: " +
             std::to_string(scenario.staticObstacles.size()),
@@ -498,6 +516,12 @@ std::vector<std::string> routeDiagnostics(
         std::string("PLANNER: ") + (route.valid ? "OK" : "FAIL"),
         "FOLLOWER: NOT RUN (STAGE 1)",
         "START: " + formatVec3(scenario.startPosition),
+        "START VELOCITY: " + formatVec3(scenario.startVelocity) + " M/S",
+        "START ACCELERATION: " + formatVec3(scenario.startAcceleration) + " M/S2",
+        "START ANGULAR RATE P/Y/R: (" +
+            std::to_string(scenario.startPitchRateRadPerSec) + ", " +
+            std::to_string(scenario.startYawRateRadPerSec) + ", " +
+            std::to_string(scenario.startRollRateRadPerSec) + ") RAD/S",
         "FINISH: " + formatVec3(scenario.finish.position),
         "STATIC OBSTACLES: " +
             std::to_string(scenario.staticObstacles.size()),
@@ -1042,6 +1066,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
             params
         );
     request.initialVelocityMps = scenario.startVelocity;
+    request.initialAccelerationMps2 = scenario.startAcceleration;
 
     if (!request.pathPointsMeters.empty())
     {
@@ -1252,6 +1277,12 @@ struct ExecutionVehicle
             transform,
             scenario.startBasis
         );
+        transform.pitchRate =
+            static_cast<float>(scenario.startPitchRateRadPerSec);
+        transform.yawRate =
+            static_cast<float>(scenario.startYawRateRadPerSec);
+        transform.rollRate =
+            static_cast<float>(scenario.startRollRateRadPerSec);
 
         Bridge::Intent initial;
         // Reset on neutral revision zero so the first real route intent

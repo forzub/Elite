@@ -1183,6 +1183,32 @@ const char* lawName(Law law)
         : "assisted";
 }
 
+const char* plannerStatusName(Planner::Status status)
+{
+    switch (status)
+    {
+        case Planner::Status::NominalClear:
+            return "nominal_clear";
+        case Planner::Status::AdjustedClear:
+            return "adjusted_clear";
+        case Planner::Status::ConflictHold:
+            return "conflict_hold";
+        case Planner::Status::StaleHold:
+            return "stale_hold";
+        case Planner::Status::StaticHold:
+            return "static_hold";
+        case Planner::Status::InvalidInput:
+            return "invalid_input";
+        case Planner::Status::MovingPassageClear:
+            return "moving_passage_clear";
+        case Planner::Status::PortalCapture:
+            return "portal_capture";
+        case Planner::Status::PortalTransit:
+            return "portal_transit";
+    }
+    return "unknown";
+}
+
 const char* familyName(Program::ManeuverFamily family)
 {
     switch (family)
@@ -1509,7 +1535,7 @@ CompositeMetrics runComposite(Law law)
     DynamicHazard hazard;
     hazard.active = true;
     hazard.activationTimeSeconds = v.timeSeconds;
-    hazard.radiusMeters = 8.0;
+    hazard.radiusMeters = 6.0;
 
     const glm::dvec3 toPortal =
         secondPortal -
@@ -1523,8 +1549,8 @@ CompositeMetrics runComposite(Law law)
         glm::normalize(toPortal);
     hazard.position =
         v.transform.motion.localPositionMeters +
-        towardPortal * 35.0;
-    hazard.velocity = {0.0, -0.75, 0.0};
+        towardPortal * 48.0;
+    hazard.velocity = {0.0, -0.50, 0.0};
 
     // Production execution monitor invalidates the already accepted program.
     Replan::Policy replanPolicy;
@@ -1609,14 +1635,47 @@ CompositeMetrics runComposite(Law law)
             pPolicy
         );
 
+    std::cout
+        << std::fixed << std::setprecision(6)
+        << "[COMPOSITE-PLAN]"
+        << " law=" << lawName(law)
+        << " status=" << plannerStatusName(adjusted.status)
+        << " adjusted=" << (adjusted.adjustedTarget ? 1 : 0)
+        << " nominal_dynamic_conflicts="
+        << adjusted.nominalDynamicConflictsFound
+        << " primary_conflict="
+        << adjusted.nominalPrimaryConflictEntityId
+        << " probes=" << adjusted.avoidanceProbesExamined
+        << " ordinary_exhausted="
+        << (adjusted.ordinaryVisibilitySearchExhausted ? 1 : 0)
+        << " nominal_static_blocked="
+        << (adjusted.nominalStaticBlocked ? 1 : 0)
+        << " position=("
+        << v.transform.motion.localPositionMeters.x << ","
+        << v.transform.motion.localPositionMeters.y << ","
+        << v.transform.motion.localPositionMeters.z << ")"
+        << " velocity=("
+        << v.transform.motion.localVelocityMps.x << ","
+        << v.transform.motion.localVelocityMps.y << ","
+        << v.transform.motion.localVelocityMps.z << ")"
+        << " hazard=("
+        << hazard.position.x << ","
+        << hazard.position.y << ","
+        << hazard.position.z << ")"
+        << " selected_target=("
+        << adjusted.selectedTargetMapMeters.x << ","
+        << adjusted.selectedTargetMapMeters.y << ","
+        << adjusted.selectedTargetMapMeters.z << ")"
+        << "\n";
+
+    require(
+        adjusted.nominalDynamicConflictsFound > 0,
+        "composite hazard no longer intersects the nominal bounded route"
+    );
     require(
         adjusted.status == Planner::Status::AdjustedClear &&
         adjusted.adjustedTarget,
         "composite production planner did not find adjusted dynamic bypass"
-    );
-    require(
-        adjusted.nominalDynamicConflictsFound > 0,
-        "composite adjusted plan lost dynamic conflict witness"
     );
 
     // Phase 3: replacement program starts from the actual invalidation state.

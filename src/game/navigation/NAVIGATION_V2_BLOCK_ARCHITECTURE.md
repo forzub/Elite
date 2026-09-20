@@ -992,3 +992,89 @@ invalidate the retained nominal route.
 
 The route envelope is only a coarse navigation/corridor abstraction. Exact oriented
 hull fit is owned by B6 tunnel/swept-volume proof later in the chain.
+
+
+## 2026-09-21 — Follower restored as Stage 2 of the same diagnostic stand
+
+User correctly rejected the previous interpretation where splitting work into two stages
+removed Follower/physics from the viewer entirely. The intended split is by ownership,
+not by executable:
+
+```text
+Stage 1: Calculate
+  static scene -> NominalRoutePlanner -> retained route polyline
+
+Stage 2: Execute
+  retained route polyline -> time trajectory -> Follower -> PilotSkill -> physics
+```
+
+The same viewer now supports both stages.
+
+### Stage 1 remains unchanged
+
+`РАССЧИТАТЬ` calls only `NominalRoutePlanner`. It builds the static route once. The
+user's target evidence already showed a valid four-point 323.75 m detour around the
+wall. Control law, pilot skill and flight style do not alter this nominal route.
+
+### Stage 2 restored correctly
+
+After a successful Stage 1 the playback button becomes `ЗАПУСТИТЬ ПОЛЁТ`.
+
+Stage 2 consumes `calculatedRoute.routePoints` directly and MUST NOT invoke
+`NominalRoutePlanner::plan`, `NavigationRuntimePlanner::plan`, or any other global
+route search.
+
+Current static Stage-2 chain:
+
+```text
+retained Stage-1 polyline
+ -> TrajectoryGenerator / RuckigRoutePlanner
+ -> time-parameterized trajectory
+ -> bounded AcceptedManeuverProgram chunks
+ -> TrajectoryFollower
+ -> NavigationRuntimeControlBridge
+ -> PilotSkillExecutor
+ -> SharedShipPhysics + DynamicMotionSystem
+ -> playback trace
+```
+
+The former stand-local `makeShortProgram()` quintic shortcut is NOT restored.
+
+### Execution modes
+
+The existing viewer selectors now become real Stage-2 inputs:
+- Newtonian / Assisted -> physical local flight law + reference-attitude policy;
+- Expert / Average / Loser -> real PilotSkillExecutor profiles;
+- Standard / Extreme -> Ruckig route speed request.
+
+Pilot execution starts from neutral revision zero so the first real route intent exercises
+the selected pilot's reaction-delay model.
+
+### Static-only dynamic boundary
+
+Dynamic/sudden obstacles remain reserved for the next pass. Stage 2 currently reports
+`DYNAMIC AVOIDANCE: NOT ENABLED IN STATIC PASS`; it does not silently use the sudden
+obstacle checkbox and does not rebuild the route.
+
+### Diagnostics
+
+Stage 2 writes:
+- stdout lines prefixed `[NAV-STAGE2]`;
+- `tools/navigation_runtime/last_execution.log`;
+- `tools/navigation_runtime/last_execution_trace.json`.
+
+Diagnostics separate Ruckig trajectory generation, Follower, Pilot bridge, final errors,
+route deviation and coarse static contact.
+
+### Physical-proof limitation
+
+The current static execution path uses the coarse route envelope for static collision
+checks and is useful for observing Follower/physics behavior. It is NOT yet final B6
+oriented swept-hull/tunnel proof. Do not promote a visually successful run to full
+navigation acceptance.
+
+### Validation state
+
+This restored Stage-2 execution path is committed but has NOT yet been compiled/run on
+the user's MinGW64 target. The last target-verified fact remains: Stage-1 nominal route
+planner passed and produced the four-point 323.75 m static detour.

@@ -1820,7 +1820,7 @@ require(
 )
 
 require(
-    "bool visibilityEvidenceComplete = false;" in SERVER_MAIN and
+    "bool visibleHorizonEvidenceComplete = false;" in SERVER_MAIN and
     "bool behaviorEvidenceComplete = false;" in SERVER_MAIN and
     "observation.visibleHorizonBypassSeen &&" in SERVER_MAIN and
     "observation.visibleHorizonDirectRecoveredSeen &&" in SERVER_MAIN and

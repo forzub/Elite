@@ -1439,10 +1439,7 @@ ScenarioRunResult calculateScenario(
                 : "assisted";
         trace.shipHalfExtentsMeters = kBodyHalfExtents;
         trace.routePoints.push_back(scenario.startPosition);
-        for (const auto& p : scenario.shipRoutePoints)
-            trace.routePoints.push_back(p);
-        trace.routePoints.push_back(scenario.finish.position);
-        trace.turnPoints = scenario.shipRoutePoints;
+        trace.turnPoints.clear();
 
         for (const auto& obstacle : scenario.staticObstacles)
         {
@@ -1482,6 +1479,18 @@ ScenarioRunResult calculateScenario(
 
         std::uint64_t programRevision = 1000;
         std::uint64_t dynamicRevision = 1;
+
+        if (
+            trace.routePoints.empty() ||
+            glm::length(
+                trace.routePoints.back() -
+                scenario.finish.position
+            ) > 1.0)
+        {
+            trace.routePoints.push_back(
+                scenario.finish.position
+            );
+        }
 
         trace.frames.push_back(
             makeTraceFrame(
@@ -1580,6 +1589,34 @@ ScenarioRunResult calculateScenario(
                         staticQueries,
                         policy
                     );
+
+                if (
+                    trace.routePoints.empty() ||
+                    glm::length(
+                        trace.routePoints.back() -
+                        plan.selectedTargetMapMeters
+                    ) > 1.0)
+                {
+                    trace.routePoints.push_back(
+                        plan.selectedTargetMapMeters
+                    );
+                }
+
+                if (
+                    plan.adjustedTarget &&
+                    (
+                        trace.turnPoints.empty() ||
+                        glm::length(
+                            trace.turnPoints.back() -
+                            plan.selectedTargetMapMeters
+                        ) > 2.0
+                    )
+                )
+                {
+                    trace.turnPoints.push_back(
+                        plan.selectedTargetMapMeters
+                    );
+                }
 
                 const bool hardHold =
                     plan.status == Planner::Status::ConflictHold ||

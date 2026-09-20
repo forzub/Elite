@@ -1146,6 +1146,8 @@ std::string localizedPhase(const std::string& phase)
         return "СЦЕНА — ДО РАСЧЁТА";
     if (phase == "route_execution")
         return "ЭТАП 2 — FOLLOWER";
+    if (phase == "phase_handoff")
+        return "ЭТАП 2 — ПЕРЕХОД ФАЗЫ";
     if (phase == "execution_complete")
         return "ЭТАП 2 — ЗАВЕРШЕНО";
     if (phase == "execution_failed")
@@ -1209,6 +1211,8 @@ std::string localizedStatus(const std::string& status)
         return "КОНТАКТ СО СТАТИЧЕСКИМ ПРЕПЯТСТВИЕМ";
     if (status == "terminal_miss")
         return "ФИНИШНОЕ СОСТОЯНИЕ НЕ ДОСТИГНУТО";
+    if (status == "capture_timeout")
+        return "ФИНИШНЫЙ ЗАХВАТ: TIMEOUT";
     if (status == "follower_complete")
         return "FOLLOWER: МАРШРУТ ВЫПОЛНЕН";
     return status;

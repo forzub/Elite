@@ -13,178 +13,162 @@ Read first:
 - `tools/navigation_runtime/README.md`
 - `tools/navigation_runtime/NavigationScenarioRuntime.h/.cpp`
 - `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
+- `tests/architecture_contracts/check_navigation_stage1_nominal_route.py`
 
 After every state-affecting event synchronize the mandatory Markdown state files and
 **recreate this CONTINUE_PROMPT.md from scratch again**.
 
-## User intent / correction
+## User intent
 
-The user explicitly rejected removing Follower from the diagnostic viewer.
-
-The two stages are responsibilities inside ONE viewer:
+The diagnostic viewer must contain BOTH stages. Do not remove Follower.
 
 ```text
 Stage 1 — РАССЧИТАТЬ
-static world -> Planner -> retained white route
+static scene -> NominalRoutePlanner -> retained white route
 
 Stage 2 — ЗАПУСТИТЬ ПОЛЁТ
-same retained route -> trajectory -> Follower -> PilotSkill -> physics -> visible Cobra motion
+same retained route -> Ruckig trajectory -> Follower -> PilotSkill -> physics
+                     -> visible Cobra motion + actual green path
 ```
 
-Do not interpret "two stages" as "route only, no movement".
+The split is ownership, not separate executables and not "route only".
 
-## Stage 1 — canonical static route
+## Stage 1 — static nominal route
 
-`NominalRoutePlanner` builds the route once from:
-- START;
-- optional ordered `ship_route_points`;
-- FINISH;
-- static NavigationObstacle geometry.
-
+`NominalRoutePlanner` owns one sparse start->finish route through static geometry.
 It reuses `GeometricPathPlanner`.
 
-Nominal route invalidation:
+Inputs:
+- START;
+- ordered optional `ship_route_points`;
+- FINISH;
+- static `NavigationObstacle` geometry;
+- coarse route envelope/clearance.
+
+Invalidation:
 - goal revision change -> rebuild;
 - static-world revision change -> rebuild;
 - dynamic-world revision change -> DO NOT rebuild.
 
-Moving objects must not reconstruct the global route.
+Moving actors must not reconstruct the global route.
 
-Last target-verified Stage-1 result:
-- target checkout at that time: `5da0be0d05ef91958a0e7dc9adda3b4eb8fdee29`;
-- `nominal_route_planner`: PASS;
-- viewer Stage-1 log from user:
+Last target-verified Stage-1 behavior:
+- nominal-route behavioral test PASS;
+- user viewer log:
   - PLANNER: OK
-  - START: (0,0,0)
-  - FINISH: (300,0,0)
-  - STATIC OBSTACLES: 1
-  - REQUIRED WAYPOINTS: 0
-  - ROUTE POINTS: 4
-  - ROUTE LENGTH: 323.75 m
-  - STATIC DETOUR: YES.
+  - START (0,0,0)
+  - FINISH (300,0,0)
+  - static obstacles: 1
+  - required waypoints: 0
+  - route points: 4
+  - route length: 323.75 m
+  - static detour: YES.
 
-This is current evidence that Planner can build the default static-wall route.
+## Viewer scene preview
 
-## Scene preview
-
-Before calculation the viewer must already show:
+Before calculation show:
 - reference grid;
 - green START;
-- yellow FINISH cross/ring;
+- yellow FINISH;
 - static obstacles;
 - Cobra at START.
 
-`TraceDocument` carries authored scene endpoints independently from route existence.
+After Stage 1 the white route is retained independently from execution traces.
 
 ## Immutable retained route
 
-After successful Stage 1 the viewer stores an immutable copy of that route in AppState.
+The viewer stores the successful Stage-1 `TraceDocument` separately.
 
-Stage 2 always consumes that retained copy.
+Stage 2 always receives that retained route. It must not regenerate it.
 
-Changing:
-- Assisted/Newtonian;
+Changing execution settings after a run:
+- Newtonian/Assisted;
 - Expert/Average/Loser;
 - Standard/Extreme;
 - reserved sudden-obstacle toggle
 
-after an execution run restores the same retained white route and invalidates only the
-execution result. The next Stage-2 run must NOT call Planner again.
+restores the same retained Stage-1 route and invalidates only Stage 2. This enables
+clean apples-to-apples execution comparisons.
 
-This is required for clean apples-to-apples execution comparisons.
-
-## Stage 2 — current static execution implementation
-
-After successful Stage 1 the button becomes `ЗАПУСТИТЬ ПОЛЁТ`.
-SPACE may also start Stage 2.
-
-Current chain:
+## Stage 2 — current static execution chain
 
 ```text
-retained Stage-1 routePoints
- -> world::navigation::TrajectoryGenerator
+retained routePoints
+ -> buildExecutionTrajectory()
+ -> world::navigation::TrajectoryGenerator::generate()
  -> game::navigation::RuckigRoutePlanner backend
  -> time-parameterized trajectory
- -> AcceptedManeuverProgram chunks (max 16 reference samples each)
+ -> AcceptedManeuverProgram chunks
  -> TrajectoryFollower
  -> NavigationRuntimeControlBridge
  -> PilotSkillExecutor
  -> SharedShipPhysics
  -> DynamicMotionSystem
- -> playback trace
+ -> execution trace / playback
 ```
 
-Hard ownership rule:
-`executeCalculatedRoute()` must NOT call:
+Hard rule: `executeCalculatedRoute()` must never invoke:
 - `NominalRoutePlanner::plan`;
 - `NavigationRuntimePlanner::plan`;
 - `GeometricPathPlanner::plan`.
 
-It only consumes `calculatedRoute.routePoints`.
+The old viewer-local `makeShortProgram()` shortcut must remain absent.
 
-The old stand-local `makeShortProgram()` quintic shortcut must remain absent.
+## Execution configuration
 
-## Stage-2 execution parameters
-
-Cobra diagnostic physics mirrors current Cobra baseline:
+Cobra diagnostic physics mirrors the current Cobra baseline:
 - angular accel 3 rad/s²;
 - max pitch/yaw 2.5 rad/s;
 - max roll 3 rad/s;
-- max linear G envelope 7.5g;
+- max linear envelope 7.5g;
 - manoeuvre/RCS acceleration 2 m/s²;
-- real RCS gas pressure/use/recharge is active;
-- body half extents used by viewer: 13 x 2.5 x 11.1 m.
+- real manoeuvre-gas pressure/use/recharge;
+- viewer body half extents 13 x 2.5 x 11.1 m.
 
-Pilot selector is real:
-- Expert: zero reaction/latency, high bandwidth;
+Pilot selector is real through `PilotSkillExecutor`:
+- Expert: zero reaction/latency, high response bandwidth;
 - Average: finite reaction/latency, lower response, small deterministic error;
 - Loser: larger delay/latency, lower response, larger deterministic error.
 
-Bridge is reset at revision zero so first real goal revision exercises reaction delay.
+Pilot bridge is reset on neutral revision zero so first real route intent exercises the
+selected pilot reaction profile.
 
 Flight style:
-- Standard uses `standard_speed_mps`;
-- Extreme uses `extreme_speed_mps`.
+- Standard -> `standard_speed_mps`;
+- Extreme -> `extreme_speed_mps`.
 
 Control law:
-- Newtonian uses physical one-direction main thrust; reference attitude follows required
-  acceleration when significant so the hull must rotate for thrust/braking.
-- Assisted uses the Assisted physical law and generally velocity-aligned transit attitude.
+- Newtonian uses one-direction main thrust and body rotation for thrust/braking;
+- Assisted uses assisted physical law.
 
-Final forward/up orientation is blended in over the last ~35 m rather than snapped at
-the final sample.
+Final forward/up orientation is blended near the last ~35 m instead of terminal snap.
 
-Current Ruckig backend explicitly rejects non-zero final speed; do not silently ignore
-that unsupported contract.
+Current Ruckig backend explicitly rejects a non-zero requested terminal speed.
 
 ## Dynamic boundary
 
-Current work is STATIC obstacles first.
+Current target is static retained-route execution first.
 
-Dynamic/sudden obstacle JSON remains parsed/reserved but Stage 2 currently reports:
+Dynamic/sudden obstacles remain parsed/reserved. Current Stage 2 explicitly reports:
 
 `DYNAMIC AVOIDANCE: NOT ENABLED IN STATIC PASS`
 
-Do not implement moving-object avoidance until retained-route static execution is target
-validated.
+Do not implement dynamic avoidance until this static execution path is target validated.
+Later dynamic avoidance must operate locally relative to the retained route and must not
+rebuild the global route merely because a moving actor changed.
 
-When dynamic avoidance is added later it must operate locally over the retained route;
-it must not rebuild global route because a moving object changed.
+## Corridor/tunnel boundary
 
-## Corridor vs tunnel
+`route_envelope_radius_m` and `route_clearance_m` are coarse navigation/test
+abstractions.
 
-The coarse `route_envelope_radius_m` / `route_clearance_m` is a navigation/test
-abstraction.
+Current Stage 2 reports coarse static contact and allows observation of
+Follower/physics behavior.
 
-Current static Stage-2 execution checks the route/envelope against static geometry and
-reports `COARSE STATIC CONTACT`.
+This is NOT final B6 exact oriented swept-hull proof. Exact rotating-Cobra clearance
+through walls/apertures belongs to the future time-parameterized physical tunnel layer.
 
-This is NOT final B6 exact physical proof.
-
-The future tunnel is the time-parameterized swept volume of the real oriented hull.
-Only that layer decides exact wall/aperture clipping during rotations.
-
-Do not claim full navigation acceptance before that B6 tunnel proof exists.
+Do not claim full navigation acceptance before B6.
 
 ## Diagnostics
 
@@ -198,49 +182,63 @@ Stage 2:
 - `tools/navigation_runtime/last_execution.log`;
 - `tools/navigation_runtime/last_execution_trace.json`.
 
-Stage-2 panel/log separates:
+Stage-2 diagnostics include:
 - cached Planner route;
-- Ruckig trajectory;
-- trajectory sample count;
-- program chunks;
-- Follower;
-- Pilot bridge;
-- pilot profile;
-- flight style;
-- control law;
-- execution frames;
-- final position/speed;
-- max route deviation;
-- max Follower error;
+- Ruckig result/sample count;
+- maneuver-program chunks;
+- Follower status;
+- Pilot bridge status;
+- pilot/style/control law;
+- execution frame count;
+- final position/speed error;
+- maximum route deviation;
+- maximum Follower error;
 - coarse static contact.
 
-Failed multi-frame execution is still playable for diagnosis.
+Failed multi-frame execution traces remain playable for diagnosis.
 
-## Known older Stage-2 regressions
+## Latest target event — architecture checker false negative
 
-Do not hide or weaken:
-1. `navigation_runtime_planner` old fixture:
-   `fixture must produce a safe adjusted target`.
-2. `navigation_composite_proving_ground`:
-   `composite full hull exceeded narrow passage`.
+Latest user run stopped before compilation:
 
-These are not the focused static route build gate but remain evidence for future
-dynamic/tunnel work.
+`[PASS] canonical obstacle geometry + shared geometric path planner`
+`[FAIL] static-route/two-stage navigation: Stage-2 execution path missing TrajectoryGenerator::generate`
 
-## Architecture checker
+Root cause: the architecture checker sliced only `executeCalculatedRoute()`, but the
+production call is intentionally delegated:
 
-`tests/architecture_contracts/check_navigation_stage1_nominal_route.py` now pins
-separation rather than absence of Follower:
-- Stage 1 may call Planner but no execution stack;
-- Stage 2 must consume retained route and contain Follower/Pilot/physics;
-- Stage 2 may not call a global planner;
-- viewer retains immutable Stage-1 route for repeated mode comparisons.
+```text
+executeCalculatedRoute()
+ -> buildExecutionTrajectory()
+ -> TrajectoryGenerator::generate()
+```
 
-## Immediate target validation
+This was a checker defect, not runtime behavior.
 
-Current restored Stage-2 path is NOT yet target-compiled.
+Fix:
+- `executeCalculatedRoute()` must contain `buildExecutionTrajectory()`;
+- isolated `buildExecutionTrajectory()` must contain
+  `calculatedRoute.routePoints` and `TrajectoryGenerator::generate`;
+- global-planner prohibition is checked across the Stage-2 trajectory-builder +
+  execution text.
 
-Run:
+Production runtime code did not change for this fix.
+
+## Current validation status
+
+The restored Stage-2 viewer has still NOT reached target compilation because the latest
+run stopped at the false architecture assertion.
+
+Do not claim Stage-2 build/run PASS yet.
+
+Known older Stage-2 regressions remain visible and are not part of the focused static
+route build gate:
+- old `navigation_runtime_planner`: adjusted-target fixture failure;
+- old composite proving ground: narrow-passage/full-hull failure.
+
+## Immediate target command
+
+Pull latest and rerun focused gate:
 
 ```bash
 cd /d/__elite/work
@@ -249,9 +247,10 @@ git rev-parse HEAD
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
-If compile/link fails, use exact target output as next state-affecting event.
+If it fails, use the exact next architecture/compiler/linker output as the next
+state-affecting event.
 
-Exact executable launch:
+## Exact executable launch after successful build
 
 ```bash
 cd /d/__elite/work
@@ -261,22 +260,19 @@ cd /d/__elite/work
 Always provide a separate exact executable launch command after build instructions that
 produce an executable.
 
-## Expected viewer workflow
+## Expected visual workflow after build
 
-1. Scene visible before calculation.
+1. Scene is visible before calculation.
 2. Press `РАССЧИТАТЬ`.
-3. Confirm same white static route.
+3. White four-point static route appears.
 4. Button becomes `ЗАПУСТИТЬ ПОЛЁТ`.
 5. Press it.
-6. Cobra must visibly move while white route remains fixed.
-7. Green actual path grows behind Cobra.
-8. Right panel shows Ruckig/Follower/Pilot state.
-9. On bad behavior send:
+6. Cobra moves; white route stays unchanged.
+7. Green actual path grows behind the Cobra.
+8. Right diagnostics show Ruckig/Follower/Pilot chain.
+9. On bad behavior inspect/send:
    - screenshot/video;
    - `tools/navigation_runtime/last_execution.log`;
    - if needed `last_execution_trace.json`.
-10. Change pilot/control/style after the run and execute again; the route must remain
-    identical without another Planner calculation.
-
-If target build/execution fails, fix this static retained-route execution path first,
-update mandatory MD files, and recreate this prompt from scratch.
+10. Change pilot/control/style and rerun Stage 2; route must remain identical without a
+    new Planner calculation.

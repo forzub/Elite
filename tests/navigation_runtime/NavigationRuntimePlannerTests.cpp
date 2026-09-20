@@ -667,6 +667,7 @@ void testAdjustedTargetPreservesNominalConflictIdentity()
     policy.horizon.turnDistanceMeters = 600.0;
     policy.horizon.minimumHorizonMeters = 600.0;
     policy.horizon.safetyMarginMeters = 5.0;
+    policy.avoidance.azimuthSamples = 4;
 
     const Planner::Result result = Planner::plan(
         agent,
@@ -789,6 +790,19 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
     require(
         result.selectedTargetMapMeters.z < -1.0e-6,
         "adjusted visibility must preserve the current -Z avoidance side"
+    );
+    require(
+        result.avoidanceContinuityHintUsed &&
+        result.avoidanceContinuityLateralValid,
+        "focused regression must exercise explicit transverse branch continuity"
+    );
+    require(
+        result.avoidanceSameBranchSafeCandidates > 0,
+        "focused regression must contain at least one safe preferred-branch candidate"
+    );
+    require(
+        result.avoidanceSelectedBranchAlignment > 0.5,
+        "selected adjusted target must remain strongly aligned with the preferred transverse branch"
     );
     require(
         result.selectedVisibilityDeflectionRadians >

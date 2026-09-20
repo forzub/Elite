@@ -24,8 +24,8 @@ def require(condition: bool, message: str) -> None:
 
 for marker in (
     "navigationAccelerationDemandValid",
-    "navigationLinearAccelerationDemandMapMps2",
-    "navigationAngularAccelerationDemandMapRadPerSec2",
+    "navigationLinearAccelerationDemandSystemMps2",
+    "navigationAngularAccelerationDemandSystemRadPerSec2",
     "navigationIntentRevision",
 ):
     require(marker in CONTROL, f"ShipControlState direct navigation seam missing: {marker}")
@@ -34,8 +34,8 @@ for marker in (
     "class NavigationRuntimeControlBridge final",
     "using PilotExecutor = world::navigation::PilotSkillExecutor",
     "ExecutionSnapshot",
-    "idealLinearAccelerationDemandMapMps2",
-    "executedLinearAccelerationDemandMapMps2",
+    "idealLinearAccelerationDemandSystemMps2",
+    "executedLinearAccelerationDemandSystemMps2",
     "activeTargetRevision",
 ):
     require(marker in BRIDGE_H, f"runtime bridge interface missing: {marker}")
@@ -43,15 +43,15 @@ for marker in (
 for marker in (
     "executor_.step",
     "navigationAccelerationDemandValid = true",
-    "navigationLinearAccelerationDemandMapMps2",
-    "navigationAngularAccelerationDemandMapRadPerSec2",
+    "navigationLinearAccelerationDemandSystemMps2",
+    "navigationAngularAccelerationDemandSystemRadPerSec2",
     "navigationIntentRevision",
 ):
     require(marker in BRIDGE_CPP, f"runtime bridge implementation missing: {marker}")
 
 for marker in (
     "navigationAccelerationDemandValid",
-    "navigationAngularAccelerationDemandMapRadPerSec2",
+    "navigationAngularAccelerationDemandSystemRadPerSec2",
     "controller.updateControlRates(",
 ):
     require(marker in SHARED, f"shared angular live seam missing: {marker}")
@@ -70,7 +70,7 @@ for marker in (
     require(marker in SHIP_CONTROLLER_CPP, f"ShipController direct-demand clamp missing: {marker}")
 
 require(
-    "applyWorldAccelerationDemand" in MOTION_H,
+    "applySystemAccelerationDemand" in MOTION_H,
     "DynamicMotionSystem direct linear-demand API missing",
 )
 
@@ -84,7 +84,7 @@ for marker in (
 for marker in (
     "manualTranslationOverride",
     "control.navigationAccelerationDemandValid",
-    "applyWorldAccelerationDemand",
+    "applySystemAccelerationDemand",
     "applyLocalFrameInput",
 ):
     require(marker in SIM, f"GameSimulation live demand/manual override branch missing: {marker}")

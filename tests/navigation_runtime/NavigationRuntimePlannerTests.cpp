@@ -5,7 +5,6 @@
 
 #include <cmath>
 #include <iostream>
-#include <iomanip>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -158,9 +157,12 @@ Planner::Policy basePolicy()
     policy.horizon.safetyMarginMeters = 1.0;
     policy.horizon.minimumHorizonMeters = 10.0;
 
-    policy.avoidance.primaryDeflectionRadians = 0.2617993877991494;
-    policy.avoidance.secondaryDeflectionRadians = 0.5235987755982988;
-    policy.avoidance.azimuthSamples = 8;
+    policy.avoidance.lateralGridHalfExtentSamples = 5;
+    policy.avoidance.minimumLateralStepMeters = 2.0;
+    policy.avoidance.lateralStepEnvelopeMultiplier = 1.0;
+    policy.avoidance.maximumLateralOffsetMeters = 80.0;
+    policy.avoidance.projectionPaddingMeters = 1.0;
+    policy.avoidance.trajectorySamples = 32;
     policy.avoidance.staticAdditionalClearanceMeters = 0.0;
     return policy;
 }
@@ -668,7 +670,7 @@ void testAdjustedTargetPreservesNominalConflictIdentity()
     policy.horizon.turnDistanceMeters = 600.0;
     policy.horizon.minimumHorizonMeters = 600.0;
     policy.horizon.safetyMarginMeters = 5.0;
-    policy.avoidance.azimuthSamples = 4;
+    policy.avoidance.lateralGridHalfExtentSamples = 4;
 
     const Planner::Result result = Planner::plan(
         agent,
@@ -692,7 +694,7 @@ void testAdjustedTargetPreservesNominalConflictIdentity()
 }
 
 
-void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
+void testProjectedVisibleHorizonBypassPublishesMergeTarget()
 {
     Map::Config config;
     config.halfExtentMeters = 2000.0;
@@ -706,161 +708,80 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
 
     Map::DynamicActorInput obstacle;
     obstacle.entityId = 202;
-    obstacle.positionMapMeters = {500.0, 0.0, 0.0};
-    obstacle.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    obstacle.positionMapMeters = {25.0, 10.0, 0.0};
+    obstacle.velocityMapMetersPerSecond = {0.0, -5.0, 0.0};
     obstacle.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
-    obstacle.radiusMeters = 50.0;
+    obstacle.radiusMeters = 2.0;
     obstacle.motionRevision = 5;
     update.actors.push_back(obstacle);
     map.replaceDynamicWorld(std::move(update));
 
     Map::CorridorQuery query;
     query.startMapMeters = {0.0, 0.0, 0.0};
-    query.endMapMeters = {1000.0, 0.0, 0.0};
-    query.radiusMeters = 10.0;
+    query.endMapMeters = {100.0, 0.0, 0.0};
+    query.radiusMeters = 30.0;
+    query.lookAheadSeconds = 3.0;
     const Map::QueryResult dynamic = map.queryCorridor(query);
 
     Space space;
     Space::StaticSpaceUpdate staticWorld;
     staticWorld.sourceRevision = 202;
-
     Space::RegionInput wideRegion;
     wideRegion.regionId = 1;
-    wideRegion.boundsMapMeters.minMapMeters =
-        {-1000.0, -1000.0, -1000.0};
-    wideRegion.boundsMapMeters.maxMapMeters =
-        {2000.0, 1000.0, 1000.0};
-    wideRegion.clearanceRadiusMeters = 2000.0;
+    wideRegion.boundsMapMeters.minMapMeters = {-100.0, -200.0, -200.0};
+    wideRegion.boundsMapMeters.maxMapMeters = {1200.0, 200.0, 200.0};
+    wideRegion.clearanceRadiusMeters = 1000.0;
     wideRegion.geometryRevision = 1;
     staticWorld.regions = {wideRegion};
-
-    Planner::Policy policy = basePolicy();
-    policy.horizon.turnDistanceMeters = 600.0;
-    policy.horizon.minimumHorizonMeters = 600.0;
-    policy.horizon.safetyMarginMeters = 5.0;
-    policy.avoidance.azimuthSamples = 4;
-
-    // Block only the preferred -Z branch on the first (15 deg) ring.
-    // The same -Z branch is clear again on the larger ring, while the
-    // opposite +Z first-ring candidate remains safe. This pins the semantic
-    // rule: accepted branch continuity outranks a smaller opposite-side
-    // deflection when a safe same-branch continuation exists.
-    world::navigation::NavigationObstacle firstRingBlocker;
-    firstRingBlocker.id = "continuity_first_ring_blocker";
-    firstRingBlocker.entityId = 203;
-    firstRingBlocker.shape =
-        world::navigation::NavigationObstacleShape::Box;
-    // Put the blocker on an interior point of the actual primary
-    // -Z ray. This is independent of the exact physical-horizon length as
-    // long as the horizon remains >300 m, while the 30 deg -Z ray is already
-    // far away at the same X.
-    constexpr double blockerRayDistanceMeters = 300.0;
-    firstRingBlocker.centerMeters = {
-        blockerRayDistanceMeters *
-            std::cos(policy.avoidance.primaryDeflectionRadians),
-        0.0,
-        -blockerRayDistanceMeters *
-            std::sin(policy.avoidance.primaryDeflectionRadians)
-    };
-    firstRingBlocker.localToWorldBasis = glm::dmat3(1.0);
-    firstRingBlocker.halfExtentsMeters = {8.0, 8.0, 8.0};
-    staticWorld.obstacles.push_back(firstRingBlocker);
-
     space.replaceStaticWorld(std::move(staticWorld));
 
     Planner::AgentState agent = baseAgent();
-    agent.radiusMeters = 5.0;
-
-    // Both +/-Z visibility candidates are geometrically and statically legal.
-    // The current velocity intentionally points elsewhere: the accepted local
-    // segment owns the continuity hint and must preserve its -Z branch.
-    agent.velocityMapMetersPerSecond = {1.0, 0.25, 0.0};
-    agent.localAvoidanceContinuityValid = true;
-    agent.localAvoidanceContinuityDirectionMap =
-        glm::normalize(glm::dvec3(1.0, 0.0, -0.25));
+    agent.radiusMeters = 2.0;
+    agent.velocityMapMetersPerSecond = {10.0, 0.0, 0.0};
 
     Planner::Goal goal = goalAt(1000.0);
     goal.maximumTargetSpeedMps = 20.0;
 
-    const Planner::Result result = Planner::plan(
-        agent,
-        goal,
-        dynamic,
-        0.0,
-        StaticQueries(space),
-        policy
-    );
+    Planner::Policy policy = basePolicy();
+    policy.horizon.turnDistanceMeters = 20.0;
+    policy.horizon.minimumHorizonMeters = 40.0;
+    policy.horizon.safetyMarginMeters = 1.0;
 
-    std::cout
-        << std::fixed << std::setprecision(6)
-        << "[BRANCH-REGRESSION]"
-        << " status=" << static_cast<int>(result.status)
-        << " deflection_deg="
-        << result.selectedVisibilityDeflectionRadians *
-               180.0 / 3.14159265358979323846
-        << " same_branch_safe="
-        << result.avoidanceSameBranchSafeCandidates
-        << " branch_alignment="
-        << result.avoidanceSelectedBranchAlignment
-        << " branch_switch_required="
-        << (result.avoidanceBranchSwitchRequired ? 1 : 0)
-        << " target=("
-        << result.selectedTargetMapMeters.x << ","
-        << result.selectedTargetMapMeters.y << ","
-        << result.selectedTargetMapMeters.z << ")"
-        << "\n";
+    const Planner::Result result = Planner::plan(
+        agent, goal, dynamic, 0.0, StaticQueries(space), policy
+    );
 
     require(
         result.status == Planner::Status::AdjustedClear &&
         result.adjustedTarget,
-        "side-continuity fixture must produce an adjusted target"
+        "visible-horizon crossing obstacle must produce a temporary bypass"
     );
     require(
         result.nominalDynamicConflictsFound > 0,
-        "side-continuity fixture requires a real nominal conflict"
+        "visible-horizon fixture must retain the nominal dynamic conflict"
     );
     require(
-        result.selectedTargetMapMeters.z < -1.0e-6,
-        "adjusted visibility must preserve the current -Z avoidance side"
+        result.avoidanceProjectedDynamicObstacles > 0 &&
+        result.avoidanceOffsetCandidatesExamined > 0,
+        "runtime planner must consume projected moving occupancy and search normal-plane offsets"
     );
     require(
-        result.avoidanceContinuityHintUsed &&
-        result.avoidanceContinuityLateralValid,
-        "focused regression must exercise explicit transverse branch continuity"
+        result.localBypassLateralOffsetMeters > 0.0,
+        "runtime planner must publish a non-zero lateral bypass offset"
     );
     require(
-        result.avoidanceSameBranchSafeCandidates > 0,
-        "focused regression must contain at least one safe preferred-branch candidate"
+        std::abs(result.localBypassMergeTargetMapMeters.y) < 1.0e-6 &&
+        std::abs(result.localBypassMergeTargetMapMeters.z) < 1.0e-6,
+        "local merge target must remain on the original planned trajectory"
     );
     require(
-        result.avoidanceSelectedBranchAlignment > 0.5,
-        "selected adjusted target must remain strongly aligned with the preferred transverse branch"
-    );
-    require(
-        !result.avoidanceBranchSwitchRequired,
-        "safe same-branch continuation must not request recovery/branch switch"
-    );
-    require(
-        result.selectedVisibilityDeflectionRadians >
-            policy.avoidance.primaryDeflectionRadians + 1.0e-6,
-        "accepted branch continuity must prefer a larger same-side ring over a smaller opposite-side ring"
-    );
-
-    const glm::dvec3 selectedDirection =
-        glm::normalize(
-            result.selectedTargetMapMeters -
-            agent.positionMapMeters
-        );
-    require(
-        glm::dot(
-            selectedDirection,
-            agent.localAvoidanceContinuityDirectionMap
-        ) > 0.9,
-        "adjusted visibility must prefer the safe candidate aligned with the accepted local segment"
+        std::abs(result.selectedTargetMapMeters.y) > 1.0e-6 ||
+        std::abs(result.selectedTargetMapMeters.z) > 1.0e-6,
+        "temporary bypass target must leave the blocked centerline"
     );
 }
 
-void testNavigationMapCrossingConflictProducesBrakingHold()
+void testNavigationMapConflictFailsClosedOnlyWhenNoOffsetFits()
 {
     Map::Config config;
     config.halfExtentMeters = 1000.0;
@@ -874,8 +795,8 @@ void testNavigationMapCrossingConflictProducesBrakingHold()
 
     Map::DynamicActorInput crossing;
     crossing.entityId = 200;
-    crossing.positionMapMeters = {20.0, 20.0, 0.0};
-    crossing.velocityMapMetersPerSecond = {0.0, -10.0, 0.0};
+    crossing.positionMapMeters = {20.0, 0.0, 0.0};
+    crossing.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
     crossing.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
     crossing.radiusMeters = 2.0;
     crossing.motionRevision = 3;
@@ -885,37 +806,51 @@ void testNavigationMapCrossingConflictProducesBrakingHold()
     Map::CorridorQuery query;
     query.startMapMeters = {0.0, 0.0, 0.0};
     query.endMapMeters = {50.0, 0.0, 0.0};
-    query.radiusMeters = 40.0;
+    query.radiusMeters = 20.0;
+    query.lookAheadSeconds = 3.0;
     const Map::QueryResult dynamic = map.queryCorridor(query);
-    require(!dynamic.candidates.empty(),
-            "NavigationMap must publish the crossing actor to the live planner");
 
-    Space space = singleRegionSpace();
+    Space space;
+    Space::StaticSpaceUpdate staticWorld;
+    staticWorld.sourceRevision = 91;
+    Space::RegionInput narrow;
+    narrow.regionId = 1;
+    narrow.boundsMapMeters.minMapMeters = {-10.0, -2.5, -2.5};
+    narrow.boundsMapMeters.maxMapMeters = {100.0, 2.5, 2.5};
+    narrow.clearanceRadiusMeters = 100.0;
+    narrow.geometryRevision = 1;
+    staticWorld.regions = {narrow};
+    space.replaceStaticWorld(std::move(staticWorld));
+
     Planner::AgentState agent = baseAgent();
+    agent.radiusMeters = 1.0;
     agent.velocityMapMetersPerSecond = {10.0, 0.0, 0.0};
-    Planner::Goal goal = goalAt(50.0);
+
+    Planner::Policy policy = basePolicy();
+    policy.horizon.safetyMarginMeters = 0.5;
+    policy.avoidance.minimumLateralStepMeters = 3.0;
 
     const Planner::Result result = Planner::plan(
-        agent,
-        goal,
-        dynamic,
-        0.0,
-        StaticQueries(space),
-        basePolicy()
+        agent, goalAt(50.0), dynamic, 0.0, StaticQueries(space), policy
     );
 
-    require(result.status == Planner::Status::ConflictHold,
-            "predicted crossing conflict must fail closed when no safe probe exists");
-    require(result.primaryConflictEntityId == 200,
-            "live planner must preserve NavigationMap conflict identity");
-    require(result.intent.emergency,
-            "conflict hold must be marked as urgent pilot execution");
-    require(result.intent.hazardUrgency01 >= 0.99,
-            "conflict hold must carry maximum local hazard urgency");
-    require(result.ordinaryVisibilitySearchExhausted,
-            "runtime planner must surface ordinary-fan exhaustion for recovery selection");
-    require(result.intent.idealLinearAccelerationLocalMps2.x < 0.0,
-            "moving conflict must create a provisional braking demand");
+    require(
+        result.status == Planner::Status::ConflictHold,
+        "dynamic conflict may hold only when projected local free space is exhausted"
+    );
+    require(
+        result.localBypassExhausted,
+        "runtime planner must explicitly surface visible-horizon bypass exhaustion"
+    );
+    require(
+        result.avoidanceStaticRejected > 0,
+        "narrow static corridor must reject projected offsets"
+    );
+    require(
+        result.intent.emergency &&
+        result.intent.idealLinearAccelerationLocalMps2.x < 0.0,
+        "exhausted local free space must retain fail-closed braking intent"
+    );
 }
 
 void testMovingGapPrecisionProbeUsesRuntimeCandidates()
@@ -1494,8 +1429,8 @@ int main()
         testExactStaticObstacleParticipatesInRuntimeComposition();
         testLiveScaleStaticObstacleInsideFirstBoundedHorizon();
         testAdjustedTargetPreservesNominalConflictIdentity();
-        testAdjustedVisibilityPreservesCurrentAvoidanceSide();
-        testNavigationMapCrossingConflictProducesBrakingHold();
+        testProjectedVisibleHorizonBypassPublishesMergeTarget();
+        testNavigationMapConflictFailsClosedOnlyWhenNoOffsetFits();
         testMovingGapPrecisionProbeUsesRuntimeCandidates();
         testClosingMovingGapFailsClosedBeforePassageEvaluation();
         testStaticObstacleRejectsSameAcceptedMovingHermiteTrajectory();
@@ -1512,8 +1447,8 @@ int main()
         std::cout << " - exact static OBB participates in runtime composition\n";
         std::cout << " - live-scale 1300 m OBB triggers first-horizon adjustment\n";
         std::cout << " - adjusted target retains nominal conflict identity\n";
-        std::cout << " - adjusted visibility preserves current avoidance side\n";
-        std::cout << " - NavigationMap crossing conflict -> braking hold\n";
+        std::cout << " - projected visible-horizon bypass publishes an on-route merge target\n";
+        std::cout << " - local conflict holds only when projected free space is exhausted\n";
         std::cout << " - bounded runtime candidates -> moving-gap/passage precision probe\n";
         std::cout << " - closing moving gap fails closed before passage evaluation\n";
         std::cout << " - exact-static blocker rejects the same accepted moving Hermite trajectory\n";

@@ -50,6 +50,20 @@ void saveTraceJson(
     for (const auto& p : trace.turnPoints)
         root["turn_points"].push_back(vec3Json(p));
 
+    root["static_obstacles"] = nlohmann::json::array();
+    for (const TraceStaticObstacle& o : trace.staticObstacles)
+    {
+        nlohmann::json obstacle;
+        obstacle["id"] = o.id;
+        obstacle["shape"] = o.shape;
+        obstacle["center"] = vec3Json(o.center);
+        obstacle["half_extents"] = vec3Json(o.halfExtents);
+        obstacle["radius_m"] = o.radiusMeters;
+        obstacle["capsule_half_length_m"] =
+            o.capsuleHalfLengthMeters;
+        root["static_obstacles"].push_back(std::move(obstacle));
+    }
+
     root["frames"] = nlohmann::json::array();
     for (const TraceFrame& f : trace.frames)
     {
@@ -131,6 +145,25 @@ TraceDocument loadTraceJson(const std::string& path)
         trace.routePoints.push_back(readVec3(p));
     for (const auto& p : root.at("turn_points"))
         trace.turnPoints.push_back(readVec3(p));
+
+    if (root.contains("static_obstacles"))
+    {
+        for (const auto& source : root.at("static_obstacles"))
+        {
+            TraceStaticObstacle o;
+            o.id = source.value("id", std::string {});
+            o.shape = source.value("shape", std::string("sphere"));
+            o.center = readVec3(source.at("center"));
+            o.halfExtents =
+                source.contains("half_extents")
+                    ? readVec3(source.at("half_extents"))
+                    : glm::dvec3(1.0);
+            o.radiusMeters = source.value("radius_m", 1.0);
+            o.capsuleHalfLengthMeters =
+                source.value("capsule_half_length_m", 0.0);
+            trace.staticObstacles.push_back(std::move(o));
+        }
+    }
 
     for (const auto& source : root.at("frames"))
     {

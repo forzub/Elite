@@ -2507,6 +2507,9 @@ void processUiAction(
         case UiAction::Calculate:
         {
             state.calculationPerformed = true;
+            state.calculationSucceeded = false;
+            state.executionPerformed = false;
+            state.executionSucceeded = false;
             state.calculationMessage = "ИДЁТ РАСЧЁТ...";
             state.playing = false;
             state.frameIndex = 0;
@@ -2547,6 +2550,77 @@ void processUiAction(
 #else
                 const std::string outputPath =
                     "tools/navigation_runtime/last_calculated_trace.json";
+#endif
+                try
+                {
+                    trace::saveTraceJson(data, outputPath);
+                }
+                catch (const std::exception& e)
+                {
+                    state.calculationMessage +=
+                        std::string(" | TRACE: ") + e.what();
+                }
+            }
+            break;
+        }
+        case UiAction::Execute:
+        {
+            if (!state.calculationSucceeded || data.routePoints.size() < 2)
+            {
+                state.executionPerformed = true;
+                state.executionSucceeded = false;
+                state.calculationMessage =
+                    "ОШИБКА: СНАЧАЛА НУЖЕН УСПЕШНЫЙ ЭТАП 1";
+                break;
+            }
+
+            state.executionPerformed = true;
+            state.executionSucceeded = false;
+            state.calculationMessage = "ЭТАП 2: ИДЁТ РАСЧЁТ ИСПОЛНЕНИЯ...";
+            state.playing = false;
+            state.frameIndex = 0;
+            state.playbackTime = 0.0;
+
+            elite::tools::navigation_runtime::ScenarioRunSettings settings;
+            settings.controlMode = state.controlMode;
+            settings.pilot = state.pilot;
+            settings.flightStyle = state.flightStyle;
+            settings.enableSuddenObstacle =
+                state.useSuddenObstacle;
+
+            const auto result =
+                elite::tools::navigation_runtime::executeCalculatedRoute(
+                    state.scenarioPath,
+                    settings,
+                    data
+                );
+
+            data = result.trace;
+            state.traceData = &data;
+            state.frameIndex = 0;
+            state.playbackTime = 0.0;
+            state.executionSucceeded = result.success;
+            state.calculationMessage =
+                result.success
+                    ? result.message
+                    : "ОШИБКА: " + result.message;
+            state.diagnosticLines = result.diagnostics;
+            state.requestFit = !data.frames.empty();
+
+            // Even a failed execution trace is useful evidence. If the
+            // simulator produced multiple frames, play them so the failure can
+            // be inspected visually instead of being reduced to one status.
+            state.playing = data.frames.size() > 1;
+
+            if (!data.frames.empty())
+            {
+#ifdef ELITE_SOURCE_ROOT
+                const std::string outputPath =
+                    std::string(ELITE_SOURCE_ROOT) +
+                    "/tools/navigation_runtime/last_execution_trace.json";
+#else
+                const std::string outputPath =
+                    "tools/navigation_runtime/last_execution_trace.json";
 #endif
                 try
                 {

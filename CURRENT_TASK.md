@@ -1,357 +1,147 @@
-# CURRENT TASK
+# CURRENT TASK — Navigation Stage 1: static nominal route
 
-**Updated:** 2026-09-20 Europe/Kyiv
+**Date:** 2026-09-20  
+**Status:** IMPLEMENTED IN REPO / TARGET VALIDATION PENDING
 
-## Evidence boundary
+## Two-stage process
 
-Accepted baseline:
-```
-3fe9b54eda0135b0cdebb7dc835d8a4b17580808
-```
+Navigation work is now deliberately split.
 
-Latest target-tested checkout:
-```
-81d0c23ae42bba0352026d6c2306cc6976c04bda
-```
+### Stage 1 — current
 
-Current unverified code baseline before documentation sync:
-```
-abfd7a6a26168f177968f0dd4299f3c712105fc0
-```
-
-## Task
-
-Run the first target-machine gate for the corrected B4 receding-horizon bypass.
-
-The contract under test is:
+Build and display one nominal route:
 
 ```text
-safe short avoidance segment exists
-    -> AdjustedClear
-    -> continue forward through the safe segment
-    -> do NOT require immediate same-horizon return to the route
-
-no safe short avoidance segment exists
-    -> ConflictHold
-    -> active braking command
-    -> navigation remains active
-    -> re-evaluate on fresh world truth
+START
+ + optional required checkpoints
+ + FINISH
+ + static obstacles
+        |
+        v
+NominalRoutePlanner
+        |
+        v
+sparse retained route polyline
 ```
 
-After the obstacle is passed, route reacquisition is progressive under physical
-control limits. There is no fixed 30 m return distance.
+No ship execution belongs to this gate.
 
-## What changed
+### Stage 2 — later
 
-Production:
-- removed mandatory exact-static proof of bypass->merge from ordinary B4;
-- removed mandatory time-coupled dynamic proof of the return leg;
-- current proof covers the short segment actually selected for execution;
-- equal-offset candidates prefer more forward progress;
-- on-route merge point is now only a reacquisition reference.
+Consume the retained Stage-1 route and add:
 
-Tests:
-- repaired invalid portal/blocker geometry;
-- replaced mandatory-return regression with a regression that requires a valid
-  bypass even when immediate return is blocked;
-- preserved no-space -> active braking coverage;
-- architecture checker now pins the short-segment/receding-horizon contract.
+```text
+dynamic/local monitor
+ -> temporary bypass / braking
+ -> physical maneuver generation
+ -> continuous swept-hull/tunnel proof
+ -> doctrine selection
+ -> AcceptedManeuverProgram
+ -> Follower
+ -> PilotSkill
+ -> authoritative physics
+ -> event-driven invalidation/replan
+```
 
-## Next gate
+Moving obstacles must not reconstruct the global nominal route.
 
-Run architecture + navigation runtime on the exact pulled HEAD.
+## Implemented Stage-1 fixes
 
-Inspect especially:
-- `navigation_runtime_planner`;
-- `navigation_composite_proving_ground`;
-- selected bypass offset and forward distance;
-- projection/static/dynamic rejection counts;
-- whether the composite can either execute a safe bypass or correctly brake
-  when physical authoring says it cannot evade.
+- Added `src/game/navigation/NominalRoutePlanner.h/.cpp`.
+- Reused the shared `GeometricPathPlanner` as the static geometric backend.
+- Route can include ordered authored `ship_route_points`.
+- No arbitrary obstacle-count correctness cap is used by the new seam.
+- Route validity is keyed by goal revision + static-world revision.
+- Dynamic-world revision is explicitly **not** a nominal-route invalidation trigger.
+- Added `NominalRoutePlannerTests.cpp`.
+- Added architecture gate
+  `check_navigation_stage1_nominal_route.py`.
+- `tools/navigation_runtime` now calculates Stage 1 only.
+- Removed the old stand-side periodic global replan loop and
+  `makeShortProgram()` execution from `NavigationScenarioRuntime.cpp`.
+- Stage-1 viewer no longer links Follower/PilotSkill/physics/NavigationMap runtime
+  code.
+- Viewer reports `ЭТАП 1 — МАРШРУТ`; the Cobra remains at START.
+- `scenario.json` exposes goal/static/dynamic revisions plus coarse
+  `route_envelope_radius_m` and `route_clearance_m`.
 
-Do not turn a geometric AdjustedClear into a claim of physical executability;
-B5/B6 still own maneuver capability/proof.
+## Corridor vs tunnel
 
-## Exit criterion
+Stage-1 envelope is only a coarse route/corridor abstraction.
 
-Green target gate with:
-- valid bypass when safe space exists;
-- active braking when no safe short segment exists;
-- no navigation shutdown;
-- no forced same-horizon merge;
-- no restored angular fan/branch mechanism.
+It is **not** exact collision truth.
 
-## Composite physical fallback
+Whether the real oriented Cobra clips a wall/aperture belongs to Stage-2
+time-parameterized swept-hull/tunnel proof.
 
-The final composite no longer treats `fit.valid == false` as an automatic
-test failure. If the geometric B4 segment cannot be authored within the
-vehicle's current physical authority, the test now executes active braking
-through the real PilotSkill/physics path, keeps the hazard authoritative,
-and then continues the receding-horizon replan loop.
+## Dynamic architecture already reserved
 
-This directly pins the required rule:
-- can evade physically -> execute bypass;
-- cannot evade physically -> brake;
-- navigation ownership remains active in both cases.
+The JSON schema still parses:
+- moving obstacles with velocity;
+- moving obstacles with route points + speed;
+- sudden obstacle.
 
-## 2026-09-20 next task after 18:24 run
+Stage 1 deliberately does not feed them to `NominalRoutePlanner`.
 
-1. Repair only the oriented-portal fixture geometry: keep the agent inside region 1
-   while maintaining >2.75 m dynamic separation at both start and staging endpoint.
-2. Do not change B4 safety thresholds.
-3. Restructure the composite after `NominalClear`: continue bounded planner/monitor
-   updates while flying toward portal 102; do not execute an unmonitored 10 s scripted
-   portal leg while the hazard is still active.
-4. Add a compact visual trace/export for ship path, hazard path, safety envelope,
-   selected targets and replan points so behavioral failures can be inspected directly.
-5. Rerun architecture + 19-test runtime gate.
+## Target validation required now
 
-## Visualization placement decision
+From MSYS2 MinGW64:
 
-First visualization belongs next to `tests/navigation_runtime/NavigationCompositeProvingGroundTests.cpp`,
-not inside the main game renderer yet.
-
-Plan:
-- composite test emits a deterministic trace file for the exact failing run;
-- a small standalone debug viewer under `tests/navigation_runtime/visualizer/` renders it;
-- show ship path, hazard path + inflated envelope, selected local targets,
-  reacquisition references, portal geometry, and every replan point;
-- after the behavior is understood and stable, reuse the same trace/debug data
-  in the in-game NAV STRESS overlay.
-
-## Immediate task — validate 3D viewer
-
-Run the target MinGW64 runtime gate once to generate
-`tools/navigation_runtime/last_trace_newtonian.json` even if the known composite
-assertion still fails. Then build/run the standalone viewer:
+### 1. Pull and record HEAD
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
-
-bash tests/navigation_runtime/run_mingw64.sh || true
-bash tools/navigation_runtime/run_mingw64.sh
 ```
 
-Viewer acceptance for this iteration:
-- window opens;
-- route polyline and turn points are visible;
-- ship is an oriented rectangular box with an unambiguous nose arrow;
-- playback shows actual ship + hazard motion;
-- replan/selected/reacquisition/portal markers are visible;
-- viewer reaches the clearance-loss area from the failing composite trace.
-
-After visual inspection, use the trace to fix the monitored topology-resume
-problem; do not weaken navigation clearance or physical limits.
-
-## Next target gate after viewer include/fixture fixes
-
-Pull latest main and rerun the runtime tests plus viewer:
+### 2. Architecture contracts
 
 ```bash
 cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-bash tests/navigation_runtime/run_mingw64.sh || true
-bash tools/navigation_runtime/run_mingw64.sh
+bash tests/architecture_contracts/run_mingw64.sh
 ```
 
-Expected checks:
-- `navigation_runtime_planner` should get past the future-portal route-context fixture;
-- composite should again write a Newtonian trace even if its known clearance assertion remains;
-- viewer should now compile using `glad/include` and open the 770-frame trace;
-- visually inspect the transition from `replan_2 / nominal_clear` into `portal_102`
-  where monitoring currently appears to stop.
-
-## Immediate validation — HUD build/open
-
-Pull latest main and run only the viewer; the existing 770-frame Newtonian trace is
-already present from the target composite run:
+### 3. Runtime tests
 
 ```bash
 cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-bash tools/navigation_runtime/run_mingw64.sh
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
+cmake --build build/tests/navigation_runtime
+ctest --test-dir build/tests/navigation_runtime --output-on-failure
 ```
 
-HUD acceptance:
-- visible top buttons: PLAY/PAUSE, PREV, NEXT, NEXT REPLAN, FIT;
-- buttons respond to left mouse clicks;
-- right panel explains current law/frame/time/phase/status/clearance;
-- `WHAT IS HAPPENING` changes across phases/replans;
-- legend makes every scene color/marker understandable;
-- known `portal_102` failure area is called out during playback.
-
-After HUD acceptance, return to the separate planner-fixture failure
-`fixture must produce a safe adjusted target`, then use the viewer to inspect/fix
-continuous monitoring through the portal-102 leg.
-
-## Developer workflow rule — executable launch command
-
-After every compilation/build instruction that produces an executable, always provide
-a separate, exact command showing how to launch that executable from the documented
-working directory. Do not rely on a build/run helper name alone.
-
-For the navigation runtime viewer, from repository root:
-
-```bash
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/last_trace_newtonian.json
-```
-
-## Immediate target gate — regenerate v2 trace and validate viewer
-
-Run only the composite target and viewer; full 19-test gate is not required for this
-visual iteration.
+Exact new Stage-1 test executable:
 
 ```bash
 cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/tests/navigation_runtime --target navigation_composite_proving_ground_tests
-./build/tests/navigation_runtime/navigation_composite_proving_ground_tests.exe || true
-
-cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/tools/navigation_runtime
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/last_trace_newtonian.json
+./build/tests/navigation_runtime/nominal_route_planner_tests.exe
 ```
 
-Acceptance checks:
-- normal Windows window opens maximized, not exclusive fullscreen;
-- Russian HUD/title render correctly;
-- animation is smooth despite 0.10 s JSON trace cadence;
-- actual Cobra body roll/orientation is preserved;
-- cyan actual nose and magenta program-reference nose can diverge visibly;
-- orientation error is shown numerically;
-- translucent blue AcceptedManeuverProgram tracking corridor is visible;
-- bottom-left Cobra-horizon view shows projected moving-hazard tunnel;
-- Newtonian dynamic bypass no longer continuously aligns body to velocity.
+### 4. Viewer build
 
-After this gate, next architecture task is a reusable live scenario runner so the
-Assisted/Newtonian, pilot skill, Standard/Extreme and obstacle checkbox controls are
-real simulation inputs rather than cosmetic replay toggles.
-
-## Immediate task — target compile and first live calculation
-
-Build the new live navigation stand, launch it with `scenario.json`, select modes and
-press `РАССЧИТАТЬ`.
-
-Build:
 ```bash
 cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
 cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build/tools/navigation_runtime
 ```
 
-Executable launch command:
+Exact viewer executable launch:
+
 ```bash
 cd /d/__elite/work
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-First acceptance checks:
-- program opens maximized as a normal decorated Windows window;
-- top blocks show real Assisted/Newtonian, Expert/Average/Loser, Standard/Extreme;
-- sudden-obstacle checkbox is visible;
-- no trajectory is preloaded from old trace JSON;
-- pressing `РАССЧИТАТЬ` calculates a new route inside the executable;
-- default scenario has no forced ship waypoints; Planner must route around JSON wall;
-- unchecked sudden obstacle never appears;
-- checked sudden obstacle appears only at activation time and causes replanning;
-- final forward/up/speed constraints from JSON are enforced;
-- route, actual path, program tracking corridor, ship attitude and Cobra horizon render;
-- `last_calculated_trace.json` is generated only as calculation output.
+## Visual acceptance for Stage 1
 
-Any compile/runtime failure is the next state-affecting event: record exact target HEAD,
-root cause, patch, and recreate CONTINUE_PROMPT.md.
+With the default wall scenario:
+- the white route starts at START and ends at FINISH;
+- it must detour around the static wall rather than pass through it;
+- Cobra must remain at the start pose; there is no fake flight animation;
+- status must read `СТАТИЧЕСКИЙ МАРШРУТ ГОТОВ`;
+- explanation must explicitly say Stage 1 and that flight is not yet calculated;
+- changing pilot / control law / flight style / sudden-obstacle checkbox must not
+  change the Stage-1 static route.
 
-## Immediate rerun after video diagnosis
-
-Build and rerun the live stand after the dynamic snapshot-age fix and fixed HUD layout.
-
-Build:
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/tools/navigation_runtime
-```
-
-Exact executable launch:
-```bash
-cd /d/__elite/work
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
-```
-
-Immediate checks:
-- status must no longer become `ДАННЫЕ УСТАРЕЛИ` simply because simulation time >0.25 s;
-- no text in the right panel may move vertically when replan/orientation/hazard rows
-  change; absent values occupy their reserved slot as `-`;
-- calculation success/failure must remain visible during playback;
-- default no-sudden-obstacle run must make meaningful route progress.
-
-After this rerun, do NOT declare navigation accepted from the live stand yet.
-Next implementation task: remove the stand-local handcrafted `makeShortProgram` path
-and route planner outputs through the real production physical maneuver
-compile/proof/selection/acceptance chain (B5/B6/B7/B8) before Follower execution.
-
-## Next implementation — stop periodic global replanning
-
-Do not continue polishing the current half-second `NavigationRuntimePlanner::plan()` loop.
-
-Implement the architecture in this order:
-1. Create/cache one nominal global route/corridor for start->finish from the static world.
-2. The corridor product must include a usable geometric centerline/waypoints and clearance/envelope information, not only region/portal IDs.
-3. Recompute that global product only on goal revision change or static-space revision invalidation/change.
-4. Feed the retained nominal corridor to the follower/execution layer.
-5. Feed fresh dynamic snapshots to LocalHorizonPlanner/LocalAvoidancePlanner only.
-6. A moving/sudden obstacle may create a temporary local bypass or braking action; it must not rebuild the global route.
-7. After the conflict, progressively reacquire the retained nominal corridor.
-
-Known gap to solve first: NavigationSpace costed corridor is currently topology/portal based and does not synthesize a geometric route around arbitrary exact obstacles inside a single region. The default JSON wall scenario exposes this gap.
-
-Do not treat 0.25 s snapshot freshness as a global replan timer.
-
-## Terminology correction — corridor vs tunnel
-
-Do not treat the nominal corridor as an exact hull-clearance product.
-
-- Global route/corridor: centerline/polyline + coarse navigation envelope used for
-  route following/testing.
-- Physical tunnel: exact or conservative time-parameterized swept hull volume along an
-  accepted trajectory, including body attitude; this is what must prove wall/aperture
-  clearance.
-
-Next implementation should first cache one global nominal route/corridor start->finish.
-Exact wall-touch feasibility remains downstream in physical maneuver/tunnel proof.
-
-## Next task after evidence audit — build one canonical autonomous E2E chain
-
-Do not spend more time making isolated green tests look like system acceptance.
-
-Required canonical chain:
-`objective/world -> cached global route -> local route-aligned geometry -> B5 physical
-maneuver candidates -> B6 continuous/tunnel proof -> B7 decision -> B8 accepted
-program -> B9/B10 follower -> B12 PilotSkill -> B13 physics -> B11/B14 monitor/replan`.
-
-Rules:
-- global route is built once and retained until goal/static-route invalidation;
-- dynamic obstacle updates feed local monitor/avoidance, not global replanning;
-- no test/local `makeProgram()` or `makeShortProgram()` may substitute for production
-  maneuver generation in the canonical E2E gate;
-- no hand-authored decision candidate may be labeled a production B7 proof;
-- Assisted cannot be claimed production-complete while B5 explicitly reports
-  `UnsupportedControlLaw`;
-- corridor remains a route/test abstraction; exact wall contact belongs to physical
-  tunnel/swept-hull proof;
-- reuse the existing event-driven GameSimulation scheduler/replan semantics instead
-  of inventing a periodic global planner loop.
-
-Before new implementation, preserve existing component tests because they remain useful
-regression tests; reclassify their evidence rather than deleting them.
+Do not begin Stage 2 until this Stage-1 target gate is verified.

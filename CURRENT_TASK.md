@@ -187,3 +187,15 @@ HUD acceptance:
 After HUD acceptance, return to the separate planner-fixture failure
 `fixture must produce a safe adjusted target`, then use the viewer to inspect/fix
 continuous monitoring through the portal-102 leg.
+
+## Developer workflow rule — executable launch command
+
+After every compilation/build instruction that produces an executable, always provide
+a separate, exact command showing how to launch that executable from the documented
+working directory. Do not rely on a build/run helper name alone.
+
+For the navigation runtime viewer, from repository root:
+
+```bash
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/last_trace_newtonian.json
+```

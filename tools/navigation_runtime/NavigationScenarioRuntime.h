@@ -41,6 +41,11 @@ struct ScenarioRunResult
     TraceDocument trace;
 };
 
+// Load only the authored input scene for pre-calculation visualization.
+[[nodiscard]] ScenarioRunResult loadScenarioPreview(
+    const std::string& scenarioJsonPath
+);
+
 [[nodiscard]] ScenarioRunResult calculateScenario(
     const std::string& scenarioJsonPath,
     const ScenarioRunSettings& settings

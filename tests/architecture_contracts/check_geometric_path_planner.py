@@ -103,14 +103,21 @@ try:
             raise AssertionError(f"legacy parallel route engine still exists: {legacy}")
 
 
-    # The identical deterministic backend is compiled into both execution
-    # owners. SpatialComputationPlacement may later choose client-local or
-    # server-shared without changing route geometry.
+    # The deterministic backend is compiled once into the shared
+    # EliteNavigationGeometry library. Client/server runtime layers reuse that
+    # target; duplicating the .cpp in multiple executables is no longer the
+    # ownership contract.
     cmake = text("CMakeLists.txt")
-    if cmake.count("src/world/navigation/GeometricPathPlanner.cpp") < 2:
-        raise AssertionError("GeometricPathPlanner is not available to both client and server")
-    if cmake.count("src/game/navigation/DockingPathPlanner.cpp") < 2:
-        raise AssertionError("DockingPathPlanner is not available to both client and server")
+    if cmake.count("src/world/navigation/GeometricPathPlanner.cpp") != 1:
+        raise AssertionError(
+            "GeometricPathPlanner must be compiled once by EliteNavigationGeometry"
+        )
+    if "add_library(EliteNavigationGeometry STATIC" not in cmake:
+        raise AssertionError("shared EliteNavigationGeometry target is missing")
+    if "PUBLIC EliteNavigationGeometry" not in cmake:
+        raise AssertionError(
+            "Navigation world runtime no longer reuses EliteNavigationGeometry"
+        )
 
     # The dynamic safety snapshot wraps the same canonical physical geometry
     # instead of defining another NavigationObstacle shape/size model.

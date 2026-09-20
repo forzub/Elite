@@ -139,6 +139,7 @@ add_library(EliteNavigationWorldRuntime STATIC
     src/world/navigation/local/LocalHorizonPlanner.cpp
     src/world/navigation/local/LocalAvoidancePlanner.cpp
     src/game/navigation/NavigationRuntimePlanner.cpp
+    src/game/navigation/NominalRoutePlanner.cpp
     src/game/navigation/TrajectoryFollower.cpp
     src/game/navigation/ManeuverProgramSampler.cpp
     src/game/navigation/ManeuverTrackingController.cpp

@@ -8,67 +8,52 @@
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Latest failed final-composite gate
-
-Tested checkout:
+## Latest tested composite checkout
 
 ```
-d57a22f69c3af1a8c967ce974b895295c77dd21a
+18f93e15f3baa5218d459b289ae89beb170f1c54
 ```
 
-Architecture PASS, build PASS, runtime 18/19.
+Architecture PASS, runtime 18/19.
 
-All previous 18 tests remained green.
+Production planner now correctly returns:
+- nominal dynamic conflict = 1;
+- `AdjustedClear`;
+- 20 bounded probes;
+- no static block.
 
-Only failure:
-
-```
-navigation_composite_proving_ground
-composite production planner did not find adjusted dynamic bypass
-```
+The only failure is the test-side physical replacement execution.
 
 ## Diagnosis
 
-The fixture published the hazard only 35 m ahead after 4 seconds of the already accepted law-specific program.
+The old replacement curve:
+- duration 6 s;
+- exit speed 8 m/s;
+- target = production adjusted target.
 
-Production LocalHorizon checks unchanged current kinematics on every candidate. At that distance the hazard can already sit inside the unavoidable closest-approach envelope, so a bounded lateral target is correctly not authorized.
+From the exact live P/V shown by the test, that quintic requires about 5 m/s2 transverse acceleration.
 
-The dynamic invalidation itself is still correct; the synthetic timing/location of the hazard is too late for a recoverable `AdjustedClear`.
+That is not compatible with the 2 m/s2 Cobra manoeuvre authority plus B10 feedback reserve.
+
+So the test was asking physics to execute a route target with an invalid time parameterization.
 
 ## Current candidate
 
 ```
-b57d81e42035f9771ae4feecee56899c4fa4f3f7
+7444c5930586300d6cac48bd4b2fa63b27e96bd6
 ```
 
-Fixture correction:
-- hazard distance: 48 m;
-- hazard radius: 6 m;
-- hazard lateral velocity: -0.50 m/s.
+The test-side replacement authoring now fits duration/exit speed to physical authority.
 
-New hard ordering:
-1. `nominalDynamicConflictsFound > 0`;
-2. status must be `AdjustedClear`;
-3. adjusted target executes and must maintain >0.5 m conservative dynamic clearance.
+Fit gate:
+- peak transverse FF <=1.35 m/s2;
+- minimum planned speed >=0.50 m/s;
+- minimum planned dynamic clearance >=1.50 m;
+- shortest valid candidate from duration 8..32 s and exit speed 4/2 m/s.
 
-New diagnostic:
-
-```
-[COMPOSITE-PLAN]
-```
-
-reports:
-- law;
-- planner status;
-- adjusted flag;
-- nominal conflicts;
-- primary conflict id;
-- probes;
-- ordinary-search exhaustion;
-- static blocked flag;
-- live position/velocity;
-- hazard position;
-- selected target.
+Execution gate:
+- zero tracking-envelope violations;
+- actual dynamic clearance >0.5 m.
 
 ## Target commands
 
@@ -94,21 +79,24 @@ OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
 echo
 echo "===== FINAL COMPOSITE SUMMARY ====="
-grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
 
 echo "$PWD/$OUT"
 ```
 
+Upload the complete log.
+
 ## Exit
 
 If 19/19:
-- accept final composite;
-- close synthetic behavior testing;
-- move into NAV STRESS/game.
+- record exact target checkout + composite metrics;
+- close synthetic behavior lab;
+- next task = real NAV STRESS/game corridor + physical trajectory visualization.
 
 If red:
-- diagnose from `[COMPOSITE-PLAN]`;
-- do not relax tracking, clearance, hull or terminal requirements.
+- compare planned and actual replacement evidence;
+- fix the exact physical/reference seam;
+- do not loosen authority, clearance or terminal requirements.
 
 ## Iteration rule
 

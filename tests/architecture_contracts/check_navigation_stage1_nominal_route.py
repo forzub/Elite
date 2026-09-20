@@ -39,6 +39,9 @@ trace_h = read("tools/navigation_runtime/NavigationTrace.h")
 tool_cmake = read("tools/navigation_runtime/CMakeLists.txt")
 test = read("tests/navigation_runtime/NominalRoutePlannerTests.cpp")
 readme = read("tools/navigation_runtime/README.md")
+scenario_json = read("tools/navigation_runtime/scenario.json")
+trajectory_h = read("src/world/navigation/TrajectoryGenerator.h")
+trajectory_cpp = read("src/world/navigation/TrajectoryGenerator.cpp")
 
 for token in (
     "class NominalRoutePlanner",
@@ -143,6 +146,11 @@ for required in (
     "loadScenarioPreview",
     "setSceneEndpoints",
     "last_route_plan.log",
+    "startAcceleration",
+    "startPitchRateRadPerSec",
+    "startYawRateRadPerSec",
+    "startRollRateRadPerSec",
+    "request.initialAccelerationMps2 = scenario.startAcceleration",
     '"route_ready"',
     '"static_route_ready"',
 ):
@@ -189,6 +197,32 @@ require(
     "NavigationRuntimePlanner.cpp" not in tool_cmake,
     "viewer execution target reintroduced periodic/global runtime planner ownership",
 )
+
+for marker in (
+    '"acceleration"',
+    '"pitch_rate_rad_s"',
+    '"yaw_rate_rad_s"',
+    '"roll_rate_rad_s"',
+):
+    require(marker in scenario_json, f"scenario initial kinematics missing {marker}")
+
+for marker in (
+    "initialAccelerationMps2",
+):
+    require(marker in trajectory_h, f"trajectory request missing {marker}")
+    require(marker in trajectory_cpp, f"trajectory generator ignores {marker}")
+
+require(
+    "vehicle.timeSeconds + 1.0e-9 >=" not in execute,
+    "Stage-2 chunk switching again permits early future-program activation",
+)
+
+for marker in (
+    "PROGRAM_BEFORE_START",
+    "FOLLOWER_OR_TRACKER_INVALID",
+    "FOLLOWER FAIL PROGRAM",
+):
+    require(marker in execute, f"Follower boundary diagnostics missing {marker}")
 
 for marker in (
     "testStaticWallProducesDetour",

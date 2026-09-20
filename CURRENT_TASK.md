@@ -300,3 +300,20 @@ After this rerun, do NOT declare navigation accepted from the live stand yet.
 Next implementation task: remove the stand-local handcrafted `makeShortProgram` path
 and route planner outputs through the real production physical maneuver
 compile/proof/selection/acceptance chain (B5/B6/B7/B8) before Follower execution.
+
+## Next implementation — stop periodic global replanning
+
+Do not continue polishing the current half-second `NavigationRuntimePlanner::plan()` loop.
+
+Implement the architecture in this order:
+1. Create/cache one nominal global route/corridor for start->finish from the static world.
+2. The corridor product must include a usable geometric centerline/waypoints and clearance/envelope information, not only region/portal IDs.
+3. Recompute that global product only on goal revision change or static-space revision invalidation/change.
+4. Feed the retained nominal corridor to the follower/execution layer.
+5. Feed fresh dynamic snapshots to LocalHorizonPlanner/LocalAvoidancePlanner only.
+6. A moving/sudden obstacle may create a temporary local bypass or braking action; it must not rebuild the global route.
+7. After the conflict, progressively reacquire the retained nominal corridor.
+
+Known gap to solve first: NavigationSpace costed corridor is currently topology/portal based and does not synthesize a geometric route around arbitrary exact obstacles inside a single region. The default JSON wall scenario exposes this gap.
+
+Do not treat 0.25 s snapshot freshness as a global replan timer.

@@ -77,7 +77,7 @@ TrajectoryGenerator / RuckigRoutePlanner
 time-parameterized trajectory
         |
         v
-AcceptedManeuverProgram chunks
+AcceptedManeuverProgram route-leg phases
         |
         v
 TrajectoryFollower
@@ -111,7 +111,7 @@ The complete execution trace is written to:
 Diagnostics include:
 - cached Planner route state;
 - Ruckig trajectory result/sample count;
-- maneuver-program chunk count;
+- route-leg program phase count;
 - Follower status;
 - Pilot bridge status;
 - selected pilot / flight style / control law;
@@ -227,10 +227,10 @@ The initial acceleration is passed into the Ruckig route request instead of bein
 hardcoded to zero. This preserves acceleration continuity at the start of a Newtonian
 execution.
 
-## Follower chunk handoff
+## Follower route-phase handoff
 
 The 2026-09-21 target run exposed a real execution bug at the first
-AcceptedManeuverProgram chunk boundary. The route produced 1521 trajectory samples and
+AcceptedManeuverProgram phase boundary. The route produced 1521 trajectory samples and
 102 bounded program chunks; Follower failed after ~24 viewer frames with only ~0.02 m
 tracking error.
 
@@ -241,4 +241,60 @@ comparison. The sampler correctly returned `BeforeStart`, which Follower surface
 
 The scheduler now switches chunks only when current simulation time is actually >= the
 next program acceptance time. Stage-2 diagnostics also record the exact Follower failure
-reason, chunk index, failure time, and chunk accepted-at time.
+reason, phase index, failure time, and phase accepted-at time.
+
+
+## 2026-09-21 test audit: why old green tests did not catch the viewer failure
+
+The previous navigation test matrix did **not** contain the exact chain now exercised by
+the viewer.
+
+The important split is:
+
+- Ruckig route tests validate route-to-trajectory generation and collision safety, but do
+  not execute that trajectory through Follower/PilotSkill/physics.
+- Follower/physics movement tests execute `AcceptedManeuverProgram`, but construct those
+  programs directly in the test. They do not consume raw Ruckig output.
+- Composite tests combine Planner, Follower, PilotSkill and physics, but each physical
+  phase is hand-authored from the current actual vehicle state; Ruckig is not in that
+  chain.
+
+The old execution tests use a small number of meaningful physical phases. A typical
+100 m line is one 16-sample program spanning the whole ~20 s maneuver. A right-angle
+case explicitly executes `leg1 -> rotate -> leg2`, with each next phase accepted at the
+actual current simulation time and advanced by `ManeuverPhaseGate`.
+
+The viewer had introduced a new untested adapter that copied every 16 consecutive 0.05 s
+Ruckig samples into a new program. A 1521-sample trajectory therefore became 102 tiny
+programs. That is not what the passing execution tests validated and is not the intended
+meaning of the fixed 16-sample execution product.
+
+The viewer adapter now follows the tested model:
+- the global route is still calculated exactly once;
+- Ruckig still parameterizes the retained route once;
+- raw Ruckig samples are compressed into one bounded physical program per retained
+  coarse route leg;
+- each program uses up to 16 reference knots spread across the whole leg;
+- `ManeuverPhaseGate` owns phase advancement;
+- the next phase is accepted at the actual current simulation time.
+
+For the current four-point route the expected scale is approximately three execution
+phases, not 102 micro-programs.
+
+A new exact regression `navigation_runtime_pipeline_tests` now runs the same chain as
+the viewer:
+
+```text
+scenario.json
+ -> NominalRoutePlanner
+ -> retained route
+ -> Ruckig trajectory
+ -> route-leg AcceptedManeuverProgram phases
+ -> TrajectoryFollower
+ -> PilotSkill
+ -> SharedShipPhysics/DynamicMotionSystem
+ -> authored finish
+```
+
+The focused navigation script now runs this E2E test after building the viewer. A green
+component matrix alone is no longer sufficient to claim the viewer execution path works.

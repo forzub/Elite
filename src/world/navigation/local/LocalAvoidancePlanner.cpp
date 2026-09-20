@@ -256,10 +256,18 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         query.avoidance.primaryDeflectionRadians;
 
     const Vec3d continuityDirection =
-        normalizedOr(
-            query.horizon.agent.velocityMapMetersPerSecond,
-            forward
-        );
+        query.preferredDirectionValid
+            ? normalizedOr(
+                  query.preferredDirectionMap,
+                  normalizedOr(
+                      query.horizon.agent.velocityMapMetersPerSecond,
+                      forward
+                  )
+              )
+            : normalizedOr(
+                  query.horizon.agent.velocityMapMetersPerSecond,
+                  forward
+              );
 
     for (double deflection =
              query.avoidance.primaryDeflectionRadians;

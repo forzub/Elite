@@ -1599,7 +1599,18 @@ void drawHud(
         );
 
         appendUiText(
-            ui, x, 208.0f,
+            ui,
+            x,
+            194.0f,
+            "ИТОГ РАСЧЁТА: " + state.calculationMessage,
+            1.15f,
+            state.calculationMessage == "РАСЧЁТ ЗАВЕРШЁН"
+                ? glm::vec3(0.35f,1.0f,0.42f)
+                : glm::vec3(1.0f,0.55f,0.10f)
+        );
+
+        appendUiText(
+            ui, x, 226.0f,
             "ЧТО ПРОИСХОДИТ",
             1.55f,
             {1.0f,0.82f,0.32f}
@@ -1607,20 +1618,20 @@ void drawHud(
         appendUiText(
             ui,
             x,
-            234.0f,
+            252.0f,
             currentExplanation(frame),
             1.30f,
             {0.96f,0.96f,0.96f}
         );
 
         appendUiText(
-            ui, x, 290.0f,
+            ui, x, 308.0f,
             "ЛЕГЕНДА",
             1.55f,
             {0.92f,0.92f,1.0f}
         );
 
-        float legendY = 316.0f;
+        float legendY = 334.0f;
         auto legend =
             [&](const glm::vec3& color, const std::string& label)
             {
@@ -1654,31 +1665,31 @@ void drawHud(
         legend({1.0f,0.45f,0.05f}, "ПЕРЕПЛАНИРОВАНИЕ");
 
         appendUiText(
-            ui, x, 538.0f,
+            ui, x, 556.0f,
             "УПРАВЛЕНИЕ",
             1.55f,
             {0.92f,0.92f,1.0f}
         );
         appendUiText(
-            ui, x, 564.0f,
+            ui, x, 582.0f,
             "ПКМ ВРАЩЕНИЕ   СКМ СДВИГ",
             1.25f,
             {0.75f,0.78f,0.84f}
         );
         appendUiText(
-            ui, x, 580.0f,
+            ui, x, 598.0f,
             "КОЛЕСО МАСШТАБ  SPACE ПУСК",
             1.25f,
             {0.75f,0.78f,0.84f}
         );
         appendUiText(
-            ui, x, 596.0f,
+            ui, x, 614.0f,
             "[ ] КАДР   R СЛЕД. ПЕРЕПЛАН",
             1.25f,
             {0.75f,0.78f,0.84f}
         );
         appendUiText(
-            ui, x, 612.0f,
+            ui, x, 630.0f,
             "F ВПИСАТЬ   ESC ЗАКРЫТЬ",
             1.25f,
             {0.75f,0.78f,0.84f}

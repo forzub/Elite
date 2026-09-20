@@ -7,133 +7,100 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 ## Accepted exact target baseline
 
 ```
-a0f0991791665e30059be15efc47dedcdfafe090
+3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Latest target result
+Evidence:
+- Stage-12 architecture contract PASS;
+- navigation_runtime 18/18 PASS;
+- chained transition + physical-limit matrix PASS.
 
-Tested:
-```
-350f7d593e22b8b89cb3ae4dbfbfbb7fbb53ea03
-```
+## Chained acceptance
 
-Results:
-- architecture PASS;
-- build PASS;
-- runtime 17/18;
-- only chained-limit Assisted phase 3 failed.
-
-Newtonian chain:
-- 4/4;
-- no state resets at seams;
-- max slip 34.49 deg;
-- hull 17.43 m inside 25 m;
-- final P 0.0246 m;
-- final speed 0.0250 m/s;
-- final attitude 0.0286 deg;
-- zero tracking violations.
-
-Assisted phase 3:
-- entry slip 1.579 deg;
-- max slip after 1 s 25.789 deg;
-- final slip 25.789 deg;
-- final forward error 25.965 deg;
-- tracking exceeded 171 ticks.
-
-This proves a phase-3 reference/control defect, not inherited transient.
-
-## Root cause
-
-The test reference builder reconstructed full body basis from velocity tangent plus a fixed world-up seed.
-
-At `abs(dot(forward,Y)) > 0.92` it switched the seed from Y to X.
-
-The forward tangent remained continuous, but right/up jumped in roll.
-
-B10 tracks full SO(3) attitude:
-- forward;
-- right;
-- up.
-
-Therefore the basis discontinuity became a real angular command.
-
-## Current unverified fix
-
-```
-b8eb4641b013692c773d087d6cad96756c672b3c
-```
-
-Aligned moving reference now uses a parallel-transport/Bishop frame:
-- carry previous right;
-- project it into the new tangent-normal plane;
-- rebuild up continuously;
-- preserve roll continuity.
-
-At terminal sample:
-- requested terminal forward is pinned;
-- transported roll is preserved.
-
-Exact terminal roll/up orientation for docking/attachment/placement must be authored explicitly as a separate attitude-capture profile.
-
-No tracking gains or acceptance tolerances changed.
-
-## Acceptance criteria
-
-Assisted aligned phase:
-- max slip after 1 s <=8 deg;
-- final slip <=4 deg.
-
-Whole chain:
+Newtonian:
 - 4/4 phases;
-- zero tracking-envelope violations;
-- no P/V/attitude/omega seam reset;
-- full hull <=25 m;
-- strict final capture.
+- no P/V/q/omega seam reset;
+- max slip 35.114714 deg;
+- hull half-width 17.419551 m / 25 m;
+- final P 0.024611 m;
+- final speed 0.024960 m/s;
+- final forward 0.029227 deg;
+- tracking exceeded 0.
 
-Negative/limit contracts must then all execute:
-- insufficient turn horizon rejection;
-- insufficient braking room rejection;
-- rigid-hull corridor rejection;
-- law-incompatible candidate rejection;
-- dynamic-hazard invalidation.
+Assisted:
+- 4/4 phases;
+- no seam reset;
+- aligned phase max slip 1.139399 deg;
+- max chain slip 1.934322 deg;
+- hull 17.419551 m / 25 m;
+- final P 0.024611 m;
+- final speed 0.024960 m/s;
+- final forward 0.035921 deg;
+- tracking exceeded 0.
 
-## Validation
+Negative contracts all PASS:
+- insufficient turn horizon -> NoPhysicalCandidate;
+- stopping reserve 110 m > 60 m available -> reject;
+- Cobra needs 13.238202 m half-width > 12 m available -> reject;
+- Assisted cannot select all-NewtonianOnly candidate population;
+- dynamic hazard -> immediate LocalHorizon replan, old accepted execution stops.
 
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
+## Current task
 
-OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
+Build the **single final composite end-to-end laboratory proving ground**.
 
-{
-    echo "===== TESTED HEAD ====="
-    git rev-parse HEAD
+This is the last synthetic navigation behavior gate.
 
-    echo
-    echo "===== ARCHITECTURE CONTRACT ====="
-    python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+## Composite scenario requirements
 
-    echo
-    echo "===== NAVIGATION RUNTIME ====="
-    bash tests/navigation_runtime/run_mingw64.sh
-} 2>&1 | tee "$OUT"
+One uninterrupted expert scenario for Newtonian and Assisted must combine:
+- authoritative-style static topology/obstacles;
+- wide then narrow passage pressure;
+- acceleration and hard moving turn;
+- B7 doctrine/control-law-dependent physical alternative;
+- B8 accepted physical program;
+- B9/B10 follower/tracking;
+- PilotSkill;
+- SharedShipPhysics/DynamicMotionSystem;
+- a dynamic hazard appearing while a program is already accepted;
+- NavigationExecutionReplanPolicy invalidating that obsolete program;
+- replacement program from actual current state, with no reset;
+- final precision P/V/attitude capture.
 
-echo
-echo "===== CHAIN/LIMIT SUMMARY ====="
-grep -E '\[CHAIN-PHASE\]|\[CHAIN\]|\[LIMIT\]|MANEUVER CHAINED/LIMIT|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+Use production components directly wherever available. Do not write a second fake production planner inside the test.
 
-echo "$PWD/$OUT"
-```
+## Output
 
-## Next
+One `[COMPOSITE]` row per law:
+- law;
+- doctrine / selected family;
+- phases;
+- replans;
+- invalidation reason;
+- minimum full-hull clearance;
+- maximum slip;
+- tracking exceeded ticks;
+- terminal P/V/forward error;
+- total simulated seconds.
 
-If 18/18:
-- accept chained transitions + negative/limit block;
-- build one final composite laboratory proving ground.
+## Final lab acceptance
 
-If still red:
-- inspect angular feed-forward derivation from transported quaternion samples;
-- do not loosen criteria.
+If this composite passes on exact target-machine checkout:
+- record exact tested HEAD;
+- declare laboratory maneuver behavior testing complete;
+- next task becomes in-game NAV STRESS trajectory/corridor visualization and live behavior review.
+
+Do not continue inventing synthetic maneuver matrices after that unless a real game defect requires a focused regression.
+
+## Architecture nuance
+
+A green final lab does not magically close remaining production migration/generalization work:
+- B1/B2/B3/B4;
+- full B5 Assisted/general compiler;
+- generalized B6 ownership;
+- explicit B11 bounded reflex;
+- final ordinary-live B7-B10 seam retirement.
+
+Those are implementation/integration tasks, not reasons to keep extending the isolated maneuver laboratory.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

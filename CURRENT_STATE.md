@@ -8,134 +8,79 @@
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-Accepted target evidence:
+Accepted:
 - Stage-12 architecture contract PASS;
 - navigation_runtime 18/18 PASS;
 - chained transition + physical-limit matrix PASS.
 
-## Closed laboratory blocks
+## Latest target-machine final-composite attempt
 
-Accepted:
-- StopTurnGo / RadiusTurn / DriftTurn;
-- long moving attitude;
-- full Cobra rigid-body corridor;
-- non-orthogonal 3D route;
-- continuous 3D fly-through;
-- speed/doctrine select -> real execution;
-- chained cross-family execution with no P/V/q/omega reset;
-- StateCapture terminal semantics;
-- fail-closed turn/braking/hull/law/invalidation limits.
-
-## Current unverified candidate: FINAL composite proving ground
-
-New source:
+Exact tested checkout:
 
 ```
-tests/navigation_runtime/NavigationCompositeProvingGroundTests.cpp
+d57a22f69c3af1a8c967ce974b895295c77dd21a
 ```
 
-CTest:
+Results:
+- architecture contract PASS;
+- build PASS;
+- navigation runtime 18/19;
+- all previously accepted 18 tests remain PASS;
+- only `navigation_composite_proving_ground` failed.
+
+Failure:
 
 ```
-navigation_composite_proving_ground
+composite production planner did not find adjusted dynamic bypass
 ```
 
-Expected full runtime suite: **19 tests**.
+## Root cause
 
-Candidate commits:
-- `ecef36520a0957300b70f1469fcd47d209dcb7e0` — initial composite test;
-- `9a74a03845003a302db38ec2102c5d688e7c214b` — Assisted control-mode enum correction;
-- `0eaf1b5faddef336d4110d9b306f609cef5b0a8c` — CMake registration;
-- `753d6027b76c99498132a0e4f8ecf533cf7cbcbe` — verbose runner integration.
+The final composite fixture introduced the dynamic hazard only 35 m ahead of the live vehicle while the actor was already moving materially toward the same bounded horizon.
 
-## Composite scenario
+Production `LocalHorizonPlanner` evaluates two independent dynamic safety conditions:
+1. unchanged current kinematics over the physical look-ahead;
+2. bounded requested corridor.
 
-For Newtonian and Assisted, one uninterrupted expert vehicle run exercises:
+Every local avoidance probe reuses the same current kinematic state. Therefore, when the hazard is already inside the unavoidable closest-approach envelope, every lateral candidate correctly remains `ConflictHold`.
 
-1. **Exact static blockage + production topology**
-   - direct start -> final exact-static segment is blocked by `composite_static_wall`;
-   - production `NavigationSpace/NavigationRuntimePlanner` selects a two-portal detour;
-   - first portal is wide.
+This is not evidence that `NavigationRuntimePlanner` cannot generate `AdjustedClear`. The fixture triggered invalidation too late.
 
-2. **Physical execution to first portal**
-   - B8 AcceptedManeuverProgram;
-   - B9/B10 follower/tracking;
-   - PilotSkill;
-   - SharedShipPhysics/DynamicMotionSystem.
+## Current unverified fix candidate
 
-3. **B7 Extreme law-specific choice**
-   - Newtonian may select faster `DriftPass`;
-   - Assisted must filter NewtonianOnly drift and select aligned `PrecisionTransit`.
+Code commit:
 
-4. **Mid-program dynamic invalidation**
-   - only a prefix of the selected program executes;
-   - a new NavigationMap dynamic actor is published ahead;
-   - production `NavigationExecutionReplanPolicy` must return immediate LocalHorizon / DynamicHazardInvalidated;
-   - obsolete accepted program is not allowed to continue.
+```
+b57d81e42035f9771ae4feecee56899c4fa4f3f7
+```
 
-5. **Production dynamic local bypass**
-   - the new hazard is published through real `NavigationMap`;
-   - `NavigationRuntimePlanner` must detect nominal dynamic conflict and return `AdjustedClear`;
-   - replacement physical program starts from the actual live state at invalidation; no reset.
+Changes:
+- dynamic hazard appears 48 m ahead instead of 35 m;
+- hazard radius reduced from 8 m to 6 m;
+- lateral hazard velocity reduced from -0.75 to -0.50 m/s;
+- nominal route must still report at least one dynamic conflict;
+- only then may `AdjustedClear` satisfy the test;
+- added `[COMPOSITE-PLAN]` diagnostics with planner status, nominal conflicts, probe count, search exhaustion, static block state, P/V, hazard position and selected target.
 
-6. **Narrow second portal**
-   - route resumes the original static topology;
-   - full Cobra hull must fit a 19 m half-width passage;
-   - centerline-only acceptance is insufficient.
+The acceptance requirement is not weakened:
+- hazard must still invalidate the old accepted program;
+- production planner must still see a nominal dynamic conflict;
+- production planner must produce a real adjusted safe target;
+- replacement execution must clear the hazard physically.
 
-7. **Final precision StateCapture**
-   - final P/V/attitude capture at the objective.
+## Current active gate
 
-## Composite strict checks
+Final composite end-to-end proving ground remains open.
 
-Per law:
-- expected B7 family:
-  - Newtonian -> DriftPass;
-  - Assisted -> PrecisionTransit;
-- exactly one dynamic-hazard replan;
-- zero tracking-envelope exceeded ticks;
-- conservative full-hull static clearance > 0.5 m;
-- conservative dynamic-hazard clearance > 0.5 m;
-- narrow passage full-hull envelope <= 19 m;
-- final P <= 1.0 m;
-- final speed <= 0.60 m/s;
-- final forward error <= 4 deg;
-- Newtonian material slip >=15 deg;
-- Assisted total max slip <=8 deg.
+Expected suite remains **19 tests**.
 
-Output:
-`[COMPOSITE]` per law with family, phases, replan, clearances, hull, slip, tracking and terminal metrics.
+If the candidate passes:
+- synthetic maneuver behavior laboratory closes;
+- next primary task moves into real NAV STRESS/game trajectory/corridor visualization and live behavior review.
 
-## Important honesty boundary
-
-The composite uses production:
-- NavigationSpace;
-- NavigationRuntimePlanner;
-- NavigationMap;
-- ManeuverDecisionController;
-- NavigationExecutionReplanPolicy;
-- AcceptedManeuverProgram execution path;
-- B9/B10;
-- PilotSkill;
-- authoritative ship physics.
-
-However physical time-program authoring in this final laboratory fixture is still test-side.
-
-Reason:
-- full production B5 Assisted/general-family compiler migration remains explicitly incomplete.
-
-Therefore a green final composite will close **synthetic maneuver behavior testing**, not falsely claim all B1-B6/B11 production migration is complete.
-
-## If final composite passes
-
-Laboratory maneuver behavior testing is closed.
-
-Next task becomes actual game/NAV STRESS:
-- visualize accepted corridor;
-- visualize accepted physical trajectory/tunnel;
-- run real NPC/autopilot;
-- inspect behavior visually;
-- create focused regressions only for real defects found there.
+If it fails:
+- `[COMPOSITE-PLAN]` must identify whether the result is ConflictHold, StaticHold, NominalClear or another planner state;
+- fix the scenario/mechanism honestly, without weakening physical clearance or terminal criteria.
 
 ## Documentation protocol
 

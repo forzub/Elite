@@ -852,6 +852,160 @@ double conservativeDynamicClearance(
         (kHullBoundingRadiusMeters + hazard.radiusMeters);
 }
 
+
+struct ReplacementFit
+{
+    bool valid = false;
+    Program program {};
+    double durationSeconds = 0.0;
+    double exitSpeedMps = 0.0;
+    double peakTransverseAccelerationMps2 = 0.0;
+    double minimumPlannedSpeedMps =
+        std::numeric_limits<double>::infinity();
+    double minimumPlannedDynamicClearanceMeters =
+        std::numeric_limits<double>::infinity();
+};
+
+ReplacementFit fitAuthorityBoundedReplacement(
+    const Vehicle& v,
+    const glm::dvec3& target,
+    const DynamicHazard& hazard
+)
+{
+    constexpr double MaximumTransverseFeedForwardMps2 = 1.35;
+    constexpr double MinimumPlannedSpeedMps = 0.50;
+    constexpr double MinimumPlannedDynamicClearanceMeters = 1.50;
+    constexpr int DenseSamples = 768;
+
+    const VehicleState start = captureState(v);
+    const glm::dvec3 delta = target - start.position;
+    const double distance = glm::length(delta);
+    if (distance <= 5.0)
+        return {};
+
+    const glm::dvec3 direction = delta / distance;
+
+    // Prefer the shortest physically bounded pass.  Try a modest 4 m/s exit
+    // first, then a slower 2 m/s pass when that avoids near-zero-speed or
+    // transverse-authority pathologies.  This helper is deliberately local to
+    // the final lab: production B5 Assisted/general authoring is still a known
+    // migration gap.
+    for (int durationSeconds = 8;
+         durationSeconds <= 32;
+         ++durationSeconds)
+    {
+        for (double exitSpeedMps : {4.0, 2.0})
+        {
+            const glm::dvec3 endVelocity =
+                direction * exitSpeedMps;
+            const QuinticCurve curve =
+                makeCurve(
+                    start.position,
+                    start.velocity,
+                    target,
+                    endVelocity,
+                    static_cast<double>(durationSeconds)
+                );
+
+            double peakTransverse = 0.0;
+            double minimumSpeed =
+                std::numeric_limits<double>::infinity();
+            double minimumDynamicClearance =
+                std::numeric_limits<double>::infinity();
+
+            for (int i = 0; i <= DenseSamples; ++i)
+            {
+                const double t =
+                    static_cast<double>(durationSeconds) *
+                    static_cast<double>(i) /
+                    static_cast<double>(DenseSamples);
+
+                glm::dvec3 position;
+                glm::dvec3 velocity;
+                glm::dvec3 acceleration;
+                sampleCurve(
+                    curve,
+                    t,
+                    position,
+                    velocity,
+                    acceleration
+                );
+
+                const double speed = glm::length(velocity);
+                minimumSpeed = std::min(minimumSpeed, speed);
+
+                if (speed > 1.0e-9)
+                {
+                    const glm::dvec3 tangent = velocity / speed;
+                    const glm::dvec3 transverse =
+                        acceleration -
+                        tangent *
+                            glm::dot(acceleration, tangent);
+                    peakTransverse =
+                        std::max(
+                            peakTransverse,
+                            glm::length(transverse)
+                        );
+                }
+
+                const glm::dvec3 hazardPosition =
+                    dynamicHazardPosition(
+                        hazard,
+                        v.timeSeconds + t
+                    );
+                minimumDynamicClearance =
+                    std::min(
+                        minimumDynamicClearance,
+                        glm::length(position - hazardPosition) -
+                            (kHullBoundingRadiusMeters +
+                             hazard.radiusMeters)
+                    );
+            }
+
+            if (peakTransverse >
+                    MaximumTransverseFeedForwardMps2 ||
+                minimumSpeed < MinimumPlannedSpeedMps ||
+                minimumDynamicClearance <
+                    MinimumPlannedDynamicClearanceMeters)
+            {
+                continue;
+            }
+
+            const Basis terminal =
+                transportedBasisForForward(
+                    endVelocity,
+                    start.basis
+                );
+
+            ReplacementFit result;
+            result.valid = true;
+            result.durationSeconds =
+                static_cast<double>(durationSeconds);
+            result.exitSpeedMps = exitSpeedMps;
+            result.peakTransverseAccelerationMps2 =
+                peakTransverse;
+            result.minimumPlannedSpeedMps = minimumSpeed;
+            result.minimumPlannedDynamicClearanceMeters =
+                minimumDynamicClearance;
+            result.program =
+                makeProgram(
+                    12020,
+                    v.timeSeconds,
+                    start,
+                    target,
+                    endVelocity,
+                    terminal,
+                    result.durationSeconds,
+                    OrientationMode::VelocityAligned,
+                    Program::ManeuverFamily::PrecisionTransit
+                );
+            return result;
+        }
+    }
+
+    return {};
+}
+
 struct ExecutionMetrics
 {
     bool valid = true;
@@ -1679,52 +1833,68 @@ CompositeMetrics runComposite(Law law)
     );
 
     // Phase 3: replacement program starts from the actual invalidation state.
+    // Do not invent a short curve that the 2 m/s2 transverse authority cannot
+    // follow. Fit the test-side time program to the same live P/V and keep
+    // explicit B10 feedback reserve.
     {
-        const VehicleState start = captureState(v);
-        const glm::dvec3 delta =
-            adjusted.selectedTargetMapMeters - start.position;
-        require(
-            glm::length(delta) > 5.0,
-            "composite adjusted target too close for replacement phase"
-        );
-
-        const glm::dvec3 endVelocity =
-            glm::normalize(delta) * 8.0;
-        const Basis terminal =
-            transportedBasisForForward(
-                endVelocity,
-                start.basis
-            );
-        const double duration =
-            std::max(
-                6.0,
-                glm::length(delta) / 8.0 * 1.5
-            );
-
-        const Program replacement =
-            makeProgram(
-                12020,
-                v.timeSeconds,
-                start,
-                adjusted.selectedTargetMapMeters,
-                endVelocity,
-                terminal,
-                duration,
-                OrientationMode::VelocityAligned,
-                Program::ManeuverFamily::PrecisionTransit
-            );
-
-        const auto phase =
-            executeProgram(
+        const ReplacementFit fit =
+            fitAuthorityBoundedReplacement(
                 v,
-                replacement,
-                Gate::Mode::ScheduledMoving,
+                adjusted.selectedTargetMapMeters,
                 hazard
             );
 
         require(
+            fit.valid,
+            "composite could not author an authority-bounded replacement program"
+        );
+
+        std::cout
+            << std::fixed << std::setprecision(6)
+            << "[COMPOSITE-REPLACEMENT]"
+            << " law=" << lawName(law)
+            << " duration_s=" << fit.durationSeconds
+            << " exit_speed_mps=" << fit.exitSpeedMps
+            << " peak_transverse_ff_mps2="
+            << fit.peakTransverseAccelerationMps2
+            << " min_planned_speed_mps="
+            << fit.minimumPlannedSpeedMps
+            << " min_planned_dynamic_clearance_m="
+            << fit.minimumPlannedDynamicClearanceMeters
+            << "\n";
+
+        const auto phase =
+            executeProgram(
+                v,
+                fit.program,
+                Gate::Mode::ScheduledMoving,
+                hazard
+            );
+
+        std::cout
+            << std::fixed << std::setprecision(6)
+            << "[COMPOSITE-REPLACEMENT-ACTUAL]"
+            << " law=" << lawName(law)
+            << " min_dynamic_clearance_m="
+            << phase.minDynamicClearanceMeters
+            << " max_slip_deg=" << phase.maxSlipDeg
+            << " max_forward_error_deg="
+            << phase.maxForwardErrorDeg
+            << " tracking_exceeded_ticks="
+            << phase.trackingExceededTicks
+            << " final_pos_error_m="
+            << phase.finalPositionErrorMeters
+            << " final_vel_error_mps="
+            << phase.finalVelocityErrorMps
+            << "\n";
+
+        require(
             phase.valid && phase.completed,
             "composite replacement program failed"
+        );
+        require(
+            phase.trackingExceededTicks == 0,
+            "composite replacement exceeded tracking envelope"
         );
         require(
             phase.minDynamicClearanceMeters > 0.5,

@@ -6,7 +6,11 @@
 #include <algorithm>
 #include <cstdint>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -433,6 +437,106 @@ TraceFrame routeFrame(
     return frame;
 }
 
+std::string formatVec3(const glm::dvec3& value)
+{
+    std::ostringstream out;
+    out.setf(std::ios::fixed);
+    out << std::setprecision(2)
+        << "("
+        << value.x << ", "
+        << value.y << ", "
+        << value.z << ")";
+    return out.str();
+}
+
+std::vector<std::string> previewDiagnostics(
+    const Scenario& scenario
+)
+{
+    return {
+        "SCENE: LOADED",
+        "PLANNER: NOT RUN",
+        "FOLLOWER: NOT RUN (STAGE 1)",
+        "START: " + formatVec3(scenario.startPosition),
+        "FINISH: " + formatVec3(scenario.finish.position),
+        "STATIC OBSTACLES: " +
+            std::to_string(scenario.staticObstacles.size()),
+        "DYNAMIC INPUTS RESERVED: " +
+            std::to_string(
+                scenario.dynamicObstacles.size() +
+                (scenario.hasSuddenObstacle ? 1u : 0u)
+            )
+    };
+}
+
+std::vector<std::string> routeDiagnostics(
+    const Scenario& scenario,
+    const game::navigation::NominalRoutePlanner::Plan& route
+)
+{
+    std::ostringstream length;
+    length.setf(std::ios::fixed);
+    length << std::setprecision(2) << route.lengthMeters;
+
+    std::vector<std::string> lines {
+        "SCENE: LOADED",
+        std::string("PLANNER: ") + (route.valid ? "OK" : "FAIL"),
+        "FOLLOWER: NOT RUN (STAGE 1)",
+        "START: " + formatVec3(scenario.startPosition),
+        "FINISH: " + formatVec3(scenario.finish.position),
+        "STATIC OBSTACLES: " +
+            std::to_string(scenario.staticObstacles.size()),
+        "REQUIRED WAYPOINTS: " +
+            std::to_string(scenario.shipRoutePoints.size()),
+        "ROUTE POINTS: " +
+            std::to_string(route.pointsMapMeters.size()),
+        "ROUTE LENGTH: " + length.str() + " M",
+        std::string("STATIC DETOUR: ") +
+            (route.staticDetourUsed ? "YES" : "NO"),
+        "GOAL REVISION: " +
+            std::to_string(route.goalRevision),
+        "STATIC WORLD REVISION: " +
+            std::to_string(route.staticWorldRevision)
+    };
+
+    if (!route.message.empty())
+        lines.push_back("PLANNER MESSAGE: " + route.message);
+
+    return lines;
+}
+
+void writeRouteDiagnostics(
+    const std::string& scenarioJsonPath,
+    const std::vector<std::string>& diagnostics
+)
+{
+    const std::filesystem::path scenarioPath(scenarioJsonPath);
+    const std::filesystem::path output =
+        scenarioPath.parent_path() / "last_route_plan.log";
+
+    std::ofstream stream(output);
+    if (!stream)
+        throw std::runtime_error(
+            "cannot write route diagnostics: " + output.string()
+        );
+
+    for (const auto& line : diagnostics)
+    {
+        stream << line << "\n";
+        std::cout << "[NAV-STAGE1] " << line << "\n";
+    }
+}
+
+void setSceneEndpoints(
+    TraceDocument& trace,
+    const Scenario& scenario
+)
+{
+    trace.hasSceneEndpoints = true;
+    trace.sceneStartMapMeters = scenario.startPosition;
+    trace.sceneFinishMapMeters = scenario.finish.position;
+}
+
 } // namespace
 
 ScenarioRunResult loadScenarioPreview(
@@ -449,6 +553,7 @@ ScenarioRunResult loadScenarioPreview(
         trace.version = 2;
         trace.law = "newtonian";
         trace.shipHalfExtentsMeters = kBodyHalfExtents;
+        setSceneEndpoints(trace, scenario);
 
         for (const auto& obstacle : scenario.staticObstacles)
             trace.staticObstacles.push_back(traceObstacle(obstacle));
@@ -463,6 +568,7 @@ ScenarioRunResult loadScenarioPreview(
         out.trace = std::move(trace);
         out.success = true;
         out.message = "СЦЕНА ЗАГРУЖЕНА — МАРШРУТ ЕЩЁ НЕ РАССЧИТАН";
+        out.diagnostics = previewDiagnostics(scenario);
     }
     catch (const std::exception& e)
     {
@@ -525,6 +631,7 @@ ScenarioRunResult calculateScenario(
                 ? "newtonian"
                 : "assisted";
         trace.shipHalfExtentsMeters = kBodyHalfExtents;
+        setSceneEndpoints(trace, scenario);
 
         for (const auto& obstacle : scenario.staticObstacles)
             trace.staticObstacles.push_back(traceObstacle(obstacle));
@@ -543,6 +650,12 @@ ScenarioRunResult calculateScenario(
         }
 
         trace.frames.push_back(routeFrame(scenario, route.valid));
+
+        out.diagnostics = routeDiagnostics(scenario, route);
+        writeRouteDiagnostics(
+            scenarioJsonPath,
+            out.diagnostics
+        );
 
         out.trace = std::move(trace);
         out.success = route.valid;

@@ -845,17 +845,74 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
                 glm::normalize(sample.velocityMps);
         }
 
-        if (i + 1 == trajectory.samples.size() &&
-            scenario.finish.requireForward)
-        {
-            requestedForward = scenario.finish.forward;
-        }
-
-        const Basis desired =
+        Basis desired =
             transportedBasisForForward(
                 requestedForward,
                 previous
             );
+
+        // Final orientation is a Stage-2 execution requirement. Blend toward
+        // it before the last sample so the follower receives a physically
+        // trackable attitude program rather than an instantaneous terminal
+        // snap.
+        if (
+            scenario.finish.requireForward ||
+            scenario.finish.requireUp)
+        {
+            constexpr double kTerminalBlendMeters = 35.0;
+            const double remaining =
+                glm::length(
+                    scenario.finish.position -
+                    sample.positionMeters
+                );
+            const double u =
+                std::clamp(
+                    1.0 - remaining / kTerminalBlendMeters,
+                    0.0,
+                    1.0
+                );
+            const double blend =
+                u * u * (3.0 - 2.0 * u);
+
+            const glm::dvec3 terminalForward =
+                scenario.finish.requireForward
+                    ? normalizedOr(
+                        scenario.finish.forward,
+                        desired.forward
+                      )
+                    : desired.forward;
+            const glm::dvec3 terminalUp =
+                scenario.finish.requireUp
+                    ? normalizedOr(
+                        scenario.finish.up,
+                        desired.up
+                      )
+                    : desired.up;
+
+            const Basis terminalBasis =
+                basisFromForwardUp(
+                    terminalForward,
+                    terminalUp
+                );
+
+            glm::dquat motionQ =
+                quaternionForBasis(desired);
+            glm::dquat terminalQ =
+                quaternionForBasis(terminalBasis);
+            if (glm::dot(motionQ, terminalQ) < 0.0)
+                terminalQ = -terminalQ;
+
+            desired =
+                basisFromQuaternion(
+                    glm::normalize(
+                        glm::slerp(
+                            motionQ,
+                            terminalQ,
+                            blend
+                        )
+                    )
+                );
+        }
 
         glm::dquat desiredQ = quaternionForBasis(desired);
         if (glm::dot(previousQ, desiredQ) < 0.0)

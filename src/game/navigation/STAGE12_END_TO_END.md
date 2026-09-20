@@ -6140,3 +6140,27 @@ Regression changes:
 
 This candidate is UNVERIFIED until a fresh target-machine architecture/runtime
 gate is supplied.
+
+
+### Composite physical-authoring fallback
+
+The final composite previously failed immediately when
+`fitAuthorityBoundedReplacement()` could not author the geometric bypass
+inside ship authority. That contradicted the runtime contract.
+
+The test now treats that state as:
+
+```text
+geometric bypass exists
+    -> physical authoring succeeds -> execute bypass
+    -> physical authoring fails    -> active braking
+                                      keep hazard/world truth
+                                      replan again
+```
+
+The braking path crosses the real `NavigationRuntimeControlBridge`,
+`SharedShipPhysics`, and `DynamicMotionSystem`; it is not a test-side teleport
+or navigation shutdown.
+
+Current unverified code baseline before documentation sync:
+`abfd7a6a26168f177968f0dd4299f3c712105fc0`.

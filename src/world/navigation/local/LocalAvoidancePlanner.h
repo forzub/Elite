@@ -108,6 +108,12 @@ public:
         std::size_t sameBranchSafeCandidates = 0;
         double selectedBranchAlignment = 0.0;
 
+        // True only when an accepted transverse branch existed, no safe
+        // candidate remains on that branch, but a safe adjusted target exists
+        // on another branch. Higher maneuver ownership must recover/brake
+        // before accepting that discontinuous branch change.
+        bool branchSwitchRequired = false;
+
         // Exact static blocker that rejected the nominal bounded segment.
         // This is independent from NavigationMap dynamic conflict identity.
         std::string nominalStaticObstacleId;

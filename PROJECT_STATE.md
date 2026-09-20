@@ -11,47 +11,63 @@
 
 ## Final composite progress
 
-Latest target:
+Latest tested checkout:
 ```
-18f93e15f3baa5218d459b289ae89beb170f1c54
+852e5a71a71625cdfc0c71a6bb89724d2194990e
 ```
 
-The production dynamic-planning part is now proven inside the composite:
-- real NavigationMap candidate;
-- nominal dynamic conflict witness;
-- Bounded LocalAvoidance;
-- `AdjustedClear`;
-- selected adjusted target.
+The following are now demonstrated inside the final composite:
+- production static topology detour;
+- B7 law filtering/selection;
+- dynamic hazard invalidation;
+- production `AdjustedClear`;
+- authority-bounded replacement authoring;
+- replacement execution with actual 3.175 m conservative hazard clearance;
+- zero tracking-envelope violations;
+- centimeter-level replacement terminal position error.
 
-The remaining failure is downstream in test-side physical time-program authoring.
+## Latest composite defect
+
+World truth diverged after the first local bypass.
+
+The test erased dynamic publication by calling `emptyDynamic()`, but execution still propagated the same moving hazard.
+
+That made later route planning inconsistent with physical safety measurement.
 
 ## Current correction
 
 ```
-7444c5930586300d6cac48bd4b2fa63b27e96bd6
+6c0a71d308040c568c109afc4425332021ade730
+01a8d69cc635a450d73a49a31b91e5546e0b1828
 ```
 
-Instead of a fixed 6 s / 8 m/s quintic, replacement authoring now fits the live P/V -> adjusted-target curve to:
-- transverse feed-forward <=1.35 m/s2;
-- minimum speed >=0.5 m/s;
-- planned conservative hazard clearance >=1.5 m.
+The dynamic actor remains authoritative until it is actually clear:
+- current actor pose is re-published after each short physical suffix;
+- production planner re-evaluates it;
+- additional bounded `AdjustedClear` suffixes are allowed;
+- static topology resumes only on real `NominalClear`.
 
-This directly addresses the known production gap: B5 general/Assisted time-parameterization is not yet fully authoritative.
+This matches the canonical architecture:
+```
+ACCEPT short segment
+ -> EXECUTE
+ -> MONITOR
+ -> if still hazardous, replan bounded suffix
+ -> continue until nominal route is physically clear
+```
 
-The final composite remains honest about this seam and now refuses to generate an obviously unexecutable test-side replacement.
-
-## Laboratory exit remains unchanged
+## Laboratory exit criterion unchanged
 
 A green final composite closes synthetic maneuver behavior testing.
 
-It does not close remaining production architecture migration:
+Remaining production architecture work still includes:
 - B1/B2/B3/B4;
 - full B5 Assisted/general compiler;
 - generalized B6 ownership;
-- B11 explicit bounded reflex;
+- explicit B11 bounded reflex;
 - ordinary-live B7-B10 final seam retirement.
 
-After a green composite, primary quality work moves into NAV STRESS/game.
+After composite green, primary quality work moves to NAV STRESS/game.
 
 ## State protocol
 

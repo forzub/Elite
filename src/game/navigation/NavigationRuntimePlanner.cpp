@@ -878,6 +878,14 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     result.ordinaryVisibilitySearchExhausted =
         local.ordinarySearchExhausted;
     result.avoidanceProbesExamined = local.targetProbesExamined;
+    result.avoidanceContinuityHintUsed =
+        local.continuityHintUsed;
+    result.avoidanceContinuityLateralValid =
+        local.continuityLateralValid;
+    result.avoidanceSameBranchSafeCandidates =
+        local.sameBranchSafeCandidates;
+    result.avoidanceSelectedBranchAlignment =
+        local.selectedBranchAlignment;
     result.primaryConflictEntityId = local.target.primaryConflictEntityId;
     result.nominalPrimaryConflictEntityId =
         local.nominalPrimaryConflictEntityId;

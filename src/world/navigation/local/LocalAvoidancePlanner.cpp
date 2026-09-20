@@ -160,6 +160,8 @@ void validatePolicy(
         policy.lateralStepEnvelopeMultiplier <= 0.0 ||
         !finite(policy.maximumLateralOffsetMeters) ||
         policy.maximumLateralOffsetMeters <= 0.0 ||
+        policy.longitudinalSamples < 1 ||
+        policy.longitudinalSamples > 16 ||
         !finite(policy.projectionPaddingMeters) ||
         policy.projectionPaddingMeters < 0.0 ||
         policy.trajectorySamples < 4 ||
@@ -284,6 +286,7 @@ double projectedClearanceForOffset(
 
 bool timeCoupledBypassClear(
     const Vec3d& bypassTarget,
+    const Vec3d& mergeTarget,
     const LocalHorizonPlanner::Query& query,
     const NavigationMap::QueryResult& dynamicCandidates,
     const Vec3d& forward,
@@ -294,7 +297,13 @@ bool timeCoupledBypassClear(
 ) noexcept
 {
     const Vec3d start = query.agent.positionMapMeters;
+    const double firstLength = distance(start, bypassTarget);
+    const double secondLength = distance(bypassTarget, mergeTarget);
+    const double totalLength = firstLength + secondLength;
     const double age = query.dynamicResultAgeSeconds;
+
+    if (totalLength <= kEpsilon)
+        return false;
 
     for (std::size_t i = 0; i <= samples; ++i)
     {
@@ -302,10 +311,45 @@ bool timeCoupledBypassClear(
             static_cast<double>(i) /
             static_cast<double>(samples);
         const double t = lookAheadSeconds * alpha;
-        const Vec3d ship = add(
-            start,
-            scale(subtract(bypassTarget, start), alpha)
-        );
+        const double pathDistance = totalLength * alpha;
+
+        Vec3d ship {};
+        if (pathDistance <= firstLength ||
+            secondLength <= kEpsilon)
+        {
+            const double localAlpha =
+                firstLength > kEpsilon
+                    ? std::clamp(
+                          pathDistance / firstLength,
+                          0.0,
+                          1.0
+                      )
+                    : 1.0;
+            ship = add(
+                start,
+                scale(
+                    subtract(bypassTarget, start),
+                    localAlpha
+                )
+            );
+        }
+        else
+        {
+            const double localAlpha =
+                std::clamp(
+                    (pathDistance - firstLength) /
+                        secondLength,
+                    0.0,
+                    1.0
+                );
+            ship = add(
+                bypassTarget,
+                scale(
+                    subtract(mergeTarget, bypassTarget),
+                    localAlpha
+                )
+            );
+        }
 
         for (const Candidate& candidate : dynamicCandidates.candidates)
         {
@@ -490,7 +534,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         );
     const double envelopeScale =
         query.horizon.agent.radiusMeters +
-        query.policy.safetyMarginMeters +
+        query.horizon.policy.safetyMarginMeters +
         query.avoidance.projectionPaddingMeters;
     const double step = std::max(
         query.avoidance.minimumLateralStepMeters,
@@ -516,8 +560,11 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     Vec3d bestOffset {};
     double bestOffsetMagnitude =
         std::numeric_limits<double>::infinity();
+    double bestRouteLength =
+        std::numeric_limits<double>::infinity();
     double bestProjectedClearance =
         -std::numeric_limits<double>::infinity();
+    double bestBypassForwardDistance = 0.0;
     std::size_t bestOrder =
         std::numeric_limits<std::size_t>::max();
     std::size_t order = 0;
@@ -534,7 +581,6 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
             if (ia == 0 && ib == 0)
                 continue;
 
-            ++order;
             ++result.offsetCandidatesExamined;
 
             const double offsetA =
@@ -554,9 +600,9 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                 continue;
             }
 
-            double projectedClearance =
-                std::numeric_limits<double>::infinity();
+            double projectedClearance = 1.0e30;
             bool projectionBlocked = false;
+            bool anyProjectedActor = false;
 
             for (const Candidate& candidate :
                  dynamicCandidates.candidates)
@@ -571,6 +617,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                     continue;
                 }
 
+                anyProjectedActor = true;
                 const double clearance =
                     projectedClearanceForOffset(
                         candidate,
@@ -599,87 +646,184 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                 continue;
             }
 
+            if (!anyProjectedActor)
+                projectedClearance =
+                    query.avoidance.maximumLateralOffsetMeters;
+
             const Vec3d offset = add(
                 scale(lateralA, offsetA),
                 scale(lateralB, offsetB)
             );
-            const Vec3d candidateTarget = add(
-                boundedNominalTarget,
-                offset
-            );
 
-            LocalAvoidancePlanner::StaticQueries::SegmentQuery staticProbe;
-            staticProbe.startMapMeters =
-                toSpaceVec(query.horizon.agent.positionMapMeters);
-            staticProbe.endMapMeters =
-                toSpaceVec(candidateTarget);
-            staticProbe.envelope = startQuery.envelope;
-            staticProbe.requireSameRegion = true;
-
-            const auto staticResult =
-                staticQueries.querySegment(staticProbe);
-            result.spaceRevision = staticResult.spaceRevision;
-            result.spaceSourceRevision =
-                staticResult.sourceRevision;
-            result.staticObstaclesExamined +=
-                staticResult.obstaclesExamined;
-
-            if (staticResult.spaceRevision != start.spaceRevision ||
-                staticResult.sourceRevision != start.sourceRevision)
+            for (std::size_t longitudinalIndex = 1;
+                 longitudinalIndex <=
+                     query.avoidance.longitudinalSamples;
+                 ++longitudinalIndex)
             {
-                result.status = Status::StaticHold;
-                return result;
-            }
+                ++order;
+                ++result.routeCandidatesExamined;
 
-            if (!staticResult.traversable ||
-                staticResult.startRegionId != start.regionId)
-            {
-                ++result.staticRejected;
-                continue;
-            }
+                const double forwardFraction =
+                    static_cast<double>(longitudinalIndex) /
+                    static_cast<double>(
+                        query.avoidance.longitudinalSamples + 1
+                    );
+                const double bypassForwardDistance =
+                    probeDistance * forwardFraction;
 
-            if (!timeCoupledBypassClear(
-                    candidateTarget,
-                    query.horizon,
-                    dynamicCandidates,
-                    forward,
-                    probeDistance,
-                    lookAhead,
-                    query.avoidance.trajectorySamples,
-                    query.avoidance.projectionPaddingMeters))
-            {
-                ++result.dynamicRejected;
-                continue;
-            }
+                const Vec3d bypassBase = add(
+                    query.horizon.agent.positionMapMeters,
+                    scale(forward, bypassForwardDistance)
+                );
+                const Vec3d candidateTarget = add(
+                    bypassBase,
+                    offset
+                );
 
-            const bool better =
-                !found ||
-                offsetMagnitude <
-                    bestOffsetMagnitude - kEpsilon ||
-                (std::abs(
-                     offsetMagnitude -
-                     bestOffsetMagnitude
-                 ) <= kEpsilon &&
-                 projectedClearance >
-                    bestProjectedClearance + kEpsilon) ||
-                (std::abs(
-                     offsetMagnitude -
-                     bestOffsetMagnitude
-                 ) <= kEpsilon &&
-                 std::abs(
-                     projectedClearance -
-                     bestProjectedClearance
-                 ) <= kEpsilon &&
-                 order < bestOrder);
+                LocalAvoidancePlanner::StaticQueries::SegmentQuery firstProbe;
+                firstProbe.startMapMeters =
+                    toSpaceVec(
+                        query.horizon.agent.positionMapMeters
+                    );
+                firstProbe.endMapMeters =
+                    toSpaceVec(candidateTarget);
+                firstProbe.envelope = startQuery.envelope;
+                firstProbe.requireSameRegion = true;
 
-            if (better)
-            {
-                found = true;
-                bestTarget = candidateTarget;
-                bestOffset = offset;
-                bestOffsetMagnitude = offsetMagnitude;
-                bestProjectedClearance = projectedClearance;
-                bestOrder = order;
+                const auto firstStatic =
+                    staticQueries.querySegment(firstProbe);
+                result.spaceRevision =
+                    firstStatic.spaceRevision;
+                result.spaceSourceRevision =
+                    firstStatic.sourceRevision;
+                result.staticObstaclesExamined +=
+                    firstStatic.obstaclesExamined;
+
+                if (firstStatic.spaceRevision !=
+                        start.spaceRevision ||
+                    firstStatic.sourceRevision !=
+                        start.sourceRevision)
+                {
+                    result.status = Status::StaticHold;
+                    return result;
+                }
+
+                if (!firstStatic.traversable ||
+                    firstStatic.startRegionId != start.regionId)
+                {
+                    ++result.staticRejected;
+                    continue;
+                }
+
+                LocalAvoidancePlanner::StaticQueries::SegmentQuery secondProbe;
+                secondProbe.startMapMeters =
+                    toSpaceVec(candidateTarget);
+                secondProbe.endMapMeters =
+                    toSpaceVec(boundedNominalTarget);
+                secondProbe.envelope = startQuery.envelope;
+                secondProbe.requireSameRegion = true;
+                secondProbe.allowEndOnStartRegionBoundary =
+                    query.avoidance.
+                        nominalTargetIsProvenPortalBoundary;
+
+                const auto secondStatic =
+                    staticQueries.querySegment(secondProbe);
+                result.spaceRevision =
+                    secondStatic.spaceRevision;
+                result.spaceSourceRevision =
+                    secondStatic.sourceRevision;
+                result.staticObstaclesExamined +=
+                    secondStatic.obstaclesExamined;
+
+                if (secondStatic.spaceRevision !=
+                        start.spaceRevision ||
+                    secondStatic.sourceRevision !=
+                        start.sourceRevision)
+                {
+                    result.status = Status::StaticHold;
+                    return result;
+                }
+
+                if (!secondStatic.traversable ||
+                    secondStatic.startRegionId != start.regionId)
+                {
+                    ++result.staticRejected;
+                    continue;
+                }
+
+                if (!timeCoupledBypassClear(
+                        candidateTarget,
+                        boundedNominalTarget,
+                        query.horizon,
+                        dynamicCandidates,
+                        forward,
+                        probeDistance,
+                        lookAhead,
+                        query.avoidance.trajectorySamples,
+                        query.avoidance.
+                            projectionPaddingMeters))
+                {
+                    ++result.dynamicRejected;
+                    continue;
+                }
+
+                const double routeLength =
+                    distance(
+                        query.horizon.agent.positionMapMeters,
+                        candidateTarget
+                    ) +
+                    distance(
+                        candidateTarget,
+                        boundedNominalTarget
+                    );
+
+                const bool better =
+                    !found ||
+                    offsetMagnitude <
+                        bestOffsetMagnitude - kEpsilon ||
+                    (std::abs(
+                         offsetMagnitude -
+                         bestOffsetMagnitude
+                     ) <= kEpsilon &&
+                     routeLength <
+                         bestRouteLength - kEpsilon) ||
+                    (std::abs(
+                         offsetMagnitude -
+                         bestOffsetMagnitude
+                     ) <= kEpsilon &&
+                     std::abs(
+                         routeLength -
+                         bestRouteLength
+                     ) <= kEpsilon &&
+                     projectedClearance >
+                         bestProjectedClearance + kEpsilon) ||
+                    (std::abs(
+                         offsetMagnitude -
+                         bestOffsetMagnitude
+                     ) <= kEpsilon &&
+                     std::abs(
+                         routeLength -
+                         bestRouteLength
+                     ) <= kEpsilon &&
+                     std::abs(
+                         projectedClearance -
+                         bestProjectedClearance
+                     ) <= kEpsilon &&
+                     order < bestOrder);
+
+                if (better)
+                {
+                    found = true;
+                    bestTarget = candidateTarget;
+                    bestOffset = offset;
+                    bestOffsetMagnitude = offsetMagnitude;
+                    bestRouteLength = routeLength;
+                    bestProjectedClearance =
+                        projectedClearance;
+                    bestBypassForwardDistance =
+                        bypassForwardDistance;
+                    bestOrder = order;
+                }
             }
         }
     }
@@ -698,6 +842,8 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     result.adjustedTarget = true;
     result.selectedLateralOffsetMap = bestOffset;
     result.selectedLateralOffsetMeters = bestOffsetMagnitude;
+    result.selectedBypassForwardDistanceMeters =
+        bestBypassForwardDistance;
     result.selectedProjectedClearanceMeters =
         std::isfinite(bestProjectedClearance)
             ? bestProjectedClearance

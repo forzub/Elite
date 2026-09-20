@@ -25,6 +25,11 @@ def function_slice(text: str, name: str, next_name: str | None = None) -> str:
     return text[start:end]
 
 
+def compact_cpp(text: str) -> str:
+    """Normalize C++ formatting so architecture checks do not depend on line wraps."""
+    return "".join(text.split())
+
+
 header = read("src/game/navigation/NominalRoutePlanner.h")
 impl = read("src/game/navigation/NominalRoutePlanner.cpp")
 runtime = read("tools/navigation_runtime/NavigationScenarioRuntime.cpp")
@@ -74,6 +79,9 @@ trajectory_builder = function_slice(
     "Program makeProgramChunk("
 )
 
+execute_compact = compact_cpp(execute)
+trajectory_builder_compact = compact_cpp(trajectory_builder)
+
 for required in (
     "NominalRoutePlanner::plan",
     "scenario.staticObstacles",
@@ -105,14 +113,17 @@ for required in (
     "DynamicMotionSystem::updateLocalFrameMotion",
     "last_execution.log",
 ):
-    require(required in execute, f"Stage-2 execution path missing {required}")
+    require(
+        compact_cpp(required) in execute_compact,
+        f"Stage-2 execution path missing {required}",
+    )
 
 for required in (
     "calculatedRoute.routePoints",
     "TrajectoryGenerator::generate",
 ):
     require(
-        required in trajectory_builder,
+        compact_cpp(required) in trajectory_builder_compact,
         f"Stage-2 trajectory builder missing {required}",
     )
 

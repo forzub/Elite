@@ -209,3 +209,26 @@ Fixes committed after that verified run:
 - oriented-portal fixture now uses interior geometry start X=1, blocker X=4,
   stage X=7 while leaving global `baseAgent()` at its original X=0;
 - these post-run fixes are UNVERIFIED until the next target run.
+
+## 2026-09-20 viewer HUD iteration
+
+Target feedback confirmed the standalone viewer now builds and opens, but the first
+UI-less build was not self-explanatory: no visible buttons and no legend/state panel.
+
+Viewer updated with an in-window diagnostic HUD:
+- clickable PLAY/PAUSE, PREV, NEXT, NEXT REPLAN and FIT buttons;
+- right-side live state panel with law/frame/time/phase/status/clearance;
+- explicit `WHAT IS HAPPENING` explanation derived from trace phase/status;
+- color legend for every diagnostic primitive;
+- visible controls reminder;
+- `portal_102` explicitly marked as the current known clearance-loss area.
+
+The HUD uses a tiny built-in bitmap font and existing OpenGL primitives; no new UI
+framework/dependency was introduced.
+
+Validation state: previous viewer build/open is target-verified; the new HUD commit
+still needs one target build/open check.
+
+Same target run also showed planner fixture progress: the old route-context assertion
+no longer fails; it now reaches `fixture must produce a safe adjusted target`. That
+is a separate planner-fixture task and was not mixed into this HUD change.

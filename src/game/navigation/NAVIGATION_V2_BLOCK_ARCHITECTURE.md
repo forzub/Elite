@@ -1092,3 +1092,17 @@ The next execution run reuses the exact same route without calling Planner again
 
 This is required for clean comparisons such as Expert/Newtonian vs Average/Assisted:
 route geometry is held constant while only the execution layer changes.
+
+
+## 2026-09-21 execution handoff amendment
+
+Stage-2 execution initial state must include full local kinematics, not only pose:
+- position;
+- linear velocity;
+- linear acceleration;
+- body orientation basis;
+- pitch/yaw/roll angular rates.
+
+AcceptedManeuverProgram chunk handoff must never activate a future chunk before its
+`acceptedAtUniverseTimeSeconds`. `ManeuverProgramSampler::BeforeStart` is an invalid
+Follower input and must be prevented by the scheduler rather than hidden with tolerance.

@@ -139,6 +139,12 @@ Farther route regions remain coarse intent. This prevents route length from line
 
 ## `NAV-V2-LOCAL-1` — ACTIVE
 
+Current production local avoidance is trajectory-relative: moving occupancy is
+predicted inside the physical horizon, projected onto the normal plane, searched
+as metric offsets, exact-static/time-coupled checked, and paired with an
+on-trajectory merge target. The former angular deflection fan and branch-state
+mechanism are removed rather than retained as fallback code.
+
 The first local-horizon boundary must be backend-neutral and deterministic. It consumes compact products rather than owning another world.
 
 Required input concepts:
@@ -271,7 +277,7 @@ geometry:
 
 ```text
 global route
-    -> local bounded visibility
+    -> projected visible-horizon local bypass
     -> precision passage
     -> emergency/contact candidate generation
                     |

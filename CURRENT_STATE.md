@@ -2,116 +2,119 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Last accepted exact target-machine baseline
+## Accepted exact target-machine baseline
 
 ```
-a0f0991791665e30059be15efc47dedcdfafe090
+3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-Accepted:
-- Stage-12 architecture contract PASS;
-- navigation_runtime 17/17 PASS;
-- B7 speed/doctrine select->execute PASS;
-- prior maneuver/corridor/fly-through gates accepted.
+Target evidence:
+- Stage-12 architecture contract: **PASS**;
+- navigation_runtime: **18/18 PASS**;
+- chained transition + physical-limit matrix: **PASS**.
 
-## Latest target-machine runtime attempt
+## Newly accepted: chained transitions + fail-closed physical limits
 
-Exact tested checkout:
-
-```
-350f7d593e22b8b89cb3ae4dbfbfbb7fbb53ea03
-```
-
-Results:
-- architecture contract PASS;
-- build PASS;
-- navigation runtime 17/18;
-- only `maneuver_chained_limit_matrix` failed.
-
-### Newtonian chain
-
-Healthy and unchanged:
-- phases 4/4;
-- seam P jump 0;
-- seam V jump 0;
-- seam forward jump ~0.000001 deg;
-- seam omega jump 0;
-- max hull half-width 17.428330 m inside 25 m;
-- max slip 34.491954 deg;
-- final P error 0.024611 m;
-- final speed 0.024960 m/s;
-- final forward error 0.028574 deg;
-- tracking envelope exceeded ticks 0.
-
-### Assisted phase-3 failure
-
-Measured:
-- entry slip 1.579066 deg;
-- max slip 25.788647 deg;
-- max slip after 1 s 25.788647 deg;
-- final slip 25.788647 deg;
-- max forward tracking error 25.964670 deg;
-- final forward error 25.964670 deg;
-- tracking-envelope exceeded ticks 171.
-
-Therefore the failure is not inherited seam transient. The aligned phase itself receives/executes a bad attitude reference.
-
-## Root cause
-
-The chained test reference builder used a world-up reconstruction:
+Both laws complete the same four-phase chain with no synthetic state reset:
 
 ```
-forward -> choose upSeed(Y or X) -> right/up
+FreeTransit
+ -> hard moving turn
+ -> Newtonian DriftPass / Assisted aligned PrecisionTransit
+ -> PrecisionCapture
 ```
 
-and switched seeds when `abs(dot(forward, Y)) > 0.92`.
+### Newtonian measured chain
 
-Phase 3 bends far enough around +Y to cross that threshold. The forward tangent remains smooth, but right/up can jump to the equivalent opposite roll frame.
+- phases: 4/4;
+- seam P/V/forward/omega jumps: 0;
+- maximum hull half-width: 17.419551 m inside 25 m;
+- maximum slip: 35.114714 deg;
+- final P error: 0.024611 m;
+- final speed: 0.024960 m/s;
+- final forward error: 0.029227 deg;
+- tracking-envelope exceeded ticks: 0;
+- total: 48.04 s.
 
-This matters because B10 `ManeuverTrackingController` tracks full SO(3) attitude using:
-- forward;
-- right;
-- up.
+### Assisted measured chain
 
-Thus an artificial right/up discontinuity becomes a real angular feed-forward/feedback command.
+- phases: 4/4;
+- seam P/V/forward/omega jumps: 0;
+- maximum hull half-width: 17.419551 m inside 25 m;
+- maximum slip over full chain: 1.934322 deg;
+- aligned phase max slip: 1.139399 deg;
+- final P error: 0.024611 m;
+- final speed: 0.024960 m/s;
+- final forward error: 0.035921 deg;
+- tracking-envelope exceeded ticks: 0;
+- total: 48.04 s.
 
-This is a reference-authoring defect in the chained test fixture, not evidence that Assisted lacks angular authority.
+The parallel-transport/Bishop-frame correction eliminated the artificial full-attitude discontinuity without changing tracking gains or tolerances.
 
-## Current unverified fix candidate
+## Accepted negative / physical-limit contracts
 
-Commit:
+1. Insufficient turn horizon:
+   - 18 m/s;
+   - 0.5 s available;
+   - B5 returns NoPhysicalCandidate.
 
-```
-b8eb4641b013692c773d087d6cad96756c672b3c
-```
+2. Insufficient braking distance:
+   - required stopping reserve 110 m;
+   - available 60 m;
+   - unsafe commitment rejected.
 
-Change:
-- aligned moving reference now uses a minimal-twist parallel-transport/Bishop frame;
-- each new forward tangent projects the previous right axis into the new normal plane;
-- no arbitrary world-up seed switch occurs inside a smooth trajectory;
-- terminal forward is pinned while transported roll is preserved.
+3. Rigid hull corridor:
+   - Cobra required half-width 13.238202 m;
+   - available 12 m;
+   - rejected.
 
-Important semantic rule recorded:
-- ordinary velocity-aligned flight should use continuous transported roll;
-- exact terminal roll/top orientation for docking, attachment or placement must be an explicit terminal attitude-capture profile, not an accidental world-up reconstruction.
+4. Law incompatibility:
+   - Assisted context with only NewtonianOnly candidates;
+   - B7 returns no valid selection.
 
-No B10 gains, physical limits, slip limits or terminal tolerances changed.
+5. New dynamic hazard:
+   - immediate LocalHorizon replan;
+   - obsolete accepted program may not continue.
 
-## Current active block
+## Laboratory status
 
-Chained transitions + physical limits remains open until target evidence passes.
+The following isolated/compound behavior blocks are now accepted:
+- corner families;
+- long moving attitude;
+- full rigid-body corridor;
+- 3D stop-to-stop route;
+- continuous 3D fly-through;
+- speed/doctrine selection + real execution;
+- chained cross-family state continuity;
+- physical-limit rejection/invalidation.
 
-Expected suite: 18 tests.
+## Remaining laboratory gate
 
-If the transported-frame fix works:
-- Assisted phase 3 must remain <=8 deg slip after 1 s;
-- terminal slip <=4 deg;
-- zero chain tracking-envelope violations;
-- negative/limit cases must then execute and report.
+Only one behavior gate remains:
 
-If it still fails:
-- investigate quaternion/angular-feed-forward derivation from the continuous transported samples;
-- do not loosen criteria.
+**final composite end-to-end proving ground**
+
+It must combine, in one scenario:
+- real static topology/obstacles;
+- a dynamic hazard;
+- wide and narrow passage pressure;
+- speed change;
+- doctrine/control-law-dependent physical choice;
+- accepted-program execution through B9/B10/PilotSkill/physics;
+- mid-run invalidation/replan;
+- exact terminal capture.
+
+This final lab must not be treated as proof that every production migration seam B1-B6/B11 is complete. Its purpose is to end synthetic maneuver behavior testing and move primary evaluation into the real game scene.
+
+## After final composite acceptance
+
+Stop adding synthetic maneuver-quality tests by default.
+
+Primary loop becomes:
+- run NAV STRESS / real game;
+- visualize accepted corridor/trajectory;
+- inspect NPC/manual guidance behavior;
+- only add a focused regression when an actual defect is found.
 
 ## Documentation protocol
 

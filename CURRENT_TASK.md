@@ -11,102 +11,57 @@
 ## Latest tested checkout
 
 ```
-af9ee9d1694ac0facafaf23b0ec51c3adaf7dbbf
+2ad1178bc5c778636748557ceb6c9a5b757c9a53
 ```
 
-Architecture PASS; runtime 17/19.
+Architecture contract PASS.
 
-## Latest composite evidence
+Runtime behavior was **not tested** because build failed before CTest.
 
-Branch-switch recovery succeeded physically:
+## Build failure
+
 ```
-duration=4.0 s
-stopping distance=6.757088 m
-peak brake FF=1.266954 m/s2
-actual dynamic clearance=9.817623 m
-tracking exceeded=0
-final speed error=0.009128 m/s
+NavigationRuntimePlannerTests.cpp:
+std::setprecision is not a member of std
 ```
 
-After recovery:
-- old continuity is cleared;
-- planner returns a fresh AdjustedClear target;
-- no new branch-switch escalation is required.
+Cause:
+- diagnostic output added `std::setprecision(6)`;
+- missing `#include <iomanip>`.
 
-## Remaining failure
-
-The generic replacement fitter rejects the post-recovery launch because it still applies:
+Fix:
 ```
-minimum planned speed >=0.50 m/s
-```
-at t=0.
-
-That is incompatible with an intentional near-stop recovery state.
-
-## Current candidate
-
-Post-recovery launch support:
-```
-7c87e655788af4e95f9576675185482639fec528
+cfa56734020b41875354262302b9be51684413be
 ```
 
-Rules:
-- moving entry >=0.50 m/s -> old minimum-speed rule unchanged;
-- recovery-rest entry <0.50 m/s -> allow launch only if:
-  - progress never reverses below -0.05 m/s;
-  - curve reaches >=0.50 m/s;
-  - after reaching it, speed stays >=0.50 m/s;
-  - transverse FF <=1.35 m/s2;
-  - planned dynamic clearance >=1.50 m.
+## Real behavior problem still under test
 
-Focused regression fixture:
+We are validating one complete local-navigation transition:
+
 ```
-252f9d81c5fd91363a0e0561e195c1f5ab0d375d
-```
-
-The blocker now sits at an interior 300 m point on the primary -Z ray, eliminating dependence on exact physical-horizon length.
-
-## Target commands
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
-
-{
-    echo "===== TESTED HEAD ====="
-    git rev-parse HEAD
-
-    echo
-    echo "===== ARCHITECTURE CONTRACT ====="
-    python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
-
-    echo
-    echo "===== NAVIGATION RUNTIME ====="
-    bash tests/navigation_runtime/run_mingw64.sh
-} 2>&1 | tee "$OUT"
-
-echo
-echo "===== FINAL COMPOSITE SUMMARY ====="
-grep -E '\[BRANCH-REGRESSION\]|\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE-RECOVERY\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|NAVIGATION RUNTIME PLANNER TESTS|tests passed|tests failed|TESTED HEAD' "$OUT" || true
-
-echo "$PWD/$OUT"
+moving accepted branch
+ -> no safe continuation on that branch
+ -> branch-switch escalation
+ -> physical brake/recovery
+ -> stop
+ -> clear obsolete continuity
+ -> fresh local plan
+ -> accelerate into new branch
 ```
 
-## Interpretation
+Method:
+- production NavigationRuntimePlanner/LocalAvoidance;
+- explicit accepted-branch continuity;
+- branch exhaustion signal;
+- physical Brake program through B9/B10 -> PilotSkill -> real physics;
+- fresh replan from actual recovered state;
+- authority-bounded post-recovery transit.
 
-If `[BRANCH-REGRESSION]` still selects the primary ring:
-- inspect exact-static query evidence, not branch ranking.
+## Next validation
 
-If post-recovery launch fitter still fails:
-- add planned reason diagnostics (reversal / speed-floor / transverse FF / clearance) before changing any threshold.
+Run the same 19-test target gate after pulling current main.
 
-If 19/19:
-- accept final composite;
-- close synthetic behavior lab;
-- next task = actual NAV STRESS/game visualization and live behavior evaluation.
+No threshold or mechanism change is justified from the failed build itself.
 
 ## Iteration rule
 

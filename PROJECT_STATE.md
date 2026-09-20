@@ -9,69 +9,49 @@
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Latest target
+## Latest target result
 
 ```
-af9ee9d1694ac0facafaf23b0ec51c3adaf7dbbf
+2ad1178bc5c778636748557ceb6c9a5b757c9a53
 ```
 
-Architecture PASS; runtime 17/19.
+Architecture PASS.
 
-## Important new acceptance evidence
+Navigation runtime behavior was not evaluated because compilation stopped on a missing standard-library header in test diagnostics.
 
-Forced avoidance branch switching now has a physically valid transition.
-
-The final composite demonstrated:
+Compile fix:
 ```
-same branch unavailable
- -> branchSwitchRequired
- -> Brake program
- -> real follower/PilotSkill/physics
- -> zero tracking violations
- -> >9 m dynamic clearance
- -> near-zero final speed
- -> continuity cleared
- -> fresh replan
+cfa56734020b41875354262302b9be51684413be
 ```
 
-That closes the conceptual branch-switch ownership question.
+## Current technical problem
 
-## Current remaining seam
+The project is no longer trying to force one local avoidance branch forever.
 
-After the correct stop, the temporary test-side physical-program author still assumed every PrecisionTransit begins already moving >=0.5 m/s.
+The intended behavior is:
 
-That assumption is invalid for recovery -> new-branch launch.
+```
+same branch safely available
+ -> preserve it
 
-The authoring fixture now supports an explicit launch-from-rest profile while retaining the old rule for ordinary moving transits.
+same branch exhausted
+ -> signal branch switch required
+ -> brake/recover physically
+ -> clear old branch commitment
+ -> replan
+ -> launch into new branch
+```
 
-## Focused branch regression
+The branch-switch recovery itself has already shown good physical evidence.
 
-The cross-ring regression blocker is now placed on an interior point of the primary ray so it is independent of physical-horizon endpoint details.
+The remaining synthetic gate is to prove:
+- the focused cross-ring regression;
+- recovery-to-new-branch launch;
+- full composite completion for Newtonian and Assisted.
 
-This should distinguish cleanly:
-- same branch exists at larger angle -> preserve it;
-- no same branch exists -> request recovery.
+## Status
 
-## Architecture status
-
-Still transitional:
-- B4 local ray-fan remains a temporary corridor substitute;
-- full production B5 Assisted/general time-program authoring remains incomplete.
-
-But the composition contract is becoming correct:
-- B4 reports branch state;
-- higher maneuver layer decides recovery;
-- B8-B10 execute physical truth.
-
-## Exit criterion
-
-Final composite green -> synthetic maneuver behavior testing closes.
-
-Then:
-- NAV STRESS/game;
-- accepted corridor/tunnel visualization;
-- accepted physical trajectory visualization;
-- real NPC/autopilot behavior review.
+No new navigation conclusion should be drawn from the latest build-only failure.
 
 ## State protocol
 

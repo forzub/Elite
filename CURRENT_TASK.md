@@ -8,52 +8,49 @@
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Latest tested composite checkout
+## Latest tested final-composite checkout
 
 ```
-18f93e15f3baa5218d459b289ae89beb170f1c54
+852e5a71a71625cdfc0c71a6bb89724d2194990e
 ```
 
 Architecture PASS, runtime 18/19.
 
-Production planner now correctly returns:
-- nominal dynamic conflict = 1;
+The production planner and first authority-bounded replacement both succeeded.
+
+Key evidence:
 - `AdjustedClear`;
-- 20 bounded probes;
-- no static block.
+- nominal conflict witness = 1;
+- 20 probes;
+- replacement planned clearance 3.181 m;
+- actual clearance 3.175 m;
+- tracking exceeded = 0;
+- final replacement P error 1.31 cm.
 
-The only failure is the test-side physical replacement execution.
+## Root cause of latest failure
 
-## Diagnosis
+After that successful bypass, the test resumed planning with `emptyDynamic()`.
 
-The old replacement curve:
-- duration 6 s;
-- exit speed 8 m/s;
-- target = production adjusted target.
+The hazard was still physically alive, so later execution measured clearance against an obstacle that the planner had been told no longer existed.
 
-From the exact live P/V shown by the test, that quintic requires about 5 m/s2 transverse acceleration.
-
-That is not compatible with the 2 m/s2 Cobra manoeuvre authority plus B10 feedback reserve.
-
-So the test was asking physics to execute a route target with an invalid time parameterization.
+This is invalid world-state synchronization.
 
 ## Current candidate
 
 ```
-7444c5930586300d6cac48bd4b2fa63b27e96bd6
+6c0a71d308040c568c109afc4425332021ade730
+01a8d69cc635a450d73a49a31b91e5546e0b1828
 ```
 
-The test-side replacement authoring now fits duration/exit speed to physical authority.
+Persistent-hazard behavior:
+1. publish current hazard position/velocity to NavigationMap;
+2. run production NavigationRuntimePlanner;
+3. if `AdjustedClear`, author the shortest authority-bounded replacement and execute it;
+4. republish hazard at the new current time/state;
+5. repeat, bounded to at most four additional continuations;
+6. resume the narrow static portal only when planner returns `NominalClear`.
 
-Fit gate:
-- peak transverse FF <=1.35 m/s2;
-- minimum planned speed >=0.50 m/s;
-- minimum planned dynamic clearance >=1.50 m;
-- shortest valid candidate from duration 8..32 s and exit speed 4/2 m/s.
-
-Execution gate:
-- zero tracking-envelope violations;
-- actual dynamic clearance >0.5 m.
+No hazard is silently deleted.
 
 ## Target commands
 
@@ -79,25 +76,22 @@ OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
 echo
 echo "===== FINAL COMPOSITE SUMMARY ====="
-grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
 
 echo "$PWD/$OUT"
 ```
 
-Upload the complete log.
-
 ## Exit
 
 If 19/19:
-- record exact target checkout + composite metrics;
-- close synthetic behavior lab;
+- record exact target checkout and final composite metrics;
+- close synthetic behavior laboratory;
 - next task = real NAV STRESS/game corridor + physical trajectory visualization.
 
 If red:
-- compare planned and actual replacement evidence;
-- fix the exact physical/reference seam;
-- do not loosen authority, clearance or terminal requirements.
+- diagnose from resume/continuation rows;
+- do not erase hazards or weaken clearance/tracking criteria.
 
 ## Iteration rule
 
-After every state/evidence change, synchronize all MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state/evidence change, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

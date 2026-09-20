@@ -5859,3 +5859,31 @@ Candidate `7c87e655788af4e95f9576675185482639fec528` permits a start below 0.5 o
 Focused regression candidate `252f9d81c5fd91363a0e0561e195c1f5ab0d375d` moves its blocker to an interior point of the primary ray and adds `[BRANCH-REGRESSION]` diagnostics.
 
 No production safety or maneuver authority threshold was relaxed.
+
+
+## 2026-09-20 — target build-only failure on branch-regression diagnostics
+
+Target checkout:
+
+```
+2ad1178bc5c778636748557ceb6c9a5b757c9a53
+```
+
+passed the Stage-12 architecture contract, but navigation runtime behavior did not execute.
+
+The build failed in `NavigationRuntimePlannerTests.cpp` because the newly added `[BRANCH-REGRESSION]` diagnostic used `std::setprecision(6)` without including `<iomanip>`.
+
+This is compile-only noise and carries no new evidence about local planner behavior.
+
+Commit `cfa56734020b41875354262302b9be51684413be` adds the missing standard-library include.
+
+The active behavior gate remains:
+```
+branch exhaustion
+ -> explicit recovery/brake
+ -> clear continuity
+ -> fresh replan
+ -> post-recovery launch
+```
+
+No safety or physical thresholds changed.

@@ -67,6 +67,12 @@ struct TraceDocument
     std::string law;
     glm::dvec3 shipHalfExtentsMeters {1.0};
 
+    // Authored scene endpoints exist before any planner result. The viewer
+    // must be able to display/focus the scene before Calculate is pressed.
+    bool hasSceneEndpoints = false;
+    glm::dvec3 sceneStartMapMeters {0.0};
+    glm::dvec3 sceneFinishMapMeters {0.0};
+
     std::vector<glm::dvec3> routePoints;
     std::vector<glm::dvec3> turnPoints;
     std::vector<TraceStaticObstacle> staticObstacles;

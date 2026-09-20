@@ -13,74 +13,67 @@
 
 Latest target:
 ```
-f626fb0373499928e0ae89585c3bd992e5436c92
+69f8ca4dbcb44df5340b94f45640bcb7d6e6ed1a
 ```
 
-Architecture PASS; 18/19 runtime tests.
+Architecture PASS, runtime 17/19.
 
-Newtonian completes the full final composite.
+The attempt confirmed:
+- velocity-only continuity is too weak;
+- first-safe-azimuth ordering is not a stable physical branch;
+- accepted local execution state must participate explicitly in replanning context.
 
-Assisted demonstrates multiple safe physical bypass segments, but the production local planner alternates adjusted-target side under repeated replanning.
+## Ownership correction
 
-## Newly identified B4-quality issue
+Accepted local branch continuity now belongs to the execution/accepted-segment layer.
 
-`LocalAvoidancePlanner` is intentionally transitional ray-fan logic.
+It is passed into the stateless planner as an explicit direction hint on each replan.
 
-Its previous inner-ring rule was:
-```
-return first safe azimuth
-```
+This fits the existing ownership contract:
+- planner does not keep mutable hidden memory;
+- execution owns what was accepted;
+- replanning consumes that accepted context;
+- safety proof remains fresh against current world truth.
 
-Because the local transverse basis is rebuilt from the new nominal direction each time, repeated bounded replans can change which physical side is represented by the first azimuth.
+## Current production changes
 
-That produces oscillatory:
-```
-left/right/left
-```
-behavior even when staying on the current side is safe.
+`NavigationRuntimePlanner::AgentState`:
+- continuity-valid flag;
+- accepted local direction.
 
-This is exactly the kind of behavior-quality defect the final composite was intended to expose before moving to game visualization.
+`LocalAvoidancePlanner::Query`:
+- preferred direction hint.
 
-## Production correction
+Local candidate selection:
+- still chooses the minimum safe deflection ring;
+- within the ring, preserves the accepted branch direction when possible.
 
-Current candidate:
-```
-86640b05145938ec0880a3a26539957aaa72f085
-ef2e6ec85823c229d6cadb6aa8dbe5b65e209193
-```
+## Regression correction
 
-Within the same minimum deflection ring:
-- evaluate all safe azimuths;
-- prefer the one best aligned with actual current velocity;
-- preserve deterministic index tie-break.
+The prior +/-Z regression accidentally used a region only +/-10 m deep in Z.
 
-No new mutable planner state and no relaxed safety bounds.
+The revised fixture uses a real 3D region and intentionally makes velocity disagree with the accepted continuity hint, proving ownership rather than an incidental kinematic correlation.
 
-Focused regression:
-```
-6064a22f565fd7cc82568b0babf2721891c8d925
-```
+## B4 interpretation
 
-## Architecture interpretation
+This still does not complete B4 route-aligned configuration-space corridor migration.
 
-This does not close B4 route-aligned corridor migration.
+It does remove one major reactive-ray-fan defect:
+- accepted short bypasses now have explicit continuity across replans.
 
-It improves the transitional local ray-fan so it does not gratuitously switch avoidance side between short accepted segments.
+Longer-term B4 still wants:
+- explicit corridor/branch object;
+- route-aligned free-space representation;
+- physical maneuver synthesis from that corridor.
 
-Longer-term B4 still remains:
-- route-aligned configuration-space corridor;
-- explicit continuity/branch semantics;
-- less reactive ray-fan behavior.
+## Exit criterion
 
-## Exit criterion unchanged
-
-Final composite must pass before synthetic behavior lab is closed.
+Final composite must pass before synthetic behavior lab closes.
 
 After green:
-- NAV STRESS/game visualization;
-- accepted route/corridor;
-- accepted physical trajectory;
-- live NPC/autopilot review.
+- move primary quality work to NAV STRESS/game;
+- visualize route/corridor and accepted physical trajectory;
+- test NPC/autopilot feel in real scene.
 
 ## State protocol
 

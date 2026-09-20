@@ -360,7 +360,10 @@ Follower::AgentState followerAgent(const Vehicle& v)
 
 Planner::AgentState plannerAgent(
     const Vehicle& v,
-    Law law
+    Law law,
+    bool continuityValid = false,
+    const glm::dvec3& continuityDirection =
+        glm::dvec3(0.0)
 )
 {
     Planner::AgentState a;
@@ -389,6 +392,11 @@ Planner::AgentState plannerAgent(
     a.linearCapability.maxVerticalAccelerationMetersPerSec2 = 2.0;
     a.angularCapability.maxAngularAccelerationRadPerSec2 = 3.0;
     a.angularCapability.maxAngularSpeedRadPerSec = 2.5;
+    a.localAvoidanceContinuityValid = continuityValid;
+    a.localAvoidanceContinuityDirectionMap =
+        continuityValid
+            ? glm::normalize(continuityDirection)
+            : glm::dvec3(0.0);
     return a;
 }
 
@@ -1860,6 +1868,13 @@ CompositeMetrics runComposite(Law law)
         "composite production planner did not find adjusted dynamic bypass"
     );
 
+    glm::dvec3 acceptedLocalContinuityDirection =
+        glm::normalize(
+            adjusted.selectedTargetMapMeters -
+            v.transform.motion.localPositionMeters
+        );
+    bool acceptedLocalContinuityValid = true;
+
     // Phase 3: replacement program starts from the actual invalidation state.
     // Do not invent a short curve that the 2 m/s2 transverse authority cannot
     // follow. Fit the test-side time program to the same live P/V and keep
@@ -1957,7 +1972,12 @@ CompositeMetrics runComposite(Law law)
 
         resumed =
             Planner::plan(
-                plannerAgent(v, law),
+                plannerAgent(
+                    v,
+                    law,
+                    acceptedLocalContinuityValid,
+                    acceptedLocalContinuityDirection
+                ),
                 goal,
                 refreshedDynamic,
                 0.0,
@@ -1975,6 +1995,10 @@ CompositeMetrics runComposite(Law law)
             << " nominal_dynamic_conflicts="
             << resumed.nominalDynamicConflictsFound
             << " probes=" << resumed.avoidanceProbesExamined
+            << " continuity=("
+            << acceptedLocalContinuityDirection.x << ","
+            << acceptedLocalContinuityDirection.y << ","
+            << acceptedLocalContinuityDirection.z << ")"
             << " position=("
             << v.transform.motion.localPositionMeters.x << ","
             << v.transform.motion.localPositionMeters.y << ","
@@ -2000,6 +2024,13 @@ CompositeMetrics runComposite(Law law)
             resumed.adjustedTarget,
             "composite persistent hazard produced no safe bounded continuation"
         );
+
+        acceptedLocalContinuityDirection =
+            glm::normalize(
+                resumed.selectedTargetMapMeters -
+                v.transform.motion.localPositionMeters
+            );
+        acceptedLocalContinuityValid = true;
 
         const ReplacementFit continuation =
             fitAuthorityBoundedReplacement(

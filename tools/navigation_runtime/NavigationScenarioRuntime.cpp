@@ -1909,6 +1909,7 @@ ScenarioRunResult executeCalculatedRoute(
                         ? "NEWTONIAN"
                         : "ASSISTED"
                 ),
+            "DYNAMIC AVOIDANCE: NOT ENABLED IN STATIC PASS",
             "EXECUTION FRAMES: " +
                 std::to_string(trace.frames.size()),
             "FINAL POSITION ERROR: " +

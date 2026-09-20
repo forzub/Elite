@@ -233,3 +233,39 @@ Acceptance checks:
 After this gate, next architecture task is a reusable live scenario runner so the
 Assisted/Newtonian, pilot skill, Standard/Extreme and obstacle checkbox controls are
 real simulation inputs rather than cosmetic replay toggles.
+
+## Immediate task — target compile and first live calculation
+
+Build the new live navigation stand, launch it with `scenario.json`, select modes and
+press `РАССЧИТАТЬ`.
+
+Build:
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/tools/navigation_runtime
+```
+
+Executable launch command:
+```bash
+cd /d/__elite/work
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```
+
+First acceptance checks:
+- program opens maximized as a normal decorated Windows window;
+- top blocks show real Assisted/Newtonian, Expert/Average/Loser, Standard/Extreme;
+- sudden-obstacle checkbox is visible;
+- no trajectory is preloaded from old trace JSON;
+- pressing `РАССЧИТАТЬ` calculates a new route inside the executable;
+- default scenario has no forced ship waypoints; Planner must route around JSON wall;
+- unchecked sudden obstacle never appears;
+- checked sudden obstacle appears only at activation time and causes replanning;
+- final forward/up/speed constraints from JSON are enforced;
+- route, actual path, program tracking corridor, ship attitude and Cobra horizon render;
+- `last_calculated_trace.json` is generated only as calculation output.
+
+Any compile/runtime failure is the next state-affecting event: record exact target HEAD,
+root cause, patch, and recreate CONTINUE_PROMPT.md.

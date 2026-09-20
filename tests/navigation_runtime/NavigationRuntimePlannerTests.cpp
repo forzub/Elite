@@ -128,7 +128,7 @@ Planner::AgentState baseAgent()
 {
     Planner::AgentState agent;
     agent.entityId = 100;
-    agent.positionMapMeters = {0.0, 0.0, 0.0};
+    agent.positionMapMeters = {1.0, 0.0, 0.0};
     agent.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
     agent.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
     agent.radiusMeters = 1.0;
@@ -406,7 +406,7 @@ void testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()
 
     Map::DynamicActorInput blocker;
     blocker.entityId = 9151;
-    blocker.positionMapMeters = {3.5, 0.0, 0.0};
+    blocker.positionMapMeters = {4.0, 0.0, 0.0};
     blocker.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
     blocker.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
     blocker.radiusMeters = 0.75;
@@ -415,7 +415,7 @@ void testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()
     map.replaceDynamicWorld(std::move(update));
 
     Map::CorridorQuery query;
-    query.startMapMeters = {0.0, 0.0, 0.0};
+    query.startMapMeters = {1.0, 0.0, 0.0};
     query.endMapMeters = {7.0, 0.0, 0.0};
     query.radiusMeters = 5.0;
     const Map::QueryResult dynamic = map.queryCorridor(query);

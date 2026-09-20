@@ -2005,6 +2005,12 @@ CompositeMetrics runComposite(Law law)
             << " selected_deflection_deg="
             << resumed.selectedVisibilityDeflectionRadians *
                    180.0 / kPi
+            << " continuity_lateral_valid="
+            << (resumed.avoidanceContinuityLateralValid ? 1 : 0)
+            << " same_branch_safe="
+            << resumed.avoidanceSameBranchSafeCandidates
+            << " selected_branch_alignment="
+            << resumed.avoidanceSelectedBranchAlignment
             << " continuity=("
             << acceptedLocalContinuityDirection.x << ","
             << acceptedLocalContinuityDirection.y << ","

@@ -232,3 +232,48 @@ still needs one target build/open check.
 Same target run also showed planner fixture progress: the old route-context assertion
 no longer fails; it now reaches `fixture must produce a safe adjusted target`. That
 is a separate planner-fixture task and was not mixed into this HUD change.
+
+## 2026-09-20 viewer physics/trace accuracy iteration
+
+User clarified the viewer must remain an ordinary decorated Windows window, simply
+maximized to the desktop work area; no exclusive/borderless game fullscreen.
+
+Verified architecture of the current tool:
+- composite test executes real Planner -> AcceptedManeuverProgram -> Follower ->
+  runtime bridge -> SharedShipPhysics first;
+- the viewer only replays the resulting JSON; it does not run planner/follower live;
+- previous apparent low performance was primarily 0.10 s trace quantization (~10 Hz)
+  with nearest-frame display, not evidence of a heavily loaded CPU.
+
+Implemented, not yet target-verified:
+- smooth interpolation between trace samples during playback;
+- trace schema v2 records actual full ship basis forward/right/up (roll preserved);
+- trace schema v2 records sampled AcceptedManeuverProgram reference P + full basis;
+- viewer draws actual nose and program-reference nose separately and reports angular
+  tracking error;
+- viewer renders AcceptedManeuverProgram tracking.positionErrorMeters as a translucent
+  tracking tube. This is explicitly NOT called a Planner volumetric corridor because
+  NavigationRuntimePlanner::Result does not publish one;
+- trace records hazard velocity + planner look-ahead;
+- bottom-left `ГОРИЗОНТ КОБРЫ` inset projects the moving hazard and its predicted
+  envelope tunnel onto Cobra's right/up plane perpendicular to actual forward;
+- Russian HUD/Cyrillic bitmap support and Russian window title;
+- interactive frame slider;
+- ordinary GLFW window starts maximized.
+
+Newtonian diagnostic correction:
+- the composite test previously authored replacement/continuation programs with
+  OrientationMode::VelocityAligned even under Newtonian law, making Newtonian motion
+  visually look Assisted;
+- Newtonian local bypass and the un-oriented portal-102 transit now preserve current
+  body attitude (FixedStart); Assisted remains velocity-aligned;
+- this change is unverified until the next target run.
+
+Still pending and must not be faked in replay UI:
+- pilot-skill selector (expert/average/loser);
+- flight doctrine selector (standard/extreme);
+- meaningful obstacle checkbox producing a different simulation, not merely hiding
+  the obstacle;
+- meaningful Assisted/Newtonian selector that runs/regenerates the scenario.
+These require extracting/reusing a live scenario runner inside the tool or generating
+distinct authoritative traces. Do not add cosmetic controls that leave physics unchanged.

@@ -227,6 +227,7 @@ public:
         bool avoidanceContinuityLateralValid = false;
         std::size_t avoidanceSameBranchSafeCandidates = 0;
         double avoidanceSelectedBranchAlignment = 0.0;
+        bool avoidanceBranchSwitchRequired = false;
 
         bool nominalStaticBlocked = false;
         std::size_t staticObstaclesExamined = 0;

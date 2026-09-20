@@ -515,7 +515,7 @@ int runNavigationRuntimeSelfTest()
             std::ceil(MaxSimulatedSeconds / step)
         );
 
-    bool visibilityEvidenceComplete = false;
+    bool visibleHorizonEvidenceComplete = false;
     double simulatedSeconds = 0.0;
 
     for (std::uint64_t i = 0; i < maxSteps; ++i)
@@ -672,7 +672,7 @@ int runNavigationRuntimeSelfTest()
             return 52;
         }
 
-        visibilityEvidenceComplete =
+        visibleHorizonEvidenceComplete =
             observation.valid &&
             observation.exactStaticGeometryPublished &&
             observation.exactStaticObstacleCount > 0 &&
@@ -703,7 +703,7 @@ int runNavigationRuntimeSelfTest()
             observation.nonZeroExecutedDemandSeen &&
             observation.lateralExecutedDemandSeen;
 
-        if (visibilityEvidenceComplete)
+        if (visibleHorizonEvidenceComplete)
             break;
     }
 
@@ -713,7 +713,7 @@ int runNavigationRuntimeSelfTest()
                 observation.minimumGoalDistanceMeters
             : 0.0;
 
-    if (!visibilityEvidenceComplete)
+    if (!visibleHorizonEvidenceComplete)
     {
         std::cerr
             << "[NAV-SELFTEST]"

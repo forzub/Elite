@@ -103,6 +103,24 @@ Vec3d leastAlignedAxis(const Vec3d& forward) noexcept
     return {0.0, 0.0, 1.0};
 }
 
+
+Vec3d normalizedOr(
+    const Vec3d& value,
+    const Vec3d& fallback
+) noexcept
+{
+    const double magnitudeSquared = lengthSquared(value);
+    if (!finite(magnitudeSquared) ||
+        magnitudeSquared <= kEpsilon)
+    {
+        return fallback;
+    }
+
+    const double inverseMagnitude =
+        1.0 / std::sqrt(magnitudeSquared);
+    return scale(value, inverseMagnitude);
+}
+
 } // namespace
 
 LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
@@ -236,6 +254,12 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         query.avoidance.secondaryDeflectionRadians -
         query.avoidance.primaryDeflectionRadians;
 
+    const Vec3d continuityDirection =
+        normalizedOr(
+            query.horizon.agent.velocityMapMetersPerSecond,
+            forward
+        );
+
     for (double deflection =
              query.avoidance.primaryDeflectionRadians;
          deflection <=
@@ -244,6 +268,13 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     {
         const double forwardScale = std::cos(deflection);
         const double lateralScale = std::sin(deflection);
+
+        bool ringHasSafeCandidate = false;
+        double bestContinuityScore =
+            -std::numeric_limits<double>::infinity();
+        std::size_t bestAzimuthIndex =
+            std::numeric_limits<std::size_t>::max();
+        LocalHorizonPlanner::Result bestAdjusted;
 
         for (std::size_t azimuthIndex = 0;
              azimuthIndex < query.avoidance.azimuthSamples;
@@ -322,8 +353,36 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
             adjusted.targetAccelerationMapMetersPerSecond2 =
                 {0.0, 0.0, 0.0};
 
+            // Search the complete minimum-deflection ring before deciding.
+            // Replanning used to return the first safe azimuth. Because the
+            // local transverse basis changes as the craft moves, that could
+            // alternate between opposite sides of the same obstacle. Prefer
+            // the safe candidate that best continues the actual velocity
+            // direction. This adds side-continuity without hidden planner
+            // state, while preserving the existing "smallest deflection ring"
+            // contract.
+            const double continuityScore =
+                dot(direction, continuityDirection);
+
+            if (!ringHasSafeCandidate ||
+                continuityScore >
+                    bestContinuityScore + kEpsilon ||
+                (std::abs(
+                     continuityScore - bestContinuityScore
+                 ) <= kEpsilon &&
+                 azimuthIndex < bestAzimuthIndex))
+            {
+                ringHasSafeCandidate = true;
+                bestContinuityScore = continuityScore;
+                bestAzimuthIndex = azimuthIndex;
+                bestAdjusted = adjusted;
+            }
+        }
+
+        if (ringHasSafeCandidate)
+        {
             result.status = Status::AdjustedClear;
-            result.target = adjusted;
+            result.target = bestAdjusted;
             result.adjustedTarget = true;
             result.selectedDeflectionRadians = deflection;
             return result;

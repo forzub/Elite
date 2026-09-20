@@ -20,11 +20,6 @@ bool finite(double value) noexcept
     return std::isfinite(value);
 }
 
-bool finite(const Vec3d& value) noexcept
-{
-    return finite(value.x) && finite(value.y) && finite(value.z);
-}
-
 Vec3d add(const Vec3d& a, const Vec3d& b) noexcept
 {
     return {a.x + b.x, a.y + b.y, a.z + b.z};

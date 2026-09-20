@@ -175,6 +175,7 @@ public:
         // nominal route; merge target lies back on the original planned line.
         glm::dvec3 localBypassLateralOffsetMap {0.0};
         double localBypassLateralOffsetMeters = 0.0;
+        double localBypassForwardDistanceMeters = 0.0;
         glm::dvec3 localBypassMergeTargetMapMeters {0.0};
         double localBypassProjectedClearanceMeters = 0.0;
 
@@ -218,6 +219,7 @@ public:
 
         std::size_t avoidanceProjectedDynamicObstacles = 0;
         std::size_t avoidanceOffsetCandidatesExamined = 0;
+        std::size_t avoidanceRouteCandidatesExamined = 0;
         std::size_t avoidanceProjectionRejected = 0;
         std::size_t avoidanceStaticRejected = 0;
         std::size_t avoidanceDynamicRejected = 0;

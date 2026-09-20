@@ -9,69 +9,81 @@
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Final composite status
+## Latest final-composite evidence
 
-Latest target:
+Tested:
 ```
-0ad327ad63d3e63f8c204b2e59a6f224f80c8fee
-```
-
-Architecture PASS; runtime 17/19.
-
-The latest run proved the explicit continuity plumbing exists, but branch classification was mathematically wrong.
-
-## Correct branch semantics
-
-A local bypass branch is a lateral choice around the current nominal route.
-
-Therefore branch comparison must remove nominal forward first.
-
-For accepted direction A and candidate C:
-```
-A_lateral = A - forward * dot(A, forward)
-C_lateral = C - forward * dot(C, forward)
-
-branch_alignment =
-    dot(normalize(A_lateral), normalize(C_lateral))
+8011cc3ed19fc027fba256ee4aecca7c93a4ce0f
 ```
 
-This correctly distinguishes opposite bypass sides even when both directions make forward progress.
+The new diagnostics changed the interpretation of the remaining failure.
 
-## Ranking
+At the problematic replans:
+- transverse continuity is valid;
+- same-branch safe candidate count is zero.
 
-With valid transverse continuity:
-- same branch first;
-- smallest safe ring inside same branch;
-- best lateral alignment inside that ring.
+Therefore branch switching is not gratuitous ping-pong at that state. It is a necessary topology/local-free-space change.
 
-This avoids both:
-- branch ping-pong;
-- gratuitous 60/75 degree turns merely to increase alignment score.
+## New ownership contract
 
-## Diagnostics
+Local avoidance may identify a safe opposite branch, but a forced branch switch is not itself a physically executable maneuver.
 
-New result diagnostics make the next composite decisive:
-- whether lateral continuity was meaningful;
-- how many same-branch safe candidates existed;
-- what alignment was selected.
+Production now exposes:
+```
+avoidanceBranchSwitchRequired
+```
 
-If no same-branch safe candidate exists, branch switching is not a ranking defect. At that point the planner/execution stack needs a physically appropriate recovery maneuver before the switch.
+Higher maneuver ownership must respond with recovery/brake before accepting the new branch if the current motion cannot transition continuously.
 
-## B4 interpretation
+This preserves the architecture split:
+- B4/local geometry identifies safe target/branch state;
+- B5/B7/higher maneuver layer chooses the physical transition;
+- B8-B10 execute the accepted physical program;
+- physics remains authoritative.
 
-This remains transitional local-ray-fan work.
+## Composite implementation
 
-Long-term B4 route-aligned corridor should carry branch/topology continuity structurally.
+The final lab now exercises:
+```
+accepted branch
+ -> no same-branch safe continuation
+ -> branch-switch escalation
+ -> physical brake/recovery
+ -> old branch commitment retired
+ -> world re-published
+ -> replan from actual stopped state
+ -> new branch accepted only after fresh proof
+```
+
+Recovery is bounded by real manoeuvre authority and both static/dynamic clearance.
+
+## Focused cross-ring fixture
+
+The regression blocker was moved onto the actual first-ring preferred ray.
+
+This should finally distinguish:
+- same branch available at larger angle -> preserve branch;
+- same branch unavailable anywhere -> signal recovery before branch switch.
+
+## Longer-term B4/B5 meaning
+
+The route-aligned corridor architecture should eventually carry this structurally:
+- branch identity;
+- branch exhaustion;
+- required branch transition;
+- physical recovery/transition candidate.
+
+The current signal is an explicit transitional contract, not hidden planner memory.
 
 ## Exit criterion
 
 Final composite green -> synthetic maneuver behavior lab closes.
 
 Then:
-- NAV STRESS/game;
-- accepted route/corridor visualization;
+- actual NAV STRESS/game;
+- accepted corridor/tunnel visualization;
 - accepted physical trajectory visualization;
-- live NPC/autopilot evaluation.
+- live NPC/autopilot behavior evaluation.
 
 ## State protocol
 

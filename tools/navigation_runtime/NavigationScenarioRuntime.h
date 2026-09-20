@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "NavigationTrace.h"
 
@@ -39,6 +40,7 @@ struct ScenarioRunResult
     bool success = false;
     std::string message;
     TraceDocument trace;
+    std::vector<std::string> diagnostics;
 };
 
 // Load only the authored input scene for pre-calculation visualization.

@@ -14,88 +14,98 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Tested:
 ```
-51e6c41bb94b65e8cc269fb035164a4eb0aa23fd
+0ad327ad63d3e63f8c204b2e59a6f224f80c8fee
 ```
 
-Architecture PASS. Runtime 18/19.
+Architecture PASS. Runtime 17/19.
 
-The focused accepted-segment continuity regression is now PASS.
+Failures:
+- strengthened planner continuity regression;
+- final composite.
 
-The final composite still failed because continuity ranking was constrained to the first safe deflection ring.
-
-Logged example:
-```
-continuity=(0.357512,-0.349550,+0.866025)
-position=(181.656981,57.946838,25.984828)
-selected target=(172.399109,59.234718,-2.521893)
-```
-
-The target is almost opposite the accepted +Z branch.
+The explicit continuity hint is reaching production, but branch classification was wrong.
 
 ## Root cause
 
-The production search still did:
-```
-for ring from small to large:
-    rank azimuths by continuity
-    if any safe candidate:
-        return
-```
+Using full direction dot product to define "same avoidance branch" is invalid because all ordinary rays contain a strong forward component.
 
-Therefore a smaller-angle opposite-side candidate could beat a slightly larger-angle same-branch candidate.
+Opposite lateral bypasses can therefore both produce positive full-direction dot.
 
 ## Current unverified production fix
 
+Commits:
 ```
-e19c1804806ce5f3554f20c7b7d3d5ac19b4911e
-```
-
-When explicit continuity exists:
-- evaluate all safe candidates across all ordinary rings;
-- safe candidates with positive alignment to accepted direction form the preferred branch class;
-- preferred branch class beats opposite branch class;
-- then maximize continuity dot;
-- then prefer smaller deflection;
-- then smaller azimuth index.
-
-If no safe same-branch candidate exists anywhere, choose the least-opposed safe fallback.
-
-Without explicit continuity, legacy smallest-ring priority remains.
-
-Public semantic comment:
-```
-c3dcf98b16bd6e45f0dbc949ec926f086aa623a0
+b8bcaae6c5af366e8cabcefb86fbe104c120b010
+caa8da847b0f48ea2d72d2fa8c042c1d599c73b8
+88f63b0d62803d73e7f3694d1c4f30bcbc1925d0
+9422dddfab64f70f94773ebcacf2167be1daacbe
+e9655a4b9f004fe790adbbc287bd55a3f1c269ea
 ```
 
-## Strengthened regression
-
+Branch classification:
 ```
-06a917f058926a29f41a936dd994be3f8073e7cf
-```
+accepted_lateral =
+    accepted_direction -
+    nominal_forward * dot(accepted_direction, nominal_forward)
 
-Fixture:
-- accepted branch = -Z;
-- first-ring -Z is blocked by exact static geometry;
-- first-ring +Z remains safe;
-- larger-ring -Z is safe.
-
-Required:
-- AdjustedClear;
-- selected target remains -Z;
-- selected deflection must exceed the primary ring.
-
-This pins cross-ring branch preservation, not merely same-ring azimuth ranking.
-
-## Composite ownership/diagnostics
-
-```
-e62328d4af99b6e452e2d07e53cd20e25a103dcf
-a2da6453daaa8e00cc1f4661321b9294513057ff
+candidate_lateral =
+    candidate_direction -
+    nominal_forward * dot(candidate_direction, nominal_forward)
 ```
 
-`[COMPOSITE-RESUME]` now prints selected deflection.
+If both lateral components are meaningful:
+```
+branch_alignment =
+    dot(normalize(candidate_lateral),
+        normalize(accepted_lateral))
+```
 
-Continuity is updated only after a physically valid local program successfully executes, using executed program start->terminal displacement.
+Positive alignment = same branch.
+
+## Ranking
+
+With explicit branch continuity:
+1. safe same-branch class;
+2. smallest safe deflection ring in that class;
+3. highest transverse branch alignment within that ring;
+4. highest full-direction continuity;
+5. deterministic azimuth index.
+
+If no same-branch safe candidate exists, use the safest least-opposed fallback.
+
+Without explicit branch continuity, legacy minimum-safe-ring behavior remains.
+
+## New diagnostics
+
+Runtime planner now surfaces:
+```
+avoidanceContinuityHintUsed
+avoidanceContinuityLateralValid
+avoidanceSameBranchSafeCandidates
+avoidanceSelectedBranchAlignment
+```
+
+Composite resume rows print these values.
+
+## Focused regression
+
+Commit:
+```
+0e344f3a3b2a5e887cbb474ce9ce650b68851716
+```
+
+The regression now uses 4 azimuth samples so first-ring preferred -Z is one deterministic ray.
+
+Exact-static blocker rejects that ray only.
+
+Larger-ring -Z remains clear.
+
+Assertions require:
+- explicit lateral continuity active;
+- at least one same-branch safe candidate;
+- selected branch alignment >0.5;
+- selected deflection > primary ring;
+- selected target remains -Z.
 
 ## Validation
 
@@ -126,14 +136,26 @@ grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-AC
 echo "$PWD/$OUT"
 ```
 
-## If green
+## Next interpretation
 
-Record exact target checkout and composite metrics, close synthetic maneuver behavior laboratory, and move immediately into real NAV STRESS/game visualization.
+If regression passes and composite shows:
+```
+same_branch_safe > 0
+selected_branch_alignment > 0
+```
+then branch continuity is functioning.
 
-## If red
+If composite failure shows:
+```
+same_branch_safe == 0
+```
+then switching branch is physically required; do not force continuity. Add explicit recovery/brake/stop-turn-go before the new branch.
 
-Use continuity + selected deflection diagnostics. If branch still flips despite a safe same-branch candidate, the vector hint is insufficient and should be promoted to explicit branch/plane identity.
+If 19/19:
+- accept final composite;
+- close synthetic behavior testing;
+- move into real NAV STRESS/game.
 
-Do not weaken physical, tracking, hull, clearance or terminal criteria.
+Do not weaken physical or safety thresholds.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

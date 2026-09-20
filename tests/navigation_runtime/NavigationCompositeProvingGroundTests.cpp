@@ -1391,6 +1391,7 @@ Planner::Policy plannerPolicy()
     policy.avoidance.minimumLateralStepMeters = 4.0;
     policy.avoidance.lateralStepEnvelopeMultiplier = 1.0;
     policy.avoidance.maximumLateralOffsetMeters = 90.0;
+    policy.avoidance.longitudinalSamples = 3;
     policy.avoidance.projectionPaddingMeters = 1.5;
     policy.avoidance.trajectorySamples = 48;
     policy.avoidance.staticAdditionalClearanceMeters = 0.0;

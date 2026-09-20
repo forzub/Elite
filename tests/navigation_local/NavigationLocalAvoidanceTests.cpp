@@ -52,6 +52,7 @@ Avoidance::Query baseQuery()
     query.avoidance.minimumLateralStepMeters = 2.0;
     query.avoidance.lateralStepEnvelopeMultiplier = 1.0;
     query.avoidance.maximumLateralOffsetMeters = 80.0;
+    query.avoidance.longitudinalSamples = 3;
     query.avoidance.projectionPaddingMeters = 1.0;
     query.avoidance.trajectorySamples = 32;
     query.avoidance.staticAdditionalClearanceMeters = 0.0;
@@ -182,10 +183,15 @@ void testCrossingObstacleProjectsToNormalPlaneAndFindsBypass()
             "local bypass must own an adjusted target");
     require(result.projectedDynamicObstacles == 1,
             "moving obstacle must enter normal-plane projection");
-    require(result.offsetCandidatesExamined > 0,
-            "visible horizon must evaluate lateral offsets");
+    require(result.offsetCandidatesExamined > 0 &&
+            result.routeCandidatesExamined > 0,
+            "visible horizon must evaluate lateral offsets and longitudinal bypass stations");
     require(result.selectedLateralOffsetMeters > 0.0,
             "bypass must leave the blocked centerline");
+    require(result.selectedBypassForwardDistanceMeters > 0.0 &&
+            result.selectedBypassForwardDistanceMeters <
+                result.target.horizonDistanceMeters,
+            "bypass station must lie before the on-route merge point inside the physical horizon");
     require(
         !near(result.selectedLateralOffsetMap.y, 0.0) ||
         !near(result.selectedLateralOffsetMap.z, 0.0),
@@ -268,6 +274,56 @@ void testExactStaticBlockerConstrainsOffsetSearch()
             "some projected offsets must be rejected by exact static geometry");
     require(result.selectedLateralOffsetMeters > 0.0,
             "static blocker must cause a lateral bypass");
+}
+
+void testReturnLegIsAlsoProvenAgainstExactStaticGeometry()
+{
+    Avoidance planner;
+    Avoidance::Query query = baseQuery();
+
+    Space::StaticSpaceUpdate update;
+    update.sourceRevision = 33;
+
+    Space::RegionInput region;
+    region.regionId = 1;
+    region.boundsMapMeters.minMapMeters = {-20.0, -100.0, -100.0};
+    region.boundsMapMeters.maxMapMeters = {200.0, 100.0, 100.0};
+    region.clearanceRadiusMeters = 1000.0;
+    region.geometryRevision = 1;
+    update.regions.push_back(region);
+
+    // This wall sits late in the visible horizon. Early bypass stations can
+    // reach their off-route point without touching it; only the second
+    // bypass->merge leg exposes the collision for insufficient offsets.
+    update.obstacles.push_back(
+        staticBox(
+            "late_return_wall",
+            901,
+            glm::dvec3(35.0, 0.0, 0.0),
+            glm::dvec3(1.5, 3.0, 3.0)
+        )
+    );
+
+    Space space;
+    space.replaceStaticWorld(std::move(update));
+
+    const Avoidance::Result result = planner.evaluate(
+        query,
+        dynamicResult(),
+        StaticQueries(space)
+    );
+
+    require(result.status == Avoidance::Status::AdjustedClear,
+            "late static wall must still admit a two-segment detour");
+    require(result.staticRejected > 0,
+            "return-leg proof must reject insufficient offsets");
+    require(result.selectedLateralOffsetMeters >= 8.0,
+            "selected detour must carry enough lateral separation through the return leg");
+    require(result.selectedBypassForwardDistanceMeters > 0.0,
+            "two-segment detour must publish its longitudinal bypass station");
+    require(near(result.mergeTargetMapMeters.y, 0.0) &&
+            near(result.mergeTargetMapMeters.z, 0.0),
+            "return-leg merge point must remain on the original trajectory");
 }
 
 void testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute()
@@ -408,6 +464,7 @@ int main()
         testCrossingObstacleProjectsToNormalPlaneAndFindsBypass();
         testHeadOnObstacleCanBypassWithoutMandatoryStop();
         testExactStaticBlockerConstrainsOffsetSearch();
+        testReturnLegIsAlsoProvenAgainstExactStaticGeometry();
         testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute();
         testObstacleGoneReturnsImmediatelyToNominalTrajectory();
         testNarrowStaticRegionFailsClosedWhenNoOffsetFits();

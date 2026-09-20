@@ -1,125 +1,106 @@
-# Navigation Runtime — live 3D diagnostic stand
+# Navigation Runtime — diagnostic stand
 
 Location: `tools/navigation_runtime/`.
 
-This tool is no longer a passive trace viewer. The JSON file describes only the
-input scenario. The executable calculates the route and vehicle motion itself by
-running the production navigation/control/physics chain in-process.
+## Current mode: Stage 1 — static route construction
 
-## Runtime chain
+The stand is intentionally split into two stages.
 
-On `РАССЧИТАТЬ` the tool runs:
+### Stage 1 — current
+
+`РАССЧИТАТЬ` builds one nominal route from START to FINISH through the
+**static** obstacle set from `scenario.json`.
+
+Current chain:
 
 ```text
 scenario.json
-  -> NavigationSpace / NavigationMap
-  -> NavigationRuntimePlanner
-  -> AcceptedManeuverProgram
-  -> TrajectoryFollower
-  -> NavigationRuntimeControlBridge / PilotSkillExecutor
-  -> SharedShipPhysics / DynamicMotionSystem
-  -> calculated TraceDocument in memory
-  -> 3D playback
+  -> start / required waypoints / finish
+  -> static NavigationObstacle geometry
+  -> NominalRoutePlanner
+  -> GeometricPathPlanner backend
+  -> retained nominal polyline
+  -> 3D display
 ```
 
-The calculated trace is also saved as
-`tools/navigation_runtime/last_calculated_trace.json` for diagnostics, but it is
-an output, not an input to the live stand.
+The ship does **not** fly in Stage 1. No Follower, PilotSkill or physics result is
+presented as if execution had been proved.
 
-## Top controls
+The calculated route is retained until either:
+- the goal revision changes; or
+- the static-world revision changes.
 
-### Режим управления
-- `АССИСТЕД`
-- `НЬЮТОН`
+A dynamic-world revision by itself does **not** invalidate/rebuild the route.
 
-This changes the real local flight control law used by physics and the maneuver
-attitude policy.
+### Stage 2 — next
 
-### Пилот
-- `ЭКСПЕРТ`
-- `СРЕДНИЙ`
-- `ЛУЗЕР`
+Stage 2 will consume the retained Stage-1 route and add:
+- local monitoring of moving objects;
+- local temporary bypass / braking;
+- physical maneuver generation;
+- continuous swept-hull/tunnel proof;
+- doctrine selection;
+- AcceptedManeuverProgram;
+- Follower / PilotSkill / authoritative physics;
+- progressive reacquisition of the same nominal route.
 
-This changes the real PilotSkillExecutor profile: reaction delay, decision rate,
-command latency, response bandwidth, slew and deterministic command error.
+Moving obstacles must not cause global route reconstruction.
 
-### Режим полёта
-- `СТАНДАРТ`
-- `ЭКСТРИМ`
+## Corridor vs tunnel
 
-This changes cruise speed and planner cost/horizon/aggressiveness parameters.
-Hard collision geometry and vehicle authority are not disabled.
+The Stage-1 route uses a coarse navigation envelope:
 
-### Внезапная помеха
-Unchecked: the sudden obstacle is never published to NavigationMap.
+```text
+route_envelope_radius_m
+route_clearance_m
+```
 
-Checked: the sudden obstacle is absent from the initial world and is published
-only when its `activation_time_s` is reached during simulation. Therefore the
-initial route is calculated without foreknowledge of the surprise obstacle.
-After appearance, normal receding-horizon replanning sees it and reacts.
+This is a **route/corridor abstraction**, not exact collision truth.
 
-### РАССЧИТАТЬ
-Runs the full scenario from the start state using the currently selected modes.
-The resulting route and motion replace the previous calculation.
+Exact questions such as whether the Cobra clips a wall while rotating belong to
+the later time-parameterized swept-hull **tunnel** proof.
+
+## Dynamic-ready architecture
+
+`scenario.json` already retains the schema for:
+- moving obstacles with velocity;
+- moving obstacles with route points + speed;
+- a sudden obstacle.
+
+Stage 1 parses these inputs but deliberately does not use them to rebuild the
+static route. They are reserved for the Stage-2 local dynamic overlay.
+
+`NominalRoutePlanner::ValidityQuery` explicitly contains a dynamic revision and
+explicitly ignores it for nominal-route invalidation. Regression tests pin this
+contract.
+
+## UI
+
+The existing selectors remain visible because Stage 2 will consume them:
+- Assisted / Newtonian;
+- Expert / Average / Loser;
+- Standard / Extreme;
+- sudden-obstacle checkbox.
+
+During Stage 1 these controls do not change the nominal static route. The viewer
+reports `ЭТАП 1 — МАРШРУТ` and displays one static calculation frame.
 
 ## scenario.json
 
-Default file:
-`tools/navigation_runtime/scenario.json`
+Supported Stage-1 route inputs:
+- start position;
+- optional `ship_route_points` as ordered required checkpoints;
+- finish position;
+- static obstacles: box / sphere / capsule;
+- `route_envelope_radius_m`;
+- `route_clearance_m`.
 
-Supported inputs:
-
-- start position, velocity, forward and up;
-- optional forced ship route points (normally empty so Planner chooses the route);
-- final position;
-- optional required final forward direction;
-- optional required final up direction;
-- required final speed;
-- standard/extreme cruise speed;
-- static obstacles:
-  - sphere;
-  - box;
-  - capsule;
-- moving obstacles:
-  - initial position + velocity vector; or
-  - route points + route speed;
-- one optional sudden obstacle with the same motion description;
-- sudden obstacle may spawn relative to the live Cobra body using
-  `spawn_relative_to_ship_fru = [forward, right, up]`.
-
-## 3D diagnostics
-
-The stand renders:
-
-- static obstacles from JSON;
-- route selected by Planner as a white polyline;
-- local adjusted/bypass targets;
-- actual Cobra path;
-- actual Cobra body basis and nose;
-- AcceptedManeuverProgram reference nose;
-- angular error between actual and program reference;
-- translucent AcceptedManeuverProgram tracking corridor;
-- moving obstacle and predicted envelope;
-- replan events;
-- bottom-left `ГОРИЗОНТ КОБРЫ` projection plane;
-- frame slider and playback controls.
-
-The tracking corridor is deliberately labeled as the maneuver-program follower
-envelope. NavigationRuntimePlanner::Result does not currently publish a separate
-volumetric planner corridor, so the tool does not invent one.
-
-## Cobra horizon inset
-
-The inset is the plane perpendicular to the Cobra's current longitudinal axis.
-
-The moving obstacle is projected into Cobra right/up coordinates. Repeated
-projected envelopes over the planner look-ahead form the visible predicted
-obstacle tunnel.
-
-## Window behavior
-
-The viewer opens as an ordinary decorated Windows window maximized to the desktop
-work area. It is not exclusive fullscreen and not borderless game fullscreen.
+Inputs already reserved for Stage 2:
+- start velocity / attitude;
+- final velocity / attitude requirements;
+- standard/extreme speeds;
+- moving obstacles;
+- sudden obstacle.
 
 ## Build
 
@@ -133,23 +114,10 @@ cmake --build build/tools/navigation_runtime
 
 ## Run executable
 
-Default scenario:
-
 ```bash
 cd /d/__elite/work
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Custom scenario:
-
-```bash
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe path/to/my_scenario.json
-```
-
-Or build and run in one command:
-
-```bash
-bash tools/navigation_runtime/run_mingw64.sh
-```
-
-The helper prints the exact executable launch command before starting it.
+The window is an ordinary decorated Windows window, maximized to the desktop
+work area.

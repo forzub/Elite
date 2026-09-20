@@ -155,3 +155,40 @@ to appear twice in root CMake. Current runtime architecture already compiles it 
 shared `EliteNavigationGeometry`, which both client/server navigation runtime reuse.
 The checker now pins that shared-library ownership instead of duplicate compilation.
 This is an architecture-test correction only; route behavior is unchanged.
+
+
+## Updated immediate target gate
+
+Do **not** use the full 20-test runtime suite as the Stage-1 acceptance gate.
+It contains intentionally retained Stage-2 regressions.
+
+Use the focused runner:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+bash tests/navigation_runtime/run_stage1_mingw64.sh
+```
+
+Exact Stage-1 test executable:
+
+```bash
+cd /d/__elite/work
+./build/tests/navigation_runtime/nominal_route_planner_tests.exe
+```
+
+Exact viewer executable:
+
+```bash
+cd /d/__elite/work
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```
+
+Known Stage-2 failures remain open and must not be deleted or weakened:
+- `navigation_runtime_planner`: adjusted-target fixture no longer demonstrates a safe
+  bypass under current B4 semantics;
+- `navigation_composite_proving_ground`: after the dynamic Newtonian bypass, the
+  hand-authored narrow-passage program enters portal 102 with a full-hull width above
+  the 19 m half-width gate. This is a Stage-2 body-attitude/tunnel issue, not a
+  Stage-1 route-planning issue.

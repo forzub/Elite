@@ -44,8 +44,9 @@ struct TrajectoryGenerationRequest
     std::vector<NavigationObstacle> obstacles;
     NavigationVehicleProfile vehicle;
 
-    // Velocity relative to the planning frame.
+    // Initial kinematic state relative to the planning frame.
     glm::dvec3 initialVelocityMps {0.0};
+    glm::dvec3 initialAccelerationMps2 {0.0};
 
     // Deprecated compatibility knobs from the removed spline backend. They are
     // intentionally ignored by the canonical Ruckig runtime planner and remain

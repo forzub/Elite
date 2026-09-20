@@ -141,6 +141,9 @@ for marker in (
     "UiAction::Execute",
     "executionPerformed",
     "diagnosticLines",
+    "retainedRoute",
+    "retainedRouteDiagnostics",
+    "restoreRetainedRouteForNewExecutionSettings",
 ):
     require(marker in viewer, f"two-stage viewer workflow missing {marker}")
 

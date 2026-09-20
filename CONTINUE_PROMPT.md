@@ -3,97 +3,132 @@
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Read `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`,
-`src/game/navigation/STAGE12_END_TO_END.md` and the relevant viewer/test code.
+`src/game/navigation/STAGE12_END_TO_END.md`, and the code under
+`tools/navigation_runtime/` before changing behavior.
+
 After every state-affecting event synchronize those Markdown files and recreate this
-`CONTINUE_PROMPT.md` from scratch. Never merely append stale continuation instructions.
+`CONTINUE_PROMPT.md` from scratch. Never append stale continuation instructions.
 
-## Mandatory developer workflow
+## Mandatory command-output rule
 
-Whenever compilation produces an executable, always give the user a separate exact
+Whenever a build produces an executable, always give the user a separate exact
 launch command from the documented working directory.
 
-## Current viewer architecture
+## Canonical tool architecture
 
-`tools/navigation_runtime/` is a deterministic replay viewer.
-The real composite test executes Planner -> AcceptedManeuverProgram -> Follower ->
-runtime control bridge -> SharedShipPhysics first, then writes JSON.
-The viewer does NOT run planner/follower live while replaying JSON.
+`tools/navigation_runtime` is now a LIVE navigation diagnostic stand, not a passive
+trace viewer.
 
-Latest target-verified viewer before the current source changes compiled and opened.
-The current source changes below are NOT target-verified yet.
+Input is `tools/navigation_runtime/scenario.json`.
+The JSON describes the initial scene only:
+- start position/velocity/forward/up;
+- optional forced ship route points (default empty);
+- final position;
+- optional final forward and up constraints;
+- final speed requirement;
+- standard/extreme cruise speeds;
+- static obstacles: sphere / box / capsule;
+- moving obstacles using either velocity vector OR route_points + route_speed_mps;
+- optional sudden obstacle, including `spawn_relative_to_ship_fru`.
 
-## Trace/viewer accuracy changes now on main
+On the real `РАССЧИТАТЬ` button the executable runs in-process:
 
-- trace schema v2 records actual ship forward/right/up; roll is no longer reconstructed
-  from forward only;
-- trace v2 records the sampled AcceptedManeuverProgram reference position and full basis;
-- trace v2 records hazard velocity and planner look-ahead;
-- playback interpolates between ~0.10 s trace samples, removing the apparent ~10 Hz
-  stutter that looked like CPU overload;
-- ordinary decorated GLFW window starts maximized to Windows work area; it is not
-  exclusive/borderless fullscreen;
-- viewer HUD/title are Russian with internal Cyrillic bitmap glyphs;
-- frame slider is visible and scrubbable;
-- actual nose and program-reference nose are rendered separately;
-- HUD reports angular error between actual and accepted-program forward;
-- translucent blue tube renders AcceptedManeuverProgram reference path plus
-  `tracking.positionErrorMeters`. Do NOT call this a Planner volumetric corridor:
-  `NavigationRuntimePlanner::Result` does not publish one;
-- bottom-left `ГОРИЗОНТ КОБРЫ` inset is the right/up plane perpendicular to actual ship
-  forward and projects the moving hazard plus its predicted envelope tunnel over the
-  planner look-ahead.
+`scenario.json -> NavigationSpace / NavigationMap -> NavigationRuntimePlanner ->
+AcceptedManeuverProgram -> TrajectoryFollower -> NavigationRuntimeControlBridge /
+PilotSkillExecutor -> SharedShipPhysics / DynamicMotionSystem -> in-memory trace -> 3D`.
 
-## Newtonian correction
+`last_calculated_trace.json` is only an OUTPUT for diagnostics. It is not the source
+of the live calculation.
 
-The composite test had been authoring post-hazard replacement/continuation programs as
-`OrientationMode::VelocityAligned` even when law was Newtonian. This made Newtonian
-look Assisted despite using the Newtonian control law.
+## Real top controls
 
-Now:
-- Newtonian local bypass/reacquisition replacement programs preserve current rigid-body
-  attitude using `FixedStart`;
-- the un-oriented portal-102 transit also preserves body attitude for Newtonian;
-- Assisted retains velocity-aligned attitude;
-- explicit precision/oriented attitude requirements may still rotate the body when the
-  maneuver contract actually demands it.
+Control law:
+- Assisted;
+- Newtonian.
 
-## What remains pending
+Pilot:
+- Expert;
+- Average;
+- Loser.
 
-Do NOT add cosmetic replay controls that pretend to change physics.
-The requested selectors still need a reusable live scenario runner:
-- Assisted / Newtonian;
-- pilot: expert / average / loser;
-- flight doctrine: standard / extreme;
-- obstacle checkbox: unchecked must run a genuinely obstacle-free simulation, checked
-  must run the moving-hazard scenario.
+Flight style:
+- Standard;
+- Extreme.
 
-The live scenario should also support the existing Cobra-horizon projection and moving
-obstacle prediction tunnel from authoritative planner inputs.
+Sudden-obstacle checkbox:
+- unchecked: sudden obstacle is never published;
+- checked: sudden obstacle is absent from the initial map and becomes authoritative
+  only when `activation_time_s` is reached DURING simulation;
+- therefore initial routing has no foreknowledge of the surprise obstacle;
+- normal receding-horizon replanning reacts after activation.
 
-## Immediate target validation
+These controls are real simulation inputs, not cosmetic replay toggles.
 
-From repository root:
+Pilot selection changes actual PilotSkillExecutor execution profile:
+reaction delay, perception/decision rate, command latency, response, slew and
+deterministic command error.
+
+Flight style changes real cruise speed and planner horizon/cost/aggressiveness.
+Hard collision geometry and vehicle authority are not disabled for Extreme.
+
+Control law changes real LocalFlightControlLaw and maneuver attitude semantics.
+
+## Route semantics
+
+The default `scenario.json` has empty `ship_route_points`, so Planner must calculate
+the route around the static JSON obstacle.
+
+The rendered white route is generated from the live sequence of Planner
+`selectedTarget` decisions after each replan. Adjusted targets are recorded as
+turn/bypass markers. Green path is actual simulated ship motion.
+
+## Existing diagnostics retained
+
+- ordinary decorated Windows window starts maximized; no exclusive fullscreen;
+- Russian HUD;
+- playback and frame slider;
+- static JSON obstacles rendered in 3D;
+- actual ship forward/right/up preserved;
+- actual nose and AcceptedManeuverProgram reference nose rendered separately;
+- angular orientation error displayed;
+- translucent maneuver-program tracking corridor;
+- Cobra horizon inset: plane perpendicular to actual ship longitudinal axis;
+- moving hazard and predicted envelope tunnel projected into Cobra right/up plane;
+- calculated trace saved to `last_calculated_trace.json` for inspection.
+
+## Current validation state
+
+The live scenario runtime implementation is committed but NOT YET compiled/run on the
+target MinGW64 machine. Do not claim it accepted.
+
+Immediate target gate:
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
-
-cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/tests/navigation_runtime --target navigation_composite_proving_ground_tests
-./build/tests/navigation_runtime/navigation_composite_proving_ground_tests.exe || true
-
 cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build/tools/navigation_runtime
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/last_trace_newtonian.json
 ```
 
-Check: Russian UI, maximized ordinary window, smooth interpolation, actual/program
-attitude distinction, translucent program tracking corridor, Cobra-horizon inset, and
-Newtonian body no longer being continuously velocity-aligned.
+Exact executable launch command:
 
-Known navigation issues remain separate:
-- planner fixture currently reaches `fixture must produce a safe adjusted target`;
-- composite previously performed two safe B4 adjusted segments and then lost dynamic
-  clearance after returning to the long portal-102 leg. Do not weaken safety limits to
-  green this test.
+```bash
+cd /d/__elite/work
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```
+
+Check first:
+- compile/link;
+- window opens maximized;
+- top three selector groups + sudden obstacle + `РАССЧИТАТЬ` are visible/clickable;
+- no preloaded old trajectory;
+- pressing `РАССЧИТАТЬ` performs a new live calculation;
+- default planner routes around the wall without forced ship waypoints;
+- unchecked/checked sudden obstacle behavior differs correctly;
+- selected pilot/mode/style materially changes the simulation;
+- final forward/up/speed contract is respected;
+- route/path/corridor/horizon render.
+
+Any target compile/runtime failure becomes the next state-affecting event. Record exact
+HEAD, observed error, root cause and patch before proceeding.

@@ -269,3 +269,34 @@ First acceptance checks:
 
 Any compile/runtime failure is the next state-affecting event: record exact target HEAD,
 root cause, patch, and recreate CONTINUE_PROMPT.md.
+
+## Immediate rerun after video diagnosis
+
+Build and rerun the live stand after the dynamic snapshot-age fix and fixed HUD layout.
+
+Build:
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/tools/navigation_runtime
+```
+
+Exact executable launch:
+```bash
+cd /d/__elite/work
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```
+
+Immediate checks:
+- status must no longer become `ДАННЫЕ УСТАРЕЛИ` simply because simulation time >0.25 s;
+- no text in the right panel may move vertically when replan/orientation/hazard rows
+  change; absent values occupy their reserved slot as `-`;
+- calculation success/failure must remain visible during playback;
+- default no-sudden-obstacle run must make meaningful route progress.
+
+After this rerun, do NOT declare navigation accepted from the live stand yet.
+Next implementation task: remove the stand-local handcrafted `makeShortProgram` path
+and route planner outputs through the real production physical maneuver
+compile/proof/selection/acceptance chain (B5/B6/B7/B8) before Follower execution.

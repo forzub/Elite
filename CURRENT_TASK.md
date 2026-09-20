@@ -11,79 +11,60 @@
 ## Latest tested checkout
 
 ```
-8011cc3ed19fc027fba256ee4aecca7c93a4ce0f
+af9ee9d1694ac0facafaf23b0ec51c3adaf7dbbf
 ```
 
 Architecture PASS; runtime 17/19.
 
-## What the latest log proved
+## Latest composite evidence
 
-At the failing persistent-hazard replans:
-
+Branch-switch recovery succeeded physically:
 ```
-continuity_lateral_valid=1
-same_branch_safe=0
-```
-
-and later:
-
-```
-selected_branch_alignment=-0.976922
+duration=4.0 s
+stopping distance=6.757088 m
+peak brake FF=1.266954 m/s2
+actual dynamic clearance=9.817623 m
+tracking exceeded=0
+final speed error=0.009128 m/s
 ```
 
-So the accepted branch is genuinely unavailable.
+After recovery:
+- old continuity is cleared;
+- planner returns a fresh AdjustedClear target;
+- no new branch-switch escalation is required.
 
-The planner is allowed to select another safe branch, but execution must not try to jump to it as a no-stop continuation.
+## Remaining failure
 
-## Current production signal
-
+The generic replacement fitter rejects the post-recovery launch because it still applies:
 ```
-avoidanceBranchSwitchRequired
+minimum planned speed >=0.50 m/s
 ```
+at t=0.
 
-is emitted when:
-- accepted transverse continuity exists;
-- no safe same-branch candidate exists;
-- a safe adjusted target exists elsewhere.
+That is incompatible with an intentional near-stop recovery state.
 
-Commits:
+## Current candidate
+
+Post-recovery launch support:
 ```
-4a91a78bea1e159a329ab346586a4d290ea5d420
-9949b701bc8ba181a08b96e8077a375aada725be
-7a5b4ae0520a10edbd89fd5f1e81f2427f4768be
-e407857d7764300193075cbee941be82312338f8
-```
-
-## Focused regression correction
-
-```
-c8e0c7cd6b6a7deb6c7f618c4d86ea80d4c62400
+7c87e655788af4e95f9576675185482639fec528
 ```
 
-The blocker is now centered on the actual 15-degree -Z probe endpoint:
+Rules:
+- moving entry >=0.50 m/s -> old minimum-speed rule unchanged;
+- recovery-rest entry <0.50 m/s -> allow launch only if:
+  - progress never reverses below -0.05 m/s;
+  - curve reaches >=0.50 m/s;
+  - after reaching it, speed stays >=0.50 m/s;
+  - transverse FF <=1.35 m/s2;
+  - planned dynamic clearance >=1.50 m.
+
+Focused regression fixture:
 ```
-(579.555496, 0, -155.291427)
+252f9d81c5fd91363a0e0561e195c1f5ab0d375d
 ```
 
-A safe larger-ring same-side candidate must suppress branch-switch escalation.
-
-## Composite recovery candidate
-
-```
-0ecf1b71b9620022a49ea71c996f5e81c02e5243
-```
-
-On `avoidanceBranchSwitchRequired`:
-- reject direct opposite-side continuation;
-- build conservative physical Brake recovery;
-- peak full acceleration <=1.35 m/s2;
-- planned static/dynamic clearance >=1.5 m;
-- execute through real follower/PilotSkill/physics;
-- actual clearances >0.5 m;
-- zero tracking-envelope violations;
-- stop to <=0.60 m/s;
-- clear old continuity;
-- replan from actual recovered state.
+The blocker now sits at an interior 300 m point on the primary -Z ray, eliminating dependence on exact physical-horizon length.
 
 ## Target commands
 
@@ -109,26 +90,23 @@ OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
 echo
 echo "===== FINAL COMPOSITE SUMMARY ====="
-grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE-RECOVERY\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|NAVIGATION RUNTIME PLANNER TESTS|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+grep -E '\[BRANCH-REGRESSION\]|\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE-RECOVERY\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|NAVIGATION RUNTIME PLANNER TESTS|tests passed|tests failed|TESTED HEAD' "$OUT" || true
 
 echo "$PWD/$OUT"
 ```
 
 ## Interpretation
 
-If focused regression fails:
-- inspect exact-static blocker geometry / branch diagnostics.
+If `[BRANCH-REGRESSION]` still selects the primary ring:
+- inspect exact-static query evidence, not branch ranking.
 
-If recovery cannot be authored:
-- inspect whether stopping itself is unsafe in the current state; do not force a branch switch.
-
-If recovery executes but replan still oscillates:
-- inspect post-stop branch selection with continuity intentionally cleared.
+If post-recovery launch fitter still fails:
+- add planned reason diagnostics (reversal / speed-floor / transverse FF / clearance) before changing any threshold.
 
 If 19/19:
 - accept final composite;
 - close synthetic behavior lab;
-- move to real NAV STRESS/game.
+- next task = actual NAV STRESS/game visualization and live behavior evaluation.
 
 ## Iteration rule
 

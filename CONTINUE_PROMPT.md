@@ -2,71 +2,45 @@
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
-## Mandatory workflow
-
 Read current `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`,
 `src/game/navigation/STAGE12_END_TO_END.md`, and relevant production/tests.
-After every state-affecting event synchronize those files and recreate this
-`CONTINUE_PROMPT.md` from scratch.
+After every state-affecting event synchronize those files and recreate this prompt from scratch.
 
-## Latest evidence
+## Current focus
 
-Latest uploaded target log: `navigation_test_20260920-182430.txt`.
-The log itself does not contain a tested HEAD line; do not invent one.
+The latest target run shows B4 can find and physically execute multiple safe
+receding-horizon bypass segments, but the composite later loses dynamic clearance
+after returning to nominal/topology travel.
 
-Result:
-- Stage-12 architecture PASS;
-- build/link PASS;
-- 17/19 runtime PASS;
-- planner fixture FAIL: future oriented portal route context not retained;
-- composite FAIL: dynamic clearance lost for Newtonian.
+## Visualization decision
 
-## B4 interpretation
+Build the first visualizer beside the composite test, not in the main game renderer.
 
-B4 is now clearly producing useful behavior in the composite:
-- first `AdjustedClear`: lateral offset 29.381694 m, forward station 22.5 m;
-- first physical replacement actual dynamic clearance 4.747075 m;
-- zero tracking exceeded ticks;
-- next `AdjustedClear` continuation actual dynamic clearance 22.820979 m;
-- zero tracking exceeded ticks;
-- next solve becomes `NominalClear`.
+Location:
+`tests/navigation_runtime/visualizer/`
 
-The failure is after this sequence. The test then exits the local replan loop and
-runs a fixed long narrow-portal phase while the hazard is still active. That violates
-the required command-continuous/receding-horizon navigation model.
+The composite test should emit a deterministic trace containing at least:
+- universe/test time;
+- ship position and velocity;
+- hazard position and velocity;
+- inflated dynamic safety radius/envelope;
+- selected B4 target;
+- on-route reacquisition reference;
+- current portal/topology target;
+- replan event/status;
+- actual dynamic clearance.
 
-Correct rule:
-```text
-safe short segment -> execute
-next world update -> monitor/replan
-safe short segment -> execute
-...
-nominal short segment becomes clear -> continue monitoring/replanning while reacquiring
-no safe executable segment -> brake, navigation stays active
-```
+The viewer should render ship path, hazard path/envelope, targets, portal geometry
+and replan points for the exact test run. Keep it simple and deterministic.
 
-`NominalClear` for one bounded segment is NOT authority to execute an unmonitored
-10-second/topology-wide segment.
+After the synthetic behavior is understood, the same debug product can be exposed
+in the real NAV STRESS in-game overlay.
 
-## Planner fixture
+## Immediate engineering work
 
-The previous repair put the agent at X=0, on the region-1 minimum X boundary.
-The failure now occurs on route-context retention before the bypass assertion.
-Repair the fixture with an interior start and valid dynamic separation; candidate:
-- start X=1;
-- blocker X=4;
-- staging X=7;
-- required dynamic separation = 2.75 m;
-- both endpoint distances = 3.0 m.
-
-Do not weaken radius/padding/safety rules.
-
-## Next engineering work
-
-1. Fix the oriented-portal fixture geometry only.
+1. Repair the oriented-portal fixture geometry.
 2. Keep planner/monitor/replan active through resumed topology travel.
-3. Add a visual trace/export: ship path, hazard path, inflated hazard envelope,
-   bypass targets, reacquisition references, portal center, and replan points.
+3. Add the composite trace + standalone visualizer.
 4. Rerun architecture + full runtime gate.
 
 Legacy angular fan/branch mechanisms remain forbidden.

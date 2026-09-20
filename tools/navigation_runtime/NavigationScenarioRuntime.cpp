@@ -1115,7 +1115,7 @@ Program makeShortProgram(
         glm::dvec3 position;
         glm::dvec3 velocity;
         glm::dvec3 acceleration;
-        sampleCurve(q, t, position, velocity, acceleration);
+        sampleCurve(curve, t, position, velocity, acceleration);
 
         Basis basis = startBasis;
 

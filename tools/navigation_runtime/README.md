@@ -69,3 +69,31 @@ Or supply a trace explicitly:
 
 The viewer uses the repository's existing GLAD source plus the same installed
 GLFW/GLM/nlohmann-json environment already used by Elite development.
+
+
+## Interactive HUD
+
+The viewer now has a visible diagnostic HUD instead of relying on hidden keyboard
+knowledge or the window title alone.
+
+Top buttons:
+- `PLAY/PAUSE`;
+- `PREV`;
+- `NEXT`;
+- `NEXT REPLAN`;
+- `FIT`.
+
+The right panel shows:
+- control law;
+- frame number and simulation time;
+- current phase and planner status;
+- live dynamic clearance;
+- explicit REPLAN event indication;
+- a short plain-English explanation of what the navigation system is doing;
+- a color legend for route, ship path, hazard path, ship box/nose, turn points,
+  bypass target, reacquisition reference, portal target and replan event;
+- mouse/keyboard controls.
+
+The phase `portal_102` is explicitly described as the current known
+clearance-loss area so visual replay can be used to diagnose the failure rather
+than only observe motion.

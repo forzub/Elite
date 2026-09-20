@@ -5629,3 +5629,33 @@ The scenario composes:
 Expected suite size is 19.
 
 The test deliberately records one remaining migration boundary: general physical time-program authoring is still test-side because the production B5 Assisted/general-family compiler is not yet complete. A green composite ends synthetic maneuver behavior testing but does not claim the remaining B1-B6/B11 migration work is done.
+
+
+## 2026-09-20 — first final-composite target attempt: recoverability fixture defect
+
+Exact target checkout:
+
+```
+d57a22f69c3af1a8c967ce974b895295c77dd21a
+```
+
+passed the architecture contract and 18/19 runtime tests. Every previously accepted runtime gate stayed green.
+
+The sole failure was:
+```
+navigation_composite_proving_ground
+ -> composite production planner did not find adjusted dynamic bypass
+```
+
+The fixture inserted the new dynamic hazard only 35 m ahead after four seconds of the selected moving program.
+
+Production LocalHorizon checks unchanged current kinematics for every candidate in addition to the bounded requested corridor. Once the hazard is already inside that current-state closest-approach envelope, ordinary lateral probes are correctly rejected rather than being granted steering authority.
+
+Candidate `b57d81e42035f9771ae4feecee56899c4fa4f3f7` moves the hazard to a recoverable but still conflicting state:
+- 48 m ahead;
+- 6 m radius;
+- -0.50 m/s cross motion.
+
+The test now explicitly requires a nominal dynamic conflict before it may accept `AdjustedClear`, so the correction cannot pass by simply making the hazard irrelevant.
+
+A new `[COMPOSITE-PLAN]` row records planner status and bounded-search diagnostics for the next target run.

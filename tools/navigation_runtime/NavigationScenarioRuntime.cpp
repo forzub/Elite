@@ -435,6 +435,44 @@ TraceFrame routeFrame(
 
 } // namespace
 
+ScenarioRunResult loadScenarioPreview(
+    const std::string& scenarioJsonPath
+)
+{
+    ScenarioRunResult out;
+
+    try
+    {
+        const Scenario scenario = loadScenario(scenarioJsonPath);
+
+        TraceDocument trace;
+        trace.version = 2;
+        trace.law = "newtonian";
+        trace.shipHalfExtentsMeters = kBodyHalfExtents;
+
+        for (const auto& obstacle : scenario.staticObstacles)
+            trace.staticObstacles.push_back(traceObstacle(obstacle));
+
+        TraceFrame frame = routeFrame(scenario, true);
+        frame.phase = "scene_preview";
+        frame.plannerStatus = "scene_loaded";
+        frame.hasSelectedTarget = true;
+        frame.selectedTarget = scenario.finish.position;
+        trace.frames.push_back(std::move(frame));
+
+        out.trace = std::move(trace);
+        out.success = true;
+        out.message = "СЦЕНА ЗАГРУЖЕНА — МАРШРУТ ЕЩЁ НЕ РАССЧИТАН";
+    }
+    catch (const std::exception& e)
+    {
+        out.success = false;
+        out.message = e.what();
+    }
+
+    return out;
+}
+
 ScenarioRunResult calculateScenario(
     const std::string& scenarioJsonPath,
     const ScenarioRunSettings& settings

@@ -1064,6 +1064,160 @@ ReplacementFit fitAuthorityBoundedReplacement(
     return {};
 }
 
+
+struct RecoveryFit
+{
+    bool valid = false;
+    Program program {};
+    double durationSeconds = 0.0;
+    double stoppingDistanceMeters = 0.0;
+    double peakAccelerationMps2 = 0.0;
+    double minimumPlannedDynamicClearanceMeters =
+        std::numeric_limits<double>::infinity();
+    double minimumPlannedStaticClearanceMeters =
+        std::numeric_limits<double>::infinity();
+};
+
+RecoveryFit fitBranchSwitchRecovery(
+    const Vehicle& v,
+    const DynamicHazard& hazard
+)
+{
+    constexpr double MaximumBrakeFeedForwardMps2 = 1.35;
+    constexpr double MinimumPlannedClearanceMeters = 1.50;
+    constexpr int DenseSamples = 768;
+
+    const VehicleState start = captureState(v);
+    const double initialSpeed = glm::length(start.velocity);
+    if (initialSpeed <= 0.60)
+        return {};
+
+    // Recovery is deliberately conservative and translation-only.  Hold the
+    // current body attitude and use manoeuvre/RCS authority to remove linear
+    // momentum before accepting a discontinuous local-branch change.
+    for (int durationSeconds = 4;
+         durationSeconds <= 40;
+         ++durationSeconds)
+    {
+        const double duration =
+            static_cast<double>(durationSeconds);
+
+        // The midpoint-distance endpoint matches constant-deceleration travel;
+        // the quintic then enforces C2 start/end conditions around it.
+        const glm::dvec3 endPosition =
+            start.position +
+            start.velocity * (0.5 * duration);
+
+        const QuinticCurve curve =
+            makeCurve(
+                start.position,
+                start.velocity,
+                endPosition,
+                glm::dvec3(0.0),
+                duration
+            );
+
+        double peakAcceleration = 0.0;
+        double minimumDynamicClearance =
+            std::numeric_limits<double>::infinity();
+        double minimumStaticClearance =
+            std::numeric_limits<double>::infinity();
+        bool reversed = false;
+
+        const glm::dvec3 initialDirection =
+            start.velocity / initialSpeed;
+
+        for (int i = 0; i <= DenseSamples; ++i)
+        {
+            const double t =
+                duration *
+                static_cast<double>(i) /
+                static_cast<double>(DenseSamples);
+
+            glm::dvec3 position;
+            glm::dvec3 velocity;
+            glm::dvec3 acceleration;
+            sampleCurve(
+                curve,
+                t,
+                position,
+                velocity,
+                acceleration
+            );
+
+            peakAcceleration =
+                std::max(
+                    peakAcceleration,
+                    glm::length(acceleration)
+                );
+
+            if (glm::dot(velocity, initialDirection) < -0.05)
+                reversed = true;
+
+            const glm::dvec3 hazardPosition =
+                dynamicHazardPosition(
+                    hazard,
+                    v.timeSeconds + t
+                );
+            minimumDynamicClearance =
+                std::min(
+                    minimumDynamicClearance,
+                    glm::length(position - hazardPosition) -
+                        (kHullBoundingRadiusMeters +
+                         hazard.radiusMeters)
+                );
+
+            minimumStaticClearance =
+                std::min(
+                    minimumStaticClearance,
+                    pointToAabbDistance(
+                        position,
+                        kStaticObstacleCenter,
+                        kStaticObstacleHalfExtents
+                    ) -
+                    kHullBoundingRadiusMeters
+                );
+        }
+
+        if (reversed ||
+            peakAcceleration >
+                MaximumBrakeFeedForwardMps2 ||
+            minimumDynamicClearance <
+                MinimumPlannedClearanceMeters ||
+            minimumStaticClearance <
+                MinimumPlannedClearanceMeters)
+        {
+            continue;
+        }
+
+        RecoveryFit result;
+        result.valid = true;
+        result.durationSeconds = duration;
+        result.stoppingDistanceMeters =
+            glm::length(endPosition - start.position);
+        result.peakAccelerationMps2 = peakAcceleration;
+        result.minimumPlannedDynamicClearanceMeters =
+            minimumDynamicClearance;
+        result.minimumPlannedStaticClearanceMeters =
+            minimumStaticClearance;
+        result.program =
+            makeProgram(
+                12025,
+                v.timeSeconds,
+                start,
+                endPosition,
+                glm::dvec3(0.0),
+                start.basis,
+                duration,
+                OrientationMode::FixedStart,
+                Program::ManeuverFamily::Brake
+            );
+        return result;
+    }
+
+    return {};
+}
+
 struct ExecutionMetrics
 {
     bool valid = true;
@@ -1539,6 +1693,7 @@ struct CompositeMetrics
     std::size_t phases = 0;
     std::size_t replans = 0;
     std::size_t dynamicBypassSegments = 0;
+    std::size_t branchRecoveryPhases = 0;
     std::size_t trackingExceededTicks = 0;
     double minStaticClearanceMeters =
         std::numeric_limits<double>::infinity();
@@ -1966,7 +2121,7 @@ CompositeMetrics runComposite(Law law)
     bool topologyResumed = false;
 
     for (int localIteration = 0;
-         localIteration < 4;
+         localIteration < 8;
          ++localIteration)
     {
         const Map::QueryResult refreshedDynamic =
@@ -2011,6 +2166,8 @@ CompositeMetrics runComposite(Law law)
             << resumed.avoidanceSameBranchSafeCandidates
             << " selected_branch_alignment="
             << resumed.avoidanceSelectedBranchAlignment
+            << " branch_switch_required="
+            << (resumed.avoidanceBranchSwitchRequired ? 1 : 0)
             << " continuity=("
             << acceptedLocalContinuityDirection.x << ","
             << acceptedLocalContinuityDirection.y << ","
@@ -2040,6 +2197,90 @@ CompositeMetrics runComposite(Law law)
             resumed.adjustedTarget,
             "composite persistent hazard produced no safe bounded continuation"
         );
+
+        if (resumed.avoidanceBranchSwitchRequired)
+        {
+            const double currentSpeed =
+                glm::length(v.transform.motion.localVelocityMps);
+
+            if (currentSpeed > 0.60)
+            {
+                const RecoveryFit recovery =
+                    fitBranchSwitchRecovery(v, hazard);
+
+                require(
+                    recovery.valid,
+                    "composite could not author safe branch-switch recovery"
+                );
+
+                const auto recoveryPhase =
+                    executeProgram(
+                        v,
+                        recovery.program,
+                        Gate::Mode::StateCapture,
+                        hazard
+                    );
+
+                std::cout
+                    << std::fixed << std::setprecision(6)
+                    << "[COMPOSITE-RECOVERY]"
+                    << " law=" << lawName(law)
+                    << " iteration=" << localIteration
+                    << " duration_s="
+                    << recovery.durationSeconds
+                    << " stopping_distance_m="
+                    << recovery.stoppingDistanceMeters
+                    << " peak_brake_ff_mps2="
+                    << recovery.peakAccelerationMps2
+                    << " min_planned_static_clearance_m="
+                    << recovery.minimumPlannedStaticClearanceMeters
+                    << " min_planned_dynamic_clearance_m="
+                    << recovery.minimumPlannedDynamicClearanceMeters
+                    << " min_actual_dynamic_clearance_m="
+                    << recoveryPhase.minDynamicClearanceMeters
+                    << " final_speed_error_mps="
+                    << recoveryPhase.finalVelocityErrorMps
+                    << " tracking_exceeded_ticks="
+                    << recoveryPhase.trackingExceededTicks
+                    << "\n";
+
+                require(
+                    recoveryPhase.valid &&
+                    recoveryPhase.completed &&
+                    !recoveryPhase.captureTimedOut,
+                    "composite branch-switch recovery failed"
+                );
+                require(
+                    recoveryPhase.trackingExceededTicks == 0,
+                    "composite branch-switch recovery exceeded tracking envelope"
+                );
+                require(
+                    recoveryPhase.minDynamicClearanceMeters > 0.5,
+                    "composite branch-switch recovery lost dynamic clearance"
+                );
+                require(
+                    recoveryPhase.minStaticClearanceMeters > 0.5,
+                    "composite branch-switch recovery lost static clearance"
+                );
+                require(
+                    glm::length(
+                        v.transform.motion.localVelocityMps
+                    ) <= 0.60,
+                    "composite branch-switch recovery did not stop sufficiently"
+                );
+
+                absorb(total, recoveryPhase);
+                ++total.phases;
+                ++total.branchRecoveryPhases;
+            }
+
+            // The old accepted branch commitment is now intentionally retired.
+            // Replan from the recovered physical state before accepting the
+            // opposite-side target that triggered this escalation.
+            acceptedLocalContinuityValid = false;
+            acceptedLocalContinuityDirection = glm::dvec3(0.0);
+            continue;
+        }
 
         const ReplacementFit continuation =
             fitAuthorityBoundedReplacement(
@@ -2225,12 +2466,12 @@ void testCompositeProvingGround()
         const CompositeMetrics m = runComposite(law);
 
         require(
-            m.phases >= 4 && m.phases <= 8,
+            m.phases >= 4 && m.phases <= 12,
             "composite completed an unexpected number of bounded physical phases"
         );
         require(
             m.dynamicBypassSegments >= 1 &&
-            m.dynamicBypassSegments <= 5,
+            m.dynamicBypassSegments <= 8,
             "composite dynamic bypass segment count is invalid"
         );
         require(
@@ -2309,6 +2550,8 @@ void testCompositeProvingGround()
             << " completed_phases=" << m.phases
             << " dynamic_bypass_segments="
             << m.dynamicBypassSegments
+            << " branch_recovery_phases="
+            << m.branchRecoveryPhases
             << " replans=" << m.replans
             << " invalidation=dynamic_hazard"
             << " min_static_clearance_m="

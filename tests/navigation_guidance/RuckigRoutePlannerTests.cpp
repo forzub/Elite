@@ -196,6 +196,28 @@ void testBlockedCornerBlendFallsBackToSafeStop()
         "unsafe diagonal corner blend was not relaxed to a stop point");
 }
 
+void testInitialAccelerationIsPreservedAtTrajectoryStart()
+{
+    auto request = baseRequest();
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(180.0, 0.0, 0.0)
+    };
+    request.initialVelocityMps = glm::dvec3(6.0, 0.0, 0.0);
+    request.initialAccelerationMps2 = glm::dvec3(1.5, 0.0, 0.0);
+    request.pointSpeedConstraints.push_back({180.0, 0.0});
+
+    const auto result = game::navigation::RuckigRoutePlanner::plan(request);
+    require(result.ready(), "initial-acceleration Ruckig route failed");
+    require(
+        glm::length(
+            result.trajectory.samples.front().accelerationMps2 -
+            request.initialAccelerationMps2
+        ) < 1.0e-6,
+        "Ruckig route lost the requested initial acceleration state"
+    );
+}
+
 void testImpossibleInitialBrakingIsRejectedBeforePlanning()
 {
     auto request = baseRequest();
@@ -227,6 +249,7 @@ int main()
         {"diagonal stopped leg stays on coarse chord", testDiagonalStoppedLegStaysOnCoarseChord},
         {"clear corner keeps through velocity", testClearCornerGetsContinuousRuckigWaypointVelocity},
         {"blocked corner falls back to stop", testBlockedCornerBlendFallsBackToSafeStop},
+        {"initial acceleration is preserved", testInitialAccelerationIsPreservedAtTrajectoryStart},
         {"impossible braking is rejected", testImpossibleInitialBrakingIsRejectedBeforePlanning},
     };
 

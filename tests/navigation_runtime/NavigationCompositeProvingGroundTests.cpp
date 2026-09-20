@@ -12,6 +12,7 @@
 #include "src/world/navigation/map/NavigationMap.h"
 #include "src/world/navigation/space/NavigationSpace.h"
 #include "src/world/navigation/space/NavigationStaticQueryApi.h"
+#include "tools/navigation_runtime/NavigationTrace.h"
 
 #include <algorithm>
 #include <array>
@@ -39,6 +40,7 @@ using Law = game::navigation::LocalFlightControlLaw;
 using Map = world::navigation::NavigationMap;
 using Space = world::navigation::NavigationSpace;
 using StaticQueries = world::navigation::NavigationStaticQueryApi;
+namespace NavTrace = elite::tools::navigation_runtime;
 
 constexpr double kPi = 3.14159265358979323846;
 constexpr double kDt = 0.02;
@@ -852,6 +854,111 @@ double conservativeDynamicClearance(
         (kHullBoundingRadiusMeters + hazard.radiusMeters);
 }
 
+struct TraceContext
+{
+    NavTrace::TraceDocument* document = nullptr;
+    std::string phase;
+    std::string plannerStatus;
+
+    bool hasSelectedTarget = false;
+    glm::dvec3 selectedTarget {0.0};
+
+    bool hasReacquisitionTarget = false;
+    glm::dvec3 reacquisitionTarget {0.0};
+
+    bool hasPortalTarget = false;
+    glm::dvec3 portalTarget {0.0};
+
+    double plannerSafetyPaddingMeters = 0.0;
+    double nextSampleTimeSeconds = 0.0;
+};
+
+struct TraceAutoWriter
+{
+    NavTrace::TraceDocument& document;
+    std::string path;
+
+    ~TraceAutoWriter() noexcept
+    {
+        try
+        {
+            NavTrace::saveTraceJson(document, path);
+            std::cout
+                << "[COMPOSITE-TRACE] path="
+                << path
+                << " frames="
+                << document.frames.size()
+                << "\n";
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr
+                << "[COMPOSITE-TRACE] write failed: "
+                << e.what()
+                << "\n";
+        }
+    }
+};
+
+void recordTraceSample(
+    const Vehicle& v,
+    const DynamicHazard& hazard,
+    TraceContext* context,
+    bool force = false,
+    bool replanEvent = false
+)
+{
+    if (!context || !context->document)
+        return;
+
+    if (!force &&
+        v.timeSeconds + 1.0e-9 <
+            context->nextSampleTimeSeconds)
+    {
+        return;
+    }
+
+    NavTrace::TraceFrame frame;
+    frame.timeSeconds = v.timeSeconds;
+    frame.shipPosition =
+        v.transform.motion.localPositionMeters;
+    frame.shipForward =
+        glm::dvec3(v.transform.forward());
+    frame.shipVelocity =
+        v.transform.motion.localVelocityMps;
+
+    frame.hazardActive = hazard.active;
+    if (hazard.active)
+    {
+        frame.hazardPosition =
+            dynamicHazardPosition(hazard, v.timeSeconds);
+        frame.hazardRadiusMeters = hazard.radiusMeters;
+        frame.hazardCollisionEnvelopeRadiusMeters =
+            kHullBoundingRadiusMeters + hazard.radiusMeters;
+        frame.hazardPlannerEnvelopeRadiusMeters =
+            frame.hazardCollisionEnvelopeRadiusMeters +
+            context->plannerSafetyPaddingMeters;
+        frame.dynamicClearanceMeters =
+            conservativeDynamicClearance(v, hazard);
+    }
+
+    frame.phase = context->phase;
+    frame.plannerStatus = context->plannerStatus;
+    frame.replanEvent = replanEvent;
+
+    frame.hasSelectedTarget = context->hasSelectedTarget;
+    frame.selectedTarget = context->selectedTarget;
+    frame.hasReacquisitionTarget =
+        context->hasReacquisitionTarget;
+    frame.reacquisitionTarget =
+        context->reacquisitionTarget;
+    frame.hasPortalTarget = context->hasPortalTarget;
+    frame.portalTarget = context->portalTarget;
+
+    context->document->frames.push_back(std::move(frame));
+    context->nextSampleTimeSeconds = v.timeSeconds + 0.10;
+}
+
 
 Map::QueryResult publishAndQueryDynamicHazard(
     Map& map,
@@ -1118,7 +1225,8 @@ ExecutionMetrics executeProgram(
     const Program& program,
     Gate::Mode mode,
     const DynamicHazard& hazard,
-    double stopAfterSeconds = -1.0
+    double stopAfterSeconds = -1.0,
+    TraceContext* traceContext = nullptr
 )
 {
     ExecutionMetrics m;
@@ -1128,6 +1236,7 @@ ExecutionMetrics executeProgram(
     gatePolicy.maximumCaptureOverrunSeconds = 5.0;
 
     const double startTime = v.timeSeconds;
+    recordTraceSample(v, hazard, traceContext, true);
     const double nominalEnd =
         program.acceptedAtUniverseTimeSeconds +
         program.samples[
@@ -1235,6 +1344,7 @@ ExecutionMetrics executeProgram(
 
         v.transform.syncLegacyPositionFromWorld();
         v.timeSeconds += kDt;
+        recordTraceSample(v, hazard, traceContext);
 
         const double speed =
             glm::length(v.transform.motion.localVelocityMps);
@@ -1593,11 +1703,13 @@ ExecutionMetrics executeActiveBraking(
     Vehicle& v,
     const DynamicHazard& hazard,
     double velocityResponsePerSecond = 0.75,
-    double maximumSeconds = 8.0
+    double maximumSeconds = 8.0,
+    TraceContext* traceContext = nullptr
 )
 {
     ExecutionMetrics m;
     const double endTime = v.timeSeconds + maximumSeconds;
+    recordTraceSample(v, hazard, traceContext, true);
 
     while (v.timeSeconds < endTime - 1.0e-9)
     {
@@ -1660,6 +1772,7 @@ ExecutionMetrics executeActiveBraking(
         v.transform.syncLegacyPositionFromWorld();
         v.timeSeconds += kDt;
         m.simulatedSeconds += kDt;
+        recordTraceSample(v, hazard, traceContext);
 
         m.minStaticClearanceMeters =
             std::min(
@@ -1725,6 +1838,41 @@ CompositeMetrics runComposite(Law law)
     const Planner::Policy pPolicy = plannerPolicy();
     const Planner::Goal goal = finalGoal();
 
+    NavTrace::TraceDocument trace;
+    trace.law = lawName(law);
+    trace.shipHalfExtentsMeters = kBodyHalfExtents;
+    trace.routePoints = {
+        {0.0, 0.0, 0.0},
+        {100.0, 40.0, 0.0},
+        {200.0, 40.0, 0.0},
+        goal.targetPositionMapMeters
+    };
+    trace.turnPoints = {
+        {100.0, 40.0, 0.0},
+        {200.0, 40.0, 0.0}
+    };
+
+    const std::string tracePath =
+        std::string("tools/navigation_runtime/last_trace_") +
+        lawName(law) +
+        ".json";
+    TraceAutoWriter traceWriter {trace, tracePath};
+
+    TraceContext traceContext;
+    traceContext.document = &trace;
+    traceContext.plannerSafetyPaddingMeters =
+        pPolicy.horizon.safetyMarginMeters +
+        pPolicy.avoidance.projectionPaddingMeters;
+    traceContext.phase = "initial";
+    traceContext.hasPortalTarget = true;
+    traceContext.portalTarget = {100.0, 40.0, 0.0};
+    recordTraceSample(
+        v,
+        DynamicHazard {},
+        &traceContext,
+        true
+    );
+
     // Production exact-static proof: direct start -> final is forbidden.
     StaticQueries::SegmentQuery direct;
     direct.startMapMeters = {0.0, 0.0, 0.0};
@@ -1783,11 +1931,21 @@ CompositeMetrics runComposite(Law law)
             );
 
         const auto phase =
-            executeProgram(
-                v,
-                p,
-                Gate::Mode::ScheduledMoving,
-                DynamicHazard {}
+            (
+                traceContext.phase = "portal_101",
+                traceContext.plannerStatus = "nominal_clear",
+                traceContext.hasSelectedTarget = false,
+                traceContext.hasReacquisitionTarget = false,
+                traceContext.hasPortalTarget = true,
+                traceContext.portalTarget = initialPlan.coarseWaypointMapMeters,
+                executeProgram(
+                    v,
+                    p,
+                    Gate::Mode::ScheduledMoving,
+                    DynamicHazard {},
+                    -1.0,
+                    &traceContext
+                )
             );
         require(
             phase.valid && phase.completed,
@@ -1859,12 +2017,21 @@ CompositeMetrics runComposite(Law law)
 
     // Execute only a prefix, then inject a new dynamic hazard.
     const auto prefix =
-        executeProgram(
-            v,
-            *selected,
-            Gate::Mode::ScheduledMoving,
-            DynamicHazard {},
-            4.0
+        (
+            traceContext.phase = "doctrine_prefix",
+            traceContext.plannerStatus = "nominal_clear",
+            traceContext.hasSelectedTarget = false,
+            traceContext.hasReacquisitionTarget = false,
+            traceContext.hasPortalTarget = true,
+            traceContext.portalTarget = secondPortal,
+            executeProgram(
+                v,
+                *selected,
+                Gate::Mode::ScheduledMoving,
+                DynamicHazard {},
+                4.0,
+                &traceContext
+            )
         );
 
     require(
@@ -2001,6 +2168,23 @@ CompositeMetrics runComposite(Law law)
         << adjusted.localBypassMergeTargetMapMeters.z << ")"
         << "\n";
 
+    traceContext.phase = "dynamic_replan";
+    traceContext.plannerStatus = plannerStatusName(adjusted.status);
+    traceContext.hasSelectedTarget = true;
+    traceContext.selectedTarget = adjusted.selectedTargetMapMeters;
+    traceContext.hasReacquisitionTarget = true;
+    traceContext.reacquisitionTarget =
+        adjusted.localBypassMergeTargetMapMeters;
+    traceContext.hasPortalTarget = true;
+    traceContext.portalTarget = secondPortal;
+    recordTraceSample(
+        v,
+        hazard,
+        &traceContext,
+        true,
+        true
+    );
+
     require(
         adjusted.nominalDynamicConflictsFound > 0,
         "composite hazard no longer intersects the nominal bounded route"
@@ -2040,11 +2224,26 @@ CompositeMetrics runComposite(Law law)
                 << "\n";
 
             const auto phase =
-                executeProgram(
-                    v,
-                    fit.program,
-                    Gate::Mode::ScheduledMoving,
-                    hazard
+                (
+                    traceContext.phase = "dynamic_bypass_0",
+                    traceContext.plannerStatus =
+                        plannerStatusName(adjusted.status),
+                    traceContext.hasSelectedTarget = true,
+                    traceContext.selectedTarget =
+                        adjusted.selectedTargetMapMeters,
+                    traceContext.hasReacquisitionTarget = true,
+                    traceContext.reacquisitionTarget =
+                        adjusted.localBypassMergeTargetMapMeters,
+                    traceContext.hasPortalTarget = true,
+                    traceContext.portalTarget = secondPortal,
+                    executeProgram(
+                        v,
+                        fit.program,
+                        Gate::Mode::ScheduledMoving,
+                        hazard,
+                        -1.0,
+                        &traceContext
+                    )
                 );
 
             std::cout
@@ -2084,10 +2283,25 @@ CompositeMetrics runComposite(Law law)
         else
         {
             const auto brake =
-                executeActiveBraking(
-                    v,
-                    hazard,
-                    goal.velocityResponsePerSecond
+                (
+                    traceContext.phase = "dynamic_brake_0",
+                    traceContext.plannerStatus =
+                        plannerStatusName(adjusted.status),
+                    traceContext.hasSelectedTarget = true,
+                    traceContext.selectedTarget =
+                        adjusted.selectedTargetMapMeters,
+                    traceContext.hasReacquisitionTarget = true,
+                    traceContext.reacquisitionTarget =
+                        adjusted.localBypassMergeTargetMapMeters,
+                    traceContext.hasPortalTarget = true,
+                    traceContext.portalTarget = secondPortal,
+                    executeActiveBraking(
+                        v,
+                        hazard,
+                        goal.velocityResponsePerSecond,
+                        8.0,
+                        &traceContext
+                    )
                 );
 
             std::cout
@@ -2190,6 +2404,28 @@ CompositeMetrics runComposite(Law law)
             << resumed.selectedTargetMapMeters.z << ")"
             << "\n";
 
+        traceContext.phase =
+            std::string("replan_") +
+            std::to_string(localIteration + 1);
+        traceContext.plannerStatus =
+            plannerStatusName(resumed.status);
+        traceContext.hasSelectedTarget = true;
+        traceContext.selectedTarget =
+            resumed.selectedTargetMapMeters;
+        traceContext.hasReacquisitionTarget = true;
+        traceContext.reacquisitionTarget =
+            resumed.localBypassMergeTargetMapMeters;
+        traceContext.hasPortalTarget = true;
+        traceContext.portalTarget =
+            resumed.coarseWaypointMapMeters;
+        recordTraceSample(
+            v,
+            hazard,
+            &traceContext,
+            true,
+            true
+        );
+
         if (resumed.status == Planner::Status::NominalClear)
         {
             topologyResumed = true;
@@ -2212,11 +2448,18 @@ CompositeMetrics runComposite(Law law)
         if (continuation.valid)
         {
             const auto continuationPhase =
-                executeProgram(
-                    v,
-                    continuation.program,
-                    Gate::Mode::ScheduledMoving,
-                    hazard
+                (
+                    traceContext.phase =
+                        std::string("dynamic_bypass_") +
+                        std::to_string(localIteration + 1),
+                    executeProgram(
+                        v,
+                        continuation.program,
+                        Gate::Mode::ScheduledMoving,
+                        hazard,
+                        -1.0,
+                        &traceContext
+                    )
                 );
 
             std::cout
@@ -2256,10 +2499,17 @@ CompositeMetrics runComposite(Law law)
         else
         {
             const auto brake =
-                executeActiveBraking(
-                    v,
-                    hazard,
-                    goal.velocityResponsePerSecond
+                (
+                    traceContext.phase =
+                        std::string("dynamic_brake_") +
+                        std::to_string(localIteration + 1),
+                    executeActiveBraking(
+                        v,
+                        hazard,
+                        goal.velocityResponsePerSecond,
+                        8.0,
+                        &traceContext
+                    )
                 );
 
             std::cout
@@ -2320,11 +2570,22 @@ CompositeMetrics runComposite(Law law)
             );
 
         const auto phase =
-            executeProgram(
-                v,
-                narrow,
-                Gate::Mode::ScheduledMoving,
-                hazard
+            (
+                traceContext.phase = "portal_102",
+                traceContext.plannerStatus = "nominal_clear",
+                traceContext.hasSelectedTarget = false,
+                traceContext.hasReacquisitionTarget = false,
+                traceContext.hasPortalTarget = true,
+                traceContext.portalTarget =
+                    resumed.coarseWaypointMapMeters,
+                executeProgram(
+                    v,
+                    narrow,
+                    Gate::Mode::ScheduledMoving,
+                    hazard,
+                    -1.0,
+                    &traceContext
+                )
             );
 
         require(
@@ -2363,11 +2624,20 @@ CompositeMetrics runComposite(Law law)
             );
 
         const auto phase =
-            executeProgram(
-                v,
-                capture,
-                Gate::Mode::StateCapture,
-                hazard
+            (
+                traceContext.phase = "final_capture",
+                traceContext.plannerStatus = "nominal_clear",
+                traceContext.hasSelectedTarget = false,
+                traceContext.hasReacquisitionTarget = false,
+                traceContext.hasPortalTarget = false,
+                executeProgram(
+                    v,
+                    capture,
+                    Gate::Mode::StateCapture,
+                    hazard,
+                    -1.0,
+                    &traceContext
+                )
             );
 
         require(

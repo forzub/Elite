@@ -199,3 +199,37 @@ For the navigation runtime viewer, from repository root:
 ```bash
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/last_trace_newtonian.json
 ```
+
+## Immediate target gate — regenerate v2 trace and validate viewer
+
+Run only the composite target and viewer; full 19-test gate is not required for this
+visual iteration.
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/tests/navigation_runtime --target navigation_composite_proving_ground_tests
+./build/tests/navigation_runtime/navigation_composite_proving_ground_tests.exe || true
+
+cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/tools/navigation_runtime
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/last_trace_newtonian.json
+```
+
+Acceptance checks:
+- normal Windows window opens maximized, not exclusive fullscreen;
+- Russian HUD/title render correctly;
+- animation is smooth despite 0.10 s JSON trace cadence;
+- actual Cobra body roll/orientation is preserved;
+- cyan actual nose and magenta program-reference nose can diverge visibly;
+- orientation error is shown numerically;
+- translucent blue AcceptedManeuverProgram tracking corridor is visible;
+- bottom-left Cobra-horizon view shows projected moving-hazard tunnel;
+- Newtonian dynamic bypass no longer continuously aligns body to velocity.
+
+After this gate, next architecture task is a reusable live scenario runner so the
+Assisted/Newtonian, pilot skill, Standard/Extreme and obstacle checkbox controls are
+real simulation inputs rather than cosmetic replay toggles.

@@ -5799,3 +5799,23 @@ Regression `06a917f058926a29f41a936dd994be3f8073e7cf` now blocks the accepted br
 Composite continuity ownership was also tightened in `a2da6453daaa8e00cc1f4661321b9294513057ff`: only a successfully executed physical program becomes continuity state.
 
 This remains a transitional B4 contract; future route-aligned corridor topology should carry branch identity structurally.
+
+
+## 2026-09-20 — avoidance branch identity corrected to transverse geometry
+
+Target `0ad327ad63d3e63f8c204b2e59a6f224f80c8fee` passed architecture but failed the strengthened branch regression and final composite.
+
+The cause was conceptual: full direction dot product is not a valid bypass-side test because every progress-preserving visibility ray shares a large nominal-forward component.
+
+Production now defines branch identity by transverse direction relative to current nominal forward.
+
+Candidate `88f63b0d62803d73e7f3694d1c4f30bcbc1925d0` implements transverse branch classification.
+
+Candidate `e9655a4b9f004fe790adbbc287bd55a3f1c269ea` ranks:
+- same branch first;
+- smallest safe ring inside that branch;
+- best transverse alignment inside that ring.
+
+Runtime diagnostics now expose whether a same-branch safe candidate actually existed. This is critical: if none exists, switching branches is legitimate and execution must recover/brake before accepting a radically different maneuver rather than forcing continuity.
+
+The focused regression was also tightened to four deterministic azimuths in `0e344f3a3b2a5e887cbb474ce9ce650b68851716`.

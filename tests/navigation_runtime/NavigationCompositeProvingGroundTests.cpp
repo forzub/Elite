@@ -942,10 +942,14 @@ ReplacementFit fitAuthorityBoundedReplacement(
         return {};
 
     const glm::dvec3 direction = delta / distance;
+    const double startingSpeed = glm::length(start.velocity);
+    const bool launchingFromRecovery =
+        startingSpeed < MinimumPlannedSpeedMps;
 
     // Prefer the shortest physically bounded pass.  Try a modest 4 m/s exit
-    // first, then a slower 2 m/s pass when that avoids near-zero-speed or
-    // transverse-authority pathologies.  This helper is deliberately local to
+    // first, then a slower 2 m/s pass. A post-recovery launch is allowed to
+    // start below 0.5 m/s by design; it must make non-reversing progress,
+    // reach the transit-speed floor, and never dip below it afterwards.  This helper is deliberately local to
     // the final lab: production B5 Assisted/general authoring is still a known
     // migration gap.
     for (int durationSeconds = 8;
@@ -970,6 +974,11 @@ ReplacementFit fitAuthorityBoundedReplacement(
                 std::numeric_limits<double>::infinity();
             double minimumDynamicClearance =
                 std::numeric_limits<double>::infinity();
+            bool reversedProgress = false;
+            bool reachedMinimumTransitSpeed =
+                !launchingFromRecovery;
+            double minimumSpeedAfterTransitReached =
+                std::numeric_limits<double>::infinity();
 
             for (int i = 0; i <= DenseSamples; ++i)
             {
@@ -991,6 +1000,23 @@ ReplacementFit fitAuthorityBoundedReplacement(
 
                 const double speed = glm::length(velocity);
                 minimumSpeed = std::min(minimumSpeed, speed);
+
+                const double progressSpeed =
+                    glm::dot(velocity, direction);
+                if (progressSpeed < -0.05)
+                    reversedProgress = true;
+
+                if (speed >= MinimumPlannedSpeedMps)
+                    reachedMinimumTransitSpeed = true;
+
+                if (reachedMinimumTransitSpeed)
+                {
+                    minimumSpeedAfterTransitReached =
+                        std::min(
+                            minimumSpeedAfterTransitReached,
+                            speed
+                        );
+                }
 
                 if (speed > 1.0e-9)
                 {
@@ -1020,9 +1046,19 @@ ReplacementFit fitAuthorityBoundedReplacement(
                     );
             }
 
+            const bool speedProfileValid =
+                launchingFromRecovery
+                    ? (
+                        !reversedProgress &&
+                        reachedMinimumTransitSpeed &&
+                        minimumSpeedAfterTransitReached >=
+                            MinimumPlannedSpeedMps - 1.0e-9
+                      )
+                    : minimumSpeed >= MinimumPlannedSpeedMps;
+
             if (peakTransverse >
                     MaximumTransverseFeedForwardMps2 ||
-                minimumSpeed < MinimumPlannedSpeedMps ||
+                !speedProfileValid ||
                 minimumDynamicClearance <
                     MinimumPlannedDynamicClearanceMeters)
             {

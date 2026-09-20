@@ -55,6 +55,7 @@ add_library(EliteNavigationExecutionToolCore STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverTrackingController.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverPhaseGate.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimeControlBridge.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
@@ -79,6 +80,46 @@ target_link_libraries(
         EliteNavigationRouteToolCore
         EliteNavigationControl
         EliteNavigationRuckig
+)
+
+enable_testing()
+
+add_executable(
+    navigation_runtime_pipeline_tests
+    "${ELITE_SOURCE_ROOT}/tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp"
+    NavigationScenarioRuntime.cpp
+    NavigationTrace.cpp
+)
+
+target_include_directories(
+    navigation_runtime_pipeline_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+        "${GLM_INCLUDE_DIR}"
+        "${CMAKE_CURRENT_LIST_DIR}"
+)
+
+target_compile_definitions(
+    navigation_runtime_pipeline_tests
+    PRIVATE ELITE_SOURCE_ROOT="${ELITE_SOURCE_ROOT}"
+)
+
+target_link_libraries(
+    navigation_runtime_pipeline_tests
+    PRIVATE
+        EliteNavigationExecutionToolCore
+        nlohmann_json::nlohmann_json
+)
+
+add_test(
+    NAME navigation_runtime_pipeline
+    COMMAND navigation_runtime_pipeline_tests
+)
+
+set_tests_properties(
+    navigation_runtime_pipeline
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
 add_executable(
@@ -124,15 +165,18 @@ endif()
 if(MSVC)
     target_compile_options(EliteNavigationRouteToolCore PRIVATE /W4 /permissive-)
     target_compile_options(EliteNavigationExecutionToolCore PRIVATE /W4 /permissive-)
+    target_compile_options(navigation_runtime_pipeline_tests PRIVATE /W4 /permissive-)
     target_compile_options(navigation_runtime_viewer PRIVATE /W4 /permissive-)
 else()
     target_compile_options(EliteNavigationRouteToolCore PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(EliteNavigationExecutionToolCore PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(navigation_runtime_pipeline_tests PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(navigation_runtime_viewer PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 set_target_properties(
     navigation_runtime_viewer
+    navigation_runtime_pipeline_tests
     PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )

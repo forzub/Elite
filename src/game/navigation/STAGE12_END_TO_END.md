@@ -5468,3 +5468,28 @@ The same regression also pins five negative contracts with existing production c
 - a new dynamic hazard invalidates accepted execution and requests immediate local replanning.
 
 Expected runtime suite size is 18. This candidate remains unaccepted until exact target-machine evidence is recorded.
+
+
+## 2026-09-20 — first chained-limit target attempt: build failure
+
+Exact target-machine checkout:
+
+```
+4753451be23f913d3e20d2ca11c112f113980434
+```
+
+passed the Stage-12 architecture contract but failed during compilation of `ManeuverChainedLimitMatrixTests.cpp` before any runtime test executed.
+
+The root cause is test-harness-only:
+```
+glm::dvec3 basis * float ShipTransform angular rate
+```
+inside `captureState()`. GLM requires matching scalar precision.
+
+Fix candidate:
+```
+1e0d555a504e6913ee417b4b628e7d062081a0c0
+```
+casts pitch/yaw/roll rates to double before reconstructing map-space angular velocity.
+
+No planner/follower/physics/doctrine behavior changed. The chained/limit capability remains untested until the next target run.

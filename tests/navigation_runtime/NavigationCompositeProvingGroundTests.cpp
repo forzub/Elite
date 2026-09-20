@@ -1871,8 +1871,12 @@ CompositeMetrics runComposite(Law law)
         << adjusted.avoidanceProjectedDynamicObstacles
         << " offset_candidates="
         << adjusted.avoidanceOffsetCandidatesExamined
+        << " route_candidates="
+        << adjusted.avoidanceRouteCandidatesExamined
         << " bypass_offset_m="
         << adjusted.localBypassLateralOffsetMeters
+        << " bypass_forward_m="
+        << adjusted.localBypassForwardDistanceMeters
         << " projected_clearance_m="
         << adjusted.localBypassProjectedClearanceMeters
         << " bypass_exhausted="
@@ -2028,6 +2032,10 @@ CompositeMetrics runComposite(Law law)
             << resumed.avoidanceProjectedDynamicObstacles
             << " offset_candidates="
             << resumed.avoidanceOffsetCandidatesExamined
+            << " route_candidates="
+            << resumed.avoidanceRouteCandidatesExamined
+            << " bypass_forward_m="
+            << resumed.localBypassForwardDistanceMeters
             << " projection_rejected="
             << resumed.avoidanceProjectionRejected
             << " static_rejected="

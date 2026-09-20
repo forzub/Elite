@@ -6672,3 +6672,40 @@ to appear twice in root CMake. Current runtime architecture already compiles it 
 shared `EliteNavigationGeometry`, which both client/server navigation runtime reuse.
 The checker now pins that shared-library ownership instead of duplicate compilation.
 This is an architecture-test correction only; route behavior is unchanged.
+
+
+## 2026-09-21 target Stage-1 validation result
+
+User target machine checkout: `5da0be0d05ef91958a0e7dc9adda3b4eb8fdee29`.
+
+Observed:
+- new `nominal_route_planner` test PASS;
+- architecture suite stopped on an obsolete pre-System-frame marker in
+  `check_navigation_live_runtime_control.py`;
+- old Stage-2 `navigation_runtime_planner` still fails its adjusted-target fixture;
+- old Stage-2 composite still fails at the narrow-passage full-hull check after a
+  Newtonian dynamic bypass;
+- all other 18/20 runtime tests passed.
+
+Interpretation:
+- Stage 1 static nominal route code itself passed its new behavioral test;
+- the two red runtime tests are Stage-2 execution/local-dynamic regressions and must
+  remain visible, but they do not invalidate Stage-1 static route acceptance;
+- the architecture failure was not a behavior regression: the checker still expected
+  `...Map...` control-field names while production had already migrated to explicit
+  `...System...` names.
+
+Fixes committed after this run:
+- updated `check_navigation_live_runtime_control.py` to the current System-frame field
+  names and `applySystemAccelerationDemand` API;
+- labeled `nominal_route_planner` with CTest label `navigation_stage1`;
+- added `tests/navigation_runtime/run_stage1_mingw64.sh` as the focused Stage-1 gate.
+
+The focused gate runs only:
+1. shared geometric-path architecture contract;
+2. Stage-1 nominal-route architecture contract;
+3. `nominal_route_planner` behavioral test;
+4. Stage-1 viewer build.
+
+This is not hiding the old red tests. It prevents Stage-2 failures from being
+misreported as Stage-1 route-construction failures.

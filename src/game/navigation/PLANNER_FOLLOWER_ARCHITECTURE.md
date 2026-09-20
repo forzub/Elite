@@ -42,7 +42,10 @@ ray / segment / sweep query
     = cheap geometric proof against already-known world truth
 ```
 
-The current LocalAvoidance 15/30/45/60/75-degree fan uses rays as a **search strategy** for alternate directions. That strategy is the part worth replacing. Segment/OBB/sweep tests remain useful as exact or conservative proof primitives.
+The production local emergency solver no longer uses an angular ray fan. It
+uses the accepted trajectory tangent as a reference, projects predicted moving
+occupancy onto the normal plane, searches metric lateral/vertical offsets, and
+uses segment/OBB/sweep queries only as geometric proof primitives.
 
 ## Planner world responsibilities
 
@@ -75,9 +78,12 @@ AcceptedManeuverProgram
 
 The same program is proved and executed.
 
-## Route-aligned corridor planning candidate
+## Route-aligned corridor planning extension
 
-For ordinary open-space/local planning, replace the visibility fan with a route-aligned configuration-space corridor.
+The current unexpected-obstacle layer already uses a route-aligned normal plane
+for one bounded visible horizon. For more complex **known** local geometry, this
+can be extended longitudinally into a route-aligned configuration-space
+corridor without introducing a second planner.
 
 Given start A and target/corridor point B:
 
@@ -113,7 +119,7 @@ Use adaptive slab boundaries at obstacle entry/exit planes, portals and importan
 - conservative hull inflation is explicit;
 - the same path can directly generate a visible manual guidance tunnel;
 - obstacle order along the route is preserved;
-- avoids repeatedly choosing arbitrary 15/30/45/... ray angles.
+- keeps local search metric and trajectory-relative rather than angular.
 
 ### Required limitations
 

@@ -154,3 +154,39 @@ unmonitored long scripted phase.
 A visual trace is now justified. The useful first visualization should plot, in the
 same 2D/3D scene, ship path, hazard path and inflated safety envelope, selected B4
 targets, bounded nominal/reacquisition references, portal center, and replan points.
+
+## 2026-09-20 navigation runtime 3D viewer
+
+Implemented an independent diagnostic viewer under `tools/navigation_runtime/`.
+
+Files:
+- `tools/navigation_runtime/NavigationTrace.h/.cpp` — shared deterministic JSON trace schema/IO;
+- `tools/navigation_runtime/NavigationRuntimeViewer.cpp` — standalone GLFW/GLAD/GLM OpenGL 3D viewer;
+- `tools/navigation_runtime/CMakeLists.txt` — isolated viewer build;
+- `tools/navigation_runtime/run_mingw64.sh` — build/run helper;
+- `tools/navigation_runtime/README.md` — controls and workflow.
+
+The composite proving-ground test now writes the actual simulated run to
+`tools/navigation_runtime/last_trace_<law>.json`. The writer is RAII-backed,
+so the trace is retained when a later composite assertion throws.
+
+Recorded data includes ship P/V/forward, dynamic-hazard P/radius, hull collision
+envelope, planner safety envelope, actual dynamic clearance, phase/status,
+selected B4 target, reacquisition reference, portal target and replan events.
+
+Viewer presentation:
+- topology route as a polyline;
+- route turn/portal points as markers;
+- actual ship trajectory;
+- ship as an oriented wire rectangular box using Cobra half extents;
+- explicit nose arrow;
+- hazard trajectory and three wire envelopes;
+- selected target / reacquisition / portal markers;
+- all replan positions;
+- current time/phase/status/clearance in the window title.
+
+Controls: RMB orbit, MMB pan, wheel zoom, F fit, Space play/pause,
+`[`/`]` frame step, R next replan, Esc close.
+
+Validation state: source is committed but has NOT yet been compiled/run on the
+target MinGW64 machine. Do not call the viewer accepted until that gate runs.

@@ -1552,19 +1552,34 @@ void drawHud(
         );
         appendUiButton(ui, prevButtonRect(), "НАЗАД");
         appendUiButton(ui, nextButtonRect(), "ВПЕРЁД");
-        appendUiButton(ui, replanButtonRect(), "СЛЕД. ПЕРЕПЛАН");
+        appendUiButton(ui, replanButtonRect(), "СЛЕД. СОБЫТИЕ");
+    }
+    else if (
+        state.calculationPerformed &&
+        state.calculationSucceeded &&
+        !state.executionPerformed)
+    {
+        appendUiButton(
+            ui,
+            playButtonRect(),
+            "ЗАПУСТИТЬ ПОЛЁТ",
+            true
+        );
+        appendUiButton(ui, prevButtonRect(), "НЕТ КАДРОВ");
+        appendUiButton(ui, nextButtonRect(), "НЕТ КАДРОВ");
+        appendUiButton(ui, replanButtonRect(), "FOLLOWER: ГОТОВ");
     }
     else
     {
         appendUiButton(
             ui,
             playButtonRect(),
-            "ПОЛЁТ: ЭТАП 2",
+            "СНАЧАЛА РАСЧЁТ",
             false
         );
         appendUiButton(ui, prevButtonRect(), "НЕТ КАДРОВ");
         appendUiButton(ui, nextButtonRect(), "НЕТ КАДРОВ");
-        appendUiButton(ui, replanButtonRect(), "FOLLOWER: OFF");
+        appendUiButton(ui, replanButtonRect(), "FOLLOWER: ОЖИДАЕТ");
     }
     appendUiButton(ui, fitButtonRect(), "ВПИСАТЬ");
 
@@ -1597,13 +1612,26 @@ void drawHud(
         {0.95f, 0.96f, 1.0f}
     );
 
+    const std::string stageTitle =
+        state.executionPerformed
+            ? (
+                state.executionSucceeded
+                    ? "ЭТАП 2: ПОЛЁТ ВЫПОЛНЕН"
+                    : "ЭТАП 2: ОШИБКА ИСПОЛНЕНИЯ"
+              )
+            : hasCalculation
+                ? "ЭТАП 1: МАРШРУТ РАССЧИТАН"
+                : "СЦЕНА ДО РАСЧЁТА";
+
     appendUiText(
         ui, x, panelTop + 48.0f,
-        hasCalculation
-            ? "ЭТАП 1: МАРШРУТ РАССЧИТАН"
-            : "СЦЕНА ДО РАСЧЁТА",
+        stageTitle,
         1.35f,
-        hasCalculation && state.calculationSucceeded
+        (
+            state.executionPerformed
+                ? state.executionSucceeded
+                : (hasCalculation && state.calculationSucceeded)
+        )
             ? glm::vec3(0.35f,1.0f,0.42f)
             : glm::vec3(1.0f,0.82f,0.32f)
     );

@@ -1,4 +1,5 @@
 #include "NavigationTrace.h"
+#include "NavigationScenarioRuntime.h"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -74,6 +75,7 @@ struct Camera
 enum class UiAction
 {
     None,
+    Calculate,
     TogglePlay,
     PreviousFrame,
     NextFrame,
@@ -84,7 +86,17 @@ enum class UiAction
 struct AppState
 {
     Camera camera;
-    const trace::TraceDocument* traceData = nullptr;
+    trace::TraceDocument* traceData = nullptr;
+    std::string scenarioPath;
+    std::string calculationMessage = "ВЫБЕРИТЕ РЕЖИМЫ И НАЖМИТЕ РАССЧИТАТЬ";
+
+    elite::tools::navigation_runtime::ControlMode controlMode =
+        elite::tools::navigation_runtime::ControlMode::Newtonian;
+    elite::tools::navigation_runtime::PilotLevel pilot =
+        elite::tools::navigation_runtime::PilotLevel::Expert;
+    elite::tools::navigation_runtime::FlightStyle flightStyle =
+        elite::tools::navigation_runtime::FlightStyle::Standard;
+    bool useSuddenObstacle = false;
     bool orbiting = false;
     bool panning = false;
     double lastMouseX = 0.0;
@@ -661,11 +673,24 @@ struct UiRect
     }
 };
 
-UiRect playButtonRect() { return {16.0f, 16.0f, 148.0f, 32.0f}; }
-UiRect prevButtonRect() { return {172.0f, 16.0f, 86.0f, 32.0f}; }
-UiRect nextButtonRect() { return {266.0f, 16.0f, 94.0f, 32.0f}; }
-UiRect replanButtonRect() { return {368.0f, 16.0f, 194.0f, 32.0f}; }
-UiRect fitButtonRect() { return {570.0f, 16.0f, 94.0f, 32.0f}; }
+UiRect assistedRect() { return {16.0f, 34.0f, 108.0f, 28.0f}; }
+UiRect newtonianRect() { return {128.0f, 34.0f, 132.0f, 28.0f}; }
+
+UiRect expertRect() { return {280.0f, 34.0f, 92.0f, 28.0f}; }
+UiRect averageRect() { return {376.0f, 34.0f, 96.0f, 28.0f}; }
+UiRect loserRect() { return {476.0f, 34.0f, 92.0f, 28.0f}; }
+
+UiRect standardRect() { return {588.0f, 34.0f, 110.0f, 28.0f}; }
+UiRect extremeRect() { return {702.0f, 34.0f, 108.0f, 28.0f}; }
+
+UiRect suddenObstacleRect() { return {830.0f, 34.0f, 210.0f, 28.0f}; }
+UiRect calculateButtonRect() { return {1052.0f, 30.0f, 160.0f, 34.0f}; }
+
+UiRect playButtonRect() { return {16.0f, 78.0f, 148.0f, 32.0f}; }
+UiRect prevButtonRect() { return {172.0f, 78.0f, 86.0f, 32.0f}; }
+UiRect nextButtonRect() { return {266.0f, 78.0f, 94.0f, 32.0f}; }
+UiRect replanButtonRect() { return {368.0f, 78.0f, 194.0f, 32.0f}; }
+UiRect fitButtonRect() { return {570.0f, 78.0f, 94.0f, 32.0f}; }
 
 UiRect frameSliderRect(int windowWidth, int windowHeight)
 {

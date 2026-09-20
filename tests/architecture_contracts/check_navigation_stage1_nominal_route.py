@@ -18,6 +18,8 @@ def require(condition: bool, message: str) -> None:
 header = read("src/game/navigation/NominalRoutePlanner.h")
 impl = read("src/game/navigation/NominalRoutePlanner.cpp")
 runtime = read("tools/navigation_runtime/NavigationScenarioRuntime.cpp")
+viewer = read("tools/navigation_runtime/NavigationRuntimeViewer.cpp")
+trace_h = read("tools/navigation_runtime/NavigationTrace.h")
 tool_cmake = read("tools/navigation_runtime/CMakeLists.txt")
 test = read("tests/navigation_runtime/NominalRoutePlannerTests.cpp")
 readme = read("tools/navigation_runtime/README.md")
@@ -64,10 +66,29 @@ for required in (
     "NominalRoutePlanner::plan",
     "scenario.staticObstacles",
     "scenario.shipRoutePoints",
+    "loadScenarioPreview",
+    "setSceneEndpoints",
+    "last_route_plan.log",
+    "FOLLOWER: NOT RUN (STAGE 1)",
     '"route_ready"',
     '"static_route_ready"',
 ):
     require(required in runtime, f"Stage-1 runtime missing {required}")
+
+for marker in (
+    "hasSceneEndpoints",
+    "sceneStartMapMeters",
+    "sceneFinishMapMeters",
+):
+    require(marker in trace_h, f"scene preview trace contract missing {marker}")
+
+for marker in (
+    "appendReferenceGrid",
+    "ПОЛЁТ: ЭТАП 2",
+    "FOLLOWER: OFF",
+    "diagnosticLines",
+):
+    require(marker in viewer, f"Stage-1 viewer diagnostics missing {marker}")
 
 for forbidden in (
     "TrajectoryFollower.cpp",

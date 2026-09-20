@@ -46,11 +46,14 @@ Avoidance::Query baseQuery()
     query.horizon.policy.maxBrakingAccelerationMetersPerSecond2 = 10.0;
     query.horizon.policy.turnDistanceMeters = 0.0;
     query.horizon.policy.safetyMarginMeters = 1.0;
-    query.horizon.policy.minimumHorizonMeters = 10.0;
+    query.horizon.policy.minimumHorizonMeters = 40.0;
 
-    query.avoidance.primaryDeflectionRadians = 0.2617993877991494;
-    query.avoidance.secondaryDeflectionRadians = 0.5235987755982988;
-    query.avoidance.azimuthSamples = 8;
+    query.avoidance.lateralGridHalfExtentSamples = 5;
+    query.avoidance.minimumLateralStepMeters = 2.0;
+    query.avoidance.lateralStepEnvelopeMultiplier = 1.0;
+    query.avoidance.maximumLateralOffsetMeters = 80.0;
+    query.avoidance.projectionPaddingMeters = 1.0;
+    query.avoidance.trajectorySamples = 32;
     query.avoidance.staticAdditionalClearanceMeters = 0.0;
     return query;
 }
@@ -60,30 +63,11 @@ Map::QueryResult dynamicResult()
     Map::QueryResult result;
     result.mapRevision = 7;
     result.sourceRevision = 11;
+    result.lookAheadSeconds = 3.0;
     return result;
 }
 
-Map::Candidate stationaryCandidate(
-    Map::EntityId id,
-    Map::Vec3d position,
-    double radius,
-    double sweptRadius
-)
-{
-    Map::Candidate candidate;
-    candidate.entityId = id;
-    candidate.positionMapMeters = position;
-    candidate.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
-    candidate.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
-    candidate.predictedEndPositionMapMeters = position;
-    candidate.conservativeSweptCenterMapMeters = position;
-    candidate.actorRadiusMeters = radius;
-    candidate.conservativeSweptRadiusMeters = sweptRadius;
-    candidate.motionRevision = 1;
-    return candidate;
-}
-
-Map::Candidate movingCandidate(
+Map::Candidate candidate(
     Map::EntityId id,
     Map::Vec3d position,
     Map::Vec3d velocity,
@@ -91,14 +75,26 @@ Map::Candidate movingCandidate(
     double sweptRadius
 )
 {
-    Map::Candidate candidate = stationaryCandidate(id, position, radius, sweptRadius);
-    candidate.velocityMapMetersPerSecond = velocity;
-    candidate.predictedEndPositionMapMeters = {
+    Map::Candidate out;
+    out.entityId = id;
+    out.positionMapMeters = position;
+    out.velocityMapMetersPerSecond = velocity;
+    out.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
+    out.predictionHorizonSeconds = 3.0;
+    out.predictedEndPositionMapMeters = {
         position.x + velocity.x * 3.0,
         position.y + velocity.y * 3.0,
         position.z + velocity.z * 3.0
     };
-    return candidate;
+    out.conservativeSweptCenterMapMeters = {
+        0.5 * (position.x + out.predictedEndPositionMapMeters.x),
+        0.5 * (position.y + out.predictedEndPositionMapMeters.y),
+        0.5 * (position.z + out.predictedEndPositionMapMeters.z)
+    };
+    out.actorRadiusMeters = radius;
+    out.conservativeSweptRadiusMeters = sweptRadius;
+    out.motionRevision = 1;
+    return out;
 }
 
 world::navigation::NavigationObstacle staticBox(
@@ -127,8 +123,10 @@ Space makeSingleRegionSpace(double lateralHalfExtent)
 
     Space::RegionInput region;
     region.regionId = 1;
-    region.boundsMapMeters.minMapMeters = {-20.0, -lateralHalfExtent, -lateralHalfExtent};
-    region.boundsMapMeters.maxMapMeters = {200.0, lateralHalfExtent, lateralHalfExtent};
+    region.boundsMapMeters.minMapMeters =
+        {-20.0, -lateralHalfExtent, -lateralHalfExtent};
+    region.boundsMapMeters.maxMapMeters =
+        {200.0, lateralHalfExtent, lateralHalfExtent};
     region.clearanceRadiusMeters = 1000.0;
     region.geometryRevision = 1;
     update.regions.push_back(region);
@@ -137,7 +135,7 @@ Space makeSingleRegionSpace(double lateralHalfExtent)
     return space;
 }
 
-void testNominalClearPassesThroughWithoutProbes()
+void testNominalClearPassesThroughWithoutOffsetSearch()
 {
     Avoidance planner;
     Avoidance::Query query = baseQuery();
@@ -150,147 +148,82 @@ void testNominalClearPassesThroughWithoutProbes()
     );
 
     require(result.status == Avoidance::Status::NominalClear,
-            "clear nominal target must pass through avoidance unchanged");
-    require(!result.adjustedTarget && result.targetProbesExamined == 0,
-            "clear nominal target must not spend lateral probes");
+            "clear nominal trajectory must remain direct");
+    require(result.nominalPathClear &&
+            !result.adjustedTarget &&
+            result.offsetCandidatesExamined == 0,
+            "clear nominal trajectory must not spend offset search work");
     require(result.target.status == Horizon::Status::Clear,
             "nested horizon result must remain clear");
 }
 
-void testSweptCorridorBlockerFindsSameRegionLateralTarget()
+void testCrossingObstacleProjectsToNormalPlaneAndFindsBypass()
 {
     Avoidance planner;
     Avoidance::Query query = baseQuery();
     Space space = makeSingleRegionSpace(100.0);
     Map::QueryResult dynamic = dynamicResult();
 
-    // Current +X velocity misses this actor by 8 m (> required 4 m), so the
-    // closest-approach check is clear. The nominal +X target segment touches the
-    // conservative swept envelope exactly, forcing only the corridor check to
-    // seek a lateral target.
-    dynamic.candidates.push_back(stationaryCandidate(
+    // Crosses the nominal +X trajectory during the 3 s visible horizon.
+    dynamic.candidates.push_back(candidate(
         200,
-        {8.0, 8.0, 0.0},
-        1.0,
-        5.0
+        {20.0, 10.0, 0.0},
+        {0.0, -5.0, 0.0},
+        2.0,
+        10.0
     ));
-
-    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
-
-    require(result.status == Avoidance::Status::AdjustedClear,
-            "swept corridor blocker should admit a statically proven lateral target");
-    require(result.adjustedTarget,
-            "adjusted-clear result must mark adjusted target ownership");
-    require(result.target.status == Horizon::Status::Clear,
-            "adjusted target must pass dynamic reference checks");
-    require(result.target.targetMode == Horizon::TargetMode::PassThrough,
-            "adjusted target must be temporary/pass-through");
-    require(result.targetProbesExamined >= 1,
-            "avoidance must report lateral probe work");
-    require(result.startRegionId == 1,
-            "same-region static proof must preserve start region identity");
-    require(!near(result.target.targetPositionMapMeters.y, 0.0) ||
-            !near(result.target.targetPositionMapMeters.z, 0.0),
-            "adjusted target must actually deflect laterally");
-}
-
-void testVisibilitySteeringWidensThenReturnsToDirectLine()
-{
-    Avoidance planner;
-    Avoidance::Query query = baseQuery();
-    query.avoidance.maximumDeflectionRadians =
-        1.3089969389957472; // 75 deg.
-    Space space = makeSingleRegionSpace(100.0);
-
-    Map::QueryResult blocked = dynamicResult();
-
-    // The direct corridor and the first small deflections remain inside the
-    // candidate's conservative swept occupancy, while a wider local steering
-    // direction is clear. Current closest-approach kinematics are deliberately
-    // non-conflicting so this fixture isolates bounded visibility steering.
-    Map::Candidate wideFanBlocker = stationaryCandidate(
-        205,
-        {8.0, 4.0, 0.0},
-        0.25,
-        3.0
-    );
-
-    // Keep current closest-approach kinematics clear by leaving the actual
-    // actor off the +X line, but center the conservative swept occupancy on
-    // the nominal corridor. That makes every 15/30-degree azimuth remain
-    // blocked while a wider ring becomes available.
-    wideFanBlocker.conservativeSweptCenterMapMeters = {8.0, 0.0, 0.0};
-    blocked.candidates.push_back(wideFanBlocker);
-
-    const Avoidance::Result bypass =
-        planner.evaluate(query, blocked, StaticQueries(space));
-
-    require(bypass.status == Avoidance::Status::AdjustedClear,
-            "bounded visibility steering must widen until a safe corridor exists");
-    require(bypass.adjustedTarget &&
-            !bypass.nominalVisibilityClear,
-            "blocked direct line must publish a temporary visibility bypass");
-    require(bypass.selectedDeflectionRadians >
-                query.avoidance.secondaryDeflectionRadians,
-            "fixture must require more than the legacy 15/30 degree fan");
-    require(bypass.selectedDeflectionRadians <=
-                query.avoidance.maximumDeflectionRadians + kTolerance,
-            "visibility bypass must remain inside the bounded angular search");
-    require(!bypass.ordinarySearchExhausted,
-            "successful ordinary bypass must not request recovery escalation");
-
-    // Receding-horizon recovery is intentionally stateless: on the next update
-    // the direct A->B corridor is always tested first.
-    const Avoidance::Result recovered =
-        planner.evaluate(query, dynamicResult(), StaticQueries(space));
-
-    require(recovered.status == Avoidance::Status::NominalClear &&
-            recovered.nominalVisibilityClear &&
-            !recovered.adjustedTarget &&
-            near(recovered.selectedDeflectionRadians, 0.0),
-            "once direct visibility returns the planner must immediately resume A->B");
-}
-
-void testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute()
-{
-    Avoidance planner;
-    Avoidance::Query query = baseQuery();
-    Space space = makeSingleRegionSpace(100.0);
-    Map::QueryResult dynamic = dynamicResult();
-
-    // The conservative radius overlaps the +X route, but the real narrow OBB
-    // sits far enough off-axis for the ship envelope + safety margin to pass.
-    // This reproduces the live 360x360x900 moving-infrastructure failure mode:
-    // an enclosing sphere may collect a candidate, but it is not collision
-    // truth when exact HitVolume geometry is available.
-    Map::Candidate candidate = stationaryCandidate(
-        206,
-        {8.0, 4.0, 0.0},
-        6.0,
-        6.0
-    );
-    candidate.exactObstacles.push_back(
-        staticBox(
-            "dynamic_exact_clear_box",
-            206,
-            glm::dvec3(8.0, 4.0, 0.0),
-            glm::dvec3(1.0, 0.25, 0.25)
-        )
-    );
-    dynamic.candidates.push_back(candidate);
 
     const Avoidance::Result result =
         planner.evaluate(query, dynamic, StaticQueries(space));
 
-    require(result.status == Avoidance::Status::NominalClear,
-            "exact dynamic OBB must reject a sphere-only false positive");
-    require(result.nominalConflictsFound == 0,
-            "broadphase overlap must not survive exact dynamic narrow-phase");
-    require(!result.adjustedTarget,
-            "clear exact dynamic geometry must preserve the direct route");
+    require(result.status == Avoidance::Status::AdjustedClear,
+            "crossing obstacle must produce a local bypass");
+    require(result.adjustedTarget,
+            "local bypass must own an adjusted target");
+    require(result.projectedDynamicObstacles == 1,
+            "moving obstacle must enter normal-plane projection");
+    require(result.offsetCandidatesExamined > 0,
+            "visible horizon must evaluate lateral offsets");
+    require(result.selectedLateralOffsetMeters > 0.0,
+            "bypass must leave the blocked centerline");
+    require(
+        !near(result.selectedLateralOffsetMap.y, 0.0) ||
+        !near(result.selectedLateralOffsetMap.z, 0.0),
+        "selected bypass must contain a lateral component");
+    require(near(result.mergeTargetMapMeters.y, 0.0) &&
+            near(result.mergeTargetMapMeters.z, 0.0),
+            "merge target must remain on the original trajectory");
+    require(result.target.targetMode == Horizon::TargetMode::PassThrough,
+            "bypass target must remain a temporary pass-through target");
 }
 
-void testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate()
+void testHeadOnObstacleCanBypassWithoutMandatoryStop()
+{
+    Avoidance planner;
+    Avoidance::Query query = baseQuery();
+    Space space = makeSingleRegionSpace(120.0);
+    Map::QueryResult dynamic = dynamicResult();
+
+    dynamic.candidates.push_back(candidate(
+        201,
+        {30.0, 0.0, 0.0},
+        {-3.0, 0.0, 0.0},
+        2.0,
+        12.0
+    ));
+
+    const Avoidance::Result result =
+        planner.evaluate(query, dynamic, StaticQueries(space));
+
+    require(result.status == Avoidance::Status::AdjustedClear,
+            "head-on visible obstacle with free lateral space must bypass instead of mandatory stop");
+    require(result.selectedLateralOffsetMeters > 0.0,
+            "head-on bypass must use normal-plane clearance");
+    require(!result.localBypassExhausted,
+            "successful head-on bypass must not escalate");
+}
+
+void testExactStaticBlockerConstrainsOffsetSearch()
 {
     Avoidance planner;
     Avoidance::Query query = baseQuery();
@@ -305,12 +238,13 @@ void testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate()
     region.clearanceRadiusMeters = 1000.0;
     region.geometryRevision = 1;
     update.regions.push_back(region);
+
     update.obstacles.push_back(
         staticBox(
             "static_nominal_wall",
             900,
-            glm::dvec3(8.0, 0.0, 0.0),
-            glm::dvec3(1.0, 0.25, 0.25)
+            glm::dvec3(12.0, 0.0, 0.0),
+            glm::dvec3(1.5, 3.0, 3.0)
         )
     );
 
@@ -324,146 +258,129 @@ void testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate()
     );
 
     require(result.status == Avoidance::Status::AdjustedClear,
-            "exact static blocker must trigger bounded avoidance even when NavigationMap is clear");
-    require(result.adjustedTarget,
-            "static-only avoidance must publish adjusted target ownership");
+            "exact static blocker must admit a safe projected offset when free space exists");
     require(result.nominalStaticBlocked,
-            "static-only avoidance must record that the nominal segment was blocked");
+            "static blocker must reject the original trajectory");
     require(result.nominalStaticObstacleId == "static_nominal_wall" &&
             result.nominalStaticObstacleEntityId == 900,
-            "static-only avoidance must retain exact blocker identity");
-    require(result.nominalConflictsFound == 0 &&
-            result.nominalPrimaryConflictEntityId == 0,
-            "static-only blocker must not fabricate a dynamic conflict");
-    require(result.targetProbesExamined > 0 &&
-            result.staticRejected > 0,
-            "static-only blocker must spend bounded probes and reject intersecting ones");
-    require(result.staticObstaclesExamined > 0,
-            "static-only avoidance must expose exact obstacle work");
+            "exact static blocker identity must survive");
+    require(result.staticRejected > 0,
+            "some projected offsets must be rejected by exact static geometry");
+    require(result.selectedLateralOffsetMeters > 0.0,
+            "static blocker must cause a lateral bypass");
 }
 
-void testDynamicConflictStillPreservesExactStaticNominalProof()
-{
-    Avoidance planner;
-    Avoidance::Query query = baseQuery();
-
-    Space::StaticSpaceUpdate update;
-    update.sourceRevision = 33;
-
-    Space::RegionInput region;
-    region.regionId = 1;
-    region.boundsMapMeters.minMapMeters = {-20.0, -100.0, -100.0};
-    region.boundsMapMeters.maxMapMeters = {200.0, 100.0, 100.0};
-    region.clearanceRadiusMeters = 1000.0;
-    region.geometryRevision = 1;
-    update.regions.push_back(region);
-    update.obstacles.push_back(
-        staticBox(
-            "shared_static_dynamic_blocker",
-            901,
-            glm::dvec3(8.0, 0.0, 0.0),
-            glm::dvec3(1.0, 0.25, 0.25)
-        )
-    );
-
-    Space space;
-    space.replaceStaticWorld(std::move(update));
-
-    Map::QueryResult dynamic = dynamicResult();
-    dynamic.candidates.push_back(stationaryCandidate(
-        901,
-        {8.0, 0.0, 0.0},
-        1.5,
-        1.5
-    ));
-
-    const Avoidance::Result result =
-        planner.evaluate(query, dynamic, StaticQueries(space));
-
-    require(result.nominalConflictsFound > 0 &&
-            result.nominalPrimaryConflictEntityId == 901,
-            "fixture must retain the dynamic conflict identity");
-    require(result.nominalStaticBlocked,
-            "dynamic ConflictHold must not collapse exact-static nominal proof to a zero segment");
-    require(result.nominalStaticObstacleId ==
-                "shared_static_dynamic_blocker" &&
-            result.nominalStaticObstacleEntityId == 901,
-            "same physical blocker must remain identifiable in exact static proof");
-    require(result.staticObstaclesExamined > 0,
-            "dynamic conflict must not bypass exact static query work");
-}
-
-void testHeadOnConflictRemainsFailClosed()
+void testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute()
 {
     Avoidance planner;
     Avoidance::Query query = baseQuery();
     Space space = makeSingleRegionSpace(100.0);
     Map::QueryResult dynamic = dynamicResult();
-    dynamic.candidates.push_back(movingCandidate(
-        201,
-        {30.0, 0.0, 0.0},
-        {-10.0, 0.0, 0.0},
-        2.0,
-        35.0
-    ));
 
-    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
+    Map::Candidate actor = candidate(
+        206,
+        {18.0, 6.0, 0.0},
+        {0.0, 0.0, 0.0},
+        6.0,
+        6.0
+    );
+    actor.exactObstacles.push_back(
+        staticBox(
+            "dynamic_exact_clear_box",
+            206,
+            glm::dvec3(18.0, 6.0, 0.0),
+            glm::dvec3(1.0, 0.25, 0.25)
+        )
+    );
+    dynamic.candidates.push_back(actor);
 
-    require(result.status == Avoidance::Status::ConflictHold,
-            "current-kinematics head-on conflict must remain fail closed");
+    const Avoidance::Result result =
+        planner.evaluate(query, dynamic, StaticQueries(space));
+
+    require(result.status == Avoidance::Status::NominalClear,
+            "exact dynamic OBB must reject a sphere-only nominal false positive");
+    require(result.nominalConflictsFound == 0,
+            "broadphase overlap must not survive exact dynamic nominal narrow-phase");
     require(!result.adjustedTarget,
-            "lateral target must not magically erase current head-on kinematics");
-    require(result.dynamicRejected > 0,
-            "head-on fixture must reject dynamically unsafe lateral probes");
-    require(result.ordinarySearchExhausted,
-            "exhausting the ordinary fan must request recovery escalation");
+            "clear exact dynamic geometry must preserve direct trajectory");
 }
 
-void testNarrowStaticRegionRejectsLateralBypass()
+void testObstacleGoneReturnsImmediatelyToNominalTrajectory()
+{
+    Avoidance planner;
+    Avoidance::Query query = baseQuery();
+    Space space = makeSingleRegionSpace(100.0);
+    Map::QueryResult dynamic = dynamicResult();
+    dynamic.candidates.push_back(candidate(
+        207,
+        {20.0, 10.0, 0.0},
+        {0.0, -5.0, 0.0},
+        2.0,
+        10.0
+    ));
+
+    const Avoidance::Result bypass =
+        planner.evaluate(query, dynamic, StaticQueries(space));
+    require(bypass.status == Avoidance::Status::AdjustedClear,
+            "fixture must first create a bypass");
+
+    const Avoidance::Result direct =
+        planner.evaluate(query, dynamicResult(), StaticQueries(space));
+
+    require(direct.status == Avoidance::Status::NominalClear &&
+            direct.nominalPathClear &&
+            !direct.adjustedTarget,
+            "once the unexpected obstacle is gone the solver must return directly to the original trajectory");
+}
+
+void testNarrowStaticRegionFailsClosedWhenNoOffsetFits()
 {
     Avoidance planner;
     Avoidance::Query query = baseQuery();
     Space space = makeSingleRegionSpace(2.5);
     Map::QueryResult dynamic = dynamicResult();
-    dynamic.candidates.push_back(stationaryCandidate(
+    dynamic.candidates.push_back(candidate(
         202,
-        {8.0, 8.0, 0.0},
-        1.0,
-        5.0
+        {20.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0},
+        2.0,
+        8.0
     ));
 
-    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
+    const Avoidance::Result result =
+        planner.evaluate(query, dynamic, StaticQueries(space));
 
     require(result.status == Avoidance::Status::ConflictHold,
-            "lateral bypass without static same-region proof must remain hold");
-    require(!result.adjustedTarget,
-            "static rejection must not publish adjusted target");
-    require(result.staticRejected == result.targetProbesExamined,
-            "narrow region should reject every probe statically");
-    require(result.dynamicRejected == 0,
-            "statically rejected targets must not reach dynamic evaluation");
+            "no physically available lateral space must fail closed");
+    require(!result.adjustedTarget &&
+            result.localBypassExhausted,
+            "exhausted projected free space must be explicit");
+    require(result.staticRejected > 0,
+            "narrow static corridor must reject projected offsets");
 }
 
-void testStaleDynamicResultSkipsAvoidanceProbes()
+void testStaleDynamicResultSkipsOffsetSearch()
 {
     Avoidance planner;
     Avoidance::Query query = baseQuery();
     query.horizon.dynamicResultAgeSeconds = 0.5;
     Space space = makeSingleRegionSpace(100.0);
     Map::QueryResult dynamic = dynamicResult();
-    dynamic.candidates.push_back(stationaryCandidate(
+    dynamic.candidates.push_back(candidate(
         203,
-        {8.0, 8.0, 0.0},
-        1.0,
-        5.0
+        {20.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0},
+        2.0,
+        8.0
     ));
 
-    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
+    const Avoidance::Result result =
+        planner.evaluate(query, dynamic, StaticQueries(space));
 
     require(result.status == Avoidance::Status::StaleHold,
-            "stale dynamic result must fail closed before avoidance");
-    require(result.targetProbesExamined == 0,
-            "stale result must not spend lateral probe work");
+            "stale dynamic truth must fail closed");
+    require(result.offsetCandidatesExamined == 0,
+            "stale dynamic truth must not spend bypass search work");
 }
 
 void testNonTraversableStartFailsStaticHold()
@@ -471,20 +388,14 @@ void testNonTraversableStartFailsStaticHold()
     Avoidance planner;
     Avoidance::Query query = baseQuery();
     Space space = makeSingleRegionSpace(1.0);
-    Map::QueryResult dynamic = dynamicResult();
-    dynamic.candidates.push_back(stationaryCandidate(
-        204,
-        {8.0, 8.0, 0.0},
-        1.0,
-        5.0
-    ));
 
-    const Avoidance::Result result = planner.evaluate(query, dynamic, StaticQueries(space));
+    const Avoidance::Result result =
+        planner.evaluate(query, dynamicResult(), StaticQueries(space));
 
     require(result.status == Avoidance::Status::StaticHold,
             "agent outside envelope-safe static free space must fail static hold");
-    require(result.targetProbesExamined == 0,
-            "invalid static start must stop before target probes");
+    require(result.offsetCandidatesExamined == 0,
+            "invalid static start must stop before bypass search");
 }
 
 } // namespace
@@ -493,24 +404,25 @@ int main()
 {
     try
     {
-        testNominalClearPassesThroughWithoutProbes();
-        testSweptCorridorBlockerFindsSameRegionLateralTarget();
-        testVisibilitySteeringWidensThenReturnsToDirectLine();
+        testNominalClearPassesThroughWithoutOffsetSearch();
+        testCrossingObstacleProjectsToNormalPlaneAndFindsBypass();
+        testHeadOnObstacleCanBypassWithoutMandatoryStop();
+        testExactStaticBlockerConstrainsOffsetSearch();
         testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute();
-        testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate();
-        testDynamicConflictStillPreservesExactStaticNominalProof();
-        testHeadOnConflictRemainsFailClosed();
-        testNarrowStaticRegionRejectsLateralBypass();
-        testStaleDynamicResultSkipsAvoidanceProbes();
+        testObstacleGoneReturnsImmediatelyToNominalTrajectory();
+        testNarrowStaticRegionFailsClosedWhenNoOffsetFits();
+        testStaleDynamicResultSkipsOffsetSearch();
         testNonTraversableStartFailsStaticHold();
 
-        std::cout << "NAVIGATION LOCAL AVOIDANCE CONTRACT TESTS: PASS\n";
+        std::cout
+            << "NAVIGATION LOCAL VISIBLE-HORIZON BYPASS TESTS: PASS\n";
         return 0;
     }
     catch (const std::exception& error)
     {
-        std::cerr << "NAVIGATION LOCAL AVOIDANCE CONTRACT TESTS: FAIL: "
-                  << error.what() << '\n';
+        std::cerr
+            << "NAVIGATION LOCAL VISIBLE-HORIZON BYPASS TESTS: FAIL: "
+            << error.what() << '\n';
         return 1;
     }
 }

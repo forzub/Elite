@@ -26,7 +26,7 @@ add_executable(
 target_include_directories(
     navigation_runtime_viewer
     PRIVATE
-        "${ELITE_SOURCE_ROOT}/glad"
+        "${ELITE_SOURCE_ROOT}/glad/include"
         "${GLM_INCLUDE_DIR}"
         "${CMAKE_CURRENT_LIST_DIR}"
 )

@@ -14,97 +14,74 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Tested:
 ```
-8011cc3ed19fc027fba256ee4aecca7c93a4ce0f
+af9ee9d1694ac0facafaf23b0ec51c3adaf7dbbf
 ```
 
 Architecture PASS. Runtime 17/19.
 
-Failures:
-- focused cross-ring continuity regression;
-- final composite.
+## Branch-switch recovery is working
 
-## Decisive composite diagnostics
-
-The failing persistent-hazard replans report:
-
+Composite evidence:
 ```
-continuity_lateral_valid=1
-same_branch_safe=0
-```
-
-and later:
-```
-selected_branch_alignment=-0.976922
+branch_switch_required=1
+recovery duration=4.0 s
+stopping distance=6.757088 m
+peak brake FF=1.266954 m/s2
+planned static clearance=39.154319 m
+planned dynamic clearance=9.803750 m
+actual dynamic clearance=9.817623 m
+tracking exceeded=0
+final speed error=0.009128 m/s
 ```
 
-This means the accepted branch is no longer safely available.
+The old branch is then cleared and production planner replans from the recovered state.
 
-Do not continue trying to force that branch.
+## Remaining composite failure
 
-## New production signal
+Fresh post-recovery AdjustedClear is produced, but the test-side replacement author rejects it.
 
-Commits:
+Root cause:
 ```
-4a91a78bea1e159a329ab346586a4d290ea5d420
-9949b701bc8ba181a08b96e8077a375aada725be
-7a5b4ae0520a10edbd89fd5f1e81f2427f4768be
-e407857d7764300193075cbee941be82312338f8
+minimumPlannedSpeed >= 0.50 m/s
 ```
+was applied at t=0 even after intentional recovery to ~0.009 m/s.
 
-`NavigationRuntimePlanner::Result::avoidanceBranchSwitchRequired` is true only when:
-- accepted continuity exists;
-- transverse branch is meaningful;
-- no safe same-branch candidate exists;
-- some safe adjusted target exists on another branch.
+## Current unverified authoring fix
 
-This is an escalation signal, not steering authority.
-
-## Focused regression
-
-Commit:
 ```
-c8e0c7cd6b6a7deb6c7f618c4d86ea80d4c62400
+7c87e655788af4e95f9576675185482639fec528
 ```
 
-The exact-static blocker now sits directly on the actual 15-degree / 600 m preferred -Z probe endpoint:
+For normal moving transits:
+- unchanged: minimum planned speed >=0.50 m/s.
+
+For post-recovery launch:
+- start below 0.50 is legal;
+- no reverse progress below -0.05 m/s;
+- must reach >=0.50 m/s;
+- must never drop below 0.50 after reaching it;
+- transverse FF <=1.35 m/s2;
+- dynamic planned clearance >=1.50 m.
+
+## Focused regression fixture fix
+
 ```
-(579.555496, 0, -155.291427)
-```
-
-A larger-ring -Z continuation remains free.
-
-The test must prove:
-- same-branch safe count >0;
-- branch switch required = false;
-- selected target stays on -Z;
-- selected deflection > primary ring.
-
-## Final composite recovery candidate
-
-Commit:
-```
-0ecf1b71b9620022a49ea71c996f5e81c02e5243
+252f9d81c5fd91363a0e0561e195c1f5ab0d375d
 ```
 
-When branch switch is required:
-1. do not execute the opposite adjusted target directly;
-2. fit a conservative Brake program from actual live P/V;
-3. hold current body attitude;
-4. dense proof:
-   - peak total acceleration <=1.35 m/s2;
-   - planned dynamic clearance >=1.5 m;
-   - planned static clearance >=1.5 m;
-   - no velocity reversal;
-5. execute with StateCapture through B9/B10 -> PilotSkill -> real physics;
-6. require zero tracking violations and >0.5 m actual clearances;
-7. require final speed <=0.60 m/s;
-8. clear obsolete accepted branch continuity;
-9. republish hazard at current time;
-10. call planner again from recovered state.
+Old blocker depended on a guessed 600 m horizon endpoint.
+
+New blocker lies at:
+```
+300 * primary-ray direction
+```
+inside the primary -Z segment.
+
+Therefore exact physical-horizon endpoint changes cannot make the blocker miss the primary ray.
 
 New diagnostic:
 ```
-[COMPOSITE-RECOVERY]
+[BRANCH-REGRESSION]
 ```
 
 ## Validation
@@ -131,27 +108,24 @@ OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
 echo
 echo "===== FINAL COMPOSITE SUMMARY ====="
-grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE-RECOVERY\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|NAVIGATION RUNTIME PLANNER TESTS|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+grep -E '\[BRANCH-REGRESSION\]|\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE-RECOVERY\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|NAVIGATION RUNTIME PLANNER TESTS|tests passed|tests failed|TESTED HEAD' "$OUT" || true
 
 echo "$PWD/$OUT"
 ```
 
-## Interpretation
+## Next interpretation
 
-If the cross-ring regression is green but branch-switch recovery triggers in composite:
-- that is expected when same_branch_safe == 0.
+If focused branch regression is green, the branch semantics are settled.
 
-If recovery cannot be physically proved:
-- fail closed and inspect the current state; do not execute the new branch.
+If post-recovery launch is green, recovery -> fresh branch execution is settled.
 
-If recovery succeeds:
-- old branch is retired and next plan is fresh from the recovered state.
+If launch still fails, instrument the fitter rejection reasons before changing thresholds.
 
 If 19/19:
-- accept exact target checkout;
+- record exact target checkout + final metrics;
 - close synthetic maneuver behavior laboratory;
-- move immediately to real NAV STRESS/game visualization and live behavior review.
+- move immediately to real NAV STRESS/game accepted-corridor + trajectory visualization.
 
-Do not weaken physical/safety criteria.
+Do not weaken physical or safety criteria.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

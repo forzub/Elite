@@ -9,65 +9,78 @@
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Final composite progress
+## Final composite status
 
-Latest tested checkout:
+Latest target:
 ```
-852e5a71a71625cdfc0c71a6bb89724d2194990e
-```
-
-The following are now demonstrated inside the final composite:
-- production static topology detour;
-- B7 law filtering/selection;
-- dynamic hazard invalidation;
-- production `AdjustedClear`;
-- authority-bounded replacement authoring;
-- replacement execution with actual 3.175 m conservative hazard clearance;
-- zero tracking-envelope violations;
-- centimeter-level replacement terminal position error.
-
-## Latest composite defect
-
-World truth diverged after the first local bypass.
-
-The test erased dynamic publication by calling `emptyDynamic()`, but execution still propagated the same moving hazard.
-
-That made later route planning inconsistent with physical safety measurement.
-
-## Current correction
-
-```
-6c0a71d308040c568c109afc4425332021ade730
-01a8d69cc635a450d73a49a31b91e5546e0b1828
+f626fb0373499928e0ae89585c3bd992e5436c92
 ```
 
-The dynamic actor remains authoritative until it is actually clear:
-- current actor pose is re-published after each short physical suffix;
-- production planner re-evaluates it;
-- additional bounded `AdjustedClear` suffixes are allowed;
-- static topology resumes only on real `NominalClear`.
+Architecture PASS; 18/19 runtime tests.
 
-This matches the canonical architecture:
+Newtonian completes the full final composite.
+
+Assisted demonstrates multiple safe physical bypass segments, but the production local planner alternates adjusted-target side under repeated replanning.
+
+## Newly identified B4-quality issue
+
+`LocalAvoidancePlanner` is intentionally transitional ray-fan logic.
+
+Its previous inner-ring rule was:
 ```
-ACCEPT short segment
- -> EXECUTE
- -> MONITOR
- -> if still hazardous, replan bounded suffix
- -> continue until nominal route is physically clear
+return first safe azimuth
 ```
 
-## Laboratory exit criterion unchanged
+Because the local transverse basis is rebuilt from the new nominal direction each time, repeated bounded replans can change which physical side is represented by the first azimuth.
 
-A green final composite closes synthetic maneuver behavior testing.
+That produces oscillatory:
+```
+left/right/left
+```
+behavior even when staying on the current side is safe.
 
-Remaining production architecture work still includes:
-- B1/B2/B3/B4;
-- full B5 Assisted/general compiler;
-- generalized B6 ownership;
-- explicit B11 bounded reflex;
-- ordinary-live B7-B10 final seam retirement.
+This is exactly the kind of behavior-quality defect the final composite was intended to expose before moving to game visualization.
 
-After composite green, primary quality work moves to NAV STRESS/game.
+## Production correction
+
+Current candidate:
+```
+86640b05145938ec0880a3a26539957aaa72f085
+ef2e6ec85823c229d6cadb6aa8dbe5b65e209193
+```
+
+Within the same minimum deflection ring:
+- evaluate all safe azimuths;
+- prefer the one best aligned with actual current velocity;
+- preserve deterministic index tie-break.
+
+No new mutable planner state and no relaxed safety bounds.
+
+Focused regression:
+```
+6064a22f565fd7cc82568b0babf2721891c8d925
+```
+
+## Architecture interpretation
+
+This does not close B4 route-aligned corridor migration.
+
+It improves the transitional local ray-fan so it does not gratuitously switch avoidance side between short accepted segments.
+
+Longer-term B4 still remains:
+- route-aligned configuration-space corridor;
+- explicit continuity/branch semantics;
+- less reactive ray-fan behavior.
+
+## Exit criterion unchanged
+
+Final composite must pass before synthetic behavior lab is closed.
+
+After green:
+- NAV STRESS/game visualization;
+- accepted route/corridor;
+- accepted physical trajectory;
+- live NPC/autopilot review.
 
 ## State protocol
 

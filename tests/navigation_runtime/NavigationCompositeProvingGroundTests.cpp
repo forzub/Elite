@@ -1588,6 +1588,102 @@ struct CompositeMetrics
     Replan::Reason invalidationReason = Replan::Reason::None;
 };
 
+
+ExecutionMetrics executeActiveBraking(
+    Vehicle& v,
+    const DynamicHazard& hazard,
+    double velocityResponsePerSecond = 0.75,
+    double maximumSeconds = 8.0
+)
+{
+    ExecutionMetrics m;
+    const double endTime = v.timeSeconds + maximumSeconds;
+
+    while (v.timeSeconds < endTime - 1.0e-9)
+    {
+        game::navigation::NavigationLocalControlIntent local;
+        local.revision = 12900;
+        local.targetRevision = 12002;
+        local.emergency = true;
+        local.hazardUrgency01 = 1.0;
+        local.idealLinearAccelerationLocalMps2 =
+            -v.transform.motion.localVelocityMps *
+            velocityResponsePerSecond;
+
+        const Basis basis = actualBasis(v);
+        local.idealAngularAccelerationLocalRadPerSec2 =
+            basis.right *
+                (-static_cast<double>(v.transform.pitchRate) * 2.0) +
+            basis.up *
+                (-static_cast<double>(v.transform.yawRate) * 2.0) +
+            basis.forward *
+                (-static_cast<double>(v.transform.rollRate) * 2.0);
+
+        const auto bridgeResult =
+            v.bridge.step(
+                v.timeSeconds + kDt,
+                kDt,
+                toSystemIntent(local)
+            );
+
+        if (bridgeResult.status !=
+            Bridge::PilotExecutor::Status::Ok)
+        {
+            m.valid = false;
+            break;
+        }
+
+        SharedShipPhysics::integrate(
+            v.transform,
+            v.params,
+            bridgeResult.control,
+            v.world,
+            static_cast<float>(kDt)
+        );
+
+        game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
+            v.transform.motion,
+            v.params,
+            bridgeResult.control.
+                navigationLinearAccelerationDemandSystemMps2,
+            v.transform.forward()
+        );
+
+        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+            v.transform.motion,
+            v.transform.worldPosition,
+            v.frame,
+            v.params,
+            kDt
+        );
+
+        v.transform.syncLegacyPositionFromWorld();
+        v.timeSeconds += kDt;
+        m.simulatedSeconds += kDt;
+
+        m.minStaticClearanceMeters =
+            std::min(
+                m.minStaticClearanceMeters,
+                conservativeStaticClearance(v)
+            );
+        m.minDynamicClearanceMeters =
+            std::min(
+                m.minDynamicClearanceMeters,
+                conservativeDynamicClearance(v, hazard)
+            );
+
+        if (glm::length(v.transform.motion.localVelocityMps) <= 0.50)
+        {
+            m.completed = true;
+            break;
+        }
+    }
+
+    m.finalVelocityErrorMps =
+        glm::length(v.transform.motion.localVelocityMps);
+    return m;
+}
+
 void absorb(
     CompositeMetrics& total,
     const ExecutionMetrics& phase
@@ -1927,66 +2023,96 @@ CompositeMetrics runComposite(Law law)
                 hazard
             );
 
-        require(
-            fit.valid,
-            "composite could not author an authority-bounded replacement program"
-        );
+        if (fit.valid)
+        {
+            std::cout
+                << std::fixed << std::setprecision(6)
+                << "[COMPOSITE-REPLACEMENT]"
+                << " law=" << lawName(law)
+                << " duration_s=" << fit.durationSeconds
+                << " exit_speed_mps=" << fit.exitSpeedMps
+                << " peak_transverse_ff_mps2="
+                << fit.peakTransverseAccelerationMps2
+                << " min_planned_speed_mps="
+                << fit.minimumPlannedSpeedMps
+                << " min_planned_dynamic_clearance_m="
+                << fit.minimumPlannedDynamicClearanceMeters
+                << "\n";
 
-        std::cout
-            << std::fixed << std::setprecision(6)
-            << "[COMPOSITE-REPLACEMENT]"
-            << " law=" << lawName(law)
-            << " duration_s=" << fit.durationSeconds
-            << " exit_speed_mps=" << fit.exitSpeedMps
-            << " peak_transverse_ff_mps2="
-            << fit.peakTransverseAccelerationMps2
-            << " min_planned_speed_mps="
-            << fit.minimumPlannedSpeedMps
-            << " min_planned_dynamic_clearance_m="
-            << fit.minimumPlannedDynamicClearanceMeters
-            << "\n";
+            const auto phase =
+                executeProgram(
+                    v,
+                    fit.program,
+                    Gate::Mode::ScheduledMoving,
+                    hazard
+                );
 
-        const auto phase =
-            executeProgram(
-                v,
-                fit.program,
-                Gate::Mode::ScheduledMoving,
-                hazard
+            std::cout
+                << std::fixed << std::setprecision(6)
+                << "[COMPOSITE-REPLACEMENT-ACTUAL]"
+                << " law=" << lawName(law)
+                << " min_dynamic_clearance_m="
+                << phase.minDynamicClearanceMeters
+                << " max_slip_deg=" << phase.maxSlipDeg
+                << " max_forward_error_deg="
+                << phase.maxForwardErrorDeg
+                << " tracking_exceeded_ticks="
+                << phase.trackingExceededTicks
+                << " final_pos_error_m="
+                << phase.finalPositionErrorMeters
+                << " final_vel_error_mps="
+                << phase.finalVelocityErrorMps
+                << "\n";
+
+            require(
+                phase.valid && phase.completed,
+                "composite replacement program failed"
+            );
+            require(
+                phase.trackingExceededTicks == 0,
+                "composite replacement exceeded tracking envelope"
+            );
+            require(
+                phase.minDynamicClearanceMeters > 0.5,
+                "composite replacement did not clear dynamic hazard"
             );
 
-        std::cout
-            << std::fixed << std::setprecision(6)
-            << "[COMPOSITE-REPLACEMENT-ACTUAL]"
-            << " law=" << lawName(law)
-            << " min_dynamic_clearance_m="
-            << phase.minDynamicClearanceMeters
-            << " max_slip_deg=" << phase.maxSlipDeg
-            << " max_forward_error_deg="
-            << phase.maxForwardErrorDeg
-            << " tracking_exceeded_ticks="
-            << phase.trackingExceededTicks
-            << " final_pos_error_m="
-            << phase.finalPositionErrorMeters
-            << " final_vel_error_mps="
-            << phase.finalVelocityErrorMps
-            << "\n";
+            absorb(total, phase);
+            ++total.phases;
+            ++total.dynamicBypassSegments;
+        }
+        else
+        {
+            const auto brake =
+                executeActiveBraking(
+                    v,
+                    hazard,
+                    goal.velocityResponsePerSecond
+                );
 
-        require(
-            phase.valid && phase.completed,
-            "composite replacement program failed"
-        );
-        require(
-            phase.trackingExceededTicks == 0,
-            "composite replacement exceeded tracking envelope"
-        );
-        require(
-            phase.minDynamicClearanceMeters > 0.5,
-            "composite replacement did not clear dynamic hazard"
-        );
+            std::cout
+                << std::fixed << std::setprecision(6)
+                << "[COMPOSITE-BRAKE]"
+                << " law=" << lawName(law)
+                << " completed=" << (brake.completed ? 1 : 0)
+                << " final_speed_mps="
+                << glm::length(v.transform.motion.localVelocityMps)
+                << " min_dynamic_clearance_m="
+                << brake.minDynamicClearanceMeters
+                << "\n";
 
-        absorb(total, phase);
-        ++total.phases;
-        ++total.dynamicBypassSegments;
+            require(
+                brake.valid && brake.completed,
+                "composite physical bypass unavailable and active braking did not settle the vehicle"
+            );
+            require(
+                brake.minDynamicClearanceMeters > 0.5,
+                "composite braking fallback lost dynamic clearance"
+            );
+
+            absorb(total, brake);
+            ++total.phases;
+        }
     }
 
     // The hazard remains authoritative after the first bounded bypass. Re-publish
@@ -2083,52 +2209,83 @@ CompositeMetrics runComposite(Law law)
                 hazard
             );
 
-        require(
-            continuation.valid,
-            "composite could not author bounded continuation around persistent hazard"
-        );
+        if (continuation.valid)
+        {
+            const auto continuationPhase =
+                executeProgram(
+                    v,
+                    continuation.program,
+                    Gate::Mode::ScheduledMoving,
+                    hazard
+                );
 
-        const auto continuationPhase =
-            executeProgram(
-                v,
-                continuation.program,
-                Gate::Mode::ScheduledMoving,
-                hazard
+            std::cout
+                << std::fixed << std::setprecision(6)
+                << "[COMPOSITE-CONTINUATION]"
+                << " law=" << lawName(law)
+                << " iteration=" << localIteration
+                << " duration_s=" << continuation.durationSeconds
+                << " peak_transverse_ff_mps2="
+                << continuation.peakTransverseAccelerationMps2
+                << " min_planned_dynamic_clearance_m="
+                << continuation.minimumPlannedDynamicClearanceMeters
+                << " min_actual_dynamic_clearance_m="
+                << continuationPhase.minDynamicClearanceMeters
+                << " tracking_exceeded_ticks="
+                << continuationPhase.trackingExceededTicks
+                << "\n";
+
+            require(
+                continuationPhase.valid &&
+                continuationPhase.completed,
+                "composite persistent-hazard continuation failed"
+            );
+            require(
+                continuationPhase.trackingExceededTicks == 0,
+                "composite persistent-hazard continuation exceeded tracking envelope"
+            );
+            require(
+                continuationPhase.minDynamicClearanceMeters > 0.5,
+                "composite persistent-hazard continuation lost clearance"
             );
 
-        std::cout
-            << std::fixed << std::setprecision(6)
-            << "[COMPOSITE-CONTINUATION]"
-            << " law=" << lawName(law)
-            << " iteration=" << localIteration
-            << " duration_s=" << continuation.durationSeconds
-            << " peak_transverse_ff_mps2="
-            << continuation.peakTransverseAccelerationMps2
-            << " min_planned_dynamic_clearance_m="
-            << continuation.minimumPlannedDynamicClearanceMeters
-            << " min_actual_dynamic_clearance_m="
-            << continuationPhase.minDynamicClearanceMeters
-            << " tracking_exceeded_ticks="
-            << continuationPhase.trackingExceededTicks
-            << "\n";
+            absorb(total, continuationPhase);
+            ++total.phases;
+            ++total.dynamicBypassSegments;
+        }
+        else
+        {
+            const auto brake =
+                executeActiveBraking(
+                    v,
+                    hazard,
+                    goal.velocityResponsePerSecond
+                );
 
-        require(
-            continuationPhase.valid &&
-            continuationPhase.completed,
-            "composite persistent-hazard continuation failed"
-        );
-        require(
-            continuationPhase.trackingExceededTicks == 0,
-            "composite persistent-hazard continuation exceeded tracking envelope"
-        );
-        require(
-            continuationPhase.minDynamicClearanceMeters > 0.5,
-            "composite persistent-hazard continuation lost clearance"
-        );
+            std::cout
+                << std::fixed << std::setprecision(6)
+                << "[COMPOSITE-CONTINUATION-BRAKE]"
+                << " law=" << lawName(law)
+                << " iteration=" << localIteration
+                << " completed=" << (brake.completed ? 1 : 0)
+                << " final_speed_mps="
+                << glm::length(v.transform.motion.localVelocityMps)
+                << " min_dynamic_clearance_m="
+                << brake.minDynamicClearanceMeters
+                << "\n";
 
-        absorb(total, continuationPhase);
-        ++total.phases;
-        ++total.dynamicBypassSegments;
+            require(
+                brake.valid && brake.completed,
+                "composite continuation was not physically authorable and braking fallback failed"
+            );
+            require(
+                brake.minDynamicClearanceMeters > 0.5,
+                "composite continuation braking fallback lost clearance"
+            );
+
+            absorb(total, brake);
+            ++total.phases;
+        }
     }
 
     require(

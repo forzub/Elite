@@ -192,3 +192,43 @@ Known Stage-2 failures remain open and must not be deleted or weakened:
   hand-authored narrow-passage program enters portal 102 with a full-hull width above
   the 19 m half-width gate. This is a Stage-2 body-attitude/tunnel issue, not a
   Stage-1 route-planning issue.
+
+
+## Immediate rerun — Stage-1 scene/diagnostic visibility
+
+Rebuild the focused Stage-1 gate and viewer.
+
+Expected before `РАССЧИТАТЬ`:
+- scene is already visible;
+- green START marker;
+- yellow FINISH marker/ring;
+- static wall/obstacles;
+- reference grid;
+- Cobra at START;
+- diagnostics says `PLANNER: NOT RUN` and `FOLLOWER: NOT RUN (STAGE 1)`.
+
+Expected after `РАССЧИТАТЬ`:
+- white static route appears;
+- diagnostics says `PLANNER: OK` or `PLANNER: FAIL`;
+- route point count / length / static-detour flag are shown;
+- Follower remains explicitly OFF in Stage 1;
+- `tools/navigation_runtime/last_route_plan.log` is written;
+- no playback/movement is expected in Stage 1.
+
+Commands:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+bash tests/navigation_runtime/run_stage1_mingw64.sh
+```
+
+Exact viewer launch:
+
+```bash
+cd /d/__elite/work
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```
+
+If the route itself looks wrong, send `tools/navigation_runtime/last_route_plan.log` plus a screenshot. That evidence is sufficient to diagnose Stage-1 Planner input/output without involving Follower.

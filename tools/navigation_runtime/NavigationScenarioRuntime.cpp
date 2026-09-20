@@ -496,7 +496,8 @@ std::vector<std::string> routeDiagnostics(
         "GOAL REVISION: " +
             std::to_string(route.goalRevision),
         "STATIC WORLD REVISION: " +
-            std::to_string(route.staticWorldRevision)
+            std::to_string(route.staticWorldRevision),
+        "LOG: last_route_plan.log"
     };
 
     if (!route.message.empty())

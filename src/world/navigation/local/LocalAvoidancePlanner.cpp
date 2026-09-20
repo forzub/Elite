@@ -284,9 +284,8 @@ double projectedClearanceForOffset(
         required;
 }
 
-bool timeCoupledBypassClear(
-    const Vec3d& bypassTarget,
-    const Vec3d& mergeTarget,
+bool timeCoupledSegmentClear(
+    const Vec3d& target,
     const LocalHorizonPlanner::Query& query,
     const NavigationMap::QueryResult& dynamicCandidates,
     const Vec3d& forward,
@@ -297,12 +296,10 @@ bool timeCoupledBypassClear(
 ) noexcept
 {
     const Vec3d start = query.agent.positionMapMeters;
-    const double firstLength = distance(start, bypassTarget);
-    const double secondLength = distance(bypassTarget, mergeTarget);
-    const double totalLength = firstLength + secondLength;
+    const double segmentLength = distance(start, target);
     const double age = query.dynamicResultAgeSeconds;
 
-    if (totalLength <= kEpsilon)
+    if (segmentLength <= kEpsilon)
         return false;
 
     for (std::size_t i = 0; i <= samples; ++i)
@@ -311,45 +308,11 @@ bool timeCoupledBypassClear(
             static_cast<double>(i) /
             static_cast<double>(samples);
         const double t = lookAheadSeconds * alpha;
-        const double pathDistance = totalLength * alpha;
 
-        Vec3d ship {};
-        if (pathDistance <= firstLength ||
-            secondLength <= kEpsilon)
-        {
-            const double localAlpha =
-                firstLength > kEpsilon
-                    ? std::clamp(
-                          pathDistance / firstLength,
-                          0.0,
-                          1.0
-                      )
-                    : 1.0;
-            ship = add(
-                start,
-                scale(
-                    subtract(bypassTarget, start),
-                    localAlpha
-                )
-            );
-        }
-        else
-        {
-            const double localAlpha =
-                std::clamp(
-                    (pathDistance - firstLength) /
-                        secondLength,
-                    0.0,
-                    1.0
-                );
-            ship = add(
-                bypassTarget,
-                scale(
-                    subtract(mergeTarget, bypassTarget),
-                    localAlpha
-                )
-            );
-        }
+        const Vec3d ship = add(
+            start,
+            scale(subtract(target, start), alpha)
+        );
 
         for (const Candidate& candidate : dynamicCandidates.candidates)
         {
@@ -474,6 +437,8 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         query.horizon.agent.positionMapMeters,
         scale(forward, probeDistance)
     );
+    // This is a route-reacquisition reference only. A local bypass is not
+    // required to return to it inside the current horizon.
     result.mergeTargetMapMeters = boundedNominalTarget;
 
     LocalAvoidancePlanner::StaticQueries::SegmentQuery nominalStaticQuery;
@@ -715,45 +680,8 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                     continue;
                 }
 
-                LocalAvoidancePlanner::StaticQueries::SegmentQuery secondProbe;
-                secondProbe.startMapMeters =
-                    toSpaceVec(candidateTarget);
-                secondProbe.endMapMeters =
-                    toSpaceVec(boundedNominalTarget);
-                secondProbe.envelope = startQuery.envelope;
-                secondProbe.requireSameRegion = true;
-                secondProbe.allowEndOnStartRegionBoundary =
-                    query.avoidance.
-                        nominalTargetIsProvenPortalBoundary;
-
-                const auto secondStatic =
-                    staticQueries.querySegment(secondProbe);
-                result.spaceRevision =
-                    secondStatic.spaceRevision;
-                result.spaceSourceRevision =
-                    secondStatic.sourceRevision;
-                result.staticObstaclesExamined +=
-                    secondStatic.obstaclesExamined;
-
-                if (secondStatic.spaceRevision !=
-                        start.spaceRevision ||
-                    secondStatic.sourceRevision !=
-                        start.sourceRevision)
-                {
-                    result.status = Status::StaticHold;
-                    return result;
-                }
-
-                if (!secondStatic.traversable ||
-                    secondStatic.startRegionId != start.regionId)
-                {
-                    ++result.staticRejected;
-                    continue;
-                }
-
-                if (!timeCoupledBypassClear(
+                if (!timeCoupledSegmentClear(
                         candidateTarget,
-                        boundedNominalTarget,
                         query.horizon,
                         dynamicCandidates,
                         forward,
@@ -771,40 +699,43 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                     distance(
                         query.horizon.agent.positionMapMeters,
                         candidateTarget
-                    ) +
-                    distance(
-                        candidateTarget,
-                        boundedNominalTarget
                     );
+
+                const bool sameOffset =
+                    std::abs(
+                        offsetMagnitude -
+                        bestOffsetMagnitude
+                    ) <= kEpsilon;
+                const bool sameForward =
+                    std::abs(
+                        bypassForwardDistance -
+                        bestBypassForwardDistance
+                    ) <= kEpsilon;
+                const bool sameRouteLength =
+                    std::abs(
+                        routeLength -
+                        bestRouteLength
+                    ) <= kEpsilon;
 
                 const bool better =
                     !found ||
                     offsetMagnitude <
                         bestOffsetMagnitude - kEpsilon ||
-                    (std::abs(
-                         offsetMagnitude -
-                         bestOffsetMagnitude
-                     ) <= kEpsilon &&
+                    (sameOffset &&
+                     bypassForwardDistance >
+                         bestBypassForwardDistance + kEpsilon) ||
+                    (sameOffset &&
+                     sameForward &&
                      routeLength <
                          bestRouteLength - kEpsilon) ||
-                    (std::abs(
-                         offsetMagnitude -
-                         bestOffsetMagnitude
-                     ) <= kEpsilon &&
-                     std::abs(
-                         routeLength -
-                         bestRouteLength
-                     ) <= kEpsilon &&
+                    (sameOffset &&
+                     sameForward &&
+                     sameRouteLength &&
                      projectedClearance >
                          bestProjectedClearance + kEpsilon) ||
-                    (std::abs(
-                         offsetMagnitude -
-                         bestOffsetMagnitude
-                     ) <= kEpsilon &&
-                     std::abs(
-                         routeLength -
-                         bestRouteLength
-                     ) <= kEpsilon &&
+                    (sameOffset &&
+                     sameForward &&
+                     sameRouteLength &&
                      std::abs(
                          projectedClearance -
                          bestProjectedClearance

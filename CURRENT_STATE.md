@@ -18,160 +18,120 @@ Accepted:
 Exact tested checkout:
 
 ```
-8011cc3ed19fc027fba256ee4aecca7c93a4ce0f
+af9ee9d1694ac0facafaf23b0ec51c3adaf7dbbf
 ```
 
 Results:
 - architecture contract PASS;
 - runtime 17/19;
 - failures:
-  - `navigation_runtime_planner` strengthened continuity regression;
+  - `navigation_runtime_planner` focused cross-ring regression;
   - `navigation_composite_proving_ground`.
 
-## Decisive composite evidence
+## What is now proven
 
-The new transverse diagnostics answered the main question.
+The forced branch-switch escalation path works.
 
-Newtonian persistent hazard:
+Composite Newtonian:
+- planner reports `branch_switch_required=1`;
+- physical Brake recovery is authored;
+- recovery duration 4.0 s;
+- stopping distance 6.757088 m;
+- peak brake FF 1.266954 m/s2;
+- planned static clearance 39.154319 m;
+- planned dynamic clearance 9.803750 m;
+- actual dynamic clearance 9.817623 m;
+- tracking exceeded ticks = 0;
+- final speed error = 0.009128 m/s.
 
-iteration 0:
-- continuity lateral valid = 1;
-- same-branch safe candidates = 0;
-- selected branch alignment = 0.0.
-
-iteration 1:
-- continuity lateral valid = 1;
-- same-branch safe candidates = 0;
-- selected branch alignment = -0.976922.
-
-Therefore the planner is **not** abandoning a safe accepted branch.
-
-No safe candidate remains on the accepted transverse branch. The proposed adjusted target is genuinely on another branch.
-
-The correct response is not more branch-ranking heuristics and not forcing a no-stop transit. The higher maneuver layer must recover/brake before changing branch.
-
-## Focused regression fixture defect
-
-The strengthened regression still failed because its exact-static blocker did not actually intersect the deterministic primary -Z probe.
-
-The intended 15 degree / 600 m probe endpoint is approximately:
-
+Therefore the new architecture:
 ```
-(579.555496, 0, -155.291427)
+branch exhausted
+ -> branch-switch escalation
+ -> physical recovery
+ -> stop
+ -> clear old continuity
+ -> replan
 ```
+is functioning physically.
 
-The blocker had been placed near an intermediate guessed location.
+## Latest composite failure root cause
 
-It is now centered directly on the actual primary probe endpoint, far from the larger-ring -Z endpoint, so the fixture really tests:
-- first-ring preferred branch blocked;
-- opposite first-ring branch safe;
-- larger-ring preferred branch safe.
+After recovery, the planner correctly replans with continuity cleared:
+- continuity lateral valid = 0;
+- branch switch required = 0;
+- new AdjustedClear target is returned.
 
-## New production escalation signal
-
-Commits:
-
+But `fitAuthorityBoundedReplacement()` still used the old moving-transit rule:
 ```
-4a91a78bea1e159a329ab346586a4d290ea5d420
-9949b701bc8ba181a08b96e8077a375aada725be
-7a5b4ae0520a10edbd89fd5f1e81f2427f4768be
-e407857d7764300193075cbee941be82312338f8
+minimumPlannedSpeed >= 0.50 m/s
 ```
+including sample t=0.
 
-`LocalAvoidancePlanner::Result` and `NavigationRuntimePlanner::Result` now publish:
+The successful recovery leaves the craft at ~0.009 m/s by design, so every post-recovery launch candidate necessarily fails this gate before execution.
 
-```
-branchSwitchRequired / avoidanceBranchSwitchRequired
-```
+This is a test-side B5 authoring seam, not a planner or physics failure.
 
-It is true only when:
-- explicit accepted continuity exists;
-- transverse continuity is meaningful;
-- no safe same-branch candidate exists;
-- a safe adjusted target exists on another branch.
-
-This is an escalation signal for maneuver ownership. The local planner does not itself mutate execution or perform braking.
-
-## Focused regression correction
+## Current unverified post-recovery authoring fix
 
 Commit:
 
 ```
-c8e0c7cd6b6a7deb6c7f618c4d86ea80d4c62400
+7c87e655788af4e95f9576675185482639fec528
 ```
 
-The primary -Z blocker now sits on the real 15-degree probe endpoint.
+Replacement fitter now distinguishes:
+- normal moving transit: original `minimum speed >=0.50 m/s` remains unchanged;
+- launch from recovery-rest: start below 0.50 m/s is allowed, but the curve must:
+  - never reverse progress more than 0.05 m/s;
+  - reach 0.50 m/s;
+  - never fall below 0.50 m/s after reaching it;
+  - still satisfy transverse FF <=1.35 m/s2;
+  - still satisfy planned dynamic clearance >=1.50 m.
 
-The regression also asserts that when a safe same-branch larger-ring continuation exists:
-- branch switch must NOT be requested.
+No ordinary moving-transit criterion was weakened.
 
-## Final composite recovery candidate
+## Focused regression fixture correction
 
-Commit:
+Previous blocker placement remained horizon-sensitive.
+
+The test assumed a 600 m primary probe, but `PhysicalManeuverHorizon` adds braking/safety reserve, so the actual ray is slightly longer.
+
+New commit:
 
 ```
-0ecf1b71b9620022a49ea71c996f5e81c02e5243
+252f9d81c5fd91363a0e0561e195c1f5ab0d375d
 ```
 
-When production returns `avoidanceBranchSwitchRequired`:
-1. do not execute the opposite-side adjusted target directly;
-2. fit a physical Brake recovery from the actual live P/V;
-3. recovery is translation-only / fixed-attitude;
-4. dense proof requires:
-   - peak total brake feed-forward <= 1.35 m/s2;
-   - planned dynamic clearance >= 1.50 m;
-   - planned static clearance >= 1.50 m;
-   - no velocity reversal;
-5. execute through B9/B10 -> PilotSkill -> real physics using StateCapture;
-6. require:
-   - zero tracking-envelope violations;
-   - actual dynamic clearance > 0.5 m;
-   - actual static clearance > 0.5 m;
-   - final speed <= 0.60 m/s;
-7. retire the old accepted branch continuity;
-8. republish current world truth;
-9. call production planner again from the recovered state.
+The blocker is now placed at an **interior 300 m point** of the primary -Z ray:
+```
+x = 300*cos(primaryDeflection)
+z = -300*sin(primaryDeflection)
+```
+
+Since the physical horizon is >300 m, the primary ray must cross it regardless of exact horizon length, while the larger-ring -Z ray is far away at that same X.
 
 New diagnostic:
-
 ```
-[COMPOSITE-RECOVERY]
+[BRANCH-REGRESSION]
 ```
-
-reports:
-- duration;
-- stopping distance;
-- peak brake FF;
-- planned static/dynamic clearances;
-- actual dynamic clearance;
-- final speed error;
-- tracking violations.
-
-## Architecture meaning
-
-This matches the existing doctrine:
-
-```
-accepted moving branch unavailable
- -> do not force impossible continuation
- -> recovery/brake
- -> clear obsolete branch commitment
- -> REPLAN from actual recovered state
-```
-
-The navigation module still never gives up.
-
-A branch switch may be required; it simply cannot be accepted as an instantaneous no-stop maneuver when current physical state cannot support it.
+prints:
+- status;
+- selected deflection;
+- same-branch safe count;
+- branch alignment;
+- branch-switch-required;
+- selected target.
 
 ## Current gate
 
-Expected suite remains **19 tests**.
+Expected runtime suite remains **19 tests**.
 
 If focused regression passes:
-- cross-ring same-branch preservation is accepted.
+- cross-ring same-branch semantics are accepted.
 
-If composite branch-switch recovery passes:
-- forced branch changes are physically sequenced rather than hidden inside local visibility steering.
+If post-recovery transit now executes:
+- branch-switch recovery + launch into new branch are physically sequenced correctly.
 
 If 19/19:
 - accept final composite;

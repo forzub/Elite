@@ -69,13 +69,6 @@ public:
             MovingPassage::ControlMode::Newtonian;
         double assistedMaxVelocityToForwardAngleRad =
             3.141592653589793238462643383279502884;
-
-        // Direction of the currently/previously accepted bounded local
-        // progress segment. The execution owner may feed this back on REPLAN
-        // so local visibility search preserves the committed bypass side.
-        // False means no continuity constraint is available.
-        bool localAvoidanceContinuityValid = false;
-        glm::dvec3 localAvoidanceContinuityDirectionMap {0.0};
     };
 
     struct Goal
@@ -172,17 +165,18 @@ public:
         bool safeProgressTargetDemonstrated = false;
         bool usedPortalWaypoint = false;
         bool adjustedTarget = false;
-        double selectedVisibilityDeflectionRadians = 0.0;
-
-        // LocalAvoidance tested the complete ordinary progress-preserving fan
-        // and found no safe target. Higher game/control logic must now consider
-        // recovery/backtrack/flip-and-burn/emergency candidates rather than
-        // interpreting the provisional hold intent as a permanent decision.
-        bool ordinaryVisibilitySearchExhausted = false;
+        bool localBypassExhausted = false;
 
         glm::dvec3 coarseWaypointMapMeters {0.0};
         glm::dvec3 selectedTargetMapMeters {0.0};
         glm::dvec3 desiredVelocityMapMetersPerSecond {0.0};
+
+        // Visible-horizon local bypass product. The temporary target is off the
+        // nominal route; merge target lies back on the original planned line.
+        glm::dvec3 localBypassLateralOffsetMap {0.0};
+        double localBypassLateralOffsetMeters = 0.0;
+        glm::dvec3 localBypassMergeTargetMapMeters {0.0};
+        double localBypassProjectedClearanceMeters = 0.0;
 
         // Attitude semantics belong to the selected CURRENT maneuver, not to
         // route context. A future oriented portal may exist on the route while
@@ -221,13 +215,12 @@ public:
         std::size_t dynamicCandidatesExamined = 0;
         std::size_t dynamicConflictsFound = 0;
         std::size_t nominalDynamicConflictsFound = 0;
-        std::size_t avoidanceProbesExamined = 0;
 
-        bool avoidanceContinuityHintUsed = false;
-        bool avoidanceContinuityLateralValid = false;
-        std::size_t avoidanceSameBranchSafeCandidates = 0;
-        double avoidanceSelectedBranchAlignment = 0.0;
-        bool avoidanceBranchSwitchRequired = false;
+        std::size_t avoidanceProjectedDynamicObstacles = 0;
+        std::size_t avoidanceOffsetCandidatesExamined = 0;
+        std::size_t avoidanceProjectionRejected = 0;
+        std::size_t avoidanceStaticRejected = 0;
+        std::size_t avoidanceDynamicRejected = 0;
 
         bool nominalStaticBlocked = false;
         std::size_t staticObstaclesExamined = 0;

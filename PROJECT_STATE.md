@@ -13,67 +13,71 @@
 
 Latest target:
 ```
-69f8ca4dbcb44df5340b94f45640bcb7d6e6ed1a
+51e6c41bb94b65e8cc269fb035164a4eb0aa23fd
 ```
 
-Architecture PASS, runtime 17/19.
+Architecture PASS; 18/19 runtime tests.
 
-The attempt confirmed:
-- velocity-only continuity is too weak;
-- first-safe-azimuth ordering is not a stable physical branch;
-- accepted local execution state must participate explicitly in replanning context.
+Focused explicit continuity is now production-wired and independently green.
 
-## Ownership correction
+The final composite exposed a stronger requirement: continuity must outrank the ordinary minimum-deflection-ring preference when the accepted branch remains safely available at a slightly larger angle.
 
-Accepted local branch continuity now belongs to the execution/accepted-segment layer.
+## Current B4 transitional semantics
 
-It is passed into the stateless planner as an explicit direction hint on each replan.
+No continuity hint:
+- choose smallest safe deflection ring;
+- use current velocity to rank safe azimuths inside that ring.
 
-This fits the existing ownership contract:
-- planner does not keep mutable hidden memory;
-- execution owns what was accepted;
-- replanning consumes that accepted context;
-- safety proof remains fresh against current world truth.
+Explicit accepted-segment continuity:
+- search all ordinary safe rings;
+- preserve same branch when possible;
+- alignment with accepted direction is primary;
+- angle is secondary;
+- safety proof is always mandatory.
 
-## Current production changes
+This remains stateless planning: execution owns the accepted branch context.
 
-`NavigationRuntimePlanner::AgentState`:
-- continuity-valid flag;
-- accepted local direction.
+## Regression
 
-`LocalAvoidancePlanner::Query`:
-- preferred direction hint.
+The strengthened regression contains:
+- real dynamic nominal conflict;
+- wide 3D static region;
+- exact-static blocker on preferred branch at first ring only;
+- safe opposite branch on first ring;
+- safe preferred branch on a larger ring.
 
-Local candidate selection:
-- still chooses the minimum safe deflection ring;
-- within the ring, preserves the accepted branch direction when possible.
+Expected:
+```
+larger same-branch candidate wins
+```
 
-## Regression correction
+## Ownership
 
-The prior +/-Z regression accidentally used a region only +/-10 m deep in Z.
+Composite continuity is now updated only after successful execution of a physically valid accepted local program.
 
-The revised fixture uses a real 3D region and intentionally makes velocity disagree with the accepted continuity hint, proving ownership rather than an incidental kinematic correlation.
+Planner proposals do not become continuity state merely by being proposed.
 
-## B4 interpretation
+## Longer-term architecture
 
-This still does not complete B4 route-aligned configuration-space corridor migration.
+This is still transitional B4.
 
-It does remove one major reactive-ray-fan defect:
-- accepted short bypasses now have explicit continuity across replans.
+The eventual route-aligned configuration-space corridor should represent:
+- branch identity;
+- local free-space topology;
+- continuity;
+- physical maneuver envelope
 
-Longer-term B4 still wants:
-- explicit corridor/branch object;
-- route-aligned free-space representation;
-- physical maneuver synthesis from that corridor.
+structurally rather than by a direction hint.
 
 ## Exit criterion
 
-Final composite must pass before synthetic behavior lab closes.
+Final composite green -> synthetic maneuver behavior lab closes.
 
-After green:
-- move primary quality work to NAV STRESS/game;
-- visualize route/corridor and accepted physical trajectory;
-- test NPC/autopilot feel in real scene.
+Then:
+- NAV STRESS/game;
+- visualize accepted corridor;
+- visualize accepted physical trajectory;
+- live NPC/autopilot evaluation.
 
 ## State protocol
 

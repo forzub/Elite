@@ -697,8 +697,8 @@ int runNavigationRuntimeSelfTest()
             observation.movingGapPairCandidateSeen &&
             observation.movingGapKinematicsVerified &&
             observation.slitPortalExactOpenPublished &&
-            observation.visibilityBypassSeen &&
-            observation.visibilityBypassActive &&
+            observation.visibleHorizonBypassSeen &&
+            observation.visibleHorizonBypassActive &&
             observation.executionSeen &&
             observation.nonZeroExecutedDemandSeen &&
             observation.lateralExecutedDemandSeen;
@@ -800,14 +800,14 @@ int runNavigationRuntimeSelfTest()
             << observation.movingPassageExecutionActive
             << " moving_passage_applied="
             << observation.movingPassageAppliedAccelerationSeen
-            << " visibility_bypass="
-            << observation.visibilityBypassSeen
-            << " visibility_bypass_active="
-            << observation.visibilityBypassActive
-            << " visibility_direct_recovered="
-            << observation.visibilityDirectRecoveredSeen
-            << " visibility_max_deflection_rad="
-            << observation.maximumVisibilityDeflectionRad
+            << " visible_horizon_bypass="
+            << observation.visibleHorizonBypassSeen
+            << " visible_horizon_bypass_active="
+            << observation.visibleHorizonBypassActive
+            << " visible_horizon_direct_recovered="
+            << observation.visibleHorizonDirectRecoveredSeen
+            << " visible_horizon_max_offset_m="
+            << observation.maximumVisibleHorizonOffsetMeters
             << " moving_gap_passed="
             << observation.movingGapPlanePassed
             << " slit_exact_open="
@@ -889,7 +889,7 @@ int runNavigationRuntimeSelfTest()
             << observation.reachedGoal
             << "\n";
         std::cerr
-            << "[FAIL] navigation-runtime bounded visibility steering evidence incomplete\n";
+            << "[FAIL] navigation-runtime projected visible-horizon bypass evidence incomplete\n";
         return 37;
     }
 
@@ -926,10 +926,10 @@ int runNavigationRuntimeSelfTest()
         publicationCount = nextPublicationCount;
 
         // Capture replication from an epoch in which the moving obstacle pair
-        // is actively causing a bounded visibility bypass. This proves the
+        // is actively causing a visible-horizon bypass. This proves the
         // selected local steering intent reaches the same authoritative
         // PilotSkillExecutor / ShipControlState publication seam.
-        if (!observation.visibilityBypassActive ||
+        if (!observation.visibleHorizonBypassActive ||
             !observation.executionSeen)
         {
             continue;
@@ -1100,10 +1100,10 @@ int runNavigationRuntimeSelfTest()
         return 43;
     }
 
-    // Replication was captured while bounded visibility steering owned the
+    // Replication was captured while projected visible-horizon bypass owned the
     // moving-pair bypass. Continue the SAME authoritative run. The ordered
     // acceptance is:
-    // visibility bypass -> replicated active epoch -> obstacle-plane crossing
+    // visible-horizon bypass -> replicated active epoch -> obstacle-plane crossing
     // -> direct-line recovery -> portal capture -> tunnel transit/exit.
     bool behaviorEvidenceComplete = false;
 
@@ -1217,8 +1217,8 @@ int runNavigationRuntimeSelfTest()
 
         behaviorEvidenceComplete =
             observation.movingGapPlanePassed &&
-            observation.visibilityBypassSeen &&
-            observation.visibilityDirectRecoveredSeen &&
+            observation.visibleHorizonBypassSeen &&
+            observation.visibleHorizonDirectRecoveredSeen &&
             observation.slitPortalExactOpenPublished &&
             observation.slitPortalWaypointSeen &&
             observation.slitEntryCaptureSeen &&
@@ -1278,63 +1278,63 @@ int runNavigationRuntimeSelfTest()
             << " exact_static_violation=" << observation.exactStaticViolationSeen
             << " simulated_s=" << simulatedSeconds
             << " first_bypass_captured="
-            << observation.firstVisibilityBypassCaptured
+            << observation.firstVisibleHorizonBypassCaptured
             << " first_bypass_t_s="
-            << observation.firstVisibilityBypassTimeSeconds
+            << observation.firstVisibleHorizonBypassTimeSeconds
             << " first_bypass_segment="
-            << observation.firstVisibilityBypassSegmentRevision
+            << observation.firstVisibleHorizonBypassSegmentRevision
             << " first_bypass_replan_reason="
             << static_cast<int>(
-                observation.firstVisibilityBypassReplanReason
+                observation.firstVisibleHorizonBypassReplanReason
             )
             << " first_bypass_deflection_rad="
-            << observation.firstVisibilityBypassDeflectionRad
+            << observation.firstVisibleHorizonBypassOffsetMeters
             << " first_bypass_agent_pos=("
-            << observation.firstVisibilityBypassAgentPositionMap.x << ","
-            << observation.firstVisibilityBypassAgentPositionMap.y << ","
-            << observation.firstVisibilityBypassAgentPositionMap.z << ")"
+            << observation.firstVisibleHorizonBypassAgentPositionMap.x << ","
+            << observation.firstVisibleHorizonBypassAgentPositionMap.y << ","
+            << observation.firstVisibleHorizonBypassAgentPositionMap.z << ")"
             << " first_bypass_agent_vel=("
-            << observation.firstVisibilityBypassAgentVelocityMapMps.x << ","
-            << observation.firstVisibilityBypassAgentVelocityMapMps.y << ","
-            << observation.firstVisibilityBypassAgentVelocityMapMps.z << ")"
+            << observation.firstVisibleHorizonBypassAgentVelocityMapMps.x << ","
+            << observation.firstVisibleHorizonBypassAgentVelocityMapMps.y << ","
+            << observation.firstVisibleHorizonBypassAgentVelocityMapMps.z << ")"
             << " first_bypass_target=("
-            << observation.firstVisibilityBypassSelectedTargetMap.x << ","
-            << observation.firstVisibilityBypassSelectedTargetMap.y << ","
-            << observation.firstVisibilityBypassSelectedTargetMap.z << ")"
+            << observation.firstVisibleHorizonBypassSelectedTargetMap.x << ","
+            << observation.firstVisibleHorizonBypassSelectedTargetMap.y << ","
+            << observation.firstVisibleHorizonBypassSelectedTargetMap.z << ")"
             << " first_bypass_desired_vel=("
-            << observation.firstVisibilityBypassDesiredVelocityMapMps.x << ","
-            << observation.firstVisibilityBypassDesiredVelocityMapMps.y << ","
-            << observation.firstVisibilityBypassDesiredVelocityMapMps.z << ")"
+            << observation.firstVisibleHorizonBypassDesiredVelocityMapMps.x << ","
+            << observation.firstVisibleHorizonBypassDesiredVelocityMapMps.y << ","
+            << observation.firstVisibleHorizonBypassDesiredVelocityMapMps.z << ")"
             << " first_bypass_align_forward="
-            << observation.firstVisibilityBypassAcceptedAlignForward
+            << observation.firstVisibleHorizonBypassAcceptedAlignForward
             << " first_bypass_forward=("
-            << observation.firstVisibilityBypassAcceptedForwardMap.x << ","
-            << observation.firstVisibilityBypassAcceptedForwardMap.y << ","
-            << observation.firstVisibilityBypassAcceptedForwardMap.z << ")"
+            << observation.firstVisibleHorizonBypassAcceptedForwardMap.x << ","
+            << observation.firstVisibleHorizonBypassAcceptedForwardMap.y << ","
+            << observation.firstVisibleHorizonBypassAcceptedForwardMap.z << ")"
             << " first_bypass_ideal_accel=("
-            << observation.firstVisibilityBypassIdealAccelerationMapMps2.x << ","
-            << observation.firstVisibilityBypassIdealAccelerationMapMps2.y << ","
-            << observation.firstVisibilityBypassIdealAccelerationMapMps2.z << ")"
+            << observation.firstVisibleHorizonBypassIdealAccelerationMapMps2.x << ","
+            << observation.firstVisibleHorizonBypassIdealAccelerationMapMps2.y << ","
+            << observation.firstVisibleHorizonBypassIdealAccelerationMapMps2.z << ")"
             << " first_bypass_exec_captured="
-            << observation.firstVisibilityBypassExecutedCaptured
+            << observation.firstVisibleHorizonBypassExecutedCaptured
             << " first_bypass_exec_accel=("
-            << observation.firstVisibilityBypassExecutedAccelerationMapMps2.x << ","
-            << observation.firstVisibilityBypassExecutedAccelerationMapMps2.y << ","
-            << observation.firstVisibilityBypassExecutedAccelerationMapMps2.z << ")"
+            << observation.firstVisibleHorizonBypassExecutedAccelerationMapMps2.x << ","
+            << observation.firstVisibleHorizonBypassExecutedAccelerationMapMps2.y << ","
+            << observation.firstVisibleHorizonBypassExecutedAccelerationMapMps2.z << ")"
             << " first_bypass_applied_captured="
-            << observation.firstVisibilityBypassAppliedCaptured
+            << observation.firstVisibleHorizonBypassAppliedCaptured
             << " first_bypass_main_accel=("
-            << observation.firstVisibilityBypassAppliedMainAccelerationMapMps2.x << ","
-            << observation.firstVisibilityBypassAppliedMainAccelerationMapMps2.y << ","
-            << observation.firstVisibilityBypassAppliedMainAccelerationMapMps2.z << ")"
+            << observation.firstVisibleHorizonBypassAppliedMainAccelerationMapMps2.x << ","
+            << observation.firstVisibleHorizonBypassAppliedMainAccelerationMapMps2.y << ","
+            << observation.firstVisibleHorizonBypassAppliedMainAccelerationMapMps2.z << ")"
             << " first_bypass_rcs_accel=("
-            << observation.firstVisibilityBypassAppliedRcsAccelerationMapMps2.x << ","
-            << observation.firstVisibilityBypassAppliedRcsAccelerationMapMps2.y << ","
-            << observation.firstVisibilityBypassAppliedRcsAccelerationMapMps2.z << ")"
+            << observation.firstVisibleHorizonBypassAppliedRcsAccelerationMapMps2.x << ","
+            << observation.firstVisibleHorizonBypassAppliedRcsAccelerationMapMps2.y << ","
+            << observation.firstVisibleHorizonBypassAppliedRcsAccelerationMapMps2.z << ")"
             << " first_bypass_total_accel=("
-            << observation.firstVisibilityBypassAppliedTotalAccelerationMapMps2.x << ","
-            << observation.firstVisibilityBypassAppliedTotalAccelerationMapMps2.y << ","
-            << observation.firstVisibilityBypassAppliedTotalAccelerationMapMps2.z << ")"
+            << observation.firstVisibleHorizonBypassAppliedTotalAccelerationMapMps2.x << ","
+            << observation.firstVisibleHorizonBypassAppliedTotalAccelerationMapMps2.y << ","
+            << observation.firstVisibleHorizonBypassAppliedTotalAccelerationMapMps2.z << ")"
             << "\n";
         return 56;
     }
@@ -1426,14 +1426,14 @@ int runNavigationRuntimeSelfTest()
         << observation.movingPassageExecutedSeen
         << " moving_passage_applied="
         << observation.movingPassageAppliedAccelerationSeen
-        << " visibility_bypass="
-        << observation.visibilityBypassSeen
-        << " visibility_bypass_active="
-        << observation.visibilityBypassActive
-        << " visibility_direct_recovered="
-        << observation.visibilityDirectRecoveredSeen
-        << " visibility_max_deflection_rad="
-        << observation.maximumVisibilityDeflectionRad
+        << " visible_horizon_bypass="
+        << observation.visibleHorizonBypassSeen
+        << " visible_horizon_bypass_active="
+        << observation.visibleHorizonBypassActive
+        << " visible_horizon_direct_recovered="
+        << observation.visibleHorizonDirectRecoveredSeen
+        << " visible_horizon_max_offset_m="
+        << observation.maximumVisibleHorizonOffsetMeters
         << " moving_gap_passed="
         << observation.movingGapPlanePassed
         << " slit_exact_open="
@@ -1538,7 +1538,7 @@ int runNavigationRuntimeSelfTest()
     }
 
     std::cerr
-        << "[PASS] navigation-runtime bounded visibility steering drove real physics,"
+        << "[PASS] navigation-runtime projected visible-horizon bypass drove real physics,"
         << " recovered the direct route after the moving obstacle pair,"
         << " portal capture aligned flight path + hull axis before entry,"
         << " the ship crossed the exact-static tunnel collision-free,"

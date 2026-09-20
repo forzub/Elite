@@ -3,60 +3,40 @@
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Read `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`,
-`src/game/navigation/STAGE12_END_TO_END.md` and relevant production/tests.
-After every state-affecting event synchronize those files and recreate this
-`CONTINUE_PROMPT.md` from scratch.
+`src/game/navigation/STAGE12_END_TO_END.md` and relevant code/tests.
+After every state-affecting event synchronize them and recreate this file from scratch.
 
-## Current architecture
+## Last verified target checkout
 
-B4 is receding-horizon local avoidance. It proves/executes the next safe short
-segment. There is no mandatory fixed-distance return to the nominal line.
-If no physically executable safe segment exists, navigation remains active and
-commands braking/replanning. Legacy angular fan/branch mechanisms stay forbidden.
+`c8972319390622a6b825bf0fa73e8a563c9d7068`
 
-## Latest target evidence before viewer work
+At that checkout:
+- runtime build succeeded;
+- 17/19 tests passed;
+- planner future-portal fixture failed;
+- composite B4 executed two safe adjusted segments, then became nominal-clear,
+  then later lost dynamic clearance;
+- composite trace writer succeeded and wrote 770 Newtonian frames;
+- standalone viewer configure succeeded but compilation failed because GLAD include
+  root pointed at `glad/` instead of `glad/include/`.
 
-The 18:24 target run built successfully and passed 17/19 runtime tests.
-B4 found and physically executed two safe adjusted segments; the composite later
-lost dynamic clearance after returning to a long scripted topology leg.
-The planner fixture also has a separate route-context fixture problem.
+## Post-run fixes now on main, unverified
 
-## 3D viewer now implemented
+1. `tools/navigation_runtime/CMakeLists.txt` uses
+   `${ELITE_SOURCE_ROOT}/glad/include`, matching `<glad/gl.h>`.
+2. Future-oriented portal fixture is interior and endpoint-safe:
+   start X=1, blocker X=4, stage X=7.
+3. Global `baseAgent()` remains unchanged at X=0; only that fixture overrides to X=1.
+
+## Viewer
 
 Location: `tools/navigation_runtime/`.
+Trace path: `tools/navigation_runtime/last_trace_newtonian.json`.
+Viewer displays route, turn points, actual ship path, oriented box + nose arrow,
+hazard path/envelopes, selected/reacquisition/portal targets and replans.
 
-Core files:
-- `NavigationTrace.h/.cpp`;
-- `NavigationRuntimeViewer.cpp`;
-- standalone `CMakeLists.txt`;
-- `run_mingw64.sh`;
-- `README.md`.
+## Next command
 
-`NavigationCompositeProvingGroundTests.cpp` now emits
-`tools/navigation_runtime/last_trace_<law>.json` through an RAII writer.
-The trace survives later test assertion failure.
-
-Viewer shows:
-- route polyline;
-- route turn/portal markers;
-- actual ship trajectory;
-- oriented rectangular ship box using Cobra half extents;
-- explicit nose arrow;
-- moving hazard trajectory;
-- hazard radius, hull collision envelope and planner safety envelope;
-- selected bypass target, reacquisition reference, portal target;
-- all replan events;
-- time/phase/status/clearance in title.
-
-Controls: RMB orbit, MMB pan, wheel zoom, F fit, Space play/pause,
-`[`/`]` frame step, R next replan, Esc close.
-
-## Validation status
-
-Viewer/trace code is committed but UNVERIFIED on the target MinGW64 machine.
-Do not claim acceptance before target compilation/run.
-
-Run:
 ```bash
 cd /d/__elite/work
 git pull --ff-only
@@ -65,8 +45,6 @@ bash tests/navigation_runtime/run_mingw64.sh || true
 bash tools/navigation_runtime/run_mingw64.sh
 ```
 
-Expected known runtime failures may still exist; the first command is also used
-to produce the trace. Inspect compile errors separately from navigation behavior.
-
-After visual inspection, fix monitored topology-resume behavior without lowering
-safety radii, padding, acceleration limits or tracking tolerances.
+Do not lower safety limits to green the test. The main behavioral issue to inspect
+is the transition from bounded `NominalClear` to the long scripted portal leg while
+the moving hazard remains authoritative.

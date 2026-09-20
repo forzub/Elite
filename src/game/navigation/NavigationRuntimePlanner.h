@@ -69,6 +69,13 @@ public:
             MovingPassage::ControlMode::Newtonian;
         double assistedMaxVelocityToForwardAngleRad =
             3.141592653589793238462643383279502884;
+
+        // Direction of the currently/previously accepted bounded local
+        // progress segment. The execution owner may feed this back on REPLAN
+        // so local visibility search preserves the committed bypass side.
+        // False means no continuity constraint is available.
+        bool localAvoidanceContinuityValid = false;
+        glm::dvec3 localAvoidanceContinuityDirectionMap {0.0};
     };
 
     struct Goal

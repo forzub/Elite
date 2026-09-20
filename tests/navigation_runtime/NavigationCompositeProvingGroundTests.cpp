@@ -379,7 +379,7 @@ Planner::AgentState plannerAgent(
     a.controlMode =
         law == Law::Newtonian
             ? Planner::MovingPassage::ControlMode::Newtonian
-            : Planner::MovingPassage::ControlMode::Assisted;
+            : Planner::MovingPassage::ControlMode::EliteAssisted;
     a.assistedMaxVelocityToForwardAngleRad = 0.35;
     a.linearCapability.maxForwardAccelerationMetersPerSec2 =
         7.5 * 9.80665;

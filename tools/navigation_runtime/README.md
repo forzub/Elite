@@ -97,3 +97,43 @@ The right panel shows:
 The phase `portal_102` is explicitly described as the current known
 clearance-loss area so visual replay can be used to diagnose the failure rather
 than only observe motion.
+
+
+## 2026-09-20 diagnostic accuracy update
+
+The viewer remains a deterministic replay tool: the composite test runs the real
+planner/follower/physics first and writes the result to JSON. The viewer does not
+rerun planner/follower while playing the file.
+
+Replay smoothness:
+- trace sampling remains approximately 0.10 s for compact diagnostic files;
+- the viewer now interpolates ship/hazard/reference state between samples, so visible
+  motion is no longer limited to ~10 Hz.
+
+Attitude correctness:
+- v2 trace stores actual ship forward/right/up, preserving roll;
+- v2 trace also stores the sampled AcceptedManeuverProgram reference basis;
+- the viewer draws actual nose separately from program nose and shows orientation error.
+
+Tracking corridor:
+- NavigationRuntimePlanner::Result does not publish a standalone volumetric corridor;
+- the viewer therefore does not invent one;
+- it renders the AcceptedManeuverProgram reference path plus
+  tracking.positionErrorMeters as a translucent tracking tube.
+
+Cobra horizon:
+- bottom-left inset is a plane perpendicular to current Cobra forward axis;
+- dynamic hazard positions are projected into Cobra right/up coordinates;
+- the predicted obstacle envelope is drawn through planner look-ahead using recorded
+  hazard velocity and current ship velocity.
+
+Window:
+- viewer opens as a normal decorated Windows window maximized to the desktop work area,
+  not exclusive/borderless fullscreen.
+
+Newtonian fixture:
+- dynamic local bypass/reacquisition programs no longer force VelocityAligned attitude
+  when law is Newtonian;
+- Newtonian bypass preserves the current rigid-body basis unless an explicit maneuver
+  attitude contract requires otherwise;
+- Assisted retains velocity-aligned behavior.

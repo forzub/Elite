@@ -1946,12 +1946,21 @@ void mouseButtonCallback(
         {
             state->pendingUiAction = UiAction::Calculate;
         }
-        else if (
-            playButtonRect().contains(x, y) &&
-            state->traceData &&
-            state->traceData->frames.size() > 1)
+        else if (playButtonRect().contains(x, y))
         {
-            state->pendingUiAction = UiAction::TogglePlay;
+            if (
+                state->calculationPerformed &&
+                state->calculationSucceeded &&
+                !state->executionPerformed)
+            {
+                state->pendingUiAction = UiAction::Execute;
+            }
+            else if (
+                state->traceData &&
+                state->traceData->frames.size() > 1)
+            {
+                state->pendingUiAction = UiAction::TogglePlay;
+            }
         }
         else if (
             prevButtonRect().contains(x, y) &&

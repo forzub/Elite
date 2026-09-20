@@ -5659,3 +5659,34 @@ Candidate `b57d81e42035f9771ae4feecee56899c4fa4f3f7` moves the hazard to a recov
 The test now explicitly requires a nominal dynamic conflict before it may accept `AdjustedClear`, so the correction cannot pass by simply making the hazard irrelevant.
 
 A new `[COMPOSITE-PLAN]` row records planner status and bounded-search diagnostics for the next target run.
+
+
+## 2026-09-20 — final composite: AdjustedClear proved, replacement authority defect exposed
+
+Exact target checkout:
+
+```
+18f93e15f3baa5218d459b289ae89beb170f1c54
+```
+
+passed the architecture contract and 18/19 runtime tests.
+
+The production local planner now succeeded inside the final composite:
+- nominal dynamic conflict = 1;
+- conflict entity 12060;
+- 20 probes;
+- `AdjustedClear`;
+- no static block.
+
+The failure moved downstream to test-side physical replacement execution.
+
+Using the logged live state and selected target, the old 6 s / 8 m/s quintic requires roughly 5 m/s2 transverse acceleration, far above the 2 m/s2 manoeuvre authority. The test had parameterized a safe geometric target with an unproved physical schedule.
+
+Candidate `7444c5930586300d6cac48bd4b2fa63b27e96bd6` makes test-side replacement authoring capability-aware:
+- dense analytic fitting;
+- transverse FF <=1.35 m/s2;
+- minimum speed >=0.5 m/s;
+- planned dynamic clearance >=1.5 m;
+- actual execution must keep zero tracking-envelope violations and >0.5 m dynamic clearance.
+
+This does not weaken the final composite. It prevents the temporary test-side B5 seam from inventing a maneuver the accepted physics cannot execute.

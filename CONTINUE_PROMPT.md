@@ -4,125 +4,100 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 ## Mandatory workflow rule
 
-After **every state-affecting project event** — new code candidate, failed
-target-machine gate/root cause, acceptance, architecture/ownership change, or
-change of current task/next step — synchronize:
-
+After every state-affecting project event — new candidate, target-machine failure/root cause, acceptance, architecture/ownership change, or task change — synchronize:
 - `CURRENT_STATE.md`
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
 - directly relevant architecture/migration docs when needed
 
-Then recreate this entire `CONTINUE_PROMPT.md` **from scratch from current
-truth**.
+Then recreate this entire `CONTINUE_PROMPT.md` **from scratch from current truth**.
 
-Do **not** incrementally patch stale continuation-prompt prose.
-
-Every recreated continuation prompt must repeat this recreate-from-scratch rule.
+Never incrementally patch stale continuation-prompt prose.
 
 ## Evidence boundary
 
-### Last exact accepted target-machine baseline
+Last exact accepted target-machine baseline:
 
 ```
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-Accepted evidence:
-- Stage-12 architecture contract PASS;
-- navigation_runtime 18/18 PASS;
-- chained transition + physical-limit matrix PASS.
-
-Do not promote another accepted baseline without fresh target-machine evidence.
-
-### Latest actually tested checkout
+Latest actually tested checkout:
 
 ```
 2ad1178bc5c778636748557ceb6c9a5b757c9a53
 ```
 
-Observed:
-- Stage-12 architecture contract PASS;
-- runtime behavior did **not** execute;
-- compilation stopped in `NavigationRuntimePlannerTests.cpp` because a
-  diagnostic used `std::setprecision` without `<iomanip>`.
+That checkout passed the Stage-12 architecture contract but runtime behavior did
+not execute because a test diagnostic failed to compile on missing
+`<iomanip>`. It predates the current B4 replacement and gives no behavioral
+evidence for it.
 
-This tested checkout predates the current B4 hard replacement and therefore
-provides no behavioral evidence for it.
-
-### Current replacement code/doc baseline before mandatory state synchronization
+Current unverified code baseline before documentation/state-sync commits:
 
 ```
-f8cd91d01006d9cba8327ae51efb6705e6df83e0
+edb4c4106686ce625e1cd5eb99a6d1483cd32854
 ```
 
-The mandatory state-sync commits come after this baseline and do not alter
-navigation behavior.
+The exact HEAD pulled by the user for the next run is the checkout that must be
+recorded as tested.
 
-The current branch HEAD after pulling is the exact checkout that must be
-recorded by the next target-machine run.
+## Current B4 architecture — hard replacement
 
-## Current architecture — B4 hard replacement
+The old ordinary local-avoidance mechanism is physically removed.
 
-The former ordinary local-avoidance mechanism is **removed**, not deprecated and
-not retained as fallback.
-
-Deleted production/test semantics include:
+Do not restore:
 - angular deflection rings;
 - 15/30/45/60/75-degree fan widening;
 - azimuth fan search;
-- `primaryDeflectionRadians`;
-- `secondaryDeflectionRadians`;
-- `maximumDeflectionRadians`;
-- `azimuthSamples`;
-- `selectedVisibilityDeflectionRadians`;
-- `ordinaryVisibilitySearchExhausted`;
-- accepted local branch-continuity hints;
-- same-branch ranking state;
-- `avoidanceBranchSwitchRequired`;
-- ordinary Brake-before-branch-switch recovery;
-- composite `[COMPOSITE-RECOVERY]` path.
+- branch-continuity hints;
+- same-branch ranking;
+- branch-switch-required API;
+- ordinary Brake-before-changing-side recovery.
 
-Do not restore any of these to make a failing test green.
+The architecture checker must reject reintroduction of those identifiers.
 
-## Canonical ordinary unexpected-obstacle flow
+## Canonical unexpected-obstacle mechanism
 
 ```text
-accepted route / trajectory
+accepted trajectory
         |
         v
 physical visible horizon
         |
-        +-- predict relevant dynamic obstacle P(t), V(t), A(t)
-        +-- retain exact-static corridor constraints
+        +-- predict relevant moving obstacle P(t), V(t), A(t)
+        +-- retain exact-static route/corridor constraints
         |
         v
 plane normal to nominal trajectory tangent
         |
         v
-project predicted swept occupancy
+project swept dynamic occupancy
         |
         v
-search bounded lateral/vertical offsets in METERS
+search metric lateral/vertical offsets
+        +
+search longitudinal bypass stations inside the horizon
+        |
+        v
+candidate detour:
+    current -> off-route bypass station
+            -> on-route merge target
         |
         +-- projected occupancy rejection
-        +-- exact-static segment proof
-        +-- time-coupled dynamic proof
+        +-- exact-static proof of outbound leg
+        +-- exact-static proof of return/merge leg
+        +-- time-coupled dynamic proof of whole detour
         |
         v
-temporary bypass target
-        +
-merge target on original trajectory
+AdjustedClear temporary bypass
         |
         v
-B5 physical maneuver compilation
+B5/B6 physical maneuver compilation/proof
         |
         v
-B6 continuous capability/geometry proof
-        |
-        v
-B7/B8 decision + ACCEPT
+B7/B8 ACCEPT
         |
         v
 B9/B10 -> PilotSkill -> propulsion/physics
@@ -131,95 +106,90 @@ B9/B10 -> PilotSkill -> propulsion/physics
 reacquire original trajectory
 ```
 
-`LocalBypassExhausted` means only that no safe bounded local offset was
-demonstrated in the current physical horizon.
+A full stop is not the normal side-change algorithm.
 
-Higher ownership may then:
-- reduce speed further;
-- select another local waypoint/portal;
-- backtrack;
-- rebuild topology route;
-- invoke emergency/contact-expected behavior.
+`LocalBypassExhausted` means no safe bounded detour was demonstrated in the
+current horizon. Higher ownership may then reduce speed, change waypoint/portal
+or topology route, backtrack, or invoke emergency behavior.
 
-A full stop is **not** the normal algorithm for selecting another side of an
-unexpected obstacle.
+## Current LocalAvoidancePlanner contract
 
-## Current implementation ownership
-
-### LocalAvoidancePlanner
-
-Current policy/result concepts:
+Policy includes:
 - `lateralGridHalfExtentSamples`
 - `minimumLateralStepMeters`
 - `lateralStepEnvelopeMultiplier`
 - `maximumLateralOffsetMeters`
+- `longitudinalSamples`
 - `projectionPaddingMeters`
 - `trajectorySamples`
-- `selectedLateralOffsetMeters`
+- `staticAdditionalClearanceMeters`
+
+Result includes:
 - `selectedLateralOffsetMap`
+- `selectedLateralOffsetMeters`
+- `selectedBypassForwardDistanceMeters`
 - `mergeTargetMapMeters`
 - `selectedProjectedClearanceMeters`
 - `projectedDynamicObstacles`
 - `offsetCandidatesExamined`
-- `projectionRejected`
-- `staticRejected`
-- `dynamicRejected`
+- `routeCandidatesExamined`
+- projection/static/dynamic rejection diagnostics
 - `localBypassExhausted`
 
-The same relevant visible-horizon actor set must be used by projected occupancy
-and final time-coupled bypass proof.
+The same relevant visible-horizon actor set is used for projection and final
+time-coupled proof.
 
-### NavigationRuntimePlanner
+## Current NavigationRuntimePlanner products
 
-Current local-bypass outputs include:
+Runtime mirrors:
 - `localBypassLateralOffsetMap`
 - `localBypassLateralOffsetMeters`
+- `localBypassForwardDistanceMeters`
 - `localBypassMergeTargetMapMeters`
 - `localBypassProjectedClearanceMeters`
-- projected/offset/static/dynamic rejection diagnostics
+- `avoidanceProjectedDynamicObstacles`
+- `avoidanceOffsetCandidatesExamined`
+- `avoidanceRouteCandidatesExamined`
+- projection/static/dynamic rejection diagnostics
 - `localBypassExhausted`
 
 No branch-continuity input exists.
 
-### Live NAV STRESS / server evidence
+## Pre-target compile/API audit already completed
 
-Live diagnostics use visible-horizon terminology and **meters of lateral
-offset**, not angular deflection.
+Before asking for the first target run:
+- incorrect helper access `query.horizon.policy` was corrected where helper
+  owns `LocalHorizonPlanner::Query`;
+- outer solver uses `query.horizon.policy` correctly;
+- NavigationSpace move semantics verified;
+- exact dynamic field `exactObstacles` verified;
+- static `SegmentQueryResult::startRegionId` verified;
+- `allowEndOnStartRegionBoundary` verified;
+- runtime/planner/test fields cross-checked;
+- architecture checker requirements cross-checked against real fixtures;
+- repository-wide search returned zero matches for removed fan/branch production identifiers.
 
-The live path must consume the same production planner; no visual-only or
-fallback planner is allowed.
+This does **not** replace the user's MinGW64 target gate.
 
-## Architecture lock
+## Focused regressions expected
 
-`tests/architecture_contracts/check_navigation_stage12_runtime_planner.py`
-must continue to:
-- require the projected visible-horizon API/implementation/tests;
-- require live metric-offset integration;
-- reject reintroduction of legacy fan/branch identifiers.
+1. nominal clear -> no bypass work;
+2. crossing moving obstacle -> projected bypass;
+3. head-on obstacle with lateral room -> bypass without mandatory stop;
+4. exact static blocker -> offset filtering;
+5. late exact-static blocker -> outbound leg may be clear but return leg must also
+   be proved;
+6. dynamic broadphase sphere must not override clear exact dynamic OBB truth;
+7. obstacle disappears -> nominal trajectory reacquisition;
+8. no fitting offset -> `localBypassExhausted`;
+9. stale dynamic truth -> fail closed;
+10. runtime planner publishes lateral offset + longitudinal station + merge
+    target;
+11. composite replans from fresh world truth without branch state.
 
-A future longitudinal multi-slab route-aligned corridor may extend B4 for
-complex known geometry, but it must extend the **same owner** rather than create
-a second planner or restore the old angular fan.
+## Target-machine validation
 
-## Focused behavior expected from the next target gate
-
-The replacement must prove:
-
-1. clear nominal route -> `NominalClear`, no offset search;
-2. crossing moving obstacle -> projected normal-plane bypass;
-3. head-on obstacle with genuine lateral room -> bypass without mandatory stop;
-4. exact static blocker -> offsets filtered by exact geometry;
-5. dynamic broadphase sphere cannot override clear exact dynamic OBB truth;
-6. obstacle disappears -> immediate return to nominal trajectory;
-7. no fitting local offset -> `localBypassExhausted` / fail closed;
-8. stale dynamic truth -> fail closed before offset search;
-9. runtime planner publishes bypass offset + merge target;
-10. persistent-hazard composite replans from fresh world truth without any
-    branch continuity/recovery state.
-
-## Validation command
-
-Run on the user's target machine:
+Run:
 
 ```bash
 cd /d/__elite/work
@@ -248,93 +218,59 @@ grep -E 'VISIBLE-HORIZON|LOCAL VISIBLE-HORIZON|\[COMPOSITE-PLAN\]|\[COMPOSITE-RE
 echo "$PWD/$OUT"
 ```
 
-## How to interpret the next result
+## How to handle the result
 
-### If compilation fails
+### Compile failure
+Patch the exact type/include/API problem only. Do not add compatibility shims for
+the removed fan/branch API.
 
-Patch the exact compile/API defect only. Do not reintroduce old fan/branch
-fields as compatibility shims.
-
-Likely classes of first-run issues:
-- type ordering / missing include;
-- renamed live diagnostic mismatch;
-- architecture checker marker drift;
-- test fixture assumptions from the removed API.
-
-After patch:
-- synchronize all required MD files;
-- recreate this prompt from scratch.
-
-### If a focused projected-bypass regression fails
-
+### Focused behavior failure
 Inspect:
-- projected actor working set;
+- actor working set;
 - normal-plane basis;
-- offset spacing / envelope inflation;
-- exact-static segment result;
-- time-coupled dynamic result;
-- whether the fixture actually contains physical free space.
+- metric offset spacing;
+- longitudinal bypass station;
+- outbound static proof;
+- return-leg static proof;
+- time-coupled dynamic proof;
+- actual fixture free space.
 
-Do not weaken clearance blindly and do not restore angular fan behavior.
+Do not weaken clearance blindly.
 
-### If the composite fails
-
-Inspect each:
+### Composite failure
+Inspect every:
 - `[COMPOSITE-PLAN]`
-- first `[COMPOSITE-REPLACEMENT]`
+- `[COMPOSITE-REPLACEMENT]`
 - `[COMPOSITE-REPLACEMENT-ACTUAL]`
-- every `[COMPOSITE-RESUME]`
-- every `[COMPOSITE-CONTINUATION]`
+- `[COMPOSITE-RESUME]`
+- `[COMPOSITE-CONTINUATION]`
 - final `[COMPOSITE]`
 
-Important invariant:
-planner world truth and executor world truth must stay synchronized across every
-bounded continuation.
+Planner and executor must use synchronized world truth.
 
-### If the full gate is green
-
+### Green gate
 Only then:
-1. record the exact tested checkout;
-2. record exact Newtonian and Assisted metrics;
-3. promote the replacement to accepted evidence as justified by the gate;
-4. synchronize all required project MDs;
+1. record exact tested HEAD;
+2. record exact Newtonian/Assisted metrics;
+3. promote only evidence actually proved;
+4. synchronize all required MDs;
 5. recreate this prompt from scratch;
-6. decide whether the synthetic maneuver behavior lab is closed enough to move
-   into actual NAV STRESS/game visual evaluation.
+6. move toward actual NAV STRESS/game visual evaluation instead of indefinite
+   unrelated synthetic matrices.
 
-## Next phase after synthetic acceptance
+## Non-negotiable ownership
 
-The user's intended next phase is actual game inspection, not indefinite
-synthetic-matrix expansion:
-
-- render the accepted route/corridor/tunnel;
-- render the accepted physical time trajectory;
-- run the real NPC/autopilot in the actual scene;
-- visually compare Newtonian and Assisted behavior;
-- then vary PilotSkill/control-law profiles as needed.
-
-Do not invent additional synthetic matrices unless live/game behavior reveals a
-specific defect that needs a focused regression.
-
-## Non-negotiable ownership rules
-
-- Planner owns route/corridor, maneuver family, physical reference, proof and
-  accepted program.
-- Follower tracks the accepted program and applies bounded residual feedback.
-- Follower does not invent a new maneuver because actuators are weak.
-- Stable automatic execution does not replan every frame.
-- Replan occurs on meaningful invalidation/completion.
-- Navigation does not give up.
+- Planner owns route/corridor, physical reference, proof and accepted program.
+- Follower tracks accepted program with bounded residual feedback.
+- Follower does not invent a new maneuver.
+- Stable execution does not replan every frame.
 - Manual guidance consumes the same accepted navigation product.
-- Static world truth remains static ownership; moving actors remain dynamic
-  ownership.
-- The old angular-fan / branch-recovery local mechanism must remain physically
-  absent.
+- Static and dynamic ownership remain separate.
+- Removed angular-fan/branch-recovery local logic must remain absent.
 
 ## Mandatory workflow rule — repeat
 
-After every state-affecting project event, synchronize the project state MDs and
-active Stage-12 document, then recreate this entire
-`CONTINUE_PROMPT.md` **from scratch**.
+After every state-affecting event, synchronize project state MDs and active
+Stage-12, then recreate this entire `CONTINUE_PROMPT.md` **from scratch**.
 
 Never incrementally patch stale continuation-prompt prose.

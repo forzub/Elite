@@ -51,6 +51,16 @@ struct TraceFrame
     glm::dvec3 portalTarget {0.0};
 };
 
+struct TraceStaticObstacle
+{
+    std::string id;
+    std::string shape = "sphere";
+    glm::dvec3 center {0.0};
+    glm::dvec3 halfExtents {1.0};
+    double radiusMeters = 1.0;
+    double capsuleHalfLengthMeters = 0.0;
+};
+
 struct TraceDocument
 {
     int version = 2;
@@ -59,6 +69,7 @@ struct TraceDocument
 
     std::vector<glm::dvec3> routePoints;
     std::vector<glm::dvec3> turnPoints;
+    std::vector<TraceStaticObstacle> staticObstacles;
     std::vector<TraceFrame> frames;
 };
 

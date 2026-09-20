@@ -585,6 +585,50 @@ set_tests_properties(
 )
 
 add_executable(
+    navigation_composite_proving_ground_tests
+    NavigationCompositeProvingGroundTests.cpp
+)
+
+target_include_directories(
+    navigation_composite_proving_ground_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    navigation_composite_proving_ground_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    navigation_composite_proving_ground_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        navigation_composite_proving_ground_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        navigation_composite_proving_ground_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME navigation_composite_proving_ground
+    COMMAND navigation_composite_proving_ground_tests
+)
+
+set_tests_properties(
+    navigation_composite_proving_ground
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     maneuver_program_execution_lab_tests
     ManeuverProgramExecutionLabTests.cpp
 )

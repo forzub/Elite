@@ -1907,21 +1907,21 @@ void setWindowTitle(
     title.setf(std::ios::fixed);
     title.precision(2);
     title
-        << "Navigation Runtime 3D - "
-        << data.law
-        << " | frame " << (frameIndex + 1)
+        << "Навигация 3D - "
+        << localizedLaw(data.law)
+        << " | кадр " << (frameIndex + 1)
         << "/" << data.frames.size()
-        << " | t=" << f.timeSeconds << " s"
-        << " | " << f.phase;
+        << " | t=" << f.timeSeconds << " с"
+        << " | " << localizedPhase(f.phase);
 
     if (!f.plannerStatus.empty())
         title << " | " << f.plannerStatus;
 
     if (f.hazardActive)
-        title << " | clearance=" << f.dynamicClearanceMeters << " m";
+        title << " | зазор=" << f.dynamicClearanceMeters << " м";
 
     if (f.replanEvent)
-        title << " | REPLAN";
+        title << " | ПЕРЕПЛАНИРОВАНИЕ";
 
     glfwSetWindowTitle(window, title.str().c_str());
 }
@@ -2055,7 +2055,7 @@ int main(int argc, char** argv)
             glfwCreateWindow(
                 1280,
                 800,
-                "Navigation Runtime 3D",
+                "Навигация 3D",
                 nullptr,
                 nullptr
             );

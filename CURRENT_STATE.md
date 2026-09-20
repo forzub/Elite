@@ -16,115 +16,128 @@ Accepted evidence:
 ## Latest actually tested checkout
 
 ```
-2ad1178bc5c778636748557ceb6c9a5b757c9a53
+81d0c23ae42bba0352026d6c2306cc6976c04bda
 ```
 
-That checkout passed the architecture contract but runtime behavior did not
-execute because a test diagnostic failed to compile on missing `<iomanip>`.
-It predates the current B4 replacement and supplies no acceptance evidence for
-the new mechanism.
+User target-machine evidence from `navigation_test_20260920-165856.txt`:
+- Stage-12 architecture contract PASS;
+- runtime compiled and linked;
+- 17/19 runtime tests PASS (89%);
+- `navigation_runtime_planner` FAIL;
+- `navigation_composite_proving_ground` FAIL.
 
-## Current unverified code baseline before mandatory state-sync commits
+Therefore the hard-replaced B4 projected visible-horizon solver is **NOT ACCEPTED** yet.
 
-```
-edb4c4106686ce625e1cd5eb99a6d1483cd32854
-```
-
-This baseline is the first coherent candidate of the hard-replaced
-trajectory-relative visible-horizon local solver.
-
-## Canonical B4 mechanism
-
-Unexpected local obstacle handling is now:
+## Current B4 mechanism
 
 ```text
 accepted trajectory
     -> physical visible horizon
-    -> predict relevant moving occupancy
-    -> project occupancy onto plane normal to trajectory
-    -> search metric lateral/vertical offsets
-    -> search longitudinal bypass stations inside the horizon
-    -> prove current -> bypass station
-    -> prove bypass station -> merge point on original trajectory
-    -> time-coupled dynamic proof of the whole two-segment detour
-    -> publish bypass target + merge target
-    -> downstream physical maneuver compilation/proof
-    -> execute
-    -> reacquire original trajectory
+    -> predicted dynamic occupancy
+    -> trajectory-normal projection
+    -> metric lateral/vertical offset search
+    -> longitudinal bypass station search
+    -> exact-static proof current -> bypass
+    -> exact-static proof bypass -> merge
+    -> time-coupled dynamic proof of the complete two-segment detour
+    -> temporary bypass target
+    -> merge target on the accepted trajectory
+    -> physical maneuver compilation/proof
+    -> execute and reacquire
 ```
 
-The solver now searches a **real detour**, not a single off-route endpoint.
+The removed angular fan / branch-continuity / branch-switch Brake path remains forbidden.
 
-New canonical fields include:
-- `longitudinalSamples`;
-- `selectedBypassForwardDistanceMeters`;
-- `routeCandidatesExamined`;
-- runtime mirrors `localBypassForwardDistanceMeters` and
-  `avoidanceRouteCandidatesExamined`.
+## Failure audit: focused runtime fixture
 
-## Hard-removed legacy mechanism
+`testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()` currently asks for
+`AdjustedClear` with:
+- agent start X = 2.0 m;
+- blocker X = 4.5 m, radius = 0.75 m;
+- portal staging / merge X = 7.0 m;
+- agent radius = 1.0 m;
+- horizon safety margin = 0.0 m;
+- projection padding = 1.0 m.
 
-The following must remain physically absent:
-- 15/30/45/60/75-degree fan;
-- angular deflection rings;
-- azimuth fan;
-- branch continuity hints;
-- same-branch ranking;
-- branch-switch-required API;
-- ordinary Brake-before-changing-side recovery.
+The full dynamic proof requires:
 
-Repo-wide symbol audit returned zero matches for the removed production
-identifiers.
+```text
+1.0 + 0.75 + 0.0 + 1.0 = 2.75 m
+```
 
-The architecture checker positively requires the projected two-segment solver
-and negatively rejects old fan/branch identifiers.
+but both start->blocker and merge->blocker centre distances are only 2.5 m.
+`timeCoupledBypassClear()` samples both endpoints and uses the same 2.75 m
+requirement. Therefore no two-segment candidate can satisfy the current
+contract. The fixture expectation is stale/inconsistent with the new solver.
 
-## Compile/API audit before target run
+## Failure audit: final composite
 
-Found and fixed before target execution:
-- helper access incorrectly used `query.horizon.policy` where the helper owns
-  a `LocalHorizonPlanner::Query`; corrected to `query.policy`;
-- outer solver uses `query.horizon.policy` correctly;
-- `NavigationSpace` is movable;
-- dynamic exact geometry field is `exactObstacles`;
-- static segment result provides `startRegionId`;
-- portal-boundary endpoint exception exists as
-  `allowEndOnStartRegionBoundary`;
-- runtime result fields, avoidance policy fields and live diagnostics all match
-  their public headers.
+Logged first Newtonian replan:
 
-Checker/API/test audit reports no missing required fields or fixtures.
+```text
+position      = (138.841366, 52.623525, 0)
+hazard        = (185.850434, 42.920559, 0)
+merge_target  = (168.222033, 46.559171, 0)
+nominal_dynamic_conflicts = 1
+projected_obstacles = 1
+offset_candidates = 168
+route_candidates = 168
+localBypassExhausted = 1
+nominal_static_blocked = 0
+```
 
-## Focused tests now expected
+Geometry from that row:
+- current -> hazard = 48.0 m;
+- current -> merge = 30.0 m;
+- merge -> hazard at activation = 18.0 m.
 
-- nominal clear -> no search;
-- crossing moving obstacle -> projected bypass;
-- head-on with free space -> bypass without mandatory stop;
-- exact static blocker constrains offsets;
-- exact static proof covers the **return leg** to the original trajectory;
-- obstacle disappears -> direct trajectory reacquisition;
-- no fitting offset -> `localBypassExhausted`;
-- stale dynamic truth -> fail closed;
-- runtime planner publishes metric offset, longitudinal bypass station and merge
-  point;
-- composite repeats fresh projected bypasses with no branch state.
+Composite required dynamic clearance is:
 
-## Validation status
+```text
+hull bounding radius 17.275995
++ hazard radius       6.000000
++ safety margin       2.000000
++ projection padding  1.500000
+=                     26.775995 m
+```
 
-**UNVERIFIED on target MinGW64.**
+At the final time-coupled sample (`t = 4 s`) the hazard has moved only 2 m in
+Y; merge-to-hazard distance is still about 18.51 m, below 26.78 m.
+Therefore every candidate forced to return to this merge target must fail the
+dynamic proof regardless of its lateral bypass offset.
 
-No acceptance claim until the user's target-machine gate passes.
+This explains the `ConflictHold + localBypassExhausted` result directly.
 
-## Required next gate
+## Important design question exposed by the test
 
-Run architecture + navigation runtime on the exact pulled HEAD. Record the
-tested SHA and all visible-horizon/composite failures or metrics.
+The focused fixture is clearly invalid and must be repaired without weakening
+clearance. The composite also exposes a possible real B4 limitation:
+`LocalAvoidancePlanner` hard-wires the merge point to the current bounded
+nominal target. If the inflated obstacle occupancy extends beyond that point,
+the solver has no legal way to remain temporarily off-route and merge later.
+
+Before changing production behavior, distinguish:
+1. invalid synthetic fixture geometry;
+2. insufficient physical horizon / merge-station selection;
+3. need for a multi-horizon off-route continuation with later reacquisition.
+
+## Next evidence gate
+
+1. Add rejection counters to the first failing focused/composite diagnostics
+   (`projectionRejected`, `staticRejected`, `dynamicRejected`).
+2. Repair the focused portal-attitude fixture geometry so both endpoints are
+   outside required clearance while the nominal path is genuinely blocked.
+3. Add a deterministic regression that proves whether the current fixed merge
+   point itself causes exhaustion.
+4. Decide whether B4 needs downstream merge sampling / multi-horizon
+   continuation instead of changing safety thresholds.
+5. Re-run the exact target-machine architecture + 19-test runtime gate.
 
 ## Documentation protocol
 
-After every state-affecting event:
-- update `CURRENT_STATE.md`;
-- update `CURRENT_TASK.md`;
-- update `PROJECT_STATE.md`;
-- update active Stage-12 documentation;
+After every state-affecting event update:
+- `CURRENT_STATE.md`;
+- `CURRENT_TASK.md`;
+- `PROJECT_STATE.md`;
+- `src/game/navigation/STAGE12_END_TO_END.md`;
 - recreate `CONTINUE_PROMPT.md` from scratch.

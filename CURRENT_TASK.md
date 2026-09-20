@@ -11,56 +11,48 @@ a0f0991791665e30059be15efc47dedcdfafe090
 ## Latest tested checkout
 
 ```
-8729abbbf3e74df0969f83bbc03773ebd827d3af
+350f7d593e22b8b89cb3ae4dbfbfbb7fbb53ea03
 ```
 
-Architecture PASS, build PASS, navigation runtime 17/18.
+Architecture PASS, build PASS, runtime 17/18.
 
 Only failure:
 ```
 maneuver_chained_limit_matrix
-Assisted chained aligned turn produced excessive slip
+Assisted aligned phase retained excessive slip after handoff transient
 ```
 
-Newtonian chain was otherwise excellent:
-- 4/4 phases;
-- zero seam P/V/omega jump;
-- ~0.000001 deg seam attitude jump;
-- 34.49 deg material drift;
-- hull 17.43 m inside 25 m;
-- final P 0.0246 m;
-- final speed 0.0250 m/s;
-- final attitude 0.0286 deg;
-- zero tracking-envelope violations.
+Measured Assisted phase 3:
+- entry slip 1.579 deg;
+- max/final slip 25.789 deg;
+- final forward error 25.965 deg;
+- 171 tracking-envelope exceeded ticks.
 
-## Diagnosis
+This proves the problem is generated inside phase 3, not inherited from phase 2.
 
-Old Assisted criterion used the maximum slip from phase-3 tick 1.
+## Root cause
 
-Phase 2 uses ScheduledMoving and therefore may hand phase 3 a physically real residual slip without waiting for terminal attitude/velocity capture.
+The test's velocity-aligned attitude builder rebuilt right/up from a world-up seed and switched seed axes at `abs(dot(forward,Y)) > 0.92`.
 
-The old metric could not distinguish inherited handoff transient from Assisted phase-3 behavior.
+That creates a discontinuous roll frame while forward remains smooth.
 
-## Current candidate
+B10 tracks all three axes, so the artificial roll discontinuity becomes a real angular command.
+
+## Current fix candidate
 
 ```
-6fda55f8a2a954ae1656d5eebf4538f585125f2e
+b8eb4641b013692c773d087d6cad96756c672b3c
 ```
 
-The test now prints `[CHAIN-PHASE]` for each phase with:
-- entry slip;
-- max slip;
-- max slip after 1 s;
-- final slip;
-- P/V/forward tracking maxima;
-- terminal errors;
-- tracking-envelope violations.
+Velocity-aligned references now use a parallel-transport/Bishop frame:
+- new forward = trajectory tangent;
+- previous right projected into new normal plane;
+- up reconstructed from transported right and new forward;
+- no world-up threshold switch.
 
-Assisted phase 3 must satisfy:
-- max slip after 1 s <= 8 deg;
-- final slip <= 4 deg.
+Terminal forward is pinned while transported roll is preserved.
 
-No tolerance was widened. The old 8 deg aligned-flight requirement remains after the explicit handoff transient window.
+Exact terminal roll, if required by docking/placement, must be authored explicitly as a separate attitude-capture profile.
 
 ## Target commands
 
@@ -91,17 +83,19 @@ grep -E '\[CHAIN-PHASE\]|\[CHAIN\]|\[LIMIT\]|MANEUVER CHAINED/LIMIT|tests passed
 echo "$PWD/$OUT"
 ```
 
-Upload the complete log.
+## Acceptance
 
-## Interpretation
+Assisted phase 3 remains strict:
+- max slip after 1 s <=8 deg;
+- final slip <=4 deg.
 
 If 18/18:
 - accept chained transitions + physical-limit block;
-- move to the final composite laboratory proving ground.
+- move to one final composite laboratory proving ground.
 
-If Assisted still fails:
-- compare entry slip vs max-after-1s vs final slip;
-- fix the reference/control mechanism if the aligned phase does not actually converge.
+If red:
+- inspect continuous-frame quaternion/angular feed-forward next;
+- do not weaken thresholds.
 
 ## Iteration rule
 

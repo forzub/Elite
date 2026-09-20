@@ -5778,3 +5778,24 @@ Regression/composite commits:
 `09bc81e03cab6c251b50678585161cc73e814ddb`.
 
 This is still transitional B4 behavior. A future route-aligned corridor should carry branch continuity structurally rather than as a direction hint.
+
+
+## 2026-09-20 — explicit continuity promoted across deflection rings
+
+Target `51e6c41bb94b65e8cc269fb035164a4eb0aa23fd` passed architecture and 18/19 runtime tests. The focused continuity regression passed, proving the explicit hint reached production local avoidance.
+
+The final composite still selected an opposite-side target because continuity was only ranked inside the first safe deflection ring.
+
+Production candidate `e19c1804806ce5f3554f20c7b7d3d5ac19b4911e` changes the explicit-continuity ordering:
+- scan all ordinary safe rings;
+- same accepted branch beats opposite branch;
+- alignment beats smaller angle;
+- angle and azimuth remain deterministic tie-breaks.
+
+The no-hint path retains legacy smallest-ring behavior.
+
+Regression `06a917f058926a29f41a936dd994be3f8073e7cf` now blocks the accepted branch only on the primary ring and requires the planner to choose a larger same-branch ring instead of a smaller opposite-side candidate.
+
+Composite continuity ownership was also tightened in `a2da6453daaa8e00cc1f4661321b9294513057ff`: only a successfully executed physical program becomes continuity state.
+
+This remains a transitional B4 contract; future route-aligned corridor topology should carry branch identity structurally.

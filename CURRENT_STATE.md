@@ -18,7 +18,7 @@ Accepted:
 Exact tested checkout:
 
 ```
-18f93e15f3baa5218d459b289ae89beb170f1c54
+852e5a71a71625cdfc0c71a6bb89724d2194990e
 ```
 
 Results:
@@ -27,80 +27,84 @@ Results:
 - all previously accepted 18 tests remain green;
 - only `navigation_composite_proving_ground` failed.
 
-Production dynamic bypass now works:
+Production planning and first replacement both succeeded.
+
+### Production dynamic plan
 
 ```
-[COMPOSITE-PLAN]
-law=newtonian
-status=adjusted_clear
-adjusted=1
+status=AdjustedClear
 nominal_dynamic_conflicts=1
 primary_conflict=12060
 probes=20
 ordinary_exhausted=0
 nominal_static_blocked=0
-position=(138.841366,52.623525,0)
-velocity=(9.263267,3.401145,0)
-hazard=(185.850434,42.920559,0)
-selected_target=(159.856528,40.750781,17.815749)
 ```
 
-Failure moved downstream:
+### Authority-bounded replacement
+
+Planned:
+- duration 24.0 s;
+- exit speed 2.0 m/s;
+- peak transverse FF 1.348975 m/s2;
+- minimum planned speed 0.800416 m/s;
+- minimum planned dynamic clearance 3.181387 m.
+
+Actual:
+- minimum dynamic clearance 3.175166 m;
+- max slip 33.112982 deg;
+- max forward tracking error 26.361613 deg;
+- tracking-envelope exceeded ticks 0;
+- final P error 0.013099 m;
+- final V error 0.076580 m/s.
+
+Thus the replacement program itself is now physically credible and executed correctly.
+
+## Latest failure root cause
+
+Final failure:
 
 ```
-composite replacement did not clear dynamic hazard
+composite dynamic clearance lost for newtonian
 ```
 
-## Root cause
+The problem was not the replacement.
 
-The production planner selected a valid bounded `AdjustedClear` target.
+After replacement completion, the test called:
 
-The test then authored a new 6 s quintic from the live P/V state to that target with an 8 m/s terminal speed.
+```
+Planner::plan(..., emptyDynamic(), ...)
+```
 
-Offline reconstruction of that exact curve shows approximately:
-- peak total acceleration ~5.61 m/s2;
-- peak acceleration transverse to the velocity-aligned body ~5.03 m/s2.
+even though the same dynamic hazard was still alive and still used by physical clearance measurement in subsequent phases.
 
-The Cobra fixture gives only:
-- lateral authority 2.0 m/s2;
-- vertical authority 2.0 m/s2;
-- and B10 needs feedback reserve.
+Therefore planner world truth and physical world truth diverged:
+- planner forgot the obstacle;
+- execution safety continued to measure it.
 
-Therefore the test-side time-program authoring created a physically unproved replacement curve even though the production planner target itself was safe.
-
-This exposes the known honesty boundary: full production B5 Assisted/general physical-program authoring is still incomplete.
+This is a composite-fixture world-publication defect.
 
 ## Current unverified fix candidate
 
-Commit:
+Commits:
 
 ```
-7444c5930586300d6cac48bd4b2fa63b27e96bd6
+6c0a71d308040c568c109afc4425332021ade730
+01a8d69cc635a450d73a49a31b91e5546e0b1828
 ```
 
-The replacement helper is now capability-aware.
-
-It searches the shortest replacement duration/exit speed satisfying all of:
-- dense planned peak transverse feed-forward <= 1.35 m/s2;
-- minimum planned speed >= 0.50 m/s;
-- minimum planned conservative dynamic clearance >= 1.50 m.
-
-The 1.35 m/s2 feed-forward cap intentionally leaves reserve below the 2.0 m/s2 manoeuvre authority for B10 feedback.
-
-Candidate search:
-- duration 8..32 s;
-- terminal speeds 4 m/s then 2 m/s;
-- 768 dense analytic samples.
+Changes:
+- the hazard is re-published to NavigationMap at its actual current position after every bounded bypass;
+- planner re-runs against the still-live dynamic working set;
+- if it returns another `AdjustedClear`, another authority-bounded short physical suffix is executed from the actual current state;
+- this continues for at most four additional local iterations;
+- only when production planner returns `NominalClear` does the composite resume the original static portal route;
+- no live hazard is erased merely because one local bypass segment completed.
 
 New diagnostics:
-- `[COMPOSITE-REPLACEMENT]`: duration, exit speed, planned transverse FF, planned minimum speed and planned dynamic clearance;
-- `[COMPOSITE-REPLACEMENT-ACTUAL]`: actual clearance, slip, forward tracking error, tracking exceeded ticks, terminal P/V errors.
+- `[COMPOSITE-RESUME]`;
+- `[COMPOSITE-CONTINUATION]`.
 
-Actual replacement additionally requires:
-- zero tracking-envelope exceeded ticks;
-- actual conservative dynamic clearance >0.5 m.
-
-No planner, B7, tracking gains, physical authority, clearance or terminal threshold was weakened.
+The original dynamic invalidation event count remains one. Additional short suffixes are ordinary bounded replanning after accepted-segment completion, not fabricated extra hazard events.
 
 ## Current gate
 
@@ -109,10 +113,10 @@ Final composite remains open. Expected suite: **19 tests**.
 If green:
 - accept final composite;
 - close synthetic maneuver behavior lab;
-- move primary evaluation into NAV STRESS/game.
+- move primary evaluation into actual NAV STRESS/game.
 
 If red:
-- use planned vs actual replacement diagnostics to locate the exact remaining composition defect.
+- use persistent-hazard continuation diagnostics to identify the remaining production/test-side seam.
 
 ## Documentation protocol
 

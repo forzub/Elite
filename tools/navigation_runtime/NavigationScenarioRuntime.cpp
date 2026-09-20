@@ -7,6 +7,7 @@
 #include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/NavigationRuntimePlanner.h"
+#include "src/game/navigation/NominalRoutePlanner.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -108,6 +109,11 @@ struct Scenario
 
     double standardSpeedMps = 10.0;
     double extremeSpeedMps = 18.0;
+
+    // Stage 1 only: coarse route/corridor abstraction. Exact oriented-hull
+    // swept-volume clearance belongs to the later physical tunnel stage.
+    double routeEnvelopeRadiusMeters = 13.0;
+    double routeClearanceMeters = 0.0;
 };
 
 glm::dvec3 readVec3(
@@ -539,6 +545,11 @@ Scenario loadScenario(const std::string& path)
         root.value("standard_speed_mps", 10.0);
     s.extremeSpeedMps =
         root.value("extreme_speed_mps", 18.0);
+
+    s.routeEnvelopeRadiusMeters =
+        root.value("route_envelope_radius_m", 13.0);
+    s.routeClearanceMeters =
+        root.value("route_clearance_m", 0.0);
 
     std::uint32_t staticEntity = 50000;
     if (root.contains("static_obstacles"))
@@ -1409,27 +1420,39 @@ ScenarioRunResult calculateScenario(
 
     try
     {
-        Scenario scenario = loadScenario(scenarioJsonPath);
+        const Scenario scenario = loadScenario(scenarioJsonPath);
+
+        // Stage 1 is deliberately independent from pilot quality, control law,
+        // flight doctrine and dynamic actors. Those inputs remain in the UI and
+        // scenario schema because Stage 2 will consume them, but they must not
+        // silently alter the retained static nominal route.
+        (void)settings.pilot;
+        (void)settings.flightStyle;
+        (void)settings.enableSuddenObstacle;
 
         const Law law =
             settings.controlMode == ControlMode::Newtonian
                 ? Law::Newtonian
                 : Law::Assisted;
 
-        Vehicle vehicle(law, scenario, settings.pilot);
-        Space space = buildStaticSpace(scenario);
-        const StaticQueries staticQueries(space);
+        game::navigation::NominalRoutePlanner::Request routeRequest;
+        routeRequest.goalRevision = 1;
+        routeRequest.staticWorldRevision = 1;
+        routeRequest.startMapMeters = scenario.startPosition;
+        routeRequest.goalMapMeters = scenario.finish.position;
+        routeRequest.requiredWaypointsMapMeters =
+            scenario.shipRoutePoints;
+        routeRequest.staticObstacles =
+            scenario.staticObstacles;
+        routeRequest.navigationEnvelopeRadiusMeters =
+            std::max(0.0, scenario.routeEnvelopeRadiusMeters);
+        routeRequest.additionalRouteClearanceMeters =
+            std::max(0.0, scenario.routeClearanceMeters);
 
-        const Planner::Policy policy =
-            plannerPolicy(settings.flightStyle);
-
-        Map::Config mapConfig;
-        mapConfig.halfExtentMeters = 2000.0;
-        mapConfig.cellSizeMeters = 50.0;
-        mapConfig.predictionHorizonSeconds =
-            policy.horizon.lookAheadSeconds;
-        mapConfig.interactionMarginMeters = 0.0;
-        Map map(mapConfig);
+        const auto route =
+            game::navigation::NominalRoutePlanner::plan(
+                routeRequest
+            );
 
         TraceDocument trace;
         trace.version = 2;
@@ -1438,8 +1461,6 @@ ScenarioRunResult calculateScenario(
                 ? "newtonian"
                 : "assisted";
         trace.shipHalfExtentsMeters = kBodyHalfExtents;
-        trace.routePoints.push_back(scenario.startPosition);
-        trace.turnPoints.clear();
 
         for (const auto& obstacle : scenario.staticObstacles)
         {
@@ -1468,434 +1489,51 @@ ScenarioRunResult calculateScenario(
             trace.staticObstacles.push_back(std::move(outObstacle));
         }
 
-        std::vector<glm::dvec3> objectives =
-            scenario.shipRoutePoints;
-        objectives.push_back(scenario.finish.position);
-
-        const double cruiseSpeed =
-            settings.flightStyle == FlightStyle::Extreme
-                ? scenario.extremeSpeedMps
-                : scenario.standardSpeedMps;
-
-        std::uint64_t programRevision = 1000;
-        std::uint64_t dynamicRevision = 1;
-
-        if (
-            trace.routePoints.empty() ||
-            glm::length(
-                trace.routePoints.back() -
-                scenario.finish.position
-            ) > 1.0)
+        if (!route.valid)
         {
-            trace.routePoints.push_back(
-                scenario.finish.position
+            TraceFrame failed;
+            failed.shipPosition = scenario.startPosition;
+            failed.shipForward = scenario.startBasis.forward;
+            failed.shipRight = scenario.startBasis.right;
+            failed.shipUp = scenario.startBasis.up;
+            failed.shipVelocity = scenario.startVelocity;
+            failed.phase = "route_failed";
+            failed.plannerStatus = "static_route_failed";
+            trace.frames.push_back(std::move(failed));
+
+            out.trace = std::move(trace);
+            out.success = false;
+            out.message =
+                "ЭТАП 1: МАРШРУТ НЕ ПОСТРОЕН — " +
+                route.message;
+            return out;
+        }
+
+        trace.routePoints = route.pointsMapMeters;
+        if (trace.routePoints.size() > 2)
+        {
+            trace.turnPoints.assign(
+                trace.routePoints.begin() + 1,
+                trace.routePoints.end() - 1
             );
         }
 
-        trace.frames.push_back(
-            makeTraceFrame(
-                vehicle,
-                nullptr,
-                nullptr,
-                nullptr,
-                {},
-                {},
-                policy.horizon.lookAheadSeconds,
-                "initial",
-                false
-            )
-        );
-
-        bool failed = false;
-        std::string failureMessage;
-
-        for (std::size_t objectiveIndex = 0;
-             objectiveIndex < objectives.size() && !failed;
-             ++objectiveIndex)
-        {
-            const bool finalObjective =
-                objectiveIndex + 1 == objectives.size();
-            const glm::dvec3 objective =
-                objectives[objectiveIndex];
-
-            while (vehicle.timeSeconds < kMaximumScenarioSeconds)
-            {
-                if (!finalObjective &&
-                    closeEnough(vehicle, objective, 4.0))
-                {
-                    break;
-                }
-
-                if (finalObjective &&
-                    finalSatisfied(vehicle, scenario.finish))
-                {
-                    break;
-                }
-
-                auto dynamic =
-                    publishDynamicWorld(
-                        map,
-                        scenario.dynamicObstacles,
-                        scenario.hasSuddenObstacle
-                            ? &scenario.suddenObstacle
-                            : nullptr,
-                        settings.enableSuddenObstacle,
-                        vehicle,
-                        dynamicRevision++,
-                        policy.horizon.lookAheadSeconds
-                    );
-
-                Planner::Goal goal;
-                goal.revision =
-                    static_cast<std::uint64_t>(
-                        objectiveIndex + 1
-                    );
-                goal.targetPositionMapMeters = objective;
-                goal.maximumTargetSpeedMps = cruiseSpeed;
-                goal.velocityResponsePerSecond =
-                    settings.flightStyle == FlightStyle::Extreme
-                        ? 1.0
-                        : 0.75;
-                goal.angularDampingPerSecond = 2.0;
-                goal.arrivalRadiusMeters =
-                    finalObjective ? 1.5 : 4.0;
-
-                if (finalObjective)
-                {
-                    if (scenario.finish.speedMps > 0.0)
-                    {
-                        const glm::dvec3 forward =
-                            scenario.finish.requireForward
-                                ? normalizedOr(
-                                    scenario.finish.forward,
-                                    {1.0, 0.0, 0.0}
-                                  )
-                                : normalizedOr(
-                                    objective -
-                                    vehicle.transform.motion.localPositionMeters,
-                                    {1.0, 0.0, 0.0}
-                                  );
-                        goal.targetVelocityMapMetersPerSecond =
-                            forward * scenario.finish.speedMps;
-                    }
-                }
-
-                const Planner::Result plan =
-                    Planner::plan(
-                        plannerAgent(vehicle, law),
-                        goal,
-                        dynamic,
-                        0.0,
-                        staticQueries,
-                        policy
-                    );
-
-                if (
-                    trace.routePoints.empty() ||
-                    glm::length(
-                        trace.routePoints.back() -
-                        plan.selectedTargetMapMeters
-                    ) > 1.0)
-                {
-                    trace.routePoints.push_back(
-                        plan.selectedTargetMapMeters
-                    );
-                }
-
-                if (
-                    plan.adjustedTarget &&
-                    (
-                        trace.turnPoints.empty() ||
-                        glm::length(
-                            trace.turnPoints.back() -
-                            plan.selectedTargetMapMeters
-                        ) > 2.0
-                    )
-                )
-                {
-                    trace.turnPoints.push_back(
-                        plan.selectedTargetMapMeters
-                    );
-                }
-
-                const bool hardHold =
-                    plan.status == Planner::Status::ConflictHold ||
-                    plan.status == Planner::Status::StaleHold ||
-                    plan.status == Planner::Status::StaticHold ||
-                    plan.status == Planner::Status::InvalidInput;
-
-                glm::dvec3 requestedVelocity =
-                    plan.desiredVelocityMapMetersPerSecond;
-
-                const double requestedSpeed =
-                    glm::length(requestedVelocity);
-                if (requestedSpeed > cruiseSpeed &&
-                    requestedSpeed > 1.0e-9)
-                {
-                    requestedVelocity *=
-                        cruiseSpeed / requestedSpeed;
-                }
-
-                AttitudeMode attitudeMode =
-                    law == Law::Assisted
-                        ? AttitudeMode::VelocityAligned
-                        : AttitudeMode::Preserve;
-
-                Basis targetBasis = actualBasis(vehicle);
-
-                if (finalObjective)
-                {
-                    const double distanceToFinish =
-                        glm::length(
-                            scenario.finish.position -
-                            vehicle.transform.motion.localPositionMeters
-                        );
-
-                    if (distanceToFinish < 45.0 &&
-                        (scenario.finish.requireForward ||
-                         scenario.finish.requireUp))
-                    {
-                        const glm::dvec3 forward =
-                            scenario.finish.requireForward
-                                ? scenario.finish.forward
-                                : targetBasis.forward;
-                        const glm::dvec3 up =
-                            scenario.finish.requireUp
-                                ? scenario.finish.up
-                                : targetBasis.up;
-                        targetBasis =
-                            basisFromForwardUp(forward, up);
-                        attitudeMode =
-                            AttitudeMode::TargetBasis;
-                    }
-
-                    if (distanceToFinish < 20.0)
-                    {
-                        requestedVelocity =
-                            goal.targetVelocityMapMetersPerSecond;
-                    }
-                }
-
-                Program program =
-                    hardHold
-                        ? makeBrakeProgram(
-                            programRevision++,
-                            vehicle
-                          )
-                        : makeShortProgram(
-                            programRevision++,
-                            vehicle,
-                            plan.selectedTargetMapMeters,
-                            requestedVelocity,
-                            law,
-                            settings.flightStyle,
-                            attitudeMode,
-                            targetBasis
-                          );
-
-                const DynamicObstacle* primaryHazard = nullptr;
-                glm::dvec3 hazardPosition(0.0);
-                glm::dvec3 hazardVelocity(0.0);
-
-                auto considerHazard =
-                    [&](DynamicObstacle& obstacle)
-                    {
-                        if (vehicle.timeSeconds <
-                            obstacle.activationTimeSeconds)
-                        {
-                            return;
-                        }
-
-                        glm::dvec3 velocity;
-                        const glm::dvec3 position =
-                            obstaclePosition(
-                                obstacle,
-                                vehicle.timeSeconds,
-                                vehicle,
-                                velocity
-                            );
-
-                        if (!primaryHazard ||
-                            glm::length(
-                                position -
-                                vehicle.transform.motion.localPositionMeters
-                            ) <
-                            glm::length(
-                                hazardPosition -
-                                vehicle.transform.motion.localPositionMeters
-                            ))
-                        {
-                            primaryHazard = &obstacle;
-                            hazardPosition = position;
-                            hazardVelocity = velocity;
-                        }
-                    };
-
-                for (auto& obstacle : scenario.dynamicObstacles)
-                    considerHazard(obstacle);
-
-                if (settings.enableSuddenObstacle &&
-                    scenario.hasSuddenObstacle)
-                {
-                    considerHazard(scenario.suddenObstacle);
-                }
-
-                trace.frames.push_back(
-                    makeTraceFrame(
-                        vehicle,
-                        &program,
-                        &plan,
-                        primaryHazard,
-                        hazardPosition,
-                        hazardVelocity,
-                        policy.horizon.lookAheadSeconds,
-                        hardHold
-                            ? "dynamic_brake_0"
-                            : (
-                                plan.adjustedTarget
-                                    ? "dynamic_bypass_0"
-                                    : "nominal_segment"
-                              ),
-                        true
-                    )
-                );
-
-                const double executeUntil =
-                    vehicle.timeSeconds +
-                    kReplanPeriodSeconds;
-
-                while (vehicle.timeSeconds + 1.0e-9 < executeUntil)
-                {
-                    const auto follower =
-                        Follower::follow(
-                            program,
-                            vehicle.timeSeconds,
-                            followerAgent(vehicle)
-                        );
-
-                    if (follower.status ==
-                        Follower::Status::InvalidInput)
-                    {
-                        failed = true;
-                        failureMessage =
-                            "FOLLOWER ОТКЛОНИЛ ПРОГРАММУ";
-                        break;
-                    }
-
-                    const auto bridgeResult =
-                        vehicle.bridge.step(
-                            vehicle.timeSeconds + kDt,
-                            kDt,
-                            toSystemIntent(follower.intent)
-                        );
-
-                    if (bridgeResult.status !=
-                        Bridge::PilotExecutor::Status::Ok)
-                    {
-                        failed = true;
-                        failureMessage =
-                            "ПИЛОТ НЕ ПРИНЯЛ КОМАНДУ НАВИГАЦИИ";
-                        break;
-                    }
-
-                    SharedShipPhysics::integrate(
-                        vehicle.transform,
-                        vehicle.params,
-                        bridgeResult.control,
-                        vehicle.world,
-                        static_cast<float>(kDt)
-                    );
-
-                    game::navigation::DynamicMotionSystem::
-                        applySystemAccelerationDemand(
-                            vehicle.transform.motion,
-                            vehicle.params,
-                            bridgeResult.control.
-                                navigationLinearAccelerationDemandSystemMps2,
-                            vehicle.transform.forward()
-                        );
-
-                    game::navigation::DynamicMotionSystem::
-                        updateLocalFrameMotion(
-                            vehicle.transform.motion,
-                            vehicle.transform.worldPosition,
-                            vehicle.frame,
-                            vehicle.params,
-                            kDt
-                        );
-
-                    vehicle.transform.syncLegacyPositionFromWorld();
-                    vehicle.timeSeconds += kDt;
-
-                    if (primaryHazard)
-                    {
-                        glm::dvec3 velocity;
-                        hazardPosition =
-                            obstaclePosition(
-                                *const_cast<DynamicObstacle*>(
-                                    primaryHazard
-                                ),
-                                vehicle.timeSeconds,
-                                vehicle,
-                                velocity
-                            );
-                        hazardVelocity = velocity;
-                    }
-
-                    trace.frames.push_back(
-                        makeTraceFrame(
-                            vehicle,
-                            &program,
-                            &plan,
-                            primaryHazard,
-                            hazardPosition,
-                            hazardVelocity,
-                            policy.horizon.lookAheadSeconds,
-                            hardHold
-                                ? "dynamic_brake_0"
-                                : (
-                                    plan.adjustedTarget
-                                        ? "dynamic_bypass_0"
-                                        : "nominal_segment"
-                                  ),
-                            false
-                        )
-                    );
-                }
-
-                if (failed)
-                    break;
-            }
-
-            if (!failed &&
-                vehicle.timeSeconds >= kMaximumScenarioSeconds)
-            {
-                failed = true;
-                failureMessage =
-                    "ПРЕВЫШЕНО МАКСИМАЛЬНОЕ ВРЕМЯ СИМУЛЯЦИИ";
-            }
-        }
-
-        trace.frames.push_back(
-            makeTraceFrame(
-                vehicle,
-                nullptr,
-                nullptr,
-                nullptr,
-                {},
-                {},
-                policy.horizon.lookAheadSeconds,
-                failed ? "failed" : "complete",
-                false
-            )
-        );
+        TraceFrame ready;
+        ready.shipPosition = scenario.startPosition;
+        ready.shipForward = scenario.startBasis.forward;
+        ready.shipRight = scenario.startBasis.right;
+        ready.shipUp = scenario.startBasis.up;
+        ready.shipVelocity = scenario.startVelocity;
+        ready.phase = "route_ready";
+        ready.plannerStatus = "static_route_ready";
+        ready.hasSelectedTarget = true;
+        ready.selectedTarget = scenario.finish.position;
+        trace.frames.push_back(std::move(ready));
 
         out.trace = std::move(trace);
-        out.success = !failed;
+        out.success = true;
         out.message =
-            failed
-                ? failureMessage
-                : "РАСЧЁТ ЗАВЕРШЁН";
+            "ЭТАП 1: СТАТИЧЕСКИЙ МАРШРУТ ПОСТРОЕН";
     }
     catch (const std::exception& e)
     {

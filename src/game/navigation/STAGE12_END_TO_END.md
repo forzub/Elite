@@ -5819,3 +5819,23 @@ Candidate `e9655a4b9f004fe790adbbc287bd55a3f1c269ea` ranks:
 Runtime diagnostics now expose whether a same-branch safe candidate actually existed. This is critical: if none exists, switching branches is legitimate and execution must recover/brake before accepting a radically different maneuver rather than forcing continuity.
 
 The focused regression was also tightened to four deterministic azimuths in `0e344f3a3b2a5e887cbb474ce9ce650b68851716`.
+
+
+## 2026-09-20 — forced branch switch promoted to explicit recovery escalation
+
+Target `8011cc3ed19fc027fba256ee4aecca7c93a4ce0f` showed:
+- continuity lateral valid;
+- same-branch safe candidate count = 0 at the problematic replans;
+- opposite target alignment as low as -0.976922.
+
+Therefore the remaining composite failure is not a same-branch ranking error. The accepted branch is genuinely unavailable.
+
+Production now exposes `avoidanceBranchSwitchRequired` through commits `4a91a78bea1e159a329ab346586a4d290ea5d420`, `9949b701bc8ba181a08b96e8077a375aada725be`, `7a5b4ae0520a10edbd89fd5f1e81f2427f4768be`, and `e407857d7764300193075cbee941be82312338f8`.
+
+The final composite candidate `0ecf1b71b9620022a49ea71c996f5e81c02e5243` responds by executing a physically bounded Brake recovery, clearing the obsolete branch commitment, republishing world truth, and replanning from the recovered state before accepting the new branch.
+
+The focused cross-ring fixture was also corrected in `c8e0c7cd6b6a7deb6c7f618c4d86ea80d4c62400` by placing its blocker on the actual primary preferred-ray endpoint.
+
+This makes the transitional B4/B5 boundary explicit:
+- geometry reports branch exhaustion/switch necessity;
+- higher maneuver ownership performs the physical recovery/transition.

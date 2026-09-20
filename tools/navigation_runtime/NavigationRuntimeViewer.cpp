@@ -1231,10 +1231,9 @@ void drawHud(
     int windowHeight
 )
 {
-    if (data.frames.empty())
-        return;
-
-    const auto& frame = displayFrame;
+    const bool hasCalculation = !data.frames.empty();
+    const trace::TraceFrame frame =
+        hasCalculation ? displayFrame : trace::TraceFrame {};
 
     const glm::mat4 projection =
         glm::ortho(
@@ -1250,11 +1249,82 @@ void drawHud(
     renderer.begin(projection);
 
     std::vector<Vertex> ui;
+
+    appendUiText(ui, 16.0f, 14.0f, "РЕЖИМ УПРАВЛЕНИЯ", 1.10f, {0.72f,0.78f,0.86f});
+    appendUiButton(
+        ui,
+        assistedRect(),
+        "АССИСТЕД",
+        state.controlMode ==
+            elite::tools::navigation_runtime::ControlMode::Assisted
+    );
+    appendUiButton(
+        ui,
+        newtonianRect(),
+        "НЬЮТОН",
+        state.controlMode ==
+            elite::tools::navigation_runtime::ControlMode::Newtonian
+    );
+
+    appendUiText(ui, 280.0f, 14.0f, "ПИЛОТ", 1.10f, {0.72f,0.78f,0.86f});
+    appendUiButton(
+        ui,
+        expertRect(),
+        "ЭКСПЕРТ",
+        state.pilot ==
+            elite::tools::navigation_runtime::PilotLevel::Expert
+    );
+    appendUiButton(
+        ui,
+        averageRect(),
+        "СРЕДНИЙ",
+        state.pilot ==
+            elite::tools::navigation_runtime::PilotLevel::Average
+    );
+    appendUiButton(
+        ui,
+        loserRect(),
+        "ЛУЗЕР",
+        state.pilot ==
+            elite::tools::navigation_runtime::PilotLevel::Loser
+    );
+
+    appendUiText(ui, 588.0f, 14.0f, "РЕЖИМ ПОЛЁТА", 1.10f, {0.72f,0.78f,0.86f});
+    appendUiButton(
+        ui,
+        standardRect(),
+        "СТАНДАРТ",
+        state.flightStyle ==
+            elite::tools::navigation_runtime::FlightStyle::Standard
+    );
+    appendUiButton(
+        ui,
+        extremeRect(),
+        "ЭКСТРИМ",
+        state.flightStyle ==
+            elite::tools::navigation_runtime::FlightStyle::Extreme
+    );
+
+    appendUiButton(
+        ui,
+        suddenObstacleRect(),
+        state.useSuddenObstacle
+            ? "[X] ВНЕЗАПНАЯ ПОМЕХА"
+            : "[ ] ВНЕЗАПНАЯ ПОМЕХА",
+        state.useSuddenObstacle
+    );
+    appendUiButton(
+        ui,
+        calculateButtonRect(),
+        "РАССЧИТАТЬ",
+        false
+    );
+
     appendUiButton(
         ui,
         playButtonRect(),
         state.playing ? "ПАУЗА" : "ПРОИГРЫВАТЬ",
-        state.playing
+        state.playing && hasCalculation
     );
     appendUiButton(ui, prevButtonRect(), "НАЗАД");
     appendUiButton(ui, nextButtonRect(), "ВПЕРЁД");
@@ -1288,6 +1358,37 @@ void drawHud(
     );
     y += 30.0f;
 
+    if (!hasCalculation)
+    {
+        appendUiText(
+            ui,
+            x,
+            y,
+            state.calculationMessage,
+            1.30f,
+            {1.0f, 0.82f, 0.32f}
+        );
+        y += 40.0f;
+        appendUiText(
+            ui,
+            x,
+            y,
+            "JSON: " + state.scenarioPath,
+            1.10f,
+            {0.68f, 0.73f, 0.80f}
+        );
+        y += 28.0f;
+        appendUiText(
+            ui,
+            x,
+            y,
+            "НАЖМИТЕ РАССЧИТАТЬ",
+            1.45f,
+            {0.90f,0.94f,1.0f}
+        );
+    }
+    else
+    {
     std::ostringstream frameLine;
     frameLine << "РЕЖИМ: " << localizedLaw(data.law);
     appendUiText(ui, x, y, frameLine.str(), textScale, {0.75f,0.82f,0.92f});
@@ -1434,7 +1535,10 @@ void drawHud(
     appendUiText(ui, x, y, "[ ] КАДР   R СЛЕД. ПЕРЕПЛАН", 1.25f, {0.75f,0.78f,0.84f});
     y += 16.0f;
     appendUiText(ui, x, y, "F ВПИСАТЬ   ESC ЗАКРЫТЬ", 1.25f, {0.75f,0.78f,0.84f});
+    } // hasCalculation
 
+    if (hasCalculation)
+    {
     const UiRect slider = frameSliderRect(windowWidth, windowHeight);
     appendFilledRect(
         ui,
@@ -1488,6 +1592,7 @@ void drawHud(
     );
 
     appendHorizonInset(ui, frame, windowHeight);
+    } // hasCalculation
 
     renderer.draw(GL_TRIANGLES, ui, 1.0f);
     glEnable(GL_DEPTH_TEST);

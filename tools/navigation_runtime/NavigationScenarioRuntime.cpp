@@ -1778,7 +1778,7 @@ ScenarioRunResult calculateScenario(
                     {
                         failed = true;
                         failureMessage =
-                            "follower rejected accepted program";
+                            "FOLLOWER ОТКЛОНИЛ ПРОГРАММУ";
                         break;
                     }
 
@@ -1794,7 +1794,7 @@ ScenarioRunResult calculateScenario(
                     {
                         failed = true;
                         failureMessage =
-                            "pilot executor rejected navigation command";
+                            "ПИЛОТ НЕ ПРИНЯЛ КОМАНДУ НАВИГАЦИИ";
                         break;
                     }
 
@@ -1872,7 +1872,7 @@ ScenarioRunResult calculateScenario(
             {
                 failed = true;
                 failureMessage =
-                    "scenario exceeded maximum simulation time";
+                    "ПРЕВЫШЕНО МАКСИМАЛЬНОЕ ВРЕМЯ СИМУЛЯЦИИ";
             }
         }
 
@@ -1895,7 +1895,7 @@ ScenarioRunResult calculateScenario(
         out.message =
             failed
                 ? failureMessage
-                : "calculation complete";
+                : "РАСЧЁТ ЗАВЕРШЁН";
     }
     catch (const std::exception& e)
     {

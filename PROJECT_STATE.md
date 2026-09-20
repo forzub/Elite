@@ -3,73 +3,59 @@
 **Project:** Elite Navigation v2
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Last accepted target baseline
+## Accepted target baseline
 
 ```
 a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
 Accepted:
-- Stage-12 architecture PASS;
+- Stage-12 architecture contract;
 - navigation runtime 17/17;
-- B7 speed/doctrine selection + real selected-program execution;
-- previous maneuver, rigid-body corridor and 3D fly-through quality gates.
+- B7 doctrine select->execute;
+- prior maneuver, rigid-body corridor and continuous 3D fly-through gates.
 
-## Original B0-B14 status
+## Current chained/limit stage
 
-Strong/accepted behavior:
-- B0 world truth;
-- B7 decision semantics/select->execute;
-- B8 AcceptedManeuverProgram;
-- B9 sampler;
-- B10 bounded tracking;
-- B12 PilotSkill;
-- B13 real propulsion/physics;
-- B14 scheduler.
+Latest tested checkout:
+```
+4753451be23f913d3e20d2ca11c112f113980434
+```
 
-Strong components but production generalization/integration remains:
-- B5 full Assisted/general-family compiler coverage;
-- B6 generalized ordinary proof ownership;
-- final ordinary-live B7-B10 migration.
+did not reach runtime execution because the new test harness failed to compile.
 
-Open/transitional architecture:
-- B1 scene-wide sparse influence batching;
-- B2 unified NavigationObjective;
-- B3 vehicle/control-law-aware global edge feasibility;
-- B4 route-aligned corridor replacing visibility ray-fan;
-- B11 explicit bounded safety-reflex API.
+Root cause:
+- `glm::dvec3` basis multiplied by `float` ShipTransform angular rates.
 
-## Current test candidate
+Fix:
+```
+1e0d555a504e6913ee417b4b628e7d062081a0c0
+```
 
-`maneuver_chained_limit_matrix`
+explicitly converts those rates to double.
 
-Purpose:
-1. prove physical continuity across different maneuver families without resetting actual state;
-2. prove impossible/invalid execution fails closed before or during execution.
+This failure does not invalidate any accepted navigation evidence and does not yet say anything about chained-transition quality.
 
-Chained route:
-- accelerate moving transit;
-- hard continuous turn;
-- Newtonian drift or Assisted aligned transit;
-- precision braking/capture.
+## Active acceptance target
 
-Negative contracts:
-- insufficient turn horizon -> B5 NoPhysicalCandidate;
-- insufficient braking distance -> stopping reserve exceeds room;
-- too-narrow rigid hull corridor -> reject;
-- no law-compatible B7 candidate -> no selection;
-- newly invalidated dynamic safety -> immediate local replan, old program stops being authoritative.
+Expected runtime suite: 18.
 
-Expected suite size: 18.
+Need to prove:
+- continuous state handoff across four maneuver families;
+- no P/V/attitude/omega reset at phase boundaries;
+- Newtonian high-slip law-specific phase;
+- Assisted aligned law-specific phase;
+- precision terminal capture;
+- fail-closed turn/braking/hull/law/invalidation limits.
 
 ## Remaining laboratory roadmap
 
-If this matrix passes:
-1. one final composite end-to-end proving ground combining clutter, moving hazards, narrow/wide passages, speed changes, law/doctrine choice, invalidation and exact terminal capture;
-2. then stop expanding synthetic behavior tests and move primary quality evaluation into the game.
+If this block passes:
+1. final composite end-to-end proving ground;
+2. then primary quality evaluation moves into the game.
 
-Architecture cleanup B1-B4/B11 and final production migration remain implementation work, but are no longer reasons to endlessly extend the maneuver laboratory.
+Open architecture migration/generalization work remains in B1-B6/B11 and ordinary-live final wiring, but synthetic maneuver testing should not expand indefinitely once the final proving ground is green.
 
 ## State protocol
 
-After each state-affecting event, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state-affecting event, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

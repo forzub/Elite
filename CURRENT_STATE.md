@@ -13,123 +13,138 @@ Accepted:
 - navigation_runtime 18/18 PASS;
 - chained transition + physical-limit matrix PASS.
 
-## Latest final-composite target attempt
+## Latest target-machine attempt
 
 Exact tested checkout:
 
 ```
-f626fb0373499928e0ae89585c3bd992e5436c92
+69f8ca4dbcb44df5340b94f45640bcb7d6e6ed1a
 ```
 
 Results:
 - architecture contract PASS;
-- runtime 18/19;
-- all previously accepted 18 tests remain green;
-- final composite is the only failure.
+- runtime 17/19;
+- failures:
+  - `navigation_runtime_planner` focused side-continuity regression;
+  - `navigation_composite_proving_ground`.
 
-## What now works in the final composite
+All other 17 tests remained green.
 
-Newtonian completed the full composite successfully:
-- production exact-static detour;
-- B7 Extreme -> DriftPass;
-- dynamic invalidation;
-- first AdjustedClear;
-- three persistent-hazard continuation suffixes;
-- return to NominalClear;
-- narrow portal;
-- final StateCapture.
+## Focused regression failure
 
-Measured Newtonian composite:
-- completed phases: 7;
-- dynamic bypass segments: 4;
-- replans: 1;
-- minimum static clearance: 10.631322 m;
-- minimum dynamic clearance: 3.175166 m;
-- max hull half-width: 22.276390 m;
-- max slip: 33.112982 deg;
-- tracking exceeded ticks: 0;
-- final P error: 0.022675 m;
-- final speed: 0.075007 m/s;
-- final forward error: 3.521282 deg;
-- total: 109.14 s.
-
-Assisted also proves:
-- initial AdjustedClear;
-- first authority-bounded replacement;
-- two persistent-hazard continuation suffixes;
-- all executed continuation segments keep positive physical clearance and zero tracking-envelope violations.
-
-## Newly exposed production quality defect
-
-Assisted failed at persistent-hazard continuation iteration 2:
+Failure:
 
 ```
-position=(181.667547,59.045896,-14.484331)
-hazard=(183.280102,20.668719,0)
-target=(175.628419,50.983151,13.773784)
+adjusted visibility must preserve the current -Z avoidance side
 ```
 
-The important pattern is the sequence of production adjusted targets:
+The regression fixture itself was invalid:
+- it reused the generic `region()` helper;
+- that helper fixes Z bounds to [-10,+10] m;
+- the test assumed +/-Z probes hundreds of meters away were both statically legal;
+- exact-static proof therefore rejected the intended +/-Z candidates before continuity scoring.
+
+This fixture bug is now corrected with a genuinely wide 3D region.
+
+## Composite evidence
+
+Velocity-only continuity did not solve the real production issue.
+
+Newtonian:
+- first adjusted target changed to Y-dominant;
+- first continuation then moved to +Z;
+- next replan selected a target near the opposite Z side;
+- test-side physical author could no longer produce a valid no-stop continuation.
+
+The key conclusion is that **instantaneous velocity is not a sufficient ownership signal for avoidance-branch continuity**.
+
+## Architecture correction
+
+The canonical execution loop is:
 
 ```
-+Z -> +Z -> -Z -> +Z
+ACCEPT short local segment
+ -> EXECUTE
+ -> MONITOR
+ -> REPLAN
 ```
 
-The local planner was changing bypass side between bounded replans.
+The execution/accepted-program layer knows which bounded local segment is currently authoritative.
 
-Root cause in production `LocalAvoidancePlanner`:
-- for each minimum deflection ring, azimuths were tested in regenerated local-basis order;
-- planner returned the first safe azimuth;
-- after vehicle motion, the transverse basis changes;
-- "first safe" can therefore switch to the opposite physical side even when the current motion is already committed to a safe side.
+Therefore continuity belongs to that accepted segment and must be passed explicitly into the next planner call. It must not be reconstructed heuristically from instantaneous velocity alone.
 
-Newtonian happened to physically survive this zig-zag. Assisted reached a state where the next opposite-side no-stop transit was no longer physically authorable. This is a real local-planner continuity defect, not merely a test-helper problem.
+## Current unverified production candidate
 
-## Current unverified production fix
-
-Production commits:
+Production/API commits:
 
 ```
-86640b05145938ec0880a3a26539957aaa72f085
-ef2e6ec85823c229d6cadb6aa8dbe5b65e209193
+71b80c4529e1bc776e2a2dbf209059a2ccff44f9
+4bde26ee2fbb531116f960d089d488067f1bfd6d
+76022a5199422dd80ef4caff611539b53c39e731
+40d7b9852bc6f265ae02ecc0bf9d7b4e002d5b96
 ```
 
-Behavior change:
-- preserve the existing smallest-deflection-ring priority;
-- evaluate all safe azimuths inside that ring;
-- choose the safe direction with maximum alignment to current actual velocity;
-- deterministic azimuth index remains the tie-break;
-- no hidden planner state is introduced;
-- no deflection, clearance, horizon or safety limit is widened.
+Changes:
+- `LocalAvoidancePlanner::Query` now accepts:
+  - `preferredDirectionValid`;
+  - `preferredDirectionMap`.
+- `NavigationRuntimePlanner::AgentState` now accepts:
+  - `localAvoidanceContinuityValid`;
+  - `localAvoidanceContinuityDirectionMap`.
+- runtime planner validates and forwards this hint into local avoidance;
+- inside the minimum safe deflection ring:
+  - explicit accepted-segment direction has priority;
+  - instantaneous velocity is only fallback;
+  - nominal forward remains the final fallback;
+  - deterministic azimuth index still breaks ties.
 
-This adds side continuity/hysteresis through current kinematics rather than memory.
+This introduces no hidden planner state and changes no safety envelope.
 
-## New focused regression
+## Updated focused regression
 
 Commit:
 
 ```
-6064a22f565fd7cc82568b0babf2721891c8d925
+bd31307fbda3d512a579f521efc1664199b1de46
 ```
 
-`NavigationRuntimePlannerTests` now includes a symmetric dynamic-obstacle fixture where:
-- +/-Z bypasses are both geometrically valid;
-- current vehicle velocity carries a small -Z component;
-- selected adjusted target must remain on -Z;
-- selected direction must be strongly aligned with current motion.
+The regression now:
+- creates a genuinely wide 3D static region;
+- makes +/-Z bypass candidates actually legal;
+- deliberately sets current velocity away from the desired branch;
+- explicitly sets accepted local continuity toward -Z;
+- requires the next AdjustedClear to preserve -Z.
 
-This regression specifically prevents reintroduction of "first safe azimuth" side flipping.
+This tests ownership correctly: accepted segment continuity wins over incidental current velocity.
+
+## Final composite integration
+
+Commit:
+
+```
+09bc81e03cab6c251b50678585161cc73e814ddb
+```
+
+The composite now:
+- captures the direction of each accepted adjusted target before execution;
+- carries that direction across the segment;
+- supplies it back to `NavigationRuntimePlanner` on the next bounded replan;
+- updates the hint only when a new AdjustedClear segment is accepted;
+- prints the active continuity vector in `[COMPOSITE-RESUME]`.
 
 ## Current gate
 
-Final composite remains open. Expected suite remains **19 tests**.
+Expected suite remains **19 tests**.
 
-If this production continuity correction works:
-- repeated `AdjustedClear` targets should stop alternating sides;
-- Assisted should remain physically authorable through the persistent hazard;
-- final composite may then expose the next real seam or pass.
+If focused regression passes but composite still flips sides:
+- inspect whether direction-only continuity is insufficient and the contract needs a stronger branch/plane identifier.
 
-No physical, tracking, clearance or terminal acceptance criterion has been weakened.
+If 19/19:
+- accept final composite;
+- close synthetic maneuver behavior lab;
+- move primary evaluation into actual NAV STRESS/game.
+
+No tracking, clearance, hull, authority or terminal threshold was weakened.
 
 ## Documentation protocol
 

@@ -8,9 +8,11 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -68,6 +70,16 @@ struct Camera
     }
 };
 
+enum class UiAction
+{
+    None,
+    TogglePlay,
+    PreviousFrame,
+    NextFrame,
+    NextReplan,
+    Fit
+};
+
 struct AppState
 {
     Camera camera;
@@ -82,6 +94,7 @@ struct AppState
     double lastRealTime = 0.0;
 
     bool requestFit = true;
+    UiAction pendingUiAction = UiAction::None;
 };
 
 GLuint compileShader(GLenum type, const char* source)
@@ -419,6 +432,419 @@ void appendShipBoxAndArrow(
     addLine(out, tip, wingBase - up * wing, arrowColor);
 }
 
+
+struct UiRect
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float width = 0.0f;
+    float height = 0.0f;
+
+    bool contains(double px, double py) const
+    {
+        return
+            px >= x && px <= x + width &&
+            py >= y && py <= y + height;
+    }
+};
+
+UiRect playButtonRect() { return {16.0f, 16.0f, 92.0f, 30.0f}; }
+UiRect prevButtonRect() { return {116.0f, 16.0f, 74.0f, 30.0f}; }
+UiRect nextButtonRect() { return {198.0f, 16.0f, 74.0f, 30.0f}; }
+UiRect replanButtonRect() { return {280.0f, 16.0f, 128.0f, 30.0f}; }
+UiRect fitButtonRect() { return {416.0f, 16.0f, 64.0f, 30.0f}; }
+
+std::array<std::uint8_t, 7> glyphRows(char c)
+{
+    if (c >= 'a' && c <= 'z')
+        c = static_cast<char>(c - 'a' + 'A');
+
+    switch (c)
+    {
+        case 'A': return {14,17,17,31,17,17,17};
+        case 'B': return {30,17,17,30,17,17,30};
+        case 'C': return {14,17,16,16,16,17,14};
+        case 'D': return {30,17,17,17,17,17,30};
+        case 'E': return {31,16,16,30,16,16,31};
+        case 'F': return {31,16,16,30,16,16,16};
+        case 'G': return {14,17,16,23,17,17,15};
+        case 'H': return {17,17,17,31,17,17,17};
+        case 'I': return {31,4,4,4,4,4,31};
+        case 'J': return {7,2,2,2,18,18,12};
+        case 'K': return {17,18,20,24,20,18,17};
+        case 'L': return {16,16,16,16,16,16,31};
+        case 'M': return {17,27,21,21,17,17,17};
+        case 'N': return {17,25,21,19,17,17,17};
+        case 'O': return {14,17,17,17,17,17,14};
+        case 'P': return {30,17,17,30,16,16,16};
+        case 'Q': return {14,17,17,17,21,18,13};
+        case 'R': return {30,17,17,30,20,18,17};
+        case 'S': return {15,16,16,14,1,1,30};
+        case 'T': return {31,4,4,4,4,4,4};
+        case 'U': return {17,17,17,17,17,17,14};
+        case 'V': return {17,17,17,17,17,10,4};
+        case 'W': return {17,17,17,21,21,21,10};
+        case 'X': return {17,17,10,4,10,17,17};
+        case 'Y': return {17,17,10,4,4,4,4};
+        case 'Z': return {31,1,2,4,8,16,31};
+        case '0': return {14,17,19,21,25,17,14};
+        case '1': return {4,12,4,4,4,4,14};
+        case '2': return {14,17,1,2,4,8,31};
+        case '3': return {30,1,1,14,1,1,30};
+        case '4': return {2,6,10,18,31,2,2};
+        case '5': return {31,16,16,30,1,1,30};
+        case '6': return {14,16,16,30,17,17,14};
+        case '7': return {31,1,2,4,8,8,8};
+        case '8': return {14,17,17,14,17,17,14};
+        case '9': return {14,17,17,15,1,1,14};
+        case ':': return {0,4,4,0,4,4,0};
+        case '.': return {0,0,0,0,0,6,6};
+        case ',': return {0,0,0,0,6,6,4};
+        case '-': return {0,0,0,31,0,0,0};
+        case '+': return {0,4,4,31,4,4,0};
+        case '/': return {1,2,2,4,8,8,16};
+        case '[': return {14,8,8,8,8,8,14};
+        case ']': return {14,2,2,2,2,2,14};
+        case '(': return {2,4,8,8,8,4,2};
+        case ')': return {8,4,2,2,2,4,8};
+        case '_': return {0,0,0,0,0,0,31};
+        case '=': return {0,31,0,31,0,0,0};
+        case '>': return {16,8,4,2,4,8,16};
+        case '<': return {1,2,4,8,4,2,1};
+        case '!': return {4,4,4,4,4,0,4};
+        case '?': return {14,17,1,2,4,0,4};
+        default: return {0,0,0,0,0,0,0};
+    }
+}
+
+void appendFilledRect(
+    std::vector<Vertex>& out,
+    const UiRect& rect,
+    const glm::vec3& color
+)
+{
+    const glm::vec3 a(rect.x, rect.y, 0.0f);
+    const glm::vec3 b(rect.x + rect.width, rect.y, 0.0f);
+    const glm::vec3 c(rect.x + rect.width, rect.y + rect.height, 0.0f);
+    const glm::vec3 d(rect.x, rect.y + rect.height, 0.0f);
+
+    out.push_back({a, color}); out.push_back({b, color}); out.push_back({c, color});
+    out.push_back({a, color}); out.push_back({c, color}); out.push_back({d, color});
+}
+
+void appendUiText(
+    std::vector<Vertex>& out,
+    float x,
+    float y,
+    const std::string& text,
+    float scale,
+    const glm::vec3& color
+)
+{
+    float cursorX = x;
+    float cursorY = y;
+    const float pixel = scale;
+    const float advance = 6.0f * scale;
+    const float lineAdvance = 9.0f * scale;
+
+    for (char ch : text)
+    {
+        if (ch == '\n')
+        {
+            cursorX = x;
+            cursorY += lineAdvance;
+            continue;
+        }
+
+        if (ch == ' ')
+        {
+            cursorX += advance;
+            continue;
+        }
+
+        const auto rows = glyphRows(ch);
+        for (int row = 0; row < 7; ++row)
+        {
+            for (int col = 0; col < 5; ++col)
+            {
+                const std::uint8_t bit =
+                    static_cast<std::uint8_t>(1u << (4 - col));
+                if ((rows[static_cast<std::size_t>(row)] & bit) == 0)
+                    continue;
+
+                appendFilledRect(
+                    out,
+                    {
+                        cursorX + static_cast<float>(col) * pixel,
+                        cursorY + static_cast<float>(row) * pixel,
+                        pixel,
+                        pixel
+                    },
+                    color
+                );
+            }
+        }
+
+        cursorX += advance;
+    }
+}
+
+void appendUiButton(
+    std::vector<Vertex>& triangles,
+    const UiRect& rect,
+    const std::string& label,
+    bool active = false
+)
+{
+    appendFilledRect(
+        triangles,
+        rect,
+        active
+            ? glm::vec3(0.18f, 0.34f, 0.22f)
+            : glm::vec3(0.12f, 0.14f, 0.18f)
+    );
+
+    appendUiText(
+        triangles,
+        rect.x + 9.0f,
+        rect.y + 9.0f,
+        label,
+        1.6f,
+        {0.92f, 0.94f, 0.98f}
+    );
+}
+
+std::string currentExplanation(const trace::TraceFrame& frame)
+{
+    if (frame.phase == "dynamic_replan")
+        return "HAZARD INVALIDATED ACCEPTED ROUTE - LOCAL REPLAN";
+
+    if (frame.phase.rfind("dynamic_bypass_", 0) == 0)
+        return "SHIP EXECUTES PHYSICALLY BOUNDED LOCAL BYPASS";
+
+    if (frame.phase.rfind("dynamic_brake_", 0) == 0)
+        return "NO SAFE PHYSICAL BYPASS - ACTIVE BRAKING";
+
+    if (frame.phase.rfind("replan_", 0) == 0)
+    {
+        if (frame.plannerStatus == "adjusted_clear")
+            return "REPLAN: HAZARD STILL BLOCKS NOMINAL SEGMENT";
+        if (frame.plannerStatus == "nominal_clear")
+            return "REPLAN: NEXT BOUNDED SEGMENT LOOKS NOMINAL-CLEAR";
+        return "LOCAL REPLAN RESULT";
+    }
+
+    if (frame.phase == "portal_101")
+        return "FOLLOW STATIC TOPOLOGY ROUTE TO PORTAL 101";
+
+    if (frame.phase == "doctrine_prefix")
+        return "EXECUTE ACCEPTED MANEUVER TOWARD PORTAL 102";
+
+    if (frame.phase == "portal_102")
+        return "LONG PORTAL LEG - CURRENT KNOWN CLEARANCE-LOSS AREA";
+
+    if (frame.phase == "final_capture")
+        return "FINAL PRECISION CAPTURE";
+
+    return "INITIAL ROUTE / TRACE START";
+}
+
+void drawHud(
+    PrimitiveRenderer& renderer,
+    const trace::TraceDocument& data,
+    const AppState& state,
+    int windowWidth,
+    int windowHeight
+)
+{
+    if (data.frames.empty())
+        return;
+
+    const auto& frame =
+        data.frames[std::min(state.frameIndex, data.frames.size() - 1)];
+
+    const glm::mat4 projection =
+        glm::ortho(
+            0.0f,
+            static_cast<float>(windowWidth),
+            static_cast<float>(windowHeight),
+            0.0f,
+            -1.0f,
+            1.0f
+        );
+
+    glDisable(GL_DEPTH_TEST);
+    renderer.begin(projection);
+
+    std::vector<Vertex> ui;
+    appendUiButton(
+        ui,
+        playButtonRect(),
+        state.playing ? "PAUSE" : "PLAY",
+        state.playing
+    );
+    appendUiButton(ui, prevButtonRect(), "PREV");
+    appendUiButton(ui, nextButtonRect(), "NEXT");
+    appendUiButton(ui, replanButtonRect(), "NEXT REPLAN");
+    appendUiButton(ui, fitButtonRect(), "FIT");
+
+    const float panelWidth = 372.0f;
+    const float panelX =
+        std::max(0.0f, static_cast<float>(windowWidth) - panelWidth);
+    appendFilledRect(
+        ui,
+        {
+            panelX,
+            0.0f,
+            panelWidth,
+            static_cast<float>(windowHeight)
+        },
+        {0.045f, 0.055f, 0.070f}
+    );
+
+    float x = panelX + 18.0f;
+    float y = 20.0f;
+    const float textScale = 1.45f;
+    const float line = 18.0f;
+
+    appendUiText(
+        ui, x, y,
+        "NAVIGATION RUNTIME 3D",
+        1.65f,
+        {0.95f, 0.96f, 1.0f}
+    );
+    y += 30.0f;
+
+    std::ostringstream frameLine;
+    frameLine << "LAW: " << data.law;
+    appendUiText(ui, x, y, frameLine.str(), textScale, {0.75f,0.82f,0.92f});
+    y += line;
+
+    std::ostringstream indexLine;
+    indexLine << "FRAME: " << (state.frameIndex + 1) << "/" << data.frames.size();
+    appendUiText(ui, x, y, indexLine.str(), textScale, {0.75f,0.82f,0.92f});
+    y += line;
+
+    std::ostringstream timeLine;
+    timeLine.setf(std::ios::fixed);
+    timeLine.precision(2);
+    timeLine << "TIME: " << frame.timeSeconds << " S";
+    appendUiText(ui, x, y, timeLine.str(), textScale, {0.75f,0.82f,0.92f});
+    y += line;
+
+    appendUiText(ui, x, y, "PHASE: " + frame.phase, textScale, {0.92f,0.92f,0.92f});
+    y += line;
+
+    appendUiText(
+        ui, x, y,
+        "STATUS: " + (frame.plannerStatus.empty() ? std::string("NONE") : frame.plannerStatus),
+        textScale,
+        {0.92f,0.92f,0.92f}
+    );
+    y += line;
+
+    if (frame.hazardActive)
+    {
+        std::ostringstream clearanceLine;
+        clearanceLine.setf(std::ios::fixed);
+        clearanceLine.precision(2);
+        clearanceLine
+            << "CLEARANCE: "
+            << frame.dynamicClearanceMeters
+            << " M";
+        appendUiText(
+            ui,
+            x,
+            y,
+            clearanceLine.str(),
+            textScale,
+            frame.dynamicClearanceMeters > 0.5
+                ? glm::vec3(0.35f, 1.0f, 0.42f)
+                : glm::vec3(1.0f, 0.28f, 0.22f)
+        );
+        y += line;
+    }
+
+    if (frame.replanEvent)
+    {
+        appendUiText(
+            ui, x, y,
+            "EVENT: REPLAN",
+            textScale,
+            {1.0f, 0.55f, 0.10f}
+        );
+        y += line;
+    }
+
+    y += 14.0f;
+    appendUiText(ui, x, y, "WHAT IS HAPPENING", 1.55f, {1.0f,0.82f,0.32f});
+    y += 23.0f;
+
+    const std::string explanation = currentExplanation(frame);
+    const std::size_t splitAt =
+        explanation.size() > 34 ? explanation.find(' ', 30) : std::string::npos;
+
+    if (splitAt != std::string::npos)
+    {
+        appendUiText(
+            ui, x, y,
+            explanation.substr(0, splitAt),
+            1.35f,
+            {0.96f,0.96f,0.96f}
+        );
+        y += line;
+        appendUiText(
+            ui, x, y,
+            explanation.substr(splitAt + 1),
+            1.35f,
+            {0.96f,0.96f,0.96f}
+        );
+        y += line;
+    }
+    else
+    {
+        appendUiText(ui, x, y, explanation, 1.35f, {0.96f,0.96f,0.96f});
+        y += line;
+    }
+
+    y += 20.0f;
+    appendUiText(ui, x, y, "LEGEND", 1.55f, {0.92f,0.92f,1.0f});
+    y += 24.0f;
+
+    auto legend = [&](const glm::vec3& color, const std::string& label)
+    {
+        appendFilledRect(ui, {x, y + 2.0f, 12.0f, 8.0f}, color);
+        appendUiText(ui, x + 20.0f, y, label, 1.30f, {0.90f,0.91f,0.94f});
+        y += 17.0f;
+    };
+
+    legend({0.88f,0.88f,0.88f}, "ROUTE");
+    legend({0.25f,1.0f,0.35f}, "ACTUAL SHIP PATH");
+    legend({1.0f,0.25f,0.20f}, "HAZARD PATH");
+    legend({0.70f,0.88f,0.72f}, "SHIP BOX");
+    legend({0.25f,0.85f,1.0f}, "SHIP NOSE");
+    legend({1.0f,0.65f,0.15f}, "TURN / PORTAL POINT");
+    legend({1.0f,0.92f,0.15f}, "SELECTED BYPASS TARGET");
+    legend({0.20f,0.95f,1.0f}, "REACQUIRE REFERENCE");
+    legend({0.85f,0.30f,1.0f}, "ACTIVE PORTAL TARGET");
+    legend({1.0f,0.45f,0.05f}, "REPLAN EVENT");
+
+    y += 14.0f;
+    appendUiText(ui, x, y, "CONTROLS", 1.55f, {0.92f,0.92f,1.0f});
+    y += 23.0f;
+    appendUiText(ui, x, y, "RMB ORBIT   MMB PAN", 1.25f, {0.75f,0.78f,0.84f});
+    y += 16.0f;
+    appendUiText(ui, x, y, "WHEEL ZOOM  SPACE PLAY", 1.25f, {0.75f,0.78f,0.84f});
+    y += 16.0f;
+    appendUiText(ui, x, y, "[ ] STEP   R NEXT REPLAN", 1.25f, {0.75f,0.78f,0.84f});
+    y += 16.0f;
+    appendUiText(ui, x, y, "F FIT      ESC CLOSE", 1.25f, {0.75f,0.78f,0.84f});
+
+    renderer.draw(GL_TRIANGLES, ui, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+}
+
+
 void fitCamera(
     AppState& state,
     const trace::TraceDocument& data
@@ -492,6 +918,23 @@ void mouseButtonCallback(
         state->panning = action == GLFW_PRESS;
 
     glfwGetCursorPos(window, &state->lastMouseX, &state->lastMouseY);
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        const double x = state->lastMouseX;
+        const double y = state->lastMouseY;
+
+        if (playButtonRect().contains(x, y))
+            state->pendingUiAction = UiAction::TogglePlay;
+        else if (prevButtonRect().contains(x, y))
+            state->pendingUiAction = UiAction::PreviousFrame;
+        else if (nextButtonRect().contains(x, y))
+            state->pendingUiAction = UiAction::NextFrame;
+        else if (replanButtonRect().contains(x, y))
+            state->pendingUiAction = UiAction::NextReplan;
+        else if (fitButtonRect().contains(x, y))
+            state->pendingUiAction = UiAction::Fit;
+    }
 }
 
 void cursorCallback(GLFWwindow* window, double x, double y)
@@ -793,6 +1236,37 @@ void jumpToNextReplan(
     }
 }
 
+
+void processUiAction(
+    AppState& state,
+    const trace::TraceDocument& data
+)
+{
+    const UiAction action = state.pendingUiAction;
+    state.pendingUiAction = UiAction::None;
+
+    switch (action)
+    {
+        case UiAction::TogglePlay:
+            state.playing = !state.playing;
+            break;
+        case UiAction::PreviousFrame:
+            advanceManualFrame(state, data, -1);
+            break;
+        case UiAction::NextFrame:
+            advanceManualFrame(state, data, +1);
+            break;
+        case UiAction::NextReplan:
+            jumpToNextReplan(state, data);
+            break;
+        case UiAction::Fit:
+            state.requestFit = true;
+            break;
+        case UiAction::None:
+            break;
+    }
+}
+
 std::string defaultTracePath()
 {
 #ifdef ELITE_SOURCE_ROOT
@@ -873,6 +1347,7 @@ int main(int argc, char** argv)
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
+            processUiAction(state, data);
 
             const bool leftDown =
                 glfwGetKey(window, GLFW_KEY_LEFT_BRACKET) == GLFW_PRESS;
@@ -955,6 +1430,17 @@ int main(int argc, char** argv)
                 data,
                 state.frameIndex,
                 projection * state.camera.view()
+            );
+
+            int windowWidth = 1;
+            int windowHeight = 1;
+            glfwGetWindowSize(window, &windowWidth, &windowHeight);
+            drawHud(
+                renderer,
+                data,
+                state,
+                windowWidth,
+                windowHeight
             );
 
             setWindowTitle(window, data, state.frameIndex);

@@ -817,3 +817,47 @@ set_tests_properties(
     physical_maneuver_horizon
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+add_executable(
+    nominal_route_planner_tests
+    NominalRoutePlannerTests.cpp
+)
+
+target_include_directories(
+    nominal_route_planner_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    nominal_route_planner_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    nominal_route_planner_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        nominal_route_planner_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        nominal_route_planner_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME nominal_route_planner
+    COMMAND nominal_route_planner_tests
+)
+
+set_tests_properties(
+    nominal_route_planner
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

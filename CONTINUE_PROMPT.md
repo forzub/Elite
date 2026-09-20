@@ -10,87 +10,76 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Latest target attempt
+## Latest target result
 
+Tested:
 ```
-d57a22f69c3af1a8c967ce974b895295c77dd21a
+18f93e15f3baa5218d459b289ae89beb170f1c54
 ```
 
-Architecture PASS. Runtime 18/19. All prior accepted tests remain green.
+Architecture PASS. Runtime 18/19. Previous 18 gates remain green.
 
-Only failure:
+Production composite planner evidence:
 ```
-NAVIGATION COMPOSITE PROVING GROUND: FAIL:
-composite production planner did not find adjusted dynamic bypass
+[COMPOSITE-PLAN]
+law=newtonian
+status=adjusted_clear
+adjusted=1
+nominal_dynamic_conflicts=1
+primary_conflict=12060
+probes=20
+ordinary_exhausted=0
+nominal_static_blocked=0
+position=(138.841366,52.623525,0)
+velocity=(9.263267,3.401145,0)
+hazard=(185.850434,42.920559,0)
+selected_target=(159.856528,40.750781,17.815749)
+```
+
+The planner is now doing exactly what the final lab requires.
+
+Failure:
+```
+composite replacement did not clear dynamic hazard
 ```
 
 ## Root cause
 
-The fixture inserted a dynamic hazard only 35 m ahead after four seconds of the selected physical segment.
+The test authored a 6-second quintic from the live P/V state to the adjusted target with 8 m/s terminal speed.
 
-Production LocalHorizon safety evaluates current unchanged kinematics as well as the requested bounded corridor. Every adjusted probe starts from the same real current state.
+That analytic curve requires roughly:
+- 5.61 m/s2 peak total acceleration;
+- 5.03 m/s2 peak transverse acceleration.
 
-At 35 m, the fixture can already place the hazard inside the unavoidable closest-approach envelope, so every local deflection is correctly rejected as ConflictHold.
+The Cobra fixture only has 2.0 m/s2 lateral/vertical manoeuvre authority and needs B10 reserve.
 
-This is a late synthetic hazard, not a production planner regression.
+Therefore the target was safe but the test-side B5-like time parameterization was physically invalid.
 
-## Current unverified code candidate
-
-```
-b57d81e42035f9771ae4feecee56899c4fa4f3f7
-```
-
-Changes:
-- hazard now appears 48 m ahead;
-- hazard radius 6 m;
-- cross velocity -0.50 m/s;
-- test first requires `nominalDynamicConflictsFound > 0`;
-- then requires real `AdjustedClear`;
-- physical replacement must still maintain >0.5 m conservative dynamic clearance.
-
-New diagnostic:
-```
-[COMPOSITE-PLAN]
-```
-
-It prints planner status, conflict witness, probes, exhaustion, static blocker flag, live P/V, hazard P and selected target.
-
-## Final composite expected chain
+## Current unverified candidate
 
 ```
-exact static direct block
- -> production portal detour
- -> physical first segment
- -> B7 Extreme law-specific choice
- -> selected program prefix
- -> dynamic hazard publication
- -> immediate DynamicHazardInvalidated replan
- -> nominal dynamic conflict
- -> production AdjustedClear
- -> replacement from actual live state
- -> narrow portal
- -> final StateCapture
+7444c5930586300d6cac48bd4b2fa63b27e96bd6
 ```
 
-## Strict acceptance remains
+Replacement authoring now searches for the shortest physical candidate:
+- duration 8..32 s;
+- terminal speed 4 then 2 m/s;
+- 768 dense analytic samples.
 
-Both laws:
-- one immediate replan;
+Required before ACCEPT:
+- peak transverse FF <=1.35 m/s2;
+- minimum speed >=0.50 m/s;
+- planned conservative dynamic clearance >=1.50 m.
+
+Then real execution requires:
 - zero tracking-envelope exceeded ticks;
-- min static clearance >0.5 m;
-- min dynamic clearance >0.5 m;
-- narrow full-hull half-width <=19 m;
-- final P <=1 m;
-- final speed <=0.60 m/s;
-- final attitude <=4 deg.
+- actual conservative dynamic clearance >0.5 m.
 
-Newtonian:
-- DriftPass selected;
-- max slip >=15 deg.
-
-Assisted:
-- PrecisionTransit selected;
-- max slip <=8 deg.
+Diagnostics:
+```
+[COMPOSITE-REPLACEMENT]
+[COMPOSITE-REPLACEMENT-ACTUAL]
+```
 
 ## Validation
 
@@ -116,17 +105,17 @@ OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
 echo
 echo "===== FINAL COMPOSITE SUMMARY ====="
-grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
 
 echo "$PWD/$OUT"
 ```
 
 ## If green
 
-Record exact target HEAD, close synthetic maneuver behavior laboratory, and move immediately to real NAV STRESS/game accepted-corridor + trajectory visualization.
+Record exact target checkout and composite metrics, close synthetic maneuver behavior laboratory, then move immediately to real NAV STRESS/game accepted-corridor + trajectory visualization.
 
 ## If red
 
-Use `[COMPOSITE-PLAN]` to repair the exact remaining composition seam. Do not weaken physical acceptance thresholds.
+Compare planned vs actual replacement metrics and repair the exact remaining seam. Do not weaken physical criteria.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

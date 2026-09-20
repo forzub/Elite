@@ -128,7 +128,7 @@ Planner::AgentState baseAgent()
 {
     Planner::AgentState agent;
     agent.entityId = 100;
-    agent.positionMapMeters = {1.0, 0.0, 0.0};
+    agent.positionMapMeters = {0.0, 0.0, 0.0};
     agent.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
     agent.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
     agent.radiusMeters = 1.0;
@@ -423,7 +423,7 @@ void testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()
             "future-portal bypass fixture must publish its dynamic blocker");
 
     Planner::AgentState agent = baseAgent();
-    agent.positionMapMeters = {0.0, 0.0, 0.0};
+    agent.positionMapMeters = {1.0, 0.0, 0.0};
     agent.forwardMap = {0.0, 0.0, -1.0};
 
     Planner::Goal goal = goalAt(18.0);

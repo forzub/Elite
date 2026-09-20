@@ -5603,3 +5603,29 @@ All five fail-closed limit contracts also passed:
 This closes the chained/limit laboratory block.
 
 Only one synthetic behavior gate remains: a single final composite end-to-end proving ground. After that gate is accepted, primary evaluation moves into the real game/NAV STRESS scene.
+
+
+## 2026-09-20 — final composite proving-ground candidate
+
+After acceptance of the chained/limit block on `3fe9b54eda0135b0cdebb7dc835d8a4b17580808`, one final synthetic behavior gate was added:
+
+```
+navigation_composite_proving_ground
+```
+
+The scenario composes:
+- production exact-static geometry;
+- production NavigationSpace topology;
+- production NavigationRuntimePlanner;
+- B7 Extreme law filtering/selection;
+- AcceptedManeuverProgram execution through B9/B10, PilotSkill and real physics;
+- mid-program dynamic hazard publication through NavigationMap;
+- NavigationExecutionReplanPolicy invalidation;
+- production AdjustedClear local bypass;
+- replacement from actual live state;
+- constrained second portal;
+- final StateCapture.
+
+Expected suite size is 19.
+
+The test deliberately records one remaining migration boundary: general physical time-program authoring is still test-side because the production B5 Assisted/general-family compiler is not yet complete. A green composite ends synthetic maneuver behavior testing but does not claim the remaining B1-B6/B11 migration work is done.

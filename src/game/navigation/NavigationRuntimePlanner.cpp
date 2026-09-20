@@ -316,12 +316,6 @@ bool validInput(
         finite(agent.pitchRateRadPerSec) &&
         finite(agent.yawRateRadPerSec) &&
         finite(agent.rollRateRadPerSec) &&
-        (!agent.localAvoidanceContinuityValid ||
-         (finite(agent.localAvoidanceContinuityDirectionMap) &&
-          glm::dot(
-              agent.localAvoidanceContinuityDirectionMap,
-              agent.localAvoidanceContinuityDirectionMap
-          ) > kEpsilon)) &&
         finite(goal.targetPositionMapMeters) &&
         finite(goal.targetVelocityMapMetersPerSecond) &&
         finite(goal.targetAccelerationMapMetersPerSecond2) &&
@@ -861,10 +855,6 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     localQuery.avoidance = policy.avoidance;
     localQuery.avoidance.nominalTargetIsProvenPortalBoundary =
         result.usedPortalWaypoint;
-    localQuery.preferredDirectionValid =
-        agent.localAvoidanceContinuityValid;
-    localQuery.preferredDirectionMap =
-        toMapVec(agent.localAvoidanceContinuityDirectionMap);
 
     const Avoidance::Result local = Avoidance{}.evaluate(
         localQuery,
@@ -873,21 +863,26 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     );
 
     result.adjustedTarget = local.adjustedTarget;
-    result.selectedVisibilityDeflectionRadians =
-        local.selectedDeflectionRadians;
-    result.ordinaryVisibilitySearchExhausted =
-        local.ordinarySearchExhausted;
-    result.avoidanceProbesExamined = local.targetProbesExamined;
-    result.avoidanceContinuityHintUsed =
-        local.continuityHintUsed;
-    result.avoidanceContinuityLateralValid =
-        local.continuityLateralValid;
-    result.avoidanceSameBranchSafeCandidates =
-        local.sameBranchSafeCandidates;
-    result.avoidanceSelectedBranchAlignment =
-        local.selectedBranchAlignment;
-    result.avoidanceBranchSwitchRequired =
-        local.branchSwitchRequired;
+    result.localBypassExhausted =
+        local.localBypassExhausted;
+    result.localBypassLateralOffsetMap =
+        toGlm(local.selectedLateralOffsetMap);
+    result.localBypassLateralOffsetMeters =
+        local.selectedLateralOffsetMeters;
+    result.localBypassMergeTargetMapMeters =
+        toGlm(local.mergeTargetMapMeters);
+    result.localBypassProjectedClearanceMeters =
+        local.selectedProjectedClearanceMeters;
+    result.avoidanceProjectedDynamicObstacles =
+        local.projectedDynamicObstacles;
+    result.avoidanceOffsetCandidatesExamined =
+        local.offsetCandidatesExamined;
+    result.avoidanceProjectionRejected =
+        local.projectionRejected;
+    result.avoidanceStaticRejected =
+        local.staticRejected;
+    result.avoidanceDynamicRejected =
+        local.dynamicRejected;
     result.primaryConflictEntityId = local.target.primaryConflictEntityId;
     result.nominalPrimaryConflictEntityId =
         local.nominalPrimaryConflictEntityId;

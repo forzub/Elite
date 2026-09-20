@@ -41,6 +41,12 @@ void saveTraceJson(
     root["version"] = trace.version;
     root["law"] = trace.law;
     root["ship_half_extents_m"] = vec3Json(trace.shipHalfExtentsMeters);
+    root["has_scene_endpoints"] = trace.hasSceneEndpoints;
+    if (trace.hasSceneEndpoints)
+    {
+        root["scene_start"] = vec3Json(trace.sceneStartMapMeters);
+        root["scene_finish"] = vec3Json(trace.sceneFinishMapMeters);
+    }
 
     root["route_points"] = nlohmann::json::array();
     for (const auto& p : trace.routePoints)
@@ -140,6 +146,14 @@ TraceDocument loadTraceJson(const std::string& path)
     trace.law = root.value("law", std::string {});
     trace.shipHalfExtentsMeters =
         readVec3(root.at("ship_half_extents_m"));
+
+    trace.hasSceneEndpoints =
+        root.value("has_scene_endpoints", false);
+    if (trace.hasSceneEndpoints)
+    {
+        trace.sceneStartMapMeters = readVec3(root.at("scene_start"));
+        trace.sceneFinishMapMeters = readVec3(root.at("scene_finish"));
+    }
 
     for (const auto& p : root.at("route_points"))
         trace.routePoints.push_back(readVec3(p));

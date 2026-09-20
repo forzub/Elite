@@ -1,63 +1,122 @@
-# CONTINUE PROMPT — Elite Navigation route/corridor vs physical tunnel
+# CONTINUE PROMPT — Elite Navigation autonomous E2E evidence reset
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
-Read `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`,
-`src/game/navigation/STAGE12_END_TO_END.md`,
-`src/world/navigation/local/LocalAvoidancePlanner.h`,
-`src/world/navigation/space/NavigationSpace.h/.cpp`,
-`src/game/navigation/NavigationRuntimePlanner.h/.cpp`,
-and the live stand under `tools/navigation_runtime/`.
+Read before changing behavior:
+- `CURRENT_STATE.md`;
+- `CURRENT_TASK.md`;
+- `PROJECT_STATE.md`;
+- `src/game/navigation/STAGE12_END_TO_END.md`;
+- `src/game/navigation/NAVIGATION_PIPELINE_AUDIT.md`;
+- `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`;
+- `src/game/navigation/NAVIGATION_COMMAND_OWNERSHIP.md`;
+- current code under `tools/navigation_runtime/`.
 
-After every state-affecting event synchronize the Markdown state files and recreate this file from scratch.
+After every state-affecting event synchronize the project Markdown state and recreate
+this `CONTINUE_PROMPT.md` from scratch.
 
-## Global/local ownership
+## Evidence rule
 
-The nominal global route is built once from start to finish and remains authoritative while goal and static world are unchanged.
-Moving obstacles do not rebuild the global route. They are handled by bounded local monitoring/avoidance and later route reacquisition.
-`maxResultAgeSeconds` is dynamic snapshot freshness, not a global replanning timer.
+Do not infer full-system acceptance by adding together green component/slice tests.
 
-## Terminology — corridor vs tunnel
+Classify evidence explicitly as:
+1. component/unit proof;
+2. execution of authored AcceptedManeuverProgram;
+3. planner/topology slice;
+4. authoritative authored-world integration;
+5. true autonomous scenario end-to-end.
 
-`corridor` is a navigation/test abstraction around the nominal route. It may be a centerline/polyline plus a coarse envelope and is used to ask whether the ship can generally proceed along the route.
+Only category 5 proves the complete navigation chain for the tested scenario.
 
-It is NOT the authoritative physical hull-clearance volume.
+## Findings from the 2026-09-20 full-chain audit
 
-`tunnel` is the physically meaningful product: the exact or conservative time-parameterized swept volume of the actual Cobra hull along an accepted trajectory, including body orientation.
+Most movement/corridor/fly-through/chained tests use real Follower, PilotSkillExecutor
+and SharedShipPhysics but construct the AcceptedManeuverProgram inside the test.
+They prove execution of a supplied good program, not production generation of it.
 
-Whether Cobra clips tunnel walls / apertures is decided by tunnel/trajectory physical proof against exact static geometry and dynamic occupancy, not by the coarse nominal corridor.
+`NavigationRuntimePlannerTests` use hand-authored regions/portals, so they prove
+topology/local planner contracts, not arbitrary raw-obstacle route synthesis.
 
-Do not over-engineer the global corridor into exact hull collision geometry.
+`OrdinaryPhysicalManeuverCompilerTests` are genuine B5 tests but current B5 supports
+Newtonian only; Assisted intentionally returns `UnsupportedControlLaw`. B5 candidates
+still require continuous downstream proof.
 
-## Current live-stand status
+`NavigationCompositeProvingGroundTests` is real-component glue but not production
+orchestration: topology is authored; `makeProgram`, `buildDoctrineChoice` and
+`fitAuthorityBoundedReplacement` provide test-owned programs/annotations/fitting.
 
-`tools/navigation_runtime` is a live scenario-driven stand. The first video exposed an integration bug where absolute simulation time was passed as dynamic snapshot age. That is fixed: fresh synchronous snapshots use age `0.0`.
+The authoritative GameSimulation NavigationRuntimeLab is genuine live evidence for its
+scope: real HitVolumes/map/space/planner/control/physics/replication. However the
+slit/tunnel route is itself authored as deterministic regions/portals/start/goal. It
+does not prove arbitrary start+raw-world+finish autonomous route/program synthesis.
 
-The right diagnostic panel must use fixed Y slots and never vertically reflow.
+The repository architecture audit already warned that P6 ordinary maneuver generation,
+P7 proof integration, P8 ordinary decision integration and P9/P10 handoff were
+incomplete/transitional. The project error was over-interpreting narrower green gates.
 
-## Current implementation direction
+## Correct runtime ownership
 
-1. Stop periodic global replanning.
-2. Build/cache one nominal start->finish route/corridor from the static world.
-3. Render that retained nominal route immediately after `РАССЧИТАТЬ`.
-4. Follow it with the production execution chain.
-5. Use LocalHorizonPlanner/LocalAvoidancePlanner only for local dynamic conflicts.
-6. Local bypass/braking may temporarily leave the nominal route, then progressively reacquire it.
-7. Exact physical feasibility is later/ downstream tunnel proof, including real hull orientation.
+Global route/corridor is built once start->finish and retained while goal and static
+route/world revisions remain valid.
 
-## Important remaining gap
+Moving/dynamic obstacles do NOT rebuild the global route. They are handled by a bounded
+local monitor/avoidance layer. After a local bypass, progressively reacquire the same
+nominal route.
 
-The live stand still uses a stand-local handcrafted `makeShortProgram` instead of the complete production physical compile/proof/selection/acceptance path. Replace this before treating live-stand success as final navigation evidence.
+`maxResultAgeSeconds` is dynamic-snapshot freshness, not a global replanning period.
 
-## UI contracts
+`corridor` is a navigation/test abstraction. Exact physical wall/aperture contact is
+owned by the later time-parameterized swept-hull `tunnel`/continuous proof.
 
-- ordinary decorated Windows window maximized;
-- Russian UI;
-- fixed non-jumping right panel;
-- Assisted/Newtonian;
-- Expert/Average/Loser;
-- Standard/Extreme;
-- sudden obstacle checkbox;
-- `РАССЧИТАТЬ`;
-- Cobra horizon inset;
-- always provide a separate exact executable launch command after builds.
+## Existing GameSimulation clue
+
+The authoritative lab already contains the correct scheduler principle:
+`Monitoring is allowed every fixed step; planning is not.`
+
+It uses `NavigationExecutionReplanPolicy` + `NavigationWorkScheduler` and wakes planner
+work on missing/completed/expired/invalidated/tracking/goal/capability/topology events.
+Reuse this event-driven ownership instead of inventing a 0.25/0.5 s global planner loop.
+
+## Current live stand defects/status
+
+The first live video exposed a stand-side bug: absolute simulation time was passed as
+dynamic snapshot age, causing StaleHold after 0.25 s. That has been fixed to fresh
+snapshot age `0.0`.
+
+The right HUD has fixed Y slots and must never vertically reflow.
+
+However `NavigationScenarioRuntime.cpp` is still architecturally transitional:
+- it periodically calls combined `NavigationRuntimePlanner::plan()`;
+- it uses stand-local `makeShortProgram()` quintic programs;
+- therefore it bypasses the full production B5/B6/B7/B8 chain.
+
+Do not treat a visually successful run of that transitional stand as final acceptance.
+
+## Next canonical implementation target
+
+Build one shared autonomous scenario chain:
+
+`objective/world`
+` -> cached global route`
+` -> local route-aligned geometric path`
+` -> B5 physical maneuver candidates`
+` -> B6 continuous/tunnel proof`
+` -> B7 doctrine decision`
+` -> B8 AcceptedManeuverProgram`
+` -> B9/B10 follower`
+` -> B12 PilotSkill`
+` -> B13 authoritative physics`
+` -> B11/B14 monitor + event-driven replan`.
+
+Hard rules:
+- no test/local `makeProgram()` / `makeShortProgram()` in the canonical E2E gate;
+- no hand-authored B7 safety/risk annotations standing in for production proof;
+- preserve all useful component tests but describe their evidence narrowly;
+- Assisted cannot be called production-complete until its B5+ downstream chain exists;
+- global planner is event-driven, not periodic;
+- dynamic surprise obstacle triggers local response, not route reconstruction.
+
+## Command rule
+
+Whenever compilation produces an executable, always give a separate exact executable
+launch command from the documented working directory.

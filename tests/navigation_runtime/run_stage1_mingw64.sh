@@ -11,7 +11,7 @@ if ! elite_require_python; then
 fi
 PYTHON_BIN="${ELITE_PYTHON_BIN}"
 
-echo "=== Stage 1 architecture ==="
+echo "=== Static route + two-stage viewer architecture ==="
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_geometric_path_planner.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_stage1_nominal_route.py"
 
@@ -21,13 +21,13 @@ cmake -S "${ROOT_DIR}/tests/navigation_runtime" -B "${TEST_BUILD}" -G Ninja
 cmake --build "${TEST_BUILD}" --target nominal_route_planner_tests
 ctest --test-dir "${TEST_BUILD}" -L navigation_stage1 --output-on-failure
 
-echo "=== Stage 1 viewer build ==="
+echo "=== Two-stage viewer build ==="
 VIEWER_BUILD="${ROOT_DIR}/build/tools/navigation_runtime"
 cmake -S "${ROOT_DIR}/tools/navigation_runtime" -B "${VIEWER_BUILD}" -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build "${VIEWER_BUILD}"
 
 echo
-echo "STAGE 1 NAVIGATION GATE: PASS"
+echo "STATIC ROUTE + FOLLOWER VIEWER BUILD GATE: PASS"
 echo
 echo "Viewer launch:"
 echo "cd /d/__elite/work"

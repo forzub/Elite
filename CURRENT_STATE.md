@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Last accepted exact target-machine baseline
+## Accepted target-machine baseline
 
 ```
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
@@ -13,143 +13,118 @@ Accepted evidence:
 - navigation_runtime 18/18 PASS;
 - chained transition + physical-limit matrix PASS.
 
-This remains the last exact accepted target-machine baseline. Do not promote a
-new baseline without fresh target-machine evidence.
-
 ## Latest actually tested checkout
 
 ```
 2ad1178bc5c778636748557ceb6c9a5b757c9a53
 ```
 
-Observed:
-- Stage-12 architecture contract PASS;
-- runtime behavior did **not** execute;
-- compilation stopped in `NavigationRuntimePlannerTests.cpp` on a missing
-  `<iomanip>` include for diagnostic `std::setprecision`.
+That checkout passed the architecture contract but runtime behavior did not
+execute because a test diagnostic failed to compile on missing `<iomanip>`.
+It predates the current B4 replacement and supplies no acceptance evidence for
+the new mechanism.
 
-Therefore this checkout provides no acceptance evidence for the current local
-avoidance mechanism.
-
-## Current unverified repository baseline before mandatory state-doc sync
+## Current unverified code baseline before mandatory state-sync commits
 
 ```
-f8cd91d01006d9cba8327ae51efb6705e6df83e0
+edb4c4106686ce625e1cd5eb99a6d1483cd32854
 ```
 
-This baseline contains the hard B4 replacement and canonical Stage-12 migration
-record. The state-doc synchronization commits come after it and do not change
-navigation behavior.
+This baseline is the first coherent candidate of the hard-replaced
+trajectory-relative visible-horizon local solver.
 
-## Current B4 production mechanism
+## Canonical B4 mechanism
 
-The former angular deflection / azimuth fan and branch-continuity mechanism are
-removed from production rather than retained as fallback code.
-
-Removed:
-- 15/30/45/60/75-degree angular fan search;
-- `primaryDeflectionRadians` / `secondaryDeflectionRadians` /
-  `maximumDeflectionRadians`;
-- `azimuthSamples`;
-- `selectedVisibilityDeflectionRadians`;
-- `ordinaryVisibilitySearchExhausted`;
-- accepted local branch continuity hints;
-- same-branch ranking state;
-- `avoidanceBranchSwitchRequired`;
-- ordinary Brake-before-branch-switch recovery;
-- composite `[COMPOSITE-RECOVERY]` path.
-
-Canonical ordinary unexpected-obstacle path:
+Unexpected local obstacle handling is now:
 
 ```text
-accepted route / trajectory
+accepted trajectory
     -> physical visible horizon
-    -> predict relevant dynamic occupancy
-    -> project swept occupancy onto plane normal to nominal trajectory
-    -> search bounded lateral/vertical offsets in meters
-    -> exact-static proof
-    -> time-coupled dynamic proof
-    -> temporary bypass target
-    -> merge target on original trajectory
-    -> downstream B5/B6 physical maneuver compilation/proof
-    -> execute and reacquire nominal trajectory
+    -> predict relevant moving occupancy
+    -> project occupancy onto plane normal to trajectory
+    -> search metric lateral/vertical offsets
+    -> search longitudinal bypass stations inside the horizon
+    -> prove current -> bypass station
+    -> prove bypass station -> merge point on original trajectory
+    -> time-coupled dynamic proof of the whole two-segment detour
+    -> publish bypass target + merge target
+    -> downstream physical maneuver compilation/proof
+    -> execute
+    -> reacquire original trajectory
 ```
 
-`LocalBypassExhausted` means no safe bounded local offset was demonstrated.
-Only then may higher ownership slow further, change waypoint/portal/route, or
-select emergency/recovery behavior. Full stop is not the normal side-change
-algorithm.
+The solver now searches a **real detour**, not a single off-route endpoint.
 
-## Hard-removal evidence already established in repository audit
+New canonical fields include:
+- `longitudinalSamples`;
+- `selectedBypassForwardDistanceMeters`;
+- `routeCandidatesExamined`;
+- runtime mirrors `localBypassForwardDistanceMeters` and
+  `avoidanceRouteCandidatesExamined`.
 
-Repository-wide searches returned zero production/test matches for deleted
-identifiers including:
-- `primaryDeflectionRadians`;
-- `secondaryDeflectionRadians`;
-- `selectedVisibilityDeflectionRadians`;
-- `ordinaryVisibilitySearchExhausted`;
-- `localAvoidanceContinuityValid`;
-- `preferredDirectionValid`;
-- `sameBranchSafeCandidates`;
-- `branchSwitchRequired`;
-- `avoidanceBranchSwitchRequired`;
-- `fitBranchSwitchRecovery`;
-- `branchRecoveryPhases`.
+## Hard-removed legacy mechanism
 
-The Stage-12 architecture checker now positively requires the projected
-visible-horizon API and negatively rejects reintroduction of old fan/branch
+The following must remain physically absent:
+- 15/30/45/60/75-degree fan;
+- angular deflection rings;
+- azimuth fan;
+- branch continuity hints;
+- same-branch ranking;
+- branch-switch-required API;
+- ordinary Brake-before-changing-side recovery.
+
+Repo-wide symbol audit returned zero matches for the removed production
 identifiers.
+
+The architecture checker positively requires the projected two-segment solver
+and negatively rejects old fan/branch identifiers.
+
+## Compile/API audit before target run
+
+Found and fixed before target execution:
+- helper access incorrectly used `query.horizon.policy` where the helper owns
+  a `LocalHorizonPlanner::Query`; corrected to `query.policy`;
+- outer solver uses `query.horizon.policy` correctly;
+- `NavigationSpace` is movable;
+- dynamic exact geometry field is `exactObstacles`;
+- static segment result provides `startRegionId`;
+- portal-boundary endpoint exception exists as
+  `allowEndOnStartRegionBoundary`;
+- runtime result fields, avoidance policy fields and live diagnostics all match
+  their public headers.
+
+Checker/API/test audit reports no missing required fields or fixtures.
+
+## Focused tests now expected
+
+- nominal clear -> no search;
+- crossing moving obstacle -> projected bypass;
+- head-on with free space -> bypass without mandatory stop;
+- exact static blocker constrains offsets;
+- exact static proof covers the **return leg** to the original trajectory;
+- obstacle disappears -> direct trajectory reacquisition;
+- no fitting offset -> `localBypassExhausted`;
+- stale dynamic truth -> fail closed;
+- runtime planner publishes metric offset, longitudinal bypass station and merge
+  point;
+- composite repeats fresh projected bypasses with no branch state.
 
 ## Validation status
 
-**UNVERIFIED on target machine.**
+**UNVERIFIED on target MinGW64.**
 
-No claim is made yet that the replacement compiles or passes behavior on the
-user's MinGW64 target.
+No acceptance claim until the user's target-machine gate passes.
 
-Next evidence must establish:
-1. exact tested HEAD;
-2. Stage-12 architecture PASS;
-3. navigation runtime compile and execution;
-4. projected-bypass focused regressions;
-5. final composite Newtonian + Assisted behavior.
+## Required next gate
 
-## Next expected gate
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
-
-{
-    echo "===== TESTED HEAD ====="
-    git rev-parse HEAD
-
-    echo
-    echo "===== ARCHITECTURE CONTRACT ====="
-    python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
-
-    echo
-    echo "===== NAVIGATION RUNTIME ====="
-    bash tests/navigation_runtime/run_mingw64.sh
-} 2>&1 | tee "$OUT"
-
-echo
-echo "===== VISIBLE-HORIZON / COMPOSITE SUMMARY ====="
-grep -E 'VISIBLE-HORIZON|LOCAL VISIBLE-HORIZON|\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|NAVIGATION RUNTIME PLANNER TESTS|tests passed|tests failed|TESTED HEAD' "$OUT" || true
-
-echo "$PWD/$OUT"
-```
+Run architecture + navigation runtime on the exact pulled HEAD. Record the
+tested SHA and all visible-horizon/composite failures or metrics.
 
 ## Documentation protocol
 
-After every state-affecting project event:
+After every state-affecting event:
 - update `CURRENT_STATE.md`;
 - update `CURRENT_TASK.md`;
 - update `PROJECT_STATE.md`;
-- update the active Stage-12 document;
-- recreate `CONTINUE_PROMPT.md` **from scratch** from current truth.
-
-Never incrementally patch stale continuation-prompt prose.
+- update active Stage-12 documentation;
+- recreate `CONTINUE_PROMPT.md` from scratch.

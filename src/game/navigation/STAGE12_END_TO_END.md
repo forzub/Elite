@@ -6088,3 +6088,55 @@ Next evidence:
 - decide between downstream merge sampling, an adaptive horizon, or a
   proved multi-horizon off-route continuation;
 - do not weaken safety thresholds or restore the superseded fan/branch path.
+
+
+## 2026-09-20 — mandatory same-horizon merge removed
+
+The first hard-replacement target failure exposed an incorrect assumption in
+both implementation and tests: ordinary local avoidance had been made to prove
+`current -> bypass -> return to nominal line` inside one visible horizon.
+
+That is not the intended navigation behavior.
+
+Current B4 contract:
+
+```text
+if a safe short bypass is available:
+    accept and execute that short segment
+    preserve forward progress
+    do not require immediate return to the route
+
+if no safe short bypass is available:
+    issue active braking intent
+    keep navigation ownership active
+    re-evaluate fresh world truth
+
+after the obstacle:
+    progressively reacquire the nominal line under physical control limits
+```
+
+There is no fixed 30 m merge rule.
+
+`mergeTargetMapMeters` remains temporarily for compatibility/diagnostics, but
+its semantic is an on-route reacquisition reference, not a mandatory
+current-horizon endpoint.
+
+Production candidate before this documentation sync:
+`70dc7bb9c024a388c39b79d54a12774475ca8b32`.
+
+Implementation changes:
+- ordinary adjusted candidate proves exact-static safety only for the selected
+  current short segment;
+- time-coupled dynamic proof covers the selected current short segment;
+- equal lateral offsets prefer the farther forward station;
+- `ConflictHold` still produces braking intent through the existing runtime
+  control path; navigation is not disabled.
+
+Regression changes:
+- invalid portal fixture geometry corrected;
+- mandatory return-leg regression replaced with
+  `testBypassDoesNotRequireImmediateReturnToTrajectory()`;
+- no-space regression still requires explicit exhaustion + braking.
+
+This candidate is UNVERIFIED until a fresh target-machine architecture/runtime
+gate is supplied.

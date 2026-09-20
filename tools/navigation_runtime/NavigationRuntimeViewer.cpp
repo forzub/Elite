@@ -382,6 +382,17 @@ void appendWireSphere(
     );
 }
 
+glm::vec3 normalizedOr(
+    const glm::dvec3& value,
+    const glm::vec3& fallback
+)
+{
+    glm::vec3 v = toVec3(value);
+    if (glm::length(v) <= 1.0e-6f)
+        return fallback;
+    return glm::normalize(v);
+}
+
 void appendShipBoxAndArrow(
     std::vector<Vertex>& out,
     const trace::TraceFrame& frame,
@@ -389,19 +400,12 @@ void appendShipBoxAndArrow(
 )
 {
     const glm::vec3 center = toVec3(frame.shipPosition);
-    glm::vec3 forward = toVec3(frame.shipForward);
-    if (glm::length(forward) <= 1.0e-6f)
-        forward = {1.0f, 0.0f, 0.0f};
-    forward = glm::normalize(forward);
-
-    glm::vec3 upSeed(0.0f, 1.0f, 0.0f);
-    if (std::abs(glm::dot(forward, upSeed)) > 0.92f)
-        upSeed = {1.0f, 0.0f, 0.0f};
-
+    const glm::vec3 forward =
+        normalizedOr(frame.shipForward, {1.0f, 0.0f, 0.0f});
     const glm::vec3 right =
-        glm::normalize(glm::cross(forward, upSeed));
+        normalizedOr(frame.shipRight, {0.0f, 0.0f, 1.0f});
     const glm::vec3 up =
-        glm::normalize(glm::cross(right, forward));
+        normalizedOr(frame.shipUp, {0.0f, 1.0f, 0.0f});
 
     const float hx = static_cast<float>(halfExtents.x);
     const float hy = static_cast<float>(halfExtents.y);
@@ -445,6 +449,193 @@ void appendShipBoxAndArrow(
     addLine(out, tip, wingBase - right * wing, arrowColor);
     addLine(out, tip, wingBase + up * wing, arrowColor);
     addLine(out, tip, wingBase - up * wing, arrowColor);
+}
+
+
+
+void appendReferenceOrientationArrow(
+    std::vector<Vertex>& out,
+    const trace::TraceFrame& frame,
+    const glm::dvec3& halfExtents
+)
+{
+    if (!frame.hasProgramReference)
+        return;
+
+    const glm::vec3 center = toVec3(frame.shipPosition);
+    const glm::vec3 forward =
+        normalizedOr(
+            frame.programReferenceForward,
+            {1.0f, 0.0f, 0.0f}
+        );
+
+    const float hz = static_cast<float>(halfExtents.z);
+    const glm::vec3 tip =
+        center + forward * (hz + std::max(10.0f, hz));
+    addLine(
+        out,
+        center,
+        tip,
+        {1.0f, 0.25f, 0.95f}
+    );
+}
+
+void appendTrackingTube(
+    std::vector<Vertex>& out,
+    const std::vector<glm::dvec3>& path,
+    float radius,
+    const glm::vec3& color,
+    float alpha
+)
+{
+    constexpr int Sides = 12;
+    if (path.size() < 2 || radius <= 0.0f)
+        return;
+
+    std::vector<std::array<glm::vec3, Sides>> rings;
+    rings.resize(path.size());
+
+    for (std::size_t i = 0; i < path.size(); ++i)
+    {
+        glm::vec3 tangent;
+        if (i == 0)
+            tangent = toVec3(path[1] - path[0]);
+        else if (i + 1 == path.size())
+            tangent = toVec3(path[i] - path[i - 1]);
+        else
+            tangent = toVec3(path[i + 1] - path[i - 1]);
+
+        if (glm::length(tangent) <= 1.0e-6f)
+            tangent = {1.0f, 0.0f, 0.0f};
+        tangent = glm::normalize(tangent);
+
+        glm::vec3 seed(0.0f, 1.0f, 0.0f);
+        if (std::abs(glm::dot(seed, tangent)) > 0.92f)
+            seed = {1.0f, 0.0f, 0.0f};
+
+        const glm::vec3 right =
+            glm::normalize(glm::cross(tangent, seed));
+        const glm::vec3 up =
+            glm::normalize(glm::cross(right, tangent));
+        const glm::vec3 center = toVec3(path[i]);
+
+        for (int side = 0; side < Sides; ++side)
+        {
+            const float a =
+                2.0f * kPi *
+                static_cast<float>(side) /
+                static_cast<float>(Sides);
+            rings[i][static_cast<std::size_t>(side)] =
+                center +
+                radius *
+                    (std::cos(a) * right + std::sin(a) * up);
+        }
+    }
+
+    for (std::size_t i = 1; i < rings.size(); ++i)
+    {
+        for (int side = 0; side < Sides; ++side)
+        {
+            const int next = (side + 1) % Sides;
+            const glm::vec3& a =
+                rings[i - 1][static_cast<std::size_t>(side)];
+            const glm::vec3& b =
+                rings[i - 1][static_cast<std::size_t>(next)];
+            const glm::vec3& c =
+                rings[i][static_cast<std::size_t>(next)];
+            const glm::vec3& d =
+                rings[i][static_cast<std::size_t>(side)];
+
+            out.push_back({a, color, alpha});
+            out.push_back({b, color, alpha});
+            out.push_back({c, color, alpha});
+
+            out.push_back({a, color, alpha});
+            out.push_back({c, color, alpha});
+            out.push_back({d, color, alpha});
+        }
+    }
+}
+
+trace::TraceFrame interpolatedDisplayFrame(
+    const trace::TraceDocument& data,
+    const AppState& state
+)
+{
+    if (data.frames.empty())
+        return {};
+
+    const std::size_t i =
+        std::min(state.frameIndex, data.frames.size() - 1);
+    trace::TraceFrame out = data.frames[i];
+
+    if (!state.playing || i + 1 >= data.frames.size())
+        return out;
+
+    const double desiredTime =
+        data.frames.front().timeSeconds +
+        state.playbackTime;
+    const auto& a = data.frames[i];
+    const auto& b = data.frames[i + 1];
+    const double dt = b.timeSeconds - a.timeSeconds;
+    if (dt <= 1.0e-9)
+        return out;
+
+    const double t =
+        std::clamp(
+            (desiredTime - a.timeSeconds) / dt,
+            0.0,
+            1.0
+        );
+
+    auto lerp3 = [t](const glm::dvec3& x, const glm::dvec3& y)
+    {
+        return x + (y - x) * t;
+    };
+
+    auto nlerp3 = [&](const glm::dvec3& x, const glm::dvec3& y)
+    {
+        glm::dvec3 v = lerp3(x, y);
+        const double len = glm::length(v);
+        if (len <= 1.0e-12)
+            return x;
+        return v / len;
+    };
+
+    out.timeSeconds = desiredTime;
+    out.shipPosition = lerp3(a.shipPosition, b.shipPosition);
+    out.shipVelocity = lerp3(a.shipVelocity, b.shipVelocity);
+    out.shipForward = nlerp3(a.shipForward, b.shipForward);
+    out.shipRight = nlerp3(a.shipRight, b.shipRight);
+    out.shipUp = nlerp3(a.shipUp, b.shipUp);
+
+    if (a.hazardActive && b.hazardActive)
+    {
+        out.hazardPosition =
+            lerp3(a.hazardPosition, b.hazardPosition);
+        out.dynamicClearanceMeters =
+            a.dynamicClearanceMeters +
+            (b.dynamicClearanceMeters - a.dynamicClearanceMeters) * t;
+    }
+
+    if (a.hasProgramReference && b.hasProgramReference)
+    {
+        out.hasProgramReference = true;
+        out.programReferencePosition =
+            lerp3(a.programReferencePosition, b.programReferencePosition);
+        out.programReferenceForward =
+            nlerp3(a.programReferenceForward, b.programReferenceForward);
+        out.programReferenceRight =
+            nlerp3(a.programReferenceRight, b.programReferenceRight);
+        out.programReferenceUp =
+            nlerp3(a.programReferenceUp, b.programReferenceUp);
+        out.programTrackingCorridorRadiusMeters =
+            a.programTrackingCorridorRadiusMeters +
+            (b.programTrackingCorridorRadiusMeters -
+             a.programTrackingCorridorRadiusMeters) * t;
+    }
+
+    return out;
 }
 
 

@@ -1197,7 +1197,9 @@ struct ExecutionVehicle
         );
 
         Bridge::Intent initial;
-        initial.revision = 1;
+        // Reset on neutral revision zero so the first real route intent
+        // (goalRevision) exercises the selected pilot's reaction-delay model.
+        initial.revision = 0;
         initial.targetRevision = 0;
         if (!bridge.reset(0.0, initial))
             throw std::runtime_error(

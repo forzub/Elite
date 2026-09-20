@@ -5749,3 +5749,32 @@ Production candidates `86640b05145938ec0880a3a26539957aaa72f085` and `ef2e6ec858
 Regression `6064a22f565fd7cc82568b0babf2721891c8d925` pins symmetric +/-Z side continuity.
 
 This is an improvement to the transitional B4 ray-fan; full route-aligned corridor migration remains open.
+
+
+## 2026-09-20 — accepted local-segment continuity becomes explicit planner input
+
+Target checkout `69f8ca4dbcb44df5340b94f45640bcb7d6e6ed1a` passed architecture but failed the focused continuity regression and final composite.
+
+The focused fixture itself was partly wrong: its static region was only +/-10 m deep in Z, so the intended symmetric +/-Z probes were not both legal.
+
+The composite nevertheless proved a deeper point: instantaneous velocity does not reliably encode the already accepted local bypass branch.
+
+The ownership contract is now explicit:
+- execution/accepted-program layer owns the direction of the accepted local segment;
+- on REPLAN it passes that direction into `NavigationRuntimePlanner::AgentState`;
+- runtime planner forwards it to `LocalAvoidancePlanner::Query`;
+- local avoidance uses it to select among safe azimuths in the minimum deflection ring.
+
+No mutable hidden planner memory is introduced and no safety bound changes.
+
+Production/API commits:
+`71b80c4529e1bc776e2a2dbf209059a2ccff44f9`,
+`4bde26ee2fbb531116f960d089d488067f1bfd6d`,
+`76022a5199422dd80ef4caff611539b53c39e731`,
+`40d7b9852bc6f265ae02ecc0bf9d7b4e002d5b96`.
+
+Regression/composite commits:
+`bd31307fbda3d512a579f521efc1664199b1de46`,
+`09bc81e03cab6c251b50678585161cc73e814ddb`.
+
+This is still transitional B4 behavior. A future route-aligned corridor should carry branch continuity structurally rather than as a direction hint.

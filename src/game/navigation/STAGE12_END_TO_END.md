@@ -5975,3 +5975,16 @@ visible-horizon solver.
 
 The current hard-replacement code is UNVERIFIED until a fresh target-machine
 architecture + navigation runtime gate is supplied.
+
+
+### Mandatory state synchronization completed
+
+The mandatory working-state documents have now been rewritten to the hard-replacement truth:
+- `CURRENT_STATE.md`;
+- `CURRENT_TASK.md`;
+- `PROJECT_STATE.md`;
+- `CONTINUE_PROMPT.md` is recreated from scratch after this Stage-12 update.
+
+The last accepted target baseline remains `3fe9b54eda0135b0cdebb7dc835d8a4b17580808`.
+The latest actually tested checkout remains `2ad1178bc5c778636748557ceb6c9a5b757c9a53` and supplied no runtime-behavior evidence.
+The projected visible-horizon hard replacement remains UNVERIFIED until a fresh target-machine gate is supplied.

@@ -41,16 +41,18 @@ public:
         double maximumLateralOffsetMeters = 120.0;
 
         // Candidate bypass stations are sampled longitudinally inside the
-        // bounded nominal horizon. Every candidate is a two-segment detour:
-        // current -> off-route bypass station -> on-route merge target.
+        // bounded nominal horizon. A candidate proves only the safe short
+        // segment that can be executed now. Reacquisition of the nominal line
+        // is handled by later receding-horizon updates; there is no mandatory
+        // same-horizon merge.
         std::size_t longitudinalSamples = 3;
 
         // Additional inflation for predicted dynamic occupancy in the normal
         // plane and in the time-coupled candidate check.
         double projectionPaddingMeters = 2.0;
 
-        // Number of temporal samples used to prove the complete two-segment
-        // detour against predicted moving actors. Physical maneuver
+        // Number of temporal samples used to prove the selected short bypass
+        // segment against predicted moving actors. Physical maneuver
         // compilation/continuous proof remains downstream ownership.
         std::size_t trajectorySamples = 24;
 
@@ -87,8 +89,9 @@ public:
         bool nominalPathClear = false;
         bool localBypassExhausted = false;
 
-        // Temporary off-route target and the point on the original nominal
-        // trajectory to reacquire after the obstacle is passed.
+        // Temporary off-route target plus an on-route reacquisition reference.
+        // The reference is diagnostic/planning context, not an endpoint that
+        // must be reached inside the current visible horizon.
         Vec3d selectedLateralOffsetMap {};
         double selectedLateralOffsetMeters = 0.0;
         double selectedBypassForwardDistanceMeters = 0.0;

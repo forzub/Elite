@@ -78,6 +78,8 @@ void saveTraceJson(
 
         frame["hazard_active"] = f.hazardActive;
         frame["hazard_position"] = vec3Json(f.hazardPosition);
+        frame["hazard_velocity"] = vec3Json(f.hazardVelocity);
+        frame["planner_lookahead_s"] = f.plannerLookAheadSeconds;
         frame["hazard_radius_m"] = f.hazardRadiusMeters;
         frame["hazard_collision_envelope_radius_m"] =
             f.hazardCollisionEnvelopeRadiusMeters;
@@ -181,6 +183,10 @@ TraceDocument loadTraceJson(const std::string& path)
 
         f.hazardActive = source.value("hazard_active", false);
         f.hazardPosition = readVec3(source.at("hazard_position"));
+        if (source.contains("hazard_velocity"))
+            f.hazardVelocity = readVec3(source.at("hazard_velocity"));
+        f.plannerLookAheadSeconds =
+            source.value("planner_lookahead_s", 0.0);
         f.hazardRadiusMeters =
             source.value("hazard_radius_m", 0.0);
         f.hazardCollisionEnvelopeRadiusMeters =

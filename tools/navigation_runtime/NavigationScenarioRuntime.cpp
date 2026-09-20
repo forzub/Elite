@@ -1444,6 +1444,33 @@ ScenarioRunResult calculateScenario(
         trace.routePoints.push_back(scenario.finish.position);
         trace.turnPoints = scenario.shipRoutePoints;
 
+        for (const auto& obstacle : scenario.staticObstacles)
+        {
+            TraceStaticObstacle outObstacle;
+            outObstacle.id = obstacle.id;
+            outObstacle.center = obstacle.centerMeters;
+            outObstacle.halfExtents = obstacle.halfExtentsMeters;
+            outObstacle.radiusMeters = obstacle.radiusMeters;
+            outObstacle.capsuleHalfLengthMeters =
+                obstacle.capsuleHalfLengthMeters;
+
+            switch (obstacle.shape)
+            {
+                case world::navigation::NavigationObstacleShape::Box:
+                    outObstacle.shape = "box";
+                    break;
+                case world::navigation::NavigationObstacleShape::Capsule:
+                    outObstacle.shape = "capsule";
+                    break;
+                case world::navigation::NavigationObstacleShape::Sphere:
+                default:
+                    outObstacle.shape = "sphere";
+                    break;
+            }
+
+            trace.staticObstacles.push_back(std::move(outObstacle));
+        }
+
         std::vector<glm::dvec3> objectives =
             scenario.shipRoutePoints;
         objectives.push_back(scenario.finish.position);

@@ -1585,7 +1585,7 @@ ScenarioRunResult calculateScenario(
                         plannerAgent(vehicle, law),
                         goal,
                         dynamic,
-                        vehicle.timeSeconds,
+                        0.0,
                         staticQueries,
                         policy
                     );

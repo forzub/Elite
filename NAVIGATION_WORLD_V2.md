@@ -862,7 +862,9 @@ current vehicle A -> current accepted target B
                   -> temporary pass-through target
 next update:
     test direct B first again
-        -> immediately recover to the direct line when clear
+        -> when clear, begin reacquiring the nominal line
+        -> physical execution limits make the return progressive, not an
+           artificial same-horizon snap-back
 ```
 
 The "line of sight" is a corridor, not an infinitesimal ray. Its envelope is the
@@ -934,3 +936,17 @@ periodic local refresh because the player can leave the recommended corridor.
 
 Known predicted motion that remains inside the accepted uncertainty model does
 not force a replan merely because the dynamic map published another tick.
+
+
+### 2026-09-20 clarification — local bypass is not a forced return loop
+
+Ordinary bounded visibility steering proves the next safe short segment.
+It does not require the vehicle to leave the nominal line and return to it
+inside the same visible horizon.
+
+If lateral avoidance is still possible, navigation keeps forward progress
+through a safe offset segment. If it is no longer possible, navigation issues
+braking intent and remains active. Later receding-horizon updates either
+continue the bypass or progressively reacquire the nominal line.
+
+No arbitrary fixed merge distance is part of this contract.

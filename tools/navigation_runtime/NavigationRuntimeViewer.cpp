@@ -1136,6 +1136,12 @@ std::string localizedPhase(const std::string& phase)
         return "ЭТАП 1 — ОШИБКА МАРШРУТА";
     if (phase == "scene_preview")
         return "СЦЕНА — ДО РАСЧЁТА";
+    if (phase == "route_execution")
+        return "ЭТАП 2 — FOLLOWER";
+    if (phase == "execution_complete")
+        return "ЭТАП 2 — ЗАВЕРШЕНО";
+    if (phase == "execution_failed")
+        return "ЭТАП 2 — ОШИБКА";
     if (phase == "portal_101")
         return "ПОРТАЛ 101";
     if (phase == "doctrine_prefix")
@@ -1183,6 +1189,20 @@ std::string localizedStatus(const std::string& status)
         return "СТАТИЧЕСКИЙ МАРШРУТ НЕ ПОСТРОЕН";
     if (status == "scene_loaded")
         return "СЦЕНА ЗАГРУЖЕНА";
+    if (status == "follower_running")
+        return "FOLLOWER ВЫПОЛНЯЕТ МАРШРУТ";
+    if (status == "trajectory_failed")
+        return "RUCKIG НЕ ПОСТРОИЛ ТРАЕКТОРИЮ";
+    if (status == "follower_invalid")
+        return "FOLLOWER: INVALID INPUT";
+    if (status == "pilot_bridge_invalid")
+        return "PILOT BRIDGE: ОШИБКА";
+    if (status == "static_contact")
+        return "КОНТАКТ СО СТАТИЧЕСКИМ ПРЕПЯТСТВИЕМ";
+    if (status == "terminal_miss")
+        return "ФИНИШНОЕ СОСТОЯНИЕ НЕ ДОСТИГНУТО";
+    if (status == "follower_complete")
+        return "FOLLOWER: МАРШРУТ ВЫПОЛНЕН";
     return status;
 }
 
@@ -1204,6 +1224,15 @@ std::string currentExplanation(const trace::TraceFrame& frame)
 {
     if (frame.phase == "scene_preview")
         return "СЦЕНА ЗАГРУЖЕНА. PLANNER ЕЩЁ НЕ ЗАПУСКАЛСЯ.\nFOLLOWER ЕЩЁ НЕ ЗАПУСКАЛСЯ.";
+
+    if (frame.phase == "route_execution")
+        return "ЭТАП 2: FOLLOWER ИСПОЛНЯЕТ СОХРАНЁННЫЙ МАРШРУТ.\nГЛОБАЛЬНЫЙ PLANNER НЕ ПЕРЕСЧИТЫВАЕТСЯ.";
+
+    if (frame.phase == "execution_complete")
+        return "ЭТАП 2: КОБРА ПРОШЛА СОХРАНЁННЫЙ МАРШРУТ.\nСМОТРИТЕ ФАКТИЧЕСКУЮ ТРАЕКТОРИЮ И ОШИБКИ.";
+
+    if (frame.phase == "execution_failed")
+        return "ЭТАП 2: ИСПОЛНЕНИЕ ЗАВЕРШИЛОСЬ ОШИБКОЙ.\nСМОТРИТЕ ЦЕПОЧКУ И last_execution.log.";
 
     if (frame.phase == "route_ready")
         return "ЭТАП 1: ПОСТРОЕН ОДИН СТАТИЧЕСКИЙ МАРШРУТ\nСТАРТ -> ФИНИШ. ПОЛЁТ ЕЩЁ НЕ РАССЧИТЫВАЕТСЯ.";

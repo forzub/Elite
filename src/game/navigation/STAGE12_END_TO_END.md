@@ -6399,3 +6399,51 @@ physics stack directly instead of being an OpenGL-only replay executable.
 
 Validation state: this live-runtime iteration is committed but NOT YET compiled/run on
 the target MinGW64 machine. Do not claim acceptance until the target gate passes.
+
+## 2026-09-20 target video diagnosis — live stand integration bug
+
+User supplied a screen recording of the first live-stand behavior.
+
+Observed on-screen:
+- playback around t≈41 s showed phase `ТОРМОЖЕНИЕ` and status `ДАННЫЕ УСТАРЕЛИ`;
+- Cobra made almost no meaningful route progress;
+- right diagnostic panel visibly jumped/blinked because conditional rows (especially
+  the one-frame `СОБЫТИЕ: ПЕРЕПЛАНИРОВАНИЕ`) were inserted/removed from flow layout;
+- the default no-sudden-obstacle run therefore did not demonstrate routing quality.
+
+Root cause found in `NavigationScenarioRuntime.cpp`:
+`NavigationRuntimePlanner::plan(... dynamicResultAgeSeconds ...)` was called with
+`vehicle.timeSeconds` (absolute simulation time) instead of the age of the freshly
+queried NavigationMap snapshot. With `maxResultAgeSeconds=0.25`, every plan after
+0.25 s became `StaleHold`, correctly triggering fail-closed braking.
+
+Fix committed:
+- live stand now passes `0.0` for the just-created dynamic snapshot age;
+- this is the correct semantics for the current synchronous query->plan call.
+
+HUD fix committed:
+- right panel uses hard fixed Y slots for mode/frame/time/phase/status/orientation/
+  clearance/event/calculation result/explanation/legend/controls;
+- optional data displays `-` instead of adding/removing rows;
+- replan indication may still change color/text, but cannot move any other text;
+- calculation result is always visible during playback so a partial failed trajectory
+  is not silently presented as a successful solution.
+
+Interpretation of previous daytime tests:
+- they were not fake: they exercised real production planner/follower/control/physics
+  components and found genuine local failures;
+- however the composite fixture staged the scenario in manually authored phases and
+  handcrafted AcceptedManeuverPrograms, so it did NOT prove a free-running arbitrary
+  start->world->finish orchestration loop;
+- the live stand exposed exactly that missing integration gate.
+
+Important remaining architecture gap:
+- current live stand still converts Planner output to a locally authored quintic
+  `makeShortProgram`; it does not yet drive every nominal/replan segment through the
+  full production B5/B6/B7/B8 physical compile/proof/selection/acceptance chain;
+- therefore the next task is to replace that local adapter with the actual production
+  maneuver compilation/proof chain before treating live-stand success as navigation
+  acceptance evidence.
+
+Validation state: snapshot-age and fixed-HUD patches are committed but not yet target
+recompiled/replayed after this video.

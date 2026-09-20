@@ -1054,7 +1054,8 @@ struct ReplacementFit
 ReplacementFit fitAuthorityBoundedReplacement(
     const Vehicle& v,
     const glm::dvec3& target,
-    const DynamicHazard& hazard
+    const DynamicHazard& hazard,
+    Law law
 )
 {
     constexpr double MaximumTransverseFeedForwardMps2 = 1.35;
@@ -1192,11 +1193,19 @@ ReplacementFit fitAuthorityBoundedReplacement(
                 continue;
             }
 
+            // Newtonian flight does not implicitly enslave body attitude
+            // to the velocity vector. The local bypass may use lateral authority
+            // while preserving the current rigid-body basis. Assisted flight is
+            // allowed to align the body with the commanded velocity.
+            const bool velocityAligned =
+                law != Law::Newtonian;
             const Basis terminal =
-                transportedBasisForForward(
-                    endVelocity,
-                    start.basis
-                );
+                velocityAligned
+                    ? transportedBasisForForward(
+                        endVelocity,
+                        start.basis
+                      )
+                    : start.basis;
 
             ReplacementFit result;
             result.valid = true;
@@ -1217,7 +1226,9 @@ ReplacementFit fitAuthorityBoundedReplacement(
                     endVelocity,
                     terminal,
                     result.durationSeconds,
-                    OrientationMode::VelocityAligned,
+                    velocityAligned
+                        ? OrientationMode::VelocityAligned
+                        : OrientationMode::FixedStart,
                     Program::ManeuverFamily::PrecisionTransit
                 );
             return result;
@@ -2246,7 +2257,8 @@ CompositeMetrics runComposite(Law law)
             fitAuthorityBoundedReplacement(
                 v,
                 adjusted.selectedTargetMapMeters,
-                hazard
+                hazard,
+                law
             );
 
         if (fit.valid)
@@ -2484,7 +2496,8 @@ CompositeMetrics runComposite(Law law)
             fitAuthorityBoundedReplacement(
                 v,
                 resumed.selectedTargetMapMeters,
-                hazard
+                hazard,
+                law
             );
 
         if (continuation.valid)
@@ -2596,7 +2609,9 @@ CompositeMetrics runComposite(Law law)
     {
         const VehicleState start = captureState(v);
         const Basis terminal =
-            basisForForward({1.0, 0.0, 0.0}, start.basis);
+            law == Law::Newtonian
+                ? start.basis
+                : basisForForward({1.0, 0.0, 0.0}, start.basis);
 
         const Program narrow =
             makeProgram(
@@ -2607,7 +2622,9 @@ CompositeMetrics runComposite(Law law)
                 {6.0, 0.0, 0.0},
                 terminal,
                 10.0,
-                OrientationMode::VelocityAligned,
+                law == Law::Newtonian
+                    ? OrientationMode::FixedStart
+                    : OrientationMode::VelocityAligned,
                 Program::ManeuverFamily::PrecisionTransit
             );
 

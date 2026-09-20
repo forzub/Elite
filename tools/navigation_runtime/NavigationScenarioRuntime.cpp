@@ -1833,10 +1833,11 @@ ScenarioRunResult executeCalculatedRoute(
                 params
             );
 
-        const auto programs =
-            buildProgramChunks(
+        auto programs =
+            buildRoutePrograms(
                 trajectoryResult.trajectory,
                 attitudes,
+                calculatedRoute.routePoints,
                 scenario,
                 params
             );
@@ -1864,22 +1865,37 @@ ScenarioRunResult executeCalculatedRoute(
 
         ExecutionVehicle vehicle(scenario, settings);
 
-        const double trajectoryEnd =
-            trajectoryResult.trajectory.durationSeconds;
+        double plannedExecutionSeconds = 0.0;
+        for (const auto& phase : programs)
+        {
+            const std::size_t lastIndex =
+                static_cast<std::size_t>(phase.sampleCount - 1);
+            plannedExecutionSeconds +=
+                phase.samples[lastIndex].timeOffsetSeconds;
+        }
+
         const double maximumEnd =
-            trajectoryEnd + 12.0;
+            plannedExecutionSeconds + 12.0;
 
         std::size_t activeProgram = 0;
+        std::size_t phaseHandoffs = 0;
         double nextTraceTime = 0.0;
         bool followerInvalid = false;
         bool bridgeInvalid = false;
         bool coarseStaticContact = false;
+        bool phaseCaptureTimedOut = false;
+        bool routeExecutionComplete = false;
         std::string followerFailureReason = "NONE";
         std::size_t followerFailureProgramIndex = 0;
         double followerFailureTimeSeconds = 0.0;
         double followerFailureAcceptedAtSeconds = 0.0;
         double maximumCrossTrack = 0.0;
         double maximumFollowerPositionError = 0.0;
+
+        activateProgramPhase(
+            programs.front(),
+            vehicle.timeSeconds
+        );
 
         trace.frames.push_back(
             executionTraceFrame(
@@ -1895,20 +1911,7 @@ ScenarioRunResult executeCalculatedRoute(
 
         while (vehicle.timeSeconds < maximumEnd - 1.0e-9)
         {
-            // Never switch to a future program early. The sampler treats
-            // any negative elapsed time as BeforeStart, so an epsilon on the
-            // >= side can turn a perfectly valid chunk boundary into
-            // Follower::InvalidInput.
-            while (
-                activeProgram + 1 < programs.size() &&
-                vehicle.timeSeconds >=
-                    programs[activeProgram + 1].
-                        acceptedAtUniverseTimeSeconds)
-            {
-                ++activeProgram;
-            }
-
-            const Program& program = programs[activeProgram];
+            Program& program = programs[activeProgram];
 
             const auto preSample =
                 game::navigation::ManeuverProgramSampler::sample(
@@ -1958,6 +1961,75 @@ ScenarioRunResult executeCalculatedRoute(
                     maximumFollowerPositionError,
                     follower.crossTrackErrorMeters
                 );
+
+            game::navigation::ManeuverPhaseGate::Policy gatePolicy;
+            gatePolicy.mode =
+                activeProgram + 1 < programs.size()
+                    ? game::navigation::ManeuverPhaseGate::Mode::ScheduledMoving
+                    : game::navigation::ManeuverPhaseGate::Mode::StateCapture;
+            gatePolicy.maximumCaptureOverrunSeconds = 6.0;
+
+            const auto gate =
+                game::navigation::ManeuverPhaseGate::evaluate(
+                    program,
+                    vehicle.timeSeconds,
+                    follower.status,
+                    gatePolicy
+                );
+
+            if (
+                gate.status ==
+                game::navigation::ManeuverPhaseGate::Status::InvalidInput)
+            {
+                followerInvalid = true;
+                followerFailureReason = "PHASE_GATE_INVALID";
+                followerFailureProgramIndex = activeProgram;
+                followerFailureTimeSeconds = vehicle.timeSeconds;
+                followerFailureAcceptedAtSeconds =
+                    program.acceptedAtUniverseTimeSeconds;
+                break;
+            }
+
+            if (
+                gate.status ==
+                game::navigation::ManeuverPhaseGate::Status::CaptureTimedOut)
+            {
+                phaseCaptureTimedOut = true;
+                followerFailureReason = "FINAL_CAPTURE_TIMEOUT";
+                followerFailureProgramIndex = activeProgram;
+                followerFailureTimeSeconds = vehicle.timeSeconds;
+                followerFailureAcceptedAtSeconds =
+                    program.acceptedAtUniverseTimeSeconds;
+                break;
+            }
+
+            if (
+                gate.status ==
+                game::navigation::ManeuverPhaseGate::Status::Advance)
+            {
+                if (activeProgram + 1 < programs.size())
+                {
+                    ++activeProgram;
+                    ++phaseHandoffs;
+                    activateProgramPhase(
+                        programs[activeProgram],
+                        vehicle.timeSeconds
+                    );
+
+                    trace.frames.push_back(
+                        executionTraceFrame(
+                            vehicle,
+                            programs[activeProgram],
+                            scenario,
+                            "phase_handoff"
+                        )
+                    );
+                    continue;
+                }
+
+                routeExecutionComplete = true;
+                break;
+            }
 
             const auto bridgeResult =
                 vehicle.bridge.step(
@@ -2045,27 +2117,6 @@ ScenarioRunResult executeCalculatedRoute(
                     )
                 );
                 nextTraceTime += kTraceSampleSeconds;
-            }
-
-            const double finalPositionError =
-                glm::length(
-                    currentPosition -
-                    scenario.finish.position
-                );
-            const double finalSpeedError =
-                std::abs(
-                    glm::length(
-                        vehicle.transform.motion.localVelocityMps
-                    ) -
-                    scenario.finish.speedMps
-                );
-
-            if (
-                vehicle.timeSeconds >= trajectoryEnd &&
-                finalPositionError <= 3.0 &&
-                finalSpeedError <= 1.0)
-            {
-                break;
             }
         }
 

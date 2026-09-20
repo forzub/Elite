@@ -330,3 +330,28 @@ Do not treat the nominal corridor as an exact hull-clearance product.
 
 Next implementation should first cache one global nominal route/corridor start->finish.
 Exact wall-touch feasibility remains downstream in physical maneuver/tunnel proof.
+
+## Next task after evidence audit — build one canonical autonomous E2E chain
+
+Do not spend more time making isolated green tests look like system acceptance.
+
+Required canonical chain:
+`objective/world -> cached global route -> local route-aligned geometry -> B5 physical
+maneuver candidates -> B6 continuous/tunnel proof -> B7 decision -> B8 accepted
+program -> B9/B10 follower -> B12 PilotSkill -> B13 physics -> B11/B14 monitor/replan`.
+
+Rules:
+- global route is built once and retained until goal/static-route invalidation;
+- dynamic obstacle updates feed local monitor/avoidance, not global replanning;
+- no test/local `makeProgram()` or `makeShortProgram()` may substitute for production
+  maneuver generation in the canonical E2E gate;
+- no hand-authored decision candidate may be labeled a production B7 proof;
+- Assisted cannot be claimed production-complete while B5 explicitly reports
+  `UnsupportedControlLaw`;
+- corridor remains a route/test abstraction; exact wall contact belongs to physical
+  tunnel/swept-hull proof;
+- reuse the existing event-driven GameSimulation scheduler/replan semantics instead
+  of inventing a periodic global planner loop.
+
+Before new implementation, preserve existing component tests because they remain useful
+regression tests; reclassify their evidence rather than deleting them.

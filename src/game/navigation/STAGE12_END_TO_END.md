@@ -6818,3 +6818,17 @@ navigation acceptance.
 This restored Stage-2 execution path is committed but has NOT yet been compiled/run on
 the user's MinGW64 target. The last target-verified fact remains: Stage-1 nominal route
 planner passed and produced the four-point 323.75 m static detour.
+
+
+## 2026-09-21 — immutable retained route for Stage-2 comparisons
+
+Viewer state now keeps the successful Stage-1 `TraceDocument` as a separate immutable
+retained-route snapshot. Stage-2 execution traces no longer replace the only copy of the
+Planner result.
+
+Changing control law, pilot skill, flight style or the reserved sudden-obstacle toggle
+after an execution run restores the retained Stage-1 route and marks only Stage 2 stale.
+The next execution run reuses the exact same route without calling Planner again.
+
+This is required for clean comparisons such as Expert/Newtonian vs Average/Assisted:
+route geometry is held constant while only the execution layer changes.

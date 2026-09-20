@@ -360,10 +360,7 @@ Follower::AgentState followerAgent(const Vehicle& v)
 
 Planner::AgentState plannerAgent(
     const Vehicle& v,
-    Law law,
-    bool continuityValid = false,
-    const glm::dvec3& continuityDirection =
-        glm::dvec3(0.0)
+    Law law
 )
 {
     Planner::AgentState a;
@@ -392,11 +389,6 @@ Planner::AgentState plannerAgent(
     a.linearCapability.maxVerticalAccelerationMetersPerSec2 = 2.0;
     a.angularCapability.maxAngularAccelerationRadPerSec2 = 3.0;
     a.angularCapability.maxAngularSpeedRadPerSec = 2.5;
-    a.localAvoidanceContinuityValid = continuityValid;
-    a.localAvoidanceContinuityDirectionMap =
-        continuityValid
-            ? glm::normalize(continuityDirection)
-            : glm::dvec3(0.0);
     return a;
 }
 
@@ -943,13 +935,13 @@ ReplacementFit fitAuthorityBoundedReplacement(
 
     const glm::dvec3 direction = delta / distance;
     const double startingSpeed = glm::length(start.velocity);
-    const bool launchingFromRecovery =
+    const bool launchingFromLowSpeed =
         startingSpeed < MinimumPlannedSpeedMps;
 
     // Prefer the shortest physically bounded pass.  Try a modest 4 m/s exit
-    // first, then a slower 2 m/s pass. A post-recovery launch is allowed to
-    // start below 0.5 m/s by design; it must make non-reversing progress,
-    // reach the transit-speed floor, and never dip below it afterwards.  This helper is deliberately local to
+    // first, then a slower 2 m/s pass. A low-speed entry may accelerate from
+    // below 0.5 m/s, but it must make non-reversing progress, reach the transit
+    // speed floor, and never dip below it afterwards. This helper is deliberately local to
     // the final lab: production B5 Assisted/general authoring is still a known
     // migration gap.
     for (int durationSeconds = 8;
@@ -976,7 +968,7 @@ ReplacementFit fitAuthorityBoundedReplacement(
                 std::numeric_limits<double>::infinity();
             bool reversedProgress = false;
             bool reachedMinimumTransitSpeed =
-                !launchingFromRecovery;
+                !launchingFromLowSpeed;
             double minimumSpeedAfterTransitReached =
                 std::numeric_limits<double>::infinity();
 
@@ -1047,7 +1039,7 @@ ReplacementFit fitAuthorityBoundedReplacement(
             }
 
             const bool speedProfileValid =
-                launchingFromRecovery
+                launchingFromLowSpeed
                     ? (
                         !reversedProgress &&
                         reachedMinimumTransitSpeed &&
@@ -1101,158 +1093,6 @@ ReplacementFit fitAuthorityBoundedReplacement(
 }
 
 
-struct RecoveryFit
-{
-    bool valid = false;
-    Program program {};
-    double durationSeconds = 0.0;
-    double stoppingDistanceMeters = 0.0;
-    double peakAccelerationMps2 = 0.0;
-    double minimumPlannedDynamicClearanceMeters =
-        std::numeric_limits<double>::infinity();
-    double minimumPlannedStaticClearanceMeters =
-        std::numeric_limits<double>::infinity();
-};
-
-RecoveryFit fitBranchSwitchRecovery(
-    const Vehicle& v,
-    const DynamicHazard& hazard
-)
-{
-    constexpr double MaximumBrakeFeedForwardMps2 = 1.35;
-    constexpr double MinimumPlannedClearanceMeters = 1.50;
-    constexpr int DenseSamples = 768;
-
-    const VehicleState start = captureState(v);
-    const double initialSpeed = glm::length(start.velocity);
-    if (initialSpeed <= 0.60)
-        return {};
-
-    // Recovery is deliberately conservative and translation-only.  Hold the
-    // current body attitude and use manoeuvre/RCS authority to remove linear
-    // momentum before accepting a discontinuous local-branch change.
-    for (int durationSeconds = 4;
-         durationSeconds <= 40;
-         ++durationSeconds)
-    {
-        const double duration =
-            static_cast<double>(durationSeconds);
-
-        // The midpoint-distance endpoint matches constant-deceleration travel;
-        // the quintic then enforces C2 start/end conditions around it.
-        const glm::dvec3 endPosition =
-            start.position +
-            start.velocity * (0.5 * duration);
-
-        const QuinticCurve curve =
-            makeCurve(
-                start.position,
-                start.velocity,
-                endPosition,
-                glm::dvec3(0.0),
-                duration
-            );
-
-        double peakAcceleration = 0.0;
-        double minimumDynamicClearance =
-            std::numeric_limits<double>::infinity();
-        double minimumStaticClearance =
-            std::numeric_limits<double>::infinity();
-        bool reversed = false;
-
-        const glm::dvec3 initialDirection =
-            start.velocity / initialSpeed;
-
-        for (int i = 0; i <= DenseSamples; ++i)
-        {
-            const double t =
-                duration *
-                static_cast<double>(i) /
-                static_cast<double>(DenseSamples);
-
-            glm::dvec3 position;
-            glm::dvec3 velocity;
-            glm::dvec3 acceleration;
-            sampleCurve(
-                curve,
-                t,
-                position,
-                velocity,
-                acceleration
-            );
-
-            peakAcceleration =
-                std::max(
-                    peakAcceleration,
-                    glm::length(acceleration)
-                );
-
-            if (glm::dot(velocity, initialDirection) < -0.05)
-                reversed = true;
-
-            const glm::dvec3 hazardPosition =
-                dynamicHazardPosition(
-                    hazard,
-                    v.timeSeconds + t
-                );
-            minimumDynamicClearance =
-                std::min(
-                    minimumDynamicClearance,
-                    glm::length(position - hazardPosition) -
-                        (kHullBoundingRadiusMeters +
-                         hazard.radiusMeters)
-                );
-
-            minimumStaticClearance =
-                std::min(
-                    minimumStaticClearance,
-                    pointToAabbDistance(
-                        position,
-                        kStaticObstacleCenter,
-                        kStaticObstacleHalfExtents
-                    ) -
-                    kHullBoundingRadiusMeters
-                );
-        }
-
-        if (reversed ||
-            peakAcceleration >
-                MaximumBrakeFeedForwardMps2 ||
-            minimumDynamicClearance <
-                MinimumPlannedClearanceMeters ||
-            minimumStaticClearance <
-                MinimumPlannedClearanceMeters)
-        {
-            continue;
-        }
-
-        RecoveryFit result;
-        result.valid = true;
-        result.durationSeconds = duration;
-        result.stoppingDistanceMeters =
-            glm::length(endPosition - start.position);
-        result.peakAccelerationMps2 = peakAcceleration;
-        result.minimumPlannedDynamicClearanceMeters =
-            minimumDynamicClearance;
-        result.minimumPlannedStaticClearanceMeters =
-            minimumStaticClearance;
-        result.program =
-            makeProgram(
-                12025,
-                v.timeSeconds,
-                start,
-                endPosition,
-                glm::dvec3(0.0),
-                start.basis,
-                duration,
-                OrientationMode::FixedStart,
-                Program::ManeuverFamily::Brake
-            );
-        return result;
-    }
-
-    return {};
-}
 
 struct ExecutionMetrics
 {
@@ -1547,11 +1387,12 @@ Planner::Policy plannerPolicy()
     policy.horizon.safetyMarginMeters = 2.0;
     policy.horizon.minimumHorizonMeters = 30.0;
 
-    policy.avoidance.primaryDeflectionRadians =
-        0.3490658503988659;
-    policy.avoidance.secondaryDeflectionRadians =
-        0.6981317007977318;
-    policy.avoidance.azimuthSamples = 16;
+    policy.avoidance.lateralGridHalfExtentSamples = 6;
+    policy.avoidance.minimumLateralStepMeters = 4.0;
+    policy.avoidance.lateralStepEnvelopeMultiplier = 1.0;
+    policy.avoidance.maximumLateralOffsetMeters = 90.0;
+    policy.avoidance.projectionPaddingMeters = 1.5;
+    policy.avoidance.trajectorySamples = 48;
     policy.avoidance.staticAdditionalClearanceMeters = 0.0;
 
     policy.portalTraversal.enabled = false;
@@ -1729,7 +1570,6 @@ struct CompositeMetrics
     std::size_t phases = 0;
     std::size_t replans = 0;
     std::size_t dynamicBypassSegments = 0;
-    std::size_t branchRecoveryPhases = 0;
     std::size_t trackingExceededTicks = 0;
     double minStaticClearanceMeters =
         std::numeric_limits<double>::infinity();
@@ -2026,9 +1866,16 @@ CompositeMetrics runComposite(Law law)
         << adjusted.nominalDynamicConflictsFound
         << " primary_conflict="
         << adjusted.nominalPrimaryConflictEntityId
-        << " probes=" << adjusted.avoidanceProbesExamined
-        << " ordinary_exhausted="
-        << (adjusted.ordinaryVisibilitySearchExhausted ? 1 : 0)
+        << " projected_obstacles="
+        << adjusted.avoidanceProjectedDynamicObstacles
+        << " offset_candidates="
+        << adjusted.avoidanceOffsetCandidatesExamined
+        << " bypass_offset_m="
+        << adjusted.localBypassLateralOffsetMeters
+        << " projected_clearance_m="
+        << adjusted.localBypassProjectedClearanceMeters
+        << " bypass_exhausted="
+        << (adjusted.localBypassExhausted ? 1 : 0)
         << " nominal_static_blocked="
         << (adjusted.nominalStaticBlocked ? 1 : 0)
         << " position=("
@@ -2047,6 +1894,10 @@ CompositeMetrics runComposite(Law law)
         << adjusted.selectedTargetMapMeters.x << ","
         << adjusted.selectedTargetMapMeters.y << ","
         << adjusted.selectedTargetMapMeters.z << ")"
+        << " merge_target=("
+        << adjusted.localBypassMergeTargetMapMeters.x << ","
+        << adjusted.localBypassMergeTargetMapMeters.y << ","
+        << adjusted.localBypassMergeTargetMapMeters.z << ")"
         << "\n";
 
     require(
@@ -2058,9 +1909,6 @@ CompositeMetrics runComposite(Law law)
         adjusted.adjustedTarget,
         "composite production planner did not find adjusted dynamic bypass"
     );
-
-    glm::dvec3 acceptedLocalContinuityDirection(0.0);
-    bool acceptedLocalContinuityValid = false;
 
     // Phase 3: replacement program starts from the actual invalidation state.
     // Do not invent a short curve that the 2 m/s2 transverse authority cannot
@@ -2131,27 +1979,15 @@ CompositeMetrics runComposite(Law law)
             "composite replacement did not clear dynamic hazard"
         );
 
-        acceptedLocalContinuityDirection =
-            glm::normalize(
-                fit.program.samples[
-                    static_cast<std::size_t>(
-                        fit.program.sampleCount - 1
-                    )
-                ].positionMapMeters -
-                fit.program.samples[0].positionMapMeters
-            );
-        acceptedLocalContinuityValid = true;
-
         absorb(total, phase);
         ++total.phases;
         ++total.dynamicBypassSegments;
     }
 
-    // The hazard remains authoritative after the first bounded bypass.
-    // Re-publish its current state and continue composing short local suffixes
-    // until the production planner says the original static portal is nominally
-    // clear again. Never erase a live obstacle merely because one bypass
-    // segment completed.
+    // The hazard remains authoritative after the first bounded bypass. Re-publish
+    // its current predicted state and repeatedly solve only the visible-horizon
+    // temporary offset. As soon as the original trajectory is clear, the local
+    // solver returns NominalClear and topology execution continues.
 
     Planner::Result resumed;
     bool topologyResumed = false;
@@ -2170,12 +2006,7 @@ CompositeMetrics runComposite(Law law)
 
         resumed =
             Planner::plan(
-                plannerAgent(
-                    v,
-                    law,
-                    acceptedLocalContinuityValid,
-                    acceptedLocalContinuityDirection
-                ),
+                plannerAgent(v, law),
                 goal,
                 refreshedDynamic,
                 0.0,
@@ -2192,22 +2023,24 @@ CompositeMetrics runComposite(Law law)
             << " adjusted=" << (resumed.adjustedTarget ? 1 : 0)
             << " nominal_dynamic_conflicts="
             << resumed.nominalDynamicConflictsFound
-            << " probes=" << resumed.avoidanceProbesExamined
-            << " selected_deflection_deg="
-            << resumed.selectedVisibilityDeflectionRadians *
-                   180.0 / kPi
-            << " continuity_lateral_valid="
-            << (resumed.avoidanceContinuityLateralValid ? 1 : 0)
-            << " same_branch_safe="
-            << resumed.avoidanceSameBranchSafeCandidates
-            << " selected_branch_alignment="
-            << resumed.avoidanceSelectedBranchAlignment
-            << " branch_switch_required="
-            << (resumed.avoidanceBranchSwitchRequired ? 1 : 0)
-            << " continuity=("
-            << acceptedLocalContinuityDirection.x << ","
-            << acceptedLocalContinuityDirection.y << ","
-            << acceptedLocalContinuityDirection.z << ")"
+            << " projected_obstacles="
+            << resumed.avoidanceProjectedDynamicObstacles
+            << " offset_candidates="
+            << resumed.avoidanceOffsetCandidatesExamined
+            << " projection_rejected="
+            << resumed.avoidanceProjectionRejected
+            << " static_rejected="
+            << resumed.avoidanceStaticRejected
+            << " dynamic_rejected="
+            << resumed.avoidanceDynamicRejected
+            << " bypass_offset_m="
+            << resumed.localBypassLateralOffsetMeters
+            << " projected_clearance_m="
+            << resumed.localBypassProjectedClearanceMeters
+            << " merge_target=("
+            << resumed.localBypassMergeTargetMapMeters.x << ","
+            << resumed.localBypassMergeTargetMapMeters.y << ","
+            << resumed.localBypassMergeTargetMapMeters.z << ")"
             << " position=("
             << v.transform.motion.localPositionMeters.x << ","
             << v.transform.motion.localPositionMeters.y << ","
@@ -2233,90 +2066,6 @@ CompositeMetrics runComposite(Law law)
             resumed.adjustedTarget,
             "composite persistent hazard produced no safe bounded continuation"
         );
-
-        if (resumed.avoidanceBranchSwitchRequired)
-        {
-            const double currentSpeed =
-                glm::length(v.transform.motion.localVelocityMps);
-
-            if (currentSpeed > 0.60)
-            {
-                const RecoveryFit recovery =
-                    fitBranchSwitchRecovery(v, hazard);
-
-                require(
-                    recovery.valid,
-                    "composite could not author safe branch-switch recovery"
-                );
-
-                const auto recoveryPhase =
-                    executeProgram(
-                        v,
-                        recovery.program,
-                        Gate::Mode::StateCapture,
-                        hazard
-                    );
-
-                std::cout
-                    << std::fixed << std::setprecision(6)
-                    << "[COMPOSITE-RECOVERY]"
-                    << " law=" << lawName(law)
-                    << " iteration=" << localIteration
-                    << " duration_s="
-                    << recovery.durationSeconds
-                    << " stopping_distance_m="
-                    << recovery.stoppingDistanceMeters
-                    << " peak_brake_ff_mps2="
-                    << recovery.peakAccelerationMps2
-                    << " min_planned_static_clearance_m="
-                    << recovery.minimumPlannedStaticClearanceMeters
-                    << " min_planned_dynamic_clearance_m="
-                    << recovery.minimumPlannedDynamicClearanceMeters
-                    << " min_actual_dynamic_clearance_m="
-                    << recoveryPhase.minDynamicClearanceMeters
-                    << " final_speed_error_mps="
-                    << recoveryPhase.finalVelocityErrorMps
-                    << " tracking_exceeded_ticks="
-                    << recoveryPhase.trackingExceededTicks
-                    << "\n";
-
-                require(
-                    recoveryPhase.valid &&
-                    recoveryPhase.completed &&
-                    !recoveryPhase.captureTimedOut,
-                    "composite branch-switch recovery failed"
-                );
-                require(
-                    recoveryPhase.trackingExceededTicks == 0,
-                    "composite branch-switch recovery exceeded tracking envelope"
-                );
-                require(
-                    recoveryPhase.minDynamicClearanceMeters > 0.5,
-                    "composite branch-switch recovery lost dynamic clearance"
-                );
-                require(
-                    recoveryPhase.minStaticClearanceMeters > 0.5,
-                    "composite branch-switch recovery lost static clearance"
-                );
-                require(
-                    glm::length(
-                        v.transform.motion.localVelocityMps
-                    ) <= 0.60,
-                    "composite branch-switch recovery did not stop sufficiently"
-                );
-
-                absorb(total, recoveryPhase);
-                ++total.phases;
-                ++total.branchRecoveryPhases;
-            }
-
-            // The old accepted branch commitment is now intentionally retired.
-            // Replan from the recovered physical state before accepting the
-            // opposite-side target that triggered this escalation.
-            acceptedLocalContinuityValid = false;
-            acceptedLocalContinuityDirection = glm::dvec3(0.0);
-            continue;
-        }
 
         const ReplacementFit continuation =
             fitAuthorityBoundedReplacement(
@@ -2367,17 +2116,6 @@ CompositeMetrics runComposite(Law law)
             continuationPhase.minDynamicClearanceMeters > 0.5,
             "composite persistent-hazard continuation lost clearance"
         );
-
-        acceptedLocalContinuityDirection =
-            glm::normalize(
-                continuation.program.samples[
-                    static_cast<std::size_t>(
-                        continuation.program.sampleCount - 1
-                    )
-                ].positionMapMeters -
-                continuation.program.samples[0].positionMapMeters
-            );
-        acceptedLocalContinuityValid = true;
 
         absorb(total, continuationPhase);
         ++total.phases;
@@ -2586,8 +2324,6 @@ void testCompositeProvingGround()
             << " completed_phases=" << m.phases
             << " dynamic_bypass_segments="
             << m.dynamicBypassSegments
-            << " branch_recovery_phases="
-            << m.branchRecoveryPhases
             << " replans=" << m.replans
             << " invalidation=dynamic_hazard"
             << " min_static_clearance_m="

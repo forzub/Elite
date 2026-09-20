@@ -689,6 +689,97 @@ void testAdjustedTargetPreservesNominalConflictIdentity()
             "final safe adjusted probe must not pretend it is still in conflict");
 }
 
+
+void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
+{
+    Map::Config config;
+    config.halfExtentMeters = 2000.0;
+    config.cellSizeMeters = 100.0;
+    config.predictionHorizonSeconds = 3.0;
+    config.interactionMarginMeters = 0.0;
+
+    Map map(config);
+    Map::DynamicWorldUpdate update;
+    update.sourceRevision = 93;
+
+    Map::DynamicActorInput obstacle;
+    obstacle.entityId = 202;
+    obstacle.positionMapMeters = {500.0, 0.0, 0.0};
+    obstacle.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    obstacle.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
+    obstacle.radiusMeters = 50.0;
+    obstacle.motionRevision = 5;
+    update.actors.push_back(obstacle);
+    map.replaceDynamicWorld(std::move(update));
+
+    Map::CorridorQuery query;
+    query.startMapMeters = {0.0, 0.0, 0.0};
+    query.endMapMeters = {1000.0, 0.0, 0.0};
+    query.radiusMeters = 10.0;
+    const Map::QueryResult dynamic = map.queryCorridor(query);
+
+    Space space;
+    Space::StaticSpaceUpdate staticWorld;
+    staticWorld.sourceRevision = 202;
+    staticWorld.regions = {
+        region(1, 500.0, 0.0, 1000.0, 1000.0, 1000.0)
+    };
+    space.replaceStaticWorld(std::move(staticWorld));
+
+    Planner::AgentState agent = baseAgent();
+    agent.radiusMeters = 5.0;
+
+    // Both +/-Z visibility candidates are geometrically symmetric.  A small
+    // existing -Z velocity is the only continuity signal.  The local planner
+    // must preserve that side instead of returning the first azimuth in its
+    // regenerated transverse basis.
+    agent.velocityMapMetersPerSecond = {1.0, 0.0, -0.25};
+
+    Planner::Goal goal = goalAt(1000.0);
+    goal.maximumTargetSpeedMps = 20.0;
+
+    Planner::Policy policy = basePolicy();
+    policy.horizon.turnDistanceMeters = 600.0;
+    policy.horizon.minimumHorizonMeters = 600.0;
+    policy.horizon.safetyMarginMeters = 5.0;
+
+    const Planner::Result result = Planner::plan(
+        agent,
+        goal,
+        dynamic,
+        0.0,
+        StaticQueries(space),
+        policy
+    );
+
+    require(
+        result.status == Planner::Status::AdjustedClear &&
+        result.adjustedTarget,
+        "side-continuity fixture must produce an adjusted target"
+    );
+    require(
+        result.nominalDynamicConflictsFound > 0,
+        "side-continuity fixture requires a real nominal conflict"
+    );
+    require(
+        result.selectedTargetMapMeters.z < -1.0e-6,
+        "adjusted visibility must preserve the current -Z avoidance side"
+    );
+
+    const glm::dvec3 selectedDirection =
+        glm::normalize(
+            result.selectedTargetMapMeters -
+            agent.positionMapMeters
+        );
+    const glm::dvec3 velocityDirection =
+        glm::normalize(agent.velocityMapMetersPerSecond);
+
+    require(
+        glm::dot(selectedDirection, velocityDirection) > 0.9,
+        "adjusted visibility must prefer the safe candidate most aligned with current motion"
+    );
+}
+
 void testNavigationMapCrossingConflictProducesBrakingHold()
 {
     Map::Config config;
@@ -1323,6 +1414,7 @@ int main()
         testExactStaticObstacleParticipatesInRuntimeComposition();
         testLiveScaleStaticObstacleInsideFirstBoundedHorizon();
         testAdjustedTargetPreservesNominalConflictIdentity();
+        testAdjustedVisibilityPreservesCurrentAvoidanceSide();
         testNavigationMapCrossingConflictProducesBrakingHold();
         testMovingGapPrecisionProbeUsesRuntimeCandidates();
         testClosingMovingGapFailsClosedBeforePassageEvaluation();
@@ -1340,6 +1432,7 @@ int main()
         std::cout << " - exact static OBB participates in runtime composition\n";
         std::cout << " - live-scale 1300 m OBB triggers first-horizon adjustment\n";
         std::cout << " - adjusted target retains nominal conflict identity\n";
+        std::cout << " - adjusted visibility preserves current avoidance side\n";
         std::cout << " - NavigationMap crossing conflict -> braking hold\n";
         std::cout << " - bounded runtime candidates -> moving-gap/passage precision probe\n";
         std::cout << " - closing moving gap fails closed before passage evaluation\n";

@@ -11,13 +11,24 @@ def read(rel: str) -> str:
 
 def require(condition: bool, message: str) -> None:
     if not condition:
-        print(f"[FAIL] Stage-1 nominal route: {message}", file=sys.stderr)
+        print(f"[FAIL] static-route/two-stage navigation: {message}", file=sys.stderr)
         raise SystemExit(1)
+
+
+def function_slice(text: str, name: str, next_name: str | None = None) -> str:
+    start = text.find(name)
+    require(start >= 0, f"missing function {name}")
+    if next_name is None:
+        return text[start:]
+    end = text.find(next_name, start + len(name))
+    require(end > start, f"cannot isolate function {name}")
+    return text[start:end]
 
 
 header = read("src/game/navigation/NominalRoutePlanner.h")
 impl = read("src/game/navigation/NominalRoutePlanner.cpp")
 runtime = read("tools/navigation_runtime/NavigationScenarioRuntime.cpp")
+runtime_h = read("tools/navigation_runtime/NavigationScenarioRuntime.h")
 viewer = read("tools/navigation_runtime/NavigationRuntimeViewer.cpp")
 trace_h = read("tools/navigation_runtime/NavigationTrace.h")
 tool_cmake = read("tools/navigation_runtime/CMakeLists.txt")
@@ -33,7 +44,7 @@ for token in (
     "navigationEnvelopeRadiusMeters",
     "InvalidationReason",
 ):
-    require(token in header, f"public contract missing {token}")
+    require(token in header, f"public route contract missing {token}")
 
 require(
     "(void)current.dynamicWorldRevision;" in impl,
@@ -41,16 +52,33 @@ require(
 )
 require(
     "GeometricPathPlanner::plan" in impl,
-    "Stage-1 production seam is not using the shared geometric backend",
+    "Stage 1 is not using the shared geometric backend",
 )
 require(
     "maxConsideredObstacles = 0" in impl,
     "Stage-1 correctness again depends on an arbitrary obstacle-count cap",
 )
 
+calculate = function_slice(
+    runtime,
+    "ScenarioRunResult calculateScenario(",
+    "ScenarioRunResult executeCalculatedRoute("
+)
+execute = function_slice(
+    runtime,
+    "ScenarioRunResult executeCalculatedRoute("
+)
+
+for required in (
+    "NominalRoutePlanner::plan",
+    "scenario.staticObstacles",
+    "scenario.shipRoutePoints",
+):
+    require(required in calculate, f"Stage-1 calculate path missing {required}")
+
 for forbidden in (
     "TrajectoryFollower",
-    "PilotSkillExecutor",
+    "TrajectoryGenerator",
     "SharedShipPhysics",
     "DynamicMotionSystem",
     "NavigationRuntimePlanner::plan",
@@ -58,22 +86,47 @@ for forbidden in (
     "kReplanPeriodSeconds",
 ):
     require(
-        forbidden not in runtime,
-        f"route-only Stage-1 runtime leaked execution/replan code: {forbidden}",
+        forbidden not in calculate,
+        f"Stage 1 leaked execution/replan ownership: {forbidden}",
     )
 
 for required in (
+    "executeCalculatedRoute",
+    "calculatedRoute.routePoints",
+    "TrajectoryGenerator::generate",
+    "Follower::follow",
+    "vehicle.bridge.step",
+    "SharedShipPhysics::integrate",
+    "DynamicMotionSystem::applySystemAccelerationDemand",
+    "DynamicMotionSystem::updateLocalFrameMotion",
+    "last_execution.log",
+):
+    require(required in execute, f"Stage-2 execution path missing {required}")
+
+for forbidden in (
     "NominalRoutePlanner::plan",
-    "scenario.staticObstacles",
-    "scenario.shipRoutePoints",
+    "NavigationRuntimePlanner::plan",
+    "GeometricPathPlanner::plan",
+):
+    require(
+        forbidden not in execute,
+        f"Stage 2 illegally rebuilds global route through {forbidden}",
+    )
+
+for required in (
     "loadScenarioPreview",
     "setSceneEndpoints",
     "last_route_plan.log",
-    "FOLLOWER: NOT RUN (STAGE 1)",
     '"route_ready"',
     '"static_route_ready"',
 ):
-    require(required in runtime, f"Stage-1 runtime missing {required}")
+    require(required in runtime, f"diagnostic runtime missing {required}")
+
+for marker in (
+    "executeCalculatedRoute",
+    "ScenarioRunSettings",
+):
+    require(marker in runtime_h, f"runtime public seam missing {marker}")
 
 for marker in (
     "hasSceneEndpoints",
@@ -84,23 +137,29 @@ for marker in (
 
 for marker in (
     "appendReferenceGrid",
-    "ПОЛЁТ: ЭТАП 2",
-    "FOLLOWER: OFF",
+    "ЗАПУСТИТЬ ПОЛЁТ",
+    "UiAction::Execute",
+    "executionPerformed",
     "diagnosticLines",
 ):
-    require(marker in viewer, f"Stage-1 viewer diagnostics missing {marker}")
+    require(marker in viewer, f"two-stage viewer workflow missing {marker}")
 
-for forbidden in (
+for required in (
+    "EliteNavigationRouteToolCore",
+    "EliteNavigationExecutionToolCore",
     "TrajectoryFollower.cpp",
     "NavigationRuntimeControlBridge.cpp",
     "SharedShipPhysics.cpp",
     "DynamicMotionSystem.cpp",
-    "NavigationRuntimePlanner.cpp",
+    "TrajectoryGenerator.cpp",
+    "EliteNavigationRuckig",
 ):
-    require(
-        forbidden not in tool_cmake,
-        f"Stage-1 viewer still links execution stack: {forbidden}",
-    )
+    require(required in tool_cmake, f"viewer build missing {required}")
+
+require(
+    "NavigationRuntimePlanner.cpp" not in tool_cmake,
+    "viewer execution target reintroduced periodic/global runtime planner ownership",
+)
 
 for marker in (
     "testStaticWallProducesDetour",
@@ -114,13 +173,13 @@ for marker in (
     "Stage 1",
     "Stage 2",
     "dynamic-world revision",
-    "does **not** invalidate/rebuild the route",
     "swept-hull",
 ):
-    require(marker in readme, f"Stage-1 documentation missing {marker}")
+    require(marker in readme, f"documentation missing {marker}")
 
-print("NAVIGATION STAGE-1 NOMINAL ROUTE CONTRACT: PASS")
-print(" - one static nominal route product owns start -> finish geometry")
+print("NAVIGATION STATIC ROUTE + TWO-STAGE EXECUTION CONTRACT: PASS")
+print(" - Stage 1 alone builds the retained static start -> finish route")
 print(" - dynamic revision cannot rebuild the nominal global route")
-print(" - viewer Stage 1 contains no follower/pilot/physics/replan execution")
-print(" - exact swept-hull tunnel proof remains a Stage-2 responsibility")
+print(" - Stage 2 consumes cached route points and cannot invoke a global planner")
+print(" - Stage 2 uses trajectory -> Follower -> pilot bridge -> authoritative physics")
+print(" - exact swept-hull tunnel proof remains a later Stage-2 acceptance layer")

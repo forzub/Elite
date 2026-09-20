@@ -441,3 +441,21 @@ Important current capability gap:
 `NavigationSpace::queryCostedCorridor` currently returns a region/portal corridor and portal centers. Exact static NavigationObstacle geometry is used to prove/reject local segments, but the global corridor search does not yet synthesize a full geometric path around arbitrary exact obstacles inside one coarse region.
 
 Therefore the default one-region + wall live scenario cannot honestly demonstrate the requested `start -> finish` global corridor yet. A proper global geometric corridor product must be added/cached first, then local dynamic avoidance must operate against that immutable nominal corridor.
+
+## 2026-09-20 clarification — corridor is not the physical collision tunnel
+
+User clarified terminology:
+- `corridor` is a navigation/test abstraction around the nominal route used to ask
+  whether the ship can generally proceed along that route;
+- it is NOT the authoritative physical swept volume of the Cobra;
+- exact wall contact / aperture passage must be decided by the future physical
+  `tunnel` product: the time-parameterized swept volume of the actual hull along the
+  accepted trajectory, including body orientation;
+- therefore corridor visualization may be approximate and route-centric;
+- tunnel proof is where it becomes critical whether Cobra's real hull clips walls.
+
+Implication:
+- do not over-engineer global corridor generation as exact hull clearance geometry;
+- global planning may retain a centerline/polyline + coarse corridor for navigation;
+- exact physical feasibility remains downstream ownership of trajectory/tunnel proof
+  against exact static geometry and dynamic occupancy.

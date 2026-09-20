@@ -743,9 +743,10 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
     firstRingBlocker.entityId = 203;
     firstRingBlocker.shape =
         world::navigation::NavigationObstacleShape::Box;
-    firstRingBlocker.centerMeters = {200.0, 0.0, -53.589838};
+    firstRingBlocker.centerMeters =
+        {579.555496, 0.0, -155.291427};
     firstRingBlocker.localToWorldBasis = glm::dmat3(1.0);
-    firstRingBlocker.halfExtentsMeters = {4.0, 4.0, 4.0};
+    firstRingBlocker.halfExtentsMeters = {8.0, 8.0, 8.0};
     staticWorld.obstacles.push_back(firstRingBlocker);
 
     space.replaceStaticWorld(std::move(staticWorld));
@@ -803,6 +804,10 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
     require(
         result.avoidanceSelectedBranchAlignment > 0.5,
         "selected adjusted target must remain strongly aligned with the preferred transverse branch"
+    );
+    require(
+        !result.avoidanceBranchSwitchRequired,
+        "safe same-branch continuation must not request recovery/branch switch"
     );
     require(
         result.selectedVisibilityDeflectionRadians >

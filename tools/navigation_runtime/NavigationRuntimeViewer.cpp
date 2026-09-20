@@ -84,6 +84,7 @@ enum class UiAction
 struct AppState
 {
     Camera camera;
+    const trace::TraceDocument* traceData = nullptr;
     bool orbiting = false;
     bool panning = false;
     double lastMouseX = 0.0;
@@ -95,6 +96,7 @@ struct AppState
     double lastRealTime = 0.0;
 
     bool requestFit = true;
+    bool scrubbingFrames = false;
     UiAction pendingUiAction = UiAction::None;
 };
 
@@ -660,6 +662,22 @@ UiRect nextButtonRect() { return {266.0f, 16.0f, 94.0f, 32.0f}; }
 UiRect replanButtonRect() { return {368.0f, 16.0f, 194.0f, 32.0f}; }
 UiRect fitButtonRect() { return {570.0f, 16.0f, 94.0f, 32.0f}; }
 
+UiRect frameSliderRect(int windowWidth, int windowHeight)
+{
+    const float sidePanel = 470.0f;
+    const float width =
+        std::max(
+            180.0f,
+            static_cast<float>(windowWidth) - sidePanel - 48.0f
+        );
+    return {
+        16.0f,
+        static_cast<float>(windowHeight) - 38.0f,
+        width,
+        16.0f
+    };
+}
+
 std::array<std::uint8_t, 7> glyphRows(std::uint32_t c)
 {
     if (c >= 'a' && c <= 'z')
@@ -1206,6 +1224,58 @@ void drawHud(
     y += 16.0f;
     appendUiText(ui, x, y, "F ВПИСАТЬ   ESC ЗАКРЫТЬ", 1.25f, {0.75f,0.78f,0.84f});
 
+    const UiRect slider = frameSliderRect(windowWidth, windowHeight);
+    appendFilledRect(
+        ui,
+        slider,
+        {0.10f, 0.12f, 0.16f}
+    );
+
+    const float progress =
+        data.frames.size() <= 1
+            ? 0.0f
+            : static_cast<float>(state.frameIndex) /
+              static_cast<float>(data.frames.size() - 1);
+
+    appendFilledRect(
+        ui,
+        {
+            slider.x,
+            slider.y,
+            slider.width * progress,
+            slider.height
+        },
+        {0.25f, 0.65f, 1.0f}
+    );
+
+    const float knobX =
+        slider.x + slider.width * progress;
+    appendFilledRect(
+        ui,
+        {
+            knobX - 3.0f,
+            slider.y - 4.0f,
+            6.0f,
+            slider.height + 8.0f
+        },
+        {0.95f, 0.96f, 1.0f}
+    );
+
+    std::ostringstream sliderText;
+    sliderText
+        << "КАДР "
+        << (state.frameIndex + 1)
+        << " / "
+        << data.frames.size();
+    appendUiText(
+        ui,
+        slider.x,
+        slider.y - 17.0f,
+        sliderText.str(),
+        1.25f,
+        {0.90f, 0.92f, 0.96f}
+    );
+
     renderer.draw(GL_TRIANGLES, ui, 1.0f);
     glEnable(GL_DEPTH_TEST);
 }
@@ -1266,6 +1336,40 @@ void errorCallback(int code, const char* description)
         << "\n";
 }
 
+void setFrameFromSlider(
+    AppState& state,
+    const trace::TraceDocument& data,
+    const UiRect& slider,
+    double mouseX
+)
+{
+    if (data.frames.empty() || slider.width <= 1.0f)
+        return;
+
+    const double normalized =
+        std::clamp(
+            (mouseX - slider.x) /
+                static_cast<double>(slider.width),
+            0.0,
+            1.0
+        );
+
+    const std::size_t index =
+        static_cast<std::size_t>(
+            std::llround(
+                normalized *
+                static_cast<double>(data.frames.size() - 1)
+            )
+        );
+
+    state.playing = false;
+    state.frameIndex =
+        std::min(index, data.frames.size() - 1);
+    state.playbackTime =
+        data.frames[state.frameIndex].timeSeconds -
+        data.frames.front().timeSeconds;
+}
+
 void mouseButtonCallback(
     GLFWwindow* window,
     int button,
@@ -1300,6 +1404,29 @@ void mouseButtonCallback(
             state->pendingUiAction = UiAction::NextReplan;
         else if (fitButtonRect().contains(x, y))
             state->pendingUiAction = UiAction::Fit;
+        else if (state->traceData)
+        {
+            int width = 1;
+            int height = 1;
+            glfwGetWindowSize(window, &width, &height);
+            const UiRect slider = frameSliderRect(width, height);
+            if (slider.contains(x, y))
+            {
+                state->scrubbingFrames = true;
+                setFrameFromSlider(
+                    *state,
+                    *state->traceData,
+                    slider,
+                    x
+                );
+            }
+        }
+    }
+    else if (
+        button == GLFW_MOUSE_BUTTON_LEFT &&
+        action == GLFW_RELEASE)
+    {
+        state->scrubbingFrames = false;
     }
 }
 
@@ -1314,6 +1441,19 @@ void cursorCallback(GLFWwindow* window, double x, double y)
     const double dy = y - state->lastMouseY;
     state->lastMouseX = x;
     state->lastMouseY = y;
+
+    if (state->scrubbingFrames && state->traceData)
+    {
+        int width = 1;
+        int height = 1;
+        glfwGetWindowSize(window, &width, &height);
+        setFrameFromSlider(
+            *state,
+            *state->traceData,
+            frameSliderRect(width, height),
+            x
+        );
+    }
 
     if (state->orbiting)
     {
@@ -1754,6 +1894,7 @@ int main(int argc, char** argv)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         AppState state;
+        state.traceData = &data;
         state.lastRealTime = glfwGetTime();
         fitCamera(state, data);
 

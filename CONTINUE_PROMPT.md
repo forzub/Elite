@@ -44,3 +44,14 @@ dynamic clearance later in the long topology/portal leg. Trace generation works.
 Do not mix the planner-fixture correction into HUD validation. After HUD acceptance,
 fix the fixture, then diagnose/fix continuous monitored execution through portal 102
 without weakening safety radii, padding, physical authority or tracking tolerances.
+
+## Mandatory command-output rule
+
+Whenever a build produces an executable, always give the user a separate exact
+launch command, including the expected working directory/path. Never stop at
+`cmake --build` or a build helper script without showing how to launch the binary.
+
+Current viewer launch from repo root:
+```bash
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/last_trace_newtonian.json
+```

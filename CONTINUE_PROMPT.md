@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation Stage 1 static route
+# CONTINUE PROMPT — Elite Navigation Stage 1 static route + diagnostics
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -12,15 +12,16 @@ Read first:
 - `src/game/navigation/NominalRoutePlanner.h/.cpp`
 - `tools/navigation_runtime/README.md`
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
+- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
 
-After every state-affecting event, synchronize the Markdown state files and
-**recreate this CONTINUE_PROMPT.md from scratch**.
+After every state-affecting event, update the mandatory Markdown state files and
+**recreate this CONTINUE_PROMPT.md from scratch again**.
 
-## Two-stage navigation process
+## Two-stage process
 
 ### Stage 1 — CURRENT
 
-Build one retained nominal route through STATIC obstacles.
+Build and inspect one retained nominal route through STATIC obstacles.
 
 ```text
 START
@@ -38,10 +39,10 @@ GeometricPathPlanner
 sparse retained route polyline
         |
         v
-3D viewer
+3D viewer + diagnostics
 ```
 
-No flight/execution belongs to Stage-1 acceptance.
+No ship execution belongs to Stage-1 acceptance.
 
 ### Stage 2 — LATER
 
@@ -60,121 +61,129 @@ dynamic/local monitor
  -> B11/B14 event-driven monitor/replan
 ```
 
-Do not start Stage 2 until Stage 1 is target-validated visually.
+Do not reintroduce Follower/physics into Stage 1.
 
-## Stage-1 route ownership
+## Route ownership
 
-`NominalRoutePlanner` is the production-facing Stage-1 seam.
+`NominalRoutePlanner` owns the Stage-1 nominal static route.
 
-Its route is invalidated only when:
+Rebuild only when:
 - goal revision changes; or
 - static-world revision changes.
 
-`dynamicWorldRevision` is explicitly present in the validity query and explicitly
-ignored for nominal-route invalidation.
+`dynamicWorldRevision` must not invalidate/rebuild the global nominal route.
 
-Moving objects must not rebuild the global nominal route.
+Moving/sudden obstacles are already parsed as reserved Stage-2 inputs but are not
+passed into Stage-1 route planning.
 
-The Stage-1 route envelope is only a coarse navigation/test abstraction.
-It is NOT exact physical collision truth.
+## Corridor vs tunnel
+
+Stage-1 route envelope/clearance is only a coarse navigation/test abstraction.
+
+It is not exact rigid-body collision truth.
 
 Exact oriented-Cobra wall/aperture contact belongs to Stage-2 time-parameterized
 swept-hull/tunnel proof.
 
-## Stage-1 diagnostic runtime
+## Current Stage-1 viewer behavior
 
-`tools/navigation_runtime/NavigationScenarioRuntime.cpp` is route-only.
+A user screenshot showed a blank scene before calculation and ambiguity after calculation
+because there was no motion.
 
-It must not contain or link:
-- `NavigationRuntimePlanner::plan`
-- periodic global replanning
-- `makeShortProgram`
-- Follower execution
-- PilotSkill execution
-- SharedShipPhysics
-- DynamicMotionSystem
+This has been fixed architecturally and visually.
 
-The JSON may still parse moving/sudden obstacles as reserved Stage-2 inputs, but
-Stage 1 must not feed them into `NominalRoutePlanner`.
+### Before Calculate
 
-Viewer behavior on `РАССЧИТАТЬ`:
-- build one static route;
-- show the white route polyline;
-- show static obstacles;
-- keep Cobra at START;
-- do not animate flight;
-- report `ЭТАП 1 — МАРШРУТ`;
-- report `СТАТИЧЕСКИЙ МАРШРУТ ГОТОВ`.
+The authored scene must be visible immediately:
+- green START cross;
+- yellow FINISH cross/ring;
+- static obstacle geometry;
+- reference grid;
+- Cobra at START.
 
-Pilot/control-law/flight-style/sudden-obstacle controls remain visible for Stage 2,
-but changing them must not alter the Stage-1 route.
+`TraceDocument` now carries explicit:
+- `hasSceneEndpoints`;
+- `sceneStartMapMeters`;
+- `sceneFinishMapMeters`.
 
-## Target evidence received
+These exist independently from a calculated route.
 
-User target checkout:
-`5da0be0d05ef91958a0e7dc9adda3b4eb8fdee29`.
+`fitCamera()` explicitly includes those endpoints.
 
-Observed target results:
-- new `nominal_route_planner`: PASS;
-- 18/20 runtime tests passed;
-- `navigation_runtime_planner`: FAIL — old adjusted-target Stage-2 fixture;
-- `navigation_composite_proving_ground`: FAIL — full hull exceeded the 19 m
-  narrow-passage half-width after a dynamic Newtonian bypass;
-- architecture suite stopped at an obsolete `...Map...` navigation control field
-  name in `check_navigation_live_runtime_control.py`.
+### After Calculate
 
-Interpretation:
-- Stage-1 behavioral route test is green on the target machine;
-- the two runtime failures are retained Stage-2 regressions, not Stage-1 route failures;
-- the architecture failure was a stale checker after the production API migrated to
-  explicit `...System...` frame names.
+White route appears.
 
-## Fixes after target output
+Fixed diagnostic panel must show an explicit chain such as:
 
-- Updated `check_navigation_live_runtime_control.py` to:
-  - `navigationLinearAccelerationDemandSystemMps2`
-  - `navigationAngularAccelerationDemandSystemRadPerSec2`
-  - System-frame bridge snapshot names
-  - `applySystemAccelerationDemand`
-- Labeled `nominal_route_planner` with CTest label `navigation_stage1`.
-- Added focused target runner:
-  `tests/navigation_runtime/run_stage1_mingw64.sh`.
+```text
+SCENE: LOADED
+PLANNER: OK
+FOLLOWER: NOT RUN (STAGE 1)
+START: ...
+FINISH: ...
+STATIC OBSTACLES: ...
+REQUIRED WAYPOINTS: ...
+ROUTE POINTS: ...
+ROUTE LENGTH: ...
+STATIC DETOUR: YES/NO
+GOAL REVISION: ...
+STATIC WORLD REVISION: ...
+LOG: last_route_plan.log
+PLANNER MESSAGE: ...
+```
 
-The focused runner intentionally checks only:
-1. shared geometric-path architecture;
-2. Stage-1 nominal-route architecture;
-3. Stage-1 nominal-route behavioral test;
-4. Stage-1 viewer build.
+On failure it must say `PLANNER: FAIL`.
 
-This does NOT hide Stage-2 failures. They remain recorded and must stay visible.
+The same calculation diagnostics are:
+- printed to stdout with prefix `[NAV-STAGE1]`;
+- written to `tools/navigation_runtime/last_route_plan.log`.
 
-## Known Stage-2 failures — preserve, do not weaken
+This log is the primary evidence for deciding whether Stage-1 Planner input/output is wrong.
 
-### navigation_runtime_planner
+## Playback controls
 
-Failure:
-`fixture must produce a safe adjusted target`.
+Stage 1 contains only one route-result frame.
 
-The legacy fixture no longer demonstrates a safe bypass under current B4 semantics.
-Do not change production safety merely to make this old fixture green. Revisit in Stage 2.
+Therefore playback is not a Stage-1 feature.
 
-### navigation_composite_proving_ground
+The UI must explicitly show:
+- `ПОЛЁТ: ЭТАП 2`;
+- `FOLLOWER: OFF`;
+- no working frame/playback controls when only one frame exists.
 
-Failure:
-`composite full hull exceeded narrow passage`.
+SPACE / playback buttons must not create the illusion of a broken Follower.
 
-The log shows:
-- dynamic bypass succeeds;
-- continuation succeeds;
-- planner returns to nominal topology;
-- the following hand-authored narrow-passage program enters portal 102 with body
-  attitude/hull projection that exceeds the 19 m half-width gate.
+## Stage-1 runtime boundary
 
-This is a Stage-2 physical attitude/tunnel issue. Preserve it as evidence.
+`tools/navigation_runtime/NavigationScenarioRuntime.cpp` must not contain:
+- `NavigationRuntimePlanner::plan`;
+- periodic global replanning;
+- `makeShortProgram`;
+- Follower;
+- PilotSkill;
+- SharedShipPhysics;
+- DynamicMotionSystem.
 
-## Immediate target command
+The Stage-1 viewer CMake must not link those execution components.
 
-Run:
+## Known older Stage-2 failures
+
+Preserve them; do not weaken them to make full CTest green.
+
+1. `navigation_runtime_planner`
+   - failure: `fixture must produce a safe adjusted target`
+   - old local-dynamic Stage-2 fixture.
+
+2. `navigation_composite_proving_ground`
+   - failure: `composite full hull exceeded narrow passage`
+   - after dynamic Newtonian bypass, hand-authored narrow-passage execution exceeds
+     the 19 m half-width gate.
+   - this is future Stage-2 attitude/tunnel evidence, not Stage-1 route failure.
+
+## Stage-1 target gate
+
+Use the focused runner:
 
 ```bash
 cd /d/__elite/work
@@ -197,18 +206,27 @@ cd /d/__elite/work
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Always give the exact executable launch command after compilation that produces an executable.
+Always provide a separate exact executable launch command after build instructions that
+produce an executable.
 
-## Stage-1 visual acceptance
+## Immediate acceptance check
 
-Default wall scenario must show:
-- white route from START to FINISH;
-- route detours around the static wall;
-- Cobra remains at START;
-- no fake flight animation;
-- status `СТАТИЧЕСКИЙ МАРШРУТ ГОТОВ`;
-- Stage-1 explanation;
-- changing pilot/control law/flight style/sudden obstacle does not change the route.
+Before Calculate:
+- scene visible;
+- START/FINISH visible;
+- wall visible;
+- diagnostics says Planner not run / Follower not run.
 
-If this focused gate or viewer fails, fix Stage 1 only, update all mandatory MD files,
-and recreate this prompt from scratch again.
+After Calculate:
+- white route visible;
+- planner diagnostics explicit;
+- route length and point count visible;
+- `last_route_plan.log` created;
+- no movement expected;
+- changing pilot/control law/flight style/sudden-obstacle must not alter the Stage-1 route.
+
+If route geometry is wrong, ask for:
+- screenshot;
+- `tools/navigation_runtime/last_route_plan.log`.
+
+Then fix Stage 1 only, update mandatory MD files, and recreate this prompt from scratch.

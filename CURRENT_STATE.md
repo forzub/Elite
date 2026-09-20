@@ -137,3 +137,52 @@ This directly pins the required rule:
 - can evade physically -> execute bypass;
 - cannot evade physically -> brake;
 - navigation ownership remains active in both cases.
+
+## 2026-09-20 target run `navigation_test_20260920-182430.txt`
+
+Important: the uploaded log does **not** contain the tested HEAD line, so the
+exact checkout must not be inferred from the filename or current repository HEAD.
+
+Observed evidence:
+- Stage-12 architecture contract PASS;
+- compile/link PASS;
+- 17/19 runtime tests PASS;
+- `navigation_runtime_planner` FAIL:
+  `fixture must retain the future oriented portal as route context`;
+- `navigation_composite_proving_ground` FAIL:
+  `composite dynamic clearance lost for newtonian`.
+
+### Planner fixture interpretation
+
+The previous fixture repair moved the agent to X=0, exactly onto the minimum X
+boundary of region 1 in `orientedPortalCaptureSpace()`. The new failure happens
+before the actual bypass assertion: the test no longer retains the oriented portal
+as route context. This strongly indicates the fixture was repaired in the wrong
+place rather than a B4 regression. Use an interior start while preserving >2.75 m
+separation from both start and staging endpoint (for example start X=1, blocker X=4, staging X=7).
+
+### Composite interpretation
+
+The B4 behavior itself improved materially:
+- first solve: `AdjustedClear`, 29.38 m lateral offset, 22.5 m forward;
+- physical replacement authored successfully;
+- actual first replacement kept +4.747 m dynamic clearance and zero tracking violations;
+- next receding-horizon solve again returned `AdjustedClear`;
+- continuation kept +22.821 m actual dynamic clearance and zero tracking violations;
+- next solve returned `NominalClear`.
+
+The failure occurs **after** that successful B4 sequence. The composite then leaves
+the receding-horizon planner loop and executes a fixed 10 s narrow-portal program
+and then final capture while the dynamic hazard remains active. That violates the
+new requirement that navigation/monitoring must remain active. A bounded segment
+being nominal-clear does not prove the entire following scripted portal leg is clear.
+
+Therefore the next fix should keep planner/monitor/replan ownership active through
+the resumed topology leg instead of treating `NominalClear` as permission to run an
+unmonitored long scripted phase.
+
+### Visualisation
+
+A visual trace is now justified. The useful first visualization should plot, in the
+same 2D/3D scene, ship path, hazard path and inflated safety envelope, selected B4
+targets, bounded nominal/reacquisition references, portal center, and replan points.

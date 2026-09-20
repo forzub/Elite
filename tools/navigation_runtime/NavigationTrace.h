@@ -30,6 +30,8 @@ struct TraceFrame
 
     bool hazardActive = false;
     glm::dvec3 hazardPosition {0.0};
+    glm::dvec3 hazardVelocity {0.0};
+    double plannerLookAheadSeconds = 0.0;
     double hazardRadiusMeters = 0.0;
     double hazardCollisionEnvelopeRadiusMeters = 0.0;
     double hazardPlannerEnvelopeRadiusMeters = 0.0;

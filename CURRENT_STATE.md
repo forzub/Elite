@@ -19,119 +19,102 @@ Accepted evidence:
 81d0c23ae42bba0352026d6c2306cc6976c04bda
 ```
 
-User target-machine evidence from `navigation_test_20260920-165856.txt`:
-- Stage-12 architecture contract PASS;
-- runtime compiled and linked;
-- 17/19 runtime tests PASS (89%);
-- `navigation_runtime_planner` FAIL;
-- `navigation_composite_proving_ground` FAIL.
+Target evidence:
+- architecture PASS;
+- compile/link PASS;
+- 17/19 runtime tests PASS;
+- failures in runtime planner and final composite.
 
-Therefore the hard-replaced B4 projected visible-horizon solver is **NOT ACCEPTED** yet.
+## Current unverified code baseline before state-sync commits
 
-## Current B4 mechanism
+```
+70dc7bb9c024a388c39b79d54a12774475ca8b32
+```
+
+## B4 contract corrected after first target failure
+
+The former same-horizon two-segment requirement is rejected.
+
+Canonical ordinary local behavior is now:
 
 ```text
-accepted trajectory
+accepted route / trajectory
     -> physical visible horizon
-    -> predicted dynamic occupancy
-    -> trajectory-normal projection
-    -> metric lateral/vertical offset search
-    -> longitudinal bypass station search
-    -> exact-static proof current -> bypass
-    -> exact-static proof bypass -> merge
-    -> time-coupled dynamic proof of the complete two-segment detour
-    -> temporary bypass target
-    -> merge target on the accepted trajectory
-    -> physical maneuver compilation/proof
-    -> execute and reacquire
+    -> predicted dynamic/static occupancy
+    -> can a safe executable short segment avoid the obstacle?
+         yes -> accept that short off-route segment and keep moving
+         no  -> issue active braking intent and keep navigation alive
+    -> next receding-horizon update
+         -> continue bypass while required
+         -> begin reacquiring nominal line when safe
+         -> converge back under physical steering/acceleration limits
 ```
 
-The removed angular fan / branch-continuity / branch-switch Brake path remains forbidden.
+There is **no arbitrary distance at which the ship must return to the route**.
+In particular, no 30 m merge requirement exists.
 
-## Failure audit: focused runtime fixture
+The on-route `mergeTargetMapMeters` / runtime mirror is currently only a
+reacquisition reference. It is not a mandatory endpoint of the current local
+segment and is not required to be reachable inside the same horizon.
 
-`testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()` currently asks for
-`AdjustedClear` with:
-- agent start X = 2.0 m;
-- blocker X = 4.5 m, radius = 0.75 m;
-- portal staging / merge X = 7.0 m;
-- agent radius = 1.0 m;
-- horizon safety margin = 0.0 m;
-- projection padding = 1.0 m.
+## Navigation continuity on failure
 
-The full dynamic proof requires:
+`ConflictHold` does not switch navigation off.
+
+Runtime behavior is command-producing:
 
 ```text
-1.0 + 0.75 + 0.0 + 1.0 = 2.75 m
+no safe current bypass
+    -> ConflictHold
+    -> holdIntent
+    -> negative velocity demand / braking
+    -> physics continues
+    -> navigation planner remains active
+    -> fresh world state is evaluated again
 ```
 
-but both start->blocker and merge->blocker centre distances are only 2.5 m.
-`timeCoupledBypassClear()` samples both endpoints and uses the same 2.75 m
-requirement. Therefore no two-segment candidate can satisfy the current
-contract. The fixture expectation is stale/inconsistent with the new solver.
+This matches the required behavior: if there is time/space to evade, evade; if
+there is not, brake and use the space that remains while continuing navigation.
 
-## Failure audit: final composite
+## Current bypass selection
 
-Logged first Newtonian replan:
+For equal lateral clearance the local solver now prefers the farther forward
+bounded bypass station. This reduces gratuitous sideways kinks and better
+preserves the route direction.
 
-```text
-position      = (138.841366, 52.623525, 0)
-hazard        = (185.850434, 42.920559, 0)
-merge_target  = (168.222033, 46.559171, 0)
-nominal_dynamic_conflicts = 1
-projected_obstacles = 1
-offset_candidates = 168
-route_candidates = 168
-localBypassExhausted = 1
-nominal_static_blocked = 0
-```
+The selected short segment is proved against:
+- exact static geometry;
+- projected moving occupancy;
+- time-coupled dynamic separation.
 
-Geometry from that row:
-- current -> hazard = 48.0 m;
-- current -> merge = 30.0 m;
-- merge -> hazard at activation = 18.0 m.
+Physical maneuver authoring/capability proof remains downstream ownership.
 
-Composite required dynamic clearance is:
+## Test corrections
 
-```text
-hull bounding radius 17.275995
-+ hazard radius       6.000000
-+ safety margin       2.000000
-+ projection padding  1.500000
-=                     26.775995 m
-```
+The stale portal-attitude fixture was corrected:
+- start moved to X=0;
+- blocker moved to X=3.5;
+- staging/reacquisition reference remains X=7.
 
-At the final time-coupled sample (`t = 4 s`) the hazard has moved only 2 m in
-Y; merge-to-hazard distance is still about 18.51 m, below 26.78 m.
-Therefore every candidate forced to return to this merge target must fail the
-dynamic proof regardless of its lateral bypass offset.
+This makes both endpoints outside the 2.75 m required dynamic separation while
+the nominal path is still genuinely blocked.
 
-This explains the `ConflictHold + localBypassExhausted` result directly.
+The old regression `testReturnLegIsAlsoProvenAgainstExactStaticGeometry()` was removed.
+It is replaced by `testBypassDoesNotRequireImmediateReturnToTrajectory()`, which
+deliberately blocks an immediate return leg while leaving a valid short bypass available.
 
-## Important design question exposed by the test
+The no-space regression remains and requires:
+- `ConflictHold`;
+- `localBypassExhausted`;
+- active emergency braking intent.
 
-The focused fixture is clearly invalid and must be repaired without weakening
-clearance. The composite also exposes a possible real B4 limitation:
-`LocalAvoidancePlanner` hard-wires the merge point to the current bounded
-nominal target. If the inflated obstacle occupancy extends beyond that point,
-the solver has no legal way to remain temporarily off-route and merge later.
+## Validation status
 
-Before changing production behavior, distinguish:
-1. invalid synthetic fixture geometry;
-2. insufficient physical horizon / merge-station selection;
-3. need for a multi-horizon off-route continuation with later reacquisition.
+**UNVERIFIED on target MinGW64.**
 
-## Next evidence gate
-
-1. Add rejection counters to the first failing focused/composite diagnostics
-   (`projectionRejected`, `staticRejected`, `dynamicRejected`).
-2. Repair the focused portal-attitude fixture geometry so both endpoints are
-   outside required clearance while the nominal path is genuinely blocked.
-3. Add a deterministic regression that proves whether the current fixed merge
-   point itself causes exhaustion.
-4. Decide whether B4 needs downstream merge sampling / multi-horizon
-   continuation instead of changing safety thresholds.
-5. Re-run the exact target-machine architecture + 19-test runtime gate.
+The next run must verify the new receding-horizon contract. Do not promote B4
+until the target gate is green and the final composite demonstrates physically
+reasonable behavior.
 
 ## Documentation protocol
 

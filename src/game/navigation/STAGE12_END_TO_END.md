@@ -5555,3 +5555,51 @@ Candidate fix `b8eb4641b013692c773d087d6cad96756c672b3c` replaces that reconstru
 Terminal forward remains explicit; exact terminal roll/up belongs to a separate docking/placement attitude-capture requirement rather than an implicit world-up rule.
 
 No physical or tracking acceptance tolerance was weakened.
+
+
+## 2026-09-20 — chained transitions + physical-limit acceptance
+
+Exact target-machine checkout:
+
+```
+3fe9b54eda0135b0cdebb7dc835d8a4b17580808
+```
+
+passed:
+- Stage-12 architecture contract;
+- all 18 navigation runtime tests;
+- `maneuver_chained_limit_matrix`.
+
+Measured Newtonian chain:
+- 4/4 phases;
+- zero P/V/attitude/omega seam jumps;
+- 35.114714 deg material drift;
+- 17.419551 m maximum full-hull half-width inside 25 m;
+- terminal P error 0.024611 m;
+- terminal speed 0.024960 m/s;
+- terminal forward error 0.029227 deg;
+- zero tracking-envelope violations.
+
+Measured Assisted chain:
+- 4/4 phases;
+- zero seam jumps;
+- aligned phase max slip 1.139399 deg;
+- max full-chain slip 1.934322 deg;
+- same 17.419551 m hull envelope;
+- terminal P error 0.024611 m;
+- terminal speed 0.024960 m/s;
+- terminal forward error 0.035921 deg;
+- zero tracking-envelope violations.
+
+The transported-frame correction is accepted: smooth tangent-following no longer invents roll discontinuities.
+
+All five fail-closed limit contracts also passed:
+- short turn horizon rejected;
+- 110 m braking reserve does not fit 60 m;
+- 13.238202 m Cobra support radius does not fit a 12 m corridor;
+- Assisted rejects an all-NewtonianOnly candidate set;
+- new dynamic hazard immediately invalidates the old accepted automatic execution.
+
+This closes the chained/limit laboratory block.
+
+Only one synthetic behavior gate remains: a single final composite end-to-end proving ground. After that gate is accepted, primary evaluation moves into the real game/NAV STRESS scene.

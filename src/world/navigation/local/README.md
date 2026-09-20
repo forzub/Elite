@@ -116,17 +116,21 @@ normal plane Pi, Pi perpendicular to F
         |
         v
 deterministic metric offset grid (meters)
+        +
+longitudinal bypass stations inside the horizon
         |
         v
 projected occupancy rejection
         |
         v
-exact-static segment proof
+exact-static proof:
+    current -> bypass station
+    bypass station -> on-route merge
         |
         v
-time-coupled dynamic proof
+time-coupled proof of the complete two-segment detour
         |
-        +-- safe offset -> AdjustedClear / PassThrough
+        +-- safe detour -> AdjustedClear / PassThrough
         |                 + merge target on original trajectory
         |
         +-- none safe   -> localBypassExhausted / fail closed
@@ -156,10 +160,14 @@ A candidate offset must:
 - pass exact-static segment proof from the current position;
 - pass a time-coupled dynamic sample check over the same horizon.
 
-The output publishes both:
+The output publishes:
 - a temporary off-route bypass target;
-- `mergeTargetMapMeters`, the point on the original bounded trajectory to
-  reacquire after the unexpected obstacle is passed.
+- `selectedBypassForwardDistanceMeters`, its longitudinal station inside the
+  current horizon;
+- `mergeTargetMapMeters`, a farther point on the original bounded trajectory
+  used to prove and describe route reacquisition.
+
+Both legs are exact-static proven before the detour is accepted.
 
 ### Speed and physical execution
 

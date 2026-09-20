@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation global corridor architecture
+# CONTINUE PROMPT — Elite Navigation route/corridor vs physical tunnel
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -11,59 +11,53 @@ and the live stand under `tools/navigation_runtime/`.
 
 After every state-affecting event synchronize the Markdown state files and recreate this file from scratch.
 
-## Correct ownership contract
+## Global/local ownership
 
-The nominal global route/corridor is built ONCE from start to finish and remains authoritative while:
-- destination/goal revision is unchanged;
-- static navigation world/corridor revision is unchanged.
+The nominal global route is built once from start to finish and remains authoritative while goal and static world are unchanged.
+Moving obstacles do not rebuild the global route. They are handled by bounded local monitoring/avoidance and later route reacquisition.
+`maxResultAgeSeconds` is dynamic snapshot freshness, not a global replanning timer.
 
-Moving obstacles do NOT trigger global route reconstruction.
+## Terminology — corridor vs tunnel
 
-Dynamic snapshots are consumed by the bounded local monitor/avoidance layer only.
-`maxResultAgeSeconds` (~0.25 s) is a dynamic-snapshot freshness limit, NOT a global replanning cadence.
+`corridor` is a navigation/test abstraction around the nominal route. It may be a centerline/polyline plus a coarse envelope and is used to ask whether the ship can generally proceed along the route.
 
-Follower/autopilot continuously executes the accepted maneuver/trajectory.
-Local dynamic avoidance may temporarily depart from the nominal corridor, brake when necessary, and later progressively reacquire the same retained global corridor.
+It is NOT the authoritative physical hull-clearance volume.
 
-Global planning may be recomputed only on goal change or static-world/corridor invalidation/change.
+`tunnel` is the physically meaningful product: the exact or conservative time-parameterized swept volume of the actual Cobra hull along an accepted trajectory, including body orientation.
 
-## Current live-stand problem
+Whether Cobra clips tunnel walls / apertures is decided by tunnel/trajectory physical proof against exact static geometry and dynamic occupancy, not by the coarse nominal corridor.
 
-`NavigationScenarioRuntime.cpp` currently calls `NavigationRuntimePlanner::plan()` repeatedly after short execution slices. That incorrectly recomputes the static/global part over and over. Do not keep this architecture.
+Do not over-engineer the global corridor into exact hull collision geometry.
 
-## Important capability gap
+## Current live-stand status
 
-`NavigationSpace::queryCostedCorridor()` currently produces coarse region/portal topology and ordered portal centers.
-Exact static `NavigationObstacle` geometry is used for segment proof/local rejection, but the global corridor search does NOT yet synthesize a full geometric centerline around arbitrary exact obstacles inside one coarse region.
+`tools/navigation_runtime` is a live scenario-driven stand. The first video exposed an integration bug where absolute simulation time was passed as dynamic snapshot age. That is fixed: fresh synchronous snapshots use age `0.0`.
 
-The default live `scenario.json` currently has one coarse region plus an exact wall. Therefore it cannot honestly demonstrate the requested start->finish global geometric corridor until this gap is solved.
+The right diagnostic panel must use fixed Y slots and never vertically reflow.
 
-## Next implementation task
+## Current implementation direction
 
-1. Add a cached nominal global corridor product with geometric centerline/waypoints and clearance/envelope information.
-2. Build it once from start to finish against the static world.
-3. Cache it by goal revision + static-space revision.
-4. Render this retained full corridor immediately after `РАССЧИТАТЬ`.
-5. Execute along it using the real production maneuver compile/proof/selection/follower chain.
-6. Run LocalHorizonPlanner/LocalAvoidancePlanner only for dynamic/local conflicts against the retained corridor.
-7. Sudden moving obstacle may cause local bypass/braking only; it must not rebuild the global route.
-8. After the obstacle, progressively reacquire the same nominal corridor.
+1. Stop periodic global replanning.
+2. Build/cache one nominal start->finish route/corridor from the static world.
+3. Render that retained nominal route immediately after `РАССЧИТАТЬ`.
+4. Follow it with the production execution chain.
+5. Use LocalHorizonPlanner/LocalAvoidancePlanner only for local dynamic conflicts.
+6. Local bypass/braking may temporarily leave the nominal route, then progressively reacquire it.
+7. Exact physical feasibility is later/ downstream tunnel proof, including real hull orientation.
 
-Do not use a 0.25 s or 0.5 s timer as a global replanning trigger.
+## Important remaining gap
 
-## Existing live-stand UI contracts
+The live stand still uses a stand-local handcrafted `makeShortProgram` instead of the complete production physical compile/proof/selection/acceptance path. Replace this before treating live-stand success as final navigation evidence.
 
-- ordinary decorated Windows window maximized, not exclusive fullscreen;
+## UI contracts
+
+- ordinary decorated Windows window maximized;
 - Russian UI;
-- fixed non-jumping right panel slots;
-- Assisted/Newtonian selector;
-- Expert/Average/Loser selector;
-- Standard/Extreme selector;
-- sudden-obstacle checkbox;
-- `РАССЧИТАТЬ` button;
+- fixed non-jumping right panel;
+- Assisted/Newtonian;
+- Expert/Average/Loser;
+- Standard/Extreme;
+- sudden obstacle checkbox;
+- `РАССЧИТАТЬ`;
 - Cobra horizon inset;
-- exact executable launch command must always be provided after builds.
-
-## Previous live-video issue already fixed
-
-The first live video showed `ДАННЫЕ УСТАРЕЛИ` because absolute simulation time was incorrectly passed as dynamic snapshot age. Fresh synchronous snapshot age is now `0.0`. Do not regress.
+- always provide a separate exact executable launch command after builds.

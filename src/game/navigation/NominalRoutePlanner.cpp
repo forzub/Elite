@@ -1,5 +1,6 @@
 #include "src/game/navigation/NominalRoutePlanner.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "src/world/navigation/GeometricPathPlanner.h"

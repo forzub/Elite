@@ -151,3 +151,32 @@ cd /d/__elite/work
 
 Do not enable dynamic avoidance until this static retained-route execution can be
 observed and diagnosed.
+
+
+## 2026-09-21 — target gate false negative in Stage-2 architecture checker
+
+Target run stopped before compilation with:
+
+`[FAIL] static-route/two-stage navigation: Stage-2 execution path missing TrajectoryGenerator::generate`
+
+This was a checker defect, not a runtime defect. The checker isolated only the body of
+`executeCalculatedRoute()`, while the actual Ruckig call is correctly delegated to
+`buildExecutionTrajectory()`:
+
+```text
+executeCalculatedRoute()
+ -> buildExecutionTrajectory()
+ -> TrajectoryGenerator::generate()
+```
+
+Fix committed in `tests/architecture_contracts/check_navigation_stage1_nominal_route.py`:
+- execution function must call `buildExecutionTrajectory()`;
+- trajectory-builder slice must contain `calculatedRoute.routePoints` and
+  `TrajectoryGenerator::generate`;
+- global-planner prohibition is checked across the owned Stage-2 trajectory-builder +
+  execution text.
+
+No production navigation/runtime behavior changed in this fix.
+
+Validation state: target compilation of the restored Stage-2 viewer still has NOT been
+reached. Rerun the focused gate from latest main.

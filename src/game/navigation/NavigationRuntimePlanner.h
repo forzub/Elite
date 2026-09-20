@@ -223,6 +223,11 @@ public:
         std::size_t nominalDynamicConflictsFound = 0;
         std::size_t avoidanceProbesExamined = 0;
 
+        bool avoidanceContinuityHintUsed = false;
+        bool avoidanceContinuityLateralValid = false;
+        std::size_t avoidanceSameBranchSafeCandidates = 0;
+        double avoidanceSelectedBranchAlignment = 0.0;
+
         bool nominalStaticBlocked = false;
         std::size_t staticObstaclesExamined = 0;
         std::string nominalStaticObstacleId;

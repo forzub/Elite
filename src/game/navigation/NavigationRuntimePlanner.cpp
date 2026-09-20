@@ -886,6 +886,8 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         local.sameBranchSafeCandidates;
     result.avoidanceSelectedBranchAlignment =
         local.selectedBranchAlignment;
+    result.avoidanceBranchSwitchRequired =
+        local.branchSwitchRequired;
     result.primaryConflictEntityId = local.target.primaryConflictEntityId;
     result.nominalPrimaryConflictEntityId =
         local.nominalPrimaryConflictEntityId;

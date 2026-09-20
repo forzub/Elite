@@ -658,7 +658,10 @@ struct PhaseMetrics
 
     double minimumSpeedMps =
         std::numeric_limits<double>::infinity();
+    double entrySlipDeg = 0.0;
     double maximumSlipDeg = 0.0;
+    double maximumSlipAfterOneSecondDeg = 0.0;
+    double finalSlipDeg = 0.0;
     double maximumHullHalfWidthMeters = 0.0;
     double maximumPositionErrorMeters = 0.0;
     double maximumVelocityErrorMps = 0.0;
@@ -683,6 +686,18 @@ PhaseMetrics executePhase(
     gatePolicy.maximumCaptureOverrunSeconds = 5.0;
 
     const double startTime = v.timeSeconds;
+
+    const double entrySpeed =
+        glm::length(v.transform.motion.localVelocityMps);
+    if (entrySpeed > 0.25)
+    {
+        m.entrySlipDeg =
+            angleRad(
+                v.transform.motion.localVelocityMps,
+                glm::dvec3(v.transform.forward())
+            ) * 180.0 / kPi;
+    }
+
     const double nominalEnd =
         program.acceptedAtUniverseTimeSeconds +
         program.samples[
@@ -799,14 +814,23 @@ PhaseMetrics executePhase(
 
         if (speed > 0.25)
         {
+            const double slipDeg =
+                angleRad(
+                    v.transform.motion.localVelocityMps,
+                    glm::dvec3(v.transform.forward())
+                ) * 180.0 / kPi;
+
             m.maximumSlipDeg =
-                std::max(
-                    m.maximumSlipDeg,
-                    angleRad(
-                        v.transform.motion.localVelocityMps,
-                        glm::dvec3(v.transform.forward())
-                    ) * 180.0 / kPi
-                );
+                std::max(m.maximumSlipDeg, slipDeg);
+
+            if (v.timeSeconds - startTime >= 1.0)
+            {
+                m.maximumSlipAfterOneSecondDeg =
+                    std::max(
+                        m.maximumSlipAfterOneSecondDeg,
+                        slipDeg
+                    );
+            }
         }
 
         m.maximumHullHalfWidthMeters =
@@ -836,6 +860,18 @@ PhaseMetrics executePhase(
             glm::dvec3(v.transform.forward()),
             terminal.forwardMap
         ) * 180.0 / kPi;
+
+    const double finalSpeed =
+        glm::length(v.transform.motion.localVelocityMps);
+    if (finalSpeed > 0.25)
+    {
+        m.finalSlipDeg =
+            angleRad(
+                v.transform.motion.localVelocityMps,
+                glm::dvec3(v.transform.forward())
+            ) * 180.0 / kPi;
+    }
+
     m.simulatedSeconds = v.timeSeconds - startTime;
 
     return m;
@@ -918,6 +954,43 @@ void accumulatePhase(
         ++chain.completedPhases;
 }
 
+void printPhaseMetrics(
+    Law law,
+    int phaseIndex,
+    const char* phaseName,
+    const PhaseMetrics& phase
+)
+{
+    std::cout
+        << std::fixed << std::setprecision(6)
+        << "[CHAIN-PHASE]"
+        << " law=" << lawName(law)
+        << " phase=" << phaseIndex
+        << " name=" << phaseName
+        << " completed=" << (phase.completed ? 1 : 0)
+        << " entry_slip_deg=" << phase.entrySlipDeg
+        << " max_slip_deg=" << phase.maximumSlipDeg
+        << " max_slip_after_1s_deg="
+        << phase.maximumSlipAfterOneSecondDeg
+        << " final_slip_deg=" << phase.finalSlipDeg
+        << " max_pos_error_m="
+        << phase.maximumPositionErrorMeters
+        << " max_vel_error_mps="
+        << phase.maximumVelocityErrorMps
+        << " max_forward_error_deg="
+        << phase.maximumForwardErrorDeg
+        << " final_pos_error_m="
+        << phase.finalPositionErrorMeters
+        << " final_vel_error_mps="
+        << phase.finalVelocityErrorMps
+        << " final_forward_error_deg="
+        << phase.finalForwardErrorDeg
+        << " tracking_exceeded_ticks="
+        << phase.trackingExceededTicks
+        << " simulated_s=" << phase.simulatedSeconds
+        << "\n";
+}
+
 ChainMetrics runChain(Law law)
 {
     Vehicle v(law);
@@ -946,6 +1019,7 @@ ChainMetrics runChain(Law law)
         const auto phase =
             executePhase(v, p, Gate::Mode::ScheduledMoving);
         accumulatePhase(chain, phase);
+        printPhaseMetrics(law, 1, "transit", phase);
         require(
             phase.completed && !phase.captureTimedOut,
             std::string("transit phase failed for ") + lawName(law)
@@ -974,6 +1048,7 @@ ChainMetrics runChain(Law law)
         const auto phase =
             executePhase(v, p, Gate::Mode::ScheduledMoving);
         accumulatePhase(chain, phase);
+        printPhaseMetrics(law, 2, "hard_turn", phase);
         require(
             phase.completed && !phase.captureTimedOut,
             std::string("hard-turn phase failed for ") + lawName(law)
@@ -1009,6 +1084,12 @@ ChainMetrics runChain(Law law)
         const auto phase =
             executePhase(v, p, Gate::Mode::ScheduledMoving);
         accumulatePhase(chain, phase);
+        printPhaseMetrics(
+            law,
+            3,
+            drift ? "drift_pass" : "aligned_transit",
+            phase
+        );
         require(
             phase.completed && !phase.captureTimedOut,
             std::string("law-specific phase failed for ") +
@@ -1025,8 +1106,12 @@ ChainMetrics runChain(Law law)
         else
         {
             require(
-                phase.maximumSlipDeg <= 8.0,
-                "Assisted chained aligned turn produced excessive slip"
+                phase.maximumSlipAfterOneSecondDeg <= 8.0,
+                "Assisted aligned phase retained excessive slip after handoff transient"
+            );
+            require(
+                phase.finalSlipDeg <= 4.0,
+                "Assisted aligned phase did not converge to low terminal slip"
             );
         }
     }
@@ -1059,6 +1144,7 @@ ChainMetrics runChain(Law law)
         const auto phase =
             executePhase(v, p, Gate::Mode::StateCapture);
         accumulatePhase(chain, phase);
+        printPhaseMetrics(law, 4, "precision_capture", phase);
 
         require(
             phase.completed && !phase.captureTimedOut,

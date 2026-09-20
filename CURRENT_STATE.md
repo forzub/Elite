@@ -2,7 +2,7 @@
 
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Accepted exact target-machine baseline
+## Last accepted exact target-machine baseline
 
 ```
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
@@ -18,133 +18,130 @@ Accepted:
 Exact tested checkout:
 
 ```
-69f8ca4dbcb44df5340b94f45640bcb7d6e6ed1a
+51e6c41bb94b65e8cc269fb035164a4eb0aa23fd
 ```
 
 Results:
 - architecture contract PASS;
-- runtime 17/19;
-- failures:
-  - `navigation_runtime_planner` focused side-continuity regression;
-  - `navigation_composite_proving_ground`.
+- `navigation_runtime_planner` PASS, including explicit accepted-segment continuity regression;
+- runtime 18/19;
+- only `navigation_composite_proving_ground` failed.
 
-All other 17 tests remained green.
+## What the latest run proved
 
-## Focused regression failure
+The explicit continuity hint is correctly wired through production:
+- focused planner regression is green;
+- `NavigationRuntimePlanner` receives accepted local continuity;
+- `LocalAvoidancePlanner` consumes it.
 
-Failure:
+However the final composite still changed branch.
 
+Logged Newtonian continuation:
 ```
-adjusted visibility must preserve the current -Z avoidance side
-```
-
-The regression fixture itself was invalid:
-- it reused the generic `region()` helper;
-- that helper fixes Z bounds to [-10,+10] m;
-- the test assumed +/-Z probes hundreds of meters away were both statically legal;
-- exact-static proof therefore rejected the intended +/-Z candidates before continuity scoring.
-
-This fixture bug is now corrected with a genuinely wide 3D region.
-
-## Composite evidence
-
-Velocity-only continuity did not solve the real production issue.
-
-Newtonian:
-- first adjusted target changed to Y-dominant;
-- first continuation then moved to +Z;
-- next replan selected a target near the opposite Z side;
-- test-side physical author could no longer produce a valid no-stop continuation.
-
-The key conclusion is that **instantaneous velocity is not a sufficient ownership signal for avoidance-branch continuity**.
-
-## Architecture correction
-
-The canonical execution loop is:
-
-```
-ACCEPT short local segment
- -> EXECUTE
- -> MONITOR
- -> REPLAN
+continuity=(0.357512,-0.349550,+0.866025)
+current position=(181.656981,57.946838,25.984828)
+new target=(172.399109,59.234718,-2.521893)
 ```
 
-The execution/accepted-program layer knows which bounded local segment is currently authoritative.
+The new target is almost opposite the +Z continuity branch.
 
-Therefore continuity belongs to that accepted segment and must be passed explicitly into the next planner call. It must not be reconstructed heuristically from instantaneous velocity alone.
+## Root cause
 
-## Current unverified production candidate
+The previous production fix only used continuity **inside each individual deflection ring**.
 
-Production/API commits:
+The algorithm still preserved this outer ordering:
 
 ```
-71b80c4529e1bc776e2a2dbf209059a2ccff44f9
-4bde26ee2fbb531116f960d089d488067f1bfd6d
-76022a5199422dd80ef4caff611539b53c39e731
-40d7b9852bc6f265ae02ecc0bf9d7b4e002d5b96
+15 deg ring
+ -> if any safe candidate exists, return
+30 deg ring
+45 deg ring
+...
 ```
 
-Changes:
-- `LocalAvoidancePlanner::Query` now accepts:
-  - `preferredDirectionValid`;
-  - `preferredDirectionMap`.
-- `NavigationRuntimePlanner::AgentState` now accepts:
-  - `localAvoidanceContinuityValid`;
-  - `localAvoidanceContinuityDirectionMap`.
-- runtime planner validates and forwards this hint into local avoidance;
-- inside the minimum safe deflection ring:
-  - explicit accepted-segment direction has priority;
-  - instantaneous velocity is only fallback;
-  - nominal forward remains the final fallback;
-  - deterministic azimuth index still breaks ties.
+Therefore an opposite-side candidate on a smaller ring could beat a same-branch candidate on a slightly larger ring.
 
-This introduces no hidden planner state and changes no safety envelope.
+That violates the meaning of an explicit accepted-segment continuity contract.
 
-## Updated focused regression
+## Current unverified production correction
 
 Commit:
 
 ```
-bd31307fbda3d512a579f521efc1664199b1de46
+e19c1804806ce5f3554f20c7b7d3d5ac19b4911e
 ```
 
-The regression now:
-- creates a genuinely wide 3D static region;
-- makes +/-Z bypass candidates actually legal;
-- deliberately sets current velocity away from the desired branch;
-- explicitly sets accepted local continuity toward -Z;
-- requires the next AdjustedClear to preserve -Z.
+New semantics when explicit continuity is present:
+- evaluate all safe candidates across all allowed ordinary deflection rings;
+- safe same-branch candidates outrank opposite-branch candidates;
+- among candidates in the same branch class, higher alignment with accepted direction wins;
+- smaller deflection is secondary tie-break;
+- deterministic azimuth index remains final tie-break;
+- if no safe same-branch candidate exists anywhere, planner may choose the least-opposed safe candidate rather than deadlock.
 
-This tests ownership correctly: accepted segment continuity wins over incidental current velocity.
+Without explicit continuity:
+- legacy smallest-safe-ring priority remains;
+- current velocity only ranks candidates inside that ring.
 
-## Final composite integration
+No safety, clearance, horizon or maximum-deflection bound changed.
+
+Public API contract comment updated in:
+```
+c3dcf98b16bd6e45f0dbc949ec926f086aa623a0
+```
+
+## Stronger focused regression
 
 Commit:
 
 ```
-09bc81e03cab6c251b50678585161cc73e814ddb
+06a917f058926a29f41a936dd994be3f8073e7cf
 ```
 
-The composite now:
-- captures the direction of each accepted adjusted target before execution;
-- carries that direction across the segment;
-- supplies it back to `NavigationRuntimePlanner` on the next bounded replan;
-- updates the hint only when a new AdjustedClear segment is accepted;
-- prints the active continuity vector in `[COMPOSITE-RESUME]`.
+The regression now proves cross-ring semantics:
+- accepted continuity points toward -Z;
+- an exact-static blocker rejects only the preferred -Z candidate on the first 15 deg ring;
+- the opposite +Z first-ring candidate remains safe;
+- the preferred -Z branch is safe again on a larger ring;
+- planner must choose the larger same-branch ring instead of the smaller opposite-side ring.
+
+## Composite diagnostics and ownership correction
+
+Diagnostics commit:
+```
+e62328d4af99b6e452e2d07e53cd20e25a103dcf
+```
+
+`[COMPOSITE-RESUME]` now prints selected deflection degrees.
+
+Ownership commit:
+```
+a2da6453daaa8e00cc1f4661321b9294513057ff
+```
+
+Continuity is now updated only after the corresponding physical program:
+- is physically authorable;
+- executes successfully;
+- preserves required clearance.
+
+The hint is taken from the executed program start->terminal displacement.
+
+Thus continuity is owned by executed accepted state, not merely by a planner proposal.
 
 ## Current gate
 
 Expected suite remains **19 tests**.
 
-If focused regression passes but composite still flips sides:
-- inspect whether direction-only continuity is insufficient and the contract needs a stronger branch/plane identifier.
+If focused regression fails:
+- debug global cross-ring branch ranking.
+
+If focused regression passes but composite still switches branch:
+- direction vector is insufficient and the next contract should be an explicit accepted local branch/plane identity.
 
 If 19/19:
 - accept final composite;
-- close synthetic maneuver behavior lab;
+- close synthetic maneuver behavior laboratory;
 - move primary evaluation into actual NAV STRESS/game.
-
-No tracking, clearance, hull, authority or terminal threshold was weakened.
 
 ## Documentation protocol
 

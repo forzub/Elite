@@ -2330,7 +2330,7 @@ void processUiAction(
             state.traceData = &data;
             state.frameIndex = 0;
             state.playbackTime = 0.0;
-            state.playing = result.success && !data.frames.empty();
+            state.playing = !data.frames.empty();
             state.requestFit = !data.frames.empty();
             state.calculationMessage =
                 result.success
@@ -2347,7 +2347,15 @@ void processUiAction(
                 const std::string outputPath =
                     "tools/navigation_runtime/last_calculated_trace.json";
 #endif
-                trace::saveTraceJson(data, outputPath);
+                try
+                {
+                    trace::saveTraceJson(data, outputPath);
+                }
+                catch (const std::exception& e)
+                {
+                    state.calculationMessage +=
+                        std::string(" | TRACE: ") + e.what();
+                }
             }
             break;
         }

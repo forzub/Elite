@@ -124,3 +124,16 @@ After every state-affecting event update:
 - `PROJECT_STATE.md`;
 - `src/game/navigation/STAGE12_END_TO_END.md`;
 - recreate `CONTINUE_PROMPT.md` from scratch.
+
+## Composite physical fallback
+
+The final composite no longer treats `fit.valid == false` as an automatic
+test failure. If the geometric B4 segment cannot be authored within the
+vehicle's current physical authority, the test now executes active braking
+through the real PilotSkill/physics path, keeps the hazard authoritative,
+and then continues the receding-horizon replan loop.
+
+This directly pins the required rule:
+- can evade physically -> execute bypass;
+- cannot evade physically -> brake;
+- navigation ownership remains active in both cases.

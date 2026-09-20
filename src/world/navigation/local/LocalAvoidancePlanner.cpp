@@ -528,6 +528,11 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         result.selectedDeflectionRadians = globalBestDeflection;
         result.selectedBranchAlignment =
             globalBestBranchAlignment;
+        result.branchSwitchRequired =
+            explicitContinuity &&
+            continuityLateralValid &&
+            result.sameBranchSafeCandidates == 0 &&
+            globalBestBranchAlignment <= kEpsilon;
         return result;
     }
 

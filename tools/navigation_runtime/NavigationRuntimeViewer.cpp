@@ -2616,6 +2616,19 @@ void processUiAction(
                     ? result.message
                     : "ОШИБКА: " + result.message;
             state.diagnosticLines = result.diagnostics;
+            state.hasRetainedRoute = result.success;
+            if (result.success)
+            {
+                state.retainedRoute = data;
+                state.retainedRouteDiagnostics = result.diagnostics;
+                state.retainedRouteMessage = result.message;
+            }
+            else
+            {
+                state.retainedRoute = trace::TraceDocument {};
+                state.retainedRouteDiagnostics.clear();
+                state.retainedRouteMessage.clear();
+            }
 
             if (!data.frames.empty())
             {
@@ -2641,7 +2654,10 @@ void processUiAction(
         }
         case UiAction::Execute:
         {
-            if (!state.calculationSucceeded || data.routePoints.size() < 2)
+            if (
+                !state.calculationSucceeded ||
+                !state.hasRetainedRoute ||
+                state.retainedRoute.routePoints.size() < 2)
             {
                 state.executionPerformed = true;
                 state.executionSucceeded = false;
@@ -2668,7 +2684,7 @@ void processUiAction(
                 elite::tools::navigation_runtime::executeCalculatedRoute(
                     state.scenarioPath,
                     settings,
-                    data
+                    state.retainedRoute
                 );
 
             data = result.trace;

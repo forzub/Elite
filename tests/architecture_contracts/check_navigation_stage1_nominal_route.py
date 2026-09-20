@@ -68,6 +68,11 @@ execute = function_slice(
     runtime,
     "ScenarioRunResult executeCalculatedRoute("
 )
+trajectory_builder = function_slice(
+    runtime,
+    "world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(",
+    "Program makeProgramChunk("
+)
 
 for required in (
     "NominalRoutePlanner::plan",
@@ -92,8 +97,7 @@ for forbidden in (
 
 for required in (
     "executeCalculatedRoute",
-    "calculatedRoute.routePoints",
-    "TrajectoryGenerator::generate",
+    "buildExecutionTrajectory(",
     "Follower::follow",
     "vehicle.bridge.step",
     "SharedShipPhysics::integrate",
@@ -103,13 +107,24 @@ for required in (
 ):
     require(required in execute, f"Stage-2 execution path missing {required}")
 
+for required in (
+    "calculatedRoute.routePoints",
+    "TrajectoryGenerator::generate",
+):
+    require(
+        required in trajectory_builder,
+        f"Stage-2 trajectory builder missing {required}",
+    )
+
+stage2_owned_text = trajectory_builder + "\n" + execute
+
 for forbidden in (
     "NominalRoutePlanner::plan",
     "NavigationRuntimePlanner::plan",
     "GeometricPathPlanner::plan",
 ):
     require(
-        forbidden not in execute,
+        forbidden not in stage2_owned_text,
         f"Stage 2 illegally rebuilds global route through {forbidden}",
     )
 

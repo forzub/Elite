@@ -10,69 +10,92 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
-## Latest runtime attempt
+## Latest target result
 
 Tested:
 ```
-8729abbbf3e74df0969f83bbc03773ebd827d3af
+350f7d593e22b8b89cb3ae4dbfbfbb7fbb53ea03
 ```
 
 Results:
-- Stage-12 architecture PASS;
+- architecture PASS;
 - build PASS;
 - runtime 17/18;
-- only `maneuver_chained_limit_matrix` failed.
+- only chained-limit Assisted phase 3 failed.
 
-Newtonian chain passed its physical behavior:
+Newtonian chain:
+- 4/4;
+- no state resets at seams;
+- max slip 34.49 deg;
+- hull 17.43 m inside 25 m;
+- final P 0.0246 m;
+- final speed 0.0250 m/s;
+- final attitude 0.0286 deg;
+- zero tracking violations.
+
+Assisted phase 3:
+- entry slip 1.579 deg;
+- max slip after 1 s 25.789 deg;
+- final slip 25.789 deg;
+- final forward error 25.965 deg;
+- tracking exceeded 171 ticks.
+
+This proves a phase-3 reference/control defect, not inherited transient.
+
+## Root cause
+
+The test reference builder reconstructed full body basis from velocity tangent plus a fixed world-up seed.
+
+At `abs(dot(forward,Y)) > 0.92` it switched the seed from Y to X.
+
+The forward tangent remained continuous, but right/up jumped in roll.
+
+B10 tracks full SO(3) attitude:
+- forward;
+- right;
+- up.
+
+Therefore the basis discontinuity became a real angular command.
+
+## Current unverified fix
+
 ```
-4/4 phases
-seam P jump 0
-seam V jump 0
-seam forward jump ~0.000001 deg
-seam omega jump 0
-max hull half-width 17.428330 m / 25 m
-max slip 34.491954 deg
-final P 0.024611 m
-final speed 0.024960 m/s
-final forward error 0.028574 deg
-tracking exceeded 0
+b8eb4641b013692c773d087d6cad96756c672b3c
 ```
 
-Failure:
-```
-Assisted chained aligned turn produced excessive slip
-```
+Aligned moving reference now uses a parallel-transport/Bishop frame:
+- carry previous right;
+- project it into the new tangent-normal plane;
+- rebuild up continuously;
+- preserve roll continuity.
 
-## Diagnostic interpretation
+At terminal sample:
+- requested terminal forward is pinned;
+- transported roll is preserved.
 
-Phase 2 uses ScheduledMoving and advances at nominal end without requiring terminal capture.
+Exact terminal roll/up orientation for docking/attachment/placement must be authored explicitly as a separate attitude-capture profile.
 
-Therefore phase 3 intentionally inherits actual physical P/V/q/omega, including possible residual slip.
+No tracking gains or acceptance tolerances changed.
 
-The old phase-3 assertion used absolute maximum slip from the first tick, so it could not distinguish an inherited handoff transient from Assisted phase behavior.
+## Acceptance criteria
 
-## Current unverified candidate
+Assisted aligned phase:
+- max slip after 1 s <=8 deg;
+- final slip <=4 deg.
 
-```
-6fda55f8a2a954ae1656d5eebf4538f585125f2e
-```
+Whole chain:
+- 4/4 phases;
+- zero tracking-envelope violations;
+- no P/V/attitude/omega seam reset;
+- full hull <=25 m;
+- strict final capture.
 
-Adds per-phase `[CHAIN-PHASE]` diagnostics:
-- entry slip;
-- absolute max slip;
-- max slip after 1 s;
-- final slip;
-- max P/V/forward tracking errors;
-- final P/V/forward errors;
-- tracking envelope exceed ticks.
-
-Assisted aligned phase criteria:
-- max slip after first 1 s <= 8 deg;
-- final slip <= 4 deg.
-
-This preserves the original 8 deg aligned behavior criterion while separating the explicit ScheduledMoving handoff transient.
-
-If the Assisted phase remains >8 deg after 1 s, treat it as a real reference/control defect; do not relax the limit.
+Negative/limit contracts must then all execute:
+- insufficient turn horizon rejection;
+- insufficient braking room rejection;
+- rigid-hull corridor rejection;
+- law-incompatible candidate rejection;
+- dynamic-hazard invalidation.
 
 ## Validation
 
@@ -106,10 +129,11 @@ echo "$PWD/$OUT"
 ## Next
 
 If 18/18:
-- accept chained transitions + negative/physical-limit block;
-- build the one final composite laboratory proving ground.
+- accept chained transitions + negative/limit block;
+- build one final composite laboratory proving ground.
 
-If red:
-- use phase diagnostics to identify actual root cause and fix mechanism/reference authoring.
+If still red:
+- inspect angular feed-forward derivation from transported quaternion samples;
+- do not loosen criteria.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

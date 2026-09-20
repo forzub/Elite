@@ -18,65 +18,25 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_path(GLM_INCLUDE_DIR glm/glm.hpp REQUIRED)
 
-add_subdirectory(
-    "${ELITE_SOURCE_ROOT}/src/world/navigation/control"
-    "${CMAKE_BINARY_DIR}/elite_navigation_control"
-)
-
-add_subdirectory(
-    "${ELITE_SOURCE_ROOT}/src/world/navigation/map"
-    "${CMAKE_BINARY_DIR}/elite_navigation_map"
-)
-
-add_subdirectory(
-    "${ELITE_SOURCE_ROOT}/src/world/navigation/local"
-    "${CMAKE_BINARY_DIR}/elite_navigation_local"
-)
-
-add_subdirectory(
-    "${ELITE_SOURCE_ROOT}/src/world/navigation/trajectory"
-    "${CMAKE_BINARY_DIR}/elite_navigation_trajectory"
-)
-
-add_library(EliteNavigationRuntimeToolCore STATIC
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimeControlBridge.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/NpcNavigationIntentController.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimePlanner.cpp"
+# Stage 1 is intentionally route-only.  Do not link Follower/PilotSkill/
+# physics here until Stage 2 starts; otherwise the diagnostic boundary becomes
+# ambiguous again.
+add_library(EliteNavigationRouteToolCore STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NominalRoutePlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/world/navigation/GeometricPathPlanner.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverTrackingController.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverPhaseGate.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationExecutionReplanPolicy.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationWorkScheduler.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationHitVolumeAdapter.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/ship/controller/ManeuverDecisionController.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/NavigationObstacleGeometry.cpp"
 )
 
 target_include_directories(
-    EliteNavigationRuntimeToolCore
+    EliteNavigationRouteToolCore
     PUBLIC
         "${ELITE_SOURCE_ROOT}"
         "${ELITE_SOURCE_ROOT}/src"
 )
 
 target_compile_features(
-    EliteNavigationRuntimeToolCore
+    EliteNavigationRouteToolCore
     PUBLIC cxx_std_17
-)
-
-target_link_libraries(
-    EliteNavigationRuntimeToolCore
-    PUBLIC
-        EliteNavigationControl
-        EliteNavigationMap
-        EliteNavigationLocal
-        EliteNavigationTrajectory
 )
 
 add_executable(
@@ -105,7 +65,7 @@ target_compile_definitions(
 target_link_libraries(
     navigation_runtime_viewer
     PRIVATE
-        EliteNavigationRuntimeToolCore
+        EliteNavigationRouteToolCore
         nlohmann_json::nlohmann_json
 )
 
@@ -120,10 +80,10 @@ else()
 endif()
 
 if(MSVC)
-    target_compile_options(EliteNavigationRuntimeToolCore PRIVATE /W4 /permissive-)
+    target_compile_options(EliteNavigationRouteToolCore PRIVATE /W4 /permissive-)
     target_compile_options(navigation_runtime_viewer PRIVATE /W4 /permissive-)
 else()
-    target_compile_options(EliteNavigationRuntimeToolCore PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(EliteNavigationRouteToolCore PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(navigation_runtime_viewer PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 

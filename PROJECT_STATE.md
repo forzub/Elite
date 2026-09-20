@@ -603,3 +603,13 @@ The Stage-1 diagnostic boundary was tightened after the initial implementation:
 - a new architecture checker pins that Stage 1 cannot regress into execution/replan
   ownership;
 - target validation is still pending on the user's MinGW64 machine.
+
+
+## Architecture-gate compatibility fix
+
+During pre-handoff audit, the existing `check_geometric_path_planner.py` was found to
+encode an obsolete ownership assumption: it required the same geometric planner .cpp
+to appear twice in root CMake. Current runtime architecture already compiles it once in
+shared `EliteNavigationGeometry`, which both client/server navigation runtime reuse.
+The checker now pins that shared-library ownership instead of duplicate compilation.
+This is an architecture-test correction only; route behavior is unchanged.

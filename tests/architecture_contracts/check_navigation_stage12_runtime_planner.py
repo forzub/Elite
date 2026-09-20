@@ -1327,7 +1327,7 @@ for marker in (
 
 require(
     LOCAL_CPP.count("staticQueries.querySegment") >= 2,
-    "LocalAvoidance must prove both nominal and adjusted segments through the static read API",
+    "LocalAvoidance must prove both nominal and selected short segments through the static read API",
 )
 
 require(
@@ -1379,10 +1379,10 @@ for marker in (
     "pointToSegmentDistance2d",
     "candidateRelevantToForwardHorizon",
     "projectedClearanceForOffset",
-    "timeCoupledBypassClear",
+    "timeCoupledSegmentClear",
     "offsetCandidatesExamined",
     "routeCandidatesExamined",
-    "secondProbe",
+    "firstProbe",
     "mergeTargetMapMeters = boundedNominalTarget",
 ):
     require(marker in LOCAL_CPP, f"projected visible-horizon implementation missing: {marker}")
@@ -1390,8 +1390,8 @@ for marker in (
 for marker in (
     "testCrossingObstacleProjectsToNormalPlaneAndFindsBypass",
     "testHeadOnObstacleCanBypassWithoutMandatoryStop",
-    "testReturnLegIsAlsoProvenAgainstExactStaticGeometry",
-    "testObstacleGoneReturnsImmediatelyToNominalTrajectory",
+    "testBypassDoesNotRequireImmediateReturnToTrajectory",
+    "testObstacleGoneReacquiresNominalTrajectoryWithoutPlannerShutdown",
     "testNarrowStaticRegionFailsClosedWhenNoOffsetFits",
 ):
     require(marker in LOCAL_TEST, f"visible-horizon bypass regression missing: {marker}")
@@ -2157,7 +2157,7 @@ print(" - non-identity typed boundary regression pins NavLocal intent -> system 
 print(" - live lateral-demand diagnostics compare vectors in world space")
 print(" - self-test reports pilot demand separately from physically applied acceleration")
 print(" - NavigationSpace exact static OBB layer preserves real apertures beyond sphere broadphase")
-print(" - LocalAvoidance proves nominal and adjusted segments against exact static geometry")
+print(" - LocalAvoidance proves nominal and selected short segments against exact static geometry")
 print(" - live lab publishes exact HitVolume OBBs after authoritative hub/object transforms")
 print(" - live self-test requires exact-static query work and nominal OBB blocking evidence")
 print(" - dynamic ConflictHold cannot collapse exact-static nominal proof to a zero-length segment")

@@ -13,61 +13,55 @@
 
 Latest target:
 ```
-51e6c41bb94b65e8cc269fb035164a4eb0aa23fd
+0ad327ad63d3e63f8c204b2e59a6f224f80c8fee
 ```
 
-Architecture PASS; 18/19 runtime tests.
+Architecture PASS; runtime 17/19.
 
-Focused explicit continuity is now production-wired and independently green.
+The latest run proved the explicit continuity plumbing exists, but branch classification was mathematically wrong.
 
-The final composite exposed a stronger requirement: continuity must outrank the ordinary minimum-deflection-ring preference when the accepted branch remains safely available at a slightly larger angle.
+## Correct branch semantics
 
-## Current B4 transitional semantics
+A local bypass branch is a lateral choice around the current nominal route.
 
-No continuity hint:
-- choose smallest safe deflection ring;
-- use current velocity to rank safe azimuths inside that ring.
+Therefore branch comparison must remove nominal forward first.
 
-Explicit accepted-segment continuity:
-- search all ordinary safe rings;
-- preserve same branch when possible;
-- alignment with accepted direction is primary;
-- angle is secondary;
-- safety proof is always mandatory.
-
-This remains stateless planning: execution owns the accepted branch context.
-
-## Regression
-
-The strengthened regression contains:
-- real dynamic nominal conflict;
-- wide 3D static region;
-- exact-static blocker on preferred branch at first ring only;
-- safe opposite branch on first ring;
-- safe preferred branch on a larger ring.
-
-Expected:
+For accepted direction A and candidate C:
 ```
-larger same-branch candidate wins
+A_lateral = A - forward * dot(A, forward)
+C_lateral = C - forward * dot(C, forward)
+
+branch_alignment =
+    dot(normalize(A_lateral), normalize(C_lateral))
 ```
 
-## Ownership
+This correctly distinguishes opposite bypass sides even when both directions make forward progress.
 
-Composite continuity is now updated only after successful execution of a physically valid accepted local program.
+## Ranking
 
-Planner proposals do not become continuity state merely by being proposed.
+With valid transverse continuity:
+- same branch first;
+- smallest safe ring inside same branch;
+- best lateral alignment inside that ring.
 
-## Longer-term architecture
+This avoids both:
+- branch ping-pong;
+- gratuitous 60/75 degree turns merely to increase alignment score.
 
-This is still transitional B4.
+## Diagnostics
 
-The eventual route-aligned configuration-space corridor should represent:
-- branch identity;
-- local free-space topology;
-- continuity;
-- physical maneuver envelope
+New result diagnostics make the next composite decisive:
+- whether lateral continuity was meaningful;
+- how many same-branch safe candidates existed;
+- what alignment was selected.
 
-structurally rather than by a direction hint.
+If no same-branch safe candidate exists, branch switching is not a ranking defect. At that point the planner/execution stack needs a physically appropriate recovery maneuver before the switch.
+
+## B4 interpretation
+
+This remains transitional local-ray-fan work.
+
+Long-term B4 route-aligned corridor should carry branch/topology continuity structurally.
 
 ## Exit criterion
 
@@ -75,8 +69,8 @@ Final composite green -> synthetic maneuver behavior lab closes.
 
 Then:
 - NAV STRESS/game;
-- visualize accepted corridor;
-- visualize accepted physical trajectory;
+- accepted route/corridor visualization;
+- accepted physical trajectory visualization;
 - live NPC/autopilot evaluation.
 
 ## State protocol

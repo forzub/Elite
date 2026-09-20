@@ -2151,12 +2151,21 @@ void keyCallback(
 
     if (key == GLFW_KEY_ESCAPE)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    else if (
-        key == GLFW_KEY_SPACE &&
-        state->traceData &&
-        state->traceData->frames.size() > 1)
+    else if (key == GLFW_KEY_SPACE)
     {
-        state->playing = !state->playing;
+        if (
+            state->calculationPerformed &&
+            state->calculationSucceeded &&
+            !state->executionPerformed)
+        {
+            state->pendingUiAction = UiAction::Execute;
+        }
+        else if (
+            state->traceData &&
+            state->traceData->frames.size() > 1)
+        {
+            state->playing = !state->playing;
+        }
     }
     else if (key == GLFW_KEY_F)
         state->requestFit = true;

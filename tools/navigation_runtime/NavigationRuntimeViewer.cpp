@@ -89,6 +89,7 @@ struct AppState
     trace::TraceDocument* traceData = nullptr;
     std::string scenarioPath;
     std::string calculationMessage = "ВЫБЕРИТЕ РЕЖИМЫ И НАЖМИТЕ РАССЧИТАТЬ";
+    bool calculationSucceeded = false;
 
     elite::tools::navigation_runtime::ControlMode controlMode =
         elite::tools::navigation_runtime::ControlMode::Newtonian;
@@ -1077,6 +1078,10 @@ std::string localizedPhase(const std::string& phase)
 {
     if (phase == "initial")
         return "СТАРТ";
+    if (phase == "route_ready")
+        return "ЭТАП 1 — МАРШРУТ";
+    if (phase == "route_failed")
+        return "ЭТАП 1 — ОШИБКА МАРШРУТА";
     if (phase == "portal_101")
         return "ПОРТАЛ 101";
     if (phase == "doctrine_prefix")
@@ -1118,6 +1123,10 @@ std::string localizedStatus(const std::string& status)
         return "СТАТИЧЕСКАЯ ПОМЕХА";
     if (status == "invalid_input")
         return "ОШИБКА ВХОДНЫХ ДАННЫХ";
+    if (status == "static_route_ready")
+        return "СТАТИЧЕСКИЙ МАРШРУТ ГОТОВ";
+    if (status == "static_route_failed")
+        return "СТАТИЧЕСКИЙ МАРШРУТ НЕ ПОСТРОЕН";
     return status;
 }
 
@@ -1137,6 +1146,12 @@ double orientationErrorDegrees(const trace::TraceFrame& frame)
 
 std::string currentExplanation(const trace::TraceFrame& frame)
 {
+    if (frame.phase == "route_ready")
+        return "ЭТАП 1: ПОСТРОЕН ОДИН СТАТИЧЕСКИЙ МАРШРУТ\nСТАРТ -> ФИНИШ. ПОЛЁТ ЕЩЁ НЕ РАССЧИТЫВАЕТСЯ.";
+
+    if (frame.phase == "route_failed")
+        return "ЭТАП 1: СТАТИЧЕСКИЙ МАРШРУТ НЕ НАЙДЕН.\nДИНАМИЧЕСКИЕ ОБЪЕКТЫ ЗДЕСЬ НЕ УЧАСТВУЮТ.";
+
     if (frame.phase == "dynamic_replan")
         return "ПОМЕХА ПЕРЕСЕКЛА ПРИНЯТЫЙ ПУТЬ -\nЛОКАЛЬНОЕ ПЕРЕПЛАНИРОВАНИЕ";
 
@@ -1604,7 +1619,7 @@ void drawHud(
             194.0f,
             "ИТОГ РАСЧЁТА: " + state.calculationMessage,
             1.15f,
-            state.calculationMessage == "РАСЧЁТ ЗАВЕРШЁН"
+            state.calculationSucceeded
                 ? glm::vec3(0.35f,1.0f,0.42f)
                 : glm::vec3(1.0f,0.55f,0.10f)
         );
@@ -2390,11 +2405,12 @@ void processUiAction(
             state.traceData = &data;
             state.frameIndex = 0;
             state.playbackTime = 0.0;
-            state.playing = !data.frames.empty();
+            state.playing = false;
             state.requestFit = !data.frames.empty();
+            state.calculationSucceeded = result.success;
             state.calculationMessage =
                 result.success
-                    ? "РАСЧЁТ ЗАВЕРШЁН"
+                    ? result.message
                     : "ОШИБКА: " + result.message;
 
             if (!data.frames.empty())

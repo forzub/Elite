@@ -2282,6 +2282,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     policy.avoidance.minimumLateralStepMeters = 10.0;
     policy.avoidance.lateralStepEnvelopeMultiplier = 1.0;
     policy.avoidance.maximumLateralOffsetMeters = 800.0;
+    policy.avoidance.longitudinalSamples = 3;
     policy.avoidance.projectionPaddingMeters = 10.0;
     policy.avoidance.trajectorySamples = 48;
     policy.avoidance.staticAdditionalClearanceMeters = 10.0;

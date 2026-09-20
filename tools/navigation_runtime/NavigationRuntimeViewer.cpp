@@ -369,6 +369,83 @@ void appendCircle(
     }
 }
 
+void appendWireBox(
+    std::vector<Vertex>& out,
+    const glm::vec3& center,
+    const glm::vec3& half,
+    const glm::vec3& color
+)
+{
+    glm::vec3 corners[8];
+    int index = 0;
+    for (int sx : {-1, 1})
+    {
+        for (int sy : {-1, 1})
+        {
+            for (int sz : {-1, 1})
+            {
+                corners[index++] =
+                    center +
+                    glm::vec3(
+                        static_cast<float>(sx) * half.x,
+                        static_cast<float>(sy) * half.y,
+                        static_cast<float>(sz) * half.z
+                    );
+            }
+        }
+    }
+
+    static constexpr int edges[][2] = {
+        {0,1},{0,2},{0,4},{1,3},{1,5},{2,3},
+        {2,6},{3,7},{4,5},{4,6},{5,7},{6,7}
+    };
+
+    for (const auto& edge : edges)
+        addLine(out, corners[edge[0]], corners[edge[1]], color);
+}
+
+void appendWireCapsuleZ(
+    std::vector<Vertex>& out,
+    const glm::vec3& center,
+    float radius,
+    float halfLength,
+    const glm::vec3& color
+)
+{
+    const glm::vec3 a =
+        center + glm::vec3(0.0f, 0.0f, halfLength);
+    const glm::vec3 b =
+        center - glm::vec3(0.0f, 0.0f, halfLength);
+
+    appendWireSphere(out, a, radius, color);
+    appendWireSphere(out, b, radius, color);
+
+    addLine(
+        out,
+        a + glm::vec3(radius, 0.0f, 0.0f),
+        b + glm::vec3(radius, 0.0f, 0.0f),
+        color
+    );
+    addLine(
+        out,
+        a - glm::vec3(radius, 0.0f, 0.0f),
+        b - glm::vec3(radius, 0.0f, 0.0f),
+        color
+    );
+    addLine(
+        out,
+        a + glm::vec3(0.0f, radius, 0.0f),
+        b + glm::vec3(0.0f, radius, 0.0f),
+        color
+    );
+    addLine(
+        out,
+        a - glm::vec3(0.0f, radius, 0.0f),
+        b - glm::vec3(0.0f, radius, 0.0f),
+        color
+    );
+}
+
 void appendWireSphere(
     std::vector<Vertex>& out,
     const glm::vec3& center,
@@ -1898,6 +1975,45 @@ void drawScene(
     const trace::TraceFrame& frame = displayFrame;
 
     renderer.begin(viewProjection);
+
+    std::vector<Vertex> staticGeometry;
+    for (const auto& obstacle : data.staticObstacles)
+    {
+        const glm::vec3 center = toVec3(obstacle.center);
+        const glm::vec3 color(0.60f, 0.64f, 0.70f);
+
+        if (obstacle.shape == "box")
+        {
+            appendWireBox(
+                staticGeometry,
+                center,
+                toVec3(obstacle.halfExtents),
+                color
+            );
+        }
+        else if (obstacle.shape == "capsule")
+        {
+            appendWireCapsuleZ(
+                staticGeometry,
+                center,
+                static_cast<float>(obstacle.radiusMeters),
+                static_cast<float>(
+                    obstacle.capsuleHalfLengthMeters
+                ),
+                color
+            );
+        }
+        else
+        {
+            appendWireSphere(
+                staticGeometry,
+                center,
+                static_cast<float>(obstacle.radiusMeters),
+                color
+            );
+        }
+    }
+    renderer.draw(GL_LINES, staticGeometry, 1.5f);
 
     renderer.draw(
         GL_LINES,

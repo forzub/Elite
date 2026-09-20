@@ -255,8 +255,11 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         query.avoidance.secondaryDeflectionRadians -
         query.avoidance.primaryDeflectionRadians;
 
+    const bool explicitContinuity =
+        query.preferredDirectionValid;
+
     const Vec3d continuityDirection =
-        query.preferredDirectionValid
+        explicitContinuity
             ? normalizedOr(
                   query.preferredDirectionMap,
                   normalizedOr(
@@ -269,6 +272,15 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                   forward
               );
 
+    bool globalHasSafeCandidate = false;
+    double globalBestContinuityScore =
+        -std::numeric_limits<double>::infinity();
+    double globalBestDeflection =
+        std::numeric_limits<double>::infinity();
+    std::size_t globalBestAzimuthIndex =
+        std::numeric_limits<std::size_t>::max();
+    LocalHorizonPlanner::Result globalBestAdjusted;
+
     for (double deflection =
              query.avoidance.primaryDeflectionRadians;
          deflection <=
@@ -279,11 +291,11 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         const double lateralScale = std::sin(deflection);
 
         bool ringHasSafeCandidate = false;
-        double bestContinuityScore =
+        double ringBestContinuityScore =
             -std::numeric_limits<double>::infinity();
-        std::size_t bestAzimuthIndex =
+        std::size_t ringBestAzimuthIndex =
             std::numeric_limits<std::size_t>::max();
-        LocalHorizonPlanner::Result bestAdjusted;
+        LocalHorizonPlanner::Result ringBestAdjusted;
 
         for (std::size_t azimuthIndex = 0;
              azimuthIndex < query.avoidance.azimuthSamples;
@@ -362,40 +374,99 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
             adjusted.targetAccelerationMapMetersPerSecond2 =
                 {0.0, 0.0, 0.0};
 
-            // Search the complete minimum-deflection ring before deciding.
-            // Replanning used to return the first safe azimuth. Because the
-            // local transverse basis changes as the craft moves, that could
-            // alternate between opposite sides of the same obstacle. Prefer
-            // the safe candidate that best continues the actual velocity
-            // direction. This adds side-continuity without hidden planner
-            // state, while preserving the existing "smallest deflection ring"
-            // contract.
             const double continuityScore =
                 dot(direction, continuityDirection);
 
             if (!ringHasSafeCandidate ||
                 continuityScore >
-                    bestContinuityScore + kEpsilon ||
+                    ringBestContinuityScore + kEpsilon ||
                 (std::abs(
-                     continuityScore - bestContinuityScore
+                     continuityScore - ringBestContinuityScore
                  ) <= kEpsilon &&
-                 azimuthIndex < bestAzimuthIndex))
+                 azimuthIndex < ringBestAzimuthIndex))
             {
                 ringHasSafeCandidate = true;
-                bestContinuityScore = continuityScore;
-                bestAzimuthIndex = azimuthIndex;
-                bestAdjusted = adjusted;
+                ringBestContinuityScore = continuityScore;
+                ringBestAzimuthIndex = azimuthIndex;
+                ringBestAdjusted = adjusted;
+            }
+
+            if (explicitContinuity)
+            {
+                // An accepted local segment is a branch-continuity contract.
+                // Search *all* allowed deflection rings before replacing it:
+                // a slightly larger same-branch maneuver is preferable to a
+                // smaller-angle maneuver on the opposite side. Safety remains
+                // mandatory because only Clear candidates enter this ranking.
+                //
+                // If no candidate keeps positive alignment with the accepted
+                // branch, we still retain the least-opposed safe candidate as
+                // a fail-safe fallback rather than deadlocking.
+                const bool candidateSameBranch =
+                    continuityScore > kEpsilon;
+                const bool globalSameBranch =
+                    globalHasSafeCandidate &&
+                    globalBestContinuityScore > kEpsilon;
+
+                const bool betterBranchClass =
+                    candidateSameBranch && !globalSameBranch;
+                const bool sameBranchClass =
+                    candidateSameBranch == globalSameBranch;
+                const bool betterContinuity =
+                    continuityScore >
+                        globalBestContinuityScore + kEpsilon;
+                const bool sameContinuity =
+                    std::abs(
+                        continuityScore -
+                        globalBestContinuityScore
+                    ) <= kEpsilon;
+                const bool smallerDeflection =
+                    deflection <
+                        globalBestDeflection - kEpsilon;
+                const bool sameDeflection =
+                    std::abs(
+                        deflection -
+                        globalBestDeflection
+                    ) <= kEpsilon;
+
+                if (!globalHasSafeCandidate ||
+                    betterBranchClass ||
+                    (sameBranchClass && betterContinuity) ||
+                    (sameBranchClass && sameContinuity &&
+                     smallerDeflection) ||
+                    (sameBranchClass && sameContinuity &&
+                     sameDeflection &&
+                     azimuthIndex < globalBestAzimuthIndex))
+                {
+                    globalHasSafeCandidate = true;
+                    globalBestContinuityScore = continuityScore;
+                    globalBestDeflection = deflection;
+                    globalBestAzimuthIndex = azimuthIndex;
+                    globalBestAdjusted = adjusted;
+                }
             }
         }
 
-        if (ringHasSafeCandidate)
+        if (!explicitContinuity && ringHasSafeCandidate)
         {
+            // With no accepted branch, preserve the legacy priority of the
+            // smallest safe deflection ring. Velocity only chooses the best
+            // candidate *inside* that ring.
             result.status = Status::AdjustedClear;
-            result.target = bestAdjusted;
+            result.target = ringBestAdjusted;
             result.adjustedTarget = true;
             result.selectedDeflectionRadians = deflection;
             return result;
         }
+    }
+
+    if (explicitContinuity && globalHasSafeCandidate)
+    {
+        result.status = Status::AdjustedClear;
+        result.target = globalBestAdjusted;
+        result.adjustedTarget = true;
+        result.selectedDeflectionRadians = globalBestDeflection;
+        return result;
     }
 
     result.ordinarySearchExhausted = true;

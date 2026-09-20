@@ -2174,7 +2174,9 @@ ScenarioRunResult executeCalculatedRoute(
         const bool success =
             !followerInvalid &&
             !bridgeInvalid &&
+            !phaseCaptureTimedOut &&
             !coarseStaticContact &&
+            routeExecutionComplete &&
             finalStateReached;
 
         if (!trace.frames.empty())
@@ -2188,11 +2190,13 @@ ScenarioRunResult executeCalculatedRoute(
                     ? "follower_invalid"
                     : bridgeInvalid
                         ? "pilot_bridge_invalid"
-                        : coarseStaticContact
-                            ? "static_contact"
-                            : finalStateReached
-                                ? "follower_complete"
-                                : "terminal_miss";
+                        : phaseCaptureTimedOut
+                            ? "capture_timeout"
+                            : coarseStaticContact
+                                ? "static_contact"
+                                : success
+                                    ? "follower_complete"
+                                    : "terminal_miss";
         }
 
         auto number = [](double value)
@@ -2211,8 +2215,12 @@ ScenarioRunResult executeCalculatedRoute(
                 std::to_string(
                     trajectoryResult.trajectory.samples.size()
                 ),
-            "PROGRAM CHUNKS: " +
+            "PROGRAM PHASES: " +
                 std::to_string(programs.size()),
+            "PHASE HANDOFFS: " +
+                std::to_string(phaseHandoffs),
+            std::string("ROUTE EXECUTION COMPLETE: ") +
+                (routeExecutionComplete ? "YES" : "NO"),
             std::string("FOLLOWER: ") +
                 (followerInvalid ? "FAIL" : "EXECUTED"),
             "FOLLOWER FAIL REASON: " + followerFailureReason,

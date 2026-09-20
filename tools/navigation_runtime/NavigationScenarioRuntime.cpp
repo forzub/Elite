@@ -23,6 +23,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -1489,6 +1490,451 @@ ScenarioRunResult calculateScenario(
                 ? "ЭТАП 1: СТАТИЧЕСКИЙ МАРШРУТ ПОСТРОЕН"
                 : "ЭТАП 1: МАРШРУТ НЕ ПОСТРОЕН — " +
                     route.message;
+    }
+    catch (const std::exception& e)
+    {
+        out.success = false;
+        out.message = e.what();
+    }
+
+    return out;
+}
+
+
+ScenarioRunResult executeCalculatedRoute(
+    const std::string& scenarioJsonPath,
+    const ScenarioRunSettings& settings,
+    const TraceDocument& calculatedRoute
+)
+{
+    ScenarioRunResult out;
+
+    try
+    {
+        const Scenario scenario = loadScenario(scenarioJsonPath);
+
+        TraceDocument trace = calculatedRoute;
+        trace.frames.clear();
+        trace.law =
+            settings.controlMode == ControlMode::Newtonian
+                ? "newtonian"
+                : "assisted";
+
+        if (calculatedRoute.routePoints.size() < 2)
+        {
+            out.trace = std::move(trace);
+            out.success = false;
+            out.message =
+                "ЭТАП 2: НЕТ РАССЧИТАННОГО МАРШРУТА";
+            out.diagnostics = {
+                "SCENE: LOADED",
+                "PLANNER: NO CACHED ROUTE",
+                "TRAJECTORY: NOT RUN",
+                "FOLLOWER: NOT RUN"
+            };
+            writeExecutionDiagnostics(
+                scenarioJsonPath,
+                out.diagnostics
+            );
+            return out;
+        }
+
+        if (scenario.finish.speedMps > 1.0e-6)
+        {
+            out.trace = std::move(trace);
+            out.success = false;
+            out.message =
+                "ЭТАП 2: НЕНУЛЕВАЯ ФИНАЛЬНАЯ СКОРОСТЬ "
+                "ЕЩЁ НЕ ПОДДЕРЖАНА RUCKIG ROUTE BACKEND";
+            out.diagnostics = {
+                "SCENE: LOADED",
+                "PLANNER: CACHED ROUTE OK",
+                "TRAJECTORY: FAIL",
+                "FOLLOWER: NOT RUN",
+                "FINAL SPEED CONTRACT: UNSUPPORTED"
+            };
+            writeExecutionDiagnostics(
+                scenarioJsonPath,
+                out.diagnostics
+            );
+            return out;
+        }
+
+        const ShipParams params = cobraParams();
+        const auto trajectoryResult =
+            buildExecutionTrajectory(
+                scenario,
+                settings,
+                calculatedRoute,
+                params
+            );
+
+        if (!trajectoryResult.ready())
+        {
+            TraceFrame failed = routeFrame(scenario, true);
+            failed.phase = "execution_failed";
+            failed.plannerStatus = "trajectory_failed";
+            trace.frames.push_back(std::move(failed));
+
+            out.trace = std::move(trace);
+            out.success = false;
+            out.message =
+                "ЭТАП 2: RUCKIG НЕ ПОСТРОИЛ ТРАЕКТОРИЮ";
+
+            out.diagnostics = {
+                "SCENE: LOADED",
+                "PLANNER: CACHED ROUTE OK",
+                "TRAJECTORY: FAIL",
+                "TRAJECTORY MESSAGE: " +
+                    trajectoryResult.trajectory.message,
+                "FOLLOWER: NOT RUN",
+                "LOG: last_execution.log"
+            };
+            writeExecutionDiagnostics(
+                scenarioJsonPath,
+                out.diagnostics
+            );
+            return out;
+        }
+
+        const auto attitudes =
+            buildReferenceAttitudes(
+                trajectoryResult.trajectory,
+                scenario,
+                controlLaw(settings.controlMode),
+                params
+            );
+
+        const auto programs =
+            buildProgramChunks(
+                trajectoryResult.trajectory,
+                attitudes,
+                scenario,
+                params
+            );
+
+        if (programs.empty())
+        {
+            out.trace = std::move(trace);
+            out.success = false;
+            out.message =
+                "ЭТАП 2: НЕ СОЗДАНО НИ ОДНОЙ ПРОГРАММЫ FOLLOWER";
+            out.diagnostics = {
+                "SCENE: LOADED",
+                "PLANNER: CACHED ROUTE OK",
+                "TRAJECTORY: OK",
+                "FOLLOWER PROGRAMS: 0",
+                "FOLLOWER: NOT RUN",
+                "LOG: last_execution.log"
+            };
+            writeExecutionDiagnostics(
+                scenarioJsonPath,
+                out.diagnostics
+            );
+            return out;
+        }
+
+        ExecutionVehicle vehicle(scenario, settings);
+
+        const double trajectoryEnd =
+            trajectoryResult.trajectory.durationSeconds;
+        const double maximumEnd =
+            trajectoryEnd + 12.0;
+
+        std::size_t activeProgram = 0;
+        double nextTraceTime = 0.0;
+        bool followerInvalid = false;
+        bool bridgeInvalid = false;
+        bool coarseStaticContact = false;
+        double maximumCrossTrack = 0.0;
+        double maximumFollowerPositionError = 0.0;
+
+        trace.frames.push_back(
+            executionTraceFrame(
+                vehicle,
+                programs.front(),
+                scenario,
+                "follower_running"
+            )
+        );
+
+        glm::dvec3 previousPosition =
+            vehicle.transform.motion.localPositionMeters;
+
+        while (vehicle.timeSeconds < maximumEnd - 1.0e-9)
+        {
+            while (
+                activeProgram + 1 < programs.size() &&
+                vehicle.timeSeconds + 1.0e-9 >=
+                    programs[activeProgram + 1].
+                        acceptedAtUniverseTimeSeconds)
+            {
+                ++activeProgram;
+            }
+
+            const Program& program = programs[activeProgram];
+            const auto follower =
+                Follower::follow(
+                    program,
+                    vehicle.timeSeconds,
+                    followerAgent(vehicle)
+                );
+
+            if (follower.status == Follower::Status::InvalidInput)
+            {
+                followerInvalid = true;
+                break;
+            }
+
+            maximumFollowerPositionError =
+                std::max(
+                    maximumFollowerPositionError,
+                    follower.crossTrackErrorMeters
+                );
+
+            const auto bridgeResult =
+                vehicle.bridge.step(
+                    vehicle.timeSeconds + kExecutionDt,
+                    kExecutionDt,
+                    toSystemIntent(follower.intent)
+                );
+
+            if (bridgeResult.status !=
+                Bridge::PilotExecutor::Status::Ok)
+            {
+                bridgeInvalid = true;
+                break;
+            }
+
+            SharedShipPhysics::integrate(
+                vehicle.transform,
+                vehicle.params,
+                bridgeResult.control,
+                vehicle.world,
+                static_cast<float>(kExecutionDt)
+            );
+
+            game::navigation::DynamicMotionSystem::
+                applySystemAccelerationDemand(
+                    vehicle.transform.motion,
+                    vehicle.params,
+                    bridgeResult.control.
+                        navigationLinearAccelerationDemandSystemMps2,
+                    vehicle.transform.forward()
+                );
+
+            game::navigation::DynamicMotionSystem::
+                updateLocalFrameMotion(
+                    vehicle.transform.motion,
+                    vehicle.transform.worldPosition,
+                    vehicle.frame,
+                    vehicle.params,
+                    kExecutionDt
+                );
+
+            vehicle.transform.syncLegacyPositionFromWorld();
+            vehicle.timeSeconds += kExecutionDt;
+
+            const glm::dvec3 currentPosition =
+                vehicle.transform.motion.localPositionMeters;
+
+            maximumCrossTrack =
+                std::max(
+                    maximumCrossTrack,
+                    distancePointToPolyline(
+                        currentPosition,
+                        calculatedRoute.routePoints
+                    )
+                );
+
+            if (!world::navigation::
+                    segmentClearOfNavigationObstacles(
+                        previousPosition,
+                        currentPosition,
+                        scenario.staticObstacles,
+                        std::max(
+                            0.0,
+                            scenario.routeEnvelopeRadiusMeters
+                        ),
+                        std::max(
+                            0.0,
+                            scenario.routeClearanceMeters
+                        )
+                    ))
+            {
+                coarseStaticContact = true;
+            }
+
+            previousPosition = currentPosition;
+
+            if (vehicle.timeSeconds + 1.0e-9 >= nextTraceTime)
+            {
+                trace.frames.push_back(
+                    executionTraceFrame(
+                        vehicle,
+                        program,
+                        scenario,
+                        "follower_running"
+                    )
+                );
+                nextTraceTime += kTraceSampleSeconds;
+            }
+
+            const double finalPositionError =
+                glm::length(
+                    currentPosition -
+                    scenario.finish.position
+                );
+            const double finalSpeedError =
+                std::abs(
+                    glm::length(
+                        vehicle.transform.motion.localVelocityMps
+                    ) -
+                    scenario.finish.speedMps
+                );
+
+            if (
+                vehicle.timeSeconds >= trajectoryEnd &&
+                finalPositionError <= 3.0 &&
+                finalSpeedError <= 1.0)
+            {
+                break;
+            }
+        }
+
+        const glm::dvec3 finalPosition =
+            vehicle.transform.motion.localPositionMeters;
+        const double finalPositionError =
+            glm::length(
+                finalPosition - scenario.finish.position
+            );
+        const double finalSpeed =
+            glm::length(
+                vehicle.transform.motion.localVelocityMps
+            );
+        const double finalSpeedError =
+            std::abs(finalSpeed - scenario.finish.speedMps);
+
+        auto angleBetween = [](
+            const glm::dvec3& a,
+            const glm::dvec3& b)
+        {
+            const double la = glm::length(a);
+            const double lb = glm::length(b);
+            if (la <= 1.0e-12 || lb <= 1.0e-12)
+                return 0.0;
+            return std::acos(
+                std::clamp(
+                    glm::dot(a / la, b / lb),
+                    -1.0,
+                    1.0
+                )
+            );
+        };
+
+        const double finalForwardError =
+            scenario.finish.requireForward
+                ? angleBetween(
+                    glm::dvec3(vehicle.transform.forward()),
+                    scenario.finish.forward
+                  )
+                : 0.0;
+        const double finalUpError =
+            scenario.finish.requireUp
+                ? angleBetween(
+                    glm::dvec3(vehicle.transform.up()),
+                    scenario.finish.up
+                  )
+                : 0.0;
+
+        const bool finalStateReached =
+            finalPositionError <= 5.0 &&
+            finalSpeedError <= 1.5 &&
+            finalForwardError <= 0.25 &&
+            finalUpError <= 0.25;
+
+        const bool success =
+            !followerInvalid &&
+            !bridgeInvalid &&
+            !coarseStaticContact &&
+            finalStateReached;
+
+        if (!trace.frames.empty())
+        {
+            trace.frames.back().phase =
+                success
+                    ? "execution_complete"
+                    : "execution_failed";
+            trace.frames.back().plannerStatus =
+                followerInvalid
+                    ? "follower_invalid"
+                    : bridgeInvalid
+                        ? "pilot_bridge_invalid"
+                        : coarseStaticContact
+                            ? "static_contact"
+                            : finalStateReached
+                                ? "follower_complete"
+                                : "terminal_miss";
+        }
+
+        auto number = [](double value)
+        {
+            std::ostringstream stream;
+            stream.setf(std::ios::fixed);
+            stream << std::setprecision(2) << value;
+            return stream.str();
+        };
+
+        out.diagnostics = {
+            "SCENE: LOADED",
+            "PLANNER: CACHED ROUTE OK",
+            "TRAJECTORY: RUCKIG OK",
+            "TRAJECTORY SAMPLES: " +
+                std::to_string(
+                    trajectoryResult.trajectory.samples.size()
+                ),
+            "PROGRAM CHUNKS: " +
+                std::to_string(programs.size()),
+            std::string("FOLLOWER: ") +
+                (followerInvalid ? "FAIL" : "EXECUTED"),
+            std::string("PILOT BRIDGE: ") +
+                (bridgeInvalid ? "FAIL" : "EXECUTED"),
+            "PILOT PROFILE: " +
+                std::string(pilotName(settings.pilot)),
+            "FLIGHT STYLE: " +
+                std::string(flightStyleName(settings.flightStyle)),
+            "CONTROL LAW: " +
+                std::string(
+                    settings.controlMode == ControlMode::Newtonian
+                        ? "NEWTONIAN"
+                        : "ASSISTED"
+                ),
+            "EXECUTION FRAMES: " +
+                std::to_string(trace.frames.size()),
+            "FINAL POSITION ERROR: " +
+                number(finalPositionError) + " M",
+            "FINAL SPEED: " +
+                number(finalSpeed) + " M/S",
+            "MAX ROUTE DEVIATION: " +
+                number(maximumCrossTrack) + " M",
+            "MAX FOLLOWER ERROR: " +
+                number(maximumFollowerPositionError) + " M",
+            std::string("COARSE STATIC CONTACT: ") +
+                (coarseStaticContact ? "YES" : "NO"),
+            "LOG: last_execution.log"
+        };
+
+        writeExecutionDiagnostics(
+            scenarioJsonPath,
+            out.diagnostics
+        );
+
+        out.trace = std::move(trace);
+        out.success = success;
+        out.message =
+            success
+                ? "ЭТАП 2: FOLLOWER ПРОШЁЛ МАРШРУТ"
+                : "ЭТАП 2: ИСПОЛНЕНИЕ МАРШРУТА ЗАВЕРШИЛОСЬ ОШИБКОЙ";
     }
     catch (const std::exception& e)
     {

@@ -893,39 +893,104 @@ void appendUiButton(
     );
 }
 
+std::string localizedLaw(const std::string& law)
+{
+    if (law == "newtonian")
+        return "НЬЮТОНОВСКИЙ";
+    if (law == "assisted")
+        return "АССИСТИРОВАННЫЙ";
+    return law;
+}
+
+std::string localizedPhase(const std::string& phase)
+{
+    if (phase == "initial")
+        return "СТАРТ";
+    if (phase == "portal_101")
+        return "ПОРТАЛ 101";
+    if (phase == "doctrine_prefix")
+        return "ПОЛЁТ К ПОРТАЛУ 102";
+    if (phase == "dynamic_replan")
+        return "ПЕРЕПЛАНИРОВАНИЕ";
+    if (phase.rfind("dynamic_bypass_", 0) == 0)
+        return "ОБХОД ПРЕПЯТСТВИЯ";
+    if (phase.rfind("dynamic_brake_", 0) == 0)
+        return "ТОРМОЖЕНИЕ";
+    if (phase.rfind("replan_", 0) == 0)
+        return "ПЕРЕПЛАНИРОВАНИЕ";
+    if (phase == "portal_102")
+        return "ПОРТАЛ 102";
+    if (phase == "final_capture")
+        return "ФИНАЛЬНОЕ ПОЗИЦИОНИРОВАНИЕ";
+    return phase;
+}
+
+std::string localizedStatus(const std::string& status)
+{
+    if (status.empty())
+        return "НЕТ";
+    if (status == "nominal_clear")
+        return "НОМИНАЛЬНЫЙ ПУТЬ СВОБОДЕН";
+    if (status == "adjusted_clear")
+        return "ВЫБРАН БЕЗОПАСНЫЙ ОБХОД";
+    if (status == "conflict_hold")
+        return "КОНФЛИКТ - ТОРМОЖЕНИЕ";
+    if (status == "stale_hold")
+        return "ДАННЫЕ УСТАРЕЛИ";
+    if (status == "static_hold")
+        return "СТАТИЧЕСКАЯ ПОМЕХА";
+    if (status == "invalid_input")
+        return "ОШИБКА ВХОДНЫХ ДАННЫХ";
+    return status;
+}
+
+double orientationErrorDegrees(const trace::TraceFrame& frame)
+{
+    if (!frame.hasProgramReference)
+        return 0.0;
+
+    const glm::dvec3 a =
+        glm::normalize(frame.shipForward);
+    const glm::dvec3 b =
+        glm::normalize(frame.programReferenceForward);
+    const double dot =
+        std::clamp(glm::dot(a, b), -1.0, 1.0);
+    return std::acos(dot) * 180.0 / 3.14159265358979323846;
+}
+
 std::string currentExplanation(const trace::TraceFrame& frame)
 {
     if (frame.phase == "dynamic_replan")
-        return "HAZARD INVALIDATED ACCEPTED ROUTE - LOCAL REPLAN";
+        return "ПОМЕХА ПЕРЕСЕКЛА ПРИНЯТЫЙ ПУТЬ - ЛОКАЛЬНОЕ ПЕРЕПЛАНИРОВАНИЕ";
 
     if (frame.phase.rfind("dynamic_bypass_", 0) == 0)
-        return "SHIP EXECUTES PHYSICALLY BOUNDED LOCAL BYPASS";
+        return "КОБРА ВЫПОЛНЯЕТ ФИЗИЧЕСКИ ДОПУСТИМЫЙ ЛОКАЛЬНЫЙ ОБХОД";
 
     if (frame.phase.rfind("dynamic_brake_", 0) == 0)
-        return "NO SAFE PHYSICAL BYPASS - ACTIVE BRAKING";
+        return "БЕЗОПАСНЫЙ ОБХОД НЕДОСТУПЕН - АКТИВНОЕ ТОРМОЖЕНИЕ";
 
     if (frame.phase.rfind("replan_", 0) == 0)
     {
         if (frame.plannerStatus == "adjusted_clear")
-            return "REPLAN: HAZARD STILL BLOCKS NOMINAL SEGMENT";
+            return "ПОМЕХА ЕЩЁ ПЕРЕКРЫВАЕТ НОМИНАЛЬНЫЙ СЕГМЕНТ - СТРОИТСЯ ОБХОД";
         if (frame.plannerStatus == "nominal_clear")
-            return "REPLAN: NEXT BOUNDED SEGMENT LOOKS NOMINAL-CLEAR";
-        return "LOCAL REPLAN RESULT";
+            return "СЛЕДУЮЩИЙ КОРОТКИЙ СЕГМЕНТ СВОБОДЕН - ВОЗВРАТ К МАРШРУТУ";
+        return "РЕЗУЛЬТАТ ЛОКАЛЬНОГО ПЕРЕПЛАНИРОВАНИЯ";
     }
 
     if (frame.phase == "portal_101")
-        return "FOLLOW STATIC TOPOLOGY ROUTE TO PORTAL 101";
+        return "ПОЛЁТ ПО СТАТИЧЕСКОМУ МАРШРУТУ К ПОРТАЛУ 101";
 
     if (frame.phase == "doctrine_prefix")
-        return "EXECUTE ACCEPTED MANEUVER TOWARD PORTAL 102";
+        return "ВЫПОЛНЯЕТСЯ ПРИНЯТАЯ ПРОГРАММА ПОЛЁТА К ПОРТАЛУ 102";
 
     if (frame.phase == "portal_102")
-        return "LONG PORTAL LEG - CURRENT KNOWN CLEARANCE-LOSS AREA";
+        return "ДЛИННЫЙ ПЕРЕХОД К ПОРТАЛУ 102 - ЗДЕСЬ СЕЙЧАС ТЕРЯЕТСЯ ЗАЗОР";
 
     if (frame.phase == "final_capture")
-        return "FINAL PRECISION CAPTURE";
+        return "ФИНАЛЬНОЕ ТОЧНОЕ ПОЗИЦИОНИРОВАНИЕ";
 
-    return "INITIAL ROUTE / TRACE START";
+    return "СТАРТ МАРШРУТА";
 }
 
 void drawHud(
@@ -959,15 +1024,15 @@ void drawHud(
     appendUiButton(
         ui,
         playButtonRect(),
-        state.playing ? "PAUSE" : "PLAY",
+        state.playing ? "ПАУЗА" : "ПРОИГРЫВАТЬ",
         state.playing
     );
-    appendUiButton(ui, prevButtonRect(), "PREV");
-    appendUiButton(ui, nextButtonRect(), "NEXT");
-    appendUiButton(ui, replanButtonRect(), "NEXT REPLAN");
-    appendUiButton(ui, fitButtonRect(), "FIT");
+    appendUiButton(ui, prevButtonRect(), "НАЗАД");
+    appendUiButton(ui, nextButtonRect(), "ВПЕРЁД");
+    appendUiButton(ui, replanButtonRect(), "СЛЕД. ПЕРЕПЛАН");
+    appendUiButton(ui, fitButtonRect(), "ВПИСАТЬ");
 
-    const float panelWidth = 372.0f;
+    const float panelWidth = 470.0f;
     const float panelX =
         std::max(0.0f, static_cast<float>(windowWidth) - panelWidth);
     appendFilledRect(
@@ -988,39 +1053,59 @@ void drawHud(
 
     appendUiText(
         ui, x, y,
-        "NAVIGATION RUNTIME 3D",
+        "НАВИГАЦИЯ 3D",
         1.65f,
         {0.95f, 0.96f, 1.0f}
     );
     y += 30.0f;
 
     std::ostringstream frameLine;
-    frameLine << "LAW: " << data.law;
+    frameLine << "РЕЖИМ: " << localizedLaw(data.law);
     appendUiText(ui, x, y, frameLine.str(), textScale, {0.75f,0.82f,0.92f});
     y += line;
 
     std::ostringstream indexLine;
-    indexLine << "FRAME: " << (state.frameIndex + 1) << "/" << data.frames.size();
+    indexLine << "КАДР: " << (state.frameIndex + 1) << "/" << data.frames.size();
     appendUiText(ui, x, y, indexLine.str(), textScale, {0.75f,0.82f,0.92f});
     y += line;
 
     std::ostringstream timeLine;
     timeLine.setf(std::ios::fixed);
     timeLine.precision(2);
-    timeLine << "TIME: " << frame.timeSeconds << " S";
+    timeLine << "ВРЕМЯ: " << frame.timeSeconds << " С";
     appendUiText(ui, x, y, timeLine.str(), textScale, {0.75f,0.82f,0.92f});
     y += line;
 
-    appendUiText(ui, x, y, "PHASE: " + frame.phase, textScale, {0.92f,0.92f,0.92f});
+    appendUiText(ui, x, y, "ФАЗА: " + localizedPhase(frame.phase), textScale, {0.92f,0.92f,0.92f});
     y += line;
 
     appendUiText(
         ui, x, y,
-        "STATUS: " + (frame.plannerStatus.empty() ? std::string("NONE") : frame.plannerStatus),
+        "СТАТУС: " + localizedStatus(frame.plannerStatus),
         textScale,
         {0.92f,0.92f,0.92f}
     );
     y += line;
+
+    if (frame.hasProgramReference)
+    {
+        std::ostringstream orientationLine;
+        orientationLine.setf(std::ios::fixed);
+        orientationLine.precision(1);
+        orientationLine
+            << "ОШИБКА ОРИЕНТАЦИИ: "
+            << orientationErrorDegrees(frame)
+            << " ГРАД";
+        appendUiText(
+            ui,
+            x,
+            y,
+            orientationLine.str(),
+            1.30f,
+            {1.0f, 0.45f, 0.95f}
+        );
+        y += line;
+    }
 
     if (frame.hazardActive)
     {
@@ -1028,9 +1113,9 @@ void drawHud(
         clearanceLine.setf(std::ios::fixed);
         clearanceLine.precision(2);
         clearanceLine
-            << "CLEARANCE: "
+            << "ЗАЗОР: "
             << frame.dynamicClearanceMeters
-            << " M";
+            << " М";
         appendUiText(
             ui,
             x,
@@ -1048,7 +1133,7 @@ void drawHud(
     {
         appendUiText(
             ui, x, y,
-            "EVENT: REPLAN",
+            "СОБЫТИЕ: ПЕРЕПЛАНИРОВАНИЕ",
             textScale,
             {1.0f, 0.55f, 0.10f}
         );
@@ -1056,7 +1141,7 @@ void drawHud(
     }
 
     y += 14.0f;
-    appendUiText(ui, x, y, "WHAT IS HAPPENING", 1.55f, {1.0f,0.82f,0.32f});
+    appendUiText(ui, x, y, "ЧТО ПРОИСХОДИТ", 1.55f, {1.0f,0.82f,0.32f});
     y += 23.0f;
 
     const std::string explanation = currentExplanation(frame);
@@ -1087,7 +1172,7 @@ void drawHud(
     }
 
     y += 20.0f;
-    appendUiText(ui, x, y, "LEGEND", 1.55f, {0.92f,0.92f,1.0f});
+    appendUiText(ui, x, y, "ЛЕГЕНДА", 1.55f, {0.92f,0.92f,1.0f});
     y += 24.0f;
 
     auto legend = [&](const glm::vec3& color, const std::string& label)
@@ -1097,27 +1182,29 @@ void drawHud(
         y += 17.0f;
     };
 
-    legend({0.88f,0.88f,0.88f}, "ROUTE");
-    legend({0.25f,1.0f,0.35f}, "ACTUAL SHIP PATH");
-    legend({1.0f,0.25f,0.20f}, "HAZARD PATH");
-    legend({0.70f,0.88f,0.72f}, "SHIP BOX");
-    legend({0.25f,0.85f,1.0f}, "SHIP NOSE");
-    legend({1.0f,0.65f,0.15f}, "TURN / PORTAL POINT");
-    legend({1.0f,0.92f,0.15f}, "SELECTED BYPASS TARGET");
-    legend({0.20f,0.95f,1.0f}, "REACQUIRE REFERENCE");
-    legend({0.85f,0.30f,1.0f}, "ACTIVE PORTAL TARGET");
-    legend({1.0f,0.45f,0.05f}, "REPLAN EVENT");
+    legend({0.88f,0.88f,0.88f}, "МАРШРУТ");
+    legend({0.25f,1.0f,0.35f}, "ФАКТИЧЕСКАЯ ТРАЕКТОРИЯ");
+    legend({1.0f,0.25f,0.20f}, "ТРАЕКТОРИЯ ПОМЕХИ");
+    legend({0.70f,0.88f,0.72f}, "КОРПУС КОБРЫ");
+    legend({0.25f,0.85f,1.0f}, "ФАКТИЧЕСКИЙ НОС КОБРЫ");
+    legend({1.0f,0.25f,0.95f}, "НОС ПО ПРОГРАММЕ");
+    legend({0.20f,0.55f,1.0f}, "КОРИДОР СЛЕЖЕНИЯ");
+    legend({1.0f,0.65f,0.15f}, "ТОЧКА ПОВОРОТА / ПОРТАЛ");
+    legend({1.0f,0.92f,0.15f}, "ЦЕЛЬ ОБХОДА");
+    legend({0.20f,0.95f,1.0f}, "ТОЧКА ВОЗВРАТА НА МАРШРУТ");
+    legend({0.85f,0.30f,1.0f}, "ТЕКУЩИЙ ПОРТАЛ");
+    legend({1.0f,0.45f,0.05f}, "ПЕРЕПЛАНИРОВАНИЕ");
 
     y += 14.0f;
-    appendUiText(ui, x, y, "CONTROLS", 1.55f, {0.92f,0.92f,1.0f});
+    appendUiText(ui, x, y, "УПРАВЛЕНИЕ", 1.55f, {0.92f,0.92f,1.0f});
     y += 23.0f;
-    appendUiText(ui, x, y, "RMB ORBIT   MMB PAN", 1.25f, {0.75f,0.78f,0.84f});
+    appendUiText(ui, x, y, "ПКМ ВРАЩЕНИЕ   СКМ СДВИГ", 1.25f, {0.75f,0.78f,0.84f});
     y += 16.0f;
-    appendUiText(ui, x, y, "WHEEL ZOOM  SPACE PLAY", 1.25f, {0.75f,0.78f,0.84f});
+    appendUiText(ui, x, y, "КОЛЕСО МАСШТАБ  SPACE ПУСК", 1.25f, {0.75f,0.78f,0.84f});
     y += 16.0f;
-    appendUiText(ui, x, y, "[ ] STEP   R NEXT REPLAN", 1.25f, {0.75f,0.78f,0.84f});
+    appendUiText(ui, x, y, "[ ] КАДР   R СЛЕД. ПЕРЕПЛАН", 1.25f, {0.75f,0.78f,0.84f});
     y += 16.0f;
-    appendUiText(ui, x, y, "F FIT      ESC CLOSE", 1.25f, {0.75f,0.78f,0.84f});
+    appendUiText(ui, x, y, "F ВПИСАТЬ   ESC ЗАКРЫТЬ", 1.25f, {0.75f,0.78f,0.84f});
 
     renderer.draw(GL_TRIANGLES, ui, 1.0f);
     glEnable(GL_DEPTH_TEST);

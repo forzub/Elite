@@ -406,7 +406,7 @@ void testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()
 
     Map::DynamicActorInput blocker;
     blocker.entityId = 9151;
-    blocker.positionMapMeters = {4.5, 0.0, 0.0};
+    blocker.positionMapMeters = {3.5, 0.0, 0.0};
     blocker.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
     blocker.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
     blocker.radiusMeters = 0.75;
@@ -415,7 +415,7 @@ void testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()
     map.replaceDynamicWorld(std::move(update));
 
     Map::CorridorQuery query;
-    query.startMapMeters = {2.0, 0.0, 0.0};
+    query.startMapMeters = {0.0, 0.0, 0.0};
     query.endMapMeters = {7.0, 0.0, 0.0};
     query.radiusMeters = 5.0;
     const Map::QueryResult dynamic = map.queryCorridor(query);
@@ -423,7 +423,7 @@ void testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()
             "future-portal bypass fixture must publish its dynamic blocker");
 
     Planner::AgentState agent = baseAgent();
-    agent.positionMapMeters = {2.0, 0.0, 0.0};
+    agent.positionMapMeters = {0.0, 0.0, 0.0};
     agent.forwardMap = {0.0, 0.0, -1.0};
 
     Planner::Goal goal = goalAt(18.0);
@@ -1453,7 +1453,7 @@ int main()
         std::cout << " - exact static OBB participates in runtime composition\n";
         std::cout << " - live-scale 1300 m OBB triggers first-horizon adjustment\n";
         std::cout << " - adjusted target retains nominal conflict identity\n";
-        std::cout << " - projected visible-horizon bypass publishes an on-route merge target\n";
+        std::cout << " - projected visible-horizon bypass publishes an on-route reacquisition reference\n";
         std::cout << " - local conflict holds only when projected free space is exhausted\n";
         std::cout << " - bounded runtime candidates -> moving-gap/passage precision probe\n";
         std::cout << " - closing moving gap fails closed before passage evaluation\n";

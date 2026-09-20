@@ -1,139 +1,155 @@
-# Navigation Runtime 3D Viewer
+# Navigation Runtime — live 3D diagnostic stand
 
-Standalone visualizer for the deterministic navigation composite trace.
+Location: `tools/navigation_runtime/`.
 
-The viewer lives under `tools/navigation_runtime/` deliberately: it is a
-diagnostic tool, not part of the production game renderer.
+This tool is no longer a passive trace viewer. The JSON file describes only the
+input scenario. The executable calculates the route and vehicle motion itself by
+running the production navigation/control/physics chain in-process.
 
-## What it shows
+## Runtime chain
 
-- authored route polyline;
-- turn/portal points;
-- actual ship trajectory;
-- ship as an oriented wire box;
-- arrow extending from the ship nose;
-- dynamic hazard trajectory;
-- hazard body radius;
-- hull-collision envelope;
-- planner safety envelope;
-- selected local bypass target;
-- on-route reacquisition reference;
-- active portal target;
-- every recorded replan point.
+On `РАССЧИТАТЬ` the tool runs:
 
-The window title shows the current frame, universe time, phase, planner status,
-dynamic clearance and REPLAN marker.
+```text
+scenario.json
+  -> NavigationSpace / NavigationMap
+  -> NavigationRuntimePlanner
+  -> AcceptedManeuverProgram
+  -> TrajectoryFollower
+  -> NavigationRuntimeControlBridge / PilotSkillExecutor
+  -> SharedShipPhysics / DynamicMotionSystem
+  -> calculated TraceDocument in memory
+  -> 3D playback
+```
 
-## Controls
+The calculated trace is also saved as
+`tools/navigation_runtime/last_calculated_trace.json` for diagnostics, but it is
+an output, not an input to the live stand.
 
-- RMB drag: orbit camera;
-- MMB drag: pan;
-- mouse wheel: zoom;
-- F: fit the complete trace;
-- Space: play / pause;
-- [: previous recorded frame;
-- ]: next recorded frame;
-- R: jump to next replan event;
-- Esc: close.
+## Top controls
 
-## Trace files
+### Режим управления
+- `АССИСТЕД`
+- `НЬЮТОН`
 
-`navigation_composite_proving_ground_tests` writes:
+This changes the real local flight control law used by physics and the maneuver
+attitude policy.
 
-- `tools/navigation_runtime/last_trace_newtonian.json`;
-- `tools/navigation_runtime/last_trace_assisted.json` when the assisted run is reached.
+### Пилот
+- `ЭКСПЕРТ`
+- `СРЕДНИЙ`
+- `ЛУЗЕР`
 
-The file is written by an RAII guard, so a trace is retained even when a
-composite assertion throws after motion has already been simulated.
+This changes the real PilotSkillExecutor profile: reaction delay, decision rate,
+command latency, response bandwidth, slew and deterministic command error.
 
-## Build on MSYS2 MinGW64
+### Режим полёта
+- `СТАНДАРТ`
+- `ЭКСТРИМ`
 
-From repository root:
+This changes cruise speed and planner cost/horizon/aggressiveness parameters.
+Hard collision geometry and vehicle authority are not disabled.
+
+### Внезапная помеха
+Unchecked: the sudden obstacle is never published to NavigationMap.
+
+Checked: the sudden obstacle is absent from the initial world and is published
+only when its `activation_time_s` is reached during simulation. Therefore the
+initial route is calculated without foreknowledge of the surprise obstacle.
+After appearance, normal receding-horizon replanning sees it and reacts.
+
+### РАССЧИТАТЬ
+Runs the full scenario from the start state using the currently selected modes.
+The resulting route and motion replace the previous calculation.
+
+## scenario.json
+
+Default file:
+`tools/navigation_runtime/scenario.json`
+
+Supported inputs:
+
+- start position, velocity, forward and up;
+- optional forced ship route points (normally empty so Planner chooses the route);
+- final position;
+- optional required final forward direction;
+- optional required final up direction;
+- required final speed;
+- standard/extreme cruise speed;
+- static obstacles:
+  - sphere;
+  - box;
+  - capsule;
+- moving obstacles:
+  - initial position + velocity vector; or
+  - route points + route speed;
+- one optional sudden obstacle with the same motion description;
+- sudden obstacle may spawn relative to the live Cobra body using
+  `spawn_relative_to_ship_fru = [forward, right, up]`.
+
+## 3D diagnostics
+
+The stand renders:
+
+- static obstacles from JSON;
+- route selected by Planner as a white polyline;
+- local adjusted/bypass targets;
+- actual Cobra path;
+- actual Cobra body basis and nose;
+- AcceptedManeuverProgram reference nose;
+- angular error between actual and program reference;
+- translucent AcceptedManeuverProgram tracking corridor;
+- moving obstacle and predicted envelope;
+- replan events;
+- bottom-left `ГОРИЗОНТ КОБРЫ` projection plane;
+- frame slider and playback controls.
+
+The tracking corridor is deliberately labeled as the maneuver-program follower
+envelope. NavigationRuntimePlanner::Result does not currently publish a separate
+volumetric planner corridor, so the tool does not invent one.
+
+## Cobra horizon inset
+
+The inset is the plane perpendicular to the Cobra's current longitudinal axis.
+
+The moving obstacle is projected into Cobra right/up coordinates. Repeated
+projected envelopes over the planner look-ahead form the visible predicted
+obstacle tunnel.
+
+## Window behavior
+
+The viewer opens as an ordinary decorated Windows window maximized to the desktop
+work area. It is not exclusive fullscreen and not borderless game fullscreen.
+
+## Build
+
+From MSYS2 MinGW64:
 
 ```bash
+cd /d/__elite/work
 cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build/tools/navigation_runtime
 ```
 
-Run the latest Newtonian trace:
+## Run executable
+
+Default scenario:
 
 ```bash
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe
+cd /d/__elite/work
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Or supply a trace explicitly:
+Custom scenario:
 
 ```bash
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/last_trace_newtonian.json
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe path/to/my_scenario.json
 ```
 
-The viewer uses the repository's existing GLAD source plus the same installed
-GLFW/GLM/nlohmann-json environment already used by Elite development.
+Or build and run in one command:
 
+```bash
+bash tools/navigation_runtime/run_mingw64.sh
+```
 
-## Interactive HUD
-
-The viewer now has a visible diagnostic HUD instead of relying on hidden keyboard
-knowledge or the window title alone.
-
-Top buttons:
-- `PLAY/PAUSE`;
-- `PREV`;
-- `NEXT`;
-- `NEXT REPLAN`;
-- `FIT`.
-
-The right panel shows:
-- control law;
-- frame number and simulation time;
-- current phase and planner status;
-- live dynamic clearance;
-- explicit REPLAN event indication;
-- a short plain-English explanation of what the navigation system is doing;
-- a color legend for route, ship path, hazard path, ship box/nose, turn points,
-  bypass target, reacquisition reference, portal target and replan event;
-- mouse/keyboard controls.
-
-The phase `portal_102` is explicitly described as the current known
-clearance-loss area so visual replay can be used to diagnose the failure rather
-than only observe motion.
-
-
-## 2026-09-20 diagnostic accuracy update
-
-The viewer remains a deterministic replay tool: the composite test runs the real
-planner/follower/physics first and writes the result to JSON. The viewer does not
-rerun planner/follower while playing the file.
-
-Replay smoothness:
-- trace sampling remains approximately 0.10 s for compact diagnostic files;
-- the viewer now interpolates ship/hazard/reference state between samples, so visible
-  motion is no longer limited to ~10 Hz.
-
-Attitude correctness:
-- v2 trace stores actual ship forward/right/up, preserving roll;
-- v2 trace also stores the sampled AcceptedManeuverProgram reference basis;
-- the viewer draws actual nose separately from program nose and shows orientation error.
-
-Tracking corridor:
-- NavigationRuntimePlanner::Result does not publish a standalone volumetric corridor;
-- the viewer therefore does not invent one;
-- it renders the AcceptedManeuverProgram reference path plus
-  tracking.positionErrorMeters as a translucent tracking tube.
-
-Cobra horizon:
-- bottom-left inset is a plane perpendicular to current Cobra forward axis;
-- dynamic hazard positions are projected into Cobra right/up coordinates;
-- the predicted obstacle envelope is drawn through planner look-ahead using recorded
-  hazard velocity and current ship velocity.
-
-Window:
-- viewer opens as a normal decorated Windows window maximized to the desktop work area,
-  not exclusive/borderless fullscreen.
-
-Newtonian fixture:
-- dynamic local bypass/reacquisition programs no longer force VelocityAligned attitude
-  when law is Newtonian;
-- Newtonian bypass preserves the current rigid-body basis unless an explicit maneuver
-  attitude contract requires otherwise;
-- Assisted retains velocity-aligned behavior.
+The helper prints the exact executable launch command before starting it.

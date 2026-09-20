@@ -11,56 +11,61 @@
 ## Latest tested checkout
 
 ```
-f626fb0373499928e0ae89585c3bd992e5436c92
+69f8ca4dbcb44df5340b94f45640bcb7d6e6ed1a
 ```
 
-Architecture PASS, runtime 18/19.
+Architecture PASS, runtime 17/19.
 
-Newtonian final composite fully completes.
+Failures:
+- focused side-continuity regression;
+- final composite.
 
-Assisted fails only after repeated persistent-hazard replanning.
+## What the last run proved
 
-## Diagnosis
+The velocity-only tie-break is insufficient.
 
-Production adjusted targets for Assisted change avoidance side:
+Repeated local replans can still change avoidance branch because instantaneous velocity is not the same thing as the direction/branch of the currently accepted bounded segment.
 
+The focused regression also had a fixture bug: generic static region Z bounds were only +/-10 m, so intended +/-Z alternatives were not actually statically legal.
+
+## Current architecture fix
+
+Execution owns accepted-segment continuity.
+
+New runtime planner input:
 ```
-initial  Z=+17.815749
-iter 0   Z=+15.519026
-iter 1   Z=-14.477971
-iter 2   Z=+13.773784
-```
-
-The final failure is:
-```
-composite could not author bounded continuation around persistent hazard
-```
-
-The no-stop author cannot physically reverse side again from the current live state.
-
-Root cause is production local-avoidance azimuth selection:
-- first safe azimuth wins;
-- local transverse basis is regenerated after every segment;
-- equivalent safe side ordering changes with vehicle pose;
-- repeated replans can ping-pong.
-
-## Current production candidate
-
-```
-86640b05145938ec0880a3a26539957aaa72f085
-ef2e6ec85823c229d6cadb6aa8dbe5b65e209193
-6064a22f565fd7cc82568b0babf2721891c8d925
+localAvoidanceContinuityValid
+localAvoidanceContinuityDirectionMap
 ```
 
-New rule:
-- smallest safe deflection ring still wins;
-- inside that ring, choose the safe candidate most aligned with current velocity;
-- azimuth index is deterministic tie-break.
+This is forwarded to:
+```
+LocalAvoidancePlanner::Query::preferredDirection*
+```
 
-New focused regression:
-- symmetric +/-Z safe bypass;
-- vehicle already moving slightly toward -Z;
-- result must preserve -Z side.
+Selection rule inside the smallest safe ring:
+1. accepted-segment continuity direction;
+2. otherwise current velocity direction;
+3. otherwise nominal forward;
+4. deterministic azimuth index for exact ties.
+
+No hidden planner memory.
+
+## Current candidate commits
+
+Production:
+```
+71b80c4529e1bc776e2a2dbf209059a2ccff44f9
+4bde26ee2fbb531116f960d089d488067f1bfd6d
+76022a5199422dd80ef4caff611539b53c39e731
+40d7b9852bc6f265ae02ecc0bf9d7b4e002d5b96
+```
+
+Tests/composite:
+```
+bd31307fbda3d512a579f521efc1664199b1de46
+09bc81e03cab6c251b50678585161cc73e814ddb
+```
 
 ## Target commands
 
@@ -93,17 +98,17 @@ echo "$PWD/$OUT"
 
 ## Interpretation
 
-If the focused planner regression fails:
-- fix the continuity selection itself.
+If focused regression fails:
+- debug explicit continuity forwarding/scoring.
 
-If planner regression passes but composite still ping-pongs:
-- inspect whether current velocity is an insufficient continuity signal and promote an explicit accepted-corridor side/steering hint into the planner contract.
+If regression passes but composite still side-switches:
+- inspect whether direction-only continuity needs promotion to an explicit accepted branch/plane identifier.
 
 If 19/19:
 - accept final composite;
-- close synthetic maneuver behavior lab;
-- move primary evaluation to NAV STRESS/game.
+- close synthetic behavior lab;
+- next task = real NAV STRESS/game accepted-corridor + physical-trajectory visualization.
 
 ## Iteration rule
 
-After every state/evidence change, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state/evidence change, synchronize all MDs and recreate `CONTINUE_PROMPT.md` from scratch.

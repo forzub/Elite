@@ -5721,3 +5721,31 @@ Candidates `6c0a71d308040c568c109afc4425332021ade730` and `01a8d69cc635a450d73a4
 - return to static portal only after genuine `NominalClear`.
 
 No safety tolerance was relaxed.
+
+
+## 2026-09-20 — final composite exposes local-avoidance side ping-pong
+
+Exact target checkout:
+
+```
+f626fb0373499928e0ae89585c3bd992e5436c92
+```
+
+kept the architecture contract green and all previous 18 runtime tests green.
+
+Newtonian completed the entire final composite.
+
+Assisted failed only after multiple successful persistent-hazard continuations. Its production adjusted targets alternated bypass side in Z:
+```
++17.8 -> +15.5 -> -14.5 -> +13.8
+```
+
+The final opposite-side target was no longer physically authorable as a no-stop continuation from the actual live state.
+
+Root cause was identified in transitional `LocalAvoidancePlanner`: within a deflection ring it returned the first safe azimuth. Because the local transverse basis changes after every segment, "first" does not preserve a physical avoidance side.
+
+Production candidates `86640b05145938ec0880a3a26539957aaa72f085` and `ef2e6ec85823c229d6cadb6aa8dbe5b65e209193` now evaluate all safe candidates in the minimum deflection ring and choose the one most aligned with current velocity. No safety envelope is widened.
+
+Regression `6064a22f565fd7cc82568b0babf2721891c8d925` pins symmetric +/-Z side continuity.
+
+This is an improvement to the transitional B4 ray-fan; full route-aligned corridor migration remains open.

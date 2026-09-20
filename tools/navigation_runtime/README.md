@@ -200,3 +200,45 @@ Workflow:
 6. inspect `last_execution.log` if behavior is wrong.
 
 The window is an ordinary decorated maximized Windows window, not exclusive fullscreen.
+
+
+## Initial ship state
+
+Stage-2 execution now starts from a complete local kinematic state.
+
+`scenario.json/start` provides:
+- `position`;
+- `velocity`;
+- `acceleration`;
+- `forward` / `up` body orientation;
+- `pitch_rate_rad_s`;
+- `yaw_rate_rad_s`;
+- `roll_rate_rad_s`.
+
+The default scenario currently starts at:
+- P=(0,0,0) m;
+- V=(6,0,0) m/s;
+- A=(0,0,0) m/s²;
+- forward=+X;
+- up=+Y;
+- angular rates=0.
+
+The initial acceleration is passed into the Ruckig route request instead of being
+hardcoded to zero. This preserves acceleration continuity at the start of a Newtonian
+execution.
+
+## Follower chunk handoff
+
+The 2026-09-21 target run exposed a real execution bug at the first
+AcceptedManeuverProgram chunk boundary. The route produced 1521 trajectory samples and
+102 bounded program chunks; Follower failed after ~24 viewer frames with only ~0.02 m
+tracking error.
+
+Root cause: the Stage-2 scheduler allowed the next chunk to become active fractionally
+before its `acceptedAtUniverseTimeSeconds` because of a positive epsilon in the
+comparison. The sampler correctly returned `BeforeStart`, which Follower surfaced as
+`InvalidInput`.
+
+The scheduler now switches chunks only when current simulation time is actually >= the
+next program acceptance time. Stage-2 diagnostics also record the exact Follower failure
+reason, chunk index, failure time, and chunk accepted-at time.

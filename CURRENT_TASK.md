@@ -11,73 +11,54 @@
 ## Latest tested checkout
 
 ```
-51e6c41bb94b65e8cc269fb035164a4eb0aa23fd
+0ad327ad63d3e63f8c204b2e59a6f224f80c8fee
 ```
 
-Architecture PASS; runtime 18/19.
+Architecture PASS; runtime 17/19.
 
-The focused explicit-continuity planner regression passed.
+Failures:
+- strengthened local branch regression;
+- final composite.
 
-Only final composite failed.
+## Diagnosis
 
-## Failure
+The cross-ring search was present, but "same branch" was defined by full direction dot product.
 
-At a persistent-hazard replan:
+Because all progress candidates retain a large forward component, opposite lateral sides could both look positively aligned.
+
+## Current production candidate
+
 ```
-accepted continuity ~ (0.36,-0.35,+0.87)
-selected target direction ~ opposite -Z
-```
-
-The physical author then correctly refused to build an impossible no-stop continuation.
-
-## Root cause
-
-Continuity ranking was only applied inside the currently tested deflection ring.
-
-The planner still returned the first ring containing any safe candidate, so:
-```
-smaller-angle opposite branch
-```
-could beat:
-```
-slightly larger-angle accepted branch
+b8bcaae6c5af366e8cabcefb86fbe104c120b010
+caa8da847b0f48ea2d72d2fa8c042c1d599c73b8
+88f63b0d62803d73e7f3694d1c4f30bcbc1925d0
+9422dddfab64f70f94773ebcacf2167be1daacbe
+e9655a4b9f004fe790adbbc287bd55a3f1c269ea
 ```
 
-## Current candidate
+Branch continuity is now based on the lateral component relative to nominal forward.
 
-Production:
-```
-e19c1804806ce5f3554f20c7b7d3d5ac19b4911e
-c3dcf98b16bd6e45f0dbc949ec926f086aa623a0
-```
+Selection order with explicit continuity:
+1. safe same-branch class;
+2. smallest safe deflection ring within that class;
+3. strongest transverse alignment inside the ring;
+4. strongest full-direction continuity;
+5. deterministic azimuth index.
 
-Regression/diagnostics:
-```
-06a917f058926a29f41a936dd994be3f8073e7cf
-e62328d4af99b6e452e2d07e53cd20e25a103dcf
-a2da6453daaa8e00cc1f4661321b9294513057ff
-```
+Opposite branch is fallback only when no same-branch safe candidate exists.
 
-## New branch-selection rule
+## Focused regression
 
-With explicit accepted continuity:
-1. scan all safe candidates in all ordinary rings up to maximum deflection;
-2. same-branch safe candidates outrank opposite-branch candidates;
-3. maximize alignment with accepted direction;
-4. smaller deflection breaks equal-alignment ties;
-5. azimuth index is deterministic final tie-break.
+Updated fixture:
+- 4 azimuth samples;
+- accepted branch = -Z;
+- exact-static blocker rejects primary-ring -Z only;
+- +Z primary remains safe;
+- larger-ring -Z remains safe.
 
-If no same-branch safe candidate exists, least-opposed safe fallback is allowed.
-
-Without explicit continuity, smallest-safe-ring behavior is unchanged.
-
-## Strong regression
-
-The focused test now blocks preferred -Z only on the first ring while +Z remains safe there.
-
-A larger-ring -Z candidate is safe.
-
-Planner must deliberately take the larger ring and keep the accepted branch.
+Required:
+- larger-ring -Z wins;
+- transverse branch diagnostics confirm the branch exists and is selected.
 
 ## Target commands
 
@@ -108,17 +89,23 @@ grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-AC
 echo "$PWD/$OUT"
 ```
 
-## Exit
+## Interpretation
+
+If planner regression fails:
+- inspect transverse branch calculation/fixture geometry.
+
+If regression passes and composite has `same_branch_safe > 0` but negative selected alignment:
+- ranking bug remains.
+
+If composite has `same_branch_safe == 0` at the failing replan:
+- branch switch is legitimate;
+- next step is explicit brake/recovery before switching branch, not forcing an impossible no-stop transit.
 
 If 19/19:
-- accept exact target checkout and composite metrics;
-- close synthetic behavior lab;
-- move to real NAV STRESS/game corridor + physical-trajectory visualization.
-
-If red:
-- use selected deflection + continuity diagnostics;
-- do not weaken physical or safety criteria.
+- accept final composite;
+- close synthetic maneuver behavior lab;
+- move to real NAV STRESS/game.
 
 ## Iteration rule
 
-After every state/evidence change, synchronize all MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state/evidence change, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

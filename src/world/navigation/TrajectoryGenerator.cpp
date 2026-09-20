@@ -89,7 +89,8 @@ bool validRequest(
         !finite(request.startUniverseTimeSeconds) ||
         !finite(request.universeTimeScale) || request.universeTimeScale <= 0.0 ||
         !request.vehicle.valid() || request.pathPointsMeters.size() < 2 ||
-        !finite3(request.initialVelocityMps))
+        !finite3(request.initialVelocityMps) ||
+        !finite3(request.initialAccelerationMps2))
     {
         return false;
     }
@@ -693,8 +694,9 @@ RouteAttempt buildRouteAttempt(
     game::navigation::WorldKinematicState currentState;
     currentState.positionMeters = request.pathPointsMeters.front();
     currentState.velocityMps = request.initialVelocityMps;
-    currentState.accelerationMps2 = glm::dvec3(0.0);
-    glm::dvec3 currentProperAcceleration(0.0);
+    currentState.accelerationMps2 = request.initialAccelerationMps2;
+    glm::dvec3 currentProperAcceleration =
+        request.initialAccelerationMps2;
 
     double accumulatedPhysicalSeconds = 0.0;
     double accumulatedPathMeters = 0.0;

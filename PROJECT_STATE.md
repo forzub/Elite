@@ -3,59 +3,55 @@
 **Project:** Elite Navigation v2
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Accepted target baseline
+## Accepted baseline
 
 ```
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Final composite status
+## Final composite progress
 
-First target attempt:
+Latest target:
 ```
-d57a22f69c3af1a8c967ce974b895295c77dd21a
-```
-
-Result:
-- architecture PASS;
-- previous 18 runtime gates remain PASS;
-- final composite alone failed at production dynamic bypass.
-
-## Failure interpretation
-
-The old fixture inserted the hazard 35 m ahead after the ship had already executed 4 seconds of its selected physical program.
-
-That can put the current unchanged-kinematics closest approach inside the required safety envelope.
-
-Production local avoidance intentionally refuses to "steer around" a condition already judged unrecoverable under its bounded current-state safety contract. This is fail-closed behavior, not a planner regression.
-
-## Current final-composite correction
-
-```
-b57d81e42035f9771ae4feecee56899c4fa4f3f7
+18f93e15f3baa5218d459b289ae89beb170f1c54
 ```
 
-The hazard is now introduced with enough physical response room:
-- 48 m ahead;
-- radius 6 m;
-- slower cross motion.
+The production dynamic-planning part is now proven inside the composite:
+- real NavigationMap candidate;
+- nominal dynamic conflict witness;
+- Bounded LocalAvoidance;
+- `AdjustedClear`;
+- selected adjusted target.
 
-The test still explicitly requires the nominal bounded route to conflict before accepting an adjusted target.
+The remaining failure is downstream in test-side physical time-program authoring.
 
-## Laboratory exit criterion unchanged
+## Current correction
 
-Final composite must prove:
-- static topology detour;
-- B7 law-specific selection;
-- actual accepted-program execution;
-- mid-run hazard invalidation;
-- production nominal dynamic conflict;
-- production AdjustedClear;
-- no-reset replacement execution;
-- constrained portal;
-- terminal StateCapture.
+```
+7444c5930586300d6cac48bd4b2fa63b27e96bd6
+```
 
-A green result closes synthetic maneuver behavior testing.
+Instead of a fixed 6 s / 8 m/s quintic, replacement authoring now fits the live P/V -> adjusted-target curve to:
+- transverse feed-forward <=1.35 m/s2;
+- minimum speed >=0.5 m/s;
+- planned conservative hazard clearance >=1.5 m.
+
+This directly addresses the known production gap: B5 general/Assisted time-parameterization is not yet fully authoritative.
+
+The final composite remains honest about this seam and now refuses to generate an obviously unexecutable test-side replacement.
+
+## Laboratory exit remains unchanged
+
+A green final composite closes synthetic maneuver behavior testing.
+
+It does not close remaining production architecture migration:
+- B1/B2/B3/B4;
+- full B5 Assisted/general compiler;
+- generalized B6 ownership;
+- B11 explicit bounded reflex;
+- ordinary-live B7-B10 final seam retirement.
+
+After a green composite, primary quality work moves into NAV STRESS/game.
 
 ## State protocol
 

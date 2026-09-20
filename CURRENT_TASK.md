@@ -93,3 +93,15 @@ This directly pins the required rule:
 - can evade physically -> execute bypass;
 - cannot evade physically -> brake;
 - navigation ownership remains active in both cases.
+
+## 2026-09-20 next task after 18:24 run
+
+1. Repair only the oriented-portal fixture geometry: keep the agent inside region 1
+   while maintaining >2.75 m dynamic separation at both start and staging endpoint.
+2. Do not change B4 safety thresholds.
+3. Restructure the composite after `NominalClear`: continue bounded planner/monitor
+   updates while flying toward portal 102; do not execute an unmonitored 10 s scripted
+   portal leg while the hazard is still active.
+4. Add a compact visual trace/export for ship path, hazard path, safety envelope,
+   selected targets and replan points so behavioral failures can be inspected directly.
+5. Rerun architecture + 19-test runtime gate.

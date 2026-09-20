@@ -14,84 +14,88 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Tested:
 ```
-69f8ca4dbcb44df5340b94f45640bcb7d6e6ed1a
+51e6c41bb94b65e8cc269fb035164a4eb0aa23fd
 ```
 
-Architecture PASS. Runtime 17/19.
+Architecture PASS. Runtime 18/19.
 
-Failures:
-1. focused continuity regression;
-2. final composite.
+The focused accepted-segment continuity regression is now PASS.
 
-The focused regression itself had a static-space fixture bug: generic region depth was only +/-10 m in Z, so the alleged symmetric +/-Z alternatives were not actually legal.
+The final composite still failed because continuity ranking was constrained to the first safe deflection ring.
 
-More importantly, the composite showed the velocity-only tie-break does not reliably preserve an accepted avoidance branch.
-
-## Architecture conclusion
-
-The direction of the currently accepted bounded local segment is execution state.
-
-It must be supplied explicitly to the stateless planner on the next REPLAN.
-
-Do not infer it only from instantaneous velocity.
-
-## Current unverified production API
-
-Commits:
+Logged example:
 ```
-71b80c4529e1bc776e2a2dbf209059a2ccff44f9
-4bde26ee2fbb531116f960d089d488067f1bfd6d
-76022a5199422dd80ef4caff611539b53c39e731
-40d7b9852bc6f265ae02ecc0bf9d7b4e002d5b96
+continuity=(0.357512,-0.349550,+0.866025)
+position=(181.656981,57.946838,25.984828)
+selected target=(172.399109,59.234718,-2.521893)
 ```
 
-`NavigationRuntimePlanner::AgentState` now carries:
+The target is almost opposite the accepted +Z branch.
+
+## Root cause
+
+The production search still did:
 ```
-bool localAvoidanceContinuityValid
-glm::dvec3 localAvoidanceContinuityDirectionMap
+for ring from small to large:
+    rank azimuths by continuity
+    if any safe candidate:
+        return
 ```
 
-`LocalAvoidancePlanner::Query` carries:
+Therefore a smaller-angle opposite-side candidate could beat a slightly larger-angle same-branch candidate.
+
+## Current unverified production fix
+
 ```
-bool preferredDirectionValid
-Vec3d preferredDirectionMap
+e19c1804806ce5f3554f20c7b7d3d5ac19b4911e
 ```
 
-Inside the minimum safe deflection ring:
-- explicit accepted direction is the continuity reference;
-- current velocity is fallback only;
-- nominal forward is fallback when both are unavailable.
+When explicit continuity exists:
+- evaluate all safe candidates across all ordinary rings;
+- safe candidates with positive alignment to accepted direction form the preferred branch class;
+- preferred branch class beats opposite branch class;
+- then maximize continuity dot;
+- then prefer smaller deflection;
+- then smaller azimuth index.
 
-The planner remains stateless.
+If no safe same-branch candidate exists anywhere, choose the least-opposed safe fallback.
 
-## Updated regression
+Without explicit continuity, legacy smallest-ring priority remains.
 
-Commit:
+Public semantic comment:
 ```
-bd31307fbda3d512a579f521efc1664199b1de46
+c3dcf98b16bd6e45f0dbc949ec926f086aa623a0
+```
+
+## Strengthened regression
+
+```
+06a917f058926a29f41a936dd994be3f8073e7cf
 ```
 
 Fixture:
-- wide 3D static region;
-- symmetric safe +/-Z branches;
-- current velocity intentionally does not point toward -Z;
-- accepted local continuity explicitly points toward -Z;
-- next AdjustedClear must preserve -Z.
+- accepted branch = -Z;
+- first-ring -Z is blocked by exact static geometry;
+- first-ring +Z remains safe;
+- larger-ring -Z is safe.
 
-## Updated final composite
+Required:
+- AdjustedClear;
+- selected target remains -Z;
+- selected deflection must exceed the primary ring.
 
-Commit:
+This pins cross-ring branch preservation, not merely same-ring azimuth ranking.
+
+## Composite ownership/diagnostics
+
 ```
-09bc81e03cab6c251b50678585161cc73e814ddb
+e62328d4af99b6e452e2d07e53cd20e25a103dcf
+a2da6453daaa8e00cc1f4661321b9294513057ff
 ```
 
-On every accepted dynamic bypass:
-- store normalized selected-target direction;
-- execute the accepted short physical program;
-- on next replan supply the stored direction as continuity;
-- update it only after a new AdjustedClear is accepted.
+`[COMPOSITE-RESUME]` now prints selected deflection.
 
-`[COMPOSITE-RESUME]` now prints the continuity vector.
+Continuity is updated only after a physically valid local program successfully executes, using executed program start->terminal displacement.
 
 ## Validation
 
@@ -122,19 +126,14 @@ grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-AC
 echo "$PWD/$OUT"
 ```
 
-## Interpretation
+## If green
 
-If focused regression fails:
-- explicit continuity is not reaching/scoring correctly.
+Record exact target checkout and composite metrics, close synthetic maneuver behavior laboratory, and move immediately into real NAV STRESS/game visualization.
 
-If focused regression passes but composite still oscillates:
-- a vector hint is insufficient; next step is an explicit accepted local branch/plane identity rather than another heuristic.
+## If red
 
-If 19/19:
-- accept final composite;
-- close synthetic maneuver behavior lab;
-- immediately move to real NAV STRESS/game accepted-corridor + trajectory visualization.
+Use continuity + selected deflection diagnostics. If branch still flips despite a safe same-branch candidate, the vector hint is insufficient and should be promoted to explicit branch/plane identity.
 
-Do not weaken physical/safety thresholds.
+Do not weaken physical, tracking, hull, clearance or terminal criteria.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

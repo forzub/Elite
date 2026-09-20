@@ -1138,43 +1138,43 @@ double orientationErrorDegrees(const trace::TraceFrame& frame)
 std::string currentExplanation(const trace::TraceFrame& frame)
 {
     if (frame.phase == "dynamic_replan")
-        return "ПОМЕХА ПЕРЕСЕКЛА ПРИНЯТЫЙ ПУТЬ - ЛОКАЛЬНОЕ ПЕРЕПЛАНИРОВАНИЕ";
+        return "ПОМЕХА ПЕРЕСЕКЛА ПРИНЯТЫЙ ПУТЬ -\nЛОКАЛЬНОЕ ПЕРЕПЛАНИРОВАНИЕ";
 
     if (frame.phase.rfind("dynamic_bypass_", 0) == 0)
-        return "КОБРА ВЫПОЛНЯЕТ ФИЗИЧЕСКИ ДОПУСТИМЫЙ ЛОКАЛЬНЫЙ ОБХОД";
+        return "КОБРА ВЫПОЛНЯЕТ ФИЗИЧЕСКИ ДОПУСТИМЫЙ\nЛОКАЛЬНЫЙ ОБХОД";
 
     if (frame.phase.rfind("dynamic_brake_", 0) == 0)
-        return "БЕЗОПАСНЫЙ ОБХОД НЕДОСТУПЕН - АКТИВНОЕ ТОРМОЖЕНИЕ";
+        return "БЕЗОПАСНЫЙ ОБХОД НЕДОСТУПЕН -\nАКТИВНОЕ ТОРМОЖЕНИЕ";
 
     if (frame.phase.rfind("replan_", 0) == 0)
     {
         if (frame.plannerStatus == "adjusted_clear")
-            return "ПОМЕХА ЕЩЁ ПЕРЕКРЫВАЕТ НОМИНАЛЬНЫЙ СЕГМЕНТ - СТРОИТСЯ ОБХОД";
+            return "ПОМЕХА ЕЩЁ ПЕРЕКРЫВАЕТ НОМИНАЛЬНЫЙ СЕГМЕНТ -\nСТРОИТСЯ ОБХОД";
         if (frame.plannerStatus == "nominal_clear")
-            return "СЛЕДУЮЩИЙ КОРОТКИЙ СЕГМЕНТ СВОБОДЕН - ВОЗВРАТ К МАРШРУТУ";
+            return "СЛЕДУЮЩИЙ КОРОТКИЙ СЕГМЕНТ СВОБОДЕН -\nВОЗВРАТ К МАРШРУТУ";
         return "РЕЗУЛЬТАТ ЛОКАЛЬНОГО ПЕРЕПЛАНИРОВАНИЯ";
     }
 
     if (frame.phase == "portal_101")
-        return "ПОЛЁТ ПО СТАТИЧЕСКОМУ МАРШРУТУ К ПОРТАЛУ 101";
+        return "ПОЛЁТ ПО СТАТИЧЕСКОМУ МАРШРУТУ\nК ПОРТАЛУ 101";
 
     if (frame.phase == "doctrine_prefix")
-        return "ВЫПОЛНЯЕТСЯ ПРИНЯТАЯ ПРОГРАММА ПОЛЁТА К ПОРТАЛУ 102";
+        return "ВЫПОЛНЯЕТСЯ ПРИНЯТАЯ ПРОГРАММА ПОЛЁТА\nК ПОРТАЛУ 102";
 
     if (frame.phase == "portal_102")
-        return "ДЛИННЫЙ ПЕРЕХОД К ПОРТАЛУ 102 - ЗДЕСЬ СЕЙЧАС ТЕРЯЕТСЯ ЗАЗОР";
+        return "ДЛИННЫЙ ПЕРЕХОД К ПОРТАЛУ 102 -\nЗДЕСЬ СЕЙЧАС ТЕРЯЕТСЯ ЗАЗОР";
 
     if (frame.phase == "final_capture")
         return "ФИНАЛЬНОЕ ТОЧНОЕ ПОЗИЦИОНИРОВАНИЕ";
 
     if (frame.phase == "nominal_segment")
-        return "ПЛАНЕР ВЕДЁТ КОБРУ ПО ТЕКУЩЕМУ БЕЗОПАСНОМУ СЕГМЕНТУ";
+        return "ПЛАНЕР ВЕДЁТ КОБРУ ПО ТЕКУЩЕМУ\nБЕЗОПАСНОМУ СЕГМЕНТУ";
 
     if (frame.phase == "complete")
-        return "МАРШРУТ РАССЧИТАН И ВЫПОЛНЕН ДО ФИНАЛЬНОГО СОСТОЯНИЯ";
+        return "МАРШРУТ РАССЧИТАН И ВЫПОЛНЕН\nДО ФИНАЛЬНОГО СОСТОЯНИЯ";
 
     if (frame.phase == "failed")
-        return "РАСЧЁТ ОСТАНОВЛЕН - СМОТРИТЕ ПОСЛЕДНИЙ СТАТУС ПЛАНЕРА";
+        return "РАСЧЁТ ОСТАНОВЛЕН -\nСМОТРИТЕ ПОСЛЕДНИЙ СТАТУС ПЛАНЕРА";
 
     return "СТАРТ МАРШРУТА";
 }
@@ -1444,43 +1444,38 @@ void drawHud(
     appendUiButton(ui, replanButtonRect(), "СЛЕД. ПЕРЕПЛАН");
     appendUiButton(ui, fitButtonRect(), "ВПИСАТЬ");
 
-    float x = panelX + 18.0f;
-    float y = 20.0f;
+    const float x = panelX + 18.0f;
     const float textScale = 1.45f;
-    const float line = 18.0f;
 
     appendUiText(
-        ui, x, y,
+        ui, x, 20.0f,
         "НАВИГАЦИЯ 3D",
         1.65f,
         {0.95f, 0.96f, 1.0f}
     );
-    y += 30.0f;
 
     if (!hasCalculation)
     {
         appendUiText(
             ui,
             x,
-            y,
+            56.0f,
             state.calculationMessage,
             1.30f,
             {1.0f, 0.82f, 0.32f}
         );
-        y += 40.0f;
         appendUiText(
             ui,
             x,
-            y,
+            100.0f,
             "JSON: " + state.scenarioPath,
             1.10f,
             {0.68f, 0.73f, 0.80f}
         );
-        y += 28.0f;
         appendUiText(
             ui,
             x,
-            y,
+            136.0f,
             "НАЖМИТЕ РАССЧИТАТЬ",
             1.45f,
             {0.90f,0.94f,1.0f}
@@ -1488,152 +1483,206 @@ void drawHud(
     }
     else
     {
-    std::ostringstream frameLine;
-    frameLine << "РЕЖИМ: " << localizedLaw(data.law);
-    appendUiText(ui, x, y, frameLine.str(), textScale, {0.75f,0.82f,0.92f});
-    y += line;
-
-    std::ostringstream indexLine;
-    indexLine << "КАДР: " << (state.frameIndex + 1) << "/" << data.frames.size();
-    appendUiText(ui, x, y, indexLine.str(), textScale, {0.75f,0.82f,0.92f});
-    y += line;
-
-    std::ostringstream timeLine;
-    timeLine.setf(std::ios::fixed);
-    timeLine.precision(2);
-    timeLine << "ВРЕМЯ: " << frame.timeSeconds << " С";
-    appendUiText(ui, x, y, timeLine.str(), textScale, {0.75f,0.82f,0.92f});
-    y += line;
-
-    appendUiText(ui, x, y, "ФАЗА: " + localizedPhase(frame.phase), textScale, {0.92f,0.92f,0.92f});
-    y += line;
-
-    appendUiText(
-        ui, x, y,
-        "СТАТУС: " + localizedStatus(frame.plannerStatus),
-        textScale,
-        {0.92f,0.92f,0.92f}
-    );
-    y += line;
-
-    if (frame.hasProgramReference)
-    {
-        std::ostringstream orientationLine;
-        orientationLine.setf(std::ios::fixed);
-        orientationLine.precision(1);
-        orientationLine
-            << "ОШИБКА ОРИЕНТАЦИИ: "
-            << orientationErrorDegrees(frame)
-            << " ГРАД";
+        std::ostringstream frameLine;
+        frameLine
+            << "РЕЖИМ: "
+            << localizedLaw(data.law);
         appendUiText(
-            ui,
-            x,
-            y,
+            ui, x, 50.0f,
+            frameLine.str(),
+            textScale,
+            {0.75f,0.82f,0.92f}
+        );
+
+        std::ostringstream indexLine;
+        indexLine
+            << "КАДР: "
+            << (state.frameIndex + 1)
+            << "/"
+            << data.frames.size();
+        appendUiText(
+            ui, x, 68.0f,
+            indexLine.str(),
+            textScale,
+            {0.75f,0.82f,0.92f}
+        );
+
+        std::ostringstream timeLine;
+        timeLine.setf(std::ios::fixed);
+        timeLine.precision(2);
+        timeLine
+            << "ВРЕМЯ: "
+            << frame.timeSeconds
+            << " С";
+        appendUiText(
+            ui, x, 86.0f,
+            timeLine.str(),
+            textScale,
+            {0.75f,0.82f,0.92f}
+        );
+
+        appendUiText(
+            ui, x, 104.0f,
+            "ФАЗА: " + localizedPhase(frame.phase),
+            textScale,
+            {0.92f,0.92f,0.92f}
+        );
+
+        appendUiText(
+            ui, x, 122.0f,
+            "СТАТУС: " + localizedStatus(frame.plannerStatus),
+            textScale,
+            {0.92f,0.92f,0.92f}
+        );
+
+        std::ostringstream orientationLine;
+        if (frame.hasProgramReference)
+        {
+            orientationLine.setf(std::ios::fixed);
+            orientationLine.precision(1);
+            orientationLine
+                << "ОШИБКА ОРИЕНТАЦИИ: "
+                << orientationErrorDegrees(frame)
+                << " ГРАД";
+        }
+        else
+        {
+            orientationLine << "ОШИБКА ОРИЕНТАЦИИ: -";
+        }
+        appendUiText(
+            ui, x, 140.0f,
             orientationLine.str(),
             1.30f,
             {1.0f, 0.45f, 0.95f}
         );
-        y += line;
-    }
 
-    if (frame.hazardActive)
-    {
         std::ostringstream clearanceLine;
-        clearanceLine.setf(std::ios::fixed);
-        clearanceLine.precision(2);
-        clearanceLine
-            << "ЗАЗОР: "
-            << frame.dynamicClearanceMeters
-            << " М";
+        if (frame.hazardActive)
+        {
+            clearanceLine.setf(std::ios::fixed);
+            clearanceLine.precision(2);
+            clearanceLine
+                << "ЗАЗОР: "
+                << frame.dynamicClearanceMeters
+                << " М";
+        }
+        else
+        {
+            clearanceLine << "ЗАЗОР: -";
+        }
         appendUiText(
             ui,
             x,
-            y,
+            158.0f,
             clearanceLine.str(),
             textScale,
-            frame.dynamicClearanceMeters > 0.5
-                ? glm::vec3(0.35f, 1.0f, 0.42f)
-                : glm::vec3(1.0f, 0.28f, 0.22f)
+            !frame.hazardActive
+                ? glm::vec3(0.62f,0.66f,0.72f)
+                : (
+                    frame.dynamicClearanceMeters > 0.5
+                        ? glm::vec3(0.35f,1.0f,0.42f)
+                        : glm::vec3(1.0f,0.28f,0.22f)
+                  )
         );
-        y += line;
-    }
 
-    if (frame.replanEvent)
-    {
         appendUiText(
-            ui, x, y,
-            "СОБЫТИЕ: ПЕРЕПЛАНИРОВАНИЕ",
+            ui,
+            x,
+            176.0f,
+            frame.replanEvent
+                ? "СОБЫТИЕ: ПЕРЕПЛАНИРОВАНИЕ"
+                : "СОБЫТИЕ: -",
             textScale,
-            {1.0f, 0.55f, 0.10f}
+            frame.replanEvent
+                ? glm::vec3(1.0f,0.55f,0.10f)
+                : glm::vec3(0.62f,0.66f,0.72f)
         );
-        y += line;
-    }
 
-    y += 14.0f;
-    appendUiText(ui, x, y, "ЧТО ПРОИСХОДИТ", 1.55f, {1.0f,0.82f,0.32f});
-    y += 23.0f;
-
-    const std::string explanation = currentExplanation(frame);
-    const std::size_t splitAt =
-        explanation.size() > 34 ? explanation.find(' ', 30) : std::string::npos;
-
-    if (splitAt != std::string::npos)
-    {
         appendUiText(
-            ui, x, y,
-            explanation.substr(0, splitAt),
-            1.35f,
+            ui, x, 208.0f,
+            "ЧТО ПРОИСХОДИТ",
+            1.55f,
+            {1.0f,0.82f,0.32f}
+        );
+        appendUiText(
+            ui,
+            x,
+            234.0f,
+            currentExplanation(frame),
+            1.30f,
             {0.96f,0.96f,0.96f}
         );
-        y += line;
+
         appendUiText(
-            ui, x, y,
-            explanation.substr(splitAt + 1),
-            1.35f,
-            {0.96f,0.96f,0.96f}
+            ui, x, 290.0f,
+            "ЛЕГЕНДА",
+            1.55f,
+            {0.92f,0.92f,1.0f}
         );
-        y += line;
-    }
-    else
-    {
-        appendUiText(ui, x, y, explanation, 1.35f, {0.96f,0.96f,0.96f});
-        y += line;
-    }
 
-    y += 20.0f;
-    appendUiText(ui, x, y, "ЛЕГЕНДА", 1.55f, {0.92f,0.92f,1.0f});
-    y += 24.0f;
+        float legendY = 316.0f;
+        auto legend =
+            [&](const glm::vec3& color, const std::string& label)
+            {
+                appendFilledRect(
+                    ui,
+                    {x, legendY + 2.0f, 12.0f, 8.0f},
+                    color
+                );
+                appendUiText(
+                    ui,
+                    x + 20.0f,
+                    legendY,
+                    label,
+                    1.30f,
+                    {0.90f,0.91f,0.94f}
+                );
+                legendY += 17.0f;
+            };
 
-    auto legend = [&](const glm::vec3& color, const std::string& label)
-    {
-        appendFilledRect(ui, {x, y + 2.0f, 12.0f, 8.0f}, color);
-        appendUiText(ui, x + 20.0f, y, label, 1.30f, {0.90f,0.91f,0.94f});
-        y += 17.0f;
-    };
+        legend({0.88f,0.88f,0.88f}, "МАРШРУТ");
+        legend({0.25f,1.0f,0.35f}, "ФАКТИЧЕСКАЯ ТРАЕКТОРИЯ");
+        legend({1.0f,0.25f,0.20f}, "ТРАЕКТОРИЯ ПОМЕХИ");
+        legend({0.70f,0.88f,0.72f}, "КОРПУС КОБРЫ");
+        legend({0.25f,0.85f,1.0f}, "ФАКТИЧЕСКИЙ НОС КОБРЫ");
+        legend({1.0f,0.25f,0.95f}, "НОС ПО ПРОГРАММЕ");
+        legend({0.20f,0.55f,1.0f}, "КОРИДОР СЛЕЖЕНИЯ");
+        legend({1.0f,0.65f,0.15f}, "ТОЧКА ПОВОРОТА / ПОРТАЛ");
+        legend({1.0f,0.92f,0.15f}, "ЦЕЛЬ ОБХОДА");
+        legend({0.20f,0.95f,1.0f}, "ТОЧКА ВОЗВРАТА НА МАРШРУТ");
+        legend({0.85f,0.30f,1.0f}, "ТЕКУЩИЙ ПОРТАЛ");
+        legend({1.0f,0.45f,0.05f}, "ПЕРЕПЛАНИРОВАНИЕ");
 
-    legend({0.88f,0.88f,0.88f}, "МАРШРУТ");
-    legend({0.25f,1.0f,0.35f}, "ФАКТИЧЕСКАЯ ТРАЕКТОРИЯ");
-    legend({1.0f,0.25f,0.20f}, "ТРАЕКТОРИЯ ПОМЕХИ");
-    legend({0.70f,0.88f,0.72f}, "КОРПУС КОБРЫ");
-    legend({0.25f,0.85f,1.0f}, "ФАКТИЧЕСКИЙ НОС КОБРЫ");
-    legend({1.0f,0.25f,0.95f}, "НОС ПО ПРОГРАММЕ");
-    legend({0.20f,0.55f,1.0f}, "КОРИДОР СЛЕЖЕНИЯ");
-    legend({1.0f,0.65f,0.15f}, "ТОЧКА ПОВОРОТА / ПОРТАЛ");
-    legend({1.0f,0.92f,0.15f}, "ЦЕЛЬ ОБХОДА");
-    legend({0.20f,0.95f,1.0f}, "ТОЧКА ВОЗВРАТА НА МАРШРУТ");
-    legend({0.85f,0.30f,1.0f}, "ТЕКУЩИЙ ПОРТАЛ");
-    legend({1.0f,0.45f,0.05f}, "ПЕРЕПЛАНИРОВАНИЕ");
-
-    y += 14.0f;
-    appendUiText(ui, x, y, "УПРАВЛЕНИЕ", 1.55f, {0.92f,0.92f,1.0f});
-    y += 23.0f;
-    appendUiText(ui, x, y, "ПКМ ВРАЩЕНИЕ   СКМ СДВИГ", 1.25f, {0.75f,0.78f,0.84f});
-    y += 16.0f;
-    appendUiText(ui, x, y, "КОЛЕСО МАСШТАБ  SPACE ПУСК", 1.25f, {0.75f,0.78f,0.84f});
-    y += 16.0f;
-    appendUiText(ui, x, y, "[ ] КАДР   R СЛЕД. ПЕРЕПЛАН", 1.25f, {0.75f,0.78f,0.84f});
-    y += 16.0f;
-    appendUiText(ui, x, y, "F ВПИСАТЬ   ESC ЗАКРЫТЬ", 1.25f, {0.75f,0.78f,0.84f});
+        appendUiText(
+            ui, x, 538.0f,
+            "УПРАВЛЕНИЕ",
+            1.55f,
+            {0.92f,0.92f,1.0f}
+        );
+        appendUiText(
+            ui, x, 564.0f,
+            "ПКМ ВРАЩЕНИЕ   СКМ СДВИГ",
+            1.25f,
+            {0.75f,0.78f,0.84f}
+        );
+        appendUiText(
+            ui, x, 580.0f,
+            "КОЛЕСО МАСШТАБ  SPACE ПУСК",
+            1.25f,
+            {0.75f,0.78f,0.84f}
+        );
+        appendUiText(
+            ui, x, 596.0f,
+            "[ ] КАДР   R СЛЕД. ПЕРЕПЛАН",
+            1.25f,
+            {0.75f,0.78f,0.84f}
+        );
+        appendUiText(
+            ui, x, 612.0f,
+            "F ВПИСАТЬ   ESC ЗАКРЫТЬ",
+            1.25f,
+            {0.75f,0.78f,0.84f}
+        );
     } // hasCalculation
 
     if (hasCalculation)

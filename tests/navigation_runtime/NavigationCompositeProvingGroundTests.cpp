@@ -853,6 +853,56 @@ double conservativeDynamicClearance(
 }
 
 
+Map::QueryResult publishAndQueryDynamicHazard(
+    Map& map,
+    const Vehicle& v,
+    const DynamicHazard& hazard,
+    std::uint64_t sourceRevision
+)
+{
+    Map::DynamicWorldUpdate update;
+    update.sourceRevision = sourceRevision;
+
+    if (hazard.active)
+    {
+        const glm::dvec3 currentHazard =
+            dynamicHazardPosition(
+                hazard,
+                v.timeSeconds
+            );
+
+        Map::DynamicActorInput blocker;
+        blocker.entityId = 12060;
+        blocker.positionMapMeters = {
+            currentHazard.x,
+            currentHazard.y,
+            currentHazard.z
+        };
+        blocker.velocityMapMetersPerSecond = {
+            hazard.velocity.x,
+            hazard.velocity.y,
+            hazard.velocity.z
+        };
+        blocker.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
+        blocker.radiusMeters = hazard.radiusMeters;
+        blocker.motionRevision = sourceRevision;
+        update.actors.push_back(blocker);
+    }
+
+    map.replaceDynamicWorld(std::move(update));
+
+    Map::SphereQuery sphere;
+    sphere.centerMapMeters = {
+        v.transform.motion.localPositionMeters.x,
+        v.transform.motion.localPositionMeters.y,
+        v.transform.motion.localPositionMeters.z
+    };
+    sphere.radiusMeters = 140.0;
+    sphere.lookAheadSeconds = 4.0;
+    return map.querySphere(sphere);
+}
+
+
 struct ReplacementFit
 {
     bool valid = false;
@@ -1480,6 +1530,7 @@ struct CompositeMetrics
 {
     std::size_t phases = 0;
     std::size_t replans = 0;
+    std::size_t dynamicBypassSegments = 0;
     std::size_t trackingExceededTicks = 0;
     double minStaticClearanceMeters =
         std::numeric_limits<double>::infinity();
@@ -1741,38 +1792,15 @@ CompositeMetrics runComposite(Law law)
     mapConfig.interactionMarginMeters = 0.0;
 
     Map map(mapConfig);
-    Map::DynamicWorldUpdate dynamicUpdate;
-    dynamicUpdate.sourceRevision = 12003;
-
-    Map::DynamicActorInput blocker;
-    blocker.entityId = 12060;
-    blocker.positionMapMeters = {
-        hazard.position.x,
-        hazard.position.y,
-        hazard.position.z
-    };
-    blocker.velocityMapMetersPerSecond = {
-        hazard.velocity.x,
-        hazard.velocity.y,
-        hazard.velocity.z
-    };
-    blocker.accelerationMapMetersPerSecond2 = {0.0, 0.0, 0.0};
-    blocker.radiusMeters = hazard.radiusMeters;
-    blocker.motionRevision = 1;
-    dynamicUpdate.actors.push_back(blocker);
-    map.replaceDynamicWorld(std::move(dynamicUpdate));
-
-    Map::SphereQuery sphere;
-    sphere.centerMapMeters = {
-        v.transform.motion.localPositionMeters.x,
-        v.transform.motion.localPositionMeters.y,
-        v.transform.motion.localPositionMeters.z
-    };
-    sphere.radiusMeters = 140.0;
-    sphere.lookAheadSeconds = 4.0;
+    std::uint64_t dynamicSourceRevision = 12003;
 
     const Map::QueryResult dynamic =
-        map.querySphere(sphere);
+        publishAndQueryDynamicHazard(
+            map,
+            v,
+            hazard,
+            dynamicSourceRevision++
+        );
 
     require(
         !dynamic.candidates.empty(),
@@ -1903,20 +1931,133 @@ CompositeMetrics runComposite(Law law)
 
         absorb(total, phase);
         ++total.phases;
+        ++total.dynamicBypassSegments;
     }
 
-    // Production planner resumes the same topology after the local bypass.
-    const Planner::Result resumed =
-        Planner::plan(
-            plannerAgent(v, law),
-            goal,
-            emptyDynamic(),
-            0.0,
-            staticQueries,
-            pPolicy
+    // The hazard remains authoritative after the first bounded bypass.
+    // Re-publish its current state and continue composing short local suffixes
+    // until the production planner says the original static portal is nominally
+    // clear again. Never erase a live obstacle merely because one bypass
+    // segment completed.
+
+    Planner::Result resumed;
+    bool topologyResumed = false;
+
+    for (int localIteration = 0;
+         localIteration < 4;
+         ++localIteration)
+    {
+        const Map::QueryResult refreshedDynamic =
+            publishAndQueryDynamicHazard(
+                map,
+                v,
+                hazard,
+                dynamicSourceRevision++
+            );
+
+        resumed =
+            Planner::plan(
+                plannerAgent(v, law),
+                goal,
+                refreshedDynamic,
+                0.0,
+                staticQueries,
+                pPolicy
+            );
+
+        std::cout
+            << std::fixed << std::setprecision(6)
+            << "[COMPOSITE-RESUME]"
+            << " law=" << lawName(law)
+            << " iteration=" << localIteration
+            << " status=" << plannerStatusName(resumed.status)
+            << " adjusted=" << (resumed.adjustedTarget ? 1 : 0)
+            << " nominal_dynamic_conflicts="
+            << resumed.nominalDynamicConflictsFound
+            << " probes=" << resumed.avoidanceProbesExamined
+            << " position=("
+            << v.transform.motion.localPositionMeters.x << ","
+            << v.transform.motion.localPositionMeters.y << ","
+            << v.transform.motion.localPositionMeters.z << ")"
+            << " hazard=("
+            << dynamicHazardPosition(hazard, v.timeSeconds).x << ","
+            << dynamicHazardPosition(hazard, v.timeSeconds).y << ","
+            << dynamicHazardPosition(hazard, v.timeSeconds).z << ")"
+            << " target=("
+            << resumed.selectedTargetMapMeters.x << ","
+            << resumed.selectedTargetMapMeters.y << ","
+            << resumed.selectedTargetMapMeters.z << ")"
+            << "\n";
+
+        if (resumed.status == Planner::Status::NominalClear)
+        {
+            topologyResumed = true;
+            break;
+        }
+
+        require(
+            resumed.status == Planner::Status::AdjustedClear &&
+            resumed.adjustedTarget,
+            "composite persistent hazard produced no safe bounded continuation"
         );
 
+        const ReplacementFit continuation =
+            fitAuthorityBoundedReplacement(
+                v,
+                resumed.selectedTargetMapMeters,
+                hazard
+            );
+
+        require(
+            continuation.valid,
+            "composite could not author bounded continuation around persistent hazard"
+        );
+
+        const auto continuationPhase =
+            executeProgram(
+                v,
+                continuation.program,
+                Gate::Mode::ScheduledMoving,
+                hazard
+            );
+
+        std::cout
+            << std::fixed << std::setprecision(6)
+            << "[COMPOSITE-CONTINUATION]"
+            << " law=" << lawName(law)
+            << " iteration=" << localIteration
+            << " duration_s=" << continuation.durationSeconds
+            << " peak_transverse_ff_mps2="
+            << continuation.peakTransverseAccelerationMps2
+            << " min_planned_dynamic_clearance_m="
+            << continuation.minimumPlannedDynamicClearanceMeters
+            << " min_actual_dynamic_clearance_m="
+            << continuationPhase.minDynamicClearanceMeters
+            << " tracking_exceeded_ticks="
+            << continuationPhase.trackingExceededTicks
+            << "\n";
+
+        require(
+            continuationPhase.valid &&
+            continuationPhase.completed,
+            "composite persistent-hazard continuation failed"
+        );
+        require(
+            continuationPhase.trackingExceededTicks == 0,
+            "composite persistent-hazard continuation exceeded tracking envelope"
+        );
+        require(
+            continuationPhase.minDynamicClearanceMeters > 0.5,
+            "composite persistent-hazard continuation lost clearance"
+        );
+
+        absorb(total, continuationPhase);
+        ++total.phases;
+        ++total.dynamicBypassSegments;
+    }
+
     require(
+        topologyResumed &&
         resumed.status == Planner::Status::NominalClear &&
         resumed.usedPortalWaypoint,
         "composite did not resume topology toward narrow portal"
@@ -2033,8 +2174,13 @@ void testCompositeProvingGround()
         const CompositeMetrics m = runComposite(law);
 
         require(
-            m.phases == 4,
-            "composite expected four completed post-selection phases"
+            m.phases >= 4 && m.phases <= 7,
+            "composite completed an unexpected number of bounded physical phases"
+        );
+        require(
+            m.dynamicBypassSegments >= 1 &&
+            m.dynamicBypassSegments <= 4,
+            "composite dynamic bypass segment count is invalid"
         );
         require(
             m.replans == 1 &&
@@ -2110,6 +2256,8 @@ void testCompositeProvingGround()
             << " selected_family="
             << familyName(m.selectedFamily)
             << " completed_phases=" << m.phases
+            << " dynamic_bypass_segments="
+            << m.dynamicBypassSegments
             << " replans=" << m.replans
             << " invalidation=dynamic_hazard"
             << " min_static_clearance_m="

@@ -18,125 +18,75 @@ Accepted:
 Exact tested checkout:
 
 ```
-af9ee9d1694ac0facafaf23b0ec51c3adaf7dbbf
+2ad1178bc5c778636748557ceb6c9a5b757c9a53
 ```
 
-Results:
+Result:
 - architecture contract PASS;
-- runtime 17/19;
-- failures:
-  - `navigation_runtime_planner` focused cross-ring regression;
-  - `navigation_composite_proving_ground`.
+- navigation runtime tests did **not** execute;
+- build stopped in `NavigationRuntimePlannerTests.cpp`.
 
-## What is now proven
-
-The forced branch-switch escalation path works.
-
-Composite Newtonian:
-- planner reports `branch_switch_required=1`;
-- physical Brake recovery is authored;
-- recovery duration 4.0 s;
-- stopping distance 6.757088 m;
-- peak brake FF 1.266954 m/s2;
-- planned static clearance 39.154319 m;
-- planned dynamic clearance 9.803750 m;
-- actual dynamic clearance 9.817623 m;
-- tracking exceeded ticks = 0;
-- final speed error = 0.009128 m/s.
-
-Therefore the new architecture:
+Compiler error:
 ```
-branch exhausted
- -> branch-switch escalation
- -> physical recovery
- -> stop
- -> clear old continuity
- -> replan
-```
-is functioning physically.
-
-## Latest composite failure root cause
-
-After recovery, the planner correctly replans with continuity cleared:
-- continuity lateral valid = 0;
-- branch switch required = 0;
-- new AdjustedClear target is returned.
-
-But `fitAuthorityBoundedReplacement()` still used the old moving-transit rule:
-```
-minimumPlannedSpeed >= 0.50 m/s
-```
-including sample t=0.
-
-The successful recovery leaves the craft at ~0.009 m/s by design, so every post-recovery launch candidate necessarily fails this gate before execution.
-
-This is a test-side B5 authoring seam, not a planner or physics failure.
-
-## Current unverified post-recovery authoring fix
-
-Commit:
-
-```
-7c87e655788af4e95f9576675185482639fec528
+std::setprecision is not a member of std
 ```
 
-Replacement fitter now distinguishes:
-- normal moving transit: original `minimum speed >=0.50 m/s` remains unchanged;
-- launch from recovery-rest: start below 0.50 m/s is allowed, but the curve must:
-  - never reverse progress more than 0.05 m/s;
-  - reach 0.50 m/s;
-  - never fall below 0.50 m/s after reaching it;
-  - still satisfy transverse FF <=1.35 m/s2;
-  - still satisfy planned dynamic clearance >=1.50 m.
+Root cause:
+- new `[BRANCH-REGRESSION]` diagnostic uses `std::setprecision`;
+- test source did not include `<iomanip>`.
 
-No ordinary moving-transit criterion was weakened.
+This is compile-only noise. It provides no new evidence about:
+- branch continuity;
+- branch-switch recovery;
+- post-recovery launch.
 
-## Focused regression fixture correction
+## Fix
 
-Previous blocker placement remained horizon-sensitive.
-
-The test assumed a 600 m primary probe, but `PhysicalManeuverHorizon` adds braking/safety reserve, so the actual ray is slightly longer.
-
-New commit:
+Compile fix commit:
 
 ```
-252f9d81c5fd91363a0e0561e195c1f5ab0d375d
+cfa56734020b41875354262302b9be51684413be
 ```
 
-The blocker is now placed at an **interior 300 m point** of the primary -Z ray:
-```
-x = 300*cos(primaryDeflection)
-z = -300*sin(primaryDeflection)
+Added:
+```cpp
+#include <iomanip>
 ```
 
-Since the physical horizon is >300 m, the primary ray must cross it regardless of exact horizon length, while the larger-ring -Z ray is far away at that same X.
+No navigation logic, physics, thresholds, planner semantics, or test acceptance criteria changed.
 
-New diagnostic:
+## Actual mechanism under test
+
+The current navigation problem remains:
+
 ```
-[BRANCH-REGRESSION]
+accepted local bypass
+ -> accepted branch becomes unavailable
+ -> planner signals branch switch required
+ -> physical Brake recovery
+ -> near-stop
+ -> old branch continuity cleared
+ -> fresh replan
+ -> launch into newly safe branch
 ```
-prints:
-- status;
-- selected deflection;
-- same-branch safe count;
-- branch alignment;
-- branch-switch-required;
-- selected target.
+
+Already demonstrated on the previous target:
+- forced branch-switch detection;
+- physical recovery;
+- 4 s braking;
+- >9.8 m dynamic clearance;
+- zero tracking-envelope violations;
+- near-zero final speed.
+
+Current unverified behavior work remains:
+1. focused cross-ring regression with a robust primary-ray blocker;
+2. post-recovery launch authoring from near-zero speed.
 
 ## Current gate
 
-Expected runtime suite remains **19 tests**.
+Expected suite remains **19 tests**.
 
-If focused regression passes:
-- cross-ring same-branch semantics are accepted.
-
-If post-recovery transit now executes:
-- branch-switch recovery + launch into new branch are physically sequenced correctly.
-
-If 19/19:
-- accept final composite;
-- close synthetic maneuver behavior laboratory;
-- move primary evaluation into actual NAV STRESS/game.
+Next target run is required before drawing any new conclusion about the mechanism.
 
 ## Documentation protocol
 

@@ -14,7 +14,19 @@ struct TraceFrame
 
     glm::dvec3 shipPosition {0.0};
     glm::dvec3 shipForward {1.0, 0.0, 0.0};
+    glm::dvec3 shipRight {0.0, 0.0, 1.0};
+    glm::dvec3 shipUp {0.0, 1.0, 0.0};
     glm::dvec3 shipVelocity {0.0};
+
+    // Reference state sampled from the actually accepted maneuver program.
+    // This is distinct from actual rigid-body attitude and lets the viewer
+    // expose tracking/orientation mismatch instead of reconstructing attitude.
+    bool hasProgramReference = false;
+    glm::dvec3 programReferencePosition {0.0};
+    glm::dvec3 programReferenceForward {1.0, 0.0, 0.0};
+    glm::dvec3 programReferenceRight {0.0, 0.0, 1.0};
+    glm::dvec3 programReferenceUp {0.0, 1.0, 0.0};
+    double programTrackingCorridorRadiusMeters = 0.0;
 
     bool hazardActive = false;
     glm::dvec3 hazardPosition {0.0};
@@ -39,7 +51,7 @@ struct TraceFrame
 
 struct TraceDocument
 {
-    int version = 1;
+    int version = 2;
     std::string law;
     glm::dvec3 shipHalfExtentsMeters {1.0};
 

@@ -14,98 +14,98 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Tested:
 ```
-0ad327ad63d3e63f8c204b2e59a6f224f80c8fee
+8011cc3ed19fc027fba256ee4aecca7c93a4ce0f
 ```
 
 Architecture PASS. Runtime 17/19.
 
 Failures:
-- strengthened planner continuity regression;
+- focused cross-ring continuity regression;
 - final composite.
 
-The explicit continuity hint is reaching production, but branch classification was wrong.
+## Decisive composite diagnostics
 
-## Root cause
+The failing persistent-hazard replans report:
 
-Using full direction dot product to define "same avoidance branch" is invalid because all ordinary rays contain a strong forward component.
+```
+continuity_lateral_valid=1
+same_branch_safe=0
+```
 
-Opposite lateral bypasses can therefore both produce positive full-direction dot.
+and later:
+```
+selected_branch_alignment=-0.976922
+```
 
-## Current unverified production fix
+This means the accepted branch is no longer safely available.
+
+Do not continue trying to force that branch.
+
+## New production signal
 
 Commits:
 ```
-b8bcaae6c5af366e8cabcefb86fbe104c120b010
-caa8da847b0f48ea2d72d2fa8c042c1d599c73b8
-88f63b0d62803d73e7f3694d1c4f30bcbc1925d0
-9422dddfab64f70f94773ebcacf2167be1daacbe
-e9655a4b9f004fe790adbbc287bd55a3f1c269ea
+4a91a78bea1e159a329ab346586a4d290ea5d420
+9949b701bc8ba181a08b96e8077a375aada725be
+7a5b4ae0520a10edbd89fd5f1e81f2427f4768be
+e407857d7764300193075cbee941be82312338f8
 ```
 
-Branch classification:
-```
-accepted_lateral =
-    accepted_direction -
-    nominal_forward * dot(accepted_direction, nominal_forward)
+`NavigationRuntimePlanner::Result::avoidanceBranchSwitchRequired` is true only when:
+- accepted continuity exists;
+- transverse branch is meaningful;
+- no safe same-branch candidate exists;
+- some safe adjusted target exists on another branch.
 
-candidate_lateral =
-    candidate_direction -
-    nominal_forward * dot(candidate_direction, nominal_forward)
-```
-
-If both lateral components are meaningful:
-```
-branch_alignment =
-    dot(normalize(candidate_lateral),
-        normalize(accepted_lateral))
-```
-
-Positive alignment = same branch.
-
-## Ranking
-
-With explicit branch continuity:
-1. safe same-branch class;
-2. smallest safe deflection ring in that class;
-3. highest transverse branch alignment within that ring;
-4. highest full-direction continuity;
-5. deterministic azimuth index.
-
-If no same-branch safe candidate exists, use the safest least-opposed fallback.
-
-Without explicit branch continuity, legacy minimum-safe-ring behavior remains.
-
-## New diagnostics
-
-Runtime planner now surfaces:
-```
-avoidanceContinuityHintUsed
-avoidanceContinuityLateralValid
-avoidanceSameBranchSafeCandidates
-avoidanceSelectedBranchAlignment
-```
-
-Composite resume rows print these values.
+This is an escalation signal, not steering authority.
 
 ## Focused regression
 
 Commit:
 ```
-0e344f3a3b2a5e887cbb474ce9ce650b68851716
+c8e0c7cd6b6a7deb6c7f618c4d86ea80d4c62400
 ```
 
-The regression now uses 4 azimuth samples so first-ring preferred -Z is one deterministic ray.
+The exact-static blocker now sits directly on the actual 15-degree / 600 m preferred -Z probe endpoint:
+```
+(579.555496, 0, -155.291427)
+```
 
-Exact-static blocker rejects that ray only.
+A larger-ring -Z continuation remains free.
 
-Larger-ring -Z remains clear.
+The test must prove:
+- same-branch safe count >0;
+- branch switch required = false;
+- selected target stays on -Z;
+- selected deflection > primary ring.
 
-Assertions require:
-- explicit lateral continuity active;
-- at least one same-branch safe candidate;
-- selected branch alignment >0.5;
-- selected deflection > primary ring;
-- selected target remains -Z.
+## Final composite recovery candidate
+
+Commit:
+```
+0ecf1b71b9620022a49ea71c996f5e81c02e5243
+```
+
+When branch switch is required:
+1. do not execute the opposite adjusted target directly;
+2. fit a conservative Brake program from actual live P/V;
+3. hold current body attitude;
+4. dense proof:
+   - peak total acceleration <=1.35 m/s2;
+   - planned dynamic clearance >=1.5 m;
+   - planned static clearance >=1.5 m;
+   - no velocity reversal;
+5. execute with StateCapture through B9/B10 -> PilotSkill -> real physics;
+6. require zero tracking violations and >0.5 m actual clearances;
+7. require final speed <=0.60 m/s;
+8. clear obsolete accepted branch continuity;
+9. republish hazard at current time;
+10. call planner again from recovered state.
+
+New diagnostic:
+```
+[COMPOSITE-RECOVERY]
+```
 
 ## Validation
 
@@ -131,31 +131,27 @@ OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
 echo
 echo "===== FINAL COMPOSITE SUMMARY ====="
-grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|NAVIGATION RUNTIME PLANNER TESTS|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE-RECOVERY\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|NAVIGATION RUNTIME PLANNER TESTS|tests passed|tests failed|TESTED HEAD' "$OUT" || true
 
 echo "$PWD/$OUT"
 ```
 
-## Next interpretation
+## Interpretation
 
-If regression passes and composite shows:
-```
-same_branch_safe > 0
-selected_branch_alignment > 0
-```
-then branch continuity is functioning.
+If the cross-ring regression is green but branch-switch recovery triggers in composite:
+- that is expected when same_branch_safe == 0.
 
-If composite failure shows:
-```
-same_branch_safe == 0
-```
-then switching branch is physically required; do not force continuity. Add explicit recovery/brake/stop-turn-go before the new branch.
+If recovery cannot be physically proved:
+- fail closed and inspect the current state; do not execute the new branch.
+
+If recovery succeeds:
+- old branch is retired and next plan is fresh from the recovered state.
 
 If 19/19:
-- accept final composite;
-- close synthetic behavior testing;
-- move into real NAV STRESS/game.
+- accept exact target checkout;
+- close synthetic maneuver behavior laboratory;
+- move immediately to real NAV STRESS/game visualization and live behavior review.
 
-Do not weaken physical or safety thresholds.
+Do not weaken physical/safety criteria.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

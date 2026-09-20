@@ -10,44 +10,45 @@ Accepted baseline:
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-Latest actually tested checkout:
+Latest target-tested checkout:
 ```
-2ad1178bc5c778636748557ceb6c9a5b757c9a53
-```
-
-Current unverified two-segment visible-horizon baseline before state-doc sync:
-```
-edb4c4106686ce625e1cd5eb99a6d1483cd32854
+81d0c23ae42bba0352026d6c2306cc6976c04bda
 ```
 
-## B4 current architecture
+Target evidence:
+- architecture contract PASS;
+- compile/link PASS;
+- navigation runtime 17/19 PASS;
+- failures: `navigation_runtime_planner`, `navigation_composite_proving_ground`.
 
-B4 ordinary unexpected-obstacle handling is now one trajectory-relative owner:
+## B4 status
 
-`LocalHorizonPlanner + LocalAvoidancePlanner`.
+The old angular fan / branch continuity / branch-switch recovery path remains
+removed. The only ordinary local owner is the trajectory-relative projected
+visible-horizon solver with metric offsets and an explicitly proved
+two-segment bypass/merge route.
 
-The local solver:
-- uses the accepted trajectory as reference;
-- predicts moving occupancy over the physical horizon;
-- projects occupancy into the normal plane;
-- searches offsets in meters, not angles;
-- samples several longitudinal bypass stations;
-- proves both outbound and return-to-route exact-static segments;
-- time-checks the whole two-segment detour against relevant moving actors;
-- publishes a temporary bypass target and an explicit merge point on the
-  original trajectory.
+The hard replacement remains **UNVERIFIED / NOT ACCEPTED**.
 
-This is the sole ordinary local path.
+## What the first target run established
 
-A future longitudinal multi-slab corridor may extend the same B4 owner for
-complex known geometry. It must not become a second planner.
+The replacement is integrated well enough to build and execute the full
+runtime suite. The failures are behavioral, not compile/API failures.
 
-## Removed path
+One focused regression is definitely inconsistent with the new clearance
+contract: it places both start and merge 2.5 m from a blocker while requiring
+2.75 m separation.
 
-The angular ray fan / branch-continuity / branch-switch-recovery mechanism is
-historical only and must remain absent.
+The composite reveals a more important boundary: the current implementation
+forces merge at the bounded nominal target. In the logged failure that point
+is 18.0 m from the hazard at activation (about 18.51 m at t=4 s), while
+required separation is 26.775995 m. A complete two-segment route therefore
+cannot be accepted.
 
-The architecture checker enforces this negatively.
+## Current milestone
+
+Separate fixture error from real merge/horizon architecture limitation, then
+make B4 demonstrate a safe recoverable bypass without relaxing clearance.
 
 ## Other block status
 
@@ -65,22 +66,13 @@ Still incomplete/transitional:
 - B1 shared influence builder;
 - B2 unified objective;
 - B3 coarse vehicle-aware topology feasibility;
+- B4 current bypass/merge semantics under target validation;
 - B5 general production maneuver compiler;
 - B6 generalized continuous proof;
 - B11 explicit safety/reflex monitor;
 - ordinary-live migration of accepted-program execution.
 
-## Current milestone
-
-First target-machine validation of the hard B4 replacement.
-
-Do not call the new solver accepted until:
-- architecture passes;
-- runtime compiles;
-- focused projected-bypass tests execute;
-- composite behavior supplies acceptable evidence.
-
 ## State protocol
 
-After every state/evidence change synchronize all project MDs, active Stage-12,
-and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state/evidence change synchronize project state MDs, active
+Stage-12, and recreate `CONTINUE_PROMPT.md` from scratch.

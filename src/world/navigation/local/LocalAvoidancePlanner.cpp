@@ -291,6 +291,8 @@ bool timeCoupledBypassClear(
     const Vec3d& bypassTarget,
     const LocalHorizonPlanner::Query& query,
     const NavigationMap::QueryResult& dynamicCandidates,
+    const Vec3d& forward,
+    double probeDistance,
     double lookAheadSeconds,
     std::size_t samples,
     double projectionPaddingMeters
@@ -312,8 +314,12 @@ bool timeCoupledBypassClear(
 
         for (const Candidate& candidate : dynamicCandidates.candidates)
         {
-            if (query.agent.entityId != 0 &&
-                candidate.entityId == query.agent.entityId)
+            if (!candidateRelevantToForwardHorizon(
+                    candidate,
+                    query,
+                    forward,
+                    probeDistance,
+                    lookAheadSeconds))
             {
                 continue;
             }
@@ -641,6 +647,8 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                     candidateTarget,
                     query.horizon,
                     dynamicCandidates,
+                    forward,
+                    probeDistance,
                     lookAhead,
                     query.avoidance.trajectorySamples,
                     query.avoidance.projectionPaddingMeters))

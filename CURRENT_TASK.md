@@ -14,80 +14,70 @@
 2ad1178bc5c778636748557ceb6c9a5b757c9a53
 ```
 
-Architecture PASS; runtime behavior did not execute because of the historical
-missing-`<iomanip>` diagnostic compile failure.
-
-## Current unverified replacement baseline before state-doc sync
+## Current unverified mechanism baseline before state-sync commits
 
 ```
-f8cd91d01006d9cba8327ae51efb6705e6df83e0
+edb4c4106686ce625e1cd5eb99a6d1483cd32854
 ```
 
 ## Task
 
-Validate the **hard-replaced B4 visible-horizon local solver** on the target
-machine.
+Run the first target-machine compile/behavior gate for the hard-replaced B4
+visible-horizon solver.
 
-Do not repair, preserve, or re-enable the removed angular-fan / branch mechanism
-to make tests pass.
-
-The production path under test is:
+The mechanism being tested is:
 
 ```text
-accepted trajectory
- -> visible physical horizon
- -> predicted unexpected dynamic occupancy
- -> projection onto normal plane
- -> metric lateral/vertical offset search
- -> exact-static proof
- -> time-coupled dynamic proof
- -> bypass target + nominal merge target
- -> physical maneuver compilation/proof
- -> execution
- -> nominal trajectory reacquisition
+nominal trajectory
+ -> visible horizon
+ -> predicted dynamic occupancy
+ -> normal-plane projection
+ -> metric offset grid
+ -> longitudinal bypass station
+ -> exact-static proof of outbound leg
+ -> exact-static proof of return/merge leg
+ -> time-coupled dynamic proof of complete detour
+ -> temporary bypass
+ -> on-route merge
 ```
 
-## Required behavior
+## What must not happen
 
-Focused regressions must establish:
-- clear nominal route performs no offset search;
-- crossing moving obstacle produces a projected bypass;
-- head-on obstacle with genuine lateral room does not require a mandatory stop;
-- exact static geometry constrains/rejects offsets;
-- disappearing conflict returns directly to the original trajectory;
-- no fitting offset fails closed through `localBypassExhausted`;
-- stale dynamic truth fails closed;
-- runtime planner publishes metric bypass offset + merge target;
-- composite persistent-hazard replans use fresh world truth without branch
-  continuity/recovery state.
+Do not restore:
+- angular fan;
+- deflection rings;
+- azimuth branches;
+- branch continuity;
+- branch-switch Brake/recovery.
 
-## Forbidden response to failures
+Do not weaken clearance just to get green.
 
-Do **not**:
-- restore 15/30/45/60/75-degree fan search;
-- restore azimuth branch identity;
-- restore accepted-branch continuity hints;
-- restore Brake-before-branch-switch as ordinary avoidance;
-- weaken static/dynamic clearance simply to obtain green tests;
-- make a second parallel local planner.
+## First-run priorities
 
-If a target-machine failure occurs, diagnose the replacement mechanism itself
-or its fixture/API integration.
+If build fails:
+- fix exact API/include/type error only.
 
-## Next validation
+If focused tests fail:
+- inspect projection working set;
+- basis construction;
+- metric step size;
+- longitudinal station search;
+- first/second exact-static segment evidence;
+- time-coupled dynamic proof;
+- fixture geometry.
 
-Run the architecture + navigation runtime target gate from `CURRENT_STATE.md`
-or the freshly recreated `CONTINUE_PROMPT.md`.
+If composite fails:
+- inspect each projected bypass target, forward station, merge point, planned
+  and actual clearance;
+- keep planner/executor world truth synchronized.
+
+## Exit criterion
+
+Only a fresh target-machine green gate can promote the replacement.
 
 If green:
-- record exact tested HEAD and exact metrics;
-- promote only the evidence actually proved;
-- synchronize all required MD files;
+- record exact tested HEAD and metrics;
+- synchronize all required MDs;
 - recreate `CONTINUE_PROMPT.md` from scratch;
-- then decide whether the synthetic behavior lab is sufficiently closed to move
-  into actual NAV STRESS/game visual evaluation.
-
-## Iteration rule
-
-After every state/evidence change, synchronize all project state MDs and
-recreate `CONTINUE_PROMPT.md` from scratch.
+- then move toward actual NAV STRESS/game visual evaluation rather than adding
+  unrelated synthetic matrices.

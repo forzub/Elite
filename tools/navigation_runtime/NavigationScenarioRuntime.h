@@ -53,4 +53,10 @@ struct ScenarioRunResult
     const ScenarioRunSettings& settings
 );
 
+[[nodiscard]] ScenarioRunResult executeCalculatedRoute(
+    const std::string& scenarioJsonPath,
+    const ScenarioRunSettings& settings,
+    const TraceDocument& calculatedRoute
+);
+
 } // namespace elite::tools::navigation_runtime

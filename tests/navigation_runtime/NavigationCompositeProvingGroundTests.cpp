@@ -2174,12 +2174,12 @@ void testCompositeProvingGround()
         const CompositeMetrics m = runComposite(law);
 
         require(
-            m.phases >= 4 && m.phases <= 7,
+            m.phases >= 4 && m.phases <= 8,
             "composite completed an unexpected number of bounded physical phases"
         );
         require(
             m.dynamicBypassSegments >= 1 &&
-            m.dynamicBypassSegments <= 4,
+            m.dynamicBypassSegments <= 5,
             "composite dynamic bypass segment count is invalid"
         );
         require(

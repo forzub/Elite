@@ -255,9 +255,9 @@ VehicleState captureState(const Vehicle& v)
     result.velocity = v.transform.motion.localVelocityMps;
     result.basis = basis;
     result.angularVelocityMap =
-        basis.right * v.transform.pitchRate +
-        basis.up * v.transform.yawRate +
-        basis.forward * v.transform.rollRate;
+        basis.right * static_cast<double>(v.transform.pitchRate) +
+        basis.up * static_cast<double>(v.transform.yawRate) +
+        basis.forward * static_cast<double>(v.transform.rollRate);
     return result;
 }
 

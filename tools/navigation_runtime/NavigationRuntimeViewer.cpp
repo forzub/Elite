@@ -1597,7 +1597,7 @@ void drawHud(
     );
 
     float logY = panelTop + 142.0f;
-    const std::size_t maxLines = 13;
+    const std::size_t maxLines = 14;
     for (
         std::size_t i = 0;
         i < state.diagnosticLines.size() && i < maxLines;

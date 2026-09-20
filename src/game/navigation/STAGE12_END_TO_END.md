@@ -5690,3 +5690,34 @@ Candidate `7444c5930586300d6cac48bd4b2fa63b27e96bd6` makes test-side replacement
 - actual execution must keep zero tracking-envelope violations and >0.5 m dynamic clearance.
 
 This does not weaken the final composite. It prevents the temporary test-side B5 seam from inventing a maneuver the accepted physics cannot execute.
+
+
+## 2026-09-20 — final composite: first replacement passes, persistent world truth fixed
+
+Exact target checkout:
+
+```
+852e5a71a71625cdfc0c71a6bb89724d2194990e
+```
+
+passed the architecture contract and 18/19 runtime tests.
+
+Inside the final composite:
+- production planner returned `AdjustedClear` with one real nominal dynamic conflict;
+- first authority-bounded replacement used 24 s / 2 m/s;
+- planned hazard clearance was 3.181387 m;
+- actual clearance was 3.175166 m;
+- tracking-envelope violations were zero;
+- terminal replacement P error was 0.013099 m.
+
+Thus the first physical bypass is accepted as healthy evidence.
+
+The remaining failure came after that segment because the test resumed planning with `emptyDynamic()` while the same hazard remained physically alive.
+
+Candidates `6c0a71d308040c568c109afc4425332021ade730` and `01a8d69cc635a450d73a49a31b91e5546e0b1828` keep dynamic world truth authoritative across segment boundaries:
+- republish current hazard state;
+- replan bounded suffix;
+- repeat if necessary;
+- return to static portal only after genuine `NominalClear`.
+
+No safety tolerance was relaxed.

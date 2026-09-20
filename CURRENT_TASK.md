@@ -163,3 +163,27 @@ Expected checks:
 - viewer should now compile using `glad/include` and open the 770-frame trace;
 - visually inspect the transition from `replan_2 / nominal_clear` into `portal_102`
   where monitoring currently appears to stop.
+
+## Immediate validation — HUD build/open
+
+Pull latest main and run only the viewer; the existing 770-frame Newtonian trace is
+already present from the target composite run:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+bash tools/navigation_runtime/run_mingw64.sh
+```
+
+HUD acceptance:
+- visible top buttons: PLAY/PAUSE, PREV, NEXT, NEXT REPLAN, FIT;
+- buttons respond to left mouse clicks;
+- right panel explains current law/frame/time/phase/status/clearance;
+- `WHAT IS HAPPENING` changes across phases/replans;
+- legend makes every scene color/marker understandable;
+- known `portal_102` failure area is called out during playback.
+
+After HUD acceptance, return to the separate planner-fixture failure
+`fixture must produce a safe adjusted target`, then use the viewer to inspect/fix
+continuous monitoring through the portal-102 leg.

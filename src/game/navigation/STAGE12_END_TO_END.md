@@ -5988,3 +5988,45 @@ The mandatory working-state documents have now been rewritten to the hard-replac
 The last accepted target baseline remains `3fe9b54eda0135b0cdebb7dc835d8a4b17580808`.
 The latest actually tested checkout remains `2ad1178bc5c778636748557ceb6c9a5b757c9a53` and supplied no runtime-behavior evidence.
 The projected visible-horizon hard replacement remains UNVERIFIED until a fresh target-machine gate is supplied.
+
+
+### Two-segment visible-horizon candidate before first target gate
+
+Current unverified code baseline before documentation/state-sync commits:
+
+```
+edb4c4106686ce625e1cd5eb99a6d1483cd32854
+```
+
+The initial projected-offset rewrite was tightened before target execution.
+
+A bypass is no longer a single off-route endpoint at the merge station. The
+solver now searches:
+- metric lateral/vertical offsets;
+- several longitudinal bypass stations inside the physical horizon.
+
+Each candidate is:
+
+```text
+current state
+    -> off-route bypass station
+    -> on-route merge target
+```
+
+Acceptance requires:
+- projected dynamic clearance;
+- exact-static proof of current -> bypass;
+- exact-static proof of bypass -> merge;
+- time-coupled dynamic proof of the complete two-segment detour.
+
+New diagnostics:
+- `selectedBypassForwardDistanceMeters`;
+- `routeCandidatesExamined`;
+- runtime mirrors `localBypassForwardDistanceMeters` and
+  `avoidanceRouteCandidatesExamined`.
+
+A focused regression places exact-static geometry late in the horizon so an
+insufficient detour can reach its bypass station but fails on the return leg.
+This pins the requirement that route reacquisition itself is proved.
+
+The replacement remains UNVERIFIED until the user's MinGW64 target gate passes.

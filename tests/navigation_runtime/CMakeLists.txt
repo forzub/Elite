@@ -859,5 +859,7 @@ add_test(
 
 set_tests_properties(
     nominal_route_planner
-    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+        LABELS "navigation_stage1"
 )

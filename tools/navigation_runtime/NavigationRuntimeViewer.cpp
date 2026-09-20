@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -269,7 +270,9 @@ std::vector<Vertex> polyline(
         return out;
 
     const std::size_t limit =
-        std::min(lastInclusive + 1, points.size());
+        lastInclusive == std::numeric_limits<std::size_t>::max()
+            ? points.size()
+            : std::min(lastInclusive + 1, points.size());
     for (std::size_t i = 1; i < limit; ++i)
         addLine(out, toVec3(points[i - 1]), toVec3(points[i]), color);
 

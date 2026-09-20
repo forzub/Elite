@@ -31,6 +31,11 @@ target_include_directories(
         "${CMAKE_CURRENT_LIST_DIR}"
 )
 
+target_compile_definitions(
+    navigation_runtime_viewer
+    PRIVATE ELITE_SOURCE_ROOT="${ELITE_SOURCE_ROOT}"
+)
+
 target_link_libraries(
     navigation_runtime_viewer
     PRIVATE

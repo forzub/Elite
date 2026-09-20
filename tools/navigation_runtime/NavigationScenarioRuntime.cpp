@@ -4,6 +4,7 @@
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
+#include "src/game/navigation/ManeuverPhaseGate.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/KinematicFrame.h"
@@ -1098,7 +1099,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
     return world::navigation::TrajectoryGenerator::generate(request);
 }
 
-Program makeProgramChunk(
+Program makeProgramPhase(
     const world::navigation::Trajectory& trajectory,
     const std::vector<ReferenceAttitude>& attitudes,
     std::size_t first,
@@ -1114,23 +1115,66 @@ Program makeProgramChunk(
     program.objectiveRevision = scenario.goalRevision;
     program.family = Program::ManeuverFamily::FreeTransit;
 
-    const double acceptedAt =
-        trajectory.samples[first].timeOffsetSeconds;
-    program.acceptedAtUniverseTimeSeconds = acceptedAt;
+    // Accepted time is assigned when the phase actually becomes active.
+    // The template stores only phase-relative reference time.
+    program.acceptedAtUniverseTimeSeconds = 0.0;
 
-    const std::size_t count = last - first + 1;
+    const std::size_t available = last - first + 1;
+    const std::size_t count =
+        std::min<std::size_t>(
+            Program::kMaxSamples,
+            available
+        );
+
+    if (count < 2)
+        return {};
+
     program.sampleCount =
         static_cast<std::uint8_t>(count);
 
+    const double sourceStartTime =
+        trajectory.samples[first].timeOffsetSeconds;
+
+    std::size_t previousSource = first;
     for (std::size_t i = 0; i < count; ++i)
     {
-        const std::size_t sourceIndex = first + i;
+        std::size_t sourceIndex = first;
+        if (i + 1 == count)
+        {
+            sourceIndex = last;
+        }
+        else if (i > 0)
+        {
+            const double u =
+                static_cast<double>(i) /
+                static_cast<double>(count - 1);
+            sourceIndex =
+                first +
+                static_cast<std::size_t>(
+                    std::llround(
+                        u * static_cast<double>(last - first)
+                    )
+                );
+
+            sourceIndex =
+                std::max(sourceIndex, previousSource + 1);
+            const std::size_t remainingSlots =
+                count - 1 - i;
+            sourceIndex =
+                std::min(
+                    sourceIndex,
+                    last - remainingSlots
+                );
+        }
+
+        previousSource = sourceIndex;
+
         const auto& source = trajectory.samples[sourceIndex];
         const auto& attitude = attitudes[sourceIndex];
         auto& target = program.samples[i];
 
         target.timeOffsetSeconds =
-            source.timeOffsetSeconds - acceptedAt;
+            source.timeOffsetSeconds - sourceStartTime;
         target.positionMapMeters = source.positionMeters;
         target.velocityMapMetersPerSecond = source.velocityMps;
         target.linearAccelerationFeedForwardMapMps2 =
@@ -1146,8 +1190,11 @@ Program makeProgramChunk(
 
     const double duration =
         program.samples[count - 1].timeOffsetSeconds;
+    if (!(duration > 0.0))
+        return {};
+
     program.validUntilUniverseTimeSeconds =
-        acceptedAt + duration + 5.0;
+        duration + 5.0;
 
     program.terminalTolerance.positionMeters = 4.0;
     program.terminalTolerance.linearVelocityMps = 2.0;
@@ -1192,30 +1239,105 @@ Program makeProgramChunk(
     return program;
 }
 
-std::vector<Program> buildProgramChunks(
+std::vector<double> routeProgressTable(
+    const std::vector<glm::dvec3>& route
+)
+{
+    std::vector<double> progress(route.size(), 0.0);
+    for (std::size_t i = 1; i < route.size(); ++i)
+    {
+        progress[i] =
+            progress[i - 1] +
+            glm::length(route[i] - route[i - 1]);
+    }
+    return progress;
+}
+
+std::size_t sampleNearestSourceProgress(
+    const world::navigation::Trajectory& trajectory,
+    double targetProgress,
+    std::size_t beginIndex
+)
+{
+    std::size_t best = beginIndex;
+    double bestError =
+        std::abs(
+            trajectory.samples[beginIndex].
+                sourcePathProgressMeters -
+            targetProgress
+        );
+
+    for (std::size_t i = beginIndex + 1;
+         i < trajectory.samples.size();
+         ++i)
+    {
+        const double error =
+            std::abs(
+                trajectory.samples[i].
+                    sourcePathProgressMeters -
+                targetProgress
+            );
+
+        if (error <= bestError)
+        {
+            best = i;
+            bestError = error;
+            continue;
+        }
+
+        if (
+            trajectory.samples[i].sourcePathProgressMeters >
+            targetProgress)
+        {
+            break;
+        }
+    }
+
+    return best;
+}
+
+std::vector<Program> buildRoutePrograms(
     const world::navigation::Trajectory& trajectory,
     const std::vector<ReferenceAttitude>& attitudes,
+    const std::vector<glm::dvec3>& retainedRoute,
     const Scenario& scenario,
     const ShipParams& params
 )
 {
     std::vector<Program> programs;
-    if (trajectory.samples.size() < 2)
+    if (
+        trajectory.samples.size() < 2 ||
+        attitudes.size() != trajectory.samples.size() ||
+        retainedRoute.size() < 2)
+    {
         return programs;
+    }
+
+    const auto routeProgress =
+        routeProgressTable(retainedRoute);
 
     std::size_t first = 0;
     std::uint64_t revision = 1000;
 
-    while (first + 1 < trajectory.samples.size())
+    for (std::size_t leg = 0;
+         leg + 1 < retainedRoute.size();
+         ++leg)
     {
-        const std::size_t last =
-            std::min(
-                trajectory.samples.size() - 1,
-                first + Program::kMaxSamples - 1
+        std::size_t last =
+            sampleNearestSourceProgress(
+                trajectory,
+                routeProgress[leg + 1],
+                first
             );
 
-        programs.push_back(
-            makeProgramChunk(
+        if (leg + 2 == retainedRoute.size())
+            last = trajectory.samples.size() - 1;
+
+        if (last <= first)
+            continue;
+
+        Program phase =
+            makeProgramPhase(
                 trajectory,
                 attitudes,
                 first,
@@ -1223,12 +1345,12 @@ std::vector<Program> buildProgramChunks(
                 revision++,
                 scenario,
                 params
-            )
-        );
+            );
 
-        if (last + 1 >= trajectory.samples.size())
-            break;
+        if (!phase.valid || phase.sampleCount < 2)
+            return {};
 
+        programs.push_back(std::move(phase));
         first = last;
     }
 
@@ -1236,6 +1358,22 @@ std::vector<Program> buildProgramChunks(
         programs.back().completionTriggersReplan = true;
 
     return programs;
+}
+
+void activateProgramPhase(
+    Program& program,
+    double actualStartTimeSeconds
+)
+{
+    const std::size_t lastIndex =
+        static_cast<std::size_t>(program.sampleCount - 1);
+    const double duration =
+        program.samples[lastIndex].timeOffsetSeconds;
+
+    program.acceptedAtUniverseTimeSeconds =
+        actualStartTimeSeconds;
+    program.validUntilUniverseTimeSeconds =
+        actualStartTimeSeconds + duration + 5.0;
 }
 
 struct ExecutionVehicle

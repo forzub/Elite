@@ -823,11 +823,11 @@ UiRect extremeRect() { return {702.0f, 34.0f, 108.0f, 28.0f}; }
 UiRect suddenObstacleRect() { return {830.0f, 34.0f, 210.0f, 28.0f}; }
 UiRect calculateButtonRect() { return {1052.0f, 30.0f, 160.0f, 34.0f}; }
 
-UiRect playButtonRect() { return {16.0f, 78.0f, 148.0f, 32.0f}; }
-UiRect prevButtonRect() { return {172.0f, 78.0f, 86.0f, 32.0f}; }
-UiRect nextButtonRect() { return {266.0f, 78.0f, 94.0f, 32.0f}; }
-UiRect replanButtonRect() { return {368.0f, 78.0f, 194.0f, 32.0f}; }
-UiRect fitButtonRect() { return {570.0f, 78.0f, 94.0f, 32.0f}; }
+UiRect playButtonRect() { return {16.0f, 78.0f, 184.0f, 32.0f}; }
+UiRect prevButtonRect() { return {208.0f, 78.0f, 86.0f, 32.0f}; }
+UiRect nextButtonRect() { return {302.0f, 78.0f, 94.0f, 32.0f}; }
+UiRect replanButtonRect() { return {404.0f, 78.0f, 194.0f, 32.0f}; }
+UiRect fitButtonRect() { return {606.0f, 78.0f, 94.0f, 32.0f}; }
 
 UiRect frameSliderRect(int windowWidth, int windowHeight)
 {
@@ -1657,7 +1657,7 @@ void drawHud(
     );
 
     float logY = panelTop + 142.0f;
-    const std::size_t maxLines = 14;
+    const std::size_t maxLines = 18;
     for (
         std::size_t i = 0;
         i < state.diagnosticLines.size() && i < maxLines;
@@ -1666,12 +1666,26 @@ void drawHud(
         const std::string& line = state.diagnosticLines[i];
         glm::vec3 color(0.86f,0.88f,0.92f);
 
-        if (line.find("PLANNER: OK") != std::string::npos)
+        if (
+            line.find("PLANNER: OK") != std::string::npos ||
+            line.find("TRAJECTORY: RUCKIG OK") != std::string::npos ||
+            line.find("FOLLOWER: EXECUTED") != std::string::npos ||
+            line.find("PILOT BRIDGE: EXECUTED") != std::string::npos)
+        {
             color = {0.35f,1.0f,0.42f};
-        else if (line.find("PLANNER: FAIL") != std::string::npos)
+        }
+        else if (
+            line.find("FAIL") != std::string::npos ||
+            line.find("CONTACT: YES") != std::string::npos)
+        {
             color = {1.0f,0.30f,0.22f};
-        else if (line.find("FOLLOWER: NOT RUN") != std::string::npos)
+        }
+        else if (
+            line.find("NOT RUN") != std::string::npos ||
+            line.find("NOT ENABLED") != std::string::npos)
+        {
             color = {1.0f,0.72f,0.25f};
+        }
 
         appendUiText(
             ui,
@@ -1685,7 +1699,7 @@ void drawHud(
     }
 
     appendUiText(
-        ui, x, panelTop + 396.0f,
+        ui, x, panelTop + 482.0f,
         "ЧТО ПРОИСХОДИТ",
         1.40f,
         {1.0f,0.82f,0.32f}
@@ -1693,38 +1707,38 @@ void drawHud(
     appendUiText(
         ui,
         x,
-        panelTop + 420.0f,
+        panelTop + 506.0f,
         currentExplanation(frame),
         1.10f,
         {0.94f,0.95f,0.97f}
     );
 
     appendUiText(
-        ui, x, panelTop + 474.0f,
+        ui, x, panelTop + 560.0f,
         "СЦЕНА",
         1.35f,
         {0.90f,0.92f,1.0f}
     );
     appendUiText(
-        ui, x, panelTop + 498.0f,
+        ui, x, panelTop + 584.0f,
         "ЗЕЛЁНЫЙ КРЕСТ: START",
         1.05f,
         {0.35f,1.0f,0.42f}
     );
     appendUiText(
-        ui, x, panelTop + 514.0f,
+        ui, x, panelTop + 600.0f,
         "ЖЁЛТЫЙ КРЕСТ/КРУГ: FINISH",
         1.05f,
         {1.0f,0.92f,0.15f}
     );
     appendUiText(
-        ui, x, panelTop + 530.0f,
+        ui, x, panelTop + 616.0f,
         "СЕРЫЙ КАРКАС: STATIC OBSTACLE",
         1.05f,
         {0.75f,0.78f,0.82f}
     );
     appendUiText(
-        ui, x, panelTop + 546.0f,
+        ui, x, panelTop + 632.0f,
         "БЕЛАЯ ЛИНИЯ: ROUTE ПОСЛЕ РАСЧЁТА",
         1.05f,
         {0.90f,0.90f,0.90f}

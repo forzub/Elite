@@ -121,3 +121,35 @@ cd /d/__elite/work
 
 The window is an ordinary decorated Windows window, maximized to the desktop
 work area.
+
+
+## Pre-calculation scene and diagnostics
+
+The authored scene is visible immediately on startup, before `РАССЧИТАТЬ`:
+- green cross: START;
+- yellow cross/ring: FINISH;
+- grey wire geometry: static obstacles;
+- reference grid: visual scale/orientation aid;
+- Cobra body remains at START.
+
+The white route does not exist until the Stage-1 planner runs.
+
+After `РАССЧИТАТЬ`, the fixed diagnostics panel and console show the Stage-1 chain explicitly:
+
+```text
+SCENE: LOADED
+PLANNER: OK / FAIL
+FOLLOWER: NOT RUN (STAGE 1)
+START / FINISH
+STATIC OBSTACLES
+REQUIRED WAYPOINTS
+ROUTE POINTS
+ROUTE LENGTH
+STATIC DETOUR
+GOAL / STATIC WORLD REVISION
+```
+
+The same calculation log is written to:
+`tools/navigation_runtime/last_route_plan.log`.
+
+Playback controls are deliberately disabled in Stage 1 and labeled as Stage-2 execution controls. A one-frame route result must never look like a failed Follower run.

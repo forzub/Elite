@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cmath>
 #include <fstream>
 #include <stdexcept>
 #include <string>

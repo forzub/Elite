@@ -14,72 +14,84 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Tested:
 ```
-f626fb0373499928e0ae89585c3bd992e5436c92
+69f8ca4dbcb44df5340b94f45640bcb7d6e6ed1a
 ```
 
-Architecture PASS. Runtime 18/19.
+Architecture PASS. Runtime 17/19.
 
-Newtonian final composite fully passes its complete scenario:
-- 7 completed phases;
-- 4 dynamic-bypass segments;
-- one hazard invalidation;
-- minimum dynamic clearance 3.175166 m;
-- zero tracking-envelope violations;
-- final P 0.022675 m;
-- final speed 0.075007 m/s;
-- final forward 3.521282 deg.
+Failures:
+1. focused continuity regression;
+2. final composite.
 
-Assisted safely executes:
-- initial authority-bounded replacement;
-- continuation 0;
-- continuation 1.
+The focused regression itself had a static-space fixture bug: generic region depth was only +/-10 m in Z, so the alleged symmetric +/-Z alternatives were not actually legal.
 
-Then production adjusted targets oscillate in Z:
+More importantly, the composite showed the velocity-only tie-break does not reliably preserve an accepted avoidance branch.
+
+## Architecture conclusion
+
+The direction of the currently accepted bounded local segment is execution state.
+
+It must be supplied explicitly to the stateless planner on the next REPLAN.
+
+Do not infer it only from instantaneous velocity.
+
+## Current unverified production API
+
+Commits:
 ```
-+17.815749
-+15.519026
--14.477971
-+13.773784
-```
-
-At the final reversal the test-side no-stop physical author cannot produce a valid continuation.
-
-## Root cause
-
-Production `LocalAvoidancePlanner` previously returned the first safe azimuth in the first safe deflection ring.
-
-The transverse basis is regenerated at each replan, so azimuth index ordering does not preserve a physical left/right/up/down bypass side.
-
-Repeated replans may therefore switch sides for no safety reason.
-
-## Current unverified production fix
-
-```
-86640b05145938ec0880a3a26539957aaa72f085
-ef2e6ec85823c229d6cadb6aa8dbe5b65e209193
+71b80c4529e1bc776e2a2dbf209059a2ccff44f9
+4bde26ee2fbb531116f960d089d488067f1bfd6d
+76022a5199422dd80ef4caff611539b53c39e731
+40d7b9852bc6f265ae02ecc0bf9d7b4e002d5b96
 ```
 
-New selection semantics:
-- preserve existing smallest-deflection-ring priority;
-- evaluate every safe azimuth in that ring;
-- maximize dot(candidateDirection, currentVelocityDirection);
-- deterministic azimuth index breaks ties;
-- when current velocity is effectively zero, nominal route direction is fallback.
-
-This supplies local side continuity without persistent hidden state.
-
-## Focused regression
-
+`NavigationRuntimePlanner::AgentState` now carries:
 ```
-6064a22f565fd7cc82568b0babf2721891c8d925
+bool localAvoidanceContinuityValid
+glm::dvec3 localAvoidanceContinuityDirectionMap
 ```
 
-A symmetric dynamic obstacle has safe +/-Z alternatives while agent velocity contains -Z.
+`LocalAvoidancePlanner::Query` carries:
+```
+bool preferredDirectionValid
+Vec3d preferredDirectionMap
+```
 
-The runtime planner must:
-- return AdjustedClear;
-- keep the selected target on -Z;
-- strongly align selected direction with current velocity.
+Inside the minimum safe deflection ring:
+- explicit accepted direction is the continuity reference;
+- current velocity is fallback only;
+- nominal forward is fallback when both are unavailable.
+
+The planner remains stateless.
+
+## Updated regression
+
+Commit:
+```
+bd31307fbda3d512a579f521efc1664199b1de46
+```
+
+Fixture:
+- wide 3D static region;
+- symmetric safe +/-Z branches;
+- current velocity intentionally does not point toward -Z;
+- accepted local continuity explicitly points toward -Z;
+- next AdjustedClear must preserve -Z.
+
+## Updated final composite
+
+Commit:
+```
+09bc81e03cab6c251b50678585161cc73e814ddb
+```
+
+On every accepted dynamic bypass:
+- store normalized selected-target direction;
+- execute the accepted short physical program;
+- on next replan supply the stored direction as continuity;
+- update it only after a new AdjustedClear is accepted.
+
+`[COMPOSITE-RESUME]` now prints the continuity vector.
 
 ## Validation
 
@@ -110,17 +122,19 @@ grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-AC
 echo "$PWD/$OUT"
 ```
 
-## Next interpretation
+## Interpretation
 
-If the new focused regression fails, repair continuity scoring.
+If focused regression fails:
+- explicit continuity is not reaching/scoring correctly.
 
-If it passes but composite still alternates sides, current velocity alone is insufficient and the next architectural move is an explicit accepted local-corridor/avoidance-side continuity hint.
+If focused regression passes but composite still oscillates:
+- a vector hint is insufficient; next step is an explicit accepted local branch/plane identity rather than another heuristic.
 
 If 19/19:
 - accept final composite;
-- close synthetic maneuver behavior testing;
-- move to real NAV STRESS/game visualization and behavior evaluation.
+- close synthetic maneuver behavior lab;
+- immediately move to real NAV STRESS/game accepted-corridor + trajectory visualization.
 
-Do not weaken physical or clearance criteria.
+Do not weaken physical/safety thresholds.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

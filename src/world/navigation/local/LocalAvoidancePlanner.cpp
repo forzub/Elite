@@ -272,7 +272,28 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                   forward
               );
 
+    const Vec3d continuityLateralRaw = add(
+        continuityDirection,
+        scale(
+            forward,
+            -dot(continuityDirection, forward)
+        )
+    );
+    const bool continuityLateralValid =
+        lengthSquared(continuityLateralRaw) > kEpsilon;
+    const Vec3d continuityLateral =
+        continuityLateralValid
+            ? normalize(continuityLateralRaw)
+            : Vec3d {0.0, 0.0, 0.0};
+
+    result.continuityHintUsed = explicitContinuity;
+    result.continuityLateralValid =
+        explicitContinuity && continuityLateralValid;
+
     bool globalHasSafeCandidate = false;
+    bool globalBestSameBranch = false;
+    double globalBestBranchAlignment =
+        -std::numeric_limits<double>::infinity();
     double globalBestContinuityScore =
         -std::numeric_limits<double>::infinity();
     double globalBestDeflection =
@@ -393,25 +414,54 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
 
             if (explicitContinuity)
             {
-                // An accepted local segment is a branch-continuity contract.
-                // Search *all* allowed deflection rings before replacing it:
-                // a slightly larger same-branch maneuver is preferable to a
-                // smaller-angle maneuver on the opposite side. Safety remains
-                // mandatory because only Clear candidates enter this ranking.
-                //
-                // If no candidate keeps positive alignment with the accepted
-                // branch, we still retain the least-opposed safe candidate as
-                // a fail-safe fallback rather than deadlocking.
+                // Branch identity lives in the *transverse* component relative
+                // to the current nominal route. Full direction dot product is
+                // not sufficient because every ordinary visibility ray shares
+                // a large forward component and opposite bypass sides can both
+                // look "positively aligned".
+                const Vec3d candidateLateralRaw = add(
+                    direction,
+                    scale(forward, -dot(direction, forward))
+                );
+                const bool candidateLateralValid =
+                    lengthSquared(candidateLateralRaw) > kEpsilon;
+                const Vec3d candidateLateral =
+                    candidateLateralValid
+                        ? normalize(candidateLateralRaw)
+                        : Vec3d {0.0, 0.0, 0.0};
+
+                const double branchAlignment =
+                    continuityLateralValid &&
+                    candidateLateralValid
+                        ? dot(
+                              candidateLateral,
+                              continuityLateral
+                          )
+                        : continuityScore;
+
                 const bool candidateSameBranch =
-                    continuityScore > kEpsilon;
-                const bool globalSameBranch =
-                    globalHasSafeCandidate &&
-                    globalBestContinuityScore > kEpsilon;
+                    continuityLateralValid
+                        ? branchAlignment > kEpsilon
+                        : continuityScore > kEpsilon;
+
+                if (candidateSameBranch)
+                    ++result.sameBranchSafeCandidates;
 
                 const bool betterBranchClass =
-                    candidateSameBranch && !globalSameBranch;
+                    candidateSameBranch &&
+                    (!globalHasSafeCandidate ||
+                     !globalBestSameBranch);
                 const bool sameBranchClass =
-                    candidateSameBranch == globalSameBranch;
+                    globalHasSafeCandidate &&
+                    candidateSameBranch == globalBestSameBranch;
+                const bool betterBranchAlignment =
+                    branchAlignment >
+                        globalBestBranchAlignment + kEpsilon;
+                const bool sameBranchAlignment =
+                    std::abs(
+                        branchAlignment -
+                        globalBestBranchAlignment
+                    ) <= kEpsilon;
                 const bool betterContinuity =
                     continuityScore >
                         globalBestContinuityScore + kEpsilon;
@@ -431,14 +481,24 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
 
                 if (!globalHasSafeCandidate ||
                     betterBranchClass ||
-                    (sameBranchClass && betterContinuity) ||
-                    (sameBranchClass && sameContinuity &&
+                    (sameBranchClass &&
+                     betterBranchAlignment) ||
+                    (sameBranchClass &&
+                     sameBranchAlignment &&
+                     betterContinuity) ||
+                    (sameBranchClass &&
+                     sameBranchAlignment &&
+                     sameContinuity &&
                      smallerDeflection) ||
-                    (sameBranchClass && sameContinuity &&
+                    (sameBranchClass &&
+                     sameBranchAlignment &&
+                     sameContinuity &&
                      sameDeflection &&
                      azimuthIndex < globalBestAzimuthIndex))
                 {
                     globalHasSafeCandidate = true;
+                    globalBestSameBranch = candidateSameBranch;
+                    globalBestBranchAlignment = branchAlignment;
                     globalBestContinuityScore = continuityScore;
                     globalBestDeflection = deflection;
                     globalBestAzimuthIndex = azimuthIndex;
@@ -466,6 +526,8 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         result.target = globalBestAdjusted;
         result.adjustedTarget = true;
         result.selectedDeflectionRadians = globalBestDeflection;
+        result.selectedBranchAlignment =
+            globalBestBranchAlignment;
         return result;
     }
 

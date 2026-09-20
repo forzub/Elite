@@ -1,5 +1,6 @@
 #include "NavigationTrace.h"
 
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
@@ -56,7 +57,24 @@ void saveTraceJson(
         frame["time_s"] = f.timeSeconds;
         frame["ship_position"] = vec3Json(f.shipPosition);
         frame["ship_forward"] = vec3Json(f.shipForward);
+        frame["ship_right"] = vec3Json(f.shipRight);
+        frame["ship_up"] = vec3Json(f.shipUp);
         frame["ship_velocity"] = vec3Json(f.shipVelocity);
+
+        frame["has_program_reference"] = f.hasProgramReference;
+        if (f.hasProgramReference)
+        {
+            frame["program_reference_position"] =
+                vec3Json(f.programReferencePosition);
+            frame["program_reference_forward"] =
+                vec3Json(f.programReferenceForward);
+            frame["program_reference_right"] =
+                vec3Json(f.programReferenceRight);
+            frame["program_reference_up"] =
+                vec3Json(f.programReferenceUp);
+            frame["program_tracking_corridor_radius_m"] =
+                f.programTrackingCorridorRadiusMeters;
+        }
 
         frame["hazard_active"] = f.hazardActive;
         frame["hazard_position"] = vec3Json(f.hazardPosition);
@@ -119,6 +137,47 @@ TraceDocument loadTraceJson(const std::string& path)
         f.shipPosition = readVec3(source.at("ship_position"));
         f.shipForward = readVec3(source.at("ship_forward"));
         f.shipVelocity = readVec3(source.at("ship_velocity"));
+
+        if (source.contains("ship_right") && source.contains("ship_up"))
+        {
+            f.shipRight = readVec3(source.at("ship_right"));
+            f.shipUp = readVec3(source.at("ship_up"));
+        }
+        else
+        {
+            // Backward compatibility with v1 traces: reconstruct only when the
+            // old file genuinely did not record full body attitude.
+            glm::dvec3 forward = f.shipForward;
+            if (glm::length(forward) <= 1.0e-12)
+                forward = {1.0, 0.0, 0.0};
+            forward = glm::normalize(forward);
+
+            glm::dvec3 upSeed(0.0, 1.0, 0.0);
+            if (std::abs(glm::dot(forward, upSeed)) > 0.92)
+                upSeed = {1.0, 0.0, 0.0};
+
+            f.shipRight = glm::normalize(glm::cross(forward, upSeed));
+            f.shipUp = glm::normalize(glm::cross(f.shipRight, forward));
+        }
+
+        f.hasProgramReference =
+            source.value("has_program_reference", false);
+        if (f.hasProgramReference)
+        {
+            f.programReferencePosition =
+                readVec3(source.at("program_reference_position"));
+            f.programReferenceForward =
+                readVec3(source.at("program_reference_forward"));
+            f.programReferenceRight =
+                readVec3(source.at("program_reference_right"));
+            f.programReferenceUp =
+                readVec3(source.at("program_reference_up"));
+            f.programTrackingCorridorRadiusMeters =
+                source.value(
+                    "program_tracking_corridor_radius_m",
+                    0.0
+                );
+        }
 
         f.hazardActive = source.value("hazard_active", false);
         f.hazardPosition = readVec3(source.at("hazard_position"));

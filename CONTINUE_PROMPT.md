@@ -11,96 +11,121 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 ```
 
 Evidence:
-- Stage-12 architecture contract PASS;
+- Stage-12 architecture PASS;
 - navigation_runtime 18/18 PASS;
 - chained transition + physical-limit matrix PASS.
 
-## Chained acceptance
+## Final synthetic behavior candidate
+
+Source:
+```
+tests/navigation_runtime/NavigationCompositeProvingGroundTests.cpp
+```
+
+CTest:
+```
+navigation_composite_proving_ground
+```
+
+Expected full suite: **19 tests**.
+
+Candidate commits:
+- `ecef36520a0957300b70f1469fcd47d209dcb7e0`;
+- `9a74a03845003a302db38ec2102c5d688e7c214b`;
+- `0eaf1b5faddef336d4110d9b306f609cef5b0a8c`;
+- `753d6027b76c99498132a0e4f8ecf533cf7cbcbe`.
+
+## Scenario
+
+For each expert law:
+
+1. Production exact-static query proves direct start -> final is blocked by `composite_static_wall`.
+2. Production `NavigationSpace/NavigationRuntimePlanner` selects a two-portal topology detour.
+3. First physical AcceptedManeuverProgram executes through B9/B10 -> PilotSkill -> real physics.
+4. B7 `Extreme` chooses:
+   - Newtonian: faster NewtonianOnly DriftPass;
+   - Assisted: common aligned PrecisionTransit after law filtering.
+5. Only a prefix executes.
+6. A new dynamic actor is published ahead through NavigationMap.
+7. Production `NavigationExecutionReplanPolicy` must invalidate old execution immediately with `DynamicHazardInvalidated`.
+8. Production `NavigationRuntimePlanner` must report nominal dynamic conflict and produce `AdjustedClear`.
+9. Replacement physical program is authored from actual live state; no reset.
+10. Static topology resumes through second constrained portal.
+11. Final PrecisionCapture uses StateCapture.
+
+## Strict acceptance
+
+Both laws:
+- one replan;
+- old program not continued;
+- zero tracking-envelope exceed;
+- min static clearance >0.5 m;
+- min dynamic clearance >0.5 m;
+- narrow passage full-hull half-width <=19 m;
+- final P <=1 m;
+- final speed <=0.60 m/s;
+- final forward <=4 deg.
 
 Newtonian:
-- 4/4 phases;
-- no P/V/q/omega seam reset;
-- max slip 35.114714 deg;
-- hull half-width 17.419551 m / 25 m;
-- final P 0.024611 m;
-- final speed 0.024960 m/s;
-- final forward 0.029227 deg;
-- tracking exceeded 0.
+- selected family DriftPass;
+- max slip >=15 deg.
 
 Assisted:
-- 4/4 phases;
-- no seam reset;
-- aligned phase max slip 1.139399 deg;
-- max chain slip 1.934322 deg;
-- hull 17.419551 m / 25 m;
-- final P 0.024611 m;
-- final speed 0.024960 m/s;
-- final forward 0.035921 deg;
-- tracking exceeded 0.
+- selected family PrecisionTransit;
+- max slip <=8 deg.
 
-Negative contracts all PASS:
-- insufficient turn horizon -> NoPhysicalCandidate;
-- stopping reserve 110 m > 60 m available -> reject;
-- Cobra needs 13.238202 m half-width > 12 m available -> reject;
-- Assisted cannot select all-NewtonianOnly candidate population;
-- dynamic hazard -> immediate LocalHorizon replan, old accepted execution stops.
+Output:
+```
+[COMPOSITE] law=... doctrine=extreme selected_family=... replans=... min_static_clearance_m=... min_dynamic_clearance_m=... max_hull_half_width_m=... max_slip_deg=... tracking_exceeded_ticks=... final_pos_error_m=... final_speed_mps=... final_forward_error_deg=...
+```
 
-## Current task
+## Honesty boundary
 
-Build the **single final composite end-to-end laboratory proving ground**.
+The composite uses production topology, dynamic working set, runtime planner, B7, replan policy, B8-B10, PilotSkill and real physics.
 
-This is the last synthetic navigation behavior gate.
+General physical time-program authoring remains test-side because production B5 Assisted/general-family compiler is not yet fully migrated.
 
-## Composite scenario requirements
+A green composite closes synthetic behavior testing; it does not falsely claim B1-B6/B11 migration complete.
 
-One uninterrupted expert scenario for Newtonian and Assisted must combine:
-- authoritative-style static topology/obstacles;
-- wide then narrow passage pressure;
-- acceleration and hard moving turn;
-- B7 doctrine/control-law-dependent physical alternative;
-- B8 accepted physical program;
-- B9/B10 follower/tracking;
-- PilotSkill;
-- SharedShipPhysics/DynamicMotionSystem;
-- a dynamic hazard appearing while a program is already accepted;
-- NavigationExecutionReplanPolicy invalidating that obsolete program;
-- replacement program from actual current state, with no reset;
-- final precision P/V/attitude capture.
+## Validation
 
-Use production components directly wherever available. Do not write a second fake production planner inside the test.
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
 
-## Output
+OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
-One `[COMPOSITE]` row per law:
-- law;
-- doctrine / selected family;
-- phases;
-- replans;
-- invalidation reason;
-- minimum full-hull clearance;
-- maximum slip;
-- tracking exceeded ticks;
-- terminal P/V/forward error;
-- total simulated seconds.
+{
+    echo "===== TESTED HEAD ====="
+    git rev-parse HEAD
 
-## Final lab acceptance
+    echo
+    echo "===== ARCHITECTURE CONTRACT ====="
+    python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
 
-If this composite passes on exact target-machine checkout:
-- record exact tested HEAD;
-- declare laboratory maneuver behavior testing complete;
-- next task becomes in-game NAV STRESS trajectory/corridor visualization and live behavior review.
+    echo
+    echo "===== NAVIGATION RUNTIME ====="
+    bash tests/navigation_runtime/run_mingw64.sh
+} 2>&1 | tee "$OUT"
 
-Do not continue inventing synthetic maneuver matrices after that unless a real game defect requires a focused regression.
+echo
+echo "===== FINAL COMPOSITE SUMMARY ====="
+grep -E '\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
 
-## Architecture nuance
+echo "$PWD/$OUT"
+```
 
-A green final lab does not magically close remaining production migration/generalization work:
-- B1/B2/B3/B4;
-- full B5 Assisted/general compiler;
-- generalized B6 ownership;
-- explicit B11 bounded reflex;
-- final ordinary-live B7-B10 seam retirement.
+## If green
 
-Those are implementation/integration tasks, not reasons to keep extending the isolated maneuver laboratory.
+- record exact target-machine checkout and composite metrics;
+- mark synthetic maneuver behavior lab complete;
+- next task becomes in-game NAV STRESS accepted-corridor + physical-trajectory visualization and live behavior evaluation.
+
+Do not add another synthetic matrix unless an actual game defect requires a focused regression.
+
+## If red
+
+Fix the first real composition seam; do not weaken criteria.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

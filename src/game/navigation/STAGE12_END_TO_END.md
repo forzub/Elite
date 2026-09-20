@@ -10,6 +10,14 @@ Stage 12 proves that the accepted Navigation v2 components work as one live syst
 
 It is not a new planner stage. The purpose is to compose and stress the already accepted planner/trajectory/control chain and retire legacy route-wide navigation only after equivalent or better live behavior is demonstrated.
 
+> **Current local-avoidance canon — 2026-09-20:** the production ordinary
+> unexpected-obstacle path is the trajectory-normal **projected visible-horizon
+> bypass**. The former angular deflection fan, branch-continuity API and
+> branch-switch Brake/recovery path have been removed from production code,
+> runtime tests and live acceptance contracts. Any older fan/branch sections
+> below are retained only as chronological failure evidence and are
+> **SUPERSEDED — DO NOT IMPLEMENT OR RESTORE**.
+
 ## 12A-1 — live composition seam candidate
 
 Before the physical proving-ground scene is attached to `GameSimulation`, Stage 12 first closes the missing runtime composition seam.
@@ -5887,3 +5895,83 @@ branch exhaustion
 ```
 
 No safety or physical thresholds changed.
+
+
+## 2026-09-20 — HARD REPLACEMENT: projected visible-horizon bypass is the only ordinary local path
+
+This migration supersedes every earlier Stage-12 experiment based on:
+- angular deflection rings / azimuth fan search;
+- persistent left/right branch continuity;
+- same-branch ranking;
+- branch-switch escalation as an ordinary local avoidance transition;
+- mandatory Brake-before-changing-side behavior.
+
+Those mechanisms are historical evidence only. They are no longer production
+fallbacks.
+
+Canonical unexpected-obstacle flow:
+
+~~~text
+accepted trajectory / corridor
+        |
+        v
+physical visible horizon
+        |
+        +-- predict dynamic obstacle P(t), V(t), A(t)
+        +-- retain known exact-static corridor constraints
+        |
+        v
+plane normal to accepted trajectory tangent
+        |
+        v
+project predicted swept occupancy
+        |
+        v
+search bounded metric lateral/vertical offsets
+        |
+        +-- candidate exact-static proof
+        +-- time-coupled dynamic proof
+        |
+        v
+temporary bypass target
+        +
+merge target on original accepted trajectory
+        |
+        v
+B5/B6 physical maneuver compilation/proof
+        |
+        v
+execute short program
+        |
+        v
+reacquire original trajectory
+~~~
+
+Normal local avoidance does **not** require a full stop. Longitudinal speed may
+be reduced by physical maneuver compilation when useful. A fail-closed
+hold/brake remains only for the case where no bounded safe offset is
+demonstrated; higher topology/objective ownership may then choose another
+waypoint/portal/route.
+
+Hard-removal evidence in the current unverified repository state:
+- `LocalAvoidancePlanner` public API contains metric offset/grid policy only;
+- `NavigationRuntimePlanner` contains projected-bypass/merge products only;
+- focused local/runtime tests no longer contain fan/branch fixtures;
+- final composite no longer contains continuity state or branch recovery;
+- live GameSimulation/server diagnostics use visible-horizon offsets in meters;
+- Stage-12 architecture checker positively requires the projected solver and
+  negatively rejects reintroduction of old fan/branch identifiers.
+
+The latest actually tested target checkout remains:
+
+~~~text
+2ad1178bc5c778636748557ceb6c9a5b757c9a53
+~~~
+
+That checkout passed the architecture contract but failed to compile a
+diagnostic test because `<iomanip>` was missing. It predates this hard
+replacement and therefore provides **no acceptance evidence** for the new
+visible-horizon solver.
+
+The current hard-replacement code is UNVERIFIED until a fresh target-machine
+architecture + navigation runtime gate is supplied.

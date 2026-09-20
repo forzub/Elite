@@ -14,46 +14,69 @@ Latest target-tested checkout:
 81d0c23ae42bba0352026d6c2306cc6976c04bda
 ```
 
-Result: architecture PASS, runtime build PASS, 17/19 tests PASS.
+Current unverified code baseline before documentation sync:
+```
+70dc7bb9c024a388c39b79d54a12774475ca8b32
+```
 
 ## Task
 
-Diagnose and correct the first target-machine failures of the hard-replaced B4
-two-segment projected visible-horizon solver **without weakening safety
-clearance and without restoring the removed fan/branch mechanism**.
+Run the first target-machine gate for the corrected B4 receding-horizon bypass.
 
-## Proven fixture problem
+The contract under test is:
 
-`testAdjustedVisibilityDoesNotInheritFuturePortalAlignment()` cannot satisfy
-its own current dynamic proof: required separation is 2.75 m while blocker
-distance to both start and merge is 2.5 m. Repair the geometry, not the safety
-rule.
+```text
+safe short avoidance segment exists
+    -> AdjustedClear
+    -> continue forward through the safe segment
+    -> do NOT require immediate same-horizon return to the route
 
-## Composite problem
+no safe short avoidance segment exists
+    -> ConflictHold
+    -> active braking command
+    -> navigation remains active
+    -> re-evaluate on fresh world truth
+```
 
-The first composite replan has a 30 m merge point while the hazard is 48 m
-ahead. The merge is only 18 m from the hazard, but required clearance is
-26.775995 m (about 18.51 m after the hazard's 4 s lateral motion).
+After the obstacle is passed, route reacquisition is progressive under physical
+control limits. There is no fixed 30 m return distance.
 
-Thus a complete return to the current fixed merge point is impossible under
-the current two-segment contract.
+## What changed
 
-## Immediate work order
+Production:
+- removed mandatory exact-static proof of bypass->merge from ordinary B4;
+- removed mandatory time-coupled dynamic proof of the return leg;
+- current proof covers the short segment actually selected for execution;
+- equal-offset candidates prefer more forward progress;
+- on-route merge point is now only a reacquisition reference.
 
-1. Make first-failure diagnostics print projection/static/dynamic rejection
-   counts.
-2. Fix only the stale focused test geometry.
-3. Add a regression for `merge target lies inside dynamic exclusion envelope`.
-4. Determine whether production B4 must:
-   - sample a later merge station;
-   - extend the physical horizon when a demonstrated bypass requires it; or
-   - keep an accepted off-route continuation across receding-horizon updates
-     and reacquire later.
-5. Do not simply increase offsets, reduce radii/padding, or force green.
-6. Re-run the 19-test target gate.
+Tests:
+- repaired invalid portal/blocker geometry;
+- replaced mandatory-return regression with a regression that requires a valid
+  bypass even when immediate return is blocked;
+- preserved no-space -> active braking coverage;
+- architecture checker now pins the short-segment/receding-horizon contract.
+
+## Next gate
+
+Run architecture + navigation runtime on the exact pulled HEAD.
+
+Inspect especially:
+- `navigation_runtime_planner`;
+- `navigation_composite_proving_ground`;
+- selected bypass offset and forward distance;
+- projection/static/dynamic rejection counts;
+- whether the composite can either execute a safe bypass or correctly brake
+  when physical authoring says it cannot evade.
+
+Do not turn a geometric AdjustedClear into a claim of physical executability;
+B5/B6 still own maneuver capability/proof.
 
 ## Exit criterion
 
-A fresh target-machine green gate plus evidence that the solver can handle a
-real recoverable obstacle whose safe reacquisition lies beyond the first
-bounded nominal point.
+Green target gate with:
+- valid bypass when safe space exists;
+- active braking when no safe short segment exists;
+- no navigation shutdown;
+- no forced same-horizon merge;
+- no restored angular fan/branch mechanism.

@@ -4,117 +4,96 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 **Mandatory workflow rule:** after every state-affecting iteration, update `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, the active Stage-12 document, and recreate this entire `CONTINUE_PROMPT.md` **from scratch** from current truth. Never incrementally patch stale prompt prose. Every recreated prompt must repeat this same rule.
 
-## Exact accepted target baseline
+## Accepted exact target baseline
 
 ```
 a0f0991791665e30059be15efc47dedcdfafe090
 ```
 
 Evidence:
-- Stage-12 architecture contract PASS;
+- Stage-12 architecture PASS;
 - navigation_runtime 17/17 PASS;
-- B7 speed/doctrine select->execute PASS.
+- B7 speed/doctrine select->execute accepted.
 
-## Accepted B7 behavior
+## Current stage
 
-Observed:
-- Rational -> balanced;
-- PrecisionRetrieval -> precision;
-- Extreme/Newtonian -> Newtonian drift dash;
-- Extreme/Assisted -> common fast aligned path;
-- CombatEscape -> low-threat path;
-- reckless criticalRisk=0.90 shortcut rejected above doctrine.
-
-Selected programs really executed through follower/B10/PilotSkill/real physics.
-
-## Current unverified candidate
-
-New file:
-```
-tests/navigation_runtime/ManeuverChainedLimitMatrixTests.cpp
-```
+Chained transitions + negative/physical-limit matrix.
 
 CTest:
 ```
 maneuver_chained_limit_matrix
 ```
 
-Candidate commits:
-- `35e81f34605d63ec05876375f7511141730751a3`;
-- `f8877e39d1d0a07c89440d2fe3b68708e3f72422`;
-- `aff7ba6dc0185e794a5e64ce0051aa16b53c89d5`.
+Expected total after successful build: 18 tests.
 
-Expected navigation runtime total: **18 tests**.
+## Latest target-machine result
 
-## Chained execution fixture
+Tested checkout:
+```
+4753451be23f913d3e20d2ca11c112f113980434
+```
 
-For Newtonian and Assisted, one vehicle executes four consecutive programs without any transform/motion reset:
+Architecture passed, but build failed before tests.
 
-1. FreeTransit:
-   - 6 -> 10 m/s.
+Exact defect:
+```
+ManeuverChainedLimitMatrixTests.cpp::captureState()
+```
+used `glm::dvec3 * float` for ShipTransform pitch/yaw/roll rates.
 
-2. PrecisionTransit:
-   - hard moving ~90 degree change.
+This is a test-harness type mismatch, not a navigation behavior failure.
 
-3. Law-specific:
-   - Newtonian: fixed-body DriftPass;
-   - Assisted: velocity-aligned PrecisionTransit.
+## Current unverified fix
 
-4. PrecisionCapture:
-   - moving -> zero terminal velocity;
-   - StateCapture gate must wait for real terminal P/V/attitude/omega.
+```
+1e0d555a504e6913ee417b4b628e7d062081a0c0
+```
 
-Each new program is authored from the actual final state of the previous phase.
+The fix explicitly casts:
+- pitchRate;
+- yawRate;
+- rollRate
 
-Strict chain acceptance:
-- 4/4 phases complete;
-- zero tracking-envelope exceeded ticks;
-- phase-seam P jump <=1e-9 m;
+to double before reconstructing map-space angular velocity.
+
+No production navigation behavior changed.
+
+## Intended chained gate
+
+One vehicle, no resets:
+
+```
+FreeTransit
+ -> hard moving PrecisionTransit
+ -> Newtonian DriftPass / Assisted aligned PrecisionTransit
+ -> PrecisionCapture with StateCapture
+```
+
+Strict seam requirements:
+- P jump <=1e-9 m;
 - V jump <=1e-9 m/s;
 - forward jump <=1e-6 deg;
-- angular velocity jump <=1e-9 rad/s;
-- full Cobra hull <=25 m reference corridor half-width;
-- Newtonian law-specific phase actual slip >=20 deg;
-- Assisted law-specific phase actual slip <=8 deg;
+- omega jump <=1e-9 rad/s.
+
+Execution requirements:
+- 4/4 phases;
+- zero tracking-envelope exceed ticks;
+- full Cobra hull within 25 m reference half-width;
+- Newtonian law-specific slip >=20 deg;
+- Assisted law-specific slip <=8 deg;
 - final P <=1.0 m;
 - final speed <=0.60 m/s;
-- final forward error <=4 deg.
+- final attitude <=4 deg.
 
-## Negative / physical-limit fixture
+## Negative contracts
 
-### 1. Insufficient turn room/horizon
-Production `OrdinaryPhysicalManeuverCompiler`:
-- 18 m/s;
-- major direction change;
-- maximumProgramSeconds=0.5.
+- insufficient turn horizon -> B5 NoPhysicalCandidate;
+- insufficient braking distance -> stopping reserve exceeds available room;
+- full Cobra hull cannot fit 12 m half-width corridor;
+- Assisted cannot select all-NewtonianOnly B7 population;
+- new dynamic hazard -> immediate LocalHorizon replan and old accepted program stops being authoritative.
 
-Must return:
-- NoPhysicalCandidate;
-- candidateCount=0.
-
-### 2. Insufficient braking distance
-Production `NavigationExecutionSafetyProbeBuilder`:
-- 20 m/s;
-- response reserve 0.5 s;
-- braking 2 m/s2;
-- only 60 m available.
-
-Required stopping reserve must exceed available room; unsafe commitment is rejected.
-
-### 3. Rigid hull too large
-Cobra full perpendicular support radius must exceed a 12 m half-width corridor; centerline-only fit is forbidden.
-
-### 4. No law-compatible maneuver
-B7 with Assisted context and only NewtonianOnly candidates must return no valid selection.
-
-### 5. New dynamic hazard
-Production `NavigationExecutionReplanPolicy` must return:
-- LocalHorizon;
-- DynamicHazardInvalidated;
-- immediate=true;
-- continueAcceptedAutomaticExecution=false.
-
-## Target validation
+## Validation command
 
 ```bash
 cd /d/__elite/work
@@ -146,16 +125,14 @@ echo "===== LOG FILE ====="
 echo "$PWD/$OUT"
 ```
 
-## Next step
+## Next action
 
-If green:
-- accept chained transitions + fail-closed limit block;
-- record measured chain/slip/corridor metrics;
-- build only one final composite laboratory proving ground;
-- after that move primary evaluation into the real game.
+If build/test fails again:
+- diagnose the first real failure;
+- do not weaken physical or seam criteria just to pass.
 
-If red:
-- identify the exact failing contract and repair it;
-- never weaken the physical, geometry, seam or invalidation requirements just to obtain green.
+If 18/18:
+- accept chained transitions + negative/limit block;
+- build the single final composite laboratory proving ground.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

@@ -902,8 +902,12 @@ for marker in (
     "movingPassageRequiredPeakReverseAccelerationMps2",
     "movingPassageRequiredPeakLateralAccelerationMps2",
     "movingPassageRequiredPeakVerticalAccelerationMps2",
-    "selectedVisibilityDeflectionRadians",
-    "ordinaryVisibilitySearchExhausted",
+    "localBypassLateralOffsetMeters",
+    "localBypassMergeTargetMapMeters",
+    "localBypassProjectedClearanceMeters",
+    "avoidanceProjectedDynamicObstacles",
+    "avoidanceOffsetCandidatesExamined",
+    "localBypassExhausted",
     "selectedManeuverRequiresForwardAlignment",
     "selectedManeuverForwardMap",
     "PortalTraversalPolicy",
@@ -970,15 +974,15 @@ require(
 )
 
 for marker in (
-    "firstVisibilityBypassCaptured",
-    "firstVisibilityBypassDeflectionRad",
-    "firstVisibilityBypassSelectedTargetMap",
-    "firstVisibilityBypassAcceptedAlignForward",
-    "firstVisibilityBypassIdealAccelerationMapMps2",
-    "firstVisibilityBypassExecutedAccelerationMapMps2",
-    "firstVisibilityBypassAppliedMainAccelerationMapMps2",
-    "firstVisibilityBypassAppliedRcsAccelerationMapMps2",
-    "firstVisibilityBypassAppliedTotalAccelerationMapMps2",
+    "firstVisibleHorizonBypassCaptured",
+    "firstVisibleHorizonBypassOffsetMeters",
+    "firstVisibleHorizonBypassSelectedTargetMap",
+    "firstVisibleHorizonBypassAcceptedAlignForward",
+    "firstVisibleHorizonBypassIdealAccelerationMapMps2",
+    "firstVisibleHorizonBypassExecutedAccelerationMapMps2",
+    "firstVisibleHorizonBypassAppliedMainAccelerationMapMps2",
+    "firstVisibleHorizonBypassAppliedRcsAccelerationMapMps2",
+    "firstVisibleHorizonBypassAppliedTotalAccelerationMapMps2",
 ):
     require(
         marker in LAB_H and marker in SIM_CPP and marker in SERVER_MAIN,
@@ -1148,7 +1152,7 @@ for marker in (
     "testPortalCaptureAlignsVelocityAndHullBeforeTransit",
     "testSamePortalRejectsOversizedHull",
     "testAdjustedTargetPreservesNominalConflictIdentity",
-    "testNavigationMapCrossingConflictProducesBrakingHold",
+    "testNavigationMapConflictFailsClosedOnlyWhenNoOffsetFits",
     "testTypedNavigationBoundaryTransformsLocalControlIntoSystemControl",
     "testExactStaticObstacleParticipatesInRuntimeComposition",
     "testLiveScaleStaticObstacleInsideFirstBoundedHorizon",
@@ -1331,13 +1335,8 @@ require(
 )
 
 require(
-    "testExactStaticBlockerTriggersAvoidanceWithoutDynamicCandidate" in LOCAL_TEST,
+    "testExactStaticBlockerConstrainsOffsetSearch" in LOCAL_TEST,
     "local avoidance must prove an exact static blocker can trigger adjustment without a dynamic candidate",
-)
-
-require(
-    "testDynamicConflictStillPreservesExactStaticNominalProof" in LOCAL_TEST,
-    "simultaneous dynamic conflict must not collapse exact-static nominal proof",
 )
 
 require(
@@ -1359,23 +1358,58 @@ require(
 )
 
 for marker in (
-    "maximumDeflectionRadians",
-    "selectedDeflectionRadians",
-    "nominalVisibilityClear",
-    "ordinarySearchExhausted",
+    "lateralGridHalfExtentSamples",
+    "minimumLateralStepMeters",
+    "maximumLateralOffsetMeters",
+    "projectionPaddingMeters",
+    "trajectorySamples",
+    "selectedLateralOffsetMeters",
+    "mergeTargetMapMeters",
+    "projectedDynamicObstacles",
+    "localBypassExhausted",
 ):
-    require(marker in LOCAL_H, f"bounded visibility steering contract missing: {marker}")
+    require(marker in LOCAL_H, f"projected visible-horizon bypass contract missing: {marker}")
 
-require(
-    "deflection += deflectionStep" in LOCAL_CPP and
-    "query.avoidance.maximumDeflectionRadians" in LOCAL_CPP,
-    "ordinary local avoidance must widen deflection only inside the bounded visibility search",
-)
+for marker in (
+    "pointToSegmentDistance2d",
+    "candidateRelevantToForwardHorizon",
+    "projectedClearanceForOffset",
+    "timeCoupledBypassClear",
+    "offsetCandidatesExamined",
+    "mergeTargetMapMeters = boundedNominalTarget",
+):
+    require(marker in LOCAL_CPP, f"projected visible-horizon implementation missing: {marker}")
 
-require(
-    "testVisibilitySteeringWidensThenReturnsToDirectLine" in LOCAL_TEST,
-    "local regression must prove widening beyond the legacy 15/30 fan and stateless return to direct A->B visibility",
-)
+for marker in (
+    "testCrossingObstacleProjectsToNormalPlaneAndFindsBypass",
+    "testHeadOnObstacleCanBypassWithoutMandatoryStop",
+    "testObstacleGoneReturnsImmediatelyToNominalTrajectory",
+    "testNarrowStaticRegionFailsClosedWhenNoOffsetFits",
+):
+    require(marker in LOCAL_TEST, f"visible-horizon bypass regression missing: {marker}")
+
+for forbidden in (
+    "primaryDeflectionRadians",
+    "secondaryDeflectionRadians",
+    "maximumDeflectionRadians",
+    "azimuthSamples",
+    "selectedDeflectionRadians",
+    "ordinarySearchExhausted",
+    "preferredDirectionValid",
+    "preferredDirectionMap",
+    "sameBranchSafeCandidates",
+    "selectedBranchAlignment",
+    "branchSwitchRequired",
+    "localAvoidanceContinuity",
+):
+    require(
+        forbidden not in LOCAL_H and
+        forbidden not in LOCAL_CPP and
+        forbidden not in LOCAL_TEST and
+        forbidden not in PLANNER_H and
+        forbidden not in PLANNER_CPP,
+        f"legacy angular-fan/branch mechanism must be physically removed: {forbidden}",
+    )
 
 require(
     "exactTranslationNarrowPhaseAvailable" in HORIZON_CPP and
@@ -1385,12 +1419,6 @@ require(
     "testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute" in LOCAL_TEST,
     "dynamic conservative spheres must narrow against exact translation-only OBB geometry instead of sealing real free space",
 )
-require(
-    "ordinarySearchExhausted" in LOCAL_TEST and
-    "ordinaryVisibilitySearchExhausted" in RUNTIME_TEST,
-    "ordinary fan exhaustion must be pinned as a recovery escalation signal",
-)
-
 require(
     "localQuery.avoidance.nominalTargetIsProvenPortalBoundary =" in PLANNER_CPP and
     "result.usedPortalWaypoint" in PLANNER_CPP,
@@ -1595,7 +1623,7 @@ require(
     "querySphere(dynamicQuery)" in SIM_CPP and
     "localHorizonMeters" in SIM_CPP and
     "LabTurnDistanceMeters" in SIM_CPP,
-    "live broadphase must cover the complete bounded avoidance fan rather than only the nominal corridor",
+    "live broadphase must cover the complete visible-horizon working set rather than only the nominal corridor",
 )
 
 require(
@@ -1725,16 +1753,19 @@ for marker in (
     "expectedMovingGapVelocityMapMps",
     "movingGapMaximumVelocityErrorMps",
     "movingGapPairCandidateSeen",
-    "policy.avoidance.maximumDeflectionRadians",
+    "policy.avoidance.lateralGridHalfExtentSamples",
+    "policy.avoidance.maximumLateralOffsetMeters",
+    "policy.avoidance.projectionPaddingMeters",
+    "policy.avoidance.trajectorySamples",
     "policy.movingPassage.enabled = false",
     "policy.movingPassage.allowSteeringAuthority = false",
     "movingPairIsNominalConflict",
-    "visibilityBypassActive",
-    "visibilityBypassSeen",
-    "visibilityDirectRecoveredSeen",
-    "selectedVisibilityDeflectionRadians",
+    "visibleHorizonBypassActive",
+    "visibleHorizonBypassSeen",
+    "visibleHorizonDirectRecoveredSeen",
+    "localBypassLateralOffsetMeters",
 ):
-    require(marker in SIM_CPP, f"live bounded-visibility production integration missing: {marker}")
+    require(marker in SIM_CPP, f"live projected visible-horizon production integration missing: {marker}")
 
 require(
     "isNavigationRuntimeLabMovingGapBoundary(" in SIM_CPP and
@@ -1745,16 +1776,16 @@ require(
 for marker in (
     "observation.movingGapPairCandidateSeen",
     "observation.movingGapKinematicsVerified",
-    "observation.visibilityBypassSeen",
-    "observation.visibilityBypassActive",
-    "observation.visibilityDirectRecoveredSeen",
-    "observation.maximumVisibilityDeflectionRad",
+    "observation.visibleHorizonBypassSeen",
+    "observation.visibleHorizonBypassActive",
+    "observation.visibleHorizonDirectRecoveredSeen",
+    "observation.maximumVisibleHorizonOffsetMeters",
     "observation.movingGapPlanePassed",
     "moving_gap_pair=",
-    "visibility_bypass=",
-    "visibility_bypass_active=",
-    "visibility_direct_recovered=",
-    "visibility_max_deflection_rad=",
+    "visible_horizon_bypass=",
+    "visible_horizon_bypass_active=",
+    "visible_horizon_direct_recovered=",
+    "visible_horizon_max_offset_m=",
     "moving_gap_passed=",
     "observation.slitPortalExactOpenPublished",
     "observation.slitPortalWaypointSeen",
@@ -1777,22 +1808,22 @@ for marker in (
     "slit_margin_m=",
     "slit_crossing_map=(",
 ):
-    require(marker in SERVER_MAIN, f"server live visibility/tunnel acceptance gate missing: {marker}")
+    require(marker in SERVER_MAIN, f"server live visible-horizon/tunnel acceptance gate missing: {marker}")
 
 require(
-    "if (!observation.visibilityBypassActive ||" in SERVER_MAIN and
+    "if (!observation.visibleHorizonBypassActive ||" in SERVER_MAIN and
     "!observation.executionSeen" in SERVER_MAIN and
     "replicatedDemandMagnitude > 1.0e-6" in SERVER_MAIN and
     "sparsePacket.metadata.serverTick" in SERVER_MAIN and
     "authoritativePublished.metadata.serverTick" in SERVER_MAIN,
-    "same-tick replication proof must be captured while bounded visibility steering is actively executing",
+    "same-tick replication proof must be captured while projected visible-horizon bypass is actively executing",
 )
 
 require(
     "bool visibilityEvidenceComplete = false;" in SERVER_MAIN and
     "bool behaviorEvidenceComplete = false;" in SERVER_MAIN and
-    "observation.visibilityBypassSeen &&" in SERVER_MAIN and
-    "observation.visibilityDirectRecoveredSeen &&" in SERVER_MAIN and
+    "observation.visibleHorizonBypassSeen &&" in SERVER_MAIN and
+    "observation.visibleHorizonDirectRecoveredSeen &&" in SERVER_MAIN and
     "observation.movingGapPlanePassed &&" in SERVER_MAIN and
     "observation.slitPortalExactOpenPublished &&" in SERVER_MAIN and
     "observation.slitPortalWaypointSeen &&" in SERVER_MAIN and
@@ -1802,7 +1833,7 @@ require(
     "observation.slitEntryPlaneCrossedAligned &&" in SERVER_MAIN and
     "observation.slitTunnelPassed &&" in SERVER_MAIN and
     "return 56;" in SERVER_MAIN,
-    "live gate must order visibility bypass/replication/direct recovery before aligned portal capture and exact-static tunnel transit",
+    "live gate must order visible-horizon bypass/replication/trajectory reacquisition before aligned portal capture and exact-static tunnel transit",
 )
 
 require(
@@ -2063,8 +2094,9 @@ for marker in (
     "conservative rotation sphere",
     "continuous swept OBB",
     "FlipAndBurn",
-    "75-degree limit is not a vehicle capability limit",
-    "NoSafeProgressInOrdinaryFan",
+    "Unexpected-obstacle visible-horizon bypass",
+    "plane normal to the trajectory",
+    "LocalBypassExhausted",
     "motion-primitive generation",
 ):
     require(marker in CONTROL_LAW_DOC, f"control-law maneuver architecture missing: {marker}")
@@ -2098,7 +2130,7 @@ print(" - maneuver decision ownership sits above navigation geometry/reachabilit
 print(" - Rational/Precision/Extreme/CombatEscape doctrines are deterministic and tested")
 print(" - MustProgress retains contact-expected progress instead of collapsing to stop")
 print(" - Assisted and Newtonian maneuver families are separated before doctrine ranking")
-print(" - ordinary 0..75 degree exhaustion escalates to recovery instead of defining vehicle capability")
+print(" - unexpected obstacles use projected visible-horizon offsets and merge back to the accepted trajectory")
 print(" - stable automatic execution keeps accepted short trajectory instead of replanning per frame")
 print(" - manual guidance refreshes local suffix periodically and immediately on corridor exit")
 print(" - NavigationSpace publishes ordered selected-portal steering centers")
@@ -2108,8 +2140,8 @@ print(" - planner cannot mutate authoritative physics state")
 print(" - client/server share the same NavigationWorld runtime-planning target")
 print(" - deterministic fixtures pin detour, envelope rejection, moving conflict and pilot bridge")
 print(" - authoritative GameSimulation isolates one Active stage-12 lab actor on real NAV STRESS hit volumes")
-print(" - live self-test pins bounded visibility bypass -> direct recovery -> portal capture -> aligned tunnel entry/exit")
-print(" - bounded NavigationMap sphere covers the complete local avoidance fan")
+print(" - live self-test pins projected visible-horizon bypass -> trajectory reacquisition -> portal capture -> aligned tunnel entry/exit")
+print(" - bounded NavigationMap sphere covers the complete visible-horizon working set")
 print(" - sparse packet is compared with authoritative publication at the exact same server tick")
 print(" - canonical sparse hydration must match the same authoritative execution truth")
 print(" - non-identity typed boundary regression pins NavLocal intent -> system control transform")
@@ -2143,4 +2175,4 @@ print(" - accepted moving Hermite curve is continuously bounded between its 33 s
 print(" - same moving trajectory is re-proven against exact static NavigationSpace geometry")
 print(" - moving-passage steering authority is explicit opt-in and requires both dynamic + exact-static proof")
 print(" - authoritative moving passage uses the exact proved local sample through typed boundary + PilotSkillExecutor")
-print(" - live moving obstacle pair drives bounded visibility steering through real physics and same-tick replication")
+print(" - live moving obstacle pair drives projected visible-horizon bypass through real physics and same-tick replication")

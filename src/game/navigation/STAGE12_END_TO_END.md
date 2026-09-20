@@ -6709,3 +6709,26 @@ The focused gate runs only:
 
 This is not hiding the old red tests. It prevents Stage-2 failures from being
 misreported as Stage-1 route-construction failures.
+
+
+## 2026-09-21 — Stage-1 viewer observability fix after user screenshot
+
+User screenshot showed a blank 3D area before pressing `РАССЧИТАТЬ`. After calculation the scene/route appeared, but there was no movement, making it impossible from the UI to tell whether Planner or Follower had failed.
+
+Clarification: Stage 1 is route-only by design; Follower is not linked or executed. The UI was misleading because legacy playback controls remained visible as ordinary controls and the pre-calculation scene had no sufficiently explicit authored-scene rendering contract.
+
+Fixes now committed:
+- `TraceDocument` carries explicit authored `sceneStartMapMeters` / `sceneFinishMapMeters` independent of route existence;
+- `loadScenarioPreview()` and calculated results populate those endpoints;
+- viewer renders a reference grid, a large green START marker, a large yellow FINISH marker/ring, static obstacle geometry and Cobra-at-start before calculation;
+- `fitCamera()` explicitly includes authored scene endpoints, so preview framing no longer depends on a calculated route;
+- fixed diagnostics panel is placed below the top controls and shows the chain state without vertical reflow;
+- Stage-1 playback controls are visually labeled `ПОЛЁТ: ЭТАП 2` / `FOLLOWER: OFF` and cannot start playback when only the one route frame exists;
+- `ScenarioRunResult` now exposes diagnostics;
+- calculation writes console diagnostics plus `tools/navigation_runtime/last_route_plan.log`;
+- diagnostic chain explicitly distinguishes `SCENE`, `PLANNER`, and `FOLLOWER: NOT RUN (STAGE 1)`;
+- Stage-1 architecture checker now pins pre-calculation scene endpoints, preview loading and diagnostic ownership.
+
+This does not start Stage 2. No Follower/physics execution was reintroduced.
+
+Target validation pending for these viewer/diagnostic changes.

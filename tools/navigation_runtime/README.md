@@ -1,106 +1,177 @@
-# Navigation Runtime — diagnostic stand
+# Navigation Runtime — two-stage diagnostic stand
 
 Location: `tools/navigation_runtime/`.
 
-## Current mode: Stage 1 — static route construction
+The tool deliberately separates **route construction** from **route execution** so a
+bad path can be distinguished from bad ship control.
 
-The stand is intentionally split into two stages.
+## Stage 0 — scene preview
 
-### Stage 1 — current
+The authored scene is visible immediately, before any calculation:
 
-`РАССЧИТАТЬ` builds one nominal route from START to FINISH through the
-**static** obstacle set from `scenario.json`.
+- green cross: START;
+- yellow cross/ring: FINISH;
+- grey wire geometry: static obstacles;
+- reference grid;
+- Cobra body at START.
 
-Current chain:
+The scene is loaded from `scenario.json`. No planner or follower has run yet.
 
-```text
-scenario.json
-  -> start / required waypoints / finish
-  -> static NavigationObstacle geometry
-  -> NominalRoutePlanner
-  -> GeometricPathPlanner backend
-  -> retained nominal polyline
-  -> 3D display
-```
+## Stage 1 — calculate the static nominal route
 
-The ship does **not** fly in Stage 1. No Follower, PilotSkill or physics result is
-presented as if execution had been proved.
-
-The calculated route is retained until either:
-- the goal revision changes; or
-- the static-world revision changes.
-
-A dynamic-world revision by itself does **not** invalidate/rebuild the route.
-
-### Stage 2 — next
-
-Stage 2 will consume the retained Stage-1 route and add:
-- local monitoring of moving objects;
-- local temporary bypass / braking;
-- physical maneuver generation;
-- continuous swept-hull/tunnel proof;
-- doctrine selection;
-- AcceptedManeuverProgram;
-- Follower / PilotSkill / authoritative physics;
-- progressive reacquisition of the same nominal route.
-
-Moving obstacles must not cause global route reconstruction.
-
-## Corridor vs tunnel
-
-The Stage-1 route uses a coarse navigation envelope:
+Press `РАССЧИТАТЬ`.
 
 ```text
-route_envelope_radius_m
-route_clearance_m
+start
+ + optional required ship_route_points
+ + finish
+ + static NavigationObstacle geometry
+        |
+        v
+NominalRoutePlanner
+        |
+        v
+GeometricPathPlanner
+        |
+        v
+retained sparse route polyline
 ```
 
-This is a **route/corridor abstraction**, not exact collision truth.
+The white route appears after Stage 1.
 
-Exact questions such as whether the Cobra clips a wall while rotating belong to
-the later time-parameterized swept-hull **tunnel** proof.
+The nominal route is rebuilt only when:
+- goal revision changes; or
+- static-world revision changes.
 
-## Dynamic-ready architecture
+A dynamic-world revision does **not** invalidate/rebuild the route.
 
-`scenario.json` already retains the schema for:
-- moving obstacles with velocity;
-- moving obstacles with route points + speed;
-- a sudden obstacle.
+Stage-1 diagnostics are printed to stdout and written to:
 
-Stage 1 parses these inputs but deliberately does not use them to rebuild the
-static route. They are reserved for the Stage-2 local dynamic overlay.
+`tools/navigation_runtime/last_route_plan.log`
 
-`NominalRoutePlanner::ValidityQuery` explicitly contains a dynamic revision and
-explicitly ignores it for nominal-route invalidation. Regression tests pin this
-contract.
+They include:
+- Planner success/failure;
+- START/FINISH;
+- static obstacle count;
+- required waypoint count;
+- route point count;
+- route length;
+- static-detour flag;
+- goal/static-world revisions.
 
-## UI
+## Stage 2 — execute the retained route
 
-The existing selectors remain visible because Stage 2 will consume them:
+After a successful Stage 1, the former playback button becomes
+`ЗАПУСТИТЬ ПОЛЁТ`.
+
+Stage 2 does **not** call a global planner. It consumes the exact
+`TraceDocument::routePoints` produced by Stage 1:
+
+```text
+retained Stage-1 polyline
+        |
+        v
+TrajectoryGenerator / RuckigRoutePlanner
+        |
+        v
+time-parameterized trajectory
+        |
+        v
+AcceptedManeuverProgram chunks
+        |
+        v
+TrajectoryFollower
+        |
+        v
+NavigationRuntimeControlBridge
+        |
+        v
+PilotSkillExecutor
+        |
+        v
+SharedShipPhysics + DynamicMotionSystem
+        |
+        v
+actual Cobra trajectory / playback trace
+```
+
+The route remains white. The actual ship path is green.
+
+Stage 2 records frames at approximately 30 Hz and simulates physics at 120 Hz. A failed
+execution trace is still kept and can be replayed for diagnosis.
+
+Stage-2 diagnostics are printed with `[NAV-STAGE2]` and written to:
+
+`tools/navigation_runtime/last_execution.log`
+
+The complete execution trace is written to:
+
+`tools/navigation_runtime/last_execution_trace.json`
+
+Diagnostics include:
+- cached Planner route state;
+- Ruckig trajectory result/sample count;
+- maneuver-program chunk count;
+- Follower status;
+- Pilot bridge status;
+- selected pilot / flight style / control law;
+- final position/speed error;
+- maximum deviation from the nominal route;
+- maximum Follower tracking error;
+- coarse static-contact flag.
+
+## Control selectors
+
+The top selectors have different ownership.
+
+### Stage 1
+
+These do **not** change the static route:
 - Assisted / Newtonian;
 - Expert / Average / Loser;
 - Standard / Extreme;
 - sudden-obstacle checkbox.
 
-During Stage 1 these controls do not change the nominal static route. The viewer
-reports `ЭТАП 1 — МАРШРУТ` and displays one static calculation frame.
+### Stage 2
 
-## scenario.json
+These are real execution inputs:
+- Assisted / Newtonian changes the physical local flight law and reference-attitude
+  behavior;
+- Expert / Average / Loser changes the real PilotSkillExecutor profile;
+- Standard / Extreme changes the requested Ruckig cruise speed.
 
-Supported Stage-1 route inputs:
-- start position;
-- optional `ship_route_points` as ordered required checkpoints;
-- finish position;
-- static obstacles: box / sphere / capsule;
-- `route_envelope_radius_m`;
-- `route_clearance_m`.
+The sudden-obstacle option is still reserved for the later dynamic-avoidance pass.
+The current static Stage-2 diagnostics explicitly report:
 
-Inputs already reserved for Stage 2:
-- start velocity / attitude;
-- final velocity / attitude requirements;
-- standard/extreme speeds;
-- moving obstacles;
-- sudden obstacle.
+`DYNAMIC AVOIDANCE: NOT ENABLED IN STATIC PASS`
+
+It must not silently rebuild the global route.
+
+## Corridor vs physical tunnel
+
+`route_envelope_radius_m` and `route_clearance_m` remain coarse navigation/test
+abstractions.
+
+The current Ruckig execution backend checks static geometry using this conservative
+route envelope, which is useful for the static diagnostic pass, but this is **not yet**
+the final oriented swept-hull/tunnel proof.
+
+The exact question “does the rotating Cobra physically clip this wall/aperture?” remains
+owned by the later B6 time-parameterized swept-hull tunnel proof.
+
+Therefore a visually successful Stage-2 run is execution evidence, not final B6
+navigation acceptance.
+
+## Final-state requirements
+
+The current static scenario supports:
+- final position;
+- final forward requirement;
+- final up requirement;
+- zero terminal speed.
+
+The current Ruckig route backend stops at the final waypoint. A non-zero
+`finish.speed_mps` is rejected explicitly instead of being silently ignored.
 
 ## Build
 
@@ -119,37 +190,13 @@ cd /d/__elite/work
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-The window is an ordinary decorated Windows window, maximized to the desktop
-work area.
+Workflow:
 
+1. inspect scene;
+2. press `РАССЧИТАТЬ`;
+3. inspect the white route and Stage-1 log;
+4. press `ЗАПУСТИТЬ ПОЛЁТ`;
+5. watch the Cobra/Follower execute that retained route;
+6. inspect `last_execution.log` if behavior is wrong.
 
-## Pre-calculation scene and diagnostics
-
-The authored scene is visible immediately on startup, before `РАССЧИТАТЬ`:
-- green cross: START;
-- yellow cross/ring: FINISH;
-- grey wire geometry: static obstacles;
-- reference grid: visual scale/orientation aid;
-- Cobra body remains at START.
-
-The white route does not exist until the Stage-1 planner runs.
-
-After `РАССЧИТАТЬ`, the fixed diagnostics panel and console show the Stage-1 chain explicitly:
-
-```text
-SCENE: LOADED
-PLANNER: OK / FAIL
-FOLLOWER: NOT RUN (STAGE 1)
-START / FINISH
-STATIC OBSTACLES
-REQUIRED WAYPOINTS
-ROUTE POINTS
-ROUTE LENGTH
-STATIC DETOUR
-GOAL / STATIC WORLD REVISION
-```
-
-The same calculation log is written to:
-`tools/navigation_runtime/last_route_plan.log`.
-
-Playback controls are deliberately disabled in Stage 1 and labeled as Stage-2 execution controls. A one-frame route result must never look like a failed Follower run.
+The window is an ordinary decorated maximized Windows window, not exclusive fullscreen.

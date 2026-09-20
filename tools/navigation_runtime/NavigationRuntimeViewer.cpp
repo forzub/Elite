@@ -1569,6 +1569,18 @@ void drawHud(
         appendUiButton(ui, nextButtonRect(), "НЕТ КАДРОВ");
         appendUiButton(ui, replanButtonRect(), "FOLLOWER: ГОТОВ");
     }
+    else if (state.executionPerformed)
+    {
+        appendUiButton(
+            ui,
+            playButtonRect(),
+            "ПОЛЁТ: ОШИБКА",
+            false
+        );
+        appendUiButton(ui, prevButtonRect(), "НЕТ КАДРОВ");
+        appendUiButton(ui, nextButtonRect(), "НЕТ КАДРОВ");
+        appendUiButton(ui, replanButtonRect(), "СМОТРИТЕ ЛОГ");
+    }
     else
     {
         appendUiButton(

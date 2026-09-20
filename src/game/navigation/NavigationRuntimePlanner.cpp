@@ -869,6 +869,8 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         toGlm(local.selectedLateralOffsetMap);
     result.localBypassLateralOffsetMeters =
         local.selectedLateralOffsetMeters;
+    result.localBypassForwardDistanceMeters =
+        local.selectedBypassForwardDistanceMeters;
     result.localBypassMergeTargetMapMeters =
         toGlm(local.mergeTargetMapMeters);
     result.localBypassProjectedClearanceMeters =
@@ -877,6 +879,8 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         local.projectedDynamicObstacles;
     result.avoidanceOffsetCandidatesExamined =
         local.offsetCandidatesExamined;
+    result.avoidanceRouteCandidatesExamined =
+        local.routeCandidatesExamined;
     result.avoidanceProjectionRejected =
         local.projectionRejected;
     result.avoidanceStaticRejected =

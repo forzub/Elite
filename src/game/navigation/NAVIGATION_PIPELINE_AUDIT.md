@@ -967,3 +967,28 @@ No production navigation/runtime behavior changed in this fix.
 
 Validation state: target compilation of the restored Stage-2 viewer still has NOT been
 reached. Rerun the focused gate from latest main.
+
+
+## 2026-09-21 — second Stage-2 architecture checker false negative
+
+Target gate stopped with:
+`Stage-2 execution path missing DynamicMotionSystem::applySystemAccelerationDemand`.
+
+Runtime call is present. The checker failed because production formatting splits the C++
+scope operator/call across lines:
+
+```cpp
+game::navigation::DynamicMotionSystem::
+    applySystemAccelerationDemand(...)
+```
+
+The architecture checker previously searched an exact single-line string.
+
+Fix:
+- added whitespace-insensitive C++ token normalization via `compact_cpp()`;
+- Stage-2 execution and trajectory-builder call checks now compare normalized token
+  streams rather than raw formatting;
+- runtime behavior is unchanged.
+
+Validation state: target compilation of the restored two-stage viewer still has not yet
+been reached; rerun the focused gate from latest main.

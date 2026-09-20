@@ -216,7 +216,7 @@ bool candidateRelevantToForwardHorizon(
     const double padding =
         query.agent.radiusMeters +
         candidate.actorRadiusMeters +
-        query.horizon.policy.safetyMarginMeters;
+        query.policy.safetyMarginMeters;
 
     return
         std::max(s0, s1) >= -padding &&
@@ -267,7 +267,7 @@ double projectedClearanceForOffset(
     const double required =
         query.agent.radiusMeters +
         candidate.actorRadiusMeters +
-        query.horizon.policy.safetyMarginMeters +
+        query.policy.safetyMarginMeters +
         projectionPaddingMeters;
 
     return
@@ -340,7 +340,7 @@ bool timeCoupledBypassClear(
             const double required =
                 query.agent.radiusMeters +
                 candidate.actorRadiusMeters +
-                query.horizon.policy.safetyMarginMeters +
+                query.policy.safetyMarginMeters +
                 projectionPaddingMeters;
 
             if (distance(ship, actor) <= required)
@@ -490,7 +490,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         );
     const double envelopeScale =
         query.horizon.agent.radiusMeters +
-        query.horizon.policy.safetyMarginMeters +
+        query.policy.safetyMarginMeters +
         query.avoidance.projectionPaddingMeters;
     const double step = std::max(
         query.avoidance.minimumLateralStepMeters,

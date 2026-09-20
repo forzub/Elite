@@ -1287,7 +1287,7 @@ int runNavigationRuntimeSelfTest()
             << static_cast<int>(
                 observation.firstVisibleHorizonBypassReplanReason
             )
-            << " first_bypass_deflection_rad="
+            << " first_bypass_offset_m="
             << observation.firstVisibleHorizonBypassOffsetMeters
             << " first_bypass_agent_pos=("
             << observation.firstVisibleHorizonBypassAgentPositionMap.x << ","

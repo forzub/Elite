@@ -1736,6 +1736,10 @@ ScenarioRunResult executeCalculatedRoute(
         bool followerInvalid = false;
         bool bridgeInvalid = false;
         bool coarseStaticContact = false;
+        std::string followerFailureReason = "NONE";
+        std::size_t followerFailureProgramIndex = 0;
+        double followerFailureTimeSeconds = 0.0;
+        double followerFailureAcceptedAtSeconds = 0.0;
         double maximumCrossTrack = 0.0;
         double maximumFollowerPositionError = 0.0;
 
@@ -1781,6 +1785,15 @@ ScenarioRunResult executeCalculatedRoute(
                     game::navigation::ManeuverProgramSampler::Status::BeforeStart)
             {
                 followerInvalid = true;
+                followerFailureReason =
+                    preSample.status ==
+                        game::navigation::ManeuverProgramSampler::Status::BeforeStart
+                        ? "PROGRAM_BEFORE_START"
+                        : "PROGRAM_INVALID";
+                followerFailureProgramIndex = activeProgram;
+                followerFailureTimeSeconds = vehicle.timeSeconds;
+                followerFailureAcceptedAtSeconds =
+                    program.acceptedAtUniverseTimeSeconds;
                 break;
             }
 
@@ -1794,6 +1807,11 @@ ScenarioRunResult executeCalculatedRoute(
             if (follower.status == Follower::Status::InvalidInput)
             {
                 followerInvalid = true;
+                followerFailureReason = "FOLLOWER_OR_TRACKER_INVALID";
+                followerFailureProgramIndex = activeProgram;
+                followerFailureTimeSeconds = vehicle.timeSeconds;
+                followerFailureAcceptedAtSeconds =
+                    program.acceptedAtUniverseTimeSeconds;
                 break;
             }
 
@@ -2008,6 +2026,13 @@ ScenarioRunResult executeCalculatedRoute(
                 std::to_string(programs.size()),
             std::string("FOLLOWER: ") +
                 (followerInvalid ? "FAIL" : "EXECUTED"),
+            "FOLLOWER FAIL REASON: " + followerFailureReason,
+            "FOLLOWER FAIL PROGRAM: " +
+                std::to_string(followerFailureProgramIndex),
+            "FOLLOWER FAIL TIME: " +
+                number(followerFailureTimeSeconds) + " S",
+            "FOLLOWER PROGRAM ACCEPTED AT: " +
+                number(followerFailureAcceptedAtSeconds) + " S",
             std::string("PILOT BRIDGE: ") +
                 (bridgeInvalid ? "FAIL" : "EXECUTED"),
             "PILOT PROFILE: " +

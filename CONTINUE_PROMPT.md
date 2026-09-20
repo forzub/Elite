@@ -14,66 +14,72 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Tested:
 ```
-852e5a71a71625cdfc0c71a6bb89724d2194990e
+f626fb0373499928e0ae89585c3bd992e5436c92
 ```
 
-Architecture PASS. Runtime 18/19. Previous 18 gates remain green.
+Architecture PASS. Runtime 18/19.
 
-Production dynamic plan:
-- `AdjustedClear`;
-- nominal conflict witness = 1;
-- primary entity = 12060;
-- 20 probes;
-- no static block.
+Newtonian final composite fully passes its complete scenario:
+- 7 completed phases;
+- 4 dynamic-bypass segments;
+- one hazard invalidation;
+- minimum dynamic clearance 3.175166 m;
+- zero tracking-envelope violations;
+- final P 0.022675 m;
+- final speed 0.075007 m/s;
+- final forward 3.521282 deg.
 
-Authority-bounded first replacement:
-- duration 24 s;
-- terminal speed 2 m/s;
-- peak transverse FF 1.348975 m/s2;
-- planned hazard clearance 3.181387 m;
-- actual hazard clearance 3.175166 m;
-- tracking exceeded = 0;
-- terminal P error 0.013099 m;
-- terminal V error 0.076580 m/s.
+Assisted safely executes:
+- initial authority-bounded replacement;
+- continuation 0;
+- continuation 1.
 
-Therefore planner + first physical bypass are healthy.
-
-## Latest root cause
-
-After the successful first local bypass, the test called:
-
+Then production adjusted targets oscillate in Z:
 ```
-Planner::plan(..., emptyDynamic(), ...)
++17.815749
++15.519026
+-14.477971
++13.773784
 ```
 
-while the dynamic hazard continued to exist in physical simulation.
+At the final reversal the test-side no-stop physical author cannot produce a valid continuation.
 
-The planner was therefore given a different world from the executor.
+## Root cause
 
-The final aggregate dynamic-clearance failure came from this fixture inconsistency, not from the first replacement.
+Production `LocalAvoidancePlanner` previously returned the first safe azimuth in the first safe deflection ring.
 
-## Current unverified candidate
+The transverse basis is regenerated at each replan, so azimuth index ordering does not preserve a physical left/right/up/down bypass side.
+
+Repeated replans may therefore switch sides for no safety reason.
+
+## Current unverified production fix
 
 ```
-6c0a71d308040c568c109afc4425332021ade730
-01a8d69cc635a450d73a49a31b91e5546e0b1828
+86640b05145938ec0880a3a26539957aaa72f085
+ef2e6ec85823c229d6cadb6aa8dbe5b65e209193
 ```
 
-Persistent hazard rules:
-- re-publish the hazard at its actual current position after each bypass;
-- query NavigationMap again;
-- run production NavigationRuntimePlanner again;
-- if `AdjustedClear`, execute another authority-bounded local suffix from current live state;
-- allow up to four additional continuations;
-- resume static portal path only after `NominalClear`.
+New selection semantics:
+- preserve existing smallest-deflection-ring priority;
+- evaluate every safe azimuth in that ring;
+- maximize dot(candidateDirection, currentVelocityDirection);
+- deterministic azimuth index breaks ties;
+- when current velocity is effectively zero, nominal route direction is fallback.
 
-The original invalidation event remains exactly one. Additional suffix replans are normal short-horizon continuation after segment completion.
+This supplies local side continuity without persistent hidden state.
 
-New diagnostics:
+## Focused regression
+
 ```
-[COMPOSITE-RESUME]
-[COMPOSITE-CONTINUATION]
+6064a22f565fd7cc82568b0babf2721891c8d925
 ```
+
+A symmetric dynamic obstacle has safe +/-Z alternatives while agent velocity contains -Z.
+
+The runtime planner must:
+- return AdjustedClear;
+- keep the selected target on -Z;
+- strongly align selected direction with current velocity.
 
 ## Validation
 
@@ -99,17 +105,22 @@ OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
 echo
 echo "===== FINAL COMPOSITE SUMMARY ====="
-grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|NAVIGATION RUNTIME PLANNER TESTS|tests passed|tests failed|TESTED HEAD' "$OUT" || true
 
 echo "$PWD/$OUT"
 ```
 
-## If green
+## Next interpretation
 
-Record exact target checkout + final composite metrics, close synthetic maneuver behavior lab, and move immediately to actual NAV STRESS/game accepted-corridor + physical-trajectory visualization.
+If the new focused regression fails, repair continuity scoring.
 
-## If red
+If it passes but composite still alternates sides, current velocity alone is insufficient and the next architectural move is an explicit accepted local-corridor/avoidance-side continuity hint.
 
-Use persistent-hazard resume diagnostics to repair the exact remaining composition seam. Do not erase hazards or weaken physical criteria.
+If 19/19:
+- accept final composite;
+- close synthetic maneuver behavior testing;
+- move to real NAV STRESS/game visualization and behavior evaluation.
+
+Do not weaken physical or clearance criteria.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

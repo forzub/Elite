@@ -731,6 +731,22 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
     wideRegion.clearanceRadiusMeters = 2000.0;
     wideRegion.geometryRevision = 1;
     staticWorld.regions = {wideRegion};
+
+    // Block only the preferred -Z branch on the first (15 deg) ring.
+    // The same -Z branch is clear again on the larger ring, while the
+    // opposite +Z first-ring candidate remains safe. This pins the semantic
+    // rule: accepted branch continuity outranks a smaller opposite-side
+    // deflection when a safe same-branch continuation exists.
+    world::navigation::NavigationObstacle firstRingBlocker;
+    firstRingBlocker.id = "continuity_first_ring_blocker";
+    firstRingBlocker.entityId = 203;
+    firstRingBlocker.shape =
+        world::navigation::NavigationObstacleShape::Box;
+    firstRingBlocker.centerMeters = {200.0, 0.0, -53.589838};
+    firstRingBlocker.localToWorldBasis = glm::dmat3(1.0);
+    firstRingBlocker.halfExtentsMeters = {4.0, 4.0, 4.0};
+    staticWorld.obstacles.push_back(firstRingBlocker);
+
     space.replaceStaticWorld(std::move(staticWorld));
 
     Planner::AgentState agent = baseAgent();
@@ -773,6 +789,11 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
     require(
         result.selectedTargetMapMeters.z < -1.0e-6,
         "adjusted visibility must preserve the current -Z avoidance side"
+    );
+    require(
+        result.selectedVisibilityDeflectionRadians >
+            policy.avoidance.primaryDeflectionRadians + 1.0e-6,
+        "accepted branch continuity must prefer a larger same-side ring over a smaller opposite-side ring"
     );
 
     const glm::dvec3 selectedDirection =

@@ -733,6 +733,12 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
     wideRegion.geometryRevision = 1;
     staticWorld.regions = {wideRegion};
 
+    Planner::Policy policy = basePolicy();
+    policy.horizon.turnDistanceMeters = 600.0;
+    policy.horizon.minimumHorizonMeters = 600.0;
+    policy.horizon.safetyMarginMeters = 5.0;
+    policy.avoidance.azimuthSamples = 4;
+
     // Block only the preferred -Z branch on the first (15 deg) ring.
     // The same -Z branch is clear again on the larger ring, while the
     // opposite +Z first-ring candidate remains safe. This pins the semantic
@@ -743,8 +749,18 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
     firstRingBlocker.entityId = 203;
     firstRingBlocker.shape =
         world::navigation::NavigationObstacleShape::Box;
-    firstRingBlocker.centerMeters =
-        {579.555496, 0.0, -155.291427};
+    // Put the blocker on an interior point of the actual primary
+    // -Z ray. This is independent of the exact physical-horizon length as
+    // long as the horizon remains >300 m, while the 30 deg -Z ray is already
+    // far away at the same X.
+    constexpr double blockerRayDistanceMeters = 300.0;
+    firstRingBlocker.centerMeters = {
+        blockerRayDistanceMeters *
+            std::cos(policy.avoidance.primaryDeflectionRadians),
+        0.0,
+        -blockerRayDistanceMeters *
+            std::sin(policy.avoidance.primaryDeflectionRadians)
+    };
     firstRingBlocker.localToWorldBasis = glm::dmat3(1.0);
     firstRingBlocker.halfExtentsMeters = {8.0, 8.0, 8.0};
     staticWorld.obstacles.push_back(firstRingBlocker);
@@ -765,11 +781,6 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
     Planner::Goal goal = goalAt(1000.0);
     goal.maximumTargetSpeedMps = 20.0;
 
-    Planner::Policy policy = basePolicy();
-    policy.horizon.turnDistanceMeters = 600.0;
-    policy.horizon.minimumHorizonMeters = 600.0;
-    policy.horizon.safetyMarginMeters = 5.0;
-
     const Planner::Result result = Planner::plan(
         agent,
         goal,
@@ -778,6 +789,25 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
         StaticQueries(space),
         policy
     );
+
+    std::cout
+        << std::fixed << std::setprecision(6)
+        << "[BRANCH-REGRESSION]"
+        << " status=" << static_cast<int>(result.status)
+        << " deflection_deg="
+        << result.selectedVisibilityDeflectionRadians *
+               180.0 / 3.14159265358979323846
+        << " same_branch_safe="
+        << result.avoidanceSameBranchSafeCandidates
+        << " branch_alignment="
+        << result.avoidanceSelectedBranchAlignment
+        << " branch_switch_required="
+        << (result.avoidanceBranchSwitchRequired ? 1 : 0)
+        << " target=("
+        << result.selectedTargetMapMeters.x << ","
+        << result.selectedTargetMapMeters.y << ","
+        << result.selectedTargetMapMeters.z << ")"
+        << "\n";
 
     require(
         result.status == Planner::Status::AdjustedClear &&

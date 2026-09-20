@@ -89,6 +89,58 @@ Basis basisForForward(
     return {forward, right, up};
 }
 
+// Minimal-twist transported frame for a moving tangent.  Rebuilding right/up
+// from a fixed world-up seed creates a basis singularity when forward crosses
+// the seed-switch threshold.  B10 tracks all three body axes, so that artificial
+// roll jump becomes a real angular command.  Project the previous right axis
+// into the new normal plane instead (Bishop/parallel-transport frame).
+Basis transportedBasisForForward(
+    const glm::dvec3& requestedForward,
+    const Basis& previous
+)
+{
+    if (glm::length(requestedForward) <= 1.0e-9)
+        return previous;
+
+    const glm::dvec3 forward = glm::normalize(requestedForward);
+
+    glm::dvec3 right =
+        previous.right -
+        forward * glm::dot(previous.right, forward);
+
+    if (glm::length(right) <= 1.0e-9)
+    {
+        glm::dvec3 projectedUp =
+            previous.up -
+            forward * glm::dot(previous.up, forward);
+
+        if (glm::length(projectedUp) > 1.0e-9)
+        {
+            projectedUp = glm::normalize(projectedUp);
+            right = glm::cross(forward, projectedUp);
+        }
+        else
+        {
+            // Only a true 180-degree degeneracy reaches this fallback.
+            return basisForForward(forward, previous);
+        }
+    }
+
+    right = glm::normalize(right);
+    glm::dvec3 up =
+        glm::normalize(glm::cross(right, forward));
+
+    // Preserve the previous roll hemisphere if numerical projection produced
+    // the equivalent frame with both transverse axes inverted.
+    if (glm::dot(up, previous.up) < 0.0)
+    {
+        right = -right;
+        up = -up;
+    }
+
+    return {forward, right, up};
+}
+
 glm::dquat quaternionForBasis(const Basis& basis)
 {
     glm::dmat3 m(1.0);
@@ -450,16 +502,40 @@ Program makeProgram(
         Basis basis = start.basis;
         if (orientationMode == OrientationMode::VelocityAligned)
         {
-            basis =
+            const glm::dvec3 requestedForward =
                 glm::length(velocity) > 0.25
-                    ? basisForForward(velocity, previousBasis)
-                    : terminalBasis;
+                    ? velocity
+                    : terminalBasis.forward;
+
+            basis =
+                transportedBasisForForward(
+                    requestedForward,
+                    previousBasis
+                );
         }
 
         if (i == 0)
             basis = start.basis;
+
         if (i + 1 == Program::kMaxSamples)
-            basis = terminalBasis;
+        {
+            if (orientationMode == OrientationMode::VelocityAligned)
+            {
+                // Preserve the transported roll while pinning the requested
+                // terminal forward direction. Exact terminal roll, when
+                // required by docking/attachment semantics, belongs to a
+                // separate explicit attitude-capture profile.
+                basis =
+                    transportedBasisForForward(
+                        terminalBasis.forward,
+                        previousBasis
+                    );
+            }
+            else
+            {
+                basis = terminalBasis;
+            }
+        }
 
         previousBasis = basis;
         orientations[i] = quaternionForBasis(basis);

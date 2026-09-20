@@ -144,3 +144,22 @@ Viewer acceptance for this iteration:
 
 After visual inspection, use the trace to fix the monitored topology-resume
 problem; do not weaken navigation clearance or physical limits.
+
+## Next target gate after viewer include/fixture fixes
+
+Pull latest main and rerun the runtime tests plus viewer:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+bash tests/navigation_runtime/run_mingw64.sh || true
+bash tools/navigation_runtime/run_mingw64.sh
+```
+
+Expected checks:
+- `navigation_runtime_planner` should get past the future-portal route-context fixture;
+- composite should again write a Newtonian trace even if its known clearance assertion remains;
+- viewer should now compile using `glad/include` and open the 770-frame trace;
+- visually inspect the transition from `replan_2 / nominal_clear` into `portal_102`
+  where monitoring currently appears to stop.

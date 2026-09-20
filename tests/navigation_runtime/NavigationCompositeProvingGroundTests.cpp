@@ -872,6 +872,7 @@ struct TraceContext
     glm::dvec3 portalTarget {0.0};
 
     double plannerSafetyPaddingMeters = 0.0;
+    double plannerLookAheadSeconds = 0.0;
     double nextSampleTimeSeconds = 0.0;
 };
 
@@ -960,6 +961,9 @@ void recordTraceSample(
     {
         frame.hazardPosition =
             dynamicHazardPosition(hazard, v.timeSeconds);
+        frame.hazardVelocity = hazard.velocity;
+        frame.plannerLookAheadSeconds =
+            context->plannerLookAheadSeconds;
         frame.hazardRadiusMeters = hazard.radiusMeters;
         frame.hazardCollisionEnvelopeRadiusMeters =
             kHullBoundingRadiusMeters + hazard.radiusMeters;
@@ -1916,6 +1920,8 @@ CompositeMetrics runComposite(Law law)
     traceContext.plannerSafetyPaddingMeters =
         pPolicy.horizon.safetyMarginMeters +
         pPolicy.avoidance.projectionPaddingMeters;
+    traceContext.plannerLookAheadSeconds =
+        pPolicy.horizon.lookAheadSeconds;
     traceContext.phase = "initial";
     traceContext.hasPortalTarget = true;
     traceContext.portalTarget = {100.0, 40.0, 0.0};

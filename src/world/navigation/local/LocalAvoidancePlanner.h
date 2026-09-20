@@ -40,12 +40,17 @@ public:
         double lateralStepEnvelopeMultiplier = 1.0;
         double maximumLateralOffsetMeters = 120.0;
 
+        // Candidate bypass stations are sampled longitudinally inside the
+        // bounded nominal horizon. Every candidate is a two-segment detour:
+        // current -> off-route bypass station -> on-route merge target.
+        std::size_t longitudinalSamples = 3;
+
         // Additional inflation for predicted dynamic occupancy in the normal
         // plane and in the time-coupled candidate check.
         double projectionPaddingMeters = 2.0;
 
-        // Number of temporal samples used to prove the straight temporary
-        // bypass segment against predicted moving actors. Physical maneuver
+        // Number of temporal samples used to prove the complete two-segment
+        // detour against predicted moving actors. Physical maneuver
         // compilation/continuous proof remains downstream ownership.
         std::size_t trajectorySamples = 24;
 
@@ -86,11 +91,13 @@ public:
         // trajectory to reacquire after the obstacle is passed.
         Vec3d selectedLateralOffsetMap {};
         double selectedLateralOffsetMeters = 0.0;
+        double selectedBypassForwardDistanceMeters = 0.0;
         Vec3d mergeTargetMapMeters {};
 
         // Visible-horizon projection diagnostics.
         std::size_t projectedDynamicObstacles = 0;
         std::size_t offsetCandidatesExamined = 0;
+        std::size_t routeCandidatesExamined = 0;
         std::size_t projectionRejected = 0;
         std::size_t staticRejected = 0;
         std::size_t dynamicRejected = 0;

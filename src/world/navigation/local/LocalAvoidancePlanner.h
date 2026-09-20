@@ -10,13 +10,19 @@
 namespace world::navigation
 {
 
-// Deterministic first-stage local adjusted-target selector.
+// Stateless visible-horizon local bypass selector.
 //
-// Ownership rules:
-// - consumes accepted LocalHorizonPlanner dynamic products;
-// - consumes static state only through NavigationStaticQueryApi;
-// - owns no actor table, spatial index, static topology or global route;
-// - never accepts a lateral target unless static free-space safety is proven.
+// The global/topology planner already owns the planned route and static world.
+// This layer only reacts to a bounded conflict in front of the vehicle:
+//
+// nominal trajectory tangent
+//     -> project predicted dynamic occupancy onto the normal plane
+//     -> choose the smallest reachable lateral offset that remains free
+//     -> prove the temporary segment against exact static geometry
+//     -> publish a bypass target plus the original on-route merge target.
+//
+// It owns no branch memory, left/right commitment, angular ray fan or
+// branch-switch recovery state.
 class LocalAvoidancePlanner final
 {
 public:
@@ -26,28 +32,29 @@ public:
 
     struct Policy
     {
-        // Two deterministic deflection rings around the nominal travel direction.
-        // They are intentionally small: this stage selects a temporary target,
-        // not a route-wide bypass.
-        double primaryDeflectionRadians = 0.2617993877991494;   // 15 deg
-        double secondaryDeflectionRadians = 0.5235987755982988; // 30 deg
+        // Cartesian search on the plane perpendicular to the nominal route.
+        // Candidate offsets are multiples of a scale derived from the vehicle
+        // envelope and safety margin, never angular rays.
+        std::size_t lateralGridHalfExtentSamples = 4;
+        double minimumLateralStepMeters = 2.0;
+        double lateralStepEnvelopeMultiplier = 1.0;
+        double maximumLateralOffsetMeters = 120.0;
 
-        // Ordinary free-space transit widens the visibility search only as far
-        // as needed. primary/secondary define the first step and increment;
-        // the default sequence is 15, 30, 45, 60, 75 degrees. This remains a
-        // bounded local search, never a route-wide path solve.
-        double maximumDeflectionRadians = 1.3089969389957472; // 75 deg
+        // Additional inflation for predicted dynamic occupancy in the normal
+        // plane and in the time-coupled candidate check.
+        double projectionPaddingMeters = 2.0;
 
-        // Number of azimuth samples around each ring. The first reference pins
-        // this to a small bounded fan so per-agent work remains predictable.
-        std::size_t azimuthSamples = 8;
+        // Number of temporal samples used to prove the straight temporary
+        // bypass segment against predicted moving actors. Physical maneuver
+        // compilation/continuous proof remains downstream ownership.
+        std::size_t trajectorySamples = 24;
 
-        // Extra static clearance required in addition to the agent radius.
+        // Extra exact-static clearance beyond the agent radius.
         double staticAdditionalClearanceMeters = 0.0;
 
         // Set only when the nominal target is a corridor-selected portal center
         // whose envelope clearance was already proved by the static query API.
-        // Adjusted probes never inherit this exception.
+        // Temporary bypass targets never inherit this exception.
         bool nominalTargetIsProvenPortalBoundary = false;
     };
 
@@ -55,12 +62,6 @@ public:
     {
         LocalHorizonPlanner::Query horizon {};
         Policy avoidance {};
-
-        // Optional continuity hint owned by the accepted/execution layer.
-        // On a bounded replan this is the direction of the previously accepted
-        // local progress segment. It is not hidden planner memory.
-        bool preferredDirectionValid = false;
-        Vec3d preferredDirectionMap {0.0, 0.0, 0.0};
     };
 
     enum class Status
@@ -78,51 +79,30 @@ public:
         LocalHorizonPlanner::Result target {};
 
         bool adjustedTarget = false;
+        bool nominalPathClear = false;
+        bool localBypassExhausted = false;
 
-        // Visibility-steering diagnostics. Nominal visibility means the direct
-        // bounded corridor to the accepted target was clear. Without an
-        // explicit accepted-segment continuity hint, selected deflection is
-        // the smallest safe tested ring. With continuity, the planner may
-        // deliberately choose a larger safe ring to preserve the already
-        // accepted bypass branch; safety proof remains mandatory.
-        bool nominalVisibilityClear = false;
-        double selectedDeflectionRadians = 0.0;
+        // Temporary off-route target and the point on the original nominal
+        // trajectory to reacquire after the obstacle is passed.
+        Vec3d selectedLateralOffsetMap {};
+        double selectedLateralOffsetMeters = 0.0;
+        Vec3d mergeTargetMapMeters {};
 
-        // True only after the complete ordinary progress-preserving fan
-        // (up to maximumDeflectionRadians) was evaluated without a safe
-        // target. This is an escalation signal for the higher maneuver layer,
-        // not permission to disable control.
-        bool ordinarySearchExhausted = false;
-
-        bool nominalStaticBlocked = false;
-        std::size_t targetProbesExamined = 0;
+        // Visible-horizon projection diagnostics.
+        std::size_t projectedDynamicObstacles = 0;
+        std::size_t offsetCandidatesExamined = 0;
+        std::size_t projectionRejected = 0;
         std::size_t staticRejected = 0;
         std::size_t dynamicRejected = 0;
         std::size_t staticObstaclesExamined = 0;
-
-        // Accepted-branch diagnostics. "Branch" is defined by the transverse
-        // component relative to the current nominal forward, not by full
-        // direction dot product (all progress-preserving rays share forward).
-        bool continuityHintUsed = false;
-        bool continuityLateralValid = false;
-        std::size_t sameBranchSafeCandidates = 0;
-        double selectedBranchAlignment = 0.0;
-
-        // True only when an accepted transverse branch existed, no safe
-        // candidate remains on that branch, but a safe adjusted target exists
-        // on another branch. Higher maneuver ownership must recover/brake
-        // before accepting that discontinuous branch change.
-        bool branchSwitchRequired = false;
+        double selectedProjectedClearanceMeters = 0.0;
 
         // Exact static blocker that rejected the nominal bounded segment.
-        // This is independent from NavigationMap dynamic conflict identity.
         std::string nominalStaticObstacleId;
         std::uint32_t nominalStaticObstacleEntityId = 0;
+        bool nominalStaticBlocked = false;
 
-        // Preserve the conflict that rejected the unmodified nominal target.
-        // Once an adjusted probe is Clear, target.primaryConflictEntityId is
-        // correctly zero; diagnostics still need to know what caused the
-        // deviation without re-running a second planner.
+        // Preserve the dynamic conflict that rejected the nominal trajectory.
         EntityId nominalPrimaryConflictEntityId = 0;
         std::size_t nominalConflictsFound = 0;
 

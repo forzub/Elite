@@ -10,79 +10,61 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Latest target result
+## Latest target-machine attempt
 
-Tested:
+Tested checkout:
 ```
-af9ee9d1694ac0facafaf23b0ec51c3adaf7dbbf
-```
-
-Architecture PASS. Runtime 17/19.
-
-## Branch-switch recovery is working
-
-Composite evidence:
-```
-branch_switch_required=1
-recovery duration=4.0 s
-stopping distance=6.757088 m
-peak brake FF=1.266954 m/s2
-planned static clearance=39.154319 m
-planned dynamic clearance=9.803750 m
-actual dynamic clearance=9.817623 m
-tracking exceeded=0
-final speed error=0.009128 m/s
+2ad1178bc5c778636748557ceb6c9a5b757c9a53
 ```
 
-The old branch is then cleared and production planner replans from the recovered state.
+Architecture contract PASS.
 
-## Remaining composite failure
+Runtime behavior was not tested because compilation failed in:
+```
+tests/navigation_runtime/NavigationRuntimePlannerTests.cpp
+```
 
-Fresh post-recovery AdjustedClear is produced, but the test-side replacement author rejects it.
+Error:
+```
+std::setprecision is not a member of std
+```
 
 Root cause:
-```
-minimumPlannedSpeed >= 0.50 m/s
-```
-was applied at t=0 even after intentional recovery to ~0.009 m/s.
+- `[BRANCH-REGRESSION]` diagnostic added `std::setprecision`;
+- source lacked `#include <iomanip>`.
 
-## Current unverified authoring fix
-
+Compile-only fix:
 ```
-7c87e655788af4e95f9576675185482639fec528
+cfa56734020b41875354262302b9be51684413be
 ```
 
-For normal moving transits:
-- unchanged: minimum planned speed >=0.50 m/s.
+No navigation semantics or thresholds changed.
 
-For post-recovery launch:
-- start below 0.50 is legal;
-- no reverse progress below -0.05 m/s;
-- must reach >=0.50 m/s;
-- must never drop below 0.50 after reaching it;
-- transverse FF <=1.35 m/s2;
-- dynamic planned clearance >=1.50 m.
+## Current behavior problem
 
-## Focused regression fixture fix
+We are proving a physically correct local-branch transition:
 
 ```
-252f9d81c5fd91363a0e0561e195c1f5ab0d375d
+accepted moving branch
+ -> branch becomes unavailable
+ -> avoidanceBranchSwitchRequired
+ -> Brake recovery
+ -> near-zero speed
+ -> old continuity cleared
+ -> fresh production replan
+ -> bounded launch into newly safe branch
 ```
 
-Old blocker depended on a guessed 600 m horizon endpoint.
+Already demonstrated before this build-only failure:
+- branch-switch escalation;
+- real Brake execution;
+- >9.8 m dynamic clearance;
+- zero tracking-envelope violations;
+- ~0.009 m/s final speed error.
 
-New blocker lies at:
-```
-300 * primary-ray direction
-```
-inside the primary -Z segment.
-
-Therefore exact physical-horizon endpoint changes cannot make the blocker miss the primary ray.
-
-New diagnostic:
-```
-[BRANCH-REGRESSION]
-```
+Current unverified candidate also contains:
+- horizon-independent focused branch regression blocker;
+- post-recovery launch support from near-zero speed.
 
 ## Validation
 
@@ -113,19 +95,19 @@ grep -E '\[BRANCH-REGRESSION\]|\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[CO
 echo "$PWD/$OUT"
 ```
 
-## Next interpretation
+## Interpretation
 
-If focused branch regression is green, the branch semantics are settled.
+If build succeeds, only then evaluate mechanism behavior.
 
-If post-recovery launch is green, recovery -> fresh branch execution is settled.
+If focused regression fails:
+- use `[BRANCH-REGRESSION]` diagnostics.
 
-If launch still fails, instrument the fitter rejection reasons before changing thresholds.
+If post-recovery launch fails:
+- instrument fitter rejection reasons before changing thresholds.
 
 If 19/19:
-- record exact target checkout + final metrics;
-- close synthetic maneuver behavior laboratory;
-- move immediately to real NAV STRESS/game accepted-corridor + trajectory visualization.
-
-Do not weaken physical or safety criteria.
+- accept final composite;
+- close synthetic maneuver behavior lab;
+- move to real NAV STRESS/game.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

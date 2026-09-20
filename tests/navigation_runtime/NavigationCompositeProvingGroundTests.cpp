@@ -1868,12 +1868,8 @@ CompositeMetrics runComposite(Law law)
         "composite production planner did not find adjusted dynamic bypass"
     );
 
-    glm::dvec3 acceptedLocalContinuityDirection =
-        glm::normalize(
-            adjusted.selectedTargetMapMeters -
-            v.transform.motion.localPositionMeters
-        );
-    bool acceptedLocalContinuityValid = true;
+    glm::dvec3 acceptedLocalContinuityDirection(0.0);
+    bool acceptedLocalContinuityValid = false;
 
     // Phase 3: replacement program starts from the actual invalidation state.
     // Do not invent a short curve that the 2 m/s2 transverse authority cannot
@@ -1943,6 +1939,17 @@ CompositeMetrics runComposite(Law law)
             phase.minDynamicClearanceMeters > 0.5,
             "composite replacement did not clear dynamic hazard"
         );
+
+        acceptedLocalContinuityDirection =
+            glm::normalize(
+                fit.program.samples[
+                    static_cast<std::size_t>(
+                        fit.program.sampleCount - 1
+                    )
+                ].positionMapMeters -
+                fit.program.samples[0].positionMapMeters
+            );
+        acceptedLocalContinuityValid = true;
 
         absorb(total, phase);
         ++total.phases;
@@ -2028,13 +2035,6 @@ CompositeMetrics runComposite(Law law)
             "composite persistent hazard produced no safe bounded continuation"
         );
 
-        acceptedLocalContinuityDirection =
-            glm::normalize(
-                resumed.selectedTargetMapMeters -
-                v.transform.motion.localPositionMeters
-            );
-        acceptedLocalContinuityValid = true;
-
         const ReplacementFit continuation =
             fitAuthorityBoundedReplacement(
                 v,
@@ -2084,6 +2084,17 @@ CompositeMetrics runComposite(Law law)
             continuationPhase.minDynamicClearanceMeters > 0.5,
             "composite persistent-hazard continuation lost clearance"
         );
+
+        acceptedLocalContinuityDirection =
+            glm::normalize(
+                continuation.program.samples[
+                    static_cast<std::size_t>(
+                        continuation.program.sampleCount - 1
+                    )
+                ].positionMapMeters -
+                continuation.program.samples[0].positionMapMeters
+            );
+        acceptedLocalContinuityValid = true;
 
         absorb(total, continuationPhase);
         ++total.phases;

@@ -1995,6 +1995,9 @@ CompositeMetrics runComposite(Law law)
             << " nominal_dynamic_conflicts="
             << resumed.nominalDynamicConflictsFound
             << " probes=" << resumed.avoidanceProbesExamined
+            << " selected_deflection_deg="
+            << resumed.selectedVisibilityDeflectionRadians *
+                   180.0 / kPi
             << " continuity=("
             << acceptedLocalContinuityDirection.x << ","
             << acceptedLocalContinuityDirection.y << ","

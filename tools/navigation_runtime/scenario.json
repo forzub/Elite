@@ -1,4 +1,8 @@
 {
+  "goal_revision": 1,
+  "static_world_revision": 1,
+  "dynamic_world_revision": 1,
+
   "start": {
     "position": [0.0, 0.0, 0.0],
     "velocity": [6.0, 0.0, 0.0],

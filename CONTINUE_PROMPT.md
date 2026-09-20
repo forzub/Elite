@@ -1,111 +1,69 @@
-# CONTINUE PROMPT — Elite Navigation live stand
+# CONTINUE PROMPT — Elite Navigation global corridor architecture
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Read `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`,
-`src/game/navigation/STAGE12_END_TO_END.md`, and all relevant files under
-`tools/navigation_runtime/` before changing behavior.
+`src/game/navigation/STAGE12_END_TO_END.md`,
+`src/world/navigation/local/LocalAvoidancePlanner.h`,
+`src/world/navigation/space/NavigationSpace.h/.cpp`,
+`src/game/navigation/NavigationRuntimePlanner.h/.cpp`,
+and the live stand under `tools/navigation_runtime/`.
 
-After every state-affecting event synchronize those Markdown files and recreate this
-`CONTINUE_PROMPT.md` from scratch.
+After every state-affecting event synchronize the Markdown state files and recreate this file from scratch.
 
-## Mandatory command rule
+## Correct ownership contract
 
-Whenever compilation produces an executable, always provide a separate exact launch
-command from the documented working directory.
+The nominal global route/corridor is built ONCE from start to finish and remains authoritative while:
+- destination/goal revision is unchanged;
+- static navigation world/corridor revision is unchanged.
 
-## Canonical tool architecture
+Moving obstacles do NOT trigger global route reconstruction.
 
-`tools/navigation_runtime` is a live scenario-driven navigation diagnostic stand.
-`scenario.json` is INPUT. `last_calculated_trace.json` is OUTPUT only.
+Dynamic snapshots are consumed by the bounded local monitor/avoidance layer only.
+`maxResultAgeSeconds` (~0.25 s) is a dynamic-snapshot freshness limit, NOT a global replanning cadence.
 
-On `РАССЧИТАТЬ` the executable runs in-process:
-`NavigationSpace/NavigationMap -> NavigationRuntimePlanner -> maneuver program ->
-TrajectoryFollower -> NavigationRuntimeControlBridge/PilotSkillExecutor ->
-SharedShipPhysics/DynamicMotionSystem -> in-memory trace -> 3D playback`.
+Follower/autopilot continuously executes the accepted maneuver/trajectory.
+Local dynamic avoidance may temporarily depart from the nominal corridor, brake when necessary, and later progressively reacquire the same retained global corridor.
 
-Real UI inputs:
-- Assisted / Newtonian;
-- Expert / Average / Loser pilot;
-- Standard / Extreme flight style;
-- sudden obstacle checkbox;
-- Calculate button.
+Global planning may be recomputed only on goal change or static-world/corridor invalidation/change.
 
-## First live-video diagnosis
+## Current live-stand problem
 
-The first target video showed the Cobra mostly braking with right-panel status
-`ДАННЫЕ УСТАРЕЛИ` around simulation time ~41 s.
+`NavigationScenarioRuntime.cpp` currently calls `NavigationRuntimePlanner::plan()` repeatedly after short execution slices. That incorrectly recomputes the static/global part over and over. Do not keep this architecture.
 
-Root cause was an integration bug in `NavigationScenarioRuntime.cpp`:
-`NavigationRuntimePlanner::plan()` received absolute `vehicle.timeSeconds` as
-`dynamicResultAgeSeconds`. The freshly queried NavigationMap snapshot therefore
-became stale as soon as simulation time exceeded the planner's 0.25 s age limit.
+## Important capability gap
 
-Fix now on main:
-- pass `0.0` as snapshot age for the synchronous query->plan call;
-- do not regress this back to absolute simulation time.
+`NavigationSpace::queryCostedCorridor()` currently produces coarse region/portal topology and ordered portal centers.
+Exact static `NavigationObstacle` geometry is used for segment proof/local rejection, but the global corridor search does NOT yet synthesize a full geometric centerline around arbitrary exact obstacles inside one coarse region.
 
-## HUD rule from video feedback
+The default live `scenario.json` currently has one coarse region plus an exact wall. Therefore it cannot honestly demonstrate the requested start->finish global geometric corridor until this gap is solved.
 
-The right diagnostic panel must NEVER vertically reflow during playback.
-All rows use fixed Y slots:
-- mode;
-- frame;
-- time;
-- phase;
-- planner status;
-- orientation error;
-- clearance;
-- event;
-- calculation result;
-- explanation;
-- legend;
-- controls.
+## Next implementation task
 
-Absent values display `-`; they do not remove rows.
-`СОБЫТИЕ: ПЕРЕПЛАНИРОВАНИЕ` may change text/color but must never move any other text.
-Calculation success/failure remains visible while a partial trace is playing.
+1. Add a cached nominal global corridor product with geometric centerline/waypoints and clearance/envelope information.
+2. Build it once from start to finish against the static world.
+3. Cache it by goal revision + static-space revision.
+4. Render this retained full corridor immediately after `РАССЧИТАТЬ`.
+5. Execute along it using the real production maneuver compile/proof/selection/follower chain.
+6. Run LocalHorizonPlanner/LocalAvoidancePlanner only for dynamic/local conflicts against the retained corridor.
+7. Sudden moving obstacle may cause local bypass/braking only; it must not rebuild the global route.
+8. After the obstacle, progressively reacquire the same nominal corridor.
 
-## Interpretation of daytime tests
+Do not use a 0.25 s or 0.5 s timer as a global replanning trigger.
 
-Do not call them fake, but do not overclaim them.
-They exercised real production planner/follower/control/physics components and useful
-local/composite slices. However the composite scenario was staged through manually
-authored phases and AcceptedManeuverPrograms. It did NOT prove a free-running
-arbitrary start->world->finish replanning/execution loop.
+## Existing live-stand UI contracts
 
-The live stand exposed that missing end-to-end orchestration gate.
+- ordinary decorated Windows window maximized, not exclusive fullscreen;
+- Russian UI;
+- fixed non-jumping right panel slots;
+- Assisted/Newtonian selector;
+- Expert/Average/Loser selector;
+- Standard/Extreme selector;
+- sudden-obstacle checkbox;
+- `РАССЧИТАТЬ` button;
+- Cobra horizon inset;
+- exact executable launch command must always be provided after builds.
 
-## Critical remaining architecture gap
+## Previous live-video issue already fixed
 
-The live stand currently converts Planner output through its own handcrafted quintic
-`makeShortProgram`. That is NOT yet the full production B5/B6/B7/B8 physical
-compile/proof/selection/acceptance path.
-
-Therefore a successful live-stand run is not yet final navigation acceptance evidence.
-After the immediate rerun, replace the stand-local maneuver adapter with the actual
-production physical maneuver chain before further quality judgments.
-
-## Immediate target rerun
-
-Build:
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/tools/navigation_runtime
-```
-
-Exact executable launch:
-```bash
-cd /d/__elite/work
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
-```
-
-Check:
-- no automatic StaleHold after 0.25 s;
-- right panel does not jump;
-- calculation result stays visible;
-- default no-surprise run makes meaningful progress;
-- collect exact target HEAD and visible/runtime behavior before the next change.
+The first live video showed `ДАННЫЕ УСТАРЕЛИ` because absolute simulation time was incorrectly passed as dynamic snapshot age. Fresh synchronous snapshot age is now `0.0`. Do not regress.

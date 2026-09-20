@@ -80,9 +80,11 @@ public:
         bool adjustedTarget = false;
 
         // Visibility-steering diagnostics. Nominal visibility means the direct
-        // bounded corridor to the accepted target was clear. When false, the
-        // selected deflection is the smallest tested angular deviation that
-        // passed both exact-static and dynamic horizon proofs.
+        // bounded corridor to the accepted target was clear. Without an
+        // explicit accepted-segment continuity hint, selected deflection is
+        // the smallest safe tested ring. With continuity, the planner may
+        // deliberately choose a larger safe ring to preserve the already
+        // accepted bypass branch; safety proof remains mandatory.
         bool nominalVisibilityClear = false;
         double selectedDeflectionRadians = 0.0;
 

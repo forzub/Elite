@@ -76,6 +76,7 @@ enum class UiAction
 {
     None,
     Calculate,
+    Execute,
     TogglePlay,
     PreviousFrame,
     NextFrame,
@@ -92,6 +93,8 @@ struct AppState
     std::vector<std::string> diagnosticLines;
     bool calculationPerformed = false;
     bool calculationSucceeded = false;
+    bool executionPerformed = false;
+    bool executionSucceeded = false;
 
     elite::tools::navigation_runtime::ControlMode controlMode =
         elite::tools::navigation_runtime::ControlMode::Newtonian;

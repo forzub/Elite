@@ -89,6 +89,7 @@ struct AppState
     trace::TraceDocument* traceData = nullptr;
     std::string scenarioPath;
     std::string calculationMessage = "ВЫБЕРИТЕ РЕЖИМЫ И НАЖМИТЕ РАССЧИТАТЬ";
+    std::vector<std::string> diagnosticLines;
     bool calculationPerformed = false;
     bool calculationSucceeded = false;
 
@@ -336,6 +337,53 @@ void appendCross(
                  center + glm::vec3(0.0f, size, 0.0f), color);
     addLine(out, center - glm::vec3(0.0f, 0.0f, size),
                  center + glm::vec3(0.0f, 0.0f, size), color);
+}
+
+void appendReferenceGrid(
+    std::vector<Vertex>& out,
+    const glm::dvec3& start,
+    const glm::dvec3& finish
+)
+{
+    const glm::vec3 a = toVec3(start);
+    const glm::vec3 b = toVec3(finish);
+    const glm::vec3 center = 0.5f * (a + b);
+
+    const float span =
+        std::max(100.0f, glm::length(b - a) * 1.25f);
+    const float spacing = 25.0f;
+    const int halfLines =
+        std::clamp(
+            static_cast<int>(std::ceil(span / spacing * 0.5f)),
+            4,
+            24
+        );
+    const float halfSize =
+        static_cast<float>(halfLines) * spacing;
+
+    const glm::vec3 minor(0.12f, 0.14f, 0.17f);
+    const glm::vec3 axisX(0.24f, 0.16f, 0.16f);
+    const glm::vec3 axisZ(0.16f, 0.20f, 0.26f);
+
+    for (int i = -halfLines; i <= halfLines; ++i)
+    {
+        const float d = static_cast<float>(i) * spacing;
+        const glm::vec3 xColor = i == 0 ? axisZ : minor;
+        const glm::vec3 zColor = i == 0 ? axisX : minor;
+
+        addLine(
+            out,
+            {center.x - halfSize, 0.0f, center.z + d},
+            {center.x + halfSize, 0.0f, center.z + d},
+            xColor
+        );
+        addLine(
+            out,
+            {center.x + d, 0.0f, center.z - halfSize},
+            {center.x + d, 0.0f, center.z + halfSize},
+            zColor
+        );
+    }
 }
 
 void appendCircle(
@@ -1083,6 +1131,8 @@ std::string localizedPhase(const std::string& phase)
         return "ЭТАП 1 — МАРШРУТ";
     if (phase == "route_failed")
         return "ЭТАП 1 — ОШИБКА МАРШРУТА";
+    if (phase == "scene_preview")
+        return "СЦЕНА — ДО РАСЧЁТА";
     if (phase == "portal_101")
         return "ПОРТАЛ 101";
     if (phase == "doctrine_prefix")
@@ -1128,6 +1178,8 @@ std::string localizedStatus(const std::string& status)
         return "СТАТИЧЕСКИЙ МАРШРУТ ГОТОВ";
     if (status == "static_route_failed")
         return "СТАТИЧЕСКИЙ МАРШРУТ НЕ ПОСТРОЕН";
+    if (status == "scene_loaded")
+        return "СЦЕНА ЗАГРУЖЕНА";
     return status;
 }
 
@@ -1147,6 +1199,9 @@ double orientationErrorDegrees(const trace::TraceFrame& frame)
 
 std::string currentExplanation(const trace::TraceFrame& frame)
 {
+    if (frame.phase == "scene_preview")
+        return "СЦЕНА ЗАГРУЖЕНА. PLANNER ЕЩЁ НЕ ЗАПУСКАЛСЯ.\nFOLLOWER ЕЩЁ НЕ ЗАПУСКАЛСЯ.";
+
     if (frame.phase == "route_ready")
         return "ЭТАП 1: ПОСТРОЕН ОДИН СТАТИЧЕСКИЙ МАРШРУТ\nСТАРТ -> ФИНИШ. ПОЛЁТ ЕЩЁ НЕ РАССЧИТЫВАЕТСЯ.";
 
@@ -1795,6 +1850,12 @@ void fitCamera(
         maximum = glm::max(maximum, v);
     };
 
+    if (data.hasSceneEndpoints)
+    {
+        include(data.sceneStartMapMeters);
+        include(data.sceneFinishMapMeters);
+    }
+
     for (const auto& p : data.routePoints)
         include(p);
 
@@ -2109,6 +2170,41 @@ void drawScene(
     const trace::TraceFrame& frame = displayFrame;
 
     renderer.begin(viewProjection);
+
+    if (data.hasSceneEndpoints)
+    {
+        std::vector<Vertex> grid;
+        appendReferenceGrid(
+            grid,
+            data.sceneStartMapMeters,
+            data.sceneFinishMapMeters
+        );
+        renderer.draw(GL_LINES, grid, 1.0f);
+
+        std::vector<Vertex> endpoints;
+        appendCross(
+            endpoints,
+            toVec3(data.sceneStartMapMeters),
+            8.0f,
+            {0.25f, 1.0f, 0.35f}
+        );
+        appendCross(
+            endpoints,
+            toVec3(data.sceneFinishMapMeters),
+            9.0f,
+            {1.0f, 0.92f, 0.15f}
+        );
+        appendCircle(
+            endpoints,
+            toVec3(data.sceneFinishMapMeters),
+            12.0f,
+            {1.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f},
+            {1.0f, 0.92f, 0.15f},
+            40
+        );
+        renderer.draw(GL_LINES, endpoints, 3.0f);
+    }
 
     std::vector<Vertex> staticGeometry;
     for (const auto& obstacle : data.staticObstacles)

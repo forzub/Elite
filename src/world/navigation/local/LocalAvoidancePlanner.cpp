@@ -454,6 +454,14 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                 const bool sameBranchClass =
                     globalHasSafeCandidate &&
                     candidateSameBranch == globalBestSameBranch;
+                const bool smallerDeflection =
+                    deflection <
+                        globalBestDeflection - kEpsilon;
+                const bool sameDeflection =
+                    std::abs(
+                        deflection -
+                        globalBestDeflection
+                    ) <= kEpsilon;
                 const bool betterBranchAlignment =
                     branchAlignment >
                         globalBestBranchAlignment + kEpsilon;
@@ -470,30 +478,22 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                         continuityScore -
                         globalBestContinuityScore
                     ) <= kEpsilon;
-                const bool smallerDeflection =
-                    deflection <
-                        globalBestDeflection - kEpsilon;
-                const bool sameDeflection =
-                    std::abs(
-                        deflection -
-                        globalBestDeflection
-                    ) <= kEpsilon;
 
                 if (!globalHasSafeCandidate ||
                     betterBranchClass ||
                     (sameBranchClass &&
+                     smallerDeflection) ||
+                    (sameBranchClass &&
+                     sameDeflection &&
                      betterBranchAlignment) ||
                     (sameBranchClass &&
+                     sameDeflection &&
                      sameBranchAlignment &&
                      betterContinuity) ||
                     (sameBranchClass &&
-                     sameBranchAlignment &&
-                     sameContinuity &&
-                     smallerDeflection) ||
-                    (sameBranchClass &&
-                     sameBranchAlignment &&
-                     sameContinuity &&
                      sameDeflection &&
+                     sameBranchAlignment &&
+                     sameContinuity &&
                      azimuthIndex < globalBestAzimuthIndex))
                 {
                     globalHasSafeCandidate = true;

@@ -6030,3 +6030,61 @@ insufficient detour can reach its bypass station but fails on the return leg.
 This pins the requirement that route reacquisition itself is proved.
 
 The replacement remains UNVERIFIED until the user's MinGW64 target gate passes.
+
+
+## 2026-09-20 — 81d0c23 hard-replacement target gate
+
+Exact target-machine checkout:
+
+```
+81d0c23ae42bba0352026d6c2306cc6976c04bda
+```
+
+passed the Stage-12 architecture contract and compiled/linked the runtime
+suite, but finished 17/19 PASS.
+
+Failures:
+- `navigation_runtime_planner`: expected local visibility bypass;
+- `navigation_composite_proving_ground`: first Newtonian replan returned
+  `ConflictHold`, `localBypassExhausted=1` after 168 offset candidates and
+  168 route candidates.
+
+### Focused fixture audit
+
+The failing portal-attitude fixture is incompatible with the new complete
+two-segment dynamic proof. Agent start X=2, blocker X=4.5 and merge/staging
+X=7 put both endpoints 2.5 m from the blocker. Required separation is
+`1.0 + 0.75 + 0.0 + 1.0 = 2.75 m`. Since
+`timeCoupledBypassClear()` samples both endpoints, no candidate can satisfy
+the current contract. The fixture must be repaired geometrically without
+weakening clearance.
+
+### Composite audit
+
+The logged state gives:
+
+```text
+current -> hazard = 48.0 m
+current -> merge  = 30.0 m
+merge -> hazard   = 18.0 m
+```
+
+Required dynamic separation is `26.775995 m` from the Cobra bounding radius
+`17.275995 m`, hazard radius `6 m`, safety `2 m` and projection padding
+`1.5 m`. At t=4 s the hazard has moved only 2 m laterally and remains about
+`18.51 m` from the merge point. Therefore every two-segment candidate that
+must finish at the current fixed merge target necessarily fails the
+time-coupled dynamic proof.
+
+This is more than a search-grid tuning issue. The current implementation
+hard-wires merge to `boundedNominalTarget`. The next iteration must separate
+the stale focused fixture from the production question of what happens when
+safe reacquisition lies beyond the first bounded nominal point.
+
+Next evidence:
+- log projection/static/dynamic rejection counts at the first composite plan;
+- repair the focused fixture geometry;
+- add a regression for an unsafe first merge but safe later reacquisition;
+- decide between downstream merge sampling, an adaptive horizon, or a
+  proved multi-horizon off-route continuation;
+- do not weaken safety thresholds or restore the superseded fan/branch path.

@@ -1404,6 +1404,8 @@ void drawHud(
     const bool hasScene = !data.frames.empty();
     const bool hasCalculation =
         state.calculationPerformed && hasScene;
+    const bool hasExecution =
+        data.frames.size() > 1;
     const trace::TraceFrame frame =
         hasScene ? displayFrame : trace::TraceFrame {};
 
@@ -1422,21 +1424,13 @@ void drawHud(
 
     std::vector<Vertex> ui;
 
-    const float panelWidth = 470.0f;
-    const float panelX =
-        std::max(0.0f, static_cast<float>(windowWidth) - panelWidth);
-    appendFilledRect(
-        ui,
-        {
-            panelX,
-            0.0f,
-            panelWidth,
-            static_cast<float>(windowHeight)
-        },
-        {0.045f, 0.055f, 0.070f}
+    // Top control bar is independent from the diagnostics panel.
+    appendUiText(
+        ui, 16.0f, 14.0f,
+        "РЕЖИМ УПРАВЛЕНИЯ",
+        1.10f,
+        {0.72f,0.78f,0.86f}
     );
-
-    appendUiText(ui, 16.0f, 14.0f, "РЕЖИМ УПРАВЛЕНИЯ", 1.10f, {0.72f,0.78f,0.86f});
     appendUiButton(
         ui,
         assistedRect(),
@@ -1452,7 +1446,12 @@ void drawHud(
             elite::tools::navigation_runtime::ControlMode::Newtonian
     );
 
-    appendUiText(ui, 280.0f, 14.0f, "ПИЛОТ", 1.10f, {0.72f,0.78f,0.86f});
+    appendUiText(
+        ui, 280.0f, 14.0f,
+        "ПИЛОТ",
+        1.10f,
+        {0.72f,0.78f,0.86f}
+    );
     appendUiButton(
         ui,
         expertRect(),
@@ -1475,7 +1474,12 @@ void drawHud(
             elite::tools::navigation_runtime::PilotLevel::Loser
     );
 
-    appendUiText(ui, 588.0f, 14.0f, "РЕЖИМ ПОЛЁТА", 1.10f, {0.72f,0.78f,0.86f});
+    appendUiText(
+        ui, 588.0f, 14.0f,
+        "РЕЖИМ ПОЛЁТА",
+        1.10f,
+        {0.72f,0.78f,0.86f}
+    );
     appendUiButton(
         ui,
         standardRect(),
@@ -1506,325 +1510,208 @@ void drawHud(
         false
     );
 
-    appendUiButton(
-        ui,
-        playButtonRect(),
-        state.playing ? "ПАУЗА" : "ПРОИГРЫВАТЬ",
-        state.playing && hasCalculation
-    );
-    appendUiButton(ui, prevButtonRect(), "НАЗАД");
-    appendUiButton(ui, nextButtonRect(), "ВПЕРЁД");
-    appendUiButton(ui, replanButtonRect(), "СЛЕД. ПЕРЕПЛАН");
-    appendUiButton(ui, fitButtonRect(), "ВПИСАТЬ");
-
-    const float x = panelX + 18.0f;
-    const float textScale = 1.45f;
-
-    appendUiText(
-        ui, x, 20.0f,
-        "НАВИГАЦИЯ 3D",
-        1.65f,
-        {0.95f, 0.96f, 1.0f}
-    );
-
-    if (!hasCalculation)
+    if (hasExecution)
     {
-        appendUiText(
+        appendUiButton(
             ui,
-            x,
-            56.0f,
-            state.calculationMessage,
-            1.30f,
-            {1.0f, 0.82f, 0.32f}
+            playButtonRect(),
+            state.playing ? "ПАУЗА" : "ПРОИГРЫВАТЬ",
+            state.playing
         );
-        appendUiText(
-            ui,
-            x,
-            100.0f,
-            "JSON: " + state.scenarioPath,
-            1.10f,
-            {0.68f, 0.73f, 0.80f}
-        );
-        appendUiText(
-            ui,
-            x,
-            136.0f,
-            "НАЖМИТЕ РАССЧИТАТЬ",
-            1.45f,
-            {0.90f,0.94f,1.0f}
-        );
+        appendUiButton(ui, prevButtonRect(), "НАЗАД");
+        appendUiButton(ui, nextButtonRect(), "ВПЕРЁД");
+        appendUiButton(ui, replanButtonRect(), "СЛЕД. ПЕРЕПЛАН");
     }
     else
     {
-        std::ostringstream frameLine;
-        frameLine
-            << "РЕЖИМ: "
-            << localizedLaw(data.law);
-        appendUiText(
-            ui, x, 50.0f,
-            frameLine.str(),
-            textScale,
-            {0.75f,0.82f,0.92f}
-        );
-
-        std::ostringstream indexLine;
-        indexLine
-            << "КАДР: "
-            << (state.frameIndex + 1)
-            << "/"
-            << data.frames.size();
-        appendUiText(
-            ui, x, 68.0f,
-            indexLine.str(),
-            textScale,
-            {0.75f,0.82f,0.92f}
-        );
-
-        std::ostringstream timeLine;
-        timeLine.setf(std::ios::fixed);
-        timeLine.precision(2);
-        timeLine
-            << "ВРЕМЯ: "
-            << frame.timeSeconds
-            << " С";
-        appendUiText(
-            ui, x, 86.0f,
-            timeLine.str(),
-            textScale,
-            {0.75f,0.82f,0.92f}
-        );
-
-        appendUiText(
-            ui, x, 104.0f,
-            "ФАЗА: " + localizedPhase(frame.phase),
-            textScale,
-            {0.92f,0.92f,0.92f}
-        );
-
-        appendUiText(
-            ui, x, 122.0f,
-            "СТАТУС: " + localizedStatus(frame.plannerStatus),
-            textScale,
-            {0.92f,0.92f,0.92f}
-        );
-
-        std::ostringstream orientationLine;
-        if (frame.hasProgramReference)
-        {
-            orientationLine.setf(std::ios::fixed);
-            orientationLine.precision(1);
-            orientationLine
-                << "ОШИБКА ОРИЕНТАЦИИ: "
-                << orientationErrorDegrees(frame)
-                << " ГРАД";
-        }
-        else
-        {
-            orientationLine << "ОШИБКА ОРИЕНТАЦИИ: -";
-        }
-        appendUiText(
-            ui, x, 140.0f,
-            orientationLine.str(),
-            1.30f,
-            {1.0f, 0.45f, 0.95f}
-        );
-
-        std::ostringstream clearanceLine;
-        if (frame.hazardActive)
-        {
-            clearanceLine.setf(std::ios::fixed);
-            clearanceLine.precision(2);
-            clearanceLine
-                << "ЗАЗОР: "
-                << frame.dynamicClearanceMeters
-                << " М";
-        }
-        else
-        {
-            clearanceLine << "ЗАЗОР: -";
-        }
-        appendUiText(
+        appendUiButton(
             ui,
-            x,
-            158.0f,
-            clearanceLine.str(),
-            textScale,
-            !frame.hazardActive
-                ? glm::vec3(0.62f,0.66f,0.72f)
-                : (
-                    frame.dynamicClearanceMeters > 0.5
-                        ? glm::vec3(0.35f,1.0f,0.42f)
-                        : glm::vec3(1.0f,0.28f,0.22f)
-                  )
+            playButtonRect(),
+            "ПОЛЁТ: ЭТАП 2",
+            false
+        );
+        appendUiButton(ui, prevButtonRect(), "НЕТ КАДРОВ");
+        appendUiButton(ui, nextButtonRect(), "НЕТ КАДРОВ");
+        appendUiButton(ui, replanButtonRect(), "FOLLOWER: OFF");
+    }
+    appendUiButton(ui, fitButtonRect(), "ВПИСАТЬ");
+
+    // Diagnostics are deliberately below the top controls so resizing or
+    // changing a status line can never cover/reflow the controls.
+    const float panelWidth = 470.0f;
+    const float panelTop = 122.0f;
+    const float panelX =
+        std::max(
+            0.0f,
+            static_cast<float>(windowWidth) - panelWidth
+        );
+    const float panelHeight =
+        std::max(
+            0.0f,
+            static_cast<float>(windowHeight) - panelTop
         );
 
-        appendUiText(
-            ui,
-            x,
-            176.0f,
-            frame.replanEvent
-                ? "СОБЫТИЕ: ПЕРЕПЛАНИРОВАНИЕ"
-                : "СОБЫТИЕ: -",
-            textScale,
-            frame.replanEvent
-                ? glm::vec3(1.0f,0.55f,0.10f)
-                : glm::vec3(0.62f,0.66f,0.72f)
-        );
-
-        appendUiText(
-            ui,
-            x,
-            194.0f,
-            "ИТОГ РАСЧЁТА: " + state.calculationMessage,
-            1.15f,
-            state.calculationSucceeded
-                ? glm::vec3(0.35f,1.0f,0.42f)
-                : glm::vec3(1.0f,0.55f,0.10f)
-        );
-
-        appendUiText(
-            ui, x, 226.0f,
-            "ЧТО ПРОИСХОДИТ",
-            1.55f,
-            {1.0f,0.82f,0.32f}
-        );
-        appendUiText(
-            ui,
-            x,
-            252.0f,
-            currentExplanation(frame),
-            1.30f,
-            {0.96f,0.96f,0.96f}
-        );
-
-        appendUiText(
-            ui, x, 308.0f,
-            "ЛЕГЕНДА",
-            1.55f,
-            {0.92f,0.92f,1.0f}
-        );
-
-        float legendY = 334.0f;
-        auto legend =
-            [&](const glm::vec3& color, const std::string& label)
-            {
-                appendFilledRect(
-                    ui,
-                    {x, legendY + 2.0f, 12.0f, 8.0f},
-                    color
-                );
-                appendUiText(
-                    ui,
-                    x + 20.0f,
-                    legendY,
-                    label,
-                    1.30f,
-                    {0.90f,0.91f,0.94f}
-                );
-                legendY += 17.0f;
-            };
-
-        legend({0.88f,0.88f,0.88f}, "МАРШРУТ");
-        legend({0.25f,1.0f,0.35f}, "ФАКТИЧЕСКАЯ ТРАЕКТОРИЯ");
-        legend({1.0f,0.25f,0.20f}, "ТРАЕКТОРИЯ ПОМЕХИ");
-        legend({0.70f,0.88f,0.72f}, "КОРПУС КОБРЫ");
-        legend({0.25f,0.85f,1.0f}, "ФАКТИЧЕСКИЙ НОС КОБРЫ");
-        legend({1.0f,0.25f,0.95f}, "НОС ПО ПРОГРАММЕ");
-        legend({0.20f,0.55f,1.0f}, "КОРИДОР СЛЕЖЕНИЯ");
-        legend({1.0f,0.65f,0.15f}, "ТОЧКА ПОВОРОТА / ПОРТАЛ");
-        legend({1.0f,0.92f,0.15f}, "ЦЕЛЬ ОБХОДА");
-        legend({0.20f,0.95f,1.0f}, "ТОЧКА ВОЗВРАТА НА МАРШРУТ");
-        legend({0.85f,0.30f,1.0f}, "ТЕКУЩИЙ ПОРТАЛ");
-        legend({1.0f,0.45f,0.05f}, "ПЕРЕПЛАНИРОВАНИЕ");
-
-        appendUiText(
-            ui, x, 556.0f,
-            "УПРАВЛЕНИЕ",
-            1.55f,
-            {0.92f,0.92f,1.0f}
-        );
-        appendUiText(
-            ui, x, 582.0f,
-            "ПКМ ВРАЩЕНИЕ   СКМ СДВИГ",
-            1.25f,
-            {0.75f,0.78f,0.84f}
-        );
-        appendUiText(
-            ui, x, 598.0f,
-            "КОЛЕСО МАСШТАБ  SPACE ПУСК",
-            1.25f,
-            {0.75f,0.78f,0.84f}
-        );
-        appendUiText(
-            ui, x, 614.0f,
-            "[ ] КАДР   R СЛЕД. ПЕРЕПЛАН",
-            1.25f,
-            {0.75f,0.78f,0.84f}
-        );
-        appendUiText(
-            ui, x, 630.0f,
-            "F ВПИСАТЬ   ESC ЗАКРЫТЬ",
-            1.25f,
-            {0.75f,0.78f,0.84f}
-        );
-    } // hasCalculation
-
-    if (hasCalculation)
-    {
-    const UiRect slider = frameSliderRect(windowWidth, windowHeight);
     appendFilledRect(
         ui,
-        slider,
-        {0.10f, 0.12f, 0.16f}
+        {panelX, panelTop, panelWidth, panelHeight},
+        {0.045f, 0.055f, 0.070f}
     );
 
-    const float progress =
-        data.frames.size() <= 1
-            ? 0.0f
-            : static_cast<float>(state.frameIndex) /
-              static_cast<float>(data.frames.size() - 1);
-
-    appendFilledRect(
-        ui,
-        {
-            slider.x,
-            slider.y,
-            slider.width * progress,
-            slider.height
-        },
-        {0.25f, 0.65f, 1.0f}
-    );
-
-    const float knobX =
-        slider.x + slider.width * progress;
-    appendFilledRect(
-        ui,
-        {
-            knobX - 3.0f,
-            slider.y - 4.0f,
-            6.0f,
-            slider.height + 8.0f
-        },
+    const float x = panelX + 18.0f;
+    appendUiText(
+        ui, x, panelTop + 18.0f,
+        "НАВИГАЦИЯ 3D — ДИАГНОСТИКА",
+        1.55f,
         {0.95f, 0.96f, 1.0f}
     );
 
-    std::ostringstream sliderText;
-    sliderText
-        << "КАДР "
-        << (state.frameIndex + 1)
-        << " / "
-        << data.frames.size();
     appendUiText(
-        ui,
-        slider.x,
-        slider.y - 17.0f,
-        sliderText.str(),
-        1.25f,
-        {0.90f, 0.92f, 0.96f}
+        ui, x, panelTop + 48.0f,
+        hasCalculation
+            ? "ЭТАП 1: МАРШРУТ РАССЧИТАН"
+            : "СЦЕНА ДО РАСЧЁТА",
+        1.35f,
+        hasCalculation && state.calculationSucceeded
+            ? glm::vec3(0.35f,1.0f,0.42f)
+            : glm::vec3(1.0f,0.82f,0.32f)
     );
 
-    appendHorizonInset(ui, frame, windowHeight);
-    } // hasCalculation
+    appendUiText(
+        ui, x, panelTop + 68.0f,
+        "ФАЗА: " + localizedPhase(frame.phase),
+        1.20f,
+        {0.85f,0.87f,0.92f}
+    );
+    appendUiText(
+        ui, x, panelTop + 86.0f,
+        "СТАТУС: " + localizedStatus(frame.plannerStatus),
+        1.20f,
+        {0.85f,0.87f,0.92f}
+    );
+
+    appendUiText(
+        ui, x, panelTop + 116.0f,
+        "ЦЕПОЧКА",
+        1.45f,
+        {1.0f,0.82f,0.32f}
+    );
+
+    float logY = panelTop + 142.0f;
+    const std::size_t maxLines = 13;
+    for (
+        std::size_t i = 0;
+        i < state.diagnosticLines.size() && i < maxLines;
+        ++i)
+    {
+        const std::string& line = state.diagnosticLines[i];
+        glm::vec3 color(0.86f,0.88f,0.92f);
+
+        if (line.find("PLANNER: OK") != std::string::npos)
+            color = {0.35f,1.0f,0.42f};
+        else if (line.find("PLANNER: FAIL") != std::string::npos)
+            color = {1.0f,0.30f,0.22f};
+        else if (line.find("FOLLOWER: NOT RUN") != std::string::npos)
+            color = {1.0f,0.72f,0.25f};
+
+        appendUiText(
+            ui,
+            x,
+            logY,
+            line,
+            1.10f,
+            color
+        );
+        logY += 18.0f;
+    }
+
+    appendUiText(
+        ui, x, panelTop + 396.0f,
+        "ЧТО ПРОИСХОДИТ",
+        1.40f,
+        {1.0f,0.82f,0.32f}
+    );
+    appendUiText(
+        ui,
+        x,
+        panelTop + 420.0f,
+        currentExplanation(frame),
+        1.10f,
+        {0.94f,0.95f,0.97f}
+    );
+
+    appendUiText(
+        ui, x, panelTop + 474.0f,
+        "СЦЕНА",
+        1.35f,
+        {0.90f,0.92f,1.0f}
+    );
+    appendUiText(
+        ui, x, panelTop + 498.0f,
+        "ЗЕЛЁНЫЙ КРЕСТ: START",
+        1.05f,
+        {0.35f,1.0f,0.42f}
+    );
+    appendUiText(
+        ui, x, panelTop + 514.0f,
+        "ЖЁЛТЫЙ КРЕСТ/КРУГ: FINISH",
+        1.05f,
+        {1.0f,0.92f,0.15f}
+    );
+    appendUiText(
+        ui, x, panelTop + 530.0f,
+        "СЕРЫЙ КАРКАС: STATIC OBSTACLE",
+        1.05f,
+        {0.75f,0.78f,0.82f}
+    );
+    appendUiText(
+        ui, x, panelTop + 546.0f,
+        "БЕЛАЯ ЛИНИЯ: ROUTE ПОСЛЕ РАСЧЁТА",
+        1.05f,
+        {0.90f,0.90f,0.90f}
+    );
+
+    if (hasExecution)
+    {
+        const UiRect slider =
+            frameSliderRect(windowWidth, windowHeight);
+        appendFilledRect(
+            ui,
+            slider,
+            {0.10f, 0.12f, 0.16f}
+        );
+
+        const float progress =
+            data.frames.size() <= 1
+                ? 0.0f
+                : static_cast<float>(state.frameIndex) /
+                  static_cast<float>(data.frames.size() - 1);
+
+        appendFilledRect(
+            ui,
+            {
+                slider.x,
+                slider.y,
+                slider.width * progress,
+                slider.height
+            },
+            {0.25f, 0.65f, 1.0f}
+        );
+
+        const float knobX =
+            slider.x + slider.width * progress;
+        appendFilledRect(
+            ui,
+            {
+                knobX - 3.0f,
+                slider.y - 4.0f,
+                6.0f,
+                slider.height + 8.0f
+            },
+            {0.95f, 0.96f, 1.0f}
+        );
+
+        appendHorizonInset(ui, frame, windowHeight);
+    }
 
     renderer.draw(GL_TRIANGLES, ui, 1.0f);
     glEnable(GL_DEPTH_TEST);

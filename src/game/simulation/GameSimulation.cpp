@@ -1054,13 +1054,13 @@ bool GameSimulation::updateNpcNavigationControl(
             observation.lastExecutedLinearDemandMapMps2 =
                 executedMapVector;
 
-            if (observation.firstVisibilityBypassCaptured &&
-                !observation.firstVisibilityBypassExecutedCaptured &&
-                observation.firstVisibilityBypassSegmentRevision ==
+            if (observation.firstVisibleHorizonBypassCaptured &&
+                !observation.firstVisibleHorizonBypassExecutedCaptured &&
+                observation.firstVisibleHorizonBypassSegmentRevision ==
                     m_navigationRuntimeLabAcceptedSegment.revision)
             {
-                observation.firstVisibilityBypassExecutedCaptured = true;
-                observation.firstVisibilityBypassExecutedAccelerationMapMps2 =
+                observation.firstVisibleHorizonBypassExecutedCaptured = true;
+                observation.firstVisibleHorizonBypassExecutedAccelerationMapMps2 =
                     executedMapVector;
             }
         }
@@ -2278,18 +2278,17 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     policy.horizon.minimumHorizonMeters =
         LabMinimumHorizonMeters;
 
-    policy.avoidance.primaryDeflectionRadians =
-        glm::radians(15.0);
-    policy.avoidance.secondaryDeflectionRadians =
-        glm::radians(30.0);
-    policy.avoidance.maximumDeflectionRadians =
-        glm::radians(75.0);
-    policy.avoidance.azimuthSamples = 8;
+    policy.avoidance.lateralGridHalfExtentSamples = 8;
+    policy.avoidance.minimumLateralStepMeters = 10.0;
+    policy.avoidance.lateralStepEnvelopeMultiplier = 1.0;
+    policy.avoidance.maximumLateralOffsetMeters = 800.0;
+    policy.avoidance.projectionPaddingMeters = 10.0;
+    policy.avoidance.trajectorySamples = 48;
     policy.avoidance.staticAdditionalClearanceMeters = 10.0;
 
     // Ordinary free-space encounter: do not force the ship through a gap just
     // because two dynamic actors happen to form a pair. The default authority
-    // is bounded visibility steering. Precision MovingPassage remains enabled
+    // is projected visible-horizon bypass. Precision MovingPassage remains enabled
     // by explicit callers/fixtures that require a specific constrained gap.
     policy.movingPassage.enabled = false;
     policy.movingPassage.allowSteeringAuthority = false;
@@ -3676,7 +3675,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
           m_navigationRuntimeLabLastPlan.primaryConflictEntityId ==
               movingGapLowerEntityId));
 
-    const bool visibilityBypassActive =
+    const bool visibleHorizonBypassActive =
         movingPairIsNominalConflict &&
         m_navigationRuntimeLabLastPlan.status ==
             Planner::Status::AdjustedClear &&
@@ -3684,49 +3683,49 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
 
     auto& visibilityObservation =
         m_navigationRuntimeLabObservation;
-    visibilityObservation.visibilityBypassActive =
-        visibilityBypassActive;
-    visibilityObservation.visibilityBypassSeen =
-        visibilityObservation.visibilityBypassSeen ||
-        visibilityBypassActive;
-    visibilityObservation.maximumVisibilityDeflectionRad =
+    visibilityObservation.visibleHorizonBypassActive =
+        visibleHorizonBypassActive;
+    visibilityObservation.visibleHorizonBypassSeen =
+        visibilityObservation.visibleHorizonBypassSeen ||
+        visibleHorizonBypassActive;
+    visibilityObservation.maximumVisibleHorizonOffsetMeters =
         std::max(
-            visibilityObservation.maximumVisibilityDeflectionRad,
+            visibilityObservation.maximumVisibleHorizonOffsetMeters,
             m_navigationRuntimeLabLastPlan.
-                selectedVisibilityDeflectionRadians
+                localBypassLateralOffsetMeters
         );
 
-    if (visibilityBypassActive &&
-        !visibilityObservation.firstVisibilityBypassCaptured)
+    if (visibleHorizonBypassActive &&
+        !visibilityObservation.firstVisibleHorizonBypassCaptured)
     {
-        visibilityObservation.firstVisibilityBypassCaptured = true;
-        visibilityObservation.firstVisibilityBypassTimeSeconds =
+        visibilityObservation.firstVisibleHorizonBypassCaptured = true;
+        visibilityObservation.firstVisibleHorizonBypassTimeSeconds =
             navigationTimeSeconds;
-        visibilityObservation.firstVisibilityBypassSegmentRevision =
+        visibilityObservation.firstVisibleHorizonBypassSegmentRevision =
             m_navigationRuntimeLabAcceptedSegment.revision;
-        visibilityObservation.firstVisibilityBypassReplanReason =
+        visibilityObservation.firstVisibleHorizonBypassReplanReason =
             static_cast<std::uint8_t>(replan.reason);
-        visibilityObservation.firstVisibilityBypassDeflectionRad =
+        visibilityObservation.firstVisibleHorizonBypassOffsetMeters =
             m_navigationRuntimeLabLastPlan.
-                selectedVisibilityDeflectionRadians;
-        visibilityObservation.firstVisibilityBypassAgentPositionMap =
+                localBypassLateralOffsetMeters;
+        visibilityObservation.firstVisibleHorizonBypassAgentPositionMap =
             agent.positionMapMeters;
-        visibilityObservation.firstVisibilityBypassAgentVelocityMapMps =
+        visibilityObservation.firstVisibleHorizonBypassAgentVelocityMapMps =
             agent.velocityMapMetersPerSecond;
-        visibilityObservation.firstVisibilityBypassSelectedTargetMap =
+        visibilityObservation.firstVisibleHorizonBypassSelectedTargetMap =
             m_navigationRuntimeLabLastPlan.selectedTargetMapMeters;
-        visibilityObservation.firstVisibilityBypassDesiredVelocityMapMps =
+        visibilityObservation.firstVisibleHorizonBypassDesiredVelocityMapMps =
             m_navigationRuntimeLabLastPlan.
                 desiredVelocityMapMetersPerSecond;
-        visibilityObservation.firstVisibilityBypassAcceptedAlignForward =
+        visibilityObservation.firstVisibleHorizonBypassAcceptedAlignForward =
             m_navigationRuntimeLabAcceptedSegment.alignForward;
-        visibilityObservation.firstVisibilityBypassAcceptedForwardMap =
+        visibilityObservation.firstVisibleHorizonBypassAcceptedForwardMap =
             m_navigationRuntimeLabAcceptedSegment.desiredForwardMap;
-        visibilityObservation.firstVisibilityBypassIdealAccelerationMapMps2 =
+        visibilityObservation.firstVisibleHorizonBypassIdealAccelerationMapMps2 =
             followerResult.intent.idealLinearAccelerationLocalMps2;
     }
 
-    if (visibilityObservation.visibilityBypassSeen &&
+    if (visibilityObservation.visibleHorizonBypassSeen &&
         !m_navigationRuntimeLabLastPlan.adjustedTarget &&
         m_navigationRuntimeLabLastPlan.safeProgressTargetDemonstrated &&
         m_navigationRuntimeLabLastPlan.status !=
@@ -3736,7 +3735,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         m_navigationRuntimeLabLastPlan.status !=
             Planner::Status::StaleHold)
     {
-        visibilityObservation.visibilityDirectRecoveredSeen = true;
+        visibilityObservation.visibleHorizonDirectRecoveredSeen = true;
     }
 
     m_navigationRuntimeLabObservation.movingPrecisionAttemptedSeen =
@@ -3793,7 +3792,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         m_navigationRuntimeLabObservation.movingPassageAuthoritySeen ||
         movingPassageAuthorityActive;
 
-    if ((m_navigationRuntimeLabObservation.visibilityBypassSeen ||
+    if ((m_navigationRuntimeLabObservation.visibleHorizonBypassSeen ||
          m_navigationRuntimeLabObservation.movingPassageAuthoritySeen) &&
         routeLengthSquared > 1.0e-12)
     {
@@ -4790,19 +4789,19 @@ m_hubVelocityMetersPerSecond[hubId] =
                         );
                     hubFrame && hubFrame->valid)
                 {
-                    if (observation.firstVisibilityBypassCaptured &&
-                        !observation.firstVisibilityBypassAppliedCaptured &&
-                        observation.firstVisibilityBypassSegmentRevision ==
+                    if (observation.firstVisibleHorizonBypassCaptured &&
+                        !observation.firstVisibleHorizonBypassAppliedCaptured &&
+                        observation.firstVisibleHorizonBypassSegmentRevision ==
                             m_navigationRuntimeLabAcceptedSegment.revision)
                     {
                         const auto boundary =
                             makeNavigationRuntimeLabBoundary(*hubFrame);
                         if (boundary.valid())
                         {
-                            observation.firstVisibilityBypassAppliedCaptured =
+                            observation.firstVisibleHorizonBypassAppliedCaptured =
                                 true;
                             observation.
-                                firstVisibilityBypassAppliedMainAccelerationMapMps2 =
+                                firstVisibleHorizonBypassAppliedMainAccelerationMapMps2 =
                                 boundary.toNavigationVector(
                                     game::navigation::NavigationFrameBoundary::
                                         SystemVector {
@@ -4810,7 +4809,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                                         }
                                 ).value;
                             observation.
-                                firstVisibilityBypassAppliedRcsAccelerationMapMps2 =
+                                firstVisibleHorizonBypassAppliedRcsAccelerationMapMps2 =
                                 boundary.toNavigationVector(
                                     game::navigation::NavigationFrameBoundary::
                                         SystemVector {
@@ -4818,7 +4817,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                                         }
                                 ).value;
                             observation.
-                                firstVisibilityBypassAppliedTotalAccelerationMapMps2 =
+                                firstVisibleHorizonBypassAppliedTotalAccelerationMapMps2 =
                                 boundary.toNavigationVector(
                                     game::navigation::NavigationFrameBoundary::
                                         SystemVector {

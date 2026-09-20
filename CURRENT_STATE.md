@@ -459,3 +459,103 @@ Implication:
 - global planning may retain a centerline/polyline + coarse corridor for navigation;
 - exact physical feasibility remains downstream ownership of trajectory/tunnel proof
   against exact static geometry and dynamic occupancy.
+
+## 2026-09-20 full-chain evidence audit — why green slices did not mean green navigation
+
+Re-audit performed after the live 3D stand exposed bad end-to-end behavior.
+
+### Core conclusion
+
+The previous tests were not fictitious: many of them exercised real production
+Follower, PilotSkillExecutor, propulsion/physics, exact HitVolume geometry,
+NavigationMap, NavigationSpace and parts of NavigationRuntimePlanner.
+
+However, the evidence boundary was repeatedly over-interpreted. Most green tests
+proved a component or a pre-authored slice, not the autonomous full chain:
+
+`world/objective -> one retained global route -> local geometric response -> physical
+maneuver generation -> continuous tunnel/proof -> decision -> ACCEPT -> follower ->
+pilot -> physics -> event-driven monitor/replan -> finish`.
+
+### What the main green test families actually proved
+
+`ManeuverProgramExecutionLabTests`, `ManeuverCorridorMatrixTests`,
+`ManeuverFlyThrough3dTests`, `ManeuverRigidBodyCorridorTests` and much of
+`ManeuverChainedLimitMatrixTests` construct AcceptedManeuverProgram objects in the
+test itself, then execute them through the real Follower/Bridge/Pilot/physics stack.
+They prove execution/tracking of an already-good authored program. They do not prove
+that production planning can generate that program from arbitrary world truth.
+
+`NavigationRuntimePlannerTests` use deliberately authored region/portal fixtures. For
+example the forced detour is already encoded by three regions and two known portals.
+This validly proves topology/portal selection and local planner semantics, but not
+automatic route synthesis around arbitrary raw obstacle geometry.
+
+`OrdinaryPhysicalManeuverCompilerTests` genuinely test production B5 Newtonian
+maneuver generation. They also explicitly pin that Assisted is unsupported in the
+current first B5 slice, and candidates still require downstream continuous proof.
+Therefore successful Assisted execution matrices were execution proofs of authored
+programs, not proof of a production Assisted B5/B6/B7/B8 chain.
+
+`NavigationCompositeProvingGroundTests` uses real planner/follower/physics components
+but glues them together with test-owned helpers. Its topology is pre-authored through
+portals; `makeProgram()` authors quintic programs; `buildDoctrineChoice()` authors
+candidate programs/decision annotations; `fitAuthorityBoundedReplacement()` is a
+test-side physical fitter. The file itself documents that production general B5
+authoring remained a migration gap. The composite therefore was a proving ground,
+not a production orchestrator.
+
+The authoritative GameSimulation NavigationRuntimeLab was a real live test and remains
+strong evidence for its narrow scope: real world objects/HitVolumes, real map/space,
+real planner/control/physics and replication. But its slit/tunnel topology, approach,
+entry/exit portals, start and goal are deterministic authored fixture data. It proves
+that the live runtime can execute that authored topology/local situation; it does not
+prove arbitrary `start + raw obstacles + finish -> full route/program` synthesis.
+
+### Existing repository documentation already warned about this
+
+`NAVIGATION_PIPELINE_AUDIT.md` explicitly says a unit test passing inside one stage is
+not enough and records P6 ordinary maneuver generation / P7 proof integration / P8
+ordinary decision integration / P9-P10 handoff as incomplete or transitional.
+
+`NAVIGATION_V2_BLOCK_ARCHITECTURE.md` states B3 is event-driven, B5 current production
+compiler is Newtonian-only, B6 proof is mandatory before ACCEPT, and the follower may
+only execute the already accepted maneuver.
+
+The project mistake was therefore not lack of warnings in code/docs; it was promoting
+slice-level green evidence to a broader 'system works' interpretation.
+
+### Why the new live stand looked dramatically worse
+
+The new stand attempted, for the first time in this workflow, to synthesize much more
+of the chain from a raw JSON scenario inside one executable. That immediately exposed
+missing orchestration and also introduced new stand-side integration defects:
+- absolute simulation time was mistakenly supplied as dynamic snapshot age, causing
+  StaleHold/fail-closed braking;
+- the stand periodically called the combined NavigationRuntimePlanner, incorrectly
+  recomputing global/static planning instead of retaining one global route;
+- the stand still uses its own `makeShortProgram()` quintic adapter, bypassing the
+  complete production B5/B6/B7/B8 compile/proof/selection/acceptance chain;
+- its default one-region + wall scenario asks current topology machinery to do a more
+  general raw-obstacle route-synthesis job than the earlier authored-portal fixtures.
+
+Thus the bad video is not evidence that Follower/PilotSkill/physics were fake. It is
+evidence that the missing orchestration/handoff layers were never fully proved, and
+that the newly written stand-side glue was itself incorrect.
+
+### Evidence policy from now on
+
+No collection of component/slice tests may be described as full navigation acceptance.
+A true end-to-end acceptance must start from world/objective input and use the same
+production products/handoffs as the game without test-authored maneuver programs or
+test-only route/physics adapters.
+
+Every test/result should be classified as one of:
+- component/unit proof;
+- execution of authored program;
+- planner/topology slice;
+- authoritative authored-world integration;
+- true autonomous scenario end-to-end.
+
+Only the last category may support a statement that the complete navigation chain
+works for the scenario being tested.

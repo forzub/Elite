@@ -118,3 +118,29 @@ Plan:
   reacquisition references, portal geometry, and every replan point;
 - after the behavior is understood and stable, reuse the same trace/debug data
   in the in-game NAV STRESS overlay.
+
+## Immediate task — validate 3D viewer
+
+Run the target MinGW64 runtime gate once to generate
+`tools/navigation_runtime/last_trace_newtonian.json` even if the known composite
+assertion still fails. Then build/run the standalone viewer:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+
+bash tests/navigation_runtime/run_mingw64.sh || true
+bash tools/navigation_runtime/run_mingw64.sh
+```
+
+Viewer acceptance for this iteration:
+- window opens;
+- route polyline and turn points are visible;
+- ship is an oriented rectangular box with an unambiguous nose arrow;
+- playback shows actual ship + hazard motion;
+- replan/selected/reacquisition/portal markers are visible;
+- viewer reaches the clearance-loss area from the failing composite trace.
+
+After visual inspection, use the trace to fix the monitored topology-resume
+problem; do not weaken navigation clearance or physical limits.

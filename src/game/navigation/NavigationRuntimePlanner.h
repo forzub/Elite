@@ -172,7 +172,8 @@ public:
         glm::dvec3 desiredVelocityMapMetersPerSecond {0.0};
 
         // Visible-horizon local bypass product. The temporary target is off the
-        // nominal route; merge target lies back on the original planned line.
+        // nominal route; the merge target is only an on-route reacquisition
+        // reference for later replans, not a mandatory current-horizon endpoint.
         glm::dvec3 localBypassLateralOffsetMap {0.0};
         double localBypassLateralOffsetMeters = 0.0;
         double localBypassForwardDistanceMeters = 0.0;

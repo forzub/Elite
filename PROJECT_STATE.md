@@ -15,40 +15,56 @@ Latest target-tested checkout:
 81d0c23ae42bba0352026d6c2306cc6976c04bda
 ```
 
-Target evidence:
-- architecture contract PASS;
-- compile/link PASS;
-- navigation runtime 17/19 PASS;
-- failures: `navigation_runtime_planner`, `navigation_composite_proving_ground`.
+Current unverified code baseline before state-doc sync:
+```
+70dc7bb9c024a388c39b79d54a12774475ca8b32
+```
 
-## B4 status
+## B4 current architecture
 
-The old angular fan / branch continuity / branch-switch recovery path remains
-removed. The only ordinary local owner is the trajectory-relative projected
-visible-horizon solver with metric offsets and an explicitly proved
-two-segment bypass/merge route.
+Ordinary local avoidance is receding-horizon and command-continuous.
 
-The hard replacement remains **UNVERIFIED / NOT ACCEPTED**.
+A local solve is responsible for the **next safe executable geometric segment**,
+not for completing an artificial leave-route-and-return loop inside one horizon.
 
-## What the first target run established
+```text
+nominal route
+ -> bounded physical horizon
+ -> projected/static conflict
+ -> safe short offset segment if available
+ -> execute
+ -> refresh from actual state
+ -> continue offset or begin route reacquisition
+```
 
-The replacement is integrated well enough to build and execute the full
-runtime suite. The failures are behavioral, not compile/API failures.
+If no safe short offset exists, navigation remains active and returns braking
+intent. It is not disabled and it does not surrender ownership.
 
-One focused regression is definitely inconsistent with the new clearance
-contract: it places both start and merge 2.5 m from a blocker while requiring
-2.75 m separation.
+The route is reacquired progressively. No fixed distance, including 30 m, is a
+required merge point.
 
-The composite reveals a more important boundary: the current implementation
-forces merge at the bounded nominal target. In the logged failure that point
-is 18.0 m from the hazard at activation (about 18.51 m at t=4 s), while
-required separation is 26.775995 m. A complete two-segment route therefore
-cannot be accepted.
+## Removed/superseded behavior
+
+Still forbidden:
+- angular deflection fan;
+- azimuth branch search;
+- persistent left/right branch continuity;
+- branch-switch API;
+- mandatory Brake-before-changing-side recovery.
+
+Also superseded:
+- mandatory same-horizon current->bypass->merge proof;
+- treating the current bounded nominal endpoint as a compulsory return point.
 
 ## Current milestone
 
-Separate fixture error from real merge/horizon architecture limitation, then
-make B4 demonstrate a safe recoverable bypass without relaxing clearance.
+Target-machine validation of the corrected receding-horizon B4 behavior.
+
+The final composite must distinguish:
+- geometry can evade -> continue through proved local free space;
+- geometry cannot evade -> braking command while navigation continues;
+- physical compiler cannot execute geometric bypass -> higher maneuver
+  ownership brakes/replans rather than accepting an impossible maneuver.
 
 ## Other block status
 
@@ -66,7 +82,7 @@ Still incomplete/transitional:
 - B1 shared influence builder;
 - B2 unified objective;
 - B3 coarse vehicle-aware topology feasibility;
-- B4 current bypass/merge semantics under target validation;
+- B4 receding-horizon local bypass under target validation;
 - B5 general production maneuver compiler;
 - B6 generalized continuous proof;
 - B11 explicit safety/reflex monitor;
@@ -74,5 +90,5 @@ Still incomplete/transitional:
 
 ## State protocol
 
-After every state/evidence change synchronize project state MDs, active
-Stage-12, and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state/evidence change synchronize project state MDs, active Stage-12,
+and recreate `CONTINUE_PROMPT.md` from scratch.

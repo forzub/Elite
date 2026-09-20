@@ -1,122 +1,264 @@
-# CONTINUE PROMPT — Elite Navigation autonomous E2E evidence reset
+# CONTINUE PROMPT — Elite Navigation Stage 1 static route
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
-Read before changing behavior:
+Before changing behavior read:
 - `CURRENT_STATE.md`;
 - `CURRENT_TASK.md`;
 - `PROJECT_STATE.md`;
 - `src/game/navigation/STAGE12_END_TO_END.md`;
 - `src/game/navigation/NAVIGATION_PIPELINE_AUDIT.md`;
 - `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`;
-- `src/game/navigation/NAVIGATION_COMMAND_OWNERSHIP.md`;
-- current code under `tools/navigation_runtime/`.
+- `src/game/navigation/NominalRoutePlanner.h/.cpp`;
+- `tools/navigation_runtime/README.md`;
+- `tools/navigation_runtime/NavigationScenarioRuntime.cpp`.
 
-After every state-affecting event synchronize the project Markdown state and recreate
-this `CONTINUE_PROMPT.md` from scratch.
+After every state-affecting project event update the Markdown state files and
+**recreate this CONTINUE_PROMPT.md from scratch again**.
 
-## Evidence rule
+## Current project split
 
-Do not infer full-system acceptance by adding together green component/slice tests.
+Navigation work is now explicitly divided into two stages.
 
-Classify evidence explicitly as:
-1. component/unit proof;
-2. execution of authored AcceptedManeuverProgram;
-3. planner/topology slice;
-4. authoritative authored-world integration;
-5. true autonomous scenario end-to-end.
+### Stage 1 — CURRENT
 
-Only category 5 proves the complete navigation chain for the tested scenario.
+Build one retained nominal route through **static** obstacles.
 
-## Findings from the 2026-09-20 full-chain audit
+```text
+start
+ + optional required ship_route_points
+ + finish
+ + static NavigationObstacle geometry
+        |
+        v
+NominalRoutePlanner
+        |
+        v
+GeometricPathPlanner backend
+        |
+        v
+sparse retained route polyline
+        |
+        v
+3D viewer
+```
 
-Most movement/corridor/fly-through/chained tests use real Follower, PilotSkillExecutor
-and SharedShipPhysics but construct the AcceptedManeuverProgram inside the test.
-They prove execution of a supplied good program, not production generation of it.
+No flight/execution is part of this acceptance gate.
 
-`NavigationRuntimePlannerTests` use hand-authored regions/portals, so they prove
-topology/local planner contracts, not arbitrary raw-obstacle route synthesis.
+### Stage 2 — LATER
 
-`OrdinaryPhysicalManeuverCompilerTests` are genuine B5 tests but current B5 supports
-Newtonian only; Assisted intentionally returns `UnsupportedControlLaw`. B5 candidates
-still require continuous downstream proof.
+Consume the retained Stage-1 route and add:
 
-`NavigationCompositeProvingGroundTests` is real-component glue but not production
-orchestration: topology is authored; `makeProgram`, `buildDoctrineChoice` and
-`fitAuthorityBoundedReplacement` provide test-owned programs/annotations/fitting.
+```text
+dynamic/local monitor
+ -> temporary bypass / braking
+ -> B5 physical maneuver candidate(s)
+ -> B6 continuous swept-hull/tunnel proof
+ -> B7 decision
+ -> B8 AcceptedManeuverProgram
+ -> B9/B10 Follower
+ -> B12 PilotSkill
+ -> B13 authoritative physics
+ -> B11/B14 monitor + event-driven replan
+```
 
-The authoritative GameSimulation NavigationRuntimeLab is genuine live evidence for its
-scope: real HitVolumes/map/space/planner/control/physics/replication. However the
-slit/tunnel route is itself authored as deterministic regions/portals/start/goal. It
-does not prove arbitrary start+raw-world+finish autonomous route/program synthesis.
+Do not start Stage 2 until the user target-validates Stage 1.
 
-The repository architecture audit already warned that P6 ordinary maneuver generation,
-P7 proof integration, P8 ordinary decision integration and P9/P10 handoff were
-incomplete/transitional. The project error was over-interpreting narrower green gates.
+## Stage-1 implementation now in repo
 
-## Correct runtime ownership
+New production-facing component:
+- `src/game/navigation/NominalRoutePlanner.h`;
+- `src/game/navigation/NominalRoutePlanner.cpp`.
 
-Global route/corridor is built once start->finish and retained while goal and static
-route/world revisions remain valid.
+It reuses the existing shared `GeometricPathPlanner` backend.
 
-Moving/dynamic obstacles do NOT rebuild the global route. They are handled by a bounded
-local monitor/avoidance layer. After a local bypass, progressively reacquire the same
-nominal route.
+The Stage-1 request contains:
+- `goalRevision`;
+- `staticWorldRevision`;
+- start;
+- finish;
+- ordered required waypoints;
+- static obstacles;
+- coarse navigation envelope radius;
+- coarse route clearance.
 
-`maxResultAgeSeconds` is dynamic-snapshot freshness, not a global replanning period.
+The returned plan contains:
+- validity;
+- goal/static source revisions;
+- sparse route points;
+- route length;
+- whether a static detour was required.
 
-`corridor` is a navigation/test abstraction. Exact physical wall/aperture contact is
-owned by the later time-parameterized swept-hull `tunnel`/continuous proof.
+## Invalidation contract
 
-## Existing GameSimulation clue
+A nominal global/static route is rebuilt only when:
+- goal revision changes; or
+- static-world revision changes.
 
-The authoritative lab already contains the correct scheduler principle:
-`Monitoring is allowed every fixed step; planning is not.`
+`dynamicWorldRevision` is deliberately present in
+`NominalRoutePlanner::ValidityQuery` but deliberately ignored by
+`invalidationReason()`.
 
-It uses `NavigationExecutionReplanPolicy` + `NavigationWorkScheduler` and wakes planner
-work on missing/completed/expired/invalidated/tracking/goal/capability/topology events.
-Reuse this event-driven ownership instead of inventing a 0.25/0.5 s global planner loop.
+Changing dynamic actors must **not** rebuild the nominal route.
 
-## Current live stand defects/status
+A regression test pins this behavior:
+`tests/navigation_runtime/NominalRoutePlannerTests.cpp`.
 
-The first live video exposed a stand-side bug: absolute simulation time was passed as
-dynamic snapshot age, causing StaleHold after 0.25 s. That has been fixed to fresh
-snapshot age `0.0`.
+## Corridor vs tunnel
 
-The right HUD has fixed Y slots and must never vertically reflow.
+The Stage-1 route envelope is a coarse navigation/test abstraction.
 
-However `NavigationScenarioRuntime.cpp` is still architecturally transitional:
-- it periodically calls combined `NavigationRuntimePlanner::plan()`;
-- it uses stand-local `makeShortProgram()` quintic programs;
-- therefore it bypasses the full production B5/B6/B7/B8 chain.
+It is NOT exact physical collision truth.
 
-Do not treat a visually successful run of that transitional stand as final acceptance.
+Exact questions such as whether the oriented Cobra clips a wall while rotating
+belong to the later time-parameterized swept-hull **tunnel** proof in Stage 2.
 
-## Next canonical implementation target
+Do not turn Stage-1 route generation into exact rigid-body trajectory proof.
 
-Build one shared autonomous scenario chain:
+## Important cleanup already completed
 
-`objective/world`
-` -> cached global route`
-` -> local route-aligned geometric path`
-` -> B5 physical maneuver candidates`
-` -> B6 continuous/tunnel proof`
-` -> B7 doctrine decision`
-` -> B8 AcceptedManeuverProgram`
-` -> B9/B10 follower`
-` -> B12 PilotSkill`
-` -> B13 authoritative physics`
-` -> B11/B14 monitor + event-driven replan`.
+The old transitional live-stand flight path has been removed from the Stage-1
+runtime, not merely disabled.
 
-Hard rules:
-- no test/local `makeProgram()` / `makeShortProgram()` in the canonical E2E gate;
-- no hand-authored B7 safety/risk annotations standing in for production proof;
-- preserve all useful component tests but describe their evidence narrowly;
-- Assisted cannot be called production-complete until its B5+ downstream chain exists;
-- global planner is event-driven, not periodic;
-- dynamic surprise obstacle triggers local response, not route reconstruction.
+`tools/navigation_runtime/NavigationScenarioRuntime.cpp` no longer contains:
+- `NavigationRuntimePlanner::plan`;
+- periodic 0.25/0.5 s global replanning;
+- `makeShortProgram`;
+- Follower execution;
+- PilotSkill execution;
+- SharedShipPhysics;
+- DynamicMotionSystem.
 
-## Command rule
+`tools/navigation_runtime/CMakeLists.txt` now links only:
+- `NominalRoutePlanner.cpp`;
+- `GeometricPathPlanner.cpp`;
+- `NavigationObstacleGeometry.cpp`;
+- viewer/trace/json/OpenGL dependencies.
 
-Whenever compilation produces an executable, always give a separate exact executable
-launch command from the documented working directory.
+Do not reintroduce execution code into Stage 1.
+
+## Dynamic-ready scenario architecture
+
+`scenario.json` still parses and preserves:
+- moving obstacles with velocity;
+- moving obstacles with route points + speed;
+- sudden obstacle;
+- `dynamic_world_revision`.
+
+These are reserved Stage-2 inputs.
+
+Stage 1 must not pass them into `NominalRoutePlanner`.
+
+Current revision fields in JSON:
+- `goal_revision`;
+- `static_world_revision`;
+- `dynamic_world_revision`.
+
+Current route abstraction fields:
+- `route_envelope_radius_m`;
+- `route_clearance_m`.
+
+## Viewer behavior
+
+On `РАССЧИТАТЬ`:
+- build one static route;
+- show the white route polyline;
+- show static obstacles;
+- keep Cobra at START;
+- do not animate a fake flight;
+- phase/status should report Stage 1 static route state.
+
+Pilot/control-law/flight-style/sudden-obstacle UI selectors remain visible for
+future Stage 2, but changing them must not change the Stage-1 route.
+
+## Architecture gate
+
+New checker:
+`tests/architecture_contracts/check_navigation_stage1_nominal_route.py`.
+
+It pins:
+- dynamic revision cannot invalidate the nominal route;
+- Stage-1 viewer contains no execution stack;
+- Stage-1 tool CMake does not link Follower/PilotSkill/physics/runtime planner;
+- static wall detour and required waypoint regressions exist;
+- corridor/tunnel ownership remains separated.
+
+## Evidence boundary
+
+Earlier green tests remain valid only for the scope they actually proved:
+- component/unit proof;
+- execution of authored AcceptedManeuverProgram;
+- planner/topology slice;
+- authoritative authored-world integration.
+
+Do not call those collectively a full autonomous navigation proof.
+
+Stage 1 acceptance proves only static route construction.
+
+## Immediate next action: target validation
+
+User must run from MSYS2 MinGW64.
+
+Pull and record HEAD:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+```
+
+Architecture contracts:
+
+```bash
+cd /d/__elite/work
+bash tests/architecture_contracts/run_mingw64.sh
+```
+
+Runtime tests:
+
+```bash
+cd /d/__elite/work
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
+cmake --build build/tests/navigation_runtime
+ctest --test-dir build/tests/navigation_runtime --output-on-failure
+```
+
+Exact new test executable launch:
+
+```bash
+cd /d/__elite/work
+./build/tests/navigation_runtime/nominal_route_planner_tests.exe
+```
+
+Viewer build:
+
+```bash
+cd /d/__elite/work
+cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/tools/navigation_runtime
+```
+
+Exact viewer executable launch:
+
+```bash
+cd /d/__elite/work
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```
+
+Always provide the exact executable launch command after any build instruction
+that produces an executable.
+
+## Stage-1 visual acceptance
+
+Default wall scenario must show:
+- route starts at START;
+- route ends at FINISH;
+- route detours around the wall;
+- no Cobra flight animation;
+- `СТАТИЧЕСКИЙ МАРШРУТ ГОТОВ`;
+- explanation says Stage 1 / flight not yet calculated;
+- changing pilot/control/flight-style/sudden-obstacle settings does not alter
+  the static route.
+
+If target build/test fails, fix Stage 1 only, update all MD state files, and
+recreate this prompt from scratch again.

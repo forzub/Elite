@@ -316,6 +316,12 @@ bool validInput(
         finite(agent.pitchRateRadPerSec) &&
         finite(agent.yawRateRadPerSec) &&
         finite(agent.rollRateRadPerSec) &&
+        (!agent.localAvoidanceContinuityValid ||
+         (finite(agent.localAvoidanceContinuityDirectionMap) &&
+          glm::dot(
+              agent.localAvoidanceContinuityDirectionMap,
+              agent.localAvoidanceContinuityDirectionMap
+          ) > kEpsilon)) &&
         finite(goal.targetPositionMapMeters) &&
         finite(goal.targetVelocityMapMetersPerSecond) &&
         finite(goal.targetAccelerationMapMetersPerSecond2) &&
@@ -855,6 +861,10 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
     localQuery.avoidance = policy.avoidance;
     localQuery.avoidance.nominalTargetIsProvenPortalBoundary =
         result.usedPortalWaypoint;
+    localQuery.preferredDirectionValid =
+        agent.localAvoidanceContinuityValid;
+    localQuery.preferredDirectionMap =
+        toMapVec(agent.localAvoidanceContinuityDirectionMap);
 
     const Avoidance::Result local = Avoidance{}.evaluate(
         localQuery,

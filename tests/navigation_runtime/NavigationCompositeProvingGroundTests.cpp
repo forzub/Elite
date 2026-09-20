@@ -1,4 +1,5 @@
 #include "src/game/navigation/AcceptedManeuverProgram.h"
+#include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
@@ -31,6 +32,7 @@ namespace
 
 using Program = game::navigation::AcceptedManeuverProgram;
 using Follower = game::navigation::TrajectoryFollower;
+using Sampler = game::navigation::ManeuverProgramSampler;
 using Bridge = game::navigation::NavigationRuntimeControlBridge;
 using Gate = game::navigation::ManeuverPhaseGate;
 using Replan = game::navigation::NavigationExecutionReplanPolicy;
@@ -905,7 +907,8 @@ void recordTraceSample(
     const DynamicHazard& hazard,
     TraceContext* context,
     bool force = false,
-    bool replanEvent = false
+    bool replanEvent = false,
+    const Program* activeProgram = nullptr
 )
 {
     if (!context || !context->document)
@@ -924,8 +927,33 @@ void recordTraceSample(
         v.transform.motion.localPositionMeters;
     frame.shipForward =
         glm::dvec3(v.transform.forward());
+    frame.shipRight =
+        glm::dvec3(v.transform.right());
+    frame.shipUp =
+        glm::dvec3(v.transform.up());
     frame.shipVelocity =
         v.transform.motion.localVelocityMps;
+
+    if (activeProgram)
+    {
+        const auto sampled =
+            Sampler::sample(*activeProgram, v.timeSeconds);
+        if (sampled.status == Sampler::Status::Active ||
+            sampled.status == Sampler::Status::AfterEnd)
+        {
+            frame.hasProgramReference = true;
+            frame.programReferencePosition =
+                sampled.reference.positionMapMeters;
+            frame.programReferenceForward =
+                sampled.reference.forwardMap;
+            frame.programReferenceRight =
+                sampled.reference.rightMap;
+            frame.programReferenceUp =
+                sampled.reference.upMap;
+            frame.programTrackingCorridorRadiusMeters =
+                activeProgram->tracking.positionErrorMeters;
+        }
+    }
 
     frame.hazardActive = hazard.active;
     if (hazard.active)
@@ -1236,7 +1264,14 @@ ExecutionMetrics executeProgram(
     gatePolicy.maximumCaptureOverrunSeconds = 5.0;
 
     const double startTime = v.timeSeconds;
-    recordTraceSample(v, hazard, traceContext, true);
+    recordTraceSample(
+        v,
+        hazard,
+        traceContext,
+        true,
+        false,
+        &program
+    );
     const double nominalEnd =
         program.acceptedAtUniverseTimeSeconds +
         program.samples[
@@ -1344,7 +1379,14 @@ ExecutionMetrics executeProgram(
 
         v.transform.syncLegacyPositionFromWorld();
         v.timeSeconds += kDt;
-        recordTraceSample(v, hazard, traceContext);
+        recordTraceSample(
+            v,
+            hazard,
+            traceContext,
+            false,
+            false,
+            &program
+        );
 
         const double speed =
             glm::length(v.transform.motion.localVelocityMps);

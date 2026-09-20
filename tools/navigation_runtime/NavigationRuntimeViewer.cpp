@@ -89,6 +89,7 @@ struct AppState
     trace::TraceDocument* traceData = nullptr;
     std::string scenarioPath;
     std::string calculationMessage = "ВЫБЕРИТЕ РЕЖИМЫ И НАЖМИТЕ РАССЧИТАТЬ";
+    bool calculationPerformed = false;
     bool calculationSucceeded = false;
 
     elite::tools::navigation_runtime::ControlMode controlMode =
@@ -1345,9 +1346,11 @@ void drawHud(
     int windowHeight
 )
 {
-    const bool hasCalculation = !data.frames.empty();
+    const bool hasScene = !data.frames.empty();
+    const bool hasCalculation =
+        state.calculationPerformed && hasScene;
     const trace::TraceFrame frame =
-        hasCalculation ? displayFrame : trace::TraceFrame {};
+        hasScene ? displayFrame : trace::TraceFrame {};
 
     const glm::mat4 projection =
         glm::ortho(
@@ -1794,9 +1797,43 @@ void fitCamera(
 
     for (const auto& p : data.routePoints)
         include(p);
+
+    for (const auto& obstacle : data.staticObstacles)
+    {
+        glm::dvec3 half(0.0);
+
+        if (obstacle.shape == "box")
+        {
+            half = obstacle.halfExtents;
+        }
+        else if (obstacle.shape == "capsule")
+        {
+            half = {
+                obstacle.radiusMeters,
+                obstacle.radiusMeters,
+                obstacle.radiusMeters +
+                    obstacle.capsuleHalfLengthMeters
+            };
+        }
+        else
+        {
+            half = glm::dvec3(obstacle.radiusMeters);
+        }
+
+        include(obstacle.center - half);
+        include(obstacle.center + half);
+    }
+
     for (const auto& f : data.frames)
     {
         include(f.shipPosition);
+        if (f.hasSelectedTarget)
+            include(f.selectedTarget);
+        if (f.hasReacquisitionTarget)
+            include(f.reacquisitionTarget);
+        if (f.hasPortalTarget)
+            include(f.portalTarget);
+
         if (f.hazardActive)
         {
             include(
@@ -2289,6 +2326,15 @@ void setWindowTitle(
     const auto& f =
         data.frames[std::min(frameIndex, data.frames.size() - 1)];
 
+    if (f.phase == "scene_preview")
+    {
+        glfwSetWindowTitle(
+            window,
+            "Навигация 3D - СЦЕНА ДО РАСЧЁТА"
+        );
+        return;
+    }
+
     std::ostringstream title;
     title.setf(std::ios::fixed);
     title.precision(2);
@@ -2383,6 +2429,7 @@ void processUiAction(
     {
         case UiAction::Calculate:
         {
+            state.calculationPerformed = true;
             state.calculationMessage = "ИДЁТ РАСЧЁТ...";
             state.playing = false;
             state.frameIndex = 0;
@@ -2436,7 +2483,8 @@ void processUiAction(
             break;
         }
         case UiAction::TogglePlay:
-            state.playing = !state.playing;
+            if (state.calculationPerformed)
+                state.playing = !state.playing;
             break;
         case UiAction::PreviousFrame:
             advanceManualFrame(state, data, -1);
@@ -2473,7 +2521,19 @@ int main(int argc, char** argv)
     {
         const std::string scenarioPath =
             argc >= 2 ? argv[1] : defaultScenarioPath();
-        trace::TraceDocument data;
+
+        const auto preview =
+            elite::tools::navigation_runtime::loadScenarioPreview(
+                scenarioPath
+            );
+        if (!preview.success)
+        {
+            throw std::runtime_error(
+                "scenario preview failed: " + preview.message
+            );
+        }
+
+        trace::TraceDocument data = preview.trace;
 
         glfwSetErrorCallback(errorCallback);
         if (!glfwInit())
@@ -2520,7 +2580,11 @@ int main(int argc, char** argv)
         AppState state;
         state.traceData = &data;
         state.scenarioPath = scenarioPath;
+        state.calculationPerformed = false;
+        state.calculationSucceeded = false;
+        state.calculationMessage = preview.message;
         state.playing = false;
+        state.requestFit = true;
         state.lastRealTime = glfwGetTime();
 
         glfwSetWindowUserPointer(window, &state);

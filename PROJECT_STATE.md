@@ -527,3 +527,64 @@ Every test/result should be classified as one of:
 
 Only the last category may support a statement that the complete navigation chain
 works for the scenario being tested.
+
+
+## 2026-09-20 — Stage split implemented: Stage 1 static nominal route
+
+The navigation diagnostic workflow is now explicitly split into two stages.
+
+### Stage 1 — current implementation
+
+One retained nominal route is built once from start to finish through static obstacle
+geometry.
+
+New production-facing component:
+- `src/game/navigation/NominalRoutePlanner.h/.cpp`.
+
+It wraps the existing `GeometricPathPlanner` backend behind an explicit v2 ownership
+contract and returns a sparse polyline only. It accepts optional required authored
+checkpoints and a coarse navigation envelope/clearance.
+
+Nominal-route validity is revision driven:
+- goal revision changed -> rebuild;
+- static-world revision changed -> rebuild;
+- dynamic-world revision changed -> **do not rebuild**.
+
+The dynamic revision is deliberately present in `ValidityQuery` and deliberately
+ignored by nominal-route invalidation. A regression test pins this behavior.
+
+The live diagnostic stand now runs only Stage 1 on `РАССЧИТАТЬ`:
+
+```text
+JSON start/checkpoints/finish
+ + static obstacles
+ -> NominalRoutePlanner
+ -> retained static route polyline
+ -> viewer
+```
+
+It no longer runs the old half-second Planner/Follower/physics loop during Stage 1.
+Therefore the two previously identified stand defects are removed from the canonical
+Stage-1 path:
+- no periodic global route replanning;
+- no stand-local `makeShortProgram()` presented as production maneuver execution.
+
+The ship remains at the start pose in Stage 1. The viewer shows the calculated route
+and static obstacles only.
+
+### Corridor/tunnel boundary
+
+`route_envelope_radius_m` and `route_clearance_m` are coarse route/corridor inputs.
+They are not exact physical collision proof. Exact Cobra wall/aperture contact belongs
+to the later time-parameterized swept-hull tunnel proof.
+
+### Dynamic-ready boundary
+
+The scenario schema still accepts moving obstacles and a sudden obstacle. Stage 1 does
+not use them for route reconstruction. Stage 2 will consume them as a local dynamic
+overlay against the retained nominal route.
+
+### Validation state
+
+Code is committed but the new Stage-1 target has not yet been compiled/run on the
+user's MinGW64 machine. Do not claim target acceptance until that run is supplied.

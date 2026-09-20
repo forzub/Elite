@@ -1,108 +1,94 @@
-# CONTINUE PROMPT — Elite Navigation v2
+# CONTINUE PROMPT — Elite Navigation live stand
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Read `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`,
-`src/game/navigation/STAGE12_END_TO_END.md`, and the code under
+`src/game/navigation/STAGE12_END_TO_END.md`, and all relevant files under
 `tools/navigation_runtime/` before changing behavior.
 
 After every state-affecting event synchronize those Markdown files and recreate this
-`CONTINUE_PROMPT.md` from scratch. Never append stale continuation instructions.
+`CONTINUE_PROMPT.md` from scratch.
 
-## Mandatory command-output rule
+## Mandatory command rule
 
-Whenever a build produces an executable, always give the user a separate exact
-launch command from the documented working directory.
+Whenever compilation produces an executable, always provide a separate exact launch
+command from the documented working directory.
 
 ## Canonical tool architecture
 
-`tools/navigation_runtime` is now a LIVE navigation diagnostic stand, not a passive
-trace viewer.
+`tools/navigation_runtime` is a live scenario-driven navigation diagnostic stand.
+`scenario.json` is INPUT. `last_calculated_trace.json` is OUTPUT only.
 
-Input is `tools/navigation_runtime/scenario.json`.
-The JSON describes the initial scene only:
-- start position/velocity/forward/up;
-- optional forced ship route points (default empty);
-- final position;
-- optional final forward and up constraints;
-- final speed requirement;
-- standard/extreme cruise speeds;
-- static obstacles: sphere / box / capsule;
-- moving obstacles using either velocity vector OR route_points + route_speed_mps;
-- optional sudden obstacle, including `spawn_relative_to_ship_fru`.
+On `РАССЧИТАТЬ` the executable runs in-process:
+`NavigationSpace/NavigationMap -> NavigationRuntimePlanner -> maneuver program ->
+TrajectoryFollower -> NavigationRuntimeControlBridge/PilotSkillExecutor ->
+SharedShipPhysics/DynamicMotionSystem -> in-memory trace -> 3D playback`.
 
-On the real `РАССЧИТАТЬ` button the executable runs in-process:
+Real UI inputs:
+- Assisted / Newtonian;
+- Expert / Average / Loser pilot;
+- Standard / Extreme flight style;
+- sudden obstacle checkbox;
+- Calculate button.
 
-`scenario.json -> NavigationSpace / NavigationMap -> NavigationRuntimePlanner ->
-AcceptedManeuverProgram -> TrajectoryFollower -> NavigationRuntimeControlBridge /
-PilotSkillExecutor -> SharedShipPhysics / DynamicMotionSystem -> in-memory trace -> 3D`.
+## First live-video diagnosis
 
-`last_calculated_trace.json` is only an OUTPUT for diagnostics. It is not the source
-of the live calculation.
+The first target video showed the Cobra mostly braking with right-panel status
+`ДАННЫЕ УСТАРЕЛИ` around simulation time ~41 s.
 
-## Real top controls
+Root cause was an integration bug in `NavigationScenarioRuntime.cpp`:
+`NavigationRuntimePlanner::plan()` received absolute `vehicle.timeSeconds` as
+`dynamicResultAgeSeconds`. The freshly queried NavigationMap snapshot therefore
+became stale as soon as simulation time exceeded the planner's 0.25 s age limit.
 
-Control law:
-- Assisted;
-- Newtonian.
+Fix now on main:
+- pass `0.0` as snapshot age for the synchronous query->plan call;
+- do not regress this back to absolute simulation time.
 
-Pilot:
-- Expert;
-- Average;
-- Loser.
+## HUD rule from video feedback
 
-Flight style:
-- Standard;
-- Extreme.
+The right diagnostic panel must NEVER vertically reflow during playback.
+All rows use fixed Y slots:
+- mode;
+- frame;
+- time;
+- phase;
+- planner status;
+- orientation error;
+- clearance;
+- event;
+- calculation result;
+- explanation;
+- legend;
+- controls.
 
-Sudden-obstacle checkbox:
-- unchecked: sudden obstacle is never published;
-- checked: sudden obstacle is absent from the initial map and becomes authoritative
-  only when `activation_time_s` is reached DURING simulation;
-- therefore initial routing has no foreknowledge of the surprise obstacle;
-- normal receding-horizon replanning reacts after activation.
+Absent values display `-`; they do not remove rows.
+`СОБЫТИЕ: ПЕРЕПЛАНИРОВАНИЕ` may change text/color but must never move any other text.
+Calculation success/failure remains visible while a partial trace is playing.
 
-These controls are real simulation inputs, not cosmetic replay toggles.
+## Interpretation of daytime tests
 
-Pilot selection changes actual PilotSkillExecutor execution profile:
-reaction delay, perception/decision rate, command latency, response, slew and
-deterministic command error.
+Do not call them fake, but do not overclaim them.
+They exercised real production planner/follower/control/physics components and useful
+local/composite slices. However the composite scenario was staged through manually
+authored phases and AcceptedManeuverPrograms. It did NOT prove a free-running
+arbitrary start->world->finish replanning/execution loop.
 
-Flight style changes real cruise speed and planner horizon/cost/aggressiveness.
-Hard collision geometry and vehicle authority are not disabled for Extreme.
+The live stand exposed that missing end-to-end orchestration gate.
 
-Control law changes real LocalFlightControlLaw and maneuver attitude semantics.
+## Critical remaining architecture gap
 
-## Route semantics
+The live stand currently converts Planner output through its own handcrafted quintic
+`makeShortProgram`. That is NOT yet the full production B5/B6/B7/B8 physical
+compile/proof/selection/acceptance path.
 
-The default `scenario.json` has empty `ship_route_points`, so Planner must calculate
-the route around the static JSON obstacle.
+Therefore a successful live-stand run is not yet final navigation acceptance evidence.
+After the immediate rerun, replace the stand-local maneuver adapter with the actual
+production physical maneuver chain before further quality judgments.
 
-The rendered white route is generated from the live sequence of Planner
-`selectedTarget` decisions after each replan. Adjusted targets are recorded as
-turn/bypass markers. Green path is actual simulated ship motion.
+## Immediate target rerun
 
-## Existing diagnostics retained
-
-- ordinary decorated Windows window starts maximized; no exclusive fullscreen;
-- Russian HUD;
-- playback and frame slider;
-- static JSON obstacles rendered in 3D;
-- actual ship forward/right/up preserved;
-- actual nose and AcceptedManeuverProgram reference nose rendered separately;
-- angular orientation error displayed;
-- translucent maneuver-program tracking corridor;
-- Cobra horizon inset: plane perpendicular to actual ship longitudinal axis;
-- moving hazard and predicted envelope tunnel projected into Cobra right/up plane;
-- calculated trace saved to `last_calculated_trace.json` for inspection.
-
-## Current validation state
-
-The live scenario runtime implementation is committed but NOT YET compiled/run on the
-target MinGW64 machine. Do not claim it accepted.
-
-Immediate target gate:
-
+Build:
 ```bash
 cd /d/__elite/work
 git pull --ff-only
@@ -111,24 +97,15 @@ cmake -S tools/navigation_runtime -B build/tools/navigation_runtime -G Ninja -DC
 cmake --build build/tools/navigation_runtime
 ```
 
-Exact executable launch command:
-
+Exact executable launch:
 ```bash
 cd /d/__elite/work
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Check first:
-- compile/link;
-- window opens maximized;
-- top three selector groups + sudden obstacle + `РАССЧИТАТЬ` are visible/clickable;
-- no preloaded old trajectory;
-- pressing `РАССЧИТАТЬ` performs a new live calculation;
-- default planner routes around the wall without forced ship waypoints;
-- unchecked/checked sudden obstacle behavior differs correctly;
-- selected pilot/mode/style materially changes the simulation;
-- final forward/up/speed contract is respected;
-- route/path/corridor/horizon render.
-
-Any target compile/runtime failure becomes the next state-affecting event. Record exact
-HEAD, observed error, root cause and patch before proceeding.
+Check:
+- no automatic StaleHold after 0.25 s;
+- right panel does not jump;
+- calculation result stays visible;
+- default no-surprise run makes meaningful progress;
+- collect exact target HEAD and visible/runtime behavior before the next change.

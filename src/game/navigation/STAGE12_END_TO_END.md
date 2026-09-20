@@ -5839,3 +5839,23 @@ The focused cross-ring fixture was also corrected in `c8e0c7cd6b6a7deb6c7f618c4d
 This makes the transitional B4/B5 boundary explicit:
 - geometry reports branch exhaustion/switch necessity;
 - higher maneuver ownership performs the physical recovery/transition.
+
+
+## 2026-09-20 — branch recovery accepted mechanically; post-recovery launch seam
+
+Target `af9ee9d1694ac0facafaf23b0ec51c3adaf7dbbf` proved the new forced branch-switch recovery mechanism works physically:
+- branch switch detected;
+- 4 s Brake program;
+- 6.757088 m stopping distance;
+- 1.266954 m/s2 peak brake FF;
+- 9.817623 m actual dynamic clearance;
+- zero tracking-envelope violations;
+- ~0.009 m/s final speed error.
+
+The next failure was test-side authoring: `fitAuthorityBoundedReplacement` still required minimum speed >=0.5 m/s at t=0, making any deliberate post-recovery launch impossible.
+
+Candidate `7c87e655788af4e95f9576675185482639fec528` permits a start below 0.5 only for a recovery-rest launch, while requiring non-reversing progress and a stable transition above the 0.5 m/s floor.
+
+Focused regression candidate `252f9d81c5fd91363a0e0561e195c1f5ab0d375d` moves its blocker to an interior point of the primary ray and adds `[BRANCH-REGRESSION]` diagnostics.
+
+No production safety or maneuver authority threshold was relaxed.

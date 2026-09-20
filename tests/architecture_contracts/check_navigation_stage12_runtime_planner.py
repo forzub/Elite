@@ -903,10 +903,12 @@ for marker in (
     "movingPassageRequiredPeakLateralAccelerationMps2",
     "movingPassageRequiredPeakVerticalAccelerationMps2",
     "localBypassLateralOffsetMeters",
+    "localBypassForwardDistanceMeters",
     "localBypassMergeTargetMapMeters",
     "localBypassProjectedClearanceMeters",
     "avoidanceProjectedDynamicObstacles",
     "avoidanceOffsetCandidatesExamined",
+    "avoidanceRouteCandidatesExamined",
     "localBypassExhausted",
     "selectedManeuverRequiresForwardAlignment",
     "selectedManeuverForwardMap",
@@ -1361,11 +1363,14 @@ for marker in (
     "lateralGridHalfExtentSamples",
     "minimumLateralStepMeters",
     "maximumLateralOffsetMeters",
+    "longitudinalSamples",
     "projectionPaddingMeters",
     "trajectorySamples",
     "selectedLateralOffsetMeters",
+    "selectedBypassForwardDistanceMeters",
     "mergeTargetMapMeters",
     "projectedDynamicObstacles",
+    "routeCandidatesExamined",
     "localBypassExhausted",
 ):
     require(marker in LOCAL_H, f"projected visible-horizon bypass contract missing: {marker}")
@@ -1376,6 +1381,8 @@ for marker in (
     "projectedClearanceForOffset",
     "timeCoupledBypassClear",
     "offsetCandidatesExamined",
+    "routeCandidatesExamined",
+    "secondProbe",
     "mergeTargetMapMeters = boundedNominalTarget",
 ):
     require(marker in LOCAL_CPP, f"projected visible-horizon implementation missing: {marker}")
@@ -1383,6 +1390,7 @@ for marker in (
 for marker in (
     "testCrossingObstacleProjectsToNormalPlaneAndFindsBypass",
     "testHeadOnObstacleCanBypassWithoutMandatoryStop",
+    "testReturnLegIsAlsoProvenAgainstExactStaticGeometry",
     "testObstacleGoneReturnsImmediatelyToNominalTrajectory",
     "testNarrowStaticRegionFailsClosedWhenNoOffsetFits",
 ):
@@ -1755,6 +1763,7 @@ for marker in (
     "movingGapPairCandidateSeen",
     "policy.avoidance.lateralGridHalfExtentSamples",
     "policy.avoidance.maximumLateralOffsetMeters",
+    "policy.avoidance.longitudinalSamples",
     "policy.avoidance.projectionPaddingMeters",
     "policy.avoidance.trajectorySamples",
     "policy.movingPassage.enabled = false",

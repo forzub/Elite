@@ -654,16 +654,20 @@ struct UiRect
     }
 };
 
-UiRect playButtonRect() { return {16.0f, 16.0f, 92.0f, 30.0f}; }
-UiRect prevButtonRect() { return {116.0f, 16.0f, 74.0f, 30.0f}; }
-UiRect nextButtonRect() { return {198.0f, 16.0f, 74.0f, 30.0f}; }
-UiRect replanButtonRect() { return {280.0f, 16.0f, 128.0f, 30.0f}; }
-UiRect fitButtonRect() { return {416.0f, 16.0f, 64.0f, 30.0f}; }
+UiRect playButtonRect() { return {16.0f, 16.0f, 148.0f, 32.0f}; }
+UiRect prevButtonRect() { return {172.0f, 16.0f, 86.0f, 32.0f}; }
+UiRect nextButtonRect() { return {266.0f, 16.0f, 94.0f, 32.0f}; }
+UiRect replanButtonRect() { return {368.0f, 16.0f, 194.0f, 32.0f}; }
+UiRect fitButtonRect() { return {570.0f, 16.0f, 94.0f, 32.0f}; }
 
-std::array<std::uint8_t, 7> glyphRows(char c)
+std::array<std::uint8_t, 7> glyphRows(std::uint32_t c)
 {
     if (c >= 'a' && c <= 'z')
-        c = static_cast<char>(c - 'a' + 'A');
+        c = c - 'a' + 'A';
+    if (c >= 0x0430 && c <= 0x044F)
+        c -= 0x20;
+    if (c == 0x0451)
+        c = 0x0401;
 
     switch (c)
     {
@@ -719,6 +723,42 @@ std::array<std::uint8_t, 7> glyphRows(char c)
         case '<': return {1,2,4,8,4,2,1};
         case '!': return {4,4,4,4,4,0,4};
         case '?': return {14,17,1,2,4,0,4};
+
+        // Cyrillic uppercase 5x7 glyphs used by the Russian diagnostic UI.
+        case 0x0410: return {14,17,17,31,17,17,17}; // А
+        case 0x0411: return {31,16,16,30,17,17,30}; // Б
+        case 0x0412: return {30,17,17,30,17,17,30}; // В
+        case 0x0413: return {31,16,16,16,16,16,16}; // Г
+        case 0x0414: return {14,10,10,10,10,31,17}; // Д
+        case 0x0415: return {31,16,16,30,16,16,31}; // Е
+        case 0x0401: return {10,0,31,16,30,16,31};  // Ё
+        case 0x0416: return {21,21,14,31,14,21,21}; // Ж
+        case 0x0417: return {30,1,1,14,1,1,30};     // З
+        case 0x0418: return {17,19,21,25,17,17,17}; // И
+        case 0x0419: return {10,4,17,19,21,25,17};  // Й
+        case 0x041A: return {17,18,20,24,20,18,17}; // К
+        case 0x041B: return {3,5,9,17,17,17,17};    // Л
+        case 0x041C: return {17,27,21,21,17,17,17}; // М
+        case 0x041D: return {17,17,17,31,17,17,17}; // Н
+        case 0x041E: return {14,17,17,17,17,17,14}; // О
+        case 0x041F: return {31,17,17,17,17,17,17}; // П
+        case 0x0420: return {30,17,17,30,16,16,16}; // Р
+        case 0x0421: return {14,17,16,16,16,17,14}; // С
+        case 0x0422: return {31,4,4,4,4,4,4};        // Т
+        case 0x0423: return {17,17,17,15,1,17,14};  // У
+        case 0x0424: return {4,14,21,21,14,4,4};    // Ф
+        case 0x0425: return {17,17,10,4,10,17,17};  // Х
+        case 0x0426: return {17,17,17,17,17,31,1};  // Ц
+        case 0x0427: return {17,17,17,15,1,1,1};    // Ч
+        case 0x0428: return {21,21,21,21,21,21,31}; // Ш
+        case 0x0429: return {21,21,21,21,21,31,1};  // Щ
+        case 0x042A: return {24,8,8,14,9,9,14};     // Ъ
+        case 0x042B: return {17,17,17,29,21,21,29}; // Ы
+        case 0x042C: return {16,16,16,30,17,17,30}; // Ь
+        case 0x042D: return {14,17,1,7,1,17,14};    // Э
+        case 0x042E: return {18,21,21,29,21,21,18}; // Ю
+        case 0x042F: return {15,17,17,15,5,9,17};   // Я
+
         default: return {0,0,0,0,0,0,0};
     }
 }
@@ -753,8 +793,41 @@ void appendUiText(
     const float advance = 6.0f * scale;
     const float lineAdvance = 9.0f * scale;
 
-    for (char ch : text)
+    for (std::size_t offset = 0; offset < text.size();)
     {
+        const unsigned char lead =
+            static_cast<unsigned char>(text[offset]);
+        std::uint32_t ch = 0;
+        std::size_t consumed = 1;
+
+        if (lead < 0x80)
+        {
+            ch = lead;
+        }
+        else if ((lead & 0xE0) == 0xC0 &&
+                 offset + 1 < text.size())
+        {
+            ch =
+                ((lead & 0x1F) << 6) |
+                (static_cast<unsigned char>(text[offset + 1]) & 0x3F);
+            consumed = 2;
+        }
+        else if ((lead & 0xF0) == 0xE0 &&
+                 offset + 2 < text.size())
+        {
+            ch =
+                ((lead & 0x0F) << 12) |
+                ((static_cast<unsigned char>(text[offset + 1]) & 0x3F) << 6) |
+                (static_cast<unsigned char>(text[offset + 2]) & 0x3F);
+            consumed = 3;
+        }
+        else
+        {
+            ch = '?';
+        }
+
+        offset += consumed;
+
         if (ch == '\n')
         {
             cursorX = x;

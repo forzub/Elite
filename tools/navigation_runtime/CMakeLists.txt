@@ -18,9 +18,18 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_path(GLM_INCLUDE_DIR glm/glm.hpp REQUIRED)
 
-# Stage 1 is intentionally route-only.  Do not link Follower/PilotSkill/
-# physics here until Stage 2 starts; otherwise the diagnostic boundary becomes
-# ambiguous again.
+include("${ELITE_SOURCE_ROOT}/cmake/EliteRuckigNavigation.cmake")
+elite_add_ruckig_navigation(
+    EliteNavigationRuckig
+    "${ELITE_SOURCE_ROOT}"
+)
+
+add_subdirectory(
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/control"
+    "${CMAKE_BINARY_DIR}/elite_navigation_control"
+)
+
+# Stage 1: static route generation.
 add_library(EliteNavigationRouteToolCore STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NominalRoutePlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/world/navigation/GeometricPathPlanner.cpp"
@@ -37,6 +46,39 @@ target_include_directories(
 target_compile_features(
     EliteNavigationRouteToolCore
     PUBLIC cxx_std_17
+)
+
+# Stage 2: execute the already calculated Stage-1 route.
+# This target must never search or rebuild the nominal route.
+add_library(EliteNavigationExecutionToolCore STATIC
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/TrajectoryGenerator.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverTrackingController.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimeControlBridge.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"
+)
+
+target_include_directories(
+    EliteNavigationExecutionToolCore
+    PUBLIC
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    EliteNavigationExecutionToolCore
+    PUBLIC cxx_std_17
+)
+
+target_link_libraries(
+    EliteNavigationExecutionToolCore
+    PUBLIC
+        EliteNavigationRouteToolCore
+        EliteNavigationControl
+        EliteNavigationRuckig
 )
 
 add_executable(
@@ -65,7 +107,7 @@ target_compile_definitions(
 target_link_libraries(
     navigation_runtime_viewer
     PRIVATE
-        EliteNavigationRouteToolCore
+        EliteNavigationExecutionToolCore
         nlohmann_json::nlohmann_json
 )
 
@@ -81,9 +123,11 @@ endif()
 
 if(MSVC)
     target_compile_options(EliteNavigationRouteToolCore PRIVATE /W4 /permissive-)
+    target_compile_options(EliteNavigationExecutionToolCore PRIVATE /W4 /permissive-)
     target_compile_options(navigation_runtime_viewer PRIVATE /W4 /permissive-)
 else()
     target_compile_options(EliteNavigationRouteToolCore PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(EliteNavigationExecutionToolCore PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(navigation_runtime_viewer PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 

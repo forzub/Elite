@@ -279,7 +279,15 @@ LocalGeometricPath
 - adaptive slabs, not centimeter grids;
 - fixed/bounded candidate counts where possible.
 
-**Current repository:** LocalHorizon + LocalAvoidance perform this role imperfectly; the 15/30/45/60/75 degree ray fan is transitional and will be replaced/A-B tested.
+**Current repository:** `LocalHorizonPlanner + LocalAvoidancePlanner` now use the
+accepted trajectory as the local reference. Unexpected dynamic occupancy is
+predicted over the physical visible horizon, projected onto the plane normal to
+the nominal trajectory, searched as bounded metric lateral/vertical offsets,
+proved against exact static geometry and time-coupled dynamic motion, and
+returned with an explicit merge target on the original trajectory. The former
+angular ray fan / branch-continuity mechanism has been removed from production.
+A richer longitudinal-slab corridor remains a future extension for complex
+known local geometry; it is not a parallel planner.
 
 ---
 

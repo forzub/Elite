@@ -105,3 +105,16 @@ This directly pins the required rule:
 4. Add a compact visual trace/export for ship path, hazard path, safety envelope,
    selected targets and replan points so behavioral failures can be inspected directly.
 5. Rerun architecture + 19-test runtime gate.
+
+## Visualization placement decision
+
+First visualization belongs next to `tests/navigation_runtime/NavigationCompositeProvingGroundTests.cpp`,
+not inside the main game renderer yet.
+
+Plan:
+- composite test emits a deterministic trace file for the exact failing run;
+- a small standalone debug viewer under `tests/navigation_runtime/visualizer/` renders it;
+- show ship path, hazard path + inflated envelope, selected local targets,
+  reacquisition references, portal geometry, and every replan point;
+- after the behavior is understood and stable, reuse the same trace/debug data
+  in the in-game NAV STRESS overlay.

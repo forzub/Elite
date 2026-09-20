@@ -763,12 +763,17 @@ void testProjectedVisibleHorizonBypassPublishesMergeTarget()
     );
     require(
         result.avoidanceProjectedDynamicObstacles > 0 &&
-        result.avoidanceOffsetCandidatesExamined > 0,
-        "runtime planner must consume projected moving occupancy and search normal-plane offsets"
+        result.avoidanceOffsetCandidatesExamined > 0 &&
+        result.avoidanceRouteCandidatesExamined > 0,
+        "runtime planner must consume projected moving occupancy and search normal-plane offsets plus longitudinal stations"
     );
     require(
         result.localBypassLateralOffsetMeters > 0.0,
         "runtime planner must publish a non-zero lateral bypass offset"
+    );
+    require(
+        result.localBypassForwardDistanceMeters > 0.0,
+        "runtime planner must publish a longitudinal bypass station before merge"
     );
     require(
         std::abs(result.localBypassMergeTargetMapMeters.y) < 1.0e-6 &&

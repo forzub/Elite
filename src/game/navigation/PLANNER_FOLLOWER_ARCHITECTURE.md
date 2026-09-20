@@ -313,13 +313,13 @@ Already aligned:
 - PilotSkill and propulsion/physics are separate owners.
 
 Still divergent:
-- LocalAvoidance uses a bounded visibility-ray fan as its search strategy;
+- the current projected visible-horizon solver is one bounded normal-plane slice, not yet a longitudinal multi-slab local corridor;
 - ordinary AdjustedClear remains geometric rather than physically time-parameterized;
 - NavigationRuntimePlanner still mixes topology/local search/precision proof/control-intent production;
 - AcceptedShortSegment is transitional and the follower can re-derive control;
 - there is no explicit general safety-reflex contract;
 - dynamic candidate discovery is still issued per agent, so pairs may be rediscovered;
-- ordinary local planning has no route-aligned configuration-space corridor representation.
+- complex known local geometry may still require a richer route-aligned longitudinal corridor representation.
 
 ## Architecture verdict
 
@@ -335,14 +335,14 @@ The two-world hypothesis is **accepted as the preferred direction**, with these 
 
 ## Recommended implementation order
 
-1. Introduce `AcceptedManeuverProgram` and migrate `TrajectoryFollower` to sample it.
+1. Keep `AcceptedManeuverProgram` as the single execution product and continue migrating ordinary live paths onto it.
 2. Preserve current NavigationSpace topology and exact-geometry services.
-3. Add a `RouteAlignedCorridorPlanner` prototype for ordinary local free-space generation.
-4. Keep LocalAvoidance visibility fan as temporary fallback/A-B comparison until the new solver passes deterministic fixtures.
-5. Add maneuver compiler from corridor geometry -> Newtonian/Assisted physical program.
+3. Keep the projected visible-horizon solver as the **only** ordinary unexpected-obstacle local path; do not restore a parallel angular-fan fallback.
+4. Extend the same local owner longitudinally into route-aligned slabs only when known complex geometry requires more than one normal-plane slice.
+5. Complete maneuver compilation from local geometry -> Newtonian/Assisted physical program.
 6. Add explicit bounded safety-reflex contract to the autopilot world.
 7. Move dynamic influence isolation from repeated per-agent discovery toward a shared scene-wide sparse pair/influence frame.
-8. Only after target-machine evidence, retire the old ray-fan search path.
+8. Retire remaining transitional AcceptedShortSegment/control-intent seams only after target-machine evidence.
 
 
 ## Rigid-body maneuver proof

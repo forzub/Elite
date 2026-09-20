@@ -1226,6 +1226,7 @@ void drawScene(
     PrimitiveRenderer& renderer,
     const trace::TraceDocument& data,
     std::size_t frameIndex,
+    const trace::TraceFrame& displayFrame,
     const glm::mat4& viewProjection
 )
 {
@@ -1233,7 +1234,7 @@ void drawScene(
         return;
 
     frameIndex = std::min(frameIndex, data.frames.size() - 1);
-    const trace::TraceFrame& frame = data.frames[frameIndex];
+    const trace::TraceFrame& frame = displayFrame;
 
     renderer.begin(viewProjection);
 
@@ -1245,6 +1246,54 @@ void drawScene(
         ),
         2.0f
     );
+
+    // The planner result itself does not publish a volumetric corridor.
+    // What execution owns is the accepted maneuver reference plus its follower
+    // position-error envelope. Render that product explicitly and label it as
+    // the maneuver-program tracking corridor.
+    if (data.frames[frameIndex].hasProgramReference)
+    {
+        std::size_t first = frameIndex;
+        while (
+            first > 0 &&
+            data.frames[first - 1].hasProgramReference &&
+            data.frames[first - 1].phase == data.frames[frameIndex].phase
+        )
+        {
+            --first;
+        }
+
+        std::size_t last = frameIndex;
+        while (
+            last + 1 < data.frames.size() &&
+            data.frames[last + 1].hasProgramReference &&
+            data.frames[last + 1].phase == data.frames[frameIndex].phase
+        )
+        {
+            ++last;
+        }
+
+        std::vector<glm::dvec3> referencePath;
+        referencePath.reserve(last - first + 1);
+        for (std::size_t i = first; i <= last; ++i)
+            referencePath.push_back(data.frames[i].programReferencePosition);
+
+        std::vector<Vertex> corridorTriangles;
+        appendTrackingTube(
+            corridorTriangles,
+            referencePath,
+            static_cast<float>(
+                data.frames[frameIndex].
+                    programTrackingCorridorRadiusMeters
+            ),
+            {0.20f, 0.55f, 1.0f},
+            0.16f
+        );
+
+        glDepthMask(GL_FALSE);
+        renderer.draw(GL_TRIANGLES, corridorTriangles, 1.0f);
+        glDepthMask(GL_TRUE);
+    }
 
     std::vector<Vertex> markers;
     for (const auto& p : data.turnPoints)
@@ -1342,6 +1391,11 @@ void drawScene(
 
     std::vector<Vertex> ship;
     appendShipBoxAndArrow(
+        ship,
+        frame,
+        data.shipHalfExtentsMeters
+    );
+    appendReferenceOrientationArrow(
         ship,
         frame,
         data.shipHalfExtentsMeters
@@ -1636,10 +1690,14 @@ int main(int argc, char** argv)
                     20000.0f
                 );
 
+            const trace::TraceFrame displayFrame =
+                interpolatedDisplayFrame(data, state);
+
             drawScene(
                 renderer,
                 data,
                 state.frameIndex,
+                displayFrame,
                 projection * state.camera.view()
             );
 

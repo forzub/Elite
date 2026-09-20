@@ -1093,6 +1093,12 @@ std::string localizedPhase(const std::string& phase)
         return "ПОРТАЛ 102";
     if (phase == "final_capture")
         return "ФИНАЛЬНОЕ ПОЗИЦИОНИРОВАНИЕ";
+    if (phase == "nominal_segment")
+        return "НОМИНАЛЬНЫЙ СЕГМЕНТ";
+    if (phase == "complete")
+        return "РАСЧЁТ ЗАВЕРШЁН";
+    if (phase == "failed")
+        return "РАСЧЁТ ОСТАНОВЛЕН";
     return phase;
 }
 
@@ -1160,6 +1166,15 @@ std::string currentExplanation(const trace::TraceFrame& frame)
 
     if (frame.phase == "final_capture")
         return "ФИНАЛЬНОЕ ТОЧНОЕ ПОЗИЦИОНИРОВАНИЕ";
+
+    if (frame.phase == "nominal_segment")
+        return "ПЛАНЕР ВЕДЁТ КОБРУ ПО ТЕКУЩЕМУ БЕЗОПАСНОМУ СЕГМЕНТУ";
+
+    if (frame.phase == "complete")
+        return "МАРШРУТ РАССЧИТАН И ВЫПОЛНЕН ДО ФИНАЛЬНОГО СОСТОЯНИЯ";
+
+    if (frame.phase == "failed")
+        return "РАСЧЁТ ОСТАНОВЛЕН - СМОТРИТЕ ПОСЛЕДНИЙ СТАТУС ПЛАНЕРА";
 
     return "СТАРТ МАРШРУТА";
 }
@@ -1334,6 +1349,20 @@ void drawHud(
 
     std::vector<Vertex> ui;
 
+    const float panelWidth = 470.0f;
+    const float panelX =
+        std::max(0.0f, static_cast<float>(windowWidth) - panelWidth);
+    appendFilledRect(
+        ui,
+        {
+            panelX,
+            0.0f,
+            panelWidth,
+            static_cast<float>(windowHeight)
+        },
+        {0.045f, 0.055f, 0.070f}
+    );
+
     appendUiText(ui, 16.0f, 14.0f, "РЕЖИМ УПРАВЛЕНИЯ", 1.10f, {0.72f,0.78f,0.86f});
     appendUiButton(
         ui,
@@ -1414,20 +1443,6 @@ void drawHud(
     appendUiButton(ui, nextButtonRect(), "ВПЕРЁД");
     appendUiButton(ui, replanButtonRect(), "СЛЕД. ПЕРЕПЛАН");
     appendUiButton(ui, fitButtonRect(), "ВПИСАТЬ");
-
-    const float panelWidth = 470.0f;
-    const float panelX =
-        std::max(0.0f, static_cast<float>(windowWidth) - panelWidth);
-    appendFilledRect(
-        ui,
-        {
-            panelX,
-            0.0f,
-            panelWidth,
-            static_cast<float>(windowHeight)
-        },
-        {0.045f, 0.055f, 0.070f}
-    );
 
     float x = panelX + 18.0f;
     float y = 20.0f;

@@ -191,14 +191,14 @@ void testCrossingObstacleProjectsToNormalPlaneAndFindsBypass()
     require(result.selectedBypassForwardDistanceMeters > 0.0 &&
             result.selectedBypassForwardDistanceMeters <
                 result.target.horizonDistanceMeters,
-            "bypass station must lie before the on-route merge point inside the physical horizon");
+            "bypass station must be a bounded forward point inside the physical horizon");
     require(
         !near(result.selectedLateralOffsetMap.y, 0.0) ||
         !near(result.selectedLateralOffsetMap.z, 0.0),
         "selected bypass must contain a lateral component");
     require(near(result.mergeTargetMapMeters.y, 0.0) &&
             near(result.mergeTargetMapMeters.z, 0.0),
-            "merge target must remain on the original trajectory");
+            "reacquisition reference must remain on the original trajectory");
     require(result.target.targetMode == Horizon::TargetMode::PassThrough,
             "bypass target must remain a temporary pass-through target");
 }
@@ -276,7 +276,7 @@ void testExactStaticBlockerConstrainsOffsetSearch()
             "static blocker must cause a lateral bypass");
 }
 
-void testReturnLegIsAlsoProvenAgainstExactStaticGeometry()
+void testBypassDoesNotRequireImmediateReturnToTrajectory()
 {
     Avoidance planner;
     Avoidance::Query query = baseQuery();
@@ -292,38 +292,59 @@ void testReturnLegIsAlsoProvenAgainstExactStaticGeometry()
     region.geometryRevision = 1;
     update.regions.push_back(region);
 
-    // This wall sits late in the visible horizon. Early bypass stations can
-    // reach their off-route point without touching it; only the second
-    // bypass->merge leg exposes the collision for insufficient offsets.
+    // The nominal line is blocked late in the current horizon. A safe short
+    // off-route segment exists before the wall, but an immediate return from
+    // that bypass point to the current on-route reacquisition reference is
+    // deliberately impossible. B4 must still keep navigating through the
+    // safe short segment and let later replans reacquire the line.
     update.obstacles.push_back(
         staticBox(
-            "late_return_wall",
+            "late_reacquisition_wall",
             901,
             glm::dvec3(35.0, 0.0, 0.0),
-            glm::dvec3(1.5, 3.0, 3.0)
+            glm::dvec3(1.5, 50.0, 50.0)
         )
     );
 
     Space space;
     space.replaceStaticWorld(std::move(update));
+    const StaticQueries staticQueries(space);
 
     const Avoidance::Result result = planner.evaluate(
         query,
         dynamicResult(),
-        StaticQueries(space)
+        staticQueries
     );
 
     require(result.status == Avoidance::Status::AdjustedClear,
-            "late static wall must still admit a two-segment detour");
-    require(result.staticRejected > 0,
-            "return-leg proof must reject insufficient offsets");
-    require(result.selectedLateralOffsetMeters >= 8.0,
-            "selected detour must carry enough lateral separation through the return leg");
-    require(result.selectedBypassForwardDistanceMeters > 0.0,
-            "two-segment detour must publish its longitudinal bypass station");
-    require(near(result.mergeTargetMapMeters.y, 0.0) &&
-            near(result.mergeTargetMapMeters.z, 0.0),
-            "return-leg merge point must remain on the original trajectory");
+            "safe short bypass must not be rejected only because same-horizon reacquisition is blocked");
+    require(result.nominalStaticBlocked,
+            "fixture must block the nominal bounded line");
+    require(result.selectedBypassForwardDistanceMeters > 0.0 &&
+            result.selectedBypassForwardDistanceMeters <
+                result.target.horizonDistanceMeters,
+            "selected bypass must remain a bounded short segment");
+
+    StaticQueries::SegmentQuery immediateReturn;
+    immediateReturn.startMapMeters = {
+        result.target.targetPositionMapMeters.x,
+        result.target.targetPositionMapMeters.y,
+        result.target.targetPositionMapMeters.z
+    };
+    immediateReturn.endMapMeters = {
+        result.mergeTargetMapMeters.x,
+        result.mergeTargetMapMeters.y,
+        result.mergeTargetMapMeters.z
+    };
+    immediateReturn.envelope.radiusMeters =
+        query.horizon.agent.radiusMeters;
+    immediateReturn.requireSameRegion = true;
+
+    const auto returnProof =
+        staticQueries.querySegment(immediateReturn);
+
+    require(!returnProof.traversable,
+            "fixture must prove that immediate return is blocked while the short bypass itself is valid");
 }
 
 void testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute()
@@ -361,7 +382,7 @@ void testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute()
             "clear exact dynamic geometry must preserve direct trajectory");
 }
 
-void testObstacleGoneReturnsImmediatelyToNominalTrajectory()
+void testObstacleGoneReacquiresNominalTrajectoryWithoutPlannerShutdown()
 {
     Avoidance planner;
     Avoidance::Query query = baseQuery();
@@ -386,7 +407,7 @@ void testObstacleGoneReturnsImmediatelyToNominalTrajectory()
     require(direct.status == Avoidance::Status::NominalClear &&
             direct.nominalPathClear &&
             !direct.adjustedTarget,
-            "once the unexpected obstacle is gone the solver must return directly to the original trajectory");
+            "once the unexpected obstacle is gone the active planner must resume nominal-line reacquisition");
 }
 
 void testNarrowStaticRegionFailsClosedWhenNoOffsetFits()
@@ -464,9 +485,9 @@ int main()
         testCrossingObstacleProjectsToNormalPlaneAndFindsBypass();
         testHeadOnObstacleCanBypassWithoutMandatoryStop();
         testExactStaticBlockerConstrainsOffsetSearch();
-        testReturnLegIsAlsoProvenAgainstExactStaticGeometry();
+        testBypassDoesNotRequireImmediateReturnToTrajectory();
         testDynamicSphereBroadphaseDoesNotSealClearExactObbRoute();
-        testObstacleGoneReturnsImmediatelyToNominalTrajectory();
+        testObstacleGoneReacquiresNominalTrajectoryWithoutPlannerShutdown();
         testNarrowStaticRegionFailsClosedWhenNoOffsetFits();
         testStaleDynamicResultSkipsOffsetSearch();
         testNonTraversableStartFailsStaticHold();

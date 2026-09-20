@@ -721,19 +721,28 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
     Space space;
     Space::StaticSpaceUpdate staticWorld;
     staticWorld.sourceRevision = 202;
-    staticWorld.regions = {
-        region(1, 500.0, 0.0, 1000.0, 1000.0, 1000.0)
-    };
+
+    Space::RegionInput wideRegion;
+    wideRegion.regionId = 1;
+    wideRegion.boundsMapMeters.minMapMeters =
+        {-1000.0, -1000.0, -1000.0};
+    wideRegion.boundsMapMeters.maxMapMeters =
+        {2000.0, 1000.0, 1000.0};
+    wideRegion.clearanceRadiusMeters = 2000.0;
+    wideRegion.geometryRevision = 1;
+    staticWorld.regions = {wideRegion};
     space.replaceStaticWorld(std::move(staticWorld));
 
     Planner::AgentState agent = baseAgent();
     agent.radiusMeters = 5.0;
 
-    // Both +/-Z visibility candidates are geometrically symmetric.  A small
-    // existing -Z velocity is the only continuity signal.  The local planner
-    // must preserve that side instead of returning the first azimuth in its
-    // regenerated transverse basis.
-    agent.velocityMapMetersPerSecond = {1.0, 0.0, -0.25};
+    // Both +/-Z visibility candidates are geometrically and statically legal.
+    // The current velocity intentionally points elsewhere: the accepted local
+    // segment owns the continuity hint and must preserve its -Z branch.
+    agent.velocityMapMetersPerSecond = {1.0, 0.25, 0.0};
+    agent.localAvoidanceContinuityValid = true;
+    agent.localAvoidanceContinuityDirectionMap =
+        glm::normalize(glm::dvec3(1.0, 0.0, -0.25));
 
     Planner::Goal goal = goalAt(1000.0);
     goal.maximumTargetSpeedMps = 20.0;
@@ -771,12 +780,12 @@ void testAdjustedVisibilityPreservesCurrentAvoidanceSide()
             result.selectedTargetMapMeters -
             agent.positionMapMeters
         );
-    const glm::dvec3 velocityDirection =
-        glm::normalize(agent.velocityMapMetersPerSecond);
-
     require(
-        glm::dot(selectedDirection, velocityDirection) > 0.9,
-        "adjusted visibility must prefer the safe candidate most aligned with current motion"
+        glm::dot(
+            selectedDirection,
+            agent.localAvoidanceContinuityDirectionMap
+        ) > 0.9,
+        "adjusted visibility must prefer the safe candidate aligned with the accepted local segment"
     );
 }
 

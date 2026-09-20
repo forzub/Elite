@@ -5527,3 +5527,31 @@ The Assisted criterion remains strict:
 - <=4 deg at phase end.
 
 If these fail, the next correction must target reference/control behavior, not test tolerance.
+
+
+## 2026-09-20 — Assisted chained failure root cause: discontinuous world-up frame
+
+Target checkout:
+
+```
+350f7d593e22b8b89cb3ae4dbfbfbb7fbb53ea03
+```
+
+proved the Assisted failure is real inside phase 3, not inherited at the seam:
+- entry slip 1.579 deg;
+- max/final slip 25.789 deg;
+- final forward error 25.965 deg;
+- 171 tracking-envelope violations.
+
+The chained fixture reconstructed each velocity-aligned body basis from a fixed world-up seed and switched that seed near a vertical tangent. This made right/up discontinuous even though forward remained smooth.
+
+Because B10 tracks the full three-axis attitude, the artificial roll discontinuity became authoritative angular feed-forward/feedback demand.
+
+Candidate fix `b8eb4641b013692c773d087d6cad96756c672b3c` replaces that reconstruction with a parallel-transport/Bishop frame:
+- tangent owns forward;
+- previous transverse axis is projected into the new normal plane;
+- roll remains continuous unless explicitly commanded.
+
+Terminal forward remains explicit; exact terminal roll/up belongs to a separate docking/placement attitude-capture requirement rather than an implicit world-up rule.
+
+No physical or tracking acceptance tolerance was weakened.

@@ -11,61 +11,73 @@
 ## Latest tested checkout
 
 ```
-69f8ca4dbcb44df5340b94f45640bcb7d6e6ed1a
+51e6c41bb94b65e8cc269fb035164a4eb0aa23fd
 ```
 
-Architecture PASS, runtime 17/19.
+Architecture PASS; runtime 18/19.
 
-Failures:
-- focused side-continuity regression;
-- final composite.
+The focused explicit-continuity planner regression passed.
 
-## What the last run proved
+Only final composite failed.
 
-The velocity-only tie-break is insufficient.
+## Failure
 
-Repeated local replans can still change avoidance branch because instantaneous velocity is not the same thing as the direction/branch of the currently accepted bounded segment.
-
-The focused regression also had a fixture bug: generic static region Z bounds were only +/-10 m, so intended +/-Z alternatives were not actually statically legal.
-
-## Current architecture fix
-
-Execution owns accepted-segment continuity.
-
-New runtime planner input:
+At a persistent-hazard replan:
 ```
-localAvoidanceContinuityValid
-localAvoidanceContinuityDirectionMap
+accepted continuity ~ (0.36,-0.35,+0.87)
+selected target direction ~ opposite -Z
 ```
 
-This is forwarded to:
+The physical author then correctly refused to build an impossible no-stop continuation.
+
+## Root cause
+
+Continuity ranking was only applied inside the currently tested deflection ring.
+
+The planner still returned the first ring containing any safe candidate, so:
 ```
-LocalAvoidancePlanner::Query::preferredDirection*
+smaller-angle opposite branch
+```
+could beat:
+```
+slightly larger-angle accepted branch
 ```
 
-Selection rule inside the smallest safe ring:
-1. accepted-segment continuity direction;
-2. otherwise current velocity direction;
-3. otherwise nominal forward;
-4. deterministic azimuth index for exact ties.
-
-No hidden planner memory.
-
-## Current candidate commits
+## Current candidate
 
 Production:
 ```
-71b80c4529e1bc776e2a2dbf209059a2ccff44f9
-4bde26ee2fbb531116f960d089d488067f1bfd6d
-76022a5199422dd80ef4caff611539b53c39e731
-40d7b9852bc6f265ae02ecc0bf9d7b4e002d5b96
+e19c1804806ce5f3554f20c7b7d3d5ac19b4911e
+c3dcf98b16bd6e45f0dbc949ec926f086aa623a0
 ```
 
-Tests/composite:
+Regression/diagnostics:
 ```
-bd31307fbda3d512a579f521efc1664199b1de46
-09bc81e03cab6c251b50678585161cc73e814ddb
+06a917f058926a29f41a936dd994be3f8073e7cf
+e62328d4af99b6e452e2d07e53cd20e25a103dcf
+a2da6453daaa8e00cc1f4661321b9294513057ff
 ```
+
+## New branch-selection rule
+
+With explicit accepted continuity:
+1. scan all safe candidates in all ordinary rings up to maximum deflection;
+2. same-branch safe candidates outrank opposite-branch candidates;
+3. maximize alignment with accepted direction;
+4. smaller deflection breaks equal-alignment ties;
+5. azimuth index is deterministic final tie-break.
+
+If no same-branch safe candidate exists, least-opposed safe fallback is allowed.
+
+Without explicit continuity, smallest-safe-ring behavior is unchanged.
+
+## Strong regression
+
+The focused test now blocks preferred -Z only on the first ring while +Z remains safe there.
+
+A larger-ring -Z candidate is safe.
+
+Planner must deliberately take the larger ring and keep the accepted branch.
 
 ## Target commands
 
@@ -96,18 +108,16 @@ grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-AC
 echo "$PWD/$OUT"
 ```
 
-## Interpretation
-
-If focused regression fails:
-- debug explicit continuity forwarding/scoring.
-
-If regression passes but composite still side-switches:
-- inspect whether direction-only continuity needs promotion to an explicit accepted branch/plane identifier.
+## Exit
 
 If 19/19:
-- accept final composite;
+- accept exact target checkout and composite metrics;
 - close synthetic behavior lab;
-- next task = real NAV STRESS/game accepted-corridor + physical-trajectory visualization.
+- move to real NAV STRESS/game corridor + physical-trajectory visualization.
+
+If red:
+- use selected deflection + continuity diagnostics;
+- do not weaken physical or safety criteria.
 
 ## Iteration rule
 

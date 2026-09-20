@@ -3,56 +3,75 @@
 **Project:** Elite Navigation v2
 **Updated:** 2026-09-20 Europe/Kyiv
 
-## Accepted baseline
+## Accepted target baseline
 
 ```
-a0f0991791665e30059be15efc47dedcdfafe090
+3fe9b54eda0135b0cdebb7dc835d8a4b17580808
 ```
 
-## Current chained/limit evidence
+Accepted target evidence:
+- Stage-12 architecture contract PASS;
+- navigation runtime 18/18 PASS;
+- chained transition + physical-limit matrix PASS.
 
-Target checkout `350f7d593e22b8b89cb3ae4dbfbfbb7fbb53ea03`:
-- architecture PASS;
-- build PASS;
-- 17/18 runtime tests;
-- Newtonian chain healthy;
-- Assisted phase 3 exposed an attitude-reference defect.
+## Accepted maneuver/execution evidence
 
-Assisted phase-3 evidence:
-- only 1.58 deg slip at entry;
-- grows to 25.79 deg and stays there;
-- forward reference error reaches 25.96 deg;
-- 171 tracking-envelope exceeded ticks.
+Now demonstrated:
+- StopTurnGo / RadiusTurn / DriftTurn;
+- continuous moving attitude correction;
+- Newtonian vs Assisted law-specific propulsion behavior;
+- full Cobra rigid-body corridor occupancy;
+- non-orthogonal 3D route execution;
+- continuous 3D fly-through;
+- doctrine-dependent candidate selection;
+- law filtering before ranking;
+- real selected-program execution;
+- cross-family chained execution without P/V/q/omega reset;
+- StateCapture terminal semantics;
+- fail-closed turn/braking/hull/law/invalidation limits.
 
-So this is not a seam transient.
+## Important frame-authoring conclusion
 
-## Reference-frame defect
+Ordinary velocity-aligned attitude must use a continuous transported body frame.
 
-The chained fixture used a fixed world-up basis reconstruction with a seed switch near vertical forward.
+A fixed world-up reconstruction can create roll singularities near vertical tangents. Since B10 tracks full SO(3), such representational discontinuities become physical control defects.
 
-That representation is discontinuous in roll even for a smooth velocity tangent.
+Exact terminal roll/top orientation remains an explicit semantic requirement for docking/attachment/placement.
 
-Because B10 owns full-axis attitude tracking, the representation discontinuity is physically significant.
+## Architecture status
 
-Fix candidate:
-```
-b8eb4641b013692c773d087d6cad96756c672b3c
-```
+Strong/accepted behavior:
+- B0, B7, B8, B9, B10, B12, B13, B14.
 
-The moving aligned frame is now parallel-transported/minimal-twist.
+Strong components but final production generalization/integration remains:
+- B5 full Assisted/general-family compiler coverage;
+- B6 generalized proof ownership;
+- final ordinary-live B7-B10 migration.
 
-General design conclusion:
-- ordinary path following should not invent roll from global up at singular headings;
-- roll should remain continuous unless maneuver semantics explicitly command roll;
-- exact final top/up orientation belongs to an explicit terminal-attitude requirement.
+Open/transitional:
+- B1 scene-wide influence batching;
+- B2 unified objective;
+- B3 vehicle-aware global topology feasibility;
+- B4 route-aligned corridor replacing ray-fan;
+- B11 explicit bounded safety-reflex API.
 
-## Active roadmap
+## Final laboratory stage
 
-1. re-run chained/limit matrix with transported frame;
-2. if green, accept chained + negative/limit block;
-3. build final composite end-to-end proving ground;
-4. then move primary quality evaluation into the game.
+One composite end-to-end proving ground remains.
+
+It must combine static topology, dynamic invalidation, corridor pressure, speed, law/doctrine choice, real accepted-program execution and precision terminal capture in one uninterrupted scenario.
+
+Passing it ends synthetic maneuver behavior testing.
+
+## After final lab
+
+Primary quality work moves into the actual game:
+- NAV STRESS / real scene;
+- visible corridor/tunnel;
+- accepted physical trajectory visualization;
+- NPC/autopilot behavior inspection;
+- targeted regressions only for defects observed there.
 
 ## State protocol
 
-After every state-affecting event, synchronize project MDs and recreate `CONTINUE_PROMPT.md` from scratch.
+After every state-affecting event, synchronize all project MDs and recreate `CONTINUE_PROMPT.md` from scratch.

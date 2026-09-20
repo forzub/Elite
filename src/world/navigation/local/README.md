@@ -83,74 +83,140 @@ stale_1024        0.0359          0 candidates examined
 
 The loop is accepted. Even the artificial 1024-candidate stress case is below `0.037 ms p95`; further optimization is not justified without new runtime evidence. Raw evidence: `benchmarks/navigation_local/RUN_LOG.md`.
 
-## Active avoidance candidate — same-region lateral fan
+## Active avoidance — projected visible horizon
 
-`LocalAvoidancePlanner` does not replace `LocalHorizonPlanner`; it composes it with `NavigationStaticQueryApi`, the narrow read-only capability bound by the orchestration layer. The `NavigationSpace` state owner itself does not cross into the calculation.
+`LocalAvoidancePlanner` composes the accepted nominal route with the compact
+dynamic candidates from `NavigationMap` and exact static read access through
+`NavigationStaticQueryApi`.
+
+It does **not** own an angular ray fan, persistent left/right branch state or a
+second route planner.
 
 Flow:
 
-```text
-nominal LocalHorizonPlanner result
-    |
-    +-- Clear ------> keep nominal target, zero avoidance probes
-    |
-    +-- StaleHold --> fail closed, zero avoidance probes
-    |
-    +-- ConflictHold
-            |
-            v
-      query static start region
-            |
-            v
-      deterministic 3D lateral fan
-      15 deg ring x 8 azimuths
-      30 deg ring x 8 azimuths
-            |
-            v
-      static same-region proof
-            |
-            v
-      recheck dynamic candidates through LocalHorizonPlanner
-            |
-            +-- first proven target -> AdjustedClear / PassThrough
-            +-- none proven --------> ConflictHold
-```
+~~~text
+accepted nominal trajectory / local target
+        |
+        v
+LocalHorizonPlanner
+    physical visible horizon
+    nominal conflict prediction
+        |
+        +-- nominal dynamic + static clear
+        |       -> NominalClear
+        |
+        v
+trajectory tangent F
+        |
+        v
+normal plane Pi, Pi perpendicular to F
+        |
+        +-- project moving-obstacle P(t) swept occupancy
+        +-- retain exact-static corridor constraints
+        |
+        v
+deterministic metric offset grid (meters)
+        |
+        v
+projected occupancy rejection
+        |
+        v
+exact-static segment proof
+        |
+        v
+time-coupled dynamic proof
+        |
+        +-- safe offset -> AdjustedClear / PassThrough
+        |                 + merge target on original trajectory
+        |
+        +-- none safe   -> localBypassExhausted / fail closed
+~~~
 
-### Why same-region
+### Why projection is trajectory-relative
 
-The current `NavigationSpace` semantic free-space region is an axis-aligned box. For an agent envelope, the traversable interior of one region is a shrunken convex AABB. Therefore, when both the current agent point and an adjusted target are traversable and resolve to the same region, the entire straight segment between them is statically contained in that free-space volume.
+Known persistent static geometry belongs to the route/corridor plan. The local
+layer reacts to an unexpected obstacle by asking a smaller question:
 
-Both endpoint results must come from the **same static publication**: identical `spaceRevision` and `sourceRevision`. Mixed-revision endpoint evidence fails closed as `StaticHold` instead of composing stale and current free-space facts.
+> what temporary lateral/vertical displacement inside the current physical
+> horizon avoids the predicted obstacle and still allows reacquisition of the
+> accepted trajectory?
 
-This is intentionally conservative. It may reject a valid maneuver crossing a portal or overlapping region, but it does not invent static free space. Portal-aware local avoidance is a later extension only if runtime evidence requires it.
+The solver therefore works in the plane normal to the nominal trajectory
+rather than rebuilding global topology or choosing an abstract left/right
+branch.
 
-### Current-kinematics conflicts remain fail closed
+### Dynamic prediction
 
-The accepted `LocalHorizonPlanner` closest-approach test uses the ship's current P/V/A. A lateral target therefore must **not** magically erase an already predicted head-on/crossing conflict. The first avoidance slice can clear a future swept-corridor blocker when current closest approach is still safe, but head-on/current-kinematics conflicts remain `ConflictHold` until a trajectory-aware maneuver is separately demonstrated.
+For each relevant `NavigationMap::Candidate`, current state is aged to the
+completed snapshot epoch and the actor is predicted over the visible horizon.
+Its motion projects to a swept segment/capsule in the normal plane.
 
-Pinned behavior fixtures:
+A candidate offset must:
+- clear projected dynamic occupancy with vehicle + safety inflation;
+- pass exact-static segment proof from the current position;
+- pass a time-coupled dynamic sample check over the same horizon.
 
-```text
+The output publishes both:
+- a temporary off-route bypass target;
+- `mergeTargetMapMeters`, the point on the original bounded trajectory to
+  reacquire after the unexpected obstacle is passed.
+
+### Speed and physical execution
+
+This local layer selects free-space geometry. It does not pretend every
+geometric offset is an executable maneuver.
+
+Downstream physical maneuver compilation may:
+- retain speed;
+- reduce speed to make the offset reachable;
+- use control-law-specific lateral/vertical/rotational authority.
+
+A full stop is not the normal avoidance algorithm. If no bounded local offset
+can be proved, `localBypassExhausted` fails closed and higher ownership may
+slow further, change the local waypoint/portal, backtrack or choose an
+emergency maneuver.
+
+### Exact static ownership
+
+All temporary bypass targets are strict exact-static queries. The only endpoint
+exception remains the already-proven nominal portal boundary supplied by the
+global corridor.
+
+Static and dynamic evidence must come from coherent revisions. The local solver
+does not manufacture free space and does not restore stationary objects as
+dynamic spheres.
+
+### Pinned behavior
+
+~~~text
 nominal_clear
-    -> NominalClear, zero probes
+    -> NominalClear, no offset search
 
-swept_corridor_blocker
-    -> same-region AdjustedClear when a lateral target is proven
+crossing_dynamic_obstacle
+    -> predicted normal-plane occupancy
+    -> temporary metric offset
+    -> AdjustedClear
+    -> merge target remains on nominal trajectory
 
-head_on
-    -> ConflictHold; lateral target cannot erase current kinematics
+head_on_with_free_lateral_space
+    -> bypass without mandatory stop
 
-narrow_static_region
-    -> all lateral probes rejected statically; ConflictHold
+exact_static_blocker
+    -> projected offsets filtered by exact static geometry
+
+obstacle_disappears
+    -> immediate return to nominal trajectory
+
+no_offset_fits
+    -> localBypassExhausted / fail closed
 
 stale_snapshot
-    -> StaleHold before avoidance probes
+    -> StaleHold before offset search
+~~~
 
-non_traversable_start
-    -> StaticHold
-```
-
-The avoidance candidate is **pending target-machine compile/behavior gate**. Its multiplied probe cost is not yet accepted and will be benchmarked only after behavior passes.
+The old angular deflection fan and branch-continuity mechanism are removed from
+the production API and implementation. The Stage-12 architecture checker
+explicitly rejects their identifiers if they are reintroduced.
 
 ## Non-goals
 

@@ -79,7 +79,7 @@ execute = function_slice(
 trajectory_builder = function_slice(
     runtime,
     "world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(",
-    "Program makeProgramChunk("
+    "Program makeProgramPhase("
 )
 
 execute_compact = compact_cpp(execute)
@@ -109,6 +109,9 @@ for forbidden in (
 for required in (
     "executeCalculatedRoute",
     "buildExecutionTrajectory(",
+    "buildRoutePrograms(",
+    "activateProgramPhase(",
+    "ManeuverPhaseGate::evaluate",
     "Follower::follow",
     "vehicle.bridge.step",
     "SharedShipPhysics::integrate",
@@ -185,11 +188,14 @@ for required in (
     "EliteNavigationRouteToolCore",
     "EliteNavigationExecutionToolCore",
     "TrajectoryFollower.cpp",
+    "ManeuverPhaseGate.cpp",
     "NavigationRuntimeControlBridge.cpp",
     "SharedShipPhysics.cpp",
     "DynamicMotionSystem.cpp",
     "TrajectoryGenerator.cpp",
     "EliteNavigationRuckig",
+    "navigation_runtime_pipeline_tests",
+    "NavigationScenarioRuntimeE2ETests.cpp",
 ):
     require(required in tool_cmake, f"viewer build missing {required}")
 
@@ -213,9 +219,21 @@ for marker in (
     require(marker in trajectory_cpp, f"trajectory generator ignores {marker}")
 
 require(
-    "vehicle.timeSeconds + 1.0e-9 >=" not in execute,
-    "Stage-2 chunk switching again permits early future-program activation",
+    "buildProgramChunks" not in runtime,
+    "Stage 2 reintroduced raw consecutive-sample microchunking",
 )
+require(
+    '"PROGRAM CHUNKS:"' not in runtime,
+    "Stage-2 diagnostics still expose raw microchunks instead of physical phases",
+)
+for marker in (
+    "buildRoutePrograms",
+    "sampleNearestSourceProgress",
+    "activateProgramPhase",
+    '"PROGRAM PHASES: "',
+    '"PHASE HANDOFFS: "',
+):
+    require(marker in runtime, f"route-leg execution phase contract missing {marker}")
 
 for marker in (
     "PROGRAM_BEFORE_START",

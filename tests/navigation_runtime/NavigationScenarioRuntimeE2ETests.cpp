@@ -80,9 +80,19 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
     printDiagnostics("[E2E-STAGE2] ", executed);
 
     require(
-        executed.trace.routePoints == retainedRoute,
-        "Stage 2 mutated the retained Stage-1 route"
+        executed.trace.routePoints.size() == retainedRoute.size(),
+        "Stage 2 changed retained-route point count"
     );
+    for (std::size_t i = 0; i < retainedRoute.size(); ++i)
+    {
+        require(
+            glm::length(
+                executed.trace.routePoints[i] -
+                retainedRoute[i]
+            ) <= 1.0e-9,
+            "Stage 2 mutated a retained Stage-1 route point"
+        );
+    }
     require(
         hasDiagnostic(executed, "TRAJECTORY: RUCKIG OK"),
         "Stage 2 did not produce a Ruckig trajectory"

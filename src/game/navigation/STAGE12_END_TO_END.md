@@ -6647,3 +6647,18 @@ overlay against the retained nominal route.
 
 Code is committed but the new Stage-1 target has not yet been compiled/run on the
 user's MinGW64 machine. Do not claim target acceptance until that run is supplied.
+
+
+## 2026-09-20 Stage-1 cleanup lock
+
+The Stage-1 diagnostic boundary was tightened after the initial implementation:
+- old stand-local `makeShortProgram`, periodic planner loop, Follower/PilotSkill/
+  SharedShipPhysics execution and dynamic publication code were removed from
+  `NavigationScenarioRuntime.cpp` rather than merely left dormant;
+- `tools/navigation_runtime/CMakeLists.txt` now links only the nominal-route/static
+  geometry core for Stage 1;
+- moving/sudden obstacle records remain parseable in the scenario schema as reserved
+  Stage-2 inputs, but cannot influence the Stage-1 route;
+- a new architecture checker pins that Stage 1 cannot regress into execution/replan
+  ownership;
+- target validation is still pending on the user's MinGW64 machine.

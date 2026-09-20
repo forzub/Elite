@@ -47,7 +47,7 @@ using StaticQueries = world::navigation::NavigationStaticQueryApi;
 
 constexpr double kPi = 3.14159265358979323846;
 constexpr double kDt = 0.02;
-constexpr double kReplanPeriodSeconds = 0.25;
+constexpr double kReplanPeriodSeconds = 0.50;
 constexpr double kMaximumScenarioSeconds = 180.0;
 const glm::dvec3 kBodyHalfExtents {13.0, 2.5, 11.1};
 const double kHullBoundingRadiusMeters = glm::length(kBodyHalfExtents);

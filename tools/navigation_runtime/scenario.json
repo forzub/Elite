@@ -1,0 +1,44 @@
+{
+  "start": {
+    "position": [0.0, 0.0, 0.0],
+    "velocity": [6.0, 0.0, 0.0],
+    "forward": [1.0, 0.0, 0.0],
+    "up": [0.0, 1.0, 0.0]
+  },
+
+  "ship_route_points": [
+    [100.0, 40.0, 0.0],
+    [200.0, 40.0, 0.0]
+  ],
+
+  "finish": {
+    "position": [300.0, 0.0, 0.0],
+    "forward": [1.0, 0.0, 0.0],
+    "up": [0.0, 1.0, 0.0],
+    "speed_mps": 0.0
+  },
+
+  "standard_speed_mps": 10.0,
+  "extreme_speed_mps": 18.0,
+
+  "static_obstacles": [
+    {
+      "id": "wall",
+      "shape": "box",
+      "center": [150.0, 0.0, 0.0],
+      "half_extents": [25.0, 12.0, 30.0],
+      "required_clearance_m": 0.0
+    }
+  ],
+
+  "moving_obstacles": [],
+
+  "sudden_obstacle": {
+    "id": "sudden_crossing_ship",
+    "radius_m": 6.0,
+    "activation_time_s": 18.0,
+
+    "spawn_relative_to_ship_fru": [48.0, 28.0, 0.0],
+    "velocity": [0.0, -5.0, 0.0]
+  }
+}

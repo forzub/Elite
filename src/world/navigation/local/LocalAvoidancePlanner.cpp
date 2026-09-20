@@ -11,13 +11,18 @@ namespace
 {
 
 using Vec3d = LocalAvoidancePlanner::Vec3d;
+using Candidate = NavigationMap::Candidate;
 
 constexpr double kEpsilon = 1.0e-12;
-constexpr double kTwoPi = 6.283185307179586476925286766559;
 
 bool finite(double value) noexcept
 {
     return std::isfinite(value);
+}
+
+bool finite(const Vec3d& value) noexcept
+{
+    return finite(value.x) && finite(value.y) && finite(value.z);
 }
 
 Vec3d add(const Vec3d& a, const Vec3d& b) noexcept
@@ -59,36 +64,48 @@ double length(const Vec3d& value) noexcept
     return std::sqrt(lengthSquared(value));
 }
 
+double distance(const Vec3d& a, const Vec3d& b) noexcept
+{
+    return length(subtract(a, b));
+}
+
 Vec3d normalize(const Vec3d& value)
 {
     const double magnitude = length(value);
     if (magnitude <= kEpsilon)
-        throw std::invalid_argument("LocalAvoidancePlanner cannot normalize zero vector");
+        throw std::invalid_argument(
+            "LocalAvoidancePlanner cannot normalize zero vector"
+        );
     return scale(value, 1.0 / magnitude);
 }
 
-LocalAvoidancePlanner::StaticQueries::Vec3d toSpaceVec(const Vec3d& value) noexcept
+Vec3d positionAt(
+    const Vec3d& position,
+    const Vec3d& velocity,
+    const Vec3d& acceleration,
+    double seconds
+) noexcept
 {
-    return {value.x, value.y, value.z};
+    return add(
+        add(position, scale(velocity, seconds)),
+        scale(acceleration, 0.5 * seconds * seconds)
+    );
 }
 
-void validatePolicy(const LocalAvoidancePlanner::Policy& policy)
+Vec3d velocityAt(
+    const Vec3d& velocity,
+    const Vec3d& acceleration,
+    double seconds
+) noexcept
 {
-    if (!finite(policy.primaryDeflectionRadians) ||
-        !finite(policy.secondaryDeflectionRadians) ||
-        policy.primaryDeflectionRadians <= 0.0 ||
-        policy.secondaryDeflectionRadians <= policy.primaryDeflectionRadians ||
-        policy.secondaryDeflectionRadians >= 1.5707963267948966 ||
-        !finite(policy.maximumDeflectionRadians) ||
-        policy.maximumDeflectionRadians < policy.secondaryDeflectionRadians ||
-        policy.maximumDeflectionRadians >= 1.5707963267948966 ||
-        policy.azimuthSamples < 4 ||
-        policy.azimuthSamples > 32 ||
-        !finite(policy.staticAdditionalClearanceMeters) ||
-        policy.staticAdditionalClearanceMeters < 0.0)
-    {
-        throw std::invalid_argument("LocalAvoidancePlanner policy is invalid");
-    }
+    return add(velocity, scale(acceleration, seconds));
+}
+
+LocalAvoidancePlanner::StaticQueries::Vec3d toSpaceVec(
+    const Vec3d& value
+) noexcept
+{
+    return {value.x, value.y, value.z};
 }
 
 Vec3d leastAlignedAxis(const Vec3d& forward) noexcept
@@ -104,22 +121,233 @@ Vec3d leastAlignedAxis(const Vec3d& forward) noexcept
     return {0.0, 0.0, 1.0};
 }
 
-
-Vec3d normalizedOr(
-    const Vec3d& value,
-    const Vec3d& fallback
+double pointToSegmentDistance2d(
+    double px,
+    double py,
+    double ax,
+    double ay,
+    double bx,
+    double by
 ) noexcept
 {
-    const double magnitudeSquared = lengthSquared(value);
-    if (!finite(magnitudeSquared) ||
-        magnitudeSquared <= kEpsilon)
+    const double dx = bx - ax;
+    const double dy = by - ay;
+    const double denominator = dx * dx + dy * dy;
+
+    if (denominator <= kEpsilon)
     {
-        return fallback;
+        const double ex = px - ax;
+        const double ey = py - ay;
+        return std::sqrt(ex * ex + ey * ey);
     }
 
-    const double inverseMagnitude =
-        1.0 / std::sqrt(magnitudeSquared);
-    return scale(value, inverseMagnitude);
+    const double t = std::clamp(
+        ((px - ax) * dx + (py - ay) * dy) / denominator,
+        0.0,
+        1.0
+    );
+    const double cx = ax + dx * t;
+    const double cy = ay + dy * t;
+    const double ex = px - cx;
+    const double ey = py - cy;
+    return std::sqrt(ex * ex + ey * ey);
+}
+
+void validatePolicy(
+    const LocalAvoidancePlanner::Policy& policy
+)
+{
+    if (policy.lateralGridHalfExtentSamples < 1 ||
+        policy.lateralGridHalfExtentSamples > 16 ||
+        !finite(policy.minimumLateralStepMeters) ||
+        policy.minimumLateralStepMeters <= 0.0 ||
+        !finite(policy.lateralStepEnvelopeMultiplier) ||
+        policy.lateralStepEnvelopeMultiplier <= 0.0 ||
+        !finite(policy.maximumLateralOffsetMeters) ||
+        policy.maximumLateralOffsetMeters <= 0.0 ||
+        !finite(policy.projectionPaddingMeters) ||
+        policy.projectionPaddingMeters < 0.0 ||
+        policy.trajectorySamples < 4 ||
+        policy.trajectorySamples > 128 ||
+        !finite(policy.staticAdditionalClearanceMeters) ||
+        policy.staticAdditionalClearanceMeters < 0.0)
+    {
+        throw std::invalid_argument(
+            "LocalAvoidancePlanner policy is invalid"
+        );
+    }
+}
+
+bool candidateRelevantToForwardHorizon(
+    const Candidate& candidate,
+    const LocalHorizonPlanner::Query& query,
+    const Vec3d& forward,
+    double probeDistance,
+    double lookAheadSeconds
+) noexcept
+{
+    if (query.agent.entityId != 0 &&
+        candidate.entityId == query.agent.entityId)
+    {
+        return false;
+    }
+
+    const double age = query.dynamicResultAgeSeconds;
+    const Vec3d actorNow = positionAt(
+        candidate.positionMapMeters,
+        candidate.velocityMapMetersPerSecond,
+        candidate.accelerationMapMetersPerSecond2,
+        age
+    );
+    const Vec3d actorVelocityNow = velocityAt(
+        candidate.velocityMapMetersPerSecond,
+        candidate.accelerationMapMetersPerSecond2,
+        age
+    );
+    const Vec3d actorFuture = positionAt(
+        actorNow,
+        actorVelocityNow,
+        candidate.accelerationMapMetersPerSecond2,
+        lookAheadSeconds
+    );
+
+    const Vec3d fromAgentNow =
+        subtract(actorNow, query.agent.positionMapMeters);
+    const Vec3d fromAgentFuture =
+        subtract(actorFuture, query.agent.positionMapMeters);
+
+    const double s0 = dot(fromAgentNow, forward);
+    const double s1 = dot(fromAgentFuture, forward);
+    const double padding =
+        query.agent.radiusMeters +
+        candidate.actorRadiusMeters +
+        query.horizon.policy.safetyMarginMeters;
+
+    return
+        std::max(s0, s1) >= -padding &&
+        std::min(s0, s1) <= probeDistance + padding;
+}
+
+double projectedClearanceForOffset(
+    const Candidate& candidate,
+    const LocalHorizonPlanner::Query& query,
+    const Vec3d& forward,
+    const Vec3d& lateralA,
+    const Vec3d& lateralB,
+    double offsetA,
+    double offsetB,
+    double lookAheadSeconds,
+    double projectionPaddingMeters
+) noexcept
+{
+    const double age = query.dynamicResultAgeSeconds;
+    const Vec3d actorNow = positionAt(
+        candidate.positionMapMeters,
+        candidate.velocityMapMetersPerSecond,
+        candidate.accelerationMapMetersPerSecond2,
+        age
+    );
+    const Vec3d actorVelocityNow = velocityAt(
+        candidate.velocityMapMetersPerSecond,
+        candidate.accelerationMapMetersPerSecond2,
+        age
+    );
+    const Vec3d actorFuture = positionAt(
+        actorNow,
+        actorVelocityNow,
+        candidate.accelerationMapMetersPerSecond2,
+        lookAheadSeconds
+    );
+
+    const Vec3d nowRelative =
+        subtract(actorNow, query.agent.positionMapMeters);
+    const Vec3d futureRelative =
+        subtract(actorFuture, query.agent.positionMapMeters);
+
+    const double a0 = dot(nowRelative, lateralA);
+    const double b0 = dot(nowRelative, lateralB);
+    const double a1 = dot(futureRelative, lateralA);
+    const double b1 = dot(futureRelative, lateralB);
+
+    const double required =
+        query.agent.radiusMeters +
+        candidate.actorRadiusMeters +
+        query.horizon.policy.safetyMarginMeters +
+        projectionPaddingMeters;
+
+    return
+        pointToSegmentDistance2d(
+            offsetA,
+            offsetB,
+            a0,
+            b0,
+            a1,
+            b1
+        ) -
+        required;
+}
+
+bool timeCoupledBypassClear(
+    const Vec3d& bypassTarget,
+    const LocalHorizonPlanner::Query& query,
+    const NavigationMap::QueryResult& dynamicCandidates,
+    double lookAheadSeconds,
+    std::size_t samples,
+    double projectionPaddingMeters
+) noexcept
+{
+    const Vec3d start = query.agent.positionMapMeters;
+    const double age = query.dynamicResultAgeSeconds;
+
+    for (std::size_t i = 0; i <= samples; ++i)
+    {
+        const double alpha =
+            static_cast<double>(i) /
+            static_cast<double>(samples);
+        const double t = lookAheadSeconds * alpha;
+        const Vec3d ship = add(
+            start,
+            scale(subtract(bypassTarget, start), alpha)
+        );
+
+        for (const Candidate& candidate : dynamicCandidates.candidates)
+        {
+            if (query.agent.entityId != 0 &&
+                candidate.entityId == query.agent.entityId)
+            {
+                continue;
+            }
+
+            const Vec3d actorNow = positionAt(
+                candidate.positionMapMeters,
+                candidate.velocityMapMetersPerSecond,
+                candidate.accelerationMapMetersPerSecond2,
+                age
+            );
+            const Vec3d actorVelocityNow = velocityAt(
+                candidate.velocityMapMetersPerSecond,
+                candidate.accelerationMapMetersPerSecond2,
+                age
+            );
+            const Vec3d actor = positionAt(
+                actorNow,
+                actorVelocityNow,
+                candidate.accelerationMapMetersPerSecond2,
+                t
+            );
+
+            const double required =
+                query.agent.radiusMeters +
+                candidate.actorRadiusMeters +
+                query.horizon.policy.safetyMarginMeters +
+                projectionPaddingMeters;
+
+            if (distance(ship, actor) <= required)
+                return false;
+        }
+    }
+
+    return true;
 }
 
 } // namespace
@@ -157,8 +385,7 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     startQuery.envelope.additionalClearanceMeters =
         query.avoidance.staticAdditionalClearanceMeters;
 
-    const LocalAvoidancePlanner::StaticQueries::PointQueryResult start =
-        staticQueries.queryPoint(startQuery);
+    const auto start = staticQueries.queryPoint(startQuery);
     result.spaceRevision = start.spaceRevision;
     result.spaceSourceRevision = start.sourceRevision;
     result.startRegionId = start.regionId;
@@ -167,35 +394,42 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     if (!start.traversable || start.regionId == 0)
     {
         result.status = Status::StaticHold;
-        result.nominalStaticBlocked = !start.blockingObstacleId.empty();
-        result.nominalStaticObstacleId = start.blockingObstacleId;
+        result.nominalStaticBlocked =
+            !start.blockingObstacleId.empty();
+        result.nominalStaticObstacleId =
+            start.blockingObstacleId;
         result.nominalStaticObstacleEntityId =
             start.blockingObstacleEntityId;
         return result;
     }
 
-    // Dynamic and static truth are independent layers. Even when the dynamic
-    // horizon says Clear, the bounded nominal segment must be proven against
-    // exact persistent static geometry through the read API before it may pass through.
     const Vec3d nominalDelta = subtract(
         query.horizon.nominalTarget.positionMapMeters,
         query.horizon.agent.positionMapMeters
     );
     const double nominalDistance = length(nominalDelta);
 
-    Vec3d boundedNominalTarget =
-        query.horizon.nominalTarget.positionMapMeters;
-    if (nominalDistance > nominal.horizonDistanceMeters &&
-        nominalDistance > kEpsilon)
+    if (nominalDistance <= kEpsilon)
     {
-        boundedNominalTarget = add(
-            query.horizon.agent.positionMapMeters,
-            scale(
-                nominalDelta,
-                nominal.horizonDistanceMeters / nominalDistance
-            )
-        );
+        result.status =
+            nominal.status == LocalHorizonPlanner::Status::Clear
+                ? Status::NominalClear
+                : Status::ConflictHold;
+        result.nominalPathClear =
+            nominal.status == LocalHorizonPlanner::Status::Clear;
+        return result;
     }
+
+    const Vec3d forward = normalize(nominalDelta);
+    const double probeDistance = std::min(
+        nominalDistance,
+        nominal.horizonDistanceMeters
+    );
+    const Vec3d boundedNominalTarget = add(
+        query.horizon.agent.positionMapMeters,
+        scale(forward, probeDistance)
+    );
+    result.mergeTargetMapMeters = boundedNominalTarget;
 
     LocalAvoidancePlanner::StaticQueries::SegmentQuery nominalStaticQuery;
     nominalStaticQuery.startMapMeters =
@@ -207,9 +441,10 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
     nominalStaticQuery.allowEndOnStartRegionBoundary =
         query.avoidance.nominalTargetIsProvenPortalBoundary;
 
-    const LocalAvoidancePlanner::StaticQueries::SegmentQueryResult nominalStatic =
+    const auto nominalStatic =
         staticQueries.querySegment(nominalStaticQuery);
-    result.staticObstaclesExamined += nominalStatic.obstaclesExamined;
+    result.staticObstaclesExamined +=
+        nominalStatic.obstaclesExamined;
 
     if (nominalStatic.spaceRevision != start.spaceRevision ||
         nominalStatic.sourceRevision != start.sourceRevision)
@@ -228,14 +463,10 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
         nominalStatic.traversable)
     {
         result.status = Status::NominalClear;
-        result.nominalVisibilityClear = true;
+        result.nominalPathClear = true;
+        result.mergeTargetMapMeters = boundedNominalTarget;
         return result;
     }
-
-    const double probeDistance = std::min(
-        nominalDistance,
-        nominal.horizonDistanceMeters
-    );
 
     if (probeDistance <= kEpsilon)
     {
@@ -243,101 +474,137 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
             nominal.status == LocalHorizonPlanner::Status::Clear
                 ? Status::StaticHold
                 : Status::ConflictHold;
+        result.localBypassExhausted = true;
         return result;
     }
 
-    const Vec3d forward = normalize(nominalDelta);
     const Vec3d reference = leastAlignedAxis(forward);
     const Vec3d lateralA = normalize(cross(forward, reference));
     const Vec3d lateralB = normalize(cross(lateralA, forward));
 
-    const double deflectionStep =
-        query.avoidance.secondaryDeflectionRadians -
-        query.avoidance.primaryDeflectionRadians;
-
-    const bool explicitContinuity =
-        query.preferredDirectionValid;
-
-    const Vec3d continuityDirection =
-        explicitContinuity
-            ? normalizedOr(
-                  query.preferredDirectionMap,
-                  normalizedOr(
-                      query.horizon.agent.velocityMapMetersPerSecond,
-                      forward
-                  )
-              )
-            : normalizedOr(
-                  query.horizon.agent.velocityMapMetersPerSecond,
-                  forward
-              );
-
-    const Vec3d continuityLateralRaw = add(
-        continuityDirection,
-        scale(
-            forward,
-            -dot(continuityDirection, forward)
-        )
+    const double lookAhead =
+        std::max(
+            query.horizon.policy.lookAheadSeconds,
+            nominal.effectiveLookAheadSeconds
+        );
+    const double envelopeScale =
+        query.horizon.agent.radiusMeters +
+        query.horizon.policy.safetyMarginMeters +
+        query.avoidance.projectionPaddingMeters;
+    const double step = std::max(
+        query.avoidance.minimumLateralStepMeters,
+        envelopeScale *
+            query.avoidance.lateralStepEnvelopeMultiplier
     );
-    const bool continuityLateralValid =
-        lengthSquared(continuityLateralRaw) > kEpsilon;
-    const Vec3d continuityLateral =
-        continuityLateralValid
-            ? normalize(continuityLateralRaw)
-            : Vec3d {0.0, 0.0, 0.0};
 
-    result.continuityHintUsed = explicitContinuity;
-    result.continuityLateralValid =
-        explicitContinuity && continuityLateralValid;
-
-    bool globalHasSafeCandidate = false;
-    bool globalBestSameBranch = false;
-    double globalBestBranchAlignment =
-        -std::numeric_limits<double>::infinity();
-    double globalBestContinuityScore =
-        -std::numeric_limits<double>::infinity();
-    double globalBestDeflection =
-        std::numeric_limits<double>::infinity();
-    std::size_t globalBestAzimuthIndex =
-        std::numeric_limits<std::size_t>::max();
-    LocalHorizonPlanner::Result globalBestAdjusted;
-
-    for (double deflection =
-             query.avoidance.primaryDeflectionRadians;
-         deflection <=
-             query.avoidance.maximumDeflectionRadians + kEpsilon;
-         deflection += deflectionStep)
+    for (const Candidate& candidate : dynamicCandidates.candidates)
     {
-        const double forwardScale = std::cos(deflection);
-        const double lateralScale = std::sin(deflection);
-
-        bool ringHasSafeCandidate = false;
-        double ringBestContinuityScore =
-            -std::numeric_limits<double>::infinity();
-        std::size_t ringBestAzimuthIndex =
-            std::numeric_limits<std::size_t>::max();
-        LocalHorizonPlanner::Result ringBestAdjusted;
-
-        for (std::size_t azimuthIndex = 0;
-             azimuthIndex < query.avoidance.azimuthSamples;
-             ++azimuthIndex)
+        if (candidateRelevantToForwardHorizon(
+                candidate,
+                query.horizon,
+                forward,
+                probeDistance,
+                lookAhead))
         {
-            ++result.targetProbesExamined;
+            ++result.projectedDynamicObstacles;
+        }
+    }
 
-            const double azimuth =
-                kTwoPi * static_cast<double>(azimuthIndex) /
-                static_cast<double>(query.avoidance.azimuthSamples);
-            const Vec3d radial = add(
-                scale(lateralA, std::cos(azimuth)),
-                scale(lateralB, std::sin(azimuth))
+    bool found = false;
+    Vec3d bestTarget {};
+    Vec3d bestOffset {};
+    double bestOffsetMagnitude =
+        std::numeric_limits<double>::infinity();
+    double bestProjectedClearance =
+        -std::numeric_limits<double>::infinity();
+    std::size_t bestOrder =
+        std::numeric_limits<std::size_t>::max();
+    std::size_t order = 0;
+
+    const int half =
+        static_cast<int>(
+            query.avoidance.lateralGridHalfExtentSamples
+        );
+
+    for (int ia = -half; ia <= half; ++ia)
+    {
+        for (int ib = -half; ib <= half; ++ib)
+        {
+            if (ia == 0 && ib == 0)
+                continue;
+
+            ++order;
+            ++result.offsetCandidatesExamined;
+
+            const double offsetA =
+                static_cast<double>(ia) * step;
+            const double offsetB =
+                static_cast<double>(ib) * step;
+            const double offsetMagnitude =
+                std::sqrt(
+                    offsetA * offsetA +
+                    offsetB * offsetB
+                );
+
+            if (offsetMagnitude >
+                query.avoidance.maximumLateralOffsetMeters)
+            {
+                ++result.projectionRejected;
+                continue;
+            }
+
+            double projectedClearance =
+                std::numeric_limits<double>::infinity();
+            bool projectionBlocked = false;
+
+            for (const Candidate& candidate :
+                 dynamicCandidates.candidates)
+            {
+                if (!candidateRelevantToForwardHorizon(
+                        candidate,
+                        query.horizon,
+                        forward,
+                        probeDistance,
+                        lookAhead))
+                {
+                    continue;
+                }
+
+                const double clearance =
+                    projectedClearanceForOffset(
+                        candidate,
+                        query.horizon,
+                        forward,
+                        lateralA,
+                        lateralB,
+                        offsetA,
+                        offsetB,
+                        lookAhead,
+                        query.avoidance.projectionPaddingMeters
+                    );
+                projectedClearance =
+                    std::min(projectedClearance, clearance);
+
+                if (clearance <= 0.0)
+                {
+                    projectionBlocked = true;
+                    break;
+                }
+            }
+
+            if (projectionBlocked)
+            {
+                ++result.projectionRejected;
+                continue;
+            }
+
+            const Vec3d offset = add(
+                scale(lateralA, offsetA),
+                scale(lateralB, offsetB)
             );
-            const Vec3d direction = normalize(add(
-                scale(forward, forwardScale),
-                scale(radial, lateralScale)
-            ));
             const Vec3d candidateTarget = add(
-                query.horizon.agent.positionMapMeters,
-                scale(direction, probeDistance)
+                boundedNominalTarget,
+                offset
             );
 
             LocalAvoidancePlanner::StaticQueries::SegmentQuery staticProbe;
@@ -348,15 +615,14 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
             staticProbe.envelope = startQuery.envelope;
             staticProbe.requireSameRegion = true;
 
-            const LocalAvoidancePlanner::StaticQueries::SegmentQueryResult staticResult =
+            const auto staticResult =
                 staticQueries.querySegment(staticProbe);
-
             result.spaceRevision = staticResult.spaceRevision;
-            result.spaceSourceRevision = staticResult.sourceRevision;
+            result.spaceSourceRevision =
+                staticResult.sourceRevision;
             result.staticObstaclesExamined +=
                 staticResult.obstaclesExamined;
 
-            // Do not combine exact static evidence from two publications.
             if (staticResult.spaceRevision != start.spaceRevision ||
                 staticResult.sourceRevision != start.sourceRevision)
             {
@@ -371,176 +637,81 @@ LocalAvoidancePlanner::Result LocalAvoidancePlanner::evaluate(
                 continue;
             }
 
-            LocalHorizonPlanner::Query probe = query.horizon;
-            probe.nominalTarget.positionMapMeters = candidateTarget;
-            probe.nominalTarget.velocityMapMetersPerSecond =
-                {0.0, 0.0, 0.0};
-            probe.nominalTarget.accelerationMapMetersPerSecond2 =
-                {0.0, 0.0, 0.0};
-
-            LocalHorizonPlanner::Result adjusted =
-                horizonPlanner.evaluate(probe, dynamicCandidates);
-            if (adjusted.status != LocalHorizonPlanner::Status::Clear)
+            if (!timeCoupledBypassClear(
+                    candidateTarget,
+                    query.horizon,
+                    dynamicCandidates,
+                    lookAhead,
+                    query.avoidance.trajectorySamples,
+                    query.avoidance.projectionPaddingMeters))
             {
                 ++result.dynamicRejected;
                 continue;
             }
 
-            // An avoidance target is always temporary/pass-through even when
-            // its probe distance lies numerically inside the current horizon.
-            adjusted.targetMode =
-                LocalHorizonPlanner::TargetMode::PassThrough;
-            adjusted.targetVelocityMapMetersPerSecond =
-                {0.0, 0.0, 0.0};
-            adjusted.targetAccelerationMapMetersPerSecond2 =
-                {0.0, 0.0, 0.0};
-
-            const double continuityScore =
-                dot(direction, continuityDirection);
-
-            if (!ringHasSafeCandidate ||
-                continuityScore >
-                    ringBestContinuityScore + kEpsilon ||
+            const bool better =
+                !found ||
+                offsetMagnitude <
+                    bestOffsetMagnitude - kEpsilon ||
                 (std::abs(
-                     continuityScore - ringBestContinuityScore
+                     offsetMagnitude -
+                     bestOffsetMagnitude
                  ) <= kEpsilon &&
-                 azimuthIndex < ringBestAzimuthIndex))
+                 projectedClearance >
+                    bestProjectedClearance + kEpsilon) ||
+                (std::abs(
+                     offsetMagnitude -
+                     bestOffsetMagnitude
+                 ) <= kEpsilon &&
+                 std::abs(
+                     projectedClearance -
+                     bestProjectedClearance
+                 ) <= kEpsilon &&
+                 order < bestOrder);
+
+            if (better)
             {
-                ringHasSafeCandidate = true;
-                ringBestContinuityScore = continuityScore;
-                ringBestAzimuthIndex = azimuthIndex;
-                ringBestAdjusted = adjusted;
+                found = true;
+                bestTarget = candidateTarget;
+                bestOffset = offset;
+                bestOffsetMagnitude = offsetMagnitude;
+                bestProjectedClearance = projectedClearance;
+                bestOrder = order;
             }
-
-            if (explicitContinuity)
-            {
-                // Branch identity lives in the *transverse* component relative
-                // to the current nominal route. Full direction dot product is
-                // not sufficient because every ordinary visibility ray shares
-                // a large forward component and opposite bypass sides can both
-                // look "positively aligned".
-                const Vec3d candidateLateralRaw = add(
-                    direction,
-                    scale(forward, -dot(direction, forward))
-                );
-                const bool candidateLateralValid =
-                    lengthSquared(candidateLateralRaw) > kEpsilon;
-                const Vec3d candidateLateral =
-                    candidateLateralValid
-                        ? normalize(candidateLateralRaw)
-                        : Vec3d {0.0, 0.0, 0.0};
-
-                const double branchAlignment =
-                    continuityLateralValid &&
-                    candidateLateralValid
-                        ? dot(
-                              candidateLateral,
-                              continuityLateral
-                          )
-                        : continuityScore;
-
-                const bool candidateSameBranch =
-                    continuityLateralValid
-                        ? branchAlignment > kEpsilon
-                        : continuityScore > kEpsilon;
-
-                if (candidateSameBranch)
-                    ++result.sameBranchSafeCandidates;
-
-                const bool betterBranchClass =
-                    candidateSameBranch &&
-                    (!globalHasSafeCandidate ||
-                     !globalBestSameBranch);
-                const bool sameBranchClass =
-                    globalHasSafeCandidate &&
-                    candidateSameBranch == globalBestSameBranch;
-                const bool smallerDeflection =
-                    deflection <
-                        globalBestDeflection - kEpsilon;
-                const bool sameDeflection =
-                    std::abs(
-                        deflection -
-                        globalBestDeflection
-                    ) <= kEpsilon;
-                const bool betterBranchAlignment =
-                    branchAlignment >
-                        globalBestBranchAlignment + kEpsilon;
-                const bool sameBranchAlignment =
-                    std::abs(
-                        branchAlignment -
-                        globalBestBranchAlignment
-                    ) <= kEpsilon;
-                const bool betterContinuity =
-                    continuityScore >
-                        globalBestContinuityScore + kEpsilon;
-                const bool sameContinuity =
-                    std::abs(
-                        continuityScore -
-                        globalBestContinuityScore
-                    ) <= kEpsilon;
-
-                if (!globalHasSafeCandidate ||
-                    betterBranchClass ||
-                    (sameBranchClass &&
-                     smallerDeflection) ||
-                    (sameBranchClass &&
-                     sameDeflection &&
-                     betterBranchAlignment) ||
-                    (sameBranchClass &&
-                     sameDeflection &&
-                     sameBranchAlignment &&
-                     betterContinuity) ||
-                    (sameBranchClass &&
-                     sameDeflection &&
-                     sameBranchAlignment &&
-                     sameContinuity &&
-                     azimuthIndex < globalBestAzimuthIndex))
-                {
-                    globalHasSafeCandidate = true;
-                    globalBestSameBranch = candidateSameBranch;
-                    globalBestBranchAlignment = branchAlignment;
-                    globalBestContinuityScore = continuityScore;
-                    globalBestDeflection = deflection;
-                    globalBestAzimuthIndex = azimuthIndex;
-                    globalBestAdjusted = adjusted;
-                }
-            }
-        }
-
-        if (!explicitContinuity && ringHasSafeCandidate)
-        {
-            // With no accepted branch, preserve the legacy priority of the
-            // smallest safe deflection ring. Velocity only chooses the best
-            // candidate *inside* that ring.
-            result.status = Status::AdjustedClear;
-            result.target = ringBestAdjusted;
-            result.adjustedTarget = true;
-            result.selectedDeflectionRadians = deflection;
-            return result;
         }
     }
 
-    if (explicitContinuity && globalHasSafeCandidate)
+    if (!found)
     {
-        result.status = Status::AdjustedClear;
-        result.target = globalBestAdjusted;
-        result.adjustedTarget = true;
-        result.selectedDeflectionRadians = globalBestDeflection;
-        result.selectedBranchAlignment =
-            globalBestBranchAlignment;
-        result.branchSwitchRequired =
-            explicitContinuity &&
-            continuityLateralValid &&
-            result.sameBranchSafeCandidates == 0 &&
-            globalBestBranchAlignment <= kEpsilon;
+        result.localBypassExhausted = true;
+        result.status =
+            nominal.status == LocalHorizonPlanner::Status::Clear
+                ? Status::StaticHold
+                : Status::ConflictHold;
         return result;
     }
 
-    result.ordinarySearchExhausted = true;
-    result.status =
-        nominal.status == LocalHorizonPlanner::Status::Clear
-            ? Status::StaticHold
-            : Status::ConflictHold;
+    result.status = Status::AdjustedClear;
+    result.adjustedTarget = true;
+    result.selectedLateralOffsetMap = bestOffset;
+    result.selectedLateralOffsetMeters = bestOffsetMagnitude;
+    result.selectedProjectedClearanceMeters =
+        std::isfinite(bestProjectedClearance)
+            ? bestProjectedClearance
+            : 0.0;
+
+    result.target.status = LocalHorizonPlanner::Status::Clear;
+    result.target.targetMode =
+        LocalHorizonPlanner::TargetMode::PassThrough;
+    result.target.targetPositionMapMeters = bestTarget;
+    result.target.targetVelocityMapMetersPerSecond =
+        {0.0, 0.0, 0.0};
+    result.target.targetAccelerationMapMetersPerSecond2 =
+        {0.0, 0.0, 0.0};
+    result.target.safeProgressTargetDemonstrated = true;
+    result.target.primaryConflictEntityId = 0;
+    result.target.conflictsFound = 0;
+
     return result;
 }
 

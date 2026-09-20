@@ -55,6 +55,12 @@ public:
     {
         LocalHorizonPlanner::Query horizon {};
         Policy avoidance {};
+
+        // Optional continuity hint owned by the accepted/execution layer.
+        // On a bounded replan this is the direction of the previously accepted
+        // local progress segment. It is not hidden planner memory.
+        bool preferredDirectionValid = false;
+        Vec3d preferredDirectionMap {0.0, 0.0, 0.0};
     };
 
     enum class Status

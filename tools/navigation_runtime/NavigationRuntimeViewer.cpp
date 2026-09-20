@@ -1712,7 +1712,50 @@ void mouseButtonCallback(
         const double x = state->lastMouseX;
         const double y = state->lastMouseY;
 
-        if (playButtonRect().contains(x, y))
+        if (assistedRect().contains(x, y))
+        {
+            state->controlMode =
+                elite::tools::navigation_runtime::ControlMode::Assisted;
+        }
+        else if (newtonianRect().contains(x, y))
+        {
+            state->controlMode =
+                elite::tools::navigation_runtime::ControlMode::Newtonian;
+        }
+        else if (expertRect().contains(x, y))
+        {
+            state->pilot =
+                elite::tools::navigation_runtime::PilotLevel::Expert;
+        }
+        else if (averageRect().contains(x, y))
+        {
+            state->pilot =
+                elite::tools::navigation_runtime::PilotLevel::Average;
+        }
+        else if (loserRect().contains(x, y))
+        {
+            state->pilot =
+                elite::tools::navigation_runtime::PilotLevel::Loser;
+        }
+        else if (standardRect().contains(x, y))
+        {
+            state->flightStyle =
+                elite::tools::navigation_runtime::FlightStyle::Standard;
+        }
+        else if (extremeRect().contains(x, y))
+        {
+            state->flightStyle =
+                elite::tools::navigation_runtime::FlightStyle::Extreme;
+        }
+        else if (suddenObstacleRect().contains(x, y))
+        {
+            state->useSuddenObstacle = !state->useSuddenObstacle;
+        }
+        else if (calculateButtonRect().contains(x, y))
+        {
+            state->pendingUiAction = UiAction::Calculate;
+        }
+        else if (playButtonRect().contains(x, y))
             state->pendingUiAction = UiAction::TogglePlay;
         else if (prevButtonRect().contains(x, y))
             state->pendingUiAction = UiAction::PreviousFrame;
@@ -2117,7 +2160,7 @@ void jumpToNextReplan(
 
 void processUiAction(
     AppState& state,
-    const trace::TraceDocument& data
+    trace::TraceDocument& data
 )
 {
     const UiAction action = state.pendingUiAction;
@@ -2125,6 +2168,51 @@ void processUiAction(
 
     switch (action)
     {
+        case UiAction::Calculate:
+        {
+            state.calculationMessage = "ИДЁТ РАСЧЁТ...";
+            state.playing = false;
+            state.frameIndex = 0;
+            state.playbackTime = 0.0;
+
+            elite::tools::navigation_runtime::ScenarioRunSettings settings;
+            settings.controlMode = state.controlMode;
+            settings.pilot = state.pilot;
+            settings.flightStyle = state.flightStyle;
+            settings.enableSuddenObstacle =
+                state.useSuddenObstacle;
+
+            const auto result =
+                elite::tools::navigation_runtime::calculateScenario(
+                    state.scenarioPath,
+                    settings
+                );
+
+            data = result.trace;
+            state.traceData = &data;
+            state.frameIndex = 0;
+            state.playbackTime = 0.0;
+            state.playing = result.success && !data.frames.empty();
+            state.requestFit = !data.frames.empty();
+            state.calculationMessage =
+                result.success
+                    ? "РАСЧЁТ ЗАВЕРШЁН"
+                    : "ОШИБКА: " + result.message;
+
+            if (!data.frames.empty())
+            {
+#ifdef ELITE_SOURCE_ROOT
+                const std::string outputPath =
+                    std::string(ELITE_SOURCE_ROOT) +
+                    "/tools/navigation_runtime/last_calculated_trace.json";
+#else
+                const std::string outputPath =
+                    "tools/navigation_runtime/last_calculated_trace.json";
+#endif
+                trace::saveTraceJson(data, outputPath);
+            }
+            break;
+        }
         case UiAction::TogglePlay:
             state.playing = !state.playing;
             break;
@@ -2145,13 +2233,13 @@ void processUiAction(
     }
 }
 
-std::string defaultTracePath()
+std::string defaultScenarioPath()
 {
 #ifdef ELITE_SOURCE_ROOT
     return std::string(ELITE_SOURCE_ROOT) +
-        "/tools/navigation_runtime/last_trace_newtonian.json";
+        "/tools/navigation_runtime/scenario.json";
 #else
-    return "tools/navigation_runtime/last_trace_newtonian.json";
+    return "tools/navigation_runtime/scenario.json";
 #endif
 }
 
@@ -2161,13 +2249,9 @@ int main(int argc, char** argv)
 {
     try
     {
-        const std::string path =
-            argc >= 2 ? argv[1] : defaultTracePath();
-        const trace::TraceDocument data =
-            trace::loadTraceJson(path);
-
-        if (data.frames.empty())
-            throw std::runtime_error("trace contains no frames");
+        const std::string scenarioPath =
+            argc >= 2 ? argv[1] : defaultScenarioPath();
+        trace::TraceDocument data;
 
         glfwSetErrorCallback(errorCallback);
         if (!glfwInit())
@@ -2213,8 +2297,9 @@ int main(int argc, char** argv)
 
         AppState state;
         state.traceData = &data;
+        state.scenarioPath = scenarioPath;
+        state.playing = false;
         state.lastRealTime = glfwGetTime();
-        fitCamera(state, data);
 
         glfwSetWindowUserPointer(window, &state);
         glfwSetMouseButtonCallback(window, mouseButtonCallback);
@@ -2310,7 +2395,9 @@ int main(int argc, char** argv)
                 );
 
             const trace::TraceFrame displayFrame =
-                interpolatedDisplayFrame(data, state);
+                data.frames.empty()
+                    ? trace::TraceFrame {}
+                    : interpolatedDisplayFrame(data, state);
 
             drawScene(
                 renderer,

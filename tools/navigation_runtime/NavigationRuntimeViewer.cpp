@@ -369,6 +369,13 @@ void appendCircle(
     }
 }
 
+void appendWireSphere(
+    std::vector<Vertex>& out,
+    const glm::vec3& center,
+    float radius,
+    const glm::vec3& color
+);
+
 void appendWireBox(
     std::vector<Vertex>& out,
     const glm::vec3& center,

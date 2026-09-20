@@ -960,3 +960,35 @@ At every iteration:
 - target-machine gate before acceptance;
 - then update state/task/continuation MDs.
 
+
+
+## 2026-09-20 current implementation amendment — two-stage diagnostic gate
+
+The immediate diagnostic gate is split deliberately:
+
+```text
+STAGE 1
+static world + objective
+ -> one retained NominalRoute
+ -> sparse route polyline / coarse corridor abstraction
+
+STAGE 2
+retained NominalRoute + dynamic world
+ -> bounded local response
+ -> physical maneuver candidates
+ -> continuous swept-hull/tunnel proof
+ -> decision / ACCEPT
+ -> follower / pilot / physics
+```
+
+`NominalRoutePlanner` is now the explicit Stage-1 production-facing seam. Its current
+geometric backend is `GeometricPathPlanner`; this reuse does not restore the retired
+route-wide dense trajectory/materialization architecture. The Stage-1 product is sparse
+route intent only.
+
+Dynamic-world revision is not a B3/global-route invalidation trigger. Dynamic occupancy
+belongs to Stage 2 local monitoring/avoidance. Goal or static-world revision may
+invalidate the retained nominal route.
+
+The route envelope is only a coarse navigation/corridor abstraction. Exact oriented
+hull fit is owned by B6 tunnel/swept-volume proof later in the chain.

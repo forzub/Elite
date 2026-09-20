@@ -930,3 +930,72 @@ The execution vehicle initializes pitch/yaw/roll rate from the scenario. No glob
 recalculation semantics changed.
 
 Validation state: these fixes are committed but not yet target-rebuilt/re-run.
+
+
+## 2026-09-21 — test-matrix audit: why old movement tests were green while viewer execution failed
+
+A full audit of navigation execution tests found a real coverage gap.
+
+### What old tests actually covered
+
+- `RuckigRoutePlannerTests`: Ruckig route/trajectory generation and obstacle safety only;
+  no TrajectoryFollower, PilotSkill or authoritative physics.
+- `ManeuverProgramExecutionLabTests`: real Follower -> PilotSkill -> physics, but the
+  test directly authors a small number of AcceptedManeuverProgram phases. A 100 m line
+  is one 16-sample program spanning the whole ~20 s maneuver. The right-angle case is
+  explicitly `leg1 -> rotate -> leg2`.
+- `ManeuverCorridorMatrix`, `ManeuverFlyThrough3d`, `ManeuverCornerFamilyMatrix`,
+  `ManeuverSpeedDoctrineMatrix`, `ManeuverChainedLimitMatrix`: real execution, but
+  again with hand-authored bounded physical programs, not raw Ruckig output.
+- `NavigationCompositeProvingGroundTests`: Planner + Follower + PilotSkill + physics,
+  but each physical phase is hand-authored from the current actual vehicle state;
+  Ruckig is not used for the executed phase.
+- sampler/tracker/pilot tests are component tests only.
+
+Therefore no previous test exercised the exact viewer chain:
+
+```text
+NominalRoutePlanner
+ -> retained route
+ -> Ruckig full trajectory
+ -> route-to-AcceptedManeuverProgram adapter
+ -> Follower
+ -> PilotSkill
+ -> physics
+```
+
+### Root integration mistake
+
+The viewer introduced a new untested adapter that copied every 16 consecutive raw
+Ruckig samples into a new AcceptedManeuverProgram. The current 1521-sample trajectory
+therefore became 102 tiny ~0.75 s programs.
+
+That interpretation was wrong. In the green execution tests, the fixed 16 samples are
+reference knots spanning one meaningful physical phase; they are not a transport packet
+of 16 adjacent 0.05 s Ruckig samples.
+
+### Fix
+
+- removed raw consecutive-sample microchunking;
+- retained global route is still calculated exactly once;
+- Ruckig still parameterizes that route once;
+- trajectory is divided by retained coarse-route legs;
+- each route leg becomes one bounded AcceptedManeuverProgram with up to 16 reference
+  knots spread across the whole leg;
+- phase advancement now uses the already-tested `ManeuverPhaseGate`;
+- each next phase is accepted at the actual current simulation time;
+- for the current four-point route the expected program scale is ~3 physical phases,
+  not 102 micro-programs.
+
+### New missing regression added
+
+`tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp` now exercises the
+same pipeline as the viewer from `scenario.json` through Planner -> retained route ->
+Ruckig -> Follower -> PilotSkill -> physics -> authored finish.
+
+`tests/navigation_runtime/run_stage1_mingw64.sh` now builds the viewer and runs this
+exact E2E regression. Component tests alone are no longer sufficient evidence for viewer
+execution.
+
+Target validation is pending. Do not claim the route-phase fix works until the user's
+MinGW64 machine passes the new E2E test.

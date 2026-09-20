@@ -1,7 +1,20 @@
 #include "NavigationScenarioRuntime.h"
 
 #include "src/game/navigation/NominalRoutePlanner.h"
+#include "src/game/navigation/AcceptedManeuverProgram.h"
+#include "src/game/navigation/TrajectoryFollower.h"
+#include "src/game/navigation/ManeuverProgramSampler.h"
+#include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/DynamicMotionSystem.h"
+#include "src/game/navigation/KinematicFrame.h"
+#include "src/game/navigation/LocalFlightControlLaw.h"
+#include "src/game/shared/SharedShipPhysics.h"
+#include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/core/ShipTransform.h"
+#include "src/world/WorldParams.h"
 #include "src/world/navigation/NavigationObstacle.h"
+#include "src/world/navigation/TrajectoryGenerator.h"
+#include "src/world/navigation/NavigationObstacleGeometry.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -17,6 +30,7 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace elite::tools::navigation_runtime
 {

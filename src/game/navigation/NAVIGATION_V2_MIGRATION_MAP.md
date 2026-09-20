@@ -16,7 +16,7 @@ The migration goal is **not** a rewrite. Preserve accepted world/geometry/contro
 | B1 Shared Influence Builder | NavigationMap spatial hash + per-agent queryCorridor/querySphere | PARTIAL | retain spatial index; later publish scene-wide sparse InfluenceFrame |
 | B2 Navigation Objective | NavigationRuntimePlanner::Goal, NpcNavigationGoal, task-specific target structs | FRAGMENTED | unify after execution seam is clean |
 | B3 Topology Route | NavigationSpace corridor/portals | KEEP / INCOMPLETE | add coarse vehicle-feasibility metadata later |
-| B4 Local Corridor | LocalHorizonPlanner + LocalAvoidancePlanner visibility fan | TRANSITIONAL | introduce RouteAlignedCorridorPlanner beside it; A/B before removal |
+| B4 Local Corridor | LocalHorizonPlanner + trajectory-normal projected visible-horizon LocalAvoidancePlanner | ACTIVE REPLACEMENT / UNVERIFIED | keep this as the single ordinary unexpected-obstacle path; extend longitudinally into route-aligned slabs only if complex known geometry requires it; no angular-fan fallback |
 | B5 Maneuver Compiler | OrdinaryPhysicalManeuverCompiler (Newtonian first slice) + precision MovingPassage precursor | ISOLATED GREEN / REVISED CANDIDATE | rerun after main-engine-option ownership correction, then feed exact candidate to B6 |
 | B6 Continuous Prover | MovingPassageTrajectoryEvaluator + exact-static same-Hermite proof inside NavigationRuntimePlanner | GOOD PARTS / MIXED OWNER | extract general proof API |
 | B7 Maneuver Decision | ManeuverDecisionController | EXISTS / BYPASSED | feed ordinary proved candidates through it |

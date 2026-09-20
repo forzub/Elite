@@ -18,130 +18,115 @@ Accepted:
 Exact tested checkout:
 
 ```
-51e6c41bb94b65e8cc269fb035164a4eb0aa23fd
+0ad327ad63d3e63f8c204b2e59a6f224f80c8fee
 ```
 
 Results:
 - architecture contract PASS;
-- `navigation_runtime_planner` PASS, including explicit accepted-segment continuity regression;
-- runtime 18/19;
-- only `navigation_composite_proving_ground` failed.
+- runtime 17/19;
+- failures:
+  - `navigation_runtime_planner` strengthened cross-ring continuity regression;
+  - `navigation_composite_proving_ground`.
 
-## What the latest run proved
+## Key evidence
 
-The explicit continuity hint is correctly wired through production:
-- focused planner regression is green;
-- `NavigationRuntimePlanner` receives accepted local continuity;
-- `LocalAvoidancePlanner` consumes it.
+The strengthened regression failed on:
+```
+accepted branch continuity must prefer a larger same-side ring over a smaller opposite-side ring
+```
 
-However the final composite still changed branch.
-
-Logged Newtonian continuation:
+The final composite still showed:
 ```
 continuity=(0.357512,-0.349550,+0.866025)
-current position=(181.656981,57.946838,25.984828)
-new target=(172.399109,59.234718,-2.521893)
+selected target=(172.399109,59.234718,-2.521893)
+selected_deflection_deg=60
 ```
 
-The new target is almost opposite the +Z continuity branch.
+Thus the explicit hint was present, but branch classification/ranking was still wrong.
 
 ## Root cause
 
-The previous production fix only used continuity **inside each individual deflection ring**.
+We classified "same branch" using the full direction dot product.
 
-The algorithm still preserved this outer ordering:
+That is incorrect for progress-preserving visibility rays:
+- all candidates share a large forward component;
+- opposite bypass sides may both have positive full-direction dot;
+- therefore +Z and -Z can both be mislabeled as the same branch.
+
+Avoidance branch identity must be based on the **transverse component relative to the current nominal forward**.
+
+## Current unverified production fix
+
+Production commits:
 
 ```
-15 deg ring
- -> if any safe candidate exists, return
-30 deg ring
-45 deg ring
-...
+b8bcaae6c5af366e8cabcefb86fbe104c120b010
+caa8da847b0f48ea2d72d2fa8c042c1d599c73b8
+88f63b0d62803d73e7f3694d1c4f30bcbc1925d0
+9422dddfab64f70f94773ebcacf2167be1daacbe
+e9655a4b9f004fe790adbbc287bd55a3f1c269ea
 ```
 
-Therefore an opposite-side candidate on a smaller ring could beat a same-branch candidate on a slightly larger ring.
+New semantics:
+1. project accepted continuity direction into the plane perpendicular to current nominal forward;
+2. project each candidate direction into the same plane;
+3. branch alignment = dot(normalized lateral candidate, normalized accepted lateral);
+4. positive transverse alignment = same branch;
+5. same branch outranks opposite branch;
+6. within the same branch class, choose the **smallest safe deflection ring**;
+7. inside that ring, maximize transverse branch alignment;
+8. full direction continuity and azimuth index are deterministic lower-level tie-breaks.
 
-That violates the meaning of an explicit accepted-segment continuity contract.
+If the accepted continuity has no meaningful transverse component, the planner falls back to full-direction continuity rather than inventing a branch.
 
-## Current unverified production correction
+## New diagnostics
+
+Local/runtime result now exposes:
+- continuity hint used;
+- continuity lateral valid;
+- number of safe same-branch candidates;
+- selected branch alignment.
+
+Composite `[COMPOSITE-RESUME]` prints:
+- selected deflection;
+- lateral-valid flag;
+- same-branch safe count;
+- selected branch alignment;
+- accepted continuity vector.
+
+## Focused regression correction
 
 Commit:
-
 ```
-e19c1804806ce5f3554f20c7b7d3d5ac19b4911e
-```
-
-New semantics when explicit continuity is present:
-- evaluate all safe candidates across all allowed ordinary deflection rings;
-- safe same-branch candidates outrank opposite-branch candidates;
-- among candidates in the same branch class, higher alignment with accepted direction wins;
-- smaller deflection is secondary tie-break;
-- deterministic azimuth index remains final tie-break;
-- if no safe same-branch candidate exists anywhere, planner may choose the least-opposed safe candidate rather than deadlock.
-
-Without explicit continuity:
-- legacy smallest-safe-ring priority remains;
-- current velocity only ranks candidates inside that ring.
-
-No safety, clearance, horizon or maximum-deflection bound changed.
-
-Public API contract comment updated in:
-```
-c3dcf98b16bd6e45f0dbc949ec926f086aa623a0
+0e344f3a3b2a5e887cbb474ce9ce650b68851716
 ```
 
-## Stronger focused regression
+The fixture now uses four azimuth samples so the preferred first-ring -Z branch is a single deterministic candidate and can be blocked exactly.
 
-Commit:
+The regression requires:
+- explicit continuity hint used;
+- meaningful transverse continuity;
+- at least one safe same-branch candidate exists;
+- selected branch alignment > 0.5;
+- selected deflection is larger than the blocked primary ring;
+- selected target remains on -Z.
 
-```
-06a917f058926a29f41a936dd994be3f8073e7cf
-```
-
-The regression now proves cross-ring semantics:
-- accepted continuity points toward -Z;
-- an exact-static blocker rejects only the preferred -Z candidate on the first 15 deg ring;
-- the opposite +Z first-ring candidate remains safe;
-- the preferred -Z branch is safe again on a larger ring;
-- planner must choose the larger same-branch ring instead of the smaller opposite-side ring.
-
-## Composite diagnostics and ownership correction
-
-Diagnostics commit:
-```
-e62328d4af99b6e452e2d07e53cd20e25a103dcf
-```
-
-`[COMPOSITE-RESUME]` now prints selected deflection degrees.
-
-Ownership commit:
-```
-a2da6453daaa8e00cc1f4661321b9294513057ff
-```
-
-Continuity is now updated only after the corresponding physical program:
-- is physically authorable;
-- executes successfully;
-- preserves required clearance.
-
-The hint is taken from the executed program start->terminal displacement.
-
-Thus continuity is owned by executed accepted state, not merely by a planner proposal.
+This now tests the intended cross-ring branch rule rather than ambiguous diagonal first-ring candidates.
 
 ## Current gate
 
 Expected suite remains **19 tests**.
 
-If focused regression fails:
-- debug global cross-ring branch ranking.
+If focused regression passes and composite reports:
+- same_branch_safe > 0;
+- selected_branch_alignment > 0;
+then branch preservation is functioning.
 
-If focused regression passes but composite still switches branch:
-- direction vector is insufficient and the next contract should be an explicit accepted local branch/plane identity.
+If composite still switches to the opposite side while same_branch_safe > 0, the ranking remains wrong.
 
-If 19/19:
-- accept final composite;
-- close synthetic maneuver behavior laboratory;
-- move primary evaluation into actual NAV STRESS/game.
+If same_branch_safe == 0, switching branch is physically justified and the next missing behavior is a recovery/braking maneuver before the branch switch rather than a no-stop continuation.
+
+No physical, tracking, clearance, hull or terminal criterion has been weakened.
 
 ## Documentation protocol
 

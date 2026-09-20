@@ -277,3 +277,66 @@ Still pending and must not be faked in replay UI:
 - meaningful Assisted/Newtonian selector that runs/regenerates the scenario.
 These require extracting/reusing a live scenario runner inside the tool or generating
 distinct authoritative traces. Do not add cosmetic controls that leave physics unchanged.
+
+## 2026-09-20 live navigation diagnostic stand
+
+Architecture changed: `tools/navigation_runtime` is no longer a passive JSON trace
+viewer. The JSON file is now an INPUT SCENARIO only. The executable calculates the
+route and vehicle motion in-process when the user presses `РАССЧИТАТЬ`.
+
+New production-chain runtime:
+`scenario.json -> NavigationSpace/NavigationMap -> NavigationRuntimePlanner ->
+AcceptedManeuverProgram -> TrajectoryFollower -> NavigationRuntimeControlBridge /
+PilotSkillExecutor -> SharedShipPhysics / DynamicMotionSystem -> in-memory trace -> 3D`.
+
+New files:
+- `tools/navigation_runtime/NavigationScenarioRuntime.h`;
+- `tools/navigation_runtime/NavigationScenarioRuntime.cpp`;
+- `tools/navigation_runtime/scenario.json`.
+
+Real UI inputs:
+- control law: Assisted / Newtonian;
+- pilot: Expert / Average / Loser;
+- flight style: Standard / Extreme;
+- sudden-obstacle checkbox;
+- `РАССЧИТАТЬ` button.
+
+Pilot choice changes the actual PilotSkillExecutor profile (reaction delay, decision
+rate, latency, response, slew and deterministic command error). Flight style changes
+real cruise speed and planner horizon/cost aggressiveness. Control law changes the
+actual local flight law and maneuver attitude semantics.
+
+Sudden obstacle semantics:
+- unchecked: sudden obstacle is never published;
+- checked: it is absent from initial NavigationMap and appears only after
+  `activation_time_s` during the simulation;
+- therefore the initial route has no foreknowledge of the surprise obstacle;
+- after activation normal receding-horizon replanning reacts to it.
+
+`scenario.json` supports:
+- start P/V/forward/up;
+- optional forced ship route points (default empty);
+- final position;
+- optional final forward/up constraints;
+- final constant speed requirement;
+- static sphere/box/capsule obstacles;
+- moving obstacles defined by velocity vector OR route points + speed;
+- sudden obstacle, including spawn relative to live ship forward/right/up.
+
+The default scenario leaves `ship_route_points` empty so Planner must calculate the
+route around the static obstacle rather than replay authored portal points.
+
+Calculated white route now records the live sequence of Planner `selectedTarget`
+decisions. Adjusted targets are marked as turn/bypass points. Actual motion remains
+a separate rendered path.
+
+Static obstacles from JSON are carried into the calculated TraceDocument and rendered
+in 3D. `last_calculated_trace.json` is still saved for diagnostics, but is an OUTPUT,
+not an input to the stand.
+
+Build architecture:
+`tools/navigation_runtime/CMakeLists.txt` now links the production navigation/control/
+physics stack directly instead of being an OpenGL-only replay executable.
+
+Validation state: this live-runtime iteration is committed but NOT YET compiled/run on
+the target MinGW64 machine. Do not claim acceptance until the target gate passes.

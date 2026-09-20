@@ -214,38 +214,37 @@ struct NavigationRuntimeLabObservation
     bool movingPassageExecutionActive = false;
     bool movingPassageAppliedAccelerationSeen = false;
 
-    // Default free-space transit evidence. The moving pair is an obstacle
-    // encounter, not a mandatory gap: bounded visibility steering must choose
-    // the smallest safe deflection, physically execute it, then return to the
-    // direct accepted target as soon as that corridor becomes clear.
-    bool visibilityBypassSeen = false;
-    bool visibilityBypassActive = false;
-    bool visibilityDirectRecoveredSeen = false;
-    double maximumVisibilityDeflectionRad = 0.0;
+    // Default unexpected-obstacle evidence. The moving pair is projected into
+    // the plane normal to the accepted route, a temporary metric offset is
+    // executed, and the solver returns to the original route as soon as its
+    // bounded horizon is clear again.
+    bool visibleHorizonBypassSeen = false;
+    bool visibleHorizonBypassActive = false;
+    bool visibleHorizonDirectRecoveredSeen = false;
+    double maximumVisibleHorizonOffsetMeters = 0.0;
 
-    // One-shot P5 -> P9 -> P13 witness. Capture only the first real moving-pair
-    // AdjustedClear epoch so diagnostics show whether a geometrically selected
-    // bypass preserved its semantics through ACCEPT, PilotSkill and propulsion.
-    bool firstVisibilityBypassCaptured = false;
-    double firstVisibilityBypassTimeSeconds = 0.0;
-    std::uint64_t firstVisibilityBypassSegmentRevision = 0;
-    std::uint8_t firstVisibilityBypassReplanReason = 0xffu;
-    double firstVisibilityBypassDeflectionRad = 0.0;
-    glm::dvec3 firstVisibilityBypassAgentPositionMap {0.0};
-    glm::dvec3 firstVisibilityBypassAgentVelocityMapMps {0.0};
-    glm::dvec3 firstVisibilityBypassSelectedTargetMap {0.0};
-    glm::dvec3 firstVisibilityBypassDesiredVelocityMapMps {0.0};
-    bool firstVisibilityBypassAcceptedAlignForward = false;
-    glm::dvec3 firstVisibilityBypassAcceptedForwardMap {0.0};
-    glm::dvec3 firstVisibilityBypassIdealAccelerationMapMps2 {0.0};
+    // One-shot P5 -> P9 -> P13 witness for the first projected visible-horizon
+    // bypass, preserving its metric offset through ACCEPT, PilotSkill and propulsion.
+    bool firstVisibleHorizonBypassCaptured = false;
+    double firstVisibleHorizonBypassTimeSeconds = 0.0;
+    std::uint64_t firstVisibleHorizonBypassSegmentRevision = 0;
+    std::uint8_t firstVisibleHorizonBypassReplanReason = 0xffu;
+    double firstVisibleHorizonBypassOffsetMeters = 0.0;
+    glm::dvec3 firstVisibleHorizonBypassAgentPositionMap {0.0};
+    glm::dvec3 firstVisibleHorizonBypassAgentVelocityMapMps {0.0};
+    glm::dvec3 firstVisibleHorizonBypassSelectedTargetMap {0.0};
+    glm::dvec3 firstVisibleHorizonBypassDesiredVelocityMapMps {0.0};
+    bool firstVisibleHorizonBypassAcceptedAlignForward = false;
+    glm::dvec3 firstVisibleHorizonBypassAcceptedForwardMap {0.0};
+    glm::dvec3 firstVisibleHorizonBypassIdealAccelerationMapMps2 {0.0};
 
-    bool firstVisibilityBypassExecutedCaptured = false;
-    glm::dvec3 firstVisibilityBypassExecutedAccelerationMapMps2 {0.0};
+    bool firstVisibleHorizonBypassExecutedCaptured = false;
+    glm::dvec3 firstVisibleHorizonBypassExecutedAccelerationMapMps2 {0.0};
 
-    bool firstVisibilityBypassAppliedCaptured = false;
-    glm::dvec3 firstVisibilityBypassAppliedMainAccelerationMapMps2 {0.0};
-    glm::dvec3 firstVisibilityBypassAppliedRcsAccelerationMapMps2 {0.0};
-    glm::dvec3 firstVisibilityBypassAppliedTotalAccelerationMapMps2 {0.0};
+    bool firstVisibleHorizonBypassAppliedCaptured = false;
+    glm::dvec3 firstVisibleHorizonBypassAppliedMainAccelerationMapMps2 {0.0};
+    glm::dvec3 firstVisibleHorizonBypassAppliedRcsAccelerationMapMps2 {0.0};
+    glm::dvec3 firstVisibleHorizonBypassAppliedTotalAccelerationMapMps2 {0.0};
 
     bool movingGapPlanePassed = false;
 

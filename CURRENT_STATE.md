@@ -420,3 +420,24 @@ Important remaining architecture gap:
 
 Validation state: snapshot-age and fixed-HUD patches are committed but not yet target
 recompiled/replayed after this video.
+
+## 2026-09-20 architecture correction — global corridor vs local dynamic avoidance
+
+User clarified the intended ownership and this matches the existing LocalAvoidancePlanner contract:
+
+- the nominal global route/corridor is built once from start to finish;
+- it remains authoritative while the destination and static navigation world remain unchanged;
+- moving obstacles do NOT trigger global route reconstruction;
+- dynamic snapshots are consumed only by a bounded local monitor/avoidance layer;
+- local avoidance may temporarily leave the nominal corridor, then progressively reacquire it;
+- follower/autopilot continuously executes the current accepted trajectory/control program;
+- the global planner is invoked again only when the goal changes or the static navigation world/corridor revision becomes invalid.
+
+`maxResultAgeSeconds` / the ~0.25 s freshness limit is therefore a dynamic-snapshot safety contract, NOT a global replanning cadence.
+
+Current live stand violates this architecture because it calls NavigationRuntimePlanner::plan repeatedly and therefore recomputes the static corridor every short execution slice.
+
+Important current capability gap:
+`NavigationSpace::queryCostedCorridor` currently returns a region/portal corridor and portal centers. Exact static NavigationObstacle geometry is used to prove/reject local segments, but the global corridor search does not yet synthesize a full geometric path around arbitrary exact obstacles inside one coarse region.
+
+Therefore the default one-region + wall live scenario cannot honestly demonstrate the requested `start -> finish` global corridor yet. A proper global geometric corridor product must be added/cached first, then local dynamic avoidance must operate against that immutable nominal corridor.

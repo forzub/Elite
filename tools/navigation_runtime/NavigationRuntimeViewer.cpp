@@ -91,6 +91,14 @@ struct AppState
     std::string scenarioPath;
     std::string calculationMessage = "ВЫБЕРИТЕ РЕЖИМЫ И НАЖМИТЕ РАССЧИТАТЬ";
     std::vector<std::string> diagnosticLines;
+
+    // Immutable Stage-1 source for every Stage-2 comparison run. Changing
+    // pilot/control/style must never ask Planner to rebuild this route.
+    trace::TraceDocument retainedRoute;
+    std::vector<std::string> retainedRouteDiagnostics;
+    std::string retainedRouteMessage;
+    bool hasRetainedRoute = false;
+
     bool calculationPerformed = false;
     bool calculationSucceeded = false;
     bool executionPerformed = false;

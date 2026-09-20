@@ -142,9 +142,9 @@ The route planner does not issue an arbitrary acceleration vector and assume the
 
 ~~~text
 DirectForward
-VisibilityTurn
-BankedVisibilityTurn
-BrakeAndTurn
+ProjectedBypass
+BankedProjectedBypass
+SpeedAdjustedBypass
 PrecisionAlignedPass
 GoAround
 AssistedStop
@@ -171,81 +171,69 @@ EmergencyGlancingPass
 
 These are candidate generators, not scripted animation names. Every accepted candidate still passes real capability and continuous geometry checks.
 
-## Ordinary bounded visibility remains cheap
+## Unexpected-obstacle visible-horizon bypass
 
-First local attempt:
+Unexpected local obstacles are not a second global-routing problem.
 
-~~~text
-direct A -> B
-15 deg
-30 deg
-45 deg
-60 deg
-75 deg
-~~~
+The accepted route/trajectory already contains the known static world. The
+local emergency layer consumes only a bounded physical horizon around the
+currently accepted trajectory.
 
-This is intentionally the cheap, progress-preserving local layer.
-
-The 75-degree limit is not a vehicle capability limit. It separates ordinary local bypass from recovery / retreat / extreme maneuver selection.
-
-## No-safe-progress escalation
-
-Failure of the ordinary 0..75-degree visibility fan must not map directly to permanent Hold.
-
-Instead it produces:
+Its canonical construction is:
 
 ~~~text
-NoSafeProgressInOrdinaryFan
+accepted trajectory tangent
+        |
+        v
+plane normal to the trajectory
+        |
+        +-- project predicted moving-obstacle swept occupancy
+        +-- apply known exact-static corridor constraints
+        |
+        v
+search reachable lateral/vertical metric offsets
+        |
+        v
+prove temporary bypass
+        |
+        v
+merge back to the original accepted trajectory
 ~~~
 
-and triggers bounded recovery candidate generation.
+The search space is expressed in **meters of offset**, not angular rays. There
+is no 15/30/45/60/75-degree fan, no persistent left/right branch identity and
+no branch-switch state.
 
-### Common recovery candidates
+Longitudinal speed is part of maneuver compilation. A vehicle may slow enough
+to make a safe offset reachable, but stopping is not the normal way to choose a
+different side of an obstacle.
+
+If projected local free space is exhausted, the local layer reports:
 
 ~~~text
-1. wider local turn / escape sector (>75 deg)
-2. known backtrack corridor / previous viable portal
-3. safe stop/brake, if physically reachable
-4. retreat / reverse-sector candidate
-5. mandatory precision passage candidate
-6. emergency contact-expected candidate
+LocalBypassExhausted
 ~~~
 
-The exact ordering is doctrine-dependent and belongs to ManeuverDecisionController.
+That means only that no safe bounded bypass was demonstrated inside the current
+physical horizon. Higher ownership may then reduce speed, choose a different
+local waypoint/portal, backtrack, or invoke an emergency/contact-expected
+maneuver. A full stop is one possible fail-safe candidate, not the default
+local avoidance algorithm.
 
-### Assisted recovery
+### Control-law-specific physical realization
 
-Assisted may generate wider forward-turn and controlled low-speed recovery candidates first.
+The geometric bypass target is shared, but its physical realization remains
+control-law-specific.
 
-If progress is not mandatory:
+Assisted may use aligned lateral/vertical motion, banked turns and speed
+adjustment.
 
-~~~text
-brake -> turn -> reacquire route
-~~~
+Newtonian may preserve inertial velocity while rotating, trim with RCS, drift
+through the free projected region, or rotate/burn to reacquire the merge
+trajectory.
 
-If progress is mandatory:
-
-~~~text
-wider turn / go-around / reverse-sector
- -> precision passage
- -> contact-expected emergency
-~~~
-
-### Newtonian recovery
-
-Newtonian has additional useful choices because attitude and velocity can separate:
-
-~~~text
-coast while rotating away from blocker
-RCS trim while preserving inertial velocity
-sideways passage
-hard 90..150 deg attitude change while still drifting
-180 deg flip-and-burn
-burn into a retreat vector
-rotate for minimum threat silhouette while velocity stays on escape line
-~~~
-
-A Newtonian reverse maneuver is never modeled as instant negative velocity. It is a bounded turn/burn trajectory.
+Every accepted physical candidate still passes capability and continuous
+geometry proof.
 
 ## Optimal Newtonian trajectory implementation
 

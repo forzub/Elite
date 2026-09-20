@@ -46,6 +46,8 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimeControlBridge.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NpcNavigationIntentController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimePlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/NominalRoutePlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/GeometricPathPlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverTrackingController.cpp"

@@ -14,71 +14,65 @@ Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 Tested:
 ```
-18f93e15f3baa5218d459b289ae89beb170f1c54
+852e5a71a71625cdfc0c71a6bb89724d2194990e
 ```
 
 Architecture PASS. Runtime 18/19. Previous 18 gates remain green.
 
-Production composite planner evidence:
+Production dynamic plan:
+- `AdjustedClear`;
+- nominal conflict witness = 1;
+- primary entity = 12060;
+- 20 probes;
+- no static block.
+
+Authority-bounded first replacement:
+- duration 24 s;
+- terminal speed 2 m/s;
+- peak transverse FF 1.348975 m/s2;
+- planned hazard clearance 3.181387 m;
+- actual hazard clearance 3.175166 m;
+- tracking exceeded = 0;
+- terminal P error 0.013099 m;
+- terminal V error 0.076580 m/s.
+
+Therefore planner + first physical bypass are healthy.
+
+## Latest root cause
+
+After the successful first local bypass, the test called:
+
 ```
-[COMPOSITE-PLAN]
-law=newtonian
-status=adjusted_clear
-adjusted=1
-nominal_dynamic_conflicts=1
-primary_conflict=12060
-probes=20
-ordinary_exhausted=0
-nominal_static_blocked=0
-position=(138.841366,52.623525,0)
-velocity=(9.263267,3.401145,0)
-hazard=(185.850434,42.920559,0)
-selected_target=(159.856528,40.750781,17.815749)
+Planner::plan(..., emptyDynamic(), ...)
 ```
 
-The planner is now doing exactly what the final lab requires.
+while the dynamic hazard continued to exist in physical simulation.
 
-Failure:
-```
-composite replacement did not clear dynamic hazard
-```
+The planner was therefore given a different world from the executor.
 
-## Root cause
-
-The test authored a 6-second quintic from the live P/V state to the adjusted target with 8 m/s terminal speed.
-
-That analytic curve requires roughly:
-- 5.61 m/s2 peak total acceleration;
-- 5.03 m/s2 peak transverse acceleration.
-
-The Cobra fixture only has 2.0 m/s2 lateral/vertical manoeuvre authority and needs B10 reserve.
-
-Therefore the target was safe but the test-side B5-like time parameterization was physically invalid.
+The final aggregate dynamic-clearance failure came from this fixture inconsistency, not from the first replacement.
 
 ## Current unverified candidate
 
 ```
-7444c5930586300d6cac48bd4b2fa63b27e96bd6
+6c0a71d308040c568c109afc4425332021ade730
+01a8d69cc635a450d73a49a31b91e5546e0b1828
 ```
 
-Replacement authoring now searches for the shortest physical candidate:
-- duration 8..32 s;
-- terminal speed 4 then 2 m/s;
-- 768 dense analytic samples.
+Persistent hazard rules:
+- re-publish the hazard at its actual current position after each bypass;
+- query NavigationMap again;
+- run production NavigationRuntimePlanner again;
+- if `AdjustedClear`, execute another authority-bounded local suffix from current live state;
+- allow up to four additional continuations;
+- resume static portal path only after `NominalClear`.
 
-Required before ACCEPT:
-- peak transverse FF <=1.35 m/s2;
-- minimum speed >=0.50 m/s;
-- planned conservative dynamic clearance >=1.50 m.
+The original invalidation event remains exactly one. Additional suffix replans are normal short-horizon continuation after segment completion.
 
-Then real execution requires:
-- zero tracking-envelope exceeded ticks;
-- actual conservative dynamic clearance >0.5 m.
-
-Diagnostics:
+New diagnostics:
 ```
-[COMPOSITE-REPLACEMENT]
-[COMPOSITE-REPLACEMENT-ACTUAL]
+[COMPOSITE-RESUME]
+[COMPOSITE-CONTINUATION]
 ```
 
 ## Validation
@@ -105,17 +99,17 @@ OUT="navigation_test_$(date +%Y%m%d-%H%M%S).txt"
 
 echo
 echo "===== FINAL COMPOSITE SUMMARY ====="
-grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
+grep -E '\[COMPOSITE-PLAN\]|\[COMPOSITE-REPLACEMENT\]|\[COMPOSITE-REPLACEMENT-ACTUAL\]|\[COMPOSITE-RESUME\]|\[COMPOSITE-CONTINUATION\]|\[COMPOSITE\]|NAVIGATION COMPOSITE PROVING GROUND|tests passed|tests failed|TESTED HEAD' "$OUT" || true
 
 echo "$PWD/$OUT"
 ```
 
 ## If green
 
-Record exact target checkout and composite metrics, close synthetic maneuver behavior laboratory, then move immediately to real NAV STRESS/game accepted-corridor + trajectory visualization.
+Record exact target checkout + final composite metrics, close synthetic maneuver behavior lab, and move immediately to actual NAV STRESS/game accepted-corridor + physical-trajectory visualization.
 
 ## If red
 
-Compare planned vs actual replacement metrics and repair the exact remaining seam. Do not weaken physical criteria.
+Use persistent-hazard resume diagnostics to repair the exact remaining composition seam. Do not erase hazards or weaken physical criteria.
 
 **Again: recreate this prompt from scratch after every state-affecting iteration.**

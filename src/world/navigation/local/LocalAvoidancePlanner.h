@@ -100,6 +100,14 @@ public:
         std::size_t dynamicRejected = 0;
         std::size_t staticObstaclesExamined = 0;
 
+        // Accepted-branch diagnostics. "Branch" is defined by the transverse
+        // component relative to the current nominal forward, not by full
+        // direction dot product (all progress-preserving rays share forward).
+        bool continuityHintUsed = false;
+        bool continuityLateralValid = false;
+        std::size_t sameBranchSafeCandidates = 0;
+        double selectedBranchAlignment = 0.0;
+
         // Exact static blocker that rejected the nominal bounded segment.
         // This is independent from NavigationMap dynamic conflict identity.
         std::string nominalStaticObstacleId;

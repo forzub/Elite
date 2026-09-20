@@ -3681,51 +3681,51 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             Planner::Status::AdjustedClear &&
         m_navigationRuntimeLabLastPlan.adjustedTarget;
 
-    auto& visibilityObservation =
+    auto& visibleHorizonObservation =
         m_navigationRuntimeLabObservation;
-    visibilityObservation.visibleHorizonBypassActive =
+    visibleHorizonObservation.visibleHorizonBypassActive =
         visibleHorizonBypassActive;
-    visibilityObservation.visibleHorizonBypassSeen =
-        visibilityObservation.visibleHorizonBypassSeen ||
+    visibleHorizonObservation.visibleHorizonBypassSeen =
+        visibleHorizonObservation.visibleHorizonBypassSeen ||
         visibleHorizonBypassActive;
-    visibilityObservation.maximumVisibleHorizonOffsetMeters =
+    visibleHorizonObservation.maximumVisibleHorizonOffsetMeters =
         std::max(
-            visibilityObservation.maximumVisibleHorizonOffsetMeters,
+            visibleHorizonObservation.maximumVisibleHorizonOffsetMeters,
             m_navigationRuntimeLabLastPlan.
                 localBypassLateralOffsetMeters
         );
 
     if (visibleHorizonBypassActive &&
-        !visibilityObservation.firstVisibleHorizonBypassCaptured)
+        !visibleHorizonObservation.firstVisibleHorizonBypassCaptured)
     {
-        visibilityObservation.firstVisibleHorizonBypassCaptured = true;
-        visibilityObservation.firstVisibleHorizonBypassTimeSeconds =
+        visibleHorizonObservation.firstVisibleHorizonBypassCaptured = true;
+        visibleHorizonObservation.firstVisibleHorizonBypassTimeSeconds =
             navigationTimeSeconds;
-        visibilityObservation.firstVisibleHorizonBypassSegmentRevision =
+        visibleHorizonObservation.firstVisibleHorizonBypassSegmentRevision =
             m_navigationRuntimeLabAcceptedSegment.revision;
-        visibilityObservation.firstVisibleHorizonBypassReplanReason =
+        visibleHorizonObservation.firstVisibleHorizonBypassReplanReason =
             static_cast<std::uint8_t>(replan.reason);
-        visibilityObservation.firstVisibleHorizonBypassOffsetMeters =
+        visibleHorizonObservation.firstVisibleHorizonBypassOffsetMeters =
             m_navigationRuntimeLabLastPlan.
                 localBypassLateralOffsetMeters;
-        visibilityObservation.firstVisibleHorizonBypassAgentPositionMap =
+        visibleHorizonObservation.firstVisibleHorizonBypassAgentPositionMap =
             agent.positionMapMeters;
-        visibilityObservation.firstVisibleHorizonBypassAgentVelocityMapMps =
+        visibleHorizonObservation.firstVisibleHorizonBypassAgentVelocityMapMps =
             agent.velocityMapMetersPerSecond;
-        visibilityObservation.firstVisibleHorizonBypassSelectedTargetMap =
+        visibleHorizonObservation.firstVisibleHorizonBypassSelectedTargetMap =
             m_navigationRuntimeLabLastPlan.selectedTargetMapMeters;
-        visibilityObservation.firstVisibleHorizonBypassDesiredVelocityMapMps =
+        visibleHorizonObservation.firstVisibleHorizonBypassDesiredVelocityMapMps =
             m_navigationRuntimeLabLastPlan.
                 desiredVelocityMapMetersPerSecond;
-        visibilityObservation.firstVisibleHorizonBypassAcceptedAlignForward =
+        visibleHorizonObservation.firstVisibleHorizonBypassAcceptedAlignForward =
             m_navigationRuntimeLabAcceptedSegment.alignForward;
-        visibilityObservation.firstVisibleHorizonBypassAcceptedForwardMap =
+        visibleHorizonObservation.firstVisibleHorizonBypassAcceptedForwardMap =
             m_navigationRuntimeLabAcceptedSegment.desiredForwardMap;
-        visibilityObservation.firstVisibleHorizonBypassIdealAccelerationMapMps2 =
+        visibleHorizonObservation.firstVisibleHorizonBypassIdealAccelerationMapMps2 =
             followerResult.intent.idealLinearAccelerationLocalMps2;
     }
 
-    if (visibilityObservation.visibleHorizonBypassSeen &&
+    if (visibleHorizonObservation.visibleHorizonBypassSeen &&
         !m_navigationRuntimeLabLastPlan.adjustedTarget &&
         m_navigationRuntimeLabLastPlan.safeProgressTargetDemonstrated &&
         m_navigationRuntimeLabLastPlan.status !=
@@ -3735,7 +3735,7 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         m_navigationRuntimeLabLastPlan.status !=
             Planner::Status::StaleHold)
     {
-        visibilityObservation.visibleHorizonDirectRecoveredSeen = true;
+        visibleHorizonObservation.visibleHorizonDirectRecoveredSeen = true;
     }
 
     m_navigationRuntimeLabObservation.movingPrecisionAttemptedSeen =

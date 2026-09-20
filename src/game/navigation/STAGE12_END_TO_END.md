@@ -6249,3 +6249,22 @@ Controls: RMB orbit, MMB pan, wheel zoom, F fit, Space play/pause,
 
 Validation state: source is committed but has NOT yet been compiled/run on the
 target MinGW64 machine. Do not call the viewer accepted until that gate runs.
+
+## 2026-09-20 target run on `c8972319390622a6b825bf0fa73e8a563c9d7068`
+
+Verified on target MinGW64:
+- navigation runtime configured and linked;
+- 17/19 tests PASS;
+- planner fixture still failed at future oriented portal route-context assertion;
+- composite emitted `tools/navigation_runtime/last_trace_newtonian.json` with 770 frames;
+- composite B4 sequence remained the same: two physically executed `AdjustedClear`
+  segments, then `NominalClear`, then later dynamic-clearance failure;
+- standalone viewer configure succeeded, but compile failed because the GLAD
+  include root was wrong: source includes `<glad/gl.h>`, actual file is
+  `glad/include/glad/gl.h`.
+
+Fixes committed after that verified run:
+- viewer CMake now includes `${ELITE_SOURCE_ROOT}/glad/include`;
+- oriented-portal fixture now uses interior geometry start X=1, blocker X=4,
+  stage X=7 while leaving global `baseAgent()` at its original X=0;
+- these post-run fixes are UNVERIFIED until the next target run.

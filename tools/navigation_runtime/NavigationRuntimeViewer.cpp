@@ -615,6 +615,11 @@ trace::TraceFrame interpolatedDisplayFrame(
     {
         out.hazardPosition =
             lerp3(a.hazardPosition, b.hazardPosition);
+        out.hazardVelocity =
+            lerp3(a.hazardVelocity, b.hazardVelocity);
+        out.plannerLookAheadSeconds =
+            a.plannerLookAheadSeconds +
+            (b.plannerLookAheadSeconds - a.plannerLookAheadSeconds) * t;
         out.dynamicClearanceMeters =
             a.dynamicClearanceMeters +
             (b.dynamicClearanceMeters - a.dynamicClearanceMeters) * t;
@@ -886,6 +891,45 @@ void appendUiText(
     }
 }
 
+void appendUiCircle(
+    std::vector<Vertex>& out,
+    const glm::vec2& center,
+    float radius,
+    const glm::vec3& color,
+    float alpha,
+    int segments = 28
+)
+{
+    if (radius <= 0.0f)
+        return;
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const float a0 =
+            2.0f * kPi * static_cast<float>(i) /
+            static_cast<float>(segments);
+        const float a1 =
+            2.0f * kPi * static_cast<float>(i + 1) /
+            static_cast<float>(segments);
+
+        const glm::vec3 c(center.x, center.y, 0.0f);
+        const glm::vec3 p0(
+            center.x + radius * std::cos(a0),
+            center.y + radius * std::sin(a0),
+            0.0f
+        );
+        const glm::vec3 p1(
+            center.x + radius * std::cos(a1),
+            center.y + radius * std::sin(a1),
+            0.0f
+        );
+
+        out.push_back({c, color, alpha});
+        out.push_back({p0, color, alpha});
+        out.push_back({p1, color, alpha});
+    }
+}
+
 void appendUiButton(
     std::vector<Vertex>& triangles,
     const UiRect& rect,
@@ -1011,10 +1055,153 @@ std::string currentExplanation(const trace::TraceFrame& frame)
     return "СТАРТ МАРШРУТА";
 }
 
+void appendHorizonInset(
+    std::vector<Vertex>& ui,
+    const trace::TraceFrame& frame,
+    int windowHeight
+)
+{
+    const UiRect panel {
+        16.0f,
+        static_cast<float>(windowHeight) - 300.0f,
+        320.0f,
+        220.0f
+    };
+
+    appendFilledRect(
+        ui,
+        panel,
+        {0.035f, 0.045f, 0.060f}
+    );
+
+    appendUiText(
+        ui,
+        panel.x + 12.0f,
+        panel.y + 10.0f,
+        "ГОРИЗОНТ КОБРЫ",
+        1.35f,
+        {0.90f, 0.94f, 1.0f}
+    );
+
+    const glm::vec2 center(
+        panel.x + panel.width * 0.5f,
+        panel.y + panel.height * 0.56f
+    );
+
+    const float pixelsPerMeter = 2.0f;
+
+    // Crosshair: projection plane perpendicular to Cobra longitudinal axis.
+    appendFilledRect(
+        ui,
+        {center.x - 44.0f, center.y - 0.5f, 88.0f, 1.0f},
+        {0.30f, 0.34f, 0.42f}
+    );
+    appendFilledRect(
+        ui,
+        {center.x - 0.5f, center.y - 44.0f, 1.0f, 88.0f},
+        {0.30f, 0.34f, 0.42f}
+    );
+    appendUiCircle(
+        ui,
+        center,
+        6.0f,
+        {0.45f, 0.85f, 1.0f},
+        0.85f
+    );
+
+    if (!frame.hazardActive)
+    {
+        appendUiText(
+            ui,
+            panel.x + 12.0f,
+            panel.y + panel.height - 22.0f,
+            "ПОМЕХА НЕ АКТИВНА",
+            1.20f,
+            {0.60f, 0.65f, 0.72f}
+        );
+        return;
+    }
+
+    const glm::dvec3 forward =
+        glm::normalize(frame.shipForward);
+    const glm::dvec3 right =
+        glm::normalize(frame.shipRight);
+    const glm::dvec3 up =
+        glm::normalize(frame.shipUp);
+
+    const double horizon =
+        std::max(0.0, frame.plannerLookAheadSeconds);
+
+    for (int i = 0; i <= 12; ++i)
+    {
+        const double u = static_cast<double>(i) / 12.0;
+        const double t = horizon * u;
+
+        const glm::dvec3 predictedHazard =
+            frame.hazardPosition +
+            frame.hazardVelocity * t;
+        const glm::dvec3 predictedShip =
+            frame.shipPosition +
+            frame.shipVelocity * t;
+        const glm::dvec3 relative =
+            predictedHazard - predictedShip;
+
+        const double depth = glm::dot(relative, forward);
+        if (depth <= 0.0)
+            continue;
+
+        const float px =
+            center.x +
+            static_cast<float>(glm::dot(relative, right)) *
+                pixelsPerMeter;
+        const float py =
+            center.y -
+            static_cast<float>(glm::dot(relative, up)) *
+                pixelsPerMeter;
+
+        const float radius =
+            static_cast<float>(
+                frame.hazardPlannerEnvelopeRadiusMeters
+            ) * pixelsPerMeter;
+
+        appendUiCircle(
+            ui,
+            {px, py},
+            radius,
+            {1.0f, 0.22f, 0.16f},
+            0.055f + 0.12f * static_cast<float>(1.0 - u)
+        );
+    }
+
+    const glm::dvec3 currentRelative =
+        frame.hazardPosition - frame.shipPosition;
+    const double currentDepth =
+        glm::dot(currentRelative, forward);
+
+    std::ostringstream depthLine;
+    depthLine.setf(std::ios::fixed);
+    depthLine.precision(1);
+    depthLine
+        << "ДАЛЬНОСТЬ ВПЕРЁД: "
+        << currentDepth
+        << " М";
+    appendUiText(
+        ui,
+        panel.x + 12.0f,
+        panel.y + panel.height - 22.0f,
+        depthLine.str(),
+        1.12f,
+        currentDepth > 0.0
+            ? glm::vec3(0.90f, 0.75f, 0.32f)
+            : glm::vec3(0.55f, 0.58f, 0.64f)
+    );
+}
+
 void drawHud(
     PrimitiveRenderer& renderer,
     const trace::TraceDocument& data,
     const AppState& state,
+    const trace::TraceFrame& displayFrame,
     int windowWidth,
     int windowHeight
 )
@@ -1022,8 +1209,7 @@ void drawHud(
     if (data.frames.empty())
         return;
 
-    const auto& frame =
-        data.frames[std::min(state.frameIndex, data.frames.size() - 1)];
+    const auto& frame = displayFrame;
 
     const glm::mat4 projection =
         glm::ortho(
@@ -1275,6 +1461,8 @@ void drawHud(
         1.25f,
         {0.90f, 0.92f, 0.96f}
     );
+
+    appendHorizonInset(ui, frame, windowHeight);
 
     renderer.draw(GL_TRIANGLES, ui, 1.0f);
     glEnable(GL_DEPTH_TEST);
@@ -2009,6 +2197,7 @@ int main(int argc, char** argv)
                 renderer,
                 data,
                 state,
+                displayFrame,
                 windowWidth,
                 windowHeight
             );

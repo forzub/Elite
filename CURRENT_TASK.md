@@ -317,3 +317,16 @@ Implement the architecture in this order:
 Known gap to solve first: NavigationSpace costed corridor is currently topology/portal based and does not synthesize a geometric route around arbitrary exact obstacles inside a single region. The default JSON wall scenario exposes this gap.
 
 Do not treat 0.25 s snapshot freshness as a global replan timer.
+
+## Terminology correction — corridor vs tunnel
+
+Do not treat the nominal corridor as an exact hull-clearance product.
+
+- Global route/corridor: centerline/polyline + coarse navigation envelope used for
+  route following/testing.
+- Physical tunnel: exact or conservative time-parameterized swept hull volume along an
+  accepted trajectory, including body attitude; this is what must prove wall/aperture
+  clearance.
+
+Next implementation should first cache one global nominal route/corridor start->finish.
+Exact wall-touch feasibility remains downstream in physical maneuver/tunnel proof.

@@ -1741,6 +1741,17 @@ TraceFrame executionTraceFrame(
         glm::dvec3(vehicle.transform.right());
     frame.shipUp =
         glm::dvec3(vehicle.transform.up());
+    frame.shipAngularRatePyrRadPerSec = {
+        static_cast<double>(vehicle.transform.pitchRate),
+        static_cast<double>(vehicle.transform.yawRate),
+        static_cast<double>(vehicle.transform.rollRate)
+    };
+    frame.mainEngineAccelerationMps2 =
+        vehicle.transform.motion.mainEngineAccelerationMps2;
+    frame.manoeuvreAccelerationMps2 =
+        vehicle.transform.motion.manoeuvreAccelerationMps2;
+    frame.engineAccelerationMps2 =
+        vehicle.transform.motion.engineAccelerationMps2;
 
     frame.hasRuntimeControlLaw = true;
     frame.runtimeControlLaw =
@@ -1827,6 +1838,132 @@ void writeExecutionDiagnostics(
     {
         stream << line << "\n";
         std::cout << "[NAV-STAGE2] " << line << "\n";
+    }
+}
+
+void writeExecutionTelemetry(
+    const std::string& scenarioJsonPath,
+    const TraceDocument& trace
+)
+{
+    const std::filesystem::path scenarioPath(scenarioJsonPath);
+    const std::filesystem::path output =
+        scenarioPath.parent_path() /
+        "last_execution_telemetry.log";
+
+    std::ofstream stream(output);
+    if (!stream)
+        throw std::runtime_error(
+            "cannot write execution telemetry: " +
+            output.string()
+        );
+
+    stream.setf(std::ios::fixed);
+    stream << std::setprecision(4);
+    stream
+        << "# per-frame physical execution telemetry\n"
+        << "# t_s phase law pos speed forward up pyr_rate "
+           "main_pct main_a rcs_a engine_a ref_speed ref_forward "
+           "body_vel_deg body_ref_deg events\n";
+
+    bool previousMainOn = false;
+    bool previousRcsOn = false;
+
+    auto angleDeg = [](
+        const glm::dvec3& a,
+        const glm::dvec3& b)
+    {
+        const double la = glm::length(a);
+        const double lb = glm::length(b);
+        if (la <= 1.0e-12 || lb <= 1.0e-12)
+            return 0.0;
+        return
+            std::acos(
+                std::clamp(
+                    glm::dot(a / la, b / lb),
+                    -1.0,
+                    1.0
+                )
+            ) *
+            180.0 / 3.14159265358979323846;
+    };
+
+    for (const auto& frame : trace.frames)
+    {
+        const double speed =
+            glm::length(frame.shipVelocity);
+        const double mainMagnitude =
+            glm::length(frame.mainEngineAccelerationMps2);
+        const double rcsMagnitude =
+            glm::length(frame.manoeuvreAccelerationMps2);
+        const bool mainOn =
+            frame.mainEngineThrottle01 > 0.01 ||
+            mainMagnitude > 0.01;
+        const bool rcsOn = rcsMagnitude > 0.01;
+
+        std::string events;
+        if (mainOn != previousMainOn)
+            events += mainOn ? "MAIN_ON" : "MAIN_OFF";
+        if (rcsOn != previousRcsOn)
+        {
+            if (!events.empty())
+                events += ",";
+            events += rcsOn ? "RCS_ON" : "RCS_OFF";
+        }
+        if (events.empty())
+            events = "-";
+
+        const double referenceSpeed =
+            frame.hasProgramReference
+                ? glm::length(frame.programReferenceVelocity)
+                : 0.0;
+
+        stream
+            << "t=" << frame.timeSeconds
+            << " phase=" << frame.phase
+            << " law="
+            << (
+                frame.hasRuntimeControlLaw
+                    ? frame.runtimeControlLaw
+                    : "-"
+               )
+            << " pos=" << formatVec3(frame.shipPosition)
+            << " speed=" << speed
+            << " forward=" << formatVec3(frame.shipForward)
+            << " up=" << formatVec3(frame.shipUp)
+            << " pyr_rate="
+            << formatVec3(frame.shipAngularRatePyrRadPerSec)
+            << " main_pct="
+            << frame.mainEngineThrottle01 * 100.0
+            << " main_a="
+            << formatVec3(frame.mainEngineAccelerationMps2)
+            << " rcs_a="
+            << formatVec3(frame.manoeuvreAccelerationMps2)
+            << " engine_a="
+            << formatVec3(frame.engineAccelerationMps2)
+            << " ref_speed=" << referenceSpeed
+            << " ref_forward="
+            << (
+                frame.hasProgramReference
+                    ? formatVec3(frame.programReferenceForward)
+                    : std::string("(0.00, 0.00, 0.00)")
+               )
+            << " body_vel_deg="
+            << angleDeg(frame.shipForward, frame.shipVelocity)
+            << " body_ref_deg="
+            << (
+                frame.hasProgramReference
+                    ? angleDeg(
+                        frame.shipForward,
+                        frame.programReferenceForward
+                      )
+                    : 0.0
+               )
+            << " events=" << events
+            << "\n";
+
+        previousMainOn = mainOn;
+        previousRcsOn = rcsOn;
     }
 }
 
@@ -2687,12 +2824,17 @@ ScenarioRunResult executeCalculatedRoute(
                 ) + " DEG",
             std::string("COARSE STATIC CONTACT: ") +
                 (coarseStaticContact ? "YES" : "NO"),
-            "LOG: last_execution.log"
+            "LOG: last_execution.log",
+            "TELEMETRY LOG: last_execution_telemetry.log"
         };
 
         writeExecutionDiagnostics(
             scenarioJsonPath,
             out.diagnostics
+        );
+        writeExecutionTelemetry(
+            scenarioJsonPath,
+            trace
         );
 
         out.trace = std::move(trace);

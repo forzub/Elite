@@ -165,7 +165,7 @@ void testClearCornerGetsContinuousRuckigWaypointVelocity()
         "continuous Ruckig corner reported no curvature");
 }
 
-void testBlockedCornerBlendFallsBackToSafeStop()
+void testBlockedWideBlendShrinksBeforeStopping()
 {
     auto request = baseRequest();
     request.pathPointsMeters = {
@@ -176,14 +176,14 @@ void testBlockedCornerBlendFallsBackToSafeStop()
     };
 
     world::navigation::NavigationObstacle blocker;
-    blocker.id = "corner-cut-blocker";
+    blocker.id = "wide-corner-cut-blocker";
     blocker.shape = world::navigation::NavigationObstacleShape::Box;
     blocker.centerMeters = glm::dvec3(90.0, 15.0, 0.0);
     blocker.halfExtentsMeters = glm::dvec3(5.0, 5.0, 20.0);
     request.obstacles.push_back(blocker);
 
     const auto result = game::navigation::RuckigRoutePlanner::plan(request);
-    require(result.ready(), "blocked-corner Ruckig fallback route failed");
+    require(result.ready(), "adaptive corner-blend route failed");
     requireSweptClear(result.trajectory, request);
 
     const auto& corner = sampleNearestSourceProgress(
@@ -191,9 +191,94 @@ void testBlockedCornerBlendFallsBackToSafeStop()
         100.0
     );
     require(std::abs(corner.sourcePathProgressMeters - 100.0) < 1.0e-5,
-        "blocked-corner route lost the topology vertex");
+        "adaptive corner route lost the topology vertex");
+    require(corner.speedMps > 0.75,
+        "one blocked wide chord incorrectly forced a full stop");
+}
+
+void testTrulyBlockedCornerStillFallsBackToSafeStop()
+{
+    auto request = baseRequest();
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(100.0, 0.0, 0.0),
+        glm::dvec3(100.0, 100.0, 0.0),
+        glm::dvec3(200.0, 100.0, 0.0)
+    };
+
+    world::navigation::NavigationObstacle blocker;
+    blocker.id = "tight-corner-blocker";
+    blocker.shape = world::navigation::NavigationObstacleShape::Box;
+    blocker.centerMeters = glm::dvec3(95.0, 5.0, 0.0);
+    blocker.halfExtentsMeters = glm::dvec3(2.8, 2.8, 20.0);
+    request.obstacles.push_back(blocker);
+
+    const auto result = game::navigation::RuckigRoutePlanner::plan(request);
+    require(result.ready(), "true blocked-corner fallback route failed");
+    requireSweptClear(result.trajectory, request);
+
+    const auto& corner = sampleNearestSourceProgress(
+        result.trajectory,
+        100.0
+    );
     require(corner.speedMps < 1.0e-5,
-        "unsafe diagonal corner blend was not relaxed to a stop point");
+        "corner with no safe minimum blend did not fall back to stop");
+}
+
+void testDefaultWallDetourKeepsMovingThroughShallowCorners()
+{
+    auto request = baseRequest();
+    request.vehicle.collisionRadiusMeters = 13.0;
+    request.vehicle.maxSpeedMps = 10.0;
+    request.vehicle.maxLateralAccelerationMps2 = 2.0;
+    request.initialVelocityMps = glm::dvec3(6.0, 0.0, 0.0);
+
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(110.0, -27.0, 0.0),
+        glm::dvec3(190.0, -27.0, 0.0),
+        glm::dvec3(300.0, 0.0, 0.0)
+    };
+
+    world::navigation::NavigationObstacle wall;
+    wall.id = "viewer-wall";
+    wall.shape = world::navigation::NavigationObstacleShape::Box;
+    wall.centerMeters = glm::dvec3(150.0, 0.0, 0.0);
+    wall.halfExtentsMeters = glm::dvec3(25.0, 12.0, 30.0);
+    request.obstacles.push_back(wall);
+
+    const double firstProgress =
+        glm::length(
+            request.pathPointsMeters[1] -
+            request.pathPointsMeters[0]
+        );
+    const double secondProgress =
+        firstProgress +
+        glm::length(
+            request.pathPointsMeters[2] -
+            request.pathPointsMeters[1]
+        );
+    const double totalProgress =
+        secondProgress +
+        glm::length(
+            request.pathPointsMeters[3] -
+            request.pathPointsMeters[2]
+        );
+    request.pointSpeedConstraints.push_back({totalProgress, 0.0});
+
+    const auto result = game::navigation::RuckigRoutePlanner::plan(request);
+    require(result.ready(), "viewer wall detour Ruckig route failed");
+    requireSweptClear(result.trajectory, request);
+
+    const auto& firstCorner =
+        sampleNearestSourceProgress(result.trajectory, firstProgress);
+    const auto& secondCorner =
+        sampleNearestSourceProgress(result.trajectory, secondProgress);
+
+    require(firstCorner.speedMps > 0.75,
+        "first shallow wall corner still became StopTurnGo");
+    require(secondCorner.speedMps > 0.75,
+        "second shallow wall corner still became StopTurnGo");
 }
 
 void testInitialAccelerationIsPreservedAtTrajectoryStart()
@@ -248,7 +333,9 @@ int main()
         {"straight route uses Ruckig", testStraightRouteUsesRuckigAndStopsAtTerminal},
         {"diagonal stopped leg stays on coarse chord", testDiagonalStoppedLegStaysOnCoarseChord},
         {"clear corner keeps through velocity", testClearCornerGetsContinuousRuckigWaypointVelocity},
-        {"blocked corner falls back to stop", testBlockedCornerBlendFallsBackToSafeStop},
+        {"blocked wide blend shrinks before stop", testBlockedWideBlendShrinksBeforeStopping},
+        {"truly blocked corner falls back to stop", testTrulyBlockedCornerStillFallsBackToSafeStop},
+        {"default wall shallow corners stay moving", testDefaultWallDetourKeepsMovingThroughShallowCorners},
         {"initial acceleration is preserved", testInitialAccelerationIsPreservedAtTrajectoryStart},
         {"impossible braking is rejected", testImpossibleInitialBrakingIsRejectedBeforePlanning},
     };

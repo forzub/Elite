@@ -1,104 +1,77 @@
-# CURRENT TASK — validate physical reference reacquisition and hull damping
+# CURRENT TASK — Validate frozen-reference recovery on real physics
 
-**Date:** 2026-09-22  
-**Status:** ROOT CAUSES FIXED / TARGET MINWG64 VALIDATION REQUIRED
+Date: 2026-09-22
 
-## Latest reproduced failure
+Status: **CODE CANDIDATE READY / TARGET MINGW64 VALIDATION REQUIRED**
 
-User's high-speed run:
-- START 26.15 m/s;
-- FINISH 11.75 m/s;
-- Newtonian / Expert / Standard;
-- Ruckig OK;
-- old program timeline completed;
-- physical final error 68.49 m;
-- max route deviation 62.24 m.
+Code candidate before documentation commits:
 
-The old system let the time reference outrun the physical ship.
-
-User also observed hull "float"/oscillation while returning to attitude.
-
-## Fix A — attitude damping
-
-B10 default attitude loop was strongly underdamped:
-- Kp=2;
-- Kd=1.
-
-It is now:
-- Kp=2;
-- Kd=3.
-
-Default policy regression requires Kd >= 2*sqrt(Kp).
-
-Do not add hidden damping in ShipController's navigation path; B10 owns the requested
-angular feedback and physical clamps remain below it.
-
-## Fix B — reference reacquisition
-
-AcceptedManeuverProgram remains immutable.
-
-Runtime owns:
 ```text
-activeProgramReferenceDelaySeconds
+59ff756996229bf15a122eb0fe43cf0d9a14b245
 ```
 
-Follower/B9 reference time:
+## Failure just reproduced
+
+Viewer configuration:
+
 ```text
-physical time - reference delay
+ASSISTED
+EXPERT
+STANDARD
+START  10.00 m/s
+FINISH 10.00 m/s
 ```
 
-If `follower.trackingErrorExceeded`:
-- reference delay advances by dt;
-- reference progress pauses;
-- phase gate sees the delayed time;
-- physical Follower/Pilot/physics keep correcting;
-- viewer status = FOLLOWER ВОЗВРАЩАЕТСЯ В КОРИДОР.
+Observed:
 
-When inside envelope again:
-- reference time resumes.
+```text
+Ruckig max speed          11.71 m/s
+final physical speed     100.64 m/s
+final position error     2411.14 m
+reference clock hold     47.70 s
+max body/velocity angle  179.99 deg
+physical terminal state  MISSED
+```
 
-Current FreeTransit reacquisition envelope:
-- position 8 m;
-- linear velocity 4 m/s;
-- forward error 0.35 rad;
-- angular-rate error 0.8 rad/s.
+Therefore Stage-1 speed calculation is still sane; execution/reacquisition is
+not.
 
-Longitudinal FreeTransit deadbands are applied before envelope evaluation, so harmless
-lead/lag does not pause the clock.
+## Root cause
 
-Diagnostics:
-- REFERENCE CLOCK HOLD FRAMES
-- REFERENCE CLOCK HOLD
+The reference-clock hold froze time on a moving FreeTransit sample but kept
+executing that sample's derivatives forever:
 
-## Fix C — completion truth
+```text
+held position / attitude
++ non-zero linear A_ff
++ non-zero reference angular velocity
+= internally inconsistent frozen reference
+```
 
-Diagnostics now distinguish:
-- PROGRAM PHASES COMPLETE
-- PHYSICAL TERMINAL STATE
+The bounded B10 correction reserve cannot cancel a permanently replayed
+feed-forward acceleration. The frozen angular-velocity target likewise makes
+the hull continue rotating around a fixed attitude target.
 
-Never again interpret elapsed timeline as physical route completion.
+## Candidate correction
 
-## Fix D — root artifacts
+In `ManeuverTrackingController`:
 
-All current-run files are in repository root:
-- last_route_plan.log
-- last_execution.log
-- last_execution_telemetry.log
-- navigation_perf.log
-- last_calculated_trace.json
-- last_execution_trace.json
+- inside envelope: execute the accepted moving reference unchanged;
+- outside envelope:
+  - keep position/velocity/attitude errors for reacquisition;
+  - set moving-sample linear/angular feed-forward to zero;
+  - damp actual angular velocity toward zero;
+  - use only the bounded tracking reserve;
+- after recovery: resume the accepted moving reference automatically.
 
-## High-speed E2E
+Regression:
+`testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()`.
 
-New target regression uses exact failing case:
-- 26.15 -> 11.75 m/s;
-- Newtonian / Expert / Standard.
+Viewer:
+`fitCamera()` fits authored/accepted scene geometry, not the complete runaway
+physical history.
 
-Requires successful physical execution and final error <= 5 m.
-
-## Immediate validation
-
-Run:
+## Required target gate
 
 ```bash
 cd /d/__elite/work
@@ -107,34 +80,32 @@ git rev-parse HEAD
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
-If that passes, launch:
+Then launch:
 
 ```bash
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Reproduce:
-1. Newtonian / Expert / Standard.
-2. START about 26.1, FINISH about 11.8.
-3. Calculate.
-4. Watch for:
-   - hull return with no repeated pendulum overshoot;
-   - right status `FOLLOWER ВОЗВРАЩАЕТСЯ В КОРИДОР` if actual craft falls behind;
-   - physical path bending back toward purple/blue reference instead of allowing the
-     reference to escape;
-   - no false "complete" while tens of meters away.
-5. Send root `last_execution.log` and `last_execution_telemetry.log` if it still fails.
+First re-run exactly:
 
-Also re-check Assisted after this damping fix. If Assisted still performs unnecessarily
-sharp attitude motion while tracking is otherwise stable, the next slice is Assisted
-reference-attitude policy (minimal/smoothed hull rotation), not another generic damping
-increase.
+```text
+ASSISTED / EXPERT / STANDARD
+10.00 -> 10.00 m/s
+```
 
-## Mandatory state protocol
+Acceptance:
+- no unbounded speed growth;
+- no persistent tumbling;
+- reference hold may occur but recovery must converge;
+- program phases complete;
+- physical terminal state reached;
+- final position error <= 5 m;
+- final speed within the existing terminal tolerance;
+- no coarse static contact;
+- F / ВПИСАТЬ keeps the authored scene usable even if a future run fails.
 
-Every state-affecting iteration:
-- update CURRENT_STATE.md;
-- update CURRENT_TASK.md;
-- update PROJECT_STATE.md;
-- update src/game/navigation/STAGE12_END_TO_END.md;
-- recreate CONTINUE_PROMPT.md from scratch.
+Then re-run the pinned high-speed regression:
+`NEWTONIAN / EXPERT / STANDARD, 26.15 -> 11.75 m/s`.
+
+Do not enable dynamic avoidance in this gate.
+Do not change the retained route merely to make the execution pass.

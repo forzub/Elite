@@ -832,6 +832,115 @@ glm::dvec3 angularVelocityBetween(
     return axis * (angle / dt);
 }
 
+glm::dvec3 rotateDirectionToward(
+    const glm::dvec3& fromInput,
+    const glm::dvec3& toInput,
+    double angleRad,
+    const glm::dvec3& fallbackAxis
+)
+{
+    const glm::dvec3 from =
+        normalizedOr(fromInput, glm::dvec3(1.0, 0.0, 0.0));
+    const glm::dvec3 to =
+        normalizedOr(toInput, from);
+
+    const double dot =
+        std::clamp(glm::dot(from, to), -1.0, 1.0);
+    const double totalAngle = std::acos(dot);
+    if (totalAngle <= 1.0e-9 || angleRad <= 1.0e-9)
+        return from;
+    if (angleRad >= totalAngle - 1.0e-9)
+        return to;
+
+    glm::dvec3 axis = glm::cross(from, to);
+    if (glm::length(axis) <= 1.0e-9)
+    {
+        axis = fallbackAxis -
+            from * glm::dot(fallbackAxis, from);
+        if (glm::length(axis) <= 1.0e-9)
+        {
+            axis =
+                std::abs(from.y) < 0.92
+                    ? glm::dvec3(0.0, 1.0, 0.0)
+                    : glm::dvec3(0.0, 0.0, 1.0);
+            axis -= from * glm::dot(axis, from);
+        }
+    }
+    axis = glm::normalize(axis);
+
+    const glm::dquat q =
+        glm::angleAxis(angleRad, axis);
+    return glm::normalize(q * from);
+}
+
+glm::dvec3 newtonianReferenceForward(
+    const world::navigation::TrajectorySample& sample,
+    const Basis& previous,
+    const ShipParams& params
+)
+{
+    const double speed = glm::length(sample.velocityMps);
+    const double acceleration =
+        glm::length(sample.accelerationMps2);
+
+    const glm::dvec3 travelForward =
+        speed > 0.25
+            ? glm::normalize(sample.velocityMps)
+            : previous.forward;
+
+    if (acceleration <= 0.35)
+        return travelForward;
+
+    const double rcsAuthority = std::max(
+        0.0,
+        static_cast<double>(params.manoeuvreThrusterAccel)
+    );
+
+    // The manoeuvre/RCS system can supply any acceleration vector up to its
+    // magnitude limit. If the requested acceleration lies inside that sphere,
+    // no main-engine pointing manoeuvre is necessary at all.
+    if (acceleration <= rcsAuthority + 1.0e-9)
+        return travelForward;
+
+    const glm::dvec3 accelerationDirection =
+        sample.accelerationMps2 / acceleration;
+
+    // Find the smallest possible nose rotation for which a positive main-engine
+    // thrust vector plus bounded omnidirectional RCS can reproduce the desired
+    // acceleration. Geometrically, the main-thrust ray only has to come within
+    // rcsAuthority of the acceleration vector; it does NOT need to point
+    // directly along acceleration.
+    const double angleToAcceleration = std::acos(
+        std::clamp(
+            glm::dot(travelForward, accelerationDirection),
+            -1.0,
+            1.0
+        )
+    );
+
+    const double rcsAngularAllowance =
+        std::asin(
+            std::clamp(
+                rcsAuthority / acceleration,
+                0.0,
+                1.0
+            )
+        );
+
+    const double requiredNoseTurn =
+        std::max(
+            0.0,
+            angleToAcceleration - rcsAngularAllowance
+        );
+
+    return rotateDirectionToward(
+        travelForward,
+        accelerationDirection,
+        requiredNoseTurn,
+        previous.up
+    );
+}
+
 struct ReferenceAttitude
 {
     Basis basis {};
@@ -864,13 +973,18 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
         const double speed = glm::length(sample.velocityMps);
         const double acceleration = glm::length(sample.accelerationMps2);
 
-        if (law == Law::Newtonian && acceleration > 0.35)
+        if (law == Law::Newtonian)
         {
-            // Newtonian autopilot points the main thrust axis along the
-            // requested acceleration. This is intentionally different from
-            // Assisted velocity alignment.
+            // Keep the hull close to the velocity/tangent direction whenever
+            // the bounded manoeuvre thrusters can supply the requested
+            // transverse acceleration. Only cant/flip the hull as much as is
+            // physically required for main-engine participation.
             requestedForward =
-                glm::normalize(sample.accelerationMps2);
+                newtonianReferenceForward(
+                    sample,
+                    previous,
+                    params
+                );
         }
         else if (speed > 0.25)
         {

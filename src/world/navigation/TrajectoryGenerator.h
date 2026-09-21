@@ -84,6 +84,10 @@ struct TrajectoryGenerationDiagnostics
     std::size_t collisionSegmentsChecked = 0;
     double ruckigSolveMilliseconds = 0.0;
 
+    std::size_t executionGuidePoints = 0;
+    std::size_t roundedGuideCorners = 0;
+    std::size_t expandedGuideCorners = 0;
+
     // Deprecated names retained temporarily for old logging/tests. The Ruckig
     // planner maps attempts/successes into these fields so old diagnostics do
     // not break while production code migrates to the fields above.

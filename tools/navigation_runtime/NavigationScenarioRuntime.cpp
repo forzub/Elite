@@ -2957,8 +2957,10 @@ ScenarioRunResult executeCalculatedRoute(
                 std::to_string(programs.size()),
             "PHASE HANDOFFS: " +
                 std::to_string(phaseHandoffs),
-            std::string("ROUTE EXECUTION COMPLETE: ") +
+            std::string("PROGRAM PHASES COMPLETE: ") +
                 (routeExecutionComplete ? "YES" : "NO"),
+            std::string("PHYSICAL TERMINAL STATE: ") +
+                (finalStateReached ? "REACHED" : "MISSED"),
             std::string("FOLLOWER: ") +
                 (followerInvalid ? "FAIL" : "EXECUTED"),
             "FOLLOWER FAIL REASON: " + followerFailureReason,

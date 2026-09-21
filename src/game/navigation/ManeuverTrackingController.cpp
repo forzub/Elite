@@ -330,13 +330,23 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         return Result {};
     }
 
+    // FreeTransit longitudinal deadbands are part of the tracking
+    // contract, not merely a feedback convenience. The execution envelope must
+    // therefore be evaluated against the same effective errors; otherwise a
+    // harmless along-track lead/lag can report EnvelopeExceeded while the
+    // controller intentionally commands zero correction.
+    const double envelopePositionErrorMeters =
+        glm::length(effectivePositionError);
+    const double envelopeVelocityErrorMps =
+        glm::length(effectiveVelocityError);
+
     const bool outsideEnvelope =
         exceeded(
-            result.positionErrorMeters,
+            envelopePositionErrorMeters,
             program.tracking.positionErrorMeters
         ) ||
         exceeded(
-            result.linearVelocityErrorMps,
+            envelopeVelocityErrorMps,
             program.tracking.linearVelocityErrorMps
         ) ||
         exceeded(

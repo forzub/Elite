@@ -2242,3 +2242,150 @@ program/reference
 
 All changes in this section are committed but not yet target-MinGW64 validated.
 Do not claim PASS until the user rebuilds/runs the viewer and returns the new telemetry.
+
+
+## 2026-09-22 — FlightStyle = clearance doctrine; speed/style now invalidate Stage-1; Calculate has one explicit meaning
+
+User clarified the intended semantics:
+
+- FlightStyle must never own a nominal/cruise speed.
+- STANDARD vs EXTREME answers only the risk/clearance question:
+  - STANDARD: prefer more maneuver/safety room around static geometry;
+  - EXTREME: accept a tighter pass when that is useful (for example to stay close to cover).
+- START/FINISH speed changes are not execution-only. Higher inertia changes the
+  geometric room needed for a credible maneuver, so the retained Stage-1 route may move.
+- `РАССЧИТАТЬ` must have one unambiguous action:
+  - enabled only when current inputs invalidate the displayed result;
+  - one click performs every required calculation;
+  - show a concise on-screen result log;
+  - after the attempt, visibly disable the button until an invalidating input changes.
+
+### Removed style-owned speeds
+
+The runtime no longer contains or parses:
+- `standardSpeedMps`;
+- `extremeSpeedMps`;
+- `standard_speed_mps`;
+- `extreme_speed_mps`.
+
+Those keys were also removed from `tools/navigation_runtime/scenario.json`.
+
+The current test stand's trajectory speed envelope is derived only from the explicit
+boundary requests:
+```text
+max(start speed, finish speed)
+```
+
+FlightStyle is no longer passed into FreeTransit program authoring and no longer changes
+Follower speed/progress deadbands.
+
+Relevant commits:
+- `7e8c67bacfc6615c1d03faf8f771e6e5e65b66d3`;
+- `75d0f50fc25c784d515f1e9f092c37600d4e6346`;
+- `75c85b028b4c7b21a3ddce4c1dff3912b596c95f`.
+
+### Speed-aware Stage-1 maneuver reserve
+
+A first coarse speed-aware route reserve now exists in the diagnostic stand.
+
+`routePlanningClearanceMeters()` uses:
+- the larger requested START/FINISH speed;
+- real ship angular acceleration/rate limits;
+- a representative 30-degree turn time;
+- a style-only clearance factor.
+
+Current coarse formula:
+```text
+inertialLead = planningSpeed * characteristicTurnTime
+additionalClearance =
+    authoredClearance +
+    inertialLead * styleReserveFactor
+```
+
+Current factors:
+- STANDARD = 1.0;
+- EXTREME = 0.35.
+
+This is intentionally a coarse Stage-1 maneuver-space reserve, not the final B6
+time-parameterized oriented swept-hull proof.
+
+Practical consequence:
+- increasing speed should usually keep the same obstacle-side topology but move support
+  points farther away;
+- if another passage becomes cheaper/feasible, topology/point count may also change;
+- at the same speed EXTREME should route closer than STANDARD.
+
+Stage-1 diagnostics now include:
+- `ROUTE PLANNING SPEED`;
+- `STYLE CLEARANCE`;
+- `ROUTE ADDITIONAL CLEARANCE`.
+
+A new E2E regression compares:
+- STANDARD 10/10;
+- STANDARD 40/40;
+- EXTREME 40/40;
+and requires the 40 m/s Standard detour to move farther from the wall and the 40 m/s
+Extreme detour to cut closer.
+
+Relevant commits:
+- `7e8c67bacfc6615c1d03faf8f771e6e5e65b66d3`;
+- `a8930d82b8379d26b73a1bd1f61b6f7dbdf66c5d`;
+- `f3f4734d0ebc2d0a500d9607862319d26b3e6d44`;
+- `70f099ccd77810da8c31356efd1951cbc0549e01`;
+- `0c6700ae470b7758da014cf7fe78e719a3c61362`.
+
+### Calculate UX/state contract
+
+Viewer state now separates:
+- `routeInputsDirty`;
+- `executionInputsDirty`;
+- `calculationInProgress`.
+
+Invalidation:
+- START speed -> route + execution dirty;
+- FINISH speed -> route + execution dirty;
+- STANDARD/EXTREME -> route + execution dirty;
+- Assisted/Newtonian -> execution dirty only;
+- Pilot skill -> execution dirty only;
+- sudden-obstacle toggle -> execution dirty only.
+
+No setting auto-runs a calculation anymore.
+
+One `РАССЧИТАТЬ` click:
+1. rebuilds Stage-1 only when route inputs are dirty (or no route exists);
+2. executes Stage-2 from the resulting/retained route;
+3. publishes a concise on-screen log with route point count/length, flight result and
+   requested boundary speeds;
+4. clears dirty state after the attempt.
+
+The button is then rendered dark/dim and labeled `РАСЧЕТ ГОТОВ`. It cannot be clicked
+again until an input marks the result dirty. Dirty state changes the short log to
+`РЕЗУЛЬТАТ УСТАРЕЛ` and re-enables `РАССЧИТАТЬ`.
+
+The obsolete second `UiAction::Execute`, `ЗАПУСТИТЬ ПОЛЁТ` path and SPACE-to-execute
+behavior were removed. Playback controls now only control playback.
+
+Relevant commits:
+- `523d40866610f5b167ad30ffd6fbe598d91fa701`;
+- `ba4b38c5a380bfbb238841fe5b4eee419730d653`;
+- `8a013ea2f54ced80dc9495948196f3922a0aba8e`;
+- `d254b18cf7bc7a70030c24041facf3fd73175124`;
+- `e99d3be88d52283531d26cb9e631e03b018fa88f`.
+
+Documentation was updated in `tools/navigation_runtime/README.md` to match this
+one-button workflow and the new style semantics:
+- `ef3c632d5e2dbbcdb51dd51dba3918de39a4e646`.
+
+### Validation state
+
+These changes are committed but NOT yet validated on the user's MinGW64 target.
+
+Next target evidence must verify:
+- architecture contract script passes;
+- runtime E2E builds/runs;
+- viewer builds;
+- `РАССЧИТАТЬ` is enabled initially, visibly disabled after an attempt, and re-enabled
+  only after a relevant setting changes;
+- changing speed visibly changes white Stage-1 route coordinates/clearance;
+- at equal speed EXTREME is closer to the obstacle than STANDARD;
+- no style-owned nominal speed remains in behavior/diagnostics.

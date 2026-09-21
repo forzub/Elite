@@ -1713,11 +1713,19 @@ TraceFrame executionTraceFrame(
             static_cast<double>(vehicle.params.maxLinearGs) *
                 kStandardGravity
         );
+    const glm::dvec3 physicalForward =
+        normalizedOr(
+            glm::dvec3(vehicle.transform.forward()),
+            glm::dvec3(1.0, 0.0, 0.0)
+        );
+    const double aftMainAcceleration =
+        glm::dot(
+            vehicle.transform.motion.mainEngineAccelerationMps2,
+            physicalForward
+        );
     frame.mainEngineThrottle01 =
         std::clamp(
-            glm::length(
-                vehicle.transform.motion.mainEngineAccelerationMps2
-            ) / mainAuthority,
+            aftMainAcceleration / mainAuthority,
             0.0,
             1.0
         );

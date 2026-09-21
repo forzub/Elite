@@ -38,8 +38,10 @@ struct TrajectoryGenerationRequest
     // clock. Local acceleration and braking always use timeOffsetSeconds.
     double universeTimeScale = 1.0;
 
-    // Coarse topology only. Runtime trajectory generation must not search or
-    // smooth a second global path here. Each consecutive pair is a Ruckig leg.
+    // Coarse topology only. Runtime trajectory generation must not search a
+    // second global path here. A local execution guide may round these corners,
+    // but dense guide samples are geometry p(s), not independent Ruckig target
+    // states. Multi-point routes use scalar Ruckig progress s(t).
     std::vector<glm::dvec3> pathPointsMeters;
     std::vector<NavigationObstacle> obstacles;
     NavigationVehicleProfile vehicle;

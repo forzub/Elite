@@ -127,6 +127,18 @@ Follower::AgentState followerAgentFor(
     return agent;
 }
 
+void testDefaultAttitudeLoopIsNotUnderdamped()
+{
+    const Tracker::Policy policy;
+    const double criticalDamping =
+        2.0 * std::sqrt(policy.attitudeGainPerSecond2);
+
+    require(
+        policy.angularVelocityGainPerSecond >= criticalDamping,
+        "default attitude loop is underdamped and can oscillate around reference"
+    );
+}
+
 void testZeroErrorPreservesAcceptedFeedForwardExactly()
 {
     const Program program = baseProgram();
@@ -355,6 +367,7 @@ int main()
 {
     try
     {
+        testDefaultAttitudeLoopIsNotUnderdamped();
         testZeroErrorPreservesAcceptedFeedForwardExactly();
         testFeedbackCannotExceedReservedAuthority();
         testFollowerUsesB9ThenB10WithoutResolvingControl();
@@ -365,6 +378,7 @@ int main()
         testFollowerRejectsExecutionBeforeAcceptanceTime();
 
         std::cout << "MANEUVER TRACKING CONTROLLER TESTS: PASS\n";
+        std::cout << " - default attitude loop is critically damped or stronger\n";
         std::cout << " - zero error preserves A_ff/alpha_ff exactly\n";
         std::cout << " - tracking feedback is bounded by proved reserve\n";
         std::cout << " - follower composes B9 sampler -> B10 tracker\n";

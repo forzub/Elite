@@ -87,6 +87,46 @@ void requireSweptClear(
     }
 }
 
+double pointSegmentDistance(
+    const glm::dvec3& p,
+    const glm::dvec3& a,
+    const glm::dvec3& b
+)
+{
+    const glm::dvec3 ab = b - a;
+    const double denom = glm::dot(ab, ab);
+    if (denom <= 1.0e-12)
+        return glm::length(p - a);
+
+    const double u = std::clamp(
+        glm::dot(p - a, ab) / denom,
+        0.0,
+        1.0
+    );
+    return glm::length(p - (a + ab * u));
+}
+
+double pointPolylineDistance(
+    const glm::dvec3& p,
+    const std::vector<glm::dvec3>& polyline
+)
+{
+    require(polyline.size() >= 2, "polyline has too few points");
+    double best = std::numeric_limits<double>::infinity();
+    for (std::size_t i = 1; i < polyline.size(); ++i)
+    {
+        best = std::min(
+            best,
+            pointSegmentDistance(
+                p,
+                polyline[i - 1],
+                polyline[i]
+            )
+        );
+    }
+    return best;
+}
+
 void testStraightRouteUsesRuckigWithMovingStartAndFinish()
 {
     auto request = baseRequest();
@@ -316,6 +356,23 @@ void testDefaultWallDetourKeepsMovingThroughShallowCorners()
     require(
         minimumSpeed >= 7.5,
         "default wall calculated curve contains a major unnecessary braking dip"
+    );
+
+    double maximumGuideDeviation = 0.0;
+    for (const auto& sample : result.trajectory.samples)
+    {
+        maximumGuideDeviation = std::max(
+            maximumGuideDeviation,
+            pointPolylineDistance(
+                sample.positionMeters,
+                result.executionGuidePointsMeters
+            )
+        );
+    }
+
+    require(
+        maximumGuideDeviation <= 1.5,
+        "default wall Ruckig reference bows visibly away from execution guide"
     );
 
     for (std::size_t i = 1; i < result.trajectory.samples.size(); ++i)

@@ -1700,6 +1700,28 @@ TraceFrame executionTraceFrame(
         glm::dvec3(vehicle.transform.right());
     frame.shipUp =
         glm::dvec3(vehicle.transform.up());
+
+    frame.hasRuntimeControlLaw = true;
+    frame.runtimeControlLaw =
+        game::navigation::localFlightControlLawName(
+            vehicle.transform.motion.localControlLaw
+        );
+
+    const double mainAuthority =
+        std::max(
+            0.1,
+            static_cast<double>(vehicle.params.maxLinearGs) *
+                kStandardGravity
+        );
+    frame.mainEngineThrottle01 =
+        std::clamp(
+            glm::length(
+                vehicle.transform.motion.mainEngineAccelerationMps2
+            ) / mainAuthority,
+            0.0,
+            1.0
+        );
+
     frame.phase = "route_execution";
     frame.plannerStatus = status;
     frame.hasSelectedTarget = true;
@@ -2120,6 +2142,9 @@ ScenarioRunResult executeCalculatedRoute(
         double maximumCrossTrack = 0.0;
         double maximumFollowerPositionError = 0.0;
         double maximumBodyVelocityAngleRad = 0.0;
+        std::size_t runtimeControlLawSwitches = 0;
+        auto previousRuntimeControlLaw =
+            vehicle.transform.motion.localControlLaw;
 
         activateProgramPhase(
             programs.front(),
@@ -2311,6 +2336,14 @@ ScenarioRunResult executeCalculatedRoute(
 
             vehicle.transform.syncLegacyPositionFromWorld();
             vehicle.timeSeconds += kExecutionDt;
+
+            if (vehicle.transform.motion.localControlLaw !=
+                previousRuntimeControlLaw)
+            {
+                ++runtimeControlLawSwitches;
+                previousRuntimeControlLaw =
+                    vehicle.transform.motion.localControlLaw;
+            }
 
             const glm::dvec3 currentPosition =
                 vehicle.transform.motion.localPositionMeters;
@@ -2546,12 +2579,20 @@ ScenarioRunResult executeCalculatedRoute(
                         ? 5.0
                         : 2.0
                 ) + " M",
-            "CONTROL LAW: " +
+            "CONTROL LAW REQUESTED: " +
                 std::string(
                     settings.controlMode == ControlMode::Newtonian
                         ? "NEWTONIAN"
                         : "ASSISTED"
                 ),
+            "CONTROL LAW EFFECTIVE: " +
+                std::string(
+                    game::navigation::localFlightControlLawName(
+                        vehicle.transform.motion.localControlLaw
+                    )
+                ),
+            "CONTROL LAW SWITCHES: " +
+                std::to_string(runtimeControlLawSwitches),
             "DYNAMIC AVOIDANCE: NOT ENABLED IN STATIC PASS",
             "EXECUTION FRAMES: " +
                 std::to_string(trace.frames.size()),

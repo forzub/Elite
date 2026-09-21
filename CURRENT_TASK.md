@@ -1,134 +1,117 @@
-# CURRENT TASK — credible static corner maneuvers before dynamic avoidance
+# CURRENT TASK — validate continuous shallow-corner passage, then fix Newtonian maneuver semantics
 
 **Date:** 2026-09-21  
-**Status:** STATIC E2E EXECUTES / BEHAVIOR QUALITY BLOCKER FOUND / DYNAMIC OVERLAY PAUSED
+**Status:** ADAPTIVE THROUGH-CORNER CANDIDATE COMMITTED / TARGET VALIDATION REQUIRED
 
-## Why this task supersedes the dynamic-overlay step
+## Current evidence
 
-The retained-route Stage-2 chain now reaches the finish, but the user's video exposed
-behavior that is not acceptable for an Expert pilot:
-- ~25.5 degree corners can become full StopTurnGo;
-- Newtonian velocity can bend before body attitude has acquired the physically useful
-  thrust direction;
-- Newtonian body reference can rotate toward braking and then rotate again for the
-  next leg;
-- Assisted inherits the same stop because the common Ruckig waypoint velocity is zero;
-- Standard and Extreme currently differ mostly by 10 vs 18 m/s requested max speed.
+The nearest-face nominal route is now visually/logically acceptable, but the user's
+latest run still stops at both shallow intermediate points.
 
-Do not add dynamic obstacle behavior on top of this until ordinary static maneuver
-authoring is credible.
+The supplied performance log confirms the previous candidate still ended with
+`blended_waypoints=0` for the four-point / one-obstacle viewer route. Therefore the
+stops are authored upstream by Ruckig waypoint handling, not caused by Follower losing
+an otherwise continuous reference.
 
-## Confirmed root causes
+## Candidate now committed
 
-### Route geometry
+### Corner execution
 
-The former box visibility graph lacked edge-midpoint support nodes. The old default
-route was approximately:
+`d2205f50259fdef05a6515fec3822055891c47d5`
+- replace the single fixed 25%-leg corner-cut safety test with adaptive blend-distance
+  search;
+- keep the widest collision-clear local blend;
+- if an actual Ruckig leg fails, reduce through-speed progressively before zeroing it.
 
-```text
-(0,0,0) -> (110,-27,-45) -> (190,-27,-45) -> (300,0,0)
-length ~= 323.75 m
+`641e6ef6aeb79d4dddcf58ce7601448723f79b9a`
+- remove the arbitrary 65% max-speed corner cap;
+- physical curvature/lateral authority and real speed constraints now limit speed.
+
+`20aef47942c675ae59b04c288b2ae4b3cb6de5e6`
+- test wide-blend-blocked/tight-blend-safe -> keep moving;
+- test truly blocked minimum blend -> stop allowed;
+- test default wall shallow corners -> both must retain nonzero speed.
+
+The white retained route remains a coarse geometric/topological polyline. It is not a
+literal instruction to stop and pivot at each vertex. The intended Stage-2 output is a
+continuous Ruckig execution trajectory through that intent.
+
+If this is still too tight, add an execution/maneuver reserve that moves the corner
+support farther from the obstacle. A slightly longer route is preferable to a fake stop.
+
+### Viewer
+
+Latest viewer commits:
+- `cbdbcc2b2132f0ef29af9a73e3589d25c415a8f5`
+- `2ad3bf086c153895adefee64fb9f67bcabaa84da`
+- `f695a55454f5ccc5802c618347dfb400ec4d6bcb`
+
+Lower-right fixed block now shows:
+- numeric current speed;
+- yellow thick arrow = actual velocity vector;
+- short cyan arrow = actual hull nose;
+- red arrow = program/Follower target nose;
+- white = retained geometric route;
+- green = actual flown path.
+
+Velocity arrow scale is 3.5 m of display length per 1 m/s and width 6 px.
+
+## Important Newtonian issue still open
+
+Do not confuse fixing StopTurnGo with completing Newtonian maneuver authoring.
+
+Current translation is still generated before final body/thrust attitude semantics.
+After the shallow-corner stop is removed, inspect:
+- actual yellow velocity vector;
+- actual cyan hull nose;
+- red program target nose.
+
+For Expert/Newtonian, a material course change must ultimately come from a
+body/thrust-aware proved maneuver:
+- preserve useful inertial velocity;
+- lead body rotation as needed;
+- use bounded RCS for trim;
+- use main-engine thrust only when actual hull attitude makes it available;
+- never let an arbitrary translational reference assume the future body attitude.
+
+That remains a B5/B6 integration task after this gate.
+
+## Target-machine gate
+
+First run the focused Ruckig corner tests:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+
+cmake -S tests/navigation_guidance -B build/tests/navigation_guidance -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/tests/navigation_guidance --target ruckig_route_planner_tests
+ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
 ```
 
-The intended nearest-face route is approximately:
+Then run the retained-route/viewer gate:
 
-```text
-(0,0,0) -> (110,-27,0) -> (190,-27,0) -> (300,0,0)
-length ~= 306.53 m
+```bash
+cd /d/__elite/work
+bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
-Candidate route fix:
-`e53312cc9b00119e69f1c7676edf14b5d21fea64`.
+Launch separately:
 
-Regression:
-`8e0d4c4c6ca7d4d7ae3e7cc71387ebff8b335302`.
+```bash
+cd /d/__elite/work
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```
 
-### StopTurnGo fallback
-
-`TrajectoryGenerator::buildWaypointVelocities()` tries one synthetic shortcut chord
-around each corner. If that chord intersects the inflated wall, the waypoint remains
-at zero target velocity. Ruckig then stops there.
-
-A blocked shortcut chord does **not** imply that the vehicle must stop. It only proves
-that this particular shortcut construction is invalid.
-
-### Newtonian reference semantics
-
-The current Stage-2 pipeline creates translational P/V/A first. Afterwards
-`buildReferenceAttitudes()` points Newtonian forward toward requested acceleration.
-That lets RCS alter velocity while attitude is still rotating and creates excessive
-body rotation around braking/leg transitions.
-
-The physical allocator itself remains directionally meaningful; the defect is the
-upstream physical maneuver reference.
-
-## Active implementation objective
-
-Replace ordinary corner handling with control-law-aware physical maneuver authoring.
-
-Required behavior for Expert:
-- shallow/medium bend + adequate space/authority -> continuous pass, not mandatory stop;
-- Newtonian -> body/thrust-aware lead turn / coast-drift / bounded RCS trim /
-  main-engine burn as the geometry and delta-v require;
-- Assisted -> smooth continuous pass using its longitudinal assisted authority and
-  bounded RCS;
-- a stop is legal only when geometry, terminal state, vehicle authority or safety
-  actually requires it;
-- no full flip merely to negotiate a small heading change;
-- body/velocity slip must be intentional and bounded by the selected maneuver;
-- the exact maneuver accepted by Follower must be the same maneuver that passed
-  capability and geometry proof.
-
-Standard vs Extreme must become a doctrine difference:
-- Standard: more clearance/reserve, smoother lower-slip choices;
-- Extreme: faster/more aggressive proved choices, may accept larger controlled slip
-  and use more of the safe envelope;
-- neither mode may violate hard safety/authority proof.
-
-## Architecture boundary
-
-Do not solve this by:
-- increasing RCS to make arbitrary vectors work;
-- widening collision clearance;
-- forcing waypoint velocities nonzero without a physical maneuver proof;
-- moving maneuver choice into Follower;
-- adding viewer-only motion logic.
-
-Use:
-- B4 geometric local/route path;
-- B5 control-law-aware maneuver compiler;
-- B6 continuous maneuver proof;
-- B7 doctrine selection;
-- B8 AcceptedManeuverProgram;
-- B9/B10 Follower execution.
-
-Current ordinary B5 supports Newtonian first. General ordinary B6 remains a real gap
-and should be filled rather than bypassed.
-
-## New observability already committed
-
-`ac30d441ebdafe232af0bf0fe7e8882da9f38767`:
-- triangular-prism Cobra diagnostic hull;
-- smaller translucent nose marker;
-- thick velocity vector proportional to speed;
-- numeric speed label at its tip.
-
-`c4c63c9751a4b5b381da290a570ee98775148eb6`:
-- exact retained route points in Stage-1 diagnostics;
-- retained interior waypoint speeds;
-- maximum body/velocity angle.
-
-## Immediate target-machine gate
-
-Run latest main and inspect:
-- nominal route length/points;
-- whether the new box regression passes;
-- viewer compiles;
+Collect:
+- HEAD;
+- focused Ruckig result;
+- route points/length;
 - `RETAINED WAYPOINT SPEEDS`;
 - `MAX BODY/VELOCITY ANGLE`;
-- video/visual behavior with Expert Standard Newtonian and Assisted.
-
-After this evidence, implement the physical corner-authoring correction.
+- video or observation of yellow V vs cyan actual nose vs red target nose for
+  Expert/Standard/Newtonian and Assisted.
 
 ## Mandatory state protocol
 

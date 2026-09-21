@@ -82,6 +82,39 @@ void testStaticWallProducesDetour()
     }
 }
 
+void testBoxDetourUsesNearestFacePlaneInsteadOfCornerEdge()
+{
+    auto q = baseRequest();
+    q.staticObstacles.push_back(wall());
+
+    const auto result = Planner::plan(q);
+    require(result.valid, "box face-plane detour route failed");
+    require(
+        result.pointsMapMeters.size() == 4,
+        "symmetric wall should produce one two-point face-plane detour"
+    );
+
+    // With the wall used by this fixture, Y is the cheapest transverse axis.
+    // The old corner-only support graph unnecessarily also displaced Z and
+    // produced a ~323 m-class route in the 13 m-envelope viewer scenario.
+    // Edge support nodes must keep this equivalent test route in one
+    // transverse plane.
+    require(
+        std::abs(result.pointsMapMeters[1].z) <= 1.0e-9 &&
+        std::abs(result.pointsMapMeters[2].z) <= 1.0e-9,
+        "box detour unnecessarily paid clearance on a second transverse axis"
+    );
+    require(
+        std::abs(result.pointsMapMeters[1].y) > 1.0 &&
+        std::abs(result.pointsMapMeters[2].y) > 1.0,
+        "box detour did not move onto the nearest clear face plane"
+    );
+    require(
+        result.lengthMeters < 310.0,
+        "box detour remained materially longer than the nearest-face route"
+    );
+}
+
 void testRequiredWaypointIsPreserved()
 {
     auto q = baseRequest();
@@ -149,6 +182,7 @@ int main()
     {
         testDirectRouteIsRetainedAsOneNominalProduct();
         testStaticWallProducesDetour();
+        testBoxDetourUsesNearestFacePlaneInsteadOfCornerEdge();
         testRequiredWaypointIsPreserved();
         testDynamicRevisionDoesNotInvalidateNominalRoute();
 

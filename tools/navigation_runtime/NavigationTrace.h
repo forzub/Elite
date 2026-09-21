@@ -26,6 +26,13 @@ struct TraceFrame
     glm::dvec3 manoeuvreAccelerationMps2 {0.0};
     glm::dvec3 engineAccelerationMps2 {0.0};
 
+    // Control-chain telemetry: what Follower requested and what the selected
+    // pilot profile actually delivered to SharedShipPhysics this tick.
+    glm::dvec3 idealLinearAccelerationDemandMps2 {0.0};
+    glm::dvec3 idealAngularAccelerationDemandRadPerSec2 {0.0};
+    glm::dvec3 executedLinearAccelerationDemandMps2 {0.0};
+    glm::dvec3 executedAngularAccelerationDemandRadPerSec2 {0.0};
+
     // Effective runtime state, not merely what the UI requested. The viewer
     // uses this to keep controls synchronized with the system actually flown.
     bool hasRuntimeControlLaw = false;

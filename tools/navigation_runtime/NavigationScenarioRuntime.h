@@ -33,6 +33,12 @@ struct ScenarioRunSettings
     PilotLevel pilot = PilotLevel::Expert;
     FlightStyle flightStyle = FlightStyle::Standard;
     bool enableSuddenObstacle = false;
+
+    // Negative means "use the authored scenario value". The runtime viewer
+    // uses explicit overrides so start/finish speed can be swept without
+    // rewriting scenario.json or forcing Stage-1 route replanning.
+    double startSpeedOverrideMps = -1.0;
+    double finishSpeedOverrideMps = -1.0;
 };
 
 struct ScenarioRunResult
@@ -41,6 +47,11 @@ struct ScenarioRunResult
     std::string message;
     TraceDocument trace;
     std::vector<std::string> diagnostics;
+
+    // Authored defaults exposed to the viewer so its sliders initialize from
+    // scenario data rather than hard-coded UI values.
+    double authoredStartSpeedMps = 0.0;
+    double authoredFinishSpeedMps = 0.0;
 };
 
 // Load only the authored input scene for pre-calculation visualization.

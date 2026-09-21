@@ -88,6 +88,11 @@ void saveTraceJson(
         frame["ship_right"] = vec3Json(f.shipRight);
         frame["ship_up"] = vec3Json(f.shipUp);
         frame["ship_velocity"] = vec3Json(f.shipVelocity);
+        frame["has_runtime_control_law"] = f.hasRuntimeControlLaw;
+        if (f.hasRuntimeControlLaw)
+            frame["runtime_control_law"] = f.runtimeControlLaw;
+        frame["main_engine_throttle_01"] =
+            f.mainEngineThrottle01;
 
         frame["has_program_reference"] = f.hasProgramReference;
         if (f.hasProgramReference)
@@ -206,6 +211,15 @@ TraceDocument loadTraceJson(const std::string& path)
         f.shipPosition = readVec3(source.at("ship_position"));
         f.shipForward = readVec3(source.at("ship_forward"));
         f.shipVelocity = readVec3(source.at("ship_velocity"));
+        f.hasRuntimeControlLaw =
+            source.value("has_runtime_control_law", false);
+        if (f.hasRuntimeControlLaw)
+        {
+            f.runtimeControlLaw =
+                source.value("runtime_control_law", std::string {});
+        }
+        f.mainEngineThrottle01 =
+            source.value("main_engine_throttle_01", 0.0);
 
         if (source.contains("ship_right") && source.contains("ship_up"))
         {

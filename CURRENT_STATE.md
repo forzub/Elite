@@ -999,3 +999,75 @@ execution.
 
 Target validation is pending. Do not claim the route-phase fix works until the user's
 MinGW64 machine passes the new E2E test.
+
+
+## 2026-09-21 — retained-route Stage-2 target execution PASS
+
+User-supplied target diagnostics prove that the route-leg phase correction works in the
+real diagnostic stand. The supplied output does not contain `git rev-parse HEAD`, so
+this evidence is intentionally not attached to an inferred commit SHA.
+
+Stage 1 remained unchanged:
+- START = (0,0,0) m with V=(6,0,0) m/s;
+- FINISH = (300,0,0) m;
+- one static obstacle;
+- 4 retained route points;
+- retained route length 323.75 m;
+- static detour YES.
+
+Observed Stage-2 runs:
+
+| Pilot / style / law | Ruckig samples | phases / handoffs | final P error | final speed | max route dev | max follower error | contact |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Expert / Standard / Newtonian | 1521 | 3 / 2 | 0.15 m | 0.10 m/s | 3.26 m | 1.08 m | NO |
+| Expert / Extreme / Newtonian | 1416 | 3 / 2 | 0.10 m | 0.48 m/s | 3.26 m | 0.95 m | NO |
+| Expert / Extreme / Assisted | 1416 | 3 / 2 | 0.10 m | 0.48 m/s | 3.26 m | 0.95 m | NO |
+
+All three runs report:
+- `ROUTE EXECUTION COMPLETE: YES`;
+- `FOLLOWER: EXECUTED`;
+- `FOLLOWER FAIL REASON: NONE`;
+- `PILOT BRIDGE: EXECUTED`;
+- `COARSE STATIC CONTACT: NO`.
+
+This directly closes the previous 102-microprogram failure mode. The current four-point
+retained route is executed as three meaningful physical route-leg phases with two real
+ManeuverPhaseGate handoffs.
+
+The exact retained-route E2E gate now exercises the previously missing chain:
+
+```text
+scenario.json
+ -> NominalRoutePlanner once
+ -> immutable retained route
+ -> Ruckig
+ -> route-leg AcceptedManeuverPrograms
+ -> TrajectoryFollower
+ -> PilotSkillExecutor
+ -> SharedShipPhysics / DynamicMotionSystem
+ -> authored finish
+```
+
+This is strong static integration evidence, not full Navigation-v2 acceptance. The
+current static contact check is still coarse route-envelope geometry, not the final
+oriented swept-hull B6 tunnel proof.
+
+### Next active slice — dynamic local overlay on the retained route
+
+Static retained-route execution is now sufficiently stable to start the previously
+deferred dynamic layer.
+
+Hard ownership contract:
+- dynamic actors never rebuild the retained global/static route;
+- moving/sudden obstacles are a bounded local monitor/avoidance overlay only;
+- surprise obstacles become visible only after their authored activation time;
+- if a physically executable short bypass exists, execute that bypass;
+- do not require an immediate return-to-line segment inside the same horizon;
+- if no safe executable bypass exists, issue active braking while navigation remains
+  alive and continues evaluating fresh world state;
+- after the obstacle clears, progressively reacquire the retained route under vehicle
+  limits rather than teleporting or enforcing an arbitrary merge distance.
+
+Initial dynamic acceptance should keep the same Stage-1 route immutable and first prove
+Expert/Standard/Newtonian. Mode/style expansion follows after the local dynamic chain is
+behaviorally correct.

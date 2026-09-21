@@ -1,12 +1,12 @@
-# CONTINUE PROMPT — Elite Navigation: visible Ruckig curve vs actual flight
+# CONTINUE PROMPT — Elite Navigation: remove purple Ruckig barrels
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
 After every state-affecting event:
-- update `CURRENT_STATE.md`;
-- update `CURRENT_TASK.md`;
-- update `PROJECT_STATE.md`;
-- update `src/game/navigation/STAGE12_END_TO_END.md`;
+- update CURRENT_STATE.md;
+- update CURRENT_TASK.md;
+- update PROJECT_STATE.md;
+- update src/game/navigation/STAGE12_END_TO_END.md;
 - **recreate this CONTINUE_PROMPT.md from scratch again**.
 
 Read first:
@@ -19,61 +19,50 @@ Read first:
 - tools/navigation_runtime/NavigationScenarioRuntime.cpp
 - tools/navigation_runtime/NavigationRuntimeViewer.cpp
 - tests/navigation_guidance/RuckigRoutePlannerTests.cpp
-- src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md
 
-## Critical correction
+## Current confirmed evidence
 
-Do not call the current production reference a SmoothPathOptimizer spline.
-`SmoothPathOptimizer` is retired in production. Aggregate `SmoothPathPerf` log lines
-are legacy/test compatibility output. Current runtime motion is Ruckig.
+The viewer now proves the two "barrels" are in the PURPLE calculated Ruckig reference
+itself, not merely in the GREEN actual path.
 
-## Current candidate
+Pre-fix perf:
+coarse_points=4, guide_points=6, rounded_corners=2, expanded_corners=0,
+blended_waypoints=4, samples=2300, valid=1.
 
-The four-point Stage-1 route remains immutable:
-```text
-(0,0,0) -> (110,-27,0) -> (190,-27,0) -> (300,0,0)
-```
+Diagnosis:
+- one coarse corner had become only one entry point + one exit point;
+- Ruckig solved a relatively long leg between them;
+- endpoint velocity directions were not collinear with that chord;
+- therefore a lateral polynomial bow was mathematically legal and visibly appeared.
 
-Stage-2 now creates a separate rounded execution guide:
-- local entry/exit points replace an exact coarse corner constraint;
-- turn-room estimate uses speed and lateral acceleration;
-- if the useful corner cannot fit, local support can be moved outward into free space;
-- Ruckig solves that guide.
+## Candidate mechanism fix
 
-The full products are now visible:
-- WHITE = retained Stage-1 route;
-- BLUE = local execution guide;
-- PURPLE = complete calculated Ruckig reference;
-- GREEN = actual flown path;
-- YELLOW arrow = actual V;
-- CYAN short arrow = physical hull nose;
-- RED arrow = target/program nose.
+Each rounded corner is now a densely sampled quadratic C1 curve:
+- control point = widened local corner;
+- tangent at entry matches incoming route;
+- tangent at exit matches outgoing route;
+- sample spacing about 2.5 m, 4..24 segments;
+- sampled curve collision checked.
 
-Runtime also reports:
-- EXECUTION GUIDE POINTS
-- CALCULATED MIN SPEED
-- CALCULATED MIN SPEED POS
-- CALCULATED MAX SPEED
-
-Focused default-wall test now rejects a calculated reference that:
-- does not create a rounded guide;
-- drops below 7.5 m/s in this steady 10 m/s experiment;
-- geometrically backtracks along +X.
+The old artificial bend-factor floor 0.15 was removed. Tiny direction changes on a dense
+curve now use their real `sin(angle/2)` with only a 1e-4 numerical floor.
 
 Latest candidate commits:
-0b4212345b2c38b4f775937060a81ba56cace219
-939a7058ba58a244282d219e0c298150a72a410f
-3ee684742afd8ad91307b99c0a1815bd30aea722
-287ab085275873ffb1f991e09902d31706edb927
-33e3b228327cfb9c6031ecb09aa67847d16d2cda
-154d9e1a544dc957769efce127b70ee36dd8b0cc
-68f4377aabae1fd894be4a882fb30b0cec762d89
-77f9640eb77267be6a258b0293720e00f089fbe6
-f9b106f8c259c0f7a39ebde11f67c776e1a35c92
+- 3dccb8a36c8e8023083b21f317b944a8097fd6a0
+- 517904389019fbf94ddbbabbe3248cdb7b6fab20
+- a056973c674194b109b8f37646f6d7a9e461c5b9
 
-Do not call target PASS until the user's MinGW64 output proves it.
+Do not call target PASS until user MinGW64 evidence proves it.
 
-## Exact next commands
+## New regression
+
+In the default steady 10 m/s wall case:
+- max calculated Ruckig-reference deviation from execution guide <= 1.5 m;
+- min calculated speed >= 7.5 m/s;
+- no +X backtracking;
+- collision-free.
+
+## Next commands
 
 ```bash
 cd /d/__elite/work
@@ -88,15 +77,10 @@ bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-## Interpret next viewer
+Inspect WHITE / BLUE / PURPLE / GREEN.
 
-If PURPLE itself has a loop or large speed dip:
-- continue changing execution-guide/Ruckig authoring;
-- widen support farther rather than tightening the curve or stopping.
+Decision:
+- PURPLE clean, GREEN bad -> next layer is Follower/Pilot/body-thrust execution.
+- PURPLE still bad -> stay in continuous reference generation and densification.
 
-If PURPLE is smooth at about 10 m/s but GREEN brakes or loops:
-- geometry is no longer the main fault;
-- fix Follower / Pilot / Newtonian body-thrust execution;
-- do not hide it with more route changes.
-
-Do not start dynamic avoidance yet.
+Do not enable dynamic avoidance yet.

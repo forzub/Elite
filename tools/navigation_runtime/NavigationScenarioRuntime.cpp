@@ -1747,6 +1747,12 @@ TraceFrame executionTraceFrame(
         frame.hasProgramReference = true;
         frame.programReferencePosition =
             sampled.reference.positionMapMeters;
+        frame.programReferenceVelocity =
+            sampled.reference.velocityMapMetersPerSecond;
+        frame.programSpeedCorridorHalfWidthMps =
+            program.tracking.alongTrackSpeedDeadbandMps;
+        frame.programProgressCorridorHalfWidthMeters =
+            program.tracking.alongTrackPositionDeadbandMeters;
         frame.programReferenceForward =
             sampled.reference.forwardMap;
         frame.programReferenceRight =

@@ -315,6 +315,15 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         reference.angularAccelerationFeedForwardMapRadPerSec2 +
         result.angularFeedbackMapRadPerSec2;
 
+    if (program.capability.maxAngularAccelerationRadPerSec2 > 0.0)
+    {
+        result.intent.idealAngularAccelerationLocalRadPerSec2 =
+            clampMagnitude(
+                result.intent.idealAngularAccelerationLocalRadPerSec2,
+                program.capability.maxAngularAccelerationRadPerSec2
+            );
+    }
+
     if (!finite(result.intent.idealLinearAccelerationLocalMps2) ||
         !finite(result.intent.idealAngularAccelerationLocalRadPerSec2))
     {

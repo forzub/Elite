@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: Assisted runaway target validation
+# CONTINUE PROMPT — Elite Navigation: physical hull/thrust coupling gate
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -9,99 +9,101 @@ Every state-affecting iteration MUST:
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
+Also keep `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md` synchronized
+when propulsion/control-law ownership changes.
+
 Read first:
 - `CURRENT_STATE.md`
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
 - `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
+- `src/game/navigation/DynamicMotionSystem.cpp`
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
 - `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
 - `src/game/navigation/ManeuverTrackingController.cpp/.h`
-- `src/game/navigation/ManeuverProgramSampler.cpp/.h`
-- `src/game/navigation/TrajectoryFollower.cpp/.h`
-- `src/game/navigation/ManeuverPhaseGate.cpp/.h`
-- `tests/navigation_runtime/ManeuverTrackingControllerTests.cpp`
+- `tests/navigation_runtime/NavigationRuntimeControlTests.cpp`
 - `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`.
 
-## Current code candidate
+## Current candidate
 
-Before the documentation-only synchronization commits:
+Code baseline before documentation commits:
 
 ```text
-13ef6bd731ef6d8e78c75c72bf7a59f524b30bcb
+b833eddb7bd04b5c025b2be0fd8334c33f8824e6
 ```
 
-Target-machine validation is pending. Never claim PASS before it is supplied.
+Target-machine PASS is not yet established.
 
-## Latest target failure
+## Latest evidence
+
+The previous exponential runaway is fixed.
+
+New target case:
 
 ```text
 ASSISTED / EXPERT / STANDARD
-START 10.00 M/S
-FINISH 10.00 M/S
+START 20.90 M/S
+FINISH 20.00 M/S
 
-TRAJECTORY: RUCKIG OK
-CALCULATED MAX SPEED: 11.71 M/S
-PROGRAM PHASES COMPLETE: NO
-PHYSICAL TERMINAL STATE: MISSED
-FINAL POSITION ERROR: 2411.14 M
-FINAL SPEED: 100.64 M/S
-REFERENCE CLOCK HOLD: 47.70 S
-MAX BODY/VELOCITY ANGLE: 179.99 DEG
-COARSE STATIC CONTACT: YES
+TRAJECTORY RUCKIG OK
+CALCULATED MAX SPEED 20.90 M/S
+PROGRAM PHASES COMPLETE NO
+PHYSICAL TERMINAL STATE MISSED
+FINAL ERROR 175.20 M
+FINAL SPEED 7.45 M/S
+REFERENCE HOLD 40.70 S
+MAX BODY/VELOCITY ANGLE 180 DEG
 ```
 
-The speed planner did **not** request 100 m/s. This was physical execution
-runaway.
+## Proven root cause
 
-## Root cause A — held moving reference kept derivatives alive
+Old Assisted navigation allocation had a symmetric longitudinal main channel.
+A negative acceleration demand could create **fore/nose main thrust** without
+rotating the hull.
 
-Reference progress pause froze a moving trajectory sample but continued to
-apply that sample's feed-forward / rate derivatives indefinitely. B10 recovery
-reserve could not cancel them.
+Telemetry showed:
+- hull/reference nearly identical;
+- main_pct displayed 0;
+- physical `main_a` pointed opposite hull forward;
+- speed fell through zero;
+- velocity reversed while hull attitude stayed unchanged;
+- body/velocity angle approached 180 deg.
 
-Current B10:
-- normal in-envelope tracking uses accepted feed-forward;
-- out-of-envelope reacquisition uses zero linear/angular feed-forward;
-- recovery damps actual angular rate toward zero;
-- feedback remains bounded by the proved reserve;
-- accepted moving reference resumes when the physical craft re-enters.
+This violated the existing architecture statement that Assisted is not
+permission to invent thrust.
 
-Regression:
-`testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()`.
+## Current correction
 
-## Root cause B — dense angular velocity was copied into sparse FreeTransit
+`DynamicMotionSystem::applySystemAccelerationDemand`
+- aft main only for BOTH Assisted and Newtonian;
+- reverse demand can use only bounded real RCS before hull rotation.
 
-FreeTransit is <=16 samples. Copying an instantaneous dense attitude
-`angularVelocity` into a sparse program caused B9 to smear short rate peaks
-across long intervals. The visible sparse basis and the commanded omega were
-therefore inconsistent.
+`buildReferenceAttitudes`
+- Assisted now also uses propulsion-aware attitude authoring;
+- if RCS alone cannot supply the requested acceleration, reference hull
+  cants/flips toward the acceleration enough for aft main participation.
 
-Current authoring:
-- keep sparse basis as authority;
-- re-derive interior omega from neighboring sparse basis/time samples;
-- omega first/last = 0;
-- alpha_ff = 0;
-- clamp sparse omega to physical angular-rate capability.
+Invariant:
+```text
+nonzero main engine => main_a dot hull_forward >= 0
+```
 
-## Viewer
+## Regression gate
 
-Normal F / ВПИСАТЬ fit ignores the full physical frame history. A runaway
-physical trace can no longer shrink the authored route/obstacles to a postage
-stamp.
+Exact new E2E:
+`ASSISTED / EXPERT / STANDARD, 20.90 -> 20.00 m/s`.
 
-## Exact regressions
+It requires:
+- physical execution success;
+- no hidden reverse main thrust;
+- max physical speed <= 35 m/s;
+- final position <= 5 m;
+- final speed 20 +/- 1.5 m/s.
 
-1. Assisted / Expert / Standard 10 -> 10:
-   `testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()`
-   - physical max speed <= 25 m/s;
-   - execution success;
-   - final position <= 5 m;
-   - final speed 10 +/- 1.5 m/s.
-
-2. Newtonian / Expert / Standard 26.15 -> 11.75:
-   existing high-speed reacquisition regression.
+Existing regressions remain:
+- Assisted 10 -> 10 no runaway;
+- Newtonian 26.15 -> 11.75 reacquisition.
 
 ## Run next
 
@@ -118,22 +120,21 @@ Then:
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-First inspect exactly:
-`ASSISTED / EXPERT / STANDARD, 10.00 -> 10.00 m/s`.
+Test first:
+`ASSISTED / EXPERT / STANDARD, 20.90 -> 20.00 m/s`.
 
-Required:
-- no runaway acceleration;
-- no persistent tumbling;
-- hold/reacquisition converges;
-- phases complete physically;
-- final position <= 5 m;
-- no static contact;
-- camera fit remains useful.
+Observe physical causality:
+- if hull has not rotated and RCS is insufficient, strong braking must NOT
+  occur;
+- rotating hull alone must not alter velocity;
+- main/RCS thrust must be visible whenever velocity materially changes;
+- a loop must result from integrated forces, not from an independent visual
+  curve.
+
+If this still fails, inspect whether the Ruckig point-mass program asks for
+main-engine-dominant acceleration before finite hull lead-rotation can be
+completed. The next fix would then belong in maneuver timing/authoring, not in
+the propulsion allocator or viewer.
 
 Do not enable dynamic avoidance.
-Do not change route geometry or loosen acceptance tolerances to hide an
-execution failure.
-If the test still fails, inspect telemetry at the **first**
-`follower_reacquiring` transition and compare:
-`ref_forward`, body forward, body/velocity angle, ideal/exec linear demand,
-ideal/exec angular demand, and reference-clock hold onset.
+Do not loosen tolerances to hide the failure.

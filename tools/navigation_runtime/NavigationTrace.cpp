@@ -99,6 +99,12 @@ void saveTraceJson(
         {
             frame["program_reference_position"] =
                 vec3Json(f.programReferencePosition);
+            frame["program_reference_velocity"] =
+                vec3Json(f.programReferenceVelocity);
+            frame["program_speed_corridor_half_width_mps"] =
+                f.programSpeedCorridorHalfWidthMps;
+            frame["program_progress_corridor_half_width_m"] =
+                f.programProgressCorridorHalfWidthMeters;
             frame["program_reference_forward"] =
                 vec3Json(f.programReferenceForward);
             frame["program_reference_right"] =
@@ -249,6 +255,21 @@ TraceDocument loadTraceJson(const std::string& path)
         {
             f.programReferencePosition =
                 readVec3(source.at("program_reference_position"));
+            if (source.contains("program_reference_velocity"))
+            {
+                f.programReferenceVelocity =
+                    readVec3(source.at("program_reference_velocity"));
+            }
+            f.programSpeedCorridorHalfWidthMps =
+                source.value(
+                    "program_speed_corridor_half_width_mps",
+                    0.0
+                );
+            f.programProgressCorridorHalfWidthMeters =
+                source.value(
+                    "program_progress_corridor_half_width_m",
+                    0.0
+                );
             f.programReferenceForward =
                 readVec3(source.at("program_reference_forward"));
             f.programReferenceRight =

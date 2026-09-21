@@ -263,6 +263,82 @@ void testFollowerCompletesOnlyAtTerminalState()
             "program completed despite missing terminal tolerance");
 }
 
+void testFreeTransitSpeedCorridorIgnoresTinyLongitudinalError()
+{
+    Program program = baseProgram();
+    program.family = Program::ManeuverFamily::FreeTransit;
+    program.samples[0].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+    program.tracking.alongTrackPositionDeadbandMeters = 2.0;
+    program.tracking.alongTrackSpeedDeadbandMps = 0.5;
+
+    auto agent = exactAgentFor(program.samples[0]);
+    agent.velocityMapMetersPerSecond = {5.1, 0.0, 0.0};
+
+    const auto result =
+        Tracker::track(program, program.samples[0], agent);
+
+    require(result.status == Tracker::Status::Tracking,
+            "tiny free-transit speed error left tracking state");
+    requireNear(
+        glm::length(result.linearFeedbackMapMps2),
+        0.0,
+        1.0e-12,
+        "free-transit speed corridor still corrected 0.1 m/s overspeed"
+    );
+}
+
+void testFreeTransitCorridorStillCorrectsCrossTrackMotion()
+{
+    Program program = baseProgram();
+    program.family = Program::ManeuverFamily::FreeTransit;
+    program.samples[0].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+    program.tracking.alongTrackPositionDeadbandMeters = 2.0;
+    program.tracking.alongTrackSpeedDeadbandMps = 0.5;
+
+    auto agent = exactAgentFor(program.samples[0]);
+    agent.positionMapMeters = {1.0, 1.0, 0.0};
+    agent.velocityMapMetersPerSecond = {5.1, 0.25, 0.0};
+
+    const auto result =
+        Tracker::track(program, program.samples[0], agent);
+
+    require(
+        std::abs(result.linearFeedbackMapMps2.y) > 0.1,
+        "longitudinal corridor suppressed cross-track correction"
+    );
+    requireNear(
+        result.linearFeedbackMapMps2.x,
+        0.0,
+        1.0e-12,
+        "inside-corridor along-track error still produced longitudinal feedback"
+    );
+}
+
+void testFreeTransitCorridorCorrectsOnlyExcessOutsideBand()
+{
+    Program program = baseProgram();
+    program.family = Program::ManeuverFamily::FreeTransit;
+    program.samples[0].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+    program.tracking.alongTrackPositionDeadbandMeters = 2.0;
+    program.tracking.alongTrackSpeedDeadbandMps = 0.5;
+
+    auto agent = exactAgentFor(program.samples[0]);
+    agent.velocityMapMetersPerSecond = {6.0, 0.0, 0.0};
+
+    const auto result =
+        Tracker::track(program, program.samples[0], agent);
+
+    requireNear(
+        result.linearFeedbackMapMps2.x,
+        -0.5,
+        1.0e-12,
+        "speed corridor did not subtract the allowed 0.5 m/s before correcting"
+    );
+}
+
 void testFollowerRejectsExecutionBeforeAcceptanceTime()
 {
     const Program program = baseProgram();
@@ -283,6 +359,9 @@ int main()
         testFeedbackCannotExceedReservedAuthority();
         testFollowerUsesB9ThenB10WithoutResolvingControl();
         testFollowerCompletesOnlyAtTerminalState();
+        testFreeTransitSpeedCorridorIgnoresTinyLongitudinalError();
+        testFreeTransitCorridorStillCorrectsCrossTrackMotion();
+        testFreeTransitCorridorCorrectsOnlyExcessOutsideBand();
         testFollowerRejectsExecutionBeforeAcceptanceTime();
 
         std::cout << "MANEUVER TRACKING CONTROLLER TESTS: PASS\n";
@@ -290,6 +369,8 @@ int main()
         std::cout << " - tracking feedback is bounded by proved reserve\n";
         std::cout << " - follower composes B9 sampler -> B10 tracker\n";
         std::cout << " - terminal completion uses accepted tolerances\n";
+        std::cout << " - free transit ignores harmless longitudinal speed drift\n";
+        std::cout << " - free transit keeps full cross-track correction\n";
         return 0;
     }
     catch (const std::exception& error)

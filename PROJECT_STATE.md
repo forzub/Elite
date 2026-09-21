@@ -2738,3 +2738,20 @@ physical execution history, so a runaway trace cannot destroy scene scale.
 
 Candidate baseline before docs: `59ff756996229bf15a122eb0fe43cf0d9a14b245`.
 Target-machine acceptance is pending.
+
+### 2026-09-22 — FreeTransit sparse derivative consistency
+
+Stage-12 FreeTransit attitude authoring now treats the accepted sparse basis
+sequence as the source of truth for angular motion. Dense-source instantaneous
+angular velocity is no longer copied into a <=16-sample program because that
+creates temporal aliasing when B9 interpolates the sparse product.
+
+Interior sparse angular velocity is re-derived from neighboring accepted
+basis/time samples, endpoints are zero-rate, and angular acceleration
+feed-forward remains zero. This complements out-of-envelope derivative
+neutralization in B10.
+
+Exact Assisted 10 -> 10 physical-runaway E2E regression is now pinned.
+
+Candidate baseline before docs: `13ef6bd731ef6d8e78c75c72bf7a59f524b30bcb`.
+Acceptance remains target-machine pending.

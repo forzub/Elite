@@ -39,11 +39,16 @@ retained sparse route polyline
 
 The white route appears after Stage 1.
 
-The nominal route is rebuilt only when:
-- goal revision changes; or
-- static-world revision changes.
+The underlying nominal-route validity key still excludes dynamic actors, but the
+diagnostic stand also treats **speed and flight style as route-request inputs** because
+they change the geometric maneuver reserve around static obstacles.
 
-A dynamic-world revision does **not** invalidate/rebuild the route.
+The route is rebuilt when:
+- goal/static-world geometry changes;
+- requested start/finish speed changes;
+- Standard/Extreme clearance doctrine changes.
+
+A dynamic-world revision by itself does **not** invalidate/rebuild the global route.
 
 Stage-1 diagnostics are printed to stdout and written to:
 
@@ -61,8 +66,9 @@ They include:
 
 ## Stage 2 — execute the retained route
 
-After a successful Stage 1, the former playback button becomes
-`ЗАПУСТИТЬ ПОЛЁТ`.
+One press of `РАССЧИТАТЬ` runs the required calculation chain. If Stage 1 succeeds,
+Stage 2 is executed immediately from that retained route; there is no ambiguous second
+"execute" step required from the user.
 
 Stage 2 does **not** call a global planner. It consumes the exact
 `TraceDocument::routePoints` produced by Stage 1:
@@ -124,21 +130,27 @@ Diagnostics include:
 
 The top selectors have different ownership.
 
-### Stage 1
+### Route-affecting inputs
 
-These do **not** change the static route:
-- Assisted / Newtonian;
-- Expert / Average / Loser;
-- Standard / Extreme;
-- sudden-obstacle checkbox.
+These require a fresh Stage-1 route because they change required maneuver room:
+- START speed;
+- FINISH speed;
+- Standard / Extreme flight style.
 
-### Stage 2
+Higher speed increases the coarse inertial maneuver reserve, so support points can move
+farther from a static obstacle.
 
-These are real execution inputs:
+Flight style has **no nominal speed**:
+- Standard = larger safety/maneuver clearance;
+- Extreme = smaller clearance, deliberately cutting closer to geometry.
+
+### Execution-only inputs
+
+These reuse the retained Stage-1 route but require a fresh Stage-2 solve:
 - Assisted / Newtonian changes the physical local flight law and reference-attitude
   behavior;
 - Expert / Average / Loser changes the real PilotSkillExecutor profile;
-- Standard / Extreme changes the requested Ruckig cruise speed.
+- sudden-obstacle checkbox remains an execution/dynamic-overlay input.
 
 The sudden-obstacle option is still reserved for the later dynamic-avoidance pass.
 The current static Stage-2 diagnostics explicitly report:
@@ -168,10 +180,10 @@ The current static scenario supports:
 - final position;
 - final forward requirement;
 - final up requirement;
-- zero terminal speed.
+- non-zero start and terminal speed.
 
-The current Ruckig route backend stops at the final waypoint. A non-zero
-`finish.speed_mps` is rejected explicitly instead of being silently ignored.
+The viewer exposes independent 5..50 m/s START/FINISH speed controls. Their larger value
+defines the current test execution speed envelope; Standard/Extreme do not alter it.
 
 ## Build
 
@@ -192,12 +204,13 @@ cd /d/__elite/work
 
 Workflow:
 
-1. inspect scene;
+1. inspect scene and choose control/pilot/style/speeds;
 2. press `РАССЧИТАТЬ`;
-3. inspect the white route and Stage-1 log;
-4. press `ЗАПУСТИТЬ ПОЛЁТ`;
-5. watch the Cobra/Follower execute that retained route;
-6. inspect `last_execution.log` if behavior is wrong.
+3. inspect the short on-screen calculation log;
+4. watch the Cobra/Follower execute the newly calculated result;
+5. after calculation the button is visually disabled;
+6. changing an input that invalidates the result enables `РАССЧИТАТЬ` again;
+7. inspect `last_execution.log` / `last_execution_telemetry.log` if behavior is wrong.
 
 The window is an ordinary decorated maximized Windows window, not exclusive fullscreen.
 

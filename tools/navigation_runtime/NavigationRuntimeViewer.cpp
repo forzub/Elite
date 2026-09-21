@@ -2361,29 +2361,12 @@ void fitCamera(
         include(obstacle.center + half);
     }
 
-    for (const auto& f : data.frames)
-    {
-        include(f.shipPosition);
-        if (f.hasSelectedTarget)
-            include(f.selectedTarget);
-        if (f.hasReacquisitionTarget)
-            include(f.reacquisitionTarget);
-        if (f.hasPortalTarget)
-            include(f.portalTarget);
-
-        if (f.hazardActive)
-        {
-            include(
-                f.hazardPosition +
-                glm::dvec3(f.hazardPlannerEnvelopeRadiusMeters)
-            );
-            include(
-                f.hazardPosition -
-                glm::dvec3(f.hazardPlannerEnvelopeRadiusMeters)
-            );
-        }
-    }
-
+    // Fit is a view of the authored/accepted navigation scene, not a
+    // bounding box of every physical execution sample. A failed controller can
+    // legitimately throw the ship kilometres away; including that runaway
+    // history here makes the diagnostic scene microscopic exactly when it is
+    // most useful. The execution path remains rendered and can still be
+    // inspected by pan/zoom, but it cannot poison the default/F camera fit.
     if (!std::isfinite(minimum.x) || !std::isfinite(maximum.x))
         return;
 

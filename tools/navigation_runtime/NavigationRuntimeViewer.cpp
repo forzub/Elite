@@ -655,15 +655,20 @@ void appendReferenceOrientationArrow(
             {1.0f, 0.0f, 0.0f}
         );
 
+    const glm::vec3 right =
+        normalizedOr(
+            frame.programReferenceRight,
+            {0.0f, 0.0f, 1.0f}
+        );
     const float hz = static_cast<float>(halfExtents.z);
     const glm::vec3 tip =
         center + forward * (hz + 7.0f);
-    addLine(
-        out,
-        center,
-        tip,
-        {1.0f, 0.25f, 0.18f}
-    );
+    const glm::vec3 color(1.0f, 0.25f, 0.18f);
+    addLine(out, center, tip, color);
+
+    const glm::vec3 headBase = tip - forward * 4.0f;
+    addLine(out, tip, headBase + right * 2.5f, color);
+    addLine(out, tip, headBase - right * 2.5f, color);
 }
 
 void appendTrackingTube(

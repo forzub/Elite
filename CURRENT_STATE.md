@@ -1274,3 +1274,86 @@ UNVERIFIED on target MinGW64.
 
 Run the focused Ruckig route tests plus the two-stage viewer gate before promoting this
 candidate.
+
+
+## 2026-09-21 — target corner gate 7/8; convert Test 1 to moving-start/moving-finish
+
+Target MinGW64 evidence from the focused Ruckig suite:
+- straight route: PASS;
+- diagonal stopped leg: PASS;
+- clear corner keeps through velocity: PASS;
+- blocked wide blend shrinks before stop: PASS;
+- default wall shallow corners stay moving: PASS;
+- initial acceleration preservation: PASS;
+- impossible braking rejection: PASS;
+- the only failure was the synthetic `truly blocked corner falls back to stop`
+  assertion.
+
+The important result is that the actual default four-point wall case now passes the
+focused requirement that both shallow intermediate corners retain non-zero speed. The
+single failure was not a safety failure: the test assumed that one tight fixture must
+force zero speed. That assumption is stronger than the architecture contract. If the
+solver proves a collision-free continuous passage, stopping only to satisfy the test is
+wrong. The fixture is therefore retained as a swept-safety check, not as a mandatory
+StopTurnGo assertion.
+
+### Test-1 isolation change
+
+For the default Standard stand, remove start/finish transients from the visual test:
+- authored Standard max speed = 10 m/s;
+- start velocity changed from 6 m/s to 10 m/s;
+- finish speed changed from 0 m/s to 10 m/s.
+
+The intent is a steady 10 m/s fly-through test:
+```text
+start already at 10 m/s
+ -> shallow corner 1
+ -> straight bypass leg
+ -> shallow corner 2
+ -> cross finish still at 10 m/s
+```
+
+This isolates the two turn maneuvers from startup acceleration and terminal braking.
+
+### Moving terminal velocity support
+
+The previous runtime had two artificial stop constraints:
+- `executeCalculatedRoute()` rejected any non-zero authored finish speed;
+- `RuckigRoutePlanner::plan()` unconditionally overwrote the final waypoint velocity
+  with zero.
+
+That is now replaced by an explicit exact terminal-velocity contract in
+`TrajectoryGenerationRequest`:
+- `hasTerminalVelocity`;
+- `terminalVelocityMps`.
+
+Point speed constraints remain upper bounds; the new terminal velocity is the authored
+final inertial velocity.
+
+Candidate commits:
+- `c9a8e381531feee4516cafa436b67809fb2d753d` — request contract;
+- `9372af939d2406768e530f9e2c02e05389f0df83` — Ruckig honors exact moving terminal;
+- `82dc142e5c06f8be8e6c94aec810f16b8b47302f` — runtime accepts/authors moving finish;
+- `75f11481979b83706861bbc98f8b6326341a07e0` — default stand start=10, finish=10;
+- `d40e4fdc7cb1048d0f45daf2598788684e49affc` — focused tests use moving terminal and
+  remove mandatory-stop assumption from tight corner;
+- `bc5fbaa284663d7a986e2257b8d71f4a64a610ba` — focused straight Test 1 is a true
+  steady 10 m/s transit;
+- `7f57df3ef4a05d6601d05aa9c94de7121e0d9884` — retained-route E2E now requires
+  crossing the finish at the authored 10 m/s.
+
+These latest moving-terminal changes are not yet target-validated.
+
+### Next target evidence
+
+Run focused Ruckig first. Expected qualitative result:
+- 8/8 focused tests;
+- default wall shallow corners moving;
+- straight Test 1 starts and ends at 10 m/s without an authored stop.
+
+Then run Stage-1/Stage-2 viewer. For Expert/Standard/Newtonian, the useful visual is now
+almost entirely the two corners because start and finish no longer require speed
+transients.
+
+After that, inspect yellow actual velocity vs cyan actual hull nose vs red target nose.
+The deeper Newtonian body/thrust-aware maneuver-authoring issue remains open.

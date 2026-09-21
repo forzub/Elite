@@ -18,6 +18,14 @@ struct TraceFrame
     glm::dvec3 shipUp {0.0, 1.0, 0.0};
     glm::dvec3 shipVelocity {0.0};
 
+    // Physical angular/propulsion telemetry. This is recorded per trace frame
+    // so a visible hull flip can be correlated with actual engine activity
+    // instead of inferred from animation alone.
+    glm::dvec3 shipAngularRatePyrRadPerSec {0.0};
+    glm::dvec3 mainEngineAccelerationMps2 {0.0};
+    glm::dvec3 manoeuvreAccelerationMps2 {0.0};
+    glm::dvec3 engineAccelerationMps2 {0.0};
+
     // Effective runtime state, not merely what the UI requested. The viewer
     // uses this to keep controls synchronized with the system actually flown.
     bool hasRuntimeControlLaw = false;

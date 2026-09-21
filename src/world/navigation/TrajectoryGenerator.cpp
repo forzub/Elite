@@ -285,6 +285,52 @@ bool guideCornerClear(
             request.vehicle.preferredClearanceMeters);
 }
 
+glm::dvec3 quadraticBezier(
+    const glm::dvec3& a,
+    const glm::dvec3& control,
+    const glm::dvec3& b,
+    double u
+) noexcept
+{
+    const double v = 1.0 - u;
+    return
+        a * (v * v) +
+        control * (2.0 * v * u) +
+        b * (u * u);
+}
+
+bool sampledBezierClear(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const glm::dvec3& entry,
+    const glm::dvec3& control,
+    const glm::dvec3& exit,
+    int segments
+)
+{
+    glm::dvec3 previous = entry;
+    for (int i = 1; i <= segments; ++i)
+    {
+        const double u =
+            static_cast<double>(i) /
+            static_cast<double>(segments);
+        const glm::dvec3 current =
+            quadraticBezier(entry, control, exit, u);
+
+        if (!world::navigation::segmentClearOfNavigationObstacles(
+                previous,
+                current,
+                request.obstacles,
+                request.vehicle.collisionRadiusMeters,
+                request.vehicle.preferredClearanceMeters))
+        {
+            return false;
+        }
+
+        previous = current;
+    }
+    return true;
+}
+
 ExecutionGuide buildExecutionGuide(
     const world::navigation::TrajectoryGenerationRequest& request,
     const std::vector<double>& coarseProgress
@@ -334,6 +380,7 @@ ExecutionGuide buildExecutionGuide(
         bool rounded = false;
         glm::dvec3 chosenEntry(0.0);
         glm::dvec3 chosenExit(0.0);
+        glm::dvec3 chosenControl = originalCorner;
         double chosenCut = 0.0;
         int chosenExpansion = 0;
 
@@ -386,6 +433,7 @@ ExecutionGuide buildExecutionGuide(
             {
                 chosenEntry = corner;
                 chosenExit = corner;
+                chosenControl = corner;
                 chosenCut = 0.0;
                 chosenExpansion = expansionAttempt;
                 rounded = true;
@@ -429,15 +477,30 @@ ExecutionGuide buildExecutionGuide(
                 const glm::dvec3 entry = corner - incoming * cut;
                 const glm::dvec3 exit = corner + outgoing * cut;
 
+                const int previewSegments = std::clamp(
+                    static_cast<int>(
+                        std::ceil((2.0 * cut) / 2.5)
+                    ),
+                    4,
+                    24
+                );
+
                 if (guideCornerClear(
                         request,
                         previous,
                         entry,
                         exit,
-                        next))
+                        next) &&
+                    sampledBezierClear(
+                        request,
+                        entry,
+                        corner,
+                        exit,
+                        previewSegments))
                 {
                     chosenEntry = entry;
                     chosenExit = exit;
+                    chosenControl = corner;
                     chosenCut = cut;
                     chosenExpansion = expansionAttempt;
                     rounded = true;
@@ -486,8 +549,36 @@ ExecutionGuide buildExecutionGuide(
                 coarseProgress[i + 1] - 1.0e-6
             );
 
-        appendGuidePoint(guide, chosenEntry, entryProgress);
-        appendGuidePoint(guide, chosenExit, exitProgress);
+        const int curveSegments = std::clamp(
+            static_cast<int>(
+                std::ceil((2.0 * chosenCut) / 2.5)
+            ),
+            4,
+            24
+        );
+
+        for (int sampleIndex = 0;
+             sampleIndex <= curveSegments;
+             ++sampleIndex)
+        {
+            const double u =
+                static_cast<double>(sampleIndex) /
+                static_cast<double>(curveSegments);
+
+            const glm::dvec3 point =
+                quadraticBezier(
+                    chosenEntry,
+                    chosenControl,
+                    chosenExit,
+                    u
+                );
+            const double progress =
+                entryProgress +
+                (exitProgress - entryProgress) * u;
+
+            appendGuidePoint(guide, point, progress);
+        }
+
         ++guide.roundedCorners;
         if (chosenExpansion > 0)
             ++guide.expandedCorners;
@@ -687,7 +778,7 @@ std::vector<glm::dvec3> buildWaypointVelocities(
             request.vehicle.maxLateralAccelerationMps2
         );
         const double bendFactor = std::max(
-            0.15,
+            1.0e-4,
             std::sin(angle * 0.5)
         );
         const double turnSpeed = std::sqrt(

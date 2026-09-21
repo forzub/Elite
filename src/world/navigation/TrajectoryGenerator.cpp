@@ -1910,6 +1910,40 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     const ExecutionGuide guide =
         buildExecutionGuide(request, coarseSourceProgress);
 
+    // Ruckig is a state-to-state online trajectory generator. Do not abuse
+    // the 3-D solver as a dense waypoint/path interpolator: close spatial
+    // guide samples become separate target states and can create stop-like
+    // slowdowns and large lateral polynomial bows. For a curved retained
+    // route, geometry is fixed first and Ruckig owns only scalar path progress
+    // s(t). The legacy 3-D state-to-state leg solver remains useful for the
+    // true single-leg case.
+    if (request.pathPointsMeters.size() > 2)
+    {
+        auto result = buildPathProgressTrajectory(
+            request,
+            coarseSourceProgress,
+            guide
+        );
+        result.executionGuidePointsMeters =
+            guide.points;
+        result.diagnostics.executionGuidePoints =
+            guide.points.size();
+        result.diagnostics.roundedGuideCorners =
+            guide.roundedCorners;
+        result.diagnostics.expandedGuideCorners =
+            guide.expandedCorners;
+
+        appendPerfLog(
+            request,
+            result,
+            elapsedMilliseconds(totalStart, Clock::now()),
+            guide.points.size() > 2
+                ? guide.points.size() - 2
+                : 0
+        );
+        return result;
+    }
+
     world::navigation::TrajectoryGenerationRequest executionRequest =
         request;
     executionRequest.pathPointsMeters = guide.points;

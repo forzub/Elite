@@ -283,53 +283,6 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
             );
     }
 
-    const glm::dvec3 requestedLinearFeedback =
-        effectivePositionError * policy.positionGainPerSecond2 +
-        effectiveVelocityError * policy.velocityGainPerSecond;
-
-    const glm::dvec3 requestedAngularFeedback =
-        attitudeErrorVector(reference, agent) *
-            policy.attitudeGainPerSecond2 +
-        angularVelocityError *
-            policy.angularVelocityGainPerSecond;
-
-    result.linearFeedbackMapMps2 = clampMagnitude(
-        requestedLinearFeedback,
-        program.tracking.linearFeedbackReserveMps2
-    );
-    result.angularFeedbackMapRadPerSec2 = clampMagnitude(
-        requestedAngularFeedback,
-        program.tracking.angularFeedbackReserveRadPerSec2
-    );
-
-    result.intent.revision = program.objectiveRevision;
-    result.intent.targetRevision = program.revision;
-    result.intent.emergency = program.emergency;
-    result.intent.hazardUrgency01 =
-        std::clamp(program.hazardUrgency01, 0.0, 1.0);
-
-    result.intent.idealLinearAccelerationLocalMps2 =
-        reference.linearAccelerationFeedForwardMapMps2 +
-        result.linearFeedbackMapMps2;
-    result.intent.idealAngularAccelerationLocalRadPerSec2 =
-        reference.angularAccelerationFeedForwardMapRadPerSec2 +
-        result.angularFeedbackMapRadPerSec2;
-
-    if (program.capability.maxAngularAccelerationRadPerSec2 > 0.0)
-    {
-        result.intent.idealAngularAccelerationLocalRadPerSec2 =
-            clampMagnitude(
-                result.intent.idealAngularAccelerationLocalRadPerSec2,
-                program.capability.maxAngularAccelerationRadPerSec2
-            );
-    }
-
-    if (!finite(result.intent.idealLinearAccelerationLocalMps2) ||
-        !finite(result.intent.idealAngularAccelerationLocalRadPerSec2))
-    {
-        return Result {};
-    }
-
     // FreeTransit longitudinal deadbands are part of the tracking
     // contract, not merely a feedback convenience. The execution envelope must
     // therefore be evaluated against the same effective errors; otherwise a
@@ -357,6 +310,77 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
             result.angularVelocityErrorRadPerSec,
             program.tracking.angularVelocityErrorRadPerSec
         );
+
+    const glm::dvec3 requestedLinearFeedback =
+        effectivePositionError * policy.positionGainPerSecond2 +
+        effectiveVelocityError * policy.velocityGainPerSecond;
+
+    // A frozen reference clock turns one moving trajectory sample into a
+    // geometric reacquisition target. Its derivatives are no longer valid
+    // feed-forward while that sample is held. In particular, replaying a
+    // non-zero path acceleration or angular velocity forever creates a
+    // self-sustaining runaway instead of returning the craft to the corridor.
+    //
+    // Outside the execution envelope B10 therefore damps the ACTUAL angular
+    // rate toward zero and uses only the bounded tracking reserve. Once the
+    // craft re-enters the envelope the accepted moving reference (including
+    // its feed-forward and angular velocity) becomes authoritative again.
+    const glm::dvec3 controlAngularVelocityError =
+        outsideEnvelope
+            ? -actualAngularVelocity
+            : angularVelocityError;
+
+    const glm::dvec3 requestedAngularFeedback =
+        attitudeErrorVector(reference, agent) *
+            policy.attitudeGainPerSecond2 +
+        controlAngularVelocityError *
+            policy.angularVelocityGainPerSecond;
+
+    result.linearFeedbackMapMps2 = clampMagnitude(
+        requestedLinearFeedback,
+        program.tracking.linearFeedbackReserveMps2
+    );
+    result.angularFeedbackMapRadPerSec2 = clampMagnitude(
+        requestedAngularFeedback,
+        program.tracking.angularFeedbackReserveRadPerSec2
+    );
+
+    result.intent.revision = program.objectiveRevision;
+    result.intent.targetRevision = program.revision;
+    result.intent.emergency = program.emergency;
+    result.intent.hazardUrgency01 =
+        std::clamp(program.hazardUrgency01, 0.0, 1.0);
+
+    const glm::dvec3 linearFeedForward =
+        outsideEnvelope
+            ? glm::dvec3(0.0)
+            : reference.linearAccelerationFeedForwardMapMps2;
+    const glm::dvec3 angularFeedForward =
+        outsideEnvelope
+            ? glm::dvec3(0.0)
+            : reference.angularAccelerationFeedForwardMapRadPerSec2;
+
+    result.intent.idealLinearAccelerationLocalMps2 =
+        linearFeedForward +
+        result.linearFeedbackMapMps2;
+    result.intent.idealAngularAccelerationLocalRadPerSec2 =
+        angularFeedForward +
+        result.angularFeedbackMapRadPerSec2;
+
+    if (program.capability.maxAngularAccelerationRadPerSec2 > 0.0)
+    {
+        result.intent.idealAngularAccelerationLocalRadPerSec2 =
+            clampMagnitude(
+                result.intent.idealAngularAccelerationLocalRadPerSec2,
+                program.capability.maxAngularAccelerationRadPerSec2
+            );
+    }
+
+    if (!finite(result.intent.idealLinearAccelerationLocalMps2) ||
+        !finite(result.intent.idealAngularAccelerationLocalRadPerSec2))
+    {
+        return Result {};
+    }
 
     result.status =
         outsideEnvelope

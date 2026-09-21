@@ -7154,3 +7154,81 @@ Next mechanism target:
 The already documented architecture gap remains decisive: ordinary B5 exists first for
 Newtonian, but a generalized ordinary B6 continuous maneuver prover is still missing.
 Do not bypass that proof boundary.
+
+
+## 2026-09-21 — adaptive corner pass candidate after user retest
+
+User retest confirms:
+- the new nearest-face nominal route is logically acceptable;
+- the full stops at the two shallow intermediate points remain;
+- the program-reference arrow visibly leads the physical hull;
+- the current velocity vector was not legible enough in the viewer.
+
+The supplied performance log confirms the stop mechanism is still active: the latest
+four-point / one-obstacle Stage-2 solves finish with `blended_waypoints=0`.
+Therefore both interior waypoints are still authored as zero-speed points before this
+candidate.
+
+### StopTurnGo fallback changed
+
+Candidate commits:
+- `d2205f50259fdef05a6515fec3822055891c47d5`:
+  `buildWaypointVelocities()` no longer tests only one 25%-of-leg corner chord.
+  It searches from the widest proposed local blend toward a bounded smaller blend and
+  keeps the widest collision-clear option. If a generated Ruckig leg still fails,
+  through-speed is reduced progressively (70% steps) before falling back to zero.
+- `641e6ef6aeb79d4dddcf58ce7601448723f79b9a`:
+  removed the arbitrary global `0.65 * maxSpeed` waypoint cap. Curvature/available
+  lateral acceleration and explicit speed limits now own the corner-speed limit.
+- `20aef47942c675ae59b04c288b2ae4b3cb6de5e6`:
+  focused Ruckig regressions now distinguish:
+  1. wide corner chord blocked but tighter continuous turn available -> must keep moving;
+  2. even minimum local blend blocked -> safe stop remains legal;
+  3. the current default wall detour -> both shallow interior points must retain
+     non-zero through-speed.
+
+This makes the retained white polyline a geometric/topological intent rather than a
+literal StopTurnGo execution prescription. Ruckig remains responsible for a continuous
+time trajectory through the retained route; the candidate does not reintroduce the
+retired custom B-spline backend.
+
+If the target gate still collapses either default wall waypoint to zero, the next step
+is to add explicit maneuver-space offset / corner-radius reserve to the execution path
+rather than accepting StopTurnGo. Slightly lengthening the geometric route is allowed
+when required to create real turn room.
+
+### Viewer observability changed
+
+Candidate commits:
+- `cbdbcc2b2132f0ef29af9a73e3589d25c415a8f5`;
+- `2ad3bf086c153895adefee64fb9f67bcabaa84da`;
+- `f695a55454f5ccc5802c618347dfb400ec4d6bcb`.
+
+Changes:
+- speed number moved away from the ship into a fixed lower-right block;
+- current velocity vector is now bright yellow, 6 px wide and 3.5 world-meters per
+  1 m/s, so 10 m/s is about a 35 m arrow;
+- short cyan arrow = actual physical hull nose;
+- red arrow = Follower/program target nose;
+- white line = retained geometric route;
+- green line = actual flown trajectory;
+- the lower-right block states these meanings explicitly.
+
+Interpretation rule for the next video:
+- red leading cyan by itself means the attitude reference is commanding ahead of the
+  physical hull and is not automatically wrong;
+- the important Newtonian fault is if the **yellow actual velocity vector** bends as
+  though the requested thrust attitude were already achieved, rather than following
+  the acceleration authority of the actual cyan-oriented hull/RCS system.
+
+The deeper Newtonian architecture issue remains open: generic translational Ruckig P/V/A
+is still authored before the final body/thrust-specific maneuver. The adaptive corner
+candidate is intended to remove the clearly invalid zero-speed fallback first, not to
+declare the complete B5/B6 Newtonian maneuver problem solved.
+
+### Validation status
+
+UNVERIFIED on target MinGW64.
+
+Run the focused Ruckig route tests plus the two-stage viewer gate before promoting this
+candidate.

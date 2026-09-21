@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: physical reacquisition + damped attitude
+# CONTINUE PROMPT — Elite Navigation: validate frozen-reference recovery
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -18,138 +18,87 @@ Read first:
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
 - `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
 - `src/game/navigation/ManeuverTrackingController.cpp/.h`
-- `src/game/navigation/ManeuverPhaseGate.cpp/.h`
+- `src/game/navigation/ManeuverProgramSampler.cpp/.h`
 - `src/game/navigation/TrajectoryFollower.cpp/.h`
+- `src/game/navigation/ManeuverPhaseGate.cpp/.h`
 - `tests/navigation_runtime/ManeuverTrackingControllerTests.cpp`
 - `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`.
 
-## Latest target evidence
+## Current candidate
 
-User ran Newtonian / Expert / Standard around:
-- START 26.15 m/s;
-- FINISH 11.75 m/s.
+Code baseline before documentation commits:
 
-Old diagnostics:
-- Ruckig OK;
-- program phases completed;
-- final physical error 68.49 m;
-- max route deviation 62.24 m;
-- max follower error 68.49 m.
-
-Viewer showed the reference/path continuing while the physical ship failed to return.
-
-Telemetry also showed visible hull attitude overshoot/oscillation.
-
-## Root cause 1 — B10 angular loop was underdamped
-
-Old default:
 ```text
-Kp attitude = 2
-Kd angular velocity = 1
+59ff756996229bf15a122eb0fe43cf0d9a14b245
 ```
 
-Critical Kd for Kp=2 is about 2.83.
+Target-machine acceptance is NOT yet established.
 
-Current:
+## Latest reproduced failure
+
+Interactive viewer:
+
 ```text
-Kp = 2
-Kd = 3
+ASSISTED / EXPERT / STANDARD
+START  10.00 m/s
+FINISH 10.00 m/s
 ```
 
-Do not move damping responsibility into a hidden ShipController navigation term.
-B10 owns angular feedback; lower physics still clamps angular authority.
+Evidence:
+
+```text
+Ruckig OK
+calculated max speed       11.71 m/s
+program phases complete    NO
+physical terminal state    MISSED
+final speed                100.64 m/s
+final position error       2411.14 m
+reference clock hold       47.70 s
+max body/velocity angle    179.99 deg
+coarse static contact      YES
+```
+
+Do not misdiagnose this as the route/Ruckig speed calculator. The accepted
+trajectory remained near 10-12 m/s.
+
+## Root cause now fixed in candidate
+
+The reference-clock hold froze a **moving** sample in time. The fixed pose still
+carried non-zero trajectory derivatives:
+- linear acceleration feed-forward;
+- reference angular velocity;
+- potentially angular feed-forward.
+
+That turned reacquisition into an indefinite acceleration/spin command. B10's
+bounded feedback reserve could not cancel the frozen feed-forward.
+
+New B10 behavior:
+- inside envelope: accepted moving reference unchanged;
+- outside envelope: geometric reacquisition target, zero A_ff/alpha_ff, damp
+  actual angular velocity toward zero, bounded feedback only;
+- after physical recovery: accepted moving reference resumes automatically.
 
 Regression:
-default Kd >= 2*sqrt(Kp).
+`testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()`.
 
-## Root cause 2 — program reference outran physical execution
+## Camera fix
 
-Do NOT mutate AcceptedManeuverProgram after acceptance.
+`NavigationRuntimeViewer::fitCamera()` now ignores the complete physical
+execution history when calculating normal scene fit. A runaway ship can no
+longer make the route/obstacles microscopic. The trace itself is still rendered.
 
-Current runtime owns:
-```text
-activeProgramReferenceDelaySeconds
-```
+## Existing contracts that remain
 
-Sampling:
-```text
-programReferenceTime = vehicle.timeSeconds - delay
-```
+- reference clock progress pauses while `follower.trackingErrorExceeded`;
+- phase gate uses the same delayed reference time;
+- physical navigation does not switch off on envelope violation;
+- FreeTransit longitudinal deadbands are evaluated before the envelope;
+- B10 owns tracking feedback/damping;
+- lower physics owns actual capability clamping;
+- requested control-law selector and effective displayed law remain separate;
+- dynamic avoidance is still disabled for this static gate.
 
-When `follower.trackingErrorExceeded`:
-- delay += dt;
-- B9/Follower reference progress pauses;
-- gate uses the same delayed reference time;
-- physical control continues trying to reacquire;
-- no timed phase handoff while actual craft is outside envelope.
-
-When tracking recovers, program reference time resumes.
-
-Viewer status:
-`FOLLOWER ВОЗВРАЩАЕТСЯ В КОРИДОР`.
-
-Diagnostics:
-- REFERENCE CLOCK HOLD FRAMES
-- REFERENCE CLOCK HOLD
-
-Current reacquisition envelope:
-- position 8 m;
-- velocity 4 m/s;
-- forward angle 0.35 rad;
-- angular velocity 0.8 rad/s.
-
-FreeTransit longitudinal deadbands are applied BEFORE envelope evaluation.
-
-## Completion semantics
-
-Diagnostics now say:
-- PROGRAM PHASES COMPLETE
-- PHYSICAL TERMINAL STATE
-
-Never use wall-clock program completion as proof of physical arrival.
-
-## Actuator semantics
-
-A body turn with MAIN=0 is not automatically wrong.
-
-Angular torque (attitude/RCS) and main linear thrust are separate. Telemetry witnesses:
-- `exec_ang_cmd` = attitude acceleration request;
-- `main_pct` = main linear engine.
-
-The bug to eliminate is unnecessary or oscillatory attitude motion, not the fact that a
-ship can rotate without firing the main engine.
-
-## Assisted
-
-Requested/effective selector state remains separate:
-- selected law = next Calculate input;
-- effective law = displayed runtime trace.
-
-Do not undo that.
-
-After current damping/reacquisition target gate is green, if Assisted still turns hull
-more sharply than needed, change Assisted reference-attitude authoring specifically.
-Do not fake it in the viewer and do not couple FlightStyle to control law.
-
-## Logs and traces
-
-Everything current-run is now in repository root:
-- last_route_plan.log
-- last_execution.log
-- last_execution_telemetry.log
-- navigation_perf.log
-- last_calculated_trace.json
-- last_execution_trace.json
-
-## High-speed regression
-
-`NavigationScenarioRuntimeE2ETests.cpp` now reproduces:
-- Newtonian / Expert / Standard;
-- 26.15 -> 11.75 m/s.
-
-It requires physical success and final position error <= 5 m.
-
-## Target commands
+## Immediate target commands
 
 ```bash
 cd /d/__elite/work
@@ -164,4 +113,25 @@ Then:
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Do not claim PASS without target evidence. Do not enable dynamic avoidance yet.
+Re-run first:
+`ASSISTED / EXPERT / STANDARD, 10.00 -> 10.00 m/s`.
+
+Required result:
+- no runaway acceleration;
+- no persistent tumbling;
+- reference hold converges instead of feeding the failure;
+- program phases complete;
+- physical terminal state reached;
+- final position error <= 5 m;
+- terminal speed within tolerance;
+- no coarse static contact;
+- F / ВПИСАТЬ produces a usable nominal scene scale.
+
+Then re-run the existing high-speed case:
+`NEWTONIAN / EXPERT / STANDARD, 26.15 -> 11.75 m/s`.
+
+Do not claim PASS without target evidence.
+Do not enable dynamic avoidance yet.
+If the Assisted 10 -> 10 run still fails, inspect the new telemetry around the
+FIRST `follower_reacquiring` frame before changing route geometry or widening
+tolerances.

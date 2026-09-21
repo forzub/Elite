@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: reducer state + free-transit corridor + engine visualization
+# CONTINUE PROMPT — Elite Navigation: diagnose remaining hull flip with execution telemetry
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -9,96 +9,89 @@ Every state-affecting iteration MUST:
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
-Read those files first, then inspect:
+Read those five files first, then inspect:
+- `tools/navigation_runtime/NavigationScenarioRuntime.h/.cpp`;
 - `tools/navigation_runtime/NavigationRuntimeViewer.cpp`;
-- `tools/navigation_runtime/NavigationScenarioRuntime.cpp`;
 - `tools/navigation_runtime/NavigationTrace.h/.cpp`;
-- `src/game/navigation/AcceptedManeuverProgram.h`;
+- `src/game/navigation/ManeuverProgramSampler.cpp`;
 - `src/game/navigation/ManeuverTrackingController.cpp`;
-- relevant navigation runtime/guidance tests.
+- `src/game/navigation/DynamicMotionSystem.cpp`;
+- `src/game/ship/ShipController.cpp`.
 
-## Current confirmed trajectory state
+## Current verified high-level state
 
-The scalar path-progress architecture is much better. Latest uploaded perf tail shows
-steady default wall runs with:
-- one Ruckig solve;
-- `min_speed_mps=10.0000`;
-- `max_speed_mps=10.0000`.
+The scalar path-progress architecture fixed the old dense-waypoint Ruckig fan/near-stop.
+Latest uploaded perf tail continues to show the default wall reference at exactly
+10.0 m/s min/max.
 
-The minimum-cant Newtonian attitude also visually improved hull behavior.
+Minimum-cant Newtonian attitude and free-transit speed/progress deadbands improved the
+flight substantially.
 
-## Current user requests already implemented, awaiting target validation
+Remaining user-visible defect:
+- around the low/straight part of the route the hull can perform a somersault;
+- viewer main-engine indicator is off;
+- actual speed can be about 10.1 m/s;
+- exact cause is not yet proven.
 
-### 1. Redux-style viewer state
+Do NOT infer body behavior from `navigation_perf.log`; it is trajectory-generator perf
+only.
 
-Native C++ viewer now has one authoritative reducer-driven `AppState`:
-- actions for control law, pilot, style, obstacle, playback;
-- all controls dispatch actions;
-- runtime effective control law is observed from trace frames and dispatches through the
-  same reducer;
-- buttons are projections of this state.
+## New evidence channel
 
-Do not introduce separate widget-owned mode booleans.
+Every Stage-2 run now writes:
+```text
+tools/navigation_runtime/last_execution_telemetry.log
+```
 
-Diagnostics:
-- CONTROL LAW REQUESTED
-- CONTROL LAW EFFECTIVE
-- CONTROL LAW SWITCHES
+Each line contains:
+- time, phase, effective control law;
+- physical position/speed;
+- body forward/up;
+- pitch/yaw/roll rates;
+- MAIN %, main acceleration vector;
+- RCS/manoeuvre acceleration vector;
+- total engine acceleration;
+- reference speed;
+- reference forward/up;
+- body-vs-velocity angle;
+- actual-vs-reference forward and up angles;
+- MAIN_ON/OFF and RCS_ON/OFF sampled transition events.
 
-If runtime actually changes from Assisted to Newtonian, the button must follow.
+Trace JSON persists the same physical angular/propulsion data.
 
-### 2. Free-transit speed/progress corridor
+Use this log to decide:
+1. reference flips -> attitude authoring or program sampling;
+2. reference stable, body flips -> angular tracker / physics;
+3. main off but RCS on -> translational RCS is active, not main vectoring;
+4. both propulsion channels quiet -> flip is purely angular control.
 
-`AcceptedManeuverProgram::TrackingEnvelope`:
-- `alongTrackSpeedDeadbandMps`;
-- `alongTrackPositionDeadbandMeters`.
+## New viewer controls
 
-`ManeuverTrackingController` removes in-corridor along-track position/velocity error
-before computing feedback, while retaining cross-track correction.
+Reducer-owned sliders:
+- START V 5..50 m/s;
+- FINISH V 5..50 m/s.
 
-Current doctrine:
-- STANDARD: +/-0.5 m/s and +/-12 m;
-- EXTREME: +/-1.0 m/s and +/-16 m.
+Runtime settings:
+- `startSpeedOverrideMps`;
+- `finishSpeedOverrideMps`.
 
-Thus 10.1 m/s on a 10.0 m/s free-transit reference must not request braking solely to
-recover exact speed.
+Negative override means authored scenario value.
 
-Do not apply these loose corridors to PrecisionCapture/PrecisionTransit.
+Stage-1 geometry is retained. Slider changes invalidate only Stage-2 execution.
 
-### 3. Main-engine use visualization
+Start override scales the authored start velocity direction.
+Finish override changes terminal Ruckig speed, moving-terminal gate, and final-state
+speed validation.
 
-Each execution trace frame exposes:
-- effective runtime law;
-- `mainEngineThrottle01`, derived from actual physical positive aft-main acceleration.
+## Relevant commits
 
-Viewer:
-- orange rear face only when actual aft main engine is firing;
-- HUD `MAIN: N%`;
-- RCS does not light the rear face.
-
-This is the diagnostic for deciding whether a hull turn is doing useful main-engine
-vectoring.
-
-### Relevant code commits
-
-- `92d65f86fe22ec1d0a404f952a0ebd0eb4935fb3`
-- `a171510889a2d235896e6ad567011c2b651ee3b7`
-- `023861170299dc7321975f2e73173af4b2547ca8`
-- `ad053356ada03d5212185b7d49d0b6aeb017ed6a`
-- `0b2e48b66744662e783b52b135ef26a714f43fb5`
-- `b503c3e35a9b8c2b0333b026b9251d6075a1afe2`
-- `1d17f9d208f9ef77a3dc8ac09753202aba7cd4c4`
-- `cbb58b16a7a15803cc8e56618d639916d748a53e`
-- `089d905f3207fa48afe3bba70935ce9413b145f6`
-- `163bee3c58443a5d0d6b4ad092ae7e6f970feef1`
-- `2e8692b68c670275e7f96654c4a990c473b885a9`
-- `7a663da3b7f6bc8a92daa9433daeef40a10d41c9`
-- `3cadb29a840643524f2edafba3abb0b9091d795c`
-- `9e27bcd2392e7c18c36354374df33ab04882045f`
-- `3845b50910310494b394ec00820c86cc97b96aff`
-- `5299809e37f0a5061d56f066240619d56c6f27b4`
-- `eedad40169c00509e01015f1a1777bd67f29965f`
-- `a60a215fde65505826b9b96c70edf511991da91f`
+- `1932f80e1350a2631332b1092f7615bddc479dfe`
+- `0bebf41764177e6614efc10617ddfa034407f38b`
+- `62c94992bfbde0983dbcb2d581c038f5939f890c`
+- `33854813be1d8299597a7aeb9e4bf40600403f16`
+- `72eeb3fde524136aff5edff1e33a683c9cf1e955`
+- `e8083bb2f27623e73753bb98a9b6137bfc5928c2`
+- `c199d0dbb042066075f1b320799d8e5dfa55b0a7`
 
 ## Next target commands
 
@@ -111,20 +104,11 @@ bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Validate four combinations:
-- Assisted Standard
-- Assisted Extreme
-- Newtonian Standard
-- Newtonian Extreme
+Reproduce first at 10/10 and send:
+`tools/navigation_runtime/last_execution_telemetry.log`.
 
-Watch:
-- selected law button;
-- requested/effective/switches;
-- speed + corridor;
-- MAIN:% and orange rear face;
-- red reference nose vs cyan hull vs yellow velocity.
+Then vary boundary speeds independently.
 
-If the effective law remains ASSISTED with zero switches but motion still resembles
-Newtonian, debug Assisted force/attitude behavior rather than changing UI state.
+If compile fails, fix actual compile issue first and repeat mandatory MD/prompt update.
 
 Do not enable dynamic avoidance yet.

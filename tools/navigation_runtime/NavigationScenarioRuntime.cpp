@@ -1358,8 +1358,8 @@ Program makeProgramPhase(
     // recover an exact 10.0 m/s reference.
     program.tracking.alongTrackPositionDeadbandMeters =
         flightStyle == FlightStyle::Extreme
-            ? 5.0
-            : 2.0;
+            ? 16.0
+            : 12.0;
     program.tracking.alongTrackSpeedDeadbandMps =
         flightStyle == FlightStyle::Extreme
             ? 1.0
@@ -2590,8 +2590,8 @@ ScenarioRunResult executeCalculatedRoute(
             "FOLLOWER PROGRESS CORRIDOR: +/- " +
                 number(
                     settings.flightStyle == FlightStyle::Extreme
-                        ? 5.0
-                        : 2.0
+                        ? 16.0
+                        : 12.0
                 ) + " M",
             "CONTROL LAW REQUESTED: " +
                 std::string(

@@ -102,7 +102,7 @@ struct AppState
     Camera camera;
     trace::TraceDocument* traceData = nullptr;
     std::string scenarioPath;
-    std::string calculationMessage = "РАССЧИТАЙТЕ МАРШРУТ ОДИН РАЗ; ПАРАМЕТРЫ ПОЛЁТА ДАЛЬШЕ ПЕРЕСЧИТЫВАЮТСЯ АВТОМАТИЧЕСКИ";
+    std::string calculationMessage = "ИЗМЕНИТЕ УСЛОВИЯ И НАЖМИТЕ РАССЧИТАТЬ";
     std::vector<std::string> diagnosticLines;
 
     // Immutable Stage-1 source for every Stage-2 comparison run. Changing
@@ -116,6 +116,14 @@ struct AppState
     bool calculationSucceeded = false;
     bool executionPerformed = false;
     bool executionSucceeded = false;
+
+    // Calculate has deterministic semantics: it is enabled only while some
+    // input invalidates the currently displayed result. Route-affecting dirty
+    // inputs require Stage-1+Stage-2; execution-only dirty inputs reuse Stage-1.
+    bool routeInputsDirty = true;
+    bool executionInputsDirty = true;
+    bool calculationInProgress = false;
+    std::vector<std::string> shortCalculationLog;
 
     // Canonical viewer store. UI controls are projections of this state, not
     // independent booleans owned by widgets.
@@ -2317,29 +2325,32 @@ void setFrameFromSlider(
         data.frames.front().timeSeconds;
 }
 
-void restoreRetainedRouteForNewExecutionSettings(
-    AppState& state
+bool recalculationRequired(const AppState& state)
+{
+    return
+        state.routeInputsDirty ||
+        state.executionInputsDirty;
+}
+
+void markCalculationDirty(
+    AppState& state,
+    bool routeAffecting
 )
 {
-    if (
-        !state.executionPerformed ||
-        !state.hasRetainedRoute ||
-        !state.traceData)
-    {
-        return;
-    }
-
-    *state.traceData = state.retainedRoute;
-    state.frameIndex = 0;
-    state.playbackTime = 0.0;
+    state.executionInputsDirty = true;
+    state.routeInputsDirty =
+        state.routeInputsDirty || routeAffecting;
     state.playing = false;
-    state.executionPerformed = false;
-    state.executionSucceeded = false;
-    state.calculationPerformed = true;
-    state.calculationSucceeded = true;
-    state.calculationMessage = state.retainedRouteMessage;
-    state.diagnosticLines = state.retainedRouteDiagnostics;
-    state.requestFit = true;
+    state.calculationMessage =
+        routeAffecting
+            ? "ИЗМЕНЕНЫ ПАРАМЕТРЫ МАРШРУТА — НУЖЕН ПЕРЕСЧЕТ"
+            : "ИЗМЕНЕНЫ ПАРАМЕТРЫ ПОЛЕТА — НУЖЕН ПЕРЕСЧЕТ";
+    state.shortCalculationLog = {
+        "РЕЗУЛЬТАТ УСТАРЕЛ",
+        routeAffecting
+            ? "БУДЕТ ПЕРЕСЧИТАН МАРШРУТ И ПОЛЕТ"
+            : "МАРШРУТ СОХРАНЕН, БУДЕТ ПЕРЕСЧИТАН ПОЛЕТ"
+    };
 }
 
 const char* traceLawName(
@@ -2373,7 +2384,7 @@ void reduceViewerState(
             if (state.controlMode != action.controlMode)
             {
                 state.controlMode = action.controlMode;
-                restoreRetainedRouteForNewExecutionSettings(state);
+                markCalculationDirty(state, false);
                 synchronizeTraceLawLabel(state);
             }
             break;
@@ -2382,7 +2393,7 @@ void reduceViewerState(
             if (state.pilot != action.pilot)
             {
                 state.pilot = action.pilot;
-                restoreRetainedRouteForNewExecutionSettings(state);
+                markCalculationDirty(state, false);
             }
             break;
 
@@ -2390,7 +2401,7 @@ void reduceViewerState(
             if (state.flightStyle != action.flightStyle)
             {
                 state.flightStyle = action.flightStyle;
-                restoreRetainedRouteForNewExecutionSettings(state);
+                markCalculationDirty(state, true);
             }
             break;
 
@@ -2401,7 +2412,7 @@ void reduceViewerState(
             if (std::abs(state.startSpeedMps - next) > 1.0e-6)
             {
                 state.startSpeedMps = next;
-                restoreRetainedRouteForNewExecutionSettings(state);
+                markCalculationDirty(state, true);
             }
             break;
         }
@@ -2413,14 +2424,14 @@ void reduceViewerState(
             if (std::abs(state.finishSpeedMps - next) > 1.0e-6)
             {
                 state.finishSpeedMps = next;
-                restoreRetainedRouteForNewExecutionSettings(state);
+                markCalculationDirty(state, true);
             }
             break;
         }
 
         case ViewerActionType::ToggleSuddenObstacle:
             state.useSuddenObstacle = !state.useSuddenObstacle;
-            restoreRetainedRouteForNewExecutionSettings(state);
+            markCalculationDirty(state, false);
             break;
 
         case ViewerActionType::QueueUiAction:
@@ -2479,19 +2490,6 @@ void queueUiAction(
     dispatchViewerAction(state, command);
 }
 
-void queueExecutionRefreshIfReady(
-    AppState& state
-)
-{
-    if (
-        state.calculationSucceeded &&
-        state.hasRetainedRoute &&
-        state.retainedRoute.routePoints.size() >= 2)
-    {
-        queueUiAction(state, UiAction::Execute);
-    }
-}
-
 void syncViewerStateFromRuntimeFrame(
     AppState& state,
     const trace::TraceFrame& frame
@@ -2540,7 +2538,6 @@ void mouseButtonCallback(
             change.controlMode =
                 elite::tools::navigation_runtime::ControlMode::Assisted;
             dispatchViewerAction(*state, change);
-            queueExecutionRefreshIfReady(*state);
         }
         else if (newtonianRect().contains(x, y))
         {
@@ -2549,7 +2546,6 @@ void mouseButtonCallback(
             change.controlMode =
                 elite::tools::navigation_runtime::ControlMode::Newtonian;
             dispatchViewerAction(*state, change);
-            queueExecutionRefreshIfReady(*state);
         }
         else if (expertRect().contains(x, y))
         {
@@ -2558,7 +2554,6 @@ void mouseButtonCallback(
             change.pilot =
                 elite::tools::navigation_runtime::PilotLevel::Expert;
             dispatchViewerAction(*state, change);
-            queueExecutionRefreshIfReady(*state);
         }
         else if (averageRect().contains(x, y))
         {
@@ -2567,7 +2562,6 @@ void mouseButtonCallback(
             change.pilot =
                 elite::tools::navigation_runtime::PilotLevel::Average;
             dispatchViewerAction(*state, change);
-            queueExecutionRefreshIfReady(*state);
         }
         else if (loserRect().contains(x, y))
         {
@@ -2576,7 +2570,6 @@ void mouseButtonCallback(
             change.pilot =
                 elite::tools::navigation_runtime::PilotLevel::Loser;
             dispatchViewerAction(*state, change);
-            queueExecutionRefreshIfReady(*state);
         }
         else if (standardRect().contains(x, y))
         {
@@ -2585,7 +2578,6 @@ void mouseButtonCallback(
             change.flightStyle =
                 elite::tools::navigation_runtime::FlightStyle::Standard;
             dispatchViewerAction(*state, change);
-            queueExecutionRefreshIfReady(*state);
         }
         else if (extremeRect().contains(x, y))
         {
@@ -2594,14 +2586,12 @@ void mouseButtonCallback(
             change.flightStyle =
                 elite::tools::navigation_runtime::FlightStyle::Extreme;
             dispatchViewerAction(*state, change);
-            queueExecutionRefreshIfReady(*state);
         }
         else if (suddenObstacleRect().contains(x, y))
         {
             ViewerAction change;
             change.type = ViewerActionType::ToggleSuddenObstacle;
             dispatchViewerAction(*state, change);
-            queueExecutionRefreshIfReady(*state);
         }
         else if (startSpeedSliderRect().contains(x, y))
         {
@@ -2621,7 +2611,10 @@ void mouseButtonCallback(
                 speedFromSliderX(finishSpeedSliderRect(), x);
             dispatchViewerAction(*state, change);
         }
-        else if (calculateButtonRect().contains(x, y))
+        else if (
+            calculateButtonRect().contains(x, y) &&
+            recalculationRequired(*state) &&
+            !state->calculationInProgress)
         {
             queueUiAction(*state, UiAction::Calculate);
         }
@@ -2693,7 +2686,6 @@ void mouseButtonCallback(
             state->speedSliderDrag != SpeedSliderDrag::None;
         state->speedSliderDrag = SpeedSliderDrag::None;
         if (speedChanged)
-            queueExecutionRefreshIfReady(*state);
     }
 }
 

@@ -2755,3 +2755,26 @@ Exact Assisted 10 -> 10 physical-runaway E2E regression is now pinned.
 
 Candidate baseline before docs: `13ef6bd731ef6d8e78c75c72bf7a59f524b30bcb`.
 Acceptance remains target-machine pending.
+
+## 2026-09-22 — propulsion truth unified across control laws
+
+The Stage-12 physical runtime exposed an Assisted-only hidden propulsion model:
+negative longitudinal navigation demand was implemented as symmetric fore/nose
+main thrust. That allowed velocity to brake and reverse while the hull remained
+pointed along the accepted route.
+
+Architecture is now corrected for navigation execution:
+- propulsion hardware is authoritative and independent of control law;
+- current Cobra main engine is aft-only in Assisted and Newtonian;
+- bounded RCS is the only translation authority available against hull forward
+  before a physical hull rotation;
+- Assisted reference-attitude authoring is propulsion-aware, so a substantial
+  acceleration/braking vector can demand a real cant/flip before main burn.
+
+This directly enforces the invariant:
+`no hull rotation + no physical thrust => no arbitrary velocity-vector change`.
+
+Pinned E2E: Assisted / Expert / Standard, 20.90 -> 20.00 m/s.
+
+Candidate before docs: `b833eddb7bd04b5c025b2be0fd8334c33f8824e6`.
+Target evidence pending.

@@ -1283,9 +1283,9 @@ void appendUiButton(
 
 std::string localizedLaw(const std::string& law)
 {
-    if (law == "newtonian")
+    if (law == "newtonian" || law == "NEWTONIAN")
         return "НЬЮТОНОВСКИЙ";
-    if (law == "assisted")
+    if (law == "assisted" || law == "ASSISTED")
         return "АССИСТИРОВАННЫЙ";
     return law;
 }

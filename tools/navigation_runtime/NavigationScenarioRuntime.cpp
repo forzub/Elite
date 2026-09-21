@@ -480,7 +480,7 @@ std::vector<std::string> previewDiagnostics(
         "PLANNER: NOT RUN",
         "FOLLOWER: NOT RUN (STAGE 1)",
         "START: " + formatVec3(scenario.startPosition),
-        "START VELOCITY: " + formatVec3(startVelocity) + " M/S",
+        "START VELOCITY: " + formatVec3(scenario.startVelocity) + " M/S",
         "START ACCELERATION: " + formatVec3(scenario.startAcceleration) + " M/S2",
         "START ANGULAR RATE P/Y/R: (" +
             std::to_string(scenario.startPitchRateRadPerSec) + ", " +
@@ -512,7 +512,7 @@ std::vector<std::string> routeDiagnostics(
         std::string("PLANNER: ") + (route.valid ? "OK" : "FAIL"),
         "FOLLOWER: NOT RUN (STAGE 1)",
         "START: " + formatVec3(scenario.startPosition),
-        "START VELOCITY: " + formatVec3(scenario.startVelocity) + " M/S",
+        "START VELOCITY: " + formatVec3(startVelocity) + " M/S",
         "START ACCELERATION: " + formatVec3(scenario.startAcceleration) + " M/S2",
         "START ANGULAR RATE P/Y/R: (" +
             std::to_string(scenario.startPitchRateRadPerSec) + ", " +

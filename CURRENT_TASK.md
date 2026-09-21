@@ -1,116 +1,101 @@
-# CURRENT TASK — validate speed-aware route clearance and deterministic Calculate UX
+# CURRENT TASK — validate viewer build fix, then localize speed constraints
 
 **Date:** 2026-09-22  
-**Status:** IMPLEMENTED / TARGET MINWG64 VALIDATION REQUIRED
+**Status:** BUILD FIX COMMITTED / TARGET VALIDATION REQUIRED
 
-## Fixed semantics
+## Target failure just received
 
-### Flight style
+The user's MinGW64 run reached the viewer build and failed only in
+`NavigationRuntimeViewer.cpp`:
 
-There is no Standard speed and no Extreme speed.
+- `recalculationRequired` was used by `drawHud` before declaration;
+- a dangling `if (speedChanged)` remained after removing slider auto-refresh.
 
-FlightStyle owns only static clearance/risk doctrine:
-- STANDARD = more safety/maneuver room;
-- EXTREME = tighter pass / less clearance when tactically useful.
+Fixed in:
+- `e2597a7714f5e7fee2200e7f47f9bfb9bafb2734`;
+- `b15d0e97c6897d2b099e0c6e41d60830c45776b9`.
 
-Scenario/runtime no longer contain:
-- standard_speed_mps / extreme_speed_mps;
-- standardSpeedMps / extremeSpeedMps.
+The unused `buildReferenceAttitudes` acceleration warning was also removed.
 
-The current test speed envelope comes from explicit START/FINISH speed requests.
+## Canonical speed rule
 
-### Speed changes the route
+Speed is not constant by style and is not required to be constant along a route.
 
-START/FINISH speeds are Stage-1 route inputs.
+- START/FINISH speed = boundary constraints only.
+- Intermediate speed may be lower or higher.
+- Braking must have a concrete local reason.
+- A hard/acute maneuver may slow heavily or stop.
+- A clear section may exceed FINISH speed substantially.
+- Local speed constraints must remain local.
+- No invented braking merely to match an arbitrary uniform reference.
+- STANDARD/EXTREME only trade clearance/risk; they never define nominal speed.
 
-Higher speed increases a coarse inertial maneuver reserve based on real Cobra angular
-rate/acceleration limits. Therefore route support points may move farther from a static
-obstacle.
+Recorded in:
+- `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`;
+- `tools/navigation_runtime/README.md`.
 
-Current Stage-1 diagnostics expose:
-- ROUTE PLANNING SPEED
-- STYLE CLEARANCE
-- ROUTE ADDITIONAL CLEARANCE
+## Implementation already corrected
 
-This reserve is a coarse B4/Stage-1 allowance only. It is not a replacement for final B6
-continuous oriented swept-hull proof.
+- Runtime execution hard speed ceiling now comes from vehicle capability, not
+  `max(start, finish)`.
+- Exact moving FINISH speed is no longer converted into a whole-route scalar speed cap.
+- Focused regression added: 500 m three-point straight route, START=10, FINISH=10,
+  vehicle max=80; calculated peak must exceed 12 while terminal remains exactly 10.
 
-### Calculate button
+Relevant commits:
+- `336b48a293dca0306847afbe3bc00e5787713a2e`;
+- `16fe6a8918fa1a9f03fce3dd2f814987198f31e8`;
+- `22133bbe5c9ef61a52e839338e88b44a29061f22`;
+- `49009e6f480c7a70848f9a89c5cb4a0f7d4c8dab`.
 
-No automatic solve occurs when a setting changes.
+## Known remaining mechanism defect
 
-Dirty ownership:
-- speed/style -> route + execution dirty;
-- control law/pilot/dynamic toggle -> execution dirty only.
+`globalGuideSpeedLimit()` still collapses the worst curvature on a multi-point guide
+into one route-wide maximum speed.
 
-One click on РАССЧИТАТЬ:
-- rebuilds Stage-1 if route inputs are dirty;
-- executes Stage-2;
-- shows a short on-screen calculation log;
-- clears dirty state.
+That is safe but wrong under the new contract: a sharp bend may force local braking, but
+must not cap unrelated straight sections.
 
-After any attempt the button is visually disabled/dim and says РАСЧЕТ ГОТОВ.
-It becomes active again only after a setting invalidates the result.
+After target compile/build is green, the next mechanism slice is:
+- local scalar speed restrictions by progress;
+- forward/backward braking feasibility;
+- accelerate on clear sections;
+- brake only for the upcoming local restriction;
+- full stop permitted if required;
+- accelerate again afterward.
 
-There is no second Execute/ЗАПУСТИТЬ ПОЛЁТ action anymore.
+Do not solve this in Follower or by adding style speeds.
 
-## Regression added
-
-Runtime E2E now compares:
-- STANDARD 10/10 m/s;
-- STANDARD 40/40 m/s;
-- EXTREME 40/40 m/s.
-
-Required:
-- 40 Standard detour farther from the wall than 10 Standard;
-- 40 Extreme closer than 40 Standard.
-
-## Immediate target validation
-
-Run:
+## Immediate target command
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
-
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
-If that passes, launch:
+If green, also run the focused Ruckig regression:
+
+```bash
+bash tests/navigation_guidance/run_mingw64.sh
+```
+
+Then launch viewer:
 
 ```bash
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Viewer checks:
-1. initial РАССЧИТАТЬ is enabled;
-2. set STANDARD, START=10, FINISH=10 and click once;
-3. note white route coordinates/clearance and the short on-screen log;
-4. button must become visibly disabled / РАСЧЕТ ГОТОВ;
-5. move both speeds to 40 -> button re-enables, old result is marked stale;
-6. click Calculate -> white route should move farther from wall;
-7. switch only STANDARD -> EXTREME at 40/40 -> button re-enables;
-8. Calculate -> route should cut closer than 40/40 Standard;
-9. switch pilot or Assisted/Newtonian -> Calculate re-enables, but Stage-1 route should be
-   retained and only Stage-2 recomputed.
+Validate Calculate UX and speed/style route-coordinate behavior as previously specified.
 
-Send build/test output if anything fails. Do not claim PASS before target evidence.
-
-## Related unresolved navigation work
-
-The previous hull-somersault fix remains a candidate awaiting the same target run:
-- FreeTransit sparse angular-acceleration feed-forward removed;
-- total follower angular demand capped to physical capability;
-- telemetry now exposes ideal vs pilot-executed linear/angular commands.
-
-Dynamic obstacle avoidance remains paused until static maneuver behavior is credible.
+Do not claim target PASS until user evidence is received.
 
 ## Mandatory state protocol
 
 Every state-affecting iteration:
-- update CURRENT_STATE.md;
-- update CURRENT_TASK.md;
-- update PROJECT_STATE.md;
-- update src/game/navigation/STAGE12_END_TO_END.md;
-- recreate CONTINUE_PROMPT.md from scratch.
+- update `CURRENT_STATE.md`;
+- update `CURRENT_TASK.md`;
+- update `PROJECT_STATE.md`;
+- update `src/game/navigation/STAGE12_END_TO_END.md`;
+- recreate `CONTINUE_PROMPT.md` from scratch.

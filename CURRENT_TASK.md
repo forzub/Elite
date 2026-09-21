@@ -1,63 +1,63 @@
-# CURRENT TASK — validate reducer-synced control law, speed corridor, and actual main-engine indication
+# CURRENT TASK — reproduce remaining hull somersault with telemetry and speed sliders
 
 **Date:** 2026-09-21  
-**Status:** IMPLEMENTED / TARGET VIEWER VALIDATION REQUIRED
+**Status:** TELEMETRY + 5..50 M/S START/FINISH SLIDERS IMPLEMENTED / TARGET VALIDATION REQUIRED
 
-## User-observed issues being addressed
+## Current observation
 
-1. After switching to EXTREME, the UI could still show ASSISTED while motion looked
-   Newtonian.
-2. Free transit was over-controlling exact 10.0 m/s; a harmless 10.1 m/s deviation could
-   provoke corrective thrust/attitude.
-3. Viewer did not clearly distinguish a physically useful main-engine vectoring turn
-   from an attitude rotation with no aft-main thrust.
-
-## Implemented state architecture
-
-Viewer is now reducer-driven:
+Navigation geometry/timing is no longer the obvious problem. Latest uploaded
+`navigation_perf.log` tail still reports the default wall reference as a single scalar
+Ruckig solve with:
 ```text
-UI click/runtime observation
- -> ViewerAction
- -> reduceViewerState(AppState)
- -> buttons/HUD are projections of AppState
+min_speed_mps=10.0000
+max_speed_mps=10.0000
 ```
 
-Runtime frames publish the effective law. Playback feeds it back into the same store.
-If runtime is NEWTONIAN, the NEWTONIAN button must become selected even if the previous
-user request was ASSISTED.
+User nevertheless sees:
+- actual speed around 10.1 m/s;
+- main-engine indicator off;
+- a visible hull somersault near the low/straight route segment.
 
-Diagnostics:
-- CONTROL LAW REQUESTED
-- CONTROL LAW EFFECTIVE
-- CONTROL LAW SWITCHES
+The perf log cannot diagnose body attitude. We need execution telemetry.
 
-## Implemented free-transit corridor
+## New telemetry
 
-Follower no longer treats the route as an exact longitudinal timetable.
+Generated after every Stage-2 run:
+```text
+tools/navigation_runtime/last_execution_telemetry.log
+```
 
-Current `FreeTransit` deadbands:
-- STANDARD: speed +/-0.5 m/s, progress +/-12 m;
-- EXTREME: speed +/-1.0 m/s, progress +/-16 m.
+Per sampled frame it records:
+- t, phase, effective law;
+- position/speed;
+- physical forward/up;
+- pitch/yaw/roll rates;
+- MAIN %, main acceleration;
+- RCS/manoeuvre acceleration;
+- combined engine acceleration;
+- reference speed;
+- reference forward/up;
+- body-vs-velocity angle;
+- actual-vs-reference forward/up angles;
+- MAIN_ON/OFF and RCS_ON/OFF transition events.
 
-Cross-track control remains active. Precision maneuver families are not loosened.
+Trace JSON also persists the new angular/propulsion fields.
 
-Viewer displays the active speed corridor.
+## New speed controls
 
-## Implemented physical main-engine indicator
+Viewer reducer state owns two sliders:
+- START V: 5..50 m/s;
+- FINISH V: 5..50 m/s.
 
-Trace frame records actual positive aft-main throttle.
+They initialize from scenario.json authored values.
 
-Viewer:
-- orange filled rear face = actual aft main engine producing thrust;
-- intensity follows throttle;
-- HUD shows MAIN: N%;
-- RCS alone does not light the rear face.
+Changing them:
+- does not rebuild Stage-1 static route;
+- invalidates/restores only Stage-2 execution;
+- scales authored start velocity direction to the selected start magnitude;
+- applies selected finish magnitude to terminal trajectory/gate/final validation.
 
-## Latest source HEAD before mandatory doc sync
-
-`a60a215fde65505826b9b96c70edf511991da91f`
-
-## Target validation
+## Target commands
 
 ```bash
 cd /d/__elite/work
@@ -68,24 +68,29 @@ bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Run at least:
-1. ASSISTED + STANDARD
-2. ASSISTED + EXTREME
-3. NEWTONIAN + STANDARD
-4. NEWTONIAN + EXTREME
+First reproduce at START=10, FINISH=10 in the mode that shows the somersault.
 
-Check each:
-- NAV REV visible;
-- selected control-law button matches actual/effective runtime law;
-- REQUESTED/EFFECTIVE/SWITCHES diagnostics are sensible;
-- speed corridor shown;
-- ~0.1 m/s harmless speed error does not provoke longitudinal correction;
-- orange rear face appears only when main engine is truly active;
-- MAIN:% agrees with rear-face indication.
+Then send:
+```text
+tools/navigation_runtime/last_execution_telemetry.log
+```
 
-If EXTREME appears Newtonian while diagnostics say EFFECTIVE=ASSISTED and SWITCHES=0,
-then the visual similarity is in Assisted execution behavior, not a hidden law switch,
-and must be debugged there.
+Interpretation:
+- reference forward/up rotates with the flip, MAIN=0 -> attitude authoring/program sampling;
+- reference stable but physical forward/up rotates -> angular tracker/physics;
+- RCS_ON around the event -> distinguish translational manoeuvre thrust from pure
+  attitude torque;
+- MAIN_ON proves a real main-thrust vectoring manoeuvre.
+
+After baseline reproduction, vary START/FINISH separately (e.g. 5/10, 10/20, 20/10)
+to see whether the flip is tied to boundary speed or independent of it.
+
+## Important caution
+
+The speed sliders are boundary-condition test controls. Very high values may expose
+missing interior curvature-speed zoning in the current first scalar path-progress
+implementation. Do not hide such failures by clamping the UI back to doctrine speed;
+record and fix them if they occur.
 
 ## Mandatory state protocol
 

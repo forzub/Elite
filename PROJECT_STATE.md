@@ -2288,3 +2288,109 @@ Next target evidence must verify:
 - changing speed visibly changes white Stage-1 route coordinates/clearance;
 - at equal speed EXTREME is closer to the obstacle than STANDARD;
 - no style-owned nominal speed remains in behavior/diagnostics.
+
+
+## 2026-09-22 — target build failure fixed; variable-speed invariant formalized
+
+Target MinGW64 evidence from HEAD `c5a2ea68434a6743e034599e7c35134b0c3c1663` reached the viewer build and failed in
+`NavigationRuntimeViewer.cpp` for two ordinary C++ integration mistakes:
+
+1. `drawHud()` called `recalculationRequired(state)` before any declaration was visible.
+2. The old speed-slider auto-refresh removal left a dangling
+   `if (speedChanged)` with no statement before the closing brace.
+
+These were not navigation-algorithm failures.
+
+Corrections:
+- forward declaration for `recalculationRequired(const AppState&)`;
+- slider release now only clears `scrubbingFrames` and `speedSliderDrag`;
+- unused viewer `orientationErrorDegrees()` helper removed;
+- the unrelated unused `acceleration` warning in `buildReferenceAttitudes()` was also
+  removed.
+
+Relevant commits:
+- `e2597a7714f5e7fee2200e7f47f9bfb9bafb2734`;
+- `b15d0e97c6897d2b099e0c6e41d60830c45776b9`.
+
+### Variable-speed contract
+
+A new canonical rule is now recorded in
+`src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`.
+
+Speed is a state variable, not a FlightStyle constant and not a value that must remain
+uniform across a route.
+
+Rules:
+- START/FINISH speeds constrain those boundary states only.
+- Intermediate speed may vary freely inside physical, geometric, mission and safety
+  limits.
+- Any speed reduction must have a concrete reason local to the maneuver:
+  curvature/turn authority, braking distance for an upcoming required state, collision
+  or clearance proof, explicit local speed restriction, docking/formation precision,
+  tracking recovery, or emergency avoidance.
+- A difficult corner may require a major slowdown or a full stop.
+- A clear segment may be flown substantially faster than the FINISH speed if later
+  constraints can still be met.
+- A local speed restriction must not silently cap unrelated route segments.
+- Without a physical/geometric/mission/safety reason, the planner must not invent
+  braking just to make the profile uniform.
+- STANDARD/EXTREME remain clearance/risk doctrine only and never own a nominal speed.
+
+Commit:
+- `49009e6f480c7a70848f9a89c5cb4a0f7d4c8dab`.
+
+### Concrete terminal-speed bug fixed
+
+Two implementation points were corrected immediately:
+
+1. `executionVehicleProfile.maxSpeedMps` is no longer
+   `max(startSpeed, finishSpeed)`.
+   START/FINISH are boundary states. The hard execution speed ceiling now comes from the
+   vehicle capability (`ShipParams::maxCombatSpeed`), expanded only if a boundary state
+   is already higher.
+
+2. In the multi-point scalar path-progress backend, an exact moving terminal point-speed
+   constraint is no longer folded into the route-wide maximum speed. Ruckig already
+   receives terminal speed as `targetSpeedMps`; applying the same value globally was
+   unjustified braking.
+
+Relevant commits:
+- `336b48a293dca0306847afbe3bc00e5787713a2e`;
+- `16fe6a8918fa1a9f03fce3dd2f814987198f31e8`.
+
+Focused regression added:
+- three-point straight 500 m route;
+- START = 10 m/s;
+- FINISH = 10 m/s;
+- vehicle max = 80 m/s;
+- trajectory must rise above 12 m/s in the unrelated transit segment and still finish at
+  exactly 10 m/s.
+
+Commit:
+- `22133bbe5c9ef61a52e839338e88b44a29061f22`.
+
+Runtime README now states the same variable-speed rule:
+- `30135fcd9db3a61b875ad0e4a4f5a4e98611e960`.
+
+### Remaining known speed-profile defect
+
+Do not claim the entire variable-speed contract is implemented yet.
+
+The current multi-point scalar path backend still computes a single
+`globalGuideSpeedLimit()` from the worst curvature found anywhere on the execution
+guide. Therefore one difficult bend can still unnecessarily cap otherwise clear route
+segments.
+
+That behavior is safe but over-conservative and violates the new locality rule.
+
+Required next trajectory-authoring correction after the target build is green:
+- convert curvature / point / range speed restrictions into local speed-profile
+  constraints along scalar progress;
+- permit independent acceleration on clear segments;
+- brake only early enough to satisfy the next local restriction;
+- permit a local stop when genuinely required;
+- accelerate again after the restriction when safe;
+- never turn a local restriction into a whole-route cap.
+
+This must stay inside the route-to-trajectory/B5-B6 authoring path. Do not hide it in
+Follower behavior or FlightStyle.

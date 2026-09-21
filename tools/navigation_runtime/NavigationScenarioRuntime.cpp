@@ -543,6 +543,14 @@ std::vector<std::string> routeDiagnostics(
     if (!route.message.empty())
         lines.push_back("PLANNER MESSAGE: " + route.message);
 
+    for (std::size_t i = 0; i < route.pointsMapMeters.size(); ++i)
+    {
+        lines.push_back(
+            "ROUTE POINT " + std::to_string(i) + ": " +
+            formatVec3(route.pointsMapMeters[i])
+        );
+    }
+
     return lines;
 }
 
@@ -1825,6 +1833,27 @@ ScenarioRunResult executeCalculatedRoute(
             return out;
         }
 
+        std::vector<double> retainedWaypointSpeedsMps;
+        if (calculatedRoute.routePoints.size() > 2)
+        {
+            const auto retainedProgress =
+                routeProgressTable(calculatedRoute.routePoints);
+            for (std::size_t i = 1;
+                 i + 1 < calculatedRoute.routePoints.size();
+                 ++i)
+            {
+                const std::size_t sample =
+                    sampleNearestSourceProgress(
+                        trajectoryResult.trajectory,
+                        retainedProgress[i],
+                        0
+                    );
+                retainedWaypointSpeedsMps.push_back(
+                    trajectoryResult.trajectory.samples[sample].speedMps
+                );
+            }
+        }
+
         const auto attitudes =
             buildReferenceAttitudes(
                 trajectoryResult.trajectory,
@@ -1891,6 +1920,7 @@ ScenarioRunResult executeCalculatedRoute(
         double followerFailureAcceptedAtSeconds = 0.0;
         double maximumCrossTrack = 0.0;
         double maximumFollowerPositionError = 0.0;
+        double maximumBodyVelocityAngleRad = 0.0;
 
         activateProgramPhase(
             programs.front(),
@@ -2077,6 +2107,34 @@ ScenarioRunResult executeCalculatedRoute(
             const glm::dvec3 currentPosition =
                 vehicle.transform.motion.localPositionMeters;
 
+            const glm::dvec3 currentVelocity =
+                vehicle.transform.motion.localVelocityMps;
+            const double currentSpeed = glm::length(currentVelocity);
+            if (currentSpeed > 0.25)
+            {
+                const glm::dvec3 velocityDirection =
+                    currentVelocity / currentSpeed;
+                const glm::dvec3 bodyForward =
+                    normalizedOr(
+                        glm::dvec3(vehicle.transform.forward()),
+                        velocityDirection
+                    );
+                maximumBodyVelocityAngleRad =
+                    std::max(
+                        maximumBodyVelocityAngleRad,
+                        std::acos(
+                            std::clamp(
+                                glm::dot(
+                                    velocityDirection,
+                                    bodyForward
+                                ),
+                                -1.0,
+                                1.0
+                            )
+                        )
+                    );
+            }
+
             maximumCrossTrack =
                 std::max(
                     maximumCrossTrack,
@@ -2207,6 +2265,28 @@ ScenarioRunResult executeCalculatedRoute(
             return stream.str();
         };
 
+        std::ostringstream waypointSpeeds;
+        waypointSpeeds.setf(std::ios::fixed);
+        waypointSpeeds << std::setprecision(2);
+        if (retainedWaypointSpeedsMps.empty())
+        {
+            waypointSpeeds << "NONE";
+        }
+        else
+        {
+            for (std::size_t i = 0;
+                 i < retainedWaypointSpeedsMps.size();
+                 ++i)
+            {
+                if (i != 0)
+                    waypointSpeeds << ", ";
+                waypointSpeeds
+                    << "P" << (i + 1) << "="
+                    << retainedWaypointSpeedsMps[i];
+            }
+            waypointSpeeds << " M/S";
+        }
+
         out.diagnostics = {
             "SCENE: LOADED",
             "PLANNER: CACHED ROUTE OK",
@@ -2253,6 +2333,13 @@ ScenarioRunResult executeCalculatedRoute(
                 number(maximumCrossTrack) + " M",
             "MAX FOLLOWER ERROR: " +
                 number(maximumFollowerPositionError) + " M",
+            "RETAINED WAYPOINT SPEEDS: " +
+                waypointSpeeds.str(),
+            "MAX BODY/VELOCITY ANGLE: " +
+                number(
+                    maximumBodyVelocityAngleRad *
+                    180.0 / 3.14159265358979323846
+                ) + " DEG",
             std::string("COARSE STATIC CONTACT: ") +
                 (coarseStaticContact ? "YES" : "NO"),
             "LOG: last_execution.log"

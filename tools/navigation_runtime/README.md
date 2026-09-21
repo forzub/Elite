@@ -359,3 +359,52 @@ the requested button must remain Assisted until the new solve is requested.
 The right panel also displays the currently selected pilot and flight behavior
 (Standard/Extreme clearance doctrine), so mode changes can be verified independently of
 the rendered ship motion.
+
+
+## Reference reacquisition and attitude damping
+
+The runtime no longer treats a time-parameterized FreeTransit program as a train schedule
+that the physical ship must somehow catch after the reference has run away.
+
+When B10 reports that the physical craft has left its accepted tracking envelope:
+
+- the immutable `AcceptedManeuverProgram` is **not modified**;
+- the runtime holds only its local sampling clock;
+- B9 therefore keeps presenting the same local reference progress while B10 + pilot +
+  physics reduce the real tracking error;
+- phase handoff cannot occur while that reference clock is held;
+- once the craft is back inside the tracking envelope, reference time resumes.
+
+The viewer reports this state as
+`FOLLOWER ВОЗВРАЩАЕТСЯ В КОРИДОР`.
+
+Diagnostics expose:
+- `REFERENCE CLOCK HOLD FRAMES`;
+- `REFERENCE CLOCK HOLD`.
+
+The FreeTransit execution envelope is evaluated after the allowed longitudinal
+position/speed deadbands. Thus harmless lead/lag does not freeze progress, while real
+cross-track, velocity, attitude or angular-rate error does.
+
+The default B10 attitude loop was also changed from strongly underdamped
+(`Kp=2, Kd=1`) to near-critical/slightly overdamped
+(`Kp=2, Kd=3`). This is intended to remove the visible "float/pendulum" overshoot when
+the hull returns to its requested attitude. Physical angular acceleration/rate limits
+still apply below B10.
+
+A main-engine-off hull rotation is not by itself an error: attitude torque and main
+linear thrust are independent actuators. `exec_ang_cmd` in telemetry is the direct
+witness that the attitude controller is asking the RCS/attitude system to rotate even
+when `main_pct=0`.
+
+## Runtime diagnostic file location
+
+Runtime diagnostic logs are written to the process working directory. With the supported
+commands run from the repository root, these files are now directly in the repo root:
+
+- `last_route_plan.log`;
+- `last_execution.log`;
+- `last_execution_telemetry.log`;
+- `navigation_perf.log` (already used the root).
+
+The JSON trace artifacts remain trace artifacts rather than diagnostic logs.

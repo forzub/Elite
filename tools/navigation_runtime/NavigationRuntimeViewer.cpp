@@ -2248,6 +2248,26 @@ void restoreRetainedRouteForNewExecutionSettings(
     state.requestFit = true;
 }
 
+const char* traceLawName(
+    elite::tools::navigation_runtime::ControlMode mode
+)
+{
+    return
+        mode == elite::tools::navigation_runtime::ControlMode::Assisted
+            ? "assisted"
+            : "newtonian";
+}
+
+void synchronizeTraceLawLabel(
+    AppState& state
+)
+{
+    if (state.traceData)
+        state.traceData->law = traceLawName(state.controlMode);
+    if (state.hasRetainedRoute)
+        state.retainedRoute.law = traceLawName(state.controlMode);
+}
+
 void reduceViewerState(
     AppState& state,
     const ViewerAction& action
@@ -2260,6 +2280,7 @@ void reduceViewerState(
             {
                 state.controlMode = action.controlMode;
                 restoreRetainedRouteForNewExecutionSettings(state);
+                synchronizeTraceLawLabel(state);
             }
             break;
 
@@ -2308,11 +2329,13 @@ void reduceViewerState(
                 // retained route here: this action reports what is actually
                 // flying, it is not a user's new execution request.
                 state.controlMode = ControlMode::Assisted;
+                synchronizeTraceLawLabel(state);
             }
             else if (action.runtimeControlLaw == "NEWTONIAN" ||
                      action.runtimeControlLaw == "newtonian")
             {
                 state.controlMode = ControlMode::Newtonian;
+                synchronizeTraceLawLabel(state);
             }
             break;
         }

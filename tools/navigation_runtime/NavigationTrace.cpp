@@ -56,6 +56,14 @@ void saveTraceJson(
     for (const auto& p : trace.turnPoints)
         root["turn_points"].push_back(vec3Json(p));
 
+    root["execution_guide_points"] = nlohmann::json::array();
+    for (const auto& p : trace.executionGuidePoints)
+        root["execution_guide_points"].push_back(vec3Json(p));
+
+    root["calculated_trajectory_points"] = nlohmann::json::array();
+    for (const auto& p : trace.calculatedTrajectoryPoints)
+        root["calculated_trajectory_points"].push_back(vec3Json(p));
+
     root["static_obstacles"] = nlohmann::json::array();
     for (const TraceStaticObstacle& o : trace.staticObstacles)
     {
@@ -159,6 +167,18 @@ TraceDocument loadTraceJson(const std::string& path)
         trace.routePoints.push_back(readVec3(p));
     for (const auto& p : root.at("turn_points"))
         trace.turnPoints.push_back(readVec3(p));
+
+    if (root.contains("execution_guide_points"))
+    {
+        for (const auto& p : root.at("execution_guide_points"))
+            trace.executionGuidePoints.push_back(readVec3(p));
+    }
+
+    if (root.contains("calculated_trajectory_points"))
+    {
+        for (const auto& p : root.at("calculated_trajectory_points"))
+            trace.calculatedTrajectoryPoints.push_back(readVec3(p));
+    }
 
     if (root.contains("static_obstacles"))
     {

@@ -330,23 +330,63 @@ std::vector<glm::dvec3> buildWaypointVelocities(
             sourceProgress[i + 1]
         );
 
-        const double blendDistance = std::max(
+        // The coarse polyline is a geometric intent, not a command to perform
+        // StopTurnGo at every topology vertex. Search for the widest local
+        // corner chord that is still inside the proved free space. The old
+        // implementation tested exactly one 25%-of-leg chord; if that single
+        // chord was blocked it forced a zero-speed waypoint even when a tighter
+        // continuous turn was perfectly safe.
+        const double nominalBlendDistance = std::max(
             1.0,
             std::min(incomingLength, outgoingLength) * 0.25
         );
-        const glm::dvec3 entry =
-            request.pathPointsMeters[i] - incoming * blendDistance;
-        const glm::dvec3 exit =
-            request.pathPointsMeters[i] + outgoing * blendDistance;
-        if (!world::navigation::segmentClearOfNavigationObstacles(
-                entry,
-                exit,
-                request.obstacles,
-                request.vehicle.collisionRadiusMeters,
-                request.vehicle.preferredClearanceMeters))
+        const double minimumBlendDistance = std::min(
+            nominalBlendDistance,
+            std::max(
+                0.75,
+                request.vehicle.collisionRadiusMeters * 0.25
+            )
+        );
+
+        double blendDistance = nominalBlendDistance;
+        bool foundSafeBlend = false;
+        for (int attempt = 0; attempt < 10; ++attempt)
         {
-            continue;
+            blendDistance = std::max(
+                minimumBlendDistance,
+                blendDistance
+            );
+
+            const glm::dvec3 entry =
+                request.pathPointsMeters[i] -
+                incoming * blendDistance;
+            const glm::dvec3 exit =
+                request.pathPointsMeters[i] +
+                outgoing * blendDistance;
+
+            if (world::navigation::segmentClearOfNavigationObstacles(
+                    entry,
+                    exit,
+                    request.obstacles,
+                    request.vehicle.collisionRadiusMeters,
+                    request.vehicle.preferredClearanceMeters))
+            {
+                foundSafeBlend = true;
+                break;
+            }
+
+            if (blendDistance <= minimumBlendDistance + 1.0e-6)
+                break;
+
+            blendDistance =
+                std::max(
+                    minimumBlendDistance,
+                    blendDistance * 0.70
+                );
         }
+
+        if (!foundSafeBlend)
+            continue;
 
         glm::dvec3 direction = incoming + outgoing;
         if (magnitude(direction) <= Epsilon)
@@ -959,7 +999,10 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     waypointVelocities.back() = glm::dvec3(0.0);
 
     world::navigation::TrajectoryGenerationDiagnostics cumulativeDiagnostics;
-    const std::size_t maxRestarts = request.pathPointsMeters.size() + 2;
+    // Preserve continuous corner motion when possible: waypoint through-speed
+    // is relaxed progressively before the final StopTurnGo fallback.
+    const std::size_t maxRestarts =
+        request.pathPointsMeters.size() * 8 + 4;
 
     for (std::size_t restart = 0; restart < maxRestarts; ++restart)
     {
@@ -986,18 +1029,38 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
 
         bool relaxed = false;
         const std::size_t leg = attempt.failedLeg;
-        if (leg > 0 && leg < waypointVelocities.size() - 1 &&
-            nonZeroVelocity(waypointVelocities[leg]))
+
+        const auto relaxWaypoint = [&](std::size_t index)
         {
-            waypointVelocities[leg] = glm::dvec3(0.0);
-            relaxed = true;
-        }
-        if (leg + 1 > 0 && leg + 1 < waypointVelocities.size() - 1 &&
-            nonZeroVelocity(waypointVelocities[leg + 1]))
-        {
-            waypointVelocities[leg + 1] = glm::dvec3(0.0);
-            relaxed = true;
-        }
+            if (index == 0 ||
+                index + 1 >= waypointVelocities.size() ||
+                !nonZeroVelocity(waypointVelocities[index]))
+            {
+                return false;
+            }
+
+            const double speed =
+                magnitude(waypointVelocities[index]);
+
+            // A collision or numerical failure at one candidate through-speed
+            // does not prove that the corner requires a stop. Reduce the
+            // through-speed first and retry the exact swept validation. Only
+            // collapse to zero when the remaining speed is already negligible.
+            if (speed > 1.25)
+            {
+                waypointVelocities[index] *= 0.70;
+            }
+            else
+            {
+                waypointVelocities[index] = glm::dvec3(0.0);
+            }
+            return true;
+        };
+
+        if (leg < waypointVelocities.size())
+            relaxed = relaxWaypoint(leg) || relaxed;
+        if (leg + 1 < waypointVelocities.size())
+            relaxed = relaxWaypoint(leg + 1) || relaxed;
 
         if (relaxed)
             continue;

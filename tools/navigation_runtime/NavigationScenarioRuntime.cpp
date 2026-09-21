@@ -711,6 +711,44 @@ Law controlLaw(ControlMode mode)
         : Law::Assisted;
 }
 
+double effectiveStartSpeedMps(
+    const Scenario& scenario,
+    const ScenarioRunSettings& settings
+)
+{
+    return
+        settings.startSpeedOverrideMps >= 0.0
+            ? settings.startSpeedOverrideMps
+            : glm::length(scenario.startVelocity);
+}
+
+double effectiveFinishSpeedMps(
+    const Scenario& scenario,
+    const ScenarioRunSettings& settings
+)
+{
+    return
+        settings.finishSpeedOverrideMps >= 0.0
+            ? settings.finishSpeedOverrideMps
+            : std::max(0.0, scenario.finish.speedMps);
+}
+
+glm::dvec3 effectiveStartVelocity(
+    const Scenario& scenario,
+    const ScenarioRunSettings& settings
+)
+{
+    glm::dvec3 direction = scenario.startVelocity;
+    if (glm::length(direction) <= 1.0e-9)
+        direction = scenario.startBasis.forward;
+    if (glm::length(direction) <= 1.0e-9)
+        direction = glm::dvec3(1.0, 0.0, 0.0);
+
+    return
+        glm::normalize(direction) *
+        effectiveStartSpeedMps(scenario, settings);
+}
+
 void setTransformBasis(
     ShipTransform& transform,
     const Basis& basis
@@ -1188,7 +1226,8 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
             settings,
             params
         );
-    request.initialVelocityMps = scenario.startVelocity;
+    request.initialVelocityMps =
+        effectiveStartVelocity(scenario, settings);
     request.initialAccelerationMps2 = scenario.startAcceleration;
 
     if (!request.pathPointsMeters.empty())
@@ -1204,13 +1243,15 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
             );
         }
 
+        const double finishSpeedMps =
+            effectiveFinishSpeedMps(scenario, settings);
+
         world::navigation::TrajectoryPointSpeedConstraint finish;
         finish.sourcePathProgressMeters = progress;
-        finish.maxSpeedMps =
-            std::max(0.0, scenario.finish.speedMps);
+        finish.maxSpeedMps = finishSpeedMps;
         request.pointSpeedConstraints.push_back(finish);
 
-        if (scenario.finish.speedMps > 1.0e-6)
+        if (finishSpeedMps > 1.0e-6)
         {
             glm::dvec3 terminalDirection = scenario.finish.forward;
             if (glm::length(terminalDirection) <= 1.0e-9 &&
@@ -1229,7 +1270,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
                 request.hasTerminalVelocity = true;
                 request.terminalVelocityMps =
                     terminalDirection / directionLength *
-                    scenario.finish.speedMps;
+                    finishSpeedMps;
             }
         }
     }
@@ -1569,7 +1610,7 @@ struct ExecutionVehicle
         transform.motion.localPositionMeters =
             scenario.startPosition;
         transform.motion.localVelocityMps =
-            scenario.startVelocity;
+            effectiveStartVelocity(scenario, settings);
         transform.setWorldPositionMeters(
             scenario.startPosition
         );
@@ -1800,6 +1841,8 @@ ScenarioRunResult loadScenarioPreview(
     try
     {
         const Scenario scenario = loadScenario(scenarioJsonPath);
+        out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
+        out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 
         TraceDocument trace;
         trace.version = 2;
@@ -1841,6 +1884,8 @@ ScenarioRunResult calculateScenario(
     try
     {
         const Scenario scenario = loadScenario(scenarioJsonPath);
+        out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
+        out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 
         // Stage 1 consumes only static route facts. Control law, pilot skill,
         // doctrine and dynamic actors are intentionally Stage-2 inputs.
@@ -1938,6 +1983,8 @@ ScenarioRunResult executeCalculatedRoute(
     try
     {
         const Scenario scenario = loadScenario(scenarioJsonPath);
+        out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
+        out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 
         TraceDocument trace = calculatedRoute;
         trace.frames.clear();
@@ -2234,7 +2281,7 @@ ScenarioRunResult executeCalculatedRoute(
             const bool finalPhase =
                 activeProgram + 1 >= programs.size();
             const bool movingTerminal =
-                scenario.finish.speedMps > 1.0e-6;
+                effectiveFinishSpeedMps(scenario, settings) > 1.0e-6;
 
             // A moving terminal is a fly-through boundary, not a parking
             // capture. Holding the final position sample while simultaneously
@@ -2443,8 +2490,10 @@ ScenarioRunResult executeCalculatedRoute(
             glm::length(
                 vehicle.transform.motion.localVelocityMps
             );
+        const double requestedFinishSpeedMps =
+            effectiveFinishSpeedMps(scenario, settings);
         const double finalSpeedError =
-            std::abs(finalSpeed - scenario.finish.speedMps);
+            std::abs(finalSpeed - requestedFinishSpeedMps);
 
         auto angleBetween = [](
             const glm::dvec3& a,
@@ -2581,6 +2630,12 @@ ScenarioRunResult executeCalculatedRoute(
                 std::string(pilotName(settings.pilot)),
             "FLIGHT STYLE: " +
                 std::string(flightStyleName(settings.flightStyle)),
+            "START SPEED REQUESTED: " +
+                number(effectiveStartSpeedMps(scenario, settings)) +
+                " M/S",
+            "FINISH SPEED REQUESTED: " +
+                number(effectiveFinishSpeedMps(scenario, settings)) +
+                " M/S",
             "FOLLOWER SPEED CORRIDOR: +/- " +
                 number(
                     settings.flightStyle == FlightStyle::Extreme

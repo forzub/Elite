@@ -1,58 +1,74 @@
-# CURRENT TASK — validate sampled C1 corner guide removes purple Ruckig barrels
+# CURRENT TASK — re-run focused Ruckig gate after curvature-speed fix
 
 **Date:** 2026-09-21  
-**Status:** PURPLE REFERENCE DEFECT ISOLATED / SAMPLED-CURVE CANDIDATE UNVERIFIED
+**Status:** TARGET COMPILE PASS / FOCUSED FUNCTIONAL GATE 7/8 / FIX CANDIDATE UNVERIFIED
 
-## Confirmed defect
+## Latest target result
 
-Viewer evidence shows two visible lateral barrels directly in the PURPLE calculated
-Ruckig reference, at the two rounded-corner regions.
+The focused executable compiled and linked successfully.
 
-Therefore:
-- this defect is upstream of Follower/Pilot;
-- do not change body/thrust execution yet to solve these two barrels.
-
-Latest perf evidence before the fix:
+Result:
 ```text
-coarse_points=4
-guide_points=6
-rounded_corners=2
-expanded_corners=0
-blended_waypoints=4
-samples=2300
-valid=1
+7/8 PASS
+FAIL: default wall shallow corners stay moving
+reason: calculated curve contains a major unnecessary braking dip
 ```
 
-The six-point guide was too sparse. A long Ruckig leg with non-collinear endpoint
-velocities can bow laterally between the endpoints.
+This is not a compiler failure. It is the exact functional regression we need to fix.
+
+## Root cause
+
+The new dense C1 guide exposed an old invalid speed heuristic.
+
+`buildWaypointVelocities()` used a `blendDistance` derived from local segment length.
+On a densely sampled curve, segment length gets smaller even though physical curvature
+does not change. Therefore the same curve could receive a lower allowed speed merely by
+adding samples.
 
 ## Candidate fix
 
-Each corner now becomes a densely sampled quadratic C1 curve:
-- entry tangent = incoming leg;
-- exit tangent = outgoing leg;
-- quadratic control = local widened corner;
-- ~2.5 m sample spacing;
-- 4..24 segments per corner;
-- the sampled curve is collision checked.
+Corner speed now uses true local geometric curvature:
+```text
+kappa = 2*|AB x BC| / (|AB| |BC| |AC|)
+v_max = sqrt(a_lateral / kappa)
+```
 
-Also removed the artificial 0.15 floor from the small-angle bend factor. With a dense
-smooth curve, tiny local heading changes must not be interpreted as tight turns.
+This is sampling-density invariant.
+
+Ruckig perf lines now also contain:
+- `min_speed_mps`;
+- `max_speed_mps`.
+
+Commit:
+- `4dcebe77580e8abc7a0f9f4a22cec65f3ba985d5`.
+
+## Steady-test correction
+
+The old start/finish magnitudes were 10 m/s, but their directions were +X rather than
+the first/last route tangents. That still introduced endpoint steering transients.
+
+Now:
+- start velocity + physical forward = first route tangent at 10 m/s;
+- terminal velocity + forward = last route tangent at 10 m/s.
 
 Commits:
-- 3dccb8a36c8e8023083b21f317b944a8097fd6a0
-- 517904389019fbf94ddbbabbe3248cdb7b6fab20
-- a056973c674194b109b8f37646f6d7a9e461c5b9
+- `5c408b76b36a86bd6b4fecacc377142d80726796`;
+- `3a22a4ae0aca037df4c9b8c76759506ed8a840c6`.
 
-## Focused acceptance
+## Viewer revision stamp
 
-Default steady 10 m/s wall regression now requires:
-- execution guide is rounded;
-- calculated min speed >= 7.5 m/s;
-- no +X backtracking;
-- max PURPLE-reference distance from BLUE guide <= 1.5 m.
+Viewer now shows exact Git revision in:
+- window title;
+- HUD heading.
 
-## Immediate target commands
+CMake obtains it from:
+`git rev-parse --short=12 HEAD`.
+
+Commits:
+- `2c1baf4854f083c2e3e44ed16136c70237dfafcd`;
+- `1e84a9cac2f26da8e2802e1b97e8582f869f218d`.
+
+## Immediate target gate
 
 ```bash
 cd /d/__elite/work
@@ -62,32 +78,41 @@ git rev-parse HEAD
 cmake -S tests/navigation_guidance -B build/tests/navigation_guidance -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build/tests/navigation_guidance --target ruckig_route_planner_tests
 ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
+```
 
+Expected next evidence:
+- either 8/8;
+- or the failure text now reports exact `min_speed=<value> m/s`.
+
+Only after focused gate passes:
+```bash
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-## What to inspect in viewer
+Verify viewer HUD/title revision equals current HEAD short SHA.
 
-WHITE = coarse route  
-BLUE = dense execution guide  
+## Visual decision
+
+WHITE = retained route  
+BLUE = sampled execution guide  
 PURPLE = calculated Ruckig reference  
 GREEN = actual flight
 
-First question only:
-- did the two visible PURPLE barrels disappear?
+First check PURPLE:
+- no two lateral barrels;
+- no obvious braking dips.
 
-If PURPLE is now clean but GREEN still brakes/deviates, then move downstream to
-Follower/Pilot/body-thrust semantics.
+If PURPLE is clean and GREEN is not, move downstream to Follower/Pilot/body-thrust.
+If PURPLE remains bad, stay in route-to-Ruckig authoring.
 
-If PURPLE still barrels, keep working in Ruckig guide discretization / continuous
-reference generation. Do not hide it downstream.
+Do not enable dynamic avoidance yet.
 
 ## Mandatory state protocol
 
-After every state-affecting event:
-- update CURRENT_STATE.md;
-- update CURRENT_TASK.md;
-- update PROJECT_STATE.md;
-- update src/game/navigation/STAGE12_END_TO_END.md;
-- recreate CONTINUE_PROMPT.md from scratch.
+Every state-affecting iteration:
+- update `CURRENT_STATE.md`;
+- update `CURRENT_TASK.md`;
+- update `PROJECT_STATE.md`;
+- update `src/game/navigation/STAGE12_END_TO_END.md`;
+- recreate `CONTINUE_PROMPT.md` from scratch.

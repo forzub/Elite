@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation steady 10 m/s corner fly-through
+# CONTINUE PROMPT — Elite Navigation viewer-first steady fly-through
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -15,74 +15,64 @@ Read first:
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
 - `src/world/navigation/TrajectoryGenerator.h/.cpp`
-- `tests/navigation_guidance/RuckigRoutePlannerTests.cpp`
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
-- `tools/navigation_runtime/scenario.json`
 - `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
+- `tools/navigation_runtime/scenario.json`
+- `src/game/navigation/ManeuverPhaseGate.h/.cpp`
 - `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
 - `src/game/navigation/OrdinaryPhysicalManeuverCompiler.h/.cpp`
 
 ## Latest target evidence
 
-The focused target gate before the moving-finish change was 7/8.
+Default route:
+`(0,0,0) -> (110,-27,0) -> (190,-27,0) -> (300,0,0)`,
+length 306.53 m.
 
-Most important PASS:
-`default wall shallow corners stay moving`.
+The target headless output proved the important corner result:
+`RETAINED WAYPOINT SPEEDS: P1=10.00, P2=10.00 M/S`.
 
-Only failure:
-`truly blocked corner falls back to stop`.
+So the former shallow-corner StopTurnGo defect is no longer present in the authored
+Ruckig waypoint speeds.
 
-Do not treat that as a mechanism regression. The fixture remained collision-safe while
-moving, so the old assertion that it must stop was too strong. The updated test keeps
-the safety invariant and no longer prescribes StopTurnGo.
+That headless run still failed:
+- FINAL_CAPTURE_TIMEOUT;
+- final speed 1.01 m/s;
+- final position error 32.94 m;
+- MAX BODY/VELOCITY ANGLE 178.94 deg.
 
-## New user-requested Test 1 semantics
+## Diagnosis
 
-Default Standard stand should isolate corner quality:
-- start velocity 10 m/s;
-- Standard max speed 10 m/s;
-- finish speed 10 m/s.
+The last program always used `ManeuverPhaseGate::StateCapture`. That is correct only
+for a stopped/parking terminal.
 
-No startup from rest and no terminal stop. Expected experiment:
-```text
-10 m/s -> shallow turn -> bypass leg -> shallow turn -> finish at 10 m/s
-```
+The current stand has finish speed 10 m/s, so its terminal is a fly-through boundary.
+Holding/capturing the final point after the nominal moving trajectory ended caused the
+artificial terminal braking and timeout.
 
-## Moving terminal implementation
+Fix committed:
+- `9b1251e8601172ecd83ba4f656871f92f4669fb4`:
+  moving terminal -> final phase uses `ScheduledMoving`.
 
-New request fields:
-- `hasTerminalVelocity`;
-- `terminalVelocityMps`.
+## User-requested workflow
 
-The runtime no longer rejects non-zero finish speed.
-The Ruckig route no longer unconditionally forces the final waypoint velocity to zero.
+All current maneuver behavior must be watched in the viewer.
 
-Latest unverified candidate commits:
-- `c9a8e381531feee4516cafa436b67809fb2d753d`
-- `9372af939d2406768e530f9e2c02e05389f0df83`
-- `82dc142e5c06f8be8e6c94aec810f16b8b47302f`
-- `75f11481979b83706861bbc98f8b6326341a07e0`
-- `d40e4fdc7cb1048d0f45daf2598788684e49affc`
-- `bc5fbaa284663d7a986e2257b8d71f4a64a610ba`
-- `7f57df3ef4a05d6601d05aa9c94de7121e0d9884`
+Commit:
+- `06513569f7861ac8b6e3104994ec72ffd0d891d1`:
+  `run_stage1_mingw64.sh` no longer auto-runs the headless Stage-2 E2E.
 
-Do not call these target-accepted yet.
+The script still runs static/architecture gates and builds the viewer.
 
-## Target commands
+Do not re-add the headless Stage-2 test to this workflow while current maneuver
+behavior is being iterated visually. The separate E2E test may remain in the project for
+later regression use.
+
+## Exact next commands
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
-
-cmake -S tests/navigation_guidance -B build/tests/navigation_guidance -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/tests/navigation_guidance --target ruckig_route_planner_tests
-ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
-```
-
-Then:
-```bash
-cd /d/__elite/work
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
@@ -92,23 +82,31 @@ cd /d/__elite/work
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Return:
-- HEAD;
-- focused test result;
-- Stage-2 diagnostics including `RETAINED WAYPOINT SPEEDS`;
-- final speed;
-- `MAX BODY/VELOCITY ANGLE`;
-- visual observation/video of yellow actual velocity, cyan actual hull nose and red
-  program target nose.
+Inspect Expert / Standard / Newtonian first.
 
-## Next step after validation
+Legend:
+- yellow thick arrow = actual velocity;
+- cyan short arrow = physical hull nose;
+- red arrow = program target nose;
+- white line = retained route;
+- green line = actual flown trajectory.
 
-If the steady 10 m/s stand passes corners without stop, stop working on corner fallback.
-Move directly to the Newtonian body/thrust semantic defect:
-- translation must not bend as if future body attitude already exists;
-- small course changes should use lead rotation + bounded RCS/main-thrust authority,
-  not unnecessary flip/stop/reorientation;
-- preserve B4 geometry -> B5 physical maneuver -> B6 continuous proof -> B7 doctrine
-  -> B8 accepted program -> Follower.
+Expected:
+- starts at 10 m/s;
+- both shallow corners remain moving;
+- finish is crossed at ~10 m/s;
+- no final capture/braking.
 
-Do not start dynamic obstacle overlay before this.
+## Then
+
+If the fly-through looks correct at corners/final boundary, move directly to the deeper
+Newtonian issue. The previous 178.94-degree body/velocity separation is a serious clue.
+
+Determine whether yellow actual velocity changes before real cyan attitude/RCS/main
+authority can physically support it. Fix that through B5/B6 physical maneuver authoring,
+not viewer tricks or boosted RCS.
+
+Do not start dynamic avoidance yet.
+
+After every state-affecting event, synchronize all mandatory MD files and recreate this
+prompt from scratch again.

@@ -102,7 +102,7 @@ struct AppState
     Camera camera;
     trace::TraceDocument* traceData = nullptr;
     std::string scenarioPath;
-    std::string calculationMessage = "ВЫБЕРИТЕ РЕЖИМЫ И НАЖМИТЕ РАССЧИТАТЬ";
+    std::string calculationMessage = "РАССЧИТАЙТЕ МАРШРУТ ОДИН РАЗ; ПАРАМЕТРЫ ПОЛЁТА ДАЛЬШЕ ПЕРЕСЧИТЫВАЮТСЯ АВТОМАТИЧЕСКИ";
     std::vector<std::string> diagnosticLines;
 
     // Immutable Stage-1 source for every Stage-2 comparison run. Changing
@@ -2479,6 +2479,19 @@ void queueUiAction(
     dispatchViewerAction(state, command);
 }
 
+void queueExecutionRefreshIfReady(
+    AppState& state
+)
+{
+    if (
+        state.calculationSucceeded &&
+        state.hasRetainedRoute &&
+        state.retainedRoute.routePoints.size() >= 2)
+    {
+        queueUiAction(state, UiAction::Execute);
+    }
+}
+
 void syncViewerStateFromRuntimeFrame(
     AppState& state,
     const trace::TraceFrame& frame
@@ -2527,6 +2540,7 @@ void mouseButtonCallback(
             change.controlMode =
                 elite::tools::navigation_runtime::ControlMode::Assisted;
             dispatchViewerAction(*state, change);
+            queueExecutionRefreshIfReady(*state);
         }
         else if (newtonianRect().contains(x, y))
         {
@@ -2535,6 +2549,7 @@ void mouseButtonCallback(
             change.controlMode =
                 elite::tools::navigation_runtime::ControlMode::Newtonian;
             dispatchViewerAction(*state, change);
+            queueExecutionRefreshIfReady(*state);
         }
         else if (expertRect().contains(x, y))
         {
@@ -2543,6 +2558,7 @@ void mouseButtonCallback(
             change.pilot =
                 elite::tools::navigation_runtime::PilotLevel::Expert;
             dispatchViewerAction(*state, change);
+            queueExecutionRefreshIfReady(*state);
         }
         else if (averageRect().contains(x, y))
         {
@@ -2551,6 +2567,7 @@ void mouseButtonCallback(
             change.pilot =
                 elite::tools::navigation_runtime::PilotLevel::Average;
             dispatchViewerAction(*state, change);
+            queueExecutionRefreshIfReady(*state);
         }
         else if (loserRect().contains(x, y))
         {
@@ -2559,6 +2576,7 @@ void mouseButtonCallback(
             change.pilot =
                 elite::tools::navigation_runtime::PilotLevel::Loser;
             dispatchViewerAction(*state, change);
+            queueExecutionRefreshIfReady(*state);
         }
         else if (standardRect().contains(x, y))
         {
@@ -2567,6 +2585,7 @@ void mouseButtonCallback(
             change.flightStyle =
                 elite::tools::navigation_runtime::FlightStyle::Standard;
             dispatchViewerAction(*state, change);
+            queueExecutionRefreshIfReady(*state);
         }
         else if (extremeRect().contains(x, y))
         {
@@ -2575,12 +2594,14 @@ void mouseButtonCallback(
             change.flightStyle =
                 elite::tools::navigation_runtime::FlightStyle::Extreme;
             dispatchViewerAction(*state, change);
+            queueExecutionRefreshIfReady(*state);
         }
         else if (suddenObstacleRect().contains(x, y))
         {
             ViewerAction change;
             change.type = ViewerActionType::ToggleSuddenObstacle;
             dispatchViewerAction(*state, change);
+            queueExecutionRefreshIfReady(*state);
         }
         else if (startSpeedSliderRect().contains(x, y))
         {
@@ -2668,7 +2689,11 @@ void mouseButtonCallback(
         action == GLFW_RELEASE)
     {
         state->scrubbingFrames = false;
+        const bool speedChanged =
+            state->speedSliderDrag != SpeedSliderDrag::None;
         state->speedSliderDrag = SpeedSliderDrag::None;
+        if (speedChanged)
+            queueExecutionRefreshIfReady(*state);
     }
 }
 
@@ -3295,6 +3320,9 @@ void processUiAction(
                         std::string(" | TRACE: ") + e.what();
                 }
             }
+
+            if (result.success)
+                queueUiAction(state, UiAction::Execute);
             break;
         }
         case UiAction::Execute:

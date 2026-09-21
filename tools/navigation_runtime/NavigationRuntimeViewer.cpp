@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <iostream>
 #include <limits>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>

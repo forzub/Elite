@@ -21,6 +21,10 @@ cmake -S "${ROOT_DIR}/tests/navigation_runtime" -B "${TEST_BUILD}" -G Ninja
 cmake --build "${TEST_BUILD}" --target nominal_route_planner_tests
 ctest --test-dir "${TEST_BUILD}" -L navigation_stage1 --output-on-failure
 
+echo "=== Free-transit follower corridor test ==="
+cmake --build "${TEST_BUILD}" --target maneuver_tracking_controller_tests
+ctest --test-dir "${TEST_BUILD}" -R "^maneuver_tracking_controller$" --output-on-failure
+
 echo "=== Two-stage viewer build ==="
 VIEWER_BUILD="${ROOT_DIR}/build/tools/navigation_runtime"
 cmake -S "${ROOT_DIR}/tools/navigation_runtime" -B "${VIEWER_BUILD}" -G Ninja -DCMAKE_BUILD_TYPE=Release

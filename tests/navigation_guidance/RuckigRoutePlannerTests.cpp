@@ -4,6 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -293,7 +294,6 @@ void testDefaultWallDetourKeepsMovingThroughShallowCorners()
     request.vehicle.collisionRadiusMeters = 13.0;
     request.vehicle.maxSpeedMps = 10.0;
     request.vehicle.maxLateralAccelerationMps2 = 2.0;
-    request.initialVelocityMps = glm::dvec3(10.0, 0.0, 0.0);
 
     request.pathPointsMeters = {
         glm::dvec3(0.0, 0.0, 0.0),
@@ -326,8 +326,20 @@ void testDefaultWallDetourKeepsMovingThroughShallowCorners()
             request.pathPointsMeters[3] -
             request.pathPointsMeters[2]
         );
+    const glm::dvec3 firstDirection = glm::normalize(
+        request.pathPointsMeters[1] -
+        request.pathPointsMeters[0]
+    );
+    const glm::dvec3 lastDirection = glm::normalize(
+        request.pathPointsMeters.back() -
+        request.pathPointsMeters[
+            request.pathPointsMeters.size() - 2
+        ]
+    );
+
+    request.initialVelocityMps = firstDirection * 10.0;
     request.hasTerminalVelocity = true;
-    request.terminalVelocityMps = glm::dvec3(10.0, 0.0, 0.0);
+    request.terminalVelocityMps = lastDirection * 10.0;
     request.pointSpeedConstraints.push_back({totalProgress, 10.0});
 
     const auto result = game::navigation::RuckigRoutePlanner::plan(request);
@@ -354,10 +366,17 @@ void testDefaultWallDetourKeepsMovingThroughShallowCorners()
     for (const auto& sample : result.trajectory.samples)
         minimumSpeed = std::min(minimumSpeed, sample.speedMps);
 
-    require(
-        minimumSpeed >= 7.5,
-        "default wall calculated curve contains a major unnecessary braking dip"
-    );
+    if (minimumSpeed < 7.5)
+    {
+        std::ostringstream message;
+        message.setf(std::ios::fixed);
+        message.precision(3);
+        message
+            << "default wall calculated curve contains a major unnecessary braking dip: min_speed="
+            << minimumSpeed
+            << " m/s";
+        require(false, message.str());
+    }
 
     double maximumGuideDeviation = 0.0;
     for (const auto& sample : result.trajectory.samples)

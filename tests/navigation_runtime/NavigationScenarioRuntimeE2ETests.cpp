@@ -246,6 +246,89 @@ void testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()
     );
 }
 
+void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
+{
+#ifdef ELITE_SOURCE_ROOT
+    const std::string scenario =
+        std::string(ELITE_SOURCE_ROOT) +
+        "/tools/navigation_runtime/scenario.json";
+#else
+    const std::string scenario =
+        "tools/navigation_runtime/scenario.json";
+#endif
+
+    ScenarioRunSettings settings;
+    settings.controlMode = ControlMode::Assisted;
+    settings.pilot = PilotLevel::Expert;
+    settings.flightStyle = FlightStyle::Standard;
+    settings.enableSuddenObstacle = false;
+    settings.startSpeedOverrideMps = 20.90;
+    settings.finishSpeedOverrideMps = 20.00;
+
+    const auto planned = calculateScenario(scenario, settings);
+    require(
+        planned.success,
+        "Assisted 20.9->20 physical-braking fixture failed Stage-1 planning"
+    );
+
+    const auto executed =
+        executeCalculatedRoute(scenario, settings, planned.trace);
+
+    printDiagnostics("[E2E-ASSISTED-20] ", executed);
+
+    double maximumPhysicalSpeed = 0.0;
+    for (const auto& frame : executed.trace.frames)
+    {
+        maximumPhysicalSpeed =
+            std::max(
+                maximumPhysicalSpeed,
+                glm::length(frame.shipVelocity)
+            );
+
+        const double mainMagnitude =
+            glm::length(frame.mainEngineAccelerationMps2);
+        if (mainMagnitude > 1.0e-6)
+        {
+            const glm::dvec3 forward =
+                glm::normalize(frame.shipForward);
+            require(
+                glm::dot(
+                    frame.mainEngineAccelerationMps2,
+                    forward
+                ) >= -1.0e-6,
+                "Assisted runtime produced reverse/fore main thrust without rotating the hull"
+            );
+        }
+    }
+
+    require(
+        maximumPhysicalSpeed <= 35.0,
+        "Assisted 20.9->20 execution escaped its physical speed regime"
+    );
+    require(
+        executed.success,
+        "Assisted 20.9->20 did not complete through hull-coupled physical control"
+    );
+
+    const auto& finalFrame = executed.trace.frames.back();
+    const double finalError =
+        glm::length(
+            finalFrame.shipPosition -
+            executed.trace.sceneFinishMapMeters
+        );
+    const double finalSpeed =
+        glm::length(finalFrame.shipVelocity);
+
+    require(
+        finalError <= 5.0,
+        "Assisted 20.9->20 ended outside terminal position tolerance"
+    );
+    require(
+        std::abs(finalSpeed - 20.0) <= 1.5,
+        "Assisted 20.9->20 ended outside terminal speed tolerance"
+    );
+}
+
 void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
 {
 #ifdef ELITE_SOURCE_ROOT
@@ -348,6 +431,7 @@ int main()
         testSpeedAndStyleChangeStaticManeuverReserve();
         testHighSpeedRunReacquiresInsteadOfOutrunningReference();
         testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold();
+        testAssistedHigherSpeedUsesHullCoupledPhysicalBraking();
         testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics();
         std::cout
             << "NAVIGATION RETAINED-ROUTE E2E: PASS\n"
@@ -357,6 +441,7 @@ int main()
             << " - Ruckig parameterizes that retained route\n"
             << " - high-speed follower can hold reference progress and reacquire\n"
             << " - Assisted 10->10 cannot turn reference hold into a speed runaway\n"
+            << " - Assisted 20.9->20 uses aft-only main thrust and physical hull coupling\n"
             << " - route-leg programs cross Follower -> PilotSkill -> physics\n"
             << " - Cobra reaches the authored finish\n";
         return EXIT_SUCCESS;

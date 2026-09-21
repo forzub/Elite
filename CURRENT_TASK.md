@@ -1,57 +1,63 @@
-# CURRENT TASK — validate minimum-cant Newtonian attitude on the clean scalar path
+# CURRENT TASK — validate reducer-synced control law, speed corridor, and actual main-engine indication
 
 **Date:** 2026-09-21  
-**Status:** SCALAR PATH LOOKS MUCH BETTER / EXCESSIVE NEWTONIAN HULL ROTATION ROOT-CAUSED / FIX UNVERIFIED
+**Status:** IMPLEMENTED / TARGET VIEWER VALIDATION REQUIRED
 
-## Latest evidence
+## User-observed issues being addressed
 
-Latest navigation perf for the default wall stand includes:
+1. After switching to EXTREME, the UI could still show ASSISTED while motion looked
+   Newtonian.
+2. Free transit was over-controlling exact 10.0 m/s; a harmless 10.1 m/s deviation could
+   provoke corrective thrust/attitude.
+3. Viewer did not clearly distinguish a physically useful main-engine vectoring turn
+   from an attitude rotation with no aft-main thrust.
+
+## Implemented state architecture
+
+Viewer is now reducer-driven:
 ```text
-legs=1
-guide_points=10
-rounded_corners=2
-min_speed_mps=10.0000
-max_speed_mps=10.0000
-valid=1
+UI click/runtime observation
+ -> ViewerAction
+ -> reduceViewerState(AppState)
+ -> buttons/HUD are projections of AppState
 ```
 
-So the previous dense-waypoint / near-stop problem is no longer the dominant issue.
+Runtime frames publish the effective law. Playback feeds it back into the same store.
+If runtime is NEWTONIAN, the NEWTONIAN button must become selected even if the previous
+user request was ASSISTED.
 
-The uploaded viewer video shows the hull rotating dramatically broadside to the velocity
-vector during the gentle turn.
+Diagnostics:
+- CONTROL LAW REQUESTED
+- CONTROL LAW EFFECTIVE
+- CONTROL LAW SWITCHES
 
-## Root cause
+## Implemented free-transit corridor
 
-`buildReferenceAttitudes()` previously did:
-```cpp
-if (Newtonian && |acceleration| > 0.35)
-    nose = normalize(acceleration);
-```
+Follower no longer treats the route as an exact longitudinal timetable.
 
-At constant speed on a curve, acceleration is centripetal and almost perpendicular to
-velocity. So the code explicitly ordered the broadside rotation.
+Current `FreeTransit` deadbands:
+- STANDARD: speed +/-0.5 m/s, progress +/-12 m;
+- EXTREME: speed +/-1.0 m/s, progress +/-16 m.
 
-This was unnecessary because the same trajectory is already curvature-limited by the
-ship's manoeuvre/RCS acceleration authority.
+Cross-track control remains active. Precision maneuver families are not loosened.
 
-## Candidate fix
+Viewer displays the active speed corridor.
 
-Newtonian attitude is now minimum-cant:
-- keep nose along velocity while RCS can reproduce the requested acceleration;
-- only rotate enough for main-engine participation when the RCS sphere is insufficient;
-- hard braking / high lateral demand may still legitimately require a large rotation.
+## Implemented physical main-engine indicator
 
-Commits:
-- fcffa5bae3b4e3deab5d6f043d3c500137719dad
-- b943064d529935243863c30238ae0daf62f1c129
+Trace frame records actual positive aft-main throttle.
 
-New execution diagnostic:
-```text
-MAX REFERENCE/VELOCITY ANGLE
-```
-This separates planned attitude from actual body tracking.
+Viewer:
+- orange filled rear face = actual aft main engine producing thrust;
+- intensity follows throttle;
+- HUD shows MAIN: N%;
+- RCS alone does not light the rear face.
 
-## Immediate target validation
+## Latest source HEAD before mandatory doc sync
+
+`a60a215fde65505826b9b96c70edf511991da91f`
+
+## Target validation
 
 ```bash
 cd /d/__elite/work
@@ -62,30 +68,28 @@ bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Test Expert / Standard / Newtonian first.
+Run at least:
+1. ASSISTED + STANDARD
+2. ASSISTED + EXTREME
+3. NEWTONIAN + STANDARD
+4. NEWTONIAN + EXTREME
 
-Check:
-- NAV REV visible and current;
-- purple path remains clean;
-- red reference nose should stay much closer to yellow velocity on the gentle turn;
-- cyan physical hull should follow red without large unnecessary broadside rotation;
-- report `MAX REFERENCE/VELOCITY ANGLE` and `MAX BODY/VELOCITY ANGLE`.
+Check each:
+- NAV REV visible;
+- selected control-law button matches actual/effective runtime law;
+- REQUESTED/EFFECTIVE/SWITCHES diagnostics are sensible;
+- speed corridor shown;
+- ~0.1 m/s harmless speed error does not provoke longitudinal correction;
+- orange rear face appears only when main engine is truly active;
+- MAIN:% agrees with rear-face indication.
 
-Then compare Assisted.
-
-## Decision
-
-If reference/velocity angle is small but physical body/velocity angle remains large:
-- the remaining defect is angular tracking / body-axis execution.
-
-If both remain large:
-- revisit minimum-cant allocation or acceleration decomposition.
-
-Do not enable dynamic avoidance yet.
+If EXTREME appears Newtonian while diagnostics say EFFECTIVE=ASSISTED and SWITCHES=0,
+then the visual similarity is in Assisted execution behavior, not a hidden law switch,
+and must be debugged there.
 
 ## Mandatory state protocol
 
-Every iteration:
+Every state-affecting iteration:
 - update CURRENT_STATE.md;
 - update CURRENT_TASK.md;
 - update PROJECT_STATE.md;

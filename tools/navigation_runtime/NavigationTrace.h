@@ -75,6 +75,12 @@ struct TraceDocument
 
     std::vector<glm::dvec3> routePoints;
     std::vector<glm::dvec3> turnPoints;
+
+    // Stage-2 diagnostics: the local guide generated from the retained coarse
+    // route and the full collision-checked Ruckig reference trajectory.
+    std::vector<glm::dvec3> executionGuidePoints;
+    std::vector<glm::dvec3> calculatedTrajectoryPoints;
+
     std::vector<TraceStaticObstacle> staticObstacles;
     std::vector<TraceFrame> frames;
 };

@@ -1505,6 +1505,27 @@ void drawHud(
 
     std::vector<Vertex> ui;
 
+    // Always-visible source stamp. Do not rely only on the native title or the
+    // right diagnostics panel: screenshots may crop either of them.
+    appendFilledRect(
+        ui,
+        {
+            12.0f,
+            92.0f,
+            250.0f,
+            28.0f
+        },
+        {0.02f, 0.025f, 0.035f}
+    );
+    appendUiText(
+        ui,
+        20.0f,
+        99.0f,
+        std::string("NAV REV ") + kViewerRevision,
+        1.35f,
+        {1.0f, 0.82f, 0.28f}
+    );
+
     // Top control bar is independent from the diagnostics panel.
     appendUiText(
         ui, 16.0f, 14.0f,
@@ -2487,19 +2508,6 @@ void drawScene(
         appendCross(markers, toVec3(p), 3.0f, {1.0f, 0.65f, 0.15f});
     renderer.draw(GL_LINES, markers, 2.0f);
 
-    std::vector<Vertex> guideMarkers;
-    for (std::size_t i = 1;
-         i + 1 < data.executionGuidePoints.size();
-         ++i)
-    {
-        appendCross(
-            guideMarkers,
-            toVec3(data.executionGuidePoints[i]),
-            1.8f,
-            {0.20f, 0.72f, 1.0f}
-        );
-    }
-    renderer.draw(GL_LINES, guideMarkers, 1.5f);
 
     std::vector<glm::dvec3> actualPath;
     actualPath.reserve(frameIndex + 1);

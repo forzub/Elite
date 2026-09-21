@@ -1358,12 +1358,9 @@ Program makeProgramPhase(
     std::size_t last,
     std::uint64_t revision,
     const Scenario& scenario,
-    const ShipParams& params,
-    FlightStyle flightStyle
+    const ShipParams& params
 )
 {
-    (void)flightStyle;
-
     Program program;
     program.valid = true;
     program.revision = revision;
@@ -1572,8 +1569,7 @@ std::vector<Program> buildRoutePrograms(
     const std::vector<ReferenceAttitude>& attitudes,
     const std::vector<glm::dvec3>& retainedRoute,
     const Scenario& scenario,
-    const ShipParams& params,
-    FlightStyle flightStyle
+    const ShipParams& params
 )
 {
     std::vector<Program> programs;
@@ -1616,8 +1612,7 @@ std::vector<Program> buildRoutePrograms(
                 last,
                 revision++,
                 scenario,
-                params,
-                flightStyle
+                params
             );
 
         if (!phase.valid || phase.sampleCount < 2)
@@ -2447,8 +2442,7 @@ ScenarioRunResult executeCalculatedRoute(
                 attitudes,
                 calculatedRoute.routePoints,
                 scenario,
-                params,
-                settings.flightStyle
+                params
             );
 
         if (programs.empty())

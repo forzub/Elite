@@ -8037,3 +8037,166 @@ Next evidence should include:
 
 Do not guess the remaining flip root cause from `navigation_perf.log`; use the new
 execution telemetry.
+
+
+## 2026-09-22 — control-chain audit, automatic Stage-2 refresh, speed-override validity, and somersault root cause
+
+User raised two architectural/UX questions:
+1. Who is actually controlling the ship during motion, versus merely animating a material point?
+2. Do pilot/control-law/style/speed changes require another explicit Calculate press?
+
+User also supplied `last_execution_telemetry.log`, which finally gives physical
+attitude/propulsion evidence for the remaining hull somersault.
+
+### Actual runtime control chain
+
+The current Stage-2 execution is not a kinematic playback. The mutable ship state is a
+real `ShipTransform` + `DynamicMotionState`, and the control chain is:
+
+```text
+AcceptedManeuverProgram
+ -> ManeuverProgramSampler
+ -> TrajectoryFollower
+ -> ManeuverTrackingController
+ -> NavigationSystemControlIntent
+ -> NavigationRuntimeControlBridge
+ -> PilotSkillExecutor
+ -> ShipControlState navigation acceleration demands
+ -> SharedShipPhysics / ShipController (angular)
+ -> DynamicMotionSystem (main-engine + manoeuvre/RCS allocation and translation)
+ -> ShipTransform / DynamicMotionState
+```
+
+So there is a concrete autopilot/controller pulling the virtual controls. Pilot skill
+changes the delivered command through `PilotSkillExecutor`; body angular rates are
+bounded by the actual ship parameters; translational demand is physically split into
+main-engine and manoeuvre/RCS channels according to the active control law.
+
+However, the user's concern is partly correct at the *authoring* level: the current
+Stage-2 still starts from a kinematically-authored trajectory and then derives an
+attitude/reference program around it. Full B5/B6 body/thrust-coupled maneuver authoring
+is still not complete. The lower execution is physical; the accepted program is not yet
+the final unified physical maneuver compiler/proof architecture.
+
+### Telemetry proves the current somersault is an angular-control runaway
+
+The uploaded telemetry shows:
+- early flight: actual body basis equals reference basis, angular rate is zero, and
+  both main/RCS translation channels are quiet;
+- near the first turn, body and reference briefly become nearly coincident while the
+  physical pitch rate is already about +0.75 rad/s;
+- after that, the reference settles back toward the route tangent but pitch rate keeps
+  increasing/saturating around +1.57 rad/s, so the physical body continues rotating
+  *away* from the stable reference;
+- during much of that runaway the main engine is OFF; manoeuvre acceleration is
+  translational RCS, not evidence that the main engine needed the flip;
+- a second runaway later reaches nearly 179 degrees body-vs-velocity/reference with the
+  main engine still OFF, and main thrust starts only after the hull is already nearly
+  inverted.
+
+Therefore the main engine is not requesting the somersault. The angular command loop is.
+
+### Root cause in the current accepted-program representation
+
+`AcceptedManeuverProgram` is capped at 16 samples per phase. The runtime previously:
+1. differentiated the dense reference attitude to angular velocity and angular
+   acceleration;
+2. downsampled those values into at most 16 program samples;
+3. linearly interpolated `angularAccelerationFeedForwardMapRadPerSec2` between the
+   sparse samples;
+4. added that feed-forward directly to angular tracking feedback.
+
+This can smear a short angular-acceleration pulse over a long interval. The result
+matches the telemetry: the reference basis has already passed the desired orientation,
+but positive angular acceleration/feed-forward can keep winding up the ship.
+
+Additionally, the follower previously clamped only the angular *feedback reserve*, then
+added angular feed-forward without a final clamp against the accepted physical angular
+capability.
+
+Candidate fixes:
+- `018fd2c08874cb426a9d3fc8340c85ffb4539bad`
+  - FreeTransit no longer publishes sparsely-sampled angular-acceleration feed-forward;
+    body attitude is tracked using reference basis + reference angular velocity +
+    closed-loop feedback.
+  - explicit START/FINISH speed overrides expand the Stage-2 speed envelope so 5..50
+    m/s slider values do not fail `validRequest()` merely because STANDARD nominal
+    speed is 10 or EXTREME nominal speed is 18.
+- `e8369c0fa21cc59f0429741540dd4903f7f556e8`
+  - total follower angular acceleration demand is clamped to the accepted physical
+    angular-acceleration capability after feed-forward + feedback composition.
+
+These fixes are not target-validated yet.
+
+### Automatic execution refresh after UI changes
+
+The old UX did require a separate Stage-2 Execute after changing execution settings,
+and the viewer could therefore continue showing the previous trace. That created the
+correct impression that buttons/sliders did nothing until another explicit action.
+
+New behavior:
+- one initial `Calculate` obtains/retains Stage-1 static route and immediately queues
+  Stage-2 execution;
+- after a retained route exists, changing:
+  - Assisted/Newtonian;
+  - pilot skill;
+  - Standard/Extreme;
+  - sudden-obstacle toggle
+  automatically queues a fresh Stage-2 execution;
+- START/FINISH speed sliders queue one fresh Stage-2 execution on mouse release rather
+  than once per dragged pixel;
+- these execution-only changes do not re-run the static Planner.
+
+Commit:
+- `7a164a65292a47e41c19a01bdcb3f55b93d0110d`.
+
+Therefore the intended UX is now:
+```text
+Calculate once for static route
+ -> change any flight/execution setting
+ -> Stage-2 recalculates automatically
+ -> viewer plays the new trace
+```
+
+A new Stage-1 Calculate is only needed when static route facts/goal/world geometry change.
+
+### Full control-chain telemetry
+
+To answer "who pulled which lever" rather than infer it from hull motion, trace frames
+now also store:
+- Follower ideal linear acceleration command;
+- Follower ideal angular acceleration command;
+- PilotSkillExecutor executed linear acceleration command;
+- PilotSkillExecutor executed angular acceleration command.
+
+These are written to JSON and to `last_execution_telemetry.log` as:
+- `ideal_lin_cmd`
+- `ideal_ang_cmd`
+- `exec_lin_cmd`
+- `exec_ang_cmd`
+
+Then the same line shows the downstream physical allocation:
+- `main_a`
+- `rcs_a`
+- `engine_a`
+- actual `pyr_rate`
+- actual/reference body basis.
+
+Commits:
+- `a2ece66294ab0a8aa3c4258257dbcdbe0c72b086`;
+- `4343b7d5289fca95e6989f3e7d21f691723361bc`;
+- `9efe6934aa3f8141604e81e714319126a83afa6a`.
+
+This makes the next target run able to distinguish:
+```text
+program/reference
+ -> follower ideal command
+ -> pilot-executed command
+ -> physical allocator
+ -> actual body/velocity
+```
+
+### Validation status
+
+All changes in this section are committed but not yet target-MinGW64 validated.
+Do not claim PASS until the user rebuilds/runs the viewer and returns the new telemetry.

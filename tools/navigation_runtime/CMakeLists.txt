@@ -18,6 +18,17 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_path(GLM_INCLUDE_DIR glm/glm.hpp REQUIRED)
 
+execute_process(
+    COMMAND git rev-parse --short=12 HEAD
+    WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+    OUTPUT_VARIABLE ELITE_NAV_VIEWER_REVISION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT ELITE_NAV_VIEWER_REVISION)
+    set(ELITE_NAV_VIEWER_REVISION "unknown")
+endif()
+
 include("${ELITE_SOURCE_ROOT}/cmake/EliteRuckigNavigation.cmake")
 elite_add_ruckig_navigation(
     EliteNavigationRuckig
@@ -142,7 +153,9 @@ target_include_directories(
 
 target_compile_definitions(
     navigation_runtime_viewer
-    PRIVATE ELITE_SOURCE_ROOT="${ELITE_SOURCE_ROOT}"
+    PRIVATE
+        ELITE_SOURCE_ROOT="${ELITE_SOURCE_ROOT}"
+        ELITE_NAV_VIEWER_REVISION="${ELITE_NAV_VIEWER_REVISION}"
 )
 
 target_link_libraries(

@@ -1722,3 +1722,127 @@ Commits:
   `MAX BODY/VELOCITY ANGLE`.
 
 This candidate is not target MinGW64 validated yet.
+
+
+## 2026-09-21 — viewer state authority, free-transit corridors, and main-engine visualization
+
+User feedback after the minimum-cant Newtonian fix:
+- visual behavior is now substantially better;
+- UI appeared to disagree with actual control law after changing flight style
+  (ASSISTED button still selected while motion looked Newtonian);
+- exact 10.0 m/s tracking is undesirable for ordinary free transit: harmless
+  ~10.1 m/s overshoot must not provoke a body rotation/braking manoeuvre;
+- requested a visible indication of when the aft main engine is actually producing
+  thrust.
+
+Latest uploaded perf evidence remains healthy for the geometric/timing layer: the
+steady wall cases at the tail of the log are one scalar Ruckig solve with
+`min_speed_mps=10.0000` and `max_speed_mps=10.0000`. Therefore these changes belong
+to execution/UI semantics, not the path generator.
+
+### Redux-style viewer state
+
+The native C++/GLFW viewer now uses one reducer-driven authoritative store:
+- one `AppState`;
+- explicit `ViewerActionType` actions;
+- `reduceViewerState()`;
+- all mode/pilot/style button clicks dispatch actions rather than directly mutating
+  independent widget booleans;
+- runtime control-law observations also dispatch into the same reducer.
+
+This is intentionally Redux-style architecture, not the JavaScript Redux library.
+
+Runtime truth is recorded in every execution frame:
+- `hasRuntimeControlLaw`;
+- `runtimeControlLaw`.
+
+During playback the current frame is observed and, if a lower layer has actually changed
+the law, the reducer updates `state.controlMode`. The ASSISTED/NEWTONIAN buttons are
+therefore projections of the effective runtime state, not merely the last click.
+
+Execution diagnostics now distinguish:
+- `CONTROL LAW REQUESTED`;
+- `CONTROL LAW EFFECTIVE`;
+- `CONTROL LAW SWITCHES`.
+
+The trace's textual law label is kept synchronized with reducer state, and effective-law
+labels are localized in the viewer.
+
+Relevant commits:
+- `b503c3e35a9b8c2b0333b026b9251d6075a1afe2`;
+- `1d17f9d208f9ef77a3dc8ac09753202aba7cd4c4`;
+- `eedad40169c00509e01015f1a1777bd67f29965f`;
+- `a60a215fde65505826b9b96c70edf511991da91f`.
+
+### Free-transit speed/progress corridors
+
+`AcceptedManeuverProgram::TrackingEnvelope` now has:
+- `alongTrackSpeedDeadbandMps`;
+- `alongTrackPositionDeadbandMeters`.
+
+For `FreeTransit`, Follower decomposes position and velocity error into:
+- cross-track components: still controlled normally;
+- along-track components: ignored inside the configured corridor and corrected only
+  by the excess outside it.
+
+Current doctrine:
+- STANDARD speed corridor: reference +/- 0.5 m/s;
+- EXTREME speed corridor: reference +/- 1.0 m/s;
+- STANDARD progress corridor: +/- 12 m;
+- EXTREME progress corridor: +/- 16 m.
+
+Thus a 10.1 m/s actual speed on a 10.0 m/s reference creates zero longitudinal speed
+feedback in both styles. The vehicle is not required to chase exact schedule position
+inside the progress corridor either.
+
+This is deliberately limited to `FreeTransit`; precision docking/capture maneuvers keep
+their stricter semantics.
+
+The active speed corridor is persisted in trace frames and displayed in the viewer HUD
+as e.g. `КОРИДОР V: 9.5 .. 10.5 М/С`.
+
+Relevant commits:
+- `92d65f86fe22ec1d0a404f952a0ebd0eb4935fb3`;
+- `a171510889a2d235896e6ad567011c2b651ee3b7`;
+- `023861170299dc7321975f2e73173af4b2547ca8`;
+- `ad053356ada03d5212185b7d49d0b6aeb017ed6a`;
+- `0b2e48b66744662e783b52b135ef26a714f43fb5`;
+- `7a663da3b7f6bc8a92daa9433daeef40a10d41c9`;
+- `3cadb29a840643524f2edafba3abb0b9091d795c`;
+- `9e27bcd2392e7c18c36354374df33ab04882045f`;
+- `3845b50910310494b394ec00820c86cc97b96aff`;
+- `5299809e37f0a5061d56f066240619d56c6f27b4`.
+
+### Aft-main-engine visualization
+
+Each execution frame now records `mainEngineThrottle01` from the **actual physical**
+`motion.mainEngineAccelerationMps2`, projected onto the current physical hull forward
+axis and normalized by main-engine authority.
+
+Viewer behavior:
+- rear face of the diagnostic ship is filled orange only for positive aft-main thrust;
+- intensity/alpha scale with actual main-engine throttle;
+- HUD also shows `MAIN: N%`;
+- RCS/manoeuvre-thruster acceleration does not light the rear face.
+
+This directly answers whether a hull rotation was physically useful for main-engine
+vectoring or was merely an attitude command with no aft-main thrust.
+
+Relevant commits:
+- `245bcc627fef5e0f79ad3e00e4b998c31e04b8db`;
+- `2de51af96a3d9156fe7f3b5cb94a9f33d9f0e015`;
+- `cbb58b16a7a15803cc8e56618d639916d748a53e`;
+- `089d905f3207fa48afe3bba70935ce9413b145f6`;
+- `163bee3c58443a5d0d6b4ad092ae7e6f970feef1`;
+- `2e8692b68c670275e7f96654c4a990c473b885a9`.
+
+### Validation state
+
+These latest execution/UI changes are committed but are not yet user target-validated.
+The next target viewer pass must explicitly compare STANDARD/EXTREME and
+ASSISTED/NEWTONIAN while watching:
+- effective button selection;
+- `CONTROL LAW REQUESTED/EFFECTIVE/SWITCHES`;
+- speed corridor text;
+- `MAIN:%`;
+- orange rear face.

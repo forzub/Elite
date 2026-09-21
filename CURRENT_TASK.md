@@ -1,74 +1,69 @@
-# CURRENT TASK — Target-validate Assisted recovery and sparse attitude program
+# CURRENT TASK — Validate hull-coupled Assisted braking at higher speed
 
 Date: 2026-09-22
 
-Status: **CODE + REGRESSIONS READY / TARGET MINGW64 VALIDATION REQUIRED**
+Status: **CODE CANDIDATE READY / TARGET VALIDATION REQUIRED**
 
-Code candidate before documentation commits:
+Code baseline before documentation commits:
 
 ```text
-13ef6bd731ef6d8e78c75c72bf7a59f524b30bcb
+b833eddb7bd04b5c025b2be0fd8334c33f8824e6
 ```
 
-## Reproduced failure
+## Fresh reproduced failure
 
 ```text
 ASSISTED / EXPERT / STANDARD
-10.00 -> 10.00 m/s
+START 20.90 m/s
+FINISH 20.00 m/s
 
-Ruckig max speed          11.71 m/s
-final physical speed     100.64 m/s
-final position error     2411.14 m
-reference clock hold     47.70 s
-max body/velocity angle  179.99 deg
-physical terminal state  MISSED
+Ruckig max speed          20.90 m/s
+program phases complete   NO
+physical terminal state   MISSED
+final position error      175.20 m
+final speed               7.45 m/s
+max body/velocity angle   180 deg
+reference clock hold      40.70 s
 ```
 
-The route/speed profile did not request 100 m/s. The execution loop ran away.
+The exponential speed runaway is fixed.
 
-## Two coupled root causes
+## Root cause now
 
-1. **Frozen moving-reference derivatives**
-   - reference time paused on envelope violation;
-   - the fixed sample kept its non-zero linear feed-forward and angular-rate
-     derivative;
-   - bounded recovery feedback could not cancel an indefinitely replayed
-     moving-sample command.
+The runtime still had an old Assisted-only propulsion shortcut:
 
-2. **Dense -> sparse attitude-rate alias**
-   - FreeTransit keeps <=16 accepted samples;
-   - old code copied an instantaneous angular velocity from a dense source
-     sample into each sparse sample;
-   - B9 interpolated that isolated rate across a long sparse interval, so the
-     commanded angular rate could be much larger than the actual sparse basis
-     motion.
+```text
+negative longitudinal demand
+    -> symmetric "fore main" thrust
+```
 
-## Candidate behavior
+So the point-mass velocity could slow, stop and reverse without a hull flip.
+The body remained aligned to the route reference, while velocity crossed through
+90 degrees and eventually became almost exactly backwards.
 
-B10:
-- inside envelope: accepted moving reference is authoritative;
-- outside envelope: zero moving-sample A_ff/alpha_ff, damp actual hull rate,
-  bounded feedback only;
-- resume the moving reference after reacquisition.
+This is precisely the visual/physics disconnect the current gate must remove.
 
-FreeTransit authoring:
-- sparse attitude bases remain authoritative;
-- interior angular velocity is re-derived from neighboring sparse bases/times;
-- first/last sparse angular velocity = 0;
-- sparse angular acceleration feed-forward = 0;
-- angular velocity is capability-clamped.
+## Candidate correction
 
-Viewer:
-- F / ВПИСАТЬ fits authored/accepted scene geometry, not the complete runaway
-  execution history.
+1. `DynamicMotionSystem::applySystemAccelerationDemand`
+   - aft main only for BOTH control laws;
+   - reverse demand gets only real bounded RCS until hull orientation allows
+     aft main contribution.
 
-## Pinned regressions
+2. `buildReferenceAttitudes`
+   - Assisted no longer blindly points the nose along velocity;
+   - both laws use the physical acceleration vector + RCS authority to decide
+     whether the hull must cant/flip for main-engine participation.
 
-- `testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()`
-- `testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()`
-- existing Newtonian high-speed reacquisition: 26.15 -> 11.75 m/s.
+3. Regression
+   - exact Assisted / Expert / Standard 20.90 -> 20.00 run;
+   - execution must complete physically;
+   - physical max speed <= 35 m/s;
+   - every non-zero main acceleration must have non-negative projection on hull
+     forward;
+   - final error <= 5 m and final speed within 1.5 m/s.
 
-## Run now
+## Run next
 
 ```bash
 cd /d/__elite/work
@@ -77,32 +72,25 @@ git rev-parse HEAD
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
-Then:
+Then viewer:
 
 ```bash
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-First interactive gate:
+First reproduce exactly:
+`ASSISTED / EXPERT / STANDARD, 20.90 -> 20.00 m/s`.
 
-```text
-ASSISTED / EXPERT / STANDARD
-10.00 -> 10.00 m/s
-```
+Watch specifically:
+- hull must visibly rotate when substantial braking requires main thrust;
+- without sufficient alignment, main engine must not magically brake backwards;
+- with hull rotated but main off, velocity must coast except for bounded RCS;
+- no velocity reversal caused by hidden fore thrust;
+- loop/turn must emerge from actual thrust + attitude, not a point-mass curve.
 
-Acceptance:
-- no speed runaway;
-- no persistent hull tumbling;
-- recovery may pause reference progress but must converge;
-- PROGRAM PHASES COMPLETE: YES;
-- PHYSICAL TERMINAL STATE: REACHED;
-- final position error <= 5 m;
-- final speed within terminal tolerance;
-- no coarse static contact;
-- F / ВПИСАТЬ remains usable even for a failed run.
+If this still fails, next layer is the deeper one already implied by the
+architecture: Ruckig point-mass trajectory timing must include finite
+lead-rotation time before a main-engine-dominant acceleration segment.
 
-Then re-run:
-`NEWTONIAN / EXPERT / STANDARD, 26.15 -> 11.75 m/s`.
-
-Do not widen tolerances or alter route geometry to make this pass.
 Do not enable dynamic avoidance yet.
+Do not hide failure by widening envelopes/tolerances.

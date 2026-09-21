@@ -1773,7 +1773,7 @@ void drawHud(
         );
     const float legendY =
         std::max(
-            panelTop + 540.0f,
+            panelTop + 360.0f,
             static_cast<float>(windowHeight) - legendHeight - 54.0f
         );
 

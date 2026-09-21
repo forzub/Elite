@@ -1170,10 +1170,20 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
         std::max(0.0, scenario.routeEnvelopeRadiusMeters);
     profile.preferredClearanceMeters =
         std::max(0.0, scenario.routeClearanceMeters);
-    profile.maxSpeedMps =
+    const double styleSpeedMps =
         settings.flightStyle == FlightStyle::Extreme
             ? scenario.extremeSpeedMps
             : scenario.standardSpeedMps;
+
+    // START/FINISH sliders are explicit execution-boundary requests. They may
+    // intentionally exceed the nominal style cruise speed for diagnostics, so
+    // they must expand the trajectory envelope instead of being rejected by
+    // validRequest() as an impossible terminal state.
+    profile.maxSpeedMps = std::max({
+        styleSpeedMps,
+        effectiveStartSpeedMps(scenario, settings),
+        effectiveFinishSpeedMps(scenario, settings)
+    });
 
     const double mainAcceleration =
         std::max(
@@ -1371,8 +1381,16 @@ Program makeProgramPhase(
         target.upMap = attitude.basis.up;
         target.angularVelocityMapRadPerSecond =
             attitude.angularVelocity;
+
+        // FreeTransit programs are intentionally bounded to only 16 samples.
+        // A differentiated attitude acceleration spike from the dense source
+        // trajectory must not be sparsely sampled and then linearly smeared
+        // across a long interval: that can keep commanding angular acceleration
+        // after the reference basis itself is already straight. Use reference
+        // attitude + angular velocity tracking here; physical alpha is produced
+        // by the closed-loop controller.
         target.angularAccelerationFeedForwardMapRadPerSec2 =
-            attitude.angularAcceleration;
+            glm::dvec3(0.0);
     }
 
     const double duration =

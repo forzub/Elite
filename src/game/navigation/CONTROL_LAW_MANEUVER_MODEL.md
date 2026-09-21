@@ -93,6 +93,19 @@ Navigation may request slow approach, forward turn, roll to fit, go-around, assi
 
 Assisted control is not permission to invent thrust; all linear/angular authority remains physical.
 
+For the current Cobra-class propulsion model this additionally means:
+
+~~~text
+main engine = aft-only in BOTH control laws
+negative longitudinal acceleration demand != hidden fore main engine
+if bounded RCS cannot supply the requested braking vector:
+    rotate hull until aft main can contribute
+    then burn
+~~~
+
+The difference between Assisted and Newtonian is therefore controller doctrine
+and velocity/attitude coupling, not a different imaginary propulsion set.
+
 ### Newtonian
 
 ~~~text

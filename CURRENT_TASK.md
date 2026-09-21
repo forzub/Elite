@@ -1,97 +1,99 @@
-# CURRENT TASK — validate steady 10 m/s corner fly-through, then fix Newtonian body/thrust semantics
+# CURRENT TASK — inspect steady 10 m/s fly-through in viewer, then fix Newtonian body/thrust semantics
 
 **Date:** 2026-09-21  
-**Status:** FOCUSED CORNER FIX SHOWS DEFAULT-WALL PASS / MOVING TERMINAL CANDIDATE UNVERIFIED
+**Status:** CORNER SPEED FIX CONFIRMED IN TARGET OUTPUT / FINAL-CAPTURE BUG FIXED / VIEWER-FIRST
 
 ## Latest target evidence
 
-Focused Ruckig target gate returned 7/8.
+The current default retained route is:
+```text
+(0,0,0)
+ -> (110,-27,0)
+ -> (190,-27,0)
+ -> (300,0,0)
+length 306.53 m
+```
 
-PASS:
-- straight route uses Ruckig;
-- diagonal stopped leg stays on coarse chord;
-- clear corner keeps through velocity;
-- blocked wide blend shrinks before stop;
-- **default wall shallow corners stay moving**;
-- initial acceleration is preserved;
-- impossible braking is rejected.
+Target output confirms:
+- start speed = 10 m/s;
+- `RETAINED WAYPOINT SPEEDS: P1=10.00, P2=10.00 M/S`;
+- no coarse static contact;
+- Ruckig generated the trajectory.
 
-The only failure was the synthetic test requiring a tight-corner fixture to force a
-full stop. That is not a valid invariant: if a continuous passage is collision-free,
-the solver should be allowed to keep moving. The test now checks swept safety instead
-of prescribing zero speed.
+The headless run then failed with:
+- `FINAL_CAPTURE_TIMEOUT`;
+- final speed 1.01 m/s;
+- final position error 32.94 m;
+- max body/velocity angle 178.94 deg.
 
-## User-requested Test 1 change
+## Root cause of that failure
 
-Make the default Standard visual stand a steady transit:
-- start velocity = 10 m/s;
-- Standard max speed = 10 m/s;
-- finish speed = 10 m/s.
+The final phase was always `StateCapture`.
 
-This removes startup and terminal braking from the experiment. The ship should enter,
-negotiate both shallow corners, and cross the finish while still moving at 10 m/s.
+That is wrong for a moving finish. A 10 m/s terminal is a fly-through boundary, not a
+parking target. Continuing to capture one fixed endpoint after the trajectory horizon
+artificially brakes the ship and eventually times out.
 
-## Required backend change
+Fix:
+- `9b1251e8601172ecd83ba4f656871f92f4669fb4`:
+  final phase is `ScheduledMoving` whenever authored finish speed is non-zero.
 
-Non-zero terminal velocity used to be impossible because:
-1. runtime rejected non-zero finish speed;
-2. Ruckig route forcibly overwrote final waypoint velocity with zero.
+## Viewer-first workflow
 
-Now `TrajectoryGenerationRequest` has:
-- `hasTerminalVelocity`;
-- `terminalVelocityMps`.
+Per user request, current maneuver quality is evaluated in the interactive viewer.
 
-Runtime authors the exact terminal velocity from finish forward * finish speed.
-Ruckig honors it. Point speed constraints remain route speed limits.
+`run_stage1_mingw64.sh` now:
+- runs static/architecture checks;
+- builds the viewer;
+- does **not** auto-run the headless Stage-2 E2E.
 
-Candidate commits:
-- c9a8e381531feee4516cafa436b67809fb2d753d
-- 9372af939d2406768e530f9e2c02e05389f0df83
-- 82dc142e5c06f8be8e6c94aec810f16b8b47302f
-- 75f11481979b83706861bbc98f8b6326341a07e0
-- d40e4fdc7cb1048d0f45daf2598788684e49affc
-- bc5fbaa284663d7a986e2257b8d71f4a64a610ba
-- 7f57df3ef4a05d6601d05aa9c94de7121e0d9884
+Commit:
+- `06513569f7861ac8b6e3104994ec72ffd0d891d1`.
 
-## Immediate gate
+The headless E2E remains available separately and will be restored as a required
+regression after moving-terminal semantics and body/thrust authoring stabilize.
+
+## Immediate next action
 
 Run:
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
-
-cmake -S tests/navigation_guidance -B build/tests/navigation_guidance -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/tests/navigation_guidance --target ruckig_route_planner_tests
-ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
-```
-
-Then:
-```bash
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
-Then launch:
+Then inspect the entire maneuver in:
 ```bash
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Collect:
-- HEAD;
-- focused Ruckig 8/8 or exact failure;
-- Stage-2 `RETAINED WAYPOINT SPEEDS`;
-- final speed;
-- `MAX BODY/VELOCITY ANGLE`;
-- visual relation between yellow actual V, cyan actual nose, red target nose.
+Watch:
+- yellow = actual velocity vector;
+- cyan = actual physical hull nose;
+- red = program/Follower target nose;
+- white = retained geometric route;
+- green = actual path.
 
-## Next architecture step after this gate
+Expected stand behavior:
+- start already at 10 m/s;
+- no stop at either shallow corner;
+- no artificial braking at finish;
+- cross finish at ~10 m/s.
 
-Do not move to dynamic avoidance yet.
+## After visual confirmation
 
-Once StopTurnGo and start/finish transients are removed from the stand, fix the deeper
-Newtonian issue: translational P/V/A must not assume future hull attitude. The accepted
-maneuver must be body/thrust-aware before Follower execution and must preserve the
-B4 -> B5 -> B6 -> B7 -> B8 -> B9/B10 ownership chain.
+The next real mechanism task is Newtonian body/thrust-aware maneuver authoring.
+
+The target output already showed `MAX BODY/VELOCITY ANGLE: 178.94 DEG`, so even after
+removing StopTurnGo there is still a serious semantics issue to inspect. Translation
+must not behave as if future hull attitude already exists.
+
+Preserve:
+B4 geometry -> B5 physical maneuver -> B6 continuous proof -> B7 doctrine ->
+B8 AcceptedManeuverProgram -> B9/B10 Follower/Pilot execution.
+
+Do not start dynamic obstacle avoidance yet.
 
 ## Mandatory state protocol
 

@@ -54,6 +54,46 @@ struct RuckigTrajectoryResult
 };
 
 /*
+    One-dimensional jerk-limited path-progress solve.
+
+    This is deliberately separate from the 3-D state-to-state solver. A
+    geometric path p(s) owns spatial shape; Ruckig owns only the scalar progress
+    s(t). This is the correct seam for following an already collision-free
+    curved route without turning every geometric sample into a 3-D target state.
+*/
+struct RuckigProgressRequest
+{
+    double startProgressMeters = 0.0;
+    double startSpeedMps = 0.0;
+    double startAccelerationMps2 = 0.0;
+
+    double targetProgressMeters = 0.0;
+    double targetSpeedMps = 0.0;
+    double targetAccelerationMps2 = 0.0;
+
+    double maxSpeedMps = 0.0;
+    double maxAccelerationMps2 = 0.0;
+    double maxJerkMps3 = 0.0;
+    double sampleIntervalSeconds = 0.02;
+};
+
+struct RuckigProgressSample
+{
+    double timeOffsetSeconds = 0.0;
+    double progressMeters = 0.0;
+    double speedMps = 0.0;
+    double accelerationMps2 = 0.0;
+};
+
+struct RuckigProgressResult
+{
+    bool ready = false;
+    std::string message;
+    double durationSeconds = 0.0;
+    std::vector<RuckigProgressSample> samples;
+};
+
+/*
     Thin offline Ruckig adapter used for local state-to-state manoeuvres.
 
     It solves in an accelerating co-moving frame to avoid orbital-scale world
@@ -68,6 +108,10 @@ class RuckigTrajectorySolver
 public:
     static RuckigTrajectoryResult solve(
         const RuckigTrajectoryRequest& request
+    );
+
+    static RuckigProgressResult solveProgress(
+        const RuckigProgressRequest& request
     );
 };
 

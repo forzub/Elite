@@ -1,85 +1,61 @@
-# CURRENT TASK — validate continuous shallow-corner passage, then fix Newtonian maneuver semantics
+# CURRENT TASK — validate steady 10 m/s corner fly-through, then fix Newtonian body/thrust semantics
 
 **Date:** 2026-09-21  
-**Status:** ADAPTIVE THROUGH-CORNER CANDIDATE COMMITTED / TARGET VALIDATION REQUIRED
+**Status:** FOCUSED CORNER FIX SHOWS DEFAULT-WALL PASS / MOVING TERMINAL CANDIDATE UNVERIFIED
 
-## Current evidence
+## Latest target evidence
 
-The nearest-face nominal route is now visually/logically acceptable, but the user's
-latest run still stops at both shallow intermediate points.
+Focused Ruckig target gate returned 7/8.
 
-The supplied performance log confirms the previous candidate still ended with
-`blended_waypoints=0` for the four-point / one-obstacle viewer route. Therefore the
-stops are authored upstream by Ruckig waypoint handling, not caused by Follower losing
-an otherwise continuous reference.
+PASS:
+- straight route uses Ruckig;
+- diagonal stopped leg stays on coarse chord;
+- clear corner keeps through velocity;
+- blocked wide blend shrinks before stop;
+- **default wall shallow corners stay moving**;
+- initial acceleration is preserved;
+- impossible braking is rejected.
 
-## Candidate now committed
+The only failure was the synthetic test requiring a tight-corner fixture to force a
+full stop. That is not a valid invariant: if a continuous passage is collision-free,
+the solver should be allowed to keep moving. The test now checks swept safety instead
+of prescribing zero speed.
 
-### Corner execution
+## User-requested Test 1 change
 
-`d2205f50259fdef05a6515fec3822055891c47d5`
-- replace the single fixed 25%-leg corner-cut safety test with adaptive blend-distance
-  search;
-- keep the widest collision-clear local blend;
-- if an actual Ruckig leg fails, reduce through-speed progressively before zeroing it.
+Make the default Standard visual stand a steady transit:
+- start velocity = 10 m/s;
+- Standard max speed = 10 m/s;
+- finish speed = 10 m/s.
 
-`641e6ef6aeb79d4dddcf58ce7601448723f79b9a`
-- remove the arbitrary 65% max-speed corner cap;
-- physical curvature/lateral authority and real speed constraints now limit speed.
+This removes startup and terminal braking from the experiment. The ship should enter,
+negotiate both shallow corners, and cross the finish while still moving at 10 m/s.
 
-`20aef47942c675ae59b04c288b2ae4b3cb6de5e6`
-- test wide-blend-blocked/tight-blend-safe -> keep moving;
-- test truly blocked minimum blend -> stop allowed;
-- test default wall shallow corners -> both must retain nonzero speed.
+## Required backend change
 
-The white retained route remains a coarse geometric/topological polyline. It is not a
-literal instruction to stop and pivot at each vertex. The intended Stage-2 output is a
-continuous Ruckig execution trajectory through that intent.
+Non-zero terminal velocity used to be impossible because:
+1. runtime rejected non-zero finish speed;
+2. Ruckig route forcibly overwrote final waypoint velocity with zero.
 
-If this is still too tight, add an execution/maneuver reserve that moves the corner
-support farther from the obstacle. A slightly longer route is preferable to a fake stop.
+Now `TrajectoryGenerationRequest` has:
+- `hasTerminalVelocity`;
+- `terminalVelocityMps`.
 
-### Viewer
+Runtime authors the exact terminal velocity from finish forward * finish speed.
+Ruckig honors it. Point speed constraints remain route speed limits.
 
-Latest viewer commits:
-- `cbdbcc2b2132f0ef29af9a73e3589d25c415a8f5`
-- `2ad3bf086c153895adefee64fb9f67bcabaa84da`
-- `f695a55454f5ccc5802c618347dfb400ec4d6bcb`
+Candidate commits:
+- c9a8e381531feee4516cafa436b67809fb2d753d
+- 9372af939d2406768e530f9e2c02e05389f0df83
+- 82dc142e5c06f8be8e6c94aec810f16b8b47302f
+- 75f11481979b83706861bbc98f8b6326341a07e0
+- d40e4fdc7cb1048d0f45daf2598788684e49affc
+- bc5fbaa284663d7a986e2257b8d71f4a64a610ba
+- 7f57df3ef4a05d6601d05aa9c94de7121e0d9884
 
-Lower-right fixed block now shows:
-- numeric current speed;
-- yellow thick arrow = actual velocity vector;
-- short cyan arrow = actual hull nose;
-- red arrow = program/Follower target nose;
-- white = retained geometric route;
-- green = actual flown path.
+## Immediate gate
 
-Velocity arrow scale is 3.5 m of display length per 1 m/s and width 6 px.
-
-## Important Newtonian issue still open
-
-Do not confuse fixing StopTurnGo with completing Newtonian maneuver authoring.
-
-Current translation is still generated before final body/thrust attitude semantics.
-After the shallow-corner stop is removed, inspect:
-- actual yellow velocity vector;
-- actual cyan hull nose;
-- red program target nose.
-
-For Expert/Newtonian, a material course change must ultimately come from a
-body/thrust-aware proved maneuver:
-- preserve useful inertial velocity;
-- lead body rotation as needed;
-- use bounded RCS for trim;
-- use main-engine thrust only when actual hull attitude makes it available;
-- never let an arbitrary translational reference assume the future body attitude.
-
-That remains a B5/B6 integration task after this gate.
-
-## Target-machine gate
-
-First run the focused Ruckig corner tests:
-
+Run:
 ```bash
 cd /d/__elite/work
 git pull --ff-only
@@ -90,28 +66,32 @@ cmake --build build/tests/navigation_guidance --target ruckig_route_planner_test
 ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
 ```
 
-Then run the retained-route/viewer gate:
-
+Then:
 ```bash
-cd /d/__elite/work
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
-Launch separately:
-
+Then launch:
 ```bash
-cd /d/__elite/work
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
 Collect:
 - HEAD;
-- focused Ruckig result;
-- route points/length;
-- `RETAINED WAYPOINT SPEEDS`;
+- focused Ruckig 8/8 or exact failure;
+- Stage-2 `RETAINED WAYPOINT SPEEDS`;
+- final speed;
 - `MAX BODY/VELOCITY ANGLE`;
-- video or observation of yellow V vs cyan actual nose vs red target nose for
-  Expert/Standard/Newtonian and Assisted.
+- visual relation between yellow actual V, cyan actual nose, red target nose.
+
+## Next architecture step after this gate
+
+Do not move to dynamic avoidance yet.
+
+Once StopTurnGo and start/finish transients are removed from the stand, fix the deeper
+Newtonian issue: translational P/V/A must not assume future hull attitude. The accepted
+maneuver must be body/thrust-aware before Follower execution and must preserve the
+B4 -> B5 -> B6 -> B7 -> B8 -> B9/B10 ownership chain.
 
 ## Mandatory state protocol
 

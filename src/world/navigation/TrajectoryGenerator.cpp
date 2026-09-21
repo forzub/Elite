@@ -90,7 +90,11 @@ bool validRequest(
         !finite(request.universeTimeScale) || request.universeTimeScale <= 0.0 ||
         !request.vehicle.valid() || request.pathPointsMeters.size() < 2 ||
         !finite3(request.initialVelocityMps) ||
-        !finite3(request.initialAccelerationMps2))
+        !finite3(request.initialAccelerationMps2) ||
+        (request.hasTerminalVelocity &&
+            (!finite3(request.terminalVelocityMps) ||
+             magnitude(request.terminalVelocityMps) >
+                 request.vehicle.maxSpeedMps + 1.0e-6)))
     {
         return false;
     }
@@ -998,7 +1002,14 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
 
     std::vector<glm::dvec3> waypointVelocities =
         buildWaypointVelocities(request, sourceProgress);
-    waypointVelocities.back() = glm::dvec3(0.0);
+
+    // Historical behavior stopped at every route terminal. Preserve that
+    // default, but allow an explicitly authored fly-through terminal velocity
+    // for tests, formation legs and ordinary moving route continuation.
+    waypointVelocities.back() =
+        request.hasTerminalVelocity
+            ? request.terminalVelocityMps
+            : glm::dvec3(0.0);
 
     world::navigation::TrajectoryGenerationDiagnostics cumulativeDiagnostics;
     // Preserve continuous corner motion when possible: waypoint through-speed

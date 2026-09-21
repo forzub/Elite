@@ -1606,6 +1606,11 @@ struct ExecutionVehicle
     Bridge bridge;
     double timeSeconds = 0.0;
 
+    glm::dvec3 lastIdealLinearDemandMps2 {0.0};
+    glm::dvec3 lastIdealAngularDemandRadPerSec2 {0.0};
+    glm::dvec3 lastExecutedLinearDemandMps2 {0.0};
+    glm::dvec3 lastExecutedAngularDemandRadPerSec2 {0.0};
+
     ExecutionVehicle(
         const Scenario& scenario,
         const ScenarioRunSettings& settings
@@ -1770,6 +1775,14 @@ TraceFrame executionTraceFrame(
         vehicle.transform.motion.manoeuvreAccelerationMps2;
     frame.engineAccelerationMps2 =
         vehicle.transform.motion.engineAccelerationMps2;
+    frame.idealLinearAccelerationDemandMps2 =
+        vehicle.lastIdealLinearDemandMps2;
+    frame.idealAngularAccelerationDemandRadPerSec2 =
+        vehicle.lastIdealAngularDemandRadPerSec2;
+    frame.executedLinearAccelerationDemandMps2 =
+        vehicle.lastExecutedLinearDemandMps2;
+    frame.executedAngularAccelerationDemandRadPerSec2 =
+        vehicle.lastExecutedAngularDemandRadPerSec2;
 
     frame.hasRuntimeControlLaw = true;
     frame.runtimeControlLaw =
@@ -1881,6 +1894,7 @@ void writeExecutionTelemetry(
     stream
         << "# per-frame physical execution telemetry\n"
         << "# t_s phase law pos speed forward up pyr_rate "
+           "ideal_lin_cmd ideal_ang_cmd exec_lin_cmd exec_ang_cmd "
            "main_pct main_a rcs_a engine_a ref_speed ref_forward ref_up "
            "body_vel_deg forward_ref_deg up_ref_deg events\n";
 
@@ -1951,6 +1965,14 @@ void writeExecutionTelemetry(
             << " up=" << formatVec3(frame.shipUp)
             << " pyr_rate="
             << formatVec3(frame.shipAngularRatePyrRadPerSec)
+            << " ideal_lin_cmd="
+            << formatVec3(frame.idealLinearAccelerationDemandMps2)
+            << " ideal_ang_cmd="
+            << formatVec3(frame.idealAngularAccelerationDemandRadPerSec2)
+            << " exec_lin_cmd="
+            << formatVec3(frame.executedLinearAccelerationDemandMps2)
+            << " exec_ang_cmd="
+            << formatVec3(frame.executedAngularAccelerationDemandRadPerSec2)
             << " main_pct="
             << frame.mainEngineThrottle01 * 100.0
             << " main_a="
@@ -2538,6 +2560,19 @@ ScenarioRunResult executeCalculatedRoute(
                 bridgeInvalid = true;
                 break;
             }
+
+            vehicle.lastIdealLinearDemandMps2 =
+                bridgeResult.snapshot.
+                    idealLinearAccelerationDemandSystemMps2;
+            vehicle.lastIdealAngularDemandRadPerSec2 =
+                bridgeResult.snapshot.
+                    idealAngularAccelerationDemandSystemRadPerSec2;
+            vehicle.lastExecutedLinearDemandMps2 =
+                bridgeResult.snapshot.
+                    executedLinearAccelerationDemandSystemMps2;
+            vehicle.lastExecutedAngularDemandRadPerSec2 =
+                bridgeResult.snapshot.
+                    executedAngularAccelerationDemandSystemRadPerSec2;
 
             SharedShipPhysics::integrate(
                 vehicle.transform,

@@ -1,119 +1,73 @@
-# CURRENT TASK — target-validate automatic Stage-2 refresh and angular-control fix
+# CURRENT TASK — validate speed-aware route clearance and deterministic Calculate UX
 
 **Date:** 2026-09-22  
-**Status:** SOMERSAULT ROOT-CAUSED FROM TELEMETRY / FIX CANDIDATE UNVERIFIED
+**Status:** IMPLEMENTED / TARGET MINWG64 VALIDATION REQUIRED
 
-## What actually controls the ship
+## Fixed semantics
 
-Current Stage-2 runtime control chain:
+### Flight style
 
-```text
-AcceptedManeuverProgram
- -> ManeuverProgramSampler
- -> TrajectoryFollower
- -> ManeuverTrackingController
- -> NavigationSystemControlIntent
- -> NavigationRuntimeControlBridge
- -> PilotSkillExecutor
- -> ShipControlState
- -> SharedShipPhysics / ShipController
- -> DynamicMotionSystem
- -> physical ShipTransform/DynamicMotionState
-```
+There is no Standard speed and no Extreme speed.
 
-So the viewer is not moving a material point directly.
+FlightStyle owns only static clearance/risk doctrine:
+- STANDARD = more safety/maneuver room;
+- EXTREME = tighter pass / less clearance when tactically useful.
 
-The remaining architectural caveat is upstream: the accepted reference trajectory and
-body attitude are still authored separately rather than by the final B5/B6
-body/thrust-coupled physical maneuver compiler/prover.
+Scenario/runtime no longer contain:
+- standard_speed_mps / extreme_speed_mps;
+- standardSpeedMps / extremeSpeedMps.
 
-## Uploaded telemetry diagnosis
+The current test speed envelope comes from explicit START/FINISH speed requests.
 
-The previous telemetry proves the remaining flip is not requested by the main engine.
+### Speed changes the route
 
-At the first runaway:
-- body nearly matches reference around t ~= 11.57 s while pitch rate is already
-  ~+0.75 rad/s;
-- reference settles toward the path tangent, but physical pitch rate continues rising to
-  ~+1.57 rad/s;
-- body then rotates more than 120 degrees away while main engine is zero for much of the
-  event.
+START/FINISH speeds are Stage-1 route inputs.
 
-A later event reaches almost 179 degrees body-vs-reference/velocity with MAIN still zero.
+Higher speed increases a coarse inertial maneuver reserve based on real Cobra angular
+rate/acceleration limits. Therefore route support points may move farther from a static
+obstacle.
 
-This points to angular-command generation/tracking, not main-thrust vectoring.
+Current Stage-1 diagnostics expose:
+- ROUTE PLANNING SPEED
+- STYLE CLEARANCE
+- ROUTE ADDITIONAL CLEARANCE
 
-## Candidate angular fix
+This reserve is a coarse B4/Stage-1 allowance only. It is not a replacement for final B6
+continuous oriented swept-hull proof.
 
-Root cause:
-- FreeTransit phase stores at most 16 AcceptedManeuverProgram samples;
-- dense attitude angular acceleration was downsampled and then linearly interpolated;
-- short alpha pulses were therefore smeared over long intervals;
-- final feed-forward + feedback angular demand had no final accepted-capability clamp.
+### Calculate button
 
-Changes:
-- FreeTransit angular acceleration feed-forward = 0;
-- reference orientation + reference angular velocity + closed-loop feedback own body
-  tracking;
-- total angular demand is clamped to accepted max angular acceleration.
+No automatic solve occurs when a setting changes.
 
-Commits:
-- 018fd2c08874cb426a9d3fc8340c85ffb4539bad
-- e8369c0fa21cc59f0429741540dd4903f7f556e8
+Dirty ownership:
+- speed/style -> route + execution dirty;
+- control law/pilot/dynamic toggle -> execution dirty only.
 
-## Speed-slider failure fixed
+One click on РАССЧИТАТЬ:
+- rebuilds Stage-1 if route inputs are dirty;
+- executes Stage-2;
+- shows a short on-screen calculation log;
+- clears dirty state.
 
-The 5..50 m/s slider exposed a request-validity bug:
-- STANDARD trajectory envelope was still max 10 m/s;
-- EXTREME was still max 18 m/s;
-- terminal slider value above that was rejected as `invalid Ruckig route request`.
+After any attempt the button is visually disabled/dim and says РАСЧЕТ ГОТОВ.
+It becomes active again only after a setting invalidates the result.
 
-Stage-2 `maxSpeedMps` now expands to:
-```text
-max(style speed, requested start speed, requested finish speed)
-```
+There is no second Execute/ЗАПУСТИТЬ ПОЛЁТ action anymore.
 
-This makes explicit diagnostic boundary speeds legal. It does not silently change the
-static Stage-1 route.
+## Regression added
 
-Commit included in:
-- 018fd2c08874cb426a9d3fc8340c85ffb4539bad
+Runtime E2E now compares:
+- STANDARD 10/10 m/s;
+- STANDARD 40/40 m/s;
+- EXTREME 40/40 m/s.
 
-## Viewer settings now auto-run Stage-2
-
-After the first successful Calculate:
-- Assisted/Newtonian change -> automatic Stage-2 refresh;
-- pilot change -> automatic Stage-2 refresh;
-- Standard/Extreme change -> automatic Stage-2 refresh;
-- obstacle toggle -> automatic Stage-2 refresh;
-- speed slider -> one automatic Stage-2 refresh on mouse release.
-
-The first Calculate also automatically queues the first Stage-2 execution.
-
-No additional Calculate click is required for execution-only settings.
-
-Commit:
-- 7a164a65292a47e41c19a01bdcb3f55b93d0110d
-
-## New command telemetry
-
-Each execution frame/log line now includes:
-- ideal_lin_cmd
-- ideal_ang_cmd
-- exec_lin_cmd
-- exec_ang_cmd
-then:
-- main_a
-- rcs_a
-- engine_a
-- actual pyr_rate / basis
-
-Commits:
-- a2ece66294ab0a8aa3c4258257dbcdbe0c72b086
-- 4343b7d5289fca95e6989f3e7d21f691723361bc
-- 9efe6934aa3f8141604e81e714319126a83afa6a
+Required:
+- 40 Standard detour farther from the wall than 10 Standard;
+- 40 Extreme closer than 40 Standard.
 
 ## Immediate target validation
+
+Run:
 
 ```bash
 cd /d/__elite/work
@@ -121,23 +75,36 @@ git pull --ff-only
 git rev-parse HEAD
 
 bash tests/navigation_runtime/run_stage1_mingw64.sh
+```
+
+If that passes, launch:
+
+```bash
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Then:
-1. click Calculate once;
-2. verify Stage-2 starts automatically;
-3. change Assisted/Newtonian, pilot, style: each should immediately produce/replay a new
-   Stage-2 trace;
-4. drag START/FINISH speeds (including >10 in Standard) and release: Stage-2 should
-   recalculate without `invalid Ruckig route request`;
-5. reproduce the old low-route somersault if it remains;
-6. send the new `tools/navigation_runtime/last_execution_telemetry.log`.
+Viewer checks:
+1. initial РАССЧИТАТЬ is enabled;
+2. set STANDARD, START=10, FINISH=10 and click once;
+3. note white route coordinates/clearance and the short on-screen log;
+4. button must become visibly disabled / РАСЧЕТ ГОТОВ;
+5. move both speeds to 40 -> button re-enables, old result is marked stale;
+6. click Calculate -> white route should move farther from wall;
+7. switch only STANDARD -> EXTREME at 40/40 -> button re-enables;
+8. Calculate -> route should cut closer than 40/40 Standard;
+9. switch pilot or Assisted/Newtonian -> Calculate re-enables, but Stage-1 route should be
+   retained and only Stage-2 recomputed.
 
-Primary acceptance:
-- old runaway full somersault should disappear;
-- if any rotation remains, new `ideal_ang_cmd` / `exec_ang_cmd` show exactly who
-  commands it.
+Send build/test output if anything fails. Do not claim PASS before target evidence.
+
+## Related unresolved navigation work
+
+The previous hull-somersault fix remains a candidate awaiting the same target run:
+- FreeTransit sparse angular-acceleration feed-forward removed;
+- total follower angular demand capped to physical capability;
+- telemetry now exposes ideal vs pilot-executed linear/angular commands.
+
+Dynamic obstacle avoidance remains paused until static maneuver behavior is credible.
 
 ## Mandatory state protocol
 

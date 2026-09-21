@@ -551,10 +551,10 @@ ExecutionGuide buildExecutionGuide(
 
         const int curveSegments = std::clamp(
             static_cast<int>(
-                std::ceil((2.0 * chosenCut) / 2.5)
+                std::ceil((2.0 * chosenCut) / 6.0)
             ),
-            4,
-            24
+            3,
+            10
         );
 
         for (int sampleIndex = 0;
@@ -1260,6 +1260,15 @@ double globalGuideSpeedLimit(
             range.maxSpeedMps > 0.0)
         {
             limit = std::min(limit, range.maxSpeedMps);
+        }
+    }
+
+    for (const auto& point : request.pointSpeedConstraints)
+    {
+        if (finite(point.maxSpeedMps) &&
+            point.maxSpeedMps > 0.0)
+        {
+            limit = std::min(limit, point.maxSpeedMps);
         }
     }
 

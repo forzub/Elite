@@ -8453,3 +8453,116 @@ Required next trajectory-authoring correction after the target build is green:
 
 This must stay inside the route-to-trajectory/B5-B6 authoring path. Do not hide it in
 Follower behavior or FlightStyle.
+
+
+## 2026-09-22 — Assisted selector bug fixed by separating requested vs effective runtime state
+
+Latest user feedback:
+- overall flight now looks materially more realistic;
+- there is still some body oscillation while returning to the nominal attitude;
+- ASSISTED appears not to switch at all;
+- user requested an always-visible right-panel summary of current pilot, control type and
+  behavior/style.
+
+The uploaded execution telemetry begins with `law=NEWTONIAN` and the displayed run is
+indeed a Newtonian execution. The important UI bug was found in the viewer state model,
+not in the Assisted physics implementation.
+
+### Root cause
+
+The viewer previously used one field, `state.controlMode`, for two different products:
+
+1. the **requested** user setting selected by the ASSISTED/NEWTONIAN buttons;
+2. the **effective** control law observed from the currently displayed runtime frame.
+
+Every render called:
+```text
+syncViewerStateFromRuntimeFrame(displayFrame)
+ -> RuntimeControlLawObserved
+ -> state.controlMode = frame.runtimeControlLaw
+```
+
+Therefore this sequence was broken:
+```text
+old trace = NEWTONIAN
+user clicks ASSISTED
+ -> requested state becomes ASSISTED
+next render still displays old NEWTONIAN frame
+ -> runtime observation writes NEWTONIAN back into state.controlMode
+ -> ASSISTED button appears not to work
+```
+
+This also meant stale playback could modify the input that would be sent to the next
+Calculate.
+
+### Corrected state ownership
+
+Viewer now has separate products:
+
+```text
+state.controlMode
+    = requested control law for the next Calculate
+
+state.effectiveRuntimeControlLaw
+    = observed law of the currently displayed execution frame
+```
+
+`RuntimeControlLawObserved` is no longer allowed to assign `state.controlMode`.
+
+The top buttons always show the requested input. The old trace may remain visible while
+the result is dirty, but it cannot undo the newly selected input.
+
+Commit:
+- `3067ccfde2f260dcde30baa038ca82e400f233a8`.
+
+### Right-panel mode diagnostics
+
+The right diagnostics panel now contains a dedicated `ТЕКУЩИЕ РЕЖИМЫ` block:
+
+- `ПИЛОТ`;
+- `УПРАВЛЕНИЕ / ВЫБРАНО`;
+- `УПРАВЛЕНИЕ / ФАКТ`;
+- `ПОВЕДЕНИЕ`.
+
+If settings changed and the displayed execution is still the previous trace, effective
+control law is shown with:
+```text
+(СТАРЫЙ РАСЧЕТ)
+```
+
+This makes the intended interaction explicit:
+- click ASSISTED -> selected line/button becomes Assisted immediately;
+- before Calculate, effective line may still say Newtonian / old calculation;
+- press Calculate -> fresh execution should show effective Assisted if the runtime really
+  uses the requested law.
+
+Pilot and Standard/Extreme behavior are also visible in the same block.
+
+Architecture regression now forbids `RuntimeControlLawObserved` from writing
+`state.controlMode`, and checks that the right-panel mode diagnostics remain present.
+
+Commits:
+- `d57cd3b285b0419f9bf8266887fb34811d57a592`;
+- `12d91b3253f68907557308b9e27ee4fe6d871822`.
+
+### Remaining body oscillation
+
+The user still observes some oscillation while the hull returns toward the requested
+attitude. Do not conflate this with the selector bug.
+
+The control-chain telemetry already exposes:
+- ideal angular command;
+- pilot-executed angular command;
+- actual P/Y/R rate;
+- reference forward/up;
+- actual forward/up.
+
+After confirming ASSISTED really executes, use those channels to determine whether the
+remaining oscillation is:
+- reference motion;
+- insufficient angular damping in ManeuverTrackingController;
+- PilotSkillExecutor lag/overshoot;
+- or ShipController/angular-rate dynamics.
+
+Do not tune damping until the requested/effective control-law state is visibly proven on
+the target viewer.

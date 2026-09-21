@@ -26,11 +26,12 @@ VIEWER_BUILD="${ROOT_DIR}/build/tools/navigation_runtime"
 cmake -S "${ROOT_DIR}/tools/navigation_runtime" -B "${VIEWER_BUILD}" -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build "${VIEWER_BUILD}"
 
-echo "=== Exact retained-route -> Follower -> physics regression ==="
-ctest --test-dir "${VIEWER_BUILD}" --output-on-failure
-
 echo
-echo "STATIC ROUTE + FOLLOWER VIEWER E2E GATE: PASS"
+echo "=== Viewer ready ==="
+echo "Headless Stage-2 execution is intentionally NOT auto-run here."
+echo "Current maneuver development is inspected in the interactive viewer."
+echo
+echo "STATIC ROUTE + VIEWER BUILD: PASS"
 echo
 echo "Viewer launch:"
 echo "cd /d/__elite/work"

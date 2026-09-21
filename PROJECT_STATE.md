@@ -1475,3 +1475,90 @@ Commits:
 - `a056973c674194b109b8f37646f6d7a9e461c5b9` — explicit test include.
 
 This candidate is not target MinGW64 validated yet.
+
+
+## 2026-09-21 — target 7/8 after dense curve: functional speed-dip failure, not compile failure
+
+Target MinGW64 evidence:
+- `ruckig_route_planner_tests.exe` compiled and linked successfully;
+- 7/8 focused tests passed;
+- only failure:
+  `default wall shallow corners stay moving`;
+- failure reason:
+  `default wall calculated curve contains a major unnecessary braking dip`.
+
+This is a **functional trajectory test failure**, not a compiler/linker failure. The
+test is intentionally retained: the steady 10 m/s wall stand must not hide a large
+calculated speed dip.
+
+### Root cause found
+
+The sampled C1 execution guide introduced short local segments, but
+`buildWaypointVelocities()` still computed corner speed from a heuristic
+`blendDistance` proportional to local segment length.
+
+That made speed depend on sampling density:
+```text
+same geometric curve
+ + more guide samples
+ -> shorter local segments
+ -> smaller blendDistance
+ -> lower turnSpeed
+```
+
+This is non-physical.
+
+Candidate fix:
+- use the three-point circumcircle curvature instead:
+  `kappa = 2*|AB x BC| / (|AB| |BC| |AC|)`;
+- local lateral-acceleration speed limit:
+  `v_max = sqrt(a_lateral / kappa)`;
+- this is invariant to guide discretization density;
+- Ruckig perf log now records `min_speed_mps` and `max_speed_mps`.
+
+Commit:
+- `4dcebe77580e8abc7a0f9f4a22cec65f3ba985d5`.
+
+### Remove start/finish heading transients from the steady stand
+
+The prior "10 m/s start and finish" still had a hidden directional transient:
+- start velocity was +X while the first retained route leg points
+  `(110,-27,0)`;
+- terminal velocity was +X while the final retained route leg points
+  `(110,+27,0)`.
+
+So the stand still asked Ruckig to perform extra heading changes at both boundaries.
+
+The default scenario and focused wall fixture now align:
+- start velocity and hull forward with the first route-leg tangent;
+- finish velocity/forward with the final route-leg tangent;
+- magnitude remains exactly 10 m/s.
+
+Commits:
+- `5c408b76b36a86bd6b4fecacc377142d80726796`;
+- `3a22a4ae0aca037df4c9b8c76759506ed8a840c6`.
+
+This makes the experiment genuinely:
+```text
+already moving along route at 10
+ -> corner 1
+ -> bypass
+ -> corner 2
+ -> leave along route at 10
+```
+
+### Viewer source revision control
+
+Per user request, every viewer build now displays the exact Git source revision:
+- CMake runs `git rev-parse --short=12 HEAD`;
+- compile definition `ELITE_NAV_VIEWER_REVISION` is injected;
+- the revision appears in both the native window title and the in-window HUD.
+
+Commits:
+- `2c1baf4854f083c2e3e44ed16136c70237dfafcd`;
+- `1e84a9cac2f26da8e2802e1b97e8582f869f218d`.
+
+The revision shown by the viewer is the HEAD that existed at CMake configure time. The
+normal `run_stage1_mingw64.sh` configure/build flow refreshes it after every pull.
+
+All changes after the reported 7/8 target run are currently unverified on target.

@@ -2905,3 +2905,55 @@ rejects physical speed above 25 m/s.
 
 Updated code candidate before docs: `13ef6bd731ef6d8e78c75c72bf7a59f524b30bcb`.
 Target MinGW64 evidence is still required.
+
+## 2026-09-22 — higher-speed Assisted failure: propulsion/body coupling bug
+
+Fresh target run:
+
+```text
+ASSISTED / EXPERT / STANDARD
+START 20.90 m/s
+FINISH 20.00 m/s
+Ruckig max 20.90 m/s
+program phases complete NO
+physical terminal state MISSED
+final error 175.20 m
+final speed 7.45 m/s
+max body/velocity angle 180 deg
+reference hold 40.70 s
+```
+
+The exponential runaway is gone. The new failure is different: the physical
+allocator and the reference attitude were inconsistent.
+
+Observed telemetry showed the hull almost perfectly aligned with the accepted
+reference while speed fell hard with `main_pct=0`. At ~10 s:
+```text
+body/ref error ~0.03 deg
+main_pct 0
+main_a = (-1.42, +0.39, 0)
+speed 13.76 while ref speed 20.35
+```
+The old Assisted allocator allowed negative longitudinal **main** acceleration:
+a virtual fore/nose main engine. Therefore the ship could brake through zero
+and reverse its velocity while the hull did not turn. Around 19.2 s the body
+was still fixed on the same reference attitude while body/velocity passed
+through 90 deg; later it reached ~180 deg and the real aft-positive main command
+began braking the now-backwards motion.
+
+That behavior violates the documented physical contract.
+
+Candidate correction:
+- navigation main engine is aft-only in BOTH Assisted and Newtonian;
+- reverse demand before hull rotation can use only bounded RCS;
+- Assisted reference attitude is now propulsion-aware just like Newtonian:
+  if RCS cannot realize the requested acceleration vector, the hull reference
+  cants/flips toward the acceleration so aft main can contribute;
+- control-law difference remains controller doctrine/slip behavior, not hidden
+  propulsion;
+- exact 20.90 -> 20.00 Assisted E2E regression added and rejects reverse main
+  acceleration relative to hull forward.
+
+Candidate code baseline before docs: `b833eddb7bd04b5c025b2be0fd8334c33f8824e6`.
+
+Status: target MinGW64 validation required.

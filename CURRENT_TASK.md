@@ -1,96 +1,134 @@
-# CURRENT TASK — dynamic local avoidance over immutable retained route
+# CURRENT TASK — credible static corner maneuvers before dynamic avoidance
 
 **Date:** 2026-09-21  
-**Status:** STATIC RETAINED-ROUTE EXECUTION TARGET-PROVEN / DYNAMIC OVERLAY NEXT
+**Status:** STATIC E2E EXECUTES / BEHAVIOR QUALITY BLOCKER FOUND / DYNAMIC OVERLAY PAUSED
 
-## Accepted current evidence
+## Why this task supersedes the dynamic-overlay step
 
-The diagnostic stand now proves the static two-stage chain:
+The retained-route Stage-2 chain now reaches the finish, but the user's video exposed
+behavior that is not acceptable for an Expert pilot:
+- ~25.5 degree corners can become full StopTurnGo;
+- Newtonian velocity can bend before body attitude has acquired the physically useful
+  thrust direction;
+- Newtonian body reference can rotate toward braking and then rotate again for the
+  next leg;
+- Assisted inherits the same stop because the common Ruckig waypoint velocity is zero;
+- Standard and Extreme currently differ mostly by 10 vs 18 m/s requested max speed.
 
-```text
-Stage 1
-scene + static obstacles
- -> NominalRoutePlanner
- -> immutable retained route
+Do not add dynamic obstacle behavior on top of this until ordinary static maneuver
+authoring is credible.
 
-Stage 2
-same retained route
- -> Ruckig
- -> route-leg AcceptedManeuverPrograms
- -> TrajectoryFollower
- -> PilotSkillExecutor
- -> SharedShipPhysics / DynamicMotionSystem
- -> finish
-```
+## Confirmed root causes
 
-User target diagnostics (exact checkout SHA was not included in the supplied output):
-- Stage-1 route: 4 points, 323.75 m, static detour YES;
-- Expert / Standard / Newtonian: 3 phases, 2 handoffs, final P error 0.15 m,
-  final speed 0.10 m/s, max follower error 1.08 m, no static contact;
-- Expert / Extreme / Newtonian: final P error 0.10 m, final speed 0.48 m/s,
-  max follower error 0.95 m, no static contact;
-- Expert / Extreme / Assisted: same observed quality, no static contact.
+### Route geometry
 
-The old 102 consecutive-Ruckig-sample microprogram interpretation is closed. The
-four-point route now produces three physical route-leg phases.
-
-## Current task
-
-Enable the scenario's moving/sudden-obstacle inputs as a **local dynamic overlay**
-without changing the retained Stage-1 route.
-
-Required behavior:
+The former box visibility graph lacked edge-midpoint support nodes. The old default
+route was approximately:
 
 ```text
-immutable retained route
-  -> execute/follow
-  -> bounded dynamic monitor sees predicted conflict
-       -> safe executable local bypass available:
-            accept short off-route bypass and continue
-       -> no safe executable bypass:
-            active braking command
-            navigation remains alive
-  -> fresh monitor updates
-  -> obstacle clears / bypass completes
-  -> progressive reacquisition of retained route
-  -> continue to finish
+(0,0,0) -> (110,-27,-45) -> (190,-27,-45) -> (300,0,0)
+length ~= 323.75 m
 ```
 
-Non-negotiable rules:
-- no dynamic-triggered NominalRoutePlanner/global route rebuild;
-- no arbitrary 30 m or same-horizon mandatory merge;
-- no navigation shutdown on ConflictHold/no-space;
-- surprise obstacle is absent before `activation_time_s`;
-- local avoidance must respect actual vehicle speed/acceleration/control-law capability;
-- the retained white route must remain bitwise/geometrically unchanged throughout
-  Stage 2/3 execution.
+The intended nearest-face route is approximately:
 
-## First dynamic acceptance scenario
+```text
+(0,0,0) -> (110,-27,0) -> (190,-27,0) -> (300,0,0)
+length ~= 306.53 m
+```
 
-Use the existing `scenario.json` sudden obstacle:
-- checkbox enabled;
-- actor appears only after activation;
-- first acceptance mode: Expert / Standard / Newtonian.
+Candidate route fix:
+`e53312cc9b00119e69f1c7676edf14b5d21fea64`.
 
-Required evidence:
-- retained route unchanged;
-- dynamic obstacle publication/activation observed;
-- at least one local monitor decision after activation;
-- either a safe physically executed bypass or explicit active braking when bypass is
-  not physically available;
-- no dynamic contact;
-- navigation continues after the event;
-- finish eventually reached.
+Regression:
+`8e0d4c4c6ca7d4d7ae3e7cc71387ebff8b335302`.
 
-Only after this is correct expand to:
-- Extreme;
-- Assisted;
-- Average/Loser pilot profiles.
+### StopTurnGo fallback
 
-## Static proof boundary
+`TrajectoryGenerator::buildWaypointVelocities()` tries one synthetic shortcut chord
+around each corner. If that chord intersects the inflated wall, the waypoint remains
+at zero target velocity. Ruckig then stops there.
 
-Current `COARSE STATIC CONTACT` is still route-envelope-level evidence, not final
-oriented swept-hull B6 tunnel proof. Do not call the whole navigation system accepted.
+A blocked shortcut chord does **not** imply that the vehicle must stop. It only proves
+that this particular shortcut construction is invalid.
+
+### Newtonian reference semantics
+
+The current Stage-2 pipeline creates translational P/V/A first. Afterwards
+`buildReferenceAttitudes()` points Newtonian forward toward requested acceleration.
+That lets RCS alter velocity while attitude is still rotating and creates excessive
+body rotation around braking/leg transitions.
+
+The physical allocator itself remains directionally meaningful; the defect is the
+upstream physical maneuver reference.
+
+## Active implementation objective
+
+Replace ordinary corner handling with control-law-aware physical maneuver authoring.
+
+Required behavior for Expert:
+- shallow/medium bend + adequate space/authority -> continuous pass, not mandatory stop;
+- Newtonian -> body/thrust-aware lead turn / coast-drift / bounded RCS trim /
+  main-engine burn as the geometry and delta-v require;
+- Assisted -> smooth continuous pass using its longitudinal assisted authority and
+  bounded RCS;
+- a stop is legal only when geometry, terminal state, vehicle authority or safety
+  actually requires it;
+- no full flip merely to negotiate a small heading change;
+- body/velocity slip must be intentional and bounded by the selected maneuver;
+- the exact maneuver accepted by Follower must be the same maneuver that passed
+  capability and geometry proof.
+
+Standard vs Extreme must become a doctrine difference:
+- Standard: more clearance/reserve, smoother lower-slip choices;
+- Extreme: faster/more aggressive proved choices, may accept larger controlled slip
+  and use more of the safe envelope;
+- neither mode may violate hard safety/authority proof.
+
+## Architecture boundary
+
+Do not solve this by:
+- increasing RCS to make arbitrary vectors work;
+- widening collision clearance;
+- forcing waypoint velocities nonzero without a physical maneuver proof;
+- moving maneuver choice into Follower;
+- adding viewer-only motion logic.
+
+Use:
+- B4 geometric local/route path;
+- B5 control-law-aware maneuver compiler;
+- B6 continuous maneuver proof;
+- B7 doctrine selection;
+- B8 AcceptedManeuverProgram;
+- B9/B10 Follower execution.
+
+Current ordinary B5 supports Newtonian first. General ordinary B6 remains a real gap
+and should be filled rather than bypassed.
+
+## New observability already committed
+
+`ac30d441ebdafe232af0bf0fe7e8882da9f38767`:
+- triangular-prism Cobra diagnostic hull;
+- smaller translucent nose marker;
+- thick velocity vector proportional to speed;
+- numeric speed label at its tip.
+
+`c4c63c9751a4b5b381da290a570ee98775148eb6`:
+- exact retained route points in Stage-1 diagnostics;
+- retained interior waypoint speeds;
+- maximum body/velocity angle.
+
+## Immediate target-machine gate
+
+Run latest main and inspect:
+- nominal route length/points;
+- whether the new box regression passes;
+- viewer compiles;
+- `RETAINED WAYPOINT SPEEDS`;
+- `MAX BODY/VELOCITY ANGLE`;
+- video/visual behavior with Expert Standard Newtonian and Assisted.
+
+After this evidence, implement the physical corner-authoring correction.
 
 ## Mandatory state protocol
 

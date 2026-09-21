@@ -1,63 +1,119 @@
-# CURRENT TASK — reproduce remaining hull somersault with telemetry and speed sliders
+# CURRENT TASK — target-validate automatic Stage-2 refresh and angular-control fix
 
-**Date:** 2026-09-21  
-**Status:** TELEMETRY + 5..50 M/S START/FINISH SLIDERS IMPLEMENTED / TARGET VALIDATION REQUIRED
+**Date:** 2026-09-22  
+**Status:** SOMERSAULT ROOT-CAUSED FROM TELEMETRY / FIX CANDIDATE UNVERIFIED
 
-## Current observation
+## What actually controls the ship
 
-Navigation geometry/timing is no longer the obvious problem. Latest uploaded
-`navigation_perf.log` tail still reports the default wall reference as a single scalar
-Ruckig solve with:
+Current Stage-2 runtime control chain:
+
 ```text
-min_speed_mps=10.0000
-max_speed_mps=10.0000
+AcceptedManeuverProgram
+ -> ManeuverProgramSampler
+ -> TrajectoryFollower
+ -> ManeuverTrackingController
+ -> NavigationSystemControlIntent
+ -> NavigationRuntimeControlBridge
+ -> PilotSkillExecutor
+ -> ShipControlState
+ -> SharedShipPhysics / ShipController
+ -> DynamicMotionSystem
+ -> physical ShipTransform/DynamicMotionState
 ```
 
-User nevertheless sees:
-- actual speed around 10.1 m/s;
-- main-engine indicator off;
-- a visible hull somersault near the low/straight route segment.
+So the viewer is not moving a material point directly.
 
-The perf log cannot diagnose body attitude. We need execution telemetry.
+The remaining architectural caveat is upstream: the accepted reference trajectory and
+body attitude are still authored separately rather than by the final B5/B6
+body/thrust-coupled physical maneuver compiler/prover.
 
-## New telemetry
+## Uploaded telemetry diagnosis
 
-Generated after every Stage-2 run:
+The previous telemetry proves the remaining flip is not requested by the main engine.
+
+At the first runaway:
+- body nearly matches reference around t ~= 11.57 s while pitch rate is already
+  ~+0.75 rad/s;
+- reference settles toward the path tangent, but physical pitch rate continues rising to
+  ~+1.57 rad/s;
+- body then rotates more than 120 degrees away while main engine is zero for much of the
+  event.
+
+A later event reaches almost 179 degrees body-vs-reference/velocity with MAIN still zero.
+
+This points to angular-command generation/tracking, not main-thrust vectoring.
+
+## Candidate angular fix
+
+Root cause:
+- FreeTransit phase stores at most 16 AcceptedManeuverProgram samples;
+- dense attitude angular acceleration was downsampled and then linearly interpolated;
+- short alpha pulses were therefore smeared over long intervals;
+- final feed-forward + feedback angular demand had no final accepted-capability clamp.
+
+Changes:
+- FreeTransit angular acceleration feed-forward = 0;
+- reference orientation + reference angular velocity + closed-loop feedback own body
+  tracking;
+- total angular demand is clamped to accepted max angular acceleration.
+
+Commits:
+- 018fd2c08874cb426a9d3fc8340c85ffb4539bad
+- e8369c0fa21cc59f0429741540dd4903f7f556e8
+
+## Speed-slider failure fixed
+
+The 5..50 m/s slider exposed a request-validity bug:
+- STANDARD trajectory envelope was still max 10 m/s;
+- EXTREME was still max 18 m/s;
+- terminal slider value above that was rejected as `invalid Ruckig route request`.
+
+Stage-2 `maxSpeedMps` now expands to:
 ```text
-tools/navigation_runtime/last_execution_telemetry.log
+max(style speed, requested start speed, requested finish speed)
 ```
 
-Per sampled frame it records:
-- t, phase, effective law;
-- position/speed;
-- physical forward/up;
-- pitch/yaw/roll rates;
-- MAIN %, main acceleration;
-- RCS/manoeuvre acceleration;
-- combined engine acceleration;
-- reference speed;
-- reference forward/up;
-- body-vs-velocity angle;
-- actual-vs-reference forward/up angles;
-- MAIN_ON/OFF and RCS_ON/OFF transition events.
+This makes explicit diagnostic boundary speeds legal. It does not silently change the
+static Stage-1 route.
 
-Trace JSON also persists the new angular/propulsion fields.
+Commit included in:
+- 018fd2c08874cb426a9d3fc8340c85ffb4539bad
 
-## New speed controls
+## Viewer settings now auto-run Stage-2
 
-Viewer reducer state owns two sliders:
-- START V: 5..50 m/s;
-- FINISH V: 5..50 m/s.
+After the first successful Calculate:
+- Assisted/Newtonian change -> automatic Stage-2 refresh;
+- pilot change -> automatic Stage-2 refresh;
+- Standard/Extreme change -> automatic Stage-2 refresh;
+- obstacle toggle -> automatic Stage-2 refresh;
+- speed slider -> one automatic Stage-2 refresh on mouse release.
 
-They initialize from scenario.json authored values.
+The first Calculate also automatically queues the first Stage-2 execution.
 
-Changing them:
-- does not rebuild Stage-1 static route;
-- invalidates/restores only Stage-2 execution;
-- scales authored start velocity direction to the selected start magnitude;
-- applies selected finish magnitude to terminal trajectory/gate/final validation.
+No additional Calculate click is required for execution-only settings.
 
-## Target commands
+Commit:
+- 7a164a65292a47e41c19a01bdcb3f55b93d0110d
+
+## New command telemetry
+
+Each execution frame/log line now includes:
+- ideal_lin_cmd
+- ideal_ang_cmd
+- exec_lin_cmd
+- exec_ang_cmd
+then:
+- main_a
+- rcs_a
+- engine_a
+- actual pyr_rate / basis
+
+Commits:
+- a2ece66294ab0a8aa3c4258257dbcdbe0c72b086
+- 4343b7d5289fca95e6989f3e7d21f691723361bc
+- 9efe6934aa3f8141604e81e714319126a83afa6a
+
+## Immediate target validation
 
 ```bash
 cd /d/__elite/work
@@ -68,29 +124,20 @@ bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-First reproduce at START=10, FINISH=10 in the mode that shows the somersault.
+Then:
+1. click Calculate once;
+2. verify Stage-2 starts automatically;
+3. change Assisted/Newtonian, pilot, style: each should immediately produce/replay a new
+   Stage-2 trace;
+4. drag START/FINISH speeds (including >10 in Standard) and release: Stage-2 should
+   recalculate without `invalid Ruckig route request`;
+5. reproduce the old low-route somersault if it remains;
+6. send the new `tools/navigation_runtime/last_execution_telemetry.log`.
 
-Then send:
-```text
-tools/navigation_runtime/last_execution_telemetry.log
-```
-
-Interpretation:
-- reference forward/up rotates with the flip, MAIN=0 -> attitude authoring/program sampling;
-- reference stable but physical forward/up rotates -> angular tracker/physics;
-- RCS_ON around the event -> distinguish translational manoeuvre thrust from pure
-  attitude torque;
-- MAIN_ON proves a real main-thrust vectoring manoeuvre.
-
-After baseline reproduction, vary START/FINISH separately (e.g. 5/10, 10/20, 20/10)
-to see whether the flip is tied to boundary speed or independent of it.
-
-## Important caution
-
-The speed sliders are boundary-condition test controls. Very high values may expose
-missing interior curvature-speed zoning in the current first scalar path-progress
-implementation. Do not hide such failures by clamping the UI back to doctrine speed;
-record and fix them if they occur.
+Primary acceptance:
+- old runaway full somersault should disappear;
+- if any rotation remains, new `ideal_ang_cmd` / `exec_ang_cmd` show exactly who
+  commands it.
 
 ## Mandatory state protocol
 

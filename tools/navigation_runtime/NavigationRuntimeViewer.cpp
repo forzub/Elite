@@ -3240,11 +3240,21 @@ void processUiAction(
     {
         case UiAction::Calculate:
         {
+            if (!recalculationRequired(state) ||
+                state.calculationInProgress)
+            {
+                break;
+            }
+
+            state.calculationInProgress = true;
             state.calculationPerformed = true;
             state.calculationSucceeded = false;
             state.executionPerformed = false;
             state.executionSucceeded = false;
-            state.calculationMessage = "ИДЁТ РАСЧЁТ...";
+            state.calculationMessage = "ИДЕТ РАСЧЕТ...";
+            state.shortCalculationLog = {
+                "РАСЧЕТ: ВЫПОЛНЯЕТСЯ"
+            };
             state.playing = false;
             state.frameIndex = 0;
             state.playbackTime = 0.0;
@@ -3260,61 +3270,176 @@ void processUiAction(
             settings.finishSpeedOverrideMps =
                 state.finishSpeedMps;
 
-            const auto result =
-                elite::tools::navigation_runtime::calculateScenario(
-                    state.scenarioPath,
-                    settings
-                );
+            bool routeReady =
+                state.hasRetainedRoute &&
+                state.retainedRoute.routePoints.size() >= 2;
 
-            data = result.trace;
-            state.traceData = &data;
-            state.frameIndex = 0;
-            state.playbackTime = 0.0;
-            state.playing = false;
-            state.requestFit = !data.frames.empty();
-            state.calculationSucceeded = result.success;
-            state.calculationMessage =
-                result.success
-                    ? result.message
-                    : "ОШИБКА: " + result.message;
-            state.diagnosticLines = result.diagnostics;
-            state.hasRetainedRoute = result.success;
-            if (result.success)
+            if (state.routeInputsDirty || !routeReady)
             {
-                state.retainedRoute = data;
-                state.retainedRouteDiagnostics = result.diagnostics;
-                state.retainedRouteMessage = result.message;
+                const auto routeResult =
+                    elite::tools::navigation_runtime::calculateScenario(
+                        state.scenarioPath,
+                        settings
+                    );
+
+                data = routeResult.trace;
+                state.traceData = &data;
+                state.frameIndex = 0;
+                state.playbackTime = 0.0;
+                state.requestFit = !data.frames.empty();
+                state.diagnosticLines = routeResult.diagnostics;
+                state.calculationSucceeded = routeResult.success;
+                state.calculationMessage =
+                    routeResult.success
+                        ? routeResult.message
+                        : "ОШИБКА: " + routeResult.message;
+
+                state.hasRetainedRoute = routeResult.success;
+                routeReady = routeResult.success;
+
+                if (routeResult.success)
+                {
+                    state.retainedRoute = data;
+                    state.retainedRouteDiagnostics =
+                        routeResult.diagnostics;
+                    state.retainedRouteMessage =
+                        routeResult.message;
+                }
+                else
+                {
+                    state.retainedRoute = trace::TraceDocument {};
+                    state.retainedRouteDiagnostics.clear();
+                    state.retainedRouteMessage.clear();
+                }
+
+                if (!data.frames.empty())
+                {
+#ifdef ELITE_SOURCE_ROOT
+                    const std::string outputPath =
+                        std::string(ELITE_SOURCE_ROOT) +
+                        "/tools/navigation_runtime/last_calculated_trace.json";
+#else
+                    const std::string outputPath =
+                        "tools/navigation_runtime/last_calculated_trace.json";
+#endif
+                    try
+                    {
+                        trace::saveTraceJson(data, outputPath);
+                    }
+                    catch (const std::exception& e)
+                    {
+                        state.calculationMessage +=
+                            std::string(" | TRACE: ") + e.what();
+                    }
+                }
             }
             else
             {
-                state.retainedRoute = trace::TraceDocument {};
-                state.retainedRouteDiagnostics.clear();
-                state.retainedRouteMessage.clear();
+                state.calculationSucceeded = true;
             }
 
-            if (!data.frames.empty())
+            if (routeReady)
             {
+                state.executionPerformed = true;
+
+                const auto executionResult =
+                    elite::tools::navigation_runtime::executeCalculatedRoute(
+                        state.scenarioPath,
+                        settings,
+                        state.retainedRoute
+                    );
+
+                data = executionResult.trace;
+                state.traceData = &data;
+                state.frameIndex = 0;
+                state.playbackTime = 0.0;
+                state.executionSucceeded = executionResult.success;
+                state.calculationMessage =
+                    executionResult.success
+                        ? executionResult.message
+                        : "ОШИБКА: " + executionResult.message;
+                state.diagnosticLines = executionResult.diagnostics;
+                state.requestFit = !data.frames.empty();
+                state.playing = data.frames.size() > 1;
+
+                if (!data.frames.empty())
+                {
 #ifdef ELITE_SOURCE_ROOT
-                const std::string outputPath =
-                    std::string(ELITE_SOURCE_ROOT) +
-                    "/tools/navigation_runtime/last_calculated_trace.json";
+                    const std::string outputPath =
+                        std::string(ELITE_SOURCE_ROOT) +
+                        "/tools/navigation_runtime/last_execution_trace.json";
 #else
-                const std::string outputPath =
-                    "tools/navigation_runtime/last_calculated_trace.json";
+                    const std::string outputPath =
+                        "tools/navigation_runtime/last_execution_trace.json";
 #endif
-                try
-                {
-                    trace::saveTraceJson(data, outputPath);
-                }
-                catch (const std::exception& e)
-                {
-                    state.calculationMessage +=
-                        std::string(" | TRACE: ") + e.what();
+                    try
+                    {
+                        trace::saveTraceJson(data, outputPath);
+                    }
+                    catch (const std::exception& e)
+                    {
+                        state.calculationMessage +=
+                            std::string(" | TRACE: ") + e.what();
+                    }
                 }
             }
 
-            if (result.success)
-                queueUiAction(state, UiAction::Execute);
+            // Same inputs produce the same result. The Calculate button stays
+            // disabled after the attempt (success or failure) until a user
+            // changes an input that invalidates the result.
+            state.routeInputsDirty = false;
+            state.executionInputsDirty = false;
+            state.calculationInProgress = false;
+
+            auto routeLengthMeters = [](const trace::TraceDocument& route)
+            {
+                double total = 0.0;
+                for (std::size_t i = 1; i < route.routePoints.size(); ++i)
+                    total += glm::length(
+                        route.routePoints[i] -
+                        route.routePoints[i - 1]
+                    );
+                return total;
+            };
+
+            std::ostringstream routeSummary;
+            routeSummary.setf(std::ios::fixed);
+            routeSummary << std::setprecision(1);
+            if (routeReady)
+            {
+                routeSummary
+                    << "МАРШРУТ: "
+                    << state.retainedRoute.routePoints.size()
+                    << " ТОЧКИ, "
+                    << routeLengthMeters(state.retainedRoute)
+                    << " М";
+            }
+            else
+            {
+                routeSummary << "МАРШРУТ: ОШИБКА";
+            }
+
+            std::ostringstream speedSummary;
+            speedSummary.setf(std::ios::fixed);
+            speedSummary << std::setprecision(1)
+                << "V: " << state.startSpeedMps
+                << " -> " << state.finishSpeedMps
+                << " М/С";
+
+            state.shortCalculationLog = {
+                routeReady
+                    ? "РАСЧЕТ: ЗАВЕРШЕН"
+                    : "РАСЧЕТ: ОШИБКА",
+                routeSummary.str(),
+                state.executionPerformed
+                    ? (
+                        state.executionSucceeded
+                            ? "ПОЛЕТ: OK"
+                            : "ПОЛЕТ: ОШИБКА"
+                      )
+                    : "ПОЛЕТ: НЕ ЗАПУЩЕН",
+                speedSummary.str()
+            };
             break;
         }
         case UiAction::Execute:

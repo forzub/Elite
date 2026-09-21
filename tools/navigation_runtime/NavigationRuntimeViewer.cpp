@@ -2287,6 +2287,17 @@ void dispatchViewerAction(
     reduceViewerState(state, action);
 }
 
+void queueUiAction(
+    AppState& state,
+    UiAction uiAction
+)
+{
+    ViewerAction command;
+    command.type = ViewerActionType::QueueUiAction;
+    command.uiAction = uiAction;
+    dispatchViewerAction(state, command);
+}
+
 void syncViewerStateFromRuntimeFrame(
     AppState& state,
     const trace::TraceFrame& frame
@@ -2392,12 +2403,7 @@ void mouseButtonCallback(
         }
         else if (calculateButtonRect().contains(x, y))
         {
-            {
-                ViewerAction command;
-                command.type = ViewerActionType::QueueUiAction;
-                command.uiAction = UiAction::Calculate;
-                dispatchViewerAction(*state, command);
-            }
+            queueUiAction(*state, UiAction::Calculate);
         }
         else if (playButtonRect().contains(x, y))
         {
@@ -2406,23 +2412,13 @@ void mouseButtonCallback(
                 state->calculationSucceeded &&
                 !state->executionPerformed)
             {
-                {
-                ViewerAction command;
-                command.type = ViewerActionType::QueueUiAction;
-                command.uiAction = UiAction::Execute;
-                dispatchViewerAction(*state, command);
-            }
+                queueUiAction(*state, UiAction::Execute);
             }
             else if (
                 state->traceData &&
                 state->traceData->frames.size() > 1)
             {
-                {
-                ViewerAction command;
-                command.type = ViewerActionType::QueueUiAction;
-                command.uiAction = UiAction::TogglePlay;
-                dispatchViewerAction(*state, command);
-            }
+                queueUiAction(*state, UiAction::TogglePlay);
             }
         }
         else if (
@@ -2430,44 +2426,26 @@ void mouseButtonCallback(
             state->traceData &&
             state->traceData->frames.size() > 1)
         {
-            {
-                ViewerAction command;
-                command.type = ViewerActionType::QueueUiAction;
-                command.uiAction = UiAction::PreviousFrame;
-                dispatchViewerAction(*state, command);
-            }
+            queueUiAction(*state, UiAction::PreviousFrame);
         }
         else if (
             nextButtonRect().contains(x, y) &&
             state->traceData &&
             state->traceData->frames.size() > 1)
         {
-            {
-                ViewerAction command;
-                command.type = ViewerActionType::QueueUiAction;
-                command.uiAction = UiAction::NextFrame;
-                dispatchViewerAction(*state, command);
-            }
+            queueUiAction(*state, UiAction::NextFrame);
         }
         else if (
             replanButtonRect().contains(x, y) &&
             state->traceData &&
             state->traceData->frames.size() > 1)
         {
-            {
-                ViewerAction command;
-                command.type = ViewerActionType::QueueUiAction;
-                command.uiAction = UiAction::NextReplan;
-                dispatchViewerAction(*state, command);
-            }
+            queueUiAction(*state, UiAction::NextReplan);
         }
         else if (fitButtonRect().contains(x, y))
-            {
-                ViewerAction command;
-                command.type = ViewerActionType::QueueUiAction;
-                command.uiAction = UiAction::Fit;
-                dispatchViewerAction(*state, command);
-            }
+        {
+            queueUiAction(*state, UiAction::Fit);
+        }
         else if (state->traceData)
         {
             int width = 1;

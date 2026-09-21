@@ -201,22 +201,15 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
 
     requireNear(
         glm::length(motion.mainEngineAccelerationMps2),
-        standardGravity,
-        1.0e-6,
-        "Assisted reverse demand must use bounded fore/nose longitudinal main authority"
-    );
-    require(
-        glm::dot(
-            motion.mainEngineAccelerationMps2,
-            glm::dvec3(forward)
-        ) < 0.0,
-        "Assisted reverse main thrust must point opposite ship forward"
+        0.0,
+        1.0e-12,
+        "Assisted reverse demand must not invent fore/nose main thrust"
     );
     requireNear(
         glm::length(motion.manoeuvreAccelerationMps2),
         2.0,
         1.0e-9,
-        "Assisted main reverse thrust must still leave excess demand to bounded RCS"
+        "Assisted reverse demand may use only real manoeuvre-thruster authority before hull rotation"
     );
 
     const glm::dvec3 lateralDemand(5.0, 0.0, 0.0);

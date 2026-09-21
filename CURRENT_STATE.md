@@ -1407,3 +1407,95 @@ by itself. The key Newtonian diagnostic remains whether the yellow actual veloci
 vector changes consistently with the real cyan hull attitude and bounded RCS/main-thrust
 authority. The 178.94-degree body/velocity diagnostic in the failed headless run is
 strong evidence that this deeper maneuver-authoring issue remains.
+
+
+## 2026-09-21 — expose the real calculated curve and replace exact-corner forcing with a rounded execution guide
+
+User viewer evidence showed visible braking / path distortion on apparently straight
+parts of the retained four-point wall route and requested that the actual calculated
+"spline" be drawn.
+
+Important correction: production runtime does **not** use the retired
+`SmoothPathOptimizer`. The `SmoothPathPerf` records that can still appear in the
+aggregate navigation performance log come from legacy/test compatibility runs. The
+current runtime route-to-motion backend is the canonical Ruckig path. Therefore the
+curve that must be inspected is the complete Ruckig reference trajectory, not a hidden
+B-spline.
+
+### Runtime geometry change
+
+The previous Ruckig route authoring still forced each coarse Stage-1 support vertex to
+be an exact target position while assigning a non-zero bisector velocity there. That
+can create an unnecessarily awkward local state constraint: the solver must hit one
+mathematical corner point and simultaneously leave it already rotated in velocity
+space.
+
+New candidate behavior:
+- Stage-1 `routePoints` remain retained and unchanged.
+- Stage-2 derives a separate collision-checked `executionGuide`.
+- For every interior coarse vertex it computes a physically useful tangent reserve from
+  authored speed and lateral acceleration.
+- The coarse vertex is replaced locally by entry/exit guide points.
+- If that useful corner does not fit, the local corner can be moved farther outward into
+  free space in steps instead of tightening the curve or forcing StopTurnGo.
+- Ruckig parameterizes this guide.
+- The full guide is published in `TrajectoryGenerationResult::executionGuidePointsMeters`.
+
+Candidate commits:
+- `0b4212345b2c38b4f775937060a81ba56cace219` — expose execution guide;
+- `939a7058ba58a244282d219e0c298150a72a410f` — rounded/widenable execution guide;
+- `77f9640eb77267be6a258b0293720e00f089fbe6` /
+  `f9b106f8c259c0f7a39ebde11f67c776e1a35c92` — guide diagnostics.
+
+### Viewer change
+
+The trace now carries two new Stage-2 products:
+- `executionGuidePoints`;
+- `calculatedTrajectoryPoints` (all Ruckig samples).
+
+Viewer colors:
+- white = retained coarse geometric route;
+- blue = widened local execution guide;
+- purple = complete calculated Ruckig curve;
+- green = actual flown trajectory;
+- yellow arrow = actual velocity;
+- cyan short arrow = real hull nose;
+- red arrow = program target nose.
+
+Blue guide support points are also drawn as small crosses.
+
+Candidate commits:
+- `3ee684742afd8ad91307b99c0a1815bd30aea722` /
+  `287ab085275873ffb1f991e09902d31706edb927` — trace schema/persistence;
+- `33e3b228327cfb9c6031ecb09aa67847d16d2cda` — runtime publishes guide and full
+  reference plus calculated min/max speed;
+- `154d9e1a544dc957769efce127b70ee36dd8b0cc` — viewer renders the products.
+
+### Focused regression
+
+The default wall Ruckig test now additionally requires:
+- execution guide has more support points than the four-point coarse route;
+- calculated reference minimum speed stays >= 7.5 m/s in this steady 10 m/s stand;
+- calculated reference does not geometrically backtrack along +X.
+
+Commit:
+- `68f4377aabae1fd894be4a882fb30b0cec762d89`.
+
+This candidate is **not target MinGW64 validated yet**.
+
+### Immediate diagnostic objective
+
+In the next viewer run compare:
+1. white coarse route;
+2. blue execution guide;
+3. purple calculated Ruckig curve;
+4. green actual path.
+
+Also inspect:
+- `CALCULATED MIN SPEED`;
+- `CALCULATED MIN SPEED POS`;
+- `CALCULATED MAX SPEED`.
+
+If purple is smooth and remains near 10 m/s while green brakes/loops, the fault is
+downstream in Follower / body-thrust execution. If purple itself brakes or loops, keep
+the fix in route-to-trajectory authoring and widen/reject the guide before ACCEPT.

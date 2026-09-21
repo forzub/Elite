@@ -1,8 +1,8 @@
-# CONTINUE PROMPT — Elite Navigation: minimum-cant Newtonian attitude
+# CONTINUE PROMPT — Elite Navigation: reducer state + free-transit corridor + engine visualization
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
-Every iteration MUST:
+Every state-affecting iteration MUST:
 1. update `CURRENT_STATE.md`;
 2. update `CURRENT_TASK.md`;
 3. update `PROJECT_STATE.md`;
@@ -10,60 +10,97 @@ Every iteration MUST:
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
 Read those files first, then inspect:
+- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`;
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`;
-- `src/game/navigation/DynamicMotionSystem.cpp`;
+- `tools/navigation_runtime/NavigationTrace.h/.cpp`;
+- `src/game/navigation/AcceptedManeuverProgram.h`;
 - `src/game/navigation/ManeuverTrackingController.cpp`;
-- `src/game/ship/ShipController.cpp`;
-- `src/world/navigation/TrajectoryGenerator.cpp`.
+- relevant navigation runtime/guidance tests.
 
-## Latest verified behavior
+## Current confirmed trajectory state
 
-Scalar path-progress correction substantially improved the reference geometry.
+The scalar path-progress architecture is much better. Latest uploaded perf tail shows
+steady default wall runs with:
+- one Ruckig solve;
+- `min_speed_mps=10.0000`;
+- `max_speed_mps=10.0000`.
 
-Latest wall-case perf includes one scalar solve, `guide_points=10`, and
-`min_speed_mps=max_speed_mps=10.0000`.
+The minimum-cant Newtonian attitude also visually improved hull behavior.
 
-Remaining user-visible problem:
-the physical hull rotates dramatically broadside to the direction of travel during a
-gentle Newtonian turn.
+## Current user requests already implemented, awaiting target validation
 
-## Root cause
+### 1. Redux-style viewer state
 
-The old reference-attitude policy was:
-```cpp
-if (law == Newtonian && acceleration > 0.35)
-    requestedForward = normalize(acceleration);
-```
+Native C++ viewer now has one authoritative reducer-driven `AppState`:
+- actions for control law, pilot, style, obstacle, playback;
+- all controls dispatch actions;
+- runtime effective control law is observed from trace frames and dispatches through the
+  same reducer;
+- buttons are projections of this state.
 
-On a constant-speed turn the acceleration is centripetal, so this commands roughly a
-90-degree nose-to-velocity separation even when RCS alone can provide the needed lateral
-acceleration.
+Do not introduce separate widget-owned mode booleans.
 
-The lower physical allocator already has the correct decomposition seam:
-- main engine = positive longitudinal along hull forward in Newtonian;
-- residual = bounded manoeuvre/RCS vector.
+Diagnostics:
+- CONTROL LAW REQUESTED
+- CONTROL LAW EFFECTIVE
+- CONTROL LAW SWITCHES
 
-Therefore the reference attitude should not point the main engine at the full
-acceleration vector by default.
+If runtime actually changes from Assisted to Newtonian, the button must follow.
 
-## Current candidate
+### 2. Free-transit speed/progress corridor
 
-Commit `fcffa5bae3b4e3deab5d6f043d3c500137719dad` introduces minimum-cant
-Newtonian attitude:
-- velocity tangent is default nose direction;
-- if |requested acceleration| <= manoeuvre/RCS authority, no main-engine cant;
-- otherwise rotate only the minimum angle needed so a positive main-thrust ray plus the
-  bounded RCS sphere can reproduce requested acceleration.
+`AcceptedManeuverProgram::TrackingEnvelope`:
+- `alongTrackSpeedDeadbandMps`;
+- `alongTrackPositionDeadbandMeters`.
 
-Commit `b943064d529935243863c30238ae0daf62f1c129` adds:
-```text
-MAX REFERENCE/VELOCITY ANGLE
-```
-alongside the existing actual `MAX BODY/VELOCITY ANGLE`.
+`ManeuverTrackingController` removes in-corridor along-track position/velocity error
+before computing feedback, while retaining cross-track correction.
 
-Do not call this target-accepted until user MinGW64 viewer evidence confirms it.
+Current doctrine:
+- STANDARD: +/-0.5 m/s and +/-12 m;
+- EXTREME: +/-1.0 m/s and +/-16 m.
 
-## Next commands
+Thus 10.1 m/s on a 10.0 m/s free-transit reference must not request braking solely to
+recover exact speed.
+
+Do not apply these loose corridors to PrecisionCapture/PrecisionTransit.
+
+### 3. Main-engine use visualization
+
+Each execution trace frame exposes:
+- effective runtime law;
+- `mainEngineThrottle01`, derived from actual physical positive aft-main acceleration.
+
+Viewer:
+- orange rear face only when actual aft main engine is firing;
+- HUD `MAIN: N%`;
+- RCS does not light the rear face.
+
+This is the diagnostic for deciding whether a hull turn is doing useful main-engine
+vectoring.
+
+### Relevant code commits
+
+- `92d65f86fe22ec1d0a404f952a0ebd0eb4935fb3`
+- `a171510889a2d235896e6ad567011c2b651ee3b7`
+- `023861170299dc7321975f2e73173af4b2547ca8`
+- `ad053356ada03d5212185b7d49d0b6aeb017ed6a`
+- `0b2e48b66744662e783b52b135ef26a714f43fb5`
+- `b503c3e35a9b8c2b0333b026b9251d6075a1afe2`
+- `1d17f9d208f9ef77a3dc8ac09753202aba7cd4c4`
+- `cbb58b16a7a15803cc8e56618d639916d748a53e`
+- `089d905f3207fa48afe3bba70935ce9413b145f6`
+- `163bee3c58443a5d0d6b4ad092ae7e6f970feef1`
+- `2e8692b68c670275e7f96654c4a990c473b885a9`
+- `7a663da3b7f6bc8a92daa9433daeef40a10d41c9`
+- `3cadb29a840643524f2edafba3abb0b9091d795c`
+- `9e27bcd2392e7c18c36354374df33ab04882045f`
+- `3845b50910310494b394ec00820c86cc97b96aff`
+- `5299809e37f0a5061d56f066240619d56c6f27b4`
+- `eedad40169c00509e01015f1a1777bd67f29965f`
+- `a60a215fde65505826b9b96c70edf511991da91f`
+
+## Next target commands
 
 ```bash
 cd /d/__elite/work
@@ -74,23 +111,20 @@ bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Start with Expert / Standard / Newtonian.
+Validate four combinations:
+- Assisted Standard
+- Assisted Extreme
+- Newtonian Standard
+- Newtonian Extreme
 
-Viewer:
-- yellow = actual velocity;
-- red = reference nose;
-- cyan = physical nose;
-- purple = calculated path;
-- green = actual path;
-- NAV REV must be visible.
+Watch:
+- selected law button;
+- requested/effective/switches;
+- speed + corridor;
+- MAIN:% and orange rear face;
+- red reference nose vs cyan hull vs yellow velocity.
 
-Expected:
-- red no longer swings broadside merely because the curve has centripetal acceleration;
-- cyan follows red with a modest turn;
-- for this gentle 10 m/s stand, reference/velocity angle should be much smaller than the
-  previous near-90/180-degree behavior.
-
-If red is good but cyan is bad, investigate angular tracker/control-axis execution.
-If red is still bad, fix reference attitude allocation.
+If the effective law remains ASSISTED with zero switches but motion still resembles
+Newtonian, debug Assisted force/attitude behavior rather than changing UI state.
 
 Do not enable dynamic avoidance yet.

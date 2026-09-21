@@ -36,7 +36,8 @@ struct ScenarioRunSettings
 
     // Negative means "use the authored scenario value". The runtime viewer
     // uses explicit overrides so start/finish speed can be swept without
-    // rewriting scenario.json or forcing Stage-1 route replanning.
+    // rewriting scenario.json. Speed is a route-planning input because higher
+    // inertia requires more geometric maneuver room.
     double startSpeedOverrideMps = -1.0;
     double finishSpeedOverrideMps = -1.0;
 };

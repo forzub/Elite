@@ -1835,6 +1835,41 @@ ScenarioRunResult executeCalculatedRoute(
             return out;
         }
 
+        trace.executionGuidePoints =
+            trajectoryResult.executionGuidePointsMeters;
+        trace.calculatedTrajectoryPoints.clear();
+        trace.calculatedTrajectoryPoints.reserve(
+            trajectoryResult.trajectory.samples.size()
+        );
+
+        double calculatedMinimumSpeedMps =
+            std::numeric_limits<double>::infinity();
+        double calculatedMaximumSpeedMps = 0.0;
+        glm::dvec3 calculatedMinimumSpeedPosition =
+            scenario.startPosition;
+
+        for (const auto& sample : trajectoryResult.trajectory.samples)
+        {
+            trace.calculatedTrajectoryPoints.push_back(
+                sample.positionMeters
+            );
+
+            if (sample.speedMps < calculatedMinimumSpeedMps)
+            {
+                calculatedMinimumSpeedMps = sample.speedMps;
+                calculatedMinimumSpeedPosition =
+                    sample.positionMeters;
+            }
+            calculatedMaximumSpeedMps =
+                std::max(
+                    calculatedMaximumSpeedMps,
+                    sample.speedMps
+                );
+        }
+
+        if (!std::isfinite(calculatedMinimumSpeedMps))
+            calculatedMinimumSpeedMps = 0.0;
+
         std::vector<double> retainedWaypointSpeedsMps;
         if (calculatedRoute.routePoints.size() > 2)
         {
@@ -2306,6 +2341,16 @@ ScenarioRunResult executeCalculatedRoute(
                 std::to_string(
                     trajectoryResult.trajectory.samples.size()
                 ),
+            "EXECUTION GUIDE POINTS: " +
+                std::to_string(
+                    trace.executionGuidePoints.size()
+                ),
+            "CALCULATED MIN SPEED: " +
+                number(calculatedMinimumSpeedMps) + " M/S",
+            "CALCULATED MIN SPEED POS: " +
+                formatVec3(calculatedMinimumSpeedPosition),
+            "CALCULATED MAX SPEED: " +
+                number(calculatedMaximumSpeedMps) + " M/S",
             "PROGRAM PHASES: " +
                 std::to_string(programs.size()),
             "PHASE HANDOFFS: " +

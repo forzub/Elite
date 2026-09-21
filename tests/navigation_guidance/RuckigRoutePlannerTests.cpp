@@ -174,6 +174,42 @@ void testStraightRouteUsesRuckigWithMovingStartAndFinish()
     );
 }
 
+void testMovingTerminalSpeedDoesNotCapUnrelatedTransit()
+{
+    auto request = baseRequest();
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(250.0, 0.0, 0.0),
+        glm::dvec3(500.0, 0.0, 0.0)
+    };
+    request.vehicle.maxSpeedMps = 80.0;
+    request.initialVelocityMps = glm::dvec3(10.0, 0.0, 0.0);
+    request.hasTerminalVelocity = true;
+    request.terminalVelocityMps = glm::dvec3(10.0, 0.0, 0.0);
+    request.pointSpeedConstraints.push_back({500.0, 10.0});
+
+    const auto result = game::navigation::RuckigRoutePlanner::plan(request);
+    require(
+        result.ready(),
+        "moving-terminal variable-speed Ruckig route failed"
+    );
+
+    double peakSpeed = 0.0;
+    for (const auto& sample : result.trajectory.samples)
+        peakSpeed = std::max(peakSpeed, sample.speedMps);
+
+    require(
+        peakSpeed > 12.0,
+        "terminal 10 m/s was incorrectly applied as a global cruise cap"
+    );
+    require(
+        std::abs(
+            result.trajectory.samples.back().speedMps - 10.0
+        ) < 1.0e-6,
+        "variable-speed transit lost the exact moving terminal speed"
+    );
+}
+
 void testDiagonalStoppedLegStaysOnCoarseChord()
 {
     auto request = baseRequest();
@@ -455,6 +491,7 @@ int main()
         void (*fn)();
     } tests[] = {
         {"straight route keeps moving start and finish", testStraightRouteUsesRuckigWithMovingStartAndFinish},
+        {"moving terminal does not globally cap transit speed", testMovingTerminalSpeedDoesNotCapUnrelatedTransit},
         {"diagonal stopped leg stays on coarse chord", testDiagonalStoppedLegStaysOnCoarseChord},
         {"clear corner keeps through velocity", testClearCornerGetsContinuousRuckigWaypointVelocity},
         {"blocked wide blend shrinks before stop", testBlockedWideBlendShrinksBeforeStopping},

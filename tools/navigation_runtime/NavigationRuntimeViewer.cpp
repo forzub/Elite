@@ -154,6 +154,8 @@ struct AppState
     UiAction pendingUiAction = UiAction::None;
 };
 
+bool recalculationRequired(const AppState& state);
+
 enum class ViewerActionType
 {
     SetControlMode,
@@ -2708,10 +2710,7 @@ void mouseButtonCallback(
         action == GLFW_RELEASE)
     {
         state->scrubbingFrames = false;
-        const bool speedChanged =
-            state->speedSliderDrag != SpeedSliderDrag::None;
         state->speedSliderDrag = SpeedSliderDrag::None;
-        if (speedChanged)
     }
 }
 

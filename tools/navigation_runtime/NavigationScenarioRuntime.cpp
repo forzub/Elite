@@ -103,9 +103,6 @@ struct Scenario
     DynamicObstacleDefinition suddenObstacle;
     bool hasSuddenObstacle = false;
 
-    double standardSpeedMps = 10.0;
-    double extremeSpeedMps = 18.0;
-
     // Coarse Stage-1 route/corridor abstraction only. Exact oriented-hull
     // swept-volume clearance belongs to the later physical tunnel stage.
     double routeEnvelopeRadiusMeters = 13.0;
@@ -322,10 +319,6 @@ Scenario loadScenario(const std::string& path)
             finish.value("speed_mps", 0.0);
     }
 
-    scenario.standardSpeedMps =
-        root.value("standard_speed_mps", 10.0);
-    scenario.extremeSpeedMps =
-        root.value("extreme_speed_mps", 18.0);
     scenario.routeEnvelopeRadiusMeters =
         root.value("route_envelope_radius_m", 13.0);
     scenario.routeClearanceMeters =
@@ -749,6 +742,66 @@ glm::dvec3 effectiveStartVelocity(
         effectiveStartSpeedMps(scenario, settings);
 }
 
+double characteristicTurnTimeSeconds(
+    const ShipParams& params
+)
+{
+    // Coarse Stage-1 maneuver reserve: time to rotate the hull through a
+    // representative 30-degree avoidance bend using the real angular limits.
+    // This is not the final B6 swept-hull proof; it only gives the geometric
+    // route enough room for inertia to matter before detailed authoring.
+    constexpr double kRepresentativeTurnRad =
+        3.14159265358979323846 / 6.0;
+
+    const double alpha = std::max(
+        0.1,
+        static_cast<double>(params.angularAccel)
+    );
+    const double omega = std::max(
+        0.1,
+        std::max({
+            static_cast<double>(params.maxPitchRate),
+            static_cast<double>(params.maxYawRate),
+            static_cast<double>(params.maxRollRate)
+        })
+    );
+
+    const double accelDecelAngle = omega * omega / alpha;
+    if (kRepresentativeTurnRad <= accelDecelAngle)
+        return 2.0 * std::sqrt(kRepresentativeTurnRad / alpha);
+
+    return
+        2.0 * omega / alpha +
+        (kRepresentativeTurnRad - accelDecelAngle) / omega;
+}
+
+double routePlanningClearanceMeters(
+    const Scenario& scenario,
+    const ScenarioRunSettings& settings,
+    const ShipParams& params
+)
+{
+    const double planningSpeedMps = std::max(
+        effectiveStartSpeedMps(scenario, settings),
+        effectiveFinishSpeedMps(scenario, settings)
+    );
+
+    const double inertialLeadMeters =
+        planningSpeedMps * characteristicTurnTimeSeconds(params);
+
+    // FlightStyle is a clearance/risk doctrine only:
+    // STANDARD keeps more maneuver room; EXTREME deliberately cuts closer.
+    // It does not own a cruise speed.
+    const double styleReserveFactor =
+        settings.flightStyle == FlightStyle::Extreme
+            ? 0.35
+            : 1.0;
+
+    return
+        std::max(0.0, scenario.routeClearanceMeters) +
+        inertialLeadMeters * styleReserveFactor;
+}
+
 void setTransformBasis(
     ShipTransform& transform,
     const Basis& basis
@@ -1169,21 +1222,22 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
     profile.collisionRadiusMeters =
         std::max(0.0, scenario.routeEnvelopeRadiusMeters);
     profile.preferredClearanceMeters =
-        std::max(0.0, scenario.routeClearanceMeters);
-    const double styleSpeedMps =
-        settings.flightStyle == FlightStyle::Extreme
-            ? scenario.extremeSpeedMps
-            : scenario.standardSpeedMps;
+        routePlanningClearanceMeters(
+            scenario,
+            settings,
+            params
+        );
 
-    // START/FINISH sliders are explicit execution-boundary requests. They may
-    // intentionally exceed the nominal style cruise speed for diagnostics, so
-    // they must expand the trajectory envelope instead of being rejected by
-    // validRequest() as an impossible terminal state.
-    profile.maxSpeedMps = std::max({
-        styleSpeedMps,
-        effectiveStartSpeedMps(scenario, settings),
-        effectiveFinishSpeedMps(scenario, settings)
-    });
+    // FlightStyle does NOT define speed. The current test stand has explicit
+    // start/finish speed requests; their larger value is the kinematic speed
+    // envelope for this retained-route execution.
+    profile.maxSpeedMps = std::max(
+        0.1,
+        std::max(
+            effectiveStartSpeedMps(scenario, settings),
+            effectiveFinishSpeedMps(scenario, settings)
+        )
+    );
 
     const double mainAcceleration =
         std::max(
@@ -1306,6 +1360,8 @@ Program makeProgramPhase(
     FlightStyle flightStyle
 )
 {
+    (void)flightStyle;
+
     Program program;
     program.valid = true;
     program.revision = revision;
@@ -1415,14 +1471,8 @@ Program makeProgramPhase(
     // lateral/cross-track control but allow harmless longitudinal drift so a
     // 10.1 m/s actual speed does not trigger a braking manoeuvre merely to
     // recover an exact 10.0 m/s reference.
-    program.tracking.alongTrackPositionDeadbandMeters =
-        flightStyle == FlightStyle::Extreme
-            ? 16.0
-            : 12.0;
-    program.tracking.alongTrackSpeedDeadbandMps =
-        flightStyle == FlightStyle::Extreme
-            ? 1.0
-            : 0.5;
+    program.tracking.alongTrackPositionDeadbandMeters = 12.0;
+    program.tracking.alongTrackSpeedDeadbandMps = 0.5;
 
     program.tracking.linearFeedbackReserveMps2 = 1.5;
     program.tracking.angularFeedbackReserveRadPerSec2 = 0.8;
@@ -2079,17 +2129,16 @@ ScenarioRunResult calculateScenario(
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 
-        // Stage 1 consumes only static route facts. Control law, pilot skill,
-        // doctrine and dynamic actors are intentionally Stage-2 inputs.
+        // Stage 1 remains static-world planning, but its geometric maneuver
+        // reserve is speed/style aware: higher boundary speed needs more room,
+        // STANDARD keeps more clearance, EXTREME cuts closer. Pilot skill,
+        // control law and dynamic actors remain Stage-2 concerns.
         (void)settings.pilot;
-        (void)settings.flightStyle;
         (void)settings.enableSuddenObstacle;
         (void)scenario.dynamicWorldRevision;
         (void)scenario.dynamicObstacles;
         (void)scenario.suddenObstacle;
         (void)scenario.hasSuddenObstacle;
-        (void)scenario.standardSpeedMps;
-        (void)scenario.extremeSpeedMps;
         (void)scenario.finish.requireForward;
         (void)scenario.finish.requireUp;
         (void)scenario.finish.forward;
@@ -2107,8 +2156,16 @@ ScenarioRunResult calculateScenario(
         request.staticObstacles = scenario.staticObstacles;
         request.navigationEnvelopeRadiusMeters =
             std::max(0.0, scenario.routeEnvelopeRadiusMeters);
+
+        const ShipParams planningShip = cobraParams();
+        const double planningClearanceMeters =
+            routePlanningClearanceMeters(
+                scenario,
+                settings,
+                planningShip
+            );
         request.additionalRouteClearanceMeters =
-            std::max(0.0, scenario.routeClearanceMeters);
+            planningClearanceMeters;
 
         const auto route =
             game::navigation::NominalRoutePlanner::plan(request);
@@ -2141,6 +2198,33 @@ ScenarioRunResult calculateScenario(
         trace.frames.push_back(routeFrame(scenario, route.valid));
 
         out.diagnostics = routeDiagnostics(scenario, route);
+        {
+            std::ostringstream planningSpeed;
+            planningSpeed.setf(std::ios::fixed);
+            planningSpeed << std::setprecision(2)
+                << std::max(
+                    effectiveStartSpeedMps(scenario, settings),
+                    effectiveFinishSpeedMps(scenario, settings)
+                );
+
+            std::ostringstream clearance;
+            clearance.setf(std::ios::fixed);
+            clearance << std::setprecision(2)
+                << planningClearanceMeters;
+
+            out.diagnostics.push_back(
+                "ROUTE PLANNING SPEED: " +
+                planningSpeed.str() + " M/S"
+            );
+            out.diagnostics.push_back(
+                "STYLE CLEARANCE: " +
+                std::string(flightStyleName(settings.flightStyle))
+            );
+            out.diagnostics.push_back(
+                "ROUTE ADDITIONAL CLEARANCE: " +
+                clearance.str() + " M"
+            );
+        }
         writeRouteDiagnostics(
             scenarioJsonPath,
             out.diagnostics
@@ -2833,7 +2917,7 @@ ScenarioRunResult executeCalculatedRoute(
                 (bridgeInvalid ? "FAIL" : "EXECUTED"),
             "PILOT PROFILE: " +
                 std::string(pilotName(settings.pilot)),
-            "FLIGHT STYLE: " +
+            "FLIGHT STYLE / CLEARANCE DOCTRINE: " +
                 std::string(flightStyleName(settings.flightStyle)),
             "START SPEED REQUESTED: " +
                 number(effectiveStartSpeedMps(scenario, settings)) +
@@ -2842,16 +2926,16 @@ ScenarioRunResult executeCalculatedRoute(
                 number(effectiveFinishSpeedMps(scenario, settings)) +
                 " M/S",
             "FOLLOWER SPEED CORRIDOR: +/- " +
-                number(
-                    settings.flightStyle == FlightStyle::Extreme
-                        ? 1.0
-                        : 0.5
-                ) + " M/S",
+                number(0.5) + " M/S",
             "FOLLOWER PROGRESS CORRIDOR: +/- " +
+                number(12.0) + " M",
+            "ROUTE ADDITIONAL CLEARANCE: " +
                 number(
-                    settings.flightStyle == FlightStyle::Extreme
-                        ? 16.0
-                        : 12.0
+                    routePlanningClearanceMeters(
+                        scenario,
+                        settings,
+                        params
+                    )
                 ) + " M",
             "CONTROL LAW REQUESTED: " +
                 std::string(

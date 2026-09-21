@@ -191,6 +191,26 @@ for marker in (
 ):
     require(marker in viewer, f"deterministic calculate/viewer workflow missing {marker}")
 
+for marker in (
+    "hasEffectiveRuntimeControlLaw",
+    "effectiveRuntimeControlLaw",
+    "УПРАВЛЕНИЕ / ВЫБРАНО",
+    "УПРАВЛЕНИЕ / ФАКТ",
+    "ПИЛОТ: ",
+    "ПОВЕДЕНИЕ: ",
+):
+    require(marker in viewer, f"viewer current-mode diagnostics missing {marker}")
+
+runtime_observer = function_slice(
+    viewer,
+    "case ViewerActionType::RuntimeControlLawObserved:",
+    "void dispatchViewerAction("
+)
+require(
+    "state.controlMode =" not in runtime_observer,
+    "runtime playback is again overwriting the requested control-law selector",
+)
+
 for required in (
     "EliteNavigationRouteToolCore",
     "EliteNavigationExecutionToolCore",

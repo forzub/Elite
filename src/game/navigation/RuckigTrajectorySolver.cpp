@@ -271,6 +271,105 @@ TrajectoryPredictionSample makeOutputSample(
 
 } // namespace
 
+
+RuckigProgressResult RuckigTrajectorySolver::solveProgress(
+    const RuckigProgressRequest& request
+)
+{
+    RuckigProgressResult out;
+
+    const bool valid =
+        finite(request.startProgressMeters) &&
+        finite(request.startSpeedMps) &&
+        finite(request.startAccelerationMps2) &&
+        finite(request.targetProgressMeters) &&
+        finite(request.targetSpeedMps) &&
+        finite(request.targetAccelerationMps2) &&
+        finite(request.maxSpeedMps) &&
+        finite(request.maxAccelerationMps2) &&
+        finite(request.maxJerkMps3) &&
+        finite(request.sampleIntervalSeconds) &&
+        request.targetProgressMeters >= request.startProgressMeters &&
+        request.maxSpeedMps > 0.0 &&
+        request.maxAccelerationMps2 > 0.0 &&
+        request.maxJerkMps3 > 0.0 &&
+        request.sampleIntervalSeconds > 0.0;
+
+    if (!valid)
+    {
+        out.message = "invalid scalar Ruckig progress request";
+        return out;
+    }
+
+    ruckig::InputParameter<1> input;
+    input.current_position = {request.startProgressMeters};
+    input.current_velocity = {request.startSpeedMps};
+    input.current_acceleration = {request.startAccelerationMps2};
+    input.target_position = {request.targetProgressMeters};
+    input.target_velocity = {request.targetSpeedMps};
+    input.target_acceleration = {request.targetAccelerationMps2};
+    input.max_velocity = {request.maxSpeedMps};
+    input.max_acceleration = {request.maxAccelerationMps2};
+    input.max_jerk = {request.maxJerkMps3};
+    input.control_interface = ruckig::ControlInterface::Position;
+    input.synchronization = ruckig::Synchronization::Time;
+
+    ruckig::Ruckig<1> ruckig;
+    ruckig::Trajectory<1> trajectory;
+    const ruckig::Result result = ruckig.calculate(input, trajectory);
+    if (result < 0)
+    {
+        std::ostringstream message;
+        message << "scalar Ruckig failed with code "
+                << static_cast<int>(result);
+        out.message = message.str();
+        return out;
+    }
+
+    out.durationSeconds = trajectory.get_duration();
+    const double dt = std::min(
+        request.sampleIntervalSeconds,
+        std::max(out.durationSeconds, request.sampleIntervalSeconds)
+    );
+
+    double t = 0.0;
+    while (t < out.durationSeconds - TimeEpsilon)
+    {
+        std::array<double, 1> p {};
+        std::array<double, 1> v {};
+        std::array<double, 1> a {};
+        trajectory.at_time(t, p, v, a);
+        out.samples.push_back({
+            t,
+            p[0],
+            v[0],
+            a[0]
+        });
+        t = std::min(
+            out.durationSeconds,
+            t + dt
+        );
+    }
+
+    std::array<double, 1> p {};
+    std::array<double, 1> v {};
+    std::array<double, 1> a {};
+    trajectory.at_time(out.durationSeconds, p, v, a);
+    out.samples.push_back({
+        out.durationSeconds,
+        p[0],
+        v[0],
+        a[0]
+    });
+
+    out.ready = out.samples.size() >= 2;
+    out.message =
+        out.ready
+            ? "scalar Ruckig progress ready"
+            : "scalar Ruckig produced too few samples";
+    return out;
+}
+
 RuckigTrajectoryResult RuckigTrajectorySolver::solve(
     const RuckigTrajectoryRequest& request
 )

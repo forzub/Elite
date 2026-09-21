@@ -23,7 +23,10 @@ public:
         double positionGainPerSecond2 = 0.50;
         double velocityGainPerSecond = 1.00;
         double attitudeGainPerSecond2 = 2.00;
-        double angularVelocityGainPerSecond = 1.00;
+        // Near-critical attitude damping. With Kp=2, critical Kd is
+        // about 2.83; the small margin prevents physical clamping from
+        // turning return-to-reference into a visible pendulum oscillation.
+        double angularVelocityGainPerSecond = 3.00;
     };
 
     struct AgentState

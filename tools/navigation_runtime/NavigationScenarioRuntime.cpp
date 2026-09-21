@@ -554,9 +554,9 @@ void writeRouteDiagnostics(
     const std::vector<std::string>& diagnostics
 )
 {
-    const std::filesystem::path scenarioPath(scenarioJsonPath);
+    (void)scenarioJsonPath;
     const std::filesystem::path output =
-        scenarioPath.parent_path() / "last_route_plan.log";
+        std::filesystem::current_path() / "last_route_plan.log";
 
     std::ofstream stream(output);
     if (!stream)
@@ -1917,9 +1917,9 @@ void writeExecutionDiagnostics(
     const std::vector<std::string>& diagnostics
 )
 {
-    const std::filesystem::path scenarioPath(scenarioJsonPath);
+    (void)scenarioJsonPath;
     const std::filesystem::path output =
-        scenarioPath.parent_path() / "last_execution.log";
+        std::filesystem::current_path() / "last_execution.log";
 
     std::ofstream stream(output);
     if (!stream)
@@ -1940,9 +1940,9 @@ void writeExecutionTelemetry(
     const TraceDocument& trace
 )
 {
-    const std::filesystem::path scenarioPath(scenarioJsonPath);
+    (void)scenarioJsonPath;
     const std::filesystem::path output =
-        scenarioPath.parent_path() /
+        std::filesystem::current_path() /
         "last_execution_telemetry.log";
 
     std::ofstream stream(output);

@@ -2507,3 +2507,207 @@ remaining oscillation is:
 
 Do not tune damping until the requested/effective control-law state is visibly proven on
 the target viewer.
+
+
+## 2026-09-22 — high-speed runaway root causes: underdamped hull loop + reference clock outrunning physics
+
+Latest target evidence came from a 26.15 m/s -> 11.75 m/s Newtonian run.
+
+Observed diagnostics:
+- Ruckig trajectory itself was produced successfully;
+- 3 accepted FreeTransit phases / 2 nominal handoffs;
+- calculated speed range 11.38..26.15 m/s;
+- old runtime claimed `ROUTE EXECUTION COMPLETE: YES`;
+- but physical final position error was 68.49 m;
+- max route deviation 62.24 m;
+- max Follower position error 68.49 m;
+- main engine could be zero while angular control and RCS remained active.
+
+That proves two separate faults.
+
+### 1. Hull "float" / oscillation
+
+B10 default attitude feedback was:
+```text
+Kp = 2.0
+Kd = 1.0
+```
+
+For the second-order attitude-error loop, critical damping for Kp=2 is about:
+```text
+Kd_critical = 2 * sqrt(Kp) ~= 2.83
+```
+
+So the old loop was intentionally/accidentally strongly underdamped. Telemetry matches
+that: the body still carries substantial angular rate as forward-reference error approaches
+zero, overshoots the requested attitude, then reverses correction like a pendulum.
+
+Changed default B10 angular-velocity feedback to:
+```text
+Kp = 2.0
+Kd = 3.0
+```
+
+This is near-critical/slightly overdamped and remains bounded by the accepted program's
+angular feedback reserve and lower physical angular acceleration/rate limits.
+
+Focused regression now requires default Kd >= 2*sqrt(Kp).
+
+Commits:
+- `e2b5270210b79c5b873a0437b2a4deb14c7973ae`;
+- `32af480c8fee271a1f5f3f6396b02b6601a0e190`.
+
+Important actuator semantics remain:
+- hull rotation does NOT imply main-engine thrust;
+- navigation angular acceleration is applied by the attitude/RCS torque path;
+- main engine owns linear thrust;
+- therefore `MAIN=0` while `exec_ang_cmd != 0` is physically legitimate.
+The bug was unnecessary/underdamped rotation, not the independence of those actuators.
+
+### 2. No physical return to the trajectory at high speed
+
+The old FreeTransit execution was too schedule-driven.
+
+`ManeuverPhaseGate::ScheduledMoving` advances when nominal phase time ends. At high speed
+the reference could continue into the next phase while the physical craft had already
+fallen far outside the intended track. The program clock therefore ran away from the ship.
+
+This explains the previously contradictory diagnostic:
+```text
+ROUTE EXECUTION COMPLETE: YES
+FINAL POSITION ERROR: 68.49 M
+```
+
+A reference-reacquisition policy is now implemented in the runtime fixture:
+
+- `AcceptedManeuverProgram` remains immutable;
+- runtime owns a separate `activeProgramReferenceDelaySeconds`;
+- B9/Follower are sampled using:
+  ```text
+  programReferenceTime = physicalTime - referenceDelay
+  ```
+- when B10 reports `trackingErrorExceeded`, reference delay grows by one fixed step;
+- therefore reference progress pauses while the physical ship catches/reorients/reacquires;
+- phase gate sees the same delayed reference time, so it cannot hand off merely because
+  wall-clock time elapsed;
+- once the craft is back inside its envelope, reference time resumes;
+- phase activation resets the local delay;
+- accepted program timestamps are NOT mutated.
+
+Viewer status while this happens:
+```text
+FOLLOWER ВОЗВРАЩАЕТСЯ В КОРИДОР
+```
+
+Diagnostics:
+- `REFERENCE CLOCK HOLD FRAMES`;
+- `REFERENCE CLOCK HOLD`.
+
+The diagnostic harness overrun window was enlarged from +12 s to +30 s so a real recovery
+attempt has time to occur instead of immediately ending the fixture.
+
+Commits:
+- initial implementation `4717263f59e9b50f90ad7696e927eb1f3f4696ba`;
+- immutable accepted-program correction
+  `c0378aa900518523a8f9ac9c51dd32563c7ed773`;
+- viewer reacquisition status
+  `4d2255366d4ff6ad330d82586b24a29214236b41`.
+
+### 3. FreeTransit envelope now matches its own longitudinal deadbands
+
+Previously FreeTransit could intentionally suppress harmless along-track lead/lag feedback
+but still mark the same raw error as `EnvelopeExceeded`.
+
+B10 now evaluates the tracking envelope using the same effective position/velocity errors
+after longitudinal deadbands are applied. Real cross-track/velocity errors remain active;
+accepted longitudinal slack no longer falsely pauses the reference.
+
+A regression deliberately makes the raw along-track error exceed the nominal envelope
+while remaining inside the accepted deadband and requires `Tracking`, not
+`EnvelopeExceeded`.
+
+Commits:
+- `aca1d7af46a0cf5bdccc7e08629450bb217ced2b`;
+- `cf963e972690e0f822146bdeb0ce96dbb8df166b`.
+
+The runtime FreeTransit reacquisition envelope is now tighter:
+- position 8 m;
+- linear velocity 4 m/s;
+- forward-angle 0.35 rad;
+- angular-rate 0.8 rad/s.
+
+Leaving this envelope does not disable navigation; it holds reference progress and
+continues physical recovery.
+
+Commit:
+- `59aa0d404d02604e37f93955e083f18d0504b3cf`.
+
+### 4. High-speed regression
+
+Runtime E2E now reproduces the reported case:
+- Newtonian;
+- Expert;
+- Standard;
+- START 26.15 m/s;
+- FINISH 11.75 m/s.
+
+It requires:
+- reference-reacquisition diagnostics are present;
+- execution succeeds physically;
+- final position error <= 5 m.
+
+Commit:
+- `41ea618fc089003410b6cba8f5b2c1db912c8cbc`.
+
+This target regression is committed but NOT yet verified on the user's MinGW64 machine.
+
+### 5. Completion diagnostics no longer conflate schedule and physics
+
+Removed misleading:
+```text
+ROUTE EXECUTION COMPLETE: YES
+```
+
+It is now split into:
+```text
+PROGRAM PHASES COMPLETE: YES/NO
+PHYSICAL TERMINAL STATE: REACHED/MISSED
+```
+
+Commit:
+- `f6a8e68df19c9951ade574b38d7e4e08101aec2c`.
+
+### 6. All current-run artifacts moved to repo root
+
+Runtime logs now use process working directory. With supported commands launched from
+repo root:
+- `last_route_plan.log`;
+- `last_execution.log`;
+- `last_execution_telemetry.log`;
+- `navigation_perf.log`.
+
+Viewer traces also moved to root:
+- `last_calculated_trace.json`;
+- `last_execution_trace.json`.
+
+Commits:
+- `5aefdd85ec15b95e17f37834ab05e3458bf7a7ac`;
+- `830069744134177f23ff829a8879032bdb0f4d4a`;
+- docs `83fb94fc413290bcabf022cd53cd48ae840b7d86`,
+  `a928e7e018567a8b1b27962aa7189f112c9ae575`.
+
+### Validation status
+
+Architecture guard updated to require:
+- immutable-program external reference delay;
+- reacquisition markers;
+- root-log path ownership;
+- Kd=3 attitude damping;
+- effective FreeTransit envelope errors;
+- high-speed E2E regression.
+
+Commit:
+- `baecf937643083e97d8af4a9e82ee10742a82f7d`.
+
+Do not claim the new high-speed recovery or reduced oscillation is PASS until target
+MinGW64 evidence is returned.

@@ -212,6 +212,291 @@ double segmentSpeedLimit(
     return std::max(0.1, limit);
 }
 
+
+struct ExecutionGuide
+{
+    std::vector<glm::dvec3> points;
+    std::vector<double> sourceProgress;
+    std::size_t roundedCorners = 0;
+    std::size_t expandedCorners = 0;
+};
+
+glm::dvec3 closestPointOnSegment(
+    const glm::dvec3& point,
+    const glm::dvec3& a,
+    const glm::dvec3& b
+) noexcept
+{
+    const glm::dvec3 ab = b - a;
+    const double denom = glm::dot(ab, ab);
+    if (denom <= Epsilon)
+        return a;
+    const double u = std::clamp(
+        glm::dot(point - a, ab) / denom,
+        0.0,
+        1.0
+    );
+    return a + ab * u;
+}
+
+void appendGuidePoint(
+    ExecutionGuide& guide,
+    const glm::dvec3& point,
+    double sourceProgress
+)
+{
+    if (!guide.points.empty() &&
+        magnitude(point - guide.points.back()) <= 1.0e-6)
+    {
+        guide.sourceProgress.back() = sourceProgress;
+        return;
+    }
+
+    guide.points.push_back(point);
+    guide.sourceProgress.push_back(sourceProgress);
+}
+
+bool guideCornerClear(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const glm::dvec3& previous,
+    const glm::dvec3& entry,
+    const glm::dvec3& exit,
+    const glm::dvec3& next
+)
+{
+    return
+        world::navigation::segmentClearOfNavigationObstacles(
+            previous,
+            entry,
+            request.obstacles,
+            request.vehicle.collisionRadiusMeters,
+            request.vehicle.preferredClearanceMeters) &&
+        world::navigation::segmentClearOfNavigationObstacles(
+            entry,
+            exit,
+            request.obstacles,
+            request.vehicle.collisionRadiusMeters,
+            request.vehicle.preferredClearanceMeters) &&
+        world::navigation::segmentClearOfNavigationObstacles(
+            exit,
+            next,
+            request.obstacles,
+            request.vehicle.collisionRadiusMeters,
+            request.vehicle.preferredClearanceMeters);
+}
+
+ExecutionGuide buildExecutionGuide(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const std::vector<double>& coarseProgress
+)
+{
+    ExecutionGuide guide;
+    const auto& coarse = request.pathPointsMeters;
+    guide.points.reserve(coarse.size() * 2);
+    guide.sourceProgress.reserve(coarse.size() * 2);
+
+    appendGuidePoint(guide, coarse.front(), coarseProgress.front());
+
+    if (coarse.size() < 3)
+    {
+        appendGuidePoint(guide, coarse.back(), coarseProgress.back());
+        return guide;
+    }
+
+    for (std::size_t i = 1; i + 1 < coarse.size(); ++i)
+    {
+        const glm::dvec3 previous = coarse[i - 1];
+        const glm::dvec3 originalCorner = coarse[i];
+        const glm::dvec3 next = coarse[i + 1];
+
+        const double incomingSourceLength =
+            coarseProgress[i] - coarseProgress[i - 1];
+        const double outgoingSourceLength =
+            coarseProgress[i + 1] - coarseProgress[i];
+
+        const double authoredSpeed = std::min({
+            pointSpeedLimit(request, coarseProgress[i]),
+            segmentSpeedLimit(
+                request,
+                coarseProgress[i - 1],
+                coarseProgress[i]),
+            segmentSpeedLimit(
+                request,
+                coarseProgress[i],
+                coarseProgress[i + 1])
+        });
+
+        const double lateralAcceleration = std::max(
+            0.1,
+            request.vehicle.maxLateralAccelerationMps2
+        );
+
+        bool rounded = false;
+        glm::dvec3 chosenEntry(0.0);
+        glm::dvec3 chosenExit(0.0);
+        double chosenCut = 0.0;
+        int chosenExpansion = 0;
+
+        // The coarse Stage-1 vertex is topology, not a demand to fly through
+        // one mathematical point with a bisector velocity. Build a local
+        // entry/exit guide around it. If the physically useful turn does not
+        // fit, move the local corner farther into free space instead of
+        // creating a tight S-turn or forcing StopTurnGo.
+        const glm::dvec3 chordClosest =
+            closestPointOnSegment(originalCorner, previous, next);
+        glm::dvec3 outward =
+            originalCorner - chordClosest;
+        if (magnitude(outward) <= 1.0e-6)
+        {
+            const glm::dvec3 midpoint = 0.5 * (previous + next);
+            outward = originalCorner - midpoint;
+        }
+        outward = normalizedOr(outward, glm::dvec3(0.0));
+
+        const double expansionStep = std::max(
+            2.0,
+            request.vehicle.collisionRadiusMeters * 0.25
+        );
+
+        for (int expansionAttempt = 0;
+             expansionAttempt < 7 && !rounded;
+             ++expansionAttempt)
+        {
+            const glm::dvec3 corner =
+                originalCorner +
+                outward * (expansionStep * expansionAttempt);
+
+            const glm::dvec3 incomingDelta = corner - previous;
+            const glm::dvec3 outgoingDelta = next - corner;
+            const double incomingLength = magnitude(incomingDelta);
+            const double outgoingLength = magnitude(outgoingDelta);
+            if (incomingLength <= Epsilon || outgoingLength <= Epsilon)
+                continue;
+
+            const glm::dvec3 incoming = incomingDelta / incomingLength;
+            const glm::dvec3 outgoing = outgoingDelta / outgoingLength;
+            const double cosine = std::clamp(
+                glm::dot(incoming, outgoing),
+                -1.0,
+                1.0
+            );
+            const double angle = std::acos(cosine);
+
+            if (angle <= glm::radians(0.5))
+            {
+                chosenEntry = corner;
+                chosenExit = corner;
+                chosenCut = 0.0;
+                chosenExpansion = expansionAttempt;
+                rounded = true;
+                break;
+            }
+
+            if (angle >= glm::radians(150.0))
+                continue;
+
+            const double radiusForSpeed =
+                authoredSpeed * authoredSpeed / lateralAcceleration;
+            const double tangentForSpeed =
+                radiusForSpeed * std::tan(angle * 0.5);
+
+            const double maxCut =
+                std::max(
+                    1.0,
+                    std::min(incomingLength, outgoingLength) * 0.42
+                );
+            const double minCut =
+                std::min(
+                    maxCut,
+                    std::max(
+                        2.0,
+                        request.vehicle.collisionRadiusMeters * 0.30
+                    )
+                );
+
+            // Extra reserve keeps the execution curve from being the
+            // mathematically tightest admissible turn.
+            double cut = std::clamp(
+                tangentForSpeed * 1.35,
+                minCut,
+                maxCut
+            );
+
+            for (int cutAttempt = 0;
+                 cutAttempt < 8;
+                 ++cutAttempt)
+            {
+                const glm::dvec3 entry = corner - incoming * cut;
+                const glm::dvec3 exit = corner + outgoing * cut;
+
+                if (guideCornerClear(
+                        request,
+                        previous,
+                        entry,
+                        exit,
+                        next))
+                {
+                    chosenEntry = entry;
+                    chosenExit = exit;
+                    chosenCut = cut;
+                    chosenExpansion = expansionAttempt;
+                    rounded = true;
+                    break;
+                }
+
+                if (cut <= minCut + 1.0e-6)
+                    break;
+
+                cut = std::max(minCut, cut * 0.78);
+            }
+        }
+
+        if (!rounded)
+        {
+            appendGuidePoint(
+                guide,
+                originalCorner,
+                coarseProgress[i]
+            );
+            continue;
+        }
+
+        if (chosenCut <= 1.0e-6)
+        {
+            appendGuidePoint(
+                guide,
+                chosenEntry,
+                coarseProgress[i]
+            );
+            continue;
+        }
+
+        const double entryProgress =
+            std::clamp(
+                coarseProgress[i] -
+                    std::min(chosenCut, incomingSourceLength * 0.45),
+                coarseProgress[i - 1] + 1.0e-6,
+                coarseProgress[i] - 1.0e-6
+            );
+        const double exitProgress =
+            std::clamp(
+                coarseProgress[i] +
+                    std::min(chosenCut, outgoingSourceLength * 0.45),
+                coarseProgress[i] + 1.0e-6,
+                coarseProgress[i + 1] - 1.0e-6
+            );
+
+        appendGuidePoint(guide, chosenEntry, entryProgress);
+        appendGuidePoint(guide, chosenExit, exitProgress);
+        ++guide.roundedCorners;
+        if (chosenExpansion > 0)
+            ++guide.expandedCorners;
+    }
+
+    appendGuidePoint(guide, coarse.back(), coarseProgress.back());
+    return guide;
+}
+
 bool violatesKnownStopDistance(
     const world::navigation::TrajectoryGenerationRequest& request,
     const std::vector<double>& sourceProgress
@@ -705,6 +990,7 @@ void appendPerfLog(
         << " collision_segments=" << result.diagnostics.collisionSegmentsChecked
         << " blended_waypoints=" << blendedWaypoints
         << " coarse_points=" << request.pathPointsMeters.size()
+        << " guide_points=" << result.executionGuidePointsMeters.size()
         << " obstacles=" << request.obstacles.size()
         << " samples=" << result.trajectory.samples.size()
         << " valid=" << (result.ready() ? 1 : 0)
@@ -972,8 +1258,9 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
         );
     }
 
-    const auto sourceProgress = sourceProgressTable(request.pathPointsMeters);
-    if (sourceProgress.back() <= Epsilon)
+    const auto coarseSourceProgress =
+        sourceProgressTable(request.pathPointsMeters);
+    if (coarseSourceProgress.back() <= Epsilon)
     {
         return failure(
             request,
@@ -982,7 +1269,7 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
         );
     }
 
-    if (violatesKnownStopDistance(request, sourceProgress))
+    if (violatesKnownStopDistance(request, coarseSourceProgress))
     {
         return failure(
             request,
@@ -1000,8 +1287,18 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
         );
     }
 
+    const ExecutionGuide guide =
+        buildExecutionGuide(request, coarseSourceProgress);
+
+    world::navigation::TrajectoryGenerationRequest executionRequest =
+        request;
+    executionRequest.pathPointsMeters = guide.points;
+
     std::vector<glm::dvec3> waypointVelocities =
-        buildWaypointVelocities(request, sourceProgress);
+        buildWaypointVelocities(
+            executionRequest,
+            guide.sourceProgress
+        );
 
     // Historical behavior stopped at every route terminal. Preserve that
     // default, but allow an explicitly authored fly-through terminal velocity
@@ -1020,14 +1317,17 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     for (std::size_t restart = 0; restart < maxRestarts; ++restart)
     {
         auto attempt = buildRouteAttempt(
-            request,
-            sourceProgress,
+            executionRequest,
+            guide.sourceProgress,
             waypointVelocities,
             cumulativeDiagnostics
         );
 
         if (attempt.ready)
         {
+            attempt.result.executionGuidePointsMeters =
+                guide.points;
+
             const std::size_t blended = countBlendedWaypoints(
                 waypointVelocities
             );
@@ -1084,6 +1384,7 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
             attempt.failureMessage,
             cumulativeDiagnostics
         );
+        failed.executionGuidePointsMeters = guide.points;
         appendPerfLog(
             request,
             failed,
@@ -1099,6 +1400,7 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
         "Ruckig waypoint relaxation did not converge",
         cumulativeDiagnostics
     );
+    failed.executionGuidePointsMeters = guide.points;
     appendPerfLog(
         request,
         failed,

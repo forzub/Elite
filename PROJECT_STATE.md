@@ -2711,3 +2711,30 @@ Commit:
 
 Do not claim the new high-speed recovery or reduced oscillation is PASS until target
 MinGW64 evidence is returned.
+
+## 2026-09-22 — Stage-12 execution recovery correction
+
+The physical runtime exposed a failure in the first reference-clock-hold
+implementation under Assisted / Expert / Standard at 10 -> 10 m/s.
+
+Planner evidence remained healthy (Ruckig max about 11.71 m/s), while physical
+execution escaped to 100.64 m/s and 2.4 km terminal error. The reference clock
+was held for 47.70 s.
+
+Architecture correction:
+- a held moving reference sample is not allowed to keep moving-reference
+  derivatives authoritative;
+- outside the B10 execution envelope, recovery uses the fixed geometric
+  reference with zero feed-forward and damps actual angular rate;
+- bounded follower feedback remains the only recovery authority;
+- accepted moving derivatives resume only after physical reacquisition.
+
+This prevents a reference hold from becoming an indefinite accelerator/spin
+command without mutating `AcceptedManeuverProgram`.
+
+Diagnostic viewer correction:
+camera fit is based on authored/accepted scene geometry rather than the complete
+physical execution history, so a runaway trace cannot destroy scene scale.
+
+Candidate baseline before docs: `59ff756996229bf15a122eb0fe43cf0d9a14b245`.
+Target-machine acceptance is pending.

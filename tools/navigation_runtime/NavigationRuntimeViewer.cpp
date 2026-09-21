@@ -29,6 +29,11 @@ namespace
 constexpr float kPi = 3.14159265358979323846f;
 constexpr float kVelocityVectorMetersPerMps = 3.5f;
 
+#ifndef ELITE_NAV_VIEWER_REVISION
+#define ELITE_NAV_VIEWER_REVISION "unknown"
+#endif
+constexpr const char* kViewerRevision = ELITE_NAV_VIEWER_REVISION;
+
 struct Vertex
 {
     glm::vec3 position;
@@ -1663,7 +1668,8 @@ void drawHud(
     const float x = panelX + 18.0f;
     appendUiText(
         ui, x, panelTop + 18.0f,
-        "НАВИГАЦИЯ 3D — ДИАГНОСТИКА",
+        std::string("НАВИГАЦИЯ 3D — ДИАГНОСТИКА | REV ") +
+            kViewerRevision,
         1.55f,
         {0.95f, 0.96f, 1.0f}
     );
@@ -2616,9 +2622,13 @@ void setWindowTitle(
 
     if (f.phase == "scene_preview")
     {
+        const std::string previewTitle =
+            std::string("Навигация 3D | REV ") +
+            kViewerRevision +
+            " - СЦЕНА ДО РАСЧЁТА";
         glfwSetWindowTitle(
             window,
-            "Навигация 3D - СЦЕНА ДО РАСЧЁТА"
+            previewTitle.c_str()
         );
         return;
     }
@@ -2627,7 +2637,9 @@ void setWindowTitle(
     title.setf(std::ios::fixed);
     title.precision(2);
     title
-        << "Навигация 3D - "
+        << "Навигация 3D | REV "
+        << kViewerRevision
+        << " - "
         << localizedLaw(data.law)
         << " | кадр " << (frameIndex + 1)
         << "/" << data.frames.size()
@@ -2926,11 +2938,15 @@ int main(int argc, char** argv)
         // This is intentionally NOT an exclusive/borderless fullscreen mode.
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
+        const std::string initialWindowTitle =
+            std::string("Навигация 3D | REV ") +
+            kViewerRevision;
+
         GLFWwindow* window =
             glfwCreateWindow(
                 1280,
                 800,
-                "Навигация 3D",
+                initialWindowTitle.c_str(),
                 nullptr,
                 nullptr
             );

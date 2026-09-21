@@ -1995,8 +1995,17 @@ ScenarioRunResult executeCalculatedRoute(
                 );
 
             game::navigation::ManeuverPhaseGate::Policy gatePolicy;
+            const bool finalPhase =
+                activeProgram + 1 >= programs.size();
+            const bool movingTerminal =
+                scenario.finish.speedMps > 1.0e-6;
+
+            // A moving terminal is a fly-through boundary, not a parking
+            // capture. Holding the final position sample while simultaneously
+            // requesting non-zero velocity is self-contradictory and caused
+            // the old FINAL_CAPTURE_TIMEOUT + artificial braking.
             gatePolicy.mode =
-                activeProgram + 1 < programs.size()
+                (!finalPhase || movingTerminal)
                     ? game::navigation::ManeuverPhaseGate::Mode::ScheduledMoving
                     : game::navigation::ManeuverPhaseGate::Mode::StateCapture;
             gatePolicy.maximumCaptureOverrunSeconds = 6.0;

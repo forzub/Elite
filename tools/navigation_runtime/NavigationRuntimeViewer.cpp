@@ -110,6 +110,8 @@ struct AppState
     bool executionPerformed = false;
     bool executionSucceeded = false;
 
+    // Canonical viewer store. UI controls are projections of this state, not
+    // independent booleans owned by widgets.
     elite::tools::navigation_runtime::ControlMode controlMode =
         elite::tools::navigation_runtime::ControlMode::Newtonian;
     elite::tools::navigation_runtime::PilotLevel pilot =
@@ -117,6 +119,7 @@ struct AppState
     elite::tools::navigation_runtime::FlightStyle flightStyle =
         elite::tools::navigation_runtime::FlightStyle::Standard;
     bool useSuddenObstacle = false;
+
     bool orbiting = false;
     bool panning = false;
     double lastMouseX = 0.0;
@@ -130,6 +133,32 @@ struct AppState
     bool requestFit = true;
     bool scrubbingFrames = false;
     UiAction pendingUiAction = UiAction::None;
+};
+
+enum class ViewerActionType
+{
+    SetControlMode,
+    SetPilot,
+    SetFlightStyle,
+    ToggleSuddenObstacle,
+    QueueUiAction,
+    SetPlaying,
+    RequestFit,
+    RuntimeControlLawObserved
+};
+
+struct ViewerAction
+{
+    ViewerActionType type = ViewerActionType::QueueUiAction;
+    elite::tools::navigation_runtime::ControlMode controlMode =
+        elite::tools::navigation_runtime::ControlMode::Newtonian;
+    elite::tools::navigation_runtime::PilotLevel pilot =
+        elite::tools::navigation_runtime::PilotLevel::Expert;
+    elite::tools::navigation_runtime::FlightStyle flightStyle =
+        elite::tools::navigation_runtime::FlightStyle::Standard;
+    UiAction uiAction = UiAction::None;
+    bool boolValue = false;
+    std::string runtimeControlLaw;
 };
 
 GLuint compileShader(GLenum type, const char* source)
@@ -2173,6 +2202,102 @@ void restoreRetainedRouteForNewExecutionSettings(
     state.requestFit = true;
 }
 
+void reduceViewerState(
+    AppState& state,
+    const ViewerAction& action
+)
+{
+    switch (action.type)
+    {
+        case ViewerActionType::SetControlMode:
+            if (state.controlMode != action.controlMode)
+            {
+                state.controlMode = action.controlMode;
+                restoreRetainedRouteForNewExecutionSettings(state);
+            }
+            break;
+
+        case ViewerActionType::SetPilot:
+            if (state.pilot != action.pilot)
+            {
+                state.pilot = action.pilot;
+                restoreRetainedRouteForNewExecutionSettings(state);
+            }
+            break;
+
+        case ViewerActionType::SetFlightStyle:
+            if (state.flightStyle != action.flightStyle)
+            {
+                state.flightStyle = action.flightStyle;
+                restoreRetainedRouteForNewExecutionSettings(state);
+            }
+            break;
+
+        case ViewerActionType::ToggleSuddenObstacle:
+            state.useSuddenObstacle = !state.useSuddenObstacle;
+            restoreRetainedRouteForNewExecutionSettings(state);
+            break;
+
+        case ViewerActionType::QueueUiAction:
+            state.pendingUiAction = action.uiAction;
+            break;
+
+        case ViewerActionType::SetPlaying:
+            state.playing = action.boolValue;
+            break;
+
+        case ViewerActionType::RequestFit:
+            state.requestFit = true;
+            break;
+
+        case ViewerActionType::RuntimeControlLawObserved:
+        {
+            using ControlMode =
+                elite::tools::navigation_runtime::ControlMode;
+
+            if (action.runtimeControlLaw == "ASSISTED" ||
+                action.runtimeControlLaw == "assisted")
+            {
+                // Runtime observation is authoritative. Do not restore the
+                // retained route here: this action reports what is actually
+                // flying, it is not a user's new execution request.
+                state.controlMode = ControlMode::Assisted;
+            }
+            else if (action.runtimeControlLaw == "NEWTONIAN" ||
+                     action.runtimeControlLaw == "newtonian")
+            {
+                state.controlMode = ControlMode::Newtonian;
+            }
+            break;
+        }
+    }
+}
+
+void dispatchViewerAction(
+    AppState& state,
+    const ViewerAction& action
+)
+{
+    reduceViewerState(state, action);
+}
+
+void syncViewerStateFromRuntimeFrame(
+    AppState& state,
+    const trace::TraceFrame& frame
+)
+{
+    if (!frame.hasRuntimeControlLaw ||
+        frame.runtimeControlLaw.empty())
+    {
+        return;
+    }
+
+    ViewerAction action;
+    action.type = ViewerActionType::RuntimeControlLawObserved;
+    action.runtimeControlLaw = frame.runtimeControlLaw;
+    dispatchViewerAction(state, action);
+}
+
 void mouseButtonCallback(
     GLFWwindow* window,
     int button,
@@ -2199,54 +2324,74 @@ void mouseButtonCallback(
 
         if (assistedRect().contains(x, y))
         {
-            state->controlMode =
+            ViewerAction change;
+            change.type = ViewerActionType::SetControlMode;
+            change.controlMode =
                 elite::tools::navigation_runtime::ControlMode::Assisted;
-            restoreRetainedRouteForNewExecutionSettings(*state);
+            dispatchViewerAction(*state, change);
         }
         else if (newtonianRect().contains(x, y))
         {
-            state->controlMode =
+            ViewerAction change;
+            change.type = ViewerActionType::SetControlMode;
+            change.controlMode =
                 elite::tools::navigation_runtime::ControlMode::Newtonian;
-            restoreRetainedRouteForNewExecutionSettings(*state);
+            dispatchViewerAction(*state, change);
         }
         else if (expertRect().contains(x, y))
         {
-            state->pilot =
+            ViewerAction change;
+            change.type = ViewerActionType::SetPilot;
+            change.pilot =
                 elite::tools::navigation_runtime::PilotLevel::Expert;
-            restoreRetainedRouteForNewExecutionSettings(*state);
+            dispatchViewerAction(*state, change);
         }
         else if (averageRect().contains(x, y))
         {
-            state->pilot =
+            ViewerAction change;
+            change.type = ViewerActionType::SetPilot;
+            change.pilot =
                 elite::tools::navigation_runtime::PilotLevel::Average;
-            restoreRetainedRouteForNewExecutionSettings(*state);
+            dispatchViewerAction(*state, change);
         }
         else if (loserRect().contains(x, y))
         {
-            state->pilot =
+            ViewerAction change;
+            change.type = ViewerActionType::SetPilot;
+            change.pilot =
                 elite::tools::navigation_runtime::PilotLevel::Loser;
-            restoreRetainedRouteForNewExecutionSettings(*state);
+            dispatchViewerAction(*state, change);
         }
         else if (standardRect().contains(x, y))
         {
-            state->flightStyle =
+            ViewerAction change;
+            change.type = ViewerActionType::SetFlightStyle;
+            change.flightStyle =
                 elite::tools::navigation_runtime::FlightStyle::Standard;
-            restoreRetainedRouteForNewExecutionSettings(*state);
+            dispatchViewerAction(*state, change);
         }
         else if (extremeRect().contains(x, y))
         {
-            state->flightStyle =
+            ViewerAction change;
+            change.type = ViewerActionType::SetFlightStyle;
+            change.flightStyle =
                 elite::tools::navigation_runtime::FlightStyle::Extreme;
-            restoreRetainedRouteForNewExecutionSettings(*state);
+            dispatchViewerAction(*state, change);
         }
         else if (suddenObstacleRect().contains(x, y))
         {
-            state->useSuddenObstacle = !state->useSuddenObstacle;
-            restoreRetainedRouteForNewExecutionSettings(*state);
+            ViewerAction change;
+            change.type = ViewerActionType::ToggleSuddenObstacle;
+            dispatchViewerAction(*state, change);
         }
         else if (calculateButtonRect().contains(x, y))
         {
-            state->pendingUiAction = UiAction::Calculate;
+            {
+                ViewerAction command;
+                command.type = ViewerActionType::QueueUiAction;
+                command.uiAction = UiAction::Calculate;
+                dispatchViewerAction(*state, command);
+            }
         }
         else if (playButtonRect().contains(x, y))
         {
@@ -2255,13 +2400,23 @@ void mouseButtonCallback(
                 state->calculationSucceeded &&
                 !state->executionPerformed)
             {
-                state->pendingUiAction = UiAction::Execute;
+                {
+                ViewerAction command;
+                command.type = ViewerActionType::QueueUiAction;
+                command.uiAction = UiAction::Execute;
+                dispatchViewerAction(*state, command);
+            }
             }
             else if (
                 state->traceData &&
                 state->traceData->frames.size() > 1)
             {
-                state->pendingUiAction = UiAction::TogglePlay;
+                {
+                ViewerAction command;
+                command.type = ViewerActionType::QueueUiAction;
+                command.uiAction = UiAction::TogglePlay;
+                dispatchViewerAction(*state, command);
+            }
             }
         }
         else if (
@@ -2269,24 +2424,44 @@ void mouseButtonCallback(
             state->traceData &&
             state->traceData->frames.size() > 1)
         {
-            state->pendingUiAction = UiAction::PreviousFrame;
+            {
+                ViewerAction command;
+                command.type = ViewerActionType::QueueUiAction;
+                command.uiAction = UiAction::PreviousFrame;
+                dispatchViewerAction(*state, command);
+            }
         }
         else if (
             nextButtonRect().contains(x, y) &&
             state->traceData &&
             state->traceData->frames.size() > 1)
         {
-            state->pendingUiAction = UiAction::NextFrame;
+            {
+                ViewerAction command;
+                command.type = ViewerActionType::QueueUiAction;
+                command.uiAction = UiAction::NextFrame;
+                dispatchViewerAction(*state, command);
+            }
         }
         else if (
             replanButtonRect().contains(x, y) &&
             state->traceData &&
             state->traceData->frames.size() > 1)
         {
-            state->pendingUiAction = UiAction::NextReplan;
+            {
+                ViewerAction command;
+                command.type = ViewerActionType::QueueUiAction;
+                command.uiAction = UiAction::NextReplan;
+                dispatchViewerAction(*state, command);
+            }
         }
         else if (fitButtonRect().contains(x, y))
-            state->pendingUiAction = UiAction::Fit;
+            {
+                ViewerAction command;
+                command.type = ViewerActionType::QueueUiAction;
+                command.uiAction = UiAction::Fit;
+                dispatchViewerAction(*state, command);
+            }
         else if (state->traceData)
         {
             int width = 1;
@@ -2406,17 +2581,29 @@ void keyCallback(
             state->calculationSucceeded &&
             !state->executionPerformed)
         {
-            state->pendingUiAction = UiAction::Execute;
+            {
+                ViewerAction command;
+                command.type = ViewerActionType::QueueUiAction;
+                command.uiAction = UiAction::Execute;
+                dispatchViewerAction(*state, command);
+            }
         }
         else if (
             state->traceData &&
             state->traceData->frames.size() > 1)
         {
-            state->playing = !state->playing;
+            ViewerAction play;
+            play.type = ViewerActionType::SetPlaying;
+            play.boolValue = !state->playing;
+            dispatchViewerAction(*state, play);
         }
     }
     else if (key == GLFW_KEY_F)
-        state->requestFit = true;
+    {
+        ViewerAction fit;
+        fit.type = ViewerActionType::RequestFit;
+        dispatchViewerAction(*state, fit);
+    }
 }
 
 void drawScene(
@@ -2742,7 +2929,11 @@ void setWindowTitle(
         << "Навигация 3D | REV "
         << kViewerRevision
         << " - "
-        << localizedLaw(data.law)
+        << localizedLaw(
+            f.hasRuntimeControlLaw
+                ? f.runtimeControlLaw
+                : data.law
+        )
         << " | кадр " << (frameIndex + 1)
         << "/" << data.frames.size()
         << " | t=" << f.timeSeconds << " с"
@@ -3182,6 +3373,14 @@ int main(int argc, char** argv)
                 data.frames.empty()
                     ? trace::TraceFrame {}
                     : interpolatedDisplayFrame(data, state);
+
+            // Runtime truth wins over stale UI selection. If any lower layer
+            // ever changes the effective control law, the same Redux-style
+            // store that drives the buttons observes it on the displayed frame.
+            syncViewerStateFromRuntimeFrame(
+                state,
+                displayFrame
+            );
 
             drawScene(
                 renderer,

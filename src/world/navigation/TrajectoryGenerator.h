@@ -111,6 +111,12 @@ struct TrajectoryGenerationResult
     Trajectory trajectory;
     TrajectoryGenerationDiagnostics diagnostics;
 
+    // The collision-checked execution guide actually handed to the canonical
+    // Ruckig route backend. It may contain local corner entry/exit points that
+    // round a coarse geometric-polyline vertex. The retained Stage-1 route is
+    // never mutated.
+    std::vector<glm::dvec3> executionGuidePointsMeters;
+
     bool ready() const noexcept
     {
         return trajectory.ready();

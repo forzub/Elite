@@ -113,6 +113,61 @@ void testSpeedAndStyleChangeStaticManeuverReserve()
     );
 }
 
+void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
+{
+#ifdef ELITE_SOURCE_ROOT
+    const std::string scenario =
+        std::string(ELITE_SOURCE_ROOT) +
+        "/tools/navigation_runtime/scenario.json";
+#else
+    const std::string scenario =
+        "tools/navigation_runtime/scenario.json";
+#endif
+
+    ScenarioRunSettings settings;
+    settings.controlMode = ControlMode::Newtonian;
+    settings.pilot = PilotLevel::Expert;
+    settings.flightStyle = FlightStyle::Standard;
+    settings.enableSuddenObstacle = false;
+    settings.startSpeedOverrideMps = 26.15;
+    settings.finishSpeedOverrideMps = 11.75;
+
+    const auto planned =
+        calculateScenario(scenario, settings);
+    require(
+        planned.success,
+        "high-speed reacquisition fixture failed Stage-1 planning"
+    );
+
+    const auto executed =
+        executeCalculatedRoute(
+            scenario,
+            settings,
+            planned.trace
+        );
+
+    printDiagnostics("[E2E-HIGH-SPEED] ", executed);
+
+    require(
+        hasDiagnostic(executed, "REFERENCE CLOCK HOLD: "),
+        "high-speed execution lost reference-reacquisition diagnostics"
+    );
+    require(
+        executed.success,
+        "high-speed execution outran its physical ship instead of reacquiring"
+    );
+
+    const double finalError =
+        glm::length(
+            executed.trace.frames.back().shipPosition -
+            executed.trace.sceneFinishMapMeters
+        );
+    require(
+        finalError <= 5.0,
+        "high-speed execution still declared completion far from finish"
+    );
+}
+
 void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
 {
 #ifdef ELITE_SOURCE_ROOT
@@ -213,6 +268,7 @@ int main()
     try
     {
         testSpeedAndStyleChangeStaticManeuverReserve();
+        testHighSpeedRunReacquiresInsteadOfOutrunningReference();
         testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics();
         std::cout
             << "NAVIGATION RETAINED-ROUTE E2E: PASS\n"
@@ -220,6 +276,7 @@ int main()
             << " - STANDARD/EXTREME change clearance, not nominal speed\n"
             << " - one Stage-1 route is retained unchanged during Stage-2\n"
             << " - Ruckig parameterizes that retained route\n"
+            << " - high-speed follower can hold reference progress and reacquire\n"
             << " - route-leg programs cross Follower -> PilotSkill -> physics\n"
             << " - Cobra reaches the authored finish\n";
         return EXIT_SUCCESS;

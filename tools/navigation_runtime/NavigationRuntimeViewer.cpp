@@ -83,7 +83,6 @@ enum class UiAction
 {
     None,
     Calculate,
-    Execute,
     TogglePlay,
     PreviousFrame,
     NextFrame,
@@ -106,8 +105,9 @@ struct AppState
     std::string calculationMessage = "ИЗМЕНИТЕ УСЛОВИЯ И НАЖМИТЕ РАССЧИТАТЬ";
     std::vector<std::string> diagnosticLines;
 
-    // Immutable Stage-1 source for every Stage-2 comparison run. Changing
-    // pilot/control/style must never ask Planner to rebuild this route.
+    // Last successful Stage-1 route. Pilot/control-law changes may reuse it,
+    // while speed/style changes invalidate it because they change maneuver
+    // clearance around static geometry.
     trace::TraceDocument retainedRoute;
     std::vector<std::string> retainedRouteDiagnostics;
     std::string retainedRouteMessage;
@@ -1809,21 +1809,6 @@ void drawHud(
         appendUiButton(ui, nextButtonRect(), "ВПЕРЁД");
         appendUiButton(ui, replanButtonRect(), "СЛЕД. СОБЫТИЕ");
     }
-    else if (
-        state.calculationPerformed &&
-        state.calculationSucceeded &&
-        !state.executionPerformed)
-    {
-        appendUiButton(
-            ui,
-            playButtonRect(),
-            "ЗАПУСТИТЬ ПОЛЁТ",
-            true
-        );
-        appendUiButton(ui, prevButtonRect(), "НЕТ КАДРОВ");
-        appendUiButton(ui, nextButtonRect(), "НЕТ КАДРОВ");
-        appendUiButton(ui, replanButtonRect(), "FOLLOWER: ГОТОВ");
-    }
     else if (state.executionPerformed)
     {
         appendUiButton(
@@ -2668,21 +2653,12 @@ void mouseButtonCallback(
         {
             queueUiAction(*state, UiAction::Calculate);
         }
-        else if (playButtonRect().contains(x, y))
+        else if (
+            playButtonRect().contains(x, y) &&
+            state->traceData &&
+            state->traceData->frames.size() > 1)
         {
-            if (
-                state->calculationPerformed &&
-                state->calculationSucceeded &&
-                !state->executionPerformed)
-            {
-                queueUiAction(*state, UiAction::Execute);
-            }
-            else if (
-                state->traceData &&
-                state->traceData->frames.size() > 1)
-            {
-                queueUiAction(*state, UiAction::TogglePlay);
-            }
+            queueUiAction(*state, UiAction::TogglePlay);
         }
         else if (
             prevButtonRect().contains(x, y) &&
@@ -2842,29 +2818,15 @@ void keyCallback(
 
     if (key == GLFW_KEY_ESCAPE)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    else if (key == GLFW_KEY_SPACE)
+    else if (
+        key == GLFW_KEY_SPACE &&
+        state->traceData &&
+        state->traceData->frames.size() > 1)
     {
-        if (
-            state->calculationPerformed &&
-            state->calculationSucceeded &&
-            !state->executionPerformed)
-        {
-            {
-                ViewerAction command;
-                command.type = ViewerActionType::QueueUiAction;
-                command.uiAction = UiAction::Execute;
-                dispatchViewerAction(*state, command);
-            }
-        }
-        else if (
-            state->traceData &&
-            state->traceData->frames.size() > 1)
-        {
-            ViewerAction play;
-            play.type = ViewerActionType::SetPlaying;
-            play.boolValue = !state->playing;
-            dispatchViewerAction(*state, play);
-        }
+        ViewerAction play;
+        play.type = ViewerActionType::SetPlaying;
+        play.boolValue = !state->playing;
+        dispatchViewerAction(*state, play);
     }
     else if (key == GLFW_KEY_F)
     {
@@ -3490,84 +3452,6 @@ void processUiAction(
                     : "ПОЛЕТ: НЕ ЗАПУЩЕН",
                 speedSummary.str()
             };
-            break;
-        }
-        case UiAction::Execute:
-        {
-            if (
-                !state.calculationSucceeded ||
-                !state.hasRetainedRoute ||
-                state.retainedRoute.routePoints.size() < 2)
-            {
-                state.executionPerformed = true;
-                state.executionSucceeded = false;
-                state.calculationMessage =
-                    "ОШИБКА: СНАЧАЛА НУЖЕН УСПЕШНЫЙ ЭТАП 1";
-                break;
-            }
-
-            state.executionPerformed = true;
-            state.executionSucceeded = false;
-            state.calculationMessage = "ЭТАП 2: ИДЁТ РАСЧЁТ ИСПОЛНЕНИЯ...";
-            state.playing = false;
-            state.frameIndex = 0;
-            state.playbackTime = 0.0;
-
-            elite::tools::navigation_runtime::ScenarioRunSettings settings;
-            settings.controlMode = state.controlMode;
-            settings.pilot = state.pilot;
-            settings.flightStyle = state.flightStyle;
-            settings.enableSuddenObstacle =
-                state.useSuddenObstacle;
-            settings.startSpeedOverrideMps =
-                state.startSpeedMps;
-            settings.finishSpeedOverrideMps =
-                state.finishSpeedMps;
-
-            const auto result =
-                elite::tools::navigation_runtime::executeCalculatedRoute(
-                    state.scenarioPath,
-                    settings,
-                    state.retainedRoute
-                );
-
-            data = result.trace;
-            state.traceData = &data;
-            state.frameIndex = 0;
-            state.playbackTime = 0.0;
-            state.executionSucceeded = result.success;
-            state.calculationMessage =
-                result.success
-                    ? result.message
-                    : "ОШИБКА: " + result.message;
-            state.diagnosticLines = result.diagnostics;
-            state.requestFit = !data.frames.empty();
-
-            // Even a failed execution trace is useful evidence. If the
-            // simulator produced multiple frames, play them so the failure can
-            // be inspected visually instead of being reduced to one status.
-            state.playing = data.frames.size() > 1;
-
-            if (!data.frames.empty())
-            {
-#ifdef ELITE_SOURCE_ROOT
-                const std::string outputPath =
-                    std::string(ELITE_SOURCE_ROOT) +
-                    "/tools/navigation_runtime/last_execution_trace.json";
-#else
-                const std::string outputPath =
-                    "tools/navigation_runtime/last_execution_trace.json";
-#endif
-                try
-                {
-                    trace::saveTraceJson(data, outputPath);
-                }
-                catch (const std::exception& e)
-                {
-                    state.calculationMessage +=
-                        std::string(" | TRACE: ") + e.what();
-                }
-            }
             break;
         }
         case UiAction::TogglePlay:

@@ -1251,7 +1251,8 @@ Program makeProgramPhase(
     std::size_t last,
     std::uint64_t revision,
     const Scenario& scenario,
-    const ShipParams& params
+    const ShipParams& params,
+    FlightStyle flightStyle
 )
 {
     Program program;
@@ -1350,6 +1351,20 @@ Program makeProgramPhase(
     program.tracking.linearVelocityErrorMps = 8.0;
     program.tracking.forwardAngleErrorRad = 0.75;
     program.tracking.angularVelocityErrorRadPerSec = 1.2;
+
+    // Free transit is corridor following, not a rail simulation. Keep exact
+    // lateral/cross-track control but allow harmless longitudinal drift so a
+    // 10.1 m/s actual speed does not trigger a braking manoeuvre merely to
+    // recover an exact 10.0 m/s reference.
+    program.tracking.alongTrackPositionDeadbandMeters =
+        flightStyle == FlightStyle::Extreme
+            ? 5.0
+            : 2.0;
+    program.tracking.alongTrackSpeedDeadbandMps =
+        flightStyle == FlightStyle::Extreme
+            ? 1.0
+            : 0.5;
+
     program.tracking.linearFeedbackReserveMps2 = 1.5;
     program.tracking.angularFeedbackReserveRadPerSec2 = 0.8;
 
@@ -1446,7 +1461,8 @@ std::vector<Program> buildRoutePrograms(
     const std::vector<ReferenceAttitude>& attitudes,
     const std::vector<glm::dvec3>& retainedRoute,
     const Scenario& scenario,
-    const ShipParams& params
+    const ShipParams& params,
+    FlightStyle flightStyle
 )
 {
     std::vector<Program> programs;
@@ -1489,7 +1505,8 @@ std::vector<Program> buildRoutePrograms(
                 last,
                 revision++,
                 scenario,
-                params
+                params,
+                flightStyle
             );
 
         if (!phase.valid || phase.sampleCount < 2)
@@ -2049,7 +2066,8 @@ ScenarioRunResult executeCalculatedRoute(
                 attitudes,
                 calculatedRoute.routePoints,
                 scenario,
-                params
+                params,
+                settings.flightStyle
             );
 
         if (programs.empty())
@@ -2516,6 +2534,18 @@ ScenarioRunResult executeCalculatedRoute(
                 std::string(pilotName(settings.pilot)),
             "FLIGHT STYLE: " +
                 std::string(flightStyleName(settings.flightStyle)),
+            "FOLLOWER SPEED CORRIDOR: +/- " +
+                number(
+                    settings.flightStyle == FlightStyle::Extreme
+                        ? 1.0
+                        : 0.5
+                ) + " M/S",
+            "FOLLOWER PROGRESS CORRIDOR: +/- " +
+                number(
+                    settings.flightStyle == FlightStyle::Extreme
+                        ? 5.0
+                        : 2.0
+                ) + " M",
             "CONTROL LAW: " +
                 std::string(
                     settings.controlMode == ControlMode::Newtonian

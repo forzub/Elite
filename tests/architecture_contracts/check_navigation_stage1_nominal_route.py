@@ -149,6 +149,10 @@ for required in (
     "loadScenarioPreview",
     "setSceneEndpoints",
     "last_route_plan.log",
+    "routePlanningClearanceMeters",
+    "characteristicTurnTimeSeconds",
+    "effectiveStartSpeedMps",
+    "effectiveFinishSpeedMps",
     "startAcceleration",
     "startPitchRateRadPerSec",
     "startYawRateRadPerSec",
@@ -174,15 +178,18 @@ for marker in (
 
 for marker in (
     "appendReferenceGrid",
-    "ЗАПУСТИТЬ ПОЛЁТ",
-    "UiAction::Execute",
+    "UiAction::Calculate",
     "executionPerformed",
     "diagnosticLines",
     "retainedRoute",
     "retainedRouteDiagnostics",
-    "restoreRetainedRouteForNewExecutionSettings",
+    "routeInputsDirty",
+    "executionInputsDirty",
+    "recalculationRequired",
+    "shortCalculationLog",
+    "РАСЧЕТ ГОТОВ",
 ):
-    require(marker in viewer, f"two-stage viewer workflow missing {marker}")
+    require(marker in viewer, f"deterministic calculate/viewer workflow missing {marker}")
 
 for required in (
     "EliteNavigationRouteToolCore",
@@ -211,6 +218,35 @@ for marker in (
     '"roll_rate_rad_s"',
 ):
     require(marker in scenario_json, f"scenario initial kinematics missing {marker}")
+
+for forbidden in (
+    '"standard_speed_mps"',
+    '"extreme_speed_mps"',
+):
+    require(
+        forbidden not in scenario_json,
+        f"flight style again owns a nominal speed through {forbidden}",
+    )
+
+for forbidden in (
+    "styleSpeedMps",
+    "scenario.standardSpeedMps",
+    "scenario.extremeSpeedMps",
+):
+    require(
+        forbidden not in runtime,
+        f"runtime again maps flight style to nominal speed through {forbidden}",
+    )
+
+for required in (
+    "styleReserveFactor",
+    "FlightStyle::Extreme",
+    "request.additionalRouteClearanceMeters",
+):
+    require(
+        required in calculate or required in runtime,
+        f"speed/style-aware route clearance contract missing {required}",
+    )
 
 for marker in (
     "initialAccelerationMps2",
@@ -250,6 +286,15 @@ for marker in (
 ):
     require(marker in test, f"Stage-1 regression missing {marker}")
 
+e2e_test = read("tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp")
+for marker in (
+    "testSpeedAndStyleChangeStaticManeuverReserve",
+    "higher speed did not move static detour farther from the wall",
+    "EXTREME did not cut closer than STANDARD at the same speed",
+    "ROUTE PLANNING SPEED: 40.00 M/S",
+):
+    require(marker in e2e_test, f"speed/style route regression missing {marker}")
+
 for marker in (
     "Stage 1",
     "Stage 2",
@@ -259,7 +304,8 @@ for marker in (
     require(marker in readme, f"documentation missing {marker}")
 
 print("NAVIGATION STATIC ROUTE + TWO-STAGE EXECUTION CONTRACT: PASS")
-print(" - Stage 1 alone builds the retained static start -> finish route")
+print(" - Stage 1 builds the retained static start -> finish route with speed-aware maneuver clearance")
+print(" - flight style changes clearance doctrine, never nominal speed")
 print(" - dynamic revision cannot rebuild the nominal global route")
 print(" - Stage 2 consumes cached route points and cannot invoke a global planner")
 print(" - Stage 2 uses trajectory -> Follower -> pilot bridge -> authoritative physics")

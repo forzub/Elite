@@ -302,6 +302,30 @@ void testDefaultWallDetourKeepsMovingThroughShallowCorners()
         "first shallow wall corner still became StopTurnGo");
     require(secondCorner.speedMps > 0.75,
         "second shallow wall corner still became StopTurnGo");
+
+    require(
+        result.executionGuidePointsMeters.size() >
+            request.pathPointsMeters.size(),
+        "default wall route did not create a rounded execution guide"
+    );
+
+    double minimumSpeed = std::numeric_limits<double>::infinity();
+    for (const auto& sample : result.trajectory.samples)
+        minimumSpeed = std::min(minimumSpeed, sample.speedMps);
+
+    require(
+        minimumSpeed >= 7.5,
+        "default wall calculated curve contains a major unnecessary braking dip"
+    );
+
+    for (std::size_t i = 1; i < result.trajectory.samples.size(); ++i)
+    {
+        require(
+            result.trajectory.samples[i].positionMeters.x + 0.05 >=
+                result.trajectory.samples[i - 1].positionMeters.x,
+            "default wall calculated curve loops/backtracks along route direction"
+        );
+    }
 }
 
 void testInitialAccelerationIsPreservedAtTrajectoryStart()

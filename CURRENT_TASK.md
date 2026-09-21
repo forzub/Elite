@@ -1,134 +1,91 @@
-# CURRENT TASK — target-validate scalar Ruckig path progress and visible viewer revision
+# CURRENT TASK — validate minimum-cant Newtonian attitude on the clean scalar path
 
 **Date:** 2026-09-21  
-**Status:** DENSE 3-D RUCKIG WAYPOINT CHAIN RETIRED / SCALAR PATH-PROGRESS CANDIDATE UNVERIFIED
+**Status:** SCALAR PATH LOOKS MUCH BETTER / EXCESSIVE NEWTONIAN HULL ROTATION ROOT-CAUSED / FIX UNVERIFIED
 
-## Latest verified target evidence
+## Latest evidence
 
-Focused test binary compiled and linked.
-
-Result:
+Latest navigation perf for the default wall stand includes:
 ```text
-7/8 PASS
-FAIL default wall shallow corners stay moving
-min_speed=0.009 m/s
+legs=1
+guide_points=10
+rounded_corners=2
+min_speed_mps=10.0000
+max_speed_mps=10.0000
+valid=1
 ```
 
-Viewer also shows a purple fan around the rounded node.
+So the previous dense-waypoint / near-stop problem is no longer the dominant issue.
 
-The latest performance log shows the cause:
-```text
-guide_points=18
-legs=74
-ruckig_ok=17
-min_speed_mps=0.0094
+The uploaded viewer video shows the hull rotating dramatically broadside to the velocity
+vector during the gentle turn.
+
+## Root cause
+
+`buildReferenceAttitudes()` previously did:
+```cpp
+if (Newtonian && |acceleration| > 0.35)
+    nose = normalize(acceleration);
 ```
 
-Earlier dense candidates reached 36/52 guide points and hundreds/thousands of Ruckig
-leg attempts. This is not acceptable.
+At constant speed on a curve, acceleration is centripetal and almost perpendicular to
+velocity. So the code explicitly ordered the broadside rotation.
 
-## Internet / upstream verification
+This was unnecessary because the same trajectory is already curvature-limited by the
+ship's manoeuvre/RCS acceleration authority.
 
-Official Ruckig guidance:
-- basic/community use is state-to-state online trajectory generation;
-- local intermediate-waypoint solving is a Pro feature;
-- waypoint calculation is substantially harder;
-- use as few waypoints as possible;
-- filter close waypoint lists and prefer waypoints far apart.
+## Candidate fix
 
-Therefore our implementation was wrong: we were turning dense geometric samples into
-many independent 3-D Ruckig target states.
+Newtonian attitude is now minimum-cant:
+- keep nose along velocity while RCS can reproduce the requested acceleration;
+- only rotate enough for main-engine participation when the RCS sphere is insufficient;
+- hard braking / high lateral demand may still legitimately require a large rotation.
 
-## New architecture candidate
+Commits:
+- fcffa5bae3b4e3deab5d6f043d3c500137719dad
+- b943064d529935243863c30238ae0daf62f1c129
 
+New execution diagnostic:
 ```text
-coarse route
- -> rounded geometric guide p(s)
- -> one-dimensional jerk-limited Ruckig progress s(t)
- -> map progress back to path p(s(t))
- -> swept geometry validation
+MAX REFERENCE/VELOCITY ANGLE
 ```
+This separates planned attitude from actual body tracking.
 
-Ruckig remains:
-- true 2-point path: existing 3-D state-to-state solve;
-- curved / multi-point route: scalar progress only.
-
-New API:
-- `RuckigProgressRequest`;
-- `RuckigProgressSample`;
-- `RuckigProgressResult`;
-- `RuckigTrajectorySolver::solveProgress()`.
-
-Key commits:
-- 2e815ef993a31acd40596f170c67a124f9337bf9
-- a50de59958887efbe50e2cdacee8c67623b2ebb8
-- 9f166f4286dd03197705b0cd9e4ba63e33d000bc
-- 3c58f4c3719d712e524e86e5f030820486af3102
-- c6f7b160878a3582362574691a12c96fd3ff3623
-- b76c4a52d8c32421d6fffe1098de9ad1c6a95dfb
-- b9e7ce64182ce761edb45b4751d680950ab33ff5
-- 3843194d999e302ca32171de3d49f3f21987de64
-
-## Viewer revision requirement
-
-Viewer must visibly show:
-```text
-NAV REV <12-char git sha>
-```
-inside the OpenGL HUD, independent of the native title/right panel.
-
-Per-sample execution-guide crosses are removed; BLUE remains the geometric guide line.
-
-Commit:
-- 1199a0c04ee7cf3a6938bef0ca9c3bb55d7bd4c8
-
-## Immediate target gate
-
-First build focused tests only:
+## Immediate target validation
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
 
-cmake -S tests/navigation_guidance -B build/tests/navigation_guidance -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/tests/navigation_guidance --target ruckig_route_planner_tests
-ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
-```
-
-If compile fails, fix compile first.
-If the default wall functional test still fails, use the exact reported min speed and
-latest `RuckigRoutePerf` line. Do not restore dense 3-D waypoint chaining.
-
-Only after focused gate passes:
-
-```bash
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Viewer acceptance:
-- NAV REV visible;
-- BLUE guide has reasonable geometry without sample-cross clutter;
-- PURPLE calculated path has no fan/barrels;
-- steady wall route does not nearly stop;
-- GREEN vs PURPLE then determines whether the next defect is downstream Follower/Pilot.
+Test Expert / Standard / Newtonian first.
 
-## Important limitation of this first scalar candidate
+Check:
+- NAV REV visible and current;
+- purple path remains clean;
+- red reference nose should stay much closer to yellow velocity on the gentle turn;
+- cyan physical hull should follow red without large unnecessary broadside rotation;
+- report `MAX REFERENCE/VELOCITY ANGLE` and `MAX BODY/VELOCITY ANGLE`.
 
-For curved routes it currently uses a conservative path-wide speed cap derived from:
-- vehicle max speed;
-- speed-limit ranges;
-- positive point limits;
-- worst local curvature.
+Then compare Assisted.
 
-This is intentionally conservative and correct. Later optimization can split the path
-into a small number of meaningful speed zones. Never use one 3-D Ruckig target per
-geometric sample again.
+## Decision
+
+If reference/velocity angle is small but physical body/velocity angle remains large:
+- the remaining defect is angular tracking / body-axis execution.
+
+If both remain large:
+- revisit minimum-cant allocation or acceleration decomposition.
+
+Do not enable dynamic avoidance yet.
 
 ## Mandatory state protocol
 
-Every state-affecting iteration:
+Every iteration:
 - update CURRENT_STATE.md;
 - update CURRENT_TASK.md;
 - update PROJECT_STATE.md;

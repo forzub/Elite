@@ -777,17 +777,42 @@ std::vector<glm::dvec3> buildWaypointVelocities(
             0.1,
             request.vehicle.maxLateralAccelerationMps2
         );
-        const double bendFactor = std::max(
-            1.0e-4,
-            std::sin(angle * 0.5)
-        );
-        const double turnSpeed = std::sqrt(
-            lateralAcceleration * blendDistance / bendFactor
-        );
-        // Curvature/authority already supplies the physical corner speed
-        // limit. Do not impose the former arbitrary 65% waypoint cap: on a
-        // shallow bend it made even a clear Expert-quality route brake for no
-        // physical reason.
+
+        // IMPORTANT: this function now also receives densely sampled points
+        // from the rounded execution guide. The old speed heuristic used
+        // blendDistance, which scales with local segment length. Densifying a
+        // perfectly identical curve therefore made the allowed speed smaller
+        // purely because we added more samples. That is physically wrong.
+        //
+        // Use the circumcircle curvature of the three geometric samples
+        // instead. For points A-B-C:
+        //   kappa = 2*|AB x BC| / (|AB| |BC| |AC|)
+        // and the lateral-acceleration speed limit is:
+        //   v = sqrt(a_lat / kappa)
+        //
+        // This makes the limit invariant to guide sampling density.
+        const glm::dvec3 acrossDelta =
+            request.pathPointsMeters[i + 1] -
+            request.pathPointsMeters[i - 1];
+        const double acrossLength = magnitude(acrossDelta);
+        const double crossMagnitude =
+            magnitude(glm::cross(incomingDelta, outgoingDelta));
+
+        double curvature = 0.0;
+        const double curvatureDenominator =
+            incomingLength * outgoingLength * acrossLength;
+        if (curvatureDenominator > Epsilon)
+        {
+            curvature =
+                2.0 * crossMagnitude /
+                curvatureDenominator;
+        }
+
+        const double turnSpeed =
+            curvature > 1.0e-9
+                ? std::sqrt(lateralAcceleration / curvature)
+                : request.vehicle.maxSpeedMps;
+
         const double speed = std::max(
             0.0,
             std::min({
@@ -1086,6 +1111,20 @@ void appendPerfLog(
         << " expanded_corners=" << result.diagnostics.expandedGuideCorners
         << " obstacles=" << request.obstacles.size()
         << " samples=" << result.trajectory.samples.size()
+        << " min_speed_mps=";
+    if (result.trajectory.samples.empty())
+    {
+        out << 0.0;
+    }
+    else
+    {
+        double minimumSpeed = std::numeric_limits<double>::infinity();
+        for (const auto& sample : result.trajectory.samples)
+            minimumSpeed = std::min(minimumSpeed, sample.speedMps);
+        out << minimumSpeed;
+    }
+    out
+        << " max_speed_mps=" << result.diagnostics.maxSpeedMps
         << " valid=" << (result.ready() ? 1 : 0)
         << '\n';
 }

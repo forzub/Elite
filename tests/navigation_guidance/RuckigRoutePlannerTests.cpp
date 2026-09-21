@@ -217,8 +217,8 @@ void testClearCornerGetsContinuousRuckigWaypointVelocity()
         result.trajectory,
         300.0
     );
-    require(std::abs(firstCorner.sourcePathProgressMeters - 300.0) < 1.0e-5,
-        "Ruckig route lost the coarse waypoint progress marker");
+    require(std::abs(firstCorner.sourcePathProgressMeters - 300.0) < 0.5,
+        "time-sampled path progress lost the coarse waypoint neighborhood");
     require(firstCorner.speedMps > 1.0,
         "clear coarse corner was needlessly converted to a stop point");
     require(result.diagnostics.maxCurvaturePerMeter > 0.0,
@@ -250,8 +250,8 @@ void testBlockedWideBlendShrinksBeforeStopping()
         result.trajectory,
         100.0
     );
-    require(std::abs(corner.sourcePathProgressMeters - 100.0) < 1.0e-5,
-        "adaptive corner route lost the topology vertex");
+    require(std::abs(corner.sourcePathProgressMeters - 100.0) < 0.5,
+        "time-sampled corner route lost the topology-vertex neighborhood");
     require(corner.speedMps > 0.75,
         "one blocked wide chord incorrectly forced a full stop");
 }

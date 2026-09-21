@@ -1,8 +1,8 @@
-# CONTINUE PROMPT — Elite Navigation static corner maneuver quality
+# CONTINUE PROMPT — Elite Navigation adaptive corner passage validation
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
-After every state-affecting event, update:
+After every state-affecting event update:
 - `CURRENT_STATE.md`;
 - `CURRENT_TASK.md`;
 - `PROJECT_STATE.md`;
@@ -14,139 +14,126 @@ Read first:
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
-- `src/game/navigation/NAVIGATION_PIPELINE_AUDIT.md`
-- `src/game/navigation/NAVIGATION_V2_BLOCK_ARCHITECTURE.md`
 - `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
-- `src/world/navigation/GeometricPathPlanner.cpp`
 - `src/world/navigation/TrajectoryGenerator.cpp`
-- `src/game/navigation/OrdinaryPhysicalManeuverCompiler.h/.cpp`
-- `src/game/navigation/AcceptedManeuverProgram.h`
-- `src/game/navigation/ManeuverProgramSampler.h/.cpp`
-- `src/game/navigation/ManeuverTrackingController.h/.cpp`
-- `src/game/navigation/TrajectoryFollower.h/.cpp`
-- `src/game/navigation/DynamicMotionSystem.cpp`
-- `src/game/ship/ShipController.cpp`
+- `tests/navigation_guidance/RuckigRoutePlannerTests.cpp`
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
 - `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
-- `tools/navigation_runtime/scenario.json`
-- `tests/navigation_runtime/NominalRoutePlannerTests.cpp`
+- `src/game/navigation/OrdinaryPhysicalManeuverCompiler.h/.cpp`
+- `src/game/navigation/DynamicMotionSystem.cpp`
 
-## Latest user evidence
+## User's latest result
 
-A target run before this candidate completed retained-route execution in Expert:
-- Standard/Newtonian: final P error 0.15 m, final speed 0.10 m/s;
-- Extreme/Newtonian: final P error 0.10 m, final speed 0.48 m/s;
-- Extreme/Assisted: same observed terminal quality;
-- no coarse static contact.
+Nominal route shape is now approximately logical, but the ship still stops at both
+shallow intermediate points.
 
-However user video shows that the motion is behaviorally wrong:
-- shallow corners cause near/full stops;
-- Newtonian velocity visibly changes direction while the hull is still acquiring
-  attitude;
-- Newtonian rotates much more than a small course change should require;
-- Assisted also stops on a smooth/shallow bend;
-- Standard/Extreme look behaviorally the same.
+The supplied `navigation_perf(6).log` shows the latest four-point / one-obstacle
+viewer solves with `blended_waypoints=0`. This confirms the previous Stage-2 reference
+still converted both interior points to stops.
 
-Treat these as genuine quality blockers, not presentation complaints.
+User also requested:
+- speed numeric readout fixed in the lower-right corner;
+- explicit lower-right legend for every ship/vector arrow;
+- much more visible actual velocity vector;
+- clearer distinction between actual hull nose and the red program/reference arrow;
+- treat white polyline as rough route intent and actual execution as a smooth/rounded
+  trajectory; slightly lengthening the route is acceptable if needed to create turn
+  room.
 
-## Confirmed source diagnosis
+## Current unverified candidate
 
-### Stop at shallow corners
+### Ruckig corner handling
 
-The old retained route had about 25.5 degree interior bends.
+`d2205f50259fdef05a6515fec3822055891c47d5`
+- adaptive corner blend-distance search replaces the single fixed 25% chord test;
+- largest safe local blend wins;
+- failed Ruckig through-speed is reduced progressively before zero.
 
-`TrajectoryGenerator::buildWaypointVelocities()` tries a shortcut chord using
-25% of adjacent leg length. For the old wall route, that chord intersects the inflated
-box. The waypoint velocity remains zero. Ruckig therefore authors StopTurnGo.
+`641e6ef6aeb79d4dddcf58ce7601448723f79b9a`
+- removed arbitrary 65% max-speed corner cap.
 
-There is no Expert-pilot reason for the stop. It is a fallback artifact.
+`20aef47942c675ae59b04c288b2ae4b3cb6de5e6`
+- tests now require a tighter safe blend to remain moving;
+- preserve stop fallback only when even the minimum local blend is blocked;
+- default viewer wall shallow corners must both have nonzero through-speed.
 
-### Newtonian body/velocity mismatch
+### Viewer
 
-The Stage-2 trajectory currently authors translation first. Then
-`buildReferenceAttitudes()`:
-- Newtonian points body-forward toward trajectory acceleration when |A| > 0.35;
-- otherwise it tends toward velocity direction;
-- Assisted tends toward velocity direction.
+`cbdbcc2b2132f0ef29af9a73e3589d25c415a8f5`
+`2ad3bf086c153895adefee64fb9f67bcabaa84da`
+`f695a55454f5ccc5802c618347dfb400ec4d6bcb`
 
-Because RCS can already produce bounded lateral acceleration, Newtonian velocity can
-bend before the hull has rotated. Before a zero-speed waypoint, the reference
-acceleration becomes braking-oriented, causing additional body rotation.
+Legend:
+- yellow thick arrow = actual velocity;
+- short cyan arrow = actual hull nose;
+- red arrow = target/program nose;
+- white line = retained geometric route;
+- green line = actual flight path;
+- current speed is numeric in the fixed lower-right block.
 
-Low-level propulsion allocation is not the primary fault:
-- Newtonian main channel is forward-only;
-- reverse/main braking requires body reorientation;
-- RCS remains bounded;
-- Assisted has symmetric longitudinal main authority but bounded transverse RCS.
+Velocity display scale = 3.5 m per 1 m/s, line width 6 px.
 
-The missing piece is a physically authored control-law-specific maneuver before ACCEPT.
+## Next action
 
-### Flight styles
+Do NOT start dynamic avoidance.
 
-Current diagnostic Standard/Extreme is mostly 10 vs 18 m/s max-speed request.
-This is not yet a full flight doctrine. Standard/Extreme must eventually choose
-meaningfully different proved maneuver families/aggressiveness.
+Run the focused Ruckig gate first. If it passes, run the two-stage viewer and inspect
+whether the two intermediate points now retain speed.
 
-## Route bug and current candidate
+If either default wall corner still stops:
+1. inspect `RETAINED WAYPOINT SPEEDS`;
+2. identify whether adaptive blend initialization or later swept Ruckig validation
+   reduced it to zero;
+3. add a real maneuver-space/corner-radius reserve by moving the execution guide
+   farther from the obstacle;
+4. prefer a slightly longer path over StopTurnGo.
 
-Old support graph lacked box edge midpoints, producing:
-`(0,0,0) -> (110,-27,-45) -> (190,-27,-45) -> (300,0,0)`,
-~323.75 m.
+Do not revive the retired custom SmoothPathOptimizer merely to draw a spline. The
+architectural target is:
+```text
+retained geometric polyline / corridor intent
+ -> control-law-aware continuous execution trajectory
+ -> capability + swept-geometry proof
+ -> AcceptedManeuverProgram
+ -> Follower
+```
 
-Nearest-face route should be approximately:
-`(0,0,0) -> (110,-27,0) -> (190,-27,0) -> (300,0,0)`,
-~306.53 m.
+After the stop is gone, continue the deeper Newtonian correction: translation must not
+assume future hull attitude. Use yellow actual V vs cyan actual nose vs red target nose
+to diagnose that separately.
 
-Current unverified commits:
-- `e53312cc9b00119e69f1c7676edf14b5d21fea64` box edge support nodes;
-- `8e0d4c4c6ca7d4d7ae3e7cc71387ebff8b335302` nearest-face detour regression;
-- `ac30d441ebdafe232af0bf0fe7e8882da9f38767` triangular-prism ship, small
-  translucent nose, thick speed-proportional velocity vector, numeric speed;
-- `c4c63c9751a4b5b381da290a570ee98775148eb6` route-point, waypoint-speed and
-  body/velocity-slip diagnostics.
-
-Do not call them accepted until the target MinGW64 gate runs.
-
-## Active task
-
-Pause the dynamic-obstacle overlay. First make ordinary static corner execution
-credible.
-
-Target semantics:
-- a blocked synthetic corner-cut chord does not mean stop;
-- shallow/medium bends remain moving whenever a physically safe maneuver exists;
-- Newtonian Expert uses an intentional body/thrust maneuver, not arbitrary vector
-  translation followed by attitude catch-up;
-- Assisted Expert also preserves speed on normal bends;
-- stop/flip only when actually required;
-- B4 geometry -> B5 physical maneuver -> B6 continuous proof -> B7 doctrine ->
-  B8 AcceptedManeuverProgram -> B9/B10 execution;
-- do not bypass the missing generalized ordinary B6 proof.
-
-## Target-machine commands
+## Exact target commands
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
 
+cmake -S tests/navigation_guidance -B build/tests/navigation_guidance -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/tests/navigation_guidance --target ruckig_route_planner_tests
+ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
+```
+
+Then:
+
+```bash
+cd /d/__elite/work
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
-Then launch separately:
+Launch separately:
 
 ```bash
 cd /d/__elite/work
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Collect:
+Return:
 - HEAD;
-- full Stage-1 route points and length;
+- focused Ruckig output;
+- Stage-1/Stage-2 diagnostics;
 - `RETAINED WAYPOINT SPEEDS`;
 - `MAX BODY/VELOCITY ANGLE`;
-- any build/test failure;
-- optionally a short video of Expert/Standard/Newtonian and Assisted.
+- short observations/video for Expert Standard Newtonian and Assisted.
 
-After target evidence, update all mandatory MD files and recreate this prompt from
-scratch.
+Then update all mandatory MD files and recreate this prompt again.

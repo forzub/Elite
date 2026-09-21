@@ -48,6 +48,12 @@ struct TrajectoryGenerationRequest
     glm::dvec3 initialVelocityMps {0.0};
     glm::dvec3 initialAccelerationMps2 {0.0};
 
+    // Optional exact terminal inertial velocity. This is distinct from
+    // pointSpeedConstraints, which are upper bounds along the retained route.
+    // A moving fly-through finish must not be represented as a fake stop.
+    bool hasTerminalVelocity = false;
+    glm::dvec3 terminalVelocityMps {0.0};
+
     // Deprecated compatibility knobs from the removed spline backend. They are
     // intentionally ignored by the canonical Ruckig runtime planner and remain
     // only while older callers/tests are migrated off the old request shape.

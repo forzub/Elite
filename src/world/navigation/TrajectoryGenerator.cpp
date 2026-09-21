@@ -1129,6 +1129,494 @@ void appendPerfLog(
         << '\n';
 }
 
+struct GuideMetricSample
+{
+    glm::dvec3 position {0.0};
+    glm::dvec3 tangent {1.0, 0.0, 0.0};
+    double sourceProgressMeters = 0.0;
+};
+
+std::vector<double> guideArcTable(
+    const ExecutionGuide& guide
+)
+{
+    std::vector<double> arc(
+        guide.points.size(),
+        0.0
+    );
+    for (std::size_t i = 1; i < guide.points.size(); ++i)
+    {
+        arc[i] =
+            arc[i - 1] +
+            magnitude(
+                guide.points[i] -
+                guide.points[i - 1]
+            );
+    }
+    return arc;
+}
+
+GuideMetricSample sampleGuide(
+    const ExecutionGuide& guide,
+    const std::vector<double>& arc,
+    double progressMeters
+)
+{
+    GuideMetricSample out;
+    if (guide.points.empty())
+        return out;
+    if (guide.points.size() == 1 || arc.size() != guide.points.size())
+    {
+        out.position = guide.points.front();
+        return out;
+    }
+
+    const double s = std::clamp(
+        progressMeters,
+        0.0,
+        arc.back()
+    );
+
+    const auto upper = std::upper_bound(
+        arc.begin(),
+        arc.end(),
+        s
+    );
+    std::size_t index =
+        upper == arc.begin()
+            ? 1
+            : static_cast<std::size_t>(
+                std::distance(arc.begin(), upper)
+              );
+    index = std::clamp<std::size_t>(
+        index,
+        1,
+        guide.points.size() - 1
+    );
+
+    const double segmentStart = arc[index - 1];
+    const double segmentEnd = arc[index];
+    const double segmentLength =
+        std::max(Epsilon, segmentEnd - segmentStart);
+    const double u = std::clamp(
+        (s - segmentStart) / segmentLength,
+        0.0,
+        1.0
+    );
+
+    out.position =
+        guide.points[index - 1] * (1.0 - u) +
+        guide.points[index] * u;
+    out.tangent = normalizedOr(
+        guide.points[index] -
+            guide.points[index - 1],
+        glm::dvec3(1.0, 0.0, 0.0)
+    );
+    out.sourceProgressMeters =
+        guide.sourceProgress[index - 1] * (1.0 - u) +
+        guide.sourceProgress[index] * u;
+    return out;
+}
+
+glm::dvec3 guideCurvatureVector(
+    const ExecutionGuide& guide,
+    const std::vector<double>& arc,
+    double progressMeters
+)
+{
+    if (arc.empty() || arc.back() <= Epsilon)
+        return glm::dvec3(0.0);
+
+    const double probe = std::clamp(
+        arc.back() * 0.0025,
+        0.20,
+        1.00
+    );
+    const double s0 =
+        std::max(0.0, progressMeters - probe);
+    const double s1 =
+        std::min(arc.back(), progressMeters + probe);
+    if (s1 - s0 <= Epsilon)
+        return glm::dvec3(0.0);
+
+    const glm::dvec3 t0 =
+        sampleGuide(guide, arc, s0).tangent;
+    const glm::dvec3 t1 =
+        sampleGuide(guide, arc, s1).tangent;
+    return (t1 - t0) / (s1 - s0);
+}
+
+double globalGuideSpeedLimit(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const ExecutionGuide& guide,
+    const std::vector<double>& arc
+)
+{
+    double limit = request.vehicle.maxSpeedMps;
+
+    for (const auto& range : request.speedLimitRanges)
+    {
+        if (finite(range.maxSpeedMps) &&
+            range.maxSpeedMps > 0.0)
+        {
+            limit = std::min(limit, range.maxSpeedMps);
+        }
+    }
+
+    const double lateralAcceleration = std::max(
+        0.1,
+        request.vehicle.maxLateralAccelerationMps2
+    );
+
+    for (std::size_t i = 1;
+         i + 1 < guide.points.size();
+         ++i)
+    {
+        const glm::dvec3 a =
+            guide.points[i] - guide.points[i - 1];
+        const glm::dvec3 b =
+            guide.points[i + 1] - guide.points[i];
+        const glm::dvec3 across =
+            guide.points[i + 1] - guide.points[i - 1];
+
+        const double la = magnitude(a);
+        const double lb = magnitude(b);
+        const double lc = magnitude(across);
+        const double denom = la * lb * lc;
+        if (denom <= Epsilon)
+            continue;
+
+        const double curvature =
+            2.0 * magnitude(glm::cross(a, b)) /
+            denom;
+        if (curvature > 1.0e-9)
+        {
+            limit = std::min(
+                limit,
+                std::sqrt(
+                    lateralAcceleration / curvature
+                )
+            );
+        }
+    }
+
+    return std::max(0.1, limit);
+}
+
+world::navigation::TrajectoryGenerationResult
+buildPathProgressTrajectory(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const std::vector<double>& coarseSourceProgress,
+    const ExecutionGuide& guide,
+    double totalStartMilliseconds = 0.0
+)
+{
+    (void)totalStartMilliseconds;
+
+    if (guide.points.size() < 2)
+    {
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::NumericalFailure,
+            "execution guide has too few points"
+        );
+    }
+
+    const std::vector<double> arc =
+        guideArcTable(guide);
+    if (arc.back() <= Epsilon)
+    {
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::NumericalFailure,
+            "execution guide has zero length"
+        );
+    }
+
+    const GuideMetricSample first =
+        sampleGuide(guide, arc, 0.0);
+    const GuideMetricSample last =
+        sampleGuide(guide, arc, arc.back());
+
+    const double initialAlongSpeed =
+        glm::dot(
+            request.initialVelocityMps,
+            first.tangent
+        );
+    const glm::dvec3 initialCrossVelocity =
+        request.initialVelocityMps -
+        first.tangent * initialAlongSpeed;
+
+    const double terminalAlongSpeed =
+        request.hasTerminalVelocity
+            ? std::max(
+                0.0,
+                glm::dot(
+                    request.terminalVelocityMps,
+                    last.tangent
+                )
+              )
+            : 0.0;
+
+    const double pathSpeedLimit =
+        globalGuideSpeedLimit(
+            request,
+            guide,
+            arc
+        );
+
+    game::navigation::RuckigProgressRequest progressRequest;
+    progressRequest.startProgressMeters = 0.0;
+    progressRequest.startSpeedMps =
+        std::max(0.0, initialAlongSpeed);
+    progressRequest.startAccelerationMps2 =
+        glm::dot(
+            request.initialAccelerationMps2,
+            first.tangent
+        );
+    progressRequest.targetProgressMeters = arc.back();
+    progressRequest.targetSpeedMps = terminalAlongSpeed;
+    progressRequest.targetAccelerationMps2 = 0.0;
+    progressRequest.maxSpeedMps = std::max({
+        pathSpeedLimit,
+        progressRequest.startSpeedMps,
+        progressRequest.targetSpeedMps
+    });
+    progressRequest.maxAccelerationMps2 = std::max(
+        0.1,
+        std::min(
+            request.vehicle.maxForwardAccelerationMps2,
+            request.vehicle.maxBrakingAccelerationMps2
+        )
+    );
+    progressRequest.maxJerkMps3 = std::max(
+        1.0,
+        progressRequest.maxAccelerationMps2 * 4.0
+    );
+    progressRequest.sampleIntervalSeconds = 0.02;
+
+    const auto solveStart = Clock::now();
+    const auto progress =
+        game::navigation::RuckigTrajectorySolver::solveProgress(
+            progressRequest
+        );
+    const double solveMs =
+        elapsedMilliseconds(
+            solveStart,
+            Clock::now()
+        );
+
+    if (!progress.ready)
+    {
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::NumericalFailure,
+            "scalar Ruckig path progress failed: " +
+                progress.message
+        );
+    }
+
+    world::navigation::TrajectoryGenerationResult out;
+    out.trajectory.status =
+        world::navigation::TrajectoryStatus::Ready;
+    out.trajectory.systemId = request.systemId;
+    out.trajectory.frameId = request.frameId;
+    out.trajectory.startUniverseTimeSeconds =
+        request.startUniverseTimeSeconds;
+    out.trajectory.message =
+        "Ruckig scalar path-progress trajectory";
+    out.trajectory.durationSeconds =
+        progress.durationSeconds;
+    out.trajectory.lengthMeters =
+        arc.back();
+
+    out.executionGuidePointsMeters = guide.points;
+    out.diagnostics.coarsePathLengthMeters =
+        coarseSourceProgress.empty()
+            ? 0.0
+            : coarseSourceProgress.back();
+    out.diagnostics.optimizedPathLengthMeters =
+        arc.back();
+    out.diagnostics.executionGuidePoints =
+        guide.points.size();
+    out.diagnostics.roundedGuideCorners =
+        guide.roundedCorners;
+    out.diagnostics.expandedGuideCorners =
+        guide.expandedCorners;
+    out.diagnostics.ruckigLegAttempts = 1;
+    out.diagnostics.ruckigLegSuccesses = 1;
+    out.diagnostics.ruckigSolveMilliseconds = solveMs;
+    out.diagnostics.initialAlongPathSpeedMps =
+        initialAlongSpeed;
+    out.diagnostics.initialCrossTrackSpeedMps =
+        magnitude(initialCrossVelocity);
+    out.diagnostics.pathCaptureRequired =
+        magnitude(initialCrossVelocity) > 0.25;
+
+    out.trajectory.samples.reserve(
+        progress.samples.size()
+    );
+
+    for (std::size_t i = 0;
+         i < progress.samples.size();
+         ++i)
+    {
+        const auto& progressSample =
+            progress.samples[i];
+        const GuideMetricSample spatial =
+            sampleGuide(
+                guide,
+                arc,
+                progressSample.progressMeters
+            );
+        const glm::dvec3 curvature =
+            guideCurvatureVector(
+                guide,
+                arc,
+                progressSample.progressMeters
+            );
+
+        world::navigation::TrajectorySample sample;
+        sample.timeOffsetSeconds =
+            progressSample.timeOffsetSeconds;
+        sample.universeTimeSeconds =
+            request.startUniverseTimeSeconds +
+            sample.timeOffsetSeconds *
+                request.universeTimeScale;
+        sample.pathProgressMeters =
+            progressSample.progressMeters;
+        sample.sourcePathProgressMeters =
+            spatial.sourceProgressMeters;
+        sample.positionMeters = spatial.position;
+        sample.speedMps = progressSample.speedMps;
+        sample.velocityMps =
+            spatial.tangent *
+            progressSample.speedMps;
+        sample.accelerationMps2 =
+            spatial.tangent *
+                progressSample.accelerationMps2 +
+            curvature *
+                (progressSample.speedMps *
+                 progressSample.speedMps);
+        sample.orientation = sampleOrientation(
+            request,
+            sample.velocityMps,
+            spatial.tangent,
+            sample.sourcePathProgressMeters,
+            coarseSourceProgress.empty()
+                ? 0.0
+                : coarseSourceProgress.back()
+        );
+
+        out.diagnostics.maxSpeedMps = std::max(
+            out.diagnostics.maxSpeedMps,
+            sample.speedMps
+        );
+        out.diagnostics.maxAccelerationMps2 =
+            std::max(
+                out.diagnostics.maxAccelerationMps2,
+                magnitude(sample.accelerationMps2)
+            );
+
+        out.trajectory.samples.push_back(
+            std::move(sample)
+        );
+    }
+
+    if (out.trajectory.samples.size() < 2)
+    {
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::NumericalFailure,
+            "scalar path progress produced too few mapped samples"
+        );
+    }
+
+    // Preserve the exact authored initial state; the path-progress solve owns
+    // subsequent motion, not the input seed itself.
+    out.trajectory.samples.front().positionMeters =
+        request.pathPointsMeters.front();
+    out.trajectory.samples.front().velocityMps =
+        request.initialVelocityMps;
+    out.trajectory.samples.front().accelerationMps2 =
+        request.initialAccelerationMps2;
+    out.trajectory.samples.front().speedMps =
+        magnitude(request.initialVelocityMps);
+
+    auto& terminal =
+        out.trajectory.samples.back();
+    terminal.positionMeters =
+        request.pathPointsMeters.back();
+    if (request.hasTerminalVelocity)
+    {
+        terminal.velocityMps =
+            request.terminalVelocityMps;
+        terminal.speedMps =
+            magnitude(request.terminalVelocityMps);
+    }
+    terminal.sourcePathProgressMeters =
+        coarseSourceProgress.empty()
+            ? terminal.sourcePathProgressMeters
+            : coarseSourceProgress.back();
+
+    if (request.hasTerminalOrientation)
+    {
+        terminal.orientation =
+            world::navigation::orientationForForwardUp(
+                request.terminalForward,
+                request.terminalUp
+            );
+    }
+
+    std::size_t collisionSegments = 0;
+    for (std::size_t i = 1;
+         i < out.trajectory.samples.size();
+         ++i)
+    {
+        const auto& previous =
+            out.trajectory.samples[i - 1];
+        const auto& current =
+            out.trajectory.samples[i];
+        const bool legalTargetIngress =
+            !request.terminalAllowedObstacleId.empty() &&
+            std::min(
+                previous.sourcePathProgressMeters,
+                current.sourcePathProgressMeters
+            ) + 1.0e-7 >=
+                request.terminalObstacleEntrySourceProgressMeters;
+
+        ++collisionSegments;
+        if (!world::navigation::segmentClearOfNavigationObstacles(
+                previous.positionMeters,
+                current.positionMeters,
+                request.obstacles,
+                request.vehicle.collisionRadiusMeters,
+                request.vehicle.preferredClearanceMeters,
+                legalTargetIngress
+                    ? std::string_view(
+                        request.terminalAllowedObstacleId
+                      )
+                    : std::string_view{}))
+        {
+            return failure(
+                request,
+                world::navigation::TrajectoryStatus::NoSafePath,
+                "scalar path-progress trajectory leaves collision-free guide"
+            );
+        }
+    }
+    out.diagnostics.collisionSegmentsChecked =
+        collisionSegments;
+
+    computeCurvatureDiagnostics(out);
+    out.diagnostics.smoothCandidatesEvaluated = 1;
+    out.diagnostics.smoothSafeCandidates = 1;
+    out.diagnostics.selectedSmoothSupportLevel = 0;
+    out.diagnostics.smoothingFellBackToPolyline = false;
+
+    return out;
+}
+
 struct RouteAttempt
 {
     world::navigation::TrajectoryGenerationResult result;

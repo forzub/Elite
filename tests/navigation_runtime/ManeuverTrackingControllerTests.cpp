@@ -300,6 +300,40 @@ void testFreeTransitSpeedCorridorIgnoresTinyLongitudinalError()
     );
 }
 
+void testFreeTransitDeadbandDoesNotFalseTriggerEnvelope()
+{
+    Program program = baseProgram();
+    program.family = Program::ManeuverFamily::FreeTransit;
+    program.samples[0].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+    program.tracking.alongTrackPositionDeadbandMeters = 2.0;
+    program.tracking.alongTrackSpeedDeadbandMps = 0.5;
+
+    // Deliberately tighter than the raw along-track errors below. The
+    // deadband means those errors are acceptable and must not report an
+    // execution-envelope failure.
+    program.tracking.positionErrorMeters = 0.5;
+    program.tracking.linearVelocityErrorMps = 0.05;
+
+    auto agent = exactAgentFor(program.samples[0]);
+    agent.positionMapMeters = {1.0, 0.0, 0.0};
+    agent.velocityMapMetersPerSecond = {5.1, 0.0, 0.0};
+
+    const auto result =
+        Tracker::track(program, program.samples[0], agent);
+
+    require(
+        result.status == Tracker::Status::Tracking,
+        "accepted free-transit longitudinal deadband falsely exceeded envelope"
+    );
+    requireNear(
+        glm::length(result.linearFeedbackMapMps2),
+        0.0,
+        1.0e-12,
+        "accepted free-transit deadband generated correction"
+    );
+}
+
 void testFreeTransitCorridorStillCorrectsCrossTrackMotion()
 {
     Program program = baseProgram();
@@ -373,6 +407,7 @@ int main()
         testFollowerUsesB9ThenB10WithoutResolvingControl();
         testFollowerCompletesOnlyAtTerminalState();
         testFreeTransitSpeedCorridorIgnoresTinyLongitudinalError();
+        testFreeTransitDeadbandDoesNotFalseTriggerEnvelope();
         testFreeTransitCorridorStillCorrectsCrossTrackMotion();
         testFreeTransitCorridorCorrectsOnlyExcessOutsideBand();
         testFollowerRejectsExecutionBeforeAcceptanceTime();
@@ -384,6 +419,7 @@ int main()
         std::cout << " - follower composes B9 sampler -> B10 tracker\n";
         std::cout << " - terminal completion uses accepted tolerances\n";
         std::cout << " - free transit ignores harmless longitudinal speed drift\n";
+        std::cout << " - free-transit deadbands do not falsely trip the execution envelope\n";
         std::cout << " - free transit keeps full cross-track correction\n";
         return 0;
     }

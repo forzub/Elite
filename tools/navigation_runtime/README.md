@@ -407,4 +407,5 @@ commands run from the repository root, these files are now directly in the repo 
 - `last_execution_telemetry.log`;
 - `navigation_perf.log` (already used the root).
 
-The JSON trace artifacts remain trace artifacts rather than diagnostic logs.
+The viewer's `last_calculated_trace.json` and `last_execution_trace.json` are also
+written to the repository root so every current-run artifact is in one place.

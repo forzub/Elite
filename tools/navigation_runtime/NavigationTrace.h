@@ -18,6 +18,12 @@ struct TraceFrame
     glm::dvec3 shipUp {0.0, 1.0, 0.0};
     glm::dvec3 shipVelocity {0.0};
 
+    // Effective runtime state, not merely what the UI requested. The viewer
+    // uses this to keep controls synchronized with the system actually flown.
+    bool hasRuntimeControlLaw = false;
+    std::string runtimeControlLaw;
+    double mainEngineThrottle01 = 0.0;
+
     // Reference state sampled from the actually accepted maneuver program.
     // This is distinct from actual rigid-body attitude and lets the viewer
     // expose tracking/orientation mismatch instead of reconstructing attitude.

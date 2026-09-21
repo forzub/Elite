@@ -1770,7 +1770,7 @@ void drawHud(
     );
 
     const float legendWidth = 438.0f;
-    const float legendHeight = 154.0f;
+    const float legendHeight = 190.0f;
     const float legendX =
         std::max(
             8.0f,
@@ -1825,18 +1825,30 @@ void drawHud(
     );
     appendUiText(
         ui, legendX + 14.0f, legendY + 100.0f,
-        "БЕЛАЯ ЛИНИЯ: ГЕОМЕТРИЧЕСКИЙ МАРШРУТ",
+        "БЕЛАЯ: ГРУБЫЙ ГЕОМЕТРИЧЕСКИЙ МАРШРУТ",
         1.00f,
         {0.90f, 0.90f, 0.90f}
     );
     appendUiText(
         ui, legendX + 14.0f, legendY + 118.0f,
-        "ЗЕЛЁНАЯ ЛИНИЯ: ФАКТИЧЕСКАЯ ТРАЕКТОРИЯ",
+        "СИНЯЯ: РАЗДВИНУТЫЙ EXECUTION GUIDE",
+        1.00f,
+        {0.20f, 0.72f, 1.0f}
+    );
+    appendUiText(
+        ui, legendX + 14.0f, legendY + 136.0f,
+        "ФИОЛЕТОВАЯ: РАСЧЁТНАЯ КРИВАЯ RUCKIG",
+        1.00f,
+        {0.88f, 0.35f, 1.0f}
+    );
+    appendUiText(
+        ui, legendX + 14.0f, legendY + 154.0f,
+        "ЗЕЛЁНАЯ: ФАКТИЧЕСКАЯ ТРАЕКТОРИЯ",
         1.00f,
         {0.25f, 1.0f, 0.35f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 136.0f,
+        ui, legendX + 14.0f, legendY + 172.0f,
         "СЕРЫЙ КАРКАС: СТАТИЧЕСКОЕ ПРЕПЯТСТВИЕ",
         1.00f,
         {0.75f, 0.78f, 0.82f}
@@ -1916,6 +1928,10 @@ void fitCamera(
     }
 
     for (const auto& p : data.routePoints)
+        include(p);
+    for (const auto& p : data.executionGuidePoints)
+        include(p);
+    for (const auto& p : data.calculatedTrajectoryPoints)
         include(p);
 
     for (const auto& obstacle : data.staticObstacles)
@@ -2389,6 +2405,29 @@ void drawScene(
         2.0f
     );
 
+    // Stage-2 local guide: entry/exit support geometry derived from the
+    // retained coarse route. This line shows whether the corner was widened
+    // before Ruckig solved the actual continuous reference.
+    renderer.draw(
+        GL_LINES,
+        polyline(
+            data.executionGuidePoints,
+            glm::vec3(0.20f, 0.72f, 1.0f)
+        ),
+        1.5f
+    );
+
+    // Full collision-checked continuous reference handed to Follower. This is
+    // the curve the user needs to compare against the green flown trajectory.
+    renderer.draw(
+        GL_LINES,
+        polyline(
+            data.calculatedTrajectoryPoints,
+            glm::vec3(0.88f, 0.35f, 1.0f)
+        ),
+        3.0f
+    );
+
     // The planner result itself does not publish a volumetric corridor.
     // What execution owns is the accepted maneuver reference plus its follower
     // position-error envelope. Render that product explicitly and label it as
@@ -2441,6 +2480,20 @@ void drawScene(
     for (const auto& p : data.turnPoints)
         appendCross(markers, toVec3(p), 3.0f, {1.0f, 0.65f, 0.15f});
     renderer.draw(GL_LINES, markers, 2.0f);
+
+    std::vector<Vertex> guideMarkers;
+    for (std::size_t i = 1;
+         i + 1 < data.executionGuidePoints.size();
+         ++i)
+    {
+        appendCross(
+            guideMarkers,
+            toVec3(data.executionGuidePoints[i]),
+            1.8f,
+            {0.20f, 0.72f, 1.0f}
+        );
+    }
+    renderer.draw(GL_LINES, guideMarkers, 1.5f);
 
     std::vector<glm::dvec3> actualPath;
     actualPath.reserve(frameIndex + 1);

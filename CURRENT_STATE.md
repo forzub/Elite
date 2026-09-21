@@ -1663,3 +1663,100 @@ The revision shown by the viewer is the HEAD that existed at CMake configure tim
 normal `run_stage1_mingw64.sh` configure/build flow refreshes it after every pull.
 
 All changes after the reported 7/8 target run are currently unverified on target.
+
+
+## 2026-09-21 — web review confirms dense 3-D Ruckig waypoint chaining is the wrong integration
+
+Latest target evidence:
+- focused binary still compiles/links;
+- 7/8 tests pass;
+- default wall test reports `min_speed=0.009 m/s`;
+- viewer shows a large fan / convergence of purple calculated reference segments near
+  the rounded route node.
+
+The performance log explains the visual failure. After densifying the corner guide, the
+runtime started feeding many close geometric samples to the 3-D state-to-state Ruckig
+adapter. Recent lines show examples such as:
+- `guide_points=52`, hundreds/thousands of Ruckig leg attempts;
+- current default wall case `guide_points=18`, `legs=74`,
+  `ruckig_ok=17`, `min_speed_mps=0.0094`.
+
+This fan is therefore not a mysterious renderer artifact. It is the result of our own
+integration: every close guide point became a new 3-D target state with its own target
+velocity. Ruckig then solved many local polynomial state-to-state transitions and the
+route nearly stopped at one of them.
+
+### External verification
+
+Official Ruckig documentation says:
+- Ruckig's basic/open-source strength is state-to-state online trajectory generation;
+- full local intermediate-waypoint trajectory calculation is a Pro feature;
+- waypoint problems are significantly harder;
+- Ruckig recommends as few waypoints as possible;
+- it explicitly recommends filtering waypoint lists and prefers waypoints far apart.
+
+This matches the target evidence exactly. The current dense chaining was a misuse of the
+state-to-state solver.
+
+The standard alternative architecture is also consistent with TOPP/TOPPRA:
+```text
+geometric path p(s)
+    +
+time parameterization s(t)
+    =
+trajectory p(s(t))
+```
+
+### Architecture correction implemented
+
+Do not feed dense spatial samples to 3-D Ruckig.
+
+New ownership:
+```text
+Stage-1 coarse route
+ -> local rounded execution guide p(s)
+ -> scalar jerk-limited Ruckig progress s(t)
+ -> map s(t) back onto p(s)
+ -> swept collision validation
+ -> AcceptedManeuverProgram / Follower
+```
+
+Ruckig remains in the architecture, but in the role it is good at:
+- true single-leg state-to-state solves still use the existing 3-D adapter;
+- curved / multi-point routes use new one-dimensional
+  `RuckigTrajectorySolver::solveProgress()`;
+- dense guide points define geometry only and are never independent 3-D Ruckig targets.
+
+Commits:
+- `2e815ef993a31acd40596f170c67a124f9337bf9` — scalar progress API;
+- `a50de59958887efbe50e2cdacee8c67623b2ebb8` — scalar Ruckig implementation;
+- `9f166f4286dd03197705b0cd9e4ba63e33d000bc` — path-progress trajectory mapping;
+- `3c58f4c3719d712e524e86e5f030820486af3102` — stop chaining dense 3-D legs;
+- `c6f7b160878a3582362574691a12c96fd3ff3623` — keep stored guide sparse;
+- `b9e7ce64182ce761edb45b4751d680950ab33ff5` /
+  `3843194d999e302ca32171de3d49f3f21987de64` — contract docs corrected.
+
+The current scalar timing uses one conservative path-wide speed cap for the current
+slice (including curvature/range/positive point limits). This deliberately favors a
+correct monotone reference over aggressive per-corner optimization. Later work may
+introduce a sparse set of meaningful speed zones, but must never return to one Ruckig
+3-D solve per geometric sample.
+
+### Viewer revision and clutter
+
+The previous revision stamp could be outside a cropped screenshot. Viewer now also
+draws an always-visible in-window `NAV REV <sha>` badge below the top controls.
+
+Per-sample cyan execution-guide crosses were removed. The BLUE guide line remains, but
+internal geometric sampling no longer looks like dozens of commanded target states.
+
+Commit:
+- `1199a0c04ee7cf3a6938bef0ca9c3bb55d7bd4c8`.
+
+### Validation state
+
+This architecture correction has NOT yet been built or run on target MinGW64.
+Do not call it PASS until the focused target gate and viewer confirm:
+- no near-zero speed on the steady 10 m/s wall route;
+- no purple fan/barrels;
+- `NAV REV` visible and matches the current build revision.

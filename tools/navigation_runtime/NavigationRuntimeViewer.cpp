@@ -1434,20 +1434,6 @@ std::string localizedStatus(const std::string& status)
     return status;
 }
 
-double orientationErrorDegrees(const trace::TraceFrame& frame)
-{
-    if (!frame.hasProgramReference)
-        return 0.0;
-
-    const glm::dvec3 a =
-        glm::normalize(frame.shipForward);
-    const glm::dvec3 b =
-        glm::normalize(frame.programReferenceForward);
-    const double dot =
-        std::clamp(glm::dot(a, b), -1.0, 1.0);
-    return std::acos(dot) * 180.0 / 3.14159265358979323846;
-}
-
 std::string currentExplanation(const trace::TraceFrame& frame)
 {
     if (frame.phase == "scene_preview")

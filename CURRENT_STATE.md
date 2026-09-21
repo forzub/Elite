@@ -1071,3 +1071,128 @@ Hard ownership contract:
 Initial dynamic acceptance should keep the same Stage-1 route immutable and first prove
 Expert/Standard/Newtonian. Mode/style expansion follows after the local dynamic chain is
 behaviorally correct.
+
+
+## 2026-09-21 — video review: static maneuver quality blocker
+
+User video review exposed two real quality defects that must be fixed before the
+dynamic-overlay stage is promoted.
+
+### 1. Shallow retained-route corners incorrectly become StopTurnGo
+
+For the previous default retained route, the static planner produced approximately:
+
+```text
+(0, 0, 0)
+ -> (110, -27, -45)
+ -> (190, -27, -45)
+ -> (300, 0, 0)
+```
+
+The two interior course changes are only about 25.5 degrees. An Expert pilot has no
+behavioral reason to stop there.
+
+The stop is caused by the current Ruckig waypoint-authoring fallback:
+- `buildWaypointVelocities()` attempts a 25%-leg-length shortcut chord around each
+  interior polyline point;
+- on this geometry that chord intersects the inflated static wall;
+- the waypoint is therefore left with zero target velocity;
+- Ruckig then correctly solves a stop-at-waypoint trajectory;
+- both Newtonian and Assisted inherit the same upstream StopTurnGo reference.
+
+This is a trajectory-authoring defect, not a sensible Expert maneuver doctrine.
+
+### 2. Newtonian hull/velocity semantics are not yet expert-quality
+
+Low-level propulsion allocation is physically differentiated:
+- Newtonian has aft-main thrust only for the main channel; reverse/main braking
+  requires body reorientation, while lateral/vertical correction is bounded by RCS;
+- Assisted has symmetric longitudinal main authority, with lateral/vertical correction
+  still bounded by RCS.
+
+However the Stage-2 reference is authored in the wrong order for a
+main-engine-dominant Newtonian maneuver:
+- Ruckig first creates a translational P/V/A history using a common vector
+  acceleration budget;
+- `buildReferenceAttitudes()` then points Newtonian body-forward toward the already
+  requested acceleration whenever |A| > 0.35 m/s2;
+- bounded RCS can therefore begin changing the velocity vector while the hull is still
+  catching up;
+- before a zero-speed waypoint, the acceleration vector becomes braking-oriented, so
+  the body reference rotates toward the braking vector and then rotates again for the
+  next leg.
+
+The resulting motion is physically possible as an RCS-heavy correction, but it is not a
+credible Expert Newtonian route maneuver. Large course changes must be authored as
+body/thrust-aware physical primitives before ACCEPT, not derived by attaching attitude
+after an arbitrary translational Ruckig curve.
+
+Assisted also stops at these shallow corners because the zero waypoint velocity is
+already baked into the common translational trajectory.
+
+### 3. Standard vs Extreme is not yet a real flight doctrine
+
+In the current diagnostic Stage 2, Standard vs Extreme primarily changes the requested
+route speed (10 vs 18 m/s). It does not yet choose different physical maneuver families,
+clearance use, slip tolerance or aggressiveness. Therefore visually similar maneuver
+semantics are expected and are not sufficient implementation of the requested flight
+styles.
+
+### 4. Static route detour was unnecessarily long
+
+The old box support graph had:
+- 8 corners;
+- 6 face centers;
+- no 12 edge midpoints.
+
+For the default wall, inflated/support half-extents are approximately
+`(40, 27, 45)`. Because edge midpoints were missing, visibility A* had to pay
+clearance on two transverse axes and selected the old 323.75 m route through
+`(110,-27,-45)` and `(190,-27,-45)`.
+
+The geometrically shorter same-clearance route is approximately:
+
+```text
+(0, 0, 0)
+ -> (110, -27, 0)
+ -> (190, -27, 0)
+ -> (300, 0, 0)
+```
+
+with length about 306.53 m.
+
+Candidate fixes committed:
+- `e53312cc9b00119e69f1c7676edf14b5d21fea64` — add all box edge-midpoint support
+  nodes to `GeometricPathPlanner`;
+- `8e0d4c4c6ca7d4d7ae3e7cc71387ebff8b335302` — regression requiring a nearest-face
+  one-plane box detour rather than unnecessary second-axis displacement;
+- `ac30d441ebdafe232af0bf0fe7e8882da9f38767` — viewer uses a Cobra-like triangular
+  prism, a much smaller translucent nose marker, and a thick current-velocity vector
+  whose length is proportional to speed, with numeric speed at the vector tip;
+- `c4c63c9751a4b5b381da290a570ee98775148eb6` — diagnostics now print every retained
+  route point, interior retained-waypoint speeds and maximum body/velocity angle.
+
+These candidates are not target-validated yet.
+
+### Active priority change
+
+Dynamic local avoidance is postponed, not discarded. First make the static retained
+route execution behaviorally credible.
+
+Next mechanism target:
+- shallow/medium corners must remain moving when a physically safe maneuver exists;
+- no zero-speed waypoint merely because one synthetic corner-cut chord is blocked;
+- Newtonian Expert must use a body/thrust-aware maneuver (lead turn, drift/coast,
+  RCS trim, main-burn as appropriate) rather than letting the translational vector
+  rotate independently and asking attitude to catch up afterwards;
+- Assisted Expert must also preserve speed on ordinary shallow bends;
+- stop/flip is reserved for geometry, required terminal pose or braking physics that
+  actually requires it;
+- Standard and Extreme must differ by real maneuver doctrine/aggressiveness, not only
+  by max-speed scalar;
+- production B5/B6/B7/B8 ownership must be preserved. Do not turn geometric targets
+  directly into accepted execution programs to make the viewer look good.
+
+The already documented architecture gap remains decisive: ordinary B5 exists first for
+Newtonian, but a generalized ordinary B6 continuous maneuver prover is still missing.
+Do not bypass that proof boundary.

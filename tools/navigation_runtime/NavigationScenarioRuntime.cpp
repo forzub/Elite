@@ -1648,22 +1648,6 @@ void activateProgramPhase(
         actualStartTimeSeconds + duration + 5.0;
 }
 
-void holdProgramReferenceClock(
-    Program& program,
-    double holdSeconds
-)
-{
-    if (!(holdSeconds > 0.0))
-        return;
-
-    // A time-parameterized reference must not run away from a physical ship
-    // that is already outside its accepted tracking envelope. Shift both
-    // acceptance and validity by the same amount: the next B9 sample then
-    // stays at the same reference progress while B10/physics reacquire it.
-    program.acceptedAtUniverseTimeSeconds += holdSeconds;
-    program.validUntilUniverseTimeSeconds += holdSeconds;
-}
-
 struct ExecutionVehicle
 {
     ShipTransform transform {};
@@ -1816,6 +1800,7 @@ TraceFrame executionTraceFrame(
     const ExecutionVehicle& vehicle,
     const Program& program,
     const Scenario& scenario,
+    double programSampleUniverseTimeSeconds,
     const std::string& status
 )
 {
@@ -1888,7 +1873,7 @@ TraceFrame executionTraceFrame(
     const auto sampled =
         game::navigation::ManeuverProgramSampler::sample(
             program,
-            vehicle.timeSeconds
+            programSampleUniverseTimeSeconds
         );
 
     if (sampled.status !=
@@ -2521,6 +2506,7 @@ ScenarioRunResult executeCalculatedRoute(
         std::size_t runtimeControlLawSwitches = 0;
         std::size_t referenceClockHoldFrames = 0;
         double referenceClockHoldSeconds = 0.0;
+        double activeProgramReferenceDelaySeconds = 0.0;
         auto previousRuntimeControlLaw =
             vehicle.transform.motion.localControlLaw;
 
@@ -2534,6 +2520,7 @@ ScenarioRunResult executeCalculatedRoute(
                 vehicle,
                 programs.front(),
                 scenario,
+                vehicle.timeSeconds,
                 "follower_running"
             )
         );
@@ -2545,10 +2532,14 @@ ScenarioRunResult executeCalculatedRoute(
         {
             Program& program = programs[activeProgram];
 
+            const double programReferenceTimeSeconds =
+                vehicle.timeSeconds -
+                activeProgramReferenceDelaySeconds;
+
             const auto preSample =
                 game::navigation::ManeuverProgramSampler::sample(
                     program,
-                    vehicle.timeSeconds
+                    programReferenceTimeSeconds
                 );
 
             if (
@@ -2573,7 +2564,7 @@ ScenarioRunResult executeCalculatedRoute(
             const auto follower =
                 Follower::follow(
                     program,
-                    vehicle.timeSeconds,
+                    programReferenceTimeSeconds,
                     followerAgent(vehicle)
                 );
 
@@ -2598,10 +2589,7 @@ ScenarioRunResult executeCalculatedRoute(
                 follower.trackingErrorExceeded;
             if (reacquiringReference)
             {
-                holdProgramReferenceClock(
-                    program,
-                    kExecutionDt
-                );
+                activeProgramReferenceDelaySeconds += kExecutionDt;
                 ++referenceClockHoldFrames;
                 referenceClockHoldSeconds += kExecutionDt;
             }
@@ -2625,7 +2613,8 @@ ScenarioRunResult executeCalculatedRoute(
             const auto gate =
                 game::navigation::ManeuverPhaseGate::evaluate(
                     program,
-                    vehicle.timeSeconds,
+                    vehicle.timeSeconds -
+                        activeProgramReferenceDelaySeconds,
                     follower.status,
                     gatePolicy
                 );
@@ -2664,6 +2653,7 @@ ScenarioRunResult executeCalculatedRoute(
                 {
                     ++activeProgram;
                     ++phaseHandoffs;
+                    activeProgramReferenceDelaySeconds = 0.0;
                     activateProgramPhase(
                         programs[activeProgram],
                         vehicle.timeSeconds
@@ -2674,6 +2664,7 @@ ScenarioRunResult executeCalculatedRoute(
                             vehicle,
                             programs[activeProgram],
                             scenario,
+                            vehicle.timeSeconds,
                             "phase_handoff"
                         )
                     );
@@ -2815,6 +2806,8 @@ ScenarioRunResult executeCalculatedRoute(
                         vehicle,
                         program,
                         scenario,
+                        vehicle.timeSeconds -
+                            activeProgramReferenceDelaySeconds,
                         reacquiringReference
                             ? "follower_reacquiring"
                             : "follower_running"

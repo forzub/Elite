@@ -1499,3 +1499,80 @@ Also inspect:
 If purple is smooth and remains near 10 m/s while green brakes/loops, the fault is
 downstream in Follower / body-thrust execution. If purple itself brakes or loops, keep
 the fix in route-to-trajectory authoring and widen/reject the guide before ACCEPT.
+
+
+## 2026-09-21 — purple reference itself bows at both rounded corners; replace chord-like guide with sampled C1 curve
+
+User viewer evidence now isolates the defect conclusively:
+- the purple calculated Ruckig reference itself has two visible lateral "barrels";
+- they occur at the two rounded-corner transitions;
+- therefore this is upstream of Follower/Pilot. The green actual path is not the primary
+  cause of these two visible bulges.
+
+Latest perf line for the new guide shows:
+- coarse_points=4;
+- guide_points=6;
+- rounded_corners=2;
+- expanded_corners=0;
+- blended_waypoints=4;
+- samples=2300;
+- valid=1.
+
+The six-point guide proved that merely replacing each coarse corner with one
+`entry -> exit` chord is insufficient. Each Ruckig leg is solved with non-zero
+endpoint velocities. When those velocity directions are not aligned with the leg chord,
+Ruckig is free to generate a lateral polynomial bow while still satisfying endpoint
+states.
+
+### Mechanism fix
+
+Each rounded corner is now represented by a densely sampled quadratic C1 curve:
+```text
+entry -> quadratic samples controlled by widened corner -> exit
+```
+
+Properties:
+- the quadratic control point is the current local corner (including any outward
+  expansion);
+- its tangent at entry matches the incoming coarse leg;
+- its tangent at exit matches the outgoing coarse leg;
+- sample density targets about 2.5 m per segment, clamped to 4..24 segments per corner;
+- the sampled curve itself is collision checked before acceptance;
+- if the curve is not safe, the existing cut/expansion search continues.
+
+This removes the long single Ruckig leg whose endpoint velocities were forcing the
+visible barrel.
+
+Commit:
+- `3dccb8a36c8e8023083b21f317b944a8097fd6a0`.
+
+### Small-angle speed fix
+
+The old through-speed estimate clamped
+`sin(angle/2)` to at least `0.15`. Once a curve is sampled densely, each local angle
+is intentionally very small. That clamp falsely treated tiny smooth direction changes
+as a much tighter turn and could create unnecessary braking.
+
+The floor is now numerical only (`1e-4`), while the explicit max speed and lateral
+acceleration remain the physical bounds.
+
+### Focused regression
+
+Default wall regression now additionally measures the full calculated Ruckig reference
+against the published execution guide.
+
+Requirement:
+- maximum distance of any purple Ruckig sample from the blue execution-guide polyline
+  must be <= 1.5 m.
+
+Existing requirements remain:
+- no major braking dip below 7.5 m/s in the steady 10 m/s experiment;
+- no geometric backtracking along +X;
+- collision-free;
+- moving finish remains moving.
+
+Commits:
+- `517904389019fbf94ddbbabbe3248cdb7b6fab20` — visible-bow regression;
+- `a056973c674194b109b8f37646f6d7a9e461c5b9` — explicit test include.
+
+This candidate is not target MinGW64 validated yet.

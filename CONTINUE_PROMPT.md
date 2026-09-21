@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: validate frozen-reference recovery
+# CONTINUE PROMPT — Elite Navigation: Assisted runaway target validation
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -24,81 +24,86 @@ Read first:
 - `tests/navigation_runtime/ManeuverTrackingControllerTests.cpp`
 - `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`.
 
-## Current candidate
+## Current code candidate
 
-Code baseline before documentation commits:
+Before the documentation-only synchronization commits:
 
 ```text
-59ff756996229bf15a122eb0fe43cf0d9a14b245
+13ef6bd731ef6d8e78c75c72bf7a59f524b30bcb
 ```
 
-Target-machine acceptance is NOT yet established.
+Target-machine validation is pending. Never claim PASS before it is supplied.
 
-## Latest reproduced failure
-
-Interactive viewer:
+## Latest target failure
 
 ```text
 ASSISTED / EXPERT / STANDARD
-START  10.00 m/s
-FINISH 10.00 m/s
+START 10.00 M/S
+FINISH 10.00 M/S
+
+TRAJECTORY: RUCKIG OK
+CALCULATED MAX SPEED: 11.71 M/S
+PROGRAM PHASES COMPLETE: NO
+PHYSICAL TERMINAL STATE: MISSED
+FINAL POSITION ERROR: 2411.14 M
+FINAL SPEED: 100.64 M/S
+REFERENCE CLOCK HOLD: 47.70 S
+MAX BODY/VELOCITY ANGLE: 179.99 DEG
+COARSE STATIC CONTACT: YES
 ```
 
-Evidence:
+The speed planner did **not** request 100 m/s. This was physical execution
+runaway.
 
-```text
-Ruckig OK
-calculated max speed       11.71 m/s
-program phases complete    NO
-physical terminal state    MISSED
-final speed                100.64 m/s
-final position error       2411.14 m
-reference clock hold       47.70 s
-max body/velocity angle    179.99 deg
-coarse static contact      YES
-```
+## Root cause A — held moving reference kept derivatives alive
 
-Do not misdiagnose this as the route/Ruckig speed calculator. The accepted
-trajectory remained near 10-12 m/s.
+Reference progress pause froze a moving trajectory sample but continued to
+apply that sample's feed-forward / rate derivatives indefinitely. B10 recovery
+reserve could not cancel them.
 
-## Root cause now fixed in candidate
-
-The reference-clock hold froze a **moving** sample in time. The fixed pose still
-carried non-zero trajectory derivatives:
-- linear acceleration feed-forward;
-- reference angular velocity;
-- potentially angular feed-forward.
-
-That turned reacquisition into an indefinite acceleration/spin command. B10's
-bounded feedback reserve could not cancel the frozen feed-forward.
-
-New B10 behavior:
-- inside envelope: accepted moving reference unchanged;
-- outside envelope: geometric reacquisition target, zero A_ff/alpha_ff, damp
-  actual angular velocity toward zero, bounded feedback only;
-- after physical recovery: accepted moving reference resumes automatically.
+Current B10:
+- normal in-envelope tracking uses accepted feed-forward;
+- out-of-envelope reacquisition uses zero linear/angular feed-forward;
+- recovery damps actual angular rate toward zero;
+- feedback remains bounded by the proved reserve;
+- accepted moving reference resumes when the physical craft re-enters.
 
 Regression:
 `testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()`.
 
-## Camera fix
+## Root cause B — dense angular velocity was copied into sparse FreeTransit
 
-`NavigationRuntimeViewer::fitCamera()` now ignores the complete physical
-execution history when calculating normal scene fit. A runaway ship can no
-longer make the route/obstacles microscopic. The trace itself is still rendered.
+FreeTransit is <=16 samples. Copying an instantaneous dense attitude
+`angularVelocity` into a sparse program caused B9 to smear short rate peaks
+across long intervals. The visible sparse basis and the commanded omega were
+therefore inconsistent.
 
-## Existing contracts that remain
+Current authoring:
+- keep sparse basis as authority;
+- re-derive interior omega from neighboring sparse basis/time samples;
+- omega first/last = 0;
+- alpha_ff = 0;
+- clamp sparse omega to physical angular-rate capability.
 
-- reference clock progress pauses while `follower.trackingErrorExceeded`;
-- phase gate uses the same delayed reference time;
-- physical navigation does not switch off on envelope violation;
-- FreeTransit longitudinal deadbands are evaluated before the envelope;
-- B10 owns tracking feedback/damping;
-- lower physics owns actual capability clamping;
-- requested control-law selector and effective displayed law remain separate;
-- dynamic avoidance is still disabled for this static gate.
+## Viewer
 
-## Immediate target commands
+Normal F / ВПИСАТЬ fit ignores the full physical frame history. A runaway
+physical trace can no longer shrink the authored route/obstacles to a postage
+stamp.
+
+## Exact regressions
+
+1. Assisted / Expert / Standard 10 -> 10:
+   `testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()`
+   - physical max speed <= 25 m/s;
+   - execution success;
+   - final position <= 5 m;
+   - final speed 10 +/- 1.5 m/s.
+
+2. Newtonian / Expert / Standard 26.15 -> 11.75:
+   existing high-speed reacquisition regression.
+
+## Run next
 
 ```bash
 cd /d/__elite/work
@@ -113,25 +118,22 @@ Then:
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Re-run first:
+First inspect exactly:
 `ASSISTED / EXPERT / STANDARD, 10.00 -> 10.00 m/s`.
 
-Required result:
+Required:
 - no runaway acceleration;
 - no persistent tumbling;
-- reference hold converges instead of feeding the failure;
-- program phases complete;
-- physical terminal state reached;
-- final position error <= 5 m;
-- terminal speed within tolerance;
-- no coarse static contact;
-- F / ВПИСАТЬ produces a usable nominal scene scale.
+- hold/reacquisition converges;
+- phases complete physically;
+- final position <= 5 m;
+- no static contact;
+- camera fit remains useful.
 
-Then re-run the existing high-speed case:
-`NEWTONIAN / EXPERT / STANDARD, 26.15 -> 11.75 m/s`.
-
-Do not claim PASS without target evidence.
-Do not enable dynamic avoidance yet.
-If the Assisted 10 -> 10 run still fails, inspect the new telemetry around the
-FIRST `follower_reacquiring` frame before changing route geometry or widening
-tolerances.
+Do not enable dynamic avoidance.
+Do not change route geometry or loosen acceptance tolerances to hide an
+execution failure.
+If the test still fails, inspect telemetry at the **first**
+`follower_reacquiring` transition and compare:
+`ref_forward`, body forward, body/velocity angle, ideal/exec linear demand,
+ideal/exec angular demand, and reference-clock hold onset.

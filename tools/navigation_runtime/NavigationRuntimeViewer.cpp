@@ -611,6 +611,57 @@ void appendShipBoxAndArrow(
     addLine(out, tip, wingBase - right * wing, arrowColor, 0.38f);
 }
 
+void appendMainEngineThrustFace(
+    std::vector<Vertex>& out,
+    const trace::TraceFrame& frame,
+    const glm::dvec3& halfExtents
+)
+{
+    const float throttle =
+        static_cast<float>(
+            std::clamp(frame.mainEngineThrottle01, 0.0, 1.0)
+        );
+    if (throttle <= 0.01f)
+        return;
+
+    const glm::vec3 center = toVec3(frame.shipPosition);
+    const glm::vec3 forward =
+        normalizedOr(frame.shipForward, {1.0f, 0.0f, 0.0f});
+    const glm::vec3 right =
+        normalizedOr(frame.shipRight, {0.0f, 0.0f, 1.0f});
+    const glm::vec3 up =
+        normalizedOr(frame.shipUp, {0.0f, 1.0f, 0.0f});
+
+    const float hx = static_cast<float>(halfExtents.x);
+    const float hy = static_cast<float>(halfExtents.y);
+    const float hz = static_cast<float>(halfExtents.z);
+
+    // Rear rectangular face of the diagnostic triangular prism. Slightly
+    // offset aft to avoid depth fighting with the hull wireframe.
+    const glm::vec3 rearCenter =
+        center - forward * (hz + 0.02f);
+    const glm::vec3 a = rearCenter - right * hx - up * hy;
+    const glm::vec3 b = rearCenter + right * hx - up * hy;
+    const glm::vec3 c0 = rearCenter + right * hx + up * hy;
+    const glm::vec3 d = rearCenter - right * hx + up * hy;
+
+    const glm::vec3 color(
+        1.0f,
+        0.36f + 0.34f * throttle,
+        0.06f
+    );
+    const float alpha =
+        0.22f + 0.68f * throttle;
+
+    out.push_back({a, color, alpha});
+    out.push_back({b, color, alpha});
+    out.push_back({c0, color, alpha});
+
+    out.push_back({a, color, alpha});
+    out.push_back({c0, color, alpha});
+    out.push_back({d, color, alpha});
+}
+
 void appendVelocityVector(
     std::vector<Vertex>& out,
     const trace::TraceFrame& frame
@@ -804,6 +855,35 @@ trace::TraceFrame interpolatedDisplayFrame(
     out.shipForward = nlerp3(a.shipForward, b.shipForward);
     out.shipRight = nlerp3(a.shipRight, b.shipRight);
     out.shipUp = nlerp3(a.shipUp, b.shipUp);
+    out.mainEngineThrottle01 =
+        std::clamp(
+            a.mainEngineThrottle01 +
+                (b.mainEngineThrottle01 -
+                 a.mainEngineThrottle01) * t,
+            0.0,
+            1.0
+        );
+
+    if (a.hasRuntimeControlLaw || b.hasRuntimeControlLaw)
+    {
+        const trace::TraceFrame& lawFrame =
+            t < 0.5 ? a : b;
+        const trace::TraceFrame& fallbackLawFrame =
+            t < 0.5 ? b : a;
+
+        if (lawFrame.hasRuntimeControlLaw)
+        {
+            out.hasRuntimeControlLaw = true;
+            out.runtimeControlLaw =
+                lawFrame.runtimeControlLaw;
+        }
+        else if (fallbackLawFrame.hasRuntimeControlLaw)
+        {
+            out.hasRuntimeControlLaw = true;
+            out.runtimeControlLaw =
+                fallbackLawFrame.runtimeControlLaw;
+        }
+    }
 
     if (a.hazardActive && b.hazardActive)
     {
@@ -1797,7 +1877,7 @@ void drawHud(
     );
 
     const float legendWidth = 438.0f;
-    const float legendHeight = 190.0f;
+    const float legendHeight = 208.0f;
     const float legendX =
         std::max(
             8.0f,
@@ -1879,6 +1959,12 @@ void drawHud(
         "СЕРЫЙ КАРКАС: СТАТИЧЕСКОЕ ПРЕПЯТСТВИЕ",
         1.00f,
         {0.75f, 0.78f, 0.82f}
+    );
+    appendUiText(
+        ui, legendX + 14.0f, legendY + 190.0f,
+        "ОРАНЖЕВАЯ КОРМА: РАБОТАЕТ ГЛАВНЫЙ ДВИГАТЕЛЬ",
+        1.00f,
+        {1.0f, 0.62f, 0.12f}
     );
 
     if (hasExecution)
@@ -2597,6 +2683,14 @@ void drawScene(
             {0.85f, 0.30f, 1.0f}
         );
     renderer.draw(GL_LINES, currentMarkers, 3.0f);
+
+    std::vector<Vertex> mainEngineFace;
+    appendMainEngineThrustFace(
+        mainEngineFace,
+        frame,
+        data.shipHalfExtentsMeters
+    );
+    renderer.draw(GL_TRIANGLES, mainEngineFace, 1.0f);
 
     std::vector<Vertex> ship;
     appendShipBoxAndArrow(

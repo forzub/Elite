@@ -1309,15 +1309,21 @@ void appendUiButton(
     std::vector<Vertex>& triangles,
     const UiRect& rect,
     const std::string& label,
-    bool active = false
+    bool active = false,
+    bool enabled = true
 )
 {
+    const glm::vec3 background =
+        !enabled
+            ? glm::vec3(0.065f, 0.070f, 0.080f)
+            : active
+                ? glm::vec3(0.18f, 0.34f, 0.22f)
+                : glm::vec3(0.12f, 0.14f, 0.18f);
+
     appendFilledRect(
         triangles,
         rect,
-        active
-            ? glm::vec3(0.18f, 0.34f, 0.22f)
-            : glm::vec3(0.12f, 0.14f, 0.18f)
+        background
     );
 
     appendUiText(
@@ -1326,7 +1332,9 @@ void appendUiButton(
         rect.y + 9.0f,
         label,
         1.6f,
-        {0.92f, 0.94f, 0.98f}
+        enabled
+            ? glm::vec3(0.92f, 0.94f, 0.98f)
+            : glm::vec3(0.38f, 0.40f, 0.44f)
     );
 }
 
@@ -1773,11 +1781,19 @@ void drawHud(
             : "[ ] ВНЕЗАПНАЯ ПОМЕХА",
         state.useSuddenObstacle
     );
+    const bool calculateEnabled =
+        recalculationRequired(state) &&
+        !state.calculationInProgress;
     appendUiButton(
         ui,
         calculateButtonRect(),
-        "РАССЧИТАТЬ",
-        false
+        state.calculationInProgress
+            ? "РАСЧЕТ..."
+            : calculateEnabled
+                ? "РАССЧИТАТЬ"
+                : "РАСЧЕТ ГОТОВ",
+        false,
+        calculateEnabled
     );
 
     if (hasExecution)
@@ -1885,6 +1901,39 @@ void drawHud(
         "ФИНИШ V",
         state.finishSpeedMps
     );
+
+    if (!state.shortCalculationLog.empty())
+    {
+        const UiRect shortLogRect {
+            16.0f,
+            174.0f,
+            620.0f,
+            26.0f +
+                18.0f *
+                static_cast<float>(state.shortCalculationLog.size())
+        };
+        appendFilledRect(
+            ui,
+            shortLogRect,
+            {0.025f, 0.033f, 0.045f}
+        );
+
+        float shortY = shortLogRect.y + 10.0f;
+        for (const auto& line : state.shortCalculationLog)
+        {
+            appendUiText(
+                ui,
+                shortLogRect.x + 12.0f,
+                shortY,
+                line,
+                1.10f,
+                recalculationRequired(state)
+                    ? glm::vec3(1.0f, 0.78f, 0.28f)
+                    : glm::vec3(0.78f, 0.90f, 0.82f)
+            );
+            shortY += 18.0f;
+        }
+    }
 
     // Diagnostics are deliberately below the top controls so resizing or
     // changing a status line can never cover/reflow the controls.
@@ -3624,7 +3673,14 @@ int main(int argc, char** argv)
         state.scenarioPath = scenarioPath;
         state.calculationPerformed = false;
         state.calculationSucceeded = false;
+        state.routeInputsDirty = true;
+        state.executionInputsDirty = true;
+        state.calculationInProgress = false;
         state.calculationMessage = preview.message;
+        state.shortCalculationLog = {
+            "РАСЧЕТ НЕ ВЫПОЛНЕН",
+            "НАЖМИТЕ РАССЧИТАТЬ"
+        };
         state.diagnosticLines = preview.diagnostics;
         state.startSpeedMps =
             std::clamp(preview.authoredStartSpeedMps, 5.0, 50.0);

@@ -208,6 +208,61 @@ void testFeedbackCannotExceedReservedAuthority()
     );
 }
 
+void testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()
+{
+    Program program = baseProgram();
+    program.family = Program::ManeuverFamily::FreeTransit;
+
+    auto agent = exactAgentFor(program.samples[0]);
+
+    // Force a cross-track envelope violation while the sampled moving
+    // reference itself still carries both translational feed-forward and a
+    // non-zero angular velocity. This reproduces the viewer failure where
+    // reference time was held on a curved trajectory sample.
+    agent.positionMapMeters = {0.0, 30.0, 0.0};
+    agent.velocityMapMetersPerSecond =
+        program.samples[0].velocityMapMetersPerSecond;
+
+    // The held pose is already correct, but the physical hull is still
+    // rotating. Reacquisition must damp that spin instead of chasing the
+    // moving sample's frozen +0.5 rad/s angular-velocity derivative.
+    agent.pitchRateRadPerSec = 1.0;
+    agent.yawRateRadPerSec = 0.0;
+    agent.rollRateRadPerSec = 0.0;
+
+    const auto result =
+        Tracker::track(program, program.samples[0], agent);
+
+    require(
+        result.status == Tracker::Status::EnvelopeExceeded,
+        "reacquisition fixture did not leave the tracking envelope"
+    );
+
+    requireNear(
+        glm::length(
+            result.intent.idealLinearAccelerationLocalMps2 -
+            result.linearFeedbackMapMps2
+        ),
+        0.0,
+        1.0e-12,
+        "reacquisition replayed frozen linear feed-forward"
+    );
+    requireNear(
+        glm::length(
+            result.intent.idealAngularAccelerationLocalRadPerSec2 -
+            result.angularFeedbackMapRadPerSec2
+        ),
+        0.0,
+        1.0e-12,
+        "reacquisition replayed frozen angular feed-forward"
+    );
+
+    require(
+        result.angularFeedbackMapRadPerSec2.z < -0.70,
+        "reacquisition chased frozen reference angular velocity instead of damping hull spin"
+    );
+}
+
 void testFollowerUsesB9ThenB10WithoutResolvingControl()
 {
     const Program program = baseProgram();
@@ -404,6 +459,7 @@ int main()
         testDefaultAttitudeLoopIsNotUnderdamped();
         testZeroErrorPreservesAcceptedFeedForwardExactly();
         testFeedbackCannotExceedReservedAuthority();
+        testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives();
         testFollowerUsesB9ThenB10WithoutResolvingControl();
         testFollowerCompletesOnlyAtTerminalState();
         testFreeTransitSpeedCorridorIgnoresTinyLongitudinalError();
@@ -416,6 +472,7 @@ int main()
         std::cout << " - default attitude loop is critically damped or stronger\n";
         std::cout << " - zero error preserves A_ff/alpha_ff exactly\n";
         std::cout << " - tracking feedback is bounded by proved reserve\n";
+        std::cout << " - envelope recovery neutralizes frozen moving-reference derivatives\n";
         std::cout << " - follower composes B9 sampler -> B10 tracker\n";
         std::cout << " - terminal completion uses accepted tolerances\n";
         std::cout << " - free transit ignores harmless longitudinal speed drift\n";

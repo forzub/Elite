@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: diagnose remaining hull flip with execution telemetry
+# CONTINUE PROMPT — Elite Navigation: physical control chain + somersault fix
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -9,106 +9,140 @@ Every state-affecting iteration MUST:
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
-Read those five files first, then inspect:
-- `tools/navigation_runtime/NavigationScenarioRuntime.h/.cpp`;
-- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`;
-- `tools/navigation_runtime/NavigationTrace.h/.cpp`;
-- `src/game/navigation/ManeuverProgramSampler.cpp`;
-- `src/game/navigation/ManeuverTrackingController.cpp`;
-- `src/game/navigation/DynamicMotionSystem.cpp`;
-- `src/game/ship/ShipController.cpp`.
+Read those files first, then inspect:
+- `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
+- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
+- `tools/navigation_runtime/NavigationTrace.h/.cpp`
+- `src/game/navigation/AcceptedManeuverProgram.h`
+- `src/game/navigation/ManeuverProgramSampler.cpp`
+- `src/game/navigation/TrajectoryFollower.cpp`
+- `src/game/navigation/ManeuverTrackingController.cpp`
+- `src/game/navigation/NavigationRuntimeControlBridge.cpp`
+- `src/game/shared/SharedShipPhysics.cpp`
+- `src/game/ship/ShipController.cpp`
+- `src/game/navigation/DynamicMotionSystem.cpp`.
 
-## Current verified high-level state
+## Actual control-chain contract
 
-The scalar path-progress architecture fixed the old dense-waypoint Ruckig fan/near-stop.
-Latest uploaded perf tail continues to show the default wall reference at exactly
-10.0 m/s min/max.
+The runtime ship is physically controlled, not directly animated:
 
-Minimum-cant Newtonian attitude and free-transit speed/progress deadbands improved the
-flight substantially.
-
-Remaining user-visible defect:
-- around the low/straight part of the route the hull can perform a somersault;
-- viewer main-engine indicator is off;
-- actual speed can be about 10.1 m/s;
-- exact cause is not yet proven.
-
-Do NOT infer body behavior from `navigation_perf.log`; it is trajectory-generator perf
-only.
-
-## New evidence channel
-
-Every Stage-2 run now writes:
 ```text
-tools/navigation_runtime/last_execution_telemetry.log
+AcceptedManeuverProgram
+ -> ManeuverProgramSampler
+ -> TrajectoryFollower
+ -> ManeuverTrackingController
+ -> NavigationRuntimeControlBridge
+ -> PilotSkillExecutor
+ -> ShipControlState navigation demands
+ -> SharedShipPhysics / ShipController
+ -> DynamicMotionSystem main+RCS allocation
+ -> ShipTransform/DynamicMotionState
 ```
 
-Each line contains:
-- time, phase, effective control law;
-- physical position/speed;
-- body forward/up;
-- pitch/yaw/roll rates;
-- MAIN %, main acceleration vector;
-- RCS/manoeuvre acceleration vector;
-- total engine acceleration;
-- reference speed;
-- reference forward/up;
-- body-vs-velocity angle;
-- actual-vs-reference forward and up angles;
-- MAIN_ON/OFF and RCS_ON/OFF sampled transition events.
+Be explicit that a remaining architectural gap still exists upstream: trajectory and
+attitude are currently authored as a reference program rather than by the final fully
+body/thrust-coupled B5/B6 physical maneuver compiler/prover.
 
-Trace JSON persists the same physical angular/propulsion data.
+## Telemetry-proven somersault diagnosis
 
-Use this log to decide:
-1. reference flips -> attitude authoring or program sampling;
-2. reference stable, body flips -> angular tracker / physics;
-3. main off but RCS on -> translational RCS is active, not main vectoring;
-4. both propulsion channels quiet -> flip is purely angular control.
+User supplied `last_execution_telemetry.log`.
 
-## New viewer controls
+Important evidence:
+- around t=11.57s actual forward nearly equals reference forward while pitch rate is
+  already about +0.75 rad/s;
+- thereafter reference stabilizes but pitch rate continues increasing/saturating around
+  +1.57 rad/s;
+- physical body rotates more than 120 degrees from reference while MAIN is zero;
+- later body reaches almost 179 degrees from velocity/reference with MAIN still zero;
+- main thrust begins only after body is already nearly inverted.
 
-Reducer-owned sliders:
-- START V 5..50 m/s;
-- FINISH V 5..50 m/s.
+Therefore do not blame main-engine vectoring. The angular-command loop was winding the
+body up.
 
-Runtime settings:
-- `startSpeedOverrideMps`;
-- `finishSpeedOverrideMps`.
+## Root cause and current fix candidate
 
-Negative override means authored scenario value.
+`AcceptedManeuverProgram::kMaxSamples = 16`.
 
-Stage-1 geometry is retained. Slider changes invalidate only Stage-2 execution.
+The previous FreeTransit program:
+- differentiated dense attitude into angular velocity/acceleration;
+- downsampled to <=16 samples;
+- linearly interpolated angular acceleration feed-forward;
+- added that feed-forward to controller feedback without final capability clamp.
 
-Start override scales the authored start velocity direction.
-Finish override changes terminal Ruckig speed, moving-terminal gate, and final-state
-speed validation.
+This can smear a short angular-acceleration impulse across a large time span.
 
-## Relevant commits
+Current candidate:
+- FreeTransit publishes ZERO angular-acceleration feed-forward;
+- reference basis + reference angular velocity + feedback drive attitude;
+- total angular acceleration demand is clamped to accepted physical capability.
 
-- `1932f80e1350a2631332b1092f7615bddc479dfe`
-- `0bebf41764177e6614efc10617ddfa034407f38b`
-- `62c94992bfbde0983dbcb2d581c038f5939f890c`
-- `33854813be1d8299597a7aeb9e4bf40600403f16`
-- `72eeb3fde524136aff5edff1e33a683c9cf1e955`
-- `e8083bb2f27623e73753bb98a9b6137bfc5928c2`
-- `c199d0dbb042066075f1b320799d8e5dfa55b0a7`
+Commits:
+- `018fd2c08874cb426a9d3fc8340c85ffb4539bad`
+- `e8369c0fa21cc59f0429741540dd4903f7f556e8`
 
-## Next target commands
+## Speed slider validity fix
+
+The prior `invalid Ruckig route request` after changing START/FINISH was because the
+explicit terminal velocity could exceed the nominal style `maxSpeedMps` (10 Standard,
+18 Extreme).
+
+Now Stage-2 max speed envelope is:
+```text
+max(style speed, requested start speed, requested finish speed)
+```
+
+This is an execution-only test override; static route remains retained.
+
+## Automatic Stage-2 refresh
+
+After one successful Calculate:
+- control law click auto-executes Stage-2;
+- pilot click auto-executes Stage-2;
+- style click auto-executes Stage-2;
+- obstacle toggle auto-executes Stage-2;
+- START/FINISH slider release auto-executes Stage-2.
+
+First successful Calculate itself also queues the first Stage-2 execution.
+
+Commit:
+- `7a164a65292a47e41c19a01bdcb3f55b93d0110d`
+
+Do not reintroduce a requirement to press Calculate for execution-only settings.
+
+## New control telemetry
+
+Trace/log now records every sampled layer:
+- `ideal_lin_cmd`
+- `ideal_ang_cmd`
+- `exec_lin_cmd`
+- `exec_ang_cmd`
+- then physical `main_a`, `rcs_a`, `engine_a`, `pyr_rate`, body/reference basis.
+
+Commits:
+- `a2ece66294ab0a8aa3c4258257dbcdbe0c72b086`
+- `4343b7d5289fca95e6989f3e7d21f691723361bc`
+- `9efe6934aa3f8141604e81e714319126a83afa6a`
+
+This is now the authoritative way to answer "who pulled what lever".
+
+## Next target run
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
-
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Reproduce first at 10/10 and send:
-`tools/navigation_runtime/last_execution_telemetry.log`.
+Click Calculate once, then change execution settings without Calculate.
 
-Then vary boundary speeds independently.
+Check:
+- automatic fresh Stage-2 trace each time;
+- speeds >10 Standard / >18 Extreme no longer fail merely at request validation;
+- old body somersault disappears or is materially reduced;
+- NAV REV matches build.
 
-If compile fails, fix actual compile issue first and repeat mandatory MD/prompt update.
+If rotation remains, inspect new telemetry command fields before changing more geometry.
 
 Do not enable dynamic avoidance yet.

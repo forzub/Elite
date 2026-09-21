@@ -134,6 +134,12 @@ struct AppState
         elite::tools::navigation_runtime::PilotLevel::Expert;
     elite::tools::navigation_runtime::FlightStyle flightStyle =
         elite::tools::navigation_runtime::FlightStyle::Standard;
+
+    // Runtime observation is separate from requested settings. A stale trace
+    // must never overwrite a user's newly selected ASSISTED/NEWTONIAN button.
+    bool hasEffectiveRuntimeControlLaw = false;
+    std::string effectiveRuntimeControlLaw;
+
     bool useSuddenObstacle = false;
     double startSpeedMps = 10.0;
     double finishSpeedMps = 10.0;
@@ -1350,6 +1356,43 @@ std::string localizedLaw(const std::string& law)
     return law;
 }
 
+std::string localizedRequestedLaw(
+    elite::tools::navigation_runtime::ControlMode mode
+)
+{
+    return
+        mode == elite::tools::navigation_runtime::ControlMode::Assisted
+            ? "АССИСТИРОВАННЫЙ"
+            : "НЬЮТОНОВСКИЙ";
+}
+
+std::string localizedPilot(
+    elite::tools::navigation_runtime::PilotLevel pilot
+)
+{
+    using Pilot = elite::tools::navigation_runtime::PilotLevel;
+    switch (pilot)
+    {
+        case Pilot::Expert:
+            return "ЭКСПЕРТ";
+        case Pilot::Average:
+            return "СРЕДНИЙ";
+        case Pilot::Loser:
+            return "ЛУЗЕР";
+    }
+    return "?";
+}
+
+std::string localizedFlightStyle(
+    elite::tools::navigation_runtime::FlightStyle style
+)
+{
+    return
+        style == elite::tools::navigation_runtime::FlightStyle::Extreme
+            ? "ЭКСТРИМ"
+            : "СТАНДАРТ";
+}
+
 std::string localizedPhase(const std::string& phase)
 {
     if (phase == "initial")
@@ -1978,13 +2021,56 @@ void drawHud(
 
     appendUiText(
         ui, x, panelTop + 116.0f,
+        "ТЕКУЩИЕ РЕЖИМЫ",
+        1.35f,
+        {1.0f,0.82f,0.32f}
+    );
+    appendUiText(
+        ui, x, panelTop + 138.0f,
+        "ПИЛОТ: " + localizedPilot(state.pilot),
+        1.10f,
+        {0.88f,0.90f,0.95f}
+    );
+    appendUiText(
+        ui, x, panelTop + 156.0f,
+        "УПРАВЛЕНИЕ / ВЫБРАНО: " +
+            localizedRequestedLaw(state.controlMode),
+        1.10f,
+        {0.88f,0.90f,0.95f}
+    );
+
+    std::string effectiveLawText = "НЕТ РАСЧЕТА";
+    if (state.hasEffectiveRuntimeControlLaw)
+    {
+        effectiveLawText =
+            localizedLaw(state.effectiveRuntimeControlLaw);
+        if (recalculationRequired(state))
+            effectiveLawText += " (СТАРЫЙ РАСЧЕТ)";
+    }
+    appendUiText(
+        ui, x, panelTop + 174.0f,
+        "УПРАВЛЕНИЕ / ФАКТ: " + effectiveLawText,
+        1.10f,
+        recalculationRequired(state)
+            ? glm::vec3(1.0f,0.72f,0.25f)
+            : glm::vec3(0.35f,1.0f,0.42f)
+    );
+    appendUiText(
+        ui, x, panelTop + 192.0f,
+        "ПОВЕДЕНИЕ: " + localizedFlightStyle(state.flightStyle),
+        1.10f,
+        {0.88f,0.90f,0.95f}
+    );
+
+    appendUiText(
+        ui, x, panelTop + 222.0f,
         "ЦЕПОЧКА",
         1.45f,
         {1.0f,0.82f,0.32f}
     );
 
-    float logY = panelTop + 142.0f;
-    const std::size_t maxLines = 18;
+    float logY = panelTop + 248.0f;
+    const std::size_t maxLines = 12;
     for (
         std::size_t i = 0;
         i < state.diagnosticLines.size() && i < maxLines;
@@ -2026,7 +2112,7 @@ void drawHud(
     }
 
     appendUiText(
-        ui, x, panelTop + 482.0f,
+        ui, x, panelTop + 474.0f,
         "ЧТО ПРОИСХОДИТ",
         1.40f,
         {1.0f,0.82f,0.32f}
@@ -2034,7 +2120,7 @@ void drawHud(
     appendUiText(
         ui,
         x,
-        panelTop + 506.0f,
+        panelTop + 498.0f,
         currentExplanation(frame),
         1.10f,
         {0.94f,0.95f,0.97f}
@@ -2386,16 +2472,6 @@ const char* traceLawName(
             : "newtonian";
 }
 
-void synchronizeTraceLawLabel(
-    AppState& state
-)
-{
-    if (state.traceData)
-        state.traceData->law = traceLawName(state.controlMode);
-    if (state.hasRetainedRoute)
-        state.retainedRoute.law = traceLawName(state.controlMode);
-}
-
 void reduceViewerState(
     AppState& state,
     const ViewerAction& action
@@ -2408,7 +2484,6 @@ void reduceViewerState(
             {
                 state.controlMode = action.controlMode;
                 markCalculationDirty(state, false);
-                synchronizeTraceLawLabel(state);
             }
             break;
 
@@ -2471,23 +2546,18 @@ void reduceViewerState(
 
         case ViewerActionType::RuntimeControlLawObserved:
         {
-            using ControlMode =
-                elite::tools::navigation_runtime::ControlMode;
-
             if (action.runtimeControlLaw == "ASSISTED" ||
-                action.runtimeControlLaw == "assisted")
+                action.runtimeControlLaw == "assisted" ||
+                action.runtimeControlLaw == "NEWTONIAN" ||
+                action.runtimeControlLaw == "newtonian")
             {
-                // Runtime observation is authoritative. Do not restore the
-                // retained route here: this action reports what is actually
-                // flying, it is not a user's new execution request.
-                state.controlMode = ControlMode::Assisted;
-                synchronizeTraceLawLabel(state);
-            }
-            else if (action.runtimeControlLaw == "NEWTONIAN" ||
-                     action.runtimeControlLaw == "newtonian")
-            {
-                state.controlMode = ControlMode::Newtonian;
-                synchronizeTraceLawLabel(state);
+                // Observe what the displayed execution frame actually used,
+                // but NEVER write it back into the requested selector state.
+                // Otherwise a stale Newtonian trace immediately undoes a new
+                // Assisted button click before the user can press Calculate.
+                state.hasEffectiveRuntimeControlLaw = true;
+                state.effectiveRuntimeControlLaw =
+                    action.runtimeControlLaw;
             }
             break;
         }
@@ -3249,6 +3319,8 @@ void processUiAction(
             state.executionPerformed = false;
             state.executionSucceeded = false;
             state.calculationMessage = "ИДЕТ РАСЧЕТ...";
+            state.hasEffectiveRuntimeControlLaw = false;
+            state.effectiveRuntimeControlLaw.clear();
             state.shortCalculationLog = {
                 "РАСЧЕТ: ВЫПОЛНЯЕТСЯ"
             };
@@ -3658,9 +3730,9 @@ int main(int argc, char** argv)
                     ? trace::TraceFrame {}
                     : interpolatedDisplayFrame(data, state);
 
-            // Runtime truth wins over stale UI selection. If any lower layer
-            // ever changes the effective control law, the same Redux-style
-            // store that drives the buttons observes it on the displayed frame.
+            // Observe the effective law of the displayed execution separately
+            // from the requested selector state. Old playback must not undo a
+            // newly selected control law while the result is marked stale.
             syncViewerStateFromRuntimeFrame(
                 state,
                 displayFrame

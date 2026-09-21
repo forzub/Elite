@@ -1644,6 +1644,22 @@ void activateProgramPhase(
         actualStartTimeSeconds + duration + 5.0;
 }
 
+void holdProgramReferenceClock(
+    Program& program,
+    double holdSeconds
+)
+{
+    if (!(holdSeconds > 0.0))
+        return;
+
+    // A time-parameterized reference must not run away from a physical ship
+    // that is already outside its accepted tracking envelope. Shift both
+    // acceptance and validity by the same amount: the next B9 sample then
+    // stays at the same reference progress while B10/physics reacquire it.
+    program.acceptedAtUniverseTimeSeconds += holdSeconds;
+    program.validUntilUniverseTimeSeconds += holdSeconds;
+}
+
 struct ExecutionVehicle
 {
     ShipTransform transform {};
@@ -2477,8 +2493,11 @@ ScenarioRunResult executeCalculatedRoute(
                 phase.samples[lastIndex].timeOffsetSeconds;
         }
 
+        // The diagnostic harness remains bounded, but recovery from a missed
+        // reference gets enough wall-clock time to reacquire instead of
+        // silently declaring the timed program complete.
         const double maximumEnd =
-            plannedExecutionSeconds + 12.0;
+            plannedExecutionSeconds + 30.0;
 
         std::size_t activeProgram = 0;
         std::size_t phaseHandoffs = 0;
@@ -2496,6 +2515,8 @@ ScenarioRunResult executeCalculatedRoute(
         double maximumFollowerPositionError = 0.0;
         double maximumBodyVelocityAngleRad = 0.0;
         std::size_t runtimeControlLawSwitches = 0;
+        std::size_t referenceClockHoldFrames = 0;
+        double referenceClockHoldSeconds = 0.0;
         auto previousRuntimeControlLaw =
             vehicle.transform.motion.localControlLaw;
 
@@ -2568,6 +2589,18 @@ ScenarioRunResult executeCalculatedRoute(
                     maximumFollowerPositionError,
                     follower.crossTrackErrorMeters
                 );
+
+            const bool reacquiringReference =
+                follower.trackingErrorExceeded;
+            if (reacquiringReference)
+            {
+                holdProgramReferenceClock(
+                    program,
+                    kExecutionDt
+                );
+                ++referenceClockHoldFrames;
+                referenceClockHoldSeconds += kExecutionDt;
+            }
 
             game::navigation::ManeuverPhaseGate::Policy gatePolicy;
             const bool finalPhase =
@@ -2778,7 +2811,9 @@ ScenarioRunResult executeCalculatedRoute(
                         vehicle,
                         program,
                         scenario,
-                        "follower_running"
+                        reacquiringReference
+                            ? "follower_reacquiring"
+                            : "follower_running"
                     )
                 );
                 nextTraceTime += kTraceSampleSeconds;
@@ -2978,6 +3013,10 @@ ScenarioRunResult executeCalculatedRoute(
                 number(maximumCrossTrack) + " M",
             "MAX FOLLOWER ERROR: " +
                 number(maximumFollowerPositionError) + " M",
+            "REFERENCE CLOCK HOLD FRAMES: " +
+                std::to_string(referenceClockHoldFrames),
+            "REFERENCE CLOCK HOLD: " +
+                number(referenceClockHoldSeconds) + " S",
             "RETAINED WAYPOINT SPEEDS: " +
                 waypointSpeeds.str(),
             "MAX REFERENCE/VELOCITY ANGLE: " +

@@ -1,61 +1,59 @@
-# CURRENT TASK — inspect the visible calculated Ruckig curve against actual flight
+# CURRENT TASK — validate sampled C1 corner guide removes purple Ruckig barrels
 
 **Date:** 2026-09-21  
-**Status:** ROUNDED EXECUTION-GUIDE CANDIDATE / VIEWER REFERENCE OVERLAY ADDED / TARGET UNVERIFIED
+**Status:** PURPLE REFERENCE DEFECT ISOLATED / SAMPLED-CURVE CANDIDATE UNVERIFIED
 
-## Why this iteration exists
+## Confirmed defect
 
-The viewer showed braking and a distorted green flown path on visually simple sections.
-We need to stop guessing whether the cause is route-to-trajectory authoring or the
-Follower/Pilot execution layer.
+Viewer evidence shows two visible lateral barrels directly in the PURPLE calculated
+Ruckig reference, at the two rounded-corner regions.
 
-Production runtime does not use the retired custom SmoothPathOptimizer. The actual
-continuous reference is Ruckig.
+Therefore:
+- this defect is upstream of Follower/Pilot;
+- do not change body/thrust execution yet to solve these two barrels.
 
-## Candidate changes
+Latest perf evidence before the fix:
+```text
+coarse_points=4
+guide_points=6
+rounded_corners=2
+expanded_corners=0
+blended_waypoints=4
+samples=2300
+valid=1
+```
 
-Stage-2 now derives a separate execution guide from the retained Stage-1 route:
-- coarse route is never mutated;
-- an interior coarse corner is replaced by entry/exit points;
-- desired turn room is derived from speed and lateral acceleration;
-- if the desired corner does not fit, local support may be pushed farther outward into
-  free space instead of making a tight S-turn / StopTurnGo;
-- Ruckig solves the widened guide.
+The six-point guide was too sparse. A long Ruckig leg with non-collinear endpoint
+velocities can bow laterally between the endpoints.
 
-Viewer now shows:
-- WHITE = retained coarse route;
-- BLUE = execution guide;
-- PURPLE = complete calculated Ruckig curve;
-- GREEN = actual flown path;
-- YELLOW = actual velocity;
-- CYAN = real hull nose;
-- RED = target nose.
+## Candidate fix
 
-Runtime diagnostics now include:
-- EXECUTION GUIDE POINTS;
-- CALCULATED MIN SPEED;
-- CALCULATED MIN SPEED POS;
-- CALCULATED MAX SPEED.
+Each corner now becomes a densely sampled quadratic C1 curve:
+- entry tangent = incoming leg;
+- exit tangent = outgoing leg;
+- quadratic control = local widened corner;
+- ~2.5 m sample spacing;
+- 4..24 segments per corner;
+- the sampled curve is collision checked.
 
-Focused default-wall regression now rejects:
-- missing local rounding;
-- calculated speed below 7.5 m/s in this steady 10 m/s stand;
-- calculated geometric backtracking along +X.
+Also removed the artificial 0.15 floor from the small-angle bend factor. With a dense
+smooth curve, tiny local heading changes must not be interpreted as tight turns.
 
-Latest candidate commits:
-- 0b4212345b2c38b4f775937060a81ba56cace219
-- 939a7058ba58a244282d219e0c298150a72a410f
-- 3ee684742afd8ad91307b99c0a1815bd30aea722
-- 287ab085275873ffb1f991e09902d31706edb927
-- 33e3b228327cfb9c6031ecb09aa67847d16d2cda
-- 154d9e1a544dc957769efce127b70ee36dd8b0cc
-- 68f4377aabae1fd894be4a882fb30b0cec762d89
-- 77f9640eb77267be6a258b0293720e00f089fbe6
-- f9b106f8c259c0f7a39ebde11f67c776e1a35c92
+Commits:
+- 3dccb8a36c8e8023083b21f317b944a8097fd6a0
+- 517904389019fbf94ddbbabbe3248cdb7b6fab20
+- a056973c674194b109b8f37646f6d7a9e461c5b9
 
-## Immediate target gate
+## Focused acceptance
 
-Run:
+Default steady 10 m/s wall regression now requires:
+- execution guide is rounded;
+- calculated min speed >= 7.5 m/s;
+- no +X backtracking;
+- max PURPLE-reference distance from BLUE guide <= 1.5 m.
+
+## Immediate target commands
+
 ```bash
 cd /d/__elite/work
 git pull --ff-only
@@ -64,28 +62,32 @@ git rev-parse HEAD
 cmake -S tests/navigation_guidance -B build/tests/navigation_guidance -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build/tests/navigation_guidance --target ruckig_route_planner_tests
 ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
-```
 
-Then:
-```bash
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-## Decision after viewer evidence
+## What to inspect in viewer
 
-- PURPLE bad (loop/braking): remain in route-to-Ruckig authoring. Reject/widen the
-  execution guide before ACCEPT.
-- PURPLE good but GREEN bad: stop changing geometry and fix the Newtonian/Assisted
-  Follower + physical body/thrust execution mismatch.
+WHITE = coarse route  
+BLUE = dense execution guide  
+PURPLE = calculated Ruckig reference  
+GREEN = actual flight
 
-Do not enable dynamic avoidance yet.
+First question only:
+- did the two visible PURPLE barrels disappear?
 
-## Mandatory project-state protocol
+If PURPLE is now clean but GREEN still brakes/deviates, then move downstream to
+Follower/Pilot/body-thrust semantics.
 
-After every state-affecting event update:
-- CURRENT_STATE.md
-- CURRENT_TASK.md
-- PROJECT_STATE.md
-- src/game/navigation/STAGE12_END_TO_END.md
+If PURPLE still barrels, keep working in Ruckig guide discretization / continuous
+reference generation. Do not hide it downstream.
+
+## Mandatory state protocol
+
+After every state-affecting event:
+- update CURRENT_STATE.md;
+- update CURRENT_TASK.md;
+- update PROJECT_STATE.md;
+- update src/game/navigation/STAGE12_END_TO_END.md;
 - recreate CONTINUE_PROMPT.md from scratch.

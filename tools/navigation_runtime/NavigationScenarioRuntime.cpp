@@ -1863,8 +1863,8 @@ void writeExecutionTelemetry(
     stream
         << "# per-frame physical execution telemetry\n"
         << "# t_s phase law pos speed forward up pyr_rate "
-           "main_pct main_a rcs_a engine_a ref_speed ref_forward "
-           "body_vel_deg body_ref_deg events\n";
+           "main_pct main_a rcs_a engine_a ref_speed ref_forward ref_up "
+           "body_vel_deg forward_ref_deg up_ref_deg events\n";
 
     bool previousMainOn = false;
     bool previousRcsOn = false;
@@ -1948,14 +1948,29 @@ void writeExecutionTelemetry(
                     ? formatVec3(frame.programReferenceForward)
                     : std::string("(0.00, 0.00, 0.00)")
                )
+            << " ref_up="
+            << (
+                frame.hasProgramReference
+                    ? formatVec3(frame.programReferenceUp)
+                    : std::string("(0.00, 0.00, 0.00)")
+               )
             << " body_vel_deg="
             << angleDeg(frame.shipForward, frame.shipVelocity)
-            << " body_ref_deg="
+            << " forward_ref_deg="
             << (
                 frame.hasProgramReference
                     ? angleDeg(
                         frame.shipForward,
                         frame.programReferenceForward
+                      )
+                    : 0.0
+               )
+            << " up_ref_deg="
+            << (
+                frame.hasProgramReference
+                    ? angleDeg(
+                        frame.shipUp,
+                        frame.programReferenceUp
                       )
                     : 0.0
                )

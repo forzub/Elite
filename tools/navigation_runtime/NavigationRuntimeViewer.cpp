@@ -3388,10 +3388,10 @@ void processUiAction(
 #ifdef ELITE_SOURCE_ROOT
                     const std::string outputPath =
                         std::string(ELITE_SOURCE_ROOT) +
-                        "/tools/navigation_runtime/last_calculated_trace.json";
+                        "/last_calculated_trace.json";
 #else
                     const std::string outputPath =
-                        "tools/navigation_runtime/last_calculated_trace.json";
+                        "last_calculated_trace.json";
 #endif
                     try
                     {
@@ -3438,10 +3438,10 @@ void processUiAction(
 #ifdef ELITE_SOURCE_ROOT
                     const std::string outputPath =
                         std::string(ELITE_SOURCE_ROOT) +
-                        "/tools/navigation_runtime/last_execution_trace.json";
+                        "/last_execution_trace.json";
 #else
                     const std::string outputPath =
-                        "tools/navigation_runtime/last_execution_trace.json";
+                        "last_execution_trace.json";
 #endif
                     try
                     {

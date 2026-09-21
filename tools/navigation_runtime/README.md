@@ -338,3 +338,24 @@ scenario.json
 
 The focused navigation script now runs this E2E test after building the viewer. A green
 component matrix alone is no longer sufficient to claim the viewer execution path works.
+
+
+## Requested vs effective runtime mode in the viewer
+
+The control selector and the currently displayed execution are deliberately separate
+state products.
+
+- top ASSISTED / NEWTONIAN buttons = **requested setting for the next Calculate**;
+- right-panel `УПРАВЛЕНИЕ / ВЫБРАНО` = the same requested setting;
+- right-panel `УПРАВЛЕНИЕ / ФАКТ` = effective control law carried by the currently
+  displayed runtime frame;
+- if settings have changed but Calculate has not been pressed yet, the effective line is
+  explicitly marked `(СТАРЫЙ РАСЧЕТ)`.
+
+A stale playback frame must never overwrite a newly selected button. This matters because
+the user may switch Newtonian -> Assisted while the old Newtonian trace is still visible;
+the requested button must remain Assisted until the new solve is requested.
+
+The right panel also displays the currently selected pilot and flight behavior
+(Standard/Extreme clearance doctrine), so mode changes can be verified independently of
+the rendered ship motion.

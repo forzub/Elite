@@ -27,6 +27,7 @@ namespace
 {
 
 constexpr float kPi = 3.14159265358979323846f;
+constexpr float kVelocityVectorMetersPerMps = 1.5f;
 
 struct Vertex
 {
@@ -307,11 +308,12 @@ void addLine(
     std::vector<Vertex>& out,
     const glm::vec3& a,
     const glm::vec3& b,
-    const glm::vec3& color
+    const glm::vec3& color,
+    float alpha = 1.0f
 )
 {
-    out.push_back({a, color});
-    out.push_back({b, color});
+    out.push_back({a, color, alpha});
+    out.push_back({b, color, alpha});
 }
 
 std::vector<Vertex> polyline(
@@ -570,46 +572,85 @@ void appendShipBoxAndArrow(
     const float hy = static_cast<float>(halfExtents.y);
     const float hz = static_cast<float>(halfExtents.z);
 
-    glm::vec3 corners[8];
+    // Simple Cobra-like diagnostic silhouette: a triangular planform prism.
+    // It makes hull attitude readable without the large nose arrow obscuring
+    // the actual velocity vector.
+    glm::vec3 prism[6];
     int index = 0;
-    for (int sx : {-1, 1})
+    for (int sy : {-1, 1})
     {
-        for (int sy : {-1, 1})
-        {
-            for (int sz : {-1, 1})
-            {
-                corners[index++] =
-                    center +
-                    right * (static_cast<float>(sx) * hx) +
-                    up * (static_cast<float>(sy) * hy) +
-                    forward * (static_cast<float>(sz) * hz);
-            }
-        }
+        const glm::vec3 layer = center + up * (static_cast<float>(sy) * hy);
+        prism[index++] = layer + forward * hz;
+        prism[index++] = layer - forward * hz - right * hx;
+        prism[index++] = layer - forward * hz + right * hx;
     }
 
-    const glm::vec3 boxColor(0.70f, 0.88f, 0.72f);
-    static constexpr int edges[][2] = {
-        {0,1},{0,2},{0,4},{1,3},{1,5},{2,3},
-        {2,6},{3,7},{4,5},{4,6},{5,7},{6,7}
+    const glm::vec3 hullColor(0.70f, 0.88f, 0.72f);
+    static constexpr int prismEdges[][2] = {
+        {0,1},{1,2},{2,0},
+        {3,4},{4,5},{5,3},
+        {0,3},{1,4},{2,5}
     };
-    for (const auto& edge : edges)
-        addLine(out, corners[edge[0]], corners[edge[1]], boxColor);
+    for (const auto& edge : prismEdges)
+        addLine(out, prism[edge[0]], prism[edge[1]], hullColor);
 
+    // Nose direction remains visible, but deliberately small and translucent.
     const glm::vec3 arrowColor(0.25f, 0.85f, 1.0f);
-    const glm::vec3 tip =
-        center + forward * (hz + std::max(6.0f, hz * 0.75f));
-    const glm::vec3 arrowBase = center + forward * hz;
-    addLine(out, arrowBase, tip, arrowColor);
+    const glm::vec3 nose = center + forward * hz;
+    const glm::vec3 tip = nose + forward * 4.5f;
+    addLine(out, nose, tip, arrowColor, 0.38f);
 
-    const float wing = std::max(3.0f, hx * 0.40f);
-    const glm::vec3 wingBase =
-        tip - forward * std::max(4.0f, hz * 0.35f);
-    addLine(out, tip, wingBase + right * wing, arrowColor);
-    addLine(out, tip, wingBase - right * wing, arrowColor);
-    addLine(out, tip, wingBase + up * wing, arrowColor);
-    addLine(out, tip, wingBase - up * wing, arrowColor);
+    const float wing = 1.5f;
+    const glm::vec3 wingBase = tip - forward * 2.0f;
+    addLine(out, tip, wingBase + right * wing, arrowColor, 0.38f);
+    addLine(out, tip, wingBase - right * wing, arrowColor, 0.38f);
 }
 
+glm::dvec3 velocityVectorTip(
+    const trace::TraceFrame& frame
+)
+{
+    const double speed = glm::length(frame.shipVelocity);
+    if (speed <= 1.0e-9)
+        return frame.shipPosition;
+
+    return
+        frame.shipPosition +
+        frame.shipVelocity / speed *
+            (speed * static_cast<double>(kVelocityVectorMetersPerMps));
+}
+
+void appendVelocityVector(
+    std::vector<Vertex>& out,
+    const trace::TraceFrame& frame
+)
+{
+    const double speed = glm::length(frame.shipVelocity);
+    if (speed <= 0.05)
+        return;
+
+    const glm::vec3 start = toVec3(frame.shipPosition);
+    const glm::vec3 direction =
+        normalizedOr(frame.shipVelocity, {1.0f, 0.0f, 0.0f});
+    const float length =
+        static_cast<float>(speed) * kVelocityVectorMetersPerMps;
+    const glm::vec3 tip = start + direction * length;
+
+    glm::vec3 seed(0.0f, 1.0f, 0.0f);
+    if (std::abs(glm::dot(seed, direction)) > 0.90f)
+        seed = {1.0f, 0.0f, 0.0f};
+    const glm::vec3 side =
+        glm::normalize(glm::cross(direction, seed));
+
+    const glm::vec3 velocityColor(0.20f, 1.0f, 0.35f);
+    addLine(out, start, tip, velocityColor);
+
+    const float headBack = std::clamp(length * 0.22f, 2.5f, 6.0f);
+    const float headWing = std::clamp(length * 0.10f, 1.5f, 3.5f);
+    const glm::vec3 base = tip - direction * headBack;
+    addLine(out, tip, base + side * headWing, velocityColor);
+    addLine(out, tip, base - side * headWing, velocityColor);
+}
 
 
 void appendReferenceOrientationArrow(
@@ -1436,6 +1477,47 @@ void appendHorizonInset(
     );
 }
 
+bool projectWorldToScreen(
+    const glm::dvec3& world,
+    const AppState& state,
+    int windowWidth,
+    int windowHeight,
+    glm::vec2& out
+)
+{
+    if (windowWidth <= 0 || windowHeight <= 0)
+        return false;
+
+    const float aspect =
+        static_cast<float>(windowWidth) /
+        static_cast<float>(windowHeight);
+    const glm::mat4 projection =
+        glm::perspective(
+            glm::radians(50.0f),
+            aspect,
+            0.1f,
+            20000.0f
+        );
+    const glm::vec4 clip =
+        projection * state.camera.view() *
+        glm::vec4(toVec3(world), 1.0f);
+
+    if (clip.w <= 1.0e-6f)
+        return false;
+
+    const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+    if (ndc.z < -1.0f || ndc.z > 1.0f)
+        return false;
+
+    out.x =
+        (ndc.x * 0.5f + 0.5f) *
+        static_cast<float>(windowWidth);
+    out.y =
+        (1.0f - (ndc.y * 0.5f + 0.5f)) *
+        static_cast<float>(windowHeight);
+    return true;
+}
+
 void drawHud(
     PrimitiveRenderer& renderer,
     const trace::TraceDocument& data,
@@ -1467,6 +1549,43 @@ void drawHud(
     renderer.begin(projection);
 
     std::vector<Vertex> ui;
+
+    // Label the current inertial velocity at the tip of the proportional
+    // velocity vector. This is intentionally separate from hull/nose attitude.
+    if (hasExecution)
+    {
+        glm::vec2 speedLabel;
+        if (projectWorldToScreen(
+                velocityVectorTip(frame),
+                state,
+                windowWidth,
+                windowHeight,
+                speedLabel))
+        {
+            const double speed = glm::length(frame.shipVelocity);
+            std::ostringstream speedText;
+            speedText.setf(std::ios::fixed);
+            speedText.precision(1);
+            speedText << "V=" << speed << " M/S";
+
+            appendUiText(
+                ui,
+                std::clamp(
+                    speedLabel.x + 8.0f,
+                    8.0f,
+                    static_cast<float>(windowWidth) - 150.0f
+                ),
+                std::clamp(
+                    speedLabel.y - 8.0f,
+                    8.0f,
+                    static_cast<float>(windowHeight) - 24.0f
+                ),
+                speedText.str(),
+                1.15f,
+                {0.20f, 1.0f, 0.35f}
+            );
+        }
+    }
 
     // Top control bar is independent from the diagnostics panel.
     appendUiText(
@@ -2469,6 +2588,10 @@ void drawScene(
         data.shipHalfExtentsMeters
     );
     renderer.draw(GL_LINES, ship, 2.0f);
+
+    std::vector<Vertex> velocityVector;
+    appendVelocityVector(velocityVector, frame);
+    renderer.draw(GL_LINES, velocityVector, 4.0f);
 }
 
 void setWindowTitle(

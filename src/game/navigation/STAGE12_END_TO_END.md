@@ -8857,3 +8857,40 @@ Code candidate before documentation commits:
 ```
 
 Target MinGW64/runtime validation is pending.
+
+### Dense-to-sparse attitude-rate alias found in the same failure
+
+The tumbling did not begin only after the reference clock was held. FreeTransit
+program construction also copied `ReferenceAttitude::angularVelocity` from a
+dense source trajectory into a program limited to at most 16 samples. B9 then
+linearly interpolated those sparse values.
+
+That is not kinematically equivalent to the sparse basis interpolation. A
+short-lived dense angular-rate peak can become a long-lived sparse target rate.
+
+The accepted FreeTransit product now uses:
+
+```text
+sparse basis_i + sparse time_i
+    -> centered basis delta across i-1 .. i+1
+    -> sparse omega_i
+    -> physical rate clamp
+
+omega_0 = 0
+omega_last = 0
+alpha_ff = 0
+```
+
+Therefore B9's visible pose program and the angular-rate target come from the
+same temporal resolution.
+
+Combined with B10 recovery:
+- moving-sample feed-forward is neutralized outside the tracking envelope;
+- actual hull angular rate is damped while the reference clock is held;
+- after reacquisition the sanitized sparse moving reference resumes.
+
+Pinned physical regression:
+`testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()`.
+
+Candidate before documentation commits: `13ef6bd731ef6d8e78c75c72bf7a59f524b30bcb`.
+Target evidence pending.

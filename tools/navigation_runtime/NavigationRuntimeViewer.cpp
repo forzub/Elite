@@ -1930,7 +1930,13 @@ void drawHud(
     speedText
         << "СКОРОСТЬ: "
         << glm::length(frame.shipVelocity)
-        << " М/С";
+        << " М/С"
+        << " | MAIN: "
+        << std::lround(
+            std::clamp(frame.mainEngineThrottle01, 0.0, 1.0) *
+            100.0
+        )
+        << "%";
 
     appendUiText(
         ui,

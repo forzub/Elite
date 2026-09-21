@@ -7905,3 +7905,135 @@ ASSISTED/NEWTONIAN while watching:
 - speed corridor text;
 - `MAIN:%`;
 - orange rear face.
+
+
+## 2026-09-21 — body/engine telemetry + independent 5..50 m/s start/finish sliders
+
+User feedback after reducer/corridor/main-engine visualization:
+- current flight is visually much better, but a remaining unexplained hull somersault occurs
+  near the low/straight part of the route while the main engine indicator is off;
+- actual speed is about 10.1 m/s during the event;
+- user asked whether logs contain body orientation changes and exact engine-on moments;
+- user requested independent start and finish speed sliders, each 5..50 m/s.
+
+### What the existing logs did and did not contain
+
+`navigation_perf.log` is a trajectory-generator performance log. It contains Ruckig/path
+timing facts only. The latest uploaded tail still shows the default wall reference as one
+scalar solve with `min_speed_mps=10.0000` and `max_speed_mps=10.0000`; it cannot
+explain a physical body flip.
+
+Before this iteration, `last_execution_trace.json` already persisted:
+- ship position;
+- ship forward/right/up basis;
+- ship velocity;
+- effective runtime control law;
+- actual positive aft-main throttle;
+- accepted-program reference forward/right/up.
+
+However, there was no compact human-readable time-series log correlating body attitude,
+angular rate, main/RCS acceleration, and reference attitude.
+
+### New execution telemetry
+
+Each trace frame now additionally records:
+- `shipAngularRatePyrRadPerSec`;
+- `mainEngineAccelerationMps2`;
+- `manoeuvreAccelerationMps2`;
+- `engineAccelerationMps2`.
+
+These fields are persisted in trace JSON.
+
+A new file is emitted after every Stage-2 execution:
+```text
+tools/navigation_runtime/last_execution_telemetry.log
+```
+
+Every sampled line contains:
+- time;
+- phase;
+- effective control law;
+- position and speed;
+- actual body forward/up;
+- pitch/yaw/roll rates;
+- main-engine throttle percent;
+- main-engine acceleration vector;
+- manoeuvre/RCS acceleration vector;
+- combined engine acceleration;
+- reference speed;
+- reference forward/up;
+- body-vs-velocity forward angle;
+- actual-vs-reference forward angle;
+- actual-vs-reference up angle.
+
+It also marks exact sampled transitions:
+- `MAIN_ON` / `MAIN_OFF`;
+- `RCS_ON` / `RCS_OFF`.
+
+This is the primary evidence for the remaining somersault. If main stays off while
+`ref_forward/ref_up` themselves rotate, the problem is attitude authoring/program
+sampling. If reference attitude is stable but actual body rotates, the problem is lower
+in angular tracking/physics.
+
+Relevant commits:
+- `62c94992bfbde0983dbcb2d581c038f5939f890c`;
+- `33854813be1d8299597a7aeb9e4bf40600403f16`;
+- `72eeb3fde524136aff5edff1e33a683c9cf1e955`;
+- `e8083bb2f27623e73753bb98a9b6137bfc5928c2`.
+
+### Start/finish speed override seam
+
+`ScenarioRunSettings` now has independent optional execution overrides:
+- `startSpeedOverrideMps`;
+- `finishSpeedOverrideMps`.
+
+Negative values mean "use scenario.json authored value".
+
+The runtime:
+- preserves the authored start velocity direction and changes only its magnitude;
+- applies the same effective start velocity both to trajectory generation and the actual
+  simulated ship initial state;
+- applies the effective finish speed to terminal Ruckig speed constraint/velocity,
+  moving-terminal gate semantics, final-state validation, and diagnostics;
+- Stage-1 static route geometry remains unchanged.
+
+`ScenarioRunResult` exposes authored start/finish defaults so the viewer initializes
+from scenario data, not a UI hard-code.
+
+Relevant commits:
+- `1932f80e1350a2631332b1092f7615bddc479dfe`;
+- `0bebf41764177e6614efc10617ddfa034407f38b`.
+
+### Viewer speed sliders
+
+The reducer-owned viewer state now includes:
+- `startSpeedMps`;
+- `finishSpeedMps`.
+
+Two independent sliders are visible under the main controls:
+- `СТАРТ V`;
+- `ФИНИШ V`;
+- range 5.0 .. 50.0 m/s.
+
+Dragging a slider dispatches `SetStartSpeed` / `SetFinishSpeed` through the same
+Redux-style reducer. Changing speed after an execution restores the retained Stage-1
+route and invalidates only Stage-2 execution, because speed is an execution setting and
+must not force static route replanning.
+
+Execution settings carry the current slider values into Stage-2.
+
+Commit:
+- `c199d0dbb042066075f1b320799d8e5dfa55b0a7`.
+
+### Validation state
+
+These telemetry and slider changes are committed but not target-MinGW64 validated yet.
+
+Next evidence should include:
+- successful runtime/viewer build;
+- visible 5..50 start/finish sliders;
+- one run that reproduces the unexplained somersault;
+- the generated `last_execution_telemetry.log`.
+
+Do not guess the remaining flip root cause from `navigation_perf.log`; use the new
+execution telemetry.

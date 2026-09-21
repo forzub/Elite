@@ -2874,3 +2874,34 @@ Code candidate before documentation commits:
 Status: **TARGET MINGW64 VALIDATION REQUIRED**. Do not call this accepted until
 the target machine passes both the Assisted 10 -> 10 viewer case and the
 existing Newtonian high-speed reacquisition regression.
+
+### 2026-09-22 follow-up — sparse attitude derivative alias also fixed
+
+The frozen-reference failure exposed a second, earlier source of the tumbling:
+FreeTransit programs keep at most 16 sparse samples, but were copying
+`angularVelocity` from individual dense attitude samples. B9 then interpolated
+those isolated dense rates across the much longer sparse interval.
+
+In the failing trace the visible reference heading moved only by a few degrees
+per second around the hold point while the controller was effectively chasing
+a much larger sampled angular-rate target. That derivative was not consistent
+with the sparse basis being rendered/executed.
+
+Candidate now:
+- never copies dense-source angular velocity directly into sparse FreeTransit
+  samples;
+- re-derives interior angular velocity from neighboring **sparse accepted
+  bases and sparse sample times**;
+- forces first/last sparse angular velocity to zero;
+- clamps re-derived angular velocity to physical angular-rate capability;
+- keeps angular acceleration feed-forward zero for sparse FreeTransit;
+- retains the out-of-envelope derivative-neutralization recovery added in the
+  previous correction.
+
+New E2E regression:
+`testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()` pins the exact
+ASSISTED / EXPERT / STANDARD 10 -> 10 m/s case, requires physical success and
+rejects physical speed above 25 m/s.
+
+Updated code candidate before docs: `13ef6bd731ef6d8e78c75c72bf7a59f524b30bcb`.
+Target MinGW64 evidence is still required.

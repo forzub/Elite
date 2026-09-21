@@ -94,6 +94,7 @@ void testStraightRouteUsesRuckigWithMovingStartAndFinish()
         glm::dvec3(0.0, 0.0, 0.0),
         glm::dvec3(500.0, 0.0, 0.0)
     };
+    request.vehicle.maxSpeedMps = 10.0;
     request.initialVelocityMps = glm::dvec3(10.0, 0.0, 0.0);
     request.hasTerminalVelocity = true;
     request.terminalVelocityMps = glm::dvec3(10.0, 0.0, 0.0);
@@ -124,6 +125,10 @@ void testStraightRouteUsesRuckigWithMovingStartAndFinish()
             request.terminalVelocityMps
         ) < 1.0e-6,
         "straight route stopped instead of honoring moving terminal velocity"
+    );
+    require(
+        result.diagnostics.maxSpeedMps <= 10.0 + 1.0e-6,
+        "steady 10 m/s transit accelerated above the authored test speed"
     );
 }
 

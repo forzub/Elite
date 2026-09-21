@@ -1988,55 +1988,55 @@ void drawHud(
     }
 
     appendUiText(
-        ui, legendX + 14.0f, legendY + 94.0f,
+        ui, legendX + 14.0f, legendY + 58.0f,
         "ЖЁЛТАЯ СТРЕЛКА: ФАКТИЧЕСКИЙ ВЕКТОР СКОРОСТИ",
         1.00f,
         {1.0f, 0.78f, 0.10f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 58.0f,
+        ui, legendX + 14.0f, legendY + 76.0f,
         "ГОЛУБАЯ КОРОТКАЯ: ФАКТИЧЕСКИЙ НОС КОРАБЛЯ",
         1.00f,
         {0.25f, 0.85f, 1.0f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 76.0f,
+        ui, legendX + 14.0f, legendY + 94.0f,
         "КРАСНАЯ: ЦЕЛЕВОЙ НОС ПРОГРАММЫ FOLLOWER",
         1.00f,
         {1.0f, 0.25f, 0.18f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 208.0f,
+        ui, legendX + 14.0f, legendY + 118.0f,
         "БЕЛАЯ: ГРУБЫЙ ГЕОМЕТРИЧЕСКИЙ МАРШРУТ",
         1.00f,
         {0.90f, 0.90f, 0.90f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 118.0f,
+        ui, legendX + 14.0f, legendY + 136.0f,
         "СИНЯЯ: РАЗДВИНУТЫЙ EXECUTION GUIDE",
         1.00f,
         {0.20f, 0.72f, 1.0f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 136.0f,
+        ui, legendX + 14.0f, legendY + 154.0f,
         "ФИОЛЕТОВАЯ: РАСЧЁТНАЯ КРИВАЯ RUCKIG",
         1.00f,
         {0.88f, 0.35f, 1.0f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 154.0f,
+        ui, legendX + 14.0f, legendY + 172.0f,
         "ЗЕЛЁНАЯ: ФАКТИЧЕСКАЯ ТРАЕКТОРИЯ",
         1.00f,
         {0.25f, 1.0f, 0.35f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 172.0f,
+        ui, legendX + 14.0f, legendY + 190.0f,
         "СЕРЫЙ КАРКАС: СТАТИЧЕСКОЕ ПРЕПЯТСТВИЕ",
         1.00f,
         {0.75f, 0.78f, 0.82f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 190.0f,
+        ui, legendX + 14.0f, legendY + 208.0f,
         "ОРАНЖЕВАЯ КОРМА: РАБОТАЕТ ГЛАВНЫЙ ДВИГАТЕЛЬ",
         1.00f,
         {1.0f, 0.62f, 0.12f}

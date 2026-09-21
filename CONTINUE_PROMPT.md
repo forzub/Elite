@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: speed-aware route + explicit Calculate state
+# CONTINUE PROMPT — Elite Navigation: build fix + local variable-speed profile
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -9,95 +9,89 @@ Every state-affecting iteration MUST:
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
-Read those files first, plus:
-- `tools/navigation_runtime/NavigationScenarioRuntime.cpp/.h`
+Read first:
+- `CURRENT_STATE.md`
+- `CURRENT_TASK.md`
+- `PROJECT_STATE.md`
+- `src/game/navigation/STAGE12_END_TO_END.md`
+- `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
 - `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
-- `tools/navigation_runtime/scenario.json`
-- `tools/navigation_runtime/README.md`
-- `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`
-- `tests/architecture_contracts/check_navigation_stage1_nominal_route.py`.
+- `tools/navigation_runtime/NavigationScenarioRuntime.cpp/.h`
+- `src/world/navigation/TrajectoryGenerator.cpp/.h`
+- `tests/navigation_guidance/RuckigRoutePlannerTests.cpp`
+- `tools/navigation_runtime/README.md`.
 
-## Non-negotiable current semantics
+## Latest target evidence
 
-### FlightStyle
+The user's MinGW64 run on old HEAD `c5a2ea68434a...` failed at viewer compile:
 
-Never introduce Standard/Extreme nominal speeds.
+1. `drawHud()` used `recalculationRequired(state)` before declaration.
+2. speed-slider release contained dangling `if (speedChanged)`.
 
-FlightStyle answers only the clearance/risk tradeoff:
-- STANDARD -> more safety/maneuver room from static obstacles;
-- EXTREME -> tighter pass / less clearance when useful tactically.
+Fixed:
+- `e2597a7714f5e7fee2200e7f47f9bfb9bafb2734`
+- `b15d0e97c6897d2b099e0c6e41d60830c45776b9`
 
-There must be no:
-- standard_speed_mps / extreme_speed_mps;
-- standardSpeedMps / extremeSpeedMps;
-- styleSpeedMps.
+Also remove the old unused `buildReferenceAttitudes` acceleration warning.
 
-The current test stand speed is explicitly requested by START/FINISH settings.
+## Non-negotiable speed semantics
 
-### Speed is route-affecting
+Speed is a state variable, not a FlightStyle constant and not globally uniform.
 
-START/FINISH speed changes must invalidate Stage-1 because higher inertia changes
-required maneuver room.
+Rules:
+- START/FINISH speed constrain only boundary states.
+- Intermediate speed may vary.
+- Braking requires a concrete local physical/geometric/mission/safety reason.
+- Sharp/complex maneuver may slow heavily or stop.
+- Clear segment may be much faster than FINISH speed.
+- Local restriction must not become a whole-route cap.
+- Without a reason, do not cut speed.
+- STANDARD/EXTREME only trade clearance/risk; they never define speed.
 
-Current coarse implementation:
-```text
-planningSpeed = max(startSpeed, finishSpeed)
-inertialLead = planningSpeed * characteristicTurnTime(real ship angular limits)
-additionalClearance =
-    authoredClearance +
-    inertialLead * styleReserveFactor
-```
+This is recorded in `CONTROL_LAW_MANEUVER_MODEL.md`.
 
-Current style factors:
-- STANDARD 1.0
-- EXTREME 0.35
+Already fixed:
+- execution `maxSpeedMps` comes from vehicle capability, not max boundary speed;
+- exact moving terminal speed no longer globally caps scalar path progress;
+- focused regression requires START=10 / FINISH=10 three-point straight transit to exceed
+  12 m/s between boundaries.
 
-This is coarse Stage-1 maneuver reserve, not final B6 swept-volume proof.
+Commits:
+- `336b48a293dca0306847afbe3bc00e5787713a2e`
+- `16fe6a8918fa1a9f03fce3dd2f814987198f31e8`
+- `22133bbe5c9ef61a52e839338e88b44a29061f22`
+- `49009e6f480c7a70848f9a89c5cb4a0f7d4c8dab`
 
-Expected visible behavior:
-- higher speed generally moves white route support points farther from the obstacle;
-- same speed EXTREME is closer than STANDARD;
-- topology can remain the same even when point coordinates move.
+## Known remaining speed bug
 
-### Calculate button contract
+`globalGuideSpeedLimit()` still uses the worst curvature on the whole multi-point route
+as one global max speed.
 
-Settings do NOT auto-run calculations.
+This violates the new locality rule.
 
-Dirty state:
-- speed/style => Stage-1 route + Stage-2 dirty;
-- pilot/control law/dynamic toggle => Stage-2 dirty only.
+Once target build is green, replace that global behavior with a local scalar speed
+profile:
+- local curvature / point / range limits by progress;
+- backward braking feasibility before each restriction;
+- forward acceleration feasibility;
+- Ruckig remains timing/jerk owner;
+- stop is legal where necessary;
+- clear segments accelerate independently;
+- no local limit globally clamps unrelated segments.
 
-`РАССЧИТАТЬ` has exactly one meaning:
-- run all calculations required by current dirty state;
-- if Stage-1 dirty, rebuild route first;
-- then execute Stage-2;
-- show concise on-screen result log.
+Do not move this responsibility into Follower.
 
-After the attempt:
-- button disabled and visually dim;
-- label `РАСЧЕТ ГОТОВ`;
-- same inputs cannot trigger another solve;
-- changing an invalidating input marks result stale and re-enables button.
+## Calculate UX remains fixed
 
-Do NOT restore:
-- automatic Stage-2 refresh on selector clicks;
-- second Execute button/action;
-- `ЗАПУСТИТЬ ПОЛЁТ` workflow.
+No automatic recalculation on selector changes.
 
-Playback controls only playback.
-
-## Current somersault candidate
-
-Previous telemetry proved the main engine was not commanding the old full hull flip.
-The angular loop kept winding up after reference attitude had settled.
-
-Current candidate fixes still require target validation:
-- FreeTransit sparse angular-acceleration feed-forward = zero;
-- total follower angular acceleration demand clamped to physical capability;
-- telemetry logs ideal/pilot-executed linear/angular commands and physical main/RCS
-  allocation.
-
-Do not undo those fixes while working on route/UI semantics.
+- speed/style dirty => Stage-1 + Stage-2;
+- control-law/pilot/dynamic toggle dirty => Stage-2 only;
+- one click `РАССЧИТАТЬ` performs all required calculation;
+- concise on-screen log;
+- then dim/disabled `РАСЧЕТ ГОТОВ`;
+- changing an invalidating input re-enables it;
+- no second Execute / `ЗАПУСТИТЬ ПОЛЁТ`.
 
 ## Target commands
 
@@ -108,23 +102,11 @@ git rev-parse HEAD
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ```
 
-Then:
+If green:
 
 ```bash
+bash tests/navigation_guidance/run_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Validate:
-1. initial Calculate enabled;
-2. Calculate once at Standard 10/10;
-3. short log visible; button disabled;
-4. change to 40/40 -> button enabled/stale;
-5. Calculate -> white route farther from obstacle;
-6. switch 40/40 Standard to Extreme -> Calculate -> route closer;
-7. pilot/control-law change re-enables Calculate but does not require Stage-1 route
-   geometry rebuild;
-8. viewer REV matches target HEAD/build.
-
-If compile/test fails, fix the actual problem and repeat mandatory MD/prompt protocol.
-
-Do not enable dynamic avoidance yet.
+Do not claim PASS without target evidence. Do not enable dynamic avoidance yet.

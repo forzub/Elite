@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
@@ -123,6 +124,13 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
     require(
         finalError <= 5.0,
         "default execution finished outside terminal position tolerance"
+    );
+
+    const double finalSpeed =
+        glm::length(executed.trace.frames.back().shipVelocity);
+    require(
+        std::abs(finalSpeed - 10.0) <= 1.5,
+        "default execution did not cross finish at the authored 10 m/s"
     );
 }
 

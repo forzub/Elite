@@ -1263,13 +1263,34 @@ double globalGuideSpeedLimit(
         }
     }
 
+    const double terminalSourceProgress =
+        guide.sourceProgress.empty()
+            ? std::numeric_limits<double>::infinity()
+            : guide.sourceProgress.back();
+
     for (const auto& point : request.pointSpeedConstraints)
     {
-        if (finite(point.maxSpeedMps) &&
-            point.maxSpeedMps > 0.0)
+        if (!finite(point.maxSpeedMps) ||
+            point.maxSpeedMps <= 0.0)
         {
-            limit = std::min(limit, point.maxSpeedMps);
+            continue;
         }
+
+        const bool exactMovingTerminal =
+            request.hasTerminalVelocity &&
+            finite(point.sourcePathProgressMeters) &&
+            std::abs(
+                point.sourcePathProgressMeters -
+                terminalSourceProgress
+            ) <= 1.0e-5;
+
+        // A terminal speed is a boundary state, not a cruise-speed command.
+        // Ruckig already receives it as targetSpeedMps. Applying it here as a
+        // global maximum would needlessly hold the whole route at finish speed.
+        if (exactMovingTerminal)
+            continue;
+
+        limit = std::min(limit, point.maxSpeedMps);
     }
 
     const double lateralAcceleration = std::max(

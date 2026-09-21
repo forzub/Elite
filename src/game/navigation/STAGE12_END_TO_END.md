@@ -8894,3 +8894,58 @@ Pinned physical regression:
 
 Candidate before documentation commits: `13ef6bd731ef6d8e78c75c72bf7a59f524b30bcb`.
 Target evidence pending.
+
+## Higher-speed Assisted gate — body attitude must own main-thrust direction
+
+Target evidence after the runaway fix:
+
+```text
+ASSISTED / EXPERT / STANDARD
+20.90 -> 20.00 m/s
+Ruckig max 20.90 m/s
+final physical speed 7.45 m/s
+final error 175.20 m
+body/velocity max 180 deg
+reference hold 40.70 s
+```
+
+Telemetry proved that the old Assisted allocator could apply negative
+longitudinal `main_a` while `main_pct` was zero and the hull stayed aligned
+to the reference. The ship then crossed zero speed and reversed relative to its
+unchanged nose. Later, once velocity was backwards, positive aft main thrust
+acted against that reversed velocity.
+
+That was a physics-model contradiction, not merely a viewer problem.
+
+### Correct execution invariant
+
+For the current ship:
+
+```text
+main_a · hull_forward >= 0
+```
+
+for every physical main-engine sample in BOTH laws.
+
+If desired acceleration is opposite the hull:
+- bounded RCS may contribute;
+- otherwise the accepted attitude program must rotate/cant the hull;
+- only after aft-main alignment may strong braking occur.
+
+Assisted and Newtonian may still produce different maneuver doctrine and
+velocity/attitude behavior, but they do not get different fictional engines.
+
+### Current candidate
+
+- aft-only navigation main allocation for both laws;
+- propulsion-aware reference attitude for Assisted as well as Newtonian;
+- exact 20.90 -> 20.00 E2E regression;
+- regression checks every non-zero main acceleration has non-negative projection
+  on hull forward.
+
+If target testing still misses the route after this correction, the next
+required fix is not another allocator patch. It is maneuver timing:
+point-mass Ruckig acceleration intervals must reserve finite lead-rotation time
+before main-engine-dominant burns.
+
+Candidate before docs: `b833eddb7bd04b5c025b2be0fd8334c33f8824e6`.

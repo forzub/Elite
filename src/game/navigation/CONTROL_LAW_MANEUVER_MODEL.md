@@ -320,3 +320,40 @@ ManeuverDecisionController:
     chooses among already physical candidates
     never invents thrust or geometry
 ~~~
+
+
+## Variable-speed route invariant
+
+Speed is not a flight-style constant and is not required to remain uniform along a route.
+
+The maneuver-authoring contract is:
+
+- START speed and FINISH speed constrain only their boundary states unless a caller
+  explicitly publishes a wider local speed restriction.
+- Intermediate speed is free to vary within vehicle capability, geometry, control-law
+  authority, mission constraints and safety proof.
+- A speed reduction requires a concrete reason local to the maneuver:
+  - curvature / available lateral acceleration;
+  - braking distance for an upcoming required state;
+  - obstacle clearance / swept-hull feasibility;
+  - explicit local speed restriction;
+  - docking / formation / placement precision;
+  - tracking recovery;
+  - emergency avoidance.
+- A difficult bend may legally require a large slowdown or a complete stop. A stop is a
+  valid maneuver candidate, not a planner failure.
+- A clear segment may legally be flown substantially faster than the requested terminal
+  speed if the ship can still satisfy all later constraints.
+- A local speed constraint must not silently become a global cruise cap on unrelated
+  route segments.
+- In the absence of a physical, geometric, mission or safety reason, the planner must not
+  invent braking merely to make the speed profile numerically uniform.
+
+This rule is independent of FlightStyle. STANDARD / EXTREME may influence which
+clearance/risk candidate is preferred, but neither style owns a nominal speed.
+
+Current implementation note: exact moving terminal speed is already treated as a terminal
+boundary rather than a global cap. The current scalar multi-point path solver still
+collapses curvature into a worst-case route-wide speed ceiling; localizing curvature and
+other local speed limits is the next trajectory-authoring correction required by this
+contract.

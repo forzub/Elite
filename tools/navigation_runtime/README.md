@@ -159,6 +159,30 @@ The current static Stage-2 diagnostics explicitly report:
 
 It must not silently rebuild the global route.
 
+## Speed-profile invariant
+
+Speed is a planned state variable, not a style constant and not a value that must remain
+uniform along the whole route.
+
+The canonical rule is:
+
+- START and FINISH speeds constrain only those boundary states;
+- an intermediate speed reduction must have a concrete local reason: curvature/turn
+  authority, braking distance for an upcoming required state, collision/clearance proof,
+  an explicit local speed restriction, docking/formation precision, tracking recovery,
+  or emergency avoidance;
+- a difficult corner may legally require a major slowdown or a full stop;
+- a clear segment may legally be flown much faster than the requested FINISH speed;
+- a local speed restriction must not silently become a global cap on unrelated route
+  segments;
+- without a physical, geometric, mission, or safety reason, the planner must not invent
+  braking merely to make the speed profile look uniform.
+
+The current Ruckig seam now treats an exact moving terminal speed as a terminal boundary
+rather than a whole-route cruise cap. Local curvature limits are still safety constraints;
+their localization along the scalar progress solve is tracked as the next trajectory
+authoring refinement rather than being reinterpreted as a style speed.
+
 ## Corridor vs physical tunnel
 
 `route_envelope_radius_m` and `route_clearance_m` remain coarse navigation/test
@@ -182,8 +206,11 @@ The current static scenario supports:
 - final up requirement;
 - non-zero start and terminal speed.
 
-The viewer exposes independent 5..50 m/s START/FINISH speed controls. Their larger value
-defines the current test execution speed envelope; Standard/Extreme do not alter it.
+The viewer exposes independent 5..50 m/s START/FINISH speed controls. These are
+**boundary-state requirements**, not cruise-speed commands. Between START and FINISH the
+trajectory may accelerate above either value when geometry and physical authority permit
+it, and it may slow substantially or even stop when a local maneuver genuinely requires
+that. Standard/Extreme do not define a speed.
 
 ## Build
 

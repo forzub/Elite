@@ -7315,3 +7315,53 @@ transients.
 
 After that, inspect yellow actual velocity vs cyan actual hull nose vs red target nose.
 The deeper Newtonian body/thrust-aware maneuver-authoring issue remains open.
+
+
+## 2026-09-21 — viewer-first maneuver inspection; moving finish is fly-through
+
+Latest target output after switching the stand to start=10 m/s and finish=10 m/s showed:
+- retained route remains 306.53 m with four points;
+- Ruckig trajectory generated successfully;
+- both interior retained waypoints are now exactly 10.00 m/s;
+- no coarse static contact;
+- the run failed only at the final phase with `FINAL_CAPTURE_TIMEOUT`;
+- by timeout, final speed had collapsed to 1.01 m/s and final position error had grown to
+  32.94 m;
+- maximum body/velocity angle reached 178.94 degrees.
+
+This failure was caused by a semantic mismatch in the stand, not by the two shallow
+corner speeds. The last phase always used `ManeuverPhaseGate::StateCapture`, which is
+correct for a parking/stopped terminal but wrong for an authored moving terminal. After
+the nominal moving trajectory ended, the follower kept trying to capture a fixed final
+position while also owning a non-zero terminal velocity reference. That produced the
+artificial braking and eventual timeout.
+
+Candidate fix:
+- `9b1251e8601172ecd83ba4f656871f92f4669fb4` — a non-zero finish speed now makes
+  the final phase `ScheduledMoving`; the terminal is a fly-through boundary rather
+  than a parking capture.
+
+Process change requested by user:
+- current maneuver development is inspected visually in
+  `navigation_runtime_viewer.exe`;
+- the viewer preparation script must not auto-run the headless Stage-2 E2E and abort
+  before the user can inspect the maneuver;
+- `06513569f7861ac8b6e3104994ec72ffd0d891d1` removes that automatic headless
+  Stage-2 run from `run_stage1_mingw64.sh`;
+- focused/static architecture tests still run, and the viewer is still built;
+- the headless E2E target remains available separately for later regression work.
+
+Current visual objective:
+```text
+10 m/s at start
+ -> corner 1 at moving speed
+ -> bypass leg
+ -> corner 2 at moving speed
+ -> cross finish at 10 m/s
+```
+
+Do not interpret a red target-attitude arrow leading the cyan physical nose as a fault
+by itself. The key Newtonian diagnostic remains whether the yellow actual velocity
+vector changes consistently with the real cyan hull attitude and bounded RCS/main-thrust
+authority. The 178.94-degree body/velocity diagnostic in the failed headless run is
+strong evidence that this deeper maneuver-authoring issue remains.

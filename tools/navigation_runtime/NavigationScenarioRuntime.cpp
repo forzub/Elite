@@ -1095,6 +1095,29 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
         finish.maxSpeedMps =
             std::max(0.0, scenario.finish.speedMps);
         request.pointSpeedConstraints.push_back(finish);
+
+        if (scenario.finish.speedMps > 1.0e-6)
+        {
+            glm::dvec3 terminalDirection = scenario.finish.forward;
+            if (glm::length(terminalDirection) <= 1.0e-9 &&
+                request.pathPointsMeters.size() >= 2)
+            {
+                terminalDirection =
+                    request.pathPointsMeters.back() -
+                    request.pathPointsMeters[
+                        request.pathPointsMeters.size() - 2
+                    ];
+            }
+
+            const double directionLength = glm::length(terminalDirection);
+            if (directionLength > 1.0e-9)
+            {
+                request.hasTerminalVelocity = true;
+                request.terminalVelocityMps =
+                    terminalDirection / directionLength *
+                    scenario.finish.speedMps;
+            }
+        }
     }
 
     request.hasTerminalOrientation =
@@ -1767,27 +1790,6 @@ ScenarioRunResult executeCalculatedRoute(
                 "PLANNER: NO CACHED ROUTE",
                 "TRAJECTORY: NOT RUN",
                 "FOLLOWER: NOT RUN"
-            };
-            writeExecutionDiagnostics(
-                scenarioJsonPath,
-                out.diagnostics
-            );
-            return out;
-        }
-
-        if (scenario.finish.speedMps > 1.0e-6)
-        {
-            out.trace = std::move(trace);
-            out.success = false;
-            out.message =
-                "ЭТАП 2: НЕНУЛЕВАЯ ФИНАЛЬНАЯ СКОРОСТЬ "
-                "ЕЩЁ НЕ ПОДДЕРЖАНА RUCKIG ROUTE BACKEND";
-            out.diagnostics = {
-                "SCENE: LOADED",
-                "PLANNER: CACHED ROUTE OK",
-                "TRAJECTORY: FAIL",
-                "FOLLOWER: NOT RUN",
-                "FINAL SPEED CONTRACT: UNSUPPORTED"
             };
             writeExecutionDiagnostics(
                 scenarioJsonPath,

@@ -1460,6 +1460,8 @@ std::string localizedStatus(const std::string& status)
         return "СЦЕНА ЗАГРУЖЕНА";
     if (status == "follower_running")
         return "FOLLOWER ВЫПОЛНЯЕТ МАРШРУТ";
+    if (status == "follower_reacquiring")
+        return "FOLLOWER ВОЗВРАЩАЕТСЯ В КОРИДОР";
     if (status == "trajectory_failed")
         return "RUCKIG НЕ ПОСТРОИЛ ТРАЕКТОРИЮ";
     if (status == "follower_invalid")

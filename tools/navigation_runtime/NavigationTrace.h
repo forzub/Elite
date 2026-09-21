@@ -29,10 +29,13 @@ struct TraceFrame
     // expose tracking/orientation mismatch instead of reconstructing attitude.
     bool hasProgramReference = false;
     glm::dvec3 programReferencePosition {0.0};
+    glm::dvec3 programReferenceVelocity {0.0};
     glm::dvec3 programReferenceForward {1.0, 0.0, 0.0};
     glm::dvec3 programReferenceRight {0.0, 0.0, 1.0};
     glm::dvec3 programReferenceUp {0.0, 1.0, 0.0};
     double programTrackingCorridorRadiusMeters = 0.0;
+    double programSpeedCorridorHalfWidthMps = 0.0;
+    double programProgressCorridorHalfWidthMeters = 0.0;
 
     bool hazardActive = false;
     glm::dvec3 hazardPosition {0.0};

@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: requested/effective control-law state
+# CONTINUE PROMPT — Elite Navigation: physical reacquisition + damped attitude
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -9,102 +9,145 @@ Every state-affecting iteration MUST:
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
-Read:
+Read first:
 - `CURRENT_STATE.md`
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
-- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
+- `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
-- `tools/navigation_runtime/NavigationTrace.h/.cpp`
-- `tests/architecture_contracts/check_navigation_stage1_nominal_route.py`.
+- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
+- `src/game/navigation/ManeuverTrackingController.cpp/.h`
+- `src/game/navigation/ManeuverPhaseGate.cpp/.h`
+- `src/game/navigation/TrajectoryFollower.cpp/.h`
+- `tests/navigation_runtime/ManeuverTrackingControllerTests.cpp`
+- `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`.
 
-## Latest bug and fix
+## Latest target evidence
 
-User reported ASSISTED button did not work.
+User ran Newtonian / Expert / Standard around:
+- START 26.15 m/s;
+- FINISH 11.75 m/s.
 
-Root cause was definite:
-the viewer used one `state.controlMode` both for requested selector input and effective
-runtime observation.
+Old diagnostics:
+- Ruckig OK;
+- program phases completed;
+- final physical error 68.49 m;
+- max route deviation 62.24 m;
+- max follower error 68.49 m.
 
-Old sequence:
+Viewer showed the reference/path continuing while the physical ship failed to return.
+
+Telemetry also showed visible hull attitude overshoot/oscillation.
+
+## Root cause 1 — B10 angular loop was underdamped
+
+Old default:
 ```text
-old displayed trace = NEWTONIAN
-click ASSISTED
- -> state.controlMode = ASSISTED
-next frame observes old NEWTONIAN trace
- -> RuntimeControlLawObserved
- -> state.controlMode = NEWTONIAN
+Kp attitude = 2
+Kd angular velocity = 1
 ```
 
-This made ASSISTED visually and functionally appear dead.
+Critical Kd for Kp=2 is about 2.83.
 
-Current fix:
-- `state.controlMode` = requested setting only;
-- `state.effectiveRuntimeControlLaw` = observed displayed runtime law;
-- RuntimeControlLawObserved MUST NEVER assign state.controlMode.
+Current:
+```text
+Kp = 2
+Kd = 3
+```
 
-Commit:
-- `3067ccfde2f260dcde30baa038ca82e400f233a8`.
+Do not move damping responsibility into a hidden ShipController navigation term.
+B10 owns angular feedback; lower physics still clamps angular authority.
 
-Architecture gate:
-- `d57cd3b285b0419f9bf8266887fb34811d57a592`.
+Regression:
+default Kd >= 2*sqrt(Kp).
 
-README:
-- `12d91b3253f68907557308b9e27ee4fe6d871822`.
+## Root cause 2 — program reference outran physical execution
 
-## Right-panel contract
+Do NOT mutate AcceptedManeuverProgram after acceptance.
 
-Always show:
-- ПИЛОТ
-- УПРАВЛЕНИЕ / ВЫБРАНО
-- УПРАВЛЕНИЕ / ФАКТ
-- ПОВЕДЕНИЕ
+Current runtime owns:
+```text
+activeProgramReferenceDelaySeconds
+```
 
-If selected inputs are dirty and old execution is still displayed, factual law must be
-marked `(СТАРЫЙ РАСЧЕТ)`.
+Sampling:
+```text
+programReferenceTime = vehicle.timeSeconds - delay
+```
 
-Expected sequence:
-1. NEWTONIAN calculated -> selected/fact both Newtonian.
-2. click ASSISTED -> selected becomes Assisted immediately; fact remains old Newtonian
-   with stale marker.
-3. press Calculate -> new execution should produce selected/fact Assisted.
+When `follower.trackingErrorExceeded`:
+- delay += dt;
+- B9/Follower reference progress pauses;
+- gate uses the same delayed reference time;
+- physical control continues trying to reacquire;
+- no timed phase handoff while actual craft is outside envelope.
 
-If after fresh Calculate fact is still Newtonian, inspect runtime settings/control-law
-propagation below viewer state. Do not change UI again until telemetry proves that.
+When tracking recovers, program reference time resumes.
 
-## Existing contracts that must remain
+Viewer status:
+`FOLLOWER ВОЗВРАЩАЕТСЯ В КОРИДОР`.
 
-Calculate:
-- no auto recalculation on selector change;
-- one click runs required Stage-1/Stage-2;
-- disabled/dim afterward until invalidating input changes.
+Diagnostics:
+- REFERENCE CLOCK HOLD FRAMES
+- REFERENCE CLOCK HOLD
 
-FlightStyle:
-- no style-owned speed;
-- Standard/Extreme = clearance/risk doctrine only.
+Current reacquisition envelope:
+- position 8 m;
+- velocity 4 m/s;
+- forward angle 0.35 rad;
+- angular velocity 0.8 rad/s.
 
-Speed:
-- START/FINISH = boundary states;
-- intermediate speed may vary;
-- no braking without local reason.
+FreeTransit longitudinal deadbands are applied BEFORE envelope evaluation.
 
-Control chain:
-- accepted program -> Follower -> tracking controller -> runtime bridge -> pilot executor
-  -> ShipControlState -> SharedShipPhysics/ShipController/DynamicMotionSystem.
+## Completion semantics
 
-## Secondary unresolved issue
+Diagnostics now say:
+- PROGRAM PHASES COMPLETE
+- PHYSICAL TERMINAL STATE
 
-User reports some hull oscillation while returning to reference attitude.
+Never use wall-clock program completion as proof of physical arrival.
 
-After mode-switch validation is green, diagnose with:
-- ideal_ang_cmd;
-- exec_ang_cmd;
-- pyr_rate;
-- reference forward/up;
-- forward_ref_deg/up_ref_deg.
+## Actuator semantics
 
-Do not blindly increase damping before identifying which layer generates the overshoot.
+A body turn with MAIN=0 is not automatically wrong.
+
+Angular torque (attitude/RCS) and main linear thrust are separate. Telemetry witnesses:
+- `exec_ang_cmd` = attitude acceleration request;
+- `main_pct` = main linear engine.
+
+The bug to eliminate is unnecessary or oscillatory attitude motion, not the fact that a
+ship can rotate without firing the main engine.
+
+## Assisted
+
+Requested/effective selector state remains separate:
+- selected law = next Calculate input;
+- effective law = displayed runtime trace.
+
+Do not undo that.
+
+After current damping/reacquisition target gate is green, if Assisted still turns hull
+more sharply than needed, change Assisted reference-attitude authoring specifically.
+Do not fake it in the viewer and do not couple FlightStyle to control law.
+
+## Logs and traces
+
+Everything current-run is now in repository root:
+- last_route_plan.log
+- last_execution.log
+- last_execution_telemetry.log
+- navigation_perf.log
+- last_calculated_trace.json
+- last_execution_trace.json
+
+## High-speed regression
+
+`NavigationScenarioRuntimeE2ETests.cpp` now reproduces:
+- Newtonian / Expert / Standard;
+- 26.15 -> 11.75 m/s.
+
+It requires physical success and final position error <= 5 m.
 
 ## Target commands
 
@@ -113,6 +156,11 @@ cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
 bash tests/navigation_runtime/run_stage1_mingw64.sh
+```
+
+Then:
+
+```bash
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 

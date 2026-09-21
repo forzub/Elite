@@ -1230,16 +1230,16 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
             params
         );
 
-    // FlightStyle does NOT define speed. The current test stand has explicit
-    // start/finish speed requests; their larger value is the kinematic speed
-    // envelope for this retained-route execution.
-    profile.maxSpeedMps = std::max(
+    // START/FINISH speed are boundary-state constraints, not cruise caps.
+    // Between them the trajectory may accelerate above either value when
+    // geometry and physical authority permit it. The hard speed ceiling comes
+    // from the vehicle capability, never from FlightStyle or terminal speed.
+    profile.maxSpeedMps = std::max({
         0.1,
-        std::max(
-            effectiveStartSpeedMps(scenario, settings),
-            effectiveFinishSpeedMps(scenario, settings)
-        )
-    );
+        static_cast<double>(params.maxCombatSpeed),
+        effectiveStartSpeedMps(scenario, settings),
+        effectiveFinishSpeedMps(scenario, settings)
+    });
 
     const double mainAcceleration =
         std::max(

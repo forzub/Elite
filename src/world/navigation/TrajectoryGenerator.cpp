@@ -404,15 +404,17 @@ std::vector<glm::dvec3> buildWaypointVelocities(
         const double turnSpeed = std::sqrt(
             lateralAcceleration * blendDistance / bendFactor
         );
-        const double policyCap = request.vehicle.maxSpeedMps * 0.65;
+        // Curvature/authority already supplies the physical corner speed
+        // limit. Do not impose the former arbitrary 65% waypoint cap: on a
+        // shallow bend it made even a clear Expert-quality route brake for no
+        // physical reason.
         const double speed = std::max(
             0.0,
             std::min({
                 pointLimit,
                 incomingLimit,
                 outgoingLimit,
-                turnSpeed,
-                policyCap
+                turnSpeed
             })
         );
         if (speed <= 0.5)

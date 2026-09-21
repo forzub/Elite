@@ -1,131 +1,96 @@
-# CONTINUE PROMPT — Elite Navigation: scalar Ruckig path progress
+# CONTINUE PROMPT — Elite Navigation: minimum-cant Newtonian attitude
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
-Every state-affecting iteration MUST:
+Every iteration MUST:
 1. update `CURRENT_STATE.md`;
 2. update `CURRENT_TASK.md`;
 3. update `PROJECT_STATE.md`;
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
-Read those five files first. Then inspect:
-- `src/game/navigation/RuckigTrajectorySolver.h/.cpp`;
-- `src/game/navigation/RuckigRoutePlanner.h`;
-- `src/world/navigation/TrajectoryGenerator.h/.cpp`;
-- `tests/navigation_guidance/RuckigRoutePlannerTests.cpp`;
-- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`;
-- `tools/navigation_runtime/CMakeLists.txt`;
-- `tools/navigation_runtime/scenario.json`.
+Read those files first, then inspect:
+- `tools/navigation_runtime/NavigationScenarioRuntime.cpp`;
+- `src/game/navigation/DynamicMotionSystem.cpp`;
+- `src/game/navigation/ManeuverTrackingController.cpp`;
+- `src/game/ship/ShipController.cpp`;
+- `src/world/navigation/TrajectoryGenerator.cpp`.
 
-## Latest target evidence
+## Latest verified behavior
 
-Target MinGW64 focused binary compiled and linked.
+Scalar path-progress correction substantially improved the reference geometry.
 
-7/8 tests passed.
+Latest wall-case perf includes one scalar solve, `guide_points=10`, and
+`min_speed_mps=max_speed_mps=10.0000`.
 
-Failure:
-```text
-default wall calculated curve contains a major unnecessary braking dip:
-min_speed=0.009 m/s
+Remaining user-visible problem:
+the physical hull rotates dramatically broadside to the direction of travel during a
+gentle Newtonian turn.
+
+## Root cause
+
+The old reference-attitude policy was:
+```cpp
+if (law == Newtonian && acceleration > 0.35)
+    requestedForward = normalize(acceleration);
 ```
 
-Viewer showed a purple fan near the rounded node.
+On a constant-speed turn the acceleration is centripetal, so this commands roughly a
+90-degree nose-to-velocity separation even when RCS alone can provide the needed lateral
+acceleration.
 
-Latest perf evidence from that generation:
+The lower physical allocator already has the correct decomposition seam:
+- main engine = positive longitudinal along hull forward in Newtonian;
+- residual = bounded manoeuvre/RCS vector.
+
+Therefore the reference attitude should not point the main engine at the full
+acceleration vector by default.
+
+## Current candidate
+
+Commit `fcffa5bae3b4e3deab5d6f043d3c500137719dad` introduces minimum-cant
+Newtonian attitude:
+- velocity tangent is default nose direction;
+- if |requested acceleration| <= manoeuvre/RCS authority, no main-engine cant;
+- otherwise rotate only the minimum angle needed so a positive main-thrust ray plus the
+  bounded RCS sphere can reproduce requested acceleration.
+
+Commit `b943064d529935243863c30238ae0daf62f1c129` adds:
 ```text
-guide_points=18
-legs=74
-ruckig_ok=17
-min_speed_mps=0.0094
+MAX REFERENCE/VELOCITY ANGLE
 ```
+alongside the existing actual `MAX BODY/VELOCITY ANGLE`.
 
-Earlier dense versions reached 36/52 guide points and hundreds/thousands of Ruckig leg
-attempts.
+Do not call this target-accepted until user MinGW64 viewer evidence confirms it.
 
-## Root cause, externally verified
-
-Official Ruckig documentation says:
-- core/community Ruckig is state-to-state online trajectory generation;
-- full local intermediate waypoint calculation is a Pro feature;
-- waypoint planning is significantly harder;
-- use as few waypoints as possible;
-- filter waypoint lists and prefer waypoints far apart.
-
-So do NOT try to fix the fan by adding more Ruckig target points. That was the misuse.
-
-## Current candidate architecture
-
-```text
-Stage-1 coarse route
- -> local rounded geometry p(s)
- -> scalar jerk-limited Ruckig progress s(t)
- -> trajectory p(s(t))
- -> collision validation
-```
-
-Ruckig roles:
-- true single leg: existing 3-D state-to-state solve;
-- curved/multi-point path: new `solveProgress()` 1-D Ruckig solve.
-
-Dense geometry samples are never independent Ruckig target states.
-
-Key code commits:
-- `2e815ef993a31acd40596f170c67a124f9337bf9`
-- `a50de59958887efbe50e2cdacee8c67623b2ebb8`
-- `9f166f4286dd03197705b0cd9e4ba63e33d000bc`
-- `3c58f4c3719d712e524e86e5f030820486af3102`
-- `c6f7b160878a3582362574691a12c96fd3ff3623`
-- `b76c4a52d8c32421d6fffe1098de9ad1c6a95dfb`
-- `b9e7ce64182ce761edb45b4751d680950ab33ff5`
-- `3843194d999e302ca32171de3d49f3f21987de64`
-
-## Viewer revision control
-
-Viewer must show an in-window badge:
-`NAV REV <sha>`.
-
-It already also has revision in title/right HUD, but the new badge is specifically to
-survive cropped screenshots.
-
-Commit:
-- `1199a0c04ee7cf3a6938bef0ca9c3bb55d7bd4c8`.
-
-Guide sample crosses are hidden; BLUE line remains.
-
-## Exact next commands
+## Next commands
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
 
-cmake -S tests/navigation_guidance -B build/tests/navigation_guidance -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build/tests/navigation_guidance --target ruckig_route_planner_tests
-ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
-```
-
-Do not open viewer until focused gate builds and runs.
-
-If focused gate is 8/8:
-```bash
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Check:
-- visible NAV REV matches build revision;
-- no purple fan/barrels;
-- no near-zero speed in steady 10 m/s wall test.
+Start with Expert / Standard / Newtonian.
 
-If PURPLE becomes correct and GREEN remains wrong, next task is Follower/Pilot/body-thrust.
-If PURPLE remains wrong, stay in path geometry / scalar timing.
+Viewer:
+- yellow = actual velocity;
+- red = reference nose;
+- cyan = physical nose;
+- purple = calculated path;
+- green = actual path;
+- NAV REV must be visible.
 
-## Current limitation
+Expected:
+- red no longer swings broadside merely because the curve has centripetal acceleration;
+- cyan follows red with a modest turn;
+- for this gentle 10 m/s stand, reference/velocity angle should be much smaller than the
+  previous near-90/180-degree behavior.
 
-Curved paths currently use one conservative path-wide speed cap based on worst curvature
-and authored limits. That is acceptable for the current correctness gate. Later replace
-it with a small number of meaningful speed zones if needed. Never return to one Ruckig
-3-D solve per dense geometric sample.
+If red is good but cyan is bad, investigate angular tracker/control-axis execution.
+If red is still bad, fix reference attitude allocation.
 
 Do not enable dynamic avoidance yet.

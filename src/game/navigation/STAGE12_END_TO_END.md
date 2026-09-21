@@ -8770,3 +8770,90 @@ Commit:
 
 Do not claim the new high-speed recovery or reduced oscillation is PASS until target
 MinGW64 evidence is returned.
+
+## Assisted 10 -> 10 target failure — frozen moving-reference derivatives
+
+A fresh interactive Stage-12 runtime run used:
+
+```text
+ASSISTED / EXPERT / STANDARD
+10.00 -> 10.00 m/s
+```
+
+The retained planner product itself stayed low-speed:
+
+```text
+TRAJECTORY: RUCKIG OK
+CALCULATED MAX SPEED: 11.71 M/S
+```
+
+but physical execution ended at:
+
+```text
+FINAL SPEED: 100.64 M/S
+FINAL POSITION ERROR: 2411.14 M
+REFERENCE CLOCK HOLD: 47.70 S
+MAX BODY/VELOCITY ANGLE: 179.99 DEG
+PROGRAM PHASES COMPLETE: NO
+PHYSICAL TERMINAL STATE: MISSED
+```
+
+### Root cause
+
+The first reference-reacquisition implementation held **reference time** when
+B10 left the tracking envelope. That correctly stopped B9 progress, but the
+sample at the held time remained a moving trajectory sample. It therefore
+continued to carry:
+- non-zero linear acceleration feed-forward;
+- non-zero reference angular velocity;
+- potentially non-zero angular feed-forward in generic programs.
+
+Holding the pose while replaying those derivatives indefinitely is
+self-contradictory. In this run the bounded recovery reserve was smaller than
+the frozen path acceleration, so the net command kept accelerating the real
+ship away. The fixed attitude plus frozen non-zero angular velocity also drove
+continuous hull rotation.
+
+### Recovery contract correction
+
+B10 now distinguishes normal accepted tracking from out-of-envelope recovery:
+
+```text
+inside tracking envelope
+    -> accepted position/velocity/attitude
+    -> accepted A_ff / alpha_ff
+    -> accepted reference angular velocity
+    -> bounded feedback
+
+outside tracking envelope
+    -> held geometric reference
+    -> A_ff = 0
+    -> alpha_ff = 0
+    -> target angular velocity = 0
+    -> bounded feedback only
+```
+
+The program object is not mutated. When the actual craft re-enters the tracking
+envelope, the original accepted moving reference becomes authoritative again.
+
+This is deliberately a recovery behavior after the accepted execution envelope
+has already been violated; it does not claim that the original moving-trajectory
+proof remains valid outside that envelope.
+
+Regression:
+`testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()`.
+
+### Viewer failure-mode usability
+
+`fitCamera()` no longer expands its bounds using every physical execution
+frame. The authored route, accepted trajectory/guide and obstacle geometry
+define the normal fit. A pathological runaway remains drawable but cannot shrink
+the useful navigation scene to a postage stamp.
+
+Code candidate before documentation commits:
+
+```text
+59ff756996229bf15a122eb0fe43cf0d9a14b245
+```
+
+Target MinGW64/runtime validation is pending.

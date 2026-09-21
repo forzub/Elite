@@ -966,7 +966,7 @@ glm::dvec3 rotateDirectionToward(
     return glm::normalize(q * from);
 }
 
-glm::dvec3 newtonianReferenceForward(
+glm::dvec3 propulsionReferenceForward(
     const world::navigation::TrajectorySample& sample,
     const Basis& previous,
     const ShipParams& params
@@ -1066,24 +1066,18 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
         const double speed = glm::length(sample.velocityMps);
         const double acceleration = glm::length(sample.accelerationMps2);
 
-        if (law == Law::Newtonian)
-        {
-            // Keep the hull close to the velocity/tangent direction whenever
-            // the bounded manoeuvre thrusters can supply the requested
-            // transverse acceleration. Only cant/flip the hull as much as is
-            // physically required for main-engine participation.
-            requestedForward =
-                newtonianReferenceForward(
-                    sample,
-                    previous,
-                    params
-                );
-        }
-        else if (speed > 0.25)
-        {
-            requestedForward =
-                glm::normalize(sample.velocityMps);
-        }
+        // Both flight laws use the same physical propulsion set.
+        // Assisted changes how the pilot/controller manages slip and attitude;
+        // it does not add a hidden fore engine. Therefore the reference hull
+        // must point far enough toward the required acceleration for the aft
+        // main engine + bounded RCS to realize it. If RCS alone is sufficient,
+        // keep the nose on the travel tangent.
+        requestedForward =
+            propulsionReferenceForward(
+                sample,
+                previous,
+                params
+            );
 
         Basis desired =
             transportedBasisForForward(

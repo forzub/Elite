@@ -1461,10 +1461,14 @@ Program makeProgramPhase(
     program.terminalTolerance.forwardAngleRad = 0.20;
     program.terminalTolerance.angularVelocityRadPerSec = 0.50;
 
-    program.tracking.positionErrorMeters = 18.0;
-    program.tracking.linearVelocityErrorMps = 8.0;
-    program.tracking.forwardAngleErrorRad = 0.75;
-    program.tracking.angularVelocityErrorRadPerSec = 1.2;
+    // Execution progress is allowed to run only while the physical craft is
+    // plausibly tracking the accepted reference. These are not "fail and turn
+    // navigation off" limits: leaving the envelope now freezes reference
+    // progress so the follower can reacquire before phase handoff.
+    program.tracking.positionErrorMeters = 8.0;
+    program.tracking.linearVelocityErrorMps = 4.0;
+    program.tracking.forwardAngleErrorRad = 0.35;
+    program.tracking.angularVelocityErrorRadPerSec = 0.8;
 
     // Free transit is corridor following, not a rail simulation. Keep exact
     // lateral/cross-track control but allow harmless longitudinal drift so a

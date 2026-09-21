@@ -42,6 +42,8 @@ readme = read("tools/navigation_runtime/README.md")
 scenario_json = read("tools/navigation_runtime/scenario.json")
 trajectory_h = read("src/world/navigation/TrajectoryGenerator.h")
 trajectory_cpp = read("src/world/navigation/TrajectoryGenerator.cpp")
+tracking_h = read("src/game/navigation/ManeuverTrackingController.h")
+tracking_cpp = read("src/game/navigation/ManeuverTrackingController.cpp")
 
 for token in (
     "class NominalRoutePlanner",
@@ -168,6 +170,34 @@ for marker in (
     "ScenarioRunSettings",
 ):
     require(marker in runtime_h, f"runtime public seam missing {marker}")
+
+for marker in (
+    "activeProgramReferenceDelaySeconds",
+    "follower.trackingErrorExceeded",
+    "REFERENCE CLOCK HOLD FRAMES",
+    "REFERENCE CLOCK HOLD: ",
+    "follower_reacquiring",
+    "std::filesystem::current_path()",
+):
+    require(marker in runtime, f"reference reacquisition/root-log contract missing {marker}")
+
+require(
+    "program.acceptedAtUniverseTimeSeconds +=" not in runtime,
+    "runtime reacquisition mutates an accepted maneuver program instead of its local sampling clock",
+)
+
+for marker in (
+    "angularVelocityGainPerSecond = 3.00",
+):
+    require(marker in tracking_h, f"attitude damping regression missing {marker}")
+
+for marker in (
+    "envelopePositionErrorMeters",
+    "effectivePositionError",
+    "envelopeVelocityErrorMps",
+    "effectiveVelocityError",
+):
+    require(marker in tracking_cpp, f"FreeTransit effective-envelope contract missing {marker}")
 
 for marker in (
     "hasSceneEndpoints",
@@ -314,6 +344,13 @@ for marker in (
     "ROUTE PLANNING SPEED: 40.00 M/S",
 ):
     require(marker in e2e_test, f"speed/style route regression missing {marker}")
+
+for marker in (
+    "testHighSpeedRunReacquiresInsteadOfOutrunningReference",
+    "high-speed execution outran its physical ship instead of reacquiring",
+    "REFERENCE CLOCK HOLD: ",
+):
+    require(marker in e2e_test, f"high-speed reacquisition regression missing {marker}")
 
 for marker in (
     "Stage 1",

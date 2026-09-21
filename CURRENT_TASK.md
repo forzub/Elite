@@ -1,105 +1,91 @@
-# CURRENT TASK — inspect steady 10 m/s fly-through in viewer, then fix Newtonian body/thrust semantics
+# CURRENT TASK — inspect the visible calculated Ruckig curve against actual flight
 
 **Date:** 2026-09-21  
-**Status:** CORNER SPEED FIX CONFIRMED IN TARGET OUTPUT / FINAL-CAPTURE BUG FIXED / VIEWER-FIRST
+**Status:** ROUNDED EXECUTION-GUIDE CANDIDATE / VIEWER REFERENCE OVERLAY ADDED / TARGET UNVERIFIED
 
-## Latest target evidence
+## Why this iteration exists
 
-The current default retained route is:
-```text
-(0,0,0)
- -> (110,-27,0)
- -> (190,-27,0)
- -> (300,0,0)
-length 306.53 m
-```
+The viewer showed braking and a distorted green flown path on visually simple sections.
+We need to stop guessing whether the cause is route-to-trajectory authoring or the
+Follower/Pilot execution layer.
 
-Target output confirms:
-- start speed = 10 m/s;
-- `RETAINED WAYPOINT SPEEDS: P1=10.00, P2=10.00 M/S`;
-- no coarse static contact;
-- Ruckig generated the trajectory.
+Production runtime does not use the retired custom SmoothPathOptimizer. The actual
+continuous reference is Ruckig.
 
-The headless run then failed with:
-- `FINAL_CAPTURE_TIMEOUT`;
-- final speed 1.01 m/s;
-- final position error 32.94 m;
-- max body/velocity angle 178.94 deg.
+## Candidate changes
 
-## Root cause of that failure
+Stage-2 now derives a separate execution guide from the retained Stage-1 route:
+- coarse route is never mutated;
+- an interior coarse corner is replaced by entry/exit points;
+- desired turn room is derived from speed and lateral acceleration;
+- if the desired corner does not fit, local support may be pushed farther outward into
+  free space instead of making a tight S-turn / StopTurnGo;
+- Ruckig solves the widened guide.
 
-The final phase was always `StateCapture`.
+Viewer now shows:
+- WHITE = retained coarse route;
+- BLUE = execution guide;
+- PURPLE = complete calculated Ruckig curve;
+- GREEN = actual flown path;
+- YELLOW = actual velocity;
+- CYAN = real hull nose;
+- RED = target nose.
 
-That is wrong for a moving finish. A 10 m/s terminal is a fly-through boundary, not a
-parking target. Continuing to capture one fixed endpoint after the trajectory horizon
-artificially brakes the ship and eventually times out.
+Runtime diagnostics now include:
+- EXECUTION GUIDE POINTS;
+- CALCULATED MIN SPEED;
+- CALCULATED MIN SPEED POS;
+- CALCULATED MAX SPEED.
 
-Fix:
-- `9b1251e8601172ecd83ba4f656871f92f4669fb4`:
-  final phase is `ScheduledMoving` whenever authored finish speed is non-zero.
+Focused default-wall regression now rejects:
+- missing local rounding;
+- calculated speed below 7.5 m/s in this steady 10 m/s stand;
+- calculated geometric backtracking along +X.
 
-## Viewer-first workflow
+Latest candidate commits:
+- 0b4212345b2c38b4f775937060a81ba56cace219
+- 939a7058ba58a244282d219e0c298150a72a410f
+- 3ee684742afd8ad91307b99c0a1815bd30aea722
+- 287ab085275873ffb1f991e09902d31706edb927
+- 33e3b228327cfb9c6031ecb09aa67847d16d2cda
+- 154d9e1a544dc957769efce127b70ee36dd8b0cc
+- 68f4377aabae1fd894be4a882fb30b0cec762d89
+- 77f9640eb77267be6a258b0293720e00f089fbe6
+- f9b106f8c259c0f7a39ebde11f67c776e1a35c92
 
-Per user request, current maneuver quality is evaluated in the interactive viewer.
-
-`run_stage1_mingw64.sh` now:
-- runs static/architecture checks;
-- builds the viewer;
-- does **not** auto-run the headless Stage-2 E2E.
-
-Commit:
-- `06513569f7861ac8b6e3104994ec72ffd0d891d1`.
-
-The headless E2E remains available separately and will be restored as a required
-regression after moving-terminal semantics and body/thrust authoring stabilize.
-
-## Immediate next action
+## Immediate target gate
 
 Run:
 ```bash
 cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
-bash tests/navigation_runtime/run_stage1_mingw64.sh
+
+cmake -S tests/navigation_guidance -B build/tests/navigation_guidance -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/tests/navigation_guidance --target ruckig_route_planner_tests
+ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
 ```
 
-Then inspect the entire maneuver in:
+Then:
 ```bash
+bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Watch:
-- yellow = actual velocity vector;
-- cyan = actual physical hull nose;
-- red = program/Follower target nose;
-- white = retained geometric route;
-- green = actual path.
+## Decision after viewer evidence
 
-Expected stand behavior:
-- start already at 10 m/s;
-- no stop at either shallow corner;
-- no artificial braking at finish;
-- cross finish at ~10 m/s.
+- PURPLE bad (loop/braking): remain in route-to-Ruckig authoring. Reject/widen the
+  execution guide before ACCEPT.
+- PURPLE good but GREEN bad: stop changing geometry and fix the Newtonian/Assisted
+  Follower + physical body/thrust execution mismatch.
 
-## After visual confirmation
+Do not enable dynamic avoidance yet.
 
-The next real mechanism task is Newtonian body/thrust-aware maneuver authoring.
-
-The target output already showed `MAX BODY/VELOCITY ANGLE: 178.94 DEG`, so even after
-removing StopTurnGo there is still a serious semantics issue to inspect. Translation
-must not behave as if future hull attitude already exists.
-
-Preserve:
-B4 geometry -> B5 physical maneuver -> B6 continuous proof -> B7 doctrine ->
-B8 AcceptedManeuverProgram -> B9/B10 Follower/Pilot execution.
-
-Do not start dynamic obstacle avoidance yet.
-
-## Mandatory state protocol
+## Mandatory project-state protocol
 
 After every state-affecting event update:
-- `CURRENT_STATE.md`;
-- `CURRENT_TASK.md`;
-- `PROJECT_STATE.md`;
-- `src/game/navigation/STAGE12_END_TO_END.md`;
-- recreate `CONTINUE_PROMPT.md` from scratch.
+- CURRENT_STATE.md
+- CURRENT_TASK.md
+- PROJECT_STATE.md
+- src/game/navigation/STAGE12_END_TO_END.md
+- recreate CONTINUE_PROMPT.md from scratch.

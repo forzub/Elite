@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: target rerun after curvature-speed correction
+# CONTINUE PROMPT — Elite Navigation: scalar Ruckig path progress
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -9,70 +9,91 @@ Every state-affecting iteration MUST:
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
-Read those files first, then inspect:
+Read those five files first. Then inspect:
+- `src/game/navigation/RuckigTrajectorySolver.h/.cpp`;
+- `src/game/navigation/RuckigRoutePlanner.h`;
 - `src/world/navigation/TrajectoryGenerator.h/.cpp`;
 - `tests/navigation_guidance/RuckigRoutePlannerTests.cpp`;
-- `tools/navigation_runtime/scenario.json`;
-- `tools/navigation_runtime/NavigationScenarioRuntime.cpp`;
 - `tools/navigation_runtime/NavigationRuntimeViewer.cpp`;
-- `tools/navigation_runtime/CMakeLists.txt`.
+- `tools/navigation_runtime/CMakeLists.txt`;
+- `tools/navigation_runtime/scenario.json`.
 
-## Latest verified target evidence
+## Latest target evidence
 
-The focused Ruckig binary compiled and linked.
+Target MinGW64 focused binary compiled and linked.
 
 7/8 tests passed.
 
-Only failure:
+Failure:
 ```text
-default wall shallow corners stay moving:
-default wall calculated curve contains a major unnecessary braking dip
+default wall calculated curve contains a major unnecessary braking dip:
+min_speed=0.009 m/s
 ```
 
-Therefore this was a functional trajectory failure, not compilation.
+Viewer showed a purple fan near the rounded node.
 
-## Current diagnosis
-
-The dense sampled C1 guide was correct directionally, but
-`buildWaypointVelocities()` retained an old speed rule based on
-`blendDistance`.
-
-That quantity shrinks when guide sampling becomes denser, so adding samples to the same
-geometric curve could lower the prescribed speed. This is physically invalid.
-
-## Current unverified candidate
-
-Commit `4dcebe77580e8abc7a0f9f4a22cec65f3ba985d5` replaces the density-dependent
-turn-speed rule with circumcircle curvature:
+Latest perf evidence from that generation:
 ```text
-kappa = 2*|AB x BC| / (|AB| |BC| |AC|)
-v_max = sqrt(a_lateral / kappa)
+guide_points=18
+legs=74
+ruckig_ok=17
+min_speed_mps=0.0094
 ```
 
-Ruckig perf now logs `min_speed_mps` and `max_speed_mps`.
+Earlier dense versions reached 36/52 guide points and hundreds/thousands of Ruckig leg
+attempts.
 
-The steady wall fixture was also corrected so start and finish are not hidden heading
-transients:
-- start velocity/forward follows first route leg at 10 m/s;
-- finish velocity/forward follows last route leg at 10 m/s.
+## Root cause, externally verified
 
-Commits:
-- `5c408b76b36a86bd6b4fecacc377142d80726796`;
-- `3a22a4ae0aca037df4c9b8c76759506ed8a840c6`.
+Official Ruckig documentation says:
+- core/community Ruckig is state-to-state online trajectory generation;
+- full local intermediate waypoint calculation is a Pro feature;
+- waypoint planning is significantly harder;
+- use as few waypoints as possible;
+- filter waypoint lists and prefer waypoints far apart.
 
-## Viewer revision requirement
+So do NOT try to fix the fan by adding more Ruckig target points. That was the misuse.
 
-The viewer MUST show which source revision is running.
+## Current candidate architecture
 
-Implemented:
-- CMake obtains `git rev-parse --short=12 HEAD`;
-- viewer window title and HUD show `REV <sha>`.
+```text
+Stage-1 coarse route
+ -> local rounded geometry p(s)
+ -> scalar jerk-limited Ruckig progress s(t)
+ -> trajectory p(s(t))
+ -> collision validation
+```
 
-Commits:
-- `2c1baf4854f083c2e3e44ed16136c70237dfafcd`;
-- `1e84a9cac2f26da8e2802e1b97e8582f869f218d`.
+Ruckig roles:
+- true single leg: existing 3-D state-to-state solve;
+- curved/multi-point path: new `solveProgress()` 1-D Ruckig solve.
 
-## Exact next target commands
+Dense geometry samples are never independent Ruckig target states.
+
+Key code commits:
+- `2e815ef993a31acd40596f170c67a124f9337bf9`
+- `a50de59958887efbe50e2cdacee8c67623b2ebb8`
+- `9f166f4286dd03197705b0cd9e4ba63e33d000bc`
+- `3c58f4c3719d712e524e86e5f030820486af3102`
+- `c6f7b160878a3582362574691a12c96fd3ff3623`
+- `b76c4a52d8c32421d6fffe1098de9ad1c6a95dfb`
+- `b9e7ce64182ce761edb45b4751d680950ab33ff5`
+- `3843194d999e302ca32171de3d49f3f21987de64`
+
+## Viewer revision control
+
+Viewer must show an in-window badge:
+`NAV REV <sha>`.
+
+It already also has revision in title/right HUD, but the new badge is specifically to
+survive cropped screenshots.
+
+Commit:
+- `1199a0c04ee7cf3a6938bef0ca9c3bb55d7bd4c8`.
+
+Guide sample crosses are hidden; BLUE line remains.
+
+## Exact next commands
 
 ```bash
 cd /d/__elite/work
@@ -84,25 +105,27 @@ cmake --build build/tests/navigation_guidance --target ruckig_route_planner_test
 ctest --test-dir build/tests/navigation_guidance -R ruckig_route_planner -V
 ```
 
-Interpretation:
-- 8/8 -> build/open viewer.
-- still fail -> use exact new `min_speed=<value>` and latest Ruckig perf line; fix the
-  mechanism, do not weaken the regression.
+Do not open viewer until focused gate builds and runs.
 
-Then:
+If focused gate is 8/8:
 ```bash
 bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Viewer:
-- WHITE coarse retained route;
-- BLUE dense execution guide;
-- PURPLE calculated Ruckig reference;
-- GREEN actual flight;
-- HUD/title must display current `REV`.
+Check:
+- visible NAV REV matches build revision;
+- no purple fan/barrels;
+- no near-zero speed in steady 10 m/s wall test.
 
-If PURPLE is clean but GREEN is bad, move to Follower/Pilot/body-thrust semantics.
-If PURPLE is bad, remain in continuous reference generation.
+If PURPLE becomes correct and GREEN remains wrong, next task is Follower/Pilot/body-thrust.
+If PURPLE remains wrong, stay in path geometry / scalar timing.
+
+## Current limitation
+
+Curved paths currently use one conservative path-wide speed cap based on worst curvature
+and authored limits. That is acceptable for the current correctness gate. Later replace
+it with a small number of meaningful speed zones if needed. Never return to one Ruckig
+3-D solve per dense geometric sample.
 
 Do not enable dynamic avoidance yet.

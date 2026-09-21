@@ -1760,3 +1760,66 @@ Do not call it PASS until the focused target gate and viewer confirm:
 - no near-zero speed on the steady 10 m/s wall route;
 - no purple fan/barrels;
 - `NAV REV` visible and matches the current build revision.
+
+
+## 2026-09-21 — excessive hull rotation isolated to Newtonian attitude authoring
+
+Latest viewer/video evidence after scalar path-progress correction:
+- purple calculated path is much cleaner;
+- current wall-case perf reaches `min_speed_mps=10.0000`,
+  `max_speed_mps=10.0000`, `guide_points=10`, one scalar Ruckig solve;
+- remaining visually dominant defect is large hull rotation relative to the velocity
+  vector during the shallow turn.
+
+The cause is explicit in `buildReferenceAttitudes()`, not hidden physics:
+```cpp
+if (law == Law::Newtonian && acceleration > 0.35)
+    requestedForward = normalize(sample.accelerationMps2);
+```
+
+For a constant-speed curved path, acceleration is predominantly centripetal and
+approximately perpendicular to velocity. That rule therefore commands the ship to point
+nearly broadside to its direction of travel even for a gentle turn.
+
+This is especially wrong for the current stand because:
+- `executionVehicleProfile.maxLateralAccelerationMps2` is already derived from
+  `ShipParams::manoeuvreThrusterAccel`;
+- Cobra test profile has `manoeuvreThrusterAccel = 2.0 m/s2`;
+- the path curvature/speed combination is generated under that same lateral-authority
+  envelope;
+- therefore a gentle constant-speed turn that fits inside RCS authority does **not**
+  require rotating the main engine into the centripetal acceleration vector.
+
+The apparent sideways/out-of-plane motion in the video is primarily the commanded
+broadside attitude viewed in perspective. The route and requested acceleration are
+planar in this stand; the reference basis transport itself is designed to preserve the
+previous roll orientation.
+
+### Attitude fix candidate
+
+Newtonian reference attitude now uses a minimum-cant allocation:
+
+1. Default nose direction is velocity/path tangent.
+2. If total requested acceleration is within manoeuvre/RCS authority, keep the nose on
+   velocity.
+3. If main-engine participation is required, calculate the smallest nose rotation such
+   that:
+   ```text
+   positive main-engine thrust along nose
+   + bounded omnidirectional RCS
+   = requested acceleration
+   ```
+4. Do **not** point the nose directly at acceleration unless the physical demand truly
+   requires that much rotation.
+
+This keeps the hull close to the flight direction for ordinary gentle Newtonian turns,
+while still allowing large cant/flip for demands that RCS cannot satisfy (hard braking,
+high lateral acceleration, etc.).
+
+Commits:
+- `fcffa5bae3b4e3deab5d6f043d3c500137719dad` — minimum-cant Newtonian reference;
+- `b943064d529935243863c30238ae0daf62f1c129` — report
+  `MAX REFERENCE/VELOCITY ANGLE` separately from actual
+  `MAX BODY/VELOCITY ANGLE`.
+
+This candidate is not target MinGW64 validated yet.

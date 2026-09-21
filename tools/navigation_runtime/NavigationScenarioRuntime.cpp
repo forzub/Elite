@@ -2013,6 +2013,36 @@ ScenarioRunResult executeCalculatedRoute(
                 params
             );
 
+        double maximumReferenceVelocityAngleRad = 0.0;
+        for (std::size_t i = 0;
+             i < trajectoryResult.trajectory.samples.size() &&
+             i < attitudes.size();
+             ++i)
+        {
+            const auto& sample =
+                trajectoryResult.trajectory.samples[i];
+            const double speed =
+                glm::length(sample.velocityMps);
+            if (speed <= 0.25)
+                continue;
+
+            const glm::dvec3 velocityDirection =
+                sample.velocityMps / speed;
+            const double cosine = std::clamp(
+                glm::dot(
+                    velocityDirection,
+                    attitudes[i].basis.forward
+                ),
+                -1.0,
+                1.0
+            );
+            maximumReferenceVelocityAngleRad =
+                std::max(
+                    maximumReferenceVelocityAngleRad,
+                    std::acos(cosine)
+                );
+        }
+
         auto programs =
             buildRoutePrograms(
                 trajectoryResult.trajectory,
@@ -2505,6 +2535,11 @@ ScenarioRunResult executeCalculatedRoute(
                 number(maximumFollowerPositionError) + " M",
             "RETAINED WAYPOINT SPEEDS: " +
                 waypointSpeeds.str(),
+            "MAX REFERENCE/VELOCITY ANGLE: " +
+                number(
+                    maximumReferenceVelocityAngleRad *
+                    180.0 / 3.14159265358979323846
+                ) + " DEG",
             "MAX BODY/VELOCITY ANGLE: " +
                 number(
                     maximumBodyVelocityAngleRad *

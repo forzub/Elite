@@ -272,6 +272,32 @@ void addBoxSupportNodes(
         ));
     }
 
+    // Edge midpoints are essential support states for a box. Corners alone
+    // force A* to pay clearance on two transverse axes even when the shortest
+    // route only needs to pass one face. Example: a route along +X around a
+    // low Y face should be able to use (+/-X, -Y, 0), rather than being forced
+    // onto (+/-X, -Y, +/-Z) corner edges.
+    for (int sx : {-1, 1})
+    for (int sy : {-1, 1})
+        nodes.push_back(obstacleToWorld(
+            obstacle,
+            glm::dvec3(double(sx) * h.x, double(sy) * h.y, 0.0)
+        ));
+
+    for (int sx : {-1, 1})
+    for (int sz : {-1, 1})
+        nodes.push_back(obstacleToWorld(
+            obstacle,
+            glm::dvec3(double(sx) * h.x, 0.0, double(sz) * h.z)
+        ));
+
+    for (int sy : {-1, 1})
+    for (int sz : {-1, 1})
+        nodes.push_back(obstacleToWorld(
+            obstacle,
+            glm::dvec3(0.0, double(sy) * h.y, double(sz) * h.z)
+        ));
+
     nodes.push_back(obstacleToWorld(obstacle, glm::dvec3( h.x, 0.0, 0.0)));
     nodes.push_back(obstacleToWorld(obstacle, glm::dvec3(-h.x, 0.0, 0.0)));
     nodes.push_back(obstacleToWorld(obstacle, glm::dvec3(0.0,  h.y, 0.0)));

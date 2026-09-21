@@ -933,6 +933,16 @@ trace::TraceFrame interpolatedDisplayFrame(
         out.hasProgramReference = true;
         out.programReferencePosition =
             lerp3(a.programReferencePosition, b.programReferencePosition);
+        out.programReferenceVelocity =
+            lerp3(a.programReferenceVelocity, b.programReferenceVelocity);
+        out.programSpeedCorridorHalfWidthMps =
+            a.programSpeedCorridorHalfWidthMps +
+            (b.programSpeedCorridorHalfWidthMps -
+             a.programSpeedCorridorHalfWidthMps) * t;
+        out.programProgressCorridorHalfWidthMeters =
+            a.programProgressCorridorHalfWidthMeters +
+            (b.programProgressCorridorHalfWidthMeters -
+             a.programProgressCorridorHalfWidthMeters) * t;
         out.programReferenceForward =
             nlerp3(a.programReferenceForward, b.programReferenceForward);
         out.programReferenceRight =
@@ -1906,7 +1916,7 @@ void drawHud(
     );
 
     const float legendWidth = 438.0f;
-    const float legendHeight = 208.0f;
+    const float legendHeight = 226.0f;
     const float legendX =
         std::max(
             8.0f,
@@ -1947,8 +1957,38 @@ void drawHud(
         {1.0f, 0.86f, 0.34f}
     );
 
+    if (frame.hasProgramReference)
+    {
+        const double referenceSpeed =
+            glm::length(frame.programReferenceVelocity);
+        const double halfWidth =
+            std::max(
+                0.0,
+                frame.programSpeedCorridorHalfWidthMps
+            );
+
+        std::ostringstream corridorText;
+        corridorText.setf(std::ios::fixed);
+        corridorText.precision(1);
+        corridorText
+            << "КОРИДОР V: "
+            << std::max(0.0, referenceSpeed - halfWidth)
+            << " .. "
+            << (referenceSpeed + halfWidth)
+            << " М/С";
+
+        appendUiText(
+            ui,
+            legendX + 14.0f,
+            legendY + 32.0f,
+            corridorText.str(),
+            1.10f,
+            {0.70f, 0.88f, 1.0f}
+        );
+    }
+
     appendUiText(
-        ui, legendX + 14.0f, legendY + 40.0f,
+        ui, legendX + 14.0f, legendY + 94.0f,
         "ЖЁЛТАЯ СТРЕЛКА: ФАКТИЧЕСКИЙ ВЕКТОР СКОРОСТИ",
         1.00f,
         {1.0f, 0.78f, 0.10f}
@@ -1966,7 +2006,7 @@ void drawHud(
         {1.0f, 0.25f, 0.18f}
     );
     appendUiText(
-        ui, legendX + 14.0f, legendY + 100.0f,
+        ui, legendX + 14.0f, legendY + 208.0f,
         "БЕЛАЯ: ГРУБЫЙ ГЕОМЕТРИЧЕСКИЙ МАРШРУТ",
         1.00f,
         {0.90f, 0.90f, 0.90f}

@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: build fix + local variable-speed profile
+# CONTINUE PROMPT — Elite Navigation: requested/effective control-law state
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -9,89 +9,102 @@ Every state-affecting iteration MUST:
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
-Read first:
+Read:
 - `CURRENT_STATE.md`
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
-- `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
 - `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
-- `tools/navigation_runtime/NavigationScenarioRuntime.cpp/.h`
-- `src/world/navigation/TrajectoryGenerator.cpp/.h`
-- `tests/navigation_guidance/RuckigRoutePlannerTests.cpp`
-- `tools/navigation_runtime/README.md`.
+- `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
+- `tools/navigation_runtime/NavigationTrace.h/.cpp`
+- `tests/architecture_contracts/check_navigation_stage1_nominal_route.py`.
 
-## Latest target evidence
+## Latest bug and fix
 
-The user's MinGW64 run on old HEAD `c5a2ea68434a...` failed at viewer compile:
+User reported ASSISTED button did not work.
 
-1. `drawHud()` used `recalculationRequired(state)` before declaration.
-2. speed-slider release contained dangling `if (speedChanged)`.
+Root cause was definite:
+the viewer used one `state.controlMode` both for requested selector input and effective
+runtime observation.
 
-Fixed:
-- `e2597a7714f5e7fee2200e7f47f9bfb9bafb2734`
-- `b15d0e97c6897d2b099e0c6e41d60830c45776b9`
+Old sequence:
+```text
+old displayed trace = NEWTONIAN
+click ASSISTED
+ -> state.controlMode = ASSISTED
+next frame observes old NEWTONIAN trace
+ -> RuntimeControlLawObserved
+ -> state.controlMode = NEWTONIAN
+```
 
-Also remove the old unused `buildReferenceAttitudes` acceleration warning.
+This made ASSISTED visually and functionally appear dead.
 
-## Non-negotiable speed semantics
+Current fix:
+- `state.controlMode` = requested setting only;
+- `state.effectiveRuntimeControlLaw` = observed displayed runtime law;
+- RuntimeControlLawObserved MUST NEVER assign state.controlMode.
 
-Speed is a state variable, not a FlightStyle constant and not globally uniform.
+Commit:
+- `3067ccfde2f260dcde30baa038ca82e400f233a8`.
 
-Rules:
-- START/FINISH speed constrain only boundary states.
-- Intermediate speed may vary.
-- Braking requires a concrete local physical/geometric/mission/safety reason.
-- Sharp/complex maneuver may slow heavily or stop.
-- Clear segment may be much faster than FINISH speed.
-- Local restriction must not become a whole-route cap.
-- Without a reason, do not cut speed.
-- STANDARD/EXTREME only trade clearance/risk; they never define speed.
+Architecture gate:
+- `d57cd3b285b0419f9bf8266887fb34811d57a592`.
 
-This is recorded in `CONTROL_LAW_MANEUVER_MODEL.md`.
+README:
+- `12d91b3253f68907557308b9e27ee4fe6d871822`.
 
-Already fixed:
-- execution `maxSpeedMps` comes from vehicle capability, not max boundary speed;
-- exact moving terminal speed no longer globally caps scalar path progress;
-- focused regression requires START=10 / FINISH=10 three-point straight transit to exceed
-  12 m/s between boundaries.
+## Right-panel contract
 
-Commits:
-- `336b48a293dca0306847afbe3bc00e5787713a2e`
-- `16fe6a8918fa1a9f03fce3dd2f814987198f31e8`
-- `22133bbe5c9ef61a52e839338e88b44a29061f22`
-- `49009e6f480c7a70848f9a89c5cb4a0f7d4c8dab`
+Always show:
+- ПИЛОТ
+- УПРАВЛЕНИЕ / ВЫБРАНО
+- УПРАВЛЕНИЕ / ФАКТ
+- ПОВЕДЕНИЕ
 
-## Known remaining speed bug
+If selected inputs are dirty and old execution is still displayed, factual law must be
+marked `(СТАРЫЙ РАСЧЕТ)`.
 
-`globalGuideSpeedLimit()` still uses the worst curvature on the whole multi-point route
-as one global max speed.
+Expected sequence:
+1. NEWTONIAN calculated -> selected/fact both Newtonian.
+2. click ASSISTED -> selected becomes Assisted immediately; fact remains old Newtonian
+   with stale marker.
+3. press Calculate -> new execution should produce selected/fact Assisted.
 
-This violates the new locality rule.
+If after fresh Calculate fact is still Newtonian, inspect runtime settings/control-law
+propagation below viewer state. Do not change UI again until telemetry proves that.
 
-Once target build is green, replace that global behavior with a local scalar speed
-profile:
-- local curvature / point / range limits by progress;
-- backward braking feasibility before each restriction;
-- forward acceleration feasibility;
-- Ruckig remains timing/jerk owner;
-- stop is legal where necessary;
-- clear segments accelerate independently;
-- no local limit globally clamps unrelated segments.
+## Existing contracts that must remain
 
-Do not move this responsibility into Follower.
+Calculate:
+- no auto recalculation on selector change;
+- one click runs required Stage-1/Stage-2;
+- disabled/dim afterward until invalidating input changes.
 
-## Calculate UX remains fixed
+FlightStyle:
+- no style-owned speed;
+- Standard/Extreme = clearance/risk doctrine only.
 
-No automatic recalculation on selector changes.
+Speed:
+- START/FINISH = boundary states;
+- intermediate speed may vary;
+- no braking without local reason.
 
-- speed/style dirty => Stage-1 + Stage-2;
-- control-law/pilot/dynamic toggle dirty => Stage-2 only;
-- one click `РАССЧИТАТЬ` performs all required calculation;
-- concise on-screen log;
-- then dim/disabled `РАСЧЕТ ГОТОВ`;
-- changing an invalidating input re-enables it;
-- no second Execute / `ЗАПУСТИТЬ ПОЛЁТ`.
+Control chain:
+- accepted program -> Follower -> tracking controller -> runtime bridge -> pilot executor
+  -> ShipControlState -> SharedShipPhysics/ShipController/DynamicMotionSystem.
+
+## Secondary unresolved issue
+
+User reports some hull oscillation while returning to reference attitude.
+
+After mode-switch validation is green, diagnose with:
+- ideal_ang_cmd;
+- exec_ang_cmd;
+- pyr_rate;
+- reference forward/up;
+- forward_ref_deg/up_ref_deg.
+
+Do not blindly increase damping before identifying which layer generates the overshoot.
 
 ## Target commands
 
@@ -100,12 +113,6 @@ cd /d/__elite/work
 git pull --ff-only
 git rev-parse HEAD
 bash tests/navigation_runtime/run_stage1_mingw64.sh
-```
-
-If green:
-
-```bash
-bash tests/navigation_guidance/run_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 

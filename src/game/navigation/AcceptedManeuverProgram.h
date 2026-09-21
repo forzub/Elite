@@ -73,6 +73,12 @@ struct AcceptedManeuverProgram
         double forwardAngleErrorRad = 0.0;
         double angularVelocityErrorRadPerSec = 0.0;
 
+        // Free-transit does not need rail-like time tracking. These deadbands
+        // define a longitudinal corridor around the accepted reference while
+        // cross-track position/velocity errors remain fully controlled.
+        double alongTrackPositionDeadbandMeters = 0.0;
+        double alongTrackSpeedDeadbandMps = 0.0;
+
         // Authority intentionally reserved for the follower. Maneuver proof
         // must account for this reserve instead of consuming 100% authority.
         double linearFeedbackReserveMps2 = 0.0;

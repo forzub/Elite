@@ -1434,18 +1434,77 @@ Program makeProgramPhase(
         target.forwardMap = attitude.basis.forward;
         target.rightMap = attitude.basis.right;
         target.upMap = attitude.basis.up;
+        // Do not copy dense-source angular derivatives into the sparse
+        // AcceptedManeuverProgram. A short high-rate event in the dense
+        // attitude stream can otherwise be smeared by B9 interpolation across
+        // a much longer sparse interval and command a turn that the sparse
+        // basis itself is not making.
         target.angularVelocityMapRadPerSecond =
-            attitude.angularVelocity;
-
-        // FreeTransit programs are intentionally bounded to only 16 samples.
-        // A differentiated attitude acceleration spike from the dense source
-        // trajectory must not be sparsely sampled and then linearly smeared
-        // across a long interval: that can keep commanding angular acceleration
-        // after the reference basis itself is already straight. Use reference
-        // attitude + angular velocity tracking here; physical alpha is produced
-        // by the closed-loop controller.
+            glm::dvec3(0.0);
         target.angularAccelerationFeedForwardMapRadPerSec2 =
             glm::dvec3(0.0);
+    }
+
+    // Re-derive angular velocity from the ACTUAL sparse basis/time product
+    // that B9 will interpolate. This makes pose and first derivative
+    // kinematically consistent and removes the dense->sparse alias that caused
+    // the Assisted viewer run to request ~rad/s hull motion while the visible
+    // reference heading was moving only a few degrees per second.
+    const double maximumSparseAngularSpeed =
+        std::max({
+            0.1,
+            static_cast<double>(params.maxPitchRate),
+            static_cast<double>(params.maxYawRate),
+            static_cast<double>(params.maxRollRate)
+        });
+
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        auto& target = program.samples[i];
+
+        // Acceptance starts from the actual authored hull state and terminal
+        // handoff/capture must not require a residual spin.
+        if (i == 0 || i + 1 == count)
+        {
+            target.angularVelocityMapRadPerSecond =
+                glm::dvec3(0.0);
+            continue;
+        }
+
+        const std::size_t beforeIndex = i - 1;
+        const std::size_t afterIndex = i + 1;
+        const auto& before = program.samples[beforeIndex];
+        const auto& after = program.samples[afterIndex];
+        const double dt =
+            after.timeOffsetSeconds -
+            before.timeOffsetSeconds;
+
+        const Basis beforeBasis {
+            before.forwardMap,
+            before.rightMap,
+            before.upMap
+        };
+        const Basis afterBasis {
+            after.forwardMap,
+            after.rightMap,
+            after.upMap
+        };
+
+        glm::dvec3 omega =
+            angularVelocityBetween(
+                quaternionForBasis(beforeBasis),
+                quaternionForBasis(afterBasis),
+                dt
+            );
+
+        const double omegaMagnitude = glm::length(omega);
+        if (omegaMagnitude > maximumSparseAngularSpeed &&
+            omegaMagnitude > 1.0e-12)
+        {
+            omega *= maximumSparseAngularSpeed / omegaMagnitude;
+        }
+
+        target.angularVelocityMapRadPerSecond = omega;
     }
 
     const double duration =

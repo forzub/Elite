@@ -90,6 +90,13 @@ enum class UiAction
     Fit
 };
 
+enum class SpeedSliderDrag
+{
+    None,
+    Start,
+    Finish
+};
+
 struct AppState
 {
     Camera camera;
@@ -119,6 +126,8 @@ struct AppState
     elite::tools::navigation_runtime::FlightStyle flightStyle =
         elite::tools::navigation_runtime::FlightStyle::Standard;
     bool useSuddenObstacle = false;
+    double startSpeedMps = 10.0;
+    double finishSpeedMps = 10.0;
 
     bool orbiting = false;
     bool panning = false;
@@ -132,6 +141,7 @@ struct AppState
 
     bool requestFit = true;
     bool scrubbingFrames = false;
+    SpeedSliderDrag speedSliderDrag = SpeedSliderDrag::None;
     UiAction pendingUiAction = UiAction::None;
 };
 
@@ -140,6 +150,8 @@ enum class ViewerActionType
     SetControlMode,
     SetPilot,
     SetFlightStyle,
+    SetStartSpeed,
+    SetFinishSpeed,
     ToggleSuddenObstacle,
     QueueUiAction,
     SetPlaying,
@@ -158,6 +170,7 @@ struct ViewerAction
         elite::tools::navigation_runtime::FlightStyle::Standard;
     UiAction uiAction = UiAction::None;
     bool boolValue = false;
+    double speedMps = 10.0;
     std::string runtimeControlLaw;
 };
 
@@ -993,6 +1006,34 @@ UiRect nextButtonRect() { return {302.0f, 78.0f, 94.0f, 32.0f}; }
 UiRect replanButtonRect() { return {404.0f, 78.0f, 194.0f, 32.0f}; }
 UiRect fitButtonRect() { return {606.0f, 78.0f, 94.0f, 32.0f}; }
 
+UiRect startSpeedSliderRect()
+{
+    return {16.0f, 138.0f, 300.0f, 20.0f};
+}
+
+UiRect finishSpeedSliderRect()
+{
+    return {370.0f, 138.0f, 300.0f, 20.0f};
+}
+
+double speedFromSliderX(
+    const UiRect& rect,
+    double mouseX
+)
+{
+    constexpr double MinimumSpeedMps = 5.0;
+    constexpr double MaximumSpeedMps = 50.0;
+    const double u = std::clamp(
+        (mouseX - static_cast<double>(rect.x)) /
+            static_cast<double>(rect.width),
+        0.0,
+        1.0
+    );
+    return
+        MinimumSpeedMps +
+        (MaximumSpeedMps - MinimumSpeedMps) * u;
+}
+
 UiRect frameSliderRect(int windowWidth, int windowHeight)
 {
     const float sidePanel = 470.0f;
@@ -1784,6 +1825,59 @@ void drawHud(
     }
     appendUiButton(ui, fitButtonRect(), "ВПИСАТЬ");
 
+    auto appendSpeedSlider = [&](
+        const UiRect& rect,
+        const char* label,
+        double value)
+    {
+        std::ostringstream text;
+        text.setf(std::ios::fixed);
+        text.precision(1);
+        text << label << ": " << value << " М/С";
+
+        appendUiText(
+            ui,
+            rect.x,
+            rect.y - 17.0f,
+            text.str(),
+            1.05f,
+            {0.78f, 0.84f, 0.92f}
+        );
+
+        appendFilledRect(
+            ui,
+            {rect.x, rect.y + 6.0f, rect.width, 6.0f},
+            {0.10f, 0.13f, 0.18f}
+        );
+
+        const float u = static_cast<float>(
+            std::clamp((value - 5.0) / 45.0, 0.0, 1.0)
+        );
+        appendFilledRect(
+            ui,
+            {rect.x, rect.y + 6.0f, rect.width * u, 6.0f},
+            {0.24f, 0.64f, 1.0f}
+        );
+
+        const float knobX = rect.x + rect.width * u;
+        appendFilledRect(
+            ui,
+            {knobX - 4.0f, rect.y + 1.0f, 8.0f, 16.0f},
+            {0.92f, 0.95f, 1.0f}
+        );
+    };
+
+    appendSpeedSlider(
+        startSpeedSliderRect(),
+        "СТАРТ V",
+        state.startSpeedMps
+    );
+    appendSpeedSlider(
+        finishSpeedSliderRect(),
+        "ФИНИШ V",
+        state.finishSpeedMps
+    );
+
     // Diagnostics are deliberately below the top controls so resizing or
     // changing a status line can never cover/reflow the controls.
     const float panelWidth = 470.0f;
@@ -2300,6 +2394,30 @@ void reduceViewerState(
             }
             break;
 
+        case ViewerActionType::SetStartSpeed:
+        {
+            const double next =
+                std::clamp(action.speedMps, 5.0, 50.0);
+            if (std::abs(state.startSpeedMps - next) > 1.0e-6)
+            {
+                state.startSpeedMps = next;
+                restoreRetainedRouteForNewExecutionSettings(state);
+            }
+            break;
+        }
+
+        case ViewerActionType::SetFinishSpeed:
+        {
+            const double next =
+                std::clamp(action.speedMps, 5.0, 50.0);
+            if (std::abs(state.finishSpeedMps - next) > 1.0e-6)
+            {
+                state.finishSpeedMps = next;
+                restoreRetainedRouteForNewExecutionSettings(state);
+            }
+            break;
+        }
+
         case ViewerActionType::ToggleSuddenObstacle:
             state.useSuddenObstacle = !state.useSuddenObstacle;
             restoreRetainedRouteForNewExecutionSettings(state);
@@ -2464,6 +2582,24 @@ void mouseButtonCallback(
             change.type = ViewerActionType::ToggleSuddenObstacle;
             dispatchViewerAction(*state, change);
         }
+        else if (startSpeedSliderRect().contains(x, y))
+        {
+            state->speedSliderDrag = SpeedSliderDrag::Start;
+            ViewerAction change;
+            change.type = ViewerActionType::SetStartSpeed;
+            change.speedMps =
+                speedFromSliderX(startSpeedSliderRect(), x);
+            dispatchViewerAction(*state, change);
+        }
+        else if (finishSpeedSliderRect().contains(x, y))
+        {
+            state->speedSliderDrag = SpeedSliderDrag::Finish;
+            ViewerAction change;
+            change.type = ViewerActionType::SetFinishSpeed;
+            change.speedMps =
+                speedFromSliderX(finishSpeedSliderRect(), x);
+            dispatchViewerAction(*state, change);
+        }
         else if (calculateButtonRect().contains(x, y))
         {
             queueUiAction(*state, UiAction::Calculate);
@@ -2532,6 +2668,7 @@ void mouseButtonCallback(
         action == GLFW_RELEASE)
     {
         state->scrubbingFrames = false;
+        state->speedSliderDrag = SpeedSliderDrag::None;
     }
 }
 
@@ -2558,6 +2695,23 @@ void cursorCallback(GLFWwindow* window, double x, double y)
             frameSliderRect(width, height),
             x
         );
+    }
+
+    if (state->speedSliderDrag == SpeedSliderDrag::Start)
+    {
+        ViewerAction change;
+        change.type = ViewerActionType::SetStartSpeed;
+        change.speedMps =
+            speedFromSliderX(startSpeedSliderRect(), x);
+        dispatchViewerAction(*state, change);
+    }
+    else if (state->speedSliderDrag == SpeedSliderDrag::Finish)
+    {
+        ViewerAction change;
+        change.type = ViewerActionType::SetFinishSpeed;
+        change.speedMps =
+            speedFromSliderX(finishSpeedSliderRect(), x);
+        dispatchViewerAction(*state, change);
     }
 
     if (state->orbiting)
@@ -3084,6 +3238,10 @@ void processUiAction(
             settings.flightStyle = state.flightStyle;
             settings.enableSuddenObstacle =
                 state.useSuddenObstacle;
+            settings.startSpeedOverrideMps =
+                state.startSpeedMps;
+            settings.finishSpeedOverrideMps =
+                state.finishSpeedMps;
 
             const auto result =
                 elite::tools::navigation_runtime::calculateScenario(
@@ -3166,6 +3324,10 @@ void processUiAction(
             settings.flightStyle = state.flightStyle;
             settings.enableSuddenObstacle =
                 state.useSuddenObstacle;
+            settings.startSpeedOverrideMps =
+                state.startSpeedMps;
+            settings.finishSpeedOverrideMps =
+                state.finishSpeedMps;
 
             const auto result =
                 elite::tools::navigation_runtime::executeCalculatedRoute(
@@ -3319,6 +3481,10 @@ int main(int argc, char** argv)
         state.calculationSucceeded = false;
         state.calculationMessage = preview.message;
         state.diagnosticLines = preview.diagnostics;
+        state.startSpeedMps =
+            std::clamp(preview.authoredStartSpeedMps, 5.0, 50.0);
+        state.finishSpeedMps =
+            std::clamp(preview.authoredFinishSpeedMps, 5.0, 50.0);
         state.playing = false;
         state.requestFit = true;
         state.lastRealTime = glfwGetTime();

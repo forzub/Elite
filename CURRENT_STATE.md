@@ -2812,3 +2812,65 @@ Commit:
 
 Do not claim the new high-speed recovery or reduced oscillation is PASS until target
 MinGW64 evidence is returned.
+
+## 2026-09-22 — Assisted 10 -> 10 regression: frozen-reference derivative runaway
+
+Fresh target evidence from the viewer run:
+
+```text
+control law                    ASSISTED
+pilot                          EXPERT
+flight style                   STANDARD
+requested speed                10.00 -> 10.00 m/s
+Ruckig calculated max speed    11.71 m/s
+program phases complete        NO
+physical terminal state        MISSED
+final speed                    100.64 m/s
+final position error           2411.14 m
+max route deviation            2411.14 m
+reference clock hold           47.70 s
+max body/velocity angle        179.99 deg
+coarse static contact          YES
+```
+
+This is **not** a Stage-1/Ruckig speed-profile failure. The retained route and
+trajectory still request about 10-12 m/s. The failure is in physical
+reacquisition after the new reference-clock hold activates.
+
+Root cause:
+- reference time was frozen on a **moving** FreeTransit sample;
+- B10 kept replaying that frozen sample's non-zero linear feed-forward;
+- the same frozen sample also retained non-zero reference angular velocity;
+- bounded recovery feedback could not cancel the permanently replayed
+  derivatives;
+- the hull therefore accelerated away while trying to chase a fixed pose plus
+  moving-sample derivatives, producing the observed speed runaway and tumbling.
+
+Corrective candidate:
+- outside the B10 tracking envelope, the frozen sample is treated as a
+  geometric reacquisition target;
+- linear/angular feed-forward derivatives are neutralized while outside;
+- angular recovery damps actual hull angular rate toward zero instead of chasing
+  the frozen sample's angular velocity;
+- once the physical craft re-enters the envelope, the accepted moving reference
+  and its derivatives become authoritative again;
+- tracking authority remains bounded by the existing follower reserve.
+
+Viewer correction:
+- `fitCamera()` no longer includes every historical physical ship position;
+- a runaway execution cannot make the authored route/obstacles microscopic;
+- the execution trace remains rendered and can still be inspected with
+  pan/zoom.
+
+Regression added:
+`testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()`.
+
+Code candidate before documentation commits:
+
+```text
+59ff756996229bf15a122eb0fe43cf0d9a14b245
+```
+
+Status: **TARGET MINGW64 VALIDATION REQUIRED**. Do not call this accepted until
+the target machine passes both the Assisted 10 -> 10 viewer case and the
+existing Newtonian high-speed reacquisition regression.

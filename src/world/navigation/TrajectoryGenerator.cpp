@@ -991,6 +991,8 @@ void appendPerfLog(
         << " blended_waypoints=" << blendedWaypoints
         << " coarse_points=" << request.pathPointsMeters.size()
         << " guide_points=" << result.executionGuidePointsMeters.size()
+        << " rounded_corners=" << result.diagnostics.roundedGuideCorners
+        << " expanded_corners=" << result.diagnostics.expandedGuideCorners
         << " obstacles=" << request.obstacles.size()
         << " samples=" << result.trajectory.samples.size()
         << " valid=" << (result.ready() ? 1 : 0)
@@ -1312,7 +1314,7 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     // Preserve continuous corner motion when possible: waypoint through-speed
     // is relaxed progressively before the final StopTurnGo fallback.
     const std::size_t maxRestarts =
-        request.pathPointsMeters.size() * 8 + 4;
+        guide.points.size() * 8 + 4;
 
     for (std::size_t restart = 0; restart < maxRestarts; ++restart)
     {
@@ -1327,6 +1329,12 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
         {
             attempt.result.executionGuidePointsMeters =
                 guide.points;
+            attempt.result.diagnostics.executionGuidePoints =
+                guide.points.size();
+            attempt.result.diagnostics.roundedGuideCorners =
+                guide.roundedCorners;
+            attempt.result.diagnostics.expandedGuideCorners =
+                guide.expandedCorners;
 
             const std::size_t blended = countBlendedWaypoints(
                 waypointVelocities

@@ -96,6 +96,14 @@ void saveTraceJson(
             vec3Json(f.manoeuvreAccelerationMps2);
         frame["engine_acceleration_mps2"] =
             vec3Json(f.engineAccelerationMps2);
+        frame["ideal_linear_acceleration_demand_mps2"] =
+            vec3Json(f.idealLinearAccelerationDemandMps2);
+        frame["ideal_angular_acceleration_demand_rad_s2"] =
+            vec3Json(f.idealAngularAccelerationDemandRadPerSec2);
+        frame["executed_linear_acceleration_demand_mps2"] =
+            vec3Json(f.executedLinearAccelerationDemandMps2);
+        frame["executed_angular_acceleration_demand_rad_s2"] =
+            vec3Json(f.executedAngularAccelerationDemandRadPerSec2);
         frame["has_runtime_control_law"] = f.hasRuntimeControlLaw;
         if (f.hasRuntimeControlLaw)
             frame["runtime_control_law"] = f.runtimeControlLaw;
@@ -237,6 +245,18 @@ TraceDocument loadTraceJson(const std::string& path)
         if (source.contains("engine_acceleration_mps2"))
             f.engineAccelerationMps2 =
                 readVec3(source.at("engine_acceleration_mps2"));
+        if (source.contains("ideal_linear_acceleration_demand_mps2"))
+            f.idealLinearAccelerationDemandMps2 =
+                readVec3(source.at("ideal_linear_acceleration_demand_mps2"));
+        if (source.contains("ideal_angular_acceleration_demand_rad_s2"))
+            f.idealAngularAccelerationDemandRadPerSec2 =
+                readVec3(source.at("ideal_angular_acceleration_demand_rad_s2"));
+        if (source.contains("executed_linear_acceleration_demand_mps2"))
+            f.executedLinearAccelerationDemandMps2 =
+                readVec3(source.at("executed_linear_acceleration_demand_mps2"));
+        if (source.contains("executed_angular_acceleration_demand_rad_s2"))
+            f.executedAngularAccelerationDemandRadPerSec2 =
+                readVec3(source.at("executed_angular_acceleration_demand_rad_s2"));
         f.hasRuntimeControlLaw =
             source.value("has_runtime_control_law", false);
         if (f.hasRuntimeControlLaw)

@@ -128,28 +128,17 @@ void DynamicMotionSystem::applySystemAccelerationDemand(
     const double mainAuthority = linearAccelerationLimit(params);
     const double manoeuvreAuthority = manoeuvreAccelerationLimit(params);
 
-    // Longitudinal main-thrust model is control-law specific:
-    //
-    // Newtonian:
-    //   aft main engine only. A reverse demand cannot invent nose thrust and
-    //   must be handled by bounded RCS or by a planner-authored 180 deg flip.
-    //
-    // Assisted / aircraft-like:
-    //   symmetric longitudinal controlled thrust is available from aft and
-    //   fore sources. The main channel may therefore accelerate either along
-    //   +forward or -forward, while lateral/vertical remainder still belongs
-    //   to the real manoeuvre/RCS authority.
+    // Propulsion truth is independent of the pilot/control law:
+    // this ship has one aft main engine. Neither Assisted nor Newtonian may
+    // manufacture fore/nose "main thrust" to satisfy an arbitrary world-space
+    // acceleration vector. A demand opposite the current hull forward can use
+    // only real bounded manoeuvre/RCS authority until the hull rotates enough
+    // for the aft engine to contribute.
     const double requestedForward =
         glm::dot(linearAccelerationDemandSystemMps2, forward);
 
     const double mainLongitudinal =
-        motion.localControlLaw == LocalFlightControlLaw::Newtonian
-            ? std::clamp(requestedForward, 0.0, mainAuthority)
-            : std::clamp(
-                  requestedForward,
-                  -mainAuthority,
-                  mainAuthority
-              );
+        std::clamp(requestedForward, 0.0, mainAuthority);
 
     motion.mainEngineAccelerationMps2 =
         forward * mainLongitudinal;

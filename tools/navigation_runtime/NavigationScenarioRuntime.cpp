@@ -432,7 +432,8 @@ TraceStaticObstacle traceObstacle(
 
 TraceFrame routeFrame(
     const Scenario& scenario,
-    bool routeValid
+    bool routeValid,
+    const glm::dvec3& startVelocity
 )
 {
     TraceFrame frame;
@@ -441,7 +442,7 @@ TraceFrame routeFrame(
     frame.shipForward = scenario.startBasis.forward;
     frame.shipRight = scenario.startBasis.right;
     frame.shipUp = scenario.startBasis.up;
-    frame.shipVelocity = scenario.startVelocity;
+    frame.shipVelocity = startVelocity;
     frame.phase =
         routeValid ? "route_ready" : "route_failed";
     frame.plannerStatus =
@@ -479,7 +480,7 @@ std::vector<std::string> previewDiagnostics(
         "PLANNER: NOT RUN",
         "FOLLOWER: NOT RUN (STAGE 1)",
         "START: " + formatVec3(scenario.startPosition),
-        "START VELOCITY: " + formatVec3(scenario.startVelocity) + " M/S",
+        "START VELOCITY: " + formatVec3(startVelocity) + " M/S",
         "START ACCELERATION: " + formatVec3(scenario.startAcceleration) + " M/S2",
         "START ANGULAR RATE P/Y/R: (" +
             std::to_string(scenario.startPitchRateRadPerSec) + ", " +
@@ -498,7 +499,8 @@ std::vector<std::string> previewDiagnostics(
 
 std::vector<std::string> routeDiagnostics(
     const Scenario& scenario,
-    const game::navigation::NominalRoutePlanner::Plan& route
+    const game::navigation::NominalRoutePlanner::Plan& route,
+    const glm::dvec3& startVelocity
 )
 {
     std::ostringstream length;
@@ -2095,7 +2097,12 @@ ScenarioRunResult loadScenarioPreview(
         for (const auto& obstacle : scenario.staticObstacles)
             trace.staticObstacles.push_back(traceObstacle(obstacle));
 
-        TraceFrame frame = routeFrame(scenario, true);
+        TraceFrame frame =
+            routeFrame(
+                scenario,
+                true,
+                scenario.startVelocity
+            );
         frame.phase = "scene_preview";
         frame.plannerStatus = "scene_loaded";
         frame.hasSelectedTarget = true;
@@ -2195,9 +2202,19 @@ ScenarioRunResult calculateScenario(
             }
         }
 
-        trace.frames.push_back(routeFrame(scenario, route.valid));
+        trace.frames.push_back(
+            routeFrame(
+                scenario,
+                route.valid,
+                effectiveStartVelocity(scenario, settings)
+            )
+        );
 
-        out.diagnostics = routeDiagnostics(scenario, route);
+        out.diagnostics = routeDiagnostics(
+            scenario,
+            route,
+            effectiveStartVelocity(scenario, settings)
+        );
         {
             std::ostringstream planningSpeed;
             planningSpeed.setf(std::ios::fixed);
@@ -2299,7 +2316,12 @@ ScenarioRunResult executeCalculatedRoute(
 
         if (!trajectoryResult.ready())
         {
-            TraceFrame failed = routeFrame(scenario, true);
+            TraceFrame failed =
+                routeFrame(
+                    scenario,
+                    true,
+                    effectiveStartVelocity(scenario, settings)
+                );
             failed.phase = "execution_failed";
             failed.plannerStatus = "trajectory_failed";
             trace.frames.push_back(std::move(failed));

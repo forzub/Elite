@@ -27,7 +27,7 @@ namespace
 {
 
 constexpr float kPi = 3.14159265358979323846f;
-constexpr float kVelocityVectorMetersPerMps = 1.5f;
+constexpr float kVelocityVectorMetersPerMps = 3.5f;
 
 struct Vertex
 {
@@ -606,20 +606,6 @@ void appendShipBoxAndArrow(
     addLine(out, tip, wingBase - right * wing, arrowColor, 0.38f);
 }
 
-glm::dvec3 velocityVectorTip(
-    const trace::TraceFrame& frame
-)
-{
-    const double speed = glm::length(frame.shipVelocity);
-    if (speed <= 1.0e-9)
-        return frame.shipPosition;
-
-    return
-        frame.shipPosition +
-        frame.shipVelocity / speed *
-            (speed * static_cast<double>(kVelocityVectorMetersPerMps));
-}
-
 void appendVelocityVector(
     std::vector<Vertex>& out,
     const trace::TraceFrame& frame
@@ -642,7 +628,7 @@ void appendVelocityVector(
     const glm::vec3 side =
         glm::normalize(glm::cross(direction, seed));
 
-    const glm::vec3 velocityColor(0.20f, 1.0f, 0.35f);
+    const glm::vec3 velocityColor(1.0f, 0.78f, 0.10f);
     addLine(out, start, tip, velocityColor);
 
     const float headBack = std::clamp(length * 0.22f, 2.5f, 6.0f);
@@ -671,12 +657,12 @@ void appendReferenceOrientationArrow(
 
     const float hz = static_cast<float>(halfExtents.z);
     const glm::vec3 tip =
-        center + forward * (hz + std::max(10.0f, hz));
+        center + forward * (hz + 7.0f);
     addLine(
         out,
         center,
         tip,
-        {1.0f, 0.25f, 0.95f}
+        {1.0f, 0.25f, 0.18f}
     );
 }
 
@@ -1477,47 +1463,6 @@ void appendHorizonInset(
     );
 }
 
-bool projectWorldToScreen(
-    const glm::dvec3& world,
-    const AppState& state,
-    int windowWidth,
-    int windowHeight,
-    glm::vec2& out
-)
-{
-    if (windowWidth <= 0 || windowHeight <= 0)
-        return false;
-
-    const float aspect =
-        static_cast<float>(windowWidth) /
-        static_cast<float>(windowHeight);
-    const glm::mat4 projection =
-        glm::perspective(
-            glm::radians(50.0f),
-            aspect,
-            0.1f,
-            20000.0f
-        );
-    const glm::vec4 clip =
-        projection * state.camera.view() *
-        glm::vec4(toVec3(world), 1.0f);
-
-    if (clip.w <= 1.0e-6f)
-        return false;
-
-    const glm::vec3 ndc = glm::vec3(clip) / clip.w;
-    if (ndc.z < -1.0f || ndc.z > 1.0f)
-        return false;
-
-    out.x =
-        (ndc.x * 0.5f + 0.5f) *
-        static_cast<float>(windowWidth);
-    out.y =
-        (1.0f - (ndc.y * 0.5f + 0.5f)) *
-        static_cast<float>(windowHeight);
-    return true;
-}
-
 void drawHud(
     PrimitiveRenderer& renderer,
     const trace::TraceDocument& data,
@@ -1549,43 +1494,6 @@ void drawHud(
     renderer.begin(projection);
 
     std::vector<Vertex> ui;
-
-    // Label the current inertial velocity at the tip of the proportional
-    // velocity vector. This is intentionally separate from hull/nose attitude.
-    if (hasExecution)
-    {
-        glm::vec2 speedLabel;
-        if (projectWorldToScreen(
-                velocityVectorTip(frame),
-                state,
-                windowWidth,
-                windowHeight,
-                speedLabel))
-        {
-            const double speed = glm::length(frame.shipVelocity);
-            std::ostringstream speedText;
-            speedText.setf(std::ios::fixed);
-            speedText.precision(1);
-            speedText << "V=" << speed << " M/S";
-
-            appendUiText(
-                ui,
-                std::clamp(
-                    speedLabel.x + 8.0f,
-                    8.0f,
-                    static_cast<float>(windowWidth) - 150.0f
-                ),
-                std::clamp(
-                    speedLabel.y - 8.0f,
-                    8.0f,
-                    static_cast<float>(windowHeight) - 24.0f
-                ),
-                speedText.str(),
-                1.15f,
-                {0.20f, 1.0f, 0.35f}
-            );
-        }
-    }
 
     // Top control bar is independent from the diagnostics panel.
     appendUiText(
@@ -1856,35 +1764,77 @@ void drawHud(
         {0.94f,0.95f,0.97f}
     );
 
+    const float legendWidth = 438.0f;
+    const float legendHeight = 154.0f;
+    const float legendX =
+        std::max(
+            8.0f,
+            static_cast<float>(windowWidth) - legendWidth - 16.0f
+        );
+    const float legendY =
+        std::max(
+            panelTop + 540.0f,
+            static_cast<float>(windowHeight) - legendHeight - 54.0f
+        );
+
+    appendFilledRect(
+        ui,
+        {legendX, legendY, legendWidth, legendHeight},
+        {0.025f, 0.033f, 0.045f}
+    );
+
+    std::ostringstream speedText;
+    speedText.setf(std::ios::fixed);
+    speedText.precision(1);
+    speedText
+        << "СКОРОСТЬ: "
+        << glm::length(frame.shipVelocity)
+        << " М/С";
+
     appendUiText(
-        ui, x, panelTop + 560.0f,
-        "СЦЕНА",
-        1.35f,
-        {0.90f,0.92f,1.0f}
+        ui,
+        legendX + 14.0f,
+        legendY + 12.0f,
+        speedText.str(),
+        1.45f,
+        {1.0f, 0.86f, 0.34f}
+    );
+
+    appendUiText(
+        ui, legendX + 14.0f, legendY + 40.0f,
+        "ЖЁЛТАЯ СТРЕЛКА: ФАКТИЧЕСКИЙ ВЕКТОР СКОРОСТИ",
+        1.00f,
+        {1.0f, 0.78f, 0.10f}
     );
     appendUiText(
-        ui, x, panelTop + 584.0f,
-        "ЗЕЛЁНЫЙ КРЕСТ: START",
-        1.05f,
-        {0.35f,1.0f,0.42f}
+        ui, legendX + 14.0f, legendY + 58.0f,
+        "ГОЛУБАЯ КОРОТКАЯ: ФАКТИЧЕСКИЙ НОС КОРАБЛЯ",
+        1.00f,
+        {0.25f, 0.85f, 1.0f}
     );
     appendUiText(
-        ui, x, panelTop + 600.0f,
-        "ЖЁЛТЫЙ КРЕСТ/КРУГ: FINISH",
-        1.05f,
-        {1.0f,0.92f,0.15f}
+        ui, legendX + 14.0f, legendY + 76.0f,
+        "КРАСНАЯ: ЦЕЛЕВОЙ НОС ПРОГРАММЫ FOLLOWER",
+        1.00f,
+        {1.0f, 0.25f, 0.18f}
     );
     appendUiText(
-        ui, x, panelTop + 616.0f,
-        "СЕРЫЙ КАРКАС: STATIC OBSTACLE",
-        1.05f,
-        {0.75f,0.78f,0.82f}
+        ui, legendX + 14.0f, legendY + 100.0f,
+        "БЕЛАЯ ЛИНИЯ: ГЕОМЕТРИЧЕСКИЙ МАРШРУТ",
+        1.00f,
+        {0.90f, 0.90f, 0.90f}
     );
     appendUiText(
-        ui, x, panelTop + 632.0f,
-        "БЕЛАЯ ЛИНИЯ: ROUTE ПОСЛЕ РАСЧЁТА",
-        1.05f,
-        {0.90f,0.90f,0.90f}
+        ui, legendX + 14.0f, legendY + 118.0f,
+        "ЗЕЛЁНАЯ ЛИНИЯ: ФАКТИЧЕСКАЯ ТРАЕКТОРИЯ",
+        1.00f,
+        {0.25f, 1.0f, 0.35f}
+    );
+    appendUiText(
+        ui, legendX + 14.0f, legendY + 136.0f,
+        "СЕРЫЙ КАРКАС: СТАТИЧЕСКОЕ ПРЕПЯТСТВИЕ",
+        1.00f,
+        {0.75f, 0.78f, 0.82f}
     );
 
     if (hasExecution)
@@ -2591,7 +2541,7 @@ void drawScene(
 
     std::vector<Vertex> velocityVector;
     appendVelocityVector(velocityVector, frame);
-    renderer.draw(GL_LINES, velocityVector, 4.0f);
+    renderer.draw(GL_LINES, velocityVector, 6.0f);
 }
 
 void setWindowTitle(

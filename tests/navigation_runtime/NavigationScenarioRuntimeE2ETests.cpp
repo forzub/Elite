@@ -168,6 +168,84 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
     );
 }
 
+void testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()
+{
+#ifdef ELITE_SOURCE_ROOT
+    const std::string scenario =
+        std::string(ELITE_SOURCE_ROOT) +
+        "/tools/navigation_runtime/scenario.json";
+#else
+    const std::string scenario =
+        "tools/navigation_runtime/scenario.json";
+#endif
+
+    ScenarioRunSettings settings;
+    settings.controlMode = ControlMode::Assisted;
+    settings.pilot = PilotLevel::Expert;
+    settings.flightStyle = FlightStyle::Standard;
+    settings.enableSuddenObstacle = false;
+    settings.startSpeedOverrideMps = 10.0;
+    settings.finishSpeedOverrideMps = 10.0;
+
+    const auto planned =
+        calculateScenario(scenario, settings);
+    require(
+        planned.success,
+        "Assisted 10->10 regression fixture failed Stage-1 planning"
+    );
+
+    const auto executed =
+        executeCalculatedRoute(
+            scenario,
+            settings,
+            planned.trace
+        );
+
+    printDiagnostics("[E2E-ASSISTED-10] ", executed);
+
+    require(
+        hasDiagnostic(executed, "REFERENCE CLOCK HOLD: "),
+        "Assisted execution lost reference-hold diagnostics"
+    );
+
+    double maximumPhysicalSpeed = 0.0;
+    for (const auto& frame : executed.trace.frames)
+    {
+        maximumPhysicalSpeed =
+            std::max(
+                maximumPhysicalSpeed,
+                glm::length(frame.shipVelocity)
+            );
+    }
+
+    require(
+        maximumPhysicalSpeed <= 25.0,
+        "Assisted 10->10 execution reproduced unbounded physical speed growth"
+    );
+    require(
+        executed.success,
+        "Assisted 10->10 execution failed to reacquire and finish physically"
+    );
+
+    const auto& finalFrame = executed.trace.frames.back();
+    const double finalError =
+        glm::length(
+            finalFrame.shipPosition -
+            executed.trace.sceneFinishMapMeters
+        );
+    const double finalSpeed =
+        glm::length(finalFrame.shipVelocity);
+
+    require(
+        finalError <= 5.0,
+        "Assisted 10->10 execution ended outside terminal position tolerance"
+    );
+    require(
+        std::abs(finalSpeed - 10.0) <= 1.5,
+        "Assisted 10->10 execution ended outside terminal speed tolerance"
+    );
+}
+
 void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
 {
 #ifdef ELITE_SOURCE_ROOT
@@ -269,6 +347,7 @@ int main()
     {
         testSpeedAndStyleChangeStaticManeuverReserve();
         testHighSpeedRunReacquiresInsteadOfOutrunningReference();
+        testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold();
         testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics();
         std::cout
             << "NAVIGATION RETAINED-ROUTE E2E: PASS\n"
@@ -277,6 +356,7 @@ int main()
             << " - one Stage-1 route is retained unchanged during Stage-2\n"
             << " - Ruckig parameterizes that retained route\n"
             << " - high-speed follower can hold reference progress and reacquire\n"
+            << " - Assisted 10->10 cannot turn reference hold into a speed runaway\n"
             << " - route-leg programs cross Follower -> PilotSkill -> physics\n"
             << " - Cobra reaches the authored finish\n";
         return EXIT_SUCCESS;

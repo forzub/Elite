@@ -88,6 +88,14 @@ void saveTraceJson(
         frame["ship_right"] = vec3Json(f.shipRight);
         frame["ship_up"] = vec3Json(f.shipUp);
         frame["ship_velocity"] = vec3Json(f.shipVelocity);
+        frame["ship_angular_rate_pyr_rad_s"] =
+            vec3Json(f.shipAngularRatePyrRadPerSec);
+        frame["main_engine_acceleration_mps2"] =
+            vec3Json(f.mainEngineAccelerationMps2);
+        frame["manoeuvre_acceleration_mps2"] =
+            vec3Json(f.manoeuvreAccelerationMps2);
+        frame["engine_acceleration_mps2"] =
+            vec3Json(f.engineAccelerationMps2);
         frame["has_runtime_control_law"] = f.hasRuntimeControlLaw;
         if (f.hasRuntimeControlLaw)
             frame["runtime_control_law"] = f.runtimeControlLaw;
@@ -217,6 +225,18 @@ TraceDocument loadTraceJson(const std::string& path)
         f.shipPosition = readVec3(source.at("ship_position"));
         f.shipForward = readVec3(source.at("ship_forward"));
         f.shipVelocity = readVec3(source.at("ship_velocity"));
+        if (source.contains("ship_angular_rate_pyr_rad_s"))
+            f.shipAngularRatePyrRadPerSec =
+                readVec3(source.at("ship_angular_rate_pyr_rad_s"));
+        if (source.contains("main_engine_acceleration_mps2"))
+            f.mainEngineAccelerationMps2 =
+                readVec3(source.at("main_engine_acceleration_mps2"));
+        if (source.contains("manoeuvre_acceleration_mps2"))
+            f.manoeuvreAccelerationMps2 =
+                readVec3(source.at("manoeuvre_acceleration_mps2"));
+        if (source.contains("engine_acceleration_mps2"))
+            f.engineAccelerationMps2 =
+                readVec3(source.at("engine_acceleration_mps2"));
         f.hasRuntimeControlLaw =
             source.value("has_runtime_control_law", false);
         if (f.hasRuntimeControlLaw)

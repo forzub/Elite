@@ -161,6 +161,8 @@ bool validInput(
         nonNegativeFinite(program.tracking.linearVelocityErrorMps) &&
         nonNegativeFinite(program.tracking.forwardAngleErrorRad) &&
         nonNegativeFinite(program.tracking.angularVelocityErrorRadPerSec) &&
+        nonNegativeFinite(program.tracking.alongTrackPositionDeadbandMeters) &&
+        nonNegativeFinite(program.tracking.alongTrackSpeedDeadbandMps) &&
         nonNegativeFinite(program.tracking.linearFeedbackReserveMps2) &&
         nonNegativeFinite(program.tracking.angularFeedbackReserveRadPerSec2) &&
         validPolicy(policy);
@@ -170,6 +172,25 @@ bool exceeded(double value, double maximum) noexcept
 {
     return maximum > 0.0 && value > maximum;
 }
+
+double signedDeadbandExcess(
+    double value,
+    double halfWidth
+) noexcept
+{
+    if (!(halfWidth > 0.0))
+        return value;
+
+    const double magnitude = std::abs(value);
+    if (magnitude <= halfWidth)
+        return 0.0;
+
+    return std::copysign(
+        magnitude - halfWidth,
+        value
+    );
+}
+
 
 } // namespace
 
@@ -221,9 +242,50 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         return Result {};
     }
 
+    glm::dvec3 effectivePositionError = positionError;
+    glm::dvec3 effectiveVelocityError = velocityError;
+
+    const double referenceSpeedSquared =
+        glm::dot(
+            reference.velocityMapMetersPerSecond,
+            reference.velocityMapMetersPerSecond
+        );
+
+    if (program.family ==
+            AcceptedManeuverProgram::ManeuverFamily::FreeTransit &&
+        referenceSpeedSquared > kEpsilon)
+    {
+        const glm::dvec3 tangent =
+            reference.velocityMapMetersPerSecond /
+            std::sqrt(referenceSpeedSquared);
+
+        const double alongPosition =
+            glm::dot(positionError, tangent);
+        const double alongVelocity =
+            glm::dot(velocityError, tangent);
+
+        effectivePositionError =
+            positionError -
+            tangent * alongPosition +
+            tangent * signedDeadbandExcess(
+                alongPosition,
+                program.tracking.
+                    alongTrackPositionDeadbandMeters
+            );
+
+        effectiveVelocityError =
+            velocityError -
+            tangent * alongVelocity +
+            tangent * signedDeadbandExcess(
+                alongVelocity,
+                program.tracking.
+                    alongTrackSpeedDeadbandMps
+            );
+    }
+
     const glm::dvec3 requestedLinearFeedback =
-        positionError * policy.positionGainPerSecond2 +
-        velocityError * policy.velocityGainPerSecond;
+        effectivePositionError * policy.positionGainPerSecond2 +
+        effectiveVelocityError * policy.velocityGainPerSecond;
 
     const glm::dvec3 requestedAngularFeedback =
         attitudeErrorVector(reference, agent) *

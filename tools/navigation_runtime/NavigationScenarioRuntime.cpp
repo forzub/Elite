@@ -640,13 +640,25 @@ std::vector<std::string> routeDiagnostics(
 }
 
 void writeRouteDiagnostics(
-    const std::string& scenarioJsonPath,
+    const ScenarioRuntimeIoPolicy& io,
     const std::vector<std::string>& diagnostics
 )
 {
-    (void)scenarioJsonPath;
+    if (io.echoDiagnosticsToConsole)
+    {
+        for (const auto& line : diagnostics)
+            std::cout << "[NAV-STAGE1] " << line << "\n";
+    }
+
+    if (!io.writeRouteDiagnostics ||
+        io.diagnosticsDirectory.empty())
+    {
+        return;
+    }
+
     const std::filesystem::path output =
-        std::filesystem::current_path() / "last_route_plan.log";
+        std::filesystem::path(io.diagnosticsDirectory) /
+        "last_route_plan.log";
 
     std::ofstream stream(output);
     if (!stream)
@@ -655,10 +667,7 @@ void writeRouteDiagnostics(
         );
 
     for (const auto& line : diagnostics)
-    {
         stream << line << "\n";
-        std::cout << "[NAV-STAGE1] " << line << "\n";
-    }
 }
 
 void setSceneEndpoints(
@@ -2250,13 +2259,25 @@ TraceFrame executionTraceFrame(
 }
 
 void writeExecutionDiagnostics(
-    const std::string& scenarioJsonPath,
+    const ScenarioRuntimeIoPolicy& io,
     const std::vector<std::string>& diagnostics
 )
 {
-    (void)scenarioJsonPath;
+    if (io.echoDiagnosticsToConsole)
+    {
+        for (const auto& line : diagnostics)
+            std::cout << "[NAV-STAGE2] " << line << "\n";
+    }
+
+    if (!io.writeExecutionDiagnostics ||
+        io.diagnosticsDirectory.empty())
+    {
+        return;
+    }
+
     const std::filesystem::path output =
-        std::filesystem::current_path() / "last_execution.log";
+        std::filesystem::path(io.diagnosticsDirectory) /
+        "last_execution.log";
 
     std::ofstream stream(output);
     if (!stream)
@@ -2266,20 +2287,22 @@ void writeExecutionDiagnostics(
         );
 
     for (const auto& line : diagnostics)
-    {
         stream << line << "\n";
-        std::cout << "[NAV-STAGE2] " << line << "\n";
-    }
 }
 
 void writeExecutionTelemetry(
-    const std::string& scenarioJsonPath,
+    const ScenarioRuntimeIoPolicy& io,
     const TraceDocument& trace
 )
 {
-    (void)scenarioJsonPath;
+    if (!io.writeExecutionTelemetry ||
+        io.diagnosticsDirectory.empty())
+    {
+        return;
+    }
+
     const std::filesystem::path output =
-        std::filesystem::current_path() /
+        std::filesystem::path(io.diagnosticsDirectory) /
         "last_execution_telemetry.log";
 
     std::ofstream stream(output);
@@ -2633,7 +2656,7 @@ ScenarioRunResult calculateScenario(
             );
         }
         writeRouteDiagnostics(
-            scenarioJsonPath,
+            settings.io,
             out.diagnostics
         );
 
@@ -3517,11 +3540,11 @@ ScenarioRunResult executeCalculatedRoute(
         };
 
         writeExecutionDiagnostics(
-            scenarioJsonPath,
+            settings.io,
             out.diagnostics
         );
         writeExecutionTelemetry(
-            scenarioJsonPath,
+            settings.io,
             trace
         );
 

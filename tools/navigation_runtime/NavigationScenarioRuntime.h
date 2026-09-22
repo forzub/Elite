@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <glm/glm.hpp>
 
-#include "src/game/ship/core/ShipParams.h"
+#include "src/game/navigation/VehicleDynamicsProfile.h"
 
 class ShipDescriptor;
 
@@ -100,14 +100,8 @@ struct ScenarioRunSettings
     double finishSpeedOverrideMps = -1.0;
 };
 
-struct ScenarioVehicleParameters
-{
-    // One explicit immutable vehicle input crosses the scenario-runtime
-    // boundary. Navigation runtime does not own or reconstruct ship data.
-    ShipParams physics {};
-    glm::dvec3 bodyHalfExtentsMeters {0.5};
-    std::uint64_t capabilityRevision = 1;
-};
+using ScenarioVehicleParameters =
+    game::navigation::VehicleDynamicsProfile;
 
 [[nodiscard]] ScenarioVehicleParameters makeScenarioVehicleParameters(
     const ShipDescriptor& descriptor,

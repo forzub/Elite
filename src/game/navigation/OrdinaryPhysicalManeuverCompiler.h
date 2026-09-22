@@ -95,9 +95,22 @@ public:
         glm::dvec3 angularVelocityMapRadPerSecond {0.0};
     };
 
+    struct Policy
+    {
+        // Maneuver-shaping values are explicit API data. The compiler may
+        // contain numeric epsilons and exact polynomial constants internally,
+        // but it must not own behavioral timing/ramp doctrine.
+        double minimumPrimitiveSeconds = 0.05;
+        double directPrimitiveSeconds = 1.0;
+        double burnRampMinimumSeconds = 0.02;
+        double burnRampMaximumSeconds = 0.20;
+        double burnRampFractionOfRawBurn = 0.25;
+    };
+
     struct Query
     {
         LocalFlightControlLaw controlLaw = LocalFlightControlLaw::Newtonian;
+        Policy policy {};
 
         State state {};
         Capability capability {};

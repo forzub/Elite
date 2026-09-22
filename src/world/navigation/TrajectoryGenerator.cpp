@@ -1,10 +1,7 @@
 #include "src/world/navigation/TrajectoryGenerator.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
-#include <fstream>
-#include <iomanip>
 #include <limits>
 #include <string>
 #include <string_view>
@@ -17,11 +14,9 @@
 #include "src/game/navigation/RuckigTrajectorySolver.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/world/navigation/NavigationOrientation.h"
-#include "src/world/navigation/NavigationPerfLog.h"
 
 namespace
 {
-using Clock = std::chrono::steady_clock;
 constexpr double Epsilon = 1.0e-9;
 
 bool finite(double value) noexcept
@@ -54,14 +49,6 @@ double smoothStep01(double value) noexcept
 {
     const double u = std::clamp(value, 0.0, 1.0);
     return u * u * (3.0 - 2.0 * u);
-}
-
-double elapsedMilliseconds(
-    Clock::time_point begin,
-    Clock::time_point end
-)
-{
-    return std::chrono::duration<double, std::milli>(end - begin).count();
 }
 
 world::navigation::TrajectoryGenerationResult failure(
@@ -1014,13 +1001,8 @@ LegSolve solveLeg(
         ruckigRequest.targetVelocityMps = targetVelocity;
 
         ++diagnostics.ruckigLegAttempts;
-        const auto solveStart = Clock::now();
         auto candidate = game::navigation::RuckigTrajectorySolver::solve(
             ruckigRequest
-        );
-        diagnostics.ruckigSolveMilliseconds += elapsedMilliseconds(
-            solveStart,
-            Clock::now()
         );
 
         if (candidate.ok() && !candidate.prediction.samples.empty())
@@ -1082,51 +1064,6 @@ void computeCurvatureDiagnostics(
 
     result.diagnostics.maxCurvaturePerMeter = maximum;
     result.diagnostics.curvatureVariation = variation;
-}
-
-void appendPerfLog(
-    const world::navigation::TrajectoryGenerationRequest& request,
-    const world::navigation::TrajectoryGenerationResult& result,
-    double totalMs,
-    std::size_t blendedWaypoints
-)
-{
-    std::ofstream out(
-        world::navigation::navigationPerfLogPath(),
-        std::ios::app
-    );
-    if (!out)
-        return;
-
-    out << std::fixed << std::setprecision(4)
-        << "[RuckigRoutePerf] total_ms=" << totalMs
-        << " legs=" << result.diagnostics.ruckigLegAttempts
-        << " ruckig_ok=" << result.diagnostics.ruckigLegSuccesses
-        << " ruckig_ms=" << result.diagnostics.ruckigSolveMilliseconds
-        << " collision_segments=" << result.diagnostics.collisionSegmentsChecked
-        << " blended_waypoints=" << blendedWaypoints
-        << " coarse_points=" << request.pathPointsMeters.size()
-        << " guide_points=" << result.executionGuidePointsMeters.size()
-        << " rounded_corners=" << result.diagnostics.roundedGuideCorners
-        << " expanded_corners=" << result.diagnostics.expandedGuideCorners
-        << " obstacles=" << request.obstacles.size()
-        << " samples=" << result.trajectory.samples.size()
-        << " min_speed_mps=";
-    if (result.trajectory.samples.empty())
-    {
-        out << 0.0;
-    }
-    else
-    {
-        double minimumSpeed = std::numeric_limits<double>::infinity();
-        for (const auto& sample : result.trajectory.samples)
-            minimumSpeed = std::min(minimumSpeed, sample.speedMps);
-        out << minimumSpeed;
-    }
-    out
-        << " max_speed_mps=" << result.diagnostics.maxSpeedMps
-        << " valid=" << (result.ready() ? 1 : 0)
-        << '\n';
 }
 
 struct GuideMetricSample
@@ -1425,15 +1362,9 @@ buildPathProgressTrajectory(
     );
     progressRequest.sampleIntervalSeconds = 0.02;
 
-    const auto solveStart = Clock::now();
     const auto progress =
         game::navigation::RuckigTrajectorySolver::solveProgress(
             progressRequest
-        );
-    const double solveMs =
-        elapsedMilliseconds(
-            solveStart,
-            Clock::now()
         );
 
     if (!progress.ready)
@@ -1475,7 +1406,6 @@ buildPathProgressTrajectory(
         guide.expandedCorners;
     out.diagnostics.ruckigLegAttempts = 1;
     out.diagnostics.ruckigLegSuccesses = 1;
-    out.diagnostics.ruckigSolveMilliseconds = solveMs;
     out.diagnostics.initialAlongPathSpeedMps =
         initialAlongSpeed;
     out.diagnostics.initialCrossTrackSpeedMps =
@@ -1897,8 +1827,6 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     const world::navigation::TrajectoryGenerationRequest& request
 )
 {
-    const auto totalStart = Clock::now();
-
     if (!validRequest(request))
     {
         return failure(
@@ -1963,14 +1891,6 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
         result.diagnostics.expandedGuideCorners =
             guide.expandedCorners;
 
-        appendPerfLog(
-            request,
-            result,
-            elapsedMilliseconds(totalStart, Clock::now()),
-            guide.points.size() > 2
-                ? guide.points.size() - 2
-                : 0
-        );
         return result;
     }
 
@@ -2021,12 +1941,6 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
             const std::size_t blended = countBlendedWaypoints(
                 waypointVelocities
             );
-            appendPerfLog(
-                request,
-                attempt.result,
-                elapsedMilliseconds(totalStart, Clock::now()),
-                blended
-            );
             return attempt.result;
         }
 
@@ -2075,12 +1989,6 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
             cumulativeDiagnostics
         );
         failed.executionGuidePointsMeters = guide.points;
-        appendPerfLog(
-            request,
-            failed,
-            elapsedMilliseconds(totalStart, Clock::now()),
-            countBlendedWaypoints(waypointVelocities)
-        );
         return failed;
     }
 
@@ -2091,12 +1999,6 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
         cumulativeDiagnostics
     );
     failed.executionGuidePointsMeters = guide.points;
-    appendPerfLog(
-        request,
-        failed,
-        elapsedMilliseconds(totalStart, Clock::now()),
-        countBlendedWaypoints(waypointVelocities)
-    );
     return failed;
 }
 

@@ -11,6 +11,8 @@
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/world/WorldParams.h"
 #include "src/world/navigation/NavigationObstacle.h"
@@ -36,10 +38,43 @@
 
 namespace elite::tools::navigation_runtime
 {
+
+ScenarioVehicleParameters makeScenarioVehicleParameters(
+    const ShipDescriptor& descriptor,
+    std::uint64_t capabilityRevision
+)
+{
+    ScenarioVehicleParameters out;
+    out.physics = descriptor.physics;
+    out.capabilityRevision = capabilityRevision;
+
+    const LogicalDimensions& logical = descriptor.logicalDimensions();
+    if (logical.enabled &&
+        logical.width > 0.0f &&
+        logical.height > 0.0f &&
+        logical.length > 0.0f)
+    {
+        out.bodyHalfExtentsMeters = {
+            0.5 * static_cast<double>(logical.width),
+            0.5 * static_cast<double>(logical.height),
+            0.5 * static_cast<double>(logical.length)
+        };
+    }
+    else
+    {
+        const glm::vec3 mesh = descriptor.getMeshSizeMeters();
+        out.bodyHalfExtentsMeters = {
+            0.5 * std::max(0.0, static_cast<double>(mesh.x)),
+            0.5 * std::max(0.0, static_cast<double>(mesh.y)),
+            0.5 * std::max(0.0, static_cast<double>(mesh.z))
+        };
+    }
+
+    return out;
+}
+
 namespace
 {
-
-const glm::dvec3 kBodyHalfExtents {13.0, 2.5, 11.1};
 
 struct Basis
 {
@@ -594,39 +629,6 @@ using Law = game::navigation::LocalFlightControlLaw;
 constexpr double kExecutionDt = 1.0 / 120.0;
 constexpr double kTraceSampleSeconds = 1.0 / 30.0;
 constexpr double kStandardGravity = 9.80665;
-
-ShipParams cobraParams()
-{
-    ShipParams p {};
-    p.maxPitchRate = 2.5f;
-    p.maxYawRate = 2.5f;
-    p.maxRollRate = 3.0f;
-    p.angularAccel = 3.0f;
-    p.angularDamping = 2.5f;
-
-    p.maxCombatSpeed = 500.0f;
-    p.maxCruiseSpeed = 29979245.0f;
-    p.throttleAccel = 5.0f;
-
-    p.autoLevelStrength = 0.0f;
-    p.strafeAccel = 20.0f;
-    p.strafeDamping = 6.0f;
-    p.maxStrafeSpeed = 80.0f;
-    p.manoeuvreThrusterAccel = 2.0f;
-    p.manoeuvreGasUsePerSecond = 0.20f;
-    p.manoeuvreGasRechargePerSecond = 0.08f;
-    p.manoeuvreGasRestartFraction = 0.20f;
-
-    p.maxGs = 5.0f;
-    p.maxLinearGs = 7.5f;
-    p.turnRadius = 20.0f;
-
-    p.massKg = 260000.0;
-    p.pitchInertiaKgM2 = 11219866.6666667;
-    p.yawInertiaKgM2 = 25324866.6666667;
-    p.rollInertiaKgM2 = 15188333.3333333;
-    return p;
-}
 
 Bridge::PilotSkillProfile pilotProfile(PilotLevel level)
 {
@@ -1868,9 +1870,10 @@ struct ExecutionVehicle
 
     ExecutionVehicle(
         const Scenario& scenario,
-        const ScenarioRunSettings& settings
+        const ScenarioRunSettings& settings,
+        const ScenarioVehicleParameters& vehicle
     )
-        : params(cobraParams()),
+        : params(vehicle.physics),
           bridge(pilotProfile(settings.pilot))
     {
         frame.systemId = 1;
@@ -2322,7 +2325,8 @@ void writeExecutionTelemetry(
 } // namespace
 
 ScenarioRunResult loadScenarioPreview(
-    const std::string& scenarioJsonPath
+    const std::string& scenarioJsonPath,
+    const ScenarioVehicleParameters& vehicle
 )
 {
     ScenarioRunResult out;
@@ -2336,7 +2340,7 @@ ScenarioRunResult loadScenarioPreview(
         TraceDocument trace;
         trace.version = 2;
         trace.law = "newtonian";
-        trace.shipHalfExtentsMeters = kBodyHalfExtents;
+        trace.shipHalfExtentsMeters = vehicle.bodyHalfExtentsMeters;
         setSceneEndpoints(trace, scenario);
 
         for (const auto& obstacle : scenario.staticObstacles)
@@ -2370,7 +2374,8 @@ ScenarioRunResult loadScenarioPreview(
 
 ScenarioRunResult calculateScenario(
     const std::string& scenarioJsonPath,
-    const ScenarioRunSettings& settings
+    const ScenarioRunSettings& settings,
+    const ScenarioVehicleParameters& vehicle
 )
 {
     ScenarioRunResult out;
@@ -2407,14 +2412,18 @@ ScenarioRunResult calculateScenario(
             scenario.shipRoutePoints;
         request.staticObstacles = scenario.staticObstacles;
         request.navigationEnvelopeRadiusMeters =
-            std::max(0.0, scenario.routeEnvelopeRadiusMeters);
+            std::max({
+                0.0,
+                vehicle.bodyHalfExtentsMeters.x,
+                vehicle.bodyHalfExtentsMeters.y,
+                vehicle.bodyHalfExtentsMeters.z
+            });
 
-        const ShipParams planningShip = cobraParams();
         const double planningClearanceMeters =
             routePlanningClearanceMeters(
                 scenario,
                 settings,
-                planningShip
+                vehicle.physics
             );
         request.additionalRouteClearanceMeters =
             planningClearanceMeters;
@@ -2428,7 +2437,7 @@ ScenarioRunResult calculateScenario(
             settings.controlMode == ControlMode::Newtonian
                 ? "newtonian"
                 : "assisted";
-        trace.shipHalfExtentsMeters = kBodyHalfExtents;
+        trace.shipHalfExtentsMeters = vehicle.bodyHalfExtentsMeters;
         setSceneEndpoints(trace, scenario);
 
         for (const auto& obstacle : scenario.staticObstacles)
@@ -2513,7 +2522,8 @@ ScenarioRunResult calculateScenario(
 ScenarioRunResult executeCalculatedRoute(
     const std::string& scenarioJsonPath,
     const ScenarioRunSettings& settings,
-    const TraceDocument& calculatedRoute
+    const TraceDocument& calculatedRoute,
+    const ScenarioVehicleParameters& vehicleInput
 )
 {
     ScenarioRunResult out;
@@ -2550,7 +2560,7 @@ ScenarioRunResult executeCalculatedRoute(
             return out;
         }
 
-        const ShipParams params = cobraParams();
+        const ShipParams& params = vehicleInput.physics;
         const auto trajectoryResult =
             buildExecutionTrajectory(
                 scenario,
@@ -2738,7 +2748,7 @@ ScenarioRunResult executeCalculatedRoute(
         const bool actuatorSourceCoverageComplete =
             plannedActuatorSegments == expectedActuatorSegments;
 
-        ExecutionVehicle vehicle(scenario, settings);
+        ExecutionVehicle vehicle(scenario, settings, vehicleInput);
 
         double plannedExecutionSeconds = 0.0;
         for (const auto& phase : programs)
@@ -3051,10 +3061,12 @@ ScenarioRunResult executeCalculatedRoute(
                         previousPosition,
                         currentPosition,
                         scenario.staticObstacles,
-                        std::max(
+                        std::max({
                             0.0,
-                            scenario.routeEnvelopeRadiusMeters
-                        ),
+                            vehicleInput.bodyHalfExtentsMeters.x,
+                            vehicleInput.bodyHalfExtentsMeters.y,
+                            vehicleInput.bodyHalfExtentsMeters.z
+                        }),
                         std::max(
                             0.0,
                             scenario.routeClearanceMeters

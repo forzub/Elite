@@ -2785,7 +2785,8 @@ ScenarioRunResult executeCalculatedRoute(
                 trajectoryResult.trajectory,
                 scenario,
                 controlLaw(settings.controlMode),
-                params
+                params,
+                settings.navigation
             );
 
         double maximumReferenceVelocityAngleRad = 0.0;
@@ -2824,7 +2825,8 @@ ScenarioRunResult executeCalculatedRoute(
                 attitudes,
                 calculatedRoute.routePoints,
                 scenario,
-                params
+                params,
+                settings.navigation
             );
 
         if (programs.empty())
@@ -2878,7 +2880,8 @@ ScenarioRunResult executeCalculatedRoute(
         {
             bindProgramPageToExecutionClock(
                 page,
-                maneuverStartUniverseTimeSeconds
+                maneuverStartUniverseTimeSeconds,
+                settings.navigation
             );
         }
 
@@ -2897,7 +2900,8 @@ ScenarioRunResult executeCalculatedRoute(
         // only for final capture / bounded invalidation diagnostics; storage
         // page transitions never reset this clock.
         const double maximumEnd =
-            plannedExecutionSeconds + 30.0;
+            plannedExecutionSeconds +
+            settings.navigation.maximumExecutionOverrunSeconds;
 
         std::size_t activeProgram = 0;
         std::size_t storagePageAdvances = 0;
@@ -2916,7 +2920,6 @@ ScenarioRunResult executeCalculatedRoute(
         double maximumBodyVelocityAngleRad = 0.0;
         std::size_t runtimeControlLawSwitches = 0;
         double trackingLossSeconds = 0.0;
-        constexpr double kTrackingLossInvalidateSeconds = 0.50;
         auto previousRuntimeControlLaw =
             vehicle.transform.motion.localControlLaw;
 
@@ -3027,7 +3030,7 @@ ScenarioRunResult executeCalculatedRoute(
                 follower.trackingErrorExceeded;
 
             if (trackingOutsideEnvelope)
-                trackingLossSeconds += kExecutionDt;
+                trackingLossSeconds += settings.navigation.executionDtSeconds;
             else
                 trackingLossSeconds = 0.0;
 
@@ -3038,7 +3041,7 @@ ScenarioRunResult executeCalculatedRoute(
             // state; this static harness reports the invalidation explicitly.
             if (
                 trackingLossSeconds >
-                kTrackingLossInvalidateSeconds
+                settings.navigation.trackingLossInvalidateSeconds
             )
             {
                 followerInvalid = true;
@@ -3067,7 +3070,7 @@ ScenarioRunResult executeCalculatedRoute(
                     movingTerminal
                         ? game::navigation::ManeuverPhaseGate::Mode::ScheduledMoving
                         : game::navigation::ManeuverPhaseGate::Mode::StateCapture;
-                gatePolicy.maximumCaptureOverrunSeconds = 6.0;
+                gatePolicy.maximumCaptureOverrunSeconds = settings.navigation.finalCaptureOverrunSeconds;
 
                 const auto gate =
                     game::navigation::ManeuverPhaseGate::evaluate(
@@ -3114,7 +3117,7 @@ ScenarioRunResult executeCalculatedRoute(
 
             const auto bridgeResult =
                 vehicle.bridge.step(
-                    vehicle.timeSeconds + kExecutionDt,
+                    vehicle.timeSeconds + settings.navigation.executionDtSeconds,
                     kExecutionDt,
                     toSystemIntent(follower.intent)
                 );
@@ -3144,7 +3147,7 @@ ScenarioRunResult executeCalculatedRoute(
                 vehicle.params,
                 bridgeResult.control,
                 vehicle.world,
-                static_cast<float>(kExecutionDt)
+                static_cast<float>(settings.navigation.executionDtSeconds)
             );
 
             game::navigation::DynamicMotionSystem::
@@ -3162,11 +3165,11 @@ ScenarioRunResult executeCalculatedRoute(
                     vehicle.transform.worldPosition,
                     vehicle.frame,
                     vehicle.params,
-                    kExecutionDt
+                    settings.navigation.executionDtSeconds
                 );
 
             vehicle.transform.syncLegacyPositionFromWorld();
-            vehicle.timeSeconds += kExecutionDt;
+            vehicle.timeSeconds += settings.navigation.executionDtSeconds;
 
             if (vehicle.transform.motion.localControlLaw !=
                 previousRuntimeControlLaw)
@@ -3251,7 +3254,7 @@ ScenarioRunResult executeCalculatedRoute(
                             : "follower_running"
                     )
                 );
-                nextTraceTime += kTraceSampleSeconds;
+                nextTraceTime += settings.navigation.traceSampleSeconds;
             }
         }
 
@@ -3303,10 +3306,14 @@ ScenarioRunResult executeCalculatedRoute(
                 : 0.0;
 
         const bool finalStateReached =
-            finalPositionError <= 5.0 &&
-            finalSpeedError <= 1.5 &&
-            finalForwardError <= 0.25 &&
-            finalUpError <= 0.25;
+            finalPositionError <=
+                settings.navigation.finalPositionToleranceMeters &&
+            finalSpeedError <=
+                settings.navigation.finalSpeedToleranceMps &&
+            finalForwardError <=
+                settings.navigation.finalForwardToleranceRad &&
+            finalUpError <=
+                settings.navigation.finalUpToleranceRad;
 
         const bool success =
             !followerInvalid &&
@@ -3429,9 +3436,11 @@ ScenarioRunResult executeCalculatedRoute(
                 number(effectiveFinishSpeedMps(scenario, settings)) +
                 " M/S",
             "FOLLOWER SPEED CORRIDOR: +/- " +
-                number(0.5) + " M/S",
+                number(settings.navigation.alongTrackSpeedDeadbandMps) +
+                " M/S",
             "FOLLOWER PROGRESS CORRIDOR: +/- " +
-                number(12.0) + " M",
+                number(settings.navigation.alongTrackPositionDeadbandMeters) +
+                " M",
             "ROUTE ADDITIONAL CLEARANCE: " +
                 number(
                     routePlanningClearanceMeters(
@@ -3467,7 +3476,7 @@ ScenarioRunResult executeCalculatedRoute(
                 number(maximumFollowerPositionError) + " M",
             "REFERENCE CLOCK: MONOTONIC",
             "TRACKING LOSS INVALIDATE AFTER: " +
-                number(kTrackingLossInvalidateSeconds) + " S",
+                number(settings.navigation.trackingLossInvalidateSeconds) + " S",
             "RETAINED WAYPOINT SPEEDS: " +
                 waypointSpeeds.str(),
             "MAX REFERENCE/VELOCITY ANGLE: " +

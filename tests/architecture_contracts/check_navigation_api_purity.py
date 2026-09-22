@@ -27,6 +27,9 @@ trajectory_h = read("src/world/navigation/TrajectoryGenerator.h")
 ship_dynamics = read("src/game/ship/core/ShipDynamics.h")
 ship_controller = read("src/game/ship/ShipController.cpp")
 dynamic_motion = read("src/game/navigation/DynamicMotionSystem.cpp")
+ship_params_h = read("src/game/ship/core/ShipParams.h")
+pilot_h = read("src/world/navigation/control/PilotSkillExecutor.h")
+pilot_cpp = read("src/world/navigation/control/PilotSkillExecutor.cpp")
 compiler_h = read("src/game/navigation/OrdinaryPhysicalManeuverCompiler.h")
 compiler_cpp = read("src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp")
 sampler = read("src/game/navigation/ManeuverProgramSampler.cpp")
@@ -52,6 +55,8 @@ for token in (
     "VehicleDynamicsProfile",
     "ScenarioNavigationPolicy",
     "TrajectoryGenerationPolicy trajectory",
+    "WorldParams worldPhysics",
+    "ScenarioFrameDefinition",
 ):
     require(token in runtime_h, f"runtime API missing explicit boundary token {token!r}")
 
@@ -85,6 +90,27 @@ for token in (
 
 require("std::filesystem::current_path" not in runtime_cpp,
         "runtime resolves ambient current working directory")
+
+for forbidden in (
+    "WorldParams world {};",
+    'frame.systemId = 1;',
+    'frame.frameId = "navigation-runtime-stage2";',
+    "frame.originMeters = {0.0, 0.0, 0.0};",
+):
+    require(
+        forbidden not in exec_body,
+        f"Stage-2 execution manufactures hidden environment/frame input: {forbidden}",
+    )
+
+for token in (
+    "world(scenario.worldPhysics)",
+    "frame.systemId = scenario.frame.systemId",
+    "frame.frameId = scenario.frame.frameId",
+    "frame.originMeters = scenario.frame.originMeters",
+    "frame.localToWorldBasis = scenario.frame.localToWorldBasis",
+):
+    require(token in exec_body,
+            f"Stage-2 does not consume explicit scenario environment/frame data: {token}")
 
 # ---------- Stage-1 geometric policy ----------
 for token in (
@@ -150,6 +176,27 @@ for token in (
     require(token in ship_controller,
             f"ShipController does not consume canonical angular limit {token}")
 
+for token in (
+    "stopSpeedEpsilonMps",
+    "brakeAlignmentCosine",
+    "assistedMinimumTargetSpeedChangeRateMps2",
+    "assistedTargetSpeedChangeRateFractionPerSecond",
+    "fallbackThrottleResponsePerSecond",
+):
+    require(token in ship_params_h,
+            f"ShipParams API missing low-level motion input {token}")
+    require(token in dynamic_motion,
+            f"DynamicMotionSystem does not consume explicit ShipParams input {token}")
+
+for forbidden in (
+    "constexpr double StopSpeedEpsilonMps",
+    "constexpr double BrakeAlignmentCos",
+    "std::max(50.0, maxSpeed * 0.6)",
+    "positiveOr(static_cast<double>(params.throttleAccel), 1.0)",
+):
+    require(forbidden not in dynamic_motion,
+            f"DynamicMotionSystem reintroduced hidden behavior constant {forbidden}")
+
 for source_name, source in (
     ("NavigationVehicleProfileAdapters", vehicle_adapter),
     ("ManeuverCapabilityAdapters", capability_adapter),
@@ -206,6 +253,29 @@ for name, source in (
         require(forbidden not in source,
                 f"{name} pure kernel leaked ambient/stateful dependency {forbidden}")
 
+# Pilot executor is deliberately stateful, but cadence/queue behavior must
+# remain part of its explicit profile rather than private constants.
+for token in (
+    "maximumStepSeconds",
+    "integrationSubstepsPerResponsePeriod",
+    "maximumIntegrationSubsteps",
+    "maximumPendingCommands",
+):
+    require(token in pilot_h, f"pilot execution API hides cadence policy {token}")
+    require(token in pilot_cpp, f"pilot executor ignores explicit cadence policy {token}")
+
+for forbidden in (
+    "kMaximumStepSeconds",
+    "kMaxIntegrationSubsteps",
+    "kMaxPendingCommands",
+):
+    require(forbidden not in pilot_h + pilot_cpp,
+            f"pilot executor reintroduced hidden behavior constant {forbidden}")
+
+# A fixed array capacity is an implementation/storage bound, not behavior.
+require("kPendingCommandStorageCapacity" in pilot_h,
+        "pilot queue storage bound is no longer explicit as implementation capacity")
+
 # Bridge is deliberately stateful, but its state/time/profile must be explicit.
 for token in (
     "NavigationRuntimeControlBridge(",
@@ -248,6 +318,17 @@ for forbidden in (
 ):
     require(forbidden not in runtime_planner_cpp,
             f"NavigationRuntimePlanner reintroduced hidden behavior literal {forbidden}")
+
+# ---------- Runtime physical-capability purity ----------
+for forbidden in (
+    "std::max(0.1, profile.maxForwardAccelerationMps2)",
+    "std::max(0.1, profile.maxBrakingAccelerationMps2)",
+    "std::max(0.1, profile.maxLateralAccelerationMps2)",
+    "std::max(0.1, profile.maxAngularAccelerationRadPerSecond2)",
+    "std::max(\n            0.1,\n            game::ship::maximumAngularSpeedRadPerSec(params)",
+):
+    require(forbidden not in runtime_cpp,
+            f"runtime invents physical authority through numeric floor: {forbidden}")
 
 # ---------- Removed legacy contracts ----------
 for forbidden in (

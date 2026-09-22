@@ -24,6 +24,23 @@ const ScenarioVehicleParameters& fixtureVehicle()
     return vehicle;
 }
 
+const ScenarioDefinition& fixtureScenario()
+{
+#ifdef ELITE_SOURCE_ROOT
+    static const ScenarioDefinition scenario =
+        loadScenarioDefinition(
+            std::string(ELITE_SOURCE_ROOT) +
+            "/tools/navigation_runtime/scenario.json"
+        );
+#else
+    static const ScenarioDefinition scenario =
+        loadScenarioDefinition(
+            "tools/navigation_runtime/scenario.json"
+        );
+#endif
+    return scenario;
+}
+
 void require(bool condition, const std::string& message)
 {
     if (!condition)
@@ -78,15 +95,6 @@ double maximumInteriorAbsY(
 
 void testSpeedAndStyleChangeStaticManeuverReserve()
 {
-#ifdef ELITE_SOURCE_ROOT
-    const std::string scenario =
-        std::string(ELITE_SOURCE_ROOT) +
-        "/tools/navigation_runtime/scenario.json";
-#else
-    const std::string scenario =
-        "tools/navigation_runtime/scenario.json";
-#endif
-
     ScenarioRunSettings lowStandard;
     enableRuntimeDiagnostics(lowStandard);
     lowStandard.controlMode = ControlMode::Newtonian;
@@ -104,9 +112,9 @@ void testSpeedAndStyleChangeStaticManeuverReserve()
     ScenarioRunSettings highExtreme = highStandard;
     highExtreme.flightStyle = FlightStyle::Extreme;
 
-    const auto low = calculateScenario(scenario, lowStandard, fixtureVehicle());
-    const auto fast = calculateScenario(scenario, highStandard, fixtureVehicle());
-    const auto extreme = calculateScenario(scenario, highExtreme, fixtureVehicle());
+    const auto low = calculateScenario(fixtureScenario(), lowStandard, fixtureVehicle());
+    const auto fast = calculateScenario(fixtureScenario(), highStandard, fixtureVehicle());
+    const auto extreme = calculateScenario(fixtureScenario(), highExtreme, fixtureVehicle());
 
     require(low.success && fast.success && extreme.success,
             "speed/style route-reserve fixture failed to plan");
@@ -139,15 +147,6 @@ void testSpeedAndStyleChangeStaticManeuverReserve()
 
 void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
 {
-#ifdef ELITE_SOURCE_ROOT
-    const std::string scenario =
-        std::string(ELITE_SOURCE_ROOT) +
-        "/tools/navigation_runtime/scenario.json";
-#else
-    const std::string scenario =
-        "tools/navigation_runtime/scenario.json";
-#endif
-
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Newtonian;
@@ -160,14 +159,14 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
     settings.finishSpeedOverrideMps = 11.75;
 
     const auto planned =
-        calculateScenario(scenario, settings, fixtureVehicle());
+        calculateScenario(fixtureScenario(), settings, fixtureVehicle());
     require(
         planned.success,
         "high-speed reacquisition fixture failed Stage-1 planning"
     );
 
     const auto executed =
-        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-HIGH-SPEED] ", executed);
 
@@ -193,15 +192,6 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
 
 void testAssistedLowSpeedUsesMonotonicReferenceClock()
 {
-#ifdef ELITE_SOURCE_ROOT
-    const std::string scenario =
-        std::string(ELITE_SOURCE_ROOT) +
-        "/tools/navigation_runtime/scenario.json";
-#else
-    const std::string scenario =
-        "tools/navigation_runtime/scenario.json";
-#endif
-
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Assisted;
@@ -214,14 +204,14 @@ void testAssistedLowSpeedUsesMonotonicReferenceClock()
     settings.finishSpeedOverrideMps = 10.0;
 
     const auto planned =
-        calculateScenario(scenario, settings, fixtureVehicle());
+        calculateScenario(fixtureScenario(), settings, fixtureVehicle());
     require(
         planned.success,
         "Assisted 10->10 regression fixture failed Stage-1 planning"
     );
 
     const auto executed =
-        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-ASSISTED-10] ", executed);
 
@@ -270,15 +260,6 @@ void testAssistedLowSpeedUsesMonotonicReferenceClock()
 
 void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
 {
-#ifdef ELITE_SOURCE_ROOT
-    const std::string scenario =
-        std::string(ELITE_SOURCE_ROOT) +
-        "/tools/navigation_runtime/scenario.json";
-#else
-    const std::string scenario =
-        "tools/navigation_runtime/scenario.json";
-#endif
-
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Assisted;
@@ -290,14 +271,14 @@ void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
     settings.startSpeedOverrideMps = 20.90;
     settings.finishSpeedOverrideMps = 20.00;
 
-    const auto planned = calculateScenario(scenario, settings, fixtureVehicle());
+    const auto planned = calculateScenario(fixtureScenario(), settings, fixtureVehicle());
     require(
         planned.success,
         "Assisted 20.9->20 physical-braking fixture failed Stage-1 planning"
     );
 
     const auto executed =
-        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-ASSISTED-20] ", executed);
 
@@ -356,15 +337,6 @@ void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
 
 void testNewtonianHigherSpeedUsesMainEngineDominantManeuver()
 {
-#ifdef ELITE_SOURCE_ROOT
-    const std::string scenario =
-        std::string(ELITE_SOURCE_ROOT) +
-        "/tools/navigation_runtime/scenario.json";
-#else
-    const std::string scenario =
-        "tools/navigation_runtime/scenario.json";
-#endif
-
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Newtonian;
@@ -376,14 +348,14 @@ void testNewtonianHigherSpeedUsesMainEngineDominantManeuver()
     settings.startSpeedOverrideMps = 21.20;
     settings.finishSpeedOverrideMps = 21.20;
 
-    const auto planned = calculateScenario(scenario, settings, fixtureVehicle());
+    const auto planned = calculateScenario(fixtureScenario(), settings, fixtureVehicle());
     require(
         planned.success,
         "Newtonian 21.2->21.2 main-engine fixture failed Stage-1 planning"
     );
 
     const auto executed =
-        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-NEWTONIAN-21] ", executed);
 
@@ -432,15 +404,6 @@ void testNewtonianHigherSpeedUsesMainEngineDominantManeuver()
 
 void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
 {
-#ifdef ELITE_SOURCE_ROOT
-    const std::string scenario =
-        std::string(ELITE_SOURCE_ROOT) +
-        "/tools/navigation_runtime/scenario.json";
-#else
-    const std::string scenario =
-        "tools/navigation_runtime/scenario.json";
-#endif
-
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Newtonian;
@@ -451,7 +414,7 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
     settings.enableSuddenObstacle = false;
 
     const auto planned =
-        calculateScenario(scenario, settings, fixtureVehicle());
+        calculateScenario(fixtureScenario(), settings, fixtureVehicle());
 
     printDiagnostics("[E2E-STAGE1] ", planned);
 
@@ -464,7 +427,7 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
     const auto retainedRoute = planned.trace.routePoints;
 
     const auto executed =
-        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-STAGE2] ", executed);
 

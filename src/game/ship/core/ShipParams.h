@@ -23,6 +23,15 @@ struct ShipParams
     float maxCruiseSpeed;   // маршевый (игровая)
     float throttleAccel;
 
+    // Low-level local-flight/controller policy that affects deterministic
+    // motion integration. These are generic vehicle/control inputs; the motion
+    // system must not keep private behavior constants.
+    float stopSpeedEpsilonMps = 0.05f;
+    float brakeAlignmentCosine = 0.995f;
+    float assistedMinimumTargetSpeedChangeRateMps2 = 50.0f;
+    float assistedTargetSpeedChangeRateFractionPerSecond = 0.60f;
+    float fallbackThrottleResponsePerSecond = 1.0f;
+
     // Installed ordinary longitudinal main propulsion.
     // "Forward" means acceleration along ship forward; "reverse" means a
     // physically installed fore/nose main engine. These are hardware facts,

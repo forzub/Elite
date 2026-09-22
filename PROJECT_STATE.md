@@ -2998,3 +2998,29 @@ must become:
 physical geometry + attitude + actuator feasibility
  -> timing
 ```
+
+## 2026-09-22 — strict API/purity contract strengthened
+
+A second API audit found that "explicit top-level inputs" was not enough:
+private helpers were still accepting oversized context objects or carrying
+hidden behavioral thresholds.
+
+The project now distinguishes:
+- pure calculation kernels;
+- deterministic stateful executors;
+- orchestration/composition boundaries.
+
+Calculation helpers must receive exactly the values they consume. They may not
+reach into Scenario/Settings/ShipDescriptor/GameSimulation/global time/I/O for
+missing inputs.
+
+Behavioral thresholds that affect accepted motion belong to an explicit policy
+object. Only numerical epsilons and mathematical identities may remain private
+implementation constants.
+
+A dedicated `NAVIGATION_API_CONTRACT.md` and expanded static purity checker now
+pin this architecture.
+
+Remaining major RED item is unchanged: the physical maneuver must be authored
+and proved before final Ruckig timing. API cleanup is a prerequisite, not the
+physics fix itself.

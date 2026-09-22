@@ -1988,6 +1988,20 @@ void bindProgramPageToExecutionClock(
         policy.programValidityGraceSeconds;
 }
 
+struct ExecutionVehicleInit
+{
+    WorldParams world {};
+    ScenarioFrameDefinition frame {};
+    glm::dvec3 startPositionMapMeters {0.0};
+    glm::dvec3 startVelocityMapMps {0.0};
+    Basis startBasis {};
+    double startPitchRateRadPerSec = 0.0;
+    double startYawRateRadPerSec = 0.0;
+    double startRollRateRadPerSec = 0.0;
+    Law controlLaw = Law::Newtonian;
+    ScenarioPilotSkillProfile pilotExecutionProfile {};
+};
+
 struct ExecutionVehicle
 {
     ShipTransform transform {};
@@ -2003,52 +2017,51 @@ struct ExecutionVehicle
     glm::dvec3 lastExecutedAngularDemandRadPerSec2 {0.0};
 
     ExecutionVehicle(
-        const Scenario& scenario,
-        const ScenarioRunSettings& settings,
+        const ExecutionVehicleInit& init,
         const ScenarioVehicleParameters& vehicle
     )
         : params(vehicle.physics),
-          world(scenario.worldPhysics),
-          bridge(settings.pilotExecutionProfile)
+          world(init.world),
+          bridge(init.pilotExecutionProfile)
     {
-        frame.systemId = scenario.frame.systemId;
-        frame.frameId = scenario.frame.frameId;
-        frame.originMeters = scenario.frame.originMeters;
+        frame.systemId = init.frame.systemId;
+        frame.frameId = init.frame.frameId;
+        frame.originMeters = init.frame.originMeters;
         frame.linearVelocityMps =
-            scenario.frame.linearVelocityMps;
+            init.frame.linearVelocityMps;
         frame.linearAccelerationMps2 =
-            scenario.frame.linearAccelerationMps2;
-        frame.localToWorldBasis = scenario.frame.localToWorldBasis;
+            init.frame.linearAccelerationMps2;
+        frame.localToWorldBasis = init.frame.localToWorldBasis;
         frame.angularVelocityWorldRadPerSecond =
-            scenario.frame.angularVelocityWorldRadPerSecond;
+            init.frame.angularVelocityWorldRadPerSecond;
         frame.angularAccelerationWorldRadPerSecond2 =
-            scenario.frame.angularAccelerationWorldRadPerSecond2;
+            init.frame.angularAccelerationWorldRadPerSecond2;
         frame.valid = true;
 
         transform.motion.mode =
             game::navigation::MotionMode::HubTactical;
-        transform.motion.systemId = 1;
+        transform.motion.systemId = init.frame.systemId;
         transform.motion.travelFrame = frame;
         transform.motion.localControlLaw =
-            controlLaw(settings.controlMode);
+            init.controlLaw;
         transform.motion.localPositionMeters =
-            scenario.startPosition;
+            init.startPositionMapMeters;
         transform.motion.localVelocityMps =
-            effectiveStartVelocity(scenario, settings);
+            init.startVelocityMapMps;
         transform.setWorldPositionMeters(
-            scenario.startPosition
+            init.startPositionMapMeters
         );
         setTransformBasis(
             transform,
-            scenario.startBasis
+            init.startBasis
         );
         transform.pitchRate =
-            static_cast<float>(scenario.startPitchRateRadPerSec);
+            static_cast<float>(init.startPitchRateRadPerSec);
         transform.yawRate =
-            static_cast<float>(scenario.startYawRateRadPerSec);
+            static_cast<float>(init.startYawRateRadPerSec);
         transform.rollRate =
-            static_cast<float>(scenario.startRollRateRadPerSec);
-        timeSeconds = scenario.frame.startUniverseTimeSeconds;
+            static_cast<float>(init.startRollRateRadPerSec);
+        timeSeconds = init.frame.startUniverseTimeSeconds;
 
         Bridge::Intent initial;
         // Reset on neutral revision zero so the first real route intent
@@ -3019,7 +3032,25 @@ ScenarioRunResult executeCalculatedRoute(
         const bool actuatorSourceCoverageComplete =
             plannedActuatorSegments == expectedActuatorSegments;
 
-        ExecutionVehicle vehicle(scenario, settings, vehicleInput);
+        ExecutionVehicleInit vehicleInit;
+        vehicleInit.world = scenario.worldPhysics;
+        vehicleInit.frame = scenario.frame;
+        vehicleInit.startPositionMapMeters = scenario.startPosition;
+        vehicleInit.startVelocityMapMps =
+            effectiveStartVelocity(scenario, settings);
+        vehicleInit.startBasis = scenario.startBasis;
+        vehicleInit.startPitchRateRadPerSec =
+            scenario.startPitchRateRadPerSec;
+        vehicleInit.startYawRateRadPerSec =
+            scenario.startYawRateRadPerSec;
+        vehicleInit.startRollRateRadPerSec =
+            scenario.startRollRateRadPerSec;
+        vehicleInit.controlLaw =
+            controlLaw(settings.controlMode);
+        vehicleInit.pilotExecutionProfile =
+            settings.pilotExecutionProfile;
+
+        ExecutionVehicle vehicle(vehicleInit, vehicleInput);
 
         const double maneuverStartUniverseTimeSeconds =
             vehicle.timeSeconds;

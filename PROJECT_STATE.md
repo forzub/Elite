@@ -2858,3 +2858,24 @@ Current scenario terminal state is oriented and moving: finish forward/up are
 required and non-zero finish speed defines terminal velocity direction.
 Therefore a free-space high-speed turn may remain a constant-speed broad arc;
 braking is conditional, not mandatory.
+
+## 2026-09-22 — navigation ownership renamed and fixed
+
+The navigation architecture now uses the following names literally:
+
+**Planner** — decides the physical maneuver.
+
+**ManeuverProgram** — time-ordered physical states plus propulsion/attitude
+commands for each interval.
+
+**Ruckig** — internal numerical trajectory/timing helper used by Planner.
+
+**Autopilot/Follower** — executes the accepted ManeuverProgram and monitors
+unexpected hazards.
+
+This removes the previous ambiguous split where Planner emitted geometry,
+Ruckig emitted kinematics, and Follower was expected to infer how a real ship
+should realize them.
+
+A physical maneuver is accepted only if integrating real hull attitude and
+available propulsion can reach the next planned state.

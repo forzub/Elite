@@ -63,9 +63,10 @@ struct AcceptedManeuverProgram
         // Interval from samples[i] to samples[i+1].
         double durationSeconds = 0.0;
 
-        // Current Cobra has one aft/rear main engine. Fore-main fields remain
-        // explicit so the program format does not confuse "reverse demand"
-        // with hardware that is not actually installed.
+        // Longitudinal main channels are explicit because installed topology
+        // is vehicle data. A profile may expose rear/forward main thrust,
+        // fore/reverse main thrust, both, or neither; the program must never
+        // synthesize hardware from a signed acceleration request.
         bool rearMainEnabled = false;
         double rearMainThrottleStart01 = 0.0;
         double rearMainThrottleEnd01 = 0.0;

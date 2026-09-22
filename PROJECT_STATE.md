@@ -2806,3 +2806,30 @@ lamps driven by physical acceleration channels.
 
 Candidate before docs: `421ecb1b2721d54bc0c33737a520100a3c10fac9`.
 Target acceptance pending.
+
+## 2026-09-22 — trajectory architecture clarification
+
+The navigation stack currently has a geometry/timing inversion for high-speed
+Newtonian flight.
+
+Multi-point routes are implemented as:
+`coarse polyline -> Bezier execution guide -> scalar Ruckig s(t) -> attitude`.
+
+This is useful for simple kinematic path following, but it does not make Ruckig
+a full ship maneuver solver. Ruckig sees path progress and a symmetric scalar
+acceleration budget; it cannot account for finite hull rotation or aft-main
+pointing before braking.
+
+The next architectural step is to move physical maneuver compilation ahead of
+final timing:
+- real Cobra profile;
+- propulsion allocation;
+- hull rotation reachability;
+- braking/turn lead distance;
+- physically sized arc/transition geometry;
+- then Ruckig timing.
+
+The current hard-coded `cobraParams()` duplicate is now explicitly considered
+technical debt and should be removed.
+
+No further follower tuning should be treated as a solution to this issue.

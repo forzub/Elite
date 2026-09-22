@@ -59,6 +59,15 @@ struct TraceFrame
     bool hasProgramPhaseTarget = false;
     glm::dvec3 programPhaseTargetPosition {0.0};
 
+    // Planner-owned actuator command sampled from the accepted maneuver
+    // interval. Kept separate from actual physical engine telemetry.
+    bool hasPlannedActuatorCommand = false;
+    std::size_t plannedActuatorSegmentIndex = 0;
+    double plannedRearMainThrottle01 = 0.0;
+    double plannedForeMainThrottle01 = 0.0;
+    glm::dvec3 plannedManoeuvreAccelerationMps2 {0.0};
+    bool plannedPropulsionFeasible = true;
+
     bool hazardActive = false;
     glm::dvec3 hazardPosition {0.0};
     glm::dvec3 hazardVelocity {0.0};

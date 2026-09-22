@@ -3523,3 +3523,100 @@ Do NOT relax the 0.50 s invalidation timeout to hide this. Next fix is:
 2. move physical maneuver/attitude/thrust feasibility ahead of final Ruckig timing.
 
 Baseline tested: `5cc0b668665f0adc11b160bad3bc2af314cdfe4d`.
+
+## 2026-09-22 — second API-purity audit after stale E2E contract
+
+The user's concern was valid: the first API cleanup was incomplete. A second
+function-by-function audit of the active navigation path found concrete boundary
+violations and hidden behavior.
+
+### Fixed in this audit
+
+1. **Stale E2E contract**
+   - old "reacquire/reference hold" terminology is removed from active E2E
+     assertions;
+   - current contract is monotonic reference time + explicit invalidation.
+
+2. **Accidental terminal-state reach-through**
+   - a previous broad textual refactor had leaked an undeclared `terminal.*`
+     alias into parser/orchestration code outside helpers that actually receive a
+     terminal endpoint;
+   - fixed;
+   - API purity checker now explicitly rejects `terminal.*` outside functions
+     whose API contains `const Endpoint& terminal`.
+
+3. **Broad helper APIs narrowed**
+   - `routePlanningClearanceMeters` no longer receives whole Scenario/Settings;
+     it receives planning speed, authored clearance, style, ShipParams, policy;
+   - `executionVehicleProfile` receives vehicle + resolved clearance/speed
+     ceiling only;
+   - `buildReferenceAttitudes` receives trajectory, initial basis/omega,
+     terminal endpoint, law, vehicle physics and policy;
+   - `makeProgramPhase/buildRoutePrograms` receive exact revisions/clearance
+     rather than whole Scenario;
+   - `ExecutionVehicle` receives an explicit `ExecutionVehicleInit`;
+   - `executionTraceFrame` receives the selected target directly rather than
+     the whole Scenario.
+
+4. **One resolved kinematics snapshot**
+   - start speed, finish speed, planning speed and start velocity are resolved
+     once into `ResolvedRunKinematics`;
+   - the old repeated `effectiveStartSpeedMps/effectiveFinishSpeedMps/
+     effectiveStartVelocity` helpers are removed.
+
+5. **Trajectory backend hidden behavior constants**
+   - non-zero waypoint velocity threshold now comes from
+     `minimumUsefulWaypointSpeedMps`;
+   - lateral acceleration floor comes from
+     `minimumAccelerationMps2`;
+   - scalar speed floor comes from `minimumSpeedMps`;
+   - path-capture threshold comes from `pathCaptureSpeedThresholdMps`.
+
+6. **Production/transitional RuntimePlanner hidden doctrine**
+   - `holdIntent(..., 0.5)` removed;
+   - emergency threshold `urgency >= 0.75` removed from helper internals;
+   - static/stale/conflict urgency and emergency threshold are explicit
+     `NavigationRuntimePlanner::Policy` inputs.
+
+### Classification after audit
+
+Strict pure calculation kernels:
+- NominalRoutePlanner
+- GeometricPathPlanner
+- TrajectoryGenerator/RuckigRoutePlanner backend
+- RuckigTrajectorySolver
+- OrdinaryPhysicalManeuverCompiler
+- ManeuverProgramSampler
+- ManeuverTrackingController
+- TrajectoryFollower
+- ManeuverPhaseGate
+- NavigationExecutionReplanPolicy
+
+Explicit deterministic stateful executors:
+- NavigationRuntimeControlBridge
+- PilotSkillExecutor
+- DynamicMotionSystem
+
+Orchestration boundaries allowed to compose values/I/O:
+- loadScenarioDefinition
+- makeScenarioVehicleParameters
+- calculateScenario
+- executeCalculatedRoute
+- explicit diagnostic writers
+
+`NavigationRuntimePlanner` remains a composition planner rather than a strict
+math kernel because its API explicitly receives `StaticQueries&` and performs
+bounded static queries. This is not hidden/ambient access: the service is an
+explicit dependency. If we later require referentially pure planning, this seam
+must be replaced by immutable precomputed query results/snapshots.
+
+New normative document:
+`src/game/navigation/NAVIGATION_API_CONTRACT.md`.
+
+The architecture gate
+`tests/architecture_contracts/check_navigation_api_purity.py` now checks the
+active pipeline more broadly and pins the narrow helper/API contracts above.
+
+Code baseline before documentation commits: `efb3999b71a18186c1e3622c6c51d9b0169b52be`.
+
+No target-machine build/E2E has yet validated these new edits.

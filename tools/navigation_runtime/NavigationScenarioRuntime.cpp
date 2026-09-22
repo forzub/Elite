@@ -2147,6 +2147,7 @@ void writeExecutionTelemetry(
         << "# per-frame physical execution telemetry\n"
         << "# t_s phase law pos speed forward up pyr_rate "
            "ideal_lin_cmd ideal_ang_cmd exec_lin_cmd exec_ang_cmd "
+           "plan_seg plan_main_pct plan_front_pct plan_rcs plan_feasible "
            "main_pct main_a rcs_a engine_a ref_speed ref_forward ref_up "
            "body_vel_deg forward_ref_deg up_ref_deg events\n";
 
@@ -2225,6 +2226,24 @@ void writeExecutionTelemetry(
             << formatVec3(frame.executedLinearAccelerationDemandMps2)
             << " exec_ang_cmd="
             << formatVec3(frame.executedAngularAccelerationDemandRadPerSec2)
+            << " plan_seg="
+            << (
+                frame.hasPlannedActuatorCommand
+                    ? std::to_string(frame.plannedActuatorSegmentIndex)
+                    : "-"
+               )
+            << " plan_main_pct="
+            << frame.plannedRearMainThrottle01 * 100.0
+            << " plan_front_pct="
+            << frame.plannedForeMainThrottle01 * 100.0
+            << " plan_rcs="
+            << formatVec3(frame.plannedManoeuvreAccelerationMps2)
+            << " plan_feasible="
+            << (
+                frame.hasPlannedActuatorCommand
+                    ? (frame.plannedPropulsionFeasible ? "YES" : "NO")
+                    : "-"
+               )
             << " main_pct="
             << frame.mainEngineThrottle01 * 100.0
             << " main_a="
@@ -2669,6 +2688,21 @@ ScenarioRunResult executeCalculatedRoute(
                 out.diagnostics
             );
             return out;
+        }
+
+        std::size_t plannedActuatorSegments = 0;
+        std::size_t infeasibleActuatorSegments = 0;
+        for (const auto& phase : programs)
+        {
+            plannedActuatorSegments +=
+                phase.actuatorSegmentCount;
+            for (std::size_t i = 0;
+                 i < phase.actuatorSegmentCount;
+                 ++i)
+            {
+                if (!phase.actuatorSegments[i].propulsionFeasible)
+                    ++infeasibleActuatorSegments;
+            }
         }
 
         ExecutionVehicle vehicle(scenario, settings);
@@ -3148,6 +3182,11 @@ ScenarioRunResult executeCalculatedRoute(
                 number(calculatedMaximumSpeedMps) + " M/S",
             "PROGRAM PHASES: " +
                 std::to_string(programs.size()),
+            "PLANNED ACTUATOR SEGMENTS: " +
+                std::to_string(plannedActuatorSegments),
+            "PLANNED ACTUATOR INFEASIBLE: " +
+                std::to_string(infeasibleActuatorSegments),
+            "AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION",
             "PHASE HANDOFFS: " +
                 std::to_string(phaseHandoffs),
             std::string("PROGRAM PHASES COMPLETE: ") +

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,11 @@ struct GeometricPathPlannerParams
     double additionalClearanceMeters = 0.0;
     double supportMarginMeters = 2.0;
 
+    // Support-node policy is part of the geometric search contract. The
+    // implementation must not silently add a different margin or sample floor.
+    double minimumSupportMarginMeters = 0.25;
+    double supportMarginObstacleRadiusFactor = 0.03;
+
     int sphereRadialSamples = 16;
     int capsuleRadialSamples = 12;
     std::size_t maxConsideredObstacles = 32;
@@ -24,6 +30,23 @@ struct GeometricPathPlannerParams
     bool allowStartEscape = false;
     bool allowGoalEscape = false;
     bool simplifyLineOfSight = true;
+
+    [[nodiscard]] bool valid() const noexcept
+    {
+        return
+            std::isfinite(agentRadiusMeters) &&
+            agentRadiusMeters >= 0.0 &&
+            std::isfinite(additionalClearanceMeters) &&
+            additionalClearanceMeters >= 0.0 &&
+            std::isfinite(supportMarginMeters) &&
+            supportMarginMeters >= 0.0 &&
+            std::isfinite(minimumSupportMarginMeters) &&
+            minimumSupportMarginMeters >= 0.0 &&
+            std::isfinite(supportMarginObstacleRadiusFactor) &&
+            supportMarginObstacleRadiusFactor >= 0.0 &&
+            sphereRadialSamples >= 3 &&
+            capsuleRadialSamples >= 3;
+    }
 };
 
 struct GeometricPathRequest

@@ -37,6 +37,14 @@ public:
         double maxLinearCommandSlewMetersPerSec3 = 1.0e6;
         double maxAngularCommandSlewRadPerSec3 = 1.0e6;
 
+        // Numerical/execution cadence policy. These affect deterministic
+        // results and therefore belong to the explicit profile rather than to
+        // private executor constants.
+        double maximumStepSeconds = 0.25;
+        double integrationSubstepsPerResponsePeriod = 16.0;
+        std::size_t maximumIntegrationSubsteps = 64;
+        std::size_t maximumPendingCommands = 256;
+
         // Deterministic per-decision precision error. This is command-space
         // error, not direct position/velocity corruption.
         double deterministicLinearNoiseAmplitudeMetersPerSec2 = 0.0;
@@ -106,9 +114,9 @@ public:
         std::size_t pendingCommandCount = 0;
     };
 
-    static constexpr std::size_t kMaxPendingCommands = 256;
-    static constexpr std::size_t kMaxIntegrationSubsteps = 64;
-    static constexpr double kMaximumStepSeconds = 0.25;
+    // Storage capacity is an implementation bound only. The effective queue
+    // and integrator policy comes from ExecutionProfile.
+    static constexpr std::size_t kPendingCommandStorageCapacity = 256;
 
     PilotSkillExecutor() noexcept;
 
@@ -168,7 +176,7 @@ private:
     FilterState linearFilter_ {};
     FilterState angularFilter_ {};
 
-    std::array<QueuedCommand, kMaxPendingCommands> queue_ {};
+    std::array<QueuedCommand, kPendingCommandStorageCapacity> queue_ {};
     std::size_t queueHead_ = 0;
     std::size_t queueSize_ = 0;
 };

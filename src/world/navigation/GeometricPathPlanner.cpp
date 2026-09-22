@@ -58,8 +58,12 @@ double supportMargin(
 ) noexcept
 {
     return std::max(
-        std::max(0.25, params.supportMarginMeters),
-        obstacle.conservativeRadiusMeters() * 0.03
+        std::max(
+            params.minimumSupportMarginMeters,
+            params.supportMarginMeters
+        ),
+        obstacle.conservativeRadiusMeters() *
+            params.supportMarginObstacleRadiusFactor
     );
 }
 
@@ -312,7 +316,7 @@ void addSphereSupportNodes(
     const GeometricPathPlannerParams& params
 )
 {
-    const int samples = std::max(8, params.sphereRadialSamples);
+    const int samples = params.sphereRadialSamples;
     const double radius = std::max(0.0, obstacle.radiusMeters) +
         navigationObstacleInflationMeters(
             obstacle,
@@ -341,7 +345,7 @@ void addCapsuleSupportNodes(
     const GeometricPathPlannerParams& params
 )
 {
-    const int samples = std::max(8, params.capsuleRadialSamples);
+    const int samples = params.capsuleRadialSamples;
     const double radial = std::max(0.0, obstacle.radiusMeters) +
         navigationObstacleInflationMeters(
             obstacle,
@@ -433,9 +437,11 @@ double pathLength(const std::vector<glm::dvec3>& points) noexcept
 GeometricPathResult GeometricPathPlanner::plan(const GeometricPathRequest& request)
 {
     GeometricPathResult out;
-    if (!finite3(request.startMeters) || !finite3(request.goalMeters))
+    if (!finite3(request.startMeters) ||
+        !finite3(request.goalMeters) ||
+        !request.params.valid())
     {
-        out.message = "non-finite geometric path endpoint";
+        out.message = "invalid geometric path request";
         return out;
     }
 

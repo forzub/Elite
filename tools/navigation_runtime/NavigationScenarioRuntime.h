@@ -33,12 +33,64 @@ enum class FlightStyle
     Extreme
 };
 
+struct ScenarioNavigationPolicy
+{
+    // Runtime clock / sampling. These values affect integration and therefore
+    // are explicit inputs, not file-scope constants.
+    double executionDtSeconds = 1.0 / 120.0;
+    double traceSampleSeconds = 1.0 / 30.0;
+    double maximumExecutionOverrunSeconds = 30.0;
+
+    // Static-route maneuver reserve policy.
+    double representativeTurnAngleRad =
+        3.14159265358979323846 / 6.0;
+    double standardClearanceReserveFactor = 1.0;
+    double extremeClearanceReserveFactor = 0.35;
+
+    // Physical attitude / propulsion authoring policy.
+    double lowSpeedDirectionThresholdMps = 0.25;
+    double newtonianRcsPrimaryThresholdMps2 = 0.35;
+    double terminalOrientationBlendDistanceMeters = 35.0;
+
+    // Accepted-program terminal tolerances.
+    double programTerminalPositionToleranceMeters = 4.0;
+    double programTerminalSpeedToleranceMps = 2.0;
+    double programTerminalForwardToleranceRad = 0.20;
+    double programTerminalAngularVelocityToleranceRadPerSec = 0.50;
+    double programValidityGraceSeconds = 5.0;
+
+    // Tracking envelope / reserve.
+    double trackingPositionErrorMeters = 8.0;
+    double trackingLinearVelocityErrorMps = 4.0;
+    double trackingForwardAngleErrorRad = 0.35;
+    double trackingAngularVelocityErrorRadPerSec = 0.8;
+    double alongTrackPositionDeadbandMeters = 12.0;
+    double alongTrackSpeedDeadbandMps = 0.5;
+    double linearFeedbackReserveMps2 = 1.5;
+    double angularFeedbackReserveRadPerSec2 = 0.8;
+
+    // A FreeTransit program that is outside its proved envelope for longer
+    // than this is invalidated; Autopilot must not home indefinitely to stale
+    // reference data.
+    double trackingLossInvalidateSeconds = 0.50;
+    double finalCaptureOverrunSeconds = 6.0;
+
+    // Final physical-state acceptance for this diagnostic scenario runner.
+    double finalPositionToleranceMeters = 5.0;
+    double finalSpeedToleranceMps = 1.5;
+    double finalForwardToleranceRad = 0.25;
+    double finalUpToleranceRad = 0.25;
+};
+
 struct ScenarioRunSettings
 {
     ControlMode controlMode = ControlMode::Newtonian;
     PilotLevel pilot = PilotLevel::Expert;
     FlightStyle flightStyle = FlightStyle::Standard;
     bool enableSuddenObstacle = false;
+
+    // All calculation-affecting stand policy crosses the API explicitly.
+    ScenarioNavigationPolicy navigation {};
 
     // Negative means "use the authored scenario value". The runtime viewer
     // uses explicit overrides so start/finish speed can be swept without

@@ -1,7 +1,7 @@
 # Navigation command ownership and accepted maneuver API
 
 **Status:** architecture contract / active Stage-12 correction
-**Updated:** 2026-09-19 Europe/Kyiv
+**Updated:** 2026-09-22 Europe/Kyiv
 **Related:** `NAVIGATION_PIPELINE_AUDIT.md`, `NAVIGATION_BEHAVIOR_CHARACTER_MODEL.md`, `CONTROL_LAW_MANEUVER_MODEL.md`, `TRAJECTORY_EXECUTION_REPLAN_MODEL.md`
 
 ## Core ownership question
@@ -199,19 +199,50 @@ the feed-forward acceleration/attitude program that was actually proved
 
 The proof and execution must refer to the same program.
 
-## The planner does not command individual thrusters
+## The planner owns the nominal actuator schedule
 
-The accepted program is vehicle-level, not hardware-bit-level.
+The accepted maneuver is not merely a kinematic trajectory and it is not a
+signed acceleration vector that a downstream allocator is expected to
+reinterpret.
 
-It specifies:
-- desired body attitude;
-- feed-forward proper/linear acceleration;
-- feed-forward angular acceleration;
-- optional maneuver-family/control-allocation semantics for diagnostics/policy.
+For each planned interval the Planner publishes the physical actuator schedule
+that was part of the feasibility proof:
 
-The flight-control/propulsion allocator maps that to actual main engine, RCS and torque actuators using the current physical vehicle model.
+~~~text
+rear/aft main:
+    enabled
+    throttle start/end or equivalent ramp law
 
-The planner's feasibility proof must use the same capability semantics as the allocator so the allocator is not asked to rescue an impossible request.
+fore/reverse main:
+    only when the VehicleDynamicsProfile says that hardware exists
+    enabled
+    throttle start/end
+
+manoeuvre/RCS:
+    bounded requested acceleration/force vector
+
+attitude:
+    q/omega/alpha reference that makes the actuator directions physically valid
+~~~
+
+The low-level flight-control/propulsion layer remains the **physical authority**:
+it applies installed-actuator limits, resource depletion and safety clamps, and
+physics integrates the actual result. It does not choose a different nominal
+engine allocation just because the Planner's program is inconvenient.
+
+Therefore:
+
+~~~text
+Planner chooses and proves nominal main/RCS/attitude allocation.
+Autopilot tracks that accepted schedule and adds only proved bounded correction.
+Low-level control clamps/enforces real hardware.
+Physics decides what actually happens.
+~~~
+
+If actual capability differs from the capability revision used by the proof,
+or if bounded correction cannot recover tracking, the program is invalidated
+and authority returns to Planner. No downstream layer silently invents a new
+maneuver.
 
 ## 4. Trajectory follower — closes the loop around the accepted program
 
@@ -394,7 +425,7 @@ accepted program contains reference state + feed-forward control
 
 follower tracks; it does not re-plan
 
-propulsion allocator chooses actuators; planner does not bit-drive thrusters
+planner publishes the proved nominal actuator schedule; low-level control enforces real actuator limits
 
 Newtonian turn != stop-turn-go
 

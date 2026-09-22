@@ -1550,27 +1550,26 @@ Program makeProgramPhase(
     program.tracking.linearFeedbackReserveMps2 = 1.5;
     program.tracking.angularFeedbackReserveRadPerSec2 = 0.8;
 
-    const double mainAcceleration =
-        static_cast<double>(params.maxLinearGs) *
-        kStandardGravity;
+    const double forwardMainAuthority =
+        game::ship::forwardMainAccelerationLimitMps2(params);
+    const double reverseMainAuthority =
+        game::ship::reverseMainAccelerationLimitMps2(params);
+    const double manoeuvreAuthority =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
 
     program.capability.revision = scenario.staticWorldRevision;
     program.capability.maxForwardAccelerationMetersPerSec2 =
-        mainAcceleration;
+        std::max(forwardMainAuthority, manoeuvreAuthority);
     program.capability.maxReverseAccelerationMetersPerSec2 =
-        mainAcceleration;
+        std::max(reverseMainAuthority, manoeuvreAuthority);
     program.capability.maxLateralAccelerationMetersPerSec2 =
-        static_cast<double>(params.manoeuvreThrusterAccel);
+        manoeuvreAuthority;
     program.capability.maxVerticalAccelerationMetersPerSec2 =
-        static_cast<double>(params.manoeuvreThrusterAccel);
+        manoeuvreAuthority;
     program.capability.maxAngularAccelerationRadPerSec2 =
-        static_cast<double>(params.angularAccel);
+        game::ship::angularAccelerationLimitRadPerSec2(params);
     program.capability.maxAngularSpeedRadPerSec =
-        std::max({
-            static_cast<double>(params.maxPitchRate),
-            static_cast<double>(params.maxYawRate),
-            static_cast<double>(params.maxRollRate)
-        });
+        game::ship::maximumAngularSpeedRadPerSec(params);
 
     // Planner-owned physical command intervals. This is the first explicit
     // State + Segment slice: the reference samples remain the required states;
@@ -1583,11 +1582,13 @@ Program makeProgramPhase(
         bool feasible = true;
     };
 
-    const double manoeuvreAuthority =
-        std::max(
-            0.0,
-            static_cast<double>(params.manoeuvreThrusterAccel)
-        );
+    struct PlannedPropulsion
+    {
+        double rearMainThrottle01 = 0.0;
+        double foreMainThrottle01 = 0.0;
+        glm::dvec3 manoeuvreAccelerationMapMps2 {0.0};
+        bool feasible = true;
+    };
 
     const auto compilePropulsion =
         [&](const Program::ReferenceSample& sample)
@@ -1604,27 +1605,48 @@ Program makeProgramPhase(
                     sample.linearAccelerationFeedForwardMapMps2,
                     forward
                 );
+
             const double rearMainAcceleration =
                 std::clamp(
                     requestedForward,
                     0.0,
-                    mainAcceleration
+                    forwardMainAuthority
+                );
+            const double foreMainAcceleration =
+                std::clamp(
+                    -requestedForward,
+                    0.0,
+                    reverseMainAuthority
                 );
 
             out.rearMainThrottle01 =
-                mainAcceleration > 1.0e-9
-                    ? rearMainAcceleration / mainAcceleration
+                forwardMainAuthority > 1.0e-9
+                    ? rearMainAcceleration / forwardMainAuthority
                     : 0.0;
+            out.foreMainThrottle01 =
+                reverseMainAuthority > 1.0e-9
+                    ? foreMainAcceleration / reverseMainAuthority
+                    : 0.0;
+
+            const glm::dvec3 mainAccelerationVector =
+                forward *
+                (rearMainAcceleration - foreMainAcceleration);
 
             glm::dvec3 manoeuvre =
                 sample.linearAccelerationFeedForwardMapMps2 -
-                forward * rearMainAcceleration;
+                mainAccelerationVector;
 
             const double manoeuvreMagnitude =
                 glm::length(manoeuvre);
 
+            const bool longitudinalFeasible =
+                requestedForward <=
+                    forwardMainAuthority + manoeuvreAuthority + 1.0e-6 &&
+                requestedForward >=
+                    -reverseMainAuthority - manoeuvreAuthority - 1.0e-6;
+
             out.feasible =
-                requestedForward <= mainAcceleration + 1.0e-6 &&
+                longitudinalFeasible &&
                 manoeuvreMagnitude <= manoeuvreAuthority + 1.0e-6;
 
             if (manoeuvreMagnitude > manoeuvreAuthority &&
@@ -1663,12 +1685,13 @@ Program makeProgramPhase(
         segment.rearMainThrottleEnd01 =
             end.rearMainThrottle01;
 
-        // Current Cobra descriptor has no fore main engine. Keep the explicit
-        // channel dark instead of representing reverse acceleration as
-        // imaginary propulsion.
-        segment.foreMainEnabled = false;
-        segment.foreMainThrottleStart01 = 0.0;
-        segment.foreMainThrottleEnd01 = 0.0;
+        segment.foreMainEnabled =
+            start.foreMainThrottle01 > 1.0e-4 ||
+            end.foreMainThrottle01 > 1.0e-4;
+        segment.foreMainThrottleStart01 =
+            start.foreMainThrottle01;
+        segment.foreMainThrottleEnd01 =
+            end.foreMainThrottle01;
 
         segment.manoeuvreAccelerationStartMapMps2 =
             start.manoeuvreAccelerationMapMps2;

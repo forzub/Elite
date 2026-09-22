@@ -1228,12 +1228,18 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
 world::navigation::NavigationVehicleProfile executionVehicleProfile(
     const Scenario& scenario,
     const ScenarioRunSettings& settings,
-    const ShipParams& params
+    const ScenarioVehicleParameters& vehicle
 )
 {
+    const ShipParams& params = vehicle.physics;
     world::navigation::NavigationVehicleProfile profile;
     profile.collisionRadiusMeters =
-        std::max(0.0, scenario.routeEnvelopeRadiusMeters);
+        std::max({
+            0.0,
+            vehicle.bodyHalfExtentsMeters.x,
+            vehicle.bodyHalfExtentsMeters.y,
+            vehicle.bodyHalfExtentsMeters.z
+        });
     profile.preferredClearanceMeters =
         routePlanningClearanceMeters(
             scenario,
@@ -1247,39 +1253,33 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
     // from the vehicle capability, never from FlightStyle or terminal speed.
     profile.maxSpeedMps = std::max({
         0.1,
-        static_cast<double>(params.maxCombatSpeed),
+        game::ship::controlledSpeedLimitMps(params),
         effectiveStartSpeedMps(scenario, settings),
         effectiveFinishSpeedMps(scenario, settings)
     });
 
-    const double mainAcceleration =
-        std::max(
-            0.1,
-            static_cast<double>(params.maxLinearGs) *
-                kStandardGravity
-        );
+    const double forwardMain =
+        game::ship::forwardMainAccelerationLimitMps2(params);
+    const double reverseMain =
+        game::ship::reverseMainAccelerationLimitMps2(params);
+    const double manoeuvre =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
 
     profile.maxForwardAccelerationMps2 =
-        mainAcceleration;
-    profile.maxBrakingAccelerationMps2 =
-        mainAcceleration;
+        std::max(0.1, std::max(forwardMain, manoeuvre));
 
-    // Translation sideways relative to the hull is physically limited by the
-    // real manoeuvre thrusters, not the old 20 m/s2 planning placeholder.
+    // IMPORTANT: this scalar path profile may only expose instantaneous
+    // attitude-preserving braking authority. Flip-and-burn is a separate
+    // maneuver that must include rotation time and proof.
+    profile.maxBrakingAccelerationMps2 =
+        std::max(0.1, std::max(reverseMain, manoeuvre));
     profile.maxLateralAccelerationMps2 =
-        std::max(
-            0.1,
-            static_cast<double>(params.manoeuvreThrusterAccel)
-        );
+        std::max(0.1, manoeuvre);
 
     profile.maxAngularVelocityRadPerSecond =
-        std::max({
-            static_cast<double>(params.maxPitchRate),
-            static_cast<double>(params.maxYawRate),
-            static_cast<double>(params.maxRollRate)
-        });
+        game::ship::maximumAngularSpeedRadPerSec(params);
     profile.maxAngularAccelerationRadPerSecond2 =
-        std::max(0.1, static_cast<double>(params.angularAccel));
+        game::ship::angularAccelerationLimitRadPerSec2(params);
     return profile;
 }
 
@@ -1287,7 +1287,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
     const Scenario& scenario,
     const ScenarioRunSettings& settings,
     const TraceDocument& calculatedRoute,
-    const ShipParams& params
+    const ScenarioVehicleParameters& vehicle
 )
 {
     world::navigation::TrajectoryGenerationRequest request;
@@ -1301,7 +1301,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
         executionVehicleProfile(
             scenario,
             settings,
-            params
+            vehicle
         );
     request.initialVelocityMps =
         effectiveStartVelocity(scenario, settings);
@@ -2566,7 +2566,7 @@ ScenarioRunResult executeCalculatedRoute(
                 scenario,
                 settings,
                 calculatedRoute,
-                params
+                vehicleInput
             );
 
         if (!trajectoryResult.ready())

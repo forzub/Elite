@@ -58,6 +58,33 @@ struct AcceptedManeuverProgram
         glm::dvec3 angularAccelerationFeedForwardMapRadPerSec2 {0.0};
     };
 
+    struct ActuatorSegment
+    {
+        // Interval from samples[i] to samples[i+1].
+        double durationSeconds = 0.0;
+
+        // Current Cobra has one aft/rear main engine. Fore-main fields remain
+        // explicit so the program format does not confuse "reverse demand"
+        // with hardware that is not actually installed.
+        bool rearMainEnabled = false;
+        double rearMainThrottleStart01 = 0.0;
+        double rearMainThrottleEnd01 = 0.0;
+
+        bool foreMainEnabled = false;
+        double foreMainThrottleStart01 = 0.0;
+        double foreMainThrottleEnd01 = 0.0;
+
+        // World/NavLocal feed-forward requested from real manoeuvre/RCS
+        // authority over this interval.
+        glm::dvec3 manoeuvreAccelerationStartMapMps2 {0.0};
+        glm::dvec3 manoeuvreAccelerationEndMapMps2 {0.0};
+
+        // False means the sampled kinematic reference demanded more feed-forward
+        // authority than the vehicle model can physically allocate. This is
+        // observable during migration and will become a hard acceptance gate.
+        bool propulsionFeasible = true;
+    };
+
     struct TerminalTolerance
     {
         double positionMeters = 0.0;
@@ -120,6 +147,13 @@ struct AcceptedManeuverProgram
 
     std::uint8_t sampleCount = 0;
     std::array<ReferenceSample, kMaxSamples> samples {};
+
+    // Explicit physical command intervals owned by Planner. During migration
+    // this may be zero for legacy producers; new Stage-12 programs publish
+    // exactly sampleCount-1 intervals.
+    std::uint8_t actuatorSegmentCount = 0;
+    std::array<ActuatorSegment, kMaxSamples - 1> actuatorSegments {};
+    bool actuatorProgramFeasible = true;
 
     TerminalTolerance terminalTolerance {};
     TrackingEnvelope tracking {};

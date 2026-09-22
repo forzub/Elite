@@ -329,6 +329,79 @@ void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
     );
 }
 
+void testNewtonianHigherSpeedUsesMainEngineDominantManeuver()
+{
+#ifdef ELITE_SOURCE_ROOT
+    const std::string scenario =
+        std::string(ELITE_SOURCE_ROOT) +
+        "/tools/navigation_runtime/scenario.json";
+#else
+    const std::string scenario =
+        "tools/navigation_runtime/scenario.json";
+#endif
+
+    ScenarioRunSettings settings;
+    settings.controlMode = ControlMode::Newtonian;
+    settings.pilot = PilotLevel::Expert;
+    settings.flightStyle = FlightStyle::Standard;
+    settings.enableSuddenObstacle = false;
+    settings.startSpeedOverrideMps = 21.20;
+    settings.finishSpeedOverrideMps = 21.20;
+
+    const auto planned = calculateScenario(scenario, settings);
+    require(
+        planned.success,
+        "Newtonian 21.2->21.2 main-engine fixture failed Stage-1 planning"
+    );
+
+    const auto executed =
+        executeCalculatedRoute(scenario, settings, planned.trace);
+
+    printDiagnostics("[E2E-NEWTONIAN-21] ", executed);
+
+    bool mainParticipatedEarly = false;
+    double maximumEarlyMainAcceleration = 0.0;
+
+    for (const auto& frame : executed.trace.frames)
+    {
+        const double mainMagnitude =
+            glm::length(frame.mainEngineAccelerationMps2);
+
+        if (frame.timeSeconds <= 8.0)
+        {
+            maximumEarlyMainAcceleration =
+                std::max(
+                    maximumEarlyMainAcceleration,
+                    mainMagnitude
+                );
+            if (mainMagnitude >= 0.25)
+                mainParticipatedEarly = true;
+        }
+
+        if (mainMagnitude > 1.0e-6)
+        {
+            const glm::dvec3 forward =
+                glm::normalize(frame.shipForward);
+            require(
+                glm::dot(
+                    frame.mainEngineAccelerationMps2,
+                    forward
+                ) >= -1.0e-6,
+                "Newtonian runtime produced impossible forward/nose main thrust"
+            );
+        }
+    }
+
+    require(
+        mainParticipatedEarly,
+        "Newtonian 21.2->21.2 still flew the material maneuver on RCS alone"
+    );
+    require(
+        maximumEarlyMainAcceleration >= 0.25,
+        "Newtonian 21.2->21.2 never acquired an early main-engine burn"
+    );
+}
+
 void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
 {
 #ifdef ELITE_SOURCE_ROOT
@@ -432,6 +505,7 @@ int main()
         testHighSpeedRunReacquiresInsteadOfOutrunningReference();
         testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold();
         testAssistedHigherSpeedUsesHullCoupledPhysicalBraking();
+        testNewtonianHigherSpeedUsesMainEngineDominantManeuver();
         testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics();
         std::cout
             << "NAVIGATION RETAINED-ROUTE E2E: PASS\n"
@@ -442,6 +516,7 @@ int main()
             << " - high-speed follower can hold reference progress and reacquire\n"
             << " - Assisted 10->10 cannot turn reference hold into a speed runaway\n"
             << " - Assisted 20.9->20 uses aft-only main thrust and physical hull coupling\n"
+            << " - Newtonian 21.2->21.2 acquires main-engine thrust instead of flying on RCS alone\n"
             << " - route-leg programs cross Follower -> PilotSkill -> physics\n"
             << " - Cobra reaches the authored finish\n";
         return EXIT_SUCCESS;

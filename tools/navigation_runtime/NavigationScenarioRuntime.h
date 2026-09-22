@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/VehicleDynamicsProfile.h"
+#include "src/world/navigation/control/PilotSkillExecutor.h"
 
 class ShipDescriptor;
 
@@ -33,6 +34,13 @@ enum class FlightStyle
     Standard = 0,
     Extreme
 };
+
+using ScenarioPilotSkillProfile =
+    world::navigation::PilotSkillExecutor::PilotSkillProfile;
+
+[[nodiscard]] ScenarioPilotSkillProfile makeScenarioPilotSkillProfile(
+    PilotLevel level
+) noexcept;
 
 struct ScenarioNavigationPolicy
 {
@@ -150,7 +158,9 @@ struct ScenarioNavigationPolicy
 struct ScenarioRunSettings
 {
     ControlMode controlMode = ControlMode::Newtonian;
-    PilotLevel pilot = PilotLevel::Expert;
+    PilotLevel pilot = PilotLevel::Expert; // presentation label only
+    ScenarioPilotSkillProfile pilotExecutionProfile =
+        makeScenarioPilotSkillProfile(PilotLevel::Expert);
     FlightStyle flightStyle = FlightStyle::Standard;
     bool enableSuddenObstacle = false;
 

@@ -137,6 +137,8 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
     ScenarioRunSettings settings;
     settings.controlMode = ControlMode::Newtonian;
     settings.pilot = PilotLevel::Expert;
+    settings.pilotExecutionProfile =
+        makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;
     settings.enableSuddenObstacle = false;
     settings.startSpeedOverrideMps = 26.15;
@@ -188,6 +190,8 @@ void testAssistedLowSpeedUsesMonotonicReferenceClock()
     ScenarioRunSettings settings;
     settings.controlMode = ControlMode::Assisted;
     settings.pilot = PilotLevel::Expert;
+    settings.pilotExecutionProfile =
+        makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;
     settings.enableSuddenObstacle = false;
     settings.startSpeedOverrideMps = 10.0;
@@ -262,6 +266,8 @@ void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
     ScenarioRunSettings settings;
     settings.controlMode = ControlMode::Assisted;
     settings.pilot = PilotLevel::Expert;
+    settings.pilotExecutionProfile =
+        makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;
     settings.enableSuddenObstacle = false;
     settings.startSpeedOverrideMps = 20.90;
@@ -345,6 +351,8 @@ void testNewtonianHigherSpeedUsesMainEngineDominantManeuver()
     ScenarioRunSettings settings;
     settings.controlMode = ControlMode::Newtonian;
     settings.pilot = PilotLevel::Expert;
+    settings.pilotExecutionProfile =
+        makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;
     settings.enableSuddenObstacle = false;
     settings.startSpeedOverrideMps = 21.20;
@@ -418,6 +426,8 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
     ScenarioRunSettings settings;
     settings.controlMode = ControlMode::Newtonian;
     settings.pilot = PilotLevel::Expert;
+    settings.pilotExecutionProfile =
+        makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;
     settings.enableSuddenObstacle = false;
 

@@ -256,12 +256,15 @@ Planner::MovingPassage::Vec3d precisionHullHalfExtents(
 NavigationLocalControlIntent holdIntent(
     const NavigationRuntimePlanner::AgentState& agent,
     const NavigationRuntimePlanner::Goal& goal,
-    double urgency
+    double urgency,
+    double emergencyUrgencyThreshold01
 ) noexcept
 {
     NavigationLocalControlIntent intent;
     intent.revision = goal.revision;
-    intent.emergency = goal.emergency || urgency >= 0.75;
+    intent.emergency =
+        goal.emergency ||
+        urgency >= emergencyUrgencyThreshold01;
     intent.hazardUrgency01 = std::clamp(
         std::max(goal.hazardUrgency01, urgency),
         0.0,
@@ -696,7 +699,12 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         result.status = Status::StaticHold;
         result.selectedTargetMapMeters = agent.positionMapMeters;
         result.coarseWaypointMapMeters = agent.positionMapMeters;
-        result.intent = holdIntent(agent, goal, policy.staticHoldUrgency01);
+        result.intent = holdIntent(
+            agent,
+            goal,
+            policy.staticHoldUrgency01,
+            policy.holdEmergencyUrgencyThreshold01
+        );
         return result;
     }
 
@@ -732,7 +740,10 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         policy.staleHoldUrgency01 <= 1.0 &&
         finite(policy.conflictHoldUrgency01) &&
         policy.conflictHoldUrgency01 >= 0.0 &&
-        policy.conflictHoldUrgency01 <= 1.0;
+        policy.conflictHoldUrgency01 <= 1.0 &&
+        finite(policy.holdEmergencyUrgencyThreshold01) &&
+        policy.holdEmergencyUrgencyThreshold01 >= 0.0 &&
+        policy.holdEmergencyUrgencyThreshold01 <= 1.0;
     if (!portalPolicyValid)
         return result;
 
@@ -964,7 +975,12 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         // Reuse the existing stabilized angular-control semantics, but replace
         // only linear demand with the already-proven Hermite control sample.
         // No second desired-velocity or trajectory solve occurs here.
-        result.intent = holdIntent(agent, goal, 0.0);
+        result.intent = holdIntent(
+            agent,
+            goal,
+            0.0,
+            policy.holdEmergencyUrgencyThreshold01
+        );
         result.intent.idealLinearAccelerationLocalMps2 =
             result.movingPassageInitialAccelerationMapMps2;
         return result;
@@ -990,16 +1006,31 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
             break;
         case Avoidance::Status::ConflictHold:
             result.status = Status::ConflictHold;
-            result.intent = holdIntent(agent, goal, policy.conflictHoldUrgency01);
+            result.intent = holdIntent(
+                agent,
+                goal,
+                policy.conflictHoldUrgency01,
+                policy.holdEmergencyUrgencyThreshold01
+            );
             return result;
         case Avoidance::Status::StaleHold:
             result.status = Status::StaleHold;
-            result.intent = holdIntent(agent, goal, policy.staleHoldUrgency01);
+            result.intent = holdIntent(
+                agent,
+                goal,
+                policy.staleHoldUrgency01,
+                policy.holdEmergencyUrgencyThreshold01
+            );
             return result;
         case Avoidance::Status::StaticHold:
         default:
             result.status = Status::StaticHold;
-            result.intent = holdIntent(agent, goal, 0.5);
+            result.intent = holdIntent(
+                agent,
+                goal,
+                policy.staticHoldUrgency01,
+                policy.holdEmergencyUrgencyThreshold01
+            );
             return result;
     }
 

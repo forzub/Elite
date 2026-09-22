@@ -75,6 +75,61 @@ ScenarioVehicleParameters makeScenarioVehicleParameters(
     return out;
 }
 
+ScenarioPilotSkillProfile makeScenarioPilotSkillProfile(
+    PilotLevel level
+) noexcept
+{
+    ScenarioPilotSkillProfile profile;
+    profile.execution.deterministicSeed = 0xC0A1B17Eull;
+
+    switch (level)
+    {
+        case PilotLevel::Average:
+            profile.execution.reactionDelaySeconds = 0.15;
+            profile.execution.perceptionDecisionRateHz = 20.0;
+            profile.execution.commandLatencySeconds = 0.08;
+            profile.execution.responseFrequencyHz = 5.0;
+            profile.execution.dampingRatio = 1.0;
+            profile.execution.commandGain = 0.96;
+            profile.execution.maxLinearCommandSlewMetersPerSec3 = 180.0;
+            profile.execution.maxAngularCommandSlewRadPerSec3 = 18.0;
+            profile.execution.deterministicLinearNoiseAmplitudeMetersPerSec2 =
+                0.08;
+            profile.execution.deterministicAngularNoiseAmplitudeRadPerSec2 =
+                0.015;
+            break;
+
+        case PilotLevel::Loser:
+            profile.execution.reactionDelaySeconds = 0.40;
+            profile.execution.perceptionDecisionRateHz = 8.0;
+            profile.execution.commandLatencySeconds = 0.18;
+            profile.execution.responseFrequencyHz = 2.5;
+            profile.execution.dampingRatio = 0.85;
+            profile.execution.commandGain = 0.88;
+            profile.execution.maxLinearCommandSlewMetersPerSec3 = 70.0;
+            profile.execution.maxAngularCommandSlewRadPerSec3 = 7.0;
+            profile.execution.deterministicLinearNoiseAmplitudeMetersPerSec2 =
+                0.22;
+            profile.execution.deterministicAngularNoiseAmplitudeRadPerSec2 =
+                0.045;
+            break;
+
+        case PilotLevel::Expert:
+        default:
+            profile.execution.reactionDelaySeconds = 0.0;
+            profile.execution.perceptionDecisionRateHz = 100.0;
+            profile.execution.commandLatencySeconds = 0.0;
+            profile.execution.responseFrequencyHz = 10.0;
+            profile.execution.dampingRatio = 1.0;
+            profile.execution.commandGain = 1.0;
+            profile.execution.maxLinearCommandSlewMetersPerSec3 = 1000.0;
+            profile.execution.maxAngularCommandSlewRadPerSec3 = 1000.0;
+            break;
+    }
+
+    return profile;
+}
+
 namespace
 {
 
@@ -625,59 +680,6 @@ using Program = game::navigation::AcceptedManeuverProgram;
 using Follower = game::navigation::TrajectoryFollower;
 using Bridge = game::navigation::NavigationRuntimeControlBridge;
 using Law = game::navigation::LocalFlightControlLaw;
-
-Bridge::PilotSkillProfile pilotProfile(PilotLevel level)
-{
-    Bridge::PilotSkillProfile profile;
-    profile.execution.deterministicSeed = 0xC0A1B17Eull;
-
-    switch (level)
-    {
-        case PilotLevel::Average:
-            profile.execution.reactionDelaySeconds = 0.15;
-            profile.execution.perceptionDecisionRateHz = 20.0;
-            profile.execution.commandLatencySeconds = 0.08;
-            profile.execution.responseFrequencyHz = 5.0;
-            profile.execution.dampingRatio = 1.0;
-            profile.execution.commandGain = 0.96;
-            profile.execution.maxLinearCommandSlewMetersPerSec3 = 180.0;
-            profile.execution.maxAngularCommandSlewRadPerSec3 = 18.0;
-            profile.execution.deterministicLinearNoiseAmplitudeMetersPerSec2 =
-                0.08;
-            profile.execution.deterministicAngularNoiseAmplitudeRadPerSec2 =
-                0.015;
-            break;
-
-        case PilotLevel::Loser:
-            profile.execution.reactionDelaySeconds = 0.40;
-            profile.execution.perceptionDecisionRateHz = 8.0;
-            profile.execution.commandLatencySeconds = 0.18;
-            profile.execution.responseFrequencyHz = 2.5;
-            profile.execution.dampingRatio = 0.85;
-            profile.execution.commandGain = 0.88;
-            profile.execution.maxLinearCommandSlewMetersPerSec3 = 70.0;
-            profile.execution.maxAngularCommandSlewRadPerSec3 = 7.0;
-            profile.execution.deterministicLinearNoiseAmplitudeMetersPerSec2 =
-                0.22;
-            profile.execution.deterministicAngularNoiseAmplitudeRadPerSec2 =
-                0.045;
-            break;
-
-        case PilotLevel::Expert:
-        default:
-            profile.execution.reactionDelaySeconds = 0.0;
-            profile.execution.perceptionDecisionRateHz = 100.0;
-            profile.execution.commandLatencySeconds = 0.0;
-            profile.execution.responseFrequencyHz = 10.0;
-            profile.execution.dampingRatio = 1.0;
-            profile.execution.commandGain = 1.0;
-            profile.execution.maxLinearCommandSlewMetersPerSec3 = 1000.0;
-            profile.execution.maxAngularCommandSlewRadPerSec3 = 1000.0;
-            break;
-    }
-
-    return profile;
-}
 
 const char* pilotName(PilotLevel level)
 {
@@ -1990,7 +1992,7 @@ struct ExecutionVehicle
         const ScenarioVehicleParameters& vehicle
     )
         : params(vehicle.physics),
-          bridge(pilotProfile(settings.pilot))
+          bridge(settings.pilotExecutionProfile)
     {
         frame.systemId = 1;
         frame.frameId = "navigation-runtime-stage2";
@@ -2668,6 +2670,11 @@ ScenarioRunResult executeCalculatedRoute(
             throw std::runtime_error("invalid vehicle dynamics profile");
         if (!settings.navigation.valid())
             throw std::runtime_error("invalid navigation runtime policy");
+        if (!world::navigation::PilotSkillExecutor::validProfile(
+                settings.pilotExecutionProfile))
+        {
+            throw std::runtime_error("invalid pilot execution profile");
+        }
 
         const Scenario scenario = loadScenario(scenarioJsonPath);
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);

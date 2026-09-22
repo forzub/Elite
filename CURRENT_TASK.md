@@ -1,101 +1,98 @@
-# CURRENT TASK — Replace point-mass corner timing with physically compiled maneuver geometry
+# CURRENT TASK — Observe Ruckig reference vs physical execution, then fix maneuver ownership
 
 Date: 2026-09-22
 
-Status: **ARCHITECTURE FIX REQUIRED BEFORE MORE FOLLOWER TUNING**
+Status: **DIAGNOSTIC VIEWER READY / TARGET RUN REQUIRED**
 
-Baseline before documentation commits:
-
-```text
-adfe567eefac994344d81c60b1f21e24f3d09077
-```
-
-## Finding
-
-The current higher-speed failure is not just a bad Ruckig tuning constant.
-
-Current multi-point chain:
+Code baseline before documentation commits:
 
 ```text
-coarse collision-free polyline
-    -> local Bezier corner rounding
-    -> scalar path p(s)
-    -> scalar Ruckig s(t)
-    -> attitude authored afterwards
-    -> follower tries to physically realize it
+620b59ebbb6937727c5c3e3a47f78884ae3fd99f
 ```
 
-That ordering is backwards for a main-engine-dominant Newtonian craft.
+## New visual markers
 
-Ruckig currently knows:
-- scalar path distance;
-- scalar path speed;
-- one symmetric acceleration limit;
-- jerk limit.
-
-It does NOT know:
-- hull attitude needed for the next burn;
-- finite time needed to rotate the hull;
-- aft-main direction;
-- simultaneous RCS + main allocation;
-- actual braking boundary including lead-rotation;
-- whether the chosen curve is dynamically flyable by Cobra at that speed.
-
-## Vehicle-data issue
-
-The runtime harness uses a duplicated hard-coded `cobraParams()` instead of
-the authoritative Cobra descriptor.
-
-Current inspected values are duplicated correctly, but this is unsafe and must
-be removed.
-
-Worse, `maxLinearGs = 7.5` becomes ~73.55 m/s^2 forward/braking authority in
-the trajectory profile. That is an envelope, not a complete propulsion model.
-
-`turnRadius = 20 m` exists but is not the authoritative source for current
-multi-point corner geometry.
-
-## Required architecture
-
-For each material maneuver/corner, compile a physically feasible primitive
-before final timing:
+During execution:
 
 ```text
-incoming state
-(position, velocity, hull attitude, angular rate)
+PINK CROSS
+    = instantaneous programReferencePosition
+    = current Ruckig-derived reference point B9/B10 asks follower to track
 
-    -> choose geometric maneuver
-       straight / arc / clothoid-like transition / lead-rotate+burn
-
-    -> solve propulsion allocation
-       aft main + RCS + angular authority
-
-    -> compute lead-rotation start
-       and braking/turn entry boundary
-
-    -> produce target state samples / primitive constraints
-
-    -> Ruckig times the already feasible scalar or state transition
-       without inventing geometry or propulsion
+VIOLET CROSS
+    = end of active AcceptedManeuverProgram phase
+    = post-split endpoint on the already calculated trajectory
 ```
 
-At 30 m/s with free space, planner should be allowed to generate a broad arc
-whose radius is determined by the actual maneuver envelope instead of retaining
-an unnecessarily sharp polyline topology.
+Important: current multi-point Ruckig solve has no true "target of current
+section". It solves one scalar path progress `s(t)` to the end of the complete
+execution guide. The phase endpoint is created afterward when the full
+trajectory is divided by retained-route progress.
 
-## Immediate implementation sequence
+## Architecture decision
 
-1. Eliminate duplicated `cobraParams()`; source the real descriptor/profile.
-2. Separate **propulsion capability** from pilot/load envelope.
-3. Add a maneuver-feasibility layer that computes:
-   - available RCS vector;
-   - aft-main contribution as a function of hull attitude;
-   - angular rotation time;
-   - braking/turn lead distance.
-4. Upgrade corner geometry to use physically required radius/transition length.
-5. Feed Ruckig physically feasible progress/state constraints after that.
-6. Add a 30 m/s no-nearby-obstacle regression requiring a broad smooth arc and
-   no corner overshoot.
+Do not treat RCS as the sole source of turn acceleration.
 
-Do not tune follower envelopes or add more recovery hacks until this planner /
-maneuver-authoring boundary is corrected.
+The physical maneuver planner/compiler is authoritative for:
+- flyable geometry;
+- tangent/velocity state;
+- hull attitude schedule;
+- angular reachability;
+- aft-main + RCS allocation;
+- turn/braking lead distance.
+
+Ruckig is an inner numerical solver for timing/state transition inside that
+compiled maneuver.
+
+Follower/autopilot only executes the accepted program. If it cannot track, it
+holds/reacquires or requests recompile; it does not become a second path
+planner.
+
+## Terminal requirement in current scenario
+
+`scenario.json` explicitly provides `finish.forward` and `finish.up`.
+Parser therefore sets both terminal orientation requirements.
+
+Current acceptance:
+- position <= 5 m;
+- speed within +/-1.5 m/s;
+- forward error <= 0.25 rad;
+- up error <= 0.25 rad.
+
+For non-zero requested finish speed, the trajectory request also sets terminal
+velocity in `finish.forward`.
+
+So the current test is an oriented moving fly-through.
+
+No braking is required merely because there is a turn. If a broad free-space
+arc can arrive at the requested speed and final direction, preserve speed.
+Brake only when required by:
+- requested lower terminal speed;
+- curvature/available acceleration;
+- narrow corridor / obstacle clearance;
+- finite attitude acquisition / propulsion reachability.
+
+## Run next
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+bash tests/navigation_runtime/run_stage1_mingw64.sh
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```
+
+Use Newtonian / Expert / Standard and reproduce the higher-speed case.
+
+Observe frame-by-frame around the first miss:
+- pink reference cross;
+- violet active-phase endpoint;
+- hull nose;
+- actual velocity vector;
+- main/RCS lamps.
+
+The immediate question is:
+**does the pink reference itself demand a physically unreasonable turn, or does
+the follower fail to realize a reasonable reference?**
+
+Do not tune follower envelopes until this is answered.

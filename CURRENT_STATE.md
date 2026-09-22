@@ -3326,3 +3326,42 @@ adjacent dense trajectory sample exactly once.
 
 Code baseline before documentation commits: `b51b0abc22270104f75f198935d857582c9b4445`.
 Target MinGW64 validation pending.
+
+## 2026-09-22 — full architecture audit: current regression is a frozen-program deadlock
+
+Fresh dense-source target runs are both failures. Source coverage is now
+complete, but there are zero phase handoffs.
+
+The key new diagnosis is independent of speed:
+
+- accepted attitude can jump from zero angular rate to ~3 rad/s in one 8.33 ms
+  sample because `buildReferenceAttitudes()` constrains angular speed but not
+  angular acceleration;
+- the 0.8 rad/s tracking envelope is therefore exceeded almost immediately;
+- runtime freezes `programReferenceTime` by accumulating
+  `activeProgramReferenceDelaySeconds`;
+- the same frozen time is passed to `ManeuverPhaseGate`;
+- nominal page end is never reached, so activeProgram remains 0 forever;
+- outside-envelope B10 removes trajectory feed-forward and performs bounded
+  recovery toward that frozen early reference;
+- the craft therefore brakes, reaches zero speed and then returns toward an old
+  point.
+
+Dense chunking exposed this because the 16-sample objects are being treated as
+semantic maneuver phases. They are actually storage pages of one continuous
+program and must share one global timebase.
+
+Architecture audit also confirms there is no single vehicle-dynamics source of
+truth. Descriptor, runtime `cobraParams()`, NavigationVehicleProfile,
+CapabilitySnapshot and manual Assisted propulsion currently disagree.
+
+No further follower-gain tuning is justified before correcting:
+1. continuous program/page semantics;
+2. reference invalidation/replan behavior;
+3. angular-acceleration-reachable attitude authoring;
+4. vehicle dynamics SSOT.
+
+The Stage-1 script is not an E2E execution gate. The actual
+`navigation_runtime_pipeline` CTest must be run explicitly.
+
+Repository baseline entering this audit: `5117857c8f31992c97f393e7f2ed16a630e8efc3`.

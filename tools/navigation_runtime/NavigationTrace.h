@@ -52,6 +52,13 @@ struct TraceFrame
     double programSpeedCorridorHalfWidthMps = 0.0;
     double programProgressCorridorHalfWidthMeters = 0.0;
 
+    // Diagnostics for the currently active accepted program. The instantaneous
+    // reference is the point the follower is tracking NOW; the phase target is
+    // the end of the active program slice cut from the Ruckig-derived
+    // trajectory. Neither is mislabeled as Ruckig's global scalar target.
+    bool hasProgramPhaseTarget = false;
+    glm::dvec3 programPhaseTargetPosition {0.0};
+
     bool hazardActive = false;
     glm::dvec3 hazardPosition {0.0};
     glm::dvec3 hazardVelocity {0.0};

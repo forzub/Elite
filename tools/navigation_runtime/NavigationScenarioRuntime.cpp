@@ -1578,13 +1578,6 @@ Program makeProgramPhase(
     struct PlannedPropulsion
     {
         double rearMainThrottle01 = 0.0;
-        glm::dvec3 manoeuvreAccelerationMapMps2 {0.0};
-        bool feasible = true;
-    };
-
-    struct PlannedPropulsion
-    {
-        double rearMainThrottle01 = 0.0;
         double foreMainThrottle01 = 0.0;
         glm::dvec3 manoeuvreAccelerationMapMps2 {0.0};
         bool feasible = true;

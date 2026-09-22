@@ -2437,6 +2437,9 @@ ScenarioRunResult loadScenarioPreview(
 
     try
     {
+        if (!vehicle.valid())
+            throw std::runtime_error("invalid vehicle dynamics profile");
+
         const Scenario scenario = loadScenario(scenarioJsonPath);
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
@@ -2486,6 +2489,11 @@ ScenarioRunResult calculateScenario(
 
     try
     {
+        if (!vehicle.valid())
+            throw std::runtime_error("invalid vehicle dynamics profile");
+        if (!settings.navigation.valid())
+            throw std::runtime_error("invalid navigation runtime policy");
+
         const Scenario scenario = loadScenario(scenarioJsonPath);
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
@@ -2629,6 +2637,11 @@ ScenarioRunResult executeCalculatedRoute(
 
     try
     {
+        if (!vehicleInput.valid())
+            throw std::runtime_error("invalid vehicle dynamics profile");
+        if (!settings.navigation.valid())
+            throw std::runtime_error("invalid navigation runtime policy");
+
         const Scenario scenario = loadScenario(scenarioJsonPath);
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);

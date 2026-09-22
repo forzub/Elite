@@ -176,7 +176,6 @@ struct ScenarioRuntimeIoPolicy
 struct ScenarioRunSettings
 {
     ControlMode controlMode = ControlMode::Newtonian;
-    PilotLevel pilot = PilotLevel::Expert; // presentation label only
     ScenarioPilotSkillProfile pilotExecutionProfile =
         makeScenarioPilotSkillProfile(PilotLevel::Expert);
     FlightStyle flightStyle = FlightStyle::Standard;

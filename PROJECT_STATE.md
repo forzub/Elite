@@ -2926,3 +2926,28 @@ Invariant:
 
 Planner actuator commands remain observe-only until this corrected source
 program is target-validated.
+
+## 2026-09-22 — architecture audit supersedes follower tuning
+
+Dense trajectory coverage is now correct, but current execution still fails
+because representation and timing semantics are wrong.
+
+Accepted fixed-capacity chunks are storage pages of one continuous maneuver,
+not independent maneuver phases. Current runtime incorrectly gates them as
+phases and freezes their clock on tracking-envelope loss. This can deadlock on
+Program 0 and turn recovery into return-to-stale-reference behavior.
+
+A second hard defect is attitude reachability: reference orientation is limited
+by angular speed but not by angular acceleration, so a zero-rate ship may be
+asked to acquire near-max angular rate in one sample.
+
+A vehicle-dynamics SSOT audit also failed. Authoritative descriptor,
+`cobraParams()`, NavigationVehicleProfile, CapabilitySnapshot and manual
+Assisted propulsion semantics are not one consistent truth.
+
+Project repair order is now:
+continuous time/page semantics -> invalidation/replan instead of indefinite
+freeze -> angular reachability -> vehicle dynamics SSOT -> physical maneuver
+compiler -> direct actuator execution.
+
+Stage-1 build success is explicitly not Stage-2 E2E evidence.

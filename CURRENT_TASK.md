@@ -1,147 +1,92 @@
-# CURRENT TASK — Target-validate normalized APIs, then move physical maneuver proof ahead of Ruckig timing
+# CURRENT TASK — Fix stale E2E contract, then physical maneuver timing
 
 Date: 2026-09-22
 
-Status: **API/SSOT/CLOCK CLEANUP IMPLEMENTED / TARGET VALIDATION REQUIRED**
+Status: **TARGET BUILD PASS / STAGE-2 PHYSICAL AUTHORING FAIL**
 
-Code baseline before documentation commits:
-
-```text
-8b7134078fe1e7672e04085254c9f84c29ed1519
-```
-
-## Completed architecture cleanup
-
-### Vehicle data
-
-Runtime accepts one generic explicit input:
+Target-tested baseline:
 
 ```text
-VehicleDynamicsProfile
-    physics: ShipParams
-    bodyHalfExtentsMeters
-    capabilityRevision
+5cc0b668665f0adc11b160bad3bc2af314cdfe4d
 ```
 
-Concrete Cobra selection exists only at the viewer/E2E application boundary.
-Navigation runtime itself contains no `cobraParams()`.
+## Target evidence
 
-Vehicle capability and world-map revision are separate domains.
+Passed:
+- architecture contract;
+- Stage-1 nominal route;
+- follower corridor test;
+- viewer/runtime build.
 
-### Common derived limits
+Failed:
+- `navigation_runtime_pipeline`.
 
-All navigation/physics code must derive vehicle limits through common helpers:
+High-speed Newtonian result:
+```text
+trajectory samples:             743
+storage pages:                   51
+actuator segments:              742
+infeasible actuator segments:    42
+storage page advances:            1
+tracking invalidated at:       0.51 s
+final error:                 287.19 m
+reference/velocity angle:     175.84 deg
+body/velocity angle:            0.94 deg
+reference clock:              MONOTONIC
+```
+
+## Immediate test defect
+
+`testHighSpeedRunReacquiresInsteadOfOutrunningReference()` still requires:
 
 ```text
-ShipDynamics.h
-NavigationVehicleProfileAdapters.h
-ManeuverCapabilityAdapters.h
+REFERENCE CLOCK HOLD:
 ```
 
-Do not reintroduce raw local interpretations of:
-- maxLinearGs;
-- manoeuvreThrusterAccel;
-- pitch/yaw/roll limits;
-- reverse-main capability;
-- vehicle collision size.
+That mechanism was intentionally removed.
 
-### Explicit calculation policy
+Update regressions to require:
+- `REFERENCE CLOCK: MONOTONIC`;
+- no hold diagnostics;
+- explicit invalidation when the accepted program is materially unreachable.
 
-`ScenarioNavigationPolicy` owns the stand's calculation policy and crosses the
-API explicitly through `ScenarioRunSettings`.
+Do not make invalidation itself a success condition for normal navigation.
 
-No hidden runtime timestep or tracking-loss timeout remains.
+## Real production defect
 
-### Clock
+The accepted translational trajectory is generated before full attitude/thrust
+feasibility is known.
 
-One authored maneuver has one monotonic clock.
-
-Fixed-capacity AcceptedManeuverProgram objects are storage pages:
-- shared acceptedAt time;
-- explicit sequenceStartOffsetSeconds;
-- page advance is indexing only;
-- no phase capture at page boundaries.
-
-### Tracking loss
-
-No infinite reference freeze.
-
-If FreeTransit is outside its proved tracking envelope longer than the explicit
-policy timeout, the program becomes invalid:
-`PROGRAM_INVALIDATED_TRACKING_LOSS`.
-
-Production ownership after invalidation is:
-Autopilot safety response -> Planner re-author from current measured state.
-
-### Attitude
-
-Reference attitude is now angular-acceleration reachable. It no longer jumps from
-zero omega directly to max angular rate.
-
-## Target gate now
-
-Run:
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-bash tests/navigation_runtime/run_stage1_mingw64.sh
-
-ctest --test-dir build/tools/navigation_runtime \
-      -R "^navigation_runtime_pipeline$" \
-      --output-on-failure
-```
-
-Then run viewer:
-
-```bash
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe \
-    tools/navigation_runtime/scenario.json
-```
-
-First target cases:
-1. NEWTONIAN / EXPERT / STANDARD 10 -> 10 m/s
-2. same 27.8 -> 26 m/s
-
-Expected diagnostics:
-- PROGRAM STORAGE PAGES, not PROGRAM PHASES;
-- STORAGE PAGE ADVANCES > 0 for long trajectories;
-- REFERENCE CLOCK: MONOTONIC;
-- no REFERENCE CLOCK HOLD lines;
-- no return-to-stale-point behavior;
-- if tracking becomes materially unreachable, explicit
-  PROGRAM_INVALIDATED_TRACKING_LOSS.
-
-## Next architecture step after compile/E2E gate
-
-The remaining major RED area is physical maneuver authoring.
-
-Current order is still approximately:
+Current sequence:
 
 ```text
-coarse route
- -> geometric execution guide
- -> scalar Ruckig timing
- -> attitude / propulsion compilation
+route
+ -> guide
+ -> scalar Ruckig trajectory
+ -> attitude author
+ -> actuator fit
 ```
 
-Target order:
+This allows Ruckig to demand braking/turn acceleration at a time when the hull
+cannot yet point installed main thrust in the required direction.
 
-```text
-coarse route
- -> physical maneuver compiler
-    geometry / tangents
-    hull attitude reachability
-    installed main + RCS allocation
-    throttle slew
-    braking / lead-rotation boundary
-    proof against VehicleDynamicsProfile
- -> Ruckig as subordinate timing/state-transition helper
- -> Accepted ManeuverProgram
- -> Autopilot executes explicit ActuatorSegments
-```
+The angular stream is now individually reachable, but the translational stream
+does not wait for it. Result: actuator infeasibility and tracking invalidation.
 
-Do not tune follower gains or tracking envelopes before the target gate.
-Do not enable dynamic avoidance yet.
+## Required next implementation
+
+1. Remove stale REFERENCE CLOCK HOLD assertions from E2E tests.
+2. Make actuator infeasibility a hard authoring failure, not observe-only data.
+3. Introduce physical maneuver compilation before final timing:
+   - tangent/geometry state;
+   - required force vector;
+   - hull attitude schedule;
+   - angular reachability;
+   - installed rear/fore main;
+   - RCS allocation;
+   - throttle slew;
+   - lead-rotation / braking boundary.
+4. Use Ruckig only after these constraints are known.
+5. Keep 0.50 s tracking invalidation as a safety guard; do not widen it to mask the planner defect.
+
+Dynamic avoidance remains disabled.

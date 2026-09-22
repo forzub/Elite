@@ -216,6 +216,25 @@ require("request.policy = trajectoryPolicy;" in runtime_cpp,
 require("settings.trajectory.valid()" in runtime_cpp,
         "Stage 2 does not validate trajectory policy at API boundary")
 
+# ---------- Trajectory policy purity ----------
+for token in (
+    "request.policy.minimumAccelerationMps2",
+    "request.policy.minimumSpeedMps",
+    "request.policy.minimumUsefulWaypointSpeedMps",
+    "request.policy.pathCaptureSpeedThresholdMps",
+):
+    require(token in trajectory_cpp,
+            f"trajectory backend does not consume explicit policy {token}")
+
+for forbidden in (
+    "return glm::dot(value, value) >\n        0.25;",
+    "std::max(0.1, request.vehicle.maxLateralAccelerationMps2)",
+    "return std::max(0.1, limit);",
+    "initialCrossTrackSpeedMps > 0.25",
+):
+    require(forbidden not in trajectory_cpp,
+            f"trajectory backend reintroduced hidden behavior threshold: {forbidden}")
+
 # ---------- Vehicle dynamics single source of truth ----------
 for token in (
     "forwardMainAccelerationLimitMps2",

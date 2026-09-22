@@ -2972,3 +2972,29 @@ angular rate.
 Remaining architectural blocker:
 physical maneuver geometry/propulsion proof is still downstream of the current
 geometric path + scalar Ruckig timing and must be moved ahead of final timing.
+
+## 2026-09-22 target gate exposes physical timing mismatch
+
+API/SSOT/clock cleanup compiles and the Stage-1/component gates pass.
+
+The Stage-2 E2E now fails for two separate reasons:
+1. stale regression code still expects removed REFERENCE CLOCK HOLD diagnostics;
+2. the real accepted trajectory contains physically infeasible actuator intervals
+   and becomes invalid after 0.51 s of tracking loss.
+
+The second failure is useful: monotonic-clock + invalidation semantics are no
+longer masking planner/authoring defects by homing to stale references.
+
+Current blocker is now precisely the planned order mismatch:
+
+```text
+scalar trajectory timing first
+ -> attitude / actuator fit afterwards
+```
+
+must become:
+
+```text
+physical geometry + attitude + actuator feasibility
+ -> timing
+```

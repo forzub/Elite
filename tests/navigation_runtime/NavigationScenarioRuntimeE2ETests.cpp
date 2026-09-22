@@ -79,6 +79,8 @@ void testSpeedAndStyleChangeStaticManeuverReserve()
     ScenarioRunSettings lowStandard;
     lowStandard.controlMode = ControlMode::Newtonian;
     lowStandard.pilot = PilotLevel::Expert;
+    lowStandard.pilotExecutionProfile =
+        makeScenarioPilotSkillProfile(PilotLevel::Expert);
     lowStandard.flightStyle = FlightStyle::Standard;
     lowStandard.startSpeedOverrideMps = 10.0;
     lowStandard.finishSpeedOverrideMps = 10.0;

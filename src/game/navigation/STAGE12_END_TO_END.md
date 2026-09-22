@@ -9284,3 +9284,42 @@ Attitude samples must additionally satisfy both:
 The real Stage-2 E2E gate is
 `navigation_runtime_pipeline`; the Stage-1 helper script only builds the
 viewer and does not execute this test.
+
+## 2026-09-22 — normalized Stage-12 API boundary
+
+The Stage-12 test stand now has explicit non-overlapping input domains.
+
+```text
+VehicleDynamicsProfile
+    immutable vehicle facts
+
+Scenario
+    start / finish / obstacles / world revisions
+
+ScenarioRunSettings
+    selected law / pilot / style
+    ScenarioNavigationPolicy
+
+retained Stage-1 route
+    immutable topology input to Stage 2
+```
+
+No Stage-2 helper may reconstruct a vehicle descriptor or keep its own Cobra
+constants.
+
+Vehicle limits are derived only through:
+- ShipDynamics;
+- NavigationVehicleProfileAdapters;
+- ManeuverCapabilityAdapters.
+
+The maneuver clock is single and monotonic across all fixed-capacity pages.
+
+Tracking-loss semantics:
+- bounded correction is allowed;
+- prolonged envelope violation invalidates the accepted maneuver;
+- an obsolete reference is never frozen indefinitely.
+
+Attitude reference states must satisfy both angular-rate and
+angular-acceleration reachability.
+
+Next Stage-12 gate is physical maneuver compilation before final Ruckig timing.

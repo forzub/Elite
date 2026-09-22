@@ -1274,3 +1274,37 @@ Still RED / not yet physically accepted:
 
 New architecture checker pins the corrected ownership so these old defects cannot
 silently return.
+
+## 2026-09-22 target audit result after normalization
+
+Target validation status:
+- static route architecture: PASS;
+- Stage-1 route: PASS;
+- free-transit tracking component: PASS;
+- runtime/viewer build: PASS;
+- retained-route E2E: FAIL.
+
+Two defects are distinguished:
+
+### Stale regression assertion
+
+The E2E test still checks for `REFERENCE CLOCK HOLD:`. That diagnostic belongs
+to the removed frozen-reference mechanism. The new runtime correctly emits
+`REFERENCE CLOCK: MONOTONIC`.
+
+### Real runtime failure
+
+High-speed Newtonian accepted program:
+- 742 actuator intervals;
+- 42 infeasible;
+- invalidated after 0.51 s;
+- reference/velocity angle up to 175.84 deg;
+- actual body/velocity angle only 0.94 deg.
+
+This confirms that translational timing and attitude reachability are still
+authored in the wrong order. The attitude stream can now be individually
+angular-acceleration feasible, but the already-fixed translational trajectory
+does not wait for that attitude to become available.
+
+Status of "reference-clock hold" issue: GREEN.
+Status of physical maneuver timing: RED.

@@ -9238,3 +9238,49 @@ Diagnostic invariant:
 
 This must be green before wiring the explicit Planner actuator schedule into
 Autopilot/physics.
+
+## 2026-09-22 — page/timebase invariant and stale-reference failure
+
+Dense accepted-source coverage is now complete, but the live target exposed a
+new orchestration invariant:
+
+```text
+storage page boundary != maneuver phase boundary
+```
+
+A continuous Ruckig/Planner trajectory may require many fixed-capacity
+AcceptedManeuverProgram pages. These pages must preserve one global maneuver
+time and state continuity. Advancing to the next page is an indexing operation,
+not a phase capture/replan decision.
+
+Current failure:
+- first page reference becomes angular-rate unreachable;
+- tracking envelope is exceeded;
+- reference delay increases every frame;
+- the same delayed clock is sent to ManeuverPhaseGate;
+- page 0 can never reach nominal end;
+- B10 tracks a frozen early point until the craft stops/reverses.
+
+New Stage-12 invariants:
+
+```text
+one authored maneuver -> one monotonic program clock
+
+page lookup may change
+program clock may not go backward or freeze indefinitely
+
+tracking invalidation:
+    bounded safety action
+    -> replan from current physical state
+
+never:
+    infinite homing to an obsolete moving-reference sample
+```
+
+Attitude samples must additionally satisfy both:
+- angular speed limit;
+- angular acceleration reachability from previous omega.
+
+The real Stage-2 E2E gate is
+`navigation_runtime_pipeline`; the Stage-1 helper script only builds the
+viewer and does not execute this test.

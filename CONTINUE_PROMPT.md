@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: physical hull/thrust coupling gate
+# CONTINUE PROMPT — Elite Navigation: Newtonian main-engine-dominant execution
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -9,8 +9,8 @@ Every state-affecting iteration MUST:
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
 
-Also keep `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md` synchronized
-when propulsion/control-law ownership changes.
+When propulsion/control-law ownership changes, also synchronize
+`src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`.
 
 Read first:
 - `CURRENT_STATE.md`
@@ -25,85 +25,94 @@ Read first:
 - `tests/navigation_runtime/NavigationRuntimeControlTests.cpp`
 - `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`.
 
-## Current candidate
+## Current code candidate
 
-Code baseline before documentation commits:
-
-```text
-b833eddb7bd04b5c025b2be0fd8334c33f8824e6
-```
-
-Target-machine PASS is not yet established.
-
-## Latest evidence
-
-The previous exponential runaway is fixed.
-
-New target case:
+Before documentation-only commits:
 
 ```text
-ASSISTED / EXPERT / STANDARD
-START 20.90 M/S
-FINISH 20.00 M/S
-
-TRAJECTORY RUCKIG OK
-CALCULATED MAX SPEED 20.90 M/S
-PROGRAM PHASES COMPLETE NO
-PHYSICAL TERMINAL STATE MISSED
-FINAL ERROR 175.20 M
-FINAL SPEED 7.45 M/S
-REFERENCE HOLD 40.70 S
-MAX BODY/VELOCITY ANGLE 180 DEG
+421ecb1b2721d54bc0c33737a520100a3c10fac9
 ```
 
-## Proven root cause
+Target-machine PASS has NOT been established.
 
-Old Assisted navigation allocation had a symmetric longitudinal main channel.
-A negative acceleration demand could create **fore/nose main thrust** without
-rotating the hull.
+## Latest target evidence
 
-Telemetry showed:
-- hull/reference nearly identical;
-- main_pct displayed 0;
-- physical `main_a` pointed opposite hull forward;
-- speed fell through zero;
-- velocity reversed while hull attitude stayed unchanged;
-- body/velocity angle approached 180 deg.
+```text
+NEWTONIAN / EXPERT / STANDARD
+START 21.20 M/S
+FINISH 21.20 M/S
 
-This violated the existing architecture statement that Assisted is not
-permission to invent thrust.
+PLANNER: CACHED ROUTE OK
+ROUTE ADDITIONAL CLEARANCE: 17.71 M
+TRAJECTORY: RUCKIG OK
+CALCULATED MIN/MAX: 20.73 / 21.20 M/S
+PROGRAM PHASES COMPLETE: NO
+PHYSICAL TERMINAL STATE: MISSED
+FINAL POSITION ERROR: 181.42 M
+FINAL SPEED: 8.17 M/S
+REFERENCE CLOCK HOLD: 40.61 S
+MAX BODY/VELOCITY ANGLE: 174.31 DEG
+```
+
+Planner direction is reasonable: speed increase widened the detour.
+
+## Root cause
+
+Newtonian attitude authoring treated the complete physical
+`manoeuvreThrusterAccel=2.0 m/s^2` as ordinary route propulsion. The Ruckig
+curve usually requested ~1.5 m/s^2, so the hull stayed aligned with the travel
+reference and RCS supplied the whole material delta-v.
+
+Telemetry examples show main OFF while RCS ~1.5 m/s^2 continuously reduces
+speed even though reference speed remains ~20.6 m/s. Main appears only very
+late with body/velocity already ~174 deg apart.
+
+This is why Newtonian looked Assisted.
 
 ## Current correction
 
-`DynamicMotionSystem::applySystemAccelerationDemand`
-- aft main only for BOTH Assisted and Newtonian;
-- reverse demand can use only bounded real RCS before hull rotation.
+`propulsionReferenceForward(..., law, ...)` now separates doctrine:
 
-`buildReferenceAttitudes`
-- Assisted now also uses propulsion-aware attitude authoring;
-- if RCS alone cannot supply the requested acceleration, reference hull
-  cants/flips toward the acceleration enough for aft main participation.
+- Assisted: may use the full real RCS envelope when deciding whether to stay
+  velocity/tangent coupled.
+- Newtonian: only the existing 0.35 m/s^2 tiny-correction authority counts for
+  attitude authoring.
+- Material Newtonian acceleration therefore authors a real hull cant/flip so
+  the aft main engine can participate.
+- The full RCS hardware limit remains physically available downstream for
+  transient recovery and trim.
 
-Invariant:
+Navigation main engine remains aft-only.
+
+## Viewer propulsion lamps
+
+Always visible at screen bottom:
+
 ```text
-nonzero main engine => main_a dot hull_forward >= 0
+МАРШЕВЫЙ
+ПЕРЕДНИЙ МАРШЕВЫЙ
+МАНЕВРОВЫЙ
 ```
 
-## Regression gate
+They are driven from actual physical acceleration channels:
+- aft main projection > threshold -> `МАРШЕВЫЙ`;
+- main projection < -threshold -> `ПЕРЕДНИЙ МАРШЕВЫЙ`;
+- non-zero manoeuvre acceleration -> `МАНЕВРОВЫЙ`.
 
-Exact new E2E:
-`ASSISTED / EXPERT / STANDARD, 20.90 -> 20.00 m/s`.
+Current Cobra has no fore main engine. Therefore `ПЕРЕДНИЙ МАРШЕВЫЙ` is
+expected to stay dark and acts as a regression detector.
 
-It requires:
-- physical execution success;
-- no hidden reverse main thrust;
-- max physical speed <= 35 m/s;
-- final position <= 5 m;
-- final speed 20 +/- 1.5 m/s.
+## Regression
 
-Existing regressions remain:
-- Assisted 10 -> 10 no runaway;
-- Newtonian 26.15 -> 11.75 reacquisition.
+New exact fixture:
+`NEWTONIAN / EXPERT / STANDARD, 21.20 -> 21.20 m/s`.
+
+`testNewtonianHigherSpeedUsesMainEngineDominantManeuver()` requires:
+- material main-engine acceleration within first 8 seconds;
+- no negative/fore main acceleration.
+
+Existing Assisted 10->10, Assisted 20.9->20 and Newtonian 26.15->11.75
+regressions remain.
 
 ## Run next
 
@@ -120,21 +129,21 @@ Then:
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Test first:
-`ASSISTED / EXPERT / STANDARD, 20.90 -> 20.00 m/s`.
+First run:
+`NEWTONIAN / EXPERT / STANDARD, 21.20 -> 21.20 m/s`.
 
-Observe physical causality:
-- if hull has not rotated and RCS is insufficient, strong braking must NOT
-  occur;
-- rotating hull alone must not alter velocity;
-- main/RCS thrust must be visible whenever velocity materially changes;
-- a loop must result from integrated forces, not from an independent visual
-  curve.
+Observe:
+1. `МАНЕВРОВЫЙ` may blink/use trim, but must not be the only material
+   propulsion for tens of seconds.
+2. Hull must visibly lead-rotate/cant for material route delta-v.
+3. `МАРШЕВЫЙ` should light during the burn.
+4. Hull rotation without thrust must not bend V.
+5. `ПЕРЕДНИЙ МАРШЕВЫЙ` must remain dark.
 
-If this still fails, inspect whether the Ruckig point-mass program asks for
-main-engine-dominant acceleration before finite hull lead-rotation can be
-completed. The next fix would then belong in maneuver timing/authoring, not in
-the propulsion allocator or viewer.
+If those are true but path tracking still fails, the next architectural work is
+finite lead-rotation time/distance in maneuver authoring: Ruckig point-mass
+acceleration currently starts before the physical hull necessarily acquires its
+burn attitude.
 
 Do not enable dynamic avoidance.
-Do not loosen tolerances to hide the failure.
+Do not loosen tracking/terminal tolerances to fake a pass.

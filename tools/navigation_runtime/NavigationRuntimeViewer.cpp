@@ -2240,7 +2240,7 @@ void drawHud(
     );
 
     const float legendWidth = 438.0f;
-    const float legendHeight = 226.0f;
+    const float legendHeight = 266.0f;
     const float legendX =
         std::max(
             8.0f,
@@ -2364,6 +2364,18 @@ void drawHud(
         "ОРАНЖЕВАЯ КОРМА: РАБОТАЕТ ГЛАВНЫЙ ДВИГАТЕЛЬ",
         1.00f,
         {1.0f, 0.62f, 0.12f}
+    );
+    appendUiText(
+        ui, legendX + 14.0f, legendY + 226.0f,
+        "РОЗОВЫЙ КРЕСТ: ТЕКУЩАЯ ТОЧКА REF ИЗ RUCKIG",
+        1.00f,
+        {1.0f, 0.20f, 0.75f}
+    );
+    appendUiText(
+        ui, legendX + 14.0f, legendY + 244.0f,
+        "СИРЕНЕВЫЙ КРЕСТ: КОНЕЦ АКТИВНОЙ ФАЗЫ",
+        1.00f,
+        {0.72f, 0.42f, 1.0f}
     );
 
     if (hasExecution)
@@ -3236,6 +3248,28 @@ void drawScene(
     }
 
     std::vector<Vertex> currentMarkers;
+
+    // Instantaneous point on the accepted Ruckig-derived trajectory that B9/B10
+    // is asking the follower to track at this frame.
+    if (frame.hasProgramReference)
+        appendCross(
+            currentMarkers,
+            toVec3(frame.programReferencePosition),
+            5.5f,
+            {1.0f, 0.20f, 0.75f}
+        );
+
+    // End of the currently active AcceptedManeuverProgram slice. This is
+    // intentionally separate from the instantaneous reference and from the
+    // global finish target.
+    if (frame.hasProgramPhaseTarget)
+        appendCross(
+            currentMarkers,
+            toVec3(frame.programPhaseTargetPosition),
+            7.0f,
+            {0.72f, 0.42f, 1.0f}
+        );
+
     if (frame.hasSelectedTarget)
         appendCross(
             currentMarkers,

@@ -245,7 +245,11 @@ struct ScenarioFrameDefinition
     int systemId = 1;
     std::string frameId = "navigation-runtime-stage2";
     glm::dvec3 originMeters {0.0};
+    glm::dvec3 linearVelocityMps {0.0};
+    glm::dvec3 linearAccelerationMps2 {0.0};
     glm::dmat3 localToWorldBasis {1.0};
+    glm::dvec3 angularVelocityWorldRadPerSecond {0.0};
+    glm::dvec3 angularAccelerationWorldRadPerSecond2 {0.0};
     double startUniverseTimeSeconds = 0.0;
     double universeTimeScale = 1.0;
 };

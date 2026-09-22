@@ -398,32 +398,32 @@ ScenarioDefinition parseScenarioDefinitionFile(
     if (root.contains("finish"))
     {
         const auto& finish = root.at("finish");
-        scenario.finish.position =
+        terminal.position =
             readVec3(
                 finish,
                 "position",
-                scenario.finish.position
+                terminal.position
             );
 
         if (finish.contains("forward"))
         {
-            scenario.finish.requireForward = true;
-            scenario.finish.forward =
+            terminal.requireForward = true;
+            terminal.forward =
                 readVec3(
                     finish,
                     "forward",
-                    scenario.finish.forward
+                    terminal.forward
                 );
         }
 
         if (finish.contains("up"))
         {
-            scenario.finish.requireUp = true;
-            scenario.finish.up =
+            terminal.requireUp = true;
+            terminal.up =
                 readVec3(
                     finish,
                     "up",
-                    scenario.finish.up
+                    terminal.up
                 );
         }
 
@@ -563,7 +563,7 @@ TraceFrame routeFrame(
     if (routeValid)
     {
         frame.hasSelectedTarget = true;
-        frame.selectedTarget = scenario.finish.position;
+        frame.selectedTarget = terminal.position;
     }
 
     return frame;
@@ -596,7 +596,7 @@ std::vector<std::string> previewDiagnostics(
             std::to_string(scenario.startPitchRateRadPerSec) + ", " +
             std::to_string(scenario.startYawRateRadPerSec) + ", " +
             std::to_string(scenario.startRollRateRadPerSec) + ") RAD/S",
-        "FINISH: " + formatVec3(scenario.finish.position),
+        "FINISH: " + formatVec3(terminal.position),
         "STATIC OBSTACLES: " +
             std::to_string(scenario.staticObstacles.size()),
         "DYNAMIC INPUTS RESERVED: " +
@@ -628,7 +628,7 @@ std::vector<std::string> routeDiagnostics(
             std::to_string(scenario.startPitchRateRadPerSec) + ", " +
             std::to_string(scenario.startYawRateRadPerSec) + ", " +
             std::to_string(scenario.startRollRateRadPerSec) + ") RAD/S",
-        "FINISH: " + formatVec3(scenario.finish.position),
+        "FINISH: " + formatVec3(terminal.position),
         "STATIC OBSTACLES: " +
             std::to_string(scenario.staticObstacles.size()),
         "REQUIRED WAYPOINTS: " +
@@ -697,7 +697,7 @@ void setSceneEndpoints(
 {
     trace.hasSceneEndpoints = true;
     trace.sceneStartMapMeters = scenario.startPosition;
-    trace.sceneFinishMapMeters = scenario.finish.position;
+    trace.sceneFinishMapMeters = terminal.position;
 }
 
 // -----------------------------------------------------------------------------
@@ -1083,7 +1083,9 @@ struct ReferenceAttitude
 
 std::vector<ReferenceAttitude> buildReferenceAttitudes(
     const world::navigation::Trajectory& trajectory,
-    const Scenario& scenario,
+    const Basis& initialBasis,
+    const glm::dvec3& initialAngularVelocityMapRadPerSec,
+    const Endpoint& terminal,
     Law law,
     const ShipParams& params,
     const ScenarioNavigationPolicy& policy
@@ -1095,15 +1097,12 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
     if (trajectory.samples.empty())
         return out;
 
-    Basis previous = scenario.startBasis;
+    Basis previous = initialBasis;
     glm::dquat previousQ = quaternionForBasis(previous);
 
-    // Initial angular state is part of the scenario state. Do not silently
-    // replace it with zero at the Planner -> ManeuverProgram boundary.
+    // Initial angular state crosses this API explicitly.
     glm::dvec3 previousOmega =
-        previous.right * scenario.startPitchRateRadPerSec +
-        previous.up * scenario.startYawRateRadPerSec +
-        previous.forward * scenario.startRollRateRadPerSec;
+        initialAngularVelocityMapRadPerSec;
 
     const double maxRate = std::max(
         0.0,
@@ -1141,8 +1140,8 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
         // desired attitude; the rate/acceleration integrator below decides how
         // much of that desired rotation is physically reachable this sample.
         if (
-            scenario.finish.requireForward ||
-            scenario.finish.requireUp)
+            terminal.requireForward ||
+            terminal.requireUp)
         {
             const double terminalBlendMeters =
                 std::max(
@@ -1151,7 +1150,7 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
                 );
             const double remaining =
                 glm::length(
-                    scenario.finish.position -
+                    terminal.position -
                     sample.positionMeters
                 );
             const double u =
@@ -1164,16 +1163,16 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
                 u * u * (3.0 - 2.0 * u);
 
             const glm::dvec3 terminalForward =
-                scenario.finish.requireForward
+                terminal.requireForward
                     ? normalizedOr(
-                        scenario.finish.forward,
+                        terminal.forward,
                         desired.forward
                       )
                     : desired.forward;
             const glm::dvec3 terminalUp =
-                scenario.finish.requireUp
+                terminal.requireUp
                     ? normalizedOr(
-                        scenario.finish.up,
+                        terminal.up,
                         desired.up
                       )
                     : desired.up;
@@ -1435,7 +1434,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
 
         if (finishSpeedMps > 1.0e-6)
         {
-            glm::dvec3 terminalDirection = scenario.finish.forward;
+            glm::dvec3 terminalDirection = terminal.forward;
             if (glm::length(terminalDirection) <= 1.0e-9 &&
                 request.pathPointsMeters.size() >= 2)
             {
@@ -1458,10 +1457,10 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
     }
 
     request.hasTerminalOrientation =
-        scenario.finish.requireForward ||
-        scenario.finish.requireUp;
-    request.terminalForward = scenario.finish.forward;
-    request.terminalUp = scenario.finish.up;
+        terminal.requireForward ||
+        terminal.requireUp;
+    request.terminalForward = terminal.forward;
+    request.terminalUp = terminal.up;
     request.terminalOrientationBlendDistanceMeters =
         settings.navigation.terminalOrientationBlendDistanceMeters;
 
@@ -2214,7 +2213,7 @@ TraceFrame executionTraceFrame(
     frame.phase = "route_execution";
     frame.plannerStatus = status;
     frame.hasSelectedTarget = true;
-    frame.selectedTarget = scenario.finish.position;
+    frame.selectedTarget = terminal.position;
 
     if (program.valid && program.sampleCount >= 2)
     {
@@ -2517,7 +2516,7 @@ ScenarioRunResult loadScenarioPreview(
         frame.phase = "scene_preview";
         frame.plannerStatus = "scene_loaded";
         frame.hasSelectedTarget = true;
-        frame.selectedTarget = scenario.finish.position;
+        frame.selectedTarget = terminal.position;
         trace.frames.push_back(std::move(frame));
 
         out.trace = std::move(trace);
@@ -2563,10 +2562,10 @@ ScenarioRunResult calculateScenario(
         (void)scenario.dynamicObstacles;
         (void)scenario.suddenObstacle;
         (void)scenario.hasSuddenObstacle;
-        (void)scenario.finish.requireForward;
-        (void)scenario.finish.requireUp;
-        (void)scenario.finish.forward;
-        (void)scenario.finish.up;
+        (void)terminal.requireForward;
+        (void)terminal.requireUp;
+        (void)terminal.forward;
+        (void)terminal.up;
         (void)scenario.finish.speedMps;
 
         game::navigation::NominalRoutePlanner::Request request;
@@ -2574,7 +2573,7 @@ ScenarioRunResult calculateScenario(
         request.staticWorldRevision =
             scenario.staticWorldRevision;
         request.startMapMeters = scenario.startPosition;
-        request.goalMapMeters = scenario.finish.position;
+        request.goalMapMeters = terminal.position;
         request.requiredWaypointsMapMeters =
             scenario.shipRoutePoints;
         request.staticObstacles = scenario.staticObstacles;
@@ -2910,10 +2909,20 @@ ScenarioRunResult executeCalculatedRoute(
             }
         }
 
+        const glm::dvec3 initialAngularVelocityMapRadPerSec =
+            scenario.startBasis.right *
+                scenario.startPitchRateRadPerSec +
+            scenario.startBasis.up *
+                scenario.startYawRateRadPerSec +
+            scenario.startBasis.forward *
+                scenario.startRollRateRadPerSec;
+
         const auto attitudes =
             buildReferenceAttitudes(
                 trajectoryResult.trajectory,
-                scenario,
+                scenario.startBasis,
+                initialAngularVelocityMapRadPerSec,
+                scenario.finish,
                 controlLaw(settings.controlMode),
                 params,
                 settings.navigation
@@ -3390,7 +3399,7 @@ ScenarioRunResult executeCalculatedRoute(
             vehicle.transform.motion.localPositionMeters;
         const double finalPositionError =
             glm::length(
-                finalPosition - scenario.finish.position
+                finalPosition - terminal.position
             );
         const double finalSpeed =
             glm::length(
@@ -3419,17 +3428,17 @@ ScenarioRunResult executeCalculatedRoute(
         };
 
         const double finalForwardError =
-            scenario.finish.requireForward
+            terminal.requireForward
                 ? angleBetween(
                     glm::dvec3(vehicle.transform.forward()),
-                    scenario.finish.forward
+                    terminal.forward
                   )
                 : 0.0;
         const double finalUpError =
-            scenario.finish.requireUp
+            terminal.requireUp
                 ? angleBetween(
                     glm::dvec3(vehicle.transform.up()),
-                    scenario.finish.up
+                    terminal.up
                   )
                 : 0.0;
 

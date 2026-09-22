@@ -3,6 +3,7 @@
 #include "src/game/navigation/NominalRoutePlanner.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/AcceptedManeuverProgram.h"
+#include "src/game/navigation/ManeuverCapabilityAdapters.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/ManeuverPhaseGate.h"
@@ -1648,19 +1649,11 @@ Program makeProgramPhase(
     const double manoeuvreAuthority =
         game::ship::manoeuvreAccelerationLimitMps2(params);
 
-    program.capability.revision = scenario.staticWorldRevision;
-    program.capability.maxForwardAccelerationMetersPerSec2 =
-        std::max(forwardMainAuthority, manoeuvreAuthority);
-    program.capability.maxReverseAccelerationMetersPerSec2 =
-        std::max(reverseMainAuthority, manoeuvreAuthority);
-    program.capability.maxLateralAccelerationMetersPerSec2 =
-        manoeuvreAuthority;
-    program.capability.maxVerticalAccelerationMetersPerSec2 =
-        manoeuvreAuthority;
-    program.capability.maxAngularAccelerationRadPerSec2 =
-        game::ship::angularAccelerationLimitRadPerSec2(params);
-    program.capability.maxAngularSpeedRadPerSec =
-        game::ship::maximumAngularSpeedRadPerSec(params);
+    program.capability =
+        game::navigation::makeManeuverCapabilitySnapshot(
+            params,
+            scenario.staticWorldRevision
+        );
 
     // Planner-owned physical command intervals. This is the first explicit
     // State + Segment slice: the reference samples remain the required states;

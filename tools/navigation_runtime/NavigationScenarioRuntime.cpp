@@ -962,7 +962,8 @@ glm::dvec3 propulsionReferenceForward(
     const world::navigation::TrajectorySample& sample,
     const Basis& previous,
     Law law,
-    const ShipParams& params
+    const ShipParams& params,
+    const ScenarioNavigationPolicy& policy
 )
 {
     const double speed = glm::length(sample.velocityMps);
@@ -970,11 +971,11 @@ glm::dvec3 propulsionReferenceForward(
         glm::length(sample.accelerationMps2);
 
     const glm::dvec3 travelForward =
-        speed > 0.25
+        speed > policy.lowSpeedDirectionThresholdMps
             ? glm::normalize(sample.velocityMps)
             : previous.forward;
 
-    if (acceleration <= 0.35)
+    if (acceleration <= policy.newtonianRcsPrimaryThresholdMps2)
         return travelForward;
 
     const double physicalRcsAuthority =
@@ -993,7 +994,10 @@ glm::dvec3 propulsionReferenceForward(
     // use the full real RCS envelope for transient recovery/trim.
     const double attitudeRcsAuthority =
         law == Law::Newtonian
-            ? std::min(physicalRcsAuthority, 0.35)
+            ? std::min(
+                physicalRcsAuthority,
+                policy.newtonianRcsPrimaryThresholdMps2
+              )
             : physicalRcsAuthority;
 
     if (acceleration <= attitudeRcsAuthority + 1.0e-9)
@@ -1049,7 +1053,8 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
     const world::navigation::Trajectory& trajectory,
     const Scenario& scenario,
     Law law,
-    const ShipParams& params
+    const ShipParams& params,
+    const ScenarioNavigationPolicy& policy
 )
 {
     std::vector<ReferenceAttitude> out(
@@ -1090,7 +1095,8 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
                 sample,
                 previous,
                 law,
-                params
+                params,
+                policy
             );
 
         Basis desired =
@@ -1106,7 +1112,11 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
             scenario.finish.requireForward ||
             scenario.finish.requireUp)
         {
-            constexpr double kTerminalBlendMeters = 35.0;
+            const double terminalBlendMeters =
+                std::max(
+                    1.0e-6,
+                    policy.terminalOrientationBlendDistanceMeters
+                );
             const double remaining =
                 glm::length(
                     scenario.finish.position -
@@ -1114,7 +1124,7 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
                 );
             const double u =
                 std::clamp(
-                    1.0 - remaining / kTerminalBlendMeters,
+                    1.0 - remaining / terminalBlendMeters,
                     0.0,
                     1.0
                 );
@@ -1433,7 +1443,8 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
         scenario.finish.requireUp;
     request.terminalForward = scenario.finish.forward;
     request.terminalUp = scenario.finish.up;
-    request.terminalOrientationBlendDistanceMeters = 35.0;
+    request.terminalOrientationBlendDistanceMeters =
+        settings.navigation.terminalOrientationBlendDistanceMeters;
 
     return world::navigation::TrajectoryGenerator::generate(request);
 }
@@ -1445,7 +1456,8 @@ Program makeProgramPhase(
     std::size_t last,
     std::uint64_t revision,
     const Scenario& scenario,
-    const ShipParams& params
+    const ShipParams& params,
+    const ScenarioNavigationPolicy& policy
 )
 {
     Program program;
@@ -1599,31 +1611,43 @@ Program makeProgramPhase(
         return {};
 
     program.validUntilUniverseTimeSeconds =
-        duration + 5.0;
+        duration + policy.programValidityGraceSeconds;
 
-    program.terminalTolerance.positionMeters = 4.0;
-    program.terminalTolerance.linearVelocityMps = 2.0;
-    program.terminalTolerance.forwardAngleRad = 0.20;
-    program.terminalTolerance.angularVelocityRadPerSec = 0.50;
+    program.terminalTolerance.positionMeters =
+        policy.programTerminalPositionToleranceMeters;
+    program.terminalTolerance.linearVelocityMps =
+        policy.programTerminalSpeedToleranceMps;
+    program.terminalTolerance.forwardAngleRad =
+        policy.programTerminalForwardToleranceRad;
+    program.terminalTolerance.angularVelocityRadPerSec =
+        policy.programTerminalAngularVelocityToleranceRadPerSec;
 
     // Execution progress is allowed to run only while the physical craft is
     // plausibly tracking the accepted reference. These are not "fail and turn
     // navigation off" limits: leaving the envelope now freezes reference
     // progress so the follower can reacquire before phase handoff.
-    program.tracking.positionErrorMeters = 8.0;
-    program.tracking.linearVelocityErrorMps = 4.0;
-    program.tracking.forwardAngleErrorRad = 0.35;
-    program.tracking.angularVelocityErrorRadPerSec = 0.8;
+    program.tracking.positionErrorMeters =
+        policy.trackingPositionErrorMeters;
+    program.tracking.linearVelocityErrorMps =
+        policy.trackingLinearVelocityErrorMps;
+    program.tracking.forwardAngleErrorRad =
+        policy.trackingForwardAngleErrorRad;
+    program.tracking.angularVelocityErrorRadPerSec =
+        policy.trackingAngularVelocityErrorRadPerSec;
 
     // Free transit is corridor following, not a rail simulation. Keep exact
     // lateral/cross-track control but allow harmless longitudinal drift so a
     // 10.1 m/s actual speed does not trigger a braking manoeuvre merely to
     // recover an exact 10.0 m/s reference.
-    program.tracking.alongTrackPositionDeadbandMeters = 12.0;
-    program.tracking.alongTrackSpeedDeadbandMps = 0.5;
+    program.tracking.alongTrackPositionDeadbandMeters =
+        policy.alongTrackPositionDeadbandMeters;
+    program.tracking.alongTrackSpeedDeadbandMps =
+        policy.alongTrackSpeedDeadbandMps;
 
-    program.tracking.linearFeedbackReserveMps2 = 1.5;
-    program.tracking.angularFeedbackReserveRadPerSec2 = 0.8;
+    program.tracking.linearFeedbackReserveMps2 =
+        policy.linearFeedbackReserveMps2;
+    program.tracking.angularFeedbackReserveRadPerSec2 =
+        policy.angularFeedbackReserveRadPerSec2;
 
     const double forwardMainAuthority =
         game::ship::forwardMainAccelerationLimitMps2(params);
@@ -1844,7 +1868,8 @@ std::vector<Program> buildRoutePrograms(
     const std::vector<ReferenceAttitude>& attitudes,
     const std::vector<glm::dvec3>& retainedRoute,
     const Scenario& scenario,
-    const ShipParams& params
+    const ShipParams& params,
+    const ScenarioNavigationPolicy& policy
 )
 {
     std::vector<Program> programs;
@@ -1906,7 +1931,8 @@ std::vector<Program> buildRoutePrograms(
                     chunkLast,
                     revision++,
                     scenario,
-                    params
+                    params,
+                    policy
                 );
 
             if (!phase.valid || phase.sampleCount < 2)
@@ -1931,7 +1957,8 @@ std::vector<Program> buildRoutePrograms(
 
 void bindProgramPageToExecutionClock(
     Program& program,
-    double maneuverStartUniverseTimeSeconds
+    double maneuverStartUniverseTimeSeconds,
+    const ScenarioNavigationPolicy& policy
 )
 {
     const std::size_t lastIndex =
@@ -1945,7 +1972,7 @@ void bindProgramPageToExecutionClock(
         maneuverStartUniverseTimeSeconds +
         program.sequenceStartOffsetSeconds +
         localDuration +
-        5.0;
+        policy.programValidityGraceSeconds;
 }
 
 struct ExecutionVehicle

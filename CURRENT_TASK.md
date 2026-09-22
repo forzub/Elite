@@ -1,129 +1,101 @@
-# CURRENT TASK — Validate distinct Newtonian propulsion behavior + live engine indicators
+# CURRENT TASK — Replace point-mass corner timing with physically compiled maneuver geometry
 
 Date: 2026-09-22
 
-Status: **CODE CANDIDATE READY / TARGET MINGW64 VALIDATION REQUIRED**
+Status: **ARCHITECTURE FIX REQUIRED BEFORE MORE FOLLOWER TUNING**
 
-Code baseline before documentation commits:
-
-```text
-421ecb1b2721d54bc0c33737a520100a3c10fac9
-```
-
-## Fresh target evidence
+Baseline before documentation commits:
 
 ```text
-NEWTONIAN / EXPERT / STANDARD
-START 21.20 m/s
-FINISH 21.20 m/s
-
-route additional clearance   17.71 m
-Ruckig min/max               20.73 / 21.20 m/s
-program phases complete      NO
-physical terminal state      MISSED
-final position error         181.42 m
-final speed                  8.17 m/s
-reference hold               40.61 s
-max body/velocity angle      174.31 deg
+adfe567eefac994344d81c60b1f21e24f3d09077
 ```
 
-Planner behavior is directionally sane: higher speed widened the static detour.
-The current problem is physical execution.
+## Finding
 
-## Root cause
+The current higher-speed failure is not just a bad Ruckig tuning constant.
 
-Cobra physical RCS authority is 2.0 m/s^2. The Ruckig point-mass route asks for
-roughly 1.5 m/s^2 over much of this run.
-
-Old Newtonian reference authoring said:
+Current multi-point chain:
 
 ```text
-if desired acceleration <= full RCS authority
-    keep nose on travel tangent
-    let RCS do all of it
+coarse collision-free polyline
+    -> local Bezier corner rounding
+    -> scalar path p(s)
+    -> scalar Ruckig s(t)
+    -> attitude authored afterwards
+    -> follower tries to physically realize it
 ```
 
-Result: Newtonian became effectively Assisted-like. The hull stayed near the
-route reference while manoeuvre thrusters continuously changed velocity and
-bled speed. Main engine did not participate until body/velocity were already
-almost opposite.
+That ordering is backwards for a main-engine-dominant Newtonian craft.
 
-## Candidate correction
+Ruckig currently knows:
+- scalar path distance;
+- scalar path speed;
+- one symmetric acceleration limit;
+- jerk limit.
 
-`propulsionReferenceForward(sample, previous, law, params)` is law-specific:
+It does NOT know:
+- hull attitude needed for the next burn;
+- finite time needed to rotate the hull;
+- aft-main direction;
+- simultaneous RCS + main allocation;
+- actual braking boundary including lead-rotation;
+- whether the chosen curve is dynamically flyable by Cobra at that speed.
 
-- Assisted: may consider full real RCS authority for its coupled-flight
-  attitude choice.
-- Newtonian: only 0.35 m/s^2 (existing tiny-correction threshold) counts as
-  primary attitude-authoring RCS authority.
-- Above that, Newtonian authors a physical hull cant/flip toward the requested
-  acceleration so aft main can participate.
-- Actual physical RCS limit remains 2.0 m/s^2 downstream for recovery/trim; it
-  is not artificially removed.
+## Vehicle-data issue
 
-## Viewer indicators
+The runtime harness uses a duplicated hard-coded `cobraParams()` instead of
+the authoritative Cobra descriptor.
 
-Bottom of screen now always shows three fixed lamps:
+Current inspected values are duplicated correctly, but this is unsafe and must
+be removed.
+
+Worse, `maxLinearGs = 7.5` becomes ~73.55 m/s^2 forward/braking authority in
+the trajectory profile. That is an envelope, not a complete propulsion model.
+
+`turnRadius = 20 m` exists but is not the authoritative source for current
+multi-point corner geometry.
+
+## Required architecture
+
+For each material maneuver/corner, compile a physically feasible primitive
+before final timing:
 
 ```text
-[ ] МАРШЕВЫЙ
-[ ] ПЕРЕДНИЙ МАРШЕВЫЙ
-[ ] МАНЕВРОВЫЙ
+incoming state
+(position, velocity, hull attitude, angular rate)
+
+    -> choose geometric maneuver
+       straight / arc / clothoid-like transition / lead-rotate+burn
+
+    -> solve propulsion allocation
+       aft main + RCS + angular authority
+
+    -> compute lead-rotation start
+       and braking/turn entry boundary
+
+    -> produce target state samples / primitive constraints
+
+    -> Ruckig times the already feasible scalar or state transition
+       without inventing geometry or propulsion
 ```
 
-They light from physical acceleration channels, not from planned intent:
-- `МАРШЕВЫЙ` = main acceleration projected along hull forward;
-- `ПЕРЕДНИЙ МАРШЕВЫЙ` = negative main projection (should never light on
-  current Cobra);
-- `МАНЕВРОВЫЙ` = non-zero real RCS/manoeuvre acceleration.
+At 30 m/s with free space, planner should be allowed to generate a broad arc
+whose radius is determined by the actual maneuver envelope instead of retaining
+an unnecessarily sharp polyline topology.
 
-This makes the next visual pass immediately diagnostic.
+## Immediate implementation sequence
 
-## New regression
+1. Eliminate duplicated `cobraParams()`; source the real descriptor/profile.
+2. Separate **propulsion capability** from pilot/load envelope.
+3. Add a maneuver-feasibility layer that computes:
+   - available RCS vector;
+   - aft-main contribution as a function of hull attitude;
+   - angular rotation time;
+   - braking/turn lead distance.
+4. Upgrade corner geometry to use physically required radius/transition length.
+5. Feed Ruckig physically feasible progress/state constraints after that.
+6. Add a 30 m/s no-nearby-obstacle regression requiring a broad smooth arc and
+   no corner overshoot.
 
-`testNewtonianHigherSpeedUsesMainEngineDominantManeuver()`
-
-Exact fixture:
-`NEWTONIAN / EXPERT / STANDARD, 21.20 -> 21.20 m/s`.
-
-Checks:
-- main engine materially participates within first 8 s;
-- no impossible fore main thrust is produced.
-
-Existing Assisted and high-speed reacquisition regressions remain.
-
-## Run now
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-bash tests/navigation_runtime/run_stage1_mingw64.sh
-```
-
-Then:
-
-```bash
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
-```
-
-First interactive gate:
-`NEWTONIAN / EXPERT / STANDARD, 21.20 -> 21.20 m/s`.
-
-What should visibly change:
-1. Early material route correction must no longer be `МАНЕВРОВЫЙ` alone for
-   tens of seconds.
-2. Hull should lead-rotate/cant toward the required burn direction.
-3. `МАРШЕВЫЙ` should light when the aft engine actually supplies the material
-   delta-v.
-4. Rotation alone must not bend velocity.
-5. `ПЕРЕДНИЙ МАРШЕВЫЙ` should remain dark.
-6. Short RCS trim is fine; sustained RCS-only route propulsion is not.
-
-If main participation is now visible but the craft still misses the Ruckig
-curve, the next correction is finite lead-rotation timing in maneuver authoring:
-the point-mass trajectory currently does not reserve time/distance for the hull
-to acquire burn attitude before the acceleration segment.
-
-Do not enable dynamic avoidance.
-Do not widen tracking envelopes/tolerances to hide the mismatch.
+Do not tune follower envelopes or add more recovery hacks until this planner /
+maneuver-authoring boundary is corrected.

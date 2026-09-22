@@ -585,7 +585,8 @@ ProgramRunResult runProgram(
             Follower::follow(
                 program,
                 v.timeSeconds,
-                agentState(v)
+                agentState(v),
+                game::navigation::ManeuverTrackingController::Policy {}
             );
 
         if (follower.status == Follower::Status::InvalidInput)

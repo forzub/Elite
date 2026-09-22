@@ -12,6 +12,7 @@ fi
 PYTHON_BIN="${ELITE_PYTHON_BIN}"
 
 echo "=== Static route + two-stage viewer architecture ==="
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_api_purity.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_geometric_path_planner.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_stage1_nominal_route.py"
 

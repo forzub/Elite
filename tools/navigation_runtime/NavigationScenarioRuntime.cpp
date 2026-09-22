@@ -138,9 +138,9 @@ struct Scenario
     DynamicObstacleDefinition suddenObstacle;
     bool hasSuddenObstacle = false;
 
-    // Coarse Stage-1 route/corridor abstraction only. Exact oriented-hull
-    // swept-volume clearance belongs to the later physical tunnel stage.
-    double routeEnvelopeRadiusMeters = 13.0;
+    // Environment / scenario clearance only. Vehicle dimensions cross the
+    // runtime boundary through ScenarioVehicleParameters and are never authored
+    // in the scenario file.
     double routeClearanceMeters = 0.0;
 };
 
@@ -354,8 +354,6 @@ Scenario loadScenario(const std::string& path)
             finish.value("speed_mps", 0.0);
     }
 
-    scenario.routeEnvelopeRadiusMeters =
-        root.value("route_envelope_radius_m", 13.0);
     scenario.routeClearanceMeters =
         root.value("route_clearance_m", 0.0);
 

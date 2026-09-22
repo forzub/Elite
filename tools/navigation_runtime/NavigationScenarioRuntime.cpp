@@ -809,30 +809,26 @@ trackingControllerPolicy(
 }
 
 double routePlanningClearanceMeters(
-    const Scenario& scenario,
-    const ScenarioRunSettings& settings,
-    const ShipParams& params
+    double planningSpeedMps,
+    double authoredRouteClearanceMeters,
+    FlightStyle flightStyle,
+    const ShipParams& params,
+    const ScenarioNavigationPolicy& policy
 )
 {
-    const double planningSpeedMps = std::max(
-        effectiveStartSpeedMps(scenario, settings),
-        effectiveFinishSpeedMps(scenario, settings)
-    );
-
     const double inertialLeadMeters =
-        planningSpeedMps *
-        characteristicTurnTimeSeconds(params, settings.navigation);
+        std::max(0.0, planningSpeedMps) *
+        characteristicTurnTimeSeconds(params, policy);
 
-    // FlightStyle is a clearance/risk doctrine only:
-    // STANDARD keeps more maneuver room; EXTREME deliberately cuts closer.
-    // It does not own a cruise speed.
+    // FlightStyle is a clearance/risk doctrine only. All inputs are explicit;
+    // this pure helper does not reach into Scenario or ScenarioRunSettings.
     const double styleReserveFactor =
-        settings.flightStyle == FlightStyle::Extreme
-            ? settings.navigation.extremeClearanceReserveFactor
-            : settings.navigation.standardClearanceReserveFactor;
+        flightStyle == FlightStyle::Extreme
+            ? policy.extremeClearanceReserveFactor
+            : policy.standardClearanceReserveFactor;
 
     return
-        std::max(0.0, scenario.routeClearanceMeters) +
+        std::max(0.0, authoredRouteClearanceMeters) +
         inertialLeadMeters * styleReserveFactor;
 }
 
@@ -1348,9 +1344,9 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
 }
 
 world::navigation::NavigationVehicleProfile executionVehicleProfile(
-    const Scenario& scenario,
-    const ScenarioRunSettings& settings,
-    const ScenarioVehicleParameters& vehicle
+    const ScenarioVehicleParameters& vehicle,
+    double preferredClearanceMeters,
+    double solverSpeedCeilingMps
 )
 {
     const double collisionRadius =
@@ -1360,29 +1356,16 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
         game::navigation::makeNavigationVehicleProfile(
             vehicle.physics,
             collisionRadius,
-            routePlanningClearanceMeters(
-                scenario,
-                settings,
-                vehicle.physics
-            )
+            std::max(0.0, preferredClearanceMeters)
         );
 
-    // START/FINISH speeds are boundary-state constraints, not alternate
-    // vehicle capability sources. The profile remains vehicle-derived; the
-    // trajectory request may raise only its numeric solver ceiling so an
-    // already-authored overspeed state can be represented and braked.
-    profile.maxSpeedMps = std::max({
-        profile.maxSpeedMps,
-        effectiveStartSpeedMps(scenario, settings),
-        effectiveFinishSpeedMps(scenario, settings)
-    });
-
-    // Scalar path-progress timing cannot claim flip-and-burn as instantaneous
-    // reverse authority. The common adapter therefore exposes only installed
-    // reverse-main + omnidirectional RCS authority here.
-    // Preserve physical zeroes. Numerical solver floors belong to the
-    // explicit TrajectoryGenerationPolicy and must never mutate the vehicle
-    // capability projection.
+    // START/FINISH boundary speeds are not vehicle facts. The orchestration
+    // layer resolves them once and passes only the numeric solver ceiling.
+    profile.maxSpeedMps =
+        std::max(
+            profile.maxSpeedMps,
+            std::max(0.0, solverSpeedCeilingMps)
+        );
 
     return profile;
 }
@@ -1403,11 +1386,26 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
         scenario.frame.universeTimeScale;
     request.pathPointsMeters = retainedRoute.pointsMapMeters;
     request.obstacles = scenario.staticObstacles;
+    const double startSpeedMps =
+        effectiveStartSpeedMps(scenario, settings);
+    const double finishSpeedMpsResolved =
+        effectiveFinishSpeedMps(scenario, settings);
+    const double planningSpeedMps =
+        std::max(startSpeedMps, finishSpeedMpsResolved);
+    const double preferredClearanceMeters =
+        routePlanningClearanceMeters(
+            planningSpeedMps,
+            scenario.routeClearanceMeters,
+            settings.flightStyle,
+            vehicle.physics,
+            settings.navigation
+        );
+
     request.vehicle =
         executionVehicleProfile(
-            scenario,
-            settings,
-            vehicle
+            vehicle,
+            preferredClearanceMeters,
+            planningSpeedMps
         );
     request.policy = settings.trajectory;
     request.initialVelocityMps =
@@ -1428,7 +1426,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
         }
 
         const double finishSpeedMps =
-            effectiveFinishSpeedMps(scenario, settings);
+            finishSpeedMpsResolved;
 
         world::navigation::TrajectoryPointSpeedConstraint finish;
         finish.sourcePathProgressMeters = progress;

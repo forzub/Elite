@@ -39,6 +39,18 @@ bridge = read("src/game/navigation/NavigationRuntimeControlBridge.cpp")
 ruckig = read("src/game/navigation/RuckigTrajectorySolver.cpp")
 vehicle_adapter = read("src/game/navigation/NavigationVehicleProfileAdapters.h")
 capability_adapter = read("src/game/navigation/ManeuverCapabilityAdapters.h")
+nominal_h = read("src/game/navigation/NominalRoutePlanner.h")
+nominal_cpp = read("src/game/navigation/NominalRoutePlanner.cpp")
+trajectory_cpp = read("src/world/navigation/TrajectoryGenerator.cpp")
+ruckig_h = read("src/game/navigation/RuckigTrajectorySolver.h")
+sampler_h = read("src/game/navigation/ManeuverProgramSampler.h")
+tracker_h = read("src/game/navigation/ManeuverTrackingController.h")
+follower_h = read("src/game/navigation/TrajectoryFollower.h")
+bridge_h = read("src/game/navigation/NavigationRuntimeControlBridge.h")
+phase_gate_h = read("src/game/navigation/ManeuverPhaseGate.h")
+phase_gate_cpp = read("src/game/navigation/ManeuverPhaseGate.cpp")
+replan_h = read("src/game/navigation/NavigationExecutionReplanPolicy.h")
+replan_cpp = read("src/game/navigation/NavigationExecutionReplanPolicy.cpp")
 ownership_doc = read("src/game/navigation/NAVIGATION_COMMAND_OWNERSHIP.md")
 runtime_planner_h = read("src/game/navigation/NavigationRuntimePlanner.h")
 runtime_planner_cpp = read("src/game/navigation/NavigationRuntimePlanner.cpp")
@@ -103,14 +115,72 @@ for forbidden in (
     )
 
 for token in (
-    "world(scenario.worldPhysics)",
-    "frame.systemId = scenario.frame.systemId",
-    "frame.frameId = scenario.frame.frameId",
-    "frame.originMeters = scenario.frame.originMeters",
-    "frame.localToWorldBasis = scenario.frame.localToWorldBasis",
+    "vehicleInit.world = scenario.worldPhysics",
+    "vehicleInit.frame = scenario.frame",
+    "vehicleInit.startPositionMapMeters = scenario.startPosition",
+    "vehicleInit.startVelocityMapMps =",
+    "ExecutionVehicle vehicle(vehicleInit, vehicleInput)",
 ):
     require(token in runtime_cpp,
-            f"runtime does not consume explicit scenario environment/frame data: {token}")
+            f"runtime does not compose explicit execution init data: {token}")
+
+# ---------- Active-path API surface ----------
+for token in (
+    "struct Request",
+    "static Plan plan(const Request& request)",
+):
+    require(token in nominal_h, f"NominalRoutePlanner API missing explicit request seam {token}")
+
+for token in (
+    "struct TrajectoryGenerationRequest",
+    "NavigationVehicleProfile vehicle",
+    "TrajectoryGenerationPolicy policy",
+    "static TrajectoryGenerationResult generate(",
+):
+    require(token in trajectory_h, f"TrajectoryGenerator API missing explicit input {token}")
+
+for token in (
+    "struct RuckigProgressRequest",
+    "struct RuckigTrajectoryRequest",
+    "solveProgress(",
+):
+    require(token in ruckig_h, f"Ruckig solver API missing explicit request {token}")
+
+for token in (
+    "const AcceptedManeuverProgram& program",
+    "double universeTimeSeconds",
+    "const AgentState& agent",
+    "const ManeuverTrackingController::Policy& trackingPolicy",
+):
+    require(token in follower_h, f"TrajectoryFollower API missing explicit input {token}")
+
+for token in (
+    "const AcceptedManeuverProgram& program",
+    "const AcceptedManeuverProgram::ReferenceSample& reference",
+    "const AgentState& agent",
+    "const Policy& policy",
+):
+    require(token in tracker_h, f"ManeuverTrackingController API missing explicit input {token}")
+
+for token in (
+    "const AcceptedManeuverProgram& program",
+    "double universeTimeSeconds",
+):
+    require(token in sampler_h, f"ManeuverProgramSampler API missing explicit input {token}")
+
+for token in (
+    "const AcceptedManeuverProgram& program",
+    "double universeTimeSeconds",
+    "TrajectoryFollower::Status followerStatus",
+    "const Policy& policy",
+):
+    require(token in phase_gate_h, f"ManeuverPhaseGate API missing explicit input {token}")
+
+for token in (
+    "const Policy& policy",
+    "const Query& query",
+):
+    require(token in replan_h, f"NavigationExecutionReplanPolicy API missing explicit input {token}")
 
 # ---------- Stage-1 geometric policy ----------
 for token in (
@@ -230,12 +300,16 @@ for forbidden in (
 
 # ---------- Pure calculation kernels ----------
 for name, source in (
+    ("NominalRoutePlanner", nominal_cpp),
     ("GeometricPathPlanner", geo_cpp),
+    ("TrajectoryGenerator", trajectory_cpp),
     ("RuckigTrajectorySolver", ruckig),
     ("OrdinaryPhysicalManeuverCompiler", compiler_cpp),
     ("ManeuverProgramSampler", sampler),
     ("ManeuverTrackingController", tracker),
     ("TrajectoryFollower", follower),
+    ("ManeuverPhaseGate", phase_gate_cpp),
+    ("NavigationExecutionReplanPolicy", replan_cpp),
 ):
     for forbidden in (
         "std::ifstream",
@@ -248,7 +322,12 @@ for name, source in (
         "random_device",
         "std::rand",
         "EliteCobraMk1",
+        "ShipDescriptor",
+        "NavigationScenarioRuntime",
+        "scenario.json",
         "GameSimulation",
+        "std::cout",
+        "std::cerr",
     ):
         require(forbidden not in source,
                 f"{name} pure kernel leaked ambient/stateful dependency {forbidden}")
@@ -286,6 +365,60 @@ for token in (
 ):
     require(token in read("src/game/navigation/NavigationRuntimeControlBridge.h"),
             f"control bridge state boundary missing explicit {token}")
+
+# ---------- Runtime helper API narrowness ----------
+# Orchestration may compose Scenario/Settings, but calculation helpers below it
+# must receive exactly the data they use. This catches "reach into a giant
+# context object" regressions before they become a second source of truth.
+for required in (
+    "struct ResolvedRunKinematics",
+    "ResolvedRunKinematics resolveRunKinematics(",
+    "double routePlanningClearanceMeters(\n    double planningSpeedMps,",
+    "const Basis& initialBasis,",
+    "const glm::dvec3& initialAngularVelocityMapRadPerSec,",
+    "const Endpoint& terminal,",
+    "double preferredClearanceMeters,",
+    "double solverSpeedCeilingMps",
+    "struct ExecutionVehicleInit",
+    "ExecutionVehicle(\n        const ExecutionVehicleInit& init,",
+):
+    require(required in runtime_cpp, f"runtime helper API is not explicit/narrow: {required}")
+
+for forbidden in (
+    "double effectiveStartSpeedMps(",
+    "double effectiveFinishSpeedMps(",
+    "glm::dvec3 effectiveStartVelocity(",
+    "double routePlanningClearanceMeters(\n    const Scenario&",
+    "std::vector<ReferenceAttitude> buildReferenceAttitudes(\n    const world::navigation::Trajectory& trajectory,\n    const Scenario&",
+    "Program makeProgramPhase(\n    const world::navigation::Trajectory& trajectory,\n    const std::vector<ReferenceAttitude>& attitudes,\n    std::size_t first,\n    std::size_t last,\n    std::uint64_t revision,\n    const Scenario&",
+    "ExecutionVehicle(\n        const Scenario&",
+):
+    require(forbidden not in runtime_cpp, f"runtime calculation helper reaches across broad API: {forbidden}")
+
+# Scenario file parser owns ScenarioDefinition mutation. No anonymous 'terminal'
+# alias may leak into parser/preview/Stage-1 orchestration.
+parser = function_slice(
+    runtime_cpp,
+    "ScenarioDefinition parseScenarioDefinitionFile(",
+    "TraceStaticObstacle traceObstacle("
+)
+for token in (
+    "scenario.finish.position",
+    "scenario.finish.requireForward",
+    "scenario.finish.requireUp",
+):
+    require(token in parser, f"scenario parser lost explicit finish ownership: {token}")
+
+# The active E2E contract must not mention the retired reference-hold/reacquire
+# mechanism at all.
+for forbidden in (
+    "REFERENCE CLOCK HOLD:",
+    "reference-hold",
+    "reacquiresInsteadOfOutrunningReference",
+    "instead of reacquiring",
+):
+    require(forbidden not in e2e,
+            f"E2E still names retired frozen-reference semantics: {forbidden}")
 
 # ---------- Retained-route provenance ----------
 for token in (

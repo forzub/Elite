@@ -37,6 +37,8 @@ ruckig = read("src/game/navigation/RuckigTrajectorySolver.cpp")
 vehicle_adapter = read("src/game/navigation/NavigationVehicleProfileAdapters.h")
 capability_adapter = read("src/game/navigation/ManeuverCapabilityAdapters.h")
 ownership_doc = read("src/game/navigation/NAVIGATION_COMMAND_OWNERSHIP.md")
+runtime_planner_h = read("src/game/navigation/NavigationRuntimePlanner.h")
+runtime_planner_cpp = read("src/game/navigation/NavigationRuntimePlanner.cpp")
 e2e = read("tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp")
 
 # ---------- Public snapshot/API boundary ----------
@@ -225,6 +227,27 @@ for token in (
 ):
     require(token in runtime_cpp,
             f"Stage 2 does not validate retained-route provenance: {token}")
+
+# ---------- Production runtime-planner policy ----------
+for token in (
+    "staticHoldUrgency01",
+    "staleHoldUrgency01",
+    "conflictHoldUrgency01",
+    "minimumApproachHoldDistanceMeters",
+    "maximumLateralCorrectionVelocityAngleRad",
+):
+    require(token in runtime_planner_h,
+            f"NavigationRuntimePlanner hides behavior policy {token}")
+
+for forbidden in (
+    "holdIntent(agent, goal, 0.5)",
+    "holdIntent(agent, goal, 0.75)",
+    "holdIntent(agent, goal, 1.0)",
+    "std::max(2.0, portalAllowedCrossTrackMeters)",
+    "1.5533430342749532 // 89 degrees.",
+):
+    require(forbidden not in runtime_planner_cpp,
+            f"NavigationRuntimePlanner reintroduced hidden behavior literal {forbidden}")
 
 # ---------- Removed legacy contracts ----------
 for forbidden in (

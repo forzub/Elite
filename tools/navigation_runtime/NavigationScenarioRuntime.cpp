@@ -770,6 +770,23 @@ double characteristicTurnTimeSeconds(
         (representativeTurnRad - accelDecelAngle) / omega;
 }
 
+game::navigation::ManeuverTrackingController::Policy
+trackingControllerPolicy(
+    const ScenarioNavigationPolicy& policy
+)
+{
+    game::navigation::ManeuverTrackingController::Policy out;
+    out.positionGainPerSecond2 =
+        policy.trackingPositionGainPerSecond2;
+    out.velocityGainPerSecond =
+        policy.trackingVelocityGainPerSecond;
+    out.attitudeGainPerSecond2 =
+        policy.trackingAttitudeGainPerSecond2;
+    out.angularVelocityGainPerSecond =
+        policy.trackingAngularVelocityGainPerSecond;
+    return out;
+}
+
 double routePlanningClearanceMeters(
     const Scenario& scenario,
     const ScenarioRunSettings& settings,
@@ -2992,7 +3009,8 @@ ScenarioRunResult executeCalculatedRoute(
                 Follower::follow(
                     program,
                     programReferenceTimeSeconds,
-                    followerAgent(vehicle)
+                    followerAgent(vehicle),
+                    trackingControllerPolicy(settings.navigation)
                 );
 
             if (follower.status == Follower::Status::InvalidInput)

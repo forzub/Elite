@@ -197,7 +197,7 @@ double segmentSpeedLimit(
         if (overlapStart <= overlapEnd)
             limit = std::min(limit, range.maxSpeedMps);
     }
-    return std::max(0.1, limit);
+    return std::max(request.policy.minimumSpeedMps, limit);
 }
 
 
@@ -644,12 +644,15 @@ double estimateLegDuration(
     double maxSpeedMps,
     double accelerationMps2,
     double initialSpeedMps,
-    double terminalSpeedMps
+    double terminalSpeedMps,
+    const world::navigation::TrajectoryGenerationPolicy& policy
 )
 {
     const double distance = std::max(0.0, distanceMeters);
-    const double speed = std::max(0.1, maxSpeedMps);
-    const double acceleration = std::max(0.1, accelerationMps2);
+    const double speed =
+        std::max(policy.minimumSpeedMps, maxSpeedMps);
+    const double acceleration =
+        std::max(policy.minimumAccelerationMps2, accelerationMps2);
     const double distanceForAccelAndBrake = speed * speed / acceleration;
 
     double ideal = 0.0;
@@ -662,7 +665,11 @@ double estimateLegDuration(
     ideal += (std::max(0.0, initialSpeedMps) +
               std::max(0.0, terminalSpeedMps)) /
         (2.0 * acceleration);
-    return std::max(0.5, ideal * 1.20 + 0.25);
+    return std::max(
+        policy.minimumLegDurationSeconds,
+        ideal * policy.legDurationScale +
+            policy.legDurationPaddingSeconds
+    );
 }
 
 std::vector<glm::dvec3> buildWaypointVelocities(
@@ -694,7 +701,8 @@ std::vector<glm::dvec3> buildWaypointVelocities(
             1.0
         );
         const double angle = std::acos(cosine);
-        if (angle >= glm::radians(150.0))
+        if (angle >=
+            request.policy.maximumRoundableCornerAngleRad)
             continue;
 
         const double pointLimit = pointSpeedLimit(
@@ -722,20 +730,24 @@ std::vector<glm::dvec3> buildWaypointVelocities(
         // chord was blocked it forced a zero-speed waypoint even when a tighter
         // continuous turn was perfectly safe.
         const double nominalBlendDistance = std::max(
-            1.0,
-            std::min(incomingLength, outgoingLength) * 0.25
+            request.policy.nominalBlendMinimumMeters,
+            std::min(incomingLength, outgoingLength) *
+                request.policy.nominalBlendLegFraction
         );
         const double minimumBlendDistance = std::min(
             nominalBlendDistance,
             std::max(
-                0.75,
-                request.vehicle.collisionRadiusMeters * 0.25
+                request.policy.minimumBlendMeters,
+                request.vehicle.collisionRadiusMeters *
+                    request.policy.minimumBlendCollisionRadiusFactor
             )
         );
 
         double blendDistance = nominalBlendDistance;
         bool foundSafeBlend = false;
-        for (int attempt = 0; attempt < 10; ++attempt)
+        for (int attempt = 0;
+             attempt < request.policy.blendAttempts;
+             ++attempt)
         {
             blendDistance = std::max(
                 minimumBlendDistance,
@@ -766,7 +778,8 @@ std::vector<glm::dvec3> buildWaypointVelocities(
             blendDistance =
                 std::max(
                     minimumBlendDistance,
-                    blendDistance * 0.70
+                    blendDistance *
+                        request.policy.blendShrinkFactor
                 );
         }
 
@@ -827,7 +840,8 @@ std::vector<glm::dvec3> buildWaypointVelocities(
                 turnSpeed
             })
         );
-        if (speed <= 0.5)
+        if (speed <=
+            request.policy.minimumUsefulWaypointSpeedMps)
             continue;
 
         velocities[i] = direction * speed;
@@ -838,7 +852,8 @@ std::vector<glm::dvec3> buildWaypointVelocities(
 
 bool nonZeroVelocity(const glm::dvec3& value) noexcept
 {
-    return glm::dot(value, value) > 0.25;
+    return glm::dot(value, value) >
+        0.25;
 }
 
 glm::dquat sampleOrientation(
@@ -978,28 +993,34 @@ LegSolve solveLeg(
         speedLimit,
         acceleration,
         inheritedSpeed,
-        terminalSpeed
+        terminalSpeed,
+        request.policy
     );
 
     const double speedForSampling = std::max({
-        1.0,
+        request.policy.minimumSamplingSpeedMps,
         speedLimit,
         inheritedSpeed,
         terminalSpeed
     });
     const double desiredCollisionChord = std::clamp(
-        std::max(1.0, request.vehicle.collisionRadiusMeters * 0.25),
-        1.0,
-        5.0
+        std::max(
+            request.policy.collisionChordMinimumMeters,
+            request.vehicle.collisionRadiusMeters *
+                request.policy.collisionChordRadiusFactor
+        ),
+        request.policy.collisionChordMinimumMeters,
+        request.policy.collisionChordMaximumMeters
     );
     const double sampleInterval = std::clamp(
         desiredCollisionChord / speedForSampling,
-        0.02,
-        0.05
+        request.policy.legSampleIntervalMinimumSeconds,
+        request.policy.legSampleIntervalMaximumSeconds
     );
 
-    constexpr int MaxDurationAttempts = 8;
-    for (int attempt = 0; attempt < MaxDurationAttempts; ++attempt)
+    for (int attempt = 0;
+         attempt < request.policy.ruckigDurationAttempts;
+         ++attempt)
     {
         game::navigation::RuckigTrajectoryRequest ruckigRequest;
         ruckigRequest.systemId = request.systemId;
@@ -1008,13 +1029,20 @@ LegSolve solveLeg(
         ruckigRequest.initialProperAccelerationMps2 = initialProperAcceleration;
         ruckigRequest.motionEnvelope.maxProperAccelerationMps2 = acceleration;
         ruckigRequest.motionEnvelope.maxProperJerkMps3 =
-            std::max(1.0, acceleration * 4.0);
+            std::max(
+                request.policy.jerkMinimumMps3,
+                acceleration *
+                    request.policy.jerkAccelerationMultiplier
+            );
         ruckigRequest.horizonSeconds = duration;
         ruckigRequest.sampleIntervalSeconds = std::min(
             sampleInterval,
             duration
         );
-        ruckigRequest.validationStepSeconds = std::min(0.02, duration);
+        ruckigRequest.validationStepSeconds = std::min(
+            request.policy.validationStepSeconds,
+            duration
+        );
         ruckigRequest.targetPositionMeters = targetPosition;
         ruckigRequest.targetVelocityMps = targetVelocity;
 
@@ -1028,7 +1056,11 @@ LegSolve solveLeg(
             const double permittedPeakSpeed = std::max(
                 speedLimit,
                 inheritedSpeed
-            ) + std::max(0.25, speedLimit * 0.01);
+            ) + std::max(
+                request.policy.peakSpeedToleranceMps,
+                speedLimit *
+                    request.policy.peakSpeedToleranceFraction
+            );
             if (candidate.prediction.diagnostics.maxSpeedMps <=
                 permittedPeakSpeed)
             {
@@ -1039,7 +1071,7 @@ LegSolve solveLeg(
             }
         }
 
-        duration *= 1.45;
+        duration *= request.policy.durationRetryFactor;
     }
 
     return out;
@@ -1174,6 +1206,7 @@ GuideMetricSample sampleGuide(
 }
 
 glm::dvec3 guideCurvatureVector(
+    const world::navigation::TrajectoryGenerationRequest& request,
     const ExecutionGuide& guide,
     const std::vector<double>& arc,
     double progressMeters
@@ -1183,9 +1216,9 @@ glm::dvec3 guideCurvatureVector(
         return glm::dvec3(0.0);
 
     const double probe = std::clamp(
-        arc.back() * 0.0025,
-        0.20,
-        1.00
+        arc.back() * request.policy.curvatureProbeFraction,
+        request.policy.curvatureProbeMinimumMeters,
+        request.policy.curvatureProbeMaximumMeters
     );
     const double s0 =
         std::max(0.0, progressMeters - probe);
@@ -1292,11 +1325,9 @@ world::navigation::TrajectoryGenerationResult
 buildPathProgressTrajectory(
     const world::navigation::TrajectoryGenerationRequest& request,
     const std::vector<double>& coarseSourceProgress,
-    const ExecutionGuide& guide,
-    double totalStartMilliseconds = 0.0
+    const ExecutionGuide& guide
 )
 {
-    (void)totalStartMilliseconds;
 
     if (guide.points.size() < 2)
     {
@@ -1368,17 +1399,19 @@ buildPathProgressTrajectory(
         progressRequest.targetSpeedMps
     });
     progressRequest.maxAccelerationMps2 = std::max(
-        0.1,
+        request.policy.minimumAccelerationMps2,
         std::min(
             request.vehicle.maxForwardAccelerationMps2,
             request.vehicle.maxBrakingAccelerationMps2
         )
     );
     progressRequest.maxJerkMps3 = std::max(
-        1.0,
-        progressRequest.maxAccelerationMps2 * 4.0
+        request.policy.jerkMinimumMps3,
+        progressRequest.maxAccelerationMps2 *
+            request.policy.jerkAccelerationMultiplier
     );
-    progressRequest.sampleIntervalSeconds = 0.02;
+    progressRequest.sampleIntervalSeconds =
+        request.policy.progressSampleIntervalSeconds;
 
     const auto progress =
         game::navigation::RuckigTrajectorySolver::solveProgress(
@@ -1429,7 +1462,8 @@ buildPathProgressTrajectory(
     out.diagnostics.initialCrossTrackSpeedMps =
         magnitude(initialCrossVelocity);
     out.diagnostics.pathCaptureRequired =
-        magnitude(initialCrossVelocity) > 0.25;
+        magnitude(initialCrossVelocity) >
+            request.policy.pathCaptureSpeedThresholdMps;
 
     out.trajectory.samples.reserve(
         progress.samples.size()
@@ -1449,6 +1483,7 @@ buildPathProgressTrajectory(
             );
         const glm::dvec3 curvature =
             guideCurvatureVector(
+                request,
                 guide,
                 arc,
                 progressSample.progressMeters
@@ -1934,7 +1969,9 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     // Preserve continuous corner motion when possible: waypoint through-speed
     // is relaxed progressively before the final StopTurnGo fallback.
     const std::size_t maxRestarts =
-        guide.points.size() * 8 + 4;
+        guide.points.size() *
+            request.policy.restartAttemptsPerGuidePoint +
+        request.policy.restartBaseAttempts;
 
     for (std::size_t restart = 0; restart < maxRestarts; ++restart)
     {
@@ -1981,9 +2018,10 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
             // does not prove that the corner requires a stop. Reduce the
             // through-speed first and retry the exact swept validation. Only
             // collapse to zero when the remaining speed is already negligible.
-            if (speed > 1.25)
+            if (speed > request.policy.waypointRelaxThresholdMps)
             {
-                waypointVelocities[index] *= 0.70;
+                waypointVelocities[index] *=
+                    request.policy.waypointRelaxFactor;
             }
             else
             {

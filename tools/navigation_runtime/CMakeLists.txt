@@ -93,6 +93,30 @@ target_link_libraries(
         EliteNavigationRuckig
 )
 
+# The navigation runtime itself is vehicle-agnostic. The standalone viewer
+# and E2E fixture explicitly choose Cobra at their application boundary and
+# pass a generic ScenarioVehicleParameters object into the runtime API.
+add_library(EliteNavigationRuntimeVehicleFixture STATIC
+    "${ELITE_SOURCE_ROOT}/src/game/ship/descriptors/EliteCobraMk1.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/equipment/data/decryptors.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/equipment/data/jammers.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/equipment/data/radars.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/equipment/data/receivers.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/equipment/data/transmitters.cpp"
+)
+
+target_include_directories(
+    EliteNavigationRuntimeVehicleFixture
+    PUBLIC
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    EliteNavigationRuntimeVehicleFixture
+    PUBLIC cxx_std_17
+)
+
 enable_testing()
 
 add_executable(
@@ -120,6 +144,7 @@ target_link_libraries(
     navigation_runtime_pipeline_tests
     PRIVATE
         EliteNavigationExecutionToolCore
+        EliteNavigationRuntimeVehicleFixture
         nlohmann_json::nlohmann_json
 )
 
@@ -162,6 +187,7 @@ target_link_libraries(
     navigation_runtime_viewer
     PRIVATE
         EliteNavigationExecutionToolCore
+        EliteNavigationRuntimeVehicleFixture
         nlohmann_json::nlohmann_json
 )
 
@@ -178,11 +204,13 @@ endif()
 if(MSVC)
     target_compile_options(EliteNavigationRouteToolCore PRIVATE /W4 /permissive-)
     target_compile_options(EliteNavigationExecutionToolCore PRIVATE /W4 /permissive-)
+    target_compile_options(EliteNavigationRuntimeVehicleFixture PRIVATE /W4 /permissive-)
     target_compile_options(navigation_runtime_pipeline_tests PRIVATE /W4 /permissive-)
     target_compile_options(navigation_runtime_viewer PRIVATE /W4 /permissive-)
 else()
     target_compile_options(EliteNavigationRouteToolCore PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(EliteNavigationExecutionToolCore PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(EliteNavigationRuntimeVehicleFixture PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(navigation_runtime_pipeline_tests PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(navigation_runtime_viewer PRIVATE -Wall -Wextra -Wpedantic)
 endif()

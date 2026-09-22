@@ -2555,6 +2555,9 @@ ScenarioRunResult calculateScenario(
         if (!settings.trajectory.valid())
             throw std::runtime_error("invalid trajectory generation policy");
 
+        const ResolvedRunKinematics kinematics =
+            resolveRunKinematics(scenario, settings);
+
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 
@@ -2604,10 +2607,7 @@ ScenarioRunResult calculateScenario(
             settings.navigation.geometricSimplifyLineOfSight;
 
         const double planningSpeedMps =
-            std::max(
-                effectiveStartSpeedMps(scenario, settings),
-                effectiveFinishSpeedMps(scenario, settings)
-            );
+            kinematics.planningSpeedMps;
         const double planningClearanceMeters =
             routePlanningClearanceMeters(
                 planningSpeedMps,
@@ -2651,14 +2651,14 @@ ScenarioRunResult calculateScenario(
             routeFrame(
                 scenario,
                 route.valid,
-                effectiveStartVelocity(scenario, settings)
+                kinematics.startVelocityMapMps
             )
         );
 
         out.diagnostics = routeDiagnostics(
             scenario,
             route,
-            effectiveStartVelocity(scenario, settings)
+            kinematics.startVelocityMapMps
         );
         {
             std::ostringstream planningSpeed;
@@ -2743,6 +2743,9 @@ ScenarioRunResult executeCalculatedRoute(
             throw std::runtime_error("invalid pilot execution profile");
         }
 
+        const ResolvedRunKinematics kinematics =
+            resolveRunKinematics(scenario, settings);
+
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 
@@ -2767,10 +2770,7 @@ ScenarioRunResult executeCalculatedRoute(
         }
 
         const double expectedPlanningSpeedMps =
-            std::max(
-                effectiveStartSpeedMps(scenario, settings),
-                effectiveFinishSpeedMps(scenario, settings)
-            );
+            kinematics.planningSpeedMps;
         const double expectedClearanceMeters =
             routePlanningClearanceMeters(
                 expectedPlanningSpeedMps,
@@ -2820,9 +2820,13 @@ ScenarioRunResult executeCalculatedRoute(
         const auto trajectoryResult =
             buildExecutionTrajectory(
                 scenario,
-                settings,
+                scenario.finish,
                 retainedRoute,
-                vehicleInput
+                vehicleInput,
+                kinematics,
+                settings.trajectory,
+                settings.navigation.
+                    terminalOrientationBlendDistanceMeters
             );
 
         if (!trajectoryResult.ready())
@@ -2831,7 +2835,7 @@ ScenarioRunResult executeCalculatedRoute(
                 routeFrame(
                     scenario,
                     true,
-                    effectiveStartVelocity(scenario, settings)
+                    kinematics.startVelocityMapMps
                 );
             failed.phase = "execution_failed";
             failed.plannerStatus = "trajectory_failed";
@@ -3023,7 +3027,7 @@ ScenarioRunResult executeCalculatedRoute(
         vehicleInit.frame = scenario.frame;
         vehicleInit.startPositionMapMeters = scenario.startPosition;
         vehicleInit.startVelocityMapMps =
-            effectiveStartVelocity(scenario, settings);
+            kinematics.startVelocityMapMps;
         vehicleInit.startBasis = scenario.startBasis;
         vehicleInit.startPitchRateRadPerSec =
             scenario.startPitchRateRadPerSec;
@@ -3226,10 +3230,7 @@ ScenarioRunResult executeCalculatedRoute(
             {
                 game::navigation::ManeuverPhaseGate::Policy gatePolicy;
                 const bool movingTerminal =
-                    effectiveFinishSpeedMps(
-                        scenario,
-                        settings
-                    ) > 1.0e-6;
+                    kinematics.finishSpeedMps > 1.0e-6;
 
                 gatePolicy.mode =
                     movingTerminal
@@ -3431,7 +3432,7 @@ ScenarioRunResult executeCalculatedRoute(
                 vehicle.transform.motion.localVelocityMps
             );
         const double requestedFinishSpeedMps =
-            effectiveFinishSpeedMps(scenario, settings);
+            kinematics.finishSpeedMps;
         const double finalSpeedError =
             std::abs(finalSpeed - requestedFinishSpeedMps);
 
@@ -3591,10 +3592,10 @@ ScenarioRunResult executeCalculatedRoute(
             "FLIGHT STYLE / CLEARANCE DOCTRINE: " +
                 std::string(flightStyleName(settings.flightStyle)),
             "START SPEED REQUESTED: " +
-                number(effectiveStartSpeedMps(scenario, settings)) +
+                number(kinematics.startSpeedMps) +
                 " M/S",
             "FINISH SPEED REQUESTED: " +
-                number(effectiveFinishSpeedMps(scenario, settings)) +
+                number(kinematics.finishSpeedMps) +
                 " M/S",
             "FOLLOWER SPEED CORRIDOR: +/- " +
                 number(settings.navigation.alongTrackSpeedDeadbandMps) +

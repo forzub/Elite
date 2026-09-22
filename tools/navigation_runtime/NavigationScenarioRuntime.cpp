@@ -1,6 +1,7 @@
 #include "NavigationScenarioRuntime.h"
 
 #include "src/game/navigation/NominalRoutePlanner.h"
+#include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
@@ -1317,55 +1318,46 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
     const ScenarioVehicleParameters& vehicle
 )
 {
-    const ShipParams& params = vehicle.physics;
-    world::navigation::NavigationVehicleProfile profile;
-    profile.collisionRadiusMeters =
-        std::max({
-            0.0,
-            vehicle.bodyHalfExtentsMeters.x,
-            vehicle.bodyHalfExtentsMeters.y,
-            vehicle.bodyHalfExtentsMeters.z
-        });
-    profile.preferredClearanceMeters =
-        routePlanningClearanceMeters(
-            scenario,
-            settings,
-            params
+    const double collisionRadius = std::max({
+        0.0,
+        vehicle.bodyHalfExtentsMeters.x,
+        vehicle.bodyHalfExtentsMeters.y,
+        vehicle.bodyHalfExtentsMeters.z
+    });
+
+    auto profile =
+        game::navigation::makeNavigationVehicleProfile(
+            vehicle.physics,
+            collisionRadius,
+            routePlanningClearanceMeters(
+                scenario,
+                settings,
+                vehicle.physics
+            )
         );
 
-    // START/FINISH speed are boundary-state constraints, not cruise caps.
-    // Between them the trajectory may accelerate above either value when
-    // geometry and physical authority permit it. The hard speed ceiling comes
-    // from the vehicle capability, never from FlightStyle or terminal speed.
+    // START/FINISH speeds are boundary-state constraints, not alternate
+    // vehicle capability sources. The profile remains vehicle-derived; the
+    // trajectory request may raise only its numeric solver ceiling so an
+    // already-authored overspeed state can be represented and braked.
     profile.maxSpeedMps = std::max({
         0.1,
-        game::ship::controlledSpeedLimitMps(params),
+        profile.maxSpeedMps,
         effectiveStartSpeedMps(scenario, settings),
         effectiveFinishSpeedMps(scenario, settings)
     });
 
-    const double forwardMain =
-        game::ship::forwardMainAccelerationLimitMps2(params);
-    const double reverseMain =
-        game::ship::reverseMainAccelerationLimitMps2(params);
-    const double manoeuvre =
-        game::ship::manoeuvreAccelerationLimitMps2(params);
-
+    // Scalar path-progress timing cannot claim flip-and-burn as instantaneous
+    // reverse authority. The common adapter therefore exposes only installed
+    // reverse-main + omnidirectional RCS authority here.
     profile.maxForwardAccelerationMps2 =
-        std::max(0.1, std::max(forwardMain, manoeuvre));
-
-    // IMPORTANT: this scalar path profile may only expose instantaneous
-    // attitude-preserving braking authority. Flip-and-burn is a separate
-    // maneuver that must include rotation time and proof.
+        std::max(0.1, profile.maxForwardAccelerationMps2);
     profile.maxBrakingAccelerationMps2 =
-        std::max(0.1, std::max(reverseMain, manoeuvre));
+        std::max(0.1, profile.maxBrakingAccelerationMps2);
     profile.maxLateralAccelerationMps2 =
-        std::max(0.1, manoeuvre);
-
-    profile.maxAngularVelocityRadPerSecond =
-        game::ship::maximumAngularSpeedRadPerSec(params);
+        std::max(0.1, profile.maxLateralAccelerationMps2);
     profile.maxAngularAccelerationRadPerSecond2 =
-        game::ship::angularAccelerationLimitRadPerSec2(params);
+        std::max(0.1, profile.maxAngularAccelerationRadPerSecond2);
     return profile;
 }
 

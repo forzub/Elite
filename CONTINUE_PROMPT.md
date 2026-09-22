@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: validate normalized APIs, then implement physical maneuver authoring
+# CONTINUE PROMPT — Elite Navigation: physical maneuver timing is now the blocker
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -9,148 +9,89 @@ Every state-affecting iteration MUST:
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
 5. recreate this `CONTINUE_PROMPT.md` from scratch.
 
-While architecture cleanup remains relevant also synchronize:
-- `src/game/navigation/NAVIGATION_PIPELINE_AUDIT.md`;
-- `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`.
+Also keep `src/game/navigation/NAVIGATION_PIPELINE_AUDIT.md` synchronized.
 
-## Current code baseline before docs
+## Last target gate
 
+Baseline:
+`5cc0b668665f0adc11b160bad3bc2af314cdfe4d`
+
+Passed:
+- static-route architecture;
+- Stage-1 nominal route;
+- follower corridor component;
+- viewer/runtime build.
+
+Failed:
+- `navigation_runtime_pipeline`.
+
+High-speed Newtonian diagnostic:
+- 743 trajectory samples;
+- 51 storage pages;
+- 742 actuator segments;
+- 42 actuator segments infeasible;
+- first storage page advance occurred;
+- program invalidated for tracking loss at 0.51 s;
+- max reference/velocity angle 175.84 deg;
+- max body/velocity angle 0.94 deg;
+- reference clock is MONOTONIC.
+
+## Important: two failures, not one
+
+### Stale test
+
+The E2E regression still searches for `REFERENCE CLOCK HOLD:`.
+That mechanism was intentionally removed.
+
+Update tests to the new contract:
+- monotonic reference clock;
+- no old hold diagnostics;
+- explicit invalidation on prolonged tracking loss.
+
+### Real navigation failure
+
+The accepted translational trajectory is authored/timed before full physical
+attitude + propulsion feasibility.
+
+Current order:
 ```text
-8b7134078fe1e7672e04085254c9f84c29ed1519
+route -> guide -> Ruckig -> attitude -> actuator fit
 ```
 
-Target-machine validation has NOT been performed for this cleanup.
+Wrong because the scalar trajectory may demand a force vector before the hull
+can rotate to provide it.
 
-## Canonical input ownership
-
-### Vehicle
-
-Navigation receives one generic:
-
+Target order:
 ```text
-game::navigation::VehicleDynamicsProfile
-    ShipParams physics
-    bodyHalfExtentsMeters
-    capabilityRevision
+route
+ -> physical maneuver compiler
+    geometry/tangent
+    force requirement
+    hull attitude
+    angular reachability
+    main/RCS allocation
+    throttle slew
+    lead-rotation and braking boundaries
+ -> Ruckig timing inside the feasible envelope
+ -> AcceptedManeuverProgram
+ -> Autopilot
 ```
 
-The runtime is vehicle-agnostic.
+The 42 infeasible actuator segments are evidence of this defect. Do not ignore
+or clamp them away.
 
-Viewer/E2E currently choose EliteCobraMk1Descriptor at their application boundary
-and call `makeScenarioVehicleParameters(descriptor)`.
+## Next actions
 
-Never reintroduce `cobraParams()` inside navigation.
-
-### Derived vehicle limits
-
-Use only:
-- `src/game/ship/core/ShipDynamics.h`;
-- `src/game/navigation/NavigationVehicleProfileAdapters.h`;
-- `src/game/navigation/ManeuverCapabilityAdapters.h`.
-
-Do not locally reinterpret maxLinearGs / RCS / angular rates / reverse thrust.
-
-### Navigation policy
-
-All stand calculation constants now live in
-`ScenarioRunSettings::navigation` / `ScenarioNavigationPolicy`.
-
-This includes:
-- execution/trace timestep;
-- route reserve doctrine;
-- RCS trim threshold;
-- terminal attitude blend;
-- program tolerances;
-- tracking envelope/deadbands/reserves;
-- tracking-loss invalidation;
-- capture/final tolerances.
-
-Public runtime API rejects invalid vehicle/profile policy inputs.
-
-## Clock contract
-
-One physical maneuver -> one monotonic clock.
-
-Fixed-capacity AcceptedManeuverProgram objects are storage pages only.
-
-Every page:
-- shares acceptedAtUniverseTimeSeconds;
-- has sequenceStartOffsetSeconds;
-- is selected transparently by global maneuver time.
-
-Do not use capture/replan semantics at page boundaries.
-
-## Tracking loss
-
-No reference-clock freeze exists.
-
-FreeTransit:
-- short tracking error -> bounded correction;
-- prolonged error -> `PROGRAM_INVALIDATED_TRACKING_LOSS`;
-- production owner should request a new Planner program from measured state.
-
-Never home for tens of seconds to an obsolete sample.
-
-## Attitude authoring
-
-`buildReferenceAttitudes()` now integrates:
-- initial omega;
-- angular acceleration;
-- max angular rate;
-- stopping-aware target omega;
-- orientation via average omega.
-
-No instantaneous 0 -> max-omega jump is allowed.
-
-## Run target gate next
-
+1. Fix stale E2E assertions.
+2. Turn actuator infeasibility into an authoring failure.
+3. Start the physical maneuver compiler / timing inversion above.
+4. Re-run:
 ```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
 bash tests/navigation_runtime/run_stage1_mingw64.sh
-
 ctest --test-dir build/tools/navigation_runtime \
       -R "^navigation_runtime_pipeline$" \
       --output-on-failure
 ```
 
-Then viewer:
-```bash
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe \
-    tools/navigation_runtime/scenario.json
-```
-
-Run Newtonian/Expert/Standard:
-1. 10 -> 10 m/s
-2. 27.8 -> 26 m/s
-
-Expected architecture diagnostics:
-- PROGRAM STORAGE PAGES;
-- STORAGE PAGE ADVANCES;
-- REFERENCE CLOCK: MONOTONIC;
-- no REFERENCE CLOCK HOLD;
-- no stop-and-return to a stale reference.
-
-## Next code work after the gate
-
-Move physical maneuver authoring ahead of final timing.
-
-Planner/maneuver compiler must decide and prove:
-- smooth geometry / tangent states;
-- body attitude schedule;
-- angular reachability;
-- installed rear/fore main use;
-- RCS vector use;
-- throttle slew;
-- lead-rotation and braking boundaries.
-
-Ruckig is subordinate to this physical plan.
-
-Only after that:
-- publish proved ActuatorSegments;
-- make Autopilot execute them directly with bounded correction.
-
-Do not tune follower gains to hide planner defects.
-Do not enable dynamic avoidance yet.
+Do not tune follower gains or increase the 0.50 s tracking-loss timeout.
+Do not enable dynamic avoidance.

@@ -3508,6 +3508,9 @@ void processUiAction(
             elite::tools::navigation_runtime::ScenarioRunSettings settings;
             settings.controlMode = state.controlMode;
             settings.pilot = state.pilot;
+            settings.pilotExecutionProfile =
+                elite::tools::navigation_runtime::
+                    makeScenarioPilotSkillProfile(state.pilot);
             settings.flightStyle = state.flightStyle;
             settings.enableSuddenObstacle =
                 state.useSuddenObstacle;

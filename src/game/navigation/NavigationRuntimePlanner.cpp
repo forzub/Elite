@@ -696,7 +696,7 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         result.status = Status::StaticHold;
         result.selectedTargetMapMeters = agent.positionMapMeters;
         result.coarseWaypointMapMeters = agent.positionMapMeters;
-        result.intent = holdIntent(agent, goal, 0.5);
+        result.intent = holdIntent(agent, goal, policy.staticHoldUrgency01);
         return result;
     }
 
@@ -710,7 +710,29 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
         finite(policy.portalTraversal.orientationResponsePerSecond2) &&
         policy.portalTraversal.orientationResponsePerSecond2 >= 0.0 &&
         finite(policy.portalTraversal.minimumSpeedForDirectionMps) &&
-        policy.portalTraversal.minimumSpeedForDirectionMps >= 0.0;
+        policy.portalTraversal.minimumSpeedForDirectionMps >= 0.0 &&
+        finite(
+            policy.portalTraversal.minimumApproachHoldDistanceMeters
+        ) &&
+        policy.portalTraversal.minimumApproachHoldDistanceMeters >= 0.0 &&
+        finite(
+            policy.portalTraversal.
+                maximumLateralCorrectionVelocityAngleRad
+        ) &&
+        policy.portalTraversal.
+            maximumLateralCorrectionVelocityAngleRad >= 0.0 &&
+        policy.portalTraversal.
+            maximumLateralCorrectionVelocityAngleRad <
+                1.57079632679489661923 &&
+        finite(policy.staticHoldUrgency01) &&
+        policy.staticHoldUrgency01 >= 0.0 &&
+        policy.staticHoldUrgency01 <= 1.0 &&
+        finite(policy.staleHoldUrgency01) &&
+        policy.staleHoldUrgency01 >= 0.0 &&
+        policy.staleHoldUrgency01 <= 1.0 &&
+        finite(policy.conflictHoldUrgency01) &&
+        policy.conflictHoldUrgency01 >= 0.0 &&
+        policy.conflictHoldUrgency01 <= 1.0;
     if (!portalPolicyValid)
         return result;
 
@@ -810,7 +832,11 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
                 );
             result.portalApproachHolding =
                 approachDistance <=
-                    std::max(2.0, portalAllowedCrossTrackMeters);
+                    std::max(
+                        policy.portalTraversal.
+                            minimumApproachHoldDistanceMeters,
+                        portalAllowedCrossTrackMeters
+                    );
         }
         else
         {
@@ -964,11 +990,11 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
             break;
         case Avoidance::Status::ConflictHold:
             result.status = Status::ConflictHold;
-            result.intent = holdIntent(agent, goal, 1.0);
+            result.intent = holdIntent(agent, goal, policy.conflictHoldUrgency01);
             return result;
         case Avoidance::Status::StaleHold:
             result.status = Status::StaleHold;
-            result.intent = holdIntent(agent, goal, 0.75);
+            result.intent = holdIntent(agent, goal, policy.staleHoldUrgency01);
             return result;
         case Avoidance::Status::StaticHold:
         default:
@@ -1055,7 +1081,8 @@ NavigationRuntimePlanner::Result NavigationRuntimePlanner::plan(
                 std::tan(
                     std::min(
                         activePortalTraversal.maximumVelocityAngleRad,
-                        1.5533430342749532 // 89 degrees.
+                        policy.portalTraversal.
+                            maximumLateralCorrectionVelocityAngleRad
                     )
                 );
             const double correctionLimit =

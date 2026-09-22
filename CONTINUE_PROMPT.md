@@ -1,106 +1,83 @@
-# CONTINUE PROMPT — Elite Navigation: validate explicit Planner actuator program
+# CONTINUE PROMPT — Elite Navigation: validate dense accepted maneuver source
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
-Every state-affecting iteration MUST:
-1. update `CURRENT_STATE.md`;
-2. update `CURRENT_TASK.md`;
-3. update `PROJECT_STATE.md`;
-4. update `src/game/navigation/STAGE12_END_TO_END.md`;
-5. recreate this `CONTINUE_PROMPT.md` from scratch.
-
-Keep `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md` synchronized when the
-Planner/Autopilot contract changes.
-
-Read first:
+Every state-affecting iteration MUST update:
 - `CURRENT_STATE.md`
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
-- `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
-- `src/game/navigation/AcceptedManeuverProgram.h`
-- `src/game/navigation/ManeuverProgramSampler.cpp/.h`
-- `src/game/navigation/TrajectoryFollower.cpp/.h`
-- `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
-- `tools/navigation_runtime/NavigationTrace.cpp/.h`
-- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`.
+- recreate this file from scratch.
 
-## Current code candidate before docs
+## Current root cause
+
+Fresh failing target run:
 
 ```text
-7b60f875193334e20bc5d168d65df351b746754d
+TRAJECTORY SAMPLES: 693
+PROGRAM PHASES: 3
+PLANNED ACTUATOR SEGMENTS: 45
+AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION
 ```
 
-Target-machine PASS has NOT been established.
+The accepted program was massively undersampling the dense trajectory.
 
-## Canonical ownership
+At runtime the Planner actuator interval could say MAIN=0/RCS=0 while Follower
+generated ~1.5 m/s^2 lateral correction and actual RCS performed the maneuver.
+
+## Important historical finding
+
+The course-oscillation fix did NOT directly change engine allocation.
+
+`e2b5270` only raised angular damping Kd.
+
+`56aca8a` correctly removed dense angular-derivative smear and re-derived
+angular velocity from sparse accepted basis keys.
+
+But the full P/V/A/attitude trajectory was still compressed into <=16 keys per
+long route leg. That representation remained wrong.
+
+## Current code correction
+
+`9d4b599c7339fc7dc30803a0aa3c57b7b543fd5a`:
+
+- do not uniformly compress an arbitrarily long route leg to <=16 keys;
+- split it into consecutive dense chunks of <=16 samples;
+- chunks share a boundary state;
+- therefore B9 interpolation only spans adjacent dense source samples.
+
+Additional diagnostic code baseline before docs:
 
 ```text
-Planner
-    -> physical ManeuverProgram
-       -> Autopilot/Follower
-          -> ship physics
+b51b0abc22270104f75f198935d857582c9b4445
 ```
 
-Ruckig is an internal Planner helper.
+Summary now reports:
+`PLANNED ACTUATOR SOURCE COVERAGE: actual/expected COMPLETE`.
 
-## Implemented in this slice
+Expected invariant:
+`actual == dense trajectory sample count - 1`.
 
-`AcceptedManeuverProgram` now contains:
-- state/reference samples;
-- explicit `ActuatorSegment` intervals.
+## Current actual engine-selection rule
 
-Each actuator interval contains:
-- duration;
-- rear-main enable + throttle start/end;
-- explicit fore-main enable + throttle start/end;
-- manoeuvre/RCS acceleration start/end;
-- propulsion-feasibility witness.
+Planner actuator schedule is STILL observe-only.
 
-Current Cobra has no fore main; Planner keeps that channel OFF.
-
-Current Stage-12 compiler decomposes each reference acceleration:
-- positive component along planned hull forward -> rear main;
-- residual vector -> RCS;
-- RCS is bounded by real `manoeuvreThrusterAccel`;
-- authority excess marks the segment SATURATED / infeasible.
-
-B9 samples these commands directly.
-Follower exposes them without re-solving engine choice.
-
-## New diagnostics
-
-Viewer line:
+Live path:
 ```text
-ПЛАН SEG N: MAIN xx% | FRONT 0% | RCS x.x M/S2 | FEASIBLE/SATURATED
+Follower net acceleration
+ -> PilotSkillExecutor
+ -> DynamicMotionSystem
+
+dot(acceleration, actualHullForward) > 0
+    -> aft main gets positive forward component
+
+residual
+    -> RCS
 ```
 
-Existing engine lamps are ACTUAL physics.
+So do not claim Planner directly controls engines yet.
 
-Telemetry adds:
-```text
-plan_seg
-plan_main_pct
-plan_front_pct
-plan_rcs
-plan_feasible
-```
-beside actual main/RCS telemetry.
-
-Pink cross remains the instantaneous accepted reference.
-Violet cross remains the active phase endpoint.
-
-## Important current limitation
-
-The explicit actuator schedule is still OBSERVE-ONLY in Stage-12 execution.
-
-Diagnostics say:
-`AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION`.
-
-Do not hide this. The next run must first determine whether Planner's explicit
-engine schedule is physically sane.
-
-## Run next
+## Next run
 
 ```bash
 cd /d/__elite/work
@@ -110,19 +87,17 @@ bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-First use the same higher-speed Newtonian case.
+Repeat same Newtonian / Expert / Standard high-speed case.
 
-At first bend inspect:
-- pink reference;
-- `ПЛАН SEG` line;
-- FEASIBLE/SATURATED;
-- actual engine lamps;
-- velocity vector;
-- hull nose.
+Check:
+1. `PROGRAM SOURCE SAMPLING: CONSECUTIVE DENSE CHUNKS`.
+2. `PLANNED ACTUATOR SOURCE COVERAGE: N/N COMPLETE`.
+3. program phase count should no longer be only 3 for ~693 source samples.
+4. At first material turn, inspect planned MAIN/RCS.
 
-If Planner schedule is sane:
-next iteration wires sampled actuator intervals into Autopilot/physics and keeps
-bounded tracking feedback separate.
+If planned engine schedule is now sane, next iteration wires sampled
+`ActuatorSegment` into Autopilot/physics.
 
-If Planner schedule is saturated or late:
-fix physical maneuver authoring / broad-arc / lead-rotation first, not Follower.
+If MAIN still remains zero in Planner schedule, inspect
+`propulsionReferenceForward()` and trajectory acceleration decomposition next.
+Do not undo critical damping merely to make main thrust appear accidentally.

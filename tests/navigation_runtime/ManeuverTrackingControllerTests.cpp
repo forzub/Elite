@@ -146,7 +146,7 @@ void testZeroErrorPreservesAcceptedFeedForwardExactly()
     const auto agent = exactAgentFor(reference);
 
     const auto result =
-        Tracker::track(program, reference, agent);
+        Tracker::track(program, reference, agent, Tracker::Policy {});
 
     require(result.status == Tracker::Status::Tracking,
             "exact reference state must be inside tracking envelope");
@@ -190,7 +190,7 @@ void testFeedbackCannotExceedReservedAuthority()
     agent.rollRateRadPerSec = 5.0;
 
     const auto result =
-        Tracker::track(program, program.samples[0], agent);
+        Tracker::track(program, program.samples[0], agent, Tracker::Policy {});
 
     require(result.status == Tracker::Status::EnvelopeExceeded,
             "large tracking error must be reported outside envelope");
@@ -231,7 +231,7 @@ void testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()
     agent.rollRateRadPerSec = 0.0;
 
     const auto result =
-        Tracker::track(program, program.samples[0], agent);
+        Tracker::track(program, program.samples[0], agent, Tracker::Policy {});
 
     require(
         result.status == Tracker::Status::EnvelopeExceeded,
@@ -282,7 +282,7 @@ void testFollowerUsesB9ThenB10WithoutResolvingControl()
 
     const auto agent = followerAgentFor(midpoint);
 
-    const auto result = Follower::follow(program, t, agent);
+    const auto result = Follower::follow(program, t, agent, game::navigation::ManeuverTrackingController::Policy {});
     require(result.status == Follower::Status::Following,
             "mid-program follower must remain active");
     require(!result.trackingErrorExceeded,
@@ -317,7 +317,7 @@ void testFollowerCompletesOnlyAtTerminalState()
     const Program program = baseProgram();
     const auto agent = followerAgentFor(program.samples[1]);
 
-    const auto atEnd = Follower::follow(program, 11.0, agent);
+    const auto atEnd = Follower::follow(program, 11.0, agent, game::navigation::ManeuverTrackingController::Policy {});
     require(atEnd.status == Follower::Status::Complete,
             "program must complete at its proved terminal state");
 
@@ -343,7 +343,7 @@ void testFreeTransitSpeedCorridorIgnoresTinyLongitudinalError()
     agent.velocityMapMetersPerSecond = {5.1, 0.0, 0.0};
 
     const auto result =
-        Tracker::track(program, program.samples[0], agent);
+        Tracker::track(program, program.samples[0], agent, Tracker::Policy {});
 
     require(result.status == Tracker::Status::Tracking,
             "tiny free-transit speed error left tracking state");
@@ -375,7 +375,7 @@ void testFreeTransitDeadbandDoesNotFalseTriggerEnvelope()
     agent.velocityMapMetersPerSecond = {5.1, 0.0, 0.0};
 
     const auto result =
-        Tracker::track(program, program.samples[0], agent);
+        Tracker::track(program, program.samples[0], agent, Tracker::Policy {});
 
     require(
         result.status == Tracker::Status::Tracking,
@@ -403,7 +403,7 @@ void testFreeTransitCorridorStillCorrectsCrossTrackMotion()
     agent.velocityMapMetersPerSecond = {5.1, 0.25, 0.0};
 
     const auto result =
-        Tracker::track(program, program.samples[0], agent);
+        Tracker::track(program, program.samples[0], agent, Tracker::Policy {});
 
     require(
         std::abs(result.linearFeedbackMapMps2.y) > 0.1,
@@ -430,7 +430,7 @@ void testFreeTransitCorridorCorrectsOnlyExcessOutsideBand()
     agent.velocityMapMetersPerSecond = {6.0, 0.0, 0.0};
 
     const auto result =
-        Tracker::track(program, program.samples[0], agent);
+        Tracker::track(program, program.samples[0], agent, Tracker::Policy {});
 
     requireNear(
         result.linearFeedbackMapMps2.x,
@@ -445,7 +445,7 @@ void testFollowerRejectsExecutionBeforeAcceptanceTime()
     const Program program = baseProgram();
     const auto agent = followerAgentFor(program.samples[0]);
 
-    const auto result = Follower::follow(program, 9.9, agent);
+    const auto result = Follower::follow(program, 9.9, agent, game::navigation::ManeuverTrackingController::Policy {});
     require(result.status == Follower::Status::InvalidInput,
             "follower executed a program before its acceptance time");
 }

@@ -319,7 +319,7 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
     if (!reactionBlocked &&
         timeSeconds + kTolerance >= nextDecisionTimeSeconds_)
     {
-        if (queueSize_ >= kMaxPendingCommands)
+        if (queueSize_ >= execution.maximumPendingCommands)
         {
             result.status = Status::QueueOverflow;
         }
@@ -362,7 +362,7 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
             );
 
             const std::size_t tail =
-                (queueHead_ + queueSize_) % kMaxPendingCommands;
+                (queueHead_ + queueSize_) % kPendingCommandStorageCapacity;
             queue_[tail] = queued;
             ++queueSize_;
             ++decisionSequence_;
@@ -390,7 +390,7 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
         activeLinearTarget_ = queued.linearTarget;
         activeAngularTarget_ = queued.angularTarget;
         activeTargetRevision_ = queued.revision;
-        queueHead_ = (queueHead_ + 1) % kMaxPendingCommands;
+        queueHead_ = (queueHead_ + 1) % kPendingCommandStorageCapacity;
         --queueSize_;
         result.queuedCommandApplied = true;
     }

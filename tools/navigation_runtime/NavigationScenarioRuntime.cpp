@@ -624,9 +624,6 @@ using Follower = game::navigation::TrajectoryFollower;
 using Bridge = game::navigation::NavigationRuntimeControlBridge;
 using Law = game::navigation::LocalFlightControlLaw;
 
-constexpr double kExecutionDt = 1.0 / 120.0;
-constexpr double kTraceSampleSeconds = 1.0 / 30.0;
-
 Bridge::PilotSkillProfile pilotProfile(PilotLevel level)
 {
     Bridge::PilotSkillProfile profile;
@@ -744,15 +741,14 @@ glm::dvec3 effectiveStartVelocity(
 }
 
 double characteristicTurnTimeSeconds(
-    const ShipParams& params
+    const ShipParams& params,
+    const ScenarioNavigationPolicy& policy
 )
 {
-    // Coarse Stage-1 maneuver reserve: time to rotate the hull through a
-    // representative 30-degree avoidance bend using the real angular limits.
-    // This is not the final B6 swept-hull proof; it only gives the geometric
-    // route enough room for inertia to matter before detailed authoring.
-    constexpr double kRepresentativeTurnRad =
-        3.14159265358979323846 / 6.0;
+    // Coarse Stage-1 maneuver reserve. The representative angle is explicit
+    // stand policy; vehicle angular authority comes only from ShipParams.
+    const double representativeTurnRad =
+        std::max(0.0, policy.representativeTurnAngleRad);
 
     const double alpha = std::max(
         0.1,
@@ -764,12 +760,12 @@ double characteristicTurnTimeSeconds(
     );
 
     const double accelDecelAngle = omega * omega / alpha;
-    if (kRepresentativeTurnRad <= accelDecelAngle)
-        return 2.0 * std::sqrt(kRepresentativeTurnRad / alpha);
+    if (representativeTurnRad <= accelDecelAngle)
+        return 2.0 * std::sqrt(representativeTurnRad / alpha);
 
     return
         2.0 * omega / alpha +
-        (kRepresentativeTurnRad - accelDecelAngle) / omega;
+        (representativeTurnRad - accelDecelAngle) / omega;
 }
 
 double routePlanningClearanceMeters(
@@ -784,15 +780,16 @@ double routePlanningClearanceMeters(
     );
 
     const double inertialLeadMeters =
-        planningSpeedMps * characteristicTurnTimeSeconds(params);
+        planningSpeedMps *
+        characteristicTurnTimeSeconds(params, settings.navigation);
 
     // FlightStyle is a clearance/risk doctrine only:
     // STANDARD keeps more maneuver room; EXTREME deliberately cuts closer.
     // It does not own a cruise speed.
     const double styleReserveFactor =
         settings.flightStyle == FlightStyle::Extreme
-            ? 0.35
-            : 1.0;
+            ? settings.navigation.extremeClearanceReserveFactor
+            : settings.navigation.standardClearanceReserveFactor;
 
     return
         std::max(0.0, scenario.routeClearanceMeters) +

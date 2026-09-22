@@ -1786,21 +1786,47 @@ std::vector<Program> buildRoutePrograms(
         if (last <= first)
             continue;
 
-        Program phase =
-            makeProgramPhase(
-                trajectory,
-                attitudes,
-                first,
-                last,
-                revision++,
-                scenario,
-                params
-            );
+        // AcceptedManeuverProgram is intentionally fixed-capacity and
+        // short-horizon. Do NOT compress an arbitrarily long route leg into
+        // <=16 uniformly spaced reference keys: B9 linearly interpolates P/V/A
+        // and attitude between accepted keys, so sparse compression can create
+        // a reference velocity turn whose implied acceleration is completely
+        // different from the Ruckig source samples.
+        //
+        // Keep consecutive source samples instead and split a long route leg
+        // into multiple accepted programs. Adjacent chunks share their boundary
+        // sample so state continuity is explicit.
+        std::size_t chunkFirst = first;
+        while (chunkFirst < last)
+        {
+            const std::size_t maximumChunkLast =
+                chunkFirst +
+                Program::kMaxSamples - 1;
+            const std::size_t chunkLast =
+                std::min(last, maximumChunkLast);
 
-        if (!phase.valid || phase.sampleCount < 2)
-            return {};
+            Program phase =
+                makeProgramPhase(
+                    trajectory,
+                    attitudes,
+                    chunkFirst,
+                    chunkLast,
+                    revision++,
+                    scenario,
+                    params
+                );
 
-        programs.push_back(std::move(phase));
+            if (!phase.valid || phase.sampleCount < 2)
+                return {};
+
+            programs.push_back(std::move(phase));
+
+            if (chunkLast >= last)
+                break;
+
+            chunkFirst = chunkLast;
+        }
+
         first = last;
     }
 
@@ -3182,6 +3208,7 @@ ScenarioRunResult executeCalculatedRoute(
                 number(calculatedMaximumSpeedMps) + " M/S",
             "PROGRAM PHASES: " +
                 std::to_string(programs.size()),
+            "PROGRAM SOURCE SAMPLING: CONSECUTIVE DENSE CHUNKS",
             "PLANNED ACTUATOR SEGMENTS: " +
                 std::to_string(plannedActuatorSegments),
             "PLANNED ACTUATOR INFEASIBLE: " +

@@ -1541,6 +1541,117 @@ std::string currentExplanation(const trace::TraceFrame& frame)
     return "СТАРТ МАРШРУТА";
 }
 
+void appendEngineIndicator(
+    std::vector<Vertex>& ui,
+    const UiRect& rect,
+    const std::string& label,
+    bool active,
+    const glm::vec3& activeColor
+)
+{
+    const glm::vec3 offPanel(0.045f, 0.052f, 0.065f);
+    const glm::vec3 onPanel =
+        active
+            ? activeColor * 0.24f
+            : offPanel;
+    const glm::vec3 textColor =
+        active
+            ? activeColor
+            : glm::vec3(0.42f, 0.46f, 0.52f);
+
+    appendFilledRect(ui, rect, onPanel);
+
+    const UiRect lamp {
+        rect.x + 8.0f,
+        rect.y + 7.0f,
+        12.0f,
+        12.0f
+    };
+    appendFilledRect(
+        ui,
+        lamp,
+        active
+            ? activeColor
+            : glm::vec3(0.16f, 0.18f, 0.21f)
+    );
+
+    appendUiText(
+        ui,
+        rect.x + 28.0f,
+        rect.y + 8.0f,
+        label,
+        1.10f,
+        textColor
+    );
+}
+
+void appendEngineIndicators(
+    std::vector<Vertex>& ui,
+    const trace::TraceFrame& frame,
+    int windowWidth,
+    int windowHeight
+)
+{
+    const double forwardLength =
+        glm::length(frame.shipForward);
+    const glm::dvec3 forward =
+        forwardLength > 1.0e-9
+            ? frame.shipForward / forwardLength
+            : glm::dvec3(1.0, 0.0, 0.0);
+
+    const double mainProjection =
+        glm::dot(
+            frame.mainEngineAccelerationMps2,
+            forward
+        );
+    const double manoeuvreMagnitude =
+        glm::length(frame.manoeuvreAccelerationMps2);
+
+    constexpr double kIndicatorThresholdMps2 = 0.02;
+    const bool rearMainActive =
+        mainProjection > kIndicatorThresholdMps2;
+    const bool frontMainActive =
+        mainProjection < -kIndicatorThresholdMps2;
+    const bool manoeuvreActive =
+        manoeuvreMagnitude > kIndicatorThresholdMps2;
+
+    const float totalWidth = 690.0f;
+    const float sceneWidth =
+        std::max(
+            720.0f,
+            static_cast<float>(windowWidth) - 470.0f
+        );
+    const float startX =
+        std::max(
+            350.0f,
+            (sceneWidth - totalWidth) * 0.5f
+        );
+    const float y =
+        static_cast<float>(windowHeight) - 72.0f;
+
+    appendEngineIndicator(
+        ui,
+        {startX, y, 184.0f, 26.0f},
+        "МАРШЕВЫЙ",
+        rearMainActive,
+        {1.0f, 0.66f, 0.16f}
+    );
+    appendEngineIndicator(
+        ui,
+        {startX + 194.0f, y, 274.0f, 26.0f},
+        "ПЕРЕДНИЙ МАРШЕВЫЙ",
+        frontMainActive,
+        {1.0f, 0.30f, 0.34f}
+    );
+    appendEngineIndicator(
+        ui,
+        {startX + 478.0f, y, 202.0f, 26.0f},
+        "МАНЕВРОВЫЙ",
+        manoeuvreActive,
+        {0.25f, 0.86f, 1.0f}
+    );
+}
+
 void appendHorizonInset(
     std::vector<Vertex>& ui,
     const trace::TraceFrame& frame,
@@ -2257,6 +2368,13 @@ void drawHud(
 
     if (hasExecution)
     {
+        appendEngineIndicators(
+            ui,
+            frame,
+            windowWidth,
+            windowHeight
+        );
+
         const UiRect slider =
             frameSliderRect(windowWidth, windowHeight);
         appendFilledRect(

@@ -67,12 +67,6 @@ public:
     [[nodiscard]] static Result track(
         const AcceptedManeuverProgram& program,
         const AcceptedManeuverProgram::ReferenceSample& reference,
-        const AgentState& agent
-    ) noexcept;
-
-    [[nodiscard]] static Result track(
-        const AcceptedManeuverProgram& program,
-        const AcceptedManeuverProgram::ReferenceSample& reference,
         const AgentState& agent,
         const Policy& policy
     ) noexcept;

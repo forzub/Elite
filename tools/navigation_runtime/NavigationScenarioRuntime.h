@@ -70,6 +70,13 @@ struct ScenarioNavigationPolicy
     double linearFeedbackReserveMps2 = 1.5;
     double angularFeedbackReserveRadPerSec2 = 0.8;
 
+    // B10 controller gains. They are execution policy, not hidden controller
+    // defaults, so the caller owns them explicitly.
+    double trackingPositionGainPerSecond2 = 0.50;
+    double trackingVelocityGainPerSecond = 1.00;
+    double trackingAttitudeGainPerSecond2 = 2.00;
+    double trackingAngularVelocityGainPerSecond = 3.00;
+
     // A FreeTransit program that is outside its proved envelope for longer
     // than this is invalidated; Autopilot must not home indefinitely to stale
     // reference data.
@@ -115,6 +122,10 @@ struct ScenarioNavigationPolicy
             finiteNonNegative(alongTrackSpeedDeadbandMps) &&
             finiteNonNegative(linearFeedbackReserveMps2) &&
             finiteNonNegative(angularFeedbackReserveRadPerSec2) &&
+            finiteNonNegative(trackingPositionGainPerSecond2) &&
+            finiteNonNegative(trackingVelocityGainPerSecond) &&
+            finiteNonNegative(trackingAttitudeGainPerSecond2) &&
+            finiteNonNegative(trackingAngularVelocityGainPerSecond) &&
             finiteNonNegative(trackingLossInvalidateSeconds) &&
             finiteNonNegative(finalCaptureOverrunSeconds) &&
             finiteNonNegative(finalPositionToleranceMeters) &&

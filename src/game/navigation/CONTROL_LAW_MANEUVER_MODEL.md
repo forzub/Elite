@@ -423,3 +423,114 @@ tracking violation / new hazard
 Follower may not silently invent a different trajectory merely to stay close to
 an obsolete reference. Ruckig may be used inside receding-horizon maneuver
 compilation, but it remains subordinate to the physical maneuver planner.
+
+## 2026-09-22 — canonical naming: Planner emits a maneuver program, Autopilot executes it
+
+The terminology is now fixed.
+
+### Planner
+
+The navigation Planner owns the complete **physical maneuver program**. It is
+not allowed to emit only geometric waypoints and leave propulsion decisions to
+the executor.
+
+Its output is a time-ordered sequence of maneuver states plus commands for the
+interval to the next state.
+
+Each maneuver state must describe at minimum:
+
+```text
+time
+position
+linear velocity vector
+linear acceleration vector
+body orientation in 3D
+angular velocity
+angular acceleration
+```
+
+Each interval from state i to state i+1 must describe at minimum:
+
+```text
+duration
+
+aft/rear main engine:
+    enabled
+    requested throttle / normalized thrust
+    throttle ramp / slew constraint
+
+fore main engine:
+    enabled
+    requested throttle / normalized thrust
+    only for ships that physically have one
+
+manoeuvre/RCS:
+    requested world/body force vector
+    or equivalent per-axis normalized command
+    bounded by real hardware authority
+
+attitude control:
+    target orientation / angular-rate profile
+```
+
+The interval, not the point itself, owns "which engine works and for how long".
+A point owns the required physical state at an instant.
+
+The planner may represent the program densely as samples or compactly as
+piecewise primitives/keyframes, but execution semantics must be equivalent.
+
+### Ruckig
+
+Ruckig is a numerical helper INSIDE the planner/compiler.
+
+It may solve:
+- transition time;
+- velocity/acceleration/jerk-limited state changes;
+- scalar progress over already feasible geometry;
+- bounded state-to-state subproblems.
+
+It does not own:
+- obstacle topology;
+- turn geometry;
+- engine selection;
+- hull attitude doctrine;
+- braking policy;
+- emergency behavior.
+
+### Autopilot / Follower
+
+The Autopilot takes the accepted maneuver program "under the visor" and drives
+the real ship toward those commanded states using the commanded propulsion
+channels.
+
+It does not redesign the nominal route.
+
+It may:
+- close small tracking errors;
+- compensate bounded disturbances;
+- watch dynamic/sudden obstacles continuously;
+- temporarily inhibit or emergency-brake when safety would be violated;
+- request a new Planner program from the current physical state.
+
+A persistent deviation or new obstacle that changes the route belongs back to
+the Planner. The Autopilot is not a second planner.
+
+### Physical invariant
+
+No state transition is valid merely because a kinematic curve exists.
+
+Every planned interval must be executable by the real vehicle:
+
+```text
+integrate(
+    body attitude dynamics,
+    aft/fore main thrust that actually exists,
+    manoeuvre/RCS thrust,
+    throttle slew,
+    angular rate/accel limits
+)
+=> next planned state within tolerance
+```
+
+This contract replaces the previous "geometry first, propulsion later"
+interpretation.

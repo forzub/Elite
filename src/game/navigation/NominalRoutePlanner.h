@@ -6,7 +6,7 @@
 
 #include <glm/glm.hpp>
 
-#include "src/world/navigation/NavigationObstacle.h"
+#include "src/world/navigation/GeometricPathPlanner.h"
 
 namespace game::navigation
 {
@@ -41,6 +41,11 @@ public:
         // time-parameterized swept-hull/tunnel proof.
         double navigationEnvelopeRadiusMeters = 0.0;
         double additionalRouteClearanceMeters = 0.0;
+
+        // Geometric search policy crosses the Stage-1 API explicitly. The
+        // planner may override only radius/clearance above because those are
+        // vehicle/scenario data, not search doctrine.
+        world::navigation::GeometricPathPlannerParams geometricPolicy {};
     };
 
     struct Plan

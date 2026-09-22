@@ -3272,7 +3272,7 @@ ScenarioRunResult executeCalculatedRoute(
                 formatVec3(calculatedMinimumSpeedPosition),
             "CALCULATED MAX SPEED: " +
                 number(calculatedMaximumSpeedMps) + " M/S",
-            "PROGRAM PHASES: " +
+            "PROGRAM STORAGE PAGES: " +
                 std::to_string(programs.size()),
             "PROGRAM SOURCE SAMPLING: CONSECUTIVE DENSE CHUNKS",
             "PLANNED ACTUATOR SEGMENTS: " +
@@ -3289,16 +3289,16 @@ ScenarioRunResult executeCalculatedRoute(
                         : " INCOMPLETE"
                 ),
             "AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION",
-            "PHASE HANDOFFS: " +
-                std::to_string(phaseHandoffs),
-            std::string("PROGRAM PHASES COMPLETE: ") +
+            "STORAGE PAGE ADVANCES: " +
+                std::to_string(storagePageAdvances),
+            std::string("MANEUVER PROGRAM COMPLETE: ") +
                 (routeExecutionComplete ? "YES" : "NO"),
             std::string("PHYSICAL TERMINAL STATE: ") +
                 (finalStateReached ? "REACHED" : "MISSED"),
             std::string("FOLLOWER: ") +
                 (followerInvalid ? "FAIL" : "EXECUTED"),
             "FOLLOWER FAIL REASON: " + followerFailureReason,
-            "FOLLOWER FAIL PROGRAM: " +
+            "FOLLOWER FAIL PAGE: " +
                 std::to_string(followerFailureProgramIndex),
             "FOLLOWER FAIL TIME: " +
                 number(followerFailureTimeSeconds) + " S",
@@ -3353,10 +3353,9 @@ ScenarioRunResult executeCalculatedRoute(
                 number(maximumCrossTrack) + " M",
             "MAX FOLLOWER ERROR: " +
                 number(maximumFollowerPositionError) + " M",
-            "REFERENCE CLOCK HOLD FRAMES: " +
-                std::to_string(referenceClockHoldFrames),
-            "REFERENCE CLOCK HOLD: " +
-                number(referenceClockHoldSeconds) + " S",
+            "REFERENCE CLOCK: MONOTONIC",
+            "TRACKING LOSS INVALIDATE AFTER: " +
+                number(kTrackingLossInvalidateSeconds) + " S",
             "RETAINED WAYPOINT SPEEDS: " +
                 waypointSpeeds.str(),
             "MAX REFERENCE/VELOCITY ANGLE: " +

@@ -464,6 +464,13 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
         "Stage 2 did not publish route-leg execution phases"
     );
     require(
+        hasDiagnostic(
+            executed,
+            "PLANNED ACTUATOR SOURCE COVERAGE: "
+        ),
+        "Stage 2 lost actuator/source coverage diagnostics"
+    );
+    require(
         executed.trace.frames.size() > 100,
         "Stage 2 stopped before sustained Follower execution"
     );

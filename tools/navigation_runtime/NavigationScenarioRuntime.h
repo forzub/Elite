@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <cmath>
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/VehicleDynamicsProfile.h"
@@ -80,6 +81,47 @@ struct ScenarioNavigationPolicy
     double finalSpeedToleranceMps = 1.5;
     double finalForwardToleranceRad = 0.25;
     double finalUpToleranceRad = 0.25;
+
+    [[nodiscard]] bool valid() const noexcept
+    {
+        const auto finiteNonNegative = [](double v) noexcept
+        {
+            return std::isfinite(v) && v >= 0.0;
+        };
+
+        return
+            std::isfinite(executionDtSeconds) &&
+            executionDtSeconds > 0.0 &&
+            std::isfinite(traceSampleSeconds) &&
+            traceSampleSeconds > 0.0 &&
+            finiteNonNegative(maximumExecutionOverrunSeconds) &&
+            finiteNonNegative(representativeTurnAngleRad) &&
+            finiteNonNegative(standardClearanceReserveFactor) &&
+            finiteNonNegative(extremeClearanceReserveFactor) &&
+            finiteNonNegative(lowSpeedDirectionThresholdMps) &&
+            finiteNonNegative(newtonianRcsPrimaryThresholdMps2) &&
+            std::isfinite(terminalOrientationBlendDistanceMeters) &&
+            terminalOrientationBlendDistanceMeters > 0.0 &&
+            finiteNonNegative(programTerminalPositionToleranceMeters) &&
+            finiteNonNegative(programTerminalSpeedToleranceMps) &&
+            finiteNonNegative(programTerminalForwardToleranceRad) &&
+            finiteNonNegative(programTerminalAngularVelocityToleranceRadPerSec) &&
+            finiteNonNegative(programValidityGraceSeconds) &&
+            finiteNonNegative(trackingPositionErrorMeters) &&
+            finiteNonNegative(trackingLinearVelocityErrorMps) &&
+            finiteNonNegative(trackingForwardAngleErrorRad) &&
+            finiteNonNegative(trackingAngularVelocityErrorRadPerSec) &&
+            finiteNonNegative(alongTrackPositionDeadbandMeters) &&
+            finiteNonNegative(alongTrackSpeedDeadbandMps) &&
+            finiteNonNegative(linearFeedbackReserveMps2) &&
+            finiteNonNegative(angularFeedbackReserveRadPerSec2) &&
+            finiteNonNegative(trackingLossInvalidateSeconds) &&
+            finiteNonNegative(finalCaptureOverrunSeconds) &&
+            finiteNonNegative(finalPositionToleranceMeters) &&
+            finiteNonNegative(finalSpeedToleranceMps) &&
+            finiteNonNegative(finalForwardToleranceRad) &&
+            finiteNonNegative(finalUpToleranceRad);
+    }
 };
 
 struct ScenarioRunSettings

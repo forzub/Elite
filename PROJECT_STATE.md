@@ -2951,3 +2951,24 @@ freeze -> angular reachability -> vehicle dynamics SSOT -> physical maneuver
 compiler -> direct actuator execution.
 
 Stage-1 build success is explicitly not Stage-2 E2E evidence.
+
+## 2026-09-22 — navigation input ownership normalized
+
+Navigation no longer owns a ship-specific parameter copy.
+
+The application supplies a generic `VehicleDynamicsProfile`; all downstream
+vehicle capability views are derived through common adapters.
+
+A separate explicit `ScenarioNavigationPolicy` contains the diagnostic
+stand's calculation policy. Vehicle facts and navigation policy are therefore
+different API domains.
+
+The continuous maneuver timebase is now independent from fixed-capacity storage
+pages, and stale-reference freezing has been replaced with bounded invalidation.
+
+Reference attitude authoring now respects angular acceleration in addition to
+angular rate.
+
+Remaining architectural blocker:
+physical maneuver geometry/propulsion proof is still downstream of the current
+geometric path + scalar Ruckig timing and must be moved ahead of final timing.

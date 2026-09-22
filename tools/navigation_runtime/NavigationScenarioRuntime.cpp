@@ -2568,6 +2568,10 @@ ScenarioRunResult calculateScenario(
             game::navigation::conservativeCollisionRadiusMeters(vehicle);
         request.geometricPolicy.supportMarginMeters =
             settings.navigation.geometricSupportMarginMeters;
+        request.geometricPolicy.minimumSupportMarginMeters =
+            settings.navigation.geometricMinimumSupportMarginMeters;
+        request.geometricPolicy.supportMarginObstacleRadiusFactor =
+            settings.navigation.geometricSupportMarginObstacleRadiusFactor;
         request.geometricPolicy.sphereRadialSamples =
             settings.navigation.geometricSphereRadialSamples;
         request.geometricPolicy.capsuleRadialSamples =

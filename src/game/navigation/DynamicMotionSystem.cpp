@@ -95,20 +95,26 @@ void DynamicMotionSystem::applySystemAccelerationDemand(
     const glm::dvec3 forward =
         glm::normalize(glm::dvec3(shipForward));
 
-    const double mainAuthority = game::ship::mainAccelerationLimitMps2(params);
-    const double manoeuvreAuthority = game::ship::manoeuvreAccelerationLimitMps2(params);
+    const double forwardMainAuthority =
+        game::ship::forwardMainAccelerationLimitMps2(params);
+    const double reverseMainAuthority =
+        game::ship::reverseMainAccelerationLimitMps2(params);
+    const double manoeuvreAuthority =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
 
-    // Propulsion truth is independent of the pilot/control law:
-    // this ship has one aft main engine. Neither Assisted nor Newtonian may
-    // manufacture fore/nose "main thrust" to satisfy an arbitrary world-space
-    // acceleration vector. A demand opposite the current hull forward can use
-    // only real bounded manoeuvre/RCS authority until the hull rotates enough
-    // for the aft engine to contribute.
+    // Installed propulsion is a ShipParams hardware fact, not a control-law
+    // convention. Positive longitudinal demand may use a real rear/aft main
+    // engine. Negative demand may use a real fore/reverse main engine only
+    // when the vehicle profile says that actuator exists.
     const double requestedForward =
         glm::dot(linearAccelerationDemandSystemMps2, forward);
 
     const double mainLongitudinal =
-        std::clamp(requestedForward, 0.0, mainAuthority);
+        std::clamp(
+            requestedForward,
+            -reverseMainAuthority,
+            forwardMainAuthority
+        );
 
     motion.mainEngineAccelerationMps2 =
         forward * mainLongitudinal;

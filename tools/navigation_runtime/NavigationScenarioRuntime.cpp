@@ -631,17 +631,6 @@ using Follower = game::navigation::TrajectoryFollower;
 using Bridge = game::navigation::NavigationRuntimeControlBridge;
 using Law = game::navigation::LocalFlightControlLaw;
 
-const char* pilotName(PilotLevel level)
-{
-    switch (level)
-    {
-        case PilotLevel::Average: return "AVERAGE";
-        case PilotLevel::Loser: return "LOSER";
-        case PilotLevel::Expert:
-        default: return "EXPERT";
-    }
-}
-
 const char* flightStyleName(FlightStyle style)
 {
     return style == FlightStyle::Extreme
@@ -2489,7 +2478,6 @@ ScenarioRunResult calculateScenario(
         // reserve is speed/style aware: higher boundary speed needs more room,
         // STANDARD keeps more clearance, EXTREME cuts closer. Pilot skill,
         // control law and dynamic actors remain Stage-2 concerns.
-        (void)settings.pilot;
         (void)settings.enableSuddenObstacle;
         (void)scenario.dynamicWorldRevision;
         (void)scenario.dynamicObstacles;
@@ -3481,8 +3469,7 @@ ScenarioRunResult executeCalculatedRoute(
                 number(followerFailureAcceptedAtSeconds) + " S",
             std::string("PILOT BRIDGE: ") +
                 (bridgeInvalid ? "FAIL" : "EXECUTED"),
-            "PILOT PROFILE: " +
-                std::string(pilotName(settings.pilot)),
+            "PILOT PROFILE: EXPLICIT API PROFILE",
             "FLIGHT STYLE / CLEARANCE DOCTRINE: " +
                 std::string(flightStyleName(settings.flightStyle)),
             "START SPEED REQUESTED: " +

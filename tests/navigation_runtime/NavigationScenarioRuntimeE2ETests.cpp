@@ -166,7 +166,7 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
     );
 
     const auto executed =
-        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.retainedRoute, fixtureVehicle());
 
     printDiagnostics("[E2E-HIGH-SPEED] ", executed);
 
@@ -211,7 +211,7 @@ void testAssistedLowSpeedUsesMonotonicReferenceClock()
     );
 
     const auto executed =
-        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.retainedRoute, fixtureVehicle());
 
     printDiagnostics("[E2E-ASSISTED-10] ", executed);
 
@@ -278,7 +278,7 @@ void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
     );
 
     const auto executed =
-        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.retainedRoute, fixtureVehicle());
 
     printDiagnostics("[E2E-ASSISTED-20] ", executed);
 
@@ -355,7 +355,7 @@ void testNewtonianHigherSpeedUsesMainEngineDominantManeuver()
     );
 
     const auto executed =
-        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.retainedRoute, fixtureVehicle());
 
     printDiagnostics("[E2E-NEWTONIAN-21] ", executed);
 
@@ -427,7 +427,7 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
     const auto retainedRoute = planned.trace.routePoints;
 
     const auto executed =
-        executeCalculatedRoute(fixtureScenario(), settings, planned.trace, fixtureVehicle());
+        executeCalculatedRoute(fixtureScenario(), settings, planned.retainedRoute, fixtureVehicle());
 
     printDiagnostics("[E2E-STAGE2] ", executed);
 

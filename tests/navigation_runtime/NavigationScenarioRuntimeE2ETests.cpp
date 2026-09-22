@@ -52,6 +52,17 @@ void printDiagnostics(
         std::cout << prefix << line << '\n';
 }
 
+void enableRuntimeDiagnostics(
+    ScenarioRunSettings& settings
+)
+{
+    settings.io.diagnosticsDirectory = ".";
+    settings.io.writeRouteDiagnostics = true;
+    settings.io.writeExecutionDiagnostics = true;
+    settings.io.writeExecutionTelemetry = true;
+    settings.io.echoDiagnosticsToConsole = false;
+}
+
 double maximumInteriorAbsY(
     const TraceDocument& trace
 )
@@ -77,6 +88,7 @@ void testSpeedAndStyleChangeStaticManeuverReserve()
 #endif
 
     ScenarioRunSettings lowStandard;
+    enableRuntimeDiagnostics(lowStandard);
     lowStandard.controlMode = ControlMode::Newtonian;
     lowStandard.pilot = PilotLevel::Expert;
     lowStandard.pilotExecutionProfile =
@@ -137,6 +149,7 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
 #endif
 
     ScenarioRunSettings settings;
+    enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Newtonian;
     settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =
@@ -190,6 +203,7 @@ void testAssistedLowSpeedUsesMonotonicReferenceClock()
 #endif
 
     ScenarioRunSettings settings;
+    enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Assisted;
     settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =
@@ -266,6 +280,7 @@ void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
 #endif
 
     ScenarioRunSettings settings;
+    enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Assisted;
     settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =
@@ -351,6 +366,7 @@ void testNewtonianHigherSpeedUsesMainEngineDominantManeuver()
 #endif
 
     ScenarioRunSettings settings;
+    enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Newtonian;
     settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =
@@ -426,6 +442,7 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
 #endif
 
     ScenarioRunSettings settings;
+    enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Newtonian;
     settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =

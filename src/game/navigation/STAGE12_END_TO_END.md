@@ -9146,3 +9146,57 @@ When a new obstacle invalidates the program:
 
 This contract is the basis for subsequent 30 m/s broad-arc and braking-boundary
 work.
+
+## Explicit actuator-program migration — observation gate
+
+Stage-12 programs now contain explicit actuator intervals in addition to state
+samples.
+
+```text
+ReferenceSample[i]
+    P, V, A
+    body basis
+    omega, alpha
+
+ActuatorSegment[i -> i+1]
+    dt
+    rear main throttle start/end
+    fore main throttle start/end
+    RCS acceleration start/end
+    propulsionFeasible
+```
+
+Current Cobra fore-main is always disabled.
+
+The existing trajectory is compiled into the interval by projecting required
+acceleration onto the planned body forward axis. Positive forward acceleration
+is assigned to aft main; residual acceleration is assigned to bounded RCS.
+
+If residual RCS or main demand exceeds physical authority, the segment is
+marked `propulsionFeasible=false`.
+
+### Diagnostic contract
+
+Viewer:
+- pink cross = instantaneous accepted reference;
+- violet cross = active phase endpoint;
+- `ПЛАН SEG ...` = planned propulsion interval;
+- engine lamps = actual physics.
+
+Telemetry:
+- `plan_main_pct`, `plan_front_pct`, `plan_rcs`,
+  `plan_feasible`;
+- actual `main_pct`, `main_a`, `rcs_a`, `engine_a`.
+
+This lets one frame answer whether a miss originates in:
+1. bad reference geometry/timing;
+2. bad Planner propulsion allocation;
+3. Autopilot/physics execution mismatch.
+
+### Current migration boundary
+
+The new actuator program is observe-only in the live Stage-12 runtime for this
+gate. Physics still consumes the old net acceleration demand.
+
+After target validation confirms a sane program, Autopilot will execute the
+sampled actuator interval directly and use only bounded feedback for correction.

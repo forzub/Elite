@@ -9323,3 +9323,22 @@ Attitude reference states must satisfy both angular-rate and
 angular-acceleration reachability.
 
 Next Stage-12 gate is physical maneuver compilation before final Ruckig timing.
+
+## 2026-09-22 target E2E after monotonic-clock migration
+
+Target E2E demonstrates:
+- storage pages advance;
+- reference clock is monotonic;
+- stale-reference hold is gone;
+- tracking invalidation fires after the configured 0.50 s.
+
+The failing high-speed case reports 42 infeasible actuator segments and a
+175.84-degree reference/velocity angle while the body/velocity angle remains
+0.94 degrees.
+
+Therefore the current Stage-12 failure is no longer page/clock orchestration.
+It is physical maneuver authoring/timing: the accepted translational trajectory
+requires a force-direction/attitude change before the vehicle can attain that
+attitude.
+
+E2E tests must no longer require `REFERENCE CLOCK HOLD:`.

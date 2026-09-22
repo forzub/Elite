@@ -478,6 +478,7 @@ for token in (
     "conflictHoldUrgency01",
     "minimumApproachHoldDistanceMeters",
     "maximumLateralCorrectionVelocityAngleRad",
+    "holdEmergencyUrgencyThreshold01",
 ):
     require(token in runtime_planner_h,
             f"NavigationRuntimePlanner hides behavior policy {token}")
@@ -488,6 +489,7 @@ for forbidden in (
     "holdIntent(agent, goal, 1.0)",
     "std::max(2.0, portalAllowedCrossTrackMeters)",
     "1.5533430342749532 // 89 degrees.",
+    "urgency >= 0.75",
 ):
     require(forbidden not in runtime_planner_cpp,
             f"NavigationRuntimePlanner reintroduced hidden behavior literal {forbidden}")

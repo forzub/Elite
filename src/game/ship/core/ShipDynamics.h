@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 #include "src/game/ship/core/ShipParams.h"
 
@@ -69,23 +70,77 @@ inline constexpr double StandardGravityMps2 = 9.80665;
     return std::max(0.0, static_cast<double>(params.maxCombatSpeed));
 }
 
-[[nodiscard]] inline double maximumAngularSpeedRadPerSec(
+[[nodiscard]] inline double angularLoadRateLimitRadPerSec(
     const ShipParams& params
 ) noexcept
 {
-    return std::max({
-        0.0,
-        static_cast<double>(params.maxPitchRate),
-        static_cast<double>(params.maxYawRate),
-        static_cast<double>(params.maxRollRate)
-    });
+    if (params.maxGs <= 0.0f || params.turnRadius <= 0.0f)
+        return std::numeric_limits<double>::infinity();
+
+    return std::sqrt(
+        std::max(0.0, static_cast<double>(params.maxGs)) *
+        StandardGravityMps2 /
+        static_cast<double>(params.turnRadius)
+    );
 }
 
 [[nodiscard]] inline double angularAccelerationLimitRadPerSec2(
     const ShipParams& params
 ) noexcept
 {
-    return std::max(0.0, static_cast<double>(params.angularAccel));
+    const double configured =
+        std::max(0.0, static_cast<double>(params.angularAccel));
+
+    if (params.maxGs <= 0.0f || params.turnRadius <= 0.0f)
+        return configured;
+
+    const double byLinearLoad =
+        std::max(0.0, static_cast<double>(params.maxGs)) *
+        StandardGravityMps2 /
+        static_cast<double>(params.turnRadius);
+
+    return std::min(configured, byLinearLoad);
+}
+
+[[nodiscard]] inline double pitchRateLimitRadPerSec(
+    const ShipParams& params
+) noexcept
+{
+    return std::min(
+        std::max(0.0, static_cast<double>(params.maxPitchRate)),
+        angularLoadRateLimitRadPerSec(params)
+    );
+}
+
+[[nodiscard]] inline double yawRateLimitRadPerSec(
+    const ShipParams& params
+) noexcept
+{
+    return std::min(
+        std::max(0.0, static_cast<double>(params.maxYawRate)),
+        angularLoadRateLimitRadPerSec(params)
+    );
+}
+
+[[nodiscard]] inline double rollRateLimitRadPerSec(
+    const ShipParams& params
+) noexcept
+{
+    return std::min(
+        std::max(0.0, static_cast<double>(params.maxRollRate)),
+        angularLoadRateLimitRadPerSec(params)
+    );
+}
+
+[[nodiscard]] inline double maximumAngularSpeedRadPerSec(
+    const ShipParams& params
+) noexcept
+{
+    return std::max({
+        pitchRateLimitRadPerSec(params),
+        yawRateLimitRadPerSec(params),
+        rollRateLimitRadPerSec(params)
+    });
 }
 
 } // namespace game::ship

@@ -211,7 +211,7 @@ for token in (
 # ---------- Trajectory backend policy ----------
 require("TrajectoryGenerationPolicy policy" in trajectory_h,
         "trajectory request no longer owns explicit generation policy")
-require("request.policy = settings.trajectory;" in runtime_cpp,
+require("request.policy = trajectoryPolicy;" in runtime_cpp,
         "Stage 2 silently relies on TrajectoryGenerationPolicy defaults")
 require("settings.trajectory.valid()" in runtime_cpp,
         "Stage 2 does not validate trajectory policy at API boundary")

@@ -3199,3 +3199,55 @@ hard. It may apply bounded correction and emergency safety action, then ask
 Planner for a replacement program from the current state.
 
 This is the architecture to implement next.
+
+## 2026-09-22 — explicit Planner actuator intervals introduced
+
+First implementation slice of the canonical Planner -> ManeuverProgram ->
+Autopilot contract is now in code.
+
+`AcceptedManeuverProgram` now contains two different things explicitly:
+
+```text
+ReferenceSample
+    instantaneous physical target state
+
+ActuatorSegment[i -> i+1]
+    duration
+    rear-main enable + throttle start/end
+    fore-main enable + throttle start/end
+    manoeuvre/RCS acceleration start/end
+    propulsion-feasible witness
+```
+
+Current Cobra planner compilation never invents fore-main hardware.
+
+The existing Stage-12 trajectory/reference is now converted into these physical
+actuator intervals in `makeProgramPhase()`:
+- requested acceleration is decomposed against the planned body forward axis;
+- positive body-forward component becomes rear-main throttle;
+- remaining vector becomes manoeuvre/RCS command;
+- RCS is clamped to real `manoeuvreThrusterAccel`;
+- intervals that require more physical authority are marked infeasible.
+
+This migration is deliberately observable before switching the live physics
+path:
+- B9 `ManeuverProgramSampler` samples the actuator interval directly;
+- `TrajectoryFollower::Result` carries the sampled planner actuator command;
+- trace records planned actuator segment/main/front/RCS/feasibility separately
+  from actual engine telemetry;
+- viewer shows a `ПЛАН SEG ... MAIN ... FRONT ... RCS ... FEASIBLE/SATURATED`
+  line above the real engine lamps;
+- telemetry log writes planned and actual propulsion on the same frame.
+
+The actual runtime physics still uses the old net-acceleration execution path in
+this slice. Diagnostics explicitly report:
+`AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION`.
+
+This is intentional: next target run first verifies whether Planner's new
+physical program itself is sane before making Autopilot obey it literally.
+
+New sampler regression pins that actuator intervals are interpolated directly
+and no fore engine is synthesized.
+
+Code baseline before documentation commits: `7b60f875193334e20bc5d168d65df351b746754d`.
+Target MinGW64 validation pending.

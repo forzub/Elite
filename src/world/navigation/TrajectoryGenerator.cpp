@@ -850,10 +850,16 @@ std::vector<glm::dvec3> buildWaypointVelocities(
     return velocities;
 }
 
-bool nonZeroVelocity(const glm::dvec3& value) noexcept
+bool nonZeroVelocity(
+    const glm::dvec3& value,
+    double thresholdMps
+) noexcept
 {
-    return glm::dot(value, value) >
-        0.25;
+    const double threshold =
+        std::max(0.0, thresholdMps);
+    return
+        glm::dot(value, value) >
+        threshold * threshold;
 }
 
 glm::dquat sampleOrientation(
@@ -1282,7 +1288,7 @@ double globalGuideSpeedLimit(
     }
 
     const double lateralAcceleration = std::max(
-        0.1,
+        request.policy.minimumAccelerationMps2,
         request.vehicle.maxLateralAccelerationMps2
     );
 
@@ -1318,7 +1324,10 @@ double globalGuideSpeedLimit(
         }
     }
 
-    return std::max(0.1, limit);
+    return std::max(
+        request.policy.minimumSpeedMps,
+        limit
+    );
 }
 
 world::navigation::TrajectoryGenerationResult
@@ -1677,7 +1686,8 @@ RouteAttempt buildRouteAttempt(
         firstDirection * out.diagnostics.initialAlongPathSpeedMps;
     out.diagnostics.initialCrossTrackSpeedMps = magnitude(crossTrack);
     out.diagnostics.pathCaptureRequired =
-        out.diagnostics.initialCrossTrackSpeedMps > 0.25;
+        out.diagnostics.initialCrossTrackSpeedMps >
+        request.policy.pathCaptureSpeedThresholdMps;
 
     for (std::size_t legIndex = 0;
          legIndex + 1 < request.pathPointsMeters.size();
@@ -1859,13 +1869,14 @@ RouteAttempt buildRouteAttempt(
 }
 
 std::size_t countBlendedWaypoints(
-    const std::vector<glm::dvec3>& velocities
+    const std::vector<glm::dvec3>& velocities,
+    double thresholdMps
 )
 {
     std::size_t count = 0;
     for (std::size_t i = 1; i + 1 < velocities.size(); ++i)
     {
-        if (nonZeroVelocity(velocities[i]))
+        if (nonZeroVelocity(velocities[i], thresholdMps))
             ++count;
     }
     return count;
@@ -2006,7 +2017,10 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
         {
             if (index == 0 ||
                 index + 1 >= waypointVelocities.size() ||
-                !nonZeroVelocity(waypointVelocities[index]))
+                !nonZeroVelocity(
+                    waypointVelocities[index],
+                    request.policy.minimumUsefulWaypointSpeedMps
+                ))
             {
                 return false;
             }

@@ -33,6 +33,15 @@ inline constexpr double StandardGravityMps2 = 9.80665;
         nonNegativeFinite(params.maxCombatSpeed) &&
         nonNegativeFinite(params.maxCruiseSpeed) &&
         nonNegativeFinite(params.throttleAccel) &&
+        nonNegativeFinite(params.stopSpeedEpsilonMps) &&
+        std::isfinite(params.brakeAlignmentCosine) &&
+        params.brakeAlignmentCosine >= -1.0f &&
+        params.brakeAlignmentCosine <= 1.0f &&
+        nonNegativeFinite(params.assistedMinimumTargetSpeedChangeRateMps2) &&
+        nonNegativeFinite(
+            params.assistedTargetSpeedChangeRateFractionPerSecond
+        ) &&
+        nonNegativeFinite(params.fallbackThrottleResponsePerSecond) &&
         nonNegativeFinite(params.autoLevelStrength) &&
         nonNegativeFinite(params.strafeAccel) &&
         nonNegativeFinite(params.strafeDamping) &&

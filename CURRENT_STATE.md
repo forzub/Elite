@@ -3251,3 +3251,78 @@ and no fore engine is synthesized.
 
 Code baseline before documentation commits: `7b60f875193334e20bc5d168d65df351b746754d`.
 Target MinGW64 validation pending.
+
+## 2026-09-22 — root cause of "Newtonian uses only manoeuvre thrusters" isolated
+
+Fresh target run proved two separate facts.
+
+### 1. Planner actuator schedule was not actually driving the ship
+
+The run explicitly reported:
+
+```text
+TRAJECTORY SAMPLES: 693
+PROGRAM PHASES: 3
+PLANNED ACTUATOR SEGMENTS: 45
+AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION
+```
+
+So the new Planner engine schedule was diagnostic-only. Actual engines were
+still selected downstream from Follower/Pilot's net acceleration vector.
+
+Current live engine selection rule is still:
+- project executed world acceleration onto actual hull forward;
+- positive forward component -> aft main;
+- residual vector -> manoeuvre/RCS;
+- no positive component -> main stays off.
+
+Therefore a lateral/opposed tracking correction naturally lights only RCS even
+if the intended nominal maneuver should have used main thrust.
+
+### 2. The oscillation fix exposed a pre-existing sparse-program alias
+
+The important regression is not the Kd change itself.
+
+`e2b5270 Critically damp navigation attitude tracking` only changed angular
+velocity damping from 1.0 to 3.0.
+
+`56aca8a Derive sparse attitude rate from accepted basis samples` correctly
+stopped copying dense angular derivatives into a <=16-key accepted program.
+
+However, the entire long route leg was still compressed into <=16 uniformly
+selected states. In the fresh run, 693 dense Ruckig samples became only 45
+actuator intervals across 3 phases.
+
+That means:
+- P/V/A and body attitude were sampled too sparsely;
+- B9 linearly interpolated between distant states;
+- the accepted interval could have zero/incorrect feed-forward acceleration
+  while its interpolated position/velocity reference still curved;
+- Follower then created a large correction acceleration;
+- because that correction was mostly lateral/opposed to current hull forward,
+  downstream allocation used RCS almost exclusively.
+
+Telemetry confirms exactly this signature at the start:
+Planner interval reports MAIN=0 / RCS=0 while Follower/physics immediately
+commands and applies RCS acceleration.
+
+### Code correction
+
+Commit `9d4b599c7339fc7dc30803a0aa3c57b7b543fd5a` removed long-leg sparse
+compression. Route legs are now divided into consecutive dense chunks of at
+most 16 source samples. Adjacent chunks share their boundary sample.
+
+This preserves the actual dense Ruckig-derived P/V/A/attitude sequence instead
+of inventing a different trajectory through sparse interpolation.
+
+Additional invariant now reported:
+
+```text
+PLANNED ACTUATOR SOURCE COVERAGE: actual/expected COMPLETE
+```
+
+For a complete accepted route, planned actuator intervals must cover every
+adjacent dense trajectory sample exactly once.
+
+Code baseline before documentation commits: `b51b0abc22270104f75f198935d857582c9b4445`.
+Target MinGW64 validation pending.

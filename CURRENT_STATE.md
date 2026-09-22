@@ -1,5 +1,51 @@
 # CURRENT STATE
 
+## 2026-09-22 — scalable navigation architecture specified
+
+Status: **NORMATIVE BLUEPRINT AUTHORED / IMPLEMENTATION NOT STARTED**
+
+The complete audit, target semantic model, algorithms, APIs, multi-object
+scheduling model, proof rules, tests and M0-M13 migration are now defined in:
+
+```text
+src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md
+```
+
+The audit concludes that the active tool chain is transitional and must not be
+scaled as-is. Its geometry-first/scalar-timing-first order, post-fitted attitude
+and propulsion, observe-only actuator segments and downstream reallocation mean
+that the executed maneuver is not the maneuver that was accepted.
+
+The target invariant is:
+
+```text
+accepted maneuver == capability-checked maneuver
+                  == continuously collision-proved maneuver
+                  == actuator program executed by physics
+```
+
+The first implementation stage is M1, because the active stand bypasses the
+canonical coordinate boundary and current lexical purity checks miss that real
+violation. The next code iteration must repair frame/API semantics before
+physical compiler or topology work.
+
+The architecture audit did not modify runtime code and did not claim a new
+target-machine validation result. Existing test evidence below remains
+historical baseline evidence only.
+
+Local audit evidence on the unchanged code baseline:
+
+- `check_navigation_api_purity.py` fails on the benign DTO declaration
+  `WorldParams world {};`;
+- `check_navigation_stage1_nominal_route.py` fails because it expects one exact
+  source spelling/layout for terminal-orientation policy consumption;
+- `check_navigation_stage12_runtime_planner.py` fails because it expects one
+  exact source spelling/layout for acceleration feed-forward;
+- those checks do not reject the actual private frame-conversion bypass.
+
+This is the concrete reason M1 includes replacement of lexical confidence with
+semantic boundary and non-identity-frame evidence.
+
 **Updated:** 2026-09-20 Europe/Kyiv
 
 ## Accepted target-machine baseline

@@ -1353,3 +1353,22 @@ boundary smell and must be narrowed in the active calculation path.
 
 The static API-purity gate is now part of the mandatory Stage-1 script and
 should fail before compilation when old hidden contracts return.
+
+## 2026-09-22 — full navigation-layer audit outcome
+
+The normative findings and migration now live in
+`NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`. This audit remains historical
+evidence; where it describes the active chain as acceptable, the blueprint's
+later function-by-function and end-to-end assessment takes precedence.
+
+Two qualifications are now explicit:
+
+1. the active tool bypasses `NavigationFrameBoundary` through a private
+   NavLocal-to-System vector copy and direct initial-state assignment;
+2. current static architecture checks are lexical and produce both false
+   positives from formatting/DTO names and false negatives for that real frame
+   bypass.
+
+Therefore “purity checker PASS” is not by itself API-boundary proof. Migration
+M1 must replace the checks with semantic assertions and add a non-identity
+moving-frame product-chain E2E.

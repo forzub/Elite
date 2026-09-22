@@ -3024,3 +3024,32 @@ pin this architecture.
 Remaining major RED item is unchanged: the physical maneuver must be authored
 and proved before final Ruckig timing. API cleanup is a prerequisite, not the
 physics fix itself.
+
+## 2026-09-22 — normative navigation-layer blueprint
+
+`src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md` is now the
+primary target architecture for navigation work. It records the full function
+and ownership audit of the active runtime, the scalable 3D navigation-world
+model, hierarchical corridor search, physical local-maneuver generation,
+continuous swept-hull proof, literal actuator execution, scheduler/LOD model,
+public API shapes, revision semantics, tests and an M0-M13 migration.
+
+Key project decision:
+
+```text
+static generated 3D topology + exact static BVH + dynamic spatial index
+    -> async/shared global corridor
+    -> receding-horizon physical maneuver candidates
+    -> capability/resource/continuous collision proof
+    -> immutable accepted state + actuator program
+    -> literal execution with bounded reserved correction
+```
+
+The existing `NavigationSpace`, `NavigationMap`, scheduler, dynamics profiles
+and accepted-program value objects are foundations to evolve, not proof that
+this target already exists. `NavigationScenarioRuntime.cpp`, the visibility
+graph and scalar Ruckig path remain transitional.
+
+Migration is at M0 complete by audit/documentation and M1 pending. M1 repairs
+the canonical frame/API boundary and semantic architecture tests. No later
+stage may claim completion before its predecessor's evidence gate passes.

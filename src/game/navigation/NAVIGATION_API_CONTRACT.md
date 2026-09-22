@@ -176,3 +176,16 @@ It checks:
 - terminal aliases do not leak outside helpers that explicitly receive them;
 - old frozen-reference/reacquisition semantics do not return;
 - vehicle/capability projections use canonical helpers.
+
+## Normative architecture and current checker limitation
+
+`NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md` is the normative end-to-end API
+and ownership specification. This file remains the detailed purity contract for
+calculation boundaries.
+
+The current Python guard is a transitional lexical check, not a proof of
+semantic purity. It is known to be sensitive to harmless source layout/DTO
+names while failing to detect the active runtime's private NavLocal-to-System
+copy. Migration M1 must make frame conversions canonical and replace brittle
+exact-string conditions with semantic contract tests. Until then, a guard PASS
+cannot substitute for non-identity-frame E2E evidence.

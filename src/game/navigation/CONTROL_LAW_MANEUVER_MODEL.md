@@ -618,3 +618,16 @@ arguments/profile objects.
 
 `NavigationRuntimePlanner::holdIntent` now receives both urgency and emergency
 threshold explicitly; no private 0.5/0.75 doctrine remains in that helper.
+
+## 2026-09-22 — relationship to the target navigation layer
+
+The complete target and migration are specified in
+`NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`.
+
+Control law is an input to local physical maneuver generation, not a late
+reinterpretation of an already timed geometric curve. Candidate generation must
+choose Newtonian, Assisted, flip-and-burn, coast, brake, squeeze or precision
+families using explicit doctrine plus actual hardware. Capability/resource and
+continuous collision proof happen before acceptance. The accepted actuator
+schedule is then executed literally; bounded follower correction may consume
+only authority explicitly reserved by the planner.

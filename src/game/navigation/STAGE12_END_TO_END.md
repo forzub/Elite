@@ -9369,3 +9369,28 @@ threshold.
 
 This purity gate precedes the next Stage-12 physics work:
 physical maneuver feasibility must be constructed before Ruckig timing.
+
+## 2026-09-22 — target architecture and staged replacement
+
+The normative replacement design is now:
+
+```text
+NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md
+```
+
+This Stage-12 stand remains valuable as a characterization and product-chain
+gate, but its present internal chain is not the target architecture. In
+particular, visibility-polyline -> scalar Ruckig timing -> attitude fit ->
+propulsion fit must not be generalized into the many-actor system.
+
+The next accepted Stage-12 change is migration M1 only:
+
+- remove the private NavLocal-to-System copy conversion;
+- use `NavigationFrameBoundary` for intent and initial-state conversion;
+- prove a translated, rotated and moving non-identity frame in the real chain;
+- make architecture checks semantic enough to reject boundary bypasses.
+
+Subsequent gates are ordered: split the composition root, hard-reject infeasible
+programs, activate a short-horizon physical compiler, add continuous oriented
+hull proof, and execute the proved actuator schedule literally. Static octree
+integration comes after one maneuver is truthful end to end.

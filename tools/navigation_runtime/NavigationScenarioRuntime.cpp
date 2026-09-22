@@ -1938,6 +1938,15 @@ TraceFrame executionTraceFrame(
     frame.hasSelectedTarget = true;
     frame.selectedTarget = scenario.finish.position;
 
+    if (program.valid && program.sampleCount >= 2)
+    {
+        const std::size_t phaseLast =
+            static_cast<std::size_t>(program.sampleCount - 1);
+        frame.hasProgramPhaseTarget = true;
+        frame.programPhaseTargetPosition =
+            program.samples[phaseLast].positionMapMeters;
+    }
+
     const auto sampled =
         game::navigation::ManeuverProgramSampler::sample(
             program,

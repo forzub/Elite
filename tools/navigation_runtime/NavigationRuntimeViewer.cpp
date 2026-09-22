@@ -1629,6 +1629,41 @@ void appendEngineIndicators(
     const float y =
         static_cast<float>(windowHeight) - 72.0f;
 
+    if (frame.hasPlannedActuatorCommand)
+    {
+        std::ostringstream planned;
+        planned.setf(std::ios::fixed);
+        planned.precision(1);
+        planned
+            << "ПЛАН SEG "
+            << frame.plannedActuatorSegmentIndex
+            << ": MAIN "
+            << (frame.plannedRearMainThrottle01 * 100.0)
+            << "% | FRONT "
+            << (frame.plannedForeMainThrottle01 * 100.0)
+            << "% | RCS "
+            << glm::length(
+                frame.plannedManoeuvreAccelerationMps2
+            )
+            << " M/S2 | "
+            << (
+                frame.plannedPropulsionFeasible
+                    ? "FEASIBLE"
+                    : "SATURATED"
+               );
+
+        appendUiText(
+            ui,
+            startX,
+            y - 20.0f,
+            planned.str(),
+            1.00f,
+            frame.plannedPropulsionFeasible
+                ? glm::vec3(0.68f, 0.90f, 1.0f)
+                : glm::vec3(1.0f, 0.30f, 0.22f)
+        );
+    }
+
     appendEngineIndicator(
         ui,
         {startX, y, 184.0f, 26.0f},

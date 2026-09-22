@@ -43,6 +43,26 @@ bool validSample(const Sample& sample) noexcept
         finite(sample.angularAccelerationFeedForwardMapRadPerSec2);
 }
 
+bool validActuatorSegment(
+    const Program::ActuatorSegment& segment
+) noexcept
+{
+    const auto unit01 = [](double value) noexcept
+    {
+        return finite(value) && value >= 0.0 && value <= 1.0;
+    };
+
+    return
+        finite(segment.durationSeconds) &&
+        segment.durationSeconds > 0.0 &&
+        unit01(segment.rearMainThrottleStart01) &&
+        unit01(segment.rearMainThrottleEnd01) &&
+        unit01(segment.foreMainThrottleStart01) &&
+        unit01(segment.foreMainThrottleEnd01) &&
+        finite(segment.manoeuvreAccelerationStartMapMps2) &&
+        finite(segment.manoeuvreAccelerationEndMapMps2);
+}
+
 bool validProgram(const Program& program) noexcept
 {
     if (!program.valid ||
@@ -66,6 +86,38 @@ bool validProgram(const Program& program) noexcept
         !finite(program.hazardUrgency01))
     {
         return false;
+    }
+
+    if (program.actuatorSegmentCount > 0)
+    {
+        if (program.sampleCount < 2 ||
+            program.actuatorSegmentCount != program.sampleCount - 1 ||
+            program.actuatorSegmentCount >
+                Program::kMaxSamples - 1)
+        {
+            return false;
+        }
+
+        for (std::size_t i = 0;
+             i < program.actuatorSegmentCount;
+             ++i)
+        {
+            const auto& segment = program.actuatorSegments[i];
+            if (!validActuatorSegment(segment))
+                return false;
+
+            const double expectedDuration =
+                program.samples[i + 1].timeOffsetSeconds -
+                program.samples[i].timeOffsetSeconds;
+            if (!finite(expectedDuration) ||
+                std::abs(
+                    segment.durationSeconds -
+                    expectedDuration
+                ) > 1.0e-6)
+            {
+                return false;
+            }
+        }
     }
 
     double previousTime = -1.0;
@@ -112,6 +164,43 @@ glm::dvec3 lerp(
 ) noexcept
 {
     return a + (b - a) * alpha;
+}
+
+void sampleActuatorCommand(
+    ManeuverProgramSampler::Result& result,
+    const Program& program,
+    std::size_t segmentIndex,
+    double alpha
+) noexcept
+{
+    if (program.actuatorSegmentCount == 0 ||
+        segmentIndex >= program.actuatorSegmentCount)
+    {
+        return;
+    }
+
+    const auto& segment =
+        program.actuatorSegments[segmentIndex];
+    const double u = std::clamp(alpha, 0.0, 1.0);
+
+    result.hasActuatorCommand = true;
+    result.actuatorSegmentIndex = segmentIndex;
+    result.rearMainThrottle01 =
+        segment.rearMainThrottleStart01 +
+        (segment.rearMainThrottleEnd01 -
+         segment.rearMainThrottleStart01) * u;
+    result.foreMainThrottle01 =
+        segment.foreMainThrottleStart01 +
+        (segment.foreMainThrottleEnd01 -
+         segment.foreMainThrottleStart01) * u;
+    result.manoeuvreAccelerationMapMps2 =
+        lerp(
+            segment.manoeuvreAccelerationStartMapMps2,
+            segment.manoeuvreAccelerationEndMapMps2,
+            u
+        );
+    result.propulsionFeasible =
+        segment.propulsionFeasible;
 }
 
 Sample interpolate(
@@ -195,6 +284,7 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sample(
                 ? Status::BeforeStart
                 : Status::Active;
         result.reference = program.samples[0];
+        sampleActuatorCommand(result, program, 0, 0.0);
         return result;
     }
 
@@ -210,6 +300,15 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sample(
         result.lowerSampleIndex = lastIndex;
         result.upperSampleIndex = lastIndex;
         result.interpolation01 = 1.0;
+        if (program.actuatorSegmentCount > 0)
+        {
+            sampleActuatorCommand(
+                result,
+                program,
+                program.actuatorSegmentCount - 1,
+                1.0
+            );
+        }
         return result;
     }
 
@@ -245,6 +344,12 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sample(
         program.samples[upper],
         alpha,
         result.elapsedSeconds
+    );
+    sampleActuatorCommand(
+        result,
+        program,
+        lower,
+        alpha
     );
     return result;
 }

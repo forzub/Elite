@@ -1246,3 +1246,31 @@ and physical-authoring defects are corrected.
    of final Ruckig timing.
 6. Only after Planner emits a proved physical ManeuverProgram, switch the
    explicit actuator segments from observe-only to Autopilot authority.
+
+## 2026-09-22 — audit update after API/SSOT cleanup
+
+The following previous RED findings are now structurally corrected:
+
+| Finding | New status |
+| --- | --- |
+| hard-coded runtime cobraParams() | GREEN: removed; vehicle supplied explicitly |
+| duplicated hull envelope in scenario | GREEN: removed; vehicle geometry input only |
+| symmetric fake reverse-main capability | GREEN for common projections: derived from installed topology |
+| vehicle capability revision mixed with map revision | GREEN: separated |
+| file-scope execution dt / reference timeout | GREEN: explicit ScenarioNavigationPolicy |
+| storage pages treated as maneuver phases | GREEN structurally: one monotonic clock |
+| indefinite stale-reference clock hold | GREEN structurally: bounded invalidation |
+| angular reference ignores angular acceleration | GREEN structurally: acceleration-reachable integration |
+| manual Assisted virtual fore-main | GREEN structurally: uses installed topology |
+
+Still RED / not yet physically accepted:
+- execution-guide geometry is not yet produced from combined hull + main + RCS
+  reachability;
+- scalar trajectory timing does not include finite lead-rotation / throttle slew
+  proof;
+- explicit ActuatorSegments are still observe-only in the Stage-12 stand;
+- physical maneuver proof is still performed too late;
+- target MinGW64 compile/E2E has not validated this cleanup.
+
+New architecture checker pins the corrected ownership so these old defects cannot
+silently return.

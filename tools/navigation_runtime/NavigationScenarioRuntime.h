@@ -155,6 +155,18 @@ struct ScenarioNavigationPolicy
     }
 };
 
+struct ScenarioRuntimeIoPolicy
+{
+    // Empty directory disables file output. The runtime never resolves the
+    // process working directory by itself; an orchestration boundary must pass
+    // the destination explicitly.
+    std::string diagnosticsDirectory;
+    bool writeRouteDiagnostics = false;
+    bool writeExecutionDiagnostics = false;
+    bool writeExecutionTelemetry = false;
+    bool echoDiagnosticsToConsole = false;
+};
+
 struct ScenarioRunSettings
 {
     ControlMode controlMode = ControlMode::Newtonian;
@@ -166,6 +178,10 @@ struct ScenarioRunSettings
 
     // All calculation-affecting stand policy crosses the API explicitly.
     ScenarioNavigationPolicy navigation {};
+
+    // Side effects are also explicit. They are orchestration output policy and
+    // do not participate in navigation calculations.
+    ScenarioRuntimeIoPolicy io {};
 
     // Negative means "use the authored scenario value". The runtime viewer
     // uses explicit overrides so start/finish speed can be swept without

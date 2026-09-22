@@ -44,6 +44,7 @@ struct TrajectoryGenerationPolicy
 
     // Legacy single-leg through-corner candidate policy.
     double nominalBlendLegFraction = 0.25;
+    double nominalBlendMinimumMeters = 1.0;
     double minimumBlendMeters = 0.75;
     double minimumBlendCollisionRadiusFactor = 0.25;
     int blendAttempts = 10;
@@ -58,6 +59,12 @@ struct TrajectoryGenerationPolicy
     double jerkMinimumMps3 = 1.0;
     double jerkAccelerationMultiplier = 4.0;
     double validationStepSeconds = 0.02;
+    double minimumSamplingSpeedMps = 1.0;
+    double collisionChordMinimumMeters = 1.0;
+    double collisionChordRadiusFactor = 0.25;
+    double collisionChordMaximumMeters = 5.0;
+    double legSampleIntervalMinimumSeconds = 0.02;
+    double legSampleIntervalMaximumSeconds = 0.05;
     double peakSpeedToleranceMps = 0.25;
     double peakSpeedToleranceFraction = 0.01;
     double durationRetryFactor = 1.45;
@@ -111,6 +118,7 @@ struct TrajectoryGenerationPolicy
             curveMaximumSegments >= curveMinimumSegments &&
             nominalBlendLegFraction > 0.0 &&
             nominalBlendLegFraction < 0.5 &&
+            nonNegative(nominalBlendMinimumMeters) &&
             nonNegative(minimumBlendMeters) &&
             nonNegative(minimumBlendCollisionRadiusFactor) &&
             blendAttempts > 0 &&
@@ -123,6 +131,13 @@ struct TrajectoryGenerationPolicy
             nonNegative(jerkMinimumMps3) &&
             nonNegative(jerkAccelerationMultiplier) &&
             positive(validationStepSeconds) &&
+            positive(minimumSamplingSpeedMps) &&
+            nonNegative(collisionChordMinimumMeters) &&
+            nonNegative(collisionChordRadiusFactor) &&
+            collisionChordMaximumMeters >= collisionChordMinimumMeters &&
+            positive(legSampleIntervalMinimumSeconds) &&
+            legSampleIntervalMaximumSeconds >=
+                legSampleIntervalMinimumSeconds &&
             nonNegative(peakSpeedToleranceMps) &&
             nonNegative(peakSpeedToleranceFraction) &&
             durationRetryFactor > 1.0 &&

@@ -621,7 +621,8 @@ Metrics runCase(
             Follower::follow(
                 program,
                 v.timeSeconds,
-                agentState(v)
+                agentState(v),
+                game::navigation::ManeuverTrackingController::Policy {}
             );
 
         require(

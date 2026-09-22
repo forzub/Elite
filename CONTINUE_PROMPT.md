@@ -1,113 +1,128 @@
-# CONTINUE PROMPT — Elite Navigation: implement Planner-owned physical ManeuverProgram
+# CONTINUE PROMPT — Elite Navigation: validate explicit Planner actuator program
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
-Every state-affecting iteration MUST update:
+Every state-affecting iteration MUST:
+1. update `CURRENT_STATE.md`;
+2. update `CURRENT_TASK.md`;
+3. update `PROJECT_STATE.md`;
+4. update `src/game/navigation/STAGE12_END_TO_END.md`;
+5. recreate this `CONTINUE_PROMPT.md` from scratch.
+
+Keep `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md` synchronized when the
+Planner/Autopilot contract changes.
+
+Read first:
 - `CURRENT_STATE.md`
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
-- recreate this `CONTINUE_PROMPT.md` from scratch.
+- `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
+- `src/game/navigation/AcceptedManeuverProgram.h`
+- `src/game/navigation/ManeuverProgramSampler.cpp/.h`
+- `src/game/navigation/TrajectoryFollower.cpp/.h`
+- `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
+- `tools/navigation_runtime/NavigationTrace.cpp/.h`
+- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`.
 
-Keep `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md` synchronized with
-ownership changes.
+## Current code candidate before docs
 
-## Canonical terminology
+```text
+7b60f875193334e20bc5d168d65df351b746754d
+```
 
-Do not use vague "planner points + follower figures out the rest" language.
+Target-machine PASS has NOT been established.
 
-The hierarchy is:
+## Canonical ownership
 
 ```text
 Planner
-    -> Physical ManeuverProgram
+    -> physical ManeuverProgram
        -> Autopilot/Follower
-          -> Ship physics
+          -> ship physics
 ```
 
 Ruckig is an internal Planner helper.
 
-## ManeuverProgram semantics
+## Implemented in this slice
 
-A point/state owns instantaneous physical state:
+`AcceptedManeuverProgram` now contains:
+- state/reference samples;
+- explicit `ActuatorSegment` intervals.
 
+Each actuator interval contains:
+- duration;
+- rear-main enable + throttle start/end;
+- explicit fore-main enable + throttle start/end;
+- manoeuvre/RCS acceleration start/end;
+- propulsion-feasibility witness.
+
+Current Cobra has no fore main; Planner keeps that channel OFF.
+
+Current Stage-12 compiler decomposes each reference acceleration:
+- positive component along planned hull forward -> rear main;
+- residual vector -> RCS;
+- RCS is bounded by real `manoeuvreThrusterAccel`;
+- authority excess marks the segment SATURATED / infeasible.
+
+B9 samples these commands directly.
+Follower exposes them without re-solving engine choice.
+
+## New diagnostics
+
+Viewer line:
 ```text
-time
-position
-velocity vector
-acceleration vector
-3-D body orientation
-angular velocity
-angular acceleration
+ПЛАН SEG N: MAIN xx% | FRONT 0% | RCS x.x M/S2 | FEASIBLE/SATURATED
 ```
 
-A segment from state i to i+1 owns the actuator schedule:
+Existing engine lamps are ACTUAL physics.
 
+Telemetry adds:
 ```text
-duration
+plan_seg
+plan_main_pct
+plan_front_pct
+plan_rcs
+plan_feasible
+```
+beside actual main/RCS telemetry.
 
-rear main:
-  enabled
-  throttle
-  throttle ramp/slew
+Pink cross remains the instantaneous accepted reference.
+Violet cross remains the active phase endpoint.
 
-front main:
-  only if actual vehicle has it
+## Important current limitation
 
-manoeuvre/RCS:
-  requested force/acceleration vector
-  bounded by real hardware
+The explicit actuator schedule is still OBSERVE-ONLY in Stage-12 execution.
 
-attitude-control profile
+Diagnostics say:
+`AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION`.
+
+Do not hide this. The next run must first determine whether Planner's explicit
+engine schedule is physically sane.
+
+## Run next
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+bash tests/navigation_runtime/run_stage1_mingw64.sh
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-"Engine runs for N seconds" is a segment property, not a point property.
+First use the same higher-speed Newtonian case.
 
-## Planner ownership
+At first bend inspect:
+- pink reference;
+- `ПЛАН SEG` line;
+- FEASIBLE/SATURATED;
+- actual engine lamps;
+- velocity vector;
+- hull nose.
 
-Planner decides:
-- obstacle route;
-- broad arc / narrow maneuver / brake / flip / burn;
-- tangent velocity;
-- required acceleration;
-- body orientation;
-- main + RCS allocation;
-- lead rotation;
-- braking boundary;
-- segment timing.
+If Planner schedule is sane:
+next iteration wires sampled actuator intervals into Autopilot/physics and keeps
+bounded tracking feedback separate.
 
-Planner may call Ruckig to solve bounded transition timing, velocity,
-acceleration and jerk.
-
-Ruckig does not own engine selection or maneuver doctrine.
-
-## Autopilot ownership
-
-Autopilot:
-- obeys accepted ManeuverProgram;
-- actuates real controls;
-- closes bounded error;
-- watches sudden obstacles;
-- may perform immediate safety inhibition/emergency braking;
-- requests replanning when nominal program is no longer safe/reachable.
-
-Autopilot must not become a second nominal route planner.
-
-## Existing diagnostics to preserve
-
-- pink cross = current accepted reference point;
-- violet cross = active phase endpoint;
-- rear-main / fore-main / manoeuvre indicators;
-- actual velocity vector and actual hull nose.
-
-## Next implementation
-
-1. Introduce explicit ManeuverState + ManeuverSegment data structure.
-2. Adapt current accepted-program generation to populate it.
-3. Move propulsion allocation and attitude schedule into Planner compilation.
-4. Include throttle slew and finite angular rotation in feasibility.
-5. Use Ruckig only inside physically feasible segment construction.
-6. Feed Autopilot the resulting physical command program.
-7. Add 30 m/s free-space broad-arc regression.
-
-Do not compensate for bad planning by loosening follower tracking.
+If Planner schedule is saturated or late:
+fix physical maneuver authoring / broad-arc / lead-rotation first, not Follower.

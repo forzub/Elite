@@ -8,9 +8,6 @@ namespace game::navigation
 {
 namespace
 {
-constexpr double StopSpeedEpsilonMps = 0.05;
-constexpr double BrakeAlignmentCos = 0.995;
-
 inline double positiveOr(double value, double fallback)
 {
     return value > 0.0 ? value : fallback;
@@ -250,7 +247,7 @@ void DynamicMotionSystem::updateLocalFrameMotion(
 
     if (motion.velocityAlignmentMode ==
             VelocityAlignmentMode::BrakeToStop &&
-        glm::length(motion.localVelocityMps) <= StopSpeedEpsilonMps)
+        glm::length(motion.localVelocityMps) <= static_cast<double>(params.stopSpeedEpsilonMps))
     {
         motion.localVelocityMps = glm::dvec3(0.0);
         motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
@@ -346,7 +343,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
                 VelocityAlignmentMode::BrakeToStop)
         {
             const double speed = glm::length(relativeWorldVelocity);
-            if (speed <= StopSpeedEpsilonMps || dtD <= 0.0)
+            if (speed <= static_cast<double>(params.stopSpeedEpsilonMps) || dtD <= 0.0)
             {
                 motion.localVelocityMps = glm::dvec3(0.0);
                 motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
@@ -359,7 +356,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
 
             const glm::dvec3 antiVelocity = -relativeWorldVelocity / speed;
 
-            if (glm::dot(f, antiVelocity) >= BrakeAlignmentCos)
+            if (glm::dot(f, antiVelocity) >= static_cast<double>(params.brakeAlignmentCosine))
             {
                 const double brakeAccel =
                     std::min(forwardMainAccel, speed / dtD);
@@ -398,7 +395,16 @@ void DynamicMotionSystem::applyLocalFrameInput(
     // folded into that setpoint: while a body-axis RCS key is held, stabilization
     // yields on that axis and the small physical thruster moves the ship. On
     // release, the Assisted controller resumes correcting that axis.
-    const double targetSpeedChangeRate = std::max(50.0, maxSpeed * 0.6);
+    const double targetSpeedChangeRate =
+        std::max(
+            static_cast<double>(
+                params.assistedMinimumTargetSpeedChangeRateMps2
+            ),
+            maxSpeed *
+                static_cast<double>(
+                    params.assistedTargetSpeedChangeRateFractionPerSecond
+                )
+        );
     const bool throttleTrimActive =
         std::abs(static_cast<double>(targetSpeedRate)) > 1.0e-6;
 
@@ -452,7 +458,12 @@ void DynamicMotionSystem::applyLocalFrameInput(
     yieldAxisToManualRcs(u, liftInput);
 
     const double response =
-        positiveOr(static_cast<double>(params.throttleAccel), 1.0);
+        positiveOr(
+            static_cast<double>(params.throttleAccel),
+            static_cast<double>(
+                params.fallbackThrottleResponsePerSecond
+            )
+        );
 
     // Assisted changes control doctrine, never installed hardware.
     // Split the requested stabilization acceleration through the SAME physical
@@ -499,7 +510,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
         motion.manoeuvreAccelerationMps2;
 
     if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop &&
-        glm::length(motion.localVelocityMps) <= StopSpeedEpsilonMps)
+        glm::length(motion.localVelocityMps) <= static_cast<double>(params.stopSpeedEpsilonMps))
     {
         motion.localVelocityMps = glm::dvec3(0.0);
         motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);

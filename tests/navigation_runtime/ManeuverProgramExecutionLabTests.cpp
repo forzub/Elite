@@ -387,7 +387,7 @@ ScenarioMetrics runStraightScenario()
         );
 
         const auto follower =
-            Follower::follow(p, v.timeSeconds, agentState(v));
+            Follower::follow(p, v.timeSeconds, agentState(v), game::navigation::ManeuverTrackingController::Policy {});
         require(
             follower.status != Follower::Status::InvalidInput,
             "straight follower became invalid"
@@ -428,7 +428,7 @@ ScenarioMetrics runStraightScenario()
         v.timeSeconds += kDt;
 
         const auto after =
-            Follower::follow(p, v.timeSeconds, agentState(v));
+            Follower::follow(p, v.timeSeconds, agentState(v), game::navigation::ManeuverTrackingController::Policy {});
         if (after.status == Follower::Status::Complete)
         {
             m.completed = true;
@@ -487,7 +487,7 @@ ScenarioMetrics runRightAngleScenario(double corridorHalfWidth)
                     );
 
                 const auto follower =
-                    Follower::follow(p, v.timeSeconds, agentState(v));
+                    Follower::follow(p, v.timeSeconds, agentState(v), game::navigation::ManeuverTrackingController::Policy {});
                 require(
                     follower.status != Follower::Status::InvalidInput,
                     "right-angle follower became invalid"
@@ -529,7 +529,7 @@ ScenarioMetrics runRightAngleScenario(double corridorHalfWidth)
                 v.timeSeconds += kDt;
 
                 const auto after =
-                    Follower::follow(p, v.timeSeconds, agentState(v));
+                    Follower::follow(p, v.timeSeconds, agentState(v), game::navigation::ManeuverTrackingController::Policy {});
                 if (after.status == Follower::Status::Complete)
                     return true;
             }

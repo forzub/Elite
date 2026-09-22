@@ -142,7 +142,12 @@ struct AcceptedManeuverProgram
 
     ManeuverFamily family = ManeuverFamily::Undefined;
 
+    // One maneuver may span multiple fixed-capacity storage pages.
+    // All pages share acceptedAtUniverseTimeSeconds. Each page keeps local
+    // sample times starting at zero and declares where it begins on the one
+    // monotonic maneuver clock.
     double acceptedAtUniverseTimeSeconds = 0.0;
+    double sequenceStartOffsetSeconds = 0.0;
     double validUntilUniverseTimeSeconds = 0.0;
 
     std::uint8_t sampleCount = 0;

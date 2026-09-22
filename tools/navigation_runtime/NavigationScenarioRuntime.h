@@ -10,6 +10,7 @@
 #include "src/world/navigation/control/PilotSkillExecutor.h"
 #include "src/world/navigation/TrajectoryGenerator.h"
 #include "src/world/navigation/NavigationObstacle.h"
+#include "src/world/WorldParams.h"
 
 class ShipDescriptor;
 
@@ -239,6 +240,16 @@ struct ScenarioDynamicObstacleDefinition
     glm::dvec3 spawnRelativeFruMeters {0.0};
 };
 
+struct ScenarioFrameDefinition
+{
+    int systemId = 1;
+    std::string frameId = "navigation-runtime-stage2";
+    glm::dvec3 originMeters {0.0};
+    glm::dmat3 localToWorldBasis {1.0};
+    double startUniverseTimeSeconds = 0.0;
+    double universeTimeScale = 1.0;
+};
+
 // Immutable parsed scenario snapshot. File I/O ends at loadScenarioDefinition;
 // all planning/execution functions consume this value and never reopen the
 // source file across the Stage-1/Stage-2 boundary.
@@ -247,6 +258,11 @@ struct ScenarioDefinition
     std::uint64_t goalRevision = 1;
     std::uint64_t staticWorldRevision = 1;
     std::uint64_t dynamicWorldRevision = 1;
+
+    // Physical environment and reference-frame facts are scenario inputs.
+    // Execution must not manufacture these behind its API boundary.
+    WorldParams worldPhysics {};
+    ScenarioFrameDefinition frame {};
 
     glm::dvec3 startPosition {0.0};
     glm::dvec3 startVelocity {6.0, 0.0, 0.0};

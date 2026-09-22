@@ -155,8 +155,8 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
     printDiagnostics("[E2E-HIGH-SPEED] ", executed);
 
     require(
-        hasDiagnostic(executed, "REFERENCE CLOCK HOLD: "),
-        "high-speed execution lost reference-reacquisition diagnostics"
+        hasDiagnostic(executed, "REFERENCE CLOCK: MONOTONIC"),
+        "high-speed execution lost monotonic reference-clock diagnostics"
     );
     require(
         executed.success,
@@ -207,7 +207,7 @@ void testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()
 
     require(
         hasDiagnostic(executed, "REFERENCE CLOCK HOLD: "),
-        "Assisted execution lost reference-hold diagnostics"
+        "Assisted execution lost monotonic reference-clock diagnostics"
     );
 
     double maximumPhysicalSpeed = 0.0;
@@ -518,7 +518,7 @@ int main()
             << " - STANDARD/EXTREME change clearance, not nominal speed\n"
             << " - one Stage-1 route is retained unchanged during Stage-2\n"
             << " - Ruckig parameterizes that retained route\n"
-            << " - high-speed follower can hold reference progress and reacquire\n"
+            << " - high-speed execution uses one monotonic maneuver clock\n"
             << " - Assisted 10->10 cannot turn reference hold into a speed runaway\n"
             << " - Assisted 20.9->20 uses aft-only main thrust and physical hull coupling\n"
             << " - Newtonian 21.2->21.2 acquires main-engine thrust instead of flying on RCS alone\n"

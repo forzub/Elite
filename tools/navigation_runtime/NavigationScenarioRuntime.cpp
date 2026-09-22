@@ -693,14 +693,15 @@ double characteristicTurnTimeSeconds(
     const double representativeTurnRad =
         std::max(0.0, policy.representativeTurnAngleRad);
 
-    const double alpha = std::max(
-        0.1,
-        game::ship::angularAccelerationLimitRadPerSec2(params)
-    );
-    const double omega = std::max(
-        0.1,
-        game::ship::maximumAngularSpeedRadPerSec(params)
-    );
+    const double alpha =
+        game::ship::angularAccelerationLimitRadPerSec2(params);
+    const double omega =
+        game::ship::maximumAngularSpeedRadPerSec(params);
+
+    if (representativeTurnRad <= 0.0)
+        return 0.0;
+    if (alpha <= 0.0 || omega <= 0.0)
+        return std::numeric_limits<double>::infinity();
 
     const double accelDecelAngle = omega * omega / alpha;
     if (representativeTurnRad <= accelDecelAngle)
@@ -1292,7 +1293,6 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
     // trajectory request may raise only its numeric solver ceiling so an
     // already-authored overspeed state can be represented and braked.
     profile.maxSpeedMps = std::max({
-        0.1,
         profile.maxSpeedMps,
         effectiveStartSpeedMps(scenario, settings),
         effectiveFinishSpeedMps(scenario, settings)
@@ -1301,14 +1301,10 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
     // Scalar path-progress timing cannot claim flip-and-burn as instantaneous
     // reverse authority. The common adapter therefore exposes only installed
     // reverse-main + omnidirectional RCS authority here.
-    profile.maxForwardAccelerationMps2 =
-        std::max(0.1, profile.maxForwardAccelerationMps2);
-    profile.maxBrakingAccelerationMps2 =
-        std::max(0.1, profile.maxBrakingAccelerationMps2);
-    profile.maxLateralAccelerationMps2 =
-        std::max(0.1, profile.maxLateralAccelerationMps2);
-    profile.maxAngularAccelerationRadPerSecond2 =
-        std::max(0.1, profile.maxAngularAccelerationRadPerSecond2);
+    // Preserve physical zeroes. Numerical solver floors belong to the
+    // explicit TrajectoryGenerationPolicy and must never mutate the vehicle
+    // capability projection.
+
     return profile;
 }
 
@@ -1496,10 +1492,7 @@ Program makeProgramPhase(
     // the Assisted viewer run to request ~rad/s hull motion while the visible
     // reference heading was moving only a few degrees per second.
     const double maximumSparseAngularSpeed =
-        std::max(
-            0.1,
-            game::ship::maximumAngularSpeedRadPerSec(params)
-        );
+        game::ship::maximumAngularSpeedRadPerSec(params);
 
     for (std::size_t i = 0; i < count; ++i)
     {
@@ -1567,10 +1560,9 @@ Program makeProgramPhase(
     program.terminalTolerance.angularVelocityRadPerSec =
         policy.programTerminalAngularVelocityToleranceRadPerSec;
 
-    // Execution progress is allowed to run only while the physical craft is
-    // plausibly tracking the accepted reference. These are not "fail and turn
-    // navigation off" limits: leaving the envelope now freezes reference
-    // progress so the follower can reacquire before phase handoff.
+    // Tracking limits are part of the accepted-program proof envelope.
+    // Exceeding them does not mutate/freeze the program clock; orchestration
+    // may invalidate the program after the explicit tracking-loss timeout.
     program.tracking.positionErrorMeters =
         policy.trackingPositionErrorMeters;
     program.tracking.linearVelocityErrorMps =
@@ -2108,11 +2100,8 @@ TraceFrame executionTraceFrame(
         );
 
     const double mainAuthority =
-        std::max(
-            0.1,
-            game::ship::forwardMainAccelerationLimitMps2(
-                vehicle.params
-            )
+        game::ship::forwardMainAccelerationLimitMps2(
+            vehicle.params
         );
     const glm::dvec3 physicalForward =
         normalizedOr(
@@ -2125,11 +2114,13 @@ TraceFrame executionTraceFrame(
             physicalForward
         );
     frame.mainEngineThrottle01 =
-        std::clamp(
-            aftMainAcceleration / mainAuthority,
-            0.0,
-            1.0
-        );
+        mainAuthority > 0.0
+            ? std::clamp(
+                aftMainAcceleration / mainAuthority,
+                0.0,
+                1.0
+              )
+            : 0.0;
 
     frame.phase = "route_execution";
     frame.plannerStatus = status;
@@ -2846,7 +2837,7 @@ ScenarioRunResult executeCalculatedRoute(
                 trajectoryResult.trajectory.samples[i];
             const double speed =
                 glm::length(sample.velocityMps);
-            if (speed <= 0.25)
+            if (speed <= settings.navigation.lowSpeedDirectionThresholdMps)
                 continue;
 
             const glm::dvec3 velocityDirection =
@@ -3233,7 +3224,8 @@ ScenarioRunResult executeCalculatedRoute(
             const glm::dvec3 currentVelocity =
                 vehicle.transform.motion.localVelocityMps;
             const double currentSpeed = glm::length(currentVelocity);
-            if (currentSpeed > 0.25)
+            if (currentSpeed >
+                settings.navigation.lowSpeedDirectionThresholdMps)
             {
                 const glm::dvec3 velocityDirection =
                     currentVelocity / currentSpeed;

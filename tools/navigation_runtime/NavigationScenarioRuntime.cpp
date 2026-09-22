@@ -1319,12 +1319,8 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
     const ScenarioVehicleParameters& vehicle
 )
 {
-    const double collisionRadius = std::max({
-        0.0,
-        vehicle.bodyHalfExtentsMeters.x,
-        vehicle.bodyHalfExtentsMeters.y,
-        vehicle.bodyHalfExtentsMeters.z
-    });
+    const double collisionRadius =
+        game::navigation::conservativeCollisionRadiusMeters(vehicle);
 
     auto profile =
         game::navigation::makeNavigationVehicleProfile(
@@ -2520,12 +2516,7 @@ ScenarioRunResult calculateScenario(
             scenario.shipRoutePoints;
         request.staticObstacles = scenario.staticObstacles;
         request.navigationEnvelopeRadiusMeters =
-            std::max({
-                0.0,
-                vehicle.bodyHalfExtentsMeters.x,
-                vehicle.bodyHalfExtentsMeters.y,
-                vehicle.bodyHalfExtentsMeters.z
-            });
+            game::navigation::conservativeCollisionRadiusMeters(vehicle);
 
         const double planningClearanceMeters =
             routePlanningClearanceMeters(
@@ -3210,12 +3201,8 @@ ScenarioRunResult executeCalculatedRoute(
                         previousPosition,
                         currentPosition,
                         scenario.staticObstacles,
-                        std::max({
-                            0.0,
-                            vehicleInput.bodyHalfExtentsMeters.x,
-                            vehicleInput.bodyHalfExtentsMeters.y,
-                            vehicleInput.bodyHalfExtentsMeters.z
-                        }),
+                        game::navigation::
+                            conservativeCollisionRadiusMeters(vehicleInput),
                         std::max(
                             0.0,
                             scenario.routeClearanceMeters

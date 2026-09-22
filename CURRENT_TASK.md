@@ -1,157 +1,147 @@
-# CURRENT TASK — Architecture cleanup gate before further navigation tuning
+# CURRENT TASK — Target-validate normalized APIs, then move physical maneuver proof ahead of Ruckig timing
 
 Date: 2026-09-22
 
-Status: **AUDIT COMPLETE / IMPLEMENT CONTINUOUS PROGRAM SEMANTICS NEXT**
+Status: **API/SSOT/CLOCK CLEANUP IMPLEMENTED / TARGET VALIDATION REQUIRED**
 
-Baseline entering audit:
-
-```text
-5117857c8f31992c97f393e7f2ed16a630e8efc3
-```
-
-## Fresh target result
-
-Dense-source preservation is confirmed:
+Code baseline before documentation commits:
 
 ```text
-10 m/s:
-    1333 trajectory samples
-    1332/1332 actuator coverage COMPLETE
-    90 Program objects
-    0 handoffs
-    reference hold 56.62 s
-    final speed 0
-
-27.8 -> 26:
-    613 trajectory samples
-    612/612 actuator coverage COMPLETE
-    42 Program objects
-    0 handoffs
-    reference hold 42.22 s
+8b7134078fe1e7672e04085254c9f84c29ed1519
 ```
 
-Therefore source sampling is no longer the primary failure.
+## Completed architecture cleanup
 
-## Immediate root cause
+### Vehicle data
 
-The accepted attitude stream is not angular-acceleration feasible.
-
-At the start of the 27.8 m/s run the reference forward changes ~1.4323 degrees
-in 0.00833 s, i.e. ~3 rad/s immediately from omega=0.
-
-Current authoring clamps only:
+Runtime accepts one generic explicit input:
 
 ```text
-delta orientation <= maxAngularRate * dt
+VehicleDynamicsProfile
+    physics: ShipParams
+    bodyHalfExtentsMeters
+    capabilityRevision
 ```
 
-It does not enforce `angularAccel`.
+Concrete Cobra selection exists only at the viewer/E2E application boundary.
+Navigation runtime itself contains no `cobraParams()`.
 
-Follower immediately exceeds its 0.8 rad/s angular-rate-error envelope.
+Vehicle capability and world-map revision are separate domains.
 
-Runtime then freezes program time whenever tracking is outside the envelope:
+### Common derived limits
+
+All navigation/physics code must derive vehicle limits through common helpers:
 
 ```text
-activeProgramReferenceDelaySeconds += dt
-programReferenceTime = wallTime - delay
+ShipDynamics.h
+NavigationVehicleProfileAdapters.h
+ManeuverCapabilityAdapters.h
 ```
 
-The phase gate receives the same frozen time, so Program 0 never ends.
-Recovery then homes toward a stale early reference, explaining the stop and
-return behavior.
+Do not reintroduce raw local interpretations of:
+- maxLinearGs;
+- manoeuvreThrusterAccel;
+- pitch/yaw/roll limits;
+- reverse-main capability;
+- vehicle collision size.
 
-## Architecture correction required
+### Explicit calculation policy
 
-### 1. One continuous ManeuverProgram clock
+`ScenarioNavigationPolicy` owns the stand's calculation policy and crosses the
+API explicitly through `ScenarioRunSettings`.
 
-Fixed-capacity <=16-sample chunks are storage pages, not maneuver phases.
+No hidden runtime timestep or tracking-loss timeout remains.
 
-Page transitions must not:
-- reset acceptedAt time;
-- invoke capture semantics;
-- reset reference timing;
-- become a replanning event.
+### Clock
 
-### 2. No indefinite stale-reference homing
+One authored maneuver has one monotonic clock.
 
-For FreeTransit, material tracking loss means the accepted maneuver is no
-longer proved from the current state.
+Fixed-capacity AcceptedManeuverProgram objects are storage pages:
+- shared acceptedAt time;
+- explicit sequenceStartOffsetSeconds;
+- page advance is indexing only;
+- no phase capture at page boundaries.
 
-Allowed:
-- short bounded safety/recovery action;
-- invalidate accepted program;
-- replan from measured P/V/q/omega.
+### Tracking loss
 
-Forbidden:
-- freeze one moving reference forever and drive back to it.
+No infinite reference freeze.
 
-### 3. Angular reachability
+If FreeTransit is outside its proved tracking envelope longer than the explicit
+policy timeout, the program becomes invalid:
+`PROGRAM_INVALIDATED_TRACKING_LOSS`.
 
-Planner attitude construction must integrate:
-- current angular velocity;
-- angular acceleration limit;
-- angular speed limit;
-- required final attitude/rate.
+Production ownership after invalidation is:
+Autopilot safety response -> Planner re-author from current measured state.
 
-No sample may require an instantaneous omega jump.
+### Attitude
 
-### 4. One vehicle-dynamics source of truth
+Reference attitude is now angular-acceleration reachable. It no longer jumps from
+zero omega directly to max angular rate.
 
-Create one profile derived from authoritative ship descriptor.
+## Target gate now
 
-Remove/reconcile:
-- runtime hard-coded `cobraParams()`;
-- fake symmetric braking/reverse scalar capability;
-- stale `CapabilitySnapshot.maxReverse...` for aft-only Cobra;
-- manual Assisted virtual fore-main semantics;
-- navigation path ignoring throttle slew.
-
-## What is trusted right now
-
-Trusted only within stated scope:
-- static geometry/collision queries;
-- Stage-1 coarse route topology for the current fixture;
-- scalar Ruckig numerical solve for the constraints it is given;
-- Newtonian low-level aft-main + bounded-RCS physical allocator;
-- deterministic sampling/frame conversion.
-
-Not accepted as physical maneuver truth:
-- current Stage-2 execution guide;
-- current attitude author;
-- current program phase/page orchestration;
-- current reacquisition freeze;
-- current vehicle capability snapshots.
-
-## Implementation order
-
-1. Introduce continuous program/global time semantics across storage pages.
-2. Replace page-gated execution with transparent page indexing.
-3. Replace indefinite reference hold with bounded invalidation/replan semantics.
-4. Make attitude author angular-acceleration feasible.
-5. Introduce authoritative VehicleDynamicsProfile and eliminate duplicates.
-6. Rebuild physical maneuver compiler around that profile.
-7. Then wire Planner ActuatorSegments directly into Autopilot.
-
-## Target gate
-
-Build:
+Run:
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
+git rev-parse HEAD
+
 bash tests/navigation_runtime/run_stage1_mingw64.sh
-```
 
-Then run the E2E that Stage-1 script does NOT run:
-
-```bash
 ctest --test-dir build/tools/navigation_runtime \
       -R "^navigation_runtime_pipeline$" \
       --output-on-failure
 ```
 
-Current code is expected to fail this E2E. Do not treat a viewer build PASS as
-navigation acceptance.
+Then run viewer:
 
-Dynamic avoidance remains disabled.
+```bash
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe \
+    tools/navigation_runtime/scenario.json
+```
+
+First target cases:
+1. NEWTONIAN / EXPERT / STANDARD 10 -> 10 m/s
+2. same 27.8 -> 26 m/s
+
+Expected diagnostics:
+- PROGRAM STORAGE PAGES, not PROGRAM PHASES;
+- STORAGE PAGE ADVANCES > 0 for long trajectories;
+- REFERENCE CLOCK: MONOTONIC;
+- no REFERENCE CLOCK HOLD lines;
+- no return-to-stale-point behavior;
+- if tracking becomes materially unreachable, explicit
+  PROGRAM_INVALIDATED_TRACKING_LOSS.
+
+## Next architecture step after compile/E2E gate
+
+The remaining major RED area is physical maneuver authoring.
+
+Current order is still approximately:
+
+```text
+coarse route
+ -> geometric execution guide
+ -> scalar Ruckig timing
+ -> attitude / propulsion compilation
+```
+
+Target order:
+
+```text
+coarse route
+ -> physical maneuver compiler
+    geometry / tangents
+    hull attitude reachability
+    installed main + RCS allocation
+    throttle slew
+    braking / lead-rotation boundary
+    proof against VehicleDynamicsProfile
+ -> Ruckig as subordinate timing/state-transition helper
+ -> Accepted ManeuverProgram
+ -> Autopilot executes explicit ActuatorSegments
+```
+
+Do not tune follower gains or tracking envelopes before the target gate.
+Do not enable dynamic avoidance yet.

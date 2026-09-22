@@ -8,11 +8,21 @@
 #include <glm/glm.hpp>
 
 #include "tools/navigation_runtime/NavigationScenarioRuntime.h"
+#include "src/game/ship/descriptors/EliteCobraMk1.h"
 
 namespace
 {
 
 using namespace elite::tools::navigation_runtime;
+
+const ScenarioVehicleParameters& fixtureVehicle()
+{
+    static const ScenarioVehicleParameters vehicle =
+        makeScenarioVehicleParameters(
+            EliteCobraMk1::EliteCobraMk1Descriptor()
+        );
+    return vehicle;
+}
 
 void require(bool condition, const std::string& message)
 {
@@ -80,9 +90,9 @@ void testSpeedAndStyleChangeStaticManeuverReserve()
     ScenarioRunSettings highExtreme = highStandard;
     highExtreme.flightStyle = FlightStyle::Extreme;
 
-    const auto low = calculateScenario(scenario, lowStandard);
-    const auto fast = calculateScenario(scenario, highStandard);
-    const auto extreme = calculateScenario(scenario, highExtreme);
+    const auto low = calculateScenario(scenario, lowStandard, fixtureVehicle());
+    const auto fast = calculateScenario(scenario, highStandard, fixtureVehicle());
+    const auto extreme = calculateScenario(scenario, highExtreme, fixtureVehicle());
 
     require(low.success && fast.success && extreme.success,
             "speed/style route-reserve fixture failed to plan");
@@ -133,18 +143,14 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
     settings.finishSpeedOverrideMps = 11.75;
 
     const auto planned =
-        calculateScenario(scenario, settings);
+        calculateScenario(scenario, settings, fixtureVehicle());
     require(
         planned.success,
         "high-speed reacquisition fixture failed Stage-1 planning"
     );
 
     const auto executed =
-        executeCalculatedRoute(
-            scenario,
-            settings,
-            planned.trace
-        );
+        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-HIGH-SPEED] ", executed);
 
@@ -188,18 +194,14 @@ void testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()
     settings.finishSpeedOverrideMps = 10.0;
 
     const auto planned =
-        calculateScenario(scenario, settings);
+        calculateScenario(scenario, settings, fixtureVehicle());
     require(
         planned.success,
         "Assisted 10->10 regression fixture failed Stage-1 planning"
     );
 
     const auto executed =
-        executeCalculatedRoute(
-            scenario,
-            settings,
-            planned.trace
-        );
+        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-ASSISTED-10] ", executed);
 
@@ -265,14 +267,14 @@ void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
     settings.startSpeedOverrideMps = 20.90;
     settings.finishSpeedOverrideMps = 20.00;
 
-    const auto planned = calculateScenario(scenario, settings);
+    const auto planned = calculateScenario(scenario, settings, fixtureVehicle());
     require(
         planned.success,
         "Assisted 20.9->20 physical-braking fixture failed Stage-1 planning"
     );
 
     const auto executed =
-        executeCalculatedRoute(scenario, settings, planned.trace);
+        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-ASSISTED-20] ", executed);
 
@@ -348,14 +350,14 @@ void testNewtonianHigherSpeedUsesMainEngineDominantManeuver()
     settings.startSpeedOverrideMps = 21.20;
     settings.finishSpeedOverrideMps = 21.20;
 
-    const auto planned = calculateScenario(scenario, settings);
+    const auto planned = calculateScenario(scenario, settings, fixtureVehicle());
     require(
         planned.success,
         "Newtonian 21.2->21.2 main-engine fixture failed Stage-1 planning"
     );
 
     const auto executed =
-        executeCalculatedRoute(scenario, settings, planned.trace);
+        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-NEWTONIAN-21] ", executed);
 
@@ -420,7 +422,7 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
     settings.enableSuddenObstacle = false;
 
     const auto planned =
-        calculateScenario(scenario, settings);
+        calculateScenario(scenario, settings, fixtureVehicle());
 
     printDiagnostics("[E2E-STAGE1] ", planned);
 
@@ -433,11 +435,7 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
     const auto retainedRoute = planned.trace.routePoints;
 
     const auto executed =
-        executeCalculatedRoute(
-            scenario,
-            settings,
-            planned.trace
-        );
+        executeCalculatedRoute(scenario, settings, planned.trace, fixtureVehicle());
 
     printDiagnostics("[E2E-STAGE2] ", executed);
 

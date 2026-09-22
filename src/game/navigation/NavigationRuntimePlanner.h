@@ -149,6 +149,10 @@ public:
         double staticHoldUrgency01 = 0.50;
         double staleHoldUrgency01 = 0.75;
         double conflictHoldUrgency01 = 1.00;
+
+        // Hold intent becomes emergency only at/above this explicit doctrine
+        // threshold. The helper must not invent a private urgency cutoff.
+        double holdEmergencyUrgencyThreshold01 = 0.75;
     };
 
     enum class Status : std::uint8_t

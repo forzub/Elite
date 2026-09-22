@@ -2083,6 +2083,19 @@ TraceFrame executionTraceFrame(
             sampled.reference.upMap;
         frame.programTrackingCorridorRadiusMeters =
             program.tracking.positionErrorMeters;
+
+        frame.hasPlannedActuatorCommand =
+            sampled.hasActuatorCommand;
+        frame.plannedActuatorSegmentIndex =
+            sampled.actuatorSegmentIndex;
+        frame.plannedRearMainThrottle01 =
+            sampled.rearMainThrottle01;
+        frame.plannedForeMainThrottle01 =
+            sampled.foreMainThrottle01;
+        frame.plannedManoeuvreAccelerationMps2 =
+            sampled.manoeuvreAccelerationMapMps2;
+        frame.plannedPropulsionFeasible =
+            sampled.propulsionFeasible;
     }
 
     return frame;

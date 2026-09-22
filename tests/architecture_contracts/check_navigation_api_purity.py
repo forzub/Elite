@@ -420,6 +420,27 @@ for forbidden in (
     require(forbidden not in e2e,
             f"E2E still names retired frozen-reference semantics: {forbidden}")
 
+# 'terminal' is an explicit helper parameter only inside the attitude author
+# and trajectory-request adapter. It must not leak as an undeclared alias into
+# parser/diagnostic/orchestration functions.
+attitude_helper = function_slice(
+    runtime_cpp,
+    "std::vector<ReferenceAttitude> buildReferenceAttitudes(",
+    "world::navigation::NavigationVehicleProfile executionVehicleProfile("
+)
+trajectory_helper = function_slice(
+    runtime_cpp,
+    "world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(",
+    "Program makeProgramPhase("
+)
+runtime_without_terminal_helpers = runtime_cpp.replace(attitude_helper, "").replace(
+    trajectory_helper, ""
+)
+require(
+    "terminal." not in runtime_without_terminal_helpers,
+    "undeclared/cross-boundary terminal alias leaked outside explicit helper APIs",
+)
+
 # ---------- Retained-route provenance ----------
 for token in (
     "retainedRoute.goalRevision == scenario.goalRevision",

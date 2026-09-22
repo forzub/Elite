@@ -32,6 +32,14 @@ public:
         std::size_t lowerSampleIndex = 0;
         std::size_t upperSampleIndex = 0;
         double interpolation01 = 0.0;
+
+        // Planner-owned physical command for the active interval.
+        bool hasActuatorCommand = false;
+        std::size_t actuatorSegmentIndex = 0;
+        double rearMainThrottle01 = 0.0;
+        double foreMainThrottle01 = 0.0;
+        glm::dvec3 manoeuvreAccelerationMapMps2 {0.0};
+        bool propulsionFeasible = true;
     };
 
     [[nodiscard]] static Result sample(

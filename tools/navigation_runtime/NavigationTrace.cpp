@@ -139,6 +139,22 @@ void saveTraceJson(
                 vec3Json(f.programPhaseTargetPosition);
         }
 
+        frame["has_planned_actuator_command"] =
+            f.hasPlannedActuatorCommand;
+        if (f.hasPlannedActuatorCommand)
+        {
+            frame["planned_actuator_segment_index"] =
+                f.plannedActuatorSegmentIndex;
+            frame["planned_rear_main_throttle_01"] =
+                f.plannedRearMainThrottle01;
+            frame["planned_fore_main_throttle_01"] =
+                f.plannedForeMainThrottle01;
+            frame["planned_manoeuvre_acceleration_mps2"] =
+                vec3Json(f.plannedManoeuvreAccelerationMps2);
+            frame["planned_propulsion_feasible"] =
+                f.plannedPropulsionFeasible;
+        }
+
         frame["hazard_active"] = f.hazardActive;
         frame["hazard_position"] = vec3Json(f.hazardPosition);
         frame["hazard_velocity"] = vec3Json(f.hazardVelocity);
@@ -338,6 +354,41 @@ TraceDocument loadTraceJson(const std::string& path)
         {
             f.programPhaseTargetPosition =
                 readVec3(source.at("program_phase_target_position"));
+        }
+
+        f.hasPlannedActuatorCommand =
+            source.value("has_planned_actuator_command", false);
+        if (f.hasPlannedActuatorCommand)
+        {
+            f.plannedActuatorSegmentIndex =
+                source.value(
+                    "planned_actuator_segment_index",
+                    static_cast<std::size_t>(0)
+                );
+            f.plannedRearMainThrottle01 =
+                source.value(
+                    "planned_rear_main_throttle_01",
+                    0.0
+                );
+            f.plannedForeMainThrottle01 =
+                source.value(
+                    "planned_fore_main_throttle_01",
+                    0.0
+                );
+            if (source.contains("planned_manoeuvre_acceleration_mps2"))
+            {
+                f.plannedManoeuvreAccelerationMps2 =
+                    readVec3(
+                        source.at(
+                            "planned_manoeuvre_acceleration_mps2"
+                        )
+                    );
+            }
+            f.plannedPropulsionFeasible =
+                source.value(
+                    "planned_propulsion_feasible",
+                    true
+                );
         }
 
         f.hazardActive = source.value("hazard_active", false);

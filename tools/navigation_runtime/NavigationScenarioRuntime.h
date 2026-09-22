@@ -2,6 +2,12 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
+#include <glm/glm.hpp>
+
+#include "src/game/ship/core/ShipParams.h"
+
+class ShipDescriptor;
 
 #include "NavigationTrace.h"
 
@@ -42,6 +48,20 @@ struct ScenarioRunSettings
     double finishSpeedOverrideMps = -1.0;
 };
 
+struct ScenarioVehicleParameters
+{
+    // One explicit immutable vehicle input crosses the scenario-runtime
+    // boundary. Navigation runtime does not own or reconstruct ship data.
+    ShipParams physics {};
+    glm::dvec3 bodyHalfExtentsMeters {0.5};
+    std::uint64_t capabilityRevision = 1;
+};
+
+[[nodiscard]] ScenarioVehicleParameters makeScenarioVehicleParameters(
+    const ShipDescriptor& descriptor,
+    std::uint64_t capabilityRevision = 1
+);
+
 struct ScenarioRunResult
 {
     bool success = false;
@@ -57,18 +77,21 @@ struct ScenarioRunResult
 
 // Load only the authored input scene for pre-calculation visualization.
 [[nodiscard]] ScenarioRunResult loadScenarioPreview(
-    const std::string& scenarioJsonPath
+    const std::string& scenarioJsonPath,
+    const ScenarioVehicleParameters& vehicle
 );
 
 [[nodiscard]] ScenarioRunResult calculateScenario(
     const std::string& scenarioJsonPath,
-    const ScenarioRunSettings& settings
+    const ScenarioRunSettings& settings,
+    const ScenarioVehicleParameters& vehicle
 );
 
 [[nodiscard]] ScenarioRunResult executeCalculatedRoute(
     const std::string& scenarioJsonPath,
     const ScenarioRunSettings& settings,
-    const TraceDocument& calculatedRoute
+    const TraceDocument& calculatedRoute,
+    const ScenarioVehicleParameters& vehicle
 );
 
 } // namespace elite::tools::navigation_runtime

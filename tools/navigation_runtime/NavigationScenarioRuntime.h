@@ -9,6 +9,7 @@
 #include "src/game/navigation/VehicleDynamicsProfile.h"
 #include "src/world/navigation/control/PilotSkillExecutor.h"
 #include "src/world/navigation/TrajectoryGenerator.h"
+#include "src/world/navigation/NavigationObstacle.h"
 
 class ShipDescriptor;
 
@@ -202,6 +203,75 @@ struct ScenarioRunSettings
     double finishSpeedOverrideMps = -1.0;
 };
 
+struct ScenarioBasis
+{
+    glm::dvec3 forward {1.0, 0.0, 0.0};
+    glm::dvec3 right {0.0, 0.0, 1.0};
+    glm::dvec3 up {0.0, 1.0, 0.0};
+};
+
+struct ScenarioEndpoint
+{
+    glm::dvec3 position {300.0, 0.0, 0.0};
+    bool requireForward = false;
+    bool requireUp = false;
+    glm::dvec3 forward {1.0, 0.0, 0.0};
+    glm::dvec3 up {0.0, 1.0, 0.0};
+    double speedMps = 0.0;
+};
+
+struct ScenarioMotionPath
+{
+    std::vector<glm::dvec3> points;
+    double speedMps = 0.0;
+    bool loop = false;
+};
+
+struct ScenarioDynamicObstacleDefinition
+{
+    std::uint64_t entityId = 0;
+    std::string id;
+    glm::dvec3 initialPosition {0.0};
+    glm::dvec3 linearVelocity {0.0};
+    ScenarioMotionPath path {};
+    double activationTimeSeconds = 0.0;
+    double radiusMeters = 5.0;
+    bool spawnRelativeToShip = false;
+    glm::dvec3 spawnRelativeFruMeters {0.0};
+};
+
+// Immutable parsed scenario snapshot. File I/O ends at loadScenarioDefinition;
+// all planning/execution functions consume this value and never reopen the
+// source file across the Stage-1/Stage-2 boundary.
+struct ScenarioDefinition
+{
+    std::uint64_t goalRevision = 1;
+    std::uint64_t staticWorldRevision = 1;
+    std::uint64_t dynamicWorldRevision = 1;
+
+    glm::dvec3 startPosition {0.0};
+    glm::dvec3 startVelocity {6.0, 0.0, 0.0};
+    glm::dvec3 startAcceleration {0.0};
+    double startPitchRateRadPerSec = 0.0;
+    double startYawRateRadPerSec = 0.0;
+    double startRollRateRadPerSec = 0.0;
+    ScenarioBasis startBasis {};
+
+    std::vector<glm::dvec3> shipRoutePoints;
+    ScenarioEndpoint finish {};
+
+    std::vector<world::navigation::NavigationObstacle> staticObstacles;
+    std::vector<ScenarioDynamicObstacleDefinition> dynamicObstacles;
+    ScenarioDynamicObstacleDefinition suddenObstacle {};
+    bool hasSuddenObstacle = false;
+
+    double routeClearanceMeters = 0.0;
+};
+
+[[nodiscard]] ScenarioDefinition loadScenarioDefinition(
+    const std::string& scenarioJsonPath
+);
+
 using ScenarioVehicleParameters =
     game::navigation::VehicleDynamicsProfile;
 
@@ -225,18 +295,18 @@ struct ScenarioRunResult
 
 // Load only the authored input scene for pre-calculation visualization.
 [[nodiscard]] ScenarioRunResult loadScenarioPreview(
-    const std::string& scenarioJsonPath,
+    const ScenarioDefinition& scenario,
     const ScenarioVehicleParameters& vehicle
 );
 
 [[nodiscard]] ScenarioRunResult calculateScenario(
-    const std::string& scenarioJsonPath,
+    const ScenarioDefinition& scenario,
     const ScenarioRunSettings& settings,
     const ScenarioVehicleParameters& vehicle
 );
 
 [[nodiscard]] ScenarioRunResult executeCalculatedRoute(
-    const std::string& scenarioJsonPath,
+    const ScenarioDefinition& scenario,
     const ScenarioRunSettings& settings,
     const TraceDocument& calculatedRoute,
     const ScenarioVehicleParameters& vehicle

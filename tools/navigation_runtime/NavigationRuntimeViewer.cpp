@@ -1,5 +1,6 @@
 #include "NavigationTrace.h"
 #include "NavigationScenarioRuntime.h"
+#include "src/game/ship/descriptors/EliteCobraMk1.h"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -134,6 +135,10 @@ struct AppState
         elite::tools::navigation_runtime::PilotLevel::Expert;
     elite::tools::navigation_runtime::FlightStyle flightStyle =
         elite::tools::navigation_runtime::FlightStyle::Standard;
+
+    // Vehicle data is explicit runtime input. Viewer happens to instantiate a
+    // Cobra fixture, but NavigationScenarioRuntime itself is vehicle-agnostic.
+    elite::tools::navigation_runtime::ScenarioVehicleParameters vehicle;
 
     // Runtime observation is separate from requested settings. A stale trace
     // must never overwrite a user's newly selected ASSISTED/NEWTONIAN button.
@@ -3520,7 +3525,8 @@ void processUiAction(
                 const auto routeResult =
                     elite::tools::navigation_runtime::calculateScenario(
                         state.scenarioPath,
-                        settings
+                        settings,
+                        state.vehicle
                     );
 
                 data = routeResult.trace;
@@ -3587,7 +3593,8 @@ void processUiAction(
                     elite::tools::navigation_runtime::executeCalculatedRoute(
                         state.scenarioPath,
                         settings,
-                        state.retainedRoute
+                        state.retainedRoute,
+                        state.vehicle
                     );
 
                 data = executionResult.trace;
@@ -3723,9 +3730,15 @@ int main(int argc, char** argv)
         const std::string scenarioPath =
             argc >= 2 ? argv[1] : defaultScenarioPath();
 
+        const auto vehicle =
+            elite::tools::navigation_runtime::makeScenarioVehicleParameters(
+                EliteCobraMk1::EliteCobraMk1Descriptor()
+            );
+
         const auto preview =
             elite::tools::navigation_runtime::loadScenarioPreview(
-                scenarioPath
+                scenarioPath,
+                vehicle
             );
         if (!preview.success)
         {
@@ -3785,6 +3798,7 @@ int main(int argc, char** argv)
         AppState state;
         state.traceData = &data;
         state.scenarioPath = scenarioPath;
+        state.vehicle = vehicle;
         state.calculationPerformed = false;
         state.calculationSucceeded = false;
         state.routeInputsDirty = true;

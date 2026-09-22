@@ -13,7 +13,6 @@ using Candidate = OrdinaryPhysicalManeuverCandidate;
 
 constexpr double kEpsilon = 1.0e-9;
 constexpr double kAngleEpsilon = 1.0e-6;
-constexpr double kMinimumPrimitiveSeconds = 0.05;
 
 bool finite(double v) noexcept
 {
@@ -127,7 +126,18 @@ bool validQuery(
 ) noexcept
 {
     const auto& c = q.capability;
+    const auto& p = q.policy;
     return
+        finite(p.minimumPrimitiveSeconds) &&
+        p.minimumPrimitiveSeconds > 0.0 &&
+        finite(p.directPrimitiveSeconds) &&
+        p.directPrimitiveSeconds > 0.0 &&
+        finite(p.burnRampMinimumSeconds) &&
+        p.burnRampMinimumSeconds >= 0.0 &&
+        finite(p.burnRampMaximumSeconds) &&
+        p.burnRampMaximumSeconds >= p.burnRampMinimumSeconds &&
+        finite(p.burnRampFractionOfRawBurn) &&
+        p.burnRampFractionOfRawBurn >= 0.0 &&
         finite(q.state.positionMapMeters) &&
         finite(q.state.velocityMapMetersPerSecond) &&
         finite(q.state.forwardMap) &&
@@ -145,7 +155,7 @@ bool validQuery(
         finite(q.controlResponseReserveSeconds) &&
         q.controlResponseReserveSeconds >= 0.0 &&
         finite(q.maximumProgramSeconds) &&
-        q.maximumProgramSeconds >= kMinimumPrimitiveSeconds &&
+        q.maximumProgramSeconds >= p.minimumPrimitiveSeconds &&
         finite(c.maxForwardAccelerationMps2) &&
         c.maxForwardAccelerationMps2 >= 0.0 &&
         finite(c.maxReverseAccelerationMps2) &&
@@ -291,7 +301,10 @@ bool compileDirect(
         velocityError * q.velocityResponsePerSecond;
 
     const double duration =
-        std::min(1.0, q.maximumProgramSeconds);
+        std::min(
+            q.policy.directPrimitiveSeconds,
+            q.maximumProgramSeconds
+        );
 
     if (duration <= kEpsilon)
         return false;
@@ -421,20 +434,25 @@ bool compileLeadRotateMainBurn(
     const double rawBurnSeconds =
         deltaSpeed / forwardAvailable;
     const double burnRampSeconds =
-        std::min(0.20, std::max(0.02, rawBurnSeconds * 0.25));
+        std::clamp(
+            rawBurnSeconds *
+                q.policy.burnRampFractionOfRawBurn,
+            q.policy.burnRampMinimumSeconds,
+            q.policy.burnRampMaximumSeconds
+        );
     double burnSeconds =
         rawBurnSeconds + 0.5 * burnRampSeconds;
 
     const double availableBurnWindow =
         q.maximumProgramSeconds - rotateSeconds;
-    if (availableBurnWindow <= kMinimumPrimitiveSeconds)
+    if (availableBurnWindow <= q.policy.minimumPrimitiveSeconds)
         return false;
 
     burnSeconds = std::min(burnSeconds, availableBurnWindow);
     const double totalSeconds = rotateSeconds + burnSeconds;
 
     if (!finite(totalSeconds) ||
-        totalSeconds < kMinimumPrimitiveSeconds)
+        totalSeconds < q.policy.minimumPrimitiveSeconds)
     {
         return false;
     }

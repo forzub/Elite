@@ -109,7 +109,7 @@ struct AppState
     // Last successful Stage-1 route. Pilot/control-law changes may reuse it,
     // while speed/style changes invalidate it because they change maneuver
     // clearance around static geometry.
-    trace::TraceDocument retainedRoute;
+    elite::tools::navigation_runtime::RetainedStaticRoute retainedRoute;
     std::vector<std::string> retainedRouteDiagnostics;
     std::string retainedRouteMessage;
     bool hasRetainedRoute = false;
@@ -3526,7 +3526,7 @@ void processUiAction(
 
             bool routeReady =
                 state.hasRetainedRoute &&
-                state.retainedRoute.routePoints.size() >= 2;
+                state.retainedRoute.pointsMapMeters.size() >= 2;
 
             if (state.routeInputsDirty || !routeReady)
             {
@@ -3554,7 +3554,7 @@ void processUiAction(
 
                 if (routeResult.success)
                 {
-                    state.retainedRoute = data;
+                    state.retainedRoute = routeResult.retainedRoute;
                     state.retainedRouteDiagnostics =
                         routeResult.diagnostics;
                     state.retainedRouteMessage =
@@ -3562,7 +3562,7 @@ void processUiAction(
                 }
                 else
                 {
-                    state.retainedRoute = trace::TraceDocument {};
+                    state.retainedRoute = elite::tools::navigation_runtime::RetainedStaticRoute {};
                     state.retainedRouteDiagnostics.clear();
                     state.retainedRouteMessage.clear();
                 }
@@ -3647,14 +3647,20 @@ void processUiAction(
             state.executionInputsDirty = false;
             state.calculationInProgress = false;
 
-            auto routeLengthMeters = [](const trace::TraceDocument& route)
+            auto routeLengthMeters = [](
+                const elite::tools::navigation_runtime::RetainedStaticRoute& route
+            )
             {
                 double total = 0.0;
-                for (std::size_t i = 1; i < route.routePoints.size(); ++i)
+                for (std::size_t i = 1;
+                     i < route.pointsMapMeters.size();
+                     ++i)
+                {
                     total += glm::length(
-                        route.routePoints[i] -
-                        route.routePoints[i - 1]
+                        route.pointsMapMeters[i] -
+                        route.pointsMapMeters[i - 1]
                     );
+                }
                 return total;
             };
 
@@ -3665,7 +3671,7 @@ void processUiAction(
             {
                 routeSummary
                     << "МАРШРУТ: "
-                    << state.retainedRoute.routePoints.size()
+                    << state.retainedRoute.pointsMapMeters.size()
                     << " ТОЧКИ, "
                     << routeLengthMeters(state.retainedRoute)
                     << " М";

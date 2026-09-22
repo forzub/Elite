@@ -145,7 +145,7 @@ void testSpeedAndStyleChangeStaticManeuverReserve()
     );
 }
 
-void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
+void testHighSpeedUsesMonotonicClockAndMustStillFinish()
 {
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
@@ -175,7 +175,7 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
     );
     require(
         executed.success,
-        "high-speed execution outran its physical ship instead of reacquiring"
+        "high-speed execution did not physically finish under the monotonic-clock contract"
     );
 
     const double finalError =
@@ -234,7 +234,7 @@ void testAssistedLowSpeedUsesMonotonicReferenceClock()
     );
     require(
         executed.success,
-        "Assisted 10->10 execution failed to reacquire and finish physically"
+        "Assisted 10->10 execution failed to finish physically under the monotonic-clock contract"
     );
 
     const auto& finalFrame = executed.trace.frames.back();
@@ -494,7 +494,7 @@ int main()
     try
     {
         testSpeedAndStyleChangeStaticManeuverReserve();
-        testHighSpeedRunReacquiresInsteadOfOutrunningReference();
+        testHighSpeedUsesMonotonicClockAndMustStillFinish();
         testAssistedLowSpeedUsesMonotonicReferenceClock();
         testAssistedHigherSpeedUsesHullCoupledPhysicalBraking();
         testNewtonianHigherSpeedUsesMainEngineDominantManeuver();

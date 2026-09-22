@@ -508,7 +508,7 @@ int main()
     {
         testSpeedAndStyleChangeStaticManeuverReserve();
         testHighSpeedRunReacquiresInsteadOfOutrunningReference();
-        testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold();
+        testAssistedLowSpeedUsesMonotonicReferenceClock();
         testAssistedHigherSpeedUsesHullCoupledPhysicalBraking();
         testNewtonianHigherSpeedUsesMainEngineDominantManeuver();
         testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics();

@@ -1473,7 +1473,9 @@ Program makeProgramPhase(
     std::size_t first,
     std::size_t last,
     std::uint64_t revision,
-    const Scenario& scenario,
+    std::uint64_t objectiveRevision,
+    std::uint64_t staticMapRevision,
+    double minimumClearanceMeters,
     const ScenarioVehicleParameters& vehicle,
     const ScenarioNavigationPolicy& policy
 )
@@ -1482,7 +1484,7 @@ Program makeProgramPhase(
     Program program;
     program.valid = true;
     program.revision = revision;
-    program.objectiveRevision = scenario.goalRevision;
+    program.objectiveRevision = objectiveRevision;
     program.family = Program::ManeuverFamily::FreeTransit;
 
     // Accepted time is assigned when the phase actually becomes active.
@@ -1804,10 +1806,10 @@ Program makeProgramPhase(
             segment.propulsionFeasible;
     }
 
-    program.proof.mapRevision = scenario.staticWorldRevision;
-    program.proof.mapSourceRevision = scenario.staticWorldRevision;
+    program.proof.mapRevision = staticMapRevision;
+    program.proof.mapSourceRevision = staticMapRevision;
     program.proof.minimumClearanceMeters =
-        std::max(0.0, scenario.routeClearanceMeters);
+        std::max(0.0, minimumClearanceMeters);
 
     program.completionTriggersReplan = false;
     return program;
@@ -1874,7 +1876,9 @@ std::vector<Program> buildRoutePrograms(
     const world::navigation::Trajectory& trajectory,
     const std::vector<ReferenceAttitude>& attitudes,
     const std::vector<glm::dvec3>& retainedRoute,
-    const Scenario& scenario,
+    std::uint64_t objectiveRevision,
+    std::uint64_t staticMapRevision,
+    double minimumClearanceMeters,
     const ScenarioVehicleParameters& vehicle,
     const ScenarioNavigationPolicy& policy
 )
@@ -1937,7 +1941,9 @@ std::vector<Program> buildRoutePrograms(
                     chunkFirst,
                     chunkLast,
                     revision++,
-                    scenario,
+                    objectiveRevision,
+                    staticMapRevision,
+                    minimumClearanceMeters,
                     vehicle,
                     policy
                 );
@@ -2963,7 +2969,9 @@ ScenarioRunResult executeCalculatedRoute(
                 trajectoryResult.trajectory,
                 attitudes,
                 retainedRoute.pointsMapMeters,
-                scenario,
+                scenario.goalRevision,
+                scenario.staticWorldRevision,
+                retainedRoute.additionalClearanceMeters,
                 vehicleInput,
                 settings.navigation
             );

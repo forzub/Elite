@@ -1,98 +1,119 @@
-# CURRENT TASK — Observe Ruckig reference vs physical execution, then fix maneuver ownership
+# CURRENT TASK — Introduce a real physical ManeuverProgram between Planner and Autopilot
 
 Date: 2026-09-22
 
-Status: **DIAGNOSTIC VIEWER READY / TARGET RUN REQUIRED**
+Status: **ARCHITECTURE CONTRACT ACCEPTED / IMPLEMENTATION NEXT**
 
-Code baseline before documentation commits:
-
-```text
-620b59ebbb6937727c5c3e3a47f78884ae3fd99f
-```
-
-## New visual markers
-
-During execution:
+Baseline before documentation commits:
 
 ```text
-PINK CROSS
-    = instantaneous programReferencePosition
-    = current Ruckig-derived reference point B9/B10 asks follower to track
-
-VIOLET CROSS
-    = end of active AcceptedManeuverProgram phase
-    = post-split endpoint on the already calculated trajectory
+d3a566fb262512fa3fdbe1dc391db219abc46a4c
 ```
 
-Important: current multi-point Ruckig solve has no true "target of current
-section". It solves one scalar path progress `s(t)` to the end of the complete
-execution guide. The phase endpoint is created afterward when the full
-trajectory is divided by retained-route progress.
+## Canonical ownership
 
-## Architecture decision
-
-Do not treat RCS as the sole source of turn acceleration.
-
-The physical maneuver planner/compiler is authoritative for:
-- flyable geometry;
-- tangent/velocity state;
-- hull attitude schedule;
-- angular reachability;
-- aft-main + RCS allocation;
-- turn/braking lead distance.
-
-Ruckig is an inner numerical solver for timing/state transition inside that
-compiled maneuver.
-
-Follower/autopilot only executes the accepted program. If it cannot track, it
-holds/reacquires or requests recompile; it does not become a second path
-planner.
-
-## Terminal requirement in current scenario
-
-`scenario.json` explicitly provides `finish.forward` and `finish.up`.
-Parser therefore sets both terminal orientation requirements.
-
-Current acceptance:
-- position <= 5 m;
-- speed within +/-1.5 m/s;
-- forward error <= 0.25 rad;
-- up error <= 0.25 rad.
-
-For non-zero requested finish speed, the trajectory request also sets terminal
-velocity in `finish.forward`.
-
-So the current test is an oriented moving fly-through.
-
-No braking is required merely because there is a turn. If a broad free-space
-arc can arrive at the requested speed and final direction, preserve speed.
-Brake only when required by:
-- requested lower terminal speed;
-- curvature/available acceleration;
-- narrow corridor / obstacle clearance;
-- finite attitude acquisition / propulsion reachability.
-
-## Run next
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-bash tests/navigation_runtime/run_stage1_mingw64.sh
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```text
+PLANNER
+    owns route + physical maneuver
+    may call Ruckig internally
+        |
+        v
+PHYSICAL MANEUVER PROGRAM
+        |
+        v
+AUTOPILOT / FOLLOWER
+    executes it
+    watches sudden hazards
+        |
+        v
+SHIP PHYSICS
 ```
 
-Use Newtonian / Expert / Standard and reproduce the higher-speed case.
+## Program representation
 
-Observe frame-by-frame around the first miss:
-- pink reference cross;
-- violet active-phase endpoint;
-- hull nose;
-- actual velocity vector;
-- main/RCS lamps.
+Do not treat a waypoint as if it simultaneously means position, an engine
+command and a duration.
 
-The immediate question is:
-**does the pink reference itself demand a physically unreasonable turn, or does
-the follower fail to realize a reasonable reference?**
+Use two concepts.
 
-Do not tune follower envelopes until this is answered.
+### ManeuverState
+
+At instant t:
+
+```text
+t
+position
+velocity
+acceleration
+orientation quaternion/basis
+angular velocity
+angular acceleration
+```
+
+### ManeuverSegment
+
+From state i to state i+1:
+
+```text
+duration
+
+rear/aft main:
+    enabled
+    throttle command
+    throttle slew/ramp
+
+front main:
+    enabled
+    throttle command
+    only when vehicle really has that engine
+
+manoeuvre/RCS:
+    commanded force/acceleration vector
+    bounded by hardware
+
+attitude:
+    target/profile for the interval
+```
+
+Dense sampling is allowed, but these semantics must remain explicit.
+
+## Ruckig ownership
+
+Ruckig is subordinate to Planner.
+
+It may solve jerk-limited transition timing or a feasible state transition.
+
+It must NOT decide:
+- engine allocation;
+- body orientation doctrine;
+- obstacle route;
+- braking policy;
+- whether to use a broad arc or a stop/flip/burn maneuver.
+
+## Autopilot ownership
+
+Autopilot:
+- tracks the accepted program;
+- actuates the actual engines and attitude controls;
+- closes bounded tracking error;
+- watches sudden obstacles;
+- may safety-inhibit/emergency-brake;
+- requests replanning if the accepted program becomes unsafe/unreachable.
+
+It does not silently replace the nominal trajectory.
+
+## Immediate implementation order
+
+1. Introduce an explicit maneuver-program data model with State + Segment.
+2. Make current trajectory/reference generation populate it rather than hiding
+   propulsion decisions downstream.
+3. Put real engine allocation into Planner/maneuver compilation.
+4. Integrate throttle slew and angular rotation time into planned segment
+   feasibility.
+5. Move Ruckig calls inside those segment/state solves.
+6. Make Follower consume the resulting propulsion/attitude program.
+7. Preserve the new pink current-reference and violet phase-endpoint diagnostics.
+8. Add a 30 m/s free-space turn regression where Planner may choose a broad
+   constant-speed arc instead of braking.
+
+Do not add another follower-side workaround before this boundary exists.

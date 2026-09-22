@@ -1570,6 +1570,116 @@ Program makeProgramPhase(
             static_cast<double>(params.maxRollRate)
         });
 
+    // Planner-owned physical command intervals. This is the first explicit
+    // State + Segment slice: the reference samples remain the required states;
+    // every interval now also records which real translation actuators are
+    // expected to create the feed-forward acceleration.
+    struct PlannedPropulsion
+    {
+        double rearMainThrottle01 = 0.0;
+        glm::dvec3 manoeuvreAccelerationMapMps2 {0.0};
+        bool feasible = true;
+    };
+
+    const double manoeuvreAuthority =
+        std::max(
+            0.0,
+            static_cast<double>(params.manoeuvreThrusterAccel)
+        );
+
+    const auto compilePropulsion =
+        [&](const Program::ReferenceSample& sample)
+        {
+            PlannedPropulsion out;
+            const glm::dvec3 forward =
+                normalizedOr(
+                    sample.forwardMap,
+                    glm::dvec3(1.0, 0.0, 0.0)
+                );
+
+            const double requestedForward =
+                glm::dot(
+                    sample.linearAccelerationFeedForwardMapMps2,
+                    forward
+                );
+            const double rearMainAcceleration =
+                std::clamp(
+                    requestedForward,
+                    0.0,
+                    mainAcceleration
+                );
+
+            out.rearMainThrottle01 =
+                mainAcceleration > 1.0e-9
+                    ? rearMainAcceleration / mainAcceleration
+                    : 0.0;
+
+            glm::dvec3 manoeuvre =
+                sample.linearAccelerationFeedForwardMapMps2 -
+                forward * rearMainAcceleration;
+
+            const double manoeuvreMagnitude =
+                glm::length(manoeuvre);
+
+            out.feasible =
+                requestedForward <= mainAcceleration + 1.0e-6 &&
+                manoeuvreMagnitude <= manoeuvreAuthority + 1.0e-6;
+
+            if (manoeuvreMagnitude > manoeuvreAuthority &&
+                manoeuvreMagnitude > 1.0e-12)
+            {
+                manoeuvre *=
+                    manoeuvreAuthority / manoeuvreMagnitude;
+            }
+
+            out.manoeuvreAccelerationMapMps2 = manoeuvre;
+            return out;
+        };
+
+    program.actuatorSegmentCount =
+        static_cast<std::uint8_t>(count - 1);
+    program.actuatorProgramFeasible = true;
+
+    for (std::size_t i = 0; i + 1 < count; ++i)
+    {
+        auto& segment = program.actuatorSegments[i];
+        const auto& a = program.samples[i];
+        const auto& b = program.samples[i + 1];
+
+        const PlannedPropulsion start =
+            compilePropulsion(a);
+        const PlannedPropulsion end =
+            compilePropulsion(b);
+
+        segment.durationSeconds =
+            b.timeOffsetSeconds - a.timeOffsetSeconds;
+        segment.rearMainEnabled =
+            start.rearMainThrottle01 > 1.0e-4 ||
+            end.rearMainThrottle01 > 1.0e-4;
+        segment.rearMainThrottleStart01 =
+            start.rearMainThrottle01;
+        segment.rearMainThrottleEnd01 =
+            end.rearMainThrottle01;
+
+        // Current Cobra descriptor has no fore main engine. Keep the explicit
+        // channel dark instead of representing reverse acceleration as
+        // imaginary propulsion.
+        segment.foreMainEnabled = false;
+        segment.foreMainThrottleStart01 = 0.0;
+        segment.foreMainThrottleEnd01 = 0.0;
+
+        segment.manoeuvreAccelerationStartMapMps2 =
+            start.manoeuvreAccelerationMapMps2;
+        segment.manoeuvreAccelerationEndMapMps2 =
+            end.manoeuvreAccelerationMapMps2;
+        segment.propulsionFeasible =
+            start.feasible && end.feasible;
+
+        program.actuatorProgramFeasible =
+            program.actuatorProgramFeasible &&
+            segment.propulsionFeasible;
+    }
+
     program.proof.mapRevision = scenario.staticWorldRevision;
     program.proof.mapSourceRevision = scenario.staticWorldRevision;
     program.proof.minimumClearanceMeters =

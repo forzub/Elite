@@ -131,6 +131,14 @@ void saveTraceJson(
                 f.programTrackingCorridorRadiusMeters;
         }
 
+        frame["has_program_phase_target"] =
+            f.hasProgramPhaseTarget;
+        if (f.hasProgramPhaseTarget)
+        {
+            frame["program_phase_target_position"] =
+                vec3Json(f.programPhaseTargetPosition);
+        }
+
         frame["hazard_active"] = f.hazardActive;
         frame["hazard_position"] = vec3Json(f.hazardPosition);
         frame["hazard_velocity"] = vec3Json(f.hazardVelocity);
@@ -321,6 +329,15 @@ TraceDocument loadTraceJson(const std::string& path)
                     "program_tracking_corridor_radius_m",
                     0.0
                 );
+        }
+
+        f.hasProgramPhaseTarget =
+            source.value("has_program_phase_target", false);
+        if (f.hasProgramPhaseTarget &&
+            source.contains("program_phase_target_position"))
+        {
+            f.programPhaseTargetPosition =
+                readVec3(source.at("program_phase_target_position"));
         }
 
         f.hazardActive = source.value("hazard_active", false);

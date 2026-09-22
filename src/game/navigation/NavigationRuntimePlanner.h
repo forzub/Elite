@@ -128,6 +128,12 @@ public:
         double capturePositionResponsePerSecond = 0.25;
         double orientationResponsePerSecond2 = 4.0;
         double minimumSpeedForDirectionMps = 0.25;
+
+        // Capture/hold geometry and lateral-velocity shaping are policy, not
+        // hidden planner literals.
+        double minimumApproachHoldDistanceMeters = 2.0;
+        double maximumLateralCorrectionVelocityAngleRad =
+            1.5533430342749532; // 89 degrees
     };
 
     struct Policy
@@ -137,6 +143,12 @@ public:
         Avoidance::Policy avoidance {};
         MovingPassagePolicy movingPassage {};
         PortalTraversalPolicy portalTraversal {};
+
+        // Safety/hold urgency is explicit planner doctrine. The pure planner
+        // must not invent different urgency values internally.
+        double staticHoldUrgency01 = 0.50;
+        double staleHoldUrgency01 = 0.75;
+        double conflictHoldUrgency01 = 1.00;
     };
 
     enum class Status : std::uint8_t

@@ -48,6 +48,15 @@ struct ScenarioNavigationPolicy
     double standardClearanceReserveFactor = 1.0;
     double extremeClearanceReserveFactor = 0.35;
 
+    // Stage-1 geometric search doctrine.
+    double geometricSupportMarginMeters = 2.0;
+    int geometricSphereRadialSamples = 16;
+    int geometricCapsuleRadialSamples = 12;
+    std::size_t geometricMaxConsideredObstacles = 0;
+    bool geometricAllowStartEscape = false;
+    bool geometricAllowGoalEscape = false;
+    bool geometricSimplifyLineOfSight = true;
+
     // Physical attitude / propulsion authoring policy.
     double lowSpeedDirectionThresholdMps = 0.25;
     double newtonianRcsPrimaryThresholdMps2 = 0.35;
@@ -105,6 +114,9 @@ struct ScenarioNavigationPolicy
             finiteNonNegative(representativeTurnAngleRad) &&
             finiteNonNegative(standardClearanceReserveFactor) &&
             finiteNonNegative(extremeClearanceReserveFactor) &&
+            finiteNonNegative(geometricSupportMarginMeters) &&
+            geometricSphereRadialSamples >= 3 &&
+            geometricCapsuleRadialSamples >= 3 &&
             finiteNonNegative(lowSpeedDirectionThresholdMps) &&
             finiteNonNegative(newtonianRcsPrimaryThresholdMps2) &&
             std::isfinite(terminalOrientationBlendDistanceMeters) &&

@@ -2879,3 +2879,27 @@ should realize them.
 
 A physical maneuver is accepted only if integrating real hull attitude and
 available propulsion can reach the next planned state.
+
+## 2026-09-22 — ManeuverProgram now carries explicit propulsion intervals
+
+Navigation now has a concrete representation of the agreed ownership model.
+
+`AcceptedManeuverProgram` no longer consists only of reference states and
+abstract acceleration feed-forward. It also carries fixed-capacity actuator
+intervals between states.
+
+Planner-side interval data includes rear-main throttle, explicit fore-main
+channel, manoeuvre/RCS vector and a physical-feasibility witness.
+
+The current Cobra compiler keeps fore main disabled. This prevents reverse
+acceleration from being silently reinterpreted as nonexistent hardware.
+
+B9 samples the command interval; Follower exposes it; trace/viewer show planned
+propulsion separately from actual propulsion.
+
+Execution is intentionally not switched yet. This is an observation gate before
+literal actuator execution, so bad Planner authoring can be diagnosed without
+confusing it with an Autopilot bug.
+
+Next accepted transition:
+`sampled ActuatorSegment + bounded tracking correction -> real propulsion`.

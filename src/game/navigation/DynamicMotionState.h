@@ -88,11 +88,11 @@ struct DynamicMotionState
     // Longitudinal main-thrust request and the independent body-axis
     // manoeuvre/RCS request. They stay separate until the fixed kinematic step.
     //
-    // Newtonian: mainEngineAccelerationMps2 may point only along ship forward
-    // (aft source); reverse braking requires a physical hull flip.
-    // Assisted: the same longitudinal channel may point along +/- ship forward
-    // (aft/fore controlled sources). It is never a lateral/vertical main
-    // engine; those components belong to manoeuvre/RCS authority.
+    // Direction is a hardware fact from ShipParams, not a control-law fact.
+    // A vehicle with only an aft/rear main source can accelerate only along
+    // ship forward; reverse main acceleration requires a physically installed
+    // fore/reverse source. Assisted/Newtonian may command the hardware
+    // differently, but neither law may invent an actuator.
     glm::dvec3 mainEngineAccelerationMps2 {0.0};
     glm::dvec3 manoeuvreAccelerationMps2 {0.0};
 

@@ -8,6 +8,7 @@
 
 #include "src/game/navigation/VehicleDynamicsProfile.h"
 #include "src/world/navigation/control/PilotSkillExecutor.h"
+#include "src/world/navigation/TrajectoryGenerator.h"
 
 class ShipDescriptor;
 
@@ -178,6 +179,12 @@ struct ScenarioRunSettings
 
     // All calculation-affecting stand policy crosses the API explicitly.
     ScenarioNavigationPolicy navigation {};
+
+    // Canonical route->trajectory backend policy. Keeping the exact backend
+    // policy object at this API boundary prevents TrajectoryGenerator from
+    // silently falling back to its struct defaults when the runtime forgets
+    // to populate a field.
+    world::navigation::TrajectoryGenerationPolicy trajectory {};
 
     // Side effects are also explicit. They are orchestration output policy and
     // do not participate in navigation calculations.

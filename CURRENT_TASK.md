@@ -1,116 +1,97 @@
-# CURRENT TASK — Validate Planner actuator program before switching Autopilot execution
+# CURRENT TASK — Validate dense ManeuverProgram source preservation before direct actuator execution
 
 Date: 2026-09-22
 
-Status: **FIRST MANEUVER-PROGRAM SLICE IMPLEMENTED / TARGET VALIDATION REQUIRED**
+Status: **SPARSE-ALIAS ROOT CAUSE FIXED / TARGET VALIDATION REQUIRED**
 
 Code baseline before documentation commits:
 
 ```text
-7b60f875193334e20bc5d168d65df351b746754d
+b51b0abc22270104f75f198935d857582c9b4445
 ```
 
-## What is implemented
+## Fresh target evidence
 
-`AcceptedManeuverProgram` now has explicit physical command intervals.
-
-### State
-
-Existing `ReferenceSample` remains the instantaneous target state:
+The failing run had:
 
 ```text
-time
-position
-velocity
-linear acceleration
-body basis/orientation
-angular velocity
-angular acceleration
-```
-
-### Segment
-
-New `ActuatorSegment[i -> i+1]` owns:
-
-```text
-duration
-
-rear main:
-    enabled
-    throttle start/end
-
-front main:
-    enabled
-    throttle start/end
-
-manoeuvre/RCS:
-    acceleration vector start/end
-
-propulsionFeasible
-```
-
-For current Cobra, fore-main is always OFF.
-
-## Current compiler behavior
-
-For each reference sample:
-
-```text
-requested acceleration
-    -> project onto planned hull forward
-    -> positive forward component = rear-main acceleration
-    -> remainder = manoeuvre/RCS
-    -> clamp RCS to real manoeuvreThrusterAccel
-    -> mark infeasible if required authority exceeded
-```
-
-This is the first explicit propulsion schedule. It does not yet solve the
-higher-level broad-arc/lead-rotation problem; it exposes whether the existing
-trajectory can even be represented as a physical engine program.
-
-## Observability
-
-Viewer now shows:
-
-```text
-ПЛАН SEG N: MAIN xx% | FRONT 0% | RCS x.x M/S2 | FEASIBLE/SATURATED
-```
-
-The existing lamps still show ACTUAL physical engines.
-
-Telemetry now places planned and actual propulsion beside each other:
-
-```text
-plan_seg
-plan_main_pct
-plan_front_pct
-plan_rcs
-plan_feasible
-
-main_pct
-main_a
-rcs_a
-engine_a
-```
-
-Pink cross = current sampled reference.
-Violet cross = active program endpoint.
-
-## Important limitation of this slice
-
-Autopilot does NOT yet literally apply the new actuator schedule.
-
-Execution is still the old net-acceleration path. The run prints:
-
-```text
+TRAJECTORY SAMPLES: 693
+PROGRAM PHASES: 3
+PLANNED ACTUATOR SEGMENTS: 45
+PLANNED ACTUATOR INFEASIBLE: 4
 AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION
 ```
 
-This is intentional for one gate: first inspect whether Planner is producing a
-sensible engine schedule. If Planner already says SATURATED or commands a
-nonsensical main/RCS sequence, do not wire that bad program into physics.
+This is the core mismatch.
 
-## Run next
+A 693-sample physical trajectory was compressed into only 45 actuator
+intervals. B9 then linearly interpolated P/V/A/attitude between distant keys.
+
+At the beginning of the run Planner reported:
+`plan_main_pct=0, plan_rcs=(0,0,0)`,
+while Follower immediately generated a lateral acceleration correction and
+actual RCS became active.
+
+## Engine-selection rule in current live path
+
+Actual execution still does NOT obey the Planner actuator schedule.
+
+Current live allocator receives a net acceleration vector from
+Follower -> PilotSkillExecutor and does:
+
+```text
+forwardComponent = dot(executedAcceleration, actualHullForward)
+
+if forwardComponent > 0:
+    rear main supplies the positive forward part
+
+RCS supplies the residual vector
+```
+
+So if the accepted feed-forward is missing and Follower's correction points
+sideways/backward, RCS performs the work.
+
+## What the oscillation work changed
+
+`e2b5270`:
+- Kd 1.0 -> 3.0;
+- no propulsion logic change.
+
+`56aca8a`:
+- removed dense angular derivative alias;
+- re-derived omega from sparse accepted bases;
+- correct fix for course oscillation;
+- but retained the bad <=16-key compression of a long physical trajectory.
+
+Thus oscillation removal did not directly disable the main engine. It removed
+an angular artifact while leaving state/feed-forward sparsification in place.
+The remaining alias then became obvious as RCS-only tracking.
+
+## Current correction
+
+`9d4b599...` changes route-program construction:
+
+```text
+OLD:
+entire route leg -> <=16 uniformly spaced accepted samples
+
+NEW:
+dense source samples -> consecutive chunks of <=16
+adjacent chunks share one boundary sample
+```
+
+No P/V/A/attitude state is skipped between accepted chunks.
+
+New diagnostic:
+
+```text
+PLANNED ACTUATOR SOURCE COVERAGE: N/N COMPLETE
+```
+
+The new invariant should equal:
+`planned actuator segments == trajectory samples - 1`.
+
+## Run now
 
 ```bash
 cd /d/__elite/work
@@ -120,24 +101,21 @@ bash tests/navigation_runtime/run_stage1_mingw64.sh
 ./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Use the same higher-speed Newtonian case first.
+Repeat the same Newtonian / Expert / Standard case.
 
-At the first bend, compare:
-- pink reference point;
+Check summary first:
+- PROGRAM SOURCE SAMPLING: CONSECUTIVE DENSE CHUNKS
+- PLANNED ACTUATOR SOURCE COVERAGE: N/N COMPLETE
+- program phases should be much more than 3 for ~693 dense samples.
+
+Then inspect the first bend:
 - planned MAIN/RCS line;
-- actual engine lamps;
-- actual velocity vector;
-- actual hull nose.
+- pink current reference;
+- actual engine lamps.
 
-Questions for the next iteration:
-1. Does Planner mark the program FEASIBLE or SATURATED?
-2. Does planned rear-main throttle rise BEFORE the bend where material delta-v
-   is needed?
-3. Does planned RCS stay trim-sized or does it still carry the whole maneuver?
-4. Is the pink reference itself already too sharp / too late?
+If Planner now emits a sensible main+RCS schedule, next iteration removes
+`OBSERVE-ONLY` and makes Autopilot execute that schedule directly.
 
-If the planned program is sane, next iteration switches Autopilot from inferred
-net acceleration to direct execution of `ActuatorSegment` plus bounded
-tracking correction.
-
-Do not tune follower envelopes before this gate.
+If Planner still emits MAIN=0 through the material turn, inspect
+`propulsionReferenceForward()` / required acceleration geometry next; do not
+blame the damping loop and do not loosen tracking envelopes.

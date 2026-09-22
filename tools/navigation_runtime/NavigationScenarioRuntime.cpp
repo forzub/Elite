@@ -311,6 +311,45 @@ ScenarioDefinition parseScenarioDefinitionFile(
                 "origin_m",
                 scenario.frame.originMeters
             );
+        scenario.frame.linearVelocityMps =
+            readVec3(
+                frame,
+                "linear_velocity_mps",
+                scenario.frame.linearVelocityMps
+            );
+        scenario.frame.linearAccelerationMps2 =
+            readVec3(
+                frame,
+                "linear_acceleration_mps2",
+                scenario.frame.linearAccelerationMps2
+            );
+        scenario.frame.angularVelocityWorldRadPerSecond =
+            readVec3(
+                frame,
+                "angular_velocity_world_rad_s",
+                scenario.frame.angularVelocityWorldRadPerSecond
+            );
+        scenario.frame.angularAccelerationWorldRadPerSecond2 =
+            readVec3(
+                frame,
+                "angular_acceleration_world_rad_s2",
+                scenario.frame.angularAccelerationWorldRadPerSecond2
+            );
+
+        if (frame.contains("local_x") ||
+            frame.contains("local_y") ||
+            frame.contains("local_z"))
+        {
+            const glm::dvec3 localX =
+                readVec3(frame, "local_x", {1.0, 0.0, 0.0});
+            const glm::dvec3 localY =
+                readVec3(frame, "local_y", {0.0, 1.0, 0.0});
+            const glm::dvec3 localZ =
+                readVec3(frame, "local_z", {0.0, 0.0, 1.0});
+            scenario.frame.localToWorldBasis =
+                glm::dmat3(localX, localY, localZ);
+        }
+
         scenario.frame.startUniverseTimeSeconds =
             frame.value(
                 "start_universe_time_s",
@@ -1972,7 +2011,15 @@ struct ExecutionVehicle
         frame.systemId = scenario.frame.systemId;
         frame.frameId = scenario.frame.frameId;
         frame.originMeters = scenario.frame.originMeters;
+        frame.linearVelocityMps =
+            scenario.frame.linearVelocityMps;
+        frame.linearAccelerationMps2 =
+            scenario.frame.linearAccelerationMps2;
         frame.localToWorldBasis = scenario.frame.localToWorldBasis;
+        frame.angularVelocityWorldRadPerSecond =
+            scenario.frame.angularVelocityWorldRadPerSecond;
+        frame.angularAccelerationWorldRadPerSecond2 =
+            scenario.frame.angularAccelerationWorldRadPerSecond2;
         frame.valid = true;
 
         transform.motion.mode =

@@ -15,6 +15,128 @@
 namespace world::navigation
 {
 
+struct TrajectoryGenerationPolicy
+{
+    // Numeric/solver floors. These are explicit because they change accepted
+    // motion rather than being implementation-only epsilons.
+    double minimumAccelerationMps2 = 0.1;
+    double minimumSpeedMps = 0.1;
+
+    // Local corner-guide construction.
+    double nearStraightAngleRad = 0.008726646259971648; // 0.5 deg
+    double maximumRoundableCornerAngleRad = 2.6179938779914944; // 150 deg
+    double cornerExpansionMinimumMeters = 2.0;
+    double cornerExpansionCollisionRadiusFactor = 0.25;
+    int cornerExpansionAttempts = 7;
+    double maximumCornerCutLegFraction = 0.42;
+    double minimumCornerCutMeters = 2.0;
+    double minimumCornerCutCollisionRadiusFactor = 0.30;
+    double cornerTangentReserveFactor = 1.35;
+    int cornerCutAttempts = 8;
+    double cornerCutShrinkFactor = 0.78;
+    double previewSampleSpacingMeters = 2.5;
+    int previewMinimumSegments = 4;
+    int previewMaximumSegments = 24;
+    double sourceProgressCutFraction = 0.45;
+    double curveSampleSpacingMeters = 6.0;
+    int curveMinimumSegments = 3;
+    int curveMaximumSegments = 10;
+
+    // Legacy single-leg through-corner candidate policy.
+    double nominalBlendLegFraction = 0.25;
+    double minimumBlendMeters = 0.75;
+    double minimumBlendCollisionRadiusFactor = 0.25;
+    int blendAttempts = 10;
+    double blendShrinkFactor = 0.70;
+    double minimumUsefulWaypointSpeedMps = 0.5;
+
+    // Ruckig state-to-state solve policy.
+    double minimumLegDurationSeconds = 0.5;
+    double legDurationScale = 1.20;
+    double legDurationPaddingSeconds = 0.25;
+    int ruckigDurationAttempts = 8;
+    double jerkMinimumMps3 = 1.0;
+    double jerkAccelerationMultiplier = 4.0;
+    double validationStepSeconds = 0.02;
+    double peakSpeedToleranceMps = 0.25;
+    double peakSpeedToleranceFraction = 0.01;
+    double durationRetryFactor = 1.45;
+
+    // Scalar path-progress timing / curvature sampling.
+    double curvatureProbeFraction = 0.0025;
+    double curvatureProbeMinimumMeters = 0.20;
+    double curvatureProbeMaximumMeters = 1.00;
+    double progressSampleIntervalSeconds = 0.02;
+    double pathCaptureSpeedThresholdMps = 0.25;
+
+    // State-to-state fallback relaxation.
+    std::size_t restartAttemptsPerGuidePoint = 8;
+    std::size_t restartBaseAttempts = 4;
+    double waypointRelaxThresholdMps = 1.25;
+    double waypointRelaxFactor = 0.70;
+
+    [[nodiscard]] bool valid() const noexcept
+    {
+        const auto positive = [](double v) noexcept
+        {
+            return std::isfinite(v) && v > 0.0;
+        };
+        const auto nonNegative = [](double v) noexcept
+        {
+            return std::isfinite(v) && v >= 0.0;
+        };
+
+        return
+            positive(minimumAccelerationMps2) &&
+            positive(minimumSpeedMps) &&
+            nonNegative(nearStraightAngleRad) &&
+            positive(maximumRoundableCornerAngleRad) &&
+            maximumRoundableCornerAngleRad > nearStraightAngleRad &&
+            nonNegative(cornerExpansionMinimumMeters) &&
+            nonNegative(cornerExpansionCollisionRadiusFactor) &&
+            cornerExpansionAttempts > 0 &&
+            positive(maximumCornerCutLegFraction) &&
+            nonNegative(minimumCornerCutMeters) &&
+            nonNegative(minimumCornerCutCollisionRadiusFactor) &&
+            positive(cornerTangentReserveFactor) &&
+            cornerCutAttempts > 0 &&
+            cornerCutShrinkFactor > 0.0 && cornerCutShrinkFactor < 1.0 &&
+            positive(previewSampleSpacingMeters) &&
+            previewMinimumSegments >= 1 &&
+            previewMaximumSegments >= previewMinimumSegments &&
+            sourceProgressCutFraction > 0.0 &&
+            sourceProgressCutFraction < 0.5 &&
+            positive(curveSampleSpacingMeters) &&
+            curveMinimumSegments >= 1 &&
+            curveMaximumSegments >= curveMinimumSegments &&
+            nominalBlendLegFraction > 0.0 &&
+            nominalBlendLegFraction < 0.5 &&
+            nonNegative(minimumBlendMeters) &&
+            nonNegative(minimumBlendCollisionRadiusFactor) &&
+            blendAttempts > 0 &&
+            blendShrinkFactor > 0.0 && blendShrinkFactor < 1.0 &&
+            nonNegative(minimumUsefulWaypointSpeedMps) &&
+            positive(minimumLegDurationSeconds) &&
+            positive(legDurationScale) &&
+            nonNegative(legDurationPaddingSeconds) &&
+            ruckigDurationAttempts > 0 &&
+            nonNegative(jerkMinimumMps3) &&
+            nonNegative(jerkAccelerationMultiplier) &&
+            positive(validationStepSeconds) &&
+            nonNegative(peakSpeedToleranceMps) &&
+            nonNegative(peakSpeedToleranceFraction) &&
+            durationRetryFactor > 1.0 &&
+            nonNegative(curvatureProbeFraction) &&
+            positive(curvatureProbeMinimumMeters) &&
+            curvatureProbeMaximumMeters >= curvatureProbeMinimumMeters &&
+            positive(progressSampleIntervalSeconds) &&
+            nonNegative(pathCaptureSpeedThresholdMps) &&
+            restartAttemptsPerGuidePoint > 0 &&
+            waypointRelaxThresholdMps >= 0.0 &&
+            waypointRelaxFactor > 0.0 && waypointRelaxFactor < 1.0;
+    }
+};
+
 struct TrajectoryPointSpeedConstraint
 {
     // Progress along the original GeometricPath polyline.
@@ -45,6 +167,7 @@ struct TrajectoryGenerationRequest
     std::vector<glm::dvec3> pathPointsMeters;
     std::vector<NavigationObstacle> obstacles;
     NavigationVehicleProfile vehicle;
+    TrajectoryGenerationPolicy policy {};
 
     // Initial kinematic state relative to the planning frame.
     glm::dvec3 initialVelocityMps {0.0};

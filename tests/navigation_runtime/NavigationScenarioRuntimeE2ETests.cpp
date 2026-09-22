@@ -450,8 +450,8 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
         "Stage 2 did not produce a Ruckig trajectory"
     );
     require(
-        hasDiagnostic(executed, "PROGRAM PHASES: "),
-        "Stage 2 did not publish route-leg execution phases"
+        hasDiagnostic(executed, "PROGRAM STORAGE PAGES: "),
+        "Stage 2 did not publish continuous maneuver storage pages"
     );
     require(
         hasDiagnostic(
@@ -514,7 +514,7 @@ int main()
             << " - Assisted 10->10 cannot turn reference hold into a speed runaway\n"
             << " - Assisted 20.9->20 uses aft-only main thrust and physical hull coupling\n"
             << " - Newtonian 21.2->21.2 acquires main-engine thrust instead of flying on RCS alone\n"
-            << " - route-leg programs cross Follower -> PilotSkill -> physics\n"
+            << " - storage pages preserve one maneuver clock across Follower -> PilotSkill -> physics\n"
             << " - Cobra reaches the authored finish\n";
         return EXIT_SUCCESS;
     }

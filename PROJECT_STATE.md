@@ -2903,3 +2903,26 @@ confusing it with an Autopilot bug.
 
 Next accepted transition:
 `sampled ActuatorSegment + bounded tracking correction -> real propulsion`.
+
+## 2026-09-22 — sparse accepted-program alias identified behind RCS-only execution
+
+The course-oscillation correction did not itself change propulsion allocation.
+It exposed a deeper representation defect.
+
+Long Ruckig trajectories were being compressed to <=16 accepted samples per
+route leg. Linear state/feed-forward and attitude were therefore interpolated
+across intervals much larger than the original physical trajectory sampling.
+
+This allowed an accepted program to contain little/zero feed-forward
+acceleration while its position/velocity reference still curved. Follower
+generated lateral recovery acceleration, and the downstream net-vector allocator
+correctly—but undesirably—assigned that recovery mostly to RCS.
+
+The accepted-program representation now preserves consecutive dense source
+states by splitting long legs into multiple <=16-sample chunks.
+
+Invariant:
+`sum(actuatorSegmentCount) == denseTrajectorySamples - 1`.
+
+Planner actuator commands remain observe-only until this corrected source
+program is target-validated.

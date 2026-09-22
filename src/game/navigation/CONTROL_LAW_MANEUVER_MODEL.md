@@ -135,6 +135,16 @@ The planner must account for the finite time required to acquire thrust attitude
 angular acceleration/speed + pilot reaction/latency determine how early hull rotation must begin.
 RCS is normally precision authority: trim, close formation, docking, parking, portal capture, low-speed centering and small residual velocity cleanup. A craft or drone whose actual propulsion profile makes omnidirectional thrusters primary is allowed to use them as primary translation; the maneuver generator follows the real vehicle profile rather than a hard-coded ship assumption.
 
+For the current Cobra Newtonian navigation authoring, the full physical
+`manoeuvreThrusterAccel` is **not** treated as ordinary sustained route
+authority merely because it exists. A small precision slice (currently the
+existing 0.35 m/s^2 correction threshold) is considered when deciding whether
+the hull may stay on the travel tangent. A material requested acceleration above
+that trim level authors a real hull cant/flip so the aft main engine can
+participate. The full physical RCS envelope remains available downstream for
+transient recovery and fine trim; this distinction is maneuver doctrine, not a
+fake hardware limit.
+
 A strong stop is therefore:
 
 ~~~text

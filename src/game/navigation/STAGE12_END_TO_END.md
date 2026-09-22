@@ -9342,3 +9342,30 @@ requires a force-direction/attitude change before the vehicle can attain that
 attitude.
 
 E2E tests must no longer require `REFERENCE CLOCK HOLD:`.
+
+## 2026-09-22 — Stage-12 function-boundary purity gate
+
+Before further physical-planner work, the active Stage-12 path was audited
+function by function.
+
+New boundary rule:
+```text
+orchestration resolves context once
+    -> narrow immutable calculation request
+    -> pure result
+```
+
+Examples now enforced:
+- run boundary speeds -> one `ResolvedRunKinematics`;
+- route clearance helper receives numeric speed/clearance/style + vehicle/policy;
+- attitude author receives initial basis/omega + terminal endpoint explicitly;
+- program page author receives exact revisions/clearance;
+- execution vehicle receives `ExecutionVehicleInit`;
+- trace helper receives selected target directly.
+
+No calculation helper may silently reopen the scenario, inspect a descriptor,
+read working directory/environment, obtain a global clock, or invent a motion
+threshold.
+
+This purity gate precedes the next Stage-12 physics work:
+physical maneuver feasibility must be constructed before Ruckig timing.

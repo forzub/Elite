@@ -44,6 +44,10 @@ trajectory_h = read("src/world/navigation/TrajectoryGenerator.h")
 trajectory_cpp = read("src/world/navigation/TrajectoryGenerator.cpp")
 tracking_h = read("src/game/navigation/ManeuverTrackingController.h")
 tracking_cpp = read("src/game/navigation/ManeuverTrackingController.cpp")
+vehicle_profile_h = read("src/game/navigation/VehicleDynamicsProfile.h")
+ship_dynamics_h = read("src/game/ship/core/ShipDynamics.h")
+vehicle_adapter_h = read("src/game/navigation/NavigationVehicleProfileAdapters.h")
+capability_adapter_h = read("src/game/navigation/ManeuverCapabilityAdapters.h")
 
 for token in (
     "class NominalRoutePlanner",
@@ -112,7 +116,7 @@ for required in (
     "executeCalculatedRoute",
     "buildExecutionTrajectory(",
     "buildRoutePrograms(",
-    "activateProgramPhase(",
+    "bindProgramPageToExecutionClock(",
     "ManeuverPhaseGate::evaluate",
     "Follower::follow",
     "vehicle.bridge.step",
@@ -172,18 +176,31 @@ for marker in (
     require(marker in runtime_h, f"runtime public seam missing {marker}")
 
 for marker in (
-    "activeProgramReferenceDelaySeconds",
     "follower.trackingErrorExceeded",
+    "trackingLossSeconds",
+    "PROGRAM_INVALIDATED_TRACKING_LOSS",
+    "REFERENCE CLOCK: MONOTONIC",
+    "STORAGE PAGE ADVANCES:",
+    "bindProgramPageToExecutionClock",
+    "std::filesystem::current_path()",
+):
+    require(marker in runtime, f"continuous-program/root-log contract missing {marker}")
+
+for forbidden in (
+    "activeProgramReferenceDelaySeconds",
     "REFERENCE CLOCK HOLD FRAMES",
     "REFERENCE CLOCK HOLD: ",
     "follower_reacquiring",
-    "std::filesystem::current_path()",
+    "activateProgramPhase(",
 ):
-    require(marker in runtime, f"reference reacquisition/root-log contract missing {marker}")
+    require(
+        forbidden not in runtime,
+        f"obsolete frozen-reference/page-as-phase behavior returned: {forbidden}",
+    )
 
 require(
     "program.acceptedAtUniverseTimeSeconds +=" not in runtime,
-    "runtime reacquisition mutates an accepted maneuver program instead of its local sampling clock",
+    "runtime mutates accepted maneuver time instead of using one monotonic clock",
 )
 
 for marker in (
@@ -304,29 +321,31 @@ for marker in (
     require(marker in trajectory_h, f"trajectory request missing {marker}")
     require(marker in trajectory_cpp, f"trajectory generator ignores {marker}")
 
-require(
-    "buildProgramChunks" not in runtime,
-    "Stage 2 reintroduced raw consecutive-sample microchunking",
-)
-require(
-    '"PROGRAM CHUNKS:"' not in runtime,
-    "Stage-2 diagnostics still expose raw microchunks instead of physical phases",
-)
 for marker in (
     "buildRoutePrograms",
     "sampleNearestSourceProgress",
-    "activateProgramPhase",
+    "sequenceStartOffsetSeconds",
+    "bindProgramPageToExecutionClock",
+    '"PROGRAM STORAGE PAGES: "',
+    '"STORAGE PAGE ADVANCES: "',
+):
+    require(marker in runtime, f"continuous maneuver storage-page contract missing {marker}")
+
+for forbidden in (
     '"PROGRAM PHASES: "',
     '"PHASE HANDOFFS: "',
 ):
-    require(marker in runtime, f"route-leg execution phase contract missing {marker}")
+    require(
+        forbidden not in runtime,
+        f"storage pages are again being described as physical phases: {forbidden}",
+    )
 
 for marker in (
-    "PROGRAM_BEFORE_START",
+    "PROGRAM_PAGE_BEFORE_START",
     "FOLLOWER_OR_TRACKER_INVALID",
-    "FOLLOWER FAIL PROGRAM",
+    "FOLLOWER FAIL PAGE",
 ):
-    require(marker in execute, f"Follower boundary diagnostics missing {marker}")
+    require(marker in execute, f"Follower/page boundary diagnostics missing {marker}")
 
 for marker in (
     "testStaticWallProducesDetour",
@@ -348,9 +367,8 @@ for marker in (
 for marker in (
     "testHighSpeedRunReacquiresInsteadOfOutrunningReference",
     "high-speed execution outran its physical ship instead of reacquiring",
-    "REFERENCE CLOCK HOLD: ",
 ):
-    require(marker in e2e_test, f"high-speed reacquisition regression missing {marker}")
+    require(marker in e2e_test, f"high-speed execution regression missing {marker}")
 
 for marker in (
     "Stage 1",
@@ -359,6 +377,69 @@ for marker in (
     "swept-hull",
 ):
     require(marker in readme, f"documentation missing {marker}")
+
+# Generic vehicle/policy API and single-source-of-truth checks.
+for marker in (
+    "VehicleDynamicsProfile",
+    "bodyHalfExtentsMeters",
+    "capabilityRevision",
+    "conservativeCollisionRadiusMeters",
+):
+    require(marker in vehicle_profile_h, f"vehicle dynamics profile missing {marker}")
+
+for marker in (
+    "forwardMainAccelerationLimitMps2",
+    "reverseMainAccelerationLimitMps2",
+    "manoeuvreAccelerationLimitMps2",
+    "maximumAngularSpeedRadPerSec",
+    "angularAccelerationLimitRadPerSec2",
+):
+    require(marker in ship_dynamics_h, f"canonical ship-dynamics helper missing {marker}")
+
+for marker in (
+    "makeNavigationVehicleProfile",
+    "forwardMainAccelerationLimitMps2",
+    "reverseMainAccelerationLimitMps2",
+):
+    require(marker in vehicle_adapter_h, f"navigation vehicle projection missing {marker}")
+
+for marker in (
+    "makeManeuverCapabilitySnapshot",
+    "reverseMainAccelerationLimitMps2",
+):
+    require(marker in capability_adapter_h, f"maneuver capability projection missing {marker}")
+
+for marker in (
+    "ScenarioNavigationPolicy",
+    "ScenarioVehicleParameters",
+    "const ScenarioVehicleParameters& vehicle",
+):
+    require(marker in runtime_h, f"runtime API missing explicit input {marker}")
+
+for forbidden in (
+    "ShipParams cobraParams()",
+    "kExecutionDt",
+    "kTraceSampleSeconds",
+    "kTrackingLossInvalidateSeconds",
+):
+    require(
+        forbidden not in runtime,
+        f"runtime reintroduced hidden/hard-coded calculation state: {forbidden}",
+    )
+
+for marker in (
+    "settings.navigation.executionDtSeconds",
+    "settings.navigation.trackingLossInvalidateSeconds",
+    "settings.navigation.terminalOrientationBlendDistanceMeters",
+    "makeNavigationVehicleProfile",
+    "makeManeuverCapabilitySnapshot",
+):
+    require(marker in runtime, f"runtime did not consume explicit common input {marker}")
+
+require(
+    "scenario.staticWorldRevision\n        );" not in runtime,
+    "vehicle capability revision is again sourced from world-map revision",
+)
 
 print("NAVIGATION STATIC ROUTE + TWO-STAGE EXECUTION CONTRACT: PASS")
 print(" - Stage 1 builds the retained static start -> finish route with speed-aware maneuver clearance")

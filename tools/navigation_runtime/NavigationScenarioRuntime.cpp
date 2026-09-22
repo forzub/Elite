@@ -3118,7 +3118,7 @@ ScenarioRunResult executeCalculatedRoute(
             const auto bridgeResult =
                 vehicle.bridge.step(
                     vehicle.timeSeconds + settings.navigation.executionDtSeconds,
-                    kExecutionDt,
+                    settings.navigation.executionDtSeconds,
                     toSystemIntent(follower.intent)
                 );
 

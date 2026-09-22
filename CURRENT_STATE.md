@@ -3112,3 +3112,51 @@ implementation:
 Next task is design/implement this contract rather than further follower tuning.
 
 Repository baseline at start of this audit: `adfe567eefac994344d81c60b1f21e24f3d09077`.
+
+## 2026-09-22 — current Ruckig reference / phase-target diagnostics added
+
+Two world-space crosses are now rendered during execution:
+
+- pink: the instantaneous `programReferencePosition` sampled from the active
+  accepted Ruckig-derived program; this is the point B9/B10 is asking the
+  follower to track NOW;
+- violet: the endpoint of the currently active `AcceptedManeuverProgram`
+  phase.
+
+This distinction matters because the current multi-point backend does **not**
+give Ruckig a "target point for the current route leg". It performs one scalar
+path-progress solve to the end of the whole execution guide, then the resulting
+trajectory is split afterward into accepted phases.
+
+The new markers therefore expose both:
+1. the actual moving reference handed to the follower;
+2. the current phase endpoint created from the precomputed Ruckig trajectory.
+
+This should make the next target run answer "what point is the executor chasing
+when it begins to miss the turn?" without pretending that scalar Ruckig has a
+per-leg target it does not actually have.
+
+Architecture correction recorded in this iteration:
+- turn geometry must NOT assume manoeuvre thrusters are the only source of
+  lateral/normal acceleration;
+- main + RCS + hull attitude form the reachable acceleration set;
+- physical maneuver compiler/planner owns this decision;
+- Ruckig is subordinate solver;
+- follower/autopilot executes the accepted physical maneuver.
+
+Current scenario terminal state:
+- finish JSON contains both `forward` and `up`, so both are required;
+- runtime accepts final position error <= 5 m;
+- final speed error <= 1.5 m/s;
+- final forward and up errors <= 0.25 rad (~14.3 deg);
+- non-zero finish speed is converted into an exact terminal velocity direction
+  along `finish.forward`.
+
+Therefore current test requires an oriented moving fly-through, not merely
+crossing the finish position. Braking is not intrinsically required when
+start/finish speeds are equal and a sufficiently broad curve can achieve the
+terminal velocity/orientation. Braking becomes necessary when geometry,
+speed-limit/curvature, narrow passages or terminal speed demand it.
+
+Code baseline before docs: `620b59ebbb6937727c5c3e3a47f78884ae3fd99f`.
+Target validation pending.

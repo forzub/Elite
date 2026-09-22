@@ -174,7 +174,7 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
     );
 }
 
-void testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()
+void testAssistedLowSpeedUsesMonotonicReferenceClock()
 {
 #ifdef ELITE_SOURCE_ROOT
     const std::string scenario =
@@ -206,7 +206,7 @@ void testAssistedLowSpeedDoesNotRunAwayDuringReferenceHold()
     printDiagnostics("[E2E-ASSISTED-10] ", executed);
 
     require(
-        hasDiagnostic(executed, "REFERENCE CLOCK HOLD: "),
+        hasDiagnostic(executed, "REFERENCE CLOCK: MONOTONIC"),
         "Assisted execution lost monotonic reference-clock diagnostics"
     );
 

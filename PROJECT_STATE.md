@@ -2833,3 +2833,28 @@ The current hard-coded `cobraParams()` duplicate is now explicitly considered
 technical debt and should be removed.
 
 No further follower tuning should be treated as a solution to this issue.
+
+## 2026-09-22 — Ruckig demoted to inner solver; follower remains actuator layer
+
+Navigation responsibility is now explicitly:
+
+```text
+route topology -> physical maneuver compiler -> Ruckig inner solve
+              -> AcceptedManeuverProgram -> follower/autopilot -> physics
+```
+
+The physical maneuver compiler is authoritative for geometry, hull attitude and
+engine allocation. Ruckig is not an autopilot and is not a global path planner.
+
+The prior assumption in execution-guide sizing that normal acceleration is
+limited to `manoeuvreThrusterAccel` is now considered architecturally wrong
+for a main-engine-dominant Newtonian ship. Required turn acceleration may come
+from combined aft-main + RCS after finite hull rotation.
+
+Viewer diagnostics now distinguish instantaneous accepted reference (pink cross)
+from active-phase endpoint (violet cross).
+
+Current scenario terminal state is oriented and moving: finish forward/up are
+required and non-zero finish speed defines terminal velocity direction.
+Therefore a free-space high-speed turn may remain a constant-speed broad arc;
+braking is conditional, not mandatory.

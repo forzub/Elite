@@ -1,121 +1,157 @@
-# CURRENT TASK — Validate dense ManeuverProgram source preservation before direct actuator execution
+# CURRENT TASK — Architecture cleanup gate before further navigation tuning
 
 Date: 2026-09-22
 
-Status: **SPARSE-ALIAS ROOT CAUSE FIXED / TARGET VALIDATION REQUIRED**
+Status: **AUDIT COMPLETE / IMPLEMENT CONTINUOUS PROGRAM SEMANTICS NEXT**
 
-Code baseline before documentation commits:
-
-```text
-b51b0abc22270104f75f198935d857582c9b4445
-```
-
-## Fresh target evidence
-
-The failing run had:
+Baseline entering audit:
 
 ```text
-TRAJECTORY SAMPLES: 693
-PROGRAM PHASES: 3
-PLANNED ACTUATOR SEGMENTS: 45
-PLANNED ACTUATOR INFEASIBLE: 4
-AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION
+5117857c8f31992c97f393e7f2ed16a630e8efc3
 ```
 
-This is the core mismatch.
+## Fresh target result
 
-A 693-sample physical trajectory was compressed into only 45 actuator
-intervals. B9 then linearly interpolated P/V/A/attitude between distant keys.
-
-At the beginning of the run Planner reported:
-`plan_main_pct=0, plan_rcs=(0,0,0)`,
-while Follower immediately generated a lateral acceleration correction and
-actual RCS became active.
-
-## Engine-selection rule in current live path
-
-Actual execution still does NOT obey the Planner actuator schedule.
-
-Current live allocator receives a net acceleration vector from
-Follower -> PilotSkillExecutor and does:
+Dense-source preservation is confirmed:
 
 ```text
-forwardComponent = dot(executedAcceleration, actualHullForward)
+10 m/s:
+    1333 trajectory samples
+    1332/1332 actuator coverage COMPLETE
+    90 Program objects
+    0 handoffs
+    reference hold 56.62 s
+    final speed 0
 
-if forwardComponent > 0:
-    rear main supplies the positive forward part
-
-RCS supplies the residual vector
+27.8 -> 26:
+    613 trajectory samples
+    612/612 actuator coverage COMPLETE
+    42 Program objects
+    0 handoffs
+    reference hold 42.22 s
 ```
 
-So if the accepted feed-forward is missing and Follower's correction points
-sideways/backward, RCS performs the work.
+Therefore source sampling is no longer the primary failure.
 
-## What the oscillation work changed
+## Immediate root cause
 
-`e2b5270`:
-- Kd 1.0 -> 3.0;
-- no propulsion logic change.
+The accepted attitude stream is not angular-acceleration feasible.
 
-`56aca8a`:
-- removed dense angular derivative alias;
-- re-derived omega from sparse accepted bases;
-- correct fix for course oscillation;
-- but retained the bad <=16-key compression of a long physical trajectory.
+At the start of the 27.8 m/s run the reference forward changes ~1.4323 degrees
+in 0.00833 s, i.e. ~3 rad/s immediately from omega=0.
 
-Thus oscillation removal did not directly disable the main engine. It removed
-an angular artifact while leaving state/feed-forward sparsification in place.
-The remaining alias then became obvious as RCS-only tracking.
-
-## Current correction
-
-`9d4b599...` changes route-program construction:
+Current authoring clamps only:
 
 ```text
-OLD:
-entire route leg -> <=16 uniformly spaced accepted samples
-
-NEW:
-dense source samples -> consecutive chunks of <=16
-adjacent chunks share one boundary sample
+delta orientation <= maxAngularRate * dt
 ```
 
-No P/V/A/attitude state is skipped between accepted chunks.
+It does not enforce `angularAccel`.
 
-New diagnostic:
+Follower immediately exceeds its 0.8 rad/s angular-rate-error envelope.
+
+Runtime then freezes program time whenever tracking is outside the envelope:
 
 ```text
-PLANNED ACTUATOR SOURCE COVERAGE: N/N COMPLETE
+activeProgramReferenceDelaySeconds += dt
+programReferenceTime = wallTime - delay
 ```
 
-The new invariant should equal:
-`planned actuator segments == trajectory samples - 1`.
+The phase gate receives the same frozen time, so Program 0 never ends.
+Recovery then homes toward a stale early reference, explaining the stop and
+return behavior.
 
-## Run now
+## Architecture correction required
+
+### 1. One continuous ManeuverProgram clock
+
+Fixed-capacity <=16-sample chunks are storage pages, not maneuver phases.
+
+Page transitions must not:
+- reset acceptedAt time;
+- invoke capture semantics;
+- reset reference timing;
+- become a replanning event.
+
+### 2. No indefinite stale-reference homing
+
+For FreeTransit, material tracking loss means the accepted maneuver is no
+longer proved from the current state.
+
+Allowed:
+- short bounded safety/recovery action;
+- invalidate accepted program;
+- replan from measured P/V/q/omega.
+
+Forbidden:
+- freeze one moving reference forever and drive back to it.
+
+### 3. Angular reachability
+
+Planner attitude construction must integrate:
+- current angular velocity;
+- angular acceleration limit;
+- angular speed limit;
+- required final attitude/rate.
+
+No sample may require an instantaneous omega jump.
+
+### 4. One vehicle-dynamics source of truth
+
+Create one profile derived from authoritative ship descriptor.
+
+Remove/reconcile:
+- runtime hard-coded `cobraParams()`;
+- fake symmetric braking/reverse scalar capability;
+- stale `CapabilitySnapshot.maxReverse...` for aft-only Cobra;
+- manual Assisted virtual fore-main semantics;
+- navigation path ignoring throttle slew.
+
+## What is trusted right now
+
+Trusted only within stated scope:
+- static geometry/collision queries;
+- Stage-1 coarse route topology for the current fixture;
+- scalar Ruckig numerical solve for the constraints it is given;
+- Newtonian low-level aft-main + bounded-RCS physical allocator;
+- deterministic sampling/frame conversion.
+
+Not accepted as physical maneuver truth:
+- current Stage-2 execution guide;
+- current attitude author;
+- current program phase/page orchestration;
+- current reacquisition freeze;
+- current vehicle capability snapshots.
+
+## Implementation order
+
+1. Introduce continuous program/global time semantics across storage pages.
+2. Replace page-gated execution with transparent page indexing.
+3. Replace indefinite reference hold with bounded invalidation/replan semantics.
+4. Make attitude author angular-acceleration feasible.
+5. Introduce authoritative VehicleDynamicsProfile and eliminate duplicates.
+6. Rebuild physical maneuver compiler around that profile.
+7. Then wire Planner ActuatorSegments directly into Autopilot.
+
+## Target gate
+
+Build:
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only
-git rev-parse HEAD
 bash tests/navigation_runtime/run_stage1_mingw64.sh
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
 ```
 
-Repeat the same Newtonian / Expert / Standard case.
+Then run the E2E that Stage-1 script does NOT run:
 
-Check summary first:
-- PROGRAM SOURCE SAMPLING: CONSECUTIVE DENSE CHUNKS
-- PLANNED ACTUATOR SOURCE COVERAGE: N/N COMPLETE
-- program phases should be much more than 3 for ~693 dense samples.
+```bash
+ctest --test-dir build/tools/navigation_runtime \
+      -R "^navigation_runtime_pipeline$" \
+      --output-on-failure
+```
 
-Then inspect the first bend:
-- planned MAIN/RCS line;
-- pink current reference;
-- actual engine lamps.
+Current code is expected to fail this E2E. Do not treat a viewer build PASS as
+navigation acceptance.
 
-If Planner now emits a sensible main+RCS schedule, next iteration removes
-`OBSERVE-ONLY` and makes Autopilot execute that schedule directly.
-
-If Planner still emits MAIN=0 through the material turn, inspect
-`propulsionReferenceForward()` / required acceleration geometry next; do not
-blame the damping loop and do not loosen tracking envelopes.
+Dynamic avoidance remains disabled.

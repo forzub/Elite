@@ -197,6 +197,19 @@ bool PilotSkillExecutor::validProfile(
         execution.maxLinearCommandSlewMetersPerSec3 > 0.0 &&
         finite(execution.maxAngularCommandSlewRadPerSec3) &&
         execution.maxAngularCommandSlewRadPerSec3 > 0.0 &&
+        finite(execution.maximumStepSeconds) &&
+        execution.maximumStepSeconds > 0.0 &&
+        finite(execution.integrationSubstepsPerResponsePeriod) &&
+        execution.integrationSubstepsPerResponsePeriod > 0.0 &&
+        execution.maximumIntegrationSubsteps > 0 &&
+        execution.maximumPendingCommands > 0 &&
+        execution.maximumPendingCommands <=
+            kPendingCommandStorageCapacity &&
+        execution.commandLatencySeconds *
+                execution.perceptionDecisionRateHz <
+            static_cast<double>(
+                execution.maximumPendingCommands - 1
+            ) &&
         finite(execution.deterministicLinearNoiseAmplitudeMetersPerSec2) &&
         execution.deterministicLinearNoiseAmplitudeMetersPerSec2 >= 0.0 &&
         finite(execution.deterministicAngularNoiseAmplitudeRadPerSec2) &&
@@ -269,7 +282,7 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
         !finite(timeSeconds) ||
         !finite(deltaSeconds) ||
         deltaSeconds <= 0.0 ||
-        deltaSeconds > kMaximumStepSeconds ||
+        deltaSeconds > profile_.execution.maximumStepSeconds ||
         timeSeconds + kTolerance < lastTimeSeconds_ ||
         std::abs(
             (timeSeconds - lastTimeSeconds_) - deltaSeconds
@@ -385,11 +398,15 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
     const double naturalFrequency =
         kTwoPi * execution.responseFrequencyHz;
     const double requestedSubsteps =
-        std::ceil(deltaSeconds * execution.responseFrequencyHz * 16.0);
+        std::ceil(
+            deltaSeconds *
+            execution.responseFrequencyHz *
+            execution.integrationSubstepsPerResponsePeriod
+        );
     const std::size_t substeps = std::clamp<std::size_t>(
         static_cast<std::size_t>(std::max(1.0, requestedSubsteps)),
         1,
-        kMaxIntegrationSubsteps
+        execution.maximumIntegrationSubsteps
     );
 
     advanceSecondOrder(

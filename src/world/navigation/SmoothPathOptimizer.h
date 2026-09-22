@@ -9,7 +9,6 @@
 
 #include "src/world/navigation/NavigationObstacle.h"
 #include "src/world/navigation/NavigationVehicleProfile.h"
-#include "src/world/navigation/NavigationPerfLog.h"
 
 namespace world::navigation
 {

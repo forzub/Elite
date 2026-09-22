@@ -102,7 +102,7 @@ struct AppState
 {
     Camera camera;
     trace::TraceDocument* traceData = nullptr;
-    std::string scenarioPath;
+    elite::tools::navigation_runtime::ScenarioDefinition scenario;
     std::string calculationMessage = "ИЗМЕНИТЕ УСЛОВИЯ И НАЖМИТЕ РАССЧИТАТЬ";
     std::vector<std::string> diagnosticLines;
 
@@ -3532,7 +3532,7 @@ void processUiAction(
             {
                 const auto routeResult =
                     elite::tools::navigation_runtime::calculateScenario(
-                        state.scenarioPath,
+                        state.scenario,
                         settings,
                         state.vehicle
                     );
@@ -3599,7 +3599,7 @@ void processUiAction(
 
                 const auto executionResult =
                     elite::tools::navigation_runtime::executeCalculatedRoute(
-                        state.scenarioPath,
+                        state.scenario,
                         settings,
                         state.retainedRoute,
                         state.vehicle
@@ -3742,10 +3742,14 @@ int main(int argc, char** argv)
             elite::tools::navigation_runtime::makeScenarioVehicleParameters(
                 EliteCobraMk1::EliteCobraMk1Descriptor()
             );
+        const auto scenario =
+            elite::tools::navigation_runtime::loadScenarioDefinition(
+                scenarioPath
+            );
 
         const auto preview =
             elite::tools::navigation_runtime::loadScenarioPreview(
-                scenarioPath,
+                scenario,
                 vehicle
             );
         if (!preview.success)
@@ -3805,7 +3809,7 @@ int main(int argc, char** argv)
 
         AppState state;
         state.traceData = &data;
-        state.scenarioPath = scenarioPath;
+        state.scenario = scenario;
         state.vehicle = vehicle;
         state.calculationPerformed = false;
         state.calculationSucceeded = false;

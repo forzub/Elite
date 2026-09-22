@@ -1388,6 +1388,7 @@ Program makeProgramPhase(
 
     const double sourceStartTime =
         trajectory.samples[first].timeOffsetSeconds;
+    program.sequenceStartOffsetSeconds = sourceStartTime;
 
     std::size_t previousSource = first;
     for (std::size_t i = 0; i < count; ++i)
@@ -1843,20 +1844,23 @@ std::vector<Program> buildRoutePrograms(
     return programs;
 }
 
-void activateProgramPhase(
+void bindProgramPageToExecutionClock(
     Program& program,
-    double actualStartTimeSeconds
+    double maneuverStartUniverseTimeSeconds
 )
 {
     const std::size_t lastIndex =
         static_cast<std::size_t>(program.sampleCount - 1);
-    const double duration =
+    const double localDuration =
         program.samples[lastIndex].timeOffsetSeconds;
 
     program.acceptedAtUniverseTimeSeconds =
-        actualStartTimeSeconds;
+        maneuverStartUniverseTimeSeconds;
     program.validUntilUniverseTimeSeconds =
-        actualStartTimeSeconds + duration + 5.0;
+        maneuverStartUniverseTimeSeconds +
+        program.sequenceStartOffsetSeconds +
+        localDuration +
+        5.0;
 }
 
 struct ExecutionVehicle

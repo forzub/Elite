@@ -150,7 +150,6 @@ void testHighSpeedRunReacquiresInsteadOfOutrunningReference()
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Newtonian;
-    settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =
         makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;
@@ -195,7 +194,6 @@ void testAssistedLowSpeedUsesMonotonicReferenceClock()
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Assisted;
-    settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =
         makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;
@@ -263,7 +261,6 @@ void testAssistedHigherSpeedUsesHullCoupledPhysicalBraking()
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Assisted;
-    settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =
         makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;
@@ -340,7 +337,6 @@ void testNewtonianHigherSpeedUsesMainEngineDominantManeuver()
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Newtonian;
-    settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =
         makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;
@@ -407,7 +403,6 @@ void testDefaultScenarioRunsPlannerRouteThroughFollowerAndPhysics()
     ScenarioRunSettings settings;
     enableRuntimeDiagnostics(settings);
     settings.controlMode = ControlMode::Newtonian;
-    settings.pilot = PilotLevel::Expert;
     settings.pilotExecutionProfile =
         makeScenarioPilotSkillProfile(PilotLevel::Expert);
     settings.flightStyle = FlightStyle::Standard;

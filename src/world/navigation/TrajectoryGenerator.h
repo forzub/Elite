@@ -56,13 +56,6 @@ struct TrajectoryGenerationRequest
     bool hasTerminalVelocity = false;
     glm::dvec3 terminalVelocityMps {0.0};
 
-    // Deprecated compatibility knobs from the removed spline backend. They are
-    // intentionally ignored by the canonical Ruckig runtime planner and remain
-    // only while older callers/tests are migrated off the old request shape.
-    std::size_t maxSmoothSupportLevel = 5;
-    double sampleSpacingMeters = 8.0;
-    double maxCurveChordErrorMeters = 0.05;
-
     std::vector<TrajectoryPointSpeedConstraint> pointSpeedConstraints;
     std::vector<TrajectorySpeedLimitRange> speedLimitRanges;
 
@@ -84,7 +77,6 @@ struct TrajectoryGenerationDiagnostics
     std::size_t ruckigLegAttempts = 0;
     std::size_t ruckigLegSuccesses = 0;
     std::size_t collisionSegmentsChecked = 0;
-    double ruckigSolveMilliseconds = 0.0;
 
     std::size_t executionGuidePoints = 0;
     std::size_t roundedGuideCorners = 0;

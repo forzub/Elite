@@ -68,6 +68,7 @@ bool validProgram(const Program& program) noexcept
     if (!program.valid ||
         program.revision == 0 ||
         !finite(program.acceptedAtUniverseTimeSeconds) ||
+        !nonNegativeFinite(program.sequenceStartOffsetSeconds) ||
         !finite(program.validUntilUniverseTimeSeconds) ||
         program.validUntilUniverseTimeSeconds <
             program.acceptedAtUniverseTimeSeconds ||
@@ -139,6 +140,7 @@ bool validProgram(const Program& program) noexcept
 
     const double lastAbsoluteTime =
         program.acceptedAtUniverseTimeSeconds +
+        program.sequenceStartOffsetSeconds +
         program.samples[program.sampleCount - 1].timeOffsetSeconds;
 
     return
@@ -275,7 +277,9 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sample(
         static_cast<std::size_t>(program.sampleCount - 1);
 
     result.elapsedSeconds =
-        universeTimeSeconds - program.acceptedAtUniverseTimeSeconds;
+        universeTimeSeconds -
+        program.acceptedAtUniverseTimeSeconds -
+        program.sequenceStartOffsetSeconds;
 
     if (result.elapsedSeconds <= 0.0)
     {

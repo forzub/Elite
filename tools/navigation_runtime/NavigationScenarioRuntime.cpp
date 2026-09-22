@@ -1063,23 +1063,32 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
 
     Basis previous = scenario.startBasis;
     glm::dquat previousQ = quaternionForBasis(previous);
-    glm::dvec3 previousOmega(0.0);
 
-    for (std::size_t i = 0; i < trajectory.samples.size(); ++i)
+    // Initial angular state is part of the scenario state. Do not silently
+    // replace it with zero at the Planner -> ManeuverProgram boundary.
+    glm::dvec3 previousOmega =
+        previous.right * scenario.startPitchRateRadPerSec +
+        previous.up * scenario.startYawRateRadPerSec +
+        previous.forward * scenario.startRollRateRadPerSec;
+
+    const double maxRate = std::max(
+        0.0,
+        game::ship::maximumAngularSpeedRadPerSec(params)
+    );
+    const double maxAngularAccel = std::max(
+        0.0,
+        game::ship::angularAccelerationLimitRadPerSec2(params)
+    );
+
+    out.front().basis = previous;
+    out.front().angularVelocity = previousOmega;
+    out.front().angularAcceleration = glm::dvec3(0.0);
+
+    for (std::size_t i = 1; i < trajectory.samples.size(); ++i)
     {
         const auto& sample = trajectory.samples[i];
 
-        glm::dvec3 requestedForward = previous.forward;
-        const double speed = glm::length(sample.velocityMps);
-        const double acceleration = glm::length(sample.accelerationMps2);
-
-        // Both laws share hardware but NOT maneuver doctrine.
-        // Assisted may keep the nose close to the travel tangent while real
-        // RCS handles an attainable correction. Newtonian treats RCS as trim:
-        // material route acceleration authors a real hull cant/flip so the
-        // aft main engine participates instead of silently flying an
-        // "Assisted by RCS" point-mass trajectory.
-        requestedForward =
+        glm::dvec3 requestedForward =
             propulsionReferenceForward(
                 sample,
                 previous,
@@ -1093,10 +1102,9 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
                 previous
             );
 
-        // Final orientation is a Stage-2 execution requirement. Blend toward
-        // it before the last sample so the follower receives a physically
-        // trackable attitude program rather than an instantaneous terminal
-        // snap.
+        // Final orientation is a Stage-2 execution requirement. It is still a
+        // desired attitude; the rate/acceleration integrator below decides how
+        // much of that desired rotation is physically reachable this sample.
         if (
             scenario.finish.requireForward ||
             scenario.finish.requireUp)
@@ -1160,55 +1168,137 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
         if (glm::dot(previousQ, desiredQ) < 0.0)
             desiredQ = -desiredQ;
 
-        double dt = 0.0;
-        if (i > 0)
-        {
-            dt =
-                sample.timeOffsetSeconds -
-                trajectory.samples[i - 1].timeOffsetSeconds;
-        }
+        const double dt =
+            sample.timeOffsetSeconds -
+            trajectory.samples[i - 1].timeOffsetSeconds;
 
-        glm::dquat currentQ = desiredQ;
-        if (i == 0)
+        glm::dquat currentQ = previousQ;
+        glm::dvec3 nextOmega = previousOmega;
+
+        if (dt > 1.0e-9)
         {
-            currentQ = previousQ;
-        }
-        else if (dt > 1.0e-9)
-        {
-            const double maxRate = std::max(
-                0.1,
-                game::ship::maximumAngularSpeedRadPerSec(params)
-            );
-            const double angle =
-                quaternionAngle(previousQ, desiredQ);
-            const double maxAngle = maxRate * dt;
-            const double alpha =
-                angle <= 1.0e-9
-                    ? 1.0
-                    : std::clamp(maxAngle / angle, 0.0, 1.0);
-            currentQ =
-                glm::normalize(
-                    glm::slerp(previousQ, desiredQ, alpha)
+            // angularVelocityBetween(..., 1 s) is the shortest world-space
+            // axis-angle error vector: direction=rotation axis, magnitude=rad.
+            const glm::dvec3 errorVector =
+                angularVelocityBetween(
+                    previousQ,
+                    desiredQ,
+                    1.0
                 );
+            const double angle = glm::length(errorVector);
+
+            glm::dvec3 targetOmega(0.0);
+            if (angle > 1.0e-12 &&
+                maxRate > 0.0 &&
+                maxAngularAccel > 0.0)
+            {
+                const glm::dvec3 axis =
+                    errorVector / angle;
+
+                // Braking-aware angular speed. At this speed the body can
+                // still decelerate to zero at the desired attitude with the
+                // same angular-acceleration limit.
+                const double stoppingLimitedSpeed =
+                    std::sqrt(
+                        std::max(
+                            0.0,
+                            2.0 * maxAngularAccel * angle
+                        )
+                    );
+                const double targetSpeed =
+                    std::min(
+                        maxRate,
+                        stoppingLimitedSpeed
+                    );
+                targetOmega = axis * targetSpeed;
+            }
+
+            glm::dvec3 deltaOmega =
+                targetOmega - previousOmega;
+            const double deltaMagnitude =
+                glm::length(deltaOmega);
+            const double maxDelta =
+                maxAngularAccel * dt;
+            if (
+                deltaMagnitude > maxDelta &&
+                deltaMagnitude > 1.0e-12)
+            {
+                deltaOmega *= maxDelta / deltaMagnitude;
+            }
+
+            nextOmega = previousOmega + deltaOmega;
+
+            const double nextSpeed =
+                glm::length(nextOmega);
+            if (
+                nextSpeed > maxRate &&
+                nextSpeed > 1.0e-12)
+            {
+                nextOmega *= maxRate / nextSpeed;
+            }
+
+            // Integrate orientation using the average angular velocity over
+            // this interval. This makes q, omega and alpha one physical state
+            // instead of independently clamped fields.
+            const glm::dvec3 averageOmega =
+                0.5 * (previousOmega + nextOmega);
+            const double averageSpeed =
+                glm::length(averageOmega);
+
+            if (averageSpeed > 1.0e-12)
+            {
+                double stepAngle =
+                    averageSpeed * dt;
+                const glm::dvec3 stepAxis =
+                    averageOmega / averageSpeed;
+
+                // Avoid numerical overshoot only when rotating essentially
+                // along the shortest-error axis.
+                const double remainingAngle =
+                    quaternionAngle(previousQ, desiredQ);
+                const glm::dvec3 errorDirection =
+                    remainingAngle > 1.0e-12
+                        ? glm::normalize(
+                            angularVelocityBetween(
+                                previousQ,
+                                desiredQ,
+                                1.0
+                            )
+                          )
+                        : stepAxis;
+
+                if (
+                    glm::dot(stepAxis, errorDirection) > 0.999 &&
+                    stepAngle > remainingAngle)
+                {
+                    stepAngle = remainingAngle;
+                }
+
+                currentQ =
+                    glm::normalize(
+                        glm::angleAxis(
+                            stepAngle,
+                            stepAxis
+                        ) *
+                        previousQ
+                    );
+            }
         }
 
         ReferenceAttitude reference;
-        reference.basis = basisFromQuaternion(currentQ);
+        reference.basis =
+            basisFromQuaternion(currentQ);
         reference.angularVelocity =
-            i == 0
-                ? glm::dvec3(0.0)
-                : angularVelocityBetween(previousQ, currentQ, dt);
+            nextOmega;
         reference.angularAcceleration =
-            i == 0 || dt <= 1.0e-9
-                ? glm::dvec3(0.0)
-                : (
-                    reference.angularVelocity - previousOmega
-                  ) / dt;
+            dt > 1.0e-9
+                ? (nextOmega - previousOmega) / dt
+                : glm::dvec3(0.0);
 
         out[i] = reference;
         previous = reference.basis;
         previousQ = currentQ;
-        previousOmega = reference.angularVelocity;
+        previousOmega = nextOmega;
     }
 
     return out;

@@ -9013,3 +9013,42 @@ track, proceed to finite attitude-acquisition/lead-rotation timing in the
 trajectory/maneuver compiler rather than increasing RCS authority.
 
 Candidate before docs: `421ecb1b2721d54bc0c33737a520100a3c10fac9`.
+
+## Planner/Ruckig responsibility audit
+
+Current multi-point Stage-2 execution is not "Ruckig through each waypoint".
+
+The actual contract is:
+
+```text
+Stage-1 coarse collision-free route
+    -> buildExecutionGuide(): local quadratic-Bezier corner rounding
+    -> guide p(s)
+    -> RuckigProgressRequest: scalar s(t)
+    -> map v(s), a_t(s) and curvature*v^2 back to world
+    -> buildReferenceAttitudes()
+    -> AcceptedManeuverProgram
+    -> follower/physics
+```
+
+Consequences:
+- Ruckig does not choose the route curve;
+- it does not receive per-corner hull attitude or engine allocation;
+- it does not know lead-rotation time;
+- it does not decide where aft-main braking must begin;
+- one scalar acceleration limit cannot represent "RCS now, rotate, main burn
+  later" behavior.
+
+The execution guide already supports curves, but its radius is based mainly on
+`v^2 / maxLateralAcceleration` and local obstacle clearance. That is not yet a
+full Newtonian maneuver proof.
+
+For a free-space 30 m/s test the desired behavior is now explicitly:
+- broaden the geometric arc as much as physically useful;
+- begin attitude acquisition before the required acceleration vector;
+- use RCS for trim and aft main for material delta-v;
+- determine braking/turn entry from the compiled maneuver, not from follower
+  error after the corner has already been missed.
+
+Ruckig remains valuable as a time-parameterization/state-transition solver after
+the physical maneuver geometry/constraints are authored.

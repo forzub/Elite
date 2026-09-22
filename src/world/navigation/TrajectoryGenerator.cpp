@@ -75,7 +75,8 @@ bool validRequest(
     if (request.systemId < 0 || request.frameId.empty() ||
         !finite(request.startUniverseTimeSeconds) ||
         !finite(request.universeTimeScale) || request.universeTimeScale <= 0.0 ||
-        !request.vehicle.valid() || request.pathPointsMeters.size() < 2 ||
+        !request.vehicle.valid() || !request.policy.valid() ||
+        request.pathPointsMeters.size() < 2 ||
         !finite3(request.initialVelocityMps) ||
         !finite3(request.initialAccelerationMps2) ||
         (request.hasTerminalVelocity &&
@@ -360,7 +361,7 @@ ExecutionGuide buildExecutionGuide(
         });
 
         const double lateralAcceleration = std::max(
-            0.1,
+            request.policy.minimumAccelerationMps2,
             request.vehicle.maxLateralAccelerationMps2
         );
 
@@ -388,12 +389,14 @@ ExecutionGuide buildExecutionGuide(
         outward = normalizedOr(outward, glm::dvec3(0.0));
 
         const double expansionStep = std::max(
-            2.0,
-            request.vehicle.collisionRadiusMeters * 0.25
+            request.policy.cornerExpansionMinimumMeters,
+            request.vehicle.collisionRadiusMeters *
+                request.policy.cornerExpansionCollisionRadiusFactor
         );
 
         for (int expansionAttempt = 0;
-             expansionAttempt < 7 && !rounded;
+             expansionAttempt < request.policy.cornerExpansionAttempts &&
+             !rounded;
              ++expansionAttempt)
         {
             const glm::dvec3 corner =
@@ -416,7 +419,7 @@ ExecutionGuide buildExecutionGuide(
             );
             const double angle = std::acos(cosine);
 
-            if (angle <= glm::radians(0.5))
+            if (angle <= request.policy.nearStraightAngleRad)
             {
                 chosenEntry = corner;
                 chosenExit = corner;
@@ -427,7 +430,8 @@ ExecutionGuide buildExecutionGuide(
                 break;
             }
 
-            if (angle >= glm::radians(150.0))
+            if (angle >=
+                request.policy.maximumRoundableCornerAngleRad)
                 continue;
 
             const double radiusForSpeed =
@@ -438,27 +442,30 @@ ExecutionGuide buildExecutionGuide(
             const double maxCut =
                 std::max(
                     1.0,
-                    std::min(incomingLength, outgoingLength) * 0.42
+                    std::min(incomingLength, outgoingLength) *
+                        request.policy.maximumCornerCutLegFraction
                 );
             const double minCut =
                 std::min(
                     maxCut,
                     std::max(
-                        2.0,
-                        request.vehicle.collisionRadiusMeters * 0.30
+                        request.policy.minimumCornerCutMeters,
+                        request.vehicle.collisionRadiusMeters *
+                            request.policy.minimumCornerCutCollisionRadiusFactor
                     )
                 );
 
             // Extra reserve keeps the execution curve from being the
             // mathematically tightest admissible turn.
             double cut = std::clamp(
-                tangentForSpeed * 1.35,
+                tangentForSpeed *
+                    request.policy.cornerTangentReserveFactor,
                 minCut,
                 maxCut
             );
 
             for (int cutAttempt = 0;
-                 cutAttempt < 8;
+                 cutAttempt < request.policy.cornerCutAttempts;
                  ++cutAttempt)
             {
                 const glm::dvec3 entry = corner - incoming * cut;
@@ -466,10 +473,13 @@ ExecutionGuide buildExecutionGuide(
 
                 const int previewSegments = std::clamp(
                     static_cast<int>(
-                        std::ceil((2.0 * cut) / 2.5)
+                        std::ceil(
+                            (2.0 * cut) /
+                            request.policy.previewSampleSpacingMeters
+                        )
                     ),
-                    4,
-                    24
+                    request.policy.previewMinimumSegments,
+                    request.policy.previewMaximumSegments
                 );
 
                 if (guideCornerClear(
@@ -497,7 +507,10 @@ ExecutionGuide buildExecutionGuide(
                 if (cut <= minCut + 1.0e-6)
                     break;
 
-                cut = std::max(minCut, cut * 0.78);
+                cut = std::max(
+                    minCut,
+                    cut * request.policy.cornerCutShrinkFactor
+                );
             }
         }
 
@@ -524,24 +537,29 @@ ExecutionGuide buildExecutionGuide(
         const double entryProgress =
             std::clamp(
                 coarseProgress[i] -
-                    std::min(chosenCut, incomingSourceLength * 0.45),
+                    std::min(chosenCut, incomingSourceLength *
+                        request.policy.sourceProgressCutFraction),
                 coarseProgress[i - 1] + 1.0e-6,
                 coarseProgress[i] - 1.0e-6
             );
         const double exitProgress =
             std::clamp(
                 coarseProgress[i] +
-                    std::min(chosenCut, outgoingSourceLength * 0.45),
+                    std::min(chosenCut, outgoingSourceLength *
+                        request.policy.sourceProgressCutFraction),
                 coarseProgress[i] + 1.0e-6,
                 coarseProgress[i + 1] - 1.0e-6
             );
 
         const int curveSegments = std::clamp(
             static_cast<int>(
-                std::ceil((2.0 * chosenCut) / 6.0)
+                std::ceil(
+                    (2.0 * chosenCut) /
+                    request.policy.curveSampleSpacingMeters
+                )
             ),
-            3,
-            10
+            request.policy.curveMinimumSegments,
+            request.policy.curveMaximumSegments
         );
 
         for (int sampleIndex = 0;
@@ -761,7 +779,7 @@ std::vector<glm::dvec3> buildWaypointVelocities(
         direction = glm::normalize(direction);
 
         const double lateralAcceleration = std::max(
-            0.1,
+            request.policy.minimumAccelerationMps2,
             request.vehicle.maxLateralAccelerationMps2
         );
 

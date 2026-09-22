@@ -575,3 +575,29 @@ state/orientation. It is not an independent source of truth.
 
 For the current Cobra, no subsystem may claim a physical fore main engine
 unless the authoritative descriptor is changed to install one.
+
+## 2026-09-22 — vehicle facts and control doctrine are separate inputs
+
+Control law no longer owns propulsion hardware facts.
+
+Canonical input split:
+
+```text
+VehicleDynamicsProfile / ShipParams
+    installed actuators
+    physical limits
+    hull dimensions
+
+control law / navigation policy
+    how that hardware is used
+
+maneuver program
+    concrete time/state/actuator command product
+```
+
+A Newtonian/Assisted switch may alter control doctrine, but it may not invent a
+reverse main engine, alter vehicle angular authority, or redefine collision
+geometry.
+
+All capability snapshots and trajectory vehicle envelopes must be derived from
+the same VehicleDynamicsProfile input.

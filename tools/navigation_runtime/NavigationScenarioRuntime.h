@@ -280,11 +280,24 @@ using ScenarioVehicleParameters =
     std::uint64_t capabilityRevision = 1
 );
 
+struct RetainedStaticRoute
+{
+    bool valid = false;
+    std::uint64_t goalRevision = 0;
+    std::uint64_t staticWorldRevision = 0;
+    std::uint64_t vehicleCapabilityRevision = 0;
+
+    double planningSpeedMps = 0.0;
+    double additionalClearanceMeters = 0.0;
+    std::vector<glm::dvec3> pointsMapMeters;
+};
+
 struct ScenarioRunResult
 {
     bool success = false;
     std::string message;
     TraceDocument trace;
+    RetainedStaticRoute retainedRoute;
     std::vector<std::string> diagnostics;
 
     // Authored defaults exposed to the viewer so its sliders initialize from
@@ -308,7 +321,7 @@ struct ScenarioRunResult
 [[nodiscard]] ScenarioRunResult executeCalculatedRoute(
     const ScenarioDefinition& scenario,
     const ScenarioRunSettings& settings,
-    const TraceDocument& calculatedRoute,
+    const RetainedStaticRoute& retainedRoute,
     const ScenarioVehicleParameters& vehicle
 );
 

@@ -59,6 +59,8 @@ struct ScenarioNavigationPolicy
 
     // Stage-1 geometric search doctrine.
     double geometricSupportMarginMeters = 2.0;
+    double geometricMinimumSupportMarginMeters = 0.25;
+    double geometricSupportMarginObstacleRadiusFactor = 0.03;
     int geometricSphereRadialSamples = 16;
     int geometricCapsuleRadialSamples = 12;
     std::size_t geometricMaxConsideredObstacles = 0;
@@ -124,6 +126,8 @@ struct ScenarioNavigationPolicy
             finiteNonNegative(standardClearanceReserveFactor) &&
             finiteNonNegative(extremeClearanceReserveFactor) &&
             finiteNonNegative(geometricSupportMarginMeters) &&
+            finiteNonNegative(geometricMinimumSupportMarginMeters) &&
+            finiteNonNegative(geometricSupportMarginObstacleRadiusFactor) &&
             geometricSphereRadialSamples >= 3 &&
             geometricCapsuleRadialSamples >= 3 &&
             finiteNonNegative(lowSpeedDirectionThresholdMps) &&

@@ -1402,6 +1402,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
             settings,
             vehicle
         );
+    request.policy = settings.trajectory;
     request.initialVelocityMps =
         effectiveStartVelocity(scenario, settings);
     request.initialAccelerationMps2 = scenario.startAcceleration;
@@ -2531,6 +2532,8 @@ ScenarioRunResult calculateScenario(
             throw std::runtime_error("invalid vehicle dynamics profile");
         if (!settings.navigation.valid())
             throw std::runtime_error("invalid navigation runtime policy");
+        if (!settings.trajectory.valid())
+            throw std::runtime_error("invalid trajectory generation policy");
 
         const Scenario scenario = loadScenario(scenarioJsonPath);
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);

@@ -2760,23 +2760,35 @@ ScenarioRunResult executeCalculatedRoute(
 
         ExecutionVehicle vehicle(scenario, settings, vehicleInput);
 
-        double plannedExecutionSeconds = 0.0;
-        for (const auto& phase : programs)
+        const double maneuverStartUniverseTimeSeconds =
+            vehicle.timeSeconds;
+        for (auto& page : programs)
         {
-            const std::size_t lastIndex =
-                static_cast<std::size_t>(phase.sampleCount - 1);
-            plannedExecutionSeconds +=
-                phase.samples[lastIndex].timeOffsetSeconds;
+            bindProgramPageToExecutionClock(
+                page,
+                maneuverStartUniverseTimeSeconds
+            );
         }
 
-        // The diagnostic harness remains bounded, but recovery from a missed
-        // reference gets enough wall-clock time to reacquire instead of
-        // silently declaring the timed program complete.
+        const Program& finalPageTemplate = programs.back();
+        const std::size_t finalPageLastIndex =
+            static_cast<std::size_t>(
+                finalPageTemplate.sampleCount - 1
+            );
+        const double plannedExecutionSeconds =
+            finalPageTemplate.sequenceStartOffsetSeconds +
+            finalPageTemplate.samples[
+                finalPageLastIndex
+            ].timeOffsetSeconds;
+
+        // A continuous maneuver has one monotonic clock. Extra wall time is
+        // only for final capture / bounded invalidation diagnostics; storage
+        // page transitions never reset this clock.
         const double maximumEnd =
             plannedExecutionSeconds + 30.0;
 
         std::size_t activeProgram = 0;
-        std::size_t phaseHandoffs = 0;
+        std::size_t storagePageAdvances = 0;
         double nextTraceTime = 0.0;
         bool followerInvalid = false;
         bool bridgeInvalid = false;
@@ -2791,16 +2803,10 @@ ScenarioRunResult executeCalculatedRoute(
         double maximumFollowerPositionError = 0.0;
         double maximumBodyVelocityAngleRad = 0.0;
         std::size_t runtimeControlLawSwitches = 0;
-        std::size_t referenceClockHoldFrames = 0;
-        double referenceClockHoldSeconds = 0.0;
-        double activeProgramReferenceDelaySeconds = 0.0;
+        double trackingLossSeconds = 0.0;
+        constexpr double kTrackingLossInvalidateSeconds = 0.50;
         auto previousRuntimeControlLaw =
             vehicle.transform.motion.localControlLaw;
-
-        activateProgramPhase(
-            programs.front(),
-            vehicle.timeSeconds
-        );
 
         trace.frames.push_back(
             executionTraceFrame(
@@ -2817,11 +2823,44 @@ ScenarioRunResult executeCalculatedRoute(
 
         while (vehicle.timeSeconds < maximumEnd - 1.0e-9)
         {
-            Program& program = programs[activeProgram];
+            // Fixed-capacity Program objects are storage pages of ONE authored
+            // maneuver. Crossing a page boundary is transparent indexing, not
+            // a capture/replan/clock-reset event.
+            while (activeProgram + 1 < programs.size())
+            {
+                const Program& currentPage =
+                    programs[activeProgram];
+                const std::size_t currentLast =
+                    static_cast<std::size_t>(
+                        currentPage.sampleCount - 1
+                    );
+                const double currentPageEnd =
+                    currentPage.acceptedAtUniverseTimeSeconds +
+                    currentPage.sequenceStartOffsetSeconds +
+                    currentPage.samples[
+                        currentLast
+                    ].timeOffsetSeconds;
 
+                if (vehicle.timeSeconds + 1.0e-9 < currentPageEnd)
+                    break;
+
+                ++activeProgram;
+                ++storagePageAdvances;
+
+                trace.frames.push_back(
+                    executionTraceFrame(
+                        vehicle,
+                        programs[activeProgram],
+                        scenario,
+                        vehicle.timeSeconds,
+                        "storage_page_advance"
+                    )
+                );
+            }
+
+            Program& program = programs[activeProgram];
             const double programReferenceTimeSeconds =
-                vehicle.timeSeconds -
-                activeProgramReferenceDelaySeconds;
+                vehicle.timeSeconds;
 
             const auto preSample =
                 game::navigation::ManeuverProgramSampler::sample(
@@ -2839,8 +2878,8 @@ ScenarioRunResult executeCalculatedRoute(
                 followerFailureReason =
                     preSample.status ==
                         game::navigation::ManeuverProgramSampler::Status::BeforeStart
-                        ? "PROGRAM_BEFORE_START"
-                        : "PROGRAM_INVALID";
+                        ? "PROGRAM_PAGE_BEFORE_START"
+                        : "PROGRAM_PAGE_INVALID";
                 followerFailureProgramIndex = activeProgram;
                 followerFailureTimeSeconds = vehicle.timeSeconds;
                 followerFailureAcceptedAtSeconds =
@@ -2872,46 +2911,27 @@ ScenarioRunResult executeCalculatedRoute(
                     follower.crossTrackErrorMeters
                 );
 
-            const bool reacquiringReference =
+            const bool trackingOutsideEnvelope =
                 follower.trackingErrorExceeded;
-            if (reacquiringReference)
-            {
-                activeProgramReferenceDelaySeconds += kExecutionDt;
-                ++referenceClockHoldFrames;
-                referenceClockHoldSeconds += kExecutionDt;
-            }
 
-            game::navigation::ManeuverPhaseGate::Policy gatePolicy;
-            const bool finalPhase =
-                activeProgram + 1 >= programs.size();
-            const bool movingTerminal =
-                effectiveFinishSpeedMps(scenario, settings) > 1.0e-6;
+            if (trackingOutsideEnvelope)
+                trackingLossSeconds += kExecutionDt;
+            else
+                trackingLossSeconds = 0.0;
 
-            // A moving terminal is a fly-through boundary, not a parking
-            // capture. Holding the final position sample while simultaneously
-            // requesting non-zero velocity is self-contradictory and caused
-            // the old FINAL_CAPTURE_TIMEOUT + artificial braking.
-            gatePolicy.mode =
-                (!finalPhase || movingTerminal)
-                    ? game::navigation::ManeuverPhaseGate::Mode::ScheduledMoving
-                    : game::navigation::ManeuverPhaseGate::Mode::StateCapture;
-            gatePolicy.maximumCaptureOverrunSeconds = 6.0;
-
-            const auto gate =
-                game::navigation::ManeuverPhaseGate::evaluate(
-                    program,
-                    vehicle.timeSeconds -
-                        activeProgramReferenceDelaySeconds,
-                    follower.status,
-                    gatePolicy
-                );
-
+            // FreeTransit may use bounded correction briefly, but it may not
+            // freeze time and home indefinitely to an obsolete point. Once the
+            // accepted maneuver is materially unreachable, invalidate it. The
+            // production owner will request Planner re-authoring from measured
+            // state; this static harness reports the invalidation explicitly.
             if (
-                gate.status ==
-                game::navigation::ManeuverPhaseGate::Status::InvalidInput)
+                trackingLossSeconds >
+                kTrackingLossInvalidateSeconds
+            )
             {
                 followerInvalid = true;
-                followerFailureReason = "PHASE_GATE_INVALID";
+                followerFailureReason =
+                    "PROGRAM_INVALIDATED_TRACKING_LOSS";
                 followerFailureProgramIndex = activeProgram;
                 followerFailureTimeSeconds = vehicle.timeSeconds;
                 followerFailureAcceptedAtSeconds =
@@ -2919,47 +2939,65 @@ ScenarioRunResult executeCalculatedRoute(
                 break;
             }
 
-            if (
-                gate.status ==
-                game::navigation::ManeuverPhaseGate::Status::CaptureTimedOut)
-            {
-                phaseCaptureTimedOut = true;
-                followerFailureReason = "FINAL_CAPTURE_TIMEOUT";
-                followerFailureProgramIndex = activeProgram;
-                followerFailureTimeSeconds = vehicle.timeSeconds;
-                followerFailureAcceptedAtSeconds =
-                    program.acceptedAtUniverseTimeSeconds;
-                break;
-            }
+            const bool finalPage =
+                activeProgram + 1 >= programs.size();
 
-            if (
-                gate.status ==
-                game::navigation::ManeuverPhaseGate::Status::Advance)
+            if (finalPage)
             {
-                if (activeProgram + 1 < programs.size())
+                game::navigation::ManeuverPhaseGate::Policy gatePolicy;
+                const bool movingTerminal =
+                    effectiveFinishSpeedMps(
+                        scenario,
+                        settings
+                    ) > 1.0e-6;
+
+                gatePolicy.mode =
+                    movingTerminal
+                        ? game::navigation::ManeuverPhaseGate::Mode::ScheduledMoving
+                        : game::navigation::ManeuverPhaseGate::Mode::StateCapture;
+                gatePolicy.maximumCaptureOverrunSeconds = 6.0;
+
+                const auto gate =
+                    game::navigation::ManeuverPhaseGate::evaluate(
+                        program,
+                        vehicle.timeSeconds,
+                        follower.status,
+                        gatePolicy
+                    );
+
+                if (
+                    gate.status ==
+                    game::navigation::ManeuverPhaseGate::Status::InvalidInput)
                 {
-                    ++activeProgram;
-                    ++phaseHandoffs;
-                    activeProgramReferenceDelaySeconds = 0.0;
-                    activateProgramPhase(
-                        programs[activeProgram],
-                        vehicle.timeSeconds
-                    );
-
-                    trace.frames.push_back(
-                        executionTraceFrame(
-                            vehicle,
-                            programs[activeProgram],
-                            scenario,
-                            vehicle.timeSeconds,
-                            "phase_handoff"
-                        )
-                    );
-                    continue;
+                    followerInvalid = true;
+                    followerFailureReason = "FINAL_GATE_INVALID";
+                    followerFailureProgramIndex = activeProgram;
+                    followerFailureTimeSeconds = vehicle.timeSeconds;
+                    followerFailureAcceptedAtSeconds =
+                        program.acceptedAtUniverseTimeSeconds;
+                    break;
                 }
 
-                routeExecutionComplete = true;
-                break;
+                if (
+                    gate.status ==
+                    game::navigation::ManeuverPhaseGate::Status::CaptureTimedOut)
+                {
+                    phaseCaptureTimedOut = true;
+                    followerFailureReason = "FINAL_CAPTURE_TIMEOUT";
+                    followerFailureProgramIndex = activeProgram;
+                    followerFailureTimeSeconds = vehicle.timeSeconds;
+                    followerFailureAcceptedAtSeconds =
+                        program.acceptedAtUniverseTimeSeconds;
+                    break;
+                }
+
+                if (
+                    gate.status ==
+                    game::navigation::ManeuverPhaseGate::Status::Advance)
+                {
+                    routeExecutionComplete = true;
+                    break;
+                }
             }
 
             const auto bridgeResult =
@@ -3095,10 +3133,9 @@ ScenarioRunResult executeCalculatedRoute(
                         vehicle,
                         program,
                         scenario,
-                        vehicle.timeSeconds -
-                            activeProgramReferenceDelaySeconds,
-                        reacquiringReference
-                            ? "follower_reacquiring"
+                        programReferenceTimeSeconds,
+                        trackingOutsideEnvelope
+                            ? "follower_tracking_error"
                             : "follower_running"
                     )
                 );

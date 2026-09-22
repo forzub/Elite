@@ -9200,3 +9200,41 @@ gate. Physics still consumes the old net acceleration demand.
 
 After target validation confirms a sane program, Autopilot will execute the
 sampled actuator interval directly and use only bounded feedback for correction.
+
+## Dense-source preservation gate after course-oscillation fix
+
+The failing Newtonian target run demonstrated:
+
+```text
+Ruckig dense samples       693
+accepted phases              3
+actuator intervals          45
+```
+
+That compression was not a harmless optimization. B9 linearly interpolates
+state and attitude; therefore distant-key compression changes the effective
+physical program.
+
+The course-oscillation fixes:
+- increased attitude damping;
+- stopped smearing dense angular derivatives across sparse intervals.
+
+They did not disable the main engine. The remaining problem was that the sparse
+state program itself was still being treated as authoritative.
+
+The new Stage-12 rule is:
+
+```text
+dense trajectory source
+    -> consecutive accepted chunks
+    -> no skipped adjacent P/V/A/attitude states
+```
+
+Each chunk is still fixed-capacity (<=16 samples), but long route legs produce
+multiple chunks rather than uniformly sampling an entire leg into 16 keys.
+
+Diagnostic invariant:
+`PLANNED ACTUATOR SOURCE COVERAGE: N/N COMPLETE`.
+
+This must be green before wiring the explicit Planner actuator schedule into
+Autopilot/physics.

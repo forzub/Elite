@@ -4,13 +4,12 @@
 
 #include "src/game/navigation/VehicleGuidanceEnvelope.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/core/ShipDynamics.h"
 #include "src/world/navigation/NavigationAgentProfile.h"
 #include "src/world/navigation/NavigationVehicleProfile.h"
 
 namespace game::navigation
 {
-
-inline constexpr double NavigationStandardGravityMps2 = 9.80665;
 
 inline world::navigation::NavigationVehicleProfile
 makeNavigationVehicleProfile(
@@ -27,37 +26,27 @@ makeNavigationVehicleProfile(
         static_cast<double>(params.maxCombatSpeed)
     );
 
-    const double linearGs = params.maxLinearGs > 0.0f
-        ? static_cast<double>(params.maxLinearGs)
-        : static_cast<double>(params.maxGs);
-    const double mainAcceleration = std::max(
-        0.0,
-        linearGs * NavigationStandardGravityMps2
-    );
-    const double lateralAcceleration = std::max(
-        0.0,
-        std::min(
-            mainAcceleration,
-            static_cast<double>(params.strafeAccel)
-        )
-    );
+    const double forwardMain =
+        game::ship::forwardMainAccelerationLimitMps2(params);
+    const double reverseMain =
+        game::ship::reverseMainAccelerationLimitMps2(params);
+    const double manoeuvre =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
 
-    profile.maxForwardAccelerationMps2 = mainAcceleration;
-    profile.maxBrakingAccelerationMps2 = mainAcceleration;
-    profile.maxLateralAccelerationMps2 = lateralAcceleration > 0.0
-        ? lateralAcceleration
-        : mainAcceleration;
+    profile.maxForwardAccelerationMps2 =
+        std::max(forwardMain, manoeuvre);
+    // This common trajectory projection may only claim acceleration that can
+    // be produced WITHOUT first changing attitude. Flip-and-burn authority is
+    // a maneuver-level fact and must be authored/proved by the physical
+    // maneuver compiler, not smuggled into a scalar braking number.
+    profile.maxBrakingAccelerationMps2 =
+        std::max(reverseMain, manoeuvre);
+    profile.maxLateralAccelerationMps2 = manoeuvre;
 
-    profile.maxAngularVelocityRadPerSecond = std::max({
-        0.0,
-        static_cast<double>(params.maxPitchRate),
-        static_cast<double>(params.maxYawRate),
-        static_cast<double>(params.maxRollRate)
-    });
-    profile.maxAngularAccelerationRadPerSecond2 = std::max(
-        0.0,
-        static_cast<double>(params.angularAccel)
-    );
+    profile.maxAngularVelocityRadPerSecond =
+        game::ship::maximumAngularSpeedRadPerSec(params);
+    profile.maxAngularAccelerationRadPerSecond2 =
+        game::ship::angularAccelerationLimitRadPerSec2(params);
     return profile;
 }
 

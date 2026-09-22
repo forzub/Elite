@@ -1308,3 +1308,48 @@ does not wait for that attitude to become available.
 
 Status of "reference-clock hold" issue: GREEN.
 Status of physical maneuver timing: RED.
+
+## 2026-09-22 — second purity pass: function boundary audit
+
+The first cleanup still allowed broad-context helper APIs and therefore did not
+fully satisfy the "all data through API" rule.
+
+### Newly found/fixed
+
+| Finding | Status |
+| --- | --- |
+| stale E2E "reacquire/reference hold" contract | GREEN: removed |
+| leaked undeclared `terminal.*` alias after refactor | GREEN: fixed + checker guard |
+| route-clearance helper reading Scenario/Settings | GREEN: narrowed |
+| vehicle-profile helper reading Scenario/Settings | GREEN: narrowed |
+| attitude author reading whole Scenario | GREEN: explicit initial state + terminal |
+| program-page builder reading whole Scenario | GREEN: exact revisions/clearance |
+| ExecutionVehicle constructor reading Scenario/Settings | GREEN: explicit init struct |
+| repeated speed/velocity resolution helpers | GREEN: one ResolvedRunKinematics snapshot |
+| trajectory 0.25/0.1 behavioral thresholds | GREEN: moved to TrajectoryGenerationPolicy |
+| RuntimePlanner hard-coded hold urgency/emergency threshold | GREEN: explicit Policy |
+
+### Purity taxonomy
+
+**Strict-pure:** planner/trajectory/solver/compiler/sampler/tracker/follower/gate
+and replan-policy kernels listed in NAVIGATION_API_CONTRACT.md.
+
+**Stateful but explicit:** pilot executor, runtime control bridge, physical motion
+integrator.
+
+**Orchestration:** parsed scenario loading, vehicle descriptor adaptation,
+Stage-1/Stage-2 composition, explicit diagnostics I/O.
+
+`NavigationRuntimePlanner` is explicitly classified as a composition service:
+it receives `StaticQueries&` through its public API. It has no ambient/static
+world lookup, but it is not referentially pure because it invokes that supplied
+query service. Converting it to snapshot-only inputs is optional future
+hardening and is separate from the current static viewer Stage-12 path.
+
+### Rule now enforced
+
+A function receiving a large context object when it only needs two fields is a
+boundary smell and must be narrowed in the active calculation path.
+
+The static API-purity gate is now part of the mandatory Stage-1 script and
+should fail before compilation when old hidden contracts return.

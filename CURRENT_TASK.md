@@ -1,119 +1,143 @@
-# CURRENT TASK — Introduce a real physical ManeuverProgram between Planner and Autopilot
+# CURRENT TASK — Validate Planner actuator program before switching Autopilot execution
 
 Date: 2026-09-22
 
-Status: **ARCHITECTURE CONTRACT ACCEPTED / IMPLEMENTATION NEXT**
+Status: **FIRST MANEUVER-PROGRAM SLICE IMPLEMENTED / TARGET VALIDATION REQUIRED**
 
-Baseline before documentation commits:
+Code baseline before documentation commits:
 
 ```text
-d3a566fb262512fa3fdbe1dc391db219abc46a4c
+7b60f875193334e20bc5d168d65df351b746754d
 ```
 
-## Canonical ownership
+## What is implemented
+
+`AcceptedManeuverProgram` now has explicit physical command intervals.
+
+### State
+
+Existing `ReferenceSample` remains the instantaneous target state:
 
 ```text
-PLANNER
-    owns route + physical maneuver
-    may call Ruckig internally
-        |
-        v
-PHYSICAL MANEUVER PROGRAM
-        |
-        v
-AUTOPILOT / FOLLOWER
-    executes it
-    watches sudden hazards
-        |
-        v
-SHIP PHYSICS
-```
-
-## Program representation
-
-Do not treat a waypoint as if it simultaneously means position, an engine
-command and a duration.
-
-Use two concepts.
-
-### ManeuverState
-
-At instant t:
-
-```text
-t
+time
 position
 velocity
-acceleration
-orientation quaternion/basis
+linear acceleration
+body basis/orientation
 angular velocity
 angular acceleration
 ```
 
-### ManeuverSegment
+### Segment
 
-From state i to state i+1:
+New `ActuatorSegment[i -> i+1]` owns:
 
 ```text
 duration
 
-rear/aft main:
+rear main:
     enabled
-    throttle command
-    throttle slew/ramp
+    throttle start/end
 
 front main:
     enabled
-    throttle command
-    only when vehicle really has that engine
+    throttle start/end
 
 manoeuvre/RCS:
-    commanded force/acceleration vector
-    bounded by hardware
+    acceleration vector start/end
 
-attitude:
-    target/profile for the interval
+propulsionFeasible
 ```
 
-Dense sampling is allowed, but these semantics must remain explicit.
+For current Cobra, fore-main is always OFF.
 
-## Ruckig ownership
+## Current compiler behavior
 
-Ruckig is subordinate to Planner.
+For each reference sample:
 
-It may solve jerk-limited transition timing or a feasible state transition.
+```text
+requested acceleration
+    -> project onto planned hull forward
+    -> positive forward component = rear-main acceleration
+    -> remainder = manoeuvre/RCS
+    -> clamp RCS to real manoeuvreThrusterAccel
+    -> mark infeasible if required authority exceeded
+```
 
-It must NOT decide:
-- engine allocation;
-- body orientation doctrine;
-- obstacle route;
-- braking policy;
-- whether to use a broad arc or a stop/flip/burn maneuver.
+This is the first explicit propulsion schedule. It does not yet solve the
+higher-level broad-arc/lead-rotation problem; it exposes whether the existing
+trajectory can even be represented as a physical engine program.
 
-## Autopilot ownership
+## Observability
 
-Autopilot:
-- tracks the accepted program;
-- actuates the actual engines and attitude controls;
-- closes bounded tracking error;
-- watches sudden obstacles;
-- may safety-inhibit/emergency-brake;
-- requests replanning if the accepted program becomes unsafe/unreachable.
+Viewer now shows:
 
-It does not silently replace the nominal trajectory.
+```text
+ПЛАН SEG N: MAIN xx% | FRONT 0% | RCS x.x M/S2 | FEASIBLE/SATURATED
+```
 
-## Immediate implementation order
+The existing lamps still show ACTUAL physical engines.
 
-1. Introduce an explicit maneuver-program data model with State + Segment.
-2. Make current trajectory/reference generation populate it rather than hiding
-   propulsion decisions downstream.
-3. Put real engine allocation into Planner/maneuver compilation.
-4. Integrate throttle slew and angular rotation time into planned segment
-   feasibility.
-5. Move Ruckig calls inside those segment/state solves.
-6. Make Follower consume the resulting propulsion/attitude program.
-7. Preserve the new pink current-reference and violet phase-endpoint diagnostics.
-8. Add a 30 m/s free-space turn regression where Planner may choose a broad
-   constant-speed arc instead of braking.
+Telemetry now places planned and actual propulsion beside each other:
 
-Do not add another follower-side workaround before this boundary exists.
+```text
+plan_seg
+plan_main_pct
+plan_front_pct
+plan_rcs
+plan_feasible
+
+main_pct
+main_a
+rcs_a
+engine_a
+```
+
+Pink cross = current sampled reference.
+Violet cross = active program endpoint.
+
+## Important limitation of this slice
+
+Autopilot does NOT yet literally apply the new actuator schedule.
+
+Execution is still the old net-acceleration path. The run prints:
+
+```text
+AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION
+```
+
+This is intentional for one gate: first inspect whether Planner is producing a
+sensible engine schedule. If Planner already says SATURATED or commands a
+nonsensical main/RCS sequence, do not wire that bad program into physics.
+
+## Run next
+
+```bash
+cd /d/__elite/work
+git pull --ff-only
+git rev-parse HEAD
+bash tests/navigation_runtime/run_stage1_mingw64.sh
+./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
+```
+
+Use the same higher-speed Newtonian case first.
+
+At the first bend, compare:
+- pink reference point;
+- planned MAIN/RCS line;
+- actual engine lamps;
+- actual velocity vector;
+- actual hull nose.
+
+Questions for the next iteration:
+1. Does Planner mark the program FEASIBLE or SATURATED?
+2. Does planned rear-main throttle rise BEFORE the bend where material delta-v
+   is needed?
+3. Does planned RCS stay trim-sized or does it still carry the whole maneuver?
+4. Is the pink reference itself already too sharp / too late?
+
+If the planned program is sane, next iteration switches Autopilot from inferred
+net acceleration to direct execution of `ActuatorSegment` plus bounded
+tracking correction.
+
+Do not tune follower envelopes before this gate.

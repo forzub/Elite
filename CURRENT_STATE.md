@@ -3365,3 +3365,126 @@ The Stage-1 script is not an E2E execution gate. The actual
 `navigation_runtime_pipeline` CTest must be run explicitly.
 
 Repository baseline entering this audit: `5117857c8f31992c97f393e7f2ed16a630e8efc3`.
+
+## 2026-09-22 — input/API normalization pass implemented
+
+The architecture-cleanup pass requested after the emergency-state audit is now
+implemented in code.
+
+### Generic vehicle input
+
+Navigation runtime no longer owns Cobra constants.
+
+New canonical API type:
+
+```text
+game::navigation::VehicleDynamicsProfile
+    ShipParams physics
+    bodyHalfExtentsMeters
+    capabilityRevision
+```
+
+The application/test fixture chooses a concrete vehicle descriptor and converts
+it once at the outer boundary. Runtime functions receive the generic profile
+explicitly:
+
+```text
+loadScenarioPreview(..., vehicle)
+calculateScenario(..., settings, vehicle)
+executeCalculatedRoute(..., settings, retainedRoute, vehicle)
+```
+
+No `cobraParams()` remains in NavigationScenarioRuntime.
+
+Vehicle dimensions are no longer authored in scenario JSON. Collision-envelope
+projection is centralized by
+`conservativeCollisionRadiusMeters(VehicleDynamicsProfile)`.
+
+### Derived dynamics have one projection layer
+
+New common helpers:
+
+```text
+ShipDynamics.h
+    forwardMainAccelerationLimitMps2
+    reverseMainAccelerationLimitMps2
+    manoeuvreAccelerationLimitMps2
+    controlledSpeedLimitMps
+    maximumAngularSpeedRadPerSec
+    angularAccelerationLimitRadPerSec2
+```
+
+`NavigationVehicleProfileAdapters.h` is now the single ShipParams ->
+NavigationVehicleProfile projection.
+
+`ManeuverCapabilityAdapters.h` is now the single ShipParams ->
+AcceptedManeuverProgram::CapabilitySnapshot projection.
+
+Capability revision now comes from the vehicle capability revision, not from the
+static-world revision.
+
+### Explicit calculation policy
+
+All stand parameters that materially affect calculations are now carried through
+`ScenarioRunSettings::navigation` as `ScenarioNavigationPolicy`, including:
+- integration dt;
+- trace sampling dt;
+- execution overrun window;
+- speed-aware clearance doctrine;
+- Newtonian RCS-as-primary threshold;
+- low-speed direction threshold;
+- terminal orientation blend;
+- accepted-program tolerances;
+- tracking envelope/deadbands/reserves;
+- tracking-loss invalidation time;
+- final capture timeout;
+- final physical acceptance tolerances.
+
+The policy validates at the public API boundary. Vehicle profile validates at
+the same boundary.
+
+This removes the previous file-scope `kExecutionDt`,
+`kTraceSampleSeconds`, `kTrackingLossInvalidateSeconds` and duplicate
+literal tolerances from the runtime calculation path.
+
+### One maneuver clock / storage-page semantics
+
+Already implemented in the same cleanup sequence:
+- <=16-sample objects are storage pages, not maneuver phases;
+- all pages share one accepted maneuver clock;
+- page changes are transparent indexing;
+- diagnostics now say PROGRAM STORAGE PAGES / STORAGE PAGE ADVANCES;
+- the reference clock is monotonic.
+
+Indefinite stale-reference homing is removed:
+- short tracking loss is allowed as bounded correction;
+- after the explicit tracking-loss timeout the accepted program is invalidated;
+- the static stand reports `PROGRAM_INVALIDATED_TRACKING_LOSS` instead of
+  freezing time and driving back to an obsolete sample.
+
+### Attitude reachability
+
+`buildReferenceAttitudes()` now integrates angular state using:
+- actual initial angular velocity;
+- angular acceleration limit;
+- angular-rate limit;
+- braking-aware target omega;
+- average-omega orientation integration.
+
+The old zero -> near-max-omega-in-one-sample reference jump is no longer
+permitted.
+
+### Architecture checker
+
+The Stage-1/Stage-2 architecture checker was updated to pin:
+- generic VehicleDynamicsProfile input;
+- explicit ScenarioNavigationPolicy;
+- common vehicle/capability projection helpers;
+- monotonic program clock;
+- absence of old frozen-reference state;
+- absence of hard-coded Cobra runtime params;
+- storage-page terminology.
+
+Code baseline before documentation commits: `8b7134078fe1e7672e04085254c9f84c29ed1519`.
+
+Target MinGW64 build/E2E validation is still required.

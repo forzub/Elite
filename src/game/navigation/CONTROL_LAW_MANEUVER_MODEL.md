@@ -534,3 +534,44 @@ integrate(
 
 This contract replaces the previous "geometry first, propulsion later"
 interpretation.
+
+## 2026-09-22 — vehicle dynamics must have one authoritative profile
+
+Architecture audit found competing propulsion/capability truths.
+
+Current contradictions include:
+- runtime stand duplicates Cobra values in `cobraParams()`;
+- NavigationVehicleProfile treats `maxLinearGs` as symmetric forward/braking
+  path authority;
+- AcceptedManeuverProgram publishes symmetric reverse authority;
+- navigation Newtonian allocator correctly models one aft main engine;
+- manual Assisted path still contains a symmetric aft/fore longitudinal
+  main-thrust model;
+- navigation demand path does not yet apply the descriptor throttle slew/ramp.
+
+Target rule:
+
+```text
+EliteCobraMk1Descriptor
+        ↓
+authoritative immutable VehicleDynamicsProfile
+        ↓
+Planner / maneuver proof / Accepted program / Autopilot / physics
+```
+
+The canonical profile must explicitly state installed actuators and dynamics,
+not only scalar acceleration envelopes:
+- aft main presence/direction/maximum acceleration;
+- optional fore main presence/direction;
+- throttle slew/ramp;
+- RCS vector authority and consumable behavior;
+- angular acceleration and angular-rate limits;
+- controlled speed/load envelope;
+- hull/collision dimensions;
+- mass/inertia when required.
+
+Any scalar Planner constraint is derived from this profile for a particular
+state/orientation. It is not an independent source of truth.
+
+For the current Cobra, no subsystem may claim a physical fore main engine
+unless the authoritative descriptor is changed to install one.

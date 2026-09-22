@@ -1326,7 +1326,7 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
 world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
     const Scenario& scenario,
     const ScenarioRunSettings& settings,
-    const TraceDocument& calculatedRoute,
+    const RetainedStaticRoute& retainedRoute,
     const ScenarioVehicleParameters& vehicle
 )
 {
@@ -1335,7 +1335,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
     request.frameId = "navigation-runtime-stage2";
     request.startUniverseTimeSeconds = 0.0;
     request.universeTimeScale = 1.0;
-    request.pathPointsMeters = calculatedRoute.routePoints;
+    request.pathPointsMeters = retainedRoute.pointsMapMeters;
     request.obstacles = scenario.staticObstacles;
     request.vehicle =
         executionVehicleProfile(
@@ -2614,6 +2614,22 @@ ScenarioRunResult calculateScenario(
         );
 
         out.trace = std::move(trace);
+        out.retainedRoute.valid = route.valid;
+        out.retainedRoute.goalRevision = route.goalRevision;
+        out.retainedRoute.staticWorldRevision =
+            route.staticWorldRevision;
+        out.retainedRoute.vehicleCapabilityRevision =
+            vehicle.capabilityRevision;
+        out.retainedRoute.planningSpeedMps =
+            std::max(
+                effectiveStartSpeedMps(scenario, settings),
+                effectiveFinishSpeedMps(scenario, settings)
+            );
+        out.retainedRoute.additionalClearanceMeters =
+            planningClearanceMeters;
+        out.retainedRoute.pointsMapMeters =
+            route.pointsMapMeters;
+
         out.success = route.valid;
         out.message =
             route.valid
@@ -2634,7 +2650,7 @@ ScenarioRunResult calculateScenario(
 ScenarioRunResult executeCalculatedRoute(
     const ScenarioDefinition& scenario,
     const ScenarioRunSettings& settings,
-    const TraceDocument& calculatedRoute,
+    const RetainedStaticRoute& retainedRoute,
     const ScenarioVehicleParameters& vehicleInput
 )
 {
@@ -2657,19 +2673,61 @@ ScenarioRunResult executeCalculatedRoute(
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 
-        TraceDocument trace = calculatedRoute;
-        trace.frames.clear();
+        TraceDocument trace;
+        trace.version = 2;
         trace.law =
             settings.controlMode == ControlMode::Newtonian
                 ? "newtonian"
                 : "assisted";
+        trace.shipHalfExtentsMeters =
+            vehicleInput.bodyHalfExtentsMeters;
+        setSceneEndpoints(trace, scenario);
+        for (const auto& obstacle : scenario.staticObstacles)
+            trace.staticObstacles.push_back(traceObstacle(obstacle));
+        trace.routePoints = retainedRoute.pointsMapMeters;
+        if (trace.routePoints.size() > 2)
+        {
+            trace.turnPoints.assign(
+                trace.routePoints.begin() + 1,
+                trace.routePoints.end() - 1
+            );
+        }
 
-        if (calculatedRoute.routePoints.size() < 2)
+        const double expectedPlanningSpeedMps =
+            std::max(
+                effectiveStartSpeedMps(scenario, settings),
+                effectiveFinishSpeedMps(scenario, settings)
+            );
+        const double expectedClearanceMeters =
+            routePlanningClearanceMeters(
+                scenario,
+                settings,
+                vehicleInput.physics
+            );
+
+        const bool retainedRouteMatchesInputs =
+            retainedRoute.valid &&
+            retainedRoute.pointsMapMeters.size() >= 2 &&
+            retainedRoute.goalRevision == scenario.goalRevision &&
+            retainedRoute.staticWorldRevision ==
+                scenario.staticWorldRevision &&
+            retainedRoute.vehicleCapabilityRevision ==
+                vehicleInput.capabilityRevision &&
+            std::abs(
+                retainedRoute.planningSpeedMps -
+                expectedPlanningSpeedMps
+            ) <= 1.0e-9 &&
+            std::abs(
+                retainedRoute.additionalClearanceMeters -
+                expectedClearanceMeters
+            ) <= 1.0e-9;
+
+        if (!retainedRouteMatchesInputs)
         {
             out.trace = std::move(trace);
             out.success = false;
             out.message =
-                "ЭТАП 2: НЕТ РАССЧИТАННОГО МАРШРУТА";
+                "ЭТАП 2: RETAINED ROUTE НЕ СООТВЕТСТВУЕТ ВХОДАМ";
             out.diagnostics = {
                 "SCENE: LOADED",
                 "PLANNER: NO CACHED ROUTE",
@@ -2688,7 +2746,7 @@ ScenarioRunResult executeCalculatedRoute(
             buildExecutionTrajectory(
                 scenario,
                 settings,
-                calculatedRoute,
+                retainedRoute,
                 vehicleInput
             );
 
@@ -2761,12 +2819,12 @@ ScenarioRunResult executeCalculatedRoute(
             calculatedMinimumSpeedMps = 0.0;
 
         std::vector<double> retainedWaypointSpeedsMps;
-        if (calculatedRoute.routePoints.size() > 2)
+        if (retainedRoute.pointsMapMeters.size() > 2)
         {
             const auto retainedProgress =
-                routeProgressTable(calculatedRoute.routePoints);
+                routeProgressTable(retainedRoute.pointsMapMeters);
             for (std::size_t i = 1;
-                 i + 1 < calculatedRoute.routePoints.size();
+                 i + 1 < retainedRoute.pointsMapMeters.size();
                  ++i)
             {
                 const std::size_t sample =
@@ -2824,7 +2882,7 @@ ScenarioRunResult executeCalculatedRoute(
             buildRoutePrograms(
                 trajectoryResult.trajectory,
                 attitudes,
-                calculatedRoute.routePoints,
+                retainedRoute.pointsMapMeters,
                 scenario,
                 vehicleInput,
                 settings.navigation
@@ -3217,7 +3275,7 @@ ScenarioRunResult executeCalculatedRoute(
                     maximumCrossTrack,
                     distancePointToPolyline(
                         currentPosition,
-                        calculatedRoute.routePoints
+                        retainedRoute.pointsMapMeters
                     )
                 );
 

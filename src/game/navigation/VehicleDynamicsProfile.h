@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/core/ShipDynamics.h"
 
 namespace game::navigation
 {
@@ -31,6 +32,7 @@ struct VehicleDynamicsProfile
         };
 
         return
+            game::ship::validShipDynamics(physics) &&
             finite(bodyHalfExtentsMeters.x) &&
             finite(bodyHalfExtentsMeters.y) &&
             finite(bodyHalfExtentsMeters.z) &&

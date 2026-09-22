@@ -325,7 +325,7 @@ void testFollowerCompletesOnlyAtTerminalState()
     offTerminal.positionMapMeters.x -= 2.0;
 
     const auto notComplete =
-        Follower::follow(program, 11.0, offTerminal);
+        Follower::follow(program, 11.0, offTerminal, game::navigation::ManeuverTrackingController::Policy {});
     require(notComplete.status == Follower::Status::Following,
             "program completed despite missing terminal tolerance");
 }

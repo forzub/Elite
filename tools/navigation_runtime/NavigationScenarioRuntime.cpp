@@ -2731,6 +2731,13 @@ ScenarioRunResult executeCalculatedRoute(
             }
         }
 
+        const std::size_t expectedActuatorSegments =
+            trajectoryResult.trajectory.samples.empty()
+                ? 0
+                : trajectoryResult.trajectory.samples.size() - 1;
+        const bool actuatorSourceCoverageComplete =
+            plannedActuatorSegments == expectedActuatorSegments;
+
         ExecutionVehicle vehicle(scenario, settings);
 
         double plannedExecutionSeconds = 0.0;
@@ -3213,6 +3220,15 @@ ScenarioRunResult executeCalculatedRoute(
                 std::to_string(plannedActuatorSegments),
             "PLANNED ACTUATOR INFEASIBLE: " +
                 std::to_string(infeasibleActuatorSegments),
+            "PLANNED ACTUATOR SOURCE COVERAGE: " +
+                std::to_string(plannedActuatorSegments) +
+                "/" +
+                std::to_string(expectedActuatorSegments) +
+                (
+                    actuatorSourceCoverageComplete
+                        ? " COMPLETE"
+                        : " INCOMPLETE"
+                ),
             "AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION",
             "PHASE HANDOFFS: " +
                 std::to_string(phaseHandoffs),

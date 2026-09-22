@@ -23,7 +23,6 @@
     "speed_mps": 10.0
   },
 
-  "route_envelope_radius_m": 13.0,
   "route_clearance_m": 0.0,
 
   "static_obstacles": [

@@ -3488,3 +3488,38 @@ The Stage-1/Stage-2 architecture checker was updated to pin:
 Code baseline before documentation commits: `8b7134078fe1e7672e04085254c9f84c29ed1519`.
 
 Target MinGW64 build/E2E validation is still required.
+
+## 2026-09-22 target gate after API/clock normalization
+
+Target machine results:
+- architecture contract PASS;
+- Stage-1 nominal route test PASS;
+- follower corridor component test PASS;
+- viewer/runtime build PASS;
+- `navigation_runtime_pipeline` FAIL.
+
+The first test assertion is stale: `testHighSpeedRunReacquiresInsteadOfOutrunningReference()`
+still requires the old `REFERENCE CLOCK HOLD:` diagnostic even though reference-clock
+freezing was intentionally removed. The runtime correctly reports
+`REFERENCE CLOCK: MONOTONIC`.
+
+There is also a real Stage-2 failure behind that stale assertion:
+- high-speed Newtonian run: 743 trajectory samples;
+- 742/742 actuator source coverage;
+- 42 planned actuator segments are physically infeasible;
+- tracking is invalidated at 0.51 s on storage page 1;
+- max reference/velocity angle reaches 175.84 deg while actual body/velocity
+  angle is only 0.94 deg.
+
+Interpretation:
+the new invalidation path is working. It now exposes that the authored
+translation/reference program is still not physically co-timed with reachable
+body attitude. Ruckig/guide timing can demand acceleration/braking whose force
+direction requires a large hull rotation before that rotation can physically
+occur.
+
+Do NOT relax the 0.50 s invalidation timeout to hide this. Next fix is:
+1. update stale E2E expectations to monotonic-clock/invalidation semantics;
+2. move physical maneuver/attitude/thrust feasibility ahead of final Ruckig timing.
+
+Baseline tested: `5cc0b668665f0adc11b160bad3bc2af314cdfe4d`.

@@ -197,16 +197,6 @@ double signedDeadbandExcess(
 ManeuverTrackingController::Result ManeuverTrackingController::track(
     const AcceptedManeuverProgram& program,
     const AcceptedManeuverProgram::ReferenceSample& reference,
-    const AgentState& agent
-) noexcept
-{
-    const Policy policy {};
-    return track(program, reference, agent, policy);
-}
-
-ManeuverTrackingController::Result ManeuverTrackingController::track(
-    const AcceptedManeuverProgram& program,
-    const AcceptedManeuverProgram::ReferenceSample& reference,
     const AgentState& agent,
     const Policy& policy
 ) noexcept
@@ -315,16 +305,9 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         effectivePositionError * policy.positionGainPerSecond2 +
         effectiveVelocityError * policy.velocityGainPerSecond;
 
-    // A frozen reference clock turns one moving trajectory sample into a
-    // geometric reacquisition target. Its derivatives are no longer valid
-    // feed-forward while that sample is held. In particular, replaying a
-    // non-zero path acceleration or angular velocity forever creates a
-    // self-sustaining runaway instead of returning the craft to the corridor.
-    //
-    // Outside the execution envelope B10 therefore damps the ACTUAL angular
-    // rate toward zero and uses only the bounded tracking reserve. Once the
-    // craft re-enters the envelope the accepted moving reference (including
-    // its feed-forward and angular velocity) becomes authoritative again.
+    // Outside the proved tracking envelope the accepted feed-forward is no
+    // longer authoritative. B10 falls back to bounded error reduction only;
+    // orchestration may invalidate the program if that condition persists.
     const glm::dvec3 controlAngularVelocityError =
         outsideEnvelope
             ? -actualAngularVelocity

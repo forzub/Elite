@@ -7,37 +7,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "src/game/ship/core/ShipDynamics.h"
+
 namespace
 {
 constexpr double MinAlignmentSpeedMps = 0.05;
 constexpr float AlignmentSnapAngleRad = 0.25f * 3.14159265358979323846f / 180.0f;
 constexpr float AlignmentAxisEpsilon = 1.0e-6f;
-constexpr float StandardGravityMps2 = 9.80665f;
-
-float angularAccelerationEnvelope(const ShipParams& params)
-{
-    const float configured = std::max(0.0f, params.angularAccel);
-    if (params.maxGs <= 0.0f || params.turnRadius <= 0.0f)
-        return configured;
-
-    // Characteristic-radius safety envelope shared by crewed and uncrewed
-    // craft. Crewed ships normally have the lower maxGs; drones may advertise
-    // a higher structural/equipment envelope while using the same equations.
-    const float byLinearLoad =
-        params.maxGs * StandardGravityMps2 / params.turnRadius;
-    return std::min(configured, std::max(0.0f, byLinearLoad));
-}
-
-float angularRateEnvelope(const ShipParams& params)
-{
-    if (params.maxGs <= 0.0f || params.turnRadius <= 0.0f)
-        return std::numeric_limits<float>::infinity();
-
-    return std::sqrt(
-        params.maxGs * StandardGravityMps2 / params.turnRadius
-    );
-}
-
 float limitAxisControlAcceleration(
     float currentRate,
     float requestedAcceleration,
@@ -347,20 +323,24 @@ void applyRequestedAngularAcceleration(
     glm::vec3 requestedAngularAcceleration
 )
 {
-    const float safeAngularAccel = angularAccelerationEnvelope(params);
-    const float safeAngularRate = angularRateEnvelope(params);
-    const float maxPitchRate = std::min(
-        std::max(0.0f, params.maxPitchRate),
-        safeAngularRate
+    const float safeAngularAccel = static_cast<float>(
+        game::ship::angularAccelerationLimitRadPerSec2(params)
     );
-    const float maxYawRate = std::min(
-        std::max(0.0f, params.maxYawRate),
-        safeAngularRate
+    const float safeAngularRate = static_cast<float>(
+        game::ship::angularLoadRateLimitRadPerSec(params)
     );
-    const float maxRollRate = std::min(
-        std::max(0.0f, params.maxRollRate),
-        safeAngularRate
-    );
+    const float maxPitchRate =
+        static_cast<float>(
+            game::ship::pitchRateLimitRadPerSec(params)
+        );
+    const float maxYawRate =
+        static_cast<float>(
+            game::ship::yawRateLimitRadPerSec(params)
+        );
+    const float maxRollRate =
+        static_cast<float>(
+            game::ship::rollRateLimitRadPerSec(params)
+        );
 
     const float requestedAccelLength =
         glm::length(requestedAngularAcceleration);
@@ -423,16 +403,20 @@ void ShipController::updateControlRates(
 
     // Manual/legacy attitude path, including persistent HOME/INSERT/END
     // velocity-alignment behavior.
-    const float safeAngularAccel = angularAccelerationEnvelope(params);
-    const float safeAngularRate = angularRateEnvelope(params);
-    const float maxPitchRate = std::min(
-        std::max(0.0f, params.maxPitchRate),
-        safeAngularRate
+    const float safeAngularAccel = static_cast<float>(
+        game::ship::angularAccelerationLimitRadPerSec2(params)
     );
-    const float maxYawRate = std::min(
-        std::max(0.0f, params.maxYawRate),
-        safeAngularRate
+    const float safeAngularRate = static_cast<float>(
+        game::ship::angularLoadRateLimitRadPerSec(params)
     );
+    const float maxPitchRate =
+        static_cast<float>(
+            game::ship::pitchRateLimitRadPerSec(params)
+        );
+    const float maxYawRate =
+        static_cast<float>(
+            game::ship::yawRateLimitRadPerSec(params)
+        );
 
     (void)applyVelocityAlignmentAttitude(
         ship,

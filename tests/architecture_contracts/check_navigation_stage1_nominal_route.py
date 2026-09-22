@@ -69,8 +69,8 @@ require(
     "Stage 1 is not using the shared geometric backend",
 )
 require(
-    "maxConsideredObstacles = 0" in impl,
-    "Stage-1 correctness again depends on an arbitrary obstacle-count cap",
+    "geometric.params = request.geometricPolicy;" in impl,
+    "Stage-1 geometric policy is not passed through the nominal-route API",
 )
 
 calculate = function_slice(
@@ -131,7 +131,8 @@ for required in (
     )
 
 for required in (
-    "calculatedRoute.routePoints",
+    "retainedRoute.pointsMapMeters",
+    "request.policy = settings.trajectory",
     "TrajectoryGenerator::generate",
 ):
     require(
@@ -182,7 +183,6 @@ for marker in (
     "REFERENCE CLOCK: MONOTONIC",
     "STORAGE PAGE ADVANCES:",
     "bindProgramPageToExecutionClock",
-    "std::filesystem::current_path()",
 ):
     require(marker in runtime, f"continuous-program/root-log contract missing {marker}")
 
@@ -393,6 +393,10 @@ for marker in (
     "manoeuvreAccelerationLimitMps2",
     "maximumAngularSpeedRadPerSec",
     "angularAccelerationLimitRadPerSec2",
+    "angularLoadRateLimitRadPerSec",
+    "pitchRateLimitRadPerSec",
+    "yawRateLimitRadPerSec",
+    "rollRateLimitRadPerSec",
 ):
     require(marker in ship_dynamics_h, f"canonical ship-dynamics helper missing {marker}")
 
@@ -412,6 +416,9 @@ for marker in (
 for marker in (
     "ScenarioNavigationPolicy",
     "ScenarioVehicleParameters",
+    "ScenarioDefinition",
+    "RetainedStaticRoute",
+    "const ScenarioDefinition& scenario",
     "const ScenarioVehicleParameters& vehicle",
 ):
     require(marker in runtime_h, f"runtime API missing explicit input {marker}")
@@ -421,6 +428,7 @@ for forbidden in (
     "kExecutionDt",
     "kTraceSampleSeconds",
     "kTrackingLossInvalidateSeconds",
+    "std::filesystem::current_path()",
 ):
     require(
         forbidden not in runtime,
@@ -431,6 +439,7 @@ for marker in (
     "settings.navigation.executionDtSeconds",
     "settings.navigation.trackingLossInvalidateSeconds",
     "settings.navigation.terminalOrientationBlendDistanceMeters",
+    "request.policy = settings.trajectory",
     "makeNavigationVehicleProfile",
     "makeManeuverCapabilitySnapshot",
 ):

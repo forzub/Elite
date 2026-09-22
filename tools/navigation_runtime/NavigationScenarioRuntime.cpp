@@ -2696,6 +2696,8 @@ ScenarioRunResult executeCalculatedRoute(
             throw std::runtime_error("invalid vehicle dynamics profile");
         if (!settings.navigation.valid())
             throw std::runtime_error("invalid navigation runtime policy");
+        if (!settings.trajectory.valid())
+            throw std::runtime_error("invalid trajectory generation policy");
         if (!world::navigation::PilotSkillExecutor::validProfile(
                 settings.pilotExecutionProfile))
         {

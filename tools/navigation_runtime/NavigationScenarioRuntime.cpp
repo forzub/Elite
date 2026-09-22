@@ -2599,11 +2599,18 @@ ScenarioRunResult calculateScenario(
         request.geometricPolicy.simplifyLineOfSight =
             settings.navigation.geometricSimplifyLineOfSight;
 
+        const double planningSpeedMps =
+            std::max(
+                effectiveStartSpeedMps(scenario, settings),
+                effectiveFinishSpeedMps(scenario, settings)
+            );
         const double planningClearanceMeters =
             routePlanningClearanceMeters(
-                scenario,
-                settings,
-                vehicle.physics
+                planningSpeedMps,
+                scenario.routeClearanceMeters,
+                settings.flightStyle,
+                vehicle.physics,
+                settings.navigation
             );
         request.additionalRouteClearanceMeters =
             planningClearanceMeters;
@@ -2653,10 +2660,7 @@ ScenarioRunResult calculateScenario(
             std::ostringstream planningSpeed;
             planningSpeed.setf(std::ios::fixed);
             planningSpeed << std::setprecision(2)
-                << std::max(
-                    effectiveStartSpeedMps(scenario, settings),
-                    effectiveFinishSpeedMps(scenario, settings)
-                );
+                << planningSpeedMps;
 
             std::ostringstream clearance;
             clearance.setf(std::ios::fixed);
@@ -2689,10 +2693,7 @@ ScenarioRunResult calculateScenario(
         out.retainedRoute.vehicleCapabilityRevision =
             vehicle.capabilityRevision;
         out.retainedRoute.planningSpeedMps =
-            std::max(
-                effectiveStartSpeedMps(scenario, settings),
-                effectiveFinishSpeedMps(scenario, settings)
-            );
+            planningSpeedMps;
         out.retainedRoute.additionalClearanceMeters =
             planningClearanceMeters;
         out.retainedRoute.pointsMapMeters =
@@ -2768,9 +2769,11 @@ ScenarioRunResult executeCalculatedRoute(
             );
         const double expectedClearanceMeters =
             routePlanningClearanceMeters(
-                scenario,
-                settings,
-                vehicleInput.physics
+                expectedPlanningSpeedMps,
+                scenario.routeClearanceMeters,
+                settings.flightStyle,
+                vehicleInput.physics,
+                settings.navigation
             );
 
         const bool retainedRouteMatchesInputs =
@@ -3566,13 +3569,8 @@ ScenarioRunResult executeCalculatedRoute(
                 number(settings.navigation.alongTrackPositionDeadbandMeters) +
                 " M",
             "ROUTE ADDITIONAL CLEARANCE: " +
-                number(
-                    routePlanningClearanceMeters(
-                        scenario,
-                        settings,
-                        params
-                    )
-                ) + " M",
+                number(retainedRoute.additionalClearanceMeters) +
+                " M",
             "CONTROL LAW REQUESTED: " +
                 std::string(
                     settings.controlMode == ControlMode::Newtonian

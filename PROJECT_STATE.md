@@ -2778,3 +2778,31 @@ Pinned E2E: Assisted / Expert / Standard, 20.90 -> 20.00 m/s.
 
 Candidate before docs: `b833eddb7bd04b5c025b2be0fd8334c33f8824e6`.
 Target evidence pending.
+
+## 2026-09-22 — Newtonian maneuver doctrine separated from Assisted RCS use
+
+The higher-speed static viewer gate proved that Newtonian navigation was
+physically using the Cobra's full 2.0 m/s^2 manoeuvre-thruster envelope as
+ordinary sustained route propulsion. Since the Ruckig curve requested about
+1.5 m/s^2, the attitude author kept the hull on the travel tangent and RCS did
+the maneuver almost alone.
+
+This was physically integrated but architecturally wrong for a
+main-engine-dominant Cobra: Newtonian is supposed to preserve inertial motion,
+lead-rotate, then use aft-main delta-v with RCS as trim.
+
+Current architecture:
+- physical RCS maximum remains hardware truth;
+- maneuver doctrine separately controls how much RCS may justify *not* rotating
+  the hull;
+- current Cobra Newtonian attitude author uses the existing 0.35 m/s^2
+  precision threshold for that decision;
+- Assisted may still use the full real RCS authority for its own coupled-flight
+  doctrine;
+- navigation main engine remains aft-only in both laws.
+
+Viewer now includes always-visible rear-main / fore-main / manoeuvre-thruster
+lamps driven by physical acceleration channels.
+
+Candidate before docs: `421ecb1b2721d54bc0c33737a520100a3c10fac9`.
+Target acceptance pending.

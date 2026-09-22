@@ -380,3 +380,46 @@ boundary rather than a global cap. The current scalar multi-point path solver st
 collapses curvature into a worst-case route-wide speed ceiling; localizing curvature and
 other local speed limits is the next trajectory-authoring correction required by this
 contract.
+
+## 2026-09-22 — authority hierarchy: physical maneuver compiler owns motion
+
+The navigation stack now explicitly rejects the idea that cornering is
+"manoeuvre-thrusters only".
+
+For a main-engine-dominant ship, required world-space acceleration may be
+produced by a combination of:
+- hull attitude;
+- aft-main thrust projected into the desired acceleration vector;
+- bounded manoeuvre/RCS trim.
+
+The maneuver compiler must choose that combination. Geometry must therefore be
+sized from the **combined reachable acceleration set**, including finite hull
+rotation, not from `manoeuvreThrusterAccel` alone.
+
+Ownership hierarchy:
+
+```text
+global/static route planner
+    -> free-space topology / corridor
+
+physical maneuver planner/compiler   <-- motion authority ("батя")
+    -> choose flyable geometry + attitude + propulsion schedule
+    -> may call Ruckig as an inner timing/state-transition solver
+
+Ruckig
+    -> numerical trajectory/timing primitive
+    -> never owns obstacle topology or propulsion doctrine
+
+AcceptedManeuverProgram
+    -> immutable short-horizon execution contract
+
+Follower / autopilot
+    -> actuate real hull + engines to track the accepted program
+
+tracking violation / new hazard
+    -> request recompile/replan from actual state
+```
+
+Follower may not silently invent a different trajectory merely to stay close to
+an obsolete reference. Ruckig may be used inside receding-horizon maneuver
+compilation, but it remains subordinate to the physical maneuver planner.

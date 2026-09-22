@@ -398,32 +398,32 @@ ScenarioDefinition parseScenarioDefinitionFile(
     if (root.contains("finish"))
     {
         const auto& finish = root.at("finish");
-        terminal.position =
+        scenario.finish.position =
             readVec3(
                 finish,
                 "position",
-                terminal.position
+                scenario.finish.position
             );
 
         if (finish.contains("forward"))
         {
-            terminal.requireForward = true;
-            terminal.forward =
+            scenario.finish.requireForward = true;
+            scenario.finish.forward =
                 readVec3(
                     finish,
                     "forward",
-                    terminal.forward
+                    scenario.finish.forward
                 );
         }
 
         if (finish.contains("up"))
         {
-            terminal.requireUp = true;
-            terminal.up =
+            scenario.finish.requireUp = true;
+            scenario.finish.up =
                 readVec3(
                     finish,
                     "up",
-                    terminal.up
+                    scenario.finish.up
                 );
         }
 
@@ -563,7 +563,7 @@ TraceFrame routeFrame(
     if (routeValid)
     {
         frame.hasSelectedTarget = true;
-        frame.selectedTarget = terminal.position;
+        frame.selectedTarget = scenario.finish.position;
     }
 
     return frame;
@@ -596,7 +596,7 @@ std::vector<std::string> previewDiagnostics(
             std::to_string(scenario.startPitchRateRadPerSec) + ", " +
             std::to_string(scenario.startYawRateRadPerSec) + ", " +
             std::to_string(scenario.startRollRateRadPerSec) + ") RAD/S",
-        "FINISH: " + formatVec3(terminal.position),
+        "FINISH: " + formatVec3(scenario.finish.position),
         "STATIC OBSTACLES: " +
             std::to_string(scenario.staticObstacles.size()),
         "DYNAMIC INPUTS RESERVED: " +
@@ -628,7 +628,7 @@ std::vector<std::string> routeDiagnostics(
             std::to_string(scenario.startPitchRateRadPerSec) + ", " +
             std::to_string(scenario.startYawRateRadPerSec) + ", " +
             std::to_string(scenario.startRollRateRadPerSec) + ") RAD/S",
-        "FINISH: " + formatVec3(terminal.position),
+        "FINISH: " + formatVec3(scenario.finish.position),
         "STATIC OBSTACLES: " +
             std::to_string(scenario.staticObstacles.size()),
         "REQUIRED WAYPOINTS: " +
@@ -697,7 +697,7 @@ void setSceneEndpoints(
 {
     trace.hasSceneEndpoints = true;
     trace.sceneStartMapMeters = scenario.startPosition;
-    trace.sceneFinishMapMeters = terminal.position;
+    trace.sceneFinishMapMeters = scenario.finish.position;
 }
 
 // -----------------------------------------------------------------------------
@@ -1369,6 +1369,7 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
 
 world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
     const Scenario& scenario,
+    const Endpoint& terminal,
     const RetainedStaticRoute& retainedRoute,
     const ScenarioVehicleParameters& vehicle,
     const ResolvedRunKinematics& kinematics,
@@ -2217,7 +2218,7 @@ TraceFrame executionTraceFrame(
     frame.phase = "route_execution";
     frame.plannerStatus = status;
     frame.hasSelectedTarget = true;
-    frame.selectedTarget = terminal.position;
+    frame.selectedTarget = scenario.finish.position;
 
     if (program.valid && program.sampleCount >= 2)
     {
@@ -2520,7 +2521,7 @@ ScenarioRunResult loadScenarioPreview(
         frame.phase = "scene_preview";
         frame.plannerStatus = "scene_loaded";
         frame.hasSelectedTarget = true;
-        frame.selectedTarget = terminal.position;
+        frame.selectedTarget = scenario.finish.position;
         trace.frames.push_back(std::move(frame));
 
         out.trace = std::move(trace);
@@ -2566,10 +2567,10 @@ ScenarioRunResult calculateScenario(
         (void)scenario.dynamicObstacles;
         (void)scenario.suddenObstacle;
         (void)scenario.hasSuddenObstacle;
-        (void)terminal.requireForward;
-        (void)terminal.requireUp;
-        (void)terminal.forward;
-        (void)terminal.up;
+        (void)scenario.finish.requireForward;
+        (void)scenario.finish.requireUp;
+        (void)scenario.finish.forward;
+        (void)scenario.finish.up;
         (void)scenario.finish.speedMps;
 
         game::navigation::NominalRoutePlanner::Request request;
@@ -2577,7 +2578,7 @@ ScenarioRunResult calculateScenario(
         request.staticWorldRevision =
             scenario.staticWorldRevision;
         request.startMapMeters = scenario.startPosition;
-        request.goalMapMeters = terminal.position;
+        request.goalMapMeters = scenario.finish.position;
         request.requiredWaypointsMapMeters =
             scenario.shipRoutePoints;
         request.staticObstacles = scenario.staticObstacles;
@@ -3423,7 +3424,7 @@ ScenarioRunResult executeCalculatedRoute(
             vehicle.transform.motion.localPositionMeters;
         const double finalPositionError =
             glm::length(
-                finalPosition - terminal.position
+                finalPosition - scenario.finish.position
             );
         const double finalSpeed =
             glm::length(
@@ -3452,17 +3453,17 @@ ScenarioRunResult executeCalculatedRoute(
         };
 
         const double finalForwardError =
-            terminal.requireForward
+            scenario.finish.requireForward
                 ? angleBetween(
                     glm::dvec3(vehicle.transform.forward()),
-                    terminal.forward
+                    scenario.finish.forward
                   )
                 : 0.0;
         const double finalUpError =
-            terminal.requireUp
+            scenario.finish.requireUp
                 ? angleBetween(
                     glm::dvec3(vehicle.transform.up()),
-                    terminal.up
+                    scenario.finish.up
                   )
                 : 0.0;
 

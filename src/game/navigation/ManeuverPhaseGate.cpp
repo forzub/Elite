@@ -21,7 +21,9 @@ bool validProgramEnvelope(
         program.revision == 0 ||
         program.sampleCount == 0 ||
         program.sampleCount > AcceptedManeuverProgram::kMaxSamples ||
-        !finite(program.acceptedAtUniverseTimeSeconds))
+        !finite(program.acceptedAtUniverseTimeSeconds) ||
+        !finite(program.sequenceStartOffsetSeconds) ||
+        program.sequenceStartOffsetSeconds < 0.0)
     {
         return false;
     }
@@ -63,6 +65,7 @@ ManeuverPhaseGate::Result ManeuverPhaseGate::evaluate(
 
     result.nominalEndUniverseTimeSeconds =
         program.acceptedAtUniverseTimeSeconds +
+        program.sequenceStartOffsetSeconds +
         last.timeOffsetSeconds;
 
     if (!finite(result.nominalEndUniverseTimeSeconds))

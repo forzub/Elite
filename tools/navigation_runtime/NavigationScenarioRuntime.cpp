@@ -969,6 +969,7 @@ glm::dvec3 rotateDirectionToward(
 glm::dvec3 propulsionReferenceForward(
     const world::navigation::TrajectorySample& sample,
     const Basis& previous,
+    Law law,
     const ShipParams& params
 )
 {
@@ -984,15 +985,28 @@ glm::dvec3 propulsionReferenceForward(
     if (acceleration <= 0.35)
         return travelForward;
 
-    const double rcsAuthority = std::max(
+    const double physicalRcsAuthority = std::max(
         0.0,
         static_cast<double>(params.manoeuvreThrusterAccel)
     );
 
-    // The manoeuvre/RCS system can supply any acceleration vector up to its
-    // magnitude limit. If the requested acceleration lies inside that sphere,
-    // no main-engine pointing manoeuvre is necessary at all.
-    if (acceleration <= rcsAuthority + 1.0e-9)
+    // Control-law doctrine matters here even though the physical hardware is
+    // shared. Assisted may legitimately spend the available manoeuvre/RCS
+    // authority to keep velocity approximately coupled to the nose. Newtonian
+    // on a main-engine-dominant Cobra must NOT treat the full 2 m/s^2 RCS
+    // envelope as its ordinary propulsion system: that makes the hull follow
+    // the route while RCS quietly performs the entire turn/brake.
+    //
+    // 0.35 m/s^2 is the existing "tiny correction" threshold used above. In
+    // Newtonian it is therefore the maximum RCS authority considered when
+    // AUTHORING the required hull attitude; the physical allocator may still
+    // use the full real RCS envelope for transient recovery/trim.
+    const double attitudeRcsAuthority =
+        law == Law::Newtonian
+            ? std::min(physicalRcsAuthority, 0.35)
+            : physicalRcsAuthority;
+
+    if (acceleration <= attitudeRcsAuthority + 1.0e-9)
         return travelForward;
 
     const glm::dvec3 accelerationDirection =
@@ -1014,7 +1028,7 @@ glm::dvec3 propulsionReferenceForward(
     const double rcsAngularAllowance =
         std::asin(
             std::clamp(
-                rcsAuthority / acceleration,
+                attitudeRcsAuthority / acceleration,
                 0.0,
                 1.0
             )
@@ -1066,16 +1080,17 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
         const double speed = glm::length(sample.velocityMps);
         const double acceleration = glm::length(sample.accelerationMps2);
 
-        // Both flight laws use the same physical propulsion set.
-        // Assisted changes how the pilot/controller manages slip and attitude;
-        // it does not add a hidden fore engine. Therefore the reference hull
-        // must point far enough toward the required acceleration for the aft
-        // main engine + bounded RCS to realize it. If RCS alone is sufficient,
-        // keep the nose on the travel tangent.
+        // Both laws share hardware but NOT maneuver doctrine.
+        // Assisted may keep the nose close to the travel tangent while real
+        // RCS handles an attainable correction. Newtonian treats RCS as trim:
+        // material route acceleration authors a real hull cant/flip so the
+        // aft main engine participates instead of silently flying an
+        // "Assisted by RCS" point-mass trajectory.
         requestedForward =
             propulsionReferenceForward(
                 sample,
                 previous,
+                law,
                 params
             );
 

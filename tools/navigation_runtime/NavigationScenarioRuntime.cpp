@@ -2723,7 +2723,7 @@ ScenarioRunResult executeCalculatedRoute(
                 "FOLLOWER: NOT RUN"
             };
             writeExecutionDiagnostics(
-                scenarioJsonPath,
+                settings.io,
                 out.diagnostics
             );
             return out;
@@ -2765,7 +2765,7 @@ ScenarioRunResult executeCalculatedRoute(
                 "LOG: last_execution.log"
             };
             writeExecutionDiagnostics(
-                scenarioJsonPath,
+                settings.io,
                 out.diagnostics
             );
             return out;
@@ -2891,7 +2891,7 @@ ScenarioRunResult executeCalculatedRoute(
                 "LOG: last_execution.log"
             };
             writeExecutionDiagnostics(
-                scenarioJsonPath,
+                settings.io,
                 out.diagnostics
             );
             return out;

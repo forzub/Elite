@@ -9109,3 +9109,40 @@ Braking is therefore conditional:
 - lower terminal speed, tight curvature, narrow passage, or insufficient
   attitude/engine reachability -> braking is required and must start early
   enough for hull rotation + burn.
+
+## Stage-12 naming contract — Planner -> ManeuverProgram -> Autopilot
+
+Stage-12 execution is being migrated to a literal physical command program.
+
+The target interface is:
+
+```text
+ManeuverState[i]
+    position
+    velocity
+    acceleration
+    attitude
+    angular velocity
+    angular acceleration
+    time
+
+ManeuverSegment[i -> i+1]
+    duration
+    rear-main command + throttle ramp
+    optional real fore-main command
+    manoeuvre/RCS command
+    attitude-control profile
+```
+
+Ruckig may contribute timing/state interpolation while Planner constructs these
+segments, but Ruckig is not the owner of the maneuver.
+
+Follower/autopilot consumes the accepted program and performs only bounded
+tracking/safety behavior.
+
+When a new obstacle invalidates the program:
+- Autopilot may immediately protect the ship;
+- Planner is asked for a new ManeuverProgram from the measured current state.
+
+This contract is the basis for subsequent 30 m/s broad-arc and braking-boundary
+work.

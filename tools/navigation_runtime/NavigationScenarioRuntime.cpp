@@ -133,73 +133,12 @@ ScenarioPilotSkillProfile makeScenarioPilotSkillProfile(
 namespace
 {
 
-struct Basis
-{
-    glm::dvec3 forward {1.0, 0.0, 0.0};
-    glm::dvec3 right {0.0, 0.0, 1.0};
-    glm::dvec3 up {0.0, 1.0, 0.0};
-};
-
-struct Endpoint
-{
-    glm::dvec3 position {300.0, 0.0, 0.0};
-    bool requireForward = false;
-    bool requireUp = false;
-    glm::dvec3 forward {1.0, 0.0, 0.0};
-    glm::dvec3 up {0.0, 1.0, 0.0};
-    double speedMps = 0.0;
-};
-
-struct MotionPath
-{
-    std::vector<glm::dvec3> points;
-    double speedMps = 0.0;
-    bool loop = false;
-};
-
-// Parsed now so the Stage-1 scenario format already has the correct ownership
-// boundary for Stage 2. These records are intentionally NOT passed to the
-// nominal static route planner.
-struct DynamicObstacleDefinition
-{
-    std::uint64_t entityId = 0;
-    std::string id;
-    glm::dvec3 initialPosition {0.0};
-    glm::dvec3 linearVelocity {0.0};
-    MotionPath path {};
-    double activationTimeSeconds = 0.0;
-    double radiusMeters = 5.0;
-    bool spawnRelativeToShip = false;
-    glm::dvec3 spawnRelativeFruMeters {0.0};
-};
-
-struct Scenario
-{
-    std::uint64_t goalRevision = 1;
-    std::uint64_t staticWorldRevision = 1;
-    std::uint64_t dynamicWorldRevision = 1;
-
-    glm::dvec3 startPosition {0.0};
-    glm::dvec3 startVelocity {6.0, 0.0, 0.0};
-    glm::dvec3 startAcceleration {0.0};
-    double startPitchRateRadPerSec = 0.0;
-    double startYawRateRadPerSec = 0.0;
-    double startRollRateRadPerSec = 0.0;
-    Basis startBasis {};
-
-    std::vector<glm::dvec3> shipRoutePoints;
-    Endpoint finish;
-
-    std::vector<world::navigation::NavigationObstacle> staticObstacles;
-    std::vector<DynamicObstacleDefinition> dynamicObstacles;
-    DynamicObstacleDefinition suddenObstacle;
-    bool hasSuddenObstacle = false;
-
-    // Environment / scenario clearance only. Vehicle dimensions cross the
-    // runtime boundary through ScenarioVehicleParameters and are never authored
-    // in the scenario file.
-    double routeClearanceMeters = 0.0;
-};
+using Basis = ScenarioBasis;
+using Endpoint = ScenarioEndpoint;
+using MotionPath = ScenarioMotionPath;
+using DynamicObstacleDefinition =
+    ScenarioDynamicObstacleDefinition;
+using Scenario = ScenarioDefinition;
 
 glm::dvec3 readVec3(
     const nlohmann::json& object,
@@ -325,7 +264,9 @@ DynamicObstacleDefinition parseDynamicObstacle(
     return obstacle;
 }
 
-Scenario loadScenario(const std::string& path)
+ScenarioDefinition parseScenarioDefinitionFile(
+    const std::string& path
+)
 {
     std::ifstream stream(path);
     if (!stream)
@@ -2467,8 +2408,15 @@ void writeExecutionTelemetry(
 
 } // namespace
 
+ScenarioDefinition loadScenarioDefinition(
+    const std::string& scenarioJsonPath
+)
+{
+    return parseScenarioDefinitionFile(scenarioJsonPath);
+}
+
 ScenarioRunResult loadScenarioPreview(
-    const std::string& scenarioJsonPath,
+    const ScenarioDefinition& scenario,
     const ScenarioVehicleParameters& vehicle
 )
 {
@@ -2479,7 +2427,6 @@ ScenarioRunResult loadScenarioPreview(
         if (!vehicle.valid())
             throw std::runtime_error("invalid vehicle dynamics profile");
 
-        const Scenario scenario = loadScenario(scenarioJsonPath);
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 
@@ -2519,7 +2466,7 @@ ScenarioRunResult loadScenarioPreview(
 }
 
 ScenarioRunResult calculateScenario(
-    const std::string& scenarioJsonPath,
+    const ScenarioDefinition& scenario,
     const ScenarioRunSettings& settings,
     const ScenarioVehicleParameters& vehicle
 )
@@ -2535,7 +2482,6 @@ ScenarioRunResult calculateScenario(
         if (!settings.trajectory.valid())
             throw std::runtime_error("invalid trajectory generation policy");
 
-        const Scenario scenario = loadScenario(scenarioJsonPath);
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 
@@ -2686,7 +2632,7 @@ ScenarioRunResult calculateScenario(
 
 
 ScenarioRunResult executeCalculatedRoute(
-    const std::string& scenarioJsonPath,
+    const ScenarioDefinition& scenario,
     const ScenarioRunSettings& settings,
     const TraceDocument& calculatedRoute,
     const ScenarioVehicleParameters& vehicleInput
@@ -2708,7 +2654,6 @@ ScenarioRunResult executeCalculatedRoute(
             throw std::runtime_error("invalid pilot execution profile");
         }
 
-        const Scenario scenario = loadScenario(scenarioJsonPath);
         out.authoredStartSpeedMps = glm::length(scenario.startVelocity);
         out.authoredFinishSpeedMps = std::max(0.0, scenario.finish.speedMps);
 

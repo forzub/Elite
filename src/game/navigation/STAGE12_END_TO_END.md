@@ -9052,3 +9052,60 @@ For a free-space 30 m/s test the desired behavior is now explicitly:
 
 Ruckig remains valuable as a time-parameterization/state-transition solver after
 the physical maneuver geometry/constraints are authored.
+
+## Current-reference diagnostic and authority correction
+
+A new diagnostic distinction is visible in the Stage-12 viewer:
+
+```text
+pink cross   = current sampled reference position
+violet cross = current accepted phase endpoint
+```
+
+For the current multi-point path backend, these must not be described as
+"Ruckig current target" without qualification. Ruckig receives one scalar
+progress problem from `s=0` to the end of the full guide. The full trajectory
+is then split into follower phases by retained-route source progress.
+
+Therefore:
+- pink answers "what reference point is follower expected to be at now?";
+- violet answers "where does the current accepted phase end?";
+- global finish remains the scalar Ruckig target.
+
+### Correct motion ownership
+
+Corner/turn physics is not RCS-only. The physically reachable acceleration
+vector is produced by hull orientation plus aft-main thrust plus bounded RCS.
+
+The intended Stage-12 ownership is now:
+
+```text
+coarse topology
+    -> physical maneuver author/compiler
+       - choose arc/transition
+       - tangent velocity
+       - required acceleration
+       - hull attitude / angular schedule
+       - main + RCS allocation
+       - lead-rotation / braking boundary
+       - call Ruckig as needed
+    -> accepted program
+    -> follower/autopilot
+    -> physical ship
+```
+
+Ruckig must not be asked to decide a propulsion policy it cannot see, and
+Follower must not compensate for physically impossible authored references.
+
+### Terminal behavior
+
+The current scenario includes finish `forward` and `up`; both are parsed as
+requirements. Non-zero finish speed becomes terminal velocity along
+`finish.forward`.
+
+Braking is therefore conditional:
+- same speed + enough free space -> broad arc / vector rotation without speed
+  loss is valid;
+- lower terminal speed, tight curvature, narrow passage, or insufficient
+  attitude/engine reachability -> braking is required and must start early
+  enough for hull rotation + burn.

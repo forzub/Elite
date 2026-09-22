@@ -2,48 +2,18 @@
 #include <cmath>
 
 #include "DynamicMotionSystem.h"
+#include "src/game/ship/core/ShipDynamics.h"
 
 namespace game::navigation
 {
 namespace
 {
-constexpr double StandardGravityMps2 = 9.80665;
 constexpr double StopSpeedEpsilonMps = 0.05;
 constexpr double BrakeAlignmentCos = 0.995;
 
 inline double positiveOr(double value, double fallback)
 {
     return value > 0.0 ? value : fallback;
-}
-
-inline double localSpeedLimit(const ShipParams& params)
-{
-    return std::max(0.0, static_cast<double>(params.maxCombatSpeed));
-}
-
-inline double linearAccelerationLimit(const ShipParams& params)
-{
-    // A descriptor may opt into a linear-only envelope so longitudinal
-    // response can be tuned independently from the angular/load envelope.
-    // Zero preserves legacy descriptors and tests by falling back to maxGs.
-    const double linearGs =
-        params.maxLinearGs > 0.0f
-            ? static_cast<double>(params.maxLinearGs)
-            : static_cast<double>(params.maxGs);
-
-    return std::max(0.0, linearGs * StandardGravityMps2);
-}
-
-inline double manoeuvreAccelerationLimit(const ShipParams& params)
-{
-    const double dedicated =
-        static_cast<double>(params.manoeuvreThrusterAccel);
-    if (dedicated > 0.0)
-        return dedicated;
-
-    // Legacy/test descriptors that predate the dedicated RCS field still get
-    // their historical authority until every ship profile has migrated.
-    return std::max(0.0, static_cast<double>(params.strafeAccel));
 }
 
 inline glm::dvec3 clampMagnitude(
@@ -125,8 +95,8 @@ void DynamicMotionSystem::applySystemAccelerationDemand(
     const glm::dvec3 forward =
         glm::normalize(glm::dvec3(shipForward));
 
-    const double mainAuthority = linearAccelerationLimit(params);
-    const double manoeuvreAuthority = manoeuvreAccelerationLimit(params);
+    const double mainAuthority = game::ship::mainAccelerationLimitMps2(params);
+    const double manoeuvreAuthority = game::ship::manoeuvreAccelerationLimitMps2(params);
 
     // Propulsion truth is independent of the pilot/control law:
     // this ship has one aft main engine. Neither Assisted nor Newtonian may
@@ -178,7 +148,7 @@ void DynamicMotionSystem::updateLocalFrameMotion(
     glm::dvec3 actualManoeuvreWorldAcceleration =
         motion.manoeuvreAccelerationMps2;
 
-    const double manoeuvreAuthority = manoeuvreAccelerationLimit(params);
+    const double manoeuvreAuthority = game::ship::manoeuvreAccelerationLimitMps2(params);
     const double gasUsePerSecond = std::max(
         0.0,
         static_cast<double>(params.manoeuvreGasUsePerSecond)
@@ -247,7 +217,7 @@ void DynamicMotionSystem::updateLocalFrameMotion(
             limitPropulsionAccelerationToControlledSpeed(
                 motion.localVelocityMps,
                 requestedMainLocalAcceleration,
-                localSpeedLimit(params),
+                game::ship::controlledSpeedLimitMps(params),
                 dt
             );
 
@@ -262,7 +232,7 @@ void DynamicMotionSystem::updateLocalFrameMotion(
         localAcceleration = limitPropulsionAccelerationToControlledSpeed(
             motion.localVelocityMps,
             requestedMainLocalAcceleration + actualManoeuvreLocalAcceleration,
-            localSpeedLimit(params),
+            game::ship::controlledSpeedLimitMps(params),
             dt
         );
     }
@@ -321,9 +291,9 @@ void DynamicMotionSystem::applyLocalFrameInput(
 )
 {
     const double dtD = std::max(0.0, static_cast<double>(dt));
-    const double maxSpeed = localSpeedLimit(params);
-    const double maxAccel = linearAccelerationLimit(params);
-    const double manoeuvreAccel = manoeuvreAccelerationLimit(params);
+    const double maxSpeed = game::ship::controlledSpeedLimitMps(params);
+    const double maxAccel = game::ship::mainAccelerationLimitMps2(params);
+    const double manoeuvreAccel = game::ship::manoeuvreAccelerationLimitMps2(params);
 
     const glm::dvec3 f = glm::normalize(glm::dvec3(shipForward));
     const glm::dvec3 r = glm::normalize(glm::dvec3(shipRight));

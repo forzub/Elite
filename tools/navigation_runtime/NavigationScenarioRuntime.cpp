@@ -2149,7 +2149,7 @@ double distancePointToPolyline(
 TraceFrame executionTraceFrame(
     const ExecutionVehicle& vehicle,
     const Program& program,
-    const Scenario& scenario,
+    const glm::dvec3& selectedTargetMapMeters,
     double programSampleUniverseTimeSeconds,
     const std::string& status
 )
@@ -2218,7 +2218,7 @@ TraceFrame executionTraceFrame(
     frame.phase = "route_execution";
     frame.plannerStatus = status;
     frame.hasSelectedTarget = true;
-    frame.selectedTarget = scenario.finish.position;
+    frame.selectedTarget = selectedTargetMapMeters;
 
     if (program.valid && program.sampleCount >= 2)
     {
@@ -3095,7 +3095,7 @@ ScenarioRunResult executeCalculatedRoute(
             executionTraceFrame(
                 vehicle,
                 programs.front(),
-                scenario,
+                scenario.finish.position,
                 vehicle.timeSeconds,
                 "follower_running"
             )
@@ -3134,7 +3134,7 @@ ScenarioRunResult executeCalculatedRoute(
                     executionTraceFrame(
                         vehicle,
                         programs[activeProgram],
-                        scenario,
+                        scenario.finish.position,
                         vehicle.timeSeconds,
                         "storage_page_advance"
                     )
@@ -3410,7 +3410,7 @@ ScenarioRunResult executeCalculatedRoute(
                     executionTraceFrame(
                         vehicle,
                         program,
-                        scenario,
+                        scenario.finish.position,
                         programReferenceTimeSeconds,
                         trackingOutsideEnvelope
                             ? "follower_tracking_error"

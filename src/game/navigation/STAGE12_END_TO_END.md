@@ -8949,3 +8949,67 @@ point-mass Ruckig acceleration intervals must reserve finite lead-rotation time
 before main-engine-dominant burns.
 
 Candidate before docs: `b833eddb7bd04b5c025b2be0fd8334c33f8824e6`.
+
+## Newtonian 21.20 m/s gate — RCS must not silently become the primary engine
+
+Fresh target result:
+
+```text
+NEWTONIAN / EXPERT / STANDARD
+21.20 -> 21.20 m/s
+Ruckig 20.73 .. 21.20 m/s
+final 8.17 m/s
+final error 181.42 m
+reference hold 40.61 s
+body/velocity max 174.31 deg
+```
+
+The route itself widened correctly with speed. The failure was execution
+doctrine.
+
+Telemetry showed long intervals with:
+```text
+main_a = 0
+RCS ~= 1.5 m/s^2
+reference speed ~= 20.6 m/s
+physical speed collapsing toward ~4 m/s
+hull/reference error ~0
+```
+
+The old attitude author compared requested acceleration against the *full*
+2.0 m/s^2 physical RCS capability. Because Ruckig requested less than that,
+Newtonian never needed to point the aft main engine.
+
+### Corrected distinction
+
+```text
+ASSISTED attitude authoring
+    may use full physical RCS authority when choosing to stay velocity-coupled
+
+NEWTONIAN attitude authoring
+    RCS-as-primary threshold = tiny correction authority (0.35 m/s^2)
+    material acceleration -> lead/cant/flip hull for aft-main participation
+```
+
+The downstream allocator still knows the full physical RCS capability; this is
+not a fake clamp. It is a maneuver-authoring choice that stops a
+main-engine-dominant ship from spending its whole route on manoeuvre jets.
+
+### New visual diagnostics
+
+Three persistent bottom indicators are driven from physical frame channels:
+- `МАРШЕВЫЙ` — positive aft-main acceleration;
+- `ПЕРЕДНИЙ МАРШЕВЫЙ` — negative main acceleration relative to hull forward;
+- `МАНЕВРОВЫЙ` — non-zero RCS/manoeuvre acceleration.
+
+For the current Cobra the middle indicator should remain off. If it lights,
+that is direct evidence of a reintroduced hidden fore-main path.
+
+Regression:
+`testNewtonianHigherSpeedUsesMainEngineDominantManeuver()`.
+
+If the next target run shows correct hull rotation + main burn but still cannot
+track, proceed to finite attitude-acquisition/lead-rotation timing in the
+trajectory/maneuver compiler rather than increasing RCS authority.
+
+Candidate before docs: `421ecb1b2721d54bc0c33737a520100a3c10fac9`.

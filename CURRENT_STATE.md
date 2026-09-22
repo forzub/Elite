@@ -3160,3 +3160,42 @@ speed-limit/curvature, narrow passages or terminal speed demand it.
 
 Code baseline before docs: `620b59ebbb6937727c5c3e3a47f78884ae3fd99f`.
 Target validation pending.
+
+## 2026-09-22 — canonical Planner/Autopilot contract fixed
+
+Terminology is now explicit:
+
+- **Planner** outputs the complete physical maneuver program.
+- **Ruckig** is a helper used inside Planner calculations.
+- **Autopilot/Follower** executes that program against real ship physics and
+  watches for sudden hazards.
+
+A Planner result is no longer conceptually "a set of route points".
+
+It is a sequence of physical states plus the command interval to the next state.
+
+State:
+- time;
+- position;
+- velocity vector;
+- acceleration vector;
+- 3-D body attitude;
+- angular velocity;
+- angular acceleration.
+
+Interval:
+- duration;
+- aft-main enable/throttle and throttle ramp;
+- fore-main enable/throttle only when that hardware exists;
+- manoeuvre/RCS force/command;
+- attitude-control target/profile.
+
+Important semantic correction:
+"engine works for N seconds" belongs to the segment between two states, not to
+the point itself.
+
+The Autopilot does not choose a different nominal maneuver when tracking gets
+hard. It may apply bounded correction and emergency safety action, then ask
+Planner for a replacement program from the current state.
+
+This is the architecture to implement next.

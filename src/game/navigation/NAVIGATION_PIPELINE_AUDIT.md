@@ -1063,3 +1063,186 @@ The execution vehicle initializes pitch/yaw/roll rate from the scenario. No glob
 recalculation semantics changed.
 
 Validation state: these fixes are committed but not yet target-rebuilt/re-run.
+
+## 2026-09-22 — runtime purity / source-of-truth audit after dense-program regression
+
+Fresh target evidence after preserving every dense trajectory interval:
+
+```text
+10 -> 10 Newtonian:
+    trajectory samples              1333
+    program phases                    90
+    actuator segments               1332
+    source coverage             1332/1332 COMPLETE
+    phase handoffs                     0
+    final speed                     0.00 m/s
+    final error                   270.27 m
+    reference hold                56.62 s
+
+27.8 -> 26 Newtonian:
+    trajectory samples               613
+    program phases                    42
+    actuator segments                612
+    source coverage               612/612 COMPLETE
+    phase handoffs                     0
+    final speed                    14.21 m/s
+    final error                   148.72 m
+    reference hold                42.22 s
+```
+
+The dense-source preservation itself is correct as data preservation, but it
+exposed two architecture defects.
+
+### Immediate stop-and-return root cause
+
+At the beginning of the 27.8 m/s run the accepted reference changes forward
+direction by about 1.4323 degrees in 0.00833 s. That is approximately
+3.0 rad/s immediately from a zero-angular-rate start.
+
+`buildReferenceAttitudes()` constrains the per-sample orientation delta by
+`maxAngularRate * dt`, but does not integrate the vehicle's angular
+acceleration limit. Therefore the authored reference may jump from omega=0 to
+near max omega in one sample even though the Cobra has finite
+`angularAccel = 3 rad/s^2`.
+
+The tracking envelope permits only 0.8 rad/s angular-rate error, so the follower
+leaves the envelope almost immediately.
+
+Runtime then performs:
+
+```text
+if trackingErrorExceeded:
+    activeProgramReferenceDelaySeconds += dt
+
+programTime = wallTime - activeProgramReferenceDelaySeconds
+```
+
+This freezes the moving reference clock. The phase gate receives the same
+frozen time, therefore it cannot reach the nominal phase end. The observed
+`PHASE HANDOFFS: 0` is a direct consequence.
+
+Outside the envelope B10 correctly disables moving-reference feed-forward and
+uses bounded feedback toward the frozen reference. But when the reference is
+held indefinitely, that defensive recovery mode becomes a stale-point homing
+controller: the craft brakes to zero and then returns toward the old reference
+point. That exactly explains the current visible "flies, stops, turns back"
+behavior.
+
+### Storage page != physical maneuver phase
+
+The <=16-sample fixed-capacity object is a storage/execution page. After dense
+preservation, one continuous trajectory became 42 or 90 Program objects.
+
+The runtime currently treats every page as a semantic maneuver phase:
+- new accepted time;
+- phase gate;
+- possible capture/reacquisition;
+- independent reference delay.
+
+That is wrong. Paging a continuous program must not alter maneuver semantics or
+time.
+
+Target rule:
+
+```text
+ONE continuous ManeuverProgram timebase
+    -> many fixed-capacity storage pages if needed
+
+page transition:
+    storage/index operation only
+
+maneuver phase transition:
+    semantic event only when Planner authored a real phase boundary
+```
+
+### Current function / ownership audit
+
+| Area | Verdict | Reason |
+| --- | --- | --- |
+| authoritative world/static geometry | GREEN | factual transforms/HitVolumes and collision queries are coherent for the fixture |
+| Stage-1 NominalRoutePlanner | GREEN for topology only | returns a collision-free coarse detour; its speed clearance is a heuristic reserve, not a dynamics proof |
+| SmoothPath geometric sampling/proof | GREEN for geometry only | checks safe geometry/curvature candidates; does not prove Cobra propulsion |
+| Ruckig scalar solver | GREEN as numeric primitive | solves the 1-D request it is given; it does not know hull/thruster topology |
+| DynamicMotionSystem Newtonian nav allocator | GREEN/LOCAL | aft main is forward-only, residual is bounded RCS, physical velocity is integrated |
+| ManeuverProgramSampler | GREEN as sampler | deterministic interpolation; must not be made responsible for semantic paging |
+| PilotSkill bridge | YELLOW | clean execution-quality layer, but its latency/slew is not yet included in Planner feasibility |
+| AcceptedManeuverProgram actuator fields | YELLOW | correct direction, but currently observe-only and authored after trajectory geometry |
+| ManeuverPhaseGate | YELLOW locally / RED integration | gate logic is coherent; feeding it a frozen page clock makes it deadlock |
+| buildReferenceAttitudes | RED | rate-limited but not angular-acceleration reachable |
+| reference-clock hold/reacquire policy | RED | can freeze forever and command return to stale reference |
+| dense Program chunks as phases | RED | storage representation changes execution semantics |
+| executionVehicleProfile | RED | converts maxLinearGs into symmetric forward/braking scalar authority independent of hull attitude |
+| buildExecutionGuide/globalGuideSpeedLimit | RED for physical planning | cornering is primarily sized from RCS lateral authority and clamped local Bezier cuts, not combined main+RCS+hull reachability |
+| hard-coded runtime cobraParams() | RED | duplicate of authoritative ship descriptor |
+| CapabilitySnapshot reverse authority | RED | publishes symmetric reverse acceleration although current Cobra has no fore main |
+| manual Assisted longitudinal model | RED SSOT | still implements a symmetric aft/fore main-thrust pair, contradicting current aft-only propulsion truth |
+| throttle slew in navigation demand path | RED/incomplete | descriptor has throttleAccel, but nav main acceleration is applied immediately |
+| turnRadius=20 m | RED/dead truth in this path | descriptor field is not authoritative for Stage-2 maneuver geometry |
+
+### Source-of-truth verdict
+
+There is currently **no single vehicle-dynamics source of truth**.
+
+At least these competing representations exist:
+1. `EliteCobraMk1Descriptor()`;
+2. duplicated `cobraParams()` in the runtime stand;
+3. simplified `NavigationVehicleProfile`;
+4. `AcceptedManeuverProgram::CapabilitySnapshot`;
+5. separate manual Assisted propulsion semantics.
+
+Target replacement is one immutable
+`VehicleDynamicsProfile / PropulsionCapability` derived from the authoritative
+descriptor and passed unchanged through Planner, proof, AcceptedManeuverProgram,
+Autopilot and physics where appropriate.
+
+It must explicitly carry:
+- installed main-thruster directions (aft main, optional real fore main);
+- main acceleration and throttle slew;
+- RCS vector authority / consumable model;
+- angular rate and angular acceleration limits;
+- controlled speed/load limits;
+- hull/collision envelope;
+- mass/inertia where required by proof.
+
+Derived scalar constraints are views of this profile, never competing truth.
+
+### Test-gate audit
+
+`tests/navigation_runtime/run_stage1_mingw64.sh` does NOT execute the Stage-2
+E2E pipeline. It builds the viewer and intentionally stops after Stage-1 +
+component tests.
+
+The true viewer pipeline test is wired in
+`tools/navigation_runtime/CMakeLists.txt` as:
+
+```text
+navigation_runtime_pipeline
+```
+
+Therefore a viewer build PASS is not end-to-end acceptance.
+
+Required target gate after the build:
+
+```bash
+ctest --test-dir build/tools/navigation_runtime \
+      -R "^navigation_runtime_pipeline$" \
+      --output-on-failure
+```
+
+The current code is expected to FAIL this gate until the timebase/reacquisition
+and physical-authoring defects are corrected.
+
+### Repair order
+
+1. Separate storage pages from semantic maneuver phases and restore one
+   continuous program timebase.
+2. Remove indefinite FreeTransit reference-clock freezing. A materially
+   unreachable accepted program is invalidated/replanned from current physical
+   state; the Autopilot does not home forever to an obsolete point.
+3. Make attitude authoring enforce angular acceleration as well as angular rate.
+4. Replace all duplicated/symmetric capability descriptions with one
+   authoritative VehicleDynamicsProfile.
+5. Move physical geometry + attitude + main/RCS/throttle allocation/proof ahead
+   of final Ruckig timing.
+6. Only after Planner emits a proved physical ManeuverProgram, switch the
+   explicit actuator segments from observe-only to Autopilot authority.

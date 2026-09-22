@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation: Newtonian main-engine-dominant execution
+# CONTINUE PROMPT — Elite Navigation: physically compile the maneuver before Ruckig timing
 
 Continue directly in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -7,10 +7,7 @@ Every state-affecting iteration MUST:
 2. update `CURRENT_TASK.md`;
 3. update `PROJECT_STATE.md`;
 4. update `src/game/navigation/STAGE12_END_TO_END.md`;
-5. **recreate this `CONTINUE_PROMPT.md` from scratch again**.
-
-When propulsion/control-law ownership changes, also synchronize
-`src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`.
+5. recreate this `CONTINUE_PROMPT.md` from scratch.
 
 Read first:
 - `CURRENT_STATE.md`
@@ -18,132 +15,75 @@ Read first:
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
 - `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
-- `src/game/navigation/DynamicMotionSystem.cpp`
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`
-- `tools/navigation_runtime/NavigationRuntimeViewer.cpp`
-- `src/game/navigation/ManeuverTrackingController.cpp/.h`
-- `tests/navigation_runtime/NavigationRuntimeControlTests.cpp`
-- `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`.
+- `src/world/navigation/TrajectoryGenerator.cpp/.h`
+- `src/game/navigation/RuckigTrajectorySolver.cpp/.h`
+- `src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp/.h`
+- `src/game/navigation/DynamicMotionSystem.cpp`
+- Cobra descriptor / ShipParams definitions.
 
-## Current code candidate
+## Latest architectural finding
 
-Before documentation-only commits:
+Higher-speed corner overshoot cannot be fixed by follower tuning alone.
 
-```text
-421ecb1b2721d54bc0c33737a520100a3c10fac9
-```
-
-Target-machine PASS has NOT been established.
-
-## Latest target evidence
+Actual current multi-point chain:
 
 ```text
-NEWTONIAN / EXPERT / STANDARD
-START 21.20 M/S
-FINISH 21.20 M/S
-
-PLANNER: CACHED ROUTE OK
-ROUTE ADDITIONAL CLEARANCE: 17.71 M
-TRAJECTORY: RUCKIG OK
-CALCULATED MIN/MAX: 20.73 / 21.20 M/S
-PROGRAM PHASES COMPLETE: NO
-PHYSICAL TERMINAL STATE: MISSED
-FINAL POSITION ERROR: 181.42 M
-FINAL SPEED: 8.17 M/S
-REFERENCE CLOCK HOLD: 40.61 S
-MAX BODY/VELOCITY ANGLE: 174.31 DEG
+coarse route
+ -> local Bezier execution guide p(s)
+ -> ONE scalar Ruckig progress solve s(t)
+ -> map tangent/curvature acceleration
+ -> author attitude afterwards
+ -> follower tries to execute
 ```
 
-Planner direction is reasonable: speed increase widened the detour.
+Ruckig is therefore not currently solving each route waypoint as a full 3-D
+ship state. It does not know hull rotation, aft-main pointing, combined
+main/RCS allocation, or lead-rotation braking distance.
 
-## Root cause
+## Cobra data findings
 
-Newtonian attitude authoring treated the complete physical
-`manoeuvreThrusterAccel=2.0 m/s^2` as ordinary route propulsion. The Ruckig
-curve usually requested ~1.5 m/s^2, so the hull stayed aligned with the travel
-reference and RCS supplied the whole material delta-v.
+Runtime harness currently uses duplicated hard-coded `cobraParams()`, not the
+authoritative descriptor.
 
-Telemetry examples show main OFF while RCS ~1.5 m/s^2 continuously reduces
-speed even though reference speed remains ~20.6 m/s. Main appears only very
-late with body/velocity already ~174 deg apart.
+Inspected duplicated values:
+- pitch/yaw 2.5 rad/s
+- roll 3.0 rad/s
+- angularAccel 3.0 rad/s^2
+- manoeuvreThrusterAccel 2.0 m/s^2
+- maxLinearGs 7.5
+- turnRadius 20 m
+- maxCombatSpeed 500 m/s.
 
-This is why Newtonian looked Assisted.
+The trajectory profile maps `maxLinearGs*9.80665 ~= 73.55 m/s^2` into both
+forward and braking acceleration. Treat this as suspicious: it is an envelope,
+not an engine-allocation model.
 
-## Current correction
+## Required next architecture
 
-`propulsionReferenceForward(..., law, ...)` now separates doctrine:
+The planner/trajectory layer must compile a physically feasible maneuver before
+final Ruckig timing.
 
-- Assisted: may use the full real RCS envelope when deciding whether to stay
-  velocity/tangent coupled.
-- Newtonian: only the existing 0.35 m/s^2 tiny-correction authority counts for
-  attitude authoring.
-- Material Newtonian acceleration therefore authors a real hull cant/flip so
-  the aft main engine can participate.
-- The full RCS hardware limit remains physically available downstream for
-  transient recovery and trim.
+For a material corner:
+1. know incoming position/velocity/hull attitude/angular rate;
+2. choose a broad free-space arc/transition geometry appropriate to speed;
+3. compute needed acceleration vector along it;
+4. solve whether RCS alone is trim or hull must rotate for aft main;
+5. include finite angular acceleration/rate in lead-rotation time;
+6. derive where turning/braking must start;
+7. only then time the feasible primitive with Ruckig or equivalent state solver.
 
-Navigation main engine remains aft-only.
+At 30 m/s, if free space exists, the planner should produce a broad smooth arc,
+not cling to a sharp polyline corner and hope follower fixes it.
 
-## Viewer propulsion lamps
+## Immediate coding order
 
-Always visible at screen bottom:
+1. Replace hard-coded `cobraParams()` with authoritative Cobra profile access.
+2. Introduce explicit propulsion capability separate from max pilot/load G.
+3. Add maneuver-feasibility / lead-distance computation.
+4. Make execution-guide corner radius/transition length use that feasibility.
+5. Add exact 30 m/s free-space broad-arc regression.
+6. Then evaluate whether scalar Ruckig progress remains sufficient or whether
+   selected primitives need explicit state-to-state Ruckig calls.
 
-```text
-МАРШЕВЫЙ
-ПЕРЕДНИЙ МАРШЕВЫЙ
-МАНЕВРОВЫЙ
-```
-
-They are driven from actual physical acceleration channels:
-- aft main projection > threshold -> `МАРШЕВЫЙ`;
-- main projection < -threshold -> `ПЕРЕДНИЙ МАРШЕВЫЙ`;
-- non-zero manoeuvre acceleration -> `МАНЕВРОВЫЙ`.
-
-Current Cobra has no fore main engine. Therefore `ПЕРЕДНИЙ МАРШЕВЫЙ` is
-expected to stay dark and acts as a regression detector.
-
-## Regression
-
-New exact fixture:
-`NEWTONIAN / EXPERT / STANDARD, 21.20 -> 21.20 m/s`.
-
-`testNewtonianHigherSpeedUsesMainEngineDominantManeuver()` requires:
-- material main-engine acceleration within first 8 seconds;
-- no negative/fore main acceleration.
-
-Existing Assisted 10->10, Assisted 20.9->20 and Newtonian 26.15->11.75
-regressions remain.
-
-## Run next
-
-```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-bash tests/navigation_runtime/run_stage1_mingw64.sh
-```
-
-Then:
-
-```bash
-./build/tools/navigation_runtime/bin/navigation_runtime_viewer.exe tools/navigation_runtime/scenario.json
-```
-
-First run:
-`NEWTONIAN / EXPERT / STANDARD, 21.20 -> 21.20 m/s`.
-
-Observe:
-1. `МАНЕВРОВЫЙ` may blink/use trim, but must not be the only material
-   propulsion for tens of seconds.
-2. Hull must visibly lead-rotate/cant for material route delta-v.
-3. `МАРШЕВЫЙ` should light during the burn.
-4. Hull rotation without thrust must not bend V.
-5. `ПЕРЕДНИЙ МАРШЕВЫЙ` must remain dark.
-
-If those are true but path tracking still fails, the next architectural work is
-finite lead-rotation time/distance in maneuver authoring: Ruckig point-mass
-acceleration currently starts before the physical hull necessarily acquires its
-burn attitude.
-
-Do not enable dynamic avoidance.
-Do not loosen tracking/terminal tolerances to fake a pass.
+Do not add another follower recovery workaround for this issue.

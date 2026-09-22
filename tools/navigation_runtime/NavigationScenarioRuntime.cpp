@@ -986,14 +986,10 @@ glm::dvec3 propulsionReferenceForward(
     // Control-law doctrine matters here even though the physical hardware is
     // shared. Assisted may legitimately spend the available manoeuvre/RCS
     // authority to keep velocity approximately coupled to the nose. Newtonian
-    // on a main-engine-dominant Cobra must NOT treat the full 2 m/s^2 RCS
-    // envelope as its ordinary propulsion system: that makes the hull follow
-    // the route while RCS quietly performs the entire turn/brake.
-    //
-    // 0.35 m/s^2 is the existing "tiny correction" threshold used above. In
-    // Newtonian it is therefore the maximum RCS authority considered when
-    // AUTHORING the required hull attitude; the physical allocator may still
-    // use the full real RCS envelope for transient recovery/trim.
+    // on a main-engine-dominant vehicle must NOT treat the full RCS envelope
+    // as its ordinary route propulsion; the threshold below is explicit policy,
+    // not a hidden vehicle constant. The physical allocator may still use the
+    // full installed RCS authority for transient recovery/trim.
     const double attitudeRcsAuthority =
         law == Law::Newtonian
             ? std::min(

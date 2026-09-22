@@ -724,42 +724,40 @@ Law controlLaw(ControlMode mode)
         : Law::Assisted;
 }
 
-double effectiveStartSpeedMps(
+struct ResolvedRunKinematics
+{
+    double startSpeedMps = 0.0;
+    double finishSpeedMps = 0.0;
+    double planningSpeedMps = 0.0;
+    glm::dvec3 startVelocityMapMps {0.0};
+};
+
+ResolvedRunKinematics resolveRunKinematics(
     const Scenario& scenario,
     const ScenarioRunSettings& settings
 )
 {
-    return
+    ResolvedRunKinematics out;
+    out.startSpeedMps =
         settings.startSpeedOverrideMps >= 0.0
             ? settings.startSpeedOverrideMps
             : glm::length(scenario.startVelocity);
-}
-
-double effectiveFinishSpeedMps(
-    const Scenario& scenario,
-    const ScenarioRunSettings& settings
-)
-{
-    return
+    out.finishSpeedMps =
         settings.finishSpeedOverrideMps >= 0.0
             ? settings.finishSpeedOverrideMps
             : std::max(0.0, scenario.finish.speedMps);
-}
+    out.planningSpeedMps =
+        std::max(out.startSpeedMps, out.finishSpeedMps);
 
-glm::dvec3 effectiveStartVelocity(
-    const Scenario& scenario,
-    const ScenarioRunSettings& settings
-)
-{
     glm::dvec3 direction = scenario.startVelocity;
     if (glm::length(direction) <= 1.0e-9)
         direction = scenario.startBasis.forward;
     if (glm::length(direction) <= 1.0e-9)
         direction = glm::dvec3(1.0, 0.0, 0.0);
 
-    return
-        glm::normalize(direction) *
-        effectiveStartSpeedMps(scenario, settings);
+    out.startVelocityMapMps =
+        glm::normalize(direction) * out.startSpeedMps;
+    return out;
 }
 
 double characteristicTurnTimeSeconds(
@@ -1371,9 +1369,11 @@ world::navigation::NavigationVehicleProfile executionVehicleProfile(
 
 world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
     const Scenario& scenario,
-    const ScenarioRunSettings& settings,
     const RetainedStaticRoute& retainedRoute,
-    const ScenarioVehicleParameters& vehicle
+    const ScenarioVehicleParameters& vehicle,
+    const ResolvedRunKinematics& kinematics,
+    const world::navigation::TrajectoryGenerationPolicy& trajectoryPolicy,
+    double terminalOrientationBlendDistanceMeters
 )
 {
     world::navigation::TrajectoryGenerationRequest request;
@@ -1385,30 +1385,15 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
         scenario.frame.universeTimeScale;
     request.pathPointsMeters = retainedRoute.pointsMapMeters;
     request.obstacles = scenario.staticObstacles;
-    const double startSpeedMps =
-        effectiveStartSpeedMps(scenario, settings);
-    const double finishSpeedMpsResolved =
-        effectiveFinishSpeedMps(scenario, settings);
-    const double planningSpeedMps =
-        std::max(startSpeedMps, finishSpeedMpsResolved);
-    const double preferredClearanceMeters =
-        routePlanningClearanceMeters(
-            planningSpeedMps,
-            scenario.routeClearanceMeters,
-            settings.flightStyle,
-            vehicle.physics,
-            settings.navigation
-        );
-
     request.vehicle =
         executionVehicleProfile(
             vehicle,
-            preferredClearanceMeters,
-            planningSpeedMps
+            retainedRoute.additionalClearanceMeters,
+            kinematics.planningSpeedMps
         );
-    request.policy = settings.trajectory;
+    request.policy = trajectoryPolicy;
     request.initialVelocityMps =
-        effectiveStartVelocity(scenario, settings);
+        kinematics.startVelocityMapMps;
     request.initialAccelerationMps2 = scenario.startAcceleration;
 
     if (!request.pathPointsMeters.empty())
@@ -1425,7 +1410,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
         }
 
         const double finishSpeedMps =
-            finishSpeedMpsResolved;
+            kinematics.finishSpeedMps;
 
         world::navigation::TrajectoryPointSpeedConstraint finish;
         finish.sourcePathProgressMeters = progress;
@@ -1462,7 +1447,7 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
     request.terminalForward = terminal.forward;
     request.terminalUp = terminal.up;
     request.terminalOrientationBlendDistanceMeters =
-        settings.navigation.terminalOrientationBlendDistanceMeters;
+        terminalOrientationBlendDistanceMeters;
 
     return world::navigation::TrajectoryGenerator::generate(request);
 }

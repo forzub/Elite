@@ -22,6 +22,14 @@ struct ShipParams
     float maxCombatSpeed;
     float maxCruiseSpeed;   // маршевый (игровая)
     float throttleAccel;
+
+    // Installed ordinary longitudinal main propulsion.
+    // "Forward" means acceleration along ship forward; "reverse" means a
+    // physically installed fore/nose main engine. These are hardware facts,
+    // not control-law preferences. Zero reverse authority means braking that
+    // needs main-engine force must rotate the hull first.
+    bool forwardMainEngineAvailable = true;
+    bool reverseMainEngineAvailable = false;
     
     // --- стабилизация ---
     float autoLevelStrength; // 0 = выкл

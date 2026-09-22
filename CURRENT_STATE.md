@@ -2957,3 +2957,68 @@ Candidate correction:
 Candidate code baseline before docs: `b833eddb7bd04b5c025b2be0fd8334c33f8824e6`.
 
 Status: target MinGW64 validation required.
+
+## 2026-09-22 — Newtonian still behaved Assisted: RCS was acting as primary propulsion
+
+Fresh target run:
+
+```text
+NEWTONIAN / EXPERT / STANDARD
+START 21.20 m/s
+FINISH 21.20 m/s
+route additional clearance 17.71 m
+Ruckig min/max 20.73 / 21.20 m/s
+program phases complete NO
+physical terminal state MISSED
+final error 181.42 m
+final speed 8.17 m/s
+max body/velocity angle 174.31 deg
+reference hold 40.61 s
+```
+
+Stage-1 responded logically to the higher requested speed by widening the
+detour. The execution failure was downstream.
+
+Telemetry showed the actual problem clearly:
+- Newtonian hull/reference became essentially fixed;
+- main engine stayed OFF;
+- manoeuvre/RCS supplied about 1.5 m/s^2 continuously;
+- that RCS-only acceleration reduced physical speed from ~21 m/s to single
+  digits while the reference still expected ~20.6 m/s;
+- only very late, with body/velocity already ~174 deg apart, did aft main thrust
+  begin to appear.
+
+Why this happened:
+`propulsionReferenceForward()` considered the Cobra's full physical
+`manoeuvreThrusterAccel = 2.0 m/s^2` as ordinary route authority. The Ruckig
+trajectory typically asks for ~1.5 m/s^2, so Newtonian concluded that RCS alone
+could realize the trajectory and did not author a main-engine pointing
+maneuver. Physically possible for a short RCS burst, but wrong doctrine for this
+main-engine-dominant ship and effectively Assisted-like behavior.
+
+Candidate correction:
+- Assisted and Newtonian no longer share the same RCS attitude-authoring
+  doctrine;
+- Assisted may use the full real RCS envelope to preserve its coupled-flight
+  behavior;
+- Newtonian uses only the existing 0.35 m/s^2 precision slice when deciding
+  whether the hull may stay on the travel tangent;
+- material Newtonian acceleration therefore authors a real cant/flip so aft
+  main propulsion participates;
+- full RCS physical authority remains available downstream for recovery/trim.
+
+Viewer diagnostic added at the bottom:
+- fixed indicator `МАРШЕВЫЙ`: lights for positive aft-main acceleration;
+- fixed indicator `ПЕРЕДНИЙ МАРШЕВЫЙ`: lights if any negative/fore main
+  acceleration appears (should stay dark for the current Cobra; useful as a
+  physics-bug detector);
+- fixed indicator `МАНЕВРОВЫЙ`: lights whenever manoeuvre/RCS acceleration is
+  physically non-zero.
+
+New regression:
+`testNewtonianHigherSpeedUsesMainEngineDominantManeuver()` pins the exact
+21.20 -> 21.20 Newtonian case and requires material main-engine participation
+within the first 8 seconds.
+
+Code candidate before documentation commits: `421ecb1b2721d54bc0c33737a520100a3c10fac9`.
+Target MinGW64 validation pending.

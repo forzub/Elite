@@ -3518,6 +3518,11 @@ void processUiAction(
                 state.startSpeedMps;
             settings.finishSpeedOverrideMps =
                 state.finishSpeedMps;
+            settings.io.diagnosticsDirectory = ".";
+            settings.io.writeRouteDiagnostics = true;
+            settings.io.writeExecutionDiagnostics = true;
+            settings.io.writeExecutionTelemetry = true;
+            settings.io.echoDiagnosticsToConsole = true;
 
             bool routeReady =
                 state.hasRetainedRoute &&

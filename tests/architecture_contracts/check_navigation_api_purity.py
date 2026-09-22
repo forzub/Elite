@@ -98,8 +98,8 @@ for forbidden in (
     "frame.originMeters = {0.0, 0.0, 0.0};",
 ):
     require(
-        forbidden not in exec_body,
-        f"Stage-2 execution manufactures hidden environment/frame input: {forbidden}",
+        forbidden not in runtime_cpp,
+        f"runtime manufactures hidden environment/frame input: {forbidden}",
     )
 
 for token in (
@@ -109,8 +109,8 @@ for token in (
     "frame.originMeters = scenario.frame.originMeters",
     "frame.localToWorldBasis = scenario.frame.localToWorldBasis",
 ):
-    require(token in exec_body,
-            f"Stage-2 does not consume explicit scenario environment/frame data: {token}")
+    require(token in runtime_cpp,
+            f"runtime does not consume explicit scenario environment/frame data: {token}")
 
 # ---------- Stage-1 geometric policy ----------
 for token in (

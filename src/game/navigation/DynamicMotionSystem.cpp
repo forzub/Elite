@@ -297,9 +297,14 @@ void DynamicMotionSystem::applyLocalFrameInput(
 )
 {
     const double dtD = std::max(0.0, static_cast<double>(dt));
-    const double maxSpeed = game::ship::controlledSpeedLimitMps(params);
-    const double maxAccel = game::ship::mainAccelerationLimitMps2(params);
-    const double manoeuvreAccel = game::ship::manoeuvreAccelerationLimitMps2(params);
+    const double maxSpeed =
+        game::ship::controlledSpeedLimitMps(params);
+    const double forwardMainAccel =
+        game::ship::forwardMainAccelerationLimitMps2(params);
+    const double reverseMainAccel =
+        game::ship::reverseMainAccelerationLimitMps2(params);
+    const double manoeuvreAccel =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
 
     const glm::dvec3 f = glm::normalize(glm::dvec3(shipForward));
     const glm::dvec3 r = glm::normalize(glm::dvec3(shipRight));
@@ -356,7 +361,8 @@ void DynamicMotionSystem::applyLocalFrameInput(
 
             if (glm::dot(f, antiVelocity) >= BrakeAlignmentCos)
             {
-                const double brakeAccel = std::min(maxAccel, speed / dtD);
+                const double brakeAccel =
+                    std::min(forwardMainAccel, speed / dtD);
                 motion.mainEngineAccelerationMps2 = f * brakeAccel;
             }
 
@@ -377,7 +383,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
         );
 
         motion.mainEngineAccelerationMps2 =
-            f * (mainThrustCommand * maxAccel);
+            f * (mainThrustCommand * forwardMainAccel);
         motion.engineAccelerationMps2 =
             motion.mainEngineAccelerationMps2 +
             motion.manoeuvreAccelerationMps2;
@@ -448,29 +454,40 @@ void DynamicMotionSystem::applyLocalFrameInput(
     const double response =
         positiveOr(static_cast<double>(params.throttleAccel), 1.0);
 
-    // Assisted does not gain an omnidirectional "main engine". Longitudinal
-    // velocity error is handled by the symmetric aft/fore main-thrust pair.
-    // Lateral/vertical stabilization uses the same bounded manoeuvre/RCS
-    // authority as manual keypad translation.
+    // Assisted changes control doctrine, never installed hardware.
+    // Split the requested stabilization acceleration through the SAME physical
+    // propulsion topology used by navigation: real forward/reverse main
+    // authority first, then bounded RCS for whatever remains.
     const double longitudinalVelocityError =
         glm::dot(velocityError, f);
-    const glm::dvec3 longitudinalMainAcceleration =
-        f * std::clamp(
-            longitudinalVelocityError * response,
-            -maxAccel,
-            maxAccel
-        );
+    const double requestedLongitudinalAcceleration =
+        longitudinalVelocityError * response;
 
-    const glm::dvec3 lateralVelocityError =
-        velocityError - f * longitudinalVelocityError;
-    const glm::dvec3 assistedRcsStabilization =
-        clampMagnitude(
-            lateralVelocityError * response,
-            manoeuvreAccel
+    const double mainLongitudinalAcceleration =
+        std::clamp(
+            requestedLongitudinalAcceleration,
+            -reverseMainAccel,
+            forwardMainAccel
         );
 
     motion.mainEngineAccelerationMps2 =
-        longitudinalMainAcceleration;
+        f * mainLongitudinalAcceleration;
+
+    const glm::dvec3 lateralVelocityError =
+        velocityError - f * longitudinalVelocityError;
+    const glm::dvec3 unservedLongitudinalAcceleration =
+        f * (
+            requestedLongitudinalAcceleration -
+            mainLongitudinalAcceleration
+        );
+
+    const glm::dvec3 assistedRcsStabilization =
+        clampMagnitude(
+            lateralVelocityError * response +
+                unservedLongitudinalAcceleration,
+            manoeuvreAccel
+        );
+
     motion.manoeuvreAccelerationMps2 =
         clampMagnitude(
             motion.manoeuvreAccelerationMps2 +

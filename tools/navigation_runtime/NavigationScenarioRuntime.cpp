@@ -1449,10 +1449,11 @@ Program makeProgramPhase(
     std::size_t last,
     std::uint64_t revision,
     const Scenario& scenario,
-    const ShipParams& params,
+    const ScenarioVehicleParameters& vehicle,
     const ScenarioNavigationPolicy& policy
 )
 {
+    const ShipParams& params = vehicle.physics;
     Program program;
     program.valid = true;
     program.revision = revision;
@@ -1652,7 +1653,7 @@ Program makeProgramPhase(
     program.capability =
         game::navigation::makeManeuverCapabilitySnapshot(
             params,
-            scenario.staticWorldRevision
+            vehicle.capabilityRevision
         );
 
     // Planner-owned physical command intervals. This is the first explicit
@@ -1853,7 +1854,7 @@ std::vector<Program> buildRoutePrograms(
     const std::vector<ReferenceAttitude>& attitudes,
     const std::vector<glm::dvec3>& retainedRoute,
     const Scenario& scenario,
-    const ShipParams& params,
+    const ScenarioVehicleParameters& vehicle,
     const ScenarioNavigationPolicy& policy
 )
 {
@@ -1916,7 +1917,7 @@ std::vector<Program> buildRoutePrograms(
                     chunkLast,
                     revision++,
                     scenario,
-                    params,
+                    vehicle,
                     policy
                 );
 
@@ -2810,7 +2811,7 @@ ScenarioRunResult executeCalculatedRoute(
                 attitudes,
                 calculatedRoute.routePoints,
                 scenario,
-                params,
+                vehicleInput,
                 settings.navigation
             );
 

@@ -2538,6 +2538,20 @@ ScenarioRunResult calculateScenario(
         request.staticObstacles = scenario.staticObstacles;
         request.navigationEnvelopeRadiusMeters =
             game::navigation::conservativeCollisionRadiusMeters(vehicle);
+        request.geometricPolicy.supportMarginMeters =
+            settings.navigation.geometricSupportMarginMeters;
+        request.geometricPolicy.sphereRadialSamples =
+            settings.navigation.geometricSphereRadialSamples;
+        request.geometricPolicy.capsuleRadialSamples =
+            settings.navigation.geometricCapsuleRadialSamples;
+        request.geometricPolicy.maxConsideredObstacles =
+            settings.navigation.geometricMaxConsideredObstacles;
+        request.geometricPolicy.allowStartEscape =
+            settings.navigation.geometricAllowStartEscape;
+        request.geometricPolicy.allowGoalEscape =
+            settings.navigation.geometricAllowGoalEscape;
+        request.geometricPolicy.simplifyLineOfSight =
+            settings.navigation.geometricSimplifyLineOfSight;
 
         const double planningClearanceMeters =
             routePlanningClearanceMeters(

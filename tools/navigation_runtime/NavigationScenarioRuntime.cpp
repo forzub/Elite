@@ -283,6 +283,46 @@ ScenarioDefinition parseScenarioDefinitionFile(
     scenario.dynamicWorldRevision =
         root.value("dynamic_world_revision", std::uint64_t{1});
 
+    if (root.contains("world_physics"))
+    {
+        const auto& world = root.at("world_physics");
+        scenario.worldPhysics.linearDrag =
+            world.value(
+                "linear_drag",
+                scenario.worldPhysics.linearDrag
+            );
+        scenario.worldPhysics.maxSafeDecel =
+            world.value(
+                "max_safe_decel",
+                scenario.worldPhysics.maxSafeDecel
+            );
+    }
+
+    if (root.contains("reference_frame"))
+    {
+        const auto& frame = root.at("reference_frame");
+        scenario.frame.systemId =
+            frame.value("system_id", scenario.frame.systemId);
+        scenario.frame.frameId =
+            frame.value("frame_id", scenario.frame.frameId);
+        scenario.frame.originMeters =
+            readVec3(
+                frame,
+                "origin_m",
+                scenario.frame.originMeters
+            );
+        scenario.frame.startUniverseTimeSeconds =
+            frame.value(
+                "start_universe_time_s",
+                scenario.frame.startUniverseTimeSeconds
+            );
+        scenario.frame.universeTimeScale =
+            frame.value(
+                "universe_time_scale",
+                scenario.frame.universeTimeScale
+            );
+    }
+
     if (root.contains("start"))
     {
         const auto& start = root.at("start");
@@ -1316,10 +1356,12 @@ world::navigation::TrajectoryGenerationResult buildExecutionTrajectory(
 )
 {
     world::navigation::TrajectoryGenerationRequest request;
-    request.systemId = 1;
-    request.frameId = "navigation-runtime-stage2";
-    request.startUniverseTimeSeconds = 0.0;
-    request.universeTimeScale = 1.0;
+    request.systemId = scenario.frame.systemId;
+    request.frameId = scenario.frame.frameId;
+    request.startUniverseTimeSeconds =
+        scenario.frame.startUniverseTimeSeconds;
+    request.universeTimeScale =
+        scenario.frame.universeTimeScale;
     request.pathPointsMeters = retainedRoute.pointsMapMeters;
     request.obstacles = scenario.staticObstacles;
     request.vehicle =
@@ -1908,7 +1950,7 @@ struct ExecutionVehicle
 {
     ShipTransform transform {};
     ShipParams params {};
-    WorldParams world {};
+    WorldParams world;
     game::navigation::KinematicFrame frame {};
     Bridge bridge;
     double timeSeconds = 0.0;
@@ -1924,12 +1966,13 @@ struct ExecutionVehicle
         const ScenarioVehicleParameters& vehicle
     )
         : params(vehicle.physics),
+          world(scenario.worldPhysics),
           bridge(settings.pilotExecutionProfile)
     {
-        frame.systemId = 1;
-        frame.frameId = "navigation-runtime-stage2";
-        frame.originMeters = {0.0, 0.0, 0.0};
-        frame.localToWorldBasis = glm::dmat3(1.0);
+        frame.systemId = scenario.frame.systemId;
+        frame.frameId = scenario.frame.frameId;
+        frame.originMeters = scenario.frame.originMeters;
+        frame.localToWorldBasis = scenario.frame.localToWorldBasis;
         frame.valid = true;
 
         transform.motion.mode =
@@ -1955,13 +1998,14 @@ struct ExecutionVehicle
             static_cast<float>(scenario.startYawRateRadPerSec);
         transform.rollRate =
             static_cast<float>(scenario.startRollRateRadPerSec);
+        timeSeconds = scenario.frame.startUniverseTimeSeconds;
 
         Bridge::Intent initial;
         // Reset on neutral revision zero so the first real route intent
         // (goalRevision) exercises the selected pilot's reaction-delay model.
         initial.revision = 0;
         initial.targetRevision = 0;
-        if (!bridge.reset(0.0, initial))
+        if (!bridge.reset(timeSeconds, initial))
             throw std::runtime_error(
                 "Stage 2 pilot bridge reset failed"
             );

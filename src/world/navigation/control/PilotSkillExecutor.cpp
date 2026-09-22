@@ -184,8 +184,6 @@ bool PilotSkillExecutor::validProfile(
         finite(execution.commandLatencySeconds) &&
         execution.commandLatencySeconds >= 0.0 &&
         execution.commandLatencySeconds <= 10.0 &&
-        execution.commandLatencySeconds * execution.perceptionDecisionRateHz <
-            static_cast<double>(kMaxPendingCommands - 1) &&
         finite(execution.responseFrequencyHz) &&
         execution.responseFrequencyHz > 0.0 &&
         execution.responseFrequencyHz <= 16.0 &&

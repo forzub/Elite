@@ -3022,3 +3022,93 @@ within the first 8 seconds.
 
 Code candidate before documentation commits: `421ecb1b2721d54bc0c33737a520100a3c10fac9`.
 Target MinGW64 validation pending.
+
+## 2026-09-22 — planner/Ruckig architecture audit after Newtonian overshoot
+
+No new physics patch in this iteration. The current architecture was inspected
+before changing more executor behavior.
+
+### What Stage 1 actually does
+
+The static planner returns a coarse collision-free polyline. Its speed-aware
+clearance reserve uses:
+- requested start/finish speed;
+- Cobra angular acceleration;
+- Cobra max pitch/yaw/roll rate;
+- STANDARD/EXTREME clearance doctrine.
+
+It does **not** directly generate the final flyable 30 m/s arc.
+
+### What Stage 2 geometry does
+
+`TrajectoryGenerator::buildExecutionGuide()` rounds coarse corners locally
+with sampled quadratic Bezier geometry. Radius/cut is estimated from:
+`radius ~= v^2 / maxLateralAcceleration`.
+
+For the current Cobra runtime profile, lateral acceleration is
+`manoeuvreThrusterAccel = 2.0 m/s^2`.
+
+This means the system can draw curved guide geometry, but the curve is still
+constructed from a simplified lateral-acceleration envelope rather than from a
+fully compiled hull-attitude + main/RCS maneuver.
+
+### What Ruckig actually does on a multi-point route
+
+For routes with >2 points Ruckig is **not** called once per user-visible route
+point with full 3-D position/velocity/acceleration states.
+
+Instead:
+1. coarse route -> rounded execution guide p(s);
+2. one scalar Ruckig solve computes path progress s(t);
+3. trajectory maps scalar speed/acceleration back onto guide tangent/curvature.
+
+So Ruckig currently decides only *when/how fast to move along an already fixed
+curve*. It does not choose the arc and does not understand hull rotation,
+main-engine pointing, RCS/main allocation, or lead-rotation time.
+
+The scalar request uses one symmetric acceleration limit:
+`min(maxForwardAcceleration, maxBrakingAcceleration)`.
+
+### Cobra parameters: yes, but with two important problems
+
+The runtime test harness uses a local hard-coded `cobraParams()` copy instead
+of reading the authoritative `EliteCobraMk1Descriptor()`.
+
+The copied values currently match the descriptor for the inspected fields:
+- maxPitchRate 2.5 rad/s
+- maxYawRate 2.5 rad/s
+- maxRollRate 3.0 rad/s
+- angularAccel 3.0 rad/s^2
+- manoeuvreThrusterAccel 2.0 m/s^2
+- maxLinearGs 7.5
+- turnRadius 20 m
+- maxCombatSpeed 500 m/s
+
+However, the execution vehicle profile turns `maxLinearGs=7.5` into
+~73.55 m/s^2 and exposes that as both forward and braking acceleration to the
+trajectory layer. This is a load/linear envelope, not a propulsion allocation
+model. Ruckig therefore sees a much stronger longitudinal capability than the
+actual maneuver can necessarily realize before hull rotation.
+
+The descriptor also contains `turnRadius=20 m`, but the current multi-point
+execution-guide construction does not use that field as the authoritative turn
+geometry.
+
+### Architectural conclusion
+
+The user's mental model is closer to the required end state than the current
+implementation:
+- planner/trajectory authoring should produce a physically flyable sequence of
+  states/primitives with position, tangent velocity, acceleration requirement,
+  and hull attitude/rotation schedule;
+- a corner should become a real arc/clothoid-like maneuver sized by speed and
+  available propulsion/rotation authority, not merely a polyline plus a global
+  clearance padding;
+- braking boundary must include hull lead-rotation time before aft-main braking;
+- main and RCS authority must be compiled together before timing is accepted;
+- Ruckig should time/bridge already physically feasible states or primitives,
+  not be asked to compensate for missing propulsion geometry.
+
+Next task is design/implement this contract rather than further follower tuning.
+
+Repository baseline at start of this audit: `adfe567eefac994344d81c60b1f21e24f3d09077`.

@@ -601,3 +601,20 @@ geometry.
 
 All capability snapshots and trajectory vehicle envelopes must be derived from
 the same VehicleDynamicsProfile input.
+
+## 2026-09-22 — control doctrine values must cross explicit APIs
+
+The same purity rule applies to control-law behavior.
+
+A helper may not infer or privately own:
+- static/stale/conflict hold urgency;
+- emergency urgency threshold;
+- RCS-primary threshold;
+- tracking gains/reserves;
+- propulsion hardware.
+
+These are respectively policy or vehicle facts and must enter through explicit
+arguments/profile objects.
+
+`NavigationRuntimePlanner::holdIntent` now receives both urgency and emergency
+threshold explicitly; no private 0.5/0.75 doctrine remains in that helper.

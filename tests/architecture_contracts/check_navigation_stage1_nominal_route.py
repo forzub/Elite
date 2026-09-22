@@ -132,7 +132,7 @@ for required in (
 
 for required in (
     "retainedRoute.pointsMapMeters",
-    "request.policy = settings.trajectory",
+    "request.policy = trajectoryPolicy",
     "TrajectoryGenerator::generate",
 ):
     require(
@@ -158,9 +158,8 @@ for required in (
     "last_route_plan.log",
     "routePlanningClearanceMeters",
     "characteristicTurnTimeSeconds",
-    "effectiveStartSpeedMps",
-    "effectiveFinishSpeedMps",
-    "startAcceleration",
+    "resolveRunKinematics",
+        "startAcceleration",
     "startPitchRateRadPerSec",
     "startYawRateRadPerSec",
     "startRollRateRadPerSec",
@@ -365,8 +364,8 @@ for marker in (
     require(marker in e2e_test, f"speed/style route regression missing {marker}")
 
 for marker in (
-    "testHighSpeedRunReacquiresInsteadOfOutrunningReference",
-    "high-speed execution outran its physical ship instead of reacquiring",
+    "testHighSpeedUsesMonotonicClockAndMustStillFinish",
+    "high-speed execution did not physically finish under the monotonic-clock contract",
 ):
     require(marker in e2e_test, f"high-speed execution regression missing {marker}")
 
@@ -439,7 +438,7 @@ for marker in (
     "settings.navigation.executionDtSeconds",
     "settings.navigation.trackingLossInvalidateSeconds",
     "settings.navigation.terminalOrientationBlendDistanceMeters",
-    "request.policy = settings.trajectory",
+    "request.policy = trajectoryPolicy",
     "makeNavigationVehicleProfile",
     "makeManeuverCapabilitySnapshot",
 ):

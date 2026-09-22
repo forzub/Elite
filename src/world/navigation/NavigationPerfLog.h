@@ -1,41 +1,19 @@
 #pragma once
 
 #include <filesystem>
-#include <iostream>
 
 namespace world::navigation
 {
 
-inline const std::filesystem::path& navigationPerfLogPath()
+// Explicit path composition only.  This header intentionally owns no global
+// logger, startup announcer, working-directory lookup, wall clock or file I/O.
+// Orchestration may choose a diagnostics root and perform logging outside the
+// strict-pure navigation calculation core.
+[[nodiscard]] inline std::filesystem::path navigationPerfLogPath(
+    const std::filesystem::path& diagnosticsRoot
+)
 {
-    static const std::filesystem::path path = []
-    {
-        std::error_code ec;
-        const auto absolute = std::filesystem::absolute(
-            std::filesystem::path("navigation_perf.log"),
-            ec
-        );
-        if (ec)
-            return std::filesystem::path("navigation_perf.log");
-        return absolute.lexically_normal();
-    }();
-    return path;
+    return diagnosticsRoot / "navigation_perf.log";
 }
-
-// Inline process-lifetime announcer. Any executable that links the navigation
-// smoother prints the exact file it will use before gameplay/tests start. This
-// also makes multiple files from different working directories unambiguous.
-struct NavigationPerfLogStartupAnnouncer
-{
-    NavigationPerfLogStartupAnnouncer()
-    {
-        std::cerr
-            << "[NavigationPerf] log_path="
-            << navigationPerfLogPath().string()
-            << '\n';
-    }
-};
-
-inline NavigationPerfLogStartupAnnouncer g_navigationPerfLogStartupAnnouncer;
 
 } // namespace world::navigation

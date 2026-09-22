@@ -81,6 +81,7 @@ NominalRoutePlanner::Plan NominalRoutePlanner::plan(
         geometric.startMeters = legStart;
         geometric.goalMeters = legGoal;
         geometric.obstacles = request.staticObstacles;
+        geometric.params = request.geometricPolicy;
 
         geometric.params.agentRadiusMeters =
             std::max(
@@ -92,13 +93,6 @@ NominalRoutePlanner::Plan NominalRoutePlanner::plan(
                 0.0,
                 request.additionalRouteClearanceMeters
             );
-
-        // Correctness must not depend on an arbitrary obstacle-count cap.
-        // The shared/static world reduction layer is responsible for scaling.
-        geometric.params.maxConsideredObstacles = 0;
-        geometric.params.allowStartEscape = false;
-        geometric.params.allowGoalEscape = false;
-        geometric.params.simplifyLineOfSight = true;
 
         const auto leg =
             world::navigation::GeometricPathPlanner::plan(geometric);

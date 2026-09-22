@@ -628,7 +628,6 @@ using Law = game::navigation::LocalFlightControlLaw;
 
 constexpr double kExecutionDt = 1.0 / 120.0;
 constexpr double kTraceSampleSeconds = 1.0 / 30.0;
-constexpr double kStandardGravity = 9.80665;
 
 Bridge::PilotSkillProfile pilotProfile(PilotLevel level)
 {
@@ -759,15 +758,11 @@ double characteristicTurnTimeSeconds(
 
     const double alpha = std::max(
         0.1,
-        static_cast<double>(params.angularAccel)
+        game::ship::angularAccelerationLimitRadPerSec2(params)
     );
     const double omega = std::max(
         0.1,
-        std::max({
-            static_cast<double>(params.maxPitchRate),
-            static_cast<double>(params.maxYawRate),
-            static_cast<double>(params.maxRollRate)
-        })
+        game::ship::maximumAngularSpeedRadPerSec(params)
     );
 
     const double accelDecelAngle = omega * omega / alpha;
@@ -987,10 +982,8 @@ glm::dvec3 propulsionReferenceForward(
     if (acceleration <= 0.35)
         return travelForward;
 
-    const double physicalRcsAuthority = std::max(
-        0.0,
-        static_cast<double>(params.manoeuvreThrusterAccel)
-    );
+    const double physicalRcsAuthority =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
 
     // Control-law doctrine matters here even though the physical hardware is
     // shared. Assisted may legitimately spend the available manoeuvre/RCS
@@ -1184,12 +1177,10 @@ std::vector<ReferenceAttitude> buildReferenceAttitudes(
         }
         else if (dt > 1.0e-9)
         {
-            const double maxRate = std::max({
+            const double maxRate = std::max(
                 0.1,
-                static_cast<double>(params.maxPitchRate),
-                static_cast<double>(params.maxYawRate),
-                static_cast<double>(params.maxRollRate)
-            });
+                game::ship::maximumAngularSpeedRadPerSec(params)
+            );
             const double angle =
                 quaternionAngle(previousQ, desiredQ);
             const double maxAngle = maxRate * dt;
@@ -1462,12 +1453,10 @@ Program makeProgramPhase(
     // the Assisted viewer run to request ~rad/s hull motion while the visible
     // reference heading was moving only a few degrees per second.
     const double maximumSparseAngularSpeed =
-        std::max({
+        std::max(
             0.1,
-            static_cast<double>(params.maxPitchRate),
-            static_cast<double>(params.maxYawRate),
-            static_cast<double>(params.maxRollRate)
-        });
+            game::ship::maximumAngularSpeedRadPerSec(params)
+        );
 
     for (std::size_t i = 0; i < count; ++i)
     {
@@ -2068,8 +2057,9 @@ TraceFrame executionTraceFrame(
     const double mainAuthority =
         std::max(
             0.1,
-            static_cast<double>(vehicle.params.maxLinearGs) *
-                kStandardGravity
+            game::ship::forwardMainAccelerationLimitMps2(
+                vehicle.params
+            )
         );
     const glm::dvec3 physicalForward =
         normalizedOr(

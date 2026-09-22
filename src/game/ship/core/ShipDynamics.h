@@ -11,6 +11,47 @@ namespace game::ship
 
 inline constexpr double StandardGravityMps2 = 9.80665;
 
+[[nodiscard]] inline bool validShipDynamics(
+    const ShipParams& params
+) noexcept
+{
+    const auto nonNegativeFinite = [](double value) noexcept
+    {
+        return std::isfinite(value) && value >= 0.0;
+    };
+    const auto positiveFinite = [](double value) noexcept
+    {
+        return std::isfinite(value) && value > 0.0;
+    };
+
+    return
+        nonNegativeFinite(params.maxPitchRate) &&
+        nonNegativeFinite(params.maxYawRate) &&
+        nonNegativeFinite(params.maxRollRate) &&
+        nonNegativeFinite(params.angularAccel) &&
+        nonNegativeFinite(params.angularDamping) &&
+        nonNegativeFinite(params.maxCombatSpeed) &&
+        nonNegativeFinite(params.maxCruiseSpeed) &&
+        nonNegativeFinite(params.throttleAccel) &&
+        nonNegativeFinite(params.autoLevelStrength) &&
+        nonNegativeFinite(params.strafeAccel) &&
+        nonNegativeFinite(params.strafeDamping) &&
+        nonNegativeFinite(params.maxStrafeSpeed) &&
+        nonNegativeFinite(params.manoeuvreThrusterAccel) &&
+        nonNegativeFinite(params.manoeuvreGasUsePerSecond) &&
+        nonNegativeFinite(params.manoeuvreGasRechargePerSecond) &&
+        std::isfinite(params.manoeuvreGasRestartFraction) &&
+        params.manoeuvreGasRestartFraction >= 0.0f &&
+        params.manoeuvreGasRestartFraction <= 1.0f &&
+        nonNegativeFinite(params.maxGs) &&
+        nonNegativeFinite(params.maxLinearGs) &&
+        nonNegativeFinite(params.turnRadius) &&
+        positiveFinite(params.massKg) &&
+        positiveFinite(params.pitchInertiaKgM2) &&
+        positiveFinite(params.yawInertiaKgM2) &&
+        positiveFinite(params.rollInertiaKgM2);
+}
+
 [[nodiscard]] inline double effectiveLinearGs(
     const ShipParams& params
 ) noexcept

@@ -267,6 +267,14 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         tracking.status ==
         ManeuverTrackingController::Status::EnvelopeExceeded;
 
+    result.hasActuatorCommand = sampled.hasActuatorCommand;
+    result.actuatorSegmentIndex = sampled.actuatorSegmentIndex;
+    result.rearMainThrottle01 = sampled.rearMainThrottle01;
+    result.foreMainThrottle01 = sampled.foreMainThrottle01;
+    result.manoeuvreAccelerationMapMps2 =
+        sampled.manoeuvreAccelerationMapMps2;
+    result.propulsionFeasible = sampled.propulsionFeasible;
+
     const std::size_t lastIndex =
         static_cast<std::size_t>(program.sampleCount - 1);
     result.remainingDistanceMeters =

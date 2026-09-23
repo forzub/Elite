@@ -1,8 +1,11 @@
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
+#include "src/game/navigation/ManeuverProgramTimeline.h"
+#include "src/game/navigation/TrajectoryFollower.h"
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -11,6 +14,8 @@ namespace
 
 using Program = game::navigation::AcceptedManeuverProgram;
 using Sampler = game::navigation::ManeuverProgramSampler;
+using Timeline = game::navigation::ManeuverProgramTimeline;
+using Follower = game::navigation::TrajectoryFollower;
 
 void require(bool condition, const std::string& message)
 {
@@ -258,6 +263,112 @@ void testProgramStorageIsStaticallyBounded()
             "accepted maneuver program must use fixed-capacity storage");
 }
 
+void testStoragePageSelectionUsesNextPageStart()
+{
+    Program pages[2] = {baseProgram(), baseProgram()};
+    pages[0].acceptedAtUniverseTimeSeconds = 50.0;
+    pages[0].sequenceStartOffsetSeconds = 0.0;
+    pages[0].samples[1].timeOffsetSeconds = 0.3;
+    pages[0].validUntilUniverseTimeSeconds = 51.0;
+
+    pages[1].revision = 78;
+    pages[1].acceptedAtUniverseTimeSeconds = 50.0;
+    pages[1].sequenceStartOffsetSeconds = 0.3;
+    pages[1].samples[1].timeOffsetSeconds = 0.2;
+    pages[1].validUntilUniverseTimeSeconds = 51.0;
+
+    const auto secondWindow = Timeline::pageWindow(pages[1]);
+    require(secondWindow.valid, "second storage-page window is invalid");
+
+    const double immediatelyBeforeSecondPage = std::nextafter(
+        secondWindow.startUniverseTimeSeconds,
+        -std::numeric_limits<double>::infinity()
+    );
+    const auto before = Timeline::selectActivePage(
+        pages,
+        2,
+        immediatelyBeforeSecondPage,
+        0
+    );
+    require(
+        before.status == Timeline::SelectionStatus::Active &&
+        before.pageIndex == 0,
+        "timeline selected a storage page before its own canonical start"
+    );
+
+    const auto atStart = Timeline::selectActivePage(
+        pages,
+        2,
+        secondWindow.startUniverseTimeSeconds,
+        0
+    );
+    require(
+        atStart.status == Timeline::SelectionStatus::Active &&
+        atStart.pageIndex == 1 &&
+        atStart.pagesAdvanced == 1,
+        "timeline did not advance exactly at the next storage-page start"
+    );
+
+    requireNear(
+        Timeline::elapsedPageSeconds(
+            pages[1],
+            secondWindow.startUniverseTimeSeconds
+        ),
+        0.0,
+        0.0,
+        "page-local elapsed time did not share the maneuver epoch"
+    );
+}
+
+void testFollowerCompletionUsesPageLocalElapsedTime()
+{
+    Program page = baseProgram();
+    page.acceptedAtUniverseTimeSeconds = 100.0;
+    page.sequenceStartOffsetSeconds = 5.0;
+    page.validUntilUniverseTimeSeconds = 108.0;
+    page.completionTriggersReplan = true;
+    page.samples[1].positionMapMeters =
+        page.samples[0].positionMapMeters;
+    page.samples[1].velocityMapMetersPerSecond =
+        page.samples[0].velocityMapMetersPerSecond;
+    page.samples[1].forwardMap = page.samples[0].forwardMap;
+    page.samples[1].rightMap = page.samples[0].rightMap;
+    page.samples[1].upMap = page.samples[0].upMap;
+    page.samples[0].angularVelocityMapRadPerSecond = glm::dvec3(0.0);
+    page.samples[1].angularVelocityMapRadPerSecond = glm::dvec3(0.0);
+
+    Follower::AgentState agent;
+    agent.positionMapMeters = page.samples[1].positionMapMeters;
+    agent.velocityMapMetersPerSecond =
+        page.samples[1].velocityMapMetersPerSecond;
+    agent.forwardMap = page.samples[1].forwardMap;
+    agent.rightMap = page.samples[1].rightMap;
+    agent.upMap = page.samples[1].upMap;
+
+    const game::navigation::ManeuverTrackingController::Policy policy;
+    const auto beforeLocalEnd = Follower::follow(
+        page,
+        106.0,
+        agent,
+        policy
+    );
+    require(
+        beforeLocalEnd.status == Follower::Status::Following,
+        "Follower completed a later storage page using global maneuver age"
+    );
+
+    const auto atLocalEnd = Follower::follow(
+        page,
+        107.0,
+        agent,
+        policy
+    );
+    require(
+        atLocalEnd.status == Follower::Status::Complete,
+        "Follower did not complete at the page-local nominal end"
+    );
+}
+
 } // namespace
 
 int main()
@@ -270,6 +381,8 @@ int main()
         testProgramBoundsClampWithoutCreatingNewTrajectory();
         testInvalidProgramFailsClosed();
         testProgramStorageIsStaticallyBounded();
+        testStoragePageSelectionUsesNextPageStart();
+        testFollowerCompletionUsesPageLocalElapsedTime();
 
         std::cout << "MANEUVER PROGRAM SAMPLER TESTS: PASS\n";
         std::cout << " - fixed-capacity AcceptedManeuverProgram\n";
@@ -277,6 +390,8 @@ int main()
         std::cout << " - sampler performs no target-velocity control solve\n";
         std::cout << " - planner actuator intervals are sampled directly\n";
         std::cout << " - invalid time domains fail closed\n";
+        std::cout << " - storage pages share one canonical maneuver timeline\n";
+        std::cout << " - Follower completion uses page-local elapsed time\n";
         return 0;
     }
     catch (const std::exception& error)

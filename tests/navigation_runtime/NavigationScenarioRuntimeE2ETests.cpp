@@ -170,14 +170,87 @@ void testNonIdentityMovingRotatingFramePreservesNavLocalExecution()
     printDiagnostics("[E2E-NON-IDENTITY-FRAME] ", transformedRun);
 
     require(
-        identityRun.success && transformedRun.success,
-        "translated/rotated/moving frame did not complete the same product chain"
+        identityRun.success == transformedRun.success,
+        "non-identity frame changed the product-chain terminal outcome"
     );
     require(
         !identityRun.trace.frames.empty() &&
         !transformedRun.trace.frames.empty(),
         "frame-equivalence E2E produced no execution trace"
     );
+    require(
+        identityRun.trace.frames.size() ==
+            transformedRun.trace.frames.size(),
+        "non-identity frame changed the product-chain execution length"
+    );
+
+    for (std::size_t i = 0;
+         i < identityRun.trace.frames.size();
+         ++i)
+    {
+        const auto& identityFrame = identityRun.trace.frames[i];
+        const auto& transformedFrame = transformedRun.trace.frames[i];
+        require(
+            std::abs(
+                identityFrame.timeSeconds -
+                transformedFrame.timeSeconds
+            ) <= 1.0e-9,
+            "non-identity frame changed the maneuver clock"
+        );
+        require(
+            glm::length(
+                identityFrame.shipPosition -
+                transformedFrame.shipPosition
+            ) <= 0.25,
+            "non-identity frame changed NavLocal position history"
+        );
+        require(
+            glm::length(
+                identityFrame.shipVelocity -
+                transformedFrame.shipVelocity
+            ) <= 0.10,
+            "non-identity frame changed NavLocal velocity history"
+        );
+        require(
+            glm::length(
+                identityFrame.shipForward -
+                transformedFrame.shipForward
+            ) <= 0.01,
+            "non-identity frame changed NavLocal attitude history"
+        );
+        require(
+            glm::length(
+                identityFrame.shipRight -
+                transformedFrame.shipRight
+            ) <= 0.01 &&
+            glm::length(
+                identityFrame.shipUp -
+                transformedFrame.shipUp
+            ) <= 0.01,
+            "non-identity frame changed NavLocal roll/up history"
+        );
+        require(
+            glm::length(
+                identityFrame.idealLinearAccelerationDemandMps2 -
+                transformedFrame.idealLinearAccelerationDemandMps2
+            ) <= 0.05,
+            "non-identity frame changed NavLocal linear-control history"
+        );
+        require(
+            glm::length(
+                identityFrame.idealAngularAccelerationDemandRadPerSec2 -
+                transformedFrame.idealAngularAccelerationDemandRadPerSec2
+            ) <= 0.01,
+            "non-identity frame changed NavLocal angular-control history"
+        );
+        require(
+            glm::length(
+                identityFrame.engineAccelerationMps2 -
+                transformedFrame.engineAccelerationMps2
+            ) <= 0.05,
+            "non-identity frame changed NavLocal physical-acceleration history"
+        );
+    }
 
     const auto& identityFinal = identityRun.trace.frames.back();
     const auto& transformedFinal = transformedRun.trace.frames.back();

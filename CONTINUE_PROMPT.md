@@ -1,69 +1,69 @@
-# CONTINUE PROMPT — validate Elite navigation M1 after compile cleanup
+# CONTINUE PROMPT — finish Elite navigation M1 timeline/frame validation
 
 Continue in GitHub repository `forzub/Elite`, branch `main`.
 
-The normative target is
-`src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`. M1 is still
-open; M2 has not started.
+The normative target architecture is
+`src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`. M1 remains
+open until the next target evidence is classified; M2 has not started.
 
-## Mandatory reading
+## Read first
 
-Read completely, in order:
+Read completely:
 
 1. `src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`;
 2. `CURRENT_STATE.md`;
 3. `CURRENT_TASK.md`;
 4. `PROJECT_STATE.md`;
-5. the final dated sections of `src/game/navigation/STAGE12_END_TO_END.md`;
+5. final dated sections of `src/game/navigation/STAGE12_END_TO_END.md`;
 6. `src/game/navigation/NAVIGATION_API_CONTRACT.md`.
 
-Inspect the active M1 path and the latest correction in:
+Inspect the active change in:
 
-- `src/game/navigation/NavigationFrameBoundary.h`;
+- `src/game/navigation/ManeuverProgramTimeline.h`;
+- `src/game/navigation/ManeuverProgramSampler.cpp`;
+- `src/game/navigation/TrajectoryFollower.cpp`;
+- `src/game/navigation/ManeuverPhaseGate.cpp`;
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`;
-- `src/world/navigation/TrajectoryGenerator.{h,cpp}`;
+- `tests/navigation_runtime/ManeuverProgramSamplerTests.cpp`;
 - `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`;
 - `tests/architecture_contracts/check_navigation_api_purity.py`.
 
-Follow other files only where these sources or the active build target reference
-them.
+Follow other files only when referenced by this active path.
 
 ## Exact state
 
-M1 canonicalizes NavLocal/System conversion, makes the moving-frame snapshot and
-epoch explicit, advances that frame during execution, and adds a non-identity
-product-chain E2E.
+The third MinGW64 run built and linked successfully. Identity and moving-frame
+executions produced identical printed NavLocal telemetry but both stopped at
+the first page boundary with `PROGRAM_PAGE_BEFORE_START` at 50.30 s.
 
-Target attempt 1 failed on a stale `ScenarioRunSettings::pilot` fixture write.
-That was removed and statically forbidden.
+Root cause: runtime selected by a reconstructed previous-page end plus epsilon;
+Sampler selected by the next page's independently reconstructed start. Four
+components owned page-time arithmetic.
 
-Target attempt 2 confirmed the E2E translation unit now compiles, while
-architecture checks, Stage-1 nominal routing and the tracking-controller test
-pass. The build then found older dead code in `TrajectoryGenerator.cpp`:
+The candidate adds one pure `ManeuverProgramTimeline` owner. Runtime selects by
+the next page's own start. Sampler, Follower and phase gate consume the same
+window/elapsed-time API. Follower completion now subtracts the page sequence
+offset. Unit tests pin the floating-point boundary and later-page completion.
 
-- a copy of removed `ruckigSolveMilliseconds` diagnostics;
-- an orphaned `countBlendedWaypoints()` left after perf-log removal;
-- its obsolete call signature and unused local result;
-- an unused `arc` input on `globalGuideSpeedLimit()`.
-
-These have been removed. No trajectory policy or output semantics changed. The
-purity checker prevents both retired symbols from returning.
+The frame E2E now compares every identity/non-identity NavLocal trace frame and
+requires the same terminal outcome. It intentionally does not require the known
+78-infeasible-segment physical plan to succeed: that belongs to M3/M4. This
+separates the M1 coordinate invariant from later physical truthfulness.
 
 ## Immediate action
 
-Obtain the complete output of the single chained command in `CURRENT_TASK.md`,
-including the checkout hash. Do not interpret CTest unless the corrected target
-compiled and linked.
+Run the complete chained target command in `CURRENT_TASK.md`, including the
+focused timeline test and pipeline test. Preserve the checkout hash.
 
-Required M1 marker:
+Required independent marker:
 
 ```text
 [PASS] non-identity translated/rotated/moving frame preserves NavLocal product-chain execution
 ```
 
-If it passes, accept M1 independently of any later known physical-authoring
-failure. If it fails or compilation fails earlier, repair the exact defect
-without weakening the fixture or changing physical-control policy.
+If it passes, record M1 acceptance separately from any following physical
+failure and activate M2. If it does not, repair the exact timeline/frame defect
+without relaxing trace tolerances.
 
 ## Governing invariant
 
@@ -73,21 +73,19 @@ accepted maneuver == capability-checked maneuver
                   == actuator program executed by physics
 ```
 
-No ambient time/filesystem lookup belongs in a pure calculation kernel. Do not
-restore identity-frame copies, broad context inputs, infeasible propulsion,
-follower tuning or octree work to bypass this gate.
+Do not restore duplicate clock arithmetic, identity-frame copies, ambient
+lookups, infeasible-plan acceptance, follower tuning or octree work to bypass a
+gate.
 
-## After M1 acceptance only
+## After M1 acceptance
 
-Activate M2 from the blueprint: split `NavigationScenarioRuntime.cpp` into a
-thin tool composition root and production-owned parsing, route composition,
-maneuver planning/proof, execution harness and diagnostics modules. Preserve
-behavior during that split.
+Activate only M2: split `NavigationScenarioRuntime.cpp` into a thin composition
+root and production-owned parsing, route composition, maneuver planning/proof,
+execution harness and diagnostics modules. Preserve behavior during the split.
 
-## Iteration protocol
+## Mandatory iteration protocol
 
-Every state-changing iteration must update the blueprint, `CURRENT_STATE.md`,
-`CURRENT_TASK.md`, `PROJECT_STATE.md`, the Stage-12 journal and any affected
-contract document; recreate this prompt; run all available gates; review the
-complete diff; commit and push the coherent change to `main`. Never claim a
-check that did not run.
+Update the blueprint, state/task/project documents, Stage-12 journal and affected
+API contracts after every state change; recreate this prompt; run all available
+gates; inspect the full diff; commit and push one coherent iteration to `main`.
+Never claim a check that did not run.

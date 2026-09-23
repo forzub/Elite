@@ -6,6 +6,7 @@
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
+#include "src/game/navigation/ManeuverProgramTimeline.h"
 #include "src/game/navigation/ManeuverPhaseGate.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
@@ -3260,24 +3261,33 @@ ScenarioRunResult executeCalculatedRoute(
             // Fixed-capacity Program objects are storage pages of ONE authored
             // maneuver. Crossing a page boundary is transparent indexing, not
             // a capture/replan/clock-reset event.
-            while (activeProgram + 1 < programs.size())
+            const auto pageSelection =
+                game::navigation::ManeuverProgramTimeline::selectActivePage(
+                    programs.data(),
+                    programs.size(),
+                    vehicle.timeSeconds,
+                    activeProgram
+                );
+            if (pageSelection.status !=
+                game::navigation::ManeuverProgramTimeline::
+                    SelectionStatus::Active)
             {
-                const Program& currentPage =
-                    programs[activeProgram];
-                const std::size_t currentLast =
-                    static_cast<std::size_t>(
-                        currentPage.sampleCount - 1
-                    );
-                const double currentPageEnd =
-                    currentPage.acceptedAtUniverseTimeSeconds +
-                    currentPage.sequenceStartOffsetSeconds +
-                    currentPage.samples[
-                        currentLast
-                    ].timeOffsetSeconds;
+                followerInvalid = true;
+                followerFailureReason =
+                    pageSelection.status ==
+                        game::navigation::ManeuverProgramTimeline::
+                            SelectionStatus::BeforeStart
+                        ? "PROGRAM_TIMELINE_BEFORE_START"
+                        : "PROGRAM_TIMELINE_INVALID";
+                followerFailureProgramIndex = activeProgram;
+                followerFailureTimeSeconds = vehicle.timeSeconds;
+                followerFailureAcceptedAtSeconds =
+                    programs[activeProgram].acceptedAtUniverseTimeSeconds;
+                break;
+            }
 
-                if (vehicle.timeSeconds + 1.0e-9 < currentPageEnd)
-                    break;
-
+            while (activeProgram < pageSelection.pageIndex)
+            {
                 ++activeProgram;
                 ++storagePageAdvances;
 

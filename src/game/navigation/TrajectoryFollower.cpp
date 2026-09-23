@@ -1,6 +1,7 @@
 #include "TrajectoryFollower.h"
 
 #include "src/game/navigation/ManeuverProgramSampler.h"
+#include "src/game/navigation/ManeuverProgramTimeline.h"
 
 #include <algorithm>
 #include <cmath>
@@ -274,8 +275,12 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     const double endOffset =
         program.samples[lastIndex].timeOffsetSeconds;
     const double elapsed =
-        universeTimeSeconds -
-        program.acceptedAtUniverseTimeSeconds;
+        ManeuverProgramTimeline::elapsedPageSeconds(
+            program,
+            universeTimeSeconds
+        );
+    if (!finite(elapsed))
+        return Result {};
     const bool atOrAfterProgramEnd =
         elapsed >= endOffset - kEpsilon;
 

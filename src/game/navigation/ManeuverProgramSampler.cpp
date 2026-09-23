@@ -1,5 +1,7 @@
 #include "ManeuverProgramSampler.h"
 
+#include "src/game/navigation/ManeuverProgramTimeline.h"
+
 #include <algorithm>
 #include <cmath>
 
@@ -138,14 +140,13 @@ bool validProgram(const Program& program) noexcept
     if (std::abs(program.samples[0].timeOffsetSeconds) > kEpsilon)
         return false;
 
-    const double lastAbsoluteTime =
-        program.acceptedAtUniverseTimeSeconds +
-        program.sequenceStartOffsetSeconds +
-        program.samples[program.sampleCount - 1].timeOffsetSeconds;
+    const auto pageWindow =
+        ManeuverProgramTimeline::pageWindow(program);
 
     return
-        finite(lastAbsoluteTime) &&
-        lastAbsoluteTime <= program.validUntilUniverseTimeSeconds + kEpsilon;
+        pageWindow.valid &&
+        pageWindow.endUniverseTimeSeconds <=
+            program.validUntilUniverseTimeSeconds + kEpsilon;
 }
 
 glm::dvec3 normalizedOr(
@@ -277,9 +278,10 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sample(
         static_cast<std::size_t>(program.sampleCount - 1);
 
     result.elapsedSeconds =
-        universeTimeSeconds -
-        program.acceptedAtUniverseTimeSeconds -
-        program.sequenceStartOffsetSeconds;
+        ManeuverProgramTimeline::elapsedPageSeconds(
+            program,
+            universeTimeSeconds
+        );
 
     if (result.elapsedSeconds <= 0.0)
     {

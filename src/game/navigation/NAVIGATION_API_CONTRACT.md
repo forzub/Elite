@@ -97,6 +97,7 @@ Stage 2 validates all provenance before use and never rebuilds the global route.
 | RuckigTrajectorySolver | explicit Ruckig request | numeric trajectory/progress | pure |
 | buildReferenceAttitudes (runtime adapter) | trajectory, initial basis/omega, terminal endpoint, law, vehicle params, navigation policy | attitude stream | pure |
 | makeProgramPhase (runtime adapter) | trajectory/attitude slice, revisions, proof clearance, vehicle, policy | AcceptedManeuverProgram page | pure |
+| ManeuverProgramTimeline | accepted program pages + universe time + current page | canonical page window/active index/page-local elapsed time | pure |
 | ManeuverProgramSampler::sample | accepted program + universe time | sampled state/actuator command | pure |
 | ManeuverTrackingController::track | program + reference + measured agent state + explicit gains | bounded control intent | pure |
 | TrajectoryFollower::follow | accepted program + time + measured state + tracking policy | follower result | pure composition |
@@ -126,11 +127,21 @@ No lower calculation component may include or call these orchestration APIs.
 One accepted physical maneuver has one monotonic universe-time basis.
 
 Fixed-capacity AcceptedManeuverProgram objects are storage pages only. Page
-selection is an indexing concern and must not create:
+selection is owned by `ManeuverProgramTimeline`; Sampler, Follower, phase gate
+and orchestration must not reconstruct page time independently. Selection uses
+the next page's canonical start, not a separately rounded previous-page end.
+
+Page indexing must not create:
 - a new clock;
 - a new accepted-at time;
 - a hidden phase capture;
 - a reference-time freeze.
+
+Follower completion uses page-local elapsed time:
+
+```text
+universe time - accepted-at time - sequence start offset
+```
 
 Any subsystem that needs time receives it explicitly.
 

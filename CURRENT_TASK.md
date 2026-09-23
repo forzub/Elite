@@ -1,25 +1,30 @@
-# CURRENT TASK — rebuild M1 after TrajectoryGenerator cleanup
+# CURRENT TASK — validate canonical page timeline and M1 frame invariance
 
 Date: 2026-09-23
 
-Status: **SECOND COMPILE CORRECTION COMPLETE / TARGET EVIDENCE REQUIRED**
+Status: **THIRD M1 CORRECTION COMPLETE / TARGET EVIDENCE REQUIRED**
 
-The previous target run confirms the stale `ScenarioRunSettings::pilot` blocker
-is gone. It then exposed dead implementation references left after wall-clock
-and filesystem performance diagnostics were removed from the pure trajectory
-generator. Those references and an unused helper input have been removed
-without changing trajectory behavior.
+The target now builds and links. Its first real M1 execution exposed duplicate
+storage-page time ownership: runtime selected page 1 just before that page's own
+start, and Sampler correctly returned `BeforeStart`.
+
+`ManeuverProgramTimeline` now owns page windows, page-local elapsed time and
+active-page selection. Runtime, Sampler, Follower and phase gate consume it.
 
 ## Required target gate
 
-Run this as one command in MSYS2 MinGW64. Keep the printed commit hash and do
-not run CTest if any build step fails:
+Run as one chained command in MSYS2 MinGW64:
 
 ```bash
 cd /d/__elite/work && \
 git pull --ff-only && \
 git rev-parse HEAD && \
 bash tests/navigation_runtime/run_stage1_mingw64.sh && \
+cmake --build build/tests/navigation_runtime \
+  --target maneuver_program_sampler_tests && \
+ctest --test-dir build/tests/navigation_runtime \
+  -R "^maneuver_program_sampler$" \
+  --output-on-failure && \
 cmake --build build/tools/navigation_runtime \
   --target navigation_runtime_pipeline_tests && \
 ctest --test-dir build/tools/navigation_runtime \
@@ -27,25 +32,27 @@ ctest --test-dir build/tools/navigation_runtime \
   --output-on-failure
 ```
 
-Return the complete output beginning with `git rev-parse HEAD`.
+Return the complete output beginning with the commit hash.
 
-## Required classification
+## M1 acceptance evidence
 
-First establish:
-
-1. `TrajectoryGenerator.cpp` compiles and the pipeline executable links;
-2. the rebuilt executable prints:
+Required marker:
 
 ```text
 [PASS] non-identity translated/rotated/moving frame preserves NavLocal product-chain execution
 ```
 
-Then classify any later failure independently:
+The marker now means:
 
-- failure before the marker keeps M1 open;
-- marker PASS accepts the M1 coordinate/frame boundary even if the later known
-  physical-authoring E2E fails;
-- full pipeline PASS accepts M1 and permits activation of M2.
+- identity and non-identity runs have the same terminal outcome;
+- their complete NavLocal position, velocity, attitude and clock histories agree
+  within explicit tolerances;
+- storage pages use one maneuver timeline.
 
-Do not restore removed timing diagnostics, reintroduce internal file I/O, weaken
-the frame fixture, or tune physical control while resolving this gate.
+It does not claim that the current 78-infeasible-segment physical plan is valid.
+That failure must appear later and be classified for M3/M4, not used to reject
+M1.
+
+If the marker passes, accept M1 and activate M2 even if a subsequent known
+physical-authoring case fails. If timeline or frame equivalence fails, keep M1
+open and repair the exact boundary defect.

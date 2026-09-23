@@ -3115,3 +3115,20 @@ references are now removed. An unused arc-table parameter was also removed from
 This iteration changes no planning semantics. The pipeline has still not linked
 or executed the non-identity product-chain fixture. M1 remains pending and M2
 has not started.
+
+## 2026-09-23 — third M1 target gate exposed duplicate page-time ownership
+
+Target build and link now pass. The identity and non-identity runs agree across
+all printed planning and NavLocal execution metrics, but runtime advanced to
+storage page 1 a floating-point instant before that page's own canonical start.
+Sampler failed closed with `PROGRAM_PAGE_BEFORE_START` at 50.30 s.
+
+A new pure `ManeuverProgramTimeline` is the single owner of page windows,
+page-local elapsed time and active-page selection. It is consumed by runtime,
+Sampler, Follower and phase gate. The known Follower completion omission of
+`sequenceStartOffsetSeconds` is corrected at the same boundary.
+
+The M1 E2E now proves frame invariance by comparing the entire identity and
+non-identity NavLocal trace plus terminal outcome. It does not require the known
+78-infeasible-segment physical plan to complete; that would make M1 depend on
+M3/M4. M1 remains pending until this candidate runs on target.

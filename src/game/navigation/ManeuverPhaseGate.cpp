@@ -1,5 +1,7 @@
 #include "ManeuverPhaseGate.h"
 
+#include "src/game/navigation/ManeuverProgramTimeline.h"
+
 #include <algorithm>
 #include <cmath>
 
@@ -58,18 +60,12 @@ ManeuverPhaseGate::Result ManeuverPhaseGate::evaluate(
         return result;
     }
 
-    const auto& last =
-        program.samples[
-            static_cast<std::size_t>(program.sampleCount - 1)
-        ];
-
-    result.nominalEndUniverseTimeSeconds =
-        program.acceptedAtUniverseTimeSeconds +
-        program.sequenceStartOffsetSeconds +
-        last.timeOffsetSeconds;
-
-    if (!finite(result.nominalEndUniverseTimeSeconds))
+    const auto pageWindow =
+        ManeuverProgramTimeline::pageWindow(program);
+    if (!pageWindow.valid)
         return Result {};
+    result.nominalEndUniverseTimeSeconds =
+        pageWindow.endUniverseTimeSeconds;
 
     result.captureOverrunSeconds =
         std::max(

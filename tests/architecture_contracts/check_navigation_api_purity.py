@@ -57,6 +57,7 @@ nominal_cpp = read("src/game/navigation/NominalRoutePlanner.cpp")
 trajectory_cpp = read("src/world/navigation/TrajectoryGenerator.cpp")
 ruckig_h = read("src/game/navigation/RuckigTrajectorySolver.h")
 sampler_h = read("src/game/navigation/ManeuverProgramSampler.h")
+timeline_h = read("src/game/navigation/ManeuverProgramTimeline.h")
 tracker_h = read("src/game/navigation/ManeuverTrackingController.h")
 follower_h = read("src/game/navigation/TrajectoryFollower.h")
 bridge_h = read("src/game/navigation/NavigationRuntimeControlBridge.h")
@@ -208,6 +209,25 @@ for token in (
     "double universeTimeSeconds",
 ):
     require(token in sampler_h, f"ManeuverProgramSampler API missing explicit input {token}")
+
+for token in (
+    "struct PageWindow",
+    "struct Selection",
+    "pageWindow(",
+    "elapsedPageSeconds(",
+    "selectActivePage(",
+):
+    require(token in timeline_h,
+            f"maneuver storage-page timeline API missing {token}")
+
+for source_name, source, required in (
+    ("runtime", runtime_cpp, "ManeuverProgramTimeline::selectActivePage("),
+    ("sampler", sampler, "ManeuverProgramTimeline::elapsedPageSeconds("),
+    ("Follower", follower, "ManeuverProgramTimeline::elapsedPageSeconds("),
+    ("phase gate", phase_gate_cpp, "ManeuverProgramTimeline::pageWindow("),
+):
+    require(required in source,
+            f"{source_name} bypasses canonical maneuver page-time API")
 
 for token in (
     "const AcceptedManeuverProgram& program",

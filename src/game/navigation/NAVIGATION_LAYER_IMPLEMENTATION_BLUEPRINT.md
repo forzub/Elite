@@ -477,6 +477,14 @@ elapsed maneuver time with a page-local end offset without adding
 Required correction: introduce a `ManeuverProgramView`/page-indexing layer that
 owns global maneuver time. Follower should not manually reconstruct page time.
 
+Implementation update (2026-09-23): a header-only pure
+`ManeuverProgramTimeline` candidate now owns canonical page windows, page-local
+elapsed time and amortized page selection from the current index. Runtime
+selects the next page by that page's own start rather than by a separately
+rounded previous-page end. Sampler, Follower and phase gate consume the same
+timeline API; Follower completion now includes `sequenceStartOffsetSeconds`.
+Target validation is still required before this audit item is closed.
+
 ### 4.20 Misnamed tracking quantities
 
 Follower reports full position-reference error as cross-track error. This hides
@@ -1582,6 +1590,48 @@ timing field or orphan counter.
 No trajectory decision, threshold, generated state or collision proof changed.
 The build did not link and the M1 runtime fixture still has not executed, so M1
 remains open pending the next chained target gate.
+
+Third target attempt (2026-09-23): **BUILD/LINK PASS; RUNTIME PAGE-TIME DEFECT
+EXPOSED**.
+
+The viewer and pipeline executable built successfully. The real identity and
+translated/rotated/moving/rotating executions then produced identical planning,
+trajectory and NavLocal telemetry, but both stopped after the first storage-page
+advance:
+
+```text
+FOLLOWER FAIL REASON: PROGRAM_PAGE_BEFORE_START
+FOLLOWER FAIL PAGE: 1
+FOLLOWER FAIL TIME: 50.30 S
+FOLLOWER PROGRAM ACCEPTED AT: 50.00 S
+```
+
+Root cause: runtime selected page 1 when universe time was within its epsilon of
+the recomputed end of page 0. IEEE rounding still left that time microscopically
+before page 1's independently computed canonical start, so the Sampler correctly
+rejected it as future input. Four owners separately reconstructed the same page
+clock.
+
+Correction candidate:
+
+- add pure `ManeuverProgramTimeline` as the sole page window/index/elapsed-time
+  owner;
+- advance only when `universeTime >= nextPage.startUniverseTime`;
+- make Sampler, Follower and phase gate consume the same page-time API;
+- fix Follower completion to subtract `sequenceStartOffsetSeconds`;
+- add boundary regression at the representable double immediately before the
+  next page start and at the exact start;
+- add Follower regression proving a later page cannot complete from global
+  maneuver age before its local end.
+
+The frame E2E itself was also incorrectly coupled to later physical-planner
+success. M1 concerns semantic-frame invariance, while the current trajectory is
+known to contain 78 infeasible actuator intervals. The corrected M1 gate
+compares every identity/non-identity NavLocal frame and requires the same
+terminal outcome; it no longer demands that M3/M4 already be solved. This is a
+stronger frame test and a narrower ownership test, not a relaxed physics gate.
+
+M1 remains open until the corrected target run emits its independent marker.
 
 The local Linux environment has `g++` but no CMake or GLM development headers,
 so it cannot compile the project. M1 remains open until the target Windows

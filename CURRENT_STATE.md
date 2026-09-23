@@ -1,5 +1,25 @@
 # CURRENT STATE
 
+## 2026-09-23 — M1 runtime reached; canonical page timeline added
+
+Status: **RUNTIME DEFECT CORRECTED / TARGET REVALIDATION REQUIRED**
+
+The third MinGW64 run compiled and linked the viewer and pipeline. Identity and
+non-identity executions produced identical diagnostics and NavLocal telemetry,
+but both failed at 50.30 s on page 1 with `PROGRAM_PAGE_BEFORE_START`.
+
+The failure was caused by duplicate time ownership: runtime advanced by a
+rounded previous-page end while Sampler judged the next page by its own start.
+`ManeuverProgramTimeline` now owns page windows, active-page selection and
+page-local elapsed time. Runtime, Sampler, Follower and phase gate use it.
+Follower completion also now accounts for `sequenceStartOffsetSeconds`.
+
+The frame E2E now compares the complete identity/non-identity trace and terminal
+outcome rather than requiring both runs to finish a maneuver already known to
+contain 78 infeasible actuator intervals. Physical success remains an M3/M4
+gate; frame invariance remains M1. A new target run is required before M1 can be
+accepted.
+
 ## 2026-09-23 — second M1 target attempt reached TrajectoryGenerator
 
 Status: **SECOND COMPILE CORRECTION IMPLEMENTED / TARGET REBUILD REQUIRED**

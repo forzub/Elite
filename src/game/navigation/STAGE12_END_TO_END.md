@@ -9478,3 +9478,50 @@ retired implementation symbols.
 No speed policy, waypoint relaxation, Ruckig request, collision check or
 trajectory output changed. Since link/runtime were not reached, this log still
 does not accept or reject the non-identity-frame M1 behavior.
+
+## 2026-09-23 — third M1 target run: frame execution reaches page boundary
+
+The third target run achieved:
+
+- architecture gates PASS;
+- Stage-1 nominal route PASS;
+- maneuver tracking controller PASS;
+- viewer compile/link PASS;
+- pipeline compile/link PASS;
+- real identity and translated/rotated/moving/rotating execution started.
+
+Both executions reported exactly the same route, 1352 trajectory samples, 91
+storage pages, 78 infeasible actuator segments, 12 execution frames and all
+printed NavLocal errors/angles. Both then failed identically:
+
+```text
+PROGRAM_PAGE_BEFORE_START
+page = 1
+time = 50.30 s
+accepted-at = 50.00 s
+```
+
+Runtime had selected page 1 using `currentPageEnd` plus a 1e-9 comparison
+tolerance. Sampler independently computed page 1 elapsed time and observed a
+small negative value. That is not a frame-transform failure; it is a split
+storage-timeline owner.
+
+The correction adds `ManeuverProgramTimeline` and routes four consumers through
+it:
+
+- runtime selects by the next page's canonical start;
+- Sampler obtains page-local elapsed time;
+- Follower uses page-local rather than global maneuver age for completion;
+- phase gate obtains the canonical page end.
+
+New unit regressions pin the floating-point instant immediately before the next
+page start, the exact page start, and Follower completion on a later page.
+
+The original frame fixture also required both runs to reach a successful
+physical terminal. That incorrectly made M1 depend on the known infeasible
+actuator plan assigned to M3/M4. The fixture now compares every NavLocal trace
+frame and requires identical success/failure outcome. The independent marker
+therefore proves coordinate invariance without declaring the physical maneuver
+valid.
+
+This candidate is unverified on target. M1 remains open.

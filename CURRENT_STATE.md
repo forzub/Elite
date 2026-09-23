@@ -1,5 +1,34 @@
 # CURRENT STATE
 
+## 2026-09-23 — M1 accepted; M2 composition-root split activated
+
+Status: **M1 ACCEPTED / M2 SLICE 1 IMPLEMENTED — TARGET BUILD REQUIRED**
+
+The fourth MinGW64 run produced the required non-identity-frame marker. Identity
+and translated/rotated/moving-frame executions both advanced through all 90 page
+boundaries, completed their 91-page programs and matched across 902 NavLocal
+trace frames. This closes the frame/API/timeline exit gate for M1.
+
+The pipeline still fails later in the high-speed Newtonian fixture. It reports
+34 physically infeasible actuator segments, loses tracking at 0.51 s and has a
+170.46-degree reference/velocity mismatch while the body remains aligned within
+1 degree of velocity. That is the known M3/M4 authoring-order defect: an
+unreachable translational reference is accepted before attitude/thrust
+feasibility. It must not be hidden by increasing the tracking timeout.
+
+M2 is now active. Its first behavior-preserving slice has extracted scenario
+JSON and filesystem parsing from the 3849-line runtime monolith into
+`NavigationScenarioIo.{h,cpp}` and the dedicated
+`EliteNavigationScenarioToolIo` target. `NavigationScenarioRuntime.cpp` no
+longer includes nlohmann JSON, defines the loader or owns input streams. The
+viewer and E2E explicitly include the tool-I/O API, while Stage 1/2 continue to
+receive the immutable `ScenarioDefinition` value.
+
+All five available architecture contracts and `git diff --check` pass. Local
+C++ build was not run because this environment has no CMake. MinGW64 must now
+prove the new module compiles/links and preserves the accepted M1 marker and
+the already-classified high-speed failure.
+
 ## 2026-09-23 — map/passage/risk/pilot semantics clarified
 
 Status: **NORMATIVE REQUIREMENTS INTEGRATED / M1 TARGET GATE UNCHANGED**

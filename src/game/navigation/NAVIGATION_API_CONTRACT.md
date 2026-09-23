@@ -57,8 +57,9 @@ Immutable parsed snapshot:
 - world physics;
 - goal/static/dynamic revisions.
 
-File parsing ends at loadScenarioDefinition(). No Stage-1 or Stage-2
-calculation reopens the scenario source.
+File parsing is owned by `NavigationScenarioIo.{h,cpp}` and ends at
+`loadScenarioDefinition()`. `NavigationScenarioRuntime.h` does not expose the
+file-input function. No Stage-1 or Stage-2 calculation reopens the source.
 
 ### ScenarioRunSettings
 
@@ -137,6 +138,18 @@ boundary:
 - diagnostic writers: only through ScenarioRuntimeIoPolicy.
 
 No lower calculation component may include or call these orchestration APIs.
+
+The diagnostic tool keeps scenario input physically separate:
+
+```text
+NavigationScenarioIo (JSON/filesystem)
+    -> immutable ScenarioDefinition
+    -> NavigationScenarioRuntime (preview/Stage 1/Stage 2 composition)
+```
+
+`NavigationScenarioRuntime.cpp` may write diagnostics only through the explicit
+`ScenarioRuntimeIoPolicy`, but it may not include nlohmann JSON, parse scenario
+input or define `loadScenarioDefinition()`.
 
 ## Clock contract
 

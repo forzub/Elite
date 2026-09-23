@@ -9554,3 +9554,33 @@ Important decisions:
 
 This contract clarification does not alter the active M1 executable candidate
 or replace its pending target gate.
+
+## 2026-09-23 — fourth target run accepts M1 and exposes the M3/M4 blocker
+
+The canonical page-timeline correction passed on MinGW64. Identity and
+translated/rotated/moving-frame executions each reported:
+
+- 91 storage pages and 90 page advances;
+- maneuver program complete;
+- 902 execution frames;
+- identical terminal and NavLocal tracking metrics;
+- no Follower failure;
+- the required non-identity product-chain PASS marker.
+
+M1 is therefore accepted. The subsequent high-speed Newtonian fixture still
+fails by design-visible physics: 34 of 753 actuator segments are infeasible,
+the reference/velocity angle reaches 170.46 degrees, and tracking is invalidated
+at 0.51 s. The test's final assertion still asks for physical completion, so the
+aggregate CTest remains red. This does not reopen M1; it records the M3/M4 need
+to author attitude/thrust-feasible motion before final timing and acceptance.
+
+M2 is activated as a behavior-preserving structural migration. Its first slice
+extracts scenario JSON/filesystem parsing from the runtime monolith and adds an
+architecture guard for that ownership boundary.
+
+The slice is now implemented as a target-unverified candidate.
+`NavigationScenarioIo.{h,cpp}` owns `loadScenarioDefinition()`, nlohmann JSON
+and the input stream. Runtime, viewer and E2E cross that boundary only through
+the immutable scenario value and the explicit loader header. CMake links the
+parser as `EliteNavigationScenarioToolIo`; purity checks forbid moving parser
+ownership back into the runtime monolith. No flight calculation changed.

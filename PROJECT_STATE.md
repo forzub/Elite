@@ -1,5 +1,24 @@
 # PROJECT STATE
 
+## 2026-09-23 — migration gate M1 closed, M2 opened
+
+Target evidence accepts the canonical NavLocal/System frame boundary and the
+single maneuver-page timeline. Both coordinate fixtures completed all storage
+pages and emitted the independent frame-equivalence PASS marker.
+
+The remaining pipeline failure is deliberately not attributed to M1: the
+high-speed Newtonian program contains 34 infeasible actuator intervals and is
+invalidated after 0.51 s of tracking loss. Physical acceptance remains RED for
+M3/M4.
+
+Active work is M2: split scenario I/O, route composition, maneuver/proof
+composition, execution harness and trace adapters out of
+`NavigationScenarioRuntime.cpp` without changing observed behavior. The first
+slice now has a code candidate: scenario JSON/file parsing is owned by
+`NavigationScenarioIo`, exposed through a separate header and linked as
+`EliteNavigationScenarioToolIo`. Static contracts pass; target compile/runtime
+evidence is pending.
+
 **Project:** Elite Navigation v2
 **Updated:** 2026-09-20 Europe/Kyiv
 

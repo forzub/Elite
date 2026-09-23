@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "tools/navigation_runtime/NavigationScenarioRuntime.h"
+#include "tools/navigation_runtime/NavigationScenarioIo.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 
 namespace

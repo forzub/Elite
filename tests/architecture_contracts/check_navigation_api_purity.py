@@ -34,6 +34,9 @@ def function_slice(text: str, start_marker: str, end_marker: str) -> str:
 
 runtime_h = read("tools/navigation_runtime/NavigationScenarioRuntime.h")
 runtime_cpp = read("tools/navigation_runtime/NavigationScenarioRuntime.cpp")
+scenario_io_h = read("tools/navigation_runtime/NavigationScenarioIo.h")
+scenario_io_cpp = read("tools/navigation_runtime/NavigationScenarioIo.cpp")
+tool_cmake = read("tools/navigation_runtime/CMakeLists.txt")
 geo_h = read("src/world/navigation/GeometricPathPlanner.h")
 geo_cpp = read("src/world/navigation/GeometricPathPlanner.cpp")
 trajectory_h = read("src/world/navigation/TrajectoryGenerator.h")
@@ -73,7 +76,6 @@ e2e = read("tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp")
 # ---------- Public snapshot/API boundary ----------
 for token in (
     "struct ScenarioDefinition",
-    "loadScenarioDefinition(",
     "const ScenarioDefinition& scenario",
     "struct RetainedStaticRoute",
     "vehicleCapabilityRevision",
@@ -85,6 +87,12 @@ for token in (
     "ScenarioFrameDefinition",
 ):
     require(token in runtime_h, f"runtime API missing explicit boundary token {token!r}")
+
+require(
+    "loadScenarioDefinition(" in scenario_io_h and
+    "loadScenarioDefinition(" not in runtime_h,
+    "scenario file-input API is not separated from the calculation runtime API",
+)
 
 # Stage-1 and Stage-2 calculation must consume one already parsed snapshot.
 calc_start = runtime_cpp.find("ScenarioRunResult calculateScenario(")
@@ -116,6 +124,36 @@ for token in (
 
 require("std::filesystem::current_path" not in runtime_cpp,
         "runtime resolves ambient current working directory")
+
+# M2: authored scenario input is a tool-I/O concern. Calculation/orchestration
+# receives the immutable ScenarioDefinition and cannot parse or reopen JSON.
+for forbidden in (
+    "nlohmann::json",
+    "parseScenarioDefinitionFile(",
+    "ScenarioDefinition loadScenarioDefinition(",
+):
+    require(
+        forbidden not in runtime_cpp,
+        f"runtime monolith still owns scenario input concern {forbidden!r}",
+    )
+
+for required in (
+    "ScenarioDefinition parseScenarioDefinitionFile(",
+    "ScenarioDefinition loadScenarioDefinition(",
+    "std::ifstream stream(path)",
+):
+    require(
+        required in scenario_io_cpp,
+        f"scenario I/O module missing explicit ownership {required!r}",
+    )
+
+for required in (
+    "add_library(EliteNavigationScenarioToolIo STATIC",
+    "NavigationScenarioIo.cpp",
+    "NavigationScenarioIo.h",
+    "EliteNavigationScenarioToolIo",
+):
+    require(required in tool_cmake, f"scenario I/O module not linked explicitly: {required}")
 
 for forbidden in (
     'frame.systemId = 1;',
@@ -485,9 +523,9 @@ for forbidden in (
 # Scenario file parser owns ScenarioDefinition mutation. No anonymous 'terminal'
 # alias may leak into parser/preview/Stage-1 orchestration.
 parser = function_slice(
-    runtime_cpp,
+    scenario_io_cpp,
     "ScenarioDefinition parseScenarioDefinitionFile(",
-    "TraceStaticObstacle traceObstacle("
+    "} // namespace"
 )
 for token in (
     "scenario.finish.position",

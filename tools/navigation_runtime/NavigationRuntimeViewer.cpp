@@ -1,5 +1,6 @@
 #include "NavigationTrace.h"
 #include "NavigationScenarioRuntime.h"
+#include "NavigationScenarioIo.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 
 #include <glad/gl.h>

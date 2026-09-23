@@ -117,6 +117,32 @@ target_compile_features(
     PUBLIC cxx_std_17
 )
 
+# Tool boundary: JSON/filesystem input ends here. The immutable
+# ScenarioDefinition value is the only product passed into planning/execution.
+add_library(EliteNavigationScenarioToolIo STATIC
+    NavigationScenarioIo.cpp
+    NavigationScenarioIo.h
+)
+
+target_include_directories(
+    EliteNavigationScenarioToolIo
+    PUBLIC
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+        "${GLM_INCLUDE_DIR}"
+        "${CMAKE_CURRENT_LIST_DIR}"
+)
+
+target_compile_features(
+    EliteNavigationScenarioToolIo
+    PUBLIC cxx_std_17
+)
+
+target_link_libraries(
+    EliteNavigationScenarioToolIo
+    PRIVATE nlohmann_json::nlohmann_json
+)
+
 enable_testing()
 
 add_executable(
@@ -145,6 +171,7 @@ target_link_libraries(
     PRIVATE
         EliteNavigationExecutionToolCore
         EliteNavigationRuntimeVehicleFixture
+        EliteNavigationScenarioToolIo
         nlohmann_json::nlohmann_json
 )
 
@@ -188,6 +215,7 @@ target_link_libraries(
     PRIVATE
         EliteNavigationExecutionToolCore
         EliteNavigationRuntimeVehicleFixture
+        EliteNavigationScenarioToolIo
         nlohmann_json::nlohmann_json
 )
 
@@ -205,12 +233,14 @@ if(MSVC)
     target_compile_options(EliteNavigationRouteToolCore PRIVATE /W4 /permissive-)
     target_compile_options(EliteNavigationExecutionToolCore PRIVATE /W4 /permissive-)
     target_compile_options(EliteNavigationRuntimeVehicleFixture PRIVATE /W4 /permissive-)
+    target_compile_options(EliteNavigationScenarioToolIo PRIVATE /W4 /permissive-)
     target_compile_options(navigation_runtime_pipeline_tests PRIVATE /W4 /permissive-)
     target_compile_options(navigation_runtime_viewer PRIVATE /W4 /permissive-)
 else()
     target_compile_options(EliteNavigationRouteToolCore PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(EliteNavigationExecutionToolCore PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(EliteNavigationRuntimeVehicleFixture PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(EliteNavigationScenarioToolIo PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(navigation_runtime_pipeline_tests PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(navigation_runtime_viewer PRIVATE -Wall -Wextra -Wpedantic)
 endif()

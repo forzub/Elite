@@ -287,10 +287,6 @@ struct ScenarioDefinition
     double routeClearanceMeters = 0.0;
 };
 
-[[nodiscard]] ScenarioDefinition loadScenarioDefinition(
-    const std::string& scenarioJsonPath
-);
-
 using ScenarioVehicleParameters =
     game::navigation::VehicleDynamicsProfile;
 

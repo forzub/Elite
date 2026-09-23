@@ -1,22 +1,48 @@
-# CURRENT TASK — validate canonical page timeline and M1 frame invariance
+# CURRENT TASK — M2 slice 1: extract scenario I/O
 
 Date: 2026-09-23
 
-Status: **THIRD M1 CORRECTION COMPLETE / TARGET EVIDENCE REQUIRED**
+Status: **M1 ACCEPTED / M2 SLICE 1 IMPLEMENTED — TARGET EVIDENCE REQUIRED**
 
-The target now builds and links. Its first real M1 execution exposed duplicate
-storage-page time ownership: runtime selected page 1 just before that page's own
-start, and Sampler correctly returned `BeforeStart`.
+The target emitted the required frame-equivalence marker after both coordinate
+fixtures traversed all 91 storage pages. M1 is closed.
 
-`ManeuverProgramTimeline` now owns page windows, page-local elapsed time and
-active-page selection. Runtime, Sampler, Follower and phase gate consume it.
+The aggregate pipeline remains red only in the later high-speed Newtonian case:
+34 actuator segments are infeasible and the accepted reference is invalidated
+after 0.51 s. That is retained evidence for M3/M4 and is outside this structural
+slice.
 
-The blueprint has additionally incorporated the later navigation-map,
-portal/risk and pilot-skill requirements. That documentation does not change
-this immediate M1 gate: validate the already implemented timeline/frame
-candidate before beginning M2 or any octree/portal implementation.
+## Implemented slice
 
-## Required target gate
+Scenario parsing/tool file I/O has been split out of the 3849-line
+`NavigationScenarioRuntime.cpp`:
+
+1. JSON helpers and `loadScenarioDefinition()` now live in
+   `NavigationScenarioIo.{h,cpp}`;
+2. `ScenarioDefinition` remains the immutable Stage-1/Stage-2 input;
+3. runtime calculation/orchestration no longer includes nlohmann JSON or opens
+   scenario input streams;
+4. CMake owns an explicit `EliteNavigationScenarioToolIo` target;
+5. the API-purity contract pins the new physical boundary.
+
+No control tuning, timeout relaxation, portal/octree work or high-speed physics
+repair belongs in this slice.
+
+## Completed local gates
+
+All commands below pass. No local C++ build ran because CMake is not installed:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+python tests/architecture_contracts/check_navigation_api_purity.py
+python tests/architecture_contracts/check_navigation_stage1_nominal_route.py
+python tests/architecture_contracts/check_navigation_stage12_runtime_planner.py
+python tests/architecture_contracts/check_geometric_path_planner.py
+python tests/architecture_contracts/check_ruckig_navigation_integration.py
+git diff --check
+```
+
+## Target gate after the slice
 
 Run as one chained command in MSYS2 MinGW64:
 
@@ -37,27 +63,11 @@ ctest --test-dir build/tools/navigation_runtime \
   --output-on-failure
 ```
 
-Return the complete output beginning with the commit hash.
+Return the complete output beginning with the checkout hash. Required
+invariants:
 
-## M1 acceptance evidence
-
-Required marker:
-
-```text
-[PASS] non-identity translated/rotated/moving frame preserves NavLocal product-chain execution
-```
-
-The marker now means:
-
-- identity and non-identity runs have the same terminal outcome;
-- their complete NavLocal position, velocity, attitude and clock histories agree
-  within explicit tolerances;
-- storage pages use one maneuver timeline.
-
-It does not claim that the current 78-infeasible-segment physical plan is valid.
-That failure must appear later and be classified for M3/M4, not used to reject
-M1.
-
-If the marker passes, accept M1 and activate M2 even if a subsequent known
-physical-authoring case fails. If timeline or frame equivalence fails, keep M1
-open and repair the exact boundary defect.
+- scenario parsing/build/link succeeds from the new module;
+- the M1 non-identity marker remains PASS;
+- identity/non-identity metrics remain unchanged;
+- the high-speed case remains classified by its actual physical-authoring
+  failure until M3/M4, rather than being hidden or redefined.

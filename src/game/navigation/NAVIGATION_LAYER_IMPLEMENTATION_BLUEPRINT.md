@@ -1788,8 +1788,7 @@ Exit gate:
 
 ### M1 — Repair coordinate and API boundaries
 
-Implementation status (2026-09-23): **CODE CANDIDATE COMPLETE / TARGET
-MINGW64 VALIDATION PENDING**.
+Implementation status (2026-09-23): **ACCEPTED ON TARGET / EXIT GATE PASS**.
 
 Implemented in the candidate:
 
@@ -1932,7 +1931,18 @@ compares every identity/non-identity NavLocal frame and requires the same
 terminal outcome; it no longer demands that M3/M4 already be solved. This is a
 stronger frame test and a narrower ownership test, not a relaxed physics gate.
 
-M1 remains open until the corrected target run emits its independent marker.
+Fourth target run accepted M1. Both identity and translated/rotated/moving-frame
+executions traversed all 91 storage pages, completed the maneuver program and
+produced equivalent 902-frame NavLocal histories. The target emitted:
+
+```text
+[PASS] non-identity translated/rotated/moving frame preserves NavLocal product-chain execution
+```
+
+The later high-speed Newtonian case failed independently with 34 infeasible
+actuator segments and `PROGRAM_INVALIDATED_TRACKING_LOSS` after 0.51 s. This is
+the already classified M3/M4 physical-authoring defect, not an M1 coordinate or
+timeline failure. M1 is closed and M2 is active.
 
 The local Linux environment has `g++` but no CMake or GLM development headers,
 so it cannot compile the project. M1 remains open until the target Windows
@@ -1954,6 +1964,23 @@ Exit gate:
 - all frame E2E fixtures produce equivalent NavLocal behavior.
 
 ### M2 — Split the runtime composition root
+
+Implementation status (2026-09-23): **SLICE 1 CODE CANDIDATE COMPLETE / TARGET
+VALIDATION PENDING**.
+
+First behavior-preserving slice: separate scenario JSON/file parsing from
+`NavigationScenarioRuntime.cpp`, link it as an explicit tool-I/O module, and pin
+the boundary with the architecture contract. Planning/execution behavior and
+the known high-speed physical failure must remain unchanged.
+
+Candidate result:
+
+- `NavigationScenarioIo.{h,cpp}` exclusively owns authored JSON/file input;
+- `NavigationScenarioRuntime.h` no longer exposes the file loader;
+- viewer/E2E include the I/O API explicitly;
+- `EliteNavigationScenarioToolIo` is a separate CMake target;
+- the runtime monolith no longer includes nlohmann JSON or parses input;
+- architecture contracts pass locally; MinGW64 compile/link/E2E is pending.
 
 Create separate modules for:
 

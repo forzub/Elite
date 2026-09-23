@@ -18,6 +18,16 @@ authority and does not satisfy B6 continuous proof, B8 acceptance or literal
 actuator execution. Target build and visual inspection remain required before
 the migration proceeds beyond this gate.
 
+Target inspection result (2026-09-23): the seam renders correctly, but a
+20.60 m/s run proves that one initial physical candidate is not route evidence.
+The legacy chain requests 50 infeasible actuator intervals at the first corner
+and loses tracking at 5.33 s. The current B5 compiler copies
+`geometricTargetPositionMapMeters` into output metadata but derives dynamics
+from velocity error alone; the observer also stops after the first primitive.
+M4 must therefore add typed spatial capture semantics and exact terminal-state
+chaining before B6. A single `candidate_found_unproved` must never summarize a
+multi-corner route.
+
 Scope: static and dynamic 3D navigation for one to many thousands of ships,
 drones, missiles and other autonomous actors.
 
@@ -2103,8 +2113,9 @@ Exit gate:
 
 ### M4 — Activate a short-horizon physical maneuver compiler
 
-Implementation status (2026-09-23): **TYPED WITNESS AND BOUNDED COORDINATOR
-ACCEPTED ON TARGET; OBSERVER-ONLY VIEWER INTEGRATION IS THE NEXT BLOCKING GATE**.
+Implementation status (2026-09-23): **TYPED WITNESS/COORDINATOR ACCEPTED;
+VIEWER SEAM VALIDATED; SPATIAL CAPTURE AND RECEDING-HORIZON CHAIN ARE THE NEXT
+BLOCKING GATE**.
 
 The physical compiler result is a sum-type in semantics: either one or more
 bounded candidates, or a typed quantitative `InfeasibilityWitness`. The witness
@@ -2182,7 +2193,10 @@ rather than accepting impossible nominal motion or turning navigation off.
 Correct current compiler defects:
 
 - preserve initial angular velocity;
-- use target position/corridor bounds;
+- use target position/corridor bounds as actual boundary conditions rather than
+  copied metadata;
+- propagate each selected candidate's exact terminal rigid-body state into the
+  next bounded solve and advance a corridor leg only through typed capture;
 - emit literal actuator schedules;
 - reserve feedback authority;
 - integrate rigid-body state consistently.

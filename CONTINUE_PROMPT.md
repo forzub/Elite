@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — validate the observer, then prove the displayed candidate
+# CONTINUE PROMPT — build a spatial physical chain before proof or execution
 
 Continue in repository `forzub/Elite`, branch `main`.
 
@@ -40,6 +40,12 @@ corrected `physical_maneuver_search_coordinator` test (1/1, 0.04 s).
 
 These are unit/contract results, not integrated-system acceptance.
 
+Remote commit `15f4c6c6f856cc9cf7974ef1527730315807c880` also built and
+ran in the target viewer. The observer layer is visible and correctly remains
+unaccepted. A 20.60 m/s Newtonian run then exposed 50/801 infeasible legacy
+actuator intervals and tracking invalidation at 5.33 s on the first corner,
+without collision.
+
 ## Implemented candidate
 
 `tools/navigation_runtime` now builds an observer-only physical frontier from
@@ -55,9 +61,9 @@ Follower or physics. Every candidate remains `requiresContinuousProof=true`.
 
 ## Immediate work
 
-Do not continue into accepted-program execution yet. First build the candidate
-on MinGW, run the focused coordinator/compiler tests plus
-`navigation_runtime_pipeline`, and launch the viewer.
+Do not continue into B6 proof or accepted-program execution yet. Replace the
+initial-only physical probe with a typed spatial capture task and a deterministic
+receding-horizon candidate chain.
 
 The viewer must distinguish:
 
@@ -71,15 +77,23 @@ The observer adapter may depend on tool/runtime presentation types. The pure
 coordinator/compiler may not depend on trace, viewer, JSON, filesystem or
 OpenGL. Observer mode must not steer physics or construct an accepted program.
 
-Inspect straight, corner and high-speed Newtonian scenes. Verify that rejected
-alternatives and unproved candidate curves/vectors are visible and cannot be
-confused with accepted or actual motion. The existing high-speed legacy failure
-must not be tuned away.
+The key uncovered API defect is that
+`geometricTargetPositionMapMeters` currently affects candidate metadata but not
+candidate dynamics. First add a regression proving that a changed capture
+plane/corner/terminal volume cannot be silently ignored when desired velocity
+happens to be the same. Targets on the same unconstrained ray may share a short
+progress primitive; typed progress/capture semantics decide eligibility. Then
+make those semantics an explicit solve input.
 
-After that visual gate passes, implement B6 continuous oriented-hull/corridor
-proof for the exact sampled candidate shown by the observer. Keep proof output
-separate from B5 and do not publish B8 acceptance until exact capability,
-resource and geometry checks all refer to the same maneuver history.
+Chain bounded candidates by exact terminal position, velocity, attitude and
+angular velocity. Do not advance to the next corridor leg until its capture
+condition is met. On failure, use typed witnesses to vary speed, arrival time,
+terminal sample or corridor while keeping the objective active.
+
+Only after straight, corner and high-speed Newtonian chains are spatially and
+physically coherent should B6 continuously prove the exact sampled candidates.
+Keep proof output separate from B5 and do not publish B8 acceptance until exact
+capability, resource and geometry checks all refer to the same maneuver history.
 
 ## Accepted coordinator design
 
@@ -103,9 +117,10 @@ Accepted semantics:
 - stale objective or frontier revision fails before physical work; the two
   revisions remain independent.
 
-The read-only viewer snapshot is implemented but not target-accepted. Only after
-visual inspection may work proceed to continuous oriented-hull/corridor proof;
-literal execution and accepted publication remain later gates.
+The read-only viewer snapshot is target-validated as instrumentation. It also
+proved that the current single primitive cannot validate a route. Spatial
+receding-horizon chaining precedes continuous proof; literal execution and
+accepted publication remain later gates.
 
 ## Non-negotiable model
 

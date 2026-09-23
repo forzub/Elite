@@ -4,6 +4,30 @@
 **Started:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md`
 
+## 2026-09-23 — first observer visual run exposes high-speed corner infeasibility
+
+Remote commit `15f4c6c6f856cc9cf7974ef1527730315807c880` built and launched
+on MinGW64. The B4/B5 observer product is visible and distinct from legacy
+Ruckig/reference/actual motion.
+
+The inspected Newtonian run used 20.60 m/s start and 20.45 m/s finish speed.
+Stage 1 produced a four-point, 321.98 m detour with 19.04 m additional
+clearance. Stage 2 produced 801 actuator intervals, of which 50 are infeasible.
+The first infeasible corner demand appears near 5.03 s; Follower invalidates the
+unreachable legacy reference at 5.33 s on storage page 17. Maximum route
+deviation is 7.36 m and no coarse static collision occurs.
+
+The observer reports `candidate_found_unproved` for one initial
+`LeadRotateMainBurn`. This is not contradictory: the current observer evaluates
+only the first local velocity change. The compiler does not yet use geometric
+target position in its dynamics, and no candidate terminal state is chained
+into the next corner. The visual checkpoint therefore passes as instrumentation
+but fails as route-wide physical validation.
+
+Next Stage-12 gate: a spatial capture task plus deterministic receding-horizon
+candidate chain must expose every corridor transition before B6 continuous
+proof or B8 publication can begin.
+
 ## 2026-09-23 — observer-only physical layer implemented for target inspection
 
 `tools/navigation_runtime` now has a read-only presentation seam for the pure

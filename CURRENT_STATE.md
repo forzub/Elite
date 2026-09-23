@@ -1,5 +1,33 @@
 # CURRENT STATE
 
+## 2026-09-23 — target visual gate exposes the next physical-planner defect
+
+Status: **OBSERVER VISIBLE / ROUTE-WIDE PHYSICAL SOLVE NOT YET PRESENT**
+
+Exact remote commit `15f4c6c6f856cc9cf7974ef1527730315807c880`
+built and ran on the MinGW target. The observer publishes one unproved
+`LeadRotateMainBurn` candidate and the viewer renders its attitude/burn vectors
+separately from legacy execution.
+
+The 20.60 m/s Newtonian visual run fails at the first high-speed direction
+change, not during a scalar speed increase. The retained route is collision-free
+and has 19.04 m additional clearance, but the legacy author contains 50/801
+infeasible actuator intervals. At about 5.03 s it requests lateral/RCS authority
+the ship does not have; Follower invalidates tracking at 5.33 s on page 17. No
+coarse static contact occurs.
+
+The visual gate also exposes that the observer is only an initial-primitive
+probe. `geometricTargetPositionMapMeters` is copied into B5 candidate metadata,
+but current candidate dynamics are generated from velocity error only. Thus
+`candidate_found_unproved` does not mean the route or next corner is physically
+reachable. Extending this observer unchanged would produce a prettier lie.
+
+The active correction is now a spatially bound receding-horizon physical solve:
+candidate generation must consume target/corridor capture semantics, propagate
+the exact terminal rigid-body state, and negotiate speed/time/terminal
+alternatives at every direction change. Only that exact chain may proceed to
+continuous proof and acceptance.
+
 ## 2026-09-23 — physical observer candidate implemented; target visual gate pending
 
 Status: **OBSERVER DATAFLOW IMPLEMENTED / TARGET BUILD AND VISUAL INSPECTION REQUIRED**

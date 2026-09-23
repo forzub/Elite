@@ -1,8 +1,39 @@
-# CURRENT TASK — observer-only visualization of the replacement path
+# CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
 Date: 2026-09-23
 
-Status: **VISUAL DATAFLOW CANDIDATE READY — TARGET BUILD/INSPECTION NEXT**
+Status: **VISUAL GATE FAILED USEFULLY — INITIAL-ONLY PHYSICAL PROBE MUST BECOME A CHAIN**
+
+## Target visual result
+
+Commit `15f4c6c6f856cc9cf7974ef1527730315807c880` built and displayed
+the observer layer. At 20.60 m/s the legacy route reaches the first corner with
+50 infeasible actuator intervals and loses tracking at 5.33 s. The observer's
+initial rotate/burn candidate is visible and remains explicitly unaccepted.
+
+This proves the viewer seam works and proves that one successful initial B5
+primitive says nothing about a later corner.
+
+## Active implementation task
+
+Replace the initial-only observer request with a pure spatial local-maneuver
+task and a bounded receding-horizon chain:
+
+- target is a typed capture region/corridor cross-section, not metadata;
+- candidate scoring/compilation must account for position and velocity boundary
+  conditions together;
+- the next solve starts from the exact terminal position, velocity, attitude
+  and angular velocity of the previous candidate;
+- a corridor leg advances only after its capture condition is reached;
+- corner failure returns a typed witness and varies speed, arrival time or
+  terminal sample without cancelling the objective;
+- no candidate enters Follower before continuous swept-hull proof.
+
+First regression: when a changed spatial target changes progress/capture
+constraints while desired velocity is preserved, candidate eligibility or
+outcome must change or return a typed rejection. Identical short primitives may
+remain legal for targets on the same unconstrained ray; silently ignoring a
+capture plane, corner or terminal volume is not legal.
 
 ## Implemented observer candidate
 

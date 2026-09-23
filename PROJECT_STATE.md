@@ -1,5 +1,23 @@
 # PROJECT STATE
 
+## 2026-09-23 — visual evidence rejects initial-only physical success as route evidence
+
+The target viewer run of remote commit `15f4c6c6f856cc9cf7974ef1527730315807c880`
+shows both products at once: an honest unproved initial rotate/burn candidate
+and a legacy route execution that fails at the first high-speed corner.
+
+At 20.60 m/s the route widens geometrically, but geometry alone cannot provide
+the lateral acceleration. The legacy program contains 50/801 infeasible
+actuator intervals; tracking is invalidated at 5.33 s with no collision. This
+confirms that speed-dependent clearance is not a substitute for kinodynamic
+planning.
+
+The observer is presently too local to validate a route. Its target position is
+not part of the compiler's dynamic solve, and the single candidate does not
+propagate into the next corridor transition. Project work therefore remains in
+M4: construct a spatially bound receding-horizon physical chain before starting
+B6 proof or any replacement execution.
+
 ## 2026-09-23 — observer-only physical search reaches trace and viewer
 
 The first integration-scale inspection seam is implemented. Runtime composition

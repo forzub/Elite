@@ -216,6 +216,20 @@ public:
         return {frame_.localToWorldVector(vector.value)};
     }
 
+    // Angular velocity is a frame-relative state. Convert the relative
+    // NavLocal value to system axes and restore the frame's own rotation.
+    [[nodiscard]] SystemAngularVelocity toSystem(
+        const NavAngularVelocity& angularVelocity
+    ) const noexcept
+    {
+        return {
+            frame_.angularVelocityWorldRadPerSecond +
+            frame_.localToWorldVector(
+                angularVelocity.radiansPerSecond
+            )
+        };
+    }
+
     [[nodiscard]] NavigationSystemControlIntent toSystemControlIntent(
         const NavigationLocalControlIntent& local
     ) const noexcept

@@ -3053,3 +3053,29 @@ graph and scalar Ruckig path remain transitional.
 Migration is at M0 complete by audit/documentation and M1 pending. M1 repairs
 the canonical frame/API boundary and semantic architecture tests. No later
 stage may claim completion before its predecessor's evidence gate passes.
+
+## 2026-09-23 — M1 implementation candidate
+
+The first migration stage is implemented but not accepted.
+
+The runtime now has one explicit coordinate seam:
+
+```text
+NavLocal planner/Follower state
+    -> NavigationFrameBoundary
+    -> System control/physics state
+    -> NavigationFrameBoundary
+    -> NavLocal observation/trace/terminal evaluation
+```
+
+Initial rigid-body state uses the same boundary. The execution composition
+receives a value-owned `KinematicFrame` snapshot and epoch; the harness advances
+the frame during fixed-step execution instead of freezing a moving frame at its
+initial pose.
+
+Execution deadline comparison now uses the same absolute universe-time domain
+as `ExecutionVehicle::timeSeconds`; the prior code silently assumed epoch zero.
+
+Four local architecture gates pass. C++ compilation and the new non-identity
+product-chain E2E still require the Windows MSYS2/MinGW64 target. M2 is not
+active until that evidence is recorded.

@@ -1372,3 +1372,14 @@ Two qualifications are now explicit:
 Therefore “purity checker PASS” is not by itself API-boundary proof. Migration
 M1 must replace the checks with semantic assertions and add a non-identity
 moving-frame product-chain E2E.
+
+## 2026-09-23 — M1 correction applied, validation pending
+
+The identified frame bypass has been removed from the tool candidate. The
+checker now pins actual boundary operations after whitespace normalization,
+forbids a private `NavigationSystemControlIntent toSystemIntent(...)`, and
+requires the non-identity product-chain fixture.
+
+This closes the source-level finding only. Runtime closure requires target
+evidence that identity and translated/rotated/moving/rotating executions retain
+equivalent NavLocal terminal state.

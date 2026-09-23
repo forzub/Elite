@@ -1335,6 +1335,7 @@ void testTypedNavigationBoundaryTransformsLocalControlIntoSystemControl()
     frame.systemId = 5;
     frame.valid = true;
     frame.originMeters = {100.0, 200.0, 300.0};
+    frame.angularVelocityWorldRadPerSecond = {0.01, -0.02, 0.03};
     frame.localToWorldBasis = glm::dmat3(
         glm::dvec3(0.0, 1.0, 0.0),
         glm::dvec3(0.0, 0.0, 1.0),
@@ -1360,6 +1361,29 @@ void testTypedNavigationBoundaryTransformsLocalControlIntoSystemControl()
             near(system.idealAngularAccelerationSystemRadPerSec2.y, -1.0) &&
             near(system.idealAngularAccelerationSystemRadPerSec2.z, 5.0),
             "angular demand did not rotate from NavLocal to system axes");
+
+    game::navigation::NavigationFrameBoundary::NavAngularVelocity
+        relativeAngularVelocity;
+    relativeAngularVelocity.radiansPerSecond = {0.4, -0.2, 0.1};
+    const auto absoluteAngularVelocity =
+        boundary.toSystem(relativeAngularVelocity);
+    const auto roundTripAngularVelocity =
+        boundary.toNavigation(absoluteAngularVelocity);
+    require(
+        near(
+            roundTripAngularVelocity.radiansPerSecond.x,
+            relativeAngularVelocity.radiansPerSecond.x
+        ) &&
+        near(
+            roundTripAngularVelocity.radiansPerSecond.y,
+            relativeAngularVelocity.radiansPerSecond.y
+        ) &&
+        near(
+            roundTripAngularVelocity.radiansPerSecond.z,
+            relativeAngularVelocity.radiansPerSecond.z
+        ),
+        "angular-velocity state did not round-trip through the rotating frame"
+    );
 
     game::navigation::KinematicFrame invalid = frame;
     invalid.localToWorldBasis[1] = invalid.localToWorldBasis[0];

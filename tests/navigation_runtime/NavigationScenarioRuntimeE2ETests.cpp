@@ -93,6 +93,118 @@ double maximumInteriorAbsY(
     return out;
 }
 
+void testNonIdentityMovingRotatingFramePreservesNavLocalExecution()
+{
+    ScenarioDefinition identity = fixtureScenario();
+    identity.frame.originMeters = {0.0, 0.0, 0.0};
+    identity.frame.linearVelocityMps = {0.0, 0.0, 0.0};
+    identity.frame.linearAccelerationMps2 = {0.0, 0.0, 0.0};
+    identity.frame.localToWorldBasis = glm::dmat3(1.0);
+    identity.frame.angularVelocityWorldRadPerSecond = {0.0, 0.0, 0.0};
+    identity.frame.angularAccelerationWorldRadPerSecond2 = {0.0, 0.0, 0.0};
+    identity.frame.startUniverseTimeSeconds = 50.0;
+
+    ScenarioDefinition transformed = identity;
+    transformed.frame.frameId = "navigation-runtime-non-identity-e2e";
+    transformed.frame.originMeters = {125000.0, -83000.0, 41000.0};
+    transformed.frame.linearVelocityMps = {43.0, -17.0, 8.0};
+    transformed.frame.linearAccelerationMps2 = {0.03, -0.02, 0.01};
+    transformed.frame.localToWorldBasis = glm::dmat3(
+        glm::dvec3(0.0, 1.0, 0.0),
+        glm::dvec3(0.0, 0.0, 1.0),
+        glm::dvec3(1.0, 0.0, 0.0)
+    );
+    transformed.frame.angularVelocityWorldRadPerSecond =
+        {0.0, 0.0, 0.001};
+
+    ScenarioRunSettings settings;
+    enableRuntimeDiagnostics(settings);
+    settings.controlMode = ControlMode::Assisted;
+    settings.pilotExecutionProfile =
+        makeScenarioPilotSkillProfile(PilotLevel::Expert);
+    settings.flightStyle = FlightStyle::Standard;
+    settings.enableSuddenObstacle = false;
+    settings.startSpeedOverrideMps = 10.0;
+    settings.finishSpeedOverrideMps = 10.0;
+
+    const auto identityPlan =
+        calculateScenario(identity, settings, fixtureVehicle());
+    const auto transformedPlan =
+        calculateScenario(transformed, settings, fixtureVehicle());
+    require(
+        identityPlan.success && transformedPlan.success,
+        "non-identity frame fixture failed Stage-1 planning"
+    );
+    require(
+        identityPlan.retainedRoute.pointsMapMeters.size() ==
+            transformedPlan.retainedRoute.pointsMapMeters.size(),
+        "system-frame transform changed the NavLocal retained-route size"
+    );
+    for (std::size_t i = 0;
+         i < identityPlan.retainedRoute.pointsMapMeters.size();
+         ++i)
+    {
+        require(
+            glm::length(
+                identityPlan.retainedRoute.pointsMapMeters[i] -
+                transformedPlan.retainedRoute.pointsMapMeters[i]
+            ) <= 1.0e-9,
+            "system-frame transform changed a NavLocal retained-route point"
+        );
+    }
+
+    const auto identityRun = executeCalculatedRoute(
+        identity,
+        settings,
+        identityPlan.retainedRoute,
+        fixtureVehicle()
+    );
+    const auto transformedRun = executeCalculatedRoute(
+        transformed,
+        settings,
+        transformedPlan.retainedRoute,
+        fixtureVehicle()
+    );
+
+    printDiagnostics("[E2E-IDENTITY-FRAME] ", identityRun);
+    printDiagnostics("[E2E-NON-IDENTITY-FRAME] ", transformedRun);
+
+    require(
+        identityRun.success && transformedRun.success,
+        "translated/rotated/moving frame did not complete the same product chain"
+    );
+    require(
+        !identityRun.trace.frames.empty() &&
+        !transformedRun.trace.frames.empty(),
+        "frame-equivalence E2E produced no execution trace"
+    );
+
+    const auto& identityFinal = identityRun.trace.frames.back();
+    const auto& transformedFinal = transformedRun.trace.frames.back();
+    require(
+        glm::length(
+            identityFinal.shipPosition - transformedFinal.shipPosition
+        ) <= 0.25,
+        "non-identity frame changed final NavLocal position"
+    );
+    require(
+        glm::length(
+            identityFinal.shipVelocity - transformedFinal.shipVelocity
+        ) <= 0.10,
+        "non-identity frame changed final NavLocal velocity"
+    );
+    require(
+        glm::length(
+            identityFinal.shipForward - transformedFinal.shipForward
+        ) <= 0.01,
+        "non-identity frame changed final NavLocal attitude"
+    );
+
+    std::cout
+        << "[PASS] non-identity translated/rotated/moving frame preserves "
+        << "NavLocal product-chain execution\n";
+}
+
 void testSpeedAndStyleChangeStaticManeuverReserve()
 {
     ScenarioRunSettings lowStandard;
@@ -494,6 +606,7 @@ int main()
     try
     {
         testSpeedAndStyleChangeStaticManeuverReserve();
+        testNonIdentityMovingRotatingFramePreservesNavLocalExecution();
         testHighSpeedUsesMonotonicClockAndMustStillFinish();
         testAssistedLowSpeedUsesMonotonicReferenceClock();
         testAssistedHigherSpeedUsesHullCoupledPhysicalBraking();
@@ -503,6 +616,7 @@ int main()
             << "NAVIGATION RETAINED-ROUTE E2E: PASS\n"
             << " - speed changes Stage-1 maneuver clearance and route points\n"
             << " - STANDARD/EXTREME change clearance, not nominal speed\n"
+            << " - translated/rotated/moving frame preserves NavLocal execution\n"
             << " - one Stage-1 route is retained unchanged during Stage-2\n"
             << " - Ruckig parameterizes that retained route\n"
             << " - high-speed execution uses one monotonic maneuver clock\n"

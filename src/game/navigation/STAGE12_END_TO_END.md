@@ -9394,3 +9394,24 @@ Subsequent gates are ordered: split the composition root, hard-reject infeasible
 programs, activate a short-horizon physical compiler, add continuous oriented
 hull proof, and execute the proved actuator schedule literally. Static octree
 integration comes after one maneuver is truthful end to end.
+
+## 2026-09-23 — M1 canonical frame-boundary candidate
+
+The Stage-12 tool boundary has been repaired as an unverified candidate:
+
+- Follower intent crosses through
+  `NavigationFrameBoundary::toSystemControlIntent()`;
+- execution initialization receives a `KinematicFrame` value snapshot and
+  epoch explicitly;
+- NavLocal P/V/basis/relative angular velocity are converted before populating
+  system physics state;
+- translating/accelerating/rotating frame state advances with execution time;
+- program deadline includes the non-zero maneuver start universe time;
+- system physical state is converted back before Follower, trace and terminal
+  evaluation;
+- a full retained-route E2E compares identity and non-identity moving/rotating
+  frames and prints an independent PASS marker before later physical cases.
+
+The architecture/purity scripts pass locally. Target compile and runtime remain
+mandatory; this candidate must not be described as an accepted Stage-12 gate
+until MinGW64 emits the non-identity PASS marker.

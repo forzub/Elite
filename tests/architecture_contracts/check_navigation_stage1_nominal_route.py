@@ -442,7 +442,10 @@ for marker in (
     "makeNavigationVehicleProfile",
     "makeManeuverCapabilitySnapshot",
 ):
-    require(marker in runtime, f"runtime did not consume explicit common input {marker}")
+    require(
+        compact_cpp(marker) in compact_cpp(runtime),
+        f"runtime did not consume explicit common input {marker}",
+    )
 
 require(
     "scenario.staticWorldRevision\n        );" not in runtime,

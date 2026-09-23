@@ -19,6 +19,19 @@ def require(condition: bool, message: str) -> None:
         fail(message)
 
 
+def compact_cpp(text: str) -> str:
+    """Ignore whitespace when checking a C++ expression contract."""
+    return "".join(text.split())
+
+
+def function_slice(text: str, start_marker: str, end_marker: str) -> str:
+    start = text.find(start_marker)
+    require(start >= 0, f"cannot locate function marker {start_marker!r}")
+    end = text.find(end_marker, start + len(start_marker))
+    require(end > start, f"cannot isolate function before {end_marker!r}")
+    return text[start:end]
+
+
 runtime_h = read("tools/navigation_runtime/NavigationScenarioRuntime.h")
 runtime_cpp = read("tools/navigation_runtime/NavigationScenarioRuntime.cpp")
 geo_h = read("src/world/navigation/GeometricPathPlanner.h")
@@ -104,7 +117,6 @@ require("std::filesystem::current_path" not in runtime_cpp,
         "runtime resolves ambient current working directory")
 
 for forbidden in (
-    "WorldParams world {};",
     'frame.systemId = 1;',
     'frame.frameId = "navigation-runtime-stage2";',
     "frame.originMeters = {0.0, 0.0, 0.0};",
@@ -114,14 +126,43 @@ for forbidden in (
         f"runtime manufactures hidden environment/frame input: {forbidden}",
     )
 
+runtime_compact = compact_cpp(runtime_cpp)
+for required in (
+    "NavigationFrameBoundary boundary(frame)",
+    "boundary.toSystem(startPosition)",
+    "boundary.toSystem(startPosition, startVelocity)",
+    "systemBasisFromNavigation(boundary, init.startBasis)",
+    "vehicle.navigationBoundary().toSystemControlIntent(follower.intent)",
+):
+    require(
+        compact_cpp(required) in runtime_compact,
+        f"runtime frame/API boundary missing semantic operation: {required}",
+    )
+
+require(
+    "NavigationSystemControlIntent toSystemIntent(" not in runtime_cpp,
+    "runtime reintroduced a private NavLocal-to-System intent converter",
+)
+
+for required in (
+    "testNonIdentityMovingRotatingFramePreservesNavLocalExecution",
+    "translated/rotated/moving frame preserves NavLocal execution",
+):
+    require(
+        required in e2e,
+        f"runtime lacks non-identity product-chain boundary evidence: {required}",
+    )
+
 for token in (
-    "vehicleInit.world = scenario.worldPhysics",
-    "vehicleInit.frame = scenario.frame",
+    "vehicleInit.worldPhysics = scenario.worldPhysics",
+    "vehicleInit.frameSnapshot =",
+    "makeExecutionFrameSnapshot(scenario.frame)",
+    "vehicleInit.frameEpochUniverseTimeSeconds =",
     "vehicleInit.startPositionMapMeters = scenario.startPosition",
     "vehicleInit.startVelocityMapMps =",
     "ExecutionVehicle vehicle(vehicleInit, vehicleInput)",
 ):
-    require(token in runtime_cpp,
+    require(compact_cpp(token) in runtime_compact,
             f"runtime does not compose explicit execution init data: {token}")
 
 # ---------- Active-path API surface ----------

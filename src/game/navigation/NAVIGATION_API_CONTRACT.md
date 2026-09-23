@@ -189,3 +189,21 @@ names while failing to detect the active runtime's private NavLocal-to-System
 copy. Migration M1 must make frame conversions canonical and replace brittle
 exact-string conditions with semantic contract tests. Until then, a guard PASS
 cannot substitute for non-identity-frame E2E evidence.
+
+## 2026-09-23 — active runtime boundary candidate
+
+The active diagnostic runtime now obeys the intended API shape:
+
+- composition resolves `ScenarioFrameDefinition` once into a value-owned
+  `KinematicFrame` snapshot and explicit epoch;
+- `ExecutionVehicle` validates that snapshot but does not reconstruct or look
+  up a frame;
+- `NavigationFrameBoundary` is the only NavLocal/System conversion owner;
+- relative angular velocity is treated as state, so conversion adds/subtracts
+  frame angular velocity rather than rotating it as a free vector;
+- trace and Follower inputs are converted observations, not direct reads of
+  system-space orientation vectors.
+
+The Python guard is now formatting-independent for these operations and the
+product-chain fixture is mandatory. Target compilation/E2E is still required
+before this candidate is promoted to an accepted contract implementation.

@@ -10,6 +10,7 @@
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/KinematicFrame.h"
+#include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -842,6 +843,26 @@ void setTransformBasis(
         glm::vec4(glm::vec3(basis.up), 0.0f);
     transform.orientation[2] =
         glm::vec4(glm::vec3(-basis.forward), 0.0f);
+}
+
+Basis systemBasisFromNavigation(
+    const game::navigation::NavigationFrameBoundary& boundary,
+    const Basis& navigationBasis
+)
+{
+    using Boundary = game::navigation::NavigationFrameBoundary;
+
+    Basis out;
+    out.forward = boundary.toSystemVector(
+        Boundary::NavVector {navigationBasis.forward}
+    ).value;
+    out.right = boundary.toSystemVector(
+        Boundary::NavVector {navigationBasis.right}
+    ).value;
+    out.up = boundary.toSystemVector(
+        Boundary::NavVector {navigationBasis.up}
+    ).value;
+    return out;
 }
 
 Basis transportedBasisForForward(
@@ -1974,10 +1995,67 @@ void bindProgramPageToExecutionClock(
         policy.programValidityGraceSeconds;
 }
 
+game::navigation::KinematicFrame makeExecutionFrameSnapshot(
+    const ScenarioFrameDefinition& source
+)
+{
+    game::navigation::KinematicFrame frame;
+    frame.systemId = source.systemId;
+    frame.frameId = source.frameId;
+    frame.originMeters = source.originMeters;
+    frame.linearVelocityMps = source.linearVelocityMps;
+    frame.linearAccelerationMps2 = source.linearAccelerationMps2;
+    frame.localToWorldBasis = source.localToWorldBasis;
+    frame.angularVelocityWorldRadPerSecond =
+        source.angularVelocityWorldRadPerSecond;
+    frame.angularAccelerationWorldRadPerSecond2 =
+        source.angularAccelerationWorldRadPerSecond2;
+    frame.valid = true;
+    return frame;
+}
+
+void advanceExecutionFrame(
+    game::navigation::KinematicFrame& frame,
+    double dt
+)
+{
+    if (!(dt > 0.0) || !std::isfinite(dt))
+        return;
+
+    frame.originMeters +=
+        frame.linearVelocityMps * dt +
+        0.5 * frame.linearAccelerationMps2 * dt * dt;
+    frame.linearVelocityMps +=
+        frame.linearAccelerationMps2 * dt;
+
+    const glm::dvec3 midpointAngularVelocity =
+        frame.angularVelocityWorldRadPerSecond +
+        0.5 * frame.angularAccelerationWorldRadPerSecond2 * dt;
+    const double angularSpeed = glm::length(midpointAngularVelocity);
+    if (angularSpeed > 1.0e-12)
+    {
+        const glm::dquat rotation = glm::normalize(
+            glm::angleAxis(
+                angularSpeed * dt,
+                midpointAngularVelocity / angularSpeed
+            )
+        );
+        frame.localToWorldBasis = glm::dmat3(
+            rotation * glm::dvec3(frame.localToWorldBasis[0]),
+            rotation * glm::dvec3(frame.localToWorldBasis[1]),
+            rotation * glm::dvec3(frame.localToWorldBasis[2])
+        );
+    }
+
+    frame.angularVelocityWorldRadPerSecond +=
+        frame.angularAccelerationWorldRadPerSecond2 * dt;
+}
+
 struct ExecutionVehicleInit
 {
-    WorldParams world {};
-    ScenarioFrameDefinition frame {};
+    WorldParams worldPhysics {};
+    game::navigation::KinematicFrame frameSnapshot {};
+    double frameEpochUniverseTimeSeconds = 0.0;
     glm::dvec3 startPositionMapMeters {0.0};
     glm::dvec3 startVelocityMapMps {0.0};
     Basis startBasis {};
@@ -1992,7 +2070,7 @@ struct ExecutionVehicle
 {
     ShipTransform transform {};
     ShipParams params {};
-    WorldParams world;
+    WorldParams worldPhysics;
     game::navigation::KinematicFrame frame {};
     Bridge bridge;
     double timeSeconds = 0.0;
@@ -2007,26 +2085,17 @@ struct ExecutionVehicle
         const ScenarioVehicleParameters& vehicle
     )
         : params(vehicle.physics),
-          world(init.world),
+          worldPhysics(init.worldPhysics),
+          frame(init.frameSnapshot),
           bridge(init.pilotExecutionProfile)
     {
-        frame.systemId = init.frame.systemId;
-        frame.frameId = init.frame.frameId;
-        frame.originMeters = init.frame.originMeters;
-        frame.linearVelocityMps =
-            init.frame.linearVelocityMps;
-        frame.linearAccelerationMps2 =
-            init.frame.linearAccelerationMps2;
-        frame.localToWorldBasis = init.frame.localToWorldBasis;
-        frame.angularVelocityWorldRadPerSecond =
-            init.frame.angularVelocityWorldRadPerSecond;
-        frame.angularAccelerationWorldRadPerSecond2 =
-            init.frame.angularAccelerationWorldRadPerSecond2;
-        frame.valid = true;
+        const game::navigation::NavigationFrameBoundary boundary(frame);
+        if (!boundary.valid())
+            throw std::runtime_error("invalid execution frame snapshot");
 
         transform.motion.mode =
             game::navigation::MotionMode::HubTactical;
-        transform.motion.systemId = init.frame.systemId;
+        transform.motion.systemId = frame.systemId;
         transform.motion.travelFrame = frame;
         transform.motion.localControlLaw =
             init.controlLaw;
@@ -2034,20 +2103,58 @@ struct ExecutionVehicle
             init.startPositionMapMeters;
         transform.motion.localVelocityMps =
             init.startVelocityMapMps;
-        transform.setWorldPositionMeters(
+
+        using Boundary = game::navigation::NavigationFrameBoundary;
+        const Boundary::NavPosition startPosition {
             init.startPositionMapMeters
+        };
+        const Boundary::NavVelocity startVelocity {
+            init.startVelocityMapMps
+        };
+        const auto systemPosition =
+            boundary.toSystem(startPosition);
+        const auto systemVelocity =
+            boundary.toSystem(startPosition, startVelocity);
+
+        transform.setWorldPositionMeters(
+            systemPosition.meters
         );
+
+        transform.motion.referenceVelocityMps =
+            frame.localToWorldVelocity(
+                init.startPositionMapMeters,
+                glm::dvec3(0.0)
+            );
+        transform.motion.worldVelocityMps =
+            systemVelocity.metersPerSecond;
+
+        const Basis systemBasis =
+            systemBasisFromNavigation(boundary, init.startBasis);
         setTransformBasis(
             transform,
-            init.startBasis
+            systemBasis
         );
-        transform.pitchRate =
-            static_cast<float>(init.startPitchRateRadPerSec);
-        transform.yawRate =
-            static_cast<float>(init.startYawRateRadPerSec);
-        transform.rollRate =
-            static_cast<float>(init.startRollRateRadPerSec);
-        timeSeconds = init.frame.startUniverseTimeSeconds;
+
+        const glm::dvec3 relativeAngularVelocityMap =
+            init.startBasis.right * init.startPitchRateRadPerSec +
+            init.startBasis.up * init.startYawRateRadPerSec +
+            init.startBasis.forward * init.startRollRateRadPerSec;
+        const glm::dvec3 systemAngularVelocity =
+            boundary.toSystem(
+                Boundary::NavAngularVelocity {
+                    relativeAngularVelocityMap
+                }
+            ).radiansPerSecond;
+        transform.pitchRate = static_cast<float>(
+            glm::dot(systemAngularVelocity, systemBasis.right)
+        );
+        transform.yawRate = static_cast<float>(
+            glm::dot(systemAngularVelocity, systemBasis.up)
+        );
+        transform.rollRate = static_cast<float>(
+            glm::dot(systemAngularVelocity, systemBasis.forward)
+        );
+        timeSeconds = init.frameEpochUniverseTimeSeconds;
 
         Bridge::Intent initial;
         // Reset on neutral revision zero so the first real route intent
@@ -2059,46 +2166,71 @@ struct ExecutionVehicle
                 "Stage 2 pilot bridge reset failed"
             );
     }
+
+    [[nodiscard]] game::navigation::NavigationFrameBoundary
+    navigationBoundary() const noexcept
+    {
+        return game::navigation::NavigationFrameBoundary(frame);
+    }
+
+    void advanceFrame(double dt)
+    {
+        advanceExecutionFrame(frame, dt);
+        transform.motion.travelFrame = frame;
+    }
 };
 
 Follower::AgentState followerAgent(
     const ExecutionVehicle& vehicle
 )
 {
+    using Boundary = game::navigation::NavigationFrameBoundary;
+    const Boundary boundary = vehicle.navigationBoundary();
+
+    const glm::dvec3 systemForward(vehicle.transform.forward());
+    const glm::dvec3 systemRight(vehicle.transform.right());
+    const glm::dvec3 systemUp(vehicle.transform.up());
+
+    const glm::dvec3 navigationForward =
+        boundary.toNavigationVector(
+            Boundary::SystemVector {systemForward}
+        ).value;
+    const glm::dvec3 navigationRight =
+        boundary.toNavigationVector(
+            Boundary::SystemVector {systemRight}
+        ).value;
+    const glm::dvec3 navigationUp =
+        boundary.toNavigationVector(
+            Boundary::SystemVector {systemUp}
+        ).value;
+
+    const glm::dvec3 systemAngularVelocity =
+        systemRight * static_cast<double>(vehicle.transform.pitchRate) +
+        systemUp * static_cast<double>(vehicle.transform.yawRate) +
+        systemForward * static_cast<double>(vehicle.transform.rollRate);
+    const glm::dvec3 navigationAngularVelocity =
+        boundary.toNavigation(
+            Boundary::SystemAngularVelocity {systemAngularVelocity}
+        ).radiansPerSecond;
+
     Follower::AgentState agent;
     agent.positionMapMeters =
         vehicle.transform.motion.localPositionMeters;
     agent.velocityMapMetersPerSecond =
         vehicle.transform.motion.localVelocityMps;
     agent.forwardMap =
-        glm::dvec3(vehicle.transform.forward());
+        navigationForward;
     agent.rightMap =
-        glm::dvec3(vehicle.transform.right());
+        navigationRight;
     agent.upMap =
-        glm::dvec3(vehicle.transform.up());
+        navigationUp;
     agent.pitchRateRadPerSec =
-        vehicle.transform.pitchRate;
+        glm::dot(navigationAngularVelocity, navigationRight);
     agent.yawRateRadPerSec =
-        vehicle.transform.yawRate;
+        glm::dot(navigationAngularVelocity, navigationUp);
     agent.rollRateRadPerSec =
-        vehicle.transform.rollRate;
+        glm::dot(navigationAngularVelocity, navigationForward);
     return agent;
-}
-
-game::navigation::NavigationSystemControlIntent toSystemIntent(
-    const game::navigation::NavigationLocalControlIntent& local
-)
-{
-    game::navigation::NavigationSystemControlIntent system;
-    system.revision = local.revision;
-    system.targetRevision = local.targetRevision;
-    system.idealLinearAccelerationSystemMps2 =
-        local.idealLinearAccelerationLocalMps2;
-    system.idealAngularAccelerationSystemRadPerSec2 =
-        local.idealAngularAccelerationLocalRadPerSec2;
-    system.emergency = local.emergency;
-    system.hazardUrgency01 = local.hazardUrgency01;
-    return system;
 }
 
 double distancePointToSegment(
@@ -2154,37 +2286,52 @@ TraceFrame executionTraceFrame(
     const std::string& status
 )
 {
+    using Boundary = game::navigation::NavigationFrameBoundary;
+    const Boundary boundary = vehicle.navigationBoundary();
+    const Follower::AgentState agent = followerAgent(vehicle);
+
+    const auto toNavigationVector = [&boundary](
+        const glm::dvec3& systemVector)
+    {
+        return boundary.toNavigationVector(
+            Boundary::SystemVector {systemVector}
+        ).value;
+    };
+
     TraceFrame frame;
     frame.timeSeconds = vehicle.timeSeconds;
     frame.shipPosition =
         vehicle.transform.motion.localPositionMeters;
     frame.shipVelocity =
         vehicle.transform.motion.localVelocityMps;
-    frame.shipForward =
-        glm::dvec3(vehicle.transform.forward());
-    frame.shipRight =
-        glm::dvec3(vehicle.transform.right());
-    frame.shipUp =
-        glm::dvec3(vehicle.transform.up());
+    frame.shipForward = agent.forwardMap;
+    frame.shipRight = agent.rightMap;
+    frame.shipUp = agent.upMap;
     frame.shipAngularRatePyrRadPerSec = {
-        static_cast<double>(vehicle.transform.pitchRate),
-        static_cast<double>(vehicle.transform.yawRate),
-        static_cast<double>(vehicle.transform.rollRate)
+        agent.pitchRateRadPerSec,
+        agent.yawRateRadPerSec,
+        agent.rollRateRadPerSec
     };
     frame.mainEngineAccelerationMps2 =
-        vehicle.transform.motion.mainEngineAccelerationMps2;
+        toNavigationVector(
+            vehicle.transform.motion.mainEngineAccelerationMps2
+        );
     frame.manoeuvreAccelerationMps2 =
-        vehicle.transform.motion.manoeuvreAccelerationMps2;
+        toNavigationVector(
+            vehicle.transform.motion.manoeuvreAccelerationMps2
+        );
     frame.engineAccelerationMps2 =
-        vehicle.transform.motion.engineAccelerationMps2;
+        toNavigationVector(
+            vehicle.transform.motion.engineAccelerationMps2
+        );
     frame.idealLinearAccelerationDemandMps2 =
-        vehicle.lastIdealLinearDemandMps2;
+        toNavigationVector(vehicle.lastIdealLinearDemandMps2);
     frame.idealAngularAccelerationDemandRadPerSec2 =
-        vehicle.lastIdealAngularDemandRadPerSec2;
+        toNavigationVector(vehicle.lastIdealAngularDemandRadPerSec2);
     frame.executedLinearAccelerationDemandMps2 =
-        vehicle.lastExecutedLinearDemandMps2;
+        toNavigationVector(vehicle.lastExecutedLinearDemandMps2);
     frame.executedAngularAccelerationDemandRadPerSec2 =
-        vehicle.lastExecutedAngularDemandRadPerSec2;
+        toNavigationVector(vehicle.lastExecutedAngularDemandRadPerSec2);
 
     frame.hasRuntimeControlLaw = true;
     frame.runtimeControlLaw =
@@ -3023,8 +3170,11 @@ ScenarioRunResult executeCalculatedRoute(
             plannedActuatorSegments == expectedActuatorSegments;
 
         ExecutionVehicleInit vehicleInit;
-        vehicleInit.world = scenario.worldPhysics;
-        vehicleInit.frame = scenario.frame;
+        vehicleInit.worldPhysics = scenario.worldPhysics;
+        vehicleInit.frameSnapshot =
+            makeExecutionFrameSnapshot(scenario.frame);
+        vehicleInit.frameEpochUniverseTimeSeconds =
+            scenario.frame.startUniverseTimeSeconds;
         vehicleInit.startPositionMapMeters = scenario.startPosition;
         vehicleInit.startVelocityMapMps =
             kinematics.startVelocityMapMps;
@@ -3068,12 +3218,13 @@ ScenarioRunResult executeCalculatedRoute(
         // only for final capture / bounded invalidation diagnostics; storage
         // page transitions never reset this clock.
         const double maximumEnd =
+            maneuverStartUniverseTimeSeconds +
             plannedExecutionSeconds +
             settings.navigation.maximumExecutionOverrunSeconds;
 
         std::size_t activeProgram = 0;
         std::size_t storagePageAdvances = 0;
-        double nextTraceTime = 0.0;
+        double nextTraceTime = vehicle.timeSeconds;
         bool followerInvalid = false;
         bool bridgeInvalid = false;
         bool coarseStaticContact = false;
@@ -3285,7 +3436,9 @@ ScenarioRunResult executeCalculatedRoute(
                 vehicle.bridge.step(
                     vehicle.timeSeconds + settings.navigation.executionDtSeconds,
                     settings.navigation.executionDtSeconds,
-                    toSystemIntent(follower.intent)
+                    vehicle.navigationBoundary().toSystemControlIntent(
+                        follower.intent
+                    )
                 );
 
             if (bridgeResult.status !=
@@ -3312,7 +3465,7 @@ ScenarioRunResult executeCalculatedRoute(
                 vehicle.transform,
                 vehicle.params,
                 bridgeResult.control,
-                vehicle.world,
+                vehicle.worldPhysics,
                 static_cast<float>(settings.navigation.executionDtSeconds)
             );
 
@@ -3324,6 +3477,10 @@ ScenarioRunResult executeCalculatedRoute(
                         navigationLinearAccelerationDemandSystemMps2,
                     vehicle.transform.forward()
                 );
+
+            vehicle.advanceFrame(
+                settings.navigation.executionDtSeconds
+            );
 
             game::navigation::DynamicMotionSystem::
                 updateLocalFrameMotion(
@@ -3356,9 +3513,11 @@ ScenarioRunResult executeCalculatedRoute(
             {
                 const glm::dvec3 velocityDirection =
                     currentVelocity / currentSpeed;
+                const Follower::AgentState currentAgent =
+                    followerAgent(vehicle);
                 const glm::dvec3 bodyForward =
                     normalizedOr(
-                        glm::dvec3(vehicle.transform.forward()),
+                        currentAgent.forwardMap,
                         velocityDirection
                     );
                 maximumBodyVelocityAngleRad =
@@ -3456,14 +3615,14 @@ ScenarioRunResult executeCalculatedRoute(
         const double finalForwardError =
             scenario.finish.requireForward
                 ? angleBetween(
-                    glm::dvec3(vehicle.transform.forward()),
+                    followerAgent(vehicle).forwardMap,
                     scenario.finish.forward
                   )
                 : 0.0;
         const double finalUpError =
             scenario.finish.requireUp
                 ? angleBetween(
-                    glm::dvec3(vehicle.transform.up()),
+                    followerAgent(vehicle).upMap,
                     scenario.finish.up
                   )
                 : 0.0;

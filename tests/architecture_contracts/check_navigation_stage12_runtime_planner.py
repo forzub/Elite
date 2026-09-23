@@ -3,6 +3,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+
+def compact_cpp(text: str) -> str:
+    """Normalize formatting while retaining the checked C++ token order."""
+    return "".join(text.split())
+
 SPACE_H = (ROOT / "src/world/navigation/space/NavigationSpace.h").read_text(encoding="utf-8")
 STATIC_QUERY_API_H = (ROOT / "src/world/navigation/space/NavigationStaticQueryApi.h").read_text(encoding="utf-8")
 MAP_H = (ROOT / "src/world/navigation/map/NavigationMap.h").read_text(encoding="utf-8")
@@ -316,11 +321,12 @@ for marker in (
     "linearFeedbackReserveMps2",
     "angularFeedbackReserveRadPerSec2",
     "clampMagnitude",
-    "reference.linearAccelerationFeedForwardMapMps2 +",
-    "reference.angularAccelerationFeedForwardMapRadPerSec2 +",
+    "linearFeedForward + result.linearFeedbackMapMps2",
+    "angularFeedForward + result.angularFeedbackMapRadPerSec2",
 ):
     require(
-        marker in TRACKER_H or marker in TRACKER_CPP,
+        compact_cpp(marker) in compact_cpp(TRACKER_H) or
+        compact_cpp(marker) in compact_cpp(TRACKER_CPP),
         f"B10 bounded tracking contract missing: {marker}",
     )
 
@@ -333,9 +339,9 @@ require(
 require(
     "const Policy& policy = {}" not in TRACKER_H and
     "trackingPolicy = {}" not in FOLLOWER_H and
-    "const Policy policy {};" in TRACKER_CPP and
-    "const ManeuverTrackingController::Policy trackingPolicy {};" in FOLLOWER_CPP,
-    "MinGW-safe default tracking policy must use explicit overloads, not braced default reference arguments",
+    "const Policy& policy" in TRACKER_H and
+    "const ManeuverTrackingController::Policy& trackingPolicy" in FOLLOWER_H,
+    "tracking policy must cross the public API explicitly without a hidden default",
 )
 
 for marker in (
@@ -566,15 +572,17 @@ require(
 
 require(
     "LocalFlightControlLaw::Newtonian" in DYNAMIC_MOTION_CPP and
-    "-mainAuthority" in DYNAMIC_MOTION_CPP and
-    "symmetric longitudinal controlled thrust" in DYNAMIC_MOTION_CPP,
-    "DynamicMotionSystem must preserve Newtonian aft-only and Assisted fore/aft longitudinal allocation",
+    "forwardMainAuthority" in DYNAMIC_MOTION_CPP and
+    "reverseMainAuthority" in DYNAMIC_MOTION_CPP and
+    "-reverseMainAuthority" in DYNAMIC_MOTION_CPP and
+    "linearAccelerationDemandSystemMps2 -" in DYNAMIC_MOTION_CPP,
+    "DynamicMotionSystem must allocate installed longitudinal hardware first and bounded RCS remainder second",
 )
 
 require(
     "Assisted lateral demand must not invent omnidirectional main thrust" in RUNTIME_CONTROL_TEST and
     "Newtonian reverse demand must not invent fore/nose main thrust" in RUNTIME_CONTROL_TEST and
-    "Assisted reverse demand must use bounded fore/nose longitudinal main authority" in RUNTIME_CONTROL_TEST,
+    "Assisted reverse demand must not invent fore/nose main thrust" in RUNTIME_CONTROL_TEST,
     "runtime control tests must pin physical longitudinal/RCS source allocation",
 )
 

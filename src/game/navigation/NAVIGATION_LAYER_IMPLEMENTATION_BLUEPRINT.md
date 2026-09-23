@@ -1479,6 +1479,54 @@ Exit gate:
 
 ### M1 — Repair coordinate and API boundaries
 
+Implementation status (2026-09-23): **CODE CANDIDATE COMPLETE / TARGET
+MINGW64 VALIDATION PENDING**.
+
+Implemented in the candidate:
+
+- deleted the tool-local `toSystemIntent()` copy converter;
+- routed Follower intent through
+  `NavigationFrameBoundary::toSystemControlIntent()`;
+- changed `ExecutionVehicleInit` to receive an explicit `KinematicFrame`
+  snapshot and its epoch instead of reconstructing a frame internally;
+- converted initial NavLocal position, velocity, basis and relative angular
+  velocity through `NavigationFrameBoundary` before populating system-space
+  physics state;
+- added the missing rotating-frame inverse for angular-velocity state
+  (`NavAngularVelocity -> SystemAngularVelocity`);
+- converted system-space physical state and control telemetry back to NavLocal
+  before it enters Follower, terminal checks, trace, viewer or local metrics;
+- advanced the explicit translating/accelerating/rotating frame snapshot during
+  execution and synchronized it into `DynamicMotionState::travelFrame`;
+- corrected the execution deadline to include the explicit maneuver start
+  universe time instead of assuming every frame epoch begins at zero;
+- added a product-chain equivalence E2E comparing identity execution with a
+  translated, axis-rotated, linearly moving/accelerating and rotating frame;
+- replaced the known whitespace/exact-spelling purity assertions with
+  formatting-independent semantic-operation checks;
+- corrected two stale architecture assertions that still described Assisted
+  as permission to invent fore-main hardware.
+
+Local evidence:
+
+- `check_navigation_api_purity.py` PASS;
+- `check_navigation_stage1_nominal_route.py` PASS;
+- `check_navigation_stage12_runtime_planner.py` PASS;
+- `check_geometric_path_planner.py` PASS;
+- Python checker byte-compilation PASS;
+- `git diff --check` PASS.
+
+Not yet claimed:
+
+- C++ compile/link PASS;
+- non-identity E2E runtime PASS;
+- full `navigation_runtime_pipeline` PASS.
+
+The local Linux environment has `g++` but no CMake or GLM development headers,
+so it cannot compile the project. M1 remains open until the target Windows
+MSYS2/MinGW64 gate validates the candidate. Do not begin M2 merely because the
+lexical gates are green.
+
 Actions:
 
 - replace tool-local `toSystemIntent()` with `NavigationFrameBoundary`;

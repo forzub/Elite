@@ -1,5 +1,37 @@
 # CURRENT STATE
 
+## 2026-09-23 — M1 frame/API repair candidate
+
+Status: **CODE CANDIDATE COMPLETE / TARGET MINGW64 VALIDATION REQUIRED**
+
+The active `tools/navigation_runtime` execution boundary no longer copies
+NavLocal intent vectors into System fields. Initial position, velocity, basis
+and relative angular velocity now cross the canonical
+`NavigationFrameBoundary`; Follower inputs, terminal comparisons and trace
+telemetry cross back to NavLocal explicitly.
+
+The execution harness now consumes an explicit `KinematicFrame` snapshot plus
+epoch and advances its translation, acceleration, basis rotation and angular
+velocity through the fixed-step run. A new product-chain E2E compares the same
+route in identity and translated/rotated/moving/rotating frames.
+
+The same test exposed a clock-boundary defect: the maximum execution deadline
+was relative while `vehicle.timeSeconds` was absolute universe time. The
+deadline now includes the explicit maneuver start epoch.
+
+Static evidence on this checkout:
+
+- navigation API purity PASS;
+- Stage-1/two-stage ownership PASS;
+- Stage-12 runtime-planner contract PASS;
+- geometric path planner contract PASS;
+- Python checker compilation PASS;
+- diff whitespace validation PASS.
+
+C++ evidence is not available locally: CMake and GLM headers are absent. This
+is not an accepted M1 completion. The next state-affecting event must be the
+target MinGW64 build/E2E result or a correction of a failure exposed by it.
+
 ## 2026-09-22 — scalable navigation architecture specified
 
 Status: **NORMATIVE BLUEPRINT AUTHORED / IMPLEMENTATION NOT STARTED**

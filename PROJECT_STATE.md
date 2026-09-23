@@ -1,5 +1,18 @@
 # PROJECT STATE
 
+## 2026-09-23 — coordinator failure is a test-physics error, not search failure
+
+Commit `3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` compiled on
+MinGW64. The coordinator test supplied 4.0 s as a feasible retry horizon, while
+its 135-degree quintic rotation requires about 4.60 s before burn. Both options
+were therefore correctly rejected. The fixture is corrected to 6.0 s and needs
+retest; production physics is unchanged.
+
+Visual inspection of the replacement path is not yet authoritative. The
+existing viewer follows legacy execution. The planned observer seam will first
+show search alternatives/witnesses, then rigid-body phases and literal thrust;
+proved/accepted motion must use separate rendering from unproved candidates.
+
 ## 2026-09-23 — bounded physical search becomes an explicit product
 
 The typed physical compiler contract is accepted on MinGW64 at exact commit

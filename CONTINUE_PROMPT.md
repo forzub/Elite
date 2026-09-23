@@ -42,6 +42,12 @@ explicit corridor/terminal/speed/arrival-time alternatives. It owns a bounded
 attempt budget and resumable cursor, but it does not generate mission doctrine,
 change capability, prove geometry or publish accepted programs.
 
+First target run of commit
+`3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` compiled the new test.
+It exposed a fixture error: a 135-degree rotation needs about 4.60 s before
+burn, but the supposedly feasible alternative allowed only 4.0 s. The corrected
+fixture uses 6.0 s. Retest this correction without changing production physics.
+
 Validate its focused test first. Required semantics:
 
 - typed rejection advances to later ranked alternatives;
@@ -55,6 +61,11 @@ After target acceptance, implement literal actuator phases and consistent
 rigid-body propagation, including initial angular velocity. Continuous
 oriented-hull/corridor proof remains mandatory before converting any candidate
 to `AcceptedManeuverProgram`.
+
+Then add a read-only viewer snapshot. It must render ranked/rejected candidates,
+unproved physical candidates, proved tunnel, accepted reference and actual
+motion as visibly different layers. Until runtime integration, the existing
+viewer shows the legacy path and is not evidence for the replacement.
 
 ## Non-negotiable model
 

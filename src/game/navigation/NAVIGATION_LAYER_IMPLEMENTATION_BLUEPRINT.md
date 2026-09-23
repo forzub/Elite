@@ -2095,7 +2095,7 @@ Exit gate:
 ### M4 — Activate a short-horizon physical maneuver compiler
 
 Implementation status (2026-09-23): **TYPED WITNESS ACCEPTED ON TARGET;
-BOUNDED COORDINATOR CANDIDATE IMPLEMENTED**.
+BOUNDED COORDINATOR COMPILES; CORRECTED FIXTURE AWAITS RETEST**.
 
 The physical compiler result is a sum-type in semantics: either one or more
 bounded candidates, or a typed quantitative `InfeasibilityWitness`. The witness
@@ -2129,6 +2129,24 @@ The coordinator API is an explicit bounded frontier, not a hidden optimizer:
 
 `CandidateFound` still returns unproved B5 candidates. Continuous hull/corridor
 and resource proof remains a separate mandatory boundary before acceptance.
+
+First coordinator target result: commit
+`3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` compiled, while its test
+incorrectly labeled a 4.0 s horizon feasible for a 135-degree rotation requiring
+about 4.60 s before burn. The coordinator correctly exhausted both choices.
+The test horizon is corrected to 6.0 s; physical constraints are unchanged.
+
+Visualization checkpoint:
+
+1. after coordinator acceptance, publish a read-only diagnostic snapshot of
+   ranked alternatives, cursor/budget state and typed rejection witnesses;
+2. after rigid-body/literal-actuator compilation, render attitude acquisition,
+   coast/burn phases and planned thrust vectors;
+3. after continuous proof/runtime integration, render proved swept tunnel,
+   accepted reference and actual motion as separate layers.
+
+Unproved candidates must never use the same visual language as proved or
+accepted motion.
 
 Start with Newtonian families:
 

@@ -69,7 +69,10 @@ Coordinator::Request requestWithTwoHorizons()
     request.frontier.frontierRevision = 91;
     request.frontier.alternativeCount = 2;
     request.frontier.alternatives[0] = alternative(1, 0.5);
-    request.frontier.alternatives[1] = alternative(2, 4.0);
+    // The requested delta-v is 135 degrees from the initial forward axis.
+    // This capability/policy needs about 4.60 s merely to acquire attitude;
+    // 6.0 s leaves a real bounded burn window after rotation.
+    request.frontier.alternatives[1] = alternative(2, 6.0);
     request.cursor.objectiveRevision = 17;
     request.cursor.frontierRevision = 91;
     request.policy.maximumAttemptsPerAdvance = 2;
@@ -82,7 +85,7 @@ void testSearchContinuesFromShortHorizonToPhysicalCandidate()
 
     require(
         result.status == Coordinator::Status::CandidateFound,
-        "coordinator stopped after the first rejected horizon"
+        "later alternative did not clear the 135-degree rotate-before-burn bound"
     );
     require(result.objectiveRemainsActive,
             "physical retry cancelled the mission objective");

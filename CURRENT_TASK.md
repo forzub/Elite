@@ -2,7 +2,19 @@
 
 Date: 2026-09-23
 
-Status: **IMPLEMENTED LOCALLY — TARGET BUILD/TEST REQUIRED**
+Status: **TARGET COMPILE PASS — FEASIBLE-HORIZON FIXTURE RETEST REQUIRED**
+
+## First target result
+
+Exact commit `3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` configured and
+compiled all three targets. The existing two tests passed; the new coordinator
+test failed because its allegedly feasible second alternative used a 4.0 s
+horizon for a 135-degree rotation whose computed attitude-acquisition lower
+bound is about 4.60 s.
+
+Correction: use a 6.0 s second horizon so the test actually contains a physical
+burn window. The coordinator correctly rejected the original pair; no planner
+logic, timeout or authority limit is relaxed.
 
 ## Accepted prerequisite
 
@@ -74,3 +86,8 @@ Add literal actuator phases and consistent rigid-body propagation, including
 non-zero initial angular velocity. Then introduce continuous proof over the
 exact candidate. Only after both layers may the replacement publish an
 `AcceptedManeuverProgram` and displace the legacy translation-first author.
+
+Add a read-only diagnostic snapshot after coordinator acceptance so the viewer
+can distinguish ranked alternatives, rejection reasons, unproved physical
+candidates, proved tunnel, accepted reference and actual motion. Do not render
+an unproved candidate as a valid flight tunnel.

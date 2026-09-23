@@ -4,6 +4,24 @@
 **Started:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md`
 
+## 2026-09-23 — coordinator target compile passes; fixture horizon was impossible
+
+Exact commit `3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` configured and
+linked `physical_maneuver_search_coordinator_tests`. The two prior physical
+tests passed. The new test failed because it expected a 4.0 s retry to realize a
+135-degree rotate-before-burn maneuver whose attitude lower bound is about
+4.60 s with the supplied capability and reserve.
+
+The coordinator exhausted both physically impossible alternatives as designed.
+The fixture now uses 6.0 s for the feasible alternative. No authority, timeout
+or acceptance condition changed.
+
+The current viewer is not evidence for this path because it still observes the
+legacy runtime author. A read-only coordinator diagnostic snapshot is the next
+visual seam; physical flight visualization becomes trustworthy only after
+rigid-body/literal-actuator integration. Candidate, proved, accepted and actual
+motion must remain visually distinct.
+
 ## 2026-09-23 — physical witness target PASS; search coordinator candidate
 
 Exact commit `9af337c2e23a32d5f11d34a3e048ecd98842674d` passed both

@@ -1,8 +1,29 @@
 # CURRENT STATE
 
+## 2026-09-23 — coordinator target fixture corrected; visual gate defined
+
+Status: **TARGET COMPILE PASS / TEST FIXTURE CORRECTION PENDING RETEST**
+
+Exact commit `3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` configured and
+compiled the new coordinator target. Existing physical compiler and chained
+limit tests remained PASS. The coordinator test failed its first expectation.
+
+The implementation did not stop after the first rejection: both alternatives
+were physically rejected. The fixture requested a 135-degree Newtonian thrust
+axis change but gave the supposed feasible alternative only 4.0 s. Its own
+compiler policy/capability requires about 4.60 s for attitude acquisition before
+any main burn. The corrected feasible horizon is 6.0 s; no production tolerance
+or physical bound changed.
+
+Visual status: the current viewer still displays the legacy runtime path, not
+the new coordinator. After this focused gate, an observer snapshot may expose
+frontier alternatives and typed rejections. Trustworthy visual flight requires
+the next rigid-body/literal-actuator compiler slice and runtime integration;
+unproved candidates must be visibly distinct from proved/accepted motion.
+
 ## 2026-09-23 — physical witness accepted; bounded coordinator candidate
 
-Status: **FIRST M3/M4 CONTRACT SLICE ACCEPTED / COORDINATOR TARGET GATE REQUIRED**
+Status: **FIRST M3/M4 CONTRACT SLICE ACCEPTED / COORDINATOR RETEST REQUIRED**
 
 MinGW64 validated exact commit
 `9af337c2e23a32d5f11d34a3e048ecd98842674d`. Both

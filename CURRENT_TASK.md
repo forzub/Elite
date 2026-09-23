@@ -1,64 +1,76 @@
-# CURRENT TASK — M3/M4 physical-authoring replacement
+# CURRENT TASK — bounded physical maneuver search coordinator
 
 Date: 2026-09-23
 
-Status: **ACTIVE — TYPED PHYSICAL-SOLVE CONTRACT FIRST**
+Status: **IMPLEMENTED LOCALLY — TARGET BUILD/TEST REQUIRED**
 
-## Why this task is active
+## Accepted prerequisite
 
-The accepted M1 frame/timeline work and the M2 scenario-I/O boundary reach the
-real runtime. The remaining high-speed Newtonian failure is not a tuning issue:
-the legacy chain authors scalar translational P/V/A before it knows whether the
-hull and installed actuators can realize that motion.
+Exact MinGW64 commit
+`9af337c2e23a32d5f11d34a3e048ecd98842674d` passed:
 
-Legacy physical-authoring behavior no longer needs to be preserved. It may be
-deleted or bypassed as the replacement becomes executable.
+- `maneuver_chained_limit_matrix`;
+- `ordinary_physical_maneuver_compiler`.
 
-## Required solve contract
+Result: 2/2 tests passed in 0.12 s. The typed physical infeasibility witness is
+accepted. The aggregate high-speed runtime remains intentionally unresolved
+until the replacement path reaches accepted-program publication.
 
-The physical planner must return exactly one of:
+## Implemented slice
 
-1. one or more bounded candidates for the supplied ship, control law, measured
-   state, capability, corridor/terminal request and horizon; or
-2. a typed quantitative `InfeasibilityWitness`.
+`PhysicalManeuverSearchCoordinator` is a pure bounded search layer above
+`OrdinaryPhysicalManeuverCompiler`.
 
-The witness is coordinator feedback. It must distinguish invalid API input,
-unsupported law, invalid body frame, missing translation authority, missing
-attitude authority, an initial angular state not yet modeled by a candidate
-family, insufficient program horizon and numerical/internal failure. Relevant
-delta-v, attitude change, minimum timing and usable authority bounds travel
-with it.
+Input ownership:
 
-No result from this stage is accepted merely because it is sampled. Continuous
-hull/corridor proof and exact capability/resource proof remain mandatory before
-`AcceptedManeuverProgram` publication.
+- mission/goal/route code owns the ranked alternative frontier;
+- every alternative carries corridor, terminal, speed-schedule and
+  arrival-time provenance IDs;
+- the common query owns measured state, vehicle capability, control law,
+  reserves and compiler policy;
+- an alternative may vary only target position, desired velocity and local
+  program horizon;
+- an explicit policy owns the maximum attempts per worker slice;
+- independent objective/frontier revisions and a cursor preserve progress
+  between slices without turning a rebuilt frontier into a new mission goal.
 
-## Current slice
+Output states:
 
-- extend `OrdinaryPhysicalManeuverCompiler::Result` with the typed witness;
-- retain pure/value-only API ownership;
-- prove that Newtonian main burn does not begin before the required thrust
-  attitude is reached;
-- prove that a short horizon and missing angular authority fail closed with
-  actionable reasons;
-- update the purity contract and migration documents;
-- run local static gates, then request the focused MinGW64 compiler test.
+- `CandidateFound` — one alternative produced unproved physical candidates;
+- `SearchPending` — budget ended and the cursor can resume later;
+- `FrontierExhausted` — caller must produce another frontier or proved safe
+  fallback, while the objective remains active;
+- `SharedStateBlocked` — changing terminal alternatives cannot repair the
+  shared input/law/state problem;
+- `InvalidInput` — revision/frontier/policy API data is invalid.
 
-## Next vertical slices
+No state accepts a maneuver, changes ship capability or disables navigation.
 
-1. add the persistent coordinator and bounded mutation budget over
-   corridor/terminal/speed/arrival-time alternatives;
-2. compile literal actuator schedules and preserve full rigid-body initial
-   state, including angular velocity;
-3. continuously prove the exact candidate against oriented hull and corridor;
-4. publish only the proved candidate as `AcceptedManeuverProgram`;
-5. replace observe-only execution with literal actuator execution;
-6. remove the old translation-first authoring block;
-7. add explicit unavoidable-contact mitigation after collision-free search is
-   exhausted, without ever accepting an impossible nominal maneuver.
+## Focused evidence required
 
-## Target evidence
+Build and run:
 
-The aggregate pipeline is expected to remain red until the new vertical path is
-connected. The focused compiler test must pass and the existing high-speed test
-must not be weakened or hidden.
+```bash
+cmake --build build/tests/navigation_runtime \
+  --target physical_maneuver_search_coordinator_tests \
+           ordinary_physical_maneuver_compiler_tests \
+           maneuver_chained_limit_matrix_tests && \
+ctest --test-dir build/tests/navigation_runtime \
+  -R "^(physical_maneuver_search_coordinator|ordinary_physical_maneuver_compiler|maneuver_chained_limit_matrix)$" \
+  --output-on-failure
+```
+
+Required behavior:
+
+- a short-horizon rejection advances to a later feasible alternative;
+- a one-attempt budget returns `SearchPending` and resume does not repeat work;
+- exhausted alternatives preserve witnesses and objective ownership;
+- shared control-law/state blockers do not waste the remaining frontier;
+- stale objective or frontier revisions fail before physical compilation.
+
+## Next slice after acceptance
+
+Add literal actuator phases and consistent rigid-body propagation, including
+non-zero initial angular velocity. Then introduce continuous proof over the
+exact candidate. Only after both layers may the replacement publish an
+`AcceptedManeuverProgram` and displace the legacy translation-first author.

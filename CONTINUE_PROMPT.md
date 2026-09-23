@@ -1,12 +1,11 @@
-# CONTINUE PROMPT — replace Elite physical maneuver authoring
+# CONTINUE PROMPT — validate and extend bounded physical maneuver search
 
 Continue in repository `forzub/Elite`, branch `main`.
 
 The normative architecture is
 `src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`. M1 is
-accepted. The M2 scenario-I/O boundary is in place. Do not spend the next
-iteration preserving the obsolete translation-first maneuver author: direct
-replacement is authorized.
+accepted, the M2 scenario-I/O boundary is in place, and direct replacement of
+the legacy translation-first physical author is authorized.
 
 ## Read before editing
 
@@ -18,63 +17,76 @@ replacement is authorized.
 6. final dated sections of `src/game/navigation/STAGE12_END_TO_END.md`;
 7. `src/game/navigation/NAVIGATION_API_CONTRACT.md`.
 
-For the active slice inspect
-`OrdinaryPhysicalManeuverCompiler.{h,cpp}`, its focused tests and only the files
-directly referenced by the replacement seam.
+Inspect the active files:
+
+- `OrdinaryPhysicalManeuverCompiler.{h,cpp}`;
+- `PhysicalManeuverSearchCoordinator.{h,cpp}`;
+- their focused tests;
+- files referenced directly by the next replacement seam.
+
+## Accepted evidence
+
+Exact commit `9af337c2e23a32d5f11d34a3e048ecd98842674d` passed
+`maneuver_chained_limit_matrix` and
+`ordinary_physical_maneuver_compiler` on MinGW64: 2/2 tests passed, 0 failed,
+0.12 s.
+
+The typed physical rejection contract is accepted. Do not reopen it by
+returning generic failure, inventing omnidirectional authority or allowing main
+burn before its required Newtonian attitude.
+
+## Active candidate
+
+`PhysicalManeuverSearchCoordinator` consumes a revisioned ranked frontier of
+explicit corridor/terminal/speed/arrival-time alternatives. It owns a bounded
+attempt budget and resumable cursor, but it does not generate mission doctrine,
+change capability, prove geometry or publish accepted programs.
+
+Validate its focused test first. Required semantics:
+
+- typed rejection advances to later ranked alternatives;
+- `SearchPending` resumes without repeated work;
+- `FrontierExhausted` retains objective ownership and rejection history;
+- `SharedStateBlocked` preserves untried alternatives;
+- stale objective or frontier revision fails before physical work; the two
+  revisions remain independent.
+
+After target acceptance, implement literal actuator phases and consistent
+rigid-body propagation, including initial angular velocity. Continuous
+oriented-hull/corridor proof remains mandatory before converting any candidate
+to `AcceptedManeuverProgram`.
 
 ## Non-negotiable model
 
-A ship trajectory is not translational P/V/A with attitude fitted afterward.
-It is one coupled rigid-body/control-law maneuver whose translation, rotation,
-installed actuator allocation, reserves, resources and corridor occupancy are
-simultaneously feasible.
-
-The persistent chain is:
-
 ```text
 NavigationIntent + TerminalContract
- -> ranked corridor/terminal alternatives
- -> physical maneuver solve
- -> candidate or typed InfeasibilityWitness
- -> bounded coordinator mutation and retry
+ -> ranked revisioned frontier
+ -> bounded physical coordinator
+ -> physical candidates or typed witnesses
  -> exact capability/resource + continuous swept-hull proof
  -> AcceptedManeuverProgram
  -> literal actuator execution + bounded feedback reserve
 ```
 
-Failed solve does not disable navigation. The objective and planner state stay
-active; the coordinator changes legal corridor, terminal, speed and time
-parameters. A last still-proved short program may continue. If collision-free
-motion is exhausted, use a separate physically executable and explicitly
-contact-predicted `UnavoidableContactMitigation` solve.
-
-## Immediate work
-
-Complete the typed physical-solve contract. Success returns bounded physical
-candidates. Failure returns a quantitative witness distinguishing invalid
-input/body frame, unsupported law, missing translation or attitude authority,
-unmodeled initial angular state, insufficient horizon and numerical failure.
-Tests must prove rotate-before-burn and actionable short-horizon/no-angular-
-authority rejection.
-
-Then implement the coordinator as a deterministic bounded search over explicit
-alternatives. Do not convert the witness into a terminal navigation failure.
+A failed attempt never disables navigation. The objective remains active, the
+last still-proved short program may continue, and exhaustion requests a new
+frontier or proved safe fallback. Unavoidable contact is a separate physically
+executable, explicitly contact-predicted mitigation solve.
 
 ## Forbidden shortcuts
 
-- do not increase tracking-loss timeout;
-- do not weaken the high-speed assertion;
-- do not accept any interval with infeasible actuator allocation;
-- do not label an unreachable mathematical reference a trajectory;
-- do not use sphere/AABB broadphase as exact free-space truth;
-- do not let STANDARD/EXTREME change ship physics;
-- do not let pilot skill repair or redefine nominal physical feasibility;
-- do not invent reverse-main authority in ASSISTED mode.
+- no tracking-timeout increase or weakened high-speed assertion;
+- no accepted interval with infeasible actuator allocation;
+- no unreachable mathematical reference called a trajectory;
+- no sphere/AABB broadphase used as exact free-space truth;
+- no STANDARD/EXTREME modification of ship physics;
+- no pilot skill used to repair nominal feasibility;
+- no synthetic reverse-main authority in ASSISTED mode;
+- no coordinator mutation of measured state or vehicle capability.
 
 ## Iteration protocol
 
 After each state-affecting event update the blueprint, current state/task,
 project state, Stage-12 journal and this prompt. Run all available gates, inspect
-the entire diff, commit and push one coherent iteration to `main`. Never claim a
-target result that was not run, and preserve the fact that the earlier supplied
-pipeline output did not include its checkout hash.
+the complete diff, commit and push one coherent iteration to `main`. Never claim
+a target result that was not run.

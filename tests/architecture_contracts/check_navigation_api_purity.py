@@ -48,6 +48,8 @@ pilot_h = read("src/world/navigation/control/PilotSkillExecutor.h")
 pilot_cpp = read("src/world/navigation/control/PilotSkillExecutor.cpp")
 compiler_h = read("src/game/navigation/OrdinaryPhysicalManeuverCompiler.h")
 compiler_cpp = read("src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp")
+coordinator_h = read("src/game/navigation/PhysicalManeuverSearchCoordinator.h")
+coordinator_cpp = read("src/game/navigation/PhysicalManeuverSearchCoordinator.cpp")
 sampler = read("src/game/navigation/ManeuverProgramSampler.cpp")
 tracker = read("src/game/navigation/ManeuverTrackingController.cpp")
 follower = read("src/game/navigation/TrajectoryFollower.cpp")
@@ -440,6 +442,46 @@ for forbidden in (
     require(forbidden not in compiler_cpp,
             f"maneuver compiler reintroduced hidden behavioral constant {forbidden}")
 
+# ---------- Persistent physical-search coordinator ----------
+for token in (
+    "struct AlternativeIdentity",
+    "corridorAlternativeId",
+    "terminalAlternativeId",
+    "speedScheduleAlternativeId",
+    "arrivalTimeAlternativeId",
+    "struct Frontier",
+    "objectiveRevision",
+    "frontierRevision",
+    "struct Cursor",
+    "maximumAttemptsPerAdvance",
+    "SearchPending",
+    "FrontierExhausted",
+    "SharedStateBlocked",
+    "objectiveRemainsActive = true",
+):
+    require(token in coordinator_h,
+            f"physical-search coordinator API missing explicit contract {token!r}")
+
+coordinator_compact = compact_cpp(coordinator_cpp)
+for required in (
+    "physicalQuery = request.commonPhysicalQuery",
+    "physicalQuery.geometricTargetPositionMapMeters =",
+    "physicalQuery.desiredVelocityMapMetersPerSecond =",
+    "physicalQuery.maximumProgramSeconds =",
+):
+    require(compact_cpp(required) in coordinator_compact,
+            f"coordinator does not compose explicit physical query field {required!r}")
+
+for forbidden in (
+    "AcceptedManeuverProgram",
+    "TrajectoryGenerator",
+    "NavigationScenarioRuntime",
+    "ShipDescriptor",
+    "GameSimulation",
+):
+    require(forbidden not in coordinator_h and forbidden not in coordinator_cpp,
+            f"physical-search coordinator crossed ownership boundary via {forbidden!r}")
+
 # ---------- Pure calculation kernels ----------
 for name, source in (
     ("NominalRoutePlanner", nominal_cpp),
@@ -447,6 +489,7 @@ for name, source in (
     ("TrajectoryGenerator", trajectory_cpp),
     ("RuckigTrajectorySolver", ruckig),
     ("OrdinaryPhysicalManeuverCompiler", compiler_cpp),
+    ("PhysicalManeuverSearchCoordinator", coordinator_cpp),
     ("ManeuverProgramSampler", sampler),
     ("ManeuverTrackingController", tracker),
     ("TrajectoryFollower", follower),

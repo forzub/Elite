@@ -2094,7 +2094,8 @@ Exit gate:
 
 ### M4 — Activate a short-horizon physical maneuver compiler
 
-Implementation status (2026-09-23): **FIRST CONTRACT SLICE ACTIVE**.
+Implementation status (2026-09-23): **TYPED WITNESS ACCEPTED ON TARGET;
+BOUNDED COORDINATOR CANDIDATE IMPLEMENTED**.
 
 The physical compiler result is a sum-type in semantics: either one or more
 bounded candidates, or a typed quantitative `InfeasibilityWitness`. The witness
@@ -2105,6 +2106,29 @@ explicit rejection, never silently replaced with zero angular velocity. The
 witness carries the requested delta-v and relevant time/authority lower bounds.
 Generic `NoPhysicalCandidate` without this data is insufficient for the
 coordinator.
+
+Target evidence for the first slice: exact commit
+`9af337c2e23a32d5f11d34a3e048ecd98842674d` passed
+`ordinary_physical_maneuver_compiler` and `maneuver_chained_limit_matrix` on
+MinGW64 (2/2 tests, 0 failures).
+
+The coordinator API is an explicit bounded frontier, not a hidden optimizer:
+
+- route/goal resolution supplies ranked alternatives and provenance IDs for
+  corridor, terminal, speed schedule and arrival time;
+- measured state, capability, control law, reserves and compiler policy are
+  immutable common inputs;
+- each alternative may replace only target position, desired velocity and
+  local program horizon;
+- independent objective and frontier revisions keep mission lifetime separate
+  from regenerated alternative batches; the matching cursor makes search
+  resumable across worker slices and rejects stale state;
+- caller policy supplies the maximum attempts per advance;
+- `SearchPending`, `FrontierExhausted` and `SharedStateBlocked` all retain
+  objective ownership and typed rejection history.
+
+`CandidateFound` still returns unproved B5 candidates. Continuous hull/corridor
+and resource proof remains a separate mandatory boundary before acceptance.
 
 Start with Newtonian families:
 

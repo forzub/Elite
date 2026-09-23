@@ -1,5 +1,23 @@
 # PROJECT STATE
 
+## 2026-09-23 — bounded physical search becomes an explicit product
+
+The typed physical compiler contract is accepted on MinGW64 at exact commit
+`9af337c2e23a32d5f11d34a3e048ecd98842674d` (2/2 focused tests pass).
+
+The next replacement seam is implemented as a pure bounded coordinator. Route
+and goal owners provide a ranked, revisioned frontier; the coordinator neither
+invents doctrine nor edits capability. It advances through explicit terminal,
+speed and horizon alternatives under a caller-owned attempt budget and returns
+a persistent cursor. Exhausting one frontier keeps the objective live and asks
+for a new frontier/safe fallback rather than disabling navigation. Objective
+and frontier revisions are separate: rebuilding route alternatives does not
+change the NPC's mission goal.
+
+This candidate is not yet wired to the legacy runtime author and does not claim
+collision proof or accepted-program publication. Its focused C++ test still
+requires target execution.
+
 ## 2026-09-23 — legacy physical-authoring preservation is no longer required
 
 The owner explicitly authorized replacement of legacy blocks instead of

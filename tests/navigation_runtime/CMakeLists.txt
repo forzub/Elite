@@ -55,6 +55,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationExecutionReplanPolicy.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationWorkScheduler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/PhysicalManeuverSearchCoordinator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationHitVolumeAdapter.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/controller/ManeuverDecisionController.cpp"
@@ -714,6 +715,47 @@ add_test(
 
 set_tests_properties(
     ordinary_physical_maneuver_compiler
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    physical_maneuver_search_coordinator_tests
+    PhysicalManeuverSearchCoordinatorTests.cpp
+)
+
+target_include_directories(physical_maneuver_search_coordinator_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    physical_maneuver_search_coordinator_tests
+    PRIVATE cxx_std_17
+)
+target_link_libraries(
+    physical_maneuver_search_coordinator_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        physical_maneuver_search_coordinator_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        physical_maneuver_search_coordinator_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME physical_maneuver_search_coordinator
+    COMMAND physical_maneuver_search_coordinator_tests
+)
+
+set_tests_properties(
+    physical_maneuver_search_coordinator
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 

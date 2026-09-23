@@ -1,5 +1,29 @@
 # CURRENT STATE
 
+## 2026-09-23 — physical witness accepted; bounded coordinator candidate
+
+Status: **FIRST M3/M4 CONTRACT SLICE ACCEPTED / COORDINATOR TARGET GATE REQUIRED**
+
+MinGW64 validated exact commit
+`9af337c2e23a32d5f11d34a3e048ecd98842674d`. Both
+`ordinary_physical_maneuver_compiler` and `maneuver_chained_limit_matrix`
+passed (2/2, 0.12 s). The typed infeasibility witness and its Newtonian
+rotate-before-burn boundary are therefore accepted on target.
+
+The next candidate adds pure `PhysicalManeuverSearchCoordinator`. It consumes
+an explicit ranked frontier of corridor/terminal/speed/arrival-time
+alternatives, independent objective/frontier revisions, a resumable cursor and
+a per-worker attempt budget. It
+changes only target position, desired velocity and local program horizon before
+calling the physical compiler; state, capability, law, reserves and compiler
+policy remain common immutable inputs.
+
+The coordinator returns `CandidateFound`, resumable `SearchPending`,
+`FrontierExhausted`, `SharedStateBlocked` or `InvalidInput`. Every non-terminal
+search outcome keeps objective ownership active. Rejection history retains
+alternative provenance and typed witnesses; candidates remain unproved B5
+products and cannot cross directly into `AcceptedManeuverProgram`.
+
 ## 2026-09-23 — direct physical-authoring replacement authorized
 
 Status: **M3/M4 VERTICAL REPLACEMENT STARTED**
@@ -21,7 +45,7 @@ It also fails closed when initial angular velocity is non-zero because the
 current candidate families do not yet propagate that state consistently; the
 old behavior silently emitted fixed-attitude samples from a rotating state.
 Already-aligned main-engine burns no longer require irrelevant angular
-authority. Focused C++ validation is still required on MinGW64.
+authority. This first slice is accepted by the target evidence above.
 
 The old `TrajectoryGenerator -> attitude fit -> actuator annotation` chain may
 temporarily remain for regression evidence and geometric-corridor extraction,

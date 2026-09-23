@@ -4,6 +4,30 @@
 **Started:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md`
 
+## 2026-09-23 — physical witness target PASS; search coordinator candidate
+
+Exact commit `9af337c2e23a32d5f11d34a3e048ecd98842674d` passed both
+focused MinGW64 tests:
+
+```text
+maneuver_chained_limit_matrix          Passed
+ordinary_physical_maneuver_compiler    Passed
+100% tests passed, 0 failed (0.12 s)
+```
+
+The next vertical slice introduces `PhysicalManeuverSearchCoordinator` as a
+pure resumable worker product. Independent objective and frontier revisions
+prevent stale cursor reuse without conflating goal lifetime with route-batch
+lifetime; a per-call budget bounds work; provenance IDs preserve which
+corridor, terminal, speed schedule and arrival-time alternative was tried.
+
+The coordinator can find a later feasible horizon after a typed rejection,
+pause and resume without repeating alternatives, exhaust a frontier without
+cancelling the objective, and stop early on a shared state/law blocker. It does
+not prove geometry, publish accepted programs or mutate ship capability.
+
+Target compile/runtime validation of the new focused test is pending.
+
 ## 2026-09-23 — M3/M4 direct replacement begins
 
 Preserving the legacy translation-first maneuver author is no longer an

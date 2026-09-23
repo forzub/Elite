@@ -135,6 +135,7 @@ into the other planner or mutates its state.
 | ManeuverPhaseGate::evaluate | program + time + follower status + explicit gate policy | gate decision | pure |
 | NavigationExecutionReplanPolicy::evaluate | policy + query | replan scope/reason | pure |
 | OrdinaryPhysicalManeuverCompiler::compile | explicit Query | physical maneuver candidates | pure |
+| PhysicalManeuverSearchCoordinator::advance | common physical query + revisioned ranked frontier + cursor + attempt policy | candidates, typed rejection history and resumable cursor | pure |
 | NavigationRuntimeControlBridge | explicit pilot profile; step(time, dt, intent) | ShipControlState + execution snapshot | deterministic stateful |
 | PilotSkillExecutor | explicit execution profile; step(time, dt, command) | executed command | deterministic stateful |
 | DynamicMotionSystem | mutable motion state + ShipParams + frame + dt + command | updated physical motion state | deterministic stateful |
@@ -228,6 +229,19 @@ the coordinator schedules another bounded solve. An accepted program must stay
 fully actuator-feasible; a rejection witness can never be sent to Follower as a
 nominal program.
 
+The physical-search coordinator receives alternatives; it does not manufacture
+them by reaching into mission, route or world state. Each alternative carries
+explicit corridor/terminal/speed/arrival-time provenance and may override only
+the target position, desired velocity and local horizon of a common physical
+query. Capability, measured state, control law, reserves and compiler policy
+remain immutable. Work is bounded by an explicit attempt policy and resumed
+only through a cursor with matching objective and frontier revisions. Rebuilding
+the alternative frontier does not manufacture a new mission-objective revision.
+
+`SearchPending`, `FrontierExhausted` and `SharedStateBlocked` are planning
+states, not execution commands. They keep objective ownership active and cannot
+be converted to an accepted program.
+
 If an accepted maneuver becomes unreachable:
 - Autopilot may apply bounded safety behavior;
 - the accepted maneuver is invalidated;
@@ -253,6 +267,8 @@ It checks:
 - terminal aliases do not leak outside helpers that explicitly receive them;
 - old frozen-reference/reacquisition semantics do not return;
 - vehicle/capability projections use canonical helpers.
+- physical-search alternatives cannot mutate shared state/capability/law and
+  preserve objective revision, attempt budget and rejection provenance.
 
 ## Normative architecture and current checker limitation
 

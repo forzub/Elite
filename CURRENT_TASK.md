@@ -2,7 +2,7 @@
 
 Date: 2026-09-23
 
-Status: **M1 ACCEPTED / M2 SLICE 1 COMPILE FIX IMPLEMENTED — TARGET RETEST REQUIRED**
+Status: **M2 SLICE 1 TARGET RUNTIME REACHED — KNOWN M3/M4 FAILURE REPRODUCED; TESTED SHA NOT PRESENT IN EXCERPT**
 
 The target emitted the required frame-equivalence marker after both coordinate
 fixtures traversed all 91 storage pages. M1 is closed.
@@ -42,6 +42,32 @@ runtime and scenario I/O. The parser no longer privately owns math still needed
 by runtime. No flight semantics changed.
 
 The next action is to rerun the unchanged target gate below.
+
+
+## Latest target result
+
+The corrected extraction now compiles/links and reaches runtime. The M1
+non-identity frame marker remains PASS. The aggregate pipeline then stops only
+at the known high-speed Newtonian physical-authoring fixture:
+
+```text
+PLANNED ACTUATOR SEGMENTS: 753
+PLANNED ACTUATOR INFEASIBLE: 34
+FOLLOWER FAIL REASON: PROGRAM_INVALIDATED_TRACKING_LOSS
+FOLLOWER FAIL TIME: 0.51 S
+MAX REFERENCE/VELOCITY ANGLE: 170.46 DEG
+MAX BODY/VELOCITY ANGLE: 1.00 DEG
+```
+
+This is not an M2 scenario-I/O regression. It is the retained M3/M4 defect:
+translation is timed before reachable attitude and actuator allocation are
+proved. Keep the failing assertion; do not make the M2 split "green" by relaxing
+tracking or redefining success.
+
+The supplied output excerpt omitted the initial `git rev-parse HEAD` line, so
+the exact tested checkout cannot be recorded as verified evidence from this
+message. No rerun is required merely to understand the failure; record the hash
+when available in subsequent target evidence.
 
 ## Completed local gates
 

@@ -1,5 +1,27 @@
 # PROJECT STATE
 
+## 2026-09-23 — M2 target runtime evidence preserves the split and re-exposes M3/M4
+
+The corrected M2 slice reaches the real runtime pipeline and preserves the M1
+frame invariant. The only reported E2E stop is the known high-speed Newtonian
+case: 34/753 actuator intervals are infeasible and Follower invalidates the
+unreachable accepted reference after 0.51 s.
+
+This evidence reinforces the target architectural invariant: translational
+timing cannot precede body-attitude and actuator feasibility for a
+main-engine-dominant Newtonian vehicle. Aft-only main propulsion means strong
+braking may require a hull flip before the burn; RCS authority cannot be treated
+as an omnidirectional substitute.
+
+M3 owns truthful rejection of infeasible accepted programs. M4 owns physical
+short-horizon maneuver compilation before final time parameterization. The M2
+composition-root split must remain behavior-preserving and must not tune around
+this failure.
+
+The supplied target excerpt does not contain the tested checkout hash, therefore
+no exact verified SHA is attached to this evidence entry.
+
+
 ## 2026-09-23 — M2 slice 1 first target compile failure
 
 The first target-machine validation of the scenario-I/O split did not reach

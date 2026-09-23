@@ -9599,3 +9599,33 @@ The correction adds shared header-only `NavigationScenarioMath.h`, includes it
 from runtime and scenario I/O, and removes the I/O-private duplicate. No
 navigation behavior, timing, control law, physical acceptance or test tolerance
 changed. M2 slice 1 requires the same target gate again before acceptance.
+
+## 2026-09-23 — M2 split reaches pipeline; high-speed Newtonian reference remains physically unauthorable
+
+The corrected scenario-I/O extraction now compiles and links through the runtime
+pipeline. Identity and non-identity frame executions preserve the accepted M1
+product-chain equivalence marker.
+
+The next fixture, Newtonian 26.15 -> 11.75 m/s, reports 753 actuator intervals,
+34 physically infeasible intervals, and `PROGRAM_INVALIDATED_TRACKING_LOSS`
+after 0.51 s. The maximum authored reference-forward/velocity separation is
+170.46 degrees, while the body/velocity separation observed before abort remains
+1.00 degree. There is no coarse static contact.
+
+Interpretation: the current trajectory is still generated as translational
+P/V/A first and only afterward fitted to reachable attitude and propulsion.
+Because the ship has no reverse/fore main engine and only small manoeuvre/RCS
+authority, substantial Newtonian braking requires a physical rotate/flip phase
+before main-engine burn. The current timing does not reserve that phase.
+
+The runtime already exposes this truth with
+`actuatorProgramFeasible=false`, but the migration path still accepts and
+executes the program. Follower's tracking-loss invalidation is therefore the
+correct safety response, not the root defect.
+
+Do not alter the 0.50 s invalidation window to pass this fixture. M3 must refuse
+acceptance of any infeasible actuator interval; M4 must compile the rigid-body
+maneuver first and time that exact maneuver afterward.
+
+The supplied output excerpt omitted the checkout hash and therefore is not
+recorded as evidence for a specific SHA.

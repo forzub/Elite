@@ -1965,8 +1965,8 @@ Exit gate:
 
 ### M2 — Split the runtime composition root
 
-Implementation status (2026-09-23): **SLICE 1 CODE CANDIDATE COMPLETE / TARGET
-VALIDATION PENDING**.
+Implementation status (2026-09-23): **SLICE 1 TARGET RUNTIME REACHED / STRUCTURAL
+BEHAVIOR PRESERVED; EXACT TESTED SHA NOT PRESENT IN SUPPLIED EXCERPT**.
 
 First behavior-preserving slice: separate scenario JSON/file parsing from
 `NavigationScenarioRuntime.cpp`, link it as an explicit tool-I/O module, and pin
@@ -1980,7 +1980,14 @@ Candidate result:
 - viewer/E2E include the I/O API explicitly;
 - `EliteNavigationScenarioToolIo` is a separate CMake target;
 - the runtime monolith no longer includes nlohmann JSON or parses input;
-- architecture contracts pass locally; MinGW64 compile/link/E2E is pending.
+- architecture contracts pass locally;
+- corrected MinGW64 execution now compiles/links and preserves the M1
+  non-identity marker;
+- the pipeline then reproduces the pre-existing M3/M4 high-speed Newtonian
+  physical-authoring failure (34/753 infeasible actuator intervals, tracking
+  invalidation at 0.51 s);
+- the supplied excerpt omitted the checkout hash, so no exact target SHA is
+  attached to that runtime evidence.
 
 Create separate modules for:
 

@@ -45,17 +45,21 @@ Do not tune the timeout or weaken the assertion.
 
 ## Immediate work
 
-The first M2 target gate found a compile-only extraction defect before runtime
-execution: `normalizedOr()` and `basisFromForwardUp()` had moved into
-`NavigationScenarioIo.cpp`'s anonymous namespace even though runtime still
-uses them. The correction introduces shared pure
-`NavigationScenarioMath.h`; scenario I/O and runtime both include it.
+The compile-only extraction defect is corrected and the supplied MinGW64 output
+now reaches `navigation_runtime_pipeline`. The M1 non-identity marker remains
+PASS. The pipeline then reproduces the already-known high-speed Newtonian
+physical-authoring failure: 34/753 actuator intervals are infeasible and the
+accepted program is invalidated for tracking loss at 0.51 s.
 
-Rerun the unchanged target command in `CURRENT_TASK.md`. Scenario
-JSON/file-input ownership remains in `NavigationScenarioIo.{h,cpp}` and the
-`EliteNavigationScenarioToolIo` CMake target. `NavigationScenarioRuntime.cpp`
-must still own no parsing and include no nlohmann JSON. Keep
-`ScenarioDefinition` as the immutable boundary value.
+Do not repair that failure inside M2, do not extend the tracking timeout, and do
+not weaken the high-speed assertion. M2 remains a behavior-preserving
+composition-root split. The physical correction belongs to M3/M4: reject
+infeasible programs, then author a reachable Newtonian rigid-body maneuver
+before final timing.
+
+The supplied excerpt omitted the checkout hash, so do not invent a verified
+tested SHA from current repository HEAD. Preserve this provenance limitation in
+state documents.
 
 This is a behavior-preserving split. Do not change routing, maneuver timing,
 Follower gains, physics, risk semantics or navigation geometry.

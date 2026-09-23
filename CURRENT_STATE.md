@@ -1,5 +1,49 @@
 # CURRENT STATE
 
+## 2026-09-23 — M2 slice 1 reaches runtime; known Newtonian physical-authoring defect reproduced
+
+Status: **TARGET RUNTIME REACHED / M2 STRUCTURAL BEHAVIOR PRESERVED / M3-M4 FAILURE REPRODUCED**
+
+The supplied MinGW64 excerpt confirms that the scenario-I/O extraction now
+compiles and links far enough to run `navigation_runtime_pipeline`. The
+non-identity frame product-chain marker remains PASS and the identity and
+translated/rotated/moving fixtures remain numerically identical.
+
+The later high-speed Newtonian fixture fails exactly at the already classified
+physical-authoring boundary:
+
+- 753 planned actuator intervals;
+- 34 intervals marked physically infeasible;
+- only one storage-page advance before tracking invalidation;
+- `PROGRAM_INVALIDATED_TRACKING_LOSS` at 0.51 s;
+- planned reference/velocity separation reaches 170.46 deg somewhere in the
+  authored trajectory;
+- the actually executed body remains within 1.00 deg of current velocity before
+  execution aborts;
+- no coarse static collision occurs.
+
+Root cause remains the ordering defect, not the M2 I/O split:
+`TrajectoryGenerator/Ruckig` first authors translational P/V/A using a scalar
+acceleration envelope; reachable body attitude and installed propulsion topology
+are fitted afterward. For the Newtonian Cobra, reverse main authority is absent
+and manoeuvre/RCS authority is small, so braking that requires strong force
+opposite velocity must reserve time to rotate the hull first. The current
+trajectory does not co-time that rotation with translational demand.
+
+`makeProgramPhase()` detects the mismatch via
+`propulsionFeasible=false` / `actuatorProgramFeasible=false` but still emits
+a valid executable program during the observe-only migration. Follower then
+tracks an unreachable reference until the explicit 0.50 s tracking-loss window
+expires and correctly invalidates the program.
+
+Do not lengthen the timeout and do not weaken the high-speed test. M3 must make
+infeasible programs non-acceptable; M4 must move Newtonian physical maneuver
+authoring (rotate/coast/burn/flip-and-burn as required) ahead of final timing.
+
+The provided excerpt does not include the checkout hash line requested by the
+target-gate protocol, so no exact tested SHA is recorded from this run.
+
+
 ## 2026-09-23 — M2 slice 1 target compile defect diagnosed and corrected
 
 Status: **M2 SLICE 1 CORRECTION IMPLEMENTED — TARGET RETEST REQUIRED**

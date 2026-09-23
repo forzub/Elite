@@ -40,8 +40,10 @@ The finished system must support:
 - ships with different sizes, shapes, masses, engines and control laws;
 - static and moving obstacles;
 - stationary, moving and oriented terminal states;
-- ordinary, extreme, squeeze, docking, formation, pursuit, repair and attack
-  behavior;
+- `STANDARD` and `EXTREME` behavior doctrine crossed with free, corridor,
+  constrained/Squeeze, portal and docking passage profiles;
+- explicit pilot qualifications whose execution quality may cause a correctly
+  planned narrow transit to be missed or contacted;
 - automatic flight and a visible manual-navigation corridor;
 - hundreds or thousands of actors without all-pairs checks or full replanning
   every frame;
@@ -56,6 +58,12 @@ was capability-checked and collision-proved.
 
 No downstream block may reinterpret an accepted geometric curve into a different
 physical maneuver.
+
+`collision-proved` means that the **nominal oriented hull trajectory** does not
+intersect authoritative geometry over the accepted interval. It does not mean
+that every pilot, disturbance or damaged actuator is guaranteed to remain
+inside an arbitrarily large safety tube. Clearance robustness and execution
+risk are separate, explicit products defined below.
 
 ---
 
@@ -203,6 +211,105 @@ reserved by the Planner. It does not invent another route or another maneuver.
 Checks whether the assumptions and proof of the accepted program remain valid.
 It may trigger bounded reflex behavior and request replanning. It does not
 silently mutate the accepted program.
+
+### 3.10 Geometric traversability
+
+Geometric traversability means that at least one continuous configuration-space
+path exists for the real hull through the passage. Configuration includes
+position and, where clearance is orientation-dependent, attitude.
+
+The following are only conservative accelerators, never final truth:
+
+- bounding sphere/capsule;
+- tile/region AABB;
+- portal center point;
+- scalar clearance band.
+
+Failure of a coarse sphere fit may trigger an orientation-aware constrained
+query. It must not erase a slit, canyon, tunnel or portal that the oriented hull
+can actually traverse.
+
+### 3.11 Passage constraint profile
+
+`Constrained`/`Squeeze` is not a third control law and not a third primary
+behavior doctrine. It is an orthogonal passage profile attached to a corridor
+window or portal:
+
+- unconstrained/free transit;
+- corridor/canyon transit;
+- constrained aperture/slit transit;
+- portal capture/transit/release;
+- docking/precision ingress.
+
+The passage profile determines which configuration variables and terminal
+conditions are hard. `STANDARD` or `EXTREME` still determines the acceptable
+margin, cost and risk within that passage.
+
+### 3.12 Navigation risk class
+
+The system must distinguish four outcomes rather than one `collision/no
+collision` boolean:
+
+1. `Impossible`: no nominal collision-free, physically executable maneuver
+   exists for this hull/capability/control law.
+2. `RobustSafe`: the nominal hull and the required execution-error tube are
+   continuously clear.
+3. `ConstrainedRisk`: the nominal oriented hull is continuously clear, but the
+   available margin is smaller than the preferred execution-error envelope;
+   doctrine may accept it explicitly.
+4. `ExecutionContact`: an accepted nominally clear program contacted geometry
+   because measured execution left its proved envelope, capability changed or a
+   new obstacle invalidated the assumptions.
+
+An intentional scrape/contact is not ordinary navigation risk. If gameplay ever
+requires one, it is a separately typed damage-authorized contact maneuver with
+an explicit damage/resource budget.
+
+### 3.13 Pilot skill
+
+Pilot skill is neither geometry, doctrine nor vehicle capability.
+
+The authoritative `PilotSkillProfile` controls execution qualities such as:
+
+- observation/command latency and update cadence;
+- prediction quality and look-ahead error;
+- control noise, bias, quantization and overshoot;
+- tracking gains/damping within allowed bounds;
+- reserve consumption and recovery quality;
+- probability/bound of leaving the planned tracking tube.
+
+A deterministic `PilotExecutionEnvelope` derived from that profile is an input
+to route/maneuver decision so the system can judge whether a passage is robust
+for this pilot. The actual Autopilot/PilotSkill executor then realizes the
+declared delay/error model. Skill may make a safe corridor risky or unacceptable
+under `STANDARD`; it may not make an impossible actuator command physically
+possible.
+
+### 3.14 Doctrine
+
+The two primary behavior doctrines are `STANDARD` and `EXTREME`:
+
+- `STANDARD` prefers robust margins, smooth loads, early alignment/braking and
+  low contact probability;
+- `EXTREME` accepts smaller robustness margins, higher legal load fraction,
+  later braking and more demanding passages when mission policy permits.
+
+Doctrine changes candidate generation, ranking and accepted risk budget. It
+does not change hull size, installed actuators or physical limits.
+
+### 3.15 Control law
+
+The two control laws are `NEWTONIAN` and `ASSISTED`.
+
+- `NEWTONIAN` treats velocity and hull attitude as independent; a rear-main-
+  dominant ship must rotate/flip before main-engine braking in the opposite
+  direction.
+- `ASSISTED` may stabilize translation and use installed multidirectional
+  authority more freely, but cannot invent a fore main engine or symmetric
+  thrust absent from the vehicle profile.
+
+The same route corridor may therefore yield different maneuver families,
+attitude schedules, speed profiles and required clearance for the two laws.
 
 ---
 
@@ -675,6 +782,26 @@ The public `NavigationSpace` API can remain backend-neutral.
 9. Retain exact collision shape handles in a tile BVH for local proof.
 10. Publish the new immutable snapshot with source and derived revisions.
 
+#### Free-space certification and region merging
+
+Every published free leaf must be a conservative subset of actual free space.
+If voxelization or source geometry is uncertain, the cell is solid/unknown and
+fails closed until rebuilt.
+
+Region merging preserves the union of certified free cells. A region AABB is
+only an index/broadphase bound; it must never become the claimed free volume.
+In particular, merging disconnected or concave free leaves into one box may not
+fill the box through intervening solids. The region retains one of:
+
+- the exact member-leaf set;
+- a conservative convex decomposition;
+- another representation whose free-space inclusion is formally guaranteed.
+
+Clearance stored on a leaf, region edge or portal is a lower bound after
+voxelization/discretization error, never an optimistic center sample. Build
+tests must independently probe the published free set against exact source
+geometry and reject any false-free volume.
+
 #### Multiple vehicle sizes
 
 Do not build one map per ship instance.
@@ -686,8 +813,36 @@ radius. A portal is traversable when:
 available_clearance >= agent_coarse_radius + doctrine_clearance
 ```
 
+This scalar test is a sufficient fast path, not a universal rejection rule. If
+it fails and the request permits constrained passage, query an
+orientation-aware configuration graph over position plus bounded attitude
+states. Exact oriented fit remains mandatory before acceptance.
+
 For a small number of common size bands, optional precomputed connectivity
 islands may accelerate queries. Exact oriented fit remains a local proof.
+
+#### Portal publication contract
+
+A portal is an interface between certified free volumes, not a waypoint. Its
+typed record contains at least:
+
+```text
+NavigationPortal
+  portal id + adjacent region/tile ids + revisions
+  aperture geometry / boundary polygon or conservative convex set
+  entry and exit planes, oriented normal, thickness/depth
+  guaranteed free subset and conservative clearance field/bounds
+  admissible hull-orientation set or orientation-state references
+  allowed lateral velocity and angular-state bounds
+  transit-speed range and stopping/escape requirements
+  capture volume, transit volume and release volume
+  exact static-geometry handles for final proof
+  semantic permissions (dock ingress, one-way, hazard, reservation)
+```
+
+The portal center may be used for visualization or a heuristic only. Local
+planning must solve capture, aligned transit and release against the aperture
+geometry and the real hull.
 
 #### Runtime geometry changes
 
@@ -754,6 +909,9 @@ RouteRequest
   goal region/position
   required coarse radius
   doctrine cost profile
+  passage constraint permissions
+  pilot execution envelope / required robustness
+  explicit risk budget
   required semantic checkpoints
   static topology revision
   maximum search cost/budget
@@ -765,9 +923,13 @@ RouteRequest
 2. Search the coarse region/tile graph with A* or Dijkstra.
 3. Restrict the detailed search to the selected coarse corridor.
 4. Search octree leaves/portals within that corridor.
-5. Apply a 3D funnel/string-pulling equivalent where valid.
-6. Return ordered regions and portals plus clearance bounds.
-7. Do not manufacture a physically timed trajectory.
+5. If scalar coarse fit rejects an allowed constrained passage, search bounded
+   orientation states across its aperture instead of deleting the connection.
+6. Apply a 3D funnel/string-pulling equivalent only where the certified free
+   set supports it.
+7. Return ordered regions and typed portals plus guaranteed clearance bounds
+   and risk/passaging annotations.
+8. Do not manufacture a physically timed trajectory.
 
 ### Route cost
 
@@ -780,8 +942,14 @@ Cost is doctrine-dependent and may include:
 - congestion reservation;
 - known hazard exposure;
 - mission-specific forbidden/preferred volumes.
+- compatibility between portal precision and the pilot execution envelope;
+- consequence-weighted contact risk under the explicit doctrine budget.
 
 Cost never changes installed vehicle capability.
+
+The global layer may return more than one corridor class: robust, constrained
+or orientation-dependent. It may not call an impossible corridor merely
+"risky". Final feasibility remains actor-specific L3 proof.
 
 ### Reuse and caching
 
@@ -825,11 +993,13 @@ ManeuverQuery
   NavigationAgentCapability + resources
   LocalFlightControlLaw
   RouteCorridorWindow
+  typed portal/passage constraints inside the horizon
   local exact static candidates
   local dynamic candidates
   terminal requirement if inside horizon
-  pilot/control latency reserve
+  PilotExecutionEnvelope (latency/error/recovery bound)
   doctrine
+  explicit risk budget
   world/revision/time identity
 ```
 
@@ -882,10 +1052,19 @@ the first production implementation:
 4. Allocate installed actuators and reserve feedback authority.
 5. Integrate the candidate rigid-body state forward.
 6. Reject capability/resource violations.
-7. Send surviving candidates to continuous proof.
+7. For portals/constrained passages, solve capture -> oriented transit ->
+   release as typed boundary states rather than steering to a center point.
+8. Compare predicted tracking robustness with the pilot execution envelope and
+   annotate `RobustSafe` or `ConstrainedRisk`.
+9. Send surviving candidates to continuous proof.
 
 This is deterministic, debuggable and naturally bounded. More advanced optimal
 control/MPC may replace individual families later without changing the API.
+
+Pilot skill does not perturb the nominal physical solve. The nominal candidate
+must remain actuator-feasible and collision-free. Skill contributes an explicit
+execution-error envelope used to reserve authority, size robustness margins and
+classify risk; realized error occurs only during execution.
 
 ### Force and actuator allocation
 
@@ -971,6 +1150,9 @@ The accepted witness records:
 - minimum linear/angular feedback reserve;
 - resource margin;
 - proof time interval.
+- nominal oriented-hull minimum clearance;
+- robust tracking-tube clearance for the supplied pilot envelope;
+- resulting navigation risk class and limiting portal/obstacle witness.
 
 Changing the program invalidates the witness.
 
@@ -991,6 +1173,8 @@ Only proven candidates enter decision. Cost may include:
 - terminal-state quality;
 - doctrine-specific aggression or comfort;
 - oscillation/hysteresis penalty for changing family.
+- pilot precision demand versus declared execution envelope;
+- risk class, predicted envelope violation and contact consequence.
 
 ### Acceptance rules
 
@@ -1003,6 +1187,15 @@ An `AcceptedManeuverProgram` exists only if:
 - revisions match the captured inputs;
 - correction reserve remains;
 - its validity horizon is explicit.
+- the nominal oriented hull is continuously collision-free;
+- its risk class is permitted by doctrine/mission policy;
+- required execution precision and pilot envelope are recorded explicitly.
+
+`ConstrainedRisk` may be accepted only when the nominal maneuver is still
+physical and collision-free. Reduced robustness is never permission to accept
+an actuator-infeasible state or a nominal hull intersection. If measured
+execution leaves the recorded envelope, resulting contact is classified as an
+execution/pilot/disturbance failure and triggers safety/replan semantics.
 
 Storage paging is representation only. It never creates another maneuver,
 clock, acceptance event or phase-capture contract.
@@ -1040,24 +1233,52 @@ Doctrine is policy. Capability is hardware. Keep them separate.
 - earlier braking/rotation;
 - stronger avoidance hysteresis;
 - StopTurnGo allowed when efficient or safer;
-- larger feedback reserve.
+- larger feedback reserve;
+- normally requires `RobustSafe` against the assigned pilot envelope;
+- rejects a passage whose precision demand exceeds policy even when an expert
+  could theoretically fly it.
 
 ### Extreme
 
-- smaller clearance reserve, never below hard hull safety;
+- smaller robustness/clearance reserve, while the nominal oriented hull remains
+  continuously clear;
 - higher allowed load fraction;
 - later braking;
 - drift and aggressive main-burn families preferred;
-- shorter replanning horizon and higher update priority.
+- shorter replanning horizon and higher update priority;
+- may accept explicitly annotated `ConstrainedRisk` when mission/contact
+  consequence policy permits it;
+- still rejects nominal collision and physical infeasibility.
 
-### Squeeze
+### Constrained/Squeeze passage profile
 
+- orthogonal to `STANDARD`/`EXTREME`, not a third primary doctrine;
 - available only for an explicitly recognized constrained passage;
 - orientation-dependent configuration search;
 - low speed and strong terminal/corridor capture requirements;
 - exact hull proof mandatory;
 - dynamic entrance blocking fails closed;
 - no reduction of the hull to a fictitious smaller sphere.
+
+Thus `STANDARD + SQUEEZE` means conservative precision transit with the largest
+available margin, while `EXTREME + SQUEEZE` may accept a smaller proved nominal
+margin and greater pilot-execution risk. Both use the same hull and physics.
+
+### Pilot qualification interaction
+
+Doctrine chooses what risk may be accepted; pilot skill determines the declared
+execution envelope and realized tracking quality.
+
+- expert: lower latency/noise, better anticipation, smaller required error tube;
+- ordinary: nominal envelope and normal reserve;
+- inexperienced/negligent: larger latency/error/overshoot envelope and higher
+  probability of leaving it.
+
+The planner may choose a wider corridor or slower portal capture for a poor
+pilot. If policy explicitly accepts `ConstrainedRisk`, that pilot may still
+receive a nominally valid tight program and can strike the wall through
+execution error. Telemetry must attribute that contact to envelope departure,
+not retroactively label the map or physical plan impossible.
 
 ### Docking/precision
 
@@ -1085,6 +1306,8 @@ Doctrine is policy. Capability is hardware. Keep them separate.
 - calculate bounded state feedback;
 - allocate feedback only from reserved authority;
 - report tracking and resource margins;
+- execute the explicit PilotSkillProfile latency/error model without changing
+  vehicle physics or silently widening the accepted maneuver;
 - never search global topology;
 - never change maneuver family silently.
 
@@ -1100,6 +1323,18 @@ AutopilotCommand
 ```
 
 Physics consumes these channels directly.
+
+Pilot degradation belongs between nominal Autopilot demand and physical command
+application. It must be deterministic from explicit profile/seed/state for
+authoritative replay. A collision is attributed using the recorded chain:
+
+```text
+map/corridor fit
+ -> accepted nominal proof
+ -> required pilot envelope
+ -> realized pilot command error
+ -> measured envelope departure/contact
+```
 
 ### Tracking decomposition
 
@@ -1230,6 +1465,32 @@ Targets must be measured on the user's target machine.
 ## 16. Required public APIs
 
 Names may evolve, but responsibilities and data direction are fixed.
+
+### Semantic policy/value inputs
+
+```cpp
+enum class NavigationDoctrineKind { Standard, Extreme };
+enum class PassageConstraintKind {
+    FreeTransit,
+    Corridor,
+    ConstrainedAperture,
+    PortalTransit,
+    DockingIngress
+};
+enum class NavigationRiskClass {
+    Impossible,
+    RobustSafe,
+    ConstrainedRisk,
+    ExecutionContact
+};
+
+struct PilotExecutionEnvelope;   // latency/error/recovery bound
+struct NavigationRiskBudget;     // allowed class + consequence limits
+struct NavigationPortal;         // aperture/normal/depth/orientation/transit
+```
+
+These are separate inputs/products. No boolean `squeeze`, `expert` or
+`extreme` flag may secretly redefine hull geometry or actuator capability.
 
 ### Publication
 
@@ -1411,13 +1672,20 @@ Required scenarios:
 - flip-and-burn;
 - narrow oriented slit;
 - portal capture/transit;
+- portal aperture/normal/depth/orientation-state enforcement;
+- region merge cannot publish false-free AABB volume;
+- guaranteed clearance lower bound against exact source geometry;
+- robust-safe versus constrained-risk classification;
+- expert/ordinary/inexperienced pilot on the same proved corridor;
+- pilot envelope departure/contact attribution;
 - docking;
 - pursuit/formation;
 - sudden obstacle;
 - moving gap;
 - damaged thruster/capability revision;
 - non-identity moving and rotating frame;
-- Standard/Extreme/Squeeze comparisons.
+- Standard/Extreme crossed with free/constrained/Squeeze passage profiles;
+- Newtonian/Assisted on the same corridor and vehicle hardware.
 
 ### 19.4 Scale tests
 
@@ -1462,6 +1730,39 @@ the conventional game-navigation stack with capability, actuator, resource and
 continuous swept-hull proof because a main-engine-dominant spacecraft cannot
 truthfully execute an arbitrary steering velocity chosen by ordinary crowd
 avoidance.
+
+### 19.7 Requirement/owner acceptance matrix (2026-09-23)
+
+The following matrix is normative and prevents later implementations from
+folding distinct concerns back into one `clearance` number.
+
+| Concern | Canonical owner | Required proof/output |
+| --- | --- | --- |
+| Is space geometrically traversable? | NavigationSpace + configuration-space query | certified free cells/regions; oriented fit when coarse sphere rejects |
+| Did region merging preserve free space? | static navigation builder | member-cell/convex-union certificate; AABB never acts as free volume |
+| What is the passage? | typed NavigationPortal / corridor | aperture, normal, depth, orientation, speed and capture/transit/release constraints |
+| Which space may be used? | global route/corridor planner | ordered certified corridor plus guaranteed clearance/risk annotations |
+| What risk is acceptable? | STANDARD/EXTREME doctrine + mission risk budget | permitted `RobustSafe`/`ConstrainedRisk` class; no physics mutation |
+| How can this craft pass? | physical maneuver planner | control-law-specific 6DoF state and literal installed-actuator schedule |
+| Is the nominal maneuver truthful? | capability/resource/continuous prover | finite, actuator-feasible, nominal oriented-hull collision-free program |
+| Can this pilot hold it robustly? | PilotExecutionEnvelope + decision | required precision versus latency/error/recovery bound |
+| How well is it actually flown? | PilotSkill executor + Autopilot | deterministic delayed/noisy command execution and envelope-departure telemetry |
+| What really happened? | authoritative physics | measured motion/contact and attribution witness |
+
+Migration mapping:
+
+- M3–M7 make the nominal maneuver physically truthful and executable;
+- M8–M9 build certified topology, portal geometry and orientation-aware narrow
+  connectivity;
+- M10 proves dynamic constrained transit;
+- M11 scales shared corridor/planning work;
+- M12 completes doctrine, passage profiles, pilot envelopes and risk/contact
+  attribution.
+
+These later requirements do not change the active M1 gate. M1 must first finish
+canonical frame and maneuver-time boundaries; M2 then separates the monolithic
+composition root so these owners can be implemented without recreating hidden
+cross-layer access.
 
 ---
 
@@ -1833,12 +2134,16 @@ Actions:
 - configuration-space orientation states for narrow passages;
 - explicit portal capture/transit programs;
 - exact docking terminal solve;
-- Standard/Extreme/Squeeze doctrine profiles;
+- Standard/Extreme doctrine profiles crossed with constrained/Squeeze passage
+  profiles;
+- explicit pilot execution envelopes and skill-degraded command execution;
+- robust-safe/constrained-risk/contact attribution;
 - formation/repair/attack scenario policies.
 
 Exit gate:
 
-- mode changes select different legal costs/families, never different physics;
+- doctrine, passage and pilot changes select different legal
+  costs/families/robustness, never different physics;
 - terminal and portal semantics are carried by typed products end to end.
 
 ### M13 — Production integration and removal of transitional paths
@@ -1896,7 +2201,12 @@ The navigation layer is working only when all statements below are true:
 - Follower adds only bounded reserved feedback;
 - unexpected hazards invalidate/replan rather than mutate hidden semantics;
 - all coordinate conversions cross the canonical frame boundary;
-- Standard, Extreme and Squeeze are explicit doctrines, not magic constants;
+- Standard and Extreme are explicit doctrines; Squeeze is an explicit
+  constrained-passage profile, not a magic constant or third physics mode;
+- pilot qualification has an explicit execution envelope and realized command
+  model distinct from vehicle capability;
+- risk classification distinguishes impossible, robust-safe,
+  constrained-risk and execution contact;
 - stationary, moving and oriented terminal states are solved as boundary
   conditions;
 - many actors share world/topology work and receive budgeted asynchronous

@@ -1,91 +1,110 @@
-# CONTINUE PROMPT — finish Elite navigation M1 timeline/frame validation
+# CONTINUE PROMPT — validate M1, preserve the complete navigation contract
 
 Continue in GitHub repository `forzub/Elite`, branch `main`.
 
-The normative target architecture is
-`src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`. M1 remains
-open until the next target evidence is classified; M2 has not started.
+`src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md` is the
+normative architecture. M1 is implemented as a candidate but not accepted; M2
+has not started.
 
-## Read first
-
-Read completely:
+## Read completely before editing
 
 1. `src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`;
 2. `CURRENT_STATE.md`;
 3. `CURRENT_TASK.md`;
 4. `PROJECT_STATE.md`;
 5. final dated sections of `src/game/navigation/STAGE12_END_TO_END.md`;
-6. `src/game/navigation/NAVIGATION_API_CONTRACT.md`.
+6. `src/game/navigation/NAVIGATION_API_CONTRACT.md`;
+7. relevant sections of `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`.
 
-Inspect the active change in:
+For the active M1 gate inspect only the referenced path:
 
 - `src/game/navigation/ManeuverProgramTimeline.h`;
 - `src/game/navigation/ManeuverProgramSampler.cpp`;
 - `src/game/navigation/TrajectoryFollower.cpp`;
 - `src/game/navigation/ManeuverPhaseGate.cpp`;
+- `src/game/navigation/NavigationFrameBoundary.h`;
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`;
-- `tests/navigation_runtime/ManeuverProgramSamplerTests.cpp`;
-- `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`;
-- `tests/architecture_contracts/check_navigation_api_purity.py`.
+- focused sampler and runtime E2E tests;
+- navigation architecture checks.
 
-Follow other files only when referenced by this active path.
+Follow other files only where this code references them.
 
-## Exact state
+## Exact active state
 
-The third MinGW64 run built and linked successfully. Identity and moving-frame
-executions produced identical printed NavLocal telemetry but both stopped at
-the first page boundary with `PROGRAM_PAGE_BEFORE_START` at 50.30 s.
+The latest target build/link passed, then both identity and moving/rotating-frame
+runs failed identically at storage page 1 with `PROGRAM_PAGE_BEFORE_START`.
+Duplicate page-clock arithmetic was the cause.
 
-Root cause: runtime selected by a reconstructed previous-page end plus epsilon;
-Sampler selected by the next page's independently reconstructed start. Four
-components owned page-time arithmetic.
+The candidate now has one pure `ManeuverProgramTimeline` owner. Runtime selects
+by the next page's canonical start; Sampler, Follower and phase gate use the same
+window/elapsed-time API. Unit regressions pin floating-point page boundaries and
+later-page completion.
 
-The candidate adds one pure `ManeuverProgramTimeline` owner. Runtime selects by
-the next page's own start. Sampler, Follower and phase gate consume the same
-window/elapsed-time API. Follower completion now subtracts the page sequence
-offset. Unit tests pin the floating-point boundary and later-page completion.
-
-The frame E2E now compares every identity/non-identity NavLocal trace frame and
-requires the same terminal outcome. It intentionally does not require the known
-78-infeasible-segment physical plan to succeed: that belongs to M3/M4. This
-separates the M1 coordinate invariant from later physical truthfulness.
+The M1 frame E2E compares every identity/non-identity NavLocal clock, position,
+velocity, full basis, control demand and physical acceleration frame. It
+requires identical terminal outcome without requiring the known 78-infeasible-
+segment M3/M4 plan to complete.
 
 ## Immediate action
 
-Run the complete chained target command in `CURRENT_TASK.md`, including the
-focused timeline test and pipeline test. Preserve the checkout hash.
+Run the exact chained MinGW64 command in `CURRENT_TASK.md`, including the
+focused `maneuver_program_sampler` test and `navigation_runtime_pipeline`.
+Preserve the checkout hash and full output.
 
-Required independent marker:
+Required M1 marker:
 
 ```text
 [PASS] non-identity translated/rotated/moving frame preserves NavLocal product-chain execution
 ```
 
-If it passes, record M1 acceptance separately from any following physical
-failure and activate M2. If it does not, repair the exact timeline/frame defect
-without relaxing trace tolerances.
+If it passes, accept M1 separately from any later physical-authoring failure and
+activate M2. If it fails, repair only the exact timeline/frame boundary without
+weakening trace comparisons.
+
+## Normative later-stage semantics
+
+Do not lose these requirements during M2 and later implementation:
+
+```text
+certified NavigationSpace
+ -> typed route corridor / portals
+ -> STANDARD or EXTREME doctrine + risk budget
+ -> NEWTONIAN or ASSISTED physical maneuver
+ -> nominal capability/resource/continuous hull proof
+ -> pilot execution envelope and realized skill error
+ -> authoritative physics/contact attribution
+```
+
+- free regions are certified cell/convex unions; AABB is broadphase only;
+- scalar sphere clearance cannot erase an orientation-traversable slit;
+- portal includes aperture, normal, depth, orientation and transit state;
+- Squeeze is an orthogonal constrained-passage profile, not a third doctrine;
+- `ConstrainedRisk` is still nominally hull-clear and actuator-feasible;
+- pilot skill affects latency/error/recovery and may cause envelope departure;
+- Assisted cannot invent hardware; Newtonian and Assisted may produce different
+  maneuvers through the same corridor.
 
 ## Governing invariant
 
 ```text
-accepted maneuver == capability-checked maneuver
-                  == continuously collision-proved maneuver
-                  == actuator program executed by physics
+accepted nominal maneuver == capability-checked maneuver
+                          == continuously collision-proved maneuver
+                          == actuator program executed by physics
 ```
 
-Do not restore duplicate clock arithmetic, identity-frame copies, ambient
-lookups, infeasible-plan acceptance, follower tuning or octree work to bypass a
-gate.
+Risk may reduce robustness margin; it may not falsify geometry or physics.
 
-## After M1 acceptance
+## After M1 acceptance only
 
-Activate only M2: split `NavigationScenarioRuntime.cpp` into a thin composition
-root and production-owned parsing, route composition, maneuver planning/proof,
-execution harness and diagnostics modules. Preserve behavior during the split.
+Activate M2: split `NavigationScenarioRuntime.cpp` into a thin composition root
+and production-owned parsing, route composition, maneuver planning/proof,
+execution harness and diagnostics modules. Preserve behavior. Do not begin
+octree/portal work before the ownership split and truthful physical planning
+stages required by the blueprint.
 
 ## Mandatory iteration protocol
 
-Update the blueprint, state/task/project documents, Stage-12 journal and affected
-API contracts after every state change; recreate this prompt; run all available
-gates; inspect the full diff; commit and push one coherent iteration to `main`.
-Never claim a check that did not run.
+After every state change update the blueprint, state/task/project documents,
+Stage-12 journal and affected API/control contracts; recreate this prompt; run
+all available gates; inspect the complete diff; commit and push one coherent
+iteration to `main`. Never claim a check that did not run.

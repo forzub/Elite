@@ -3132,3 +3132,25 @@ The M1 E2E now proves frame invariance by comparing the entire identity and
 non-identity NavLocal trace plus terminal outcome. It does not require the known
 78-infeasible-segment physical plan to complete; that would make M1 depend on
 M3/M4. M1 remains pending until this candidate runs on target.
+
+## 2026-09-23 — navigation map and execution-risk contract expanded
+
+New product requirements are now normative in the blueprint and related API/
+control-law contracts:
+
+- octree/voxel free space and merged regions must be conservative certified
+  subsets; a region AABB is broadphase only;
+- clearance is a guaranteed lower bound, not an optimistic sample;
+- sphere fit is a fast sufficient test, while orientation-aware configuration
+  search preserves genuinely traversable slits and portals;
+- portals carry aperture, normal, depth, orientation, velocity and
+  capture/transit/release semantics;
+- primary doctrine is `STANDARD`/`EXTREME`; Squeeze is an orthogonal constrained
+  passage profile;
+- nominal physical feasibility, robustness/risk and pilot execution error are
+  separate products;
+- poor pilot contact on a correct nominal route is execution-envelope departure,
+  not automatically a map/planner defect.
+
+No active M1 code changed in this requirements iteration. Its focused sampler
+and pipeline target gate remains next.

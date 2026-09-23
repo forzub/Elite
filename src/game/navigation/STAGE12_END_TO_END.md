@@ -9525,3 +9525,32 @@ therefore proves coordinate invariance without declaring the physical maneuver
 valid.
 
 This candidate is unverified on target. M1 remains open.
+
+## 2026-09-23 — later-stage map/risk/pilot requirements normalized
+
+The target architecture now records a strict semantic chain for later M8–M12
+work:
+
+```text
+certified NavigationSpace
+ -> typed corridor/portals
+ -> STANDARD/EXTREME doctrine + explicit risk budget
+ -> NEWTONIAN/ASSISTED physical maneuver
+ -> nominal capability + continuous hull proof
+ -> pilot execution envelope / realized skill error
+ -> authoritative physics and contact attribution
+```
+
+Important decisions:
+
+- `Squeeze` is a passage constraint profile, not a third primary doctrine or
+  control law;
+- `ConstrainedRisk` still requires a nominally collision-free, physically
+  executable program;
+- an inexperienced/negligent pilot may leave the proved envelope and collide;
+- the same corridor may produce different Newtonian and Assisted maneuvers;
+- portal center points and region AABBs are never accepted as exact free-space
+  truth.
+
+This contract clarification does not alter the active M1 executable candidate
+or replace its pending target gate.

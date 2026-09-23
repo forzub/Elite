@@ -73,6 +73,22 @@ Contains doctrine/policy only:
 - explicit I/O policy;
 - optional boundary-speed overrides.
 
+The target production API must keep these semantic domains distinct even if the
+diagnostic stand temporarily aggregates them in `ScenarioRunSettings`:
+
+- `NavigationDoctrine`: `STANDARD` or `EXTREME` risk/load/margin policy;
+- `PassageConstraintProfile`: free, corridor, constrained aperture, portal or
+  docking constraints;
+- `LocalFlightControlLaw`: `NEWTONIAN` or `ASSISTED` hardware-use doctrine;
+- `PilotExecutionEnvelope`: deterministic latency/error/recovery bound used by
+  planning and proof;
+- `PilotSkillProfile`: realized command cadence/error behavior used by the
+  executor;
+- `NavigationRiskBudget`: which proved robustness class and contact consequence
+  the mission permits.
+
+None of these may mutate `VehicleDynamicsProfile` or hull geometry.
+
 ### RetainedStaticRoute
 
 Owner: Stage 1.
@@ -161,6 +177,19 @@ Policy answers:
 - numerical/trajectory policy.
 
 A policy may choose how to use hardware. It may not invent hardware.
+
+Geometry, risk and execution quality are also separate:
+
+- `NavigationSpace` publishes certified free space and typed portal geometry;
+- route/corridor planning chooses which certified space may be used;
+- physical planning proves a nominal oriented-hull maneuver;
+- doctrine decides whether its robustness class is acceptable;
+- pilot skill determines the declared and realized execution error;
+- physics records actual contact.
+
+`ConstrainedRisk` never permits an actuator-infeasible program or nominal hull
+intersection. It permits a smaller explicit robustness margin whose execution
+may fail if the pilot leaves the proved envelope.
 
 ## Failure semantics
 

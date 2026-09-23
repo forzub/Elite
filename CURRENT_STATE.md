@@ -1,5 +1,29 @@
 # CURRENT STATE
 
+## 2026-09-23 — map/passage/risk/pilot semantics clarified
+
+Status: **NORMATIVE REQUIREMENTS INTEGRATED / M1 TARGET GATE UNCHANGED**
+
+The blueprint now explicitly separates:
+
+- certified geometric traversability from coarse sphere/AABB broadphase;
+- route corridor and typed portal geometry from actor-specific physical motion;
+- `STANDARD`/`EXTREME` risk doctrine from constrained/Squeeze passage profile;
+- `NEWTONIAN`/`ASSISTED` control law from installed hardware;
+- nominal collision-free physical proof from robustness margin;
+- pilot execution envelope and realized pilot error from vehicle capability;
+- impossible route, robust-safe route, constrained-risk route and execution
+  contact.
+
+Regions may not treat their AABB as free volume, portal centers are not portal
+semantics, and scalar clearance is a sufficient fast path rather than authority
+to erase an orientation-traversable slit. A constrained-risk program must still
+be nominally hull-clear and actuator-feasible; collision can result from pilot
+envelope departure and must be attributed as such.
+
+This is a documentation/contract iteration. The active code candidate remains
+the canonical page timeline + M1 frame boundary awaiting MinGW64 validation.
+
 ## 2026-09-23 — M1 runtime reached; canonical page timeline added
 
 Status: **RUNTIME DEFECT CORRECTED / TARGET REVALIDATION REQUIRED**

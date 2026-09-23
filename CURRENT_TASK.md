@@ -11,6 +11,11 @@ start, and Sampler correctly returned `BeforeStart`.
 `ManeuverProgramTimeline` now owns page windows, page-local elapsed time and
 active-page selection. Runtime, Sampler, Follower and phase gate consume it.
 
+The blueprint has additionally incorporated the later navigation-map,
+portal/risk and pilot-skill requirements. That documentation does not change
+this immediate M1 gate: validate the already implemented timeline/frame
+candidate before beginning M2 or any octree/portal implementation.
+
 ## Required target gate
 
 Run as one chained command in MSYS2 MinGW64:

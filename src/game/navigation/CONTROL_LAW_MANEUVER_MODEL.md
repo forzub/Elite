@@ -306,7 +306,8 @@ Extreme + Assisted
     aggressive minimum-time forward turn / narrow pass
 
 Extreme + Newtonian
-    drift, side-on pass, late flip-and-burn, expendable scrape if needed
+    drift, constrained-risk side-on pass, late flip-and-burn
+    (scrape only as a separately damage-authorized contact maneuver)
 
 CombatEscape + Newtonian
     keep useful escape velocity while rotating hull for minimum silhouette
@@ -374,6 +375,43 @@ The maneuver-authoring contract is:
 
 This rule is independent of FlightStyle. STANDARD / EXTREME may influence which
 clearance/risk candidate is preferred, but neither style owns a nominal speed.
+
+## 2026-09-23 — passage, risk and pilot skill are separate control inputs
+
+The two primary flight doctrines remain `STANDARD` and `EXTREME`.
+`SQUEEZE` is an orthogonal constrained-passage profile, while docking,
+formation, pursuit and combat escape are typed mission/terminal contexts. None
+of these changes installed hardware.
+
+The control chain distinguishes:
+
+```text
+VehicleDynamicsProfile
+    what the craft can physically do
+
+LocalFlightControlLaw (NEWTONIAN / ASSISTED)
+    how installed hardware may be used
+
+FlightStyle (STANDARD / EXTREME)
+    margin, load and risk doctrine
+
+PassageConstraintProfile
+    free / corridor / aperture / portal / docking constraints
+
+PilotExecutionEnvelope + PilotSkillProfile
+    expected precision and realized execution error
+```
+
+A nominal accepted maneuver always remains actuator-feasible and continuously
+clear for the oriented hull. `ConstrainedRisk` means its robustness margin is
+smaller than the preferred pilot-error tube, not that the planner may intersect
+the wall. A poor/negligent pilot can contact geometry only by leaving the proved
+execution envelope; telemetry must distinguish that from an impossible route or
+invalid physical program.
+
+The same corridor may therefore yield different Newtonian and Assisted
+attitude/thrust programs. Assisted is still forbidden to synthesize a fore main
+engine absent from the authoritative vehicle profile.
 
 Current implementation note: exact moving terminal speed is already treated as a terminal
 boundary rather than a global cap. The current scalar multi-point path solver still

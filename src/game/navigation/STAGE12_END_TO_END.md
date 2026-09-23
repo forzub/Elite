@@ -9415,3 +9415,32 @@ The Stage-12 tool boundary has been repaired as an unverified candidate:
 The architecture/purity scripts pass locally. Target compile and runtime remain
 mandatory; this candidate must not be described as an accepted Stage-12 gate
 until MinGW64 emits the non-identity PASS marker.
+
+## 2026-09-23 — first M1 target attempt: stale fixture and stale executable
+
+The first target attempt stopped during compilation at:
+
+```text
+NavigationScenarioRuntimeE2ETests.cpp:213:
+ScenarioRunSettings has no member named 'pilot'
+```
+
+That assignment was obsolete. `ScenarioRunSettings` intentionally receives the
+resolved `pilotExecutionProfile`; it no longer exposes a second broad
+`PilotLevel` selector. The fixture already populated the narrow field, so the
+dead write was removed. `check_navigation_api_purity.py` now rejects any
+`.pilot =` assignment in this active E2E.
+
+The later `ctest` output in the same supplied log is not evidence from the M1
+candidate. The build had failed, and the test was launched separately, so CTest
+used the previous executable. Its assertion text—`reference-reacquisition
+diagnostics`—does not exist in current source, which requires `REFERENCE CLOCK:
+MONOTONIC`. It also did not emit the newly added non-identity-frame marker.
+
+The stale executable again reported 42 infeasible actuator segments, observe-
+only execution and tracking invalidation at 0.51 s. That remains evidence for
+the known physical-authoring defect to be addressed after M1/M2; it is neither
+a pass nor a failure of the new frame boundary.
+
+All subsequent target commands must use `&&` from pull through CTest. M1 stays
+unaccepted until the corrected test executable builds and runs.

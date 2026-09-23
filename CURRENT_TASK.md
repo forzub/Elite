@@ -1,67 +1,50 @@
-# CURRENT TASK — target-validate navigation blueprint M1
+# CURRENT TASK — rebuild and validate corrected navigation M1
 
 Date: 2026-09-23
 
-Status: **M1 CODE CANDIDATE COMPLETE / TARGET EVIDENCE REQUIRED**
+Status: **M1 CORRECTION COMPLETE / TARGET EVIDENCE REQUIRED**
 
-Primary specification:
-
-```text
-src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md
-```
-
-## What changed
-
-- the private runtime `toSystemIntent()` bypass was removed;
-- control intent uses `NavigationFrameBoundary`;
-- initial position, velocity, attitude basis and angular-velocity state cross
-  the same boundary;
-- runtime frame snapshot and epoch are explicit inputs;
-- execution deadline includes that non-zero universe-time epoch;
-- the moving/accelerating/rotating frame is advanced during execution;
-- Follower, trace and terminal checks receive NavLocal state rather than system
-  vectors mislabeled as map vectors;
-- a non-identity product-chain equivalence E2E was added;
-- brittle architecture checks were made formatting-independent and stale
-  hardware assumptions were corrected.
+The first target attempt found one obsolete E2E write to
+`ScenarioRunSettings::pilot`. It has been removed; the test already supplies
+the correct resolved `pilotExecutionProfile`. The runtime output produced after
+that compile failure was from a stale binary and must not be used as evidence.
 
 ## Required target gate
 
-Run from MSYS2 MinGW64:
+Run the following as one chained command in MSYS2 MinGW64. Do not run CTest if
+any earlier step fails:
 
 ```bash
-cd /d/__elite/work
-git pull --ff-only
-git rev-parse HEAD
-
-bash tests/navigation_runtime/run_stage1_mingw64.sh
-
+cd /d/__elite/work && \
+git pull --ff-only && \
+git rev-parse HEAD && \
+bash tests/navigation_runtime/run_stage1_mingw64.sh && \
 cmake --build build/tools/navigation_runtime \
-  --target navigation_runtime_pipeline_tests
-
+  --target navigation_runtime_pipeline_tests && \
 ctest --test-dir build/tools/navigation_runtime \
   -R "^navigation_runtime_pipeline$" \
   --output-on-failure
 ```
 
-The output must contain:
+Return the complete output beginning with the printed commit hash.
+
+## Required M1 evidence
+
+The rebuilt executable must print:
 
 ```text
 [PASS] non-identity translated/rotated/moving frame preserves NavLocal product-chain execution
 ```
 
-## Interpretation
+Interpretation:
 
-- compile failure: fix M1; do not advance;
-- non-identity test failure: frame conversion/evolution is still wrong; fix M1;
-- non-identity test passes but a later pre-existing physical E2E fails: record
-  both facts separately; M1 may be accepted while the physical-planner failure
-  remains assigned to M3/M4;
-- all gates pass: mark M1 accepted and activate M2.
+- compilation fails: repair the reported compile defect and keep M1 open;
+- the marker is absent after a successful rebuild: verify test registration and
+  binary provenance; do not infer a frame result;
+- the marker fails: diagnose the coordinate/frame chain and keep M1 open;
+- the marker passes but a later physical case fails: accept M1 separately and
+  retain the physical-authoring failure for M3/M4;
+- the complete suite passes: accept M1 and activate M2.
 
-## Next stage after acceptance
-
-M2 splits `NavigationScenarioRuntime.cpp` into a thin composition root plus
-production-owned parsing, route composition, maneuver planning/proof,
-execution-harness and diagnostics modules. Do not begin that split before M1
-compile/runtime evidence is recorded.
+Do not weaken the frame fixture, restore broad `pilot` input, tune physical
+control, or start the M2 split before this evidence is classified.

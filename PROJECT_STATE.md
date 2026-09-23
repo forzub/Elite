@@ -3079,3 +3079,21 @@ as `ExecutionVehicle::timeSeconds`; the prior code silently assumed epoch zero.
 Four local architecture gates pass. C++ compilation and the new non-identity
 product-chain E2E still require the Windows MSYS2/MinGW64 target. M2 is not
 active until that evidence is recorded.
+
+## 2026-09-23 — first M1 target gate classified and corrected
+
+The first supplied MinGW64 attempt did not compile the M1 test executable. A
+retained E2E fixture wrote the already-removed `ScenarioRunSettings::pilot`
+field even though it also supplied the correct resolved
+`pilotExecutionProfile`. The dead assignment is removed and the purity gate now
+forbids that API regression.
+
+The `ctest` output following the compiler failure came from a stale executable:
+it contains assertion text absent from the current source and lacks the new
+non-identity-frame marker. It is not valid M1 runtime evidence. Its physical
+failure remains consistent with the known later-stage blocker—42 infeasible
+actuator segments followed by tracking invalidation—but does not change the M1
+frame-boundary decision.
+
+Build and test must now be chained so a compile failure cannot fall through to
+an old executable. M1 remains pending; M2 has not started.

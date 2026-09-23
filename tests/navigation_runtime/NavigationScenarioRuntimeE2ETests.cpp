@@ -210,7 +210,6 @@ void testSpeedAndStyleChangeStaticManeuverReserve()
     ScenarioRunSettings lowStandard;
     enableRuntimeDiagnostics(lowStandard);
     lowStandard.controlMode = ControlMode::Newtonian;
-    lowStandard.pilot = PilotLevel::Expert;
     lowStandard.pilotExecutionProfile =
         makeScenarioPilotSkillProfile(PilotLevel::Expert);
     lowStandard.flightStyle = FlightStyle::Standard;

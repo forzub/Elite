@@ -1,5 +1,28 @@
 # CURRENT STATE
 
+## 2026-09-23 — first M1 target attempt was compile-blocked
+
+Status: **CORRECTION IMPLEMENTED / CLEAN TARGET REBUILD REQUIRED**
+
+The supplied MinGW64 log is not an M1 runtime result. Compilation stopped in
+`NavigationScenarioRuntimeE2ETests.cpp` because one fixture still assigned the
+removed `ScenarioRunSettings::pilot` field. The same fixture already passes the
+resolved `pilotExecutionProfile`, so the stale broad-field assignment has been
+deleted and the API-purity checker now rejects its return.
+
+The `ctest` command in that log ran after the failed build and therefore
+executed an older binary. Evidence: its failure text asks for obsolete
+reference-reacquisition diagnostics, while the current source requires the
+monotonic-clock contract. It also never prints the new non-identity-frame PASS
+marker. Those runtime lines cannot accept or reject M1.
+
+The next target commands must be joined with `&&`. M1 remains pending until a
+successfully rebuilt executable prints:
+
+```text
+[PASS] non-identity translated/rotated/moving frame preserves NavLocal product-chain execution
+```
+
 ## 2026-09-23 — M1 frame/API repair candidate
 
 Status: **CODE CANDIDATE COMPLETE / TARGET MINGW64 VALIDATION REQUIRED**

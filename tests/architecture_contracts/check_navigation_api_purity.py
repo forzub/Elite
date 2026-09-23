@@ -480,6 +480,16 @@ for forbidden in (
     require(forbidden not in e2e,
             f"E2E still names retired frozen-reference semantics: {forbidden}")
 
+# ScenarioRunSettings no longer owns a broad PilotLevel selector. Tests must
+# provide the already-resolved execution profile through the narrow API, just
+# as production orchestration does. Keep this static guard because an obsolete
+# assignment otherwise survives Python architecture gates and fails only in a
+# target C++ build.
+require(
+    ".pilot =" not in e2e,
+    "E2E reaches through removed ScenarioRunSettings::pilot instead of passing pilotExecutionProfile",
+)
+
 # 'terminal' is an explicit helper parameter only inside the attitude author
 # and trajectory-request adapter. It must not leak as an undeclared alias into
 # parser/diagnostic/orchestration functions.

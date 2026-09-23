@@ -1522,6 +1522,35 @@ Not yet claimed:
 - non-identity E2E runtime PASS;
 - full `navigation_runtime_pipeline` PASS.
 
+First target attempt (2026-09-23): **COMPILE BLOCKED; RUNTIME RESULT
+INADMISSIBLE**.
+
+- MinGW64 reached `NavigationScenarioRuntimeE2ETests.cpp` and rejected an
+  obsolete `lowStandard.pilot` assignment because `ScenarioRunSettings` no
+  longer exposes that broad selector;
+- the fixture already supplied the resolved `pilotExecutionProfile` on the
+  following line, so deleting the stale assignment is an API-boundary repair,
+  not a behavioral change;
+- `ctest` was then invoked after the failed build as a separate command and
+  consequently ran the previously built executable;
+- that old executable did not contain the new non-identity marker and still
+  emitted the retired reference-reacquisition assertion text, proving it was
+  not the M1 candidate;
+- its 42 infeasible actuator segments and 0.51 s tracking invalidation remain
+  useful historical evidence for M3/M4, but cannot accept or reject M1.
+
+Correction:
+
+- remove the dead `ScenarioRunSettings::pilot` write;
+- statically reject `.pilot =` in the active E2E so the removed API cannot
+  again pass Python architecture gates and fail only during target compile;
+- chain build and test commands with `&&`, making it impossible to execute a
+  stale test binary after a failed compilation.
+
+M1 remains open. Its first admissible target runtime evidence must come from a
+successful rebuild of the corrected checkout and must contain the independent
+non-identity product-chain marker.
+
 The local Linux environment has `g++` but no CMake or GLM development headers,
 so it cannot compile the project. M1 remains open until the target Windows
 MSYS2/MinGW64 gate validates the candidate. Do not begin M2 merely because the

@@ -1242,8 +1242,7 @@ glm::dvec3 guideCurvatureVector(
 
 double globalGuideSpeedLimit(
     const world::navigation::TrajectoryGenerationRequest& request,
-    const ExecutionGuide& guide,
-    const std::vector<double>& arc
+    const ExecutionGuide& guide
 )
 {
     double limit = request.vehicle.maxSpeedMps;
@@ -1386,8 +1385,7 @@ buildPathProgressTrajectory(
     const double pathSpeedLimit =
         globalGuideSpeedLimit(
             request,
-            guide,
-            arc
+            guide
         );
 
     game::navigation::RuckigProgressRequest progressRequest;
@@ -1850,8 +1848,6 @@ RouteAttempt buildRouteAttempt(
         cumulativeDiagnostics.ruckigLegAttempts;
     out.diagnostics.ruckigLegSuccesses =
         cumulativeDiagnostics.ruckigLegSuccesses;
-    out.diagnostics.ruckigSolveMilliseconds =
-        cumulativeDiagnostics.ruckigSolveMilliseconds;
     out.diagnostics.collisionSegmentsChecked =
         cumulativeDiagnostics.collisionSegmentsChecked;
 
@@ -1866,20 +1862,6 @@ RouteAttempt buildRouteAttempt(
 
     attempt.ready = true;
     return attempt;
-}
-
-std::size_t countBlendedWaypoints(
-    const std::vector<glm::dvec3>& velocities,
-    double thresholdMps
-)
-{
-    std::size_t count = 0;
-    for (std::size_t i = 1; i + 1 < velocities.size(); ++i)
-    {
-        if (nonZeroVelocity(velocities[i], thresholdMps))
-            ++count;
-    }
-    return count;
 }
 
 } // namespace
@@ -2004,9 +1986,6 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
             attempt.result.diagnostics.expandedGuideCorners =
                 guide.expandedCorners;
 
-            const std::size_t blended = countBlendedWaypoints(
-                waypointVelocities
-            );
             return attempt.result;
         }
 

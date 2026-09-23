@@ -1551,6 +1551,38 @@ M1 remains open. Its first admissible target runtime evidence must come from a
 successful rebuild of the corrected checkout and must contain the independent
 non-identity product-chain marker.
 
+Second target attempt (2026-09-23): **PREVIOUS FIX CONFIRMED; NEXT LATENT
+COMPILE DEFECT FOUND**.
+
+Confirmed target evidence before the failure:
+
+- all navigation architecture scripts passed;
+- the Stage-1 nominal-route test passed;
+- the maneuver-tracking-controller corridor test passed;
+- `NavigationScenarioRuntimeE2ETests.cpp` compiled, so the removed
+  `ScenarioRunSettings::pilot` access no longer blocks the target build.
+
+The viewer/pipeline build then stopped in `TrajectoryGenerator.cpp` on three
+pieces of dead API left by two earlier cleanups:
+
+- `ruckigSolveMilliseconds` had been removed from
+  `TrajectoryGenerationDiagnostics` after wall-clock timing was removed from
+  the pure generator, but one result-copy statement still referenced it;
+- `appendPerfLog()` had been removed, leaving `countBlendedWaypoints()` and its
+  local result with no consumer;
+- a later purity change added an explicit threshold parameter to that orphaned
+  counter without updating its dead call site.
+
+The correction removes the two dead diagnostic assignments, the orphaned
+counter and its unused local. It also removes the unused `arc` input from
+`globalGuideSpeedLimit()`, keeping the calculation helper's API equal to its
+actual dependencies. The purity gate now rejects reintroduction of the removed
+timing field or orphan counter.
+
+No trajectory decision, threshold, generated state or collision proof changed.
+The build did not link and the M1 runtime fixture still has not executed, so M1
+remains open pending the next chained target gate.
+
 The local Linux environment has `g++` but no CMake or GLM development headers,
 so it cannot compile the project. M1 remains open until the target Windows
 MSYS2/MinGW64 gate validates the candidate. Do not begin M2 merely because the

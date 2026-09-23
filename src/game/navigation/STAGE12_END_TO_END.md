@@ -9444,3 +9444,37 @@ a pass nor a failure of the new frame boundary.
 
 All subsequent target commands must use `&&` from pull through CTest. M1 stays
 unaccepted until the corrected test executable builds and runs.
+
+## 2026-09-23 — second M1 target attempt: generator cleanup mismatch
+
+The second target run advanced beyond the previous blocker:
+
+- navigation API purity PASS;
+- geometric planner contract PASS;
+- static-route/two-stage contract PASS;
+- Stage-1 nominal route 1/1 PASS;
+- maneuver tracking controller 1/1 PASS;
+- `NavigationScenarioRuntimeE2ETests.cpp` compiled.
+
+The build stopped before link in `TrajectoryGenerator.cpp`:
+
+```text
+TrajectoryGenerationDiagnostics has no member named ruckigSolveMilliseconds
+too few arguments to countBlendedWaypoints(..., double)
+unused variable 'blended'
+```
+
+The common cause is incomplete removal of internal performance instrumentation.
+Wall-clock/file-I/O logging had already been removed from this pure calculation
+kernel and `ruckigSolveMilliseconds` had already been deleted from the public
+diagnostic DTO, but a stale result-copy remained. Removal of `appendPerfLog()`
+also left its blended-waypoint helper and local value without a consumer.
+
+The correction deletes those dead paths and narrows
+`globalGuideSpeedLimit(request, guide, arc)` to the values it actually consumes:
+`globalGuideSpeedLimit(request, guide)`. Static purity checks now reject both
+retired implementation symbols.
+
+No speed policy, waypoint relaxation, Ruckig request, collision check or
+trajectory output changed. Since link/runtime were not reached, this log still
+does not accept or reject the non-identity-frame M1 behavior.

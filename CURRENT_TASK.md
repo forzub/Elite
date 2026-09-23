@@ -1,18 +1,19 @@
-# CURRENT TASK — rebuild and validate corrected navigation M1
+# CURRENT TASK — rebuild M1 after TrajectoryGenerator cleanup
 
 Date: 2026-09-23
 
-Status: **M1 CORRECTION COMPLETE / TARGET EVIDENCE REQUIRED**
+Status: **SECOND COMPILE CORRECTION COMPLETE / TARGET EVIDENCE REQUIRED**
 
-The first target attempt found one obsolete E2E write to
-`ScenarioRunSettings::pilot`. It has been removed; the test already supplies
-the correct resolved `pilotExecutionProfile`. The runtime output produced after
-that compile failure was from a stale binary and must not be used as evidence.
+The previous target run confirms the stale `ScenarioRunSettings::pilot` blocker
+is gone. It then exposed dead implementation references left after wall-clock
+and filesystem performance diagnostics were removed from the pure trajectory
+generator. Those references and an unused helper input have been removed
+without changing trajectory behavior.
 
 ## Required target gate
 
-Run the following as one chained command in MSYS2 MinGW64. Do not run CTest if
-any earlier step fails:
+Run this as one command in MSYS2 MinGW64. Keep the printed commit hash and do
+not run CTest if any build step fails:
 
 ```bash
 cd /d/__elite/work && \
@@ -26,25 +27,25 @@ ctest --test-dir build/tools/navigation_runtime \
   --output-on-failure
 ```
 
-Return the complete output beginning with the printed commit hash.
+Return the complete output beginning with `git rev-parse HEAD`.
 
-## Required M1 evidence
+## Required classification
 
-The rebuilt executable must print:
+First establish:
+
+1. `TrajectoryGenerator.cpp` compiles and the pipeline executable links;
+2. the rebuilt executable prints:
 
 ```text
 [PASS] non-identity translated/rotated/moving frame preserves NavLocal product-chain execution
 ```
 
-Interpretation:
+Then classify any later failure independently:
 
-- compilation fails: repair the reported compile defect and keep M1 open;
-- the marker is absent after a successful rebuild: verify test registration and
-  binary provenance; do not infer a frame result;
-- the marker fails: diagnose the coordinate/frame chain and keep M1 open;
-- the marker passes but a later physical case fails: accept M1 separately and
-  retain the physical-authoring failure for M3/M4;
-- the complete suite passes: accept M1 and activate M2.
+- failure before the marker keeps M1 open;
+- marker PASS accepts the M1 coordinate/frame boundary even if the later known
+  physical-authoring E2E fails;
+- full pipeline PASS accepts M1 and permits activation of M2.
 
-Do not weaken the frame fixture, restore broad `pilot` input, tune physical
-control, or start the M2 split before this evidence is classified.
+Do not restore removed timing diagnostics, reintroduce internal file I/O, weaken
+the frame fixture, or tune physical control while resolving this gate.

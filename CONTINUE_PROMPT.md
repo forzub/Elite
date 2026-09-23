@@ -1,12 +1,12 @@
-# CONTINUE PROMPT — validate corrected Elite navigation M1
+# CONTINUE PROMPT — validate Elite navigation M1 after compile cleanup
 
 Continue in GitHub repository `forzub/Elite`, branch `main`.
 
-The normative architecture is
-`src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`. The current
-implementation is still an M1 candidate; M2 has not started.
+The normative target is
+`src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`. M1 is still
+open; M2 has not started.
 
-## Read first
+## Mandatory reading
 
 Read completely, in order:
 
@@ -17,47 +17,53 @@ Read completely, in order:
 5. the final dated sections of `src/game/navigation/STAGE12_END_TO_END.md`;
 6. `src/game/navigation/NAVIGATION_API_CONTRACT.md`.
 
-Then inspect the M1 code and tests in:
+Inspect the active M1 path and the latest correction in:
 
 - `src/game/navigation/NavigationFrameBoundary.h`;
 - `tools/navigation_runtime/NavigationScenarioRuntime.cpp`;
-- `tests/navigation_runtime/NavigationRuntimePlannerTests.cpp`;
+- `src/world/navigation/TrajectoryGenerator.{h,cpp}`;
 - `tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp`;
-- `tests/architecture_contracts/check_navigation_api_purity.py`;
-- the other modified navigation architecture checks.
+- `tests/architecture_contracts/check_navigation_api_purity.py`.
 
-## Exact current state
+Follow other files only where these sources or the active build target reference
+them.
 
-M1 routes intent and initial/observed rigid-body state through
-`NavigationFrameBoundary`, receives an explicit moving-frame snapshot and epoch,
-advances the frame during execution, and includes a non-identity product-chain
-E2E.
+## Exact state
 
-The first MinGW64 attempt was compile-blocked by a stale
-`lowStandard.pilot = PilotLevel::Expert` line. The fixture already supplied
-`pilotExecutionProfile`; the dead assignment has now been removed and the
-purity checker forbids its return.
+M1 canonicalizes NavLocal/System conversion, makes the moving-frame snapshot and
+epoch explicit, advances that frame during execution, and adds a non-identity
+product-chain E2E.
 
-Do not treat the CTest output appended after that compiler failure as current.
-It came from an older executable: it used obsolete reference-reacquisition
-assertion text and lacked the new non-identity marker. Its infeasible actuator
-segments are a known M3/M4 physical-authoring problem, not an M1 verdict.
+Target attempt 1 failed on a stale `ScenarioRunSettings::pilot` fixture write.
+That was removed and statically forbidden.
+
+Target attempt 2 confirmed the E2E translation unit now compiles, while
+architecture checks, Stage-1 nominal routing and the tracking-controller test
+pass. The build then found older dead code in `TrajectoryGenerator.cpp`:
+
+- a copy of removed `ruckigSolveMilliseconds` diagnostics;
+- an orphaned `countBlendedWaypoints()` left after perf-log removal;
+- its obsolete call signature and unused local result;
+- an unused `arc` input on `globalGuideSpeedLimit()`.
+
+These have been removed. No trajectory policy or output semantics changed. The
+purity checker prevents both retired symbols from returning.
 
 ## Immediate action
 
-Obtain the complete output of the single `&&`-chained MinGW64 command in
-`CURRENT_TASK.md`, including `git rev-parse HEAD`.
+Obtain the complete output of the single chained command in `CURRENT_TASK.md`,
+including the checkout hash. Do not interpret CTest unless the corrected target
+compiled and linked.
 
-The independent M1 marker is:
+Required M1 marker:
 
 ```text
 [PASS] non-identity translated/rotated/moving frame preserves NavLocal product-chain execution
 ```
 
-Never run or interpret CTest after a failed build. If compilation fails, repair
-the exact defect without weakening the non-identity fixture. If the marker
-passes and a later physical E2E fails, record M1 acceptance separately from the
-existing physical-planner failure.
+If it passes, accept M1 independently of any later known physical-authoring
+failure. If it fails or compilation fails earlier, repair the exact defect
+without weakening the fixture or changing physical-control policy.
 
 ## Governing invariant
 
@@ -67,21 +73,21 @@ accepted maneuver == capability-checked maneuver
                   == actuator program executed by physics
 ```
 
-Do not restore identity-frame copies or broad settings, add ambient lookups,
-accept infeasible propulsion, tune follower gains/timeouts, or start octree
-integration to evade a failure.
+No ambient time/filesystem lookup belongs in a pure calculation kernel. Do not
+restore identity-frame copies, broad context inputs, infeasible propulsion,
+follower tuning or octree work to bypass this gate.
 
-## Only after M1 acceptance
+## After M1 acceptance only
 
-Activate blueprint stage M2: split `NavigationScenarioRuntime.cpp` into a thin
-composition root plus production-owned parsing, route composition, maneuver
-planning/proof, execution-harness and diagnostics modules. M2 must preserve
-behavior; it is not the physical-planner redesign.
+Activate M2 from the blueprint: split `NavigationScenarioRuntime.cpp` into a
+thin tool composition root and production-owned parsing, route composition,
+maneuver planning/proof, execution harness and diagnostics modules. Preserve
+behavior during that split.
 
-## Mandatory iteration protocol
+## Iteration protocol
 
-Every state-affecting iteration must update the blueprint, `CURRENT_STATE.md`,
-`CURRENT_TASK.md`, `PROJECT_STATE.md`, the Stage-12 journal, affected contract
-documents, and recreate this prompt for the next exact action. Review the full
-diff, run every available gate, commit the coherent iteration and push it to
-`main`. Never claim a check that did not run.
+Every state-changing iteration must update the blueprint, `CURRENT_STATE.md`,
+`CURRENT_TASK.md`, `PROJECT_STATE.md`, the Stage-12 journal and any affected
+contract document; recreate this prompt; run all available gates; review the
+complete diff; commit and push the coherent change to `main`. Never claim a
+check that did not run.

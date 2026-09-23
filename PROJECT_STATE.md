@@ -3097,3 +3097,21 @@ frame-boundary decision.
 
 Build and test must now be chained so a compile failure cannot fall through to
 an old executable. M1 remains pending; M2 has not started.
+
+## 2026-09-23 — second M1 target compile blocker removed
+
+The next MinGW64 run passed all architecture checks, Stage-1 nominal routing and
+the maneuver-tracking-controller test. It also compiled the corrected E2E
+translation unit, confirming removal of the stale `ScenarioRunSettings::pilot`
+use.
+
+Compilation subsequently exposed incomplete earlier cleanup inside
+`TrajectoryGenerator.cpp`: implementation code still referenced the removed
+wall-clock timing diagnostic, and the removed perf logger had left behind an
+unused blended-waypoint counter whose signature later changed. Those dead
+references are now removed. An unused arc-table parameter was also removed from
+`globalGuideSpeedLimit()` to preserve narrow calculation APIs.
+
+This iteration changes no planning semantics. The pipeline has still not linked
+or executed the non-identity product-chain fixture. M1 remains pending and M2
+has not started.

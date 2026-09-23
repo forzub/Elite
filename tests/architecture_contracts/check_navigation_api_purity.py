@@ -276,6 +276,13 @@ for forbidden in (
     require(forbidden not in trajectory_cpp,
             f"trajectory backend reintroduced hidden behavior threshold: {forbidden}")
 
+for forbidden in (
+    "ruckigSolveMilliseconds",
+    "countBlendedWaypoints(",
+):
+    require(forbidden not in trajectory_cpp,
+            f"trajectory backend reintroduced removed internal diagnostics: {forbidden}")
+
 # ---------- Vehicle dynamics single source of truth ----------
 for token in (
     "forwardMainAccelerationLimitMps2",

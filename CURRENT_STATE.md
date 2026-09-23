@@ -1,5 +1,25 @@
 # CURRENT STATE
 
+## 2026-09-23 — second M1 target attempt reached TrajectoryGenerator
+
+Status: **SECOND COMPILE CORRECTION IMPLEMENTED / TARGET REBUILD REQUIRED**
+
+The second supplied MinGW64 log confirms that the previous stale-pilot fix
+worked: `NavigationScenarioRuntimeE2ETests.cpp` compiled. Architecture checks,
+the Stage-1 nominal-route test and the maneuver-tracking-controller test also
+passed on target.
+
+The build then stopped in `TrajectoryGenerator.cpp`. This was a latent cleanup
+defect, not a trajectory failure: the pure generator still copied the removed
+`ruckigSolveMilliseconds` diagnostic and retained an unused blended-waypoint
+counter after its only consumer—the internal filesystem perf-log—had been
+deleted. The dead code is removed. `globalGuideSpeedLimit()` also no longer
+accepts an unused arc table.
+
+The API-purity checker now rejects both removed symbols. No motion behavior was
+changed. Link and runtime were not reached, so the non-identity M1 fixture still
+has no target verdict.
+
 ## 2026-09-23 — first M1 target attempt was compile-blocked
 
 Status: **CORRECTION IMPLEMENTED / CLEAN TARGET REBUILD REQUIRED**

@@ -9629,3 +9629,18 @@ maneuver first and time that exact maneuver afterward.
 
 The supplied output excerpt omitted the checkout hash and therefore is not
 recorded as evidence for a specific SHA.
+
+## 2026-09-23 — correction: infeasible motion is not a trajectory
+
+The high-speed Newtonian failure must not be described as a valid trajectory
+that merely outruns hull rotation. A vehicle trajectory is valid only when
+attitude reachability, installed actuator allocation and translation are solved
+together. The current translation-first chain produces a rejected mathematical
+reference, not a maneuver belonging to the ship.
+
+The target replacement is a bounded negotiation: intent/terminal alternatives
+-> corridor alternatives -> physical solve -> typed rejection witness -> vary
+corridor/speed/terminal/time and retry. Search failure retains the objective and
+navigation ownership. If collision becomes unavoidable, an explicit
+damage-minimizing contact program remains physical and continuously replanned;
+an infeasible nominal program is never sent to Follower.

@@ -112,3 +112,12 @@ invariants:
 - identity/non-identity metrics remain unchanged;
 - the high-speed case remains classified by its actual physical-authoring
   failure until M3/M4, rather than being hidden or redefined.
+
+## Corrected planning contract
+
+M3/M4 must not merely return failure for the high-speed case. A typed
+infeasibility witness feeds a bounded coordinator search over corridor,
+terminal, speed and time alternatives while navigation stays active. Only a
+fully physical program may be accepted; unavoidable contact belongs to a
+separate damage-minimizing emergency solve. This does not change the current M2
+gate classification.

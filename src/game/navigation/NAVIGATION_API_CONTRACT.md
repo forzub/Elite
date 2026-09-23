@@ -104,6 +104,20 @@ Immutable Stage-1 product:
 
 Stage 2 validates all provenance before use and never rebuilds the global route.
 
+### NavigationIntent and TerminalContract
+
+Owner: mission/behavior plus the goal-resolution boundary.
+
+`NavigationIntent` states the wanted outcome and doctrine/risk/contact budgets.
+`TerminalContract` states hard terminal constraints and ranked alternatives.
+Neither contains an unproved trajectory or actuator schedule.
+
+Route planning returns a ranked corridor/terminal frontier. Physical maneuver
+planning consumes one alternative and returns either proved candidates or a
+typed `ManeuverInfeasibilityWitness`. The coordinator may then vary corridor,
+portal, terminal sample, speed schedule or arrival time. Neither planner reaches
+into the other planner or mutates its state.
+
 ## Active calculation APIs
 
 | Component | Input | Output | Purity |
@@ -209,12 +223,22 @@ may fail if the pilot leaves the proved envelope.
 A pure calculation returns an invalid/failure result. It does not reach across a
 boundary for replacement data.
 
+Planning failure is not navigation shutdown. The objective remains active and
+the coordinator schedules another bounded solve. An accepted program must stay
+fully actuator-feasible; a rejection witness can never be sent to Follower as a
+nominal program.
+
 If an accepted maneuver becomes unreachable:
 - Autopilot may apply bounded safety behavior;
 - the accepted maneuver is invalidated;
 - orchestration requests a new Planner product from measured state.
 
 Follower does not silently become a planner.
+
+If collision is physically unavoidable, a separately typed
+`UnavoidableContactMitigation` request may produce a physically feasible,
+contact-predicted emergency program that minimizes explicit damage metrics.
+This result must not claim collision-free proof or ordinary constrained risk.
 
 ## Automated guard
 

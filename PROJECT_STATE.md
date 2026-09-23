@@ -1,5 +1,17 @@
 # PROJECT STATE
 
+## 2026-09-23 — planning is bounded negotiation, not fail-and-disable
+
+Mission/behavior supplies intent and acceptable terminal conditions; global
+planning supplies alternative corridors; physical planning supplies a proved
+maneuver or typed rejection witness. The coordinator continues search by
+varying legal spatial and temporal parameters.
+
+An exhausted solve keeps navigation active. Safe-progress/hold programs and
+replanning remain available. When collision is unavoidable, an explicitly
+contact-predicted, damage-minimizing emergency program replaces both silent
+shutdown and knowingly infeasible nominal motion.
+
 ## 2026-09-23 — M2 target runtime evidence preserves the split and re-exposes M3/M4
 
 The corrected M2 slice reaches the real runtime pipeline and preserves the M1

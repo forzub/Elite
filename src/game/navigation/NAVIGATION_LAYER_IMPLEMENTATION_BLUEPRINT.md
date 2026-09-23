@@ -311,6 +311,30 @@ The two control laws are `NEWTONIAN` and `ASSISTED`.
 The same route corridor may therefore yield different maneuver families,
 attitude schedules, speed profiles and required clearance for the two laws.
 
+### 3.16 Objective, terminal contract and planning negotiation
+
+The mission/behavior owner does not hand navigation an already chosen dynamic
+trajectory. It publishes a `NavigationIntent` containing the goal region or
+entity, semantic action, acceptable terminal-state set, hard constraints, soft
+preferences, deadline/priority, doctrine and risk/contact budgets.
+
+A goal resolver converts that intent into a typed `TerminalContract`. Hard
+fields must be satisfied; soft fields are ranked. Docking may require one exact
+pose and velocity, while ordinary arrival may permit any point in a volume and
+a range of headings and speeds.
+
+Global route and local physical planning negotiate through value products, not
+callbacks or hidden state. The route layer proposes ranked corridor/terminal
+alternatives. The physical planner either proves an executable maneuver or
+returns a typed infeasibility witness: insufficient rotation lead time,
+stopping distance beyond the corridor window, actuator saturation, unreachable
+portal state or resource exhaustion. The coordinator uses that witness to vary
+corridor, portal, terminal sample, speed schedule or arrival time within
+explicit work and deadline budgets.
+
+Failure of one calculation never disables navigation and never becomes an
+invalid accepted program.
+
 ---
 
 ## 4. Complete problem inventory
@@ -906,7 +930,7 @@ nothing about throttle samples or Follower gains.
 RouteRequest
   actor/agent class key
   start NavLocal position
-  goal region/position
+  NavigationIntent / TerminalContract alternatives
   required coarse radius
   doctrine cost profile
   passage constraint permissions
@@ -930,6 +954,8 @@ RouteRequest
 7. Return ordered regions and typed portals plus guaranteed clearance bounds
    and risk/passaging annotations.
 8. Do not manufacture a physically timed trajectory.
+9. Return a ranked corridor/terminal frontier when the request permits
+   alternatives instead of committing irreversibly to one line.
 
 ### Route cost
 
@@ -950,6 +976,9 @@ Cost never changes installed vehicle capability.
 The global layer may return more than one corridor class: robust, constrained
 or orientation-dependent. It may not call an impossible corridor merely
 "risky". Final feasibility remains actor-specific L3 proof.
+
+`RouteUnavailable` means no route was found in the current snapshot and search
+budget. It does not cancel the objective or stop future planning.
 
 ### Reuse and caching
 
@@ -1057,6 +1086,12 @@ the first production implementation:
 8. Compare predicted tracking robustness with the pilot execution envelope and
    annotate `RobustSafe` or `ConstrainedRisk`.
 9. Send surviving candidates to continuous proof.
+
+If no candidate survives, return a `ManeuverInfeasibilityWitness`; do not emit a
+trajectory that asks the hull to accelerate before its thrust axis is
+reachable. The coordinator tries other corridor/terminal/speed/time
+alternatives. This is a bounded anytime loop: a previously proved short-horizon
+program may continue while downstream alternatives are searched.
 
 This is deterministic, debuggable and naturally bounded. More advanced optimal
 control/MPC may replace individual families later without changing the API.
@@ -1199,6 +1234,9 @@ execution/pilot/disturbance failure and triggers safety/replan semantics.
 
 Storage paging is representation only. It never creates another maneuver,
 clock, acceptance event or phase-capture contract.
+
+An infeasibility witness is a planning product, not an execution program.
+`AcceptedManeuverProgram` can never contain "mostly feasible" motion.
 
 ### Program representation
 
@@ -1385,6 +1423,24 @@ Allowed reflexes are deliberately bounded:
 
 The reflex does not become an undocumented alternate planner. Material deviation
 always produces a replan request.
+
+### No-solution and unavoidable-contact behavior
+
+Navigation remains active when route or maneuver search does not converge:
+
+1. retain the objective and coherent world/capability revisions;
+2. continue bounded asynchronous search using rejection witnesses;
+3. execute the remainder of the last valid program while it remains proved;
+4. otherwise select a proved safe hold/coast/attitude/braking program;
+5. if every reachable future intersects an obstacle, solve an explicit
+   `UnavoidableContactMitigation` problem.
+
+Unavoidable-contact mitigation searches only physically executable programs
+and minimizes consequences lexicographically: protected occupants/components,
+impact energy and normal relative speed, vulnerable contact location, loss of
+control and secondary collisions. Its proof explicitly predicts contact and
+records the damage budget/witness. It is not mislabeled collision-free or
+`ConstrainedRisk`, and it does not disable subsequent replanning.
 
 ---
 
@@ -2010,6 +2066,8 @@ Exit gate:
 Actions:
 
 - reject any infeasible actuator interval;
+- return a typed infeasibility witness to the planning coordinator instead of
+  disabling navigation;
 - introduce one global-time program view over storage pages;
 - fix completion time to include sequence/page offset;
 - replace independently interpolated state fields with consistent segment laws;
@@ -2030,6 +2088,11 @@ Start with Newtonian families:
 - LeadRotateMainBurn;
 - Brake/FlipAndBurn;
 - StopTurnGo fallback.
+
+The coordinator must use rejected-candidate witnesses to vary corridor,
+terminal sample, speed schedule and arrival time. If every reachable candidate
+predicts contact, generate an explicit `UnavoidableContactMitigation` family
+rather than accepting impossible nominal motion or turning navigation off.
 
 Correct current compiler defects:
 

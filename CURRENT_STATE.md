@@ -1,5 +1,27 @@
 # CURRENT STATE
 
+## 2026-09-23 — objective negotiation and persistent no-solution behavior
+
+Status: **ARCHITECTURE CONTRACT CORRECTED / M2 CODE GATE RECORDED**
+
+The high-speed diagnosis exposed wording that treated an attitude-infeasible
+translation as a trajectory and suggested returning failure. That model is now
+explicitly rejected. A trajectory belongs to a concrete vehicle/control law and
+cannot demand thrust before its required thrust axis is reachable.
+
+Mission/behavior owns `NavigationIntent`; a goal resolver owns the typed
+`TerminalContract`; global planning returns ranked corridor/terminal
+alternatives; the physical planner returns either proved candidates or a typed
+infeasibility witness. The coordinator uses the witness to vary corridor,
+portal, terminal sample, speed schedule or arrival time under bounded budgets.
+
+No-solution does not disable navigation. The objective and planning state stay
+active, the last still-proved short program may continue, and safe hold/coast/
+attitude/braking alternatives are considered. If contact is unavoidable, a
+separate physically feasible `UnavoidableContactMitigation` solve minimizes
+impact consequences and explicitly predicts contact rather than claiming a
+collision-free proof.
+
 ## 2026-09-23 — M2 slice 1 reaches runtime; known Newtonian physical-authoring defect reproduced
 
 Status: **TARGET RUNTIME REACHED / M2 STRUCTURAL BEHAVIOR PRESERVED / M3-M4 FAILURE REPRODUCED**

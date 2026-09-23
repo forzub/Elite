@@ -86,3 +86,13 @@ After every state-affecting event, update the blueprint, state/task/project
 documents, Stage-12 journal and this prompt. Run all available gates, inspect
 the complete diff, commit and push one coherent iteration to `main`. Never claim
 a target result that was not run.
+
+## Persistent planning contract
+
+Mission/behavior owns intent and terminal alternatives; route planning returns
+corridor alternatives; physical planning returns a proved maneuver or typed
+infeasibility witness. The coordinator varies legal route/speed/terminal/time
+parameters and keeps the objective active. No failed solve may disable
+navigation or create an actuator-infeasible accepted program. If contact is
+unavoidable, use a separate physically executable, contact-predicted
+damage-mitigation program.

@@ -4,6 +4,26 @@
 **Started:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md`
 
+## 2026-09-23 — M3/M4 direct replacement begins
+
+Preserving the legacy translation-first maneuver author is no longer an
+implementation constraint. The active replacement starts at the pure physical
+compiler boundary: success yields bounded Newtonian candidates that still
+require continuous proof; failure yields a typed, quantitative infeasibility
+witness for the persistent coordinator.
+
+This slice does not make the current high-speed E2E green. Until the new
+compiler/coordinator/prover becomes the only producer of accepted programs, the
+existing failure remains required evidence that the old path is unreachable.
+Tracking timeout relaxation and acceptance of infeasible actuator intervals
+remain forbidden.
+
+The first compiler candidate now reports quantitative timing/authority
+witnesses, proves burn-after-attitude in focused tests, permits an aligned burn
+without unused angular authority, and rejects non-zero initial angular motion
+until a rigid-body family propagates it consistently. This is intentionally
+truthful incompleteness rather than fabricated fixed-attitude motion.
+
 ## Goal
 
 Stage 12 proves that the accepted Navigation v2 components work as one live system under real game ownership, real obstacle geometry, real vehicle authority, real replication, and real presentation.

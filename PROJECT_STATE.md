@@ -1,5 +1,23 @@
 # PROJECT STATE
 
+## 2026-09-23 — legacy physical-authoring preservation is no longer required
+
+The owner explicitly authorized replacement of legacy blocks instead of
+behavior-preserving surgery. Active work therefore moves from the remaining M2
+monolith cleanup to an M3/M4 vertical slice: truthful physical-solve output,
+bounded alternative negotiation, exact proof, then acceptance.
+
+The first API correction adds a typed physical infeasibility witness. It tells
+the coordinator whether the request lacks translation authority, attitude
+authority, program horizon, a supported control law or a valid input/body
+frame. This is the minimum feedback required to vary route/speed/terminal/time
+parameters without disabling navigation.
+
+The candidate additionally closes two physical-compiler truth defects:
+already-aligned burns can proceed without angular authority, while a non-zero
+initial angular velocity is rejected with its own witness until a candidate
+family models it instead of silently replacing it with a fixed attitude.
+
 ## 2026-09-23 — planning is bounded negotiation, not fail-and-disable
 
 Mission/behavior supplies intent and acceptable terminal conditions; global

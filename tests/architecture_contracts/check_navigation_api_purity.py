@@ -412,8 +412,25 @@ for token in (
     "burnRampMinimumSeconds",
     "burnRampMaximumSeconds",
     "burnRampFractionOfRawBurn",
+    "enum class InfeasibilityReason",
+    "struct InfeasibilityWitness",
+    "requestedDeltaVelocityMapMetersPerSecond",
+    "minimumAttitudeSeconds",
+    "minimumProgramSeconds",
+    "availableProgramSeconds",
 ):
     require(token in compiler_h, f"maneuver compiler API hides timing policy {token}")
+
+for token in (
+    "TranslationAuthorityUnavailable",
+    "AttitudeAuthorityUnavailable",
+    "InitialAngularStateUnsupported",
+    "ProgramHorizonTooShort",
+):
+    require(
+        token in compiler_h,
+        f"maneuver compiler cannot explain physical rejection {token}",
+    )
 
 for forbidden in (
     "kMinimumPrimitiveSeconds",

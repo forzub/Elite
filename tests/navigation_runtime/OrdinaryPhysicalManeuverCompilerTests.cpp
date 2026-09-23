@@ -281,6 +281,118 @@ void testNoAngularAuthorityDoesNotFallBackToImpossibleLateralDemand()
         result.candidateCount == 0,
         "impossible request leaked a maneuver candidate"
     );
+    require(
+        result.infeasibility.reason ==
+            Compiler::InfeasibilityReason::AttitudeAuthorityUnavailable,
+        "no-angular-authority rejection did not identify its limiting constraint"
+    );
+    require(
+        result.infeasibility.requiredAttitudeChangeRad > 1.5,
+        "no-angular-authority witness lost the required hull rotation"
+    );
+}
+
+void testAlignedBurnDoesNotRequireAngularAuthority()
+{
+    auto q = baseQuery();
+    q.capability.maxAngularAccelerationRadPerSec2 = 0.0;
+    q.capability.maxAngularSpeedRadPerSec = 0.0;
+
+    const auto result = Compiler::compile(q);
+    require(
+        result.status == Compiler::Status::Compiled,
+        "already-aligned Newtonian burn must not require unused angular authority"
+    );
+    require(
+        findFamily(result, Candidate::Family::LeadRotateMainBurn) != nullptr,
+        "already-aligned main-engine candidate was discarded with zero angular authority"
+    );
+}
+
+void testUnmodeledInitialAngularStateFailsClosed()
+{
+    auto q = baseQuery();
+    q.state.angularVelocityMapRadPerSecond = {0.0, 0.2, 0.0};
+
+    const auto result = Compiler::compile(q);
+    require(
+        result.status == Compiler::Status::NoPhysicalCandidate,
+        "compiler emitted fixed-attitude samples from a rotating initial state"
+    );
+    require(
+        result.infeasibility.reason ==
+            Compiler::InfeasibilityReason::InitialAngularStateUnsupported,
+        "rotating initial state did not identify the missing rigid-body family"
+    );
+    requireNear(
+        result.infeasibility.initialAngularSpeedRadPerSec,
+        0.2,
+        1.0e-12,
+        "initial-angular-state witness lost the measured angular speed"
+    );
+}
+
+void testShortHorizonReturnsRetryableTimingWitness()
+{
+    auto q = baseQuery();
+    q.state.velocityMapMetersPerSecond = {18.0, 0.0, 0.0};
+    q.state.forwardMap = {1.0, 0.0, 0.0};
+    q.state.rightMap = {0.0, 0.0, 1.0};
+    q.desiredVelocityMapMetersPerSecond = {0.0, 18.0, 0.0};
+    q.maximumProgramSeconds = 0.5;
+
+    const auto result = Compiler::compile(q);
+    require(
+        result.status == Compiler::Status::NoPhysicalCandidate,
+        "short horizon must not leak a partial rotate/burn candidate"
+    );
+    require(
+        result.infeasibility.reason ==
+            Compiler::InfeasibilityReason::ProgramHorizonTooShort,
+        "short horizon did not return a timing witness"
+    );
+    require(
+        result.infeasibility.minimumAttitudeSeconds >
+            result.infeasibility.availableProgramSeconds,
+        "timing witness does not prove that rotation exceeds the available horizon"
+    );
+    require(
+        result.infeasibility.minimumProgramSeconds >
+            result.infeasibility.availableProgramSeconds,
+        "timing witness does not expose a longer retry horizon"
+    );
+}
+
+void testMainBurnNeverStartsBeforeRequiredAttitudeIsReached()
+{
+    auto q = baseQuery();
+    q.desiredVelocityMapMetersPerSecond = {0.0, -54.8, 24.5};
+
+    const auto result = Compiler::compile(q);
+    const Candidate* candidate =
+        findFamily(result, Candidate::Family::LeadRotateMainBurn);
+    require(candidate != nullptr, "rotate-before-burn candidate missing");
+
+    const glm::dvec3 thrustDirection = glm::normalize(
+        q.desiredVelocityMapMetersPerSecond -
+        q.state.velocityMapMetersPerSecond
+    );
+
+    for (std::size_t i = 0; i < candidate->sampleCount; ++i)
+    {
+        const auto& sample = candidate->samples[i];
+        if (glm::length(
+                sample.linearAccelerationFeedForwardMapMps2
+            ) <= 1.0e-6)
+        {
+            continue;
+        }
+
+        require(
+            glm::dot(sample.forwardMap, thrustDirection) > 0.999999,
+            "main-engine acceleration began before the hull reached its thrust attitude"
+        );
+    }
 }
 
 void testFeedbackReserveCanMakeMarginalDirectDemandInfeasible()
@@ -457,6 +569,10 @@ int main()
         testLargeLateralDeltaVRequiresLeadRotateMainBurn();
         testRcsFeasibleLateralChangeStillExposesMainEngineOption();
         testNoAngularAuthorityDoesNotFallBackToImpossibleLateralDemand();
+        testAlignedBurnDoesNotRequireAngularAuthority();
+        testUnmodeledInitialAngularStateFailsClosed();
+        testShortHorizonReturnsRetryableTimingWitness();
+        testMainBurnNeverStartsBeforeRequiredAttitudeIsReached();
         testFeedbackReserveCanMakeMarginalDirectDemandInfeasible();
         testAssistedIsExplicitlyUnsupportedInFirstB5Slice();
         testFixtureLikeSeventyFiveDegreeDemandIsNotAcceptedAsOmnidirectional();
@@ -468,6 +584,10 @@ int main()
         std::cout << " - RCS-feasible delta-v still exposes a main-engine alternative for B7\n";
         std::cout << " - B10 reserve is removed before B5 feed-forward authority\n";
         std::cout << " - missing angular authority fails closed instead of inventing lateral thrust\n";
+        std::cout << " - aligned burns do not demand unused angular authority\n";
+        std::cout << " - unmodeled initial angular motion fails closed with a typed witness\n";
+        std::cout << " - failed physical solves return typed limiting-constraint witnesses\n";
+        std::cout << " - Newtonian main burn cannot precede its required hull attitude\n";
         std::cout << " - Assisted remains explicit unsupported work, not fake Newtonian behavior\n";
         std::cout << " - live 75-degree failure class compiles without omnidirectional main thrust\n";
         std::cout << " - 10000 dirty-actor compiles are measured diagnostically\n";

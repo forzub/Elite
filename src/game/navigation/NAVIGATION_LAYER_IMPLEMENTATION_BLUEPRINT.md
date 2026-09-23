@@ -4,6 +4,11 @@ Status: **normative target architecture**
 
 Date: 2026-09-22
 
+Active migration decision (2026-09-23): legacy physical-authoring code may be
+deleted or bypassed rather than preserved. After the accepted scenario-I/O
+boundary, work proceeds as an M3/M4 vertical replacement. The translation-first
+chain is regression evidence, not a compatibility contract.
+
 Scope: static and dynamic 3D navigation for one to many thousands of ships,
 drones, missiles and other autonomous actors.
 
@@ -2021,10 +2026,10 @@ Exit gate:
 
 ### M2 — Split the runtime composition root
 
-Implementation status (2026-09-23): **SLICE 1 TARGET RUNTIME REACHED / STRUCTURAL
-BEHAVIOR PRESERVED; EXACT TESTED SHA NOT PRESENT IN SUPPLIED EXCERPT**.
+Implementation status (2026-09-23): **SCENARIO-I/O BOUNDARY ACCEPTED FORWARD;
+REMAINING MONOLITH SPLIT MAY FOLLOW THE REPLACEMENT SEAMS**.
 
-First behavior-preserving slice: separate scenario JSON/file parsing from
+Completed slice: separate scenario JSON/file parsing from
 `NavigationScenarioRuntime.cpp`, link it as an explicit tool-I/O module, and pin
 the boundary with the architecture contract. Planning/execution behavior and
 the known high-speed physical failure must remain unchanged.
@@ -2056,12 +2061,20 @@ Create separate modules for:
 The tool must link production libraries rather than compile domain logic from a
 tool-owned monolith.
 
+Migration amendment: further extraction does not need to preserve the obsolete
+translation-first program-authoring behavior. New physical compiler,
+coordinator, proof and acceptance modules should replace that block directly;
+the composition root is reduced as those seams become active.
+
 Exit gate:
 
 - pure libraries build/test without filesystem, viewer or scenario JSON;
 - tool orchestration contains no maneuver math.
 
 ### M3 — Make program acceptance truthful
+
+Implementation status (2026-09-23): **ACTIVE WITH M4 AS A VERTICAL
+REPLACEMENT**.
 
 Actions:
 
@@ -2080,6 +2093,18 @@ Exit gate:
 - sampling preserves state continuity and correct global time across pages.
 
 ### M4 — Activate a short-horizon physical maneuver compiler
+
+Implementation status (2026-09-23): **FIRST CONTRACT SLICE ACTIVE**.
+
+The physical compiler result is a sum-type in semantics: either one or more
+bounded candidates, or a typed quantitative `InfeasibilityWitness`. The witness
+must identify invalid input/frame, unsupported control law, missing translation
+or attitude authority, insufficient horizon, or an internal numerical failure;
+an initial angular state not yet supported by a candidate family is also an
+explicit rejection, never silently replaced with zero angular velocity. The
+witness carries the requested delta-v and relevant time/authority lower bounds.
+Generic `NoPhysicalCandidate` without this data is insufficient for the
+coordinator.
 
 Start with Newtonian families:
 

@@ -72,6 +72,42 @@ struct OrdinaryPhysicalManeuverCandidate
 class OrdinaryPhysicalManeuverCompiler final
 {
 public:
+    // A failed solve is data for the planning coordinator, not a command to
+    // disable navigation.  The reason and measured lower bounds tell the
+    // caller which search dimension can change on the next attempt.
+    enum class InfeasibilityReason : std::uint8_t
+    {
+        None = 0,
+        InvalidQuery,
+        UnsupportedControlLaw,
+        InvalidBodyFrame,
+        InitialAngularStateUnsupported,
+        TranslationAuthorityUnavailable,
+        AttitudeAuthorityUnavailable,
+        ProgramHorizonTooShort,
+        NumericalFailure
+    };
+
+    struct InfeasibilityWitness
+    {
+        InfeasibilityReason reason = InfeasibilityReason::None;
+
+        glm::dvec3 requestedDeltaVelocityMapMetersPerSecond {0.0};
+        double initialAngularSpeedRadPerSec = 0.0;
+        double requiredAttitudeChangeRad = 0.0;
+        double minimumAttitudeSeconds = 0.0;
+        // Full-burn time needed to remove the complete requested delta-v.
+        double minimumBurnSeconds = 0.0;
+        // Earliest horizon that can contain attitude acquisition plus one
+        // bounded receding-horizon translation primitive.
+        double minimumProgramSeconds = 0.0;
+        double availableProgramSeconds = 0.0;
+
+        double usableForwardAccelerationMps2 = 0.0;
+        double usableAngularAccelerationRadPerSec2 = 0.0;
+        double usableAngularSpeedRadPerSec = 0.0;
+    };
+
     struct Capability
     {
         double maxForwardAccelerationMps2 = 0.0;
@@ -146,6 +182,7 @@ public:
     struct Result
     {
         Status status = Status::InvalidInput;
+        InfeasibilityWitness infeasibility {};
 
         static constexpr std::size_t kMaxCandidates = 2;
         std::array<OrdinaryPhysicalManeuverCandidate, kMaxCandidates>

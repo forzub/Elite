@@ -178,6 +178,106 @@ double usable(
     return std::max(0.0, authority - reserve);
 }
 
+double requiredAttitudeChange(
+    const glm::dvec3& forward,
+    const glm::dvec3& deltaVelocity
+) noexcept
+{
+    const double deltaSpeed = glm::length(deltaVelocity);
+    if (!finite(deltaSpeed) || deltaSpeed <= kEpsilon)
+        return 0.0;
+
+    return std::acos(
+        std::clamp(
+            glm::dot(forward, deltaVelocity / deltaSpeed),
+            -1.0,
+            1.0
+        )
+    );
+}
+
+Compiler::InfeasibilityWitness assessInfeasibility(
+    const Compiler::Query& q,
+    const glm::dvec3& forward
+) noexcept
+{
+    Compiler::InfeasibilityWitness witness;
+    witness.requestedDeltaVelocityMapMetersPerSecond =
+        q.desiredVelocityMapMetersPerSecond -
+        q.state.velocityMapMetersPerSecond;
+    witness.availableProgramSeconds = q.maximumProgramSeconds;
+    witness.usableForwardAccelerationMps2 = usable(
+        q.capability.maxForwardAccelerationMps2,
+        q.linearFeedbackReserveMps2
+    );
+    witness.usableAngularAccelerationRadPerSec2 = usable(
+        q.capability.maxAngularAccelerationRadPerSec2,
+        q.angularFeedbackReserveRadPerSec2
+    );
+    witness.usableAngularSpeedRadPerSec =
+        std::max(0.0, q.capability.maxAngularSpeedRadPerSec);
+
+    const double deltaSpeed =
+        glm::length(witness.requestedDeltaVelocityMapMetersPerSecond);
+    witness.requiredAttitudeChangeRad = requiredAttitudeChange(
+        forward,
+        witness.requestedDeltaVelocityMapMetersPerSecond
+    );
+
+    if (deltaSpeed > kEpsilon &&
+        witness.usableForwardAccelerationMps2 <= kEpsilon)
+    {
+        witness.reason =
+            Compiler::InfeasibilityReason::TranslationAuthorityUnavailable;
+        return witness;
+    }
+
+    if (witness.requiredAttitudeChangeRad > kAngleEpsilon &&
+        (witness.usableAngularAccelerationRadPerSec2 <= kEpsilon ||
+         witness.usableAngularSpeedRadPerSec <= kEpsilon))
+    {
+        witness.reason =
+            Compiler::InfeasibilityReason::AttitudeAuthorityUnavailable;
+        return witness;
+    }
+
+    if (witness.requiredAttitudeChangeRad > kAngleEpsilon)
+    {
+        witness.minimumAttitudeSeconds = std::max(
+            1.875 * witness.requiredAttitudeChangeRad /
+                witness.usableAngularSpeedRadPerSec,
+            std::sqrt(
+                6.0 * witness.requiredAttitudeChangeRad /
+                witness.usableAngularAccelerationRadPerSec2
+            )
+        ) + q.controlResponseReserveSeconds;
+    }
+
+    if (deltaSpeed > kEpsilon)
+    {
+        const double rawBurnSeconds =
+            deltaSpeed / witness.usableForwardAccelerationMps2;
+        const double burnRampSeconds = std::clamp(
+            rawBurnSeconds * q.policy.burnRampFractionOfRawBurn,
+            q.policy.burnRampMinimumSeconds,
+            q.policy.burnRampMaximumSeconds
+        );
+        witness.minimumBurnSeconds =
+            rawBurnSeconds + 0.5 * burnRampSeconds;
+    }
+
+    witness.minimumProgramSeconds =
+        witness.minimumAttitudeSeconds +
+        q.policy.minimumPrimitiveSeconds;
+
+    witness.reason =
+        witness.availableProgramSeconds <=
+                witness.minimumProgramSeconds + kEpsilon
+            ? Compiler::InfeasibilityReason::ProgramHorizonTooShort
+            : Compiler::InfeasibilityReason::NumericalFailure;
+    return witness;
+}
+
 bool bodyAxisFeasible(
     const glm::dvec3& acceleration,
     const glm::dvec3& forward,
@@ -380,12 +480,8 @@ bool compileLeadRotateMainBurn(
     const double angularSpeedAvailable =
         std::max(0.0, q.capability.maxAngularSpeedRadPerSec);
 
-    if (forwardAvailable <= kEpsilon ||
-        angularAccelerationAvailable <= kEpsilon ||
-        angularSpeedAvailable <= kEpsilon)
-    {
+    if (forwardAvailable <= kEpsilon)
         return false;
-    }
 
     const glm::dvec3 thrustDirection =
         deltaVelocity / deltaSpeed;
@@ -396,6 +492,13 @@ bool compileLeadRotateMainBurn(
         1.0
     );
     const double angle = std::acos(cosAngle);
+
+    if (angle > kAngleEpsilon &&
+        (angularAccelerationAvailable <= kEpsilon ||
+         angularSpeedAvailable <= kEpsilon))
+    {
+        return false;
+    }
 
     glm::dvec3 axis =
         glm::cross(forward, thrustDirection);
@@ -611,11 +714,19 @@ OrdinaryPhysicalManeuverCompiler::compile(
     Result result;
 
     if (!validQuery(query))
+    {
+        result.infeasibility.reason =
+            InfeasibilityReason::InvalidQuery;
         return result;
+    }
 
     if (query.controlLaw != LocalFlightControlLaw::Newtonian)
     {
         result.status = Status::UnsupportedControlLaw;
+        result.infeasibility.reason =
+            InfeasibilityReason::UnsupportedControlLaw;
+        result.infeasibility.availableProgramSeconds =
+            query.maximumProgramSeconds;
         return result;
     }
 
@@ -630,6 +741,24 @@ OrdinaryPhysicalManeuverCompiler::compile(
             right,
             up))
     {
+        result.infeasibility.reason =
+            InfeasibilityReason::InvalidBodyFrame;
+        result.infeasibility.availableProgramSeconds =
+            query.maximumProgramSeconds;
+        return result;
+    }
+
+    const double initialAngularSpeed =
+        glm::length(query.state.angularVelocityMapRadPerSecond);
+    if (initialAngularSpeed > kAngleEpsilon)
+    {
+        result.status = Status::NoPhysicalCandidate;
+        result.infeasibility.reason =
+            InfeasibilityReason::InitialAngularStateUnsupported;
+        result.infeasibility.initialAngularSpeedRadPerSec =
+            initialAngularSpeed;
+        result.infeasibility.availableProgramSeconds =
+            query.maximumProgramSeconds;
         return result;
     }
 
@@ -687,6 +816,10 @@ OrdinaryPhysicalManeuverCompiler::compile(
         result.candidateCount > 0
             ? Status::Compiled
             : Status::NoPhysicalCandidate;
+
+    if (result.status == Status::NoPhysicalCandidate)
+        result.infeasibility = assessInfeasibility(query, forward);
+
     return result;
 }
 

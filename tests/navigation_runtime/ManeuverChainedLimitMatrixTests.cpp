@@ -1374,6 +1374,16 @@ void testInsufficientTurnRoomRejectsBeforeAccept()
         result.candidateCount == 0,
         "insufficient turn room reached candidate output"
     );
+    require(
+        result.infeasibility.reason ==
+            Compiler::InfeasibilityReason::ProgramHorizonTooShort,
+        "insufficient turn room did not return a retryable horizon witness"
+    );
+    require(
+        result.infeasibility.minimumProgramSeconds >
+            result.infeasibility.availableProgramSeconds,
+        "insufficient-turn witness does not prove the horizon shortfall"
+    );
 
     std::cout
         << "[LIMIT] case=insufficient_turn_room"

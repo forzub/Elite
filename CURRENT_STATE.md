@@ -1,5 +1,32 @@
 # CURRENT STATE
 
+## 2026-09-23 — direct physical-authoring replacement authorized
+
+Status: **M3/M4 VERTICAL REPLACEMENT STARTED**
+
+The migration no longer treats preservation of the translation-first physical
+authoring block as a goal. Scenario I/O already has its explicit boundary; the
+next vertical slice may delete or bypass legacy trajectory/program construction
+where it conflicts with physical truth.
+
+The first replacement seam is the physical compiler result. It must return
+either bounded vehicle/control-law candidates or a typed
+`InfeasibilityWitness` containing the limiting constraint and measured timing/
+authority bounds. A failed attempt is coordinator feedback, not navigation
+shutdown and not permission to publish an infeasible accepted program.
+
+The candidate now implements that witness for invalid query/frame/law, missing
+translation or attitude authority, insufficient horizon and numerical failure.
+It also fails closed when initial angular velocity is non-zero because the
+current candidate families do not yet propagate that state consistently; the
+old behavior silently emitted fixed-attitude samples from a rotating state.
+Already-aligned main-engine burns no longer require irrelevant angular
+authority. Focused C++ validation is still required on MinGW64.
+
+The old `TrajectoryGenerator -> attitude fit -> actuator annotation` chain may
+temporarily remain for regression evidence and geometric-corridor extraction,
+but it is not the target author of `AcceptedManeuverProgram`.
+
 ## 2026-09-23 — objective negotiation and persistent no-solution behavior
 
 Status: **ARCHITECTURE CONTRACT CORRECTED / M2 CODE GATE RECORDED**

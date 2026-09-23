@@ -1,5 +1,20 @@
 # PROJECT STATE
 
+## 2026-09-23 — M2 slice 1 first target compile failure
+
+The first target-machine validation of the scenario-I/O split did not reach
+runtime behavior. Architecture, nominal Stage-1 and follower component gates
+passed; compilation then failed because `normalizedOr()` and
+`basisFromForwardUp()` were accidentally moved into the private
+`NavigationScenarioIo.cpp` implementation while
+`NavigationScenarioRuntime.cpp` still used them.
+
+The correction moves those pure shared helpers to
+`NavigationScenarioMath.h` and includes that header from both owners. This
+preserves the intended I/O boundary while restoring the runtime dependency
+explicitly. M2 slice 1 remains pending target compile/link/E2E evidence.
+
+
 ## 2026-09-23 — migration gate M1 closed, M2 opened
 
 Target evidence accepts the canonical NavLocal/System frame boundary and the

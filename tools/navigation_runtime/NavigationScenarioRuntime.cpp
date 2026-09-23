@@ -1,4 +1,5 @@
 #include "NavigationScenarioRuntime.h"
+#include "NavigationScenarioMath.h"
 
 #include "src/game/navigation/NominalRoutePlanner.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"

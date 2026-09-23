@@ -1,5 +1,32 @@
 # CURRENT STATE
 
+## 2026-09-23 — M2 slice 1 target compile defect diagnosed and corrected
+
+Status: **M2 SLICE 1 CORRECTION IMPLEMENTED — TARGET RETEST REQUIRED**
+
+The first MinGW64 target gate after extracting scenario I/O passed the
+architecture contract, Stage-1 nominal-route test and follower component test,
+then failed while compiling both `navigation_runtime_pipeline_tests` and
+`navigation_runtime_viewer`.
+
+The compile failures were all unresolved `normalizedOr()` calls plus one
+unresolved `basisFromForwardUp()` call in
+`NavigationScenarioRuntime.cpp`. Root cause: commit
+`104544f8864e8ae26a7e668ceec72f5f08566d57` moved those two pure math helpers
+together with the JSON parser into `NavigationScenarioIo.cpp`'s anonymous
+namespace. Scenario I/O still compiled, but runtime calculation code could no
+longer see helpers it continued to use.
+
+Correction: `NavigationScenarioMath.h` now owns the two shared pure helpers.
+Both scenario I/O and runtime composition include that header, and the private
+duplicate was removed from `NavigationScenarioIo.cpp`. No route generation,
+maneuver timing, Follower behavior, physics, pilot policy, risk semantics or
+navigation geometry changed.
+
+The same MinGW64 target gate must now be rerun. M2 slice 1 remains unaccepted
+until compile/link and the required runtime evidence are observed.
+
+
 ## 2026-09-23 — M1 accepted; M2 composition-root split activated
 
 Status: **M1 ACCEPTED / M2 SLICE 1 IMPLEMENTED — TARGET BUILD REQUIRED**

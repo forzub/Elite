@@ -1,4 +1,5 @@
 #include "NavigationScenarioIo.h"
+#include "NavigationScenarioMath.h"
 
 #include <fstream>
 #include <stdexcept>
@@ -49,43 +50,6 @@ glm::dvec3 readVec3Value(
         j.at(1).get<double>(),
         j.at(2).get<double>()
     };
-}
-
-glm::dvec3 normalizedOr(
-    const glm::dvec3& value,
-    const glm::dvec3& fallback
-)
-{
-    const double length = glm::length(value);
-    if (!(length > 1.0e-9))
-        return fallback;
-    return value / length;
-}
-
-Basis basisFromForwardUp(
-    const glm::dvec3& forwardInput,
-    const glm::dvec3& upInput
-)
-{
-    const glm::dvec3 forward =
-        normalizedOr(forwardInput, {1.0, 0.0, 0.0});
-
-    glm::dvec3 up =
-        upInput - forward * glm::dot(upInput, forward);
-
-    if (glm::length(up) <= 1.0e-9)
-    {
-        up = {0.0, 1.0, 0.0};
-        if (std::abs(glm::dot(up, forward)) > 0.92)
-            up = {0.0, 0.0, 1.0};
-        up -= forward * glm::dot(up, forward);
-    }
-
-    up = glm::normalize(up);
-    const glm::dvec3 right =
-        glm::normalize(glm::cross(forward, up));
-    up = glm::normalize(glm::cross(right, forward));
-    return {forward, right, up};
 }
 
 DynamicObstacleDefinition parseDynamicObstacle(

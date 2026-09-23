@@ -2,7 +2,7 @@
 
 Date: 2026-09-23
 
-Status: **M1 ACCEPTED / M2 SLICE 1 IMPLEMENTED — TARGET EVIDENCE REQUIRED**
+Status: **M1 ACCEPTED / M2 SLICE 1 COMPILE FIX IMPLEMENTED — TARGET RETEST REQUIRED**
 
 The target emitted the required frame-equivalence marker after both coordinate
 fixtures traversed all 91 storage pages. M1 is closed.
@@ -27,6 +27,21 @@ Scenario parsing/tool file I/O has been split out of the 3849-line
 
 No control tuning, timeout relaxation, portal/octree work or high-speed physics
 repair belongs in this slice.
+
+
+## First target result and correction
+
+The first MinGW64 gate reached the viewer/runtime build, then failed to compile
+`NavigationScenarioRuntime.cpp` because `normalizedOr()` and
+`basisFromForwardUp()` had been moved with the JSON parser into
+`NavigationScenarioIo.cpp`'s private anonymous namespace.
+
+This is an M2 ownership/refactor defect, not a navigation-behavior failure.
+The correction introduces shared pure `NavigationScenarioMath.h`, used by both
+runtime and scenario I/O. The parser no longer privately owns math still needed
+by runtime. No flight semantics changed.
+
+The next action is to rerun the unchanged target gate below.
 
 ## Completed local gates
 

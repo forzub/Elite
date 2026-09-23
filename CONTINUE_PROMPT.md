@@ -45,11 +45,17 @@ Do not tune the timeout or weaken the assertion.
 
 ## Immediate work
 
-Validate the implemented M2 slice 1 from `CURRENT_TASK.md` on MinGW64. Scenario
-JSON/file-input ownership now lives in `NavigationScenarioIo.{h,cpp}` and the
+The first M2 target gate found a compile-only extraction defect before runtime
+execution: `normalizedOr()` and `basisFromForwardUp()` had moved into
+`NavigationScenarioIo.cpp`'s anonymous namespace even though runtime still
+uses them. The correction introduces shared pure
+`NavigationScenarioMath.h`; scenario I/O and runtime both include it.
+
+Rerun the unchanged target command in `CURRENT_TASK.md`. Scenario
+JSON/file-input ownership remains in `NavigationScenarioIo.{h,cpp}` and the
 `EliteNavigationScenarioToolIo` CMake target. `NavigationScenarioRuntime.cpp`
-no longer owns parsing or includes nlohmann JSON. Keep `ScenarioDefinition` as
-the immutable boundary value.
+must still own no parsing and include no nlohmann JSON. Keep
+`ScenarioDefinition` as the immutable boundary value.
 
 This is a behavior-preserving split. Do not change routing, maneuver timing,
 Follower gains, physics, risk semantics or navigation geometry.

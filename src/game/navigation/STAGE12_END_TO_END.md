@@ -9584,3 +9584,18 @@ and the input stream. Runtime, viewer and E2E cross that boundary only through
 the immutable scenario value and the explicit loader header. CMake links the
 parser as `EliteNavigationScenarioToolIo`; purity checks forbid moving parser
 ownership back into the runtime monolith. No flight calculation changed.
+## 2026-09-23 — M2 scenario-I/O split first target compile correction
+
+First MinGW64 validation of M2 slice 1 passed the architecture contract,
+Stage-1 nominal-route test and follower component test, then failed compiling
+`NavigationScenarioRuntime.cpp` for both pipeline tests and viewer.
+
+All compile errors had one extraction root cause: the pure helpers
+`normalizedOr()` and `basisFromForwardUp()` were moved with JSON parsing into
+`NavigationScenarioIo.cpp`'s anonymous namespace, while runtime composition
+still referenced them.
+
+The correction adds shared header-only `NavigationScenarioMath.h`, includes it
+from runtime and scenario I/O, and removes the I/O-private duplicate. No
+navigation behavior, timing, control law, physical acceptance or test tolerance
+changed. M2 slice 1 requires the same target gate again before acceptance.

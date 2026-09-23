@@ -1,10 +1,46 @@
-# CURRENT TASK — bounded physical maneuver search coordinator
+# CURRENT TASK — observer-only visualization of the replacement path
 
 Date: 2026-09-23
 
-Status: **TARGET COMPILE PASS — FEASIBLE-HORIZON FIXTURE RETEST REQUIRED**
+Status: **COORDINATOR ACCEPTED — VISUAL DATAFLOW NEXT**
 
-## First target result
+## Accepted coordinator evidence
+
+Exact commit `b506397ca30f223ee6cb29597c8673e0815626d1` passed
+`physical_maneuver_search_coordinator` on MinGW64 (1/1, 0.04 s). Combined with
+the earlier exact `9af337c` physical compiler/limit pass, the pure compiler and
+bounded-search contracts are accepted.
+
+This is not acceptance of the integrated navigation system.
+
+## Active visual slice
+
+Connect the new physical search to `tools/navigation_runtime` in observer-only
+mode. It must not steer the ship or publish `AcceptedManeuverProgram` yet.
+
+Required viewer layers:
+
+- legacy coarse route and legacy Ruckig reference, clearly labeled;
+- ranked physical alternatives and their provenance;
+- rejected alternatives with typed witness/reason;
+- selected unproved physical candidate samples;
+- candidate attitude axis and planned acceleration/thrust phase;
+- later, proved swept tunnel, accepted reference and actual path as distinct
+  products.
+
+The observer adapter owns conversion from scenario/vehicle/runtime values into
+the pure coordinator request. The coordinator and compiler remain free of
+viewer, JSON, filesystem and OpenGL dependencies. All behavior-affecting
+observer inputs must come through explicit policy/API values.
+
+Exit gate:
+
+- viewer builds and displays the new path independently of legacy execution;
+- an unproved candidate cannot be mistaken for a proved or accepted program;
+- visual inspection is performed on straight, corner and high-speed Newtonian
+  cases before the replacement is allowed to control physics.
+
+## Historical first target result
 
 Exact commit `3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` configured and
 compiled all three targets. The existing two tests passed; the new coordinator
@@ -58,7 +94,7 @@ Output states:
 
 No state accepts a maneuver, changes ship capability or disables navigation.
 
-## Focused evidence required
+## Accepted focused evidence
 
 Build and run:
 
@@ -80,14 +116,9 @@ Required behavior:
 - shared control-law/state blockers do not waste the remaining frontier;
 - stale objective or frontier revisions fail before physical compilation.
 
-## Next slice after acceptance
+## Work after visual acceptance
 
 Add literal actuator phases and consistent rigid-body propagation, including
 non-zero initial angular velocity. Then introduce continuous proof over the
 exact candidate. Only after both layers may the replacement publish an
 `AcceptedManeuverProgram` and displace the legacy translation-first author.
-
-Add a read-only diagnostic snapshot after coordinator acceptance so the viewer
-can distinguish ranked alternatives, rejection reasons, unproved physical
-candidates, proved tunnel, accepted reference and actual motion. Do not render
-an unproved candidate as a valid flight tunnel.

@@ -1,8 +1,28 @@
 # CURRENT STATE
 
+## 2026-09-23 — coordinator accepted; visual observer is the next mandatory gate
+
+Status: **BOUNDED COORDINATOR TARGET PASS / SYSTEM QUALITY NOT YET CLAIMED**
+
+Exact commit `b506397ca30f223ee6cb29597c8673e0815626d1` built and passed
+`physical_maneuver_search_coordinator` on MinGW64 (1/1, 0.04 s). The corrected
+6.0 s alternative proves that bounded search advances past an impossible
+horizon to a physically compilable candidate.
+
+This accepts only the coordinator contract. It does not validate live route
+quality, collision behavior, ship motion or viewer integration. The existing
+viewer still shows the legacy translation-first execution path.
+
+Because prior isolated tests were green while integrated visual behavior was
+broken, the next mandatory gate is observer-only visualization of the new path:
+ranked alternatives, typed rejections, physical candidate samples, attitude and
+thrust phases must be rendered separately from legacy trajectory, proved tunnel,
+accepted program and actual motion. Further acceptance/execution work is paused
+until this visual seam exists and is inspected.
+
 ## 2026-09-23 — coordinator target fixture corrected; visual gate defined
 
-Status: **TARGET COMPILE PASS / TEST FIXTURE CORRECTION PENDING RETEST**
+Status: **SUPERSEDED — CORRECTION PASSED AT `b506397c`**
 
 Exact commit `3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` configured and
 compiled the new coordinator target. Existing physical compiler and chained

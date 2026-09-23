@@ -1,5 +1,17 @@
 # PROJECT STATE
 
+## 2026-09-23 — visual integration promoted ahead of deeper planner work
+
+The corrected coordinator fixture passed on exact commit
+`b506397ca30f223ee6cb29597c8673e0815626d1` (1/1, 0.04 s).
+
+Project policy now treats isolated green tests as necessary but insufficient.
+Before literal execution or accepted-program publication, the replacement path
+must be visible in observer-only mode beside the legacy path. Candidate,
+rejected, proved, accepted and actual motion receive distinct trace products and
+rendering. This is intended to expose integration-scale nonsense early, where a
+unit test cannot politely hide it.
+
 ## 2026-09-23 — coordinator failure is a test-physics error, not search failure
 
 Commit `3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` compiled on

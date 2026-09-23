@@ -2094,8 +2094,8 @@ Exit gate:
 
 ### M4 — Activate a short-horizon physical maneuver compiler
 
-Implementation status (2026-09-23): **TYPED WITNESS ACCEPTED ON TARGET;
-BOUNDED COORDINATOR COMPILES; CORRECTED FIXTURE AWAITS RETEST**.
+Implementation status (2026-09-23): **TYPED WITNESS AND BOUNDED COORDINATOR
+ACCEPTED ON TARGET; OBSERVER-ONLY VIEWER INTEGRATION IS THE NEXT BLOCKING GATE**.
 
 The physical compiler result is a sum-type in semantics: either one or more
 bounded candidates, or a typed quantitative `InfeasibilityWitness`. The witness
@@ -2135,6 +2135,15 @@ First coordinator target result: commit
 incorrectly labeled a 4.0 s horizon feasible for a 135-degree rotation requiring
 about 4.60 s before burn. The coordinator correctly exhausted both choices.
 The test horizon is corrected to 6.0 s; physical constraints are unchanged.
+
+Corrected target evidence: exact commit
+`b506397ca30f223ee6cb29597c8673e0815626d1` passed
+`physical_maneuver_search_coordinator` (1/1, 0.04 s).
+
+This does not authorize live execution. Experience with the earlier path showed
+that isolated tests can remain green while assembled visual behavior is broken.
+Observer-only integration is therefore a blocking M4 sub-gate before deeper
+acceptance/execution work.
 
 Visualization checkpoint:
 

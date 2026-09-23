@@ -4,6 +4,21 @@
 **Started:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md`
 
+## 2026-09-23 — coordinator target PASS; visual inspection becomes blocking
+
+Exact commit `b506397ca30f223ee6cb29597c8673e0815626d1` passed the corrected
+`physical_maneuver_search_coordinator` test (1/1, 0.04 s).
+
+This closes the pure bounded-search gate only. It does not establish integrated
+navigation quality. The legacy viewer cannot validate the new path because the
+new coordinator/candidates are not yet in its trace.
+
+The next Stage-12 gate is therefore observer-only integration. The trace and
+viewer must distinguish legacy route/reference, ranked and rejected physical
+alternatives, selected unproved candidate, future proved tunnel, accepted
+program and actual flight. No replacement candidate may control physics before
+straight, corner and high-speed cases have been visually inspected.
+
 ## 2026-09-23 — coordinator target compile passes; fixture horizon was impossible
 
 Exact commit `3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` configured and

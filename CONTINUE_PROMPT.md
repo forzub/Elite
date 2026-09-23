@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — validate and extend bounded physical maneuver search
+# CONTINUE PROMPT — visualize the replacement physical path before execution
 
 Continue in repository `forzub/Elite`, branch `main`.
 
@@ -35,7 +35,33 @@ The typed physical rejection contract is accepted. Do not reopen it by
 returning generic failure, inventing omnidirectional authority or allowing main
 burn before its required Newtonian attitude.
 
-## Active candidate
+Exact commit `b506397ca30f223ee6cb29597c8673e0815626d1` also passed the
+corrected `physical_maneuver_search_coordinator` test (1/1, 0.04 s).
+
+These are unit/contract results, not integrated-system acceptance.
+
+## Immediate work
+
+Do not continue deeper into accepted-program execution yet. First connect the
+new coordinator/compiler output to `tools/navigation_runtime` as a read-only
+observer product and render it in the viewer beside the legacy path.
+
+The viewer must distinguish:
+
+- legacy route and legacy Ruckig reference;
+- ranked/rejected alternatives and typed witness reasons;
+- selected unproved physical candidate;
+- attitude and thrust/acceleration phases;
+- future proved tunnel, accepted reference and actual motion.
+
+The observer adapter may depend on tool/runtime presentation types. The pure
+coordinator/compiler may not depend on trace, viewer, JSON, filesystem or
+OpenGL. Observer mode must not steer physics or construct an accepted program.
+
+Require visual inspection of straight, corner and high-speed Newtonian scenes
+before enabling the replacement path to control the ship.
+
+## Accepted coordinator design
 
 `PhysicalManeuverSearchCoordinator` consumes a revisioned ranked frontier of
 explicit corridor/terminal/speed/arrival-time alternatives. It owns a bounded
@@ -46,9 +72,9 @@ First target run of commit
 `3492ca3ba314dcf250c5d3ebc03c6e8cc0c3dce6` compiled the new test.
 It exposed a fixture error: a 135-degree rotation needs about 4.60 s before
 burn, but the supposedly feasible alternative allowed only 4.0 s. The corrected
-fixture uses 6.0 s. Retest this correction without changing production physics.
+fixture uses 6.0 s and passed at `b506397c`.
 
-Validate its focused test first. Required semantics:
+Accepted semantics:
 
 - typed rejection advances to later ranked alternatives;
 - `SearchPending` resumes without repeated work;
@@ -57,15 +83,9 @@ Validate its focused test first. Required semantics:
 - stale objective or frontier revision fails before physical work; the two
   revisions remain independent.
 
-After target acceptance, implement literal actuator phases and consistent
-rigid-body propagation, including initial angular velocity. Continuous
-oriented-hull/corridor proof remains mandatory before converting any candidate
-to `AcceptedManeuverProgram`.
-
-Then add a read-only viewer snapshot. It must render ranked/rejected candidates,
-unproved physical candidates, proved tunnel, accepted reference and actual
-motion as visibly different layers. Until runtime integration, the existing
-viewer shows the legacy path and is not evidence for the replacement.
+The read-only viewer snapshot is now the immediate gate. Only after visual
+inspection may work proceed to literal actuator phases, consistent rigid-body
+propagation and continuous oriented-hull/corridor proof.
 
 ## Non-negotiable model
 

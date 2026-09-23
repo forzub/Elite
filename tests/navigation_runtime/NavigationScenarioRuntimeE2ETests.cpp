@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -68,6 +69,50 @@ void printDiagnostics(
 {
     for (const auto& line : result.diagnostics)
         std::cout << prefix << line << '\n';
+}
+
+void requireHonestPhysicalObserver(
+    const ScenarioRunResult& result,
+    bool expectCandidate
+)
+{
+    const auto& observer = result.trace.physicalSearch;
+    require(observer.available, "physical observer trace was not published");
+    require(
+        observer.objectiveRemainsActive,
+        "physical-search failure incorrectly cancelled the objective"
+    );
+    require(
+        !observer.alternatives.empty(),
+        "physical observer published no ranked alternatives"
+    );
+    bool sawAttempt = false;
+    for (const auto& alternative : observer.alternatives)
+        sawAttempt = sawAttempt || alternative.attempted;
+    require(sawAttempt, "physical observer did not expose any attempt");
+
+    if (expectCandidate)
+    {
+        require(
+            observer.coordinatorStatus == "candidate_found_unproved",
+            "Newtonian physical observer found no unproved candidate"
+        );
+        require(
+            !observer.candidates.empty(),
+            "candidate status was published without candidate samples"
+        );
+    }
+    for (const auto& candidate : observer.candidates)
+    {
+        require(
+            candidate.requiresContinuousProof,
+            "B5 observer candidate was mislabeled as geometry-proved"
+        );
+        require(
+            candidate.samples.size() >= 2,
+            "physical observer candidate has no renderable time history"
+        );
+    }
 }
 
 void enableRuntimeDiagnostics(
@@ -169,6 +214,27 @@ void testNonIdentityMovingRotatingFramePreservesNavLocalExecution()
 
     printDiagnostics("[E2E-IDENTITY-FRAME] ", identityRun);
     printDiagnostics("[E2E-NON-IDENTITY-FRAME] ", transformedRun);
+
+    requireHonestPhysicalObserver(identityRun, false);
+    require(
+        identityRun.trace.physicalSearch.coordinatorStatus ==
+            "shared_state_blocked",
+        "Assisted observer did not expose unsupported physical compiler law"
+    );
+    const std::filesystem::path observerRoundTripPath =
+        std::filesystem::temp_directory_path() /
+        "elite_nav_physical_observer_roundtrip.json";
+    saveTraceJson(identityRun.trace, observerRoundTripPath.string());
+    const TraceDocument observerRoundTrip =
+        loadTraceJson(observerRoundTripPath.string());
+    std::filesystem::remove(observerRoundTripPath);
+    require(
+        observerRoundTrip.physicalSearch.coordinatorStatus ==
+            identityRun.trace.physicalSearch.coordinatorStatus &&
+        observerRoundTrip.physicalSearch.alternatives.size() ==
+            identityRun.trace.physicalSearch.alternatives.size(),
+        "physical observer trace JSON did not round-trip"
+    );
 
     require(
         identityRun.success == transformedRun.success,
@@ -353,6 +419,8 @@ void testHighSpeedUsesMonotonicClockAndMustStillFinish()
         executeCalculatedRoute(fixtureScenario(), settings, planned.retainedRoute, fixtureVehicle());
 
     printDiagnostics("[E2E-HIGH-SPEED] ", executed);
+
+    requireHonestPhysicalObserver(executed, true);
 
     require(
         hasDiagnostic(executed, "REFERENCE CLOCK: MONOTONIC"),

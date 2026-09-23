@@ -1,5 +1,22 @@
 # PROJECT STATE
 
+## 2026-09-23 — observer-only physical search reaches trace and viewer
+
+The first integration-scale inspection seam is implemented. Runtime composition
+adapts scenario state and canonical ship capability into the already accepted
+pure coordinator, then copies results into a presentation DTO. Ranked horizon
+alternatives retain provenance and typed infeasibility; candidate samples retain
+the mandatory continuous-proof flag.
+
+The DTO is serialized in navigation trace JSON and rendered independently of
+the legacy reference, accepted-program corridor and actual flight. Viewer colors
+and its explicit `НЕ ПРИНЯТО` title prevent an unproved B5 candidate from being
+presented as executable navigation. Observer code has no steering authority.
+
+Target compilation and visual inspection remain pending. The local environment
+has neither CMake nor GLM, so this entry claims implemented source/dataflow, not
+a compiled or visually accepted result.
+
 ## 2026-09-23 — visual integration promoted ahead of deeper planner work
 
 The corrected coordinator fixture passed on exact commit

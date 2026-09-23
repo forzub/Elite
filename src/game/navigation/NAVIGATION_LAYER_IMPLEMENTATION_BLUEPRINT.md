@@ -9,6 +9,15 @@ deleted or bypassed rather than preserved. After the accepted scenario-I/O
 boundary, work proceeds as an M3/M4 vertical replacement. The translation-first
 chain is regression evidence, not a compatibility contract.
 
+Active inspection seam (2026-09-23): the first B4/B5 observer-only adapter is
+implemented in `tools/navigation_runtime`. It exposes ranked horizon
+alternatives, typed physical rejection witnesses and sampled unproved candidate
+families through a presentation-only trace DTO. The viewer renders those
+products separately and labels them not accepted. This seam has zero execution
+authority and does not satisfy B6 continuous proof, B8 acceptance or literal
+actuator execution. Target build and visual inspection remain required before
+the migration proceeds beyond this gate.
+
 Scope: static and dynamic 3D navigation for one to many thousands of ships,
 drones, missiles and other autonomous actors.
 
@@ -2356,6 +2365,12 @@ The next commits should be small and ordered:
 
 This ordering deliberately proves one truthful ship maneuver before multiplying
 the same mistake across ten thousand actors.
+
+Current position in this sequence: the compiler and bounded coordinator focused
+contracts are target-accepted, and their observer-only viewer seam is a
+target-unverified candidate. The next action is build plus visual inspection;
+the next code action after that is continuous oriented-hull proof of the exact
+displayed candidate, not execution of an unproved curve.
 
 ---
 

@@ -62,6 +62,8 @@ target_compile_features(
 # Stage 2: execute the already calculated Stage-1 route.
 # This target must never search or rebuild the nominal route.
 add_library(EliteNavigationExecutionToolCore STATIC
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/PhysicalManeuverSearchCoordinator.cpp"
     "${ELITE_SOURCE_ROOT}/src/world/navigation/TrajectoryGenerator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"

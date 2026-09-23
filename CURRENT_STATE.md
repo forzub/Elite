@@ -1,5 +1,29 @@
 # CURRENT STATE
 
+## 2026-09-23 — physical observer candidate implemented; target visual gate pending
+
+Status: **OBSERVER DATAFLOW IMPLEMENTED / TARGET BUILD AND VISUAL INSPECTION REQUIRED**
+
+`tools/navigation_runtime` now invokes the pure physical-search coordinator
+after the retained route has produced its execution guide. The adapter passes
+explicit measured state, canonical vehicle capability, control law, feedback
+reserves, compiler shaping policy and four ranked arrival-time horizons.
+
+The result is copied into a presentation-only trace DTO containing alternative
+provenance, typed rejection reason/lower bound and sampled physical candidates.
+Every candidate remains marked `requiresContinuousProof`; the adapter has no
+path to `AcceptedManeuverProgram`, Follower or physics. JSON round-trip coverage
+and E2E assertions lock that distinction.
+
+The viewer now renders rejected alternatives in red and unproved physical
+candidates separately in cyan/yellow, including body-forward and planned
+acceleration vectors. Its title says `PHYS-OBS=... (НЕ ПРИНЯТО)`. Legacy Ruckig,
+accepted reference and actual motion remain independent layers.
+
+This checkout cannot compile C++ because CMake/GLM are absent. Target build,
+focused tests and visual inspection of straight/corner/high-speed Newtonian
+scenes are the active gate. No execution authority has moved.
+
 ## 2026-09-23 — coordinator accepted; visual observer is the next mandatory gate
 
 Status: **BOUNDED COORDINATOR TARGET PASS / SYSTEM QUALITY NOT YET CLAIMED**

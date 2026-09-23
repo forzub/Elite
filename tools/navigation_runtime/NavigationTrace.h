@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -102,6 +103,54 @@ struct TraceStaticObstacle
     double capsuleHalfLengthMeters = 0.0;
 };
 
+// Read-only presentation product for the B4/B5 physical-search seam.  These
+// values are diagnostics, never an AcceptedManeuverProgram and never input to
+// ship execution.
+struct TracePhysicalSearchAlternative
+{
+    std::size_t index = 0;
+    std::uint64_t corridorAlternativeId = 0;
+    std::uint64_t terminalAlternativeId = 0;
+    std::uint64_t speedScheduleAlternativeId = 0;
+    std::uint64_t arrivalTimeAlternativeId = 0;
+    glm::dvec3 targetPositionMapMeters {0.0};
+    glm::dvec3 desiredVelocityMapMps {0.0};
+    double maximumProgramSeconds = 0.0;
+    bool attempted = false;
+    bool selectedAlternative = false;
+    std::string compilerStatus = "not_attempted";
+    std::string infeasibilityReason = "none";
+    double minimumProgramSeconds = 0.0;
+};
+
+struct TracePhysicalCandidateSample
+{
+    double timeOffsetSeconds = 0.0;
+    glm::dvec3 positionMapMeters {0.0};
+    glm::dvec3 velocityMapMps {0.0};
+    glm::dvec3 accelerationMapMps2 {0.0};
+    glm::dvec3 forwardMap {1.0, 0.0, 0.0};
+};
+
+struct TracePhysicalCandidate
+{
+    std::size_t alternativeIndex = 0;
+    std::string family;
+    bool requiresContinuousProof = true;
+    std::vector<TracePhysicalCandidateSample> samples;
+};
+
+struct TracePhysicalSearch
+{
+    bool available = false;
+    std::string coordinatorStatus = "not_run";
+    std::uint64_t objectiveRevision = 0;
+    std::uint64_t frontierRevision = 0;
+    bool objectiveRemainsActive = true;
+    std::vector<TracePhysicalSearchAlternative> alternatives;
+    std::vector<TracePhysicalCandidate> candidates;
+};
+
 struct TraceDocument
 {
     int version = 2;
@@ -121,6 +170,10 @@ struct TraceDocument
     // route and the full collision-checked Ruckig reference trajectory.
     std::vector<glm::dvec3> executionGuidePoints;
     std::vector<glm::dvec3> calculatedTrajectoryPoints;
+
+    // Observer-only B4/B5 result.  The viewer renders it separately from the
+    // legacy Ruckig curve and from any accepted/executed reference.
+    TracePhysicalSearch physicalSearch;
 
     std::vector<TraceStaticObstacle> staticObstacles;
     std::vector<TraceFrame> frames;

@@ -4,6 +4,26 @@
 **Started:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md`
 
+## 2026-09-23 — observer-only physical layer implemented for target inspection
+
+`tools/navigation_runtime` now has a read-only presentation seam for the pure
+physical coordinator. It constructs a bounded initial frontier from explicit
+state, capability, law, reserves and policy; only arrival/program horizon varies
+between the four ranked alternatives.
+
+`TracePhysicalSearch` stores provenance, attempted/selected state, compiler
+status, typed rejection reason, minimum required program time and sampled B5
+candidates. Trace JSON round-trips the product. E2E assertions require that the
+objective remains active and every candidate still requires continuous proof.
+
+The viewer draws failed alternatives red and unproved physical candidates
+cyan/yellow, with body-forward and feed-forward acceleration vectors. It also
+labels the layer `PHYS-OBS=... (НЕ ПРИНЯТО)`. Nothing in this seam constructs an
+accepted program or reaches Follower/physics.
+
+Target compilation and the straight/corner/high-speed visual pass are pending;
+the development container cannot run CMake or compile GLM-dependent C++.
+
 ## 2026-09-23 — coordinator target PASS; visual inspection becomes blocking
 
 Exact commit `b506397ca30f223ee6cb29597c8673e0815626d1` passed the corrected

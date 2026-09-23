@@ -2,7 +2,35 @@
 
 Date: 2026-09-23
 
-Status: **COORDINATOR ACCEPTED — VISUAL DATAFLOW NEXT**
+Status: **VISUAL DATAFLOW CANDIDATE READY — TARGET BUILD/INSPECTION NEXT**
+
+## Implemented observer candidate
+
+The runtime now builds one observer-only initial receding-horizon frontier from
+explicit API inputs. Four ranked alternatives vary arrival/program horizon;
+the coordinator exposes attempts, witnesses and any unproved physical candidate
+samples through `TracePhysicalSearch`.
+
+The trace JSON and viewer preserve four separate meanings:
+
+- legacy retained route/Ruckig reference;
+- rejected physical alternatives;
+- unproved B5 physical candidate set with attitude and acceleration vectors;
+- accepted reference/actual motion from the still-legacy execution chain.
+
+There is deliberately no B5-to-B8 conversion and no physical observer input to
+Follower or physics.
+
+## Active gate
+
+Build `navigation_runtime_pipeline_tests` and `navigation_runtime_viewer` on the
+MinGW target, run the pipeline and open the viewer. Inspect at least straight,
+corner and high-speed Newtonian starts. Confirm red rejection markers, separate
+cyan/yellow candidate curves/vectors, and the window-title marker
+`PHYS-OBS=... (НЕ ПРИНЯТО)`.
+
+The legacy high-speed terminal failure remains expected until the replacement
+path gains continuous proof and execution authority. Do not weaken that test.
 
 ## Accepted coordinator evidence
 
@@ -13,10 +41,11 @@ bounded-search contracts are accepted.
 
 This is not acceptance of the integrated navigation system.
 
-## Active visual slice
+## Implemented visual slice contract
 
-Connect the new physical search to `tools/navigation_runtime` in observer-only
-mode. It must not steer the ship or publish `AcceptedManeuverProgram` yet.
+The new physical search is connected to `tools/navigation_runtime` in
+observer-only mode. It does not steer the ship or publish
+`AcceptedManeuverProgram`.
 
 Required viewer layers:
 

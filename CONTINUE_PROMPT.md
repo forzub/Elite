@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — visualize the replacement physical path before execution
+# CONTINUE PROMPT — validate the observer, then prove the displayed candidate
 
 Continue in repository `forzub/Elite`, branch `main`.
 
@@ -40,11 +40,24 @@ corrected `physical_maneuver_search_coordinator` test (1/1, 0.04 s).
 
 These are unit/contract results, not integrated-system acceptance.
 
+## Implemented candidate
+
+`tools/navigation_runtime` now builds an observer-only physical frontier from
+explicit scenario/vehicle/runtime API values. `TracePhysicalSearch` records
+ranked alternatives, typed rejections and sampled physical candidates; trace
+JSON preserves it. The viewer draws rejection markers and unproved candidates,
+body-forward axes and acceleration vectors separately from legacy Ruckig,
+accepted reference and actual motion. Its title includes
+`PHYS-OBS=... (НЕ ПРИНЯТО)`.
+
+The adapter does not construct `AcceptedManeuverProgram` and does not influence
+Follower or physics. Every candidate remains `requiresContinuousProof=true`.
+
 ## Immediate work
 
-Do not continue deeper into accepted-program execution yet. First connect the
-new coordinator/compiler output to `tools/navigation_runtime` as a read-only
-observer product and render it in the viewer beside the legacy path.
+Do not continue into accepted-program execution yet. First build the candidate
+on MinGW, run the focused coordinator/compiler tests plus
+`navigation_runtime_pipeline`, and launch the viewer.
 
 The viewer must distinguish:
 
@@ -58,8 +71,15 @@ The observer adapter may depend on tool/runtime presentation types. The pure
 coordinator/compiler may not depend on trace, viewer, JSON, filesystem or
 OpenGL. Observer mode must not steer physics or construct an accepted program.
 
-Require visual inspection of straight, corner and high-speed Newtonian scenes
-before enabling the replacement path to control the ship.
+Inspect straight, corner and high-speed Newtonian scenes. Verify that rejected
+alternatives and unproved candidate curves/vectors are visible and cannot be
+confused with accepted or actual motion. The existing high-speed legacy failure
+must not be tuned away.
+
+After that visual gate passes, implement B6 continuous oriented-hull/corridor
+proof for the exact sampled candidate shown by the observer. Keep proof output
+separate from B5 and do not publish B8 acceptance until exact capability,
+resource and geometry checks all refer to the same maneuver history.
 
 ## Accepted coordinator design
 
@@ -83,9 +103,9 @@ Accepted semantics:
 - stale objective or frontier revision fails before physical work; the two
   revisions remain independent.
 
-The read-only viewer snapshot is now the immediate gate. Only after visual
-inspection may work proceed to literal actuator phases, consistent rigid-body
-propagation and continuous oriented-hull/corridor proof.
+The read-only viewer snapshot is implemented but not target-accepted. Only after
+visual inspection may work proceed to continuous oriented-hull/corridor proof;
+literal execution and accepted publication remain later gates.
 
 ## Non-negotiable model
 

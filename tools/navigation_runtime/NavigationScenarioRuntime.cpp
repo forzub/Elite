@@ -5,6 +5,7 @@
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
+#include "src/game/navigation/PhysicalManeuverSearchCoordinator.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/ManeuverProgramTimeline.h"
@@ -352,6 +353,79 @@ Law controlLaw(ControlMode mode)
         : Law::Assisted;
 }
 
+const char* compilerStatusName(
+    game::navigation::OrdinaryPhysicalManeuverCompiler::Status status
+)
+{
+    using Status =
+        game::navigation::OrdinaryPhysicalManeuverCompiler::Status;
+    switch (status)
+    {
+        case Status::Compiled: return "compiled";
+        case Status::NoPhysicalCandidate: return "no_physical_candidate";
+        case Status::UnsupportedControlLaw: return "unsupported_control_law";
+        case Status::InvalidInput:
+        default: return "invalid_input";
+    }
+}
+
+const char* infeasibilityReasonName(
+    game::navigation::OrdinaryPhysicalManeuverCompiler::InfeasibilityReason reason
+)
+{
+    using Reason = game::navigation::OrdinaryPhysicalManeuverCompiler::
+        InfeasibilityReason;
+    switch (reason)
+    {
+        case Reason::None: return "none";
+        case Reason::InvalidQuery: return "invalid_query";
+        case Reason::UnsupportedControlLaw: return "unsupported_control_law";
+        case Reason::InvalidBodyFrame: return "invalid_body_frame";
+        case Reason::InitialAngularStateUnsupported:
+            return "initial_angular_state_unsupported";
+        case Reason::TranslationAuthorityUnavailable:
+            return "translation_authority_unavailable";
+        case Reason::AttitudeAuthorityUnavailable:
+            return "attitude_authority_unavailable";
+        case Reason::ProgramHorizonTooShort:
+            return "program_horizon_too_short";
+        case Reason::NumericalFailure: return "numerical_failure";
+        default: return "unknown";
+    }
+}
+
+const char* coordinatorStatusName(
+    game::navigation::PhysicalManeuverSearchCoordinator::Status status
+)
+{
+    using Status =
+        game::navigation::PhysicalManeuverSearchCoordinator::Status;
+    switch (status)
+    {
+        case Status::CandidateFound: return "candidate_found_unproved";
+        case Status::SearchPending: return "search_pending";
+        case Status::FrontierExhausted: return "frontier_exhausted";
+        case Status::SharedStateBlocked: return "shared_state_blocked";
+        case Status::InvalidInput:
+        default: return "invalid_input";
+    }
+}
+
+const char* candidateFamilyName(
+    game::navigation::OrdinaryPhysicalManeuverCandidate::Family family
+)
+{
+    using Family = game::navigation::OrdinaryPhysicalManeuverCandidate::Family;
+    switch (family)
+    {
+        case Family::Coast: return "coast";
+        case Family::Trim: return "trim";
+        case Family::LeadRotateMainBurn: return "lead_rotate_main_burn";
+        case Family::Undefined:
+        default: return "undefined";
+    }
+}
+
 struct ResolvedRunKinematics
 {
     double startSpeedMps = 0.0;
@@ -359,6 +433,192 @@ struct ResolvedRunKinematics
     double planningSpeedMps = 0.0;
     glm::dvec3 startVelocityMapMps {0.0};
 };
+
+TracePhysicalSearch buildPhysicalObserverTrace(
+    const Scenario& scenario,
+    const ScenarioRunSettings& settings,
+    const ScenarioVehicleParameters& vehicle,
+    const ResolvedRunKinematics& kinematics,
+    const std::vector<glm::dvec3>& executionGuidePoints
+)
+{
+    using Coordinator =
+        game::navigation::PhysicalManeuverSearchCoordinator;
+    using Compiler = game::navigation::OrdinaryPhysicalManeuverCompiler;
+
+    TracePhysicalSearch trace;
+    if (!settings.physicalObserver.enabled)
+        return trace;
+
+    trace.available = true;
+    trace.objectiveRevision = scenario.goalRevision;
+    trace.frontierRevision = scenario.staticWorldRevision;
+
+    glm::dvec3 target = scenario.finish.position;
+    for (const glm::dvec3& point : executionGuidePoints)
+    {
+        if (glm::length(point - scenario.startPosition) > 1.0e-6)
+        {
+            target = point;
+            break;
+        }
+    }
+
+    glm::dvec3 desiredVelocity(0.0);
+    const glm::dvec3 targetDelta = target - scenario.startPosition;
+    if (glm::length(targetDelta) > 1.0e-9)
+    {
+        desiredVelocity =
+            glm::normalize(targetDelta) * kinematics.planningSpeedMps;
+    }
+
+    Coordinator::Request request;
+    request.frontier.objectiveRevision = scenario.goalRevision;
+    request.frontier.frontierRevision = scenario.staticWorldRevision;
+    request.frontier.alternativeCount =
+        settings.physicalObserver.horizonCount;
+    request.cursor.objectiveRevision = request.frontier.objectiveRevision;
+    request.cursor.frontierRevision = request.frontier.frontierRevision;
+    request.policy.maximumAttemptsPerAdvance =
+        settings.physicalObserver.maximumAttemptsPerAdvance;
+
+    Compiler::Query& query = request.commonPhysicalQuery;
+    query.controlLaw = controlLaw(settings.controlMode);
+    query.state.positionMapMeters = scenario.startPosition;
+    query.state.velocityMapMetersPerSecond =
+        kinematics.startVelocityMapMps;
+    query.state.forwardMap = scenario.startBasis.forward;
+    query.state.rightMap = scenario.startBasis.right;
+    query.state.upMap = scenario.startBasis.up;
+    query.state.angularVelocityMapRadPerSecond =
+        scenario.startBasis.right * scenario.startPitchRateRadPerSec +
+        scenario.startBasis.up * scenario.startYawRateRadPerSec +
+        scenario.startBasis.forward * scenario.startRollRateRadPerSec;
+
+    const auto capability = game::navigation::makeManeuverCapabilitySnapshot(
+        vehicle.physics,
+        vehicle.capabilityRevision
+    );
+    query.capability.maxForwardAccelerationMps2 =
+        capability.maxForwardAccelerationMetersPerSec2;
+    query.capability.maxReverseAccelerationMps2 =
+        capability.maxReverseAccelerationMetersPerSec2;
+    query.capability.maxLateralAccelerationMps2 =
+        capability.maxLateralAccelerationMetersPerSec2;
+    query.capability.maxVerticalAccelerationMps2 =
+        capability.maxVerticalAccelerationMetersPerSec2;
+    query.capability.maxAngularAccelerationRadPerSec2 =
+        capability.maxAngularAccelerationRadPerSec2;
+    query.capability.maxAngularSpeedRadPerSec =
+        capability.maxAngularSpeedRadPerSec;
+
+    query.policy.minimumPrimitiveSeconds =
+        settings.physicalObserver.minimumPrimitiveSeconds;
+    query.policy.directPrimitiveSeconds =
+        settings.physicalObserver.directPrimitiveSeconds;
+    query.policy.burnRampMinimumSeconds =
+        settings.physicalObserver.burnRampMinimumSeconds;
+    query.policy.burnRampMaximumSeconds =
+        settings.physicalObserver.burnRampMaximumSeconds;
+    query.policy.burnRampFractionOfRawBurn =
+        settings.physicalObserver.burnRampFractionOfRawBurn;
+    query.velocityResponsePerSecond =
+        settings.physicalObserver.velocityResponsePerSecond;
+    query.linearFeedbackReserveMps2 =
+        settings.navigation.linearFeedbackReserveMps2;
+    query.angularFeedbackReserveRadPerSec2 =
+        settings.navigation.angularFeedbackReserveRadPerSec2;
+    query.controlResponseReserveSeconds =
+        settings.physicalObserver.controlResponseReserveSeconds;
+
+    trace.alternatives.reserve(request.frontier.alternativeCount);
+    for (std::size_t i = 0; i < request.frontier.alternativeCount; ++i)
+    {
+        Coordinator::Alternative& alternative =
+            request.frontier.alternatives[i];
+        alternative.identity.corridorAlternativeId = 1;
+        alternative.identity.terminalAlternativeId = 1;
+        alternative.identity.speedScheduleAlternativeId = 1;
+        alternative.identity.arrivalTimeAlternativeId = i + 1;
+        alternative.targetPositionMapMeters = target;
+        alternative.desiredVelocityMapMetersPerSecond = desiredVelocity;
+        alternative.maximumProgramSeconds =
+            settings.physicalObserver.horizonSeconds[i];
+
+        TracePhysicalSearchAlternative presentation;
+        presentation.index = i;
+        presentation.corridorAlternativeId =
+            alternative.identity.corridorAlternativeId;
+        presentation.terminalAlternativeId =
+            alternative.identity.terminalAlternativeId;
+        presentation.speedScheduleAlternativeId =
+            alternative.identity.speedScheduleAlternativeId;
+        presentation.arrivalTimeAlternativeId =
+            alternative.identity.arrivalTimeAlternativeId;
+        presentation.targetPositionMapMeters = target;
+        presentation.desiredVelocityMapMps = desiredVelocity;
+        presentation.maximumProgramSeconds =
+            alternative.maximumProgramSeconds;
+        trace.alternatives.push_back(std::move(presentation));
+    }
+
+    const Coordinator::Result result = Coordinator::advance(request);
+    trace.coordinatorStatus = coordinatorStatusName(result.status);
+    trace.objectiveRemainsActive = result.objectiveRemainsActive;
+    for (std::size_t i = 0; i < result.attemptCount; ++i)
+    {
+        const Coordinator::Attempt& attempt = result.attempts[i];
+        if (attempt.alternativeIndex >= trace.alternatives.size())
+            continue;
+        auto& presentation = trace.alternatives[attempt.alternativeIndex];
+        presentation.attempted = true;
+        presentation.compilerStatus =
+            compilerStatusName(attempt.compilerStatus);
+        presentation.infeasibilityReason =
+            infeasibilityReasonName(attempt.infeasibility.reason);
+        presentation.minimumProgramSeconds =
+            attempt.infeasibility.minimumProgramSeconds;
+    }
+
+    if (!result.hasPhysicalCandidates)
+        return trace;
+
+    if (result.selectedAlternativeIndex < trace.alternatives.size())
+    {
+        trace.alternatives[result.selectedAlternativeIndex].
+            selectedAlternative = true;
+    }
+    trace.candidates.reserve(result.physicalCandidates.candidateCount);
+    for (std::size_t i = 0;
+         i < result.physicalCandidates.candidateCount;
+         ++i)
+    {
+        const auto& source = result.physicalCandidates.candidates[i];
+        TracePhysicalCandidate candidate;
+        candidate.alternativeIndex = result.selectedAlternativeIndex;
+        candidate.family = candidateFamilyName(source.family);
+        candidate.requiresContinuousProof =
+            source.requiresContinuousProof;
+        candidate.samples.reserve(source.sampleCount);
+        for (std::size_t sampleIndex = 0;
+             sampleIndex < source.sampleCount;
+             ++sampleIndex)
+        {
+            const auto& sourceSample = source.samples[sampleIndex];
+            TracePhysicalCandidateSample sample;
+            sample.timeOffsetSeconds = sourceSample.timeOffsetSeconds;
+            sample.positionMapMeters = sourceSample.positionMapMeters;
+            sample.velocityMapMps =
+                sourceSample.velocityMapMetersPerSecond;
+            sample.accelerationMapMps2 =
+                sourceSample.linearAccelerationFeedForwardMapMps2;
+            sample.forwardMap = sourceSample.forwardMap;
+            candidate.samples.push_back(std::move(sample));
+        }
+        trace.candidates.push_back(std::move(candidate));
+    }
+    return trace;
+}
 
 ResolvedRunKinematics resolveRunKinematics(
     const Scenario& scenario,
@@ -2502,6 +2762,8 @@ ScenarioRunResult executeCalculatedRoute(
             throw std::runtime_error("invalid vehicle dynamics profile");
         if (!settings.navigation.valid())
             throw std::runtime_error("invalid navigation runtime policy");
+        if (!settings.physicalObserver.valid())
+            throw std::runtime_error("invalid physical observer policy");
         if (!settings.trajectory.valid())
             throw std::runtime_error("invalid trajectory generation policy");
         if (!world::navigation::PilotSkillExecutor::validProfile(
@@ -2631,6 +2893,13 @@ ScenarioRunResult executeCalculatedRoute(
 
         trace.executionGuidePoints =
             trajectoryResult.executionGuidePointsMeters;
+        trace.physicalSearch = buildPhysicalObserverTrace(
+            scenario,
+            settings,
+            vehicleInput,
+            kinematics,
+            trace.executionGuidePoints
+        );
         trace.calculatedTrajectoryPoints.clear();
         trace.calculatedTrajectoryPoints.reserve(
             trajectoryResult.trajectory.samples.size()
@@ -3358,6 +3627,15 @@ ScenarioRunResult executeCalculatedRoute(
                         ? " COMPLETE"
                         : " INCOMPLETE"
                 ),
+            "PHYSICAL OBSERVER: " +
+                trace.physicalSearch.coordinatorStatus,
+            "PHYSICAL OBSERVER ALTERNATIVES: " +
+                std::to_string(
+                    trace.physicalSearch.alternatives.size()
+                ),
+            "PHYSICAL OBSERVER CANDIDATES (UNPROVED): " +
+                std::to_string(trace.physicalSearch.candidates.size()),
+            "PHYSICAL OBSERVER EXECUTION AUTHORITY: NONE",
             "AUTOPILOT ACTUATOR EXECUTION: OBSERVE-ONLY MIGRATION",
             "STORAGE PAGE ADVANCES: " +
                 std::to_string(storagePageAdvances),

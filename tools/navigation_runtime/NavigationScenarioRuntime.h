@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -174,6 +175,60 @@ struct ScenarioRuntimeIoPolicy
     bool echoDiagnosticsToConsole = false;
 };
 
+struct ScenarioPhysicalObserverPolicy
+{
+    bool enabled = true;
+
+    // Ranked arrival-time alternatives for one initial receding-horizon
+    // primitive.  This observer does not replace the retained route and does
+    // not publish an executable program.
+    std::array<double, 4> horizonSeconds {0.5, 2.0, 6.0, 10.0};
+    std::size_t horizonCount = 4;
+    std::size_t maximumAttemptsPerAdvance = 4;
+
+    // Explicit B5 shaping inputs. No viewer/runtime hidden timing doctrine.
+    double minimumPrimitiveSeconds = 0.05;
+    double directPrimitiveSeconds = 1.0;
+    double burnRampMinimumSeconds = 0.02;
+    double burnRampMaximumSeconds = 0.20;
+    double burnRampFractionOfRawBurn = 0.25;
+    double velocityResponsePerSecond = 0.75;
+    double controlResponseReserveSeconds = 0.18;
+
+    [[nodiscard]] bool valid() const noexcept
+    {
+        if (horizonCount == 0 || horizonCount > horizonSeconds.size() ||
+            maximumAttemptsPerAdvance == 0 ||
+            maximumAttemptsPerAdvance > 8)
+        {
+            return false;
+        }
+        for (std::size_t i = 0; i < horizonCount; ++i)
+        {
+            if (!std::isfinite(horizonSeconds[i]) ||
+                horizonSeconds[i] <= 0.0)
+            {
+                return false;
+            }
+        }
+        return
+            std::isfinite(minimumPrimitiveSeconds) &&
+            minimumPrimitiveSeconds > 0.0 &&
+            std::isfinite(directPrimitiveSeconds) &&
+            directPrimitiveSeconds > 0.0 &&
+            std::isfinite(burnRampMinimumSeconds) &&
+            burnRampMinimumSeconds >= 0.0 &&
+            std::isfinite(burnRampMaximumSeconds) &&
+            burnRampMaximumSeconds >= burnRampMinimumSeconds &&
+            std::isfinite(burnRampFractionOfRawBurn) &&
+            burnRampFractionOfRawBurn >= 0.0 &&
+            std::isfinite(velocityResponsePerSecond) &&
+            velocityResponsePerSecond > 0.0 &&
+            std::isfinite(controlResponseReserveSeconds) &&
+            controlResponseReserveSeconds >= 0.0;
+    }
+};
+
 struct ScenarioRunSettings
 {
     ControlMode controlMode = ControlMode::Newtonian;
@@ -184,6 +239,9 @@ struct ScenarioRunSettings
 
     // All calculation-affecting stand policy crosses the API explicitly.
     ScenarioNavigationPolicy navigation {};
+
+    // Observer-only physical-search presentation. It cannot steer execution.
+    ScenarioPhysicalObserverPolicy physicalObserver {};
 
     // Canonical route->trajectory backend policy. Keeping the exact backend
     // policy object at this API boundary prevents TrajectoryGenerator from

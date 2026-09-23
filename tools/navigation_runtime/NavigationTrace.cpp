@@ -64,6 +64,69 @@ void saveTraceJson(
     for (const auto& p : trace.calculatedTrajectoryPoints)
         root["calculated_trajectory_points"].push_back(vec3Json(p));
 
+    nlohmann::json physical;
+    physical["available"] = trace.physicalSearch.available;
+    physical["coordinator_status"] =
+        trace.physicalSearch.coordinatorStatus;
+    physical["objective_revision"] =
+        trace.physicalSearch.objectiveRevision;
+    physical["frontier_revision"] =
+        trace.physicalSearch.frontierRevision;
+    physical["objective_remains_active"] =
+        trace.physicalSearch.objectiveRemainsActive;
+    physical["alternatives"] = nlohmann::json::array();
+    for (const auto& source : trace.physicalSearch.alternatives)
+    {
+        nlohmann::json alternative;
+        alternative["index"] = source.index;
+        alternative["corridor_alternative_id"] =
+            source.corridorAlternativeId;
+        alternative["terminal_alternative_id"] =
+            source.terminalAlternativeId;
+        alternative["speed_schedule_alternative_id"] =
+            source.speedScheduleAlternativeId;
+        alternative["arrival_time_alternative_id"] =
+            source.arrivalTimeAlternativeId;
+        alternative["target_position"] =
+            vec3Json(source.targetPositionMapMeters);
+        alternative["desired_velocity"] =
+            vec3Json(source.desiredVelocityMapMps);
+        alternative["maximum_program_s"] =
+            source.maximumProgramSeconds;
+        alternative["attempted"] = source.attempted;
+        alternative["selected_alternative"] =
+            source.selectedAlternative;
+        alternative["compiler_status"] = source.compilerStatus;
+        alternative["infeasibility_reason"] =
+            source.infeasibilityReason;
+        alternative["minimum_program_s"] =
+            source.minimumProgramSeconds;
+        physical["alternatives"].push_back(std::move(alternative));
+    }
+    physical["candidates"] = nlohmann::json::array();
+    for (const auto& source : trace.physicalSearch.candidates)
+    {
+        nlohmann::json candidate;
+        candidate["alternative_index"] = source.alternativeIndex;
+        candidate["family"] = source.family;
+        candidate["requires_continuous_proof"] =
+            source.requiresContinuousProof;
+        candidate["samples"] = nlohmann::json::array();
+        for (const auto& sample : source.samples)
+        {
+            nlohmann::json item;
+            item["time_offset_s"] = sample.timeOffsetSeconds;
+            item["position"] = vec3Json(sample.positionMapMeters);
+            item["velocity"] = vec3Json(sample.velocityMapMps);
+            item["acceleration"] =
+                vec3Json(sample.accelerationMapMps2);
+            item["forward"] = vec3Json(sample.forwardMap);
+            candidate["samples"].push_back(std::move(item));
+        }
+        physical["candidates"].push_back(std::move(candidate));
+    }
+    root["physical_search"] = std::move(physical);
+
     root["static_obstacles"] = nlohmann::json::array();
     for (const TraceStaticObstacle& o : trace.staticObstacles)
     {
@@ -229,6 +292,82 @@ TraceDocument loadTraceJson(const std::string& path)
     {
         for (const auto& p : root.at("calculated_trajectory_points"))
             trace.calculatedTrajectoryPoints.push_back(readVec3(p));
+    }
+
+    if (root.contains("physical_search"))
+    {
+        const auto& physical = root.at("physical_search");
+        trace.physicalSearch.available =
+            physical.value("available", false);
+        trace.physicalSearch.coordinatorStatus =
+            physical.value("coordinator_status", std::string("not_run"));
+        trace.physicalSearch.objectiveRevision =
+            physical.value("objective_revision", std::uint64_t {0});
+        trace.physicalSearch.frontierRevision =
+            physical.value("frontier_revision", std::uint64_t {0});
+        trace.physicalSearch.objectiveRemainsActive =
+            physical.value("objective_remains_active", true);
+
+        for (const auto& source :
+             physical.value("alternatives", nlohmann::json::array()))
+        {
+            TracePhysicalSearchAlternative alternative;
+            alternative.index =
+                source.value("index", std::size_t {0});
+            alternative.corridorAlternativeId =
+                source.value("corridor_alternative_id", std::uint64_t {0});
+            alternative.terminalAlternativeId =
+                source.value("terminal_alternative_id", std::uint64_t {0});
+            alternative.speedScheduleAlternativeId =
+                source.value("speed_schedule_alternative_id", std::uint64_t {0});
+            alternative.arrivalTimeAlternativeId =
+                source.value("arrival_time_alternative_id", std::uint64_t {0});
+            alternative.targetPositionMapMeters =
+                readVec3(source.at("target_position"));
+            alternative.desiredVelocityMapMps =
+                readVec3(source.at("desired_velocity"));
+            alternative.maximumProgramSeconds =
+                source.value("maximum_program_s", 0.0);
+            alternative.attempted = source.value("attempted", false);
+            alternative.selectedAlternative =
+                source.value("selected_alternative", false);
+            alternative.compilerStatus =
+                source.value("compiler_status", std::string("not_attempted"));
+            alternative.infeasibilityReason =
+                source.value("infeasibility_reason", std::string("none"));
+            alternative.minimumProgramSeconds =
+                source.value("minimum_program_s", 0.0);
+            trace.physicalSearch.alternatives.push_back(
+                std::move(alternative)
+            );
+        }
+
+        for (const auto& source :
+             physical.value("candidates", nlohmann::json::array()))
+        {
+            TracePhysicalCandidate candidate;
+            candidate.alternativeIndex =
+                source.value("alternative_index", std::size_t {0});
+            candidate.family = source.value("family", std::string {});
+            candidate.requiresContinuousProof =
+                source.value("requires_continuous_proof", true);
+            for (const auto& item :
+                 source.value("samples", nlohmann::json::array()))
+            {
+                TracePhysicalCandidateSample sample;
+                sample.timeOffsetSeconds =
+                    item.value("time_offset_s", 0.0);
+                sample.positionMapMeters = readVec3(item.at("position"));
+                sample.velocityMapMps = readVec3(item.at("velocity"));
+                sample.accelerationMapMps2 =
+                    readVec3(item.at("acceleration"));
+                sample.forwardMap = readVec3(item.at("forward"));
+                candidate.samples.push_back(std::move(sample));
+            }
+            trace.physicalSearch.candidates.push_back(
+                std::move(candidate)
+            );
+        }
     }
 
     if (root.contains("static_obstacles"))

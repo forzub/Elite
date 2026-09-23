@@ -2505,6 +2505,11 @@ void fitCamera(
         include(p);
     for (const auto& p : data.calculatedTrajectoryPoints)
         include(p);
+    for (const auto& candidate : data.physicalSearch.candidates)
+    {
+        for (const auto& sample : candidate.samples)
+            include(sample.positionMapMeters);
+    }
 
     for (const auto& obstacle : data.staticObstacles)
     {
@@ -3169,6 +3174,64 @@ void drawScene(
         3.0f
     );
 
+    // Observer-only B4/B5 layer. Red markers are attempted/rejected arrival
+    // horizons. Cyan/yellow curves are physical candidates which still need
+    // continuous geometry proof; they are deliberately NOT drawn with the
+    // accepted-program corridor color.
+    std::vector<Vertex> physicalRejected;
+    for (const auto& alternative : data.physicalSearch.alternatives)
+    {
+        if (!alternative.attempted || alternative.selectedAlternative)
+            continue;
+        appendCross(
+            physicalRejected,
+            toVec3(alternative.targetPositionMapMeters),
+            3.0f + static_cast<float>(alternative.index),
+            {1.0f, 0.22f, 0.10f}
+        );
+    }
+    renderer.draw(GL_LINES, physicalRejected, 2.0f);
+
+    for (std::size_t candidateIndex = 0;
+         candidateIndex < data.physicalSearch.candidates.size();
+         ++candidateIndex)
+    {
+        const auto& candidate = data.physicalSearch.candidates[candidateIndex];
+        const glm::vec3 color =
+            candidate.family == "lead_rotate_main_burn"
+                ? glm::vec3(1.0f, 0.78f, 0.12f)
+                : glm::vec3(0.10f, 0.95f, 0.95f);
+        std::vector<glm::dvec3> candidatePath;
+        candidatePath.reserve(candidate.samples.size());
+        std::vector<Vertex> physicalVectors;
+        for (const auto& sample : candidate.samples)
+        {
+            candidatePath.push_back(sample.positionMapMeters);
+            const glm::vec3 origin = toVec3(sample.positionMapMeters);
+            const glm::vec3 forward =
+                normalizedOr(sample.forwardMap, {1.0f, 0.0f, 0.0f});
+            addLine(
+                physicalVectors,
+                origin,
+                origin + forward * 7.0f,
+                color
+            );
+            const glm::vec3 acceleration =
+                toVec3(sample.accelerationMapMps2);
+            if (glm::length(acceleration) > 1.0e-4f)
+            {
+                addLine(
+                    physicalVectors,
+                    origin,
+                    origin + acceleration * 1.5f,
+                    {1.0f, 0.38f, 0.08f}
+                );
+            }
+        }
+        renderer.draw(GL_LINES, polyline(candidatePath, color), 4.0f);
+        renderer.draw(GL_LINES, physicalVectors, 1.5f);
+    }
+
     // The planner result itself does not publish a volumetric corridor.
     // What execution owns is the accepted maneuver reference plus its follower
     // position-error envelope. Render that product explicitly and label it as
@@ -3404,6 +3467,14 @@ void setWindowTitle(
 
     if (!f.plannerStatus.empty())
         title << " | " << f.plannerStatus;
+
+    if (data.physicalSearch.available)
+    {
+        title
+            << " | PHYS-OBS="
+            << data.physicalSearch.coordinatorStatus
+            << " (НЕ ПРИНЯТО)";
+    }
 
     if (f.hazardActive)
         title << " | зазор=" << f.dynamicClearanceMeters << " м";

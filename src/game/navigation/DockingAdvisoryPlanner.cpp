@@ -174,24 +174,33 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     {
         std::size_t next=previous+1;
 
-        // Enter terminal density one terminal interval BEFORE the nominal
-        // boundary. Otherwise a final 500 m sparse chord can end just inside
-        // the last-2-km band (for example 490 m), leaving the first visible
-        // terminal interval much too long. Starting the denser cadence early
-        // guarantees the boundary itself is bracketed by <= terminal spacing.
+        // Anchor the cadence transition explicitly. Merely switching to the
+        // terminal spacing after a frame is already inside the activation band
+        // still allows a sparse 500 m step to jump from, e.g., 2300 m to
+        // 1800 m remaining. If a sparse step would cross the activation
+        // boundary, shorten THIS interval so a frame is placed at/just before
+        // that boundary; all following intervals then use terminal spacing.
         const double remainingFromPrevious=
             denseProgress.back()-denseProgress[previous];
         const double terminalSpacing=std::min(
             r.gateSpacingMeters,
             r.terminalGateSpacingMeters
         );
-        const bool terminalDensityActive=
-            remainingFromPrevious<=
-                r.terminalDenseDistanceMeters+terminalSpacing;
-        const double spacingMeters=
-            terminalDensityActive
-                ? terminalSpacing
-                : r.gateSpacingMeters;
+        const double terminalActivationRemaining=
+            r.terminalDenseDistanceMeters+terminalSpacing;
+
+        double spacingMeters=r.gateSpacingMeters;
+        if(remainingFromPrevious<=terminalActivationRemaining)
+        {
+            spacingMeters=terminalSpacing;
+        }
+        else
+        {
+            const double distanceToActivation=
+                remainingFromPrevious-terminalActivationRemaining;
+            if(distanceToActivation<r.gateSpacingMeters)
+                spacingMeters=distanceToActivation;
+        }
 
         while(next+1<dense.size())
         {

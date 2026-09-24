@@ -50,14 +50,21 @@ int main()
     if(!sawNominal500mGate)
     { std::cerr << "no nominal 500 m advisory gate spacing\n"; return 12; }
 
-    // The last 2 km use denser guidance frames. Measure backwards over the
-    // published polyline: every gate whose endpoint is in that terminal band
-    // must have arrived from <=250 m away.
+    // The final 2 km must already be inside the dense cadence. The planner
+    // activates that cadence one terminal interval early, preventing a
+    // 500-ish metre sparse chord from crossing the 2 km boundary.
     double remainingPublishedMeters=0.0;
+    double nearestBoundaryError=1.0e30;
     for (std::size_t i=result.gates.size()-1;i>0;--i)
     {
         const double gap=glm::length(
             result.gates[i].positionMeters-result.gates[i-1].positionMeters
+        );
+        nearestBoundaryError=std::min(
+            nearestBoundaryError,
+            std::abs(
+                remainingPublishedMeters-r.terminalDenseDistanceMeters
+            )
         );
         if (remainingPublishedMeters<=r.terminalDenseDistanceMeters+1.0e-6 &&
             gap>r.terminalGateSpacingMeters+1.0e-5)
@@ -67,6 +74,15 @@ int main()
             return 22;
         }
         remainingPublishedMeters+=gap;
+    }
+    nearestBoundaryError=std::min(
+        nearestBoundaryError,
+        std::abs(remainingPublishedMeters-r.terminalDenseDistanceMeters)
+    );
+    if(nearestBoundaryError>r.terminalGateSpacingMeters+1.0e-5)
+    {
+        std::cerr << "no guidance frame anchors the 2 km density transition\n";
+        return 25;
     }
 
     // A clean 3D corner into the docking axis must be a genuine circular

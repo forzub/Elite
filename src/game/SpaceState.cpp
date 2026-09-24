@@ -1937,6 +1937,15 @@ void SpaceState::updateDockingAdvisory()
             return;
         }
 
+        std::cout << "[DockAdvisory] request=" << pending.serial
+                  << " phase=settled"
+                  << " vrel_mps=" << relativeSpeedMps
+                  << " omega_radps=" << angularRateRadPerSec
+                  << " hold_s="
+                  << (authoritativeServerSeconds -
+                      m_dockingPreparationSettledSinceServerSeconds)
+                  << " hub=" << motion.hubId << '\n';
+
         const auto* definition = m_hubSemanticAnchorCatalog.find(
             pending.target.stableObjectId,
             pending.target.semanticAnchorId

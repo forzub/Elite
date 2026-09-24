@@ -113,10 +113,18 @@ public:
 
     struct Capability
     {
+        // Instantaneous body-axis authority, including RCS.
         double maxForwardAccelerationMps2 = 0.0;
         double maxReverseAccelerationMps2 = 0.0;
         double maxLateralAccelerationMps2 = 0.0;
         double maxVerticalAccelerationMps2 = 0.0;
+
+        // Explicit longitudinal MAIN-engine banks. -1 means an older caller
+        // did not provide actuator separation; B5 then derives a conservative
+        // main-bank hint from axis-vs-RCS authority. Zero means explicitly
+        // unavailable and must never be promoted back into a main engine.
+        double maxForwardMainAccelerationMps2 = -1.0;
+        double maxReverseMainAccelerationMps2 = -1.0;
 
         double maxAngularAccelerationRadPerSec2 = 0.0;
         double maxAngularSpeedRadPerSec = 0.0;

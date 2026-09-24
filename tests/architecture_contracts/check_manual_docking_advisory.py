@@ -72,12 +72,21 @@ try:
             "predictHubSemanticAnchorAt(active.port" in advisory):
         raise AssertionError("docking advisory reintroduced mixed-epoch geometry")
     require("src/game/navigation/GuidanceCorridor.h",
-            "hubLocalFrameId", "hubLocalGatePositionsMeters")
+            "hubLocalFrameId", "hubLocalGatePositionsMeters",
+            "deviationWarning", "deviationCritical")
+    require("src/game/navigation/DockingAdvisoryCorridor.h",
+            "dockingAdvisoryReleaseCrossSection",
+            "dockingAdvisoryFrameExtentMeters",
+            "DockingAdvisoryTrackingResult::Warning")
     require("src/game/system_map/SystemMapRenderer.cpp",
             "corridor->hubLocalFrameId == hub.hubId",
             "corridor->hubLocalGatePositionsMeters[index]",
             "m_hubPresentation.camera.project(")
-    require("src/render/cockpit/GuidanceCorridorRenderer.cpp", "projectedUpperLeft")
+    require("src/render/cockpit/GuidanceCorridorRenderer.cpp",
+            "projectedUpperLeft",
+            "frameDistanceMeters <= 500.0",
+            "bottomCenter",
+            "deviationBlinkOn")
     if "projected.corners[1] +" in read("src/render/cockpit/GuidanceCorridorRenderer.cpp"):
         raise AssertionError("speed label is still tied to arbitrary corner[1]")
 

@@ -77,7 +77,25 @@ try:
     require("src/game/navigation/DockingAdvisoryCorridor.h",
             "dockingAdvisoryReleaseCrossSection",
             "dockingAdvisoryFrameExtentMeters",
-            "DockingAdvisoryTrackingResult::Warning")
+            "DockingAdvisoryTrackingResult::Warning",
+            "nearBoundary")
+    require("src/game/navigation/DockingAdvisoryPlanner.h",
+            "gateSpacingMeters = 500.0",
+            "terminalGateSpacingMeters = 250.0",
+            "terminalDenseDistanceMeters = 2000.0")
+    require("src/game/navigation/DockingAdvisoryPlanner.cpp",
+            "desiredRadius",
+            "tangentDistance/tangentScale",
+            "circle",
+            "remainingMeters<=r.terminalDenseDistanceMeters")
+    require("src/game/SpaceState.cpp",
+            "phase=settled",
+            "vrel_mps=",
+            "SettleHoldSeconds")
+    require("src/game/server/GameServer.cpp",
+            "[DockPrep] begin entity=",
+            "vrel_mps=",
+            "VelocityAlignmentMode::BrakeToStop")
     require("src/game/system_map/SystemMapRenderer.cpp",
             "corridor->hubLocalFrameId == hub.hubId",
             "corridor->hubLocalGatePositionsMeters[index]",

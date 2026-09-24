@@ -1,5 +1,19 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-24 — rerun only the two corrected focused gates first
+
+Pull current `main`. Rebuild and rerun
+`local_flight_control_contracts`, then run
+`check_manual_docking_advisory.py`. The first must prove that Assisted keeps
+the selected main-engine acceleration intact while reducing only RCS as needed
+to fit the combined linear acceleration envelope. The second must pass while
+retaining the semantic dock-bottom marker and the <=500 m speed-label rule.
+
+If both pass, continue with the already requested propulsion/compiler tests:
+`ship_propulsion_state`, `ordinary_physical_maneuver_compiler`, and
+`docking_advisory`, then build the canonical game. Preserve all untracked
+trace artifacts.
+
 ## 2026-09-24 — verify dual-main propulsion and failed-engine trajectory fallback
 
 Pull current `main` and first run the focused propulsion/trajectory/control

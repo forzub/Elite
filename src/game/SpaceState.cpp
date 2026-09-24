@@ -2272,15 +2272,71 @@ void SpaceState::updateDockingAdvisory()
                 active.lateralToleranceMeters,
                 active.verticalToleranceMeters
             );
-            const bool inside =
-                std::abs(glm::dot(delta, right)) <=
+            const double lateralOffsetMeters = glm::dot(delta, right);
+            const double verticalOffsetMeters = glm::dot(delta, up);
+            const double longitudinalOffsetMeters = glm::dot(delta, forward);
+            const double longitudinalToleranceMeters =
+                std::max(5.0, active.widthMeters);
+            const auto releaseSection =
+                dockingAdvisoryReleaseCrossSection(section);
+            const double releaseLongitudinalToleranceMeters =
+                longitudinalToleranceMeters + std::max(
+                    10.0,
+                    longitudinalToleranceMeters * 0.25
+                );
+            const bool insideNominal =
+                std::abs(lateralOffsetMeters) <=
                     section.lateralToleranceMeters &&
-                std::abs(glm::dot(delta, up)) <=
+                std::abs(verticalOffsetMeters) <=
                     section.verticalToleranceMeters &&
-                std::abs(glm::dot(delta, forward)) <=
-                    std::max(5.0, active.widthMeters);
+                std::abs(longitudinalOffsetMeters) <=
+                    longitudinalToleranceMeters;
+            const bool insideRelease =
+                std::abs(lateralOffsetMeters) <=
+                    releaseSection.lateralToleranceMeters &&
+                std::abs(verticalOffsetMeters) <=
+                    releaseSection.verticalToleranceMeters &&
+                std::abs(longitudinalOffsetMeters) <=
+                    releaseLongitudinalToleranceMeters;
 
-            const auto tracking = active.tracker.observe(inside);
+            const bool wasWarning = active.deviationWarning;
+            const bool wasCritical = active.deviationCritical;
+            const auto tracking = active.tracker.observe(
+                insideNominal,
+                insideRelease,
+                metadata.serverTimeSeconds
+            );
+            active.deviationWarning =
+                active.tracker.entered() &&
+                (tracking == DockingAdvisoryTrackingResult::Warning ||
+                 dockingAdvisoryNearBoundary(
+                     lateralOffsetMeters,
+                     verticalOffsetMeters,
+                     longitudinalOffsetMeters,
+                     section,
+                     longitudinalToleranceMeters
+                 ));
+            active.deviationCritical =
+                active.tracker.entered() && !insideNominal;
+
+            if (active.deviationWarning != wasWarning ||
+                active.deviationCritical != wasCritical)
+            {
+                std::cout << "[DockAdvisory] corridor-warning request="
+                          << pending.serial
+                          << " tick=" << metadata.serverTick
+                          << " active=" << (active.deviationWarning ? 1 : 0)
+                          << " critical=" << (active.deviationCritical ? 1 : 0)
+                          << " lateral_m=" << lateralOffsetMeters
+                          << " vertical_m=" << verticalOffsetMeters
+                          << " nominal_m="
+                          << section.lateralToleranceMeters << ','
+                          << section.verticalToleranceMeters
+                          << " release_m="
+                          << releaseSection.lateralToleranceMeters << ','
+                          << releaseSection.verticalToleranceMeters << '\n';
+            }
+
             if (tracking == DockingAdvisoryTrackingResult::Left)
             {
                 std::cerr << "[DockAdvisory] left request=" << pending.serial
@@ -2290,15 +2346,19 @@ void SpaceState::updateDockingAdvisory()
                           << " gate=" << active.nextGate
                           << " ship_local_m=(" << position.x << ','
                           << position.y << ',' << position.z << ')'
-                          << " lateral_m=" << glm::dot(delta, right)
-                          << " vertical_m=" << glm::dot(delta, up)
-                          << " bounds_m=" << section.lateralToleranceMeters
-                          << "," << section.verticalToleranceMeters << '\n';
+                          << " lateral_m=" << lateralOffsetMeters
+                          << " vertical_m=" << verticalOffsetMeters
+                          << " nominal_m=" << section.lateralToleranceMeters
+                          << "," << section.verticalToleranceMeters
+                          << " release_m="
+                          << releaseSection.lateralToleranceMeters << ","
+                          << releaseSection.verticalToleranceMeters << '\n';
                 fail("ship left guidance corridor");
                 return;
             }
 
-            if (tracking == DockingAdvisoryTrackingResult::Inside &&
+            if ((tracking == DockingAdvisoryTrackingResult::Inside ||
+                 tracking == DockingAdvisoryTrackingResult::Warning) &&
                 t >= 1.0 &&
                 glm::dot(position - b, ab) >= 0.0 &&
                 active.nextGate + 2 < gates.size())
@@ -2343,6 +2403,8 @@ void SpaceState::updateDockingAdvisory()
         route.source = GuidanceSource::DockingComputer;
         route.purpose = GuidancePurpose::Approach;
         route.advisoryOnly = true;
+        route.deviationWarning = active.deviationWarning;
+        route.deviationCritical = active.deviationCritical;
         route.priority = 50;
         route.generatedAtUniverseTimeSeconds = renderTime;
         route.frames.reserve(gates.size());
@@ -2389,12 +2451,14 @@ void SpaceState::updateDockingAdvisory()
                 active.lateralToleranceMeters,
                 active.verticalToleranceMeters
             );
-            f.widthMeters =
-                active.shipWidthMeters +
-                2.0 * section.lateralToleranceMeters;
-            f.heightMeters =
-                active.shipHeightMeters +
-                2.0 * section.verticalToleranceMeters;
+            f.widthMeters = dockingAdvisoryFrameExtentMeters(
+                active.shipWidthMeters,
+                section.lateralToleranceMeters
+            );
+            f.heightMeters = dockingAdvisoryFrameExtentMeters(
+                active.shipHeightMeters,
+                section.verticalToleranceMeters
+            );
             f.lateralToleranceMeters = section.lateralToleranceMeters;
             f.verticalToleranceMeters = section.verticalToleranceMeters;
             f.recommendedSpeedMps = gate.speedMps;

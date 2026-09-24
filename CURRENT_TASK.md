@@ -1,23 +1,34 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
-## 2026-09-24 — verify Assisted commissioning and recoverable corridor warning
+## 2026-09-24 — verify dual-main propulsion and failed-engine trajectory fallback
 
-Pull current `main`, run the focused local-flight/manual-docking and
-docking-advisory tests, then build the canonical game.
+Pull current `main` and first run the focused propulsion/trajectory/control
+regressions. The required new gates are `ship_propulsion_state`,
+`ordinary_physical_maneuver_compiler`, and the local-flight-control contract.
+Then run the existing docking-advisory/manual-docking checks and build the
+canonical game.
 
-Test SHOW ROUTE repeatedly in Newtonian and Assisted from non-zero Hub-relative
-speed. Every press must produce a new request serial and a fresh
-`phase=stabilizing -> phase=planning -> phase=handoff_wait -> human_control=1`
-cycle. Current aft-main-only Cobra Assisted must physically flip-and-burn to
-settle instead of waiting on RCS.
+Acceptance semantics:
+- healthy Cobra Assisted brakes with the physical fore main without a 180 deg
+  flip;
+- fore-bank failure removes reverse main completely, leaves RCS intact, and
+  strong braking compiles/executes flip + aft-main burn;
+- aft-bank failure removes forward main completely and promotes the surviving
+  fore main as primary propulsion with reversed working hull direction;
+- an operational bank always retains full descriptor thrust; no proportional
+  health-based derating is allowed;
+- Planner/B5 must distinguish main-bank authority from residual RCS authority.
 
-Then deliberately approach and cross the nominal corridor edge. Frames must
-blink near the limit; a small nominal excursion must remain recoverable; only
-continuous departure beyond the expanded release envelope for 0.35 s may
-cancel. Verify speed labels appear only for frames within 500 m, terminal frame
-extent matches the usable dock aperture, transit frames include the intended
-center allowance, and the bottom marker stays correct under roll.
+After those gates pass, repeat SHOW ROUTE from non-zero Hub-relative speed in
+Newtonian and Assisted and continue the current corridor-warning acceptance:
+fresh request serial each press, physical stabilization, planning/publication,
+authoritative Human hand-back, recoverable nominal-bound excursions and
+cancellation only after sustained departure beyond the release envelope.
 
+Do not weaken geometry or propulsion truth to make a test pass. The new fore
+engine modules currently have runtime/damage identities but no invented mesh
+hit-volume; do not bind them to unrelated Cobra mesh parts merely to create a
+damage target.
 ## 2026-09-24 — immediate gate: install and prove the published fix
 
 Do not modify docking geometry again from the bare legacy failure. On the

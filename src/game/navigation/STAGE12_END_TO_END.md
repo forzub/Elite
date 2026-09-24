@@ -1,5 +1,16 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — local-flight gate must be rebuilt before evaluation
+
+Windows compilation of the updated local-flight contract stopped at a missing
+`ShipDynamics.h` include in the test source. Because the target executable was
+not relinked, the following CTest invocation ran the prior executable and
+repeated its old `maxGs` assertion. That result is stale and is not accepted as
+evidence about the new combined main+RCS load-envelope logic.
+
+The include is fixed on `main`. Rebuild and rerun the focused native contract;
+only then continue to propulsion/B5/docking runtime gates.
+
 ## 2026-09-24 — first target gate: preserve main thrust, trim only secondary RCS
 
 The first Windows dual-main run found Assisted total propulsion could exceed the

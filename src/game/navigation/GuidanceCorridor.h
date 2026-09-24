@@ -97,6 +97,10 @@ struct GuidanceCorridor
     // presentation layer may flash a warning while this flag is active.
     bool noSafePrimarySolution = false;
 
+    // A manual route can remain recoverable outside its nominal center tube.
+    bool deviationWarning = false;
+    bool deviationCritical = false;
+
     // For terminal manoeuvres the accepted physical prediction and the
     // required endpoint stay separate. Render/debug code can therefore show
     // the actual raw end and the requested docking point without moving either.

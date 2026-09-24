@@ -1,5 +1,34 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-24 — failure-aware dual-main propulsion enters physical maneuver layer
+
+The Cobra descriptor now installs both aft/rear and fore/nose longitudinal main
+banks at the existing 7.5 g linear rating. Their static identities live in
+`ShipDescriptor`; current availability comes from per-instance module runtime.
+A bank has full rated authority while operational and zero when failed. Health
+does not proportionally scale main thrust.
+
+This distinction is propagated into Navigation. Instantaneous forward/reverse
+body-axis authority may still include RCS, but B5 now also receives explicit
+forward/reverse MAIN authority, so a surviving 2 m/s2 manoeuvre thruster cannot
+be mistaken for a live 7.5 g main engine.
+
+Physical maneuver behavior is now:
+- healthy Assisted: fore main performs strong reverse/braking thrust without a
+  hull flip;
+- failed fore bank: direct reverse authority falls to RCS and strong braking
+  requires a proved flip + aft-main burn;
+- failed aft bank with live fore bank: fore main becomes the primary engine;
+  B5 rotates the hull so `-forward` is the thrust/travel side and accounts for
+  finite attitude acquisition before burn;
+- Newtonian and Assisted share the same hardware state; doctrine differs, not
+  installed actuators.
+
+Server physics, Navigation runtime capability and client docking planning use
+the same damage-aware effective `ShipParams`. New focused tests cover binary
+bank state and both failure directions. Target Windows compilation/runtime
+verification remains open.
+
 ## 2026-09-24 — Assisted commissioning stop and manual corridor recovery band
 
 Live request 8 reached gate 12 and was cancelled at vertical offset 60.1343 m

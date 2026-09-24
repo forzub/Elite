@@ -1,5 +1,17 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — rebuild local-flight test after header fix
+
+Pull current `main`, rebuild only `local_flight_control_contract_tests`, and
+run only `local_flight_control_contracts`. Do not treat the previous CTest
+failure as current evidence: that invocation ran the old executable after Ninja
+failed to compile the new source.
+
+If the rebuilt contract passes, continue directly to the pending
+`ship_propulsion_state`, `ordinary_physical_maneuver_compiler`, and
+`docking_advisory` runtime tests. The two Python architecture checks already
+passed in the latest Windows run.
+
 ## 2026-09-24 — rerun only the two corrected focused gates first
 
 Pull current `main`. Rebuild and rerun

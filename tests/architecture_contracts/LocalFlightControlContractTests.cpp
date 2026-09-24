@@ -876,6 +876,57 @@ void testExternalSpinIsNotHardClampedAndRcsBrakesIt()
             "RCS magically snapped external spin back inside rate envelope");
 }
 
+void testNewtonianAftFailureUsesForeMainAsPrimary()
+{
+    const auto frame = makeFrame();
+    auto params = makeParams();
+    params.forwardMainEngineAvailable = false;
+    params.reverseMainEngineAvailable = true;
+
+    game::navigation::DynamicMotionState thrust;
+    thrust.localControlLaw = game::navigation::LocalFlightControlLaw::Newtonian;
+
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        thrust, frame, params, 0.10f, 1.0f, false,
+        0.0f, 0.0f, 0.0f,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    require(
+        glm::dot(
+            thrust.mainEngineAccelerationMps2,
+            glm::dvec3(0.0, 0.0, 1.0)
+        ) > 1.0,
+        "Newtonian '+' did not use surviving fore main after aft failure"
+    );
+
+    game::navigation::DynamicMotionState brake;
+    brake.localControlLaw = game::navigation::LocalFlightControlLaw::Newtonian;
+    brake.velocityAlignmentMode =
+        game::navigation::VelocityAlignmentMode::BrakeToStop;
+    brake.localVelocityMps = glm::dvec3(0.0, 0.0, -20.0);
+
+    // With aft main dead, ShipController's required braking attitude is
+    // nose-with-velocity (-Z). The fore engine then accelerates +Z.
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        brake, frame, params, 0.10f, 0.0f, false,
+        0.0f, 0.0f, 0.0f,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    require(
+        glm::dot(
+            brake.mainEngineAccelerationMps2,
+            glm::dvec3(0.0, 0.0, 1.0)
+        ) > 1.0,
+        "Newtonian END did not use surviving fore main after aft failure"
+    );
+}
+
 void testAssistedEndUsesForeMainWithoutHullFlip()
 {
     const auto frame = makeFrame();
@@ -1105,6 +1156,7 @@ int main()
         testOffCentreImpulseAddsAngularVelocity();
         testExternalSpinIsNotHardClampedAndRcsBrakesIt();
         testNewtonianMinusDoesNotCreateReverseMainThrust();
+        testNewtonianAftFailureUsesForeMainAsPrimary();
         testAssistedVelocityFollowsNoseWithBoundedAcceleration();
         testAssistedThrottleReleaseCapturesReachedSpeed();
         testLinearAccelerationOverrideAppliesToBothFlightLaws();

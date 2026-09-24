@@ -1,5 +1,17 @@
 # PROJECT STATE
 
+## 2026-09-25 — failed build invalidates subsequent stale CTest result
+
+The local-flight contract source now depends explicitly on the canonical
+`ShipDynamics.h` accessor for the linear acceleration envelope. A missing test
+include caused the target build to fail before linking. CTest then executed the
+old binary still present in the build tree, so the repeated old `maxGs` failure
+is not evidence against the current main-priority/RCS-trim implementation.
+
+Architecture/static checks for local flight and manual docking both pass. The
+next valid evidence must come from a freshly linked local-flight contract
+binary.
+
 ## 2026-09-24 — main thrust has priority over RCS inside the linear envelope
 
 Directional main-bank health remains binary and full-power at the descriptor

@@ -1,5 +1,19 @@
 # CURRENT STATE
 
+## 2026-09-24 — test-source meta-check parser corrected before target run
+
+Post-commit review found a defect in the newly added
+`check_test_suite_source_integrity.py`: its extension regex matched the
+`.c` prefix of `.cpp`, producing false missing-source names such as
+`DynamicMotionSystem.c`.
+
+The parser is corrected to prefer complete extensions and to inspect only two
+repository-owned CMake source forms: explicit
+`${ELITE_SOURCE_ROOT}/...` paths and test-local bare filenames. External
+include probes/URLs are deliberately ignored. The previous navigation cleanup
+itself remains unchanged.
+
+
 ## 2026-09-24 — navigation test layer audited and legacy guidance suite retired
 
 Status: **TEST ARCHITECTURE CLEANUP IMPLEMENTED / TARGET RERUN PENDING**

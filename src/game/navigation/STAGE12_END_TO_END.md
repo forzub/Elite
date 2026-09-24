@@ -10041,3 +10041,13 @@ The current contract is now explicit:
 This iteration changes test ownership only. No production motion, planner,
 follower, docking or rendering behavior is modified. Target rerun remains the
 acceptance boundary.
+
+## 2026-09-24 — test-source integrity parser correction
+
+The first version of the new test-source meta-check incorrectly allowed the
+single-letter `.c` alternative to terminate inside `.cpp`. Post-commit
+review caught the resulting false missing-source report before target
+execution.
+
+The guard now resolves only complete C/C++ extensions and repository-owned CMake
+source forms. No navigation/product behavior or prior test cleanup changed.

@@ -7,6 +7,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 TESTS = ROOT / "tests"
+SOURCE_EXTENSIONS = r"(?:cpp|cxx|cc|c|hpp|h)"
 
 
 def fail(messages: list[str]) -> None:
@@ -16,26 +17,35 @@ def fail(messages: list[str]) -> None:
     raise SystemExit(1)
 
 
-def resolve_cmake_source(cmake: Path, token: str) -> Path | None:
-    token = token.strip()
+def cmake_source_tokens(body: str) -> set[str]:
+    tokens: set[str] = set()
+
+    # Repository-root sources are explicit and safe to resolve.
+    root_pattern = re.compile(
+        rf"(\$\{{ELITE_SOURCE_ROOT\}}/"
+        rf"[A-Za-z0-9_./+\-]+\.{SOURCE_EXTENSIONS})"
+        rf"(?![A-Za-z0-9_.])"
+    )
+    tokens.update(match.group(1) for match in root_pattern.finditer(body))
+
+    # Test-local sources are normally listed as bare filenames. Restrict this
+    # pattern to names without '/' so external include probes such as
+    # glm/gtx/norm.hpp or URLs are not mistaken for repository sources.
+    local_pattern = re.compile(
+        rf"(?<![A-Za-z0-9_./\-])"
+        rf"([A-Za-z0-9_+\-]+\.{SOURCE_EXTENSIONS})"
+        rf"(?![A-Za-z0-9_.])"
+    )
+    tokens.update(match.group(1) for match in local_pattern.finditer(body))
+
+    return tokens
+
+
+def resolve_cmake_source(cmake: Path, token: str) -> Path:
     prefix = "${ELITE_SOURCE_ROOT}/"
     if token.startswith(prefix):
         return ROOT / token[len(prefix):]
-    if "${" in token:
-        return None
-    path = Path(token)
-    if path.is_absolute():
-        return path
-    return cmake.parent / path
-
-
-def cmake_source_tokens(body: str) -> set[str]:
-    pattern = re.compile(
-        r'(?<![A-Za-z0-9_./-])'
-        r'((?:\$\{ELITE_SOURCE_ROOT\}/)?'
-        r'[A-Za-z0-9_./{}$+-]+\.(?:c|cc|cpp|cxx|h|hpp))'
-    )
-    return {match.group(1) for match in pattern.finditer(body)}
+    return cmake.parent / token
 
 
 errors: list[str] = []
@@ -44,7 +54,7 @@ for cmake in sorted(TESTS.glob("*/CMakeLists.txt")):
     body = cmake.read_text(encoding="utf-8", errors="replace")
     for token in sorted(cmake_source_tokens(body)):
         resolved = resolve_cmake_source(cmake, token)
-        if resolved is not None and not resolved.is_file():
+        if not resolved.is_file():
             errors.append(
                 f"{cmake.relative_to(ROOT)} references missing source {token}"
             )
@@ -56,7 +66,7 @@ for runner_rel in (
     runner = ROOT / runner_rel
     body = runner.read_text(encoding="utf-8", errors="replace")
     for match in re.finditer(
-        r'(tests/[A-Za-z0-9_./-]+\.(?:sh|py))',
+        r"(tests/[A-Za-z0-9_./-]+\.(?:sh|py))",
         body,
     ):
         rel = match.group(1)

@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — verify cleaned current navigation tests
+# CONTINUE PROMPT — verify corrected navigation-test cleanup
 
 Continue in GitHub repository `forzub/Elite`, branch `main`.
 
@@ -6,53 +6,27 @@ Read `AGENTS.md`, `CURRENT_STATE.md`, `CURRENT_TASK.md`,
 `PROJECT_STATE.md`, and the latest section of
 `src/game/navigation/STAGE12_END_TO_END.md`.
 
-Latest target failure was:
+The navigation test layer has been cleaned:
+- stale local-flight angular raw-symbol checks now validate canonical
+  ShipDynamics accessors;
+- live replication guidance uses DockingAdvisoryPlanner and wire schema 9;
+- foundation/geometric checks target current advisory ownership;
+- dead `tests/navigation_guidance` all-in-one suite is removed;
+- useful geometric coverage moved to
+  `tests/navigation_runtime/GeometricPathPlannerTests.cpp`.
 
-```text
-Local-flight-control architecture check failed:
-shared angular safety envelope lost: angularAccelerationEnvelope
-```
+Important: commit `91f24d13726cd2192d7b240277aa5a659622caf3`
+contains a false-positive bug only in the newly added meta-check regex: it could
+parse `.cpp` as `.c`. Use the corrected HEAD after that commit.
 
-Root cause was stale test architecture, not lost physics. The current angular
-authority chain is:
+The corrected `check_test_suite_source_integrity.py` accepts only complete
+C/C++ source/header extensions and repository-owned CMake source forms
+(`${ELITE_SOURCE_ROOT}/...` or test-local bare filenames).
 
-```text
-ShipParams
- -> ShipDynamics.h
-    angularAccelerationLimitRadPerSec2()
-    angularLoadRateLimitRadPerSec()
-    pitch/yaw/rollRateLimitRadPerSec()
- -> ShipController
-```
+Next action: rerun `tests/architecture_contracts/run_mingw64.sh`. If green,
+run the focused geometric and docking-advisory native targets, then proceed to
+the in-game SHOW ROUTE commissioning.
 
-A broader audit also retired the dead `tests/navigation_guidance` suite, which
-still compiled removed `DockingPathPlanner.cpp` and `GuidanceTunnel.cpp`.
-Do not restore it.
-
-Current docking/manual guidance ownership:
-
-```text
-SHOW ROUTE
- -> authoritative temporary Autopilot takeover
- -> physical Hub-relative stop/angular settle
- -> fresh authoritative Hub planning snapshot
- -> DockingAdvisoryPlanner
- -> GeometricPathPlanner
- -> fixed 500 m spatial gates + Hub Map route
- -> acknowledged Human hand-back
-```
-
-Current focused tests include:
-- `tests/navigation_runtime/GeometricPathPlannerTests.cpp`;
-- `tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp`;
-- `tests/architecture_contracts/check_manual_docking_advisory.py`;
-- `tests/architecture_contracts/check_test_suite_source_integrity.py`;
-- wire protocol/data-plane authority contracts.
-
-Next: rerun the architecture suite. If green, run current focused runtime
-targets and then the in-game docking commissioning sequence. Never fix a stale
-grep check by reintroducing duplicate/retired runtime code.
-
-After every state-affecting result synchronize CURRENT_STATE.md,
-CURRENT_TASK.md, PROJECT_STATE.md, STAGE12_END_TO_END.md and recreate this
-prompt. Never mark target/game acceptance without target evidence.
+Keep state/task/project/Stage-12/prompt synchronized after every
+state-affecting result. Never mark target/game acceptance without target
+evidence.

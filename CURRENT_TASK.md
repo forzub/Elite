@@ -1,5 +1,14 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — use corrected meta-check HEAD
+
+Do not use `91f24d13726cd2192d7b240277aa5a659622caf3` as target evidence:
+the navigation cleanup is valid, but its new test-source meta-check has a
+false-positive extension parser.
+
+Pull the next corrected HEAD and rerun the architecture suite from the start.
+
+
 ## 2026-09-24 — rerun cleaned architecture gate, then docking-focused native gates
 
 The next target action is verification from the cleanup HEAD.

@@ -1,5 +1,13 @@
 # PROJECT STATE
 
+## 2026-09-24 — test integrity guard made extension-safe
+
+The test-source integrity guard now distinguishes complete C/C++ extensions and
+only resolves repository-owned CMake source forms. This prevents the guard
+itself from inventing `.c` files from `.cpp` registrations or treating
+external include probes as local sources.
+
+
 ## 2026-09-24 — test ownership normalized to current navigation architecture
 
 Navigation testing is no longer allowed to compile or assert the deleted

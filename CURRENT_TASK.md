@@ -1,5 +1,15 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — rerun docking advisory after 2 km transition anchoring fix
+
+Pull current main and rerun only `docking_advisory` plus
+`check_manual_docking_advisory.py`. The failed 490 m interval was the sparse
+chord crossing into the final 2 km; terminal density now starts one 250 m step
+early so the boundary is already inside the dense cadence.
+
+If both pass, rebuild EliteGame and inspect the circular final turn, final-2-km
+frame density, and new DockPrep begin/settled VREL diagnostics.
+
 ## 2026-09-25 — verify circular turns, final 250 m frames, and authoritative zero-speed stop
 
 Pull current main and run the focused docking advisory native/static tests,

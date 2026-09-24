@@ -33,6 +33,8 @@ makeManeuverCapabilitySnapshot(
         std::max(forwardMain, manoeuvre);
     out.maxReverseAccelerationMetersPerSec2 =
         std::max(reverseMain, manoeuvre);
+    out.maxForwardMainAccelerationMetersPerSec2 = forwardMain;
+    out.maxReverseMainAccelerationMetersPerSec2 = reverseMain;
     out.maxLateralAccelerationMetersPerSec2 =
         manoeuvre;
     out.maxVerticalAccelerationMetersPerSec2 =

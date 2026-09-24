@@ -913,7 +913,8 @@ bool GameServer::beginDockingGuidancePreparation(
     if (!ship)
         return false;
 
-    const auto& motion = ship->core().transform().motion;
+    const auto& transform = ship->core().transform();
+    const auto& motion = transform.motion;
     const std::string hubId = !motion.matchedReferenceFrameId.empty()
         ? motion.matchedReferenceFrameId : motion.hubId;
     const auto* hub = hubId.empty() ? nullptr : m_simulation.hubNavigationFrame(hubId);
@@ -959,8 +960,21 @@ bool GameServer::beginDockingGuidancePreparation(
     ship->setControlState(stop);
     m_forceSnapshotPublication = true;
 
+    const double initialAngularRateRadPerSec = std::sqrt(
+        static_cast<double>(transform.pitchRate) *
+            static_cast<double>(transform.pitchRate) +
+        static_cast<double>(transform.yawRate) *
+            static_cast<double>(transform.yawRate) +
+        static_cast<double>(transform.rollRate) *
+            static_cast<double>(transform.rollRate)
+    );
     std::cout << "[DockPrep] begin entity=" << controlledEntityId.value
-              << " request=" << requestSerial << " hub=" << hubId << '\n';
+              << " request=" << requestSerial
+              << " hub=" << hubId
+              << " vrel_mps=" << glm::length(motion.localVelocityMps)
+              << " omega_radps=" << initialAngularRateRadPerSec
+              << " law=" << static_cast<int>(motion.localControlLaw)
+              << '\n';
     return true;
 }
 

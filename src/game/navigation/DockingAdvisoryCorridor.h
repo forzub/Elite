@@ -76,15 +76,15 @@ inline bool dockingAdvisoryNearBoundary(
 ) noexcept
 {
     const double fraction = std::clamp(warningFraction, 0.0, 1.0);
-    const auto near = [&](double value, double tolerance)
+    const auto nearBoundary = [&](double value, double tolerance)
     {
         return tolerance > 0.0 &&
             std::abs(value) >= tolerance * fraction;
     };
     return
-        near(lateralOffsetMeters, nominal.lateralToleranceMeters) ||
-        near(verticalOffsetMeters, nominal.verticalToleranceMeters) ||
-        near(longitudinalOffsetMeters, longitudinalToleranceMeters);
+        nearBoundary(lateralOffsetMeters, nominal.lateralToleranceMeters) ||
+        nearBoundary(verticalOffsetMeters, nominal.verticalToleranceMeters) ||
+        nearBoundary(longitudinalOffsetMeters, longitudinalToleranceMeters);
 }
 
 enum class DockingAdvisoryTrackingResult

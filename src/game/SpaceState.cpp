@@ -1693,9 +1693,46 @@ void SpaceState::updateDockingAdvisory()
         m_client->sendMessage(message);
     };
 
+    const auto serverAutopilotActive = [&]() -> bool
+    {
+        return m_client->hasSessionSnapshot() &&
+            m_client->sessionSnapshot().controlledEntityAutopilotActive;
+    };
+
+    const auto confirmReleasedAuthority = [&]()
+    {
+        if (!m_dockingPreparationReleasePending ||
+            serverAutopilotActive())
+        {
+            return;
+        }
+
+        const std::uint64_t releasedSerial =
+            m_dockingPreparationSerial;
+        const bool published =
+            m_dockingPreparationReleasePublishesRoute;
+
+        m_dockingPreparationSerial = 0;
+        m_dockingPreparationSettledSinceServerSeconds = -1.0;
+        m_dockingPreparationReleasePending = false;
+        m_dockingPreparationReleasePublishesRoute = false;
+        m_client->setExternalControlPredictionSuppressed(false);
+
+        std::cout << "[DockAdvisory] request=" << releasedSerial
+                  << " phase="
+                  << (published ? "manual" : "cancelled")
+                  << " human_control=1\n";
+    };
+
     const auto finishLocalPreparation = [&](bool routePublished)
     {
-        if (m_dockingPreparationSerial != 0)
+        if (m_dockingPreparationSerial == 0)
+        {
+            m_client->setExternalControlPredictionSuppressed(false);
+            return;
+        }
+
+        if (!m_dockingPreparationReleasePending)
         {
             sendPreparationCommand(
                 routePublished
@@ -1703,12 +1740,17 @@ void SpaceState::updateDockingAdvisory()
                     : ClientShipCommand::CancelDockingGuidancePreparation,
                 m_dockingPreparationSerial
             );
+            m_dockingPreparationReleasePending = true;
+            m_dockingPreparationReleasePublishesRoute = routePublished;
+            m_dockingPreparationSettledSinceServerSeconds = -1.0;
         }
 
-        m_dockingPreparationSerial = 0;
-        m_dockingPreparationSettledSinceServerSeconds = -1.0;
-        m_client->setExternalControlPredictionSuppressed(false);
+        // If takeover was never accepted, or the server already released it,
+        // there is no authoritative ownership transition left to await.
+        confirmReleasedAuthority();
     };
+
+    confirmReleasedAuthority();
 
     const auto clear = [&]()
     {
@@ -1725,7 +1767,8 @@ void SpaceState::updateDockingAdvisory()
     if (!pending.valid() ||
         pending.mode != DockingRouteRequest::Mode::Guidance)
     {
-        finishLocalPreparation(false);
+        if (!m_dockingPreparationReleasePending)
+            finishLocalPreparation(false);
         clear();
         m_lastDockingPathRequestSerial = 0;
         m_noSafeDockingGuidanceSolution = false;
@@ -1745,7 +1788,14 @@ void SpaceState::updateDockingAdvisory()
 
     if (m_lastDockingPathRequestSerial != pending.serial)
     {
-        finishLocalPreparation(false);
+        if (m_dockingPreparationSerial != 0)
+        {
+            if (!m_dockingPreparationReleasePending)
+                finishLocalPreparation(false);
+            clear();
+            return;
+        }
+
         clear();
         m_lastDockingPathRequestSerial = pending.serial;
 
@@ -1803,6 +1853,8 @@ void SpaceState::updateDockingAdvisory()
         );
         m_dockingPreparationSerial = pending.serial;
         m_dockingPreparationSettledSinceServerSeconds = -1.0;
+        m_dockingPreparationReleasePending = false;
+        m_dockingPreparationReleasePublishesRoute = false;
         m_client->setExternalControlPredictionSuppressed(true);
 
         std::cout << "[DockAdvisory] request=" << pending.serial
@@ -1814,9 +1866,13 @@ void SpaceState::updateDockingAdvisory()
     // Autopilot has physically stopped the craft in the Hub co-moving frame
     // and normal bounded angular damping has settled all three body rates.
     if (m_dockingPreparationSerial == pending.serial &&
+        !m_dockingPreparationReleasePending &&
         !m_dockAdviceJob &&
         m_dockAdvice.serial == 0)
     {
+        if (!serverAutopilotActive())
+            return;
+
         const auto player =
             m_client->world().ships().find(m_playerId.value);
         if (player == m_client->world().ships().end() ||
@@ -2220,13 +2276,15 @@ void SpaceState::updateDockingAdvisory()
     );
     guidance.publish(std::move(route));
 
-    if (m_dockingPreparationSerial == pending.serial)
+    if (m_dockingPreparationSerial == pending.serial &&
+        !m_dockingPreparationReleasePending)
     {
-        // Route + HUD frames now exist in the same client product. Only here
-        // do we release server Autopilot and resume local Human prediction.
+        // Route + HUD frames now exist. Ask the server to hand authority back,
+        // but keep local prediction fenced until a newer per-session snapshot
+        // confirms controlledEntityAutopilotActive=false.
         finishLocalPreparation(true);
         std::cout << "[DockAdvisory] request=" << pending.serial
-                  << " phase=manual human_control=1\n";
+                  << " phase=handoff_wait\n";
     }
 }
 

@@ -1,5 +1,32 @@
 # CURRENT STATE
 
+## 2026-09-24 — authoritative docking hand-back acknowledgement implemented
+
+Status: **CODE IMPLEMENTED / TARGET GAME GATE PENDING**
+
+The initial manual-docking takeover had one remaining network race: after route
+publication the client could resume Human prediction immediately after sending
+Complete while the authoritative server still owned the ship as Autopilot for
+one transport/fixed-step interval.
+
+That edge is now closed by
+`ClientSessionSnapshot::controlledEntityAutopilotActive`. Every per-session
+full/hydrated/sparse snapshot composes the value from `ControlRegistry`.
+Snapshot data-plane schema advances from 8 to 9.
+
+Docking preparation now requires authoritative Autopilot=true before stop/settle
+evidence is accepted. After the route is published, Complete is sent but local
+prediction remains fenced until a newer accepted session snapshot reports
+Autopilot=false. Expected successful order is therefore:
+
+`phase=stabilizing -> [DockPrep] begin -> phase=planning ->
+phase=handoff_wait -> [DockPrep] published ... human_restored=1 ->
+phase=manual human_control=1`.
+
+The existing native ControlRegistry contract on current main remains the
+authority identity gate. No target-machine/game acceptance is claimed yet.
+
+
 ## 2026-09-24 — static audit after docking-preparation implementation
 
 Post-commit GitHub inspection confirmed the active Hub travel frame stores

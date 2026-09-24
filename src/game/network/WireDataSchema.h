@@ -727,6 +727,7 @@ ELITE_WIRE_SCHEMA(
     v.ownedNavigationAssets,
     v.navigationSensors,
     v.predictionWorldParams,
+    v.controlledEntityAutopilotActive,
     v.universeTimeSeconds,
     v.universeTimeScale,
     v.universeTimelineRevision,

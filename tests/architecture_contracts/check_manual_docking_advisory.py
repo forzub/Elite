@@ -29,16 +29,23 @@ try:
             "CompleteDockingGuidancePreparation",
             "applyDockingGuidancePreparationControls",
             "VelocityAlignmentMode::BrakeToStop",
-            "discardPendingAndAcknowledgeNewest")
+            "discardPendingAndAcknowledgeNewest",
+            "controlledEntityAutopilotActive")
     require("src/game/client/GameClient.cpp",
             "m_externalControlPredictionSuppressed",
             "setExternalControlPredictionSuppressed",
             "never replayed locally")
+    require("src/game/simulation/ClientSessionSnapshot.h",
+            "controlledEntityAutopilotActive")
+    require("src/game/network/WireDataCodec.h",
+            "SimulationSnapshotWireSchemaVersion = 9u")
     require("src/game/SpaceState.cpp",
             "phase=stabilizing", "buildAuthoritativeHubSnapshot",
             "relativeSpeedMps", "angularRateRadPerSec", "SettleHoldSeconds",
             "request.gateSpacingMeters = 500.0",
-            "phase=manual human_control=1", "cockpit.docking.manual_mode")
+            "phase=handoff_wait", "human_control=1",
+            "controlledEntityAutopilotActive",
+            "cockpit.docking.manual_mode")
     require("src/render/cockpit/GuidanceCorridorRenderer.cpp", "projectedUpperLeft")
     if "projected.corners[1] +" in read("src/render/cockpit/GuidanceCorridorRenderer.cpp"):
         raise AssertionError("speed label is still tied to arbitrary corner[1]")

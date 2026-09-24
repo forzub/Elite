@@ -73,7 +73,7 @@ for token in (
         fail(f"obsolete client-composed map response remains in wire schema: {token}")
 
 for token in (
-    "SimulationSnapshotWireSchemaVersion = 8u",
+    "SimulationSnapshotWireSchemaVersion = 9u",
     "SimulationSnapshotWireSchemaVersion",
     "MapResponseWireSchemaVersion",
     "encodeSimulationSnapshot(",

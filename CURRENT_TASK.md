@@ -1,5 +1,24 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — verify acknowledged docking hand-back
+
+Before gameplay inspection verify the current focused gates:
+- `control_registry_contracts`;
+- `wire_protocol_contracts`;
+- `wire_data_plane_contracts` with snapshot schema 9;
+- `docking_advisory`;
+- `check_manual_docking_advisory.py`.
+
+In game, start with non-zero linear and angular motion, press SHOW ROUTE and
+confirm the exact log order:
+`phase=stabilizing`, `[DockPrep] begin`, `phase=planning`,
+`phase=handoff_wait`, `[DockPrep] published ... human_restored=1`,
+`phase=manual human_control=1`.
+
+Do not accept the slice if Human input becomes effective before the final
+authoritative hand-back confirmation.
+
+
 ## 2026-09-24 — verify manual docking commissioning in game
 
 Implementation is present. Next acceptance is target evidence, not more redesign:

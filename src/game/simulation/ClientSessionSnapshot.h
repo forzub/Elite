@@ -18,6 +18,9 @@ struct ClientSessionSnapshot
     std::vector<game::navigation::OwnedNavigationAsset> ownedNavigationAssets;
     game::simulation::ClientNavigationSensorSnapshot navigationSensors;
     WorldParams predictionWorldParams {0.0f, 50.0f};
+    // Per-session authority fact for the controlled entity. The client uses
+    // this to fence local prediction across temporary server Autopilot handoffs.
+    bool controlledEntityAutopilotActive = false;
 
     double universeTimeSeconds = 0.0;
     double universeTimeScale = 1.0;

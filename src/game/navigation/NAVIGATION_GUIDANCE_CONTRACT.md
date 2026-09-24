@@ -568,3 +568,18 @@ spatial gate product are published.
 
 Nominal gate spacing is 500 m and a terminal remainder is legal. Manual mode
 status text is part of the unified localization catalog.
+
+## 2026-09-24 implementation note — acknowledged controller ownership
+
+Temporary docking authority is now visible in per-session replicated state as
+`controlledEntityAutopilotActive`.
+
+- takeover is considered authoritative only after an accepted snapshot reports
+  the flag true;
+- stop/settle evidence is not consumed before that point;
+- route publication requests release but does not itself grant Human control;
+- Human prediction resumes only after a newer accepted snapshot reports the
+  flag false.
+
+Controller ownership and prediction ownership therefore cross the network on a
+confirmed state boundary rather than a timing assumption.

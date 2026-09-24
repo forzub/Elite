@@ -1582,6 +1582,21 @@ bool GameServer::copySnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
+    const EntityId controlledEntityId =
+        controlledEntityForSession(sessionId);
+    outSnapshot.session.controlledEntityAutopilotActive =
+        m_controls.controllerKind(controlledEntityId) ==
+            game::server::ControllerKind::Autopilot;
+    const EntityId controlledEntityId =
+        controlledEntityForSession(sessionId);
+    outSnapshot.session.controlledEntityAutopilotActive =
+        m_controls.controllerKind(controlledEntityId) ==
+            game::server::ControllerKind::Autopilot;
+    const EntityId controlledEntityId =
+        controlledEntityForSession(sessionId);
+    outSnapshot.session.controlledEntityAutopilotActive =
+        m_controls.controllerKind(controlledEntityId) ==
+            game::server::ControllerKind::Autopilot;
 
     // Full copy remains available for diagnostics/contracts. Production normal
     // publication switches to copySparseSnapshotForSession in Stage M7; initial

@@ -300,6 +300,8 @@ private:
     std::uint64_t m_lastDockingPathRequestSerial = 0;
     std::uint64_t m_dockingPreparationSerial = 0;
     double m_dockingPreparationSettledSinceServerSeconds = -1.0;
+    bool m_dockingPreparationReleasePending = false;
+    bool m_dockingPreparationReleasePublishesRoute = false;
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
     std::string m_dockingGuidanceFailureReason;

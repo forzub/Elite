@@ -411,6 +411,7 @@ SimulationSnapshot makeSnapshot()
     hub.motion = object.orbitalMotion;
     snapshot.hubs.push_back(hub);
 
+    snapshot.session.controlledEntityAutopilotActive = true;
     snapshot.session.playerNavigation.currentSystemId = 3;
     snapshot.session.playerNavigation.worldPosition = ship.transform.worldPosition;
     snapshot.session.playerNavigation.orientation = ship.transform.orientation;
@@ -545,6 +546,8 @@ void testSnapshotRoundTrip()
     );
     require(decoded.hubs.size() == 1u && decoded.hubs[0].id == "earth_orbital_hub",
         "hub payload mismatch");
+    require(decoded.session.controlledEntityAutopilotActive,
+        "per-session controlled-entity Autopilot state did not round-trip");
     require(decoded.session.playerNavigation.currentSystemId == 3,
         "per-session navigation mismatch");
     require(decoded.session.ownedNavigationAssets.size() == 1u,

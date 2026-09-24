@@ -9974,3 +9974,19 @@ a controller-kind transaction only. Human -> Autopilot -> Human must preserve
 the same PlayerId -> EntityId mapping, reject cross-player takeover/restore and
 leave unrelated bindings unchanged. This is the native boundary test for the
 temporary control hand-off used by SHOW ROUTE.
+
+## 2026-09-24 — per-session authoritative authority acknowledgement
+
+The playable manual docking lifecycle now crosses the network with an explicit
+ownership fact. `ClientSessionSnapshot::controlledEntityAutopilotActive` is
+composed from server `ControlRegistry` in full, hydrated and sparse session
+snapshots.
+
+The client still suppresses prediction immediately on SHOW ROUTE so the visual
+ship cannot fight the requested takeover, but stop/settle data is ignored until
+an accepted snapshot proves Autopilot ownership. After route publication the
+Complete command begins hand-back; prediction remains suppressed until a newer
+accepted snapshot proves Autopilot inactive.
+
+This removes the one-fixed-step speculative hand-back window. Snapshot
+data-plane schema version is 9.

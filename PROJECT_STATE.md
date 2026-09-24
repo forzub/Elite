@@ -1,5 +1,18 @@
 # PROJECT STATE
 
+## 2026-09-24 — per-session authority acknowledgement closes prediction race
+
+Manual docking authority is now observable in replicated session state instead
+of inferred from command timing. The session snapshot carries whether the
+controlled entity is currently under Autopilot authority; all production
+snapshot paths populate it and data-plane schema version 9 serializes it.
+
+The client may optimistically suppress its own prediction at SHOW ROUTE, but it
+will not plan until server takeover is observed and will not resume prediction
+until server hand-back is observed. This preserves the physical stop/500 m guide
+implementation while removing the speculative one-tick Human/Autopilot overlap.
+
+
 ## 2026-09-24 — temporary authority invariant receives native test
 
 A dedicated ControlRegistry contract now verifies that docking preparation may

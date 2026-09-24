@@ -1,5 +1,6 @@
 #include <cmath>
 #include "src/core/RuntimeTrace.h"
+#include "src/core/JsonNumericLocale.h"
 #include <algorithm>
 #include <utility>
 #include <iostream>
@@ -724,6 +725,12 @@ int main(int argc, char** argv)
 
 
         std::setlocale(LC_ALL, "");
+        if (!core::useJsonNumericLocale())
+        {
+            std::cerr << "[Startup] cannot set LC_NUMERIC=C for JSON parsing\n";
+            return -1;
+        }
+        std::cerr << "[Startup] LC_NUMERIC=C (JSON decimal point)\n";
         core::disableRuntimeStdoutNoise();
 
         Application app;

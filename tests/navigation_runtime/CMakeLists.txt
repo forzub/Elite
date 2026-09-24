@@ -906,7 +906,8 @@ set_tests_properties(
 
 add_executable(docking_advisory_tests
     DockingAdvisoryPlannerTests.cpp
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp")
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationWorldPredictor.cpp")
 target_include_directories(docking_advisory_tests PRIVATE
     "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
 target_compile_features(docking_advisory_tests PRIVATE cxx_std_17)

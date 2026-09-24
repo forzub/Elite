@@ -87,6 +87,12 @@ struct GuidanceCorridor
     // are presented in the current Hub epoch instead of flight sample time.
     bool spatialAdvisoryGates = false;
 
+    // Docking advisory route truth is fixed in this Hub's tactical local
+    // frame. Hub Map projects these points directly; world GuidanceFrames are
+    // a presentation adapter for the generic cockpit/system-map interface.
+    std::string hubLocalFrameId;
+    std::vector<glm::dvec3> hubLocalGatePositionsMeters;
+
     // EmergencyEscape is still a corridor, not an autopilot command.  The
     // presentation layer may flash a warning while this flag is active.
     bool noSafePrimarySolution = false;

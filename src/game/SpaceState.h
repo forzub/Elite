@@ -50,6 +50,7 @@
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
+#include "src/game/simulation/HubAttachmentSnapshot.h"
 #include "src/game/navigation/NavigationModuleState.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 #include "src/game/system_map/AuthoritativeMapInterpolator.h"
@@ -309,8 +310,12 @@ private:
     {
         std::uint64_t serial = 0;
         int systemId = -1;
-        game::navigation::HubPredictionSource hub;
-        game::navigation::ResolvedHubSemanticAnchor port;
+        std::string hubId;
+        std::uint32_t targetObjectId = 0;
+        std::uint64_t timelineRevision = 0;
+        std::uint64_t lastValidatedTick = 0;
+        game::navigation::HubSemanticAnchorDefinition portDefinition;
+        game::simulation::HubAttachmentSnapshot portAttachment;
         std::vector<game::navigation::DockingAdvisoryGate> gates;
         double standoffMeters = 0.0;
         double widthMeters = 0.0;

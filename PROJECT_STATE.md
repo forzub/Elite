@@ -1,5 +1,110 @@
 # PROJECT STATE
 
+## 2026-09-24 — GitHub publication pending explicit public-main authorization
+
+Local `main` contains the corrected docking route and JSON numeric locale.
+The public `forzub/Elite` branch was confirmed at `84d59f4d`; automatic
+approval review blocked the direct push even after the user's request to put
+code on GitHub. Until express public-main publication approval is received,
+target `git pull` alone remains an old-code installation path. Do not suggest
+patches again as the user explicitly declined them.
+
+
+## 2026-09-24 — old binary explains repeated bare axis failures
+
+The target checkout and runtime binary were inspected: both are based on
+remote `84d59f4d`; the executable lacks the corrected numeric-axis marker.
+The two previous bare failure excerpts cannot be used to evaluate the newer
+Hub-local decision contract. Distribution/installation is the current gate;
+the user's untracked trace artifacts are unrelated and must be preserved.
+
+
+## 2026-09-24 — deployment identity precedes a fresh dock-model diagnosis
+
+The repeated brief route and bare axis-failure excerpt contains no numeric
+measurement from the corrected local implementation. The canonical build
+script uses the invoking checkout's `build/EliteGame.exe`; the target's
+checkout and binary identity remain unknown. Treat this as an unresolved
+deployment-versus-runtime distinction until the complete combined log and
+binary marker are inspected.
+
+
+## 2026-09-24 — JSON numeric locale invariant
+
+Process text locale may follow the OS, but JSON numeric conversion must always
+use decimal point `.`. `main.cpp` now calls `core::useJsonNumericLocale()`
+immediately after applying the user's `LC_ALL` and before creating the app or
+threads. A focused C++ regression verifies fractional/exponent JSON parsing
+under this boundary. Target startup confirmation remains open; the docking
+route failure cannot be evaluated until the game remains running.
+
+
+## 2026-09-24 — corrected branch not yet published
+
+The corrected Hub-local docking source and documentation exist as local
+commits beyond remote `84d59f4`. Automatic approval review rejected direct
+publication to public `origin/main` despite the request to apply the patch in
+the repository. Distribute the exact local commit series as a patch for the
+Windows acceptance run; do not represent `git pull` alone as installing it.
+
+
+## 2026-09-24 — live evidence must identify deployed source
+
+The legacy remote docking guard can emit `dock moved off approach axis` alone.
+The corrected local guard always emits a numeric `[DockAdvisory] axis` record
+to the same stream first. A repeated failure without that record is evidence
+for an old build only when output is complete and unfiltered; the user excerpt
+does not establish that condition. Require binary/source verification before
+attributing a fresh failure to the Hub-local contract.
+
+
+## 2026-09-24 — docking frame and epoch contract
+
+| Operation | Coordinate owner | Time owner |
+| --- | --- | --- |
+| Capture and plan | ship, port and obstacles in one tactical Hub-local snapshot | authoritative source tick/universe epoch |
+| Track and guard | sampled ship and attachment, fixed local gates | one authoritative server tick/universe epoch per validation |
+| Cockpit display | local gates converted through the player's render Hub frame | player render-frame universe epoch |
+| Hub-map display | identical local gate list projected directly by Hub camera | fixed local geometry; no orbit/time conversion |
+
+The target's authored local offset has zero translational velocity; its axial
+spin changes orientation around the dock entrance axis. All dock-axis and
+corridor comparisons now stay in tactical Hub-local coordinates. World
+`GuidanceFrame`s are a generic display adapter only. Planning and flight
+validation reject timeline/Hub mismatches; missing render frames postpone
+publication without invalidating local route truth. Local regression and
+architecture checks pass; Windows build and flight acceptance remain open.
+The focused docking check passes; the entire architecture suite does not:
+its Python portion reports nine pre-existing unrelated check failures and its
+Windows toolchain prerequisites are unavailable here.
+
+## 2026-09-24 — docking uses Hub-local route truth across time domains
+
+The advisory planner consumes only tactical Hub-local meters at one captured
+planning epoch. Its gates remain fixed Hub-local state; map projection,
+cockpit projection and corridor tracking must never substitute a world pose
+from another epoch. Runtime corridor tracking uses the ship's Hub-local
+position. Cockpit gates use the player's render reference frame and its time;
+map gates use current guidance frames and are projected against the map's
+co-moving frame at each frame time. A numerical fixture now bounds disagreement
+between the canonical orbital predictor and map co-moving predictor over 120 s.
+The generic `GuidanceFrame.centerMeters` interface remains system-local world
+meters at presentation boundaries; it is not a planner coordinate.
+
+
+## 2026-09-24 — one Hub frame owns fixed docking gate and moving port
+
+The terminal advisory gate remains fixed in Hub-local coordinates. At each
+validation epoch, both that gate and the target module/semantic port derive
+from `NavigationWorldPredictor::predictHubFrameAt`. Module pose comes from its
+stable `HubAttachmentSnapshot`, not linear extrapolation of a sampled world
+anchor. This is necessary even for a dock with zero authored local translation
+because the Hub follows a curved orbit. Diagnostic axial spin does not displace
+the entrance center or approach axis; an off-axis spin still fails the 2 m
+consistency guard. Local focused regression passes; target game acceptance and
+server-confirmed Human hand-back remain open.
+
+
 ## 2026-09-24 — docking live gate isolates post-publish dock prediction mismatch
 
 The playable docking slice now reaches route publication in the real game. The

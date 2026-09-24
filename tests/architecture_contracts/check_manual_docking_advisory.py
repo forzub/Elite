@@ -54,6 +54,29 @@ try:
             "phase=handoff_wait", "human_control=1",
             "controlledEntityAutopilotActive",
             "cockpit.docking.manual_mode")
+    require("src/game/SpaceState.cpp",
+            "resolveDockingAdvisoryLocalPortAt(",
+            "sampleHubMapRuntimeAtServerTime(",
+            "metadata.serverTick != active.lastValidatedTick",
+            "observedShip->localPositionMeters",
+            "active.timelineRevision",
+            "request.startMeters = snapshot.controlledShip.localPositionMeters",
+            "const double renderTime = playerRenderFrame.universeTimeSeconds",
+            "playerRenderFrame.kinematicFrame()",
+            "buildGuidanceCorridorHudPresentation(")
+    advisory = read("src/game/SpaceState.cpp").split(
+        "void SpaceState::updateDockingAdvisory()", 1
+    )[1].split("void SpaceState::update(float dt)", 1)[0]
+    if ("frame.worldToLocalPosition(ship" in advisory or
+            "makeRoute(frame, port, time)" in advisory or
+            "predictHubSemanticAnchorAt(active.port" in advisory):
+        raise AssertionError("docking advisory reintroduced mixed-epoch geometry")
+    require("src/game/navigation/GuidanceCorridor.h",
+            "hubLocalFrameId", "hubLocalGatePositionsMeters")
+    require("src/game/system_map/SystemMapRenderer.cpp",
+            "corridor->hubLocalFrameId == hub.hubId",
+            "corridor->hubLocalGatePositionsMeters[index]",
+            "m_hubPresentation.camera.project(")
     require("src/render/cockpit/GuidanceCorridorRenderer.cpp", "projectedUpperLeft")
     if "projected.corners[1] +" in read("src/render/cockpit/GuidanceCorridorRenderer.cpp"):
         raise AssertionError("speed label is still tied to arbitrary corner[1]")

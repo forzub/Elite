@@ -2,6 +2,9 @@
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/HubSemanticAnchor.h"
 #include "src/game/navigation/HubFrameBasis.h"
+#include "src/game/navigation/NavigationWorldPredictor.h"
+#include "src/game/navigation/DockingAdvisoryPortPrediction.h"
+#include "src/game/navigation/HubCoMovingFrame.h"
 #include <glm/gtx/quaternion.hpp>
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 #include <cmath>
@@ -90,6 +93,7 @@ int main()
         farPlan.gates.back().speedMps!=0.0) return 7;
     game::navigation::HubSemanticAnchorDefinition portDefinition;
     portDefinition.localPositionMeters={0.0,0.0,-450.0};
+    portDefinition.hubModuleId="guidance_dock_cube_a";
     portDefinition.localForward={0.0,0.0,-1.0};
     portDefinition.localUp={0.0,1.0,0.0};
     const glm::dmat4 moduleRotation=glm::rotate(glm::dmat4(1.0),
@@ -112,6 +116,134 @@ int main()
         glm::length(port.forward()-later.forward())>1e-6 ||
         glm::dot(port.up(),later.up())>0.1)
     { std::cerr << "spinning dock pose inconsistent\n"; return 8; }
+
+    // In the orbital fixture the module has no authored Hub-local translation.
+    // The fixed gate and the spinning port must be evaluated in one Hub frame;
+    // linear world-velocity extrapolation of the anchor loses the curved orbit.
+    world::orbits::OrbitalMotion orbit;
+    orbit.enabled=true;
+    orbit.parentRadiusMeters=6380000.0;
+    orbit.altitudeMeters=420000.0;
+    orbit.orbitalPeriodSeconds=5400.0;
+    const double sourceTime=10.0;
+    HubPredictionSource hub;
+    hub.systemId=0;
+    hub.hubId="earth_orbital_hub";
+    hub.sourceUniverseTimeSeconds=sourceTime;
+    hub.orbitalMotion=orbit;
+    hub.positionMeters=world::orbits::computeOrbitPositionMeters(orbit,sourceTime);
+    hub.velocityMps=world::orbits::computeOrbitVelocityMetersPerSecond(orbit,sourceTime);
+    const auto radial=glm::normalize(hub.positionMeters-orbit.centerMeters);
+    const auto prograde=glm::normalize(hub.velocityMps);
+    const auto normal=glm::normalize(glm::cross(prograde,radial));
+    hub.orientation=hubVisualOrientation(prograde,radial,normal);
+    const auto sourceFrame=NavigationWorldPredictor::predictHubFrameAt(hub,sourceTime);
+    const glm::dvec3 moduleOffset={3000.0,350.0,0.0};
+    const glm::dvec3 moduleYaw={0.0,27.0,0.0};
+    const glm::dvec3 moduleSpin={0.0,0.0,2.0};
+    game::simulation::HubAttachmentSnapshot attachment;
+    attachment.valid=true;
+    attachment.systemId=0;
+    attachment.hubId=hub.hubId;
+    attachment.moduleId=portDefinition.hubModuleId;
+    attachment.localOffsetMeters=moduleOffset;
+    attachment.localRotationDeg=moduleYaw;
+    attachment.localAngularVelocityDegPerSecond=moduleSpin;
+    const auto sourceModule=NavigationWorldPredictor::resolveHubAttachmentAt(
+        sourceFrame,sourceTime,moduleOffset,moduleYaw,moduleSpin);
+    const auto sourcePort=resolveHubSemanticAnchor(
+        portDefinition,0,sourceTime,sourceModule.positionMeters,
+        sourceModule.velocityMps,sourceModule.orientation,
+        sourceModule.angularVelocityWorldRadPerSecond);
+    const auto sourceLocal=resolveDockingAdvisoryLocalPortAt(
+        attachment,portDefinition,sourceTime);
+    if (!sourceLocal.valid ||
+        glm::length(sourceFrame.worldToLocalPosition(sourcePort.positionMeters)-
+                    sourceLocal.positionMeters)>0.01 ||
+        glm::length(sourceFrame.worldToLocalVector(sourcePort.forward())-
+                    sourceLocal.forward)>1e-5) return 16;
+    const double standoff=300.0;
+    const auto fixedGateLocal=
+        sourceLocal.positionMeters+standoff*sourceLocal.forward;
+    for (double elapsed : {1.0,45.0})
+    {
+        const double time=sourceTime+elapsed;
+        const auto frame=NavigationWorldPredictor::predictHubFrameAt(hub,time);
+        const auto module=NavigationWorldPredictor::resolveHubAttachmentAt(
+            frame,time,moduleOffset,moduleYaw,moduleSpin);
+        const auto predictedPort=resolveHubSemanticAnchor(
+            portDefinition,0,time,module.positionMeters,module.velocityMps,
+            module.orientation,module.angularVelocityWorldRadPerSecond);
+        const auto localPort=resolveDockingAdvisoryLocalPortAt(
+            attachment,portDefinition,time);
+        if (!localPort.valid) return 17;
+        const double axisError=glm::length(fixedGateLocal-
+            (localPort.positionMeters+standoff*localPort.forward));
+        const double worldToLocalError=glm::length(
+            frame.worldToLocalPosition(predictedPort.positionMeters)-
+            localPort.positionMeters);
+        const double relativeModuleSpeed=glm::length(
+            frame.worldToLocalVelocity(module.positionMeters,module.velocityMps));
+        if (!frame.valid || !module.valid || axisError>0.05 ||
+            worldToLocalError>0.01 ||
+            relativeModuleSpeed>1e-7 ||
+            glm::length(predictedPort.forward()-sourcePort.forward())>0.05)
+        { std::cerr << "orbital dock axis drift=" << axisError
+                    << " relative_speed=" << relativeModuleSpeed << '\n'; return 13; }
+        if (elapsed==45.0)
+        {
+            const auto linearPort=predictHubSemanticAnchorAt(sourcePort,time);
+            const double oldError=glm::length(
+                frame.localToWorldPosition(fixedGateLocal)-
+                (linearPort.positionMeters+standoff*linearPort.forward()));
+            if(oldError<=2.0)
+            { std::cerr << "orbital regression fixture did not reproduce drift\n"; return 14; }
+            auto offAxisAttachment=attachment;
+            offAxisAttachment.localAngularVelocityDegPerSecond={0.0,2.0,0.0};
+            const auto offAxisPort=resolveDockingAdvisoryLocalPortAt(
+                offAxisAttachment,portDefinition,time);
+            if (!offAxisPort.valid ||
+                glm::length(fixedGateLocal-
+                    (offAxisPort.positionMeters+standoff*offAxisPort.forward))<=2.0)
+            { std::cerr << "off-axis dock motion escaped the guard\n"; return 15; }
+        }
+    }
+    // Cockpit presentation lags behind the current update. A fixed local
+    // gate and a rendered ship must be projected through that same epoch;
+    // mixing their world positions displaces the tunnel by hundreds of m.
+    const auto currentFrame=NavigationWorldPredictor::predictHubFrameAt(
+        hub,sourceTime+1.0);
+    const auto renderFrame=NavigationWorldPredictor::predictHubFrameAt(
+        hub,sourceTime+0.9);
+    const glm::dvec3 shipLocal=fixedGateLocal+glm::dvec3(0.0,0.0,1000.0);
+    const auto renderedShipWorld=renderFrame.localToWorldPosition(shipLocal);
+    const auto cockpitRelative=
+        renderFrame.localToWorldPosition(fixedGateLocal)-renderedShipWorld;
+    const auto expectedRelative=renderFrame.localToWorldVector(
+        fixedGateLocal-shipLocal);
+    const auto mixedEpochRelative=
+        currentFrame.localToWorldPosition(fixedGateLocal)-renderedShipWorld;
+    if (glm::length(cockpitRelative-expectedRelative)>1e-6 ||
+        glm::length(mixedEpochRelative-expectedRelative)<100.0 ||
+        glm::length(currentFrame.worldToLocalPosition(renderedShipWorld)-
+                    shipLocal)<100.0)
+    { std::cerr << "mixed-epoch Hub gate/ship regression failed\n"; return 18; }
+    // The Hub map currently seeds its own co-moving frame from replicated
+    // orbital position/velocity. Its projection must stay equivalent to the
+    // canonical Hub predictor for a fixed local advisory gate.
+    const auto mapSeed=makeHubCoMovingFrameSeed(
+        hub.systemId,hub.hubId,sourceTime,hub.positionMeters,hub.velocityMps,
+        orbit.centerMeters,{0.0,0.0,0.0},prograde,radial,normal);
+    for (double elapsed : {1.0,45.0,120.0})
+    {
+        const auto canonical=NavigationWorldPredictor::predictHubFrameAt(
+            hub,sourceTime+elapsed);
+        const auto mapFrame=predictHubCoMovingFrameAt(mapSeed,sourceTime+elapsed);
+        if (!mapFrame.valid ||
+            glm::length(canonical.localToWorldPosition(fixedGateLocal)-
+                        mapFrame.localToWorldPosition(fixedGateLocal))>0.1)
+        { std::cerr << "Hub map frame diverged from advisory frame\n"; return 19; }
+    }
 
     // A pilot can ask to see a route while still outside its first gate.
     // The dock opening constrains only the final approach; after entering,

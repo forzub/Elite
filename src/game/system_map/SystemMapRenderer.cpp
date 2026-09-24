@@ -3164,16 +3164,38 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
 
     // The map draws the full route while the cockpit may omit passed spatial
     // gates. Keep every supplied point, including the route start.
-    for (const auto& guidanceFrame : corridor->frames)
+    const bool localDockRoute =
+        m_mode == Mode::Hub &&
+        corridor->source == game::navigation::GuidanceSource::DockingComputer &&
+        corridor->hubLocalFrameId == hub.hubId &&
+        corridor->hubLocalGatePositionsMeters.size() ==
+            corridor->frames.size();
+    for (std::size_t index = 0; index < corridor->frames.size(); ++index)
     {
+        const auto& guidanceFrame = corridor->frames[index];
         game::system_map::MapTrajectoryPoint point;
         point.universeTimeSeconds = guidanceFrame.universeTimeSeconds;
         point.position = guidanceFrame.centerMeters;
-        point.screenProjected = projectWorldPoint(
-            point.position,
-            point.universeTimeSeconds,
-            point.screenPx
-        );
+        if (localDockRoute)
+        {
+            // Fixed docking gates and the Hub camera share a tactical local
+            // frame. Do not leave it for world space just to re-enter it
+            // through a second Hub orbit/epoch predictor.
+            point.screenPx = m_hubPresentation.camera.project(
+                corridor->hubLocalGatePositionsMeters[index]
+            );
+            point.screenProjected =
+                std::isfinite(point.screenPx.x) &&
+                std::isfinite(point.screenPx.y);
+        }
+        else
+        {
+            point.screenProjected = projectWorldPoint(
+                point.position,
+                point.universeTimeSeconds,
+                point.screenPx
+            );
+        }
 
         if (point.screenProjected)
             trajectory.points.push_back(std::move(point));

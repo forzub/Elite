@@ -1,4 +1,113 @@
-# CURRENT TASK — spatially bound receding-horizon physical maneuver chain
+# CURRENT TASK — manual docking advisory flight acceptance
+
+## 2026-09-24 — public main publication approval gate
+
+User wants fixes in GitHub and no patch files. Automatic approval review
+rejected the exact `git push origin main` attempt as consequential public
+default-branch publication without sufficiently explicit approval. The next
+required input is express authorization to publish these local docking and
+JSON-locale commits to `forzub/Elite` public `origin/main`. After authorization,
+verify remote HEAD and provide only `git pull`, focused tests, canonical build
+and log-capturing run commands. Do not bypass with another push route.
+
+
+## 2026-09-24 — install confirmed-missing patch on target checkout
+
+The target is at `84d59f4d` and its binary lacks the fixed axis guard. Apply
+the complete exported patch with `git am` (do not remove the user's untracked
+trace files), run the focused JSON-locale and docking tests, build using
+`bash build_mingw64.sh`, and verify the rebuilt binary contains
+`[DockAdvisory] axis request=`. Capture combined console/file output, then
+check route persistence and server-acknowledged Human hand-back.
+
+
+## 2026-09-24 — inspect target checkout, binary and complete game log
+
+On Windows print `git log -1 --oneline`, inspect `src/game/SpaceState.cpp` for
+`[DockAdvisory] axis request=`, check the built `build/EliteGame.exe` for that
+same literal, and search the complete combined `docking-live.log` for
+`[Startup]`, planning, axis and failure lines. If the binary lacks the literal,
+apply the corrected patch and rebuild in that checkout. If the binary has it
+and the full log includes numeric axis error, diagnose that measurement.
+
+
+## 2026-09-24 — rerun after numeric JSON locale correction
+
+Install the refreshed local patch on the Windows checkout. Run the focused
+`json_numeric_locale` and `docking_advisory` CTest targets, build the canonical
+game, and capture combined output with `tee`. The new `[Startup] LC_NUMERIC=C`
+line proves the corrected startup path ran. First verify startup no longer
+asserts in the nlohmann numeric lexer; then proceed to SHOW ROUTE and capture
+the docking axis/hand-back lifecycle. This crash is a separate gate from the
+Hub-local navigation fix. Do not claim Windows runtime acceptance from the
+local native test.
+
+
+## 2026-09-24 — deliver target verification while remote push is blocked
+
+Automatic approval review rejected publishing the four local docking commits
+to public `origin/main`. Provide the refreshed `git am` patch for target
+installation, exact focused tests and canonical build/run commands. Record
+stdout/stderr both on screen and in `build/test-logs/docking-live.log` using
+`tee`. Remote push requires explicit approval identifying `origin/main`.
+
+
+## 2026-09-24 — prove the executable contains the local fix
+
+Repeated `failed=dock moved off approach axis` without an `[DockAdvisory]
+axis` line matches the old remote source. First confirm the target checkout
+contains the corrected commits and the launched `build/EliteGame.exe` was
+rebuilt from them. Capture unfiltered stdout and stderr together, including
+planning and axis lines. If the corrected binary produces an axis measurement,
+diagnose its numeric local delta/tick/Hub ID; if it does not, repair the
+deployment/build path. Do not infer new dock physics from an excerpt lacking
+the executable identity.
+
+
+## 2026-09-24 — verify single-epoch local docking route on Windows
+
+Apply the local change set on the target checkout, run architecture and focused
+docking tests, build the client and start the game. SHOW ROUTE must stop the
+ship, plan from one authoritative tick, retain fixed Hub-local gates for over
+45 s, and acknowledge Human control after route publication. Collect
+`phase=stabilizing`, `phase=planning` (source tick/time),
+`phase=handoff_wait` (validated tick/render time),
+`[DockPrep] published ... human_restored=1`, and
+`phase=manual human_control=1`. If cancelled, collect the complete
+`[DockAdvisory] axis` or `left` measurement. The code is locally checked but
+full-game compilation and live acceptance are open. Prior text asking to pull
+remote `main` alone is obsolete: these edits have not been published there.
+The full architecture runner is blocked in this environment by missing build
+tools; its separate Python portion passes 82/91, with nine unrelated failures
+requiring target-side triage. Record these separately from the docking gate.
+
+## 2026-09-24 — Windows gate after complete docking frame audit
+
+In addition to the port/Hub orbital correction, local code now removes two
+current-versus-render epoch mixes: corridor tracking uses ship Hub-local
+position, and cockpit gates are projected through the player's actual render
+Hub frame. Focused tests pass locally, including mixed-epoch displacement and
+map-frame agreement. Build the updated `docking_advisory_tests` and game on
+Windows. Verify route persistence while stationary and moving relative to the
+Hub, no orbital drift in cockpit/map for 45+ s, and confirmed Human hand-back.
+If the route clears, capture `[DockAdvisory] axis` or `[DockAdvisory] left` plus
+the complete preparation phase sequence. Full target acceptance remains open.
+
+
+## 2026-09-24 — verify canonical dock-axis prediction on Windows
+
+The split prediction is corrected in code and its orbital/axial regression
+passes locally. On the Windows target: pull current `main`; run the
+architecture gate and `docking_advisory_tests`; rebuild the game and press
+SHOW ROUTE while moving in the isolated Hub fixture. Verify physical stop,
+route persistence (including beyond 45 s), and the log sequence
+`phase=stabilizing -> phase=planning -> phase=handoff_wait ->
+[DockPrep] published ... human_restored=1 -> phase=manual human_control=1`.
+Check Human controls after that confirmation, then card-close and post-entry
+corridor reset. If `dock moved off approach axis` recurs, provide its new
+`[DockAdvisory] axis` numeric line. This gate is not yet passed by an in-game
+run; DOCKING remains disabled.
+
 
 ## 2026-09-24 — diagnose/fix dock-axis prediction split after successful publication
 

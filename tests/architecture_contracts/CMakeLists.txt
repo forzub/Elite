@@ -1398,6 +1398,12 @@ set_tests_properties(
 
 find_package(nlohmann_json REQUIRED)
 
+add_executable(json_numeric_locale_tests JsonNumericLocaleTests.cpp)
+target_include_directories(json_numeric_locale_tests PRIVATE "${ELITE_SOURCE_ROOT}")
+target_link_libraries(json_numeric_locale_tests PRIVATE nlohmann_json::nlohmann_json)
+target_compile_features(json_numeric_locale_tests PRIVATE cxx_std_17)
+add_test(NAME json_numeric_locale COMMAND json_numeric_locale_tests)
+
 add_executable(
     client_preferences_store_contract_tests
     ClientPreferencesStoreContractTests.cpp

@@ -1,5 +1,181 @@
 # CURRENT STATE
 
+## 2026-09-24 — direct GitHub publication requested, auto-review still blocks public main
+
+The user explicitly rejected patch-file delivery and asked for code directly
+on GitHub plus `git pull` commands. Read-only `git ls-remote origin
+refs/heads/main` confirmed public `main` remains `84d59f4d`. A direct
+`git push origin main` was again rejected by automatic approval review: it
+requires explicit authorization of the exact public-main push, beyond the
+user's request to apply code in git. No push or indirect publication occurred.
+The corrected code remains local; focused docking, test-source and JSON-locale
+checks pass. Await explicit authorization to publish the local commits to
+`origin/main`. Do not claim `git pull` downloads these fixes yet.
+
+
+## 2026-09-24 — target proven to run the unpatched docking executable
+
+Target-machine evidence is decisive: checkout `D:\\__elite\\work` is
+`84d59f4d` (`main`, `origin/main`), the `build/EliteGame.exe` does not contain
+`[DockAdvisory] axis request=`, and its complete searched log contains only
+`request=1 failed=dock moved off approach axis`. The observed disappearance
+therefore belongs to the old tangent-extrapolation guard, not to the corrected
+Hub-local implementation. The user has several untracked trace files; do not
+delete or overwrite them. Apply the full mailbox patch based on `84d59f4`
+with `git am`, rebuild the canonical executable, verify its axis marker, then
+rerun the flight gate. Corrected-code live acceptance remains open.
+
+
+## 2026-09-24 — repeated target route removal still lacks numeric axis record
+
+The next Windows excerpt shows `[DockAdvisory] request=1 failed=dock moved off
+approach axis` after the route briefly appeared. No `[DockAdvisory] axis`
+measurement or `[Startup] LC_NUMERIC=C` was included in the excerpt. The
+corrected guard writes axis measurements to `std::cerr` immediately before
+that same failure, and the canonical build script compiles `build/EliteGame.exe`
+from the checkout used to invoke it. An excerpt is not a complete log; the
+remaining decisive checks are the target `git log`, presence of the marker in
+the executable, and unfiltered `build/test-logs/docking-live.log`. Do not
+change the 2 m axis threshold before obtaining those results. Human hand-back
+and sustained route persistence remain unproved.
+
+
+## 2026-09-24 — Windows startup JSON assertion after docking patch
+
+New target run aborted in `nlohmann/detail/input/lexer.hpp` numeric conversion
+with `endptr == token_buffer.data() + token_buffer.size()` while starting a
+session. `src/main.cpp` previously applied the user's `LC_ALL` locale; on a
+decimal-comma Windows locale, the JSON lexer accepts `1.25` but the C runtime
+`strtod` consumes only `1`, triggering precisely this assertion. A preceding
+`session-start-update` duration line marks a completed slow phase, not a
+proven crash stack. Chromium's window-unregister message is a shutdown
+consequence, not the JSON cause.
+
+Startup now keeps the user's text locale but explicitly restores `LC_NUMERIC=C`
+before constructing `Application` or starting worker threads. It logs the
+numeric locale. A new native regression tries comma-decimal locales where
+installed and verifies nlohmann parses a fractional and exponential JSON
+number after the startup normalization. It passes locally, along with the
+authentication-admission, test-source and manual-docking static checks. The
+Windows runtime rerun and docking flight gate are pending. Remote publication
+remains blocked by the prior automatic approval rejection; update the local
+patch for target installation.
+
+
+## 2026-09-24 — local docking fix complete; remote push blocked by review
+
+The user requested applying the patch in the repository and requested
+download/build/run commands. Local `main` contains the corrected docking
+implementation through `90661a5`; focused docking and test-source architecture
+checks passed and the worktree was clean. A direct `git push origin main` was
+rejected by automatic approval review because it would publish multiple
+commits to the public default branch without an explicit authorization of
+that exact remote action. No alternate publication path is permitted. Remote
+`main` still tracks `84d59f4` in this checkout. Deliver a local `git am`
+patch and commands now; request explicit approval for remote public-main
+publication if the user wants ordinary `git pull` to carry the changes.
+
+
+## 2026-09-24 — repeated live axis failure: deployed-version check first
+
+The new supplied live excerpt again shows only `request=N failed=dock moved
+off approach axis`. The published `origin/main` source at `84d59f4` emits
+exactly that line without a preceding measurement. The local corrected
+`SpaceState.cpp` at `81175bb` emits `[DockAdvisory] axis request=... delta_m=...`
+to the same `std::cerr` immediately before that failure. Therefore, if the
+excerpt represents the unfiltered stderr stream, it was produced by an older
+binary. An excerpt alone cannot prove which executable ran. Verify checkout
+HEAD, binary contents/build provenance and capture full combined output before
+changing docking math. The local code and 2 m guard have not been changed by
+this observation. Live acceptance remains open.
+
+
+## 2026-09-24 — one authoritative tick and Hub-local docking geometry (local verification)
+
+The earlier current/render split is superseded for docking decisions. Planning
+captures a single authoritative snapshot epoch: ship start, semantic port,
+obstacles and route gates use tactical Hub-local meters. The port's authored
+module offset is fixed relative to the Hub; rotation is evaluated from the
+attachment at that same universe time. Its axial spin keeps the entrance and
+approach axis fixed. Each subsequent server tick samples ship and target from
+the same snapshot, checks timeline and Hub identity, then validates the final
+gate and corridor entirely in local coordinates. The 2 m axis guard remains.
+
+Presentation does not feed flight decisions. The cockpit world frames use the
+player's single render reference frame/time; the Hub map projects the same
+local gate positions directly in its local camera. Thus no map-specific Hub
+orbit predictor can move a docking gate. The manual-mode indicator uses render
+time too. New planning, frame mismatch, axis, corridor and hand-back logs carry
+tick/time/frame or measured local errors. Native docking regression and manual
+docking architecture/source-integrity checks pass locally. A full Windows
+build, 45 s route persistence and server-confirmed Human control are pending.
+
+Local commits must not be mistaken for remote `main`: direct public-main push
+was rejected by automatic approval review. Apply the exported patch locally
+for target verification until publication is explicitly authorized.
+
+Verification boundary: local native docking test and two focused Python checks
+pass. The Windows runner cannot start here (CMake/Ninja/CTest absent), and
+full game syntax compilation lacks GLAD. Running its Python checks separately
+gave 82/91 passes; nine failures are in existing runtime-control/NPC/DTO,
+trajectory, editor, auth/wire and bootstrap checks outside this docking change.
+They need independent triage on the configured target; no full architecture
+gate pass is claimed.
+
+## 2026-09-24 — docking coordinate/epoch boundary audit (local verification)
+
+The SHOW ROUTE planner uses one Hub-local tactical frame for ship start,
+semantic entrance/axis, static obstacle centers/bases and all generated gates.
+World positions enter only at the snapshot adapter; published map and cockpit
+frames are output projections of the same immutable local gate list.
+
+Two additional mismatched-epoch reads were found after the earlier dock-axis
+fix. Corridor tracking converted a ship world pose from its snapshot through
+the Hub frame at the current display time. It now reads the ship's authoritative
+or locally predicted `motion.localPositionMeters` after confirming Hub-frame
+identity. Cockpit guidance previously transformed gates at estimated current
+time against a player rendered on the delayed presentation frame. It now
+resolves the dock and projects the gates through the player's actual
+`renderReferenceFrame` and builds the HUD at that frame's universe time. The
+map continues to project at its map time. A temporarily missing render sample
+waits for the next coherent frame without cancelling the accepted route. HUD
+marker stamping also uses the player's render-frame time.
+
+Focused native regression passes: mixed current/render epochs in the fixture
+displace a gate by over 100 m for a 0.1 s lag; coherent local/render transforms
+preserve relative position. The separate Hub-map co-moving seed agrees with
+the canonical orbital predictor to within 0.1 m through 120 s in the fixture.
+The manual-docking architecture check and test-source integrity check pass.
+Full game build/live persistence/Human hand-back are still unverified here.
+
+
+## 2026-09-24 — dock-axis split fixed locally; Windows flight gate pending
+
+Root cause is confirmed in source and a focused native regression: the fixed
+terminal gate was advanced with the canonical orbital Hub frame, while the
+resolved dock anchor was advanced by its instantaneous world velocity. The
+latter traces a straight tangent and drifts even though the dock module's
+authored Hub-local offset has zero linear velocity. The diagnostic cube at
+`(3000,350,0)` has a 27-degree yaw and a 2-degree/s local Z spin; its entrance
+center/forward lie on that spin axis. The far cylinder is stationary relative
+to the Hub in both position and orientation.
+
+`SpaceState` now retains the target's stable Hub attachment and semantic
+definition at planning time, resolves the module again from the same predicted
+Hub frame and universe time used for the gate, and resolves the anchor from
+that module. The 2 m axis guard is unchanged. On a guard failure it logs both
+world positions, error, times, frame and module IDs and Hub-local module speed.
+The test covers 1 s and 45 s of orbital motion, zero authored module local
+translation, axis-preserving spin, and rejection of off-axis spin. Focused
+native test and manual-docking architecture check pass locally; full Windows
+game build and observed flight/authority hand-back are still required.
+
+The previous live observation remains valid: the line appeared briefly, so
+takeover, settled snapshot, planning and publication were reached in that run.
+The supplied log still does not prove the final server acknowledgement of
+Human control.
+
+
 ## 2026-09-24 — live manual docking reaches publication, then fails dock-axis consistency check
 
 Target game result on current docking slice:

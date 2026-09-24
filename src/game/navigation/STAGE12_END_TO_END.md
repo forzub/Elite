@@ -10067,3 +10067,135 @@ predicted Hub frame with the independently predicted semantic port/standoff
 state. The likely defect is split kinematic prediction for the yawed/spinning
 Hub-attached module. Preserve the 2 m guard until the two prediction sources are
 made coherent.
+
+## 2026-09-24 — canonical Hub-attached dock-axis follow-up
+
+The mismatch was a prediction ownership bug. A fixed Hub-local final gate was
+evaluated through the curved orbital Hub frame; the semantic port was instead
+propagated by its sampled straight-line world velocity. The authored diagnostic
+cube has constant Hub-local center `(3000,350,0)`, yaw 27 degrees, and local Z
+spin 2 degrees/s about the dock's entrance-center axis. Neither this axial
+spin nor the Hub orbit is an authored translation of the dock relative to the
+Hub. The cylinder has no authored local spin or translation.
+
+`DockAdvice` now stores the semantic definition and stable target module
+attachment. At validation epoch T, `predictHubFrameAt` resolves the Hub,
+`resolveHubAttachmentAt` resolves its module in that same frame, and
+`resolveHubSemanticAnchor` resolves the entrance and forward axis. The fixed
+gate is transformed through that identical Hub frame. The 2 m guard stays and
+prints numerical evidence on failure. The focused native regression passes for
+orbital motion at 1 s and 45 s, proves zero Hub-local module translation,
+reproduces old straight-line drift, and rejects off-axis dock spin.
+
+No full Windows game acceptance is claimed. The next observed flight must
+prove route persistence and the authoritative Complete/Human hand-back lines.
+
+## 2026-09-24 — audited docking coordinate and epoch ownership
+
+| Stage | Input domain | Output domain | Epoch |
+| --- | --- | --- | --- |
+| Authoritative snapshot adapter | system-local world pose and stable Hub attachment | Hub-local ship, port, obstacles | one captured planning epoch |
+| Static advisory planner | Hub-local meters, vectors and obstacle bases | fixed Hub-local gates/speeds | captured planning epoch |
+| Axis validation | fixed Hub-local terminal gate and dock attachment | comparison in system-local world meters | one current predicted Hub epoch |
+| Corridor tracking | ship Hub-local position and fixed Hub-local gates | inside/progress/cancel | ship's observed local state |
+| Hub map | fixed gate projected as world guidance frame | map screen coordinates | guidance frame/map sample time |
+| Cockpit HUD | fixed Hub-local gates and player render reference frame | world guidance frame then player-relative view | player's render-frame time |
+
+This audit found two more uses of different times for one comparison. Tracking
+had converted a snapshot ship world position with a newer orbital Hub frame;
+it now uses the ship's Hub-local position after checking frame identity. The
+HUD had compared current-time world gates to the delayed rendered ship; it now
+projects through that ship's exact render Hub frame and stamps its time. The
+map and HUD hold separately projected presentation products derived from one
+unchanging local gate list. Neither becomes a second planner truth. A missing
+render sample pauses presentation update rather than cancelling the route.
+
+The focused orbital regression reproduces >100 m of mixed-epoch displacement
+with only 0.1 s of render lag and verifies coherent projection. The map's
+independent co-moving-frame implementation is currently numerically within
+0.1 m of the orbital predictor at 1, 45 and 120 s on the fixture. The older
+generic `LocalGuidancePlanner` fallback that predicts a sampled semantic anchor
+by tangent extrapolation has no current production docking caller; activating
+it for Hub docks would require the same attachment/epoch contract first.
+
+## 2026-09-24 — single-epoch tactical Hub-local docking contract
+
+The previous docking world-projection split documented above is historical.
+At planning, `buildAuthoritativeHubSnapshot` supplies one source epoch;
+`resolveDockingAdvisoryLocalPortAt` evaluates the authored attachment at that
+epoch. The ship start, semantic entrance/axis, obstacles and resulting gates
+are in tactical Hub-local meters. Before each progress update, sample ship and
+module from the same authoritative server tick, validate Hub/timeline identity,
+and check the fixed last gate against the dock's local standoff with the 2 m
+guard. Do not project a world position back through a frame from another time.
+
+The cockpit's generic world guidance adapter uses the player's render frame
+and its time for every gate. The Hub map takes the very same `hubLocalGatePositionsMeters`
+and projects them directly, bypassing its orbital world-frame predictor. A
+missing render frame postpones publication, never changes the local decision.
+Log planning source tick/time, start-frame error, local dock-axis delta,
+local lateral/vertical corridor error and hand-back tick/render time. The
+diagnostic cube has zero authored Hub-local translation and an axial local
+spin; changing its local translation or spin axis requires fresh validation.
+Local focused regression and architecture checks passed. Windows compilation,
+route persistence and Human hand-back have not yet been demonstrated.
+The full architecture runner could not start locally without CMake/Ninja/CTest;
+its Python-only portion passes 82 of 91 checks, with nine unrelated failures.
+
+## 2026-09-24 — second live failure and executable identity
+
+Two more requests reported only `failed=dock moved off approach axis`. That
+exact log shape exists in remote `origin/main` at `84d59f4`. In the corrected
+local guard, `[DockAdvisory] axis request=... delta_m=...` is written to
+`std::cerr` immediately before the same failure. The supplied fragment is
+insufficient to prove it includes all stderr. Check the actual checkout and
+rebuilt `build/EliteGame.exe`, then collect combined output without filtering.
+Do not change the 2 m threshold based on the old-code-shaped fragment.
+
+## 2026-09-24 — distribution gate after repeat failure
+
+The local corrected branch passes the focused source checks. An attempted
+direct push of its commits to public `origin/main` was rejected by automatic
+approval review; remote `main` remains at `84d59f4` in this checkout. For a
+target build, apply the exported patch using `git am`, run the canonical
+build, and capture stdout and stderr with `tee` both on screen and under
+`build/test-logs/docking-live.log`. Publication requires explicit authorization
+of the remote public-main push.
+
+## 2026-09-24 — startup JSON assertion blocks docking rerun
+
+The next Windows run aborted in nlohmann's numeric lexer before the route gate
+could be observed. The app had set `LC_ALL` to the user's locale while
+`nlohmann::json` parses decimal-dot tokens with C `strtod`; a decimal-comma
+locale makes it stop early and assert. Startup now pins only `LC_NUMERIC=C`,
+leaving text localization intact. A standalone parse regression passes locally.
+After installing the refreshed patch, confirm `[Startup] LC_NUMERIC=C`, then
+rerun the docking sequence and preserve the full combined console/file log.
+
+## 2026-09-24 — repeated brief route, no numeric guard evidence in excerpt
+
+The next live excerpt again contains only `failed=dock moved off approach
+axis`. In the corrected local code the axis guard first writes
+`[DockAdvisory] axis request=... delta_m=...` to the same stderr; the absence
+from a partial excerpt cannot establish which binary ran. Confirm target
+checkout HEAD, marker in `build/EliteGame.exe`, and complete unfiltered
+`build/test-logs/docking-live.log` before changing the dock physics.
+
+## 2026-09-24 — target source and binary confirmed old
+
+The Windows target reported `HEAD=84d59f4d` with `origin/main` at the same
+revision, `BINARY: исправленной проверки нет`, and a full log search with only
+the bare `dock moved off approach axis` failure. This proves the tested
+executable never contained the corrected local axis guard. Apply the complete
+patch based on `84d59f4d`, rebuild `build/EliteGame.exe`, verify its embedded
+axis marker, and only then evaluate route persistence. Preserve the untracked
+navigation trace files in the target checkout.
+
+## 2026-09-24 — public-main publication review remains blocked
+
+User requested GitHub installation instead of patch files. Remote
+`refs/heads/main` was checked read-only and still points to `84d59f4d`.
+Automatic approval review again rejected direct `git push origin main`,
+requiring explicit approval for public default-branch publication. No remote
+change happened. The target cannot obtain the local Hub-frame and locale fixes
+via `git pull` until this gate is resolved.

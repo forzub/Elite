@@ -70,6 +70,7 @@
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/HubFrameBasis.h"
@@ -1980,16 +1981,15 @@ void SpaceState::updateDockingAdvisory()
         }
 
         const auto& frame = snapshot.planningFrame;
-        const auto& module = snapshot.targetModuleKinematics;
-        const auto port = resolveHubSemanticAnchor(
-            *definition,
-            snapshot.systemId,
-            snapshot.epoch.universeTimeSeconds,
-            module.positionMeters,
-            module.velocityMps,
-            module.orientation,
-            module.angularVelocityWorldRadPerSecond
+        const auto localPort = resolveDockingAdvisoryLocalPortAt(
+            snapshot.targetObject.hubAttachment,
+            *definition, snapshot.epoch.universeTimeSeconds
         );
+        if (!localPort.valid)
+        {
+            fail("dock local pose unavailable at planning epoch");
+            return;
+        }
 
         VehicleGuidanceEnvelope envelope;
         envelope.lengthMeters = hull.lengthMeters;
@@ -2002,14 +2002,33 @@ void SpaceState::updateDockingAdvisory()
         );
 
         DockingAdvisoryRequest request;
-        request.startMeters = frame.worldToLocalPosition(
+        if (snapshot.controlledShip.motionMode != MotionMode::HubTactical ||
+            snapshot.controlledShip.hubId != snapshot.hubPredictionSource.hubId)
+        {
+            fail("planning ship not in target Hub local frame");
+            return;
+        }
+        request.startMeters = snapshot.controlledShip.localPositionMeters;
+        const auto startFromWorld = frame.worldToLocalPosition(
             world::coordinates::fullMeters(
                 snapshot.controlledShip.worldPosition
             )
         );
-        request.entranceMeters =
-            frame.worldToLocalPosition(port.positionMeters);
-        request.outward = frame.worldToLocalVector(port.forward());
+        const double startFrameErrorMeters =
+            glm::length(startFromWorld - request.startMeters);
+        if (!std::isfinite(startFrameErrorMeters) ||
+            startFrameErrorMeters > 2.0)
+        {
+            std::cerr << "[DockAdvisory] start frame mismatch request="
+                      << pending.serial
+                      << " tick=" << snapshot.epoch.sourceTick
+                      << " universe_t=" << snapshot.epoch.universeTimeSeconds
+                      << " local_error_m=" << startFrameErrorMeters << '\n';
+            fail("ship start disagrees with Hub local frame");
+            return;
+        }
+        request.entranceMeters = localPort.positionMeters;
+        request.outward = localPort.forward;
         request.standoffMeters = std::max(
             300.0,
             hull.lengthMeters * 10.0 +
@@ -2038,8 +2057,11 @@ void SpaceState::updateDockingAdvisory()
             snapshot.epoch.serverTimeSeconds;
         job->context.serial = pending.serial;
         job->context.systemId = snapshot.systemId;
-        job->context.hub = snapshot.hubPredictionSource;
-        job->context.port = port;
+        job->context.hubId = snapshot.hubPredictionSource.hubId;
+        job->context.targetObjectId = snapshot.targetObject.id.value;
+        job->context.timelineRevision = snapshot.epoch.universeTimelineRevision;
+        job->context.portDefinition = *definition;
+        job->context.portAttachment = snapshot.targetObject.hubAttachment;
         job->context.standoffMeters = request.standoffMeters;
         job->context.widthMeters = fit.openingWidthMeters;
         job->context.heightMeters = fit.openingHeightMeters;
@@ -2073,6 +2095,10 @@ void SpaceState::updateDockingAdvisory()
         std::cout << "[DockAdvisory] request=" << pending.serial
                   << " phase=planning vrel_mps=" << relativeSpeedMps
                   << " omega_radps=" << angularRateRadPerSec
+                  << " source_tick=" << snapshot.epoch.sourceTick
+                  << " universe_t=" << snapshot.epoch.universeTimeSeconds
+                  << " timeline=" << snapshot.epoch.universeTimelineRevision
+                  << " hub=" << job->context.hubId
                   << " start_local=(" << capturedStart.x << ","
                   << capturedStart.y << "," << capturedStart.z << ")\n";
         return;
@@ -2108,170 +2134,288 @@ void SpaceState::updateDockingAdvisory()
     if (!active.serial)
         return;
 
-    const double time = m_client->universeTimeSeconds();
-    const auto frame =
-        NavigationWorldPredictor::predictHubFrameAt(active.hub, time);
-    if (!frame.valid)
+    const auto& metadata = m_client->lastSimulationMetadata();
+    if (metadata.universeTimelineRevision != active.timelineRevision)
     {
-        fail("hub frame unavailable");
+        fail("docking universe timeline changed");
         return;
     }
 
-    const auto port = predictHubSemanticAnchorAt(active.port, time);
-    if (glm::length(
-            frame.localToWorldPosition(
-                active.gates.back().positionMeters
-            ) -
-            (port.positionMeters +
-             port.forward() * active.standoffMeters)
-        ) > 2.0)
+    const auto ship = m_client->world().ships().find(m_playerId.value);
+    if (ship == m_client->world().ships().end())
     {
-        fail("dock moved off approach axis");
+        fail("ship unavailable");
         return;
     }
 
-    const auto ship =
-        m_client->world().ships().find(m_playerId.value);
-    if (ship == m_client->world().ships().end() ||
-        ship->second.transform.motion.systemId != active.systemId)
-    {
-        fail("ship left system");
-        return;
-    }
-
-    const auto position = frame.worldToLocalPosition(
-        world::coordinates::fullMeters(
-            ship->second.transform.worldPosition
-        )
-    );
     const auto& gates = active.gates;
-
-    if (active.nextGate + 1 < gates.size())
+    // Flight decisions are made only from a complete authoritative sample at
+    // one server tick. No local prediction or render interpolation enters the
+    // axis, corridor, or progress decisions.
+    if (metadata.serverTick != active.lastValidatedTick)
     {
-        const auto a = gates[active.nextGate].positionMeters;
-        const auto b = gates[active.nextGate + 1].positionMeters;
-        const auto ab = b - a;
-        const double t = std::clamp(
-            glm::dot(position - a, ab) / glm::dot(ab, ab),
-            0.0,
-            1.0
+        const auto observed = m_client->world().sampleHubMapRuntimeAtServerTime(
+            active.systemId, metadata.serverTimeSeconds
         );
-        const auto delta = position - (a + t * ab);
-        const auto forward = glm::normalize(ab);
-        auto up = frame.worldToLocalVector(port.up());
-        up -= forward * glm::dot(up, forward);
-        if (glm::length(up) < 0.01)
-        {
-            const auto fallback =
-                std::abs(forward.y) < 0.8
-                    ? glm::dvec3(0.0, 1.0, 0.0)
-                    : glm::dvec3(1.0, 0.0, 0.0);
-            up = fallback - forward * glm::dot(fallback, forward);
-        }
-        up = glm::normalize(up);
-        const auto right = glm::normalize(glm::cross(forward, up));
-        const auto section = dockingAdvisoryCrossSection(
-            glm::length(
-                gates.back().positionMeters - (a + t * ab)
-            ),
-            active.lateralToleranceMeters,
-            active.verticalToleranceMeters
-        );
-        const bool inside =
-            std::abs(glm::dot(delta, right)) <=
-                section.lateralToleranceMeters &&
-            std::abs(glm::dot(delta, up)) <=
-                section.verticalToleranceMeters &&
-            std::abs(glm::dot(delta, forward)) <=
-                std::max(5.0, active.widthMeters);
+        if (observed.status !=
+            game::client::DetailMapRuntimeSampleStatus::Ready)
+            return;
 
-        const auto tracking = active.tracker.observe(inside);
-        if (tracking == DockingAdvisoryTrackingResult::Left)
+        const auto observedShip = std::find_if(
+            observed.ships.begin(), observed.ships.end(),
+            [&](const auto& candidate) { return candidate.id == m_playerId; }
+        );
+        const auto observedModule = std::find_if(
+            observed.objects.begin(), observed.objects.end(),
+            [&](const auto& candidate)
+            { return candidate.id.value == active.targetObjectId; }
+        );
+        if (observedShip == observed.ships.end() ||
+            observedShip->motionMode != MotionMode::HubTactical ||
+            observedShip->hubId != active.hubId ||
+            observedModule == observed.objects.end())
         {
-            std::cerr << "[DockAdvisory] left gate=" << active.nextGate
-                      << " lateral_m=" << glm::dot(delta, right)
-                      << " vertical_m=" << glm::dot(delta, up)
-                      << " bounds_m=" << section.lateralToleranceMeters
-                      << "," << section.verticalToleranceMeters << '\n';
-            fail("ship left guidance corridor");
+            fail("ship or dock left Hub reference frame");
             return;
         }
 
-        if (tracking == DockingAdvisoryTrackingResult::Inside &&
-            t >= 1.0 &&
-            glm::dot(position - b, ab) >= 0.0 &&
-            active.nextGate + 2 < gates.size())
-            ++active.nextGate;
-    }
-
-    GuidanceCorridor route;
-    route.id = m_activeDockingGuidanceCorridorId;
-    route.systemId = active.systemId;
-    route.source = GuidanceSource::DockingComputer;
-    route.purpose = GuidancePurpose::Approach;
-    route.advisoryOnly = true;
-    route.priority = 50;
-    route.generatedAtUniverseTimeSeconds = time;
-    route.frames.reserve(gates.size());
-
-    for (std::size_t index = 0; index < gates.size(); ++index)
-    {
-        const auto& gate = gates[index];
-        GuidanceFrame f;
-        f.universeTimeSeconds = time;
-        f.centerMeters =
-            frame.localToWorldPosition(gate.positionMeters);
-
-        const auto forward = glm::normalize(
-            frame.localToWorldVector(gate.forward)
-        );
-        auto up = port.up() - forward * glm::dot(port.up(), forward);
-        if (glm::length(up) < 0.01)
+        const auto& attachment = observedModule->hubAttachment;
+        const auto& authored = active.portAttachment;
+        if (!attachment.valid ||
+            attachment.systemId != authored.systemId ||
+            attachment.hubId != authored.hubId ||
+            attachment.moduleId != authored.moduleId ||
+            attachment.inheritHubOrientation !=
+                authored.inheritHubOrientation ||
+            glm::length(attachment.localOffsetMeters -
+                        authored.localOffsetMeters) > 1.0e-6 ||
+            glm::length(attachment.localRotationDeg -
+                        authored.localRotationDeg) > 1.0e-6 ||
+            glm::length(attachment.localAngularVelocityDegPerSecond -
+                        authored.localAngularVelocityDegPerSecond) > 1.0e-6)
         {
-            const auto fallback =
-                std::abs(forward.y) < 0.8
-                    ? glm::dvec3(0.0, 1.0, 0.0)
-                    : glm::dvec3(1.0, 0.0, 0.0);
-            up = fallback - forward * glm::dot(fallback, forward);
+            fail("dock attachment changed after planning");
+            return;
         }
-        up = glm::normalize(up);
-        const auto right = glm::normalize(glm::cross(forward, up));
-        f.orientation = glm::normalize(
-            glm::quat_cast(
-                glm::dmat3(
-                    right,
-                    glm::normalize(glm::cross(right, forward)),
-                    -forward
-                )
-            )
-        );
 
-        const auto section = dockingAdvisoryCrossSection(
-            glm::length(
-                gates.back().positionMeters - gate.positionMeters
-            ),
-            active.lateralToleranceMeters,
-            active.verticalToleranceMeters
+        const auto port = resolveDockingAdvisoryLocalPortAt(
+            attachment, active.portDefinition, metadata.universeTimeSeconds
         );
-        f.widthMeters =
-            active.shipWidthMeters +
-            2.0 * section.lateralToleranceMeters;
-        f.heightMeters =
-            active.shipHeightMeters +
-            2.0 * section.verticalToleranceMeters;
-        f.lateralToleranceMeters = section.lateralToleranceMeters;
-        f.verticalToleranceMeters = section.verticalToleranceMeters;
-        f.recommendedSpeedMps = gate.speedMps;
-        f.requiredVehiclePose = index + 1 == gates.size();
-        route.frames.push_back(f);
+        if (!port.valid)
+        {
+            fail("dock local pose unavailable");
+            return;
+        }
+        const auto dockStandoffLocal =
+            port.positionMeters + port.forward * active.standoffMeters;
+        const auto axisDeltaLocal =
+            gates.back().positionMeters - dockStandoffLocal;
+        const double axisErrorMeters = glm::length(axisDeltaLocal);
+        if (!std::isfinite(axisErrorMeters) || axisErrorMeters > 2.0)
+        {
+            std::cerr << "[DockAdvisory] axis request=" << pending.serial
+                      << " tick=" << metadata.serverTick
+                      << " timeline=" << metadata.universeTimelineRevision
+                      << " universe_t=" << metadata.universeTimeSeconds
+                      << " hub=" << active.hubId
+                      << " module=" << attachment.moduleId
+                      << " delta_local_m=(" << axisDeltaLocal.x << ','
+                      << axisDeltaLocal.y << ',' << axisDeltaLocal.z << ')'
+                      << " delta_m=" << axisErrorMeters
+                      << " gate_local_m=(" << gates.back().positionMeters.x
+                      << ',' << gates.back().positionMeters.y << ','
+                      << gates.back().positionMeters.z << ')'
+                      << " dock_local_m=(" << port.positionMeters.x << ','
+                      << port.positionMeters.y << ','
+                      << port.positionMeters.z << ')'
+                      << " forward_local=(" << port.forward.x << ','
+                      << port.forward.y << ',' << port.forward.z << ")\n";
+            fail("dock moved off approach axis");
+            return;
+        }
+
+        const auto position = observedShip->localPositionMeters;
+        if (!std::isfinite(position.x) || !std::isfinite(position.y) ||
+            !std::isfinite(position.z))
+        {
+            fail("ship local position invalid");
+            return;
+        }
+        if (active.nextGate + 1 < gates.size())
+        {
+            const auto a = gates[active.nextGate].positionMeters;
+            const auto b = gates[active.nextGate + 1].positionMeters;
+            const auto ab = b - a;
+            const double t = std::clamp(
+                glm::dot(position - a, ab) / glm::dot(ab, ab),
+                0.0,
+                1.0
+            );
+            const auto delta = position - (a + t * ab);
+            const auto forward = glm::normalize(ab);
+            auto up = port.up;
+            up -= forward * glm::dot(up, forward);
+            if (glm::length(up) < 0.01)
+            {
+                const auto fallback =
+                    std::abs(forward.y) < 0.8
+                        ? glm::dvec3(0.0, 1.0, 0.0)
+                        : glm::dvec3(1.0, 0.0, 0.0);
+                up = fallback - forward * glm::dot(fallback, forward);
+            }
+            up = glm::normalize(up);
+            const auto right = glm::normalize(glm::cross(forward, up));
+            const auto section = dockingAdvisoryCrossSection(
+                glm::length(
+                    gates.back().positionMeters - (a + t * ab)
+                ),
+                active.lateralToleranceMeters,
+                active.verticalToleranceMeters
+            );
+            const bool inside =
+                std::abs(glm::dot(delta, right)) <=
+                    section.lateralToleranceMeters &&
+                std::abs(glm::dot(delta, up)) <=
+                    section.verticalToleranceMeters &&
+                std::abs(glm::dot(delta, forward)) <=
+                    std::max(5.0, active.widthMeters);
+
+            const auto tracking = active.tracker.observe(inside);
+            if (tracking == DockingAdvisoryTrackingResult::Left)
+            {
+                std::cerr << "[DockAdvisory] left request=" << pending.serial
+                          << " tick=" << metadata.serverTick
+                          << " universe_t=" << metadata.universeTimeSeconds
+                          << " hub=" << active.hubId
+                          << " gate=" << active.nextGate
+                          << " ship_local_m=(" << position.x << ','
+                          << position.y << ',' << position.z << ')'
+                          << " lateral_m=" << glm::dot(delta, right)
+                          << " vertical_m=" << glm::dot(delta, up)
+                          << " bounds_m=" << section.lateralToleranceMeters
+                          << "," << section.verticalToleranceMeters << '\n';
+                fail("ship left guidance corridor");
+                return;
+            }
+
+            if (tracking == DockingAdvisoryTrackingResult::Inside &&
+                t >= 1.0 &&
+                glm::dot(position - b, ab) >= 0.0 &&
+                active.nextGate + 2 < gates.size())
+                ++active.nextGate;
+        }
+        active.lastValidatedTick = metadata.serverTick;
     }
 
+    // Only the final presentation adapter leaves Hub-local coordinates. Both
+    // map and cockpit receive the same gates in the player's render frame.
+    const auto& playerRenderFrame = ship->second.renderReferenceFrame;
+    if (!playerRenderFrame.valid ||
+        playerRenderFrame.systemId != active.systemId ||
+        playerRenderFrame.hubId != active.hubId ||
+        playerRenderFrame.type != MotionMode::HubTactical)
+    {
+        // A render interpolation sample may temporarily be unavailable while
+        // snapshots rotate. Keep the accepted local route and wait for a
+        // coherent sample rather than cancelling navigation on a UI clock.
+        return;
+    }
+    const double renderTime = playerRenderFrame.universeTimeSeconds;
+    auto renderFrame = playerRenderFrame.kinematicFrame();
+    // A ship travel frame may have a ship-specific frameId; its Hub membership
+    // names the attachment coordinate domain shared with the dock.
+    renderFrame.frameId = playerRenderFrame.hubId;
+    const auto renderPort = resolveDockingAdvisoryLocalPortAt(
+        active.portAttachment, active.portDefinition, renderTime
+    );
+    if (!renderPort.valid)
+    {
+        // Presentation cannot invalidate a route already proved in the
+        // authoritative/current Hub frame above.
+        return;
+    }
+
+    const auto makeRoute = [&]()
+    {
+        GuidanceCorridor route;
+        route.id = m_activeDockingGuidanceCorridorId;
+        route.systemId = active.systemId;
+        route.source = GuidanceSource::DockingComputer;
+        route.purpose = GuidancePurpose::Approach;
+        route.advisoryOnly = true;
+        route.priority = 50;
+        route.generatedAtUniverseTimeSeconds = renderTime;
+        route.frames.reserve(gates.size());
+        route.hubLocalFrameId = active.hubId;
+        route.hubLocalGatePositionsMeters.reserve(gates.size());
+        for (std::size_t index = 0; index < gates.size(); ++index)
+        {
+            const auto& gate = gates[index];
+            route.hubLocalGatePositionsMeters.push_back(gate.positionMeters);
+            GuidanceFrame f;
+            f.universeTimeSeconds = renderTime;
+            f.centerMeters =
+                renderFrame.localToWorldPosition(gate.positionMeters);
+
+            const auto forward = glm::normalize(
+                renderFrame.localToWorldVector(gate.forward)
+            );
+            const auto worldUp = renderFrame.localToWorldVector(renderPort.up);
+            auto up = worldUp - forward * glm::dot(worldUp, forward);
+            if (glm::length(up) < 0.01)
+            {
+                const auto fallback =
+                    std::abs(forward.y) < 0.8
+                        ? glm::dvec3(0.0, 1.0, 0.0)
+                        : glm::dvec3(1.0, 0.0, 0.0);
+                up = fallback - forward * glm::dot(fallback, forward);
+            }
+            up = glm::normalize(up);
+            const auto right = glm::normalize(glm::cross(forward, up));
+            f.orientation = glm::normalize(
+                glm::quat_cast(
+                    glm::dmat3(
+                        right,
+                        glm::normalize(glm::cross(right, forward)),
+                        -forward
+                    )
+                )
+            );
+
+            const auto section = dockingAdvisoryCrossSection(
+                glm::length(
+                    gates.back().positionMeters - gate.positionMeters
+                ),
+                active.lateralToleranceMeters,
+                active.verticalToleranceMeters
+            );
+            f.widthMeters =
+                active.shipWidthMeters +
+                2.0 * section.lateralToleranceMeters;
+            f.heightMeters =
+                active.shipHeightMeters +
+                2.0 * section.verticalToleranceMeters;
+            f.lateralToleranceMeters = section.lateralToleranceMeters;
+            f.verticalToleranceMeters = section.verticalToleranceMeters;
+            f.recommendedSpeedMps = gate.speedMps;
+            f.requiredVehiclePose = index + 1 == gates.size();
+            route.frames.push_back(f);
+        }
+        return route;
+    };
+
+    auto route = makeRoute();
     guidance.publish(route);
     route.id += ":frames";
     route.spatialAdvisoryGates = true;
     route.frames.erase(
         route.frames.begin(),
         route.frames.begin() +
+            static_cast<std::ptrdiff_t>(active.nextGate)
+    );
+    route.hubLocalGatePositionsMeters.erase(
+        route.hubLocalGatePositionsMeters.begin(),
+        route.hubLocalGatePositionsMeters.begin() +
             static_cast<std::ptrdiff_t>(active.nextGate)
     );
     guidance.publish(std::move(route));
@@ -2284,7 +2428,11 @@ void SpaceState::updateDockingAdvisory()
         // confirms controlledEntityAutopilotActive=false.
         finishLocalPreparation(true);
         std::cout << "[DockAdvisory] request=" << pending.serial
-                  << " phase=handoff_wait\n";
+                  << " phase=handoff_wait snapshot_tick="
+                  << active.lastValidatedTick
+                  << " render_t=" << renderTime
+                  << " hub=" << active.hubId
+                  << " gates=" << gates.size() << '\n';
     }
 }
 
@@ -3117,7 +3265,7 @@ m_systemMapRenderer.render(
                         ship,
                         navVocabulary,
                         &m_hubSemanticAnchorCatalog,
-                        m_client->universeTimeSeconds()
+                        ship.renderReferenceFrame.universeTimeSeconds
                     );
 
                 m_playerView->renderNavigationMarkers(
@@ -3141,7 +3289,7 @@ m_systemMapRenderer.render(
                 game::presentation::buildGuidanceCorridorHudPresentation(
                     m_navigationWorkspace,
                     playerShip,
-                    m_client->universeTimeSeconds()
+                    playerShip.renderReferenceFrame.universeTimeSeconds
                 );
 
             TextRenderer::instance().beginFrameForViewport(
@@ -3165,7 +3313,7 @@ m_systemMapRenderer.render(
             if (manualDockingMode)
             {
                 const double manualBlinkPhase = std::fmod(
-                    std::max(0.0, m_client->universeTimeSeconds()) * 2.0,
+                    std::max(0.0, playerShip.renderReferenceFrame.universeTimeSeconds) * 2.0,
                     1.0
                 );
                 if (manualBlinkPhase < 0.58)

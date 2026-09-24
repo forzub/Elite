@@ -77,12 +77,22 @@ glm::vec3 limitAngularDeltaToControlledMagnitude(
     return requestedAcceleration * fraction;
 }
 
-bool isNewtonianVelocityAlignment(
-    const ShipTransform& ship
+bool isVelocityAlignmentAttitudeActive(
+    const ShipTransform& ship,
+    bool reverseMainEngineAvailable
 )
 {
     using game::navigation::LocalFlightControlLaw;
     using game::navigation::VelocityAlignmentMode;
+
+    // BrakeToStop is physical in both laws. Assisted may brake nose-first only
+    // when a real fore/reverse main engine exists. Otherwise it must acquire
+    // tail-to-velocity attitude so the installed aft main can contribute.
+    if (ship.motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop)
+    {
+        return ship.motion.localControlLaw == LocalFlightControlLaw::Newtonian ||
+            !reverseMainEngineAvailable;
+    }
 
     if (ship.motion.localControlLaw != LocalFlightControlLaw::Newtonian)
         return false;
@@ -91,9 +101,7 @@ bool isNewtonianVelocityAlignment(
         ship.motion.velocityAlignmentMode ==
             VelocityAlignmentMode::ForwardToVelocity ||
         ship.motion.velocityAlignmentMode ==
-            VelocityAlignmentMode::BackwardToVelocity ||
-        ship.motion.velocityAlignmentMode ==
-            VelocityAlignmentMode::BrakeToStop;
+            VelocityAlignmentMode::BackwardToVelocity;
 }
 
 float alignmentRateLimitAlongDirection(
@@ -180,12 +188,16 @@ bool applyVelocityAlignmentAttitude(
     float safeAngularAccel,
     float maxPitchRate,
     float maxYawRate,
-    float safeAngularRate
+    float safeAngularRate,
+    bool reverseMainEngineAvailable
 )
 {
     using game::navigation::VelocityAlignmentMode;
 
-    if (!isNewtonianVelocityAlignment(ship) ||
+    if (!isVelocityAlignmentAttitudeActive(
+            ship,
+            reverseMainEngineAvailable
+        ) ||
         !ship.motion.travelFrame.valid)
     {
         return false;
@@ -424,7 +436,8 @@ void ShipController::updateControlRates(
         safeAngularAccel,
         maxPitchRate,
         maxYawRate,
-        safeAngularRate
+        safeAngularRate,
+        params.reverseMainEngineAvailable
     );
 
     glm::vec3 angularInput(

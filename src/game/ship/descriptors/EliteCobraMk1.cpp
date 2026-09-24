@@ -50,6 +50,14 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // desc.physics.maxCruiseSpeed         = 13500.0f; // Крейсерская (м/с) = 48000 км/ч
         desc.physics.maxCruiseSpeed         = 29979245.0f; // Крейсерская (м/с) = 0.1с
         desc.physics.throttleAccel          = 5.0f;     // Рывок дросселя
+
+        // Assisted Cobra has two real longitudinal main-thrust banks.
+        // Aft engines push along the nose direction; fore engines push in the
+        // opposite direction and provide full-power assisted braking.
+        desc.physics.forwardMainEngineAvailable = true;
+        desc.physics.reverseMainEngineAvailable = true;
+        desc.physics.forwardMainEngineAccelerationMps2 = 73.549875f; // 7.5 g
+        desc.physics.reverseMainEngineAccelerationMps2 = 73.549875f; // 7.5 g
         
         desc.physics.autoLevelStrength      = 0.0f;     // Автовыравнивание (отключено)
         
@@ -868,6 +876,43 @@ desc.modules =
     ),
 
     // =====================================================
+    // FORE PROPULSION BLOCK
+    // =====================================================
+    //
+    // Physical nose-mounted longitudinal engines. Their module identities
+    // participate in damage/repair/propulsion truth even before dedicated
+    // visible nozzle meshes are authored.
+    internalModule(
+        "ship_fore_engine_L",
+        "ship_frame_CF",
+        "fore_propulsion_block",
+        {},
+        game::damage::HitZoneType::Engine,
+        80.0f,
+        14.0f,
+        18.0f,
+        2,
+        98,
+        true,
+        true
+    ),
+
+    internalModule(
+        "ship_fore_engine_R",
+        "ship_frame_CF",
+        "fore_propulsion_block",
+        {},
+        game::damage::HitZoneType::Engine,
+        80.0f,
+        14.0f,
+        18.0f,
+        2,
+        98,
+        true,
+        true
+    ),
+
+    // =====================================================
     // REAR PROPULSION BLOCK
     // =====================================================
 
@@ -958,6 +1003,15 @@ desc.modules =
         false,
         false
     )
+};
+
+desc.mainPropulsion.aftEngineModuleIds = {
+    "ship_engine_L",
+    "ship_engine_R"
+};
+desc.mainPropulsion.foreEngineModuleIds = {
+    "ship_fore_engine_L",
+    "ship_fore_engine_R"
 };
 
 

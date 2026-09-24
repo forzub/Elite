@@ -152,23 +152,40 @@ void GuidanceCorridorRenderer::render(
         1.0
     ));
     const bool spatialGates = presentation.spatialAdvisoryGates;
-    const glm::vec4 baseFrameColor = presentation.noSafePrimarySolution
-        ? glm::vec4(
-            1.0f,
-            0.38f,
-            0.24f,
-            spatialGates
-                ? 0.18f + confidence * 0.42f
-                : 0.08f + confidence * 0.28f
-          )
-        : glm::vec4(
-            0.34f,
-            0.92f,
-            1.0f,
-            spatialGates
-                ? 0.16f + confidence * 0.40f
-                : 0.06f + confidence * 0.20f
-          );
+    const bool dockingGates =
+        spatialGates &&
+        presentation.source == game::navigation::GuidanceSource::DockingComputer;
+    const glm::vec4 baseFrameColor =
+        (presentation.noSafePrimarySolution || presentation.deviationCritical)
+            ? glm::vec4(
+                1.0f,
+                0.38f,
+                0.24f,
+                spatialGates
+                    ? 0.18f + confidence * 0.42f
+                    : 0.08f + confidence * 0.28f
+              )
+            : presentation.deviationWarning
+                ? glm::vec4(
+                    1.0f,
+                    0.78f,
+                    0.24f,
+                    spatialGates
+                        ? 0.18f + confidence * 0.42f
+                        : 0.08f + confidence * 0.28f
+                  )
+                : glm::vec4(
+                    0.34f,
+                    0.92f,
+                    1.0f,
+                    spatialGates
+                        ? 0.16f + confidence * 0.40f
+                        : 0.06f + confidence * 0.20f
+                  );
+    const float warningBlinkScale =
+        presentation.deviationWarning && !presentation.deviationBlinkOn
+            ? 0.12f
+            : 1.0f;
     const glm::vec4 connectorColor(
         baseFrameColor.r,
         baseFrameColor.g,
@@ -194,9 +211,11 @@ void GuidanceCorridorRenderer::render(
         if (!projected.valid)
             continue;
 
-        const float frameOpacity = spatialGates
-            ? std::clamp(frame.opacity, 0.02f, 1.0f)
-            : 1.0f;
+        const float frameOpacity = (
+            spatialGates
+                ? std::clamp(frame.opacity, 0.02f, 1.0f)
+                : 1.0f
+        ) * warningBlinkScale;
         const glm::vec4 frameColor(
             baseFrameColor.r,
             baseFrameColor.g,
@@ -219,6 +238,43 @@ void GuidanceCorridorRenderer::render(
             );
         }
 
+        if (dockingGates)
+        {
+            // corners[0..1] are the semantic -up edge, regardless of camera
+            // roll. The outward T therefore marks DOCK BOTTOM, not screen down.
+            const glm::vec2 center =
+                (projected.corners[0] + projected.corners[1] +
+                 projected.corners[2] + projected.corners[3]) * 0.25f;
+            const glm::vec2 bottomCenter =
+                (projected.corners[0] + projected.corners[1]) * 0.5f;
+            const glm::vec2 bottomEdge =
+                projected.corners[1] - projected.corners[0];
+            const glm::vec2 outward = bottomCenter - center;
+            const float edgeLength = glm::length(bottomEdge);
+            const float outwardLength = glm::length(outward);
+            if (edgeLength > 1.0e-3f && outwardLength > 1.0e-3f)
+            {
+                const glm::vec2 tangent = bottomEdge / edgeLength;
+                const glm::vec2 down = outward / outwardLength;
+                const float halfMarker =
+                    std::clamp(edgeLength * 0.08f, 4.0f, 12.0f);
+                const float stem =
+                    std::clamp(outwardLength * 0.18f, 6.0f, 18.0f);
+                m_batch.line(
+                    bottomCenter - tangent * halfMarker,
+                    bottomCenter + tangent * halfMarker,
+                    frameWidth + 0.45f,
+                    frameColor
+                );
+                m_batch.line(
+                    bottomCenter,
+                    bottomCenter + down * stem,
+                    frameWidth + 0.45f,
+                    frameColor
+                );
+            }
+        }
+
         if (havePrevious)
         {
             for (int corner = 0; corner < 4; ++corner)
@@ -234,7 +290,11 @@ void GuidanceCorridorRenderer::render(
 
         previous = projected;
         havePrevious = true;
-        if (spatialGates && std::isfinite(frame.recommendedSpeedMps))
+        const double frameDistanceMeters =
+            glm::length(frame.relativeCenterMeters);
+        if (spatialGates &&
+            frameDistanceMeters <= 500.0 &&
+            std::isfinite(frame.recommendedSpeedMps))
         {
             std::ostringstream label;
             label << std::fixed << std::setprecision(

@@ -868,6 +868,86 @@ void testExternalSpinIsNotHardClampedAndRcsBrakesIt()
             "RCS magically snapped external spin back inside rate envelope");
 }
 
+void testAssistedEndFlipsAndUsesAftMainWithoutForeEngine()
+{
+    const auto frame = makeFrame();
+    auto params = makeParams();
+    params.reverseMainEngineAvailable = false;
+    params.manoeuvreThrusterAccel = 2.0f;
+    params.angularAccel = 2.0f;
+    params.maxPitchRate = 2.0f;
+    params.maxYawRate = 2.0f;
+    params.angularDamping = 2.0f;
+
+    WorldParams world;
+    ShipController controller;
+    ShipTransform ship;
+    ship.motion.travelFrame = frame;
+    ship.motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    ship.motion.velocityAlignmentMode =
+        game::navigation::VelocityAlignmentMode::BrakeToStop;
+    ship.motion.localVelocityMps = glm::dvec3(0.0, 0.0, -40.0);
+
+    const glm::vec3 antiVelocity(0.0f, 0.0f, 1.0f);
+    const float beforeAngle = forwardAngleTo(ship, antiVelocity);
+    for (int i = 0; i < 20; ++i)
+        controller.update(0.05f, params, ship, world);
+    const float afterAngle = forwardAngleTo(ship, antiVelocity);
+    require(afterAngle < beforeAngle - 0.05f,
+            "Assisted END did not flip toward aft-main braking attitude");
+    require(
+        ship.motion.velocityAlignmentMode ==
+            game::navigation::VelocityAlignmentMode::BrakeToStop,
+        "Assisted END lost BrakeToStop while acquiring braking attitude"
+    );
+
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    motion.velocityAlignmentMode =
+        game::navigation::VelocityAlignmentMode::BrakeToStop;
+    motion.localVelocityMps = glm::dvec3(0.0, 0.0, -40.0);
+    auto position =
+        world::coordinates::makeWorldPositionFromMeters(frame.originMeters);
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        motion, frame, params, 0.05f, 0.0f, false,
+        0.0f, 0.0f, 0.0f,
+        glm::vec3(0.0f, 0.0f, 1.0f),
+        glm::vec3(-1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+    require(
+        glm::dot(motion.mainEngineAccelerationMps2,
+                 glm::dvec3(0.0, 0.0, 1.0)) > 1.0,
+        "Assisted END failed to use installed aft main after flip"
+    );
+
+    const double initialSpeed = glm::length(motion.localVelocityMps);
+    for (int i = 0; i < 300 &&
+         motion.velocityAlignmentMode ==
+             game::navigation::VelocityAlignmentMode::BrakeToStop;
+         ++i)
+    {
+        game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+            motion, frame, params, 0.05f, 0.0f, false,
+            0.0f, 0.0f, 0.0f,
+            glm::vec3(0.0f, 0.0f, 1.0f),
+            glm::vec3(-1.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f)
+        );
+        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+            motion, position, frame, params, 0.05
+        );
+    }
+    require(glm::length(motion.localVelocityMps) < initialSpeed * 0.01,
+            "Assisted END did not converge to physical stop");
+    require(
+        motion.velocityAlignmentMode ==
+            game::navigation::VelocityAlignmentMode::None,
+        "Assisted END never completed BrakeToStop"
+    );
+}
+
 void testNewtonianEndBrakesOnlyAfterAntiVelocityAlignment()
 {
     const auto frame = makeFrame();
@@ -943,6 +1023,7 @@ int main()
         testAssistedThrottleReleaseCapturesReachedSpeed();
         testLinearAccelerationOverrideAppliesToBothFlightLaws();
         testAssistedExplicitMaxTargetPersistsUntilPilotOverrides();
+        testAssistedEndFlipsAndUsesAftMainWithoutForeEngine();
         testAngularMotionUsesSharedLoadEnvelope();
         testVelocityAlignmentBrakesBeforeTarget();
         testVelocityAlignmentEscapesExactAntiparallelPose();

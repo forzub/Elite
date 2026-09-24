@@ -87,6 +87,10 @@ try:
             "frameDistanceMeters <= 500.0",
             "bottomCenter",
             "deviationBlinkOn")
+    corridor_header = read("src/game/navigation/DockingAdvisoryCorridor.h")
+    if "const auto near =" in corridor_header:
+        raise AssertionError("Windows-unsafe near identifier returned in docking corridor")
+
     renderer = read("src/render/cockpit/GuidanceCorridorRenderer.cpp")
     label_begin = renderer.find("speedLabels.emplace_back(")
     label_end = renderer.find("label.str()", label_begin)

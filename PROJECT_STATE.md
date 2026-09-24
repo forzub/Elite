@@ -1,5 +1,17 @@
 # PROJECT STATE
 
+## 2026-09-25 — docking headers must remain safe under full Windows include stack
+
+A header-only docking helper used the identifier `near`. Narrow native tests
+did not expose a problem, but the full Windows game translation units include
+Windows headers before/around this code and reject that identifier. The helper
+is now named `nearBoundary`, and the static docking contract guards against
+the exact unsafe declaration returning.
+
+This is a portability/build-boundary correction only. It does not change
+corridor geometry, warning thresholds, route tracking, propulsion, or planner
+semantics.
+
 ## 2026-09-25 — directional main failure doctrine now reaches live Newtonian motion
 
 The directional-main architecture is now consistent across descriptor/runtime

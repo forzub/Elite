@@ -1,5 +1,25 @@
 # PROJECT STATE
 
+## 2026-09-24 — manual docking commissioning boundary fixed
+
+The next playable docking milestone is manual advisory commissioning, not
+automatic docking. SHOW ROUTE temporarily borrows authoritative ship control
+only to establish a deterministic physical start state. Navigation then plans
+from the newly captured state, publishes a fixed route/tunnel product, and
+returns authority to the human pilot before manual tunnel flight begins.
+
+The presentation contract is now explicit: Hub Map planned trajectory; cockpit
+spatial gates at 500 m nominal spacing; recommended speed at every gate's
+upper-left; localized blinking MANUAL DOCKING MODE status while the manual
+advisory is active. Closing the dock card or leaving the entered tunnel cancels
+the whole advisory product. The latter is a corridor-volume condition, not
+merely distance from a polyline.
+
+This requirement intentionally uses the existing unified localization service
+and existing server-authoritative ship-control physics. It must not revive the
+removed client rolling tunnel or create a second localization path.
+
+
 ## 2026-09-24 — docking preparation and corridor contract
 
 The user requires both dock-card modes to stabilize the craft before fixing

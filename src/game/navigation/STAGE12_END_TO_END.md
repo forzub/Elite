@@ -9901,3 +9901,40 @@ static, collision-checked advisory guide to a full stop outside the opening;
 its speed bounds do not constitute a ship maneuver. Actual docking still
 requires a separately proved and accepted server program, reservation, spin
 synchronization, ingress and capture. Its action is disabled until then.
+
+## 2026-09-24 — manual docking in-game commissioning gate
+
+The user-facing SHOW ROUTE lifecycle is fixed as:
+
+```text
+dock card / SHOW ROUTE
+  -> authoritative temporary Autopilot takeover
+  -> bounded physical stop in Hub co-moving frame + angular-rate settle
+  -> fresh authoritative rigid-body start snapshot
+  -> static docking advisory calculation
+  -> publish Hub Map trajectory + fixed HUD tunnel
+  -> release authority back to Human
+  -> manual flight inside displayed tunnel
+```
+
+HUD gates are spatial, not rolling prediction samples. Nominal spacing is 500 m
+with the final dock/staging gate retained. Each gate exposes the recommended
+speed for its following section and the cockpit draws that value at the
+projected upper-left corner. While this advisory exists, the cockpit top shows a
+blinking localized MANUAL DOCKING MODE status sourced from
+`LocalizationService`.
+
+The advisory is one lifecycle product. Closing the selected dock card cancels
+it, including any in-progress preparation. Once the ship has entered the tunnel,
+leaving its permitted cross-section also cancels it. Every cancellation path
+must restore Human authority if temporary Autopilot preparation still owns the
+ship.
+
+Current implementation already owns Hub Map drawing, spatial advisory gates,
+speed values, card-close cancellation and post-entry cancellation. It does not
+yet own temporary Autopilot authority/capture, uses 350 m display spacing,
+places the speed label at a non-guaranteed projected corner, has distance-faded
+gate opacity, has no manual-mode localized status, and uses a provisional
+60 m/700 m corridor envelope. The obsolete architecture tests that require the
+deleted rolling GuidanceTunnel path are not valid acceptance gates for this
+replacement and must be rewritten.

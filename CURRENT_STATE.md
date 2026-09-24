@@ -1,5 +1,61 @@
 # CURRENT STATE
 
+## 2026-09-24 — exact manual docking route commissioning contract
+
+Status: **CONTRACT PINNED / IMPLEMENTATION INCOMPLETE**
+
+The in-game manual docking test now has one exact lifecycle. Pressing the dock
+card's SHOW ROUTE / calculate-route action does not immediately plan from a
+moving client snapshot. It first requests temporary authoritative Autopilot
+control. Autopilot physically stabilizes the ship to rest relative to the Hub
+co-moving frame and settles angular rate through the normal ship-control and
+physics path. No teleport, velocity clamp or control-law substitution is
+allowed.
+
+Only after stabilization is captured does navigation take a fresh authoritative
+position/velocity/orientation/angular-velocity start state and calculate the
+manual docking route. When the route is ready, the Hub map shows the planned
+trajectory and the cockpit HUD shows fixed spatial tunnel gates. Normal gate
+spacing is **500 m**; the terminal gate is always retained even when the last
+interval is shorter. Every gate carries the recommended speed for the following
+section and renders that speed at the gate's projected upper-left corner.
+
+Once both map trajectory and HUD tunnel have been published, temporary
+Autopilot authority is released and Human control resumes. While manual docking
+guidance remains active, the cockpit displays a blinking localized
+**MANUAL DOCKING MODE** status at the top of the cockpit. This string must come
+from the unified `LocalizationService` catalog (all approved locales), never
+from a renderer-local language branch or hardcoded Russian/English text.
+
+Manual guidance is cancelled and all route/tunnel/manual-mode presentation is
+cleared when either:
+
+1. after valid corridor entry, the ship leaves the permitted tunnel
+   cross-section; or
+2. the selected dock information card is closed in Hub Map.
+
+Cancellation during the preparation phase must also release temporary
+Autopilot authority and return control to the human pilot.
+
+Repository audit at this state:
+
+- dock-card close cancellation is already implemented;
+- post-entry corridor-leave cancellation exists, but still uses the provisional
+  60 m transit / 700 m taper policy rather than proved corridor cross-sections;
+- Hub Map route rendering exists;
+- fixed spatial HUD gates and per-gate speed values exist;
+- gate spacing is currently 350 m, not 500 m;
+- the speed label currently uses a projected corner that is not guaranteed to
+  be upper-left and formats `m/s` inside the renderer;
+- spatial gate opacity still fades along the tunnel;
+- no localized manual-docking-mode cockpit string/status exists;
+- server `ControllerKind::Autopilot` exists as a type but temporary player
+  takeover/release is not wired; current SHOW ROUTE remains client-owned;
+- current architecture checks for the removed rolling
+  `GuidanceTunnelBuilder` path are stale and must be replaced before they can
+  serve as gates for the new advisory implementation.
+
+
 ## 2026-09-24 — docking start and corridor meaning revised
 
 After the first live cancellation the user clarified that both dock-card

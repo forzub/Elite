@@ -2428,3 +2428,23 @@ The navigation layer is working only when all statements below are true:
 
 Until then, individual green tests are useful evidence, but they are not proof
 of a completed navigation layer.
+
+## 2026-09-24 integration note — manual docking route commissioning
+
+Manual docking route calculation has a required pre-planning state-acquisition
+phase. The player ship is not treated as a frozen point at button press:
+temporary authoritative Autopilot control physically stabilizes the craft in
+the relevant co-moving frame, then the planner receives a fresh rigid-body
+snapshot. This is an application-layer commissioning step around the navigation
+layers, not permission for the planner to mutate ship state.
+
+The resulting manual product uses a static spatial tunnel (500 m nominal
+cross-section spacing) and section speed annotations. Human control resumes
+after publication. The product is cancelled by dock-card closure or
+post-entry corridor departure. Presentation strings remain under the common
+localization service.
+
+This integration rule does not alter the normative split: route/corridor
+planning supplies permitted space, physical planning supplies executable
+maneuvers where automatic execution is required, and Autopilot/Follower owns
+control only while explicitly granted authority.

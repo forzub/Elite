@@ -1,5 +1,48 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — implement playable manual docking commissioning slice
+
+Status: **ACTIVE — AUTOPILOT PREP -> 500 M STATIC GUIDANCE -> HUMAN HAND-BACK**
+
+Implement one vertical in-game path for the dock-card SHOW ROUTE action:
+
+1. route the request through an authoritative docking-preparation command;
+2. temporarily switch the controlled ship from Human to Autopilot authority
+   without losing the player-to-ship identity binding;
+3. physically brake to zero velocity relative to the Hub co-moving frame and
+   settle angular rate using normal bounded controls/physics;
+4. any material human flight input during preparation cancels preparation and
+   restores Human authority;
+5. after bounded settle, capture one fresh authoritative rigid-body start state;
+6. calculate the existing static docking advisory from that captured state;
+7. publish the route to Hub Map and fixed HUD tunnel gates;
+8. use 500 m nominal gate spacing and always retain the terminal gate;
+9. render each recommended speed at the projected upper-left of its gate;
+10. show a blinking localized MANUAL DOCKING MODE cockpit status through the
+    unified localization catalog;
+11. release Autopilot authority only after the map route and HUD guidance are
+    published;
+12. after entry, leaving the valid tunnel cross-section resets the advisory;
+13. closing the selected dock card resets the advisory at any stage and restores
+    Human authority if preparation still owns control.
+
+Do not enable automatic DOCKING in this slice. Do not reuse the removed rolling
+`GuidanceTunnelBuilder` or `DockingPathPlanner`. Do not plan from a moving
+pre-takeover snapshot. Do not make gate presentation time-rolling.
+
+Replace the stale manual/live docking architecture checks that still require the
+deleted rolling tunnel with checks for `DockingAdvisoryPlanner`, the
+authoritative preparation lifecycle, static 500 m gates, localization ownership,
+card-close reset and post-entry corridor-exit reset.
+
+Target acceptance is an actual Windows game run, not only native tests:
+press SHOW ROUTE while moving; observe bounded physical stabilization; observe
+the route line in Hub Map and the fixed 500 m cockpit tunnel with speed labels;
+observe the localized blinking manual-mode status; confirm Human control is
+returned after publication; then separately confirm card-close and corridor-exit
+reset behavior.
+
+
 ## 2026-09-24 — prepare start before requesting docking geometry
 
 Contract updated after the user's corridor/start clarification. Next code

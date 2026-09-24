@@ -1,5 +1,48 @@
 # Navigation Guidance Layer Contract
 
+## 2026-09-24 amendment — commissioned manual docking advisory lifecycle
+
+The active manual docking UI contract supersedes historical rolling-tunnel text
+in this document.
+
+SHOW ROUTE is a two-authority operation:
+
+```text
+Human
+  -> temporary authoritative Autopilot preparation
+  -> physically settle relative Hub velocity and angular rate
+  -> capture authoritative start state
+  -> calculate/publish static advisory
+  -> Human
+```
+
+The temporary controller is preparation only. It does not fly the displayed
+manual docking route. The player receives control back immediately after the
+Hub Map trajectory and cockpit tunnel are published.
+
+The cockpit tunnel is a fixed spatial presentation of the accepted manual
+advisory. Its ordinary frame spacing is 500 m. Frames do not march toward the
+ship and are not regenerated merely because time advances. The terminal frame
+is retained even when the final spacing is less than 500 m. Each frame carries
+a recommended section speed, rendered at that frame's projected upper-left.
+
+While the product is active the cockpit displays a blinking manual-docking-mode
+status. All player-facing wording is resolved through the unified
+`LocalizationService` data tree; renderer-local translations and hardcoded
+language selection are forbidden.
+
+The advisory lifecycle ends on explicit dock-card close or, after the first
+valid corridor entry, on departure from the permitted tunnel cross-section.
+Cancellation during preparation releases Autopilot authority as part of the
+same transaction. A zero-thickness rectangle plane is presentation geometry;
+the cancellation authority is the connected corridor volume represented by the
+ordered frames/proved clearance.
+
+Automatic DOCKING remains a separate later capability and stays disabled until
+its server-owned physical program, reservation, moving-port ingress and capture
+are proved.
+
+
 > 2026-09-24 docking rewrite: historical `GuidanceTunnelBuilder` and
 > `DockingPathPlanner` examples below are superseded. The live client uses
 > `DockingAdvisoryPlanner` for advisory geometry only; the automatic docking

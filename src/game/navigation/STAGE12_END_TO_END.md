@@ -1,5 +1,26 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-24 — Assisted commissioning stop and manual corridor recovery band
+
+Live request 8 reached gate 12 and was cancelled at vertical offset 60.1343 m
+against a 60 m transit center tolerance. This isolates a policy defect rather
+than a route-construction defect. Manual guidance now keeps nominal geometry as
+the target but adds an outer release envelope (+max(25%,10 m) per
+lateral/vertical axis) and 0.35 s continuous departure grace. At >=80% nominal
+usage the HUD warns; outside nominal is critical but recoverable until release
+is sustained.
+
+Frame geometry is explicit: `ship dimension + 2 * allowed center offset`. At
+the terminal gate this equals the dock usable aperture after clearance.
+Cockpit speed labels are limited to gates within 500 m; an outward T on the
+semantic -up edge identifies dock bottom.
+
+Current Cobra hardware remains aft-main-only. Assisted does not synthesize a
+fore engine. BrakeToStop attitude acquisition now runs in Assisted when reverse
+main is absent, so strong commissioning stop flips and uses the real aft main.
+The Assisted fixed-step stop request converges toward zero while all
+linear/angular acceleration remains inside the existing actuator envelopes.
+
 ## 2026-09-24 — published Hub-local correction awaiting target flight gate
 
 The last Windows observation was produced by the old `84d59f4d` executable:

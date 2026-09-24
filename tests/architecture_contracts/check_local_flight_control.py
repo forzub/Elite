@@ -54,6 +54,14 @@ for token in (
     if token not in system:
         fail(f"shared local motion law lost: {token}")
 
+for token in (
+    "else if (reverseMainAccel > 1.0e-9)",
+    "motion.mainEngineAccelerationMps2 = -f * brakeAccel",
+    "-f * (mainThrustCommand * reverseMainAccel)",
+):
+    if token not in system:
+        fail(f"Newtonian surviving-fore-main fallback lost: {token}")
+
 # Ship-specific numerical policy is intentionally centralized in ShipDynamics.
 # DynamicMotionSystem must consume these accessors instead of reopening raw
 # ShipParams fields and inventing a second interpretation.

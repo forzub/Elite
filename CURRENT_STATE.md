@@ -1,5 +1,25 @@
 # CURRENT STATE
 
+## 2026-09-25 — second final-density gate exposed sparse-step boundary crossing
+
+Fresh Windows `docking_advisory` still failed the terminal density contract,
+now with an exact 500 m interval:
+`terminal advisory gate spacing too sparse: 500`.
+The static manual-docking check continued to pass.
+
+The previous "activate at 2250 m" rule was insufficient because cadence was
+selected from the current frame. A current sparse frame at e.g. 2300 m could
+still take a full 500 m step to 1800 m, crossing the activation boundary in one
+jump.
+
+The planner now treats the density boundary as an explicit anchor. While still
+in sparse mode, if the next nominal 500 m step would cross
+`terminalDenseDistance + terminalSpacing`, that specific interval is shortened
+to the distance-to-boundary. Once the boundary frame is reached, all following
+published intervals use terminal spacing. This removes the entire sparse-step
+crossing class rather than shifting the threshold again. Fresh Windows rerun
+is pending.
+
 ## 2026-09-25 — final-2-km density gate exposed one boundary-transition defect
 
 Fresh Windows docking_advisory failed only the new terminal-density assertion:

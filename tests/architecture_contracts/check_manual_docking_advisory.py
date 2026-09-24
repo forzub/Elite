@@ -88,7 +88,8 @@ try:
             "tangentDistance/tangentScale",
             "arcLength=radius*turnAngle",
             "center=entry+radius*inwardNormal",
-            "remainingMeters<=r.terminalDenseDistanceMeters")
+            "remainingFromPrevious",
+            "r.terminalDenseDistanceMeters+terminalSpacing")
     require("src/game/SpaceState.cpp",
             "phase=settled",
             "vrel_mps=",

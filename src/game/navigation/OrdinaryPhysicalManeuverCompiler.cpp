@@ -182,20 +182,72 @@ double usable(
 
 double requiredAttitudeChange(
     const glm::dvec3& forward,
-    const glm::dvec3& deltaVelocity
+    const glm::dvec3& desiredHullForward
 ) noexcept
 {
-    const double deltaSpeed = glm::length(deltaVelocity);
-    if (!finite(deltaSpeed) || deltaSpeed <= kEpsilon)
-        return 0.0;
-
     return std::acos(
         std::clamp(
-            glm::dot(forward, deltaVelocity / deltaSpeed),
+            glm::dot(forward, desiredHullForward),
             -1.0,
             1.0
         )
     );
+}
+
+struct PrimaryMainBurnChoice
+{
+    bool valid = false;
+    bool usesReverseMain = false;
+    double accelerationMps2 = 0.0;
+    glm::dvec3 thrustDirection {0.0};
+    glm::dvec3 requiredHullForward {0.0, 0.0, -1.0};
+};
+
+PrimaryMainBurnChoice choosePrimaryMainBurn(
+    const Compiler::Query& q,
+    const glm::dvec3& deltaVelocity
+) noexcept
+{
+    PrimaryMainBurnChoice out;
+
+    const double deltaSpeed = glm::length(deltaVelocity);
+    if (!finite(deltaSpeed) || deltaSpeed <= kEpsilon)
+        return out;
+
+    const glm::dvec3 thrustDirection =
+        deltaVelocity / deltaSpeed;
+    const double forwardAvailable = usable(
+        q.capability.maxForwardAccelerationMps2,
+        q.linearFeedbackReserveMps2
+    );
+    const double reverseAvailable = usable(
+        q.capability.maxReverseAccelerationMps2,
+        q.linearFeedbackReserveMps2
+    );
+
+    // Doctrine: the aft/rear main bank remains primary while it is available.
+    // If it is lost, the fore bank becomes the primary main engine and the
+    // working hull direction reverses. Control law never invents hardware.
+    if (forwardAvailable > kEpsilon)
+    {
+        out.valid = true;
+        out.usesReverseMain = false;
+        out.accelerationMps2 = forwardAvailable;
+        out.thrustDirection = thrustDirection;
+        out.requiredHullForward = thrustDirection;
+        return out;
+    }
+
+    if (reverseAvailable > kEpsilon)
+    {
+        out.valid = true;
+        out.usesReverseMain = true;
+        out.accelerationMps2 = reverseAvailable;
+        out.thrustDirection = thrustDirection;
+        out.requiredHullForward = -thrustDirection;
+    }
+
+    return out;
 }
 
 Compiler::InfeasibilityWitness assessInfeasibility(
@@ -208,10 +260,13 @@ Compiler::InfeasibilityWitness assessInfeasibility(
         q.desiredVelocityMapMetersPerSecond -
         q.state.velocityMapMetersPerSecond;
     witness.availableProgramSeconds = q.maximumProgramSeconds;
-    witness.usableForwardAccelerationMps2 = usable(
-        q.capability.maxForwardAccelerationMps2,
-        q.linearFeedbackReserveMps2
-    );
+    const PrimaryMainBurnChoice mainBurn =
+        choosePrimaryMainBurn(
+            q,
+            witness.requestedDeltaVelocityMapMetersPerSecond
+        );
+    witness.usableForwardAccelerationMps2 =
+        mainBurn.valid ? mainBurn.accelerationMps2 : 0.0;
     witness.usableAngularAccelerationRadPerSec2 = usable(
         q.capability.maxAngularAccelerationRadPerSec2,
         q.angularFeedbackReserveRadPerSec2
@@ -221,13 +276,15 @@ Compiler::InfeasibilityWitness assessInfeasibility(
 
     const double deltaSpeed =
         glm::length(witness.requestedDeltaVelocityMapMetersPerSecond);
-    witness.requiredAttitudeChangeRad = requiredAttitudeChange(
-        forward,
-        witness.requestedDeltaVelocityMapMetersPerSecond
-    );
+    witness.requiredAttitudeChangeRad =
+        mainBurn.valid
+            ? requiredAttitudeChange(
+                  forward,
+                  mainBurn.requiredHullForward
+              )
+            : 0.0;
 
-    if (deltaSpeed > kEpsilon &&
-        witness.usableForwardAccelerationMps2 <= kEpsilon)
+    if (deltaSpeed > kEpsilon && !mainBurn.valid)
     {
         witness.reason =
             Compiler::InfeasibilityReason::TranslationAuthorityUnavailable;
@@ -471,10 +528,8 @@ bool compileLeadRotateMainBurn(
     if (!finite(deltaSpeed) || deltaSpeed <= 1.0e-6)
         return false;
 
-    const double forwardAvailable = usable(
-        q.capability.maxForwardAccelerationMps2,
-        q.linearFeedbackReserveMps2
-    );
+    const PrimaryMainBurnChoice mainBurn =
+        choosePrimaryMainBurn(q, deltaVelocity);
     const double angularAccelerationAvailable = usable(
         q.capability.maxAngularAccelerationRadPerSec2,
         q.angularFeedbackReserveRadPerSec2
@@ -482,14 +537,16 @@ bool compileLeadRotateMainBurn(
     const double angularSpeedAvailable =
         std::max(0.0, q.capability.maxAngularSpeedRadPerSec);
 
-    if (forwardAvailable <= kEpsilon)
+    if (!mainBurn.valid)
         return false;
 
     const glm::dvec3 thrustDirection =
-        deltaVelocity / deltaSpeed;
+        mainBurn.thrustDirection;
+    const glm::dvec3 requiredHullForward =
+        mainBurn.requiredHullForward;
 
     const double cosAngle = std::clamp(
-        glm::dot(forward, thrustDirection),
+        glm::dot(forward, requiredHullForward),
         -1.0,
         1.0
     );
@@ -503,7 +560,7 @@ bool compileLeadRotateMainBurn(
     }
 
     glm::dvec3 axis =
-        glm::cross(forward, thrustDirection);
+        glm::cross(forward, requiredHullForward);
     const double axisLength = glm::length(axis);
     if (axisLength > kEpsilon)
     {
@@ -537,7 +594,7 @@ bool compileLeadRotateMainBurn(
     }
 
     const double rawBurnSeconds =
-        deltaSpeed / forwardAvailable;
+        deltaSpeed / mainBurn.accelerationMps2;
     const double burnRampSeconds =
         std::clamp(
             rawBurnSeconds *
@@ -622,7 +679,7 @@ bool compileLeadRotateMainBurn(
                 ramp01 * ramp01 * (3.0 - 2.0 * ramp01);
             acceleration =
                 thrustDirection *
-                (forwardAvailable * ramp);
+                (mainBurn.accelerationMps2 * ramp);
         }
 
         if (i > 0)
@@ -649,7 +706,7 @@ bool compileLeadRotateMainBurn(
                     axis,
                     rotationAngle
                 ),
-                thrustDirection
+                requiredHullForward
             );
         sample.rightMap =
             normalizedOr(
@@ -677,11 +734,24 @@ bool compileLeadRotateMainBurn(
 
         previousAcceleration = acceleration;
 
-        out.required.peakForwardAccelerationMps2 =
-            std::max(
-                out.required.peakForwardAccelerationMps2,
-                glm::dot(acceleration, sample.forwardMap)
-            );
+        const double longitudinal =
+            glm::dot(acceleration, sample.forwardMap);
+        if (mainBurn.usesReverseMain)
+        {
+            out.required.peakReverseAccelerationMps2 =
+                std::max(
+                    out.required.peakReverseAccelerationMps2,
+                    std::max(0.0, -longitudinal)
+                );
+        }
+        else
+        {
+            out.required.peakForwardAccelerationMps2 =
+                std::max(
+                    out.required.peakForwardAccelerationMps2,
+                    std::max(0.0, longitudinal)
+                );
+        }
         out.required.peakAngularAccelerationRadPerSec2 =
             std::max(
                 out.required.peakAngularAccelerationRadPerSec2,
@@ -697,9 +767,14 @@ bool compileLeadRotateMainBurn(
     // Numerical integration/sample spacing may leave the final velocity a bit
     // short of the requested delta-v. That is legal: B5 emits a bounded
     // receding-horizon maneuver, not a claim that the whole route is complete.
+    const double usedMainAcceleration =
+        mainBurn.usesReverseMain
+            ? out.required.peakReverseAccelerationMps2
+            : out.required.peakForwardAccelerationMps2;
+
     return
-        out.required.peakForwardAccelerationMps2 <=
-            forwardAvailable + 1.0e-6 &&
+        usedMainAcceleration <=
+            mainBurn.accelerationMps2 + 1.0e-6 &&
         out.required.peakAngularAccelerationRadPerSec2 <=
             angularAccelerationAvailable + 1.0e-6 &&
         out.required.peakAngularSpeedRadPerSec <=
@@ -762,7 +837,8 @@ OrdinaryPhysicalManeuverCompiler::compile(
         return result;
     }
 
-    if (query.controlLaw != LocalFlightControlLaw::Newtonian)
+    if (query.controlLaw != LocalFlightControlLaw::Newtonian &&
+        query.controlLaw != LocalFlightControlLaw::Assisted)
     {
         result.status = Status::UnsupportedControlLaw;
         result.infeasibility.reason =
@@ -848,10 +924,11 @@ OrdinaryPhysicalManeuverCompiler::compile(
             rawRequired
         );
 
-    // Main engine is the primary translation authority for the default
-    // Newtonian ship model. Do not hide that option merely because RCS could
-    // eventually produce the same small body-axis acceleration. B5 generates
-    // the bounded physical alternatives; B7 selects among proved candidates.
+    // Main propulsion is the primary translation authority. Do not hide that
+    // option merely because RCS could eventually produce the same small
+    // body-axis acceleration. If the aft bank is unavailable, the same
+    // physical primitive is compiled against the fore bank with reversed hull
+    // working direction. B7 selects among proved candidates.
     Candidate rotateBurn;
     if (result.candidateCount < Result::kMaxCandidates &&
         compileLeadRotateMainBurn(

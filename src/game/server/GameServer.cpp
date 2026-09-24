@@ -1567,6 +1567,17 @@ bool GameServer::navigationStateForSession(
     return true;
 }
 
+bool GameServer::controlledEntityAutopilotActiveForSession(
+    game::network::ServerSessionId sessionId
+) const noexcept
+{
+    const EntityId controlledEntityId =
+        controlledEntityForSession(sessionId);
+    return controlledEntityId.value != 0 &&
+        m_controls.controllerKind(controlledEntityId) ==
+            game::server::ControllerKind::Autopilot;
+}
+
 bool GameServer::copySnapshotForSession(
     game::network::ServerSessionId sessionId,
     SimulationSnapshot& outSnapshot
@@ -1582,21 +1593,8 @@ bool GameServer::copySnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
-    const EntityId controlledEntityId =
-        controlledEntityForSession(sessionId);
     outSnapshot.session.controlledEntityAutopilotActive =
-        m_controls.controllerKind(controlledEntityId) ==
-            game::server::ControllerKind::Autopilot;
-    const EntityId controlledEntityId =
-        controlledEntityForSession(sessionId);
-    outSnapshot.session.controlledEntityAutopilotActive =
-        m_controls.controllerKind(controlledEntityId) ==
-            game::server::ControllerKind::Autopilot;
-    const EntityId controlledEntityId =
-        controlledEntityForSession(sessionId);
-    outSnapshot.session.controlledEntityAutopilotActive =
-        m_controls.controllerKind(controlledEntityId) ==
-            game::server::ControllerKind::Autopilot;
+        controlledEntityAutopilotActiveForSession(sessionId);
 
     // Full copy remains available for diagnostics/contracts. Production normal
     // publication switches to copySparseSnapshotForSession in Stage M7; initial
@@ -1628,6 +1626,8 @@ bool GameServer::copyHydratedSnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
+    outSnapshot.session.controlledEntityAutopilotActive =
+        controlledEntityAutopilotActiveForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
     outSnapshot.replication.removedShipIds.clear();
@@ -1652,6 +1652,8 @@ bool GameServer::copySparseSnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
+    outSnapshot.session.controlledEntityAutopilotActive =
+        controlledEntityAutopilotActiveForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;
     outSnapshot.replication.removedShipIds = selection.removedShipIds;

@@ -1,5 +1,13 @@
 # PROJECT STATE
 
+## 2026-09-24 — authority replication normalized through one server helper
+
+Per-session Autopilot authority publication is now owned by one
+`GameServer::controlledEntityAutopilotActiveForSession()` helper. Full,
+hydrated and sparse session snapshots consume that same source, eliminating
+copy-path drift and the duplicate-declaration patch error found during review.
+
+
 ## 2026-09-24 — per-session authority acknowledgement closes prediction race
 
 Manual docking authority is now observable in replicated session state instead

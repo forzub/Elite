@@ -275,6 +275,9 @@ private:
         EntityId controlledEntityId,
         const char* reason
     );
+    bool controlledEntityAutopilotActiveForSession(
+        game::network::ServerSessionId sessionId
+    ) const noexcept;
     world::celestial::PlayerNavigationState navigationStateForEntity(
         EntityId entityId
     ) const;

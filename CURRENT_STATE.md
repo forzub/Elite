@@ -1,5 +1,20 @@
 # CURRENT STATE
 
+## 2026-09-24 — authority snapshot composition compile bug found and corrected
+
+Static review of commit `61b5424608533c806672e21e77339be612dc0087`
+found a patching error before target execution: the authority assignment was
+inserted three times into `copySnapshotForSession()`, redeclaring
+`controlledEntityId`, while hydrated and sparse copy paths were left without
+the field.
+
+The correction centralizes the query in
+`controlledEntityAutopilotActiveForSession()` and makes all three production
+copy paths call that helper exactly once. The focused commissioning check now
+requires exactly three helper calls. The broken intermediate SHA must not be
+used as target evidence.
+
+
 ## 2026-09-24 — authoritative docking hand-back acknowledgement implemented
 
 Status: **CODE IMPLEMENTED / TARGET GAME GATE PENDING**

@@ -9990,3 +9990,16 @@ accepted snapshot proves Autopilot inactive.
 
 This removes the one-fixed-step speculative hand-back window. Snapshot
 data-plane schema version is 9.
+
+## 2026-09-24 — authority snapshot copy-path correction
+
+Static review caught a compile-blocking patching error in the first authority
+acknowledgement commit: one per-session snapshot function received the same
+authority block three times, while the hydrated and sparse paths received none.
+
+The source is now normalized through
+`GameServer::controlledEntityAutopilotActiveForSession()`. Exactly three
+production session-copy paths call it once each. The focused architecture check
+pins that count so this copy-path drift cannot silently return.
+
+The rejected intermediate SHA is not target evidence.

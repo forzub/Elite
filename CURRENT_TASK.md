@@ -1,5 +1,14 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — rerun from corrected authority-copy HEAD only
+
+Do not test `61b5424608533c806672e21e77339be612dc0087`; it contains the
+statically detected duplicate declaration in one snapshot-copy function.
+
+Use the next corrected HEAD and first run the architecture suite / compile gate.
+Only after those pass proceed to the in-game SHOW ROUTE lifecycle test.
+
+
 ## 2026-09-24 — verify acknowledged docking hand-back
 
 Before gameplay inspection verify the current focused gates:

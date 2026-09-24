@@ -23,6 +23,8 @@ def require(rel: str, *tokens: str) -> None:
 try:
     require("src/game/server/ControlRegistry.h",
             "ControllerKind::Autopilot", "takeAutopilotControl", "restoreHumanControl")
+    require("src/game/server/GameServer.h",
+            "controlledEntityAutopilotActiveForSession")
     require("src/game/server/GameServer.cpp",
             "BeginDockingGuidancePreparation",
             "CancelDockingGuidancePreparation",
@@ -31,6 +33,12 @@ try:
             "VelocityAlignmentMode::BrakeToStop",
             "discardPendingAndAcknowledgeNewest",
             "controlledEntityAutopilotActive")
+    server = read("src/game/server/GameServer.cpp")
+    if server.count("controlledEntityAutopilotActiveForSession(sessionId)") != 3:
+        raise AssertionError(
+            "all three per-session snapshot copy paths must publish Autopilot authority"
+        )
+
     require("src/game/client/GameClient.cpp",
             "m_externalControlPredictionSuppressed",
             "setExternalControlPredictionSuppressed",

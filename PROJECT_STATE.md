@@ -1,5 +1,21 @@
 # PROJECT STATE
 
+## 2026-09-24 — current docking blocker is target provenance, not planner construction
+
+The last playable result (brief route followed by bare
+`dock moved off approach axis`) came from the pre-fix Windows binary at
+`84d59f4d`. Route visibility proves that takeover, physical settling,
+authoritative snapshot capture, planning and publication had already occurred
+in that old run; disappearance was caused by the post-publication consistency
+guard.
+
+The corrected published baseline `512b917c` removes the split world/epoch
+prediction from that guard: terminal gate, dock attachment and semantic port
+are evaluated in one Hub-local coordinate owner, while map/HUD conversion is
+presentation-only. Local focused regression reproduces the old orbital drift
+and passes the replacement path. Live Windows acceptance remains open until a
+rebuilt executable is positively identified and exercised.
+
 ## 2026-09-24 — public main now contains corrected docking tree
 
 Public `forzub/Elite` `main` at verified commit `512b917c` contains the

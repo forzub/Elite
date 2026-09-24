@@ -1,5 +1,25 @@
 # PROJECT STATE
 
+## 2026-09-25 — docking guidance geometry is curvature-aware near the station
+
+Manual docking guidance now distinguishes route truth from display density.
+Planner corners are circular fillets derived from lateral acceleration
+capability and segment room. Display frames use 500 m spacing in open transit
+and 250 m within the last 2 km, measured by route progress rather than chord
+distance. This prevents a curved approach from being represented by a few long
+straight visual chords.
+
+The temporary docking-preparation Autopilot is authoritative and physical: it
+owns the ship, repeatedly commands BrakeToStop, and planning is gated on a
+replicated near-zero Hub-relative speed plus near-zero angular rate. Numeric
+begin/settled diagnostics are now part of the live acceptance evidence.
+
+Automatic docking remains a separate execution milestone. The request enum
+already contains Automatic, but the active SpaceState docking implementation
+processes Guidance only. The correct next automatic path is accepted physical
+maneuver program -> TrajectoryFollower -> NavigationRuntimeControlBridge ->
+ShipControlState, not direct chasing of advisory display gates.
+
 ## 2026-09-25 — docking headers must remain safe under full Windows include stack
 
 A header-only docking helper used the identifier `near`. Narrow native tests

@@ -8,127 +8,86 @@ Before changing project behavior/state, read `AGENTS.md`, newest sections of
 result synchronize those four files before the next implementation slice.
 Regenerate this prompt from current truth every iteration.
 
-## Accepted propulsion truth
+## Propulsion and stop contract
 
-Cobra has physical aft/rear and fore/nose longitudinal main-engine banks.
-Runtime module state determines effective availability.
+Dual-main Cobra propulsion and binary failure semantics are accepted on Windows:
+healthy aft/fore banks retain full authority, failed banks have zero authority,
+RCS remains separate, and Planner/B5 plus live local-flight contracts pass.
 
-Bank health is binary:
-- operational bank -> full descriptor authority;
-- failed bank -> zero authority;
-- never proportionally derate main thrust from health.
+SHOW ROUTE already performs a real temporary server Autopilot takeover for the
+pre-plan stop. Server repeatedly commands BrakeToStop and planning is gated on
+replicated authoritative Hub-relative speed <= max(0.05 m/s, ship stop epsilon)
+and angular rate <=0.01 rad/s for 0.25 s.
 
-RCS is separate. Main propulsion retains priority inside the shared linear
-acceleration envelope; secondary RCS is trimmed if necessary.
-
-Healthy Assisted uses fore main for strong nose-first braking.
-Failed fore -> flip + aft main.
-Failed aft + live fore -> fore main becomes primary and working travel direction
-becomes `-hullForward`.
-
-Newtonian follows the same hardware truth:
-- healthy aft remains primary;
-- failed aft + live fore -> '+' burns fore main along `-hullForward`;
-- BrakeToStop aligns for the surviving bank;
-- '-' remains a no-op rather than synthetic reverse thrust.
-
-## Verified Windows evidence
-
-Fresh Windows target gates have passed:
-- `local_flight_control_contracts`;
-- `ordinary_physical_maneuver_compiler`;
-- `ship_propulsion_state`;
-- `docking_advisory`;
-- `json_numeric_locale`;
-- `check_local_flight_control.py`;
-- `check_manual_docking_advisory.py`.
-
-The canonical full game build also progressed after the Windows `near`
-identifier fix and produced live docking guidance runs.
-
-Latest live manual guidance evidence:
-- request 1 gate 2: lateral -82.8289 m vs release 75 m;
-- request 3 gate 17: lateral 77.9429 m vs release 75 m;
-- request 4 gate 2: vertical -62.1068 m vs release 61.1359 m.
-These are measured real corridor exits; the old dock-axis failure is absent.
-
-## New guidance geometry
-
-User observed that the station turn is too coarse with 500 m frames and wants
-the final approach to be a radius, not a broken polyline.
-
-Implemented on main:
-- DockingAdvisoryPlanner corner smoothing is now a true circular fillet;
-- desired radius starts from v^2/a lateral capability and shrinks only to fit
-  adjacent segment room;
-- downstream speed profile remains responsible for a smaller-radius feasible
-  turn;
-- ordinary frame spacing remains 500 m;
-- within the final 2000 m, spacing becomes 250 m;
-- display compression uses along-route progress rather than Euclidean chord
-  distance, so curves are not collapsed into long chords;
-- native docking test verifies the terminal density and multiple published
-  gates lying on the expected circle.
-
-## Docking preparation stop truth
-
-SHOW ROUTE already exercises temporary authoritative Autopilot ownership.
-
-Server:
-Human -> Autopilot, discards pending human control, repeatedly commands
-`VelocityAlignmentMode::BrakeToStop`.
-
-Client planning does not begin until replicated authoritative state has:
-- Hub-relative speed <= max(0.05 m/s, ship stop epsilon);
-- angular rate <= 0.01 rad/s;
-- both held for 0.25 s.
-
-New diagnostics:
+New live diagnostics:
 - `[DockPrep] begin ... vrel_mps=... omega_radps=... law=...`
-- `[DockAdvisory] request=... phase=settled vrel_mps=... omega_radps=... hold_s=...`
+- `[DockAdvisory] ... phase=settled vrel_mps=... omega_radps=... hold_s=...`
 
-Use these values to verify the user's suspicion that the initial zero-speed stop
-may not be visually obvious. If a route is published, the settle gate must have
-been observed in replicated state, but the new log is the required explicit
-evidence.
+## Live guidance evidence
+
+Current game no longer exhibits the old dock-axis cancellation. Latest route
+removals are real measured corridor exits, including lateral 82.8289/75 m and
+77.9429/75 m cases near turns.
+
+User requested smoother terminal geometry and denser frames:
+- circular fillets instead of quadratic Bezier corner smoothing;
+- 500 m frames in open transit;
+- 250 m frames inside final 2 km.
+
+Implemented circular fillets use v^2/a desired radius, limited by adjacent
+segment room. Display compression uses along-route progress rather than chord
+distance.
+
+## Latest Windows gate result
+
+The first fresh `docking_advisory` run after final-density changes failed:
+`terminal advisory gate spacing too sparse: 490`.
+
+The static manual-docking architecture check passed.
+
+Root cause: the 500->250 transition selected spacing from the candidate endpoint,
+so a final sparse ~500 m chord could cross the 2 km threshold and land inside
+the dense region before the denser cadence activated.
+
+Fix on current main:
+- compute cadence from the current published frame;
+- activate 250 m cadence one terminal interval early:
+  `terminalDenseDistanceMeters + terminalSpacing` (2000 + 250 m);
+- therefore the 2 km boundary is already bracketed by <=250 m frames;
+- native regression remains strict for every interval inside the final band and
+  requires a transition frame within one terminal spacing of 2 km.
+
+Fresh Windows rerun is pending.
 
 ## Automatic docking boundary
 
-`DockingRouteRequest::Mode::Automatic` exists, but the active SpaceState
-docking implementation currently accepts only `Mode::Guidance`.
+`DockingRouteRequest::Mode::Automatic` exists, but current SpaceState docking
+execution accepts Guidance only.
 
-Do NOT enable full docking by writing a second ad-hoc waypoint controller that
-chases advisory frames.
-
-The correct automatic chain is:
+Do not create an ad-hoc waypoint autopilot. Full automatic docking must use:
 accepted physical maneuver program
 -> TrajectoryFollower
 -> NavigationRuntimeControlBridge
 -> ShipControlState
 -> shared ship physics.
 
-SHOW ROUTE's stop phase already tests a limited Autopilot function; full route
-autopilot remains an execution milestone until docking planning authors/accepts
-a physical maneuver program for that chain.
+SHOW ROUTE's physical stop is already a limited real Autopilot test.
 
 ## Next target gate
 
 On Windows `D:\__elite\work`:
 
 1. Pull current main.
-2. Build/run focused docking advisory test and static check.
-3. Build canonical game with `bash build_mingw64.sh`.
-4. Run SHOW ROUTE with combined stdout/stderr.
-5. Confirm circular station turn and 250 m frames inside final 2 km.
-6. Capture DockPrep begin and phase=settled VREL/omega values.
-7. Confirm route publication and Human hand-back.
-8. If these pass, next implementation milestone is wiring the docking physical
-   program into the existing TrajectoryFollower/control bridge for a real
-   automatic flight test.
+2. Rebuild/run only `docking_advisory_tests`.
+3. Run `python tests/architecture_contracts/check_manual_docking_advisory.py`.
+4. If both pass, rebuild canonical game with `bash build_mingw64.sh`.
+5. Run SHOW ROUTE with combined log.
+6. Inspect circular final turn, 250 m frame density inside final 2 km, and
+   DockPrep begin/phase=settled VREL+omega values.
+7. Confirm Human hand-back after route publication.
 
-Preserve untracked trace/log artifacts. Do not weaken corridor bounds merely to
-hide a turn-tracking defect, invent fore-engine hit geometry, or restore retired
-DockingPathPlanner/GuidanceTunnel.
+Preserve all untracked trace/log artifacts. Do not weaken corridor bounds,
+engine truth, or terminal-density tests merely to make a gate pass.
 
-The user wants implementation directly in GitHub followed by exact Windows
-pull/test/build/run commands. Do not provide patch files.
+The user wants changes applied directly to GitHub and exact Windows commands.
+Do not provide patch files.

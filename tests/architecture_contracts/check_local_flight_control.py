@@ -24,6 +24,8 @@ simulation = read("src/game/simulation/GameSimulation.cpp")
 prediction = read("src/game/client/ClientHubTacticalPrediction.h")
 params = read("src/game/ship/core/ShipParams.h")
 dynamics = read("src/game/ship/core/ShipDynamics.h")
+propulsion = read("src/game/ship/ShipPropulsionState.h")
+compiler = read("src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp")
 controller = read("src/game/ship/ShipController.cpp")
 impulse = read("src/game/ship/physics/ShipImpulseSystem.cpp")
 cobra = read("src/game/ship/descriptors/EliteCobraMk1.cpp")
@@ -131,8 +133,15 @@ for token in (
     if token not in shared:
         fail(f"shared server/client attitude path lost command: {token}")
 
-if "shipPtr->core().desc().physics" not in simulation:
-    fail("server local motion no longer uses per-ship physics profile")
+for token in (
+    "shipPtr->core().effectivePhysics()",
+    "const ShipParams effectivePhysics",
+):
+    if token not in simulation:
+        fail(f"server local motion lost damage-aware propulsion profile: {token}")
+
+if "game::ship::effectiveShipPhysics" not in space:
+    fail("manual docking planning no longer consumes current engine health")
 
 if "const ShipParams& params" not in prediction:
     fail("client prediction no longer consumes the same per-ship physics profile")
@@ -145,9 +154,29 @@ for token in (
     "manoeuvreGasUsePerSecond",
     "manoeuvreGasRechargePerSecond",
     "manoeuvreGasRestartFraction",
+    "forwardMainEngineAvailable",
+    "reverseMainEngineAvailable",
+    "forwardMainEngineAccelerationMps2",
+    "reverseMainEngineAccelerationMps2",
 ):
     if token not in params:
-        fail(f"ship profile lost manoeuvre/RCS resource parameter: {token}")
+        fail(f"ship profile lost propulsion parameter: {token}")
+
+for token in (
+    "propulsionBankOperational",
+    "applyRuntimeMainPropulsionState",
+    "Main propulsion is deliberately binary",
+):
+    if token not in propulsion:
+        fail(f"binary runtime propulsion contract lost: {token}")
+
+for forbidden in (
+    "operationalFraction",
+    "staticForwardAuthority * aftFraction",
+    "staticReverseAuthority * foreFraction",
+):
+    if forbidden in propulsion:
+        fail(f"proportional main-engine derating returned: {forbidden}")
 
 for token in (
     "game::ship::angularAccelerationLimitRadPerSec2(params)",
@@ -220,9 +249,27 @@ for token in (
     "desc.physics.manoeuvreGasUsePerSecond = 0.20f",
     "desc.physics.manoeuvreGasRechargePerSecond = 0.08f",
     "desc.physics.manoeuvreGasRestartFraction = 0.20f",
+    "desc.physics.forwardMainEngineAvailable = true",
+    "desc.physics.reverseMainEngineAvailable = true",
+    "desc.physics.forwardMainEngineAccelerationMps2 = 73.549875f",
+    "desc.physics.reverseMainEngineAccelerationMps2 = 73.549875f",
+    '"ship_fore_engine_L"',
+    '"ship_fore_engine_R"',
+    "desc.mainPropulsion.aftEngineModuleIds",
+    "desc.mainPropulsion.foreEngineModuleIds",
 ):
     if token not in cobra:
-        fail(f"Cobra manoeuvre/RCS tuning disappeared: {token}")
+        fail(f"Cobra propulsion topology disappeared: {token}")
+
+for token in (
+    "LocalFlightControlLaw::Assisted",
+    "maxForwardMainAccelerationMps2",
+    "maxReverseMainAccelerationMps2",
+    "usesReverseMain",
+    "requiredHullForward = -thrustDirection",
+):
+    if token not in compiler:
+        fail(f"B5 failed-engine maneuver support lost: {token}")
 
 
 for token, text, label in (

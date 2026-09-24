@@ -44,11 +44,11 @@ the terminal gate this equals the dock usable aperture after clearance.
 Cockpit speed labels are limited to gates within 500 m; an outward T on the
 semantic -up edge identifies dock bottom.
 
-Current Cobra hardware remains aft-main-only. Assisted does not synthesize a
-fore engine. BrakeToStop attitude acquisition now runs in Assisted when reverse
-main is absent, so strong commissioning stop flips and uses the real aft main.
-The Assisted fixed-step stop request converges toward zero while all
-linear/angular acceleration remains inside the existing actuator envelopes.
+The newer Cobra descriptor installs a physical fore main. Healthy Assisted
+commissioning therefore brakes nose-first with that bank. The attitude
+acquisition introduced by this slice remains the fallback when reverse main is
+unavailable: strong commissioning stop then flips and uses the aft main. All
+linear/angular acceleration remains inside the same actuator envelopes.
 
 ## 2026-09-24 — published Hub-local correction awaiting target flight gate
 
@@ -9317,8 +9317,9 @@ Three persistent bottom indicators are driven from physical frame channels:
 - `ПЕРЕДНИЙ МАРШЕВЫЙ` — negative main acceleration relative to hull forward;
 - `МАНЕВРОВЫЙ` — non-zero RCS/manoeuvre acceleration.
 
-For the current Cobra the middle indicator should remain off. If it lights,
-that is direct evidence of a reintroduced hidden fore-main path.
+At the 2026-09-22 aft-only baseline the middle indicator was expected to remain
+off. That statement is historical: the 2026-09-24 Cobra now has a real fore
+main, so the indicator may legitimately light when that bank is commanded.
 
 Regression:
 `testNewtonianHigherSpeedUsesMainEngineDominantManeuver()`.
@@ -9481,7 +9482,8 @@ ActuatorSegment[i -> i+1]
     propulsionFeasible
 ```
 
-Current Cobra fore-main is always disabled.
+At the 2026-09-22 baseline Cobra fore-main was disabled; this is superseded by
+the 2026-09-24 physical fore-main installation.
 
 The existing trajectory is compiled into the interval by projecting required
 acceleration onto the planned body forward axis. Positive forward acceleration

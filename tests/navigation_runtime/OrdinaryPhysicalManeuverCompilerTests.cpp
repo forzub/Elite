@@ -43,7 +43,9 @@ Compiler::Query baseQuery()
     q.state.angularVelocityMapRadPerSecond = {0.0, 0.0, 0.0};
 
     q.capability.maxForwardAccelerationMps2 = 73.5;
-    q.capability.maxReverseAccelerationMps2 = 2.0;
+    q.capability.maxReverseAccelerationMps2 = 73.5;
+    q.capability.maxForwardMainAccelerationMps2 = 73.5;
+    q.capability.maxReverseMainAccelerationMps2 = 73.5;
     q.capability.maxLateralAccelerationMps2 = 2.0;
     q.capability.maxVerticalAccelerationMps2 = 2.0;
     q.capability.maxAngularAccelerationRadPerSec2 = 1.5;
@@ -422,19 +424,121 @@ void testFeedbackReserveCanMakeMarginalDirectDemandInfeasible()
     );
 }
 
-void testAssistedIsExplicitlyUnsupportedInFirstB5Slice()
+void testAssistedUsesHealthyForeMainForDirectBraking()
 {
     auto q = baseQuery();
     q.controlLaw = Law::Assisted;
+    q.geometricTargetPositionMapMeters = {0.0, 0.0, 1000.0};
+    q.desiredVelocityMapMetersPerSecond = {0.0, 0.0, 20.0};
 
     const auto result = Compiler::compile(q);
     require(
-        result.status == Compiler::Status::UnsupportedControlLaw,
-        "first B5 slice must not pretend Newtonian compiler is Assisted"
+        result.status == Compiler::Status::Compiled,
+        "healthy Assisted reverse request must compile"
     );
     require(
-        result.candidateCount == 0,
-        "unsupported Assisted law leaked Newtonian candidate"
+        result.directBodyAxisFeasible,
+        "healthy fore main should make Assisted braking directly feasible"
+    );
+
+    const Candidate* direct =
+        findFamily(result, Candidate::Family::Trim);
+    require(direct != nullptr, "Assisted direct reverse-main candidate missing");
+    require(
+        direct->required.peakReverseAccelerationMps2 > 1.0,
+        "Assisted direct braking did not consume reverse-main authority"
+    );
+
+    const auto& last = direct->samples[direct->sampleCount - 1];
+    require(
+        glm::dot(last.forwardMap, q.state.forwardMap) > 0.999999,
+        "healthy Assisted fore-main braking rotated the hull unnecessarily"
+    );
+}
+
+void testAssistedForeMainFailureFallsBackToAftFlipAndBurn()
+{
+    auto q = baseQuery();
+    q.controlLaw = Law::Assisted;
+    q.capability.maxReverseAccelerationMps2 = 2.0;
+    q.capability.maxReverseMainAccelerationMps2 = 0.0;
+    q.geometricTargetPositionMapMeters = {0.0, 0.0, 1000.0};
+    q.desiredVelocityMapMetersPerSecond = {0.0, 0.0, 20.0};
+
+    const auto result = Compiler::compile(q);
+    require(
+        result.status == Compiler::Status::Compiled,
+        "Assisted must retain aft-main fallback after fore-main failure"
+    );
+    require(
+        !result.directBodyAxisFeasible,
+        "failed fore main was incorrectly replaced by full reverse authority"
+    );
+
+    const Candidate* rotateBurn =
+        findFamily(result, Candidate::Family::LeadRotateMainBurn);
+    require(rotateBurn != nullptr, "aft flip-and-burn fallback missing");
+    require(
+        rotateBurn->required.peakForwardAccelerationMps2 > 1.0,
+        "aft fallback did not use forward-main authority"
+    );
+    require(
+        rotateBurn->required.peakReverseAccelerationMps2 <= 1.0e-9,
+        "aft fallback still consumed failed fore-main authority"
+    );
+
+    const glm::dvec3 desiredDirection = glm::normalize(
+        q.desiredVelocityMapMetersPerSecond -
+        q.state.velocityMapMetersPerSecond
+    );
+    const auto& last =
+        rotateBurn->samples[rotateBurn->sampleCount - 1];
+    require(
+        glm::dot(last.forwardMap, desiredDirection) > 0.999,
+        "aft fallback did not point the nose along its thrust direction"
+    );
+}
+
+void testAftMainFailureUsesForeMainAsPrimaryReverseWorkingDirection()
+{
+    auto q = baseQuery();
+    q.controlLaw = Law::Assisted;
+    q.capability.maxForwardAccelerationMps2 = 2.0;
+    q.capability.maxForwardMainAccelerationMps2 = 0.0;
+    q.geometricTargetPositionMapMeters = {0.0, 0.0, -1000.0};
+    q.desiredVelocityMapMetersPerSecond = {0.0, 0.0, -20.0};
+
+    const auto result = Compiler::compile(q);
+    require(
+        result.status == Compiler::Status::Compiled,
+        "surviving fore main must compile as primary propulsion"
+    );
+    require(
+        !result.directBodyAxisFeasible,
+        "RCS residual was incorrectly promoted to failed aft main"
+    );
+
+    const Candidate* rotateBurn =
+        findFamily(result, Candidate::Family::LeadRotateMainBurn);
+    require(rotateBurn != nullptr, "fore-main primary fallback missing");
+    require(
+        rotateBurn->required.peakReverseAccelerationMps2 > 1.0,
+        "fore-main fallback did not consume reverse-main authority"
+    );
+    require(
+        rotateBurn->required.peakForwardAccelerationMps2 <= 1.0e-9,
+        "fore-main fallback consumed failed aft-main authority"
+    );
+
+    const glm::dvec3 desiredDirection = glm::normalize(
+        q.desiredVelocityMapMetersPerSecond -
+        q.state.velocityMapMetersPerSecond
+    );
+    const auto& last =
+        rotateBurn->samples[rotateBurn->sampleCount - 1];
+    require(
+        glm::dot(last.forwardMap, desiredDirection) < -0.999,
+        "fore-main fallback did not reverse the ship working direction"
     );
 }
 
@@ -594,7 +698,9 @@ int main()
         testShortHorizonReturnsRetryableTimingWitness();
         testMainBurnNeverStartsBeforeRequiredAttitudeIsReached();
         testFeedbackReserveCanMakeMarginalDirectDemandInfeasible();
-        testAssistedIsExplicitlyUnsupportedInFirstB5Slice();
+        testAssistedUsesHealthyForeMainForDirectBraking();
+        testAssistedForeMainFailureFallsBackToAftFlipAndBurn();
+        testAftMainFailureUsesForeMainAsPrimaryReverseWorkingDirection();
         testFixtureLikeSeventyFiveDegreeDemandIsNotAcceptedAsOmnidirectional();
         testTenThousandDirtyActorCompilesAndMeasure();
 
@@ -608,7 +714,9 @@ int main()
         std::cout << " - unmodeled initial angular motion fails closed with a typed witness\n";
         std::cout << " - failed physical solves return typed limiting-constraint witnesses\n";
         std::cout << " - Newtonian main burn cannot precede its required hull attitude\n";
-        std::cout << " - Assisted remains explicit unsupported work, not fake Newtonian behavior\n";
+        std::cout << " - Assisted uses real fore main for direct braking when healthy\n";
+        std::cout << " - failed fore main falls back to aft flip-and-burn\n";
+        std::cout << " - failed aft main reverses working direction and uses fore main\n";
         std::cout << " - live 75-degree failure class compiles without omnidirectional main thrust\n";
         std::cout << " - 10000 dirty-actor compiles are measured diagnostically\n";
         return 0;

@@ -4,7 +4,7 @@
 
 Implementation is present. Next acceptance is target evidence, not more redesign:
 
-1. run the focused architecture and docking-advisory native tests;
+1. run the focused architecture, control-authority and docking-advisory native tests;
 2. rebuild the canonical Windows game;
 3. enter the isolated Hub docking fixture and accelerate/rotate the Cobra;
 4. press SHOW ROUTE;

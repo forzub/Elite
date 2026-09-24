@@ -1114,6 +1114,40 @@ set_tests_properties(
 )
 
 add_executable(
+    control_registry_contract_tests
+    ControlRegistryContractTests.cpp
+)
+
+target_include_directories(
+    control_registry_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        control_registry_contract_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        control_registry_contract_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME control_registry_contracts
+    COMMAND control_registry_contract_tests
+)
+
+set_tests_properties(
+    control_registry_contracts
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     client_local_authority_contract_tests
     ClientLocalAuthorityContractTests.cpp
 )

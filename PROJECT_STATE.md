@@ -1,5 +1,13 @@
 # PROJECT STATE
 
+## 2026-09-24 — temporary authority invariant receives native test
+
+A dedicated ControlRegistry contract now verifies that docking preparation may
+change only controller kind Human <-> Autopilot. PlayerId -> EntityId ownership
+identity must remain stable, foreign players cannot steal/restore that authority,
+and unrelated player bindings remain unchanged. Target execution is pending.
+
+
 ## 2026-09-24 — playable manual docking preparation wired
 
 The manual docking commissioning seam is now code rather than only a contract:

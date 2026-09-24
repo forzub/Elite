@@ -9966,3 +9966,11 @@ seams.
 The deleted rolling GuidanceTunnel/DockingPathPlanner checks are no longer
 acceptance authorities. The current gate is the focused advisory/authority
 contract plus the real Windows game run.
+
+## 2026-09-24 — authority transition unit contract
+
+`ControlRegistryContractTests.cpp` now treats temporary docking preparation as
+a controller-kind transaction only. Human -> Autopilot -> Human must preserve
+the same PlayerId -> EntityId mapping, reject cross-player takeover/restore and
+leave unrelated bindings unchanged. This is the native boundary test for the
+temporary control hand-off used by SHOW ROUTE.

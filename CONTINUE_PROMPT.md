@@ -40,6 +40,7 @@ Inspect first:
 - `src/render/cockpit/GuidanceCorridorRenderer.cpp`;
 - `src/assets/localization/ui/cockpit/flight.json`;
 - `tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp`;
+- `tests/architecture_contracts/ControlRegistryContractTests.cpp`;
 - `tests/architecture_contracts/check_manual_docking_advisory.py`.
 
 Next action is verification. Run all locally available focused gates, but do not

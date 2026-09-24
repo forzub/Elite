@@ -1,5 +1,18 @@
 # CURRENT STATE
 
+## 2026-09-24 — static audit after docking-preparation implementation
+
+Post-commit GitHub inspection confirmed the active Hub travel frame stores
+`matchedReferenceFrameId = hubFrame->hubId`, so the preparation stop tests
+the correct Hub co-moving `localVelocityMps`. The existing shared physics
+contract confirms `BrakeToStop` is valid under both control laws: Newtonian
+rotates/brakes through its physical main-engine path, while Assisted drives its
+target relative velocity to zero through installed main/RCS authority. A native
+`ControlRegistryContractTests.cpp` now pins Human -> Autopilot -> Human
+controller transitions while requiring player->ship identity to remain
+unchanged. Execution on the Windows target remains pending.
+
+
 ## 2026-09-24 — manual docking preparation vertical slice implemented
 
 Status: **CODE IMPLEMENTED / TARGET GAME GATE PENDING**

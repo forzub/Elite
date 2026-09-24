@@ -173,18 +173,29 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     while (previous+1<dense.size())
     {
         std::size_t next=previous+1;
+
+        // Enter terminal density one terminal interval BEFORE the nominal
+        // boundary. Otherwise a final 500 m sparse chord can end just inside
+        // the last-2-km band (for example 490 m), leaving the first visible
+        // terminal interval much too long. Starting the denser cadence early
+        // guarantees the boundary itself is bracketed by <= terminal spacing.
+        const double remainingFromPrevious=
+            denseProgress.back()-denseProgress[previous];
+        const double terminalSpacing=std::min(
+            r.gateSpacingMeters,
+            r.terminalGateSpacingMeters
+        );
+        const bool terminalDensityActive=
+            remainingFromPrevious<=
+                r.terminalDenseDistanceMeters+terminalSpacing;
+        const double spacingMeters=
+            terminalDensityActive
+                ? terminalSpacing
+                : r.gateSpacingMeters;
+
         while(next+1<dense.size())
         {
             const std::size_t candidate=next+1;
-            const double remainingMeters=
-                denseProgress.back()-denseProgress[candidate];
-            const double spacingMeters=
-                remainingMeters<=r.terminalDenseDistanceMeters
-                    ? std::min(
-                        r.gateSpacingMeters,
-                        r.terminalGateSpacingMeters
-                      )
-                    : r.gateSpacingMeters;
             const double routeDistance=
                 denseProgress[candidate]-denseProgress[previous];
             if(routeDistance>spacingMeters+1.0e-6)

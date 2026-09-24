@@ -1,5 +1,30 @@
 # CURRENT STATE
 
+## 2026-09-24 — local-flight architecture gate failure is stale static contract
+
+Target architecture run stopped at:
+
+`Local-flight-control architecture check failed: shared local motion law lost:
+params.maxCombatSpeed`.
+
+This is not a runtime flight-law regression. `DynamicMotionSystem.cpp` now
+correctly consumes centralized `ShipDynamics.h` accessors:
+`controlledSpeedLimitMps(params)`,
+`forwardMainAccelerationLimitMps2(params)` and
+`reverseMainAccelerationLimitMps2(params)`.
+
+The stale Python check still required direct raw-field reads
+`params.maxCombatSpeed`, `params.maxGs` and later
+`params.maxLinearGs > 0.0f` inside DynamicMotionSystem. Those reads were
+deliberately moved out of that layer.
+
+The check is updated to prove both sides of the intended boundary:
+DynamicMotionSystem must consume the common accessors, while ShipDynamics must
+map those accessors to `maxCombatSpeed` and
+`maxLinearGs` with fallback to `maxGs`. Native local-flight behavior tests
+remain unchanged. Target rerun is required.
+
+
 ## 2026-09-24 — authority snapshot composition compile bug found and corrected
 
 Static review of commit `61b5424608533c806672e21e77339be612dc0087`

@@ -23,6 +23,7 @@ shared = read("src/game/shared/SharedShipPhysics.cpp")
 simulation = read("src/game/simulation/GameSimulation.cpp")
 prediction = read("src/game/client/ClientHubTacticalPrediction.h")
 params = read("src/game/ship/core/ShipParams.h")
+dynamics = read("src/game/ship/core/ShipDynamics.h")
 controller = read("src/game/ship/ShipController.cpp")
 impulse = read("src/game/ship/physics/ShipImpulseSystem.cpp")
 cobra = read("src/game/ship/descriptors/EliteCobraMk1.cpp")
@@ -42,13 +43,29 @@ for token in (
 
 for token in (
     "LocalFlightControlLaw::Newtonian",
-    "params.maxCombatSpeed",
-    "params.maxGs",
+    "game::ship::controlledSpeedLimitMps(params)",
+    "game::ship::forwardMainAccelerationLimitMps2(params)",
+    "game::ship::reverseMainAccelerationLimitMps2(params)",
     "VelocityAlignmentMode::BrakeToStop",
     "motion.localVelocityMps",
 ):
     if token not in system:
         fail(f"shared local motion law lost: {token}")
+
+# Ship-specific numerical policy is intentionally centralized in ShipDynamics.
+# DynamicMotionSystem must consume these accessors instead of reopening raw
+# ShipParams fields and inventing a second interpretation.
+for token in (
+    "controlledSpeedLimitMps",
+    "params.maxCombatSpeed",
+    "effectiveLinearGs",
+    "params.maxLinearGs > 0.0f",
+    "params.maxGs",
+    "forwardMainAccelerationLimitMps2",
+    "reverseMainAccelerationLimitMps2",
+):
+    if token not in dynamics:
+        fail(f"central ship-dynamics policy lost: {token}")
 
 for token in (
     "manoeuvreAccelerationLimit",
@@ -156,7 +173,8 @@ for forbidden in (
 for token in (
     "limitPropulsionAccelerationToControlledSpeed",
     "allowedRadius = std::max(controlledSpeedLimit, currentSpeed)",
-    "params.maxLinearGs > 0.0f",
+    "game::ship::controlledSpeedLimitMps(params)",
+    "game::ship::forwardMainAccelerationLimitMps2(params)",
 ):
     if token not in system:
         fail(f"controlled-speed propulsion boundary lost: {token}")

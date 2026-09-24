@@ -1,5 +1,17 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — rerun architecture gate after stale local-flight check repair
+
+The previous target run did not reach docking-specific compilation. It stopped
+in a stale grep-style local-flight architecture check.
+
+Rerun the same chained gate from the corrected HEAD. Expected next evidence:
+`Local-flight-control architecture check passed.`
+
+Do not modify DynamicMotionSystem physics to satisfy the old raw-field tokens;
+the centralized ShipDynamics ownership is the intended architecture.
+
+
 ## 2026-09-24 — rerun from corrected authority-copy HEAD only
 
 Do not test `61b5424608533c806672e21e77339be612dc0087`; it contains the

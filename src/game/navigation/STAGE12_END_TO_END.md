@@ -10003,3 +10003,18 @@ production session-copy paths call it once each. The focused architecture check
 pins that count so this copy-path drift cannot silently return.
 
 The rejected intermediate SHA is not target evidence.
+
+## 2026-09-24 — stale local-flight architecture check blocked docking target run
+
+The first target rerun after the acknowledged docking authority work stopped in
+`check_local_flight_control.py` before docking-specific compilation.
+
+The check still demanded direct `params.maxCombatSpeed`, `params.maxGs` and
+`params.maxLinearGs` reads inside `DynamicMotionSystem.cpp`. Current
+architecture intentionally centralizes those raw descriptor semantics in
+`ShipDynamics.h`, while DynamicMotionSystem consumes typed speed and actuator
+authority accessors.
+
+The check now verifies that integration boundary instead. No local-flight
+physics, tuning, tolerance or docking behavior changed. Target rerun remains
+mandatory.

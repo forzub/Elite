@@ -1,59 +1,40 @@
-# CONTINUE PROMPT — verify corrected acknowledged manual docking
+# CONTINUE PROMPT — rerun manual docking gate after stale flight-law check fix
 
 Continue in GitHub repository `forzub/Elite`, branch `main`.
 
 Read `AGENTS.md`, `CURRENT_STATE.md`, `CURRENT_TASK.md`,
-`PROJECT_STATE.md`, the latest dated section of
-`src/game/navigation/STAGE12_END_TO_END.md`, and
-`src/game/navigation/NAVIGATION_GUIDANCE_CONTRACT.md`.
+`PROJECT_STATE.md`, and the latest section of
+`src/game/navigation/STAGE12_END_TO_END.md`.
 
-Important: commit
-`61b5424608533c806672e21e77339be612dc0087` is a rejected intermediate
-candidate. Static review found duplicate `controlledEntityId` declarations in
-`copySnapshotForSession()` and missing authority publication in the other two
-copy paths. Do not use that SHA as evidence.
-
-The corrected design is:
+Latest target result stopped before the docking gate with:
 
 ```text
-ControlRegistry
- -> GameServer::controlledEntityAutopilotActiveForSession()
- -> copySnapshotForSession()
- -> copyHydratedSnapshotForSession()
- -> copySparseSnapshotForSession()
- -> ClientSessionSnapshot.controlledEntityAutopilotActive
- -> snapshot wire schema 9
+Local-flight-control architecture check failed:
+shared local motion law lost: params.maxCombatSpeed
 ```
 
-Manual SHOW ROUTE lifecycle remains:
+Root cause: stale static check. The intended current boundary is:
 
 ```text
-request
- -> Human -> Autopilot
- -> authoritative Autopilot=true
- -> physical Hub-relative stop + angular settle
- -> fresh authoritative start snapshot
- -> async advisory plan
- -> 500 m fixed gates + map route
- -> Complete
- -> handoff_wait
- -> authoritative Autopilot=false
- -> Human prediction resumes
+ShipParams raw fields
+ -> ShipDynamics.h centralized interpretation
+    - controlledSpeedLimitMps()
+    - effectiveLinearGs()
+    - forwardMainAccelerationLimitMps2()
+    - reverseMainAccelerationLimitMps2()
+ -> DynamicMotionSystem consumes accessors
 ```
 
-Run focused gates before gameplay:
-- architecture Python suite, especially
-  `check_manual_docking_advisory.py`;
-- `control_registry_contracts`;
-- `wire_protocol_contracts`;
-- `wire_data_plane_contracts`;
-- `docking_advisory`.
+Do not reintroduce direct `params.maxCombatSpeed` / `params.maxGs` reads into
+DynamicMotionSystem merely to satisfy grep checks. Native
+`LocalFlightControlContractTests.cpp` already exercises actual speed,
+acceleration, Newtonian/Assisted, overspeed and BrakeToStop behavior.
 
-Expected successful game log:
-`phase=stabilizing -> [DockPrep] begin -> phase=planning ->
-phase=handoff_wait -> [DockPrep] published ... human_restored=1 ->
-phase=manual human_control=1`.
+Manual docking candidate still requires target verification:
+Human -> authoritative Autopilot -> physical Hub-relative stop/angular settle ->
+fresh authoritative planning snapshot -> 500 m fixed advisory gates -> Complete
+-> authoritative Human hand-back -> manual prediction resumes.
 
-Keep MD state/task/project/Stage-12/prompt synchronized after every
-state-affecting result. Never claim Windows/game acceptance without target
-evidence.
+After each target result synchronize CURRENT_STATE.md, CURRENT_TASK.md,
+PROJECT_STATE.md, STAGE12_END_TO_END.md and recreate this prompt. Never record
+an unrun gate as passed.

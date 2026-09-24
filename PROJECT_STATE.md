@@ -1,5 +1,14 @@
 # PROJECT STATE
 
+## 2026-09-24 — local flight parameter ownership remains centralized
+
+The target gate exposed a stale architecture assertion, not a physics defect.
+Raw ship-profile interpretation for local speed and main-engine authority lives
+in `ShipDynamics.h`; `DynamicMotionSystem` consumes typed accessors. The
+architecture check now enforces this split rather than requiring duplicated raw
+`ShipParams` reads in the motion kernel.
+
+
 ## 2026-09-24 — authority replication normalized through one server helper
 
 Per-session Autopilot authority publication is now owned by one

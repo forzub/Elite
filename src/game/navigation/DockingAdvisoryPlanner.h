@@ -18,6 +18,13 @@ struct DockingAdvisoryRequest
     double brakingMps2 = 5.0;
     double lateralMps2 = 3.0;
     double gateSpacingMeters = 500.0;
+
+    // Manual guidance stays sparse in open transit but becomes denser on the
+    // final station approach so a curved turn is presented as a usable tunnel
+    // rather than a few long chords.
+    double terminalGateSpacingMeters = 250.0;
+    double terminalDenseDistanceMeters = 2000.0;
+
     std::vector<world::navigation::NavigationObstacle> obstacles;
 };
 struct DockingAdvisoryGate

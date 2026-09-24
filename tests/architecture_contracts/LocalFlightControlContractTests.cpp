@@ -394,11 +394,18 @@ void testAssistedVelocityFollowsNoseWithBoundedAcceleration()
     );
 
     const double accel = glm::length(motion.engineAccelerationMps2);
-    const double maxAccel = static_cast<double>(params.maxGs) * 9.80665;
+    const double maxAccel =
+        game::ship::mainAccelerationLimitMps2(params);
 
     require(accel > 0.1, "Assisted law stopped correcting velocity after hull turn");
     require(accel <= maxAccel + 1.0e-9,
-            "Assisted controller exceeded ship maxGs envelope");
+            "Assisted controller exceeded ship linear acceleration envelope");
+    requireNear(
+        glm::length(motion.mainEngineAccelerationMps2),
+        maxAccel,
+        1.0e-9,
+        "combined-envelope limiting derated the selected main engine"
+    );
 
     game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
         motion,

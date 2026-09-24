@@ -1,5 +1,22 @@
 # PROJECT STATE
 
+## 2026-09-24 — main thrust has priority over RCS inside the linear envelope
+
+Directional main-bank health remains binary and full-power at the descriptor
+level. The combined controller now also enforces the ship linear acceleration
+envelope without weakening that rule: selected main acceleration is preserved,
+and only the secondary manoeuvre/RCS vector is scaled when their vector sum
+would exceed the allowed total acceleration.
+
+This is distinct from engine-health derating. A live main bank retains its full
+available rating; a failed bank has zero authority. RCS is a subordinate vector
+inside the remaining load budget.
+
+The manual-docking static check was also corrected: `corners[1]` is legitimate
+inside the semantic bottom-marker geometry. Speed-label anchoring is checked
+only in its own placement block and must use the stable projected-frame
+upper-left helper.
+
 ## 2026-09-24 — propulsion hardware is descriptor/runtime truth, not control-law fiction
 
 Cobra is no longer an aft-main-only vehicle. Its descriptor now declares real

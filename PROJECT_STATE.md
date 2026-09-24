@@ -1,5 +1,30 @@
 # PROJECT STATE
 
+## 2026-09-24 — propulsion hardware is descriptor/runtime truth, not control-law fiction
+
+Cobra is no longer an aft-main-only vehicle. Its descriptor now declares real
+aft and fore longitudinal main-engine banks with explicit ratings and module
+bindings. Control law chooses how to use installed hardware; it does not create
+or remove that hardware.
+
+Effective propulsion is derived per ship instance from authoritative module
+state. Main-bank availability is binary: full rated thrust while operational,
+zero when failed. RCS remains an independent bounded actuator. This effective
+profile is consumed by authoritative motion, Navigation runtime capability and
+manual docking planning.
+
+The physical maneuver compiler now accepts Assisted as well as Newtonian and
+separates total body-axis authority from explicit main-bank authority. Normal
+doctrine prefers the aft bank for primary propulsion. A fore-bank failure
+therefore makes Assisted strong braking use the Newtonian-style flip-and-burn.
+An aft-bank failure instead permits the fore bank to become primary, which
+reverses the hull's working travel direction and is represented by an actual
+attitude + burn trajectory rather than by symmetric fictitious acceleration.
+
+The latest live docking evidence still predates this propulsion slice. Windows
+build/test/gameplay acceptance is the next boundary; no target result for these
+engine-failure cases exists yet.
+
 ## 2026-09-24 — manual docking has physical Assisted stop and corridor hysteresis
 
 The manual docking commissioning path no longer assumes that Assisted can stop

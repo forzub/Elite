@@ -1,5 +1,17 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-24 — pull published code and run Windows gates
+
+Public `origin/main` contains the exact corrected local tree at `512b917c`.
+On `D:\\__elite\\work`, run `git pull --ff-only origin main`, verify source
+and executable markers, run focused `docking_advisory` and
+`json_numeric_locale` CTests, build with `bash build_mingw64.sh`, and run the
+canonical `build/EliteGame.exe` with stdout/stderr piped through `tee` into a
+new `build/test-logs/docking-live-fixed.log`. Confirm startup locale, route
+persistence and acknowledged Human hand-back; if the guard fires, use the
+numeric `[DockAdvisory] axis` line. Preserve untracked trace artifacts.
+
+
 ## 2026-09-24 — public main publication approval gate
 
 User wants fixes in GitHub and no patch files. Automatic approval review

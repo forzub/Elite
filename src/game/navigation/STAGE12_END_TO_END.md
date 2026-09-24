@@ -10199,3 +10199,12 @@ Automatic approval review again rejected direct `git push origin main`,
 requiring explicit approval for public default-branch publication. No remote
 change happened. The target cannot obtain the local Hub-frame and locale fixes
 via `git pull` until this gate is resolved.
+
+## 2026-09-24 — GitHub publication completed; target flight pending
+
+With express approval, the authenticated GitHub integration published the
+verified local file tree to public `origin/main` as `512b917c`; a read-only
+remote check confirmed the ref. Prior publication-blocked sections are
+historical. The Windows checkout can now `git pull --ff-only origin main` from
+`84d59f4d`; verify its rebuilt `EliteGame.exe` contains the numeric axis log
+literal, then capture complete route persistence and Human hand-back evidence.

@@ -1,5 +1,15 @@
 # PROJECT STATE
 
+## 2026-09-24 — public main now contains corrected docking tree
+
+Public `forzub/Elite` `main` at verified commit `512b917c` contains the
+Hub-local docking geometry, one-tick corridor validation, shared Hub-map/HUD
+gate source, numeric axis logs, and JSON decimal-dot startup fix. The published
+tree SHA matches the locally tested tree. Old notes about blocked remote
+publication below describe earlier attempts only. Target Windows build and
+in-game route persistence are not yet accepted.
+
+
 ## 2026-09-24 — GitHub publication pending explicit public-main authorization
 
 Local `main` contains the corrected docking route and JSON numeric locale.

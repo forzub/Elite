@@ -1,5 +1,20 @@
 # CURRENT STATE
 
+## 2026-09-24 — docking and JSON startup fixes published on GitHub
+
+User explicitly authorized publication to public `forzub/Elite` `origin/main`.
+The command-line `git push` could not authenticate in the execution container;
+the authenticated GitHub integration instead published the exact verified
+local file tree as commit `512b917c8d09bc22b479a1c82203bd6b003b7ccf`.
+Read-only Git remote verification confirmed `refs/heads/main` points to that
+commit. The local branch now tracks it, with its previous multi-commit history
+retained under `elite-local-history`. Earlier sections describing blocked
+publication are historical. Windows can now `git pull --ff-only origin main`
+from `84d59f4d` without disturbing unrelated untracked trace files.
+Focused docking, test-source and JSON numeric-locale checks passed locally;
+the target build and live route/Human hand-back gates remain open.
+
+
 ## 2026-09-24 — direct GitHub publication requested, auto-review still blocks public main
 
 The user explicitly rejected patch-file delivery and asked for code directly

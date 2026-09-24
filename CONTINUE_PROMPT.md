@@ -1,5 +1,15 @@
 # CONTINUE PROMPT — verify the Hub-local manual docking route
 
+Latest: user explicitly authorized public `forzub/Elite` `origin/main`
+publication. Authenticated GitHub integration published the exact verified
+local tree as `512b917c`; remote `main` was read back at that commit. Earlier
+notes about blocked publication are historical. Local branch was aligned to
+that remote commit; the old local commit history is preserved in
+`elite-local-history`. Next: target `git pull --ff-only origin main`, focused
+JSON-locale and docking tests, canonical rebuild, binary marker check, then
+capture SHOW ROUTE for >45 s and confirmed Human control with complete log.
+
+
 Latest user instruction: no patch-file delivery; publish code directly to
 GitHub and supply `git pull`/check/build/run commands. Read-only remote check
 found `origin/main=84d59f4d`. Direct `git push origin main` was rejected by

@@ -49,6 +49,89 @@ int main()
     }
     if(!sawNominal500mGate)
     { std::cerr << "no nominal 500 m advisory gate spacing\n"; return 12; }
+
+    // The last 2 km use denser guidance frames. Measure backwards over the
+    // published polyline: every gate whose endpoint is in that terminal band
+    // must have arrived from <=250 m away.
+    double remainingPublishedMeters=0.0;
+    for (std::size_t i=result.gates.size()-1;i>0;--i)
+    {
+        const double gap=glm::length(
+            result.gates[i].positionMeters-result.gates[i-1].positionMeters
+        );
+        if (remainingPublishedMeters<=r.terminalDenseDistanceMeters+1.0e-6 &&
+            gap>r.terminalGateSpacingMeters+1.0e-5)
+        {
+            std::cerr << "terminal advisory gate spacing too sparse: "
+                      << gap << "\n";
+            return 22;
+        }
+        remainingPublishedMeters+=gap;
+    }
+
+    // A clean 3D corner into the docking axis must be a genuine circular
+    // fillet, not a quadratic Bezier. Use a denser terminal display sample and
+    // verify several published gates share the analytically expected radius.
+    DockingAdvisoryRequest curved;
+    curved.startMeters={-4000.0,0.0,2500.0};
+    curved.entranceMeters={0.0,0.0,0.0};
+    curved.outward={0.0,0.0,1.0};
+    curved.standoffMeters=300.0;
+    curved.hullRadiusMeters=10.0;
+    curved.maxSpeedMps=100.0;
+    curved.brakingMps2=10.0;
+    curved.lateralMps2=5.0;
+    curved.gateSpacingMeters=500.0;
+    curved.terminalGateSpacingMeters=100.0;
+    curved.terminalDenseDistanceMeters=2000.0;
+    const auto curvedPlan=DockingAdvisoryPlanner::plan(curved);
+    if(!curvedPlan.valid())
+    {
+        std::cerr << "circular fillet fixture failed: "
+                  << curvedPlan.failure << "\n";
+        return 23;
+    }
+    const auto curvedStop=
+        curved.entranceMeters+curved.outward*curved.standoffMeters;
+    const auto curvedAlign=
+        curvedStop+curved.outward*std::max(700.0,3*curved.standoffMeters);
+    const auto incomingRaw=curvedAlign-curved.startMeters;
+    const auto outgoingRaw=curvedStop-curvedAlign;
+    const double incomingLength=glm::length(incomingRaw);
+    const double outgoingLength=glm::length(outgoingRaw);
+    const auto incoming=incomingRaw/incomingLength;
+    const auto outgoing=outgoingRaw/outgoingLength;
+    const double turnAngle=std::acos(std::clamp(
+        glm::dot(incoming,outgoing),-1.0,1.0));
+    const double tangentScale=std::tan(turnAngle*0.5);
+    const double desiredRadius=std::max(
+        20.0,
+        curved.maxSpeedMps*curved.maxSpeedMps/curved.lateralMps2
+    );
+    const double tangentDistance=std::min({
+        incomingLength*0.4,
+        outgoingLength*0.4,
+        desiredRadius*tangentScale
+    });
+    const double expectedRadius=tangentDistance/tangentScale;
+    const auto entry=curvedAlign-tangentDistance*incoming;
+    const auto turnNormal=glm::normalize(glm::cross(incoming,outgoing));
+    const auto inwardNormal=glm::normalize(glm::cross(turnNormal,incoming));
+    const auto circleCenter=entry+expectedRadius*inwardNormal;
+    std::size_t gatesOnCircle=0;
+    for(const auto& gate:curvedPlan.gates)
+    {
+        if(std::abs(glm::length(gate.positionMeters-circleCenter)-
+                    expectedRadius)<0.5)
+            ++gatesOnCircle;
+    }
+    if(gatesOnCircle<4)
+    {
+        std::cerr << "terminal turn is not sampled as a circular fillet; count="
+                  << gatesOnCircle << "\n";
+        return 24;
+    }
+
     world::navigation::NavigationObstacle blocked;
     blocked.shape=world::navigation::NavigationObstacleShape::Sphere;
     blocked.centerMeters=r.startMeters;
